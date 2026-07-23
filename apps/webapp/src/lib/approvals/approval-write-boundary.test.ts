@@ -83,18 +83,33 @@ describe("approval write boundary raw SQL analyzer", () => {
 		expect(findProtectedApprovalSqlMutations(sqlText)).toEqual(expected);
 	});
 
-	it("detects only the protected work-period workflow binding column", () => {
+	it("detects every protected ordinary work-period source column", () => {
 		const source = `import { db, workPeriod } from "@/db";
 const table = workPeriod;
-const values = { approvalWorkflowId: workflowId, pendingChanges: null };
+const values = {
+  approvalStatus: "approved", pendingChanges: null,
+  approvalWorkflowId: workflowId, canonicalRecordId: recordId,
+  clockInId, clockOutId, startTime, endTime, durationMinutes,
+  updatedAt: new Date(),
+};
 db.update(table).set(values);`;
 
 		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
 			{
 				column: 1,
-				columns: ["approval_workflow_id"],
+				columns: [
+					"approval_status",
+					"approval_workflow_id",
+					"canonical_record_id",
+					"clock_in_id",
+					"clock_out_id",
+					"duration_minutes",
+					"end_time",
+					"pending_changes",
+					"start_time",
+				],
 				fileName: FILE_NAME,
-				line: 4,
+				line: 9,
 				operation: "update",
 				table: "work_period",
 			},
@@ -122,11 +137,89 @@ export async function bindSource(input: Input) {
 		]);
 	});
 
-	it("ignores unrelated work-period updates", () => {
+	it("protects direct work-period status writes", () => {
 		const source = `import { db, workPeriod } from "@/db";
 db.update(workPeriod).set({ pendingChanges: null, updatedAt: new Date() });`;
 
-		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([]);
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
+			expect.objectContaining({
+				columns: ["pending_changes"],
+				operation: "update",
+				table: "work_period",
+			}),
+		]);
+	});
+
+	it("extracts the complete ordinary and terminal-split raw SQL graph", () => {
+		expect(
+			findProtectedApprovalSqlMutations(`
+update work_period set approval_status = 'approved', pending_changes = null,
+  approval_workflow_id = $1, canonical_record_id = $2, clock_in_id = $3,
+  clock_out_id = $4, start_time = $5, end_time = $6, duration_minutes = $7;
+update time_record set approval_state = 'approved', end_at = $1, duration_minutes = $2;
+insert into time_record (id, organization_id, employee_id, record_kind, start_at,
+  end_at, duration_minutes, approval_state, origin) values ($1, $2, $3, 'work', $4, $5, $6, 'approved', 'clock');
+insert into time_record_work (record_id, organization_id, record_kind, work_category_id,
+  work_location_type, computation_metadata) values ($1, $2, 'work', $3, $4, $5);
+insert into time_record_allocation (id, organization_id, record_id, allocation_kind,
+  project_id, cost_center_id, weight_percent) values ($1, $2, $3, $4, $5, $6, $7);
+`),
+		).toEqual([
+			{
+				columns: [
+					"approval_status",
+					"approval_workflow_id",
+					"canonical_record_id",
+					"clock_in_id",
+					"clock_out_id",
+					"duration_minutes",
+					"end_time",
+					"pending_changes",
+					"start_time",
+				],
+				operation: "update",
+				table: "work_period",
+			},
+			{
+				columns: ["approval_state", "duration_minutes", "end_at"],
+				operation: "update",
+				semantic: "ordinary_finalization",
+				table: "time_record",
+			},
+			{
+				columns: ["approval_state", "duration_minutes", "end_at", "start_at"],
+				operation: "insert",
+				semantic: "policy_clock_out_terminal_break",
+				table: "time_record",
+			},
+			{
+				columns: [
+					"computation_metadata",
+					"organization_id",
+					"record_id",
+					"record_kind",
+					"work_category_id",
+					"work_location_type",
+				],
+				operation: "insert",
+				semantic: "policy_clock_out_terminal_break",
+				table: "time_record_work",
+			},
+			{
+				columns: [
+					"allocation_kind",
+					"cost_center_id",
+					"id",
+					"organization_id",
+					"project_id",
+					"record_id",
+					"weight_percent",
+				],
+				operation: "insert",
+				semantic: "policy_clock_out_terminal_break",
+				table: "time_record_allocation",
+			},
+		]);
 	});
 
 	it("detects hidden correction inserts through database and payload aliases", () => {
@@ -221,7 +314,7 @@ function mutate(patch: object) {
 
 	it("ignores a statically complete unrelated source payload", () => {
 		const source = `import { db, workPeriod } from "@/db";
-db.update(workPeriod).set({ pendingChanges: null, updatedAt: now });`;
+db.update(workPeriod).set({ projectId, updatedAt: now });`;
 
 		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([]);
 	});
@@ -342,7 +435,7 @@ db.delete(timeEntry).where(inArray(timeEntry.employeeId, employeeIds));`;
 			"update work_period set pending_changes = null, approval_workflow_id = $1 where id = $2",
 			[
 				{
-					columns: ["approval_workflow_id"],
+					columns: ["approval_workflow_id", "pending_changes"],
 					operation: "update",
 					table: "work_period",
 				},
@@ -2641,9 +2734,109 @@ db.delete(approvalOutbox);`,
 			],
 			"src/lib/approvals/server/work-period-submission.ts": [
 				{
+					columns: [
+						"approval_status",
+						"canonical_record_id",
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"pending_changes",
+						"start_time",
+					],
+					functionName: "insertOrdinaryWorkPeriodSourceInTransaction",
+					operation: "insert",
+					table: "work_period",
+				},
+				{
 					columns: ["approval_workflow_id"],
 					functionName: "bindSourceWorkflow",
 					operation: "update",
+					table: "work_period",
+				},
+			],
+			"src/lib/approvals/server/work-period-approvals.ts": [
+				{
+					columns: ["approval_status", "pending_changes"],
+					functionName: "finalizeOrdinaryWorkPeriodTerminal",
+					operation: "update",
+					table: "work_period",
+				},
+			],
+			"src/lib/time-tracking/policy-clock-out-terminal-break.ts": [
+				{
+					columns: ["type"],
+					functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+					operation: "insert",
+					semantic: "synthetic_time_entry",
+					table: "time_entry",
+				},
+				{
+					columns: ["clock_out_id", "duration_minutes", "end_time"],
+					functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+					operation: "update",
+					semantic: "policy_clock_out_terminal_break",
+					table: "work_period",
+				},
+				{
+					columns: ["duration_minutes", "end_at"],
+					functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+					operation: "update",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+				},
+				{
+					columns: ["approval_state", "duration_minutes", "end_at", "start_at"],
+					functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+				},
+				{
+					columns: [
+						"computation_metadata",
+						"organization_id",
+						"record_id",
+						"record_kind",
+						"work_category_id",
+						"work_location_type",
+					],
+					functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_work",
+				},
+				{
+					columns: [
+						"allocation_kind",
+						"cost_center_id",
+						"created_at",
+						"id",
+						"organization_id",
+						"project_id",
+						"record_id",
+						"weight_percent",
+					],
+					functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_allocation",
+				},
+				{
+					columns: [
+						"approval_status",
+						"approval_workflow_id",
+						"canonical_record_id",
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"pending_changes",
+						"start_time",
+					],
+					functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
 					table: "work_period",
 				},
 			],
@@ -2656,6 +2849,44 @@ db.delete(approvalOutbox);`,
 					operation: "update",
 					semantic: "correction_lifecycle",
 					table: "time_entry",
+				},
+				{
+					columns: ["clock_out_id", "duration_minutes", "end_time"],
+					functionName: "splitWorkPeriod",
+					operation: "update",
+					table: "work_period",
+				},
+				{
+					columns: [
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"start_time",
+					],
+					functionName: "splitWorkPeriod",
+					operation: "insert",
+					table: "work_period",
+				},
+			],
+			"src/app/[locale]/(app)/time-tracking/actions/clocking.ts": [
+				{
+					columns: [
+						"approval_status",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"pending_changes",
+					],
+					functionName: "addBreakToActiveSession",
+					operation: "update",
+					table: "work_period",
+				},
+				{
+					columns: ["clock_in_id", "start_time"],
+					functionName: "addBreakToActiveSession",
+					operation: "insert",
+					table: "work_period",
 				},
 			],
 			"src/app/[locale]/(app)/time-tracking/actions/entry-helpers.ts": [
@@ -2681,6 +2912,38 @@ db.delete(approvalOutbox);`,
 					operation: "update",
 					semantic: "correction_lifecycle",
 					table: "time_entry",
+				},
+				{
+					columns: ["clock_out_id", "duration_minutes", "end_time"],
+					functionName: "splitWorkPeriod",
+					operation: "update",
+					table: "work_period",
+				},
+				{
+					columns: [
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"start_time",
+					],
+					functionName: "splitWorkPeriod",
+					operation: "insert",
+					table: "work_period",
+				},
+			],
+			"src/lib/approvals/server/time-correction-approvals.ts": [
+				{
+					columns: [
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"start_time",
+					],
+					functionName: "finalizeTimeCorrectionTerminalDetailedInTransaction",
+					operation: "update",
+					table: "work_period",
 				},
 			],
 			"src/lib/clockin/import-orchestrator.ts": [
@@ -2735,6 +2998,18 @@ db.delete(approvalOutbox);`,
 					table: "time_entry",
 					uncertainty: "dynamic_payload",
 				},
+				{
+					columns: [
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"start_time",
+					],
+					functionName: "generateDemoTimeEntries",
+					operation: "insert",
+					table: "work_period",
+				},
 			],
 			"src/lib/import-review/committers.ts": [
 				{
@@ -2743,6 +3018,26 @@ db.delete(approvalOutbox);`,
 					operation: "insert",
 					table: "time_entry",
 					uncertainty: "dynamic_payload",
+				},
+				{
+					columns: [
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"start_time",
+					],
+					functionName: "commitWorkPeriod",
+					operation: "insert",
+					table: "work_period",
+				},
+			],
+			"src/lib/time-record/migration/backfill.ts": [
+				{
+					columns: ["canonical_record_id"],
+					functionName: "runCanonicalBackfill",
+					operation: "update",
+					table: "work_period",
 				},
 			],
 			"src/lib/time-tracking/clocking-service.ts": [
@@ -2786,6 +3081,69 @@ db.delete(approvalOutbox);`,
 						functionName: "hiddenBinding",
 						kind: "mutation",
 						table: "work_period",
+					}),
+				]);
+			},
+		);
+	});
+
+	it.each([
+		["renamed owner", "finalizeOrdinaryWorkPeriodTerminalWrong"],
+		["endpoint owner", "POST"],
+	] as const)("rejects an ordinary finalization from a %s", (_label, functionName) => {
+		const path =
+			functionName === "POST"
+				? "src/app/api/approvals/finalize/route.ts"
+				: "src/lib/approvals/server/work-period-approvals.ts";
+		withApprovalWriteTree(
+			{
+				[path]: `import { db, workPeriod } from "@/db";
+export function ${functionName}() {
+  return db.update(workPeriod).set({ approvalStatus: "approved", pendingChanges: null });
+}`,
+			},
+			(workspaceRoot) => {
+				expect(
+					scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot }),
+				).toEqual([
+					expect.objectContaining({
+						functionName,
+						path,
+						table: "work_period",
+					}),
+				]);
+			},
+		);
+	});
+
+	it("rejects a dynamic payload and a new bypass file while allowing the exact finalizer", () => {
+		const ownerPath = "src/lib/approvals/server/work-period-approvals.ts";
+		withApprovalWriteTree(
+			{
+				[ownerPath]: `import { db, workPeriod } from "@/db";
+export function finalizeOrdinaryWorkPeriodTerminal() {
+  return db.update(workPeriod).set({ approvalStatus: "approved", pendingChanges: null });
+}
+export function dynamicFinalizer(patch: object) {
+  return db.update(workPeriod).set(patch);
+}`,
+				"src/lib/approvals/server/work-period-finalization-bypass.ts":
+					'import { db, workPeriod } from "@/db"; export function bypass() { return db.update(workPeriod).set({ approvalWorkflowId: "workflow" }); }',
+			},
+			(workspaceRoot) => {
+				const findings = scanApprovalWriteBoundary({
+					roots: ["src"],
+					workspaceRoot,
+				});
+				expect(findings).toEqual([
+					expect.objectContaining({
+						functionName: "dynamicFinalizer",
+						path: ownerPath,
+						uncertainty: "dynamic_payload",
+					}),
+					expect.objectContaining({
+						functionName: "bypass",
+						path: "src/lib/approvals/server/work-period-finalization-bypass.ts",
 					}),
 				]);
 			},
@@ -2934,7 +3292,11 @@ export async function hiddenImport(values: object) {
 			inventory
 				.filter((finding) => finding.kind === "mutation")
 				.map((finding) =>
-					finding.table === "time_entry" || finding.table === "work_period"
+					finding.table === "time_entry" ||
+					finding.table === "work_period" ||
+					finding.table === "time_record" ||
+					finding.table === "time_record_work" ||
+					finding.table === "time_record_allocation"
 						? `${finding.path}\0${finding.table}\0${finding.operation}\0${finding.functionName ?? ""}\0${finding.columns?.join(",") ?? ""}\0${finding.semantic ?? ""}\0${finding.uncertainty ?? ""}`
 						: `${finding.path}\0${finding.table}\0${finding.operation}`,
 				),
@@ -2963,19 +3325,23 @@ export async function hiddenImport(values: object) {
 		);
 	}, 60_000);
 
-	it("does not grant migrated correction entry points or orchestrators protected-write ownership", () => {
+	it("does not grant actions, handlers, inbox, bot, or routes ordinary owner capabilities", () => {
 		const forbiddenOwners = [
 			"src/app/[locale]/(app)/time-tracking/actions.ts",
+			"src/app/[locale]/(app)/time-tracking/actions/approvals.ts",
 			"src/app/[locale]/(app)/time-tracking/actions/corrections.ts",
+			"src/app/api/approvals/route.ts",
 			"src/app/api/time-entries/corrections/route.ts",
+			"src/lib/approvals/handlers/time-correction.handler.ts",
 			"src/lib/approvals/inbox/decision-service.ts",
-			"src/lib/approvals/server/time-correction-approvals.ts",
+			"src/lib/bot/commands/clock-out.ts",
 			"src/lib/approvals/server/time-correction-cancellation.ts",
 		];
 
 		for (const path of forbiddenOwners) {
 			expect(CANONICAL_WRITE_OWNERS).not.toHaveProperty(path);
 			expect(TEMPORARY_LEGACY_WRITE_EXCEPTIONS).not.toHaveProperty(path);
+			expect(CANONICAL_SOURCE_WRITE_OWNERS).not.toHaveProperty(path);
 		}
 		expect(
 			TEMPORARY_LEGACY_WRITE_EXCEPTIONS["src/lib/demo/demo-data.service.ts"],

@@ -1083,7 +1083,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 ): Promise<WorkPeriodApprovalResult> {
 	const fail = ordinaryWorkPeriodFinalizationConflict;
 	const evidence = validateTerminalEvidence(input);
-	const db = input.dbService.db;
+	const db: ApprovalDbService["db"] = input.dbService.db;
 	const periods = await db
 		.select({
 			id: workPeriod.id,

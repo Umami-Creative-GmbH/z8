@@ -14,7 +14,9 @@ import type {
 	ApprovalWriteOperation,
 	ProtectedApprovalTable,
 	ProtectedWriteTable,
+	TargetedApprovalSourceTable,
 } from "./approval-write-boundary-sql";
+import { TARGETED_APPROVAL_SOURCE_TABLES } from "./approval-write-boundary-sql";
 import { analyzeApprovalWriteMutations } from "./approval-write-boundary-typescript";
 
 type ApprovalWriteOwners = Readonly<
@@ -33,7 +35,7 @@ interface ApprovalSourceWriteCapability {
 	readonly functionName?: string;
 	readonly operation: ApprovalWriteOperation;
 	readonly semantic?: ApprovalSourceMutationSemantic;
-	readonly table: "time_entry" | "work_period";
+	readonly table: TargetedApprovalSourceTable;
 	readonly uncertainty?: ApprovalSourceMutationUncertainty;
 }
 
@@ -173,9 +175,109 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 	],
 	"src/lib/approvals/server/work-period-submission.ts": [
 		{
+			columns: [
+				"approval_status",
+				"canonical_record_id",
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"pending_changes",
+				"start_time",
+			],
+			functionName: "insertOrdinaryWorkPeriodSourceInTransaction",
+			operation: "insert",
+			table: "work_period",
+		},
+		{
 			columns: ["approval_workflow_id"],
 			functionName: "bindSourceWorkflow",
 			operation: "update",
+			table: "work_period",
+		},
+	],
+	"src/lib/approvals/server/work-period-approvals.ts": [
+		{
+			columns: ["approval_status", "pending_changes"],
+			functionName: "finalizeOrdinaryWorkPeriodTerminal",
+			operation: "update",
+			table: "work_period",
+		},
+	],
+	"src/lib/time-tracking/policy-clock-out-terminal-break.ts": [
+		{
+			columns: ["type"],
+			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+			operation: "insert",
+			semantic: "synthetic_time_entry",
+			table: "time_entry",
+		},
+		{
+			columns: ["clock_out_id", "duration_minutes", "end_time"],
+			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+			operation: "update",
+			semantic: "policy_clock_out_terminal_break",
+			table: "work_period",
+		},
+		{
+			columns: ["duration_minutes", "end_at"],
+			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+			operation: "update",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+		},
+		{
+			columns: ["approval_state", "duration_minutes", "end_at", "start_at"],
+			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+		},
+		{
+			columns: [
+				"computation_metadata",
+				"organization_id",
+				"record_id",
+				"record_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_work",
+		},
+		{
+			columns: [
+				"allocation_kind",
+				"cost_center_id",
+				"created_at",
+				"id",
+				"organization_id",
+				"project_id",
+				"record_id",
+				"weight_percent",
+			],
+			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_allocation",
+		},
+		{
+			columns: [
+				"approval_status",
+				"approval_workflow_id",
+				"canonical_record_id",
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"pending_changes",
+				"start_time",
+			],
+			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
 			table: "work_period",
 		},
 	],
@@ -189,6 +291,44 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			operation: "update",
 			semantic: "correction_lifecycle",
 			table: "time_entry",
+		},
+		{
+			columns: ["clock_out_id", "duration_minutes", "end_time"],
+			functionName: "splitWorkPeriod",
+			operation: "update",
+			table: "work_period",
+		},
+		{
+			columns: [
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"start_time",
+			],
+			functionName: "splitWorkPeriod",
+			operation: "insert",
+			table: "work_period",
+		},
+	],
+	"src/app/[locale]/(app)/time-tracking/actions/clocking.ts": [
+		{
+			columns: [
+				"approval_status",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"pending_changes",
+			],
+			functionName: "addBreakToActiveSession",
+			operation: "update",
+			table: "work_period",
+		},
+		{
+			columns: ["clock_in_id", "start_time"],
+			functionName: "addBreakToActiveSession",
+			operation: "insert",
+			table: "work_period",
 		},
 	],
 	"src/app/[locale]/(app)/time-tracking/actions/entry-helpers.ts": [
@@ -214,6 +354,24 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			operation: "update",
 			semantic: "correction_lifecycle",
 			table: "time_entry",
+		},
+		{
+			columns: ["clock_out_id", "duration_minutes", "end_time"],
+			functionName: "splitWorkPeriod",
+			operation: "update",
+			table: "work_period",
+		},
+		{
+			columns: [
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"start_time",
+			],
+			functionName: "splitWorkPeriod",
+			operation: "insert",
+			table: "work_period",
 		},
 	],
 	"src/lib/clockin/import-orchestrator.ts": [
@@ -268,6 +426,18 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			table: "time_entry",
 			uncertainty: "dynamic_payload",
 		},
+		{
+			columns: [
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"start_time",
+			],
+			functionName: "generateDemoTimeEntries",
+			operation: "insert",
+			table: "work_period",
+		},
 	],
 	"src/lib/import-review/committers.ts": [
 		{
@@ -276,6 +446,40 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			operation: "insert",
 			table: "time_entry",
 			uncertainty: "dynamic_payload",
+		},
+		{
+			columns: [
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"start_time",
+			],
+			functionName: "commitWorkPeriod",
+			operation: "insert",
+			table: "work_period",
+		},
+	],
+	"src/lib/time-record/migration/backfill.ts": [
+		{
+			columns: ["canonical_record_id"],
+			functionName: "runCanonicalBackfill",
+			operation: "update",
+			table: "work_period",
+		},
+	],
+	"src/lib/approvals/server/time-correction-approvals.ts": [
+		{
+			columns: [
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"start_time",
+			],
+			functionName: "finalizeTimeCorrectionTerminalDetailedInTransaction",
+			operation: "update",
+			table: "work_period",
 		},
 	],
 	"src/lib/time-tracking/clocking-service.ts": [
@@ -425,10 +629,15 @@ function isAllowed(
 ): boolean {
 	const canonical = CANONICAL_WRITE_OWNERS as ApprovalWriteOwners;
 	const temporary = TEMPORARY_LEGACY_WRITE_EXCEPTIONS as ApprovalWriteOwners;
-	if (mutation.table !== "time_entry" && mutation.table !== "work_period") {
+	if (
+		!TARGETED_APPROVAL_SOURCE_TABLES.includes(
+			mutation.table as TargetedApprovalSourceTable,
+		)
+	) {
+		const table = mutation.table as ProtectedApprovalTable;
 		return Boolean(
-			canonical[path]?.[mutation.table]?.includes(mutation.operation) ||
-				temporary[path]?.[mutation.table]?.includes(mutation.operation),
+			canonical[path]?.[table]?.includes(mutation.operation) ||
+				temporary[path]?.[table]?.includes(mutation.operation),
 		);
 	}
 	const owners = CANONICAL_SOURCE_WRITE_OWNERS as ApprovalSourceWriteOwners;

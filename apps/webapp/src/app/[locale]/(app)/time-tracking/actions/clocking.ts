@@ -21,6 +21,7 @@ import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
 import {
 	executeOrdinaryWorkPeriodSubmissionInTransaction,
+	insertOrdinaryWorkPeriodSourceInTransaction,
 	type WorkPeriodPostCommitDescriptor,
 } from "@/lib/approvals/server/work-period-submission";
 import { deriveApprovalWorkflowId } from "@/lib/approvals/workflow/identity";
@@ -2122,39 +2123,36 @@ export async function createManualTimeEntry(
 					tx,
 				);
 
-			const [period] = await tx
-				.insert(workPeriod)
-				.values({
-					id: submissionId,
-					employeeId: targetEmployee.id,
-					organizationId: targetEmployee.organizationId,
-					clockInId: clockInEntry.id,
-					clockOutId: clockOutEntry.id,
-					startTime: adjustedClockIn,
-					endTime: adjustedClockOut,
-					durationMinutes,
-					projectId: data.projectId || null,
-					workCategoryId: data.workCategoryId || null,
-					canonicalRecordId: canonicalRecord.id,
-					isActive: false,
-					approvalStatus: requiresApproval ? "pending" : "approved",
-					pendingChanges: (requiresApproval
-						? {
-								ordinarySubmission: {
-									submissionId,
-									kind: "manual_time_submission" as const,
-								},
-								originalStartTime: adjustedClockIn.toISOString(),
-								originalEndTime: adjustedClockOut.toISOString(),
-								originalDurationMinutes: durationMinutes,
-								requestedAt: now.toISOString(),
-								requestedBy: session.user.id,
-								reason: data.reason,
-								isManualEntry: true,
-							}
-						: null) as never,
-				})
-				.returning();
+			const period = await insertOrdinaryWorkPeriodSourceInTransaction({
+				dbService: approvalDbServiceForTransaction(context.dbService),
+				id: submissionId,
+				employeeId: targetEmployee.id,
+				organizationId: targetEmployee.organizationId,
+				clockInId: clockInEntry.id,
+				clockOutId: clockOutEntry.id,
+				startTime: adjustedClockIn,
+				endTime: adjustedClockOut,
+				durationMinutes,
+				projectId: data.projectId || null,
+				workCategoryId: data.workCategoryId || null,
+				canonicalRecordId: canonicalRecord.id,
+				approvalStatus: requiresApproval ? "pending" : "approved",
+				pendingChanges: requiresApproval
+					? {
+							ordinarySubmission: {
+								submissionId,
+								kind: "manual_time_submission" as const,
+							},
+							originalStartTime: adjustedClockIn.toISOString(),
+							originalEndTime: adjustedClockOut.toISOString(),
+							originalDurationMinutes: durationMinutes,
+							requestedAt: now.toISOString(),
+							requestedBy: session.user.id,
+							reason: data.reason,
+							isManualEntry: true,
+						}
+					: null,
+			});
 
 			const approvalSubmission = requiresApproval
 				? await executeOrdinaryWorkPeriodSubmissionInTransaction({

@@ -24,6 +24,9 @@ export type ProtectedApprovalTable = (typeof PROTECTED_APPROVAL_TABLES)[number];
 export const TARGETED_APPROVAL_SOURCE_TABLES = [
 	"time_entry",
 	"work_period",
+	"time_record",
+	"time_record_work",
+	"time_record_allocation",
 ] as const;
 export type TargetedApprovalSourceTable =
 	(typeof TARGETED_APPROVAL_SOURCE_TABLES)[number];
@@ -33,7 +36,10 @@ export type ProtectedWriteTable =
 export type ApprovalSourceMutationSemantic =
 	| "correction"
 	| "correction_lifecycle"
-	| "inactive_correction";
+	| "inactive_correction"
+	| "ordinary_finalization"
+	| "policy_clock_out_terminal_break"
+	| "synthetic_time_entry";
 export type ApprovalSourceMutationUncertainty =
 	| "dynamic_payload"
 	| "dynamic_sql";
@@ -86,6 +92,34 @@ const TIME_ENTRY_LIFECYCLE_COLUMNS = new Set([
 	"replaces_entry_id",
 	"superseded_by_id",
 ]);
+const WORK_PERIOD_APPROVAL_COLUMNS = new Set([
+	"approval_status",
+	"pending_changes",
+	"approval_workflow_id",
+	"canonical_record_id",
+	"clock_in_id",
+	"clock_out_id",
+	"start_time",
+	"end_time",
+	"duration_minutes",
+]);
+const TIME_RECORD_APPROVAL_COLUMNS = new Set([
+	"approval_state",
+	"start_at",
+	"end_at",
+	"duration_minutes",
+]);
+const SYNTHETIC_TIME_ENTRY_COLUMNS = [
+	"created_by",
+	"hash",
+	"previous_entry_id",
+	"previous_hash",
+	"timestamp",
+	"timezone",
+	"timezone_source",
+	"type",
+	"utc_offset_minutes",
+] as const;
 const MAX_SQL_COMMAND_NESTING = 64;
 const MAX_SQL_STATEMENTS = 1_024;
 const MAX_SQL_TEXT_LENGTH = 1_000_000;
@@ -627,11 +661,15 @@ function targetedColumns(
 ): string[] {
 	const protectedColumns =
 		table === "work_period"
-			? columns.filter((column) => column === "approval_workflow_id")
-			: columns.filter(
-					(column) =>
-						column === "type" || TIME_ENTRY_LIFECYCLE_COLUMNS.has(column),
-				);
+			? columns.filter((column) => WORK_PERIOD_APPROVAL_COLUMNS.has(column))
+			: table === "time_entry"
+				? columns.filter(
+						(column) =>
+							column === "type" || TIME_ENTRY_LIFECYCLE_COLUMNS.has(column),
+					)
+				: table === "time_record"
+					? columns.filter((column) => TIME_RECORD_APPROVAL_COLUMNS.has(column))
+					: columns;
 	return [...new Set(protectedColumns)].sort();
 }
 
@@ -674,23 +712,38 @@ function inspectTargetedSourceSqlMutations(
 			if (!columns || !isKeyword(tokens[columnsEnd + 1], "values")) continue;
 			const dynamicColumns = columns.includes(APPROVAL_DYNAMIC_SQL_MARKER);
 			const protectedColumns = targetedColumns(target.table, columns);
-			if (
-				target.table !== "time_entry" ||
-				(protectedColumns.length === 0 && !dynamicColumns)
-			)
-				continue;
+			if (protectedColumns.length === 0 && !dynamicColumns) continue;
 			const statementEnd = sqlText.indexOf(";", tokens[start]?.start ?? 0);
 			const statement = sqlText.slice(
 				tokens[start]?.start ?? 0,
 				statementEnd === -1 ? undefined : statementEnd,
 			);
 			const correction = /['"]correction['"]/i.test(statement);
+			const syntheticTimeEntry =
+				target.table === "time_entry" &&
+				SYNTHETIC_TIME_ENTRY_COLUMNS.every((column) =>
+					columns.includes(column),
+				) &&
+				!columns.some((column) => TIME_ENTRY_LIFECYCLE_COLUMNS.has(column));
+			const terminalBreak =
+				(target.table === "time_record" &&
+					/['"]approved['"]/i.test(statement) &&
+					/['"](?:work|clock)['"]/i.test(statement)) ||
+				target.table === "time_record_work" ||
+				target.table === "time_record_allocation" ||
+				(target.table === "work_period" &&
+					/['"]approved['"]/i.test(statement) &&
+					columns.includes("canonical_record_id"));
 			const dynamicCorrectionSemantic =
+				target.table === "time_entry" &&
 				protectedColumns.includes("type") &&
 				statement.includes(APPROVAL_DYNAMIC_SQL_MARKER) &&
-				!correction;
-			if (
 				!correction &&
+				!syntheticTimeEntry;
+			if (
+				target.table === "time_entry" &&
+				!correction &&
+				!syntheticTimeEntry &&
 				!protectedColumns.some((column) =>
 					TIME_ENTRY_LIFECYCLE_COLUMNS.has(column),
 				) &&
@@ -704,11 +757,15 @@ function inspectTargetedSourceSqlMutations(
 				operation,
 				...(correction
 					? { semantic: "correction" as const }
-					: protectedColumns.some((column) =>
-								TIME_ENTRY_LIFECYCLE_COLUMNS.has(column),
-							)
-						? { semantic: "correction_lifecycle" as const }
-						: {}),
+					: syntheticTimeEntry
+						? { semantic: "synthetic_time_entry" as const }
+						: terminalBreak
+							? { semantic: "policy_clock_out_terminal_break" as const }
+							: protectedColumns.some((column) =>
+										TIME_ENTRY_LIFECYCLE_COLUMNS.has(column),
+									)
+								? { semantic: "correction_lifecycle" as const }
+								: {}),
 				table: target.table,
 				...(dynamicColumns || dynamicCorrectionSemantic
 					? { uncertainty: "dynamic_sql" as const }
@@ -790,7 +847,19 @@ function inspectTargetedSourceSqlMutations(
 			operation,
 			...(target.table === "time_entry" && protectedColumns.length > 0
 				? { semantic: "correction_lifecycle" as const }
-				: {}),
+				: target.table === "time_record"
+					? {
+							semantic: protectedColumns.includes("approval_state")
+								? ("ordinary_finalization" as const)
+								: ("policy_clock_out_terminal_break" as const),
+						}
+					: target.table === "work_period" &&
+							protectedColumns.includes("clock_out_id") &&
+							protectedColumns.includes("end_time") &&
+							protectedColumns.includes("duration_minutes") &&
+							!protectedColumns.includes("approval_status")
+						? { semantic: "policy_clock_out_terminal_break" as const }
+						: {}),
 			table: target.table,
 			...(dynamicAssignment ? { uncertainty: "dynamic_sql" as const } : {}),
 		});
@@ -1306,11 +1375,12 @@ export function findProtectedApprovalSqlMutations(
 	sqlText: string,
 ): ApprovalTableMutation[] {
 	return findProtectedApprovalSqlMutationLocations(sqlText).map(
-		({ columns, operation, semantic, table }) => ({
+		({ columns, operation, semantic, table, uncertainty }) => ({
 			...(columns ? { columns } : {}),
 			operation,
 			...(semantic ? { semantic } : {}),
 			table,
+			...(uncertainty ? { uncertainty } : {}),
 		}),
 	);
 }

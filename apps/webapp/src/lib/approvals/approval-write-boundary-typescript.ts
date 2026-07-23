@@ -73,11 +73,22 @@ const TABLE_EXPORTS: Readonly<Record<string, ProtectedWriteTable>> = {
 const SOURCE_TABLES = new Set<ProtectedWriteTable>([
 	"time_entry",
 	"work_period",
+	"time_record",
+	"time_record_work",
+	"time_record_allocation",
 ]);
 const SOURCE_COLUMN_NAMES: Readonly<Record<string, string>> = {
+	approvalStatus: "approval_status",
 	approvalWorkflowId: "approval_workflow_id",
+	canonicalRecordId: "canonical_record_id",
+	clockInId: "clock_in_id",
+	clockOutId: "clock_out_id",
+	durationMinutes: "duration_minutes",
+	endTime: "end_time",
 	isSuperseded: "is_superseded",
+	pendingChanges: "pending_changes",
 	replacesEntryId: "replaces_entry_id",
+	startTime: "start_time",
 	supersededById: "superseded_by_id",
 	type: "type",
 };
@@ -1789,7 +1800,17 @@ export function analyzeApprovalWriteMutations(
 		)) {
 			const protectedPropertyNames =
 				table === "work_period"
-					? ["approvalWorkflowId"]
+					? [
+							"approvalStatus",
+							"pendingChanges",
+							"approvalWorkflowId",
+							"canonicalRecordId",
+							"clockInId",
+							"clockOutId",
+							"startTime",
+							"endTime",
+							"durationMinutes",
+						]
 					: Object.keys(SOURCE_COLUMN_NAMES).filter(
 							(name) =>
 								name === "type" ||
@@ -1806,7 +1827,16 @@ export function analyzeApprovalWriteMutations(
 				...new Set(
 					table === "work_period"
 						? normalizedColumns.filter(
-								(column) => column === "approval_workflow_id",
+								(column) =>
+									column === "approval_status" ||
+									column === "pending_changes" ||
+									column === "approval_workflow_id" ||
+									column === "canonical_record_id" ||
+									column === "clock_in_id" ||
+									column === "clock_out_id" ||
+									column === "start_time" ||
+									column === "end_time" ||
+									column === "duration_minutes",
 							)
 						: normalizedColumns.filter(
 								(column) =>
@@ -1814,6 +1844,14 @@ export function analyzeApprovalWriteMutations(
 							),
 				),
 			].sort(compareAscii);
+			const reportedColumns =
+				unresolvedPayload &&
+				table === "work_period" &&
+				columns.every(
+					(column) => column === "clock_in_id" || column === "clock_out_id",
+				)
+					? []
+					: columns;
 			if (columns.length === 0 && !unresolvedPayload) continue;
 			if (table === "time_entry" && operation === "insert") {
 				const typeValue = payload.properties.get("type");
@@ -1830,7 +1868,7 @@ export function analyzeApprovalWriteMutations(
 				)
 					continue;
 				emit(node, operation, table, {
-					...(columns.length > 0 ? { columns } : {}),
+					...(reportedColumns.length > 0 ? { columns: reportedColumns } : {}),
 					...(correction
 						? { semantic: "correction" as const }
 						: columns.some((column) => TIME_ENTRY_LIFECYCLE_COLUMNS.has(column))
@@ -1843,7 +1881,7 @@ export function analyzeApprovalWriteMutations(
 				continue;
 			}
 			emit(node, operation, table, {
-				...(columns.length > 0 ? { columns } : {}),
+				...(reportedColumns.length > 0 ? { columns: reportedColumns } : {}),
 				...(table === "time_entry" && columns.length > 0
 					? { semantic: "correction_lifecycle" as const }
 					: {}),

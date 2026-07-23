@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { Cause, Effect, Exit, Option } from "effect";
-import { approvalRequest } from "@/db/schema";
+import { approvalRequest, workPeriod } from "@/db/schema";
 import {
 	instantFromDate,
 	instantToCanonicalString,
@@ -67,6 +67,45 @@ export interface WorkPeriodPostCommitDescriptor {
 	endTime: string;
 	durationMinutes: number;
 	reason: string | null;
+}
+
+export async function insertOrdinaryWorkPeriodSourceInTransaction(input: {
+	dbService: ApprovalDbService;
+	id: string;
+	employeeId: string;
+	organizationId: string;
+	clockInId: string;
+	clockOutId: string;
+	startTime: Date;
+	endTime: Date;
+	durationMinutes: number;
+	projectId: string | null;
+	workCategoryId: string | null;
+	canonicalRecordId: string;
+	approvalStatus: "pending" | "approved";
+	pendingChanges: unknown;
+}) {
+	const [period] = await input.dbService.db
+		.insert(workPeriod)
+		.values({
+			id: input.id,
+			employeeId: input.employeeId,
+			organizationId: input.organizationId,
+			clockInId: input.clockInId,
+			clockOutId: input.clockOutId,
+			startTime: input.startTime,
+			endTime: input.endTime,
+			durationMinutes: input.durationMinutes,
+			projectId: input.projectId,
+			workCategoryId: input.workCategoryId,
+			canonicalRecordId: input.canonicalRecordId,
+			isActive: false,
+			approvalStatus: input.approvalStatus,
+			pendingChanges: input.pendingChanges as never,
+		})
+		.returning();
+	if (!period) fail();
+	return period;
 }
 
 interface LockedOrdinarySource {
