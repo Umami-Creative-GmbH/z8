@@ -48,11 +48,12 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"requester auto-finalization failure rolls the complete submission back in %s mode",
 			"terminal prior history remains immutable while one new conflicting pending submission wins",
 			"stale same-organization source link fails generically and rolls back",
-			"foreign organization authority fails separately without tenant residue",
 			"approve versus reject leaves one coherent terminal graph and a generic conflict loser",
 			"duplicate approve replays one coherent terminal graph",
 			"Task8A split has exact period, canonical subtype, allocation, workflow, and synthetic-entry parity",
 			"forced %s CAS zero row rolls the entire decision back",
+			"decision INSERT RETURNING zero rows rolls the complete transaction back",
+			"foreign organization rollback snapshots both tenants and every durable graph",
 			"exact source advisory lock blocks then commits and replays after release",
 			"split races a locked competing employee entry into one reachable hash chain",
 		] as const) {
@@ -476,6 +477,7 @@ describeIntegration(
 
 		async function snapshot() {
 			const tables = [
+				"employee",
 				"approval_workflow",
 				"approval_workflow_stage",
 				"approval_stage_assignment",
@@ -494,19 +496,28 @@ describeIntegration(
 				"time_record_allocation",
 				"time_record_approval_decision",
 			] as const;
-			return Object.fromEntries(
+			const tenantIds = [ids.organization, ids.foreignOrganization];
+			const durable = Object.fromEntries(
 				await Promise.all(
 					tables.map(async (table) => [
 						table,
 						(
 							await pool.query<{ row: unknown }>(
-								`select to_jsonb(row) as row from ${table} row where organization_id = $1 order by 1`,
-								[ids.organization],
+								`select to_jsonb(row) as row from ${table} row where organization_id = any($1::text[]) order by 1`,
+								[tenantIds],
 							)
 						).rows.map(({ row }) => row),
 					]),
 				),
 			);
+			const organizations = await pool.query<{ row: unknown }>(
+				"select to_jsonb(row) as row from organization row where id = any($1::text[]) order by id",
+				[tenantIds],
+			);
+			return {
+				organization: organizations.rows.map(({ row }) => row),
+				...durable,
+			};
 		}
 
 		async function withFailureTrigger<T>(input: {
@@ -923,8 +934,14 @@ describeIntegration(
 			expect(await snapshot()).toEqual(before);
 		});
 
-		it("foreign organization authority fails separately without tenant residue", async () => {
+		it("foreign organization rollback snapshots both tenants and every durable graph", async () => {
 			const before = await snapshot();
+			expect(
+				(before.organization as Array<{ id: string }>).map(({ id }) => id),
+			).toEqual([ids.foreignOrganization, ids.organization].sort());
+			expect(
+				(before.employee as Array<{ id: string }>).map(({ id }) => id).sort(),
+			).toEqual([ids.foreignEmployee, ids.manager, ids.requester].sort());
 			await expect(
 				runtime().repository.withTransaction((context) =>
 					executeOrdinaryWorkPeriodSubmissionInTransaction({
@@ -944,7 +961,34 @@ describeIntegration(
 					}),
 				),
 			).rejects.toThrow("Ordinary work-period submission failed");
-			expect(await snapshot()).toEqual(before);
+			const after = await snapshot();
+			expect(after).toEqual(before);
+			for (const table of [
+				"approval_workflow",
+				"approval_workflow_stage",
+				"approval_stage_assignment",
+				"approval_workflow_event",
+				"approval_workflow_command",
+				"approval_requester_projection",
+				"approval_inbox_projection",
+				"approval_outbox",
+				"approval_request",
+				"approval_chain_instance",
+				"approval_chain_stage_instance",
+				"time_entry",
+				"work_period",
+				"time_record",
+				"time_record_work",
+				"time_record_allocation",
+				"time_record_approval_decision",
+			] as const) {
+				expect(
+					(after[table] as Array<{ organization_id?: string }>).filter(
+						({ organization_id }) =>
+							organization_id === ids.foreignOrganization,
+					),
+				).toEqual([]);
+			}
 		});
 
 		it("foreign employee ownership fails without revealing or mutating the source", async () => {
@@ -1385,6 +1429,35 @@ describeIntegration(
 			} finally {
 				await pool.query(`drop trigger if exists task11_zero_row on ${table}`);
 				await pool.query("drop function if exists task11_zero_row()");
+			}
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it("decision INSERT RETURNING zero rows rolls the complete transaction back", async () => {
+			const target = (await submit("manual_time_submission")).result
+				.approvalRequestId;
+			const before = await snapshot();
+			await pool.query(`create or replace function task11_zero_decision_insert() returns trigger as $$
+		begin
+			return null;
+		end;
+		$$ language plpgsql`);
+			await pool.query(
+				`create trigger task11_zero_decision_insert
+				 before insert on time_record_approval_decision
+				 for each row execute function task11_zero_decision_insert()`,
+			);
+			try {
+				await expect(
+					decide(target, { kind: "approve", reason: null }),
+				).rejects.toThrow("Ordinary work-period decision failed");
+			} finally {
+				await pool.query(
+					"drop trigger if exists task11_zero_decision_insert on time_record_approval_decision",
+				);
+				await pool.query(
+					"drop function if exists task11_zero_decision_insert()",
+				);
 			}
 			expect(await snapshot()).toEqual(before);
 		});
