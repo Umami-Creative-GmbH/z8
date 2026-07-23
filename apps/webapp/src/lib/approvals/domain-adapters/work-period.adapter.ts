@@ -390,6 +390,22 @@ export function createOrdinaryWorkPeriodApprovalAdapter(
 				kind === "manual_time_submission"
 					? "Manual time submission"
 					: "Policy clock-out";
+			const currentStage =
+				input.workflow.stages.find(
+					(stage) => stage.sequence === input.workflow.currentStageOrder,
+				) ??
+				input.workflow.stages.reduce<
+					(typeof input.workflow.stages)[number] | null
+				>(
+					(latest, candidate) =>
+						!latest || candidate.sequence > latest.sequence
+							? candidate
+							: latest,
+					null,
+				);
+			const stage = currentStage
+				? { name: currentStage.label, order: currentStage.sequence }
+				: null;
 			return normalizeStableData({
 				displayPayload: {
 					kind,
@@ -398,9 +414,10 @@ export function createOrdinaryWorkPeriodApprovalAdapter(
 					endTime: input.source.endTime,
 					durationMinutes: input.source.durationMinutes,
 					approvalStatus: input.source.approvalStatus,
+					...(stage ? { stage } : {}),
 				},
 				searchText:
-					`${title} ${input.source.startTime} ${input.source.endTime}`.toLocaleLowerCase(
+					`${title} ${input.source.startTime} ${input.source.endTime}${stage ? ` ${stage.name}` : ""}`.toLocaleLowerCase(
 						"en-US",
 					),
 			}) as { displayPayload: JsonObject; searchText: string };

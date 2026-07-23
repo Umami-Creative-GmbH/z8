@@ -776,6 +776,15 @@ function decodeCapture(
 		fail();
 	}
 
+	const correctionEntries = array(envelope.correctionEntries).map(
+		decodeCorrectionEntry,
+	);
+	const priorVerifiedCorrectionIds = expectedPayload
+		? [
+				expectedPayload.timeCorrection.clockInCorrectionId,
+				expectedPayload.timeCorrection.clockOutCorrectionId,
+			].filter((id): id is string => Boolean(id))
+		: [];
 	const rawRequests = array(envelope.approvalRequests);
 	const requestPayloads = rawRequests.map((value) => {
 		const raw = record(value);
@@ -784,7 +793,10 @@ function decodeCapture(
 				metadata: raw.metadata,
 				reason: raw.reason === null ? null : string(raw.reason),
 				pendingChanges: source.pendingChanges,
-				hasRelationalCorrectionEvidence: false,
+				verifiedRelationalCorrectionIds: [
+					...correctionEntries.map((entry) => entry.id),
+					...priorVerifiedCorrectionIds,
+				],
 			}) !== "time_correction"
 		) {
 			return fail();
@@ -1016,9 +1028,6 @@ function decodeCapture(
 		(directRequesterCancellation ? "cancelled" : approvalRequest?.status) ??
 		(payload && expectedPayload ? "cancelled" : null);
 
-	const correctionEntries = array(envelope.correctionEntries).map(
-		decodeCorrectionEntry,
-	);
 	const originalEntries = array(envelope.originalEntries).map(decodeEntry);
 	const correctionEndpoints: Array<Record<string, unknown>> = [];
 	const cancelledReplayWithoutCorrectionRows =

@@ -13,7 +13,7 @@ const {
 	assignmentFindFirstMock,
 	assignmentFindManyMock,
 	workPeriodFindFirstMock,
-	timeEntryFindFirstMock,
+	timeEntryFindManyMock,
 	completeHandlerApproveMock,
 } = vi.hoisted(() => ({
 	approvalRequestFindFirstMock: vi.fn(),
@@ -21,7 +21,7 @@ const {
 	assignmentFindFirstMock: vi.fn(),
 	assignmentFindManyMock: vi.fn(),
 	workPeriodFindFirstMock: vi.fn(),
-	timeEntryFindFirstMock: vi.fn(),
+	timeEntryFindManyMock: vi.fn(),
 	completeHandlerApproveMock: vi.fn(),
 }));
 
@@ -37,7 +37,7 @@ vi.mock("@/db", () => ({
 				findMany: assignmentFindManyMock,
 			},
 			workPeriod: { findFirst: workPeriodFindFirstMock },
-			timeEntry: { findFirst: timeEntryFindFirstMock },
+			timeEntry: { findMany: timeEntryFindManyMock },
 		},
 	},
 }));
@@ -77,7 +77,7 @@ describe("approval inbox decision service", () => {
 		assignmentFindFirstMock.mockReset();
 		assignmentFindManyMock.mockReset().mockResolvedValue([]);
 		workPeriodFindFirstMock.mockReset().mockResolvedValue(null);
-		timeEntryFindFirstMock.mockReset().mockResolvedValue(null);
+		timeEntryFindManyMock.mockReset().mockResolvedValue([]);
 		completeHandlerApproveMock.mockClear();
 		completeHandlerApproveMock.mockReturnValue(Effect.void);
 	});
@@ -270,7 +270,7 @@ describe("approval inbox decision service", () => {
 			clockInId: "clock-in-1",
 			clockOutId: "clock-out-1",
 		});
-		timeEntryFindFirstMock.mockResolvedValue({ id: "correction-1" });
+		timeEntryFindManyMock.mockResolvedValue([{ id: "correction-1" }]);
 
 		const target = await loadApprovalInboxDecisionTarget({
 			approvalId: "approval-1",

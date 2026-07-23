@@ -143,6 +143,9 @@ export interface ApprovalDisplayMetadata {
 
 	/** Optional icon identifier */
 	icon?: string;
+
+	/** Public current-stage display. Internal stage identifiers are never exposed. */
+	stage?: { name: string; order: number };
 }
 
 // ============================================

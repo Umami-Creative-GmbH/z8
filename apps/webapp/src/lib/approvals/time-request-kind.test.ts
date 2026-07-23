@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { classifyTimeApprovalRequest } from "./time-request-kind";
 
 describe("classifyTimeApprovalRequest", () => {
+	const clockInCorrectionId = "10000000-0000-4000-8000-000000000001";
+	const clockOutCorrectionId = "10000000-0000-4000-8000-000000000002";
+	const foreignCorrectionId = "10000000-0000-4000-8000-000000000003";
+
 	it("leaves correction and ordinary metadata conflicts unclassified", () => {
 		expect(
 			classifyTimeApprovalRequest({
@@ -11,7 +15,6 @@ describe("classifyTimeApprovalRequest", () => {
 				},
 				reason: "Manual time entry: missed punch",
 				pendingChanges: { isManualEntry: true },
-				hasRelationalCorrectionEvidence: false,
 			}),
 		).toBe("unclassified");
 	});
@@ -54,6 +57,72 @@ describe("classifyTimeApprovalRequest", () => {
 				metadata: { timeCorrection: { action: "edit" } },
 			}),
 		).toBe("time_correction");
+	});
+
+	it("classifies explicit correction IDs only with exact verified relational evidence", () => {
+		expect(
+			classifyTimeApprovalRequest({
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						clockInCorrectionId,
+						clockOutCorrectionId,
+					},
+				},
+				verifiedRelationalCorrectionIds: [
+					clockInCorrectionId,
+					clockOutCorrectionId,
+				],
+			}),
+		).toBe("time_correction");
+	});
+
+	it.each([
+		["missing evidence", undefined],
+		["orphan evidence", []],
+		["foreign evidence", [foreignCorrectionId]],
+		["partial evidence", [clockInCorrectionId]],
+	] as const)("does not classify explicit correction IDs with %s", (_label, evidence) => {
+		expect(
+			classifyTimeApprovalRequest({
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						clockInCorrectionId,
+						clockOutCorrectionId,
+					},
+				},
+				verifiedRelationalCorrectionIds: evidence,
+			}),
+		).toBe("unclassified");
+	});
+
+	it.each([
+		["non-object metadata", "malformed"],
+		["missing correction action", { timeCorrection: {} }],
+		["unknown correction action", { timeCorrection: { action: "merge" } }],
+		["delete without endpoint IDs", { timeCorrection: { action: "delete" } }],
+		[
+			"delete with one endpoint ID",
+			{
+				timeCorrection: {
+					action: "delete",
+					clockInCorrectionId,
+				},
+			},
+		],
+		[
+			"extra correction field",
+			{ timeCorrection: { action: "edit", diagnostics: "private" } },
+		],
+	] as const)("does not fall back from %s", (_label, metadata) => {
+		expect(
+			classifyTimeApprovalRequest({
+				metadata,
+				reason: "Manual time entry: historical fallback",
+				pendingChanges: { isManualEntry: true },
+			}),
+		).toBe("unclassified");
 	});
 
 	it.each([
@@ -229,7 +298,7 @@ describe("classifyTimeApprovalRequest", () => {
 				metadata: null,
 				reason: "Please fix this shift",
 				pendingChanges: null,
-				hasRelationalCorrectionEvidence: true,
+				verifiedRelationalCorrectionIds: [clockInCorrectionId],
 			}),
 		).toBe("time_correction");
 	});
@@ -240,7 +309,6 @@ describe("classifyTimeApprovalRequest", () => {
 				metadata: { timeRequest: { kind: "unknown" } },
 				reason: "Please review",
 				pendingChanges: { reason: "missing context" },
-				hasRelationalCorrectionEvidence: false,
 			}),
 		).toBe("unclassified");
 	});

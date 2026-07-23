@@ -1,4 +1,4 @@
-import { and, desc, eq, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { DateTime } from "luxon";
 
 import { db } from "@/db";
@@ -7,8 +7,10 @@ import {
 	approvalRequest,
 	approvalWorkflow,
 	approvalWorkflowRollout,
+	timeEntry,
 	travelExpenseClaim,
 	travelExpenseDecisionLog,
+	workPeriod,
 } from "@/db/schema";
 import { parseRequesterCancellationMarker } from "@/lib/approvals/domain-adapters/time-correction-cancellation-marker";
 import { normalizeTimeCorrectionWorkflowPayload } from "@/lib/approvals/domain-adapters/time-correction-contract";
@@ -165,6 +167,10 @@ async function loadTimeCorrections(
 		orderBy: [desc(approvalRequest.createdAt)],
 		limit: SOURCE_QUERY_LIMIT,
 	})) as TimeCorrectionRow[];
+	const verifiedCorrectionIdsByPeriod = await loadVerifiedCorrectionIdsByPeriod(
+		input,
+		rows,
+	);
 
 	const legacyWorkflowIds = new Set<string>();
 	const legacyItems = rows.flatMap((row) => {
@@ -172,6 +178,8 @@ async function loadTimeCorrections(
 			classifyTimeApprovalRequest({
 				metadata: row.metadata,
 				reason: row.reason,
+				verifiedRelationalCorrectionIds:
+					verifiedCorrectionIdsByPeriod.get(row.entityId) ?? [],
 			}) !== "time_correction"
 		) {
 			return [];
@@ -235,6 +243,49 @@ async function loadTimeCorrections(
 				: mapCanonicalTimeCorrection(row, input),
 		),
 	];
+}
+
+async function loadVerifiedCorrectionIdsByPeriod(
+	input: GetSelfServiceRequestsInput,
+	rows: TimeCorrectionRow[],
+): Promise<Map<string, string[]>> {
+	if (rows.length === 0) return new Map();
+	const periods = await db.query.workPeriod.findMany({
+		where: and(
+			eq(workPeriod.organizationId, input.organizationId),
+			eq(workPeriod.employeeId, input.employeeId),
+			inArray(
+				workPeriod.id,
+				rows.map((row) => row.entityId),
+			),
+		),
+		columns: { id: true, clockInId: true, clockOutId: true },
+	});
+	const endpointToPeriod = new Map<string, string>();
+	for (const period of periods) {
+		endpointToPeriod.set(period.clockInId, period.id);
+		if (period.clockOutId) endpointToPeriod.set(period.clockOutId, period.id);
+	}
+	const endpointIds = [...endpointToPeriod.keys()];
+	if (endpointIds.length === 0) return new Map();
+	const corrections = await db.query.timeEntry.findMany({
+		where: and(
+			eq(timeEntry.organizationId, input.organizationId),
+			eq(timeEntry.employeeId, input.employeeId),
+			eq(timeEntry.type, "correction"),
+			eq(timeEntry.isSuperseded, false),
+			inArray(timeEntry.replacesEntryId, endpointIds),
+		),
+		columns: { id: true, replacesEntryId: true },
+	});
+	const result = new Map<string, string[]>();
+	for (const correction of corrections) {
+		if (!correction.replacesEntryId) continue;
+		const periodId = endpointToPeriod.get(correction.replacesEntryId);
+		if (!periodId) continue;
+		result.set(periodId, [...(result.get(periodId) ?? []), correction.id]);
+	}
+	return result;
 }
 
 function parseLegacyTimeCorrectionMetadata(row: TimeCorrectionRow): {

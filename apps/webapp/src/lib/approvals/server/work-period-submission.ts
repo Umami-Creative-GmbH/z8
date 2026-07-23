@@ -598,7 +598,6 @@ function validatePendingOccupants(
 			metadata: { timeRequest: { kind: input.kind } },
 			reason: input.reason,
 			pendingChanges: source.pendingChanges,
-			hasRelationalCorrectionEvidence: false,
 		}) !== input.kind
 	) {
 		return fail();

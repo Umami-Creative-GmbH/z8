@@ -1,6 +1,8 @@
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { createOrdinaryWorkPeriodApprovalAdapter } from "../domain-adapters/work-period.adapter";
+import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
 import type { ApprovalDbService } from "../workflow/ports";
 import type { ApprovalProjectionWriteInput } from "./contracts";
 import { createApprovalProjectionWriter } from "./writer";
@@ -46,6 +48,75 @@ function fakeService(options: { failAt?: number } = {}) {
 		},
 	} as unknown as ApprovalDbService;
 	return { service, calls, transactionCalls: () => transactionCalls };
+}
+
+async function realOrdinaryProjection(kind: OrdinaryWorkPeriodApprovalKind) {
+	const adapter = createOrdinaryWorkPeriodApprovalAdapter(kind, {
+		finalizeTerminal: vi.fn(),
+	});
+	const workflow = {
+		id: "10000000-0000-4000-8000-000000000001",
+		organizationId: "org-1",
+		workflowType: kind,
+		sourceType: "time_entry",
+		sourceId: "20000000-0000-4000-8000-000000000001",
+		requesterEmployeeId: "30000000-0000-4000-8000-000000000001",
+		status: "pending" as const,
+		currentStageOrder: 2,
+		version: 1,
+		policySnapshot: {},
+		contextSnapshot: {
+			timeRequest: { kind },
+			privateReason: "private-reason",
+			sourceDiagnostics: "private-source-diagnostics",
+		},
+		displaySnapshot: {},
+		submittedAt: updatedAt,
+		completedAt: null,
+		cancelledAt: null,
+		decisionReason: null,
+		stages: [
+			{
+				id: "40000000-0000-4000-8000-000000000001",
+				organizationId: "org-1",
+				workflowId: "10000000-0000-4000-8000-000000000001",
+				sequence: 2,
+				label: "Manager review",
+				resolverSnapshot: { diagnostics: "private-stage-diagnostics" },
+				activationMode: "immediate",
+				status: "pending" as const,
+				activatedAt: updatedAt,
+				decidedAt: null,
+				decisionReason: null,
+				legacyApprovalRequestId: "60000000-0000-4000-8000-000000000001",
+				assignments: [],
+			},
+		],
+	};
+	const source = {
+		id: workflow.sourceId,
+		organizationId: "org-1",
+		employeeId: workflow.requesterEmployeeId,
+		canonicalRecordId: "70000000-0000-4000-8000-000000000001",
+		approvalWorkflowId: workflow.id,
+		approvalStatus: "pending" as const,
+		startTime: "2026-07-20T06:00:00Z",
+		endTime: "2026-07-20T14:00:00Z",
+		durationMinutes: 480,
+		payload: { timeRequest: { kind } },
+		pendingChanges: { privateNote: "private-pending-change" },
+	};
+	return adapter.projectDisplay({
+		organizationId: "org-1",
+		workflow,
+		sourceIdentity: {
+			organizationId: "org-1",
+			workflowType: kind,
+			sourceType: "time_entry",
+			sourceId: workflow.sourceId,
+		},
+		source,
+	});
 }
 
 describe("approval projection writer", () => {
@@ -132,16 +203,7 @@ describe("approval projection writer", () => {
 		["policy_clock_out", "Policy clock-out"],
 	] as const)("persists sanitized %s display, search, status, and stage", async (kind, title) => {
 		const fake = fakeService();
-		const displayPayload = {
-			kind,
-			title,
-			startTime: "2026-07-20T06:00:00Z",
-			endTime: "2026-07-20T14:00:00Z",
-			durationMinutes: 480,
-			approvalStatus: "pending",
-		};
-		const searchText =
-			`${title} 2026-07-20T06:00:00Z 2026-07-20T14:00:00Z`.toLowerCase();
+		const { displayPayload, searchText } = await realOrdinaryProjection(kind);
 		await createApprovalProjectionWriter(fake.service).write(
 			input({
 				workflowType: kind,
@@ -155,6 +217,14 @@ describe("approval projection writer", () => {
 		);
 		expect(JSON.parse(String(rendered[0]?.params[7]))).toEqual(displayPayload);
 		expect(rendered[0]?.params[8]).toBe(searchText);
+		expect(displayPayload).toMatchObject({
+			kind,
+			title,
+			stage: { name: "Manager review", order: 2 },
+		});
+		expect(`${JSON.stringify(displayPayload)} ${searchText}`).not.toMatch(
+			/private-pending-change|private-reason|private-source-diagnostics|private-stage-diagnostics|[467]0000000-0000-4000-8000-000000000001/,
+		);
 		expect(rendered[0]?.params).toContain("pending");
 		expect(rendered[0]?.params).toContain(1);
 	});

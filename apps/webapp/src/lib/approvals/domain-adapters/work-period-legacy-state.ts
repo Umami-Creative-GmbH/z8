@@ -292,7 +292,6 @@ function normalizeRequestPayload(input: {
 			metadata: { timeRequest: raw.timeRequest },
 			reason: input.reason,
 			pendingChanges: input.pendingChanges,
-			hasRelationalCorrectionEvidence: false,
 		}) !== input.expectedKind
 	) {
 		return fail();
@@ -507,7 +506,6 @@ function decodeCapture(
 		metadata: classificationMetadata,
 		reason: nullableString(rawRequest.reason),
 		pendingChanges: period.pendingChanges,
-		hasRelationalCorrectionEvidence: false,
 	});
 	if (
 		(classifiedKind !== "manual_time_submission" &&
@@ -757,7 +755,6 @@ function decodePreSubmissionCapture(
 		classifyTimeApprovalRequest({
 			metadata: { timeRequest: { kind: input.expectedKind } },
 			pendingChanges: period.pendingChanges,
-			hasRelationalCorrectionEvidence: false,
 		}) !== input.expectedKind
 	) {
 		return fail();

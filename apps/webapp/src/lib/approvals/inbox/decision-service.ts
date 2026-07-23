@@ -638,7 +638,7 @@ async function toPersistedDecisionRequest(
 				(id): id is string => Boolean(id),
 			);
 			const correctionEvidence = endpointIds.length
-				? await database.query.timeEntry.findFirst({
+				? await database.query.timeEntry.findMany({
 						where: and(
 							eq(timeEntry.organizationId, request.organizationId),
 							eq(timeEntry.employeeId, request.requestedBy),
@@ -648,12 +648,14 @@ async function toPersistedDecisionRequest(
 						),
 						columns: { id: true },
 					})
-				: null;
+				: [];
 			workflowKind = classifyTimeApprovalRequest({
 				metadata: request.metadata,
 				reason: request.reason,
 				pendingChanges: period.pendingChanges,
-				hasRelationalCorrectionEvidence: Boolean(correctionEvidence),
+				verifiedRelationalCorrectionIds: correctionEvidence.map(
+					(entry) => entry.id,
+				),
 			});
 		}
 	}

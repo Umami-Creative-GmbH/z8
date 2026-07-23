@@ -289,18 +289,6 @@ describe("shared time-entry approval presentation", () => {
 			metadata: null,
 			reason: "Manual time entry: private reason",
 		},
-		{
-			pendingChanges: { isManualEntry: true },
-			metadata: null,
-			reason: "Clock-out requires approval (0-day policy)",
-		},
-		{
-			pendingChanges: { isManualEntry: true },
-			metadata: {
-				timeCorrection: { clockInCorrectionId: "clock-in-correction" },
-			},
-			reason: null,
-		},
 	] as const)("fails closed for malformed or contradictory historical evidence", (evidence) => {
 		const review = buildTimeApprovalReview(
 			{ ...period, pendingChanges: evidence.pendingChanges },
@@ -320,6 +308,34 @@ describe("shared time-entry approval presentation", () => {
 			isActionable: false,
 		});
 		expect(review.pendingCorrection).toBeUndefined();
+	});
+
+	it("keeps verified correction metadata authoritative over historical ordinary markers", () => {
+		const correction = {
+			id: "10000000-0000-4000-8000-000000000001",
+			timestamp: new Date("2026-05-22T14:15:00.000Z"),
+			replacesEntryId: "clock-in-original",
+			isSuperseded: false,
+		};
+		const review = buildTimeApprovalReview(
+			{ ...period, pendingChanges: { isManualEntry: true } },
+			{
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						clockInCorrectionId: correction.id,
+					},
+				},
+				reason: "Manual time entry: historical prose",
+			},
+			[correction],
+		);
+
+		expect(review).toMatchObject({
+			kind: "time_correction",
+			isActionable: true,
+			pendingCorrection: { isOrphaned: false },
+		});
 	});
 
 	it("renders manual and clock-out endpoints in their independently captured offsets", () => {
@@ -391,7 +407,7 @@ describe("shared time-entry approval presentation", () => {
 
 	it("preserves correction diff and priority presentation", () => {
 		const correction = {
-			id: "clock-in-correction",
+			id: "10000000-0000-4000-8000-000000000001",
 			timestamp: new Date("2026-05-22T14:15:00.000Z"),
 			replacesEntryId: "clock-in-original",
 			isSuperseded: false,
@@ -399,7 +415,12 @@ describe("shared time-entry approval presentation", () => {
 		const review = buildTimeApprovalReview(
 			period,
 			{
-				metadata: { timeCorrection: { clockInCorrectionId: correction.id } },
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						clockInCorrectionId: correction.id,
+					},
+				},
 				reason: null,
 			},
 			[correction],
@@ -522,6 +543,7 @@ function createSupersededHistoryDbService() {
 	};
 	const queryNames: string[] = [];
 	const approvalFindFirst = vi.fn().mockResolvedValue(request);
+	const approvalChainStageFindMany = vi.fn().mockResolvedValue([]);
 	const dbService = {
 		db: {
 			query: {
@@ -543,6 +565,10 @@ function createSupersededHistoryDbService() {
 					findMany: vi.fn().mockResolvedValue([request]),
 					findFirst: approvalFindFirst,
 				},
+				approvalChainStageInstance: {
+					findMany: approvalChainStageFindMany,
+					findFirst: vi.fn().mockResolvedValue(null),
+				},
 				workPeriod: {
 					findMany: vi.fn().mockResolvedValue([period]),
 					findFirst: vi.fn().mockResolvedValue(period),
@@ -559,10 +585,57 @@ function createSupersededHistoryDbService() {
 		},
 	} as unknown as ApprovalDbService;
 
-	return { approvalFindFirst, dbService, period, queryNames, request };
+	return {
+		approvalChainStageFindMany,
+		approvalFindFirst,
+		dbService,
+		period,
+		queryNames,
+		request,
+	};
 }
 
 describe("superseded correction history regression", () => {
+	it("loads a sanitized public stage for an ordinary compatibility row", async () => {
+		const { approvalChainStageFindMany, dbService, period, request } =
+			createSupersededHistoryDbService();
+		period.pendingChanges = { isManualEntry: true } as never;
+		request.metadata = {
+			timeRequest: { kind: "manual_time_submission" },
+			stage: {
+				id: "50000000-0000-4000-8000-000000000001",
+				sequence: 2,
+			},
+		};
+		request.reason = null;
+		approvalChainStageFindMany.mockResolvedValue([
+			{
+				id: "50000000-0000-4000-8000-000000000001",
+				organizationId: "org-1",
+				approvalRequestId: "approval-1",
+				labelSnapshot: "Manager review",
+				stepOrder: 2,
+			},
+		]);
+
+		const items = await Effect.runPromise(
+			TimeCorrectionHandler.getApprovals({
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+				limit: 20,
+			}).pipe(Effect.provideService(DatabaseService, dbService)),
+		);
+
+		expect(items[0]).toMatchObject({
+			typeName: "Manual Time Submission",
+			display: { stage: { name: "Manager review", order: 2 } },
+		});
+		expect(JSON.stringify(items[0])).not.toContain(
+			"50000000-0000-4000-8000-000000000001",
+		);
+	});
+
 	it("keeps the real inbox list item visible and non-actionable", async () => {
 		const { dbService } = createSupersededHistoryDbService();
 		const items = await Effect.runPromise(

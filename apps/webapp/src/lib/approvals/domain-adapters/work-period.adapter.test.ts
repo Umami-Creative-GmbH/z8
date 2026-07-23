@@ -523,8 +523,37 @@ describe.each(
 			endTime: "2026-07-20T14:00:00Z",
 			durationMinutes: 480,
 			approvalStatus: "pending",
+			stage: { name: "Manager review", order: 1 },
 		});
 		expect(projection.searchText).not.toMatch(/private|org-1|[0-9a-f]{8}-/i);
+		expect(JSON.stringify(projection)).not.toContain(ids.stage);
+	});
+
+	it("retains the terminal public stage without its internal identifier", async () => {
+		const { adapter, context } = await loadedContext(kind);
+		const terminalWorkflow = workflow(kind, {
+			status: "approved",
+			currentStageOrder: null,
+			completedAt: finalizedAt,
+			stages: [
+				{
+					...required(workflow(kind).stages[0]),
+					status: "approved",
+					decidedAt: finalizedAt,
+				},
+			],
+		});
+		const projection = await adapter.projectDisplay({
+			...context,
+			workflow: terminalWorkflow,
+			source: { ...context.source, approvalStatus: "approved" },
+		});
+
+		expect(projection.displayPayload.stage).toEqual({
+			name: "Manager review",
+			order: 1,
+		});
+		expect(JSON.stringify(projection)).not.toContain(ids.stage);
 	});
 });
 

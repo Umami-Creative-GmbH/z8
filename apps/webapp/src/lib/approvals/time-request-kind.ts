@@ -13,163 +13,190 @@ export interface TimeApprovalClassificationInput {
 	metadata?: unknown;
 	reason?: string | null;
 	pendingChanges?: unknown;
-	hasRelationalCorrectionEvidence?: boolean;
+	verifiedRelationalCorrectionIds?: readonly string[];
 }
 
-function asObject(value: unknown): JsonObject | null {
-	return value !== null && typeof value === "object" && !Array.isArray(value)
-		? (value as JsonObject)
-		: null;
-}
-
-type PendingChangesEvidence =
+type Parsed<T> =
 	| { state: "absent" }
-	| { state: "valid"; value: JsonObject }
+	| { state: "valid"; value: T }
 	| { state: "invalid" };
 
-function pendingChangesEvidence(value: unknown): PendingChangesEvidence {
-	if (value === null || value === undefined) return { state: "absent" };
-	const object = asObject(value);
-	if (object) return { state: "valid", value: object };
-	if (typeof value !== "string") return { state: "invalid" };
+const UUID =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+function object(value: unknown): JsonObject | null {
+	if (
+		value === null ||
+		typeof value !== "object" ||
+		Array.isArray(value) ||
+		(Object.getPrototypeOf(value) !== Object.prototype &&
+			Object.getPrototypeOf(value) !== null)
+	) {
+		return null;
+	}
+	return value as JsonObject;
+}
+
+function metadataObject(value: unknown): Parsed<JsonObject> {
+	if (value === null || value === undefined) return { state: "absent" };
+	const parsed = object(value);
+	return parsed ? { state: "valid", value: parsed } : { state: "invalid" };
+}
+
+function ownDataProperty(value: JsonObject, key: string): Parsed<unknown> {
+	const descriptor = Object.getOwnPropertyDescriptor(value, key);
+	if (!descriptor)
+		return key in value ? { state: "invalid" } : { state: "absent" };
+	return descriptor.enumerable && "value" in descriptor
+		? { state: "valid", value: descriptor.value }
+		: { state: "invalid" };
+}
+
+function exactDataObject(
+	value: unknown,
+	allowedKeys: readonly string[],
+): JsonObject | null {
+	const parsed = object(value);
+	if (!parsed) return null;
+	const keys = Reflect.ownKeys(parsed);
+	if (
+		keys.some((key) => {
+			if (typeof key !== "string" || !allowedKeys.includes(key)) return true;
+			const descriptor = Object.getOwnPropertyDescriptor(parsed, key);
+			return !descriptor?.enumerable || !("value" in descriptor);
+		})
+	) {
+		return null;
+	}
+	return parsed;
+}
+
+type OrdinaryKind = "manual_time_submission" | "policy_clock_out";
+
+function timeRequestMarker(metadata: JsonObject | null): Parsed<OrdinaryKind> {
+	if (!metadata) return { state: "absent" };
+	const property = ownDataProperty(metadata, "timeRequest");
+	if (property.state !== "valid") return property;
+	const marker = exactDataObject(property.value, ["kind"]);
+	if (!marker || Reflect.ownKeys(marker).length !== 1)
+		return { state: "invalid" };
+	const kind = marker.kind;
+	return kind === "manual_time_submission" || kind === "policy_clock_out"
+		? { state: "valid", value: kind }
+		: { state: "invalid" };
+}
+
+function timeCorrectionMarker(
+	metadata: JsonObject | null,
+): Parsed<readonly string[]> {
+	if (!metadata) return { state: "absent" };
+	const property = ownDataProperty(metadata, "timeCorrection");
+	if (property.state !== "valid") return property;
+	const marker = exactDataObject(property.value, [
+		"action",
+		"clockInCorrectionId",
+		"clockOutCorrectionId",
+	]);
+	if (!marker || (marker.action !== "edit" && marker.action !== "delete")) {
+		return { state: "invalid" };
+	}
+	const ids = ["clockInCorrectionId", "clockOutCorrectionId"].flatMap((key) => {
+		const property = ownDataProperty(marker, key);
+		if (property.state === "absent") return [];
+		return property.state === "valid" &&
+			typeof property.value === "string" &&
+			UUID.test(property.value)
+			? [property.value]
+			: [null];
+	});
+	if (
+		ids.includes(null) ||
+		(marker.action === "delete" && ids.length !== 2) ||
+		(ids.length === 2 && ids[0] === ids[1])
+	) {
+		return { state: "invalid" };
+	}
+	return { state: "valid", value: ids as string[] };
+}
+
+function pendingChangesObject(value: unknown): Parsed<JsonObject> {
+	if (value === null || value === undefined) return { state: "absent" };
+	const parsed = object(value);
+	if (parsed) return { state: "valid", value: parsed };
+	if (typeof value !== "string") return { state: "invalid" };
 	try {
-		const parsed = asObject(JSON.parse(value));
-		return parsed ? { state: "valid", value: parsed } : { state: "invalid" };
+		const decoded = object(JSON.parse(value));
+		return decoded ? { state: "valid", value: decoded } : { state: "invalid" };
 	} catch {
 		return { state: "invalid" };
 	}
 }
 
-function strictBooleanMarker(
+function booleanMarker(
 	value: JsonObject | null,
-	key: "isManualEntry" | "isNewClockOut",
+	key: string,
 ): boolean | "invalid" {
 	if (!value) return false;
-	const descriptor = Object.getOwnPropertyDescriptor(value, key);
-	if (!descriptor) return key in value ? "invalid" : false;
-	if (
-		!descriptor.enumerable ||
-		!("value" in descriptor) ||
-		typeof descriptor.value !== "boolean"
-	) {
-		return "invalid";
-	}
-	return descriptor.value;
-}
-
-type TimeRequestMarker =
-	| { state: "absent" }
-	| {
-			state: "valid";
-			kind: "manual_time_submission" | "policy_clock_out";
-	  }
-	| { state: "invalid" };
-
-function strictTimeRequestMarker(
-	metadata: JsonObject | null,
-): TimeRequestMarker {
-	if (!metadata) return { state: "absent" };
-	const descriptor = Object.getOwnPropertyDescriptor(metadata, "timeRequest");
-	if (!descriptor) {
-		return "timeRequest" in metadata
-			? { state: "invalid" }
-			: { state: "absent" };
-	}
-	if (!descriptor.enumerable || !("value" in descriptor)) {
-		return { state: "invalid" };
-	}
-	const marker = asObject(descriptor.value);
-	if (!marker || Object.keys(marker).length !== 1) {
-		return { state: "invalid" };
-	}
-	const kindDescriptor = Object.getOwnPropertyDescriptor(marker, "kind");
-	if (
-		!kindDescriptor?.enumerable ||
-		!("value" in kindDescriptor) ||
-		(kindDescriptor.value !== "manual_time_submission" &&
-			kindDescriptor.value !== "policy_clock_out")
-	) {
-		return { state: "invalid" };
-	}
-	return { state: "valid", kind: kindDescriptor.value };
+	const property = ownDataProperty(value, key);
+	if (property.state === "absent") return false;
+	return property.state === "valid" && typeof property.value === "boolean"
+		? property.value
+		: "invalid";
 }
 
 export function classifyTimeApprovalRequest(
 	input: TimeApprovalClassificationInput,
 ): TimeApprovalKind {
-	const metadata = asObject(input.metadata);
-	const timeRequest = strictTimeRequestMarker(metadata);
-	if (timeRequest.state === "invalid") return "unclassified";
-	const explicitKind =
-		timeRequest.state === "valid" ? timeRequest.kind : undefined;
-	const pendingEvidence = pendingChangesEvidence(input.pendingChanges);
-	if (pendingEvidence.state === "invalid") return "unclassified";
-	const pendingChanges =
-		pendingEvidence.state === "valid" ? pendingEvidence.value : null;
-	const hasManualMarker = strictBooleanMarker(pendingChanges, "isManualEntry");
-	const hasClockOutMarker = strictBooleanMarker(
-		pendingChanges,
-		"isNewClockOut",
-	);
-	if (hasManualMarker === "invalid" || hasClockOutMarker === "invalid") {
+	const metadata = metadataObject(input.metadata);
+	if (metadata.state === "invalid") return "unclassified";
+	const metadataValue = metadata.state === "valid" ? metadata.value : null;
+	const ordinary = timeRequestMarker(metadataValue);
+	const correction = timeCorrectionMarker(metadataValue);
+	if (ordinary.state === "invalid" || correction.state === "invalid") {
 		return "unclassified";
 	}
-	const hasManualReason =
-		input.reason?.startsWith("Manual time entry:") === true;
-	const hasClockOutReason = input.reason === POLICY_CLOCK_OUT_APPROVAL_REASON;
-	const hasOrdinaryExplicitKind =
-		explicitKind === "manual_time_submission" ||
-		explicitKind === "policy_clock_out";
+	if (ordinary.state === "valid" && correction.state === "valid") {
+		return "unclassified";
+	}
+	if (correction.state === "valid") {
+		if (correction.value.length === 0) return "time_correction";
+		const verified = new Set(input.verifiedRelationalCorrectionIds ?? []);
+		return correction.value.every((id) => verified.has(id))
+			? "time_correction"
+			: "unclassified";
+	}
 
-	if (asObject(metadata?.timeCorrection)) {
-		return hasOrdinaryExplicitKind ||
-			hasManualMarker ||
-			hasClockOutMarker ||
-			hasManualReason ||
-			hasClockOutReason
+	const pending = pendingChangesObject(input.pendingChanges);
+	if (pending.state === "invalid") return "unclassified";
+	const pendingValue = pending.state === "valid" ? pending.value : null;
+	const manualMarker = booleanMarker(pendingValue, "isManualEntry");
+	const clockOutMarker = booleanMarker(pendingValue, "isNewClockOut");
+	if (manualMarker === "invalid" || clockOutMarker === "invalid") {
+		return "unclassified";
+	}
+	const manualReason = input.reason?.startsWith("Manual time entry:") === true;
+	const clockOutReason = input.reason === POLICY_CLOCK_OUT_APPROVAL_REASON;
+
+	if (ordinary.state === "valid") {
+		const oppositeMarker =
+			ordinary.value === "manual_time_submission"
+				? clockOutMarker
+				: manualMarker;
+		const oppositeReason =
+			ordinary.value === "manual_time_submission"
+				? clockOutReason
+				: manualReason;
+		return (manualMarker && clockOutMarker) || oppositeMarker || oppositeReason
 			? "unclassified"
-			: "time_correction";
+			: ordinary.value;
 	}
 
-	if (hasOrdinaryExplicitKind) {
-		const hasOppositeMarker =
-			explicitKind === "manual_time_submission"
-				? hasClockOutMarker
-				: hasManualMarker;
-		const hasOppositeReason =
-			explicitKind === "manual_time_submission"
-				? hasClockOutReason
-				: hasManualReason;
-		if (
-			(hasManualMarker && hasClockOutMarker) ||
-			hasOppositeMarker ||
-			hasOppositeReason
-		) {
-			return "unclassified";
-		}
-		return explicitKind;
-	}
-
-	if (
-		(hasManualMarker && hasClockOutMarker) ||
-		(hasManualMarker && hasClockOutReason) ||
-		(hasClockOutMarker && hasManualReason)
-	) {
-		return "unclassified";
-	}
-	if (hasManualMarker) return "manual_time_submission";
-	if (hasClockOutMarker) return "policy_clock_out";
-	if (hasManualReason) {
-		return "manual_time_submission";
-	}
-	if (hasClockOutReason) {
-		return "policy_clock_out";
-	}
-
-	if (input.hasRelationalCorrectionEvidence) {
-		return "time_correction";
-	}
-
-	return "unclassified";
+	if (manualMarker && clockOutMarker) return "unclassified";
+	if (manualMarker) return "manual_time_submission";
+	if (clockOutMarker) return "policy_clock_out";
+	if (manualReason) return "manual_time_submission";
+	if (clockOutReason) return "policy_clock_out";
+	return (input.verifiedRelationalCorrectionIds?.length ?? 0) > 0
+		? "time_correction"
+		: "unclassified";
 }

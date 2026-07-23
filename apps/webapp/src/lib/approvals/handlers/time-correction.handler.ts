@@ -9,7 +9,13 @@ import { IconClockEdit } from "@tabler/icons-react";
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { approvalRequest, employee, timeEntry, workPeriod } from "@/db/schema";
+import {
+	approvalChainStageInstance,
+	approvalRequest,
+	employee,
+	timeEntry,
+	workPeriod,
+} from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatCapturedOffsetInstant } from "@/lib/datetime/temporal-format";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -108,6 +114,11 @@ interface PendingTimeCorrectionReview {
 	isOrphaned: boolean;
 }
 
+interface PublicApprovalStage {
+	name: string;
+	order: number;
+}
+
 type TimeCorrectionApprovalMetadata = {
 	timeCorrection?: {
 		action?: TimeCorrectionAction;
@@ -162,6 +173,7 @@ const UNCLASSIFIED_TIME_APPROVAL_WARNING =
 function displayMetadataForKind(
 	period: WorkPeriodWithRelations,
 	kind: TimeApprovalKind,
+	stage?: PublicApprovalStage,
 ) {
 	const date = formatCapturedEndpoint(period.clockIn, "dateMedium");
 	const startTime = formatCapturedEndpoint(period.clockIn, "time");
@@ -173,11 +185,13 @@ function displayMetadataForKind(
 		subtitle: `${date} - ${startTime} to ${endTime}`,
 		summary: `${duration} on ${date}`,
 	};
+	const ordinaryStage = stage ? { stage } : {};
 
 	switch (kind) {
 		case "manual_time_submission":
 			return {
 				...common,
+				...ordinaryStage,
 				title: "Manual Time Submission",
 				badge: { label: "Manual", color: null },
 				icon: "clock-plus",
@@ -185,6 +199,7 @@ function displayMetadataForKind(
 		case "policy_clock_out":
 			return {
 				...common,
+				...ordinaryStage,
 				title: "Clock-out Approval",
 				badge: { label: "Clock-out", color: null },
 				icon: "clock-check",
@@ -243,16 +258,24 @@ function activeRelationalCorrectionCandidates(
 
 export function buildTimeApprovalReview(
 	period: WorkPeriodWithRelations,
-	request: { metadata?: unknown; reason?: string | null },
+	request: {
+		metadata?: unknown;
+		reason?: string | null;
+		publicStage?: PublicApprovalStage;
+	},
 	correctionEntries: CorrectionEntryForReview[],
 ) {
+	const verifiedCorrections = activeRelationalCorrectionCandidates(
+		period,
+		correctionEntries,
+	);
 	const kind = classifyTimeApprovalRequest({
 		metadata: request.metadata,
 		reason: request.reason,
 		pendingChanges: period.pendingChanges,
-		hasRelationalCorrectionEvidence:
-			activeRelationalCorrectionCandidates(period, correctionEntries).length >
-			0,
+		verifiedRelationalCorrectionIds: verifiedCorrections.map(
+			(entry) => entry.id,
+		),
 	});
 
 	return {
@@ -260,7 +283,7 @@ export function buildTimeApprovalReview(
 		isActionable: kind !== "unclassified",
 		warning:
 			kind === "unclassified" ? UNCLASSIFIED_TIME_APPROVAL_WARNING : null,
-		display: displayMetadataForKind(period, kind),
+		display: displayMetadataForKind(period, kind, request.publicStage),
 		...(kind === "time_correction"
 			? {
 					pendingCorrection: buildPendingCorrectionReview(
@@ -271,6 +294,40 @@ export function buildTimeApprovalReview(
 				}
 			: {}),
 	};
+}
+
+function stageOrderFromMetadata(metadata: unknown): number {
+	if (!metadata || typeof metadata !== "object" || Array.isArray(metadata))
+		return 1;
+	const value = metadata as Record<string, unknown>;
+	for (const [key, orderKey] of [
+		["stage", "sequence"],
+		["approvalChain", "stageOrder"],
+	] as const) {
+		const descriptor = Object.getOwnPropertyDescriptor(value, key);
+		if (!descriptor?.enumerable || !("value" in descriptor)) continue;
+		const marker = descriptor.value;
+		if (!marker || typeof marker !== "object" || Array.isArray(marker))
+			continue;
+		const orderDescriptor = Object.getOwnPropertyDescriptor(marker, orderKey);
+		if (!orderDescriptor?.enumerable || !("value" in orderDescriptor)) continue;
+		const order = orderDescriptor.value;
+		if (Number.isSafeInteger(order) && (order as number) > 0)
+			return order as number;
+	}
+	return 1;
+}
+
+function publicStage(
+	request: { metadata?: unknown },
+	stage?: { labelSnapshot: string; stepOrder: number },
+): PublicApprovalStage {
+	return stage &&
+		stage.labelSnapshot.length > 0 &&
+		Number.isSafeInteger(stage.stepOrder) &&
+		stage.stepOrder > 0
+		? { name: stage.labelSnapshot, order: stage.stepOrder }
+		: { name: "Approval", order: stageOrderFromMetadata(request.metadata) };
 }
 
 export function buildPendingCorrectionReview(
@@ -435,6 +492,48 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 						}
 						return map;
 					}),
+				fetchRequestContexts: (requests) =>
+					Effect.gen(function* (_) {
+						if (requests.length === 0)
+							return new Map<string, PublicApprovalStage>();
+						const dbService = yield* _(DatabaseService);
+						const stages = yield* _(
+							dbService.query("batchGetTimeApprovalPublicStages", async () => {
+								return await dbService.db.query.approvalChainStageInstance.findMany(
+									{
+										where: and(
+											eq(
+												approvalChainStageInstance.organizationId,
+												params.organizationId,
+											),
+											inArray(
+												approvalChainStageInstance.approvalRequestId,
+												requests.map((request) => request.id),
+											),
+										),
+										columns: {
+											approvalRequestId: true,
+											labelSnapshot: true,
+											stepOrder: true,
+										},
+									},
+								);
+							}),
+						);
+						const stagesByRequest = new Map(
+							stages.flatMap((stage) =>
+								stage.approvalRequestId
+									? [[stage.approvalRequestId, publicStage({}, stage)] as const]
+									: [],
+							),
+						);
+						return new Map(
+							requests.map((request) => [
+								request.id,
+								stagesByRequest.get(request.id) ?? publicStage(request),
+							]),
+						);
+					}),
 				filterEntity: (entity, params) => {
 					// Apply team filter
 					if (params.teamId && entity.employee.teamId !== params.teamId) {
@@ -455,10 +554,10 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 
 					return true;
 				},
-				transformToItem: (request, entity) => {
+				transformToItem: (request, entity, stage) => {
 					const review = buildTimeApprovalReview(
 						entity,
-						request,
+						{ ...request, publicStage: stage },
 						entity.correctionReviewEntries ?? [],
 					);
 					if (review.pendingCorrection?.isOrphaned) {
@@ -590,6 +689,22 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 								),
 					),
 				);
+				const chainStage = yield* _(
+					dbService.query("getTimeApprovalPublicStage", async () => {
+						return await dbService.db.query.approvalChainStageInstance.findFirst(
+							{
+								where: and(
+									eq(
+										approvalChainStageInstance.organizationId,
+										period.employee.organizationId,
+									),
+									eq(approvalChainStageInstance.approvalRequestId, request.id),
+								),
+								columns: { labelSnapshot: true, stepOrder: true },
+							},
+						);
+					}),
+				);
 
 				const priority = TimeCorrectionHandler.calculatePriority(
 					period,
@@ -652,7 +767,10 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 							);
 				const review = buildTimeApprovalReview(
 					period,
-					request,
+					{
+						...request,
+						publicStage: publicStage(request, chainStage ?? undefined),
+					},
 					correctionEntries as CorrectionEntryForReview[],
 				);
 				const periodWithReview = {

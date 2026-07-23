@@ -297,6 +297,7 @@ function toInboxItem(
 			subtitle: approval.display.subtitle,
 			detail: approval.display.summary,
 			badge: approval.display.badge ?? null,
+			...(approval.display.stage ? { stage: approval.display.stage } : {}),
 		},
 		timing: {
 			createdAt: serializeDate(approval.createdAt) ?? "",
@@ -322,6 +323,7 @@ function toInboxItem(
 function buildDetailSections(
 	detail: ApprovalDetail,
 ): ApprovalInboxDetailSection[] {
+	const stage = detail.approval.display.stage;
 	const sections: ApprovalInboxDetailSection[] = [
 		{
 			type: "key_value",
@@ -330,6 +332,9 @@ function buildDetailSections(
 				{ label: "Type", value: detail.approval.typeName },
 				{ label: "Summary", value: detail.approval.display.summary },
 				{ label: "Status", value: detail.approval.status },
+				...(stage
+					? [{ label: "Stage", value: `${stage.name} (${stage.order})` }]
+					: []),
 			],
 		},
 	];

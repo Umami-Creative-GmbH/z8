@@ -21,7 +21,7 @@ import type {
 /**
  * Configuration for building approval request queries
  */
-interface ApprovalQueryConfig<TEntity> {
+interface ApprovalQueryConfig<TEntity, TRequestContext = never> {
 	entityType: ApprovalType;
 	params: ApprovalQueryParams;
 	/**
@@ -38,7 +38,12 @@ interface ApprovalQueryConfig<TEntity> {
 	transformToItem: (
 		request: ApprovalRequestRow,
 		entity: TEntity,
+		requestContext: TRequestContext | undefined,
 	) => UnifiedApprovalItem | null;
+	/** Load request-specific display context in one organization-scoped batch. */
+	fetchRequestContexts?: (
+		requests: ApprovalRequestRow[],
+	) => Effect.Effect<Map<string, TRequestContext>, AnyAppError, any>;
 	/**
 	 * Optional filter to apply after fetching entities
 	 */
@@ -130,8 +135,8 @@ export function buildBaseConditions(
  * Optimized approval fetching using batch entity loading
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function fetchApprovals<TEntity>(
-	config: ApprovalQueryConfig<TEntity>,
+export function fetchApprovals<TEntity, TRequestContext = never>(
+	config: ApprovalQueryConfig<TEntity, TRequestContext>,
 ): Effect.Effect<UnifiedApprovalItem[], AnyAppError, any> {
 	return Effect.gen(function* (_) {
 		const dbService = yield* _(DatabaseService);
@@ -141,6 +146,7 @@ export function fetchApprovals<TEntity>(
 			fetchEntitiesByIds,
 			transformToItem,
 			filterEntity,
+			fetchRequestContexts,
 		} = config;
 
 		// Build filter conditions
@@ -169,10 +175,15 @@ export function fetchApprovals<TEntity>(
 		const entityIds = requests.map((r) => r.entityId);
 		const entitiesMap = yield* _(fetchEntitiesByIds(entityIds));
 
+		const typedRequests = requests as ApprovalRequestRow[];
+		const requestContexts = fetchRequestContexts
+			? yield* _(fetchRequestContexts(typedRequests))
+			: new Map<string, TRequestContext>();
+
 		// Transform and filter
 		const items: UnifiedApprovalItem[] = [];
 
-		for (const request of requests) {
+		for (const request of typedRequests) {
 			const entity = entitiesMap.get(request.entityId);
 			if (!entity) continue;
 
@@ -181,7 +192,11 @@ export function fetchApprovals<TEntity>(
 				continue;
 			}
 
-			const item = transformToItem(request as ApprovalRequestRow, entity);
+			const item = transformToItem(
+				request,
+				entity,
+				requestContexts.get(request.id),
+			);
 			if (item) {
 				// Apply priority filter
 				if (params.priority && item.priority !== params.priority) {

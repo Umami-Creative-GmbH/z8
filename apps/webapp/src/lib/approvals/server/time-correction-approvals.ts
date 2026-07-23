@@ -3785,7 +3785,7 @@ export async function executeTimeCorrectionDecisionInTransaction(
 					(id): id is string => Boolean(id),
 				);
 				const correctionEvidence = endpointIds.length
-					? await transactionDb.query.timeEntry.findFirst({
+					? await transactionDb.query.timeEntry.findMany({
 							where: and(
 								eq(timeEntry.organizationId, input.organizationId),
 								eq(timeEntry.employeeId, request.requestedBy),
@@ -3794,12 +3794,14 @@ export async function executeTimeCorrectionDecisionInTransaction(
 								inArray(timeEntry.replacesEntryId, endpointIds),
 							),
 						})
-					: null;
+					: [];
 				kind = classifyTimeApprovalRequest({
 					metadata: request.metadata,
 					reason: request.reason,
 					pendingChanges: period.pendingChanges,
-					hasRelationalCorrectionEvidence: Boolean(correctionEvidence),
+					verifiedRelationalCorrectionIds: correctionEvidence.map(
+						(entry) => entry.id,
+					),
 				});
 			}
 			if (kind === "unclassified") {

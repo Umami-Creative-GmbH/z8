@@ -1,11 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createTimeCorrectionApprovalAdapter } from "@/lib/approvals/domain-adapters/time-correction.adapter";
 import { buildRequesterCancellationMarker } from "@/lib/approvals/domain-adapters/time-correction-cancellation-marker";
+import { createOrdinaryWorkPeriodApprovalAdapter } from "@/lib/approvals/domain-adapters/work-period.adapter";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 
 const dbMocks = vi.hoisted(() => ({
 	approvalRequests: vi.fn(),
 	approvalWorkflows: vi.fn(),
 	approvalWorkflowRollouts: vi.fn(),
+	workPeriods: vi.fn(),
+	timeEntries: vi.fn(),
 	absenceEntries: vi.fn(),
 	travelExpenseClaims: vi.fn(),
 }));
@@ -16,6 +20,11 @@ vi.mock("drizzle-orm", () => ({
 	eq: vi.fn((left: unknown, right: unknown) => ({ op: "eq", left, right })),
 	gte: vi.fn((left: unknown, right: unknown) => ({ op: "gte", left, right })),
 	ne: vi.fn((left: unknown, right: unknown) => ({ op: "ne", left, right })),
+	inArray: vi.fn((left: unknown, right: unknown) => ({
+		op: "inArray",
+		left,
+		right,
+	})),
 }));
 
 vi.mock("@/db", () => ({
@@ -26,6 +35,8 @@ vi.mock("@/db", () => ({
 			approvalWorkflowRollout: {
 				findFirst: dbMocks.approvalWorkflowRollouts,
 			},
+			workPeriod: { findMany: dbMocks.workPeriods },
+			timeEntry: { findMany: dbMocks.timeEntries },
 			absenceEntry: { findMany: dbMocks.absenceEntries },
 			travelExpenseClaim: { findMany: dbMocks.travelExpenseClaims },
 		},
@@ -56,6 +67,18 @@ vi.mock("@/db/schema", () => ({
 	approvalWorkflowRollout: {
 		organizationId: "approvalWorkflowRollout.organizationId",
 		workflowType: "approvalWorkflowRollout.workflowType",
+	},
+	workPeriod: {
+		id: "workPeriod.id",
+		employeeId: "workPeriod.employeeId",
+		organizationId: "workPeriod.organizationId",
+	},
+	timeEntry: {
+		employeeId: "timeEntry.employeeId",
+		isSuperseded: "timeEntry.isSuperseded",
+		organizationId: "timeEntry.organizationId",
+		replacesEntryId: "timeEntry.replacesEntryId",
+		type: "timeEntry.type",
 	},
 	travelExpenseClaim: {
 		createdAt: "travelExpenseClaim.createdAt",
@@ -188,6 +211,72 @@ async function realCanonicalDisplay() {
 	} as never);
 }
 
+async function realOrdinaryDisplay(
+	kind: "manual_time_submission" | "policy_clock_out",
+) {
+	const adapter = createOrdinaryWorkPeriodApprovalAdapter(kind, {
+		finalizeTerminal: vi.fn(),
+	});
+	const submittedAt = parseInstant("2026-04-26T08:00:00Z");
+	const workflow = {
+		id: `10000000-0000-4000-8000-${kind === "manual_time_submission" ? "000000000020" : "000000000030"}`,
+		organizationId: "org-1",
+		workflowType: kind,
+		sourceType: "time_entry",
+		sourceId: `10000000-0000-4000-8000-${kind === "manual_time_submission" ? "000000000021" : "000000000031"}`,
+		requesterEmployeeId: "employee-1",
+		status: "pending" as const,
+		currentStageOrder: 1,
+		version: 1,
+		policySnapshot: {},
+		contextSnapshot: { timeRequest: { kind }, privateReason: "private-reason" },
+		displaySnapshot: {},
+		submittedAt,
+		completedAt: null,
+		cancelledAt: null,
+		decisionReason: null,
+		stages: [
+			{
+				id: "40000000-0000-4000-8000-000000000001",
+				organizationId: "org-1",
+				workflowId: `10000000-0000-4000-8000-${kind === "manual_time_submission" ? "000000000020" : "000000000030"}`,
+				sequence: 1,
+				label: "Manager review",
+				resolverSnapshot: {},
+				activationMode: "immediate",
+				status: "pending" as const,
+				activatedAt: submittedAt,
+				decidedAt: null,
+				decisionReason: null,
+				legacyApprovalRequestId: null,
+				assignments: [],
+			},
+		],
+	};
+	return adapter.projectDisplay({
+		organizationId: "org-1",
+		workflow,
+		sourceIdentity: {
+			organizationId: "org-1",
+			workflowType: kind,
+			sourceType: "time_entry",
+			sourceId: workflow.sourceId,
+		},
+		source: {
+			id: workflow.sourceId,
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			canonicalRecordId: "70000000-0000-4000-8000-000000000001",
+			approvalWorkflowId: workflow.id,
+			approvalStatus: "pending",
+			startTime: "2026-04-26T08:00:00Z",
+			endTime: "2026-04-26T16:00:00Z",
+			durationMinutes: 480,
+			payload: { timeRequest: { kind } },
+		},
+	});
+}
+
 function absence(overrides: Record<string, unknown> = {}) {
 	return {
 		id: "absence-1",
@@ -247,6 +336,8 @@ describe("getSelfServiceRequests", () => {
 		dbMocks.approvalRequests.mockReset();
 		dbMocks.approvalWorkflows.mockReset();
 		dbMocks.approvalWorkflowRollouts.mockReset();
+		dbMocks.workPeriods.mockReset();
+		dbMocks.timeEntries.mockReset();
 		dbMocks.absenceEntries.mockReset();
 		dbMocks.travelExpenseClaims.mockReset();
 		dbMocks.approvalRequests.mockResolvedValue([timeCorrection()]);
@@ -254,6 +345,19 @@ describe("getSelfServiceRequests", () => {
 		dbMocks.approvalWorkflowRollouts.mockResolvedValue({
 			lifecycleMode: "legacy",
 		});
+		dbMocks.workPeriods.mockResolvedValue([
+			{
+				id: "period-1",
+				clockInId: "clock-in-original",
+				clockOutId: "clock-out-original",
+			},
+		]);
+		dbMocks.timeEntries.mockResolvedValue([
+			{
+				id: "10000000-0000-4000-8000-000000000001",
+				replacesEntryId: "clock-in-original",
+			},
+		]);
 		dbMocks.absenceEntries.mockResolvedValue([absence()]);
 		dbMocks.travelExpenseClaims.mockResolvedValue([travelExpense()]);
 	});
@@ -928,17 +1032,27 @@ describe("getSelfServiceRequests", () => {
 		"canonical",
 		"complete",
 	] as const)("excludes ordinary compatibility and canonical requester rows in %s mode", async (lifecycleMode) => {
+		const manualDisplay = await realOrdinaryDisplay("manual_time_submission");
+		const policyDisplay = await realOrdinaryDisplay("policy_clock_out");
 		dbMocks.approvalWorkflowRollouts.mockResolvedValue({ lifecycleMode });
 		dbMocks.absenceEntries.mockResolvedValue([]);
 		dbMocks.travelExpenseClaims.mockResolvedValue([]);
 		dbMocks.approvalRequests.mockResolvedValue([
 			timeCorrection({
 				id: `${lifecycleMode}-manual-compatibility`,
-				metadata: { timeRequest: { kind: "manual_time_submission" } },
+				metadata: {
+					timeRequest: { kind: "manual_time_submission" },
+					stage: { id: "private-stage-id", sequence: 1 },
+					workflow: { id: "private-workflow-id", organizationId: "org-1" },
+				},
 			}),
 			timeCorrection({
 				id: `${lifecycleMode}-policy-compatibility`,
-				metadata: { timeRequest: { kind: "policy_clock_out" } },
+				metadata: {
+					timeRequest: { kind: "policy_clock_out" },
+					stage: { id: "private-stage-id", sequence: 1 },
+					workflow: { id: "private-workflow-id", organizationId: "org-1" },
+				},
 			}),
 		]);
 		dbMocks.approvalWorkflows.mockResolvedValue([
@@ -948,12 +1062,11 @@ describe("getSelfServiceRequests", () => {
 				contextSnapshot: {
 					timeRequest: { kind: "manual_time_submission" },
 				},
-				displaySnapshot: {
-					displayPayload: {
-						title: "Manual time submission",
-						privatePendingChanges: "must-not-leak",
-					},
-					searchText: "private-workflow-id",
+				displaySnapshot: manualDisplay,
+				requesterProjection: {
+					organizationId: "org-1",
+					requesterEmployeeId: "employee-1",
+					...manualDisplay,
 				},
 			}),
 			canonicalTimeCorrection({
@@ -961,6 +1074,12 @@ describe("getSelfServiceRequests", () => {
 				workflowType: "policy_clock_out",
 				contextSnapshot: {
 					timeRequest: { kind: "policy_clock_out" },
+				},
+				displaySnapshot: policyDisplay,
+				requesterProjection: {
+					organizationId: "org-1",
+					requesterEmployeeId: "employee-1",
+					...policyDisplay,
 				},
 			}),
 		]);
@@ -977,8 +1096,45 @@ describe("getSelfServiceRequests", () => {
 			"cancel",
 		);
 		expect(JSON.stringify(result)).not.toMatch(
-			/privatePendingChanges|private-workflow-id/,
+			/private-stage-id|private-workflow-id/,
 		);
+	});
+
+	it("keeps owned correction IDs and excludes foreign correction IDs", async () => {
+		dbMocks.absenceEntries.mockResolvedValue([]);
+		dbMocks.travelExpenseClaims.mockResolvedValue([]);
+		dbMocks.approvalRequests.mockResolvedValue([
+			timeCorrection(),
+			timeCorrection({
+				id: "foreign-correction-request",
+				entityId: "period-foreign",
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						clockInCorrectionId: "10000000-0000-4000-8000-000000000099",
+					},
+				},
+			}),
+		]);
+		dbMocks.workPeriods.mockResolvedValue([
+			{ id: "period-1", clockInId: "clock-in-original", clockOutId: null },
+			{ id: "period-foreign", clockInId: "foreign-clock-in", clockOutId: null },
+		]);
+		dbMocks.timeEntries.mockResolvedValue([
+			{
+				id: "10000000-0000-4000-8000-000000000001",
+				replacesEntryId: "clock-in-original",
+			},
+		]);
+
+		const result = await getSelfServiceRequests({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+		});
+
+		expect(
+			result.items.filter((item) => item.sourceType === "time_correction"),
+		).toEqual([expect.objectContaining({ id: "approval-time-1" })]);
 	});
 
 	it("offers correction cancellation only while the exact correction request is pending", async () => {

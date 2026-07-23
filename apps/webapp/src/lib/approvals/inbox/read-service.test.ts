@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import type { UnifiedApprovalItem } from "@/lib/approvals/domain/types";
+import { buildTimeApprovalReview } from "@/lib/approvals/handlers/time-correction.handler";
 import { getApprovalInboxListFromSources } from "@/lib/approvals/inbox/read-service";
 import type { ApprovalInboxSource } from "@/lib/approvals/inbox/source-adapters";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -47,6 +48,68 @@ function source(
 			getCount: vi.fn(() => Effect.succeed(items.length)),
 		} as never,
 	};
+}
+
+function ordinaryReview(
+	kind: "manual_time_submission" | "policy_clock_out",
+	mode: "legacy" | "shadow" | "ready" | "canonical" | "complete",
+) {
+	const metadata =
+		mode === "legacy"
+			? null
+			: {
+					timeRequest: { kind },
+					...(mode === "canonical" || mode === "complete"
+						? {
+								workflow: {
+									id: "private-workflow-id",
+									organizationId: "org-1",
+								},
+								stage: { id: "private-stage-id", sequence: 2 },
+							}
+						: { observation: { diagnostics: `private-${mode}` } }),
+				};
+	return buildTimeApprovalReview(
+		{
+			id: "period-1",
+			startTime: new Date("2026-07-20T06:00:00.000Z"),
+			endTime: new Date("2026-07-20T14:00:00.000Z"),
+			durationMinutes: 480,
+			pendingChanges:
+				kind === "manual_time_submission"
+					? { isManualEntry: true, privateNote: "private-pending-change" }
+					: { isNewClockOut: true, privateNote: "private-pending-change" },
+			employee: {
+				id: "employee-1",
+				userId: "user-1",
+				teamId: "team-1",
+				organizationId: "org-1",
+				user: {
+					id: "user-1",
+					name: "Avery Employee",
+					email: "avery@example.com",
+					image: null,
+				},
+			},
+			clockIn: {
+				id: "clock-in",
+				timestamp: new Date("2026-07-20T06:00:00.000Z"),
+			},
+			clockOut: {
+				id: "clock-out",
+				timestamp: new Date("2026-07-20T14:00:00.000Z"),
+			},
+		},
+		{
+			metadata,
+			reason:
+				kind === "manual_time_submission"
+					? "Manual time entry: private reason"
+					: "Clock-out requires approval (0-day policy)",
+			publicStage: { name: "Manager review", order: mode === "legacy" ? 1 : 2 },
+		},
+		[],
+	);
 }
 
 describe("getApprovalInboxListFromSources", () => {
@@ -358,47 +421,62 @@ describe("getApprovalInboxListFromSources", () => {
 	});
 
 	it.each([
-		["manual_time_submission", "Manual Time Submission", "8h on Jul 20, 2026"],
-		["policy_clock_out", "Clock-out Approval", "8h on Jul 20, 2026"],
-	] as const)("preserves the sanitized %s inbox list contract", async (_kind, title, detail) => {
-		const result = await getApprovalInboxListFromSources({
-			sources: [
-				source("time_entry", [
-					item({
-						approvalType: "time_entry",
-						typeName: title,
-						display: {
-							title,
-							subtitle: "Jul 20, 2026 - 08:00 to 16:00",
-							summary: detail,
-						},
-					}),
-				]),
-			],
-			params: {
-				approverId: "manager-1",
-				organizationId: "org-1",
-				status: "pending",
-			},
-		});
+		"legacy",
+		"shadow",
+		"ready",
+		"canonical",
+		"complete",
+	] as const)("preserves sanitized ordinary inbox display in %s mode", async (mode) => {
+		for (const kind of [
+			"manual_time_submission",
+			"policy_clock_out",
+		] as const) {
+			const review = ordinaryReview(kind, mode);
+			const result = await getApprovalInboxListFromSources({
+				sources: [
+					source("time_entry", [
+						item({
+							approvalType: "time_entry",
+							typeName: review.display.title,
+							display: review.display,
+						}),
+					]),
+				],
+				params: {
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+				},
+			});
 
-		expect(result.items[0]).toMatchObject({
-			type: "time_entry",
-			status: "pending",
-			requester: {
-				name: "Avery Employee",
-				email: "avery@example.com",
-			},
-			summary: {
-				title,
-				subtitle: "Jul 20, 2026 - 08:00 to 16:00",
-				detail,
-			},
-			capabilities: {
-				canApprove: true,
-				canReject: true,
-				canBulkApprove: true,
-			},
-		});
+			const stage = {
+				name: "Manager review",
+				order: mode === "legacy" ? 1 : 2,
+			};
+			expect(result.items[0]).toMatchObject({
+				type: "time_entry",
+				status: "pending",
+				requester: {
+					name: "Avery Employee",
+					email: "avery@example.com",
+				},
+				summary: {
+					title:
+						kind === "manual_time_submission"
+							? "Manual Time Submission"
+							: "Clock-out Approval",
+					detail: "8h on Jul 20, 2026",
+					stage,
+				},
+				capabilities: {
+					canApprove: true,
+					canReject: true,
+					canBulkApprove: true,
+				},
+			});
+			expect(JSON.stringify(result)).not.toMatch(
+				/private-pending-change|private-reason|private-workflow-id|private-stage-id|private-(shadow|ready)/,
+			);
+		}
 	});
 });

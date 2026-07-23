@@ -1397,6 +1397,7 @@ describe("time correction transaction boundaries", () => {
 		const outbox: unknown[] = [];
 		let terminalFinalizations = 0;
 		let decisionMode = false;
+		let timeEntryFindManyRead = 0;
 		let decisionEmployeeRead = 0;
 		let decisionApprovalRequestId = ids.request;
 		let chainQueryRead = 0;
@@ -1665,10 +1666,13 @@ describe("time correction transaction boundaries", () => {
 					}),
 				},
 				timeEntry: {
-					findMany: vi
-						.fn()
-						.mockResolvedValueOnce([correctionRow])
-						.mockResolvedValue([originalIn]),
+					findMany: vi.fn(async () => {
+						timeEntryFindManyRead += 1;
+						return timeEntryFindManyRead === 1 ||
+							(decisionMode && timeEntryFindManyRead === 2)
+							? [correctionRow]
+							: [originalIn];
+					}),
 				},
 				timeRecord: { findFirst: vi.fn(async () => canonicalRecord) },
 				workPeriod: { findFirst: vi.fn(async () => sourceRow) },
@@ -2845,6 +2849,9 @@ describe("time correction transaction boundaries", () => {
 						clockOutId: null,
 						approvalWorkflowId: snapshot.id,
 					}),
+				},
+				timeEntry: {
+					findMany: vi.fn().mockResolvedValue([{ id: fixture.ids.correction }]),
 				},
 			},
 			transaction: async <T>(
@@ -6195,7 +6202,7 @@ function createTimeCorrectionDecisionDbService() {
 			timeEntry: {
 				findFirst: timeEntryFindFirst,
 				findMany: vi.fn(async () => {
-					if (replayEntryRead++ === 0) return [correction];
+					if (replayEntryRead++ < 2) return [correction];
 					return [
 						originalEntry(period.clockInId, "clock_in", period.startTime),
 					];
