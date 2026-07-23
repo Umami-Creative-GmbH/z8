@@ -95,6 +95,10 @@ describe("buildPendingCorrectionReview", () => {
 			type: "clock_in",
 			timestamp: new Date("2026-05-22T14:00:00.000Z"),
 			utcOffsetMinutes: 120,
+			replacesEntryId: null,
+			isSuperseded: false,
+			supersededById: null,
+			replacesEntry: null,
 		},
 		clockOut: {
 			id: "clock-out-original",
@@ -103,6 +107,10 @@ describe("buildPendingCorrectionReview", () => {
 			type: "clock_out",
 			timestamp: new Date("2026-05-22T18:00:00.000Z"),
 			utcOffsetMinutes: -300,
+			replacesEntryId: null,
+			isSuperseded: false,
+			supersededById: null,
+			replacesEntry: null,
 		},
 		pendingChanges: null,
 	};
@@ -192,6 +200,10 @@ describe("shared time-entry approval presentation", () => {
 			type: "clock_in",
 			timestamp: new Date("2026-05-22T14:00:00.000Z"),
 			utcOffsetMinutes: 120,
+			replacesEntryId: null,
+			isSuperseded: false,
+			supersededById: null,
+			replacesEntry: null,
 		},
 		clockOut: {
 			id: "clock-out-original",
@@ -200,6 +212,10 @@ describe("shared time-entry approval presentation", () => {
 			type: "clock_out",
 			timestamp: new Date("2026-05-22T18:00:00.000Z"),
 			utcOffsetMinutes: -300,
+			replacesEntryId: null,
+			isSuperseded: false,
+			supersededById: null,
+			replacesEntry: null,
 		},
 	};
 
@@ -538,6 +554,10 @@ function createSupersededHistoryDbService() {
 			type: "clock_in",
 			timestamp: new Date("2026-05-22T14:00:00.000Z"),
 			utcOffsetMinutes: 120,
+			replacesEntryId: null,
+			isSuperseded: false,
+			supersededById: null,
+			replacesEntry: null,
 		},
 		clockOut: {
 			id: "clock-out-original",
@@ -546,6 +566,10 @@ function createSupersededHistoryDbService() {
 			type: "clock_out",
 			timestamp: new Date("2026-05-22T18:00:00.000Z"),
 			utcOffsetMinutes: -300,
+			replacesEntryId: null,
+			isSuperseded: false,
+			supersededById: null,
+			replacesEntry: null,
 		},
 	};
 	const request = {
@@ -633,6 +657,62 @@ function createSupersededHistoryDbService() {
 	};
 }
 
+function configureCorrectedCurrentEndpoint(
+	fixture: ReturnType<typeof createSupersededHistoryDbService>,
+	endpointName: "clockIn" | "clockOut",
+) {
+	const endpoint = fixture.period[endpointName];
+	const expectedType = endpointName === "clockIn" ? "clock_in" : "clock_out";
+	const originalId = endpoint.id;
+	const currentId = `${originalId}-current-correction`;
+	const pendingId =
+		endpointName === "clockIn"
+			? "10000000-0000-4000-8000-000000000001"
+			: "10000000-0000-4000-8000-000000000002";
+	const predecessor = {
+		...endpoint,
+		type: expectedType,
+		replacesEntryId: null,
+		isSuperseded: true,
+		supersededById: currentId,
+		replacesEntry: null,
+	};
+
+	Object.assign(endpoint, {
+		id: currentId,
+		type: "correction",
+		replacesEntryId: originalId,
+		isSuperseded: false,
+		supersededById: null,
+		replacesEntry: predecessor,
+	});
+	if (endpointName === "clockIn") {
+		fixture.period.clockInId = currentId;
+		fixture.request.metadata = {
+			timeCorrection: { action: "edit", clockInCorrectionId: pendingId },
+		};
+	} else {
+		fixture.period.clockOutId = currentId;
+		fixture.request.metadata = {
+			timeCorrection: { action: "edit", clockOutCorrectionId: pendingId },
+		};
+	}
+	fixture.request.reason = null;
+	const pendingCorrection = {
+		id: pendingId,
+		type: "correction",
+		employeeId: "emp-1",
+		organizationId: "org-1",
+		timestamp: new Date("2026-05-22T14:15:00.000Z"),
+		replacesEntryId: currentId,
+		isSuperseded: false,
+		supersededById: null,
+	};
+	fixture.timeEntryFindMany.mockResolvedValue([pendingCorrection]);
+
+	return { pendingCorrection };
+}
+
 describe("superseded correction history regression", () => {
 	const invalidEndpointCases = [
 		{
@@ -660,11 +740,11 @@ describe("superseded correction history regression", () => {
 			},
 		},
 		{
-			name: "a wrong-type clock-in",
+			name: "an arbitrary correction clock-in without replacement lineage",
 			mutate: (
 				fixture: ReturnType<typeof createSupersededHistoryDbService>,
 			) => {
-				fixture.period.clockIn.type = "clock_out";
+				fixture.period.clockIn.type = "correction";
 			},
 		},
 		{
@@ -692,14 +772,53 @@ describe("superseded correction history regression", () => {
 			},
 		},
 		{
-			name: "a wrong-type clock-out",
+			name: "an arbitrary correction clock-out without replacement lineage",
 			mutate: (
 				fixture: ReturnType<typeof createSupersededHistoryDbService>,
 			) => {
-				fixture.period.clockOut.type = "clock_in";
+				fixture.period.clockOut.type = "correction";
 			},
 		},
 	] as const;
+
+	it.each([
+		"clockIn",
+		"clockOut",
+	] as const)("preserves list and detail correction reads with a corrected current %s endpoint", async (endpointName) => {
+		const fixture = createSupersededHistoryDbService();
+		const { pendingCorrection } = configureCorrectedCurrentEndpoint(
+			fixture,
+			endpointName,
+		);
+
+		const list = await Effect.runPromise(
+			TimeCorrectionHandler.getApprovals({
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+				limit: 20,
+			}).pipe(Effect.provideService(DatabaseService, fixture.dbService)),
+		);
+		const detail = await Effect.runPromise(
+			TimeCorrectionHandler.getDetail("period-1", "org-1", {
+				approvalId: "approval-1",
+			}).pipe(Effect.provideService(DatabaseService, fixture.dbService)),
+		);
+
+		expect(list).toHaveLength(1);
+		expect(list[0]).toMatchObject({
+			typeName: "Time Correction",
+			isActionable: true,
+		});
+		expect(detail.approval).toMatchObject({
+			typeName: "Time Correction",
+			isActionable: true,
+		});
+		expect(detail.entity.pendingCorrection).toMatchObject({
+			[endpointName]: { requested: pendingCorrection.timestamp },
+			isOrphaned: false,
+		});
+	});
 
 	it.each(
 		invalidEndpointCases,

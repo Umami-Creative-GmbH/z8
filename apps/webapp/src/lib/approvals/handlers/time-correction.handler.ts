@@ -61,6 +61,20 @@ function loadCurrentApproverById(
 		);
 }
 
+interface TimeApprovalEndpoint {
+	id: string;
+	employeeId: string;
+	organizationId: string;
+	type: string;
+	timestamp: Date;
+	utcOffsetMinutes?: number;
+	timezone?: string | null;
+	replacesEntryId: string | null;
+	isSuperseded: boolean;
+	supersededById: string | null;
+	replacesEntry?: TimeApprovalEndpoint | null;
+}
+
 // Type for work period entity with relations
 interface WorkPeriodWithRelations {
 	id: string;
@@ -90,24 +104,8 @@ interface WorkPeriodWithRelations {
 			image: string | null;
 		};
 	};
-	clockIn: {
-		id: string;
-		employeeId: string;
-		organizationId: string;
-		type: string;
-		timestamp: Date;
-		utcOffsetMinutes?: number;
-		timezone?: string | null;
-	};
-	clockOut: {
-		id: string;
-		employeeId: string;
-		organizationId: string;
-		type: string;
-		timestamp: Date;
-		utcOffsetMinutes?: number;
-		timezone?: string | null;
-	} | null;
+	clockIn: TimeApprovalEndpoint;
+	clockOut: TimeApprovalEndpoint | null;
 }
 
 interface CorrectionEntryForReview {
@@ -144,15 +142,47 @@ function hasValidApprovalEndpoints(
 	requestOrganizationId: string,
 ) {
 	const matchesEndpoint = (
-		entry: WorkPeriodWithRelations["clockIn"] | null,
+		entry: TimeApprovalEndpoint | null,
 		expectedId: string,
 		expectedType: "clock_in" | "clock_out",
-	) =>
-		entry !== null &&
-		entry.id === expectedId &&
-		entry.organizationId === requestOrganizationId &&
-		entry.employeeId === period.employeeId &&
-		entry.type === expectedType;
+	) => {
+		if (
+			entry === null ||
+			entry.id !== expectedId ||
+			entry.organizationId !== requestOrganizationId ||
+			entry.employeeId !== period.employeeId
+		) {
+			return false;
+		}
+		if (entry.type === expectedType) return entry.replacesEntryId === null;
+		if (
+			entry.type !== "correction" ||
+			!entry.replacesEntryId ||
+			entry.replacesEntryId === entry.id
+		) {
+			return false;
+		}
+
+		const predecessor = entry.replacesEntry;
+		return Boolean(
+			predecessor &&
+				predecessor.id === entry.replacesEntryId &&
+				predecessor.id !== entry.id &&
+				predecessor.organizationId === requestOrganizationId &&
+				predecessor.employeeId === period.employeeId &&
+				(predecessor.type === expectedType ||
+					predecessor.type === "correction") &&
+				predecessor.isSuperseded &&
+				predecessor.supersededById === entry.id &&
+				(predecessor.type === expectedType
+					? predecessor.replacesEntryId === null
+					: Boolean(
+							predecessor.replacesEntryId &&
+								predecessor.replacesEntryId !== predecessor.id &&
+								predecessor.replacesEntryId !== entry.id,
+						)),
+		);
+	};
 
 	return (
 		period.organizationId === requestOrganizationId &&
@@ -477,8 +507,8 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 									),
 									with: {
 										employee: { with: { user: true } },
-										clockIn: true,
-										clockOut: true,
+										clockIn: { with: { replacesEntry: true } },
+										clockOut: { with: { replacesEntry: true } },
 									},
 								});
 							}),
@@ -700,8 +730,8 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 							),
 							with: {
 								employee: { with: { user: true } },
-								clockIn: true,
-								clockOut: true,
+								clockIn: { with: { replacesEntry: true } },
+								clockOut: { with: { replacesEntry: true } },
 							},
 						});
 					}),
