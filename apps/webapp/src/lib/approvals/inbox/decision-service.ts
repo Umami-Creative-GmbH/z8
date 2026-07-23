@@ -45,6 +45,7 @@ const logger = createLogger("ApprovalInboxDecisionService");
 
 export interface PersistedApprovalRequestForDecision {
 	id: string;
+	targetType: "compatibility_request" | "canonical_assignment";
 	entityType: string;
 	entityId: string;
 	organizationId: string;
@@ -230,7 +231,10 @@ export async function approveApprovalInboxItem({
 	actorEmployeeId: string;
 	organizationId: string;
 } & DecisionVisibilityInput): Promise<ApprovalInboxDecisionSuccess> {
-	const request = await loadDecisionRequest(approvalId, organizationId);
+	const request = await loadApprovalInboxDecisionTarget({
+		approvalId,
+		organizationId,
+	});
 	assertCanDecideRequest({
 		request,
 		actorEmployeeId,
@@ -264,7 +268,10 @@ export async function rejectApprovalInboxItem({
 	organizationId: string;
 	reason: string;
 } & DecisionVisibilityInput): Promise<ApprovalInboxDecisionSuccess> {
-	const request = await loadDecisionRequest(approvalId, organizationId);
+	const request = await loadApprovalInboxDecisionTarget({
+		approvalId,
+		organizationId,
+	});
 	assertCanDecideRequest({
 		request,
 		actorEmployeeId,
@@ -297,7 +304,10 @@ export async function bulkApproveApprovalInboxItems({
 	actorEmployeeId: string;
 	organizationId: string;
 } & DecisionVisibilityInput): Promise<ApprovalInboxBulkDecisionResult> {
-	const requests = await loadDecisionRequests(approvalIds, organizationId);
+	const requests = await loadApprovalInboxDecisionTargets({
+		approvalIds,
+		organizationId,
+	});
 	const result = await bulkDecideApprovalInboxItemsFromRequests({
 		requests,
 		actorEmployeeId,
@@ -322,7 +332,10 @@ export async function bulkRejectApprovalInboxItems({
 	organizationId: string;
 	reason: string;
 } & DecisionVisibilityInput): Promise<ApprovalInboxBulkDecisionResult> {
-	const requests = await loadDecisionRequests(approvalIds, organizationId);
+	const requests = await loadApprovalInboxDecisionTargets({
+		approvalIds,
+		organizationId,
+	});
 	const result = await bulkDecideApprovalInboxItemsFromRequests({
 		requests,
 		actorEmployeeId,
@@ -368,11 +381,16 @@ function withMissingApprovalFailures(
 	return { succeeded: result.succeeded, failed };
 }
 
-async function loadDecisionRequest(
-	approvalId: string,
-	organizationId: string,
-): Promise<PersistedApprovalRequestForDecision> {
-	const request = await db.query.approvalRequest.findFirst({
+export async function loadApprovalInboxDecisionTarget({
+	approvalId,
+	organizationId,
+	database = db,
+}: {
+	approvalId: string;
+	organizationId: string;
+	database?: typeof db;
+}): Promise<PersistedApprovalRequestForDecision> {
+	const request = await database.query.approvalRequest.findFirst({
 		where: and(
 			eq(approvalRequest.id, approvalId),
 			eq(approvalRequest.organizationId, organizationId),
@@ -380,7 +398,7 @@ async function loadDecisionRequest(
 	});
 
 	if (!request) {
-		const assignment = await db.query.approvalStageAssignment.findFirst({
+		const assignment = await database.query.approvalStageAssignment.findFirst({
 			where: and(
 				eq(approvalStageAssignment.id, approvalId),
 				eq(approvalStageAssignment.organizationId, organizationId),
@@ -399,15 +417,20 @@ async function loadDecisionRequest(
 	return toPersistedDecisionRequest(request);
 }
 
-async function loadDecisionRequests(
-	approvalIds: string[],
-	organizationId: string,
-): Promise<PersistedApprovalRequestForDecision[]> {
+export async function loadApprovalInboxDecisionTargets({
+	approvalIds,
+	organizationId,
+	database = db,
+}: {
+	approvalIds: string[];
+	organizationId: string;
+	database?: typeof db;
+}): Promise<PersistedApprovalRequestForDecision[]> {
 	if (approvalIds.length === 0) {
 		return [];
 	}
 
-	const requests = await db.query.approvalRequest.findMany({
+	const requests = await database.query.approvalRequest.findMany({
 		where: and(
 			inArray(approvalRequest.id, approvalIds),
 			eq(approvalRequest.organizationId, organizationId),
@@ -422,7 +445,7 @@ async function loadDecisionRequests(
 	const assignments =
 		missingIds.length === 0
 			? []
-			: await db.query.approvalStageAssignment.findMany({
+			: await database.query.approvalStageAssignment.findMany({
 					where: and(
 						inArray(approvalStageAssignment.id, missingIds),
 						eq(approvalStageAssignment.organizationId, organizationId),
@@ -537,6 +560,7 @@ function toPersistedCanonicalDecisionRequest(
 	}
 	return {
 		id: assignment.id,
+		targetType: "canonical_assignment",
 		entityType: "time_entry",
 		entityId: workflow.sourceId,
 		organizationId,
@@ -557,6 +581,7 @@ function toPersistedDecisionRequest(request: {
 }): PersistedApprovalRequestForDecision {
 	return {
 		id: request.id,
+		targetType: "compatibility_request",
 		entityType: request.entityType,
 		entityId: request.entityId,
 		organizationId: request.organizationId,

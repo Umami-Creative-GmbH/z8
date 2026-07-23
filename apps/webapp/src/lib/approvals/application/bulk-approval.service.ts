@@ -4,9 +4,7 @@
  * Handles bulk approval operations with transaction support.
  */
 
-import { and, eq, inArray } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { approvalRequest } from "@/db/schema";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -25,6 +23,7 @@ import type {
 	BulkDecisionFailure,
 	BulkDecisionResult,
 } from "../domain/types";
+import { loadApprovalInboxDecisionTargets } from "../inbox/decision-service";
 import { ApprovalAuditLoggerLive } from "../infrastructure/audit-logger";
 
 const BULK_DECISION_NOT_FOUND_MESSAGE = "Approval request not found";
@@ -118,16 +117,15 @@ export const BulkApprovalServiceLive = Layer.effect(
 						failed: [],
 					};
 
-					// Fetch all approval requests to get their types
+					// Resolve compatibility requests and canonical assignments through one boundary.
 					const requests = yield* _(
-						dbService.query("getBulkApprovalRequests", async () => {
-							return await dbService.db.query.approvalRequest.findMany({
-								where: and(
-									inArray(approvalRequest.id, approvalIds),
-									eq(approvalRequest.organizationId, organizationId),
-								),
-							});
-						}),
+						dbService.query("getBulkApprovalDecisionTargets", async () =>
+							loadApprovalInboxDecisionTargets({
+								approvalIds,
+								organizationId,
+								database: dbService.db,
+							}),
+						),
 					);
 
 					const requestsById = new Map(

@@ -83,6 +83,7 @@ vi.mock("@/db/schema", () => ({
 
 vi.mock("@/lib/approvals/inbox/decision-service", () => ({
 	rejectApprovalInboxItem: mockState.rejectApprovalInboxItem,
+	loadApprovalInboxDecisionTarget: mockState.findApprovalRequest,
 }));
 
 vi.mock("@/lib/approvals/inbox/source-adapters", () => ({
@@ -151,6 +152,7 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 		});
 		mockState.findApprovalRequest.mockResolvedValue({
 			id: "approval-1",
+			targetType: "compatibility_request",
 			entityId: "entity-1",
 			entityType: "absence_entry",
 			approverId: "employee-1",
@@ -169,10 +171,12 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 		mockState.isEligibleManagerForApprovalRequest.mockResolvedValue(true);
 		mockState.findApprovalRequest.mockResolvedValue({
 			id: "approval-1",
+			targetType: "compatibility_request",
 			entityId: "entity-1",
 			entityType: "absence_entry",
 			approverId: "employee-2",
 			requestedBy: "requester-1",
+			requesterEmployeeId: "requester-1",
 			organizationId: "org-1",
 			status: "pending",
 		});
@@ -182,6 +186,10 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 		});
 
 		expect(response.status).toBe(200);
+		expect(mockState.findApprovalRequest).toHaveBeenCalledWith({
+			approvalId: "approval-1",
+			organizationId: "org-1",
+		});
 		expect(mockState.rejectApprovalInboxItem).toHaveBeenCalledWith({
 			approvalId: "approval-1",
 			actorEmployeeId: "employee-1",
@@ -625,13 +633,20 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 		await expect(response.json()).resolves.toEqual({ error: error.message });
 	});
 
-	it("returns already-resolved approvals as stale conflicts", async () => {
+	it("delegates an exact terminal ordinary request for owner replay", async () => {
 		mockState.findApprovalRequest.mockResolvedValue({
 			id: "approval-1",
-			entityId: "entity-1",
-			entityType: "absence_entry",
+			targetType: "compatibility_request",
+			entityId: "period-1",
+			entityType: "time_entry",
 			approverId: "employee-1",
+			requesterEmployeeId: "requester-1",
 			organizationId: "org-1",
+			status: "rejected",
+		});
+		mockState.rejectApprovalInboxItem.mockResolvedValue({
+			id: "approval-1",
+			type: "time_entry",
 			status: "rejected",
 		});
 
@@ -639,10 +654,45 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 			params: Promise.resolve({ id: "approval-1" }),
 		});
 
-		expect(response.status).toBe(409);
-		await expect(response.json()).resolves.toEqual({
-			error: "Request is already rejected",
+		expect(response.status).toBe(200);
+		expect(mockState.rejectApprovalInboxItem).toHaveBeenCalledWith({
+			approvalId: "approval-1",
+			actorEmployeeId: "employee-1",
+			organizationId: "org-1",
+			reason: "Missing receipt",
+			includeAllApprovers: true,
+			eligibleApprovalScopes: [],
 		});
-		expect(mockState.rejectApprovalInboxItem).not.toHaveBeenCalled();
+	});
+
+	it("delegates a complete canonical assignment to the ordinary owner", async () => {
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "assignment-1",
+			targetType: "canonical_assignment",
+			entityId: "period-1",
+			entityType: "time_entry",
+			approverId: "employee-1",
+			requesterEmployeeId: "requester-1",
+			organizationId: "org-1",
+			status: "pending",
+		});
+		mockState.rejectApprovalInboxItem.mockResolvedValue({
+			id: "assignment-1",
+			type: "time_entry",
+			status: "rejected",
+		});
+
+		const response = await POST(createRequest({ reason: "Missing receipt" }), {
+			params: Promise.resolve({ id: "assignment-1" }),
+		});
+
+		expect(response.status).toBe(200);
+		expect(mockState.findApprovalRequest).toHaveBeenCalledWith({
+			approvalId: "assignment-1",
+			organizationId: "org-1",
+		});
+		expect(mockState.rejectApprovalInboxItem).toHaveBeenCalledWith(
+			expect.objectContaining({ approvalId: "assignment-1" }),
+		);
 	});
 });

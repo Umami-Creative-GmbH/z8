@@ -49,6 +49,7 @@ import {
 } from "../infrastructure/audit-logger";
 import { isEligibleManagerForApprovalRequest } from "../policies/manager-eligibility-db";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
+import type { VerifiedLegacyApprovalState } from "../workflow/ports";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import { processApprovalWithCurrentEmployee } from "./shared";
 import type {
@@ -153,6 +154,45 @@ function ordinaryDecisionResult(input: {
 			endTime: new Date(input.period.endTime.getTime()),
 		},
 	};
+}
+
+function isVerifiedLegacyIntermediateReplay(input: {
+	state: VerifiedLegacyApprovalState | null;
+	approvalRequestId: string;
+	actorEmployeeId: string;
+	decision: "approve" | "reject";
+}): boolean {
+	const state = input.state;
+	const request = state?.approvalRequest;
+	const chain = state?.chain;
+	if (
+		input.decision !== "approve" ||
+		!state ||
+		!request ||
+		!chain ||
+		request.id !== input.approvalRequestId ||
+		request.status !== "approved" ||
+		request.approverId !== input.actorEmployeeId ||
+		chain.status !== "pending"
+	) {
+		return false;
+	}
+	const decided = state.chainRows.find(
+		(row) => row.approvalRequestId === input.approvalRequestId,
+	);
+	const active = state.chainRows.find(
+		(row) => row.stepOrder === chain.currentStageOrder,
+	);
+	return Boolean(
+		decided &&
+			active &&
+			decided.status === "approved" &&
+			decided.resolvedApproverEmployeeId === input.actorEmployeeId &&
+			decided.decidedBy === input.actorEmployeeId &&
+			decided.stepOrder < active.stepOrder &&
+			active.status === "pending" &&
+			active.approvalRequestId,
+	);
 }
 
 export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
@@ -412,7 +452,18 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 									assignment.status === "approved",
 							),
 					);
+				const verifiedLegacyIntermediateReplay =
+					authority.mode === "legacy" &&
+					terminalRequestMatches &&
+					period.approvalStatus === "pending" &&
+					isVerifiedLegacyIntermediateReplay({
+						state: verifiedLegacyState,
+						approvalRequestId: input.approvalRequestId,
+						actorEmployeeId: actor.id,
+						decision: input.decision.kind,
+					});
 				if (
+					verifiedLegacyIntermediateReplay ||
 					observedIntermediateReplay ||
 					(terminalRequestMatches &&
 						period.approvalStatus === expectedTerminalStatus &&

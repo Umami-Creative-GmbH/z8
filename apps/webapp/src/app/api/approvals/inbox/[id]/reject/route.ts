@@ -8,8 +8,11 @@ import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { approvalRequest, employee } from "@/db/schema";
-import { rejectApprovalInboxItem } from "@/lib/approvals/inbox/decision-service";
+import { employee } from "@/db/schema";
+import {
+	loadApprovalInboxDecisionTarget,
+	rejectApprovalInboxItem,
+} from "@/lib/approvals/inbox/decision-service";
 import { isSupportedInboxType } from "@/lib/approvals/inbox/source-adapters";
 import { isEligibleManagerForApprovalRequest } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
@@ -103,12 +106,9 @@ export async function POST(
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
-		// Get the approval request
-		const approvalReq = await db.query.approvalRequest.findFirst({
-			where: and(
-				eq(approvalRequest.id, id),
-				eq(approvalRequest.organizationId, currentEmployee.organizationId),
-			),
+		const approvalReq = await loadApprovalInboxDecisionTarget({
+			approvalId: id,
+			organizationId: currentEmployee.organizationId,
 		});
 
 		if (!approvalReq) {
@@ -128,12 +128,14 @@ export async function POST(
 		const isAssignedApprover = approvalReq.approverId === currentEmployee.id;
 		const isEligibleManager = isAssignedApprover
 			? true
-			: await isEligibleManagerForApprovalRequest({
-					db,
-					approvalRequestId: approvalReq.id,
-					managerEmployeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
-				});
+			: approvalReq.targetType === "compatibility_request"
+				? await isEligibleManagerForApprovalRequest({
+						db,
+						approvalRequestId: approvalReq.id,
+						managerEmployeeId: currentEmployee.id,
+						organizationId: currentEmployee.organizationId,
+					})
+				: false;
 
 		if (!isAssignedApprover && !isEligibleManager && !canManageApprovals) {
 			return NextResponse.json(
@@ -146,14 +148,6 @@ export async function POST(
 			return NextResponse.json(
 				{ error: "Unsupported approval type" },
 				{ status: 400 },
-			);
-		}
-
-		// Check status
-		if (approvalReq.status !== "pending") {
-			return NextResponse.json(
-				{ error: `Request is already ${approvalReq.status}` },
-				{ status: 409 },
 			);
 		}
 
@@ -178,7 +172,7 @@ export async function POST(
 				!canManageApprovals && isEligibleManager
 					? [
 							{
-								requesterEmployeeId: approvalReq.requestedBy,
+								requesterEmployeeId: approvalReq.requesterEmployeeId,
 								eligibleApproverIds: [
 									approvalReq.approverId,
 									currentEmployee.id,
