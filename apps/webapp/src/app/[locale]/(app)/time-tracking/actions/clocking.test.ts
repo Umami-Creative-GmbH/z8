@@ -934,7 +934,6 @@ describe("clockOut", () => {
 					dedupeKey: "clock-out-submission:result",
 					approverEmployeeId:
 						result.kind === "auto_completed" ? "employee-1" : "manager-1",
-					deferBreakEnforcement: input.kind === "policy_clock_out" || undefined,
 				},
 			};
 		});

@@ -732,7 +732,6 @@ describe.each([
 			endTime: "2026-07-22T16:00:00Z",
 			durationMinutes: 480,
 			reason: "Needs approval",
-			...(kind === "policy_clock_out" ? { deferBreakEnforcement: true } : {}),
 		});
 		if (mode === "legacy") expect(state.calls).not.toContain("observation");
 		if (mode === "shadow" || mode === "ready") {

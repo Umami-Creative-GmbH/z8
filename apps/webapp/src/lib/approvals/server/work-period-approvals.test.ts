@@ -13,8 +13,14 @@ const notificationMocks = vi.hoisted(() => ({
 	onManualEntryApproved: vi.fn(),
 	onManualEntryRejected: vi.fn(),
 }));
+const terminalBreakMocks = vi.hoisted(() => ({
+	enforce: vi.fn().mockResolvedValue({ kind: "not_required" }),
+}));
 
 vi.mock("@/lib/notifications/triggers", () => notificationMocks);
+vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
+	enforcePolicyClockOutTerminalBreakInTransaction: terminalBreakMocks.enforce,
+}));
 
 const {
 	approveWorkPeriodWithCurrentApproverEffect,
@@ -73,6 +79,9 @@ const period = {
 	startTime: new Date("2026-07-14T08:00:00.000Z"),
 	endTime: new Date("2026-07-14T16:00:00.000Z"),
 	durationMinutes: 480,
+	projectId: "project-1",
+	workCategoryId: "category-1",
+	workLocationType: "home" as const,
 	isActive: false,
 	deletedAt: null,
 };
@@ -86,6 +95,7 @@ const canonicalRecord = {
 	endAt: period.endTime,
 	durationMinutes: 480,
 	approvalState: "pending",
+	origin: "clock",
 };
 
 const autoApprovalMetadata = (kind = "manual_time_submission") => ({
@@ -144,6 +154,7 @@ function createFinalizerDbService(options?: {
 		}));
 	let updateIndex = 0;
 	const db = {
+		execute: vi.fn(),
 		query: {
 			approvalRequest: {
 				findFirst: vi.fn().mockResolvedValue(
@@ -298,6 +309,7 @@ function createDecisionDbService(options?: {
 		};
 	};
 	const db = {
+		execute: vi.fn(),
 		query: {
 			approvalRequest: {
 				findFirst: vi
@@ -394,6 +406,7 @@ function runDecision(effect: Effect.Effect<unknown, unknown, unknown>) {
 describe("ordinary work-period approval finalizer", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		terminalBreakMocks.enforce.mockResolvedValue({ kind: "not_required" });
 	});
 
 	it("locks work_period before time_record and then records one decision", async () => {
@@ -573,6 +586,67 @@ describe("ordinary work-period approval finalizer", () => {
 			}),
 			expect.objectContaining({ approvalState: "rejected" }),
 		]);
+		expect(terminalBreakMocks.enforce).not.toHaveBeenCalled();
+	});
+
+	it("enforces a policy clock-out once after source approval and preserves submitted evidence", async () => {
+		const dbService = createFinalizerDbService({
+			request: {
+				metadata: {
+					timeRequest: { kind: "policy_clock_out" },
+					workflow: { id: "workflow-1", organizationId: "org-1" },
+				},
+			},
+		});
+
+		const result = await finalize(dbService, {
+			kind: "policy_clock_out",
+		});
+
+		expect(terminalBreakMocks.enforce).toHaveBeenCalledOnce();
+		expect(terminalBreakMocks.enforce).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				actorUserId: "manager-user-1",
+				period: expect.objectContaining({
+					id: "period-1",
+					clockOutId: "clock-out-1",
+					canonicalRecordId: "record-1",
+					projectId: "project-1",
+				}),
+			}),
+		);
+		expect(result.period).toMatchObject({
+			startTime: period.startTime,
+			endTime: period.endTime,
+		});
+		expect(
+			vi.mocked(dbService.db.update).mock.invocationCallOrder[1],
+		).toBeLessThan(terminalBreakMocks.enforce.mock.invocationCallOrder[0]);
+		expect(terminalBreakMocks.enforce.mock.invocationCallOrder[0]).toBeLessThan(
+			vi.mocked(dbService.db.insert).mock.invocationCallOrder[0],
+		);
+	});
+
+	it("rejects terminal approval when transactional break enforcement fails", async () => {
+		terminalBreakMocks.enforce.mockRejectedValueOnce(
+			new Error("private split failure"),
+		);
+		const dbService = createFinalizerDbService({
+			request: {
+				metadata: {
+					timeRequest: { kind: "policy_clock_out" },
+					workflow: { id: "workflow-1", organizationId: "org-1" },
+				},
+			},
+		});
+
+		await expect(
+			finalize(dbService, { kind: "policy_clock_out" }),
+		).rejects.toThrow("Ordinary work-period finalization conflict");
+		expect(terminalBreakMocks.enforce).toHaveBeenCalledOnce();
+		expect(dbService.insertedValues).toHaveLength(0);
 	});
 
 	it.each([
@@ -1064,6 +1138,7 @@ describe("ordinary work-period approval finalizer", () => {
 			expect.objectContaining({ recordId: "record-1" }),
 		);
 		expect(notificationMocks.onManualEntryApproved).not.toHaveBeenCalled();
+		expect(terminalBreakMocks.enforce).not.toHaveBeenCalled();
 	});
 
 	it("finalizes an already approved auto-completed request without creating a pending row", async () => {
@@ -1102,6 +1177,7 @@ describe("ordinary work-period approval finalizer", () => {
 			}),
 		);
 		expect(notificationMocks.onManualEntryApproved).not.toHaveBeenCalled();
+		expect(terminalBreakMocks.enforce).not.toHaveBeenCalled();
 	});
 
 	it("auto-completes a policy clock-out with approved source state and a system decision", async () => {
@@ -1146,6 +1222,7 @@ describe("ordinary work-period approval finalizer", () => {
 		);
 		expect(notificationMocks.onClockOutApproved).not.toHaveBeenCalled();
 		expect(notificationMocks.onClockOutRejected).not.toHaveBeenCalled();
+		expect(terminalBreakMocks.enforce).toHaveBeenCalledOnce();
 	});
 
 	it.each([

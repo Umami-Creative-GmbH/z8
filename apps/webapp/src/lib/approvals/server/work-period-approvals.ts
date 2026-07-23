@@ -15,6 +15,7 @@ import {
 	onManualEntryApproved,
 	onManualEntryRejected,
 } from "@/lib/notifications/triggers";
+import { enforcePolicyClockOutTerminalBreakInTransaction } from "@/lib/time-tracking/policy-clock-out-terminal-break";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
 	type FinalizeOrdinaryWorkPeriodTerminalAdapterInput,
@@ -278,6 +279,9 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 			approvalWorkflowId: workPeriod.approvalWorkflowId,
 			approvalStatus: workPeriod.approvalStatus,
 			pendingChanges: workPeriod.pendingChanges,
+			projectId: workPeriod.projectId,
+			workCategoryId: workPeriod.workCategoryId,
+			workLocationType: workPeriod.workLocationType,
 			isActive: workPeriod.isActive,
 			startTime: workPeriod.startTime,
 			endTime: workPeriod.endTime,
@@ -325,6 +329,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 			endAt: timeRecord.endAt,
 			durationMinutes: timeRecord.durationMinutes,
 			approvalState: timeRecord.approvalState,
+			origin: timeRecord.origin,
 		})
 		.from(timeRecord)
 		.where(
@@ -495,6 +500,33 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 	if (updatedRecords.length !== 1 || updatedRecords[0]?.id !== record.id) {
 		throw fail();
 	}
+	if (
+		input.kind === "policy_clock_out" &&
+		input.transition.kind === "approve"
+	) {
+		await enforcePolicyClockOutTerminalBreakInTransaction({
+			dbService: input.dbService,
+			organizationId: input.organizationId,
+			employeeId: input.requesterEmployeeId,
+			actorUserId: input.actorUserId,
+			period: {
+				id: period.id,
+				organizationId: period.organizationId,
+				employeeId: period.employeeId,
+				clockInId: period.clockInId,
+				clockOutId: period.clockOutId,
+				canonicalRecordId: period.canonicalRecordId,
+				approvalWorkflowId: period.approvalWorkflowId,
+				startTime: period.startTime,
+				endTime: period.endTime,
+				durationMinutes: period.durationMinutes,
+				projectId: period.projectId,
+				workCategoryId: period.workCategoryId,
+				workLocationType: period.workLocationType,
+			},
+			adjustedAt: input.finalizedAt,
+		});
+	}
 
 	const decisions = await db
 		.insert(timeRecordApprovalDecision)
@@ -543,6 +575,7 @@ function isOrdinaryWorkPeriodFinalizerDatabase(
 	if (typeof query !== "object" || query === null) return false;
 	const employeeQuery = (query as Record<string, unknown>).employee;
 	return (
+		typeof candidate.execute === "function" &&
 		typeof candidate.select === "function" &&
 		typeof candidate.update === "function" &&
 		typeof candidate.insert === "function" &&

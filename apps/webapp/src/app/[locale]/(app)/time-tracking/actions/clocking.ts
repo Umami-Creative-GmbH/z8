@@ -1391,11 +1391,7 @@ export async function clockOut(
 		let breakEnforcementResult: Awaited<
 			ReturnType<typeof enforceBreaksAfterClockOut>
 		> = { wasAdjusted: false };
-		// Task 8 terminal maintenance consumes policy clock-out break deferrals.
-		if (
-			shouldRunPostCommitEffects &&
-			approvalSubmission?.postCommit?.deferBreakEnforcement !== true
-		) {
+		if (shouldRunPostCommitEffects && !needsClockOutApproval) {
 			await bestEffort(
 				async () => {
 					breakEnforcementResult = await enforceBreaksAfterClockOut({

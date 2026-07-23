@@ -67,7 +67,6 @@ export interface WorkPeriodPostCommitDescriptor {
 	endTime: string;
 	durationMinutes: number;
 	reason: string | null;
-	deferBreakEnforcement?: true;
 }
 
 interface LockedOrdinarySource {
@@ -1202,9 +1201,6 @@ function descriptor(input: {
 		endTime: instantToCanonicalString(instantFromDate(input.source.endTime)),
 		durationMinutes: input.source.durationMinutes,
 		reason: input.submission.reason || null,
-		...(input.submission.kind === "policy_clock_out"
-			? { deferBreakEnforcement: true as const }
-			: {}),
 	});
 }
 
