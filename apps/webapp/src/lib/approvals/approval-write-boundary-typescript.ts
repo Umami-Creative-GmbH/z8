@@ -30,6 +30,7 @@ type Provenance =
 	| "bound_update"
 	| "database_namespace"
 	| "database_receiver"
+	| "database_service_tag"
 	| "drizzle_namespace"
 	| "drizzle_node_pg_namespace"
 	| "drizzle_factory"
@@ -192,19 +193,40 @@ function isApprovalDbTypesModule(
 	);
 }
 
+function isDatabaseServiceModule(
+	moduleName: string,
+	fileName: string,
+): boolean {
+	if (moduleName === "@/lib/effect/services/database.service") return true;
+	return (
+		moduleName.startsWith(".") &&
+		relativeModulePath(fileName, moduleName).endsWith(
+			"/apps/webapp/src/lib/effect/services/database.service",
+		)
+	);
+}
+
 function unwrap(expression: ts.Expression): ts.Expression {
 	let current = expression;
-	while (
-		ts.isParenthesizedExpression(current) ||
-		ts.isAwaitExpression(current) ||
-		ts.isAsExpression(current) ||
-		ts.isTypeAssertionExpression(current) ||
-		ts.isNonNullExpression(current) ||
-		ts.isSatisfiesExpression(current)
-	) {
-		current = current.expression;
+	while (true) {
+		if (ts.isYieldExpression(current)) {
+			if (!current.expression) return current;
+			current = current.expression;
+			continue;
+		}
+		if (
+			ts.isParenthesizedExpression(current) ||
+			ts.isAwaitExpression(current) ||
+			ts.isAsExpression(current) ||
+			ts.isTypeAssertionExpression(current) ||
+			ts.isNonNullExpression(current) ||
+			ts.isSatisfiesExpression(current)
+		) {
+			current = current.expression;
+			continue;
+		}
+		return current;
 	}
-	return current;
 }
 
 function staticName(node: ts.Node): string | null {
@@ -637,6 +659,14 @@ export function analyzeApprovalWriteMutations(
 			return null;
 		}
 		if (ts.isTypeReferenceNode(candidate)) {
+			if (
+				ts.isIdentifier(candidate.typeName) &&
+				candidate.typeName.text === "Pick" &&
+				candidate.typeArguments?.[0] &&
+				typeProvenance(candidate.typeArguments[0]) === "database_receiver"
+			) {
+				return "database_receiver";
+			}
 			const symbol = checker.getSymbolAtLocation(candidate.typeName);
 			if (symbol && knownTypes.has(symbol))
 				return knownTypes.get(symbol) ?? null;
@@ -708,8 +738,13 @@ export function analyzeApprovalWriteMutations(
 			const propertyName = ts.isLiteralTypeNode(candidate.indexType)
 				? staticName(candidate.indexType.literal)
 				: null;
-			return propertyName === "db" &&
+			if (
+				propertyName === "db" &&
 				typeProvenance(candidate.objectType) === "approval_db_service"
+			) {
+				return "database_receiver";
+			}
+			return containsTrustedTransactionType(candidate)
 				? "database_receiver"
 				: null;
 		}
@@ -765,6 +800,11 @@ export function analyzeApprovalWriteMutations(
 					) {
 						const symbol = checker.getSymbolAtLocation(element.name);
 						if (symbol) knownTypes.set(symbol, "approval_db_service");
+					} else if (
+						isDatabaseServiceModule(moduleName, fileName) &&
+						importedName === "DatabaseService"
+					) {
+						addRoot(element.name, "database_service_tag");
 					} else if (
 						(moduleName === "pg" &&
 							(importedName === "Client" ||
@@ -1086,6 +1126,15 @@ export function analyzeApprovalWriteMutations(
 				: new Set();
 		}
 		if (ts.isCallExpression(candidate)) {
+			if (
+				candidate.arguments.some((argument) =>
+					resolveExpression(argument, usePosition, depth + 1).has(
+						"database_service_tag",
+					),
+				)
+			) {
+				return new Set(["approval_db_service"]);
+			}
 			const moduleName =
 				candidate.arguments[0] && ts.isStringLiteralLike(candidate.arguments[0])
 					? candidate.arguments[0].text

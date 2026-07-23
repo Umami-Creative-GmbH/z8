@@ -119,7 +119,9 @@ export const canonicalWorkRecordClient = {
 		},
 		client?: CanonicalWorkRecordDbClient,
 	) => {
-		const createRecord = async (writeClient: CanonicalWorkRecordDbClient) => {
+		const createForCompletedPeriodInTransaction = async (
+			writeClient: CanonicalWorkRecordDbClient,
+		) => {
 			const [record] = await writeClient
 				.insert(timeRecord)
 				.values({
@@ -158,6 +160,8 @@ export const canonicalWorkRecordClient = {
 			return record;
 		};
 
-		return client ? createRecord(client) : db.transaction(createRecord);
+		return client
+			? createForCompletedPeriodInTransaction(client)
+			: db.transaction(createForCompletedPeriodInTransaction);
 	},
 };

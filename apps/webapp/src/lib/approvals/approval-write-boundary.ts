@@ -120,6 +120,49 @@ export const TEMPORARY_LEGACY_WRITE_EXCEPTIONS = {
 } as const satisfies ApprovalWriteOwners;
 
 export const CANONICAL_SOURCE_WRITE_OWNERS = {
+	"src/app/[locale]/(app)/time-tracking/actions.canonical.ts": [
+		{
+			columns: [
+				"approval_state",
+				"duration_minutes",
+				"employee_id",
+				"end_at",
+				"organization_id",
+				"start_at",
+			],
+			functionName: "createForCompletedPeriodInTransaction",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+		},
+		{
+			columns: [
+				"computation_metadata",
+				"organization_id",
+				"record_id",
+				"record_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "createForCompletedPeriodInTransaction",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_work",
+		},
+		{
+			columns: [
+				"allocation_kind",
+				"organization_id",
+				"project_id",
+				"record_id",
+				"weight_percent",
+			],
+			functionName: "createForCompletedPeriodInTransaction",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_allocation",
+		},
+	],
 	"src/lib/approvals/server/time-correction-approvals.ts": [
 		{
 			columns: ["approval_workflow_id"],
@@ -348,6 +391,57 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "work_period",
 		},
 	],
+	"src/lib/effect/services/time-entry.service.ts": [
+		{
+			columns: ["is_superseded", "replaces_entry_id", "type"],
+			functionName: "applyCorrectionWritesInTransaction",
+			operation: "insert",
+			semantic: "correction",
+			table: "time_entry",
+		},
+		{
+			columns: ["is_superseded", "superseded_by_id"],
+			functionName: "applyCorrectionWritesInTransaction",
+			operation: "update",
+			semantic: "correction_lifecycle",
+			table: "time_entry",
+		},
+		{
+			columns: [
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"start_time",
+			],
+			functionName: "applyCorrectionWritesInTransaction",
+			operation: "update",
+			table: "work_period",
+		},
+		{
+			columns: ["duration_minutes", "end_at", "start_at"],
+			functionName: "applyCorrectionWritesInTransaction",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+	],
+	"src/lib/effect/services/time-record.service.ts": [
+		{
+			columns: [
+				"approval_state",
+				"duration_minutes",
+				"employee_id",
+				"end_at",
+				"organization_id",
+				"start_at",
+			],
+			functionName: "createTimeRecord",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+		},
+	],
 } as const satisfies CanonicalApprovalSourceWriteOwners;
 
 export const SOURCE_WRITE_EXCEPTIONS = {
@@ -546,6 +640,33 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 				"start_time",
 			],
 			functionName: "generateDemoTimeEntries",
+			operation: "insert",
+			table: "work_period",
+		},
+	],
+	"src/lib/effect/services/break-enforcement.service.ts": [
+		{
+			columns: ["type"],
+			functionName: "createBreakTimeEntry",
+			operation: "insert",
+			table: "time_entry",
+			uncertainty: "dynamic_payload",
+		},
+		{
+			columns: ["clock_out_id", "duration_minutes", "end_time"],
+			functionName: "enforceBreaksAfterClockOutInternal",
+			operation: "update",
+			table: "work_period",
+		},
+		{
+			columns: [
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"start_time",
+			],
+			functionName: "enforceBreaksAfterClockOutInternal",
 			operation: "insert",
 			table: "work_period",
 		},

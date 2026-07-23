@@ -235,7 +235,9 @@ export const TimeEntryServiceLive = Layer.effect(
 									});
 								}
 								const workPeriodId = input.workPeriodId;
-								const mutate = async (tx: TransactionClient) => {
+								const applyCorrectionWritesInTransaction = async (
+									tx: TransactionClient,
+								) => {
 									// Global lock order: actor and target employees by ascending ID,
 									// followed by authorization rows, then the work period.
 									const lockedEmployees = await tx
@@ -559,8 +561,10 @@ export const TimeEntryServiceLive = Layer.effect(
 									return newEntry;
 								};
 								return input.transaction
-									? mutate(input.transaction)
-									: dbService.db.transaction(mutate);
+									? applyCorrectionWritesInTransaction(input.transaction)
+									: dbService.db.transaction(
+											applyCorrectionWritesInTransaction,
+										);
 							}),
 							"DatabaseError",
 							(error) =>

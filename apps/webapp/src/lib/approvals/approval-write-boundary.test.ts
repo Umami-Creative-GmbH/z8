@@ -213,6 +213,52 @@ export function directCanonicalWrites() {
 		]);
 	});
 
+	it("tracks protected writes through Pick clients, transaction aliases, and injected database services", () => {
+		const source = `import type { db } from "@/db";
+import { timeRecord, timeRecordWork, workPeriod } from "@/db/schema";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+type InsertClient = Pick<typeof db, "insert">;
+type TransactionClient = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export function createForCompletedPeriod(client: InsertClient) {
+  return client.insert(timeRecordWork).values({ recordId, organizationId, recordKind: "work", workCategoryId, workLocationType, computationMetadata });
+}
+export function applyCorrectionWritesInTransaction(tx: TransactionClient) {
+  tx.update(workPeriod).set({ clockInId, startTime, durationMinutes });
+}
+export function createTimeRecord(_) {
+  const dbService = _(DatabaseService);
+  return dbService.db.insert(timeRecord).values({ organizationId, employeeId, startAt, endAt, durationMinutes, approvalState: "approved" });
+}`;
+
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
+			expect.objectContaining({
+				functionName: "createForCompletedPeriod",
+				operation: "insert",
+				table: "time_record_work",
+			}),
+			expect.objectContaining({
+				functionName: "applyCorrectionWritesInTransaction",
+				operation: "update",
+				table: "work_period",
+			}),
+			expect.objectContaining({
+				functionName: "createTimeRecord",
+				operation: "insert",
+				table: "time_record",
+			}),
+		]);
+	});
+
+	it("does not trust arbitrary insert and update receiver lookalikes", () => {
+		const source = `import { timeRecord, workPeriod } from "@/db/schema";
+function lookalike(formatter: { insert(value: unknown): any; update(value: unknown): any }) {
+  formatter.insert(timeRecord).values({ approvalState: "approved" });
+  formatter.update(workPeriod).set({ approvalStatus: "approved" });
+}`;
+
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([]);
+	});
+
 	it("extracts the complete ordinary and terminal-split raw SQL graph", () => {
 		expect(
 			findProtectedApprovalSqlMutations(`
@@ -2749,6 +2795,49 @@ db.delete(approvalOutbox);`,
 			SOURCE_WRITE_EXCEPTIONS: unknown;
 		};
 		expect(boundary.CANONICAL_SOURCE_WRITE_OWNERS).toEqual({
+			"src/app/[locale]/(app)/time-tracking/actions.canonical.ts": [
+				{
+					columns: [
+						"approval_state",
+						"duration_minutes",
+						"employee_id",
+						"end_at",
+						"organization_id",
+						"start_at",
+					],
+					functionName: "createForCompletedPeriodInTransaction",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+				},
+				{
+					columns: [
+						"computation_metadata",
+						"organization_id",
+						"record_id",
+						"record_kind",
+						"work_category_id",
+						"work_location_type",
+					],
+					functionName: "createForCompletedPeriodInTransaction",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_work",
+				},
+				{
+					columns: [
+						"allocation_kind",
+						"organization_id",
+						"project_id",
+						"record_id",
+						"weight_percent",
+					],
+					functionName: "createForCompletedPeriodInTransaction",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_allocation",
+				},
+			],
 			"src/lib/approvals/server/time-correction-approvals.ts": [
 				{
 					columns: ["approval_workflow_id"],
@@ -2977,6 +3066,57 @@ db.delete(approvalOutbox);`,
 					table: "work_period",
 				},
 			],
+			"src/lib/effect/services/time-entry.service.ts": [
+				{
+					columns: ["is_superseded", "replaces_entry_id", "type"],
+					functionName: "applyCorrectionWritesInTransaction",
+					operation: "insert",
+					semantic: "correction",
+					table: "time_entry",
+				},
+				{
+					columns: ["is_superseded", "superseded_by_id"],
+					functionName: "applyCorrectionWritesInTransaction",
+					operation: "update",
+					semantic: "correction_lifecycle",
+					table: "time_entry",
+				},
+				{
+					columns: [
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"start_time",
+					],
+					functionName: "applyCorrectionWritesInTransaction",
+					operation: "update",
+					table: "work_period",
+				},
+				{
+					columns: ["duration_minutes", "end_at", "start_at"],
+					functionName: "applyCorrectionWritesInTransaction",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
+			],
+			"src/lib/effect/services/time-record.service.ts": [
+				{
+					columns: [
+						"approval_state",
+						"duration_minutes",
+						"employee_id",
+						"end_at",
+						"organization_id",
+						"start_at",
+					],
+					functionName: "createTimeRecord",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+				},
+			],
 		});
 		expect(boundary.SOURCE_WRITE_EXCEPTIONS).toEqual({
 			"src/app/[locale]/(app)/absences/actions.canonical.ts": [
@@ -3188,6 +3328,33 @@ db.delete(approvalOutbox);`,
 						"start_time",
 					],
 					functionName: "generateDemoTimeEntries",
+					operation: "insert",
+					table: "work_period",
+				},
+			],
+			"src/lib/effect/services/break-enforcement.service.ts": [
+				{
+					columns: ["type"],
+					functionName: "createBreakTimeEntry",
+					operation: "insert",
+					table: "time_entry",
+					uncertainty: "dynamic_payload",
+				},
+				{
+					columns: ["clock_out_id", "duration_minutes", "end_time"],
+					functionName: "enforceBreaksAfterClockOutInternal",
+					operation: "update",
+					table: "work_period",
+				},
+				{
+					columns: [
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"start_time",
+					],
+					functionName: "enforceBreaksAfterClockOutInternal",
 					operation: "insert",
 					table: "work_period",
 				},
@@ -3404,6 +3571,57 @@ export function wrongSplitOwner() {
 		);
 	});
 
+	it("allows only exact injected creation and correction owners", () => {
+		const canonicalPath =
+			"src/app/[locale]/(app)/time-tracking/actions.canonical.ts";
+		const correctionPath = "src/lib/effect/services/time-entry.service.ts";
+		const recordPath = "src/lib/effect/services/time-record.service.ts";
+		withApprovalWriteTree(
+			{
+				[canonicalPath]: `import { db, timeRecord } from "@/db";
+export function createForCompletedPeriodInTransaction() {
+  return db.insert(timeRecord).values({ organizationId, employeeId, startAt, endAt, durationMinutes, approvalState: "approved" });
+}
+export function wrongCompletedPeriodOwner() {
+  return db.insert(timeRecord).values({ organizationId, employeeId, startAt, endAt, durationMinutes, approvalState: "approved" });
+}`,
+				[correctionPath]: `import { db, workPeriod } from "@/db";
+export function applyCorrectionWritesInTransaction() {
+  return db.update(workPeriod).set({ clockInId, clockOutId, startTime, endTime, durationMinutes });
+}
+export function dynamicCorrectionOwner(patch: object) {
+  return db.update(workPeriod).set(patch);
+}`,
+				[recordPath]: `import { db, timeRecord } from "@/db";
+export function createTimeRecord() {
+  return db.insert(timeRecord).values({ organizationId, employeeId, startAt, endAt, durationMinutes, approvalState: "approved" });
+}
+export function renamedCreateTimeRecord() {
+  return db.insert(timeRecord).values({ organizationId, employeeId, startAt, endAt, durationMinutes, approvalState: "approved" });
+}`,
+			},
+			(workspaceRoot) => {
+				expect(
+					scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot }),
+				).toEqual([
+					expect.objectContaining({
+						functionName: "wrongCompletedPeriodOwner",
+						path: canonicalPath,
+					}),
+					expect.objectContaining({
+						functionName: "dynamicCorrectionOwner",
+						path: correctionPath,
+						uncertainty: "dynamic_payload",
+					}),
+					expect.objectContaining({
+						functionName: "renamedCreateTimeRecord",
+						path: recordPath,
+					}),
+				]);
+			},
+		);
+	});
+
 	it("does not let a concrete canonical owner absorb an unresolved source write", () => {
 		withApprovalWriteTree(
 			{
@@ -3581,6 +3799,70 @@ export async function hiddenImport(values: object) {
 			[...declaredApproval, ...declaredSource].sort(),
 		);
 	}, 60_000);
+
+	it("detects every required injected production mutation site", () => {
+		const expected = [
+			{
+				path: "src/app/[locale]/(app)/time-tracking/actions.canonical.ts",
+				functionName: "createForCompletedPeriodInTransaction",
+				table: "time_record",
+				operation: "insert",
+			},
+			{
+				path: "src/app/[locale]/(app)/time-tracking/actions.canonical.ts",
+				functionName: "createForCompletedPeriodInTransaction",
+				table: "time_record_work",
+				operation: "insert",
+			},
+			{
+				path: "src/app/[locale]/(app)/time-tracking/actions.canonical.ts",
+				functionName: "createForCompletedPeriodInTransaction",
+				table: "time_record_allocation",
+				operation: "insert",
+			},
+			{
+				path: "src/lib/effect/services/time-entry.service.ts",
+				functionName: "applyCorrectionWritesInTransaction",
+				table: "work_period",
+				operation: "update",
+			},
+			{
+				path: "src/lib/effect/services/time-entry.service.ts",
+				functionName: "applyCorrectionWritesInTransaction",
+				table: "time_record",
+				operation: "update",
+			},
+			{
+				path: "src/lib/effect/services/time-record.service.ts",
+				functionName: "createTimeRecord",
+				table: "time_record",
+				operation: "insert",
+			},
+		] as const;
+		const byPath = new Map<
+			string,
+			ReturnType<typeof analyzeApprovalWriteMutations>
+		>();
+
+		for (const site of expected) {
+			let mutations = byPath.get(site.path);
+			if (!mutations) {
+				const fileName = join(process.cwd(), site.path);
+				mutations = analyzeApprovalWriteMutations(
+					readFileSync(fileName, "utf8"),
+					fileName,
+				);
+				byPath.set(site.path, mutations);
+			}
+			expect(mutations).toContainEqual(
+				expect.objectContaining({
+					functionName: site.functionName,
+					operation: site.operation,
+					table: site.table,
+				}),
+			);
+		}
+	});
 
 	it("does not grant actions, handlers, inbox, bot, or routes ordinary owner capabilities", () => {
 		const forbiddenOwners = [
