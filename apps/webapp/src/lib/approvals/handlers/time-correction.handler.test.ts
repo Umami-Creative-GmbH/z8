@@ -224,6 +224,104 @@ describe("shared time-entry approval presentation", () => {
 		expect(review.pendingCorrection).toBeUndefined();
 	});
 
+	it.each([
+		["missing kind", { timeRequest: {} }, "Manual time entry: private reason"],
+		[
+			"extra marker field",
+			{
+				timeRequest: {
+					kind: "manual_time_submission",
+					workflowId: "private-workflow-id",
+				},
+			},
+			"Manual time entry: private reason",
+		],
+		[
+			"foreign kind with correction evidence",
+			{
+				timeRequest: { kind: "absence" },
+				timeCorrection: { clockInCorrectionId: "clock-in-correction" },
+			},
+			null,
+		],
+	] as const)("fails closed for %s metadata instead of using weaker evidence", (_label, metadata, reason) => {
+		const review = buildTimeApprovalReview(period, { metadata, reason }, [
+			{
+				id: "clock-in-correction",
+				timestamp: new Date("2026-05-22T14:15:00.000Z"),
+				replacesEntryId: "clock-in-original",
+				isSuperseded: false,
+			},
+		]);
+
+		expect(review).toMatchObject({
+			kind: "unclassified",
+			isActionable: false,
+		});
+		expect(review.pendingCorrection).toBeUndefined();
+	});
+
+	it.each([
+		{
+			metadata: {
+				timeRequest: { kind: "manual_time_submission" },
+				timeCorrection: { clockInCorrectionId: "clock-in-correction" },
+			},
+			reason: null,
+		},
+		{
+			metadata: { timeRequest: { kind: "manual_time_submission" } },
+			reason: "Clock-out requires approval (0-day policy)",
+		},
+	] as const)("keeps ambiguous or contradictory ordinary evidence unclassified", (request) => {
+		const review = buildTimeApprovalReview(period, request, []);
+
+		expect(review).toMatchObject({
+			kind: "unclassified",
+			isActionable: false,
+		});
+		expect(review.pendingCorrection).toBeUndefined();
+	});
+
+	it.each([
+		{
+			pendingChanges: "{malformed",
+			metadata: null,
+			reason: "Manual time entry: private reason",
+		},
+		{
+			pendingChanges: { isManualEntry: true },
+			metadata: null,
+			reason: "Clock-out requires approval (0-day policy)",
+		},
+		{
+			pendingChanges: { isManualEntry: true },
+			metadata: {
+				timeCorrection: { clockInCorrectionId: "clock-in-correction" },
+			},
+			reason: null,
+		},
+	] as const)("fails closed for malformed or contradictory historical evidence", (evidence) => {
+		const review = buildTimeApprovalReview(
+			{ ...period, pendingChanges: evidence.pendingChanges },
+			{ metadata: evidence.metadata, reason: evidence.reason },
+			[
+				{
+					id: "clock-in-correction",
+					timestamp: new Date("2026-05-22T14:15:00.000Z"),
+					replacesEntryId: "clock-in-original",
+					isSuperseded: false,
+				},
+			],
+		);
+
+		expect(review).toMatchObject({
+			kind: "unclassified",
+			isActionable: false,
+		});
+		expect(review.pendingCorrection).toBeUndefined();
+	});
+
 	it("renders manual and clock-out endpoints in their independently captured offsets", () => {
 		const review = buildTimeApprovalReview(
 			{

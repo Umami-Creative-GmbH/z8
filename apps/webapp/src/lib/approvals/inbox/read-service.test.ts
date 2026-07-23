@@ -356,4 +356,49 @@ describe("getApprovalInboxListFromSources", () => {
 			},
 		});
 	});
+
+	it.each([
+		["manual_time_submission", "Manual Time Submission", "8h on Jul 20, 2026"],
+		["policy_clock_out", "Clock-out Approval", "8h on Jul 20, 2026"],
+	] as const)("preserves the sanitized %s inbox list contract", async (_kind, title, detail) => {
+		const result = await getApprovalInboxListFromSources({
+			sources: [
+				source("time_entry", [
+					item({
+						approvalType: "time_entry",
+						typeName: title,
+						display: {
+							title,
+							subtitle: "Jul 20, 2026 - 08:00 to 16:00",
+							summary: detail,
+						},
+					}),
+				]),
+			],
+			params: {
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+			},
+		});
+
+		expect(result.items[0]).toMatchObject({
+			type: "time_entry",
+			status: "pending",
+			requester: {
+				name: "Avery Employee",
+				email: "avery@example.com",
+			},
+			summary: {
+				title,
+				subtitle: "Jul 20, 2026 - 08:00 to 16:00",
+				detail,
+			},
+			capabilities: {
+				canApprove: true,
+				canReject: true,
+				canBulkApprove: true,
+			},
+		});
+	});
 });

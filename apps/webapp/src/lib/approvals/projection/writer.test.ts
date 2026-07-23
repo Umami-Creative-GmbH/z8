@@ -126,4 +126,36 @@ describe("approval projection writer", () => {
 			createApprovalProjectionWriter(fake.service).write(input()),
 		).rejects.toThrow("database failed");
 	});
+
+	it.each([
+		["manual_time_submission", "Manual time submission"],
+		["policy_clock_out", "Policy clock-out"],
+	] as const)("persists sanitized %s display, search, status, and stage", async (kind, title) => {
+		const fake = fakeService();
+		const displayPayload = {
+			kind,
+			title,
+			startTime: "2026-07-20T06:00:00Z",
+			endTime: "2026-07-20T14:00:00Z",
+			durationMinutes: 480,
+			approvalStatus: "pending",
+		};
+		const searchText =
+			`${title} 2026-07-20T06:00:00Z 2026-07-20T14:00:00Z`.toLowerCase();
+		await createApprovalProjectionWriter(fake.service).write(
+			input({
+				workflowType: kind,
+				displayPayload,
+				searchText,
+			}),
+		);
+
+		const rendered = fake.calls.map((query) =>
+			new PgDialect().sqlToQuery(query),
+		);
+		expect(JSON.parse(String(rendered[0]?.params[7]))).toEqual(displayPayload);
+		expect(rendered[0]?.params[8]).toBe(searchText);
+		expect(rendered[0]?.params).toContain("pending");
+		expect(rendered[0]?.params).toContain(1);
+	});
 });

@@ -232,6 +232,57 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		});
 	});
 
+	it.each([
+		["manual_time_submission", "Manual Time Submission"],
+		["policy_clock_out", "Clock-out Approval"],
+	] as const)("returns only sanitized %s detail display", async (kind, title) => {
+		const timeRequest = {
+			...request,
+			entityType: "time_entry",
+			entityId: "period-1",
+		};
+		const detail = createDetail({
+			approvalType: "time_entry",
+			entityId: "period-1",
+			typeName: title,
+			display: {
+				title,
+				subtitle: "Jul 20, 2026 - 08:00 to 16:00",
+				summary: "8h on Jul 20, 2026",
+			},
+		});
+		detail.entity = {
+			timeApprovalKind: kind,
+			pendingChanges: { privateNote: "private-pending-change" },
+			approvalWorkflowId: "private-workflow-id",
+			sourceDiagnostics: "private-source-diagnostics",
+			reason: "private-reason",
+		};
+
+		const result = await getApprovalInboxDetailFromRequest({
+			request: timeRequest,
+			handler: createHandler(detail, "time_entry"),
+		});
+		const serialized = JSON.stringify(result);
+
+		expect(result.item).toMatchObject({
+			status: "pending",
+			requester: { name: "Avery Employee" },
+			summary: {
+				title,
+				subtitle: "Jul 20, 2026 - 08:00 to 16:00",
+				detail: "8h on Jul 20, 2026",
+			},
+		});
+		expect(result.actions).toMatchObject({
+			canApprove: true,
+			canReject: true,
+		});
+		expect(serialized).not.toMatch(
+			/private-pending-change|private-workflow-id|private-source-diagnostics|private-reason/,
+		);
+	});
+
 	it("rejects unsupported entity types before calling the handler", async () => {
 		const handler = createHandler();
 

@@ -921,6 +921,66 @@ describe("getSelfServiceRequests", () => {
 		]);
 	});
 
+	it.each([
+		"legacy",
+		"shadow",
+		"ready",
+		"canonical",
+		"complete",
+	] as const)("excludes ordinary compatibility and canonical requester rows in %s mode", async (lifecycleMode) => {
+		dbMocks.approvalWorkflowRollouts.mockResolvedValue({ lifecycleMode });
+		dbMocks.absenceEntries.mockResolvedValue([]);
+		dbMocks.travelExpenseClaims.mockResolvedValue([]);
+		dbMocks.approvalRequests.mockResolvedValue([
+			timeCorrection({
+				id: `${lifecycleMode}-manual-compatibility`,
+				metadata: { timeRequest: { kind: "manual_time_submission" } },
+			}),
+			timeCorrection({
+				id: `${lifecycleMode}-policy-compatibility`,
+				metadata: { timeRequest: { kind: "policy_clock_out" } },
+			}),
+		]);
+		dbMocks.approvalWorkflows.mockResolvedValue([
+			canonicalTimeCorrection({
+				id: `${lifecycleMode}-manual-workflow`,
+				workflowType: "manual_time_submission",
+				contextSnapshot: {
+					timeRequest: { kind: "manual_time_submission" },
+				},
+				displaySnapshot: {
+					displayPayload: {
+						title: "Manual time submission",
+						privatePendingChanges: "must-not-leak",
+					},
+					searchText: "private-workflow-id",
+				},
+			}),
+			canonicalTimeCorrection({
+				id: `${lifecycleMode}-policy-workflow`,
+				workflowType: "policy_clock_out",
+				contextSnapshot: {
+					timeRequest: { kind: "policy_clock_out" },
+				},
+			}),
+		]);
+
+		const result = await getSelfServiceRequests({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+		});
+
+		expect(
+			result.items.filter((item) => item.sourceType === "time_correction"),
+		).toEqual([]);
+		expect(result.items.flatMap((item) => item.availableActions)).not.toContain(
+			"cancel",
+		);
+		expect(JSON.stringify(result)).not.toMatch(
+			/privatePendingChanges|private-workflow-id/,
+		);
+	});
+
 	it("offers correction cancellation only while the exact correction request is pending", async () => {
 		dbMocks.approvalRequests.mockResolvedValue([
 			timeCorrection(),
