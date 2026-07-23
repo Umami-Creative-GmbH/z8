@@ -184,6 +184,105 @@ type RollbackFailurePoint =
 	| "finalizer";
 
 describe("time correction transaction boundaries", () => {
+	it("classifies a complete ordinary assignment before applying a workflow-type-specific loader", async () => {
+		let canonicalWorkflowQueryParams: unknown[] = [];
+		const transactionDb = {
+			query: {
+				employee: {
+					findMany: vi.fn().mockResolvedValue([
+						{
+							id: "manager-1",
+							organizationId: "org-1",
+							userId: "user-manager",
+							isActive: true,
+							user: { id: "user-manager", name: "Manager" },
+						},
+					]),
+				},
+				member: {
+					findMany: vi.fn().mockResolvedValue([
+						{
+							organizationId: "org-1",
+							userId: "user-manager",
+							status: "approved",
+						},
+					]),
+				},
+				approvalRequest: { findFirst: vi.fn().mockResolvedValue(null) },
+				approvalStageAssignment: {
+					findFirst: vi.fn().mockResolvedValue({
+						id: "assignment-1",
+						workflowId: "workflow-1",
+						stageId: "stage-1",
+					}),
+				},
+				approvalWorkflowStage: {
+					findFirst: vi
+						.fn()
+						.mockResolvedValue({ id: "stage-1", workflowId: "workflow-1" }),
+				},
+				approvalWorkflow: {
+					findFirst: vi.fn().mockImplementation((options: { where: SQL }) => {
+						canonicalWorkflowQueryParams = new PgDialect().sqlToQuery(
+							options.where,
+						).params;
+						return Promise.resolve({
+							id: "workflow-1",
+							organizationId: "org-1",
+							workflowType: "manual_time_submission",
+							sourceType: "time_entry",
+							sourceId: "period-1",
+							requesterEmployeeId: "employee-1",
+							status: "pending",
+							contextSnapshot: {
+								timeRequest: { kind: "manual_time_submission" },
+							},
+						});
+					}),
+				},
+				workPeriod: {
+					findFirst: vi.fn().mockResolvedValue({
+						id: "period-1",
+						organizationId: "org-1",
+						employeeId: "employee-1",
+						pendingChanges: { isManualEntry: true },
+						clockInId: "clock-in-1",
+						clockOutId: "clock-out-1",
+						approvalWorkflowId: "workflow-1",
+					}),
+				},
+			},
+		};
+		const processOrdinary = vi.fn().mockResolvedValue({ committed: true });
+		const context = { dbService: { db: transactionDb } } as never;
+		const runtime = {
+			repository: {
+				withTransaction: vi.fn(async (operation) => operation(context)),
+			},
+			transitionEngine: { executeInTransaction: vi.fn() },
+		};
+
+		const result = await executeTimeCorrectionDecisionInTransaction({
+			runtime: runtime as never,
+			organizationId: "org-1",
+			actorEmployeeId: "manager-1",
+			actorUserId: "user-manager",
+			approvalRequestId: "assignment-1",
+			action: "approve",
+			processLegacy: vi.fn(),
+			processOrdinary,
+		});
+
+		expect(result.kind).toBe("manual_time_submission");
+		expect(canonicalWorkflowQueryParams).not.toContain("time_correction");
+		expect(processOrdinary).toHaveBeenCalledWith(
+			expect.objectContaining({
+				workPeriodId: "period-1",
+				kind: "manual_time_submission",
+			}),
+		);
+	});
+
 	it("classifies and dispatches ordinary time approvals inside the repository transaction", async () => {
 		const transactionDb = {
 			query: {
@@ -680,13 +779,29 @@ describe("time correction transaction boundaries", () => {
 							.find(
 								(assignment) => assignment.id === decisionApprovalRequestId,
 							);
-						return target ? { id: target.id, stageId: target.stageId } : null;
+						return target
+							? {
+									id: target.id,
+									workflowId: sourceWorkflowId,
+									stageId: target.stageId,
+								}
+							: null;
 					}),
 				},
 				approvalWorkflowStage: {
-					findFirst: vi.fn(async () =>
-						sourceWorkflowId ? { workflowId: sourceWorkflowId } : null,
-					),
+					findFirst: vi.fn(async () => {
+						const snapshot = sourceWorkflowId
+							? snapshots.get(sourceWorkflowId)
+							: undefined;
+						const target = snapshot?.stages
+							.flatMap((stage) => stage.assignments)
+							.find(
+								(assignment) => assignment.id === decisionApprovalRequestId,
+							);
+						return sourceWorkflowId && target
+							? { id: target.stageId, workflowId: sourceWorkflowId }
+							: null;
+					}),
 				},
 				approvalWorkflow: {
 					findFirst: vi.fn(async () => {
@@ -2699,15 +2814,21 @@ describe("time correction transaction boundaries", () => {
 				approvalStageAssignment: {
 					findFirst: vi.fn().mockResolvedValue({
 						id: assignment.id,
+						workflowId: snapshot.id,
 						stageId: stage.id,
 					}),
 				},
 				approvalWorkflowStage: {
-					findFirst: vi.fn().mockResolvedValue({ workflowId: snapshot.id }),
+					findFirst: vi
+						.fn()
+						.mockResolvedValue({ id: stage.id, workflowId: snapshot.id }),
 				},
 				approvalWorkflow: {
 					findFirst: vi.fn().mockResolvedValue({
 						id: snapshot.id,
+						organizationId: snapshot.organizationId,
+						workflowType: snapshot.workflowType,
+						sourceType: snapshot.sourceType,
 						sourceId: snapshot.sourceId,
 						requesterEmployeeId: snapshot.requesterEmployeeId,
 						status: snapshot.status,

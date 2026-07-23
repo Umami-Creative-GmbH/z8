@@ -1,7 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { Cause, Effect, Exit, Option } from "effect";
 import { db } from "@/db";
-import { approvalRequest } from "@/db/schema";
+import { approvalRequest, approvalStageAssignment } from "@/db/schema";
 import type {
 	ApprovalActionOptions,
 	ApprovalTypeHandler,
@@ -79,7 +79,7 @@ export async function decideApprovalInboxItemFromRequest({
 		throw new Error(`Unsupported approval type: ${request.entityType}`);
 	}
 
-	if (request.status !== "pending") {
+	if (request.status !== "pending" && request.entityType !== "time_entry") {
 		throw new Error(`Request is already ${request.status}`);
 	}
 
@@ -175,7 +175,7 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 				};
 			}
 
-			if (request.status !== "pending") {
+			if (request.status !== "pending" && request.entityType !== "time_entry") {
 				return {
 					status: "failed" as const,
 					failure: {
@@ -380,11 +380,20 @@ async function loadDecisionRequest(
 	});
 
 	if (!request) {
-		throw new NotFoundError({
-			message: "Approval not found",
-			entityType: "approval_request",
-			entityId: approvalId,
+		const assignment = await db.query.approvalStageAssignment.findFirst({
+			where: and(
+				eq(approvalStageAssignment.id, approvalId),
+				eq(approvalStageAssignment.organizationId, organizationId),
+			),
+			with: { workflow: true, stage: true },
 		});
+		const canonical = toPersistedCanonicalDecisionRequest(
+			assignment,
+			approvalId,
+			organizationId,
+		);
+		if (canonical) return canonical;
+		throw approvalNotFound(approvalId);
 	}
 
 	return toPersistedDecisionRequest(request);
@@ -407,13 +416,119 @@ async function loadDecisionRequests(
 	const requestsById = new Map(
 		requests.map((request) => [request.id, request]),
 	);
+	const missingIds = approvalIds.filter(
+		(approvalId) => !requestsById.has(approvalId),
+	);
+	const assignments =
+		missingIds.length === 0
+			? []
+			: await db.query.approvalStageAssignment.findMany({
+					where: and(
+						inArray(approvalStageAssignment.id, missingIds),
+						eq(approvalStageAssignment.organizationId, organizationId),
+					),
+					with: { workflow: true, stage: true },
+				});
+	const assignmentsById = new Map(
+		assignments.flatMap((assignment) => {
+			const decision = toPersistedCanonicalDecisionRequest(
+				assignment,
+				assignment.id,
+				organizationId,
+			);
+			return decision ? [[decision.id, decision] as const] : [];
+		}),
+	);
 
 	return approvalIds
-		.map((approvalId) => requestsById.get(approvalId))
-		.filter((request): request is NonNullable<typeof request> =>
+		.map((approvalId) => {
+			const request = requestsById.get(approvalId);
+			return request
+				? toPersistedDecisionRequest(request)
+				: assignmentsById.get(approvalId);
+		})
+		.filter((request): request is PersistedApprovalRequestForDecision =>
 			Boolean(request),
-		)
-		.map(toPersistedDecisionRequest);
+		);
+}
+
+function approvalNotFound(approvalId: string): NotFoundError {
+	return new NotFoundError({
+		message: "Approval not found",
+		entityType: "approval_request",
+		entityId: approvalId,
+	});
+}
+
+function toPersistedCanonicalDecisionRequest(
+	assignment:
+		| {
+				id: string;
+				organizationId: string;
+				workflowId: string;
+				stageId: string;
+				approverEmployeeId: string;
+				status: string;
+				workflow: {
+					id: string;
+					organizationId: string;
+					workflowType: string;
+					sourceType: string;
+					sourceId: string;
+					requesterEmployeeId: string | null;
+					status: string;
+					currentStageOrder: number | null;
+				} | null;
+				stage: {
+					id: string;
+					organizationId: string;
+					workflowId: string;
+					sequence: number;
+					status: string;
+				} | null;
+		  }
+		| null
+		| undefined,
+	approvalId: string,
+	organizationId: string,
+): PersistedApprovalRequestForDecision | null {
+	const workflow = assignment?.workflow;
+	const stage = assignment?.stage;
+	const supportedWorkflow =
+		workflow?.workflowType === "manual_time_submission" ||
+		workflow?.workflowType === "policy_clock_out" ||
+		workflow?.workflowType === "time_correction";
+	if (
+		!assignment ||
+		!workflow ||
+		!stage ||
+		assignment.id !== approvalId ||
+		assignment.organizationId !== organizationId ||
+		assignment.workflowId !== workflow.id ||
+		assignment.stageId !== stage.id ||
+		workflow.organizationId !== organizationId ||
+		stage.organizationId !== organizationId ||
+		stage.workflowId !== workflow.id ||
+		workflow.sourceType !== "time_entry" ||
+		!workflow.sourceId ||
+		!workflow.requesterEmployeeId ||
+		!supportedWorkflow ||
+		assignment.status !== "pending" ||
+		stage.status !== "pending" ||
+		workflow.status !== "pending" ||
+		stage.sequence !== workflow.currentStageOrder
+	) {
+		return null;
+	}
+	return {
+		id: assignment.id,
+		entityType: "time_entry",
+		entityId: workflow.sourceId,
+		organizationId,
+		approverId: assignment.approverEmployeeId,
+		requesterEmployeeId: workflow.requesterEmployeeId,
+		status: "pending",
+	};
 }
 
 function toPersistedDecisionRequest(request: {

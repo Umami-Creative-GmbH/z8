@@ -4,10 +4,9 @@ import { and, eq, isNull } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { approvalRequest, timeEntry, workPeriod } from "@/db/schema";
-import { parseOrdinaryWorkPeriodWorkflowPayload } from "@/lib/approvals/domain-adapters/work-period-contract";
-import { decideTimeCorrectionWithStableTargetEffect } from "@/lib/approvals/server/time-correction-approvals";
+import { timeEntry, workPeriod } from "@/db/schema";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
+import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { resolveWorkPeriodSplit } from "@/lib/time-tracking/split-work-period";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
@@ -16,9 +15,11 @@ import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import { createTimeEntry, validateProjectAssignment } from "./entry-helpers";
 import { logger } from "./shared";
 
-export async function approveWorkPeriod(
-	workPeriodId: string,
-): Promise<ServerActionResult<{ workPeriodId: string }>> {
+export async function approveWorkPeriod(input: {
+	workPeriodId: string;
+	approvalRequestId: string;
+}): Promise<ServerActionResult<{ workPeriodId: string }>> {
+	const { workPeriodId, approvalRequestId } = input;
 	const session = await getCurrentSession();
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -56,43 +57,26 @@ export async function approveWorkPeriod(
 		});
 
 		if (memberRecord?.role !== "admin" && memberRecord?.role !== "owner") {
-			return { success: false, error: "Only admins and owners can approve time entries" };
+			return {
+				success: false,
+				error: "Only admins and owners can approve time entries",
+			};
 		}
 
 		if (selectedWorkPeriod.approvalStatus !== "pending") {
-			return { success: false, error: "Only pending work periods can be approved" };
+			return {
+				success: false,
+				error: "Only pending work periods can be approved",
+			};
 		}
 
-		const requests = await db.query.approvalRequest.findMany({
-			where: and(
-				eq(approvalRequest.organizationId, selectedWorkPeriod.organizationId),
-				eq(approvalRequest.entityType, "time_entry"),
-				eq(approvalRequest.entityId, selectedWorkPeriod.id),
-				eq(approvalRequest.status, "pending"),
-			),
-			limit: 2,
-		});
-		const request = requests[0];
-		if (requests.length !== 1 || !request) {
-			return { success: false, error: "Only pending work periods can be approved" };
-		}
-		try {
-			parseOrdinaryWorkPeriodWorkflowPayload({
-				timeRequest:
-					request.metadata && typeof request.metadata === "object"
-						? (request.metadata as Record<string, unknown>).timeRequest
-						: undefined,
-			});
-		} catch {
-			return { success: false, error: "Only pending work periods can be approved" };
-		}
 		const dbService: ApprovalDbService = {
 			db,
 			query: <T>(_name: string, operation: () => Promise<T>) =>
 				Effect.promise(operation),
 		};
 		await Effect.runPromise(
-			decideTimeCorrectionWithStableTargetEffect(
+			decideOrdinaryWorkPeriodWithStableTargetEffect(
 				dbService,
 				{
 					...currentEmployee,
@@ -103,11 +87,13 @@ export async function approveWorkPeriod(
 						image: session.user.image ?? null,
 					},
 				},
-				request.id,
-				"approve",
-				undefined,
 				{
-					approvalRequestId: request.id,
+					approvalRequestId,
+					workPeriodId: selectedWorkPeriod.id,
+					decision: { kind: "approve", reason: null },
+				},
+				{
+					approvalRequestId,
 					allowOrganizationWideApprover: true,
 				},
 			),
@@ -116,7 +102,10 @@ export async function approveWorkPeriod(
 		return { success: true, data: { workPeriodId: selectedWorkPeriod.id } };
 	} catch (error) {
 		logger.error({ error, workPeriodId }, "Approve work period error");
-		return { success: false, error: "Failed to approve work period. Please try again." };
+		return {
+			success: false,
+			error: "Failed to approve work period. Please try again.",
+		};
 	}
 }
 
@@ -153,11 +142,17 @@ export async function updateWorkPeriodNotes(
 		}
 
 		if (selectedWorkPeriod.employeeId !== currentEmployee.id) {
-			return { success: false, error: "You can only update your own work periods" };
+			return {
+				success: false,
+				error: "You can only update your own work periods",
+			};
 		}
 
 		if (!selectedWorkPeriod.clockOutId) {
-			return { success: false, error: "Cannot add notes to an active work period" };
+			return {
+				success: false,
+				error: "Cannot add notes to an active work period",
+			};
 		}
 
 		await db
@@ -167,7 +162,10 @@ export async function updateWorkPeriodNotes(
 		return { success: true, data: { workPeriodId } };
 	} catch (error) {
 		logger.error({ error }, "Update work period notes error");
-		return { success: false, error: "Failed to update notes. Please try again." };
+		return {
+			success: false,
+			error: "Failed to update notes. Please try again.",
+		};
 	}
 }
 
@@ -185,7 +183,9 @@ export async function splitWorkPeriod(
 	beforeNotes?: string,
 	afterNotes?: string,
 	disambiguation?: "earlier" | "later",
-): Promise<ServerActionResult<{ firstPeriodId: string; secondPeriodId: string }>> {
+): Promise<
+	ServerActionResult<{ firstPeriodId: string; secondPeriodId: string }>
+> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -216,7 +216,10 @@ export async function splitWorkPeriod(
 		}
 
 		if (selectedWorkPeriod.employeeId !== currentEmployee.id) {
-			return { success: false, error: "You can only split your own work periods" };
+			return {
+				success: false,
+				error: "You can only split your own work periods",
+			};
 		}
 
 		if (!selectedWorkPeriod.endTime || !selectedWorkPeriod.clockOutId) {
@@ -337,11 +340,17 @@ export async function splitWorkPeriod(
 
 		return {
 			success: true,
-			data: { firstPeriodId: selectedWorkPeriod.id, secondPeriodId: secondWorkPeriod.id },
+			data: {
+				firstPeriodId: selectedWorkPeriod.id,
+				secondPeriodId: secondWorkPeriod.id,
+			},
 		};
 	} catch (error) {
 		logger.error({ error }, "Split work period error");
-		return { success: false, error: "Failed to split work period. Please try again." };
+		return {
+			success: false,
+			error: "Failed to split work period. Please try again.",
+		};
 	}
 }
 
@@ -371,21 +380,29 @@ export async function updateTimeEntryNotes(
 		}
 
 		if (selectedEntry.employeeId !== currentEmployee.id) {
-			return { success: false, error: "You can only update your own time entries" };
+			return {
+				success: false,
+				error: "You can only update your own time entries",
+			};
 		}
 
 		await db.update(timeEntry).set({ notes }).where(eq(timeEntry.id, entryId));
 		return { success: true, data: { entryId } };
 	} catch (error) {
 		logger.error({ error }, "Update time entry notes error");
-		return { success: false, error: "Failed to update notes. Please try again." };
+		return {
+			success: false,
+			error: "Failed to update notes. Please try again.",
+		};
 	}
 }
 
 export async function updateWorkPeriodProject(
 	workPeriodId: string,
 	projectId: string | null,
-): Promise<ServerActionResult<{ workPeriodId: string; projectId: string | null }>> {
+): Promise<
+	ServerActionResult<{ workPeriodId: string; projectId: string | null }>
+> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -415,7 +432,10 @@ export async function updateWorkPeriodProject(
 		}
 
 		if (selectedWorkPeriod.employeeId !== currentEmployee.id) {
-			return { success: false, error: "You can only update your own work periods" };
+			return {
+				success: false,
+				error: "You can only update your own work periods",
+			};
 		}
 
 		if (projectId) {

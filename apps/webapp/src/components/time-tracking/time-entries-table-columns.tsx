@@ -22,6 +22,7 @@ export interface WorkPeriodData {
 	endTime: Date | null;
 	durationMinutes: number | null;
 	approvalStatus: "pending" | "approved" | "rejected";
+	approvalRequestId: string | null;
 	clockIn: TimeEntry;
 	clockOut: TimeEntry | undefined;
 	surchargeMinutes?: number | null;
@@ -72,12 +73,15 @@ export function getTimeEntriesColumns({
 			cell: ({ row }) => (
 				<div className="flex flex-col gap-1">
 					<span>
-						{formatCapturedOffsetInstant(instantFromDate(row.original.startTime), {
-							locale,
-							timeFormat,
-							offsetMinutes: row.original.clockIn.utcOffsetMinutes,
-							preset: "time",
-						})}
+						{formatCapturedOffsetInstant(
+							instantFromDate(row.original.startTime),
+							{
+								locale,
+								timeFormat,
+								offsetMinutes: row.original.clockIn.utcOffsetMinutes,
+								preset: "time",
+							},
+						)}
 					</span>
 					{row.original.clockIn?.isSuperseded ? (
 						<Badge variant="outline" className="w-fit text-xs">
@@ -99,18 +103,25 @@ export function getTimeEntriesColumns({
 			),
 			cell: ({ row }) => {
 				if (!row.original.endTime) {
-					return <Badge variant="secondary">{t("timeTracking.table.active", "Active")}</Badge>;
+					return (
+						<Badge variant="secondary">
+							{t("timeTracking.table.active", "Active")}
+						</Badge>
+					);
 				}
 
 				return (
 					<div className="flex flex-col gap-1">
 						<span>
-							{formatCapturedOffsetInstant(instantFromDate(row.original.endTime), {
-								locale,
-								timeFormat,
-								offsetMinutes: row.original.clockOut!.utcOffsetMinutes,
-								preset: "time",
-							})}
+							{formatCapturedOffsetInstant(
+								instantFromDate(row.original.endTime),
+								{
+									locale,
+									timeFormat,
+									offsetMinutes: row.original.clockOut!.utcOffsetMinutes,
+									preset: "time",
+								},
+							)}
 						</span>
 						{row.original.clockOut?.isSuperseded ? (
 							<Badge variant="outline" className="w-fit text-xs">
@@ -149,8 +160,12 @@ export function getTimeEntriesColumns({
 					return null;
 				}
 
-				const isSameDay = isSameDayInTimezone(period.startTime, employeeTimezone);
-				const editAction = isSameDay || hasManager ? renderEditAction(period, isSameDay) : null;
+				const isSameDay = isSameDayInTimezone(
+					period.startTime,
+					employeeTimezone,
+				);
+				const editAction =
+					isSameDay || hasManager ? renderEditAction(period, isSameDay) : null;
 				const adminAction = renderAdminAction?.(period) ?? null;
 
 				if (!editAction && !adminAction) {

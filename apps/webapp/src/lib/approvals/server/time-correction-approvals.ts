@@ -3691,7 +3691,7 @@ export async function executeTimeCorrectionDecisionInTransaction(
 							eq(approvalStageAssignment.id, input.approvalRequestId),
 							eq(approvalStageAssignment.organizationId, input.organizationId),
 						),
-						columns: { id: true, stageId: true },
+						columns: { id: true, workflowId: true, stageId: true },
 					});
 			const assignmentStage = assignmentTarget
 				? await transactionDb.query.approvalWorkflowStage.findFirst({
@@ -3699,7 +3699,7 @@ export async function executeTimeCorrectionDecisionInTransaction(
 							eq(approvalWorkflowStage.id, assignmentTarget.stageId),
 							eq(approvalWorkflowStage.organizationId, input.organizationId),
 						),
-						columns: { workflowId: true },
+						columns: { id: true, workflowId: true },
 					})
 				: null;
 			const canonicalTarget = requestRow
@@ -3711,10 +3711,12 @@ export async function executeTimeCorrectionDecisionInTransaction(
 								assignmentStage?.workflowId ?? input.approvalRequestId,
 							),
 							eq(approvalWorkflow.organizationId, input.organizationId),
-							eq(approvalWorkflow.workflowType, "time_correction"),
 							eq(approvalWorkflow.sourceType, "time_entry"),
 						),
 						columns: {
+							organizationId: true,
+							workflowType: true,
+							sourceType: true,
 							id: true,
 							sourceId: true,
 							requesterEmployeeId: true,
@@ -3725,8 +3727,18 @@ export async function executeTimeCorrectionDecisionInTransaction(
 			if (
 				(!requestRow && !canonicalTarget) ||
 				(requestRow && requestRow.id !== input.approvalRequestId) ||
-				(canonicalTarget && !canonicalTarget.requesterEmployeeId) ||
-				(assignmentTarget && assignmentTarget.id !== input.approvalRequestId)
+				(canonicalTarget &&
+					(canonicalTarget.organizationId !== input.organizationId ||
+						canonicalTarget.sourceType !== "time_entry" ||
+						(canonicalTarget.workflowType !== "time_correction" &&
+							canonicalTarget.workflowType !== "manual_time_submission" &&
+							canonicalTarget.workflowType !== "policy_clock_out") ||
+						!canonicalTarget.requesterEmployeeId)) ||
+				(assignmentTarget &&
+					(assignmentTarget.id !== input.approvalRequestId ||
+						assignmentTarget.workflowId !== assignmentStage?.workflowId ||
+						assignmentTarget.stageId !== assignmentStage?.id ||
+						assignmentTarget.workflowId !== canonicalTarget?.id))
 			) {
 				throw new NotFoundError({
 					message: "Approval not found",
@@ -4153,74 +4165,71 @@ export function decideTimeCorrectionWithStableTargetEffect(
 			>;
 			try {
 				execution = await completeTimeCorrectionDecisionAfterCommit({
-				execute: () =>
-					executeTimeCorrectionDecisionInTransaction({
-						runtime,
-						organizationId: currentEmployee.organizationId,
-						actorEmployeeId: currentEmployee.id,
-						actorUserId: currentEmployee.userId,
-						approvalRequestId,
-						action,
-						reason,
-						query: dbService.query,
-						processLegacy: async (
-							transactionDbService,
-							actor,
-							_transactionBehavior,
-							workPeriodId,
-						) =>
-							await Effect.runPromise(
-								processApprovalWithCurrentEmployee(
-									transactionDbService,
-									actor,
-									"time_entry",
-									workPeriodId,
-									action,
-									reason,
-									action === "approve"
-										? persistApprovedTimeCorrection
-										: (service, entityId, approver, approval) =>
-												persistRejectedTimeCorrection(
-													service,
-													entityId,
-													approver,
-													reason ?? "",
-													approval,
-												),
-									undefined,
-									{ ...options, approvalRequestId, transactional: true },
-									undefined,
-									"existing",
-								).pipe(
-									Effect.provideService(
-										ApprovalAuditLogger,
-										createApprovalAuditLogger(transactionDbService),
-									),
-								) as Effect.Effect<unknown, AnyAppError, never>,
-							),
-						processOrdinary: async ({
-							workPeriodId,
-							kind,
-						}) => {
-							throw new OrdinaryWorkPeriodDecisionDelegation(
+					execute: () =>
+						executeTimeCorrectionDecisionInTransaction({
+							runtime,
+							organizationId: currentEmployee.organizationId,
+							actorEmployeeId: currentEmployee.id,
+							actorUserId: currentEmployee.userId,
+							approvalRequestId,
+							action,
+							reason,
+							query: dbService.query,
+							processLegacy: async (
+								transactionDbService,
+								actor,
+								_transactionBehavior,
 								workPeriodId,
-								kind,
-							);
-						},
-					}),
-				dispatch: (effects) =>
-					dispatchTimeCorrectionDecisionPostCommit({
-						dbService,
-						actor: currentEmployee,
-						approvalRequestId,
-						effects,
-						reason,
-					}),
-				onDispatchError: (error) =>
-					logger.error(
-						{ error, approvalRequestId, action },
-						"Time correction decision after-commit work failed",
-					),
+							) =>
+								await Effect.runPromise(
+									processApprovalWithCurrentEmployee(
+										transactionDbService,
+										actor,
+										"time_entry",
+										workPeriodId,
+										action,
+										reason,
+										action === "approve"
+											? persistApprovedTimeCorrection
+											: (service, entityId, approver, approval) =>
+													persistRejectedTimeCorrection(
+														service,
+														entityId,
+														approver,
+														reason ?? "",
+														approval,
+													),
+										undefined,
+										{ ...options, approvalRequestId, transactional: true },
+										undefined,
+										"existing",
+									).pipe(
+										Effect.provideService(
+											ApprovalAuditLogger,
+											createApprovalAuditLogger(transactionDbService),
+										),
+									) as Effect.Effect<unknown, AnyAppError, never>,
+								),
+							processOrdinary: async ({ workPeriodId, kind }) => {
+								throw new OrdinaryWorkPeriodDecisionDelegation(
+									workPeriodId,
+									kind,
+								);
+							},
+						}),
+					dispatch: (effects) =>
+						dispatchTimeCorrectionDecisionPostCommit({
+							dbService,
+							actor: currentEmployee,
+							approvalRequestId,
+							effects,
+							reason,
+						}),
+					onDispatchError: (error) =>
+						logger.error(
+							{ error, approvalRequestId, action },
+							"Time correction decision after-commit work failed",
+						),
 				});
 			} catch (error) {
 				if (!(error instanceof OrdinaryWorkPeriodDecisionDelegation)) {

@@ -1,6 +1,10 @@
 "use client";
 
-import { IconCalendarEvent, IconCheck, IconDotsVertical } from "@tabler/icons-react";
+import {
+	IconCalendarEvent,
+	IconCheck,
+	IconDotsVertical,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
@@ -24,12 +28,16 @@ import type { TimeFormat } from "@/lib/user-preferences/time-format";
 import { Link, useRouter } from "@/navigation";
 
 const TimeCorrectionDialog = dynamic(
-	() => import("./time-correction-dialog").then((mod) => mod.TimeCorrectionDialog),
+	() =>
+		import("./time-correction-dialog").then((mod) => mod.TimeCorrectionDialog),
 	{ ssr: false },
 );
 
 const ManualTimeEntryDialog = dynamic(
-	() => import("./manual-time-entry-dialog").then((mod) => mod.ManualTimeEntryDialog),
+	() =>
+		import("./manual-time-entry-dialog").then(
+			(mod) => mod.ManualTimeEntryDialog,
+		),
 	{ ssr: false },
 );
 
@@ -53,15 +61,24 @@ export function TimeEntriesTable({
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const { refresh } = useRouter();
-	const [approvingWorkPeriodId, setApprovingWorkPeriodId] = useState<string | null>(null);
+	const [approvingWorkPeriodId, setApprovingWorkPeriodId] = useState<
+		string | null
+	>(null);
 
 	const handleApproveWorkPeriod = async (period: WorkPeriodData) => {
+		if (!period.approvalRequestId) return;
 		setApprovingWorkPeriodId(period.id);
-		const result = await approveWorkPeriod(period.id);
+		const result = await approveWorkPeriod({
+			workPeriodId: period.id,
+			approvalRequestId: period.approvalRequestId,
+		});
 		setApprovingWorkPeriodId(null);
 
 		if (!result.success) {
-			toast.error(result.error || t("timeTracking.table.approveFailed", "Failed to approve entry"));
+			toast.error(
+				result.error ||
+					t("timeTracking.table.approveFailed", "Failed to approve entry"),
+			);
 			return;
 		}
 
@@ -137,7 +154,7 @@ function TimeEntryAdminMenu({
 }) {
 	const { t } = useTranslate();
 
-	if (period.approvalStatus !== "pending") {
+	if (period.approvalStatus !== "pending" || !period.approvalRequestId) {
 		return null;
 	}
 

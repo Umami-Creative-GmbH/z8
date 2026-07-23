@@ -2,7 +2,10 @@
 
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { getTimeEntriesColumns, type WorkPeriodData } from "./time-entries-table-columns";
+import {
+	getTimeEntriesColumns,
+	type WorkPeriodData,
+} from "./time-entries-table-columns";
 
 const t = ((_key: string, fallback: string) => fallback) as never;
 
@@ -12,8 +15,19 @@ const workPeriod: WorkPeriodData = {
 	endTime: new Date("2026-05-03T14:30:00.000Z"),
 	durationMinutes: 145,
 	approvalStatus: "approved",
-	clockIn: { id: "clock-in-1", isSuperseded: false, notes: null, utcOffsetMinutes: 120 },
-	clockOut: { id: "clock-out-1", isSuperseded: false, notes: null, utcOffsetMinutes: -240 },
+	approvalRequestId: null,
+	clockIn: {
+		id: "clock-in-1",
+		isSuperseded: false,
+		notes: null,
+		utcOffsetMinutes: 120,
+	},
+	clockOut: {
+		id: "clock-out-1",
+		isSuperseded: false,
+		notes: null,
+		utcOffsetMinutes: -240,
+	},
 };
 
 describe("getTimeEntriesColumns", () => {
@@ -32,8 +46,12 @@ describe("getTimeEntriesColumns", () => {
 
 		render(
 			<>
-				{typeof clockIn?.cell === "function" ? clockIn.cell({ row } as never) : null}
-				{typeof clockOut?.cell === "function" ? clockOut.cell({ row } as never) : null}
+				{typeof clockIn?.cell === "function"
+					? clockIn.cell({ row } as never)
+					: null}
+				{typeof clockOut?.cell === "function"
+					? clockOut.cell({ row } as never)
+					: null}
 			</>,
 		);
 
@@ -55,8 +73,12 @@ describe("getTimeEntriesColumns", () => {
 
 		render(
 			<>
-				{typeof clockIn?.header === "function" ? clockIn.header({} as never) : null}
-				{typeof clockOut?.header === "function" ? clockOut.header({} as never) : null}
+				{typeof clockIn?.header === "function"
+					? clockIn.header({} as never)
+					: null}
+				{typeof clockOut?.header === "function"
+					? clockOut.header({} as never)
+					: null}
 			</>,
 		);
 

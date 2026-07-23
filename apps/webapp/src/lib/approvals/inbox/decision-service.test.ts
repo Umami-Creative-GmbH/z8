@@ -1,5 +1,5 @@
 import { Effect, Exit } from "effect";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -7,11 +7,19 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 
-const { approvalRequestFindFirstMock, approvalRequestFindManyMock } =
-	vi.hoisted(() => ({
-		approvalRequestFindFirstMock: vi.fn(),
-		approvalRequestFindManyMock: vi.fn(),
-	}));
+const {
+	approvalRequestFindFirstMock,
+	approvalRequestFindManyMock,
+	assignmentFindFirstMock,
+	assignmentFindManyMock,
+	completeHandlerApproveMock,
+} = vi.hoisted(() => ({
+	approvalRequestFindFirstMock: vi.fn(),
+	approvalRequestFindManyMock: vi.fn(),
+	assignmentFindFirstMock: vi.fn(),
+	assignmentFindManyMock: vi.fn(),
+	completeHandlerApproveMock: vi.fn(),
+}));
 
 vi.mock("@/db", () => ({
 	db: {
@@ -20,8 +28,25 @@ vi.mock("@/db", () => ({
 				findFirst: approvalRequestFindFirstMock,
 				findMany: approvalRequestFindManyMock,
 			},
+			approvalStageAssignment: {
+				findFirst: assignmentFindFirstMock,
+				findMany: assignmentFindManyMock,
+			},
 		},
 	},
+}));
+
+vi.mock("@/lib/approvals/inbox/source-adapters", () => ({
+	isSupportedInboxType: (type: string) =>
+		type === "time_entry" || type === "absence_entry",
+	getSupportedInboxHandler: (type: string) =>
+		type === "time_entry"
+			? {
+					type: "time_entry",
+					approve: completeHandlerApproveMock,
+					reject: vi.fn(() => Effect.void),
+				}
+			: null,
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -38,6 +63,60 @@ import {
 } from "@/lib/approvals/inbox/decision-service";
 
 describe("approval inbox decision service", () => {
+	beforeEach(() => {
+		approvalRequestFindFirstMock.mockReset();
+		approvalRequestFindManyMock.mockReset();
+		assignmentFindFirstMock.mockReset();
+		assignmentFindManyMock.mockReset().mockResolvedValue([]);
+		completeHandlerApproveMock.mockClear();
+		completeHandlerApproveMock.mockReturnValue(Effect.void);
+	});
+
+	it("loads an exact active complete-mode assignment as a time-entry decision target", async () => {
+		approvalRequestFindFirstMock.mockResolvedValue(null);
+		assignmentFindFirstMock.mockResolvedValue({
+			id: "assignment-1",
+			organizationId: "org-1",
+			workflowId: "workflow-1",
+			stageId: "stage-1",
+			approverEmployeeId: "manager-1",
+			status: "pending",
+			workflow: {
+				id: "workflow-1",
+				organizationId: "org-1",
+				workflowType: "manual_time_submission",
+				sourceType: "time_entry",
+				sourceId: "period-1",
+				requesterEmployeeId: "employee-1",
+				status: "pending",
+				currentStageOrder: 2,
+			},
+			stage: {
+				id: "stage-1",
+				organizationId: "org-1",
+				workflowId: "workflow-1",
+				sequence: 2,
+				status: "pending",
+			},
+		});
+
+		await expect(
+			approveApprovalInboxItem({
+				approvalId: "assignment-1",
+				actorEmployeeId: "manager-1",
+				organizationId: "org-1",
+			}),
+		).resolves.toEqual({
+			id: "assignment-1",
+			type: "time_entry",
+			status: "approved",
+		});
+		expect(completeHandlerApproveMock).toHaveBeenCalledWith(
+			"period-1",
+			"manager-1",
+			{ approvalRequestId: "assignment-1" },
+		);
+	});
 	it("returns the same generic not-found error for missing and inaccessible single IDs", async () => {
 		approvalRequestFindFirstMock
 			.mockResolvedValueOnce(null)

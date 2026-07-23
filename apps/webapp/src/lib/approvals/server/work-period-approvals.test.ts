@@ -3,7 +3,6 @@ import { getTableName } from "drizzle-orm";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
-import { ApprovalAuditLogger } from "../infrastructure/audit-logger";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 
@@ -29,12 +28,10 @@ vi.mock("../domain-adapters/work-period-legacy-state", () => ({
 }));
 
 const {
-	approveWorkPeriodWithCurrentApproverEffect,
 	executeOrdinaryWorkPeriodDecisionInTransaction,
 	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 	finalizeOrdinaryWorkPeriodTerminalInTransaction,
 	finalizeAutoCompletedWorkPeriodApprovalEffect,
-	rejectWorkPeriodWithCurrentApproverEffect,
 } = await import("./work-period-approvals");
 
 describe("stable ordinary work-period decisions", () => {
@@ -43,12 +40,42 @@ describe("stable ordinary work-period decisions", () => {
 	});
 
 	it.each([
-		{ mode: "canonical" as const, targetId: "approval-1", compatibility: true, replay: false },
-		{ mode: "complete" as const, targetId: "assignment-1", compatibility: false, replay: false },
-		{ mode: "canonical" as const, targetId: "approval-1", compatibility: true, replay: true },
-	])(
-		"derives the ordinary kind and routes the exact $mode target",
-		async ({ mode, targetId, compatibility, replay }) => {
+		{
+			mode: "canonical" as const,
+			targetId: "approval-1",
+			compatibility: true,
+			replay: false,
+		},
+		{
+			mode: "complete" as const,
+			targetId: "assignment-1",
+			compatibility: false,
+			replay: false,
+		},
+		{
+			mode: "canonical" as const,
+			targetId: "approval-1",
+			compatibility: true,
+			replay: true,
+		},
+		{
+			mode: "shadow" as const,
+			targetId: "approval-1",
+			compatibility: true,
+			replay: true,
+		},
+		{
+			mode: "ready" as const,
+			targetId: "approval-1",
+			compatibility: true,
+			replay: true,
+		},
+	])("derives the ordinary kind and routes the exact $mode target", async ({
+		mode,
+		targetId,
+		compatibility,
+		replay,
+	}) => {
 		const executeInTransactionWithDisposition = vi.fn().mockResolvedValue({
 			disposition: replay ? "replayed" : "executed",
 			result: {
@@ -95,26 +122,44 @@ describe("stable ordinary work-period decisions", () => {
 					findMany: vi.fn().mockResolvedValue([currentApprover]),
 				},
 				approvalRequest: {
-					findFirst: vi.fn().mockResolvedValue(compatibility ? {
-						...approval,
-						status: replay ? "approved" : "pending",
-						approvedAt: replay ? new Date("2026-07-15T10:00:00Z") : null,
-						metadata: {
-							timeRequest: { kind: "manual_time_submission" },
-							workflow: { id: "workflow-1", organizationId: "org-1" },
-							stage: { id: "stage-1", sequence: 1, assignmentId: "assignment-1" },
-						},
-					} : null),
+					findFirst: vi.fn().mockResolvedValue(
+						compatibility
+							? {
+									...approval,
+									status: replay ? "approved" : "pending",
+									approvedAt: replay ? new Date("2026-07-15T10:00:00Z") : null,
+									metadata: {
+										timeRequest: { kind: "manual_time_submission" },
+										workflow: { id: "workflow-1", organizationId: "org-1" },
+										stage: {
+											id: "stage-1",
+											sequence: 1,
+											assignmentId: "assignment-1",
+										},
+									},
+								}
+							: null,
+					),
 				},
 				approvalStageAssignment: {
 					findFirst: vi.fn().mockResolvedValue(
-						compatibility ? null : { id: "assignment-1", stageId: "stage-1" },
+						compatibility
+							? null
+							: {
+									id: "assignment-1",
+									workflowId: "workflow-1",
+									stageId: "stage-1",
+								},
 					),
 				},
 				approvalWorkflowStage: {
-					findFirst: vi.fn().mockResolvedValue(
-						compatibility ? null : { workflowId: "workflow-1" },
-					),
+					findFirst: vi
+						.fn()
+						.mockResolvedValue(
+							compatibility
+								? null
+								: { id: "stage-1", workflowId: "workflow-1" },
+						),
 				},
 				approvalWorkflow: {
 					findFirst: vi.fn().mockResolvedValue(
@@ -128,7 +173,9 @@ describe("stable ordinary work-period decisions", () => {
 									sourceId: "period-1",
 									requesterEmployeeId: "employee-1",
 									status: "pending",
-									contextSnapshot: { timeRequest: { kind: "manual_time_submission" } },
+									contextSnapshot: {
+										timeRequest: { kind: "manual_time_submission" },
+									},
 								},
 					),
 				},
@@ -171,18 +218,22 @@ describe("stable ordinary work-period decisions", () => {
 			decision: { kind: "approve", reason: null },
 		});
 
-		expect(executeInTransactionWithDisposition).toHaveBeenCalledWith(
-			expect.anything(),
-			expect.objectContaining({
-				organizationId: "org-1",
-				workflowId: "workflow-1",
-				command: {
-					type: "approve",
-					stageId: "stage-1",
-					assignmentId: "assignment-1",
-				},
-			}),
-		);
+		if (replay && (mode === "shadow" || mode === "ready")) {
+			expect(executeInTransactionWithDisposition).not.toHaveBeenCalled();
+		} else {
+			expect(executeInTransactionWithDisposition).toHaveBeenCalledWith(
+				expect.anything(),
+				expect.objectContaining({
+					organizationId: "org-1",
+					workflowId: "workflow-1",
+					command: {
+						type: "approve",
+						stageId: "stage-1",
+						assignmentId: "assignment-1",
+					},
+				}),
+			);
+		}
 		expect(executed.result.kind).toBe("manual_time_submission");
 		if (replay) {
 			expect(executed.postCommit).toBeNull();
@@ -193,8 +244,7 @@ describe("stable ordinary work-period decisions", () => {
 				workPeriodId: "period-1",
 			});
 		}
-		},
-	);
+	});
 
 	it("keeps legacy decisions authoritative and returns terminal dispatch work", async () => {
 		const dbService = createDecisionDbService({
@@ -259,85 +309,91 @@ describe("stable ordinary work-period decisions", () => {
 		).not.toHaveBeenCalled();
 	});
 
-	it.each(["shadow", "ready"] as const)(
-		"mirrors a %s legacy terminal decision atomically",
-		async (mode) => {
-			const dbService = createDecisionDbService();
-			const database = dbService.db as unknown as {
-				query: Record<string, Record<string, ReturnType<typeof vi.fn>>>;
-			};
-			database.query.employee.findMany = vi
-				.fn()
-				.mockResolvedValue([currentApprover]);
-			database.query.workPeriod.findFirst.mockResolvedValue(period);
-			legacyCaptureMocks.capture.mockImplementation(async (input) => ({
+	it.each([
+		"shadow",
+		"ready",
+	] as const)("mirrors a %s legacy terminal decision atomically", async (mode) => {
+		const dbService = createDecisionDbService();
+		const database = dbService.db as unknown as {
+			query: Record<string, Record<string, ReturnType<typeof vi.fn>>>;
+		};
+		database.query.employee.findMany = vi
+			.fn()
+			.mockResolvedValue([currentApprover]);
+		database.query.workPeriod.findFirst.mockResolvedValue(period);
+		legacyCaptureMocks.capture.mockImplementation(async (input) => ({
+			organizationId: "org-1",
+			source: {
 				organizationId: "org-1",
-				source: {
-					organizationId: "org-1",
-					workflowType: "manual_time_submission",
-					sourceType: "time_entry",
-					sourceId: "period-1",
-				},
-				approvalRequest: null,
-				chain: null,
-				chainRows: [],
-				sourceSnapshot: { timeRequest: { kind: "manual_time_submission" } },
-				capturedAt: parseInstant(
-					input.expectedRequestStatus === "pending"
-						? "2026-07-15T09:59:00Z"
-						: "2026-07-15T10:00:00Z",
-				),
-			}));
-			const mirrorLegacyToCanonical = vi.fn().mockResolvedValue({
-				snapshot: { id: "workflow-1" },
-			});
-			const compatibilityWriter = {
-				withWriteGate: vi.fn().mockReturnValue({
-					withWriteGate: vi.fn().mockReturnThis(),
-					mirrorLegacyToCanonical,
-				}),
+				workflowType: "manual_time_submission",
+				sourceType: "time_entry",
+				sourceId: "period-1",
+			},
+			approvalRequest: null,
+			chain: null,
+			chainRows: [],
+			sourceSnapshot: { timeRequest: { kind: "manual_time_submission" } },
+			capturedAt: parseInstant(
+				input.expectedRequestStatus === "pending"
+					? "2026-07-15T09:59:00Z"
+					: "2026-07-15T10:00:00Z",
+			),
+		}));
+		const mirrorLegacyToCanonical = vi.fn().mockResolvedValue({
+			snapshot: { id: "workflow-1" },
+		});
+		const compatibilityWriter = {
+			withWriteGate: vi.fn().mockReturnValue({
+				withWriteGate: vi.fn().mockReturnThis(),
 				mirrorLegacyToCanonical,
-			};
-			const context = {
-				dbService: { db: dbService.db },
-				writeGate: {
-					acquire: vi.fn().mockResolvedValue({ mode }),
-				},
-				compatibilityWriter,
-				repository: {
-					loadSnapshot: vi.fn().mockResolvedValue({ version: 2 }),
-				},
-			};
-			const runtime = {
-				repository: {
-					withTransaction: vi.fn(async (run) => run(context)),
-				},
-				transitionEngine: {
-					executeInTransactionWithDisposition: vi.fn(),
-				},
-			};
+			}),
+			mirrorLegacyToCanonical,
+		};
+		const context = {
+			dbService: { db: dbService.db },
+			writeGate: {
+				acquire: vi.fn().mockResolvedValue({ mode }),
+			},
+			compatibilityWriter,
+			repository: {
+				loadSnapshot: vi.fn().mockResolvedValue({ version: 2 }),
+			},
+		};
+		const runtime = {
+			repository: {
+				withTransaction: vi.fn(async (run) => run(context)),
+			},
+			transitionEngine: {
+				executeInTransactionWithDisposition: vi.fn(),
+			},
+		};
 
-			const executed = await executeOrdinaryWorkPeriodDecisionInTransaction({
-				dbService,
-				runtime: runtime as never,
-				organizationId: "org-1",
-				approvalRequestId: "approval-1",
-				workPeriodId: "period-1",
-				actor: currentApprover,
-				decision: { kind: "approve", reason: null },
-			});
+		const executed = await executeOrdinaryWorkPeriodDecisionInTransaction({
+			dbService,
+			runtime: runtime as never,
+			organizationId: "org-1",
+			approvalRequestId: "approval-1",
+			workPeriodId: "period-1",
+			actor: currentApprover,
+			decision: { kind: "approve", reason: null },
+		});
 
-			expect(legacyCaptureMocks.capture).toHaveBeenCalledTimes(2);
-			expect(mirrorLegacyToCanonical).toHaveBeenCalledOnce();
-			expect(executed.postCommit?.disposition).toBe("dispatch");
-		},
-	);
+		expect(legacyCaptureMocks.capture).toHaveBeenCalledTimes(2);
+		expect(mirrorLegacyToCanonical).toHaveBeenCalledOnce();
+		expect(executed.postCommit?.disposition).toBe("dispatch");
+	});
 });
 
 const source = readFileSync(
 	"src/lib/approvals/server/work-period-approvals.ts",
 	"utf8",
 );
+
+it("does not export ordinary decision APIs that accept a caller-supplied kind", () => {
+	expect(source).not.toMatch(
+		/export function (?:approveWorkPeriodWithCurrentApproverEffect|rejectWorkPeriodWithCurrentApproverEffect|decideWorkPeriodWithCurrentApproverInTransaction)/,
+	);
+});
 
 const currentApprover: CurrentApprover = {
 	id: "manager-1",
@@ -632,9 +688,10 @@ function createDecisionDbService(options?: {
 			},
 			workPeriod: {
 				findFirst: vi.fn().mockResolvedValue({
-					approvalWorkflowId: options?.autoCompleted || options?.unlinked
-						? null
-						: period.approvalWorkflowId,
+					approvalWorkflowId:
+						options?.autoCompleted || options?.unlinked
+							? null
+							: period.approvalWorkflowId,
 				}),
 			},
 		},
@@ -695,17 +752,6 @@ function createDecisionDbService(options?: {
 		updateSets: Record<string, unknown>[];
 		insertedValues: Record<string, unknown>[];
 	};
-}
-
-function runDecision(effect: Effect.Effect<unknown, unknown, unknown>) {
-	return Effect.runPromise(
-		effect.pipe(
-			Effect.provideService(ApprovalAuditLogger, {
-				log: vi.fn(() => Effect.void),
-				logBatch: vi.fn(() => Effect.void),
-			}),
-		),
-	);
 }
 
 describe("ordinary work-period approval finalizer", () => {
@@ -1341,109 +1387,6 @@ describe("ordinary work-period approval finalizer", () => {
 		await expect(finalize(dbService)).rejects.toThrow(
 			"Ordinary work-period finalization conflict",
 		);
-	});
-
-	it("approves the source period and canonical record and records one decision", async () => {
-		const dbService = createDecisionDbService();
-
-		await runDecision(
-			approveWorkPeriodWithCurrentApproverEffect(
-				dbService,
-				currentApprover,
-				"period-1",
-				"manual_time_submission",
-				{ approvalRequestId: "approval-1" },
-			),
-		);
-
-		expect(dbService.updateSets).toEqual(
-			expect.arrayContaining([
-				expect.objectContaining({ status: "approved" }),
-				expect.objectContaining({
-					approvalStatus: "approved",
-					pendingChanges: null,
-				}),
-				expect.objectContaining({
-					approvalState: "approved",
-					updatedBy: "manager-user-1",
-				}),
-			]),
-		);
-		expect(dbService.insertedValues).toContainEqual(
-			expect.objectContaining({
-				organizationId: "org-1",
-				recordId: "record-1",
-				actorEmployeeId: "manager-1",
-				action: "approved",
-			}),
-		);
-		expect(notificationMocks.onManualEntryApproved).toHaveBeenCalledOnce();
-		expect(notificationMocks.onClockOutApproved).not.toHaveBeenCalled();
-		expect(
-			vi.mocked(dbService.db.transaction).mock.invocationCallOrder[0],
-		).toBeLessThan(
-			notificationMocks.onManualEntryApproved.mock.invocationCallOrder[0],
-		);
-	});
-
-	it("rejects the source period and canonical record with the decision reason", async () => {
-		const dbService = createDecisionDbService({ kind: "policy_clock_out" });
-
-		await runDecision(
-			rejectWorkPeriodWithCurrentApproverEffect(
-				dbService,
-				currentApprover,
-				"period-1",
-				"policy_clock_out",
-				"Outside scheduled hours",
-				{ approvalRequestId: "approval-1" },
-			),
-		);
-
-		expect(dbService.updateSets).toEqual(
-			expect.arrayContaining([
-				expect.objectContaining({
-					status: "rejected",
-					rejectionReason: "Outside scheduled hours",
-				}),
-				expect.objectContaining({
-					approvalStatus: "rejected",
-					pendingChanges: null,
-				}),
-				expect.objectContaining({
-					approvalState: "rejected",
-					updatedBy: "manager-user-1",
-				}),
-			]),
-		);
-		expect(dbService.insertedValues[0]).toMatchObject({
-			action: "rejected",
-			reason: "Outside scheduled hours",
-		});
-		expect(notificationMocks.onClockOutRejected).toHaveBeenCalledOnce();
-		expect(notificationMocks.onManualEntryRejected).not.toHaveBeenCalled();
-	});
-
-	it("fails a stale work-period transition before touching the canonical record", async () => {
-		const dbService = createDecisionDbService({ staleWorkPeriod: true });
-
-		await expect(
-			runDecision(
-				approveWorkPeriodWithCurrentApproverEffect(
-					dbService,
-					currentApprover,
-					"period-1",
-					"manual_time_submission",
-					{ approvalRequestId: "approval-1" },
-				),
-			),
-		).rejects.toThrow("Ordinary work-period finalization conflict");
-		expect(dbService.updateSets).toHaveLength(2);
-		expect(dbService.insertedValues).not.toContainEqual(
-			expect.objectContaining({ recordId: "record-1" }),
-		);
-		expect(notificationMocks.onManualEntryApproved).not.toHaveBeenCalled();
-		expect(terminalBreakMocks.enforce).not.toHaveBeenCalled();
 	});
 
 	it("finalizes an already approved auto-completed request without creating a pending row", async () => {

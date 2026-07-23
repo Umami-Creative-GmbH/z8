@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
@@ -70,14 +71,18 @@ vi.mock("@/lib/time-tracking/validation", () => ({
 	validateTimeEntryRange: vi.fn(),
 }));
 
-vi.mock("@/lib/approvals/server/time-correction-approvals", async () => {
+vi.mock("@/lib/approvals/server/work-period-approvals", async () => {
 	const { Effect } = await import("effect");
 	return {
-		decideTimeCorrectionWithStableTargetEffect: (...args: unknown[]) => {
-			mockState.decideStableTarget(...args);
-			return Effect.void;
+		decideOrdinaryWorkPeriodWithStableTargetEffect: (...args: unknown[]) => {
+			return mockState.decideStableTarget(...args) ?? Effect.void;
 		},
 	};
+});
+
+vi.mock("@/lib/approvals/server/time-correction-approvals", async () => {
+	const { Effect } = await import("effect");
+	return { decideTimeCorrectionWithStableTargetEffect: () => Effect.void };
 });
 
 vi.mock("./auth", () => ({
@@ -100,7 +105,10 @@ describe("approveWorkPeriod", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.getCurrentSession.mockResolvedValue({ user: { id: "user-1" } });
-		mockState.getCurrentEmployee.mockResolvedValue({ id: "employee-1", organizationId: "org-1" });
+		mockState.getCurrentEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+		});
 		mockState.selectWhere.mockReturnValue({ limit: mockState.selectLimit });
 		mockState.selectLimit.mockResolvedValue([
 			{
@@ -111,6 +119,7 @@ describe("approveWorkPeriod", () => {
 		]);
 		mockState.updateSet.mockReturnValue({ where: mockState.updateWhere });
 		mockState.updateWhere.mockResolvedValue(undefined);
+		mockState.decideStableTarget.mockReturnValue(Effect.void);
 		mockState.findApprovalRequests.mockResolvedValue([
 			{
 				id: "approval-1",
@@ -125,7 +134,10 @@ describe("approveWorkPeriod", () => {
 	it("rejects normal organization members", async () => {
 		mockState.findMember.mockResolvedValue({ role: "member" });
 
-		const result = await approveWorkPeriod("period-1");
+		const result = await approveWorkPeriod({
+			workPeriodId: "period-1",
+			approvalRequestId: "approval-1",
+		});
 
 		expect(result).toEqual({
 			success: false,
@@ -137,38 +149,60 @@ describe("approveWorkPeriod", () => {
 	it("routes one exact pending ordinary request for organization admins", async () => {
 		mockState.findMember.mockResolvedValue({ role: "admin" });
 
-		const result = await approveWorkPeriod("period-1");
+		const result = await approveWorkPeriod({
+			workPeriodId: "period-1",
+			approvalRequestId: "approval-1",
+		});
 
-		expect(result).toEqual({ success: true, data: { workPeriodId: "period-1" } });
+		expect(result).toEqual({
+			success: true,
+			data: { workPeriodId: "period-1" },
+		});
 		expect(mockState.selectWhere).toHaveBeenCalledWith({
 			type: "and",
 			conditions: expect.arrayContaining([
 				expect.objectContaining({ left: "workPeriod.id", right: "period-1" }),
-				expect.objectContaining({ left: "workPeriod.organizationId", right: "org-1" }),
+				expect.objectContaining({
+					left: "workPeriod.organizationId",
+					right: "org-1",
+				}),
 			]),
 		});
 		expect(mockState.decideStableTarget).toHaveBeenCalledWith(
 			expect.anything(),
 			expect.objectContaining({ id: "employee-1", organizationId: "org-1" }),
-			"approval-1",
-			"approve",
-			undefined,
+			{
+				approvalRequestId: "approval-1",
+				workPeriodId: "period-1",
+				decision: { kind: "approve", reason: null },
+			},
 			{ approvalRequestId: "approval-1", allowOrganizationWideApprover: true },
 		);
+		expect(mockState.findApprovalRequests).not.toHaveBeenCalled();
 		expect(mockState.updateSet).not.toHaveBeenCalled();
 	});
 
-	it("rejects a pending period without exactly one ordinary request", async () => {
+	it("returns a generic failure when the exact target mismatches", async () => {
 		mockState.findMember.mockResolvedValue({ role: "admin" });
-		mockState.findApprovalRequests.mockResolvedValue([]);
+		mockState.decideStableTarget.mockReturnValue(
+			Effect.fail(new Error("private target mismatch")),
+		);
 
-		const result = await approveWorkPeriod("period-1");
+		const result = await approveWorkPeriod({
+			workPeriodId: "period-1",
+			approvalRequestId: "approval-mismatch",
+		});
 
 		expect(result).toEqual({
 			success: false,
-			error: "Only pending work periods can be approved",
+			error: "Failed to approve work period. Please try again.",
 		});
-		expect(mockState.decideStableTarget).not.toHaveBeenCalled();
+		expect(mockState.decideStableTarget).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.anything(),
+			expect.objectContaining({ approvalRequestId: "approval-mismatch" }),
+			expect.anything(),
+		);
 		expect(mockState.updateSet).not.toHaveBeenCalled();
 	});
 });
