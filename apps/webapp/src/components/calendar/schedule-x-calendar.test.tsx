@@ -42,28 +42,83 @@ const EMPTY_WORK_HOURS_DATA: DailyWorkHoursSummaries = new Map();
 const translateFallback = (_key: string, fallback: string) => fallback;
 
 type ScheduleXPluginTestDouble = {
-	beforeRender?: () => void;
+	beforeRender?: (calendar: CalendarAppTestDouble) => void;
 	setDate?: ReturnType<typeof vi.fn>;
 	setFirstDayOfWeek?: ReturnType<typeof vi.fn>;
 };
 
+type CalendarRangeTestDouble = {
+	start: Temporal.PlainDate;
+	end: Temporal.PlainDate;
+};
+
 type CalendarAppTestDouble = {
+	config: { firstDayOfWeek: { value: 1 | 7 } };
+	datePickerState: { selectedDate: { value: Temporal.PlainDate } };
+	calendarState: {
+		range: { value: CalendarRangeTestDouble };
+		setRange: (date: Temporal.PlainDate) => void;
+	};
 	events: { set: ReturnType<typeof vi.fn> };
 	setTheme: ReturnType<typeof vi.fn>;
 };
 
-function useCalendarAppTestDouble(config: { plugins: ScheduleXPluginTestDouble[] }) {
+function weekRangeForDate(
+	date: Temporal.PlainDate,
+	firstDayOfWeek: 1 | 7,
+): CalendarRangeTestDouble {
+	const daysSinceStart = (date.dayOfWeek - firstDayOfWeek + 7) % 7;
+	const start = date.subtract({ days: daysSinceStart });
+	return { start, end: start.add({ days: 6 }) };
+}
+
+function useCalendarAppTestDouble(config: {
+	callbacks: { onRangeUpdate?: (range: CalendarRangeTestDouble) => void };
+	firstDayOfWeek: 1 | 7;
+	plugins: ScheduleXPluginTestDouble[];
+	selectedDate: Temporal.PlainDate;
+}) {
+	const initialConfig = useRef(config);
 	const initialPlugins = useRef(config.plugins);
 	const calendar = useRef<CalendarAppTestDouble | null>(null);
 
 	return useSyncExternalStore(
 		(onCalendarReady) => {
 			if (!calendar.current) {
-				for (const plugin of initialPlugins.current) plugin.beforeRender?.();
-				calendar.current = {
+				const selectedDate = initialConfig.current.selectedDate;
+				const initialRange = weekRangeForDate(
+					selectedDate,
+					initialConfig.current.firstDayOfWeek,
+				);
+				const calendarApp: CalendarAppTestDouble = {
+					config: {
+						firstDayOfWeek: { value: initialConfig.current.firstDayOfWeek },
+					},
+					datePickerState: { selectedDate: { value: selectedDate } },
+					calendarState: {
+						range: { value: initialRange },
+						setRange: (date) => {
+							const nextRange = weekRangeForDate(
+								date,
+								calendarApp.config.firstDayOfWeek.value,
+							);
+							const currentRange = calendarApp.calendarState.range.value;
+							if (
+								nextRange.start.equals(currentRange.start) &&
+								nextRange.end.equals(currentRange.end)
+							) {
+								return;
+							}
+
+							calendarApp.calendarState.range.value = nextRange;
+							initialConfig.current.callbacks.onRangeUpdate?.(nextRange);
+						},
+					},
 					events: { set: vi.fn() },
 					setTheme: vi.fn(),
 				};
+				for (const plugin of initialPlugins.current) plugin.beforeRender?.(calendarApp);
+				calendar.current = calendarApp;
 				onCalendarReady();
 			}
 
@@ -83,17 +138,24 @@ vi.mock("@schedule-x/calendar", () => ({
 
 vi.mock("@schedule-x/calendar-controls", () => ({
 	createCalendarControlsPlugin: () => {
-		let isInitialized = false;
+		let calendar: CalendarAppTestDouble | null = null;
 		return {
-			beforeRender: () => {
-				isInitialized = true;
+			beforeRender: (calendarApp: CalendarAppTestDouble) => {
+				calendar = calendarApp;
 			},
-			setDate: vi.fn(() => {
-				if (!isInitialized) {
+			setDate: vi.fn((date: Temporal.PlainDate) => {
+				if (!calendar) {
 					throw new TypeError("Cannot read properties of undefined (reading 'datePickerState')");
 				}
+				calendar.datePickerState.selectedDate.value = date;
+				calendar.calendarState.setRange(date);
 			}),
-			setFirstDayOfWeek: vi.fn(),
+			setFirstDayOfWeek: vi.fn((firstDayOfWeek: 1 | 7) => {
+				if (!calendar) {
+					throw new TypeError("Cannot read properties of undefined (reading 'config')");
+				}
+				calendar.config.firstDayOfWeek.value = firstDayOfWeek;
+			}),
 			setView: vi.fn(),
 		};
 	},
@@ -254,16 +316,20 @@ describe("ScheduleXCalendarWrapper header", () => {
 		});
 	});
 
-	it("synchronizes Schedule-X when the week-start preference changes", () => {
+	it("recalculates the visible range when the week-start preference changes", () => {
+		const onRangeChange = vi.fn();
 		const { rerender } = render(
 			<ScheduleXCalendarWrapper
 				events={[]}
 				initialDateKey="2026-09-03"
+				onRangeChange={onRangeChange}
 				onViewModeChange={vi.fn()}
 				viewMode="week"
 			/>,
 		);
 		const calendarControls = useCalendarAppMock.mock.calls[0]?.[0].plugins[1];
+		onRangeChange.mockClear();
+		calendarControls.setDate.mockClear();
 		calendarControls.setFirstDayOfWeek.mockClear();
 
 		scheduleXPreferences.weekStartDay = "sunday";
@@ -271,12 +337,19 @@ describe("ScheduleXCalendarWrapper header", () => {
 			<ScheduleXCalendarWrapper
 				events={[]}
 				initialDateKey="2026-09-03"
+				onRangeChange={onRangeChange}
 				onViewModeChange={vi.fn()}
 				viewMode="week"
 			/>,
 		);
 
-		expect(calendarControls.setFirstDayOfWeek).toHaveBeenCalledWith(7);
+		expect(onRangeChange).toHaveBeenCalledWith({
+			startDateKey: "2026-08-30",
+			endDateKey: "2026-09-05",
+		});
+		expect(calendarControls.setFirstDayOfWeek.mock.invocationCallOrder[0]).toBeLessThan(
+			calendarControls.setDate.mock.invocationCallOrder[0],
+		);
 	});
 
 	it("updates the calendar control when the parent changes its date", () => {

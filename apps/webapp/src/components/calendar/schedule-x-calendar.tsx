@@ -290,13 +290,9 @@ export function ScheduleXCalendarWrapper({
 
 	useEffect(() => {
 		if (!calendar) return;
-		calendarControls.setDate(Temporal.PlainDate.from(currentDateKey));
-	}, [calendar, calendarControls, currentDateKey]);
-
-	useEffect(() => {
-		if (!calendar) return;
 		calendarControls.setFirstDayOfWeek(scheduleXFirstDayOfWeek);
-	}, [calendar, calendarControls, scheduleXFirstDayOfWeek]);
+		calendarControls.setDate(Temporal.PlainDate.from(currentDateKey));
+	}, [calendar, calendarControls, currentDateKey, scheduleXFirstDayOfWeek]);
 
 	useEffect(() => {
 		if (!hasVisibleRunningPeriod) return;
