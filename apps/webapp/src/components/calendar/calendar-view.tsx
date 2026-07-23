@@ -7,12 +7,15 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import type { SelectableEmployee } from "@/components/employee-select/types";
-import { useTimeFormat } from "@/components/providers/user-preferences-provider";
+import {
+	useTimeFormat,
+	useWeekStartDay,
+} from "@/components/providers/user-preferences-provider";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
 import { useOrganization } from "@/hooks/use-organization";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { todayCalendarDateKey } from "@/lib/calendar/date-keys";
+import { calendarWeekDateKeyRange, todayCalendarDateKey } from "@/lib/calendar/date-keys";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { buildDailyWorkHoursSummaries } from "@/lib/calendar/work-hours-summary";
 import { useRouter } from "@/navigation";
@@ -80,6 +83,7 @@ function CalendarViewContent({
 	const router = useRouter();
 	const locale = useLocale();
 	const timeFormat = useTimeFormat();
+	const weekStartDay = useWeekStartDay();
 	const { t } = useTranslate();
 	const { isManagerOrAbove } = useOrganization();
 	const initialEmployeeId = initialSelectedEmployeeId ?? currentEmployeeId ?? null;
@@ -104,6 +108,9 @@ function CalendarViewContent({
 	const selectedEmployeeName = activeEmployeeSelectionOverride?.name ?? null;
 	const [currentDateKey, setCurrentDateKey] = useState(
 		() => initialDateKey ?? todayCalendarDateKey(initialCalendarTimezone),
+	);
+	const [visibleDateRange, setVisibleDateRange] = useState(() =>
+		calendarWeekDateKeyRange(currentDateKey, weekStartDay),
 	);
 	const currentCalendarDate = Temporal.PlainDate.from(currentDateKey);
 	const currentYear = currentCalendarDate.year;
@@ -160,6 +167,7 @@ function CalendarViewContent({
 		year: currentYear,
 		filters: effectiveFilters,
 		fullYear: viewMode === "year",
+		dateRange: viewMode === "week" ? visibleDateRange : undefined,
 	});
 	const calendarTimeZone = calendarTimezone ?? initialCalendarTimezone;
 	const calendarDisplayContext = {
@@ -182,6 +190,7 @@ function CalendarViewContent({
 
 	// Handle date range change from schedule-x
 	const handleRangeChange = (range: { startDateKey: string; endDateKey: string }) => {
+		setVisibleDateRange(range);
 		const start = Temporal.PlainDate.from(range.startDateKey);
 		const end = Temporal.PlainDate.from(range.endDateKey);
 		const midpoint = start.add({ days: Math.floor(start.until(end).days / 2) });

@@ -62,6 +62,7 @@ vi.mock("@tolgee/react", () => ({
 vi.mock("@/components/providers/user-preferences-provider", () => ({
 	useUserTimezone: () => "Europe/Berlin",
 	useTimeFormat: () => preferences.timeFormat,
+	useWeekStartDay: () => "monday",
 }));
 
 vi.mock("@/hooks/use-organization", () => ({
@@ -162,6 +163,7 @@ vi.mock("./schedule-x-wrapper", () => ({
 		onRunningPeriodClockOutRequest,
 		onEventClick,
 		onTimeRangeSelect,
+		onRangeChange,
 		onViewModeChange,
 		timeZone,
 		viewMode,
@@ -171,6 +173,7 @@ vi.mock("./schedule-x-wrapper", () => ({
 		onRunningPeriodClockOutRequest?: (event: CalendarEvent) => void;
 		onEventClick?: (event: CalendarEvent) => void;
 		onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
+		onRangeChange?: (range: { startDateKey: string; endDateKey: string }) => void;
 		onViewModeChange: (mode: "month" | "year") => void;
 		timeZone?: string;
 		viewMode: string;
@@ -218,6 +221,17 @@ vi.mock("./schedule-x-wrapper", () => ({
 					}
 				>
 					Select time range
+				</button>
+				<button
+					type="button"
+					onClick={() =>
+						onRangeChange?.({
+							startDateKey: "2026-12-28",
+							endDateKey: "2027-01-03",
+						})
+					}
+				>
+					Change week range
 				</button>
 				<button type="button" onClick={() => onViewModeChange("month")}>
 					Month
@@ -434,6 +448,39 @@ describe("CalendarView", () => {
 		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
 
 		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-view-mode")).toBe("week");
+	});
+
+	it("requests the complete visible week range", () => {
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialDateKey="2026-09-03"
+				initialTimezone="Europe/Berlin"
+			/>,
+		);
+
+		expect(capturedCalendarQueries.at(-1)).toMatchObject({
+			dateRange: {
+				startDateKey: "2026-08-31",
+				endDateKey: "2026-09-06",
+			},
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Change week range" }));
+
+		expect(capturedCalendarQueries.at(-1)).toMatchObject({
+			dateRange: {
+				startDateKey: "2026-12-28",
+				endDateKey: "2027-01-03",
+			},
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Month" }));
+
+		expect(capturedCalendarQueries.at(-1)).toMatchObject({
+			dateRange: undefined,
+		});
 	});
 
 	it("starts from week view on mobile and switches to day after mount", async () => {
