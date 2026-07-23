@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
 import type { ApprovalDbService } from "../server/types";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
+import * as legacyState from "./work-period-legacy-state";
 import {
 	type CaptureOrdinaryWorkPeriodLegacyPreSubmissionStateInput,
 	type CaptureOrdinaryWorkPeriodLegacyStateInput,
@@ -18,6 +19,9 @@ const canonicalRecordId = "30000000-0000-4000-8000-000000000001";
 const requestId = "40000000-0000-4000-8000-000000000001";
 const chainId = "50000000-0000-4000-8000-000000000001";
 const stageId = "60000000-0000-4000-8000-000000000001";
+const nextStageId = "60000000-0000-4000-8000-000000000002";
+const nextRequestId = "40000000-0000-4000-8000-000000000002";
+const nextApproverId = "20000000-0000-4000-8000-000000000003";
 const workflowId = "70000000-0000-4000-8000-000000000001";
 const startAt = new Date("2026-07-20T06:00:00.000Z");
 const endAt = new Date("2026-07-20T14:00:00.000Z");
@@ -348,6 +352,130 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 				timeRequest: { kind: "manual_time_submission" },
 				autoApproval: { reason: "requester_is_approver" },
 			},
+		});
+	});
+
+	it("captures an approved decided request while the source and next chain stage remain pending", async () => {
+		const decidedAt = new Date("2026-07-20T14:31:00.000Z");
+		const fake = database(
+			envelope({
+				approvalRequests: [
+					request({ status: "approved", approvedAt: decidedAt }),
+				],
+				requestStageLinks: [{ chainInstanceId: chainId, stageId }],
+				chains: [chain({ currentStageOrder: 2 })],
+				chainRows: [
+					stage({ status: "approved", decidedBy: approverId, decidedAt }),
+					stage({
+						id: nextStageId,
+						policyStageId: "90000000-0000-4000-8000-000000000002",
+						stepOrder: 2,
+						resolvedApproverEmployeeId: nextApproverId,
+						approvalRequestId: nextRequestId,
+					}),
+				],
+				employees: [
+					{ id: employeeId, organizationId },
+					{ id: approverId, organizationId },
+					{ id: nextApproverId, organizationId },
+				],
+			}),
+		);
+
+		const state = await captureOrdinaryWorkPeriodLegacyState(
+			input(fake.dbService, {
+				expectedRequestStatus: "approved",
+				expectedSourceStatus: "pending",
+			}),
+		);
+
+		expect(state.approvalRequest).toMatchObject({
+			id: requestId,
+			status: "approved",
+		});
+		expect(state.chain).toMatchObject({
+			status: "pending",
+			currentStageOrder: 2,
+		});
+		expect(state.chainRows).toEqual([
+			expect.objectContaining({ id: stageId, status: "approved" }),
+			expect.objectContaining({
+				id: nextStageId,
+				status: "pending",
+				approvalRequestId: nextRequestId,
+			}),
+		]);
+		expect(state.displaySnapshot).toMatchObject({ approvalStatus: "pending" });
+	});
+
+	it("rejects nonterminal request/source parity without an active chain", async () => {
+		const decidedAt = new Date("2026-07-20T14:31:00.000Z");
+		await expectCaptureFailure(
+			envelope({
+				approvalRequests: [
+					request({ status: "approved", approvedAt: decidedAt }),
+				],
+				requestStageLinks: [],
+				chains: [],
+				chainRows: [],
+			}),
+			{ expectedRequestStatus: "approved", expectedSourceStatus: "pending" },
+		);
+	});
+
+	it("exposes a transactional verified ordinary-kind evidence loader", () => {
+		expect(
+			typeof (legacyState as Record<string, unknown>)
+				.loadOrdinaryWorkPeriodLegacyDecisionEvidence,
+		).toBe("function");
+	});
+
+	it("derives a historical ordinary kind from exact pending source evidence", async () => {
+		const fake = database(
+			envelope({
+				approvalRequests: [
+					request({ metadata: null, reason: "Manual time entry: historical" }),
+				],
+			}),
+		);
+
+		const state =
+			await legacyState.loadOrdinaryWorkPeriodLegacyDecisionEvidence({
+				dbService: fake.dbService,
+				organizationId,
+				workPeriodId,
+				expectedRequesterEmployeeId: employeeId,
+				approvalRequestId: requestId,
+			});
+
+		expect(state.source.workflowType).toBe("manual_time_submission");
+		expect(state.approvalRequest?.metadata).toEqual({
+			timeRequest: { kind: "manual_time_submission" },
+		});
+	});
+
+	it("fails closed when explicit metadata contradicts verified pending source evidence", async () => {
+		const fake = database(
+			envelope({
+				workPeriods: [period({ pendingChanges: { isNewClockOut: true } })],
+				approvalRequests: [
+					request({
+						metadata: { timeRequest: { kind: "manual_time_submission" } },
+					}),
+				],
+			}),
+		);
+
+		await expect(
+			legacyState.loadOrdinaryWorkPeriodLegacyDecisionEvidence({
+				dbService: fake.dbService,
+				organizationId,
+				workPeriodId,
+				expectedRequesterEmployeeId: employeeId,
+				approvalRequestId: requestId,
+			}),
+		).rejects.toMatchObject({
+			name: "OrdinaryWorkPeriodLegacyStateCaptureError",
 		});
 	});
 

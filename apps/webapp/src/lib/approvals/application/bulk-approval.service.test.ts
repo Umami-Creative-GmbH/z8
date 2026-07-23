@@ -104,10 +104,35 @@ describe("BulkApprovalService", () => {
 		});
 		expect(mockState.logBatch).not.toHaveBeenCalled();
 		expect(mockState.logger.error).not.toHaveBeenCalled();
-		expect(mockState.approve).toHaveBeenCalledWith(
-			"claim-1",
-			"employee-1",
-			{ approvalRequestId: "approval-1" },
+		expect(mockState.approve).toHaveBeenCalledWith("claim-1", "employee-1", {
+			approvalRequestId: "approval-1",
+		});
+	});
+
+	it("delegates an exact terminal time-entry request for owner replay", async () => {
+		mockState.findMany.mockResolvedValue([
+			{
+				id: "approval-1",
+				entityType: "time_entry",
+				entityId: "period-1",
+				approverId: "employee-1",
+				organizationId: "org-1",
+				status: "approved",
+			},
+		]);
+
+		const result = await Effect.runPromise(
+			Effect.gen(function* (_) {
+				const service = yield* _(BulkApprovalService);
+				return yield* _(
+					service.bulkDecide(["approval-1"], "employee-1", "org-1", "approve"),
+				);
+			}).pipe(Effect.provide(BulkApprovalServiceLive)),
 		);
+
+		expect(result.failed).toEqual([]);
+		expect(mockState.approve).toHaveBeenCalledWith("period-1", "employee-1", {
+			approvalRequestId: "approval-1",
+		});
 	});
 });

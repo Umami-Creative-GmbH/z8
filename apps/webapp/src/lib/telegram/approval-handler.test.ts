@@ -1,12 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { approvalFindFirstMock, employeeFindFirstMock, getChatIdForUserMock, sendMessageMock } =
-	vi.hoisted(() => ({
-		approvalFindFirstMock: vi.fn(),
-		employeeFindFirstMock: vi.fn(),
-		getChatIdForUserMock: vi.fn(),
-		sendMessageMock: vi.fn(),
-	}));
+const {
+	approvalFindFirstMock,
+	employeeFindFirstMock,
+	getChatIdForUserMock,
+	sendMessageMock,
+	decideBotApprovalMock,
+	resolveTelegramUserMock,
+} = vi.hoisted(() => ({
+	approvalFindFirstMock: vi.fn(),
+	employeeFindFirstMock: vi.fn(),
+	getChatIdForUserMock: vi.fn(),
+	sendMessageMock: vi.fn(),
+	decideBotApprovalMock: vi.fn(),
+	resolveTelegramUserMock: vi.fn(),
+}));
 
 vi.mock("@/db", () => ({
 	db: {
@@ -19,7 +27,10 @@ vi.mock("@/db", () => ({
 }));
 
 vi.mock("@/db/schema", () => ({
-	approvalRequest: { id: "approvalRequest.id", organizationId: "approvalRequest.organizationId" },
+	approvalRequest: {
+		id: "approvalRequest.id",
+		organizationId: "approvalRequest.organizationId",
+	},
 	employee: {
 		id: "employee.id",
 		organizationId: "employee.organizationId",
@@ -29,24 +40,45 @@ vi.mock("@/db/schema", () => ({
 }));
 
 vi.mock("@/lib/logger", () => ({
-	createLogger: () => ({ debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() }),
+	createLogger: () => ({
+		debug: vi.fn(),
+		error: vi.fn(),
+		info: vi.fn(),
+		warn: vi.fn(),
+	}),
 }));
 vi.mock("@/lib/bot-platform/i18n", () => ({
 	getBotTranslate: vi.fn(),
 	getUserLocale: vi.fn(),
 }));
-vi.mock("@/lib/bot-platform/approval-decision", () => ({ decideBotApproval: vi.fn() }));
+vi.mock("@/lib/bot-platform/approval-decision", () => ({
+	decideBotApproval: decideBotApprovalMock,
+	canAttemptBotApprovalDecision: ({
+		status,
+		entityType,
+	}: {
+		status: string;
+		entityType: string;
+	}) => status === "pending" || entityType === "time_entry",
+}));
 vi.mock("@/lib/notifications/recipient-display-context", () => ({
 	resolveRecipientDisplayContext: vi.fn(),
 }));
-vi.mock("./api", () => ({ editMessageText: vi.fn(), sendMessage: sendMessageMock }));
-vi.mock("./conversation-manager", () => ({ getChatIdForUser: getChatIdForUserMock }));
+vi.mock("./api", () => ({
+	editMessageText: vi.fn(),
+	sendMessage: sendMessageMock,
+}));
+vi.mock("./conversation-manager", () => ({
+	getChatIdForUser: getChatIdForUserMock,
+}));
 vi.mock("./formatters", () => ({
 	buildApprovalMessage: vi.fn(),
 	buildResolvedApprovalMessage: vi.fn(),
 	escapeMarkdownV2: vi.fn(),
 }));
-vi.mock("./user-resolver", () => ({ resolveTelegramUser: vi.fn() }));
+vi.mock("./user-resolver", () => ({
+	resolveTelegramUser: resolveTelegramUserMock,
+}));
 
 describe("sendApprovalMessageToManager", () => {
 	beforeEach(() => vi.clearAllMocks());
@@ -55,7 +87,12 @@ describe("sendApprovalMessageToManager", () => {
 		employeeFindFirstMock.mockResolvedValue(undefined);
 		const { sendApprovalMessageToManager } = await import("./approval-handler");
 
-		await sendApprovalMessageToManager("approval-in-org-b", "approver-in-org-b", "org-a", "token");
+		await sendApprovalMessageToManager(
+			"approval-in-org-b",
+			"approver-in-org-b",
+			"org-a",
+			"token",
+		);
 
 		expect(approvalFindFirstMock).not.toHaveBeenCalled();
 		expect(getChatIdForUserMock).not.toHaveBeenCalled();
@@ -67,10 +104,62 @@ describe("sendApprovalMessageToManager", () => {
 		approvalFindFirstMock.mockResolvedValue(undefined);
 		const { sendApprovalMessageToManager } = await import("./approval-handler");
 
-		await sendApprovalMessageToManager("approval-in-org-b", "approver-in-org-a", "org-a", "token");
+		await sendApprovalMessageToManager(
+			"approval-in-org-b",
+			"approver-in-org-a",
+			"org-a",
+			"token",
+		);
 
 		expect(approvalFindFirstMock).toHaveBeenCalledOnce();
 		expect(getChatIdForUserMock).not.toHaveBeenCalled();
 		expect(sendMessageMock).not.toHaveBeenCalled();
+	});
+});
+
+describe("handleApprovalCallback", () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	it("delegates an exact terminal time-entry target so the owner can replay", async () => {
+		resolveTelegramUserMock.mockResolvedValue({
+			status: "found",
+			user: { employeeId: "manager-1", userId: "user-1" },
+		});
+		approvalFindFirstMock.mockResolvedValue({
+			id: "approval-1",
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			requestedBy: "employee-1",
+			approverId: "manager-1",
+			status: "approved",
+			createdAt: new Date("2026-07-20T10:00:00Z"),
+		});
+		decideBotApprovalMock.mockResolvedValue({
+			id: "approval-1",
+			type: "time_entry",
+			status: "approved",
+		});
+		employeeFindFirstMock
+			.mockResolvedValueOnce({ user: { name: "Manager" } })
+			.mockResolvedValueOnce({
+				user: { name: "Employee", email: "employee@example.com" },
+			});
+
+		const { handleApprovalCallback } = await import("./approval-handler");
+		await handleApprovalCallback(
+			{ id: "query-1", from: { id: 1 }, message: undefined },
+			{ a: "ap", id: "approval-1" },
+			"telegram-1",
+			{ organizationId: "org-1", botToken: "token" } as never,
+		);
+
+		expect(decideBotApprovalMock).toHaveBeenCalledWith({
+			approvalId: "approval-1",
+			actorEmployeeId: "manager-1",
+			organizationId: "org-1",
+			action: "approve",
+			platform: "telegram",
+		});
 	});
 });

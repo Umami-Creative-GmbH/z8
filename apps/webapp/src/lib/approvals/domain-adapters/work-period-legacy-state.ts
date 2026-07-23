@@ -43,10 +43,11 @@ export interface CaptureOrdinaryWorkPeriodLegacyStateInput {
 	dbService: ApprovalDbService;
 	organizationId: string;
 	workPeriodId: string;
-	expectedKind: OrdinaryWorkPeriodApprovalKind;
+	expectedKind?: OrdinaryWorkPeriodApprovalKind;
 	expectedRequesterEmployeeId: string;
 	approvalRequestId: string;
 	expectedRequestStatus?: RequestStatus;
+	expectedSourceStatus?: RequestStatus;
 }
 
 export interface CaptureOrdinaryWorkPeriodLegacyPreSubmissionStateInput {
@@ -326,8 +327,7 @@ function decodeRequest(
 			(approvedAt !== null || rejectionReason !== null)) ||
 		(expectedStatus === "approved" &&
 			(approvedAt === null || rejectionReason !== null)) ||
-		(expectedStatus === "rejected" &&
-			(approvedAt !== null || !rejectionReason))
+		(expectedStatus === "rejected" && (approvedAt !== null || !rejectionReason))
 	) {
 		return fail();
 	}
@@ -360,10 +360,7 @@ function decodeRequest(
 		return fail();
 	}
 	if (requesterAutoApproved) {
-		if (
-			expectedStatus !== "approved" ||
-			raw.approverId !== raw.requestedBy
-		) {
+		if (expectedStatus !== "approved" || raw.approverId !== raw.requestedBy) {
 			return fail();
 		}
 		const root = exactDataRecord(rawMetadata, [
@@ -489,15 +486,48 @@ function decodeCapture(
 	const canonical = decodeCanonical(
 		exactlyOne(array(envelope.canonicalRecords)),
 	);
+	const rawRequest = record(exactlyOne(array(envelope.approvalRequests)));
+	const rawMetadata =
+		rawRequest.metadata === null ? undefined : record(rawRequest.metadata);
+	const timeRequestDescriptor = rawMetadata
+		? Object.getOwnPropertyDescriptor(rawMetadata, "timeRequest")
+		: undefined;
+	if (
+		timeRequestDescriptor &&
+		(!timeRequestDescriptor.enumerable || !("value" in timeRequestDescriptor))
+	) {
+		return fail();
+	}
+	const classificationMetadata = timeRequestDescriptor
+		? {
+				timeRequest: exactDataRecord(timeRequestDescriptor.value, ["kind"]),
+			}
+		: undefined;
+	const classifiedKind = classifyTimeApprovalRequest({
+		metadata: classificationMetadata,
+		reason: nullableString(rawRequest.reason),
+		pendingChanges: period.pendingChanges,
+		hasRelationalCorrectionEvidence: false,
+	});
+	if (
+		(classifiedKind !== "manual_time_submission" &&
+			classifiedKind !== "policy_clock_out") ||
+		(input.expectedKind !== undefined && input.expectedKind !== classifiedKind)
+	) {
+		return fail();
+	}
+	const kind = classifiedKind;
 	const request = decodeRequest(
-		exactlyOne(array(envelope.approvalRequests)),
+		rawRequest,
 		period,
 		input.organizationId,
 		input.workPeriodId,
-		input.expectedKind,
+		kind,
 		input.expectedRequestStatus ?? "pending",
 	);
-	const expectedSourceStatus = input.expectedRequestStatus ?? "pending";
+	const expectedRequestStatus = input.expectedRequestStatus ?? "pending";
+	const expectedSourceStatus =
+		input.expectedSourceStatus ?? period.approvalStatus;
 	if (
 		period.id !== input.workPeriodId ||
 		period.organizationId !== input.organizationId ||
@@ -538,7 +568,7 @@ function decodeCapture(
 		if (
 			string(workflow.id) !== period.approvalWorkflowId ||
 			string(workflow.organizationId) !== input.organizationId ||
-			string(workflow.workflowType) !== input.expectedKind ||
+			string(workflow.workflowType) !== kind ||
 			string(workflow.sourceType) !== "time_entry" ||
 			string(workflow.sourceId) !== input.workPeriodId ||
 			string(workflow.requesterEmployeeId) !== input.expectedRequesterEmployeeId
@@ -555,7 +585,13 @@ function decodeCapture(
 	let chain: LegacyApprovalChainSnapshot | null = null;
 	let chainRows: LegacyApprovalChainRowSnapshot[] = [];
 	if (requestStageLinks.length === 0) {
-		if (rawChains.length !== 0 || rawChainRows.length !== 0) return fail();
+		if (
+			rawChains.length !== 0 ||
+			rawChainRows.length !== 0 ||
+			expectedRequestStatus !== expectedSourceStatus
+		) {
+			return fail();
+		}
 	} else {
 		const link = record(requestStageLinks[0]);
 		chain = decodeChain(exactlyOne(rawChains), expectedSourceStatus);
@@ -566,6 +602,10 @@ function decodeCapture(
 			(row) => row.stepOrder === chain?.currentStageOrder,
 		);
 		const current = chainRows[currentIndex];
+		const decidedIndex = chainRows.findIndex(
+			(row) => row.id === string(link.stageId),
+		);
+		const decided = chainRows[decidedIndex];
 		if (
 			chain.organizationId !== input.organizationId ||
 			chain.entityType !== "time_entry" ||
@@ -573,10 +613,14 @@ function decodeCapture(
 			chain.requesterEmployeeId !== input.expectedRequesterEmployeeId ||
 			chain.id !== string(link.chainInstanceId) ||
 			!current ||
-			current.id !== string(link.stageId) ||
-			current.approvalRequestId !== input.approvalRequestId ||
-			current.status !== expectedSourceStatus ||
-			current.resolvedApproverEmployeeId !== request.approverId ||
+			!decided ||
+			decided.approvalRequestId !== input.approvalRequestId ||
+			decided.status !== expectedRequestStatus ||
+			decided.resolvedApproverEmployeeId !== request.approverId ||
+			(expectedSourceStatus === "pending" &&
+				(expectedRequestStatus === "pending"
+					? decidedIndex !== currentIndex
+					: decidedIndex >= currentIndex)) ||
 			new Set(chainRows.map((row) => row.id)).size !== chainRows.length ||
 			new Set(chainRows.map((row) => row.stepOrder)).size !==
 				chainRows.length ||
@@ -590,6 +634,7 @@ function decodeCapture(
 				: chainRows
 						.slice(0, currentIndex)
 						.some((row) => row.status !== "approved") ||
+					current.status !== expectedSourceStatus ||
 					chainRows
 						.slice(currentIndex + 1)
 						.some(
@@ -638,13 +683,13 @@ function decodeCapture(
 		{
 			timeRequest: record(request.metadata).timeRequest,
 		},
-		input.expectedKind,
+		kind,
 	);
 	const displaySnapshot = {
 		approvalStatus: period.approvalStatus,
 		labels: {
 			title:
-				input.expectedKind === "manual_time_submission"
+				kind === "manual_time_submission"
 					? "Manual time submission"
 					: "Policy clock-out",
 		},
@@ -658,7 +703,7 @@ function decodeCapture(
 		organizationId: input.organizationId,
 		source: {
 			organizationId: input.organizationId,
-			workflowType: input.expectedKind,
+			workflowType: kind,
 			sourceType: "time_entry",
 			sourceId: input.workPeriodId,
 		},
@@ -669,6 +714,12 @@ function decodeCapture(
 		displaySnapshot,
 		capturedAt: requiredInstant(envelope.capturedAt),
 	}) as VerifiedLegacyApprovalState;
+}
+
+export async function loadOrdinaryWorkPeriodLegacyDecisionEvidence(
+	input: Omit<CaptureOrdinaryWorkPeriodLegacyStateInput, "expectedKind">,
+): Promise<VerifiedLegacyApprovalState> {
+	return captureOrdinaryWorkPeriodLegacyState(input);
 }
 
 function decodePreSubmissionCapture(
@@ -755,13 +806,15 @@ function decodePreSubmissionCapture(
 export async function captureOrdinaryWorkPeriodLegacyState(
 	input: CaptureOrdinaryWorkPeriodLegacyStateInput,
 ): Promise<VerifiedLegacyApprovalState> {
-	try {
-		parseOrdinaryWorkPeriodWorkflowPayload(
-			{ timeRequest: { kind: input.expectedKind } },
-			input.expectedKind,
-		);
-	} catch {
-		return fail();
+	if (input.expectedKind !== undefined) {
+		try {
+			parseOrdinaryWorkPeriodWorkflowPayload(
+				{ timeRequest: { kind: input.expectedKind } },
+				input.expectedKind,
+			);
+		} catch {
+			return fail();
+		}
 	}
 	let queryResult: unknown;
 	try {
@@ -770,7 +823,7 @@ export async function captureOrdinaryWorkPeriodLegacyState(
 				select
 					${input.organizationId}::text as organization_id,
 					${input.workPeriodId}::uuid as work_period_id,
-					${input.expectedKind}::text as expected_kind,
+					${input.expectedKind ?? null}::text as expected_kind,
 					${input.expectedRequesterEmployeeId}::uuid as requester_employee_id,
 					${input.approvalRequestId}::uuid as approval_request_id
 			),

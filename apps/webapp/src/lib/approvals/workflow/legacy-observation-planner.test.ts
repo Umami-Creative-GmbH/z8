@@ -840,6 +840,46 @@ describe("legacy approval observation planner", () => {
 		});
 	});
 
+	it("plans an intermediate transition from the exact decided request and next active target", async () => {
+		const planner = createLegacyApprovalObservationPlanner({
+			clock: { nowInstant: () => capturedAt },
+		});
+		const before = chainState({
+			status: "pending",
+			currentStageOrder: 2,
+			rowStatuses: ["approved", "pending", "cancelled"],
+			currentRequestStatus: "pending",
+			autoRows: [1],
+		});
+		const after = chainState({
+			status: "pending",
+			currentStageOrder: 3,
+			rowStatuses: ["approved", "approved", "pending"],
+			currentRequestStatus: "pending",
+			autoRows: [1],
+		});
+		after.approvalRequest = {
+			...required(before.approvalRequest),
+			status: "approved",
+			approvedAt: updatedAt,
+			updatedAt,
+		};
+
+		const plan = await planner.plan(transition(before, after, 1));
+
+		expect(plan.snapshot).toMatchObject({
+			status: "pending",
+			currentStageOrder: 3,
+		});
+		expect(plan.events.map((event) => event.eventType)).toEqual([
+			"assignment.approved",
+			"stage.approved",
+			"assignment.created",
+			"stage.activated",
+			"workflow.activation_requested",
+		]);
+	});
+
 	it("drains cancelled requester stages before activating the next human stage", async () => {
 		const planner = createLegacyApprovalObservationPlanner({
 			clock: { nowInstant: () => capturedAt },

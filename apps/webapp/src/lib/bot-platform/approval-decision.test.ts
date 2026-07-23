@@ -2,10 +2,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { approveApprovalInboxItemMock, rejectApprovalInboxItemMock } = vi.hoisted(() => ({
-	approveApprovalInboxItemMock: vi.fn(),
-	rejectApprovalInboxItemMock: vi.fn(),
-}));
+const { approveApprovalInboxItemMock, rejectApprovalInboxItemMock } =
+	vi.hoisted(() => ({
+		approveApprovalInboxItemMock: vi.fn(),
+		rejectApprovalInboxItemMock: vi.fn(),
+	}));
 
 vi.mock("@/lib/approvals/init", () => ({}));
 vi.mock("@/lib/approvals/inbox/decision-service", () => ({
@@ -13,7 +14,10 @@ vi.mock("@/lib/approvals/inbox/decision-service", () => ({
 	rejectApprovalInboxItem: rejectApprovalInboxItemMock,
 }));
 
-import { decideBotApproval } from "./approval-decision";
+import {
+	canAttemptBotApprovalDecision,
+	decideBotApproval,
+} from "./approval-decision";
 
 describe("bot approval decisions", () => {
 	beforeEach(() => {
@@ -67,6 +71,18 @@ describe("bot approval decisions", () => {
 		});
 		expect(approveApprovalInboxItemMock).not.toHaveBeenCalled();
 	});
+
+	it.each([
+		["pending", "time_entry", true],
+		["approved", "time_entry", true],
+		["rejected", "time_entry", true],
+		["approved", "absence", false],
+		["rejected", "absence", false],
+	] as const)("returns %s/%s eligibility as %s", (status, entityType, expected) => {
+		expect(canAttemptBotApprovalDecision({ status, entityType })).toBe(
+			expected,
+		);
+	});
 });
 
 describe("external approval handler architecture", () => {
@@ -77,7 +93,9 @@ describe("external approval handler architecture", () => {
 		new URL("../teams/approval-handler.ts", import.meta.url),
 	];
 
-	it.each(handlerUrls)("routes %s through the shared canonical adapter", (handlerUrl) => {
+	it.each(
+		handlerUrls,
+	)("routes %s through the shared canonical adapter", (handlerUrl) => {
 		const source = readFileSync(fileURLToPath(handlerUrl), "utf8");
 
 		expect(source).toContain("decideBotApproval");

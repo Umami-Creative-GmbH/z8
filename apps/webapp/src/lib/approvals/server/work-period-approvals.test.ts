@@ -17,6 +17,7 @@ const terminalBreakMocks = vi.hoisted(() => ({
 }));
 const legacyCaptureMocks = vi.hoisted(() => ({
 	capture: vi.fn(),
+	load: vi.fn(),
 }));
 
 vi.mock("@/lib/notifications/triggers", () => notificationMocks);
@@ -25,18 +26,43 @@ vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
 }));
 vi.mock("../domain-adapters/work-period-legacy-state", () => ({
 	captureOrdinaryWorkPeriodLegacyState: legacyCaptureMocks.capture,
+	loadOrdinaryWorkPeriodLegacyDecisionEvidence: legacyCaptureMocks.load,
 }));
 
+const workPeriodApprovals = await import("./work-period-approvals");
 const {
 	executeOrdinaryWorkPeriodDecisionInTransaction,
 	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 	finalizeOrdinaryWorkPeriodTerminalInTransaction,
 	finalizeAutoCompletedWorkPeriodApprovalEffect,
-} = await import("./work-period-approvals");
+} = workPeriodApprovals;
 
 describe("stable ordinary work-period decisions", () => {
 	beforeEach(() => {
 		legacyCaptureMocks.capture.mockReset();
+		legacyCaptureMocks.load.mockReset();
+		legacyCaptureMocks.load.mockImplementation(async (input) => ({
+			organizationId: "org-1",
+			source: {
+				organizationId: "org-1",
+				workflowType: "manual_time_submission",
+				sourceType: "time_entry",
+				sourceId: "period-1",
+			},
+			approvalRequest: {
+				id: "approval-1",
+				organizationId: "org-1",
+				entityType: "time_entry",
+				entityId: "period-1",
+				requestedBy: "employee-1",
+				approverId: "manager-1",
+				status: input.expectedRequestStatus ?? "pending",
+			},
+			chain: null,
+			chainRows: [],
+			sourceSnapshot: { timeRequest: { kind: "manual_time_submission" } },
+			capturedAt: parseInstant("2026-07-15T09:59:00Z"),
+		}));
 	});
 
 	it.each([
@@ -45,36 +71,90 @@ describe("stable ordinary work-period decisions", () => {
 			targetId: "approval-1",
 			compatibility: true,
 			replay: false,
+			action: "approve" as const,
+		},
+		{
+			mode: "canonical" as const,
+			targetId: "approval-1",
+			compatibility: true,
+			replay: false,
+			action: "reject" as const,
 		},
 		{
 			mode: "complete" as const,
 			targetId: "assignment-1",
 			compatibility: false,
 			replay: false,
+			action: "approve" as const,
+		},
+		{
+			mode: "complete" as const,
+			targetId: "assignment-1",
+			compatibility: false,
+			replay: false,
+			action: "reject" as const,
 		},
 		{
 			mode: "canonical" as const,
 			targetId: "approval-1",
 			compatibility: true,
 			replay: true,
+			action: "approve" as const,
 		},
 		{
 			mode: "shadow" as const,
 			targetId: "approval-1",
 			compatibility: true,
 			replay: true,
+			action: "approve" as const,
 		},
 		{
 			mode: "ready" as const,
 			targetId: "approval-1",
 			compatibility: true,
 			replay: true,
+			action: "approve" as const,
 		},
-	])("derives the ordinary kind and routes the exact $mode target", async ({
+		{
+			mode: "canonical" as const,
+			targetId: "approval-1",
+			compatibility: true,
+			replay: false,
+			historical: true,
+			action: "approve" as const,
+		},
+		{
+			mode: "canonical" as const,
+			targetId: "approval-1",
+			compatibility: true,
+			replay: true,
+			intermediateReplay: true,
+			action: "approve" as const,
+		},
+		{
+			mode: "shadow" as const,
+			targetId: "approval-1",
+			compatibility: true,
+			replay: true,
+			intermediateReplay: true,
+			action: "approve" as const,
+		},
+		{
+			mode: "ready" as const,
+			targetId: "approval-1",
+			compatibility: true,
+			replay: true,
+			intermediateReplay: true,
+			action: "approve" as const,
+		},
+	])("derives the ordinary kind and routes the exact $mode $action target", async ({
 		mode,
 		targetId,
 		compatibility,
 		replay,
+		action,
+		historical = false,
+		intermediateReplay = false,
 	}) => {
 		const executeInTransactionWithDisposition = vi.fn().mockResolvedValue({
 			disposition: replay ? "replayed" : "executed",
@@ -92,9 +172,10 @@ describe("stable ordinary work-period decisions", () => {
 			sourceType: "time_entry",
 			sourceId: "period-1",
 			requesterEmployeeId: "employee-1",
-			status: replay ? "approved" : "pending",
+			status: replay && !intermediateReplay ? "approved" : "pending",
 			version: 3,
-			currentStageOrder: replay ? null : 1,
+			currentStageOrder:
+				replay && !intermediateReplay ? null : intermediateReplay ? 2 : 1,
 			stages: [
 				{
 					id: "stage-1",
@@ -114,6 +195,28 @@ describe("stable ordinary work-period decisions", () => {
 						},
 					],
 				},
+				...(intermediateReplay
+					? [
+							{
+								id: "stage-2",
+								organizationId: "org-1",
+								workflowId: "workflow-1",
+								sequence: 2,
+								status: "pending",
+								legacyApprovalRequestId: "approval-2",
+								assignments: [
+									{
+										id: "assignment-2",
+										organizationId: "org-1",
+										workflowId: "workflow-1",
+										stageId: "stage-2",
+										approverEmployeeId: "manager-2",
+										status: "pending",
+									},
+								],
+							},
+						]
+					: []),
 			],
 		};
 		const transactionDb = {
@@ -128,15 +231,17 @@ describe("stable ordinary work-period decisions", () => {
 									...approval,
 									status: replay ? "approved" : "pending",
 									approvedAt: replay ? new Date("2026-07-15T10:00:00Z") : null,
-									metadata: {
-										timeRequest: { kind: "manual_time_submission" },
-										workflow: { id: "workflow-1", organizationId: "org-1" },
-										stage: {
-											id: "stage-1",
-											sequence: 1,
-											assignmentId: "assignment-1",
-										},
-									},
+									metadata: historical
+										? null
+										: {
+												timeRequest: { kind: "manual_time_submission" },
+												workflow: { id: "workflow-1", organizationId: "org-1" },
+												stage: {
+													id: "stage-1",
+													sequence: 1,
+													assignmentId: "assignment-1",
+												},
+											},
 								}
 							: null,
 					),
@@ -182,7 +287,8 @@ describe("stable ordinary work-period decisions", () => {
 				workPeriod: {
 					findFirst: vi.fn().mockResolvedValue({
 						...period,
-						approvalStatus: replay ? "approved" : "pending",
+						approvalStatus:
+							replay && !intermediateReplay ? "approved" : "pending",
 					}),
 				},
 			},
@@ -215,7 +321,10 @@ describe("stable ordinary work-period decisions", () => {
 			approvalRequestId: targetId,
 			workPeriodId: "period-1",
 			actor: currentApprover,
-			decision: { kind: "approve", reason: null },
+			decision: {
+				kind: action,
+				reason: action === "reject" ? "Missing details" : null,
+			},
 		});
 
 		if (replay && (mode === "shadow" || mode === "ready")) {
@@ -227,9 +336,10 @@ describe("stable ordinary work-period decisions", () => {
 					organizationId: "org-1",
 					workflowId: "workflow-1",
 					command: {
-						type: "approve",
+						type: action,
 						stageId: "stage-1",
 						assignmentId: "assignment-1",
+						...(action === "reject" ? { reason: "Missing details" } : {}),
 					},
 				}),
 			);
@@ -246,7 +356,49 @@ describe("stable ordinary work-period decisions", () => {
 		}
 	});
 
-	it("keeps legacy decisions authoritative and returns terminal dispatch work", async () => {
+	it("fails before mutation when verified legacy kind evidence contradicts the request", async () => {
+		legacyCaptureMocks.load.mockRejectedValue(
+			new Error("private evidence mismatch"),
+		);
+		const executeInTransactionWithDisposition = vi.fn();
+		const transactionDb = {
+			query: {
+				employee: { findMany: vi.fn().mockResolvedValue([currentApprover]) },
+				approvalRequest: { findFirst: vi.fn().mockResolvedValue(approval) },
+				approvalStageAssignment: { findFirst: vi.fn() },
+				workPeriod: { findFirst: vi.fn().mockResolvedValue(period) },
+			},
+		};
+		const context = {
+			dbService: { db: transactionDb },
+			writeGate: { acquire: vi.fn() },
+			compatibilityWriter: { withWriteGate: vi.fn() },
+		};
+
+		await expect(
+			executeOrdinaryWorkPeriodDecisionInTransaction({
+				dbService: { db: transactionDb, query: vi.fn() } as never,
+				runtime: {
+					repository: {
+						withTransaction: (run: (value: unknown) => unknown) => run(context),
+					},
+					transitionEngine: { executeInTransactionWithDisposition },
+				} as never,
+				organizationId: "org-1",
+				approvalRequestId: "approval-1",
+				workPeriodId: "period-1",
+				actor: currentApprover,
+				decision: { kind: "approve", reason: null },
+			}),
+		).rejects.toThrow("Ordinary work-period decision failed");
+		expect(context.writeGate.acquire).not.toHaveBeenCalled();
+		expect(executeInTransactionWithDisposition).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		"approve",
+		"reject",
+	] as const)("keeps legacy %s decisions authoritative and returns terminal dispatch work", async (action) => {
 		const dbService = createDecisionDbService({
 			unlinked: true,
 			autoApprovalRequest: {
@@ -289,20 +441,25 @@ describe("stable ordinary work-period decisions", () => {
 			approvalRequestId: "approval-1",
 			workPeriodId: "period-1",
 			actor: currentApprover,
-			decision: { kind: "approve", reason: null },
+			decision: {
+				kind: action,
+				reason: action === "reject" ? "Missing details" : null,
+			},
 		});
 
 		expect(executed.result).toMatchObject({
 			kind: "manual_time_submission",
-			action: "approve",
+			action,
 		});
 		expect(executed.postCommit).toMatchObject({
 			disposition: "dispatch",
-			event: "approved",
+			event: action === "approve" ? "approved" : "rejected",
 			workPeriodId: "period-1",
 		});
 		expect(dbService.updateSets).toContainEqual(
-			expect.objectContaining({ approvalStatus: "approved" }),
+			expect.objectContaining({
+				approvalStatus: action === "approve" ? "approved" : "rejected",
+			}),
 		);
 		expect(
 			runtime.transitionEngine.executeInTransactionWithDisposition,
@@ -310,9 +467,11 @@ describe("stable ordinary work-period decisions", () => {
 	});
 
 	it.each([
-		"shadow",
-		"ready",
-	] as const)("mirrors a %s legacy terminal decision atomically", async (mode) => {
+		["shadow", "approve"],
+		["shadow", "reject"],
+		["ready", "approve"],
+		["ready", "reject"],
+	] as const)("mirrors a %s legacy %s terminal decision atomically", async (mode, action) => {
 		const dbService = createDecisionDbService();
 		const database = dbService.db as unknown as {
 			query: Record<string, Record<string, ReturnType<typeof vi.fn>>>;
@@ -375,12 +534,65 @@ describe("stable ordinary work-period decisions", () => {
 			approvalRequestId: "approval-1",
 			workPeriodId: "period-1",
 			actor: currentApprover,
-			decision: { kind: "approve", reason: null },
+			decision: {
+				kind: action,
+				reason: action === "reject" ? "Missing details" : null,
+			},
 		});
 
-		expect(legacyCaptureMocks.capture).toHaveBeenCalledTimes(2);
+		expect(legacyCaptureMocks.load).toHaveBeenCalledOnce();
+		expect(legacyCaptureMocks.capture).toHaveBeenCalledOnce();
 		expect(mirrorLegacyToCanonical).toHaveBeenCalledOnce();
 		expect(executed.postCommit?.disposition).toBe("dispatch");
+	});
+});
+
+describe("ordinary stable-target production composition", () => {
+	it.each([
+		["dispatch", "approved", 1],
+		["observe", "approved", 0],
+		["dispatch", "pending", 0],
+		[null, null, 0],
+	] as const)("handles %s/%s postcommit exactly once: %s", async (disposition, event, calls) => {
+		const complete = (workPeriodApprovals as Record<string, unknown>)
+			.completeOrdinaryWorkPeriodDecisionAfterCommit;
+		expect(typeof complete).toBe("function");
+		const execution = {
+			result: { kind: "manual_time_submission" },
+			postCommit: disposition ? { disposition, event } : null,
+		};
+		const dispatch = vi.fn().mockResolvedValue(undefined);
+
+		const result = await (complete as (input: unknown) => Promise<unknown>)({
+			execute: async () => execution,
+			dispatch,
+			onDispatchError: vi.fn(),
+		});
+
+		expect(result).toBe(execution);
+		expect(dispatch).toHaveBeenCalledTimes(calls);
+	});
+
+	it("preserves the committed result when awaited postcommit work fails", async () => {
+		const complete = (workPeriodApprovals as Record<string, unknown>)
+			.completeOrdinaryWorkPeriodDecisionAfterCommit as (
+			input: unknown,
+		) => Promise<unknown>;
+		const execution = {
+			result: { kind: "manual_time_submission" },
+			postCommit: { disposition: "dispatch", event: "approved" },
+		};
+		const error = new Error("notification unavailable");
+		const onDispatchError = vi.fn();
+
+		const result = await complete({
+			execute: async () => execution,
+			dispatch: vi.fn().mockRejectedValue(error),
+			onDispatchError,
+		});
+
+		expect(result).toBe(execution);
+		expect(onDispatchError).toHaveBeenCalledWith(error);
 	});
 });
 

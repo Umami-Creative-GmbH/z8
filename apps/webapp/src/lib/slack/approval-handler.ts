@@ -8,12 +8,19 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { approvalRequest, employee, slackApprovalMessage } from "@/db/schema";
-import { decideBotApproval } from "@/lib/bot-platform/approval-decision";
+import {
+	canAttemptBotApprovalDecision,
+	decideBotApproval,
+} from "@/lib/bot-platform/approval-decision";
 import { createLogger } from "@/lib/logger";
 import { openConversation, postMessage, updateMessage } from "./api";
 import { getChannelIdForUser } from "./conversation-manager";
 import { buildApprovalBlocks, buildResolvedApprovalBlocks } from "./formatters";
-import type { ApprovalCardData, ResolvedSlackBot, SlackInteractionPayload } from "./types";
+import type {
+	ApprovalCardData,
+	ResolvedSlackBot,
+	SlackInteractionPayload,
+} from "./types";
 import { resolveSlackUser } from "./user-resolver";
 
 const logger = createLogger("SlackApprovalHandler");
@@ -27,7 +34,8 @@ export async function handleApprovalAction(
 	slackUserId: string,
 	bot: ResolvedSlackBot,
 ): Promise<void> {
-	const approvalAction = action.action_id === "approval_approve" ? "approve" : "reject";
+	const approvalAction =
+		action.action_id === "approval_approve" ? "approve" : "reject";
 	const approvalId = action.value;
 
 	if (!approvalId) return;
@@ -53,7 +61,7 @@ export async function handleApprovalAction(
 			return;
 		}
 
-		if (approval.status !== "pending") {
+		if (!canAttemptBotApprovalDecision(approval)) {
 			// Update the message to show it's already resolved
 			if (payload.channel && payload.message) {
 				await updateMessage(bot.botAccessToken, {
@@ -158,7 +166,10 @@ export async function sendApprovalMessageToManager(
 	try {
 		// Get approver's user ID
 		const approverEmployee = await db.query.employee.findFirst({
-			where: and(eq(employee.id, approverId), eq(employee.organizationId, organizationId)),
+			where: and(
+				eq(employee.id, approverId),
+				eq(employee.organizationId, organizationId),
+			),
 			columns: { userId: true },
 		});
 
@@ -168,7 +179,10 @@ export async function sendApprovalMessageToManager(
 		}
 
 		// Get channel ID for the approver (try stored conversation first, then open DM)
-		let channelId = await getChannelIdForUser(approverEmployee.userId, organizationId);
+		let channelId = await getChannelIdForUser(
+			approverEmployee.userId,
+			organizationId,
+		);
 
 		if (!channelId) {
 			// Try to look up their Slack user ID and open a DM
@@ -187,7 +201,10 @@ export async function sendApprovalMessageToManager(
 		}
 
 		if (!channelId) {
-			logger.debug({ approverId, organizationId }, "No Slack channel for approver");
+			logger.debug(
+				{ approverId, organizationId },
+				"No Slack channel for approver",
+			);
 			return;
 		}
 
@@ -238,7 +255,10 @@ export async function sendApprovalMessageToManager(
 			);
 		}
 	} catch (error) {
-		logger.error({ error, approvalId, approverId }, "Failed to send approval message");
+		logger.error(
+			{ error, approvalId, approverId },
+			"Failed to send approval message",
+		);
 	}
 }
 

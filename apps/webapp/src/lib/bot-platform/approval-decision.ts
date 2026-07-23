@@ -12,6 +12,13 @@ const platformNames: Record<BotPlatform, string> = {
 	slack: "Slack",
 };
 
+export function canAttemptBotApprovalDecision(input: {
+	status: string;
+	entityType: string;
+}): boolean {
+	return input.status === "pending" || input.entityType === "time_entry";
+}
+
 export async function decideBotApproval({
 	approvalId,
 	actorEmployeeId,
@@ -26,7 +33,11 @@ export async function decideBotApproval({
 	platform: BotPlatform;
 }) {
 	if (action === "approve") {
-		return approveApprovalInboxItem({ approvalId, actorEmployeeId, organizationId });
+		return approveApprovalInboxItem({
+			approvalId,
+			actorEmployeeId,
+			organizationId,
+		});
 	}
 
 	const platformName = platformNames[platform];

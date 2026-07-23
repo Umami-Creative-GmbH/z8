@@ -360,7 +360,13 @@ function validateChainState(
 		);
 		if (
 			!linked ||
-			linked.stepOrder !== chain.currentStageOrder ||
+			(linked.stepOrder !== chain.currentStageOrder &&
+				!(
+					input.expectedVersion !== null &&
+					chain.status === "pending" &&
+					request.status === "approved" &&
+					linked.stepOrder < chain.currentStageOrder
+				)) ||
 			linked.resolvedApproverEmployeeId !== request.approverId ||
 			linked.status !== request.status ||
 			request.requestedBy !== chain.requesterEmployeeId

@@ -498,6 +498,24 @@ function toPersistedCanonicalDecisionRequest(
 		workflow?.workflowType === "manual_time_submission" ||
 		workflow?.workflowType === "policy_clock_out" ||
 		workflow?.workflowType === "time_correction";
+	const ordinaryWorkflow =
+		workflow?.workflowType === "manual_time_submission" ||
+		workflow?.workflowType === "policy_clock_out";
+	const pendingTarget =
+		assignment?.status === "pending" &&
+		stage?.status === "pending" &&
+		workflow?.status === "pending" &&
+		stage.sequence === workflow.currentStageOrder;
+	const terminalOrdinaryTarget =
+		ordinaryWorkflow &&
+		(assignment?.status === "approved" || assignment?.status === "rejected") &&
+		stage?.status === assignment.status &&
+		((workflow?.status === assignment.status &&
+			workflow.currentStageOrder === null) ||
+			(workflow?.status === "pending" &&
+				assignment.status === "approved" &&
+				typeof workflow.currentStageOrder === "number" &&
+				stage.sequence < workflow.currentStageOrder));
 	if (
 		!assignment ||
 		!workflow ||
@@ -513,10 +531,7 @@ function toPersistedCanonicalDecisionRequest(
 		!workflow.sourceId ||
 		!workflow.requesterEmployeeId ||
 		!supportedWorkflow ||
-		assignment.status !== "pending" ||
-		stage.status !== "pending" ||
-		workflow.status !== "pending" ||
-		stage.sequence !== workflow.currentStageOrder
+		(!pendingTarget && !terminalOrdinaryTarget)
 	) {
 		return null;
 	}
@@ -527,7 +542,7 @@ function toPersistedCanonicalDecisionRequest(
 		organizationId,
 		approverId: assignment.approverEmployeeId,
 		requesterEmployeeId: workflow.requesterEmployeeId,
-		status: "pending",
+		status: assignment.status as ApprovalInboxStatus,
 	};
 }
 

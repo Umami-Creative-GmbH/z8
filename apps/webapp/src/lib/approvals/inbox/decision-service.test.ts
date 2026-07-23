@@ -117,6 +117,91 @@ describe("approval inbox decision service", () => {
 			{ approvalRequestId: "assignment-1" },
 		);
 	});
+
+	it("loads an exact terminal ordinary assignment so the owner can determine replay", async () => {
+		approvalRequestFindFirstMock.mockResolvedValue(null);
+		assignmentFindFirstMock.mockResolvedValue({
+			id: "assignment-1",
+			organizationId: "org-1",
+			workflowId: "workflow-1",
+			stageId: "stage-1",
+			approverEmployeeId: "manager-1",
+			status: "approved",
+			workflow: {
+				id: "workflow-1",
+				organizationId: "org-1",
+				workflowType: "manual_time_submission",
+				sourceType: "time_entry",
+				sourceId: "period-1",
+				requesterEmployeeId: "employee-1",
+				status: "approved",
+				currentStageOrder: null,
+			},
+			stage: {
+				id: "stage-1",
+				organizationId: "org-1",
+				workflowId: "workflow-1",
+				sequence: 1,
+				status: "approved",
+			},
+		});
+
+		await approveApprovalInboxItem({
+			approvalId: "assignment-1",
+			actorEmployeeId: "manager-1",
+			organizationId: "org-1",
+		});
+
+		expect(completeHandlerApproveMock).toHaveBeenCalledWith(
+			"period-1",
+			"manager-1",
+			{ approvalRequestId: "assignment-1" },
+		);
+	});
+
+	it("loads exact terminal ordinary assignments for bulk replay", async () => {
+		approvalRequestFindManyMock.mockResolvedValue([]);
+		assignmentFindManyMock.mockResolvedValue([
+			{
+				id: "assignment-1",
+				organizationId: "org-1",
+				workflowId: "workflow-1",
+				stageId: "stage-1",
+				approverEmployeeId: "manager-1",
+				status: "approved",
+				workflow: {
+					id: "workflow-1",
+					organizationId: "org-1",
+					workflowType: "manual_time_submission",
+					sourceType: "time_entry",
+					sourceId: "period-1",
+					requesterEmployeeId: "employee-1",
+					status: "approved",
+					currentStageOrder: null,
+				},
+				stage: {
+					id: "stage-1",
+					organizationId: "org-1",
+					workflowId: "workflow-1",
+					sequence: 1,
+					status: "approved",
+				},
+			},
+		]);
+
+		const result = await bulkApproveApprovalInboxItems({
+			approvalIds: ["assignment-1"],
+			actorEmployeeId: "manager-1",
+			organizationId: "org-1",
+		});
+
+		expect(result.failed).toEqual([]);
+		expect(completeHandlerApproveMock).toHaveBeenCalledWith(
+			"period-1",
+			"manager-1",
+			{ approvalRequestId: "assignment-1" },
+		);
+	});
 	it("returns the same generic not-found error for missing and inaccessible single IDs", async () => {
 		approvalRequestFindFirstMock
 			.mockResolvedValueOnce(null)

@@ -63,13 +63,6 @@ export async function approveWorkPeriod(input: {
 			};
 		}
 
-		if (selectedWorkPeriod.approvalStatus !== "pending") {
-			return {
-				success: false,
-				error: "Only pending work periods can be approved",
-			};
-		}
-
 		const dbService: ApprovalDbService = {
 			db,
 			query: <T>(_name: string, operation: () => Promise<T>) =>

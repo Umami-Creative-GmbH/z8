@@ -205,4 +205,31 @@ describe("approveWorkPeriod", () => {
 		);
 		expect(mockState.updateSet).not.toHaveBeenCalled();
 	});
+
+	it("delegates an exact terminal target so the owner can determine replay", async () => {
+		mockState.findMember.mockResolvedValue({ role: "admin" });
+		mockState.selectLimit.mockResolvedValue([
+			{
+				id: "period-1",
+				organizationId: "org-1",
+				approvalStatus: "approved",
+			},
+		]);
+
+		const result = await approveWorkPeriod({
+			workPeriodId: "period-1",
+			approvalRequestId: "approval-1",
+		});
+
+		expect(result).toEqual({
+			success: true,
+			data: { workPeriodId: "period-1" },
+		});
+		expect(mockState.decideStableTarget).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.anything(),
+			expect.objectContaining({ approvalRequestId: "approval-1" }),
+			expect.anything(),
+		);
+	});
 });
