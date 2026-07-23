@@ -4,7 +4,7 @@
 
 **Goal:** Migrate manual time submissions and policy-gated clock-outs to concrete organization-scoped approval workflow adapters without changing public behavior or enabling new rollout modes.
 
-**Architecture:** A shared ordinary work-period contract, verified legacy capture, terminal finalizer, and adapter factory serve two fixed workflow types: `manual_time_submission` and `policy_clock_out`. Existing creation and decision paths cross one repository-owned rollout boundary, while exact source locking, immutable kind metadata, canonical-record parity, affected-row compare-and-swap, compatibility projections, and post-commit side-effect descriptors preserve tenant isolation and transactional correctness.
+**Architecture:** A shared ordinary work-period contract, verified legacy capture, terminal finalizer, and adapter factory serve two fixed workflow types: `manual_time_submission` and `policy_clock_out`. Existing creation and decision paths cross one repository-owned rollout boundary, while exact source locking, immutable kind metadata, canonical-record parity, affected-row compare-and-swap, compatibility projections, and post-commit side-effect descriptors preserve tenant isolation and transactional correctness. Terminal policy-clock-out approval also invokes one transaction-only break-maintenance boundary that atomically rewrites the approved source into two matching legacy and canonical segments when policy requires a break.
 
 **Tech Stack:** TypeScript, Next.js 16 server actions, Drizzle ORM, PostgreSQL, Effect, Temporal, Vitest, canonical approval repository and transition engine, pnpm.
 
@@ -25,6 +25,10 @@
 - Create `apps/webapp/src/lib/approvals/server/work-period-submission.ts`: trusted transaction-bound five-mode submission orchestration.
 - Create `apps/webapp/src/lib/approvals/server/work-period-submission.test.ts`: rollout, replay, routing, auto-completion, rollback, and side-effect tests.
 - Create `apps/webapp/src/lib/approvals/server/work-period-approvals.integration.test.ts`: disposable PostgreSQL locking, compare-and-swap, replay, race, rollback, and tenant tests.
+- Create `apps/webapp/src/lib/time-tracking/policy-clock-out-terminal-break.ts`: transaction-only policy lookup, Temporal break planning, synthetic entry creation, and canonical two-segment persistence.
+- Create `apps/webapp/src/lib/time-tracking/policy-clock-out-terminal-break.test.ts`: no-op, split, timezone, metadata, allocation, compare-and-swap, and failure tests.
+- Create `apps/webapp/src/lib/time-tracking/break-policy-calculation.ts`: pure shared break-rule selection and deficit calculation.
+- Create `apps/webapp/src/lib/time-tracking/break-policy-calculation.test.ts`: threshold, highest-rule, existing-break, and no-policy tests.
 - Modify `apps/webapp/src/lib/approvals/time-request-kind.ts`: fail closed on contradictory ordinary-time classification evidence.
 - Modify `apps/webapp/src/lib/approvals/workflow/ports.ts`: type ordinary workflow source snapshots instead of leaving them `unknown`.
 - Modify `apps/webapp/src/lib/approvals/server/work-period-approvals.ts`: exact terminal finalizer, rollout-aware stable-target decisions, and detached post-commit descriptors.
@@ -693,7 +697,256 @@ git add 'apps/webapp/src/app/[locale]/(app)/time-tracking/actions/approvals.ts' 
 git commit -m "feat: migrate ordinary time approval creation"
 ```
 
-### Task 8: Route Every Ordinary Decision Through One Stable Target
+### Task 8A: Add Transaction-Bound Canonical Break Splitting
+
+**Files:**
+- Create: `apps/webapp/src/lib/time-tracking/break-policy-calculation.ts`
+- Create: `apps/webapp/src/lib/time-tracking/break-policy-calculation.test.ts`
+- Create: `apps/webapp/src/lib/time-tracking/policy-clock-out-terminal-break.ts`
+- Create: `apps/webapp/src/lib/time-tracking/policy-clock-out-terminal-break.test.ts`
+- Modify: `apps/webapp/src/lib/effect/services/break-enforcement.service.ts`
+- Modify: `apps/webapp/src/lib/effect/services/__tests__/break-enforcement.service.test.ts`
+- Modify: `apps/webapp/src/lib/approvals/server/work-period-approvals.ts`
+- Modify: `apps/webapp/src/lib/approvals/server/work-period-approvals.test.ts`
+- Modify: `apps/webapp/src/lib/approvals/server/work-period-submission.ts`
+- Modify: `apps/webapp/src/lib/approvals/server/work-period-submission.test.ts`
+
+- [ ] **Step 1: Write failing pure planning and transaction-bound split tests**
+
+Define the transaction-only boundary expected by the tests:
+
+```ts
+export interface BreakPolicyCalculationInput {
+  sessionDurationMinutes: number;
+  breaksTakenMinutes: number;
+  regulation: {
+    regulationId: string;
+    regulationName: string;
+    maxUninterruptedMinutes: number | null;
+    breakRules: readonly {
+      workingMinutesThreshold: number;
+      requiredBreakMinutes: number;
+    }[];
+  } | null;
+}
+
+export interface BreakDeficitCalculation {
+  deficit: number;
+  applicableRule: {
+    workingMinutesThreshold: number;
+    requiredBreakMinutes: number;
+  } | null;
+  regulationId: string | null;
+  regulationName: string | null;
+  maxUninterruptedMinutes: number | null;
+}
+
+export function calculateBreakDeficit(
+  input: BreakPolicyCalculationInput,
+): BreakDeficitCalculation;
+
+export interface PolicyClockOutTerminalBreakInput {
+  dbService: OrdinaryWorkPeriodFinalizerDbService;
+  organizationId: string;
+  employeeId: string;
+  actorUserId: string;
+  period: {
+    id: string;
+    canonicalRecordId: string;
+    clockInId: string;
+    clockOutId: string;
+    startTime: Date;
+    endTime: Date;
+    durationMinutes: number;
+    projectId: string | null;
+    workCategoryId: string | null;
+    workLocationType: "office" | "home" | "remote" | "other" | null;
+    approvalWorkflowId: string | null;
+  };
+}
+
+export type PolicyClockOutTerminalBreakResult =
+  | { kind: "not_required" }
+  | {
+      kind: "split";
+      breakMinutes: number;
+      breakStart: string;
+      breakEnd: string;
+      secondWorkPeriodId: string;
+      secondCanonicalRecordId: string;
+    };
+
+export async function applyPolicyClockOutTerminalBreakInTransaction(
+  input: PolicyClockOutTerminalBreakInput,
+): Promise<PolicyClockOutTerminalBreakResult>;
+```
+
+The tests must require all of the following:
+
+- policy assignment and break rules are evaluated at the original `period.endTime`, not approval time;
+- the original real clock-out entry's IANA timezone is used for synthetic events, falling back to the employee setting only when that entry has no valid zone;
+- same-local-date break gaps include only completed, non-deleted, approved periods for the exact organization and employee;
+- Temporal computes break instants; `resolveFallbackTimezoneCapture` derives each synthetic entry's exact offset;
+- stored adjusted duration equals `period.durationMinutes - deficit`, first duration equals the integer insertion offset, and the second receives the remaining adjusted minutes;
+- no rule/deficit returns `not_required` with zero writes;
+- a split creates exactly two chained synthetic entries, updates the original period and canonical record, inserts the second period, canonical base/work subtype, and every allocation copied from the original canonical record;
+- only the original period keeps `approvalWorkflowId`; only the original canonical record receives the terminal decision;
+- both periods carry the same adjustment reason, while only the original stores `originalEndTime` and `originalDurationMinutes`;
+- every predicate includes `organizationId` and employee/source identity; stale endpoints, canonical state, workflow link, or existing adjustment fail closed;
+- failures at any write reject so the caller-owned transaction can roll back.
+
+- [ ] **Step 2: Run the focused tests and confirm RED**
+
+Run:
+
+```bash
+pnpm --filter webapp exec vitest run \
+  src/lib/time-tracking/break-policy-calculation.test.ts \
+  src/lib/time-tracking/policy-clock-out-terminal-break.test.ts \
+  src/lib/effect/services/__tests__/break-enforcement.service.test.ts \
+  src/lib/approvals/server/work-period-approvals.test.ts \
+  src/lib/approvals/server/work-period-submission.test.ts
+```
+
+Expected: FAIL because the transaction-only helper does not exist and terminal approval does not consume deferred break maintenance.
+
+- [ ] **Step 3: Implement the pure break plan and transaction-only persistence boundary**
+
+Keep the new module independent of workflow transitions, notifications, route revalidation, and transaction ownership. Its top-level flow must remain explicit:
+
+```ts
+async function acquireEmployeeTimeEntryLock(
+  db: OrdinaryWorkPeriodFinalizerDatabase,
+  input: { organizationId: string; employeeId: string },
+): Promise<void> {
+  await db.execute(
+    sql`select pg_advisory_xact_lock(hashtextextended(${`${input.organizationId}:${input.employeeId}`}, 0))`,
+  );
+}
+
+export async function applyPolicyClockOutTerminalBreakInTransaction(
+  input: PolicyClockOutTerminalBreakInput,
+): Promise<PolicyClockOutTerminalBreakResult> {
+  await acquireEmployeeTimeEntryLock(input.dbService.db, {
+    organizationId: input.organizationId,
+    employeeId: input.employeeId,
+  });
+
+  const evidence = await loadTerminalBreakEvidence(input);
+  assertExactLockedSource(input, evidence);
+
+  const plan = planTerminalBreak({
+    period: input.period,
+    policy: evidence.policyAtClockOut,
+    breaksTakenMinutes: evidence.approvedBreakMinutes,
+    timezone: evidence.eventTimezone,
+  });
+  if (plan.kind === "not_required") return plan;
+
+  const entries = await insertSyntheticBreakEntries(input, evidence, plan);
+  await shortenOriginalPeriodAndCanonicalRecord(input, evidence, entries, plan);
+  const secondCanonicalRecordId = await insertSecondCanonicalWorkRecord(
+    input,
+    evidence,
+    plan,
+  );
+  const secondWorkPeriodId = await insertSecondWorkPeriod(
+    input,
+    evidence,
+    entries,
+    plan,
+    secondCanonicalRecordId,
+  );
+
+  return {
+    kind: "split",
+    breakMinutes: plan.breakMinutes,
+    breakStart: plan.breakStart.toString(),
+    breakEnd: plan.breakEnd.toString(),
+    secondWorkPeriodId,
+    secondCanonicalRecordId,
+  };
+}
+```
+
+Implement `calculateBreakDeficit` in `break-policy-calculation.ts` and use it from both the old immediate enforcement service and the new terminal helper. Preserve the existing strict-threshold rule (`duration > threshold`), choose the highest applicable threshold, and subtract already-taken break minutes without dropping below zero. Do not change ordinary no-approval enforcement behavior. Do not import app-layer `actions.canonical.ts`; perform the narrow canonical base, `timeRecordWork`, allocation, and work-period writes in this domain module using the caller's transaction client.
+
+- [ ] **Step 4: Integrate the helper into the shared terminal finalizer**
+
+Invoke it exactly once after the approve compare-and-swap has established approved source state and before inserting terminal decision evidence:
+
+```ts
+const breakResult =
+  input.kind === "policy_clock_out" && input.transition.kind === "approve"
+    ? await applyPolicyClockOutTerminalBreakInTransaction({
+        dbService: input.dbService,
+        organizationId: input.organizationId,
+        employeeId: locked.employeeId,
+        actorUserId: input.actor.userId,
+        period: toTerminalBreakSource(locked),
+      })
+    : { kind: "not_required" as const };
+```
+
+The finalizer result, workflow event, compatibility row, projection, notification descriptor, and approval decision continue to describe the original submitted interval. The helper may change only the persisted approved source graph. Rejection and `manual_time_submission` must not load policy or invoke the helper.
+
+Remove `deferBreakEnforcement` from `WorkPeriodPostCommitDescriptor` after both explicit decisions and requester auto-completion use the shared terminal finalizer. Keep Task 7's caller guard until the field removal proves every approval-producing clock-out is consumed transactionally; then simplify the caller so only no-approval clock-outs use immediate enforcement.
+
+- [ ] **Step 5: Add terminal-path and replay regressions**
+
+Add tests proving:
+
+- legacy, shadow, ready, canonical, and complete terminal approval call the helper once;
+- legacy and canonical requester auto-approval call the helper once in the submission transaction;
+- intermediate stages and rejection call it zero times;
+- exact submission and decision replay perform zero split writes;
+- a helper failure rolls back source approval, workflow/legacy decision state, compatibility, projection, and decision evidence;
+- non-approval clock-out still calls existing immediate enforcement once.
+
+- [ ] **Step 6: Run focused verification**
+
+Run:
+
+```bash
+pnpm --filter webapp exec vitest run \
+  src/lib/time-tracking/break-policy-calculation.test.ts \
+  src/lib/time-tracking/policy-clock-out-terminal-break.test.ts \
+  src/lib/effect/services/__tests__/break-enforcement.service.test.ts \
+  src/lib/approvals/server/work-period-approvals.test.ts \
+  src/lib/approvals/server/work-period-submission.test.ts \
+  'src/app/[locale]/(app)/time-tracking/actions/clocking.test.ts'
+pnpm --filter webapp typecheck
+pnpm --filter webapp exec biome check \
+  src/lib/time-tracking/break-policy-calculation.ts \
+  src/lib/time-tracking/break-policy-calculation.test.ts \
+  src/lib/time-tracking/policy-clock-out-terminal-break.ts \
+  src/lib/time-tracking/policy-clock-out-terminal-break.test.ts \
+  src/lib/effect/services/break-enforcement.service.ts \
+  src/lib/approvals/server/work-period-approvals.ts \
+  src/lib/approvals/server/work-period-submission.ts
+```
+
+Expected: all commands exit 0; no approval-producing policy clock-out invokes post-commit break enforcement.
+
+- [ ] **Step 7: Commit terminal break maintenance**
+
+```bash
+git add apps/webapp/src/lib/time-tracking/policy-clock-out-terminal-break.ts \
+  apps/webapp/src/lib/time-tracking/policy-clock-out-terminal-break.test.ts \
+  apps/webapp/src/lib/time-tracking/break-policy-calculation.ts \
+  apps/webapp/src/lib/time-tracking/break-policy-calculation.test.ts \
+  apps/webapp/src/lib/effect/services/break-enforcement.service.ts \
+  apps/webapp/src/lib/effect/services/__tests__/break-enforcement.service.test.ts \
+  apps/webapp/src/lib/approvals/server/work-period-approvals.ts \
+  apps/webapp/src/lib/approvals/server/work-period-approvals.test.ts \
+  apps/webapp/src/lib/approvals/server/work-period-submission.ts \
+  apps/webapp/src/lib/approvals/server/work-period-submission.test.ts \
+  'apps/webapp/src/app/[locale]/(app)/time-tracking/actions/clocking.ts' \
+  'apps/webapp/src/app/[locale]/(app)/time-tracking/actions/clocking.test.ts'
+git commit -m "feat: enforce breaks on terminal clock-out approval"
+```
+
+### Task 8B: Route Every Ordinary Decision Through One Stable Target
 
 **Files:**
 - Modify: `apps/webapp/src/lib/approvals/server/work-period-approvals.ts`
@@ -952,7 +1205,9 @@ Cover two exact retries, two distinct submissions of one kind, manual versus pol
 
 - [ ] **Step 3: Write failing terminal concurrency tests**
 
-Race approve versus reject and duplicate approve commands. Assert one terminal source mutation, one decision row, one completed command receipt, consistent workflow/legacy/projection/outbox/source state, and generic conflict for the loser. Force zero-row compare-and-swap for work period, canonical record, decision insert, and source link; assert complete rollback.
+Race approve versus reject and duplicate approve commands. Assert one terminal source mutation, one decision row, one completed command receipt, consistent workflow/legacy/projection/outbox/source state, and generic conflict for the loser. For an enforced policy clock-out, assert exactly two synthetic entries, two approved work periods, two matching canonical work records, one workflow-owned source segment, and no duplicate split. Force zero-row compare-and-swap for work period, canonical record, decision insert, source link, and split-sensitive source state; assert complete rollback.
+
+Inject failures after the first synthetic entry, second synthetic entry, original period update, original canonical update, new canonical base, `timeRecordWork`, allocation copy, and second period insert. After each failure, assert the original pending graph and time-entry chain are unchanged. Race terminal splitting against another employee time-entry insertion and assert the shared transaction advisory lock preserves one valid hash/previous-entry chain.
 
 - [ ] **Step 4: Run the disposable suite and confirm RED**
 
@@ -1006,6 +1261,8 @@ Run:
 
 ```bash
 pnpm --filter webapp exec vitest run \
+  src/lib/time-tracking/break-policy-calculation.test.ts \
+  src/lib/time-tracking/policy-clock-out-terminal-break.test.ts \
   src/lib/approvals/time-request-kind.test.ts \
   src/lib/approvals/domain-adapters/work-period-contract.test.ts \
   src/lib/approvals/domain-adapters/work-period-legacy-state.test.ts \
@@ -1099,6 +1356,8 @@ If verification required no changes, do not create an empty commit.
 - [ ] Source, canonical record, compatibility, projection, outbox, and decision writes are atomic.
 - [ ] Exact retries replay and competing pending submissions fail closed.
 - [ ] Multistage source finalization occurs only on terminal transition.
+- [ ] Terminal policy-clock-out approval atomically produces either no adjustment or two approved legacy/canonical segments, with workflow ownership retained only by the original segment.
+- [ ] Synthetic break entries use Temporal-derived instants, exact event offsets, and a serialized employee entry chain.
 - [ ] Rejection preserves recorded endpoints and instants.
 - [ ] Private pending changes and internal identities never enter display or public errors.
 - [ ] Existing My Requests exclusion and public response shapes remain unchanged.
