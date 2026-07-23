@@ -48,5 +48,8 @@ APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=`);
 		expect(runner).toContain(
 			"src/lib/approvals/server/time-correction-approvals.integration.test.ts",
 		);
+		expect(runner).toContain(
+			"src/lib/approvals/server/work-period-approvals.integration.test.ts",
+		);
 	});
 });

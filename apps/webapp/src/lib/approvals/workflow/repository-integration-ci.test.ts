@@ -48,7 +48,8 @@ describe("approval workflow repository integration CI contract", () => {
 		expect(workflow).toContain(
 			`pnpm --filter webapp exec vitest run src/lib/approvals/workflow/repository.integration.test.ts \\
             src/lib/approvals/workflow/transition-engine.integration.test.ts \\
-            src/lib/approvals/server/time-correction-approvals.integration.test.ts`,
+            src/lib/approvals/server/time-correction-approvals.integration.test.ts \\
+            src/lib/approvals/server/work-period-approvals.integration.test.ts`,
 		);
 	});
 });
