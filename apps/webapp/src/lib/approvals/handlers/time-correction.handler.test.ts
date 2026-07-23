@@ -714,6 +714,34 @@ function configureCorrectedCurrentEndpoint(
 }
 
 describe("superseded correction history regression", () => {
+	const staleEndpointCases = (["clockIn", "clockOut"] as const).flatMap(
+		(endpointName) =>
+			(["native", "corrected"] as const).flatMap((endpointKind) => [
+				{
+					name: `a ${endpointKind} ${endpointName} marked superseded`,
+					mutate: (
+						fixture: ReturnType<typeof createSupersededHistoryDbService>,
+					) => {
+						if (endpointKind === "corrected") {
+							configureCorrectedCurrentEndpoint(fixture, endpointName);
+						}
+						fixture.period[endpointName].isSuperseded = true;
+					},
+				},
+				{
+					name: `a ${endpointKind} ${endpointName} linked to a successor`,
+					mutate: (
+						fixture: ReturnType<typeof createSupersededHistoryDbService>,
+					) => {
+						if (endpointKind === "corrected") {
+							configureCorrectedCurrentEndpoint(fixture, endpointName);
+						}
+						fixture.period[endpointName].supersededById =
+							`${endpointName}-successor`;
+					},
+				},
+			]),
+	);
 	const invalidEndpointCases = [
 		{
 			name: "a foreign-organization clock-in",
@@ -779,6 +807,7 @@ describe("superseded correction history regression", () => {
 				fixture.period.clockOut.type = "correction";
 			},
 		},
+		...staleEndpointCases,
 	] as const;
 
 	it.each([

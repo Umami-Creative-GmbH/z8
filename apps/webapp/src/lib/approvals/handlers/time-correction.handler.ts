@@ -150,7 +150,9 @@ function hasValidApprovalEndpoints(
 			entry === null ||
 			entry.id !== expectedId ||
 			entry.organizationId !== requestOrganizationId ||
-			entry.employeeId !== period.employeeId
+			entry.employeeId !== period.employeeId ||
+			entry.isSuperseded === true ||
+			entry.supersededById != null
 		) {
 			return false;
 		}
