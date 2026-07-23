@@ -56,4 +56,3 @@ returned.
 - A year-boundary regression case proves that December and January are both
   loaded.
 - Existing day, month, year, authorization, and timezone tests remain green.
-

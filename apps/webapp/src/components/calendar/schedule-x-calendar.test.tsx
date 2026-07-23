@@ -30,7 +30,10 @@ import {
 	useScheduleXDomLifecycle,
 } from "./use-schedule-x-dom-lifecycle";
 
-const useCalendarAppMock = vi.hoisted(() => vi.fn());
+const { scheduleXPreferences, useCalendarAppMock } = vi.hoisted(() => ({
+	scheduleXPreferences: { weekStartDay: "monday" as "monday" | "sunday" },
+	useCalendarAppMock: vi.fn(),
+}));
 
 const EMPTY_CALENDAR_EVENTS: CalendarEvent[] = [];
 const EMPTY_CLOCK_OUT_ALLOWED_WORK_PERIOD_IDS = new Set<string>();
@@ -41,6 +44,7 @@ const translateFallback = (_key: string, fallback: string) => fallback;
 type ScheduleXPluginTestDouble = {
 	beforeRender?: () => void;
 	setDate?: ReturnType<typeof vi.fn>;
+	setFirstDayOfWeek?: ReturnType<typeof vi.fn>;
 };
 
 type CalendarAppTestDouble = {
@@ -89,6 +93,7 @@ vi.mock("@schedule-x/calendar-controls", () => ({
 					throw new TypeError("Cannot read properties of undefined (reading 'datePickerState')");
 				}
 			}),
+			setFirstDayOfWeek: vi.fn(),
 			setView: vi.fn(),
 		};
 	},
@@ -105,7 +110,7 @@ vi.mock("@schedule-x/react", () => ({
 
 vi.mock("@/components/providers/user-preferences-provider", () => ({
 	useUserTimezone: () => "Europe/Berlin",
-	useWeekStartDay: () => 1,
+	useWeekStartDay: () => scheduleXPreferences.weekStartDay,
 }));
 
 vi.mock("@/components/theme-provider", () => ({
@@ -187,6 +192,7 @@ function DomLifecycleHarness() {
 }
 
 beforeEach(() => {
+	scheduleXPreferences.weekStartDay = "monday";
 	useCalendarAppMock.mockReset();
 	useCalendarAppMock.mockImplementation(useCalendarAppTestDouble);
 });
@@ -219,6 +225,58 @@ describe("ScheduleXCalendarWrapper header", () => {
 		expect(useCalendarAppMock.mock.calls[0]?.[0].selectedDate).toEqual(
 			Temporal.PlainDate.from("2026-05-18"),
 		);
+	});
+
+	it("aligns a Sunday-start Schedule-X grid with the visible week range", () => {
+		scheduleXPreferences.weekStartDay = "sunday";
+		const onRangeChange = vi.fn();
+
+		render(
+			<ScheduleXCalendarWrapper
+				events={[]}
+				initialDateKey="2026-09-03"
+				onRangeChange={onRangeChange}
+				onViewModeChange={vi.fn()}
+				viewMode="week"
+			/>,
+		);
+
+		const calendarConfig = useCalendarAppMock.mock.calls[0]?.[0];
+		expect(calendarConfig.firstDayOfWeek).toBe(7);
+
+		calendarConfig.callbacks.onRangeUpdate({
+			start: Temporal.PlainDate.from("2026-08-30"),
+			end: Temporal.PlainDate.from("2026-09-05"),
+		});
+		expect(onRangeChange).toHaveBeenCalledWith({
+			startDateKey: "2026-08-30",
+			endDateKey: "2026-09-05",
+		});
+	});
+
+	it("synchronizes Schedule-X when the week-start preference changes", () => {
+		const { rerender } = render(
+			<ScheduleXCalendarWrapper
+				events={[]}
+				initialDateKey="2026-09-03"
+				onViewModeChange={vi.fn()}
+				viewMode="week"
+			/>,
+		);
+		const calendarControls = useCalendarAppMock.mock.calls[0]?.[0].plugins[1];
+		calendarControls.setFirstDayOfWeek.mockClear();
+
+		scheduleXPreferences.weekStartDay = "sunday";
+		rerender(
+			<ScheduleXCalendarWrapper
+				events={[]}
+				initialDateKey="2026-09-03"
+				onViewModeChange={vi.fn()}
+				viewMode="week"
+			/>,
+		);
+
+		expect(calendarControls.setFirstDayOfWeek).toHaveBeenCalledWith(7);
 	});
 
 	it("updates the calendar control when the parent changes its date", () => {

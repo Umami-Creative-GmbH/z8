@@ -109,9 +109,7 @@ function CalendarViewContent({
 	const [currentDateKey, setCurrentDateKey] = useState(
 		() => initialDateKey ?? todayCalendarDateKey(initialCalendarTimezone),
 	);
-	const [visibleDateRange, setVisibleDateRange] = useState(() =>
-		calendarWeekDateKeyRange(currentDateKey, weekStartDay),
-	);
+	const visibleDateRange = calendarWeekDateKeyRange(currentDateKey, weekStartDay);
 	const currentCalendarDate = Temporal.PlainDate.from(currentDateKey);
 	const currentYear = currentCalendarDate.year;
 	const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -190,11 +188,15 @@ function CalendarViewContent({
 
 	// Handle date range change from schedule-x
 	const handleRangeChange = (range: { startDateKey: string; endDateKey: string }) => {
-		setVisibleDateRange(range);
-		const start = Temporal.PlainDate.from(range.startDateKey);
-		const end = Temporal.PlainDate.from(range.endDateKey);
-		const midpoint = start.add({ days: Math.floor(start.until(end).days / 2) });
-		setCurrentDateKey(midpoint.toString());
+		try {
+			const start = Temporal.PlainDate.from(range.startDateKey);
+			const end = Temporal.PlainDate.from(range.endDateKey);
+			if (start.until(end).days !== 6) return;
+
+			setCurrentDateKey(start.add({ days: 3 }).toString());
+		} catch {
+			// Ignore malformed or non-week ranges reported while Schedule-X changes views.
+		}
 	};
 
 	const handleTimeRangeSelect = (range: { start: Date; end: Date }) => {

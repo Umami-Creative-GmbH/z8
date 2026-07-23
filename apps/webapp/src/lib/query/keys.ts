@@ -319,6 +319,10 @@ export const queryKeys = {
 				year: number;
 				month?: number;
 				fullYear?: boolean;
+				dateRange?: {
+					startDateKey: string;
+					endDateKey: string;
+				};
 				filters: {
 					showHolidays: boolean;
 					showAbsences: boolean;
