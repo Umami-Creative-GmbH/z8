@@ -259,6 +259,197 @@ function lookalike(formatter: { insert(value: unknown): any; update(value: unkno
 		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([]);
 	});
 
+	it("tracks trusted database receivers through const object properties and aliases", () => {
+		const source = `import { db, timeRecord, workPeriod } from "@/db";
+const holder = { nested: { database: db } };
+const alias = holder;
+export function ownedObjectWrite() {
+  alias.nested.database.update(workPeriod).set({ approvalStatus: "approved" });
+}
+const lookalike = { nested: { database: formatter } };
+lookalike.nested.database.insert(timeRecord).values({ approvalState: "approved" });
+const replaced = { database: db };
+replaced.database = formatter;
+replaced.database.update(workPeriod).set({ approvalStatus: "approved" });`;
+
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
+			expect.objectContaining({
+				functionName: "ownedObjectWrite",
+				operation: "update",
+				table: "work_period",
+			}),
+		]);
+	});
+
+	it("allows an exact owner through an object-held receiver but rejects a wrong function", () => {
+		const path = "src/lib/approvals/server/work-period-approvals.ts";
+		withApprovalWriteTree(
+			{
+				[path]: `import { db, workPeriod } from "@/db";
+const holder = { db };
+export function finalizeOrdinaryWorkPeriodTerminal() {
+  return holder.db.update(workPeriod).set({ approvalStatus: "approved", pendingChanges: null });
+}
+export function wrongObjectOwner() {
+  return holder.db.update(workPeriod).set({ approvalStatus: "approved", pendingChanges: null });
+}`,
+			},
+			(workspaceRoot) => {
+				expect(
+					scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot }),
+				).toEqual([
+					expect.objectContaining({ functionName: "wrongObjectOwner", path }),
+				]);
+			},
+		);
+	});
+
+	it("tracks direct Effect DatabaseService extraction, aliases, and destructuring", () => {
+		const source = `import { timeRecord, workPeriod } from "@/db/schema";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+export function* directYield() {
+  const service = yield* DatabaseService;
+  const alias = service;
+  alias.db.update(workPeriod).set({ approvalStatus: "approved" });
+}
+export function* destructuredYield() {
+  const { db: client } = yield* DatabaseService;
+  client.insert(timeRecord).values({ organizationId, employeeId, startAt, endAt, durationMinutes, approvalState: "approved" });
+}`;
+
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
+			expect.objectContaining({
+				functionName: "directYield",
+				table: "work_period",
+			}),
+			expect.objectContaining({
+				functionName: "destructuredYield",
+				table: "time_record",
+			}),
+		]);
+	});
+
+	it("does not trust a local DatabaseService lookalike", () => {
+		const source = `import { workPeriod } from "@/db/schema";
+const DatabaseService = formatter;
+function* lookalike() {
+  const service = yield* DatabaseService;
+  service.db.update(workPeriod).set({ approvalStatus: "approved" });
+}`;
+
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([]);
+	});
+
+	it.each([
+		`import { sql } from "drizzle-orm";
+const table = input;
+sql.raw("update " + table + " set approval_status = 'approved'");`,
+		`import { db } from "@/db";
+const table = input;
+db.execute("delete from " + table);`,
+		`import { sql } from "drizzle-orm";
+const schema = input;
+sql\`update \${schema}.work_period set approval_status = 'approved'\`;`,
+		`import { sql } from "drizzle-orm";
+const table = input;
+sql\`insert into public.\${table} (approval_status) values ('approved')\`;`,
+	] as const)("fails closed for a dynamic SQL mutation target", (source) => {
+		expect(() => analyzeApprovalWriteMutations(source, FILE_NAME)).toThrow(
+			/dynamic SQL mutation target/i,
+		);
+	});
+
+	it("keeps a static SQL target with parameterized values precise", () => {
+		const source = `import { sql } from "drizzle-orm";
+sql\`update work_period set approval_status = \${status} where id = \${id}\`;`;
+
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
+			expect.objectContaining({
+				columns: ["approval_status"],
+				operation: "update",
+				table: "work_period",
+			}),
+		]);
+	});
+
+	it("fails closed when a protected payload identifier is reassigned or mutated", () => {
+		const source = `import { db, workPeriod } from "@/db";
+export function reassigned(input: object) {
+  let values = { approvalWorkflowId: "workflow-1" };
+  values = input;
+  db.update(workPeriod).set(values);
+}
+export function mutated(input: object) {
+  const values = { approvalWorkflowId: "workflow-1" };
+  Object.assign(values, input);
+  db.update(workPeriod).set(values);
+}`;
+
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
+			expect.objectContaining({
+				functionName: "reassigned",
+				uncertainty: "dynamic_payload",
+			}),
+			expect.objectContaining({
+				functionName: "mutated",
+				uncertainty: "dynamic_payload",
+			}),
+		]);
+	});
+
+	it("rejects allowed-then-input reassignment inside an exact owner capability", () => {
+		const path = "src/lib/approvals/server/work-period-submission.ts";
+		withApprovalWriteTree(
+			{
+				[path]: `import { db, workPeriod } from "@/db";
+export function bindSourceWorkflow(input: object) {
+  let values = { approvalWorkflowId: "workflow-1" };
+  values = input;
+  return db.update(workPeriod).set(values);
+}`,
+			},
+			(workspaceRoot) => {
+				expect(
+					scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot }),
+				).toEqual([
+					expect.objectContaining({
+						functionName: "bindSourceWorkflow",
+						path,
+						uncertainty: "dynamic_payload",
+					}),
+				]);
+			},
+		);
+	});
+
+	it("keeps a const payload identifier precise", () => {
+		const source = `import { db, workPeriod } from "@/db";
+const values = { approvalWorkflowId: "workflow-1" };
+db.update(workPeriod).set(values);`;
+
+		const mutations = analyzeApprovalWriteMutations(source, FILE_NAME);
+		expect(mutations).toEqual([
+			expect.objectContaining({
+				columns: ["approval_workflow_id"],
+			}),
+		]);
+		expect(mutations[0]).not.toHaveProperty("uncertainty");
+	});
+
+	it("does not carry an old object mutation across a payload reassignment", () => {
+		const source = `import { db, workPeriod } from "@/db";
+let values = {};
+Object.assign(values, input);
+values = { approvalWorkflowId: "workflow-1" };
+db.update(workPeriod).set(values);`;
+
+		const mutations = analyzeApprovalWriteMutations(source, FILE_NAME);
+		expect(mutations).toEqual([
+			expect.objectContaining({ columns: ["approval_workflow_id"] }),
+		]);
+		expect(mutations[0]).not.toHaveProperty("uncertainty");
+	});
+
 	it("extracts the complete ordinary and terminal-split raw SQL graph", () => {
 		expect(
 			findProtectedApprovalSqlMutations(`

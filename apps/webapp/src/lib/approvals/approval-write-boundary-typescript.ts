@@ -420,6 +420,7 @@ export function analyzeApprovalWriteMutations(
 	const roots = new Map<ts.Symbol, Set<Provenance>>();
 	const knownTypes = new Map<ts.Symbol, Provenance>();
 	const writes = new Map<ts.Symbol, SymbolWrite[]>();
+	const payloadMutationPositions = new Map<ts.Symbol, number[]>();
 	const typedDeclarations: Array<{ name: ts.BindingName; type: ts.TypeNode }> =
 		[];
 	const transactionCallbacks: Array<{
@@ -491,6 +492,27 @@ export function analyzeApprovalWriteMutations(
 			conditional,
 			identifier,
 		);
+	};
+	const addPayloadMutation = (
+		expression: ts.Expression,
+		position: number,
+	): void => {
+		const candidate = unwrap(expression);
+		if (!ts.isIdentifier(candidate)) return;
+		const symbol = checker.getSymbolAtLocation(candidate);
+		if (!symbol) return;
+		const positions = payloadMutationPositions.get(symbol) ?? [];
+		positions.push(position);
+		payloadMutationPositions.set(symbol, positions);
+	};
+	const mutatedObject = (expression: ts.Expression): ts.Expression | null => {
+		const access = propertyAccess(unwrap(expression));
+		if (!access) return null;
+		let target = unwrap(access.target);
+		while (propertyAccess(target)) {
+			target = unwrap(propertyAccess(target)?.target ?? target);
+		}
+		return target;
 	};
 	const addBinding = (
 		name: ts.BindingName,
@@ -862,6 +884,16 @@ export function analyzeApprovalWriteMutations(
 		if (ts.isCallExpression(node)) {
 			possibleHelperCalls.push(node);
 			const access = propertyAccess(node.expression);
+			const assignTarget = access ? unwrap(access.target) : null;
+			if (
+				access?.name === "assign" &&
+				assignTarget &&
+				ts.isIdentifier(assignTarget) &&
+				assignTarget.text === "Object" &&
+				node.arguments[0]
+			) {
+				addPayloadMutation(node.arguments[0], node.getEnd());
+			}
 			const callback = node.arguments[0];
 			if (
 				access?.name === "transaction" &&
@@ -884,6 +916,8 @@ export function analyzeApprovalWriteMutations(
 					ts.SyntaxKind.AmpersandAmpersandEqualsToken ||
 				node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionEqualsToken)
 		) {
+			const mutated = mutatedObject(node.left);
+			if (mutated) addPayloadMutation(mutated, node.getEnd());
 			addAssignment(
 				node.left,
 				node.right,
@@ -1067,6 +1101,13 @@ export function analyzeApprovalWriteMutations(
 			positions.delete(usePosition);
 		}
 	};
+	let objectPropertyExpressions: (
+		expression: ts.Expression,
+		propertyName: string,
+		usePosition: number,
+		depth: number,
+		activeSymbols?: Set<ts.Symbol>,
+	) => Set<ts.Expression>;
 	const resolveExpression = (
 		expression: ts.Expression,
 		usePosition: number,
@@ -1081,6 +1122,16 @@ export function analyzeApprovalWriteMutations(
 				? new Set([asserted])
 				: resolveExpression(expression.expression, usePosition, depth + 1);
 		}
+		if (ts.isYieldExpression(expression) && expression.expression) {
+			const yielded = resolveExpression(
+				expression.expression,
+				usePosition,
+				depth + 1,
+			);
+			return yielded.has("database_service_tag")
+				? new Set(["approval_db_service"])
+				: yielded;
+		}
 		const candidate = unwrap(expression);
 		if (
 			ts.isBinaryExpression(candidate) &&
@@ -1089,7 +1140,12 @@ export function analyzeApprovalWriteMutations(
 			return resolveExpression(candidate.right, usePosition, depth + 1);
 		}
 		if (ts.isIdentifier(candidate)) {
-			const symbol = checker.getSymbolAtLocation(candidate);
+			const symbol =
+				ts.isShorthandPropertyAssignment(candidate.parent) &&
+				candidate.parent.name === candidate &&
+				!candidate.parent.objectAssignmentInitializer
+					? checker.getShorthandAssignmentValueSymbol(candidate.parent)
+					: checker.getSymbolAtLocation(candidate);
 			return symbol
 				? resolveSymbol(
 						symbol,
@@ -1191,6 +1247,20 @@ export function analyzeApprovalWriteMutations(
 					.map((value) => applyProperty(value, access.name))
 					.filter((value): value is Provenance => value !== null),
 			);
+			for (const propertyExpression of objectPropertyExpressions(
+				access.target,
+				access.name,
+				usePosition,
+				depth + 1,
+			)) {
+				for (const value of resolveExpression(
+					propertyExpression,
+					usePosition,
+					depth + 1,
+				)) {
+					resolved.add(value);
+				}
+			}
 			if (resolved.size > 0) return resolved;
 			const symbol = checker.getSymbolAtLocation(candidate);
 			for (const declaration of symbol?.declarations ?? []) {
@@ -1206,6 +1276,109 @@ export function analyzeApprovalWriteMutations(
 			return resolved;
 		}
 		return new Set();
+	};
+	objectPropertyExpressions = (
+		expression,
+		propertyName,
+		usePosition,
+		depth,
+		activeSymbols = new Set(),
+	): Set<ts.Expression> => {
+		if (depth > MAX_PROVENANCE_DEPTH) {
+			throw new ApprovalWriteBoundaryAnalysisLimitError(
+				"constant_evaluator_depth",
+			);
+		}
+		const candidate = unwrap(expression);
+		if (ts.isObjectLiteralExpression(candidate)) {
+			for (
+				let index = candidate.properties.length - 1;
+				index >= 0;
+				index -= 1
+			) {
+				const property = candidate.properties[index];
+				if (!property) continue;
+				if (ts.isSpreadAssignment(property)) return new Set();
+				if (
+					(ts.isPropertyAssignment(property) ||
+						ts.isShorthandPropertyAssignment(property)) &&
+					staticName(property.name) === propertyName
+				) {
+					return new Set([
+						ts.isPropertyAssignment(property)
+							? property.initializer
+							: property.name,
+					]);
+				}
+			}
+			return new Set();
+		}
+		const access = propertyAccess(candidate);
+		if (access) {
+			const result = new Set<ts.Expression>();
+			for (const nested of objectPropertyExpressions(
+				access.target,
+				access.name,
+				usePosition,
+				depth + 1,
+				activeSymbols,
+			)) {
+				for (const value of objectPropertyExpressions(
+					nested,
+					propertyName,
+					usePosition,
+					depth + 1,
+					activeSymbols,
+				)) {
+					result.add(value);
+				}
+			}
+			return result;
+		}
+		if (!ts.isIdentifier(candidate)) return new Set();
+		const symbol = checker.getSymbolAtLocation(candidate);
+		if (!symbol || activeSymbols.has(symbol)) return new Set();
+		activeSymbols.add(symbol);
+		try {
+			const useScope = enclosingFunction(candidate);
+			const relevant = (writes.get(symbol) ?? []).filter(
+				(write) =>
+					write.position < usePosition &&
+					write.propertyPath.length === 0 &&
+					scopeCanReach(write.scope, useScope),
+			);
+			let start = 0;
+			for (let index = relevant.length - 1; index >= 0; index -= 1) {
+				if (!relevant[index]?.conditional) {
+					start = index;
+					break;
+				}
+			}
+			if (
+				(payloadMutationPositions.get(symbol) ?? []).some(
+					(position) =>
+						position > (relevant[start]?.position ?? -1) &&
+						position < usePosition,
+				)
+			) {
+				return new Set();
+			}
+			const result = new Set<ts.Expression>();
+			for (const write of relevant.slice(start)) {
+				for (const value of objectPropertyExpressions(
+					write.value,
+					propertyName,
+					write.position,
+					depth + 1,
+					activeSymbols,
+				)) {
+					result.add(value);
+				}
+			}
+			return result;
+		} finally {
+			activeSymbols.delete(symbol);
+		}
 	};
 	for (const callback of transactionCallbacks) {
 		if (
@@ -1661,7 +1834,9 @@ export function analyzeApprovalWriteMutations(
 	}
 	const payloadProperties = (
 		expression: ts.Expression,
+		usePosition: number,
 		depth = 0,
+		activeSymbols = new Set<ts.Symbol>(),
 	): SourcePayloadAnalysis => {
 		if (depth > MAX_PROVENANCE_DEPTH) {
 			throw new ApprovalWriteBoundaryAnalysisLimitError(
@@ -1671,23 +1846,99 @@ export function analyzeApprovalWriteMutations(
 		const candidate = unwrap(expression);
 		if (ts.isIdentifier(candidate)) {
 			const symbol = checker.getSymbolAtLocation(candidate);
-			const declaration = symbol?.valueDeclaration;
-			if (
-				declaration &&
-				ts.isVariableDeclaration(declaration) &&
-				declaration.initializer
-			) {
-				return payloadProperties(declaration.initializer, depth + 1);
+			if (!symbol || activeSymbols.has(symbol)) {
+				return {
+					properties: new Map(),
+					resolvedAfterUncertainty: new Set(),
+					unresolved: true,
+				};
 			}
-			return {
-				properties: new Map(),
-				resolvedAfterUncertainty: new Set(),
-				unresolved: true,
-			};
+			activeSymbols.add(symbol);
+			try {
+				const useScope = enclosingFunction(candidate);
+				const relevant = (writes.get(symbol) ?? []).filter(
+					(write) =>
+						write.position < usePosition &&
+						write.propertyPath.length === 0 &&
+						scopeCanReach(write.scope, useScope),
+				);
+				let start = 0;
+				for (let index = relevant.length - 1; index >= 0; index -= 1) {
+					if (!relevant[index]?.conditional) {
+						start = index;
+						break;
+					}
+				}
+				const analyses = relevant
+					.slice(start)
+					.map((write) =>
+						payloadProperties(
+							write.value,
+							write.position,
+							depth + 1,
+							activeSymbols,
+						),
+					);
+				if (analyses.length === 0) {
+					return {
+						properties: new Map(),
+						resolvedAfterUncertainty: new Set(),
+						unresolved: true,
+					};
+				}
+				const mutated = (payloadMutationPositions.get(symbol) ?? []).some(
+					(position) =>
+						position > (relevant[start]?.position ?? -1) &&
+						position < usePosition,
+				);
+				const signature = (analysis: SourcePayloadAnalysis): string =>
+					[...analysis.properties]
+						.sort(([left], [right]) => compareAscii(left, right))
+						.map(
+							([name, value]) =>
+								`${name}:${value?.getText(sourceFile) ?? "<unknown>"}`,
+						)
+						.join("|");
+				const first = analyses[0];
+				if (
+					!mutated &&
+					first &&
+					!first.unresolved &&
+					analyses.every(
+						(analysis) =>
+							!analysis.unresolved && signature(analysis) === signature(first),
+					)
+				) {
+					return first;
+				}
+				const properties = new Map<string, ts.Expression | null>();
+				for (const analysis of analyses) {
+					for (const [name, value] of analysis.properties) {
+						properties.set(name, value);
+					}
+				}
+				return {
+					properties,
+					resolvedAfterUncertainty: new Set(),
+					unresolved: true,
+				};
+			} finally {
+				activeSymbols.delete(symbol);
+			}
 		}
 		if (ts.isConditionalExpression(candidate)) {
-			const whenTrue = payloadProperties(candidate.whenTrue, depth + 1);
-			const whenFalse = payloadProperties(candidate.whenFalse, depth + 1);
+			const whenTrue = payloadProperties(
+				candidate.whenTrue,
+				usePosition,
+				depth + 1,
+				activeSymbols,
+			);
+			const whenFalse = payloadProperties(
+				candidate.whenFalse,
+				usePosition,
+				depth + 1,
+				activeSymbols,
+			);
 			const properties = new Map(whenTrue.properties);
 			for (const [name, value] of whenFalse.properties)
 				properties.set(name, value);
@@ -1713,7 +1964,12 @@ export function analyzeApprovalWriteMutations(
 		let unresolved = false;
 		for (const property of candidate.properties) {
 			if (ts.isSpreadAssignment(property)) {
-				const spread = payloadProperties(property.expression, depth + 1);
+				const spread = payloadProperties(
+					property.expression,
+					usePosition,
+					depth + 1,
+					activeSymbols,
+				);
 				if (spread.unresolved) {
 					unresolved = true;
 					resolvedAfterUncertainty.clear();
@@ -1871,7 +2127,7 @@ export function analyzeApprovalWriteMutations(
 		const operation = access.name === "values" ? "insert" : "update";
 		if (access.name !== "values" && access.name !== "set") return;
 		const payload = node.arguments[0]
-			? payloadProperties(node.arguments[0])
+			? payloadProperties(node.arguments[0], node.getStart(sourceFile))
 			: null;
 		if (!payload) return;
 		const normalizedColumns = [...payload.properties.keys()]

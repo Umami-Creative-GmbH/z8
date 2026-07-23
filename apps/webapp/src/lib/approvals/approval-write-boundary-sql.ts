@@ -610,10 +610,16 @@ function tableAt(
 ): { end: number; table: ProtectedApprovalTable | null } | null {
 	const first = tokens[start];
 	if (first?.kind !== "identifier") return null;
+	if (first.text === APPROVAL_DYNAMIC_SQL_MARKER) {
+		throw new Error("Approval write boundary dynamic SQL mutation target");
+	}
 	const qualified =
 		punctuationAt(tokens, start + 1, ".") &&
 		tokens[start + 2]?.kind === "identifier";
 	const token = qualified ? tokens[start + 2] : first;
+	if (token.text === APPROVAL_DYNAMIC_SQL_MARKER) {
+		throw new Error("Approval write boundary dynamic SQL mutation target");
+	}
 	const table = PROTECTED_TABLE_SET.has(token.text)
 		? (token.text as ProtectedApprovalTable)
 		: null;
@@ -626,10 +632,16 @@ function sourceTableAt(
 ): { end: number; table: TargetedApprovalSourceTable | null } | null {
 	const first = tokens[start];
 	if (first?.kind !== "identifier") return null;
+	if (first.text === APPROVAL_DYNAMIC_SQL_MARKER) {
+		throw new Error("Approval write boundary dynamic SQL mutation target");
+	}
 	const qualified =
 		punctuationAt(tokens, start + 1, ".") &&
 		tokens[start + 2]?.kind === "identifier";
 	const token = qualified ? tokens[start + 2] : first;
+	if (token.text === APPROVAL_DYNAMIC_SQL_MARKER) {
+		throw new Error("Approval write boundary dynamic SQL mutation target");
+	}
 	const table = TARGETED_APPROVAL_SOURCE_TABLES.includes(
 		token.text as TargetedApprovalSourceTable,
 	)
