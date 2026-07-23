@@ -133,30 +133,61 @@ function splitDatabase(options?: {
 		if (text.includes('as "clockOutTimezone"')) {
 			return { rows: [lockedSource(options?.source)] };
 		}
-		if (text.includes('as "breakRules"')) {
+		const policies = options?.policies ?? [policyRow()];
+		if (text.includes("work_policy_assignment")) {
 			if (options?.missingAssignedPolicy) {
 				return {
-					rows: text.includes("left join work_policy policy")
+					rows: [
+						{
+							assignmentPolicyId: "90000000-0000-4000-8000-000000000009",
+							assignmentPriority: 2,
+							assignmentSpecificity: 2,
+						},
+					],
+				};
+			}
+			return {
+				rows: policies.map((policy) => ({
+					assignmentPolicyId: policy.assignmentPolicyId,
+					assignmentPriority: policy.assignmentPriority,
+					assignmentSpecificity: policy.assignmentSpecificity,
+				})),
+			};
+		}
+		if (/from work_policy policy/i.test(text)) {
+			if (options?.missingAssignedPolicy) return { rows: [] };
+			const policy = policies[0];
+			return {
+				rows: policy
+					? [
+							{
+								id: policy.id,
+								policyOrganizationId: policy.policyOrganizationId,
+								policyIsActive: policy.policyIsActive,
+								regulationEnabled: policy.regulationEnabled,
+								name: policy.name,
+							},
+						]
+					: [],
+			};
+		}
+		if (text.includes("from work_policy_regulation regulation")) {
+			const policy = policies[0];
+			return {
+				rows:
+					policy && typeof policy.regulationId === "string"
 						? [
 								{
-									assignmentPolicyId: "90000000-0000-4000-8000-000000000009",
-									assignmentPriority: 2,
-									assignmentSpecificity: 2,
-									id: null,
-									policyOrganizationId: null,
-									policyIsActive: null,
-									regulationEnabled: null,
-									regulationId: null,
-									regulationPolicyId: null,
-									name: null,
-									maxUninterruptedMinutes: null,
-									breakRules: [],
+									regulationId: policy.regulationId,
+									regulationPolicyId: policy.regulationPolicyId,
+									maxUninterruptedMinutes: policy.maxUninterruptedMinutes,
 								},
 							]
 						: [],
-				};
-			}
-			return { rows: options?.policies ?? [policyRow()] };
+			};
+		}
+		if (text.includes("from work_policy_break_rule rule")) {
+			return { rows: policies[0]?.breakRules ?? [] };
 		}
 		if (text.includes('as "gapStart"')) return { rows: options?.gaps ?? [] };
 		if (text.includes('as "latestHash"')) {
@@ -212,25 +243,13 @@ function splitDatabase(options?: {
 
 describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 	it("returns not_required without split writes when no historical regulation applies", async () => {
-		const dialect = new PgDialect();
-		const statements: string[] = [];
-		const execute = vi.fn(async (query: SQL) => {
-			const text = dialect.sqlToQuery(query).sql;
-			statements.push(text);
-			if (text.includes("pg_advisory_xact_lock"))
-				return { rows: [{ locked: null }] };
-			if (text.includes('as "clockOutTimezone"')) {
-				return { rows: [lockedSource()] };
-			}
-			if (text.includes('as "breakRules"')) return { rows: [] };
-			throw new Error(`unexpected statement: ${text}`);
-		});
+		const { execute, queries } = splitDatabase({ policies: [] });
 
 		await expect(
 			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
 		).resolves.toEqual({ kind: "not_required" });
 		expect(
-			statements.filter((text) => /^\s*(insert|update)\b/i.test(text)),
+			queries.filter((query) => /^\s*(insert|update)\b/i.test(query.sql)),
 		).toEqual([]);
 	});
 
@@ -490,6 +509,45 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 				query.sql.includes("time_record_approval_decision"),
 			),
 		).toBe(false);
+	});
+
+	it("locks assignment, policy, regulation, and break-rule evidence before split writes", async () => {
+		const { execute, queries } = splitDatabase();
+
+		await enforcePolicyClockOutTerminalBreakInTransaction(input(execute));
+
+		const assignmentLock = queries.findIndex(
+			(query) =>
+				query.sql.includes("work_policy_assignment") &&
+				query.sql.includes("for update of employee_row, assignment"),
+		);
+		const policyLock = queries.findIndex(
+			(query) =>
+				/^\s*select[\s\S]+from work_policy policy/i.test(query.sql) &&
+				query.sql.includes("for update of policy"),
+		);
+		const regulationLock = queries.findIndex(
+			(query) =>
+				query.sql.includes("from work_policy_regulation regulation") &&
+				query.sql.includes("for update of regulation"),
+		);
+		const ruleLock = queries.findIndex(
+			(query) =>
+				query.sql.includes("from work_policy_break_rule rule") &&
+				query.sql.includes("for update of rule"),
+		);
+		const firstSplitWrite = queries.findIndex((query) =>
+			/^\s*(insert|update)\b/i.test(query.sql),
+		);
+		expect([
+			assignmentLock,
+			policyLock,
+			regulationLock,
+			ruleLock,
+		]).not.toContain(-1);
+		expect(
+			Math.max(assignmentLock, policyLock, regulationLock, ruleLock),
+		).toBeLessThan(firstSplitWrite);
 	});
 
 	it("falls back from an invalid clock-out zone to the exact employee setting", async () => {

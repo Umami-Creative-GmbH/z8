@@ -15,7 +15,7 @@ import {
 	onManualEntryApproved,
 	onManualEntryRejected,
 } from "@/lib/notifications/triggers";
-import { enforcePolicyClockOutTerminalBreakInTransaction } from "@/lib/time-tracking/policy-clock-out-terminal-break";
+import { applyPolicyClockOutTerminalBreakInTransaction } from "@/lib/time-tracking/policy-clock-out-terminal-break";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
 	type FinalizeOrdinaryWorkPeriodTerminalAdapterInput,
@@ -504,7 +504,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 		input.kind === "policy_clock_out" &&
 		input.transition.kind === "approve"
 	) {
-		await enforcePolicyClockOutTerminalBreakInTransaction({
+		await applyPolicyClockOutTerminalBreakInTransaction({
 			dbService: input.dbService,
 			organizationId: input.organizationId,
 			employeeId: input.requesterEmployeeId,

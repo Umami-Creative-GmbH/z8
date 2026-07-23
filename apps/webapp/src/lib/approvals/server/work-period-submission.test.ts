@@ -1,3 +1,4 @@
+import { getTableName } from "drizzle-orm";
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -25,6 +26,13 @@ const state = vi.hoisted(() => ({
 	useRealResolver: false,
 	resolverError: null as unknown,
 	originError: null as unknown,
+}));
+const terminalBreakMocks = vi.hoisted(() => ({
+	apply: vi.fn().mockResolvedValue({ kind: "not_required" }),
+}));
+
+vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
+	applyPolicyClockOutTerminalBreakInTransaction: terminalBreakMocks.apply,
 }));
 
 vi.mock("../policies/chain-service", async (importOriginal) => {
@@ -147,22 +155,6 @@ vi.mock("../workflow/start-workflow", () => ({
 	},
 }));
 
-vi.mock("./work-period-approvals", async (importOriginal) => {
-	const actual =
-		await importOriginal<typeof import("./work-period-approvals")>();
-	const finalize = async (input: { evidence: { mode: string } }) => {
-		state.calls.push(`finalize:${input.evidence.mode}`);
-		if (state.failure === "finalization")
-			throw state.originError ?? new Error("private-finalization-evidence");
-		return {};
-	};
-	return {
-		...actual,
-		finalizeOrdinaryWorkPeriodTerminalInTransaction: finalize,
-		finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction: finalize,
-	};
-});
-
 import { deriveApprovalWorkflowId } from "../workflow/identity";
 import {
 	type ExecuteOrdinaryWorkPeriodSubmissionInput,
@@ -248,7 +240,8 @@ function fixture(
 	const calls: string[] = [];
 	const queries: Array<{ sql: string; params: unknown[] }> = [];
 	const dialect = new PgDialect();
-	const row = source(options.source);
+	const row = source(options.source) as Record<string, unknown>;
+	let finalizerUpdateIndex = 0;
 	const db = {
 		execute: vi.fn(async (query: SQL) => {
 			const compiled = dialect.sqlToQuery(query);
@@ -261,6 +254,7 @@ function fixture(
 				state.calls.push("binding");
 				if (state.failure === "binding")
 					throw new Error("private-binding-evidence");
+				row.approvalWorkflowId = compiled.params[0];
 				return { rows: [{ id: workPeriodId, organizationId }] };
 			}
 			if (state.failure === "source")
@@ -286,6 +280,10 @@ function fixture(
 			employeeGroupMember: { findMany: vi.fn().mockResolvedValue([]) },
 			employeeGroup: { findMany: vi.fn().mockResolvedValue([]) },
 			employee: {
+				findFirst: vi.fn().mockResolvedValue({
+					id: requesterEmployeeId,
+					userId: requesterUserId,
+				}),
 				findMany: vi.fn().mockResolvedValue(
 					options.employees ?? [
 						{
@@ -324,6 +322,85 @@ function fixture(
 				),
 			},
 		},
+		select: vi.fn(() => ({
+			from: vi.fn((table: Parameters<typeof getTableName>[0]) => {
+				const tableName = getTableName(table);
+				const rows =
+					tableName === "work_period"
+						? [
+								{
+									...row,
+									projectId: null,
+									workCategoryId: null,
+									workLocationType: null,
+									approvalStatus: "pending",
+								},
+							]
+						: tableName === "time_record"
+							? [
+									{
+										id: row.canonicalRecordId,
+										organizationId,
+										employeeId: requesterEmployeeId,
+										recordKind: "work",
+										startAt: startTime,
+										endAt: endTime,
+										durationMinutes: 480,
+										approvalState: "pending",
+										origin: "clock",
+									},
+								]
+							: [
+									{
+										id: state.result.approvalRequestId,
+										organizationId,
+										entityType: "time_entry",
+										entityId: workPeriodId,
+										requestedBy: requesterEmployeeId,
+										approverId: requesterEmployeeId,
+										status: "approved",
+										approvedAt: new Date("2026-07-22T10:00:00Z"),
+										canonicalRecordId: row.canonicalRecordId,
+										rejectionReason: null,
+										metadata: {
+											timeRequest: { kind: state.kind },
+											ordinarySubmission: {
+												key: ordinarySubmissionKey(state.kind),
+												submissionId,
+											},
+											autoApproval: { reason: "requester_is_approver" },
+										},
+									},
+								];
+				return {
+					where: vi.fn(() => ({
+						for: vi.fn().mockResolvedValue(rows),
+						limit: vi.fn().mockResolvedValue(rows),
+					})),
+				};
+			}),
+		})),
+		update: vi.fn(() => ({
+			set: vi.fn(() => ({
+				where: vi.fn(() => ({
+					returning: vi.fn().mockImplementation(async () => {
+						const index = finalizerUpdateIndex++;
+						if (index === 0) state.calls.push("finalize:source");
+						if (state.failure === "finalization" && index === 0) return [];
+						return [
+							{
+								id: index === 0 ? workPeriodId : row.canonicalRecordId,
+							},
+						];
+					}),
+				})),
+			})),
+		})),
+		insert: vi.fn(() => ({
+			values: vi.fn(() => ({
+				returning: vi.fn().mockResolvedValue([{ id: "decision-1" }]),
+			})),
+		})),
 	};
 	const writeGate = {
 		acquire: vi.fn(async () => {
@@ -426,6 +503,8 @@ beforeEach(() => {
 	state.useRealResolver = false;
 	state.resolverError = null;
 	state.originError = null;
+	terminalBreakMocks.apply.mockClear();
+	terminalBreakMocks.apply.mockResolvedValue({ kind: "not_required" });
 	state.result = {
 		kind: "default_created",
 		approvalRequestId: "40000000-0000-4000-8000-000000000001",
@@ -1100,7 +1179,7 @@ it.each([
 		fake.input,
 	);
 
-	expect(state.calls.indexOf("finalize:canonical")).toBeLessThan(
+	expect(state.calls.indexOf("finalize:source")).toBeLessThan(
 		state.calls.indexOf("compatibility"),
 	);
 	expect(submitted.postCommit).toMatchObject({
@@ -1131,15 +1210,33 @@ it.each([
 
 	await executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input);
 
-	expect(
-		state.calls.filter(
-			(call) => call === "finalize:legacy" || call === "finalize:canonical",
-		),
-	).toEqual([
-		mode === "canonical" || mode === "complete"
-			? "finalize:canonical"
-			: "finalize:legacy",
+	expect(state.calls.filter((call) => call === "finalize:source")).toEqual([
+		"finalize:source",
 	]);
+	expect(terminalBreakMocks.apply).toHaveBeenCalledOnce();
+});
+
+it.each([
+	"legacy",
+	"shadow",
+	"ready",
+	"canonical",
+	"complete",
+] as const)("does not apply policy breaks to manual requester auto-completion in %s", async (mode) => {
+	state.mode = mode;
+	state.result = {
+		kind: "auto_completed",
+		chainInstanceId: null,
+		approvalRequestId: "40000000-0000-4000-8000-000000000001",
+		reason: "requester_is_approver",
+	};
+	state.kind = "manual_time_submission";
+	state.workflowId = expectedWorkflowId("manual_time_submission");
+	const fake = fixture();
+
+	await executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input);
+
+	expect(terminalBreakMocks.apply).not.toHaveBeenCalled();
 });
 
 it("uses exact approved legacy capture and finalization evidence for requester auto-approval", async () => {
@@ -1155,7 +1252,7 @@ it("uses exact approved legacy capture and finalization evidence for requester a
 	await executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input);
 
 	expect(state.calls).toContain("capture:after:approved");
-	expect(state.calls.indexOf("finalize:legacy")).toBeLessThan(
+	expect(state.calls.indexOf("finalize:source")).toBeLessThan(
 		state.calls.indexOf("capture:after:approved"),
 	);
 });
@@ -1343,7 +1440,7 @@ it.each([
 		disposition: "replayed",
 		postCommit: null,
 	});
-	expect(state.calls.some((call) => call.startsWith("finalize:"))).toBe(false);
+	expect(state.calls).not.toContain("finalize:source");
 	expect(state.calls).not.toContain("binding");
 	expect(state.calls.some((call) => call.startsWith("start:"))).toBe(false);
 });
@@ -1388,7 +1485,7 @@ it.each([
 		kind: "auto_completed",
 		approvalRequestId: approvedRequest.id,
 	});
-	expect(state.calls.some((call) => call.startsWith("finalize:"))).toBe(false);
+	expect(state.calls).not.toContain("finalize:source");
 	expect(state.calls.some((call) => call.startsWith("legacy:"))).toBe(false);
 	expect(state.calls).not.toContain("binding");
 });
@@ -1446,7 +1543,7 @@ it.each([
 		chainInstanceId,
 		approvalRequestId: final.id,
 	});
-	expect(state.calls.some((call) => call.startsWith("finalize:"))).toBe(false);
+	expect(state.calls).not.toContain("finalize:source");
 	expect(state.calls).not.toContain("binding");
 	expect(JSON.stringify(submitted.postCommit)).not.toContain(
 		"ordinarySubmission",
@@ -1480,7 +1577,7 @@ it("rejects duplicate same-key marked chain cycles", async () => {
 	await expect(
 		executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input),
 	).rejects.toThrow("Ordinary work-period submission failed");
-	expect(state.calls.some((call) => call.startsWith("finalize:"))).toBe(false);
+	expect(state.calls).not.toContain("finalize:source");
 });
 
 it("rejects malformed ordinary submission markers without invoking accessors", async () => {
@@ -1574,7 +1671,7 @@ it.each([
 	});
 	expect(sourceQuery?.sql).not.toContain(ordinarySubmissionKey());
 	expect(sourceQuery?.sql).not.toContain(submissionId);
-	expect(state.calls.some((call) => call.startsWith("finalize:"))).toBe(false);
+	expect(state.calls).not.toContain("finalize:source");
 });
 
 it("rejects ambiguous historical unmarked auto rows rather than ordering them", async () => {
@@ -1661,7 +1758,7 @@ it("replays authoritative shadow legacy auto evidence without treating its obser
 	);
 
 	expect(submitted.result.approvalRequestId).toBe(approvedRequest.id);
-	expect(state.calls.some((call) => call.startsWith("finalize:"))).toBe(false);
+	expect(state.calls).not.toContain("finalize:source");
 	expect(state.calls).not.toContain("binding");
 });
 
@@ -1695,7 +1792,7 @@ it("does not fall back to legacy terminal evidence under canonical authority", a
 	await expect(
 		executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input),
 	).rejects.toThrow("Ordinary work-period submission failed");
-	expect(state.calls.some((call) => call.startsWith("finalize:"))).toBe(false);
+	expect(state.calls).not.toContain("finalize:source");
 });
 
 it("rejects inverted work-period endpoints before legacy mutation", async () => {

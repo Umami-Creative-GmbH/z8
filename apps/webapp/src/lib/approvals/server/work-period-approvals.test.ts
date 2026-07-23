@@ -19,7 +19,7 @@ const terminalBreakMocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/notifications/triggers", () => notificationMocks);
 vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
-	enforcePolicyClockOutTerminalBreakInTransaction: terminalBreakMocks.enforce,
+	applyPolicyClockOutTerminalBreakInTransaction: terminalBreakMocks.enforce,
 }));
 
 const {
@@ -647,49 +647,6 @@ describe("ordinary work-period approval finalizer", () => {
 		).rejects.toThrow("Ordinary work-period finalization conflict");
 		expect(terminalBreakMocks.enforce).toHaveBeenCalledOnce();
 		expect(dbService.insertedValues).toHaveLength(0);
-	});
-
-	it.each([
-		"legacy",
-		"shadow",
-		"ready",
-		"canonical",
-		"complete",
-	] as const)("enforces one policy break for a terminal %s decision", async (mode) => {
-		terminalBreakMocks.enforce.mockClear();
-		const canonicalAuthority = mode === "canonical" || mode === "complete";
-		const dbService = createFinalizerDbService({
-			request: canonicalAuthority
-				? null
-				: {
-						metadata: {
-							timeRequest: { kind: "policy_clock_out" },
-							workflow: { id: "workflow-1", organizationId: "org-1" },
-						},
-					},
-		});
-
-		await finalize(dbService, {
-			kind: "policy_clock_out",
-			...(canonicalAuthority
-				? {
-						evidence: {
-							mode: "canonical" as const,
-							workflowId: "workflow-1",
-							payload: { timeRequest: { kind: "policy_clock_out" as const } },
-						},
-					}
-				: {}),
-		});
-
-		expect(terminalBreakMocks.enforce).toHaveBeenCalledOnce();
-		expect(dbService.insertedValues).toEqual([
-			expect.objectContaining({
-				organizationId: "org-1",
-				recordId: "record-1",
-				action: "approved",
-			}),
-		]);
 	});
 
 	it.each([
