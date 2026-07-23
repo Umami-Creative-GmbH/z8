@@ -29,6 +29,10 @@
 - Create `apps/webapp/src/lib/time-tracking/policy-clock-out-terminal-break.test.ts`: no-op, split, timezone, metadata, allocation, compare-and-swap, and failure tests.
 - Create `apps/webapp/src/lib/time-tracking/break-policy-calculation.ts`: pure shared break-rule selection and deficit calculation.
 - Create `apps/webapp/src/lib/time-tracking/break-policy-calculation.test.ts`: threshold, highest-rule, existing-break, and no-policy tests.
+- Create `apps/webapp/src/lib/approvals/inbox/ordinary-canonical-read.ts`: canonical-only ordinary inbox list, count, and detail composition with compatibility deduplication.
+- Create `apps/webapp/src/lib/approvals/inbox/ordinary-canonical-read.test.ts`: complete discovery, visibility, deduplication, redaction, and stable-target tests.
+- Create `apps/webapp/src/lib/time-tracking/policy-clock-out-break-snapshot.ts`: strict immutable break-policy snapshot parser and transaction-bound resolver.
+- Create `apps/webapp/src/lib/time-tracking/policy-clock-out-break-snapshot.test.ts`: snapshot normalization, policy mutation, replay, and tenant tests.
 - Modify `apps/webapp/src/lib/approvals/time-request-kind.ts`: fail closed on contradictory ordinary-time classification evidence.
 - Modify `apps/webapp/src/lib/approvals/workflow/ports.ts`: type ordinary workflow source snapshots instead of leaving them `unknown`.
 - Modify `apps/webapp/src/lib/approvals/server/work-period-approvals.ts`: exact terminal finalizer, rollout-aware stable-target decisions, and detached post-commit descriptors.
@@ -1348,6 +1352,238 @@ git commit -m "fix: close ordinary approval verification gaps"
 
 If verification required no changes, do not create an empty commit.
 
+### Task 13: Serve Complete-Mode Ordinary Approvals From Canonical Projections
+
+**Files:**
+- Create: `apps/webapp/src/lib/approvals/inbox/ordinary-canonical-read.ts`
+- Create: `apps/webapp/src/lib/approvals/inbox/ordinary-canonical-read.test.ts`
+- Modify: `apps/webapp/src/lib/approvals/handlers/time-correction.handler.ts`
+- Modify: `apps/webapp/src/lib/approvals/inbox/read-service.ts`
+- Modify: `apps/webapp/src/lib/approvals/inbox/ordinary-read-composition.test.ts`
+- Modify: `apps/webapp/src/lib/approvals/inbox/decision-service.test.ts`
+- Modify: `apps/webapp/src/lib/approvals/application/bulk-approval.service.test.ts`
+
+- [ ] **Step 1: Write failing canonical-only discovery tests**
+
+Define one internal canonical read boundary:
+
+```ts
+export interface CanonicalOrdinaryInboxTarget {
+  assignmentId: string;
+  workflowId: string;
+  workflowType: "manual_time_submission" | "policy_clock_out";
+  organizationId: string;
+  sourceId: string;
+  requesterEmployeeId: string;
+  stage: { name: string; order: number };
+  display: Record<string, unknown>;
+}
+
+export async function loadCanonicalOrdinaryInboxTargets(input: {
+  db: ApprovalDbService["db"];
+  organizationId: string;
+  visibleApproverEmployeeIds: readonly string[];
+}): Promise<readonly CanonicalOrdinaryInboxTarget[]>;
+```
+
+Using real submission/projection fixtures, require complete mode with zero `approval_request` rows to appear in list and count, open by assignment ID in detail, and flow through individual and bulk decisions. Require exact organization, workflow, pending stage, pending assignment, requester, source, and projection parity. Waiting/terminal/foreign/malformed rows fail closed.
+
+- [ ] **Step 2: Write failing deduplication and redaction tests**
+
+Canonical mode has both a compatibility request and canonical assignment but must render one item using the compatibility request ID. Complete mode renders the assignment ID. Assert private context, policy snapshots, source diagnostics, workflow IDs, and record IDs are absent from list/detail/search text.
+
+- [ ] **Step 3: Run read tests and confirm RED**
+
+```bash
+pnpm --filter webapp exec vitest run \
+  src/lib/approvals/inbox/ordinary-canonical-read.test.ts \
+  src/lib/approvals/inbox/ordinary-read-composition.test.ts \
+  src/lib/approvals/inbox/read-service.test.ts \
+  src/lib/approvals/inbox/detail-service.test.ts
+```
+
+Expected: complete-mode canonical assignments are absent until the canonical reader is composed.
+
+- [ ] **Step 4: Implement canonical list, count, and detail composition**
+
+Join `approval_inbox_projection`, `approval_workflow`, active workflow stage, and active assignment inside exact organization scope. Reuse strict ordinary source adapters for safe display. Suppress a canonical row when an organization-scoped compatibility request already owns the same workflow and active stage. Do not write compatibility rows in complete mode and do not generalize unrelated domain handlers.
+
+- [ ] **Step 5: Verify discovery through every public inbox path**
+
+Run list, count, detail, individual API, bulk API, UI target propagation, and stable-decision tests. Add a disposable-PostgreSQL case proving real complete submission writes zero compatibility rows but remains discoverable by assignment ID.
+
+- [ ] **Step 6: Commit canonical read serving**
+
+```bash
+git add apps/webapp/src/lib/approvals/inbox/ordinary-canonical-read.ts \
+  apps/webapp/src/lib/approvals/inbox/ordinary-canonical-read.test.ts \
+  apps/webapp/src/lib/approvals/handlers/time-correction.handler.ts \
+  apps/webapp/src/lib/approvals/inbox/read-service.ts \
+  apps/webapp/src/lib/approvals/inbox/ordinary-read-composition.test.ts
+git commit -m "fix: serve complete ordinary approval reads"
+```
+
+### Task 14: Persist Immutable Terminal Break Policy Evidence
+
+**Files:**
+- Create: `apps/webapp/src/lib/time-tracking/policy-clock-out-break-snapshot.ts`
+- Create: `apps/webapp/src/lib/time-tracking/policy-clock-out-break-snapshot.test.ts`
+- Modify: `apps/webapp/src/db/schema/types.ts`
+- Modify: `apps/webapp/src/lib/approvals/domain-adapters/work-period-contract.ts`
+- Modify: `apps/webapp/src/lib/approvals/domain-adapters/work-period-contract.test.ts`
+- Modify: `apps/webapp/src/lib/approvals/domain-adapters/work-period-legacy-state.ts`
+- Modify: `apps/webapp/src/lib/approvals/domain-adapters/work-period.adapter.ts`
+- Modify: `apps/webapp/src/lib/approvals/server/work-period-submission.ts`
+- Modify: `apps/webapp/src/lib/approvals/server/work-period-submission.test.ts`
+- Modify: `apps/webapp/src/lib/approvals/workflow/compatibility-writer.ts`
+- Modify: `apps/webapp/src/lib/time-tracking/policy-clock-out-terminal-break.ts`
+- Modify: `apps/webapp/src/app/[locale]/(app)/time-tracking/actions/clocking.ts`
+
+- [ ] **Step 1: Write failing strict snapshot contract tests**
+
+Define the private versioned payload:
+
+```ts
+export type PolicyClockOutBreakSnapshot = Readonly<{
+  version: 1;
+  evaluatedAt: string;
+  resolution:
+    | { kind: "none" }
+    | {
+        kind: "work_policy";
+        teamId: string | null;
+        assignmentId: string;
+        assignmentType: "employee" | "team" | "organization";
+        policyId: string;
+        policyName: string;
+        regulationId: string | null;
+        regulationName: string | null;
+        maxUninterruptedMinutes: number | null;
+        breakRules: readonly Readonly<{
+          id: string;
+          workingMinutesThreshold: number;
+          requiredBreakMinutes: number;
+        }>[];
+      };
+}>;
+```
+
+Reject unknown keys, invalid IDs, negative minutes, duplicate rule IDs/thresholds, unsorted rules, and `evaluatedAt` unequal to the canonical submitted end instant. Parsed results are detached and deeply frozen.
+
+- [ ] **Step 2: Write failing transaction-bound resolver tests**
+
+Resolve exact organization, employee/team, assignment priority, policy, regulation, and rules at `period.endTime` inside the source-creation transaction. Test employee/team/organization priority, no policy, tenant mismatch, malformed references, and deterministic normalized rule order.
+
+- [ ] **Step 3: Persist identical evidence in all five modes**
+
+Add `terminalBreakPolicy` to policy-clock-out pending changes, legacy metadata, and canonical context. Shadow/ready observation and canonical compatibility metadata must carry the same normalized snapshot. Complete stores source plus canonical context and no compatibility row. Manual submissions contain no break snapshot. Exact retry with changed snapshot conflicts.
+
+- [ ] **Step 4: Consume only immutable evidence at terminal approval**
+
+Remove live team/assignment/policy/regulation/rule resolution from terminal break enforcement. Pass the strictly parsed snapshot from verified source/request/workflow evidence. Retain transaction locks for source, canonical records, timezone evidence, and existing-period gaps. Newly created missing/mismatched snapshots fail before mutation; isolated historical legacy fallback remains explicit.
+
+- [ ] **Step 5: Add delayed-approval mutation regressions**
+
+After submission, mutate employee team, deactivate assignment, replace/archive policy, and edit/delete break rules. Terminal approval must produce the same result as the stored snapshot in legacy, shadow, ready, canonical, and complete. A stored `none` remains no-op after a later policy assignment. Replay does not query policy tables or split twice.
+
+- [ ] **Step 6: Verify and commit snapshot evidence**
+
+Run contract, legacy capture, submission, finalizer, break, clocking, compatibility, read-redaction, ownership, typecheck, and scoped Biome tests.
+
+```bash
+git add apps/webapp/src/lib/time-tracking/policy-clock-out-break-snapshot.ts \
+  apps/webapp/src/lib/time-tracking/policy-clock-out-break-snapshot.test.ts \
+  apps/webapp/src/db/schema/types.ts \
+  apps/webapp/src/lib/approvals/domain-adapters/work-period-contract.ts \
+  apps/webapp/src/lib/approvals/server/work-period-submission.ts \
+  apps/webapp/src/lib/time-tracking/policy-clock-out-terminal-break.ts \
+  'apps/webapp/src/app/[locale]/(app)/time-tracking/actions/clocking.ts'
+git commit -m "fix: snapshot terminal break policy evidence"
+```
+
+### Task 15: Reconcile Terminal Surcharge And Work-Balance State
+
+**Files:**
+- Modify: `apps/webapp/src/lib/time-tracking/policy-clock-out-terminal-break.ts`
+- Modify: `apps/webapp/src/lib/approvals/domain-adapters/work-period-contract.ts`
+- Modify: `apps/webapp/src/lib/approvals/server/work-period-approvals.ts`
+- Modify: `apps/webapp/src/lib/approvals/server/work-period-submission.ts`
+- Modify: `apps/webapp/src/lib/effect/services/surcharge.service.ts`
+- Modify: `apps/webapp/src/app/[locale]/(app)/time-tracking/actions/compliance.ts`
+- Modify: `apps/webapp/src/app/[locale]/(app)/time-tracking/actions/clocking.ts`
+- Test corresponding files above.
+
+- [ ] **Step 1: Write failing detached maintenance-fact tests**
+
+Extend the private terminal result/descriptor, not public action results:
+
+```ts
+interface OrdinaryTerminalMaintenance {
+  organizationId: string;
+  employeeId: string;
+  dirtyFromDate: string; // ISO PlainDate in the employee-owned event timezone
+  decision: "approved" | "rejected";
+  surchargePeriodIds: readonly string[];
+  staleSurchargePeriodIds: readonly string[];
+}
+```
+
+Adjusted approval returns original and second period IDs; no-split approval returns the original; rejection identifies stale pending-period surcharge state; intermediate and replay return no maintenance.
+
+- [ ] **Step 2: Write failing organization-scoped surcharge reconciliation tests**
+
+Add a service operation that, in exact organization scope, deletes stale calculations and recalculates each approved resulting period. Deletion must persist when recalculation yields no surcharge. Foreign period IDs fail closed. Do not use the existing unscoped short-circuit path.
+
+- [ ] **Step 3: Stop persisting final surcharge state for pending submissions**
+
+No-approval clock-outs retain immediate calculation. Pending approval defers final surcharge calculation. Requester auto-approval and later manager approval reconcile the committed terminal graph. Historical pending calculations are removed on approval or rejection.
+
+- [ ] **Step 4: Dispatch internal maintenance independently from notifications**
+
+After commit, every rollout mode marks work balance dirty from the original event-local date and reconciles surcharge facts. Notification `dispatch` versus `observe` remains unchanged. Await internal maintenance attempts with `Promise.allSettled`, log safe failures, and preserve committed success. Replay and intermediate decisions perform no maintenance.
+
+- [ ] **Step 5: Add lifecycle regressions**
+
+Cover explicit and requester-auto split approval, no-split approval, rejection, intermediate stage, exact replay, notification failure, maintenance failure, canonical/complete observe mode, and no-approval immediate clock-out. Assert split approval reconciles both periods once and marks balance once.
+
+- [ ] **Step 6: Verify and commit maintenance**
+
+Run surcharge, work-balance, clocking, submission, finalizer, decision, notification, payroll, ownership, typecheck, and scoped Biome suites.
+
+```bash
+git add apps/webapp/src/lib/time-tracking/policy-clock-out-terminal-break.ts \
+  apps/webapp/src/lib/approvals/domain-adapters/work-period-contract.ts \
+  apps/webapp/src/lib/approvals/server/work-period-approvals.ts \
+  apps/webapp/src/lib/approvals/server/work-period-submission.ts \
+  apps/webapp/src/lib/effect/services/surcharge.service.ts \
+  'apps/webapp/src/app/[locale]/(app)/time-tracking/actions/compliance.ts' \
+  'apps/webapp/src/app/[locale]/(app)/time-tracking/actions/clocking.ts'
+git commit -m "fix: reconcile terminal time maintenance"
+```
+
+### Task 16: Re-run Final Cross-Task Verification
+
+- [ ] **Step 1: Run complete canonical-read, snapshot, and maintenance suites**
+
+Run all Task 13-15 tests plus the complete focused ordinary suite, approval APIs, bots, payroll, notifications, work balance, surcharge, and mobile requester tests.
+
+- [ ] **Step 2: Run disposable PostgreSQL coverage**
+
+Add complete-mode discovery, delayed policy mutation, and terminal maintenance cases to the 65-case suite. Run the disposable integration command. If Docker still crashes with `SIGBUS`, record the exact unexecuted count and retain the environment rerun blocker; do not claim PostgreSQL verification.
+
+- [ ] **Step 3: Run all quality gates**
+
+```bash
+pnpm --filter webapp typecheck
+pnpm --filter mobile typecheck
+pnpm test
+CI=true pnpm build
+git diff --check
+pnpm dlx react-doctor@latest --verbose --scope changed
+```
+
+Run scoped Biome, security review, Temporal/timekeeping review, and a final findings-first whole-phase code review. Resolve every confirmed Medium+ issue and rerun affected gates. Commit only verified fixes; do not create an empty commit.
+
 ## Exit Checklist
 
 - [ ] Both ordinary workflow types use concrete production adapters.
@@ -1361,5 +1597,8 @@ If verification required no changes, do not create an empty commit.
 - [ ] Rejection preserves recorded endpoints and instants.
 - [ ] Private pending changes and internal identities never enter display or public errors.
 - [ ] Existing My Requests exclusion and public response shapes remain unchanged.
+- [ ] Complete-mode ordinary approvals are discoverable through canonical list, count, detail, individual, and bulk paths without legacy rows.
+- [ ] Policy-clock-out break policy meaning is captured immutably at submission and survives later team or policy mutation.
+- [ ] Terminal approval/rejection reconciles organization-scoped surcharge and work-balance state in every rollout mode without replay duplication.
 - [ ] No requester cancellation, rollout activation, or external outbox delivery is introduced.
 - [ ] Ownership, PostgreSQL concurrency, focused tests, broad regressions, typecheck, scoped Biome, CI build, security review, and timekeeping review are complete.
