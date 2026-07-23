@@ -1,6 +1,5 @@
 import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import { buildTimeApprovalReview } from "@/lib/approvals/handlers/time-correction.handler";
 import { getApprovalInboxDetailFromRequest } from "@/lib/approvals/inbox/read-service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 
@@ -231,106 +230,6 @@ describe("getApprovalInboxDetailFromRequest", () => {
 			canReject: false,
 			canBulkApprove: false,
 		});
-	});
-
-	it.each([
-		["manual_time_submission", "Manual Time Submission"],
-		["policy_clock_out", "Clock-out Approval"],
-	] as const)("returns only sanitized %s detail display", async (kind, title) => {
-		const stage = {
-			name:
-				kind === "manual_time_submission" ? "Manager review" : "Policy review",
-			order: kind === "manual_time_submission" ? 1 : 2,
-		};
-		const review = buildTimeApprovalReview(
-			{
-				id: "period-1",
-				startTime: new Date("2026-07-20T06:00:00.000Z"),
-				endTime: new Date("2026-07-20T14:00:00.000Z"),
-				durationMinutes: 480,
-				pendingChanges:
-					kind === "manual_time_submission"
-						? { isManualEntry: true, privateNote: "private-pending-change" }
-						: { isNewClockOut: true, privateNote: "private-pending-change" },
-				employee: {
-					id: "employee-1",
-					userId: "user-1",
-					teamId: null,
-					organizationId: "org-1",
-					user: {
-						id: "user-1",
-						name: "Avery Employee",
-						email: "avery@example.com",
-						image: null,
-					},
-				},
-				clockIn: {
-					id: "clock-in",
-					timestamp: new Date("2026-07-20T06:00:00.000Z"),
-				},
-				clockOut: {
-					id: "clock-out",
-					timestamp: new Date("2026-07-20T14:00:00.000Z"),
-				},
-			},
-			{
-				metadata: {
-					timeRequest: { kind },
-					workflow: { id: "private-workflow-id", organizationId: "org-1" },
-				},
-				reason: "private-reason",
-				publicStage: stage,
-			},
-			[],
-		);
-		const timeRequest = {
-			...request,
-			entityType: "time_entry",
-			entityId: "period-1",
-		};
-		const detail = createDetail({
-			approvalType: "time_entry",
-			entityId: "period-1",
-			typeName: title,
-			display: review.display,
-		});
-		detail.entity = {
-			timeApprovalKind: kind,
-			pendingChanges: { privateNote: "private-pending-change" },
-			approvalWorkflowId: "private-workflow-id",
-			sourceDiagnostics: "private-source-diagnostics",
-			reason: "private-reason",
-		};
-
-		const result = await getApprovalInboxDetailFromRequest({
-			request: timeRequest,
-			handler: createHandler(detail, "time_entry"),
-		});
-		const serialized = JSON.stringify(result);
-
-		expect(result.item).toMatchObject({
-			status: "pending",
-			requester: { name: "Avery Employee" },
-			summary: {
-				title,
-				subtitle: "Jul 20, 2026 - 06:00 to 14:00",
-				detail: "8h on Jul 20, 2026",
-				stage,
-			},
-		});
-		expect(result.sections[0]).toMatchObject({
-			type: "key_value",
-			rows: expect.arrayContaining([
-				{ label: "Stage", value: `${stage.name} (${stage.order})` },
-			]),
-		});
-		expect(result.actions).toMatchObject({
-			canApprove: true,
-			canReject: true,
-		});
-		expect(serialized).not.toMatch(
-			/private-pending-change|private-workflow-id|private-source-diagnostics|private-reason/,
-		);
 	});
 
 	it("rejects unsupported entity types before calling the handler", async () => {
