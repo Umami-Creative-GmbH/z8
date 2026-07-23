@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Effect } from "effect";
-import { Pool } from "pg";
+import { Pool, type PoolClient } from "pg";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import * as authSchema from "@/db/auth-schema";
 import { configurePostgresUtcTypes } from "@/db/postgres-utc";
@@ -59,6 +59,47 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 		] as const) {
 			expect(integrationSource.split(scenario)).toHaveLength(3);
 		}
+	});
+
+	it("binds the foreign employee to the exact foreign user and organization", () => {
+		const seedStart = integrationSource.lastIndexOf("async function seed(");
+		const employeeStart = integrationSource.indexOf(
+			"`insert into employee (id, user_id, organization_id, updated_at) values",
+			seedStart,
+		);
+		const managerStart = integrationSource.indexOf(
+			"`insert into employee_managers",
+			employeeStart,
+		);
+		const employeeSeed = integrationSource.slice(employeeStart, managerStart);
+		expect(employeeSeed).toMatch(
+			/\(\$1, \$2, \$7, \$9\), \(\$3, \$4, \$7, \$9\), \(\$5, \$6, \$8, \$9\)/,
+		);
+		expect(employeeSeed).toMatch(
+			/ids\.foreignEmployee,\s+ids\.foreignUser,\s+ids\.organization,\s+ids\.foreignOrganization,\s+timestamp/,
+		);
+	});
+
+	it("routes every checked-out transaction client through bounded rollback cleanup", () => {
+		expect(integrationSource).toContain("async function withRollbackClient");
+		const helperStart = integrationSource.lastIndexOf(
+			"async function withRollbackClient",
+		);
+		const helperEnd = integrationSource.indexOf(
+			"describeIntegration(",
+			helperStart,
+		);
+		expect(integrationSource.slice(helperStart, helperEnd)).toContain(
+			"} finally {",
+		);
+		expect(integrationSource.match(/pool\.connect\(\)/g)).toHaveLength(1);
+		expect(integrationSource.match(/client\.query\("begin"\)/g)).toHaveLength(
+			1,
+		);
+		expect(integrationSource).toContain("set local statement_timeout = '15s'");
+		expect(integrationSource).toContain(
+			"set local idle_in_transaction_session_timeout = '10s'",
+		);
 	});
 });
 
@@ -129,6 +170,70 @@ function dbService(db: unknown): ApprovalDbService {
 		query: <T>(_name: string, operation: () => Promise<T>) =>
 			Effect.promise(operation),
 	};
+}
+
+async function withRollbackClient<T>(
+	pool: Pool,
+	operation: (input: {
+		client: PoolClient;
+		commit: () => Promise<void>;
+	}) => Promise<T>,
+): Promise<T> {
+	const client = await pool.connect();
+	let transactionOpen = false;
+	let operationFailed = false;
+	let operationError: unknown;
+	let result: { value: T } | undefined;
+	let cleanupFailed = false;
+	let cleanupError: unknown;
+	try {
+		await client.query("begin");
+		transactionOpen = true;
+		await client.query("set local statement_timeout = '15s'");
+		await client.query("set local lock_timeout = '5s'");
+		await client.query("set local idle_in_transaction_session_timeout = '10s'");
+		result = {
+			value: await operation({
+				client,
+				commit: async () => {
+					if (!transactionOpen) {
+						throw new Error("Task 11 test transaction is already closed");
+					}
+					await client.query("commit");
+					transactionOpen = false;
+				},
+			}),
+		};
+	} catch (error) {
+		operationFailed = true;
+		operationError = error;
+	} finally {
+		if (transactionOpen) {
+			try {
+				await client.query("rollback");
+				transactionOpen = false;
+			} catch (error) {
+				cleanupFailed = true;
+				cleanupError = error;
+			}
+		}
+		try {
+			client.release(
+				cleanupFailed
+					? cleanupError instanceof Error
+						? cleanupError
+						: true
+					: undefined,
+			);
+		} catch (error) {
+			if (!cleanupFailed) cleanupError = error;
+			cleanupFailed = true;
+		}
+	}
+	if (operationFailed) throw operationError;
+	if (cleanupFailed) throw cleanupError;
+	if (!result) throw new Error("Task 11 test transaction produced no result");
+	return result.value;
 }
 
 describeIntegration(
@@ -217,13 +322,14 @@ describeIntegration(
 			);
 			await pool.query(
 				`insert into employee (id, user_id, organization_id, updated_at) values
-			 ($1, $2, $6, $8), ($3, $4, $6, $8), ($5, $7, $7, $8)`,
+			 ($1, $2, $7, $9), ($3, $4, $7, $9), ($5, $6, $8, $9)`,
 				[
 					ids.requester,
 					ids.requesterUser,
 					ids.manager,
 					ids.managerUser,
 					ids.foreignEmployee,
+					ids.foreignUser,
 					ids.organization,
 					ids.foreignOrganization,
 					timestamp,
@@ -800,48 +906,46 @@ describeIntegration(
 		});
 
 		it("exact source advisory lock blocks then commits and replays after release", async () => {
-			const blocker = await pool.connect();
 			const applicationName = `task11-source-lock-${process.pid}`;
-			let released = false;
+			let waiting: ReturnType<typeof submit> | undefined;
 			try {
-				await blocker.query("begin");
-				await blocker.query(
-					"set local idle_in_transaction_session_timeout = '10s'",
-				);
-				const pidResult = await blocker.query<{ pid: number }>(
-					"select pg_backend_pid() as pid",
-				);
-				const blockingPid = pidResult.rows[0]?.pid;
-				if (!blockingPid) throw new Error("Task 11 blocker has no backend pid");
-				const exactLockKey = JSON.stringify([
-					ids.organization,
-					"manual_time_submission",
-					"time_entry",
-					ids.period,
-				]);
-				await blocker.query(
-					"select pg_advisory_xact_lock(hashtextextended($1, 0))",
-					[exactLockKey],
-				);
-				const waiting = submit(
-					"manual_time_submission",
-					ids.submission,
-					applicationName,
-				);
-				await expect(
-					waitForObservedLock(applicationName, blockingPid),
-				).resolves.toMatchObject({ wait_event_type: "Lock" });
-				await blocker.query("commit");
-				released = true;
+				await withRollbackClient(pool, async ({ client, commit }) => {
+					const pidResult = await client.query<{ pid: number }>(
+						"select pg_backend_pid() as pid",
+					);
+					const blockingPid = pidResult.rows[0]?.pid;
+					if (!blockingPid)
+						throw new Error("Task 11 blocker has no backend pid");
+					const exactLockKey = JSON.stringify([
+						ids.organization,
+						"manual_time_submission",
+						"time_entry",
+						ids.period,
+					]);
+					await client.query(
+						"select pg_advisory_xact_lock(hashtextextended($1, 0))",
+						[exactLockKey],
+					);
+					waiting = submit(
+						"manual_time_submission",
+						ids.submission,
+						applicationName,
+					);
+					await expect(
+						waitForObservedLock(applicationName, blockingPid),
+					).resolves.toMatchObject({ wait_event_type: "Lock" });
+					await commit();
+				});
+				if (!waiting) throw new Error("Task 11 lock waiter was not started");
 				await expect(waiting).resolves.toMatchObject({
 					disposition: "executed",
 				});
 				await expect(submit("manual_time_submission")).resolves.toMatchObject({
 					disposition: "replayed",
 				});
-			} finally {
-				if (!released) await blocker.query("rollback");
-				blocker.release();
+			} catch (error) {
+				if (waiting) await Promise.allSettled([waiting]);
+				throw error;
 			}
 		});
 
@@ -1466,55 +1570,62 @@ describeIntegration(
 			await seed("policy_clock_out", true);
 			const target = (await submit("policy_clock_out")).result
 				.approvalRequestId;
-			const blocker = await pool.connect();
-			await blocker.query("begin");
-			await blocker.query(
-				"select pg_advisory_xact_lock(hashtextextended($1, 0))",
-				[ids.requester],
-			);
-			const blockerPid = await blocker.query<{ pid: number }>(
-				"select pg_backend_pid() as pid",
-			);
-			const latest = await blocker.query<{ hash: string }>(
-				"select hash from time_entry where id = $1 and organization_id = $2 and employee_id = $3",
-				[ids.clockOut, ids.organization, ids.requester],
-			);
-			const previousHash = latest.rows[0]?.hash;
-			if (!previousHash || !blockerPid.rows[0]?.pid) {
-				throw new Error("Task 11 competing entry prerequisite is missing");
-			}
-			const competingHash = calculateHash({
-				employeeId: ids.requester,
-				type: "correction",
-				timestamp: endTime.toISOString(),
-				previousHash,
-			});
-			const approval = decide(target, { kind: "approve", reason: null });
-			await expect(
-				waitForBlocker(blockerPid.rows[0].pid),
-			).resolves.toMatchObject({ wait_event_type: "Lock" });
-			await blocker.query(
-				`insert into time_entry (
+			let approval: ReturnType<typeof decide> | undefined;
+			try {
+				await withRollbackClient(pool, async ({ client, commit }) => {
+					await client.query(
+						"select pg_advisory_xact_lock(hashtextextended($1, 0))",
+						[ids.requester],
+					);
+					const blockerPid = await client.query<{ pid: number }>(
+						"select pg_backend_pid() as pid",
+					);
+					const latest = await client.query<{ hash: string }>(
+						"select hash from time_entry where id = $1 and organization_id = $2 and employee_id = $3",
+						[ids.clockOut, ids.organization, ids.requester],
+					);
+					const previousHash = latest.rows[0]?.hash;
+					if (!previousHash || !blockerPid.rows[0]?.pid) {
+						throw new Error("Task 11 competing entry prerequisite is missing");
+					}
+					const competingHash = calculateHash({
+						employeeId: ids.requester,
+						type: "correction",
+						timestamp: endTime.toISOString(),
+						previousHash,
+					});
+					approval = decide(target, { kind: "approve", reason: null });
+					await expect(
+						waitForBlocker(blockerPid.rows[0].pid),
+					).resolves.toMatchObject({ wait_event_type: "Lock" });
+					await client.query(
+						`insert into time_entry (
 			 id, organization_id, employee_id, type, timestamp, utc_offset_minutes,
 			 timezone, timezone_source, previous_entry_id, hash, previous_hash,
 			 created_by, created_at
 			 ) values ($1, $2, $3, 'correction', $4, 0, 'UTC', 'backfill', $5,
 			 $6, $7, $8, $9)`,
-				[
-					ids.competingEntry,
-					ids.organization,
-					ids.requester,
-					endTime,
-					ids.clockOut,
-					competingHash,
-					previousHash,
-					ids.managerUser,
-					new Date(now.epochMilliseconds),
-				],
-			);
-			await blocker.query("commit");
-			blocker.release();
-			await expect(approval).resolves.toBeDefined();
+						[
+							ids.competingEntry,
+							ids.organization,
+							ids.requester,
+							endTime,
+							ids.clockOut,
+							competingHash,
+							previousHash,
+							ids.managerUser,
+							new Date(now.epochMilliseconds),
+						],
+					);
+					await commit();
+				});
+				if (!approval)
+					throw new Error("Task 11 split approval was not started");
+				await expect(approval).resolves.toBeDefined();
+			} catch (error) {
+				if (approval) await Promise.allSettled([approval]);
+				throw error;
+			}
 			const chain = await pool.query<{
 				id: string;
 				employee_id: string;
