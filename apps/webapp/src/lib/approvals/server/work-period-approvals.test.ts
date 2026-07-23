@@ -1141,6 +1141,7 @@ const currentApprover: CurrentApprover = {
 	id: "manager-1",
 	userId: "manager-user-1",
 	organizationId: "org-1",
+	isActive: true,
 	role: "manager",
 	user: {
 		id: "manager-user-1",
@@ -1231,6 +1232,7 @@ function createFinalizerDbService(options?: {
 	request?: Partial<ApprovalFixture> | null;
 	requests?: Array<Partial<ApprovalFixture>>;
 	actorOwned?: boolean;
+	actorActive?: boolean;
 	cardinality?: {
 		periodUpdate?: number;
 		recordUpdate?: number;
@@ -1271,13 +1273,15 @@ function createFinalizerDbService(options?: {
 				),
 			},
 			employee: {
-				findFirst: vi
-					.fn()
-					.mockResolvedValue(
-						options?.actorOwned === false
-							? null
-							: { id: "manager-1", userId: "manager-user-1" },
-					),
+				findFirst: vi.fn().mockResolvedValue(
+					options?.actorOwned === false
+						? null
+						: {
+								id: "manager-1",
+								userId: "manager-user-1",
+								isActive: options?.actorActive ?? true,
+							},
+				),
 			},
 		},
 		select: vi.fn(() => ({
@@ -1426,6 +1430,7 @@ function createDecisionDbService(options?: {
 				findFirst: vi.fn().mockResolvedValue({
 					id: options?.autoCompleted ? "employee-1" : "manager-1",
 					userId: options?.autoCompleted ? "employee-user-1" : "manager-user-1",
+					isActive: true,
 				}),
 			},
 			workPeriod: {
@@ -1783,6 +1788,15 @@ describe("ordinary work-period approval finalizer", () => {
 
 	it("rejects a foreign actor", async () => {
 		const dbService = createFinalizerDbService({ actorOwned: false });
+
+		await expect(finalize(dbService)).rejects.toThrow(
+			"Ordinary work-period finalization conflict",
+		);
+		expect(dbService.updateSets).toHaveLength(0);
+	});
+
+	it("rejects an inactive actor at terminal finalization time", async () => {
+		const dbService = createFinalizerDbService({ actorActive: false });
 
 		await expect(finalize(dbService)).rejects.toThrow(
 			"Ordinary work-period finalization conflict",

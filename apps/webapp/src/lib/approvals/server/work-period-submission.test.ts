@@ -283,6 +283,7 @@ function fixture(
 				findFirst: vi.fn().mockResolvedValue({
 					id: requesterEmployeeId,
 					userId: requesterUserId,
+					isActive: true,
 				}),
 				findMany: vi.fn().mockResolvedValue(
 					options.employees ?? [

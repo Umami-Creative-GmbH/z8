@@ -116,7 +116,15 @@ function createHarness() {
 			approvalWorkflowStage: { findFirst: vi.fn().mockResolvedValue(null) },
 			approvalWorkflow: { findFirst: vi.fn().mockResolvedValue(null) },
 			workPeriod: { findFirst: workPeriodFindFirst },
-			timeEntry: { findFirst: vi.fn().mockResolvedValue(null) },
+			timeEntry: {
+				findFirst: vi.fn().mockResolvedValue(null),
+				findMany: vi.fn().mockResolvedValue([
+					{
+						id: "51000000-0000-4000-8000-000000000901",
+						replacesEntryId: "entry-1",
+					},
+				]),
+			},
 		},
 	};
 	const compatibilityWriter = {
@@ -231,7 +239,7 @@ describe("authenticated time correction live actions", () => {
 				},
 				timeCorrection: {
 					action: "edit",
-					clockInCorrectionId: "correction-1",
+					clockInCorrectionId: "51000000-0000-4000-8000-000000000901",
 				},
 			},
 			reason: "Missed punch",

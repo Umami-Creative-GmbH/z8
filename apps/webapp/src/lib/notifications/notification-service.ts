@@ -11,10 +11,17 @@ import { publishEventAsync } from "@/lib/events";
 import { createLogger } from "@/lib/logger";
 import { isDiscordAvailable, sendDiscordNotification } from "./discord-channel";
 import { sendEmailNotification } from "./email-notifications";
-import { isPushAvailable, type PushPayload, sendPushToUser } from "./push-service";
+import {
+	isPushAvailable,
+	type PushPayload,
+	sendPushToUser,
+} from "./push-service";
 import { isSlackAvailable, sendSlackNotification } from "./slack-channel";
 import { isTeamsAvailable, sendTeamsNotification } from "./teams-channel";
-import { isTelegramAvailable, sendTelegramNotification } from "./telegram-channel";
+import {
+	isTelegramAvailable,
+	sendTelegramNotification,
+} from "./telegram-channel";
 import type {
 	CreateNotificationParams,
 	Notification,
@@ -94,7 +101,9 @@ export async function createNotification(
 		const teamsEnabled = !teamsPreference || teamsPreference.enabled;
 
 		// Check Telegram preference
-		const telegramPreference = preferences.find((p) => p.channel === "telegram");
+		const telegramPreference = preferences.find(
+			(p) => p.channel === "telegram",
+		);
 		const telegramEnabled = !telegramPreference || telegramPreference.enabled;
 
 		// Check Discord preference
@@ -198,14 +207,25 @@ export async function createNotification(
 		}
 
 		// Check bot platform availability in parallel (async-parallel rule)
-		const [teamsAvailable, telegramAvailable, discordAvailable, slackAvailable] = await Promise.all(
-			[
-				teamsEnabled ? isTeamsAvailable(params.organizationId) : Promise.resolve(false),
-				telegramEnabled ? isTelegramAvailable(params.organizationId) : Promise.resolve(false),
-				discordEnabled ? isDiscordAvailable(params.organizationId) : Promise.resolve(false),
-				slackEnabled ? isSlackAvailable(params.organizationId) : Promise.resolve(false),
-			],
-		);
+		const [
+			teamsAvailable,
+			telegramAvailable,
+			discordAvailable,
+			slackAvailable,
+		] = await Promise.all([
+			teamsEnabled
+				? isTeamsAvailable(params.organizationId)
+				: Promise.resolve(false),
+			telegramEnabled
+				? isTelegramAvailable(params.organizationId)
+				: Promise.resolve(false),
+			discordEnabled
+				? isDiscordAvailable(params.organizationId)
+				: Promise.resolve(false),
+			slackEnabled
+				? isSlackAvailable(params.organizationId)
+				: Promise.resolve(false),
+		]);
 
 		const botChannelPayload = {
 			userId: params.userId,
@@ -300,7 +320,10 @@ export async function createNotificationForManager(
 		});
 
 		if (!manager) {
-			logger.warn({ managerId: params.managerId }, "Manager not found for notification");
+			logger.warn(
+				{ managerId: params.managerId },
+				"Manager not found for notification",
+			);
 			return null;
 		}
 
@@ -326,7 +349,11 @@ export async function getUserNotifications(
 		offset?: number;
 		unreadOnly?: boolean;
 	} = {},
-): Promise<{ notifications: NotificationWithMeta[]; total: number; hasMore: boolean }> {
+): Promise<{
+	notifications: NotificationWithMeta[];
+	total: number;
+	hasMore: boolean;
+}> {
 	const { limit = 20, offset = 0, unreadOnly = false } = options;
 
 	try {
@@ -355,13 +382,16 @@ export async function getUserNotifications(
 			.where(and(...conditions));
 
 		const hasMore = notifications.length > limit;
-		const resultNotifications = hasMore ? notifications.slice(0, limit) : notifications;
+		const resultNotifications = hasMore
+			? notifications.slice(0, limit)
+			: notifications;
 
 		// Add timeAgo to each notification
-		const notificationsWithMeta: NotificationWithMeta[] = resultNotifications.map((n) => ({
-			...n,
-			timeAgo: getTimeAgo(n.createdAt),
-		}));
+		const notificationsWithMeta: NotificationWithMeta[] =
+			resultNotifications.map((n) => ({
+				...n,
+				timeAgo: getTimeAgo(n.createdAt),
+			}));
 
 		return {
 			notifications: notificationsWithMeta,
@@ -377,7 +407,10 @@ export async function getUserNotifications(
 /**
  * Get unread notification count for a user
  */
-export async function getUnreadCount(userId: string, organizationId: string): Promise<number> {
+export async function getUnreadCount(
+	userId: string,
+	organizationId: string,
+): Promise<number> {
 	try {
 		const [result] = await db
 			.select({ count: count() })
@@ -427,7 +460,10 @@ export async function markAsRead(
 
 		return updated || null;
 	} catch (error) {
-		logger.error({ error, notificationId, userId }, "Failed to mark notification as read");
+		logger.error(
+			{ error, notificationId, userId },
+			"Failed to mark notification as read",
+		);
 		return null;
 	}
 }
@@ -435,7 +471,10 @@ export async function markAsRead(
 /**
  * Mark all notifications as read for a user
  */
-export async function markAllAsRead(userId: string, organizationId: string): Promise<number> {
+export async function markAllAsRead(
+	userId: string,
+	organizationId: string,
+): Promise<number> {
 	try {
 		const result = await db
 			.update(notification)
@@ -489,7 +528,10 @@ export async function deleteNotification(
 
 		return deleted;
 	} catch (error) {
-		logger.error({ error, notificationId, userId }, "Failed to delete notification");
+		logger.error(
+			{ error, notificationId, userId },
+			"Failed to delete notification",
+		);
 		return false;
 	}
 }
@@ -504,7 +546,12 @@ export async function deleteAllNotifications(
 	try {
 		const result = await db
 			.delete(notification)
-			.where(and(eq(notification.userId, userId), eq(notification.organizationId, organizationId)))
+			.where(
+				and(
+					eq(notification.userId, userId),
+					eq(notification.organizationId, organizationId),
+				),
+			)
 			.returning({ id: notification.id });
 
 		const deletedCount = result.length;
@@ -520,7 +567,9 @@ export async function deleteAllNotifications(
 /**
  * Delete old notifications (cleanup job)
  */
-export async function deleteOldNotifications(olderThanDays: number = 90): Promise<number> {
+export async function deleteOldNotifications(
+	olderThanDays: number = 90,
+): Promise<number> {
 	try {
 		const cutoffDate = new Date();
 		cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
@@ -531,11 +580,17 @@ export async function deleteOldNotifications(olderThanDays: number = 90): Promis
 			.returning({ id: notification.id });
 
 		const deletedCount = result.length;
-		logger.info({ deletedCount, olderThanDays }, "Old notifications cleaned up");
+		logger.info(
+			{ deletedCount, olderThanDays },
+			"Old notifications cleaned up",
+		);
 
 		return deletedCount;
 	} catch (error) {
-		logger.error({ error, olderThanDays }, "Failed to delete old notifications");
+		logger.error(
+			{ error, olderThanDays },
+			"Failed to delete old notifications",
+		);
 		return 0;
 	}
 }

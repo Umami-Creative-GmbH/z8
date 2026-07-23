@@ -73,7 +73,8 @@ export type Notification = typeof notification.$inferSelect;
 export type NewNotification = typeof notification.$inferInsert;
 
 export type NotificationPreference = typeof notificationPreference.$inferSelect;
-export type NewNotificationPreference = typeof notificationPreference.$inferInsert;
+export type NewNotificationPreference =
+	typeof notificationPreference.$inferInsert;
 
 // API response types
 export interface NotificationWithMeta extends Notification {

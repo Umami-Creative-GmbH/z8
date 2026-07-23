@@ -1180,13 +1180,15 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 			eq(employee.id, input.actorEmployeeId),
 			eq(employee.organizationId, input.organizationId),
 			eq(employee.userId, input.actorUserId),
+			eq(employee.isActive, true),
 		),
-		columns: { id: true, userId: true },
+		columns: { id: true, userId: true, isActive: true },
 	});
 	if (
 		!actor ||
 		actor.id !== input.actorEmployeeId ||
-		actor.userId !== input.actorUserId
+		actor.userId !== input.actorUserId ||
+		actor.isActive !== true
 	) {
 		throw fail();
 	}

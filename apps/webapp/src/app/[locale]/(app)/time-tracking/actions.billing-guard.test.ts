@@ -259,7 +259,7 @@ describe("legacy time-tracking action billing guards", () => {
 		expect(body).toContain(
 			'approvalStatus: requiresApproval ? "pending" : "approved"',
 		);
-		expect(body).toContain("pendingChanges: (requiresApproval");
+		expect(body).toContain("pendingChanges: requiresApproval");
 		expect(body).toContain(
 			"executeOrdinaryWorkPeriodSubmissionInTransaction({",
 		);
