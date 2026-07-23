@@ -24,6 +24,7 @@ const state = vi.hoisted(() => ({
 		| "policy_clock_out",
 	useRealResolver: false,
 	resolverError: null as unknown,
+	originError: null as unknown,
 }));
 
 vi.mock("../policies/chain-service", async (importOriginal) => {
@@ -98,7 +99,8 @@ vi.mock("../workflow/start-workflow", () => ({
 	}) => {
 		state.calls.push(`start:${input.submissionKey}`);
 		state.calls.push(`context:${JSON.stringify(input.contextSnapshot)}`);
-		if (state.failure === "start") throw new Error("private-start-evidence");
+		if (state.failure === "start")
+			throw state.originError ?? new Error("private-start-evidence");
 		const id = state.workflowId;
 		if (state.startKind === "created") await input.bindSourceWorkflow(id);
 		else await input.verifySourceWorkflow(id);
@@ -151,7 +153,7 @@ vi.mock("./work-period-approvals", async (importOriginal) => {
 	const finalize = async (input: { evidence: { mode: string } }) => {
 		state.calls.push(`finalize:${input.evidence.mode}`);
 		if (state.failure === "finalization")
-			throw new Error("private-finalization-evidence");
+			throw state.originError ?? new Error("private-finalization-evidence");
 		return {};
 	};
 	return {
@@ -260,7 +262,7 @@ function fixture(
 				return { rows: [{ id: workPeriodId, organizationId }] };
 			}
 			if (state.failure === "source")
-				throw new Error("private-source-evidence");
+				throw state.originError ?? new Error("private-source-evidence");
 			if (text.includes('as "terminalCanonicalWorkflows"')) {
 				return {
 					rows: [
@@ -346,7 +348,7 @@ function fixture(
 		mirrorCanonicalToLegacy: vi.fn(async () => {
 			state.calls.push("compatibility");
 			if (state.failure === "compatibility")
-				throw new Error("private-compatibility-evidence");
+				throw state.originError ?? new Error("private-compatibility-evidence");
 		}),
 	};
 	const context = {
@@ -419,6 +421,7 @@ beforeEach(() => {
 	state.kind = "manual_time_submission";
 	state.useRealResolver = false;
 	state.resolverError = null;
+	state.originError = null;
 	state.result = {
 		kind: "default_created",
 		approvalRequestId: "40000000-0000-4000-8000-000000000001",
@@ -440,6 +443,51 @@ it("preserves the exact real resolver no-manager validation error", async () => 
 		field: "managerId",
 		message: "No manager assigned to approve time changes",
 	});
+});
+
+it("preserves resolver no-manager validation error identity", async () => {
+	const expected = new ValidationError({
+		field: "managerId",
+		message: "No manager assigned to approve time changes",
+	});
+	state.resolverError = expected;
+	const fake = fixture();
+
+	const rejected = await executeOrdinaryWorkPeriodSubmissionInTransaction(
+		fake.input,
+	).catch((error: unknown) => error);
+
+	expect(rejected).toBe(expected);
+});
+
+it.each([
+	"source",
+	"start",
+	"compatibility",
+	"finalization",
+])("redacts an exact-looking manager validation error from %s", async (origin) => {
+	state.failure = origin;
+	state.originError = new ValidationError({
+		field: "managerId",
+		message: "No manager assigned to approve time changes",
+	});
+	if (origin !== "source") state.mode = "canonical";
+	if (origin === "finalization") {
+		state.result = {
+			kind: "auto_completed",
+			chainInstanceId: null,
+			approvalRequestId: "40000000-0000-4000-8000-000000000001",
+			reason: "requester_is_approver",
+		};
+	}
+	const fake = fixture();
+
+	const rejected = await executeOrdinaryWorkPeriodSubmissionInTransaction(
+		fake.input,
+	).catch((error: unknown) => error);
+
+	expect(rejected).toBeInstanceOf(OrdinaryWorkPeriodSubmissionError);
+	expect(rejected).not.toBe(state.originError);
 });
 
 it.each([
@@ -464,21 +512,28 @@ it.each([
 	expect(String(rejected)).not.toContain(error.message);
 });
 
-it("redacts structurally spoofed manager validation errors", async () => {
-	state.resolverError = {
+it.each([
+	{
 		_tag: "ValidationError",
 		field: "managerId",
 		message: "No manager assigned to approve time changes",
 		privateDetail: "dependency-owned evidence",
-	};
+	},
+	Object.assign(Object.create(ValidationError.prototype), {
+		field: "managerId",
+		message: "No manager assigned to approve time changes",
+		privateDetail: "prototype-spoofed evidence",
+	}),
+])("redacts spoofed manager validation errors %#", async (spoofed) => {
+	state.resolverError = spoofed;
 	const fake = fixture();
 
 	const rejected = await executeOrdinaryWorkPeriodSubmissionInTransaction(
 		fake.input,
 	).catch((error: unknown) => error);
 
+	expect(rejected === spoofed).toBe(false);
 	expect(rejected).toBeInstanceOf(OrdinaryWorkPeriodSubmissionError);
-	expect(String(rejected)).not.toContain("dependency-owned evidence");
 });
 
 function expectedWorkflowId(

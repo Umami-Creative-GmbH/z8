@@ -7,7 +7,7 @@ import {
 	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { ValidationError } from "@/lib/effect/errors";
+import { isValidationError, type ValidationError } from "@/lib/effect/errors";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import {
@@ -117,6 +117,13 @@ export class OrdinaryWorkPeriodSubmissionError extends Error {
 	constructor() {
 		super("Ordinary work-period submission failed");
 		this.name = "OrdinaryWorkPeriodSubmissionError";
+	}
+}
+
+class ResolverManagerValidationError extends Error {
+	constructor(readonly validationError: ValidationError) {
+		super(validationError.message);
+		this.name = "ResolverManagerValidationError";
 	}
 }
 
@@ -1338,6 +1345,13 @@ async function executeOrdinaryWorkPeriodSubmission(
 				);
 				if (Exit.isFailure(resolved)) {
 					const failure = Option.getOrNull(Cause.failureOption(resolved.cause));
+					if (
+						isValidationError(failure) &&
+						failure.field === "managerId" &&
+						failure.message === "No manager assigned to approve time changes"
+					) {
+						throw new ResolverManagerValidationError(failure);
+					}
 					if (failure) throw failure;
 					return fail();
 				}
@@ -1543,12 +1557,8 @@ export async function executeOrdinaryWorkPeriodSubmissionInTransaction(
 	try {
 		return await executeOrdinaryWorkPeriodSubmission(input);
 	} catch (error) {
-		if (
-			error instanceof ValidationError &&
-			error.field === "managerId" &&
-			error.message === "No manager assigned to approve time changes"
-		) {
-			throw error;
+		if (error instanceof ResolverManagerValidationError) {
+			throw error.validationError;
 		}
 		throw new OrdinaryWorkPeriodSubmissionError();
 	}

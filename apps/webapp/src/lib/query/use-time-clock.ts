@@ -37,7 +37,9 @@ function getServerEpochSecond() {
 }
 
 function resolveBrowserTimezone(params?: { browserTimezone?: string | null }) {
-	return params && "browserTimezone" in params ? params.browserTimezone : getBrowserTimezone();
+	return params && "browserTimezone" in params
+		? params.browserTimezone
+		: getBrowserTimezone();
 }
 
 /**
@@ -57,7 +59,9 @@ export function useElapsedTimer(startTime: Date | null): number {
 	);
 	if (!startTime || currentEpochSecond === 0) return 0;
 
-	const startEpochSecond = Math.floor(instantFromDate(startTime).epochMilliseconds / 1000);
+	const startEpochSecond = Math.floor(
+		instantFromDate(startTime).epochMilliseconds / 1000,
+	);
 	return Math.max(0, currentEpochSecond - startEpochSecond);
 }
 
@@ -92,7 +96,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 	const activeOrganizationId = session?.session.activeOrganizationId;
 
 	// Offline support
-	const { isOnline, isOffline, pendingCount, isSyncing, queueClockEvent } = useOfflineClock();
+	const { isOnline, isOffline, pendingCount, isSyncing, queueClockEvent } =
+		useOfflineClock();
 
 	// Query for time clock status
 	const statusQuery = useQuery({

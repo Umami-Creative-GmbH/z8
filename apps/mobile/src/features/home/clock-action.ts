@@ -17,7 +17,10 @@ export function getActionTimeTimezone(intlApi: IntlApi = Intl): string | null {
 	}
 }
 
-function captureActionEvidence({ now = DateTime.utc(), intlApi }: ActionEvidenceOptions) {
+function captureActionEvidence({
+	now = DateTime.utc(),
+	intlApi,
+}: ActionEvidenceOptions) {
 	const browserTimezone = getActionTimeTimezone(intlApi) ?? "UTC";
 	const instant = now.toUTC();
 
@@ -39,7 +42,9 @@ export function createMobileClockInAction({
 	};
 }
 
-export function createMobileClockOutAction(options: ActionEvidenceOptions = {}) {
+export function createMobileClockOutAction(
+	options: ActionEvidenceOptions = {},
+) {
 	return {
 		action: "clock_out" as const,
 		submissionId: crypto.randomUUID(),

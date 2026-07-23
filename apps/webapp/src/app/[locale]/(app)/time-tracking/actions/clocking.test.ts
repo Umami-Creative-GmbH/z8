@@ -1,6 +1,7 @@
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { deriveApprovalWorkflowId } from "@/lib/approvals/workflow/identity";
+import { ValidationError } from "@/lib/effect/errors";
 
 const mockState = vi.hoisted(() => ({
 	getCurrentSession: vi.fn(),
@@ -358,7 +359,7 @@ function ordinarySubmissionQueries() {
 
 function ordinarySubmissionExecute(
 	kind: "manual_time_submission" | "policy_clock_out",
-	periodId?: string,
+	periodId?: string | (() => string),
 	date?: string,
 ) {
 	const dialect = new PgDialect();
@@ -366,7 +367,15 @@ function ordinarySubmissionExecute(
 		const compiled = dialect.sqlToQuery(query);
 		return compiled.sql.includes("pg_advisory_xact_lock")
 			? { rows: [{ locked: null }] }
-			: { rows: [ordinarySubmissionSource(kind, periodId, date)] };
+			: {
+					rows: [
+						ordinarySubmissionSource(
+							kind,
+							typeof periodId === "function" ? periodId() : periodId,
+							date,
+						),
+					],
+				};
 	});
 }
 
@@ -1742,6 +1751,32 @@ describe("clockOut", () => {
 		});
 	});
 
+	it.each([
+		new ValidationError({
+			field: "managerId",
+			message: "private manager resolution detail",
+		}),
+		new ValidationError({
+			field: "approvalPolicyStage.approverType",
+			message: "No manager assigned to approve time changes",
+		}),
+		Object.assign(Object.create(ValidationError.prototype), {
+			field: "managerId",
+			message: "No manager assigned to approve time changes",
+		}),
+	])("redacts non-canonical clock-out validation errors %#", async (error) => {
+		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
+		mockState.executeOrdinarySubmission.mockRejectedValueOnce(error);
+
+		const result = await clockOut();
+
+		expect(result).toEqual({
+			success: false,
+			error: "Failed to clock out. Please try again.",
+		});
+		expect(JSON.stringify(result)).not.toContain(error.message);
+	});
+
 	it("fails closed when the clock-out approval check fails before mutating", async () => {
 		mockState.checkClockOutNeedsApproval.mockRejectedValueOnce(
 			new Error("policy unavailable"),
@@ -2062,6 +2097,46 @@ describe("createManualTimeEntry", () => {
 			success: false,
 			error: "No manager assigned to approve time changes",
 		});
+	});
+
+	it.each([
+		new ValidationError({
+			field: "managerId",
+			message: "private manager resolution detail",
+		}),
+		new ValidationError({
+			field: "approvalPolicyStage.approverType",
+			message: "No manager assigned to approve time changes",
+		}),
+		Object.assign(Object.create(ValidationError.prototype), {
+			field: "managerId",
+			message: "No manager assigned to approve time changes",
+		}),
+	])("redacts non-canonical manual-entry validation errors %#", async (error) => {
+		mockState.executeOrdinarySubmission.mockRejectedValueOnce(error);
+		mockState.createTimeEntry
+			.mockResolvedValueOnce({ id: "clock-in-1", type: "clock_in" })
+			.mockResolvedValueOnce({ id: "clock-out-1", type: "clock_out" });
+		mockState.createCanonicalWorkRecord.mockResolvedValue({
+			id: "canonical-1",
+		});
+		mockState.insertValues.mockReturnValue({
+			returning: mockState.insertReturning,
+		});
+		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
+
+		const result = await createManualTimeEntry({
+			date: "2026-05-04",
+			clockInTime: "08:00",
+			clockOutTime: "09:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Failed to create time entry. Please try again.",
+		});
+		expect(JSON.stringify(result)).not.toContain(error.message);
 	});
 
 	it("fails closed when the manual-entry edit capability check fails before mutating", async () => {
@@ -3561,6 +3636,7 @@ describe("createManualTimeEntry", () => {
 	it("rolls back approval-required manual entries when no manager or policy approver resolves", async () => {
 		mockState.findManagerLinks.mockResolvedValue([]);
 		mockState.useRealOrdinarySubmission = true;
+		let insertedWorkPeriodId = "";
 		const durableState = {
 			entries: [] as string[],
 			workPeriods: [] as string[],
@@ -3578,9 +3654,10 @@ describe("createManualTimeEntry", () => {
 			return { id: "canonical-1" };
 		});
 		mockState.insertValues.mockImplementation((values) => {
-			durableState.workPeriods.push("period-1");
+			insertedWorkPeriodId = values.id;
+			durableState.workPeriods.push(insertedWorkPeriodId);
 			return {
-				returning: vi.fn().mockResolvedValue([{ id: "period-1", ...values }]),
+				returning: vi.fn().mockResolvedValue([values]),
 			};
 		});
 		mockState.transaction.mockImplementation(async (callback) => {
@@ -3594,7 +3671,7 @@ describe("createManualTimeEntry", () => {
 				return await callback({
 					execute: ordinarySubmissionExecute(
 						"manual_time_submission",
-						defaultSubmissionId,
+						() => insertedWorkPeriodId,
 						"2026-05-03",
 					),
 					query: {

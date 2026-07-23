@@ -41,7 +41,7 @@ import {
 	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { ValidationError } from "@/lib/effect/errors";
+import { isValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
@@ -1247,7 +1247,9 @@ export async function clockOut(
 								projectId: projectId ?? null,
 								origin: "clock",
 							},
-							transaction as Parameters<Parameters<typeof db.transaction>[0]>[0],
+							transaction as Parameters<
+								Parameters<typeof db.transaction>[0]
+							>[0],
 						);
 					return { canonicalRecordId: canonicalRecord.id };
 				},
@@ -1476,7 +1478,11 @@ export async function clockOut(
 		if (error instanceof ClockingConflictError) {
 			return { success: false, error: "You are not currently clocked in" };
 		}
-		if (error instanceof ValidationError && error.field === "managerId") {
+		if (
+			isValidationError(error) &&
+			error.field === "managerId" &&
+			error.message === "No manager assigned to approve time changes"
+		) {
 			return { success: false, error: error.message };
 		}
 		logger.error({ error }, "Clock out error");
@@ -2313,7 +2319,11 @@ export async function createManualTimeEntry(
 			},
 		};
 	} catch (error) {
-		if (error instanceof ValidationError && error.field === "managerId") {
+		if (
+			isValidationError(error) &&
+			error.field === "managerId" &&
+			error.message === "No manager assigned to approve time changes"
+		) {
 			return { success: false, error: error.message };
 		}
 		logger.error({ error }, "Failed to create manual time entry");
