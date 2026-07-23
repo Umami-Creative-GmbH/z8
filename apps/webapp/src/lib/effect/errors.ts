@@ -1,33 +1,12 @@
 import { Data } from "effect";
 
-interface ValidationErrorFields {
-	message: string;
-	field?: string;
-	value?: unknown;
-}
-
-const validationErrorInstances = new WeakSet<object>();
-
 export class ValidationError extends Data.TaggedError("ValidationError")<{
 	message: string;
 	field?: string;
 	value?: unknown;
-}> {
-	constructor(fields: ValidationErrorFields) {
-		super(fields);
-		validationErrorInstances.add(this);
-	}
-}
+}> {}
 
-export function isValidationError(error: unknown): error is ValidationError {
-	return (
-		error instanceof ValidationError && validationErrorInstances.has(error)
-	);
-}
-
-export class AuthenticationError extends Data.TaggedError(
-	"AuthenticationError",
-)<{
+export class AuthenticationError extends Data.TaggedError("AuthenticationError")<{
 	message: string;
 	userId?: string;
 }> {}
@@ -64,9 +43,7 @@ export class ConflictError extends Data.TaggedError("ConflictError")<{
 	details?: Record<string, unknown>;
 }> {}
 
-export class AppAccessDeniedError extends Data.TaggedError(
-	"AppAccessDeniedError",
-)<{
+export class AppAccessDeniedError extends Data.TaggedError("AppAccessDeniedError")<{
 	message: string;
 	appType: "webapp" | "desktop" | "mobile";
 	userId: string;

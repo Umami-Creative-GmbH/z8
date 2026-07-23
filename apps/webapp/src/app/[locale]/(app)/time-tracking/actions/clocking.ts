@@ -41,7 +41,7 @@ import {
 	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { isValidationError } from "@/lib/effect/errors";
+import { ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
@@ -1479,7 +1479,8 @@ export async function clockOut(
 			return { success: false, error: "You are not currently clocked in" };
 		}
 		if (
-			isValidationError(error) &&
+			error instanceof ValidationError &&
+			Object.getPrototypeOf(error) !== ValidationError.prototype &&
 			error.field === "managerId" &&
 			error.message === "No manager assigned to approve time changes"
 		) {
@@ -2320,7 +2321,8 @@ export async function createManualTimeEntry(
 		};
 	} catch (error) {
 		if (
-			isValidationError(error) &&
+			error instanceof ValidationError &&
+			Object.getPrototypeOf(error) !== ValidationError.prototype &&
 			error.field === "managerId" &&
 			error.message === "No manager assigned to approve time changes"
 		) {

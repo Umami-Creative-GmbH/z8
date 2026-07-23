@@ -2,13 +2,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ManualTimeEntryDialog } from "./manual-time-entry-dialog";
 
@@ -25,10 +19,7 @@ const { getBrowserTimezone } = vi.hoisted(() => ({
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, string>) =>
-			fallback.replace(
-				/\{(\w+)\}/g,
-				(_, key: string) => params?.[key] ?? `{${key}}`,
-			),
+			fallback.replace(/\{(\w+)\}/g, (_, key: string) => params?.[key] ?? `{${key}}`),
 	}),
 }));
 
@@ -137,9 +128,7 @@ vi.mock("@/app/[locale]/(app)/settings/profile/actions", () => ({
 	updateTimezone,
 }));
 
-function renderDialog(
-	props: Partial<Parameters<typeof ManualTimeEntryDialog>[0]> = {},
-) {
+function renderDialog(props: Partial<Parameters<typeof ManualTimeEntryDialog>[0]> = {}) {
 	return render(
 		<ManualTimeEntryDialog
 			employeeId="employee-current"
@@ -176,10 +165,7 @@ describe("ManualTimeEntryDialog layout", () => {
 
 	it("keeps the form body naturally sized and preserves footer action spacing", () => {
 		const source = readFileSync(
-			join(
-				process.cwd(),
-				"src/components/time-tracking/manual-time-entry-dialog.tsx",
-			),
+			join(process.cwd(), "src/components/time-tracking/manual-time-entry-dialog.tsx"),
 			"utf8",
 		);
 
@@ -191,10 +177,7 @@ describe("ManualTimeEntryDialog layout", () => {
 
 	it("formats adjusted toast times with the saved time format preference", () => {
 		const source = readFileSync(
-			join(
-				process.cwd(),
-				"src/components/time-tracking/manual-time-entry-dialog.tsx",
-			),
+			join(process.cwd(), "src/components/time-tracking/manual-time-entry-dialog.tsx"),
 			"utf8",
 		);
 
@@ -212,9 +195,7 @@ describe("ManualTimeEntryDialog layout", () => {
 	it("renders no trigger button when controlled open with hideTrigger", () => {
 		renderDialog({ open: true, hideTrigger: true });
 
-		expect(
-			screen.queryByRole("button", { name: "Add Manual Entry" }),
-		).toBeNull();
+		expect(screen.queryByRole("button", { name: "Add Manual Entry" })).toBeNull();
 		expect(screen.getByText("Add Manual Time Entry")).toBeTruthy();
 	});
 
@@ -227,23 +208,13 @@ describe("ManualTimeEntryDialog layout", () => {
 			defaultClockOutTime: "15:45",
 		});
 
-		expect((screen.getByLabelText("Date") as HTMLInputElement).value).toBe(
-			"2026-05-12",
-		);
-		expect((screen.getByLabelText("Clock In") as HTMLInputElement).value).toBe(
-			"10:15",
-		);
-		expect((screen.getByLabelText("Clock Out") as HTMLInputElement).value).toBe(
-			"15:45",
-		);
+		expect((screen.getByLabelText("Date") as HTMLInputElement).value).toBe("2026-05-12");
+		expect((screen.getByLabelText("Clock In") as HTMLInputElement).value).toBe("10:15");
+		expect((screen.getByLabelText("Clock Out") as HTMLInputElement).value).toBe("15:45");
 	});
 
 	it("shows the target employee name in the title", () => {
-		renderDialog({
-			open: true,
-			hideTrigger: true,
-			targetEmployeeName: "Jane Doe",
-		});
+		renderDialog({ open: true, hideTrigger: true, targetEmployeeName: "Jane Doe" });
 
 		expect(screen.getByText("Add Manual Time Entry for Jane Doe")).toBeTruthy();
 	});
@@ -263,30 +234,16 @@ describe("ManualTimeEntryDialog layout", () => {
 			defaultClockOutTime: "15:45",
 		});
 
-		expect(
-			screen
-				.getByTestId("work-category-selector")
-				.getAttribute("data-employee-id"),
-		).toBe("employee-2");
+		expect(screen.getByTestId("work-category-selector").getAttribute("data-employee-id")).toBe(
+			"employee-2",
+		);
 
-		fireEvent.change(screen.getByLabelText("Date"), {
-			target: { value: "2026-05-13" },
-		});
-		fireEvent.change(screen.getByLabelText("Clock In"), {
-			target: { value: "11:00" },
-		});
-		fireEvent.change(screen.getByLabelText("Clock Out"), {
-			target: { value: "16:30" },
-		});
-		fireEvent.change(screen.getByLabelText("Reason"), {
-			target: { value: "Calendar adjustment" },
-		});
-		fireEvent.change(screen.getByLabelText("Project"), {
-			target: { value: "project-1" },
-		});
-		fireEvent.change(screen.getByLabelText("Work category"), {
-			target: { value: "category-1" },
-		});
+		fireEvent.change(screen.getByLabelText("Date"), { target: { value: "2026-05-13" } });
+		fireEvent.change(screen.getByLabelText("Clock In"), { target: { value: "11:00" } });
+		fireEvent.change(screen.getByLabelText("Clock Out"), { target: { value: "16:30" } });
+		fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Calendar adjustment" } });
+		fireEvent.change(screen.getByLabelText("Project"), { target: { value: "project-1" } });
+		fireEvent.change(screen.getByLabelText("Work category"), { target: { value: "category-1" } });
 		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
 
 		await waitFor(() => {
@@ -338,9 +295,7 @@ describe("ManualTimeEntryDialog layout", () => {
 			defaultClockInTime: "10:15",
 			defaultClockOutTime: "15:45",
 		});
-		fireEvent.change(screen.getByLabelText("Reason"), {
-			target: { value: "Calendar adjustment" },
-		});
+		fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Calendar adjustment" } });
 
 		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
 		await waitFor(() => expect(createManualTimeEntry).toHaveBeenCalledTimes(1));
@@ -370,9 +325,7 @@ describe("ManualTimeEntryDialog layout", () => {
 			defaultClockOutTime: "15:45",
 		});
 
-		fireEvent.change(screen.getByLabelText("Reason"), {
-			target: { value: "Calendar adjustment" },
-		});
+		fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Calendar adjustment" } });
 		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
 
 		expect(
@@ -382,9 +335,7 @@ describe("ManualTimeEntryDialog layout", () => {
 		).toBeTruthy();
 		expect(createManualTimeEntry).not.toHaveBeenCalled();
 
-		fireEvent.click(
-			screen.getByRole("button", { name: "Update timezone and continue" }),
-		);
+		fireEvent.click(screen.getByRole("button", { name: "Update timezone and continue" }));
 
 		await waitFor(() => {
 			expect(updateTimezone).toHaveBeenCalledWith("America/New_York");
@@ -413,14 +364,10 @@ describe("ManualTimeEntryDialog layout", () => {
 			defaultClockOutTime: "15:45",
 		});
 
-		fireEvent.change(screen.getByLabelText("Reason"), {
-			target: { value: "Calendar adjustment" },
-		});
+		fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Calendar adjustment" } });
 		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
 
-		fireEvent.click(
-			await screen.findByRole("button", { name: "Continue once" }),
-		);
+		fireEvent.click(await screen.findByRole("button", { name: "Continue once" }));
 
 		await waitFor(() => {
 			expect(updateTimezone).not.toHaveBeenCalled();
@@ -434,10 +381,7 @@ describe("ManualTimeEntryDialog layout", () => {
 	});
 
 	it("keeps mismatch actions disabled while continue-once manual entry submit is pending", async () => {
-		const createResult = deferredResult<{
-			success: true;
-			data: Record<string, never>;
-		}>();
+		const createResult = deferredResult<{ success: true; data: Record<string, never> }>();
 		createManualTimeEntry.mockReturnValue(createResult.promise);
 
 		renderDialog({
@@ -449,14 +393,10 @@ describe("ManualTimeEntryDialog layout", () => {
 			defaultClockOutTime: "15:45",
 		});
 
-		fireEvent.change(screen.getByLabelText("Reason"), {
-			target: { value: "Calendar adjustment" },
-		});
+		fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Calendar adjustment" } });
 		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
 
-		const continueButton = await screen.findByRole("button", {
-			name: "Continue once",
-		});
+		const continueButton = await screen.findByRole("button", { name: "Continue once" });
 		fireEvent.click(continueButton);
 
 		await waitFor(() => {
@@ -479,17 +419,13 @@ describe("ManualTimeEntryDialog layout", () => {
 			defaultClockOutTime: "15:45",
 		});
 
-		fireEvent.change(screen.getByLabelText("Reason"), {
-			target: { value: "Calendar adjustment" },
-		});
+		fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Calendar adjustment" } });
 		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
 
 		const mismatchDialog = await screen.findByRole("dialog", {
 			name: "Confirm Timezone for This Entry",
 		});
-		fireEvent.click(
-			within(mismatchDialog).getByRole("button", { name: "Cancel" }),
-		);
+		fireEvent.click(within(mismatchDialog).getByRole("button", { name: "Cancel" }));
 
 		await waitFor(() => {
 			expect(screen.queryByText(/Your device timezone is/)).toBeNull();
@@ -509,9 +445,7 @@ describe("ManualTimeEntryDialog layout", () => {
 			defaultClockOutTime: "15:45",
 		});
 
-		fireEvent.change(screen.getByLabelText("Reason"), {
-			target: { value: "Calendar adjustment" },
-		});
+		fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Calendar adjustment" } });
 		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
 
 		await waitFor(() => {
@@ -538,9 +472,7 @@ describe("ManualTimeEntryDialog layout", () => {
 			defaultClockOutTime: "15:45",
 		});
 
-		fireEvent.change(screen.getByLabelText("Reason"), {
-			target: { value: "Calendar adjustment" },
-		});
+		fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Calendar adjustment" } });
 		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
 
 		await waitFor(() => {

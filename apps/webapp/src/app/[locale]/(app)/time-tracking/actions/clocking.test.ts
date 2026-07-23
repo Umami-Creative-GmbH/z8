@@ -1760,6 +1760,10 @@ describe("clockOut", () => {
 			field: "approvalPolicyStage.approverType",
 			message: "No manager assigned to approve time changes",
 		}),
+		new ValidationError({
+			field: "managerId",
+			message: "No manager assigned to approve time changes",
+		}),
 		Object.assign(Object.create(ValidationError.prototype), {
 			field: "managerId",
 			message: "No manager assigned to approve time changes",
@@ -2106,6 +2110,10 @@ describe("createManualTimeEntry", () => {
 		}),
 		new ValidationError({
 			field: "approvalPolicyStage.approverType",
+			message: "No manager assigned to approve time changes",
+		}),
+		new ValidationError({
+			field: "managerId",
 			message: "No manager assigned to approve time changes",
 		}),
 		Object.assign(Object.create(ValidationError.prototype), {

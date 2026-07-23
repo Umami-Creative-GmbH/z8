@@ -41,10 +41,7 @@ describe("mobile clock action evidence", () => {
 			.spyOn(crypto, "randomUUID")
 			.mockReturnValue(submissionId);
 		expect(
-			createMobileClockOutAction({
-				now: fixedNow,
-				intlApi: fakeIntl("Not/AZone"),
-			}),
+			createMobileClockOutAction({ now: fixedNow, intlApi: fakeIntl("Not/AZone") }),
 		).toEqual({
 			action: "clock_out",
 			submissionId,

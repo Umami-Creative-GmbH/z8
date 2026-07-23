@@ -445,7 +445,7 @@ it("preserves the exact real resolver no-manager validation error", async () => 
 	});
 });
 
-it("preserves resolver no-manager validation error identity", async () => {
+it("localizes resolver no-manager validation error provenance", async () => {
 	const expected = new ValidationError({
 		field: "managerId",
 		message: "No manager assigned to approve time changes",
@@ -457,7 +457,12 @@ it("preserves resolver no-manager validation error identity", async () => {
 		fake.input,
 	).catch((error: unknown) => error);
 
-	expect(rejected).toBe(expected);
+	expect(rejected).toBeInstanceOf(ValidationError);
+	expect(rejected).not.toBe(expected);
+	expect(rejected).toMatchObject({
+		field: "managerId",
+		message: "No manager assigned to approve time changes",
+	});
 });
 
 it.each([

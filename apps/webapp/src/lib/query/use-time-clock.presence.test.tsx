@@ -42,9 +42,7 @@ import { useElapsedTimer, useTimeClock } from "./use-time-clock";
 
 function wrapper(client: QueryClient) {
 	return function TestWrapper({ children }: { children: React.ReactNode }) {
-		return (
-			<QueryClientProvider client={client}>{children}</QueryClientProvider>
-		);
+		return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 	};
 }
 
@@ -65,9 +63,7 @@ describe("useElapsedTimer", () => {
 	it("updates from the current instant once per second in the browser", () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-07-14T10:00:05Z"));
-		const { result } = renderHook(() =>
-			useElapsedTimer(new Date("2026-07-14T10:00:00Z")),
-		);
+		const { result } = renderHook(() => useElapsedTimer(new Date("2026-07-14T10:00:00Z")));
 
 		expect(result.current).toBe(5);
 		act(() => vi.advanceTimersByTime(1000));

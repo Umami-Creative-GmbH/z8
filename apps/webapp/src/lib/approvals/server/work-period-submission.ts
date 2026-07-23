@@ -7,7 +7,7 @@ import {
 	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { isValidationError, type ValidationError } from "@/lib/effect/errors";
+import { ValidationError } from "@/lib/effect/errors";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import {
@@ -120,9 +120,12 @@ export class OrdinaryWorkPeriodSubmissionError extends Error {
 	}
 }
 
-class ResolverManagerValidationError extends Error {
-	constructor(readonly validationError: ValidationError) {
-		super(validationError.message);
+class ResolverManagerValidationError extends ValidationError {
+	constructor() {
+		super({
+			field: "managerId",
+			message: "No manager assigned to approve time changes",
+		});
 		this.name = "ResolverManagerValidationError";
 	}
 }
@@ -1346,11 +1349,12 @@ async function executeOrdinaryWorkPeriodSubmission(
 				if (Exit.isFailure(resolved)) {
 					const failure = Option.getOrNull(Cause.failureOption(resolved.cause));
 					if (
-						isValidationError(failure) &&
+						failure instanceof ValidationError &&
+						failure._tag === "ValidationError" &&
 						failure.field === "managerId" &&
 						failure.message === "No manager assigned to approve time changes"
 					) {
-						throw new ResolverManagerValidationError(failure);
+						throw new ResolverManagerValidationError();
 					}
 					if (failure) throw failure;
 					return fail();
@@ -1557,8 +1561,12 @@ export async function executeOrdinaryWorkPeriodSubmissionInTransaction(
 	try {
 		return await executeOrdinaryWorkPeriodSubmission(input);
 	} catch (error) {
-		if (error instanceof ResolverManagerValidationError) {
-			throw error.validationError;
+		if (
+			error instanceof ResolverManagerValidationError &&
+			error.field === "managerId" &&
+			error.message === "No manager assigned to approve time changes"
+		) {
+			throw error;
 		}
 		throw new OrdinaryWorkPeriodSubmissionError();
 	}
