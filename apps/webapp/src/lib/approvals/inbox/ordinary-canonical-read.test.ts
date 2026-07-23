@@ -287,6 +287,39 @@ describe("ordinary canonical inbox reads", () => {
 	});
 
 	it.each([
+		["foreign", "80000000-0000-4000-8000-000000000099"],
+		["wrong", ids.requester],
+		["null", null],
+	] as const)("does not suppress the canonical item for a %s compatibility approver", (_name, compatibilityApproverId) => {
+		const compatibilityRequest = {
+			id: ids.compatibility,
+			organizationId: ids.organization,
+			entityType: "time_entry",
+			entityId: ids.period,
+			requestedBy: ids.requester,
+			approverId: compatibilityApproverId,
+			status: "pending",
+			metadata: {
+				workflow: { id: ids.workflow, organizationId: ids.organization },
+				stage: { id: ids.stage, sequence: 2 },
+				timeRequest: { kind: "manual_time_submission" },
+			},
+		};
+
+		expect(
+			select([
+				row({
+					stage: {
+						...row().stage,
+						legacyApprovalRequestId: ids.compatibility,
+					},
+					compatibilityRequest,
+				}),
+			]),
+		).toHaveLength(1);
+	});
+
+	it.each([
 		[
 			"foreign projection",
 			() =>
@@ -341,6 +374,81 @@ describe("ordinary canonical inbox reads", () => {
 			() =>
 				row({
 					canonicalRecord: { ...row().canonicalRecord, durationMinutes: 479 },
+				}),
+		],
+		[
+			"malformed projected title",
+			() =>
+				row({
+					projection: {
+						...row().projection,
+						displayPayload: {
+							...(row().projection.displayPayload as Record<string, unknown>),
+							title: "Private payroll investigation",
+						},
+					},
+				}),
+		],
+		[
+			"private projected search injection",
+			() =>
+				row({
+					projection: {
+						...row().projection,
+						searchText: `${row().projection.searchText} private policy evidence`,
+					},
+				}),
+		],
+		[
+			"stale projected range",
+			() =>
+				row({
+					projection: {
+						...row().projection,
+						displayPayload: {
+							...(row().projection.displayPayload as Record<string, unknown>),
+							endTime: "2026-07-20T13:00:00Z",
+						},
+					},
+				}),
+		],
+		[
+			"stale projected duration",
+			() =>
+				row({
+					projection: {
+						...row().projection,
+						displayPayload: {
+							...(row().projection.displayPayload as Record<string, unknown>),
+							durationMinutes: 479,
+						},
+					},
+				}),
+		],
+		[
+			"stale projected status",
+			() =>
+				row({
+					projection: {
+						...row().projection,
+						displayPayload: {
+							...(row().projection.displayPayload as Record<string, unknown>),
+							approvalStatus: "approved",
+						},
+					},
+				}),
+		],
+		[
+			"stale projected stage",
+			() =>
+				row({
+					projection: {
+						...row().projection,
+						displayPayload: {
+							...(row().projection.displayPayload as Record<string, unknown>),
+							stage: { name: "Previous review", order: 1 },
+						},
+					},
 				}),
 		],
 	] as const)("fails closed for %s", (_name, makeRow) => {

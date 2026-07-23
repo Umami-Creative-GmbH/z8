@@ -124,7 +124,7 @@ export interface OrdinaryCanonicalReadRow {
 		entityType: string;
 		entityId: string;
 		requestedBy: string;
-		approverId: string;
+		approverId: string | null;
 		status: string;
 		metadata: unknown;
 	} | null;
@@ -214,6 +214,10 @@ function parseDisplay(
 	row: OrdinaryCanonicalReadRow,
 	kind: OrdinaryWorkPeriodApprovalKind,
 ) {
+	const expectedTitle =
+		kind === "manual_time_submission"
+			? "Manual time submission"
+			: "Policy clock-out";
 	const display = exactObject(row.projection.displayPayload, [
 		"kind",
 		"title",
@@ -224,17 +228,28 @@ function parseDisplay(
 		"stage",
 	]);
 	const stage = exactObject(display?.stage, ["name", "order"]);
+	const expectedSearch =
+		display &&
+		typeof display.startTime === "string" &&
+		typeof display.endTime === "string" &&
+		stage &&
+		typeof stage.name === "string"
+			? `${expectedTitle} ${display.startTime} ${display.endTime} ${stage.name}`.toLocaleLowerCase(
+					"en-US",
+				)
+			: null;
 	if (
 		!display ||
 		display.kind !== kind ||
-		typeof display.title !== "string" ||
+		display.title !== expectedTitle ||
 		typeof display.startTime !== "string" ||
 		typeof display.endTime !== "string" ||
 		display.durationMinutes !== row.period.durationMinutes ||
 		display.approvalStatus !== "pending" ||
 		!stage ||
 		stage.name !== row.stage.label ||
-		stage.order !== row.stage.sequence
+		stage.order !== row.stage.sequence ||
+		row.projection.searchText !== expectedSearch
 	) {
 		return null;
 	}
@@ -273,6 +288,7 @@ function hasExactCompatibility(
 			request.entityType === "time_entry" &&
 			request.entityId === row.period.id &&
 			request.requestedBy === row.requester.id &&
+			request.approverId === row.assignment.approverEmployeeId &&
 			request.status === "pending" &&
 			workflow?.id === row.workflow.id &&
 			workflow.organizationId === row.workflow.organizationId &&
