@@ -2,6 +2,10 @@
  * Local contract: pnpm --filter webapp test:approval-workflow-repository:integration
  * The runner creates, migrates, verifies, and removes a label-owned PostgreSQL 16 database.
  */
+
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Effect } from "effect";
 import { Pool } from "pg";
@@ -10,7 +14,9 @@ import * as authSchema from "@/db/auth-schema";
 import { configurePostgresUtcTypes } from "@/db/postgres-utc";
 import * as schema from "@/db/schema";
 import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { calculateHash } from "@/lib/time-tracking/blockchain";
 import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
+import type { ApprovalWorkflowLifecycleMode } from "../workflow/ports";
 import type { ApprovalWorkflowDatabase } from "../workflow/repository";
 import {
 	resolveApprovalWorkflowRepositoryTestConfiguration,
@@ -25,6 +31,35 @@ import {
 import { executeOrdinaryWorkPeriodSubmissionInTransaction } from "./work-period-submission";
 
 configurePostgresUtcTypes();
+
+const integrationSource = readFileSync(
+	join(
+		process.cwd(),
+		"src/lib/approvals/server/work-period-approvals.integration.test.ts",
+	),
+	"utf8",
+);
+
+describe("ordinary work-period PostgreSQL case registration", () => {
+	it("registers the complete Task 11 mode, rollback, race, isolation, and split matrix", () => {
+		for (const scenario of [
+			"composes submission and terminal decisions in %s mode",
+			"rolls back $stage submission stage in $mode mode without residue",
+			"requester auto-finalization failure rolls the complete submission back in %s mode",
+			"terminal prior history remains immutable while one new conflicting pending submission wins",
+			"stale same-organization source link fails generically and rolls back",
+			"foreign organization authority fails separately without tenant residue",
+			"approve versus reject leaves one coherent terminal graph and a generic conflict loser",
+			"duplicate approve replays one coherent terminal graph",
+			"Task8A split has exact period, canonical subtype, allocation, workflow, and synthetic-entry parity",
+			"forced %s CAS zero row rolls the entire decision back",
+			"exact source advisory lock blocks then commits and replays after release",
+			"split races a locked competing employee entry into one reachable hash chain",
+		] as const) {
+			expect(integrationSource.split(scenario)).toHaveLength(3);
+		}
+	});
+});
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
@@ -76,7 +111,16 @@ const ids = {
 	policyAssignment: "c6000000-0000-4000-8000-000000000004",
 	project: "c7000000-0000-4000-8000-000000000001",
 	allocation: "c7000000-0000-4000-8000-000000000002",
+	staleWorkflow: "c8000000-0000-4000-8000-000000000001",
+	terminalWorkflow: "c8000000-0000-4000-8000-000000000002",
+	terminalRequest: "c8000000-0000-4000-8000-000000000003",
+	approvalPolicy: "c9000000-0000-4000-8000-000000000001",
+	approvalCondition: "c9000000-0000-4000-8000-000000000002",
+	approvalStageOne: "c9000000-0000-4000-8000-000000000003",
+	approvalStageTwo: "c9000000-0000-4000-8000-000000000004",
 } as const;
+
+const modes = ["legacy", "shadow", "ready", "canonical", "complete"] as const;
 
 function dbService(db: unknown): ApprovalDbService {
 	return {
@@ -152,6 +196,9 @@ describeIntegration(
 		async function seed(
 			kind: OrdinaryWorkPeriodApprovalKind = "manual_time_submission",
 			withBreakPolicy = false,
+			mode: ApprovalWorkflowLifecycleMode = "canonical",
+			requesterAutoApproves = false,
+			withApprovalChain = false,
 		) {
 			await cleanup();
 			const timestamp = new Date(now.epochMilliseconds);
@@ -188,8 +235,8 @@ describeIntegration(
 				[
 					ids.managerLink,
 					ids.requester,
-					ids.manager,
-					ids.managerUser,
+					requesterAutoApproves ? ids.requester : ids.manager,
+					requesterAutoApproves ? ids.requesterUser : ids.managerUser,
 					timestamp,
 				],
 			);
@@ -198,14 +245,26 @@ describeIntegration(
 			 values ($1, 'UTC', $2)`,
 				[ids.requesterUser, timestamp],
 			);
+			const clockInHash = calculateHash({
+				employeeId: ids.requester,
+				type: "clock_in",
+				timestamp: startTime.toISOString(),
+				previousHash: null,
+			});
+			const clockOutHash = calculateHash({
+				employeeId: ids.requester,
+				type: "clock_out",
+				timestamp: endTime.toISOString(),
+				previousHash: clockInHash,
+			});
 			await pool.query(
 				`insert into time_entry (
 			 id, organization_id, employee_id, type, timestamp, utc_offset_minutes,
 			 timezone, timezone_source, previous_entry_id, hash, previous_hash,
 			 created_by, created_at
 			 ) values
-			 ($1, $3, $4, 'clock_in', $5, 0, 'UTC', 'backfill', null, 'task11-in', null, $7, $8),
-			 ($2, $3, $4, 'clock_out', $6, 0, 'UTC', 'backfill', $1, 'task11-out', 'task11-in', $7, $8)`,
+			 ($1, $3, $4, 'clock_in', $5, 0, 'UTC', 'backfill', null, $8, null, $7, $5),
+			 ($2, $3, $4, 'clock_out', $6, 0, 'UTC', 'backfill', $1, $9, $8, $7, $6)`,
 				[
 					ids.clockIn,
 					ids.clockOut,
@@ -214,7 +273,8 @@ describeIntegration(
 					startTime,
 					endTime,
 					ids.requesterUser,
-					timestamp,
+					clockInHash,
+					clockOutHash,
 				],
 			);
 			await pool.query(
@@ -282,9 +342,50 @@ describeIntegration(
 			await pool.query(
 				`insert into approval_workflow_rollout
 			 (organization_id, workflow_type, lifecycle_mode, side_effect_mode, created_at, updated_at)
-			 values ($1, $2, 'canonical', 'canonical', $3, $3)`,
-				[ids.organization, kind, timestamp],
+			 values ($1, $2, $3, $4, $5, $5)`,
+				[
+					ids.organization,
+					kind,
+					mode,
+					mode === "canonical" || mode === "complete" ? "canonical" : "legacy",
+					timestamp,
+				],
 			);
+			if (withApprovalChain) {
+				await pool.query(
+					`insert into approval_policy
+					 (id, organization_id, name, is_active, priority, created_by, updated_at)
+					 values ($1, $2, 'Task 11 two-stage', true, 1, $3, $4)`,
+					[ids.approvalPolicy, ids.organization, ids.managerUser, timestamp],
+				);
+				await pool.query(
+					`insert into approval_policy_condition
+					 (id, organization_id, policy_id, condition_type, operator, value_json, updated_at)
+					 values ($1, $2, $3, 'approval_type', 'in', $4::jsonb, $5)`,
+					[
+						ids.approvalCondition,
+						ids.organization,
+						ids.approvalPolicy,
+						JSON.stringify(["time_entry"]),
+						timestamp,
+					],
+				);
+				await pool.query(
+					`insert into approval_policy_stage
+					 (id, organization_id, policy_id, step_order, label, approver_type,
+					  fallback_behavior, updated_at)
+					 values
+					 ($1, $3, $4, 1, 'Manager one', 'direct_manager', 'fail', $5),
+					 ($2, $3, $4, 2, 'Manager two', 'direct_manager', 'fail', $5)`,
+					[
+						ids.approvalStageOne,
+						ids.approvalStageTwo,
+						ids.organization,
+						ids.approvalPolicy,
+						timestamp,
+					],
+				);
+			}
 			if (withBreakPolicy) {
 				await pool.query(
 					`insert into work_policy
@@ -325,10 +426,16 @@ describeIntegration(
 		async function submit(
 			kind: OrdinaryWorkPeriodApprovalKind,
 			submissionId = ids.submission,
+			applicationName?: string,
 		) {
 			const productionRuntime = runtime();
-			return productionRuntime.repository.withTransaction((context) =>
-				executeOrdinaryWorkPeriodSubmissionInTransaction({
+			return productionRuntime.repository.withTransaction(async (context) => {
+				if (applicationName) {
+					await context.dbService.db.execute(
+						sql`select set_config('application_name', ${applicationName}, true), set_config('lock_timeout', '5s', true)`,
+					);
+				}
+				return executeOrdinaryWorkPeriodSubmissionInTransaction({
 					dbService: dbService(context.dbService.db),
 					context,
 					organizationId: ids.organization,
@@ -345,8 +452,8 @@ describeIntegration(
 					overtimeRisk: null,
 					kind,
 					metadata: {},
-				}),
-			);
+				});
+			});
 		}
 
 		async function decide(
@@ -378,6 +485,8 @@ describeIntegration(
 				"approval_inbox_projection",
 				"approval_outbox",
 				"approval_request",
+				"approval_chain_instance",
+				"approval_chain_stage_instance",
 				"time_entry",
 				"work_period",
 				"time_record",
@@ -398,6 +507,109 @@ describeIntegration(
 					]),
 				),
 			);
+		}
+
+		async function withFailureTrigger<T>(input: {
+			table: string;
+			operation: "insert" | "update";
+			name: string;
+			run: () => Promise<T>;
+		}) {
+			const functionName = `task11_fail_${input.name.replaceAll("-", "_")}`;
+			const triggerName = `${functionName}_trigger`;
+			await pool.query(`create or replace function ${functionName}() returns trigger as $$
+		begin raise exception 'task11 failpoint: ${input.name}'; end;
+		$$ language plpgsql`);
+			await pool.query(
+				`create trigger ${triggerName} after ${input.operation} on ${input.table} for each row execute function ${functionName}()`,
+			);
+			try {
+				return await input.run();
+			} finally {
+				await pool.query(
+					`drop trigger if exists ${triggerName} on ${input.table}`,
+				);
+				await pool.query(`drop function if exists ${functionName}()`);
+			}
+		}
+
+		async function insertWorkflowHistory(input: {
+			id: string;
+			status: "pending" | "approved";
+			sourceId?: string;
+		}) {
+			const timestamp = new Date(now.epochMilliseconds);
+			await pool.query(
+				`insert into approval_workflow (
+				 id, organization_id, workflow_type, source_type, source_id,
+				 requester_employee_id, status, current_stage_order, version,
+				 policy_snapshot, context_snapshot, display_snapshot, submitted_at,
+				 completed_at, created_at, updated_at
+				 ) values ($1, $2, 'manual_time_submission', 'time_entry', $3, $4,
+				 $5, $6, $7, '{}', $8, '{}', $9, $10, $9, $9)`,
+				[
+					input.id,
+					ids.organization,
+					input.sourceId ?? ids.period,
+					ids.requester,
+					input.status,
+					input.status === "pending" ? 1 : null,
+					input.status === "pending" ? 1 : 2,
+					JSON.stringify({ timeRequest: { kind: "manual_time_submission" } }),
+					timestamp,
+					input.status === "approved" ? timestamp : null,
+				],
+			);
+		}
+
+		async function waitForObservedLock(
+			applicationName: string,
+			blockingPid: number,
+		) {
+			const deadline = Date.now() + 5_000;
+			while (Date.now() < deadline) {
+				const result = await pool.query<{
+					wait_event_type: string | null;
+					blocking_pids: number[];
+				}>(
+					`select wait_event_type, pg_blocking_pids(pid) as blocking_pids
+					 from pg_stat_activity
+					 where datname = current_database() and application_name = $1`,
+					[applicationName],
+				);
+				const row = result.rows[0];
+				if (
+					row?.wait_event_type === "Lock" &&
+					row.blocking_pids.includes(blockingPid)
+				) {
+					return row;
+				}
+				await new Promise<void>((resolve) => setTimeout(resolve, 20));
+			}
+			throw new Error(
+				`Timed out observing Task 11 lock for ${applicationName}`,
+			);
+		}
+
+		async function waitForBlocker(blockingPid: number) {
+			const deadline = Date.now() + 5_000;
+			while (Date.now() < deadline) {
+				const result = await pool.query<{
+					pid: number;
+					wait_event_type: string | null;
+					blocking_pids: number[];
+				}>(
+					`select pid, wait_event_type, pg_blocking_pids(pid) as blocking_pids
+					 from pg_stat_activity
+					 where datname = current_database() and wait_event_type = 'Lock'`,
+				);
+				const row = result.rows.find(({ blocking_pids }) =>
+					blocking_pids.includes(blockingPid),
+				);
+				if (row) return row;
+				await new Promise<void>((resolve) => setTimeout(resolve, 20));
+			}
+			throw new Error("Timed out observing Task 11 employee advisory lock");
 		}
 
 		beforeAll(async () => {
@@ -422,6 +634,130 @@ describeIntegration(
 		afterAll(async () => {
 			await cleanup();
 			await pool.end();
+		});
+
+		it.each(
+			modes,
+		)("composes submission and terminal decisions in %s mode", async (mode) => {
+			await seed("manual_time_submission", false, mode);
+			const submitted = await submit("manual_time_submission");
+			expect(submitted.disposition).toBe("executed");
+			await expect(
+				decide(submitted.result.approvalRequestId, {
+					kind: "approve",
+					reason: null,
+				}),
+			).resolves.toMatchObject({ result: { action: "approve" } });
+			const graph = await snapshot();
+			const periods = graph.work_period as Array<Record<string, unknown>>;
+			const records = graph.time_record as Array<Record<string, unknown>>;
+			const workflows = graph.approval_workflow as Array<
+				Record<string, unknown>
+			>;
+			const requests = graph.approval_request as Array<Record<string, unknown>>;
+			expect(periods).toHaveLength(1);
+			expect(periods[0]).toMatchObject({
+				organization_id: ids.organization,
+				employee_id: ids.requester,
+				approval_status: "approved",
+			});
+			expect(records[0]).toMatchObject({
+				id: ids.canonical,
+				organization_id: ids.organization,
+				employee_id: ids.requester,
+				approval_state: "approved",
+			});
+			expect(graph.time_record_approval_decision).toHaveLength(1);
+			if (mode === "legacy") {
+				expect(workflows).toEqual([]);
+				expect(periods[0]?.approval_workflow_id).toBeNull();
+			} else {
+				expect(workflows).toHaveLength(1);
+				expect(workflows[0]).toMatchObject({ status: "approved", version: 2 });
+				expect(periods[0]?.approval_workflow_id).toBe(workflows[0]?.id);
+			}
+			if (mode === "complete") {
+				expect(requests).toEqual([]);
+			} else {
+				expect(requests).toHaveLength(1);
+				expect(requests[0]).toMatchObject({ status: "approved" });
+			}
+		});
+
+		const submissionRollbackCases = [
+			...["legacy", "shadow", "ready"].map((mode) => ({
+				mode: mode as ApprovalWorkflowLifecycleMode,
+				stage: "legacy request/chain",
+				table: "approval_request",
+				operation: "insert" as const,
+				chain: false,
+			})),
+			...["legacy", "shadow", "ready"].map((mode) => ({
+				mode: mode as ApprovalWorkflowLifecycleMode,
+				stage: "legacy chain",
+				table: "approval_chain_stage_instance",
+				operation: "insert" as const,
+				chain: true,
+			})),
+			...["shadow", "ready", "canonical", "complete"].flatMap((mode) =>
+				[
+					["workflow", "approval_workflow", "insert"],
+					["projection", "approval_requester_projection", "insert"],
+					["outbox", "approval_outbox", "insert"],
+					["source binding", "work_period", "update"],
+				].map(([stage, table, operation]) => ({
+					mode: mode as ApprovalWorkflowLifecycleMode,
+					stage,
+					table,
+					operation: operation as "insert" | "update",
+					chain: false,
+				})),
+			),
+			{
+				mode: "canonical" as const,
+				stage: "compatibility",
+				table: "approval_request",
+				operation: "insert" as const,
+				chain: false,
+			},
+		];
+
+		it.each(
+			submissionRollbackCases,
+		)("rolls back $stage submission stage in $mode mode without residue", async ({
+			mode,
+			stage,
+			table,
+			operation,
+			chain,
+		}) => {
+			await seed("manual_time_submission", false, mode, false, chain);
+			const before = await snapshot();
+			await expect(
+				withFailureTrigger({
+					table,
+					operation,
+					name: `submission-${mode}-${stage.replaceAll(" ", "-")}`,
+					run: () => submit("manual_time_submission"),
+				}),
+			).rejects.toThrow("Ordinary work-period submission failed");
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it.each(
+			modes,
+		)("requester auto-finalization failure rolls the complete submission back in %s mode", async (mode) => {
+			await seed("manual_time_submission", false, mode, true);
+			const before = await snapshot();
+			await expect(
+				withFailureTrigger({
+					table: "time_record_approval_decision",
+					operation: "insert",
+					name: `auto-finalization-${mode}`,
+					run: () => submit("manual_time_submission"),
+				}),
+			).rejects.toThrow("Ordinary work-period submission failed");
+			expect(await snapshot()).toEqual(before);
 		});
 
 		it("exact duplicate retry commits once and replays while distinct same-kind submissions commit one conflicting pending workflow", async () => {
@@ -452,11 +788,57 @@ describeIntegration(
 			).toHaveLength(1);
 		});
 
+		it("exact source advisory lock blocks then commits and replays after release", async () => {
+			const blocker = await pool.connect();
+			const applicationName = `task11-source-lock-${process.pid}`;
+			let released = false;
+			try {
+				await blocker.query("begin");
+				await blocker.query(
+					"set local idle_in_transaction_session_timeout = '10s'",
+				);
+				const pidResult = await blocker.query<{ pid: number }>(
+					"select pg_backend_pid() as pid",
+				);
+				const blockingPid = pidResult.rows[0]?.pid;
+				if (!blockingPid) throw new Error("Task 11 blocker has no backend pid");
+				const exactLockKey = JSON.stringify([
+					ids.organization,
+					"manual_time_submission",
+					"time_entry",
+					ids.period,
+				]);
+				await blocker.query(
+					"select pg_advisory_xact_lock(hashtextextended($1, 0))",
+					[exactLockKey],
+				);
+				const waiting = submit(
+					"manual_time_submission",
+					ids.submission,
+					applicationName,
+				);
+				await expect(
+					waitForObservedLock(applicationName, blockingPid),
+				).resolves.toMatchObject({ wait_event_type: "Lock" });
+				await blocker.query("commit");
+				released = true;
+				await expect(waiting).resolves.toMatchObject({
+					disposition: "executed",
+				});
+				await expect(submit("manual_time_submission")).resolves.toMatchObject({
+					disposition: "replayed",
+				});
+			} finally {
+				if (!released) await blocker.query("rollback");
+				blocker.release();
+			}
+		});
+
 		async function submitting() {
 			return submit("manual_time_submission");
 		}
 
-		it("manual versus policy-clockout competition uses exact source advisory locks and preserves terminal history", async () => {
+		it("manual versus policy-clockout competition uses exact source advisory locks", async () => {
 			const results = await Promise.allSettled([
 				submit("manual_time_submission"),
 				submit("policy_clock_out", ids.otherSubmission),
@@ -475,18 +857,74 @@ describeIntegration(
 			expect(rows.rows[0]?.status).toBe("pending");
 		});
 
-		it("stale link and foreign organization or employee fail generically with total rollback", async () => {
+		it("terminal prior history remains immutable while one new conflicting pending submission wins", async () => {
+			await insertWorkflowHistory({
+				id: ids.terminalWorkflow,
+				status: "approved",
+			});
+			await pool.query(
+				`insert into approval_request (
+				 id, organization_id, entity_type, entity_id, canonical_record_id,
+				 requested_by, approver_id, status, reason, metadata, approved_at, updated_at
+				 ) values ($1, $2, 'time_entry', $3, $4, $5, $6, 'approved',
+				 'Task 11 terminal history', $7, $8, $8)`,
+				[
+					ids.terminalRequest,
+					ids.organization,
+					ids.period,
+					ids.canonical,
+					ids.requester,
+					ids.manager,
+					JSON.stringify({ timeRequest: { kind: "manual_time_submission" } }),
+					new Date(now.epochMilliseconds),
+				],
+			);
+			const beforeHistory = await pool.query(
+				"select to_jsonb(history) as row from approval_workflow history where id = $1 and organization_id = $2",
+				[ids.terminalWorkflow, ids.organization],
+			);
+			const competing = await Promise.allSettled([
+				submit("manual_time_submission"),
+				submit("manual_time_submission", ids.otherSubmission),
+			]);
+			expect(
+				competing.filter(({ status }) => status === "fulfilled"),
+			).toHaveLength(1);
+			expect(
+				competing.filter(({ status }) => status === "rejected"),
+			).toHaveLength(1);
+			const workflows = await pool.query(
+				"select to_jsonb(workflow) as row from approval_workflow workflow where organization_id = $1 order by id",
+				[ids.organization],
+			);
+			expect(workflows.rows).toHaveLength(2);
+			expect(workflows.rows).toContainEqual(beforeHistory.rows[0]);
+			expect(
+				workflows.rows.filter(
+					({ row }: { row: { status?: string } }) => row.status === "pending",
+				),
+			).toHaveLength(1);
+		});
+
+		it("stale same-organization source link fails generically and rolls back", async () => {
+			await insertWorkflowHistory({
+				id: ids.staleWorkflow,
+				status: "pending",
+				sourceId: ids.clockIn,
+			});
+			await pool.query(
+				"update work_period set approval_workflow_id = $1 where id = $2 and organization_id = $3 and employee_id = $4",
+				[ids.staleWorkflow, ids.period, ids.organization, ids.requester],
+			);
 			const before = await snapshot();
-			await pool
-				.query(
-					"update work_period set employee_id = $1 where id = $2 and organization_id = $3",
-					[ids.foreignEmployee, ids.period, ids.organization],
-				)
-				.catch(() => undefined);
 			await expect(submit("manual_time_submission")).rejects.toThrow(
 				"Ordinary work-period submission failed",
 			);
-			await seed();
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it("foreign organization authority fails separately without tenant residue", async () => {
+			const before = await snapshot();
 			await expect(
 				runtime().repository.withTransaction((context) =>
 					executeOrdinaryWorkPeriodSubmissionInTransaction({
@@ -509,7 +947,111 @@ describeIntegration(
 			expect(await snapshot()).toEqual(before);
 		});
 
-		it("approve versus reject and duplicate approve produce one terminal source mutation, decision, completed receipt, and generic loser conflict", async () => {
+		it("foreign employee ownership fails without revealing or mutating the source", async () => {
+			const before = await snapshot();
+			await expect(
+				runtime().repository.withTransaction((context) =>
+					executeOrdinaryWorkPeriodSubmissionInTransaction({
+						dbService: dbService(context.dbService.db),
+						context,
+						organizationId: ids.organization,
+						workPeriodId: ids.period,
+						submissionId: ids.submission,
+						requesterEmployeeId: ids.foreignEmployee,
+						requesterUserId: ids.foreignUser,
+						teamId: null,
+						defaultApproverId: ids.manager,
+						reason: "Manual time entry: foreign employee",
+						overtimeRisk: null,
+						kind: "manual_time_submission",
+						metadata: {},
+					}),
+				),
+			).rejects.toThrow("Ordinary work-period submission failed");
+			expect(await snapshot()).toEqual(before);
+		});
+
+		async function assertTerminalGraph(
+			expectedStatus: "approved" | "rejected",
+		) {
+			const graph = await snapshot();
+			const period = (graph.work_period as Array<Record<string, unknown>>)[0];
+			const canonical = (
+				graph.time_record as Array<Record<string, unknown>>
+			)[0];
+			const workflow = (
+				graph.approval_workflow as Array<Record<string, unknown>>
+			)[0];
+			const requests = graph.approval_request as Array<Record<string, unknown>>;
+			const decisions = graph.time_record_approval_decision as Array<
+				Record<string, unknown>
+			>;
+			const receipts = graph.approval_workflow_command as Array<
+				Record<string, unknown>
+			>;
+			const requesterProjection = graph.approval_requester_projection as Array<
+				Record<string, unknown>
+			>;
+			const outbox = graph.approval_outbox as Array<Record<string, unknown>>;
+			expect(period).toMatchObject({
+				id: ids.period,
+				organization_id: ids.organization,
+				employee_id: ids.requester,
+				canonical_record_id: ids.canonical,
+				approval_status: expectedStatus,
+			});
+			expect(canonical).toMatchObject({
+				id: ids.canonical,
+				organization_id: ids.organization,
+				employee_id: ids.requester,
+				approval_state: expectedStatus,
+				start_at: period?.start_time,
+				end_at: period?.end_time,
+				duration_minutes: period?.duration_minutes,
+			});
+			expect(workflow).toMatchObject({
+				id: period?.approval_workflow_id,
+				status: expectedStatus,
+				version: 2,
+			});
+			expect(requests).toHaveLength(1);
+			expect(requests[0]).toMatchObject({
+				status: expectedStatus,
+				entity_id: ids.period,
+				canonical_record_id: ids.canonical,
+				metadata: {
+					workflow: { id: workflow?.id, organizationId: ids.organization },
+					timeRequest: { kind: "manual_time_submission" },
+				},
+			});
+			expect(decisions).toHaveLength(1);
+			expect(decisions[0]).toMatchObject({ action: expectedStatus });
+			expect(receipts).toHaveLength(1);
+			expect(receipts[0]).toMatchObject({ state: "completed" });
+			expect(requesterProjection).toHaveLength(1);
+			expect(requesterProjection[0]).toMatchObject({
+				workflow_id: workflow?.id,
+				status: expectedStatus,
+			});
+			expect(graph.approval_inbox_projection).toEqual([]);
+			expect(outbox.length).toBeGreaterThanOrEqual(2);
+			expect(outbox).toContainEqual(
+				expect.objectContaining({
+					workflow_id: workflow?.id,
+					event_type: `workflow.${expectedStatus}`,
+					disposition: "observe",
+				}),
+			);
+			for (const row of outbox) {
+				expect(row.workflow_id).toBe(workflow?.id);
+				expect(row.disposition).toBe("observe");
+			}
+			for (const row of [...requests, ...decisions, ...receipts, ...outbox]) {
+				expect(row.organization_id).toBe(ids.organization);
+			}
+		}
+
+		it("approve versus reject leaves one coherent terminal graph and a generic conflict loser", async () => {
 			const submitted = await submit("manual_time_submission");
 			const target = submitted.result.approvalRequestId;
 			const competing = await Promise.allSettled([
@@ -522,21 +1064,20 @@ describeIntegration(
 			expect(
 				competing.filter(({ status }) => status === "rejected"),
 			).toHaveLength(1);
-			const state = await pool.query<{
-				approval_status: string;
-				decision_count: number;
-				completed_receipts: number;
-			}>(
-				`select period.approval_status,
-			 (select count(*)::int from time_record_approval_decision decision where decision.organization_id = period.organization_id and decision.record_id = period.canonical_record_id) as decision_count,
-			 (select count(*)::int from approval_workflow_command command where command.organization_id = period.organization_id and command.state = 'completed') as completed_receipts
-			 from work_period period where period.id = $1 and period.organization_id = $2`,
-				[ids.period, ids.organization],
+			const winner = competing.find(({ status }) => status === "fulfilled");
+			const loser = competing.find(({ status }) => status === "rejected");
+			if (winner?.status !== "fulfilled" || loser?.status !== "rejected") {
+				throw new Error("Task 11 terminal race did not produce one winner");
+			}
+			expect(loser.reason).toMatchObject({
+				message: "Ordinary work-period decision failed",
+			});
+			await assertTerminalGraph(
+				winner.value.result.action === "approve" ? "approved" : "rejected",
 			);
-			expect(state.rows[0]?.decision_count).toBe(1);
-			expect(state.rows[0]?.completed_receipts).toBe(1);
+		});
 
-			await seed();
+		it("duplicate approve replays one coherent terminal graph", async () => {
 			const duplicateTarget = (await submit("manual_time_submission")).result
 				.approvalRequestId;
 			const duplicate = await Promise.allSettled([
@@ -546,15 +1087,10 @@ describeIntegration(
 			expect(
 				duplicate.filter(({ status }) => status === "fulfilled"),
 			).toHaveLength(2);
-			expect(
-				await pool.query(
-					"select count(*)::int as count from time_record_approval_decision where organization_id = $1",
-					[ids.organization],
-				),
-			).toMatchObject({ rows: [{ count: 1 }] });
+			await assertTerminalGraph("approved");
 		});
 
-		it("Task8A enforced policy split creates exactly two entries, approved periods, and canonical work records only once", async () => {
+		it("Task8A split has exact period, canonical subtype, allocation, workflow, and synthetic-entry parity", async () => {
 			await seed("policy_clock_out", true);
 			const target = (await submit("policy_clock_out")).result
 				.approvalRequestId;
@@ -569,27 +1105,129 @@ describeIntegration(
 			expect(
 				decisions.filter(({ status }) => status === "fulfilled"),
 			).toHaveLength(2);
-			const graph = await pool.query<{
-				periods: number;
-				records: number;
-				workflow_owned: number;
-				entries: number;
-			}>(
-				`select
-			 (select count(*)::int from work_period where organization_id = $1 and approval_status = 'approved') periods,
-			 (select count(*)::int from time_record where organization_id = $1 and record_kind = 'work' and approval_state = 'approved') records,
-			 (select count(*)::int from work_period where organization_id = $1 and approval_workflow_id is not null) workflow_owned,
-			 (select count(*)::int from time_entry where organization_id = $1) entries`,
+			const periods = await pool.query<Record<string, unknown>>(
+				`select id, organization_id, employee_id, clock_in_id, clock_out_id,
+				 canonical_record_id, approval_workflow_id, approval_status,
+				 start_time, end_time, duration_minutes
+				 from work_period where organization_id = $1 order by start_time, id`,
 				[ids.organization],
 			);
-			expect(graph.rows).toEqual([
+			const records = await pool.query<Record<string, unknown>>(
+				`select record.id, record.organization_id, record.employee_id,
+				 record.approval_state, record.start_at, record.end_at,
+				 record.duration_minutes, work.record_id as work_record_id,
+				 work.work_category_id, work.work_location_type, work.computation_metadata
+				 from time_record record
+				 join time_record_work work on work.record_id = record.id and work.organization_id = record.organization_id
+				 where record.organization_id = $1 and record.record_kind = 'work'
+				 order by record.start_at, record.id`,
+				[ids.organization],
+			);
+			const allocations = await pool.query<Record<string, unknown>>(
+				`select allocation.record_id, allocation.organization_id,
+				 allocation.allocation_kind, allocation.project_id, allocation.weight_percent
+				 from time_record_allocation allocation
+				 where allocation.organization_id = $1 order by allocation.record_id`,
+				[ids.organization],
+			);
+			const synthetic = await pool.query<Record<string, unknown>>(
+				`select id, organization_id, employee_id, type, timestamp,
+				 utc_offset_minutes, timezone, timezone_source, previous_entry_id,
+				 hash, previous_hash
+				 from time_entry where organization_id = $1 and notes = 'Auto-adjusted: break enforcement'
+				 order by timestamp, id`,
+				[ids.organization],
+			);
+			expect(periods.rows).toHaveLength(2);
+			expect(records.rows).toHaveLength(2);
+			expect(allocations.rows).toHaveLength(2);
+			expect(synthetic.rows).toHaveLength(2);
+			expect(beforeEntries.rows).toHaveLength(2);
+			for (const period of periods.rows) {
+				expect(period).toMatchObject({
+					organization_id: ids.organization,
+					employee_id: ids.requester,
+					approval_status: "approved",
+				});
+				const record = records.rows.find(
+					(candidate) => candidate.id === period.canonical_record_id,
+				);
+				expect(record).toMatchObject({
+					work_record_id: period.canonical_record_id,
+					organization_id: period.organization_id,
+					employee_id: period.employee_id,
+					approval_state: "approved",
+					work_category_id: null,
+					work_location_type: null,
+					computation_metadata: null,
+					start_at: period.start_time,
+					end_at: period.end_time,
+					duration_minutes: period.duration_minutes,
+				});
+			}
+			expect(periods.rows[0]).toMatchObject({
+				id: ids.period,
+				canonical_record_id: ids.canonical,
+				clock_in_id: ids.clockIn,
+				clock_out_id: synthetic.rows[0]?.id,
+				start_time: startTime,
+				end_time: new Date("2026-07-22T14:00:00Z"),
+				duration_minutes: 360,
+			});
+			expect(typeof periods.rows[0]?.approval_workflow_id).toBe("string");
+			expect(periods.rows[1]).toMatchObject({
+				clock_in_id: synthetic.rows[1]?.id,
+				clock_out_id: ids.clockOut,
+				approval_workflow_id: null,
+				start_time: new Date("2026-07-22T14:30:00Z"),
+				end_time: endTime,
+				duration_minutes: 90,
+			});
+			expect(
+				allocations.rows.map(
+					({ allocation_kind, project_id, weight_percent }) => ({
+						allocation_kind,
+						project_id,
+						weight_percent,
+					}),
+				),
+			).toEqual([
 				{
-					periods: 2,
-					records: 2,
-					workflow_owned: 1,
-					entries: beforeEntries.rows.length + 2,
+					allocation_kind: "project",
+					project_id: ids.project,
+					weight_percent: 100,
+				},
+				{
+					allocation_kind: "project",
+					project_id: ids.project,
+					weight_percent: 100,
 				},
 			]);
+			expect(synthetic.rows).toMatchObject([
+				{
+					organization_id: ids.organization,
+					employee_id: ids.requester,
+					type: "clock_out",
+					timestamp: new Date("2026-07-22T14:00:00Z"),
+					utc_offset_minutes: 0,
+					timezone: "UTC",
+				},
+				{
+					organization_id: ids.organization,
+					employee_id: ids.requester,
+					type: "clock_in",
+					timestamp: new Date("2026-07-22T14:30:00Z"),
+					utc_offset_minutes: 0,
+					timezone: "UTC",
+					previous_entry_id: synthetic.rows[0]?.id,
+				},
+			]);
+			expect(
+				await pool.query(
+					"select count(*)::int as count from approval_workflow where organization_id = $1",
+					[ids.organization],
+				),
+			).toMatchObject({ rows: [{ count: 1 }] });
 		});
 
 		it.each([
@@ -689,23 +1327,61 @@ describeIntegration(
 		});
 
 		it.each([
-			["work_period", "work-period"],
-			["time_record", "canonical record"],
-			["time_record_approval_decision", "decision/source link"],
-		] as const)("forced zero-row CAS at %s rolls the canonical decision and source graph back", async (table) => {
-			const target = (await submit("manual_time_submission")).result
-				.approvalRequestId;
+			["generic work-period", "work_period", "true", false],
+			["generic canonical-record", "time_record", "true", false],
+			[
+				"source-link binding",
+				"work_period",
+				"OLD.approval_workflow_id is null and NEW.approval_workflow_id is not null",
+				true,
+			],
+			[
+				"split-sensitive work-period",
+				"work_period",
+				"OLD.was_auto_adjusted = false and NEW.was_auto_adjusted = true",
+				false,
+			],
+			[
+				"split-sensitive canonical-record",
+				"time_record",
+				"NEW.end_at is distinct from OLD.end_at",
+				false,
+			],
+		] as const)("forced %s CAS zero row rolls the entire decision back", async (scenario, table, predicate, submissionCas) => {
+			if (scenario.startsWith("split-sensitive")) {
+				await seed("policy_clock_out", true);
+			}
+			const target = submissionCas
+				? null
+				: (
+						await submit(
+							scenario.startsWith("split-sensitive")
+								? "policy_clock_out"
+								: "manual_time_submission",
+						)
+					).result.approvalRequestId;
 			const before = await snapshot();
 			await pool.query(
-				`create or replace function task11_zero_row() returns trigger as $$ begin return null; end; $$ language plpgsql`,
+				`create or replace function task11_zero_row() returns trigger as $$
+				begin
+					if ${predicate} then return null; end if;
+					return NEW;
+				end;
+				$$ language plpgsql`,
 			);
 			await pool.query(
-				`create trigger task11_zero_row before ${table === "time_record_approval_decision" ? "insert" : "update"} on ${table} for each row execute function task11_zero_row()`,
+				`create trigger task11_zero_row before update on ${table} for each row execute function task11_zero_row()`,
 			);
 			try {
-				await expect(
-					decide(target, { kind: "approve", reason: null }),
-				).rejects.toThrow("Ordinary work-period decision failed");
+				if (submissionCas) {
+					await expect(submit("manual_time_submission")).rejects.toThrow(
+						"Ordinary work-period submission failed",
+					);
+				} else {
+					await expect(
+						decide(target ?? "", { kind: "approve", reason: null }),
+					).rejects.toThrow("Ordinary work-period decision failed");
+				}
 			} finally {
 				await pool.query(`drop trigger if exists task11_zero_row on ${table}`);
 				await pool.query("drop function if exists task11_zero_row()");
@@ -713,7 +1389,7 @@ describeIntegration(
 			expect(await snapshot()).toEqual(before);
 		});
 
-		it("split races another employee entry insertion under the employee advisory lock and leaves one valid hash chain", async () => {
+		it("split races a locked competing employee entry into one reachable hash chain", async () => {
 			await seed("policy_clock_out", true);
 			const target = (await submit("policy_clock_out")).result
 				.approvalRequestId;
@@ -723,21 +1399,42 @@ describeIntegration(
 				"select pg_advisory_xact_lock(hashtextextended($1, 0))",
 				[ids.requester],
 			);
+			const blockerPid = await blocker.query<{ pid: number }>(
+				"select pg_backend_pid() as pid",
+			);
+			const latest = await blocker.query<{ hash: string }>(
+				"select hash from time_entry where id = $1 and organization_id = $2 and employee_id = $3",
+				[ids.clockOut, ids.organization, ids.requester],
+			);
+			const previousHash = latest.rows[0]?.hash;
+			if (!previousHash || !blockerPid.rows[0]?.pid) {
+				throw new Error("Task 11 competing entry prerequisite is missing");
+			}
+			const competingHash = calculateHash({
+				employeeId: ids.requester,
+				type: "correction",
+				timestamp: endTime.toISOString(),
+				previousHash,
+			});
 			const approval = decide(target, { kind: "approve", reason: null });
-			await new Promise<void>((resolve) => setTimeout(resolve, 50));
+			await expect(
+				waitForBlocker(blockerPid.rows[0].pid),
+			).resolves.toMatchObject({ wait_event_type: "Lock" });
 			await blocker.query(
 				`insert into time_entry (
 			 id, organization_id, employee_id, type, timestamp, utc_offset_minutes,
 			 timezone, timezone_source, previous_entry_id, hash, previous_hash,
 			 created_by, created_at
 			 ) values ($1, $2, $3, 'correction', $4, 0, 'UTC', 'backfill', $5,
-			 'task11-race', 'task11-out', $6, $7)`,
+			 $6, $7, $8, $9)`,
 				[
 					ids.competingEntry,
 					ids.organization,
 					ids.requester,
 					endTime,
 					ids.clockOut,
+					competingHash,
+					previousHash,
 					ids.managerUser,
 					new Date(now.epochMilliseconds),
 				],
@@ -747,23 +1444,63 @@ describeIntegration(
 			await expect(approval).resolves.toBeDefined();
 			const chain = await pool.query<{
 				id: string;
+				employee_id: string;
+				type: string;
+				timestamp: Date;
+				created_at: Date;
 				previous_entry_id: string | null;
+				hash: string;
+				previous_hash: string | null;
 			}>(
-				"select id, previous_entry_id from time_entry where organization_id = $1 and employee_id = $2 order by created_at, id",
+				`select id, employee_id, type, timestamp, created_at,
+				 previous_entry_id, hash, previous_hash
+				 from time_entry where organization_id = $1 and employee_id = $2
+				 order by created_at, id`,
 				[ids.organization, ids.requester],
 			);
 			expect(chain.rows).toHaveLength(5);
 			const byId = new Map(chain.rows.map((entry) => [entry.id, entry]));
-			expect(
-				chain.rows.filter(
-					({ previous_entry_id }) => previous_entry_id === null,
-				),
-			).toHaveLength(1);
+			const roots = chain.rows.filter(
+				({ previous_entry_id }) => previous_entry_id === null,
+			);
+			expect(roots).toHaveLength(1);
+			const successors = new Map<string, string[]>();
 			for (const entry of chain.rows) {
-				if (entry.previous_entry_id !== null) {
-					expect(byId.has(entry.previous_entry_id)).toBe(true);
+				const predecessor = entry.previous_entry_id
+					? byId.get(entry.previous_entry_id)
+					: null;
+				if (entry.previous_entry_id !== null) expect(predecessor).toBeDefined();
+				if (predecessor) {
+					expect(entry.previous_hash).toBe(predecessor.hash);
+					expect(entry.created_at.getTime()).toBeGreaterThanOrEqual(
+						predecessor.created_at.getTime(),
+					);
+					successors.set(entry.previous_entry_id, [
+						...(successors.get(entry.previous_entry_id) ?? []),
+						entry.id,
+					]);
+				} else {
+					expect(entry.previous_hash).toBeNull();
 				}
+				expect(entry.hash).toBe(
+					calculateHash({
+						employeeId: entry.employee_id,
+						type: entry.type,
+						timestamp: entry.timestamp.toISOString(),
+						previousHash: entry.previous_hash,
+					}),
+				);
 			}
+			for (const children of successors.values())
+				expect(children).toHaveLength(1);
+			const reached = new Set<string>();
+			let cursor = roots[0]?.id;
+			while (cursor) {
+				expect(reached.has(cursor)).toBe(false);
+				reached.add(cursor);
+				cursor = successors.get(cursor)?.[0];
+			}
+			expect(reached.size).toBe(chain.rows.length);
 			expect(byId.get(ids.competingEntry)?.previous_entry_id).toBe(
 				ids.clockOut,
 			);
