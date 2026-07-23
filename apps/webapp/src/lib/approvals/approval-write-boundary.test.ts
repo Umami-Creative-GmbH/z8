@@ -308,6 +308,78 @@ replacedRoot.branch.db.update(workPeriod).set({ approvalStatus: "approved" });`;
 		]);
 	});
 
+	it("preserves reachable receiver provenance across scoped and conditional mutations", () => {
+		const source = `import { db, workPeriod } from "@/db";
+export function thenBranch(condition: boolean) {
+  const holder = { db };
+  if (condition) holder.db = formatter;
+  holder.db.update(workPeriod).set({ approvalStatus: "approved" });
+}
+export function elseBranch(condition: boolean) {
+  const holder = { db };
+  if (condition) holder.note = input;
+  else holder.db = formatter;
+  holder.db.update(workPeriod).set({ approvalStatus: "approved" });
+}
+export function bothBranches(condition: boolean) {
+  const holder = { db };
+  if (condition) holder.db = formatter;
+  else holder.db = otherFormatter;
+  holder.db.update(workPeriod).set({ approvalStatus: "approved" });
+}
+export function loopMutation(items: unknown[]) {
+  const holder = { db };
+  for (const item of items) holder.db = item;
+  holder.db.update(workPeriod).set({ approvalStatus: "approved" });
+}
+export function tryMutation() {
+  const holder = { db };
+  try { holder.db = formatter; } catch {}
+  holder.db.update(workPeriod).set({ approvalStatus: "approved" });
+}
+export function nestedFunctionMutation() {
+  const holder = { db };
+  function mutateLater() { holder.db = formatter; }
+  holder.db.update(workPeriod).set({ approvalStatus: "approved" });
+}
+export function conditionalRestore(condition: boolean) {
+  const holder = { db };
+  holder.db = formatter;
+  if (condition) holder.db = db;
+  holder.db.update(workPeriod).set({ approvalStatus: "approved" });
+}
+export function unconditionalTrustedReplacement() {
+  const holder = { db: formatter };
+  holder.db = db;
+  holder.db.update(workPeriod).set({ approvalStatus: "approved" });
+}
+export function unconditionalReceiver() {
+  const holder = { db };
+  holder.db = formatter;
+  holder.db.update(workPeriod).set({ approvalStatus: "approved" });
+}
+export function unconditionalAncestor() {
+  const holder = { nested: { db } };
+  holder.nested = input;
+  holder.nested.db.update(workPeriod).set({ approvalStatus: "approved" });
+}`;
+
+		expect(
+			analyzeApprovalWriteMutations(source, FILE_NAME).map(
+				(mutation) => mutation.functionName,
+			),
+		).toEqual([
+			"thenBranch",
+			"elseBranch",
+			"bothBranches",
+			"loopMutation",
+			"tryMutation",
+			"nestedFunctionMutation",
+			"conditionalRestore",
+			"unconditionalTrustedReplacement",
+		]);
+	});
+
 	it("allows an exact owner through an object-held receiver but rejects a wrong function", () => {
 		const path = "src/lib/approvals/server/work-period-approvals.ts";
 		withApprovalWriteTree(

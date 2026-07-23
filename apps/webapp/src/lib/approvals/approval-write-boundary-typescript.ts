@@ -55,8 +55,10 @@ interface SymbolWrite {
 }
 
 interface ObjectMutation {
+	conditional: boolean;
 	path: readonly string[] | null;
 	position: number;
+	scope: ts.SignatureDeclaration | null;
 	unknown: boolean;
 	value?: ts.Expression;
 }
@@ -544,14 +546,19 @@ export function analyzeApprovalWriteMutations(
 	};
 	const addObjectMutation = (
 		expression: ts.Expression,
-		mutation: Omit<ObjectMutation, "path">,
+		mutation: Omit<ObjectMutation, "conditional" | "path" | "scope">,
 	): void => {
 		const target = objectMutationTarget(expression);
 		if (!target) return;
 		const symbol = checker.getSymbolAtLocation(target.root);
 		if (!symbol) return;
 		const mutations = objectMutations.get(symbol) ?? [];
-		mutations.push({ ...mutation, path: target.path });
+		mutations.push({
+			...mutation,
+			conditional: isConditionalWrite(expression, sourceFile),
+			path: target.path,
+			scope: enclosingFunction(expression),
+		});
 		objectMutations.set(symbol, mutations);
 	};
 	const addBinding = (
@@ -1442,16 +1449,6 @@ export function analyzeApprovalWriteMutations(
 					break;
 				}
 			}
-			const invalidated = (objectMutations.get(symbol) ?? []).some(
-				(mutation) =>
-					mutation.position > (relevant[start]?.position ?? -1) &&
-					mutation.position < usePosition &&
-					(mutation.path === null ||
-						mutation.path.every((name, index) => propertyPath[index] === name)),
-			);
-			if (invalidated) {
-				return new Set();
-			}
 			const result = new Set<ts.Expression>();
 			for (const write of relevant.slice(start)) {
 				for (const value of objectPropertyExpressions(
@@ -1463,6 +1460,32 @@ export function analyzeApprovalWriteMutations(
 				)) {
 					result.add(value);
 				}
+			}
+			const mutations = (objectMutations.get(symbol) ?? [])
+				.filter(
+					(mutation) =>
+						mutation.position > (relevant[start]?.position ?? -1) &&
+						mutation.position < usePosition &&
+						scopeCanReach(mutation.scope, useScope) &&
+						(mutation.path === null ||
+							mutation.path.every(
+								(name, index) => propertyPath[index] === name,
+							)),
+				)
+				.sort((left, right) => left.position - right.position);
+			for (const mutation of mutations) {
+				const mutationValues =
+					!mutation.unknown && mutation.path !== null && mutation.value
+						? objectPropertyExpressions(
+								mutation.value,
+								propertyPath.slice(mutation.path.length),
+								mutation.position,
+								depth + 1,
+								activeSymbols,
+							)
+						: new Set<ts.Expression>();
+				if (!mutation.conditional) result.clear();
+				for (const value of mutationValues) result.add(value);
 			}
 			return result;
 		} finally {
@@ -1979,7 +2002,8 @@ export function analyzeApprovalWriteMutations(
 					.filter(
 						(mutation) =>
 							mutation.position > (relevant[start]?.position ?? -1) &&
-							mutation.position < usePosition,
+							mutation.position < usePosition &&
+							scopeCanReach(mutation.scope, useScope),
 					)
 					.sort((left, right) => left.position - right.position);
 				const signature = (analysis: SourcePayloadAnalysis): string =>
@@ -2014,6 +2038,7 @@ export function analyzeApprovalWriteMutations(
 				let unresolved = !exactBase;
 				for (const mutation of mutations) {
 					if (
+						mutation.conditional ||
 						mutation.unknown ||
 						mutation.path === null ||
 						mutation.path.length === 0
