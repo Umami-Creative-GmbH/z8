@@ -4,6 +4,8 @@ import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
+import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
+import { fingerprintApprovalWorkflowCommand } from "../workflow/transition-engine";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 
 const notificationMocks = vi.hoisted(() => ({
@@ -22,6 +24,9 @@ const legacyCaptureMocks = vi.hoisted(() => ({
 const chainProgressMocks = vi.hoisted(() => ({
 	progress: vi.fn(),
 }));
+const managerEligibilityMocks = vi.hoisted(() => ({
+	isEligible: vi.fn(),
+}));
 
 vi.mock("@/lib/notifications/triggers", () => notificationMocks);
 vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
@@ -33,6 +38,18 @@ vi.mock("../domain-adapters/work-period-legacy-state", () => ({
 }));
 vi.mock("../policies/chain-service", () => ({
 	progressApprovalChainIfLinked: chainProgressMocks.progress,
+}));
+vi.mock("../policies/manager-eligibility-db", () => ({
+	isEligibleManagerForApprovalRequest: managerEligibilityMocks.isEligible,
+}));
+vi.mock("../workflow/state-machine", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../workflow/state-machine")>()),
+	fingerprintApprovalCommandActor: (actor: unknown) => JSON.stringify(actor),
+}));
+vi.mock("../workflow/transition-engine", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../workflow/transition-engine")>()),
+	fingerprintApprovalWorkflowCommand: (command: unknown) =>
+		JSON.stringify(command),
 }));
 
 const workPeriodApprovals = await import("./work-period-approvals");
@@ -72,6 +89,7 @@ describe("stable ordinary work-period decisions", () => {
 		chainProgressMocks.progress
 			.mockReset()
 			.mockReturnValue(Effect.succeed({ kind: "not_linked" }));
+		managerEligibilityMocks.isEligible.mockReset().mockResolvedValue(false);
 	});
 
 	it.each([
@@ -103,6 +121,39 @@ describe("stable ordinary work-period decisions", () => {
 			replay: false,
 			action: "reject" as const,
 		},
+		{
+			mode: "complete" as const,
+			targetId: "assignment-1",
+			compatibility: false,
+			replay: true,
+			action: "approve" as const,
+		},
+		{
+			mode: "complete" as const,
+			targetId: "assignment-1",
+			compatibility: false,
+			replay: true,
+			action: "reject" as const,
+		},
+		{
+			mode: "complete" as const,
+			targetId: "assignment-1",
+			compatibility: false,
+			replay: true,
+			intermediateReplay: true,
+			action: "approve" as const,
+		},
+		...(["actor", "action", "token", "missing"] as const).map(
+			(receiptConflict) => ({
+				mode: "complete" as const,
+				targetId: "assignment-1",
+				compatibility: false,
+				replay: true,
+				action: "approve" as const,
+				receiptConflict,
+				expectFailure: true,
+			}),
+		),
 		{
 			mode: "canonical" as const,
 			targetId: "approval-1",
@@ -203,6 +254,7 @@ describe("stable ordinary work-period decisions", () => {
 		intermediateReplay = false,
 		chainActorConflict = false,
 		invalidChain = false,
+		receiptConflict = null,
 		expectFailure = false,
 	}) => {
 		if (intermediateReplay) {
@@ -262,10 +314,25 @@ describe("stable ordinary work-period decisions", () => {
 				capturedAt: parseInstant("2026-07-15T10:00:00Z"),
 			});
 		}
+		const terminalStatus = action === "approve" ? "approved" : "rejected";
+		const command =
+			action === "approve"
+				? {
+						type: "approve" as const,
+						stageId: "stage-1",
+						assignmentId: "assignment-1",
+					}
+				: {
+						type: "reject" as const,
+						stageId: "stage-1",
+						assignmentId: "assignment-1",
+						reason: "Missing details",
+					};
+		const idempotencyKey = `ordinary-decision:org-1:workflow-1:assignment-1:${action}:${action === "reject" ? "Missing details" : ""}`;
 		const executeInTransactionWithDisposition = vi.fn().mockResolvedValue({
 			disposition: replay ? "replayed" : "executed",
 			result: {
-				snapshot: { status: replay ? "approved" : "pending" },
+				snapshot: { status: replay ? terminalStatus : "pending" },
 				events: [],
 				projection: {},
 				outbox: [],
@@ -278,7 +345,7 @@ describe("stable ordinary work-period decisions", () => {
 			sourceType: "time_entry",
 			sourceId: "period-1",
 			requesterEmployeeId: "employee-1",
-			status: replay && !intermediateReplay ? "approved" : "pending",
+			status: replay && !intermediateReplay ? terminalStatus : "pending",
 			version: 3,
 			currentStageOrder:
 				replay && !intermediateReplay ? null : intermediateReplay ? 2 : 1,
@@ -288,7 +355,7 @@ describe("stable ordinary work-period decisions", () => {
 					organizationId: "org-1",
 					workflowId: "workflow-1",
 					sequence: 1,
-					status: replay ? "approved" : "pending",
+					status: replay ? terminalStatus : "pending",
 					legacyApprovalRequestId: compatibility ? "approval-1" : null,
 					assignments: [
 						{
@@ -297,7 +364,7 @@ describe("stable ordinary work-period decisions", () => {
 							workflowId: "workflow-1",
 							stageId: "stage-1",
 							approverEmployeeId: "manager-1",
-							status: replay ? "approved" : "pending",
+							status: replay ? terminalStatus : "pending",
 						},
 					],
 				},
@@ -360,17 +427,55 @@ describe("stable ordinary work-period decisions", () => {
 									id: "assignment-1",
 									workflowId: "workflow-1",
 									stageId: "stage-1",
+									approverEmployeeId: "manager-1",
+									status: replay ? terminalStatus : "pending",
 								},
 					),
 				},
 				approvalWorkflowStage: {
-					findFirst: vi
-						.fn()
-						.mockResolvedValue(
-							compatibility
-								? null
-								: { id: "stage-1", workflowId: "workflow-1" },
-						),
+					findFirst: vi.fn().mockResolvedValue(
+						compatibility
+							? null
+							: {
+									id: "stage-1",
+									workflowId: "workflow-1",
+									sequence: 1,
+									status: replay ? terminalStatus : "pending",
+								},
+					),
+				},
+				approvalWorkflowCommand: {
+					findFirst: vi.fn().mockResolvedValue(
+						replay && !compatibility && receiptConflict !== "missing"
+							? {
+									organizationId: "org-1",
+									workflowId: "workflow-1",
+									idempotencyKey:
+										receiptConflict === "token"
+											? `${idempotencyKey}:other`
+											: idempotencyKey,
+									actorFingerprint:
+										receiptConflict === "actor"
+											? "other-actor"
+											: fingerprintApprovalCommandActor({
+													kind: "employee",
+													employeeId: "manager-1",
+													userId: "manager-user-1",
+												}),
+									commandFingerprint:
+										receiptConflict === "action"
+											? fingerprintApprovalWorkflowCommand({
+													type: "reject",
+													stageId: "stage-1",
+													assignmentId: "assignment-1",
+													reason: "conflict",
+												})
+											: fingerprintApprovalWorkflowCommand(command),
+									state: "completed",
+									result: { snapshot: { id: "workflow-1" } },
+								}
+							: null,
+					),
 				},
 				approvalWorkflow: {
 					findFirst: vi.fn().mockResolvedValue(
@@ -383,7 +488,8 @@ describe("stable ordinary work-period decisions", () => {
 									sourceType: "time_entry",
 									sourceId: "period-1",
 									requesterEmployeeId: "employee-1",
-									status: "pending",
+									status:
+										replay && !intermediateReplay ? terminalStatus : "pending",
 									contextSnapshot: {
 										timeRequest: { kind: "manual_time_submission" },
 									},
@@ -394,7 +500,7 @@ describe("stable ordinary work-period decisions", () => {
 					findFirst: vi.fn().mockResolvedValue({
 						...period,
 						approvalStatus:
-							replay && !intermediateReplay ? "approved" : "pending",
+							replay && !intermediateReplay ? terminalStatus : "pending",
 					}),
 				},
 			},
@@ -478,6 +584,133 @@ describe("stable ordinary work-period decisions", () => {
 				event: "pending",
 				workPeriodId: "period-1",
 			});
+		}
+	});
+
+	it.each([
+		"legacy",
+		"shadow",
+		"ready",
+	] as const)("preserves assigned, eligible, organization-wide, and unauthorized actor semantics in %s mode", async (mode) => {
+		const cases = [
+			{
+				actorId: "manager-1",
+				options: undefined,
+				eligible: false,
+				succeeds: true,
+			},
+			{
+				actorId: "manager-2",
+				options: { allowAnyApprover: true },
+				eligible: true,
+				succeeds: true,
+			},
+			{
+				actorId: "admin-1",
+				options: { allowOrganizationWideApprover: true },
+				eligible: false,
+				succeeds: true,
+			},
+			{
+				actorId: "manager-2",
+				options: { allowAnyApprover: true },
+				eligible: false,
+				succeeds: false,
+			},
+		] as const;
+
+		for (const testCase of cases) {
+			vi.clearAllMocks();
+			managerEligibilityMocks.isEligible.mockResolvedValue(testCase.eligible);
+			chainProgressMocks.progress.mockReturnValue(
+				Effect.succeed({ kind: "not_linked" }),
+			);
+			legacyCaptureMocks.load.mockResolvedValue({
+				organizationId: "org-1",
+				source: {
+					organizationId: "org-1",
+					workflowType: "manual_time_submission",
+					sourceType: "time_entry",
+					sourceId: "period-1",
+				},
+				approvalRequest: {
+					...approval,
+					status: "pending",
+				},
+				chain: null,
+				chainRows: [],
+				sourceSnapshot: { timeRequest: { kind: "manual_time_submission" } },
+				capturedAt: parseInstant("2026-07-15T09:59:00Z"),
+			});
+			legacyCaptureMocks.capture.mockResolvedValue({
+				organizationId: "org-1",
+				source: {
+					organizationId: "org-1",
+					workflowType: "manual_time_submission",
+					sourceType: "time_entry",
+					sourceId: "period-1",
+				},
+				approvalRequest: { ...approval, status: "approved" },
+				chain: null,
+				chainRows: [],
+				sourceSnapshot: { timeRequest: { kind: "manual_time_submission" } },
+				capturedAt: parseInstant("2026-07-15T10:00:00Z"),
+			});
+			const dbService = createDecisionDbService();
+			const database = dbService.db as unknown as {
+				query: Record<string, Record<string, ReturnType<typeof vi.fn>>>;
+			};
+			const actor = {
+				...currentApprover,
+				id: testCase.actorId,
+				userId: `${testCase.actorId}-user`,
+				user: { ...currentApprover.user, id: `${testCase.actorId}-user` },
+			};
+			database.query.employee.findMany = vi.fn().mockResolvedValue([actor]);
+			database.query.employee.findFirst.mockResolvedValue(actor);
+			database.query.workPeriod.findFirst.mockResolvedValue(period);
+			const mirrorLegacyToCanonical = vi.fn().mockResolvedValue({
+				snapshot: { id: "workflow-1" },
+			});
+			const context = {
+				dbService: { db: dbService.db },
+				writeGate: { acquire: vi.fn().mockResolvedValue({ mode }) },
+				compatibilityWriter: {
+					withWriteGate: vi.fn().mockReturnValue({
+						withWriteGate: vi.fn().mockReturnThis(),
+						mirrorLegacyToCanonical,
+					}),
+					mirrorLegacyToCanonical,
+				},
+				repository: {
+					loadSnapshot: vi.fn().mockResolvedValue({ version: 2 }),
+				},
+			};
+			const execution = executeOrdinaryWorkPeriodDecisionInTransaction({
+				dbService,
+				runtime: {
+					repository: { withTransaction: async (run) => run(context) },
+					transitionEngine: { executeInTransactionWithDisposition: vi.fn() },
+				} as never,
+				organizationId: "org-1",
+				approvalRequestId: "approval-1",
+				workPeriodId: "period-1",
+				actor,
+				decision: { kind: "approve", reason: null },
+				...testCase.options,
+			} as Parameters<
+				typeof executeOrdinaryWorkPeriodDecisionInTransaction
+			>[0]);
+
+			if (testCase.succeeds) {
+				await expect(execution).resolves.toMatchObject({
+					result: { action: "approve" },
+				});
+			} else {
+				await expect(execution).rejects.toThrow(
+					"Ordinary work-period decision failed",
+				);
+			}
 		}
 	});
 

@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ConflictError } from "@/lib/effect/errors";
 
 const mockState = vi.hoisted(() => ({
 	getCurrentSession: vi.fn(),
@@ -182,7 +183,37 @@ describe("approveWorkPeriod", () => {
 		expect(mockState.updateSet).not.toHaveBeenCalled();
 	});
 
-	it("returns a generic failure when the exact target mismatches", async () => {
+	it("preserves the typed conflict when no pending ordinary target is valid", async () => {
+		mockState.findMember.mockResolvedValue({ role: "admin" });
+		mockState.decideStableTarget.mockReturnValue(
+			Effect.fail(
+				new ConflictError({
+					message: "Ordinary work-period decision failed",
+					conflictType: "approval_decision",
+				}),
+			),
+		);
+
+		const result = await approveWorkPeriod({
+			workPeriodId: "period-1",
+			approvalRequestId: "approval-mismatch",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Ordinary work-period decision failed",
+			code: "ConflictError",
+		});
+		expect(mockState.decideStableTarget).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.anything(),
+			expect.objectContaining({ approvalRequestId: "approval-mismatch" }),
+			expect.anything(),
+		);
+		expect(mockState.updateSet).not.toHaveBeenCalled();
+	});
+
+	it("redacts non-domain failures", async () => {
 		mockState.findMember.mockResolvedValue({ role: "admin" });
 		mockState.decideStableTarget.mockReturnValue(
 			Effect.fail(new Error("private target mismatch")),
@@ -197,13 +228,6 @@ describe("approveWorkPeriod", () => {
 			success: false,
 			error: "Failed to approve work period. Please try again.",
 		});
-		expect(mockState.decideStableTarget).toHaveBeenCalledWith(
-			expect.anything(),
-			expect.anything(),
-			expect.objectContaining({ approvalRequestId: "approval-mismatch" }),
-			expect.anything(),
-		);
-		expect(mockState.updateSet).not.toHaveBeenCalled();
 	});
 
 	it("delegates an exact terminal target so the owner can determine replay", async () => {

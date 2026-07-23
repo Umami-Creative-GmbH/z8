@@ -1,12 +1,13 @@
 "use server";
 
 import { and, eq, isNull } from "drizzle-orm";
-import { Effect } from "effect";
+import { Cause, Effect, Option, Runtime } from "effect";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { timeEntry, workPeriod } from "@/db/schema";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
+import { ConflictError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { resolveWorkPeriodSplit } from "@/lib/time-tracking/split-work-period";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
@@ -95,6 +96,21 @@ export async function approveWorkPeriod(input: {
 		return { success: true, data: { workPeriodId: selectedWorkPeriod.id } };
 	} catch (error) {
 		logger.error({ error, workPeriodId }, "Approve work period error");
+		const conflict =
+			error instanceof ConflictError
+				? error
+				: Runtime.isFiberFailure(error)
+					? Option.getOrNull(
+							Cause.failureOption(error[Runtime.FiberFailureCauseId]),
+						)
+					: null;
+		if (conflict instanceof ConflictError) {
+			return {
+				success: false,
+				error: conflict.message,
+				code: conflict._tag,
+			};
+		}
 		return {
 			success: false,
 			error: "Failed to approve work period. Please try again.",
