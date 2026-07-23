@@ -1,9 +1,13 @@
 "use server";
 
 import { and, eq, isNull } from "drizzle-orm";
+import { Effect } from "effect";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { timeEntry, workPeriod } from "@/db/schema";
+import { approvalRequest, timeEntry, workPeriod } from "@/db/schema";
+import { parseOrdinaryWorkPeriodWorkflowPayload } from "@/lib/approvals/domain-adapters/work-period-contract";
+import { decideTimeCorrectionWithStableTargetEffect } from "@/lib/approvals/server/time-correction-approvals";
+import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { resolveWorkPeriodSplit } from "@/lib/time-tracking/split-work-period";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
@@ -59,20 +63,55 @@ export async function approveWorkPeriod(
 			return { success: false, error: "Only pending work periods can be approved" };
 		}
 
-		await db
-			.update(workPeriod)
-			.set({
-				approvalStatus: "approved",
-				pendingChanges: null,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(workPeriod.id, selectedWorkPeriod.id),
-					eq(workPeriod.organizationId, selectedWorkPeriod.organizationId),
-					eq(workPeriod.approvalStatus, "pending"),
-				),
-			);
+		const requests = await db.query.approvalRequest.findMany({
+			where: and(
+				eq(approvalRequest.organizationId, selectedWorkPeriod.organizationId),
+				eq(approvalRequest.entityType, "time_entry"),
+				eq(approvalRequest.entityId, selectedWorkPeriod.id),
+				eq(approvalRequest.status, "pending"),
+			),
+			limit: 2,
+		});
+		const request = requests[0];
+		if (requests.length !== 1 || !request) {
+			return { success: false, error: "Only pending work periods can be approved" };
+		}
+		try {
+			parseOrdinaryWorkPeriodWorkflowPayload({
+				timeRequest:
+					request.metadata && typeof request.metadata === "object"
+						? (request.metadata as Record<string, unknown>).timeRequest
+						: undefined,
+			});
+		} catch {
+			return { success: false, error: "Only pending work periods can be approved" };
+		}
+		const dbService: ApprovalDbService = {
+			db,
+			query: <T>(_name: string, operation: () => Promise<T>) =>
+				Effect.promise(operation),
+		};
+		await Effect.runPromise(
+			decideTimeCorrectionWithStableTargetEffect(
+				dbService,
+				{
+					...currentEmployee,
+					user: {
+						id: session.user.id,
+						name: session.user.name,
+						email: session.user.email,
+						image: session.user.image ?? null,
+					},
+				},
+				request.id,
+				"approve",
+				undefined,
+				{
+					approvalRequestId: request.id,
+					allowOrganizationWideApprover: true,
+				},
+			),
+		);
 
 		return { success: true, data: { workPeriodId: selectedWorkPeriod.id } };
 	} catch (error) {

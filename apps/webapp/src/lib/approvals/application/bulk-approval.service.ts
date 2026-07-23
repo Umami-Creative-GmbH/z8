@@ -4,7 +4,7 @@
  * Handles bulk approval operations with transaction support.
  */
 
-import { inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { approvalRequest } from "@/db/schema";
 import {
@@ -109,7 +109,10 @@ export const BulkApprovalServiceLive = Layer.effect(
 					const requests = yield* _(
 						dbService.query("getBulkApprovalRequests", async () => {
 							return await dbService.db.query.approvalRequest.findMany({
-								where: inArray(approvalRequest.id, approvalIds),
+								where: and(
+									inArray(approvalRequest.id, approvalIds),
+									eq(approvalRequest.organizationId, organizationId),
+								),
 							});
 						}),
 					);
@@ -179,8 +182,15 @@ export const BulkApprovalServiceLive = Layer.effect(
 
 						const decisionEffect =
 							action === "approve"
-								? handler.approve(request.entityId, approverId)
-								: handler.reject(request.entityId, approverId, reason ?? "Rejected in bulk");
+								? handler.approve(request.entityId, approverId, {
+										approvalRequestId: request.id,
+									})
+								: handler.reject(
+										request.entityId,
+										approverId,
+										reason ?? "Rejected in bulk",
+										{ approvalRequestId: request.id },
+									);
 
 						const decisionResult = yield* _(
 							decisionEffect.pipe(

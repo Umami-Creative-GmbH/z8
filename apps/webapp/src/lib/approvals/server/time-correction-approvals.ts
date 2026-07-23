@@ -95,12 +95,21 @@ import type {
 	PendingApprovalRequest,
 } from "./types";
 import {
-	decideWorkPeriodWithCurrentApproverInTransaction,
+	executeOrdinaryWorkPeriodDecisionInTransaction,
 	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 	notifyWorkPeriodApprovalAfterCommit,
 } from "./work-period-approvals";
 
 const logger = createLogger("TimeCorrectionApprovals");
+
+class OrdinaryWorkPeriodDecisionDelegation extends Error {
+	constructor(
+		readonly workPeriodId: string,
+		readonly kind: "manual_time_submission" | "policy_clock_out",
+	) {
+		super("Ordinary work-period decision delegation");
+	}
+}
 
 export function translateTimeCorrectionDecisionError(error: unknown): unknown {
 	if (!(error instanceof ApprovalTransitionEngineError)) return error;
@@ -4139,7 +4148,11 @@ export function decideTimeCorrectionWithStableTargetEffect(
 				},
 				clock: systemClock,
 			});
-			const execution = await completeTimeCorrectionDecisionAfterCommit({
+			let execution: Awaited<
+				ReturnType<typeof executeTimeCorrectionDecisionInTransaction>
+			>;
+			try {
+				execution = await completeTimeCorrectionDecisionAfterCommit({
 				execute: () =>
 					executeTimeCorrectionDecisionInTransaction({
 						runtime,
@@ -4186,27 +4199,14 @@ export function decideTimeCorrectionWithStableTargetEffect(
 								) as Effect.Effect<unknown, AnyAppError, never>,
 							),
 						processOrdinary: async ({
-							dbService: transactionDbService,
-							actor,
 							workPeriodId,
 							kind,
-						}) =>
-							await Effect.runPromise(
-								decideWorkPeriodWithCurrentApproverInTransaction(
-									transactionDbService,
-									actor,
-									workPeriodId,
-									kind,
-									action,
-									reason,
-									{ ...options, approvalRequestId },
-								).pipe(
-									Effect.provideService(
-										ApprovalAuditLogger,
-										createApprovalAuditLogger(transactionDbService),
-									),
-								) as Effect.Effect<unknown, AnyAppError, never>,
-							),
+						}) => {
+							throw new OrdinaryWorkPeriodDecisionDelegation(
+								workPeriodId,
+								kind,
+							);
+						},
 					}),
 				dispatch: (effects) =>
 					dispatchTimeCorrectionDecisionPostCommit({
@@ -4221,7 +4221,44 @@ export function decideTimeCorrectionWithStableTargetEffect(
 						{ error, approvalRequestId, action },
 						"Time correction decision after-commit work failed",
 					),
-			});
+				});
+			} catch (error) {
+				if (!(error instanceof OrdinaryWorkPeriodDecisionDelegation)) {
+					throw error;
+				}
+				const ordinary = await executeOrdinaryWorkPeriodDecisionInTransaction({
+					dbService,
+					runtime,
+					organizationId: currentEmployee.organizationId,
+					approvalRequestId,
+					workPeriodId: error.workPeriodId,
+					actor: currentEmployee,
+					decision:
+						action === "approve"
+							? { kind: "approve", reason: reason ?? null }
+							: { kind: "reject", reason: reason ?? "" },
+				});
+				if (
+					ordinary.postCommit?.disposition === "dispatch" &&
+					ordinary.postCommit.event !== "pending"
+				) {
+					try {
+						await Effect.runPromise(
+							notifyWorkPeriodApprovalAfterCommit(
+								ordinary.result,
+								currentEmployee,
+								dbService,
+							),
+						);
+					} catch (dispatchError) {
+						logger.error(
+							{ error: dispatchError, approvalRequestId, action },
+							"Ordinary work-period decision after-commit work failed",
+						);
+					}
+				}
+				return;
+			}
 			if (
 				(execution.kind === "manual_time_submission" ||
 					execution.kind === "policy_clock_out") &&

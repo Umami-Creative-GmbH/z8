@@ -16,19 +16,323 @@ const notificationMocks = vi.hoisted(() => ({
 const terminalBreakMocks = vi.hoisted(() => ({
 	enforce: vi.fn().mockResolvedValue({ kind: "not_required" }),
 }));
+const legacyCaptureMocks = vi.hoisted(() => ({
+	capture: vi.fn(),
+}));
 
 vi.mock("@/lib/notifications/triggers", () => notificationMocks);
 vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
 	applyPolicyClockOutTerminalBreakInTransaction: terminalBreakMocks.enforce,
 }));
+vi.mock("../domain-adapters/work-period-legacy-state", () => ({
+	captureOrdinaryWorkPeriodLegacyState: legacyCaptureMocks.capture,
+}));
 
 const {
 	approveWorkPeriodWithCurrentApproverEffect,
+	executeOrdinaryWorkPeriodDecisionInTransaction,
 	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 	finalizeOrdinaryWorkPeriodTerminalInTransaction,
 	finalizeAutoCompletedWorkPeriodApprovalEffect,
 	rejectWorkPeriodWithCurrentApproverEffect,
 } = await import("./work-period-approvals");
+
+describe("stable ordinary work-period decisions", () => {
+	beforeEach(() => {
+		legacyCaptureMocks.capture.mockReset();
+	});
+
+	it.each([
+		{ mode: "canonical" as const, targetId: "approval-1", compatibility: true, replay: false },
+		{ mode: "complete" as const, targetId: "assignment-1", compatibility: false, replay: false },
+		{ mode: "canonical" as const, targetId: "approval-1", compatibility: true, replay: true },
+	])(
+		"derives the ordinary kind and routes the exact $mode target",
+		async ({ mode, targetId, compatibility, replay }) => {
+		const executeInTransactionWithDisposition = vi.fn().mockResolvedValue({
+			disposition: replay ? "replayed" : "executed",
+			result: {
+				snapshot: { status: replay ? "approved" : "pending" },
+				events: [],
+				projection: {},
+				outbox: [],
+			},
+		});
+		const snapshot = {
+			id: "workflow-1",
+			organizationId: "org-1",
+			workflowType: "manual_time_submission",
+			sourceType: "time_entry",
+			sourceId: "period-1",
+			requesterEmployeeId: "employee-1",
+			status: replay ? "approved" : "pending",
+			version: 3,
+			currentStageOrder: replay ? null : 1,
+			stages: [
+				{
+					id: "stage-1",
+					organizationId: "org-1",
+					workflowId: "workflow-1",
+					sequence: 1,
+					status: replay ? "approved" : "pending",
+					legacyApprovalRequestId: compatibility ? "approval-1" : null,
+					assignments: [
+						{
+							id: "assignment-1",
+							organizationId: "org-1",
+							workflowId: "workflow-1",
+							stageId: "stage-1",
+							approverEmployeeId: "manager-1",
+							status: replay ? "approved" : "pending",
+						},
+					],
+				},
+			],
+		};
+		const transactionDb = {
+			query: {
+				employee: {
+					findMany: vi.fn().mockResolvedValue([currentApprover]),
+				},
+				approvalRequest: {
+					findFirst: vi.fn().mockResolvedValue(compatibility ? {
+						...approval,
+						status: replay ? "approved" : "pending",
+						approvedAt: replay ? new Date("2026-07-15T10:00:00Z") : null,
+						metadata: {
+							timeRequest: { kind: "manual_time_submission" },
+							workflow: { id: "workflow-1", organizationId: "org-1" },
+							stage: { id: "stage-1", sequence: 1, assignmentId: "assignment-1" },
+						},
+					} : null),
+				},
+				approvalStageAssignment: {
+					findFirst: vi.fn().mockResolvedValue(
+						compatibility ? null : { id: "assignment-1", stageId: "stage-1" },
+					),
+				},
+				approvalWorkflowStage: {
+					findFirst: vi.fn().mockResolvedValue(
+						compatibility ? null : { workflowId: "workflow-1" },
+					),
+				},
+				approvalWorkflow: {
+					findFirst: vi.fn().mockResolvedValue(
+						compatibility
+							? null
+							: {
+									id: "workflow-1",
+									organizationId: "org-1",
+									workflowType: "manual_time_submission",
+									sourceType: "time_entry",
+									sourceId: "period-1",
+									requesterEmployeeId: "employee-1",
+									status: "pending",
+									contextSnapshot: { timeRequest: { kind: "manual_time_submission" } },
+								},
+					),
+				},
+				workPeriod: {
+					findFirst: vi.fn().mockResolvedValue({
+						...period,
+						approvalStatus: replay ? "approved" : "pending",
+					}),
+				},
+			},
+		};
+		const context = {
+			dbService: { db: transactionDb },
+			writeGate: {
+				acquire: vi.fn().mockResolvedValue({ mode }),
+			},
+			compatibilityWriter: {
+				withWriteGate: vi.fn().mockReturnThis(),
+			},
+			repository: { loadSnapshot: vi.fn().mockResolvedValue(snapshot) },
+		};
+		const runtime = {
+			repository: {
+				withTransaction: vi.fn(async (run) => run(context)),
+			},
+			transitionEngine: { executeInTransactionWithDisposition },
+		};
+
+		const executed = await executeOrdinaryWorkPeriodDecisionInTransaction({
+			dbService: {
+				db: transactionDb,
+				query: <T>(_name: string, operation: () => Promise<T>) =>
+					Effect.promise(operation),
+			} as never,
+			runtime: runtime as never,
+			organizationId: "org-1",
+			approvalRequestId: targetId,
+			workPeriodId: "period-1",
+			actor: currentApprover,
+			decision: { kind: "approve", reason: null },
+		});
+
+		expect(executeInTransactionWithDisposition).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({
+				organizationId: "org-1",
+				workflowId: "workflow-1",
+				command: {
+					type: "approve",
+					stageId: "stage-1",
+					assignmentId: "assignment-1",
+				},
+			}),
+		);
+		expect(executed.result.kind).toBe("manual_time_submission");
+		if (replay) {
+			expect(executed.postCommit).toBeNull();
+		} else {
+			expect(executed.postCommit).toMatchObject({
+				disposition: "observe",
+				event: "pending",
+				workPeriodId: "period-1",
+			});
+		}
+		},
+	);
+
+	it("keeps legacy decisions authoritative and returns terminal dispatch work", async () => {
+		const dbService = createDecisionDbService({
+			unlinked: true,
+			autoApprovalRequest: {
+				metadata: { timeRequest: { kind: "manual_time_submission" } },
+			},
+		});
+		const database = dbService.db as unknown as {
+			query: Record<string, Record<string, ReturnType<typeof vi.fn>>>;
+		};
+		database.query.employee.findMany = vi
+			.fn()
+			.mockResolvedValue([currentApprover]);
+		database.query.workPeriod.findFirst.mockResolvedValue({
+			...period,
+			approvalWorkflowId: null,
+		});
+		const context = {
+			dbService: { db: dbService.db },
+			writeGate: {
+				acquire: vi.fn().mockResolvedValue({ mode: "legacy" }),
+			},
+			compatibilityWriter: {
+				withWriteGate: vi.fn().mockReturnThis(),
+			},
+			repository: { loadSnapshot: vi.fn() },
+		};
+		const runtime = {
+			repository: {
+				withTransaction: vi.fn(async (run) => run(context)),
+			},
+			transitionEngine: {
+				executeInTransactionWithDisposition: vi.fn(),
+			},
+		};
+
+		const executed = await executeOrdinaryWorkPeriodDecisionInTransaction({
+			dbService,
+			runtime: runtime as never,
+			organizationId: "org-1",
+			approvalRequestId: "approval-1",
+			workPeriodId: "period-1",
+			actor: currentApprover,
+			decision: { kind: "approve", reason: null },
+		});
+
+		expect(executed.result).toMatchObject({
+			kind: "manual_time_submission",
+			action: "approve",
+		});
+		expect(executed.postCommit).toMatchObject({
+			disposition: "dispatch",
+			event: "approved",
+			workPeriodId: "period-1",
+		});
+		expect(dbService.updateSets).toContainEqual(
+			expect.objectContaining({ approvalStatus: "approved" }),
+		);
+		expect(
+			runtime.transitionEngine.executeInTransactionWithDisposition,
+		).not.toHaveBeenCalled();
+	});
+
+	it.each(["shadow", "ready"] as const)(
+		"mirrors a %s legacy terminal decision atomically",
+		async (mode) => {
+			const dbService = createDecisionDbService();
+			const database = dbService.db as unknown as {
+				query: Record<string, Record<string, ReturnType<typeof vi.fn>>>;
+			};
+			database.query.employee.findMany = vi
+				.fn()
+				.mockResolvedValue([currentApprover]);
+			database.query.workPeriod.findFirst.mockResolvedValue(period);
+			legacyCaptureMocks.capture.mockImplementation(async (input) => ({
+				organizationId: "org-1",
+				source: {
+					organizationId: "org-1",
+					workflowType: "manual_time_submission",
+					sourceType: "time_entry",
+					sourceId: "period-1",
+				},
+				approvalRequest: null,
+				chain: null,
+				chainRows: [],
+				sourceSnapshot: { timeRequest: { kind: "manual_time_submission" } },
+				capturedAt: parseInstant(
+					input.expectedRequestStatus === "pending"
+						? "2026-07-15T09:59:00Z"
+						: "2026-07-15T10:00:00Z",
+				),
+			}));
+			const mirrorLegacyToCanonical = vi.fn().mockResolvedValue({
+				snapshot: { id: "workflow-1" },
+			});
+			const compatibilityWriter = {
+				withWriteGate: vi.fn().mockReturnValue({
+					withWriteGate: vi.fn().mockReturnThis(),
+					mirrorLegacyToCanonical,
+				}),
+				mirrorLegacyToCanonical,
+			};
+			const context = {
+				dbService: { db: dbService.db },
+				writeGate: {
+					acquire: vi.fn().mockResolvedValue({ mode }),
+				},
+				compatibilityWriter,
+				repository: {
+					loadSnapshot: vi.fn().mockResolvedValue({ version: 2 }),
+				},
+			};
+			const runtime = {
+				repository: {
+					withTransaction: vi.fn(async (run) => run(context)),
+				},
+				transitionEngine: {
+					executeInTransactionWithDisposition: vi.fn(),
+				},
+			};
+
+			const executed = await executeOrdinaryWorkPeriodDecisionInTransaction({
+				dbService,
+				runtime: runtime as never,
+				organizationId: "org-1",
+				approvalRequestId: "approval-1",
+				workPeriodId: "period-1",
+				actor: currentApprover,
+				decision: { kind: "approve", reason: null },
+			});
+
+			expect(legacyCaptureMocks.capture).toHaveBeenCalledTimes(2);
+			expect(mirrorLegacyToCanonical).toHaveBeenCalledOnce();
+			expect(executed.postCommit?.disposition).toBe("dispatch");
+		},
+	);
+});
 
 const source = readFileSync(
 	"src/lib/approvals/server/work-period-approvals.ts",
@@ -281,6 +585,7 @@ function finalize(
 function createDecisionDbService(options?: {
 	staleWorkPeriod?: boolean;
 	autoCompleted?: boolean;
+	unlinked?: boolean;
 	kind?: "manual_time_submission" | "policy_clock_out";
 	autoApprovalRequest?: Partial<ApprovalFixture>;
 }) {
@@ -327,7 +632,7 @@ function createDecisionDbService(options?: {
 			},
 			workPeriod: {
 				findFirst: vi.fn().mockResolvedValue({
-					approvalWorkflowId: options?.autoCompleted
+					approvalWorkflowId: options?.autoCompleted || options?.unlinked
 						? null
 						: period.approvalWorkflowId,
 				}),
@@ -341,7 +646,7 @@ function createDecisionDbService(options?: {
 					const rows =
 						tableName === "work_period"
 							? [
-									options?.autoCompleted
+									options?.autoCompleted || options?.unlinked
 										? { ...period, approvalWorkflowId: null }
 										: period,
 								]

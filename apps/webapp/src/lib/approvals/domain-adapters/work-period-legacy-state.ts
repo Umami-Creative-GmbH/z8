@@ -46,7 +46,7 @@ export interface CaptureOrdinaryWorkPeriodLegacyStateInput {
 	expectedKind: OrdinaryWorkPeriodApprovalKind;
 	expectedRequesterEmployeeId: string;
 	approvalRequestId: string;
-	expectedRequestStatus?: "pending" | "approved";
+	expectedRequestStatus?: RequestStatus;
 }
 
 export interface CaptureOrdinaryWorkPeriodLegacyPreSubmissionStateInput {
@@ -322,10 +322,12 @@ function decodeRequest(
 	const rejectionReason = nullableString(raw.rejectionReason);
 	if (
 		status !== expectedStatus ||
-		rejectionReason !== null ||
-		(expectedStatus === "pending"
-			? approvedAt !== null
-			: approvedAt === null || raw.approverId !== raw.requestedBy)
+		(expectedStatus === "pending" &&
+			(approvedAt !== null || rejectionReason !== null)) ||
+		(expectedStatus === "approved" &&
+			(approvedAt === null || rejectionReason !== null)) ||
+		(expectedStatus === "rejected" &&
+			(approvedAt !== null || !rejectionReason))
 	) {
 		return fail();
 	}
@@ -345,7 +347,25 @@ function decodeRequest(
 	}
 	const hasMarker = markerDescriptor !== undefined;
 	let metadata: unknown;
-	if (expectedStatus === "approved") {
+	const autoApprovalDescriptor = Object.getOwnPropertyDescriptor(
+		rawMetadata,
+		"autoApproval",
+	);
+	const requesterAutoApproved = autoApprovalDescriptor !== undefined;
+	if (
+		expectedStatus === "approved" &&
+		raw.approverId === raw.requestedBy &&
+		!requesterAutoApproved
+	) {
+		return fail();
+	}
+	if (requesterAutoApproved) {
+		if (
+			expectedStatus !== "approved" ||
+			raw.approverId !== raw.requestedBy
+		) {
+			return fail();
+		}
 		const root = exactDataRecord(rawMetadata, [
 			"timeRequest",
 			...(hasMarker ? ["ordinarySubmission"] : []),
@@ -384,7 +404,7 @@ function decodeRequest(
 		metadata: {
 			...normalized.payload,
 			...(normalized.marker ? { ordinarySubmission: normalized.marker } : {}),
-			...(expectedStatus === "approved"
+			...(requesterAutoApproved
 				? { autoApproval: { reason: "requester_is_approver" } }
 				: {}),
 		} as unknown as JsonObject,
@@ -394,7 +414,7 @@ function decodeRequest(
 
 function decodeChain(
 	value: unknown,
-	expectedStatus: "pending" | "approved",
+	expectedStatus: RequestStatus,
 ): LegacyApprovalChainSnapshot {
 	const raw = record(value);
 	const status = chainStatus(raw.status);

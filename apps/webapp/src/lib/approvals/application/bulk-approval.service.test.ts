@@ -104,5 +104,10 @@ describe("BulkApprovalService", () => {
 		});
 		expect(mockState.logBatch).not.toHaveBeenCalled();
 		expect(mockState.logger.error).not.toHaveBeenCalled();
+		expect(mockState.approve).toHaveBeenCalledWith(
+			"claim-1",
+			"employee-1",
+			{ approvalRequestId: "approval-1" },
+		);
 	});
 });
