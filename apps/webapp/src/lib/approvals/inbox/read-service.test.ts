@@ -50,6 +50,55 @@ function source(
 	};
 }
 
+function canonicalItem(
+	id: string,
+	createdAt: string,
+	priority: "urgent" | "high" | "normal" | "low",
+	riskLevel: "high" | "medium" | "low",
+): OrdinaryCanonicalApproval {
+	return {
+		item: {
+			id,
+			type: "time_entry",
+			entityId: id,
+			status: "pending",
+			requester: {
+				id: "employee-1",
+				name: "Avery",
+				email: "avery@example.com",
+				image: null,
+				teamId: null,
+			},
+			summary: {
+				title: "Manual Time Submission",
+				subtitle: "Jun 1",
+				detail: "8h",
+				badge: null,
+			},
+			timing: {
+				createdAt,
+				resolvedAt: null,
+				slaDeadline: null,
+				ageDays: 0,
+			},
+			triage: {
+				priority,
+				riskLevel,
+				riskReasons: [riskLevel === "high" ? "stale_pending" : "needs_review"],
+				fastLaneGroup: riskLevel === "high" ? "stale_pending" : null,
+				isPayrollRelevant: false,
+				explanation: "Needs review.",
+			},
+			capabilities: {
+				canApprove: true,
+				canReject: true,
+				canBulkApprove: true,
+				requiresRejectReason: true,
+			},
+		},
+	} as OrdinaryCanonicalApproval;
+}
+
 describe("getApprovalInboxListFromSources", () => {
 	it("merges canonical-only ordinary items into list and count", async () => {
 		const canonicalItem = {
@@ -145,6 +194,7 @@ describe("getApprovalInboxListFromSources", () => {
 			teamId: undefined,
 			limit: 3,
 			cursor: undefined,
+			now: expect.any(Date),
 		});
 	});
 
@@ -342,6 +392,117 @@ describe("getApprovalInboxListFromSources", () => {
 			"approval-3",
 		]);
 		expect(secondPage.nextCursor).toBeNull();
+	});
+
+	it("pages interleaved compatibility and canonical ordinary rows without gaps", async () => {
+		const now = new Date("2026-06-01T09:00:00.000Z");
+		const canonical = [
+			canonicalItem(
+				"canonical-high",
+				"2026-05-28T09:00:00.000Z",
+				"high",
+				"high",
+			),
+			canonicalItem(
+				"canonical-normal",
+				"2026-05-29T09:00:00.000Z",
+				"normal",
+				"high",
+			),
+			canonicalItem(
+				"canonical-urgent",
+				"2026-05-31T09:00:00.000Z",
+				"urgent",
+				"medium",
+			),
+			canonicalItem(
+				"canonical-low",
+				"2026-06-01T09:00:00.000Z",
+				"low",
+				"medium",
+			),
+		];
+		const ranks = {
+			risk: { high: 0, medium: 1, low: 2 },
+			priority: { urgent: 0, high: 1, normal: 2, low: 3 },
+		} as const;
+		const loadCanonicalOrdinaryApprovals = vi.fn(async (input) => {
+			const rows = input.cursor
+				? canonical.filter(
+						({ item: candidate }) =>
+							ranks.risk[candidate.triage.riskLevel] >
+								ranks.risk[
+									input.cursor?.riskLevel as keyof typeof ranks.risk
+								] ||
+							(ranks.risk[candidate.triage.riskLevel] ===
+								ranks.risk[
+									input.cursor?.riskLevel as keyof typeof ranks.risk
+								] &&
+								(ranks.priority[candidate.triage.priority] >
+									ranks.priority[
+										input.cursor?.priority as keyof typeof ranks.priority
+									] ||
+									(ranks.priority[candidate.triage.priority] ===
+										ranks.priority[
+											input.cursor?.priority as keyof typeof ranks.priority
+										] &&
+										(candidate.timing.createdAt > input.cursor.createdAt ||
+											(candidate.timing.createdAt === input.cursor.createdAt &&
+												candidate.id > input.cursor.id))))),
+					)
+				: canonical;
+			return rows.slice(0, input.limit);
+		});
+		const sources = [
+			source("time_entry", [
+				item({
+					id: "compatibility-urgent",
+					approvalType: "time_entry",
+					createdAt: new Date("2026-05-27T09:00:00.000Z"),
+					priority: "urgent",
+				}),
+				item({
+					id: "compatibility-low",
+					approvalType: "time_entry",
+					createdAt: new Date("2026-06-01T08:00:00.000Z"),
+					priority: "low",
+				}),
+			]),
+		];
+		const ids: string[] = [];
+		let cursor: string | undefined;
+		do {
+			const page = await getApprovalInboxListFromSources({
+				sources,
+				params: {
+					approverId: "manager-1",
+					organizationId: "org-1",
+					status: "pending",
+					limit: 2,
+					cursor,
+				},
+				now,
+				loadCanonicalOrdinaryApprovals,
+				countCanonicalOrdinaryApprovals: async () => canonical.length,
+			});
+			ids.push(...page.items.map(({ id }) => id));
+			cursor = page.nextCursor ?? undefined;
+		} while (cursor);
+
+		expect(ids).toEqual([
+			"compatibility-urgent",
+			"canonical-high",
+			"canonical-normal",
+			"canonical-urgent",
+			"compatibility-low",
+			"canonical-low",
+		]);
+		expect(
+			loadCanonicalOrdinaryApprovals.mock.calls[1]?.[0].cursor,
+		).toMatchObject({
+			riskLevel: "high",
+			priority: "high",
+		});
 	});
 
 	it("clamps non-positive and fractional-under-1 limits to a usable default", async () => {

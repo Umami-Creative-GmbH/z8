@@ -10,6 +10,8 @@ import { buildInboxTriage } from "./triage";
 import type {
 	ApprovalInboxDetailResult,
 	ApprovalInboxItem,
+	ApprovalInboxPriority,
+	ApprovalInboxRiskLevel,
 	ApprovalInboxStatus,
 } from "./types";
 
@@ -148,6 +150,7 @@ interface SelectOrdinaryCanonicalApprovalsInput {
 	eligibleApprovalScopes?: EligibleApprovalScope[];
 	search?: string;
 	teamId?: string;
+	now?: Date;
 }
 
 export type OrdinaryCanonicalApprovalBatch = OrdinaryCanonicalApproval[] & {
@@ -410,6 +413,7 @@ function publicTitle(kind: OrdinaryWorkPeriodApprovalKind): string {
 function toApproval(
 	row: OrdinaryCanonicalReadRow,
 	validated: NonNullable<ReturnType<typeof validateRow>>,
+	now?: Date,
 ): OrdinaryCanonicalApproval {
 	const { period, requester, assignment, workflow } = row;
 	const { clockIn, clockOut } = period;
@@ -439,11 +443,13 @@ function toApproval(
 		preset: "time",
 	});
 	const duration = formatDuration(period.durationMinutes ?? 0);
+	const priority = ordinaryPriority(workflow.submittedAt, now);
 	const triage = buildInboxTriage({
 		type: "time_entry",
-		priority: "low",
+		priority,
 		status: "pending",
 		createdAt: workflow.submittedAt,
+		now,
 	});
 	const capabilities = {
 		canApprove: true,
@@ -478,7 +484,7 @@ function toApproval(
 			createdAt: workflow.submittedAt.toISOString(),
 			resolvedAt: null,
 			slaDeadline: null,
-			ageDays: getAgeDays({ createdAt: workflow.submittedAt }),
+			ageDays: getAgeDays({ createdAt: workflow.submittedAt, now }),
 		},
 		triage,
 		capabilities,
@@ -532,6 +538,19 @@ function toApproval(
 	};
 }
 
+function ordinaryPriority(
+	createdAt: Date,
+	now = new Date(),
+): ApprovalInboxPriority {
+	const ageHours = instantFromDate(createdAt)
+		.until(instantFromDate(now))
+		.total("hours");
+	if (ageHours > 72) return "urgent";
+	if (ageHours > 48) return "high";
+	if (ageHours > 24) return "normal";
+	return "low";
+}
+
 export function selectOrdinaryCanonicalApprovals(
 	input: SelectOrdinaryCanonicalApprovalsInput,
 ): OrdinaryCanonicalApproval[] {
@@ -546,7 +565,7 @@ export function selectOrdinaryCanonicalApprovals(
 		) {
 			return [];
 		}
-		const approval = toApproval(row, validated);
+		const approval = toApproval(row, validated, input.now);
 		if (search) {
 			const searchable = [
 				approval.item.requester.name,
@@ -575,7 +594,12 @@ interface OrdinaryCanonicalLoadInput
 	assignmentId?: string;
 	assignmentIds?: string[];
 	limit?: number;
-	cursor?: { createdAt: string; id: string };
+	cursor?: {
+		riskLevel: ApprovalInboxRiskLevel;
+		priority: ApprovalInboxPriority;
+		createdAt: string;
+		id: string;
+	};
 }
 
 function resultRows(result: unknown): Record<string, unknown>[] {
@@ -620,7 +644,29 @@ function targetCondition(input: OrdinaryCanonicalLoadInput): SQL {
 
 function cursorCondition(input: OrdinaryCanonicalLoadInput): SQL {
 	if (!input.cursor) return sql``;
-	return sql`and (workflow.submitted_at > ${new Date(input.cursor.createdAt)} or (workflow.submitted_at = ${new Date(input.cursor.createdAt)} and assignment.id > ${input.cursor.id}::uuid))`;
+	const cursorRiskRank = { high: 0, medium: 1, low: 2 }[input.cursor.riskLevel];
+	const cursorPriorityRank = { urgent: 0, high: 1, normal: 2, low: 3 }[
+		input.cursor.priority
+	];
+	return sql`and (${riskRankSql(input)} > ${cursorRiskRank}
+		or (${riskRankSql(input)} = ${cursorRiskRank} and ${priorityRankSql(input)} > ${cursorPriorityRank})
+		or (${riskRankSql(input)} = ${cursorRiskRank} and ${priorityRankSql(input)} = ${cursorPriorityRank}
+			and workflow.submitted_at > ${new Date(input.cursor.createdAt)})
+		or (${riskRankSql(input)} = ${cursorRiskRank} and ${priorityRankSql(input)} = ${cursorPriorityRank}
+			and workflow.submitted_at = ${new Date(input.cursor.createdAt)} and assignment.id > ${input.cursor.id}::uuid))`;
+}
+
+function riskRankSql(input: OrdinaryCanonicalLoadInput): SQL {
+	return sql`case when workflow.submitted_at <= ${input.now ?? new Date()} - interval '3 days' then 0 else 1 end`;
+}
+
+function priorityRankSql(input: OrdinaryCanonicalLoadInput): SQL {
+	const now = input.now ?? new Date();
+	return sql`case
+		when workflow.submitted_at < ${now} - interval '72 hours' then 0
+		when workflow.submitted_at < ${now} - interval '48 hours' then 1
+		when workflow.submitted_at < ${now} - interval '24 hours' then 2
+		else 3 end`;
 }
 
 function boundedLimit(input: OrdinaryCanonicalLoadInput): number {
@@ -710,23 +756,35 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 			and source_record.duration_minutes = source_period.duration_minutes
 			and source_clock_in.type = 'clock_in'
 			and source_clock_in.timestamp = source_period.start_time
+			and source_clock_in.utc_offset_minutes is not null
 			and source_clock_in.is_superseded = false
 			and source_clock_in.superseded_by_id is null
 			and source_clock_in.replaces_entry_id is null
 			and source_clock_out.type = 'clock_out'
 			and source_clock_out.timestamp = source_period.end_time
+			and source_clock_out.utc_offset_minutes is not null
 			and source_clock_out.is_superseded = false
 			and source_clock_out.superseded_by_id is null
 			and source_clock_out.replaces_entry_id is null
-			and case when jsonb_typeof(workflow.context_snapshot) = 'object'
-				then jsonb_object_length(workflow.context_snapshot) else null end = 1
-			and case when jsonb_typeof(workflow.context_snapshot -> 'timeRequest') = 'object'
-				then jsonb_object_length(workflow.context_snapshot -> 'timeRequest') else null end = 1
+			and jsonb_typeof(workflow.context_snapshot) = 'object'
+			and (select count(*) from jsonb_object_keys(case
+				when jsonb_typeof(workflow.context_snapshot) = 'object' then workflow.context_snapshot
+				else '{}'::jsonb end)) = 1
+			and jsonb_typeof(workflow.context_snapshot -> 'timeRequest') = 'object'
+			and (select count(*) from jsonb_object_keys(case
+				when jsonb_typeof(workflow.context_snapshot -> 'timeRequest') = 'object'
+					then workflow.context_snapshot -> 'timeRequest'
+				else '{}'::jsonb end)) = 1
 			and workflow.context_snapshot -> 'timeRequest' ->> 'kind' = workflow.workflow_type::text
-			and case when jsonb_typeof(projection.display_payload) = 'object'
-				then jsonb_object_length(projection.display_payload) else null end = 7
-			and case when jsonb_typeof(projection.display_payload -> 'stage') = 'object'
-				then jsonb_object_length(projection.display_payload -> 'stage') else null end = 2
+			and jsonb_typeof(projection.display_payload) = 'object'
+			and (select count(*) from jsonb_object_keys(case
+				when jsonb_typeof(projection.display_payload) = 'object' then projection.display_payload
+				else '{}'::jsonb end)) = 7
+			and jsonb_typeof(projection.display_payload -> 'stage') = 'object'
+			and (select count(*) from jsonb_object_keys(case
+				when jsonb_typeof(projection.display_payload -> 'stage') = 'object'
+					then projection.display_payload -> 'stage'
+				else '{}'::jsonb end)) = 2
 			and projection.display_payload ->> 'kind' = workflow.workflow_type::text
 			and projection.display_payload ->> 'title' = case
 				when workflow.workflow_type = 'manual_time_submission' then 'Manual time submission'
@@ -734,16 +792,19 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 			end
 			and case
 				when projection.display_payload ->> 'startTime' ~ '^\\d{4}-\\d{2}-\\d{2}T.*(Z|[+-]\\d{2}:\\d{2})$'
+					and pg_input_is_valid(projection.display_payload ->> 'startTime', 'timestamp with time zone')
 				then (projection.display_payload ->> 'startTime')::timestamptz
 				else null
 			end = source_period.start_time at time zone 'UTC'
 			and case
 				when projection.display_payload ->> 'endTime' ~ '^\\d{4}-\\d{2}-\\d{2}T.*(Z|[+-]\\d{2}:\\d{2})$'
+					and pg_input_is_valid(projection.display_payload ->> 'endTime', 'timestamp with time zone')
 				then (projection.display_payload ->> 'endTime')::timestamptz
 				else null
 			end = source_period.end_time at time zone 'UTC'
 			and case
 				when projection.display_payload ->> 'durationMinutes' ~ '^[0-9]+$'
+					and pg_input_is_valid(projection.display_payload ->> 'durationMinutes', 'integer')
 				then (projection.display_payload ->> 'durationMinutes')::integer
 				else null
 			end = source_period.duration_minutes
@@ -755,6 +816,23 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 				(projection.display_payload ->> 'startTime') || ' ' ||
 				(projection.display_payload ->> 'endTime') || ' ' || stage.label
 			)
+			and case
+				when source_period.pending_changes is null then true
+				when pg_input_is_valid(source_period.pending_changes, 'jsonb') then
+					jsonb_typeof(source_period.pending_changes::jsonb) = 'object'
+					and (not (source_period.pending_changes::jsonb ? 'isManualEntry')
+						or jsonb_typeof(source_period.pending_changes::jsonb -> 'isManualEntry') = 'boolean')
+					and (not (source_period.pending_changes::jsonb ? 'isNewClockOut')
+						or jsonb_typeof(source_period.pending_changes::jsonb -> 'isNewClockOut') = 'boolean')
+					and coalesce(
+						source_period.pending_changes::jsonb -> case
+							when workflow.workflow_type = 'manual_time_submission' then 'isNewClockOut'
+							else 'isManualEntry'
+						end,
+						'false'::jsonb
+					) <> 'true'::jsonb
+				else false
+			end
 			and not coalesce((
 				compatibility.id is not null
 				and compatibility.entity_type = 'time_entry'
@@ -762,14 +840,25 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 				and compatibility.requested_by = workflow.requester_employee_id
 				and compatibility.approver_id = assignment.approver_employee_id
 				and compatibility.status = 'pending'
-				and case when jsonb_typeof(compatibility.metadata) = 'object'
-					then jsonb_object_length(compatibility.metadata) else null end = 3
-				and case when jsonb_typeof(compatibility.metadata -> 'workflow') = 'object'
-					then jsonb_object_length(compatibility.metadata -> 'workflow') else null end = 2
-				and case when jsonb_typeof(compatibility.metadata -> 'stage') = 'object'
-					then jsonb_object_length(compatibility.metadata -> 'stage') else null end = 2
-				and case when jsonb_typeof(compatibility.metadata -> 'timeRequest') = 'object'
-					then jsonb_object_length(compatibility.metadata -> 'timeRequest') else null end = 1
+				and jsonb_typeof(compatibility.metadata) = 'object'
+				and (select count(*) from jsonb_object_keys(case
+					when jsonb_typeof(compatibility.metadata) = 'object' then compatibility.metadata
+					else '{}'::jsonb end)) = 3
+				and jsonb_typeof(compatibility.metadata -> 'workflow') = 'object'
+				and (select count(*) from jsonb_object_keys(case
+					when jsonb_typeof(compatibility.metadata -> 'workflow') = 'object'
+						then compatibility.metadata -> 'workflow'
+					else '{}'::jsonb end)) = 2
+				and jsonb_typeof(compatibility.metadata -> 'stage') = 'object'
+				and (select count(*) from jsonb_object_keys(case
+					when jsonb_typeof(compatibility.metadata -> 'stage') = 'object'
+						then compatibility.metadata -> 'stage'
+					else '{}'::jsonb end)) = 2
+				and jsonb_typeof(compatibility.metadata -> 'timeRequest') = 'object'
+				and (select count(*) from jsonb_object_keys(case
+					when jsonb_typeof(compatibility.metadata -> 'timeRequest') = 'object'
+						then compatibility.metadata -> 'timeRequest'
+					else '{}'::jsonb end)) = 1
 				and compatibility.metadata -> 'workflow' ->> 'id' = workflow.id::text
 				and compatibility.metadata -> 'workflow' ->> 'organizationId' = projection.organization_id
 				and compatibility.metadata -> 'stage' ->> 'id' = stage.id::text
@@ -779,7 +868,7 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 			and ${candidateVisibility(input)}
 			${targetCondition(input)}
 			${cursorCondition(input)}
-		${countOnly ? sql`` : sql`order by workflow.submitted_at, assignment.id limit ${boundedLimit(input)}`}
+		${countOnly ? sql`` : sql`order by ${riskRankSql(input)}, ${priorityRankSql(input)}, workflow.submitted_at, assignment.id limit ${boundedLimit(input)}`}
 	`;
 }
 
@@ -948,6 +1037,7 @@ function toEvidence(
 export async function loadOrdinaryCanonicalApprovals(
 	input: OrdinaryCanonicalLoadInput,
 ): Promise<OrdinaryCanonicalApprovalBatch> {
+	input = { ...input, now: input.now ?? new Date() };
 	const database =
 		input.database ?? (db as unknown as OrdinaryCanonicalReadDatabase);
 	const candidates = resultRows(

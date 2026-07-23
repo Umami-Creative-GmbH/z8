@@ -102,6 +102,7 @@ export async function getApprovalInboxListFromSources({
 	loadCanonicalOrdinaryApprovals: loadCanonical = async () => [],
 	countCanonicalOrdinaryApprovals: countCanonical,
 }: GetApprovalInboxListFromSourcesInput): Promise<ApprovalInboxListResult> {
+	const effectiveNow = now ?? new Date();
 	const requestedTypeSet = params.types ? new Set(params.types) : null;
 	const selectedSources = sources.filter(
 		(source) => !requestedTypeSet || requestedTypeSet.has(source.type),
@@ -129,7 +130,7 @@ export async function getApprovalInboxListFromSources({
 		} else {
 			items.push(
 				...approvalsExit.value.map((approval) =>
-					toInboxItem(source, approval, now),
+					toInboxItem(source, approval, effectiveNow),
 				),
 			);
 		}
@@ -167,9 +168,8 @@ export async function getApprovalInboxListFromSources({
 					search: undefined,
 					teamId: undefined,
 					limit: limit + 1,
-					cursor: cursor
-						? { createdAt: cursor.createdAt, id: cursor.id }
-						: undefined,
+					cursor: cursor ?? undefined,
+					now: effectiveNow,
 				})
 			: [];
 	const canonicalTotal = countCanonical

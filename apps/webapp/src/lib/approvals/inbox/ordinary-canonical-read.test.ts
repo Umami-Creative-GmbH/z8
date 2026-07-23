@@ -1,6 +1,7 @@
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import {
+	countOrdinaryCanonicalApprovals,
 	loadOrdinaryCanonicalApprovals,
 	type OrdinaryCanonicalReadRow,
 	selectOrdinaryCanonicalApprovals,
@@ -153,6 +154,7 @@ function select(rows: OrdinaryCanonicalReadRow[], overrides = {}) {
 		rows,
 		organizationId: ids.organization,
 		approverId: ids.approver,
+		now: new Date("2026-07-20T15:05:00Z"),
 		...overrides,
 	});
 }
@@ -287,6 +289,9 @@ describe("ordinary canonical inbox reads", () => {
 		expect(candidateQuery?.sql).toContain(
 			"compatibility.approver_id = assignment.approver_employee_id",
 		);
+		expect(candidateQuery?.sql).not.toContain("jsonb_object_length");
+		expect(candidateQuery?.sql).toContain("jsonb_typeof");
+		expect(candidateQuery?.sql).toContain("jsonb_object_keys");
 		expect(candidateQuery?.params).toEqual(
 			expect.arrayContaining([ids.organization, ids.approver, 20]),
 		);
@@ -295,6 +300,86 @@ describe("ordinary canonical inbox reads", () => {
 		expect(compatibilityQuery?.sql).toContain("from approval_request");
 		expect(compatibilityQuery?.sql).toContain("and id in (");
 		expect(compatibilityQuery?.params).toContain(ids.compatibility);
+	});
+
+	it("uses identical validity predicates for bounded list and aggregate count", async () => {
+		const calls: SQL[] = [];
+		const database = {
+			execute: async (statement: SQL) => {
+				calls.push(statement);
+				return { rows: [] };
+			},
+		};
+		const input = {
+			database,
+			organizationId: ids.organization,
+			approverId: ids.approver,
+		};
+
+		await loadOrdinaryCanonicalApprovals(input);
+		await countOrdinaryCanonicalApprovals(input);
+
+		const [listSql, countSql] = calls.map(
+			(statement) => new PgDialect().sqlToQuery(statement).sql,
+		);
+		const predicates = (value: string | undefined) =>
+			value
+				?.slice(
+					value.indexOf("from approval_inbox_projection"),
+					value.indexOf("order by"),
+				)
+				.trim();
+		expect(predicates(listSql)).toBe(predicates(`${countSql} order by`));
+		expect(countSql).toContain("pending_changes");
+		expect(countSql).toContain("isManualEntry");
+		expect(countSql).toContain("isNewClockOut");
+		expect(countSql).not.toContain("jsonb_object_length");
+	});
+
+	it("seeks and orders bounded rows by the public risk and priority tuple", async () => {
+		const calls: SQL[] = [];
+		await loadOrdinaryCanonicalApprovals({
+			database: {
+				execute: async (statement: SQL) => {
+					calls.push(statement);
+					return { rows: [] };
+				},
+			},
+			organizationId: ids.organization,
+			approverId: ids.approver,
+			now: new Date("2026-07-24T14:05:00Z"),
+			cursor: {
+				riskLevel: "high",
+				priority: "urgent",
+				createdAt: "2026-07-20T14:05:00.000Z",
+				id: ids.assignment,
+			},
+		});
+
+		const query = new PgDialect().sqlToQuery(calls[0] as SQL);
+		expect(query.sql).toContain("interval '3 days'");
+		expect(query.sql).toContain("interval '72 hours'");
+		expect(query.sql).toMatch(
+			/order by case when workflow\.submitted_at.*case\s+when workflow\.submitted_at.*workflow\.submitted_at, assignment\.id limit/s,
+		);
+		expect(query.params).toEqual(
+			expect.arrayContaining([
+				0,
+				new Date("2026-07-20T14:05:00.000Z"),
+				ids.assignment,
+			]),
+		);
+	});
+
+	it("derives canonical priority from the same age thresholds used by ordinary compatibility rows", () => {
+		const [approval] = select([row()], {
+			now: new Date("2026-07-23T15:05:01Z"),
+		});
+
+		expect(approval?.item.triage).toMatchObject({
+			priority: "urgent",
+			riskLevel: "high",
+		});
 	});
 
 	it("constrains exact target reads by assignment id with a one-row bound", async () => {
