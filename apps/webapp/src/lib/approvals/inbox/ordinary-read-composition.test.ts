@@ -50,6 +50,8 @@ const canonicalRecordId = "70000000-0000-4000-8000-000000000001";
 const approvalId = "60000000-0000-4000-8000-000000000001";
 const privateReason = "private ordinary source reason";
 const sourceDiagnostics = "private source diagnostics";
+const forbiddenPrivatePattern =
+	/private pending changes|private ordinary source reason|private source diagnostics|10000000-|20000000-|30000000-|40000000-|50000000-|60000000-|70000000-|org-composition|user-requester|team-1/;
 
 function compatibilityMetadata(
 	mode: RolloutMode,
@@ -288,15 +290,25 @@ describe.each([
 				{ label: "Stage", value: "Manager review (2)" },
 			]),
 		});
+		expect(detail.sections).toContainEqual({
+			type: "timeline",
+			title: "Timeline",
+			events: [
+				{
+					id: "timeline-created-1",
+					label: `${period.employee.user.name} requested ${expectedTitle.toLowerCase()}`,
+					at: "2026-07-20T14:05:00.000Z",
+					actorName: period.employee.user.name,
+				},
+			],
+		});
 		expect(privateSearch.items).toEqual([]);
 
 		const publicPayload = JSON.stringify({
 			list: list.items[0]?.summary,
 			sections: detail.sections,
 		});
-		expect(publicPayload).not.toMatch(
-			/private pending changes|private ordinary source reason|private source diagnostics|10000000-|40000000-|70000000-/,
-		);
+		expect(publicPayload).not.toMatch(forbiddenPrivatePattern);
 
 		const projection = await canonicalProjection(kind);
 		expect(projection.displayPayload).toMatchObject({
@@ -305,8 +317,6 @@ describe.each([
 		});
 		expect(
 			`${JSON.stringify(projection.displayPayload)} ${projection.searchText}`,
-		).not.toMatch(
-			/private pending changes|private ordinary source reason|private source diagnostics|10000000-|40000000-|70000000-/,
-		);
+		).not.toMatch(forbiddenPrivatePattern);
 	});
 });

@@ -324,6 +324,7 @@ function buildDetailSections(
 	detail: ApprovalDetail,
 ): ApprovalInboxDetailSection[] {
 	const stage = detail.approval.display.stage;
+	const useDisplayLocalTimelineIds = isOrdinaryTimeApprovalDetail(detail);
 	const sections: ApprovalInboxDetailSection[] = [
 		{
 			type: "key_value",
@@ -354,8 +355,10 @@ function buildDetailSections(
 		sections.push({
 			type: "timeline",
 			title: "Timeline",
-			events: detail.timeline.map((event) => ({
-				id: event.id,
+			events: detail.timeline.map((event, index) => ({
+				id: useDisplayLocalTimelineIds
+					? `timeline-${event.type}-${index + 1}`
+					: event.id,
 				label: event.message,
 				at: serializeDate(event.timestamp) ?? "",
 				actorName: event.performedBy?.name ?? null,
@@ -364,6 +367,21 @@ function buildDetailSections(
 	}
 
 	return sections;
+}
+
+function isOrdinaryTimeApprovalDetail(detail: ApprovalDetail): boolean {
+	if (
+		detail.approval.approvalType !== "time_entry" ||
+		typeof detail.entity !== "object" ||
+		detail.entity === null ||
+		!("timeApprovalKind" in detail.entity)
+	) {
+		return false;
+	}
+
+	const kind = (detail.entity as { timeApprovalKind?: unknown })
+		.timeApprovalKind;
+	return kind === "manual_time_submission" || kind === "policy_clock_out";
 }
 
 function getTimeRequestWarning(entity: unknown): string | null {

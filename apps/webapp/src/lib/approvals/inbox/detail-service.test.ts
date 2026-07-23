@@ -144,6 +144,18 @@ describe("getApprovalInboxDetailFromRequest", () => {
 				{ label: "Clock out", value: "16:00 -> 16:30" },
 			],
 		});
+		expect(result.sections).toContainEqual({
+			type: "timeline",
+			title: "Timeline",
+			events: [
+				{
+					id: "created",
+					label: "Request created",
+					at: "2026-05-31T09:00:00.000Z",
+					actorName: "Avery Employee",
+				},
+			],
+		});
 	});
 
 	it("warns when a pending time correction approval has missing correction entries", async () => {
