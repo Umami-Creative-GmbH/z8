@@ -2038,10 +2038,9 @@ export function analyzeApprovalWriteMutations(
 				let unresolved = !exactBase;
 				for (const mutation of mutations) {
 					if (
-						mutation.conditional ||
-						mutation.unknown ||
 						mutation.path === null ||
-						mutation.path.length === 0
+						mutation.path.length === 0 ||
+						(mutation.unknown && !mutation.value)
 					) {
 						unresolved = true;
 						resolvedAfterUncertainty.clear();
@@ -2050,8 +2049,13 @@ export function analyzeApprovalWriteMutations(
 					if (mutation.path.length === 1 && mutation.value) {
 						const name = mutation.path[0];
 						if (!name) continue;
-						properties.set(name, mutation.value);
-						if (unresolved) resolvedAfterUncertainty.add(name);
+						properties.set(
+							name,
+							mutation.conditional || mutation.unknown ? null : mutation.value,
+						);
+						if (unresolved && !mutation.conditional && !mutation.unknown) {
+							resolvedAfterUncertainty.add(name);
+						}
 					}
 				}
 				return {

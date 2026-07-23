@@ -599,6 +599,110 @@ export function protectedWrite() {
 		);
 	});
 
+	it("keeps conditional static payload keys exact across branches, loops, and try blocks", () => {
+		const source = `import { db, workPeriod } from "@/db";
+export function unprotectedIf(condition: boolean) {
+  const values = { approvalWorkflowId: "workflow-1" };
+  if (condition) values.note = input;
+  db.update(workPeriod).set(values);
+}
+export function unprotectedLoop(items: unknown[]) {
+  const values = { approvalWorkflowId: "workflow-1" };
+  for (const item of items) values.note = item;
+  db.update(workPeriod).set(values);
+}
+export function unprotectedTry() {
+  const values = { approvalWorkflowId: "workflow-1" };
+  try { values.note = input; } catch {}
+  db.update(workPeriod).set(values);
+}
+export function protectedIf(condition: boolean) {
+  const values = { note: "initial" };
+  if (condition) values.approvalStatus = "approved";
+  db.update(workPeriod).set(values);
+}
+export function protectedLoop(items: unknown[]) {
+  const values = { note: "initial" };
+  for (const item of items) values.approvalStatus = item;
+  db.update(workPeriod).set(values);
+}
+export function protectedTry() {
+  const values = { note: "initial" };
+  try { values.approvalStatus = "approved"; } catch {}
+  db.update(workPeriod).set(values);
+}
+export function computedIf(condition: boolean, key: string) {
+  const values = { approvalWorkflowId: "workflow-1" };
+  if (condition) values[key] = input;
+  db.update(workPeriod).set(values);
+}
+export function computedLoop(items: string[]) {
+  const values = { approvalWorkflowId: "workflow-1" };
+  for (const key of items) values[key] = input;
+  db.update(workPeriod).set(values);
+}
+export function computedTry(key: string) {
+  const values = { approvalWorkflowId: "workflow-1" };
+  try { values[key] = input; } catch {}
+  db.update(workPeriod).set(values);
+}`;
+
+		const mutations = analyzeApprovalWriteMutations(source, FILE_NAME);
+		expect(
+			mutations.map(({ columns, functionName, uncertainty }) => ({
+				columns,
+				functionName,
+				uncertainty,
+			})),
+		).toEqual([
+			{
+				columns: ["approval_workflow_id"],
+				functionName: "unprotectedIf",
+				uncertainty: undefined,
+			},
+			{
+				columns: ["approval_workflow_id"],
+				functionName: "unprotectedLoop",
+				uncertainty: undefined,
+			},
+			{
+				columns: ["approval_workflow_id"],
+				functionName: "unprotectedTry",
+				uncertainty: undefined,
+			},
+			{
+				columns: ["approval_status"],
+				functionName: "protectedIf",
+				uncertainty: undefined,
+			},
+			{
+				columns: ["approval_status"],
+				functionName: "protectedLoop",
+				uncertainty: undefined,
+			},
+			{
+				columns: ["approval_status"],
+				functionName: "protectedTry",
+				uncertainty: undefined,
+			},
+			{
+				columns: ["approval_workflow_id"],
+				functionName: "computedIf",
+				uncertainty: "dynamic_payload",
+			},
+			{
+				columns: ["approval_workflow_id"],
+				functionName: "computedLoop",
+				uncertainty: "dynamic_payload",
+			},
+			{
+				columns: ["approval_workflow_id"],
+				functionName: "computedTry",
+				uncertainty: "dynamic_payload",
+			},
+		]);
+	});
+
 	it("fails closed for unknown payload writes, replacements, and helper calls", () => {
 		const source = `import { db, workPeriod } from "@/db";
 export function computed(key: string) {
