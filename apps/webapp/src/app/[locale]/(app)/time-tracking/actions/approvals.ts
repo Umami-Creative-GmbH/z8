@@ -9,7 +9,6 @@ import {
 	onClockOutPendingApprovalToManager,
 	onManualEntryApproved,
 } from "@/lib/notifications/triggers";
-import { logger } from "./shared";
 
 async function getApprovalNotificationParticipants(
 	employeeId: string,
@@ -48,8 +47,7 @@ async function sendPendingApprovalNotifications(params: {
 	startTime: Date;
 	endTime: Date;
 	durationMinutes: number;
-	employeeLogMessage: string;
-	managerLogMessage: string;
+	dedupeKey: string;
 }) {
 	const { employeeUserId, employeeName, managerUserId } =
 		await getApprovalNotificationParticipants(
@@ -58,34 +56,44 @@ async function sendPendingApprovalNotifications(params: {
 			params.organizationId,
 		);
 
+	const notifications: Promise<void>[] = [];
 	if (employeeUserId) {
-		void onClockOutPendingApproval({
-			workPeriodId: params.workPeriodId,
-			employeeUserId,
-			employeeName,
-			organizationId: params.organizationId,
-			startTime: params.startTime,
-			endTime: params.endTime,
-			durationMinutes: params.durationMinutes,
-		}).catch((error) => {
-			logger.error({ error }, params.employeeLogMessage);
-		});
+		notifications.push(
+			onClockOutPendingApproval({
+				workPeriodId: params.workPeriodId,
+				employeeUserId,
+				employeeName,
+				organizationId: params.organizationId,
+				startTime: params.startTime,
+				endTime: params.endTime,
+				durationMinutes: params.durationMinutes,
+				idempotencyKey: `${params.dedupeKey}:employee:pending`,
+				durable: true,
+			}),
+		);
 	}
 
 	if (managerUserId) {
-		void onClockOutPendingApprovalToManager({
-			workPeriodId: params.workPeriodId,
-			employeeUserId: employeeUserId || "",
-			employeeName,
-			organizationId: params.organizationId,
-			startTime: params.startTime,
-			endTime: params.endTime,
-			durationMinutes: params.durationMinutes,
-			managerUserId,
-		}).catch((error) => {
-			logger.error({ error }, params.managerLogMessage);
-		});
+		notifications.push(
+			onClockOutPendingApprovalToManager({
+				workPeriodId: params.workPeriodId,
+				employeeUserId: employeeUserId || "",
+				employeeName,
+				organizationId: params.organizationId,
+				startTime: params.startTime,
+				endTime: params.endTime,
+				durationMinutes: params.durationMinutes,
+				managerUserId,
+				idempotencyKey: `${params.dedupeKey}:manager:pending`,
+				durable: true,
+			}),
+		);
 	}
+	const settled = await Promise.allSettled(notifications);
+	const rejected = settled.find(
+		(result): result is PromiseRejectedResult => result.status === "rejected",
+	);
+	if (rejected) throw rejected.reason;
 
 	return { employeeUserId, employeeName };
 }
@@ -98,13 +106,10 @@ export async function sendClockOutApprovalNotifications(params: {
 	startTime: Date;
 	endTime: Date;
 	durationMinutes: number;
+	dedupeKey: string;
 }) {
 	await sendPendingApprovalNotifications({
 		...params,
-		employeeLogMessage:
-			"Failed to send clock-out pending notification to employee",
-		managerLogMessage:
-			"Failed to send clock-out pending notification to manager",
 	});
 }
 
@@ -115,6 +120,7 @@ export async function sendClockOutApprovedNotification(params: {
 	organizationId: string;
 	startTime: Date;
 	endTime: Date;
+	dedupeKey: string;
 }) {
 	const { employeeUserId, employeeName } =
 		await getApprovalNotificationParticipants(
@@ -131,6 +137,8 @@ export async function sendClockOutApprovedNotification(params: {
 		approverName: employeeName,
 		startTime: params.startTime,
 		endTime: params.endTime,
+		idempotencyKey: `${params.dedupeKey}:employee:approved`,
+		durable: true,
 	});
 }
 
@@ -142,13 +150,10 @@ export async function sendManualEntryApprovalNotifications(params: {
 	startTime: Date;
 	endTime: Date;
 	durationMinutes: number;
+	dedupeKey: string;
 }) {
 	await sendPendingApprovalNotifications({
 		...params,
-		employeeLogMessage:
-			"Failed to send manual entry pending notification to employee",
-		managerLogMessage:
-			"Failed to send manual entry pending notification to manager",
 	});
 }
 
@@ -160,6 +165,7 @@ export async function sendManualEntryApprovedNotification(params: {
 	startTime: Date;
 	endTime: Date;
 	durationMinutes: number;
+	dedupeKey: string;
 }) {
 	const { employeeUserId, employeeName } =
 		await getApprovalNotificationParticipants(
@@ -176,5 +182,7 @@ export async function sendManualEntryApprovedNotification(params: {
 		approverName: employeeName,
 		startTime: params.startTime,
 		endTime: params.endTime,
+		idempotencyKey: `${params.dedupeKey}:employee:approved`,
+		durable: true,
 	});
 }

@@ -8,6 +8,7 @@
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "./notification-service";
+import type { CreateNotificationParams } from "./types";
 
 const logger = createLogger("NotificationTriggers");
 
@@ -380,6 +381,8 @@ interface ClockOutApprovalParams {
 	startTime: Date;
 	endTime: Date;
 	durationMinutes: number;
+	idempotencyKey?: string;
+	durable?: boolean;
 }
 
 interface ClockOutApprovalToManagerParams extends ClockOutApprovalParams {
@@ -394,6 +397,8 @@ interface ClockOutApprovalResultParams {
 	startTime: Date;
 	endTime: Date;
 	rejectionReason?: string;
+	idempotencyKey?: string;
+	durable?: boolean;
 }
 
 /**
@@ -403,7 +408,7 @@ export async function onClockOutPendingApproval(
 	params: ClockOutApprovalParams,
 ): Promise<void> {
 	try {
-		await createNotification({
+		const notification = {
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "time_correction_submitted",
@@ -412,12 +417,21 @@ export async function onClockOutPendingApproval(
 			entityType: "work_period",
 			entityId: params.workPeriodId,
 			actionUrl: "/time-tracking",
-		});
+			...(params.idempotencyKey
+				? { idempotencyKey: params.idempotencyKey }
+				: {}),
+		} satisfies CreateNotificationParams;
+		if (params.durable) {
+			await createNotification(notification, { throwOnError: true });
+		} else {
+			await createNotification(notification);
+		}
 	} catch (error) {
 		logger.error(
 			{ error, params },
 			"Failed to trigger clock-out pending notification",
 		);
+		if (params.durable) throw error;
 	}
 }
 
@@ -431,7 +445,7 @@ export async function onClockOutPendingApprovalToManager(
 		const formatTime = (date: Date) =>
 			date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
-		await createNotification({
+		const notification = {
 			userId: params.managerUserId,
 			organizationId: params.organizationId,
 			type: "approval_request_submitted",
@@ -440,12 +454,21 @@ export async function onClockOutPendingApprovalToManager(
 			entityType: "work_period",
 			entityId: params.workPeriodId,
 			actionUrl: "/approvals/inbox",
-		});
+			...(params.idempotencyKey
+				? { idempotencyKey: params.idempotencyKey }
+				: {}),
+		} satisfies CreateNotificationParams;
+		if (params.durable) {
+			await createNotification(notification, { throwOnError: true });
+		} else {
+			await createNotification(notification);
+		}
 	} catch (error) {
 		logger.error(
 			{ error, params },
 			"Failed to trigger clock-out approval manager notification",
 		);
+		if (params.durable) throw error;
 	}
 }
 
@@ -456,7 +479,7 @@ export async function onClockOutApproved(
 	params: ClockOutApprovalResultParams,
 ): Promise<void> {
 	try {
-		await createNotification({
+		const notification = {
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "time_correction_approved",
@@ -465,12 +488,21 @@ export async function onClockOutApproved(
 			entityType: "work_period",
 			entityId: params.workPeriodId,
 			actionUrl: "/time-tracking",
-		});
+			...(params.idempotencyKey
+				? { idempotencyKey: params.idempotencyKey }
+				: {}),
+		} satisfies CreateNotificationParams;
+		if (params.durable) {
+			await createNotification(notification, { throwOnError: true });
+		} else {
+			await createNotification(notification);
+		}
 	} catch (error) {
 		logger.error(
 			{ error, params },
 			"Failed to trigger clock-out approved notification",
 		);
+		if (params.durable) throw error;
 	}
 }
 
@@ -507,7 +539,7 @@ export async function onManualEntryApproved(
 	params: ClockOutApprovalResultParams,
 ): Promise<void> {
 	try {
-		await createNotification({
+		const notification = {
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "time_correction_approved",
@@ -516,12 +548,21 @@ export async function onManualEntryApproved(
 			entityType: "work_period",
 			entityId: params.workPeriodId,
 			actionUrl: "/time-tracking",
-		});
+			...(params.idempotencyKey
+				? { idempotencyKey: params.idempotencyKey }
+				: {}),
+		} satisfies CreateNotificationParams;
+		if (params.durable) {
+			await createNotification(notification, { throwOnError: true });
+		} else {
+			await createNotification(notification);
+		}
 	} catch (error) {
 		logger.error(
 			{ error, params },
 			"Failed to trigger manual time approval notification",
 		);
+		if (params.durable) throw error;
 	}
 }
 

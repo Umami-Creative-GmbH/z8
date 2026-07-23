@@ -22,6 +22,7 @@ import {
 	type ResolvePolicyAndCreateApprovalResult,
 	resolvePolicyAndCreateApproval,
 } from "../policies/chain-service";
+import { getPrimaryEligibleManagerIdForRequester } from "../policies/manager-eligibility-db";
 import type { ApprovalPolicyOvertimeRisk } from "../policies/types";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
@@ -66,6 +67,7 @@ export interface WorkPeriodPostCommitDescriptor {
 	endTime: string;
 	durationMinutes: number;
 	reason: string | null;
+	deferBreakEnforcement?: true;
 }
 
 interface LockedOrdinarySource {
@@ -1200,6 +1202,9 @@ function descriptor(input: {
 		endTime: instantToCanonicalString(instantFromDate(input.source.endTime)),
 		durationMinutes: input.source.durationMinutes,
 		reason: input.submission.reason || null,
+		...(input.submission.kind === "policy_clock_out"
+			? { deferBreakEnforcement: true as const }
+			: {}),
 	});
 }
 
@@ -1325,6 +1330,12 @@ async function executeOrdinaryWorkPeriodSubmission(
 				});
 			},
 			mutate: async () => {
+				const currentDefaultApproverId =
+					await getPrimaryEligibleManagerIdForRequester({
+						db: input.dbService.db,
+						requesterEmployeeId: input.requesterEmployeeId,
+						organizationId: input.organizationId,
+					});
 				const resolved = await Effect.runPromiseExit(
 					resolvePolicyAndCreateApproval(input.dbService, {
 						context: {
@@ -1340,7 +1351,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 							entityType: "time_entry",
 							entityId: input.workPeriodId,
 						},
-						defaultApproverId: input.defaultApproverId,
+						defaultApproverId: currentDefaultApproverId,
 						transactionBehavior: "existing",
 						reason: input.reason,
 						metadata: legacyMetadata,
@@ -1414,6 +1425,12 @@ async function executeOrdinaryWorkPeriodSubmission(
 		};
 	}
 
+	const currentDefaultApproverId =
+		await getPrimaryEligibleManagerIdForRequester({
+			db: input.dbService.db,
+			requesterEmployeeId: input.requesterEmployeeId,
+			organizationId: input.organizationId,
+		});
 	const started = await startApprovalWorkflow({
 		context,
 		organizationId: input.organizationId,
@@ -1431,7 +1448,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 			userId: input.requesterUserId,
 		},
 		submissionKey,
-		defaultApproverEmployeeId: input.defaultApproverId,
+		defaultApproverEmployeeId: currentDefaultApproverId,
 		routingContext: {
 			organizationId: input.organizationId,
 			workflowType: input.kind,

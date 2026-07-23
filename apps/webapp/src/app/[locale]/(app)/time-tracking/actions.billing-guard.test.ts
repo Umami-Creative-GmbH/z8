@@ -249,7 +249,8 @@ describe("legacy time-tracking action billing guards", () => {
 		expect(body).toContain(
 			"executeOrdinaryWorkPeriodSubmissionInTransaction({",
 		);
-		expect(body).toContain("defaultApproverId: managerId");
+		expect(body).toContain("defaultApproverId: null");
+		expect(body).not.toContain("getPrimaryEligibleManagerIdForRequester");
 	});
 
 	it("keeps manual source rows pending until approval routing resolves", () => {

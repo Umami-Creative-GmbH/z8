@@ -53,10 +53,6 @@ describe("clocking service delegation", () => {
 		);
 		const billingIndex = body.indexOf("requireBillingForMutation(");
 		const approvalPolicyIndex = body.indexOf("checkClockOutNeedsApproval(");
-		const managerIndex = body.indexOf(
-			"await getPrimaryEligibleManagerIdForRequester({",
-			approvalPolicyIndex,
-		);
 		const canonicalIndex = body.indexOf(
 			"canonicalWorkRecordClient.createForCompletedPeriod(",
 		);
@@ -65,8 +61,8 @@ describe("clocking service delegation", () => {
 		expect(projectValidationIndex).toBeGreaterThanOrEqual(0);
 		expect(billingIndex).toBeGreaterThan(projectValidationIndex);
 		expect(approvalPolicyIndex).toBeGreaterThan(billingIndex);
-		expect(managerIndex).toBeGreaterThan(approvalPolicyIndex);
-		expect(canonicalIndex).toBeGreaterThan(managerIndex);
+		expect(body).not.toContain("getPrimaryEligibleManagerIdForRequester");
+		expect(canonicalIndex).toBeGreaterThan(approvalPolicyIndex);
 		expect(canonicalIndex).toBeGreaterThan(delegateIndex);
 		expect(body).toContain("beforePeriodClose:");
 		expect(body).toContain("afterPeriodClose:");

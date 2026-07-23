@@ -12,6 +12,7 @@ import {
 	onAbsenceRecordedByManager,
 	onAbsenceRequestPendingApproval,
 	onApprovedAbsenceCancelledByEmployee,
+	onClockOutPendingApproval,
 	onClockOutPendingApprovalToManager,
 	onClockOutRejected,
 	onManualEntryApproved,
@@ -197,6 +198,31 @@ describe("approval notification triggers", () => {
 				entityId: "period-1",
 				actionUrl: "/approvals/inbox",
 			}),
+		);
+	});
+
+	it("reports durable clock-out notification persistence failures", async () => {
+		const failure = new Error("notification failed");
+		createNotification.mockRejectedValueOnce(failure);
+
+		await expect(
+			onClockOutPendingApproval({
+				workPeriodId: "period-1",
+				employeeUserId: "user-requester",
+				employeeName: "Avery Requester",
+				organizationId: "org-1",
+				startTime: new Date("2026-05-11T08:00:00.000Z"),
+				endTime: new Date("2026-05-11T16:00:00.000Z"),
+				durationMinutes: 480,
+				idempotencyKey: "submission:pending:employee",
+				durable: true,
+			}),
+		).rejects.toBe(failure);
+		expect(createNotification).toHaveBeenCalledWith(
+			expect.objectContaining({
+				idempotencyKey: "submission:pending:employee",
+			}),
+			{ throwOnError: true },
 		);
 	});
 

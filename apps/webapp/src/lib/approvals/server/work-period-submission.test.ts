@@ -235,6 +235,8 @@ function fixture(
 	options: {
 		source?: Record<string, unknown>;
 		replaySource?: Record<string, unknown>;
+		employees?: Record<string, unknown>[];
+		managerLinks?: Record<string, unknown>[];
 		sourceFromQuery?: (query: {
 			sql: string;
 			params: unknown[];
@@ -284,16 +286,20 @@ function fixture(
 			employeeGroupMember: { findMany: vi.fn().mockResolvedValue([]) },
 			employeeGroup: { findMany: vi.fn().mockResolvedValue([]) },
 			employee: {
-				findMany: vi.fn().mockResolvedValue([
-					{
-						id: requesterEmployeeId,
-						organizationId,
-						userId: requesterUserId,
-						isActive: true,
-					},
-				]),
+				findMany: vi.fn().mockResolvedValue(
+					options.employees ?? [
+						{
+							id: requesterEmployeeId,
+							organizationId,
+							userId: requesterUserId,
+							isActive: true,
+						},
+					],
+				),
 			},
-			employeeManagers: { findMany: vi.fn().mockResolvedValue([]) },
+			employeeManagers: {
+				findMany: vi.fn().mockResolvedValue(options.managerLinks ?? []),
+			},
 			teamMembership: { findMany: vi.fn().mockResolvedValue([]) },
 			team: { findMany: vi.fn().mockResolvedValue([]) },
 			approvalRequest: {
@@ -726,6 +732,7 @@ describe.each([
 			endTime: "2026-07-22T16:00:00Z",
 			durationMinutes: 480,
 			reason: "Needs approval",
+			...(kind === "policy_clock_out" ? { deferBreakEnforcement: true } : {}),
 		});
 		if (mode === "legacy") expect(state.calls).not.toContain("observation");
 		if (mode === "shadow" || mode === "ready") {
@@ -739,6 +746,45 @@ describe.each([
 			);
 		}
 	});
+});
+
+it("resolves the current fallback manager inside the submission transaction", async () => {
+	const currentApproverId = "20000000-0000-4000-8000-000000000003";
+	const fake = fixture({
+		employees: [
+			{
+				id: requesterEmployeeId,
+				organizationId,
+				userId: requesterUserId,
+				isActive: true,
+				role: "employee",
+			},
+			{
+				id: currentApproverId,
+				organizationId,
+				userId: "user-current-manager",
+				isActive: true,
+				role: "manager",
+			},
+		],
+		managerLinks: [
+			{
+				employeeId: requesterEmployeeId,
+				managerId: currentApproverId,
+				isPrimary: true,
+			},
+		],
+	});
+	fake.input.defaultApproverId = approverId;
+
+	await executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input);
+
+	const resolverCall = state.calls.find((call) => call.startsWith("legacy:"));
+	expect(JSON.parse(resolverCall?.slice("legacy:".length) ?? "")).toMatchObject(
+		{
+			defaultApproverId: currentApproverId,
+		},
+	);
 });
 
 it.each([

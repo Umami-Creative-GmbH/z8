@@ -17,7 +17,6 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
-import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
 import {
@@ -1063,11 +1062,6 @@ export async function clockOut(
 			if (!evidence) return null;
 			const { period, hasApprovalEvidence } = evidence;
 			if (!hasApprovalEvidence) return { period, approvalSubmission: null };
-			const managerId = await getPrimaryEligibleManagerIdForRequester({
-				db,
-				requesterEmployeeId: currentEmployee.id,
-				organizationId: currentEmployee.organizationId,
-			});
 			const approvalSubmission = requireReplayOnlySubmission(
 				await executeOrdinaryWorkPeriodSubmissionInTransaction({
 					dbService: approvalDbServiceForTransaction(context.dbService),
@@ -1078,7 +1072,7 @@ export async function clockOut(
 					requesterEmployeeId: currentEmployee.id,
 					requesterUserId: session.user.id,
 					teamId: currentEmployee.teamId,
-					defaultApproverId: managerId,
+					defaultApproverId: null,
 					reason: "Clock-out requires approval (0-day policy)",
 					overtimeRisk: "warning",
 					kind: "policy_clock_out",
@@ -1188,13 +1182,6 @@ export async function clockOut(
 			browserSource: "browser",
 			fallbackSource: "user_setting",
 		});
-		const managerId = needsClockOutApproval
-			? await getPrimaryEligibleManagerIdForRequester({
-					db,
-					requesterEmployeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
-				})
-			: null;
 		const sessionDurationMinutes = calculateDurationMinutes(
 			activeWorkPeriod.startTime,
 			now,
@@ -1267,7 +1254,7 @@ export async function clockOut(
 								requesterEmployeeId: currentEmployee.id,
 								requesterUserId: session.user.id,
 								teamId: currentEmployee.teamId,
-								defaultApproverId: managerId,
+								defaultApproverId: null,
 								reason: "Clock-out requires approval (0-day policy)",
 								overtimeRisk: "warning",
 								kind: "policy_clock_out",
@@ -1304,7 +1291,7 @@ export async function clockOut(
 					requesterEmployeeId: currentEmployee.id,
 					requesterUserId: session.user.id,
 					teamId: currentEmployee.teamId,
-					defaultApproverId: managerId,
+					defaultApproverId: null,
 					reason: "Clock-out requires approval (0-day policy)",
 					overtimeRisk: "warning",
 					kind: "policy_clock_out",
@@ -1346,6 +1333,7 @@ export async function clockOut(
 					startTime: activeWorkPeriod.startTime,
 					endTime: now,
 					durationMinutes,
+					dedupeKey: approvalSubmission.postCommit.dedupeKey,
 				};
 				try {
 					if (approvalSubmission.postCommit.event === "approved") {
@@ -1403,7 +1391,11 @@ export async function clockOut(
 		let breakEnforcementResult: Awaited<
 			ReturnType<typeof enforceBreaksAfterClockOut>
 		> = { wasAdjusted: false };
-		if (shouldRunPostCommitEffects) {
+		// Task 8 terminal maintenance consumes policy clock-out break deferrals.
+		if (
+			shouldRunPostCommitEffects &&
+			approvalSubmission?.postCommit?.deferBreakEnforcement !== true
+		) {
 			await bestEffort(
 				async () => {
 					breakEnforcementResult = await enforceBreaksAfterClockOut({
@@ -2052,13 +2044,6 @@ export async function createManualTimeEntry(
 					timezone,
 					timezoneSource: "manager_target_user_setting",
 				});
-		const managerId = requiresApproval
-			? await getPrimaryEligibleManagerIdForRequester({
-					db,
-					requesterEmployeeId: targetEmployee.id,
-					organizationId: targetEmployee.organizationId,
-				})
-			: null;
 		const durationMinutes = calculateDurationMinutes(
 			adjustedClockIn,
 			adjustedClockOut,
@@ -2185,7 +2170,7 @@ export async function createManualTimeEntry(
 						requesterEmployeeId: targetEmployee.id,
 						requesterUserId: targetEmployee.userId ?? session.user.id,
 						teamId: targetEmployee.teamId,
-						defaultApproverId: managerId,
+						defaultApproverId: null,
 						reason: `Manual time entry: ${data.reason}`,
 						overtimeRisk: "none",
 						kind: "manual_time_submission",
@@ -2220,6 +2205,7 @@ export async function createManualTimeEntry(
 				endTime: adjustedClockOut,
 				durationMinutes,
 				reason: data.reason,
+				dedupeKey: postCommit.dedupeKey,
 			};
 			try {
 				if (postCommit.event === "approved") {

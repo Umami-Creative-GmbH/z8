@@ -102,6 +102,7 @@ export interface CreateNotificationParams {
 	entityId?: string;
 	actionUrl?: string;
 	metadata?: Record<string, unknown>;
+	idempotencyKey?: string;
 }
 
 // Notification event payloads for triggers

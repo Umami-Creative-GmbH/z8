@@ -931,7 +931,10 @@ describe("clockOut", () => {
 				postCommit: {
 					disposition: "dispatch",
 					event: result.kind === "auto_completed" ? "approved" : "pending",
-					approverEmployeeId: input.defaultApproverId,
+					dedupeKey: "clock-out-submission:result",
+					approverEmployeeId:
+						result.kind === "auto_completed" ? "employee-1" : "manager-1",
+					deferBreakEnforcement: input.kind === "policy_clock_out" || undefined,
 				},
 			};
 		});
@@ -1024,13 +1027,14 @@ describe("clockOut", () => {
 			expect.objectContaining({
 				workPeriodId: "period-1",
 				requesterEmployeeId: "employee-1",
-				defaultApproverId: "manager-1",
+				defaultApproverId: null,
 				organizationId: "org-1",
 				kind: "policy_clock_out",
 				dbService: expect.anything(),
 				context: expect.anything(),
 			}),
 		);
+		expect(mockState.findManagerLinks).not.toHaveBeenCalled();
 		const submission = mockState.executeOrdinarySubmission.mock.calls[0][0];
 		expect(submission.dbService.db).toBe(submission.context.dbService.db);
 		expect(mockState.clockingClockOut.mock.calls[0][0].transaction).toBe(
@@ -1041,6 +1045,10 @@ describe("clockOut", () => {
 		);
 		expect(mockState.revalidatePath).toHaveBeenCalledOnce();
 		expect(mockState.revalidatePath).toHaveBeenCalledWith("/time-tracking");
+		expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
+		expect(mockState.sendClockOutApprovalNotifications).toHaveBeenCalledWith(
+			expect.objectContaining({ dedupeKey: "clock-out-submission:result" }),
+		);
 	});
 
 	it("does not report a pending clock-out when its approval auto-completes", async () => {
@@ -1057,6 +1065,79 @@ describe("clockOut", () => {
 		expect(result.success).toBe(true);
 		expect(result.success && result.data.pendingApproval).toBe(false);
 		expect(mockState.createClockOutApprovalRequest).toHaveBeenCalledOnce();
+		expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		{ label: "pending", autoCompleted: false },
+		{ label: "requester auto-completed", autoCompleted: true },
+	])("preserves policy clock-out parity and exact replay when $label", async ({
+		autoCompleted,
+	}) => {
+		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
+		if (autoCompleted) {
+			mockState.createClockOutApprovalRequest.mockResolvedValue({
+				kind: "auto_completed",
+				approvalRequestId: "approval-1",
+				chainInstanceId: null,
+				reason: "requester_is_approver",
+			});
+		}
+		mockState.enforceBreaksAfterClockOut.mockImplementation(async () => {
+			mockState.updateSet({
+				endTime: new Date("2026-05-04T09:30:00.000Z"),
+				durationMinutes: 30,
+			});
+			return { wasAdjusted: true, adjustment: { breakMinutes: 30 } };
+		});
+
+		const first = await clockOut();
+
+		expect(first.success).toBe(true);
+		expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
+		expect(mockState.updateSet).toHaveBeenCalledTimes(1);
+		expect(mockState.updateSet).toHaveBeenCalledWith(
+			expect.objectContaining({
+				pendingChanges: expect.objectContaining({
+					originalEndTime: "2026-05-04T10:00:00.000Z",
+					originalDurationMinutes: 60,
+				}),
+			}),
+		);
+		expect(mockState.createCanonicalWorkRecord).toHaveBeenCalledWith(
+			expect.objectContaining({
+				endAt: new Date("2026-05-04T10:00:00.000Z"),
+				durationMinutes: 60,
+			}),
+			expect.anything(),
+		);
+
+		mockState.findPolicyPeriods.mockResolvedValue([
+			policyReplayPeriod(defaultSubmissionId, autoCompleted ? null : undefined),
+		]);
+		setPolicyCanonicalEvidence({
+			approvalState: autoCompleted ? "approved" : "pending",
+		});
+		mockState.findApprovalRequests.mockResolvedValue([
+			{
+				metadata: autoCompleted
+					? requesterAutoApprovalMetadata("policy_clock_out", "period-1")
+					: approvalRequestMetadata("policy_clock_out", "period-1"),
+			},
+		]);
+		mockState.executeOrdinarySubmission.mockResolvedValueOnce({
+			result: autoCompleted
+				? { kind: "auto_completed", approvalRequestId: "approval-1" }
+				: { kind: "default_created", approvalRequestId: "approval-1" },
+			disposition: "replayed",
+			postCommit: null,
+		});
+
+		const replay = await clockOut();
+
+		expect(replay.success).toBe(true);
+		expect(mockState.clockingClockOut).toHaveBeenCalledOnce();
+		expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
 	});
 
 	it("keeps committed clock-out success when post-commit notification fails", async () => {
@@ -1811,7 +1892,7 @@ describe("clockOut", () => {
 		);
 	});
 
-	it("marks the work balance dirty after break enforcement can adjust the closed period", async () => {
+	it("enforces breaks for ordinary no-approval clock-outs exactly as before", async () => {
 		mockState.enforceBreaksAfterClockOut.mockResolvedValueOnce({
 			wasAdjusted: true,
 			adjustment: { breakMinutes: 30 },
@@ -2071,7 +2152,9 @@ describe("createManualTimeEntry", () => {
 				postCommit: {
 					disposition: "dispatch",
 					event: result.kind === "auto_completed" ? "approved" : "pending",
-					approverEmployeeId: input.defaultApproverId,
+					dedupeKey: "manual-submission:result",
+					approverEmployeeId:
+						result.kind === "auto_completed" ? "employee-1" : "manager-1",
 				},
 			};
 		});
@@ -2550,7 +2633,9 @@ describe("createManualTimeEntry", () => {
 				postCommit: {
 					disposition: "dispatch",
 					event: result.kind === "auto_completed" ? "approved" : "pending",
-					approverEmployeeId: input.defaultApproverId,
+					dedupeKey: "manual-submission:result",
+					approverEmployeeId:
+						result.kind === "auto_completed" ? "employee-1" : "manager-1",
 				},
 			};
 		});
@@ -3418,7 +3503,7 @@ describe("createManualTimeEntry", () => {
 			expect.objectContaining({
 				workPeriodId: "period-1",
 				requesterEmployeeId: "employee-1",
-				defaultApproverId: "manager-1",
+				defaultApproverId: null,
 				organizationId: "org-1",
 				kind: "manual_time_submission",
 			}),

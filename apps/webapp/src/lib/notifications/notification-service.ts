@@ -66,6 +66,7 @@ export function getTimeAgo(date: Date): string {
  */
 export async function createNotification(
 	params: CreateNotificationParams,
+	options: { throwOnError?: boolean } = {},
 ): Promise<Notification | null> {
 	try {
 		// Fetch all relevant preferences for this notification type at once
@@ -108,28 +109,44 @@ export async function createNotification(
 
 		// Create in-app notification if enabled
 		if (inAppEnabled) {
-			const [inserted] = await db
-				.insert(notification)
-				.values({
-					userId: params.userId,
-					organizationId: params.organizationId,
-					type: params.type,
-					title: params.title,
-					message: params.message,
-					entityType: params.entityType,
-					entityId: params.entityId,
-					actionUrl: params.actionUrl,
-					metadata: params.metadata ? JSON.stringify(params.metadata) : null,
-				})
-				.returning();
+			const insert = db.insert(notification).values({
+				userId: params.userId,
+				organizationId: params.organizationId,
+				type: params.type,
+				title: params.title,
+				message: params.message,
+				entityType: params.entityType,
+				entityId: params.entityId,
+				actionUrl: params.actionUrl,
+				metadata: params.metadata ? JSON.stringify(params.metadata) : null,
+				idempotencyKey: params.idempotencyKey,
+			});
+			const [inserted] = params.idempotencyKey
+				? await insert
+						.onConflictDoNothing({
+							target: [
+								notification.organizationId,
+								notification.idempotencyKey,
+							],
+							where: sql`${notification.idempotencyKey} is not null`,
+						})
+						.returning()
+				: await insert.returning();
 
-			created = inserted;
+			created = inserted ?? null;
 
-			logger.info(
-				{ notificationId: created.id, userId: params.userId, type: params.type },
-				"Notification created",
-			);
-
+			if (created) {
+				logger.info(
+					{
+						notificationId: created.id,
+						userId: params.userId,
+						type: params.type,
+					},
+					"Notification created",
+				);
+			} else if (params.idempotencyKey) {
+				return null;
+			}
 		} else {
 			logger.debug(
 				{ userId: params.userId, type: params.type },
@@ -258,6 +275,7 @@ export async function createNotification(
 		return created;
 	} catch (error) {
 		logger.error({ error, params }, "Failed to create notification");
+		if (options.throwOnError) throw error;
 		return null;
 	}
 }
