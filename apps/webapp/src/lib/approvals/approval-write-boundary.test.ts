@@ -217,6 +217,7 @@ export function directCanonicalWrites() {
 		const source = `import type { db } from "@/db";
 import { timeRecord, timeRecordWork, workPeriod } from "@/db/schema";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { Effect } from "effect";
 type InsertClient = Pick<typeof db, "insert">;
 type TransactionClient = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export function createForCompletedPeriod(client: InsertClient) {
@@ -225,9 +226,11 @@ export function createForCompletedPeriod(client: InsertClient) {
 export function applyCorrectionWritesInTransaction(tx: TransactionClient) {
   tx.update(workPeriod).set({ clockInId, startTime, durationMinutes });
 }
-export function createTimeRecord(_) {
-  const dbService = _(DatabaseService);
-  return dbService.db.insert(timeRecord).values({ organizationId, employeeId, startAt, endAt, durationMinutes, approvalState: "approved" });
+export function createTimeRecord() {
+  return Effect.gen(function* (_) {
+    const dbService = yield* _(DatabaseService);
+    return dbService.db.insert(timeRecord).values({ organizationId, employeeId, startAt, endAt, durationMinutes, approvalState: "approved" });
+  });
 }`;
 
 		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
@@ -278,6 +281,30 @@ replaced.database.update(workPeriod).set({ approvalStatus: "approved" });`;
 				operation: "update",
 				table: "work_period",
 			}),
+		]);
+	});
+
+	it("invalidates object receiver provenance only along the accessed path", () => {
+		const source = `import { db, workPeriod } from "@/db";
+const direct = { db, note: "before" };
+direct.note = "after";
+direct.db.update(workPeriod).set({ approvalStatus: "approved" });
+const nested = { branch: { db, note: "before" } };
+nested.branch.note = "after";
+nested.branch.db.update(workPeriod).set({ approvalStatus: "approved" });
+const replacedReceiver = { db };
+replacedReceiver.db = formatter;
+replacedReceiver.db.update(workPeriod).set({ approvalStatus: "approved" });
+const replacedAncestor = { branch: { db } };
+Object.assign(replacedAncestor.branch, input);
+replacedAncestor.branch.db.update(workPeriod).set({ approvalStatus: "approved" });
+let replacedRoot = { branch: { db } };
+replacedRoot = input;
+replacedRoot.branch.db.update(workPeriod).set({ approvalStatus: "approved" });`;
+
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
+			expect.objectContaining({ line: 4, table: "work_period" }),
+			expect.objectContaining({ line: 7, table: "work_period" }),
 		]);
 	});
 
@@ -338,6 +365,25 @@ function* lookalike() {
 }`;
 
 		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([]);
+	});
+
+	it("trusts only imported Effect generator adapter calls for DatabaseService", () => {
+		const source = `import { workPeriod } from "@/db/schema";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { Effect } from "effect";
+Effect.gen(function* (_) {
+  const adapter = _;
+  const service = yield* adapter(DatabaseService);
+  service.db.update(workPeriod).set({ approvalStatus: "approved" });
+});
+function* arbitraryWrapper() {
+  const service = yield* wrap(DatabaseService);
+  service.db.update(workPeriod).set({ approvalStatus: "approved" });
+}`;
+
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
+			expect.objectContaining({ line: 7, table: "work_period" }),
+		]);
 	});
 
 	it.each([
@@ -446,6 +492,104 @@ db.update(workPeriod).set(values);`;
 		const mutations = analyzeApprovalWriteMutations(source, FILE_NAME);
 		expect(mutations).toEqual([
 			expect.objectContaining({ columns: ["approval_workflow_id"] }),
+		]);
+		expect(mutations[0]).not.toHaveProperty("uncertainty");
+	});
+
+	it("tracks static payload property writes without widening unrelated keys", () => {
+		const source = `import { db, workPeriod } from "@/db";
+export function unprotected() {
+  const values = { approvalWorkflowId: "workflow-1" };
+  values.note = input;
+  db.update(workPeriod).set(values);
+}
+export function protectedWrite() {
+  const values = { note: "initial" };
+  values.approvalStatus = "approved";
+  db.update(workPeriod).set(values);
+}`;
+
+		const mutations = analyzeApprovalWriteMutations(source, FILE_NAME);
+		expect(mutations).toEqual([
+			expect.objectContaining({
+				columns: ["approval_workflow_id"],
+				functionName: "unprotected",
+			}),
+			expect.objectContaining({
+				columns: ["approval_status"],
+				functionName: "protectedWrite",
+			}),
+		]);
+		expect(mutations).toEqual(
+			expect.not.arrayContaining([
+				expect.objectContaining({ uncertainty: "dynamic_payload" }),
+			]),
+		);
+	});
+
+	it("fails closed for unknown payload writes, replacements, and helper calls", () => {
+		const source = `import { db, workPeriod } from "@/db";
+export function computed(key: string) {
+  const values = { approvalWorkflowId: "workflow-1" };
+  values[key] = input;
+  db.update(workPeriod).set(values);
+}
+export function replaced(input: object) {
+  let values = { approvalWorkflowId: "workflow-1" };
+  values = input;
+  db.update(workPeriod).set(values);
+}
+export function helperCall() {
+  const values = { approvalWorkflowId: "workflow-1" };
+  mutate(values);
+  db.update(workPeriod).set(values);
+}`;
+
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
+			expect.objectContaining({
+				functionName: "computed",
+				uncertainty: "dynamic_payload",
+			}),
+			expect.objectContaining({
+				functionName: "replaced",
+				uncertainty: "dynamic_payload",
+			}),
+			expect.objectContaining({
+				functionName: "helperCall",
+				uncertainty: "dynamic_payload",
+			}),
+		]);
+	});
+
+	it("distinguishes global Object.assign from shadowed and lookalike calls", () => {
+		const source = `import { db, workPeriod } from "@/db";
+export function globalReadOnly() {
+  const values = { approvalWorkflowId: "workflow-1" };
+  Object.assign({}, values);
+  db.update(workPeriod).set(values);
+}
+export function shadowed(Object: { assign(target: object, input: object): void }) {
+  const values = { approvalWorkflowId: "workflow-1" };
+  Object.assign(values, input);
+  db.update(workPeriod).set(values);
+}
+export function lookalike() {
+  const values = { approvalWorkflowId: "workflow-1" };
+  helper.assign(values, input);
+  db.update(workPeriod).set(values);
+}`;
+
+		const mutations = analyzeApprovalWriteMutations(source, FILE_NAME);
+		expect(mutations).toEqual([
+			expect.objectContaining({ functionName: "globalReadOnly" }),
+			expect.objectContaining({
+				functionName: "shadowed",
+				uncertainty: "dynamic_payload",
+			}),
+			expect.objectContaining({
+				functionName: "lookalike",
+				uncertainty: "dynamic_payload",
+			}),
 		]);
 		expect(mutations[0]).not.toHaveProperty("uncertainty");
 	});

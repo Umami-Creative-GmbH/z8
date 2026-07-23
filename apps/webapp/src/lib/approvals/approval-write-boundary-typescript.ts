@@ -35,6 +35,8 @@ type Provenance =
 	| "drizzle_node_pg_namespace"
 	| "drizzle_factory"
 	| "drizzle_sql"
+	| "effect_generator_adapter"
+	| "effect_namespace"
 	| "pg_namespace"
 	| "pg_pool_constructor"
 	| "schema_namespace"
@@ -50,6 +52,13 @@ interface SymbolWrite {
 	propertyPath: readonly string[];
 	scope: ts.SignatureDeclaration | null;
 	value: ts.Expression;
+}
+
+interface ObjectMutation {
+	path: readonly string[] | null;
+	position: number;
+	unknown: boolean;
+	value?: ts.Expression;
 }
 
 const TABLE_EXPORTS: Readonly<Record<string, ProtectedWriteTable>> = {
@@ -245,7 +254,11 @@ function propertyAccess(
 		return { name: candidate.name.text, target: candidate.expression };
 	}
 	if (ts.isElementAccessExpression(candidate) && candidate.argumentExpression) {
-		const name = staticName(unwrap(candidate.argumentExpression));
+		const argument = unwrap(candidate.argumentExpression);
+		const name =
+			ts.isStringLiteralLike(argument) || ts.isNumericLiteral(argument)
+				? argument.text
+				: null;
 		return name === null ? null : { name, target: candidate.expression };
 	}
 	return null;
@@ -420,7 +433,7 @@ export function analyzeApprovalWriteMutations(
 	const roots = new Map<ts.Symbol, Set<Provenance>>();
 	const knownTypes = new Map<ts.Symbol, Provenance>();
 	const writes = new Map<ts.Symbol, SymbolWrite[]>();
-	const payloadMutationPositions = new Map<ts.Symbol, number[]>();
+	const objectMutations = new Map<ts.Symbol, ObjectMutation[]>();
 	const typedDeclarations: Array<{ name: ts.BindingName; type: ts.TypeNode }> =
 		[];
 	const transactionCallbacks: Array<{
@@ -430,6 +443,10 @@ export function analyzeApprovalWriteMutations(
 	}> = [];
 	const localFunctions = new Map<ts.Symbol, ts.FunctionLikeDeclaration>();
 	const possibleHelperCalls: ts.CallExpression[] = [];
+	const effectGeneratorCallbacks: Array<{
+		parameter: ts.BindingName;
+		target: ts.Expression;
+	}> = [];
 	const enclosingFunction = (node: ts.Node): ts.SignatureDeclaration | null => {
 		for (let parent = node.parent; parent; parent = parent.parent) {
 			if (ts.isFunctionLike(parent)) return parent;
@@ -493,26 +510,49 @@ export function analyzeApprovalWriteMutations(
 			identifier,
 		);
 	};
-	const addPayloadMutation = (
+	const objectMutationTarget = (
 		expression: ts.Expression,
-		position: number,
-	): void => {
+	): { path: readonly string[] | null; root: ts.Identifier } | null => {
 		const candidate = unwrap(expression);
-		if (!ts.isIdentifier(candidate)) return;
-		const symbol = checker.getSymbolAtLocation(candidate);
-		if (!symbol) return;
-		const positions = payloadMutationPositions.get(symbol) ?? [];
-		positions.push(position);
-		payloadMutationPositions.set(symbol, positions);
-	};
-	const mutatedObject = (expression: ts.Expression): ts.Expression | null => {
-		const access = propertyAccess(unwrap(expression));
-		if (!access) return null;
-		let target = unwrap(access.target);
-		while (propertyAccess(target)) {
-			target = unwrap(propertyAccess(target)?.target ?? target);
+		if (ts.isIdentifier(candidate)) return { path: [], root: candidate };
+		if (ts.isPropertyAccessExpression(candidate)) {
+			const target = objectMutationTarget(candidate.expression);
+			return target
+				? {
+						path: target.path ? [...target.path, candidate.name.text] : null,
+						root: target.root,
+					}
+				: null;
 		}
-		return target;
+		if (
+			ts.isElementAccessExpression(candidate) &&
+			candidate.argumentExpression
+		) {
+			const target = objectMutationTarget(candidate.expression);
+			if (!target) return null;
+			const argument = unwrap(candidate.argumentExpression);
+			const name =
+				ts.isStringLiteralLike(argument) || ts.isNumericLiteral(argument)
+					? argument.text
+					: null;
+			return {
+				path: target.path && name !== null ? [...target.path, name] : null,
+				root: target.root,
+			};
+		}
+		return null;
+	};
+	const addObjectMutation = (
+		expression: ts.Expression,
+		mutation: Omit<ObjectMutation, "path">,
+	): void => {
+		const target = objectMutationTarget(expression);
+		if (!target) return;
+		const symbol = checker.getSymbolAtLocation(target.root);
+		if (!symbol) return;
+		const mutations = objectMutations.get(symbol) ?? [];
+		mutations.push({ ...mutation, path: target.path });
+		objectMutations.set(symbol, mutations);
 	};
 	const addBinding = (
 		name: ts.BindingName,
@@ -787,7 +827,8 @@ export function analyzeApprovalWriteMutations(
 			const moduleName = node.moduleSpecifier.text;
 			const bindings = node.importClause.namedBindings;
 			if (bindings && ts.isNamespaceImport(bindings)) {
-				if (moduleName === "drizzle-orm")
+				if (moduleName === "effect") addRoot(bindings.name, "effect_namespace");
+				else if (moduleName === "drizzle-orm")
 					addRoot(bindings.name, "drizzle_namespace");
 				else if (moduleName === "drizzle-orm/node-postgres") {
 					addRoot(bindings.name, "drizzle_node_pg_namespace");
@@ -803,7 +844,9 @@ export function analyzeApprovalWriteMutations(
 					const table = isSchemaModule(moduleName, fileName)
 						? TABLE_EXPORTS[importedName]
 						: undefined;
-					if (table) addRoot(element.name, `table:${table}`);
+					if (moduleName === "effect" && importedName === "Effect") {
+						addRoot(element.name, "effect_namespace");
+					} else if (table) addRoot(element.name, `table:${table}`);
 					else if (moduleName === "drizzle-orm" && importedName === "sql") {
 						addRoot(element.name, "drizzle_sql");
 					} else if (
@@ -885,16 +928,41 @@ export function analyzeApprovalWriteMutations(
 			possibleHelperCalls.push(node);
 			const access = propertyAccess(node.expression);
 			const assignTarget = access ? unwrap(access.target) : null;
-			if (
+			const assignSymbol =
+				assignTarget && ts.isIdentifier(assignTarget)
+					? checker.getSymbolAtLocation(assignTarget)
+					: undefined;
+			const globalObjectAssign =
 				access?.name === "assign" &&
 				assignTarget &&
 				ts.isIdentifier(assignTarget) &&
 				assignTarget.text === "Object" &&
-				node.arguments[0]
-			) {
-				addPayloadMutation(node.arguments[0], node.getEnd());
+				!assignSymbol?.declarations?.length;
+			if (globalObjectAssign && node.arguments[0]) {
+				addObjectMutation(node.arguments[0], {
+					position: node.getEnd(),
+					unknown: true,
+				});
+			} else {
+				for (const argument of node.arguments) {
+					addObjectMutation(argument, {
+						position: node.getEnd(),
+						unknown: true,
+					});
+				}
 			}
 			const callback = node.arguments[0];
+			if (
+				access?.name === "gen" &&
+				callback &&
+				(ts.isArrowFunction(callback) || ts.isFunctionExpression(callback)) &&
+				callback.parameters[0]
+			) {
+				effectGeneratorCallbacks.push({
+					parameter: callback.parameters[0].name,
+					target: access.target,
+				});
+			}
 			if (
 				access?.name === "transaction" &&
 				callback &&
@@ -916,8 +984,13 @@ export function analyzeApprovalWriteMutations(
 					ts.SyntaxKind.AmpersandAmpersandEqualsToken ||
 				node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionEqualsToken)
 		) {
-			const mutated = mutatedObject(node.left);
-			if (mutated) addPayloadMutation(mutated, node.getEnd());
+			if (!ts.isIdentifier(unwrap(node.left))) {
+				addObjectMutation(node.left, {
+					position: node.getEnd(),
+					unknown: node.operatorToken.kind !== ts.SyntaxKind.EqualsToken,
+					value: node.right,
+				});
+			}
 			addAssignment(
 				node.left,
 				node.right,
@@ -957,6 +1030,14 @@ export function analyzeApprovalWriteMutations(
 			addTypedBinding(element.name, applyProperty(provenance, propertyName));
 		}
 	};
+	for (const callback of effectGeneratorCallbacks) {
+		const target = unwrap(callback.target);
+		if (!ts.isIdentifier(target)) continue;
+		const symbol = checker.getSymbolAtLocation(target);
+		if (symbol && roots.get(symbol)?.has("effect_namespace")) {
+			addTypedBinding(callback.parameter, "effect_generator_adapter");
+		}
+	}
 	for (const declaration of typedDeclarations) {
 		addTypedBinding(declaration.name, typeProvenance(declaration.type));
 	}
@@ -1103,11 +1184,19 @@ export function analyzeApprovalWriteMutations(
 	};
 	let objectPropertyExpressions: (
 		expression: ts.Expression,
-		propertyName: string,
+		propertyPath: readonly string[],
 		usePosition: number,
 		depth: number,
 		activeSymbols?: Set<ts.Symbol>,
 	) => Set<ts.Expression>;
+	const staticObjectPath = (
+		expression: ts.Expression,
+	): { path: readonly string[]; root: ts.Expression } => {
+		const access = propertyAccess(expression);
+		if (!access) return { path: [], root: unwrap(expression) };
+		const target = staticObjectPath(access.target);
+		return { path: [...target.path, access.name], root: target.root };
+	};
 	const resolveExpression = (
 		expression: ts.Expression,
 		usePosition: number,
@@ -1183,10 +1272,13 @@ export function analyzeApprovalWriteMutations(
 		}
 		if (ts.isCallExpression(candidate)) {
 			if (
-				candidate.arguments.some((argument) =>
-					resolveExpression(argument, usePosition, depth + 1).has(
-						"database_service_tag",
-					),
+				candidate.arguments.length === 1 &&
+				candidate.arguments[0] &&
+				resolveExpression(candidate.expression, usePosition, depth + 1).has(
+					"effect_generator_adapter",
+				) &&
+				resolveExpression(candidate.arguments[0], usePosition, depth + 1).has(
+					"database_service_tag",
 				)
 			) {
 				return new Set(["approval_db_service"]);
@@ -1247,9 +1339,10 @@ export function analyzeApprovalWriteMutations(
 					.map((value) => applyProperty(value, access.name))
 					.filter((value): value is Provenance => value !== null),
 			);
+			const objectPath = staticObjectPath(candidate);
 			for (const propertyExpression of objectPropertyExpressions(
-				access.target,
-				access.name,
+				objectPath.root,
+				objectPath.path,
 				usePosition,
 				depth + 1,
 			)) {
@@ -1279,7 +1372,7 @@ export function analyzeApprovalWriteMutations(
 	};
 	objectPropertyExpressions = (
 		expression,
-		propertyName,
+		propertyPath,
 		usePosition,
 		depth,
 		activeSymbols = new Set(),
@@ -1289,6 +1382,7 @@ export function analyzeApprovalWriteMutations(
 				"constant_evaluator_depth",
 			);
 		}
+		if (propertyPath.length === 0) return new Set([expression]);
 		const candidate = unwrap(expression);
 		if (ts.isObjectLiteralExpression(candidate)) {
 			for (
@@ -1302,38 +1396,32 @@ export function analyzeApprovalWriteMutations(
 				if (
 					(ts.isPropertyAssignment(property) ||
 						ts.isShorthandPropertyAssignment(property)) &&
-					staticName(property.name) === propertyName
+					staticName(property.name) === propertyPath[0]
 				) {
-					return new Set([
-						ts.isPropertyAssignment(property)
-							? property.initializer
-							: property.name,
-					]);
+					const value = ts.isPropertyAssignment(property)
+						? property.initializer
+						: property.name;
+					return objectPropertyExpressions(
+						value,
+						propertyPath.slice(1),
+						usePosition,
+						depth + 1,
+						activeSymbols,
+					);
 				}
 			}
 			return new Set();
 		}
 		const access = propertyAccess(candidate);
 		if (access) {
-			const result = new Set<ts.Expression>();
-			for (const nested of objectPropertyExpressions(
-				access.target,
-				access.name,
+			const objectPath = staticObjectPath(candidate);
+			return objectPropertyExpressions(
+				objectPath.root,
+				[...objectPath.path, ...propertyPath],
 				usePosition,
 				depth + 1,
 				activeSymbols,
-			)) {
-				for (const value of objectPropertyExpressions(
-					nested,
-					propertyName,
-					usePosition,
-					depth + 1,
-					activeSymbols,
-				)) {
-					result.add(value);
-				}
-			}
-			return result;
+			);
 		}
 		if (!ts.isIdentifier(candidate)) return new Set();
 		const symbol = checker.getSymbolAtLocation(candidate);
@@ -1354,20 +1442,21 @@ export function analyzeApprovalWriteMutations(
 					break;
 				}
 			}
-			if (
-				(payloadMutationPositions.get(symbol) ?? []).some(
-					(position) =>
-						position > (relevant[start]?.position ?? -1) &&
-						position < usePosition,
-				)
-			) {
+			const invalidated = (objectMutations.get(symbol) ?? []).some(
+				(mutation) =>
+					mutation.position > (relevant[start]?.position ?? -1) &&
+					mutation.position < usePosition &&
+					(mutation.path === null ||
+						mutation.path.every((name, index) => propertyPath[index] === name)),
+			);
+			if (invalidated) {
 				return new Set();
 			}
 			const result = new Set<ts.Expression>();
 			for (const write of relevant.slice(start)) {
 				for (const value of objectPropertyExpressions(
 					write.value,
-					propertyName,
+					propertyPath,
 					write.position,
 					depth + 1,
 					activeSymbols,
@@ -1886,11 +1975,13 @@ export function analyzeApprovalWriteMutations(
 						unresolved: true,
 					};
 				}
-				const mutated = (payloadMutationPositions.get(symbol) ?? []).some(
-					(position) =>
-						position > (relevant[start]?.position ?? -1) &&
-						position < usePosition,
-				);
+				const mutations = (objectMutations.get(symbol) ?? [])
+					.filter(
+						(mutation) =>
+							mutation.position > (relevant[start]?.position ?? -1) &&
+							mutation.position < usePosition,
+					)
+					.sort((left, right) => left.position - right.position);
 				const signature = (analysis: SourcePayloadAnalysis): string =>
 					[...analysis.properties]
 						.sort(([left], [right]) => compareAscii(left, right))
@@ -1900,27 +1991,48 @@ export function analyzeApprovalWriteMutations(
 						)
 						.join("|");
 				const first = analyses[0];
-				if (
-					!mutated &&
+				const exactBase =
 					first &&
 					!first.unresolved &&
 					analyses.every(
 						(analysis) =>
 							!analysis.unresolved && signature(analysis) === signature(first),
-					)
-				) {
-					return first;
+					);
+				const properties = new Map<string, ts.Expression | null>(
+					exactBase ? first.properties : undefined,
+				);
+				if (!exactBase) {
+					for (const analysis of analyses) {
+						for (const [name, value] of analysis.properties) {
+							properties.set(name, value);
+						}
+					}
 				}
-				const properties = new Map<string, ts.Expression | null>();
-				for (const analysis of analyses) {
-					for (const [name, value] of analysis.properties) {
-						properties.set(name, value);
+				const resolvedAfterUncertainty = new Set(
+					exactBase ? first.resolvedAfterUncertainty : [],
+				);
+				let unresolved = !exactBase;
+				for (const mutation of mutations) {
+					if (
+						mutation.unknown ||
+						mutation.path === null ||
+						mutation.path.length === 0
+					) {
+						unresolved = true;
+						resolvedAfterUncertainty.clear();
+						continue;
+					}
+					if (mutation.path.length === 1 && mutation.value) {
+						const name = mutation.path[0];
+						if (!name) continue;
+						properties.set(name, mutation.value);
+						if (unresolved) resolvedAfterUncertainty.add(name);
 					}
 				}
 				return {
 					properties,
-					resolvedAfterUncertainty: new Set(),
-					unresolved: true,
+					resolvedAfterUncertainty,
+					unresolved,
 				};
 			} finally {
 				activeSymbols.delete(symbol);
