@@ -11,6 +11,7 @@ import { approvalRequest, employee, slackApprovalMessage } from "@/db/schema";
 import {
 	canAttemptBotApprovalDecision,
 	decideBotApproval,
+	loadBotApprovalDecisionTarget,
 } from "@/lib/bot-platform/approval-decision";
 import { createLogger } from "@/lib/logger";
 import { openConversation, postMessage, updateMessage } from "./api";
@@ -60,8 +61,12 @@ export async function handleApprovalAction(
 			logger.warn({ approvalId }, "Approval not found");
 			return;
 		}
+		const decisionTarget = await loadBotApprovalDecisionTarget({
+			approvalId,
+			organizationId: bot.organizationId,
+		});
 
-		if (!canAttemptBotApprovalDecision(approval)) {
+		if (!canAttemptBotApprovalDecision(decisionTarget)) {
 			// Update the message to show it's already resolved
 			if (payload.channel && payload.message) {
 				await updateMessage(bot.botAccessToken, {
@@ -74,7 +79,7 @@ export async function handleApprovalAction(
 		}
 
 		// Verify user is the approver
-		if (approval.approverId !== userResult.user.employeeId) {
+		if (decisionTarget.approverId !== userResult.user.employeeId) {
 			logger.warn(
 				{ approvalId, employeeId: userResult.user.employeeId },
 				"Unauthorized approval attempt",

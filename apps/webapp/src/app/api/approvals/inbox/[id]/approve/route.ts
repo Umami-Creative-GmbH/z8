@@ -11,6 +11,7 @@ import { db } from "@/db";
 import { employee } from "@/db/schema";
 import {
 	approveApprovalInboxItem,
+	canAttemptApprovalInboxDecisionTarget,
 	loadApprovalInboxDecisionTarget,
 } from "@/lib/approvals/inbox/decision-service";
 import { isSupportedInboxType } from "@/lib/approvals/inbox/source-adapters";
@@ -149,6 +150,12 @@ export async function POST(
 			return NextResponse.json(
 				{ error: "Unsupported approval type" },
 				{ status: 400 },
+			);
+		}
+		if (!canAttemptApprovalInboxDecisionTarget(request)) {
+			return NextResponse.json(
+				{ error: `Request is already ${request.status}` },
+				{ status: 409 },
 			);
 		}
 

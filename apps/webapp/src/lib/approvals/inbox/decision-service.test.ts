@@ -12,12 +12,16 @@ const {
 	approvalRequestFindManyMock,
 	assignmentFindFirstMock,
 	assignmentFindManyMock,
+	workPeriodFindFirstMock,
+	timeEntryFindFirstMock,
 	completeHandlerApproveMock,
 } = vi.hoisted(() => ({
 	approvalRequestFindFirstMock: vi.fn(),
 	approvalRequestFindManyMock: vi.fn(),
 	assignmentFindFirstMock: vi.fn(),
 	assignmentFindManyMock: vi.fn(),
+	workPeriodFindFirstMock: vi.fn(),
+	timeEntryFindFirstMock: vi.fn(),
 	completeHandlerApproveMock: vi.fn(),
 }));
 
@@ -32,6 +36,8 @@ vi.mock("@/db", () => ({
 				findFirst: assignmentFindFirstMock,
 				findMany: assignmentFindManyMock,
 			},
+			workPeriod: { findFirst: workPeriodFindFirstMock },
+			timeEntry: { findFirst: timeEntryFindFirstMock },
 		},
 	},
 }));
@@ -59,7 +65,9 @@ import {
 	approveApprovalInboxItem,
 	bulkApproveApprovalInboxItems,
 	bulkDecideApprovalInboxItemsFromRequests,
+	canAttemptApprovalInboxDecisionTarget,
 	decideApprovalInboxItemFromRequest,
+	loadApprovalInboxDecisionTarget,
 } from "@/lib/approvals/inbox/decision-service";
 
 describe("approval inbox decision service", () => {
@@ -68,8 +76,19 @@ describe("approval inbox decision service", () => {
 		approvalRequestFindManyMock.mockReset();
 		assignmentFindFirstMock.mockReset();
 		assignmentFindManyMock.mockReset().mockResolvedValue([]);
+		workPeriodFindFirstMock.mockReset().mockResolvedValue(null);
+		timeEntryFindFirstMock.mockReset().mockResolvedValue(null);
 		completeHandlerApproveMock.mockClear();
 		completeHandlerApproveMock.mockReturnValue(Effect.void);
+	});
+
+	it("fails closed for unexpected statuses even with an ordinary kind", () => {
+		expect(
+			canAttemptApprovalInboxDecisionTarget({
+				status: "cancelled",
+				workflowKind: "manual_time_submission",
+			}),
+		).toBe(false);
 	});
 
 	it("loads an exact active complete-mode assignment as a time-entry decision target", async () => {
@@ -157,6 +176,153 @@ describe("approval inbox decision service", () => {
 			"manager-1",
 			{ approvalRequestId: "assignment-1" },
 		);
+	});
+
+	it("classifies canonical terminal time corrections and rejects them as already processed", async () => {
+		approvalRequestFindFirstMock.mockResolvedValue(null);
+		assignmentFindFirstMock.mockResolvedValue({
+			id: "assignment-1",
+			organizationId: "org-1",
+			workflowId: "workflow-1",
+			stageId: "stage-1",
+			approverEmployeeId: "manager-1",
+			status: "approved",
+			workflow: {
+				id: "workflow-1",
+				organizationId: "org-1",
+				workflowType: "time_correction",
+				sourceType: "time_entry",
+				sourceId: "period-1",
+				requesterEmployeeId: "employee-1",
+				status: "approved",
+				currentStageOrder: null,
+			},
+			stage: {
+				id: "stage-1",
+				organizationId: "org-1",
+				workflowId: "workflow-1",
+				sequence: 1,
+				status: "approved",
+			},
+		});
+
+		const target = await loadApprovalInboxDecisionTarget({
+			approvalId: "assignment-1",
+			organizationId: "org-1",
+		});
+		expect(target.workflowKind).toBe("time_correction");
+		await expect(
+			approveApprovalInboxItem({
+				approvalId: "assignment-1",
+				actorEmployeeId: "manager-1",
+				organizationId: "org-1",
+			}),
+		).rejects.toThrow("Request is already approved");
+		expect(completeHandlerApproveMock).not.toHaveBeenCalled();
+	});
+
+	it("classifies metadata-free terminal ordinary requests from exact source evidence", async () => {
+		approvalRequestFindFirstMock.mockResolvedValue({
+			id: "approval-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			organizationId: "org-1",
+			approverId: "manager-1",
+			requestedBy: "employee-1",
+			status: "approved",
+			metadata: null,
+			reason: null,
+		});
+		workPeriodFindFirstMock.mockResolvedValue({
+			id: "period-1",
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			pendingChanges: { isManualEntry: true },
+			clockInId: "clock-in-1",
+			clockOutId: "clock-out-1",
+		});
+
+		const target = await loadApprovalInboxDecisionTarget({
+			approvalId: "approval-1",
+			organizationId: "org-1",
+		});
+
+		expect(target.workflowKind).toBe("manual_time_submission");
+	});
+
+	it("classifies metadata-free terminal corrections from exact relational evidence", async () => {
+		approvalRequestFindFirstMock.mockResolvedValue({
+			id: "approval-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			organizationId: "org-1",
+			approverId: "manager-1",
+			requestedBy: "employee-1",
+			status: "approved",
+			metadata: null,
+			reason: null,
+		});
+		workPeriodFindFirstMock.mockResolvedValue({
+			id: "period-1",
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			pendingChanges: null,
+			clockInId: "clock-in-1",
+			clockOutId: "clock-out-1",
+		});
+		timeEntryFindFirstMock.mockResolvedValue({ id: "correction-1" });
+
+		const target = await loadApprovalInboxDecisionTarget({
+			approvalId: "approval-1",
+			organizationId: "org-1",
+		});
+
+		expect(target.workflowKind).toBe("time_correction");
+		await expect(
+			approveApprovalInboxItem({
+				approvalId: "approval-1",
+				actorEmployeeId: "manager-1",
+				organizationId: "org-1",
+			}),
+		).rejects.toThrow("Request is already approved");
+		expect(completeHandlerApproveMock).not.toHaveBeenCalled();
+	});
+
+	it("fails closed when legacy request metadata contradicts exact source evidence", async () => {
+		approvalRequestFindFirstMock.mockResolvedValue({
+			id: "approval-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			organizationId: "org-1",
+			approverId: "manager-1",
+			requestedBy: "employee-1",
+			status: "approved",
+			metadata: { timeRequest: { kind: "policy_clock_out" } },
+			reason: null,
+		});
+		workPeriodFindFirstMock.mockResolvedValue({
+			id: "period-1",
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			pendingChanges: { isManualEntry: true },
+			clockInId: "clock-in-1",
+			clockOutId: "clock-out-1",
+		});
+
+		const target = await loadApprovalInboxDecisionTarget({
+			approvalId: "approval-1",
+			organizationId: "org-1",
+		});
+
+		expect(target.workflowKind).toBe("unclassified");
+		await expect(
+			approveApprovalInboxItem({
+				approvalId: "approval-1",
+				actorEmployeeId: "manager-1",
+				organizationId: "org-1",
+			}),
+		).rejects.toThrow("Request is already approved");
+		expect(completeHandlerApproveMock).not.toHaveBeenCalled();
 	});
 
 	it("loads exact terminal ordinary assignments for bulk replay", async () => {

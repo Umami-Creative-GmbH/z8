@@ -1,6 +1,8 @@
 import "@/lib/approvals/init";
 import {
 	approveApprovalInboxItem,
+	canAttemptApprovalInboxDecisionTarget,
+	loadApprovalInboxDecisionTarget,
 	rejectApprovalInboxItem,
 } from "@/lib/approvals/inbox/decision-service";
 import type { BotPlatform } from "./types";
@@ -14,9 +16,21 @@ const platformNames: Record<BotPlatform, string> = {
 
 export function canAttemptBotApprovalDecision(input: {
 	status: string;
-	entityType: string;
+	workflowKind:
+		| "time_correction"
+		| "manual_time_submission"
+		| "policy_clock_out"
+		| "unclassified"
+		| null;
 }): boolean {
-	return input.status === "pending" || input.entityType === "time_entry";
+	return canAttemptApprovalInboxDecisionTarget(input);
+}
+
+export function loadBotApprovalDecisionTarget(input: {
+	approvalId: string;
+	organizationId: string;
+}) {
+	return loadApprovalInboxDecisionTarget(input);
 }
 
 export async function decideBotApproval({

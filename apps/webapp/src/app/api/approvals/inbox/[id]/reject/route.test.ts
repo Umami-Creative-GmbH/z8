@@ -84,6 +84,13 @@ vi.mock("@/db/schema", () => ({
 vi.mock("@/lib/approvals/inbox/decision-service", () => ({
 	rejectApprovalInboxItem: mockState.rejectApprovalInboxItem,
 	loadApprovalInboxDecisionTarget: mockState.findApprovalRequest,
+	canAttemptApprovalInboxDecisionTarget: ({
+		status,
+		workflowKind,
+	}: Record<string, string>) =>
+		status === "pending" ||
+		workflowKind === "manual_time_submission" ||
+		workflowKind === "policy_clock_out",
 }));
 
 vi.mock("@/lib/approvals/inbox/source-adapters", () => ({
@@ -643,6 +650,7 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 			requesterEmployeeId: "requester-1",
 			organizationId: "org-1",
 			status: "rejected",
+			workflowKind: "manual_time_submission",
 		});
 		mockState.rejectApprovalInboxItem.mockResolvedValue({
 			id: "approval-1",
@@ -663,6 +671,30 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 			includeAllApprovers: true,
 			eligibleApprovalScopes: [],
 		});
+	});
+
+	it("returns the previous conflict response for a terminal time correction", async () => {
+		mockState.findApprovalRequest.mockResolvedValue({
+			id: "approval-1",
+			targetType: "compatibility_request",
+			entityId: "period-1",
+			entityType: "time_entry",
+			approverId: "employee-1",
+			requesterEmployeeId: "requester-1",
+			organizationId: "org-1",
+			status: "rejected",
+			workflowKind: "time_correction",
+		});
+
+		const response = await POST(createRequest({ reason: "Missing receipt" }), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(409);
+		await expect(response.json()).resolves.toEqual({
+			error: "Request is already rejected",
+		});
+		expect(mockState.rejectApprovalInboxItem).not.toHaveBeenCalled();
 	});
 
 	it("delegates a complete canonical assignment to the ordinary owner", async () => {

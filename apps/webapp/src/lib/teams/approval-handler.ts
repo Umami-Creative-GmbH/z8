@@ -17,6 +17,7 @@ import {
 import {
 	canAttemptBotApprovalDecision,
 	decideBotApproval,
+	loadBotApprovalDecisionTarget,
 } from "@/lib/bot-platform/approval-decision";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
@@ -60,8 +61,12 @@ export async function handleApprovalAction(
 		if (!approval) {
 			throw new TeamsError("Approval not found", "APPROVAL_NOT_FOUND");
 		}
+		const decisionTarget = await loadBotApprovalDecisionTarget({
+			approvalId,
+			organizationId: tenant.organizationId,
+		});
 
-		if (!canAttemptBotApprovalDecision(approval)) {
+		if (!canAttemptBotApprovalDecision(decisionTarget)) {
 			throw new TeamsError(
 				"Approval already resolved",
 				"APPROVAL_ALREADY_RESOLVED",
@@ -69,7 +74,7 @@ export async function handleApprovalAction(
 		}
 
 		// Verify user is the approver
-		if (approval.approverId !== resolvedUser.employeeId) {
+		if (decisionTarget.approverId !== resolvedUser.employeeId) {
 			throw new TeamsError("Not authorized to approve", "NOT_AUTHORIZED");
 		}
 

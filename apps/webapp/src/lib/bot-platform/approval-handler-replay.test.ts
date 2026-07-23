@@ -7,10 +7,12 @@ const mocks = vi.hoisted(() => ({
 	discordMessageFindFirst: vi.fn(),
 	teamsCardFindFirst: vi.fn(),
 	decide: vi.fn(),
+	loadTarget: vi.fn(),
 	resolveSlackUser: vi.fn(),
 	resolveDiscordUser: vi.fn(),
 	sendActivity: vi.fn(),
 	interactionResponse: vi.fn(),
+	slackUpdateMessage: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
@@ -42,10 +44,13 @@ vi.mock("@/db/schema", () => ({
 vi.mock("@/lib/bot-platform/approval-decision", () => ({
 	canAttemptBotApprovalDecision: ({
 		status,
-		entityType,
+		workflowKind,
 	}: Record<string, string>) =>
-		status === "pending" || entityType === "time_entry",
+		status === "pending" ||
+		workflowKind === "manual_time_submission" ||
+		workflowKind === "policy_clock_out",
 	decideBotApproval: mocks.decide,
+	loadBotApprovalDecisionTarget: mocks.loadTarget,
 }));
 vi.mock("@/lib/bot-platform/i18n", () => ({
 	getBotTranslate: vi.fn(),
@@ -62,7 +67,7 @@ vi.mock("@/lib/logger", () => ({
 vi.mock("@/lib/slack/api", () => ({
 	openConversation: vi.fn(),
 	postMessage: vi.fn(),
-	updateMessage: vi.fn(),
+	updateMessage: mocks.slackUpdateMessage,
 }));
 vi.mock("@/lib/slack/conversation-manager", () => ({
 	getChannelIdForUser: vi.fn(),
@@ -120,6 +125,49 @@ describe("bot terminal ordinary replay", () => {
 			type: "time_entry",
 			status: "approved",
 		});
+		mocks.loadTarget.mockResolvedValue({
+			id: "approval-1",
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			approverId: "manager-1",
+			requesterEmployeeId: "employee-1",
+			status: "approved",
+			workflowKind: "manual_time_submission",
+		});
+	});
+
+	it("keeps Slack terminal time corrections already processed", async () => {
+		mocks.resolveSlackUser.mockResolvedValue({
+			status: "found",
+			user: { employeeId: "manager-1", userId: "user-1" },
+		});
+		mocks.loadTarget.mockResolvedValue({
+			status: "approved",
+			workflowKind: "time_correction",
+		});
+		const { handleApprovalAction } = await import(
+			"@/lib/slack/approval-handler"
+		);
+
+		await handleApprovalAction(
+			{ channel: { id: "channel-1" }, message: { ts: "message-1" } } as never,
+			{ action_id: "approval_approve", value: "approval-1" },
+			"slack-user-1",
+			{
+				organizationId: "org-1",
+				slackTeamId: "team-1",
+				botAccessToken: "token",
+			} as never,
+		);
+
+		expect(mocks.slackUpdateMessage).toHaveBeenCalledWith(
+			"token",
+			expect.objectContaining({
+				text: "This approval has already been processed.",
+			}),
+		);
+		expect(mocks.decide).not.toHaveBeenCalled();
 	});
 
 	it("delegates Slack terminal time-entry targets to the stable owner", async () => {
@@ -149,6 +197,30 @@ describe("bot terminal ordinary replay", () => {
 			action: "approve",
 			platform: "slack",
 		});
+	});
+
+	it("keeps Teams terminal time corrections already processed", async () => {
+		mocks.loadTarget.mockResolvedValue({
+			status: "approved",
+			workflowKind: "time_correction",
+		});
+		const { handleApprovalAction } = await import(
+			"@/lib/teams/approval-handler"
+		);
+
+		await expect(
+			handleApprovalAction(
+				{ sendActivity: mocks.sendActivity } as never,
+				"approval-1",
+				"approve",
+				{ employeeId: "manager-1", userId: "user-1" } as never,
+				{ organizationId: "org-1" } as never,
+			),
+		).rejects.toMatchObject({
+			code: "APPROVAL_ALREADY_RESOLVED",
+			message: "Approval already resolved",
+		});
+		expect(mocks.decide).not.toHaveBeenCalled();
 	});
 
 	it("delegates Teams terminal time-entry targets to the stable owner", async () => {
@@ -196,5 +268,34 @@ describe("bot terminal ordinary replay", () => {
 			action: "approve",
 			platform: "discord",
 		});
+	});
+
+	it("keeps Discord terminal time corrections already processed", async () => {
+		mocks.resolveDiscordUser.mockResolvedValue({
+			status: "found",
+			user: { employeeId: "manager-1", userId: "user-1" },
+		});
+		mocks.loadTarget.mockResolvedValue({
+			status: "approved",
+			workflowKind: "time_correction",
+		});
+		const { handleApprovalButtonClick } = await import(
+			"@/lib/discord/approval-handler"
+		);
+
+		await handleApprovalButtonClick(
+			{ id: "interaction-1", token: "token" } as never,
+			{ a: "ap", id: "approval-1" },
+			"discord-user-1",
+			{ organizationId: "org-1" } as never,
+		);
+
+		expect(mocks.interactionResponse).toHaveBeenCalledWith(
+			"interaction-1",
+			"token",
+			expect.anything(),
+			{ content: "This approval has already been processed.", flags: 64 },
+		);
+		expect(mocks.decide).not.toHaveBeenCalled();
 	});
 });

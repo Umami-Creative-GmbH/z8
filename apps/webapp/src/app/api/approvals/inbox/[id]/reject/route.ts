@@ -10,6 +10,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
 import {
+	canAttemptApprovalInboxDecisionTarget,
 	loadApprovalInboxDecisionTarget,
 	rejectApprovalInboxItem,
 } from "@/lib/approvals/inbox/decision-service";
@@ -148,6 +149,12 @@ export async function POST(
 			return NextResponse.json(
 				{ error: "Unsupported approval type" },
 				{ status: 400 },
+			);
+		}
+		if (!canAttemptApprovalInboxDecisionTarget(approvalReq)) {
+			return NextResponse.json(
+				{ error: `Request is already ${approvalReq.status}` },
+				{ status: 409 },
 			);
 		}
 

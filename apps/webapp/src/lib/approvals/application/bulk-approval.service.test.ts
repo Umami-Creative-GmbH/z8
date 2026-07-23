@@ -21,6 +21,13 @@ vi.mock("../domain/registry", () => ({
 
 vi.mock("../inbox/decision-service", () => ({
 	loadApprovalInboxDecisionTargets: mockState.loadDecisionTargets,
+	canAttemptApprovalInboxDecisionTarget: ({
+		status,
+		workflowKind,
+	}: Record<string, string>) =>
+		status === "pending" ||
+		workflowKind === "manual_time_submission" ||
+		workflowKind === "policy_clock_out",
 }));
 
 vi.mock("@/lib/effect/services/database.service", async () => {
@@ -138,6 +145,7 @@ describe("BulkApprovalService", () => {
 				requesterEmployeeId: "requester-1",
 				organizationId: "org-1",
 				status: "approved",
+				workflowKind: "manual_time_submission",
 			},
 		]);
 
@@ -154,6 +162,44 @@ describe("BulkApprovalService", () => {
 		expect(mockState.approve).toHaveBeenCalledWith("period-1", "employee-1", {
 			approvalRequestId: "approval-1",
 		});
+	});
+
+	it("keeps terminal time corrections stale without invoking their owner", async () => {
+		mockState.findMany.mockResolvedValue([]);
+		mockState.loadDecisionTargets.mockResolvedValue([
+			{
+				id: "approval-1",
+				targetType: "compatibility_request",
+				entityType: "time_entry",
+				entityId: "period-1",
+				approverId: "employee-1",
+				requesterEmployeeId: "requester-1",
+				organizationId: "org-1",
+				status: "approved",
+				workflowKind: "time_correction",
+			},
+		]);
+
+		const result = await Effect.runPromise(
+			Effect.gen(function* (_) {
+				const service = yield* _(BulkApprovalService);
+				return yield* _(
+					service.bulkDecide(["approval-1"], "employee-1", "org-1", "approve"),
+				);
+			}).pipe(Effect.provide(BulkApprovalServiceLive)),
+		);
+
+		expect(result).toEqual({
+			succeeded: [],
+			failed: [
+				{
+					id: "approval-1",
+					code: "stale",
+					message: "Request is already approved",
+				},
+			],
+		});
+		expect(mockState.approve).not.toHaveBeenCalled();
 	});
 
 	it("delegates a complete canonical assignment and preserves missing item order", async () => {

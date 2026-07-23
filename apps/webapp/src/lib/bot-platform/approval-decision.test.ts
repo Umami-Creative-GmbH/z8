@@ -2,16 +2,29 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { approveApprovalInboxItemMock, rejectApprovalInboxItemMock } =
-	vi.hoisted(() => ({
-		approveApprovalInboxItemMock: vi.fn(),
-		rejectApprovalInboxItemMock: vi.fn(),
-	}));
+const {
+	approveApprovalInboxItemMock,
+	rejectApprovalInboxItemMock,
+	loadApprovalInboxDecisionTargetMock,
+} = vi.hoisted(() => ({
+	approveApprovalInboxItemMock: vi.fn(),
+	rejectApprovalInboxItemMock: vi.fn(),
+	loadApprovalInboxDecisionTargetMock: vi.fn(),
+}));
 
 vi.mock("@/lib/approvals/init", () => ({}));
 vi.mock("@/lib/approvals/inbox/decision-service", () => ({
 	approveApprovalInboxItem: approveApprovalInboxItemMock,
 	rejectApprovalInboxItem: rejectApprovalInboxItemMock,
+	loadApprovalInboxDecisionTarget: loadApprovalInboxDecisionTargetMock,
+	canAttemptApprovalInboxDecisionTarget: ({
+		status,
+		workflowKind,
+	}: Record<string, string>) =>
+		status === "pending" ||
+		((status === "approved" || status === "rejected") &&
+			(workflowKind === "manual_time_submission" ||
+				workflowKind === "policy_clock_out")),
 }));
 
 import {
@@ -73,13 +86,14 @@ describe("bot approval decisions", () => {
 	});
 
 	it.each([
-		["pending", "time_entry", true],
-		["approved", "time_entry", true],
-		["rejected", "time_entry", true],
-		["approved", "absence", false],
-		["rejected", "absence", false],
-	] as const)("returns %s/%s eligibility as %s", (status, entityType, expected) => {
-		expect(canAttemptBotApprovalDecision({ status, entityType })).toBe(
+		["pending", "time_correction", true],
+		["approved", "manual_time_submission", true],
+		["rejected", "policy_clock_out", true],
+		["approved", "time_correction", false],
+		["rejected", "unclassified", false],
+		["cancelled", "manual_time_submission", false],
+	] as const)("returns %s/%s eligibility as %s", (status, workflowKind, expected) => {
+		expect(canAttemptBotApprovalDecision({ status, workflowKind })).toBe(
 			expected,
 		);
 	});

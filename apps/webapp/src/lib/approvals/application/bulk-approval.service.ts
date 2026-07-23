@@ -23,7 +23,10 @@ import type {
 	BulkDecisionFailure,
 	BulkDecisionResult,
 } from "../domain/types";
-import { loadApprovalInboxDecisionTargets } from "../inbox/decision-service";
+import {
+	canAttemptApprovalInboxDecisionTarget,
+	loadApprovalInboxDecisionTargets,
+} from "../inbox/decision-service";
 import { ApprovalAuditLoggerLive } from "../infrastructure/audit-logger";
 
 const BULK_DECISION_NOT_FOUND_MESSAGE = "Approval request not found";
@@ -163,10 +166,7 @@ export const BulkApprovalServiceLive = Layer.effect(
 							continue;
 						}
 
-						if (
-							request.status !== "pending" &&
-							request.entityType !== "time_entry"
-						) {
+						if (!canAttemptApprovalInboxDecisionTarget(request)) {
 							result.failed.push({
 								id: request.id,
 								code: "stale",

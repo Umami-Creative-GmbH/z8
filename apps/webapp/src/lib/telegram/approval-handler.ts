@@ -15,6 +15,7 @@ import {
 import {
 	canAttemptBotApprovalDecision,
 	decideBotApproval,
+	loadBotApprovalDecisionTarget,
 } from "@/lib/bot-platform/approval-decision";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
@@ -71,8 +72,12 @@ export async function handleApprovalCallback(
 			logger.warn({ approvalId }, "Approval not found");
 			return;
 		}
+		const decisionTarget = await loadBotApprovalDecisionTarget({
+			approvalId,
+			organizationId: bot.organizationId,
+		});
 
-		if (!canAttemptBotApprovalDecision(approval)) {
+		if (!canAttemptBotApprovalDecision(decisionTarget)) {
 			// Update the message to show it's already resolved
 			if (query.message) {
 				const locale = await getUserLocale(userResult.user.userId);
@@ -93,7 +98,7 @@ export async function handleApprovalCallback(
 		}
 
 		// Verify user is the approver
-		if (approval.approverId !== userResult.user.employeeId) {
+		if (decisionTarget.approverId !== userResult.user.employeeId) {
 			logger.warn(
 				{ approvalId, employeeId: userResult.user.employeeId },
 				"Unauthorized approval attempt",

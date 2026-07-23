@@ -11,6 +11,7 @@ import { approvalRequest, discordApprovalMessage, employee } from "@/db/schema";
 import {
 	canAttemptBotApprovalDecision,
 	decideBotApproval,
+	loadBotApprovalDecisionTarget,
 } from "@/lib/bot-platform/approval-decision";
 import { createLogger } from "@/lib/logger";
 import { createInteractionResponse, sendMessage } from "./api";
@@ -74,8 +75,12 @@ export async function handleApprovalButtonClick(
 			);
 			return;
 		}
+		const decisionTarget = await loadBotApprovalDecisionTarget({
+			approvalId,
+			organizationId: bot.organizationId,
+		});
 
-		if (!canAttemptBotApprovalDecision(approval)) {
+		if (!canAttemptBotApprovalDecision(decisionTarget)) {
 			// Update the message to show it's already resolved
 			await createInteractionResponse(
 				interaction.id,
@@ -87,7 +92,7 @@ export async function handleApprovalButtonClick(
 		}
 
 		// Verify user is the approver
-		if (approval.approverId !== userResult.user.employeeId) {
+		if (decisionTarget.approverId !== userResult.user.employeeId) {
 			logger.warn(
 				{ approvalId, employeeId: userResult.user.employeeId },
 				"Unauthorized approval attempt",

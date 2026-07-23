@@ -1,12 +1,21 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { Cause, Effect, Exit, Option } from "effect";
 import { db } from "@/db";
-import { approvalRequest, approvalStageAssignment } from "@/db/schema";
+import {
+	approvalRequest,
+	approvalStageAssignment,
+	timeEntry,
+	workPeriod,
+} from "@/db/schema";
 import type {
 	ApprovalActionOptions,
 	ApprovalTypeHandler,
 } from "@/lib/approvals/domain/types";
 import { ApprovalAuditLoggerLive } from "@/lib/approvals/infrastructure/audit-logger";
+import {
+	classifyTimeApprovalRequest,
+	type TimeApprovalKind,
+} from "@/lib/approvals/time-request-kind";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runtime } from "@/lib/effect/runtime";
 import { createLogger } from "@/lib/logger";
@@ -52,6 +61,19 @@ export interface PersistedApprovalRequestForDecision {
 	approverId: string;
 	requesterEmployeeId: string;
 	status: ApprovalInboxStatus;
+	workflowKind: TimeApprovalKind | null;
+}
+
+export function canAttemptApprovalInboxDecisionTarget(input: {
+	status: ApprovalInboxStatus | string;
+	workflowKind: TimeApprovalKind | null;
+}): boolean {
+	return (
+		input.status === "pending" ||
+		((input.status === "approved" || input.status === "rejected") &&
+			(input.workflowKind === "manual_time_submission" ||
+				input.workflowKind === "policy_clock_out"))
+	);
 }
 
 export async function decideApprovalInboxItemFromRequest({
@@ -80,7 +102,7 @@ export async function decideApprovalInboxItemFromRequest({
 		throw new Error(`Unsupported approval type: ${request.entityType}`);
 	}
 
-	if (request.status !== "pending" && request.entityType !== "time_entry") {
+	if (!canAttemptApprovalInboxDecisionTarget(request)) {
 		throw new Error(`Request is already ${request.status}`);
 	}
 
@@ -176,7 +198,7 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 				};
 			}
 
-			if (request.status !== "pending" && request.entityType !== "time_entry") {
+			if (!canAttemptApprovalInboxDecisionTarget(request)) {
 				return {
 					status: "failed" as const,
 					failure: {
@@ -414,7 +436,7 @@ export async function loadApprovalInboxDecisionTarget({
 		throw approvalNotFound(approvalId);
 	}
 
-	return toPersistedDecisionRequest(request);
+	return await toPersistedDecisionRequest(request, database);
 }
 
 export async function loadApprovalInboxDecisionTargets({
@@ -463,16 +485,21 @@ export async function loadApprovalInboxDecisionTargets({
 		}),
 	);
 
-	return approvalIds
+	const ordered = approvalIds
 		.map((approvalId) => {
 			const request = requestsById.get(approvalId);
-			return request
-				? toPersistedDecisionRequest(request)
-				: assignmentsById.get(approvalId);
+			return request ? request : assignmentsById.get(approvalId);
 		})
-		.filter((request): request is PersistedApprovalRequestForDecision =>
+		.filter((request): request is NonNullable<typeof request> =>
 			Boolean(request),
 		);
+	return await Promise.all(
+		ordered.map((request) =>
+			"requestedBy" in request
+				? toPersistedDecisionRequest(request, database)
+				: Promise.resolve(request),
+		),
+	);
 }
 
 function approvalNotFound(approvalId: string): NotFoundError {
@@ -529,13 +556,13 @@ function toPersistedCanonicalDecisionRequest(
 		stage?.status === "pending" &&
 		workflow?.status === "pending" &&
 		stage.sequence === workflow.currentStageOrder;
-	const terminalOrdinaryTarget =
-		ordinaryWorkflow &&
+	const terminalTarget =
 		(assignment?.status === "approved" || assignment?.status === "rejected") &&
 		stage?.status === assignment.status &&
 		((workflow?.status === assignment.status &&
 			workflow.currentStageOrder === null) ||
-			(workflow?.status === "pending" &&
+			(ordinaryWorkflow &&
+				workflow?.status === "pending" &&
 				assignment.status === "approved" &&
 				typeof workflow.currentStageOrder === "number" &&
 				stage.sequence < workflow.currentStageOrder));
@@ -554,7 +581,7 @@ function toPersistedCanonicalDecisionRequest(
 		!workflow.sourceId ||
 		!workflow.requesterEmployeeId ||
 		!supportedWorkflow ||
-		(!pendingTarget && !terminalOrdinaryTarget)
+		(!pendingTarget && !terminalTarget)
 	) {
 		return null;
 	}
@@ -567,18 +594,69 @@ function toPersistedCanonicalDecisionRequest(
 		approverId: assignment.approverEmployeeId,
 		requesterEmployeeId: workflow.requesterEmployeeId,
 		status: assignment.status as ApprovalInboxStatus,
+		workflowKind: workflow.workflowType as TimeApprovalKind,
 	};
 }
 
-function toPersistedDecisionRequest(request: {
-	id: string;
-	entityType: string;
-	entityId: string;
-	organizationId: string;
-	approverId: string;
-	requestedBy: string;
-	status: string;
-}): PersistedApprovalRequestForDecision {
+async function toPersistedDecisionRequest(
+	request: {
+		id: string;
+		entityType: string;
+		entityId: string;
+		organizationId: string;
+		approverId: string;
+		requestedBy: string;
+		status: string;
+		metadata?: unknown;
+		reason?: string | null;
+	},
+	database: typeof db,
+): Promise<PersistedApprovalRequestForDecision> {
+	let workflowKind: TimeApprovalKind | null = null;
+	if (request.entityType === "time_entry") {
+		const period = await database.query.workPeriod.findFirst({
+			where: and(
+				eq(workPeriod.id, request.entityId),
+				eq(workPeriod.organizationId, request.organizationId),
+				eq(workPeriod.employeeId, request.requestedBy),
+			),
+			columns: {
+				pendingChanges: true,
+				clockInId: true,
+				clockOutId: true,
+			},
+		});
+		workflowKind = period
+			? classifyTimeApprovalRequest({
+					metadata: request.metadata,
+					reason: request.reason,
+					pendingChanges: period.pendingChanges,
+				})
+			: "unclassified";
+		if (period && workflowKind === "unclassified") {
+			const endpointIds = [period.clockInId, period.clockOutId].filter(
+				(id): id is string => Boolean(id),
+			);
+			const correctionEvidence = endpointIds.length
+				? await database.query.timeEntry.findFirst({
+						where: and(
+							eq(timeEntry.organizationId, request.organizationId),
+							eq(timeEntry.employeeId, request.requestedBy),
+							eq(timeEntry.type, "correction"),
+							eq(timeEntry.isSuperseded, false),
+							inArray(timeEntry.replacesEntryId, endpointIds),
+						),
+						columns: { id: true },
+					})
+				: null;
+			workflowKind = classifyTimeApprovalRequest({
+				metadata: request.metadata,
+				reason: request.reason,
+				pendingChanges: period.pendingChanges,
+				hasRelationalCorrectionEvidence: Boolean(correctionEvidence),
+			});
+		}
+	}
 	return {
 		id: request.id,
 		targetType: "compatibility_request",
@@ -588,6 +666,7 @@ function toPersistedDecisionRequest(request: {
 		approverId: request.approverId,
 		requesterEmployeeId: request.requestedBy,
 		status: request.status as ApprovalInboxStatus,
+		workflowKind,
 	};
 }
 
