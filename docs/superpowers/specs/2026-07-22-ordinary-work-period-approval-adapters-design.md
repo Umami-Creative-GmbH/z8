@@ -141,6 +141,22 @@ The finalizer locks before mutation and requires exactly one affected row for ea
 
 Terminal replay is handled by workflow command receipts and exact legacy terminal evidence. A replay returns the prior result without applying source mutations or effects again.
 
+## Terminal Break Enforcement
+
+Policy-clock-out break enforcement is part of terminal approval, not a post-submission effect. Intermediate approvals and rejections do not enforce breaks. Requester auto-approval uses the same terminal maintenance path as an explicit terminal decision.
+
+Terminal approval runs break enforcement inside the repository-owned approval transaction after locking and revalidating the organization-scoped work period, canonical work record, effective policy, and employee timezone. If no break is required, approval completes without changing the recorded interval. If a break is required, the transaction:
+
+1. creates the synthetic clock-out and clock-in entries with timezone capture for their exact event instants;
+2. shortens the original work period to the first segment and updates its existing approved canonical work record to exact parity;
+3. creates a second approved work period for the remaining segment and a second matching approved canonical work record;
+4. retains the approval workflow and source link only on the original source segment; and
+5. preserves the original submitted interval in approval history and terminal decision evidence.
+
+The system-generated second segment has no approval workflow. Both segments retain the same organization and employee ownership. Every update and insertion is transaction-scoped and organization-scoped; any calculation, timezone-capture, compare-and-swap, or persistence failure rolls back the terminal decision and the complete split.
+
+Exact submission and decision replay returns stored terminal evidence without enforcing or splitting again. Clock-outs that do not cross the approval boundary retain immediate break enforcement after clock-out.
+
 ## Side Effects
 
 The transaction returns a detached post-commit descriptor containing only the data required for:
@@ -152,6 +168,8 @@ The transaction returns a detached post-commit descriptor containing only the da
 
 Legacy, shadow, and ready dispatch current best-effort effects after commit. Canonical and complete retain observe-only outbox intent and do not deliver externally in this phase. Effect failure is logged with organization-safe identifiers and does not change the committed approval result.
 
+Break enforcement is not dispatched from this descriptor. It is consumed transactionally by terminal policy-clock-out approval before commit. Work-balance dirty marking remains post-commit because it does not mutate the approved source graph.
+
 ## Error Handling And Security
 
 All user inputs use existing schema validation. Organization, actor, employee, and approver authority come from authenticated server context, never caller-supplied trusted fields. SQL remains parameterized.
@@ -162,7 +180,7 @@ No process-local lock, automatic retry loop, or metadata-less canonical fallback
 
 ## Timekeeping
 
-Recorded instants remain canonical UTC database boundaries. This phase does not perform new business-time arithmetic or reinterpret event meaning in the viewer's timezone. Source parity compares stored instants and duration directly. Any modified date-boundary or timezone-sensitive logic must use Temporal with explicit employee-owned IANA zones, following the timekeeping reference.
+Recorded instants remain canonical UTC database boundaries and are never reinterpreted in the viewer's timezone. Source parity compares stored instants and duration directly. Terminal break calculations use Temporal with the employee-owned IANA timezone and derive each synthetic event's offset at its exact instant. Synthetic entries store that offset, timezone, and server-derived timezone source. Native `Date` is limited to database boundaries; this path does not add Luxon arithmetic.
 
 ## Testing
 
@@ -172,6 +190,7 @@ The implementation plan must include:
 - shared adapter contract tests executed for both fixed workflow types;
 - source loading, routing, terminal preflight, projection, and notification selection tests;
 - all five rollout modes for creation, auto-approval, multistage approval, rejection, and replay;
+- transaction-bound policy-clock-out break enforcement covering no-op, atomic split, requester auto-approval, rejection, exact replay, rollback, timezone capture, and two-record canonical parity;
 - individual, bulk, legacy-handler, bot, inbox, and requester-read regressions;
 - PostgreSQL tests for source locks, duplicate submission, concurrent decisions, affected-row compare-and-swap, rollback, and tenant isolation;
 - write-boundary tests that remove ordinary-time bypasses only after every path uses the shared owner;
@@ -185,5 +204,6 @@ The implementation plan must include:
 - Creation and terminal decisions are atomic with source, compatibility, projection, and outbox writes.
 - Exact retries are idempotent and conflicting pending workflows fail closed.
 - Work-period and canonical-record state remain organization and employee scoped and mutually consistent.
-- Existing public responses, inbox behavior, notifications, payroll state, and recorded instants remain stable.
+- Terminal policy-clock-out break splits produce two approved work periods and two matching canonical work records while retaining workflow ownership only on the original source segment.
+- Existing public responses, inbox behavior, notifications, and payroll semantics remain stable; only the established break-enforcement split introduces synthetic event instants and adjusted segment boundaries.
 - No cancellation, rollout activation, or external outbox delivery is introduced.
