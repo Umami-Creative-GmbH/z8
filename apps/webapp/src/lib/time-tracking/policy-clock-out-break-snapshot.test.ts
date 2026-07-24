@@ -154,34 +154,215 @@ describe("parsePolicyClockOutBreakSnapshot", () => {
 });
 
 describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
+	const employeeId = "60000000-0000-4000-8000-000000000001";
+	const candidateIds = {
+		employee: "61000000-0000-4000-8000-000000000001",
+		team: "61000000-0000-4000-8000-000000000002",
+		organization: "61000000-0000-4000-8000-000000000003",
+		tieWinner: "61000000-0000-4000-8000-000000000004",
+		tieLoser: "61000000-0000-4000-8000-000000000005",
+	} as const;
+	const policyIds = {
+		employee: "62000000-0000-4000-8000-000000000001",
+		team: "62000000-0000-4000-8000-000000000002",
+		organization: "62000000-0000-4000-8000-000000000003",
+		tieWinner: "62000000-0000-4000-8000-000000000004",
+		tieLoser: "62000000-0000-4000-8000-000000000005",
+	} as const;
+
+	function candidate(input: {
+		id: string;
+		type: "employee" | "team" | "organization";
+		policyId: string;
+		priority: number;
+		organizationId?: string;
+		employeeOrganizationId?: string;
+	}) {
+		return {
+			employeeOrganizationId: input.employeeOrganizationId ?? "org-1",
+			teamId: workPolicySnapshot.teamId,
+			assignmentId: input.id,
+			assignmentOrganizationId: input.organizationId ?? "org-1",
+			assignmentType: input.type,
+			assignmentPolicyId: input.policyId,
+			priority: input.priority,
+		};
+	}
+
+	function resolverExecute(
+		candidates: readonly ReturnType<typeof candidate>[],
+		selected: ReturnType<typeof candidate>,
+	) {
+		return vi
+			.fn()
+			.mockResolvedValueOnce({ rows: candidates })
+			.mockResolvedValueOnce({
+				rows: [
+					{
+						policyId: selected.assignmentPolicyId,
+						policyName: "Selected policy",
+						policyIsActive: true,
+						regulationEnabled: false,
+						regulationId: null,
+						maxUninterruptedMinutes: null,
+						breakRules: [],
+					},
+				],
+			});
+	}
+
+	async function resolveWith(execute: ReturnType<typeof resolverExecute>) {
+		return resolvePolicyClockOutBreakSnapshotInTransaction({
+			dbService: { db: { execute } } as never,
+			organizationId: "org-1",
+			employeeId,
+			endTime: parseInstant(evaluatedAt),
+		});
+	}
+
+	it("selects the highest numeric priority across employee, team, and organization candidates", async () => {
+		const employee = candidate({
+			id: candidateIds.employee,
+			type: "employee",
+			policyId: policyIds.employee,
+			priority: 4,
+		});
+		const team = candidate({
+			id: candidateIds.team,
+			type: "team",
+			policyId: policyIds.team,
+			priority: 9,
+		});
+		const organization = candidate({
+			id: candidateIds.organization,
+			type: "organization",
+			policyId: policyIds.organization,
+			priority: 6,
+		});
+		const execute = resolverExecute([employee, organization, team], team);
+
+		await expect(resolveWith(execute)).resolves.toMatchObject({
+			assignment: { id: team.assignmentId, type: "team" },
+			policy: { id: team.assignmentPolicyId },
+		});
+		expect(execute).toHaveBeenCalledTimes(2);
+	});
+
+	it("uses employee then team then organization specificity at equal priority", async () => {
+		const employee = candidate({
+			id: candidateIds.employee,
+			type: "employee",
+			policyId: policyIds.employee,
+			priority: 7,
+		});
+		const team = candidate({
+			id: candidateIds.team,
+			type: "team",
+			policyId: policyIds.team,
+			priority: 7,
+		});
+		const organization = candidate({
+			id: candidateIds.organization,
+			type: "organization",
+			policyId: policyIds.organization,
+			priority: 7,
+		});
+		const execute = resolverExecute([organization, team, employee], employee);
+
+		await expect(resolveWith(execute)).resolves.toMatchObject({
+			assignment: { id: employee.assignmentId, type: "employee" },
+			policy: { id: employee.assignmentPolicyId },
+		});
+
+		const teamExecute = resolverExecute([organization, team], team);
+		await expect(resolveWith(teamExecute)).resolves.toMatchObject({
+			assignment: { id: team.assignmentId, type: "team" },
+			policy: { id: team.assignmentPolicyId },
+		});
+	});
+
+	it("uses the assignment id as a stable final tie-break", async () => {
+		const winner = candidate({
+			id: candidateIds.tieWinner,
+			type: "employee",
+			policyId: policyIds.tieWinner,
+			priority: 7,
+		});
+		const loser = candidate({
+			id: candidateIds.tieLoser,
+			type: "employee",
+			policyId: policyIds.tieLoser,
+			priority: 7,
+		});
+		const execute = resolverExecute([loser, winner], winner);
+
+		await expect(resolveWith(execute)).resolves.toMatchObject({
+			assignment: { id: winner.assignmentId, type: "employee" },
+			policy: { id: winner.assignmentPolicyId },
+		});
+	});
+
+	it.each([
+		["employee evidence", { employeeOrganizationId: "foreign-org" }],
+		["assignment evidence", { assignmentOrganizationId: "foreign-org" }],
+	] as const)("fails closed on foreign %s without selecting it", async (_label, mismatch) => {
+		const foreign = {
+			...candidate({
+				id: candidateIds.employee,
+				type: "employee",
+				policyId: policyIds.employee,
+				priority: 99,
+			}),
+			...mismatch,
+			policyId: policyIds.employee,
+			policyName: "Foreign policy",
+			policyIsActive: true,
+			regulationEnabled: false,
+			regulationId: null,
+			maxUninterruptedMinutes: null,
+			breakRules: [],
+		};
+		const execute = vi.fn(async () => ({ rows: [foreign] }));
+
+		await expect(resolveWith(execute as never)).rejects.toThrow(
+			"Policy clock-out break snapshot resolution failed",
+		);
+		expect(execute).toHaveBeenCalledTimes(1);
+	});
+
 	it("locks and snapshots the exact employee team, effective assignment, policy, regulation, and ordered rules", async () => {
 		const dialect = new PgDialect();
 		const execute = vi.fn(async (query: SQL) => {
 			const compiled = dialect.sqlToQuery(query);
-			for (const owner of [
-				"employee",
-				"assignment",
-				"policy",
-				"regulation",
-				"rule",
-			]) {
+			if (compiled.sql.includes("assignment_candidates")) {
+				expect(compiled.sql).toContain("for update of employee");
+				expect(compiled.sql).toContain("for update of assignment");
+				expect(compiled.sql).toContain(
+					'assignment.organization_id = employee_row."organizationId"',
+				);
+				expect(compiled.sql).toContain("assignment.effective_from <=");
+				expect(compiled.sql).toContain("assignment.effective_until >=");
+				expect(compiled.sql.indexOf("assignment.priority desc")).toBeLessThan(
+					compiled.sql.indexOf("case assignment.assignment_type"),
+				);
+				expect(compiled.params).toContain(65);
+				return {
+					rows: [
+						candidate({
+							id: workPolicySnapshot.assignment.id,
+							type: workPolicySnapshot.assignment.type,
+							policyId: workPolicySnapshot.policy.id,
+							priority: 2,
+						}),
+					],
+				};
+			}
+			for (const owner of ["policy", "regulation", "rule"]) {
 				expect(compiled.sql).toContain(`for update of ${owner}`);
 			}
-			expect(compiled.sql).toContain(
-				'assignment.organization_id = employee_row."organizationId"',
-			);
-			expect(compiled.sql).toContain("assignment.effective_from <=");
-			expect(compiled.sql).toContain("assignment.effective_until >=");
-			expect(compiled.sql.indexOf("assignment.priority desc")).toBeLessThan(
-				compiled.sql.indexOf("case assignment.assignment_type"),
-			);
 			return {
 				rows: [
 					{
-						teamId: workPolicySnapshot.teamId,
-						assignmentId: workPolicySnapshot.assignment.id,
-						assignmentType: workPolicySnapshot.assignment.type,
-						assignmentPolicyId: workPolicySnapshot.policy.id,
 						policyId: workPolicySnapshot.policy.id,
 						policyName: workPolicySnapshot.policy.name,
 						policyIsActive: true,
@@ -210,17 +391,13 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 		const execute = vi.fn(async () => ({
 			rows: [
 				{
+					employeeOrganizationId: "org-1",
 					teamId: null,
 					assignmentId: null,
+					assignmentOrganizationId: null,
 					assignmentType: null,
 					assignmentPolicyId: null,
-					policyId: null,
-					policyName: null,
-					policyIsActive: null,
-					regulationEnabled: null,
-					regulationId: null,
-					maxUninterruptedMinutes: null,
-					breakRules: [],
+					priority: null,
 				},
 			],
 		}));
@@ -235,23 +412,28 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 	});
 
 	it("retains assigned policy identity when regulation is disabled", async () => {
-		const execute = vi.fn(async () => ({
-			rows: [
-				{
-					teamId: workPolicySnapshot.teamId,
-					assignmentId: workPolicySnapshot.assignment.id,
-					assignmentType: "team",
-					assignmentPolicyId: workPolicySnapshot.policy.id,
-					policyId: workPolicySnapshot.policy.id,
-					policyName: "Policy",
-					policyIsActive: true,
-					regulationEnabled: false,
-					regulationId: null,
-					maxUninterruptedMinutes: null,
-					breakRules: [],
-				},
-			],
-		}));
+		const assigned = candidate({
+			id: workPolicySnapshot.assignment.id,
+			type: "team",
+			policyId: workPolicySnapshot.policy.id,
+			priority: 2,
+		});
+		const execute = vi
+			.fn()
+			.mockResolvedValueOnce({ rows: [assigned] })
+			.mockResolvedValueOnce({
+				rows: [
+					{
+						policyId: workPolicySnapshot.policy.id,
+						policyName: "Policy",
+						policyIsActive: true,
+						regulationEnabled: false,
+						regulationId: null,
+						maxUninterruptedMinutes: null,
+						breakRules: [],
+					},
+				],
+			});
 
 		await expect(
 			resolvePolicyClockOutBreakSnapshotInTransaction({
@@ -278,23 +460,31 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 	});
 
 	it("fails closed when an assignment references invalid policy evidence", async () => {
-		const execute = vi.fn(async () => ({
-			rows: [
-				{
-					teamId: null,
-					assignmentId: workPolicySnapshot.assignment.id,
-					assignmentType: "employee",
-					assignmentPolicyId: workPolicySnapshot.policy.id,
-					policyId: null,
-					policyName: null,
-					policyIsActive: null,
-					regulationEnabled: null,
-					regulationId: null,
-					maxUninterruptedMinutes: null,
-					breakRules: [],
-				},
-			],
-		}));
+		const execute = vi
+			.fn()
+			.mockResolvedValueOnce({
+				rows: [
+					candidate({
+						id: workPolicySnapshot.assignment.id,
+						type: "employee",
+						policyId: workPolicySnapshot.policy.id,
+						priority: 2,
+					}),
+				],
+			})
+			.mockResolvedValueOnce({
+				rows: [
+					{
+						policyId: null,
+						policyName: null,
+						policyIsActive: null,
+						regulationEnabled: null,
+						regulationId: null,
+						maxUninterruptedMinutes: null,
+						breakRules: [],
+					},
+				],
+			});
 		await expect(
 			resolvePolicyClockOutBreakSnapshotInTransaction({
 				dbService: { db: { execute } } as never,

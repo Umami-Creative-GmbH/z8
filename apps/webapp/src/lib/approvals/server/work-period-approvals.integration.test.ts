@@ -58,6 +58,7 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"uses the submitted break snapshot after assignment deactivation in %s mode",
 			"uses the submitted break snapshot after policy replacement and archive in %s mode",
 			"uses the submitted break snapshot after rule edit and delete in %s mode",
+			"keeps submitted resolution none after a policy is assigned in %s mode",
 			"forced %s CAS zero row rolls the entire decision back",
 			"decision INSERT RETURNING zero rows rolls the complete transaction back",
 			"foreign organization rollback snapshots both tenants and every durable graph",
@@ -720,6 +721,42 @@ describeIntegration(
 			return expected;
 		}
 
+		async function assertSubmittedNoneSnapshotParity(
+			mode: (typeof modes)[number],
+		) {
+			const expected = {
+				version: 1,
+				evaluatedAt: "2026-07-22T16:00:00Z",
+				resolution: "none",
+			};
+			const source = await pool.query<{ break_snapshot: unknown }>(
+				`select pending_changes -> 'breakPolicySnapshot' as break_snapshot
+				 from work_period where id = $1 and organization_id = $2`,
+				[ids.period, ids.organization],
+			);
+			expect(source.rows).toEqual([{ break_snapshot: expected }]);
+			const requests = await pool.query<{ break_snapshot: unknown }>(
+				`select metadata -> 'breakPolicySnapshot' as break_snapshot
+				 from approval_request
+				 where organization_id = $1 and entity_type = 'time_entry' and entity_id = $2`,
+				[ids.organization, ids.period],
+			);
+			expect(requests.rows.length).toBe(mode === "complete" ? 0 : 1);
+			for (const request of requests.rows) {
+				expect(request.break_snapshot).toEqual(expected);
+			}
+			const workflows = await pool.query<{ break_snapshot: unknown }>(
+				`select context_snapshot -> 'breakPolicySnapshot' as break_snapshot
+				 from approval_workflow
+				 where organization_id = $1 and source_type = 'time_entry' and source_id = $2`,
+				[ids.organization, ids.period],
+			);
+			expect(workflows.rows.length).toBe(mode === "legacy" ? 0 : 1);
+			for (const workflow of workflows.rows) {
+				expect(workflow.break_snapshot).toEqual(expected);
+			}
+		}
+
 		async function assertDelayedSnapshotMutation(input: {
 			mode: (typeof modes)[number];
 			mutate(client: PoolClient): Promise<void>;
@@ -1077,6 +1114,96 @@ describeIntegration(
 					);
 				},
 			});
+		});
+
+		it.each(
+			modes,
+		)("keeps submitted resolution none after a policy is assigned in %s mode", async (mode) => {
+			await seed("policy_clock_out", false, mode);
+			const target = (await submit("policy_clock_out")).result
+				.approvalRequestId;
+			await assertSubmittedNoneSnapshotParity(mode);
+
+			await mutateAfterSubmission(async (client) => {
+				const timestamp = new Date(now.epochMilliseconds);
+				await client.query(
+					`insert into work_policy
+					 (id, organization_id, name, schedule_enabled, regulation_enabled,
+					  is_active, created_by, updated_at)
+					 values ($1, $2, 'Late break policy', false, true, true, $3, $4)`,
+					[ids.policy, ids.organization, ids.managerUser, timestamp],
+				);
+				await client.query(
+					`insert into work_policy_regulation
+					 (id, policy_id, max_uninterrupted_minutes, updated_at)
+					 values ($1, $2, 360, $3)`,
+					[ids.regulation, ids.policy, timestamp],
+				);
+				await client.query(
+					`insert into work_policy_break_rule
+					 (id, regulation_id, working_minutes_threshold, required_break_minutes, updated_at)
+					 values ($1, $2, 360, 30, $3)`,
+					[ids.breakRule, ids.regulation, timestamp],
+				);
+				await client.query(
+					`insert into work_policy_assignment
+					 (id, policy_id, organization_id, assignment_type, employee_id,
+					  priority, is_active, created_by, updated_at)
+					 values ($1, $2, $3, 'employee', $4, 99, true, $5, $6)`,
+					[
+						ids.policyAssignment,
+						ids.policy,
+						ids.organization,
+						ids.requester,
+						ids.managerUser,
+						timestamp,
+					],
+				);
+			});
+
+			await decide(target, { kind: "approve", reason: null });
+			const beforeReplay = await pool.query<Record<string, unknown>>(
+				`select id, start_time, end_time, duration_minutes
+				 from work_period where organization_id = $1 and employee_id = $2
+				 order by start_time, id`,
+				[ids.organization, ids.requester],
+			);
+			expect(beforeReplay.rows).toEqual([
+				expect.objectContaining({
+					id: ids.period,
+					start_time: startTime,
+					end_time: endTime,
+					duration_minutes: 480,
+				}),
+			]);
+			const entriesBeforeReplay = await pool.query<Record<string, unknown>>(
+				`select id, type, timestamp
+				 from time_entry where organization_id = $1 and employee_id = $2
+				 order by timestamp, id`,
+				[ids.organization, ids.requester],
+			);
+			expect(entriesBeforeReplay.rows.map(({ id }) => id)).toEqual([
+				ids.clockIn,
+				ids.clockOut,
+			]);
+			await assertSubmittedNoneSnapshotParity(mode);
+
+			await decide(target, { kind: "approve", reason: null });
+			const afterReplay = await pool.query<Record<string, unknown>>(
+				`select id, start_time, end_time, duration_minutes
+				 from work_period where organization_id = $1 and employee_id = $2
+				 order by start_time, id`,
+				[ids.organization, ids.requester],
+			);
+			const entriesAfterReplay = await pool.query<Record<string, unknown>>(
+				`select id, type, timestamp
+				 from time_entry where organization_id = $1 and employee_id = $2
+				 order by timestamp, id`,
+				[ids.organization, ids.requester],
+			);
+			expect(afterReplay.rows).toEqual(beforeReplay.rows);
+			expect(entriesAfterReplay.rows).toEqual(entriesBeforeReplay.rows);
+			await assertSubmittedNoneSnapshotParity(mode);
 		});
 
 		it("complete submission writes zero approval requests and canonical reader discovers the assignment", async () => {

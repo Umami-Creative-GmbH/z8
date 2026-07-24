@@ -261,6 +261,77 @@ export function policyClockOutBreakSnapshotFromPendingChanges(
 	}
 }
 
+const MAX_ASSIGNMENT_CANDIDATES = 64;
+
+type AssignmentCandidate = Readonly<{
+	teamId: string | null;
+	id: string;
+	type: "employee" | "team" | "organization";
+	policyId: string;
+	priority: number;
+}>;
+
+function selectAssignmentCandidate(
+	rows: readonly unknown[],
+	organizationId: string,
+): AssignmentCandidate | null {
+	if (rows.length === 0 || rows.length > MAX_ASSIGNMENT_CANDIDATES) fail();
+	const candidates: AssignmentCandidate[] = [];
+	for (const value of rows) {
+		if (typeof value !== "object" || value === null || Array.isArray(value)) {
+			fail();
+		}
+		const row = value as Record<string, unknown>;
+		if (row.employeeOrganizationId !== organizationId) fail();
+		if (row.assignmentId === null) {
+			if (
+				rows.length !== 1 ||
+				row.assignmentOrganizationId !== null ||
+				row.assignmentType !== null ||
+				row.assignmentPolicyId !== null ||
+				row.priority !== null
+			) {
+				fail();
+			}
+			return null;
+		}
+		if (
+			row.assignmentOrganizationId !== organizationId ||
+			(row.assignmentType !== "employee" &&
+				row.assignmentType !== "team" &&
+				row.assignmentType !== "organization") ||
+			typeof row.assignmentId !== "string" ||
+			!UUID.test(row.assignmentId) ||
+			typeof row.assignmentPolicyId !== "string" ||
+			!UUID.test(row.assignmentPolicyId) ||
+			!Number.isSafeInteger(row.priority)
+		) {
+			fail();
+		}
+		candidates.push({
+			teamId:
+				row.teamId === null || typeof row.teamId === "string"
+					? row.teamId
+					: fail(),
+			id: row.assignmentId,
+			type: row.assignmentType,
+			policyId: row.assignmentPolicyId,
+			priority: row.priority as number,
+		});
+	}
+	if (new Set(candidates.map(({ id }) => id)).size !== candidates.length)
+		fail();
+	const specificity = { employee: 2, team: 1, organization: 0 } as const;
+	return (
+		candidates.toSorted(
+			(left, right) =>
+				right.priority - left.priority ||
+				specificity[right.type] - specificity[left.type] ||
+				(left.id < right.id ? -1 : left.id > right.id ? 1 : 0),
+		)[0] ?? fail()
+	);
+}
+
 export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 	dbService: {
 		db: { execute(query: ReturnType<typeof sql>): Promise<unknown> };
@@ -271,7 +342,7 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 }): Promise<PolicyClockOutBreakSnapshot> {
 	const evaluatedAt = instantToCanonicalString(input.endTime);
 	try {
-		const result = await input.dbService.db.execute(sql`
+		const candidateResult = await input.dbService.db.execute(sql`
 			with employee_evidence as (
 				select employee.id, employee.organization_id as "organizationId",
 					employee.team_id as "teamId"
@@ -280,9 +351,12 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 					and employee.organization_id = ${input.organizationId}
 				limit 2
 				for update of employee
-			), assignment_evidence as (
-				select assignment.id, assignment.assignment_type as "assignmentType",
-					assignment.policy_id as "assignmentPolicyId"
+			), assignment_candidates as (
+				select employee_row."organizationId" as "employeeOrganizationId",
+					employee_row."teamId", assignment.id as "assignmentId",
+					assignment.organization_id as "assignmentOrganizationId",
+					assignment.assignment_type as "assignmentType",
+					assignment.policy_id as "assignmentPolicyId", assignment.priority
 				from employee_evidence employee_row
 				join work_policy_assignment assignment
 					on assignment.organization_id = employee_row."organizationId"
@@ -299,13 +373,41 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 					case assignment.assignment_type
 						when 'employee' then 2 when 'team' then 1 else 0 end desc,
 					assignment.id
-				limit 1
+				limit ${MAX_ASSIGNMENT_CANDIDATES + 1}
 				for update of assignment
-			), policy_evidence as (
+			)
+			select employee_row."organizationId" as "employeeOrganizationId",
+				employee_row."teamId", assignment."assignmentId",
+				assignment."assignmentOrganizationId", assignment."assignmentType",
+				assignment."assignmentPolicyId", assignment.priority
+			from employee_evidence employee_row
+			left join assignment_candidates assignment on true
+		`);
+		if (
+			typeof candidateResult !== "object" ||
+			candidateResult === null ||
+			!("rows" in candidateResult) ||
+			!Array.isArray(candidateResult.rows)
+		) {
+			throw new Error();
+		}
+		const assignment = selectAssignmentCandidate(
+			candidateResult.rows,
+			input.organizationId,
+		);
+		if (assignment === null) {
+			return parsePolicyClockOutBreakSnapshot(
+				{ version: 1, evaluatedAt, resolution: "none" },
+				evaluatedAt,
+			);
+		}
+
+		const result = await input.dbService.db.execute(sql`
+			with policy_evidence as (
 				select policy.id, policy.name, policy.is_active as "policyIsActive",
 					policy.regulation_enabled as "regulationEnabled"
-				from assignment_evidence assignment
-				join work_policy policy on policy.id = assignment."assignmentPolicyId"
+				from work_policy policy
+				where policy.id = ${assignment.policyId}::uuid
 					and policy.organization_id = ${input.organizationId}
 				limit 2
 				for update of policy
@@ -326,17 +428,11 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 				order by rule.working_minutes_threshold, rule.id
 				for update of rule
 			)
-			select employee_row."teamId",
-				assignment.id as "assignmentId",
-				assignment."assignmentType",
-				assignment."assignmentPolicyId",
-				policy.id as "policyId", policy.name as "policyName",
+			select policy.id as "policyId", policy.name as "policyName",
 				policy."policyIsActive", policy."regulationEnabled",
 				regulation.id as "regulationId", regulation."maxUninterruptedMinutes",
 				coalesce((select json_agg(rule order by rule."workingMinutesThreshold", rule.id) from rule_evidence rule), '[]'::json) as "breakRules"
-			from employee_evidence employee_row
-			left join assignment_evidence assignment on true
-			left join policy_evidence policy on true
+			from policy_evidence policy
 			left join regulation_evidence regulation on true
 		`);
 		if (
@@ -349,22 +445,8 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 			throw new Error();
 		}
 		const row = result.rows[0] as Record<string, unknown>;
-		if (row.assignmentId === null) {
-			if (
-				row.assignmentType !== null ||
-				row.assignmentPolicyId !== null ||
-				row.policyId !== null ||
-				row.regulationId !== null
-			) {
-				throw new Error();
-			}
-			return parsePolicyClockOutBreakSnapshot(
-				{ version: 1, evaluatedAt, resolution: "none" },
-				evaluatedAt,
-			);
-		}
 		if (
-			row.policyId !== row.assignmentPolicyId ||
+			row.policyId !== assignment.policyId ||
 			row.policyIsActive !== true ||
 			typeof row.policyName !== "string" ||
 			typeof row.regulationEnabled !== "boolean"
@@ -401,8 +483,8 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 				version: 1,
 				evaluatedAt,
 				resolution: "work_policy",
-				teamId: row.teamId,
-				assignment: { id: row.assignmentId, type: row.assignmentType },
+				teamId: assignment.teamId,
+				assignment: { id: assignment.id, type: assignment.type },
 				policy: { id: row.policyId, name: row.policyName },
 				regulationEnabled: row.regulationEnabled,
 				regulation: {
