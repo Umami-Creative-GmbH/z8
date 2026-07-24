@@ -92,6 +92,13 @@ interface CanonicalRecordSnapshot {
 	approvalState: RequestStatus | "draft";
 }
 
+function ordinaryKind(value: unknown): OrdinaryWorkPeriodApprovalKind {
+	if (value === "manual_time_submission" || value === "policy_clock_out") {
+		return value;
+	}
+	return fail();
+}
+
 function fail(
 	code: OrdinaryWorkPeriodLegacyStateCaptureErrorCode = "capture_failed",
 ): never {
@@ -323,7 +330,7 @@ function normalizeRequestPayload(input: {
 			},
 			input.expectedKind,
 		);
-		if (input.expectedKind === "policy_clock_out" && marker) {
+		if (input.expectedKind === "policy_clock_out") {
 			if (!payload.breakPolicySnapshot) return fail();
 			const evaluatedAt = instantToCanonicalString(input.sourceEndTime);
 			const sourceSnapshot = policyClockOutBreakSnapshotFromPendingChanges(
@@ -616,6 +623,9 @@ function decodeCapture(
 	}
 
 	const workflows = array(envelope.workflows);
+	let canonicalPayload: ReturnType<
+		typeof parseOrdinaryWorkPeriodWorkflowPayload
+	> | null = null;
 	if (period.approvalWorkflowId === null) {
 		if (workflows.length !== 0) return fail();
 	} else {
@@ -628,6 +638,14 @@ function decodeCapture(
 			string(workflow.sourceId) !== input.workPeriodId ||
 			string(workflow.requesterEmployeeId) !== input.expectedRequesterEmployeeId
 		) {
+			return fail();
+		}
+		try {
+			canonicalPayload = parseOrdinaryWorkPeriodWorkflowPayload(
+				workflow.contextSnapshot,
+				kind,
+			);
+		} catch {
 			return fail();
 		}
 	}
@@ -748,6 +766,20 @@ function decodeCapture(
 		},
 		kind,
 	);
+	if (canonicalPayload) {
+		if (
+			kind === "policy_clock_out" &&
+			(!payload.breakPolicySnapshot ||
+				!canonicalPayload.breakPolicySnapshot ||
+				!policyClockOutBreakSnapshotsEqual(
+					payload.breakPolicySnapshot,
+					canonicalPayload.breakPolicySnapshot,
+					instantToCanonicalString(period.endTime),
+				))
+		) {
+			return fail();
+		}
+	}
 	const displaySnapshot = {
 		approvalStatus: period.approvalStatus,
 		labels: {
@@ -879,14 +911,7 @@ export async function captureOrdinaryWorkPeriodLegacyState(
 	input: CaptureOrdinaryWorkPeriodLegacyStateInput,
 ): Promise<VerifiedLegacyApprovalState> {
 	if (input.expectedKind !== undefined) {
-		try {
-			parseOrdinaryWorkPeriodWorkflowPayload(
-				{ timeRequest: { kind: input.expectedKind } },
-				input.expectedKind,
-			);
-		} catch {
-			return fail();
-		}
+		ordinaryKind(input.expectedKind);
 	}
 	let queryResult: unknown;
 	try {
@@ -1029,7 +1054,8 @@ export async function captureOrdinaryWorkPeriodLegacyState(
 					workflow.workflow_type as "workflowType",
 					workflow.source_type as "sourceType",
 					workflow.source_id as "sourceId",
-					workflow.requester_employee_id as "requesterEmployeeId"
+					workflow.requester_employee_id as "requesterEmployeeId",
+					workflow.context_snapshot as "contextSnapshot"
 				from work_period_rows period
 				cross join capture_input capture
 				join approval_workflow workflow
@@ -1077,14 +1103,7 @@ export async function captureOrdinaryWorkPeriodLegacyState(
 export async function captureOrdinaryWorkPeriodLegacyPreSubmissionState(
 	input: CaptureOrdinaryWorkPeriodLegacyPreSubmissionStateInput,
 ): Promise<VerifiedLegacyApprovalState> {
-	try {
-		parseOrdinaryWorkPeriodWorkflowPayload(
-			{ timeRequest: { kind: input.expectedKind } },
-			input.expectedKind,
-		);
-	} catch {
-		return fail();
-	}
+	ordinaryKind(input.expectedKind);
 	let queryResult: unknown;
 	try {
 		queryResult = await input.dbService.db.execute(sql`

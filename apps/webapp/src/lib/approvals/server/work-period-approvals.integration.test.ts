@@ -50,6 +50,7 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 	it("registers the complete Task 11 mode, rollback, race, isolation, and split matrix", () => {
 		for (const scenario of [
 			"composes submission and terminal decisions in %s mode",
+			"preserves policy snapshot through production submission capture in %s mode",
 			"complete submission writes zero approval requests and canonical reader discovers the assignment",
 			"rolls back $stage submission stage in $mode mode without residue",
 			"requester auto-finalization failure rolls the complete submission back in %s mode",
@@ -1001,6 +1002,18 @@ describeIntegration(
 				expect(requests).toHaveLength(1);
 				expect(requests[0]).toMatchObject({ status: "approved" });
 			}
+		});
+
+		it.each([
+			"legacy",
+			"shadow",
+			"ready",
+		] as const)("preserves policy snapshot through production submission capture in %s mode", async (mode) => {
+			await seed("policy_clock_out", true, mode);
+			await expect(submit("policy_clock_out")).resolves.toMatchObject({
+				disposition: "executed",
+			});
+			await assertSubmittedBreakSnapshotParity(mode);
 		});
 
 		it.each(

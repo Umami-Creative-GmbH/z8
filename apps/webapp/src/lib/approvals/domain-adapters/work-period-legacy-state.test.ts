@@ -27,6 +27,32 @@ const startAt = new Date("2026-07-20T06:00:00.000Z");
 const endAt = new Date("2026-07-20T14:00:00.000Z");
 const capturedAt = new Date("2026-07-20T15:00:00.000Z");
 const submissionId = "10000000-0000-4000-8000-000000000099";
+const breakPolicySnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-20T14:00:00Z",
+	resolution: "none",
+} as const;
+const resolvedBreakPolicySnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-20T14:00:00Z",
+	resolution: "work_policy",
+	teamId: null,
+	assignment: {
+		id: "a0000000-0000-4000-8000-000000000001",
+		type: "organization",
+	},
+	policy: {
+		id: "b0000000-0000-4000-8000-000000000001",
+		name: "Default policy",
+	},
+	regulationEnabled: false,
+	regulation: {
+		id: null,
+		name: null,
+		maxUninterruptedMinutes: null,
+	},
+	breakRules: [],
+} as const;
 
 function submissionKey(kind = "manual_time_submission") {
 	return deriveApprovalWorkflowId({
@@ -140,6 +166,9 @@ function workflow(overrides: JsonRecord = {}) {
 		sourceType: "time_entry",
 		sourceId: workPeriodId,
 		requesterEmployeeId: employeeId,
+		contextSnapshot: {
+			timeRequest: { kind: "manual_time_submission" },
+		},
 		...overrides,
 	};
 }
@@ -204,6 +233,101 @@ async function expectCaptureFailure(
 }
 
 describe("captureOrdinaryWorkPeriodLegacyState", () => {
+	it("captures and reconciles exact policy snapshot evidence after submission", async () => {
+		const fake = database(
+			envelope({
+				workPeriods: [
+					period({
+						pendingChanges: {
+							isNewClockOut: true,
+							breakPolicySnapshot,
+						},
+						approvalWorkflowId: null,
+					}),
+				],
+				approvalRequests: [
+					request({
+						metadata: {
+							timeRequest: { kind: "policy_clock_out" },
+							breakPolicySnapshot,
+						},
+					}),
+				],
+				workflows: [],
+			}),
+		);
+
+		const state = await captureOrdinaryWorkPeriodLegacyState(
+			input(fake.dbService, { expectedKind: "policy_clock_out" }),
+		);
+
+		expect(fake.calls).toHaveLength(1);
+		expect(state.sourceSnapshot).toEqual({
+			timeRequest: { kind: "policy_clock_out" },
+			breakPolicySnapshot,
+		});
+		expect(state.approvalRequest?.metadata).toEqual({
+			timeRequest: { kind: "policy_clock_out" },
+			breakPolicySnapshot,
+		});
+	});
+
+	it.each([
+		[
+			"missing request snapshot evidence",
+			{ timeRequest: { kind: "policy_clock_out" } },
+			[],
+		],
+		[
+			"mismatched request snapshot evidence",
+			{
+				timeRequest: { kind: "policy_clock_out" },
+				breakPolicySnapshot: resolvedBreakPolicySnapshot,
+			},
+			[],
+		],
+		[
+			"mismatched canonical snapshot evidence",
+			{
+				timeRequest: { kind: "policy_clock_out" },
+				breakPolicySnapshot,
+			},
+			[
+				workflow({
+					workflowType: "policy_clock_out",
+					contextSnapshot: {
+						timeRequest: { kind: "policy_clock_out" },
+						breakPolicySnapshot: resolvedBreakPolicySnapshot,
+					},
+				}),
+			],
+		],
+	] as const)("rejects policy capture with %s", async (_label, metadata, workflows) => {
+		const fake = database(
+			envelope({
+				workPeriods: [
+					period({
+						pendingChanges: {
+							isNewClockOut: true,
+							breakPolicySnapshot,
+						},
+						approvalWorkflowId: workflows.length === 0 ? null : workflowId,
+					}),
+				],
+				approvalRequests: [request({ metadata })],
+				workflows: [...workflows],
+			}),
+		);
+		await expect(
+			captureOrdinaryWorkPeriodLegacyState(
+				input(fake.dbService, { expectedKind: "policy_clock_out" }),
+			),
+		).rejects.toMatchObject({
+			name: "OrdinaryWorkPeriodLegacyStateCaptureError",
+		});
+		expect(fake.calls).toHaveLength(1);
+	});
+
 	it("captures one exact chain-backed ordinary work-period cycle in one operation", async () => {
 		const value = envelope();
 		const fake = database(value);
@@ -976,6 +1100,58 @@ function preEnvelope(overrides: JsonRecord = {}) {
 }
 
 describe("captureOrdinaryWorkPeriodLegacyPreSubmissionState", () => {
+	it("captures exact policy snapshot evidence before submission", async () => {
+		const fake = database(
+			preEnvelope({
+				workPeriods: [
+					period({
+						approvalWorkflowId: null,
+						pendingChanges: {
+							isNewClockOut: true,
+							breakPolicySnapshot,
+						},
+					}),
+				],
+			}),
+		);
+
+		const state = await captureOrdinaryWorkPeriodLegacyPreSubmissionState(
+			preInput(fake.dbService, { expectedKind: "policy_clock_out" }),
+		);
+
+		expect(fake.calls).toHaveLength(1);
+		expect(state.sourceSnapshot).toEqual({
+			timeRequest: { kind: "policy_clock_out" },
+			breakPolicySnapshot,
+		});
+	});
+
+	it.each([
+		["missing", { isNewClockOut: true }],
+		[
+			"malformed",
+			{
+				isNewClockOut: true,
+				breakPolicySnapshot: { ...breakPolicySnapshot, version: 0 },
+			},
+		],
+	] as const)("rejects %s pre-submission policy evidence", async (_label, pendingChanges) => {
+		const fake = database(
+			preEnvelope({
+				workPeriods: [period({ approvalWorkflowId: null, pendingChanges })],
+			}),
+		);
+
+		await expect(
+			captureOrdinaryWorkPeriodLegacyPreSubmissionState(
+				preInput(fake.dbService, { expectedKind: "policy_clock_out" }),
+			),
+		).rejects.toMatchObject({
+			name: "OrdinaryWorkPeriodLegacyStateCaptureError",
+		});
+		expect(fake.calls).toHaveLength(1);
+	});
+
 	it("captures exact source parity with no request or chain evidence", async () => {
 		const fake = database(preEnvelope());
 
