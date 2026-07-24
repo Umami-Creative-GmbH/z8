@@ -2903,5 +2903,75 @@ describeIntegration(
 				),
 			).toHaveLength(1);
 		});
+
+		it("uses the period-time surcharge assignment after delayed approval and current deactivation", async () => {
+			await seed("manual_time_submission", false, "canonical");
+			await seedMaintenanceState();
+			const target = (await submit("manual_time_submission")).result
+				.approvalRequestId;
+			await pool.query(
+				`update surcharge_model_assignment
+				 set effective_from = $1, effective_until = $2, is_active = false, updated_at = $3
+				 where id = $4 and organization_id = $5`,
+				[
+					startTime,
+					endTime,
+					new Date(now.epochMilliseconds),
+					ids.surchargeAssignment,
+					ids.organization,
+				],
+			);
+
+			const completed = await completeDecision(target, {
+				kind: "approve",
+				reason: null,
+			});
+
+			expect(completed.maintenanceErrors).toEqual([]);
+			const state = await maintenanceSnapshot();
+			expect(
+				state.calculations.filter(
+					({ organization_id }) => organization_id === ids.organization,
+				),
+			).toEqual([
+				expect.objectContaining({
+					work_period_id: ids.period,
+					base_minutes: 480,
+					qualifying_minutes: 480,
+					surcharge_minutes: 240,
+				}),
+			]);
+		});
+
+		it("rolls back stale surcharge deletion for a foreign joined model", async () => {
+			await seed("manual_time_submission", false, "canonical");
+			await seedMaintenanceState();
+			const target = (await submit("manual_time_submission")).result
+				.approvalRequestId;
+			await pool.query(
+				"update surcharge_model set organization_id = $1 where id = $2 and organization_id = $3",
+				[ids.foreignOrganization, ids.surchargeModel, ids.organization],
+			);
+
+			const completed = await completeDecision(target, {
+				kind: "approve",
+				reason: null,
+			});
+
+			expect(completed.execution.result.action).toBe("approve");
+			expect(completed.maintenanceErrors).toHaveLength(1);
+			const state = await maintenanceSnapshot();
+			expect(
+				state.calculations.filter(
+					({ organization_id }) => organization_id === ids.organization,
+				),
+			).toEqual([
+				expect.objectContaining({
+					id: ids.staleSurchargeCalculation,
+					work_period_id: ids.period,
+					base_minutes: 999,
+				}),
+			]);
+		});
 	},
 );

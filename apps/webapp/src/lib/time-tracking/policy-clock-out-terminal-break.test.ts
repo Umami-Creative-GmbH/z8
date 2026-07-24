@@ -362,6 +362,21 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 		);
 	});
 
+	it("derives the split dirty date from the captured fixed offset when a valid zone disagrees", async () => {
+		const { execute } = splitDatabase({
+			source: {
+				clockInTimezone: "Europe/Berlin",
+				clockInUtcOffsetMinutes: -60,
+			},
+		});
+
+		await expect(
+			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
+		).resolves.toMatchObject({
+			maintenance: { dirtyFromDate: "2026-03-28" },
+		});
+	});
+
 	it("splits approved canonical and legacy records with exact DST capture and cloned allocations", async () => {
 		const { execute, queries } = splitDatabase();
 

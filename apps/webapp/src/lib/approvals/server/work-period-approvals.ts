@@ -1571,6 +1571,7 @@ function isOrdinaryWorkPeriodFinalizerDatabase(
 	const query = candidate.query;
 	if (typeof query !== "object" || query === null) return false;
 	const employeeQuery = (query as Record<string, unknown>).employee;
+	const timeEntryQuery = (query as Record<string, unknown>).timeEntry;
 	return (
 		typeof candidate.execute === "function" &&
 		typeof candidate.select === "function" &&
@@ -1578,7 +1579,11 @@ function isOrdinaryWorkPeriodFinalizerDatabase(
 		typeof candidate.insert === "function" &&
 		typeof employeeQuery === "object" &&
 		employeeQuery !== null &&
-		typeof (employeeQuery as Record<string, unknown>).findFirst === "function"
+		typeof (employeeQuery as Record<string, unknown>).findFirst ===
+			"function" &&
+		typeof timeEntryQuery === "object" &&
+		timeEntryQuery !== null &&
+		typeof (timeEntryQuery as Record<string, unknown>).findFirst === "function"
 	);
 }
 

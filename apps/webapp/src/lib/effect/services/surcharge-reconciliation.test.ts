@@ -1,3 +1,5 @@
+import type { SQL } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it, vi } from "vitest";
 import { reconcileSurchargeWorkPeriodsWithDatabase } from "./surcharge.service";
 
@@ -14,6 +16,7 @@ function database(options?: {
 }) {
 	const deletes: unknown[] = [];
 	const inserts: unknown[] = [];
+	const assignmentWhere: unknown[] = [];
 	const period = {
 		id: "period-1",
 		organizationId: "org-1",
@@ -22,6 +25,33 @@ function database(options?: {
 		endTime: new Date("2026-07-19T10:00:00Z"),
 		approvalStatus: "approved",
 	};
+	const assignment =
+		options?.model === undefined
+			? {
+					id: "assignment-1",
+					organizationId: "org-1",
+					isActive: true,
+					effectiveFrom: new Date("2026-07-01T00:00:00Z"),
+					effectiveUntil: new Date("2026-07-19T10:00:00Z"),
+					model: {
+						id: "model-1",
+						organizationId: "org-1",
+						name: "Sunday",
+						isActive: true,
+						rules: [
+							{
+								id: "rule-1",
+								name: "Sunday 50%",
+								ruleType: "day_of_week",
+								percentage: "0.5000",
+								dayOfWeek: "sunday",
+								priority: 1,
+								isActive: true,
+							},
+						],
+					},
+				}
+			: options.model;
 	const tx = {
 		query: {
 			workPeriod: {
@@ -37,28 +67,10 @@ function database(options?: {
 				]),
 			},
 			surchargeModelAssignment: {
-				findFirst: vi.fn().mockResolvedValue(
-					options?.model === undefined
-						? {
-								model: {
-									id: "model-1",
-									name: "Sunday",
-									isActive: true,
-									rules: [
-										{
-											id: "rule-1",
-											name: "Sunday 50%",
-											ruleType: "day_of_week",
-											percentage: "0.5000",
-											dayOfWeek: "sunday",
-											priority: 1,
-											isActive: true,
-										},
-									],
-								},
-							}
-						: options.model,
-				),
+				findFirst: vi.fn((query) => {
+					assignmentWhere.push(query.where);
+					return Promise.resolve(assignment);
+				}),
 			},
 			organization: {
 				findFirst: vi.fn().mockResolvedValue({
@@ -88,6 +100,7 @@ function database(options?: {
 		tx,
 		deletes,
 		inserts,
+		assignmentWhere,
 	};
 }
 
@@ -116,6 +129,69 @@ describe("reconcileSurchargeWorkPeriodsWithDatabase", () => {
 
 		expect(fake.tx.delete).toHaveBeenCalledOnce();
 		expect(fake.inserts).toEqual([]);
+	});
+
+	it("selects historical assignment applicability at the completed period end", async () => {
+		const fake = database();
+
+		await reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, input);
+
+		const dialect = new PgDialect();
+		const assignmentQueries = fake.assignmentWhere.map((where) =>
+			dialect.sqlToQuery(where as SQL),
+		);
+		const effectiveInstants = assignmentQueries.flatMap(({ params }) =>
+			params.filter(
+				(value): value is string =>
+					typeof value === "string" && value.startsWith("2026-07-19T10:00:00"),
+			),
+		);
+		expect(effectiveInstants).toEqual([
+			"2026-07-19T10:00:00.000Z",
+			"2026-07-19T10:00:00.000Z",
+		]);
+		expect(assignmentQueries.map(({ sql }) => sql).join("\n")).not.toContain(
+			'"is_active"',
+		);
+	});
+
+	it("fails closed for a foreign joined model after entering the reconciliation transaction", async () => {
+		const fake = database({
+			model: {
+				id: "assignment-1",
+				organizationId: "org-1",
+				model: {
+					id: "model-foreign",
+					organizationId: "org-2",
+					isActive: true,
+					rules: [],
+				},
+			},
+		});
+
+		await expect(
+			reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, input),
+		).rejects.toThrow("Surcharge reconciliation failed");
+		expect(fake.tx.delete).toHaveBeenCalledOnce();
+		expect(fake.tx.insert).not.toHaveBeenCalled();
+	});
+
+	it("retains the internal reconciliation failure as the generic error cause", async () => {
+		const rootCause = new Error("database diagnostic");
+		const failingDatabase = {
+			transaction: vi.fn().mockRejectedValue(rootCause),
+		};
+
+		const error = await reconcileSurchargeWorkPeriodsWithDatabase(
+			failingDatabase as never,
+			input,
+		).catch((cause: unknown) => cause);
+
+		expect(error).toBeInstanceOf(Error);
+		expect(error).toMatchObject({
+			message: "Surcharge reconciliation failed",
+			cause: rootCause,
+		});
 	});
 
 	it("fails closed before delete for a missing or foreign period", async () => {

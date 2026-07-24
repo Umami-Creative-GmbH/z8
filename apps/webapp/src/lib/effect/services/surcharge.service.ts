@@ -304,65 +304,6 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 				);
 			if (targetIds.length === 0) return;
 
-			const now = new Date();
-			const activeWindow = and(
-				eq(surchargeModelAssignment.organizationId, input.organizationId),
-				eq(surchargeModelAssignment.isActive, true),
-				or(
-					isNull(surchargeModelAssignment.effectiveFrom),
-					lte(surchargeModelAssignment.effectiveFrom, now),
-				),
-				or(
-					isNull(surchargeModelAssignment.effectiveUntil),
-					gte(surchargeModelAssignment.effectiveUntil, now),
-				),
-			);
-			const assignment =
-				(await tx.query.surchargeModelAssignment.findFirst({
-					where: and(
-						activeWindow,
-						eq(surchargeModelAssignment.employeeId, input.employeeId),
-						eq(surchargeModelAssignment.assignmentType, "employee"),
-					),
-					with: { model: { with: { rules: true } } },
-				})) ??
-				(ownedEmployee.teamId
-					? await tx.query.surchargeModelAssignment.findFirst({
-							where: and(
-								activeWindow,
-								eq(surchargeModelAssignment.teamId, ownedEmployee.teamId),
-								eq(surchargeModelAssignment.assignmentType, "team"),
-							),
-							with: { model: { with: { rules: true } } },
-						})
-					: null) ??
-				(await tx.query.surchargeModelAssignment.findFirst({
-					where: and(
-						activeWindow,
-						eq(surchargeModelAssignment.assignmentType, "organization"),
-					),
-					with: { model: { with: { rules: true } } },
-				}));
-			if (!assignment?.model?.isActive) return;
-			const rules = assignment.model.rules
-				.filter((rule) => rule.isActive)
-				.sort((left, right) => right.priority - left.priority)
-				.map((rule) => ({
-					id: rule.id,
-					name: rule.name,
-					ruleType: rule.ruleType,
-					percentage: rule.percentage,
-					dayOfWeek: rule.dayOfWeek,
-					windowStartTime: rule.windowStartTime,
-					windowEndTime: rule.windowEndTime,
-					specificDate: rule.specificDate,
-					dateRangeStart: rule.dateRangeStart,
-					dateRangeEnd: rule.dateRangeEnd,
-					priority: rule.priority,
-					validFrom: rule.validFrom,
-					validUntil: rule.validUntil,
-				}));
-			if (rules.length === 0) return;
 			const org = await tx.query.organization.findFirst({
 				where: eq(organization.id, input.organizationId),
 				columns: { id: true, timezone: true, surchargesEnabled: true },
@@ -371,8 +312,77 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 				throw new Error("organization mismatch");
 			}
 			if (!org.surchargesEnabled) return;
+			const calculatedAt = new Date();
 			for (const period of periods) {
 				if (!targetIds.includes(period.id) || !period.endTime) continue;
+				const effectiveAt = period.endTime;
+				// Historical reconciliation uses the inclusive effective window at the
+				// completed period instant. Mutable isActive only describes current use.
+				const effectiveWindow = and(
+					eq(surchargeModelAssignment.organizationId, input.organizationId),
+					or(
+						isNull(surchargeModelAssignment.effectiveFrom),
+						lte(surchargeModelAssignment.effectiveFrom, effectiveAt),
+					),
+					or(
+						isNull(surchargeModelAssignment.effectiveUntil),
+						gte(surchargeModelAssignment.effectiveUntil, effectiveAt),
+					),
+				);
+				const assignment =
+					(await tx.query.surchargeModelAssignment.findFirst({
+						where: and(
+							effectiveWindow,
+							eq(surchargeModelAssignment.employeeId, input.employeeId),
+							eq(surchargeModelAssignment.assignmentType, "employee"),
+						),
+						with: { model: { with: { rules: true } } },
+					})) ??
+					(ownedEmployee.teamId
+						? await tx.query.surchargeModelAssignment.findFirst({
+								where: and(
+									effectiveWindow,
+									eq(surchargeModelAssignment.teamId, ownedEmployee.teamId),
+									eq(surchargeModelAssignment.assignmentType, "team"),
+								),
+								with: { model: { with: { rules: true } } },
+							})
+						: null) ??
+					(await tx.query.surchargeModelAssignment.findFirst({
+						where: and(
+							effectiveWindow,
+							eq(surchargeModelAssignment.assignmentType, "organization"),
+						),
+						with: { model: { with: { rules: true } } },
+					}));
+				if (!assignment) continue;
+				if (
+					assignment.organizationId !== input.organizationId ||
+					!assignment.model ||
+					assignment.model.organizationId !== input.organizationId
+				) {
+					throw new Error("surcharge assignment ownership mismatch");
+				}
+				if (!assignment.model.isActive) continue;
+				const rules = assignment.model.rules
+					.filter((rule) => rule.isActive)
+					.sort((left, right) => right.priority - left.priority)
+					.map((rule) => ({
+						id: rule.id,
+						name: rule.name,
+						ruleType: rule.ruleType,
+						percentage: rule.percentage,
+						dayOfWeek: rule.dayOfWeek,
+						windowStartTime: rule.windowStartTime,
+						windowEndTime: rule.windowEndTime,
+						specificDate: rule.specificDate,
+						dateRangeStart: rule.dateRangeStart,
+						dateRangeEnd: rule.dateRangeEnd,
+						priority: rule.priority,
+						validFrom: rule.validFrom,
+						validUntil: rule.validUntil,
+					}));
+				if (rules.length === 0) continue;
 				const result = calculateSurchargesInternal(
 					period.startTime,
 					period.endTime,
@@ -387,7 +397,7 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 					workPeriodId: period.id,
 					surchargeRuleId: primaryRule?.ruleId ?? null,
 					surchargeModelId: assignment.model.id,
-					calculationDate: now,
+					calculationDate: calculatedAt,
 					baseMinutes: result.baseMinutes,
 					qualifyingMinutes: result.qualifyingMinutes,
 					surchargeMinutes: result.surchargeMinutes,
@@ -397,13 +407,13 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 						workPeriodEndTime: period.endTime.toISOString(),
 						rulesApplied: result.appliedRules,
 						overlapPolicy: "max_wins",
-						calculatedAt: now.toISOString(),
+						calculatedAt: calculatedAt.toISOString(),
 					},
 				});
 			}
 		});
-	} catch {
-		throw new Error("Surcharge reconciliation failed");
+	} catch (error) {
+		throw new Error("Surcharge reconciliation failed", { cause: error });
 	}
 }
 

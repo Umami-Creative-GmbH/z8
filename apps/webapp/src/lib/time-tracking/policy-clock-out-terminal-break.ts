@@ -290,9 +290,9 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 	const sourceRows = rows(sourceResult);
 	if (sourceRows.length !== 1) return fail();
 	const source = validateLockedSource(sourceRows[0], input);
-	const dirtyTimezone = isValidIanaTimezone(source.clockInTimezone)
-		? source.clockInTimezone
-		: offsetMinutesToTimeZoneId(source.clockInUtcOffsetMinutes);
+	const dirtyTimezone = offsetMinutesToTimeZoneId(
+		source.clockInUtcOffsetMinutes,
+	);
 	const timezone = isValidIanaTimezone(source.clockOutTimezone)
 		? source.clockOutTimezone
 		: isValidIanaTimezone(source.employeeTimezone)

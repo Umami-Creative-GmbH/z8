@@ -58,6 +58,7 @@ const {
 	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 	finalizeOrdinaryWorkPeriodTerminalInTransaction,
 	finalizeAutoCompletedWorkPeriodApprovalEffect,
+	requireOrdinaryWorkPeriodFinalizerDbService,
 } = workPeriodApprovals;
 
 describe("stable ordinary work-period decisions", () => {
@@ -1694,6 +1695,32 @@ describe("ordinary work-period approval finalizer", () => {
 			action: "approve",
 			period: { id: "period-1", canonicalRecordId: "record-1" },
 		});
+	});
+
+	it("derives no-split dirty date from the audit-critical clock-in offset", async () => {
+		const dbService = createFinalizerDbService();
+		vi.mocked(dbService.db.query.timeEntry.findFirst).mockResolvedValue({
+			id: "clock-in-1",
+			utcOffsetMinutes: -600,
+		} as never);
+
+		await expect(finalize(dbService)).resolves.toMatchObject({
+			maintenance: { dirtyFromDate: "2026-07-13" },
+		});
+	});
+
+	it("rejects a finalizer database without the required time-entry query", () => {
+		expect(() =>
+			requireOrdinaryWorkPeriodFinalizerDbService({
+				db: {
+					execute: vi.fn(),
+					select: vi.fn(),
+					update: vi.fn(),
+					insert: vi.fn(),
+					query: { employee: { findFirst: vi.fn() } },
+				},
+			} as never),
+		).toThrow("Ordinary work-period finalization conflict");
 	});
 
 	it.each([
