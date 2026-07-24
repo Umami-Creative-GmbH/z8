@@ -344,6 +344,22 @@ function normalizeRequestPayload(input: {
 		) {
 			return fail();
 		}
+		if (
+			input.expectedKind === "policy_clock_out" &&
+			markerDescriptor === undefined &&
+			breakPolicySnapshotDescriptor === undefined &&
+			(typeof input.pendingChanges !== "object" ||
+				input.pendingChanges === null ||
+				Object.getOwnPropertyDescriptor(
+					input.pendingChanges,
+					"breakPolicySnapshot",
+				) === undefined)
+		) {
+			return {
+				payload: { timeRequest: { kind: "policy_clock_out" } },
+				marker: null,
+			};
+		}
 		const payload = parseOrdinaryWorkPeriodWorkflowPayload(
 			{
 				timeRequest: raw.timeRequest,
@@ -798,15 +814,23 @@ function decodeCapture(
 		requestMetadata,
 		"breakPolicySnapshot",
 	);
-	const payload = parseOrdinaryWorkPeriodWorkflowPayload(
-		{
-			timeRequest: requestMetadata.timeRequest,
-			...(capturedSnapshot?.enumerable && "value" in capturedSnapshot
-				? { breakPolicySnapshot: capturedSnapshot.value }
-				: {}),
-		},
-		kind,
-	);
+	const historicalPolicyClockOut =
+		kind === "policy_clock_out" &&
+		period.approvalWorkflowId === null &&
+		capturedSnapshot === undefined &&
+		Object.getOwnPropertyDescriptor(requestMetadata, "ordinarySubmission") ===
+			undefined;
+	const payload = historicalPolicyClockOut
+		? { timeRequest: { kind: "policy_clock_out" as const } }
+		: parseOrdinaryWorkPeriodWorkflowPayload(
+				{
+					timeRequest: requestMetadata.timeRequest,
+					...(capturedSnapshot?.enumerable && "value" in capturedSnapshot
+						? { breakPolicySnapshot: capturedSnapshot.value }
+						: {}),
+				},
+				kind,
+			);
 	if (canonicalPayload) {
 		const evaluatedAt = policyEvaluatedAt({
 			endTime: period.endTime,

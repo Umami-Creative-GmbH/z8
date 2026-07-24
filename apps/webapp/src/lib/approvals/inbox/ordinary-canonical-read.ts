@@ -2,6 +2,10 @@ import { type SQL, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { instantFromDate, parseInstant } from "@/lib/datetime/temporal-core";
 import { formatCapturedOffsetInstant } from "@/lib/datetime/temporal-format";
+import {
+	policyClockOutBreakSnapshotFromPendingChanges,
+	policyClockOutBreakSnapshotsEqual,
+} from "@/lib/time-tracking/policy-clock-out-break-snapshot";
 import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
 import { parseOrdinaryWorkPeriodWorkflowPayload } from "../domain-adapters/work-period-contract";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
@@ -362,7 +366,26 @@ function validateRow(
 	const kind = ordinaryKind(workflow.workflowType);
 	if (!kind) return null;
 	try {
-		parseOrdinaryWorkPeriodWorkflowPayload(workflow.contextSnapshot, kind);
+		const payload = parseOrdinaryWorkPeriodWorkflowPayload(
+			workflow.contextSnapshot,
+			kind,
+		);
+		if (
+			kind === "policy_clock_out" &&
+			(!payload.breakPolicySnapshot ||
+				parseInstant(payload.breakPolicySnapshot.evaluatedAt)
+					.epochMilliseconds !== (period.endTime as Date).getTime() ||
+				!policyClockOutBreakSnapshotsEqual(
+					policyClockOutBreakSnapshotFromPendingChanges(
+						period.pendingChanges,
+						payload.breakPolicySnapshot.evaluatedAt,
+					),
+					payload.breakPolicySnapshot,
+					payload.breakPolicySnapshot.evaluatedAt,
+				))
+		) {
+			return null;
+		}
 	} catch {
 		return null;
 	}
@@ -741,10 +764,8 @@ function boundedLimit(input: OrdinaryCanonicalLoadInput): number {
 	return Math.min(Math.max(requested, 1), 101);
 }
 
-function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
-	const selection = countOnly
-		? sql`count(*)::integer as "totalCount"`
-		: sql`
+function candidateQuery(input: OrdinaryCanonicalLoadInput) {
+	const selection = sql`
 			projection.id as "projectionId", projection.organization_id as "projectionOrganizationId",
 			projection.workflow_id as "projectionWorkflowId", projection.active_stage_id as "activeStageId",
 			projection.source_type as "sourceType", projection.source_id as "sourceId",
@@ -766,7 +787,7 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 			requester.organization_id as "requesterOrganizationId", requester.user_id as "requesterUserId",
 			requester.team_id as "requesterTeamId", requester_user.id as "userId",
 			requester_user.name as "userName", requester_user.email as "userEmail",
-			requester_user.image as "userImage", count(*) over()::integer as "totalCount"`;
+			requester_user.image as "userImage"`;
 	return sql`
 		select ${selection}
 		from approval_inbox_projection projection
@@ -959,7 +980,8 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 			${candidateFilterCondition(input)}
 			${targetCondition(input)}
 			${cursorCondition(input)}
-		${countOnly ? sql`` : sql`order by ${riskRankSql(input)}, ${priorityRankSql(input)}, workflow.submitted_at, assignment.id limit ${boundedLimit(input)}`}
+		order by ${riskRankSql(input)}, ${priorityRankSql(input)}, workflow.submitted_at, assignment.id
+		limit ${boundedLimit(input)}
 	`;
 }
 
@@ -1019,13 +1041,10 @@ function toCandidate(value: Record<string, unknown>) {
 				image: value.userImage,
 			},
 		},
-		totalCount: value.totalCount,
 	} as unknown as Omit<
 		OrdinaryCanonicalReadRow,
 		"period" | "canonicalRecord" | "compatibilityRequest"
-	> & {
-		totalCount: number;
-	};
+	>;
 }
 
 function evidenceQuery(organizationId: string, sourceIds: string[]) {
@@ -1125,16 +1144,12 @@ function toEvidence(
 	} as Pick<OrdinaryCanonicalReadRow, "period" | "canonicalRecord">;
 }
 
-export async function loadOrdinaryCanonicalApprovals(
+async function hydrateCandidates(
 	input: OrdinaryCanonicalLoadInput,
-): Promise<OrdinaryCanonicalApprovalBatch> {
-	input = { ...input, now: input.now ?? new Date() };
-	const database =
-		input.database ?? (db as unknown as OrdinaryCanonicalReadDatabase);
-	const candidates = resultRows(
-		await database.execute(candidateQuery(input)),
-	).map(toCandidate);
-	if (candidates.length === 0) return Object.assign([], { totalCount: 0 });
+	candidates: ReturnType<typeof toCandidate>[],
+	database: OrdinaryCanonicalReadDatabase,
+): Promise<OrdinaryCanonicalApproval[]> {
+	if (candidates.length === 0) return [];
 	const sourceIds = [
 		...new Set(candidates.map(({ projection }) => projection.sourceId)),
 	];
@@ -1175,11 +1190,57 @@ export async function loadOrdinaryCanonicalApprovals(
 			} as OrdinaryCanonicalReadRow,
 		];
 	});
-	const approvals = selectOrdinaryCanonicalApprovals({ ...input, rows });
-	const rawTotal = candidates[0]?.totalCount ?? candidates.length;
-	const excluded = candidates.length - approvals.length;
-	return Object.assign(approvals, {
-		totalCount: Math.max(0, rawTotal - excluded),
+	return selectOrdinaryCanonicalApprovals({ ...input, rows });
+}
+
+const STRICT_CANDIDATE_BATCH_SIZE = 101;
+
+async function scanOrdinaryCanonicalApprovals(
+	input: OrdinaryCanonicalLoadInput,
+): Promise<OrdinaryCanonicalApproval[]> {
+	input = { ...input, now: input.now ?? new Date() };
+	const database =
+		input.database ?? (db as unknown as OrdinaryCanonicalReadDatabase);
+	const approvals: OrdinaryCanonicalApproval[] = [];
+	let cursor = input.cursor;
+	while (true) {
+		const candidates = resultRows(
+			await database.execute(
+				candidateQuery({
+					...input,
+					cursor,
+					limit: input.assignmentId ? 1 : STRICT_CANDIDATE_BATCH_SIZE,
+				}),
+			),
+		).map(toCandidate);
+		if (candidates.length === 0) break;
+		approvals.push(...(await hydrateCandidates(input, candidates, database)));
+		if (input.assignmentId || candidates.length < STRICT_CANDIDATE_BATCH_SIZE) {
+			break;
+		}
+		const last = candidates[candidates.length - 1];
+		if (!last) break;
+		cursor = {
+			riskLevel:
+				instantFromDate(last.workflow.submittedAt)
+					.until(instantFromDate(input.now as Date))
+					.total("hours") >= 72
+					? "high"
+					: "medium",
+			priority: ordinaryPriority(last.workflow.submittedAt, input.now),
+			createdAt: last.workflow.submittedAt.toISOString(),
+			id: last.assignment.id,
+		};
+	}
+	return approvals;
+}
+
+export async function loadOrdinaryCanonicalApprovals(
+	input: OrdinaryCanonicalLoadInput,
+): Promise<OrdinaryCanonicalApprovalBatch> {
+	const approvals = await scanOrdinaryCanonicalApprovals(input);
+	return Object.assign(approvals.slice(0, boundedLimit(input)), {
+		totalCount: approvals.length,
 	});
 }
 
@@ -1189,8 +1250,5 @@ export async function countOrdinaryCanonicalApprovals(
 		"limit" | "cursor" | "assignmentId" | "assignmentIds"
 	>,
 ): Promise<number> {
-	const database =
-		input.database ?? (db as unknown as OrdinaryCanonicalReadDatabase);
-	const rows = resultRows(await database.execute(candidateQuery(input, true)));
-	return typeof rows[0]?.totalCount === "number" ? rows[0].totalCount : 0;
+	return (await scanOrdinaryCanonicalApprovals(input)).length;
 }

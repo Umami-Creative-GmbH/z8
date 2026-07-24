@@ -617,9 +617,13 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 			captureOrdinaryWorkPeriodLegacyState(
 				input(policyFake.dbService, { expectedKind: "policy_clock_out" }),
 			),
-		).rejects.toThrow(
-			"Ordinary work-period legacy approval state capture failed",
-		);
+		).resolves.toMatchObject({
+			source: { workflowType: "policy_clock_out" },
+			sourceSnapshot: { timeRequest: { kind: "policy_clock_out" } },
+			approvalRequest: {
+				metadata: { timeRequest: { kind: "policy_clock_out" } },
+			},
+		});
 	});
 
 	it("captures exact requester auto-approval evidence when approved is expected", async () => {

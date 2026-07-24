@@ -79,6 +79,8 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"reconciles stale surcharge and clean balance for terminal split/no-split/reject in %s mode",
 			"rolls back surcharge reconciliation atomically with terminal maintenance",
 			"replays terminal maintenance without duplicate surcharge or balance writes",
+			"preserves unmarked historical policy $action with auto-adjusted=$autoAdjusted",
+			"pages past malformed canonical policy evidence with exact list and count",
 		] as const) {
 			expect(integrationSource.split(scenario)).toHaveLength(3);
 		}
@@ -1669,6 +1671,259 @@ describeIntegration(
 			expect(JSON.stringify({ approvals, detail })).not.toContain(
 				"breakPolicySnapshot",
 			);
+		});
+
+		it.each([
+			{ action: "approve" as const, autoAdjusted: false },
+			{ action: "approve" as const, autoAdjusted: true },
+			{ action: "reject" as const, autoAdjusted: true },
+		])("preserves unmarked historical policy $action with auto-adjusted=$autoAdjusted", async ({
+			action,
+			autoAdjusted,
+		}) => {
+			await seed("policy_clock_out", true, "legacy");
+			await pool.query(
+				`update work_period set pending_changes = $3, was_auto_adjusted = $4,
+				 original_end_time = $5, original_duration_minutes = $6
+				 where id = $1 and organization_id = $2`,
+				[
+					ids.period,
+					ids.organization,
+					JSON.stringify({ isNewClockOut: true }),
+					autoAdjusted,
+					autoAdjusted ? new Date("2026-07-22T16:30:00Z") : null,
+					autoAdjusted ? 510 : null,
+				],
+			);
+			await pool.query(
+				`insert into approval_request (
+				 id, organization_id, entity_type, entity_id, canonical_record_id,
+				 requested_by, approver_id, status, reason, metadata, updated_at
+				 ) values ($1, $2, 'time_entry', $3, $4, $5, $6, 'pending',
+				 'Historical policy clock-out', $7, $8)`,
+				[
+					ids.terminalRequest,
+					ids.organization,
+					ids.period,
+					ids.canonical,
+					ids.requester,
+					ids.manager,
+					JSON.stringify({ timeRequest: { kind: "policy_clock_out" } }),
+					new Date(now.epochMilliseconds),
+				],
+			);
+
+			const decision =
+				action === "approve"
+					? ({ kind: "approve", reason: null } as const)
+					: ({ kind: "reject", reason: "Historical rejection" } as const);
+			const first = await decide(ids.terminalRequest, decision);
+			const replay = await decide(ids.terminalRequest, decision);
+			const graph = await pool.query<{
+				approval_status: string;
+				was_auto_adjusted: boolean;
+				original_end_time: Date | null;
+				start_time: Date;
+				end_time: Date;
+				approval_state: string;
+			}>(
+				`select period.approval_status, period.was_auto_adjusted,
+				 period.original_end_time, period.start_time, period.end_time,
+				 record.approval_state
+				 from work_period period join time_record record
+				   on record.id = period.canonical_record_id
+				  and record.organization_id = period.organization_id
+				 where period.id = $1 and period.organization_id = $2`,
+				[ids.period, ids.organization],
+			);
+			const status = action === "approve" ? "approved" : "rejected";
+			expect(first.result.maintenance).toBeNull();
+			expect(replay.postCommit).toBeNull();
+			expect(graph.rows).toEqual([
+				expect.objectContaining({
+					approval_status: status,
+					approval_state: status,
+					was_auto_adjusted: autoAdjusted,
+					start_time: startTime,
+					end_time: endTime,
+				}),
+			]);
+			expect(
+				await pool.query(
+					"select id from time_entry where organization_id = $1 and employee_id = $2",
+					[ids.organization, ids.requester],
+				),
+			).toMatchObject({
+				rows: expect.arrayContaining([
+					{ id: ids.clockIn },
+					{ id: ids.clockOut },
+				]),
+			});
+			expect(
+				await pool.query(
+					"select count(*)::int as count from time_record_approval_decision where organization_id = $1 and record_id = $2",
+					[ids.organization, ids.canonical],
+				),
+			).toMatchObject({ rows: [{ count: 1 }] });
+		});
+
+		it("pages past malformed canonical policy evidence with exact list and count", async () => {
+			await seed("policy_clock_out", true, "complete");
+			await submit("policy_clock_out");
+			const cloneId = (prefix: string, index: number) =>
+				`${prefix}0000000-0000-4000-8000-${index.toString().padStart(12, "0")}`;
+			for (const index of [1, 2] as const) {
+				const clone = {
+					clockIn: cloneId("d", index * 10 + 1),
+					clockOut: cloneId("d", index * 10 + 2),
+					record: cloneId("d", index * 10 + 3),
+					period: cloneId("d", index * 10 + 4),
+					workflow: cloneId("d", index * 10 + 5),
+					stage: cloneId("d", index * 10 + 6),
+					assignment: cloneId("d", index * 10 + 7),
+					projection: cloneId("d", index * 10 + 8),
+				};
+				await pool.query(
+					`insert into time_entry (
+					 id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
+					 timezone, timezone_source, previous_entry_id, hash, previous_hash,
+					 replaces_entry_id, is_superseded, superseded_by_id, notes, location,
+					 ip_address, device_info, created_at, created_by)
+					 select $1, employee_id, organization_id, type, timestamp, utc_offset_minutes,
+					 timezone, timezone_source, null, hash, previous_hash, replaces_entry_id,
+					 is_superseded, superseded_by_id, notes, location, ip_address, device_info,
+					 created_at, created_by from time_entry where id = $2 and organization_id = $3`,
+					[clone.clockIn, ids.clockIn, ids.organization],
+				);
+				await pool.query(
+					`insert into time_entry (
+					 id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
+					 timezone, timezone_source, previous_entry_id, hash, previous_hash,
+					 replaces_entry_id, is_superseded, superseded_by_id, notes, location,
+					 ip_address, device_info, created_at, created_by)
+					 select $1, employee_id, organization_id, type, timestamp, utc_offset_minutes,
+					 timezone, timezone_source, $2, hash, previous_hash, replaces_entry_id,
+					 is_superseded, superseded_by_id, notes, location, ip_address, device_info,
+					 created_at, created_by from time_entry where id = $3 and organization_id = $4`,
+					[clone.clockOut, clone.clockIn, ids.clockOut, ids.organization],
+				);
+				await pool.query(
+					`insert into time_record (
+					 id, organization_id, employee_id, record_kind, start_at, end_at,
+					 duration_minutes, approval_state, origin, created_at, created_by,
+					 updated_at, updated_by)
+					 select $1, organization_id, employee_id, record_kind, start_at, end_at,
+					 duration_minutes, approval_state, origin, created_at, created_by,
+					 updated_at, updated_by from time_record where id = $2 and organization_id = $3`,
+					[clone.record, ids.canonical, ids.organization],
+				);
+				await pool.query(
+					`insert into approval_workflow (
+					 id, organization_id, workflow_type, source_type, source_id,
+					 requester_employee_id, status, current_stage_order, version,
+					 policy_snapshot, context_snapshot, display_snapshot, submitted_at,
+					 completed_at, cancelled_at, decision_reason, created_at, updated_at)
+					 select $1, organization_id, workflow_type, source_type, $2,
+					 requester_employee_id, status, current_stage_order, version,
+					 policy_snapshot,
+					 case when $3 = 1 then jsonb_set(context_snapshot,
+					   '{breakPolicySnapshot,assignment,id}', '"not-a-uuid"'::jsonb)
+					 else jsonb_set(context_snapshot,
+					   '{breakPolicySnapshot,breakRules,0,requiredBreakMinutes}', '0'::jsonb) end,
+					 display_snapshot, submitted_at - ($3 * interval '1 hour'), completed_at,
+					 cancelled_at, decision_reason, created_at, updated_at
+					 from approval_workflow where id = $4 and organization_id = $5`,
+					[clone.workflow, clone.period, index, ids.workflow, ids.organization],
+				);
+				await pool.query(
+					`insert into approval_workflow_stage (
+					 id, organization_id, workflow_id, stage_order, label, resolver_snapshot,
+					 activation_mode, status, activated_at, decided_at, decision_reason,
+					 legacy_approval_request_id, created_at, updated_at)
+					 select $1, organization_id, $2, stage_order, label, resolver_snapshot,
+					 activation_mode, status, activated_at, decided_at, decision_reason,
+					 null, created_at, updated_at from approval_workflow_stage
+					 where workflow_id = $3 and organization_id = $4`,
+					[clone.stage, clone.workflow, ids.workflow, ids.organization],
+				);
+				await pool.query(
+					`insert into approval_stage_assignment (
+					 id, organization_id, workflow_id, stage_id, assignment_sequence,
+					 approver_employee_id, status, assigned_at, resolved_at,
+					 resolved_by_actor_kind, resolved_by_actor_id, reassigned_by_employee_id,
+					 reassigned_from_assignment_id, reassignment_metadata, created_at, updated_at)
+					 select $1, organization_id, $2, $3, assignment_sequence,
+					 approver_employee_id, status, assigned_at, resolved_at,
+					 resolved_by_actor_kind, resolved_by_actor_id, reassigned_by_employee_id,
+					 reassigned_from_assignment_id, reassignment_metadata, created_at, updated_at
+					 from approval_stage_assignment where workflow_id = $4 and organization_id = $5`,
+					[
+						clone.assignment,
+						clone.workflow,
+						clone.stage,
+						ids.workflow,
+						ids.organization,
+					],
+				);
+				await pool.query(
+					`insert into approval_inbox_projection (
+					 id, organization_id, workflow_id, active_stage_id, source_type,
+					 source_id, status, display_payload, search_text, created_at, updated_at)
+					 select $1, organization_id, $2, $3, source_type, $4, status,
+					 display_payload, search_text, created_at, updated_at
+					 from approval_inbox_projection where workflow_id = $5 and organization_id = $6`,
+					[
+						clone.projection,
+						clone.workflow,
+						clone.stage,
+						clone.period,
+						ids.workflow,
+						ids.organization,
+					],
+				);
+				await pool.query(
+					`insert into work_period (
+					 id, employee_id, organization_id, clock_in_id, clock_out_id, project_id,
+					 work_category_id, work_location_type, start_time, end_time,
+					 duration_minutes, is_active, approval_status, pending_changes,
+					 deleted_at, deleted_by, deletion_reason, deletion_approval_request_id,
+					 was_auto_adjusted, auto_adjustment_reason, auto_adjusted_at,
+					 original_end_time, original_duration_minutes, canonical_record_id,
+					 approval_workflow_id, created_at, updated_at)
+					 select $1, employee_id, organization_id, $2, $3, project_id,
+					 work_category_id, work_location_type, start_time, end_time,
+					 duration_minutes, is_active, approval_status, pending_changes,
+					 deleted_at, deleted_by, deletion_reason, deletion_approval_request_id,
+					 was_auto_adjusted, auto_adjustment_reason, auto_adjusted_at,
+					 original_end_time, original_duration_minutes, $4, $5, created_at, updated_at
+					 from work_period where id = $6 and organization_id = $7`,
+					[
+						clone.period,
+						clone.clockIn,
+						clone.clockOut,
+						clone.record,
+						clone.workflow,
+						ids.period,
+						ids.organization,
+					],
+				);
+			}
+
+			const approvals = await loadOrdinaryCanonicalApprovals({
+				database,
+				organizationId: ids.organization,
+				approverId: ids.manager,
+				limit: 1,
+			});
+			const count = await countOrdinaryCanonicalApprovals({
+				database,
+				organizationId: ids.organization,
+				approverId: ids.manager,
+			});
+
+			expect(approvals.map(({ item }) => item.id)).toEqual([ids.assignment]);
+			expect(approvals.totalCount).toBe(1);
+			expect(count).toBe(1);
 		});
 
 		it.each(

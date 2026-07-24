@@ -1879,13 +1879,18 @@ describe("ordinary work-period approval finalizer", () => {
 	});
 
 	it.each([
-		"approve",
-		"reject",
-	] as const)("rejects legacy policy %s without stored break evidence before mutation", async (action) => {
+		["approve", false],
+		["approve", true],
+		["reject", true],
+	] as const)("preserves an unmarked historical policy %s with auto-adjusted=%s", async (action, wasAutoAdjusted) => {
 		const dbService = createFinalizerDbService({
 			period: {
 				approvalWorkflowId: null,
-				pendingChanges: { isNewClockOut: true },
+				pendingChanges: {
+					isNewClockOut: true,
+					wasAutoAdjusted,
+					originalEndTime: wasAutoAdjusted ? "2026-07-14T16:05:00Z" : null,
+				},
 			},
 			request: {
 				status: action === "approve" ? "approved" : "rejected",
@@ -1911,9 +1916,58 @@ describe("ordinary work-period approval finalizer", () => {
 						? { kind: "approve", reason: null }
 						: { kind: "reject", reason: "Policy conflict" },
 			}),
+		).resolves.toMatchObject({
+			kind: "policy_clock_out",
+			action,
+			period: {
+				startTime: period.startTime,
+				endTime: period.endTime,
+			},
+		});
+		const status = action === "approve" ? "approved" : "rejected";
+		expect(dbService.updateSets).toEqual([
+			expect.objectContaining({ approvalStatus: status }),
+			expect.objectContaining({ approvalState: status }),
+		]);
+		for (const update of dbService.updateSets) {
+			expect(update).not.toHaveProperty("startTime");
+			expect(update).not.toHaveProperty("endTime");
+			expect(update).not.toHaveProperty("startAt");
+			expect(update).not.toHaveProperty("endAt");
+			expect(update).not.toHaveProperty("durationMinutes");
+		}
+		expect(dbService.insertedValues).toHaveLength(1);
+		expect(terminalBreakMocks.enforce).not.toHaveBeenCalled();
+	});
+
+	it("rejects a marked policy submission without snapshot evidence", async () => {
+		const markerKey = deriveApprovalWorkflowId({
+			organizationId: "org-1",
+			workflowType: "policy_clock_out",
+			sourceType: "time_entry",
+			sourceId: "period-1",
+			allocationKey: submissionId,
+		});
+		const dbService = createFinalizerDbService({
+			period: {
+				approvalWorkflowId: null,
+				pendingChanges: { isNewClockOut: true },
+			},
+			request: {
+				metadata: {
+					timeRequest: { kind: "policy_clock_out" },
+					ordinarySubmission: { key: markerKey, submissionId },
+				},
+			},
+		});
+
+		await expect(
+			finalize(dbService, {
+				kind: "policy_clock_out",
+				expectedApprovalWorkflowId: null,
+			}),
 		).rejects.toThrow("Ordinary work-period finalization conflict");
 		expect(dbService.updateSets).toHaveLength(0);
-		expect(dbService.insertedValues).toHaveLength(0);
 		expect(terminalBreakMocks.enforce).not.toHaveBeenCalled();
 	});
 

@@ -1242,7 +1242,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 	}
 	const evaluatedAt = instantToCanonicalString(instantFromDate(period.endTime));
 	let sourceBreakPolicySnapshot: PolicyClockOutBreakSnapshot | null = null;
-	if (input.kind === "policy_clock_out") {
+	if (evidence.mode === "canonical" && input.kind === "policy_clock_out") {
 		try {
 			sourceBreakPolicySnapshot = policyClockOutBreakSnapshotFromPendingChanges(
 				period.pendingChanges,
@@ -1337,7 +1337,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 	) {
 		throw fail();
 	}
-	let maintenance: WorkPeriodMaintenanceFacts = {
+	let maintenance: WorkPeriodMaintenanceFacts | null = {
 		organizationId: input.organizationId,
 		employeeId: input.requesterEmployeeId,
 		dirtyFromDate: instantFromDate(period.startTime)
@@ -1354,6 +1354,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 
 	const terminalStatus =
 		input.transition.kind === "approve" ? "approved" : "rejected";
+	let historicalPolicyClockOut = false;
 	if (evidence.mode === "legacy") {
 		if (evidence.expectedStatus !== terminalStatus) throw fail();
 		const requests = await db
@@ -1414,23 +1415,53 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 				request.metadata === null && input.expectedApprovalWorkflowId === null
 					? { timeRequest: { kind: input.kind } }
 					: request.metadata;
-			const requestPayload = validateOrdinaryRequestMetadata(terminalMetadata, {
-				expectedApprovalWorkflowId: input.expectedApprovalWorkflowId,
-				kind: input.kind,
-				organizationId: input.organizationId,
-				workPeriodId: input.workPeriodId,
-				requesterAutoCompleted,
-			});
-			if (input.kind === "policy_clock_out") {
-				if (
-					!requestPayload.breakPolicySnapshot ||
-					!policyClockOutBreakSnapshotsEqual(
-						sourceBreakPolicySnapshot,
-						requestPayload.breakPolicySnapshot,
-						evaluatedAt,
-					)
-				) {
-					throw fail();
+			historicalPolicyClockOut =
+				input.kind === "policy_clock_out" &&
+				input.expectedApprovalWorkflowId === null &&
+				!requesterAutoCompleted &&
+				request.approverId === input.actorEmployeeId &&
+				(() => {
+					const metadata = exactOwnDataValues(terminalMetadata, [
+						"timeRequest",
+					]);
+					const timeRequest = exactOwnDataValues(metadata.timeRequest, [
+						"kind",
+					]);
+					return timeRequest.kind === "policy_clock_out";
+				})();
+			if (historicalPolicyClockOut) {
+				maintenance = null;
+			} else {
+				const requestPayload = validateOrdinaryRequestMetadata(
+					terminalMetadata,
+					{
+						expectedApprovalWorkflowId: input.expectedApprovalWorkflowId,
+						kind: input.kind,
+						organizationId: input.organizationId,
+						workPeriodId: input.workPeriodId,
+						requesterAutoCompleted,
+					},
+				);
+				if (input.kind === "policy_clock_out") {
+					try {
+						sourceBreakPolicySnapshot =
+							policyClockOutBreakSnapshotFromPendingChanges(
+								period.pendingChanges,
+								evaluatedAt,
+							);
+					} catch {
+						throw fail();
+					}
+					if (
+						!requestPayload.breakPolicySnapshot ||
+						!policyClockOutBreakSnapshotsEqual(
+							sourceBreakPolicySnapshot,
+							requestPayload.breakPolicySnapshot,
+							evaluatedAt,
+						)
+					) {
+						throw fail();
+					}
 				}
 			}
 		} catch {
@@ -1495,7 +1526,8 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 	}
 	if (
 		input.kind === "policy_clock_out" &&
-		input.transition.kind === "approve"
+		input.transition.kind === "approve" &&
+		!historicalPolicyClockOut
 	) {
 		if (!sourceBreakPolicySnapshot) throw fail();
 		const breakResult = await applyPolicyClockOutTerminalBreakInTransaction({
