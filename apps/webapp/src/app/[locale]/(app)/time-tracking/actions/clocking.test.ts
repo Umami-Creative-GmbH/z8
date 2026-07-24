@@ -2024,6 +2024,24 @@ describe("clockOut", () => {
 		);
 	});
 
+	it("routes no-approval surcharge evidence through immutable reconciliation", async () => {
+		const snapshot = {
+			version: 1 as const,
+			evaluatedAt: "2026-05-04T10:00:00Z",
+			resolution: { kind: "none" as const },
+		};
+		mockState.resolveSurchargeSnapshot.mockResolvedValueOnce(snapshot);
+
+		const result = await clockOut();
+
+		expect(result.success).toBe(true);
+		expect(mockState.calculateAndPersistSurcharges).toHaveBeenCalledWith(
+			"period-1",
+			"org-1",
+			{ employeeId: "employee-1", snapshot },
+		);
+	});
+
 	it("keeps clock-out successful when dirty marking fails", async () => {
 		mockState.markEmployeeWorkBalanceDirty.mockRejectedValueOnce(
 			new Error("dirty marker failed"),

@@ -14,8 +14,10 @@ import {
 } from "@/db/schema";
 import {
 	compareInstants,
+	comparePlainDates,
 	type Instant,
 	instantFromDate,
+	isInstant,
 	parseInstant,
 	parsePlainDate,
 	parsePlainTimeMinute,
@@ -254,10 +256,47 @@ function calculateSurchargesInternal(
 	};
 }
 
-function snapshotRuleApplies(
+export interface SurchargeEndpointCapture {
+	instant: Instant;
+	utcOffsetMinutes: number;
+	timezone: string;
+}
+
+function isValidSurchargeUtcOffset(value: unknown): value is number {
+	return (
+		typeof value === "number" &&
+		Number.isSafeInteger(value) &&
+		value >= -840 &&
+		value <= 840
+	);
+}
+
+function validateSurchargeEndpointCapture(
+	capture: SurchargeEndpointCapture,
+): void {
+	if (
+		!isInstant(capture.instant) ||
+		!isValidSurchargeUtcOffset(capture.utcOffsetMinutes) ||
+		!isValidIanaTimezone(capture.timezone)
+	) {
+		throw new Error("Surcharge endpoint capture is invalid");
+	}
+}
+
+function localBoundaryToInstant(
+	date: ReturnType<typeof parsePlainDate>,
+	time: ReturnType<typeof parsePlainTimeMinute>,
+	utcOffsetMinutes: number,
+): Instant {
+	return date
+		.toPlainDateTime(time)
+		.toZonedDateTime(offsetMinutesToTimeZoneId(utcOffsetMinutes))
+		.toInstant();
+}
+
+function snapshotRuleIsValidAt(
 	rule: PolicyClockOutSurchargeRuleSnapshot,
 	minute: Instant,
-	timeZone: string,
 ): boolean {
 	if (
 		rule.validFrom &&
@@ -269,7 +308,13 @@ function snapshotRuleApplies(
 		compareInstants(minute, parseInstant(rule.validUntil)) > 0
 	)
 		return false;
-	const local = minute.toZonedDateTimeISO(timeZone);
+	return true;
+}
+
+function localDateMatchesRule(
+	rule: PolicyClockOutSurchargeRuleSnapshot,
+	date: ReturnType<typeof parsePlainDate>,
+): boolean {
 	switch (rule.ruleType) {
 		case "day_of_week": {
 			const day = [
@@ -280,22 +325,12 @@ function snapshotRuleApplies(
 				"friday",
 				"saturday",
 				"sunday",
-			][local.dayOfWeek - 1];
+			][date.dayOfWeek - 1];
 			return rule.dayOfWeek === day;
 		}
-		case "time_window": {
-			if (!rule.windowStartTime || !rule.windowEndTime) return false;
-			const currentMinutes = local.hour * 60 + local.minute;
-			const start = parsePlainTimeMinute(rule.windowStartTime);
-			const end = parsePlainTimeMinute(rule.windowEndTime);
-			const startMinutes = start.hour * 60 + start.minute;
-			const endMinutes = end.hour * 60 + end.minute;
-			return startMinutes <= endMinutes
-				? currentMinutes >= startMinutes && currentMinutes < endMinutes
-				: currentMinutes >= startMinutes || currentMinutes < endMinutes;
-		}
+		case "time_window":
+			return true;
 		case "date_based": {
-			const date = local.toPlainDate();
 			if (rule.specificDate)
 				return date.equals(parsePlainDate(rule.specificDate));
 			return Boolean(
@@ -308,14 +343,99 @@ function snapshotRuleApplies(
 	}
 }
 
+function snapshotRuleIntervals(input: {
+	rule: PolicyClockOutSurchargeRuleSnapshot;
+	start: SurchargeEndpointCapture;
+	end: SurchargeEndpointCapture;
+}): Array<{ start: Instant; end: Instant }> {
+	// Endpoint offsets are the audit evidence: openings use clock-in and
+	// closings use clock-out. Never infer an unrecorded transition between them.
+	const windowOpening =
+		input.rule.ruleType === "time_window" && input.rule.windowStartTime
+			? parsePlainTimeMinute(input.rule.windowStartTime)
+			: null;
+	const windowClosing =
+		input.rule.ruleType === "time_window" && input.rule.windowEndTime
+			? parsePlainTimeMinute(input.rule.windowEndTime)
+			: null;
+	if (windowOpening && windowClosing && windowOpening.equals(windowClosing)) {
+		return [];
+	}
+	if (
+		input.rule.ruleType === "date_based" &&
+		input.rule.dateRangeStart &&
+		input.rule.dateRangeEnd
+	) {
+		const midnight = parsePlainTimeMinute("00:00");
+		const opening = localBoundaryToInstant(
+			parsePlainDate(input.rule.dateRangeStart),
+			midnight,
+			input.start.utcOffsetMinutes,
+		);
+		const closing = localBoundaryToInstant(
+			parsePlainDate(input.rule.dateRangeEnd).add({ days: 1 }),
+			midnight,
+			input.end.utcOffsetMinutes,
+		);
+		return compareInstants(opening, closing) < 0
+			? [{ start: opening, end: closing }]
+			: [];
+	}
+	const startOffset = offsetMinutesToTimeZoneId(input.start.utcOffsetMinutes);
+	const endOffset = offsetMinutesToTimeZoneId(input.end.utcOffsetMinutes);
+	const startLocalDate = input.start.instant
+		.toZonedDateTimeISO(startOffset)
+		.toPlainDate();
+	const endLocalDate = input.end.instant
+		.toZonedDateTimeISO(endOffset)
+		.toPlainDate();
+	let date =
+		comparePlainDates(startLocalDate, endLocalDate) <= 0
+			? startLocalDate.subtract({ days: 1 })
+			: endLocalDate.subtract({ days: 1 });
+	const finalDate =
+		comparePlainDates(startLocalDate, endLocalDate) >= 0
+			? startLocalDate.add({ days: 1 })
+			: endLocalDate.add({ days: 1 });
+	const intervals: Array<{ start: Instant; end: Instant }> = [];
+	while (comparePlainDates(date, finalDate) <= 0) {
+		if (localDateMatchesRule(input.rule, date)) {
+			const openingTime = windowOpening ?? parsePlainTimeMinute("00:00");
+			const closingTime = windowClosing ?? parsePlainTimeMinute("00:00");
+			const closingDate =
+				input.rule.ruleType !== "time_window" ||
+				closingTime.hour * 60 + closingTime.minute <=
+					openingTime.hour * 60 + openingTime.minute
+					? date.add({ days: 1 })
+					: date;
+			const opening = localBoundaryToInstant(
+				date,
+				openingTime,
+				input.start.utcOffsetMinutes,
+			);
+			const closing = localBoundaryToInstant(
+				closingDate,
+				closingTime,
+				input.end.utcOffsetMinutes,
+			);
+			if (compareInstants(opening, closing) < 0) {
+				intervals.push({ start: opening, end: closing });
+			}
+		}
+		date = date.add({ days: 1 });
+	}
+	return intervals;
+}
+
 export function evaluateSurchargeSnapshot(input: {
 	snapshot: PolicyClockOutSurchargeSnapshot;
-	startTime: Instant;
-	endTime: Instant;
-	timeZone: string;
+	start: SurchargeEndpointCapture;
+	end: SurchargeEndpointCapture;
 }): SurchargeCalculationResult {
+	validateSurchargeEndpointCapture(input.start);
+	validateSurchargeEndpointCapture(input.end);
 	const totalMinutes = Math.floor(
-		input.endTime.since(input.startTime).total({ unit: "minutes" }),
+		input.end.instant.since(input.start.instant).total({ unit: "minutes" }),
 	);
 	const rules =
 		input.snapshot.resolution.kind === "surcharge_model"
@@ -330,11 +450,23 @@ export function evaluateSurchargeSnapshot(input: {
 			appliedRules: [],
 		};
 	}
+	const intervals = new Map(
+		rules.map((rule) => [
+			rule.id,
+			snapshotRuleIntervals({ rule, start: input.start, end: input.end }),
+		]),
+	);
 	const qualifying = new Map<string, number>();
 	for (let minuteIndex = 0; minuteIndex < totalMinutes; minuteIndex += 1) {
-		const minute = input.startTime.add({ minutes: minuteIndex });
-		const applicable = rules.filter((rule) =>
-			snapshotRuleApplies(rule, minute, input.timeZone),
+		const minute = input.start.instant.add({ minutes: minuteIndex });
+		const applicable = rules.filter(
+			(rule) =>
+				snapshotRuleIsValidAt(rule, minute) &&
+				(intervals.get(rule.id) ?? []).some(
+					(interval) =>
+						compareInstants(minute, interval.start) >= 0 &&
+						compareInstants(minute, interval.end) < 0,
+				),
 		);
 		if (applicable.length === 0) continue;
 		const winner = applicable.reduce((highest, rule) =>
@@ -441,6 +573,24 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 			) {
 				throw new Error("target period is not approved");
 			}
+			if (
+				periods.some(
+					(period) =>
+						targetIds.includes(period.id) &&
+						(!period.clockIn ||
+							!period.clockOut ||
+							period.clockIn.timestamp.getTime() !==
+								period.startTime.getTime() ||
+							period.clockOut.timestamp.getTime() !==
+								period.endTime?.getTime() ||
+							!isValidSurchargeUtcOffset(period.clockIn.utcOffsetMinutes) ||
+							!isValidSurchargeUtcOffset(period.clockOut.utcOffsetMinutes) ||
+							!isValidIanaTimezone(period.clockIn.timezone) ||
+							!isValidIanaTimezone(period.clockOut.timezone)),
+				)
+			) {
+				throw new Error("period timezone evidence mismatch");
+			}
 			await tx
 				.delete(surchargeCalculation)
 				.where(
@@ -461,18 +611,24 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 					period.clockIn.timestamp.getTime() !== period.startTime.getTime() ||
 					period.clockOut.timestamp.getTime() !== period.endTime.getTime() ||
 					!Number.isInteger(period.clockIn.utcOffsetMinutes) ||
-					!Number.isInteger(period.clockOut.utcOffsetMinutes)
+					!Number.isInteger(period.clockOut.utcOffsetMinutes) ||
+					!isValidIanaTimezone(period.clockIn.timezone) ||
+					!isValidIanaTimezone(period.clockOut.timezone)
 				) {
 					throw new Error("period timezone evidence mismatch");
 				}
-				const timeZone = isValidIanaTimezone(period.clockOut.timezone)
-					? period.clockOut.timezone
-					: offsetMinutesToTimeZoneId(period.clockOut.utcOffsetMinutes);
 				const result = evaluateSurchargeSnapshot({
 					snapshot: input.surchargeSnapshot as PolicyClockOutSurchargeSnapshot,
-					startTime: instantFromDate(period.startTime),
-					endTime: instantFromDate(period.endTime),
-					timeZone,
+					start: {
+						instant: instantFromDate(period.clockIn.timestamp),
+						utcOffsetMinutes: period.clockIn.utcOffsetMinutes,
+						timezone: period.clockIn.timezone,
+					},
+					end: {
+						instant: instantFromDate(period.clockOut.timestamp),
+						utcOffsetMinutes: period.clockOut.utcOffsetMinutes,
+						timezone: period.clockOut.timezone,
+					},
 				});
 				if (result.surchargeMinutes === 0) continue;
 				const primaryRule = result.appliedRules[0];

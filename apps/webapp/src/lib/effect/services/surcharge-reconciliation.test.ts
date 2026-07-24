@@ -46,7 +46,13 @@ const input = {
 };
 
 describe("evaluateSurchargeSnapshot", () => {
-	it("preserves minute max-wins behavior with explicit Temporal timezone", () => {
+	const endpoint = (
+		instant: string,
+		utcOffsetMinutes: number,
+		timezone: string,
+	) => ({ instant: parseInstant(instant), utcOffsetMinutes, timezone });
+
+	it("preserves minute max-wins behavior with exact same-offset captures", () => {
 		const result = evaluateSurchargeSnapshot({
 			snapshot: {
 				...surchargeSnapshot,
@@ -68,9 +74,8 @@ describe("evaluateSurchargeSnapshot", () => {
 					],
 				},
 			},
-			startTime: parseInstant("2026-07-19T22:00:00Z"),
-			endTime: parseInstant("2026-07-19T23:00:00Z"),
-			timeZone: "UTC",
+			start: endpoint("2026-07-19T22:00:00Z", 0, "UTC"),
+			end: endpoint("2026-07-19T23:00:00Z", 0, "UTC"),
 		});
 
 		expect(result).toMatchObject({
@@ -105,9 +110,8 @@ describe("evaluateSurchargeSnapshot", () => {
 					],
 				},
 			},
-			startTime: parseInstant("2026-07-19T08:00:00Z"),
-			endTime: parseInstant("2026-07-19T10:00:00Z"),
-			timeZone: "UTC",
+			start: endpoint("2026-07-19T08:00:00Z", 0, "UTC"),
+			end: endpoint("2026-07-19T10:00:00Z", 0, "UTC"),
 		});
 
 		expect(result).toMatchObject({
@@ -124,11 +128,266 @@ describe("evaluateSurchargeSnapshot", () => {
 					evaluatedAt: "2026-07-19T10:00:00Z",
 					resolution: { kind: "none" },
 				},
-				startTime: parseInstant("2026-07-19T08:00:00Z"),
-				endTime: parseInstant("2026-07-19T10:00:00Z"),
-				timeZone: "UTC",
+				start: endpoint("2026-07-19T08:00:00Z", 0, "UTC"),
+				end: endpoint("2026-07-19T10:00:00Z", 0, "UTC"),
 			}),
 		).toMatchObject({ qualifyingMinutes: 0, surchargeMinutes: 0 });
+	});
+
+	it("uses captured opening and closing offsets for a DST change near midnight", () => {
+		const result = evaluateSurchargeSnapshot({
+			snapshot: {
+				...surchargeSnapshot,
+				resolution: {
+					...surchargeSnapshot.resolution,
+					rules: [
+						{
+							...surchargeSnapshot.resolution.rules[0],
+							ruleType: "time_window",
+							dayOfWeek: null,
+							windowStartTime: "23:00",
+							windowEndTime: "01:00",
+						},
+					],
+				},
+			},
+			start: endpoint("2026-10-24T21:30:00Z", 120, "Europe/Berlin"),
+			end: endpoint("2026-10-25T00:30:00Z", 60, "Europe/Berlin"),
+		});
+
+		expect(result).toMatchObject({
+			baseMinutes: 180,
+			qualifyingMinutes: 150,
+			surchargeMinutes: 75,
+		});
+	});
+
+	it("keeps equal time-window boundaries empty", () => {
+		const result = evaluateSurchargeSnapshot({
+			snapshot: {
+				...surchargeSnapshot,
+				resolution: {
+					...surchargeSnapshot.resolution,
+					rules: [
+						{
+							...surchargeSnapshot.resolution.rules[0],
+							ruleType: "time_window",
+							dayOfWeek: null,
+							windowStartTime: "06:00",
+							windowEndTime: "06:00",
+						},
+					],
+				},
+			},
+			start: endpoint("2026-07-19T06:00:00Z", 0, "UTC"),
+			end: endpoint("2026-07-19T07:00:00Z", 0, "UTC"),
+		});
+
+		expect(result).toMatchObject({
+			baseMinutes: 60,
+			qualifyingMinutes: 0,
+			surchargeMinutes: 0,
+		});
+	});
+
+	it("treats normal time-window openings as inclusive and closings as exclusive", () => {
+		const result = evaluateSurchargeSnapshot({
+			snapshot: {
+				...surchargeSnapshot,
+				resolution: {
+					...surchargeSnapshot.resolution,
+					rules: [
+						{
+							...surchargeSnapshot.resolution.rules[0],
+							ruleType: "time_window",
+							dayOfWeek: null,
+							windowStartTime: "09:00",
+							windowEndTime: "10:00",
+						},
+					],
+				},
+			},
+			start: endpoint("2026-07-19T08:59:00Z", 0, "UTC"),
+			end: endpoint("2026-07-19T10:01:00Z", 0, "UTC"),
+		});
+
+		expect(result).toMatchObject({
+			baseMinutes: 62,
+			qualifyingMinutes: 60,
+			surchargeMinutes: 30,
+		});
+	});
+
+	it("uses travel endpoint offsets without inventing an interior transition", () => {
+		const result = evaluateSurchargeSnapshot({
+			snapshot: {
+				...surchargeSnapshot,
+				resolution: {
+					...surchargeSnapshot.resolution,
+					rules: [
+						{
+							...surchargeSnapshot.resolution.rules[0],
+							ruleType: "time_window",
+							dayOfWeek: null,
+							windowStartTime: "23:00",
+							windowEndTime: "01:00",
+						},
+					],
+				},
+			},
+			start: endpoint("2026-07-19T21:30:00Z", 120, "Europe/Berlin"),
+			end: endpoint("2026-07-20T04:30:00Z", -240, "America/New_York"),
+		});
+
+		expect(result).toMatchObject({
+			baseMinutes: 420,
+			qualifyingMinutes: 420,
+			surchargeMinutes: 210,
+		});
+	});
+
+	it.each([
+		"day_of_week",
+		"date_based",
+	] as const)("derives %s local-day boundaries from both travel captures", (ruleType) => {
+		const result = evaluateSurchargeSnapshot({
+			snapshot: {
+				...surchargeSnapshot,
+				resolution: {
+					...surchargeSnapshot.resolution,
+					rules: [
+						{
+							...surchargeSnapshot.resolution.rules[0],
+							ruleType,
+							dayOfWeek: ruleType === "day_of_week" ? "sunday" : null,
+							specificDate: ruleType === "date_based" ? "2026-07-19" : null,
+						},
+					],
+				},
+			},
+			start: endpoint("2026-07-19T21:30:00Z", 120, "Europe/Berlin"),
+			end: endpoint("2026-07-20T04:30:00Z", -240, "America/New_York"),
+		});
+
+		expect(result).toMatchObject({
+			baseMinutes: 420,
+			qualifyingMinutes: 390,
+			surchargeMinutes: 195,
+		});
+	});
+
+	it("keeps a date range continuous across eastbound travel", () => {
+		const result = evaluateSurchargeSnapshot({
+			snapshot: {
+				...surchargeSnapshot,
+				resolution: {
+					...surchargeSnapshot.resolution,
+					rules: [
+						{
+							...surchargeSnapshot.resolution.rules[0],
+							ruleType: "date_based",
+							dayOfWeek: null,
+							dateRangeStart: "2026-07-19",
+							dateRangeEnd: "2026-07-20",
+						},
+					],
+				},
+			},
+			start: endpoint("2026-07-19T21:30:00Z", -240, "America/New_York"),
+			end: endpoint("2026-07-20T04:30:00Z", 120, "Europe/Berlin"),
+		});
+
+		expect(result).toMatchObject({
+			baseMinutes: 420,
+			qualifyingMinutes: 420,
+			surchargeMinutes: 210,
+		});
+	});
+
+	it("treats validity endpoints as inclusive and adjacent minutes as excluded", () => {
+		const result = evaluateSurchargeSnapshot({
+			snapshot: {
+				...surchargeSnapshot,
+				resolution: {
+					...surchargeSnapshot.resolution,
+					rules: [
+						{
+							...surchargeSnapshot.resolution.rules[0],
+							dayOfWeek: "monday",
+							validFrom: "2026-07-20T10:01:00Z",
+							validUntil: "2026-07-20T10:02:00Z",
+						},
+					],
+				},
+			},
+			start: endpoint("2026-07-20T10:00:00Z", 0, "UTC"),
+			end: endpoint("2026-07-20T10:04:00Z", 0, "UTC"),
+		});
+
+		expect(result).toMatchObject({
+			qualifyingMinutes: 2,
+			surchargeMinutes: 1,
+		});
+	});
+
+	it("uses maximum percentage, then snapshot priority order for equal overlaps", () => {
+		const baseRule = surchargeSnapshot.resolution.rules[0];
+		const result = evaluateSurchargeSnapshot({
+			snapshot: {
+				...surchargeSnapshot,
+				resolution: {
+					...surchargeSnapshot.resolution,
+					rules: [
+						{
+							...baseRule,
+							id: "30000000-0000-4000-8000-000000000002",
+							name: "Higher priority 50%",
+							priority: 3,
+						},
+						{
+							...baseRule,
+							id: "30000000-0000-4000-8000-000000000003",
+							name: "Lower priority 50%",
+							priority: 2,
+						},
+						{
+							...baseRule,
+							id: "30000000-0000-4000-8000-000000000004",
+							name: "Lower percentage",
+							percentage: "0.2500",
+							priority: 1,
+						},
+					],
+				},
+			},
+			start: endpoint("2026-07-19T10:00:00Z", 0, "UTC"),
+			end: endpoint("2026-07-19T10:03:00Z", 0, "UTC"),
+		});
+
+		expect(result.surchargeMinutes).toBe(2);
+		expect(result.appliedRules).toEqual([
+			expect.objectContaining({
+				ruleId: "30000000-0000-4000-8000-000000000002",
+				qualifyingMinutes: 3,
+				surchargeMinutes: 2,
+			}),
+		]);
+	});
+
+	it.each([
+		{ utcOffsetMinutes: 841, timezone: "UTC" },
+		{ utcOffsetMinutes: 0, timezone: "not/a-zone" },
+	])("rejects malformed endpoint capture %#", (capture) => {
+		expect(() =>
+			evaluateSurchargeSnapshot({
+				snapshot: surchargeSnapshot,
+				start: {
+					instant: parseInstant("2026-07-19T08:00:00Z"),
+					...capture,
+				},
+				end: endpoint("2026-07-19T10:00:00Z", 0, "UTC"),
+			}),
+		).toThrow("Surcharge endpoint capture is invalid");
 	});
 });
 
@@ -295,6 +554,145 @@ describe("reconcileSurchargeWorkPeriodsWithDatabase", () => {
 		expect(fake.tx.query.organization.findFirst).not.toHaveBeenCalled();
 	});
 
+	it("matches direct evaluator output for immediate no-approval reconciliation", async () => {
+		const travelSnapshot = {
+			...surchargeSnapshot,
+			resolution: {
+				...surchargeSnapshot.resolution,
+				rules: [
+					{
+						...surchargeSnapshot.resolution.rules[0],
+						ruleType: "time_window" as const,
+						dayOfWeek: null,
+						windowStartTime: "23:00",
+						windowEndTime: "01:00",
+					},
+				],
+			},
+		};
+		const period = {
+			id: "period-1",
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			startTime: new Date("2026-07-19T21:30:00Z"),
+			endTime: new Date("2026-07-20T04:30:00Z"),
+			approvalStatus: "approved",
+			clockIn: {
+				timestamp: new Date("2026-07-19T21:30:00Z"),
+				timezone: "Europe/Berlin",
+				utcOffsetMinutes: 120,
+			},
+			clockOut: {
+				timestamp: new Date("2026-07-20T04:30:00Z"),
+				timezone: "America/New_York",
+				utcOffsetMinutes: -240,
+			},
+		};
+		const expected = evaluateSurchargeSnapshot({
+			snapshot: travelSnapshot,
+			start: {
+				instant: parseInstant("2026-07-19T21:30:00Z"),
+				utcOffsetMinutes: 120,
+				timezone: "Europe/Berlin",
+			},
+			end: {
+				instant: parseInstant("2026-07-20T04:30:00Z"),
+				utcOffsetMinutes: -240,
+				timezone: "America/New_York",
+			},
+		});
+		const fake = database({ periods: [period] });
+
+		await reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, {
+			...input,
+			surchargeSnapshot: travelSnapshot,
+		});
+
+		expect(fake.inserts).toEqual([
+			expect.objectContaining({
+				baseMinutes: expected.baseMinutes,
+				qualifyingMinutes: expected.qualifyingMinutes,
+				surchargeMinutes: expected.surchargeMinutes,
+			}),
+		]);
+	});
+
+	it("uses stored synthetic split endpoint captures for each final segment", async () => {
+		const splitSnapshot = {
+			...surchargeSnapshot,
+			resolution: {
+				...surchargeSnapshot.resolution,
+				rules: [
+					{
+						...surchargeSnapshot.resolution.rules[0],
+						ruleType: "time_window" as const,
+						dayOfWeek: null,
+						windowStartTime: "23:00",
+						windowEndTime: "01:00",
+					},
+				],
+			},
+		};
+		const periods = [
+			{
+				id: "period-1",
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				startTime: new Date("2026-10-24T21:30:00Z"),
+				endTime: new Date("2026-10-24T23:00:00Z"),
+				approvalStatus: "approved",
+				clockIn: {
+					timestamp: new Date("2026-10-24T21:30:00Z"),
+					timezone: "Europe/Berlin",
+					utcOffsetMinutes: 120,
+				},
+				clockOut: {
+					timestamp: new Date("2026-10-24T23:00:00Z"),
+					timezone: "Europe/Berlin",
+					utcOffsetMinutes: 120,
+				},
+			},
+			{
+				id: "period-2",
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				startTime: new Date("2026-10-24T23:30:00Z"),
+				endTime: new Date("2026-10-25T00:30:00Z"),
+				approvalStatus: "approved",
+				clockIn: {
+					timestamp: new Date("2026-10-24T23:30:00Z"),
+					timezone: "Europe/Berlin",
+					utcOffsetMinutes: 60,
+				},
+				clockOut: {
+					timestamp: new Date("2026-10-25T00:30:00Z"),
+					timezone: "Europe/Berlin",
+					utcOffsetMinutes: 60,
+				},
+			},
+		];
+		const fake = database({ periods });
+
+		await reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, {
+			...input,
+			surchargePeriodIds: ["period-1", "period-2"],
+			surchargeSnapshot: splitSnapshot,
+		});
+
+		expect(fake.inserts).toEqual([
+			expect.objectContaining({
+				workPeriodId: "period-1",
+				qualifyingMinutes: 90,
+				surchargeMinutes: 45,
+			}),
+			expect.objectContaining({
+				workPeriodId: "period-2",
+				qualifyingMinutes: 30,
+				surchargeMinutes: 15,
+			}),
+		]);
+	});
+
 	it("deletes stale calculations and creates none from stored none after a later assignment", async () => {
 		const fake = database({ model: assignmentFixture({ modelId: "later" }) });
 
@@ -352,6 +750,39 @@ describe("reconcileSurchargeWorkPeriodsWithDatabase", () => {
 					startTime: new Date("2026-07-19T08:00:00Z"),
 					endTime: new Date("2026-07-19T10:00:00Z"),
 					approvalStatus: "pending",
+				},
+			],
+		});
+
+		await expect(
+			reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, input),
+		).rejects.toThrow("Surcharge reconciliation failed");
+		expect(fake.tx.delete).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		{ clockInTimezone: "not/a-zone", clockInOffset: 0 },
+		{ clockInTimezone: "UTC", clockInOffset: 900 },
+	])("fails closed before delete for malformed endpoint evidence %#", async (evidence) => {
+		const fake = database({
+			periods: [
+				{
+					id: "period-1",
+					organizationId: "org-1",
+					employeeId: "employee-1",
+					startTime: new Date("2026-07-19T08:00:00Z"),
+					endTime: new Date("2026-07-19T10:00:00Z"),
+					approvalStatus: "approved",
+					clockIn: {
+						timestamp: new Date("2026-07-19T08:00:00Z"),
+						timezone: evidence.clockInTimezone,
+						utcOffsetMinutes: evidence.clockInOffset,
+					},
+					clockOut: {
+						timestamp: new Date("2026-07-19T10:00:00Z"),
+						timezone: "UTC",
+						utcOffsetMinutes: 0,
+					},
 				},
 			],
 		});
