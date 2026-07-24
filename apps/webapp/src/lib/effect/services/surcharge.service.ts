@@ -329,32 +329,51 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 						gte(surchargeModelAssignment.effectiveUntil, effectiveAt),
 					),
 				);
-				const assignment =
-					(await tx.query.surchargeModelAssignment.findFirst({
+				const employeeAssignments =
+					await tx.query.surchargeModelAssignment.findMany({
 						where: and(
 							effectiveWindow,
 							eq(surchargeModelAssignment.employeeId, input.employeeId),
 							eq(surchargeModelAssignment.assignmentType, "employee"),
 						),
 						with: { model: { with: { rules: true } } },
-					})) ??
-					(ownedEmployee.teamId
-						? await tx.query.surchargeModelAssignment.findFirst({
-								where: and(
-									effectiveWindow,
-									eq(surchargeModelAssignment.teamId, ownedEmployee.teamId),
-									eq(surchargeModelAssignment.assignmentType, "team"),
-								),
-								with: { model: { with: { rules: true } } },
-							})
-						: null) ??
-					(await tx.query.surchargeModelAssignment.findFirst({
-						where: and(
-							effectiveWindow,
-							eq(surchargeModelAssignment.assignmentType, "organization"),
-						),
-						with: { model: { with: { rules: true } } },
-					}));
+						limit: 2,
+					});
+				if (employeeAssignments.length > 1) {
+					throw new Error("ambiguous employee surcharge assignment");
+				}
+				let assignment = employeeAssignments[0] ?? null;
+				if (!assignment && ownedEmployee.teamId) {
+					const teamAssignments =
+						await tx.query.surchargeModelAssignment.findMany({
+							where: and(
+								effectiveWindow,
+								eq(surchargeModelAssignment.teamId, ownedEmployee.teamId),
+								eq(surchargeModelAssignment.assignmentType, "team"),
+							),
+							with: { model: { with: { rules: true } } },
+							limit: 2,
+						});
+					if (teamAssignments.length > 1) {
+						throw new Error("ambiguous team surcharge assignment");
+					}
+					assignment = teamAssignments[0] ?? null;
+				}
+				if (!assignment) {
+					const organizationAssignments =
+						await tx.query.surchargeModelAssignment.findMany({
+							where: and(
+								effectiveWindow,
+								eq(surchargeModelAssignment.assignmentType, "organization"),
+							),
+							with: { model: { with: { rules: true } } },
+							limit: 2,
+						});
+					if (organizationAssignments.length > 1) {
+						throw new Error("ambiguous organization surcharge assignment");
+					}
+					assignment = organizationAssignments[0] ?? null;
+				}
 				if (!assignment) continue;
 				if (
 					assignment.organizationId !== input.organizationId ||

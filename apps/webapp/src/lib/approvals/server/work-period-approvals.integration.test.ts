@@ -212,6 +212,7 @@ const ids = {
 	surchargeRule: "cb000000-0000-4000-8000-000000000002",
 	surchargeAssignment: "cb000000-0000-4000-8000-000000000003",
 	staleSurchargeCalculation: "cb000000-0000-4000-8000-000000000004",
+	ambiguousSurchargeAssignment: "cb000000-0000-4000-8000-000000000005",
 	foreignClockIn: "cc000000-0000-4000-8000-000000000001",
 	foreignClockOut: "cc000000-0000-4000-8000-000000000002",
 	foreignPeriod: "cc000000-0000-4000-8000-000000000003",
@@ -2951,6 +2952,50 @@ describeIntegration(
 			await pool.query(
 				"update surcharge_model set organization_id = $1 where id = $2 and organization_id = $3",
 				[ids.foreignOrganization, ids.surchargeModel, ids.organization],
+			);
+
+			const completed = await completeDecision(target, {
+				kind: "approve",
+				reason: null,
+			});
+
+			expect(completed.execution.result.action).toBe("approve");
+			expect(completed.maintenanceErrors).toHaveLength(1);
+			const state = await maintenanceSnapshot();
+			expect(
+				state.calculations.filter(
+					({ organization_id }) => organization_id === ids.organization,
+				),
+			).toEqual([
+				expect.objectContaining({
+					id: ids.staleSurchargeCalculation,
+					work_period_id: ids.period,
+					base_minutes: 999,
+				}),
+			]);
+		});
+
+		it("rolls back stale surcharge deletion for ambiguous historical assignments", async () => {
+			await seed("manual_time_submission", false, "canonical");
+			await seedMaintenanceState();
+			const target = (await submit("manual_time_submission")).result
+				.approvalRequestId;
+			const timestamp = new Date(now.epochMilliseconds);
+			await pool.query(
+				`insert into surcharge_model_assignment
+				 (id, model_id, organization_id, assignment_type, employee_id,
+				  priority, effective_from, effective_until, is_active,
+				  created_by, created_at, updated_at)
+				 values ($1, $2, $3, 'employee', $4, 2, $5, null, false, $6, $7, $7)`,
+				[
+					ids.ambiguousSurchargeAssignment,
+					ids.surchargeModel,
+					ids.organization,
+					ids.requester,
+					new Date("2026-01-01T00:00:00Z"),
+					ids.managerUser,
+					timestamp,
+				],
 			);
 
 			const completed = await completeDecision(target, {
