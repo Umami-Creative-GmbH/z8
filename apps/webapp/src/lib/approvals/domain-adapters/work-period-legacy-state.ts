@@ -72,6 +72,8 @@ interface WorkPeriodSnapshot {
 	employeeId: string;
 	startTime: Instant;
 	endTime: Instant | null;
+	wasAutoAdjusted: boolean;
+	originalEndTime: Instant | null;
 	durationMinutes: number | null;
 	isActive: boolean;
 	approvalStatus: RequestStatus;
@@ -214,6 +216,23 @@ function sameInstant(left: Instant | null, right: Instant | null): boolean {
 	return compareInstants(left, right) === 0;
 }
 
+function policyEvaluatedAt(input: {
+	endTime: Instant;
+	wasAutoAdjusted: boolean;
+	originalEndTime: Instant | null;
+	status: RequestStatus;
+}): string {
+	if (input.status === "pending") {
+		if (input.wasAutoAdjusted || input.originalEndTime !== null) return fail();
+		return instantToCanonicalString(input.endTime);
+	}
+	if (input.wasAutoAdjusted) {
+		return instantToCanonicalString(input.originalEndTime ?? fail());
+	}
+	if (input.originalEndTime !== null) return fail();
+	return instantToCanonicalString(input.endTime);
+}
+
 function exactlyOne(values: unknown[]): unknown {
 	if (values.length !== 1) return fail();
 	return values[0];
@@ -227,6 +246,8 @@ function decodePeriod(value: unknown): WorkPeriodSnapshot {
 		employeeId: string(raw.employeeId),
 		startTime: requiredInstant(raw.startTime),
 		endTime: nullableInstant(raw.endTime),
+		wasAutoAdjusted: boolean(raw.wasAutoAdjusted),
+		originalEndTime: nullableInstant(raw.originalEndTime),
 		durationMinutes: nullableInteger(raw.durationMinutes),
 		isActive: boolean(raw.isActive),
 		approvalStatus: requestStatus(raw.approvalStatus),
@@ -268,6 +289,9 @@ function normalizeRequestPayload(input: {
 	organizationId: string;
 	workPeriodId: string;
 	sourceEndTime: Instant;
+	sourceWasAutoAdjusted: boolean;
+	sourceOriginalEndTime: Instant | null;
+	sourceStatus: RequestStatus;
 }) {
 	const raw = record(input.metadata);
 	const markerDescriptor = Object.getOwnPropertyDescriptor(
@@ -332,18 +356,27 @@ function normalizeRequestPayload(input: {
 		);
 		if (input.expectedKind === "policy_clock_out") {
 			if (!payload.breakPolicySnapshot) return fail();
-			const evaluatedAt = instantToCanonicalString(input.sourceEndTime);
-			const sourceSnapshot = policyClockOutBreakSnapshotFromPendingChanges(
-				input.pendingChanges,
-				evaluatedAt,
-			);
-			if (
-				!policyClockOutBreakSnapshotsEqual(
-					sourceSnapshot,
-					payload.breakPolicySnapshot,
+			const evaluatedAt = policyEvaluatedAt({
+				endTime: input.sourceEndTime,
+				wasAutoAdjusted: input.sourceWasAutoAdjusted,
+				originalEndTime: input.sourceOriginalEndTime,
+				status: input.sourceStatus,
+			});
+			if (input.sourceStatus === "pending") {
+				const sourceSnapshot = policyClockOutBreakSnapshotFromPendingChanges(
+					input.pendingChanges,
 					evaluatedAt,
-				)
-			) {
+				);
+				if (
+					!policyClockOutBreakSnapshotsEqual(
+						sourceSnapshot,
+						payload.breakPolicySnapshot,
+						evaluatedAt,
+					)
+				) {
+					return fail();
+				}
+			} else if (payload.breakPolicySnapshot.evaluatedAt !== evaluatedAt) {
 				return fail();
 			}
 		}
@@ -360,6 +393,7 @@ function decodeRequest(
 	workPeriodId: string,
 	expectedKind: OrdinaryWorkPeriodApprovalKind,
 	expectedStatus: RequestStatus,
+	expectedSourceStatus: RequestStatus,
 ): LegacyApprovalRequestSnapshot {
 	const raw = record(value);
 	const reason = nullableString(raw.reason);
@@ -449,6 +483,9 @@ function decodeRequest(
 		organizationId,
 		workPeriodId,
 		sourceEndTime: period.endTime ?? fail(),
+		sourceWasAutoAdjusted: period.wasAutoAdjusted,
+		sourceOriginalEndTime: period.originalEndTime,
+		sourceStatus: expectedSourceStatus,
 	});
 	return {
 		id: string(raw.id),
@@ -579,6 +616,8 @@ function decodeCapture(
 		return fail();
 	}
 	const kind = classifiedKind;
+	const expectedSourceStatus =
+		input.expectedSourceStatus ?? period.approvalStatus;
 	const request = decodeRequest(
 		rawRequest,
 		period,
@@ -586,15 +625,17 @@ function decodeCapture(
 		input.workPeriodId,
 		kind,
 		input.expectedRequestStatus ?? "pending",
+		expectedSourceStatus,
 	);
 	const expectedRequestStatus = input.expectedRequestStatus ?? "pending";
-	const expectedSourceStatus =
-		input.expectedSourceStatus ?? period.approvalStatus;
 	if (
 		period.id !== input.workPeriodId ||
 		period.organizationId !== input.organizationId ||
 		period.employeeId !== input.expectedRequesterEmployeeId ||
 		period.approvalStatus !== expectedSourceStatus ||
+		(expectedSourceStatus === "pending"
+			? period.pendingChanges === null
+			: period.pendingChanges !== null) ||
 		period.deletedAt !== null ||
 		period.isActive ||
 		period.endTime === null ||
@@ -767,6 +808,12 @@ function decodeCapture(
 		kind,
 	);
 	if (canonicalPayload) {
+		const evaluatedAt = policyEvaluatedAt({
+			endTime: period.endTime,
+			wasAutoAdjusted: period.wasAutoAdjusted,
+			originalEndTime: period.originalEndTime,
+			status: expectedSourceStatus,
+		});
 		if (
 			kind === "policy_clock_out" &&
 			(!payload.breakPolicySnapshot ||
@@ -774,7 +821,7 @@ function decodeCapture(
 				!policyClockOutBreakSnapshotsEqual(
 					payload.breakPolicySnapshot,
 					canonicalPayload.breakPolicySnapshot,
-					instantToCanonicalString(period.endTime),
+					evaluatedAt,
 				))
 		) {
 			return fail();
@@ -954,6 +1001,8 @@ export async function captureOrdinaryWorkPeriodLegacyState(
 					period.employee_id as "employeeId",
 					period.start_time as "startTime",
 					period.end_time as "endTime",
+					period.was_auto_adjusted as "wasAutoAdjusted",
+					period.original_end_time as "originalEndTime",
 					period.duration_minutes as "durationMinutes",
 					period.is_active as "isActive",
 					period.approval_status as "approvalStatus",
@@ -1120,6 +1169,8 @@ export async function captureOrdinaryWorkPeriodLegacyPreSubmissionState(
 					period.employee_id as "employeeId",
 					period.start_time as "startTime",
 					period.end_time as "endTime",
+					period.was_auto_adjusted as "wasAutoAdjusted",
+					period.original_end_time as "originalEndTime",
 					period.duration_minutes as "durationMinutes",
 					period.is_active as "isActive",
 					period.approval_status as "approvalStatus",

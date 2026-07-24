@@ -77,6 +77,8 @@ function period(overrides: JsonRecord = {}) {
 		employeeId,
 		startTime: startAt,
 		endTime: endAt,
+		wasAutoAdjusted: false,
+		originalEndTime: null,
 		durationMinutes: 480,
 		isActive: false,
 		approvalStatus: "pending",
@@ -191,6 +193,75 @@ function envelope(overrides: JsonRecord = {}) {
 	};
 }
 
+function terminalPolicyEnvelope(input: {
+	status: "approved" | "rejected";
+	split?: boolean;
+	linked?: boolean;
+	requestSnapshot?: unknown;
+	canonicalSnapshot?: unknown;
+}) {
+	const splitEnd = new Date("2026-07-20T13:30:00.000Z");
+	const terminalEnd = input.split ? splitEnd : endAt;
+	const terminalDuration = input.split ? 450 : 480;
+	const decidedAt = new Date("2026-07-20T14:30:00.000Z");
+	const requestSnapshot =
+		input.requestSnapshot === undefined
+			? breakPolicySnapshot
+			: input.requestSnapshot;
+	const canonicalSnapshot =
+		input.canonicalSnapshot === undefined
+			? breakPolicySnapshot
+			: input.canonicalSnapshot;
+	return envelope({
+		workPeriods: [
+			period({
+				approvalStatus: input.status,
+				pendingChanges: null,
+				approvalWorkflowId: input.linked === false ? null : workflowId,
+				endTime: terminalEnd,
+				wasAutoAdjusted: input.split === true,
+				originalEndTime: input.split ? endAt : null,
+				durationMinutes: terminalDuration,
+			}),
+		],
+		canonicalRecords: [
+			canonical({
+				approvalState: input.status,
+				endAt: terminalEnd,
+				durationMinutes: terminalDuration,
+			}),
+		],
+		approvalRequests: [
+			request({
+				status: input.status,
+				approvedAt: input.status === "approved" ? decidedAt : null,
+				rejectionReason: input.status === "rejected" ? "Policy conflict" : null,
+				metadata: {
+					timeRequest: { kind: "policy_clock_out" },
+					...(requestSnapshot === null
+						? {}
+						: { breakPolicySnapshot: requestSnapshot }),
+				},
+			}),
+		],
+		requestStageLinks: [],
+		chains: [],
+		chainRows: [],
+		workflows:
+			input.linked === false
+				? []
+				: [
+						workflow({
+							workflowType: "policy_clock_out",
+							contextSnapshot: {
+								timeRequest: { kind: "policy_clock_out" },
+								breakPolicySnapshot: canonicalSnapshot,
+							},
+						}),
+					],
+	});
+}
+
 function database(value: JsonRecord) {
 	const calls: SQL[] = [];
 	const dbService = {
@@ -233,6 +304,122 @@ async function expectCaptureFailure(
 }
 
 describe("captureOrdinaryWorkPeriodLegacyState", () => {
+	it.each([
+		["approved", false, true],
+		["approved", true, true],
+		["rejected", false, true],
+		["approved", false, false],
+	] as const)("captures terminal policy evidence for %s with split=%s linked=%s", async (status, split, linked) => {
+		const fake = database(terminalPolicyEnvelope({ status, split, linked }));
+
+		const state = await captureOrdinaryWorkPeriodLegacyState(
+			input(fake.dbService, {
+				expectedKind: "policy_clock_out",
+				expectedRequestStatus: status,
+				expectedSourceStatus: status,
+			}),
+		);
+
+		expect(state.sourceSnapshot).toEqual({
+			timeRequest: { kind: "policy_clock_out" },
+			breakPolicySnapshot,
+		});
+		expect(state.displaySnapshot).toMatchObject({
+			approvalStatus: status,
+			period: {
+				endAt: split ? "2026-07-20T13:30:00Z" : "2026-07-20T14:00:00Z",
+			},
+		});
+	});
+
+	it("rejects a terminal original endpoint without auto-adjustment evidence", async () => {
+		const value = terminalPolicyEnvelope({ status: "approved", split: true });
+		(value.workPeriods as JsonRecord[])[0] = {
+			...((value.workPeriods as JsonRecord[])[0] as JsonRecord),
+			wasAutoAdjusted: false,
+		};
+		const fake = database(value);
+
+		await expect(
+			captureOrdinaryWorkPeriodLegacyState(
+				input(fake.dbService, {
+					expectedKind: "policy_clock_out",
+					expectedRequestStatus: "approved",
+					expectedSourceStatus: "approved",
+				}),
+			),
+		).rejects.toMatchObject({
+			name: "OrdinaryWorkPeriodLegacyStateCaptureError",
+		});
+	});
+
+	it.each([
+		["missing request snapshot", null, breakPolicySnapshot],
+		[
+			"request snapshot mismatch",
+			resolvedBreakPolicySnapshot,
+			breakPolicySnapshot,
+		],
+		[
+			"canonical snapshot mismatch",
+			breakPolicySnapshot,
+			resolvedBreakPolicySnapshot,
+		],
+	] as const)("rejects terminal policy capture with %s", async (_label, requestSnapshot, canonicalSnapshot) => {
+		const fake = database(
+			terminalPolicyEnvelope({
+				status: "approved",
+				requestSnapshot,
+				canonicalSnapshot,
+			}),
+		);
+
+		await expect(
+			captureOrdinaryWorkPeriodLegacyState(
+				input(fake.dbService, {
+					expectedKind: "policy_clock_out",
+					expectedRequestStatus: "approved",
+					expectedSourceStatus: "approved",
+				}),
+			),
+		).rejects.toMatchObject({
+			name: "OrdinaryWorkPeriodLegacyStateCaptureError",
+		});
+	});
+
+	it("rejects pending policy capture after source evidence is cleared", async () => {
+		const fake = database(
+			envelope({
+				workPeriods: [period({ pendingChanges: null })],
+				approvalRequests: [
+					request({
+						metadata: {
+							timeRequest: { kind: "policy_clock_out" },
+							breakPolicySnapshot,
+						},
+					}),
+				],
+				workflows: [
+					workflow({
+						workflowType: "policy_clock_out",
+						contextSnapshot: {
+							timeRequest: { kind: "policy_clock_out" },
+							breakPolicySnapshot,
+						},
+					}),
+				],
+			}),
+		);
+
+		await expect(
+			captureOrdinaryWorkPeriodLegacyState(
+				input(fake.dbService, { expectedKind: "policy_clock_out" }),
+			),
+		).rejects.toMatchObject({
+			name: "OrdinaryWorkPeriodLegacyStateCaptureError",
+		});
+	});
+
 	it("captures and reconciles exact policy snapshot evidence after submission", async () => {
 		const fake = database(
 			envelope({
@@ -440,7 +627,11 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 		const fake = database(
 			envelope({
 				workPeriods: [
-					period({ approvalStatus: "approved", approvalWorkflowId: null }),
+					period({
+						approvalStatus: "approved",
+						approvalWorkflowId: null,
+						pendingChanges: null,
+					}),
 				],
 				canonicalRecords: [canonical({ approvalState: "approved" })],
 				approvalRequests: [
@@ -639,7 +830,11 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 		const fake = database(
 			envelope({
 				workPeriods: [
-					period({ approvalStatus: "approved", approvalWorkflowId: null }),
+					period({
+						approvalStatus: "approved",
+						approvalWorkflowId: null,
+						pendingChanges: null,
+					}),
 				],
 				canonicalRecords: [canonical({ approvalState: "approved" })],
 				approvalRequests: [
@@ -720,7 +915,11 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 		const fake = database(
 			envelope({
 				workPeriods: [
-					period({ approvalStatus: "approved", approvalWorkflowId: null }),
+					period({
+						approvalStatus: "approved",
+						approvalWorkflowId: null,
+						pendingChanges: null,
+					}),
 				],
 				canonicalRecords: [canonical({ approvalState: "approved" })],
 				approvalRequests: [

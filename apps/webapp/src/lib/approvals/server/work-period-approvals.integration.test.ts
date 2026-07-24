@@ -51,6 +51,8 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 		for (const scenario of [
 			"composes submission and terminal decisions in %s mode",
 			"preserves policy snapshot through production submission capture in %s mode",
+			"retains terminal policy evidence for $action with split=$split in $mode mode",
+			"rolls back terminal policy $evidence evidence in $mode mode",
 			"complete submission writes zero approval requests and canonical reader discovers the assignment",
 			"rolls back $stage submission stage in $mode mode without residue",
 			"requester auto-finalization failure rolls the complete submission back in %s mode",
@@ -765,6 +767,54 @@ describeIntegration(
 			}
 		}
 
+		async function assertTerminalPolicySnapshotParity(input: {
+			status: "approved" | "rejected";
+			split: boolean;
+			expectedSnapshot: unknown;
+		}) {
+			const periods = await pool.query<{
+				approval_status: string;
+				pending_changes: unknown;
+				end_time: Date;
+				original_end_time: Date | null;
+			}>(
+				`select approval_status, pending_changes, end_time, original_end_time
+				 from work_period where id = $1 and organization_id = $2`,
+				[ids.period, ids.organization],
+			);
+			expect(periods.rows).toHaveLength(1);
+			expect(periods.rows[0]).toMatchObject({
+				approval_status: input.status,
+				pending_changes: null,
+				original_end_time: input.split ? endTime : null,
+			});
+			if (input.split) {
+				expect(periods.rows[0]?.end_time.getTime()).toBeLessThan(
+					endTime.getTime(),
+				);
+			} else {
+				expect(periods.rows[0]?.end_time).toEqual(endTime);
+			}
+			const requests = await pool.query<{ break_snapshot: unknown }>(
+				`select metadata -> 'breakPolicySnapshot' as break_snapshot
+				 from approval_request
+				 where organization_id = $1 and entity_type = 'time_entry' and entity_id = $2`,
+				[ids.organization, ids.period],
+			);
+			expect(requests.rows).toEqual([
+				{ break_snapshot: input.expectedSnapshot },
+			]);
+			const workflows = await pool.query<{ break_snapshot: unknown }>(
+				`select context_snapshot -> 'breakPolicySnapshot' as break_snapshot
+				 from approval_workflow
+				 where organization_id = $1 and source_type = 'time_entry' and source_id = $2`,
+				[ids.organization, ids.period],
+			);
+			expect(workflows.rows).toEqual([
+				{ break_snapshot: input.expectedSnapshot },
+			]);
+		}
+
 		async function assertDelayedSnapshotMutation(input: {
 			mode: (typeof modes)[number];
 			mutate(client: PoolClient): Promise<void>;
@@ -1014,6 +1064,102 @@ describeIntegration(
 				disposition: "executed",
 			});
 			await assertSubmittedBreakSnapshotParity(mode);
+		});
+
+		it.each(
+			(["shadow", "ready"] as const).flatMap((mode) => [
+				{ mode, action: "approve" as const, split: false },
+				{ mode, action: "approve" as const, split: true },
+				{ mode, action: "reject" as const, split: false },
+			]),
+		)("retains terminal policy evidence for $action with split=$split in $mode mode", async ({
+			mode,
+			action,
+			split,
+		}) => {
+			await seed("policy_clock_out", split, mode);
+			const target = (await submit("policy_clock_out")).result
+				.approvalRequestId;
+			let expectedSnapshot: unknown;
+			if (split) {
+				expectedSnapshot = await assertSubmittedBreakSnapshotParity(mode);
+			} else {
+				await assertSubmittedNoneSnapshotParity(mode);
+				expectedSnapshot = {
+					version: 1,
+					evaluatedAt: "2026-07-22T16:00:00Z",
+					resolution: "none",
+				};
+			}
+			await decide(
+				target,
+				action === "approve"
+					? { kind: "approve", reason: null }
+					: { kind: "reject", reason: "Policy conflict" },
+			);
+			await assertTerminalPolicySnapshotParity({
+				status: action === "approve" ? "approved" : "rejected",
+				split,
+				expectedSnapshot,
+			});
+		});
+
+		it.each(
+			(["shadow", "ready"] as const).flatMap((mode) =>
+				(["missing", "mismatch"] as const).map((evidence) => ({
+					mode,
+					evidence,
+				})),
+			),
+		)("rolls back terminal policy $evidence evidence in $mode mode", async ({
+			mode,
+			evidence,
+		}) => {
+			await seed("policy_clock_out", true, mode);
+			const target = (await submit("policy_clock_out")).result
+				.approvalRequestId;
+			const before = await snapshot();
+			await pool.query(
+				evidence === "missing"
+					? `create function task11_mutate_terminal_policy_evidence() returns trigger
+					   language plpgsql as $$ begin
+					     update approval_request
+					     set metadata = metadata - 'breakPolicySnapshot'
+					     where organization_id = new.organization_id
+					       and entity_type = 'time_entry' and entity_id = new.id;
+					     return new;
+					   end $$`
+					: `create function task11_mutate_terminal_policy_evidence() returns trigger
+					   language plpgsql as $$ begin
+					     update approval_request
+					     set metadata = jsonb_set(
+					       metadata, '{breakPolicySnapshot}',
+					       '{"version":1,"evaluatedAt":"2026-07-22T16:00:00Z","resolution":"none"}'::jsonb
+					     )
+					     where organization_id = new.organization_id
+					       and entity_type = 'time_entry' and entity_id = new.id;
+					     return new;
+					   end $$`,
+			);
+			try {
+				await pool.query(
+					`create trigger task11_mutate_terminal_policy_evidence
+					 after update of approval_status on work_period
+					 for each row when (new.approval_status in ('approved', 'rejected'))
+					 execute function task11_mutate_terminal_policy_evidence()`,
+				);
+				await expect(
+					decide(target, { kind: "approve", reason: null }),
+				).rejects.toThrow();
+				expect(await snapshot()).toEqual(before);
+			} finally {
+				await pool.query(
+					"drop trigger if exists task11_mutate_terminal_policy_evidence on work_period",
+				);
+				await pool.query(
+					"drop function if exists task11_mutate_terminal_policy_evidence()",
+				);
+			}
 		});
 
 		it.each(
