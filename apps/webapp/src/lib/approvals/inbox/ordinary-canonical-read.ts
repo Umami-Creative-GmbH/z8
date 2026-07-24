@@ -764,8 +764,140 @@ function boundedLimit(input: OrdinaryCanonicalLoadInput): number {
 	return Math.min(Math.max(requested, 1), 101);
 }
 
-function candidateQuery(input: OrdinaryCanonicalLoadInput) {
-	const selection = sql`
+const UUID_SQL_PATTERN =
+	"^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$";
+const CANONICAL_INSTANT_SQL_PATTERN =
+	"^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](Z|\\.[0-9]{0,8}[1-9]Z)$";
+const DISPLAY_INSTANT_SQL_PATTERN =
+	"^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$";
+
+function exactJsonObjectSql(value: SQL, keyCount: number): SQL {
+	return sql`case when jsonb_typeof(${value}) = 'object' then
+		(select count(*) from jsonb_object_keys(${value})) = ${keyCount}
+		else false end`;
+}
+
+function positiveSafeIntegerSql(value: SQL): SQL {
+	return sql`case when jsonb_typeof(${value}) = 'number' then
+		((${value})::text)::numeric > 0
+		and ((${value})::text)::numeric = trunc(((${value})::text)::numeric)
+		and ((${value})::text)::numeric <= 9007199254740991
+		else false end`;
+}
+
+function strictBreakSnapshotSql(snapshot: SQL): SQL {
+	const assignment = sql`${snapshot} -> 'assignment'`;
+	const policy = sql`${snapshot} -> 'policy'`;
+	const regulation = sql`${snapshot} -> 'regulation'`;
+	const rules = sql`${snapshot} -> 'breakRules'`;
+	return sql`case
+		when jsonb_typeof(${snapshot}) <> 'object' then false
+		when ${snapshot} ->> 'resolution' = 'none' then
+			${exactJsonObjectSql(snapshot, 3)}
+			and ${snapshot} -> 'version' = '1'::jsonb
+			and jsonb_typeof(${snapshot} -> 'evaluatedAt') = 'string'
+		when ${snapshot} ->> 'resolution' = 'work_policy' then
+			${exactJsonObjectSql(snapshot, 9)}
+			and ${snapshot} -> 'version' = '1'::jsonb
+			and jsonb_typeof(${snapshot} -> 'evaluatedAt') = 'string'
+			and (${snapshot} -> 'teamId' = 'null'::jsonb or (
+				jsonb_typeof(${snapshot} -> 'teamId') = 'string'
+				and ${snapshot} ->> 'teamId' ~ ${UUID_SQL_PATTERN}
+			))
+			and ${exactJsonObjectSql(assignment, 2)}
+			and jsonb_typeof(${assignment} -> 'id') = 'string'
+			and ${assignment} ->> 'id' ~ ${UUID_SQL_PATTERN}
+			and ${assignment} ->> 'type' in ('employee', 'team', 'organization')
+			and ${exactJsonObjectSql(policy, 2)}
+			and jsonb_typeof(${policy} -> 'id') = 'string'
+			and ${policy} ->> 'id' ~ ${UUID_SQL_PATTERN}
+			and jsonb_typeof(${policy} -> 'name') = 'string'
+			and ${policy} ->> 'name' <> ''
+			and jsonb_typeof(${snapshot} -> 'regulationEnabled') = 'boolean'
+			and ${exactJsonObjectSql(regulation, 3)}
+			and case when ${snapshot} ->> 'regulationEnabled' = 'false' then
+				${regulation} -> 'id' = 'null'::jsonb
+				and ${regulation} -> 'name' = 'null'::jsonb
+				and ${regulation} -> 'maxUninterruptedMinutes' = 'null'::jsonb
+				and ${rules} = '[]'::jsonb
+			else
+				jsonb_typeof(${regulation} -> 'id') = 'string'
+				and ${regulation} ->> 'id' ~ ${UUID_SQL_PATTERN}
+				and jsonb_typeof(${regulation} -> 'name') = 'string'
+				and ${regulation} ->> 'name' <> ''
+				and (${regulation} -> 'maxUninterruptedMinutes' = 'null'::jsonb
+					or ${positiveSafeIntegerSql(sql`${regulation} -> 'maxUninterruptedMinutes'`)})
+				and case when jsonb_typeof(${rules}) = 'array' then
+					not exists (
+						select 1 from jsonb_array_elements(${rules}) rule(value)
+						where not case when jsonb_typeof(rule.value) = 'object' then
+							${exactJsonObjectSql(sql`rule.value`, 3)}
+							and jsonb_typeof(rule.value -> 'id') = 'string'
+							and rule.value ->> 'id' ~ ${UUID_SQL_PATTERN}
+							and ${positiveSafeIntegerSql(sql`rule.value -> 'workingMinutesThreshold'`)}
+							and ${positiveSafeIntegerSql(sql`rule.value -> 'requiredBreakMinutes'`)}
+						else false end
+					)
+					and (select count(*) = count(distinct rule.value ->> 'id')
+						from jsonb_array_elements(${rules}) rule(value))
+					and (select count(*) = count(distinct case
+						when jsonb_typeof(rule.value -> 'workingMinutesThreshold') = 'number'
+						then ((rule.value -> 'workingMinutesThreshold')::text)::numeric
+						else null end)
+						from jsonb_array_elements(${rules}) rule(value))
+					and not exists (
+						select 1
+						from jsonb_array_elements(${rules}) with ordinality current_rule(value, position)
+						join jsonb_array_elements(${rules}) with ordinality previous_rule(value, position)
+							on previous_rule.position + 1 = current_rule.position
+						where case
+							when jsonb_typeof(current_rule.value -> 'workingMinutesThreshold') = 'number'
+								and jsonb_typeof(previous_rule.value -> 'workingMinutesThreshold') = 'number'
+							then (previous_rule.value ->> 'workingMinutesThreshold')::numeric >
+								(current_rule.value ->> 'workingMinutesThreshold')::numeric
+								or ((previous_rule.value ->> 'workingMinutesThreshold')::numeric =
+									(current_rule.value ->> 'workingMinutesThreshold')::numeric
+									and previous_rule.value ->> 'id' >= current_rule.value ->> 'id')
+							else false end
+					)
+				else false end
+			end
+		else false end`;
+}
+
+function strictCanonicalEvidenceSql(): SQL {
+	const workflowSnapshot = sql`workflow.context_snapshot -> 'breakPolicySnapshot'`;
+	const sourceChanges = sql`source_period.pending_changes::jsonb`;
+	const sourceSnapshot = sql`${sourceChanges} -> 'breakPolicySnapshot'`;
+	const evaluatedAt = sql`${workflowSnapshot} ->> 'evaluatedAt'`;
+	return sql`jsonb_typeof(workflow.context_snapshot) = 'object'
+		and ${exactJsonObjectSql(sql`workflow.context_snapshot -> 'timeRequest'`, 1)}
+		and workflow.context_snapshot -> 'timeRequest' ->> 'kind' = workflow.workflow_type::text
+		and case
+			when workflow.workflow_type = 'manual_time_submission' then
+				${exactJsonObjectSql(sql`workflow.context_snapshot`, 1)}
+				and not (workflow.context_snapshot ? 'breakPolicySnapshot')
+			when workflow.workflow_type = 'policy_clock_out' then
+				${exactJsonObjectSql(sql`workflow.context_snapshot`, 2)}
+				and ${strictBreakSnapshotSql(workflowSnapshot)}
+				and ${evaluatedAt} ~ ${CANONICAL_INSTANT_SQL_PATTERN}
+				and pg_input_is_valid(${evaluatedAt}, 'timestamp with time zone')
+				and case when pg_input_is_valid(${evaluatedAt}, 'timestamp with time zone')
+					then (${evaluatedAt})::timestamptz else null end =
+						source_period.end_time at time zone 'UTC'
+				and case when source_period.pending_changes is not null
+					and pg_input_is_valid(source_period.pending_changes, 'jsonb') then
+						jsonb_typeof(${sourceChanges}) = 'object'
+						and ${strictBreakSnapshotSql(sourceSnapshot)}
+						and ${sourceSnapshot} = ${workflowSnapshot}
+					else false end
+			else false end`;
+}
+
+function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
+	const selection = countOnly
+		? sql`count(*)::integer as "totalCount"`
+		: sql`
 			projection.id as "projectionId", projection.organization_id as "projectionOrganizationId",
 			projection.workflow_id as "projectionWorkflowId", projection.active_stage_id as "activeStageId",
 			projection.source_type as "sourceType", projection.source_id as "sourceId",
@@ -787,7 +919,7 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput) {
 			requester.organization_id as "requesterOrganizationId", requester.user_id as "requesterUserId",
 			requester.team_id as "requesterTeamId", requester_user.id as "userId",
 			requester_user.name as "userName", requester_user.email as "userEmail",
-			requester_user.image as "userImage"`;
+			requester_user.image as "userImage", count(*) over()::integer as "totalCount"`;
 	return sql`
 		select ${selection}
 		from approval_inbox_projection projection
@@ -853,27 +985,7 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput) {
 			and source_clock_out.is_superseded = false
 			and source_clock_out.superseded_by_id is null
 			and source_clock_out.replaces_entry_id is null
-			and jsonb_typeof(workflow.context_snapshot) = 'object'
-			and (select count(*) from jsonb_object_keys(case
-				when jsonb_typeof(workflow.context_snapshot) = 'object' then workflow.context_snapshot
-				else '{}'::jsonb end)) = case
-					when workflow.workflow_type = 'policy_clock_out' then 2 else 1 end
-			and jsonb_typeof(workflow.context_snapshot -> 'timeRequest') = 'object'
-			and (select count(*) from jsonb_object_keys(case
-				when jsonb_typeof(workflow.context_snapshot -> 'timeRequest') = 'object'
-					then workflow.context_snapshot -> 'timeRequest'
-				else '{}'::jsonb end)) = 1
-			and workflow.context_snapshot -> 'timeRequest' ->> 'kind' = workflow.workflow_type::text
-			and case
-				when workflow.workflow_type = 'manual_time_submission' then
-					not (workflow.context_snapshot ? 'breakPolicySnapshot')
-				when workflow.workflow_type = 'policy_clock_out' then
-					jsonb_typeof(workflow.context_snapshot -> 'breakPolicySnapshot') = 'object'
-					and workflow.context_snapshot -> 'breakPolicySnapshot' -> 'version' = '1'::jsonb
-					and workflow.context_snapshot -> 'breakPolicySnapshot' ->> 'resolution'
-						in ('none', 'work_policy')
-				else false
-			end
+			and ${strictCanonicalEvidenceSql()}
 			and jsonb_typeof(projection.display_payload) = 'object'
 			and (select count(*) from jsonb_object_keys(case
 				when jsonb_typeof(projection.display_payload) = 'object' then projection.display_payload
@@ -883,32 +995,42 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput) {
 				when jsonb_typeof(projection.display_payload -> 'stage') = 'object'
 					then projection.display_payload -> 'stage'
 				else '{}'::jsonb end)) = 2
+			and jsonb_typeof(projection.display_payload -> 'kind') = 'string'
 			and projection.display_payload ->> 'kind' = workflow.workflow_type::text
+			and jsonb_typeof(projection.display_payload -> 'title') = 'string'
 			and projection.display_payload ->> 'title' = case
 				when workflow.workflow_type = 'manual_time_submission' then 'Manual time submission'
 				else 'Policy clock-out'
 			end
+			and jsonb_typeof(projection.display_payload -> 'startTime') = 'string'
 			and case
-				when projection.display_payload ->> 'startTime' ~ '^\\d{4}-\\d{2}-\\d{2}T.*(Z|[+-]\\d{2}:\\d{2})$'
+				when projection.display_payload ->> 'startTime' ~ ${DISPLAY_INSTANT_SQL_PATTERN}
 					and pg_input_is_valid(projection.display_payload ->> 'startTime', 'timestamp with time zone')
 				then (projection.display_payload ->> 'startTime')::timestamptz
 				else null
 			end = source_period.start_time at time zone 'UTC'
+			and jsonb_typeof(projection.display_payload -> 'endTime') = 'string'
 			and case
-				when projection.display_payload ->> 'endTime' ~ '^\\d{4}-\\d{2}-\\d{2}T.*(Z|[+-]\\d{2}:\\d{2})$'
+				when projection.display_payload ->> 'endTime' ~ ${DISPLAY_INSTANT_SQL_PATTERN}
 					and pg_input_is_valid(projection.display_payload ->> 'endTime', 'timestamp with time zone')
 				then (projection.display_payload ->> 'endTime')::timestamptz
 				else null
 			end = source_period.end_time at time zone 'UTC'
-			and case
-				when projection.display_payload ->> 'durationMinutes' ~ '^[0-9]+$'
-					and pg_input_is_valid(projection.display_payload ->> 'durationMinutes', 'integer')
-				then (projection.display_payload ->> 'durationMinutes')::integer
+			and case when jsonb_typeof(projection.display_payload -> 'durationMinutes') = 'number' then
+				case when ((projection.display_payload -> 'durationMinutes')::text)::numeric >= 0
+					and ((projection.display_payload -> 'durationMinutes')::text)::numeric =
+						trunc(((projection.display_payload -> 'durationMinutes')::text)::numeric)
+					and ((projection.display_payload -> 'durationMinutes')::text)::numeric <= 9007199254740991
+				then ((projection.display_payload -> 'durationMinutes')::text)::numeric else null end
 				else null
 			end = source_period.duration_minutes
+			and jsonb_typeof(projection.display_payload -> 'approvalStatus') = 'string'
 			and projection.display_payload ->> 'approvalStatus' = 'pending'
+			and jsonb_typeof(projection.display_payload -> 'stage' -> 'name') = 'string'
 			and projection.display_payload -> 'stage' ->> 'name' = stage.label
-			and projection.display_payload -> 'stage' ->> 'order' = stage.stage_order::text
+			and case when jsonb_typeof(projection.display_payload -> 'stage' -> 'order') = 'number'
+				then ((projection.display_payload -> 'stage' -> 'order')::text)::numeric = stage.stage_order
+				else false end
 			and projection.search_text = lower(
 				(projection.display_payload ->> 'title') || ' ' ||
 				(projection.display_payload ->> 'startTime') || ' ' ||
@@ -958,10 +1080,16 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput) {
 					when jsonb_typeof(compatibility.metadata -> 'timeRequest') = 'object'
 						then compatibility.metadata -> 'timeRequest'
 					else '{}'::jsonb end)) = 1
+				and jsonb_typeof(compatibility.metadata -> 'workflow' -> 'id') = 'string'
 				and compatibility.metadata -> 'workflow' ->> 'id' = workflow.id::text
+				and jsonb_typeof(compatibility.metadata -> 'workflow' -> 'organizationId') = 'string'
 				and compatibility.metadata -> 'workflow' ->> 'organizationId' = projection.organization_id
+				and jsonb_typeof(compatibility.metadata -> 'stage' -> 'id') = 'string'
 				and compatibility.metadata -> 'stage' ->> 'id' = stage.id::text
-				and compatibility.metadata -> 'stage' ->> 'sequence' = stage.stage_order::text
+				and case when jsonb_typeof(compatibility.metadata -> 'stage' -> 'sequence') = 'number'
+					then ((compatibility.metadata -> 'stage' -> 'sequence')::text)::numeric = stage.stage_order
+					else false end
+				and jsonb_typeof(compatibility.metadata -> 'timeRequest' -> 'kind') = 'string'
 				and compatibility.metadata -> 'timeRequest' ->> 'kind' = workflow.workflow_type::text
 				and case
 					when workflow.workflow_type = 'manual_time_submission' then
@@ -980,8 +1108,7 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput) {
 			${candidateFilterCondition(input)}
 			${targetCondition(input)}
 			${cursorCondition(input)}
-		order by ${riskRankSql(input)}, ${priorityRankSql(input)}, workflow.submitted_at, assignment.id
-		limit ${boundedLimit(input)}
+		${countOnly ? sql`` : sql`order by ${riskRankSql(input)}, ${priorityRankSql(input)}, workflow.submitted_at, assignment.id limit ${boundedLimit(input)}`}
 	`;
 }
 
@@ -1041,10 +1168,11 @@ function toCandidate(value: Record<string, unknown>) {
 				image: value.userImage,
 			},
 		},
+		totalCount: value.totalCount,
 	} as unknown as Omit<
 		OrdinaryCanonicalReadRow,
 		"period" | "canonicalRecord" | "compatibilityRequest"
-	>;
+	> & { totalCount: number };
 }
 
 function evidenceQuery(organizationId: string, sourceIds: string[]) {
@@ -1193,54 +1321,20 @@ async function hydrateCandidates(
 	return selectOrdinaryCanonicalApprovals({ ...input, rows });
 }
 
-const STRICT_CANDIDATE_BATCH_SIZE = 101;
-
-async function scanOrdinaryCanonicalApprovals(
-	input: OrdinaryCanonicalLoadInput,
-): Promise<OrdinaryCanonicalApproval[]> {
-	input = { ...input, now: input.now ?? new Date() };
-	const database =
-		input.database ?? (db as unknown as OrdinaryCanonicalReadDatabase);
-	const approvals: OrdinaryCanonicalApproval[] = [];
-	let cursor = input.cursor;
-	while (true) {
-		const candidates = resultRows(
-			await database.execute(
-				candidateQuery({
-					...input,
-					cursor,
-					limit: input.assignmentId ? 1 : STRICT_CANDIDATE_BATCH_SIZE,
-				}),
-			),
-		).map(toCandidate);
-		if (candidates.length === 0) break;
-		approvals.push(...(await hydrateCandidates(input, candidates, database)));
-		if (input.assignmentId || candidates.length < STRICT_CANDIDATE_BATCH_SIZE) {
-			break;
-		}
-		const last = candidates[candidates.length - 1];
-		if (!last) break;
-		cursor = {
-			riskLevel:
-				instantFromDate(last.workflow.submittedAt)
-					.until(instantFromDate(input.now as Date))
-					.total("hours") >= 72
-					? "high"
-					: "medium",
-			priority: ordinaryPriority(last.workflow.submittedAt, input.now),
-			createdAt: last.workflow.submittedAt.toISOString(),
-			id: last.assignment.id,
-		};
-	}
-	return approvals;
-}
-
 export async function loadOrdinaryCanonicalApprovals(
 	input: OrdinaryCanonicalLoadInput,
 ): Promise<OrdinaryCanonicalApprovalBatch> {
-	const approvals = await scanOrdinaryCanonicalApprovals(input);
-	return Object.assign(approvals.slice(0, boundedLimit(input)), {
-		totalCount: approvals.length,
+	input = { ...input, now: input.now ?? new Date() };
+	const database =
+		input.database ?? (db as unknown as OrdinaryCanonicalReadDatabase);
+	const candidates = resultRows(
+		await database.execute(candidateQuery(input)),
+	).map(toCandidate);
+	if (candidates.length === 0) return Object.assign([], { totalCount: 0 });
+	const approvals = await hydrateCandidates(input, candidates, database);
+	const rawTotal = candidates[0]?.totalCount ?? candidates.length;
+	return Object.assign(approvals, {
+		totalCount: Math.max(0, rawTotal - (candidates.length - approvals.length)),
 	});
 }
 
@@ -1250,5 +1344,8 @@ export async function countOrdinaryCanonicalApprovals(
 		"limit" | "cursor" | "assignmentId" | "assignmentIds"
 	>,
 ): Promise<number> {
-	return (await scanOrdinaryCanonicalApprovals(input)).length;
+	const database =
+		input.database ?? (db as unknown as OrdinaryCanonicalReadDatabase);
+	const rows = resultRows(await database.execute(candidateQuery(input, true)));
+	return typeof rows[0]?.totalCount === "number" ? rows[0].totalCount : 0;
 }

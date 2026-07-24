@@ -1772,7 +1772,10 @@ describeIntegration(
 			await submit("policy_clock_out");
 			const cloneId = (prefix: string, index: number) =>
 				`${prefix}0000000-0000-4000-8000-${index.toString().padStart(12, "0")}`;
-			for (const index of [1, 2] as const) {
+			for (const index of Array.from(
+				{ length: 102 },
+				(_, offset) => offset + 1,
+			)) {
 				const clone = {
 					clockIn: cloneId("d", index * 10 + 1),
 					clockOut: cloneId("d", index * 10 + 2),
@@ -1826,7 +1829,7 @@ describeIntegration(
 					 select $1, organization_id, workflow_type, source_type, $2,
 					 requester_employee_id, status, current_stage_order, version,
 					 policy_snapshot,
-					 case when $3 = 1 then jsonb_set(context_snapshot,
+					 case when $3 % 2 = 1 then jsonb_set(context_snapshot,
 					   '{breakPolicySnapshot,assignment,id}', '"not-a-uuid"'::jsonb)
 					 else jsonb_set(context_snapshot,
 					   '{breakPolicySnapshot,breakRules,0,requiredBreakMinutes}', '0'::jsonb) end,
@@ -1924,6 +1927,28 @@ describeIntegration(
 			expect(approvals.map(({ item }) => item.id)).toEqual([ids.assignment]);
 			expect(approvals.totalCount).toBe(1);
 			expect(count).toBe(1);
+			const first = approvals[0];
+			if (!first) throw new Error("Expected one strict-valid approval");
+			const afterCursor = await loadOrdinaryCanonicalApprovals({
+				database,
+				organizationId: ids.organization,
+				approverId: ids.manager,
+				limit: 1,
+				cursor: {
+					riskLevel: first.item.triage.riskLevel,
+					priority: first.item.triage.priority,
+					createdAt: first.item.timing.createdAt,
+					id: first.item.id,
+				},
+			});
+			expect(afterCursor).toHaveLength(0);
+			expect(afterCursor.totalCount).toBe(0);
+			expect(
+				await pool.query(
+					"select count(*)::int as count from approval_workflow where organization_id = $1 and context_snapshot -> 'breakPolicySnapshot' is not null",
+					[ids.organization],
+				),
+			).toMatchObject({ rows: [{ count: 103 }] });
 		});
 
 		it.each(

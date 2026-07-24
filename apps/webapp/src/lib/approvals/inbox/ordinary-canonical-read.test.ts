@@ -212,99 +212,8 @@ function policyRow(): OrdinaryCanonicalReadRow {
 	});
 }
 
-function candidateFromRow(fixture: OrdinaryCanonicalReadRow) {
-	return {
-		projectionId: fixture.projection.id,
-		projectionOrganizationId: fixture.projection.organizationId,
-		projectionWorkflowId: fixture.projection.workflowId,
-		activeStageId: fixture.projection.activeStageId,
-		sourceType: fixture.projection.sourceType,
-		sourceId: fixture.projection.sourceId,
-		projectionStatus: fixture.projection.status,
-		displayPayload: fixture.projection.displayPayload,
-		searchText: fixture.projection.searchText,
-		projectionCreatedAt: fixture.projection.createdAt,
-		workflowId: fixture.workflow.id,
-		workflowOrganizationId: fixture.workflow.organizationId,
-		workflowType: fixture.workflow.workflowType,
-		workflowSourceType: fixture.workflow.sourceType,
-		workflowSourceId: fixture.workflow.sourceId,
-		requesterEmployeeId: fixture.workflow.requesterEmployeeId,
-		workflowStatus: fixture.workflow.status,
-		currentStageOrder: fixture.workflow.currentStageOrder,
-		contextSnapshot: fixture.workflow.contextSnapshot,
-		submittedAt: fixture.workflow.submittedAt,
-		stageId: fixture.stage.id,
-		stageOrganizationId: fixture.stage.organizationId,
-		stageWorkflowId: fixture.stage.workflowId,
-		stageSequence: fixture.stage.sequence,
-		stageLabel: fixture.stage.label,
-		stageStatus: fixture.stage.status,
-		legacyApprovalRequestId: fixture.stage.legacyApprovalRequestId,
-		assignmentId: fixture.assignment.id,
-		assignmentOrganizationId: fixture.assignment.organizationId,
-		assignmentWorkflowId: fixture.assignment.workflowId,
-		assignmentStageId: fixture.assignment.stageId,
-		approverEmployeeId: fixture.assignment.approverEmployeeId,
-		assignmentStatus: fixture.assignment.status,
-		assignedAt: fixture.assignment.assignedAt,
-		requesterId: fixture.requester.id,
-		requesterOrganizationId: fixture.requester.organizationId,
-		requesterUserId: fixture.requester.userId,
-		requesterTeamId: fixture.requester.teamId,
-		userId: fixture.requester.user.id,
-		userName: fixture.requester.user.name,
-		userEmail: fixture.requester.user.email,
-		userImage: fixture.requester.user.image,
-		totalCount: 1,
-	};
-}
-
-function evidenceFromRow(fixture: OrdinaryCanonicalReadRow) {
-	return {
-		periodId: fixture.period.id,
-		periodOrganizationId: fixture.period.organizationId,
-		periodEmployeeId: fixture.period.employeeId,
-		periodCanonicalRecordId: fixture.period.canonicalRecordId,
-		periodApprovalWorkflowId: fixture.period.approvalWorkflowId,
-		periodApprovalStatus: fixture.period.approvalStatus,
-		periodIsActive: fixture.period.isActive,
-		periodDeletedAt: fixture.period.deletedAt,
-		periodStartTime: fixture.period.startTime,
-		periodEndTime: fixture.period.endTime,
-		periodDurationMinutes: fixture.period.durationMinutes,
-		periodPendingChanges: fixture.period.pendingChanges,
-		clockInId: fixture.period.clockIn?.id,
-		clockInOrganizationId: fixture.period.clockIn?.organizationId,
-		clockInEmployeeId: fixture.period.clockIn?.employeeId,
-		clockInType: fixture.period.clockIn?.type,
-		clockInTimestamp: fixture.period.clockIn?.timestamp,
-		clockInUtcOffsetMinutes: fixture.period.clockIn?.utcOffsetMinutes,
-		clockInIsSuperseded: fixture.period.clockIn?.isSuperseded,
-		clockInSupersededById: fixture.period.clockIn?.supersededById,
-		clockInReplacesEntryId: fixture.period.clockIn?.replacesEntryId,
-		clockOutId: fixture.period.clockOut?.id,
-		clockOutOrganizationId: fixture.period.clockOut?.organizationId,
-		clockOutEmployeeId: fixture.period.clockOut?.employeeId,
-		clockOutType: fixture.period.clockOut?.type,
-		clockOutTimestamp: fixture.period.clockOut?.timestamp,
-		clockOutUtcOffsetMinutes: fixture.period.clockOut?.utcOffsetMinutes,
-		clockOutIsSuperseded: fixture.period.clockOut?.isSuperseded,
-		clockOutSupersededById: fixture.period.clockOut?.supersededById,
-		clockOutReplacesEntryId: fixture.period.clockOut?.replacesEntryId,
-		canonicalId: fixture.canonicalRecord?.id,
-		canonicalOrganizationId: fixture.canonicalRecord?.organizationId,
-		canonicalEmployeeId: fixture.canonicalRecord?.employeeId,
-		canonicalRecordKind: fixture.canonicalRecord?.recordKind,
-		canonicalStartAt: fixture.canonicalRecord?.startAt,
-		canonicalEndAt: fixture.canonicalRecord?.endAt,
-		canonicalDurationMinutes: fixture.canonicalRecord?.durationMinutes,
-		canonicalApprovalState: fixture.canonicalRecord?.approvalState,
-	};
-}
-
 describe("ordinary canonical inbox reads", () => {
-	it("loads N approvals with bounded batched queries and SQL-side tenancy, kind, status, source, and visibility filters", async () => {
+	it("loads N approvals with bounded queries and SQL-side tenancy, kind, status, source, and visibility filters", async () => {
 		const fixture = row();
 		const candidate = {
 			...fixture.projection,
@@ -440,7 +349,7 @@ describe("ordinary canonical inbox reads", () => {
 		expect(candidateQuery?.sql).toContain("'version'");
 		expect(candidateQuery?.sql).toContain("'resolution'");
 		expect(candidateQuery?.params).toEqual(
-			expect.arrayContaining([ids.organization, ids.approver, 101]),
+			expect.arrayContaining([ids.organization, ids.approver, 20]),
 		);
 		expect(evidenceQuery?.sql).toContain("and period.id in (");
 		expect(evidenceQuery?.params).toContain(ids.period);
@@ -487,9 +396,7 @@ describe("ordinary canonical inbox reads", () => {
 		).toEqual([]);
 	});
 
-	it("pages past more than one page of strict-invalid candidates for exact list and count", async () => {
-		const uuid = (prefix: string, index: number) =>
-			`${prefix}0000000-0000-4000-8000-${index.toString().padStart(12, "0")}`;
+	it("generates strict SQL for every break-snapshot parser invariant", async () => {
 		const strictPolicy = {
 			...policySnapshot,
 			regulationEnabled: true,
@@ -506,134 +413,89 @@ describe("ordinary canonical inbox reads", () => {
 				},
 			],
 		};
-		const invalid = Array.from({ length: 101 }, (_, index) => {
-			const fixture = policyRow();
-			const workflowId = uuid("1", index + 10);
-			const stageId = uuid("2", index + 10);
-			const assignmentId = uuid("3", index + 10);
-			const periodId = uuid("5", index + 10);
-			const recordId = uuid("6", index + 10);
-			const malformed = structuredClone(strictPolicy) as Record<
-				string,
-				unknown
-			>;
-			switch (index % 8) {
-				case 0:
-					malformed.private = true;
-					break;
-				case 1:
-					(malformed.assignment as Record<string, unknown>).id = "not-a-uuid";
-					break;
-				case 2:
-					(
-						(malformed.breakRules as Record<string, unknown>[])[0] as Record<
-							string,
-							unknown
-						>
-					).requiredBreakMinutes = 0;
-					break;
-				case 3:
-					malformed.breakRules = [
-						...(malformed.breakRules as Record<string, unknown>[]),
-						...(malformed.breakRules as Record<string, unknown>[]),
-					];
-					break;
-				case 4:
-					malformed.evaluatedAt = "2026-07-20T13:59:00Z";
-					break;
-				case 5:
-					malformed.regulation = { id: null };
-					break;
-				case 6:
-					malformed.resolution = "unknown";
-					break;
-				default:
-					break;
-			}
-			const contextSnapshot = {
-				timeRequest: { kind: "policy_clock_out" },
-				breakPolicySnapshot: malformed,
-			};
-			return {
-				...fixture,
-				projection: {
-					...fixture.projection,
-					workflowId,
-					activeStageId: stageId,
-					sourceId: periodId,
-					...(index % 8 === 7
-						? { searchText: `${fixture.projection.searchText} injected` }
-						: {}),
-				},
-				workflow: {
-					...fixture.workflow,
-					id: workflowId,
-					sourceId: periodId,
-					contextSnapshot,
-				},
-				stage: { ...fixture.stage, id: stageId, workflowId },
-				assignment: {
-					...fixture.assignment,
-					id: assignmentId,
-					workflowId,
-					stageId,
-				},
-				period: {
-					...fixture.period,
-					id: periodId,
-					canonicalRecordId: recordId,
-					approvalWorkflowId: workflowId,
-					pendingChanges: {
-						isNewClockOut: true,
-						breakPolicySnapshot: index % 8 === 7 ? policySnapshot : malformed,
+		const malformed = [
+			{ ...strictPolicy, private: true },
+			{
+				...strictPolicy,
+				assignment: { ...strictPolicy.assignment, id: "not-a-uuid" },
+			},
+			{
+				...strictPolicy,
+				breakRules: [
+					{ ...strictPolicy.breakRules[0], requiredBreakMinutes: 0 },
+				],
+			},
+			{
+				...strictPolicy,
+				breakRules: [strictPolicy.breakRules[0], strictPolicy.breakRules[0]],
+			},
+			{
+				...strictPolicy,
+				breakRules: [
+					{ ...strictPolicy.breakRules[0], workingMinutesThreshold: 480 },
+					{
+						...strictPolicy.breakRules[0],
+						id: "94000000-0000-4000-8000-000000000002",
+						workingMinutesThreshold: 360,
 					},
-				},
-				canonicalRecord: {
-					...(fixture.canonicalRecord as NonNullable<
-						OrdinaryCanonicalReadRow["canonicalRecord"]
-					>),
-					id: recordId,
-				},
-			};
-		});
+				],
+			},
+			{ ...strictPolicy, evaluatedAt: "2026-07-20T13:59:00Z" },
+			{ ...strictPolicy, regulation: { id: null } },
+			{ ...strictPolicy, resolution: "unknown" },
+		];
 		const valid = policyRow();
-		const createDatabase = () => {
-			let candidatePage = 0;
-			return {
-				execute: async (statement: SQL) => {
-					const query = new PgDialect().sqlToQuery(statement).sql;
-					if (query.includes("from approval_inbox_projection")) {
-						return {
-							rows:
-								candidatePage++ === 0
-									? invalid.map(candidateFromRow)
-									: [candidateFromRow(valid)],
-						};
-					}
-					const page = candidatePage === 1 ? invalid : [valid];
-					return { rows: page.map(evidenceFromRow) };
-				},
-			};
+		valid.workflow.contextSnapshot = {
+			timeRequest: { kind: "policy_clock_out" },
+			breakPolicySnapshot: strictPolicy,
 		};
-		const input = {
+		valid.period.pendingChanges = {
+			isNewClockOut: true,
+			breakPolicySnapshot: strictPolicy,
+		};
+		expect(select([valid])).toHaveLength(1);
+		for (const snapshot of malformed) {
+			const fixture = policyRow();
+			fixture.workflow.contextSnapshot = {
+				timeRequest: { kind: "policy_clock_out" },
+				breakPolicySnapshot: snapshot,
+			};
+			fixture.period.pendingChanges = {
+				isNewClockOut: true,
+				breakPolicySnapshot: snapshot,
+			};
+			expect(select([fixture])).toEqual([]);
+		}
+
+		const calls: SQL[] = [];
+		await loadOrdinaryCanonicalApprovals({
+			database: {
+				execute: async (statement) => {
+					calls.push(statement);
+					return { rows: [] };
+				},
+			},
 			organizationId: ids.organization,
 			approverId: ids.approver,
-			limit: 1,
-		};
-
-		const approvals = await loadOrdinaryCanonicalApprovals({
-			...input,
-			database: createDatabase(),
 		});
-		const count = await countOrdinaryCanonicalApprovals({
-			organizationId: input.organizationId,
-			approverId: input.approverId,
-			database: createDatabase(),
-		});
-
-		expect(approvals.map(({ item }) => item.id)).toEqual([ids.assignment]);
-		expect(approvals.totalCount).toBe(1);
-		expect(count).toBe(1);
+		const generated = new PgDialect().sqlToQuery(calls[0] as SQL).sql;
+		for (const invariant of [
+			"jsonb_array_elements",
+			"with ordinality",
+			"count(distinct",
+			"9007199254740991",
+			"workingMinutesThreshold",
+			"requiredBreakMinutes",
+			"evaluatedAt",
+			"source_period.end_time",
+			"assignment",
+			"regulation",
+			"display_payload -> 'durationMinutes') = 'number'",
+			"display_payload -> 'stage' -> 'order') = 'number'",
+			"compatibility.metadata -> 'stage' -> 'sequence') = 'number'",
+		]) {
+			expect(generated).toContain(invariant);
+		}
 	});
 
 	it("suppresses policy canonical output only for exact snapshot-bearing compatibility ownership", () => {
@@ -709,6 +571,9 @@ describe("ordinary canonical inbox reads", () => {
 				)
 				.trim();
 		expect(predicates(listSql)).toBe(predicates(`${countSql} order by`));
+		expect(listSql).toContain("limit");
+		expect(countSql).toContain('count(*)::integer as "totalCount"');
+		expect(countSql).not.toContain(" limit ");
 		expect(countSql).toContain("pending_changes");
 		expect(countSql).toContain("isManualEntry");
 		expect(countSql).toContain("isNewClockOut");
