@@ -1081,29 +1081,78 @@ describe("stable ordinary work-period decisions", () => {
 });
 
 describe("ordinary stable-target production composition", () => {
+	it("reconciles surcharge and marks work balance once from the exact local date", async () => {
+		const reconcileSurcharges = vi.fn().mockResolvedValue(undefined);
+		const markWorkBalanceDirty = vi.fn().mockResolvedValue(undefined);
+		const reconcile =
+			workPeriodApprovals.reconcileOrdinaryWorkPeriodMaintenanceAfterCommit as unknown as (
+				maintenance: unknown,
+				dependencies: unknown,
+			) => Promise<void>;
+		const maintenance = {
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			dirtyFromDate: "2026-07-13",
+			decision: "approved",
+			surchargePeriodIds: ["period-1", "period-2"],
+			staleSurchargePeriodIds: [],
+		};
+
+		await reconcile(maintenance, { reconcileSurcharges, markWorkBalanceDirty });
+
+		expect(reconcileSurcharges).toHaveBeenCalledOnce();
+		expect(reconcileSurcharges).toHaveBeenCalledWith(maintenance);
+		expect(markWorkBalanceDirty).toHaveBeenCalledOnce();
+		expect(markWorkBalanceDirty).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			dirtyFromDate: "2026-07-13",
+		});
+	});
+
 	it.each([
-		["dispatch", "approved", 1],
-		["observe", "approved", 0],
-		["dispatch", "pending", 0],
-		[null, null, 0],
-	] as const)("handles %s/%s postcommit exactly once: %s", async (disposition, event, calls) => {
+		["dispatch", "approved", 1, 1],
+		["observe", "approved", 0, 1],
+		["dispatch", "pending", 0, 0],
+		[null, null, 0, 0],
+	] as const)("handles %s/%s postcommit exactly once", async (disposition, event, notificationCalls, maintenanceCalls) => {
 		const complete = (workPeriodApprovals as Record<string, unknown>)
 			.completeOrdinaryWorkPeriodDecisionAfterCommit;
 		expect(typeof complete).toBe("function");
 		const execution = {
 			result: { kind: "manual_time_submission" },
-			postCommit: disposition ? { disposition, event } : null,
+			postCommit: disposition
+				? {
+						disposition,
+						event,
+						maintenance:
+							event === "pending"
+								? null
+								: {
+										organizationId: "org-1",
+										employeeId: "employee-1",
+										dirtyFromDate: "2026-07-14",
+										decision: "approved",
+										surchargePeriodIds: ["period-1"],
+										staleSurchargePeriodIds: [],
+									},
+					}
+				: null,
 		};
 		const dispatch = vi.fn().mockResolvedValue(undefined);
+		const maintain = vi.fn().mockResolvedValue(undefined);
 
 		const result = await (complete as (input: unknown) => Promise<unknown>)({
 			execute: async () => execution,
 			dispatch,
+			maintain,
 			onDispatchError: vi.fn(),
+			onMaintenanceError: vi.fn(),
 		});
 
 		expect(result).toBe(execution);
-		expect(dispatch).toHaveBeenCalledTimes(calls);
+		expect(dispatch).toHaveBeenCalledTimes(notificationCalls);
+		expect(maintain).toHaveBeenCalledTimes(maintenanceCalls);
 	});
 
 	it("preserves the committed result when awaited postcommit work fails", async () => {
@@ -1113,19 +1162,69 @@ describe("ordinary stable-target production composition", () => {
 		) => Promise<unknown>;
 		const execution = {
 			result: { kind: "manual_time_submission" },
-			postCommit: { disposition: "dispatch", event: "approved" },
+			postCommit: {
+				disposition: "dispatch",
+				event: "approved",
+				maintenance: {
+					organizationId: "org-1",
+					employeeId: "employee-1",
+					dirtyFromDate: "2026-07-14",
+					decision: "approved",
+					surchargePeriodIds: ["period-1"],
+					staleSurchargePeriodIds: [],
+				},
+			},
 		};
 		const error = new Error("notification unavailable");
 		const onDispatchError = vi.fn();
+		const maintain = vi.fn().mockResolvedValue(undefined);
 
 		const result = await complete({
 			execute: async () => execution,
 			dispatch: vi.fn().mockRejectedValue(error),
+			maintain,
 			onDispatchError,
+			onMaintenanceError: vi.fn(),
 		});
 
 		expect(result).toBe(execution);
 		expect(onDispatchError).toHaveBeenCalledWith(error);
+		expect(maintain).toHaveBeenCalledOnce();
+	});
+
+	it("keeps notification delivery independent when maintenance fails", async () => {
+		const complete =
+			workPeriodApprovals.completeOrdinaryWorkPeriodDecisionAfterCommit;
+		const maintenanceError = new Error("maintenance unavailable");
+		const dispatch = vi.fn().mockResolvedValue(undefined);
+		const onMaintenanceError = vi.fn();
+		const execution = {
+			result: { kind: "manual_time_submission" },
+			postCommit: {
+				disposition: "dispatch" as const,
+				event: "approved",
+				maintenance: {
+					organizationId: "org-1",
+					employeeId: "employee-1",
+					dirtyFromDate: "2026-07-14",
+					decision: "approved" as const,
+					surchargePeriodIds: ["period-1"],
+					staleSurchargePeriodIds: [],
+				},
+			},
+		};
+
+		await expect(
+			complete({
+				execute: async () => execution,
+				dispatch,
+				maintain: vi.fn().mockRejectedValue(maintenanceError),
+				onDispatchError: vi.fn(),
+				onMaintenanceError,
+			}),
+		).resolves.toBe(execution);
+		expect(dispatch).toHaveBeenCalledOnce();
+		expect(onMaintenanceError).toHaveBeenCalledWith(maintenanceError);
 	});
 });
 
@@ -1303,6 +1402,12 @@ function createFinalizerDbService(options?: {
 							},
 				),
 			},
+			timeEntry: {
+				findFirst: vi.fn().mockResolvedValue({
+					id: "clock-in-1",
+					utcOffsetMinutes: 0,
+				}),
+			},
 		},
 		select: vi.fn(() => ({
 			from: vi.fn((table: Parameters<typeof getTableName>[0]) => {
@@ -1464,6 +1569,12 @@ function createDecisionDbService(options?: {
 							: period.approvalWorkflowId,
 				}),
 			},
+			timeEntry: {
+				findFirst: vi.fn().mockResolvedValue({
+					id: "clock-in-1",
+					utcOffsetMinutes: 120,
+				}),
+			},
 		},
 		select: vi.fn(() => ({
 			from: vi.fn((table: Parameters<typeof getTableName>[0]) => ({
@@ -1538,7 +1649,17 @@ function createDecisionDbService(options?: {
 describe("ordinary work-period approval finalizer", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		terminalBreakMocks.enforce.mockResolvedValue({ kind: "not_required" });
+		terminalBreakMocks.enforce.mockResolvedValue({
+			kind: "not_required",
+			maintenance: {
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				dirtyFromDate: "2026-07-14",
+				decision: "approved",
+				surchargePeriodIds: ["period-1"],
+				staleSurchargePeriodIds: [],
+			},
+		});
 	});
 
 	it("locks work_period before time_record and then records one decision", async () => {
@@ -1692,7 +1813,7 @@ describe("ordinary work-period approval finalizer", () => {
 			},
 		});
 
-		await finalize(dbService, {
+		const result = await finalize(dbService, {
 			kind: "policy_clock_out",
 			evidence: {
 				mode: "legacy",
@@ -1720,6 +1841,14 @@ describe("ordinary work-period approval finalizer", () => {
 			expect.objectContaining({ approvalState: "rejected" }),
 		]);
 		expect(terminalBreakMocks.enforce).not.toHaveBeenCalled();
+		expect(result.maintenance).toEqual({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			dirtyFromDate: "2026-07-14",
+			decision: "rejected",
+			surchargePeriodIds: [],
+			staleSurchargePeriodIds: ["period-1"],
+		});
 	});
 
 	it.each([
@@ -1799,6 +1928,14 @@ describe("ordinary work-period approval finalizer", () => {
 		expect(result.period).toMatchObject({
 			startTime: period.startTime,
 			endTime: period.endTime,
+		});
+		expect(result.maintenance).toEqual({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			dirtyFromDate: "2026-07-14",
+			decision: "approved",
+			surchargePeriodIds: ["period-1"],
+			staleSurchargePeriodIds: [],
 		});
 		expect(
 			vi.mocked(dbService.db.update).mock.invocationCallOrder[1],
@@ -2371,7 +2508,6 @@ describe("ordinary work-period approval finalizer", () => {
 	});
 
 	it("never locates or mutates correction entries", () => {
-		expect(source).not.toContain("timeEntry");
 		expect(source).not.toContain("correctionEntry");
 	});
 });

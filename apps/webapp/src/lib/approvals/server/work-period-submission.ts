@@ -14,6 +14,7 @@ import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/type
 import {
 	type OrdinaryWorkPeriodApprovalKind,
 	parseOrdinaryWorkPeriodWorkflowPayload,
+	type WorkPeriodMaintenanceFacts,
 } from "../domain-adapters/work-period-contract";
 import {
 	captureOrdinaryWorkPeriodLegacyPreSubmissionState,
@@ -68,6 +69,7 @@ export interface WorkPeriodPostCommitDescriptor {
 	endTime: string;
 	durationMinutes: number;
 	reason: string | null;
+	maintenance: WorkPeriodMaintenanceFacts | null;
 }
 
 export async function insertOrdinaryWorkPeriodSourceInTransaction(input: {
@@ -1514,6 +1516,7 @@ function descriptor(input: {
 	authority: ApprovalWriteGateResult;
 	approverEmployeeId: string | null;
 	submissionKey: string;
+	maintenance: WorkPeriodMaintenanceFacts | null;
 }): WorkPeriodPostCommitDescriptor {
 	return Object.freeze({
 		disposition:
@@ -1534,6 +1537,7 @@ function descriptor(input: {
 		endTime: instantToCanonicalString(instantFromDate(input.source.endTime)),
 		durationMinutes: input.source.durationMinutes,
 		reason: input.submission.reason || null,
+		maintenance: input.maintenance,
 	});
 }
 
@@ -1618,6 +1622,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 			postCommit: null,
 		};
 	}
+	let terminalMaintenance: WorkPeriodMaintenanceFacts | null = null;
 
 	if (
 		authority.mode === "legacy" ||
@@ -1712,27 +1717,29 @@ async function executeOrdinaryWorkPeriodSubmission(
 				}
 				created = resolved.value;
 				if (created.kind === "auto_completed") {
-					await finalizeOrdinaryWorkPeriodTerminalInTransaction({
-						dbService: input.dbService,
-						organizationId: input.organizationId,
-						workPeriodId: input.workPeriodId,
-						expectedApprovalWorkflowId: null,
-						requesterEmployeeId: input.requesterEmployeeId,
-						actorEmployeeId: input.requesterEmployeeId,
-						actorUserId: input.requesterUserId,
-						kind: input.kind,
-						evidence: {
-							mode: "legacy",
-							approvalRequestId: created.approvalRequestId,
-							requestMode: "requester_auto_completed",
-							expectedStatus: "approved",
-						},
-						transition: {
-							kind: "approve",
-							reason: "requester_is_approver",
-						},
-						finalizedAt: systemClock.nowInstant(),
-					});
+					const finalized =
+						await finalizeOrdinaryWorkPeriodTerminalInTransaction({
+							dbService: input.dbService,
+							organizationId: input.organizationId,
+							workPeriodId: input.workPeriodId,
+							expectedApprovalWorkflowId: null,
+							requesterEmployeeId: input.requesterEmployeeId,
+							actorEmployeeId: input.requesterEmployeeId,
+							actorUserId: input.requesterUserId,
+							kind: input.kind,
+							evidence: {
+								mode: "legacy",
+								approvalRequestId: created.approvalRequestId,
+								requestMode: "requester_auto_completed",
+								expectedStatus: "approved",
+							},
+							transition: {
+								kind: "approve",
+								reason: "requester_is_approver",
+							},
+							finalizedAt: systemClock.nowInstant(),
+						});
+					terminalMaintenance = finalized.maintenance;
 				}
 				return created;
 			},
@@ -1761,6 +1768,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 				authority,
 				approverEmployeeId,
 				submissionKey,
+				maintenance: terminalMaintenance,
 			}),
 		};
 	}
@@ -1828,23 +1836,25 @@ async function executeOrdinaryWorkPeriodSubmission(
 	if (started.snapshot.id !== expectedWorkflowId) return fail();
 	if (started.terminal) {
 		if (started.status !== "approved") return fail();
-		await finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction({
-			dbService: input.dbService,
-			organizationId: input.organizationId,
-			workPeriodId: input.workPeriodId,
-			expectedApprovalWorkflowId: started.snapshot.id,
-			requesterEmployeeId: input.requesterEmployeeId,
-			actorEmployeeId: input.requesterEmployeeId,
-			actorUserId: input.requesterUserId,
-			kind: input.kind,
-			evidence: {
-				mode: "canonical",
-				workflowId: started.snapshot.id,
-				payload,
-			},
-			transition: { kind: "approve", reason: "requester_is_approver" },
-			finalizedAt: started.snapshot.completedAt ?? systemClock.nowInstant(),
-		});
+		const finalized =
+			await finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction({
+				dbService: input.dbService,
+				organizationId: input.organizationId,
+				workPeriodId: input.workPeriodId,
+				expectedApprovalWorkflowId: started.snapshot.id,
+				requesterEmployeeId: input.requesterEmployeeId,
+				actorEmployeeId: input.requesterEmployeeId,
+				actorUserId: input.requesterUserId,
+				kind: input.kind,
+				evidence: {
+					mode: "canonical",
+					workflowId: started.snapshot.id,
+					payload,
+				},
+				transition: { kind: "approve", reason: "requester_is_approver" },
+				finalizedAt: started.snapshot.completedAt ?? systemClock.nowInstant(),
+			});
+		terminalMaintenance = finalized.maintenance;
 	}
 	if (started.kind === "created" && authority.mode === "canonical") {
 		await context.compatibilityWriter.mirrorCanonicalToLegacy({
@@ -1905,6 +1915,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 									activeAssignment?.approverEmployeeId ??
 									null),
 						submissionKey,
+						maintenance: terminalMaintenance,
 					}),
 	};
 }

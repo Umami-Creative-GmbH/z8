@@ -18,7 +18,11 @@ import {
 } from "@/db/schema";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
-import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
+import {
+	completeOrdinaryWorkPeriodDecisionAfterCommit,
+	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
+	reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
+} from "@/lib/approvals/server/work-period-approvals";
 import {
 	executeOrdinaryWorkPeriodSubmissionInTransaction,
 	insertOrdinaryWorkPeriodSourceInTransaction,
@@ -1336,34 +1340,38 @@ export async function clockOut(
 		const approvalAutoCompleted = approvalResult?.kind === "auto_completed";
 		if (
 			needsClockOutApproval &&
-			approvalSubmission?.disposition === "executed" &&
-			approvalSubmission?.postCommit?.disposition === "dispatch"
+			approvalSubmission?.disposition === "executed"
 		) {
-			const notificationManagerId =
-				approvalSubmission.postCommit.approverEmployeeId;
-			if (!notificationManagerId) {
-				logger.warn(
-					{ organizationId: currentEmployee.organizationId },
-					"Clock-out approval has no notification recipient",
-				);
-			} else {
-				const notificationParams = {
-					workPeriodId: activeWorkPeriod.id,
-					employeeId: currentEmployee.id,
-					managerId: notificationManagerId,
-					organizationId: currentEmployee.organizationId,
-					startTime: activeWorkPeriod.startTime,
-					endTime: now,
-					durationMinutes,
-					dedupeKey: approvalSubmission.postCommit.dedupeKey,
-				};
-				try {
-					if (approvalSubmission.postCommit.event === "approved") {
-						await sendClockOutApprovedNotification(notificationParams);
-					} else {
-						await sendClockOutApprovalNotifications(notificationParams);
+			await completeOrdinaryWorkPeriodDecisionAfterCommit({
+				execute: async () => approvalSubmission,
+				dispatchPending: true,
+				dispatch: async (execution) => {
+					const descriptor = execution.postCommit;
+					const managerId = descriptor?.approverEmployeeId;
+					if (!descriptor) return;
+					if (!managerId) {
+						logger.warn(
+							{ organizationId: currentEmployee.organizationId },
+							"Clock-out approval has no notification recipient",
+						);
+						return;
 					}
-				} catch (error) {
+					const params = {
+						workPeriodId: activeWorkPeriod.id,
+						employeeId: currentEmployee.id,
+						managerId,
+						organizationId: currentEmployee.organizationId,
+						startTime: activeWorkPeriod.startTime,
+						endTime: now,
+						durationMinutes,
+						dedupeKey: descriptor.dedupeKey,
+					};
+					await (descriptor.event === "approved"
+						? sendClockOutApprovedNotification(params)
+						: sendClockOutApprovalNotifications(params));
+				},
+				maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
+				onDispatchError: (error) =>
 					logger.error(
 						{
 							error,
@@ -1371,16 +1379,24 @@ export async function clockOut(
 							workPeriodId: activeWorkPeriod.id,
 						},
 						"Failed to dispatch clock-out approval notification after commit",
-					);
-				}
-			}
+					),
+				onMaintenanceError: (error) =>
+					logger.error(
+						{
+							error,
+							organizationId: currentEmployee.organizationId,
+							workPeriodId: activeWorkPeriod.id,
+						},
+						"Failed to reconcile clock-out approval maintenance after commit",
+					),
+			});
 		}
 
 		const shouldRunPostCommitEffects =
 			result.disposition === "executed" &&
 			(!needsClockOutApproval ||
 				approvalSubmission?.disposition === "executed");
-		if (shouldRunPostCommitEffects) {
+		if (shouldRunPostCommitEffects && !needsClockOutApproval) {
 			await bestEffort(
 				() =>
 					calculateAndPersistSurcharges(
@@ -1430,7 +1446,7 @@ export async function clockOut(
 			);
 		}
 
-		if (shouldRunPostCommitEffects) {
+		if (shouldRunPostCommitEffects && !needsClockOutApproval) {
 			await markWorkBalanceDirtyAfterClockOutBestEffort(
 				{
 					employeeId: currentEmployee.id,
@@ -2204,50 +2220,56 @@ export async function createManualTimeEntry(
 		requiresApproval = committedRequiresApproval;
 
 		const approvalResult = approvalSubmission?.result;
-		const postCommit = approvalSubmission?.postCommit;
-		if (
-			requiresApproval &&
-			approvalSubmission?.disposition === "executed" &&
-			postCommit?.disposition === "dispatch" &&
-			postCommit.approverEmployeeId
-		) {
-			const notificationParams = {
-				workPeriodId: createdWorkPeriod.id,
-				employeeId: targetEmployee.id,
-				managerId: postCommit.approverEmployeeId,
-				organizationId: targetEmployee.organizationId,
-				startTime: adjustedClockIn,
-				endTime: adjustedClockOut,
-				durationMinutes,
-				reason: data.reason,
-				dedupeKey: postCommit.dedupeKey,
-			};
-			try {
-				if (postCommit.event === "approved") {
-					await sendManualEntryApprovedNotification(notificationParams);
-				} else {
-					await sendManualEntryApprovalNotifications(notificationParams);
-				}
-			} catch (error) {
-				logger.error(
-					{
-						error,
-						organizationId: targetEmployee.organizationId,
+		if (requiresApproval && approvalSubmission?.disposition === "executed") {
+			await completeOrdinaryWorkPeriodDecisionAfterCommit({
+				execute: async () => approvalSubmission,
+				dispatchPending: true,
+				dispatch: async (execution) => {
+					const descriptor = execution.postCommit;
+					const managerId = descriptor?.approverEmployeeId;
+					if (!descriptor || !managerId) return;
+					const params = {
 						workPeriodId: createdWorkPeriod.id,
-					},
-					"Failed to dispatch manual-entry approval notification after commit",
-				);
-			}
+						employeeId: targetEmployee.id,
+						managerId,
+						organizationId: targetEmployee.organizationId,
+						startTime: adjustedClockIn,
+						endTime: adjustedClockOut,
+						durationMinutes,
+						reason: data.reason,
+						dedupeKey: descriptor.dedupeKey,
+					};
+					await (descriptor.event === "approved"
+						? sendManualEntryApprovedNotification(params)
+						: sendManualEntryApprovalNotifications(params));
+				},
+				maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
+				onDispatchError: (error) =>
+					logger.error(
+						{
+							error,
+							organizationId: targetEmployee.organizationId,
+							workPeriodId: createdWorkPeriod.id,
+						},
+						"Failed to dispatch manual-entry approval notification after commit",
+					),
+				onMaintenanceError: (error) =>
+					logger.error(
+						{
+							error,
+							organizationId: targetEmployee.organizationId,
+							workPeriodId: createdWorkPeriod.id,
+						},
+						"Failed to reconcile manual-entry approval maintenance after commit",
+					),
+			});
 		}
 
 		const approvalAutoCompleted = approvalResult?.kind === "auto_completed";
 		const shouldRunPostCommitEffects =
 			disposition === "executed" &&
 			(!requiresApproval || approvalSubmission?.disposition === "executed");
-		if (
-			shouldRunPostCommitEffects &&
-			(!requiresApproval || approvalAutoCompleted)
-		) {
+		if (shouldRunPostCommitEffects && !requiresApproval) {
 			await bestEffort(
 				() =>
 					calculateAndPersistSurcharges(
@@ -2259,7 +2281,7 @@ export async function createManualTimeEntry(
 			);
 		}
 
-		if (shouldRunPostCommitEffects) {
+		if (shouldRunPostCommitEffects && !requiresApproval) {
 			await markWorkBalanceDirtyAfterManualTimeEntryBestEffort(
 				{
 					employeeId: targetEmployee.id,

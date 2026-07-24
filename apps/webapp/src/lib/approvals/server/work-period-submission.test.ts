@@ -28,7 +28,17 @@ const state = vi.hoisted(() => ({
 	originError: null as unknown,
 }));
 const terminalBreakMocks = vi.hoisted(() => ({
-	apply: vi.fn().mockResolvedValue({ kind: "not_required" }),
+	apply: vi.fn().mockResolvedValue({
+		kind: "not_required",
+		maintenance: {
+			organizationId: "org-1",
+			employeeId: "20000000-0000-4000-8000-000000000001",
+			dirtyFromDate: "2026-07-22",
+			decision: "approved",
+			surchargePeriodIds: ["10000000-0000-4000-8000-000000000001"],
+			staleSurchargePeriodIds: [],
+		},
+	}),
 }));
 
 vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
@@ -334,6 +344,12 @@ function fixture(
 						},
 					],
 				),
+			},
+			timeEntry: {
+				findFirst: vi.fn().mockResolvedValue({
+					id: "30000000-0000-4000-8000-000000000001",
+					utcOffsetMinutes: 0,
+				}),
 			},
 			employeeManagers: {
 				findMany: vi.fn().mockResolvedValue(options.managerLinks ?? []),
@@ -863,6 +879,7 @@ describe.each([
 			endTime: "2026-07-22T16:00:00Z",
 			durationMinutes: 480,
 			reason: "Needs approval",
+			maintenance: null,
 		});
 		if (mode === "legacy") expect(state.calls).not.toContain("observation");
 		if (mode === "shadow" || mode === "ready") {

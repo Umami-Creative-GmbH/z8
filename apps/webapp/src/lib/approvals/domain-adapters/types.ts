@@ -92,6 +92,7 @@ export interface ApprovalTerminalFinalizationResult {
 	eventPayload: JsonObject;
 	compatibilityPayload: JsonObject;
 	finalizedAt: Instant;
+	maintenance?: JsonObject;
 }
 
 export interface ApprovalDisplayProjection {

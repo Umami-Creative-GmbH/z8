@@ -44,6 +44,16 @@ export interface WorkPeriodApprovalResult {
 		startTime: Date;
 		endTime: Date;
 	};
+	maintenance: WorkPeriodMaintenanceFacts | null;
+}
+
+export interface WorkPeriodMaintenanceFacts {
+	organizationId: string;
+	employeeId: string;
+	dirtyFromDate: string;
+	decision: "approved" | "rejected";
+	surchargePeriodIds: string[];
+	staleSurchargePeriodIds: string[];
 }
 
 export type OrdinaryWorkPeriodFinalizerDatabase =

@@ -74,6 +74,9 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"foreign organization rollback snapshots both tenants and every durable graph",
 			"exact source advisory lock blocks then commits and replays after release",
 			"split races a locked competing employee entry into one reachable hash chain",
+			"reconciles stale surcharge and clean balance for terminal split/no-split/reject in %s mode",
+			"rolls back surcharge reconciliation atomically with terminal maintenance",
+			"replays terminal maintenance without duplicate surcharge or balance writes",
 		] as const) {
 			expect(integrationSource.split(scenario)).toHaveLength(3);
 		}
@@ -2420,5 +2423,23 @@ describeIntegration(
 				ids.clockOut,
 			);
 		});
+
+		it.todo.each([
+			"legacy",
+			"shadow",
+			"ready",
+			"canonical",
+			"complete",
+		] as const)(
+			"reconciles stale surcharge and clean balance for terminal split/no-split/reject in %s mode",
+		);
+
+		it.todo(
+			"rolls back surcharge reconciliation atomically with terminal maintenance",
+		);
+
+		it.todo(
+			"replays terminal maintenance without duplicate surcharge or balance writes",
+		);
 	},
 );

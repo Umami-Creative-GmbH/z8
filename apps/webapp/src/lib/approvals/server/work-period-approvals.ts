@@ -7,6 +7,7 @@ import {
 	approvalWorkflowCommand,
 	approvalWorkflowStage,
 	employee,
+	timeEntry,
 	timeRecord,
 	timeRecordApprovalDecision,
 	workPeriod,
@@ -16,9 +17,16 @@ import {
 	dateFromInstant,
 	instantFromDate,
 	instantToCanonicalString,
+	parsePlainDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import { ConflictError } from "@/lib/effect/errors";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import {
+	SurchargeService,
+	SurchargeServiceLive,
+} from "@/lib/effect/services/surcharge.service";
 import { createLogger } from "@/lib/logger";
 import {
 	onClockOutApproved,
@@ -32,6 +40,7 @@ import {
 	policyClockOutBreakSnapshotsEqual,
 } from "@/lib/time-tracking/policy-clock-out-break-snapshot";
 import { applyPolicyClockOutTerminalBreakInTransaction } from "@/lib/time-tracking/policy-clock-out-terminal-break";
+import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import type { ApprovalActionOptions } from "../domain/types";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
@@ -44,6 +53,7 @@ import {
 	type OrdinaryWorkPeriodTerminalEvidence,
 	parseOrdinaryWorkPeriodWorkflowPayload,
 	type WorkPeriodApprovalResult,
+	type WorkPeriodMaintenanceFacts,
 } from "../domain-adapters/work-period-contract";
 import {
 	captureOrdinaryWorkPeriodLegacyState,
@@ -164,6 +174,61 @@ function ordinaryDecisionResult(input: {
 			startTime: new Date(input.period.startTime.getTime()),
 			endTime: new Date(input.period.endTime.getTime()),
 		},
+		maintenance: null,
+	};
+}
+
+function exactMaintenanceFacts(
+	value: unknown,
+	expected: {
+		organizationId: string;
+		employeeId: string;
+		decision: "approved" | "rejected";
+	},
+): WorkPeriodMaintenanceFacts {
+	const facts = exactOwnDataValues(value, [
+		"organizationId",
+		"employeeId",
+		"dirtyFromDate",
+		"decision",
+		"surchargePeriodIds",
+		"staleSurchargePeriodIds",
+	]);
+	if (
+		facts.organizationId !== expected.organizationId ||
+		facts.employeeId !== expected.employeeId ||
+		facts.decision !== expected.decision ||
+		typeof facts.dirtyFromDate !== "string" ||
+		(facts.decision !== "approved" && facts.decision !== "rejected") ||
+		!Array.isArray(facts.surchargePeriodIds) ||
+		!Array.isArray(facts.staleSurchargePeriodIds) ||
+		[...facts.surchargePeriodIds, ...facts.staleSurchargePeriodIds].some(
+			(id) => typeof id !== "string" || id.length === 0,
+		) ||
+		new Set(facts.surchargePeriodIds).size !==
+			facts.surchargePeriodIds.length ||
+		new Set(facts.staleSurchargePeriodIds).size !==
+			facts.staleSurchargePeriodIds.length ||
+		(expected.decision === "approved" &&
+			facts.surchargePeriodIds.length === 0) ||
+		(expected.decision === "rejected" &&
+			(facts.surchargePeriodIds.length !== 0 ||
+				facts.staleSurchargePeriodIds.length === 0))
+	) {
+		throw ordinaryWorkPeriodFinalizationConflict();
+	}
+	try {
+		parsePlainDate(facts.dirtyFromDate);
+	} catch {
+		throw ordinaryWorkPeriodFinalizationConflict();
+	}
+	return {
+		organizationId: facts.organizationId,
+		employeeId: facts.employeeId,
+		dirtyFromDate: facts.dirtyFromDate,
+		decision: facts.decision,
+		surchargePeriodIds: [...facts.surchargePeriodIds],
+		staleSurchargePeriodIds: [...facts.staleSurchargePeriodIds],
 	};
 }
 
@@ -708,6 +773,7 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 						endTime: instantToCanonicalString(instantFromDate(period.endTime)),
 						durationMinutes: period.durationMinutes,
 						reason: input.decision.reason,
+						maintenance: domainResult?.maintenance ?? null,
 					}),
 				};
 			}
@@ -840,6 +906,14 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 					: execution.result.snapshot.status === "rejected"
 						? "rejected"
 						: "pending";
+			const maintenance =
+				event === "pending"
+					? null
+					: exactMaintenanceFacts(execution.finalization?.maintenance, {
+							organizationId: input.organizationId,
+							employeeId: period.employeeId,
+							decision: event,
+						});
 			return {
 				result,
 				postCommit: Object.freeze({
@@ -857,6 +931,7 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 					endTime: instantToCanonicalString(instantFromDate(period.endTime)),
 					durationMinutes: period.durationMinutes,
 					reason: input.decision.reason,
+					maintenance,
 				}),
 			};
 		});
@@ -1247,6 +1322,35 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 	) {
 		throw fail();
 	}
+	const sourceClockIn = await db.query.timeEntry.findFirst({
+		where: and(
+			eq(timeEntry.id, period.clockInId),
+			eq(timeEntry.organizationId, input.organizationId),
+			eq(timeEntry.employeeId, input.requesterEmployeeId),
+		),
+		columns: { id: true, utcOffsetMinutes: true },
+	});
+	if (
+		!sourceClockIn ||
+		sourceClockIn.id !== period.clockInId ||
+		!Number.isInteger(sourceClockIn.utcOffsetMinutes)
+	) {
+		throw fail();
+	}
+	let maintenance: WorkPeriodMaintenanceFacts = {
+		organizationId: input.organizationId,
+		employeeId: input.requesterEmployeeId,
+		dirtyFromDate: instantFromDate(period.startTime)
+			.toZonedDateTimeISO(
+				offsetMinutesToTimeZoneId(sourceClockIn.utcOffsetMinutes),
+			)
+			.toPlainDate()
+			.toString(),
+		decision: input.transition.kind === "approve" ? "approved" : "rejected",
+		surchargePeriodIds: input.transition.kind === "approve" ? [period.id] : [],
+		staleSurchargePeriodIds:
+			input.transition.kind === "reject" ? [period.id] : [],
+	};
 
 	const terminalStatus =
 		input.transition.kind === "approve" ? "approved" : "rejected";
@@ -1394,7 +1498,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 		input.transition.kind === "approve"
 	) {
 		if (!sourceBreakPolicySnapshot) throw fail();
-		await applyPolicyClockOutTerminalBreakInTransaction({
+		const breakResult = await applyPolicyClockOutTerminalBreakInTransaction({
 			dbService: input.dbService,
 			organizationId: input.organizationId,
 			employeeId: input.requesterEmployeeId,
@@ -1417,6 +1521,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 			adjustedAt: input.finalizedAt,
 			breakPolicySnapshot: sourceBreakPolicySnapshot,
 		});
+		maintenance = breakResult.maintenance;
 	}
 
 	const decisions = await db
@@ -1444,6 +1549,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 			startTime: new Date(period.startTime.getTime()),
 			endTime: new Date(period.endTime.getTime()),
 		},
+		maintenance,
 	};
 }
 
@@ -1593,25 +1699,101 @@ export function notifyWorkPeriodApprovalAfterCommit(
 
 export async function completeOrdinaryWorkPeriodDecisionAfterCommit<
 	Execution extends {
-		postCommit: { disposition: "dispatch" | "observe"; event: string } | null;
+		postCommit: {
+			disposition: "dispatch" | "observe";
+			event: string;
+			maintenance: WorkPeriodMaintenanceFacts | null;
+		} | null;
 	},
 >(input: {
 	execute: () => Promise<Execution>;
 	dispatch: (execution: Execution) => Promise<void>;
+	maintain: (maintenance: WorkPeriodMaintenanceFacts) => Promise<void>;
+	dispatchPending?: boolean;
 	onDispatchError: (error: unknown) => void;
+	onMaintenanceError: (error: unknown) => void;
 }): Promise<Execution> {
 	const execution = await input.execute();
+	const tasks: Array<{
+		kind: "dispatch" | "maintenance";
+		promise: Promise<void>;
+	}> = [];
+	const maintenance = execution.postCommit?.maintenance;
+	if (maintenance) {
+		tasks.push({
+			kind: "maintenance",
+			promise: Promise.resolve().then(() => input.maintain(maintenance)),
+		});
+	}
 	if (
 		execution.postCommit?.disposition === "dispatch" &&
-		execution.postCommit.event !== "pending"
+		(execution.postCommit.event !== "pending" || input.dispatchPending === true)
 	) {
-		try {
-			await input.dispatch(execution);
-		} catch (error) {
-			input.onDispatchError(error);
+		tasks.push({
+			kind: "dispatch",
+			promise: Promise.resolve().then(() => input.dispatch(execution)),
+		});
+	}
+	const settled = await Promise.allSettled(tasks.map((task) => task.promise));
+	for (const [index, result] of settled.entries()) {
+		if (result.status === "fulfilled") continue;
+		if (tasks[index]?.kind === "maintenance") {
+			input.onMaintenanceError(result.reason);
+		} else {
+			input.onDispatchError(result.reason);
 		}
 	}
 	return execution;
+}
+
+export async function reconcileOrdinaryWorkPeriodMaintenanceAfterCommit(
+	maintenance: WorkPeriodMaintenanceFacts,
+	dependencies: {
+		reconcileSurcharges: (
+			maintenance: WorkPeriodMaintenanceFacts,
+		) => Promise<void>;
+		markWorkBalanceDirty: typeof markEmployeeWorkBalanceDirty;
+	} = {
+		reconcileSurcharges: (facts) =>
+			Effect.runPromise(
+				Effect.gen(function* (_) {
+					const service = yield* _(SurchargeService);
+					yield* _(
+						service.reconcileWorkPeriods({
+							organizationId: facts.organizationId,
+							employeeId: facts.employeeId,
+							surchargePeriodIds: facts.surchargePeriodIds,
+							staleSurchargePeriodIds: facts.staleSurchargePeriodIds,
+						}),
+					);
+				}).pipe(
+					Effect.provide(SurchargeServiceLive),
+					Effect.provide(DatabaseServiceLive),
+				),
+			),
+		markWorkBalanceDirty: markEmployeeWorkBalanceDirty,
+	},
+): Promise<void> {
+	const surcharge = Promise.resolve().then(() =>
+		dependencies.reconcileSurcharges(maintenance),
+	);
+	const balance = Promise.resolve().then(() =>
+		dependencies.markWorkBalanceDirty({
+			organizationId: maintenance.organizationId,
+			employeeId: maintenance.employeeId,
+			dirtyFromDate: maintenance.dirtyFromDate,
+		}),
+	);
+	const settled = await Promise.allSettled([surcharge, balance]);
+	const failures = settled.flatMap((result) =>
+		result.status === "rejected" ? [result.reason] : [],
+	);
+	if (failures.length > 0) {
+		throw new AggregateError(
+			failures,
+			"Ordinary work-period maintenance failed",
+		);
+	}
 }
 
 export function decideOrdinaryWorkPeriodWithStableTargetEffect(
@@ -1724,10 +1906,22 @@ export function decideOrdinaryWorkPeriodWithStableTargetEffect(
 						),
 					);
 				},
+				maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
 				onDispatchError: (error) => {
 					logger.error(
 						{ error, approvalRequestId: input.approvalRequestId },
 						"Ordinary work-period decision after-commit work failed",
+					);
+				},
+				onMaintenanceError: (error) => {
+					logger.error(
+						{
+							error,
+							organizationId: currentEmployee.organizationId,
+							workflowTargetId: input.approvalRequestId,
+							workPeriodId: input.workPeriodId,
+						},
+						"Ordinary work-period maintenance after commit failed",
 					);
 				},
 			});

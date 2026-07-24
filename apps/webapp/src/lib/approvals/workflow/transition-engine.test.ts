@@ -1322,10 +1322,12 @@ describe("approval transition engine atomic orchestration", () => {
 		expect(first).toEqual({
 			result: expect.any(Object),
 			disposition: "executed",
+			finalization: expect.any(Object),
 		});
 		expect(replay).toEqual({
 			result: first.result,
 			disposition: "replayed",
+			finalization: null,
 		});
 		expect(deleteCancelledAbsence).toHaveBeenCalledOnce();
 		expect(finalizeTerminal).toHaveBeenCalledOnce();

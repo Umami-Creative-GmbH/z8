@@ -83,6 +83,8 @@ function lockedSource(overrides: Record<string, unknown> = {}) {
 		originalDurationMinutes: null,
 		clockInType: "clock_in",
 		clockInTimestamp: startTime,
+		clockInTimezone: "Europe/Berlin",
+		clockInUtcOffsetMinutes: 60,
 		clockOutType: "clock_out",
 		clockOutTimestamp: endTime,
 		clockOutTimezone: "Europe/Berlin",
@@ -286,7 +288,17 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 					resolution: "none",
 				}),
 			),
-		).resolves.toEqual({ kind: "not_required" });
+		).resolves.toEqual({
+			kind: "not_required",
+			maintenance: {
+				organizationId,
+				employeeId,
+				dirtyFromDate: "2026-03-29",
+				decision: "approved",
+				surchargePeriodIds: [snapshot.id],
+				staleSurchargePeriodIds: [],
+			},
+		});
 		expect(
 			queries.filter((query) => /^\s*(insert|update)\b/i.test(query.sql)),
 		).toEqual([]);
@@ -319,7 +331,7 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 					breakRules: [],
 				}),
 			),
-		).resolves.toEqual({ kind: "not_required" });
+		).resolves.toMatchObject({ kind: "not_required" });
 		expect(
 			queries.filter((query) => /^\s*(insert|update)\b/i.test(query.sql)),
 		).toHaveLength(0);
@@ -333,7 +345,18 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 
 		await expect(
 			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
-		).resolves.toEqual({ kind: "adjusted", breakMinutes: 60 });
+		).resolves.toEqual({
+			kind: "adjusted",
+			breakMinutes: 60,
+			maintenance: {
+				organizationId,
+				employeeId,
+				dirtyFromDate: "2026-03-29",
+				decision: "approved",
+				surchargePeriodIds: [snapshot.id, expect.any(String)],
+				staleSurchargePeriodIds: [],
+			},
+		});
 		expect(queries.map((query) => query.sql).join("\n")).not.toMatch(
 			/work_policy|team_id|employee_row\.team_id/,
 		);
@@ -344,7 +367,7 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 
 		await expect(
 			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
-		).resolves.toEqual({ kind: "adjusted", breakMinutes: 60 });
+		).resolves.toMatchObject({ kind: "adjusted", breakMinutes: 60 });
 
 		const inserts = queries.filter((query) => /^\s*insert\b/i.test(query.sql));
 		const updates = queries.filter((query) => /^\s*update\b/i.test(query.sql));
@@ -572,7 +595,7 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 
 		await expect(
 			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
-		).resolves.toEqual({ kind: "not_required" });
+		).resolves.toMatchObject({ kind: "not_required" });
 		expect(
 			queries.filter((query) => /^\s*(insert|update)\b/i.test(query.sql)),
 		).toHaveLength(0);
@@ -601,7 +624,7 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 
 		await expect(
 			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
-		).resolves.toEqual({ kind: "adjusted", breakMinutes: 60 });
+		).resolves.toMatchObject({ kind: "adjusted", breakMinutes: 60 });
 		const gapQuery = queries.find((query) =>
 			query.sql.includes('as "gapStart"'),
 		);

@@ -1,12 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
-import type { OrdinaryWorkPeriodFinalizerDbService } from "@/lib/approvals/domain-adapters/work-period-contract";
+import type {
+	OrdinaryWorkPeriodFinalizerDbService,
+	WorkPeriodMaintenanceFacts,
+} from "@/lib/approvals/domain-adapters/work-period-contract";
 import {
 	compareInstants,
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
+import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import { calculateHash } from "./blockchain";
 import { calculateBreakDeficit } from "./break-policy-calculation";
 import type { PolicyClockOutBreakSnapshot } from "./policy-clock-out-break-snapshot";
@@ -44,8 +48,12 @@ export interface EnforcePolicyClockOutTerminalBreakInput {
 }
 
 export type PolicyClockOutTerminalBreakResult =
-	| { kind: "not_required" }
-	| { kind: "adjusted"; breakMinutes: number };
+	| { kind: "not_required"; maintenance: WorkPeriodMaintenanceFacts }
+	| {
+			kind: "adjusted";
+			breakMinutes: number;
+			maintenance: WorkPeriodMaintenanceFacts;
+	  };
 
 interface LockedSource extends PolicyClockOutTerminalPeriodSnapshot {
 	approvalStatus: string;
@@ -57,6 +65,8 @@ interface LockedSource extends PolicyClockOutTerminalPeriodSnapshot {
 	originalDurationMinutes: number | null;
 	clockInType: string;
 	clockInTimestamp: Date;
+	clockInTimezone: string | null;
+	clockInUtcOffsetMinutes: number;
 	clockOutType: string;
 	clockOutTimestamp: Date;
 	clockOutTimezone: string | null;
@@ -166,6 +176,7 @@ function validateLockedSource(
 		source.clockInType !== "clock_in" ||
 		source.clockOutType !== "clock_out" ||
 		!sameDate(source.clockInTimestamp, period.startTime) ||
+		!Number.isInteger(source.clockInUtcOffsetMinutes) ||
 		!sameDate(source.clockOutTimestamp, period.endTime) ||
 		source.canonicalId !== period.canonicalRecordId ||
 		!sameDate(source.canonicalStartAt, period.startTime) ||
@@ -223,6 +234,8 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 			period.work_location_type as "workLocationType",
 			clock_in.type as "clockInType",
 			clock_in.timestamp as "clockInTimestamp",
+			clock_in.timezone as "clockInTimezone",
+			clock_in.utc_offset_minutes as "clockInUtcOffsetMinutes",
 			clock_out.type as "clockOutType",
 			clock_out.timestamp as "clockOutTimestamp",
 			clock_out.timezone as "clockOutTimezone",
@@ -277,15 +290,36 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 	const sourceRows = rows(sourceResult);
 	if (sourceRows.length !== 1) return fail();
 	const source = validateLockedSource(sourceRows[0], input);
+	const dirtyTimezone = isValidIanaTimezone(source.clockInTimezone)
+		? source.clockInTimezone
+		: offsetMinutesToTimeZoneId(source.clockInUtcOffsetMinutes);
+	const timezone = isValidIanaTimezone(source.clockOutTimezone)
+		? source.clockOutTimezone
+		: isValidIanaTimezone(source.employeeTimezone)
+			? source.employeeTimezone
+			: fail();
+	const maintenance = (
+		surchargePeriodIds: string[],
+	): WorkPeriodMaintenanceFacts => ({
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		dirtyFromDate: instantFromDate(source.startTime)
+			.toZonedDateTimeISO(dirtyTimezone)
+			.toPlainDate()
+			.toString(),
+		decision: "approved",
+		surchargePeriodIds,
+		staleSurchargePeriodIds: [],
+	});
 
 	if (input.breakPolicySnapshot.resolution === "none") {
-		return { kind: "not_required" };
+		return { kind: "not_required", maintenance: maintenance([source.id]) };
 	}
 	if (
 		!input.breakPolicySnapshot.regulationEnabled ||
 		input.breakPolicySnapshot.breakRules.length === 0
 	) {
-		return { kind: "not_required" };
+		return { kind: "not_required", maintenance: maintenance([source.id]) };
 	}
 	if (
 		input.breakPolicySnapshot.regulation.id === null ||
@@ -309,14 +343,9 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 		},
 	});
 	if (calculation.deficit === 0 || !calculation.applicableRule) {
-		return { kind: "not_required" };
+		return { kind: "not_required", maintenance: maintenance([source.id]) };
 	}
 
-	const timezone = isValidIanaTimezone(source.clockOutTimezone)
-		? source.clockOutTimezone
-		: isValidIanaTimezone(source.employeeTimezone)
-			? source.employeeTimezone
-			: fail();
 	const sourceStart = instantFromDate(source.startTime);
 	const sourceEnd = instantFromDate(source.endTime);
 	const localDayStart = sourceEnd.toZonedDateTimeISO(timezone).startOfDay();
@@ -374,7 +403,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 		},
 	});
 	if (finalCalculation.deficit === 0 || !finalCalculation.applicableRule) {
-		return { kind: "not_required" };
+		return { kind: "not_required", maintenance: maintenance([source.id]) };
 	}
 
 	const insertAfterMinutes =
@@ -627,7 +656,11 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 	`);
 	exactWrite(rows(insertedPeriod), secondPeriodId);
 
-	return { kind: "adjusted", breakMinutes: finalCalculation.deficit };
+	return {
+		kind: "adjusted",
+		breakMinutes: finalCalculation.deficit,
+		maintenance: maintenance([source.id, secondPeriodId]),
+	};
 }
 
 export const enforcePolicyClockOutTerminalBreakInTransaction =

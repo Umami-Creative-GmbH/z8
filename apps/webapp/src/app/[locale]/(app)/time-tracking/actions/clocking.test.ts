@@ -30,6 +30,7 @@ const mockState = vi.hoisted(() => ({
 	enforceBreaksAfterClockOut: vi.fn(),
 	checkProjectBudgetAfterClockOut: vi.fn(),
 	markEmployeeWorkBalanceDirty: vi.fn(),
+	reconcileOrdinaryMaintenance: vi.fn(),
 	isBillingMutationAllowed: vi.fn(),
 	requireBillingForMutation: vi.fn(),
 	revalidatePath: vi.fn(),
@@ -197,6 +198,41 @@ vi.mock("@/lib/time-tracking/clocking-service", () => ({
 
 vi.mock("@/lib/approvals/server/work-period-approvals", () => ({
 	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction: vi.fn(),
+	reconcileOrdinaryWorkPeriodMaintenanceAfterCommit:
+		mockState.reconcileOrdinaryMaintenance,
+	completeOrdinaryWorkPeriodDecisionAfterCommit: async (input: {
+		execute: () => Promise<{
+			postCommit: {
+				disposition: "dispatch" | "observe";
+				event: string;
+				maintenance?: unknown;
+			} | null;
+		}>;
+		dispatch: (execution: unknown) => Promise<void>;
+		maintain: (maintenance: unknown) => Promise<void>;
+		dispatchPending?: boolean;
+		onDispatchError: (error: unknown) => void;
+		onMaintenanceError: (error: unknown) => void;
+	}) => {
+		const execution = await input.execute();
+		const tasks: Promise<void>[] = [];
+		if (
+			execution.postCommit?.disposition === "dispatch" &&
+			(execution.postCommit.event !== "pending" ||
+				input.dispatchPending === true)
+		) {
+			tasks.push(input.dispatch(execution).catch(input.onDispatchError));
+		}
+		if (execution.postCommit?.maintenance) {
+			tasks.push(
+				input
+					.maintain(execution.postCommit.maintenance)
+					.catch(input.onMaintenanceError),
+			);
+		}
+		await Promise.all(tasks);
+		return execution;
+	},
 }));
 
 vi.mock(
@@ -954,6 +990,7 @@ describe("clockOut", () => {
 			id: "canonical-1",
 		});
 		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
+		mockState.reconcileOrdinaryMaintenance.mockResolvedValue(undefined);
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
 		mockState.isBillingMutationAllowed.mockReturnValue(true);
 		mockState.createClockOutApprovalRequest.mockResolvedValue({
@@ -973,6 +1010,17 @@ describe("clockOut", () => {
 					dedupeKey: "clock-out-submission:result",
 					approverEmployeeId:
 						result.kind === "auto_completed" ? "employee-1" : "manager-1",
+					maintenance:
+						result.kind === "auto_completed"
+							? {
+									organizationId: "org-1",
+									employeeId: "employee-1",
+									dirtyFromDate: "2026-05-03",
+									decision: "approved",
+									surchargePeriodIds: ["period-1"],
+									staleSurchargePeriodIds: [],
+								}
+							: null,
 				},
 			};
 		});
@@ -2194,6 +2242,17 @@ describe("createManualTimeEntry", () => {
 					dedupeKey: "manual-submission:result",
 					approverEmployeeId:
 						result.kind === "auto_completed" ? "employee-1" : "manager-1",
+					maintenance:
+						result.kind === "auto_completed"
+							? {
+									organizationId: "org-1",
+									employeeId: "employee-1",
+									dirtyFromDate: "2026-05-03",
+									decision: "approved",
+									surchargePeriodIds: ["period-1"],
+									staleSurchargePeriodIds: [],
+								}
+							: null,
 				},
 			};
 		});
@@ -2675,6 +2734,17 @@ describe("createManualTimeEntry", () => {
 					dedupeKey: "manual-submission:result",
 					approverEmployeeId:
 						result.kind === "auto_completed" ? "employee-1" : "manager-1",
+					maintenance:
+						result.kind === "auto_completed"
+							? {
+									organizationId: "org-1",
+									employeeId: "employee-1",
+									dirtyFromDate: "2026-05-03",
+									decision: "approved",
+									surchargePeriodIds: ["period-1"],
+									staleSurchargePeriodIds: [],
+								}
+							: null,
 				},
 			};
 		});
@@ -2682,6 +2752,7 @@ describe("createManualTimeEntry", () => {
 		mockState.sendManualEntryApprovedNotification.mockResolvedValue(undefined);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
 		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
+		mockState.reconcileOrdinaryMaintenance.mockResolvedValue(undefined);
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
 		mockState.isBillingMutationAllowed.mockReturnValue(true);
 		mockState.transaction.mockImplementation(async (callback) =>
@@ -3113,7 +3184,7 @@ describe("createManualTimeEntry", () => {
 		expect(mockState.createCanonicalWorkRecord).toHaveBeenCalledOnce();
 		expect(mockState.insertValues).toHaveBeenCalledOnce();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledOnce();
+		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expect(mockState.revalidatePath).toHaveBeenCalledOnce();
 		expect(order.slice(0, 2)).toEqual(["lock", "lookup"]);
 	});
@@ -3650,9 +3721,13 @@ describe("createManualTimeEntry", () => {
 		expect(
 			mockState.sendManualEntryApprovalNotifications,
 		).not.toHaveBeenCalled();
-		expect(mockState.calculateAndPersistSurcharges).toHaveBeenCalledWith(
-			"period-1",
-			"org-1",
+		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
+		expect(mockState.reconcileOrdinaryMaintenance).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				surchargePeriodIds: ["period-1"],
+			}),
 		);
 	});
 

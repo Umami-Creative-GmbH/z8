@@ -1,6 +1,7 @@
-import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
+import type { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import {
 	employee,
@@ -63,6 +64,13 @@ export type SurchargeSummary = {
 	totalCreditedMinutes: number;
 	byRuleType: Record<string, { minutes: number; count: number }>;
 };
+
+export interface ReconcileSurchargeWorkPeriodsInput {
+	organizationId: string;
+	employeeId: string;
+	surchargePeriodIds: string[];
+	staleSurchargePeriodIds: string[];
+}
 
 // ============================================
 // HELPER FUNCTIONS
@@ -213,6 +221,192 @@ function calculateSurchargesInternal(
 	};
 }
 
+export async function reconcileSurchargeWorkPeriodsWithDatabase(
+	database: typeof db,
+	input: ReconcileSurchargeWorkPeriodsInput,
+): Promise<void> {
+	try {
+		const targetIds = [...new Set(input.surchargePeriodIds)];
+		const staleIds = [...new Set(input.staleSurchargePeriodIds)];
+		if (
+			!input.organizationId ||
+			!input.employeeId ||
+			targetIds.length !== input.surchargePeriodIds.length ||
+			staleIds.length !== input.staleSurchargePeriodIds.length
+		) {
+			throw new Error("invalid reconciliation input");
+		}
+		const allIds = [...new Set([...targetIds, ...staleIds])];
+		await database.transaction(async (tx) => {
+			if (allIds.length === 0) return;
+			const periods = await tx.query.workPeriod.findMany({
+				where: and(
+					inArray(workPeriod.id, allIds),
+					eq(workPeriod.organizationId, input.organizationId),
+					eq(workPeriod.employeeId, input.employeeId),
+				),
+				columns: {
+					id: true,
+					organizationId: true,
+					employeeId: true,
+					startTime: true,
+					endTime: true,
+					approvalStatus: true,
+				},
+			});
+			const foundIds = new Set(periods.map((period) => period.id));
+			if (
+				periods.length !== allIds.length ||
+				allIds.some((id) => !foundIds.has(id)) ||
+				periods.some(
+					(period) =>
+						period.organizationId !== input.organizationId ||
+						period.employeeId !== input.employeeId,
+				)
+			) {
+				throw new Error("period ownership mismatch");
+			}
+			if (
+				periods.some(
+					(period) =>
+						targetIds.includes(period.id) &&
+						(period.approvalStatus !== "approved" || !period.endTime),
+				)
+			) {
+				throw new Error("target period is not approved");
+			}
+			const employees = await tx.query.employee.findMany({
+				where: and(
+					eq(employee.id, input.employeeId),
+					eq(employee.organizationId, input.organizationId),
+				),
+				columns: { id: true, organizationId: true, teamId: true },
+				limit: 2,
+			});
+			const ownedEmployee = employees[0];
+			if (
+				employees.length !== 1 ||
+				!ownedEmployee ||
+				ownedEmployee.id !== input.employeeId ||
+				ownedEmployee.organizationId !== input.organizationId
+			) {
+				throw new Error("employee ownership mismatch");
+			}
+
+			await tx
+				.delete(surchargeCalculation)
+				.where(
+					and(
+						eq(surchargeCalculation.organizationId, input.organizationId),
+						eq(surchargeCalculation.employeeId, input.employeeId),
+						inArray(surchargeCalculation.workPeriodId, allIds),
+					),
+				);
+			if (targetIds.length === 0) return;
+
+			const now = new Date();
+			const activeWindow = and(
+				eq(surchargeModelAssignment.organizationId, input.organizationId),
+				eq(surchargeModelAssignment.isActive, true),
+				or(
+					isNull(surchargeModelAssignment.effectiveFrom),
+					lte(surchargeModelAssignment.effectiveFrom, now),
+				),
+				or(
+					isNull(surchargeModelAssignment.effectiveUntil),
+					gte(surchargeModelAssignment.effectiveUntil, now),
+				),
+			);
+			const assignment =
+				(await tx.query.surchargeModelAssignment.findFirst({
+					where: and(
+						activeWindow,
+						eq(surchargeModelAssignment.employeeId, input.employeeId),
+						eq(surchargeModelAssignment.assignmentType, "employee"),
+					),
+					with: { model: { with: { rules: true } } },
+				})) ??
+				(ownedEmployee.teamId
+					? await tx.query.surchargeModelAssignment.findFirst({
+							where: and(
+								activeWindow,
+								eq(surchargeModelAssignment.teamId, ownedEmployee.teamId),
+								eq(surchargeModelAssignment.assignmentType, "team"),
+							),
+							with: { model: { with: { rules: true } } },
+						})
+					: null) ??
+				(await tx.query.surchargeModelAssignment.findFirst({
+					where: and(
+						activeWindow,
+						eq(surchargeModelAssignment.assignmentType, "organization"),
+					),
+					with: { model: { with: { rules: true } } },
+				}));
+			if (!assignment?.model?.isActive) return;
+			const rules = assignment.model.rules
+				.filter((rule) => rule.isActive)
+				.sort((left, right) => right.priority - left.priority)
+				.map((rule) => ({
+					id: rule.id,
+					name: rule.name,
+					ruleType: rule.ruleType,
+					percentage: rule.percentage,
+					dayOfWeek: rule.dayOfWeek,
+					windowStartTime: rule.windowStartTime,
+					windowEndTime: rule.windowEndTime,
+					specificDate: rule.specificDate,
+					dateRangeStart: rule.dateRangeStart,
+					dateRangeEnd: rule.dateRangeEnd,
+					priority: rule.priority,
+					validFrom: rule.validFrom,
+					validUntil: rule.validUntil,
+				}));
+			if (rules.length === 0) return;
+			const org = await tx.query.organization.findFirst({
+				where: eq(organization.id, input.organizationId),
+				columns: { id: true, timezone: true, surchargesEnabled: true },
+			});
+			if (!org || org.id !== input.organizationId) {
+				throw new Error("organization mismatch");
+			}
+			if (!org.surchargesEnabled) return;
+			for (const period of periods) {
+				if (!targetIds.includes(period.id) || !period.endTime) continue;
+				const result = calculateSurchargesInternal(
+					period.startTime,
+					period.endTime,
+					rules,
+					org.timezone ?? "UTC",
+				);
+				if (result.surchargeMinutes === 0) continue;
+				const primaryRule = result.appliedRules[0];
+				await tx.insert(surchargeCalculation).values({
+					employeeId: input.employeeId,
+					organizationId: input.organizationId,
+					workPeriodId: period.id,
+					surchargeRuleId: primaryRule?.ruleId ?? null,
+					surchargeModelId: assignment.model.id,
+					calculationDate: now,
+					baseMinutes: result.baseMinutes,
+					qualifyingMinutes: result.qualifyingMinutes,
+					surchargeMinutes: result.surchargeMinutes,
+					appliedPercentage: primaryRule?.percentage.toString() ?? "0",
+					calculationDetails: {
+						workPeriodStartTime: period.startTime.toISOString(),
+						workPeriodEndTime: period.endTime.toISOString(),
+						rulesApplied: result.appliedRules,
+						overlapPolicy: "max_wins",
+						calculatedAt: now.toISOString(),
+					},
+				});
+			}
+		});
+	} catch {
+		throw new Error("Surcharge reconciliation failed");
+	}
+}
+
 // ============================================
 // SERVICE INTERFACE
 // ============================================
@@ -251,6 +445,10 @@ export class SurchargeService extends Context.Tag("SurchargeService")<
 		readonly recalculateSurcharges: (
 			workPeriodId: string,
 		) => Effect.Effect<SurchargeCalculationResult | null, NotFoundError | DatabaseError>;
+
+		readonly reconcileWorkPeriods: (
+			input: ReconcileSurchargeWorkPeriodsInput,
+		) => Effect.Effect<void, DatabaseError>;
 
 		/**
 		 * Get surcharge credits for an employee in a date range.
@@ -310,6 +508,16 @@ export const SurchargeServiceLive = Layer.effect(
 		});
 
 		return SurchargeService.of({
+			reconcileWorkPeriods: (input) =>
+				Effect.tryPromise({
+					try: () => reconcileSurchargeWorkPeriodsWithDatabase(dbService.db, input),
+					catch: (error) =>
+						new DatabaseError({
+							message: "Surcharge reconciliation failed",
+							operation: "reconcileWorkPeriods",
+							cause: error,
+						}),
+				}),
 			getEffectiveSurchargeModel: (employeeId) =>
 				Effect.gen(function* (_) {
 					// 1. Get employee with team info

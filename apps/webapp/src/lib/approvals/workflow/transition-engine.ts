@@ -3,6 +3,7 @@ import type {
 	ApprovalDomainAdapterContext,
 	ApprovalDomainCommand,
 	ApprovalTerminalAdapterInput,
+	ApprovalTerminalFinalizationResult,
 	ApprovalWorkflowTransactionContext,
 } from "../domain-adapters/types";
 import type {
@@ -206,6 +207,7 @@ export interface ApprovalTransitionEngine {
 	): Promise<{
 		result: ApprovalCommandResult;
 		disposition: "executed" | "replayed";
+		finalization: ApprovalTerminalFinalizationResult | null;
 	}>;
 	executeInTransaction(
 		context: ApprovalWorkflowTransactionContext,
@@ -482,7 +484,11 @@ export function createApprovalTransitionEngine(
 			const claim = await context.repository.claimCommand(receipt);
 			if (claim.kind === "completed") {
 				assertResultScope(request, claim.result);
-				return { result: claim.result, disposition: "replayed" };
+				return {
+					result: claim.result,
+					disposition: "replayed",
+					finalization: null,
+				};
 			}
 			if (claim.kind === "fingerprint_mismatch") {
 				throw engineError("idempotency_mismatch");
@@ -743,7 +749,7 @@ export function createApprovalTransitionEngine(
 				await context.outboxWriter.write(outbox);
 			}
 			await context.repository.completeCommand({ ...receipt, result });
-			return { result, disposition: "executed" };
+			return { result, disposition: "executed", finalization };
 		};
 	const executeInTransaction: ApprovalTransitionEngine["executeInTransaction"] =
 		async (context, request) =>

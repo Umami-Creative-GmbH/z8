@@ -179,6 +179,7 @@ function sameDate(left: Date, right: Date): boolean {
 function terminalResult(
 	kind: OrdinaryWorkPeriodApprovalKind,
 	input: ApprovalTerminalAdapterInput<OrdinaryWorkPeriodApprovalSource>,
+	maintenance: WorkPeriodApprovalResult["maintenance"],
 ): ApprovalTerminalFinalizationResult {
 	const status = input.transition.to;
 	return normalizeStableData({
@@ -210,6 +211,7 @@ function terminalResult(
 			status,
 		},
 		finalizedAt: input.finalizedAt,
+		...(maintenance ? { maintenance } : {}),
 	}) as ApprovalTerminalFinalizationResult;
 }
 
@@ -380,7 +382,7 @@ export function createOrdinaryWorkPeriodApprovalAdapter(
 					: input.transition.kind === "reject"
 						? { kind: "reject" as const, reason: input.transition.reason }
 						: fail();
-			await dependencies.finalizeTerminal({
+			const finalized = await dependencies.finalizeTerminal({
 				dbService: input.dbService,
 				organizationId: input.organizationId,
 				workPeriodId: input.source.id,
@@ -397,7 +399,7 @@ export function createOrdinaryWorkPeriodApprovalAdapter(
 				transition,
 				finalizedAt: input.finalizedAt,
 			});
-			return terminalResult(kind, input);
+			return terminalResult(kind, input, finalized.maintenance);
 		},
 		async projectDisplay(input) {
 			validateContext(kind, input);
