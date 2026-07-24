@@ -31,8 +31,10 @@ import {
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 import {
+	completeOrdinaryWorkPeriodDecisionAfterCommit,
 	executeOrdinaryWorkPeriodDecisionInTransaction,
 	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
+	reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
 } from "./work-period-approvals";
 import { executeOrdinaryWorkPeriodSubmissionInTransaction } from "./work-period-submission";
 
@@ -122,6 +124,26 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"set local idle_in_transaction_session_timeout = '10s'",
 		);
 	});
+
+	it("executes every terminal maintenance scenario without placeholders", () => {
+		for (const scenario of [
+			"reconciles stale surcharge and clean balance for terminal " +
+				"split/no-split/reject in %s mode",
+			"rolls back surcharge reconciliation atomically with terminal " +
+				"maintenance",
+			"replays terminal maintenance without duplicate surcharge or " +
+				"balance writes",
+		] as const) {
+			const scenarioIndex = integrationSource.lastIndexOf(scenario);
+			const registration = integrationSource.slice(
+				Math.max(0, scenarioIndex - 250),
+				scenarioIndex + scenario.length + 500,
+			);
+			expect(scenarioIndex).toBeGreaterThan(-1);
+			expect(registration).not.toMatch(/it\.(?:todo|skip)/);
+			expect(registration).toMatch(/async\s*\(/);
+		}
+	});
 });
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
@@ -186,6 +208,16 @@ const ids = {
 	replacementRegulation: "ca000000-0000-4000-8000-000000000003",
 	replacementBreakRule: "ca000000-0000-4000-8000-000000000004",
 	replacementAssignment: "ca000000-0000-4000-8000-000000000005",
+	surchargeModel: "cb000000-0000-4000-8000-000000000001",
+	surchargeRule: "cb000000-0000-4000-8000-000000000002",
+	surchargeAssignment: "cb000000-0000-4000-8000-000000000003",
+	staleSurchargeCalculation: "cb000000-0000-4000-8000-000000000004",
+	foreignClockIn: "cc000000-0000-4000-8000-000000000001",
+	foreignClockOut: "cc000000-0000-4000-8000-000000000002",
+	foreignPeriod: "cc000000-0000-4000-8000-000000000003",
+	foreignSurchargeCalculation: "cc000000-0000-4000-8000-000000000004",
+	foreignSurchargeModel: "cc000000-0000-4000-8000-000000000005",
+	foreignSurchargeRule: "cc000000-0000-4000-8000-000000000006",
 } as const;
 
 const modes = ["legacy", "shadow", "ready", "canonical", "complete"] as const;
@@ -694,6 +726,202 @@ describeIntegration(
 				await operation(client);
 				await commit();
 			});
+		}
+
+		async function seedMaintenanceState() {
+			const timestamp = new Date(now.epochMilliseconds);
+			await pool.query(
+				"update organization set surcharges_enabled = true, timezone = 'UTC' where id = $1",
+				[ids.organization],
+			);
+			await pool.query(
+				`insert into surcharge_model
+				 (id, organization_id, name, is_active, created_by, created_at, updated_at)
+				 values ($1, $2, 'Task 15 Wednesday', true, $3, $4, $4)`,
+				[ids.surchargeModel, ids.organization, ids.managerUser, timestamp],
+			);
+			await pool.query(
+				`insert into surcharge_rule
+				 (id, model_id, name, rule_type, percentage, day_of_week,
+				  priority, is_active, created_by, created_at)
+				 values ($1, $2, 'Task 15 Wednesday 50%', 'day_of_week', 0.5,
+				  'wednesday', 1, true, $3, $4)`,
+				[ids.surchargeRule, ids.surchargeModel, ids.managerUser, timestamp],
+			);
+			await pool.query(
+				`insert into surcharge_model_assignment
+				 (id, model_id, organization_id, assignment_type, employee_id,
+				  priority, is_active, created_by, created_at, updated_at)
+				 values ($1, $2, $3, 'employee', $4, 2, true, $5, $6, $6)`,
+				[
+					ids.surchargeAssignment,
+					ids.surchargeModel,
+					ids.organization,
+					ids.requester,
+					ids.managerUser,
+					timestamp,
+				],
+			);
+			await pool.query(
+				`insert into surcharge_calculation
+				 (id, employee_id, organization_id, work_period_id, surcharge_rule_id,
+				  surcharge_model_id, calculation_date, base_minutes, qualifying_minutes,
+				  surcharge_minutes, applied_percentage, calculation_details, created_at)
+				 values ($1, $2, $3, $4, $5, $6, $7, 999, 999, 999, 0.5,
+				  '{"seed":"stale"}', $7)`,
+				[
+					ids.staleSurchargeCalculation,
+					ids.requester,
+					ids.organization,
+					ids.period,
+					ids.surchargeRule,
+					ids.surchargeModel,
+					timestamp,
+				],
+			);
+			await pool.query(
+				`insert into surcharge_model
+				 (id, organization_id, name, is_active, created_by, created_at, updated_at)
+				 values ($1, $2, 'Task 15 Foreign', true, $3, $4, $4)`,
+				[
+					ids.foreignSurchargeModel,
+					ids.foreignOrganization,
+					ids.foreignUser,
+					timestamp,
+				],
+			);
+			await pool.query(
+				`insert into surcharge_rule
+				 (id, model_id, name, rule_type, percentage, day_of_week,
+				  priority, is_active, created_by, created_at)
+				 values ($1, $2, 'Task 15 Foreign Wednesday', 'day_of_week', 0.5,
+				  'wednesday', 1, true, $3, $4)`,
+				[
+					ids.foreignSurchargeRule,
+					ids.foreignSurchargeModel,
+					ids.foreignUser,
+					timestamp,
+				],
+			);
+			await pool.query(
+				`insert into time_entry (
+				 id, organization_id, employee_id, type, timestamp, utc_offset_minutes,
+				 timezone, timezone_source, previous_entry_id, hash, previous_hash,
+				 created_by, created_at
+				 ) values
+				 ($1, $3, $4, 'clock_in', $5, 0, 'UTC', 'backfill', null, 'foreign-in', null, $7, $5),
+				 ($2, $3, $4, 'clock_out', $6, 0, 'UTC', 'backfill', $1, 'foreign-out', 'foreign-in', $7, $6)`,
+				[
+					ids.foreignClockIn,
+					ids.foreignClockOut,
+					ids.foreignOrganization,
+					ids.foreignEmployee,
+					startTime,
+					endTime,
+					ids.foreignUser,
+				],
+			);
+			await pool.query(
+				`insert into work_period (
+				 id, organization_id, employee_id, clock_in_id, clock_out_id,
+				 start_time, end_time, duration_minutes, is_active, approval_status, updated_at
+				 ) values ($1, $2, $3, $4, $5, $6, $7, 480, false, 'approved', $8)`,
+				[
+					ids.foreignPeriod,
+					ids.foreignOrganization,
+					ids.foreignEmployee,
+					ids.foreignClockIn,
+					ids.foreignClockOut,
+					startTime,
+					endTime,
+					timestamp,
+				],
+			);
+			await pool.query(
+				`insert into surcharge_calculation
+				 (id, employee_id, organization_id, work_period_id, surcharge_rule_id,
+				  surcharge_model_id, calculation_date, base_minutes, qualifying_minutes,
+				  surcharge_minutes, applied_percentage, calculation_details, created_at)
+				 values ($1, $2, $3, $4, $5, $6, $7, 777, 777, 777, 0.5,
+				  '{"seed":"foreign"}', $7)`,
+				[
+					ids.foreignSurchargeCalculation,
+					ids.foreignEmployee,
+					ids.foreignOrganization,
+					ids.foreignPeriod,
+					ids.foreignSurchargeRule,
+					ids.foreignSurchargeModel,
+					timestamp,
+				],
+			);
+			await pool.query(
+				`insert into employee_work_balance (
+				 employee_id, organization_id, actual_minutes, required_minutes,
+				 balance_minutes, computed_from_date, computed_through_date, computed_at,
+				 is_dirty, dirty_from_date, refresh_requested_at, created_at, updated_at
+				 ) values
+				 ($1, $3, 480, 480, 0, '2026-07-01', '2026-07-22', $5, false, null, null, $5, $5),
+				 ($2, $4, 777, 700, 77, '2026-07-01', '2026-07-22', $5, false, null, null, $5, $5)`,
+				[
+					ids.requester,
+					ids.foreignEmployee,
+					ids.organization,
+					ids.foreignOrganization,
+					timestamp,
+				],
+			);
+		}
+
+		async function maintenanceSnapshot() {
+			const calculations = await pool.query<{
+				id: string;
+				organization_id: string;
+				employee_id: string;
+				work_period_id: string;
+				base_minutes: number;
+				qualifying_minutes: number;
+				surcharge_minutes: number;
+			}>(
+				`select id, organization_id, employee_id, work_period_id, base_minutes,
+				 qualifying_minutes, surcharge_minutes
+				 from surcharge_calculation
+				 where organization_id = any($1::text[]) order by organization_id, work_period_id`,
+				[[ids.organization, ids.foreignOrganization]],
+			);
+			const balances = await pool.query<{
+				organization_id: string;
+				employee_id: string;
+				actual_minutes: number;
+				is_dirty: boolean;
+				dirty_from_date: string | null;
+			}>(
+				`select organization_id, employee_id, actual_minutes, is_dirty, dirty_from_date
+				 from employee_work_balance
+				 where organization_id = any($1::text[]) order by organization_id, employee_id`,
+				[[ids.organization, ids.foreignOrganization]],
+			);
+			return { calculations: calculations.rows, balances: balances.rows };
+		}
+
+		async function completeDecision(
+			approvalRequestId: string,
+			decision:
+				| { kind: "approve"; reason: string | null }
+				| { kind: "reject"; reason: string },
+		) {
+			let dispatches = 0;
+			const dispatchErrors: unknown[] = [];
+			const maintenanceErrors: unknown[] = [];
+			const execution = await completeOrdinaryWorkPeriodDecisionAfterCommit({
+				execute: () => decide(approvalRequestId, decision),
+				dispatch: async () => {
+					dispatches += 1;
+				},
+				maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
+				onDispatchError: (error) => dispatchErrors.push(error),
+				onMaintenanceError: (error) => maintenanceErrors.push(error),
+			});
+			return { execution, dispatches, dispatchErrors, maintenanceErrors };
 		}
 
 		async function assertSubmittedBreakSnapshotParity(
@@ -2424,22 +2652,256 @@ describeIntegration(
 			);
 		});
 
-		it.todo.each([
+		it.each([
 			"legacy",
 			"shadow",
 			"ready",
 			"canonical",
 			"complete",
-		] as const)(
-			"reconciles stale surcharge and clean balance for terminal split/no-split/reject in %s mode",
-		);
+		] as const)("reconciles stale surcharge and clean balance for terminal split/no-split/reject in %s mode", async (mode) => {
+			for (const terminalCase of [
+				{
+					name: "split",
+					kind: "policy_clock_out" as const,
+					split: true,
+					action: "approve" as const,
+				},
+				{
+					name: "no-split",
+					kind: "manual_time_submission" as const,
+					split: false,
+					action: "approve" as const,
+				},
+				{
+					name: "reject",
+					kind: "manual_time_submission" as const,
+					split: false,
+					action: "reject" as const,
+				},
+			]) {
+				await seed(terminalCase.kind, terminalCase.split, mode);
+				await seedMaintenanceState();
+				const target = (await submit(terminalCase.kind)).result
+					.approvalRequestId;
+				const completed = await completeDecision(
+					target,
+					terminalCase.action === "approve"
+						? { kind: "approve", reason: null }
+						: { kind: "reject", reason: "Task 15 rejection" },
+				);
 
-		it.todo(
-			"rolls back surcharge reconciliation atomically with terminal maintenance",
-		);
+				expect(completed.maintenanceErrors).toEqual([]);
+				expect(completed.dispatchErrors).toEqual([]);
+				expect(completed.execution.postCommit?.maintenance).toMatchObject({
+					organizationId: ids.organization,
+					employeeId: ids.requester,
+					dirtyFromDate: "2026-07-22",
+					decision: terminalCase.action === "approve" ? "approved" : "rejected",
+				});
+				const ownedPeriods = await pool.query<{ id: string }>(
+					`select id from work_period
+					 where organization_id = $1 and employee_id = $2 order by id`,
+					[ids.organization, ids.requester],
+				);
+				const surchargePeriodIds =
+					terminalCase.action === "approve"
+						? ownedPeriods.rows.map(({ id }) => id).sort()
+						: [];
+				expect(
+					[
+						...(completed.execution.postCommit?.maintenance
+							?.surchargePeriodIds ?? []),
+					].sort(),
+				).toEqual(surchargePeriodIds);
+				expect(
+					completed.execution.postCommit?.maintenance?.staleSurchargePeriodIds,
+				).toEqual(terminalCase.action === "reject" ? [ids.period] : []);
+				if (mode === "canonical" || mode === "complete") {
+					expect(completed.execution.postCommit?.disposition).toBe("observe");
+					expect(completed.dispatches).toBe(0);
+				}
 
-		it.todo(
-			"replays terminal maintenance without duplicate surcharge or balance writes",
-		);
+				const state = await maintenanceSnapshot();
+				const localCalculations = state.calculations.filter(
+					({ organization_id }) => organization_id === ids.organization,
+				);
+				const expectedCalculations =
+					terminalCase.name === "split"
+						? [
+								{
+									base_minutes: 360,
+									qualifying_minutes: 360,
+									surcharge_minutes: 180,
+								},
+								{
+									base_minutes: 90,
+									qualifying_minutes: 90,
+									surcharge_minutes: 45,
+								},
+							]
+						: terminalCase.name === "no-split"
+							? [
+									{
+										base_minutes: 480,
+										qualifying_minutes: 480,
+										surcharge_minutes: 240,
+									},
+								]
+							: [];
+				expect(
+					localCalculations
+						.map(({ base_minutes, qualifying_minutes, surcharge_minutes }) => ({
+							base_minutes,
+							qualifying_minutes,
+							surcharge_minutes,
+						}))
+						.sort((left, right) => right.base_minutes - left.base_minutes),
+				).toEqual(expectedCalculations);
+				for (const calculation of localCalculations) {
+					expect(calculation.organization_id).toBe(ids.organization);
+					expect(calculation.employee_id).toBe(ids.requester);
+				}
+				expect(
+					localCalculations.map(({ work_period_id }) => work_period_id).sort(),
+				).toEqual(surchargePeriodIds);
+				expect(
+					state.calculations.filter(
+						({ organization_id }) =>
+							organization_id === ids.foreignOrganization,
+					),
+				).toEqual([
+					expect.objectContaining({
+						id: ids.foreignSurchargeCalculation,
+						organization_id: ids.foreignOrganization,
+						employee_id: ids.foreignEmployee,
+						work_period_id: ids.foreignPeriod,
+						base_minutes: 777,
+					}),
+				]);
+				expect(state.balances).toEqual([
+					{
+						organization_id: ids.foreignOrganization,
+						employee_id: ids.foreignEmployee,
+						actual_minutes: 777,
+						is_dirty: false,
+						dirty_from_date: null,
+					},
+					{
+						organization_id: ids.organization,
+						employee_id: ids.requester,
+						actual_minutes: 480,
+						is_dirty: true,
+						dirty_from_date: "2026-07-22",
+					},
+				]);
+			}
+		});
+
+		it("rolls back surcharge reconciliation atomically with terminal maintenance", async () => {
+			await seed("manual_time_submission", false, "canonical");
+			await seedMaintenanceState();
+			const target = (await submit("manual_time_submission")).result
+				.approvalRequestId;
+			const beforeRollback = await maintenanceSnapshot();
+			await expect(
+				withFailureTrigger({
+					table: "time_record_approval_decision",
+					operation: "insert",
+					name: "terminal-maintenance-precommit",
+					run: () =>
+						completeDecision(target, { kind: "approve", reason: null }),
+				}),
+			).rejects.toThrow("Ordinary work-period decision failed");
+			expect(await maintenanceSnapshot()).toEqual(beforeRollback);
+			expect(
+				await pool.query(
+					"select approval_status from work_period where id = $1 and organization_id = $2",
+					[ids.period, ids.organization],
+				),
+			).toMatchObject({ rows: [{ approval_status: "pending" }] });
+
+			await seed("manual_time_submission", false, "canonical");
+			await seedMaintenanceState();
+			const committedTarget = (await submit("manual_time_submission")).result
+				.approvalRequestId;
+			await pool.query(`create or replace function task15_fail_surcharge_delete() returns trigger as $$
+		begin raise exception 'task15 surcharge reconciliation failure'; end;
+		$$ language plpgsql`);
+			await pool.query(
+				`create trigger task15_fail_surcharge_delete
+				 before delete on surcharge_calculation
+				 for each row execute function task15_fail_surcharge_delete()`,
+			);
+			let completed: Awaited<ReturnType<typeof completeDecision>>;
+			try {
+				completed = await completeDecision(committedTarget, {
+					kind: "approve",
+					reason: null,
+				});
+			} finally {
+				await pool.query(
+					"drop trigger if exists task15_fail_surcharge_delete on surcharge_calculation",
+				);
+				await pool.query(
+					"drop function if exists task15_fail_surcharge_delete()",
+				);
+			}
+			expect(completed.maintenanceErrors).toHaveLength(1);
+			expect(completed.execution.result.action).toBe("approve");
+			expect(
+				await pool.query(
+					"select approval_status from work_period where id = $1 and organization_id = $2",
+					[ids.period, ids.organization],
+				),
+			).toMatchObject({ rows: [{ approval_status: "approved" }] });
+			const failedState = await maintenanceSnapshot();
+			expect(
+				failedState.calculations.filter(
+					({ organization_id }) => organization_id === ids.organization,
+				),
+			).toEqual([
+				expect.objectContaining({
+					id: ids.staleSurchargeCalculation,
+					base_minutes: 999,
+				}),
+			]);
+			expect(
+				failedState.balances.find(
+					({ organization_id }) => organization_id === ids.organization,
+				),
+			).toMatchObject({ is_dirty: true, dirty_from_date: "2026-07-22" });
+		});
+
+		it("replays terminal maintenance without duplicate surcharge or balance writes", async () => {
+			await seed("manual_time_submission", false, "canonical");
+			await seedMaintenanceState();
+			const target = (await submit("manual_time_submission")).result
+				.approvalRequestId;
+			const first = await completeDecision(target, {
+				kind: "approve",
+				reason: null,
+			});
+			expect(first.maintenanceErrors).toEqual([]);
+			const afterFirst = await maintenanceSnapshot();
+			const replay = await completeDecision(target, {
+				kind: "approve",
+				reason: null,
+			});
+			expect(replay.execution.postCommit).toBeNull();
+			expect(replay.dispatches).toBe(0);
+			expect(replay.maintenanceErrors).toEqual([]);
+			const afterReplay = await maintenanceSnapshot();
+			expect(afterReplay).toEqual(afterFirst);
+			expect(
+				afterReplay.calculations.filter(
+					({ organization_id }) => organization_id === ids.organization,
+				),
+			).toHaveLength(1);
+			expect(
+				afterReplay.balances.filter(
+					({ organization_id }) => organization_id === ids.organization,
+				),
+			).toHaveLength(1);
+		});
 	},
 );
