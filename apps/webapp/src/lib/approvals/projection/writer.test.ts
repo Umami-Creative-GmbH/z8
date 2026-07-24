@@ -54,6 +54,11 @@ async function realOrdinaryProjection(kind: OrdinaryWorkPeriodApprovalKind) {
 	const adapter = createOrdinaryWorkPeriodApprovalAdapter(kind, {
 		finalizeTerminal: vi.fn(),
 	});
+	const breakPolicySnapshot = {
+		version: 1 as const,
+		evaluatedAt: "2026-07-20T14:00:00Z",
+		resolution: "none" as const,
+	};
 	const workflow = {
 		id: "10000000-0000-4000-8000-000000000001",
 		organizationId: "org-1",
@@ -67,6 +72,7 @@ async function realOrdinaryProjection(kind: OrdinaryWorkPeriodApprovalKind) {
 		policySnapshot: {},
 		contextSnapshot: {
 			timeRequest: { kind },
+			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 			privateReason: "private-reason",
 			sourceDiagnostics: "private-source-diagnostics",
 		},
@@ -103,7 +109,10 @@ async function realOrdinaryProjection(kind: OrdinaryWorkPeriodApprovalKind) {
 		startTime: "2026-07-20T06:00:00Z",
 		endTime: "2026-07-20T14:00:00Z",
 		durationMinutes: 480,
-		payload: { timeRequest: { kind } },
+		payload: {
+			timeRequest: { kind },
+			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+		},
 		pendingChanges: { privateNote: "private-pending-change" },
 	};
 	return adapter.projectDisplay({

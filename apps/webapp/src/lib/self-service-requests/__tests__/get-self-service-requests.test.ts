@@ -219,6 +219,11 @@ async function realOrdinaryDisplay(
 		finalizeTerminal: vi.fn(),
 	});
 	const submittedAt = parseInstant("2026-04-26T08:00:00Z");
+	const breakPolicySnapshot = {
+		version: 1 as const,
+		evaluatedAt: "2026-04-26T16:00:00Z",
+		resolution: "none" as const,
+	};
 	const workflow = {
 		id: `10000000-0000-4000-8000-${kind === "manual_time_submission" ? "000000000020" : "000000000030"}`,
 		organizationId: "org-1",
@@ -230,7 +235,11 @@ async function realOrdinaryDisplay(
 		currentStageOrder: 1,
 		version: 1,
 		policySnapshot: {},
-		contextSnapshot: { timeRequest: { kind }, privateReason: "private-reason" },
+		contextSnapshot: {
+			timeRequest: { kind },
+			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+			privateReason: "private-reason",
+		},
 		displaySnapshot: {},
 		submittedAt,
 		completedAt: null,
@@ -273,7 +282,10 @@ async function realOrdinaryDisplay(
 			startTime: "2026-04-26T08:00:00Z",
 			endTime: "2026-04-26T16:00:00Z",
 			durationMinutes: 480,
-			payload: { timeRequest: { kind } },
+			payload: {
+				timeRequest: { kind },
+				...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+			},
 		},
 	});
 }

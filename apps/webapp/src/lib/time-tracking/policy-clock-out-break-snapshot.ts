@@ -5,41 +5,16 @@ import {
 	instantToCanonicalString,
 	parseInstant,
 } from "@/lib/datetime/temporal-core";
+import type { PolicyClockOutBreakSnapshot } from "./policy-clock-out-break-snapshot.types";
+
+export type {
+	PolicyClockOutBreakRuleSnapshot,
+	PolicyClockOutBreakSnapshot,
+} from "./policy-clock-out-break-snapshot.types";
 
 const UUID =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const ERROR = "Policy clock-out break snapshot is invalid";
-
-export interface PolicyClockOutBreakRuleSnapshot {
-	readonly id: string;
-	readonly workingMinutesThreshold: number;
-	readonly requiredBreakMinutes: number;
-}
-
-export type PolicyClockOutBreakSnapshot =
-	| Readonly<{
-			version: 1;
-			evaluatedAt: string;
-			resolution: "none";
-	  }>
-	| Readonly<{
-			version: 1;
-			evaluatedAt: string;
-			resolution: "work_policy";
-			teamId: string | null;
-			assignment: Readonly<{
-				id: string;
-				type: "employee" | "team" | "organization";
-			}>;
-			policy: Readonly<{ id: string; name: string }>;
-			regulationEnabled: boolean;
-			regulation: Readonly<{
-				id: string | null;
-				name: string | null;
-				maxUninterruptedMinutes: number | null;
-			}>;
-			breakRules: readonly Readonly<PolicyClockOutBreakRuleSnapshot>[];
-	  }>;
 
 function fail(): never {
 	throw new Error(ERROR);
