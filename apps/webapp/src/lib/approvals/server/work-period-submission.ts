@@ -123,6 +123,8 @@ interface LockedOrdinarySource {
 	isActive: boolean;
 	startTime: Date;
 	endTime: Date;
+	wasAutoAdjusted: boolean;
+	originalEndTime: Date | null;
 	durationMinutes: number;
 	deletedAt: Date | null;
 	canonicalId: string;
@@ -136,6 +138,7 @@ interface LockedOrdinarySource {
 	pendingLegacyRequests: unknown[];
 	pendingCanonicalWorkflows: unknown[];
 	terminalCanonicalWorkflows: unknown[];
+	terminalCanonicalReceipts: unknown[];
 	terminalLegacyMarkedRequests: unknown[];
 	historicalLegacyAutoRequests: unknown[];
 	hasMalformedLegacyMarker: boolean;
@@ -303,6 +306,8 @@ async function loadOrdinarySource(
 			period.is_active as "isActive",
 			period.start_time as "startTime",
 			period.end_time as "endTime",
+			period.was_auto_adjusted as "wasAutoAdjusted",
+			period.original_end_time as "originalEndTime",
 			period.duration_minutes as "durationMinutes",
 			period.deleted_at as "deletedAt",
 			canonical.id as "canonicalId",
@@ -367,11 +372,36 @@ async function loadOrdinarySource(
 						and workflow.source_type = 'time_entry'
 						and workflow.source_id = period.id
 						and workflow.workflow_type in ('manual_time_submission', 'policy_clock_out')
-						and workflow.status = 'approved'
+						and workflow.status in ('approved', 'rejected')
 					order by workflow.id
 					limit 2
 				) workflow_row
 			), '[]'::json) as "terminalCanonicalWorkflows",
+			coalesce((
+				select json_agg(receipt_row.value order by receipt_row.id)
+				from (
+					select event.id, json_build_object(
+						'organizationId', event.organization_id,
+						'workflowId', event.workflow_id,
+						'idempotencyKey', event.idempotency_key,
+						'version', event.version,
+						'eventIndex', event.event_index
+					) as value
+					from approval_workflow_event event
+					join approval_workflow workflow
+						on workflow.id = event.workflow_id
+						and workflow.organization_id = event.organization_id
+					where workflow.organization_id = period.organization_id
+						and workflow.source_type = 'time_entry'
+						and workflow.source_id = period.id
+						and workflow.workflow_type in ('manual_time_submission', 'policy_clock_out')
+						and workflow.status in ('approved', 'rejected')
+						and event.version = 1
+						and event.event_index = 0
+					order by event.id
+					limit 2
+				) receipt_row
+			), '[]'::json) as "terminalCanonicalReceipts",
 			coalesce((
 				select json_agg(request_row.value order by request_row.id)
 				from (
@@ -417,7 +447,7 @@ async function loadOrdinarySource(
 						and request.entity_type = 'time_entry'
 						and request.entity_id = period.id
 						and request.requested_by = ${input.requesterEmployeeId}::uuid
-						and request.status = 'approved'
+						and request.status in ('approved', 'rejected')
 						and request.metadata ? 'ordinarySubmission'
 						and request.metadata -> 'ordinarySubmission' ->> 'key' = ${submissionKey}
 					order by request.id
@@ -463,7 +493,7 @@ async function loadOrdinarySource(
 					and request.entity_type = 'time_entry'
 					and request.entity_id = period.id
 					and request.requested_by = ${input.requesterEmployeeId}::uuid
-					and request.status = 'approved'
+					and request.status in ('approved', 'rejected')
 					and request.metadata ? 'ordinarySubmission'
 					and case
 						when jsonb_typeof(request.metadata -> 'ordinarySubmission') <> 'object' then true
@@ -504,11 +534,15 @@ async function loadOrdinarySource(
 		!source.clockOutId ||
 		!source.canonicalRecordId ||
 		(source.approvalStatus !== "pending" &&
-			source.approvalStatus !== "approved") ||
+			source.approvalStatus !== "approved" &&
+			source.approvalStatus !== "rejected") ||
 		source.isActive !== false ||
 		source.deletedAt !== null ||
 		!(source.startTime instanceof Date) ||
 		!(source.endTime instanceof Date) ||
+		typeof source.wasAutoAdjusted !== "boolean" ||
+		(source.originalEndTime !== null &&
+			!(source.originalEndTime instanceof Date)) ||
 		source.endTime.getTime() < source.startTime.getTime() ||
 		!Number.isSafeInteger(source.durationMinutes) ||
 		source.durationMinutes < 0 ||
@@ -525,6 +559,7 @@ async function loadOrdinarySource(
 		!Array.isArray(source.pendingLegacyRequests) ||
 		!Array.isArray(source.pendingCanonicalWorkflows) ||
 		!Array.isArray(source.terminalCanonicalWorkflows) ||
+		!Array.isArray(source.terminalCanonicalReceipts) ||
 		!Array.isArray(source.terminalLegacyMarkedRequests) ||
 		!Array.isArray(source.historicalLegacyAutoRequests) ||
 		typeof source.hasMalformedLegacyMarker !== "boolean"
@@ -868,9 +903,10 @@ function representativeStage(snapshot: ApprovalWorkflowSnapshot) {
 async function resolveCanonicalCompatibilityRequest(input: {
 	submission: ExecuteOrdinaryWorkPeriodSubmissionInput;
 	snapshot: ApprovalWorkflowSnapshot;
-	expectedStatus: "pending" | "approved";
+	expectedStatus: "pending" | "approved" | "rejected";
+	stage?: { id: string; sequence: number };
 }): Promise<{ id: string; approverId: string }> {
-	const stage = representativeStage(input.snapshot);
+	const stage = input.stage ?? representativeStage(input.snapshot);
 	const requests =
 		await input.submission.dbService.db.query.approvalRequest.findMany({
 			where: and(
@@ -1134,23 +1170,44 @@ async function resolveTerminalReplay(input: {
 	authority: ApprovalWriteGateResult;
 	expectedWorkflowId: string;
 }): Promise<{
-	result: Extract<
-		ResolvePolicyAndCreateApprovalResult,
-		{ kind: "auto_completed" }
-	>;
+	result: ResolvePolicyAndCreateApprovalResult;
 	approverEmployeeId: string;
 } | null> {
 	if (input.source.approvalStatus === "pending") return null;
 	const canonicalAuthority =
 		input.authority.mode === "canonical" || input.authority.mode === "complete";
 	if (
-		input.source.approvalStatus !== "approved" ||
-		input.source.canonicalApprovalState !== "approved" ||
+		(input.source.approvalStatus !== "approved" &&
+			input.source.approvalStatus !== "rejected") ||
+		input.source.canonicalApprovalState !== input.source.approvalStatus ||
 		(canonicalAuthority && input.source.terminalCanonicalWorkflows.length > 1)
 	) {
 		return fail();
 	}
 	const canonical = input.source.terminalCanonicalWorkflows[0];
+	if (canonical) {
+		if (input.source.terminalCanonicalReceipts.length !== 1) return fail();
+		const workflow = object(canonical);
+		const receipt = object(input.source.terminalCanonicalReceipts[0]);
+		const submissionKey = deriveApprovalWorkflowId({
+			organizationId: input.submission.organizationId,
+			workflowType: input.submission.kind,
+			sourceType: "time_entry",
+			sourceId: input.submission.workPeriodId,
+			allocationKey: input.submission.submissionId,
+		});
+		if (
+			receipt.organizationId !== input.submission.organizationId ||
+			receipt.workflowId !== workflow.id ||
+			receipt.idempotencyKey !== submissionKey ||
+			receipt.version !== 1 ||
+			receipt.eventIndex !== 0
+		) {
+			return fail();
+		}
+	} else if (input.source.terminalCanonicalReceipts.length !== 0) {
+		return fail();
+	}
 	if (canonical && canonicalAuthority) {
 		const workflow = object(canonical);
 		if (
@@ -1161,11 +1218,11 @@ async function resolveTerminalReplay(input: {
 			workflow.sourceType !== "time_entry" ||
 			workflow.sourceId !== input.submission.workPeriodId ||
 			workflow.requesterEmployeeId !== input.submission.requesterEmployeeId ||
-			workflow.status !== "approved"
+			workflow.status !== input.source.approvalStatus
 		) {
 			return fail();
 		}
-		parseOrdinaryWorkPeriodWorkflowPayload(
+		const workflowPayload = parseOrdinaryWorkPeriodWorkflowPayload(
 			workflow.contextSnapshot,
 			input.submission.kind,
 		);
@@ -1180,22 +1237,73 @@ async function resolveTerminalReplay(input: {
 			snapshot.sourceType !== "time_entry" ||
 			snapshot.sourceId !== input.submission.workPeriodId ||
 			snapshot.requesterEmployeeId !== input.submission.requesterEmployeeId ||
-			snapshot.status !== "approved" ||
+			snapshot.status !== input.source.approvalStatus ||
 			snapshot.completedAt === null ||
-			snapshot.stages.length === 0 ||
-			snapshot.stages.some(
-				(stage) =>
-					stage.activationMode !== "requester_auto_approve" ||
-					stage.status !== "approved" ||
-					stage.assignments.length !== 0,
-			)
+			snapshot.stages.length === 0
 		) {
 			return fail();
 		}
-		parseOrdinaryWorkPeriodWorkflowPayload(
+		const snapshotPayload = parseOrdinaryWorkPeriodWorkflowPayload(
 			snapshot.contextSnapshot,
 			input.submission.kind,
 		);
+		if (
+			JSON.stringify(snapshotPayload) !== JSON.stringify(workflowPayload) ||
+			(input.submission.kind === "policy_clock_out" &&
+				snapshotPayload.breakPolicySnapshot?.evaluatedAt !==
+					instantToCanonicalString(
+						instantFromDate(
+							input.source.wasAutoAdjusted
+								? (input.source.originalEndTime ?? fail())
+								: input.source.endTime,
+						),
+					))
+		) {
+			return fail();
+		}
+		const requesterAutoCompleted =
+			input.source.approvalStatus === "approved" &&
+			snapshot.stages.every(
+				(stage) =>
+					stage.activationMode === "requester_auto_approve" &&
+					stage.status === "approved" &&
+					stage.assignments.length === 0,
+			);
+		if (!requesterAutoCompleted) {
+			const firstStage = snapshot.stages.find((stage) => stage.sequence === 1);
+			const firstAssignment = firstStage?.assignments[0];
+			if (
+				firstStage?.activationMode !== "human" ||
+				(firstStage.status !== "approved" &&
+					firstStage.status !== "rejected") ||
+				!firstAssignment ||
+				typeof firstAssignment.approverEmployeeId !== "string"
+			) {
+				return fail();
+			}
+			const approvalRequestId =
+				input.authority.mode === "canonical"
+					? (
+							await resolveCanonicalCompatibilityRequest({
+								submission: input.submission,
+								snapshot,
+								expectedStatus: firstStage.status,
+								stage: { id: firstStage.id, sequence: firstStage.sequence },
+							})
+						).id
+					: firstAssignment.id;
+			return {
+				result:
+					snapshot.stages.length > 1
+						? {
+								kind: "chain_created",
+								chainInstanceId: snapshot.id,
+								approvalRequestId,
+							}
+						: { kind: "default_created", approvalRequestId },
+				approverEmployeeId: firstAssignment.approverEmployeeId,
+			};
+		}
 		const approvalRequestId =
 			input.authority.mode === "canonical"
 				? (
@@ -1220,6 +1328,142 @@ async function resolveTerminalReplay(input: {
 		return fail();
 	}
 	if (input.source.hasMalformedLegacyMarker) return fail();
+	const manualRequests = input.source.terminalLegacyMarkedRequests.flatMap(
+		(value) => {
+			const request = object(value);
+			return Object.hasOwn(object(request.metadata), "autoApproval")
+				? []
+				: [request];
+		},
+	);
+	if (manualRequests.length > 0) {
+		if (
+			manualRequests.length !==
+				input.source.terminalLegacyMarkedRequests.length ||
+			manualRequests.length > 100
+		) {
+			return fail();
+		}
+		const payloads = manualRequests.map((request) =>
+			requestKind(request as unknown as PendingLegacyRequest, input.submission),
+		);
+		const payload = payloads[0] ?? fail();
+		const evaluatedAt = instantToCanonicalString(
+			instantFromDate(
+				input.source.wasAutoAdjusted
+					? (input.source.originalEndTime ?? fail())
+					: input.source.endTime,
+			),
+		);
+		if (
+			input.source.pendingChanges !== null ||
+			(!input.source.wasAutoAdjusted &&
+				input.source.originalEndTime !== null) ||
+			payloads.some(
+				(candidate) => JSON.stringify(candidate) !== JSON.stringify(payload),
+			) ||
+			manualRequests.some(
+				(request) =>
+					request.organizationId !== input.submission.organizationId ||
+					request.entityType !== "time_entry" ||
+					request.entityId !== input.submission.workPeriodId ||
+					request.requestedBy !== input.submission.requesterEmployeeId ||
+					(request.status !== "approved" && request.status !== "rejected") ||
+					typeof request.approverId !== "string" ||
+					typeof request.id !== "string",
+			) ||
+			payload.timeRequest.kind !== input.submission.kind ||
+			(input.submission.kind === "policy_clock_out" &&
+				payload.breakPolicySnapshot?.evaluatedAt !== evaluatedAt)
+		) {
+			return fail();
+		}
+		const observed = input.source.terminalCanonicalWorkflows[0];
+		if (observed) {
+			const workflow = object(observed);
+			const workflowPayload = parseOrdinaryWorkPeriodWorkflowPayload(
+				workflow.contextSnapshot,
+				input.submission.kind,
+			);
+			if (
+				workflow.id !== input.source.approvalWorkflowId ||
+				workflow.organizationId !== input.submission.organizationId ||
+				workflow.workflowType !== input.submission.kind ||
+				workflow.sourceType !== "time_entry" ||
+				workflow.sourceId !== input.submission.workPeriodId ||
+				workflow.requesterEmployeeId !== input.submission.requesterEmployeeId ||
+				workflow.status !== input.source.approvalStatus ||
+				JSON.stringify(workflowPayload) !== JSON.stringify(payload)
+			) {
+				return fail();
+			}
+		}
+		if (manualRequests.length === 1) {
+			const request = manualRequests[0] ?? fail();
+			if (
+				request.status !== input.source.approvalStatus ||
+				request.chainInstanceId !== null
+			) {
+				return fail();
+			}
+			return {
+				result: {
+					kind: "default_created",
+					approvalRequestId: request.id as string,
+				},
+				approverEmployeeId: request.approverId as string,
+			};
+		}
+		const chainInstanceId = manualRequests[0]?.chainInstanceId;
+		const stageIds = new Set<string>();
+		const sequences = new Set<number>();
+		for (const request of manualRequests) {
+			if (
+				typeof chainInstanceId !== "string" ||
+				request.chainInstanceId !== chainInstanceId ||
+				request.chainOrganizationId !== input.submission.organizationId ||
+				request.chainEntityType !== "time_entry" ||
+				request.chainEntityId !== input.submission.workPeriodId ||
+				request.chainRequesterEmployeeId !==
+					input.submission.requesterEmployeeId ||
+				request.chainStatus !== input.source.approvalStatus ||
+				!hasValidApprovedAt(request.chainCompletedAt) ||
+				request.chainStageCount !== manualRequests.length ||
+				request.stageStatus !== request.status ||
+				request.stageApprovalRequestId !== request.id ||
+				request.stageDecidedBy !== request.approverId ||
+				!hasValidApprovedAt(request.stageDecidedAt) ||
+				typeof request.stageId !== "string" ||
+				!Number.isSafeInteger(request.stepOrder)
+			) {
+				return fail();
+			}
+			stageIds.add(request.stageId);
+			sequences.add(request.stepOrder as number);
+		}
+		const ordered = manualRequests.toSorted(
+			(left, right) => (left.stepOrder as number) - (right.stepOrder as number),
+		);
+		const first = ordered[0] ?? fail();
+		const final = ordered.at(-1) ?? fail();
+		if (
+			stageIds.size !== manualRequests.length ||
+			sequences.size !== manualRequests.length ||
+			first.stepOrder !== 1 ||
+			final.stepOrder !== final.chainCurrentStageOrder ||
+			final.status !== input.source.approvalStatus
+		) {
+			return fail();
+		}
+		return {
+			result: {
+				kind: "chain_created",
+				chainInstanceId: chainInstanceId as string,
+				approvalRequestId: first.id as string,
+			},
+			approverEmployeeId: first.approverId as string,
+		};
+	}
 	const marked = resolveMarkedLegacyCycle({
 		submission: input.submission,
 		requests: input.source.terminalLegacyMarkedRequests,
@@ -1329,6 +1573,19 @@ async function executeOrdinaryWorkPeriodSubmission(
 		allocationKey: submissionKey,
 	});
 	const source = await loadOrdinarySource(input, submissionKey);
+	const terminalReplay = await resolveTerminalReplay({
+		submission: input,
+		source,
+		authority,
+		expectedWorkflowId,
+	});
+	if (terminalReplay) {
+		return {
+			result: terminalReplay.result,
+			disposition: "replayed",
+			postCommit: null,
+		};
+	}
 	const breakPolicySnapshot =
 		input.kind === "policy_clock_out"
 			? policyClockOutBreakSnapshotFromPendingChanges(
@@ -1347,19 +1604,6 @@ async function executeOrdinaryWorkPeriodSubmission(
 		...payload,
 		ordinarySubmission: { key: submissionKey, submissionId },
 	};
-	const terminalReplay = await resolveTerminalReplay({
-		submission: input,
-		source,
-		authority,
-		expectedWorkflowId,
-	});
-	if (terminalReplay) {
-		return {
-			result: terminalReplay.result,
-			disposition: "replayed",
-			postCommit: null,
-		};
-	}
 	const replay = validatePendingOccupants(
 		input,
 		source,

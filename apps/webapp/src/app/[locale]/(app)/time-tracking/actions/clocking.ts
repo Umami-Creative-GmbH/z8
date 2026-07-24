@@ -1200,29 +1200,6 @@ export async function clockOut(
 		);
 		const runtime = createOrdinaryApprovalRuntime();
 		const result = await runtime.repository.withTransaction(async (context) => {
-			const breakPolicySnapshot = needsClockOutApproval
-				? await resolvePolicyClockOutBreakSnapshotInTransaction({
-						dbService: context.dbService as never,
-						organizationId: currentEmployee.organizationId,
-						employeeId: currentEmployee.id,
-						endTime: actionInstant,
-					})
-				: null;
-			const pendingChanges = breakPolicySnapshot
-				? {
-						originalStartTime: activeWorkPeriod.startTime.toISOString(),
-						originalEndTime: now.toISOString(),
-						originalDurationMinutes: sessionDurationMinutes,
-						requestedAt: now.toISOString(),
-						requestedBy: session.user.id,
-						isNewClockOut: true,
-						ordinarySubmission: {
-							submissionId,
-							kind: "policy_clock_out" as const,
-						},
-						breakPolicySnapshot,
-					}
-				: null;
 			const clockOutResult = await clockingService.clockOut({
 				transaction: context.dbService.db,
 				actionId: submissionId,
@@ -1238,8 +1215,15 @@ export async function clockOut(
 				projectId,
 				workCategoryId,
 				approvalStatus: needsClockOutApproval ? "pending" : "approved",
-				pendingChanges,
 				beforePeriodClose: async ({ transaction }) => {
+					const breakPolicySnapshot = needsClockOutApproval
+						? await resolvePolicyClockOutBreakSnapshotInTransaction({
+								dbService: context.dbService as never,
+								organizationId: currentEmployee.organizationId,
+								employeeId: currentEmployee.id,
+								endTime: actionInstant,
+							})
+						: null;
 					const canonicalRecord =
 						await canonicalWorkRecordClient.createForCompletedPeriod(
 							{
@@ -1259,7 +1243,24 @@ export async function clockOut(
 								Parameters<typeof db.transaction>[0]
 							>[0],
 						);
-					return { canonicalRecordId: canonicalRecord.id };
+					return {
+						canonicalRecordId: canonicalRecord.id,
+						pendingChanges: breakPolicySnapshot
+							? {
+									originalStartTime: activeWorkPeriod.startTime.toISOString(),
+									originalEndTime: now.toISOString(),
+									originalDurationMinutes: sessionDurationMinutes,
+									requestedAt: now.toISOString(),
+									requestedBy: session.user.id,
+									isNewClockOut: true,
+									ordinarySubmission: {
+										submissionId,
+										kind: "policy_clock_out" as const,
+									},
+									breakPolicySnapshot,
+								}
+							: null,
+					};
 				},
 				afterPeriodClose: needsClockOutApproval
 					? async ({ transaction }) => {

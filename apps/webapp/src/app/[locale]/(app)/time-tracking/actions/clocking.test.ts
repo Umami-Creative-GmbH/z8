@@ -345,6 +345,8 @@ function ordinarySubmissionSource(
 		startTime: new Date(`${date}T09:00:00.000Z`),
 		endTime: new Date(`${date}T10:00:00.000Z`),
 		durationMinutes: 60,
+		wasAutoAdjusted: false,
+		originalEndTime: null,
 		deletedAt: null,
 		canonicalId: "canonical-1",
 		canonicalOrganizationId: "org-1",
@@ -357,6 +359,7 @@ function ordinarySubmissionSource(
 		pendingLegacyRequests: [],
 		pendingCanonicalWorkflows: [],
 		terminalCanonicalWorkflows: [],
+		terminalCanonicalReceipts: [],
 		terminalLegacyMarkedRequests: [],
 		historicalLegacyAutoRequests: [],
 		hasMalformedLegacyMarker: false,
@@ -1397,6 +1400,7 @@ describe("clockOut", () => {
 			data: { pendingApproval: false },
 		});
 		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledOnce();
+		expect(mockState.resolveBreakPolicySnapshot).not.toHaveBeenCalled();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
 	});
 

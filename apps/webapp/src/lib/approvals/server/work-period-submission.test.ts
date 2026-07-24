@@ -175,6 +175,27 @@ const breakPolicySnapshot = {
 	evaluatedAt: "2026-07-22T16:00:00Z",
 	resolution: "none",
 } as const;
+const terminalPolicySnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-22T16:00:00Z",
+	resolution: "work_policy",
+	teamId: null,
+	assignment: {
+		id: "80000000-0000-4000-8000-000000000001",
+		type: "organization",
+	},
+	policy: {
+		id: "80000000-0000-4000-8000-000000000002",
+		name: "Original policy",
+	},
+	regulationEnabled: false,
+	regulation: {
+		id: null,
+		name: null,
+		maxUninterruptedMinutes: null,
+	},
+	breakRules: [],
+} as const;
 
 function verifiedState(request: null | { status: string }) {
 	return {
@@ -217,6 +238,8 @@ function source(overrides: Record<string, unknown> = {}) {
 		isActive: false,
 		startTime,
 		endTime,
+		wasAutoAdjusted: false,
+		originalEndTime: null,
 		durationMinutes: 480,
 		deletedAt: null,
 		canonicalId: "30000000-0000-4000-8000-000000000003",
@@ -230,6 +253,7 @@ function source(overrides: Record<string, unknown> = {}) {
 		pendingLegacyRequests: [],
 		pendingCanonicalWorkflows: [],
 		terminalCanonicalWorkflows: [],
+		terminalCanonicalReceipts: [],
 		terminalLegacyMarkedRequests: [],
 		historicalLegacyAutoRequests: [],
 		hasMalformedLegacyMarker: false,
@@ -248,6 +272,7 @@ function fixture(
 			params: unknown[];
 		}) => Record<string, unknown>;
 		compatibilityRequests?: Record<string, unknown>[];
+		workflowSnapshot?: Record<string, unknown>;
 		differentDb?: boolean;
 	} = {},
 ) {
@@ -487,6 +512,7 @@ function fixture(
 						assignments: [],
 					},
 				],
+				...options.workflowSnapshot,
 			})),
 		},
 		adapterRegistry: {},
@@ -1453,6 +1479,316 @@ it("returns the actual canonical compatibility request ID instead of assignment 
 });
 
 it.each([
+	"approved",
+	"rejected",
+] as const)("replays an exact terminal legacy policy %s submission before pending snapshot validation", async (status) => {
+	state.mode = "legacy";
+	state.kind = "policy_clock_out";
+	const approvalRequestId = "40000000-0000-4000-8000-000000000077";
+	const terminalRequest = {
+		id: approvalRequestId,
+		organizationId,
+		entityType: "time_entry",
+		entityId: workPeriodId,
+		requestedBy: requesterEmployeeId,
+		approverId,
+		status,
+		approvedAt: status === "approved" ? new Date("2026-07-22T17:00:00Z") : null,
+		metadata: {
+			timeRequest: { kind: "policy_clock_out" },
+			breakPolicySnapshot,
+			ordinarySubmission: {
+				key: ordinarySubmissionKey("policy_clock_out"),
+				submissionId,
+			},
+		},
+		chainInstanceId: null,
+		stageId: null,
+		stepOrder: null,
+	};
+	const terminalSource = {
+		approvalStatus: status,
+		canonicalApprovalState: status,
+		pendingChanges: null,
+		terminalCanonicalWorkflows: [],
+		terminalLegacyMarkedRequests: [terminalRequest],
+		historicalLegacyAutoRequests: [],
+	};
+	const fake = fixture({
+		source: terminalSource,
+		replaySource: terminalSource,
+	});
+	fake.input.kind = "policy_clock_out";
+
+	const submitted = await executeOrdinaryWorkPeriodSubmissionInTransaction(
+		fake.input,
+	);
+
+	expect(submitted).toEqual({
+		result: { kind: "default_created", approvalRequestId },
+		disposition: "replayed",
+		postCommit: null,
+	});
+	expect(state.calls.some((call) => call.startsWith("legacy:"))).toBe(false);
+	expect(state.calls.some((call) => call.startsWith("start:"))).toBe(false);
+	expect(state.calls).not.toContain("finalize:source");
+});
+
+it.each([
+	...(["legacy", "shadow", "ready", "canonical", "complete"] as const).flatMap(
+		(mode) => [
+			{
+				mode,
+				status: "approved" as const,
+				split: false,
+				chain: false,
+				evidence: "exact",
+			},
+			{
+				mode,
+				status: "rejected" as const,
+				split: false,
+				chain: false,
+				evidence: "exact",
+			},
+			{
+				mode,
+				status: "approved" as const,
+				split: true,
+				chain: false,
+				evidence: "exact",
+			},
+			{
+				mode,
+				status: "approved" as const,
+				split: false,
+				chain: true,
+				evidence: "exact",
+			},
+		],
+	),
+	...(["canonical", "complete"] as const).flatMap((mode) => [
+		{
+			mode,
+			status: "approved" as const,
+			split: false,
+			chain: false,
+			evidence: "missing",
+		},
+		{
+			mode,
+			status: "approved" as const,
+			split: false,
+			chain: false,
+			evidence: "mismatch",
+		},
+	]),
+])("handles $evidence terminal policy submission evidence in $mode after $status with split=$split chain=$chain", async ({
+	mode,
+	status,
+	split,
+	chain,
+	evidence,
+}) => {
+	state.mode = mode;
+	state.kind = "policy_clock_out";
+	const workflowId = expectedWorkflowId("policy_clock_out");
+	state.workflowId = workflowId;
+	const approvalRequestId = "40000000-0000-4000-8000-000000000077";
+	const contextSnapshot = {
+		timeRequest: { kind: "policy_clock_out" },
+		breakPolicySnapshot: terminalPolicySnapshot,
+	};
+	const chainInstanceId = chain ? "40000000-0000-4000-8000-000000000088" : null;
+	const terminalRequest = {
+		id: approvalRequestId,
+		organizationId,
+		entityType: "time_entry",
+		entityId: workPeriodId,
+		requestedBy: requesterEmployeeId,
+		approverId,
+		status,
+		approvedAt: status === "approved" ? new Date("2026-07-22T17:00:00Z") : null,
+		metadata: {
+			...contextSnapshot,
+			ordinarySubmission: {
+				key: ordinarySubmissionKey("policy_clock_out"),
+				submissionId,
+			},
+		},
+		chainInstanceId,
+		stageId: chain ? state.stageId : null,
+		stepOrder: chain ? 1 : null,
+		...(chain
+			? {
+					chainOrganizationId: organizationId,
+					chainEntityType: "time_entry",
+					chainEntityId: workPeriodId,
+					chainRequesterEmployeeId: requesterEmployeeId,
+					chainStatus: status,
+					chainCurrentStageOrder: 2,
+					chainCompletedAt: new Date("2026-07-22T17:00:00Z"),
+					chainStageCount: 2,
+					stageStatus: "approved",
+					stageApprovalRequestId: approvalRequestId,
+					stageDecidedBy: approverId,
+					stageDecidedAt: new Date("2026-07-22T16:30:00Z"),
+				}
+			: {}),
+	};
+	const secondRequest = {
+		...terminalRequest,
+		id: "40000000-0000-4000-8000-000000000078",
+		stageId: "40000000-0000-4000-8000-000000000079",
+		stepOrder: 2,
+		stageApprovalRequestId: "40000000-0000-4000-8000-000000000078",
+		stageDecidedAt: new Date("2026-07-22T17:00:00Z"),
+	};
+	const terminalWorkflow = {
+		id: workflowId,
+		organizationId,
+		workflowType: "policy_clock_out",
+		sourceType: "time_entry",
+		sourceId: workPeriodId,
+		requesterEmployeeId,
+		status,
+		contextSnapshot,
+	};
+	const receipt = {
+		organizationId,
+		workflowId,
+		idempotencyKey: ordinarySubmissionKey("policy_clock_out"),
+		version: 1,
+		eventIndex: 0,
+	};
+	const terminalSource = {
+		approvalStatus: status,
+		canonicalApprovalState: status,
+		pendingChanges: null,
+		...(split
+			? {
+					endTime: new Date("2026-07-22T15:30:00Z"),
+					canonicalEndAt: new Date("2026-07-22T15:30:00Z"),
+					durationMinutes: 450,
+					canonicalDurationMinutes: 450,
+					wasAutoAdjusted: true,
+					originalEndTime: endTime,
+				}
+			: {}),
+		approvalWorkflowId: mode === "legacy" ? null : workflowId,
+		terminalCanonicalWorkflows: mode === "legacy" ? [] : [terminalWorkflow],
+		terminalCanonicalReceipts:
+			mode === "legacy" || evidence === "missing"
+				? []
+				: [
+						evidence === "mismatch"
+							? {
+									...receipt,
+									workflowId: "40000000-0000-4000-8000-000000000099",
+								}
+							: receipt,
+					],
+		terminalLegacyMarkedRequests:
+			mode === "legacy" || mode === "shadow" || mode === "ready"
+				? chain
+					? [terminalRequest, secondRequest]
+					: [terminalRequest]
+				: [],
+		historicalLegacyAutoRequests: [],
+	};
+	const compatibility = compatibilityRequest("policy_clock_out", {
+		id: approvalRequestId,
+		status,
+		metadata: {
+			workflow: { id: workflowId, organizationId },
+			stage: { id: state.stageId, sequence: 1 },
+			...contextSnapshot,
+		},
+	});
+	const fake = fixture({
+		source: terminalSource,
+		replaySource: terminalSource,
+		compatibilityRequests: mode === "canonical" ? [compatibility] : [],
+		workflowSnapshot: {
+			status,
+			contextSnapshot,
+			completedAt: parseInstant("2026-07-22T17:00:00Z"),
+			stages: [
+				{
+					id: state.stageId,
+					sequence: 1,
+					activationMode: "human",
+					status,
+					assignments: [
+						{
+							id: state.assignmentId,
+							status,
+							approverEmployeeId: approverId,
+						},
+					],
+				},
+				...(chain
+					? [
+							{
+								id: "40000000-0000-4000-8000-000000000079",
+								sequence: 2,
+								activationMode: "human" as const,
+								status,
+								assignments: [
+									{
+										id: "40000000-0000-4000-8000-000000000078",
+										status,
+										approverEmployeeId: approverId,
+									},
+								],
+							},
+						]
+					: []),
+			],
+		},
+	});
+	fake.input.kind = "policy_clock_out";
+	fake.input.teamId = "90000000-0000-4000-8000-000000000099";
+
+	const execute = () =>
+		executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input);
+	if (evidence !== "exact") {
+		await expect(execute()).rejects.toThrow(OrdinaryWorkPeriodSubmissionError);
+		expect(state.calls.some((call) => call.startsWith("legacy:"))).toBe(false);
+		expect(state.calls.some((call) => call.startsWith("start:"))).toBe(false);
+		expect(state.calls).not.toContain("finalize:source");
+		return;
+	}
+	const submitted = await execute();
+
+	expect(submitted).toEqual({
+		result: chain
+			? {
+					kind: "chain_created",
+					chainInstanceId:
+						mode === "canonical" || mode === "complete"
+							? workflowId
+							: chainInstanceId,
+					approvalRequestId:
+						mode === "complete" ? state.assignmentId : approvalRequestId,
+				}
+			: {
+					kind: "default_created",
+					approvalRequestId:
+						mode === "complete" ? state.assignmentId : approvalRequestId,
+				},
+		disposition: "replayed",
+		postCommit: null,
+	});
+	expect(state.calls.some((call) => call.startsWith("legacy:"))).toBe(false);
+	expect(state.calls.some((call) => call.startsWith("start:"))).toBe(false);
+	expect(state.calls).not.toContain("finalize:source");
+	expect(
+		fake.queries.filter(({ sql }) => /\bwork_policy(?:_|\b)/.test(sql)),
+	).toEqual([]);
+});
+
+it.each([
 	"manual_time_submission",
 	"policy_clock_out",
 ] as const)("replays an exact terminal canonical %s auto-completion without finalization or binding", async (kind) => {
@@ -1495,6 +1831,15 @@ it.each([
 					timeRequest: { kind },
 					...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 				},
+			},
+		],
+		terminalCanonicalReceipts: [
+			{
+				organizationId,
+				workflowId,
+				idempotencyKey: ordinarySubmissionKey(kind),
+				version: 1,
+				eventIndex: 0,
 			},
 		],
 		terminalLegacyMarkedRequests: [compatibility, otherCompatibility],
@@ -1824,6 +2169,15 @@ it("replays authoritative shadow legacy auto evidence without treating its obser
 				contextSnapshot: {
 					timeRequest: { kind: "manual_time_submission" },
 				},
+			},
+		],
+		terminalCanonicalReceipts: [
+			{
+				organizationId,
+				workflowId: observedWorkflowId,
+				idempotencyKey: ordinarySubmissionKey(),
+				version: 1,
+				eventIndex: 0,
 			},
 		],
 		historicalLegacyAutoRequests: [approvedRequest],
