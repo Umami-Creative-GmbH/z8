@@ -33,6 +33,8 @@
 - Create `apps/webapp/src/lib/approvals/inbox/ordinary-canonical-read.test.ts`: complete discovery, visibility, deduplication, redaction, and stable-target tests.
 - Create `apps/webapp/src/lib/time-tracking/policy-clock-out-break-snapshot.ts`: strict immutable break-policy snapshot parser and transaction-bound resolver.
 - Create `apps/webapp/src/lib/time-tracking/policy-clock-out-break-snapshot.test.ts`: snapshot normalization, policy mutation, replay, and tenant tests.
+- Create `apps/webapp/src/lib/time-tracking/policy-clock-out-surcharge-snapshot.ts`: strict immutable surcharge assignment, model, and rule evidence.
+- Create `apps/webapp/src/lib/time-tracking/policy-clock-out-surcharge-snapshot.test.ts`: surcharge snapshot normalization, delayed mutation, split, and replay tests.
 - Modify `apps/webapp/src/lib/approvals/time-request-kind.ts`: fail closed on contradictory ordinary-time classification evidence.
 - Modify `apps/webapp/src/lib/approvals/workflow/ports.ts`: type ordinary workflow source snapshots instead of leaving them `unknown`.
 - Modify `apps/webapp/src/lib/approvals/server/work-period-approvals.ts`: exact terminal finalizer, rollout-aware stable-target decisions, and detached post-commit descriptors.
@@ -1584,6 +1586,136 @@ pnpm dlx react-doctor@latest --verbose --scope changed
 
 Run scoped Biome, security review, Temporal/timekeeping review, and a final findings-first whole-phase code review. Resolve every confirmed Medium+ issue and rerun affected gates. Commit only verified fixes; do not create an empty commit.
 
+### Task 17: Preserve Historical Approvals And Strict Canonical Paging
+
+**Files:**
+- Modify: `apps/webapp/src/lib/approvals/server/work-period-approvals.ts`
+- Modify: `apps/webapp/src/lib/approvals/server/work-period-approvals.test.ts`
+- Modify: `apps/webapp/src/lib/approvals/inbox/ordinary-canonical-read.ts`
+- Modify: `apps/webapp/src/lib/approvals/inbox/ordinary-canonical-read.test.ts`
+- Modify: `apps/webapp/src/lib/approvals/server/work-period-approvals.integration.test.ts`
+
+- [ ] **Step 1: Write failing pre-contract compatibility tests**
+
+An unmarked legacy policy-clock-out request created before snapshot-capable submission represents the shipped contract where break enforcement already ran at clock-out. Approval and rejection must preserve endpoints and auto-adjustment audit, change status, and never resolve current break policy or split again. A request carrying strict `ordinarySubmission` evidence but missing or mismatching snapshots remains a conflict.
+
+- [ ] **Step 2: Implement isolated historical finalization**
+
+Require exact organization, requester, source, pending status, verified historical kind, and absence of every new submission marker. Keep this branch legacy-only; shadow-observed, canonical, and complete workflows require immutable evidence. Rejection never needs break evidence.
+
+- [ ] **Step 3: Write failing strict SQL validity tests**
+
+Create policy snapshots that pass shallow version/resolution checks but fail the strict parser: unknown keys, invalid IDs, zero minutes, unsorted/duplicate rules, mismatched `evaluatedAt`, and malformed nested fields. Put more than one page before valid rows. Valid rows must still appear with exact count and cursor.
+
+- [ ] **Step 4: Unify candidate, count, and parser validity**
+
+Express every strict snapshot/source invariant in shared PostgreSQL predicates before ordering, cursor, limit, and count. If an invariant cannot be represented safely, continue through bounded candidate batches until `limit + 1` strictly valid rows are collected and derive counts through the same complete boundary. Invalid rows never consume slots or inflate totals.
+
+- [ ] **Step 5: Verify and commit**
+
+Run finalizer/replay, canonical list/count/detail/paging, redaction, decisions, ownership, typecheck, and Biome. Add executable PostgreSQL historical approval/rejection and malformed-pagination cases.
+
+```bash
+git add apps/webapp/src/lib/approvals/server/work-period-approvals.ts \
+  apps/webapp/src/lib/approvals/server/work-period-approvals.test.ts \
+  apps/webapp/src/lib/approvals/inbox/ordinary-canonical-read.ts \
+  apps/webapp/src/lib/approvals/inbox/ordinary-canonical-read.test.ts \
+  apps/webapp/src/lib/approvals/server/work-period-approvals.integration.test.ts
+git commit -m "fix: preserve historical ordinary approvals"
+```
+
+### Task 18: Persist Immutable Surcharge Calculation Evidence
+
+**Files:**
+- Create: `apps/webapp/src/lib/time-tracking/policy-clock-out-surcharge-snapshot.ts`
+- Create: `apps/webapp/src/lib/time-tracking/policy-clock-out-surcharge-snapshot.test.ts`
+- Modify: `apps/webapp/src/db/schema/types.ts`
+- Modify: `apps/webapp/src/lib/approvals/domain-adapters/work-period-contract.ts`
+- Modify: `apps/webapp/src/lib/approvals/domain-adapters/work-period-legacy-state.ts`
+- Modify: `apps/webapp/src/lib/approvals/server/work-period-submission.ts`
+- Modify: `apps/webapp/src/lib/approvals/workflow/compatibility-writer.ts`
+- Modify: `apps/webapp/src/lib/effect/services/surcharge.service.ts`
+- Modify: `apps/webapp/src/app/[locale]/(app)/time-tracking/actions/clocking.ts`
+- Modify corresponding tests and PostgreSQL integration suite.
+
+- [ ] **Step 1: Write failing strict surcharge snapshot tests**
+
+Define a version-1 private snapshot evaluated at the submitted end instant. Its `resolution` is `none` or `surcharge_model` containing team, assignment ID/type/priority, model ID/name, and every calculation field from each rule: ID, name, rule type, decimal percentage, day, time window, specific/range dates, priority, and validity window. Reject unknown keys, invalid IDs/enums/decimals/times/dates, duplicates, unsorted rules, invalid rule-specific combinations, and mismatched evaluation instant. Deep-freeze detached output.
+
+```ts
+export interface PolicyClockOutSurchargeSnapshot {
+  version: 1;
+  evaluatedAt: string;
+  resolution:
+    | { kind: "none" }
+    | {
+        kind: "surcharge_model";
+        teamId: string | null;
+        assignmentId: string;
+        assignmentType: "employee" | "team" | "organization";
+        assignmentPriority: number;
+        modelId: string;
+        modelName: string;
+        rules: readonly {
+          id: string;
+          name: string;
+          ruleType: "time_window" | "day_of_week" | "date_based";
+          percentage: string;
+          dayOfWeek: string | null;
+          windowStartTime: string | null;
+          windowEndTime: string | null;
+          specificDate: string | null;
+          dateRangeStart: string | null;
+          dateRangeEnd: string | null;
+          priority: number;
+          validFrom: string | null;
+          validUntil: string | null;
+        }[];
+      };
+}
+```
+
+- [ ] **Step 2: Resolve evidence inside source creation**
+
+Resolve exact organization, employee team, effective assignment priority and specificity, model tenant parity, and active/effective rule values at `period.endTime`. Fail closed on ambiguous assignments and malformed references. `none` means no applicable assignment.
+
+- [ ] **Step 3: Persist identical private evidence across modes**
+
+Store `surchargeSnapshot` beside `breakPolicySnapshot` in pending changes, legacy metadata, canonical context, shadow/ready observations, and canonical compatibility metadata. Complete writes no compatibility row. Reconcile exact source/request/workflow equality; redact from display, search, errors, notifications, and logs. Terminal replay uses stored evidence without model queries.
+
+- [ ] **Step 4: Evaluate terminal segments from immutable rules**
+
+Extract a pure surcharge evaluator accepting the snapshot plus exact segment instants and captured offsets. No-approval clock-out may resolve and evaluate immediately. Delayed no-split and break-split maintenance evaluates each final segment only from persisted evidence, never current team, assignment, model activity, or rules.
+
+- [ ] **Step 5: Add delayed mutation tests**
+
+Across legacy, shadow, ready, canonical, and complete, submit then transfer team, replace/deactivate assignment, archive model, and edit/delete rules. Approve with and without split and assert submission-time results. Stored `none` remains none after later assignment. Rejection preserves historical compatibility; replay does no duplicate work.
+
+- [ ] **Step 6: Verify and commit**
+
+Run snapshot, contract, capture, submission, compatibility, surcharge, maintenance, clocking, redaction, ownership, payroll, typecheck, and Biome. Add executable PostgreSQL delayed-mutation and split-segment cases.
+
+```bash
+git add apps/webapp/src/lib/time-tracking/policy-clock-out-surcharge-snapshot.ts \
+  apps/webapp/src/lib/time-tracking/policy-clock-out-surcharge-snapshot.test.ts \
+  apps/webapp/src/db/schema/types.ts \
+  apps/webapp/src/lib/approvals/domain-adapters/work-period-contract.ts \
+  apps/webapp/src/lib/approvals/server/work-period-submission.ts \
+  apps/webapp/src/lib/effect/services/surcharge.service.ts \
+  'apps/webapp/src/app/[locale]/(app)/time-tracking/actions/clocking.ts'
+git commit -m "fix: snapshot terminal surcharge evidence"
+```
+
+### Task 19: Run Final Verification After Historical And Surcharge Fixes
+
+- [ ] **Step 1: Run focused and cross-task suites**
+
+Run Tasks 13-18, complete ordinary approvals, time corrections, no-approval clocking, inbox/API/bulk/bots, payroll, surcharge, work balance, notifications, ownership, requester, and mobile suites.
+
+- [ ] **Step 2: Run PostgreSQL and final quality gates**
+
+Register historical compatibility, strict pagination, and surcharge mutation cases. Attempt the disposable runner and report the exact unexecuted count if Docker remains broken. Run webapp/mobile typechecks, scoped Biome, `pnpm test`, CI build, diff/whitespace checks, React Doctor, security review, Temporal/timekeeping review, and one final whole-phase code review. Resolve every confirmed Medium+ issue and commit only actual fixes.
+
 ## Exit Checklist
 
 - [ ] Both ordinary workflow types use concrete production adapters.
@@ -1600,5 +1732,8 @@ Run scoped Biome, security review, Temporal/timekeeping review, and a final find
 - [ ] Complete-mode ordinary approvals are discoverable through canonical list, count, detail, individual, and bulk paths without legacy rows.
 - [ ] Policy-clock-out break policy meaning is captured immutably at submission and survives later team or policy mutation.
 - [ ] Terminal approval/rejection reconciles organization-scoped surcharge and work-balance state in every rollout mode without replay duplication.
+- [ ] Unmarked historical policy-clock-out requests remain approvable and rejectable without reapplying break policy.
+- [ ] Canonical pagination and counts exclude every row rejected by strict snapshot/source validation before applying limits.
+- [ ] Delayed terminal surcharge calculation uses immutable submission evidence rather than current team, assignment, model, or rules.
 - [ ] No requester cancellation, rollout activation, or external outbox delivery is introduced.
 - [ ] Ownership, PostgreSQL concurrency, focused tests, broad regressions, typecheck, scoped Biome, CI build, security review, and timekeeping review are complete.
