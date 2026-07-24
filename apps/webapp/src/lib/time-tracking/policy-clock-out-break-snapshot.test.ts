@@ -22,6 +22,7 @@ const workPolicySnapshot = {
 		id: "30000000-0000-4000-8000-000000000001",
 		name: "German standard",
 	},
+	regulationEnabled: true,
 	regulation: {
 		id: "40000000-0000-4000-8000-000000000001",
 		name: "German standard",
@@ -29,20 +30,20 @@ const workPolicySnapshot = {
 	},
 	breakRules: [
 		{
-			id: "50000000-0000-4000-8000-000000000002",
-			workingMinutesThreshold: 540,
-			requiredBreakMinutes: 45,
-		},
-		{
 			id: "50000000-0000-4000-8000-000000000001",
 			workingMinutesThreshold: 360,
 			requiredBreakMinutes: 30,
+		},
+		{
+			id: "50000000-0000-4000-8000-000000000002",
+			workingMinutesThreshold: 540,
+			requiredBreakMinutes: 45,
 		},
 	],
 } as const;
 
 describe("parsePolicyClockOutBreakSnapshot", () => {
-	it("canonicalizes ordering and returns detached deeply frozen evidence", () => {
+	it("accepts sorted rules and returns detached deeply frozen evidence", () => {
 		const input = structuredClone(workPolicySnapshot);
 		const parsed = parsePolicyClockOutBreakSnapshot(input, evaluatedAt);
 
@@ -75,6 +76,13 @@ describe("parsePolicyClockOutBreakSnapshot", () => {
 			{ ...workPolicySnapshot, evaluatedAt: "2026-03-29T08:02:00Z" },
 		],
 		["invalid id", { ...workPolicySnapshot, teamId: "team-1" }],
+		[
+			"unsorted break rules",
+			{
+				...workPolicySnapshot,
+				breakRules: [...workPolicySnapshot.breakRules].reverse(),
+			},
+		],
 		[
 			"negative minutes",
 			{
@@ -118,7 +126,7 @@ describe("parsePolicyClockOutBreakSnapshot", () => {
 		);
 	});
 
-	it("compares normalized evidence rather than caller object order", () => {
+	it("does not normalize stored rule order while comparing evidence", () => {
 		expect(
 			policyClockOutBreakSnapshotsEqual(
 				workPolicySnapshot,
@@ -128,7 +136,7 @@ describe("parsePolicyClockOutBreakSnapshot", () => {
 				},
 				evaluatedAt,
 			),
-		).toBe(true);
+		).toBe(false);
 		expect(
 			policyClockOutBreakSnapshotsEqual(
 				workPolicySnapshot,
@@ -164,6 +172,9 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 			);
 			expect(compiled.sql).toContain("assignment.effective_from <=");
 			expect(compiled.sql).toContain("assignment.effective_until >=");
+			expect(compiled.sql.indexOf("assignment.priority desc")).toBeLessThan(
+				compiled.sql.indexOf("case assignment.assignment_type"),
+			);
 			return {
 				rows: [
 					{
@@ -177,7 +188,7 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 						regulationEnabled: true,
 						regulationId: workPolicySnapshot.regulation.id,
 						maxUninterruptedMinutes: 360,
-						breakRules: workPolicySnapshot.breakRules,
+						breakRules: [...workPolicySnapshot.breakRules].reverse(),
 					},
 				],
 			};
@@ -195,39 +206,24 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 		);
 	});
 
-	it.each([
-		[
-			"no assignment",
-			{
-				assignmentId: null,
-				assignmentType: null,
-				assignmentPolicyId: null,
-				policyId: null,
-				policyName: null,
-				policyIsActive: null,
-				regulationEnabled: null,
-				regulationId: null,
-				maxUninterruptedMinutes: null,
-				breakRules: [],
-			},
-		],
-		[
-			"disabled regulation",
-			{
-				assignmentId: workPolicySnapshot.assignment.id,
-				assignmentType: "team",
-				assignmentPolicyId: workPolicySnapshot.policy.id,
-				policyId: workPolicySnapshot.policy.id,
-				policyName: "Policy",
-				policyIsActive: true,
-				regulationEnabled: false,
-				regulationId: null,
-				maxUninterruptedMinutes: null,
-				breakRules: [],
-			},
-		],
-	] as const)("stores none for legitimate %s", async (_label, row) => {
-		const execute = vi.fn(async () => ({ rows: [{ teamId: null, ...row }] }));
+	it("stores none only when no effective assignment exists", async () => {
+		const execute = vi.fn(async () => ({
+			rows: [
+				{
+					teamId: null,
+					assignmentId: null,
+					assignmentType: null,
+					assignmentPolicyId: null,
+					policyId: null,
+					policyName: null,
+					policyIsActive: null,
+					regulationEnabled: null,
+					regulationId: null,
+					maxUninterruptedMinutes: null,
+					breakRules: [],
+				},
+			],
+		}));
 		await expect(
 			resolvePolicyClockOutBreakSnapshotInTransaction({
 				dbService: { db: { execute } } as never,
@@ -236,6 +232,49 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 				endTime: parseInstant(evaluatedAt),
 			}),
 		).resolves.toEqual({ version: 1, evaluatedAt, resolution: "none" });
+	});
+
+	it("retains assigned policy identity when regulation is disabled", async () => {
+		const execute = vi.fn(async () => ({
+			rows: [
+				{
+					teamId: workPolicySnapshot.teamId,
+					assignmentId: workPolicySnapshot.assignment.id,
+					assignmentType: "team",
+					assignmentPolicyId: workPolicySnapshot.policy.id,
+					policyId: workPolicySnapshot.policy.id,
+					policyName: "Policy",
+					policyIsActive: true,
+					regulationEnabled: false,
+					regulationId: null,
+					maxUninterruptedMinutes: null,
+					breakRules: [],
+				},
+			],
+		}));
+
+		await expect(
+			resolvePolicyClockOutBreakSnapshotInTransaction({
+				dbService: { db: { execute } } as never,
+				organizationId: "org-1",
+				employeeId: "60000000-0000-4000-8000-000000000001",
+				endTime: parseInstant(evaluatedAt),
+			}),
+		).resolves.toEqual({
+			version: 1,
+			evaluatedAt,
+			resolution: "work_policy",
+			teamId: workPolicySnapshot.teamId,
+			assignment: workPolicySnapshot.assignment,
+			policy: { id: workPolicySnapshot.policy.id, name: "Policy" },
+			regulationEnabled: false,
+			regulation: {
+				id: null,
+				name: null,
+				maxUninterruptedMinutes: null,
+			},
+			breakRules: [],
+		});
 	});
 
 	it("fails closed when an assignment references invalid policy evidence", async () => {

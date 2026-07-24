@@ -976,6 +976,7 @@ it("rejects a pending policy clock-out replay with changed normalized break evid
 				id: "32000000-0000-4000-8000-000000000001",
 				name: "Changed",
 			},
+			regulationEnabled: true,
 			regulation: {
 				id: "33000000-0000-4000-8000-000000000001",
 				name: "Changed",

@@ -3,6 +3,7 @@ import { PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "./blockchain";
+import type { PolicyClockOutBreakSnapshot } from "./policy-clock-out-break-snapshot";
 import { enforcePolicyClockOutTerminalBreakInTransaction } from "./policy-clock-out-terminal-break";
 
 const organizationId = "org-1";
@@ -40,6 +41,7 @@ const breakPolicySnapshot = {
 		id: "90000000-0000-4000-8000-000000000001",
 		name: "DST policy",
 	},
+	regulationEnabled: true,
 	regulation: {
 		id: "91000000-0000-4000-8000-000000000001",
 		name: "DST policy",
@@ -56,13 +58,7 @@ const breakPolicySnapshot = {
 
 function input(
 	execute: ReturnType<typeof vi.fn>,
-	policySnapshot:
-		| typeof breakPolicySnapshot
-		| {
-				version: 1;
-				evaluatedAt: string;
-				resolution: "none";
-		  } = breakPolicySnapshot,
+	policySnapshot: PolicyClockOutBreakSnapshot = breakPolicySnapshot,
 ) {
 	return {
 		dbService: { db: { execute } } as never,
@@ -294,6 +290,42 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 		expect(
 			queries.filter((query) => /^\s*(insert|update)\b/i.test(query.sql)),
 		).toEqual([]);
+	});
+
+	it("returns not_required for an assigned policy with disabled regulation", async () => {
+		const { execute, queries } = splitDatabase();
+
+		await expect(
+			enforcePolicyClockOutTerminalBreakInTransaction(
+				input(execute, {
+					version: 1,
+					evaluatedAt: "2026-03-29T08:01:00Z",
+					resolution: "work_policy",
+					teamId: null,
+					assignment: {
+						id: "12000000-0000-4000-8000-000000000001",
+						type: "employee",
+					},
+					policy: {
+						id: "90000000-0000-4000-8000-000000000001",
+						name: "No regulation",
+					},
+					regulationEnabled: false,
+					regulation: {
+						id: null,
+						name: null,
+						maxUninterruptedMinutes: null,
+					},
+					breakRules: [],
+				}),
+			),
+		).resolves.toEqual({ kind: "not_required" });
+		expect(
+			queries.filter((query) => /^\s*(insert|update)\b/i.test(query.sql)),
+		).toHaveLength(0);
+		expect(queries.some((query) => query.sql.includes('as "gapStart"'))).toBe(
+			false,
+		);
 	});
 
 	it("does not query mutable team, assignment, policy, regulation, or rule tables", async () => {

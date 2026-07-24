@@ -281,6 +281,18 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 	if (input.breakPolicySnapshot.resolution === "none") {
 		return { kind: "not_required" };
 	}
+	if (
+		!input.breakPolicySnapshot.regulationEnabled ||
+		input.breakPolicySnapshot.breakRules.length === 0
+	) {
+		return { kind: "not_required" };
+	}
+	if (
+		input.breakPolicySnapshot.regulation.id === null ||
+		input.breakPolicySnapshot.regulation.name === null
+	) {
+		return fail();
+	}
 	const breakRules = input.breakPolicySnapshot.breakRules.map((rule) => ({
 		workingMinutesThreshold: rule.workingMinutesThreshold,
 		requiredBreakMinutes: rule.requiredBreakMinutes,

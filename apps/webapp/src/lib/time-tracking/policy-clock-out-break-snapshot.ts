@@ -32,9 +32,10 @@ export type PolicyClockOutBreakSnapshot =
 				type: "employee" | "team" | "organization";
 			}>;
 			policy: Readonly<{ id: string; name: string }>;
+			regulationEnabled: boolean;
 			regulation: Readonly<{
-				id: string;
-				name: string;
+				id: string | null;
+				name: string | null;
 				maxUninterruptedMinutes: number | null;
 			}>;
 			breakRules: readonly Readonly<PolicyClockOutBreakRuleSnapshot>[];
@@ -117,6 +118,7 @@ export function parsePolicyClockOutBreakSnapshot(
 						"teamId",
 						"assignment",
 						"policy",
+						"regulationEnabled",
 						"regulation",
 						"breakRules",
 					],
@@ -145,29 +147,53 @@ export function parsePolicyClockOutBreakSnapshot(
 			"name",
 			"maxUninterruptedMinutes",
 		]);
+		if (typeof root.regulationEnabled !== "boolean") return fail();
 		if (!Array.isArray(root.breakRules)) return fail();
-		const breakRules = root.breakRules
-			.map((value) => {
-				const rule = exact(value, [
-					"id",
-					"workingMinutesThreshold",
-					"requiredBreakMinutes",
-				]);
-				return Object.freeze({
-					id: uuid(rule.id),
-					workingMinutesThreshold: minutes(rule.workingMinutesThreshold),
-					requiredBreakMinutes: minutes(rule.requiredBreakMinutes),
-				});
-			})
-			.toSorted(
-				(left, right) =>
-					left.workingMinutesThreshold - right.workingMinutesThreshold ||
-					left.id.localeCompare(right.id),
-			);
+		const breakRules = root.breakRules.map((value) => {
+			const rule = exact(value, [
+				"id",
+				"workingMinutesThreshold",
+				"requiredBreakMinutes",
+			]);
+			return Object.freeze({
+				id: uuid(rule.id),
+				workingMinutesThreshold: minutes(rule.workingMinutesThreshold),
+				requiredBreakMinutes: minutes(rule.requiredBreakMinutes),
+			});
+		});
 		if (
 			new Set(breakRules.map((rule) => rule.id)).size !== breakRules.length ||
 			new Set(breakRules.map((rule) => rule.workingMinutesThreshold)).size !==
-				breakRules.length
+				breakRules.length ||
+			breakRules.some((rule, index) => {
+				const previous = breakRules[index - 1];
+				return (
+					previous !== undefined &&
+					(previous.workingMinutesThreshold > rule.workingMinutesThreshold ||
+						(previous.workingMinutesThreshold ===
+							rule.workingMinutesThreshold &&
+							previous.id.localeCompare(rule.id) >= 0))
+				);
+			})
+		) {
+			return fail();
+		}
+		const regulationEnabled = root.regulationEnabled;
+		const regulationId = regulation.id === null ? null : uuid(regulation.id);
+		const regulationName =
+			regulation.name === null ? null : name(regulation.name);
+		const maxUninterruptedMinutes =
+			regulation.maxUninterruptedMinutes === null
+				? null
+				: minutes(regulation.maxUninterruptedMinutes);
+		if (
+			(regulationEnabled &&
+				(regulationId === null || regulationName === null)) ||
+			(!regulationEnabled &&
+				(regulationId !== null ||
+					regulationName !== null ||
+					maxUninterruptedMinutes !== null ||
+					breakRules.length !== 0))
 		) {
 			return fail();
 		}
@@ -181,13 +207,11 @@ export function parsePolicyClockOutBreakSnapshot(
 				type: assignment.type,
 			}),
 			policy: Object.freeze({ id: uuid(policy.id), name: name(policy.name) }),
+			regulationEnabled,
 			regulation: Object.freeze({
-				id: uuid(regulation.id),
-				name: name(regulation.name),
-				maxUninterruptedMinutes:
-					regulation.maxUninterruptedMinutes === null
-						? null
-						: minutes(regulation.maxUninterruptedMinutes),
+				id: regulationId,
+				name: regulationName,
+				maxUninterruptedMinutes,
 			}),
 			breakRules: Object.freeze(breakRules),
 		});
@@ -271,9 +295,10 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 						or (assignment.assignment_type = 'team' and assignment.team_id = employee_row."teamId")
 						or (assignment.assignment_type = 'organization' and assignment.employee_id is null and assignment.team_id is null)
 					)
-				order by case assignment.assignment_type
-					when 'employee' then 2 when 'team' then 1 else 0 end desc,
-					assignment.priority desc, assignment.id
+				order by assignment.priority desc,
+					case assignment.assignment_type
+						when 'employee' then 2 when 'team' then 1 else 0 end desc,
+					assignment.id
 				limit 1
 				for update of assignment
 			), policy_evidence as (
@@ -346,14 +371,31 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 		) {
 			throw new Error();
 		}
-		if (row.regulationEnabled === false) {
-			if (row.regulationId !== null) throw new Error();
-			return parsePolicyClockOutBreakSnapshot(
-				{ version: 1, evaluatedAt, resolution: "none" },
-				evaluatedAt,
-			);
-		}
-		if (row.regulationId === null) throw new Error();
+		if (row.regulationEnabled === true && row.regulationId === null)
+			throw new Error();
+		if (!Array.isArray(row.breakRules)) throw new Error();
+		const breakRules = row.breakRules
+			.map((value) => {
+				if (typeof value !== "object" || value === null || Array.isArray(value))
+					throw new Error();
+				const rule = value as Record<string, unknown>;
+				if (
+					typeof rule.id !== "string" ||
+					!Number.isSafeInteger(rule.workingMinutesThreshold)
+				) {
+					throw new Error();
+				}
+				return value;
+			})
+			.toSorted((left, right) => {
+				const leftRule = left as Record<string, unknown>;
+				const rightRule = right as Record<string, unknown>;
+				return (
+					(leftRule.workingMinutesThreshold as number) -
+						(rightRule.workingMinutesThreshold as number) ||
+					(leftRule.id as string).localeCompare(rightRule.id as string)
+				);
+			});
 		return parsePolicyClockOutBreakSnapshot(
 			{
 				version: 1,
@@ -362,12 +404,13 @@ export async function resolvePolicyClockOutBreakSnapshotInTransaction(input: {
 				teamId: row.teamId,
 				assignment: { id: row.assignmentId, type: row.assignmentType },
 				policy: { id: row.policyId, name: row.policyName },
+				regulationEnabled: row.regulationEnabled,
 				regulation: {
 					id: row.regulationId,
-					name: row.policyName,
+					name: row.regulationEnabled ? row.policyName : null,
 					maxUninterruptedMinutes: row.maxUninterruptedMinutes,
 				},
-				breakRules: row.breakRules,
+				breakRules,
 			},
 			evaluatedAt,
 		);

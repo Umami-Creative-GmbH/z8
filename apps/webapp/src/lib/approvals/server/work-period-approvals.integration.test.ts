@@ -54,6 +54,10 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"duplicate approve replays one coherent terminal graph",
 			"Task8A split has exact period, canonical subtype, allocation, workflow, and synthetic-entry parity",
 			"uses the submitted break snapshot after mutable policy deletion in %s mode",
+			"uses the submitted break snapshot after delayed team change in %s mode",
+			"uses the submitted break snapshot after assignment deactivation in %s mode",
+			"uses the submitted break snapshot after policy replacement and archive in %s mode",
+			"uses the submitted break snapshot after rule edit and delete in %s mode",
 			"forced %s CAS zero row rolls the entire decision back",
 			"decision INSERT RETURNING zero rows rolls the complete transaction back",
 			"foreign organization rollback snapshots both tenants and every durable graph",
@@ -163,6 +167,11 @@ const ids = {
 	approvalCondition: "c9000000-0000-4000-8000-000000000002",
 	approvalStageOne: "c9000000-0000-4000-8000-000000000003",
 	approvalStageTwo: "c9000000-0000-4000-8000-000000000004",
+	changedTeam: "ca000000-0000-4000-8000-000000000001",
+	replacementPolicy: "ca000000-0000-4000-8000-000000000002",
+	replacementRegulation: "ca000000-0000-4000-8000-000000000003",
+	replacementBreakRule: "ca000000-0000-4000-8000-000000000004",
+	replacementAssignment: "ca000000-0000-4000-8000-000000000005",
 } as const;
 
 const modes = ["legacy", "shadow", "ready", "canonical", "complete"] as const;
@@ -460,6 +469,7 @@ describeIntegration(
 													id: ids.policy,
 													name: "Task 11 break",
 												},
+												regulationEnabled: true,
 												regulation: {
 													id: ids.regulation,
 													name: "Task 11 break",
@@ -663,6 +673,117 @@ describeIntegration(
 			};
 		}
 
+		async function mutateAfterSubmission(
+			operation: (client: PoolClient) => Promise<void>,
+		) {
+			await withRollbackClient(pool, async ({ client, commit }) => {
+				await operation(client);
+				await commit();
+			});
+		}
+
+		async function assertSubmittedBreakSnapshotParity(
+			mode: (typeof modes)[number],
+		) {
+			const source = await pool.query<{ break_snapshot: unknown }>(
+				`select pending_changes -> 'breakPolicySnapshot' as break_snapshot
+				 from work_period where id = $1 and organization_id = $2`,
+				[ids.period, ids.organization],
+			);
+			const expected = source.rows[0]?.break_snapshot;
+			expect(expected).toMatchObject({
+				version: 1,
+				resolution: "work_policy",
+				policy: { id: ids.policy, name: "Task 11 break" },
+				regulationEnabled: true,
+			});
+			const requests = await pool.query<{ break_snapshot: unknown }>(
+				`select metadata -> 'breakPolicySnapshot' as break_snapshot
+				 from approval_request
+				 where organization_id = $1 and entity_type = 'time_entry' and entity_id = $2`,
+				[ids.organization, ids.period],
+			);
+			expect(requests.rows.length).toBe(mode === "complete" ? 0 : 1);
+			for (const request of requests.rows) {
+				expect(request.break_snapshot).toEqual(expected);
+			}
+			const workflows = await pool.query<{ break_snapshot: unknown }>(
+				`select context_snapshot -> 'breakPolicySnapshot' as break_snapshot
+				 from approval_workflow
+				 where organization_id = $1 and source_type = 'time_entry' and source_id = $2`,
+				[ids.organization, ids.period],
+			);
+			expect(workflows.rows.length).toBe(mode === "legacy" ? 0 : 1);
+			for (const workflow of workflows.rows) {
+				expect(workflow.break_snapshot).toEqual(expected);
+			}
+			return expected;
+		}
+
+		async function assertDelayedSnapshotMutation(input: {
+			mode: (typeof modes)[number];
+			mutate(client: PoolClient): Promise<void>;
+		}) {
+			await seed("policy_clock_out", true, input.mode);
+			const target = (await submit("policy_clock_out")).result
+				.approvalRequestId;
+			const expectedSnapshot = await assertSubmittedBreakSnapshotParity(
+				input.mode,
+			);
+			await mutateAfterSubmission(input.mutate);
+
+			await decide(target, { kind: "approve", reason: null });
+			const beforeReplay = await pool.query<Record<string, unknown>>(
+				`select id, start_time, end_time, duration_minutes
+				 from work_period where organization_id = $1 and employee_id = $2
+				 order by start_time, id`,
+				[ids.organization, ids.requester],
+			);
+			expect(beforeReplay.rows).toMatchObject([
+				{
+					id: ids.period,
+					end_time: new Date("2026-07-22T14:00:00Z"),
+					duration_minutes: 360,
+				},
+				{
+					start_time: new Date("2026-07-22T14:30:00Z"),
+					end_time: endTime,
+					duration_minutes: 90,
+				},
+			]);
+			const workflow = await pool.query<{ break_snapshot: unknown }>(
+				`select context_snapshot -> 'breakPolicySnapshot' as break_snapshot
+				 from approval_workflow
+				 where organization_id = $1 and source_type = 'time_entry' and source_id = $2`,
+				[ids.organization, ids.period],
+			);
+			expect(workflow.rows.length).toBe(input.mode === "legacy" ? 0 : 1);
+			for (const row of workflow.rows) {
+				expect(row.break_snapshot).toEqual(expectedSnapshot);
+			}
+			const terminalRequests = await pool.query<{ break_snapshot: unknown }>(
+				`select metadata -> 'breakPolicySnapshot' as break_snapshot
+				 from approval_request
+				 where organization_id = $1 and entity_type = 'time_entry' and entity_id = $2`,
+				[ids.organization, ids.period],
+			);
+			expect(terminalRequests.rows.length).toBe(
+				input.mode === "complete" ? 0 : 1,
+			);
+			for (const row of terminalRequests.rows) {
+				expect(row.break_snapshot).toEqual(expectedSnapshot);
+			}
+
+			await decide(target, { kind: "approve", reason: null });
+			const afterReplay = await pool.query<Record<string, unknown>>(
+				`select id, start_time, end_time, duration_minutes
+				 from work_period where organization_id = $1 and employee_id = $2
+				 order by start_time, id`,
+				[ids.organization, ids.requester],
+			);
+			expect(afterReplay.rows).toEqual(beforeReplay.rows);
+		}
+
 		async function withFailureTrigger<T>(input: {
 			table: string;
 			operation: "insert" | "update";
@@ -836,6 +957,126 @@ describeIntegration(
 				expect(requests).toHaveLength(1);
 				expect(requests[0]).toMatchObject({ status: "approved" });
 			}
+		});
+
+		it.each(
+			modes,
+		)("uses the submitted break snapshot after delayed team change in %s mode", async (mode) => {
+			await assertDelayedSnapshotMutation({
+				mode,
+				mutate: async (client) => {
+					await client.query(
+						"insert into team (id, organization_id, name, updated_at) values ($1, $2, 'Changed team', $3)",
+						[
+							ids.changedTeam,
+							ids.organization,
+							new Date(now.epochMilliseconds),
+						],
+					);
+					await client.query(
+						"update employee set team_id = $1, updated_at = $2 where id = $3 and organization_id = $4",
+						[
+							ids.changedTeam,
+							new Date(now.epochMilliseconds),
+							ids.requester,
+							ids.organization,
+						],
+					);
+				},
+			});
+		});
+
+		it.each(
+			modes,
+		)("uses the submitted break snapshot after assignment deactivation in %s mode", async (mode) => {
+			await assertDelayedSnapshotMutation({
+				mode,
+				mutate: async (client) => {
+					await client.query(
+						"update work_policy_assignment set is_active = false, updated_at = $1 where id = $2 and organization_id = $3",
+						[
+							new Date(now.epochMilliseconds),
+							ids.policyAssignment,
+							ids.organization,
+						],
+					);
+				},
+			});
+		});
+
+		it.each(
+			modes,
+		)("uses the submitted break snapshot after policy replacement and archive in %s mode", async (mode) => {
+			await assertDelayedSnapshotMutation({
+				mode,
+				mutate: async (client) => {
+					const timestamp = new Date(now.epochMilliseconds);
+					await client.query(
+						"update work_policy_assignment set is_active = false, updated_at = $1 where id = $2 and organization_id = $3",
+						[timestamp, ids.policyAssignment, ids.organization],
+					);
+					await client.query(
+						"update work_policy set is_active = false, updated_at = $1 where id = $2 and organization_id = $3",
+						[timestamp, ids.policy, ids.organization],
+					);
+					await client.query(
+						`insert into work_policy
+							 (id, organization_id, name, schedule_enabled, regulation_enabled,
+							  is_active, created_by, updated_at)
+							 values ($1, $2, 'Replacement policy', false, true, true, $3, $4)`,
+						[
+							ids.replacementPolicy,
+							ids.organization,
+							ids.managerUser,
+							timestamp,
+						],
+					);
+					await client.query(
+						`insert into work_policy_regulation
+							 (id, policy_id, max_uninterrupted_minutes, updated_at)
+							 values ($1, $2, 60, $3)`,
+						[ids.replacementRegulation, ids.replacementPolicy, timestamp],
+					);
+					await client.query(
+						`insert into work_policy_break_rule
+							 (id, regulation_id, working_minutes_threshold, required_break_minutes, updated_at)
+							 values ($1, $2, 60, 5, $3)`,
+						[ids.replacementBreakRule, ids.replacementRegulation, timestamp],
+					);
+					await client.query(
+						`insert into work_policy_assignment
+							 (id, policy_id, organization_id, assignment_type, employee_id,
+							  priority, is_active, created_by, updated_at)
+							 values ($1, $2, $3, 'employee', $4, 99, true, $5, $6)`,
+						[
+							ids.replacementAssignment,
+							ids.replacementPolicy,
+							ids.organization,
+							ids.requester,
+							ids.managerUser,
+							timestamp,
+						],
+					);
+				},
+			});
+		});
+
+		it.each(
+			modes,
+		)("uses the submitted break snapshot after rule edit and delete in %s mode", async (mode) => {
+			await assertDelayedSnapshotMutation({
+				mode,
+				mutate: async (client) => {
+					await client.query(
+						"update work_policy_break_rule set required_break_minutes = 5, updated_at = $1 where id = $2",
+						[new Date(now.epochMilliseconds), ids.breakRule],
+					);
+					await client.query(
+						"delete from work_policy_break_rule where id = $1",
+						[ids.breakRule],
+					);
+				},
+			});
 		});
 
 		it("complete submission writes zero approval requests and canonical reader discovers the assignment", async () => {
@@ -1437,32 +1678,15 @@ describeIntegration(
 		it.each(
 			modes,
 		)("uses the submitted break snapshot after mutable policy deletion in %s mode", async (mode) => {
-			await seed("policy_clock_out", true, mode);
-			const target = (await submit("policy_clock_out")).result
-				.approvalRequestId;
-			await pool.query(
-				"update work_policy set name = 'Replacement', is_active = false where id = $1 and organization_id = $2",
-				[ids.policy, ids.organization],
-			);
-			await pool.query(
-				"delete from work_policy_assignment where id = $1 and organization_id = $2",
-				[ids.policyAssignment, ids.organization],
-			);
-			await pool.query(
-				"update work_policy_break_rule set required_break_minutes = 5 where id = $1",
-				[ids.breakRule],
-			);
-			await pool.query("delete from work_policy_break_rule where id = $1", [
-				ids.breakRule,
-			]);
-
-			await decide(target, { kind: "approve", reason: null });
-
-			const periods = await pool.query(
-				"select id from work_period where organization_id = $1 and employee_id = $2 order by start_time",
-				[ids.organization, ids.requester],
-			);
-			expect(periods.rows).toHaveLength(2);
+			await assertDelayedSnapshotMutation({
+				mode,
+				mutate: async (client) => {
+					await client.query(
+						"delete from work_policy where id = $1 and organization_id = $2",
+						[ids.policy, ids.organization],
+					);
+				},
+			});
 		});
 
 		it.each([
