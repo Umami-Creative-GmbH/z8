@@ -20,6 +20,28 @@ const ids = {
 	compatibility: "90000000-0000-4000-8000-000000000001",
 };
 
+const policySnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-20T14:00:00Z",
+	resolution: "work_policy",
+	teamId: null,
+	assignment: {
+		id: "91000000-0000-4000-8000-000000000001",
+		type: "employee",
+	},
+	policy: {
+		id: "92000000-0000-4000-8000-000000000001",
+		name: "Private break policy",
+	},
+	regulationEnabled: false,
+	regulation: {
+		id: null,
+		name: null,
+		maxUninterruptedMinutes: null,
+	},
+	breakRules: [],
+} as const;
+
 function row(
 	overrides: Partial<OrdinaryCanonicalReadRow> = {},
 ): OrdinaryCanonicalReadRow {
@@ -159,6 +181,37 @@ function select(rows: OrdinaryCanonicalReadRow[], overrides = {}) {
 	});
 }
 
+function policyRow(): OrdinaryCanonicalReadRow {
+	const base = row();
+	return row({
+		projection: {
+			...base.projection,
+			displayPayload: {
+				...(base.projection.displayPayload as Record<string, unknown>),
+				kind: "policy_clock_out",
+				title: "Policy clock-out",
+			},
+			searchText:
+				"policy clock-out 2026-07-20t06:00:00z 2026-07-20t14:00:00z manager review",
+		},
+		workflow: {
+			...base.workflow,
+			workflowType: "policy_clock_out",
+			contextSnapshot: {
+				timeRequest: { kind: "policy_clock_out" },
+				breakPolicySnapshot: policySnapshot,
+			},
+		},
+		period: {
+			...base.period,
+			pendingChanges: {
+				isNewClockOut: true,
+				breakPolicySnapshot: policySnapshot,
+			},
+		},
+	});
+}
+
 describe("ordinary canonical inbox reads", () => {
 	it("loads N approvals with two bounded queries and SQL-side tenancy, kind, status, source, and visibility filters", async () => {
 		const fixture = row();
@@ -292,6 +345,9 @@ describe("ordinary canonical inbox reads", () => {
 		expect(candidateQuery?.sql).not.toContain("jsonb_object_length");
 		expect(candidateQuery?.sql).toContain("jsonb_typeof");
 		expect(candidateQuery?.sql).toContain("jsonb_object_keys");
+		expect(candidateQuery?.sql).toContain("breakPolicySnapshot");
+		expect(candidateQuery?.sql).toContain("'version'");
+		expect(candidateQuery?.sql).toContain("'resolution'");
 		expect(candidateQuery?.params).toEqual(
 			expect.arrayContaining([ids.organization, ids.approver, 20]),
 		);
@@ -300,6 +356,67 @@ describe("ordinary canonical inbox reads", () => {
 		expect(compatibilityQuery?.sql).toContain("from approval_request");
 		expect(compatibilityQuery?.sql).toContain("and id in (");
 		expect(compatibilityQuery?.params).toContain(ids.compatibility);
+	});
+
+	it("discovers policy clock-out context while redacting immutable policy evidence", () => {
+		const approvals = select([policyRow()]);
+
+		expect(approvals).toHaveLength(1);
+		expect(approvals[0]).toMatchObject({
+			item: {
+				summary: { title: "Clock-out Approval" },
+			},
+			decisionTarget: { workflowKind: "policy_clock_out" },
+		});
+		const serialized = JSON.stringify(approvals[0]);
+		expect(serialized).not.toContain("breakPolicySnapshot");
+		expect(serialized).not.toContain("Private break policy");
+		expect(serialized).not.toContain(policySnapshot.policy.id);
+	});
+
+	it("suppresses policy canonical output only for exact snapshot-bearing compatibility ownership", () => {
+		const fixture = policyRow();
+		const compatibilityRequest = {
+			id: ids.compatibility,
+			organizationId: ids.organization,
+			entityType: "time_entry",
+			entityId: ids.period,
+			requestedBy: ids.requester,
+			approverId: ids.approver,
+			status: "pending",
+			metadata: {
+				workflow: { id: ids.workflow, organizationId: ids.organization },
+				stage: { id: ids.stage, sequence: 2 },
+				timeRequest: { kind: "policy_clock_out" },
+				breakPolicySnapshot: policySnapshot,
+			},
+		};
+		const owned = policyRow();
+		owned.stage = {
+			...fixture.stage,
+			legacyApprovalRequestId: ids.compatibility,
+		};
+		owned.compatibilityRequest = compatibilityRequest;
+		expect(select([owned])).toEqual([]);
+
+		owned.compatibilityRequest = {
+			...compatibilityRequest,
+			metadata: { ...compatibilityRequest.metadata, private: true },
+		};
+		expect(select([owned])).toHaveLength(1);
+
+		owned.compatibilityRequest = {
+			...compatibilityRequest,
+			metadata: {
+				...compatibilityRequest.metadata,
+				breakPolicySnapshot: {
+					version: 1,
+					evaluatedAt: policySnapshot.evaluatedAt,
+					resolution: "none",
+				},
+			},
+		};
+		expect(select([owned])).toHaveLength(1);
 	});
 
 	it("uses identical validity predicates for bounded list and aggregate count", async () => {

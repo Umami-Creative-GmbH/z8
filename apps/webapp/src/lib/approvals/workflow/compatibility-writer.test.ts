@@ -38,6 +38,11 @@ const secondDecisionAt = parseInstant("2026-07-16T16:00:00Z");
 const replacementApproverId = "42000000-0000-4000-8000-000000000099";
 const clockInCorrectionId = "45000000-0000-4000-8000-000000000001";
 const clockOutCorrectionId = "45000000-0000-4000-8000-000000000002";
+const ordinaryBreakPolicySnapshot = {
+	version: 1,
+	evaluatedAt: "2026-03-29T08:01:00Z",
+	resolution: "none",
+} as const;
 
 function asTimeCorrectionResult(
 	result: ApprovalCommandResult,
@@ -62,7 +67,12 @@ function asOrdinaryWorkPeriodResult(
 ): ApprovalCommandResult {
 	result.snapshot.workflowType = kind;
 	result.snapshot.sourceType = "time_entry";
-	result.snapshot.contextSnapshot = { timeRequest: { kind } };
+	result.snapshot.contextSnapshot = {
+		timeRequest: { kind },
+		...(kind === "policy_clock_out"
+			? { breakPolicySnapshot: ordinaryBreakPolicySnapshot }
+			: {}),
+	};
 	result.snapshot.displaySnapshot = { kind: "hostile_display_projection" };
 	result.projection.workflowType = kind;
 	result.projection.sourceType = "time_entry";
@@ -129,6 +139,12 @@ function expectedRequestMetadata(
 				sequence: stage.sequence,
 			},
 			timeRequest: { kind: result.snapshot.workflowType },
+			...(result.snapshot.workflowType === "policy_clock_out"
+				? {
+						breakPolicySnapshot:
+							result.snapshot.contextSnapshot.breakPolicySnapshot,
+					}
+				: {}),
 		};
 	}
 	if (
@@ -2752,6 +2768,9 @@ describe("transaction-bound legacy approval row writer", () => {
 			workflow: { id: result.snapshot.id, organizationId: "org-1" },
 			stage: { id: activeStage.id, sequence: activeStage.sequence },
 			timeRequest: { kind },
+			...(kind === "policy_clock_out"
+				? { breakPolicySnapshot: ordinaryBreakPolicySnapshot }
+				: {}),
 		});
 	});
 
@@ -2826,6 +2845,7 @@ describe("transaction-bound legacy approval row writer", () => {
 			workflow: { id: result.snapshot.id, organizationId: "org-1" },
 			stage: { id: activeStage.id, sequence: activeStage.sequence },
 			timeRequest: { kind: "policy_clock_out" },
+			breakPolicySnapshot: ordinaryBreakPolicySnapshot,
 		});
 	});
 

@@ -94,6 +94,42 @@ describe("parsePolicyClockOutBreakSnapshot", () => {
 			},
 		],
 		[
+			"zero max uninterrupted minutes",
+			{
+				...workPolicySnapshot,
+				regulation: {
+					...workPolicySnapshot.regulation,
+					maxUninterruptedMinutes: 0,
+				},
+			},
+		],
+		[
+			"zero working threshold",
+			{
+				...workPolicySnapshot,
+				breakRules: [
+					{
+						...workPolicySnapshot.breakRules[0],
+						workingMinutesThreshold: 0,
+					},
+					workPolicySnapshot.breakRules[1],
+				],
+			},
+		],
+		[
+			"zero required break minutes",
+			{
+				...workPolicySnapshot,
+				breakRules: [
+					{
+						...workPolicySnapshot.breakRules[0],
+						requiredBreakMinutes: 0,
+					},
+					workPolicySnapshot.breakRules[1],
+				],
+			},
+		],
+		[
 			"duplicate rule id",
 			{
 				...workPolicySnapshot,

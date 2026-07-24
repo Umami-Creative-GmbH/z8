@@ -302,15 +302,13 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 			workflows: [],
 		});
 		const policyFake = database(policy);
-		const policyState = await captureOrdinaryWorkPeriodLegacyState(
-			input(policyFake.dbService, { expectedKind: "policy_clock_out" }),
+		await expect(
+			captureOrdinaryWorkPeriodLegacyState(
+				input(policyFake.dbService, { expectedKind: "policy_clock_out" }),
+			),
+		).rejects.toThrow(
+			"Ordinary work-period legacy approval state capture failed",
 		);
-		expect(policyState.sourceSnapshot).toEqual({
-			timeRequest: { kind: "policy_clock_out" },
-		});
-		expect(policyState.displaySnapshot?.labels).toEqual({
-			title: "Policy clock-out",
-		});
 	});
 
 	it("captures exact requester auto-approval evidence when approved is expected", async () => {

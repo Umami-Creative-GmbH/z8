@@ -287,10 +287,30 @@ function hasExactCompatibility(
 		"workflow",
 		"stage",
 		"timeRequest",
+		...(kind === "policy_clock_out" ? ["breakPolicySnapshot"] : []),
 	]);
 	const workflow = exactObject(metadata?.workflow, ["id", "organizationId"]);
 	const stage = exactObject(metadata?.stage, ["id", "sequence"]);
-	const timeRequest = exactObject(metadata?.timeRequest, ["kind"]);
+	let payloadsMatch = false;
+	try {
+		const compatibilityPayload = parseOrdinaryWorkPeriodWorkflowPayload(
+			{
+				timeRequest: metadata?.timeRequest,
+				...(kind === "policy_clock_out"
+					? { breakPolicySnapshot: metadata?.breakPolicySnapshot }
+					: {}),
+			},
+			kind,
+		);
+		const workflowPayload = parseOrdinaryWorkPeriodWorkflowPayload(
+			row.workflow.contextSnapshot,
+			kind,
+		);
+		payloadsMatch =
+			JSON.stringify(compatibilityPayload) === JSON.stringify(workflowPayload);
+	} catch {
+		return false;
+	}
 	return Boolean(
 		request.id === row.stage.legacyApprovalRequestId &&
 			request.organizationId === row.projection.organizationId &&
@@ -303,7 +323,7 @@ function hasExactCompatibility(
 			workflow.organizationId === row.workflow.organizationId &&
 			stage?.id === row.stage.id &&
 			stage.sequence === row.stage.sequence &&
-			timeRequest?.kind === kind,
+			payloadsMatch,
 	);
 }
 
@@ -815,13 +835,24 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 			and jsonb_typeof(workflow.context_snapshot) = 'object'
 			and (select count(*) from jsonb_object_keys(case
 				when jsonb_typeof(workflow.context_snapshot) = 'object' then workflow.context_snapshot
-				else '{}'::jsonb end)) = 1
+				else '{}'::jsonb end)) = case
+					when workflow.workflow_type = 'policy_clock_out' then 2 else 1 end
 			and jsonb_typeof(workflow.context_snapshot -> 'timeRequest') = 'object'
 			and (select count(*) from jsonb_object_keys(case
 				when jsonb_typeof(workflow.context_snapshot -> 'timeRequest') = 'object'
 					then workflow.context_snapshot -> 'timeRequest'
 				else '{}'::jsonb end)) = 1
 			and workflow.context_snapshot -> 'timeRequest' ->> 'kind' = workflow.workflow_type::text
+			and case
+				when workflow.workflow_type = 'manual_time_submission' then
+					not (workflow.context_snapshot ? 'breakPolicySnapshot')
+				when workflow.workflow_type = 'policy_clock_out' then
+					jsonb_typeof(workflow.context_snapshot -> 'breakPolicySnapshot') = 'object'
+					and workflow.context_snapshot -> 'breakPolicySnapshot' -> 'version' = '1'::jsonb
+					and workflow.context_snapshot -> 'breakPolicySnapshot' ->> 'resolution'
+						in ('none', 'work_policy')
+				else false
+			end
 			and jsonb_typeof(projection.display_payload) = 'object'
 			and (select count(*) from jsonb_object_keys(case
 				when jsonb_typeof(projection.display_payload) = 'object' then projection.display_payload
@@ -889,7 +920,8 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 				and jsonb_typeof(compatibility.metadata) = 'object'
 				and (select count(*) from jsonb_object_keys(case
 					when jsonb_typeof(compatibility.metadata) = 'object' then compatibility.metadata
-					else '{}'::jsonb end)) = 3
+					else '{}'::jsonb end)) = case
+						when workflow.workflow_type = 'policy_clock_out' then 4 else 3 end
 				and jsonb_typeof(compatibility.metadata -> 'workflow') = 'object'
 				and (select count(*) from jsonb_object_keys(case
 					when jsonb_typeof(compatibility.metadata -> 'workflow') = 'object'
@@ -910,6 +942,18 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 				and compatibility.metadata -> 'stage' ->> 'id' = stage.id::text
 				and compatibility.metadata -> 'stage' ->> 'sequence' = stage.stage_order::text
 				and compatibility.metadata -> 'timeRequest' ->> 'kind' = workflow.workflow_type::text
+				and case
+					when workflow.workflow_type = 'manual_time_submission' then
+						not (compatibility.metadata ? 'breakPolicySnapshot')
+					when workflow.workflow_type = 'policy_clock_out' then
+						jsonb_typeof(compatibility.metadata -> 'breakPolicySnapshot') = 'object'
+						and compatibility.metadata -> 'breakPolicySnapshot' -> 'version' = '1'::jsonb
+						and compatibility.metadata -> 'breakPolicySnapshot' ->> 'resolution'
+							in ('none', 'work_policy')
+						and compatibility.metadata -> 'breakPolicySnapshot'
+							= workflow.context_snapshot -> 'breakPolicySnapshot'
+					else false
+				end
 			), false)
 			and ${candidateVisibility(input)}
 			${candidateFilterCondition(input)}

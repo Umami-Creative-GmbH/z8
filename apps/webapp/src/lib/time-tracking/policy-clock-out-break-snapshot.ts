@@ -83,7 +83,7 @@ function name(value: unknown): string {
 }
 
 function minutes(value: unknown): number {
-	return Number.isSafeInteger(value) && (value as number) >= 0
+	return Number.isSafeInteger(value) && (value as number) > 0
 		? (value as number)
 		: fail();
 }

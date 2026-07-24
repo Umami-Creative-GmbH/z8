@@ -964,10 +964,18 @@ function validateLegacyAutoReplay(input: {
 	}
 	const metadata = exactDataObject(request.metadata, [
 		"timeRequest",
+		...(input.submission.kind === "policy_clock_out"
+			? ["breakPolicySnapshot"]
+			: []),
 		"autoApproval",
 	]);
 	parseOrdinaryWorkPeriodWorkflowPayload(
-		{ timeRequest: metadata.timeRequest },
+		{
+			timeRequest: metadata.timeRequest,
+			...(input.submission.kind === "policy_clock_out"
+				? { breakPolicySnapshot: metadata.breakPolicySnapshot }
+				: {}),
+		},
 		input.submission.kind,
 	);
 	const autoApproval = exactDataObject(metadata.autoApproval, ["reason"]);
@@ -1322,7 +1330,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 	});
 	const source = await loadOrdinarySource(input, submissionKey);
 	const breakPolicySnapshot =
-		input.kind === "policy_clock_out" && source.approvalStatus === "pending"
+		input.kind === "policy_clock_out"
 			? policyClockOutBreakSnapshotFromPendingChanges(
 					source.pendingChanges,
 					instantToCanonicalString(instantFromDate(source.endTime)),

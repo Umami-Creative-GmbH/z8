@@ -1039,7 +1039,10 @@ describe("stable ordinary work-period decisions", () => {
 			},
 			chain: null,
 			chainRows: [],
-			sourceSnapshot: { timeRequest: { kind: "policy_clock_out" } },
+			sourceSnapshot: {
+				timeRequest: { kind: "policy_clock_out" },
+				breakPolicySnapshot,
+			},
 			capturedAt: parseInstant("2026-07-15T09:59:00Z"),
 		}));
 		const context = {
@@ -1717,6 +1720,51 @@ describe("ordinary work-period approval finalizer", () => {
 			expect.objectContaining({ approvalState: "rejected" }),
 		]);
 		expect(terminalBreakMocks.enforce).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		"approve",
+		"reject",
+	] as const)("rejects legacy policy %s without stored break evidence before mutation", async (action) => {
+		const dbService = createFinalizerDbService({
+			period: {
+				approvalWorkflowId: null,
+				pendingChanges: { isNewClockOut: true },
+			},
+			request: {
+				status: action === "approve" ? "approved" : "rejected",
+				approvedAt:
+					action === "approve" ? new Date("2026-07-15T10:00:00Z") : null,
+				rejectionReason: action === "reject" ? "Policy conflict" : null,
+				metadata: { timeRequest: { kind: "policy_clock_out" } },
+			},
+		});
+
+		await expect(
+			finalize(dbService, {
+				kind: "policy_clock_out",
+				expectedApprovalWorkflowId: null,
+				evidence: {
+					mode: "legacy",
+					approvalRequestId: "approval-1",
+					requestMode: "manager",
+					expectedStatus: action === "approve" ? "approved" : "rejected",
+				},
+				transition:
+					action === "approve"
+						? { kind: "approve", reason: null }
+						: { kind: "reject", reason: "Policy conflict" },
+			}),
+		).rejects.toThrow("Ordinary work-period finalization conflict");
+		expect(dbService.updateSets).toHaveLength(0);
+		expect(dbService.insertedValues).toHaveLength(0);
+		expect(terminalBreakMocks.enforce).not.toHaveBeenCalled();
+	});
+
+	it("does not depend on the live break-policy resolver", () => {
+		expect(source).not.toContain(
+			"resolvePolicyClockOutBreakSnapshotInTransaction",
+		);
 	});
 
 	it("enforces a policy clock-out once after source approval and preserves submitted evidence", async () => {

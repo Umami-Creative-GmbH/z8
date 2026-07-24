@@ -377,12 +377,13 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 		return { kind: "not_required" };
 	}
 
-	const insertAfterMinutes = finalCalculation.maxUninterruptedMinutes
-		? Math.min(
-				finalCalculation.maxUninterruptedMinutes,
-				finalCalculation.applicableRule.workingMinutesThreshold,
-			)
-		: finalCalculation.applicableRule.workingMinutesThreshold;
+	const insertAfterMinutes =
+		finalCalculation.maxUninterruptedMinutes !== null
+			? Math.min(
+					finalCalculation.maxUninterruptedMinutes,
+					finalCalculation.applicableRule.workingMinutesThreshold,
+				)
+			: finalCalculation.applicableRule.workingMinutesThreshold;
 	if (!Number.isSafeInteger(insertAfterMinutes) || insertAfterMinutes <= 0) {
 		return fail();
 	}

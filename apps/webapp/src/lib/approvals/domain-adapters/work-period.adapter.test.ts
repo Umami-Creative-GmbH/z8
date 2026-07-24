@@ -26,12 +26,24 @@ const submittedAt = parseInstant("2026-07-20T14:05:00Z");
 const finalizedAt = parseInstant("2026-07-20T15:00:00Z");
 const startTime = new Date("2026-07-20T06:00:00.000Z");
 const endTime = new Date("2026-07-20T14:00:00.000Z");
+const breakPolicySnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-20T14:00:00Z",
+	resolution: "none",
+} as const;
 
 function required<T>(value: T | null | undefined): T {
 	if (value === null || value === undefined) {
 		throw new Error("Invalid test fixture");
 	}
 	return value;
+}
+
+function expectedPayload(kind: OrdinaryWorkPeriodApprovalKind) {
+	return {
+		timeRequest: { kind },
+		...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+	};
 }
 
 function workflow(
@@ -51,7 +63,7 @@ function workflow(
 		policySnapshot: {},
 		contextSnapshot: {
 			timeRequest: { kind },
-			routing: { attackerPrivateValue: "must-not-be-trusted" },
+			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 		},
 		displaySnapshot: {},
 		submittedAt,
@@ -222,7 +234,7 @@ describe.each(
 			startTime: "2026-07-20T06:00:00Z",
 			endTime: "2026-07-20T14:00:00Z",
 			durationMinutes: 480,
-			payload: { timeRequest: { kind } },
+			payload: expectedPayload(kind),
 		});
 		expect(fixture.db.execute).toHaveBeenCalledOnce();
 		const query = fixture.db.execute.mock.calls[0]?.[0] as SQL;
@@ -440,7 +452,7 @@ describe.each(
 			evidence: {
 				mode: "canonical",
 				workflowId: ids.workflow,
-				payload: { timeRequest: { kind } },
+				payload: expectedPayload(kind),
 			},
 			transition: { kind: action, reason },
 			finalizedAt,
@@ -504,7 +516,7 @@ describe.each(
 				evidence: {
 					mode: "canonical",
 					workflowId: ids.workflow,
-					payload: { timeRequest: { kind } },
+					payload: expectedPayload(kind),
 				},
 			}),
 		);

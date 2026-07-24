@@ -13,10 +13,15 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import * as authSchema from "@/db/auth-schema";
 import { configurePostgresUtcTypes } from "@/db/postgres-utc";
 import * as schema from "@/db/schema";
+import { TimeCorrectionHandler } from "@/lib/approvals/handlers/time-correction.handler";
 import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
-import { loadOrdinaryCanonicalApprovals } from "../inbox/ordinary-canonical-read";
+import {
+	countOrdinaryCanonicalApprovals,
+	loadOrdinaryCanonicalApprovals,
+} from "../inbox/ordinary-canonical-read";
 import type { ApprovalWorkflowLifecycleMode } from "../workflow/ports";
 import type { ApprovalWorkflowDatabase } from "../workflow/repository";
 import {
@@ -59,6 +64,8 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"uses the submitted break snapshot after policy replacement and archive in %s mode",
 			"uses the submitted break snapshot after rule edit and delete in %s mode",
 			"keeps submitted resolution none after a policy is assigned in %s mode",
+			"discovers snapshot-backed policy approvals through list, count, and detail in %s mode",
+			"fails closed on $evidence stored break evidence in $mode mode",
 			"forced %s CAS zero row rolls the entire decision back",
 			"decision INSERT RETURNING zero rows rolls the complete transaction back",
 			"foreign organization rollback snapshots both tenants and every durable graph",
@@ -687,7 +694,7 @@ describeIntegration(
 			mode: (typeof modes)[number],
 		) {
 			const source = await pool.query<{ break_snapshot: unknown }>(
-				`select pending_changes -> 'breakPolicySnapshot' as break_snapshot
+				`select pending_changes::jsonb -> 'breakPolicySnapshot' as break_snapshot
 				 from work_period where id = $1 and organization_id = $2`,
 				[ids.period, ids.organization],
 			);
@@ -730,7 +737,7 @@ describeIntegration(
 				resolution: "none",
 			};
 			const source = await pool.query<{ break_snapshot: unknown }>(
-				`select pending_changes -> 'breakPolicySnapshot' as break_snapshot
+				`select pending_changes::jsonb -> 'breakPolicySnapshot' as break_snapshot
 				 from work_period where id = $1 and organization_id = $2`,
 				[ids.period, ids.organization],
 			);
@@ -1204,6 +1211,133 @@ describeIntegration(
 			expect(afterReplay.rows).toEqual(beforeReplay.rows);
 			expect(entriesAfterReplay.rows).toEqual(entriesBeforeReplay.rows);
 			await assertSubmittedNoneSnapshotParity(mode);
+		});
+
+		it.each([
+			"shadow",
+			"ready",
+			"canonical",
+			"complete",
+		] as const)("discovers snapshot-backed policy approvals through list, count, and detail in %s mode", async (mode) => {
+			await seed("policy_clock_out", true, mode);
+			const submitted = await submit("policy_clock_out");
+			const canonical = await loadOrdinaryCanonicalApprovals({
+				database,
+				organizationId: ids.organization,
+				approverId: ids.manager,
+			});
+			const canonicalCount = await countOrdinaryCanonicalApprovals({
+				database,
+				organizationId: ids.organization,
+				approverId: ids.manager,
+			});
+
+			if (mode === "complete") {
+				expect(canonical).toHaveLength(1);
+				expect(canonicalCount).toBe(1);
+				const detail = await loadOrdinaryCanonicalApprovals({
+					database,
+					organizationId: ids.organization,
+					approverId: ids.manager,
+					assignmentId: canonical[0]?.item.id,
+				});
+				expect(detail).toHaveLength(1);
+				expect(detail[0]?.decisionTarget.workflowKind).toBe("policy_clock_out");
+				expect(JSON.stringify(detail)).not.toContain("breakPolicySnapshot");
+				return;
+			}
+
+			expect(canonical).toEqual([]);
+			expect(canonicalCount).toBe(0);
+			const service = DatabaseService.of(dbService(database) as never);
+			const params = {
+				organizationId: ids.organization,
+				approverId: ids.manager,
+				status: "pending" as const,
+			};
+			const approvals = await Effect.runPromise(
+				TimeCorrectionHandler.getApprovals(params).pipe(
+					Effect.provideService(DatabaseService, service),
+				),
+			);
+			const count = await Effect.runPromise(
+				TimeCorrectionHandler.getCount(ids.manager, ids.organization).pipe(
+					Effect.provideService(DatabaseService, service),
+				),
+			);
+			const detail = await Effect.runPromise(
+				TimeCorrectionHandler.getDetail(ids.period, ids.organization, {
+					approvalId: submitted.result.approvalRequestId,
+				}).pipe(Effect.provideService(DatabaseService, service)),
+			);
+			expect(approvals.map(({ id }) => id)).toEqual([
+				submitted.result.approvalRequestId,
+			]);
+			expect(count).toBe(1);
+			expect(detail.approval.id).toBe(submitted.result.approvalRequestId);
+			expect(JSON.stringify({ approvals, detail })).not.toContain(
+				"breakPolicySnapshot",
+			);
+		});
+
+		it.each(
+			modes.flatMap((mode) =>
+				(["missing", "malformed"] as const).map((evidence) => ({
+					mode,
+					evidence,
+				})),
+			),
+		)("fails closed on $evidence stored break evidence in $mode mode", async ({
+			mode,
+			evidence,
+		}) => {
+			await seed("policy_clock_out", true, mode);
+			const target = (await submit("policy_clock_out")).result
+				.approvalRequestId;
+			await mutateAfterSubmission(async (client) => {
+				await client.query(
+					evidence === "missing"
+						? `update work_period
+						   set pending_changes = (pending_changes::jsonb - 'breakPolicySnapshot')::text
+						   where id = $1 and organization_id = $2`
+						: `update work_period
+						   set pending_changes = jsonb_set(
+						     pending_changes::jsonb, '{breakPolicySnapshot,version}', '0'::jsonb
+						   )::text
+						   where id = $1 and organization_id = $2`,
+					[ids.period, ids.organization],
+				);
+			});
+
+			await expect(
+				decide(target, { kind: "approve", reason: null }),
+			).rejects.toThrow();
+			const periods = await pool.query<{
+				approval_status: string;
+			}>(
+				`select approval_status from work_period
+				 where organization_id = $1 and employee_id = $2`,
+				[ids.organization, ids.requester],
+			);
+			expect(periods.rows).toEqual([{ approval_status: "pending" }]);
+			const records = await pool.query<{ approval_state: string }>(
+				`select approval_state from time_record
+				 where organization_id = $1 and employee_id = $2`,
+				[ids.organization, ids.requester],
+			);
+			expect(records.rows).toEqual([{ approval_state: "pending" }]);
+			const entries = await pool.query(
+				`select id from time_entry
+				 where organization_id = $1 and employee_id = $2`,
+				[ids.organization, ids.requester],
+			);
+			expect(entries.rows).toHaveLength(2);
+			const decisions = await pool.query(
+				`select id from time_record_approval_decision
+				 where organization_id = $1 and record_id = $2`,
+				[ids.organization, ids.canonical],
+			);
+			expect(decisions.rows).toEqual([]);
 		});
 
 		it("complete submission writes zero approval requests and canonical reader discovers the assignment", async () => {

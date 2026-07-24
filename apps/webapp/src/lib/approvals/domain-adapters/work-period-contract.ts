@@ -157,29 +157,39 @@ export function parseOrdinaryWorkPeriodWorkflowPayload(
 	expectedKind?: OrdinaryWorkPeriodApprovalKind,
 ): Readonly<OrdinaryWorkPeriodWorkflowPayload> {
 	try {
-		const descriptors =
-			typeof value === "object" && value !== null && !Array.isArray(value)
-				? Object.getOwnPropertyDescriptors(value)
-				: {};
-		const hasSnapshot = Object.hasOwn(descriptors, "breakPolicySnapshot");
-		const root = readExactDataProperties(
+		if (
+			typeof value !== "object" ||
+			value === null ||
+			Array.isArray(value) ||
+			Object.getPrototypeOf(value) !== Object.prototype
+		) {
+			throw new Error("Ordinary work-period workflow payload is invalid");
+		}
+		const timeRequestDescriptor = Object.getOwnPropertyDescriptor(
 			value,
-			hasSnapshot ? ["timeRequest", "breakPolicySnapshot"] : ["timeRequest"],
+			"timeRequest",
 		);
-		const timeRequest = root.timeRequest;
-		const kind = readExactDataProperty(timeRequest, "kind");
+		if (
+			!timeRequestDescriptor?.enumerable ||
+			!("value" in timeRequestDescriptor)
+		) {
+			throw new Error("Ordinary work-period workflow payload is invalid");
+		}
+		const kind = readExactDataProperty(timeRequestDescriptor.value, "kind");
 		if (
 			!isOrdinaryWorkPeriodApprovalKind(kind) ||
 			kind !== (expectedKind ?? kind)
 		) {
 			throw new Error("Ordinary work-period workflow payload is invalid");
 		}
+		const hasSnapshot = kind === "policy_clock_out";
+		const root = readExactDataProperties(
+			value,
+			hasSnapshot ? ["timeRequest", "breakPolicySnapshot"] : ["timeRequest"],
+		);
 		const normalizedRequest = Object.freeze({ kind });
 		if (!hasSnapshot) {
 			return Object.freeze({ timeRequest: normalizedRequest });
-		}
-		if (kind !== "policy_clock_out") {
-			throw new Error("Ordinary work-period workflow payload is invalid");
 		}
 		const snapshotInput = root.breakPolicySnapshot;
 		const evaluatedAtDescriptor =

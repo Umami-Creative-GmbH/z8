@@ -5,7 +5,6 @@ import type { ApprovalDbService } from "../workflow/ports";
 import {
 	type FinalizeOrdinaryWorkPeriodTerminalAdapterInput,
 	type FinalizeOrdinaryWorkPeriodTerminalInput,
-	ORDINARY_WORK_PERIOD_APPROVAL_KINDS,
 	type OrdinaryWorkPeriodFinalizerDatabase,
 	parseOrdinaryWorkPeriodWorkflowPayload,
 } from "./work-period-contract";
@@ -35,9 +34,8 @@ describe("ordinary work-period workflow contract", () => {
 		>().toEqualTypeOf<OrdinaryWorkPeriodFinalizerDatabase>();
 	});
 
-	it.each(
-		ORDINARY_WORK_PERIOD_APPROVAL_KINDS,
-	)("parses a canonical %s payload with exact enumerable data properties", (kind) => {
+	it("parses a canonical manual payload with exact enumerable data properties", () => {
+		const kind = "manual_time_submission";
 		const parsed = parseOrdinaryWorkPeriodWorkflowPayload({
 			timeRequest: { kind },
 		});
@@ -55,6 +53,15 @@ describe("ordinary work-period workflow contract", () => {
 			Object.getOwnPropertyDescriptor(parsed.timeRequest, "kind"),
 		).toMatchObject({ enumerable: true, value: kind });
 		expect(JSON.stringify(parsed)).toBe(`{"timeRequest":{"kind":"${kind}"}}`);
+	});
+
+	it("rejects policy clock-out context without immutable break evidence", () => {
+		expect(() =>
+			parseOrdinaryWorkPeriodWorkflowPayload(
+				{ timeRequest: { kind: "policy_clock_out" } },
+				"policy_clock_out",
+			),
+		).toThrow("Ordinary work-period workflow payload is invalid");
 	});
 
 	it("keeps canonical payload evidence independent of ordinary source UUIDs", () => {

@@ -1475,6 +1475,7 @@ it.each([
 				sequence: 2,
 			},
 			timeRequest: { kind },
+			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 		},
 	});
 	const terminalSource = {
@@ -1492,6 +1493,7 @@ it.each([
 				status: "approved",
 				contextSnapshot: {
 					timeRequest: { kind },
+					...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 				},
 			},
 		],
@@ -1539,6 +1541,7 @@ it.each([
 		approvedAt: new Date("2026-07-22T10:00:00Z"),
 		metadata: {
 			timeRequest: { kind },
+			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 			autoApproval: { reason: "requester_is_approver" },
 		},
 	};

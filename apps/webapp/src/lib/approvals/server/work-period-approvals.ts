@@ -30,7 +30,6 @@ import {
 	type PolicyClockOutBreakSnapshot,
 	policyClockOutBreakSnapshotFromPendingChanges,
 	policyClockOutBreakSnapshotsEqual,
-	resolvePolicyClockOutBreakSnapshotInTransaction,
 } from "@/lib/time-tracking/policy-clock-out-break-snapshot";
 import { applyPolicyClockOutTerminalBreakInTransaction } from "@/lib/time-tracking/policy-clock-out-terminal-break";
 import type { ApprovalActionOptions } from "../domain/types";
@@ -91,6 +90,9 @@ function exactDecisionMetadata(value: unknown): {
 	const root = value as Record<string, unknown>;
 	const payload = parseOrdinaryWorkPeriodWorkflowPayload({
 		timeRequest: root.timeRequest,
+		...(Object.hasOwn(root, "breakPolicySnapshot")
+			? { breakPolicySnapshot: root.breakPolicySnapshot }
+			: {}),
 	});
 	const workflow = root.workflow;
 	const stage = root.stage;
@@ -1172,7 +1174,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 				evaluatedAt,
 			);
 		} catch {
-			if (evidence.mode !== "legacy") throw fail();
+			throw fail();
 		}
 	}
 	if (
@@ -1316,26 +1318,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 				requesterAutoCompleted,
 			});
 			if (input.kind === "policy_clock_out") {
-				if (!sourceBreakPolicySnapshot) {
-					if (
-						requestPayload.breakPolicySnapshot ||
-						Object.hasOwn(
-							terminalMetadata as Record<string, unknown>,
-							"ordinarySubmission",
-						)
-					) {
-						throw fail();
-					}
-					if (input.transition.kind === "approve") {
-						sourceBreakPolicySnapshot =
-							await resolvePolicyClockOutBreakSnapshotInTransaction({
-								dbService: input.dbService as never,
-								organizationId: input.organizationId,
-								employeeId: input.requesterEmployeeId,
-								endTime: instantFromDate(period.endTime),
-							});
-					}
-				} else if (
+				if (
 					!requestPayload.breakPolicySnapshot ||
 					!policyClockOutBreakSnapshotsEqual(
 						sourceBreakPolicySnapshot,

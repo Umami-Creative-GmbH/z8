@@ -60,6 +60,11 @@ const privateReason = "private ordinary source reason";
 const sourceDiagnostics = "private source diagnostics";
 const forbiddenPrivatePattern =
 	/private pending changes|private ordinary source reason|private source diagnostics|10000000-|20000000-|30000000-|40000000-|50000000-|60000000-|70000000-|org-composition|user-requester|team-1/;
+const breakPolicySnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-20T14:00:00Z",
+	resolution: "none",
+} as const;
 
 function compatibilityMetadata(
 	mode: RolloutMode,
@@ -71,9 +76,13 @@ function compatibilityMetadata(
 			workflow: { id: workflowId, organizationId },
 			stage: { id: stageId, sequence: 2 },
 			timeRequest: { kind },
+			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 		};
 	}
-	return { timeRequest: { kind } };
+	return {
+		timeRequest: { kind },
+		...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+	};
 }
 
 function fixture(mode: RolloutMode, kind: OrdinaryWorkPeriodApprovalKind) {
@@ -116,7 +125,11 @@ function fixture(mode: RolloutMode, kind: OrdinaryWorkPeriodApprovalKind) {
 		pendingChanges:
 			kind === "manual_time_submission"
 				? { isManualEntry: true, privateNote: "private pending changes" }
-				: { isNewClockOut: true, privateNote: "private pending changes" },
+				: {
+						isNewClockOut: true,
+						privateNote: "private pending changes",
+						breakPolicySnapshot,
+					},
 		clockInId: "50000000-0000-4000-8000-000000000001",
 		clockOutId: "50000000-0000-4000-8000-000000000002",
 		canonicalRecordId,
@@ -179,8 +192,7 @@ async function canonicalProjection(kind: OrdinaryWorkPeriodApprovalKind) {
 		policySnapshot: {},
 		contextSnapshot: {
 			timeRequest: { kind },
-			privateReason,
-			sourceDiagnostics,
+			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 		},
 		displaySnapshot: {},
 		submittedAt,
@@ -224,7 +236,10 @@ async function canonicalProjection(kind: OrdinaryWorkPeriodApprovalKind) {
 			startTime: "2026-07-20T06:00:00Z",
 			endTime: "2026-07-20T14:00:00Z",
 			durationMinutes: 480,
-			payload: { timeRequest: { kind } },
+			payload: {
+				timeRequest: { kind },
+				...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+			},
 			pendingChanges: { privateNote: "private pending changes" },
 		},
 	});
@@ -369,7 +384,10 @@ describe.each([
 			requesterEmployeeId: employeeId,
 			status: "pending",
 			currentStageOrder: 2,
-			contextSnapshot: { timeRequest: { kind } },
+			contextSnapshot: {
+				timeRequest: { kind },
+				...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+			},
 			submittedAt: new Date("2026-07-20T14:05:00Z"),
 			requester: period.employee,
 		};
