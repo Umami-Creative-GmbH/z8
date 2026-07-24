@@ -59,6 +59,11 @@ async function realOrdinaryProjection(kind: OrdinaryWorkPeriodApprovalKind) {
 		evaluatedAt: "2026-07-20T14:00:00Z",
 		resolution: "none" as const,
 	};
+	const surchargeSnapshot = {
+		version: 1 as const,
+		evaluatedAt: "2026-07-20T14:00:00Z",
+		resolution: { kind: "none" as const },
+	};
 	const workflow = {
 		id: "10000000-0000-4000-8000-000000000001",
 		organizationId: "org-1",
@@ -72,7 +77,9 @@ async function realOrdinaryProjection(kind: OrdinaryWorkPeriodApprovalKind) {
 		policySnapshot: {},
 		contextSnapshot: {
 			timeRequest: { kind },
-			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+			...(kind === "policy_clock_out"
+				? { breakPolicySnapshot, surchargeSnapshot }
+				: {}),
 			privateReason: "private-reason",
 			sourceDiagnostics: "private-source-diagnostics",
 		},
@@ -111,7 +118,9 @@ async function realOrdinaryProjection(kind: OrdinaryWorkPeriodApprovalKind) {
 		durationMinutes: 480,
 		payload: {
 			timeRequest: { kind },
-			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+			...(kind === "policy_clock_out"
+				? { breakPolicySnapshot, surchargeSnapshot }
+				: {}),
 		},
 		pendingChanges: { privateNote: "private-pending-change" },
 	};

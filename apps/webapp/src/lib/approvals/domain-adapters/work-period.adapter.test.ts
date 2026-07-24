@@ -31,6 +31,11 @@ const breakPolicySnapshot = {
 	evaluatedAt: "2026-07-20T14:00:00Z",
 	resolution: "none",
 } as const;
+const surchargeSnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-20T14:00:00Z",
+	resolution: { kind: "none" },
+} as const;
 
 function required<T>(value: T | null | undefined): T {
 	if (value === null || value === undefined) {
@@ -42,7 +47,9 @@ function required<T>(value: T | null | undefined): T {
 function expectedPayload(kind: OrdinaryWorkPeriodApprovalKind) {
 	return {
 		timeRequest: { kind },
-		...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+		...(kind === "policy_clock_out"
+			? { breakPolicySnapshot, surchargeSnapshot }
+			: {}),
 	};
 }
 
@@ -63,7 +70,9 @@ function workflow(
 		policySnapshot: {},
 		contextSnapshot: {
 			timeRequest: { kind },
-			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+			...(kind === "policy_clock_out"
+				? { breakPolicySnapshot, surchargeSnapshot }
+				: {}),
 		},
 		displaySnapshot: {},
 		submittedAt,

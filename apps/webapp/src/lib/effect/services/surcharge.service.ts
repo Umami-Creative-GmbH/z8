@@ -12,6 +12,20 @@ import {
 	type surchargeRule,
 	workPeriod,
 } from "@/db/schema";
+import {
+	compareInstants,
+	type Instant,
+	instantFromDate,
+	parseInstant,
+	parsePlainDate,
+	parsePlainTimeMinute,
+} from "@/lib/datetime/temporal-core";
+import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
+import type {
+	PolicyClockOutSurchargeRuleSnapshot,
+	PolicyClockOutSurchargeSnapshot,
+} from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
+import { isValidIanaTimezone } from "@/lib/time-tracking/timezone-capture";
 import { DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService } from "./database.service";
 
@@ -70,6 +84,7 @@ export interface ReconcileSurchargeWorkPeriodsInput {
 	employeeId: string;
 	surchargePeriodIds: string[];
 	staleSurchargePeriodIds: string[];
+	surchargeSnapshot: PolicyClockOutSurchargeSnapshot | null;
 }
 
 // ============================================
@@ -239,6 +254,122 @@ function calculateSurchargesInternal(
 	};
 }
 
+function snapshotRuleApplies(
+	rule: PolicyClockOutSurchargeRuleSnapshot,
+	minute: Instant,
+	timeZone: string,
+): boolean {
+	if (
+		rule.validFrom &&
+		compareInstants(minute, parseInstant(rule.validFrom)) < 0
+	)
+		return false;
+	if (
+		rule.validUntil &&
+		compareInstants(minute, parseInstant(rule.validUntil)) > 0
+	)
+		return false;
+	const local = minute.toZonedDateTimeISO(timeZone);
+	switch (rule.ruleType) {
+		case "day_of_week": {
+			const day = [
+				"monday",
+				"tuesday",
+				"wednesday",
+				"thursday",
+				"friday",
+				"saturday",
+				"sunday",
+			][local.dayOfWeek - 1];
+			return rule.dayOfWeek === day;
+		}
+		case "time_window": {
+			if (!rule.windowStartTime || !rule.windowEndTime) return false;
+			const currentMinutes = local.hour * 60 + local.minute;
+			const start = parsePlainTimeMinute(rule.windowStartTime);
+			const end = parsePlainTimeMinute(rule.windowEndTime);
+			const startMinutes = start.hour * 60 + start.minute;
+			const endMinutes = end.hour * 60 + end.minute;
+			return startMinutes <= endMinutes
+				? currentMinutes >= startMinutes && currentMinutes < endMinutes
+				: currentMinutes >= startMinutes || currentMinutes < endMinutes;
+		}
+		case "date_based": {
+			const date = local.toPlainDate();
+			if (rule.specificDate)
+				return date.equals(parsePlainDate(rule.specificDate));
+			return Boolean(
+				rule.dateRangeStart &&
+					rule.dateRangeEnd &&
+					date.since(parsePlainDate(rule.dateRangeStart)).sign >= 0 &&
+					date.until(parsePlainDate(rule.dateRangeEnd)).sign >= 0,
+			);
+		}
+	}
+}
+
+export function evaluateSurchargeSnapshot(input: {
+	snapshot: PolicyClockOutSurchargeSnapshot;
+	startTime: Instant;
+	endTime: Instant;
+	timeZone: string;
+}): SurchargeCalculationResult {
+	const totalMinutes = Math.floor(
+		input.endTime.since(input.startTime).total({ unit: "minutes" }),
+	);
+	const rules =
+		input.snapshot.resolution.kind === "surcharge_model"
+			? input.snapshot.resolution.rules
+			: [];
+	if (totalMinutes <= 0 || rules.length === 0) {
+		return {
+			baseMinutes: Math.max(0, totalMinutes),
+			qualifyingMinutes: 0,
+			surchargeMinutes: 0,
+			totalCreditedMinutes: Math.max(0, totalMinutes),
+			appliedRules: [],
+		};
+	}
+	const qualifying = new Map<string, number>();
+	for (let minuteIndex = 0; minuteIndex < totalMinutes; minuteIndex += 1) {
+		const minute = input.startTime.add({ minutes: minuteIndex });
+		const applicable = rules.filter((rule) =>
+			snapshotRuleApplies(rule, minute, input.timeZone),
+		);
+		if (applicable.length === 0) continue;
+		const winner = applicable.reduce((highest, rule) =>
+			Number(rule.percentage) > Number(highest.percentage) ? rule : highest,
+		);
+		qualifying.set(winner.id, (qualifying.get(winner.id) ?? 0) + 1);
+	}
+	const appliedRules: SurchargeCalculationResult["appliedRules"] = [];
+	let qualifyingMinutes = 0;
+	let surchargeMinutes = 0;
+	for (const rule of rules) {
+		const ruleMinutes = qualifying.get(rule.id) ?? 0;
+		if (ruleMinutes === 0) continue;
+		const percentage = Number(rule.percentage);
+		const ruleSurchargeMinutes = Math.round(ruleMinutes * percentage);
+		appliedRules.push({
+			ruleId: rule.id,
+			ruleName: rule.name,
+			ruleType: rule.ruleType,
+			percentage,
+			qualifyingMinutes: ruleMinutes,
+			surchargeMinutes: ruleSurchargeMinutes,
+		});
+		qualifyingMinutes += ruleMinutes;
+		surchargeMinutes += ruleSurchargeMinutes;
+	}
+	return {
+		baseMinutes: totalMinutes,
+		qualifyingMinutes,
+		surchargeMinutes,
+		totalCreditedMinutes: totalMinutes + surchargeMinutes,
+		appliedRules,
+	};
+}
+
 export async function reconcileSurchargeWorkPeriodsWithDatabase(
 	database: typeof db,
 	input: ReconcileSurchargeWorkPeriodsInput,
@@ -250,7 +381,8 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 			!input.organizationId ||
 			!input.employeeId ||
 			targetIds.length !== input.surchargePeriodIds.length ||
-			staleIds.length !== input.staleSurchargePeriodIds.length
+			staleIds.length !== input.staleSurchargePeriodIds.length ||
+			(targetIds.length > 0 && input.surchargeSnapshot === null)
 		) {
 			throw new Error("invalid reconciliation input");
 		}
@@ -270,6 +402,22 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 					startTime: true,
 					endTime: true,
 					approvalStatus: true,
+				},
+				with: {
+					clockIn: {
+						columns: {
+							timestamp: true,
+							timezone: true,
+							utcOffsetMinutes: true,
+						},
+					},
+					clockOut: {
+						columns: {
+							timestamp: true,
+							timezone: true,
+							utcOffsetMinutes: true,
+						},
+					},
 				},
 			});
 			const foundIds = new Set(periods.map((period) => period.id));
@@ -293,24 +441,6 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 			) {
 				throw new Error("target period is not approved");
 			}
-			const employees = await tx.query.employee.findMany({
-				where: and(
-					eq(employee.id, input.employeeId),
-					eq(employee.organizationId, input.organizationId),
-				),
-				columns: { id: true, organizationId: true, teamId: true },
-				limit: 2,
-			});
-			const ownedEmployee = employees[0];
-			if (
-				employees.length !== 1 ||
-				!ownedEmployee ||
-				ownedEmployee.id !== input.employeeId ||
-				ownedEmployee.organizationId !== input.organizationId
-			) {
-				throw new Error("employee ownership mismatch");
-			}
-
 			await tx
 				.delete(surchargeCalculation)
 				.where(
@@ -322,118 +452,36 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 				);
 			if (targetIds.length === 0) return;
 
-			const org = await tx.query.organization.findFirst({
-				where: eq(organization.id, input.organizationId),
-				columns: { id: true, timezone: true, surchargesEnabled: true },
-			});
-			if (!org || org.id !== input.organizationId) {
-				throw new Error("organization mismatch");
-			}
-			if (!org.surchargesEnabled) return;
 			const calculatedAt = new Date();
 			for (const period of periods) {
 				if (!targetIds.includes(period.id) || !period.endTime) continue;
-				const effectiveAt = period.endTime;
-				// Historical reconciliation uses the inclusive effective window at the
-				// completed period instant. Mutable isActive only describes current use.
-				const effectiveWindow = and(
-					eq(surchargeModelAssignment.organizationId, input.organizationId),
-					or(
-						isNull(surchargeModelAssignment.effectiveFrom),
-						lte(surchargeModelAssignment.effectiveFrom, effectiveAt),
-					),
-					or(
-						isNull(surchargeModelAssignment.effectiveUntil),
-						gte(surchargeModelAssignment.effectiveUntil, effectiveAt),
-					),
-				);
-				const employeeAssignments =
-					await tx.query.surchargeModelAssignment.findMany({
-						where: and(
-							effectiveWindow,
-							eq(surchargeModelAssignment.employeeId, input.employeeId),
-							eq(surchargeModelAssignment.assignmentType, "employee"),
-						),
-						with: { model: { with: { rules: true } } },
-						limit: 2,
-					});
-				if (employeeAssignments.length > 1) {
-					throw new Error("ambiguous employee surcharge assignment");
-				}
-				let assignment = employeeAssignments[0] ?? null;
-				if (!assignment && ownedEmployee.teamId) {
-					const teamAssignments =
-						await tx.query.surchargeModelAssignment.findMany({
-							where: and(
-								effectiveWindow,
-								eq(surchargeModelAssignment.teamId, ownedEmployee.teamId),
-								eq(surchargeModelAssignment.assignmentType, "team"),
-							),
-							with: { model: { with: { rules: true } } },
-							limit: 2,
-						});
-					if (teamAssignments.length > 1) {
-						throw new Error("ambiguous team surcharge assignment");
-					}
-					assignment = teamAssignments[0] ?? null;
-				}
-				if (!assignment) {
-					const organizationAssignments =
-						await tx.query.surchargeModelAssignment.findMany({
-							where: and(
-								effectiveWindow,
-								eq(surchargeModelAssignment.assignmentType, "organization"),
-							),
-							with: { model: { with: { rules: true } } },
-							limit: 2,
-						});
-					if (organizationAssignments.length > 1) {
-						throw new Error("ambiguous organization surcharge assignment");
-					}
-					assignment = organizationAssignments[0] ?? null;
-				}
-				if (!assignment) continue;
 				if (
-					assignment.organizationId !== input.organizationId ||
-					!assignment.model ||
-					assignment.model.organizationId !== input.organizationId
+					!period.clockIn ||
+					!period.clockOut ||
+					period.clockIn.timestamp.getTime() !== period.startTime.getTime() ||
+					period.clockOut.timestamp.getTime() !== period.endTime.getTime() ||
+					!Number.isInteger(period.clockIn.utcOffsetMinutes) ||
+					!Number.isInteger(period.clockOut.utcOffsetMinutes)
 				) {
-					throw new Error("surcharge assignment ownership mismatch");
+					throw new Error("period timezone evidence mismatch");
 				}
-				if (!assignment.model.isActive) continue;
-				const rules = assignment.model.rules
-					.filter((rule) => rule.isActive)
-					.sort((left, right) => right.priority - left.priority)
-					.map((rule) => ({
-						id: rule.id,
-						name: rule.name,
-						ruleType: rule.ruleType,
-						percentage: rule.percentage,
-						dayOfWeek: rule.dayOfWeek,
-						windowStartTime: rule.windowStartTime,
-						windowEndTime: rule.windowEndTime,
-						specificDate: rule.specificDate,
-						dateRangeStart: rule.dateRangeStart,
-						dateRangeEnd: rule.dateRangeEnd,
-						priority: rule.priority,
-						validFrom: rule.validFrom,
-						validUntil: rule.validUntil,
-					}));
-				if (rules.length === 0) continue;
-				const result = calculateSurchargesInternal(
-					period.startTime,
-					period.endTime,
-					rules,
-					org.timezone ?? "UTC",
-				);
+				const timeZone = isValidIanaTimezone(period.clockOut.timezone)
+					? period.clockOut.timezone
+					: offsetMinutesToTimeZoneId(period.clockOut.utcOffsetMinutes);
+				const result = evaluateSurchargeSnapshot({
+					snapshot: input.surchargeSnapshot as PolicyClockOutSurchargeSnapshot,
+					startTime: instantFromDate(period.startTime),
+					endTime: instantFromDate(period.endTime),
+					timeZone,
+				});
 				if (result.surchargeMinutes === 0) continue;
 				const primaryRule = result.appliedRules[0];
 				await tx.insert(surchargeCalculation).values({
 					employeeId: input.employeeId,
 					organizationId: input.organizationId,
 					workPeriodId: period.id,
-					surchargeRuleId: primaryRule?.ruleId ?? null,
-					surchargeModelId: assignment.model.id,
+					surchargeRuleId: null,
+					surchargeModelId: null,
 					calculationDate: calculatedAt,
 					baseMinutes: result.baseMinutes,
 					qualifyingMinutes: result.qualifyingMinutes,

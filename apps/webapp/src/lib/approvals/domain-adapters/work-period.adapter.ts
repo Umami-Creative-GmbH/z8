@@ -92,10 +92,20 @@ function payloadFromWorkflow(
 			workflow.contextSnapshot,
 			"breakPolicySnapshot",
 		);
+		const surchargeSnapshot = Object.getOwnPropertyDescriptor(
+			workflow.contextSnapshot,
+			"surchargeSnapshot",
+		);
 		if (!timeRequest?.enumerable || !("value" in timeRequest)) fail();
 		if (
 			breakPolicySnapshot &&
 			(!breakPolicySnapshot.enumerable || !("value" in breakPolicySnapshot))
+		) {
+			fail();
+		}
+		if (
+			surchargeSnapshot &&
+			(!surchargeSnapshot.enumerable || !("value" in surchargeSnapshot))
 		) {
 			fail();
 		}
@@ -104,6 +114,9 @@ function payloadFromWorkflow(
 				timeRequest: timeRequest.value,
 				...(breakPolicySnapshot && "value" in breakPolicySnapshot
 					? { breakPolicySnapshot: breakPolicySnapshot.value }
+					: {}),
+				...(surchargeSnapshot && "value" in surchargeSnapshot
+					? { surchargeSnapshot: surchargeSnapshot.value }
 					: {}),
 			},
 			kind,

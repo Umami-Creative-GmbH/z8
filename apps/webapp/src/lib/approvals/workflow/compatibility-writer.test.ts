@@ -43,6 +43,11 @@ const ordinaryBreakPolicySnapshot = {
 	evaluatedAt: "2026-03-29T08:01:00Z",
 	resolution: "none",
 } as const;
+const ordinarySurchargeSnapshot = {
+	version: 1,
+	evaluatedAt: "2026-03-29T08:01:00Z",
+	resolution: { kind: "none" },
+} as const;
 
 function asTimeCorrectionResult(
 	result: ApprovalCommandResult,
@@ -70,7 +75,10 @@ function asOrdinaryWorkPeriodResult(
 	result.snapshot.contextSnapshot = {
 		timeRequest: { kind },
 		...(kind === "policy_clock_out"
-			? { breakPolicySnapshot: ordinaryBreakPolicySnapshot }
+			? {
+					breakPolicySnapshot: ordinaryBreakPolicySnapshot,
+					surchargeSnapshot: ordinarySurchargeSnapshot,
+				}
 			: {}),
 	};
 	result.snapshot.displaySnapshot = { kind: "hostile_display_projection" };
@@ -143,6 +151,8 @@ function expectedRequestMetadata(
 				? {
 						breakPolicySnapshot:
 							result.snapshot.contextSnapshot.breakPolicySnapshot,
+						surchargeSnapshot:
+							result.snapshot.contextSnapshot.surchargeSnapshot,
 					}
 				: {}),
 		};
@@ -2769,7 +2779,10 @@ describe("transaction-bound legacy approval row writer", () => {
 			stage: { id: activeStage.id, sequence: activeStage.sequence },
 			timeRequest: { kind },
 			...(kind === "policy_clock_out"
-				? { breakPolicySnapshot: ordinaryBreakPolicySnapshot }
+				? {
+						breakPolicySnapshot: ordinaryBreakPolicySnapshot,
+						surchargeSnapshot: ordinarySurchargeSnapshot,
+					}
 				: {}),
 		});
 	});
@@ -2808,6 +2821,7 @@ describe("transaction-bound legacy approval row writer", () => {
 		result.snapshot.contextSnapshot = {
 			timeRequest: { kind: "policy_clock_out" },
 			breakPolicySnapshot,
+			surchargeSnapshot: ordinarySurchargeSnapshot,
 		};
 		const harness = rowWriterHarness(result);
 
@@ -2820,6 +2834,7 @@ describe("transaction-bound legacy approval row writer", () => {
 		expect(insertedRequestMetadata(harness.calls)).toMatchObject({
 			timeRequest: { kind: "policy_clock_out" },
 			breakPolicySnapshot,
+			surchargeSnapshot: ordinarySurchargeSnapshot,
 		});
 	});
 
@@ -2846,6 +2861,7 @@ describe("transaction-bound legacy approval row writer", () => {
 			stage: { id: activeStage.id, sequence: activeStage.sequence },
 			timeRequest: { kind: "policy_clock_out" },
 			breakPolicySnapshot: ordinaryBreakPolicySnapshot,
+			surchargeSnapshot: ordinarySurchargeSnapshot,
 		});
 	});
 

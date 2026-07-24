@@ -62,6 +62,13 @@ const mockState = vi.hoisted(() => ({
 			resolution: "none" as const,
 		}),
 	),
+	resolveSurchargeSnapshot: vi.fn(
+		async (input: { endTime: { toString(): string } }) => ({
+			version: 1 as const,
+			evaluatedAt: input.endTime.toString(),
+			resolution: { kind: "none" as const },
+		}),
+	),
 	logger: {
 		info: vi.fn(),
 		warn: vi.fn(),
@@ -79,6 +86,17 @@ vi.mock(
 		>()),
 		resolvePolicyClockOutBreakSnapshotInTransaction:
 			mockState.resolveBreakPolicySnapshot,
+	}),
+);
+
+vi.mock(
+	"@/lib/time-tracking/policy-clock-out-surcharge-snapshot",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/time-tracking/policy-clock-out-surcharge-snapshot")
+		>()),
+		resolvePolicyClockOutSurchargeSnapshotInTransaction:
+			mockState.resolveSurchargeSnapshot,
 	}),
 );
 
@@ -374,6 +392,11 @@ function ordinarySubmissionSource(
 							evaluatedAt: `${date}T10:00:00Z`,
 							resolution: "none",
 						},
+						surchargeSnapshot: {
+							version: 1,
+							evaluatedAt: `${date}T10:00:00Z`,
+							resolution: { kind: "none" },
+						},
 					}
 				: {}),
 		},
@@ -469,6 +492,11 @@ function approvalRequestMetadata(
 						version: 1,
 						evaluatedAt: "2026-05-04T10:00:00Z",
 						resolution: "none",
+					},
+					surchargeSnapshot: {
+						version: 1,
+						evaluatedAt: "2026-05-04T10:00:00Z",
+						resolution: { kind: "none" },
 					},
 				}
 			: {}),

@@ -1,14 +1,136 @@
-import type { SQL } from "drizzle-orm";
-import { PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it, vi } from "vitest";
-import { reconcileSurchargeWorkPeriodsWithDatabase } from "./surcharge.service";
+import { parseInstant } from "@/lib/datetime/temporal-core";
+import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
+import {
+	evaluateSurchargeSnapshot,
+	reconcileSurchargeWorkPeriodsWithDatabase,
+} from "./surcharge.service";
+
+const surchargeSnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-19T10:00:00Z",
+	resolution: {
+		kind: "surcharge_model",
+		teamId: null,
+		assignmentId: "10000000-0000-4000-8000-000000000001",
+		assignmentType: "employee",
+		assignmentPriority: 2,
+		modelId: "20000000-0000-4000-8000-000000000001",
+		modelName: "Sunday",
+		rules: [
+			{
+				id: "30000000-0000-4000-8000-000000000001",
+				name: "Sunday 50%",
+				ruleType: "day_of_week",
+				percentage: "0.5000",
+				dayOfWeek: "sunday",
+				windowStartTime: null,
+				windowEndTime: null,
+				specificDate: null,
+				dateRangeStart: null,
+				dateRangeEnd: null,
+				priority: 1,
+				validFrom: null,
+				validUntil: null,
+			},
+		],
+	},
+} as const satisfies PolicyClockOutSurchargeSnapshot;
 
 const input = {
 	organizationId: "org-1",
 	employeeId: "employee-1",
 	surchargePeriodIds: ["period-1"],
 	staleSurchargePeriodIds: [],
+	surchargeSnapshot,
 };
+
+describe("evaluateSurchargeSnapshot", () => {
+	it("preserves minute max-wins behavior with explicit Temporal timezone", () => {
+		const result = evaluateSurchargeSnapshot({
+			snapshot: {
+				...surchargeSnapshot,
+				resolution: {
+					...surchargeSnapshot.resolution,
+					rules: [
+						{
+							...surchargeSnapshot.resolution.rules[0],
+							id: "30000000-0000-4000-8000-000000000002",
+							name: "Night 25%",
+							ruleType: "time_window",
+							percentage: "0.2500",
+							dayOfWeek: null,
+							windowStartTime: "22:00",
+							windowEndTime: "06:00",
+							priority: 2,
+						},
+						surchargeSnapshot.resolution.rules[0],
+					],
+				},
+			},
+			startTime: parseInstant("2026-07-19T22:00:00Z"),
+			endTime: parseInstant("2026-07-19T23:00:00Z"),
+			timeZone: "UTC",
+		});
+
+		expect(result).toMatchObject({
+			baseMinutes: 60,
+			qualifyingMinutes: 60,
+			surchargeMinutes: 30,
+		});
+		expect(result.appliedRules).toEqual([
+			expect.objectContaining({
+				ruleId: surchargeSnapshot.resolution.rules[0].id,
+				qualifyingMinutes: 60,
+			}),
+		]);
+	});
+
+	it("uses date ranges and validity instants without native Date arithmetic", () => {
+		const result = evaluateSurchargeSnapshot({
+			snapshot: {
+				...surchargeSnapshot,
+				resolution: {
+					...surchargeSnapshot.resolution,
+					rules: [
+						{
+							...surchargeSnapshot.resolution.rules[0],
+							name: "Summer",
+							ruleType: "date_based",
+							dayOfWeek: null,
+							dateRangeStart: "2026-07-01",
+							dateRangeEnd: "2026-07-31",
+							validFrom: "2026-07-19T08:30:00Z",
+						},
+					],
+				},
+			},
+			startTime: parseInstant("2026-07-19T08:00:00Z"),
+			endTime: parseInstant("2026-07-19T10:00:00Z"),
+			timeZone: "UTC",
+		});
+
+		expect(result).toMatchObject({
+			qualifyingMinutes: 90,
+			surchargeMinutes: 45,
+		});
+	});
+
+	it("returns zero evidence for a stored none resolution", () => {
+		expect(
+			evaluateSurchargeSnapshot({
+				snapshot: {
+					version: 1,
+					evaluatedAt: "2026-07-19T10:00:00Z",
+					resolution: { kind: "none" },
+				},
+				startTime: parseInstant("2026-07-19T08:00:00Z"),
+				endTime: parseInstant("2026-07-19T10:00:00Z"),
+				timeZone: "UTC",
+			}),
+		).toMatchObject({ qualifyingMinutes: 0, surchargeMinutes: 0 });
+	});
+});
 
 function assignmentFixture(input?: {
 	id?: string;
@@ -67,6 +189,16 @@ function database(options?: {
 		startTime: new Date("2026-07-19T08:00:00Z"),
 		endTime: new Date("2026-07-19T10:00:00Z"),
 		approvalStatus: "approved",
+		clockIn: {
+			timestamp: new Date("2026-07-19T08:00:00Z"),
+			timezone: "UTC",
+			utcOffsetMinutes: 0,
+		},
+		clockOut: {
+			timestamp: new Date("2026-07-19T10:00:00Z"),
+			timezone: "UTC",
+			utcOffsetMinutes: 0,
+		},
 	};
 	const assignment =
 		options?.model === undefined ? assignmentFixture() : options.model;
@@ -153,177 +285,33 @@ describe("reconcileSurchargeWorkPeriodsWithDatabase", () => {
 		]);
 	});
 
-	it("leaves the replaced row deleted when recalculation is zero", async () => {
-		const fake = database({ model: null });
-
-		await reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, input);
-
-		expect(fake.tx.delete).toHaveBeenCalledOnce();
-		expect(fake.inserts).toEqual([]);
-	});
-
-	it("selects historical assignment applicability at the completed period end", async () => {
+	it("evaluates only stored evidence without assignment or organization configuration reads", async () => {
 		const fake = database();
-
 		await reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, input);
 
-		const dialect = new PgDialect();
-		const assignmentQueries = fake.assignmentQueries.map((query) =>
-			dialect.sqlToQuery(query.where as SQL),
-		);
-		const effectiveInstants = assignmentQueries.flatMap(({ params }) =>
-			params.filter(
-				(value): value is string =>
-					typeof value === "string" && value.startsWith("2026-07-19T10:00:00"),
-			),
-		);
-		expect(effectiveInstants).toEqual([
-			"2026-07-19T10:00:00.000Z",
-			"2026-07-19T10:00:00.000Z",
-		]);
-		expect(assignmentQueries.map(({ sql }) => sql).join("\n")).not.toContain(
-			'"is_active"',
-		);
-		expect(fake.assignmentQueries).toEqual([
-			expect.objectContaining({ limit: 2 }),
-		]);
+		expect(
+			fake.tx.query.surchargeModelAssignment.findMany,
+		).not.toHaveBeenCalled();
+		expect(fake.tx.query.organization.findFirst).not.toHaveBeenCalled();
 	});
 
-	it.each([
-		["retired first", false],
-		["replacement first", true],
-	] as const)("rejects overlapping employee history with %s", async (_label, reverse) => {
-		const retired = assignmentFixture({
-			id: "assignment-retired",
-			isActive: false,
-			effectiveFrom: new Date("2026-01-01T00:00:00Z"),
-			effectiveUntil: null,
-			modelId: "model-retired",
-		});
-		const replacement = assignmentFixture({
-			id: "assignment-replacement",
-			effectiveFrom: new Date("2026-07-01T00:00:00Z"),
-			effectiveUntil: null,
-			modelId: "model-replacement",
-		});
-		const rows = reverse ? [replacement, retired] : [retired, replacement];
-		const fake = database({ assignmentScopes: [rows] });
+	it("deletes stale calculations and creates none from stored none after a later assignment", async () => {
+		const fake = database({ model: assignmentFixture({ modelId: "later" }) });
 
-		await expect(
-			reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, input),
-		).rejects.toThrow("Surcharge reconciliation failed");
-
-		expect(fake.assignmentQueries).toEqual([
-			expect.objectContaining({ limit: 2 }),
-		]);
-		expect(fake.inserts).toEqual([]);
-		expect(fake.calculations).toEqual([{ id: "stale" }]);
-	});
-
-	it.each([
-		"team",
-		"organization",
-	] as const)("rejects ambiguous %s assignment history", async (scope) => {
-		const rows = [
-			assignmentFixture({ id: `${scope}-1`, modelId: `${scope}-model-1` }),
-			assignmentFixture({ id: `${scope}-2`, modelId: `${scope}-model-2` }),
-		];
-		const fake = database({
-			teamId: scope === "team" ? "team-1" : null,
-			assignmentScopes: [[], rows],
-		});
-
-		await expect(
-			reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, input),
-		).rejects.toThrow("Surcharge reconciliation failed");
-		expect(fake.assignmentQueries).toHaveLength(2);
-		expect(fake.assignmentQueries).toEqual([
-			expect.objectContaining({ limit: 2 }),
-			expect.objectContaining({ limit: 2 }),
-		]);
-		expect(fake.calculations).toEqual([{ id: "stale" }]);
-	});
-
-	it("selects the one nonoverlapping historical replacement regardless current active state", async () => {
-		const historical = assignmentFixture({
-			id: "assignment-historical",
-			isActive: false,
-			effectiveFrom: new Date("2026-01-01T00:00:00Z"),
-			effectiveUntil: new Date("2026-07-19T10:00:00Z"),
-			modelId: "model-historical",
-		});
-		const fake = database({ assignmentScopes: [[historical]] });
-
-		await reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, input);
-
-		expect(fake.inserts).toEqual([
-			expect.objectContaining({ surchargeModelId: "model-historical" }),
-		]);
-	});
-
-	it("falls through employee to team and does not query lower organization scope", async () => {
-		const team = assignmentFixture({
-			id: "assignment-team",
-			modelId: "model-team",
-		});
-		const organization = assignmentFixture({
-			id: "assignment-organization",
-			modelId: "model-organization",
-		});
-		const fake = database({
-			teamId: "team-1",
-			assignmentScopes: [[], [team], [organization]],
-		});
-
-		await reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, input);
-
-		expect(fake.assignmentQueries).toHaveLength(2);
-		expect(fake.assignmentQueries).toEqual([
-			expect.objectContaining({ limit: 2 }),
-			expect.objectContaining({ limit: 2 }),
-		]);
-		expect(fake.inserts).toEqual([
-			expect.objectContaining({ surchargeModelId: "model-team" }),
-		]);
-	});
-
-	it("falls through empty employee and team scopes to organization", async () => {
-		const organization = assignmentFixture({
-			id: "assignment-organization",
-			modelId: "model-organization",
-		});
-		const fake = database({
-			teamId: "team-1",
-			assignmentScopes: [[], [], [organization]],
-		});
-
-		await reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, input);
-
-		expect(fake.assignmentQueries).toHaveLength(3);
-		expect(fake.inserts).toEqual([
-			expect.objectContaining({ surchargeModelId: "model-organization" }),
-		]);
-	});
-
-	it("fails closed for a foreign joined model after entering the reconciliation transaction", async () => {
-		const fake = database({
-			model: {
-				id: "assignment-1",
-				organizationId: "org-1",
-				model: {
-					id: "model-foreign",
-					organizationId: "org-2",
-					isActive: true,
-					rules: [],
-				},
+		await reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, {
+			...input,
+			surchargeSnapshot: {
+				version: 1,
+				evaluatedAt: surchargeSnapshot.evaluatedAt,
+				resolution: { kind: "none" },
 			},
 		});
 
-		await expect(
-			reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, input),
-		).rejects.toThrow("Surcharge reconciliation failed");
 		expect(fake.tx.delete).toHaveBeenCalledOnce();
-		expect(fake.tx.insert).not.toHaveBeenCalled();
+		expect(fake.inserts).toEqual([]);
+		expect(
+			fake.tx.query.surchargeModelAssignment.findMany,
+		).not.toHaveBeenCalled();
 	});
 
 	it("retains the internal reconciliation failure as the generic error cause", async () => {

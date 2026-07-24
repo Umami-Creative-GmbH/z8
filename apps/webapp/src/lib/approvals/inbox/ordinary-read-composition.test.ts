@@ -65,6 +65,11 @@ const breakPolicySnapshot = {
 	evaluatedAt: "2026-07-20T14:00:00Z",
 	resolution: "none",
 } as const;
+const surchargeSnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-20T14:00:00Z",
+	resolution: { kind: "none" },
+} as const;
 
 function compatibilityMetadata(
 	mode: RolloutMode,
@@ -76,12 +81,16 @@ function compatibilityMetadata(
 			workflow: { id: workflowId, organizationId },
 			stage: { id: stageId, sequence: 2 },
 			timeRequest: { kind },
-			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+			...(kind === "policy_clock_out"
+				? { breakPolicySnapshot, surchargeSnapshot }
+				: {}),
 		};
 	}
 	return {
 		timeRequest: { kind },
-		...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+		...(kind === "policy_clock_out"
+			? { breakPolicySnapshot, surchargeSnapshot }
+			: {}),
 	};
 }
 
@@ -129,6 +138,7 @@ function fixture(mode: RolloutMode, kind: OrdinaryWorkPeriodApprovalKind) {
 						isNewClockOut: true,
 						privateNote: "private pending changes",
 						breakPolicySnapshot,
+						surchargeSnapshot,
 					},
 		clockInId: "50000000-0000-4000-8000-000000000001",
 		clockOutId: "50000000-0000-4000-8000-000000000002",
@@ -192,7 +202,9 @@ async function canonicalProjection(kind: OrdinaryWorkPeriodApprovalKind) {
 		policySnapshot: {},
 		contextSnapshot: {
 			timeRequest: { kind },
-			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+			...(kind === "policy_clock_out"
+				? { breakPolicySnapshot, surchargeSnapshot }
+				: {}),
 		},
 		displaySnapshot: {},
 		submittedAt,
@@ -238,7 +250,9 @@ async function canonicalProjection(kind: OrdinaryWorkPeriodApprovalKind) {
 			durationMinutes: 480,
 			payload: {
 				timeRequest: { kind },
-				...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+				...(kind === "policy_clock_out"
+					? { breakPolicySnapshot, surchargeSnapshot }
+					: {}),
 			},
 			pendingChanges: { privateNote: "private pending changes" },
 		},
@@ -386,7 +400,9 @@ describe.each([
 			currentStageOrder: 2,
 			contextSnapshot: {
 				timeRequest: { kind },
-				...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+				...(kind === "policy_clock_out"
+					? { breakPolicySnapshot, surchargeSnapshot }
+					: {}),
 			},
 			submittedAt: new Date("2026-07-20T14:05:00Z"),
 			requester: period.employee,

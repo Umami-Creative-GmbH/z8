@@ -79,6 +79,7 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"reconciles stale surcharge and clean balance for terminal split/no-split/reject in %s mode",
 			"rolls back surcharge reconciliation atomically with terminal maintenance",
 			"replays terminal maintenance without duplicate surcharge or balance writes",
+			"uses submitted surcharge evidence after delayed model mutation in %s mode",
 			"preserves unmarked historical policy $action with auto-adjusted=$autoAdjusted",
 			"pages past malformed canonical policy evidence with exact list and count",
 		] as const) {
@@ -224,6 +225,37 @@ const ids = {
 } as const;
 
 const modes = ["legacy", "shadow", "ready", "canonical", "complete"] as const;
+
+const surchargeSnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-22T16:00:00Z",
+	resolution: {
+		kind: "surcharge_model",
+		teamId: null,
+		assignmentId: ids.surchargeAssignment,
+		assignmentType: "employee",
+		assignmentPriority: 2,
+		modelId: ids.surchargeModel,
+		modelName: "Task 15 Wednesday",
+		rules: [
+			{
+				id: ids.surchargeRule,
+				name: "Task 15 Wednesday 50%",
+				ruleType: "day_of_week",
+				percentage: "0.5000",
+				dayOfWeek: "wednesday",
+				windowStartTime: null,
+				windowEndTime: null,
+				specificDate: null,
+				dateRangeStart: null,
+				dateRangeEnd: null,
+				priority: 1,
+				validFrom: null,
+				validUntil: null,
+			},
+		],
+	},
+} as const;
 
 function dbService(db: unknown): ApprovalDbService {
 	return {
@@ -537,6 +569,7 @@ describeIntegration(
 												evaluatedAt: "2026-07-22T16:00:00Z",
 												resolution: "none",
 											},
+									surchargeSnapshot,
 								},
 					),
 					timestamp,
@@ -930,8 +963,12 @@ describeIntegration(
 		async function assertSubmittedBreakSnapshotParity(
 			mode: (typeof modes)[number],
 		) {
-			const source = await pool.query<{ break_snapshot: unknown }>(
-				`select pending_changes::jsonb -> 'breakPolicySnapshot' as break_snapshot
+			const source = await pool.query<{
+				break_snapshot: unknown;
+				surcharge_snapshot: unknown;
+			}>(
+				`select pending_changes::jsonb -> 'breakPolicySnapshot' as break_snapshot,
+				 pending_changes::jsonb -> 'surchargeSnapshot' as surcharge_snapshot
 				 from work_period where id = $1 and organization_id = $2`,
 				[ids.period, ids.organization],
 			);
@@ -942,8 +979,13 @@ describeIntegration(
 				policy: { id: ids.policy, name: "Task 11 break" },
 				regulationEnabled: true,
 			});
-			const requests = await pool.query<{ break_snapshot: unknown }>(
-				`select metadata -> 'breakPolicySnapshot' as break_snapshot
+			expect(source.rows[0]?.surcharge_snapshot).toEqual(surchargeSnapshot);
+			const requests = await pool.query<{
+				break_snapshot: unknown;
+				surcharge_snapshot: unknown;
+			}>(
+				`select metadata -> 'breakPolicySnapshot' as break_snapshot,
+				 metadata -> 'surchargeSnapshot' as surcharge_snapshot
 				 from approval_request
 				 where organization_id = $1 and entity_type = 'time_entry' and entity_id = $2`,
 				[ids.organization, ids.period],
@@ -951,9 +993,14 @@ describeIntegration(
 			expect(requests.rows.length).toBe(mode === "complete" ? 0 : 1);
 			for (const request of requests.rows) {
 				expect(request.break_snapshot).toEqual(expected);
+				expect(request.surcharge_snapshot).toEqual(surchargeSnapshot);
 			}
-			const workflows = await pool.query<{ break_snapshot: unknown }>(
-				`select context_snapshot -> 'breakPolicySnapshot' as break_snapshot
+			const workflows = await pool.query<{
+				break_snapshot: unknown;
+				surcharge_snapshot: unknown;
+			}>(
+				`select context_snapshot -> 'breakPolicySnapshot' as break_snapshot,
+				 context_snapshot -> 'surchargeSnapshot' as surcharge_snapshot
 				 from approval_workflow
 				 where organization_id = $1 and source_type = 'time_entry' and source_id = $2`,
 				[ids.organization, ids.period],
@@ -961,6 +1008,7 @@ describeIntegration(
 			expect(workflows.rows.length).toBe(mode === "legacy" ? 0 : 1);
 			for (const workflow of workflows.rows) {
 				expect(workflow.break_snapshot).toEqual(expected);
+				expect(workflow.surcharge_snapshot).toEqual(surchargeSnapshot);
 			}
 			return expected;
 		}
@@ -973,14 +1021,24 @@ describeIntegration(
 				evaluatedAt: "2026-07-22T16:00:00Z",
 				resolution: "none",
 			};
-			const source = await pool.query<{ break_snapshot: unknown }>(
-				`select pending_changes::jsonb -> 'breakPolicySnapshot' as break_snapshot
+			const source = await pool.query<{
+				break_snapshot: unknown;
+				surcharge_snapshot: unknown;
+			}>(
+				`select pending_changes::jsonb -> 'breakPolicySnapshot' as break_snapshot,
+				 pending_changes::jsonb -> 'surchargeSnapshot' as surcharge_snapshot
 				 from work_period where id = $1 and organization_id = $2`,
 				[ids.period, ids.organization],
 			);
-			expect(source.rows).toEqual([{ break_snapshot: expected }]);
-			const requests = await pool.query<{ break_snapshot: unknown }>(
-				`select metadata -> 'breakPolicySnapshot' as break_snapshot
+			expect(source.rows).toEqual([
+				{ break_snapshot: expected, surcharge_snapshot: surchargeSnapshot },
+			]);
+			const requests = await pool.query<{
+				break_snapshot: unknown;
+				surcharge_snapshot: unknown;
+			}>(
+				`select metadata -> 'breakPolicySnapshot' as break_snapshot,
+				 metadata -> 'surchargeSnapshot' as surcharge_snapshot
 				 from approval_request
 				 where organization_id = $1 and entity_type = 'time_entry' and entity_id = $2`,
 				[ids.organization, ids.period],
@@ -1036,16 +1094,26 @@ describeIntegration(
 				[ids.organization, ids.period],
 			);
 			expect(requests.rows).toEqual([
-				{ break_snapshot: input.expectedSnapshot },
+				{
+					break_snapshot: input.expectedSnapshot,
+					surcharge_snapshot: surchargeSnapshot,
+				},
 			]);
-			const workflows = await pool.query<{ break_snapshot: unknown }>(
-				`select context_snapshot -> 'breakPolicySnapshot' as break_snapshot
+			const workflows = await pool.query<{
+				break_snapshot: unknown;
+				surcharge_snapshot: unknown;
+			}>(
+				`select context_snapshot -> 'breakPolicySnapshot' as break_snapshot,
+				 context_snapshot -> 'surchargeSnapshot' as surcharge_snapshot
 				 from approval_workflow
 				 where organization_id = $1 and source_type = 'time_entry' and source_id = $2`,
 				[ids.organization, ids.period],
 			);
 			expect(workflows.rows).toEqual([
-				{ break_snapshot: input.expectedSnapshot },
+				{
+					break_snapshot: input.expectedSnapshot,
+					surcharge_snapshot: surchargeSnapshot,
+				},
 			]);
 		}
 
@@ -2949,7 +3017,7 @@ describeIntegration(
 				},
 				{
 					name: "no-split",
-					kind: "manual_time_submission" as const,
+					kind: "policy_clock_out" as const,
 					split: false,
 					action: "approve" as const,
 				},
@@ -3185,22 +3253,36 @@ describeIntegration(
 			).toHaveLength(1);
 		});
 
-		it("uses the period-time surcharge assignment after delayed approval and current deactivation", async () => {
-			await seed("manual_time_submission", false, "canonical");
+		it.each(
+			modes,
+		)("uses submitted surcharge evidence after delayed model mutation in %s mode", async (mode) => {
+			await seed("policy_clock_out", false, mode);
 			await seedMaintenanceState();
-			const target = (await submit("manual_time_submission")).result
+			const target = (await submit("policy_clock_out")).result
 				.approvalRequestId;
 			await pool.query(
 				`update surcharge_model_assignment
-				 set effective_from = $1, effective_until = $2, is_active = false, updated_at = $3
-				 where id = $4 and organization_id = $5`,
+					 set is_active = false, updated_at = $1
+					 where id = $2 and organization_id = $3`,
 				[
-					startTime,
-					endTime,
 					new Date(now.epochMilliseconds),
 					ids.surchargeAssignment,
 					ids.organization,
 				],
+			);
+			await pool.query(
+				"update surcharge_model set is_active = false, name = 'mutated' where id = $1 and organization_id = $2",
+				[ids.surchargeModel, ids.organization],
+			);
+			await pool.query(
+				`update surcharge_rule
+					 set is_active = false, percentage = 9.0000, name = 'mutated'
+					 where id = $1 and model_id = $2`,
+				[ids.surchargeRule, ids.surchargeModel],
+			);
+			await pool.query(
+				"update employee set team_id = $1 where id = $2 and organization_id = $3",
+				[ids.changedTeam, ids.requester, ids.organization],
 			);
 
 			const completed = await completeDecision(target, {
@@ -3224,10 +3306,10 @@ describeIntegration(
 			]);
 		});
 
-		it("rolls back stale surcharge deletion for a foreign joined model", async () => {
-			await seed("manual_time_submission", false, "canonical");
+		it("does not re-read a foreign-mutated model during terminal surcharge evaluation", async () => {
+			await seed("policy_clock_out", false, "canonical");
 			await seedMaintenanceState();
-			const target = (await submit("manual_time_submission")).result
+			const target = (await submit("policy_clock_out")).result
 				.approvalRequestId;
 			await pool.query(
 				"update surcharge_model set organization_id = $1 where id = $2 and organization_id = $3",
@@ -3240,7 +3322,7 @@ describeIntegration(
 			});
 
 			expect(completed.execution.result.action).toBe("approve");
-			expect(completed.maintenanceErrors).toHaveLength(1);
+			expect(completed.maintenanceErrors).toEqual([]);
 			const state = await maintenanceSnapshot();
 			expect(
 				state.calculations.filter(
@@ -3248,17 +3330,17 @@ describeIntegration(
 				),
 			).toEqual([
 				expect.objectContaining({
-					id: ids.staleSurchargeCalculation,
 					work_period_id: ids.period,
-					base_minutes: 999,
+					base_minutes: 480,
+					surcharge_minutes: 240,
 				}),
 			]);
 		});
 
-		it("rolls back stale surcharge deletion for ambiguous historical assignments", async () => {
-			await seed("manual_time_submission", false, "canonical");
+		it("does not re-resolve ambiguous assignments during terminal surcharge evaluation", async () => {
+			await seed("policy_clock_out", false, "canonical");
 			await seedMaintenanceState();
-			const target = (await submit("manual_time_submission")).result
+			const target = (await submit("policy_clock_out")).result
 				.approvalRequestId;
 			const timestamp = new Date(now.epochMilliseconds);
 			await pool.query(
@@ -3284,7 +3366,7 @@ describeIntegration(
 			});
 
 			expect(completed.execution.result.action).toBe("approve");
-			expect(completed.maintenanceErrors).toHaveLength(1);
+			expect(completed.maintenanceErrors).toEqual([]);
 			const state = await maintenanceSnapshot();
 			expect(
 				state.calculations.filter(
@@ -3292,9 +3374,9 @@ describeIntegration(
 				),
 			).toEqual([
 				expect.objectContaining({
-					id: ids.staleSurchargeCalculation,
 					work_period_id: ids.period,
-					base_minutes: 999,
+					base_minutes: 480,
+					surcharge_minutes: 240,
 				}),
 			]);
 		});

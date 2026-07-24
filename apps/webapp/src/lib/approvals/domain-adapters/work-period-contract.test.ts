@@ -15,6 +15,11 @@ describe("ordinary work-period workflow contract", () => {
 		evaluatedAt: "2026-03-29T08:01:00Z",
 		resolution: "none",
 	} as const;
+	const surchargeSnapshot = {
+		version: 1,
+		evaluatedAt: "2026-03-29T08:01:00Z",
+		resolution: { kind: "none" },
+	} as const;
 	it("keeps the adapter and runtime independent of server modules", () => {
 		for (const relativePath of [
 			"src/lib/approvals/domain-adapters/work-period.adapter.ts",
@@ -55,10 +60,16 @@ describe("ordinary work-period workflow contract", () => {
 		expect(JSON.stringify(parsed)).toBe(`{"timeRequest":{"kind":"${kind}"}}`);
 	});
 
-	it("rejects policy clock-out context without immutable break evidence", () => {
+	it("rejects policy clock-out context without both immutable policy snapshots", () => {
 		expect(() =>
 			parseOrdinaryWorkPeriodWorkflowPayload(
 				{ timeRequest: { kind: "policy_clock_out" } },
+				"policy_clock_out",
+			),
+		).toThrow("Ordinary work-period workflow payload is invalid");
+		expect(() =>
+			parseOrdinaryWorkPeriodWorkflowPayload(
+				{ timeRequest: { kind: "policy_clock_out" }, breakPolicySnapshot },
 				"policy_clock_out",
 			),
 		).toThrow("Ordinary work-period workflow payload is invalid");
@@ -87,6 +98,7 @@ describe("ordinary work-period workflow contract", () => {
 			{
 				timeRequest: { kind: "policy_clock_out" },
 				breakPolicySnapshot,
+				surchargeSnapshot,
 			},
 			"policy_clock_out",
 		);
@@ -94,8 +106,11 @@ describe("ordinary work-period workflow contract", () => {
 		expect(parsed).toEqual({
 			timeRequest: { kind: "policy_clock_out" },
 			breakPolicySnapshot,
+			surchargeSnapshot,
 		});
 		expect(Object.isFrozen(parsed.breakPolicySnapshot)).toBe(true);
+		expect(Object.isFrozen(parsed.surchargeSnapshot)).toBe(true);
+		expect(Object.isFrozen(parsed.surchargeSnapshot?.resolution)).toBe(true);
 	});
 
 	it("rejects snapshot evidence for manual submissions", () => {

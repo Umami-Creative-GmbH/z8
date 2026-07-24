@@ -4,6 +4,10 @@ import {
 	type PolicyClockOutBreakSnapshot,
 	parsePolicyClockOutBreakSnapshot,
 } from "@/lib/time-tracking/policy-clock-out-break-snapshot";
+import {
+	type PolicyClockOutSurchargeSnapshot,
+	parsePolicyClockOutSurchargeSnapshot,
+} from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import type { ApprovalDbService } from "../workflow/ports";
 
 export const ORDINARY_WORK_PERIOD_APPROVAL_KINDS = [
@@ -17,6 +21,7 @@ export type OrdinaryWorkPeriodApprovalKind =
 export interface OrdinaryWorkPeriodWorkflowPayload {
 	timeRequest: { kind: OrdinaryWorkPeriodApprovalKind };
 	breakPolicySnapshot?: PolicyClockOutBreakSnapshot;
+	surchargeSnapshot?: PolicyClockOutSurchargeSnapshot;
 }
 
 export interface OrdinaryWorkPeriodApprovalSource {
@@ -54,6 +59,7 @@ export interface WorkPeriodMaintenanceFacts {
 	decision: "approved" | "rejected";
 	surchargePeriodIds: string[];
 	staleSurchargePeriodIds: string[];
+	surchargeSnapshot: PolicyClockOutSurchargeSnapshot | null;
 }
 
 export type OrdinaryWorkPeriodFinalizerDatabase =
@@ -195,13 +201,16 @@ export function parseOrdinaryWorkPeriodWorkflowPayload(
 		const hasSnapshot = kind === "policy_clock_out";
 		const root = readExactDataProperties(
 			value,
-			hasSnapshot ? ["timeRequest", "breakPolicySnapshot"] : ["timeRequest"],
+			hasSnapshot
+				? ["timeRequest", "breakPolicySnapshot", "surchargeSnapshot"]
+				: ["timeRequest"],
 		);
 		const normalizedRequest = Object.freeze({ kind });
 		if (!hasSnapshot) {
 			return Object.freeze({ timeRequest: normalizedRequest });
 		}
 		const snapshotInput = root.breakPolicySnapshot;
+		const surchargeInput = root.surchargeSnapshot;
 		const evaluatedAtDescriptor =
 			typeof snapshotInput === "object" && snapshotInput !== null
 				? Object.getOwnPropertyDescriptor(snapshotInput, "evaluatedAt")
@@ -213,10 +222,25 @@ export function parseOrdinaryWorkPeriodWorkflowPayload(
 		) {
 			throw new Error("Ordinary work-period workflow payload is invalid");
 		}
+		const surchargeEvaluatedAtDescriptor =
+			typeof surchargeInput === "object" && surchargeInput !== null
+				? Object.getOwnPropertyDescriptor(surchargeInput, "evaluatedAt")
+				: undefined;
+		if (
+			!surchargeEvaluatedAtDescriptor?.enumerable ||
+			!("value" in surchargeEvaluatedAtDescriptor) ||
+			surchargeEvaluatedAtDescriptor.value !== evaluatedAtDescriptor.value
+		) {
+			throw new Error("Ordinary work-period workflow payload is invalid");
+		}
 		return Object.freeze({
 			timeRequest: normalizedRequest,
 			breakPolicySnapshot: parsePolicyClockOutBreakSnapshot(
 				snapshotInput,
+				evaluatedAtDescriptor.value,
+			),
+			surchargeSnapshot: parsePolicyClockOutSurchargeSnapshot(
+				surchargeInput,
 				evaluatedAtDescriptor.value,
 			),
 		});

@@ -11,12 +11,16 @@ import {
 	BreakEnforcementServiceLive,
 } from "@/lib/effect/services/break-enforcement.service";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
-import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/surcharge.service";
+import {
+	SurchargeService,
+	SurchargeServiceLive,
+} from "@/lib/effect/services/surcharge.service";
 import {
 	type ComplianceWarning,
 	WorkPolicyService,
 	WorkPolicyServiceLive,
 } from "@/lib/effect/services/work-policy.service";
+import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import { getTimeSummary } from "./queries";
 import { logger } from "./shared";
@@ -25,7 +29,8 @@ export async function calculateBreaksTakenToday(
 	employeeId: string,
 	timezone: string = "UTC",
 ): Promise<number> {
-	const { start: todayStartDateTime, end: todayEndDateTime } = getTodayRangeInTimezone(timezone);
+	const { start: todayStartDateTime, end: todayEndDateTime } =
+		getTodayRangeInTimezone(timezone);
 	const todayStart = dateToDB(todayStartDateTime)!;
 	const todayEnd = dateToDB(todayEndDateTime)!;
 
@@ -45,7 +50,9 @@ export async function calculateBreaksTakenToday(
 		const nextStart = workPeriods[index + 1].startTime;
 
 		if (currentEnd && nextStart) {
-			const gapMinutes = Math.floor((nextStart.getTime() - currentEnd.getTime()) / 60_000);
+			const gapMinutes = Math.floor(
+				(nextStart.getTime() - currentEnd.getTime()) / 60_000,
+			);
 			if (gapMinutes > 1) {
 				totalBreakMinutes += gapMinutes;
 			}
@@ -81,7 +88,9 @@ export async function checkComplianceAfterClockOut(
 			);
 
 			if (result.warnings.length > 0) {
-				const effectivePolicy = yield* _(workPolicyService.getEffectivePolicy(employeeId));
+				const effectivePolicy = yield* _(
+					workPolicyService.getEffectivePolicy(employeeId),
+				);
 				if (effectivePolicy?.regulation) {
 					for (const warning of result.warnings) {
 						if (warning.severity === "violation") {
@@ -106,7 +115,10 @@ export async function checkComplianceAfterClockOut(
 			}
 
 			return result.warnings;
-		}).pipe(Effect.provide(WorkPolicyServiceLive), Effect.provide(DatabaseServiceLive));
+		}).pipe(
+			Effect.provide(WorkPolicyServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
 
 		return await Effect.runPromise(complianceEffect);
 	} catch (error) {
@@ -118,22 +130,46 @@ export async function checkComplianceAfterClockOut(
 export async function calculateAndPersistSurcharges(
 	workPeriodId: string,
 	organizationId: string,
+	immutableEvidence?: {
+		employeeId: string;
+		snapshot: PolicyClockOutSurchargeSnapshot;
+	},
 ): Promise<void> {
 	try {
 		const surchargeEffect = Effect.gen(function* (_) {
 			const surchargeService = yield* _(SurchargeService);
-			const isEnabled = yield* _(surchargeService.isSurchargesEnabled(organizationId));
+			const isEnabled = yield* _(
+				surchargeService.isSurchargesEnabled(organizationId),
+			);
 
 			if (!isEnabled) {
 				return;
 			}
+			if (immutableEvidence) {
+				yield* _(
+					surchargeService.reconcileWorkPeriods({
+						organizationId,
+						employeeId: immutableEvidence.employeeId,
+						surchargePeriodIds: [workPeriodId],
+						staleSurchargePeriodIds: [],
+						surchargeSnapshot: immutableEvidence.snapshot,
+					}),
+				);
+				return;
+			}
 
 			yield* _(surchargeService.persistSurchargeCalculation(workPeriodId));
-		}).pipe(Effect.provide(SurchargeServiceLive), Effect.provide(DatabaseServiceLive));
+		}).pipe(
+			Effect.provide(SurchargeServiceLive),
+			Effect.provide(DatabaseServiceLive),
+		);
 
 		await Effect.runPromise(surchargeEffect);
 	} catch (error) {
-		logger.error({ error, workPeriodId }, "Failed to calculate surcharges after clock-out");
+		logger.error(
+			{ error, workPeriodId },
+			"Failed to calculate surcharges after clock-out",
+		);
 	}
 }
 

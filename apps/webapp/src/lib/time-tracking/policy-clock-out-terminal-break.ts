@@ -14,6 +14,7 @@ import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import { calculateHash } from "./blockchain";
 import { calculateBreakDeficit } from "./break-policy-calculation";
 import type { PolicyClockOutBreakSnapshot } from "./policy-clock-out-break-snapshot";
+import type { PolicyClockOutSurchargeSnapshot } from "./policy-clock-out-surcharge-snapshot";
 import {
 	isValidIanaTimezone,
 	resolveFallbackTimezoneCapture,
@@ -45,6 +46,7 @@ export interface EnforcePolicyClockOutTerminalBreakInput {
 	period: PolicyClockOutTerminalPeriodSnapshot;
 	adjustedAt: Instant;
 	breakPolicySnapshot: PolicyClockOutBreakSnapshot;
+	surchargeSnapshot: PolicyClockOutSurchargeSnapshot;
 }
 
 export type PolicyClockOutTerminalBreakResult =
@@ -310,6 +312,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 		decision: "approved",
 		surchargePeriodIds,
 		staleSurchargePeriodIds: [],
+		surchargeSnapshot: input.surchargeSnapshot,
 	});
 
 	if (input.breakPolicySnapshot.resolution === "none") {

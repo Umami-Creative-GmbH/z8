@@ -39,6 +39,12 @@ import {
 	policyClockOutBreakSnapshotFromPendingChanges,
 	policyClockOutBreakSnapshotsEqual,
 } from "@/lib/time-tracking/policy-clock-out-break-snapshot";
+import {
+	type PolicyClockOutSurchargeSnapshot,
+	parsePolicyClockOutSurchargeSnapshot,
+	policyClockOutSurchargeSnapshotFromPendingChanges,
+	policyClockOutSurchargeSnapshotsEqual,
+} from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import { applyPolicyClockOutTerminalBreakInTransaction } from "@/lib/time-tracking/policy-clock-out-terminal-break";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import type { ApprovalActionOptions } from "../domain/types";
@@ -102,6 +108,9 @@ function exactDecisionMetadata(value: unknown): {
 		timeRequest: root.timeRequest,
 		...(Object.hasOwn(root, "breakPolicySnapshot")
 			? { breakPolicySnapshot: root.breakPolicySnapshot }
+			: {}),
+		...(Object.hasOwn(root, "surchargeSnapshot")
+			? { surchargeSnapshot: root.surchargeSnapshot }
 			: {}),
 	});
 	const workflow = root.workflow;
@@ -193,6 +202,7 @@ function exactMaintenanceFacts(
 		"decision",
 		"surchargePeriodIds",
 		"staleSurchargePeriodIds",
+		"surchargeSnapshot",
 	]);
 	if (
 		facts.organizationId !== expected.organizationId ||
@@ -209,8 +219,6 @@ function exactMaintenanceFacts(
 			facts.surchargePeriodIds.length ||
 		new Set(facts.staleSurchargePeriodIds).size !==
 			facts.staleSurchargePeriodIds.length ||
-		(expected.decision === "approved" &&
-			facts.surchargePeriodIds.length === 0) ||
 		(expected.decision === "rejected" &&
 			(facts.surchargePeriodIds.length !== 0 ||
 				facts.staleSurchargePeriodIds.length === 0))
@@ -219,6 +227,14 @@ function exactMaintenanceFacts(
 	}
 	try {
 		parsePlainDate(facts.dirtyFromDate);
+		if (facts.surchargeSnapshot !== null) {
+			const snapshot = facts.surchargeSnapshot as { evaluatedAt?: unknown };
+			if (typeof snapshot.evaluatedAt !== "string") throw new Error();
+			parsePolicyClockOutSurchargeSnapshot(
+				facts.surchargeSnapshot,
+				snapshot.evaluatedAt,
+			);
+		}
 	} catch {
 		throw ordinaryWorkPeriodFinalizationConflict();
 	}
@@ -229,6 +245,13 @@ function exactMaintenanceFacts(
 		decision: facts.decision,
 		surchargePeriodIds: [...facts.surchargePeriodIds],
 		staleSurchargePeriodIds: [...facts.staleSurchargePeriodIds],
+		surchargeSnapshot:
+			facts.surchargeSnapshot === null
+				? null
+				: parsePolicyClockOutSurchargeSnapshot(
+						facts.surchargeSnapshot,
+						(facts.surchargeSnapshot as { evaluatedAt: string }).evaluatedAt,
+					),
 	};
 }
 
@@ -1121,12 +1144,31 @@ function validateOrdinaryRequestMetadata(
 		throw ordinaryWorkPeriodFinalizationConflict();
 	}
 	const hasSnapshot = snapshotDescriptor !== undefined;
-	if (input.kind === "policy_clock_out" && hasMarker && !hasSnapshot) {
+	const surchargeSnapshotDescriptor =
+		typeof metadata === "object" &&
+		metadata !== null &&
+		!Array.isArray(metadata)
+			? Object.getOwnPropertyDescriptor(metadata, "surchargeSnapshot")
+			: undefined;
+	if (
+		surchargeSnapshotDescriptor &&
+		(!surchargeSnapshotDescriptor.enumerable ||
+			!("value" in surchargeSnapshotDescriptor))
+	) {
+		throw ordinaryWorkPeriodFinalizationConflict();
+	}
+	const hasSurchargeSnapshot = surchargeSnapshotDescriptor !== undefined;
+	if (
+		input.kind === "policy_clock_out" &&
+		hasMarker &&
+		(!hasSnapshot || !hasSurchargeSnapshot)
+	) {
 		throw ordinaryWorkPeriodFinalizationConflict();
 	}
 	const expectedKeys = [
 		"timeRequest",
 		...(hasSnapshot ? ["breakPolicySnapshot"] : []),
+		...(hasSurchargeSnapshot ? ["surchargeSnapshot"] : []),
 		...(input.expectedApprovalWorkflowId !== null ? ["workflow"] : []),
 		...(hasMarker ? ["ordinarySubmission"] : []),
 		...(input.requesterAutoCompleted ? ["autoApproval"] : []),
@@ -1136,6 +1178,9 @@ function validateOrdinaryRequestMetadata(
 		{
 			timeRequest: root.timeRequest,
 			...(hasSnapshot ? { breakPolicySnapshot: root.breakPolicySnapshot } : {}),
+			...(hasSurchargeSnapshot
+				? { surchargeSnapshot: root.surchargeSnapshot }
+				: {}),
 		},
 		input.kind,
 	);
@@ -1242,12 +1287,18 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 	}
 	const evaluatedAt = instantToCanonicalString(instantFromDate(period.endTime));
 	let sourceBreakPolicySnapshot: PolicyClockOutBreakSnapshot | null = null;
+	let sourceSurchargeSnapshot: PolicyClockOutSurchargeSnapshot | null = null;
 	if (evidence.mode === "canonical" && input.kind === "policy_clock_out") {
 		try {
 			sourceBreakPolicySnapshot = policyClockOutBreakSnapshotFromPendingChanges(
 				period.pendingChanges,
 				evaluatedAt,
 			);
+			sourceSurchargeSnapshot =
+				policyClockOutSurchargeSnapshotFromPendingChanges(
+					period.pendingChanges,
+					evaluatedAt,
+				);
 		} catch {
 			throw fail();
 		}
@@ -1256,9 +1307,15 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 		evidence.mode === "canonical" &&
 		input.kind === "policy_clock_out" &&
 		(!evidence.payload.breakPolicySnapshot ||
+			!evidence.payload.surchargeSnapshot ||
 			!policyClockOutBreakSnapshotsEqual(
 				sourceBreakPolicySnapshot,
 				evidence.payload.breakPolicySnapshot,
+				evaluatedAt,
+			) ||
+			!policyClockOutSurchargeSnapshotsEqual(
+				sourceSurchargeSnapshot,
+				evidence.payload.surchargeSnapshot,
 				evaluatedAt,
 			))
 	) {
@@ -1347,9 +1404,14 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 			.toPlainDate()
 			.toString(),
 		decision: input.transition.kind === "approve" ? "approved" : "rejected",
-		surchargePeriodIds: input.transition.kind === "approve" ? [period.id] : [],
+		surchargePeriodIds:
+			input.transition.kind === "approve" && input.kind === "policy_clock_out"
+				? [period.id]
+				: [],
 		staleSurchargePeriodIds:
 			input.transition.kind === "reject" ? [period.id] : [],
+		surchargeSnapshot:
+			input.kind === "policy_clock_out" ? sourceSurchargeSnapshot : null,
 	};
 
 	const terminalStatus =
@@ -1449,18 +1511,35 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 								period.pendingChanges,
 								evaluatedAt,
 							);
+						sourceSurchargeSnapshot =
+							policyClockOutSurchargeSnapshotFromPendingChanges(
+								period.pendingChanges,
+								evaluatedAt,
+							);
 					} catch {
 						throw fail();
 					}
 					if (
 						!requestPayload.breakPolicySnapshot ||
+						!requestPayload.surchargeSnapshot ||
 						!policyClockOutBreakSnapshotsEqual(
 							sourceBreakPolicySnapshot,
 							requestPayload.breakPolicySnapshot,
 							evaluatedAt,
+						) ||
+						!policyClockOutSurchargeSnapshotsEqual(
+							sourceSurchargeSnapshot,
+							requestPayload.surchargeSnapshot,
+							evaluatedAt,
 						)
 					) {
 						throw fail();
+					}
+					if (maintenance) {
+						maintenance = {
+							...maintenance,
+							surchargeSnapshot: sourceSurchargeSnapshot,
+						};
 					}
 				}
 			}
@@ -1529,7 +1608,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 		input.transition.kind === "approve" &&
 		!historicalPolicyClockOut
 	) {
-		if (!sourceBreakPolicySnapshot) throw fail();
+		if (!sourceBreakPolicySnapshot || !sourceSurchargeSnapshot) throw fail();
 		const breakResult = await applyPolicyClockOutTerminalBreakInTransaction({
 			dbService: input.dbService,
 			organizationId: input.organizationId,
@@ -1552,6 +1631,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 			},
 			adjustedAt: input.finalizedAt,
 			breakPolicySnapshot: sourceBreakPolicySnapshot,
+			surchargeSnapshot: sourceSurchargeSnapshot,
 		});
 		maintenance = breakResult.maintenance;
 	}
@@ -1801,6 +1881,7 @@ export async function reconcileOrdinaryWorkPeriodMaintenanceAfterCommit(
 							employeeId: facts.employeeId,
 							surchargePeriodIds: facts.surchargePeriodIds,
 							staleSurchargePeriodIds: facts.staleSurchargePeriodIds,
+							surchargeSnapshot: facts.surchargeSnapshot,
 						}),
 					);
 				}).pipe(

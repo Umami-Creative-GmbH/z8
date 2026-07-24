@@ -10,6 +10,10 @@ import {
 	policyClockOutBreakSnapshotFromPendingChanges,
 	policyClockOutBreakSnapshotsEqual,
 } from "@/lib/time-tracking/policy-clock-out-break-snapshot";
+import {
+	policyClockOutSurchargeSnapshotFromPendingChanges,
+	policyClockOutSurchargeSnapshotsEqual,
+} from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import type { ApprovalDbService } from "../server/types";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
@@ -337,6 +341,10 @@ function normalizeRequestPayload(input: {
 			raw,
 			"breakPolicySnapshot",
 		);
+		const surchargeSnapshotDescriptor = Object.getOwnPropertyDescriptor(
+			raw,
+			"surchargeSnapshot",
+		);
 		if (
 			breakPolicySnapshotDescriptor &&
 			(!breakPolicySnapshotDescriptor.enumerable ||
@@ -345,15 +353,27 @@ function normalizeRequestPayload(input: {
 			return fail();
 		}
 		if (
+			surchargeSnapshotDescriptor &&
+			(!surchargeSnapshotDescriptor.enumerable ||
+				!("value" in surchargeSnapshotDescriptor))
+		) {
+			return fail();
+		}
+		if (
 			input.expectedKind === "policy_clock_out" &&
 			markerDescriptor === undefined &&
 			breakPolicySnapshotDescriptor === undefined &&
+			surchargeSnapshotDescriptor === undefined &&
 			(typeof input.pendingChanges !== "object" ||
 				input.pendingChanges === null ||
-				Object.getOwnPropertyDescriptor(
+				(Object.getOwnPropertyDescriptor(
 					input.pendingChanges,
 					"breakPolicySnapshot",
-				) === undefined)
+				) === undefined &&
+					Object.getOwnPropertyDescriptor(
+						input.pendingChanges,
+						"surchargeSnapshot",
+					) === undefined))
 		) {
 			return {
 				payload: { timeRequest: { kind: "policy_clock_out" } },
@@ -367,11 +387,16 @@ function normalizeRequestPayload(input: {
 				"value" in breakPolicySnapshotDescriptor
 					? { breakPolicySnapshot: breakPolicySnapshotDescriptor.value }
 					: {}),
+				...(surchargeSnapshotDescriptor &&
+				"value" in surchargeSnapshotDescriptor
+					? { surchargeSnapshot: surchargeSnapshotDescriptor.value }
+					: {}),
 			},
 			input.expectedKind,
 		);
 		if (input.expectedKind === "policy_clock_out") {
-			if (!payload.breakPolicySnapshot) return fail();
+			if (!payload.breakPolicySnapshot || !payload.surchargeSnapshot)
+				return fail();
 			const evaluatedAt = policyEvaluatedAt({
 				endTime: input.sourceEndTime,
 				wasAutoAdjusted: input.sourceWasAutoAdjusted,
@@ -383,16 +408,29 @@ function normalizeRequestPayload(input: {
 					input.pendingChanges,
 					evaluatedAt,
 				);
+				const sourceSurchargeSnapshot =
+					policyClockOutSurchargeSnapshotFromPendingChanges(
+						input.pendingChanges,
+						evaluatedAt,
+					);
 				if (
 					!policyClockOutBreakSnapshotsEqual(
 						sourceSnapshot,
 						payload.breakPolicySnapshot,
 						evaluatedAt,
+					) ||
+					!policyClockOutSurchargeSnapshotsEqual(
+						sourceSurchargeSnapshot,
+						payload.surchargeSnapshot,
+						evaluatedAt,
 					)
 				) {
 					return fail();
 				}
-			} else if (payload.breakPolicySnapshot.evaluatedAt !== evaluatedAt) {
+			} else if (
+				payload.breakPolicySnapshot.evaluatedAt !== evaluatedAt ||
+				payload.surchargeSnapshot.evaluatedAt !== evaluatedAt
+			) {
 				return fail();
 			}
 		}
@@ -445,6 +483,10 @@ function decodeRequest(
 		rawMetadata,
 		"breakPolicySnapshot",
 	);
+	const surchargeSnapshotDescriptor = Object.getOwnPropertyDescriptor(
+		rawMetadata,
+		"surchargeSnapshot",
+	);
 	if (
 		breakSnapshotDescriptor &&
 		(!breakSnapshotDescriptor.enumerable ||
@@ -453,7 +495,19 @@ function decodeRequest(
 		return fail();
 	}
 	const hasBreakSnapshot = breakSnapshotDescriptor !== undefined;
-	if (expectedKind === "policy_clock_out" && hasMarker && !hasBreakSnapshot) {
+	const hasSurchargeSnapshot = surchargeSnapshotDescriptor !== undefined;
+	if (
+		surchargeSnapshotDescriptor &&
+		(!surchargeSnapshotDescriptor.enumerable ||
+			!("value" in surchargeSnapshotDescriptor))
+	) {
+		return fail();
+	}
+	if (
+		expectedKind === "policy_clock_out" &&
+		hasMarker &&
+		(!hasBreakSnapshot || !hasSurchargeSnapshot)
+	) {
 		return fail();
 	}
 	let metadata: unknown;
@@ -476,6 +530,7 @@ function decodeRequest(
 		const root = exactDataRecord(rawMetadata, [
 			"timeRequest",
 			...(hasBreakSnapshot ? ["breakPolicySnapshot"] : []),
+			...(hasSurchargeSnapshot ? ["surchargeSnapshot"] : []),
 			...(hasMarker ? ["ordinarySubmission"] : []),
 			"autoApproval",
 		]);
@@ -488,6 +543,7 @@ function decodeRequest(
 		metadata = exactDataRecord(rawMetadata, [
 			"timeRequest",
 			...(hasBreakSnapshot ? ["breakPolicySnapshot"] : []),
+			...(hasSurchargeSnapshot ? ["surchargeSnapshot"] : []),
 			...(hasMarker ? ["ordinarySubmission"] : []),
 		]);
 	}
@@ -814,10 +870,15 @@ function decodeCapture(
 		requestMetadata,
 		"breakPolicySnapshot",
 	);
+	const capturedSurchargeSnapshot = Object.getOwnPropertyDescriptor(
+		requestMetadata,
+		"surchargeSnapshot",
+	);
 	const historicalPolicyClockOut =
 		kind === "policy_clock_out" &&
 		period.approvalWorkflowId === null &&
 		capturedSnapshot === undefined &&
+		capturedSurchargeSnapshot === undefined &&
 		Object.getOwnPropertyDescriptor(requestMetadata, "ordinarySubmission") ===
 			undefined;
 	const payload = historicalPolicyClockOut
@@ -827,6 +888,10 @@ function decodeCapture(
 					timeRequest: requestMetadata.timeRequest,
 					...(capturedSnapshot?.enumerable && "value" in capturedSnapshot
 						? { breakPolicySnapshot: capturedSnapshot.value }
+						: {}),
+					...(capturedSurchargeSnapshot?.enumerable &&
+					"value" in capturedSurchargeSnapshot
+						? { surchargeSnapshot: capturedSurchargeSnapshot.value }
 						: {}),
 				},
 				kind,
@@ -842,9 +907,16 @@ function decodeCapture(
 			kind === "policy_clock_out" &&
 			(!payload.breakPolicySnapshot ||
 				!canonicalPayload.breakPolicySnapshot ||
+				!payload.surchargeSnapshot ||
+				!canonicalPayload.surchargeSnapshot ||
 				!policyClockOutBreakSnapshotsEqual(
 					payload.breakPolicySnapshot,
 					canonicalPayload.breakPolicySnapshot,
+					evaluatedAt,
+				) ||
+				!policyClockOutSurchargeSnapshotsEqual(
+					payload.surchargeSnapshot,
+					canonicalPayload.surchargeSnapshot,
 					evaluatedAt,
 				))
 		) {
@@ -943,6 +1015,11 @@ function decodePreSubmissionCapture(
 							period.pendingChanges,
 							instantToCanonicalString(period.endTime),
 						),
+						surchargeSnapshot:
+							policyClockOutSurchargeSnapshotFromPendingChanges(
+								period.pendingChanges,
+								instantToCanonicalString(period.endTime),
+							),
 					}
 				: {}),
 		},

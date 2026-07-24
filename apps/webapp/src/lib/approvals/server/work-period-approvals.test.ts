@@ -838,7 +838,10 @@ describe("stable ordinary work-period decisions", () => {
 		database.query.employee.findMany = vi
 			.fn()
 			.mockResolvedValue([currentApprover]);
-		database.query.workPeriod.findFirst.mockResolvedValue(period);
+		database.query.workPeriod.findFirst.mockResolvedValue({
+			...period,
+			pendingChanges: { breakPolicySnapshot, surchargeSnapshot },
+		});
 		legacyCaptureMocks.capture.mockImplementation(async (input) => ({
 			organizationId: "org-1",
 			source: {
@@ -1043,6 +1046,7 @@ describe("stable ordinary work-period decisions", () => {
 			sourceSnapshot: {
 				timeRequest: { kind: "policy_clock_out" },
 				breakPolicySnapshot,
+				surchargeSnapshot,
 			},
 			capturedAt: parseInstant("2026-07-15T09:59:00Z"),
 		}));
@@ -1309,10 +1313,17 @@ const breakPolicySnapshot = {
 	evaluatedAt: "2026-07-14T16:00:00Z",
 	resolution: "none",
 } as const;
+const surchargeSnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-14T16:00:00Z",
+	resolution: { kind: "none" },
+} as const;
 
 const autoApprovalMetadata = (kind = "manual_time_submission") => ({
 	timeRequest: { kind },
-	...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+	...(kind === "policy_clock_out"
+		? { breakPolicySnapshot, surchargeSnapshot }
+		: {}),
 	autoApproval: { reason: "requester_is_approver" },
 });
 
@@ -1360,7 +1371,9 @@ function createFinalizerDbService(options?: {
 		)?.timeRequest?.kind === "policy_clock_out";
 	const lockedPeriod = {
 		...period,
-		...(policyRequest ? { pendingChanges: { breakPolicySnapshot } } : {}),
+		...(policyRequest
+			? { pendingChanges: { breakPolicySnapshot, surchargeSnapshot } }
+			: {}),
 		...options?.period,
 	};
 	const lockedRecord = { ...canonicalRecord, ...options?.record };
@@ -1534,7 +1547,7 @@ function createDecisionDbService(options?: {
 				: {
 						timeRequest: { kind: options?.kind ?? "manual_time_submission" },
 						...(options?.kind === "policy_clock_out"
-							? { breakPolicySnapshot }
+							? { breakPolicySnapshot, surchargeSnapshot }
 							: {}),
 						workflow: { id: "workflow-1", organizationId: "org-1" },
 					},
@@ -1590,13 +1603,23 @@ function createDecisionDbService(options?: {
 												...period,
 												approvalWorkflowId: null,
 												...(options?.kind === "policy_clock_out"
-													? { pendingChanges: { breakPolicySnapshot } }
+													? {
+															pendingChanges: {
+																breakPolicySnapshot,
+																surchargeSnapshot,
+															},
+														}
 													: {}),
 											}
 										: {
 												...period,
 												...(options?.kind === "policy_clock_out"
-													? { pendingChanges: { breakPolicySnapshot } }
+													? {
+															pendingChanges: {
+																breakPolicySnapshot,
+																surchargeSnapshot,
+															},
+														}
 													: {}),
 											},
 								]
@@ -1659,6 +1682,7 @@ describe("ordinary work-period approval finalizer", () => {
 				decision: "approved",
 				surchargePeriodIds: ["period-1"],
 				staleSurchargePeriodIds: [],
+				surchargeSnapshot,
 			},
 		});
 	});
@@ -1835,6 +1859,7 @@ describe("ordinary work-period approval finalizer", () => {
 				metadata: {
 					timeRequest: { kind: "policy_clock_out" },
 					breakPolicySnapshot,
+					surchargeSnapshot,
 					workflow: { id: "workflow-1", organizationId: "org-1" },
 				},
 			},
@@ -1875,6 +1900,7 @@ describe("ordinary work-period approval finalizer", () => {
 			decision: "rejected",
 			surchargePeriodIds: [],
 			staleSurchargePeriodIds: ["period-1"],
+			surchargeSnapshot,
 		});
 	});
 
@@ -1983,6 +2009,7 @@ describe("ordinary work-period approval finalizer", () => {
 				metadata: {
 					timeRequest: { kind: "policy_clock_out" },
 					breakPolicySnapshot,
+					surchargeSnapshot,
 					workflow: { id: "workflow-1", organizationId: "org-1" },
 				},
 			},
@@ -2017,6 +2044,7 @@ describe("ordinary work-period approval finalizer", () => {
 			decision: "approved",
 			surchargePeriodIds: ["period-1"],
 			staleSurchargePeriodIds: [],
+			surchargeSnapshot,
 		});
 		expect(
 			vi.mocked(dbService.db.update).mock.invocationCallOrder[1],
@@ -2035,6 +2063,7 @@ describe("ordinary work-period approval finalizer", () => {
 				metadata: {
 					timeRequest: { kind: "policy_clock_out" },
 					breakPolicySnapshot,
+					surchargeSnapshot,
 					workflow: { id: "workflow-1", organizationId: "org-1" },
 				},
 			},

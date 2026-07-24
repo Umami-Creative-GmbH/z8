@@ -41,6 +41,11 @@ const policySnapshot = {
 	},
 	breakRules: [],
 } as const;
+const surchargeSnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-20T14:00:00Z",
+	resolution: { kind: "none" },
+} as const;
 
 function row(
 	overrides: Partial<OrdinaryCanonicalReadRow> = {},
@@ -200,6 +205,7 @@ function policyRow(): OrdinaryCanonicalReadRow {
 			contextSnapshot: {
 				timeRequest: { kind: "policy_clock_out" },
 				breakPolicySnapshot: policySnapshot,
+				surchargeSnapshot,
 			},
 		},
 		period: {
@@ -207,6 +213,7 @@ function policyRow(): OrdinaryCanonicalReadRow {
 			pendingChanges: {
 				isNewClockOut: true,
 				breakPolicySnapshot: policySnapshot,
+				surchargeSnapshot,
 			},
 		},
 	});
@@ -346,6 +353,7 @@ describe("ordinary canonical inbox reads", () => {
 		expect(candidateQuery?.sql).toContain("jsonb_typeof");
 		expect(candidateQuery?.sql).toContain("jsonb_object_keys");
 		expect(candidateQuery?.sql).toContain("breakPolicySnapshot");
+		expect(candidateQuery?.sql).toContain("surchargeSnapshot");
 		expect(candidateQuery?.sql).toContain("'version'");
 		expect(candidateQuery?.sql).toContain("'resolution'");
 		expect(candidateQuery?.params).toEqual(
@@ -370,6 +378,7 @@ describe("ordinary canonical inbox reads", () => {
 		});
 		const serialized = JSON.stringify(approvals[0]);
 		expect(serialized).not.toContain("breakPolicySnapshot");
+		expect(serialized).not.toContain("surchargeSnapshot");
 		expect(serialized).not.toContain("Private break policy");
 		expect(serialized).not.toContain(policySnapshot.policy.id);
 	});
@@ -448,10 +457,12 @@ describe("ordinary canonical inbox reads", () => {
 		valid.workflow.contextSnapshot = {
 			timeRequest: { kind: "policy_clock_out" },
 			breakPolicySnapshot: strictPolicy,
+			surchargeSnapshot,
 		};
 		valid.period.pendingChanges = {
 			isNewClockOut: true,
 			breakPolicySnapshot: strictPolicy,
+			surchargeSnapshot,
 		};
 		expect(select([valid])).toHaveLength(1);
 		for (const snapshot of malformed) {
@@ -459,10 +470,12 @@ describe("ordinary canonical inbox reads", () => {
 			fixture.workflow.contextSnapshot = {
 				timeRequest: { kind: "policy_clock_out" },
 				breakPolicySnapshot: snapshot,
+				surchargeSnapshot,
 			};
 			fixture.period.pendingChanges = {
 				isNewClockOut: true,
 				breakPolicySnapshot: snapshot,
+				surchargeSnapshot,
 			};
 			expect(select([fixture])).toEqual([]);
 		}
@@ -513,6 +526,7 @@ describe("ordinary canonical inbox reads", () => {
 				stage: { id: ids.stage, sequence: 2 },
 				timeRequest: { kind: "policy_clock_out" },
 				breakPolicySnapshot: policySnapshot,
+				surchargeSnapshot,
 			},
 		};
 		const owned = policyRow();

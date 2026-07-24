@@ -9,6 +9,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 import { policyClockOutBreakSnapshotFromPendingChanges } from "@/lib/time-tracking/policy-clock-out-break-snapshot";
+import { policyClockOutSurchargeSnapshotFromPendingChanges } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import {
@@ -588,7 +589,9 @@ function requestKind(
 	try {
 		const metadata = exactDataObject(request.metadata, [
 			"timeRequest",
-			...(input.kind === "policy_clock_out" ? ["breakPolicySnapshot"] : []),
+			...(input.kind === "policy_clock_out"
+				? ["breakPolicySnapshot", "surchargeSnapshot"]
+				: []),
 			"ordinarySubmission",
 		]);
 		const marker = exactDataObject(metadata.ordinarySubmission, [
@@ -599,7 +602,10 @@ function requestKind(
 			{
 				timeRequest: metadata.timeRequest,
 				...(input.kind === "policy_clock_out"
-					? { breakPolicySnapshot: metadata.breakPolicySnapshot }
+					? {
+							breakPolicySnapshot: metadata.breakPolicySnapshot,
+							surchargeSnapshot: metadata.surchargeSnapshot,
+						}
 					: {}),
 			},
 			input.kind,
@@ -621,7 +627,10 @@ function requestKind(
 			{
 				timeRequest: metadata.timeRequest,
 				...(input.kind === "policy_clock_out"
-					? { breakPolicySnapshot: metadata.breakPolicySnapshot }
+					? {
+							breakPolicySnapshot: metadata.breakPolicySnapshot,
+							surchargeSnapshot: metadata.surchargeSnapshot,
+						}
 					: {}),
 			},
 			kind,
@@ -634,13 +643,18 @@ function requestKind(
 			"workflow",
 			"stage",
 			"timeRequest",
-			...(input.kind === "policy_clock_out" ? ["breakPolicySnapshot"] : []),
+			...(input.kind === "policy_clock_out"
+				? ["breakPolicySnapshot", "surchargeSnapshot"]
+				: []),
 		]);
 		return parseOrdinaryWorkPeriodWorkflowPayload(
 			{
 				timeRequest: metadata.timeRequest,
 				...(input.kind === "policy_clock_out"
-					? { breakPolicySnapshot: metadata.breakPolicySnapshot }
+					? {
+							breakPolicySnapshot: metadata.breakPolicySnapshot,
+							surchargeSnapshot: metadata.surchargeSnapshot,
+						}
 					: {}),
 			},
 			input.kind,
@@ -661,7 +675,9 @@ function validateCompatibilityMetadata(input: {
 		"workflow",
 		"stage",
 		"timeRequest",
-		...(input.kind === "policy_clock_out" ? ["breakPolicySnapshot"] : []),
+		...(input.kind === "policy_clock_out"
+			? ["breakPolicySnapshot", "surchargeSnapshot"]
+			: []),
 	]);
 	const workflow = exactDataObject(metadata.workflow, ["id", "organizationId"]);
 	const stage = exactDataObject(metadata.stage, ["id", "sequence"]);
@@ -669,7 +685,10 @@ function validateCompatibilityMetadata(input: {
 		{
 			timeRequest: metadata.timeRequest,
 			...(input.kind === "policy_clock_out"
-				? { breakPolicySnapshot: metadata.breakPolicySnapshot }
+				? {
+						breakPolicySnapshot: metadata.breakPolicySnapshot,
+						surchargeSnapshot: metadata.surchargeSnapshot,
+					}
 				: {}),
 		},
 		input.kind,
@@ -1003,7 +1022,7 @@ function validateLegacyAutoReplay(input: {
 	const metadata = exactDataObject(request.metadata, [
 		"timeRequest",
 		...(input.submission.kind === "policy_clock_out"
-			? ["breakPolicySnapshot"]
+			? ["breakPolicySnapshot", "surchargeSnapshot"]
 			: []),
 		"autoApproval",
 	]);
@@ -1011,7 +1030,10 @@ function validateLegacyAutoReplay(input: {
 		{
 			timeRequest: metadata.timeRequest,
 			...(input.submission.kind === "policy_clock_out"
-				? { breakPolicySnapshot: metadata.breakPolicySnapshot }
+				? {
+						breakPolicySnapshot: metadata.breakPolicySnapshot,
+						surchargeSnapshot: metadata.surchargeSnapshot,
+					}
 				: {}),
 		},
 		input.submission.kind,
@@ -1051,7 +1073,7 @@ function validateMarkedAutoRequest(input: {
 	const metadata = exactDataObject(request.metadata, [
 		"timeRequest",
 		...(input.submission.kind === "policy_clock_out"
-			? ["breakPolicySnapshot"]
+			? ["breakPolicySnapshot", "surchargeSnapshot"]
 			: []),
 		"ordinarySubmission",
 		"autoApproval",
@@ -1059,7 +1081,10 @@ function validateMarkedAutoRequest(input: {
 	const payload = parseOrdinaryWorkPeriodWorkflowPayload({
 		timeRequest: metadata.timeRequest,
 		...(input.submission.kind === "policy_clock_out"
-			? { breakPolicySnapshot: metadata.breakPolicySnapshot }
+			? {
+					breakPolicySnapshot: metadata.breakPolicySnapshot,
+					surchargeSnapshot: metadata.surchargeSnapshot,
+				}
 			: {}),
 	});
 	const marker = exactDataObject(metadata.ordinarySubmission, [
@@ -1597,10 +1622,18 @@ async function executeOrdinaryWorkPeriodSubmission(
 					instantToCanonicalString(instantFromDate(source.endTime)),
 				)
 			: undefined;
+	const surchargeSnapshot =
+		input.kind === "policy_clock_out"
+			? policyClockOutSurchargeSnapshotFromPendingChanges(
+					source.pendingChanges,
+					instantToCanonicalString(instantFromDate(source.endTime)),
+				)
+			: undefined;
 	const payload = parseOrdinaryWorkPeriodWorkflowPayload(
 		{
 			timeRequest: { kind: input.kind },
 			...(breakPolicySnapshot ? { breakPolicySnapshot } : {}),
+			...(surchargeSnapshot ? { surchargeSnapshot } : {}),
 		},
 		input.kind,
 	);

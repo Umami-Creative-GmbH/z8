@@ -185,6 +185,11 @@ const breakPolicySnapshot = {
 	evaluatedAt: "2026-07-22T16:00:00Z",
 	resolution: "none",
 } as const;
+const surchargeSnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-22T16:00:00Z",
+	resolution: { kind: "none" },
+} as const;
 const terminalPolicySnapshot = {
 	version: 1,
 	evaluatedAt: "2026-07-22T16:00:00Z",
@@ -243,6 +248,7 @@ function source(overrides: Record<string, unknown> = {}) {
 							evaluatedAt: "2026-07-22T16:00:00Z",
 							resolution: "none",
 						},
+						surchargeSnapshot,
 					}
 				: null,
 		isActive: false,
@@ -427,6 +433,7 @@ function fixture(
 															evaluatedAt: "2026-07-22T16:00:00Z",
 															resolution: "none",
 														},
+														surchargeSnapshot,
 													}
 												: {}),
 											ordinarySubmission: {
@@ -516,7 +523,9 @@ function fixture(
 				version: 1,
 				contextSnapshot: {
 					timeRequest: { kind: state.kind },
-					...(state.kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+					...(state.kind === "policy_clock_out"
+						? { breakPolicySnapshot, surchargeSnapshot }
+						: {}),
 				},
 				completedAt: parseInstant("2026-07-22T10:00:00Z"),
 				stages: [
@@ -808,7 +817,9 @@ function compatibilityRequest(
 			workflow: { id: expectedWorkflowId(kind), organizationId },
 			stage: { id: state.stageId, sequence: 1 },
 			timeRequest: { kind },
-			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+			...(kind === "policy_clock_out"
+				? { breakPolicySnapshot, surchargeSnapshot }
+				: {}),
 		},
 		...overrides,
 	};
@@ -898,6 +909,7 @@ describe.each([
 									evaluatedAt: "2026-07-22T16:00:00Z",
 									resolution: "none",
 								},
+								surchargeSnapshot,
 							}
 						: {}),
 				})}`,
@@ -1514,6 +1526,7 @@ it.each([
 		metadata: {
 			timeRequest: { kind: "policy_clock_out" },
 			breakPolicySnapshot,
+			surchargeSnapshot,
 			ordinarySubmission: {
 				key: ordinarySubmissionKey("policy_clock_out"),
 				submissionId,
@@ -1615,6 +1628,7 @@ it.each([
 	const contextSnapshot = {
 		timeRequest: { kind: "policy_clock_out" },
 		breakPolicySnapshot: terminalPolicySnapshot,
+		surchargeSnapshot,
 	};
 	const chainInstanceId = chain ? "40000000-0000-4000-8000-000000000088" : null;
 	const terminalRequest = {
@@ -1828,7 +1842,9 @@ it.each([
 				sequence: 2,
 			},
 			timeRequest: { kind },
-			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+			...(kind === "policy_clock_out"
+				? { breakPolicySnapshot, surchargeSnapshot }
+				: {}),
 		},
 	});
 	const terminalSource = {
@@ -1846,7 +1862,9 @@ it.each([
 				status: "approved",
 				contextSnapshot: {
 					timeRequest: { kind },
-					...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+					...(kind === "policy_clock_out"
+						? { breakPolicySnapshot, surchargeSnapshot }
+						: {}),
 				},
 			},
 		],
@@ -1903,7 +1921,9 @@ it.each([
 		approvedAt: new Date("2026-07-22T10:00:00Z"),
 		metadata: {
 			timeRequest: { kind },
-			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+			...(kind === "policy_clock_out"
+				? { breakPolicySnapshot, surchargeSnapshot }
+				: {}),
 			autoApproval: { reason: "requester_is_approver" },
 		},
 	};

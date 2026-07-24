@@ -32,6 +32,11 @@ const breakPolicySnapshot = {
 	evaluatedAt: "2026-07-20T14:00:00Z",
 	resolution: "none",
 } as const;
+const surchargeSnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-20T14:00:00Z",
+	resolution: { kind: "none" },
+} as const;
 const resolvedBreakPolicySnapshot = {
 	version: 1,
 	evaluatedAt: "2026-07-20T14:00:00Z",
@@ -241,6 +246,7 @@ function terminalPolicyEnvelope(input: {
 					...(requestSnapshot === null
 						? {}
 						: { breakPolicySnapshot: requestSnapshot }),
+					surchargeSnapshot,
 				},
 			}),
 		],
@@ -256,6 +262,7 @@ function terminalPolicyEnvelope(input: {
 							contextSnapshot: {
 								timeRequest: { kind: "policy_clock_out" },
 								breakPolicySnapshot: canonicalSnapshot,
+								surchargeSnapshot,
 							},
 						}),
 					],
@@ -323,6 +330,7 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 		expect(state.sourceSnapshot).toEqual({
 			timeRequest: { kind: "policy_clock_out" },
 			breakPolicySnapshot,
+			surchargeSnapshot,
 		});
 		expect(state.displaySnapshot).toMatchObject({
 			approvalStatus: status,
@@ -396,6 +404,7 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 						metadata: {
 							timeRequest: { kind: "policy_clock_out" },
 							breakPolicySnapshot,
+							surchargeSnapshot,
 						},
 					}),
 				],
@@ -405,6 +414,7 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 						contextSnapshot: {
 							timeRequest: { kind: "policy_clock_out" },
 							breakPolicySnapshot,
+							surchargeSnapshot,
 						},
 					}),
 				],
@@ -428,6 +438,7 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 						pendingChanges: {
 							isNewClockOut: true,
 							breakPolicySnapshot,
+							surchargeSnapshot,
 						},
 						approvalWorkflowId: null,
 					}),
@@ -437,6 +448,7 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 						metadata: {
 							timeRequest: { kind: "policy_clock_out" },
 							breakPolicySnapshot,
+							surchargeSnapshot,
 						},
 					}),
 				],
@@ -452,10 +464,12 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 		expect(state.sourceSnapshot).toEqual({
 			timeRequest: { kind: "policy_clock_out" },
 			breakPolicySnapshot,
+			surchargeSnapshot,
 		});
 		expect(state.approvalRequest?.metadata).toEqual({
 			timeRequest: { kind: "policy_clock_out" },
 			breakPolicySnapshot,
+			surchargeSnapshot,
 		});
 	});
 
@@ -497,6 +511,7 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 						pendingChanges: {
 							isNewClockOut: true,
 							breakPolicySnapshot,
+							surchargeSnapshot,
 						},
 						approvalWorkflowId: workflows.length === 0 ? null : workflowId,
 					}),
@@ -1312,6 +1327,7 @@ describe("captureOrdinaryWorkPeriodLegacyPreSubmissionState", () => {
 						pendingChanges: {
 							isNewClockOut: true,
 							breakPolicySnapshot,
+							surchargeSnapshot,
 						},
 					}),
 				],
@@ -1326,6 +1342,7 @@ describe("captureOrdinaryWorkPeriodLegacyPreSubmissionState", () => {
 		expect(state.sourceSnapshot).toEqual({
 			timeRequest: { kind: "policy_clock_out" },
 			breakPolicySnapshot,
+			surchargeSnapshot,
 		});
 	});
 

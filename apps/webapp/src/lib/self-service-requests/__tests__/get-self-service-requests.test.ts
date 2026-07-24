@@ -224,6 +224,11 @@ async function realOrdinaryDisplay(
 		evaluatedAt: "2026-04-26T16:00:00Z",
 		resolution: "none" as const,
 	};
+	const surchargeSnapshot = {
+		version: 1 as const,
+		evaluatedAt: "2026-04-26T16:00:00Z",
+		resolution: { kind: "none" as const },
+	};
 	const workflow = {
 		id: `10000000-0000-4000-8000-${kind === "manual_time_submission" ? "000000000020" : "000000000030"}`,
 		organizationId: "org-1",
@@ -237,7 +242,9 @@ async function realOrdinaryDisplay(
 		policySnapshot: {},
 		contextSnapshot: {
 			timeRequest: { kind },
-			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+			...(kind === "policy_clock_out"
+				? { breakPolicySnapshot, surchargeSnapshot }
+				: {}),
 			privateReason: "private-reason",
 		},
 		displaySnapshot: {},
@@ -284,7 +291,9 @@ async function realOrdinaryDisplay(
 			durationMinutes: 480,
 			payload: {
 				timeRequest: { kind },
-				...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+				...(kind === "policy_clock_out"
+					? { breakPolicySnapshot, surchargeSnapshot }
+					: {}),
 			},
 		},
 	});

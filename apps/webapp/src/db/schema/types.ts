@@ -3,6 +3,7 @@
 // ============================================
 
 import type { PolicyClockOutBreakSnapshot } from "@/lib/time-tracking/policy-clock-out-break-snapshot.types";
+import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 
 // Auth method configuration type for custom domains
 export type AuthConfig = {
@@ -114,6 +115,7 @@ export type WorkPeriodPendingChanges = {
 	// For manual work periods submitted for approval
 	isManualEntry?: boolean;
 	breakPolicySnapshot?: PolicyClockOutBreakSnapshot;
+	surchargeSnapshot?: PolicyClockOutSurchargeSnapshot;
 };
 
 // ============================================

@@ -6,6 +6,10 @@ import {
 	policyClockOutBreakSnapshotFromPendingChanges,
 	policyClockOutBreakSnapshotsEqual,
 } from "@/lib/time-tracking/policy-clock-out-break-snapshot";
+import {
+	policyClockOutSurchargeSnapshotFromPendingChanges,
+	policyClockOutSurchargeSnapshotsEqual,
+} from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
 import { parseOrdinaryWorkPeriodWorkflowPayload } from "../domain-adapters/work-period-contract";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
@@ -291,7 +295,9 @@ function hasExactCompatibility(
 		"workflow",
 		"stage",
 		"timeRequest",
-		...(kind === "policy_clock_out" ? ["breakPolicySnapshot"] : []),
+		...(kind === "policy_clock_out"
+			? ["breakPolicySnapshot", "surchargeSnapshot"]
+			: []),
 	]);
 	const workflow = exactObject(metadata?.workflow, ["id", "organizationId"]);
 	const stage = exactObject(metadata?.stage, ["id", "sequence"]);
@@ -301,7 +307,10 @@ function hasExactCompatibility(
 			{
 				timeRequest: metadata?.timeRequest,
 				...(kind === "policy_clock_out"
-					? { breakPolicySnapshot: metadata?.breakPolicySnapshot }
+					? {
+							breakPolicySnapshot: metadata?.breakPolicySnapshot,
+							surchargeSnapshot: metadata?.surchargeSnapshot,
+						}
 					: {}),
 			},
 			kind,
@@ -373,8 +382,11 @@ function validateRow(
 		if (
 			kind === "policy_clock_out" &&
 			(!payload.breakPolicySnapshot ||
+				!payload.surchargeSnapshot ||
 				parseInstant(payload.breakPolicySnapshot.evaluatedAt)
 					.epochMilliseconds !== (period.endTime as Date).getTime() ||
+				payload.surchargeSnapshot.evaluatedAt !==
+					payload.breakPolicySnapshot.evaluatedAt ||
 				!policyClockOutBreakSnapshotsEqual(
 					policyClockOutBreakSnapshotFromPendingChanges(
 						period.pendingChanges,
@@ -382,6 +394,14 @@ function validateRow(
 					),
 					payload.breakPolicySnapshot,
 					payload.breakPolicySnapshot.evaluatedAt,
+				) ||
+				!policyClockOutSurchargeSnapshotsEqual(
+					policyClockOutSurchargeSnapshotFromPendingChanges(
+						period.pendingChanges,
+						payload.surchargeSnapshot.evaluatedAt,
+					),
+					payload.surchargeSnapshot,
+					payload.surchargeSnapshot.evaluatedAt,
 				))
 		) {
 			return null;
@@ -770,6 +790,9 @@ const CANONICAL_INSTANT_SQL_PATTERN =
 	"^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](Z|\\.[0-9]{0,8}[1-9]Z)$";
 const DISPLAY_INSTANT_SQL_PATTERN =
 	"^[0-9]{4}-[0-9]{2}-[0-9]{2}T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$";
+const PLAIN_DATE_SQL_PATTERN = "^[0-9]{4}-[0-9]{2}-[0-9]{2}$";
+const PLAIN_TIME_SQL_PATTERN = "^([01][0-9]|2[0-3]):[0-5][0-9]$";
+const DECIMAL_SQL_PATTERN = "^(0|[1-9][0-9]*)\\.[0-9]{4}$";
 
 function exactJsonObjectSql(value: SQL, keyCount: number): SQL {
 	return sql`case when jsonb_typeof(${value}) = 'object' then
@@ -782,6 +805,108 @@ function positiveSafeIntegerSql(value: SQL): SQL {
 		((${value})::text)::numeric > 0
 		and ((${value})::text)::numeric = trunc(((${value})::text)::numeric)
 		and ((${value})::text)::numeric <= 9007199254740991
+		else false end`;
+}
+
+function safeIntegerSql(value: SQL): SQL {
+	return sql`case when jsonb_typeof(${value}) = 'number' then
+		abs(((${value})::text)::numeric) <= 9007199254740991
+		and ((${value})::text)::numeric = trunc(((${value})::text)::numeric)
+		else false end`;
+}
+
+function strictSurchargeSnapshotSql(snapshot: SQL): SQL {
+	const resolution = sql`${snapshot} -> 'resolution'`;
+	const rules = sql`${resolution} -> 'rules'`;
+	return sql`case
+		when jsonb_typeof(${snapshot}) <> 'object'
+			or not ${exactJsonObjectSql(snapshot, 3)}
+			or ${snapshot} -> 'version' <> '1'::jsonb
+			or jsonb_typeof(${snapshot} -> 'evaluatedAt') <> 'string' then false
+		when ${resolution} ->> 'kind' = 'none' then ${exactJsonObjectSql(resolution, 1)}
+		when ${resolution} ->> 'kind' = 'surcharge_model' then
+			${exactJsonObjectSql(resolution, 8)}
+			and (${resolution} -> 'teamId' = 'null'::jsonb or (
+				jsonb_typeof(${resolution} -> 'teamId') = 'string'
+				and ${resolution} ->> 'teamId' ~ ${UUID_SQL_PATTERN}
+			))
+			and jsonb_typeof(${resolution} -> 'assignmentId') = 'string'
+			and ${resolution} ->> 'assignmentId' ~ ${UUID_SQL_PATTERN}
+			and ${resolution} ->> 'assignmentType' in ('employee', 'team', 'organization')
+			and ${safeIntegerSql(sql`${resolution} -> 'assignmentPriority'`)}
+			and jsonb_typeof(${resolution} -> 'modelId') = 'string'
+			and ${resolution} ->> 'modelId' ~ ${UUID_SQL_PATTERN}
+			and jsonb_typeof(${resolution} -> 'modelName') = 'string'
+			and ${resolution} ->> 'modelName' <> ''
+			and case when jsonb_typeof(${rules}) = 'array' then
+				not exists (
+					select 1 from jsonb_array_elements(${rules}) rule(value)
+					where not case when jsonb_typeof(rule.value) = 'object' then
+						${exactJsonObjectSql(sql`rule.value`, 13)}
+						and jsonb_typeof(rule.value -> 'id') = 'string'
+						and rule.value ->> 'id' ~ ${UUID_SQL_PATTERN}
+						and jsonb_typeof(rule.value -> 'name') = 'string'
+						and rule.value ->> 'name' <> ''
+						and rule.value ->> 'ruleType' in ('time_window', 'day_of_week', 'date_based')
+						and jsonb_typeof(rule.value -> 'percentage') = 'string'
+						and rule.value ->> 'percentage' ~ ${DECIMAL_SQL_PATTERN}
+						and (rule.value ->> 'percentage')::numeric > 0
+						and (rule.value ->> 'percentage')::numeric <= 10
+						and ${safeIntegerSql(sql`rule.value -> 'priority'`)}
+						and (rule.value -> 'validFrom' = 'null'::jsonb or (
+							jsonb_typeof(rule.value -> 'validFrom') = 'string'
+							and rule.value ->> 'validFrom' ~ ${CANONICAL_INSTANT_SQL_PATTERN}
+							and pg_input_is_valid(rule.value ->> 'validFrom', 'timestamp with time zone')
+						))
+						and (rule.value -> 'validUntil' = 'null'::jsonb or (
+							jsonb_typeof(rule.value -> 'validUntil') = 'string'
+							and rule.value ->> 'validUntil' ~ ${CANONICAL_INSTANT_SQL_PATTERN}
+							and pg_input_is_valid(rule.value ->> 'validUntil', 'timestamp with time zone')
+						))
+						and (rule.value -> 'validFrom' = 'null'::jsonb
+							or rule.value -> 'validUntil' = 'null'::jsonb
+							or (rule.value ->> 'validFrom')::timestamptz <= (rule.value ->> 'validUntil')::timestamptz)
+						and case rule.value ->> 'ruleType'
+							when 'day_of_week' then rule.value ->> 'dayOfWeek' in
+								('monday','tuesday','wednesday','thursday','friday','saturday','sunday')
+								and rule.value -> 'windowStartTime' = 'null'::jsonb
+								and rule.value -> 'windowEndTime' = 'null'::jsonb
+								and rule.value -> 'specificDate' = 'null'::jsonb
+								and rule.value -> 'dateRangeStart' = 'null'::jsonb
+								and rule.value -> 'dateRangeEnd' = 'null'::jsonb
+							when 'time_window' then rule.value -> 'dayOfWeek' = 'null'::jsonb
+								and rule.value ->> 'windowStartTime' ~ ${PLAIN_TIME_SQL_PATTERN}
+								and rule.value ->> 'windowEndTime' ~ ${PLAIN_TIME_SQL_PATTERN}
+								and rule.value -> 'specificDate' = 'null'::jsonb
+								and rule.value -> 'dateRangeStart' = 'null'::jsonb
+								and rule.value -> 'dateRangeEnd' = 'null'::jsonb
+							when 'date_based' then rule.value -> 'dayOfWeek' = 'null'::jsonb
+								and rule.value -> 'windowStartTime' = 'null'::jsonb
+								and rule.value -> 'windowEndTime' = 'null'::jsonb
+								and ((rule.value ->> 'specificDate' ~ ${PLAIN_DATE_SQL_PATTERN}
+									and pg_input_is_valid(rule.value ->> 'specificDate', 'date')
+									and rule.value -> 'dateRangeStart' = 'null'::jsonb
+									and rule.value -> 'dateRangeEnd' = 'null'::jsonb)
+									or (rule.value -> 'specificDate' = 'null'::jsonb
+										and rule.value ->> 'dateRangeStart' ~ ${PLAIN_DATE_SQL_PATTERN}
+										and rule.value ->> 'dateRangeEnd' ~ ${PLAIN_DATE_SQL_PATTERN}
+										and pg_input_is_valid(rule.value ->> 'dateRangeStart', 'date')
+										and pg_input_is_valid(rule.value ->> 'dateRangeEnd', 'date')
+										and (rule.value ->> 'dateRangeStart')::date <= (rule.value ->> 'dateRangeEnd')::date))
+							else false end
+					else false end
+				)
+				and (select count(*) = count(distinct rule.value ->> 'id')
+					from jsonb_array_elements(${rules}) rule(value))
+				and not exists (
+					select 1 from jsonb_array_elements(${rules}) with ordinality current_rule(value, position)
+					join jsonb_array_elements(${rules}) with ordinality previous_rule(value, position)
+						on previous_rule.position + 1 = current_rule.position
+					where (previous_rule.value ->> 'priority')::numeric < (current_rule.value ->> 'priority')::numeric
+						or ((previous_rule.value ->> 'priority')::numeric = (current_rule.value ->> 'priority')::numeric
+							and previous_rule.value ->> 'id' >= current_rule.value ->> 'id')
+				)
+			else false end
 		else false end`;
 }
 
@@ -867,8 +992,10 @@ function strictBreakSnapshotSql(snapshot: SQL): SQL {
 
 function strictCanonicalEvidenceSql(): SQL {
 	const workflowSnapshot = sql`workflow.context_snapshot -> 'breakPolicySnapshot'`;
+	const workflowSurchargeSnapshot = sql`workflow.context_snapshot -> 'surchargeSnapshot'`;
 	const sourceChanges = sql`source_period.pending_changes::jsonb`;
 	const sourceSnapshot = sql`${sourceChanges} -> 'breakPolicySnapshot'`;
+	const sourceSurchargeSnapshot = sql`${sourceChanges} -> 'surchargeSnapshot'`;
 	const evaluatedAt = sql`${workflowSnapshot} ->> 'evaluatedAt'`;
 	return sql`jsonb_typeof(workflow.context_snapshot) = 'object'
 		and ${exactJsonObjectSql(sql`workflow.context_snapshot -> 'timeRequest'`, 1)}
@@ -877,9 +1004,12 @@ function strictCanonicalEvidenceSql(): SQL {
 			when workflow.workflow_type = 'manual_time_submission' then
 				${exactJsonObjectSql(sql`workflow.context_snapshot`, 1)}
 				and not (workflow.context_snapshot ? 'breakPolicySnapshot')
+				and not (workflow.context_snapshot ? 'surchargeSnapshot')
 			when workflow.workflow_type = 'policy_clock_out' then
-				${exactJsonObjectSql(sql`workflow.context_snapshot`, 2)}
+				${exactJsonObjectSql(sql`workflow.context_snapshot`, 3)}
 				and ${strictBreakSnapshotSql(workflowSnapshot)}
+				and ${strictSurchargeSnapshotSql(workflowSurchargeSnapshot)}
+				and ${workflowSurchargeSnapshot} ->> 'evaluatedAt' = ${evaluatedAt}
 				and ${evaluatedAt} ~ ${CANONICAL_INSTANT_SQL_PATTERN}
 				and pg_input_is_valid(${evaluatedAt}, 'timestamp with time zone')
 				and case when pg_input_is_valid(${evaluatedAt}, 'timestamp with time zone')
@@ -889,7 +1019,9 @@ function strictCanonicalEvidenceSql(): SQL {
 					and pg_input_is_valid(source_period.pending_changes, 'jsonb') then
 						jsonb_typeof(${sourceChanges}) = 'object'
 						and ${strictBreakSnapshotSql(sourceSnapshot)}
+						and ${strictSurchargeSnapshotSql(sourceSurchargeSnapshot)}
 						and ${sourceSnapshot} = ${workflowSnapshot}
+						and ${sourceSurchargeSnapshot} = ${workflowSurchargeSnapshot}
 					else false end
 			else false end`;
 }
@@ -1064,7 +1196,7 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 				and (select count(*) from jsonb_object_keys(case
 					when jsonb_typeof(compatibility.metadata) = 'object' then compatibility.metadata
 					else '{}'::jsonb end)) = case
-						when workflow.workflow_type = 'policy_clock_out' then 4 else 3 end
+						when workflow.workflow_type = 'policy_clock_out' then 5 else 3 end
 				and jsonb_typeof(compatibility.metadata -> 'workflow') = 'object'
 				and (select count(*) from jsonb_object_keys(case
 					when jsonb_typeof(compatibility.metadata -> 'workflow') = 'object'
@@ -1094,6 +1226,7 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 				and case
 					when workflow.workflow_type = 'manual_time_submission' then
 						not (compatibility.metadata ? 'breakPolicySnapshot')
+						and not (compatibility.metadata ? 'surchargeSnapshot')
 					when workflow.workflow_type = 'policy_clock_out' then
 						jsonb_typeof(compatibility.metadata -> 'breakPolicySnapshot') = 'object'
 						and compatibility.metadata -> 'breakPolicySnapshot' -> 'version' = '1'::jsonb
@@ -1101,6 +1234,9 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 							in ('none', 'work_policy')
 						and compatibility.metadata -> 'breakPolicySnapshot'
 							= workflow.context_snapshot -> 'breakPolicySnapshot'
+						and ${strictSurchargeSnapshotSql(sql`compatibility.metadata -> 'surchargeSnapshot'`)}
+						and compatibility.metadata -> 'surchargeSnapshot'
+							= workflow.context_snapshot -> 'surchargeSnapshot'
 					else false
 				end
 			), false)

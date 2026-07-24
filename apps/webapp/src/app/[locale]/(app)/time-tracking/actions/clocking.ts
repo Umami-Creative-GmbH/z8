@@ -59,6 +59,10 @@ import {
 } from "@/lib/time-tracking/clocking-service";
 import { resolvePolicyClockOutBreakSnapshotInTransaction } from "@/lib/time-tracking/policy-clock-out-break-snapshot";
 import {
+	type PolicyClockOutSurchargeSnapshot,
+	resolvePolicyClockOutSurchargeSnapshotInTransaction,
+} from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
+import {
 	resolveFallbackTimezoneCapture,
 	resolveTimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
@@ -345,18 +349,24 @@ function hasPrivateApprovalSubmissionEvidence(input: {
 	);
 	const hasAutoApproval = metadataKeys.includes("autoApproval");
 	const hasBreakPolicySnapshot = metadataKeys.includes("breakPolicySnapshot");
+	const hasSurchargeSnapshot = metadataKeys.includes("surchargeSnapshot");
+	if (hasBreakPolicySnapshot !== hasSurchargeSnapshot) {
+		throw new Error("Submission collision");
+	}
 	const root = exactPlainObject(
 		input.metadata,
 		hasAutoApproval
 			? [
 					"timeRequest",
 					...(hasBreakPolicySnapshot ? ["breakPolicySnapshot"] : []),
+					...(hasSurchargeSnapshot ? ["surchargeSnapshot"] : []),
 					"ordinarySubmission",
 					"autoApproval",
 				]
 			: [
 					"timeRequest",
 					...(hasBreakPolicySnapshot ? ["breakPolicySnapshot"] : []),
+					...(hasSurchargeSnapshot ? ["surchargeSnapshot"] : []),
 					"ordinarySubmission",
 				],
 	);
@@ -1202,6 +1212,8 @@ export async function clockOut(
 			activeWorkPeriod.startTime,
 			now,
 		);
+		let immediateSurchargeSnapshot: PolicyClockOutSurchargeSnapshot | null =
+			null;
 		const runtime = createOrdinaryApprovalRuntime();
 		const result = await runtime.repository.withTransaction(async (context) => {
 			const clockOutResult = await clockingService.clockOut({
@@ -1228,6 +1240,15 @@ export async function clockOut(
 								endTime: actionInstant,
 							})
 						: null;
+					const surchargeSnapshot =
+						await resolvePolicyClockOutSurchargeSnapshotInTransaction({
+							dbService: context.dbService as never,
+							organizationId: currentEmployee.organizationId,
+							employeeId: currentEmployee.id,
+							endTime: actionInstant,
+						});
+					if (!needsClockOutApproval)
+						immediateSurchargeSnapshot = surchargeSnapshot;
 					const canonicalRecord =
 						await canonicalWorkRecordClient.createForCompletedPeriod(
 							{
@@ -1249,21 +1270,23 @@ export async function clockOut(
 						);
 					return {
 						canonicalRecordId: canonicalRecord.id,
-						pendingChanges: breakPolicySnapshot
-							? {
-									originalStartTime: activeWorkPeriod.startTime.toISOString(),
-									originalEndTime: now.toISOString(),
-									originalDurationMinutes: sessionDurationMinutes,
-									requestedAt: now.toISOString(),
-									requestedBy: session.user.id,
-									isNewClockOut: true,
-									ordinarySubmission: {
-										submissionId,
-										kind: "policy_clock_out" as const,
-									},
-									breakPolicySnapshot,
-								}
-							: null,
+						pendingChanges:
+							breakPolicySnapshot && surchargeSnapshot
+								? {
+										originalStartTime: activeWorkPeriod.startTime.toISOString(),
+										originalEndTime: now.toISOString(),
+										originalDurationMinutes: sessionDurationMinutes,
+										requestedAt: now.toISOString(),
+										requestedBy: session.user.id,
+										isNewClockOut: true,
+										ordinarySubmission: {
+											submissionId,
+											kind: "policy_clock_out" as const,
+										},
+										breakPolicySnapshot,
+										surchargeSnapshot,
+									}
+								: null,
 					};
 				},
 				afterPeriodClose: needsClockOutApproval
@@ -1402,6 +1425,12 @@ export async function clockOut(
 					calculateAndPersistSurcharges(
 						activeWorkPeriod.id,
 						currentEmployee.organizationId,
+						immediateSurchargeSnapshot
+							? {
+									employeeId: currentEmployee.id,
+									snapshot: immediateSurchargeSnapshot,
+								}
+							: undefined,
 					),
 				"Failed to calculate surcharges after clock-out",
 				{ workPeriodId: activeWorkPeriod.id },
