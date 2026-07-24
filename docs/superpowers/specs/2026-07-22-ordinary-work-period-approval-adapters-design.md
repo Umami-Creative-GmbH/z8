@@ -110,6 +110,8 @@ The canonical workflow engine owns routing, transitions, compatibility writes, p
 
 Canonical mode writes compatibility rows while legacy serving remains enabled. Complete mode writes no legacy compatibility rows. Inbox list, count, detail, individual-decision, and bulk-decision surfaces discover complete-mode ordinary approvals from organization-scoped canonical inbox projections and active assignments. Canonical rows are suppressed when an authoritative compatibility request for the same workflow stage already serves the item, so no rollout mode produces duplicate inbox entries. The public stable target for a canonical-only item is its assignment ID.
 
+Canonical candidate selection, pagination, and counts use the same strict validity boundary as returned items. Malformed context, snapshots, source parity, or projection evidence is excluded before ordering, cursor application, limits, and aggregation. Invalid rows cannot consume a page slot, terminate pagination, or inflate counts.
+
 No rollout row or organization mode changes as part of this work.
 
 ## Decision Flow
@@ -153,6 +155,8 @@ The exact same snapshot is stored in the work-period pending changes and, accord
 
 Exact submission replay requires the same normalized snapshot. A changed snapshot for the same submission identity is a conflict. Newly created policy-clock-out submissions without valid snapshot evidence fail closed. Historical legacy requests created before this contract may use the explicitly isolated legacy fallback; canonical and complete requests never synthesize policy evidence at decision time.
 
+The historical fallback applies only to unmarked legacy requests created before snapshot-capable submission. Those requests retain the old contract in which break enforcement already ran at clock-out: terminal approval or rejection changes approval state without re-resolving policy or inserting another break. Any request carrying the new submission marker but missing or mismatching snapshot evidence fails closed.
+
 Terminal approval runs break enforcement inside the repository-owned approval transaction after locking and revalidating the organization-scoped work period, canonical work record, immutable policy snapshot, and employee timezone. If no break is required, approval completes without changing the recorded interval. If a break is required, the transaction:
 
 1. creates the synthetic clock-out and clock-in entries with timezone capture for their exact event instants;
@@ -186,6 +190,10 @@ Terminal approval returns detached internal maintenance facts independently from
 
 Approved no-split periods also mark work balance dirty when pending periods are excluded from approved balance calculations. Rejection removes any surcharge state created while pending when required by existing persistence behavior. Intermediate decisions and exact replay perform no terminal maintenance. Internal maintenance failure is logged with safe identifiers and does not change the committed decision; external notification delivery remains gated by rollout disposition.
 
+Policy-clock-out submission also captures one strict, versioned private surcharge snapshot at the submitted clock-out instant. It stores the employee/team assignment evidence, model identity, and complete rule values needed to calculate surcharge results for either the original interval or later break-split segments. Terminal maintenance never derives historical surcharge meaning from the employee's current team, current assignment activity, archived model state, or edited rules.
+
+The surcharge snapshot follows the same source, legacy metadata, canonical context, equality, replay, redaction, and fail-closed rules as the break-policy snapshot. No-approval clock-outs retain immediate surcharge behavior. Unmarked historical pending rows retain their already-persisted pre-contract surcharge state; marked new submissions require valid immutable surcharge evidence.
+
 ## Error Handling And Security
 
 All user inputs use existing schema validation. Organization, actor, employee, and approver authority come from authenticated server context, never caller-supplied trusted fields. SQL remains parameterized.
@@ -208,6 +216,7 @@ The implementation plan must include:
 - all five rollout modes for creation, auto-approval, multistage approval, rejection, and replay;
 - transaction-bound policy-clock-out break enforcement covering no-op, atomic split, requester auto-approval, rejection, exact replay, rollback, timezone capture, and two-record canonical parity;
 - immutable break-policy snapshots covering team transfer, assignment deactivation, policy replacement, rule edits, malformed evidence, and conflicting replay;
+- immutable surcharge snapshots covering delayed team transfer, assignment replacement, model archival, rule edits, split-segment calculation, and replay;
 - complete-mode canonical inbox list, count, detail, individual, and bulk discovery without compatibility rows or duplicate canonical-mode items;
 - organization-scoped surcharge reconciliation and work-balance dirty marking for terminal split, no-split, rejection, failure, and replay paths;
 - individual, bulk, legacy-handler, bot, inbox, and requester-read regressions;
@@ -227,5 +236,6 @@ The implementation plan must include:
 - Delayed approval applies the immutable break policy captured at submission rather than mutable current policy or team state.
 - Complete-mode ordinary approvals remain discoverable and actionable through canonical projections without restoring legacy writes.
 - Terminal source changes reconcile local surcharge and work-balance state in every rollout mode without redispatch on replay.
+- Delayed terminal maintenance calculates surcharge state from immutable submission evidence rather than mutable current assignment or model rows.
 - Existing public responses, inbox behavior, notifications, and payroll semantics remain stable; only the established break-enforcement split introduces synthetic event instants and adjusted segment boundaries.
 - No cancellation, rollout activation, or external outbox delivery is introduced.
