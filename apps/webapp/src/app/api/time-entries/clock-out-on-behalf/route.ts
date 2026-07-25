@@ -3,9 +3,9 @@ import { DateTime } from "luxon";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import {
-	calculateAndPersistSurcharges,
 	checkComplianceAfterClockOut,
 	enforceBreaksAfterClockOut,
+	reconcileImmediateSurcharges,
 } from "@/app/[locale]/(app)/time-tracking/actions/compliance";
 import { logger } from "@/app/[locale]/(app)/time-tracking/actions/shared";
 import { db } from "@/db";
@@ -24,6 +24,10 @@ import {
 	ClockingConflictError,
 	clockingService,
 } from "@/lib/time-tracking/clocking-service";
+import {
+	type PolicyClockOutSurchargeSnapshot,
+	resolvePolicyClockOutSurchargeSnapshotInTransaction,
+} from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import {
 	isValidIanaTimezone,
 	resolveFallbackTimezoneCapture,
@@ -52,6 +56,26 @@ async function markWorkBalanceDirtyAfterOnBehalfClockOutBestEffort(input: {
 				organizationId: input.organizationId,
 			},
 			"Failed to mark work balance dirty after on-behalf clock-out",
+		);
+	}
+}
+
+async function reconcileImmediateSurchargesAfterOnBehalfClockOutBestEffort(input: {
+	organizationId: string;
+	employeeId: string;
+	affectedWorkPeriodIds: string[];
+	snapshot: PolicyClockOutSurchargeSnapshot;
+}) {
+	try {
+		await reconcileImmediateSurcharges(input);
+	} catch (error) {
+		logger.error(
+			{
+				error,
+				employeeId: input.employeeId,
+				organizationId: input.organizationId,
+			},
+			"Failed to reconcile surcharges after on-behalf clock-out",
 		);
 	}
 }
@@ -176,15 +200,31 @@ export async function POST(request: NextRequest) {
 			timezone,
 			timezoneSource: "manager_target_user_setting",
 		});
+		const actionInstant = instantFromDate(entryTime);
+		let surchargeSnapshot: PolicyClockOutSurchargeSnapshot | null = null;
 
 		const result = await clockingService.clockOut({
 			createdBy: session.user.id,
 			employeeId: target.targetEmployee.id,
 			organizationId,
 			workPeriodId: target.period.id,
-			action: { instant: instantFromDate(entryTime), ...timezoneCapture },
+			action: { instant: actionInstant, ...timezoneCapture },
 			source: { ipAddress: null, deviceInfo: "web-on-behalf" },
+			beforePeriodClose: async ({ transaction, activePeriod }) => {
+				surchargeSnapshot =
+					await resolvePolicyClockOutSurchargeSnapshotInTransaction({
+						dbService: { db: transaction } as never,
+						organizationId,
+						employeeId: target.targetEmployee.id,
+						startTime: instantFromDate(activePeriod.startTime),
+						endTime: actionInstant,
+					});
+				return undefined;
+			},
 		});
+		if (!surchargeSnapshot) {
+			throw new Error("Clock-out surcharge snapshot was not captured");
+		}
 
 		await checkComplianceAfterClockOut(
 			target.targetEmployee.id,
@@ -202,9 +242,12 @@ export async function POST(request: NextRequest) {
 			timezone,
 			workPeriodId: result.period.id,
 		});
-		for (const workPeriodId of breakEnforcementResult.affectedWorkPeriodIds) {
-			await calculateAndPersistSurcharges(workPeriodId, organizationId);
-		}
+		await reconcileImmediateSurchargesAfterOnBehalfClockOutBestEffort({
+			affectedWorkPeriodIds: breakEnforcementResult.affectedWorkPeriodIds,
+			employeeId: target.targetEmployee.id,
+			organizationId,
+			snapshot: surchargeSnapshot,
+		});
 
 		const dirtyMark = {
 			dirtyFromDate:

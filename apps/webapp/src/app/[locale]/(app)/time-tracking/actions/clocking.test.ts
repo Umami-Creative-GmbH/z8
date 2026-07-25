@@ -26,6 +26,7 @@ const mockState = vi.hoisted(() => ({
 	sendManualEntryApprovedNotification: vi.fn(),
 	transactionOpen: false,
 	calculateAndPersistSurcharges: vi.fn(),
+	reconcileImmediateSurcharges: vi.fn(),
 	checkComplianceAfterClockOut: vi.fn(),
 	enforceBreaksAfterClockOut: vi.fn(),
 	checkProjectBudgetAfterClockOut: vi.fn(),
@@ -328,6 +329,7 @@ vi.mock("./compliance", () => ({
 	calculateBreaksTakenToday: vi.fn(),
 	checkComplianceAfterClockOut: mockState.checkComplianceAfterClockOut,
 	enforceBreaksAfterClockOut: mockState.enforceBreaksAfterClockOut,
+	reconcileImmediateSurcharges: mockState.reconcileImmediateSurcharges,
 }));
 
 vi.mock("./entry-helpers", () => ({
@@ -1010,6 +1012,7 @@ describe("clockOut", () => {
 		});
 		mockState.checkClockOutNeedsApproval.mockResolvedValue(false);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
+		mockState.reconcileImmediateSurcharges.mockResolvedValue(undefined);
 		mockState.checkComplianceAfterClockOut.mockResolvedValue([]);
 		mockState.enforceBreaksAfterClockOut.mockResolvedValue({
 			wasAdjusted: false,
@@ -2042,20 +2045,24 @@ describe("clockOut", () => {
 		const result = await clockOut();
 
 		expect(result.success).toBe(true);
-		expect(mockState.calculateAndPersistSurcharges.mock.calls).toEqual([
-			["period-1", "org-1", { employeeId: "employee-1", snapshot }],
-			["period-2", "org-1", { employeeId: "employee-1", snapshot }],
-		]);
+		expect(mockState.reconcileImmediateSurcharges).toHaveBeenCalledOnce();
+		expect(mockState.reconcileImmediateSurcharges).toHaveBeenCalledWith({
+			affectedWorkPeriodIds: ["period-1", "period-2"],
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			snapshot,
+		});
 		expect(
 			mockState.enforceBreaksAfterClockOut.mock.invocationCallOrder[0],
 		).toBeLessThan(
-			mockState.calculateAndPersistSurcharges.mock.invocationCallOrder[0],
+			mockState.reconcileImmediateSurcharges.mock.invocationCallOrder[0],
 		);
 		expect(
-			mockState.calculateAndPersistSurcharges.mock.invocationCallOrder[1],
+			mockState.reconcileImmediateSurcharges.mock.invocationCallOrder[0],
 		).toBeLessThan(
 			mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
 		);
+		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
 	});
 
 	it("routes no-approval surcharge evidence through immutable reconciliation", async () => {
@@ -2069,10 +2076,31 @@ describe("clockOut", () => {
 		const result = await clockOut();
 
 		expect(result.success).toBe(true);
-		expect(mockState.calculateAndPersistSurcharges).toHaveBeenCalledWith(
-			"period-1",
-			"org-1",
-			{ employeeId: "employee-1", snapshot },
+		expect(mockState.reconcileImmediateSurcharges).toHaveBeenCalledWith({
+			affectedWorkPeriodIds: ["period-1"],
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			snapshot,
+		});
+		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
+	});
+
+	it("keeps split clock-out successful when atomic surcharge reconciliation fails", async () => {
+		mockState.enforceBreaksAfterClockOut.mockResolvedValueOnce({
+			wasAdjusted: true,
+			affectedWorkPeriodIds: ["period-1", "period-2"],
+		});
+		mockState.reconcileImmediateSurcharges.mockRejectedValueOnce(
+			new Error("second surcharge insert failed"),
+		);
+
+		const result = await clockOut();
+
+		expect(result.success).toBe(true);
+		expect(mockState.reconcileImmediateSurcharges).toHaveBeenCalledOnce();
+		expect(mockState.logger.error).toHaveBeenCalledWith(
+			expect.objectContaining({ workPeriodId: "period-1" }),
+			"Failed to calculate surcharges after clock-out",
 		);
 	});
 

@@ -31,6 +31,7 @@ const mockState = vi.hoisted(() => {
 		createTimeEntry: vi.fn(),
 		clockingClockOut: vi.fn(),
 		calculateAndPersistSurcharges: vi.fn(),
+		reconcileImmediateSurcharges: vi.fn(),
 		checkComplianceAfterClockOut: vi.fn(),
 		enforceBreaksAfterClockOut: vi.fn(),
 		findUserSettings: vi.fn(),
@@ -45,6 +46,8 @@ const mockState = vi.hoisted(() => {
 		requireBillingForMutation: vi.fn(),
 		requireActor: vi.fn(),
 		resolveFallbackTimezoneCapture: vi.fn(),
+		resolveSurchargeSnapshot: vi.fn(),
+		logger: { error: vi.fn() },
 		select,
 		transaction,
 		txClient,
@@ -153,6 +156,16 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/compliance", () => ({
 	calculateAndPersistSurcharges: mockState.calculateAndPersistSurcharges,
 	checkComplianceAfterClockOut: mockState.checkComplianceAfterClockOut,
 	enforceBreaksAfterClockOut: mockState.enforceBreaksAfterClockOut,
+	reconcileImmediateSurcharges: mockState.reconcileImmediateSurcharges,
+}));
+
+vi.mock("@/app/[locale]/(app)/time-tracking/actions/shared", () => ({
+	logger: mockState.logger,
+}));
+
+vi.mock("@/lib/time-tracking/policy-clock-out-surcharge-snapshot", () => ({
+	resolvePolicyClockOutSurchargeSnapshotInTransaction:
+		mockState.resolveSurchargeSnapshot,
 }));
 
 vi.mock("@/lib/work-balance/service", () => ({
@@ -173,6 +186,11 @@ vi.mock("drizzle-orm", () => ({
 const { POST } = await import("./route");
 
 const now = new Date("2026-06-09T10:30:00.000Z");
+const surchargeSnapshot = {
+	version: 1 as const,
+	evaluatedAt: "2026-06-09T10:30:00Z",
+	resolution: { kind: "none" as const },
+};
 
 const actorEmployee = {
 	id: "actor-employee-1",
@@ -264,13 +282,25 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 			utcOffsetMinutes: 120,
 		});
 		mockState.createTimeEntry.mockResolvedValue({ id: "clock-out-entry-1" });
-		mockState.clockingClockOut.mockResolvedValue({
-			activePeriod: { id: "period-1", startTime: runningPeriod.startTime },
-			durationMinutes: 150,
-			entry: { id: "clock-out-entry-1" },
-			period: { id: "period-1" },
+		mockState.clockingClockOut.mockImplementation(async (input) => {
+			await input.beforePeriodClose?.({
+				transaction: mockState.txClient,
+				activePeriod: {
+					id: "period-1",
+					startTime: runningPeriod.startTime,
+				},
+				durationMinutes: 150,
+			});
+			return {
+				activePeriod: { id: "period-1", startTime: runningPeriod.startTime },
+				durationMinutes: 150,
+				entry: { id: "clock-out-entry-1" },
+				period: { id: "period-1" },
+			};
 		});
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
+		mockState.reconcileImmediateSurcharges.mockResolvedValue(undefined);
+		mockState.resolveSurchargeSnapshot.mockResolvedValue(surchargeSnapshot);
 		mockState.checkComplianceAfterClockOut.mockResolvedValue([]);
 		mockState.enforceBreaksAfterClockOut.mockResolvedValue({
 			wasAdjusted: false,
@@ -314,10 +344,13 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		const response = await POST(createRequest({ workPeriodId: "period-1" }));
 
 		expect(response.status).toBe(201);
-		expect(mockState.calculateAndPersistSurcharges).toHaveBeenCalledWith(
-			"period-1",
-			"org-1",
-		);
+		expect(mockState.reconcileImmediateSurcharges).toHaveBeenCalledWith({
+			affectedWorkPeriodIds: ["period-1"],
+			employeeId: "target-employee-1",
+			organizationId: "org-1",
+			snapshot: surchargeSnapshot,
+		});
+		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
 		expect(mockState.checkComplianceAfterClockOut).toHaveBeenCalledWith(
 			"target-employee-1",
 			"org-1",
@@ -338,13 +371,17 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 			employeeId: "target-employee-1",
 			organizationId: "org-1",
 		});
-		expect(
-			mockState.calculateAndPersistSurcharges.mock.invocationCallOrder[0],
-		).toBeGreaterThan(mockState.clockingClockOut.mock.invocationCallOrder[0]);
+		expect(mockState.resolveSurchargeSnapshot).toHaveBeenCalledWith({
+			dbService: { db: mockState.txClient },
+			employeeId: "target-employee-1",
+			organizationId: "org-1",
+			startTime: expect.anything(),
+			endTime: expect.anything(),
+		});
 		expect(
 			mockState.enforceBreaksAfterClockOut.mock.invocationCallOrder[0],
 		).toBeLessThan(
-			mockState.calculateAndPersistSurcharges.mock.invocationCallOrder[0],
+			mockState.reconcileImmediateSurcharges.mock.invocationCallOrder[0],
 		);
 	});
 
@@ -359,10 +396,7 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		expect(await response.json()).toEqual({
 			entry: { id: "clock-out-entry-1" },
 		});
-		expect(mockState.calculateAndPersistSurcharges).toHaveBeenCalledWith(
-			"period-1",
-			"org-1",
-		);
+		expect(mockState.reconcileImmediateSurcharges).toHaveBeenCalledOnce();
 		expect(mockState.checkComplianceAfterClockOut).toHaveBeenCalledWith(
 			"target-employee-1",
 			"org-1",
@@ -387,10 +421,14 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		expect(await response.json()).toEqual({
 			entry: { id: "clock-out-entry-1" },
 		});
-		expect(mockState.calculateAndPersistSurcharges.mock.calls).toEqual([
-			["period-1", "org-1"],
-			["period-2", "org-1"],
-		]);
+		expect(mockState.reconcileImmediateSurcharges).toHaveBeenCalledOnce();
+		expect(mockState.reconcileImmediateSurcharges).toHaveBeenCalledWith({
+			affectedWorkPeriodIds: ["period-1", "period-2"],
+			employeeId: "target-employee-1",
+			organizationId: "org-1",
+			snapshot: surchargeSnapshot,
+		});
+		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
 		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledOnce();
 		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
 			dirtyFromDate: "2026-06-09",
@@ -398,9 +436,33 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 			organizationId: "org-1",
 		});
 		expect(
-			mockState.calculateAndPersistSurcharges.mock.invocationCallOrder[1],
+			mockState.reconcileImmediateSurcharges.mock.invocationCallOrder[0],
 		).toBeLessThan(
 			mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
+		);
+	});
+
+	it("keeps a split clock-out response successful when atomic reconciliation fails", async () => {
+		mockState.enforceBreaksAfterClockOut.mockResolvedValueOnce({
+			wasAdjusted: true,
+			affectedWorkPeriodIds: ["period-1", "period-2"],
+		});
+		mockState.reconcileImmediateSurcharges.mockRejectedValueOnce(
+			new Error("second surcharge insert failed"),
+		);
+
+		const response = await POST(createRequest({ workPeriodId: "period-1" }));
+
+		expect(response.status).toBe(201);
+		expect(await response.json()).toEqual({
+			entry: { id: "clock-out-entry-1" },
+		});
+		expect(mockState.logger.error).toHaveBeenCalledWith(
+			expect.objectContaining({
+				employeeId: "target-employee-1",
+				organizationId: "org-1",
+			}),
+			"Failed to reconcile surcharges after on-behalf clock-out",
 		);
 	});
 

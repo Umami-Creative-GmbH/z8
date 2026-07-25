@@ -160,6 +160,31 @@ export async function calculateAndPersistSurcharges(
 	}
 }
 
+export async function reconcileImmediateSurcharges(input: {
+	organizationId: string;
+	employeeId: string;
+	affectedWorkPeriodIds: string[];
+	snapshot: PolicyClockOutSurchargeSnapshot;
+}): Promise<void> {
+	const surchargeEffect = Effect.gen(function* (_) {
+		const surchargeService = yield* _(SurchargeService);
+		yield* _(
+			surchargeService.reconcileWorkPeriods({
+				organizationId: input.organizationId,
+				employeeId: input.employeeId,
+				surchargePeriodIds: input.affectedWorkPeriodIds,
+				staleSurchargePeriodIds: [],
+				surchargeSnapshot: input.snapshot,
+			}),
+		);
+	}).pipe(
+		Effect.provide(SurchargeServiceLive),
+		Effect.provide(DatabaseServiceLive),
+	);
+
+	await Effect.runPromise(surchargeEffect);
+}
+
 export async function enforceBreaksAfterClockOut(input: {
 	employeeId: string;
 	organizationId: string;

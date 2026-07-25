@@ -89,6 +89,7 @@ import {
 	calculateBreaksTakenToday,
 	checkComplianceAfterClockOut,
 	enforceBreaksAfterClockOut,
+	reconcileImmediateSurcharges,
 } from "./compliance";
 import {
 	checkProjectBudgetAfterClockOut,
@@ -1464,20 +1465,16 @@ export async function clockOut(
 		}
 		if (shouldRunPostCommitEffects && !needsClockOutApproval) {
 			await bestEffort(
-				async () => {
-					for (const workPeriodId of breakEnforcementResult.affectedWorkPeriodIds) {
-						await calculateAndPersistSurcharges(
-							workPeriodId,
-							currentEmployee.organizationId,
-							immediateSurchargeSnapshot
-								? {
-										employeeId: currentEmployee.id,
-										snapshot: immediateSurchargeSnapshot,
-									}
-								: undefined,
-						);
-					}
-				},
+				() =>
+					immediateSurchargeSnapshot
+						? reconcileImmediateSurcharges({
+								affectedWorkPeriodIds:
+									breakEnforcementResult.affectedWorkPeriodIds,
+								employeeId: currentEmployee.id,
+								organizationId: currentEmployee.organizationId,
+								snapshot: immediateSurchargeSnapshot,
+							})
+						: Promise.resolve(),
 				"Failed to calculate surcharges after clock-out",
 				{ workPeriodId: activeWorkPeriod.id },
 			);

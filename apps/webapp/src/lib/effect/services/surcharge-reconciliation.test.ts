@@ -521,11 +521,13 @@ function database(options?: {
 	model?: Record<string, unknown> | null;
 	teamId?: string | null;
 	assignmentScopes?: Array<Array<Record<string, unknown>>>;
+	failOnInsert?: number;
 }) {
 	const deletes: unknown[] = [];
 	const inserts: unknown[] = [];
 	const assignmentQueries: Array<Record<string, unknown>> = [];
 	const calculations: Array<Record<string, unknown>> = [{ id: "stale" }];
+	let insertCount = 0;
 	const period = {
 		id: "period-1",
 		organizationId: "org-1",
@@ -585,6 +587,10 @@ function database(options?: {
 		})),
 		insert: vi.fn(() => ({
 			values: vi.fn((values) => {
+				insertCount += 1;
+				if (insertCount === options?.failOnInsert) {
+					return Promise.reject(new Error("surcharge insert failed"));
+				}
 				inserts.push(values);
 				calculations.push(values);
 				return Promise.resolve();
@@ -778,6 +784,56 @@ describe("reconcileSurchargeWorkPeriodsWithDatabase", () => {
 		]);
 	});
 
+	it("rolls back both split calculations when the second insert fails", async () => {
+		const periods = [
+			{
+				id: "period-1",
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				startTime: new Date("2026-07-19T08:00:00Z"),
+				endTime: new Date("2026-07-19T09:00:00Z"),
+				approvalStatus: "approved",
+				clockIn: {
+					timestamp: new Date("2026-07-19T08:00:00Z"),
+					timezone: "UTC",
+					utcOffsetMinutes: 0,
+				},
+				clockOut: {
+					timestamp: new Date("2026-07-19T09:00:00Z"),
+					timezone: "UTC",
+					utcOffsetMinutes: 0,
+				},
+			},
+			{
+				id: "period-2",
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				startTime: new Date("2026-07-19T09:30:00Z"),
+				endTime: new Date("2026-07-19T10:30:00Z"),
+				approvalStatus: "approved",
+				clockIn: {
+					timestamp: new Date("2026-07-19T09:30:00Z"),
+					timezone: "UTC",
+					utcOffsetMinutes: 0,
+				},
+				clockOut: {
+					timestamp: new Date("2026-07-19T10:30:00Z"),
+					timezone: "UTC",
+					utcOffsetMinutes: 0,
+				},
+			},
+		];
+		const fake = database({ periods, failOnInsert: 2 });
+
+		await expect(
+			reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, {
+				...input,
+				surchargePeriodIds: ["period-1", "period-2"],
+			}),
+		).rejects.toThrow("Surcharge reconciliation failed");
+		expect(fake.calculations).toEqual([{ id: "stale" }]);
+	});
+
 	it("deletes stale calculations and creates none from stored none after a later assignment", async () => {
 		const fake = database({ model: assignmentFixture({ modelId: "later" }) });
 
@@ -823,6 +879,26 @@ describe("reconcileSurchargeWorkPeriodsWithDatabase", () => {
 		).rejects.toThrow("Surcharge reconciliation failed");
 		expect(fake.tx.delete).not.toHaveBeenCalled();
 		expect(fake.tx.insert).not.toHaveBeenCalled();
+	});
+
+	it("fails closed before delete when one atomic target belongs to another organization", async () => {
+		const fake = database({
+			periods: [
+				{
+					id: "period-1",
+					organizationId: "org-1",
+					employeeId: "employee-1",
+				},
+			],
+		});
+
+		await expect(
+			reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, {
+				...input,
+				surchargePeriodIds: ["period-1", "foreign-period"],
+			}),
+		).rejects.toThrow("Surcharge reconciliation failed");
+		expect(fake.tx.delete).not.toHaveBeenCalled();
 	});
 
 	it("fails closed before delete when a target period is not approved", async () => {
