@@ -3,6 +3,16 @@ import { db, employee } from "@/db";
 import { runCanonicalBackfill } from "./backfill";
 import { reconcileLegacyToCanonical } from "./reconciliation";
 
+export class CanonicalCutoverNotReadyError extends Error {
+	readonly organizationId: string;
+
+	constructor(organizationId: string) {
+		super(`Canonical time-record backfill is incomplete for organization ${organizationId}`);
+		this.name = "CanonicalCutoverNotReadyError";
+		this.organizationId = organizationId;
+	}
+}
+
 export async function assertCanonicalCutoverReady(organizationId: string) {
 	let reconciliation = await reconcileLegacyToCanonical(organizationId);
 
@@ -25,9 +35,7 @@ export async function assertCanonicalCutoverReady(organizationId: string) {
 	}
 
 	if (hasReconciliationMismatch(reconciliation)) {
-		throw new Error(
-			`Canonical time-record backfill is incomplete for organization ${organizationId}`,
-		);
+		throw new CanonicalCutoverNotReadyError(organizationId);
 	}
 }
 

@@ -100,9 +100,11 @@ describe("assertCanonicalCutoverReady", () => {
 				missingAbsenceOrganizationIds: 0,
 			});
 
-		await expect(assertCanonicalCutoverReady("org-1")).rejects.toThrow(
-			"Canonical time-record backfill is incomplete for organization org-1",
-		);
+		await expect(assertCanonicalCutoverReady("org-1")).rejects.toMatchObject({
+			name: "CanonicalCutoverNotReadyError",
+			organizationId: "org-1",
+			message: "Canonical time-record backfill is incomplete for organization org-1",
+		});
 		expect(runCanonicalBackfill).toHaveBeenCalledWith({
 			organizationId: "org-1",
 			actorId: "user-1",
