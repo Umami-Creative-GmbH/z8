@@ -43,12 +43,19 @@ export async function reconcileLegacyToCanonical(
 	] = await Promise.all([
 		db.query.workPeriod.findMany({
 			where: eq(workPeriod.organizationId, organizationId),
-			columns: { id: true, projectId: true, durationMinutes: true, approvalStatus: true },
+			columns: {
+				id: true,
+				canonicalRecordId: true,
+				projectId: true,
+				durationMinutes: true,
+				approvalStatus: true,
+			},
 		}),
 		db.query.absenceEntry.findMany({
 			where: eq(absenceEntry.organizationId, organizationId),
 			columns: {
 				id: true,
+				canonicalRecordId: true,
 				endDate: true,
 				endPeriod: true,
 				startDate: true,
@@ -57,7 +64,10 @@ export async function reconcileLegacyToCanonical(
 			},
 		}),
 		db.query.timeRecord.findMany({
-			where: and(eq(timeRecord.organizationId, organizationId), eq(timeRecord.recordKind, "work")),
+			where: and(
+				eq(timeRecord.organizationId, organizationId),
+				eq(timeRecord.recordKind, "work"),
+			),
 			columns: { id: true, durationMinutes: true, approvalState: true },
 		}),
 		db.query.timeRecord.findMany({
@@ -106,55 +116,108 @@ export async function reconcileLegacyToCanonical(
 		}),
 	]);
 
-	const legacyWorkIds = new Set(legacyWork.map((row) => row.id));
-	const legacyAbsenceIds = new Set(legacyAbsence.map((row) => row.id));
+	const expectedWorkCanonicalIds = new Set(
+		legacyWork.map(resolveExpectedCanonicalId),
+	);
+	const expectedAbsenceCanonicalIds = new Set(
+		legacyAbsence.map(resolveExpectedCanonicalId),
+	);
 	const canonicalWorkIds = new Set(canonicalWork.map((row) => row.id));
 	const canonicalAbsenceIds = new Set(canonicalAbsence.map((row) => row.id));
-	const canonicalWorkDetailIds = new Set(canonicalWorkDetails.map((row) => row.recordId));
-	const canonicalAbsenceDetailIds = new Set(canonicalAbsenceDetails.map((row) => row.recordId));
+	const canonicalWorkDetailIds = new Set(
+		canonicalWorkDetails.map((row) => row.recordId),
+	);
+	const canonicalAbsenceDetailIds = new Set(
+		canonicalAbsenceDetails.map((row) => row.recordId),
+	);
 	const canonicalWorkById = new Map(canonicalWork.map((row) => [row.id, row]));
-	const canonicalAbsenceById = new Map(canonicalAbsence.map((row) => [row.id, row]));
-	const legacyWorkById = new Map(legacyWork.map((row) => [row.id, row]));
+	const canonicalAbsenceById = new Map(
+		canonicalAbsence.map((row) => [row.id, row]),
+	);
+	const legacyWorkByCanonicalId = new Map(
+		legacyWork.map((row) => [resolveExpectedCanonicalId(row), row]),
+	);
 	const expectedProjectAllocations = new Set(
-		legacyWork.filter((row) => row.projectId).map((row) => `${row.id}:${row.projectId}`),
+		legacyWork
+			.filter((row) => row.projectId)
+			.map((row) => `${resolveExpectedCanonicalId(row)}:${row.projectId}`),
 	);
 	const canonicalProjectAllocationKeys = new Set(
-		canonicalProjectAllocations.map((row) => `${row.recordId}:${row.projectId}`),
+		canonicalProjectAllocations.map(
+			(row) => `${row.recordId}:${row.projectId}`,
+		),
 	);
 	const targetEmployeeIds = new Set(targetEmployees.map((row) => row.id));
 	const attributedNullOrgAbsenceEntries = nullOrgAbsenceEntries.filter((row) =>
 		targetEmployeeIds.has(row.employeeId),
 	);
-	const effectiveLegacyAbsenceIds = new Set(legacyAbsenceIds);
-	const effectiveLegacyAbsenceById = new Map(legacyAbsence.map((row) => [row.id, row]));
+	const effectiveExpectedAbsenceCanonicalIds = new Set(
+		expectedAbsenceCanonicalIds,
+	);
+	const effectiveLegacyAbsenceByCanonicalId = new Map(
+		legacyAbsence.map((row) => [resolveExpectedCanonicalId(row), row]),
+	);
 
 	for (const row of attributedNullOrgAbsenceEntries) {
-		effectiveLegacyAbsenceIds.add(row.id);
-		effectiveLegacyAbsenceById.set(row.id, row);
+		const expectedCanonicalId = resolveExpectedCanonicalId(row);
+		effectiveExpectedAbsenceCanonicalIds.add(expectedCanonicalId);
+		effectiveLegacyAbsenceByCanonicalId.set(expectedCanonicalId, row);
 	}
 
+	const missingWorkCanonicalRecords = countMissingIds(
+		expectedWorkCanonicalIds,
+		canonicalWorkIds,
+	);
+	const missingAbsenceCanonicalRecords = countMissingIds(
+		effectiveExpectedAbsenceCanonicalIds,
+		canonicalAbsenceIds,
+	);
+
 	return {
-		workCountMismatch: Math.abs(legacyWork.length - canonicalWork.length),
-		absenceCountMismatch: Math.abs(effectiveLegacyAbsenceIds.size - canonicalAbsence.length),
+		workCountMismatch: missingWorkCanonicalRecords,
+		absenceCountMismatch: missingAbsenceCanonicalRecords,
 		durationMismatchRecords:
-			countWorkDurationMismatches(legacyWorkById, canonicalWorkById) +
-			countAbsenceDurationMismatches(effectiveLegacyAbsenceById, canonicalAbsenceById),
-		missingWorkCanonicalRecords: countMissingIds(legacyWorkIds, canonicalWorkIds),
-		missingAbsenceCanonicalRecords: countMissingIds(effectiveLegacyAbsenceIds, canonicalAbsenceIds),
-		missingWorkDetailRows: countMissingIds(legacyWorkIds, canonicalWorkDetailIds),
-		missingAbsenceDetailRows: countMissingIds(effectiveLegacyAbsenceIds, canonicalAbsenceDetailIds),
+			countWorkDurationMismatches(legacyWorkByCanonicalId, canonicalWorkById) +
+			countAbsenceDurationMismatches(
+				effectiveLegacyAbsenceByCanonicalId,
+				canonicalAbsenceById,
+			),
+		missingWorkCanonicalRecords,
+		missingAbsenceCanonicalRecords,
+		missingWorkDetailRows: countMissingIds(
+			expectedWorkCanonicalIds,
+			canonicalWorkDetailIds,
+		),
+		missingAbsenceDetailRows: countMissingIds(
+			effectiveExpectedAbsenceCanonicalIds,
+			canonicalAbsenceDetailIds,
+		),
 		missingProjectAllocationRows: countMissingIds(
 			expectedProjectAllocations,
 			canonicalProjectAllocationKeys,
 		),
 		missingAbsenceCanonicalLinks:
 			linkedAbsenceEntries.filter((row) => !row.canonicalRecordId).length +
-			attributedNullOrgAbsenceEntries.filter((row) => !row.canonicalRecordId).length,
+			attributedNullOrgAbsenceEntries.filter((row) => !row.canonicalRecordId)
+				.length,
 		approvalStateMismatchRecords:
-			countWorkApprovalStateMismatches(legacyWorkById, canonicalWorkById) +
-			countAbsenceApprovalStateMismatches(effectiveLegacyAbsenceById, canonicalAbsenceById),
+			countWorkApprovalStateMismatches(
+				legacyWorkByCanonicalId,
+				canonicalWorkById,
+			) +
+			countAbsenceApprovalStateMismatches(
+				effectiveLegacyAbsenceByCanonicalId,
+				canonicalAbsenceById,
+			),
 		missingAbsenceOrganizationIds: attributedNullOrgAbsenceEntries.length,
 	};
+}
+
+function resolveExpectedCanonicalId(record: {
+	id: string;
+	canonicalRecordId: string | null | undefined;
+}) {
+	return record.canonicalRecordId ?? record.id;
 }
 
 function countMissingIds(legacyIds: Set<string>, canonicalIds: Set<string>) {
@@ -225,8 +288,14 @@ function countAbsenceDurationMismatches(
 }
 
 function countWorkApprovalStateMismatches(
-	legacyWorkById: Map<string, { approvalStatus: "pending" | "approved" | "rejected" }>,
-	canonicalWorkById: Map<string, { approvalState: "pending" | "approved" | "rejected" | "draft" }>,
+	legacyWorkById: Map<
+		string,
+		{ approvalStatus: "pending" | "approved" | "rejected" }
+	>,
+	canonicalWorkById: Map<
+		string,
+		{ approvalState: "pending" | "approved" | "rejected" | "draft" }
+	>,
 ) {
 	let count = 0;
 
@@ -245,7 +314,10 @@ function countWorkApprovalStateMismatches(
 }
 
 function countAbsenceApprovalStateMismatches(
-	legacyAbsenceById: Map<string, { status: "pending" | "approved" | "rejected" }>,
+	legacyAbsenceById: Map<
+		string,
+		{ status: "pending" | "approved" | "rejected" }
+	>,
 	canonicalAbsenceById: Map<
 		string,
 		{ approvalState: "pending" | "approved" | "rejected" | "draft" }
@@ -279,11 +351,17 @@ function calculateAbsenceDurationMinutes(
 	return Math.max(0, Math.round(endAt.diff(startAt, "minutes").minutes));
 }
 
-function dateWithPeriod(dateIso: string, period: "full_day" | "am" | "pm", edge: "start" | "end") {
+function dateWithPeriod(
+	dateIso: string,
+	period: "full_day" | "am" | "pm",
+	edge: "start" | "end",
+) {
 	const day = DateTime.fromISO(dateIso, { zone: "utc" });
 
 	if (period === "am") {
-		return edge === "start" ? day.startOf("day") : day.startOf("day").plus({ hours: 12 });
+		return edge === "start"
+			? day.startOf("day")
+			: day.startOf("day").plus({ hours: 12 });
 	}
 
 	if (period === "pm") {
@@ -292,10 +370,14 @@ function dateWithPeriod(dateIso: string, period: "full_day" | "am" | "pm", edge:
 			: day.endOf("day").plus({ millisecond: 1 });
 	}
 
-	return edge === "start" ? day.startOf("day") : day.endOf("day").plus({ millisecond: 1 });
+	return edge === "start"
+		? day.startOf("day")
+		: day.endOf("day").plus({ millisecond: 1 });
 }
 
-function normalizeLegacyDayPeriod(period: "full_day" | "am" | "pm" | "morning" | "afternoon") {
+function normalizeLegacyDayPeriod(
+	period: "full_day" | "am" | "pm" | "morning" | "afternoon",
+) {
 	if (period === "morning") {
 		return "am" as const;
 	}
