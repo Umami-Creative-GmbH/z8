@@ -74,10 +74,10 @@ function asOrdinaryWorkPeriodResult(
 	result.snapshot.sourceType = "time_entry";
 	result.snapshot.contextSnapshot = {
 		timeRequest: { kind },
+		surchargeSnapshot: ordinarySurchargeSnapshot,
 		...(kind === "policy_clock_out"
 			? {
 					breakPolicySnapshot: ordinaryBreakPolicySnapshot,
-					surchargeSnapshot: ordinarySurchargeSnapshot,
 				}
 			: {}),
 	};
@@ -147,12 +147,11 @@ function expectedRequestMetadata(
 				sequence: stage.sequence,
 			},
 			timeRequest: { kind: result.snapshot.workflowType },
+			surchargeSnapshot: result.snapshot.contextSnapshot.surchargeSnapshot,
 			...(result.snapshot.workflowType === "policy_clock_out"
 				? {
 						breakPolicySnapshot:
 							result.snapshot.contextSnapshot.breakPolicySnapshot,
-						surchargeSnapshot:
-							result.snapshot.contextSnapshot.surchargeSnapshot,
 					}
 				: {}),
 		};
@@ -2778,10 +2777,10 @@ describe("transaction-bound legacy approval row writer", () => {
 			workflow: { id: result.snapshot.id, organizationId: "org-1" },
 			stage: { id: activeStage.id, sequence: activeStage.sequence },
 			timeRequest: { kind },
+			surchargeSnapshot: ordinarySurchargeSnapshot,
 			...(kind === "policy_clock_out"
 				? {
 						breakPolicySnapshot: ordinaryBreakPolicySnapshot,
-						surchargeSnapshot: ordinarySurchargeSnapshot,
 					}
 				: {}),
 		});
@@ -2805,6 +2804,7 @@ describe("transaction-bound legacy approval row writer", () => {
 			workflow: { id: result.snapshot.id, organizationId: "org-1" },
 			stage: { id: activeStage.id, sequence: activeStage.sequence },
 			timeRequest: { kind: "manual_time_submission" },
+			surchargeSnapshot: ordinarySurchargeSnapshot,
 		});
 	});
 

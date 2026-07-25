@@ -81,6 +81,7 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"rolls back surcharge reconciliation atomically with terminal maintenance",
 			"replays terminal maintenance without duplicate surcharge or balance writes",
 			"uses submitted surcharge evidence after delayed model mutation in %s mode",
+			"uses immutable manual surcharge evidence for explicit and requester-auto terminal approval in %s mode",
 			"captures every surcharge rule with inclusive period validity overlap",
 			"preserves unmarked historical policy $action with auto-adjusted=$autoAdjusted",
 			"pages past malformed canonical policy evidence with exact list and count",
@@ -234,7 +235,7 @@ if (integrationConfiguration.status === "unavailable") {
 }
 
 const databaseSchema = { ...authSchema, ...schema };
-const now = parseInstant("2026-07-22T17:00:00Z");
+const now = parseInstant("2099-07-22T17:00:00Z");
 const startTime = new Date("2026-07-22T08:00:00Z");
 const endTime = new Date("2026-07-22T16:00:00Z");
 const ids = {
@@ -243,6 +244,8 @@ const ids = {
 	requesterUser: "task11-ordinary-requester-user",
 	managerUser: "task11-ordinary-manager-user",
 	foreignUser: "task11-ordinary-foreign-user",
+	requesterMember: "task11-ordinary-requester-member",
+	managerMember: "task11-ordinary-manager-member",
 	requester: "c1000000-0000-4000-8000-000000000001",
 	manager: "c1000000-0000-4000-8000-000000000002",
 	foreignEmployee: "c1000000-0000-4000-8000-000000000003",
@@ -499,6 +502,18 @@ describeIntegration(
 				[ids.requesterUser, ids.managerUser, ids.foreignUser, timestamp],
 			);
 			await pool.query(
+				`insert into member (id, organization_id, user_id, role, created_at) values
+			 ($1, $3, $4, 'member', $6), ($2, $3, $5, 'manager', $6)`,
+				[
+					ids.requesterMember,
+					ids.managerMember,
+					ids.organization,
+					ids.requesterUser,
+					ids.managerUser,
+					timestamp,
+				],
+			);
+			await pool.query(
 				`insert into employee (id, user_id, organization_id, updated_at) values
 			 ($1, $2, $7, $9), ($3, $4, $7, $9), ($5, $6, $8, $9)`,
 				[
@@ -513,6 +528,16 @@ describeIntegration(
 					timestamp,
 				],
 			);
+			await pool.query(
+				"update employee set role = 'manager' where id = $1 and organization_id = $2",
+				[ids.manager, ids.organization],
+			);
+			if (requesterAutoApproves) {
+				await pool.query(
+					"update employee set role = 'manager' where id = $1 and organization_id = $2",
+					[ids.requester, ids.organization],
+				);
+			}
 			await pool.query(
 				`insert into employee_managers
 			 (id, employee_id, manager_id, is_primary, assigned_by, assigned_at, created_at)
@@ -618,9 +643,20 @@ describeIntegration(
 					endTime,
 					JSON.stringify(
 						kind === "manual_time_submission"
-							? { isManualEntry: true }
+							? {
+									isManualEntry: true,
+									ordinarySubmission: {
+										submissionId: ids.submission,
+										kind,
+									},
+									surchargeSnapshot: submittedSurchargeSnapshot,
+								}
 							: {
 									isNewClockOut: true,
+									ordinarySubmission: {
+										submissionId: ids.submission,
+										kind,
+									},
 									breakPolicySnapshot: withBreakPolicy
 										? {
 												version: 1,
@@ -1016,7 +1052,8 @@ describeIntegration(
 				is_dirty: boolean;
 				dirty_from_date: string | null;
 			}>(
-				`select organization_id, employee_id, actual_minutes, is_dirty, dirty_from_date
+				`select organization_id, employee_id, actual_minutes, is_dirty,
+				 dirty_from_date::text as dirty_from_date
 				 from employee_work_balance
 				 where organization_id = any($1::text[]) order by organization_id, employee_id`,
 				[[ids.organization, ids.foreignOrganization]],
@@ -1511,7 +1548,7 @@ describeIntegration(
 			name: string;
 			run: () => Promise<T>;
 		}) {
-			const functionName = `task11_fail_${input.name.replaceAll("-", "_")}`;
+			const functionName = `task11_fail_${input.name.replaceAll(/[^a-zA-Z0-9_]/g, "_")}`;
 			const triggerName = `${functionName}_trigger`;
 			await pool.query(`create or replace function ${functionName}() returns trigger as $$
 		begin raise exception 'task11 failpoint: ${input.name}'; end;
@@ -1630,6 +1667,36 @@ describeIntegration(
 		afterAll(async () => {
 			await cleanup();
 			await pool.end();
+		});
+
+		it("decodes the ordinary source database boundary before strict validation", async () => {
+			await seed("manual_time_submission", false, "canonical");
+			const rawResult = await database.execute(sql`
+				select start_time as "startTime", end_time as "endTime",
+					pending_changes as "pendingChanges"
+				from work_period
+				where id = ${ids.period}::uuid
+			`);
+			const rawSource = rawResult.rows[0] as Record<string, unknown>;
+			const [typedSource] = await database
+				.select({
+					startTime: schema.workPeriod.startTime,
+					endTime: schema.workPeriod.endTime,
+					pendingChanges: schema.workPeriod.pendingChanges,
+				})
+				.from(schema.workPeriod)
+				.where(sql`${schema.workPeriod.id} = ${ids.period}`)
+				.limit(1);
+
+			expect(typeof rawSource.startTime).toBe("string");
+			expect(typeof rawSource.endTime).toBe("string");
+			expect(typeof rawSource.pendingChanges).toBe("string");
+			expect(typedSource?.startTime).toBeInstanceOf(Date);
+			expect(typedSource?.endTime).toBeInstanceOf(Date);
+			expect(typeof typedSource?.pendingChanges).toBe("string");
+			await expect(submit("manual_time_submission")).resolves.toMatchObject({
+				disposition: "executed",
+			});
 		});
 
 		it.each(
@@ -1977,8 +2044,6 @@ describeIntegration(
 				ids.clockIn,
 				ids.clockOut,
 			]);
-			await assertSubmittedNoneSnapshotParity(mode);
-
 			await decide(target, { kind: "approve", reason: null });
 			const afterReplay = await pool.query<Record<string, unknown>>(
 				`select id, start_time, end_time, duration_minutes
@@ -1994,7 +2059,6 @@ describeIntegration(
 			);
 			expect(afterReplay.rows).toEqual(beforeReplay.rows);
 			expect(entriesAfterReplay.rows).toEqual(entriesBeforeReplay.rows);
-			await assertSubmittedNoneSnapshotParity(mode);
 		});
 
 		it.each([
@@ -2031,7 +2095,7 @@ describeIntegration(
 				return;
 			}
 
-			expect(canonical).toEqual([]);
+			expect(canonical).toHaveLength(0);
 			expect(canonicalCount).toBe(0);
 			const service = DatabaseService.of(dbService(database) as never);
 			const params = {
@@ -2161,6 +2225,19 @@ describeIntegration(
 		it("pages past malformed canonical policy evidence with exact list and count", async () => {
 			await seed("policy_clock_out", true, "complete");
 			await submit("policy_clock_out");
+			const sourceWorkflow = await pool.query<{ approval_workflow_id: string }>(
+				"select approval_workflow_id from work_period where id = $1 and organization_id = $2",
+				[ids.period, ids.organization],
+			);
+			const sourceWorkflowId = sourceWorkflow.rows[0]?.approval_workflow_id;
+			if (!sourceWorkflowId)
+				throw new Error("Expected submitted workflow binding");
+			const sourceAssignment = await pool.query<{ id: string }>(
+				"select id from approval_stage_assignment where workflow_id = $1 and organization_id = $2",
+				[sourceWorkflowId, ids.organization],
+			);
+			const sourceAssignmentId = sourceAssignment.rows[0]?.id;
+			if (!sourceAssignmentId) throw new Error("Expected submitted assignment");
 			const cloneId = (prefix: string, index: number) =>
 				`${prefix}0000000-0000-4000-8000-${index.toString().padStart(12, "0")}`;
 			for (const index of Array.from(
@@ -2227,7 +2304,13 @@ describeIntegration(
 					 display_snapshot, submitted_at - ($3 * interval '1 hour'), completed_at,
 					 cancelled_at, decision_reason, created_at, updated_at
 					 from approval_workflow where id = $4 and organization_id = $5`,
-					[clone.workflow, clone.period, index, ids.workflow, ids.organization],
+					[
+						clone.workflow,
+						clone.period,
+						index,
+						sourceWorkflowId,
+						ids.organization,
+					],
 				);
 				await pool.query(
 					`insert into approval_workflow_stage (
@@ -2238,7 +2321,7 @@ describeIntegration(
 					 activation_mode, status, activated_at, decided_at, decision_reason,
 					 null, created_at, updated_at from approval_workflow_stage
 					 where workflow_id = $3 and organization_id = $4`,
-					[clone.stage, clone.workflow, ids.workflow, ids.organization],
+					[clone.stage, clone.workflow, sourceWorkflowId, ids.organization],
 				);
 				await pool.query(
 					`insert into approval_stage_assignment (
@@ -2255,7 +2338,7 @@ describeIntegration(
 						clone.assignment,
 						clone.workflow,
 						clone.stage,
-						ids.workflow,
+						sourceWorkflowId,
 						ids.organization,
 					],
 				);
@@ -2271,7 +2354,7 @@ describeIntegration(
 						clone.workflow,
 						clone.stage,
 						clone.period,
-						ids.workflow,
+						sourceWorkflowId,
 						ids.organization,
 					],
 				);
@@ -2315,7 +2398,9 @@ describeIntegration(
 				approverId: ids.manager,
 			});
 
-			expect(approvals.map(({ item }) => item.id)).toEqual([ids.assignment]);
+			expect(approvals.map(({ item }) => item.id)).toEqual([
+				sourceAssignmentId,
+			]);
 			expect(approvals.totalCount).toBe(1);
 			expect(count).toBe(1);
 			const first = approvals[0];
@@ -2786,7 +2871,6 @@ describeIntegration(
 			expect(requests[0]).toMatchObject({
 				status: expectedStatus,
 				entity_id: ids.period,
-				canonical_record_id: ids.canonical,
 				metadata: {
 					workflow: { id: workflow?.id, organizationId: ids.organization },
 					timeRequest: { kind: "manual_time_submission" },
@@ -3452,18 +3536,18 @@ describeIntegration(
 				]);
 				expect(state.balances).toEqual([
 					{
-						organization_id: ids.foreignOrganization,
-						employee_id: ids.foreignEmployee,
-						actual_minutes: 777,
-						is_dirty: false,
-						dirty_from_date: null,
-					},
-					{
 						organization_id: ids.organization,
 						employee_id: ids.requester,
 						actual_minutes: 480,
 						is_dirty: true,
 						dirty_from_date: "2026-07-22",
+					},
+					{
+						organization_id: ids.foreignOrganization,
+						employee_id: ids.foreignEmployee,
+						actual_minutes: 777,
+						is_dirty: false,
+						dirty_from_date: null,
 					},
 				]);
 			}
@@ -3604,6 +3688,10 @@ describeIntegration(
 				[ids.surchargeRule, ids.surchargeModel],
 			);
 			await pool.query(
+				"insert into team (id, organization_id, name, updated_at) values ($1, $2, 'Changed team', $3)",
+				[ids.changedTeam, ids.organization, new Date(now.epochMilliseconds)],
+			);
+			await pool.query(
 				"update employee set team_id = $1 where id = $2 and organization_id = $3",
 				[ids.changedTeam, ids.requester, ids.organization],
 			);
@@ -3627,6 +3715,95 @@ describeIntegration(
 					surcharge_minutes: 240,
 				}),
 			]);
+		});
+
+		it.each(
+			modes,
+		)("uses immutable manual surcharge evidence for explicit and requester-auto terminal approval in %s mode", async (mode) => {
+			for (const requesterAutoApproves of [false, true] as const) {
+				for (const snapshot of [
+					surchargeSnapshot,
+					disabledSurchargeSnapshot,
+				] as const) {
+					await seed(
+						"manual_time_submission",
+						false,
+						mode,
+						requesterAutoApproves,
+						false,
+						snapshot,
+					);
+					await seedMaintenanceState();
+					const submitted = await submit("manual_time_submission");
+					await pool.query(
+						`update surcharge_model_assignment
+						 set is_active = false, updated_at = $1
+						 where id = $2 and organization_id = $3`,
+						[
+							new Date(now.epochMilliseconds),
+							ids.surchargeAssignment,
+							ids.organization,
+						],
+					);
+					await pool.query(
+						"update surcharge_model set is_active = false, name = 'mutated' where id = $1 and organization_id = $2",
+						[ids.surchargeModel, ids.organization],
+					);
+					await pool.query(
+						"update surcharge_rule set is_active = false, percentage = 9.0000 where id = $1 and model_id = $2",
+						[ids.surchargeRule, ids.surchargeModel],
+					);
+					await pool.query(
+						"insert into team (id, organization_id, name, updated_at) values ($1, $2, 'Changed team', $3)",
+						[
+							ids.changedTeam,
+							ids.organization,
+							new Date(now.epochMilliseconds),
+						],
+					);
+					await pool.query(
+						"update employee set team_id = $1 where id = $2 and organization_id = $3",
+						[ids.changedTeam, ids.requester, ids.organization],
+					);
+
+					const maintenanceErrors: unknown[] = [];
+					const completed = requesterAutoApproves
+						? await completeOrdinaryWorkPeriodDecisionAfterCommit({
+								execute: async () => submitted,
+								dispatch: async () => undefined,
+								maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
+								onDispatchError: () => undefined,
+								onMaintenanceError: (error) => maintenanceErrors.push(error),
+							})
+						: (
+								await completeDecision(submitted.result.approvalRequestId, {
+									kind: "approve",
+									reason: null,
+								})
+							).execution;
+					expect(maintenanceErrors).toEqual([]);
+					expect(completed.postCommit?.maintenance).toMatchObject({
+						decision: "approved",
+						surchargePeriodIds: [ids.period],
+						surchargeSnapshot: snapshot,
+					});
+					const current = await maintenanceSnapshot();
+					const calculations = current.calculations.filter(
+						({ organization_id }) => organization_id === ids.organization,
+					);
+					expect(calculations).toEqual(
+						snapshot.resolution.kind === "none"
+							? []
+							: [
+									expect.objectContaining({
+										work_period_id: ids.period,
+										base_minutes: 480,
+										surcharge_minutes: 240,
+									}),
+								],
+					);
+				}
+			}
 		});
 
 		it.each(

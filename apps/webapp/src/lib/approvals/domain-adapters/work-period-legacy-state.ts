@@ -14,6 +14,7 @@ import {
 	policyClockOutSurchargeSnapshotFromPendingChanges,
 	policyClockOutSurchargeSnapshotsEqual,
 } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
+import { decodeApprovalDatabaseJsonText } from "../approval-database-row";
 import type { ApprovalDbService } from "../server/types";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
@@ -180,11 +181,19 @@ function nullableInstant(value: unknown): Instant | null {
 	if (value === null) return null;
 	try {
 		if (value instanceof Date) return instantFromDB(value) ?? fail();
-		if (
-			typeof value === "string" &&
-			/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?$/.test(value)
-		) {
-			return parseInstant(`${value.replace(" ", "T")}Z`);
+		if (typeof value === "string") {
+			if (
+				/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?$/.test(value)
+			) {
+				return parseInstant(`${value.replace(" ", "T")}Z`);
+			}
+			if (
+				/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/.test(
+					value,
+				)
+			) {
+				return parseInstant(value.replace(" ", "T"));
+			}
 		}
 	} catch {
 		return fail();
@@ -255,7 +264,7 @@ function decodePeriod(value: unknown): WorkPeriodSnapshot {
 		durationMinutes: nullableInteger(raw.durationMinutes),
 		isActive: boolean(raw.isActive),
 		approvalStatus: requestStatus(raw.approvalStatus),
-		pendingChanges: raw.pendingChanges,
+		pendingChanges: decodeApprovalDatabaseJsonText(raw.pendingChanges),
 		deletedAt: nullableInstant(raw.deletedAt),
 		canonicalRecordId: string(raw.canonicalRecordId),
 		approvalWorkflowId: nullableString(raw.approvalWorkflowId),
@@ -360,23 +369,24 @@ function normalizeRequestPayload(input: {
 			return fail();
 		}
 		if (
-			input.expectedKind === "policy_clock_out" &&
 			markerDescriptor === undefined &&
-			breakPolicySnapshotDescriptor === undefined &&
 			surchargeSnapshotDescriptor === undefined &&
+			(input.expectedKind !== "policy_clock_out" ||
+				breakPolicySnapshotDescriptor === undefined) &&
 			(typeof input.pendingChanges !== "object" ||
 				input.pendingChanges === null ||
 				(Object.getOwnPropertyDescriptor(
 					input.pendingChanges,
-					"breakPolicySnapshot",
+					"surchargeSnapshot",
 				) === undefined &&
-					Object.getOwnPropertyDescriptor(
-						input.pendingChanges,
-						"surchargeSnapshot",
-					) === undefined))
+					(input.expectedKind !== "policy_clock_out" ||
+						Object.getOwnPropertyDescriptor(
+							input.pendingChanges,
+							"breakPolicySnapshot",
+						) === undefined)))
 		) {
 			return {
-				payload: { timeRequest: { kind: "policy_clock_out" } },
+				payload: { timeRequest: { kind: input.expectedKind } },
 				marker: null,
 			};
 		}
@@ -394,9 +404,13 @@ function normalizeRequestPayload(input: {
 			},
 			input.expectedKind,
 		);
-		if (input.expectedKind === "policy_clock_out") {
-			if (!payload.breakPolicySnapshot || !payload.surchargeSnapshot)
-				return fail();
+		if (!payload.surchargeSnapshot) return fail();
+		if (
+			input.expectedKind === "policy_clock_out" &&
+			!payload.breakPolicySnapshot
+		)
+			return fail();
+		{
 			const evaluatedAt = policyEvaluatedAt({
 				endTime: input.sourceEndTime,
 				wasAutoAdjusted: input.sourceWasAutoAdjusted,
@@ -404,32 +418,37 @@ function normalizeRequestPayload(input: {
 				status: input.sourceStatus,
 			});
 			if (input.sourceStatus === "pending") {
-				const sourceSnapshot = policyClockOutBreakSnapshotFromPendingChanges(
-					input.pendingChanges,
-					evaluatedAt,
-				);
+				const sourceSnapshot =
+					input.expectedKind === "policy_clock_out"
+						? policyClockOutBreakSnapshotFromPendingChanges(
+								input.pendingChanges,
+								evaluatedAt,
+							)
+						: null;
 				const sourceSurchargeSnapshot =
 					policyClockOutSurchargeSnapshotFromPendingChanges(
 						input.pendingChanges,
 						evaluatedAt,
 					);
 				if (
-					!policyClockOutBreakSnapshotsEqual(
-						sourceSnapshot,
-						payload.breakPolicySnapshot,
-						evaluatedAt,
-					) ||
 					!policyClockOutSurchargeSnapshotsEqual(
 						sourceSurchargeSnapshot,
 						payload.surchargeSnapshot,
 						evaluatedAt,
-					)
+					) ||
+					(input.expectedKind === "policy_clock_out" &&
+						!policyClockOutBreakSnapshotsEqual(
+							sourceSnapshot,
+							payload.breakPolicySnapshot,
+							evaluatedAt,
+						))
 				) {
 					return fail();
 				}
 			} else if (
-				payload.breakPolicySnapshot.evaluatedAt !== evaluatedAt ||
-				payload.surchargeSnapshot.evaluatedAt !== evaluatedAt
+				payload.surchargeSnapshot.evaluatedAt !== evaluatedAt ||
+				(input.expectedKind === "policy_clock_out" &&
+					payload.breakPolicySnapshot?.evaluatedAt !== evaluatedAt)
 			) {
 				return fail();
 			}
@@ -496,6 +515,40 @@ function decodeRequest(
 	}
 	const hasBreakSnapshot = breakSnapshotDescriptor !== undefined;
 	const hasSurchargeSnapshot = surchargeSnapshotDescriptor !== undefined;
+	const workflowDescriptor = Object.getOwnPropertyDescriptor(
+		rawMetadata,
+		"workflow",
+	);
+	const stageDescriptor = Object.getOwnPropertyDescriptor(rawMetadata, "stage");
+	const hasCompatibilityBinding =
+		workflowDescriptor !== undefined && stageDescriptor !== undefined;
+	if (
+		(workflowDescriptor === undefined) !== (stageDescriptor === undefined) ||
+		(workflowDescriptor &&
+			(!workflowDescriptor.enumerable || !("value" in workflowDescriptor))) ||
+		(stageDescriptor &&
+			(!stageDescriptor.enumerable || !("value" in stageDescriptor)))
+	) {
+		return fail();
+	}
+	if (hasCompatibilityBinding) {
+		const workflow = exactDataRecord(workflowDescriptor.value, [
+			"id",
+			"organizationId",
+		]);
+		const stage = exactDataRecord(stageDescriptor.value, ["id", "sequence"]);
+		if (
+			workflow.id !== period.approvalWorkflowId ||
+			workflow.organizationId !== organizationId ||
+			typeof stage.id !== "string" ||
+			stage.id.length === 0 ||
+			typeof stage.sequence !== "number" ||
+			!Number.isInteger(stage.sequence) ||
+			stage.sequence < 1
+		) {
+			return fail();
+		}
+	}
 	if (
 		surchargeSnapshotDescriptor &&
 		(!surchargeSnapshotDescriptor.enumerable ||
@@ -532,6 +585,7 @@ function decodeRequest(
 			...(hasBreakSnapshot ? ["breakPolicySnapshot"] : []),
 			...(hasSurchargeSnapshot ? ["surchargeSnapshot"] : []),
 			...(hasMarker ? ["ordinarySubmission"] : []),
+			...(hasCompatibilityBinding ? ["workflow", "stage"] : []),
 			"autoApproval",
 		]);
 		const autoApproval = exactDataRecord(root.autoApproval, ["reason"]);
@@ -545,6 +599,7 @@ function decodeRequest(
 			...(hasBreakSnapshot ? ["breakPolicySnapshot"] : []),
 			...(hasSurchargeSnapshot ? ["surchargeSnapshot"] : []),
 			...(hasMarker ? ["ordinarySubmission"] : []),
+			...(hasCompatibilityBinding ? ["workflow", "stage"] : []),
 		]);
 	}
 	const normalized = normalizeRequestPayload({
@@ -874,15 +929,14 @@ function decodeCapture(
 		requestMetadata,
 		"surchargeSnapshot",
 	);
-	const historicalPolicyClockOut =
-		kind === "policy_clock_out" &&
+	const historicalOrdinary =
 		period.approvalWorkflowId === null &&
-		capturedSnapshot === undefined &&
 		capturedSurchargeSnapshot === undefined &&
+		(kind !== "policy_clock_out" || capturedSnapshot === undefined) &&
 		Object.getOwnPropertyDescriptor(requestMetadata, "ordinarySubmission") ===
 			undefined;
-	const payload = historicalPolicyClockOut
-		? { timeRequest: { kind: "policy_clock_out" as const } }
+	const payload = historicalOrdinary
+		? { timeRequest: { kind } }
 		: parseOrdinaryWorkPeriodWorkflowPayload(
 				{
 					timeRequest: requestMetadata.timeRequest,
@@ -904,21 +958,21 @@ function decodeCapture(
 			status: expectedSourceStatus,
 		});
 		if (
-			kind === "policy_clock_out" &&
-			(!payload.breakPolicySnapshot ||
-				!canonicalPayload.breakPolicySnapshot ||
-				!payload.surchargeSnapshot ||
-				!canonicalPayload.surchargeSnapshot ||
-				!policyClockOutBreakSnapshotsEqual(
-					payload.breakPolicySnapshot,
-					canonicalPayload.breakPolicySnapshot,
-					evaluatedAt,
-				) ||
-				!policyClockOutSurchargeSnapshotsEqual(
-					payload.surchargeSnapshot,
-					canonicalPayload.surchargeSnapshot,
-					evaluatedAt,
-				))
+			!payload.surchargeSnapshot ||
+			!canonicalPayload.surchargeSnapshot ||
+			!policyClockOutSurchargeSnapshotsEqual(
+				payload.surchargeSnapshot,
+				canonicalPayload.surchargeSnapshot,
+				evaluatedAt,
+			) ||
+			(kind === "policy_clock_out" &&
+				(!payload.breakPolicySnapshot ||
+					!canonicalPayload.breakPolicySnapshot ||
+					!policyClockOutBreakSnapshotsEqual(
+						payload.breakPolicySnapshot,
+						canonicalPayload.breakPolicySnapshot,
+						evaluatedAt,
+					)))
 		) {
 			return fail();
 		}
@@ -1015,13 +1069,12 @@ function decodePreSubmissionCapture(
 							period.pendingChanges,
 							instantToCanonicalString(period.endTime),
 						),
-						surchargeSnapshot:
-							policyClockOutSurchargeSnapshotFromPendingChanges(
-								period.pendingChanges,
-								instantToCanonicalString(period.endTime),
-							),
 					}
 				: {}),
+			surchargeSnapshot: policyClockOutSurchargeSnapshotFromPendingChanges(
+				period.pendingChanges,
+				instantToCanonicalString(period.endTime),
+			),
 		},
 		input.expectedKind,
 	);
@@ -1230,7 +1283,7 @@ export async function captureOrdinaryWorkPeriodLegacyState(
 					and employee.organization_id = capture.organization_id
 			)
 			select
-				transaction_timestamp() as "capturedAt",
+				transaction_timestamp() at time zone 'UTC' as "capturedAt",
 				coalesce((select json_agg(period) from work_period_rows period), '[]'::json) as "workPeriods",
 				coalesce((select json_agg(record) from canonical_rows record), '[]'::json) as "canonicalRecords",
 				coalesce((select json_agg(request) from request_rows request), '[]'::json) as "approvalRequests",
@@ -1337,7 +1390,7 @@ export async function captureOrdinaryWorkPeriodLegacyPreSubmissionState(
 				limit 2
 			)
 			select
-				transaction_timestamp() as "capturedAt",
+				transaction_timestamp() at time zone 'UTC' as "capturedAt",
 				coalesce((select json_agg(period) from work_period_rows period), '[]'::json) as "workPeriods",
 				coalesce((select json_agg(record) from canonical_rows record), '[]'::json) as "canonicalRecords",
 				coalesce((select json_agg(request) from request_rows request), '[]'::json) as "approvalRequests",

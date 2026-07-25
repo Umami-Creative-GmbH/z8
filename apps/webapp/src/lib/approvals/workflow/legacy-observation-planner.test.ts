@@ -373,6 +373,25 @@ describe("legacy approval observation planner", () => {
 		]);
 	});
 
+	it("plans verified requester auto-approval when the source snapshot is a domain payload", async () => {
+		const planner = createLegacyApprovalObservationPlanner({
+			clock: { nowInstant: () => capturedAt },
+		});
+		const after = directState("approved");
+		if (!after.approvalRequest) throw new Error("fixture");
+		after.approvalRequest.approverId = requesterId;
+		after.sourceSnapshot = { timeRequest: { kind: "manual_time_submission" } };
+
+		const plan = await planner.plan(transition(emptyState(), after, null));
+
+		expect(plan.snapshot).toMatchObject({ status: "approved", version: 1 });
+		expect(plan.snapshot.stages[0]).toMatchObject({
+			activationMode: "requester_auto_approve",
+			status: "approved",
+			assignments: [],
+		});
+	});
+
 	it("rejects unexplained chainless instant approval", async () => {
 		const planner = createLegacyApprovalObservationPlanner({
 			clock: { nowInstant: () => capturedAt },

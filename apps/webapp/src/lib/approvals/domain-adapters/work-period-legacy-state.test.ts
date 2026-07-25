@@ -87,7 +87,11 @@ function period(overrides: JsonRecord = {}) {
 		durationMinutes: 480,
 		isActive: false,
 		approvalStatus: "pending",
-		pendingChanges: { isManualEntry: true, diagnostics: "private-period" },
+		pendingChanges: {
+			isManualEntry: true,
+			diagnostics: "private-period",
+			surchargeSnapshot,
+		},
 		deletedAt: null,
 		canonicalRecordId,
 		approvalWorkflowId: workflowId,
@@ -121,7 +125,10 @@ function request(overrides: JsonRecord = {}) {
 		reason: "private manual submission reason",
 		rejectionReason: null,
 		approvedAt: null,
-		metadata: { timeRequest: { kind: "manual_time_submission" } },
+		metadata: {
+			timeRequest: { kind: "manual_time_submission" },
+			surchargeSnapshot,
+		},
 		updatedAt: new Date("2026-07-20T14:30:00.000Z"),
 		...overrides,
 	};
@@ -175,6 +182,7 @@ function workflow(overrides: JsonRecord = {}) {
 		requesterEmployeeId: employeeId,
 		contextSnapshot: {
 			timeRequest: { kind: "manual_time_submission" },
+			surchargeSnapshot,
 		},
 		...overrides,
 	};
@@ -358,6 +366,27 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 			),
 		).rejects.toMatchObject({
 			name: "OrdinaryWorkPeriodLegacyStateCaptureError",
+		});
+	});
+
+	it("decodes a PostgreSQL explicit-offset original endpoint", async () => {
+		const value = terminalPolicyEnvelope({ status: "approved", split: true });
+		(value.workPeriods as JsonRecord[])[0] = {
+			...((value.workPeriods as JsonRecord[])[0] as JsonRecord),
+			originalEndTime: "2026-07-20T14:00:00+00:00",
+		};
+		const fake = database(value);
+
+		await expect(
+			captureOrdinaryWorkPeriodLegacyState(
+				input(fake.dbService, {
+					expectedKind: "policy_clock_out",
+					expectedRequestStatus: "approved",
+					expectedSourceStatus: "approved",
+				}),
+			),
+		).resolves.toMatchObject({
+			displaySnapshot: { period: { endAt: "2026-07-20T13:30:00Z" } },
 		});
 	});
 
@@ -571,6 +600,7 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 		]);
 		expect(state.sourceSnapshot).toEqual({
 			timeRequest: { kind: "manual_time_submission" },
+			surchargeSnapshot,
 		});
 		expect(state.displaySnapshot).toEqual({
 			approvalStatus: "pending",
@@ -591,6 +621,7 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 		});
 		expect(state.sourceSnapshot).toEqual({
 			timeRequest: { kind: "manual_time_submission" },
+			surchargeSnapshot,
 		});
 		expect(
 			((state.displaySnapshot as JsonRecord).period as JsonRecord)
@@ -600,9 +631,16 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 
 	it("normalizes historical marker and exact reason classification only during capture", async () => {
 		const historicalManual = envelope({
+			workPeriods: [
+				period({
+					approvalWorkflowId: null,
+					pendingChanges: { isManualEntry: true },
+				}),
+			],
 			approvalRequests: [
 				request({ metadata: null, reason: "Manual time entry: 20 July" }),
 			],
+			workflows: [],
 		});
 		const manualFake = database(historicalManual);
 		const manual = await captureOrdinaryWorkPeriodLegacyState(
@@ -765,9 +803,16 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 	it("derives a historical ordinary kind from exact pending source evidence", async () => {
 		const fake = database(
 			envelope({
+				workPeriods: [
+					period({
+						approvalWorkflowId: null,
+						pendingChanges: { isManualEntry: true },
+					}),
+				],
 				approvalRequests: [
 					request({ metadata: null, reason: "Manual time entry: historical" }),
 				],
+				workflows: [],
 			}),
 		);
 
@@ -821,6 +866,7 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 					request({
 						metadata: {
 							timeRequest: { kind: "manual_time_submission" },
+							surchargeSnapshot,
 							...marker,
 						},
 					}),
@@ -834,6 +880,7 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 
 		expect(state.approvalRequest?.metadata).toEqual({
 			timeRequest: { kind: "manual_time_submission" },
+			surchargeSnapshot,
 			...marker,
 		});
 		expect(JSON.stringify(state.displaySnapshot)).not.toContain(
@@ -841,6 +888,7 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 		);
 		expect(state.sourceSnapshot).toEqual({
 			timeRequest: { kind: "manual_time_submission" },
+			surchargeSnapshot,
 		});
 	});
 
@@ -863,6 +911,7 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 						approvedAt,
 						metadata: {
 							timeRequest: { kind: "manual_time_submission" },
+							surchargeSnapshot,
 							ordinarySubmission: { key: submissionKey(), submissionId },
 							autoApproval: { reason: "requester_is_approver" },
 						},
@@ -882,6 +931,7 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 
 		expect(state.approvalRequest?.metadata).toEqual({
 			timeRequest: { kind: "manual_time_submission" },
+			surchargeSnapshot,
 			ordinarySubmission: { key: submissionKey(), submissionId },
 			autoApproval: { reason: "requester_is_approver" },
 		});
@@ -1249,6 +1299,7 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 					pendingChanges: {
 						isManualEntry: true,
 						diagnostics: privatePending,
+						surchargeSnapshot,
 					},
 				}),
 			],

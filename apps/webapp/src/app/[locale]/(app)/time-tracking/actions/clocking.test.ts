@@ -387,17 +387,17 @@ function ordinarySubmissionSource(
 		approvalStatus: "pending",
 		pendingChanges: {
 			ordinarySubmission: { submissionId: defaultSubmissionId, kind },
+			surchargeSnapshot: {
+				version: 1,
+				evaluatedAt: `${date}T10:00:00Z`,
+				resolution: { kind: "none" },
+			},
 			...(kind === "policy_clock_out"
 				? {
 						breakPolicySnapshot: {
 							version: 1,
 							evaluatedAt: `${date}T10:00:00Z`,
 							resolution: "none",
-						},
-						surchargeSnapshot: {
-							version: 1,
-							evaluatedAt: `${date}T10:00:00Z`,
-							resolution: { kind: "none" },
 						},
 					}
 				: {}),
@@ -488,17 +488,17 @@ function approvalRequestMetadata(
 	});
 	return {
 		timeRequest: { kind },
+		surchargeSnapshot: {
+			version: 1,
+			evaluatedAt: "2026-05-04T10:00:00Z",
+			resolution: { kind: "none" },
+		},
 		...(kind === "policy_clock_out"
 			? {
 					breakPolicySnapshot: {
 						version: 1,
 						evaluatedAt: "2026-05-04T10:00:00Z",
 						resolution: "none",
-					},
-					surchargeSnapshot: {
-						version: 1,
-						evaluatedAt: "2026-05-04T10:00:00Z",
-						resolution: { kind: "none" },
 					},
 				}
 			: {}),
@@ -611,6 +611,11 @@ function setManualReplayEvidence(options?: {
 						ordinarySubmission: {
 							submissionId: defaultSubmissionId,
 							kind: "manual_time_submission",
+						},
+						surchargeSnapshot: {
+							version: 1,
+							evaluatedAt: "2026-05-03T10:00:00Z",
+							resolution: { kind: "none" },
 						},
 					},
 		clockIn: {
@@ -2490,6 +2495,19 @@ describe("createManualTimeEntry", () => {
 		expect(mockState.insertReturning.mock.invocationCallOrder[0]).toBeLessThan(
 			mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
 		);
+		expect(mockState.resolveSurchargeSnapshot).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				employeeId: "employee-1",
+			}),
+		);
+		expect(mockState.reconcileImmediateSurcharges).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			affectedWorkPeriodIds: ["period-1"],
+			snapshot: expect.objectContaining({ resolution: { kind: "none" } }),
+		});
+		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
 	});
 
 	it("uses submitted timezone for self manual entries when browser timezone differs", async () => {
@@ -2908,6 +2926,70 @@ describe("createManualTimeEntry", () => {
 		);
 		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledWith(
 			expect.objectContaining({ submissionId, workPeriodId: submissionId }),
+		);
+	});
+
+	it("captures manual surcharge evidence inside the source transaction before submission", async () => {
+		const surchargeSnapshot = {
+			version: 1,
+			evaluatedAt: "2026-05-03T10:00:00Z",
+			resolution: { kind: "none" },
+		} as const;
+		mockState.resolveSurchargeSnapshot.mockImplementationOnce(async (input) => {
+			expect(mockState.transactionOpen).toBe(true);
+			expect(mockState.createTimeEntry).toHaveBeenCalledTimes(2);
+			expect(input).toMatchObject({
+				organizationId: "org-1",
+				employeeId: "employee-1",
+			});
+			expect(input.startTime.toString()).toBe("2026-05-03T09:00:00Z");
+			expect(input.endTime.toString()).toBe("2026-05-03T10:00:00Z");
+			return surchargeSnapshot;
+		});
+		mockState.transaction.mockImplementation(async (callback) => {
+			mockState.transactionOpen = true;
+			try {
+				return await callback({
+					execute: vi.fn().mockResolvedValue({ rows: [{ locked: null }] }),
+					query: {
+						workPeriod: {
+							findFirst: mockState.findExistingPeriod,
+							findMany: mockState.findPolicyPeriods,
+						},
+						timeRecord: { findFirst: mockState.findCanonicalRecord },
+						timeRecordWork: { findMany: mockState.findCanonicalWork },
+						timeRecordAllocation: {
+							findMany: mockState.findCanonicalAllocations,
+						},
+						approvalRequest: { findMany: mockState.findApprovalRequests },
+					},
+					insert: vi.fn(() => ({
+						values: (...args: unknown[]) => mockState.insertValues(...args),
+					})),
+				});
+			} finally {
+				mockState.transactionOpen = false;
+			}
+		});
+
+		await expect(
+			createManualTimeEntry({
+				submissionId: defaultSubmissionId,
+				date: "2026-05-03",
+				clockInTime: "09:00",
+				clockOutTime: "10:00",
+				reason: "Forgot to clock in",
+			}),
+		).resolves.toMatchObject({ success: true });
+
+		expect(mockState.resolveSurchargeSnapshot).toHaveBeenCalledOnce();
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				pendingChanges: expect.objectContaining({ surchargeSnapshot }),
+			}),
+		);
+		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledAfter(
+			mockState.resolveSurchargeSnapshot,
 		);
 	});
 

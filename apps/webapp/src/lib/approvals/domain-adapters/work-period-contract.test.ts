@@ -20,6 +20,41 @@ describe("ordinary work-period workflow contract", () => {
 		evaluatedAt: "2026-03-29T08:01:00Z",
 		resolution: { kind: "none" },
 	} as const;
+	it("requires the strict manual surcharge payload without break-policy evidence", () => {
+		const parsed = parseOrdinaryWorkPeriodWorkflowPayload(
+			{
+				timeRequest: { kind: "manual_time_submission" },
+				surchargeSnapshot,
+			},
+			"manual_time_submission",
+		);
+
+		expect(parsed).toEqual({
+			timeRequest: { kind: "manual_time_submission" },
+			surchargeSnapshot,
+		});
+		expect(Reflect.ownKeys(parsed)).toEqual([
+			"timeRequest",
+			"surchargeSnapshot",
+		]);
+		expect(Object.isFrozen(parsed.surchargeSnapshot)).toBe(true);
+		expect(() =>
+			parseOrdinaryWorkPeriodWorkflowPayload(
+				{ timeRequest: { kind: "manual_time_submission" } },
+				"manual_time_submission",
+			),
+		).toThrow("Ordinary work-period workflow payload is invalid");
+		expect(() =>
+			parseOrdinaryWorkPeriodWorkflowPayload(
+				{
+					timeRequest: { kind: "manual_time_submission" },
+					breakPolicySnapshot,
+					surchargeSnapshot,
+				},
+				"manual_time_submission",
+			),
+		).toThrow("Ordinary work-period workflow payload is invalid");
+	});
 	it("keeps the adapter and runtime independent of server modules", () => {
 		for (const relativePath of [
 			"src/lib/approvals/domain-adapters/work-period.adapter.ts",
@@ -43,10 +78,14 @@ describe("ordinary work-period workflow contract", () => {
 		const kind = "manual_time_submission";
 		const parsed = parseOrdinaryWorkPeriodWorkflowPayload({
 			timeRequest: { kind },
+			surchargeSnapshot,
 		});
 
-		expect(parsed).toEqual({ timeRequest: { kind } });
-		expect(Reflect.ownKeys(parsed)).toEqual(["timeRequest"]);
+		expect(parsed).toEqual({ timeRequest: { kind }, surchargeSnapshot });
+		expect(Reflect.ownKeys(parsed)).toEqual([
+			"timeRequest",
+			"surchargeSnapshot",
+		]);
 		expect(Reflect.ownKeys(parsed.timeRequest)).toEqual(["kind"]);
 		expect(
 			Object.getOwnPropertyDescriptor(parsed, "timeRequest"),
@@ -57,7 +96,9 @@ describe("ordinary work-period workflow contract", () => {
 		expect(
 			Object.getOwnPropertyDescriptor(parsed.timeRequest, "kind"),
 		).toMatchObject({ enumerable: true, value: kind });
-		expect(JSON.stringify(parsed)).toBe(`{"timeRequest":{"kind":"${kind}"}}`);
+		expect(JSON.stringify(parsed)).toContain(
+			`"timeRequest":{"kind":"${kind}"}`,
+		);
 	});
 
 	it("rejects policy clock-out context without both immutable policy snapshots", () => {
@@ -80,12 +121,14 @@ describe("ordinary work-period workflow contract", () => {
 			id: "10000000-0000-4000-8000-000000000001",
 			payload: parseOrdinaryWorkPeriodWorkflowPayload({
 				timeRequest: { kind: "manual_time_submission" },
+				surchargeSnapshot,
 			}),
 		};
 		const second = {
 			id: "20000000-0000-4000-8000-000000000002",
 			payload: parseOrdinaryWorkPeriodWorkflowPayload({
 				timeRequest: { kind: "manual_time_submission" },
+				surchargeSnapshot,
 			}),
 		};
 
@@ -113,11 +156,12 @@ describe("ordinary work-period workflow contract", () => {
 		expect(Object.isFrozen(parsed.surchargeSnapshot?.resolution)).toBe(true);
 	});
 
-	it("rejects snapshot evidence for manual submissions", () => {
+	it("rejects break-policy evidence for manual submissions", () => {
 		expect(() =>
 			parseOrdinaryWorkPeriodWorkflowPayload({
 				timeRequest: { kind: "manual_time_submission" },
 				breakPolicySnapshot,
+				surchargeSnapshot,
 			}),
 		).toThrow(Error);
 	});
@@ -231,6 +275,7 @@ describe("ordinary work-period workflow contract", () => {
 	it("returns newly allocated recursively frozen evidence", () => {
 		const input = {
 			timeRequest: { kind: "manual_time_submission" as const },
+			surchargeSnapshot,
 		};
 
 		const parsed = parseOrdinaryWorkPeriodWorkflowPayload(input);

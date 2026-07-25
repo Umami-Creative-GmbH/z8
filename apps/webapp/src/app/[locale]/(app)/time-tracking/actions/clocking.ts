@@ -85,7 +85,6 @@ import {
 } from "./approvals";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import {
-	calculateAndPersistSurcharges,
 	calculateBreaksTakenToday,
 	checkComplianceAfterClockOut,
 	enforceBreaksAfterClockOut,
@@ -352,7 +351,10 @@ function hasPrivateApprovalSubmissionEvidence(input: {
 	const hasAutoApproval = metadataKeys.includes("autoApproval");
 	const hasBreakPolicySnapshot = metadataKeys.includes("breakPolicySnapshot");
 	const hasSurchargeSnapshot = metadataKeys.includes("surchargeSnapshot");
-	if (hasBreakPolicySnapshot !== hasSurchargeSnapshot) {
+	if (
+		!hasSurchargeSnapshot ||
+		hasBreakPolicySnapshot !== (input.expectedKind === "policy_clock_out")
+	) {
 		throw new Error("Submission collision");
 	}
 	const root = exactPlainObject(
@@ -361,14 +363,14 @@ function hasPrivateApprovalSubmissionEvidence(input: {
 			? [
 					"timeRequest",
 					...(hasBreakPolicySnapshot ? ["breakPolicySnapshot"] : []),
-					...(hasSurchargeSnapshot ? ["surchargeSnapshot"] : []),
+					"surchargeSnapshot",
 					"ordinarySubmission",
 					"autoApproval",
 				]
 			: [
 					"timeRequest",
 					...(hasBreakPolicySnapshot ? ["breakPolicySnapshot"] : []),
-					...(hasSurchargeSnapshot ? ["surchargeSnapshot"] : []),
+					"surchargeSnapshot",
 					"ordinarySubmission",
 				],
 	);
@@ -2122,6 +2124,8 @@ export async function createManualTimeEntry(
 			durationMinutes,
 			wasAdjusted,
 		};
+		let immediateSurchargeSnapshot: PolicyClockOutSurchargeSnapshot | null =
+			null;
 		const runtime = createOrdinaryApprovalRuntime();
 		const {
 			period: createdWorkPeriod,
@@ -2172,6 +2176,15 @@ export async function createManualTimeEntry(
 				},
 				tx,
 			);
+			const surchargeSnapshot =
+				await resolvePolicyClockOutSurchargeSnapshotInTransaction({
+					dbService: context.dbService as never,
+					organizationId: targetEmployee.organizationId,
+					employeeId: targetEmployee.id,
+					startTime: instantFromDate(adjustedClockIn),
+					endTime: instantFromDate(adjustedClockOut),
+				});
+			if (!requiresApproval) immediateSurchargeSnapshot = surchargeSnapshot;
 			const canonicalRecord =
 				await canonicalWorkRecordClient.createForCompletedPeriod(
 					{
@@ -2221,6 +2234,7 @@ export async function createManualTimeEntry(
 							requestedBy: session.user.id,
 							reason: data.reason,
 							isManualEntry: true,
+							surchargeSnapshot,
 						}
 					: null,
 			});
@@ -2306,10 +2320,14 @@ export async function createManualTimeEntry(
 		if (shouldRunPostCommitEffects && !requiresApproval) {
 			await bestEffort(
 				() =>
-					calculateAndPersistSurcharges(
-						createdWorkPeriod.id,
-						targetEmployee.organizationId,
-					),
+					immediateSurchargeSnapshot
+						? reconcileImmediateSurcharges({
+								affectedWorkPeriodIds: [createdWorkPeriod.id],
+								employeeId: targetEmployee.id,
+								organizationId: targetEmployee.organizationId,
+								snapshot: immediateSurchargeSnapshot,
+							})
+						: Promise.resolve(),
 				"Failed to calculate surcharges after manual time entry",
 				{ workPeriodId: createdWorkPeriod.id },
 			);

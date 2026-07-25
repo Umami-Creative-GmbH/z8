@@ -242,9 +242,8 @@ async function realOrdinaryDisplay(
 		policySnapshot: {},
 		contextSnapshot: {
 			timeRequest: { kind },
-			...(kind === "policy_clock_out"
-				? { breakPolicySnapshot, surchargeSnapshot }
-				: {}),
+			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+			surchargeSnapshot,
 			privateReason: "private-reason",
 		},
 		displaySnapshot: {},
@@ -291,9 +290,8 @@ async function realOrdinaryDisplay(
 			durationMinutes: 480,
 			payload: {
 				timeRequest: { kind },
-				...(kind === "policy_clock_out"
-					? { breakPolicySnapshot, surchargeSnapshot }
-					: {}),
+				...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+				surchargeSnapshot,
 			},
 		},
 	});

@@ -897,6 +897,11 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 				);
 				const periodWithReview = {
 					...period,
+					pendingChanges:
+						initialKind === "manual_time_submission" ||
+						initialKind === "policy_clock_out"
+							? null
+							: period.pendingChanges,
 					timeApprovalKind: review.kind,
 					timeRequestHasOrdinaryEvidence: review.hasOrdinaryEvidence,
 					timeRequestWarning: review.warning,

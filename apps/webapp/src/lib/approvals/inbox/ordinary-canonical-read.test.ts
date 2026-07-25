@@ -61,15 +61,11 @@ function row(
 			status: "pending",
 			displayPayload: {
 				kind: "manual_time_submission",
-				title: "Manual time submission",
 				startTime: "2026-07-20T06:00:00Z",
 				endTime: "2026-07-20T14:00:00Z",
 				durationMinutes: 480,
-				approvalStatus: "pending",
-				stage: { name: "Manager review", order: 2 },
 			},
-			searchText:
-				"manual time submission 2026-07-20t06:00:00z 2026-07-20t14:00:00z manager review",
+			searchText: "manual time submission",
 			createdAt: new Date("2026-07-20T14:05:00Z"),
 		},
 		workflow: {
@@ -81,7 +77,10 @@ function row(
 			requesterEmployeeId: ids.requester,
 			status: "pending",
 			currentStageOrder: 2,
-			contextSnapshot: { timeRequest: { kind: "manual_time_submission" } },
+			contextSnapshot: {
+				timeRequest: { kind: "manual_time_submission" },
+				surchargeSnapshot,
+			},
 			submittedAt: new Date("2026-07-20T14:05:00Z"),
 		},
 		stage: {
@@ -126,7 +125,11 @@ function row(
 			startTime: new Date("2026-07-20T06:00:00Z"),
 			endTime: new Date("2026-07-20T14:00:00Z"),
 			durationMinutes: 480,
-			pendingChanges: { isManualEntry: true, privateNote: "do not expose" },
+			pendingChanges: {
+				isManualEntry: true,
+				privateNote: "do not expose",
+				surchargeSnapshot,
+			},
 			employee: {
 				id: ids.requester,
 				organizationId: ids.organization,
@@ -192,12 +195,12 @@ function policyRow(): OrdinaryCanonicalReadRow {
 		projection: {
 			...base.projection,
 			displayPayload: {
-				...(base.projection.displayPayload as Record<string, unknown>),
 				kind: "policy_clock_out",
-				title: "Policy clock-out",
+				startTime: "2026-07-20T06:00:00Z",
+				endTime: "2026-07-20T14:00:00Z",
+				durationMinutes: 480,
 			},
-			searchText:
-				"policy clock-out 2026-07-20t06:00:00z 2026-07-20t14:00:00z manager review",
+			searchText: "policy clock-out",
 		},
 		workflow: {
 			...base.workflow,
@@ -220,6 +223,28 @@ function policyRow(): OrdinaryCanonicalReadRow {
 }
 
 describe("ordinary canonical inbox reads", () => {
+	it("selects canonical-only ordinary rows with the stable four-key display projection", () => {
+		const fixture = policyRow();
+
+		const result = select([
+			{
+				...fixture,
+				projection: {
+					...fixture.projection,
+					displayPayload: {
+						kind: "policy_clock_out",
+						startTime: "2026-07-20T06:00:00Z",
+						endTime: "2026-07-20T14:00:00Z",
+						durationMinutes: 480,
+					},
+					searchText: "policy clock-out",
+				},
+			},
+		]);
+
+		expect(result).toHaveLength(1);
+	});
+
 	it("loads N approvals with bounded queries and SQL-side tenancy, kind, status, source, and visibility filters", async () => {
 		const fixture = row();
 		const candidate = {
@@ -228,6 +253,7 @@ describe("ordinary canonical inbox reads", () => {
 			projectionOrganizationId: fixture.projection.organizationId,
 			projectionWorkflowId: fixture.projection.workflowId,
 			projectionStatus: fixture.projection.status,
+			projectionCreatedAt: fixture.projection.createdAt,
 			workflowId: fixture.workflow.id,
 			workflowOrganizationId: fixture.workflow.organizationId,
 			workflowType: fixture.workflow.workflowType,
@@ -686,6 +712,8 @@ describe("ordinary canonical inbox reads", () => {
 		const query = new PgDialect().sqlToQuery(calls[0] as SQL);
 		expect(query.sql).toContain("interval '3 days'");
 		expect(query.sql).toContain("interval '72 hours'");
+		expect(query.sql).not.toMatch(/\$\d+\s*-\s*interval/);
+		expect(query.sql).toMatch(/\$\d+::timestamptz\s*-\s*interval/);
 		expect(query.sql).toMatch(
 			/order by case when workflow\.submitted_at.*case\s+when workflow\.submitted_at.*workflow\.submitted_at, assignment\.id\s+limit/s,
 		);
@@ -801,6 +829,7 @@ describe("ordinary canonical inbox reads", () => {
 				workflow: { id: ids.workflow, organizationId: ids.organization },
 				stage: { id: ids.stage, sequence: 2 },
 				timeRequest: { kind: "manual_time_submission" },
+				surchargeSnapshot,
 			},
 		};
 		expect(
@@ -844,6 +873,7 @@ describe("ordinary canonical inbox reads", () => {
 				workflow: { id: ids.workflow, organizationId: ids.organization },
 				stage: { id: ids.stage, sequence: 2 },
 				timeRequest: { kind: "manual_time_submission" },
+				surchargeSnapshot,
 			},
 		};
 

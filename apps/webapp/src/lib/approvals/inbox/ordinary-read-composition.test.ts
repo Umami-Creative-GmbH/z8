@@ -81,16 +81,14 @@ function compatibilityMetadata(
 			workflow: { id: workflowId, organizationId },
 			stage: { id: stageId, sequence: 2 },
 			timeRequest: { kind },
-			...(kind === "policy_clock_out"
-				? { breakPolicySnapshot, surchargeSnapshot }
-				: {}),
+			surchargeSnapshot,
+			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 		};
 	}
 	return {
 		timeRequest: { kind },
-		...(kind === "policy_clock_out"
-			? { breakPolicySnapshot, surchargeSnapshot }
-			: {}),
+		surchargeSnapshot,
+		...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 	};
 }
 
@@ -133,7 +131,11 @@ function fixture(mode: RolloutMode, kind: OrdinaryWorkPeriodApprovalKind) {
 		durationMinutes: 480,
 		pendingChanges:
 			kind === "manual_time_submission"
-				? { isManualEntry: true, privateNote: "private pending changes" }
+				? {
+						isManualEntry: true,
+						privateNote: "private pending changes",
+						surchargeSnapshot,
+					}
 				: {
 						isNewClockOut: true,
 						privateNote: "private pending changes",
@@ -202,9 +204,8 @@ async function canonicalProjection(kind: OrdinaryWorkPeriodApprovalKind) {
 		policySnapshot: {},
 		contextSnapshot: {
 			timeRequest: { kind },
-			...(kind === "policy_clock_out"
-				? { breakPolicySnapshot, surchargeSnapshot }
-				: {}),
+			surchargeSnapshot,
+			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 		},
 		displaySnapshot: {},
 		submittedAt,
@@ -250,9 +251,8 @@ async function canonicalProjection(kind: OrdinaryWorkPeriodApprovalKind) {
 			durationMinutes: 480,
 			payload: {
 				timeRequest: { kind },
-				...(kind === "policy_clock_out"
-					? { breakPolicySnapshot, surchargeSnapshot }
-					: {}),
+				surchargeSnapshot,
+				...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 			},
 			pendingChanges: { privateNote: "private pending changes" },
 		},
@@ -361,9 +361,11 @@ describe.each([
 		expect(publicPayload).not.toMatch(forbiddenPrivatePattern);
 
 		const projection = await canonicalProjection(kind);
-		expect(projection.displayPayload).toMatchObject({
+		expect(projection.displayPayload).toEqual({
 			kind,
-			stage: { name: "Manager review", order: 2 },
+			startTime: "2026-07-20T06:00:00Z",
+			endTime: "2026-07-20T14:00:00Z",
+			durationMinutes: 480,
 		});
 		expect(
 			`${JSON.stringify(projection.displayPayload)} ${projection.searchText}`,
@@ -400,9 +402,8 @@ describe.each([
 			currentStageOrder: 2,
 			contextSnapshot: {
 				timeRequest: { kind },
-				...(kind === "policy_clock_out"
-					? { breakPolicySnapshot, surchargeSnapshot }
-					: {}),
+				surchargeSnapshot,
+				...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 			},
 			submittedAt: new Date("2026-07-20T14:05:00Z"),
 			requester: period.employee,

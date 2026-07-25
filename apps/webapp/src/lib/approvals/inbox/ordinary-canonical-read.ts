@@ -10,6 +10,11 @@ import {
 	policyClockOutSurchargeSnapshotFromPendingChanges,
 	policyClockOutSurchargeSnapshotsEqual,
 } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
+import {
+	decodeApprovalDatabaseInstant,
+	decodeApprovalDatabaseJsonText,
+	decodeApprovalDatabaseTimestamp,
+} from "../approval-database-row";
 import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
 import { parseOrdinaryWorkPeriodWorkflowPayload } from "../domain-adapters/work-period-contract";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
@@ -235,6 +240,36 @@ function parseDisplay(
 		kind === "manual_time_submission"
 			? "Manual time submission"
 			: "Policy clock-out";
+	const canonicalDisplay = exactObject(row.projection.displayPayload, [
+		"kind",
+		"startTime",
+		"endTime",
+		"durationMinutes",
+	]);
+	if (canonicalDisplay) {
+		if (
+			canonicalDisplay.kind !== kind ||
+			typeof canonicalDisplay.startTime !== "string" ||
+			typeof canonicalDisplay.endTime !== "string" ||
+			canonicalDisplay.durationMinutes !== row.period.durationMinutes ||
+			row.projection.searchText !== expectedTitle.toLocaleLowerCase("en-US")
+		) {
+			return null;
+		}
+		try {
+			if (
+				parseInstant(canonicalDisplay.startTime).epochMilliseconds !==
+					row.period.startTime.getTime() ||
+				parseInstant(canonicalDisplay.endTime).epochMilliseconds !==
+					row.period.endTime?.getTime()
+			) {
+				return null;
+			}
+		} catch {
+			return null;
+		}
+		return { name: row.stage.label, order: row.stage.sequence };
+	}
 	const display = exactObject(row.projection.displayPayload, [
 		"kind",
 		"title",
@@ -297,7 +332,7 @@ function hasExactCompatibility(
 		"timeRequest",
 		...(kind === "policy_clock_out"
 			? ["breakPolicySnapshot", "surchargeSnapshot"]
-			: []),
+			: ["surchargeSnapshot"]),
 	]);
 	const workflow = exactObject(metadata?.workflow, ["id", "organizationId"]);
 	const stage = exactObject(metadata?.stage, ["id", "sequence"]);
@@ -307,11 +342,9 @@ function hasExactCompatibility(
 			{
 				timeRequest: metadata?.timeRequest,
 				...(kind === "policy_clock_out"
-					? {
-							breakPolicySnapshot: metadata?.breakPolicySnapshot,
-							surchargeSnapshot: metadata?.surchargeSnapshot,
-						}
+					? { breakPolicySnapshot: metadata?.breakPolicySnapshot }
 					: {}),
+				surchargeSnapshot: metadata?.surchargeSnapshot,
 			},
 			kind,
 		);
@@ -380,29 +413,29 @@ function validateRow(
 			kind,
 		);
 		if (
-			kind === "policy_clock_out" &&
-			(!payload.breakPolicySnapshot ||
-				!payload.surchargeSnapshot ||
-				parseInstant(payload.breakPolicySnapshot.evaluatedAt)
-					.epochMilliseconds !== (period.endTime as Date).getTime() ||
-				payload.surchargeSnapshot.evaluatedAt !==
-					payload.breakPolicySnapshot.evaluatedAt ||
-				!policyClockOutBreakSnapshotsEqual(
-					policyClockOutBreakSnapshotFromPendingChanges(
-						period.pendingChanges,
-						payload.breakPolicySnapshot.evaluatedAt,
-					),
-					payload.breakPolicySnapshot,
-					payload.breakPolicySnapshot.evaluatedAt,
-				) ||
-				!policyClockOutSurchargeSnapshotsEqual(
-					policyClockOutSurchargeSnapshotFromPendingChanges(
-						period.pendingChanges,
-						payload.surchargeSnapshot.evaluatedAt,
-					),
-					payload.surchargeSnapshot,
+			!payload.surchargeSnapshot ||
+			parseInstant(payload.surchargeSnapshot.evaluatedAt).epochMilliseconds !==
+				(period.endTime as Date).getTime() ||
+			!policyClockOutSurchargeSnapshotsEqual(
+				policyClockOutSurchargeSnapshotFromPendingChanges(
+					period.pendingChanges,
 					payload.surchargeSnapshot.evaluatedAt,
-				))
+				),
+				payload.surchargeSnapshot,
+				payload.surchargeSnapshot.evaluatedAt,
+			) ||
+			(kind === "policy_clock_out" &&
+				(!payload.breakPolicySnapshot ||
+					payload.surchargeSnapshot.evaluatedAt !==
+						payload.breakPolicySnapshot.evaluatedAt ||
+					!policyClockOutBreakSnapshotsEqual(
+						policyClockOutBreakSnapshotFromPendingChanges(
+							period.pendingChanges,
+							payload.breakPolicySnapshot.evaluatedAt,
+						),
+						payload.breakPolicySnapshot,
+						payload.breakPolicySnapshot.evaluatedAt,
+					)))
 		) {
 			return null;
 		}
@@ -732,15 +765,15 @@ function cursorCondition(input: OrdinaryCanonicalLoadInput): SQL {
 }
 
 function riskRankSql(input: OrdinaryCanonicalLoadInput): SQL {
-	return sql`case when workflow.submitted_at <= ${input.now ?? new Date()} - interval '3 days' then 0 else 1 end`;
+	return sql`case when workflow.submitted_at <= ${input.now ?? new Date()}::timestamptz - interval '3 days' then 0 else 1 end`;
 }
 
 function priorityRankSql(input: OrdinaryCanonicalLoadInput): SQL {
 	const now = input.now ?? new Date();
 	return sql`case
-		when workflow.submitted_at < ${now} - interval '72 hours' then 0
-		when workflow.submitted_at < ${now} - interval '48 hours' then 1
-		when workflow.submitted_at < ${now} - interval '24 hours' then 2
+		when workflow.submitted_at < ${now}::timestamptz - interval '72 hours' then 0
+		when workflow.submitted_at < ${now}::timestamptz - interval '48 hours' then 1
+		when workflow.submitted_at < ${now}::timestamptz - interval '24 hours' then 2
 		else 3 end`;
 }
 
@@ -757,7 +790,7 @@ function candidateFilterCondition(input: OrdinaryCanonicalLoadInput): SQL {
 	}
 	if (filters.minAgeDays) {
 		conditions.push(
-			sql`workflow.submitted_at <= ${input.now ?? new Date()} - ${filters.minAgeDays} * interval '1 day'`,
+			sql`workflow.submitted_at <= ${input.now ?? new Date()}::timestamptz - ${filters.minAgeDays} * interval '1 day'`,
 		);
 	}
 	if (filters.dateRange) {
@@ -1002,9 +1035,21 @@ function strictCanonicalEvidenceSql(): SQL {
 		and workflow.context_snapshot -> 'timeRequest' ->> 'kind' = workflow.workflow_type::text
 		and case
 			when workflow.workflow_type = 'manual_time_submission' then
-				${exactJsonObjectSql(sql`workflow.context_snapshot`, 1)}
+				${exactJsonObjectSql(sql`workflow.context_snapshot`, 2)}
 				and not (workflow.context_snapshot ? 'breakPolicySnapshot')
-				and not (workflow.context_snapshot ? 'surchargeSnapshot')
+				and ${strictSurchargeSnapshotSql(workflowSurchargeSnapshot)}
+				and ${workflowSurchargeSnapshot} ->> 'evaluatedAt' ~ ${CANONICAL_INSTANT_SQL_PATTERN}
+				and pg_input_is_valid(${workflowSurchargeSnapshot} ->> 'evaluatedAt', 'timestamp with time zone')
+				and case when pg_input_is_valid(${workflowSurchargeSnapshot} ->> 'evaluatedAt', 'timestamp with time zone')
+					then (${workflowSurchargeSnapshot} ->> 'evaluatedAt')::timestamptz else null end =
+						source_period.end_time at time zone 'UTC'
+				and case when source_period.pending_changes is not null
+					and pg_input_is_valid(source_period.pending_changes, 'jsonb') then
+						jsonb_typeof(${sourceChanges}) = 'object'
+						and not (${sourceChanges} ? 'breakPolicySnapshot')
+						and ${strictSurchargeSnapshotSql(sourceSurchargeSnapshot)}
+						and ${sourceSurchargeSnapshot} = ${workflowSurchargeSnapshot}
+					else false end
 			when workflow.workflow_type = 'policy_clock_out' then
 				${exactJsonObjectSql(sql`workflow.context_snapshot`, 3)}
 				and ${strictBreakSnapshotSql(workflowSnapshot)}
@@ -1121,19 +1166,12 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 			and jsonb_typeof(projection.display_payload) = 'object'
 			and (select count(*) from jsonb_object_keys(case
 				when jsonb_typeof(projection.display_payload) = 'object' then projection.display_payload
-				else '{}'::jsonb end)) = 7
-			and jsonb_typeof(projection.display_payload -> 'stage') = 'object'
-			and (select count(*) from jsonb_object_keys(case
-				when jsonb_typeof(projection.display_payload -> 'stage') = 'object'
-					then projection.display_payload -> 'stage'
-				else '{}'::jsonb end)) = 2
+				else '{}'::jsonb end)) = case
+					when stage.legacy_approval_request_id is null and compatibility.id is null then 4
+					else 7
+				end
 			and jsonb_typeof(projection.display_payload -> 'kind') = 'string'
 			and projection.display_payload ->> 'kind' = workflow.workflow_type::text
-			and jsonb_typeof(projection.display_payload -> 'title') = 'string'
-			and projection.display_payload ->> 'title' = case
-				when workflow.workflow_type = 'manual_time_submission' then 'Manual time submission'
-				else 'Policy clock-out'
-			end
 			and jsonb_typeof(projection.display_payload -> 'startTime') = 'string'
 			and case
 				when projection.display_payload ->> 'startTime' ~ ${DISPLAY_INSTANT_SQL_PATTERN}
@@ -1156,18 +1194,33 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 				then ((projection.display_payload -> 'durationMinutes')::text)::numeric else null end
 				else null
 			end = source_period.duration_minutes
-			and jsonb_typeof(projection.display_payload -> 'approvalStatus') = 'string'
-			and projection.display_payload ->> 'approvalStatus' = 'pending'
-			and jsonb_typeof(projection.display_payload -> 'stage' -> 'name') = 'string'
-			and projection.display_payload -> 'stage' ->> 'name' = stage.label
-			and case when jsonb_typeof(projection.display_payload -> 'stage' -> 'order') = 'number'
-				then ((projection.display_payload -> 'stage' -> 'order')::text)::numeric = stage.stage_order
-				else false end
-			and projection.search_text = lower(
-				(projection.display_payload ->> 'title') || ' ' ||
-				(projection.display_payload ->> 'startTime') || ' ' ||
-				(projection.display_payload ->> 'endTime') || ' ' || stage.label
-			)
+			and case
+				when stage.legacy_approval_request_id is null and compatibility.id is null then
+					projection.search_text = lower(case
+						when workflow.workflow_type = 'manual_time_submission' then 'Manual time submission'
+						else 'Policy clock-out'
+					end)
+				else
+					jsonb_typeof(projection.display_payload -> 'stage') = 'object'
+					and (select count(*) from jsonb_object_keys(projection.display_payload -> 'stage')) = 2
+					and jsonb_typeof(projection.display_payload -> 'title') = 'string'
+					and projection.display_payload ->> 'title' = case
+						when workflow.workflow_type = 'manual_time_submission' then 'Manual time submission'
+						else 'Policy clock-out'
+					end
+					and jsonb_typeof(projection.display_payload -> 'approvalStatus') = 'string'
+					and projection.display_payload ->> 'approvalStatus' = 'pending'
+					and jsonb_typeof(projection.display_payload -> 'stage' -> 'name') = 'string'
+					and projection.display_payload -> 'stage' ->> 'name' = stage.label
+					and case when jsonb_typeof(projection.display_payload -> 'stage' -> 'order') = 'number'
+						then ((projection.display_payload -> 'stage' -> 'order')::text)::numeric = stage.stage_order
+						else false end
+					and projection.search_text = lower(
+						(projection.display_payload ->> 'title') || ' ' ||
+						(projection.display_payload ->> 'startTime') || ' ' ||
+						(projection.display_payload ->> 'endTime') || ' ' || stage.label
+					)
+			end
 			and case
 				when source_period.pending_changes is null then true
 				when pg_input_is_valid(source_period.pending_changes, 'jsonb') then
@@ -1196,7 +1249,7 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 				and (select count(*) from jsonb_object_keys(case
 					when jsonb_typeof(compatibility.metadata) = 'object' then compatibility.metadata
 					else '{}'::jsonb end)) = case
-						when workflow.workflow_type = 'policy_clock_out' then 5 else 3 end
+						when workflow.workflow_type = 'policy_clock_out' then 5 else 4 end
 				and jsonb_typeof(compatibility.metadata -> 'workflow') = 'object'
 				and (select count(*) from jsonb_object_keys(case
 					when jsonb_typeof(compatibility.metadata -> 'workflow') = 'object'
@@ -1226,7 +1279,9 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 				and case
 					when workflow.workflow_type = 'manual_time_submission' then
 						not (compatibility.metadata ? 'breakPolicySnapshot')
-						and not (compatibility.metadata ? 'surchargeSnapshot')
+						and ${strictSurchargeSnapshotSql(sql`compatibility.metadata -> 'surchargeSnapshot'`)}
+						and compatibility.metadata -> 'surchargeSnapshot'
+							= workflow.context_snapshot -> 'surchargeSnapshot'
 					when workflow.workflow_type = 'policy_clock_out' then
 						jsonb_typeof(compatibility.metadata -> 'breakPolicySnapshot') = 'object'
 						and compatibility.metadata -> 'breakPolicySnapshot' -> 'version' = '1'::jsonb
@@ -1260,7 +1315,7 @@ function toCandidate(value: Record<string, unknown>) {
 			status: value.projectionStatus,
 			displayPayload: value.displayPayload,
 			searchText: value.searchText,
-			createdAt: value.projectionCreatedAt,
+			createdAt: decodeApprovalDatabaseInstant(value.projectionCreatedAt),
 		},
 		workflow: {
 			id: value.workflowId,
@@ -1272,7 +1327,7 @@ function toCandidate(value: Record<string, unknown>) {
 			status: value.workflowStatus,
 			currentStageOrder: value.currentStageOrder,
 			contextSnapshot: value.contextSnapshot,
-			submittedAt: value.submittedAt,
+			submittedAt: decodeApprovalDatabaseInstant(value.submittedAt),
 		},
 		stage: {
 			id: value.stageId,
@@ -1290,7 +1345,7 @@ function toCandidate(value: Record<string, unknown>) {
 			stageId: value.assignmentStageId,
 			approverEmployeeId: value.approverEmployeeId,
 			status: value.assignmentStatus,
-			assignedAt: value.assignedAt,
+			assignedAt: decodeApprovalDatabaseInstant(value.assignedAt),
 		},
 		requester: {
 			id: value.requesterId,
@@ -1365,7 +1420,7 @@ function endpoint(
 		organizationId: value[`${prefix}OrganizationId`],
 		employeeId: value[`${prefix}EmployeeId`],
 		type: value[`${prefix}Type`],
-		timestamp: value[`${prefix}Timestamp`],
+		timestamp: decodeApprovalDatabaseTimestamp(value[`${prefix}Timestamp`]),
 		utcOffsetMinutes: value[`${prefix}UtcOffsetMinutes`],
 		isSuperseded: value[`${prefix}IsSuperseded`],
 		supersededById: value[`${prefix}SupersededById`],
@@ -1386,11 +1441,19 @@ function toEvidence(
 			approvalWorkflowId: value.periodApprovalWorkflowId,
 			approvalStatus: value.periodApprovalStatus,
 			isActive: value.periodIsActive,
-			deletedAt: value.periodDeletedAt,
-			startTime: value.periodStartTime,
-			endTime: value.periodEndTime,
+			deletedAt:
+				value.periodDeletedAt === null
+					? null
+					: decodeApprovalDatabaseInstant(value.periodDeletedAt),
+			startTime: decodeApprovalDatabaseTimestamp(value.periodStartTime),
+			endTime:
+				value.periodEndTime === null
+					? null
+					: decodeApprovalDatabaseTimestamp(value.periodEndTime),
 			durationMinutes: value.periodDurationMinutes,
-			pendingChanges: value.periodPendingChanges,
+			pendingChanges: decodeApprovalDatabaseJsonText(
+				value.periodPendingChanges,
+			),
 			employee: requester,
 			clockIn: endpoint(value, "clockIn"),
 			clockOut: endpoint(value, "clockOut"),
@@ -1400,8 +1463,11 @@ function toEvidence(
 			organizationId: value.canonicalOrganizationId,
 			employeeId: value.canonicalEmployeeId,
 			recordKind: value.canonicalRecordKind,
-			startAt: value.canonicalStartAt,
-			endAt: value.canonicalEndAt,
+			startAt: decodeApprovalDatabaseTimestamp(value.canonicalStartAt),
+			endAt:
+				value.canonicalEndAt === null
+					? null
+					: decodeApprovalDatabaseTimestamp(value.canonicalEndAt),
 			durationMinutes: value.canonicalDurationMinutes,
 			approvalState: value.canonicalApprovalState,
 		},

@@ -198,22 +198,19 @@ export function parseOrdinaryWorkPeriodWorkflowPayload(
 		) {
 			throw new Error("Ordinary work-period workflow payload is invalid");
 		}
-		const hasSnapshot = kind === "policy_clock_out";
+		const hasBreakPolicySnapshot = kind === "policy_clock_out";
 		const root = readExactDataProperties(
 			value,
-			hasSnapshot
+			hasBreakPolicySnapshot
 				? ["timeRequest", "breakPolicySnapshot", "surchargeSnapshot"]
-				: ["timeRequest"],
+				: ["timeRequest", "surchargeSnapshot"],
 		);
 		const normalizedRequest = Object.freeze({ kind });
-		if (!hasSnapshot) {
-			return Object.freeze({ timeRequest: normalizedRequest });
-		}
-		const snapshotInput = root.breakPolicySnapshot;
+		const breakPolicyInput = root.breakPolicySnapshot;
 		const surchargeInput = root.surchargeSnapshot;
 		const evaluatedAtDescriptor =
-			typeof snapshotInput === "object" && snapshotInput !== null
-				? Object.getOwnPropertyDescriptor(snapshotInput, "evaluatedAt")
+			typeof surchargeInput === "object" && surchargeInput !== null
+				? Object.getOwnPropertyDescriptor(surchargeInput, "evaluatedAt")
 				: undefined;
 		if (
 			!evaluatedAtDescriptor?.enumerable ||
@@ -222,27 +219,33 @@ export function parseOrdinaryWorkPeriodWorkflowPayload(
 		) {
 			throw new Error("Ordinary work-period workflow payload is invalid");
 		}
-		const surchargeEvaluatedAtDescriptor =
-			typeof surchargeInput === "object" && surchargeInput !== null
-				? Object.getOwnPropertyDescriptor(surchargeInput, "evaluatedAt")
+		const surchargeSnapshot = parsePolicyClockOutSurchargeSnapshot(
+			surchargeInput,
+			evaluatedAtDescriptor.value,
+		);
+		if (!hasBreakPolicySnapshot) {
+			return Object.freeze({
+				timeRequest: normalizedRequest,
+				surchargeSnapshot,
+			});
+		}
+		const breakEvaluatedAtDescriptor =
+			typeof breakPolicyInput === "object" && breakPolicyInput !== null
+				? Object.getOwnPropertyDescriptor(breakPolicyInput, "evaluatedAt")
 				: undefined;
 		if (
-			!surchargeEvaluatedAtDescriptor?.enumerable ||
-			!("value" in surchargeEvaluatedAtDescriptor) ||
-			surchargeEvaluatedAtDescriptor.value !== evaluatedAtDescriptor.value
-		) {
+			!breakEvaluatedAtDescriptor?.enumerable ||
+			!("value" in breakEvaluatedAtDescriptor) ||
+			breakEvaluatedAtDescriptor.value !== evaluatedAtDescriptor.value
+		)
 			throw new Error("Ordinary work-period workflow payload is invalid");
-		}
 		return Object.freeze({
 			timeRequest: normalizedRequest,
 			breakPolicySnapshot: parsePolicyClockOutBreakSnapshot(
-				snapshotInput,
+				breakPolicyInput,
 				evaluatedAtDescriptor.value,
 			),
-			surchargeSnapshot: parsePolicyClockOutSurchargeSnapshot(
-				surchargeInput,
-				evaluatedAtDescriptor.value,
-			),
+			surchargeSnapshot,
 		});
 	} catch {
 		throw new Error("Ordinary work-period workflow payload is invalid");

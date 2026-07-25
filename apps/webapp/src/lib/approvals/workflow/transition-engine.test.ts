@@ -1189,13 +1189,21 @@ describe("approval transition engine atomic orchestration", () => {
 		["complete", "approve"],
 		["complete", "reject"],
 	] as const)("finalizes an ordinary %s %s before compatibility without legacy request evidence", async (mode, action) => {
+		const surchargeSnapshot = {
+			version: 1,
+			evaluatedAt: "2026-07-17T16:00:00Z",
+			resolution: { kind: "none" },
+		} as const;
 		let fixture: ReturnType<typeof engineFixture>;
 		const finalizeTerminal = vi.fn(async (input) => {
 			expect(fixture.calls).not.toContain("compatibility");
 			expect(input.evidence).toEqual({
 				mode: "canonical",
 				workflowId: engineIds.workflow,
-				payload: { timeRequest: { kind: "manual_time_submission" } },
+				payload: {
+					timeRequest: { kind: "manual_time_submission" },
+					surchargeSnapshot,
+				},
 			});
 			return {
 				kind: "manual_time_submission" as const,
@@ -1220,6 +1228,7 @@ describe("approval transition engine atomic orchestration", () => {
 			sourceType: "time_entry",
 			contextSnapshot: {
 				timeRequest: { kind: "manual_time_submission" },
+				surchargeSnapshot,
 			},
 		});
 		const source = {
@@ -1232,7 +1241,10 @@ describe("approval transition engine atomic orchestration", () => {
 			startTime: "2026-07-17T08:00:00Z",
 			endTime: "2026-07-17T16:00:00Z",
 			durationMinutes: 480,
-			payload: { timeRequest: { kind: "manual_time_submission" } },
+			payload: {
+				timeRequest: { kind: "manual_time_submission" },
+				surchargeSnapshot,
+			},
 		} satisfies OrdinaryWorkPeriodApprovalSource;
 		fixture = engineFixture({ mode, adapter, snapshot, source });
 

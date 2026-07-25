@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import { parsePostgresTimestampWithoutTimeZoneAsUtc } from "@/db/postgres-utc";
 import {
 	compareInstants,
 	comparePlainDates,
@@ -16,6 +17,8 @@ import type {
 } from "./policy-clock-out-surcharge-snapshot.types";
 
 export type {
+	OrdinarySurchargeRuleSnapshot,
+	OrdinarySurchargeSnapshot,
 	PolicyClockOutSurchargeRuleSnapshot,
 	PolicyClockOutSurchargeSnapshot,
 } from "./policy-clock-out-surcharge-snapshot.types";
@@ -429,7 +432,14 @@ function dateToInstant(value: unknown): string | null {
 		return instantToCanonicalString(instantFromDate(value));
 	}
 	if (typeof value === "string") {
-		return instantToCanonicalString(parseInstant(value));
+		if (/(?:Z|[+-]\d{2}(?::?\d{2})?)$/.test(value)) {
+			return instantToCanonicalString(parseInstant(value.replace(" ", "T")));
+		}
+		const databaseDate = parsePostgresTimestampWithoutTimeZoneAsUtc(
+			value.replace("T", " "),
+		);
+		if (!(databaseDate instanceof Date)) return fail();
+		return instantToCanonicalString(instantFromDate(databaseDate));
 	}
 	return fail();
 }
@@ -533,7 +543,7 @@ export async function resolvePolicyClockOutSurchargeSnapshotInTransaction(input:
 				limit 2
 				for update of model
 			), rule_evidence as (
-				select rule.id, rule.name, rule.rule_type as "ruleType", rule.percentage,
+				select rule.id, rule.name, rule.rule_type as "ruleType", rule.percentage::text as percentage,
 					rule.day_of_week as "dayOfWeek", rule.window_start_time as "windowStartTime",
 					rule.window_end_time as "windowEndTime", rule.specific_date as "specificDate",
 					rule.date_range_start as "dateRangeStart", rule.date_range_end as "dateRangeEnd",
@@ -618,3 +628,12 @@ export async function resolvePolicyClockOutSurchargeSnapshotInTransaction(input:
 		throw new Error("Policy clock-out surcharge snapshot resolution failed");
 	}
 }
+
+export const parseOrdinarySurchargeSnapshot =
+	parsePolicyClockOutSurchargeSnapshot;
+export const ordinarySurchargeSnapshotsEqual =
+	policyClockOutSurchargeSnapshotsEqual;
+export const ordinarySurchargeSnapshotFromPendingChanges =
+	policyClockOutSurchargeSnapshotFromPendingChanges;
+export const resolveOrdinarySurchargeSnapshotInTransaction =
+	resolvePolicyClockOutSurchargeSnapshotInTransaction;

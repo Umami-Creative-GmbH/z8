@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { decodeApprovalDatabaseTimestamp } from "../approval-database-row";
 import type {
 	ApprovalSourceIdentity,
 	ApprovalWorkflowSnapshot,
@@ -174,7 +175,7 @@ function validateContext(
 		input.source.organizationId !== input.organizationId ||
 		input.source.employeeId !== input.workflow.requesterEmployeeId ||
 		input.source.approvalWorkflowId !== input.workflow.id ||
-		sourcePayload.timeRequest.kind !== workflowPayload.timeRequest.kind ||
+		JSON.stringify(sourcePayload) !== JSON.stringify(workflowPayload) ||
 		input.workflow.stages.some(
 			(stage) =>
 				stage.organizationId !== input.organizationId ||
@@ -280,7 +281,22 @@ export function createOrdinaryWorkPeriodApprovalAdapter(
 					for update of period, canonical
 				`),
 			);
-			const period = evidenceRow(rows[0]);
+			const rawPeriod = evidenceRow(rows[0]);
+			const period = {
+				...rawPeriod,
+				startTime: decodeApprovalDatabaseTimestamp(rawPeriod.startTime),
+				endTime: decodeApprovalDatabaseTimestamp(rawPeriod.endTime),
+				deletedAt:
+					rawPeriod.deletedAt === null
+						? null
+						: decodeApprovalDatabaseTimestamp(rawPeriod.deletedAt),
+				canonicalStartAt: decodeApprovalDatabaseTimestamp(
+					rawPeriod.canonicalStartAt,
+				),
+				canonicalEndAt: decodeApprovalDatabaseTimestamp(
+					rawPeriod.canonicalEndAt,
+				),
+			};
 			if (
 				rows.length !== 1 ||
 				period.id !== input.sourceIdentity.sourceId ||
@@ -420,36 +436,14 @@ export function createOrdinaryWorkPeriodApprovalAdapter(
 				kind === "manual_time_submission"
 					? "Manual time submission"
 					: "Policy clock-out";
-			const currentStage =
-				input.workflow.stages.find(
-					(stage) => stage.sequence === input.workflow.currentStageOrder,
-				) ??
-				input.workflow.stages.reduce<
-					(typeof input.workflow.stages)[number] | null
-				>(
-					(latest, candidate) =>
-						!latest || candidate.sequence > latest.sequence
-							? candidate
-							: latest,
-					null,
-				);
-			const stage = currentStage
-				? { name: currentStage.label, order: currentStage.sequence }
-				: null;
 			return normalizeStableData({
 				displayPayload: {
 					kind,
-					title,
 					startTime: input.source.startTime,
 					endTime: input.source.endTime,
 					durationMinutes: input.source.durationMinutes,
-					approvalStatus: input.source.approvalStatus,
-					...(stage ? { stage } : {}),
 				},
-				searchText:
-					`${title} ${input.source.startTime} ${input.source.endTime}${stage ? ` ${stage.name}` : ""}`.toLocaleLowerCase(
-						"en-US",
-					),
+				searchText: title.toLocaleLowerCase("en-US"),
 			}) as { displayPayload: JsonObject; searchText: string };
 		},
 	};

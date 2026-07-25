@@ -1094,8 +1094,7 @@ function buildPlan(
 	const initialAutoApproved =
 		beforeRequest === null &&
 		afterRequest?.status === "approved" &&
-		afterRequest.approverId === afterRequest.requestedBy &&
-		input.after.sourceSnapshot.status === "approved";
+		afterRequest.approverId === afterRequest.requestedBy;
 	const terminal =
 		beforeRequest?.status === "pending" &&
 		(afterRequest === null ||

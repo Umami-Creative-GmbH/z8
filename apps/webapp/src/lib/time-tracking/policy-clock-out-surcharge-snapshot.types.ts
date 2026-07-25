@@ -1,4 +1,4 @@
-export interface PolicyClockOutSurchargeRuleSnapshot {
+export interface OrdinarySurchargeRuleSnapshot {
 	readonly id: string;
 	readonly name: string;
 	readonly ruleType: "time_window" | "day_of_week" | "date_based";
@@ -22,7 +22,7 @@ export interface PolicyClockOutSurchargeRuleSnapshot {
 	readonly validUntil: string | null;
 }
 
-export type PolicyClockOutSurchargeSnapshot = Readonly<{
+export type OrdinarySurchargeSnapshot = Readonly<{
 	version: 1;
 	evaluatedAt: string;
 	resolution:
@@ -35,6 +35,9 @@ export type PolicyClockOutSurchargeSnapshot = Readonly<{
 				assignmentPriority: number;
 				modelId: string;
 				modelName: string;
-				rules: readonly Readonly<PolicyClockOutSurchargeRuleSnapshot>[];
+				rules: readonly Readonly<OrdinarySurchargeRuleSnapshot>[];
 		  }>;
 }>;
+
+export type PolicyClockOutSurchargeRuleSnapshot = OrdinarySurchargeRuleSnapshot;
+export type PolicyClockOutSurchargeSnapshot = OrdinarySurchargeSnapshot;

@@ -77,9 +77,8 @@ async function realOrdinaryProjection(kind: OrdinaryWorkPeriodApprovalKind) {
 		policySnapshot: {},
 		contextSnapshot: {
 			timeRequest: { kind },
-			...(kind === "policy_clock_out"
-				? { breakPolicySnapshot, surchargeSnapshot }
-				: {}),
+			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+			surchargeSnapshot,
 			privateReason: "private-reason",
 			sourceDiagnostics: "private-source-diagnostics",
 		},
@@ -118,9 +117,8 @@ async function realOrdinaryProjection(kind: OrdinaryWorkPeriodApprovalKind) {
 		durationMinutes: 480,
 		payload: {
 			timeRequest: { kind },
-			...(kind === "policy_clock_out"
-				? { breakPolicySnapshot, surchargeSnapshot }
-				: {}),
+			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+			surchargeSnapshot,
 		},
 		pendingChanges: { privateNote: "private-pending-change" },
 	};
@@ -219,7 +217,7 @@ describe("approval projection writer", () => {
 	it.each([
 		["manual_time_submission", "Manual time submission"],
 		["policy_clock_out", "Policy clock-out"],
-	] as const)("persists sanitized %s display, search, status, and stage", async (kind, title) => {
+	] as const)("persists sanitized %s canonical display and search", async (kind, title) => {
 		const fake = fakeService();
 		const { displayPayload, searchText } = await realOrdinaryProjection(kind);
 		await createApprovalProjectionWriter(fake.service).write(
@@ -235,11 +233,13 @@ describe("approval projection writer", () => {
 		);
 		expect(JSON.parse(String(rendered[0]?.params[7]))).toEqual(displayPayload);
 		expect(rendered[0]?.params[8]).toBe(searchText);
-		expect(displayPayload).toMatchObject({
+		expect(displayPayload).toEqual({
 			kind,
-			title,
-			stage: { name: "Manager review", order: 2 },
+			startTime: "2026-07-20T06:00:00Z",
+			endTime: "2026-07-20T14:00:00Z",
+			durationMinutes: 480,
 		});
+		expect(searchText).toBe(title.toLocaleLowerCase("en-US"));
 		expect(`${JSON.stringify(displayPayload)} ${searchText}`).not.toMatch(
 			/private-pending-change|private-reason|private-source-diagnostics|private-stage-diagnostics|[467]0000000-0000-4000-8000-000000000001/,
 		);

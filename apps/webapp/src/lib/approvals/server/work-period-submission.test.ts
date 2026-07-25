@@ -224,7 +224,10 @@ function verifiedState(request: null | { status: string }) {
 		approvalRequest: request,
 		chain: null,
 		chainRows: [],
-		sourceSnapshot: { timeRequest: { kind: "manual_time_submission" } },
+		sourceSnapshot: {
+			timeRequest: { kind: "manual_time_submission" },
+			surchargeSnapshot,
+		},
 		capturedAt: parseInstant("2026-07-22T10:00:00Z"),
 	};
 }
@@ -240,17 +243,19 @@ function source(overrides: Record<string, unknown> = {}) {
 		canonicalRecordId: "30000000-0000-4000-8000-000000000003",
 		approvalWorkflowId: null,
 		approvalStatus: "pending",
-		pendingChanges:
-			state.kind === "policy_clock_out"
+		pendingChanges: {
+			ordinarySubmission: { submissionId, kind: state.kind },
+			surchargeSnapshot,
+			...(state.kind === "policy_clock_out"
 				? {
 						breakPolicySnapshot: {
 							version: 1,
 							evaluatedAt: "2026-07-22T16:00:00Z",
 							resolution: "none",
 						},
-						surchargeSnapshot,
 					}
-				: null,
+				: {}),
+		},
 		isActive: false,
 		startTime,
 		endTime,
@@ -426,6 +431,7 @@ function fixture(
 										rejectionReason: null,
 										metadata: {
 											timeRequest: { kind: state.kind },
+											surchargeSnapshot,
 											...(state.kind === "policy_clock_out"
 												? {
 														breakPolicySnapshot: {
@@ -433,7 +439,6 @@ function fixture(
 															evaluatedAt: "2026-07-22T16:00:00Z",
 															resolution: "none",
 														},
-														surchargeSnapshot,
 													}
 												: {}),
 											ordinarySubmission: {
@@ -523,9 +528,8 @@ function fixture(
 				version: 1,
 				contextSnapshot: {
 					timeRequest: { kind: state.kind },
-					...(state.kind === "policy_clock_out"
-						? { breakPolicySnapshot, surchargeSnapshot }
-						: {}),
+					surchargeSnapshot,
+					...(state.kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 				},
 				completedAt: parseInstant("2026-07-22T10:00:00Z"),
 				stages: [
@@ -772,6 +776,7 @@ function markedAutoRequest(input: {
 			input.metadata ??
 			({
 				timeRequest: { kind: "manual_time_submission" },
+				surchargeSnapshot,
 				ordinarySubmission: {
 					key: input.key ?? ordinarySubmissionKey(),
 					submissionId,
@@ -817,9 +822,8 @@ function compatibilityRequest(
 			workflow: { id: expectedWorkflowId(kind), organizationId },
 			stage: { id: state.stageId, sequence: 1 },
 			timeRequest: { kind },
-			...(kind === "policy_clock_out"
-				? { breakPolicySnapshot, surchargeSnapshot }
-				: {}),
+			surchargeSnapshot,
+			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 		},
 		...overrides,
 	};
@@ -909,9 +913,9 @@ describe.each([
 									evaluatedAt: "2026-07-22T16:00:00Z",
 									resolution: "none",
 								},
-								surchargeSnapshot,
 							}
 						: {}),
+					surchargeSnapshot,
 				})}`,
 			);
 		}
@@ -972,6 +976,7 @@ it.each([
 	const resolverInput = JSON.parse(legacyCall?.slice("legacy:".length) ?? "");
 	expect(resolverInput.metadata).toEqual({
 		timeRequest: { kind: "manual_time_submission" },
+		surchargeSnapshot,
 		ordinarySubmission: { key: ordinarySubmissionKey(), submissionId },
 	});
 	expect(JSON.stringify(resolverInput.metadata)).not.toContain(
@@ -987,6 +992,7 @@ it.each([
 	state.mode = mode;
 	const request = pendingLegacyRequest({
 		timeRequest: { kind: "manual_time_submission" },
+		surchargeSnapshot,
 		ordinarySubmission: { key: ordinarySubmissionKey(), submissionId },
 	});
 	const fake = fixture({ source: { pendingLegacyRequests: [request] } });
@@ -1056,7 +1062,9 @@ it("preserves exact historical pending metadata replay", async () => {
 	const request = pendingLegacyRequest({
 		timeRequest: { kind: "manual_time_submission" },
 	});
-	const fake = fixture({ source: { pendingLegacyRequests: [request] } });
+	const fake = fixture({
+		source: { pendingChanges: null, pendingLegacyRequests: [request] },
+	});
 
 	const submitted = await executeOrdinaryWorkPeriodSubmissionInTransaction(
 		fake.input,
@@ -1271,6 +1279,7 @@ it("does not accept marked metadata as canonical compatibility metadata", async 
 					requesterEmployeeId,
 					contextSnapshot: {
 						timeRequest: { kind: "manual_time_submission" },
+						surchargeSnapshot,
 					},
 				},
 			],
@@ -1442,6 +1451,7 @@ it("keeps canonical replay authoritative when a pending compatibility row exists
 					requesterEmployeeId,
 					contextSnapshot: {
 						timeRequest: { kind: "manual_time_submission" },
+						surchargeSnapshot,
 					},
 				},
 			],
@@ -1842,9 +1852,8 @@ it.each([
 				sequence: 2,
 			},
 			timeRequest: { kind },
-			...(kind === "policy_clock_out"
-				? { breakPolicySnapshot, surchargeSnapshot }
-				: {}),
+			surchargeSnapshot,
+			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 		},
 	});
 	const terminalSource = {
@@ -1862,9 +1871,8 @@ it.each([
 				status: "approved",
 				contextSnapshot: {
 					timeRequest: { kind },
-					...(kind === "policy_clock_out"
-						? { breakPolicySnapshot, surchargeSnapshot }
-						: {}),
+					surchargeSnapshot,
+					...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
 				},
 			},
 		],
@@ -1893,7 +1901,7 @@ it.each([
 
 	expect(submitted.result).toMatchObject({
 		kind: "auto_completed",
-		approvalRequestId: compatibility.id,
+		approvalRequestId: state.stageId,
 	});
 	expect(submitted).toMatchObject({
 		disposition: "replayed",

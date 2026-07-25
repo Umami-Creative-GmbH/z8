@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
+import { decodeApprovalDatabaseTimestamp } from "@/lib/approvals/approval-database-row";
 import type {
 	OrdinaryWorkPeriodFinalizerDbService,
 	WorkPeriodMaintenanceFacts,
@@ -291,7 +292,25 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 	`);
 	const sourceRows = rows(sourceResult);
 	if (sourceRows.length !== 1) return fail();
-	const source = validateLockedSource(sourceRows[0], input);
+	const rawSource = object(sourceRows[0]);
+	const source = validateLockedSource(
+		{
+			...rawSource,
+			startTime: decodeApprovalDatabaseTimestamp(rawSource.startTime),
+			endTime: decodeApprovalDatabaseTimestamp(rawSource.endTime),
+			clockInTimestamp: decodeApprovalDatabaseTimestamp(
+				rawSource.clockInTimestamp,
+			),
+			clockOutTimestamp: decodeApprovalDatabaseTimestamp(
+				rawSource.clockOutTimestamp,
+			),
+			canonicalStartAt: decodeApprovalDatabaseTimestamp(
+				rawSource.canonicalStartAt,
+			),
+			canonicalEndAt: decodeApprovalDatabaseTimestamp(rawSource.canonicalEndAt),
+		},
+		input,
+	);
 	const dirtyTimezone = offsetMinutesToTimeZoneId(
 		source.clockInUtcOffsetMinutes,
 	);
@@ -372,14 +391,12 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 	let previousEnd: Instant | null = null;
 	for (const value of rows(gapResult)) {
 		const period = object(value);
-		if (
-			!(period.gapStart instanceof Date) ||
-			!(period.gapEnd instanceof Date)
-		) {
-			return fail();
-		}
-		const gapStart = instantFromDate(period.gapStart);
-		const gapEnd = instantFromDate(period.gapEnd);
+		const gapStart = instantFromDate(
+			decodeApprovalDatabaseTimestamp(period.gapStart),
+		);
+		const gapEnd = instantFromDate(
+			decodeApprovalDatabaseTimestamp(period.gapEnd),
+		);
 		if (compareInstants(gapEnd, gapStart) < 0) return fail();
 		if (compareInstants(gapStart, sourceEnd) > 0) break;
 		const boundedGapEnd =

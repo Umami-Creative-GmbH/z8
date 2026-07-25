@@ -47,9 +47,8 @@ function required<T>(value: T | null | undefined): T {
 function expectedPayload(kind: OrdinaryWorkPeriodApprovalKind) {
 	return {
 		timeRequest: { kind },
-		...(kind === "policy_clock_out"
-			? { breakPolicySnapshot, surchargeSnapshot }
-			: {}),
+		...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+		surchargeSnapshot,
 	};
 }
 
@@ -70,9 +69,8 @@ function workflow(
 		policySnapshot: {},
 		contextSnapshot: {
 			timeRequest: { kind },
-			...(kind === "policy_clock_out"
-				? { breakPolicySnapshot, surchargeSnapshot }
-				: {}),
+			...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+			surchargeSnapshot,
 		},
 		displaySnapshot: {},
 		submittedAt,
@@ -333,6 +331,33 @@ describe.each(
 		}
 	});
 
+	it("rejects a source and workflow surcharge snapshot mismatch", async () => {
+		const loaded = await loadedContext(kind);
+		const mismatchedPayload = {
+			...expectedPayload(kind),
+			surchargeSnapshot: {
+				...surchargeSnapshot,
+				resolution: {
+					kind: "surcharge_model",
+					teamId: null,
+					assignmentId: "80000000-0000-4000-8000-000000000001",
+					assignmentType: "organization",
+					assignmentPriority: 1,
+					modelId: "80000000-0000-4000-8000-000000000002",
+					modelName: "Changed",
+					rules: [],
+				},
+			},
+		};
+
+		await expect(
+			loaded.adapter.getTrustedCapabilities({
+				...loaded.context,
+				source: { ...loaded.context.source, payload: mismatchedPayload },
+			}),
+		).rejects.toThrow(/invalid/i);
+	});
+
 	it("routes using requester and safe work-period facts and cannot cancel after approval", async () => {
 		const { adapter, context } = await loadedContext(kind);
 		await expect(adapter.getTrustedCapabilities(context)).resolves.toEqual({
@@ -536,21 +561,15 @@ describe.each(
 		const projection = await adapter.projectDisplay(context);
 		expect(projection.displayPayload).toEqual({
 			kind,
-			title:
-				kind === "manual_time_submission"
-					? "Manual time submission"
-					: "Policy clock-out",
 			startTime: "2026-07-20T06:00:00Z",
 			endTime: "2026-07-20T14:00:00Z",
 			durationMinutes: 480,
-			approvalStatus: "pending",
-			stage: { name: "Manager review", order: 1 },
 		});
 		expect(projection.searchText).not.toMatch(/private|org-1|[0-9a-f]{8}-/i);
 		expect(JSON.stringify(projection)).not.toContain(ids.stage);
 	});
 
-	it("retains the terminal public stage without its internal identifier", async () => {
+	it("keeps the terminal projection independent of internal stage data", async () => {
 		const { adapter, context } = await loadedContext(kind);
 		const terminalWorkflow = workflow(kind, {
 			status: "approved",
@@ -570,10 +589,7 @@ describe.each(
 			source: { ...context.source, approvalStatus: "approved" },
 		});
 
-		expect(projection.displayPayload.stage).toEqual({
-			name: "Manager review",
-			order: 1,
-		});
+		expect(projection.displayPayload).not.toHaveProperty("stage");
 		expect(JSON.stringify(projection)).not.toContain(ids.stage);
 	});
 });

@@ -27,6 +27,11 @@ const chainProgressMocks = vi.hoisted(() => ({
 const managerEligibilityMocks = vi.hoisted(() => ({
 	isEligible: vi.fn(),
 }));
+const surchargeSnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-14T16:00:00Z",
+	resolution: { kind: "none" },
+} as const;
 
 vi.mock("@/lib/notifications/triggers", () => notificationMocks);
 vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
@@ -84,7 +89,10 @@ describe("stable ordinary work-period decisions", () => {
 			},
 			chain: null,
 			chainRows: [],
-			sourceSnapshot: { timeRequest: { kind: "manual_time_submission" } },
+			sourceSnapshot: {
+				timeRequest: { kind: "manual_time_submission" },
+				surchargeSnapshot,
+			},
 			capturedAt: parseInstant("2026-07-15T09:59:00Z"),
 		}));
 		chainProgressMocks.progress
@@ -311,7 +319,10 @@ describe("stable ordinary work-period decisions", () => {
 							]
 						: []),
 				],
-				sourceSnapshot: { timeRequest: { kind: "manual_time_submission" } },
+				sourceSnapshot: {
+					timeRequest: { kind: "manual_time_submission" },
+					surchargeSnapshot,
+				},
 				capturedAt: parseInstant("2026-07-15T10:00:00Z"),
 			});
 		}
@@ -409,6 +420,7 @@ describe("stable ordinary work-period decisions", () => {
 										? null
 										: {
 												timeRequest: { kind: "manual_time_submission" },
+												surchargeSnapshot,
 												workflow: { id: "workflow-1", organizationId: "org-1" },
 												stage: {
 													id: "stage-1",
@@ -493,6 +505,7 @@ describe("stable ordinary work-period decisions", () => {
 										replay && !intermediateReplay ? terminalStatus : "pending",
 									contextSnapshot: {
 										timeRequest: { kind: "manual_time_submission" },
+										surchargeSnapshot,
 									},
 								},
 					),
@@ -758,6 +771,28 @@ describe("stable ordinary work-period decisions", () => {
 		"approve",
 		"reject",
 	] as const)("keeps legacy %s decisions authoritative and returns terminal dispatch work", async (action) => {
+		legacyCaptureMocks.load.mockResolvedValue({
+			organizationId: "org-1",
+			source: {
+				organizationId: "org-1",
+				workflowType: "manual_time_submission",
+				sourceType: "time_entry",
+				sourceId: "period-1",
+			},
+			approvalRequest: {
+				id: "approval-1",
+				organizationId: "org-1",
+				entityType: "time_entry",
+				entityId: "period-1",
+				requestedBy: "employee-1",
+				approverId: "manager-1",
+				status: "pending",
+			},
+			chain: null,
+			chainRows: [],
+			sourceSnapshot: { timeRequest: { kind: "manual_time_submission" } },
+			capturedAt: parseInstant("2026-07-15T09:59:00Z"),
+		});
 		const dbService = createDecisionDbService({
 			unlinked: true,
 			autoApprovalRequest: {
@@ -1272,7 +1307,9 @@ const approval = {
 	rejectionReason: null,
 	metadata: {
 		timeRequest: { kind: "manual_time_submission" },
+		surchargeSnapshot,
 		workflow: { id: "workflow-1", organizationId: "org-1" },
+		stage: { id: "stage-1", sequence: 1 },
 	},
 };
 
@@ -1285,7 +1322,7 @@ const period = {
 	canonicalRecordId: "record-1",
 	approvalWorkflowId: "workflow-1",
 	approvalStatus: "pending",
-	pendingChanges: { isManualEntry: true },
+	pendingChanges: { isManualEntry: true, surchargeSnapshot },
 	startTime: new Date("2026-07-14T08:00:00.000Z"),
 	endTime: new Date("2026-07-14T16:00:00.000Z"),
 	durationMinutes: 480,
@@ -1313,33 +1350,34 @@ const breakPolicySnapshot = {
 	evaluatedAt: "2026-07-14T16:00:00Z",
 	resolution: "none",
 } as const;
-const surchargeSnapshot = {
-	version: 1,
-	evaluatedAt: "2026-07-14T16:00:00Z",
-	resolution: { kind: "none" },
-} as const;
-
 const autoApprovalMetadata = (kind = "manual_time_submission") => ({
 	timeRequest: { kind },
-	...(kind === "policy_clock_out"
-		? { breakPolicySnapshot, surchargeSnapshot }
-		: {}),
+	...(kind === "policy_clock_out" ? { breakPolicySnapshot } : {}),
+	surchargeSnapshot,
 	autoApproval: { reason: "requester_is_approver" },
 });
 
 const submissionId = "10000000-0000-4000-8000-000000000099";
 
-const ordinarySubmissionKey = () =>
+const ordinarySubmissionKey = (
+	kind:
+		| "manual_time_submission"
+		| "policy_clock_out" = "manual_time_submission",
+) =>
 	deriveApprovalWorkflowId({
 		organizationId: "org-1",
-		workflowType: "manual_time_submission",
+		workflowType: kind,
 		sourceType: "time_entry",
 		sourceId: "period-1",
 		allocationKey: submissionId,
 	});
 
-const ordinarySubmissionMarker = () => ({
-	key: ordinarySubmissionKey(),
+const ordinarySubmissionMarker = (
+	kind:
+		| "manual_time_submission"
+		| "policy_clock_out" = "manual_time_submission",
+) => ({
+	key: ordinarySubmissionKey(kind),
 	submissionId,
 });
 
@@ -1546,10 +1584,13 @@ function createDecisionDbService(options?: {
 				? autoApprovalMetadata(options.kind)
 				: {
 						timeRequest: { kind: options?.kind ?? "manual_time_submission" },
+						ordinarySubmission: ordinarySubmissionMarker(options?.kind),
 						...(options?.kind === "policy_clock_out"
-							? { breakPolicySnapshot, surchargeSnapshot }
+							? { breakPolicySnapshot }
 							: {}),
+						surchargeSnapshot,
 						workflow: { id: "workflow-1", organizationId: "org-1" },
+						stage: { id: "stage-1", sequence: 1 },
 					},
 			...(options?.autoCompleted
 				? { status: "approved", approvedAt: new Date() }
@@ -1609,7 +1650,7 @@ function createDecisionDbService(options?: {
 																surchargeSnapshot,
 															},
 														}
-													: {}),
+													: { pendingChanges: { surchargeSnapshot } }),
 											}
 										: {
 												...period,
@@ -1620,7 +1661,7 @@ function createDecisionDbService(options?: {
 																surchargeSnapshot,
 															},
 														}
-													: {}),
+													: { pendingChanges: { surchargeSnapshot } }),
 											},
 								]
 							: tableName === "time_record"
@@ -1685,6 +1726,54 @@ describe("ordinary work-period approval finalizer", () => {
 				surchargeSnapshot,
 			},
 		});
+	});
+
+	it.each([
+		[
+			"approve",
+			{
+				decision: "approved",
+				surchargePeriodIds: ["period-1"],
+				staleSurchargePeriodIds: [],
+			},
+		],
+		[
+			"reject",
+			{
+				decision: "rejected",
+				surchargePeriodIds: [],
+				staleSurchargePeriodIds: ["period-1"],
+			},
+		],
+	] as const)("uses immutable manual surcharge evidence on terminal %s", async (action, expected) => {
+		const dbService = createFinalizerDbService({
+			request: null,
+			period: { pendingChanges: { surchargeSnapshot } },
+		});
+
+		const result = await finalize(dbService, {
+			evidence: {
+				mode: "canonical",
+				workflowId: "workflow-1",
+				payload: {
+					timeRequest: { kind: "manual_time_submission" },
+					surchargeSnapshot,
+				},
+			},
+			transition:
+				action === "approve"
+					? { kind: "approve", reason: null }
+					: { kind: "reject", reason: "No evidence" },
+		});
+
+		expect(result.maintenance).toEqual({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			dirtyFromDate: "2026-07-14",
+			...expected,
+			surchargeSnapshot,
+		});
+		expect(terminalBreakMocks.enforce).not.toHaveBeenCalled();
 	});
 
 	it("locks work_period before time_record and then records one decision", async () => {
@@ -1764,7 +1853,10 @@ describe("ordinary work-period approval finalizer", () => {
 				evidence: {
 					mode: "canonical",
 					workflowId: "workflow-1",
-					payload: { timeRequest: { kind: "manual_time_submission" } },
+					payload: {
+						timeRequest: { kind: "manual_time_submission" },
+						surchargeSnapshot,
+					},
 				},
 				transition:
 					action === "approve"
@@ -1781,7 +1873,10 @@ describe("ordinary work-period approval finalizer", () => {
 			{
 				mode: "canonical",
 				workflowId: "workflow-2",
-				payload: { timeRequest: { kind: "manual_time_submission" } },
+				payload: {
+					timeRequest: { kind: "manual_time_submission" },
+					surchargeSnapshot,
+				},
 			},
 		],
 		[
@@ -1816,7 +1911,10 @@ describe("ordinary work-period approval finalizer", () => {
 				evidence: {
 					mode: "canonical",
 					workflowId: "workflow-1",
-					payload: { timeRequest: { kind: "manual_time_submission" } },
+					payload: {
+						timeRequest: { kind: "manual_time_submission" },
+						surchargeSnapshot,
+					},
 				},
 				transition: { kind: "approve", reason: null },
 				finalizedAt: parseInstant("2026-07-15T10:00:00Z"),
@@ -1841,7 +1939,10 @@ describe("ordinary work-period approval finalizer", () => {
 					evidence: {
 						mode: "canonical",
 						workflowId: "workflow-1",
-						payload: { timeRequest: { kind: "manual_time_submission" } },
+						payload: {
+							timeRequest: { kind: "manual_time_submission" },
+							surchargeSnapshot,
+						},
 					},
 					transition: { kind: "approve", reason: null },
 					finalizedAt: parseInstant("2026-07-15T10:00:00Z"),
@@ -1861,6 +1962,7 @@ describe("ordinary work-period approval finalizer", () => {
 					breakPolicySnapshot,
 					surchargeSnapshot,
 					workflow: { id: "workflow-1", organizationId: "org-1" },
+					stage: { id: "stage-1", sequence: 1 },
 				},
 			},
 		});
@@ -2011,6 +2113,7 @@ describe("ordinary work-period approval finalizer", () => {
 					breakPolicySnapshot,
 					surchargeSnapshot,
 					workflow: { id: "workflow-1", organizationId: "org-1" },
+					stage: { id: "stage-1", sequence: 1 },
 				},
 			},
 		});
@@ -2065,6 +2168,7 @@ describe("ordinary work-period approval finalizer", () => {
 					breakPolicySnapshot,
 					surchargeSnapshot,
 					workflow: { id: "workflow-1", organizationId: "org-1" },
+					stage: { id: "stage-1", sequence: 1 },
 				},
 			},
 		});
@@ -2162,7 +2266,10 @@ describe("ordinary work-period approval finalizer", () => {
 				evidence: {
 					mode: "canonical",
 					workflowId: "workflow-1",
-					payload: { timeRequest: { kind: "manual_time_submission" } },
+					payload: {
+						timeRequest: { kind: "manual_time_submission" },
+						surchargeSnapshot,
+					},
 				},
 			}),
 		).rejects.toThrow("Ordinary work-period finalization conflict");
@@ -2305,6 +2412,7 @@ describe("ordinary work-period approval finalizer", () => {
 				approverId: autoCompleted ? "employee-1" : "manager-1",
 				metadata: {
 					timeRequest: { kind: "manual_time_submission" },
+					surchargeSnapshot,
 					ordinarySubmission: { key: ordinarySubmissionKey(), submissionId },
 					...(autoCompleted
 						? {
