@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
-import { decodeApprovalDatabaseTimestamp } from "@/lib/approvals/approval-database-row";
+import {
+	decodeApprovalDatabaseTimestamptz,
+	decodeApprovalDatabaseTimestampWithoutTimeZone,
+} from "@/lib/approvals/approval-database-row";
 import type {
 	OrdinaryWorkPeriodFinalizerDbService,
 	WorkPeriodMaintenanceFacts,
@@ -296,18 +299,32 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 	const source = validateLockedSource(
 		{
 			...rawSource,
-			startTime: decodeApprovalDatabaseTimestamp(rawSource.startTime),
-			endTime: decodeApprovalDatabaseTimestamp(rawSource.endTime),
-			clockInTimestamp: decodeApprovalDatabaseTimestamp(
+			startTime: decodeApprovalDatabaseTimestampWithoutTimeZone(
+				rawSource.startTime,
+			),
+			endTime: decodeApprovalDatabaseTimestampWithoutTimeZone(
+				rawSource.endTime,
+			),
+			deletedAt:
+				rawSource.deletedAt === null
+					? null
+					: decodeApprovalDatabaseTimestampWithoutTimeZone(rawSource.deletedAt),
+			originalEndTime:
+				rawSource.originalEndTime === null
+					? null
+					: decodeApprovalDatabaseTimestamptz(rawSource.originalEndTime),
+			clockInTimestamp: decodeApprovalDatabaseTimestampWithoutTimeZone(
 				rawSource.clockInTimestamp,
 			),
-			clockOutTimestamp: decodeApprovalDatabaseTimestamp(
+			clockOutTimestamp: decodeApprovalDatabaseTimestampWithoutTimeZone(
 				rawSource.clockOutTimestamp,
 			),
-			canonicalStartAt: decodeApprovalDatabaseTimestamp(
+			canonicalStartAt: decodeApprovalDatabaseTimestampWithoutTimeZone(
 				rawSource.canonicalStartAt,
 			),
-			canonicalEndAt: decodeApprovalDatabaseTimestamp(rawSource.canonicalEndAt),
+			canonicalEndAt: decodeApprovalDatabaseTimestampWithoutTimeZone(
+				rawSource.canonicalEndAt,
+			),
 		},
 		input,
 	);
@@ -392,10 +409,10 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 	for (const value of rows(gapResult)) {
 		const period = object(value);
 		const gapStart = instantFromDate(
-			decodeApprovalDatabaseTimestamp(period.gapStart),
+			decodeApprovalDatabaseTimestampWithoutTimeZone(period.gapStart),
 		);
 		const gapEnd = instantFromDate(
-			decodeApprovalDatabaseTimestamp(period.gapEnd),
+			decodeApprovalDatabaseTimestampWithoutTimeZone(period.gapEnd),
 		);
 		if (compareInstants(gapEnd, gapStart) < 0) return fail();
 		if (compareInstants(gapStart, sourceEnd) > 0) break;

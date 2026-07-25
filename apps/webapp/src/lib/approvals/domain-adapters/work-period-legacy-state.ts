@@ -4,7 +4,6 @@ import {
 	compareInstants,
 	type Instant,
 	instantToCanonicalString,
-	parseInstant,
 } from "@/lib/datetime/temporal-core";
 import {
 	policyClockOutBreakSnapshotFromPendingChanges,
@@ -14,7 +13,11 @@ import {
 	policyClockOutSurchargeSnapshotFromPendingChanges,
 	policyClockOutSurchargeSnapshotsEqual,
 } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
-import { decodeApprovalDatabaseJsonText } from "../approval-database-row";
+import {
+	decodeApprovalDatabaseJsonText,
+	decodeApprovalDatabaseTimestamptz,
+	decodeApprovalDatabaseTimestampWithoutTimeZone,
+} from "../approval-database-row";
 import type { ApprovalDbService } from "../server/types";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
@@ -177,32 +180,29 @@ function nullableInteger(value: unknown): number | null {
 	return value === null ? null : integer(value);
 }
 
-function nullableInstant(value: unknown): Instant | null {
+function nullableTimestampWithoutTimeZone(value: unknown): Instant | null {
 	if (value === null) return null;
 	try {
-		if (value instanceof Date) return instantFromDB(value) ?? fail();
-		if (typeof value === "string") {
-			if (
-				/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?$/.test(value)
-			) {
-				return parseInstant(`${value.replace(" ", "T")}Z`);
-			}
-			if (
-				/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/.test(
-					value,
-				)
-			) {
-				return parseInstant(value.replace(" ", "T"));
-			}
-		}
+		return (
+			instantFromDB(decodeApprovalDatabaseTimestampWithoutTimeZone(value)) ??
+			fail()
+		);
 	} catch {
 		return fail();
 	}
-	return fail();
 }
 
-function requiredInstant(value: unknown): Instant {
-	return nullableInstant(value) ?? fail();
+function requiredTimestampWithoutTimeZone(value: unknown): Instant {
+	return nullableTimestampWithoutTimeZone(value) ?? fail();
+}
+
+function nullableTimestamptz(value: unknown): Instant | null {
+	if (value === null) return null;
+	try {
+		return instantFromDB(decodeApprovalDatabaseTimestamptz(value)) ?? fail();
+	} catch {
+		return fail();
+	}
 }
 
 function requestStatus(value: unknown): RequestStatus {
@@ -257,15 +257,15 @@ function decodePeriod(value: unknown): WorkPeriodSnapshot {
 		id: string(raw.id),
 		organizationId: string(raw.organizationId),
 		employeeId: string(raw.employeeId),
-		startTime: requiredInstant(raw.startTime),
-		endTime: nullableInstant(raw.endTime),
+		startTime: requiredTimestampWithoutTimeZone(raw.startTime),
+		endTime: nullableTimestampWithoutTimeZone(raw.endTime),
 		wasAutoAdjusted: boolean(raw.wasAutoAdjusted),
-		originalEndTime: nullableInstant(raw.originalEndTime),
+		originalEndTime: nullableTimestamptz(raw.originalEndTime),
 		durationMinutes: nullableInteger(raw.durationMinutes),
 		isActive: boolean(raw.isActive),
 		approvalStatus: requestStatus(raw.approvalStatus),
 		pendingChanges: decodeApprovalDatabaseJsonText(raw.pendingChanges),
-		deletedAt: nullableInstant(raw.deletedAt),
+		deletedAt: nullableTimestampWithoutTimeZone(raw.deletedAt),
 		canonicalRecordId: string(raw.canonicalRecordId),
 		approvalWorkflowId: nullableString(raw.approvalWorkflowId),
 	};
@@ -287,8 +287,8 @@ function decodeCanonical(value: unknown): CanonicalRecordSnapshot {
 		organizationId: string(raw.organizationId),
 		employeeId: string(raw.employeeId),
 		recordKind: string(raw.recordKind),
-		startAt: requiredInstant(raw.startAt),
-		endAt: nullableInstant(raw.endAt),
+		startAt: requiredTimestampWithoutTimeZone(raw.startAt),
+		endAt: nullableTimestampWithoutTimeZone(raw.endAt),
 		durationMinutes: nullableInteger(raw.durationMinutes),
 		approvalState,
 	};
@@ -471,7 +471,7 @@ function decodeRequest(
 	const raw = record(value);
 	const reason = nullableString(raw.reason);
 	const status = requestStatus(raw.status);
-	const approvedAt = nullableInstant(raw.approvedAt);
+	const approvedAt = nullableTimestampWithoutTimeZone(raw.approvedAt);
 	const rejectionReason = nullableString(raw.rejectionReason);
 	if (
 		status !== expectedStatus ||
@@ -632,7 +632,7 @@ function decodeRequest(
 				? { autoApproval: { reason: "requester_is_approver" } }
 				: {}),
 		} as unknown as JsonObject,
-		updatedAt: requiredInstant(raw.updatedAt),
+		updatedAt: requiredTimestampWithoutTimeZone(raw.updatedAt),
 	};
 }
 
@@ -642,7 +642,7 @@ function decodeChain(
 ): LegacyApprovalChainSnapshot {
 	const raw = record(value);
 	const status = chainStatus(raw.status);
-	const completedAt = nullableInstant(raw.completedAt);
+	const completedAt = nullableTimestampWithoutTimeZone(raw.completedAt);
 	const currentStageOrder = integer(raw.currentStageOrder);
 	if (
 		status !== expectedStatus ||
@@ -663,8 +663,8 @@ function decodeChain(
 		requesterEmployeeId: string(raw.requesterEmployeeId),
 		currentStageOrder,
 		status,
-		createdAt: requiredInstant(raw.createdAt),
-		updatedAt: requiredInstant(raw.updatedAt),
+		createdAt: requiredTimestampWithoutTimeZone(raw.createdAt),
+		updatedAt: requiredTimestampWithoutTimeZone(raw.updatedAt),
 		completedAt,
 	};
 }
@@ -674,7 +674,7 @@ function decodeChainRow(value: unknown): LegacyApprovalChainRowSnapshot {
 	const status = chainStatus(raw.status);
 	const approvalRequestId = nullableString(raw.approvalRequestId);
 	const decidedBy = nullableString(raw.decidedBy);
-	const decidedAt = nullableInstant(raw.decidedAt);
+	const decidedAt = nullableTimestampWithoutTimeZone(raw.decidedAt);
 	const stepOrder = integer(raw.stepOrder);
 	if (
 		stepOrder < 1 ||
@@ -698,8 +698,8 @@ function decodeChainRow(value: unknown): LegacyApprovalChainRowSnapshot {
 		status,
 		decidedBy,
 		decidedAt,
-		createdAt: requiredInstant(raw.createdAt),
-		updatedAt: requiredInstant(raw.updatedAt),
+		createdAt: requiredTimestampWithoutTimeZone(raw.createdAt),
+		updatedAt: requiredTimestampWithoutTimeZone(raw.updatedAt),
 	};
 }
 
@@ -1004,7 +1004,7 @@ function decodeCapture(
 		chainRows,
 		sourceSnapshot: payload,
 		displaySnapshot,
-		capturedAt: requiredInstant(envelope.capturedAt),
+		capturedAt: requiredTimestampWithoutTimeZone(envelope.capturedAt),
 	}) as VerifiedLegacyApprovalState;
 }
 
@@ -1104,7 +1104,8 @@ function decodePreSubmissionCapture(
 				durationMinutes: period.durationMinutes,
 			},
 		},
-		capturedAt: input.capturedAt ?? requiredInstant(envelope.capturedAt),
+		capturedAt:
+			input.capturedAt ?? requiredTimestampWithoutTimeZone(envelope.capturedAt),
 	}) as VerifiedLegacyApprovalState;
 }
 

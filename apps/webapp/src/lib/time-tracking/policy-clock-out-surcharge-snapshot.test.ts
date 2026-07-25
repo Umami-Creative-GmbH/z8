@@ -322,7 +322,12 @@ describe("resolvePolicyClockOutSurchargeSnapshotInTransaction", () => {
 			modelOrganizationId: "org-1",
 			modelName: "Standard",
 			modelIsActive: true,
-			rules: rules.map((rule) => ({ ...rule, isActive: true })),
+			rules: rules.map((rule) => ({
+				...rule,
+				validFrom: rule.validFrom?.replace(/Z$/, "") ?? null,
+				validUntil: rule.validUntil?.replace(/Z$/, "") ?? null,
+				isActive: true,
+			})),
 		};
 	}
 
@@ -519,7 +524,7 @@ describe("resolvePolicyClockOutSurchargeSnapshotInTransaction", () => {
 		await expect(resolve(execute)).resolves.toEqual(modelSnapshot);
 	});
 
-	it("canonicalizes database offset timestamps in captured rule validity", async () => {
+	it("rejects offset timestamps from timestamp-without-zone rule validity columns", async () => {
 		const assigned = candidate({
 			id: ids.assignment,
 			type: "employee",
@@ -543,11 +548,40 @@ describe("resolvePolicyClockOutSurchargeSnapshotInTransaction", () => {
 				],
 			});
 
+		await expect(resolve(execute)).rejects.toThrow(
+			"Policy clock-out surcharge snapshot resolution failed",
+		);
+	});
+
+	it("decodes timestamp-without-zone rule validity as UTC", async () => {
+		const assigned = candidate({
+			id: ids.assignment,
+			type: "employee",
+			priority: 2,
+		});
+		const execute = vi
+			.fn()
+			.mockResolvedValueOnce({ rows: [assigned] })
+			.mockResolvedValueOnce({
+				rows: [
+					{
+						...modelRow(),
+						rules: [
+							{
+								...rules[0],
+								validFrom: "2026-07-19T09:00:00.123456",
+								validUntil: "2026-07-19 10:00:00",
+							},
+						],
+					},
+				],
+			});
+
 		await expect(resolve(execute)).resolves.toMatchObject({
 			resolution: {
 				rules: [
 					{
-						validFrom: "2026-07-19T09:00:00Z",
+						validFrom: "2026-07-19T09:00:00.123Z",
 						validUntil: "2026-07-19T10:00:00Z",
 					},
 				],

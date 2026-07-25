@@ -11,9 +11,9 @@ import {
 	policyClockOutSurchargeSnapshotsEqual,
 } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import {
-	decodeApprovalDatabaseInstant,
 	decodeApprovalDatabaseJsonText,
-	decodeApprovalDatabaseTimestamp,
+	decodeApprovalDatabaseTimestamptz,
+	decodeApprovalDatabaseTimestampWithoutTimeZone,
 } from "../approval-database-row";
 import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
 import { parseOrdinaryWorkPeriodWorkflowPayload } from "../domain-adapters/work-period-contract";
@@ -1315,7 +1315,7 @@ function toCandidate(value: Record<string, unknown>) {
 			status: value.projectionStatus,
 			displayPayload: value.displayPayload,
 			searchText: value.searchText,
-			createdAt: decodeApprovalDatabaseInstant(value.projectionCreatedAt),
+			createdAt: decodeApprovalDatabaseTimestamptz(value.projectionCreatedAt),
 		},
 		workflow: {
 			id: value.workflowId,
@@ -1327,7 +1327,7 @@ function toCandidate(value: Record<string, unknown>) {
 			status: value.workflowStatus,
 			currentStageOrder: value.currentStageOrder,
 			contextSnapshot: value.contextSnapshot,
-			submittedAt: decodeApprovalDatabaseInstant(value.submittedAt),
+			submittedAt: decodeApprovalDatabaseTimestamptz(value.submittedAt),
 		},
 		stage: {
 			id: value.stageId,
@@ -1345,7 +1345,7 @@ function toCandidate(value: Record<string, unknown>) {
 			stageId: value.assignmentStageId,
 			approverEmployeeId: value.approverEmployeeId,
 			status: value.assignmentStatus,
-			assignedAt: decodeApprovalDatabaseInstant(value.assignedAt),
+			assignedAt: decodeApprovalDatabaseTimestamptz(value.assignedAt),
 		},
 		requester: {
 			id: value.requesterId,
@@ -1420,7 +1420,9 @@ function endpoint(
 		organizationId: value[`${prefix}OrganizationId`],
 		employeeId: value[`${prefix}EmployeeId`],
 		type: value[`${prefix}Type`],
-		timestamp: decodeApprovalDatabaseTimestamp(value[`${prefix}Timestamp`]),
+		timestamp: decodeApprovalDatabaseTimestampWithoutTimeZone(
+			value[`${prefix}Timestamp`],
+		),
 		utcOffsetMinutes: value[`${prefix}UtcOffsetMinutes`],
 		isSuperseded: value[`${prefix}IsSuperseded`],
 		supersededById: value[`${prefix}SupersededById`],
@@ -1444,12 +1446,16 @@ function toEvidence(
 			deletedAt:
 				value.periodDeletedAt === null
 					? null
-					: decodeApprovalDatabaseInstant(value.periodDeletedAt),
-			startTime: decodeApprovalDatabaseTimestamp(value.periodStartTime),
+					: decodeApprovalDatabaseTimestampWithoutTimeZone(
+							value.periodDeletedAt,
+						),
+			startTime: decodeApprovalDatabaseTimestampWithoutTimeZone(
+				value.periodStartTime,
+			),
 			endTime:
 				value.periodEndTime === null
 					? null
-					: decodeApprovalDatabaseTimestamp(value.periodEndTime),
+					: decodeApprovalDatabaseTimestampWithoutTimeZone(value.periodEndTime),
 			durationMinutes: value.periodDurationMinutes,
 			pendingChanges: decodeApprovalDatabaseJsonText(
 				value.periodPendingChanges,
@@ -1463,11 +1469,15 @@ function toEvidence(
 			organizationId: value.canonicalOrganizationId,
 			employeeId: value.canonicalEmployeeId,
 			recordKind: value.canonicalRecordKind,
-			startAt: decodeApprovalDatabaseTimestamp(value.canonicalStartAt),
+			startAt: decodeApprovalDatabaseTimestampWithoutTimeZone(
+				value.canonicalStartAt,
+			),
 			endAt:
 				value.canonicalEndAt === null
 					? null
-					: decodeApprovalDatabaseTimestamp(value.canonicalEndAt),
+					: decodeApprovalDatabaseTimestampWithoutTimeZone(
+							value.canonicalEndAt,
+						),
 			durationMinutes: value.canonicalDurationMinutes,
 			approvalState: value.canonicalApprovalState,
 		},

@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
-import { decodeApprovalDatabaseTimestamp } from "../approval-database-row";
+import { decodeApprovalDatabaseTimestampWithoutTimeZone } from "../approval-database-row";
 import type {
 	ApprovalSourceIdentity,
 	ApprovalWorkflowSnapshot,
@@ -284,16 +284,22 @@ export function createOrdinaryWorkPeriodApprovalAdapter(
 			const rawPeriod = evidenceRow(rows[0]);
 			const period = {
 				...rawPeriod,
-				startTime: decodeApprovalDatabaseTimestamp(rawPeriod.startTime),
-				endTime: decodeApprovalDatabaseTimestamp(rawPeriod.endTime),
+				startTime: decodeApprovalDatabaseTimestampWithoutTimeZone(
+					rawPeriod.startTime,
+				),
+				endTime: decodeApprovalDatabaseTimestampWithoutTimeZone(
+					rawPeriod.endTime,
+				),
 				deletedAt:
 					rawPeriod.deletedAt === null
 						? null
-						: decodeApprovalDatabaseTimestamp(rawPeriod.deletedAt),
-				canonicalStartAt: decodeApprovalDatabaseTimestamp(
+						: decodeApprovalDatabaseTimestampWithoutTimeZone(
+								rawPeriod.deletedAt,
+							),
+				canonicalStartAt: decodeApprovalDatabaseTimestampWithoutTimeZone(
 					rawPeriod.canonicalStartAt,
 				),
-				canonicalEndAt: decodeApprovalDatabaseTimestamp(
+				canonicalEndAt: decodeApprovalDatabaseTimestampWithoutTimeZone(
 					rawPeriod.canonicalEndAt,
 				),
 			};

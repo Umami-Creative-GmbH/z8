@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { parsePostgresTimestampWithoutTimeZoneAsUtc } from "@/db/postgres-utc";
+import { decodeApprovalDatabaseTimestampWithoutTimeZone } from "@/lib/approvals/approval-database-row";
 import {
 	compareInstants,
 	comparePlainDates,
@@ -428,20 +428,9 @@ function dateToPlainDate(value: unknown): string | null {
 
 function dateToInstant(value: unknown): string | null {
 	if (value === null) return null;
-	if (value instanceof Date) {
-		return instantToCanonicalString(instantFromDate(value));
-	}
-	if (typeof value === "string") {
-		if (/(?:Z|[+-]\d{2}(?::?\d{2})?)$/.test(value)) {
-			return instantToCanonicalString(parseInstant(value.replace(" ", "T")));
-		}
-		const databaseDate = parsePostgresTimestampWithoutTimeZoneAsUtc(
-			value.replace("T", " "),
-		);
-		if (!(databaseDate instanceof Date)) return fail();
-		return instantToCanonicalString(instantFromDate(databaseDate));
-	}
-	return fail();
+	return instantToCanonicalString(
+		instantFromDate(decodeApprovalDatabaseTimestampWithoutTimeZone(value)),
+	);
 }
 
 export async function resolvePolicyClockOutSurchargeSnapshotInTransaction(input: {

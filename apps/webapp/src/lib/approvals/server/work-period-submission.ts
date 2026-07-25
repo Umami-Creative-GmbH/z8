@@ -12,7 +12,8 @@ import { policyClockOutBreakSnapshotFromPendingChanges } from "@/lib/time-tracki
 import { policyClockOutSurchargeSnapshotFromPendingChanges } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import {
 	decodeApprovalDatabaseJsonText,
-	decodeApprovalDatabaseTimestamp,
+	decodeApprovalDatabaseTimestamptz,
+	decodeApprovalDatabaseTimestampWithoutTimeZone,
 } from "../approval-database-row";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
@@ -219,18 +220,22 @@ function decodeLockedOrdinarySource(value: unknown): LockedOrdinarySource {
 	return {
 		...row,
 		pendingChanges: decodeApprovalDatabaseJsonText(row.pendingChanges),
-		startTime: decodeApprovalDatabaseTimestamp(row.startTime),
-		endTime: decodeApprovalDatabaseTimestamp(row.endTime),
+		startTime: decodeApprovalDatabaseTimestampWithoutTimeZone(row.startTime),
+		endTime: decodeApprovalDatabaseTimestampWithoutTimeZone(row.endTime),
 		originalEndTime:
 			row.originalEndTime === null
 				? null
-				: decodeApprovalDatabaseTimestamp(row.originalEndTime),
+				: decodeApprovalDatabaseTimestamptz(row.originalEndTime),
 		deletedAt:
 			row.deletedAt === null
 				? null
-				: decodeApprovalDatabaseTimestamp(row.deletedAt),
-		canonicalStartAt: decodeApprovalDatabaseTimestamp(row.canonicalStartAt),
-		canonicalEndAt: decodeApprovalDatabaseTimestamp(row.canonicalEndAt),
+				: decodeApprovalDatabaseTimestampWithoutTimeZone(row.deletedAt),
+		canonicalStartAt: decodeApprovalDatabaseTimestampWithoutTimeZone(
+			row.canonicalStartAt,
+		),
+		canonicalEndAt: decodeApprovalDatabaseTimestampWithoutTimeZone(
+			row.canonicalEndAt,
+		),
 	} as LockedOrdinarySource;
 }
 
