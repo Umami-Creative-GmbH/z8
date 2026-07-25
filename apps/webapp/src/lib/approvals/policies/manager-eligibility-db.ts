@@ -1,5 +1,11 @@
 import { and, eq, inArray, type SQL } from "drizzle-orm";
-import { approvalRequest, employee, employeeManagers, team, teamMembership } from "@/db/schema";
+import {
+	approvalRequest,
+	employee,
+	employeeManagers,
+	team,
+	teamMembership,
+} from "@/db/schema";
 import {
 	type EligibleManagerEmployee,
 	type EligibleManagerLink,
@@ -70,17 +76,17 @@ async function getTeamEligibilityInputs(input: {
 	requesterEmployeeIds?: string[];
 }) {
 	try {
-		const [memberships, teams] = await Promise.all([
-			input.db.query.teamMembership.findMany({
-				where: input.requesterEmployeeIds
-					? and(
-							eq(teamMembership.organizationId, input.organizationId),
-							inArray(teamMembership.employeeId, input.requesterEmployeeIds),
-						)
-					: eq(teamMembership.organizationId, input.organizationId),
-			}),
-			input.db.query.team.findMany({ where: eq(team.organizationId, input.organizationId) }),
-		]);
+		const memberships = await input.db.query.teamMembership.findMany({
+			where: input.requesterEmployeeIds
+				? and(
+						eq(teamMembership.organizationId, input.organizationId),
+						inArray(teamMembership.employeeId, input.requesterEmployeeIds),
+					)
+				: eq(teamMembership.organizationId, input.organizationId),
+		});
+		const teams = await input.db.query.team.findMany({
+			where: eq(team.organizationId, input.organizationId),
+		});
 
 		return {
 			memberships: memberships as EligibleTeamMembership[],
@@ -100,17 +106,17 @@ export async function getEligibleManagerIdsForRequester(input: {
 	requesterEmployeeId: string;
 	organizationId: string;
 }) {
-	const [employees, managerLinks, { memberships, teams }] = await Promise.all([
-		input.db.query.employee.findMany({ where: eq(employee.organizationId, input.organizationId) }),
-		input.db.query.employeeManagers.findMany({
-			where: eq(employeeManagers.employeeId, input.requesterEmployeeId),
-		}),
-		getTeamEligibilityInputs({
-			db: input.db,
-			organizationId: input.organizationId,
-			requesterEmployeeIds: [input.requesterEmployeeId],
-		}),
-	]);
+	const employees = await input.db.query.employee.findMany({
+		where: eq(employee.organizationId, input.organizationId),
+	});
+	const managerLinks = await input.db.query.employeeManagers.findMany({
+		where: eq(employeeManagers.employeeId, input.requesterEmployeeId),
+	});
+	const { memberships, teams } = await getTeamEligibilityInputs({
+		db: input.db,
+		organizationId: input.organizationId,
+		requesterEmployeeIds: [input.requesterEmployeeId],
+	});
 
 	return getEligibleManagerIds({
 		organizationId: input.organizationId,
@@ -127,17 +133,17 @@ export async function getPrimaryEligibleManagerIdForRequester(input: {
 	requesterEmployeeId: string;
 	organizationId: string;
 }): Promise<string | null> {
-	const [employees, managerLinks, { memberships, teams }] = await Promise.all([
-		input.db.query.employee.findMany({ where: eq(employee.organizationId, input.organizationId) }),
-		input.db.query.employeeManagers.findMany({
-			where: eq(employeeManagers.employeeId, input.requesterEmployeeId),
-		}),
-		getTeamEligibilityInputs({
-			db: input.db,
-			organizationId: input.organizationId,
-			requesterEmployeeIds: [input.requesterEmployeeId],
-		}),
-	]);
+	const employees = await input.db.query.employee.findMany({
+		where: eq(employee.organizationId, input.organizationId),
+	});
+	const managerLinks = await input.db.query.employeeManagers.findMany({
+		where: eq(employeeManagers.employeeId, input.requesterEmployeeId),
+	});
+	const { memberships, teams } = await getTeamEligibilityInputs({
+		db: input.db,
+		organizationId: input.organizationId,
+		requesterEmployeeIds: [input.requesterEmployeeId],
+	});
 
 	const result = resolvePrimaryEligibleManager({
 		organizationId: input.organizationId,
@@ -195,15 +201,13 @@ export async function getEligibleApprovalScopesForManager(input: {
 		return [];
 	}
 
-	const [managerLinks, { memberships, teams }] = await Promise.all([
-		input.db.query.employeeManagers.findMany({
-			where: inArray(employeeManagers.employeeId, requesterIds),
-		}),
-		getTeamEligibilityInputs({
-			db: input.db,
-			organizationId: input.organizationId,
-		}),
-	]);
+	const managerLinks = await input.db.query.employeeManagers.findMany({
+		where: inArray(employeeManagers.employeeId, requesterIds),
+	});
+	const { memberships, teams } = await getTeamEligibilityInputs({
+		db: input.db,
+		organizationId: input.organizationId,
+	});
 
 	return typedEmployees.flatMap((requester: { id: string }) => {
 		const eligibleManagerIds = getEligibleManagerIds({
@@ -216,7 +220,12 @@ export async function getEligibleApprovalScopesForManager(input: {
 		});
 
 		return eligibleManagerIds.includes(input.managerEmployeeId)
-			? [{ requesterEmployeeId: requester.id, eligibleApproverIds: eligibleManagerIds }]
+			? [
+					{
+						requesterEmployeeId: requester.id,
+						eligibleApproverIds: eligibleManagerIds,
+					},
+				]
 			: [];
 	});
 }

@@ -36,6 +36,7 @@ POSTGRES_USER=postgres \\
 POSTGRES_PASSWORD="$database_password" \\
 POSTGRES_SSL_MODE=disable \\
 PGOPTIONS="-c statement_timeout=15000 -c timezone=UTC" \\
+NODE_OPTIONS="\${NODE_OPTIONS:+\${NODE_OPTIONS} }--throw-deprecation" \\
 APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=`);
 		expect(runner).toContain("docker inspect");
 		expect(runner).toContain("trap cleanup EXIT");

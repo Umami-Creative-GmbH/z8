@@ -81,6 +81,7 @@ POSTGRES_USER=postgres \
 POSTGRES_PASSWORD="$database_password" \
 POSTGRES_SSL_MODE=disable \
 PGOPTIONS="-c statement_timeout=15000 -c timezone=UTC" \
+NODE_OPTIONS="${NODE_OPTIONS:+${NODE_OPTIONS} }--throw-deprecation" \
 APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL="postgresql://postgres:${database_password}@127.0.0.1:${host_port}/${database_name}" \
 APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test \
 APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED=1 \

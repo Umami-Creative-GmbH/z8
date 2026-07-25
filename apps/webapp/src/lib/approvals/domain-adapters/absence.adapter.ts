@@ -232,45 +232,37 @@ export function createAbsenceApprovalAdapter(
 				return fail();
 			}
 
-			const [
-				requester,
-				category,
-				canonicalRecord,
-				canonicalAbsence,
-				ownedOrganization,
-			] = await Promise.all([
-				db.query.employee.findFirst({
-					where: and(
-						eq(employee.id, source.employeeId),
-						eq(employee.organizationId, input.organizationId),
-					),
-					with: { user: true },
-				}),
-				db.query.absenceCategory.findFirst({
-					where: and(
-						eq(absenceCategory.id, source.categoryId),
-						eq(absenceCategory.organizationId, input.organizationId),
-					),
-				}),
-				db.query.timeRecord.findFirst({
-					where: and(
-						eq(timeRecord.id, source.canonicalRecordId),
-						eq(timeRecord.organizationId, input.organizationId),
-						eq(timeRecord.recordKind, "absence"),
-					),
-				}),
-				db.query.timeRecordAbsence.findFirst({
-					where: and(
-						eq(timeRecordAbsence.recordId, source.canonicalRecordId),
-						eq(timeRecordAbsence.organizationId, input.organizationId),
-						eq(timeRecordAbsence.recordKind, "absence"),
-					),
-				}),
-				db.query.organization.findFirst({
-					where: eq(organization.id, input.organizationId),
-					columns: { id: true, timezone: true },
-				}),
-			]);
+			const requester = await db.query.employee.findFirst({
+				where: and(
+					eq(employee.id, source.employeeId),
+					eq(employee.organizationId, input.organizationId),
+				),
+				with: { user: true },
+			});
+			const category = await db.query.absenceCategory.findFirst({
+				where: and(
+					eq(absenceCategory.id, source.categoryId),
+					eq(absenceCategory.organizationId, input.organizationId),
+				),
+			});
+			const canonicalRecord = await db.query.timeRecord.findFirst({
+				where: and(
+					eq(timeRecord.id, source.canonicalRecordId),
+					eq(timeRecord.organizationId, input.organizationId),
+					eq(timeRecord.recordKind, "absence"),
+				),
+			});
+			const canonicalAbsence = await db.query.timeRecordAbsence.findFirst({
+				where: and(
+					eq(timeRecordAbsence.recordId, source.canonicalRecordId),
+					eq(timeRecordAbsence.organizationId, input.organizationId),
+					eq(timeRecordAbsence.recordKind, "absence"),
+				),
+			});
+			const ownedOrganization = await db.query.organization.findFirst({
+				where: eq(organization.id, input.organizationId),
+				columns: { id: true, timezone: true },
+			});
 			if (
 				!requester ||
 				requester.id !== source.employeeId ||
