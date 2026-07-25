@@ -4,7 +4,6 @@ import { approvalRequest, workPeriod } from "@/db/schema";
 import {
 	instantFromDate,
 	instantToCanonicalString,
-	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
@@ -215,6 +214,25 @@ function object(value: unknown): Record<string, unknown> {
 	return value as Record<string, unknown>;
 }
 
+function decodeNestedTimestampRows(
+	value: unknown,
+	fields: readonly string[],
+): unknown[] {
+	const decoded = decodeApprovalDatabaseJsonText(value);
+	if (!Array.isArray(decoded)) return fail();
+	return decoded.map((value) => {
+		const row = object(value);
+		const result = { ...row };
+		for (const field of fields) {
+			result[field] =
+				row[field] === null || row[field] === undefined
+					? row[field]
+					: decodeApprovalDatabaseTimestampWithoutTimeZone(row[field]);
+		}
+		return result;
+	});
+}
+
 function decodeLockedOrdinarySource(value: unknown): LockedOrdinarySource {
 	const row = object(value);
 	return {
@@ -235,6 +253,14 @@ function decodeLockedOrdinarySource(value: unknown): LockedOrdinarySource {
 		),
 		canonicalEndAt: decodeApprovalDatabaseTimestampWithoutTimeZone(
 			row.canonicalEndAt,
+		),
+		terminalLegacyMarkedRequests: decodeNestedTimestampRows(
+			row.terminalLegacyMarkedRequests,
+			["approvedAt", "stageDecidedAt", "chainCompletedAt"],
+		),
+		historicalLegacyAutoRequests: decodeNestedTimestampRows(
+			row.historicalLegacyAutoRequests,
+			["approvedAt"],
 		),
 	} as LockedOrdinarySource;
 }
@@ -1019,15 +1045,8 @@ function completeModeApprovalId(snapshot: ApprovalWorkflowSnapshot): string {
 	);
 }
 
-function hasValidApprovedAt(value: unknown): boolean {
-	if (value instanceof Date) return !Number.isNaN(value.getTime());
-	if (typeof value !== "string") return false;
-	try {
-		parseInstant(value);
-		return true;
-	} catch {
-		return false;
-	}
+function hasValidApprovalTimestamp(value: unknown): boolean {
+	return value instanceof Date && Number.isFinite(value.getTime());
 }
 
 function validateLegacyAutoReplay(input: {
@@ -1043,7 +1062,7 @@ function validateLegacyAutoReplay(input: {
 		request.requestedBy !== input.submission.requesterEmployeeId ||
 		request.approverId !== input.submission.requesterEmployeeId ||
 		request.status !== "approved" ||
-		!hasValidApprovedAt(request.approvedAt) ||
+		!hasValidApprovalTimestamp(request.approvedAt) ||
 		(request.chainInstanceId !== null &&
 			request.chainInstanceId !== undefined &&
 			typeof request.chainInstanceId !== "string")
@@ -1105,7 +1124,7 @@ function validateMarkedAutoRequest(input: {
 		request.requestedBy !== input.submission.requesterEmployeeId ||
 		request.approverId !== input.submission.requesterEmployeeId ||
 		request.status !== "approved" ||
-		!hasValidApprovedAt(request.approvedAt)
+		!hasValidApprovalTimestamp(request.approvedAt)
 	) {
 		return fail();
 	}
@@ -1190,11 +1209,11 @@ function resolveMarkedLegacyCycle(input: {
 			request.chainRequesterEmployeeId !==
 				input.submission.requesterEmployeeId ||
 			request.chainStatus !== "approved" ||
-			!hasValidApprovedAt(request.chainCompletedAt) ||
+			!hasValidApprovalTimestamp(request.chainCompletedAt) ||
 			request.stageStatus !== "approved" ||
 			request.stageApprovalRequestId !== request.id ||
 			request.stageDecidedBy !== input.submission.requesterEmployeeId ||
-			!hasValidApprovedAt(request.stageDecidedAt) ||
+			!hasValidApprovalTimestamp(request.stageDecidedAt) ||
 			typeof request.stageId !== "string" ||
 			!Number.isSafeInteger(request.stepOrder) ||
 			(request.stepOrder as number) < 1 ||
@@ -1491,12 +1510,12 @@ async function resolveTerminalReplay(input: {
 				request.chainRequesterEmployeeId !==
 					input.submission.requesterEmployeeId ||
 				request.chainStatus !== input.source.approvalStatus ||
-				!hasValidApprovedAt(request.chainCompletedAt) ||
+				!hasValidApprovalTimestamp(request.chainCompletedAt) ||
 				request.chainStageCount !== manualRequests.length ||
 				request.stageStatus !== request.status ||
 				request.stageApprovalRequestId !== request.id ||
 				request.stageDecidedBy !== request.approverId ||
-				!hasValidApprovedAt(request.stageDecidedAt) ||
+				!hasValidApprovalTimestamp(request.stageDecidedAt) ||
 				typeof request.stageId !== "string" ||
 				!Number.isSafeInteger(request.stepOrder)
 			) {

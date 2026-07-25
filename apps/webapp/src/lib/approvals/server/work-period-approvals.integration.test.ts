@@ -59,6 +59,8 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"complete submission writes zero approval requests and canonical reader discovers the assignment",
 			"rolls back $stage submission stage in $mode mode without residue",
 			"requester auto-finalization failure rolls the complete submission back in %s mode",
+			"terminal requester-auto duplicate submission replays the prior result without effects",
+			"completed-chain duplicate submission replays the prior result without effects",
 			"terminal prior history remains immutable while one new conflicting pending submission wins",
 			"stale same-organization source link fails generically and rolls back",
 			"approve versus reject leaves one coherent terminal graph and a generic conflict loser",
@@ -2580,6 +2582,55 @@ describeIntegration(
 				}),
 			).rejects.toThrow("Ordinary work-period submission failed");
 			expect(await snapshot()).toEqual(before);
+		});
+
+		it("terminal requester-auto duplicate submission replays the prior result without effects", async () => {
+			await seed("manual_time_submission", false, "legacy", true);
+			const first = await submit("manual_time_submission");
+			expect(first).toMatchObject({
+				disposition: "executed",
+				result: { kind: "auto_completed" },
+			});
+			const beforeReplay = await snapshot();
+
+			const replay = await submit("manual_time_submission");
+
+			expect(replay.result).toEqual(first.result);
+			expect(replay.disposition).toBe("replayed");
+			expect(replay.postCommit).toBeNull();
+			expect(await snapshot()).toEqual(beforeReplay);
+		});
+
+		it("completed-chain duplicate submission replays the prior result without effects", async () => {
+			await seed("manual_time_submission", false, "legacy", false, true);
+			const first = await submit("manual_time_submission");
+			expect(first).toMatchObject({
+				disposition: "executed",
+				result: { kind: "chain_created" },
+			});
+			await decide(first.result.approvalRequestId, {
+				kind: "approve",
+				reason: null,
+			});
+			const pending = await pool.query<{ id: string }>(
+				`select id from approval_request
+				where organization_id = $1 and entity_type = 'time_entry'
+				and entity_id = $2 and status = 'pending'`,
+				[ids.organization, ids.period],
+			);
+			expect(pending.rows).toHaveLength(1);
+			await decide(pending.rows[0]?.id ?? "", {
+				kind: "approve",
+				reason: null,
+			});
+			const beforeReplay = await snapshot();
+
+			const replay = await submit("manual_time_submission");
+
+			expect(replay.result).toEqual(first.result);
+			expect(replay.disposition).toBe("replayed");
+			expect(replay.postCommit).toBeNull();
+			expect(await snapshot()).toEqual(beforeReplay);
 		});
 
 		it("exact duplicate retry commits once and replays while distinct same-kind submissions commit one conflicting pending workflow", async () => {

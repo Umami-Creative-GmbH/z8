@@ -2020,6 +2020,45 @@ it.each([
 	);
 });
 
+it.each([
+	"approvedAt",
+	"stageDecidedAt",
+	"chainCompletedAt",
+] as const)("rejects offset-bearing nested no-zone %s terminal replay evidence", async (field) => {
+	state.mode = "legacy";
+	const chainInstanceId = "70000000-0000-4000-8000-000000000088";
+	const first = markedAutoRequest({
+		id: "40000000-0000-4000-8000-000000000081",
+		chainInstanceId,
+		stepOrder: 1,
+	});
+	const final = {
+		...markedAutoRequest({
+			id: "40000000-0000-4000-8000-000000000082",
+			chainInstanceId,
+			stepOrder: 2,
+		}),
+		[field]: "2026-07-22T10:00:00+02:00",
+	};
+	const terminalSource = {
+		approvalStatus: "approved",
+		canonicalApprovalState: "approved",
+		terminalCanonicalWorkflows: [],
+		terminalLegacyMarkedRequests: [first, final],
+		historicalLegacyAutoRequests: [],
+	};
+	const fake = fixture({
+		source: terminalSource,
+		replaySource: terminalSource,
+	});
+
+	await expect(
+		executeOrdinaryWorkPeriodSubmissionInTransaction(fake.input),
+	).rejects.toThrow("Ordinary work-period submission failed");
+	expect(state.calls).not.toContain("finalize:source");
+	expect(state.calls).not.toContain("binding");
+});
+
 it("rejects duplicate same-key marked chain cycles", async () => {
 	const terminalSource = {
 		approvalStatus: "approved",
