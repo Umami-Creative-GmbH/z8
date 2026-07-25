@@ -30,8 +30,12 @@ describe("mapPayrollWorkspaceActionError", () => {
 		const authorization = new AuthorizationError({ message: "Denied" });
 		const validation = new ValidationError({ message: "Bad request" });
 
-		expect(mapPayrollWorkspaceActionError(authentication, t)).toBe(authentication);
-		expect(mapPayrollWorkspaceActionError(authorization, t)).toBe(authorization);
+		expect(mapPayrollWorkspaceActionError(authentication, t)).toBe(
+			authentication,
+		);
+		expect(mapPayrollWorkspaceActionError(authorization, t)).toBe(
+			authorization,
+		);
 		expect(mapPayrollWorkspaceActionError(validation, t)).toBe(validation);
 	});
 

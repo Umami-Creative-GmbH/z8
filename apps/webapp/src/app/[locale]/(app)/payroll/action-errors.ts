@@ -29,7 +29,10 @@ export function mapPayrollWorkspaceActionError(
 	}
 
 	return new DatabaseError({
-		message: t("payroll.errors.actionFailed", "Payroll workspace action failed"),
+		message: t(
+			"payroll.errors.actionFailed",
+			"Payroll workspace action failed",
+		),
 		operation: "payroll_workspace_action",
 		cause: error,
 	});

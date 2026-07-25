@@ -103,7 +103,8 @@ describe("assertCanonicalCutoverReady", () => {
 		await expect(assertCanonicalCutoverReady("org-1")).rejects.toMatchObject({
 			name: "CanonicalCutoverNotReadyError",
 			organizationId: "org-1",
-			message: "Canonical time-record backfill is incomplete for organization org-1",
+			message:
+				"Canonical time-record backfill is incomplete for organization org-1",
 		});
 		expect(runCanonicalBackfill).toHaveBeenCalledWith({
 			organizationId: "org-1",

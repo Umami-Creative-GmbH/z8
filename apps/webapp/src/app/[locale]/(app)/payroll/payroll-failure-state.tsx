@@ -1,6 +1,15 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 
-export type PayrollFailureTranslator = (key: string, fallback: string) => string;
+export type PayrollFailureTranslator = (
+	key: string,
+	fallback: string,
+) => string;
 
 export function PayrollFailureState({
 	code,
@@ -9,7 +18,8 @@ export function PayrollFailureState({
 	code?: string;
 	t: PayrollFailureTranslator;
 }) {
-	const accessDenied = code === "AuthenticationError" || code === "AuthorizationError";
+	const accessDenied =
+		code === "AuthenticationError" || code === "AuthorizationError";
 	const title = accessDenied
 		? t("payroll.accessDenied.title", "No payroll access")
 		: t("payroll.unavailable.title", "Payroll temporarily unavailable");
@@ -18,7 +28,10 @@ export function PayrollFailureState({
 				"payroll.accessDenied.description",
 				"You do not have access to payroll data for the active organization.",
 			)
-		: t("payroll.unavailable.description", "Payroll data could not be prepared safely.");
+		: t(
+				"payroll.unavailable.description",
+				"Payroll data could not be prepared safely.",
+			);
 	const help = accessDenied
 		? t(
 				"payroll.accessDenied.help",
@@ -36,7 +49,9 @@ export function PayrollFailureState({
 					<CardTitle>{title}</CardTitle>
 					<CardDescription>{description}</CardDescription>
 				</CardHeader>
-				<CardContent className="text-muted-foreground text-sm">{help}</CardContent>
+				<CardContent className="text-muted-foreground text-sm">
+					{help}
+				</CardContent>
 			</Card>
 		</div>
 	);

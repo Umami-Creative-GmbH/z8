@@ -7,7 +7,9 @@ export class CanonicalCutoverNotReadyError extends Error {
 	readonly organizationId: string;
 
 	constructor(organizationId: string) {
-		super(`Canonical time-record backfill is incomplete for organization ${organizationId}`);
+		super(
+			`Canonical time-record backfill is incomplete for organization ${organizationId}`,
+		);
 		this.name = "CanonicalCutoverNotReadyError";
 		this.organizationId = organizationId;
 	}
