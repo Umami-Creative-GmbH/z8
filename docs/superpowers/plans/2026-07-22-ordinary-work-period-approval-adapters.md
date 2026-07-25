@@ -1716,6 +1716,63 @@ Run Tasks 13-18, complete ordinary approvals, time corrections, no-approval cloc
 
 Register historical compatibility, strict pagination, and surcharge mutation cases. Attempt the disposable runner and report the exact unexecuted count if Docker remains broken. Run webapp/mobile typechecks, scoped Biome, `pnpm test`, CI build, diff/whitespace checks, React Doctor, security review, Temporal/timekeeping review, and one final whole-phase code review. Resolve every confirmed Medium+ issue and commit only actual fixes.
 
+### Task 20: Extend Immutable Surcharge Evidence To Manual Submissions
+
+**Files:**
+- Modify: `apps/webapp/src/lib/approvals/domain-adapters/work-period-contract.ts`
+- Modify: `apps/webapp/src/lib/approvals/domain-adapters/work-period-legacy-state.ts`
+- Modify: `apps/webapp/src/lib/approvals/server/work-period-submission.ts`
+- Modify: `apps/webapp/src/lib/approvals/server/work-period-approvals.ts`
+- Modify: `apps/webapp/src/lib/approvals/workflow/compatibility-writer.ts`
+- Modify: `apps/webapp/src/lib/approvals/inbox/ordinary-canonical-read.ts`
+- Modify: `apps/webapp/src/app/[locale]/(app)/time-tracking/actions/clocking.ts`
+- Modify corresponding tests and PostgreSQL integration suite.
+
+- [ ] **Step 1: Write failing manual snapshot lifecycle tests**
+
+Require new marked `manual_time_submission` payloads to contain strict `surchargeSnapshot` but no `breakPolicySnapshot`. Resolve the snapshot in the manual-entry source transaction at the submitted end instant. Persist identical evidence in pending changes, legacy metadata, shadow/ready observation, canonical context, and canonical compatibility metadata; complete writes no compatibility row. Missing or mismatched marked evidence fails closed.
+
+- [ ] **Step 2: Preserve historical manual compatibility**
+
+Unmarked pre-contract manual requests retain existing persisted surcharge behavior. Approval/rejection does not require a snapshot. Marked new requests require it. Exact replay uses durable stored evidence and never resolves current team/model/rules.
+
+- [ ] **Step 3: Reconcile surcharge on terminal manual approval**
+
+Approved manual submissions emit maintenance for `[workPeriod.id]` and evaluate the stored immutable surcharge snapshot. Rejection removes stale historical state but creates no new calculation. Intermediate decisions and replay emit no maintenance. Requester auto-approval and explicit approval use the same path in legacy, shadow, ready, canonical, and complete.
+
+- [ ] **Step 4: Add delayed mutation and redaction tests**
+
+After submission, transfer team, replace/deactivate assignment, archive model, edit/delete rules, then approve. Results match submission evidence in every mode. Stored `none` remains none. Assert private surcharge evidence is absent from list/detail/search/errors/notifications and canonical SQL validates the exact manual two-key context before paging/counting.
+
+- [ ] **Step 5: Add executable PostgreSQL definitions**
+
+Cover explicit and requester-auto manual approval, rejection, replay, delayed mutations, canonical complete discovery, maintenance failure, and historical compatibility. No `todo` placeholders. Docker failure may block execution but not registration or compilation.
+
+- [ ] **Step 6: Verify and commit**
+
+Run manual-entry, snapshot, contract, capture, submission, finalizer, maintenance, canonical read, payroll, ownership, typecheck, and Biome tests.
+
+```bash
+git add apps/webapp/src/lib/approvals/domain-adapters/work-period-contract.ts \
+  apps/webapp/src/lib/approvals/domain-adapters/work-period-legacy-state.ts \
+  apps/webapp/src/lib/approvals/server/work-period-submission.ts \
+  apps/webapp/src/lib/approvals/server/work-period-approvals.ts \
+  apps/webapp/src/lib/approvals/workflow/compatibility-writer.ts \
+  apps/webapp/src/lib/approvals/inbox/ordinary-canonical-read.ts \
+  'apps/webapp/src/app/[locale]/(app)/time-tracking/actions/clocking.ts'
+git commit -m "fix: reconcile manual submission surcharge"
+```
+
+### Task 21: Run Final Verification After Manual Surcharge Fix
+
+- [ ] **Step 1: Run complete Phase 4.4 verification**
+
+Run all focused/broad/mobile suites, full `pnpm test`, webapp/mobile typechecks, scoped Biome, CI build, diff/whitespace checks, React Doctor, security and Temporal reviews. Attempt all executable PostgreSQL cases and record the exact environment-blocked count.
+
+- [ ] **Step 2: Request final whole-phase review**
+
+Recheck manual and policy surcharge snapshots, complete discovery, historical compatibility, strict pagination, terminal maintenance, exact replay, time corrections, no-approval paths, tenant isolation, and public redaction. Resolve every confirmed Medium+ issue and commit only actual fixes.
+
 ## Exit Checklist
 
 - [ ] Both ordinary workflow types use concrete production adapters.
@@ -1735,5 +1792,6 @@ Register historical compatibility, strict pagination, and surcharge mutation cas
 - [ ] Unmarked historical policy-clock-out requests remain approvable and rejectable without reapplying break policy.
 - [ ] Canonical pagination and counts exclude every row rejected by strict snapshot/source validation before applying limits.
 - [ ] Delayed terminal surcharge calculation uses immutable submission evidence rather than current team, assignment, model, or rules.
+- [ ] Approved manual submissions reconcile surcharge from immutable evidence in every rollout mode without replay duplication.
 - [ ] No requester cancellation, rollout activation, or external outbox delivery is introduced.
 - [ ] Ownership, PostgreSQL concurrency, focused tests, broad regressions, typecheck, scoped Biome, CI build, security review, and timekeeping review are complete.
