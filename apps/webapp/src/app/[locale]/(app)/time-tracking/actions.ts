@@ -732,7 +732,10 @@ export async function enforceBreaksAfterClockOut(input: {
 			{ error, workPeriodId: input.workPeriodId },
 			"Failed to enforce breaks after clock-out",
 		);
-		return { wasAdjusted: false };
+		return {
+			wasAdjusted: false,
+			affectedWorkPeriodIds: [input.workPeriodId],
+		};
 	}
 }
 

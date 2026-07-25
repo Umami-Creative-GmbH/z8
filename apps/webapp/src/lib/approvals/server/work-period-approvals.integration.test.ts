@@ -17,6 +17,7 @@ import { TimeCorrectionHandler } from "@/lib/approvals/handlers/time-correction.
 import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { resolvePolicyClockOutSurchargeSnapshotInTransaction } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
 import {
 	countOrdinaryCanonicalApprovals,
@@ -80,6 +81,7 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"rolls back surcharge reconciliation atomically with terminal maintenance",
 			"replays terminal maintenance without duplicate surcharge or balance writes",
 			"uses submitted surcharge evidence after delayed model mutation in %s mode",
+			"captures every surcharge rule with inclusive period validity overlap",
 			"preserves unmarked historical policy $action with auto-adjusted=$autoAdjusted",
 			"pages past malformed canonical policy evidence with exact list and count",
 		] as const) {
@@ -166,6 +168,24 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 		expect(surchargeMutationCases).toHaveLength(20);
 		expect(
 			surchargeMutationCases.map((value) => JSON.stringify(value)).sort(),
+		).toEqual(expected.sort());
+	});
+
+	it("registers every captured surcharge toggle mode and split combination", () => {
+		const scenario =
+			"uses captured surcharge enablement after $toggle with split=$split in $mode mode";
+		expect(integrationSource.split(scenario)).toHaveLength(3);
+		const expected = modes.flatMap((mode) =>
+			(["disabled to enabled", "enabled to disabled"] as const).flatMap(
+				(toggle) =>
+					([false, true] as const).map((split) =>
+						JSON.stringify({ mode, toggle, split }),
+					),
+			),
+		);
+		expect(surchargeToggleCases).toHaveLength(20);
+		expect(
+			surchargeToggleCases.map((value) => JSON.stringify(value)).sort(),
 		).toEqual(expected.sort());
 	});
 
@@ -277,6 +297,13 @@ const surchargeMutationCases = modes.flatMap((mode) => [
 	{ mode, mutation: "rule deletion" as const, split: true },
 ]);
 
+const surchargeToggleCases = modes.flatMap((mode) => [
+	{ mode, toggle: "disabled to enabled" as const, split: false },
+	{ mode, toggle: "disabled to enabled" as const, split: true },
+	{ mode, toggle: "enabled to disabled" as const, split: false },
+	{ mode, toggle: "enabled to disabled" as const, split: true },
+]);
+
 const surchargeSnapshot = {
 	version: 1,
 	evaluatedAt: "2026-07-22T16:00:00Z",
@@ -306,6 +333,12 @@ const surchargeSnapshot = {
 			},
 		],
 	},
+} as const;
+
+const disabledSurchargeSnapshot = {
+	version: 1,
+	evaluatedAt: "2026-07-22T16:00:00Z",
+	resolution: { kind: "none" },
 } as const;
 
 function dbService(db: unknown): ApprovalDbService {
@@ -449,6 +482,7 @@ describeIntegration(
 			mode: ApprovalWorkflowLifecycleMode = "canonical",
 			requesterAutoApproves = false,
 			withApprovalChain = false,
+			submittedSurchargeSnapshot: unknown = surchargeSnapshot,
 		) {
 			await cleanup();
 			const timestamp = new Date(now.epochMilliseconds);
@@ -620,7 +654,7 @@ describeIntegration(
 												evaluatedAt: "2026-07-22T16:00:00Z",
 												resolution: "none",
 											},
-									surchargeSnapshot,
+									surchargeSnapshot: submittedSurchargeSnapshot,
 								},
 					),
 					timestamp,
@@ -1403,6 +1437,72 @@ describeIntegration(
 			expect(replay.execution.postCommit).toBeNull();
 			expect(replay.maintenanceErrors).toEqual([]);
 			expect(await maintenanceSnapshot()).toEqual(beforeReplay);
+		}
+
+		async function assertCapturedSurchargeToggle(input: {
+			mode: (typeof modes)[number];
+			split: boolean;
+			toggle: "disabled to enabled" | "enabled to disabled";
+		}) {
+			const capturedSnapshot =
+				input.toggle === "disabled to enabled"
+					? disabledSurchargeSnapshot
+					: surchargeSnapshot;
+			await seed(
+				"policy_clock_out",
+				input.split,
+				input.mode,
+				false,
+				false,
+				capturedSnapshot,
+			);
+			await seedMaintenanceState();
+			await pool.query(
+				"update organization set surcharges_enabled = $1 where id = $2",
+				[input.toggle === "enabled to disabled", ids.organization],
+			);
+			const target = (await submit("policy_clock_out")).result
+				.approvalRequestId;
+
+			const source = await pool.query<{ surcharge_snapshot: unknown }>(
+				`select pending_changes::jsonb -> 'surchargeSnapshot' as surcharge_snapshot
+				 from work_period where id = $1 and organization_id = $2`,
+				[ids.period, ids.organization],
+			);
+			expect(source.rows).toEqual([{ surcharge_snapshot: capturedSnapshot }]);
+			await pool.query(
+				"update organization set surcharges_enabled = $1 where id = $2",
+				[input.toggle === "disabled to enabled", ids.organization],
+			);
+
+			const completed = await completeDecision(target, {
+				kind: "approve",
+				reason: null,
+			});
+			expect(completed.maintenanceErrors).toEqual([]);
+			const periods = await pool.query<{ id: string }>(
+				`select id from work_period
+				 where organization_id = $1 and employee_id = $2 order by start_time, id`,
+				[ids.organization, ids.requester],
+			);
+			expect(periods.rows).toHaveLength(input.split ? 2 : 1);
+			expect(
+				[
+					...(completed.execution.postCommit?.maintenance?.surchargePeriodIds ??
+						[]),
+				].sort(),
+			).toEqual(periods.rows.map(({ id }) => id).sort());
+			const state = await maintenanceSnapshot();
+			const calculations = state.calculations.filter(
+				({ organization_id }) => organization_id === ids.organization,
+			);
+			if (input.toggle === "disabled to enabled") {
+				expect(calculations).toEqual([]);
+			} else {
+				expect(
+					calculations.map(({ work_period_id }) => work_period_id).sort(),
+				).toEqual(periods.rows.map(({ id }) => id).sort());
+			}
 		}
 
 		async function withFailureTrigger<T>(input: {
@@ -3597,6 +3697,104 @@ describeIntegration(
 					);
 				},
 			});
+		});
+
+		it.each(
+			surchargeToggleCases,
+		)("uses captured surcharge enablement after $toggle with split=$split in $mode mode", async ({
+			mode,
+			split,
+			toggle,
+		}) => {
+			await assertCapturedSurchargeToggle({ mode, split, toggle });
+		});
+
+		it("captures every surcharge rule with inclusive period validity overlap", async () => {
+			await seed("policy_clock_out", false, "canonical");
+			await seedMaintenanceState();
+			const timestamp = new Date(now.epochMilliseconds);
+			const validityRules = [
+				{
+					id: "cc000000-0000-4000-8000-000000000101",
+					name: "Starts mid-period",
+					priority: 7,
+					validFrom: new Date("2026-07-22T12:00:00Z"),
+					validUntil: null,
+				},
+				{
+					id: "cc000000-0000-4000-8000-000000000102",
+					name: "Expires mid-period",
+					priority: 6,
+					validFrom: null,
+					validUntil: new Date("2026-07-22T12:00:00Z"),
+				},
+				{
+					id: "cc000000-0000-4000-8000-000000000103",
+					name: "Expires at start",
+					priority: 5,
+					validFrom: null,
+					validUntil: startTime,
+				},
+				{
+					id: "cc000000-0000-4000-8000-000000000104",
+					name: "Starts at end",
+					priority: 4,
+					validFrom: endTime,
+					validUntil: null,
+				},
+				{
+					id: "cc000000-0000-4000-8000-000000000105",
+					name: "Ends before period",
+					priority: 3,
+					validFrom: null,
+					validUntil: new Date("2026-07-22T07:59:59Z"),
+				},
+				{
+					id: "cc000000-0000-4000-8000-000000000106",
+					name: "Starts after period",
+					priority: 2,
+					validFrom: new Date("2026-07-22T16:00:01Z"),
+					validUntil: null,
+				},
+			] as const;
+			for (const rule of validityRules) {
+				await pool.query(
+					`insert into surcharge_rule
+					 (id, model_id, name, rule_type, percentage, day_of_week, priority,
+					  valid_from, valid_until, is_active, created_by, created_at)
+					 values ($1, $2, $3, 'day_of_week', 0.5000, 'wednesday', $4,
+					  $5, $6, true, $7, $8)`,
+					[
+						rule.id,
+						ids.surchargeModel,
+						rule.name,
+						rule.priority,
+						rule.validFrom,
+						rule.validUntil,
+						ids.managerUser,
+						timestamp,
+					],
+				);
+			}
+
+			const snapshot = await database.transaction(async (transaction) =>
+				resolvePolicyClockOutSurchargeSnapshotInTransaction({
+					dbService: { db: transaction } as never,
+					organizationId: ids.organization,
+					employeeId: ids.requester,
+					startTime: parseInstant(startTime.toISOString()),
+					endTime: parseInstant(endTime.toISOString()),
+				}),
+			);
+			expect(snapshot.resolution.kind).toBe("surcharge_model");
+			if (snapshot.resolution.kind !== "surcharge_model") return;
+			expect(snapshot.resolution.rules.map(({ id }) => id)).toEqual([
+				validityRules[0].id,
+				validityRules[1].id,
+				validityRules[2].id,
+				validityRules[3].id,
+				ids.surchargeRule,
+			]);
 		});
 
 		it("does not re-read a foreign-mutated model during terminal surcharge evaluation", async () => {

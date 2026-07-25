@@ -1013,6 +1013,7 @@ describe("clockOut", () => {
 		mockState.checkComplianceAfterClockOut.mockResolvedValue([]);
 		mockState.enforceBreaksAfterClockOut.mockResolvedValue({
 			wasAdjusted: false,
+			affectedWorkPeriodIds: ["period-1"],
 		});
 		mockState.createCanonicalWorkRecord.mockResolvedValue({
 			id: "canonical-1",
@@ -2010,6 +2011,7 @@ describe("clockOut", () => {
 	it("enforces breaks for ordinary no-approval clock-outs exactly as before", async () => {
 		mockState.enforceBreaksAfterClockOut.mockResolvedValueOnce({
 			wasAdjusted: true,
+			affectedWorkPeriodIds: ["period-1", "period-2"],
 			adjustment: { breakMinutes: 30 },
 		});
 
@@ -2019,6 +2021,38 @@ describe("clockOut", () => {
 		expect(mockState.enforceBreaksAfterClockOut).toHaveBeenCalled();
 		expect(
 			mockState.enforceBreaksAfterClockOut.mock.invocationCallOrder[0],
+		).toBeLessThan(
+			mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
+		);
+	});
+
+	it("reconciles every split period after break enforcement and before dirty marking", async () => {
+		const snapshot = {
+			version: 1 as const,
+			evaluatedAt: "2026-05-04T10:00:00Z",
+			resolution: { kind: "none" as const },
+		};
+		mockState.resolveSurchargeSnapshot.mockResolvedValueOnce(snapshot);
+		mockState.enforceBreaksAfterClockOut.mockResolvedValueOnce({
+			wasAdjusted: true,
+			affectedWorkPeriodIds: ["period-1", "period-2"],
+			adjustment: { breakMinutes: 30 },
+		});
+
+		const result = await clockOut();
+
+		expect(result.success).toBe(true);
+		expect(mockState.calculateAndPersistSurcharges.mock.calls).toEqual([
+			["period-1", "org-1", { employeeId: "employee-1", snapshot }],
+			["period-2", "org-1", { employeeId: "employee-1", snapshot }],
+		]);
+		expect(
+			mockState.enforceBreaksAfterClockOut.mock.invocationCallOrder[0],
+		).toBeLessThan(
+			mockState.calculateAndPersistSurcharges.mock.invocationCallOrder[0],
+		);
+		expect(
+			mockState.calculateAndPersistSurcharges.mock.invocationCallOrder[1],
 		).toBeLessThan(
 			mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
 		);

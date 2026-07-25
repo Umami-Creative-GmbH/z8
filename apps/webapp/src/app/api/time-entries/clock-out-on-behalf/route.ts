@@ -18,16 +18,16 @@ import {
 	isBillingMutationAllowed,
 	requireBillingForMutation,
 } from "@/lib/billing/guard";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import {
+	ClockingAccessError,
+	ClockingConflictError,
+	clockingService,
+} from "@/lib/time-tracking/clocking-service";
 import {
 	isValidIanaTimezone,
 	resolveFallbackTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
-import {
-  ClockingAccessError,
-  ClockingConflictError,
-  clockingService,
-} from "@/lib/time-tracking/clocking-service";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 
 class TimeEntryConflictError extends Error {
@@ -46,7 +46,11 @@ async function markWorkBalanceDirtyAfterOnBehalfClockOutBestEffort(input: {
 		await markEmployeeWorkBalanceDirty(input);
 	} catch (error) {
 		logger.error(
-			{ error, employeeId: input.employeeId, organizationId: input.organizationId },
+			{
+				error,
+				employeeId: input.employeeId,
+				organizationId: input.organizationId,
+			},
 			"Failed to mark work balance dirty after on-behalf clock-out",
 		);
 	}
@@ -60,7 +64,10 @@ export async function POST(request: NextRequest) {
 		const workPeriodId = body?.workPeriodId;
 
 		if (typeof workPeriodId !== "string" || !workPeriodId) {
-			return NextResponse.json({ error: "workPeriodId is required" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "workPeriodId is required" },
+				{ status: 400 },
+			);
 		}
 
 		const resolvedHeaders = await headers();
@@ -72,9 +79,15 @@ export async function POST(request: NextRequest) {
 
 		const organizationId = session.session.activeOrganizationId;
 		if (!organizationId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
-		await clockingService.requireActor({ userId: session.user.id, activeOrganizationId: organizationId });
+		await clockingService.requireActor({
+			userId: session.user.id,
+			activeOrganizationId: organizationId,
+		});
 
 		const [actorEmployee] = await db
 			.select()
@@ -111,11 +124,17 @@ export async function POST(request: NextRequest) {
 			.limit(1);
 
 		if (!target) {
-			return NextResponse.json({ error: "Work period not found" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Work period not found" },
+				{ status: 404 },
+			);
 		}
 
 		if (!target.period.isActive || target.period.endTime) {
-			return NextResponse.json({ error: "Work period is no longer running" }, { status: 409 });
+			return NextResponse.json(
+				{ error: "Work period is no longer running" },
+				{ status: 409 },
+			);
 		}
 
 		if (target.targetEmployee.id === actorEmployee.id) {
@@ -149,7 +168,9 @@ export async function POST(request: NextRequest) {
 			where: eq(userSettings.userId, target.targetEmployee.userId),
 			columns: { timezone: true },
 		});
-		const timezone = isValidIanaTimezone(settings?.timezone) ? settings.timezone : "UTC";
+		const timezone = isValidIanaTimezone(settings?.timezone)
+			? settings.timezone
+			: "UTC";
 		const timezoneCapture = resolveFallbackTimezoneCapture({
 			timestamp: entryTime,
 			timezone,
@@ -181,21 +202,20 @@ export async function POST(request: NextRequest) {
 			timezone,
 			workPeriodId: result.period.id,
 		});
-		// Break enforcement may split the original period, but currently does not expose
-		// the inserted second work period id for separate surcharge recalculation.
-		await calculateAndPersistSurcharges(result.period.id, organizationId);
+		for (const workPeriodId of breakEnforcementResult.affectedWorkPeriodIds) {
+			await calculateAndPersistSurcharges(workPeriodId, organizationId);
+		}
 
 		const dirtyMark = {
 			dirtyFromDate:
-				DateTime.fromJSDate(result.activePeriod.startTime, { zone: "utc" }).toISODate() ?? undefined,
+				DateTime.fromJSDate(result.activePeriod.startTime, {
+					zone: "utc",
+				}).toISODate() ?? undefined,
 			employeeId: target.targetEmployee.id,
 			organizationId,
 		};
 
 		await markWorkBalanceDirtyAfterOnBehalfClockOutBestEffort(dirtyMark);
-		if (breakEnforcementResult.wasAdjusted) {
-			await markWorkBalanceDirtyAfterOnBehalfClockOutBestEffort(dirtyMark);
-		}
 
 		return NextResponse.json({ entry: result.entry }, { status: 201 });
 	} catch (error) {
@@ -210,6 +230,9 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: error.message }, { status: 409 });
 		}
 
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }

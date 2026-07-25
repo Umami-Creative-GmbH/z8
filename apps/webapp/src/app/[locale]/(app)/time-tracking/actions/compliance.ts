@@ -12,6 +12,7 @@ import {
 } from "@/lib/effect/services/break-enforcement.service";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
+	calculateSurchargeForWorkPeriod,
 	SurchargeService,
 	SurchargeServiceLive,
 } from "@/lib/effect/services/surcharge.service";
@@ -138,27 +139,13 @@ export async function calculateAndPersistSurcharges(
 	try {
 		const surchargeEffect = Effect.gen(function* (_) {
 			const surchargeService = yield* _(SurchargeService);
-			const isEnabled = yield* _(
-				surchargeService.isSurchargesEnabled(organizationId),
+			yield* _(
+				calculateSurchargeForWorkPeriod(surchargeService, {
+					workPeriodId,
+					organizationId,
+					immutableEvidence,
+				}),
 			);
-
-			if (!isEnabled) {
-				return;
-			}
-			if (immutableEvidence) {
-				yield* _(
-					surchargeService.reconcileWorkPeriods({
-						organizationId,
-						employeeId: immutableEvidence.employeeId,
-						surchargePeriodIds: [workPeriodId],
-						staleSurchargePeriodIds: [],
-						surchargeSnapshot: immutableEvidence.snapshot,
-					}),
-				);
-				return;
-			}
-
-			yield* _(surchargeService.persistSurchargeCalculation(workPeriodId));
 		}).pipe(
 			Effect.provide(SurchargeServiceLive),
 			Effect.provide(DatabaseServiceLive),
@@ -197,6 +184,9 @@ export async function enforceBreaksAfterClockOut(input: {
 			{ error, workPeriodId: input.workPeriodId },
 			"Failed to enforce breaks after clock-out",
 		);
-		return { wasAdjusted: false };
+		return {
+			wasAdjusted: false,
+			affectedWorkPeriodIds: [input.workPeriodId],
+		};
 	}
 }

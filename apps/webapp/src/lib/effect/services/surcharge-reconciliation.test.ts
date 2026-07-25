@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
@@ -44,6 +45,90 @@ const input = {
 	staleSurchargePeriodIds: [],
 	surchargeSnapshot,
 };
+
+describe("calculateSurchargeForWorkPeriod", () => {
+	async function loadCalculationPolicy() {
+		const surchargeModule = (await import("./surcharge.service")) as Record<
+			string,
+			unknown
+		>;
+		const calculationPolicy = surchargeModule.calculateSurchargeForWorkPeriod;
+		expect(calculationPolicy).toBeTypeOf("function");
+		return calculationPolicy as (
+			service: unknown,
+			input: unknown,
+		) => Effect.Effect<void>;
+	}
+
+	it("uses captured disabled evidence without reading a live enabled setting", async () => {
+		const isSurchargesEnabled = vi.fn(() => Effect.succeed(true));
+		const reconcileWorkPeriods = vi.fn(() => Effect.void);
+		const persistSurchargeCalculation = vi.fn(() => Effect.void);
+		const calculateSurchargeForWorkPeriod = await loadCalculationPolicy();
+		const disabledSnapshot = {
+			version: 1 as const,
+			evaluatedAt: surchargeSnapshot.evaluatedAt,
+			resolution: { kind: "none" as const },
+		};
+
+		await Effect.runPromise(
+			calculateSurchargeForWorkPeriod(
+				{
+					isSurchargesEnabled,
+					reconcileWorkPeriods,
+					persistSurchargeCalculation,
+				},
+				{
+					workPeriodId: "period-1",
+					organizationId: "org-1",
+					immutableEvidence: {
+						employeeId: "employee-1",
+						snapshot: disabledSnapshot,
+					},
+				},
+			),
+		);
+
+		expect(isSurchargesEnabled).not.toHaveBeenCalled();
+		expect(reconcileWorkPeriods).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			surchargePeriodIds: ["period-1"],
+			staleSurchargePeriodIds: [],
+			surchargeSnapshot: disabledSnapshot,
+		});
+		expect(persistSurchargeCalculation).not.toHaveBeenCalled();
+	});
+
+	it("uses captured enabled evidence without reading a live disabled setting", async () => {
+		const isSurchargesEnabled = vi.fn(() => Effect.succeed(false));
+		const reconcileWorkPeriods = vi.fn(() => Effect.void);
+		const persistSurchargeCalculation = vi.fn(() => Effect.void);
+		const calculateSurchargeForWorkPeriod = await loadCalculationPolicy();
+
+		await Effect.runPromise(
+			calculateSurchargeForWorkPeriod(
+				{
+					isSurchargesEnabled,
+					reconcileWorkPeriods,
+					persistSurchargeCalculation,
+				},
+				{
+					workPeriodId: "period-1",
+					organizationId: "org-1",
+					immutableEvidence: {
+						employeeId: "employee-1",
+						snapshot: surchargeSnapshot,
+					},
+				},
+			),
+		);
+
+		expect(isSurchargesEnabled).not.toHaveBeenCalled();
+		expect(reconcileWorkPeriods).toHaveBeenCalledOnce();
+		expect(persistSurchargeCalculation).not.toHaveBeenCalled();
+	});
+});
 
 describe("evaluateSurchargeSnapshot", () => {
 	const endpoint = (

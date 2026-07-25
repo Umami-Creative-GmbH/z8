@@ -33,6 +33,7 @@ export interface EnforceBreaksInput {
 
 export interface BreakEnforcementResult {
 	wasAdjusted: boolean;
+	affectedWorkPeriodIds: string[];
 	adjustment?: {
 		breakMinutes: number;
 		breakInsertedAt: string; // ISO timestamp
@@ -40,6 +41,15 @@ export interface BreakEnforcementResult {
 		originalDurationMinutes: number;
 		adjustedDurationMinutes: number;
 	};
+}
+
+export function resolveAffectedWorkPeriodIds(
+	originalWorkPeriodId: string,
+	insertedWorkPeriodId?: string,
+): string[] {
+	return insertedWorkPeriodId
+		? [originalWorkPeriodId, insertedWorkPeriodId]
+		: [originalWorkPeriodId];
 }
 
 export interface ProcessUnprocessedPeriodsInput {
@@ -310,7 +320,12 @@ export const BreakEnforcementServiceLive = Layer.effect(
 
 				// Skip if already auto-adjusted
 				if (period.wasAutoAdjusted) {
-					return { wasAdjusted: false };
+					return {
+						wasAdjusted: false,
+						affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
+							input.workPeriodId,
+						),
+					};
 				}
 
 				// Calculate breaks taken today
@@ -334,7 +349,12 @@ export const BreakEnforcementServiceLive = Layer.effect(
 					!deficitResult.regulationId ||
 					!deficitResult.regulationName
 				) {
-					return { wasAdjusted: false };
+					return {
+						wasAdjusted: false,
+						affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
+							input.workPeriodId,
+						),
+					};
 				}
 
 				// Determine where to insert the break
@@ -350,7 +370,12 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				// Calculate break insertion point
 				const startDT = dateFromDB(period.startTime);
 				if (!startDT || !period.endTime) {
-					return { wasAdjusted: false };
+					return {
+						wasAdjusted: false,
+						affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
+							input.workPeriodId,
+						),
+					};
 				}
 
 				const breakStartDT = startDT.plus({ minutes: insertAfterMinutes });
@@ -361,7 +386,12 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				const breakEndDate = dateToDB(breakEndDT);
 
 				if (!breakStartDate || !breakEndDate) {
-					return { wasAdjusted: false };
+					return {
+						wasAdjusted: false,
+						affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
+							input.workPeriodId,
+						),
+					};
 				}
 
 				// Validate break times are within the work period
@@ -369,7 +399,12 @@ export const BreakEnforcementServiceLive = Layer.effect(
 					breakStartDate <= period.startTime ||
 					breakEndDate >= period.endTime
 				) {
-					return { wasAdjusted: false };
+					return {
+						wasAdjusted: false,
+						affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
+							input.workPeriodId,
+						),
+					};
 				}
 
 				// Store original values for audit trail
@@ -445,29 +480,42 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				);
 
 				// Create a new work period for the second segment
-				yield* _(
+				const insertedPeriodId = yield* _(
 					dbService.query("createSecondWorkPeriod", async () => {
-						await dbService.db.insert(workPeriod).values({
-							employeeId: input.employeeId,
-							organizationId: input.organizationId,
-							clockInId: secondClockIn.id,
-							clockOutId: period.clockOutId,
-							startTime: breakEndDate,
-							endTime: period.endTime,
-							durationMinutes: secondDurationMinutes,
-							projectId: period.projectId,
-							isActive: false,
-							wasAutoAdjusted: true,
-							autoAdjustmentReason: adjustmentReason,
-							autoAdjustedAt: new Date(),
-							originalEndTime: null, // Only first period has original values
-							originalDurationMinutes: null,
-						});
+						const [insertedPeriod] = await dbService.db
+							.insert(workPeriod)
+							.values({
+								employeeId: input.employeeId,
+								organizationId: input.organizationId,
+								clockInId: secondClockIn.id,
+								clockOutId: period.clockOutId,
+								startTime: breakEndDate,
+								endTime: period.endTime,
+								durationMinutes: secondDurationMinutes,
+								projectId: period.projectId,
+								isActive: false,
+								wasAutoAdjusted: true,
+								autoAdjustmentReason: adjustmentReason,
+								autoAdjustedAt: new Date(),
+								originalEndTime: null, // Only first period has original values
+								originalDurationMinutes: null,
+							})
+							.returning({ id: workPeriod.id });
+						if (!insertedPeriod) {
+							throw new Error(
+								"Break enforcement did not create a second work period",
+							);
+						}
+						return insertedPeriod.id;
 					}),
 				);
 
 				return {
 					wasAdjusted: true,
+					affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
+						input.workPeriodId,
+						insertedPeriodId,
+					),
 					adjustment: {
 						breakMinutes: deficitResult.deficit,
 						breakInsertedAt: breakStartDate.toISOString(),

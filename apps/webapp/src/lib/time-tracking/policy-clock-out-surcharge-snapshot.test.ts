@@ -9,6 +9,7 @@ import {
 } from "./policy-clock-out-surcharge-snapshot";
 
 const evaluatedAt = "2026-07-19T10:00:00Z";
+const periodStartedAt = "2026-07-19T08:00:00Z";
 const ids = {
 	team: "10000000-0000-4000-8000-000000000001",
 	assignment: "20000000-0000-4000-8000-000000000001",
@@ -325,14 +326,57 @@ describe("resolvePolicyClockOutSurchargeSnapshotInTransaction", () => {
 		};
 	}
 
-	async function resolve(execute: ReturnType<typeof vi.fn>) {
+	async function resolve(
+		execute: ReturnType<typeof vi.fn>,
+		organizationRows: unknown[] = [
+			{ organizationId: "org-1", surchargesEnabled: true },
+		],
+	) {
+		const dialect = new PgDialect();
+		const dbExecute = vi.fn(async (query: SQL) => {
+			const compiled = dialect.sqlToQuery(query);
+			if (compiled.sql.includes("from organization")) {
+				return { rows: organizationRows };
+			}
+			return execute(query);
+		});
 		return resolvePolicyClockOutSurchargeSnapshotInTransaction({
-			dbService: { db: { execute } } as never,
+			dbService: { db: { execute: dbExecute } } as never,
 			organizationId: "org-1",
 			employeeId: ids.employee,
+			startTime: parseInstant(periodStartedAt),
 			endTime: parseInstant(evaluatedAt),
 		});
 	}
+
+	it("captures disabled surcharge state as none without resolving assignments", async () => {
+		const execute = vi.fn();
+
+		await expect(
+			resolve(execute, [{ organizationId: "org-1", surchargesEnabled: false }]),
+		).resolves.toEqual({
+			version: 1,
+			evaluatedAt,
+			resolution: { kind: "none" },
+		});
+		expect(execute).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["missing", []],
+		[
+			"duplicate",
+			[
+				{ organizationId: "org-1", surchargesEnabled: true },
+				{ organizationId: "org-1", surchargesEnabled: true },
+			],
+		],
+		["foreign", [{ organizationId: "org-2", surchargesEnabled: true }]],
+	] as const)("fails closed on %s organization evidence", async (_label, rows) => {
+		await expect(resolve(vi.fn(), [...rows])).rejects.toThrow(
+			"Policy clock-out surcharge snapshot resolution failed",
+		);
+	});
 
 	it("selects numeric priority, then specificity, then stable assignment id", async () => {
 		const employee = candidate({
@@ -439,7 +483,7 @@ describe("resolvePolicyClockOutSurchargeSnapshotInTransaction", () => {
 		);
 	});
 
-	it("locks exact effective evidence and orders active end-effective rules", async () => {
+	it("locks exact effective evidence and includes rules overlapping the period", async () => {
 		const dialect = new PgDialect();
 		const assigned = candidate({
 			id: ids.assignment,
@@ -461,11 +505,53 @@ describe("resolvePolicyClockOutSurchargeSnapshotInTransaction", () => {
 			expect(compiled.sql).toContain("rule.is_active = true");
 			expect(compiled.sql).toContain("rule.valid_from <=");
 			expect(compiled.sql).toContain("rule.valid_until >=");
+			expect(compiled.params).toContainEqual(
+				new Date("2026-07-19T10:00:00.000Z"),
+			);
+			expect(compiled.params).toContainEqual(
+				new Date("2026-07-19T08:00:00.000Z"),
+			);
 			expect(compiled.sql).toContain("for update of model");
 			expect(compiled.sql).toContain("for update of rule");
 			return { rows: [modelRow()] };
 		});
 
 		await expect(resolve(execute)).resolves.toEqual(modelSnapshot);
+	});
+
+	it("canonicalizes database offset timestamps in captured rule validity", async () => {
+		const assigned = candidate({
+			id: ids.assignment,
+			type: "employee",
+			priority: 2,
+		});
+		const execute = vi
+			.fn()
+			.mockResolvedValueOnce({ rows: [assigned] })
+			.mockResolvedValueOnce({
+				rows: [
+					{
+						...modelRow(),
+						rules: [
+							{
+								...rules[0],
+								validFrom: "2026-07-19T10:00:00+01:00",
+								validUntil: "2026-07-19T12:00:00+02:00",
+							},
+						],
+					},
+				],
+			});
+
+		await expect(resolve(execute)).resolves.toMatchObject({
+			resolution: {
+				rules: [
+					{
+						validFrom: "2026-07-19T09:00:00Z",
+						validUntil: "2026-07-19T10:00:00Z",
+					},
+				],
+			},
+		});
 	});
 });

@@ -457,8 +457,13 @@ function dateToPlainDate(value: unknown): string | null {
 
 function dateToInstant(value: unknown): string | null {
 	if (value === null) return null;
-	if (!(value instanceof Date)) fail();
-	return instantToCanonicalString(instantFromDate(value));
+	if (value instanceof Date) {
+		return instantToCanonicalString(instantFromDate(value));
+	}
+	if (typeof value === "string") {
+		return instantToCanonicalString(parseInstant(value));
+	}
+	return fail();
 }
 
 export async function resolvePolicyClockOutSurchargeSnapshotInTransaction(input: {
@@ -467,10 +472,36 @@ export async function resolvePolicyClockOutSurchargeSnapshotInTransaction(input:
 	};
 	organizationId: string;
 	employeeId: string;
+	startTime: Instant;
 	endTime: Instant;
 }): Promise<PolicyClockOutSurchargeSnapshot> {
 	const evaluatedAt = instantToCanonicalString(input.endTime);
 	try {
+		if (compareInstants(input.startTime, input.endTime) > 0) fail();
+		const organizationResult = await input.dbService.db.execute(sql`
+			select organization.id as "organizationId",
+				organization.surcharges_enabled as "surchargesEnabled"
+			from organization
+			where organization.id = ${input.organizationId}
+			limit 2
+			for update of organization
+		`);
+		const organizationRows = rows(organizationResult);
+		if (organizationRows.length !== 1) fail();
+		const organizationEvidence = organizationRows[0] as Record<string, unknown>;
+		if (
+			organizationEvidence.organizationId !== input.organizationId ||
+			typeof organizationEvidence.surchargesEnabled !== "boolean"
+		) {
+			fail();
+		}
+		if (!organizationEvidence.surchargesEnabled) {
+			return parsePolicyClockOutSurchargeSnapshot(
+				{ version: 1, evaluatedAt, resolution: { kind: "none" } },
+				evaluatedAt,
+			);
+		}
+
 		const candidateResult = await input.dbService.db.execute(sql`
 			with employee_evidence as (
 				select employee.id, employee.organization_id as "organizationId",
@@ -543,7 +574,7 @@ export async function resolvePolicyClockOutSurchargeSnapshotInTransaction(input:
 				join surcharge_rule rule on rule.model_id = model.id
 				where rule.is_active = true
 					and (rule.valid_from is null or rule.valid_from <= ${dateFromInstant(input.endTime)})
-					and (rule.valid_until is null or rule.valid_until >= ${dateFromInstant(input.endTime)})
+					and (rule.valid_until is null or rule.valid_until >= ${dateFromInstant(input.startTime)})
 				order by rule.priority desc, rule.id
 				for update of rule
 			)
@@ -590,14 +621,8 @@ export async function resolvePolicyClockOutSurchargeSnapshotInTransaction(input:
 							? rule.dateRangeEnd
 							: dateToPlainDate(rule.dateRangeEnd ?? null),
 					priority: rule.priority,
-					validFrom:
-						typeof rule.validFrom === "string"
-							? rule.validFrom
-							: dateToInstant(rule.validFrom ?? null),
-					validUntil:
-						typeof rule.validUntil === "string"
-							? rule.validUntil
-							: dateToInstant(rule.validUntil ?? null),
+					validFrom: dateToInstant(rule.validFrom ?? null),
+					validUntil: dateToInstant(rule.validUntil ?? null),
 				};
 			})
 			.toSorted((left, right) => {

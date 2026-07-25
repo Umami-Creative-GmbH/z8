@@ -17,12 +17,15 @@ const mockState = vi.hoisted(() => {
 	const updateSet = vi.fn(() => ({ where: updateWhere }));
 	const update = vi.fn(() => ({ set: updateSet }));
 	const txClient = { execute: txExecute, select: txSelect, update };
-	const transaction = vi.fn(async (callback: (tx: unknown) => Promise<unknown>) =>
-		callback(txClient),
+	const transaction = vi.fn(
+		async (callback: (tx: unknown) => Promise<unknown>) => callback(txClient),
 	);
 
 	return {
-		asAppSubject: vi.fn((subject, data) => ({ ...data, __caslSubjectType__: subject })),
+		asAppSubject: vi.fn((subject, data) => ({
+			...data,
+			__caslSubjectType__: subject,
+		})),
 		connection: vi.fn(),
 		createBillingForbiddenResponse: vi.fn(),
 		createTimeEntry: vi.fn(),
@@ -61,7 +64,8 @@ vi.mock("next/headers", () => ({
 }));
 
 vi.mock("next/server", async () => {
-	const actual = await vi.importActual<typeof import("next/server")>("next/server");
+	const actual =
+		await vi.importActual<typeof import("next/server")>("next/server");
 	return {
 		...actual,
 		connection: mockState.connection,
@@ -159,7 +163,11 @@ vi.mock("drizzle-orm", () => ({
 	and: (...conditions: unknown[]) => ({ conditions, type: "and" }),
 	eq: (column: unknown, value: unknown) => ({ column, type: "eq", value }),
 	isNull: (column: unknown) => ({ column, type: "isNull" }),
-	sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, type: "sql", values }),
+	sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
+		strings,
+		type: "sql",
+		values,
+	}),
 }));
 
 const { POST } = await import("./route");
@@ -204,7 +212,9 @@ function expectAndPredicateIncludes(
 	expect(predicate).toEqual(
 		expect.objectContaining({
 			conditions: expect.arrayContaining(
-				expected.map(({ column, value }) => expect.objectContaining({ column, value })),
+				expected.map(({ column, value }) =>
+					expect.objectContaining({ column, value }),
+				),
 			),
 			type: "and",
 		}),
@@ -226,7 +236,9 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 			user: { id: "actor-user-1" },
 		});
 		mockState.limit.mockResolvedValue([]);
-		mockState.limit.mockResolvedValueOnce([actorEmployee]).mockResolvedValueOnce([loadedPeriod()]);
+		mockState.limit
+			.mockResolvedValueOnce([actorEmployee])
+			.mockResolvedValueOnce([loadedPeriod()]);
 		mockState.txLimit.mockResolvedValue([runningPeriod]);
 		mockState.getAbility.mockResolvedValue({ can: vi.fn(() => true) });
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
@@ -237,10 +249,15 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		});
 		mockState.isBillingMutationAllowed.mockReturnValue(true);
 		mockState.createBillingForbiddenResponse.mockImplementation((access) =>
-			Response.json({ error: "billing_required", reason: access.reason }, { status: 402 }),
+			Response.json(
+				{ error: "billing_required", reason: access.reason },
+				{ status: 402 },
+			),
 		);
 		mockState.findUserSettings.mockResolvedValue({ timezone: "Europe/Berlin" });
-		mockState.isValidIanaTimezone.mockImplementation((timezone) => timezone === "Europe/Berlin");
+		mockState.isValidIanaTimezone.mockImplementation(
+			(timezone) => timezone === "Europe/Berlin",
+		);
 		mockState.resolveFallbackTimezoneCapture.mockReturnValue({
 			timezone: "Europe/Berlin",
 			timezoneSource: "manager_target_user_setting",
@@ -255,7 +272,10 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		});
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
 		mockState.checkComplianceAfterClockOut.mockResolvedValue([]);
-		mockState.enforceBreaksAfterClockOut.mockResolvedValue({ wasAdjusted: false });
+		mockState.enforceBreaksAfterClockOut.mockResolvedValue({
+			wasAdjusted: false,
+			affectedWorkPeriodIds: ["period-1"],
+		});
 		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
 		mockState.txExecute.mockResolvedValue(undefined);
 		mockState.updateReturning.mockResolvedValue([{ id: "period-1" }]);
@@ -265,7 +285,9 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		const response = await POST(createRequest({ workPeriodId: "period-1" }));
 
 		expect(response.status).toBe(201);
-		expect(await response.json()).toEqual({ entry: { id: "clock-out-entry-1" } });
+		expect(await response.json()).toEqual({
+			entry: { id: "clock-out-entry-1" },
+		});
 		expect(mockState.clockingClockOut).toHaveBeenCalledWith(
 			expect.objectContaining({
 				createdBy: "actor-user-1",
@@ -292,7 +314,10 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		const response = await POST(createRequest({ workPeriodId: "period-1" }));
 
 		expect(response.status).toBe(201);
-		expect(mockState.calculateAndPersistSurcharges).toHaveBeenCalledWith("period-1", "org-1");
+		expect(mockState.calculateAndPersistSurcharges).toHaveBeenCalledWith(
+			"period-1",
+			"org-1",
+		);
 		expect(mockState.checkComplianceAfterClockOut).toHaveBeenCalledWith(
 			"target-employee-1",
 			"org-1",
@@ -313,22 +338,31 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 			employeeId: "target-employee-1",
 			organizationId: "org-1",
 		});
-		expect(mockState.calculateAndPersistSurcharges.mock.invocationCallOrder[0]).toBeGreaterThan(
-			mockState.clockingClockOut.mock.invocationCallOrder[0],
-		);
-		expect(mockState.enforceBreaksAfterClockOut.mock.invocationCallOrder[0]).toBeLessThan(
+		expect(
+			mockState.calculateAndPersistSurcharges.mock.invocationCallOrder[0],
+		).toBeGreaterThan(mockState.clockingClockOut.mock.invocationCallOrder[0]);
+		expect(
+			mockState.enforceBreaksAfterClockOut.mock.invocationCallOrder[0],
+		).toBeLessThan(
 			mockState.calculateAndPersistSurcharges.mock.invocationCallOrder[0],
 		);
 	});
 
 	it("keeps a successful clock-out response when work balance dirty marking fails", async () => {
-		mockState.markEmployeeWorkBalanceDirty.mockRejectedValueOnce(new Error("dirty marker failed"));
+		mockState.markEmployeeWorkBalanceDirty.mockRejectedValueOnce(
+			new Error("dirty marker failed"),
+		);
 
 		const response = await POST(createRequest({ workPeriodId: "period-1" }));
 
 		expect(response.status).toBe(201);
-		expect(await response.json()).toEqual({ entry: { id: "clock-out-entry-1" } });
-		expect(mockState.calculateAndPersistSurcharges).toHaveBeenCalledWith("period-1", "org-1");
+		expect(await response.json()).toEqual({
+			entry: { id: "clock-out-entry-1" },
+		});
+		expect(mockState.calculateAndPersistSurcharges).toHaveBeenCalledWith(
+			"period-1",
+			"org-1",
+		);
 		expect(mockState.checkComplianceAfterClockOut).toHaveBeenCalledWith(
 			"target-employee-1",
 			"org-1",
@@ -341,18 +375,33 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		);
 	});
 
-	it("marks work balance dirty again when break enforcement adjusts the closed period", async () => {
-		mockState.enforceBreaksAfterClockOut.mockResolvedValueOnce({ wasAdjusted: true });
+	it("reconciles every split period before marking work balance dirty", async () => {
+		mockState.enforceBreaksAfterClockOut.mockResolvedValueOnce({
+			wasAdjusted: true,
+			affectedWorkPeriodIds: ["period-1", "period-2"],
+		});
 
 		const response = await POST(createRequest({ workPeriodId: "period-1" }));
 
 		expect(response.status).toBe(201);
-		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledTimes(2);
-		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenLastCalledWith({
+		expect(await response.json()).toEqual({
+			entry: { id: "clock-out-entry-1" },
+		});
+		expect(mockState.calculateAndPersistSurcharges.mock.calls).toEqual([
+			["period-1", "org-1"],
+			["period-2", "org-1"],
+		]);
+		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledOnce();
+		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
 			dirtyFromDate: "2026-06-09",
 			employeeId: "target-employee-1",
 			organizationId: "org-1",
 		});
+		expect(
+			mockState.calculateAndPersistSurcharges.mock.invocationCallOrder[1],
+		).toBeLessThan(
+			mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
+		);
 	});
 
 	it("returns 403 and does not create a time entry when ability denies access", async () => {
@@ -365,7 +414,10 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		expect(await response.json()).toEqual({ error: "Forbidden" });
 		expect(ability.can).toHaveBeenCalledWith(
 			"manage",
-			expect.objectContaining({ employeeId: "target-employee-1", organizationId: "org-1" }),
+			expect.objectContaining({
+				employeeId: "target-employee-1",
+				organizationId: "org-1",
+			}),
 		);
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 	});
@@ -374,7 +426,9 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		mockState.limit.mockReset();
 		mockState.limit
 			.mockResolvedValueOnce([actorEmployee])
-			.mockResolvedValueOnce([{ period: runningPeriod, targetEmployee: actorEmployee }]);
+			.mockResolvedValueOnce([
+				{ period: runningPeriod, targetEmployee: actorEmployee },
+			]);
 
 		const response = await POST(createRequest({ workPeriodId: "period-1" }));
 
@@ -386,9 +440,13 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 
 	it("returns 404 for a missing or cross-organization work period", async () => {
 		mockState.limit.mockReset();
-		mockState.limit.mockResolvedValueOnce([actorEmployee]).mockResolvedValueOnce([]);
+		mockState.limit
+			.mockResolvedValueOnce([actorEmployee])
+			.mockResolvedValueOnce([]);
 
-		const response = await POST(createRequest({ workPeriodId: "foreign-period" }));
+		const response = await POST(
+			createRequest({ workPeriodId: "foreign-period" }),
+		);
 
 		expect(response.status).toBe(404);
 		expect(await response.json()).toEqual({ error: "Work period not found" });
@@ -409,18 +467,22 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 
 	it("returns 409 when the loaded work period is already stopped", async () => {
 		mockState.limit.mockReset();
-		mockState.limit.mockResolvedValueOnce([actorEmployee]).mockResolvedValueOnce([
-			loadedPeriod({
-				...runningPeriod,
-				endTime: new Date("2026-06-09T09:00:00.000Z"),
-				isActive: false,
-			}),
-		]);
+		mockState.limit
+			.mockResolvedValueOnce([actorEmployee])
+			.mockResolvedValueOnce([
+				loadedPeriod({
+					...runningPeriod,
+					endTime: new Date("2026-06-09T09:00:00.000Z"),
+					isActive: false,
+				}),
+			]);
 
 		const response = await POST(createRequest({ workPeriodId: "period-1" }));
 
 		expect(response.status).toBe(409);
-		expect(await response.json()).toEqual({ error: "Work period is no longer running" });
+		expect(await response.json()).toEqual({
+			error: "Work period is no longer running",
+		});
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 	});
 
@@ -432,7 +494,9 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		const response = await POST(createRequest({ workPeriodId: "period-1" }));
 
 		expect(response.status).toBe(409);
-		expect(await response.json()).toEqual({ error: "Active work period changed" });
+		expect(await response.json()).toEqual({
+			error: "Active work period changed",
+		});
 		expect(mockState.clockingClockOut).toHaveBeenCalledWith(expect.anything());
 	});
 
@@ -440,7 +504,9 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 		const response = await POST(createRequest({ workPeriodId: 42 }));
 
 		expect(response.status).toBe(400);
-		expect(await response.json()).toEqual({ error: "workPeriodId is required" });
+		expect(await response.json()).toEqual({
+			error: "workPeriodId is required",
+		});
 		expect(mockState.getSession).not.toHaveBeenCalled();
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 	});
@@ -466,7 +532,10 @@ describe("POST /api/time-entries/clock-out-on-behalf", () => {
 
 		expect(mockState.requireBillingForMutation).toHaveBeenCalledWith("org-1");
 		expect(response.status).toBe(402);
-		expect(await response.json()).toEqual({ error: "billing_required", reason: "trial_expired" });
+		expect(await response.json()).toEqual({
+			error: "billing_required",
+			reason: "trial_expired",
+		});
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 	});
 });

@@ -42,6 +42,7 @@ import {
 import {
 	dateFromInstant,
 	type Instant,
+	instantFromDate,
 	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
@@ -1245,6 +1246,7 @@ export async function clockOut(
 							dbService: context.dbService as never,
 							organizationId: currentEmployee.organizationId,
 							employeeId: currentEmployee.id,
+							startTime: instantFromDate(activeWorkPeriod.startTime),
 							endTime: actionInstant,
 						});
 					if (!needsClockOutApproval)
@@ -1419,23 +1421,6 @@ export async function clockOut(
 			result.disposition === "executed" &&
 			(!needsClockOutApproval ||
 				approvalSubmission?.disposition === "executed");
-		if (shouldRunPostCommitEffects && !needsClockOutApproval) {
-			await bestEffort(
-				() =>
-					calculateAndPersistSurcharges(
-						activeWorkPeriod.id,
-						currentEmployee.organizationId,
-						immediateSurchargeSnapshot
-							? {
-									employeeId: currentEmployee.id,
-									snapshot: immediateSurchargeSnapshot,
-								}
-							: undefined,
-					),
-				"Failed to calculate surcharges after clock-out",
-				{ workPeriodId: activeWorkPeriod.id },
-			);
-		}
 		let complianceWarnings: Awaited<
 			ReturnType<typeof checkComplianceAfterClockOut>
 		> = [];
@@ -1457,7 +1442,10 @@ export async function clockOut(
 
 		let breakEnforcementResult: Awaited<
 			ReturnType<typeof enforceBreaksAfterClockOut>
-		> = { wasAdjusted: false };
+		> = {
+			wasAdjusted: false,
+			affectedWorkPeriodIds: [activeWorkPeriod.id],
+		};
 		if (shouldRunPostCommitEffects && !needsClockOutApproval) {
 			await bestEffort(
 				async () => {
@@ -1471,6 +1459,26 @@ export async function clockOut(
 					});
 				},
 				"Failed to enforce breaks after clock-out",
+				{ workPeriodId: activeWorkPeriod.id },
+			);
+		}
+		if (shouldRunPostCommitEffects && !needsClockOutApproval) {
+			await bestEffort(
+				async () => {
+					for (const workPeriodId of breakEnforcementResult.affectedWorkPeriodIds) {
+						await calculateAndPersistSurcharges(
+							workPeriodId,
+							currentEmployee.organizationId,
+							immediateSurchargeSnapshot
+								? {
+										employeeId: currentEmployee.id,
+										snapshot: immediateSurchargeSnapshot,
+									}
+								: undefined,
+						);
+					}
+				},
+				"Failed to calculate surcharges after clock-out",
 				{ workPeriodId: activeWorkPeriod.id },
 			);
 		}

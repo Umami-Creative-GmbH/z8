@@ -731,6 +731,51 @@ export class SurchargeService extends Context.Tag("SurchargeService")<
 	}
 >() {}
 
+interface SurchargeCalculationOperations {
+	readonly isSurchargesEnabled: (
+		organizationId: string,
+	) => Effect.Effect<boolean, DatabaseError>;
+	readonly persistSurchargeCalculation: (
+		workPeriodId: string,
+	) => Effect.Effect<
+		SurchargeCalculationResult | null,
+		NotFoundError | DatabaseError
+	>;
+	readonly reconcileWorkPeriods: (
+		input: ReconcileSurchargeWorkPeriodsInput,
+	) => Effect.Effect<void, DatabaseError>;
+}
+
+export function calculateSurchargeForWorkPeriod(
+	surchargeService: SurchargeCalculationOperations,
+	input: {
+		workPeriodId: string;
+		organizationId: string;
+		immutableEvidence?: {
+			employeeId: string;
+			snapshot: PolicyClockOutSurchargeSnapshot;
+		};
+	},
+) {
+	if (input.immutableEvidence) {
+		return surchargeService.reconcileWorkPeriods({
+			organizationId: input.organizationId,
+			employeeId: input.immutableEvidence.employeeId,
+			surchargePeriodIds: [input.workPeriodId],
+			staleSurchargePeriodIds: [],
+			surchargeSnapshot: input.immutableEvidence.snapshot,
+		});
+	}
+
+	return Effect.gen(function* (_) {
+		const isEnabled = yield* _(
+			surchargeService.isSurchargesEnabled(input.organizationId),
+		);
+		if (!isEnabled) return;
+		yield* _(surchargeService.persistSurchargeCalculation(input.workPeriodId));
+	});
+}
+
 // ============================================
 // SERVICE IMPLEMENTATION
 // ============================================
