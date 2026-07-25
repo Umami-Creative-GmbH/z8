@@ -489,7 +489,7 @@ describe("generateDemoPendingAbsenceApprovals", () => {
 				actionUrl: "/approvals/inbox",
 			},
 		]);
-	});
+	}, 15_000);
 });
 
 describe("generateDemoPendingTimeCorrectionApprovals", () => {

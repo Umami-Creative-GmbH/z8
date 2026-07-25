@@ -3,7 +3,7 @@
 // ============================================
 
 import type { PolicyClockOutBreakSnapshot } from "@/lib/time-tracking/policy-clock-out-break-snapshot.types";
-import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
+import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot.types";
 
 // Auth method configuration type for custom domains
 export type AuthConfig = {

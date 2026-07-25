@@ -10,47 +10,15 @@ import {
 	parsePlainDate,
 	parsePlainTimeMinute,
 } from "@/lib/datetime/temporal-core";
+import type {
+	PolicyClockOutSurchargeRuleSnapshot,
+	PolicyClockOutSurchargeSnapshot,
+} from "./policy-clock-out-surcharge-snapshot.types";
 
-export interface PolicyClockOutSurchargeRuleSnapshot {
-	readonly id: string;
-	readonly name: string;
-	readonly ruleType: "time_window" | "day_of_week" | "date_based";
-	readonly percentage: string;
-	readonly dayOfWeek:
-		| "monday"
-		| "tuesday"
-		| "wednesday"
-		| "thursday"
-		| "friday"
-		| "saturday"
-		| "sunday"
-		| null;
-	readonly windowStartTime: string | null;
-	readonly windowEndTime: string | null;
-	readonly specificDate: string | null;
-	readonly dateRangeStart: string | null;
-	readonly dateRangeEnd: string | null;
-	readonly priority: number;
-	readonly validFrom: string | null;
-	readonly validUntil: string | null;
-}
-
-export type PolicyClockOutSurchargeSnapshot = Readonly<{
-	version: 1;
-	evaluatedAt: string;
-	resolution:
-		| Readonly<{ kind: "none" }>
-		| Readonly<{
-				kind: "surcharge_model";
-				teamId: string | null;
-				assignmentId: string;
-				assignmentType: "employee" | "team" | "organization";
-				assignmentPriority: number;
-				modelId: string;
-				modelName: string;
-				rules: readonly Readonly<PolicyClockOutSurchargeRuleSnapshot>[];
-		  }>;
-}>;
+export type {
+	PolicyClockOutSurchargeRuleSnapshot,
+	PolicyClockOutSurchargeSnapshot,
+} from "./policy-clock-out-surcharge-snapshot.types";
 
 const UUID =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
