@@ -80,8 +80,6 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"rolls back surcharge reconciliation atomically with terminal maintenance",
 			"replays terminal maintenance without duplicate surcharge or balance writes",
 			"uses submitted surcharge evidence after delayed model mutation in %s mode",
-			"uses submitted surcharge evidence after delayed assignment replacement in %s mode",
-			"uses submitted surcharge evidence after delayed rule deletion in %s mode",
 			"preserves unmarked historical policy $action with auto-adjusted=$autoAdjusted",
 			"pages past malformed canonical policy evidence with exact list and count",
 		] as const) {
@@ -143,6 +141,32 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 		for (const query of parityQueries) {
 			expect(query).toContain("surchargeSnapshot");
 		}
+	});
+
+	it("registers every delayed surcharge mutation mode and split combination", () => {
+		const scenario =
+			"uses submitted surcharge evidence after delayed $mutation with split=$split in $mode mode";
+		expect(integrationSource.split(scenario)).toHaveLength(3);
+		const scenarioIndex = integrationSource.lastIndexOf(scenario);
+		const registration = integrationSource.slice(
+			Math.max(0, scenarioIndex - 1_000),
+			scenarioIndex + scenario.length + 1_000,
+		);
+		expect(registration).toContain("surchargeMutationCases");
+		expect(registration).not.toMatch(/it\.(?:todo|skip)/);
+		expect(registration).toMatch(/async\s*\(/);
+		const expected = modes.flatMap((mode) =>
+			(["assignment replacement", "rule deletion"] as const).flatMap(
+				(mutation) =>
+					([false, true] as const).map((split) =>
+						JSON.stringify({ mode, mutation, split }),
+					),
+			),
+		);
+		expect(surchargeMutationCases).toHaveLength(20);
+		expect(
+			surchargeMutationCases.map((value) => JSON.stringify(value)).sort(),
+		).toEqual(expected.sort());
 	});
 
 	it("executes every terminal maintenance scenario without placeholders", () => {
@@ -245,6 +269,13 @@ const ids = {
 } as const;
 
 const modes = ["legacy", "shadow", "ready", "canonical", "complete"] as const;
+
+const surchargeMutationCases = modes.flatMap((mode) => [
+	{ mode, mutation: "assignment replacement" as const, split: false },
+	{ mode, mutation: "assignment replacement" as const, split: true },
+	{ mode, mutation: "rule deletion" as const, split: false },
+	{ mode, mutation: "rule deletion" as const, split: true },
+]);
 
 const surchargeSnapshot = {
 	version: 1,
@@ -1232,13 +1263,21 @@ describeIntegration(
 
 		async function assertDelayedSurchargeMutation(input: {
 			mode: (typeof modes)[number];
+			split: boolean;
 			mutate(client: PoolClient): Promise<void>;
 		}) {
-			await seed("policy_clock_out", false, input.mode);
+			await seed("policy_clock_out", input.split, input.mode);
 			await seedMaintenanceState();
 			const target = (await submit("policy_clock_out")).result
 				.approvalRequestId;
-			await assertSubmittedNoneSnapshotParity(input.mode);
+			const expectedBreakSnapshot = input.split
+				? await assertSubmittedBreakSnapshotParity(input.mode)
+				: {
+						version: 1,
+						evaluatedAt: "2026-07-22T16:00:00Z",
+						resolution: "none",
+					};
+			if (!input.split) await assertSubmittedNoneSnapshotParity(input.mode);
 			await mutateAfterSubmission(input.mutate);
 
 			const completed = await completeDecision(target, {
@@ -1249,28 +1288,120 @@ describeIntegration(
 			await assertTerminalPolicySnapshotParity({
 				mode: input.mode,
 				status: "approved",
-				split: false,
-				expectedSnapshot: {
-					version: 1,
-					evaluatedAt: "2026-07-22T16:00:00Z",
-					resolution: "none",
-				},
+				split: input.split,
+				expectedSnapshot: expectedBreakSnapshot,
 			});
-			const beforeReplay = await maintenanceSnapshot();
+			const periods = await pool.query<{
+				id: string;
+				start_time: Date;
+				end_time: Date;
+				duration_minutes: number;
+			}>(
+				`select id, start_time, end_time, duration_minutes
+				 from work_period
+				 where organization_id = $1 and employee_id = $2
+				 order by start_time, id`,
+				[ids.organization, ids.requester],
+			);
+			expect(periods.rows).toEqual(
+				input.split
+					? [
+							expect.objectContaining({
+								id: ids.period,
+								start_time: startTime,
+								end_time: new Date("2026-07-22T14:00:00Z"),
+								duration_minutes: 360,
+							}),
+							expect.objectContaining({
+								start_time: new Date("2026-07-22T14:30:00Z"),
+								end_time: endTime,
+								duration_minutes: 90,
+							}),
+						]
+					: [
+							expect.objectContaining({
+								id: ids.period,
+								start_time: startTime,
+								end_time: endTime,
+								duration_minutes: 480,
+							}),
+						],
+			);
+			if (input.split) {
+				expect(periods.rows[1]?.id).not.toBe(ids.period);
+			}
+			const surchargePeriodIds = periods.rows.map(({ id }) => id).sort();
 			expect(
-				beforeReplay.calculations.filter(
-					({ organization_id }) => organization_id === ids.organization,
+				[
+					...(completed.execution.postCommit?.maintenance?.surchargePeriodIds ??
+						[]),
+				].sort(),
+			).toEqual(surchargePeriodIds);
+			const beforeReplay = await maintenanceSnapshot();
+			const calculations = beforeReplay.calculations.filter(
+				({ organization_id }) => organization_id === ids.organization,
+			);
+			for (const calculation of calculations) {
+				expect(calculation.id).toMatch(
+					/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+				);
+			}
+			expect(new Set(calculations.map(({ id }) => id)).size).toBe(
+				calculations.length,
+			);
+			expect(
+				calculations
+					.map(
+						({
+							work_period_id,
+							base_minutes,
+							qualifying_minutes,
+							surcharge_minutes,
+						}) => ({
+							work_period_id,
+							base_minutes,
+							qualifying_minutes,
+							surcharge_minutes,
+						}),
+					)
+					.sort((left, right) =>
+						left.work_period_id.localeCompare(right.work_period_id),
+					),
+			).toEqual(
+				(input.split
+					? [
+							{
+								work_period_id: periods.rows[0]?.id,
+								base_minutes: 360,
+								qualifying_minutes: 360,
+								surcharge_minutes: 180,
+							},
+							{
+								work_period_id: periods.rows[1]?.id,
+								base_minutes: 90,
+								qualifying_minutes: 90,
+								surcharge_minutes: 45,
+							},
+						]
+					: [
+							{
+								work_period_id: ids.period,
+								base_minutes: 480,
+								qualifying_minutes: 480,
+								surcharge_minutes: 240,
+							},
+						]
+				).sort((left, right) =>
+					(left.work_period_id ?? "").localeCompare(right.work_period_id ?? ""),
 				),
-			).toEqual([
-				expect.objectContaining({
-					work_period_id: ids.period,
-					base_minutes: 480,
-					qualifying_minutes: 480,
-					surcharge_minutes: 240,
-				}),
-			]);
+			);
 
-			await completeDecision(target, { kind: "approve", reason: null });
+			const replay = await completeDecision(target, {
+				kind: "approve",
+				reason: null,
+			});
+			expect(replay.execution.postCommit).toBeNull();
+			expect(replay.maintenanceErrors).toEqual([]);
 			expect(await maintenanceSnapshot()).toEqual(beforeReplay);
 		}
 
@@ -3399,11 +3530,28 @@ describeIntegration(
 		});
 
 		it.each(
-			modes,
-		)("uses submitted surcharge evidence after delayed assignment replacement in %s mode", async (mode) => {
+			surchargeMutationCases,
+		)("uses submitted surcharge evidence after delayed $mutation with split=$split in $mode mode", async ({
+			mode,
+			mutation,
+			split,
+		}) => {
 			await assertDelayedSurchargeMutation({
 				mode,
+				split,
 				mutate: async (client) => {
+					if (mutation === "rule deletion") {
+						await client.query(
+							"delete from surcharge_calculation where id = $1 and organization_id = $2",
+							[ids.staleSurchargeCalculation, ids.organization],
+						);
+						await client.query(
+							"delete from surcharge_rule where id = $1 and model_id = $2",
+							[ids.surchargeRule, ids.surchargeModel],
+						);
+						return;
+					}
+
 					const timestamp = new Date(now.epochMilliseconds);
 					await client.query(
 						"update surcharge_model_assignment set is_active = false, updated_at = $1 where id = $2 and organization_id = $3",
@@ -3446,24 +3594,6 @@ describeIntegration(
 							ids.managerUser,
 							timestamp,
 						],
-					);
-				},
-			});
-		});
-
-		it.each(
-			modes,
-		)("uses submitted surcharge evidence after delayed rule deletion in %s mode", async (mode) => {
-			await assertDelayedSurchargeMutation({
-				mode,
-				mutate: async (client) => {
-					await client.query(
-						"delete from surcharge_calculation where id = $1 and organization_id = $2",
-						[ids.staleSurchargeCalculation, ids.organization],
-					);
-					await client.query(
-						"delete from surcharge_rule where id = $1 and model_id = $2",
-						[ids.surchargeRule, ids.surchargeModel],
 					);
 				},
 			});
