@@ -190,9 +190,9 @@ Terminal approval returns detached internal maintenance facts independently from
 
 Approved no-split periods also mark work balance dirty when pending periods are excluded from approved balance calculations. Rejection removes any surcharge state created while pending when required by existing persistence behavior. Intermediate decisions and exact replay perform no terminal maintenance. Internal maintenance failure is logged with safe identifiers and does not change the committed decision; external notification delivery remains gated by rollout disposition.
 
-Policy-clock-out submission also captures one strict, versioned private surcharge snapshot at the submitted clock-out instant. It stores the employee/team assignment evidence, model identity, and complete rule values needed to calculate surcharge results for either the original interval or later break-split segments. Terminal maintenance never derives historical surcharge meaning from the employee's current team, current assignment activity, archived model state, or edited rules.
+Both manual-time and policy-clock-out submissions capture one strict, versioned private surcharge snapshot at the submitted period end instant. It stores the employee/team assignment evidence, model identity, and complete rule values needed to calculate surcharge results for the approved interval or later policy-clock-out break-split segments. Terminal maintenance never derives historical surcharge meaning from the employee's current team, current assignment activity, archived model state, or edited rules.
 
-The surcharge snapshot follows the same source, legacy metadata, canonical context, equality, replay, redaction, and fail-closed rules as the break-policy snapshot. No-approval clock-outs retain immediate surcharge behavior. Unmarked historical pending rows retain their already-persisted pre-contract surcharge state; marked new submissions require valid immutable surcharge evidence.
+The surcharge snapshot follows the same source, legacy metadata, canonical context, equality, replay, redaction, and fail-closed rules for both ordinary workflow types. Break-policy snapshots remain exclusive to policy clock-outs. No-approval clock-outs retain immediate surcharge behavior. Unmarked historical pending rows retain their already-persisted pre-contract surcharge state; marked new submissions require valid immutable surcharge evidence. Terminal approval of a manual submission reconciles its original period; rejection, intermediate decisions, and exact replay do not create surcharge state.
 
 ## Error Handling And Security
 
@@ -216,7 +216,7 @@ The implementation plan must include:
 - all five rollout modes for creation, auto-approval, multistage approval, rejection, and replay;
 - transaction-bound policy-clock-out break enforcement covering no-op, atomic split, requester auto-approval, rejection, exact replay, rollback, timezone capture, and two-record canonical parity;
 - immutable break-policy snapshots covering team transfer, assignment deactivation, policy replacement, rule edits, malformed evidence, and conflicting replay;
-- immutable surcharge snapshots covering delayed team transfer, assignment replacement, model archival, rule edits, split-segment calculation, and replay;
+- immutable surcharge snapshots for both ordinary kinds covering delayed team transfer, assignment replacement, model archival, rule edits, split-segment calculation, and replay;
 - complete-mode canonical inbox list, count, detail, individual, and bulk discovery without compatibility rows or duplicate canonical-mode items;
 - organization-scoped surcharge reconciliation and work-balance dirty marking for terminal split, no-split, rejection, failure, and replay paths;
 - individual, bulk, legacy-handler, bot, inbox, and requester-read regressions;
