@@ -1,0 +1,452 @@
+import {
+	createPrivateKey,
+	createPublicKey,
+	generateKeyPairSync,
+	verify,
+} from "node:crypto";
+
+import { Temporal } from "temporal-polyfill";
+import { describe, expect, it, vi } from "vitest";
+
+import * as telemetryProtocol from "@/lib/telemetry-protocol";
+import {
+	buildTelemetrySignedContent,
+	createTelemetryAuthHeaders,
+	generateTelemetryNonce,
+	generateTelemetrySigningKey,
+	isLowercaseUuidV4,
+	MAX_TELEMETRY_BODY_BYTES,
+	parseTelemetrySigningKey,
+	prepareTelemetryReport,
+	type TelemetryPayloadV2,
+	TelemetryProtocolError,
+} from "@/lib/telemetry-protocol";
+
+const NOW = Temporal.Instant.from("2026-07-18T12:00:00Z");
+const DEPLOYMENT_ID = "123e4567-e89b-42d3-a456-426614174000";
+
+function validPayload(): TelemetryPayloadV2 {
+	return {
+		version: "2.0",
+		deployment_id: DEPLOYMENT_ID,
+		timestamp: "2026-07-18T12:00:00Z",
+		metrics: {
+			active_users_24h: 7,
+			total_organizations: 2,
+			total_employees: 11,
+			sessions_created_24h: 19,
+			license_type: "community",
+		},
+	};
+}
+
+function expectProtocolError(payload: unknown) {
+	expect(() => prepareTelemetryReport(payload, NOW)).toThrow(
+		TelemetryProtocolError,
+	);
+}
+
+function preparedReport() {
+	return prepareTelemetryReport(validPayload(), NOW);
+}
+
+function expectSigningKeyError(value: string) {
+	expect(() => parseTelemetrySigningKey(value)).toThrow(TelemetryProtocolError);
+}
+
+describe("isLowercaseUuidV4", () => {
+	it("accepts a lowercase UUID v4", () => {
+		expect(isLowercaseUuidV4("123e4567-e89b-42d3-a456-426614174000")).toBe(
+			true,
+		);
+	});
+
+	it("rejects non-v4 and uppercase UUIDs", () => {
+		expect(isLowercaseUuidV4("123e4567-e89b-12d3-a456-426614174000")).toBe(
+			false,
+		);
+		expect(isLowercaseUuidV4("123E4567-E89B-42D3-A456-426614174000")).toBe(
+			false,
+		);
+	});
+});
+
+describe("prepareTelemetryReport", () => {
+	it("does not expose the internal serializer", () => {
+		expect(telemetryProtocol).not.toHaveProperty("serializeTelemetryPayload");
+	});
+
+	it("retains the exact JSON.stringify bytes and hashes those bytes", () => {
+		const payload = validPayload();
+		const expectedBody = Buffer.from(JSON.stringify(payload), "utf8");
+
+		const prepared = prepareTelemetryReport(payload, NOW);
+
+		expect(prepared).toEqual({
+			deploymentId: DEPLOYMENT_ID,
+			timestamp: "2026-07-18T12:00:00Z",
+			body: expectedBody,
+			bodyHash:
+				"f0c01ddce626b60e0a52821466e7f14f6ceef02add31d7f1cbad94bcc633409e",
+		});
+		expect(prepared.body).toBeInstanceOf(Buffer);
+		expect(prepared.bodyHash).toMatch(/^[0-9a-f]{64}$/);
+	});
+
+	it("captures accessor values once before validation and serialization", () => {
+		const payload = validPayload();
+		let deploymentIdReads = 0;
+		Object.defineProperty(payload, "deployment_id", {
+			enumerable: true,
+			get: () => {
+				deploymentIdReads += 1;
+				return deploymentIdReads === 1
+					? DEPLOYMENT_ID
+					: DEPLOYMENT_ID.toUpperCase();
+			},
+		});
+
+		const prepared = prepareTelemetryReport(payload, NOW);
+
+		expect(deploymentIdReads).toBe(1);
+		expect(prepared.deploymentId).toBe(DEPLOYMENT_ID);
+		expect(JSON.parse(prepared.body.toString("utf8"))).toMatchObject({
+			deployment_id: DEPLOYMENT_ID,
+		});
+	});
+
+	it("serializes the validated payload exactly once", () => {
+		const stringify = vi.spyOn(JSON, "stringify");
+		try {
+			prepareTelemetryReport(validPayload(), NOW);
+
+			expect(stringify).toHaveBeenCalledTimes(1);
+		} finally {
+			stringify.mockRestore();
+		}
+	});
+
+	it("requires an object payload with only v2 wire fields", () => {
+		expectProtocolError(null);
+		expectProtocolError("payload");
+		expectProtocolError({ ...validPayload(), unexpected: true });
+		expectProtocolError({
+			...validPayload(),
+			metrics: { ...validPayload().metrics, unexpected: true },
+		});
+
+		const nonEnumerableField = validPayload();
+		Object.defineProperty(nonEnumerableField, "deployment_id", {
+			enumerable: false,
+			value: DEPLOYMENT_ID,
+		});
+		expectProtocolError(nonEnumerableField);
+	});
+
+	it("rejects version 1.0", () => {
+		expectProtocolError({ ...validPayload(), version: "1.0" });
+	});
+
+	it("rejects non-v4 and uppercase deployment IDs", () => {
+		expectProtocolError({
+			...validPayload(),
+			deployment_id: "123e4567-e89b-12d3-a456-426614174000",
+		});
+		expectProtocolError({
+			...validPayload(),
+			deployment_id: DEPLOYMENT_ID.toUpperCase(),
+		});
+	});
+
+	it.each([
+		-1,
+		1.5,
+		2_147_483_648,
+		Number.NaN,
+	])("rejects invalid numeric metric value %s", (value) => {
+		for (const metric of [
+			"active_users_24h",
+			"total_organizations",
+			"total_employees",
+			"sessions_created_24h",
+			"api_requests_24h",
+		] as const) {
+			expectProtocolError({
+				...validPayload(),
+				metrics: { ...validPayload().metrics, [metric]: value },
+			});
+		}
+	});
+
+	it("omits an absent API request count and includes its maximum", () => {
+		const withoutApiRequests = prepareTelemetryReport(validPayload(), NOW);
+		expect(
+			JSON.parse(withoutApiRequests.body.toString("utf8")).metrics,
+		).not.toHaveProperty("api_requests_24h");
+
+		const payload = validPayload();
+		payload.metrics.api_requests_24h = 2_147_483_647;
+
+		expect(
+			JSON.parse(prepareTelemetryReport(payload, NOW).body.toString("utf8"))
+				.metrics.api_requests_24h,
+		).toBe(2_147_483_647);
+	});
+
+	it("rejects timestamps outside the age and future windows", () => {
+		expectProtocolError({
+			...validPayload(),
+			timestamp: "2026-07-16T11:59:59.999999999Z",
+		});
+		expectProtocolError({
+			...validPayload(),
+			timestamp: "2026-07-18T12:05:00.000000001Z",
+		});
+	});
+
+	it("accepts timestamps exactly 48 hours old and 5 minutes future", () => {
+		for (const timestamp of ["2026-07-16T12:00:00Z", "2026-07-18T12:05:00Z"]) {
+			expect(
+				prepareTelemetryReport({ ...validPayload(), timestamp }, NOW).timestamp,
+			).toBe(timestamp);
+		}
+	});
+
+	it("requires an RFC3339 timestamp with an explicit offset", () => {
+		expectProtocolError({
+			...validPayload(),
+			timestamp: "2026-07-18T12:00:00",
+		});
+		expect(
+			prepareTelemetryReport(
+				{ ...validPayload(), timestamp: "2026-07-18T14:00:00+02:00" },
+				NOW,
+			).timestamp,
+		).toBe("2026-07-18T14:00:00+02:00");
+	});
+
+	it("rejects RFC3339 timestamps without seconds", () => {
+		expectProtocolError({
+			...validPayload(),
+			timestamp: "2026-07-18T12:00Z",
+		});
+	});
+
+	it("rejects unsupported license types", () => {
+		expectProtocolError({
+			...validPayload(),
+			metrics: { ...validPayload().metrics, license_type: "trial" },
+		});
+	});
+
+	it("accepts a raw serialized body at the UTF-8 byte limit", () => {
+		const serialized = "é".repeat(MAX_TELEMETRY_BODY_BYTES / 2);
+		const stringify = vi.spyOn(JSON, "stringify").mockReturnValue(serialized);
+		try {
+			const prepared = prepareTelemetryReport(validPayload(), NOW);
+
+			expect(prepared.body).toEqual(Buffer.from(serialized, "utf8"));
+			expect(prepared.body.byteLength).toBe(MAX_TELEMETRY_BODY_BYTES);
+			expect(stringify).toHaveBeenCalledTimes(1);
+		} finally {
+			stringify.mockRestore();
+		}
+	});
+
+	it("rejects a raw serialized body above the UTF-8 byte limit", () => {
+		const serialized = `${"é".repeat(MAX_TELEMETRY_BODY_BYTES / 2)}a`;
+		const stringify = vi.spyOn(JSON, "stringify").mockReturnValue(serialized);
+		try {
+			expect(() => prepareTelemetryReport(validPayload(), NOW)).toThrow(
+				TelemetryProtocolError,
+			);
+			expect(Buffer.byteLength(serialized, "utf8")).toBe(
+				MAX_TELEMETRY_BODY_BYTES + 1,
+			);
+			expect(stringify).toHaveBeenCalledTimes(1);
+		} finally {
+			stringify.mockRestore();
+		}
+	});
+});
+
+describe("telemetry signing keys", () => {
+	it("generates canonical Ed25519 key material that roundtrips exactly", () => {
+		const signingKey = generateTelemetrySigningKey();
+		const publicDer = Buffer.from(signingKey.public_key_spki_base64, "base64");
+
+		expect(signingKey).toEqual({
+			version: 1,
+			private_key_pkcs8_pem: expect.stringMatching(
+				/^-----BEGIN PRIVATE KEY-----\n[\s\S]+\n-----END PRIVATE KEY-----\n$/,
+			),
+			public_key_spki_base64: expect.any(String),
+		});
+		expect(publicDer.toString("base64")).toBe(
+			signingKey.public_key_spki_base64,
+		);
+		expect(
+			createPrivateKey(signingKey.private_key_pkcs8_pem).asymmetricKeyType,
+		).toBe("ed25519");
+		expect(
+			createPublicKey({ key: publicDer, format: "der", type: "spki" })
+				.asymmetricKeyType,
+		).toBe("ed25519");
+		expect(parseTelemetrySigningKey(JSON.stringify(signingKey))).toEqual(
+			signingKey,
+		);
+	});
+
+	it("rejects malformed JSON and non-exact persisted key shapes", () => {
+		const signingKey = generateTelemetrySigningKey();
+
+		expectSigningKeyError("not-json");
+		expectSigningKeyError(JSON.stringify({ ...signingKey, unexpected: true }));
+		expectSigningKeyError(
+			JSON.stringify({
+				...signingKey,
+				public_key_spki_base64: `${signingKey.public_key_spki_base64}=`,
+			}),
+		);
+	});
+
+	it("rejects non-Ed25519 private and public keys", () => {
+		const ed25519 = generateTelemetrySigningKey();
+		const rsa = generateKeyPairSync("rsa", { modulusLength: 2048 });
+		const rsaPrivatePem = rsa.privateKey.export({
+			format: "pem",
+			type: "pkcs8",
+		});
+		const rsaPublicBase64 = rsa.publicKey
+			.export({ format: "der", type: "spki" })
+			.toString("base64");
+
+		expectSigningKeyError(
+			JSON.stringify({
+				...ed25519,
+				private_key_pkcs8_pem: rsaPrivatePem,
+			}),
+		);
+		expectSigningKeyError(
+			JSON.stringify({
+				...ed25519,
+				public_key_spki_base64: rsaPublicBase64,
+			}),
+		);
+	});
+
+	it("rejects mismatched Ed25519 private and public keys", () => {
+		const first = generateTelemetrySigningKey();
+		const second = generateTelemetrySigningKey();
+
+		expectSigningKeyError(
+			JSON.stringify({
+				...first,
+				public_key_spki_base64: second.public_key_spki_base64,
+			}),
+		);
+	});
+});
+
+describe("generateTelemetryNonce", () => {
+	it("returns fresh 128-bit lowercase hexadecimal nonces", () => {
+		const first = generateTelemetryNonce();
+		const second = generateTelemetryNonce();
+
+		expect(first).toMatch(/^[0-9a-f]{32}$/);
+		expect(second).toMatch(/^[0-9a-f]{32}$/);
+		expect(first).not.toBe(second);
+	});
+});
+
+describe("buildTelemetrySignedContent", () => {
+	it("returns exactly six LF-separated lines without a trailing LF", () => {
+		const content = buildTelemetrySignedContent({
+			deploymentId: DEPLOYMENT_ID,
+			signedAt: "2026-07-18T12:00:00.123456789Z",
+			nonce: "0123456789abcdef0123456789abcdef",
+			bodyHash: "a".repeat(64),
+		});
+
+		expect(content).toBe(
+			`POST\n/api/telemetry\n${DEPLOYMENT_ID}\n2026-07-18T12:00:00.123456789Z\n0123456789abcdef0123456789abcdef\n${"a".repeat(64)}`,
+		);
+		expect(content.split("\n")).toHaveLength(6);
+		expect(content.endsWith("\n")).toBe(false);
+	});
+
+	it.each([
+		["deploymentId", DEPLOYMENT_ID.toUpperCase()],
+		["deploymentId", "123e4567-e89b-12d3-a456-426614174000"],
+		["signedAt", "2026-07-18T12:00:00+00:00"],
+		["signedAt", "2026-07-18T12:00Z"],
+		["signedAt", "2026-02-30T12:00:00Z"],
+		["nonce", "A".repeat(32)],
+		["nonce", "a".repeat(31)],
+		["bodyHash", "A".repeat(64)],
+		["bodyHash", "a".repeat(63)],
+	] as const)("rejects malformed %s values", (field, value) => {
+		expect(() =>
+			buildTelemetrySignedContent({
+				deploymentId: DEPLOYMENT_ID,
+				signedAt: "2026-07-18T12:00:00Z",
+				nonce: "a".repeat(32),
+				bodyHash: "b".repeat(64),
+				[field]: value,
+			}),
+		).toThrow(TelemetryProtocolError);
+	});
+});
+
+describe("createTelemetryAuthHeaders", () => {
+	it("signs the exact content and returns only the required matching headers", () => {
+		const report = preparedReport();
+		const signingKey = generateTelemetrySigningKey();
+		const nonce = "0123456789abcdef0123456789abcdef";
+		const headers = createTelemetryAuthHeaders({
+			report,
+			signingKey,
+			now: NOW,
+			nonce,
+		});
+		const signedContent = buildTelemetrySignedContent({
+			deploymentId: report.deploymentId,
+			signedAt: "2026-07-18T12:00:00Z",
+			nonce,
+			bodyHash: report.bodyHash,
+		});
+		const signature = Buffer.from(headers["X-Z8-Signature"], "base64");
+		const publicKey = createPublicKey({
+			key: Buffer.from(signingKey.public_key_spki_base64, "base64"),
+			format: "der",
+			type: "spki",
+		});
+
+		expect(headers).toEqual({
+			"X-Z8-Deployment-Id": DEPLOYMENT_ID,
+			"X-Z8-Signed-At": "2026-07-18T12:00:00Z",
+			"X-Z8-Nonce": nonce,
+			"X-Z8-Signature": expect.any(String),
+		});
+		expect(signature).toHaveLength(64);
+		expect(signature.toString("base64")).toBe(headers["X-Z8-Signature"]);
+		expect(
+			verify(null, Buffer.from(signedContent, "utf8"), publicKey, signature),
+		).toBe(true);
+	});
+
+	it("does not mutate or reserialize the prepared report body", () => {
+		const report = preparedReport();
+		const signingKey = generateTelemetrySigningKey();
+		const originalBody = Buffer.from(report.body);
+		const stringify = vi.spyOn(JSON, "stringify");
+		try {
+			createTelemetryAuthHeaders({ report, signingKey, now: NOW });
+
+			expect(stringify).not.toHaveBeenCalled();
+			expect(report.body).toEqual(originalBody);
+		} finally {
+			stringify.mockRestore();
+		}
+	});
+});

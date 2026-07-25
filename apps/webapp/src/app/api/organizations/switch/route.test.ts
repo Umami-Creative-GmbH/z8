@@ -73,6 +73,7 @@ vi.mock("@/db/auth-schema", () => ({
 	member: {
 		userId: "member.userId",
 		organizationId: "member.organizationId",
+		status: "member.status",
 	},
 }));
 
@@ -99,8 +100,90 @@ describe("POST /api/organizations/switch bearer access", () => {
 		vi.clearAllMocks();
 		mockState.resolvedHeaders = new Headers();
 		mockState.limit
-			.mockResolvedValueOnce([{ id: "member-1" }])
-			.mockResolvedValueOnce([{ id: "emp-1" }]);
+			.mockResolvedValueOnce([{ id: "member-1", role: "member", status: "approved" }])
+			.mockResolvedValueOnce([{ id: "emp-1", isActive: true }]);
+	});
+
+	it("requires approved organization membership in the membership lookup", async () => {
+		mockState.getSession.mockResolvedValue({
+			user: { id: "user-1" },
+			session: {},
+		});
+
+		const response = await POST(createRequest({}, { organizationId: "org-2" }));
+
+		expect(response.status).toBe(200);
+		expect(mockState.where.mock.calls[0]?.[0]).toEqual(
+			expect.objectContaining({
+				conditions: expect.arrayContaining([
+					{ type: "eq", column: "member.status", value: "approved" },
+				]),
+			}),
+		);
+	});
+
+	it.each(["pending", "rejected"])(
+		"rejects %s organization membership",
+		async (status) => {
+			mockState.limit.mockReset();
+			mockState.limit.mockResolvedValueOnce([{ id: "member-1", role: "owner", status }]);
+			mockState.getSession.mockResolvedValue({
+				user: { id: "user-1" },
+				session: {},
+			});
+
+			const response = await POST(createRequest({}, { organizationId: "org-2" }));
+
+			expect(response.status).toBe(403);
+			expect(await response.json()).toEqual({
+				error: "You are not a member of this organization",
+			});
+			expect(mockState.ensureEmployeeForOrganizationMember).not.toHaveBeenCalled();
+			expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
+		},
+	);
+
+	it("rejects missing organization membership", async () => {
+		mockState.limit.mockReset();
+		mockState.limit.mockResolvedValueOnce([]);
+		mockState.getSession.mockResolvedValue({ user: { id: "user-1" }, session: {} });
+
+		const response = await POST(createRequest({}, { organizationId: "org-2" }));
+
+		expect(response.status).toBe(403);
+		expect(mockState.ensureEmployeeForOrganizationMember).not.toHaveBeenCalled();
+		expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
+	});
+
+	it("loads the organization employee without filtering out inactive rows", async () => {
+		mockState.getSession.mockResolvedValue({ user: { id: "user-1" }, session: {} });
+
+		await POST(createRequest({}, { organizationId: "org-2" }));
+
+		expect(mockState.where.mock.calls[1]?.[0]).toEqual(
+			expect.objectContaining({
+				conditions: expect.not.arrayContaining([
+					{ type: "eq", column: "employee.isActive", value: true },
+				]),
+			}),
+		);
+	});
+
+	it("rejects an existing inactive employee without provisioning or switching", async () => {
+		mockState.limit.mockReset();
+		mockState.limit
+			.mockResolvedValueOnce([
+				{ id: "member-1", role: "owner", status: "approved" },
+			])
+			.mockResolvedValueOnce([{ id: "emp-1", isActive: false }]);
+		mockState.getSession.mockResolvedValue({ user: { id: "user-1" }, session: {} });
+
+		const response = await POST(createRequest({}, { organizationId: "org-2" }));
+
+		expect(response.status).toBe(403);
+		expect(await response.json()).toEqual({ error: "Organization access is inactive" });
+		expect(mockState.ensureEmployeeForOrganizationMember).not.toHaveBeenCalled();
+		expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
 	});
 
 	it("allows bearer org switching when the user has any non-web app access even if X-Z8-App-Type is spoofed", async () => {
@@ -160,7 +243,9 @@ describe("POST /api/organizations/switch bearer access", () => {
 	it("repairs a missing employee profile for an existing organization member", async () => {
 		mockState.limit.mockReset();
 		mockState.limit
-			.mockResolvedValueOnce([{ id: "member-1", role: "member" }])
+			.mockResolvedValueOnce([
+				{ id: "member-1", role: "member", status: "approved" },
+			])
 			.mockResolvedValueOnce([]);
 		mockState.getSession.mockResolvedValue({
 			user: {
@@ -173,9 +258,25 @@ describe("POST /api/organizations/switch bearer access", () => {
 
 		expect(response.status).toBe(200);
 		expect(mockState.ensureEmployeeForOrganizationMember).toHaveBeenCalledWith(expect.anything(), {
+			mode: "reconcile",
 			userId: "user-1",
 			organizationId: "org-2",
 			memberRole: "member",
 		});
+	});
+
+	it("switches successfully for an approved member with an active employee", async () => {
+		mockState.getSession.mockResolvedValue({ user: { id: "user-1" }, session: {} });
+
+		const response = await POST(createRequest({}, { organizationId: "org-2" }));
+
+		expect(response.status).toBe(200);
+		expect(await response.json()).toEqual({
+			success: true,
+			organizationId: "org-2",
+			hasEmployeeRecord: true,
+		});
+		expect(mockState.ensureEmployeeForOrganizationMember).not.toHaveBeenCalled();
+		expect(mockState.setActiveOrganization).toHaveBeenCalledOnce();
 	});
 });

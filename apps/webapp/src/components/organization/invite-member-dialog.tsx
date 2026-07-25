@@ -64,9 +64,16 @@ export function InviteMemberDialog({
 			canCreateOrganizations: boolean;
 			targetTeamId: string | null;
 		}) => sendInvitation(data),
-		onSuccess: (result) => {
+		onSuccess: async (result) => {
 			if (result.success) {
-				queryClient.invalidateQueries({ queryKey: queryKeys.invitations.list(organizationId) });
+				await Promise.all([
+					queryClient.invalidateQueries({
+						queryKey: queryKeys.invitations.list(organizationId),
+					}),
+					queryClient.invalidateQueries({
+						queryKey: queryKeys.employees.organization(organizationId),
+					}),
+				]);
 			}
 		},
 		onError: () => {

@@ -20,6 +20,25 @@ function event(type: CalendarEvent["type"], date: string, title: string): Calend
 }
 
 describe("YearCalendarView", () => {
+	it("keeps all timeframe tabs visible in a full-width mobile row", () => {
+		render(
+			<YearCalendarView
+				events={[]}
+				year={2026}
+				viewMode="year"
+				onYearChange={vi.fn()}
+				onViewModeChange={vi.fn()}
+				timeZone="UTC"
+			/>,
+		);
+
+		const tabs = screen.getByRole("tab", { name: "Day" }).closest('[data-slot="tabs"]');
+		const tabsList = tabs?.querySelector('[data-slot="tabs-list"]');
+
+		expect(tabs?.className).toContain("w-full");
+		expect(tabsList?.className).toContain("grid-cols-4");
+	});
+
 	it("uses the employee timezone for timed event keys and logical keys for all-day events", () => {
 		const events = [
 			event("work_period", "2026-06-01T00:00:00.000Z", "Timed"),

@@ -86,7 +86,8 @@ vi.mock("@/db", () => ({
 	},
 }));
 
-const { getPrincipalContext } = await import("./auth-helpers");
+const { getPrincipalContext, getSettingsAccessInputForUser, isOrgAdminCasl } =
+	await import("./auth-helpers");
 
 describe("getAuthContext", () => {
 	beforeEach(() => {
@@ -133,9 +134,7 @@ describe("getAuthContext", () => {
 			source.indexOf("export async function getSettingsAccessInputForUser"),
 			source.indexOf("export async function getSettingsAccessTierForUser"),
 		);
-		expect(settingsAccessBody).toContain(
-			"employeeRole: membershipRecord ? (employeeRecord?.role ?? null) : null",
-		);
+		expect(settingsAccessBody).toContain("membershipRecord && !employeeIsInactive");
 	});
 });
 
@@ -214,5 +213,118 @@ describe("getPrincipalContext", () => {
 		expect(principal?.employee).toBeNull();
 		expect(principal?.permissions.orgWide).toBeNull();
 		expect(principal?.customRoles).toEqual([]);
+	});
+});
+
+describe("getSettingsAccessInputForUser", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockState.selectResults = [];
+	});
+
+	it("queries the employee without an active filter so inactivity remains explicit", async () => {
+		const source = readFileSync(
+			fileURLToPath(new URL("./auth-helpers.ts", import.meta.url)),
+			"utf8",
+		);
+		const body = source.slice(
+			source.indexOf("export async function getSettingsAccessInputForUser"),
+			source.indexOf("export async function getSettingsAccessTierForUser"),
+		);
+
+		expect(body).toContain("isActive: employee.isActive");
+		expect(body).not.toContain("eq(employee.isActive, true)");
+	});
+
+	it.each(["owner", "admin"])(
+		"preserves approved %s bootstrap access when no employee exists",
+		async (role) => {
+			mockState.selectResults = [[{ role }], []];
+
+			await expect(getSettingsAccessInputForUser("user-1", "org-1")).resolves.toEqual({
+				activeOrganizationId: "org-1",
+				membershipRole: role,
+				employeeRole: null,
+			});
+		},
+	);
+
+	it.each(["pending", "rejected"])(
+		"does not expose org-admin access for %s membership",
+		async () => {
+			mockState.selectResults = [[], [{ role: "admin", isActive: true }]];
+
+			await expect(getSettingsAccessInputForUser("user-1", "org-1")).resolves.toEqual({
+				activeOrganizationId: "org-1",
+				membershipRole: null,
+				employeeRole: null,
+			});
+		},
+	);
+
+	it("suppresses membership and employee roles for an explicitly inactive employee", async () => {
+		mockState.selectResults = [
+			[{ role: "owner" }],
+			[{ role: "admin", isActive: false }],
+		];
+
+		await expect(getSettingsAccessInputForUser("user-1", "org-1")).resolves.toEqual({
+			activeOrganizationId: "org-1",
+			membershipRole: null,
+			employeeRole: null,
+		});
+	});
+
+	it("preserves approved membership and active manager access", async () => {
+		mockState.selectResults = [
+			[{ role: "member" }],
+			[{ role: "manager", isActive: true }],
+		];
+
+		await expect(getSettingsAccessInputForUser("user-1", "org-1")).resolves.toEqual({
+			activeOrganizationId: "org-1",
+			membershipRole: "member",
+			employeeRole: "manager",
+		});
+	});
+});
+
+describe("isOrgAdminCasl explicit organization suspension", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockState.selectResults = [];
+	});
+
+	it.each([
+		["scheduled export", null],
+		["payroll export", "org-other"],
+		["audit export", null],
+	] as const)(
+		"denies an inactive approved admin for the %s caller when the active organization is %s",
+		async (_caller, activeOrganizationId) => {
+			mockState.getSession.mockResolvedValue({
+				user: { id: "user-1", role: "user" },
+				session: { activeOrganizationId },
+			});
+			mockState.selectResults = [
+				[{ role: "admin" }],
+				[{ isActive: false }],
+			];
+
+			await expect(isOrgAdminCasl("org-1")).resolves.toBe(false);
+		},
+	);
+
+	it.each([
+		["an active employee", [{ isActive: true }]],
+		["a bootstrap admin without an employee", []],
+	] as const)("allows approved admin access with %s", async (_case, employeeRows) => {
+		mockState.getSession.mockResolvedValue({
+			user: { id: "user-1", role: "user" },
+			session: { activeOrganizationId: "org-other" },
+		});
+		mockState.selectResults = [[{ role: "member,admin" }], [...employeeRows]];
+
+		await expect(isOrgAdminCasl("org-1")).resolves.toBe(true);
 	});
 });

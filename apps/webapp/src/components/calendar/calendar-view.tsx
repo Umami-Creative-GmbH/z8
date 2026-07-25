@@ -7,12 +7,15 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import type { SelectableEmployee } from "@/components/employee-select/types";
-import { useTimeFormat } from "@/components/providers/user-preferences-provider";
+import {
+	useTimeFormat,
+	useWeekStartDay,
+} from "@/components/providers/user-preferences-provider";
 import type { CalendarFilters } from "@/hooks/use-calendar-data";
 import { useCalendarData } from "@/hooks/use-calendar-data";
 import { useOrganization } from "@/hooks/use-organization";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { todayCalendarDateKey } from "@/lib/calendar/date-keys";
+import { calendarWeekDateKeyRange, todayCalendarDateKey } from "@/lib/calendar/date-keys";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { buildDailyWorkHoursSummaries } from "@/lib/calendar/work-hours-summary";
 import { useRouter } from "@/navigation";
@@ -80,6 +83,7 @@ function CalendarViewContent({
 	const router = useRouter();
 	const locale = useLocale();
 	const timeFormat = useTimeFormat();
+	const weekStartDay = useWeekStartDay();
 	const { t } = useTranslate();
 	const { isManagerOrAbove } = useOrganization();
 	const initialEmployeeId = initialSelectedEmployeeId ?? currentEmployeeId ?? null;
@@ -105,6 +109,7 @@ function CalendarViewContent({
 	const [currentDateKey, setCurrentDateKey] = useState(
 		() => initialDateKey ?? todayCalendarDateKey(initialCalendarTimezone),
 	);
+	const visibleDateRange = calendarWeekDateKeyRange(currentDateKey, weekStartDay);
 	const currentCalendarDate = Temporal.PlainDate.from(currentDateKey);
 	const currentYear = currentCalendarDate.year;
 	const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -160,6 +165,7 @@ function CalendarViewContent({
 		year: currentYear,
 		filters: effectiveFilters,
 		fullYear: viewMode === "year",
+		dateRange: viewMode === "week" ? visibleDateRange : undefined,
 	});
 	const calendarTimeZone = calendarTimezone ?? initialCalendarTimezone;
 	const calendarDisplayContext = {
@@ -182,10 +188,15 @@ function CalendarViewContent({
 
 	// Handle date range change from schedule-x
 	const handleRangeChange = (range: { startDateKey: string; endDateKey: string }) => {
-		const start = Temporal.PlainDate.from(range.startDateKey);
-		const end = Temporal.PlainDate.from(range.endDateKey);
-		const midpoint = start.add({ days: Math.floor(start.until(end).days / 2) });
-		setCurrentDateKey(midpoint.toString());
+		try {
+			const start = Temporal.PlainDate.from(range.startDateKey);
+			const end = Temporal.PlainDate.from(range.endDateKey);
+			if (start.until(end).days !== 6) return;
+
+			setCurrentDateKey(start.add({ days: 3 }).toString());
+		} catch {
+			// Ignore malformed or non-week ranges reported while Schedule-X changes views.
+		}
 	};
 
 	const handleTimeRangeSelect = (range: { start: Date; end: Date }) => {

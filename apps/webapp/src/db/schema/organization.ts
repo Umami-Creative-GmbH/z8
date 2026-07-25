@@ -118,7 +118,10 @@ export const locationSubarea = pgTable(
 	(table) => [
 		index("locationSubarea_locationId_idx").on(table.locationId),
 		index("locationSubarea_isActive_idx").on(table.isActive),
-		uniqueIndex("locationSubarea_location_name_idx").on(table.locationId, table.name),
+		uniqueIndex("locationSubarea_location_name_idx").on(
+			table.locationId,
+			table.name,
+		),
 	],
 );
 
@@ -170,6 +173,10 @@ export const employee = pgTable(
 		index("employee_organizationId_idx").on(table.organizationId),
 		index("employee_teamId_idx").on(table.teamId),
 		index("employee_userId_isActive_idx").on(table.userId, table.isActive),
+		uniqueIndex("employee_organizationId_userId_unique_idx").on(
+			table.organizationId,
+			table.userId,
+		),
 		unique("employee_id_organizationId_idx").on(table.id, table.organizationId),
 	],
 );
@@ -239,8 +246,14 @@ export const employeeManagers = pgTable(
 		index("employeeManagers_employeeId_idx").on(table.employeeId),
 		index("employeeManagers_managerId_idx").on(table.managerId),
 		// Prevent duplicate manager assignments
-		uniqueIndex("employeeManagers_unique_idx").on(table.employeeId, table.managerId),
-		index("employeeManagers_managerId_isPrimary_idx").on(table.managerId, table.isPrimary),
+		uniqueIndex("employeeManagers_unique_idx").on(
+			table.employeeId,
+			table.managerId,
+		),
+		index("employeeManagers_managerId_isPrimary_idx").on(
+			table.managerId,
+			table.isPrimary,
+		),
 	],
 );
 
@@ -260,7 +273,10 @@ export const teamMembership = pgTable(
 		index("teamMembership_organizationId_idx").on(table.organizationId),
 		index("teamMembership_teamId_idx").on(table.teamId),
 		index("teamMembership_employeeId_idx").on(table.employeeId),
-		uniqueIndex("teamMembership_team_employee_idx").on(table.teamId, table.employeeId),
+		uniqueIndex("teamMembership_team_employee_idx").on(
+			table.teamId,
+			table.employeeId,
+		),
 		foreignKey({
 			columns: [table.teamId, table.organizationId],
 			foreignColumns: [team.id, team.organizationId],
@@ -296,7 +312,10 @@ export const locationEmployee = pgTable(
 	(table) => [
 		index("locationEmployee_locationId_idx").on(table.locationId),
 		index("locationEmployee_employeeId_idx").on(table.employeeId),
-		uniqueIndex("locationEmployee_unique_idx").on(table.locationId, table.employeeId),
+		uniqueIndex("locationEmployee_unique_idx").on(
+			table.locationId,
+			table.employeeId,
+		),
 	],
 );
 
@@ -320,7 +339,10 @@ export const subareaEmployee = pgTable(
 	(table) => [
 		index("subareaEmployee_subareaId_idx").on(table.subareaId),
 		index("subareaEmployee_employeeId_idx").on(table.employeeId),
-		uniqueIndex("subareaEmployee_unique_idx").on(table.subareaId, table.employeeId),
+		uniqueIndex("subareaEmployee_unique_idx").on(
+			table.subareaId,
+			table.employeeId,
+		),
 	],
 );
 
@@ -343,9 +365,15 @@ export const teamPermissions = pgTable(
 
 		// Four permission flags
 		canCreateTeams: boolean("can_create_teams").default(false).notNull(),
-		canManageTeamMembers: boolean("can_manage_team_members").default(false).notNull(),
-		canManageTeamSettings: boolean("can_manage_team_settings").default(false).notNull(),
-		canApproveTeamRequests: boolean("can_approve_team_requests").default(false).notNull(),
+		canManageTeamMembers: boolean("can_manage_team_members")
+			.default(false)
+			.notNull(),
+		canManageTeamSettings: boolean("can_manage_team_settings")
+			.default(false)
+			.notNull(),
+		canApproveTeamRequests: boolean("can_approve_team_requests")
+			.default(false)
+			.notNull(),
 
 		grantedBy: uuid("granted_by")
 			.notNull()

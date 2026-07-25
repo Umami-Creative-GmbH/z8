@@ -11,6 +11,9 @@ import {
 	memberApproval,
 	team,
 } from "@/db/schema";
+import { acquireEmployeeIdentityLock } from "@/lib/auth/employee-identity-lock";
+import { normalizeInvitationEmail } from "@/lib/auth/employee-invitation-draft";
+import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import { assertEnterpriseIdentityInviteCodeRedemptionAllowed } from "@/lib/enterprise-identity/enforcement";
 import {
@@ -103,15 +106,26 @@ export class InviteCodeService extends Context.Tag("InviteCodeService")<
 
 		readonly update: (
 			id: string,
+			organizationId: string,
 			input: UpdateInviteCodeInput,
-		) => Effect.Effect<InviteCode, NotFoundError | ValidationError | DatabaseError>;
+		) => Effect.Effect<
+			InviteCode,
+			NotFoundError | ValidationError | DatabaseError
+		>;
 
 		readonly delete: (
 			id: string,
+			organizationId: string,
 			userId: string,
-		) => Effect.Effect<void, NotFoundError | AuthorizationError | DatabaseError>;
+		) => Effect.Effect<
+			void,
+			NotFoundError | AuthorizationError | DatabaseError
+		>;
 
-		readonly getById: (id: string) => Effect.Effect<InviteCodeWithRelations | null, DatabaseError>;
+		readonly getById: (
+			id: string,
+			organizationId: string,
+		) => Effect.Effect<InviteCodeWithRelations | null, DatabaseError>;
 
 		readonly getByCode: (
 			organizationId: string,
@@ -123,15 +137,21 @@ export class InviteCodeService extends Context.Tag("InviteCodeService")<
 		) => Effect.Effect<InviteCodeWithRelations[], DatabaseError>;
 
 		// Validation and usage
-		readonly validateCode: (code: string) => Effect.Effect<ValidateInviteCodeResult, DatabaseError>;
+		readonly validateCode: (
+			code: string,
+		) => Effect.Effect<ValidateInviteCodeResult, DatabaseError>;
 
 		readonly useCode: (
 			input: UseInviteCodeInput,
-		) => Effect.Effect<UseInviteCodeResult, ValidationError | NotFoundError | DatabaseError>;
+		) => Effect.Effect<
+			UseInviteCodeResult,
+			ValidationError | NotFoundError | DatabaseError
+		>;
 
 		// Stats
 		readonly getUsageStats: (
 			inviteCodeId: string,
+			organizationId: string,
 		) => Effect.Effect<
 			{ total: number; pending: number; approved: number; rejected: number },
 			NotFoundError | DatabaseError
@@ -148,11 +168,18 @@ export class InviteCodeService extends Context.Tag("InviteCodeService")<
 
 		readonly processPendingInviteCode: (
 			userId: string,
-		) => Effect.Effect<UseInviteCodeResult | null, ValidationError | NotFoundError | DatabaseError>;
+		) => Effect.Effect<
+			UseInviteCodeResult | null,
+			ValidationError | NotFoundError | DatabaseError
+		>;
 
-		readonly clearPendingInviteCode: (userId: string) => Effect.Effect<void, DatabaseError>;
+		readonly clearPendingInviteCode: (
+			userId: string,
+		) => Effect.Effect<void, DatabaseError>;
 
-		readonly getPendingInviteCode: (userId: string) => Effect.Effect<string | null, DatabaseError>;
+		readonly getPendingInviteCode: (
+			userId: string,
+		) => Effect.Effect<string | null, DatabaseError>;
 	}
 >() {}
 
@@ -180,11 +207,16 @@ export const InviteCodeServiceLive = Layer.effect(
 		};
 
 		// Helper to check if code is expired or exhausted
-		const isCodeUsable = (inviteCodeRecord: InviteCode): { usable: boolean; reason?: string } => {
+		const isCodeUsable = (
+			inviteCodeRecord: InviteCode,
+		): { usable: boolean; reason?: string } => {
 			if (inviteCodeRecord.status !== "active") {
 				return { usable: false, reason: `Code is ${inviteCodeRecord.status}` };
 			}
-			if (inviteCodeRecord.expiresAt && inviteCodeRecord.expiresAt < new Date()) {
+			if (
+				inviteCodeRecord.expiresAt &&
+				inviteCodeRecord.expiresAt < new Date()
+			) {
 				return { usable: false, reason: "Code has expired" };
 			}
 			if (
@@ -196,7 +228,10 @@ export const InviteCodeServiceLive = Layer.effect(
 			return { usable: true };
 		};
 
-		type RedemptionDb = Pick<typeof dbService.db, "query" | "insert" | "update">;
+		type RedemptionDb = Pick<
+			typeof dbService.db,
+			"execute" | "query" | "insert" | "update"
+		>;
 
 		const resolveInviteCodeTargetTeamId = async (
 			dbClient: RedemptionDb,
@@ -206,7 +241,10 @@ export const InviteCodeServiceLive = Layer.effect(
 			if (!targetTeamId) return null;
 
 			const targetTeam = await dbClient.query.team.findFirst({
-				where: and(eq(team.id, targetTeamId), eq(team.organizationId, organizationId)),
+				where: and(
+					eq(team.id, targetTeamId),
+					eq(team.organizationId, organizationId),
+				),
 			});
 
 			return targetTeam?.id ?? null;
@@ -216,6 +254,7 @@ export const InviteCodeServiceLive = Layer.effect(
 			dbClient: RedemptionDb,
 			inviteCodeRecord: InviteCode,
 			userId: string,
+			memberRole: unknown,
 		) => {
 			const existingEmployee = await dbClient.query.employee.findFirst({
 				where: and(
@@ -224,22 +263,125 @@ export const InviteCodeServiceLive = Layer.effect(
 				),
 			});
 
-			if (existingEmployee) return;
-
 			const targetTeamId = await resolveInviteCodeTargetTeamId(
 				dbClient,
 				inviteCodeRecord.organizationId,
 				inviteCodeRecord.defaultTeamId,
 			);
 
+			if (existingEmployee) {
+				if (!existingEmployee.isActive) {
+					await dbClient
+						.update(employee)
+						.set({
+							isActive: true,
+							...(targetTeamId ? { teamId: targetTeamId } : {}),
+						})
+						.where(
+							and(
+								eq(employee.id, existingEmployee.id),
+								eq(employee.organizationId, inviteCodeRecord.organizationId),
+							),
+						);
+				}
+				return;
+			}
+
 			await dbClient.insert(employee).values({
 				userId,
 				organizationId: inviteCodeRecord.organizationId,
 				teamId: targetTeamId,
-				role: "employee",
+				role:
+					hasOrganizationRole(memberRole, "owner") ||
+					hasOrganizationRole(memberRole, "admin")
+						? "admin"
+						: "employee",
 				isActive: true,
 			});
 		};
+
+		const redeemInviteCodeInTransaction = async (
+			inviteCodeRecord: InviteCode,
+			input: {
+				userId: string;
+				ipAddress?: string | null;
+				userAgent?: string | null;
+			},
+		) =>
+			dbService.db.transaction(async (tx) => {
+				const redemptionDb = tx as RedemptionDb;
+				const targetUser = await redemptionDb.query.user.findFirst({
+					where: eq(user.id, input.userId),
+					columns: { email: true },
+				});
+				if (!targetUser) throw new Error("Invite code user not found");
+
+				await acquireEmployeeIdentityLock(redemptionDb, {
+					organizationId: inviteCodeRecord.organizationId,
+					normalizedEmail: normalizeInvitationEmail(targetUser.email),
+				});
+
+				const existingMember = await redemptionDb.query.member.findFirst({
+					where: and(
+						eq(member.userId, input.userId),
+						eq(member.organizationId, inviteCodeRecord.organizationId),
+					),
+				});
+				if (existingMember) {
+					if (
+						!inviteCodeRecord.requiresApproval &&
+						existingMember.status === "approved"
+					) {
+						await provisionEmployeeForInviteCode(
+							redemptionDb,
+							inviteCodeRecord,
+							input.userId,
+							existingMember.role,
+						);
+					}
+					return { member: existingMember, created: false };
+				}
+
+				const memberStatus = inviteCodeRecord.requiresApproval
+					? "pending"
+					: "approved";
+				const [createdMember] = await redemptionDb
+					.insert(member)
+					.values({
+						id: nanoid(),
+						userId: input.userId,
+						organizationId: inviteCodeRecord.organizationId,
+						role: "member",
+						status: memberStatus,
+						inviteCodeId: inviteCodeRecord.id,
+						createdAt: new Date(),
+					})
+					.returning();
+
+				await redemptionDb.insert(inviteCodeUsage).values({
+					inviteCodeId: inviteCodeRecord.id,
+					userId: input.userId,
+					memberId: createdMember.id,
+					ipAddress: input.ipAddress,
+					userAgent: input.userAgent,
+				});
+
+				if (!inviteCodeRecord.requiresApproval) {
+					await provisionEmployeeForInviteCode(
+						redemptionDb,
+						inviteCodeRecord,
+						input.userId,
+						createdMember.role,
+					);
+				}
+
+				await redemptionDb
+					.update(inviteCode)
+					.set({ currentUses: sql`${inviteCode.currentUses} + 1` })
+					.where(eq(inviteCode.id, inviteCodeRecord.id));
+
+				return { member: createdMember, created: true };
+			});
 
 		return InviteCodeService.of({
 			create: (input) =>
@@ -275,7 +417,8 @@ export const InviteCodeServiceLive = Layer.effect(
 						yield* _(
 							Effect.fail(
 								new ValidationError({
-									message: "A code with this name already exists for this organization.",
+									message:
+										"A code with this name already exists for this organization.",
 									field: "code",
 								}),
 							),
@@ -300,7 +443,8 @@ export const InviteCodeServiceLive = Layer.effect(
 							yield* _(
 								Effect.fail(
 									new ValidationError({
-										message: "Invalid default team. Team not found in this organization.",
+										message:
+											"Invalid default team. Team not found in this organization.",
 										field: "defaultTeamId",
 									}),
 								),
@@ -332,13 +476,16 @@ export const InviteCodeServiceLive = Layer.effect(
 					return createdCode;
 				}),
 
-			update: (id, input) =>
+			update: (id, organizationId, input) =>
 				Effect.gen(function* (_) {
 					// Verify code exists
 					const existing = yield* _(
 						dbService.query("getInviteCodeById", async () => {
 							return await dbService.db.query.inviteCode.findFirst({
-								where: eq(inviteCode.id, id),
+								where: and(
+									eq(inviteCode.id, id),
+									eq(inviteCode.organizationId, organizationId),
+								),
 							});
 						}),
 					);
@@ -358,7 +505,10 @@ export const InviteCodeServiceLive = Layer.effect(
 					const existingInviteCode = existing;
 
 					// Validate team if changing
-					if (input.defaultTeamId !== undefined && input.defaultTeamId !== null) {
+					if (
+						input.defaultTeamId !== undefined &&
+						input.defaultTeamId !== null
+					) {
 						const defaultTeamId = input.defaultTeamId;
 						const teamRecord = yield* _(
 							dbService.query("validateTeam", async () => {
@@ -375,7 +525,8 @@ export const InviteCodeServiceLive = Layer.effect(
 							yield* _(
 								Effect.fail(
 									new ValidationError({
-										message: "Invalid default team. Team not found in this organization.",
+										message:
+											"Invalid default team. Team not found in this organization.",
 										field: "defaultTeamId",
 									}),
 								),
@@ -407,7 +558,12 @@ export const InviteCodeServiceLive = Layer.effect(
 									...(input.status !== undefined && { status: input.status }),
 									updatedBy: input.updatedBy,
 								})
-								.where(eq(inviteCode.id, id))
+								.where(
+									and(
+										eq(inviteCode.id, id),
+										eq(inviteCode.organizationId, organizationId),
+									),
+								)
 								.returning();
 							return result;
 						}),
@@ -416,12 +572,15 @@ export const InviteCodeServiceLive = Layer.effect(
 					return updatedCode;
 				}),
 
-			delete: (id, userId) =>
+			delete: (id, organizationId, userId) =>
 				Effect.gen(function* (_) {
 					const existing = yield* _(
 						dbService.query("getInviteCodeById", async () => {
 							return await dbService.db.query.inviteCode.findFirst({
-								where: eq(inviteCode.id, id),
+								where: and(
+									eq(inviteCode.id, id),
+									eq(inviteCode.organizationId, organizationId),
+								),
 							});
 						}),
 					);
@@ -447,17 +606,25 @@ export const InviteCodeServiceLive = Layer.effect(
 									status: "archived",
 									updatedBy: userId,
 								})
-								.where(eq(inviteCode.id, id));
+								.where(
+									and(
+										eq(inviteCode.id, id),
+										eq(inviteCode.organizationId, organizationId),
+									),
+								);
 						}),
 					);
 				}),
 
-			getById: (id) =>
+			getById: (id, organizationId) =>
 				Effect.gen(function* (_) {
 					const result = yield* _(
 						dbService.query("getInviteCodeById", async () => {
 							return await dbService.db.query.inviteCode.findFirst({
-								where: eq(inviteCode.id, id),
+								where: and(
+									eq(inviteCode.id, id),
+									eq(inviteCode.organizationId, organizationId),
+								),
 								with: {
 									organization: {
 										columns: {
@@ -515,14 +682,21 @@ export const InviteCodeServiceLive = Layer.effect(
 				Effect.gen(function* (_) {
 					const results = yield* _(
 						dbService.query("listInviteCodes", async () => {
-							const baseCondition = eq(inviteCode.organizationId, query.organizationId);
+							const baseCondition = eq(
+								inviteCode.organizationId,
+								query.organizationId,
+							);
 							const whereCondition: SQL = query.status
 								? ((and(baseCondition, eq(inviteCode.status, query.status)) ??
 										baseCondition) as SQL)
 								: !query.includeArchived
 									? ((and(
 											baseCondition,
-											inArray(inviteCode.status, ["active", "paused", "expired"]),
+											inArray(inviteCode.status, [
+												"active",
+												"paused",
+												"expired",
+											]),
 										) ?? baseCondition) as SQL)
 									: baseCondition;
 
@@ -658,85 +832,20 @@ export const InviteCodeServiceLive = Layer.effect(
 						}),
 					);
 
-					// Check if user is already a member of this organization
-					const existingMember = yield* _(
-						dbService.query("checkExistingMember", async () => {
-							return await dbService.db.query.member.findFirst({
-								where: and(
-									eq(member.userId, input.userId),
-									eq(member.organizationId, inviteCodeRecord.organizationId),
-								),
-							});
-						}),
-					);
-
-					if (existingMember) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "You are already a member of this organization",
-									field: "userId",
-								}),
-							),
-						);
-					}
-
-					// Create member with appropriate status
-					const memberStatus = inviteCodeRecord.requiresApproval ? "pending" : "approved";
-
-					const newMember = yield* _(
+					const redemption = yield* _(
 						dbService.query("redeemInviteCode", async () => {
-							return await dbService.db.transaction(async (tx) => {
-								const redemptionDb = tx as RedemptionDb;
-								const memberId = nanoid();
-
-								const [createdMember] = await redemptionDb
-									.insert(member)
-									.values({
-										id: memberId,
-										userId: input.userId,
-										organizationId: inviteCodeRecord.organizationId,
-										role: "member",
-										status: memberStatus,
-										inviteCodeId: inviteCodeRecord.id,
-										createdAt: new Date(),
-									})
-									.returning();
-
-								await redemptionDb.insert(inviteCodeUsage).values({
-									inviteCodeId: inviteCodeRecord.id,
-									userId: input.userId,
-									memberId: createdMember.id,
-									ipAddress: input.ipAddress,
-									userAgent: input.userAgent,
-								});
-
-								if (!inviteCodeRecord.requiresApproval) {
-									await provisionEmployeeForInviteCode(
-										redemptionDb,
-										inviteCodeRecord,
-										input.userId,
-									);
-								}
-
-								await redemptionDb
-									.update(inviteCode)
-									.set({
-										currentUses: sql`${inviteCode.currentUses} + 1`,
-									})
-									.where(eq(inviteCode.id, inviteCodeRecord.id));
-
-								return createdMember;
-							});
+							return await redeemInviteCodeInTransaction(inviteCodeRecord, input);
 						}),
 					);
+					const redemptionStatus =
+						redemption.member.status === "pending" ? "pending" : "approved";
 
-					if (memberStatus === "approved") {
+					if (redemption.created && redemptionStatus === "approved") {
 						yield* _(
 							Effect.promise(() =>
 								syncBillingSeatsAfterMemberChange({
 									organizationId: inviteCodeRecord.organizationId,
-									memberId: newMember.id,
+									memberId: redemption.member.id,
 									userId: input.userId,
 									change: "added",
 								}),
@@ -746,22 +855,25 @@ export const InviteCodeServiceLive = Layer.effect(
 
 					return {
 						success: true,
-						memberId: newMember.id,
-						status: memberStatus as "pending" | "approved",
+						memberId: redemption.member.id,
+						status: redemptionStatus,
 						organizationId: inviteCodeRecord.organizationId,
 						organizationName:
-							(inviteCodeRecord as InviteCodeWithRelations).organization?.name ||
-							"Unknown Organization",
+							(inviteCodeRecord as InviteCodeWithRelations).organization
+								?.name || "Unknown Organization",
 					};
 				}),
 
-			getUsageStats: (inviteCodeId) =>
+			getUsageStats: (inviteCodeId, organizationId) =>
 				Effect.gen(function* (_) {
 					// Verify code exists
 					const existing = yield* _(
 						dbService.query("getInviteCodeById", async () => {
 							return await dbService.db.query.inviteCode.findFirst({
-								where: eq(inviteCode.id, inviteCodeId),
+								where: and(
+									eq(inviteCode.id, inviteCodeId),
+									eq(inviteCode.organizationId, organizationId),
+								),
 							});
 						}),
 					);
@@ -791,11 +903,14 @@ export const InviteCodeServiceLive = Layer.effect(
 								return { total: 0, pending: 0, approved: 0, rejected: 0 };
 							}
 
-							const approvals = await dbService.db.query.memberApproval.findMany({
-								where: sql`${memberApproval.memberId} = ANY(${memberIds})`,
-							});
+							const approvals =
+								await dbService.db.query.memberApproval.findMany({
+									where: sql`${memberApproval.memberId} = ANY(${memberIds})`,
+								});
 
-							const approvalMap = new Map(approvals.map((a) => [a.memberId, a.status]));
+							const approvalMap = new Map(
+								approvals.map((a) => [a.memberId, a.status]),
+							);
 
 							let pending = 0;
 							let approved = 0;
@@ -944,81 +1059,20 @@ export const InviteCodeServiceLive = Layer.effect(
 						}),
 					);
 
-					// Check if user is already a member of this organization
-					const existingMember = yield* _(
-						dbService.query("checkExistingMember", async () => {
-							return await dbService.db.query.member.findFirst({
-								where: and(
-									eq(member.userId, userId),
-									eq(member.organizationId, inviteCodeRecord.organizationId),
-								),
-							});
-						}),
-					);
-
-					if (existingMember) {
-						// User is already a member, nothing to do
-						return {
-							success: true,
-							memberId: existingMember.id,
-							status: "approved" as const,
-							organizationId: inviteCodeRecord.organizationId,
-							organizationName:
-								(inviteCodeRecord as InviteCodeWithRelations).organization?.name ||
-								"Unknown Organization",
-						};
-					}
-
-					// Create member with appropriate status
-					const memberStatus = inviteCodeRecord.requiresApproval ? "pending" : "approved";
-
-					const newMember = yield* _(
+					const redemption = yield* _(
 						dbService.query("redeemPendingInviteCode", async () => {
-							return await dbService.db.transaction(async (tx) => {
-								const redemptionDb = tx as RedemptionDb;
-								const memberId = nanoid();
-
-								const [createdMember] = await redemptionDb
-									.insert(member)
-									.values({
-										id: memberId,
-										userId,
-										organizationId: inviteCodeRecord.organizationId,
-										role: "member",
-										status: memberStatus,
-										inviteCodeId: inviteCodeRecord.id,
-										createdAt: new Date(),
-									})
-									.returning();
-
-								await redemptionDb.insert(inviteCodeUsage).values({
-									inviteCodeId: inviteCodeRecord.id,
-									userId,
-									memberId: createdMember.id,
-								});
-
-								if (!inviteCodeRecord.requiresApproval) {
-									await provisionEmployeeForInviteCode(redemptionDb, inviteCodeRecord, userId);
-								}
-
-								await redemptionDb
-									.update(inviteCode)
-									.set({
-										currentUses: sql`${inviteCode.currentUses} + 1`,
-									})
-									.where(eq(inviteCode.id, inviteCodeRecord.id));
-
-								return createdMember;
-							});
+							return await redeemInviteCodeInTransaction(inviteCodeRecord, { userId });
 						}),
 					);
+					const redemptionStatus =
+						redemption.member.status === "pending" ? "pending" : "approved";
 
-					if (memberStatus === "approved") {
+					if (redemption.created && redemptionStatus === "approved") {
 						yield* _(
 							Effect.promise(() =>
 								syncBillingSeatsAfterMemberChange({
 									organizationId: inviteCodeRecord.organizationId,
-									memberId: newMember.id,
+									memberId: redemption.member.id,
 									userId,
 									change: "added",
 								}),
@@ -1028,12 +1082,12 @@ export const InviteCodeServiceLive = Layer.effect(
 
 					return {
 						success: true,
-						memberId: newMember.id,
-						status: memberStatus as "pending" | "approved",
+						memberId: redemption.member.id,
+						status: redemptionStatus,
 						organizationId: inviteCodeRecord.organizationId,
 						organizationName:
-							(inviteCodeRecord as InviteCodeWithRelations).organization?.name ||
-							"Unknown Organization",
+							(inviteCodeRecord as InviteCodeWithRelations).organization
+								?.name || "Unknown Organization",
 					};
 				}),
 

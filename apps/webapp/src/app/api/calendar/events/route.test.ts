@@ -506,4 +506,106 @@ describe("GET /api/calendar/events", () => {
 		]);
 		expect(body.dailyActualMinutes).toEqual({ "2026-12-31": 60 });
 	});
+
+	it("merges cross-month range events and actual minutes using employee-local requirement boundaries", async () => {
+		const duplicatePeriod = {
+			id: "work-period-duplicate",
+			type: "work_period" as const,
+			date: new Date("2026-08-31T08:00:00.000Z"),
+			endDate: new Date("2026-08-31T08:30:00.000Z"),
+			title: "Duplicate period",
+			color: "#10b981",
+			metadata: { durationMinutes: 30, employeeName: "Ada" },
+		};
+		const septemberPeriod = {
+			id: "work-period-september",
+			type: "work_period" as const,
+			date: new Date("2026-09-01T08:00:00.000Z"),
+			endDate: new Date("2026-09-01T09:00:00.000Z"),
+			title: "September period",
+			color: "#10b981",
+			metadata: { durationMinutes: 60, employeeName: "Ada" },
+		};
+		mockState.getWorkPeriodsForMonth.mockImplementation(
+			async (month: number) => {
+				if (month === 7) return [duplicatePeriod];
+				if (month === 8) return [duplicatePeriod, septemberPeriod];
+				return [];
+			},
+		);
+
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&year=2026&rangeStart=2026-08-31&rangeEnd=2026-09-06&showWorkPeriods=true",
+			),
+		);
+		const body = getResponsePayload(await response.json());
+
+		expect(response.status).toBe(200);
+		expect(mockState.getWorkPeriodsForMonth).toHaveBeenCalledWith(
+			7,
+			2026,
+			{ organizationId: "org-1", employeeId: "employee-1" },
+			"Europe/Berlin",
+		);
+		expect(mockState.getWorkPeriodsForMonth).toHaveBeenCalledWith(
+			8,
+			2026,
+			{ organizationId: "org-1", employeeId: "employee-1" },
+			"Europe/Berlin",
+		);
+		expect(body.total).toBe(2);
+		expect(body.dailyActualMinutes).toEqual({
+			"2026-08-31": 30,
+			"2026-09-01": 60,
+		});
+		expect(mockState.getDailyWorkRequirementsForEmployee).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			startDate: new Date("2026-08-30T22:00:00.000Z"),
+			endDate: new Date("2026-09-06T21:59:59.999Z"),
+			timezone: "Europe/Berlin",
+		});
+	});
+
+	it("loads each month touched by a cross-year range", async () => {
+		const response = await GET(
+			createRequest(
+				"https://app.example.com/api/calendar/events?organizationId=org-1&year=2026&rangeStart=2026-12-28&rangeEnd=2027-01-03&showWorkPeriods=true",
+			),
+		);
+
+		expect(response.status).toBe(200);
+		expect(mockState.getWorkPeriodsForMonth).toHaveBeenCalledWith(
+			11,
+			2026,
+			{ organizationId: "org-1", employeeId: "employee-1" },
+			"Europe/Berlin",
+		);
+		expect(mockState.getWorkPeriodsForMonth).toHaveBeenCalledWith(
+			0,
+			2027,
+			{ organizationId: "org-1", employeeId: "employee-1" },
+			"Europe/Berlin",
+		);
+	});
+
+	it.each([
+		"rangeStart=2026-08-31",
+		"rangeStart=2026-02-30&rangeEnd=2026-03-01",
+		"rangeStart=2026-03-01&rangeEnd=2026-02-30",
+		"rangeStart=2026-09-06&rangeEnd=2026-08-31",
+		"rangeStart=2026-08-31&rangeEnd=2026-09-07",
+	])("rejects invalid calendar range: %s", async (range) => {
+		const response = await GET(
+			createRequest(
+				`https://app.example.com/api/calendar/events?organizationId=org-1&year=2026&${range}&showWorkPeriods=true`,
+			),
+		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({
+			error: "Invalid calendar date range",
+		});
+	});
 });

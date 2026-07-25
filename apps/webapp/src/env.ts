@@ -65,6 +65,7 @@ const parsedEnv = createEnv({
 
 		// Worker / Jobs
 		ENABLE_CRON_JOBS: z.string().optional(),
+		TELEMETRY_ENABLED: z.enum(["true", "false"]).default("true"),
 		WORKER_CONCURRENCY: z.string().optional(),
 		CRON_SECRET: z.string().min(1).optional(),
 
@@ -221,6 +222,7 @@ const parsedEnv = createEnv({
 		S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS: process.env.S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS,
 
 		ENABLE_CRON_JOBS: process.env.ENABLE_CRON_JOBS,
+		TELEMETRY_ENABLED: process.env.TELEMETRY_ENABLED,
 		WORKER_CONCURRENCY: process.env.WORKER_CONCURRENCY,
 		CRON_SECRET: process.env.CRON_SECRET,
 		VAULT_ADDR: process.env.VAULT_ADDR,

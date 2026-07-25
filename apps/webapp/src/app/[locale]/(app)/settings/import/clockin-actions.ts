@@ -1,11 +1,12 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { runActiveOrganizationActionActorCheck } from "@/lib/auth/organization-action-authorization";
 import { requireUser } from "@/lib/auth-helpers";
 import { ClockinClient } from "@/lib/clockin/client";
 import type {
@@ -14,7 +15,9 @@ import type {
 	ClockinImportUserMapping,
 } from "@/lib/clockin/import-types";
 
-type ActionResult<T = void> = { success: true; data: T } | { success: false; error: string };
+type ActionResult<T = void> =
+	| { success: true; data: T }
+	| { success: false; error: string };
 
 export interface ClockinPreview {
 	employees: number;
@@ -38,16 +41,14 @@ export interface Z8EmployeeInfo {
 
 async function requireAdmin(organizationId: string) {
 	const authContext = await requireUser();
-	const memberRecord = await db.query.member.findFirst({
-		where: and(
-			eq(authSchema.member.userId, authContext.user.id),
-			eq(authSchema.member.organizationId, organizationId),
-		),
+	await runActiveOrganizationActionActorCheck({
+		userId: authContext.user.id,
+		organizationId,
+		requiredRole: "admin",
+		message: "Only active approved admins and owners can manage imports",
+		resource: "clockinImport",
+		action: "manage",
 	});
-
-	if (!memberRecord || (memberRecord.role !== "owner" && memberRecord.role !== "admin")) {
-		throw new Error("Unauthorized");
-	}
 
 	return authContext;
 }
@@ -98,7 +99,10 @@ export async function validateClockinCredentials(
 	} catch (error) {
 		return {
 			success: false,
-			error: error instanceof Error ? error.message : "Failed to validate Clockin credentials",
+			error:
+				error instanceof Error
+					? error.message
+					: "Failed to validate Clockin credentials",
 		};
 	}
 }
@@ -128,7 +132,10 @@ export async function fetchClockinEmployees(
 	} catch (error) {
 		return {
 			success: false,
-			error: error instanceof Error ? error.message : "Failed to fetch Clockin employees",
+			error:
+				error instanceof Error
+					? error.message
+					: "Failed to fetch Clockin employees",
 		};
 	}
 }
@@ -169,7 +176,8 @@ export async function fetchZ8Employees(
 	} catch (error) {
 		return {
 			success: false,
-			error: error instanceof Error ? error.message : "Failed to fetch employees",
+			error:
+				error instanceof Error ? error.message : "Failed to fetch employees",
 		};
 	}
 }
@@ -182,6 +190,7 @@ export async function importClockinData(
 ): Promise<ActionResult<ClockinImportResult>> {
 	return {
 		success: false,
-		error: "Direct Clockin imports are disabled. Start an import review scan instead.",
+		error:
+			"Direct Clockin imports are disabled. Start an import review scan instead.",
 	};
 }

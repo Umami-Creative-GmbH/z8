@@ -15,6 +15,7 @@ import {
 	workPolicy,
 } from "@/db/schema";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { runActiveOrganizationActionActorCheck } from "@/lib/auth/organization-action-authorization";
 import { requireUser } from "@/lib/auth-helpers";
 import { ClockodoClient } from "@/lib/clockodo/client";
 import type { ImportUserMapping } from "@/lib/clockodo/import-orchestrator";
@@ -65,16 +66,14 @@ export interface Z8EmployeeInfo {
 
 async function requireAdmin(organizationId: string) {
 	const authContext = await requireUser();
-	const memberRecord = await db.query.member.findFirst({
-		where: and(
-			eq(authSchema.member.userId, authContext.user.id),
-			eq(authSchema.member.organizationId, organizationId),
-		),
+	await runActiveOrganizationActionActorCheck({
+		userId: authContext.user.id,
+		organizationId,
+		requiredRole: "admin",
+		message: "Only active approved admins and owners can manage imports",
+		resource: "clockodoImport",
+		action: "manage",
 	});
-
-	if (!memberRecord || (memberRecord.role !== "owner" && memberRecord.role !== "admin")) {
-		throw new Error("Unauthorized");
-	}
 
 	return authContext;
 }

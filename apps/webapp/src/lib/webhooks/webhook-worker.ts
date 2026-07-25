@@ -24,9 +24,19 @@ const logger = createLogger("WebhookWorker");
 /**
  * Process a webhook delivery job
  */
-export async function processWebhookJob(job: Job<WebhookJobData>): Promise<JobResult> {
-	const { deliveryId, webhookEndpointId, url, payload, eventType, eventId, attemptNumber } =
-		job.data;
+export async function processWebhookJob(
+	job: Job<WebhookJobData>,
+): Promise<JobResult> {
+	const {
+		deliveryId,
+		webhookEndpointId,
+		organizationId,
+		url,
+		payload,
+		eventType,
+		eventId,
+		attemptNumber,
+	} = job.data;
 
 	logger.info(
 		{ jobId: job.id, deliveryId, webhookEndpointId, eventType, attemptNumber },
@@ -34,9 +44,12 @@ export async function processWebhookJob(job: Job<WebhookJobData>): Promise<JobRe
 	);
 
 	// Fetch webhook endpoint to get current secret and status
-	const endpoint = await getWebhookEndpoint(webhookEndpointId);
+	const endpoint = await getWebhookEndpoint(webhookEndpointId, organizationId);
 	if (!endpoint) {
-		logger.warn({ webhookEndpointId, deliveryId }, "Webhook endpoint not found, skipping delivery");
+		logger.warn(
+			{ webhookEndpointId, deliveryId },
+			"Webhook endpoint not found, skipping delivery",
+		);
 		await updateDeliveryRecord(deliveryId, {
 			status: "failed",
 			attemptNumber,
@@ -47,7 +60,10 @@ export async function processWebhookJob(job: Job<WebhookJobData>): Promise<JobRe
 	}
 
 	if (!endpoint.isActive) {
-		logger.info({ webhookEndpointId, deliveryId }, "Webhook endpoint inactive, skipping delivery");
+		logger.info(
+			{ webhookEndpointId, deliveryId },
+			"Webhook endpoint inactive, skipping delivery",
+		);
 		await updateDeliveryRecord(deliveryId, {
 			status: "failed",
 			attemptNumber,
@@ -75,7 +91,11 @@ export async function processWebhookJob(job: Job<WebhookJobData>): Promise<JobRe
 
 	// Update delivery record
 	await updateDeliveryRecord(deliveryId, {
-		status: result.success ? "success" : attemptNumber >= MAX_ATTEMPTS ? "failed" : "retrying",
+		status: result.success
+			? "success"
+			: attemptNumber >= MAX_ATTEMPTS
+				? "failed"
+				: "retrying",
 		attemptNumber,
 		httpStatus: result.httpStatus,
 		responseBody: result.responseBody,

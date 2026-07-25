@@ -17,8 +17,11 @@ import type {
 import { buildDailyActualMinutes } from "@/lib/calendar/work-hours-summary";
 import { getWorkPeriodsForMonth } from "@/lib/calendar/work-period-service";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
-import { localMonthRange } from "@/lib/datetime/temporal-boundaries";
-import { dateFromInstant } from "@/lib/datetime/temporal-core";
+import {
+	localDayRange,
+	localMonthRange,
+} from "@/lib/datetime/temporal-boundaries";
+import { dateFromInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { superJsonResponse } from "@/lib/superjson";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
@@ -125,6 +128,43 @@ function getRequestDateRange(
 	};
 }
 
+function parseCalendarDateRange(
+	rangeStart: string | null,
+	rangeEnd: string | null,
+) {
+	if (rangeStart === null && rangeEnd === null) return null;
+	if (rangeStart === null || rangeEnd === null) {
+		throw new RangeError("Calendar date range requires both boundaries");
+	}
+
+	const startDate = parsePlainDate(rangeStart);
+	const endDate = parsePlainDate(rangeEnd);
+	const days = startDate.until(endDate).days;
+	if (days < 0 || days > 6) {
+		throw new RangeError(
+			"Calendar date range must be between one and seven dates",
+		);
+	}
+
+	return { startDateKey: rangeStart, endDateKey: rangeEnd, startDate, endDate };
+}
+
+function getRangeDateBoundaries(
+	range: NonNullable<ReturnType<typeof parseCalendarDateRange>>,
+	timezone: string | null,
+) {
+	const resolvedTimezone = timezone ?? "UTC";
+	const startRange = localDayRange(range.startDateKey, resolvedTimezone);
+	const endRange = localDayRange(range.endDateKey, resolvedTimezone);
+	const startDate = dateFromInstant(startRange.start);
+	const endExclusive = dateFromInstant(endRange.endExclusive);
+
+	return {
+		startDate,
+		endDate: new Date(endExclusive.getTime() - 1),
+	};
+}
+
 async function fetchDailyRequirements(params: {
 	organizationId: string;
 	employeeId: string | undefined;
@@ -175,6 +215,8 @@ export async function GET(request: NextRequest) {
 		const requestedOrgId = searchParams.get("organizationId");
 		const month = searchParams.get("month");
 		const year = searchParams.get("year");
+		const rangeStart = searchParams.get("rangeStart");
+		const rangeEnd = searchParams.get("rangeEnd");
 		const fullYear = searchParams.get("fullYear") === "true"; // Fetch all 12 months
 		const employeeId = searchParams.get("employeeId") || undefined;
 		const showHolidays = searchParams.get("showHolidays") === "true";
@@ -215,20 +257,30 @@ export async function GET(request: NextRequest) {
 			return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
 		}
 
+		let range: ReturnType<typeof parseCalendarDateRange>;
+		try {
+			range = parseCalendarDateRange(rangeStart, rangeEnd);
+		} catch (error) {
+			if (error instanceof RangeError) {
+				return NextResponse.json(
+					{ error: "Invalid calendar date range" },
+					{ status: 400 },
+				);
+			}
+			throw error;
+		}
+
 		// For single month, require month parameter
-		if (!fullYear && month === null) {
+		if (!range && !fullYear && month === null) {
 			return NextResponse.json({ error: "Missing month parameter" }, { status: 400 });
 		}
 
 		const yearNum = parseInt(year, 10);
 		const monthNum = month === null ? null : parseInt(month, 10);
 		const calendarTimezone = scopedEmployee?.timezone ?? null;
-		const { startDate, endDate } = getRequestDateRange(
-			yearNum,
-			monthNum,
-			fullYear,
-			calendarTimezone,
-		);
+		const { startDate, endDate } = range
+			? getRangeDateBoundaries(range, calendarTimezone)
+			: getRequestDateRange(yearNum, monthNum, fullYear, calendarTimezone);
 		let dailyRequirements: DailyWorkRequirements = {};
 		let dailyActualMinutes: DailyWorkActualMinutes = {};
 		let events: CalendarEvent[] = [];
@@ -236,7 +288,43 @@ export async function GET(request: NextRequest) {
 		const includeWorkPeriodActuals = Boolean(scopedEmployeeId);
 		const holidayEmployeeId = holidaysRequestedForEmployee ? scopedEmployeeId : undefined;
 
-		if (fullYear) {
+		if (range) {
+			const monthPromises = [];
+			for (
+				let currentMonth = range.startDate.with({ day: 1 });
+				currentMonth.year < range.endDate.year ||
+					(currentMonth.year === range.endDate.year &&
+						currentMonth.month <= range.endDate.month);
+				currentMonth = currentMonth.add({ months: 1 })
+			) {
+				monthPromises.push(
+					fetchMonthEvents(
+						organizationId,
+						currentMonth.month - 1,
+						currentMonth.year,
+						scopedEmployeeId,
+						holidayEmployeeId,
+						showHolidays,
+						showAbsences,
+						showTimeEntries,
+						showWorkPeriods,
+						includeWorkPeriodActuals,
+						calendarTimezone,
+					),
+				);
+			}
+
+			const monthResults = await Promise.all(monthPromises);
+			const eventsById = new Map<string, CalendarEvent>();
+			for (const event of monthResults.flatMap((result) => result.events)) {
+				if (!eventsById.has(event.id)) eventsById.set(event.id, event);
+			}
+			events = [...eventsById.values()];
+			dailyActualMinutes = Object.assign(
+				{},
+				...monthResults.map((result) => result.dailyActualMinutes),
+			);
+		} else if (fullYear) {
 			// Fetch all 12 months in parallel
 			const monthPromises = Array.from({ length: 12 }, (_, monthIndex) =>
 				fetchMonthEvents(

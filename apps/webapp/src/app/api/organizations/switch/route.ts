@@ -82,10 +82,16 @@ export async function POST(request: NextRequest) {
 		const [membership] = await db
 			.select()
 			.from(member)
-			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
+			.where(
+				and(
+					eq(member.userId, session.user.id),
+					eq(member.organizationId, organizationId),
+					eq(member.status, "approved"),
+				),
+			)
 			.limit(1);
 
-		if (!membership) {
+		if (membership?.status !== "approved") {
 			return NextResponse.json(
 				{ error: "You are not a member of this organization" },
 				{ status: 403, headers: corsHeaders },
@@ -100,13 +106,20 @@ export async function POST(request: NextRequest) {
 				and(
 					eq(employee.userId, session.user.id),
 					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
 				),
 			)
 			.limit(1);
 
+		if (employeeRecord?.isActive === false) {
+			return NextResponse.json(
+				{ error: "Organization access is inactive" },
+				{ status: 403, headers: corsHeaders },
+			);
+		}
+
 		if (!employeeRecord) {
 			employeeRecord = await ensureEmployeeForOrganizationMember(db, {
+				mode: "reconcile",
 				userId: session.user.id,
 				organizationId,
 				memberRole: membership.role,

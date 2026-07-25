@@ -366,8 +366,12 @@ export function MonthWorkSummaryView({
 					</Button>
 				</div>
 
-				<Tabs value={viewMode} onValueChange={(value) => onViewModeChange(value as ViewMode)}>
-					<TabsList>
+				<Tabs
+					value={viewMode}
+					onValueChange={(value) => onViewModeChange(value as ViewMode)}
+					className="w-full sm:w-auto"
+				>
+					<TabsList className="grid w-full grid-cols-4">
 						<TabsTrigger value="day">{t("calendar.view.day", "Day")}</TabsTrigger>
 						<TabsTrigger value="week">{t("calendar.view.week", "Week")}</TabsTrigger>
 						<TabsTrigger value="month">{t("calendar.view.month", "Month")}</TabsTrigger>

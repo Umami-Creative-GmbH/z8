@@ -6,6 +6,9 @@ const mockState = vi.hoisted(() => ({
 	createRateLimitResponse: vi.fn(),
 	getClientIp: vi.fn(),
 	getSession: vi.fn(),
+	requireActiveActor: vi.fn(),
+	deleteOrgSecret: vi.fn(),
+	storeOrgSecret: vi.fn(),
 	headers: vi.fn(),
 	logger: {
 		error: vi.fn(),
@@ -19,7 +22,8 @@ vi.mock("next/headers", () => ({
 }));
 
 vi.mock("next/server", async () => {
-	const actual = await vi.importActual<typeof import("next/server")>("next/server");
+	const actual =
+		await vi.importActual<typeof import("next/server")>("next/server");
 	return {
 		...actual,
 		connection: vi.fn().mockResolvedValue(undefined),
@@ -53,6 +57,10 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
+vi.mock("@/lib/auth/organization-action-authorization", () => ({
+	runActiveOrganizationActionActorCheck: mockState.requireActiveActor,
+}));
+
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => mockState.logger,
 }));
@@ -64,8 +72,8 @@ vi.mock("@/lib/rate-limit", () => ({
 }));
 
 vi.mock("@/lib/vault", () => ({
-	deleteOrgSecret: vi.fn(),
-	storeOrgSecret: vi.fn(),
+	deleteOrgSecret: mockState.deleteOrgSecret,
+	storeOrgSecret: mockState.storeOrgSecret,
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -76,11 +84,14 @@ vi.mock("drizzle-orm", () => ({
 const { DELETE, POST } = await import("./route");
 
 function createRequest(method: "DELETE" | "POST", body?: string): NextRequest {
-	return new Request("https://app.example.com/api/telegram/setup?organizationId=org_123", {
-		body,
-		headers: { "Content-Type": "application/json" },
-		method,
-	}) as NextRequest;
+	return new Request(
+		"https://app.example.com/api/telegram/setup?organizationId=org_123",
+		{
+			body,
+			headers: { "Content-Type": "application/json" },
+			method,
+		},
+	) as NextRequest;
 }
 
 describe("/api/telegram/setup", () => {
@@ -96,6 +107,25 @@ describe("/api/telegram/setup", () => {
 			new Response("rate limited", { status: 429 }),
 		);
 		mockState.getClientIp.mockReturnValue("127.0.0.1");
+		mockState.getSession.mockResolvedValue({ user: { id: "user-1" } });
+		mockState.requireActiveActor.mockResolvedValue({});
+	});
+
+	it.each([
+		"pending",
+		"rejected",
+		"inactive",
+	])("POST denies a %s actor before storing credentials", async (actorState) => {
+		mockState.requireActiveActor.mockRejectedValueOnce(new Error(actorState));
+		const response = await POST(
+			createRequest(
+				"POST",
+				JSON.stringify({ botToken: "token", organizationId: "org_123" }),
+			),
+		);
+
+		expect(response.status).toBe(403);
+		expect(mockState.storeOrgSecret).not.toHaveBeenCalled();
 	});
 
 	it("POST returns the rate-limit response before parsing integration credentials", async () => {
@@ -113,7 +143,10 @@ describe("/api/telegram/setup", () => {
 		expect(response.status).toBe(429);
 		expect(mockState.getClientIp).toHaveBeenCalledWith(request);
 		expect(mockState.checkRateLimit).toHaveBeenCalledWith("127.0.0.1", "api");
-		expect(mockState.createRateLimitResponse).toHaveBeenCalledWith(rateLimitResult, request);
+		expect(mockState.createRateLimitResponse).toHaveBeenCalledWith(
+			rateLimitResult,
+			request,
+		);
 		expect(mockState.headers).not.toHaveBeenCalled();
 		expect(mockState.getSession).not.toHaveBeenCalled();
 	});
@@ -133,7 +166,10 @@ describe("/api/telegram/setup", () => {
 		expect(response.status).toBe(429);
 		expect(mockState.getClientIp).toHaveBeenCalledWith(request);
 		expect(mockState.checkRateLimit).toHaveBeenCalledWith("127.0.0.1", "api");
-		expect(mockState.createRateLimitResponse).toHaveBeenCalledWith(rateLimitResult, request);
+		expect(mockState.createRateLimitResponse).toHaveBeenCalledWith(
+			rateLimitResult,
+			request,
+		);
 		expect(mockState.headers).not.toHaveBeenCalled();
 		expect(mockState.getSession).not.toHaveBeenCalled();
 	});

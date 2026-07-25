@@ -90,6 +90,7 @@ export function ScheduleXCalendarWrapper({
 	const locale = tolgee.getLanguage() ?? "en";
 	const scheduleXLocale = toScheduleXLocale(locale);
 	const weekStartDay = useWeekStartDay();
+	const scheduleXFirstDayOfWeek = weekStartDay === "monday" ? 1 : 7;
 	const viewerTimeZone = useUserTimezone();
 	const timeZone = explicitTimeZone ?? viewerTimeZone;
 	const isDark = resolvedTheme === "dark";
@@ -276,6 +277,7 @@ export function ScheduleXCalendarWrapper({
 		isDark,
 		isResponsive: false,
 		locale: scheduleXLocale,
+		firstDayOfWeek: scheduleXFirstDayOfWeek,
 		calendars: getScheduleXCalendars(),
 		plugins: [createEventModalPlugin(), calendarControls],
 		callbacks: {
@@ -288,8 +290,9 @@ export function ScheduleXCalendarWrapper({
 
 	useEffect(() => {
 		if (!calendar) return;
+		calendarControls.setFirstDayOfWeek(scheduleXFirstDayOfWeek);
 		calendarControls.setDate(Temporal.PlainDate.from(currentDateKey));
-	}, [calendar, calendarControls, currentDateKey]);
+	}, [calendar, calendarControls, currentDateKey, scheduleXFirstDayOfWeek]);
 
 	useEffect(() => {
 		if (!hasVisibleRunningPeriod) return;

@@ -8,6 +8,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { employee, slackLinkCode, slackUserMapping } from "@/db/schema";
+import { resolveCommandActorEmployee } from "@/lib/integrations/resolve-command-actor";
 import { createLogger } from "@/lib/logger";
 import type { ResolvedSlackUser } from "./types";
 
@@ -39,6 +40,12 @@ export async function resolveSlackUser(
 	});
 
 	if (mapping) {
+		const emp = await resolveCommandActorEmployee(
+			mapping.userId,
+			mapping.organizationId,
+		);
+		if (!emp) return { status: "not_linked", slackUserId };
+
 		// Update last seen and username if changed
 		await db
 			.update(slackUserMapping)
@@ -48,20 +55,11 @@ export async function resolveSlackUser(
 			})
 			.where(eq(slackUserMapping.id, mapping.id));
 
-		// Get employee ID
-		const emp = await db.query.employee.findFirst({
-			where: and(
-				eq(employee.userId, mapping.userId),
-				eq(employee.organizationId, mapping.organizationId),
-			),
-			columns: { id: true },
-		});
-
 		return {
 			status: "found",
 			user: {
 				userId: mapping.userId,
-				employeeId: emp?.id || "",
+				employeeId: emp.id,
 				organizationId: mapping.organizationId,
 				slackUserId: mapping.slackUserId,
 				slackTeamId: mapping.slackTeamId,
@@ -112,7 +110,10 @@ export async function generateLinkCode(
 		status: "pending",
 	});
 
-	logger.info({ userId, organizationId, codeLength: code.length }, "Slack link code generated");
+	logger.info(
+		{ userId, organizationId, codeLength: code.length },
+		"Slack link code generated",
+	);
 
 	return { code, expiresAt };
 }
@@ -146,7 +147,9 @@ export async function claimLinkCode(
 	}
 
 	if (linkCode.status !== "pending") {
-		return { status: linkCode.status === "expired" ? "expired" : "invalid_code" };
+		return {
+			status: linkCode.status === "expired" ? "expired" : "invalid_code",
+		};
 	}
 
 	if (linkCode.expiresAt < new Date()) {
@@ -173,7 +176,10 @@ export async function claimLinkCode(
 
 	// Get employee ID
 	const emp = await db.query.employee.findFirst({
-		where: and(eq(employee.userId, linkCode.userId), eq(employee.organizationId, organizationId)),
+		where: and(
+			eq(employee.userId, linkCode.userId),
+			eq(employee.organizationId, organizationId),
+		),
 		columns: { id: true },
 	});
 
@@ -213,12 +219,18 @@ export async function claimLinkCode(
 /**
  * Unlink a Slack account
  */
-export async function unlinkSlackUser(userId: string, organizationId: string): Promise<boolean> {
+export async function unlinkSlackUser(
+	userId: string,
+	organizationId: string,
+): Promise<boolean> {
 	const result = await db
 		.update(slackUserMapping)
 		.set({ isActive: false })
 		.where(
-			and(eq(slackUserMapping.userId, userId), eq(slackUserMapping.organizationId, organizationId)),
+			and(
+				eq(slackUserMapping.userId, userId),
+				eq(slackUserMapping.organizationId, organizationId),
+			),
 		)
 		.returning({ id: slackUserMapping.id });
 
