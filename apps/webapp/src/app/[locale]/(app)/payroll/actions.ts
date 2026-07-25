@@ -23,6 +23,7 @@ import {
 import { getPayrollWorkspaceSummary } from "@/lib/payroll-workspace/summary";
 import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import { getTranslate } from "@/tolgee/server";
+import { mapPayrollWorkspaceActionError } from "./action-errors";
 import { resolveScopedPayrollEmployeeIdsForAction } from "./action-helpers";
 
 type PayrollTranslate = Awaited<ReturnType<typeof getTranslate>>;
@@ -355,23 +356,7 @@ async function runPayrollWorkspaceAction<T>(
 	return runServerActionSafe(
 		Effect.tryPromise({
 			try: () => action(t),
-			catch: (error) => {
-				if (isAppError(error)) return error;
-
-				return new ValidationError({
-					message: t("payroll.errors.actionFailed", "Payroll workspace action failed"),
-				});
-			},
+			catch: (error) => mapPayrollWorkspaceActionError(error, t),
 		}),
-	);
-}
-
-function isAppError(
-	error: unknown,
-): error is ValidationError | AuthenticationError | AuthorizationError {
-	return (
-		error instanceof ValidationError ||
-		error instanceof AuthenticationError ||
-		error instanceof AuthorizationError
 	);
 }
