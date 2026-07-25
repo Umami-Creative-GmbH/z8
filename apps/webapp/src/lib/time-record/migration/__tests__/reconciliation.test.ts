@@ -140,6 +140,125 @@ describe("reconcileLegacyToCanonical", () => {
 		);
 	});
 
+	it("reconciles linked legacy IDs while allowing canonical-native records", async () => {
+		mockState.legacyWorkCount.mockResolvedValue([
+			{
+				id: "legacy-work-1",
+				canonicalRecordId: "canonical-work-1",
+				projectId: "project-1",
+				durationMinutes: 480,
+				approvalStatus: "approved",
+			},
+		]);
+		mockState.employeeFindMany.mockResolvedValue([]);
+		mockState.absenceEntryFindMany
+			.mockResolvedValueOnce([
+				{
+					id: "legacy-absence-1",
+					canonicalRecordId: "canonical-absence-1",
+					startDate: "2026-01-15",
+					startPeriod: "full_day",
+					endDate: "2026-01-15",
+					endPeriod: "full_day",
+					status: "approved",
+				},
+			])
+			.mockResolvedValueOnce([
+				{ id: "legacy-absence-1", canonicalRecordId: "canonical-absence-1" },
+			])
+			.mockResolvedValueOnce([]);
+		mockState.canonicalTimeRecordCount
+			.mockResolvedValueOnce([
+				{
+					id: "canonical-work-1",
+					recordKind: "work",
+					durationMinutes: 480,
+					approvalState: "approved",
+				},
+				{
+					id: "canonical-native-work",
+					recordKind: "work",
+					durationMinutes: 60,
+					approvalState: "approved",
+				},
+			])
+			.mockResolvedValueOnce([
+				{
+					id: "canonical-absence-1",
+					recordKind: "absence",
+					durationMinutes: 1440,
+					approvalState: "approved",
+				},
+				{
+					id: "canonical-native-absence",
+					recordKind: "absence",
+					durationMinutes: 1440,
+					approvalState: "approved",
+				},
+			]);
+		mockState.canonicalTimeRecordWorkFindMany.mockResolvedValue([
+			{ recordId: "canonical-work-1" },
+			{ recordId: "canonical-native-work" },
+		]);
+		mockState.canonicalTimeRecordAbsenceFindMany.mockResolvedValue([
+			{ recordId: "canonical-absence-1" },
+			{ recordId: "canonical-native-absence" },
+		]);
+		mockState.canonicalTimeRecordAllocationFindMany.mockResolvedValue([
+			{ recordId: "canonical-work-1", projectId: "project-1" },
+		]);
+
+		await expect(reconcileLegacyToCanonical("org-1")).resolves.toEqual({
+			workCountMismatch: 0,
+			absenceCountMismatch: 0,
+			durationMismatchRecords: 0,
+			missingWorkCanonicalRecords: 0,
+			missingAbsenceCanonicalRecords: 0,
+			missingAbsenceDetailRows: 0,
+			approvalStateMismatchRecords: 0,
+			missingAbsenceCanonicalLinks: 0,
+			missingAbsenceOrganizationIds: 0,
+			missingProjectAllocationRows: 0,
+			missingWorkDetailRows: 0,
+		});
+	});
+
+	it("treats an established canonical link as authoritative", async () => {
+		mockState.legacyWorkCount.mockResolvedValue([
+			{
+				id: "legacy-work-1",
+				canonicalRecordId: "missing-canonical-work",
+				projectId: null,
+				durationMinutes: 480,
+				approvalStatus: "approved",
+			},
+		]);
+		mockState.employeeFindMany.mockResolvedValue([]);
+		mockState.absenceEntryFindMany
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([]);
+		mockState.canonicalTimeRecordCount
+			.mockResolvedValueOnce([
+				{
+					id: "legacy-work-1",
+					recordKind: "work",
+					durationMinutes: 480,
+					approvalState: "approved",
+				},
+			])
+			.mockResolvedValueOnce([]);
+		mockState.canonicalTimeRecordWorkFindMany.mockResolvedValue([
+			{ recordId: "legacy-work-1" },
+		]);
+
+		await expect(reconcileLegacyToCanonical("org-1")).resolves.toMatchObject({
+			workCountMismatch: 1,
+			missingWorkCanonicalRecords: 1,
+			missingWorkDetailRows: 1,
+		});
+	});
+
 	it("reports id-level cutover gaps including null organization rows", async () => {
 		mockState.legacyWorkCount.mockResolvedValue([
 			{ id: "work-1", projectId: null, durationMinutes: 480, approvalStatus: "approved" },
