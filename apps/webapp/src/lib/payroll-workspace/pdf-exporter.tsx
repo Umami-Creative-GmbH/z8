@@ -16,8 +16,6 @@ export interface PayrollAbsenceSection {
 	}>;
 }
 
-const PAYROLL_ABSENCE_ROWS_PER_CHUNK = 18;
-
 const styleDefinitions = {
 	page: {
 		paddingTop: 34,
@@ -180,20 +178,31 @@ const styleDefinitions = {
 	absenceDetailsSection: {
 		marginTop: 14,
 	},
-	employeeCard: {
-		marginBottom: 8,
-		borderWidth: 1,
-		borderColor: "#CBD5E1",
+	absencePage: {
+		paddingTop: 104,
+		paddingBottom: 60,
 	},
-	employeeCardHeader: {
-		paddingTop: 5,
-		paddingRight: 7,
-		paddingBottom: 5,
-		paddingLeft: 7,
+	absenceReportHeader: {
+		position: "absolute" as const,
+		top: 28,
+		left: 36,
+		right: 36,
+		paddingBottom: 7,
+		backgroundColor: "#FFFFFF",
+		borderBottomWidth: 1,
+		borderBottomColor: "#CBD5E1",
+	},
+	absenceReportTitle: {
+		fontSize: 11,
+		fontWeight: "bold" as const,
+		color: "#0F172A",
+		marginBottom: 3,
+	},
+	absenceEmployeeName: {
 		fontSize: 9,
 		fontWeight: "bold" as const,
 		color: "#0F172A",
-		backgroundColor: "#F1F5F9",
+		marginBottom: 5,
 	},
 	absenceDetailHeader: {
 		flexDirection: "row" as const,
@@ -298,10 +307,7 @@ export function buildPayrollAbsenceSections(
 
 	return summary.employees
 		.filter((employee) => detailsByEmployee.has(employee.id))
-		.sort(
-			(left, right) =>
-				left.name.localeCompare(right.name) || left.id.localeCompare(right.id),
-		)
+		.sort((left, right) => left.name.localeCompare(right.name))
 		.map((employee) => ({
 			employeeId: employee.id,
 			employeeName: employee.name,
@@ -322,30 +328,10 @@ export function buildPayrollAbsenceSections(
 		}));
 }
 
-export function chunkPayrollAbsenceSections(
-	sections: PayrollAbsenceSection[],
-): PayrollAbsenceSection[] {
-	return sections.flatMap((section) =>
-		Array.from(
-			{
-				length: Math.ceil(section.rows.length / PAYROLL_ABSENCE_ROWS_PER_CHUNK),
-			},
-			(_, chunkIndex) => ({
-				...section,
-				rows: section.rows.slice(
-					chunkIndex * PAYROLL_ABSENCE_ROWS_PER_CHUNK,
-					(chunkIndex + 1) * PAYROLL_ABSENCE_ROWS_PER_CHUNK,
-				),
-			}),
-		),
-	);
-}
-
 export async function exportPayrollSummaryToPDF(
 	summary: PayrollWorkspaceSummary,
 ): Promise<Uint8Array> {
 	const absenceSections = buildPayrollAbsenceSections(summary);
-	const absenceSectionChunks = chunkPayrollAbsenceSections(absenceSections);
 	const { Document, Page, pdf, StyleSheet, Text, View } = await import(
 		"@react-pdf/renderer"
 	);
@@ -459,48 +445,14 @@ export async function exportPayrollSummaryToPDF(
 					))}
 				</View>
 
-				<View style={styles.absenceDetailsSection}>
-					<Text style={styles.sectionTitle}>Absence details</Text>
-					{absenceSections.length === 0 ? (
+				{absenceSections.length === 0 && (
+					<View style={styles.absenceDetailsSection}>
+						<Text style={styles.sectionTitle}>Absence details</Text>
 						<Text style={styles.emptyState}>
 							No approved absences for the selected period.
 						</Text>
-					) : (
-						absenceSectionChunks.map((section, sectionIndex) => (
-							<View
-								// biome-ignore lint/suspicious/noArrayIndexKey: Chunk order is immutable for this one-shot PDF render.
-								key={`${section.employeeId}-${sectionIndex}`}
-								style={styles.employeeCard}
-								wrap={false}
-							>
-								<Text style={styles.employeeCardHeader}>
-									{section.employeeName} (
-									{section.employeeNumber ?? "No employee no."})
-								</Text>
-								<View style={styles.absenceDetailHeader}>
-									<Text style={styles.absenceDateColumn}>Date</Text>
-									<Text style={styles.absenceCategoryColumn}>Category</Text>
-									<Text style={styles.absencePeriodColumn}>Period</Text>
-								</View>
-								{section.rows.map((row, rowIndex) => (
-									<View
-										// biome-ignore lint/suspicious/noArrayIndexKey: Sorted PDF rows are immutable and duplicate details must remain distinct.
-										key={`${row.date}-${row.categoryName}-${row.periodLabel}-${rowIndex}`}
-										style={styles.absenceDetailRow}
-									>
-										<Text style={styles.absenceDateColumn}>{row.date}</Text>
-										<Text style={styles.absenceCategoryColumn}>
-											{row.categoryName}
-										</Text>
-										<Text style={styles.absencePeriodColumn}>
-											{row.periodLabel}
-										</Text>
-									</View>
-								))}
-							</View>
-						))
-					)}
-				</View>
+					</View>
+				)}
 
 				<Text style={styles.footer}>
 					Audit note: Blockers are informational review markers and did not
@@ -508,6 +460,44 @@ export async function exportPayrollSummaryToPDF(
 					submission.
 				</Text>
 			</Page>
+			{absenceSections.map((section) => (
+				<Page
+					key={section.employeeId}
+					size="A4"
+					style={[styles.page, styles.absencePage]}
+				>
+					<View fixed style={styles.absenceReportHeader}>
+						<Text style={styles.absenceReportTitle}>Absence details</Text>
+						<Text style={styles.absenceEmployeeName}>
+							{section.employeeName} (
+							{section.employeeNumber ?? "No employee no."})
+						</Text>
+						<View style={styles.absenceDetailHeader}>
+							<Text style={styles.absenceDateColumn}>Date</Text>
+							<Text style={styles.absenceCategoryColumn}>Category</Text>
+							<Text style={styles.absencePeriodColumn}>Period</Text>
+						</View>
+					</View>
+					{section.rows.map((row, rowIndex) => (
+						<View
+							// biome-ignore lint/suspicious/noArrayIndexKey: Sorted PDF rows are immutable and duplicate details must remain distinct.
+							key={`${row.date}-${row.categoryName}-${row.periodLabel}-${rowIndex}`}
+							style={styles.absenceDetailRow}
+						>
+							<Text style={styles.absenceDateColumn}>{row.date}</Text>
+							<Text style={styles.absenceCategoryColumn}>
+								{row.categoryName}
+							</Text>
+							<Text style={styles.absencePeriodColumn}>{row.periodLabel}</Text>
+						</View>
+					))}
+					<Text fixed style={styles.footer}>
+						Audit note: Blockers are informational review markers and did not
+						prevent this export. Confirm unresolved items before payroll
+						submission.
+					</Text>
+				</Page>
+			))}
 		</Document>
 	);
 
