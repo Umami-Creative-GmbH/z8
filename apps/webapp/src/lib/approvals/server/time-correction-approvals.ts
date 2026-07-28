@@ -3553,11 +3553,11 @@ function exactOwnDataRecord(
 		if (prototype !== Object.prototype && prototype !== null) return null;
 		const descriptors = Object.getOwnPropertyDescriptors(value);
 		const keys = Reflect.ownKeys(descriptors);
+		const allowedKeySet = new Set(allowedKeys);
+		const keySet = new Set(keys);
 		if (
-			keys.some(
-				(key) => typeof key !== "string" || !allowedKeys.includes(key),
-			) ||
-			requiredKeys.some((key) => !keys.includes(key)) ||
+			keys.some((key) => typeof key !== "string" || !allowedKeySet.has(key)) ||
+			requiredKeys.some((key) => !keySet.has(key)) ||
 			keys.some((key) => {
 				const descriptor = descriptors[String(key)];
 				return !descriptor?.enumerable || !("value" in descriptor);
@@ -3806,20 +3806,18 @@ export async function executeTimeCorrectionDecisionInTransaction(
 						(entry) => entry.id,
 					),
 					verifiedRelationalCorrectionIdsByEndpoint: {
-						clockIn: correctionEvidence
-							.filter(
-								(entry) =>
-									entry.id === period.clockInId ||
-									entry.replacesEntryId === period.clockInId,
-							)
-							.map((entry) => entry.id),
-						clockOut: correctionEvidence
-							.filter(
-								(entry) =>
-									entry.id === period.clockOutId ||
-									entry.replacesEntryId === period.clockOutId,
-							)
-							.map((entry) => entry.id),
+						clockIn: correctionEvidence.flatMap((entry) =>
+							entry.id === period.clockInId ||
+							entry.replacesEntryId === period.clockInId
+								? [entry.id]
+								: [],
+						),
+						clockOut: correctionEvidence.flatMap((entry) =>
+							entry.id === period.clockOutId ||
+							entry.replacesEntryId === period.clockOutId
+								? [entry.id]
+								: [],
+						),
 					},
 				});
 			}

@@ -63,9 +63,10 @@ function exactDataObject(
 	const parsed = object(value);
 	if (!parsed) return null;
 	const keys = Reflect.ownKeys(parsed);
+	const allowedKeySet = new Set(allowedKeys);
 	if (
 		keys.some((key) => {
-			if (typeof key !== "string" || !allowedKeys.includes(key)) return true;
+			if (typeof key !== "string" || !allowedKeySet.has(key)) return true;
 			const descriptor = Object.getOwnPropertyDescriptor(parsed, key);
 			return !descriptor?.enumerable || !("value" in descriptor);
 		})

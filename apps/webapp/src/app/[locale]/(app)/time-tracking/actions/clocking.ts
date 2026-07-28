@@ -180,9 +180,10 @@ function exactPlainObject(value: unknown, expectedKeys: readonly string[]) {
 	}
 	const descriptors = Object.getOwnPropertyDescriptors(value);
 	const keys = Reflect.ownKeys(descriptors);
+	const expectedKeySet = new Set(expectedKeys);
 	if (
 		keys.length !== expectedKeys.length ||
-		keys.some((key) => typeof key !== "string" || !expectedKeys.includes(key))
+		keys.some((key) => typeof key !== "string" || !expectedKeySet.has(key))
 	) {
 		throw new Error("Submission collision");
 	}

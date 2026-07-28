@@ -278,11 +278,11 @@ function exactDataObject(
 		return fail();
 	}
 	const descriptors = Object.getOwnPropertyDescriptors(value);
+	const keys = Reflect.ownKeys(descriptors);
+	const expectedKeySet = new Set(expectedKeys);
 	if (
-		Reflect.ownKeys(descriptors).length !== expectedKeys.length ||
-		Reflect.ownKeys(descriptors).some(
-			(key) => typeof key !== "string" || !expectedKeys.includes(key),
-		)
+		keys.length !== expectedKeys.length ||
+		keys.some((key) => typeof key !== "string" || !expectedKeySet.has(key))
 	) {
 		return fail();
 	}

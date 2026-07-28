@@ -691,29 +691,32 @@ async function toPersistedDecisionRequest(
 						columns: { id: true, replacesEntryId: true },
 					})
 				: [];
+			const verifiedRelationalCorrectionIds: string[] = [];
+			const verifiedRelationalCorrectionIdsByEndpoint: {
+				clockIn: string[];
+				clockOut: string[];
+			} = { clockIn: [], clockOut: [] };
+			for (const entry of correctionEvidence) {
+				verifiedRelationalCorrectionIds.push(entry.id);
+				if (
+					entry.id === period.clockInId ||
+					entry.replacesEntryId === period.clockInId
+				) {
+					verifiedRelationalCorrectionIdsByEndpoint.clockIn.push(entry.id);
+				}
+				if (
+					entry.id === period.clockOutId ||
+					entry.replacesEntryId === period.clockOutId
+				) {
+					verifiedRelationalCorrectionIdsByEndpoint.clockOut.push(entry.id);
+				}
+			}
 			workflowKind = classifyTimeApprovalRequest({
 				metadata: request.metadata,
 				reason: request.reason,
 				pendingChanges: period.pendingChanges,
-				verifiedRelationalCorrectionIds: correctionEvidence.map(
-					(entry) => entry.id,
-				),
-				verifiedRelationalCorrectionIdsByEndpoint: {
-					clockIn: correctionEvidence
-						.filter(
-							(entry) =>
-								entry.id === period.clockInId ||
-								entry.replacesEntryId === period.clockInId,
-						)
-						.map((entry) => entry.id),
-					clockOut: correctionEvidence
-						.filter(
-							(entry) =>
-								entry.id === period.clockOutId ||
-								entry.replacesEntryId === period.clockOutId,
-						)
-						.map((entry) => entry.id),
-				},
+				verifiedRelationalCorrectionIds,
+				verifiedRelationalCorrectionIdsByEndpoint,
 			});
 		}
 	}

@@ -34,9 +34,10 @@ function exact(
 	}
 	const descriptors = Object.getOwnPropertyDescriptors(value);
 	const ownKeys = Reflect.ownKeys(descriptors);
+	const keySet = new Set(keys);
 	if (
 		ownKeys.length !== keys.length ||
-		ownKeys.some((key) => typeof key !== "string" || !keys.includes(key))
+		ownKeys.some((key) => typeof key !== "string" || !keySet.has(key))
 	) {
 		return fail();
 	}

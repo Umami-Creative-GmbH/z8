@@ -95,48 +95,49 @@ function useClockOutOnBehalf({
 
 		setIsClockOutPending(true);
 
-		try {
-			const response = await fetch("/api/time-entries/clock-out-on-behalf", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ workPeriodId: pendingClockOutEvent.id }),
-			});
+		await (async () => {
+			try {
+				const response = await fetch("/api/time-entries/clock-out-on-behalf", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ workPeriodId: pendingClockOutEvent.id }),
+				});
 
-			if (!response.ok) {
-				let message = t(
-					"calendar.clockOutOnBehalf.error",
-					"Failed to clock out employee",
-				);
+				if (!response.ok) {
+					let message = t(
+						"calendar.clockOutOnBehalf.error",
+						"Failed to clock out employee",
+					);
 
-				try {
-					const body = (await response.json()) as { error?: unknown };
-					if (typeof body.error === "string" && body.error.length > 0) {
-						message = body.error;
+					try {
+						const body = (await response.json()) as { error?: unknown };
+						if (typeof body.error === "string" && body.error.length > 0) {
+							message = body.error;
+						}
+					} catch {
+						// Keep the translated fallback when the server does not return JSON.
 					}
-				} catch {
-					// Keep the translated fallback when the server does not return JSON.
+
+					toast.error(message);
+					return;
 				}
 
-				toast.error(message);
-				setIsClockOutPending(false);
-				return;
+				toast.success(
+					t(
+						"calendar.clockOutOnBehalf.success",
+						"Employee clocked out successfully",
+					),
+				);
+				setPendingClockOutEvent(null);
+				refetch();
+			} catch {
+				toast.error(
+					t("calendar.clockOutOnBehalf.error", "Failed to clock out employee"),
+				);
 			}
-
-			toast.success(
-				t(
-					"calendar.clockOutOnBehalf.success",
-					"Employee clocked out successfully",
-				),
-			);
-			setPendingClockOutEvent(null);
-			refetch();
+		})().finally(() => {
 			setIsClockOutPending(false);
-		} catch {
-			toast.error(
-				t("calendar.clockOutOnBehalf.error", "Failed to clock out employee"),
-			);
-			setIsClockOutPending(false);
-		}
+		});
 	};
 
 	return {

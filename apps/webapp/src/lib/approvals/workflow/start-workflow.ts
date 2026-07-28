@@ -138,9 +138,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function exactKeys(value: object, keys: readonly string[]): boolean {
 	const actual = Reflect.ownKeys(value);
+	const expectedKeys = new Set(keys);
 	return (
 		actual.length === keys.length &&
-		actual.every((key) => typeof key === "string" && keys.includes(key))
+		actual.every((key) => typeof key === "string" && expectedKeys.has(key))
 	);
 }
 

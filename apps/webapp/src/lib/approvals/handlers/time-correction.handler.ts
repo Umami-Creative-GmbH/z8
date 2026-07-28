@@ -338,21 +338,26 @@ export function buildTimeApprovalReview(
 		period,
 		correctionEntries,
 	);
+	const verifiedRelationalCorrectionIds: string[] = [];
+	const verifiedRelationalCorrectionIdsByEndpoint: {
+		clockIn: string[];
+		clockOut: string[];
+	} = { clockIn: [], clockOut: [] };
+	for (const entry of verifiedCorrections) {
+		verifiedRelationalCorrectionIds.push(entry.id);
+		if (entry.replacesEntryId === period.clockIn.id) {
+			verifiedRelationalCorrectionIdsByEndpoint.clockIn.push(entry.id);
+		}
+		if (entry.replacesEntryId === period.clockOut?.id) {
+			verifiedRelationalCorrectionIdsByEndpoint.clockOut.push(entry.id);
+		}
+	}
 	const kind = classifyTimeApprovalRequest({
 		metadata: request.metadata,
 		reason: request.reason,
 		pendingChanges: period.pendingChanges,
-		verifiedRelationalCorrectionIds: verifiedCorrections.map(
-			(entry) => entry.id,
-		),
-		verifiedRelationalCorrectionIdsByEndpoint: {
-			clockIn: verifiedCorrections
-				.filter((entry) => entry.replacesEntryId === period.clockIn.id)
-				.map((entry) => entry.id),
-			clockOut: verifiedCorrections
-				.filter((entry) => entry.replacesEntryId === period.clockOut?.id)
-				.map((entry) => entry.id),
-		},
+		verifiedRelationalCorrectionIds,
+		verifiedRelationalCorrectionIdsByEndpoint,
 	});
 	const hasOrdinaryEvidence =
 		kind !== "time_correction" &&

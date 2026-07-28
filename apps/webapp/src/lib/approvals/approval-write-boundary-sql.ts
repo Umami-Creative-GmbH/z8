@@ -724,7 +724,8 @@ function inspectTargetedSourceSqlMutations(
 				columnsEnd,
 			);
 			if (!columns || !isKeyword(tokens[columnsEnd + 1], "values")) continue;
-			const dynamicColumns = columns.includes(APPROVAL_DYNAMIC_SQL_MARKER);
+			const columnSet = new Set(columns);
+			const dynamicColumns = columnSet.has(APPROVAL_DYNAMIC_SQL_MARKER);
 			const protectedColumns = targetedColumns(target.table, columns);
 			if (protectedColumns.length === 0 && !dynamicColumns) continue;
 			const statementEnd = sqlText.indexOf(";", tokens[start]?.start ?? 0);
@@ -735,9 +736,7 @@ function inspectTargetedSourceSqlMutations(
 			const correction = /['"]correction['"]/i.test(statement);
 			const syntheticTimeEntry =
 				target.table === "time_entry" &&
-				SYNTHETIC_TIME_ENTRY_COLUMNS.every((column) =>
-					columns.includes(column),
-				) &&
+				SYNTHETIC_TIME_ENTRY_COLUMNS.every((column) => columnSet.has(column)) &&
 				!columns.some((column) => TIME_ENTRY_LIFECYCLE_COLUMNS.has(column));
 			const terminalBreak =
 				(target.table === "time_record" &&
@@ -747,7 +746,7 @@ function inspectTargetedSourceSqlMutations(
 				target.table === "time_record_allocation" ||
 				(target.table === "work_period" &&
 					/['"]approved['"]/i.test(statement) &&
-					columns.includes("canonical_record_id"));
+					columnSet.has("canonical_record_id"));
 			const dynamicCorrectionSemantic =
 				target.table === "time_entry" &&
 				protectedColumns.includes("type") &&

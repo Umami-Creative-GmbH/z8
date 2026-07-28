@@ -145,9 +145,10 @@ function readExactDataProperties(
 	}
 	const descriptors = Object.getOwnPropertyDescriptors(value);
 	const ownKeys = Reflect.ownKeys(descriptors);
+	const keySet = new Set(keys);
 	if (
 		ownKeys.length !== keys.length ||
-		ownKeys.some((key) => typeof key !== "string" || !keys.includes(key))
+		ownKeys.some((key) => typeof key !== "string" || !keySet.has(key))
 	) {
 		throw new Error("Ordinary work-period workflow payload is invalid");
 	}

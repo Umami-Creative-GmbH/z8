@@ -544,9 +544,10 @@ function strictOwnDataRecord(
 ): Record<string, unknown> {
 	if (!record(value)) throw new Error();
 	const keys = Reflect.ownKeys(value);
+	const expectedKeySet = new Set(expectedKeys);
 	if (
 		keys.length !== expectedKeys.length ||
-		keys.some((key) => typeof key !== "string" || !expectedKeys.includes(key))
+		keys.some((key) => typeof key !== "string" || !expectedKeySet.has(key))
 	) {
 		throw new Error();
 	}
@@ -591,11 +592,10 @@ function strictStringArrayEquals(
 	}
 	const ownKeys = Reflect.ownKeys(value);
 	const expectedKeys = [...expected.map((_, index) => String(index)), "length"];
+	const expectedKeySet = new Set(expectedKeys);
 	if (
 		ownKeys.length !== expectedKeys.length ||
-		ownKeys.some(
-			(key) => typeof key !== "string" || !expectedKeys.includes(key),
-		)
+		ownKeys.some((key) => typeof key !== "string" || !expectedKeySet.has(key))
 	) {
 		return false;
 	}

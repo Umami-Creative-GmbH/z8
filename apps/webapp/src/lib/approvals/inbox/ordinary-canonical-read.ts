@@ -188,11 +188,12 @@ function exactObject(value: unknown, keys: readonly string[]) {
 		return null;
 	}
 	const descriptors = Object.getOwnPropertyDescriptors(value);
+	const keySet = new Set(keys);
 	if (
 		Reflect.ownKeys(descriptors).some(
 			(key) =>
 				typeof key !== "string" ||
-				!keys.includes(key) ||
+				!keySet.has(key) ||
 				!descriptors[key]?.enumerable ||
 				!("value" in descriptors[key]),
 		)

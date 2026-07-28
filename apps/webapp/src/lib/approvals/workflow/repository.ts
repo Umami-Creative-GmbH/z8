@@ -160,9 +160,10 @@ function exactKeys(
 	expected: readonly string[],
 ) {
 	const keys = Reflect.ownKeys(value);
+	const expectedKeys = new Set(expected);
 	return (
 		keys.length === expected.length &&
-		keys.every((key) => typeof key === "string" && expected.includes(key))
+		keys.every((key) => typeof key === "string" && expectedKeys.has(key))
 	);
 }
 

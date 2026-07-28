@@ -966,6 +966,7 @@ function exactPendingLegacyEvidence(
 	if (!Array.isArray(source.correctionEndpoints)) {
 		throw new Error("Time correction cancellation is unavailable");
 	}
+	const correctionIdSet = new Set(correctionIds);
 	const correctionRows = source.correctionEndpoints.map((value) => {
 		const endpoint = cancellationRecord(value);
 		return {
@@ -975,7 +976,7 @@ function exactPendingLegacyEvidence(
 	});
 	if (
 		correctionRows.length !== correctionIds.length ||
-		correctionRows.some((row) => !correctionIds.includes(row.id))
+		correctionRows.some((row) => !correctionIdSet.has(row.id))
 	) {
 		throw new Error("Time correction cancellation is unavailable");
 	}

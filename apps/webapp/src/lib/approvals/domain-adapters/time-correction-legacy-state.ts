@@ -785,6 +785,43 @@ function decodeCapture(
 				expectedPayload.timeCorrection.clockOutCorrectionId,
 			].filter((id): id is string => Boolean(id))
 		: [];
+	const verifiedRelationalCorrectionIds: string[] = [];
+	const verifiedRelationalCorrectionIdsByEndpoint: {
+		clockIn: string[];
+		clockOut: string[];
+	} = { clockIn: [], clockOut: [] };
+	for (const entry of correctionEntries) {
+		verifiedRelationalCorrectionIds.push(entry.id);
+		if (
+			entry.id === source.clockInId ||
+			entry.replacesEntryId === source.clockInId
+		) {
+			verifiedRelationalCorrectionIdsByEndpoint.clockIn.push(entry.id);
+		}
+		if (
+			entry.id === source.clockOutId ||
+			entry.replacesEntryId === source.clockOutId
+		) {
+			verifiedRelationalCorrectionIdsByEndpoint.clockOut.push(entry.id);
+		}
+	}
+	verifiedRelationalCorrectionIds.push(...priorVerifiedCorrectionIds);
+	if (
+		input.allowCancelledReplayWithoutCorrectionRows === true &&
+		expectedPayload?.timeCorrection.clockInCorrectionId
+	) {
+		verifiedRelationalCorrectionIdsByEndpoint.clockIn.push(
+			expectedPayload.timeCorrection.clockInCorrectionId,
+		);
+	}
+	if (
+		input.allowCancelledReplayWithoutCorrectionRows === true &&
+		expectedPayload?.timeCorrection.clockOutCorrectionId
+	) {
+		verifiedRelationalCorrectionIdsByEndpoint.clockOut.push(
+			expectedPayload.timeCorrection.clockOutCorrectionId,
+		);
+	}
 	const rawRequests = array(envelope.approvalRequests);
 	const requestPayloads = rawRequests.map((value) => {
 		const raw = record(value);
@@ -793,38 +830,8 @@ function decodeCapture(
 				metadata: raw.metadata,
 				reason: raw.reason === null ? null : string(raw.reason),
 				pendingChanges: source.pendingChanges,
-				verifiedRelationalCorrectionIds: [
-					...correctionEntries.map((entry) => entry.id),
-					...priorVerifiedCorrectionIds,
-				],
-				verifiedRelationalCorrectionIdsByEndpoint: {
-					clockIn: [
-						...correctionEntries
-							.filter(
-								(entry) =>
-									entry.id === source.clockInId ||
-									entry.replacesEntryId === source.clockInId,
-							)
-							.map((entry) => entry.id),
-						...(input.allowCancelledReplayWithoutCorrectionRows === true &&
-						expectedPayload?.timeCorrection.clockInCorrectionId
-							? [expectedPayload.timeCorrection.clockInCorrectionId]
-							: []),
-					],
-					clockOut: [
-						...correctionEntries
-							.filter(
-								(entry) =>
-									entry.id === source.clockOutId ||
-									entry.replacesEntryId === source.clockOutId,
-							)
-							.map((entry) => entry.id),
-						...(input.allowCancelledReplayWithoutCorrectionRows === true &&
-						expectedPayload?.timeCorrection.clockOutCorrectionId
-							? [expectedPayload.timeCorrection.clockOutCorrectionId]
-							: []),
-					],
-				},
+				verifiedRelationalCorrectionIds,
+				verifiedRelationalCorrectionIdsByEndpoint,
 			}) !== "time_correction"
 		) {
 			return fail();

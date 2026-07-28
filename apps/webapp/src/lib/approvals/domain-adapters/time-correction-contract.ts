@@ -71,6 +71,7 @@ function snapshotStrictObject(
 	const descriptors = Object.getOwnPropertyDescriptors(value);
 	const keys = Reflect.ownKeys(descriptors);
 	const allowedKeys = [...requiredKeys, ...optionalKeys];
+	const allowedKeySet = new Set(allowedKeys);
 	if (
 		keys.length < requiredKeys.length ||
 		keys.length > allowedKeys.length ||
@@ -80,7 +81,7 @@ function snapshotStrictObject(
 	}
 	const snapshot: Record<string, unknown> = {};
 	for (const key of keys) {
-		if (typeof key !== "string" || !allowedKeys.includes(key)) return null;
+		if (typeof key !== "string" || !allowedKeySet.has(key)) return null;
 		const descriptor = descriptors[key];
 		if (!descriptor?.enumerable || !("value" in descriptor)) return null;
 		snapshot[key] = descriptor.value;
