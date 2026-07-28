@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
 	buildPayrollAbsenceSections,
+	chunkPayrollAbsenceSections,
 	exportPayrollSummaryToPDF,
 	generatePayrollPDFFilename,
+	type PayrollAbsenceSection,
 } from "./pdf-exporter";
 import type { PayrollWorkspaceSummary } from "./types";
 
@@ -124,6 +126,108 @@ describe("payroll PDF exporter", () => {
 		]);
 	});
 
+	it("uses the raw period as the final absence row sort key", () => {
+		const sameCategorySummary: PayrollWorkspaceSummary = {
+			...summary,
+			absenceDetails: [
+				{
+					employeeId: "employee-1",
+					categoryId: "sick",
+					categoryName: "Sick",
+					date: "2026-06-03",
+					period: "pm",
+				},
+				{
+					employeeId: "employee-1",
+					categoryId: "sick",
+					categoryName: "Sick",
+					date: "2026-06-03",
+					period: "am",
+				},
+			],
+		};
+
+		expect(buildPayrollAbsenceSections(sameCategorySummary)[0]?.rows).toEqual([
+			{ date: "2026-06-03", categoryName: "Sick", periodLabel: "AM" },
+			{ date: "2026-06-03", categoryName: "Sick", periodLabel: "PM" },
+		]);
+	});
+
+	it("uses payroll summary name sorting semantics for employee sections", () => {
+		const nameOrderingSummary: PayrollWorkspaceSummary = {
+			...summary,
+			employees: [
+				{
+					...summary.employees[0],
+					id: "employee-2",
+					name: "Zoe",
+				},
+				{
+					...summary.employees[0],
+					name: "ada",
+				},
+			],
+			absenceDetails: [
+				{ ...summary.absenceDetails[0], employeeId: "employee-2" },
+				{ ...summary.absenceDetails[0], employeeId: "employee-1" },
+			],
+		};
+
+		expect(
+			buildPayrollAbsenceSections(nameOrderingSummary).map(
+				(section) => section.employeeName,
+			),
+		).toEqual(["ada", "Zoe"]);
+	});
+
+	it("preserves duplicate absence details", () => {
+		const duplicateDetail = summary.absenceDetails[0];
+		const duplicateSummary: PayrollWorkspaceSummary = {
+			...summary,
+			absenceDetails: [duplicateDetail, duplicateDetail],
+		};
+
+		expect(buildPayrollAbsenceSections(duplicateSummary)[0]?.rows).toEqual([
+			{ date: "2026-06-08", categoryName: "Vacation", periodLabel: "AM" },
+			{ date: "2026-06-08", categoryName: "Vacation", periodLabel: "AM" },
+		]);
+	});
+
+	it("chunks long employee sections without losing rows or employee context", () => {
+		const rows: PayrollAbsenceSection["rows"] = Array.from(
+			{ length: 60 },
+			(_, index) => ({
+				date: `2026-06-${String((index % 30) + 1).padStart(2, "0")}`,
+				categoryName: `Category ${index + 1}`,
+				periodLabel: "Full day",
+			}),
+		);
+		const section: PayrollAbsenceSection = {
+			employeeId: "employee-1",
+			employeeName: "Ada Lovelace",
+			employeeNumber: "E-1",
+			rows,
+		};
+
+		const chunks = chunkPayrollAbsenceSections([section]);
+
+		expect(chunks.map((chunk) => chunk.rows.length)).toEqual([18, 18, 18, 6]);
+		expect(
+			chunks.map((chunk) => ({
+				employeeId: chunk.employeeId,
+				employeeName: chunk.employeeName,
+				employeeNumber: chunk.employeeNumber,
+			})),
+		).toEqual(
+			Array.from({ length: 4 }, () => ({
+				employeeId: "employee-1",
+				employeeName: "Ada Lovelace",
+				employeeNumber: "E-1",
+			})),
+		);
+		expect(chunks.flatMap((chunk) => chunk.rows)).toEqual(rows);
+	});
+
 	it("omits absence sections when there are no approved details", () => {
 		expect(
 			buildPayrollAbsenceSections({ ...summary, absenceDetails: [] }),
@@ -138,6 +242,14 @@ describe("payroll PDF exporter", () => {
 
 	it("generates a PDF byte array", async () => {
 		const pdf = await exportPayrollSummaryToPDF(summary);
+		expect(pdf.byteLength).toBeGreaterThan(1000);
+	});
+
+	it("generates a PDF byte array without absence details", async () => {
+		const pdf = await exportPayrollSummaryToPDF({
+			...summary,
+			absenceDetails: [],
+		});
 		expect(pdf.byteLength).toBeGreaterThan(1000);
 	});
 });
