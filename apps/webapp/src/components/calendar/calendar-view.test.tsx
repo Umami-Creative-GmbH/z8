@@ -25,7 +25,11 @@ const {
 	refetch: vi.fn(),
 	toastError: vi.fn(),
 	toastSuccess: vi.fn(),
-	preferences: { timeFormat: "24h" as "12h" | "24h", locale: "en-US" },
+	preferences: {
+		timeFormat: "24h" as "12h" | "24h",
+		locale: "en-US",
+		weekStartDay: "monday" as "monday" | "sunday",
+	},
 	mockCalendarData: {
 		events: [] as CalendarEvent[],
 		dailyRequirements: new Map(),
@@ -62,6 +66,7 @@ vi.mock("@tolgee/react", () => ({
 vi.mock("@/components/providers/user-preferences-provider", () => ({
 	useUserTimezone: () => "Europe/Berlin",
 	useTimeFormat: () => preferences.timeFormat,
+	useWeekStartDay: () => preferences.weekStartDay,
 }));
 
 vi.mock("@/hooks/use-organization", () => ({
@@ -147,11 +152,28 @@ vi.mock("./delete-work-period-dialog", () => ({
 }));
 
 vi.mock("./year-calendar-view", () => ({
-	YearCalendarView: ({ events }: { events: CalendarEvent[] }) => (
+	YearCalendarView: ({
+		events,
+		onViewModeChange,
+		onYearChange,
+		year,
+	}: {
+		events: CalendarEvent[];
+		onViewModeChange: (mode: "week") => void;
+		onYearChange: (year: number) => void;
+		year: number;
+	}) => (
 		<div
 			data-testid="year-calendar-view"
 			data-event-ids={events.map((event) => event.id).join(",")}
-		/>
+		>
+			<button type="button" onClick={() => onYearChange(year + 1)}>
+				Next year
+			</button>
+			<button type="button" onClick={() => onViewModeChange("week")}>
+				Week
+			</button>
+		</div>
 	),
 }));
 
@@ -162,6 +184,7 @@ vi.mock("./schedule-x-wrapper", () => ({
 		onRunningPeriodClockOutRequest,
 		onEventClick,
 		onTimeRangeSelect,
+		onRangeChange,
 		onViewModeChange,
 		timeZone,
 		viewMode,
@@ -171,7 +194,8 @@ vi.mock("./schedule-x-wrapper", () => ({
 		onRunningPeriodClockOutRequest?: (event: CalendarEvent) => void;
 		onEventClick?: (event: CalendarEvent) => void;
 		onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
-		onViewModeChange: (mode: "month" | "year") => void;
+		onRangeChange?: (range: { startDateKey: string; endDateKey: string }) => void;
+		onViewModeChange: (mode: "week" | "month" | "year") => void;
 		timeZone?: string;
 		viewMode: string;
 	}) => {
@@ -218,6 +242,28 @@ vi.mock("./schedule-x-wrapper", () => ({
 					}
 				>
 					Select time range
+				</button>
+				<button
+					type="button"
+					onClick={() =>
+						onRangeChange?.({
+							startDateKey: "2026-12-28",
+							endDateKey: "2027-01-03",
+						})
+					}
+				>
+					Change week range
+				</button>
+				<button
+					type="button"
+					onClick={() =>
+						onRangeChange?.({
+							startDateKey: "2026-08-02",
+							endDateKey: "2026-09-12",
+						})
+					}
+				>
+					Report month-grid range
 				</button>
 				<button type="button" onClick={() => onViewModeChange("month")}>
 					Month
@@ -333,12 +379,14 @@ vi.mock("./month-work-summary-view", () => ({
 		isSummaryLoading,
 		onRefresh,
 		onMonthChange,
+		onViewModeChange,
 		viewMode,
 	}: {
 		events: CalendarEvent[];
 		isSummaryLoading?: boolean;
 		onRefresh: () => void;
 		onMonthChange: (dateKey: string) => void;
+		onViewModeChange: (mode: "week") => void;
 		viewMode: string;
 	}) => (
 		<div
@@ -352,6 +400,9 @@ vi.mock("./month-work-summary-view", () => ({
 			</button>
 			<button type="button" onClick={() => onMonthChange("2026-08-01")}>
 				Next month
+			</button>
+			<button type="button" onClick={() => onViewModeChange("week")}>
+				Week
 			</button>
 		</div>
 	),
@@ -421,6 +472,7 @@ describe("CalendarView", () => {
 		mockIsManagerOrAbove.mockReturnValue(true);
 		preferences.timeFormat = "24h";
 		preferences.locale = "en-US";
+		preferences.weekStartDay = "monday";
 		onScheduleXWrapperRender.mockReset();
 		push.mockClear();
 		refetch.mockClear();
@@ -434,6 +486,127 @@ describe("CalendarView", () => {
 		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
 
 		expect(screen.getByTestId("schedule-x-wrapper").getAttribute("data-view-mode")).toBe("week");
+	});
+
+	it("requests the complete visible week range", () => {
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialDateKey="2026-09-03"
+				initialTimezone="Europe/Berlin"
+			/>,
+		);
+
+		expect(capturedCalendarQueries.at(-1)).toMatchObject({
+			dateRange: {
+				startDateKey: "2026-08-31",
+				endDateKey: "2026-09-06",
+			},
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Change week range" }));
+
+		expect(capturedCalendarQueries.at(-1)).toMatchObject({
+			dateRange: {
+				startDateKey: "2026-12-28",
+				endDateKey: "2027-01-03",
+			},
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Month" }));
+
+		expect(capturedCalendarQueries.at(-1)).toMatchObject({
+			dateRange: undefined,
+		});
+	});
+
+	it("aligns a Sunday-start week query with the Schedule-X visible grid", () => {
+		preferences.weekStartDay = "sunday";
+
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialDateKey="2026-09-03"
+				initialTimezone="Europe/Berlin"
+			/>,
+		);
+
+		expect(capturedCalendarQueries.at(-1)).toMatchObject({
+			dateRange: {
+				startDateKey: "2026-08-30",
+				endDateKey: "2026-09-05",
+			},
+		});
+	});
+
+	it("ignores a month-grid callback before returning from month to week", () => {
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialDateKey="2026-09-03"
+				initialTimezone="Europe/Berlin"
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Report month-grid range" }));
+		fireEvent.click(screen.getByRole("button", { name: "Month" }));
+		fireEvent.click(screen.getByRole("button", { name: "Week" }));
+
+		expect(capturedCalendarQueries.at(-1)).toMatchObject({
+			dateRange: {
+				startDateKey: "2026-08-31",
+				endDateKey: "2026-09-06",
+			},
+		});
+	});
+
+	it("recomputes the seven-date range after month navigation before entering week", () => {
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialDateKey="2026-07-15"
+				initialTimezone="Europe/Berlin"
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Change week range" }));
+		fireEvent.click(screen.getByRole("button", { name: "Month" }));
+		fireEvent.click(screen.getByRole("button", { name: "Next month" }));
+		fireEvent.click(screen.getByRole("button", { name: "Week" }));
+
+		expect(capturedCalendarQueries.at(-1)).toMatchObject({
+			dateRange: {
+				startDateKey: "2026-07-27",
+				endDateKey: "2026-08-02",
+			},
+		});
+	});
+
+	it("recomputes the seven-date range after year navigation before entering week", () => {
+		render(
+			<CalendarView
+				organizationId="org-1"
+				currentEmployeeId="employee-1"
+				initialDateKey="2026-09-03"
+				initialTimezone="Europe/Berlin"
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Change week range" }));
+		fireEvent.click(screen.getByRole("button", { name: "Year" }));
+		fireEvent.click(screen.getByRole("button", { name: "Next year" }));
+		fireEvent.click(screen.getByRole("button", { name: "Week" }));
+
+		expect(capturedCalendarQueries.at(-1)).toMatchObject({
+			dateRange: {
+				startDateKey: "2027-12-27",
+				endDateKey: "2028-01-02",
+			},
+		});
 	});
 
 	it("starts from week view on mobile and switches to day after mount", async () => {

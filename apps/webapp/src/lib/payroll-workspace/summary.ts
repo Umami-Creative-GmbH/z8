@@ -9,6 +9,7 @@ import {
 	timeRecord,
 	timeRecordAbsence,
 } from "@/db/schema";
+import { assertCanonicalCutoverReady } from "@/lib/time-record/migration/cutover-state";
 import { buildPayrollAbsenceDetails, payrollAbsenceDetailDays } from "./absence-details";
 import type {
 	PayrollBlocker,
@@ -184,6 +185,8 @@ export async function getPayrollWorkspaceSummary(input: {
 	generatedBy: { id: string; name: string };
 	generatedAt?: DateTime;
 }): Promise<PayrollWorkspaceSummary> {
+	await assertCanonicalCutoverReady(input.organizationId);
+
 	const { db } = await import("@/db");
 	const [organizationRow] = await db
 		.select({ name: organization.name })

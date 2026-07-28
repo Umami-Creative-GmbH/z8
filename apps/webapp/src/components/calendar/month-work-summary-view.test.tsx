@@ -124,6 +124,16 @@ describe("MonthWorkSummaryView", () => {
 		expect(props.onViewModeChange).toHaveBeenCalledWith("week");
 	});
 
+	it("keeps all timeframe tabs visible in a full-width mobile row", () => {
+		renderView();
+
+		const tabs = screen.getByRole("tab", { name: "Day" }).closest('[data-slot="tabs"]');
+		const tabsList = tabs?.querySelector('[data-slot="tabs-list"]');
+
+		expect(tabs?.className).toContain("w-full");
+		expect(tabsList?.className).toContain("grid-cols-4");
+	});
+
 	it("shows an empty month total state when no policy requirements exist", () => {
 		renderView({ workHoursData: new Map(), events: [] });
 

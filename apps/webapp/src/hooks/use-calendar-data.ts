@@ -42,6 +42,10 @@ export interface UseCalendarDataOptions {
 	year: number;
 	filters: CalendarFilters;
 	fullYear?: boolean; // Fetch all 12 months for year view
+	dateRange?: {
+		startDateKey: string;
+		endDateKey: string;
+	};
 }
 
 export interface UseCalendarDataResult {
@@ -66,6 +70,7 @@ async function fetchCalendarEvents(
 	month: number | undefined,
 	fullYear: boolean,
 	filters: CalendarFilters,
+	dateRange?: { startDateKey: string; endDateKey: string },
 ): Promise<{
 	events: CalendarEvent[];
 	dailyRequirements: DailyWorkRequirements;
@@ -82,7 +87,10 @@ async function fetchCalendarEvents(
 		showWorkPeriods: filters.showWorkPeriods.toString(),
 	});
 
-	if (fullYear) {
+	if (dateRange) {
+		params.set("rangeStart", dateRange.startDateKey);
+		params.set("rangeEnd", dateRange.endDateKey);
+	} else if (fullYear) {
 		params.set("fullYear", "true");
 	} else if (month !== undefined) {
 		params.set("month", month.toString());
@@ -138,13 +146,15 @@ export function useCalendarData({
 	year,
 	filters,
 	fullYear = false,
+	dateRange,
 }: UseCalendarDataOptions): UseCalendarDataResult {
 	const queryClient = useQueryClient();
 
 	const queryParams = {
 		year,
-		month: fullYear ? undefined : month,
+		month: fullYear || dateRange ? undefined : month,
 		fullYear,
+		dateRange,
 		filters,
 	};
 
@@ -162,7 +172,14 @@ export function useCalendarData({
 	} = useQuery({
 		queryKey: queryKeys.calendar.events(organizationId, queryParams),
 		queryFn: () =>
-			fetchCalendarEvents(organizationId, year, fullYear ? undefined : month, fullYear, filters),
+			fetchCalendarEvents(
+				organizationId,
+				year,
+				fullYear || dateRange ? undefined : month,
+				fullYear,
+				filters,
+				dateRange,
+			),
 		staleTime: 30 * 1000, // 30 seconds - calendar data can change frequently
 		enabled: !!organizationId,
 	});
