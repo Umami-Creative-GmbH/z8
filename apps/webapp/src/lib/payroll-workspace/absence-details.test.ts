@@ -113,6 +113,28 @@ describe("buildPayrollAbsenceDetails", () => {
 		]);
 	});
 
+	it("preserves a multi-day PM start and AM end", () => {
+		const details = buildPayrollAbsenceDetails(
+			[
+				{
+					employeeId: "employee-1",
+					categoryId: "vacation",
+					categoryName: "Vacation",
+					startDate: "2026-06-10",
+					endDate: "2026-06-11",
+					startPeriod: "pm",
+					endPeriod: "am",
+				},
+			],
+			june2026,
+		);
+
+		expect(details.map(({ date, period }) => ({ date, period }))).toEqual([
+			{ date: "2026-06-10", period: "pm" },
+			{ date: "2026-06-11", period: "am" },
+		]);
+	});
+
 	it("includes weekends and sorts by employee, date, category name, then category id", () => {
 		const details = buildPayrollAbsenceDetails(
 			[
