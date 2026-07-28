@@ -57,6 +57,31 @@ describe("buildPayrollAbsenceDetails", () => {
 		expect(details[0]?.period).toBe("full_day");
 	});
 
+	it.each([
+		["14:00:00", "17:00:00", "pm"],
+		["09:00:00", "11:00:00", "am"],
+		["10:00:00", "14:00:00", "partial_day"],
+	] as const)("classifies an explicit %s-%s interval as %s", (startTime, endTime, expectedPeriod) => {
+		const details = buildPayrollAbsenceDetails(
+			[
+				{
+					employeeId: "employee-1",
+					categoryId: "vacation",
+					categoryName: "Vacation",
+					startDate: "2026-06-10",
+					endDate: "2026-06-10",
+					startPeriod: "am",
+					endPeriod: "am",
+					startTime,
+					endTime,
+				},
+			],
+			june2026,
+		);
+
+		expect(details[0]?.period).toBe(expectedPeriod);
+	});
+
 	it("clips a multi-day range while preserving only original endpoint periods", () => {
 		expect(
 			buildPayrollAbsenceDetails(
@@ -220,6 +245,7 @@ describe("payrollAbsenceDetailDays", () => {
 		["full_day", 1],
 		["am", 0.5],
 		["pm", 0.5],
+		["partial_day", 0.5],
 	] as const)("returns %s as %s day", (period, expectedDays) => {
 		expect(payrollAbsenceDetailDays(period)).toBe(expectedDays);
 	});

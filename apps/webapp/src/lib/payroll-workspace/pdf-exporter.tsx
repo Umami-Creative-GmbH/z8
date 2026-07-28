@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import type {
-	PayrollDayPeriod,
+	PayrollAbsenceDetailPeriod,
 	PayrollEmployeeSummary,
 	PayrollWorkspaceSummary,
 } from "./types";
@@ -292,8 +292,17 @@ function compareText(left: string, right: string): number {
 	return 0;
 }
 
-function formatAbsencePeriod(period: PayrollDayPeriod): string {
-	return period === "full_day" ? "Full day" : period.toUpperCase();
+function formatAbsencePeriod(period: PayrollAbsenceDetailPeriod): string {
+	if (period === "full_day") return "Full day";
+	if (period === "partial_day") return "Partial day";
+	return period.toUpperCase();
+}
+
+function compareEmployees(
+	left: PayrollEmployeeSummary,
+	right: PayrollEmployeeSummary,
+): number {
+	return left.name.localeCompare(right.name) || compareText(left.id, right.id);
 }
 
 export function buildPayrollAbsenceSections(
@@ -312,7 +321,7 @@ export function buildPayrollAbsenceSections(
 
 	return summary.employees
 		.filter((employee) => detailsByEmployee.has(employee.id))
-		.sort((left, right) => left.name.localeCompare(right.name))
+		.sort(compareEmployees)
 		.map((employee) => ({
 			employeeId: employee.id,
 			employeeName: employee.name,
@@ -322,8 +331,11 @@ export function buildPayrollAbsenceSections(
 					(left, right) =>
 						compareText(left.date, right.date) ||
 						compareText(left.categoryName, right.categoryName) ||
-						compareText(left.categoryId, right.categoryId) ||
-						compareText(left.period, right.period),
+						compareText(
+							formatAbsencePeriod(left.period),
+							formatAbsencePeriod(right.period),
+						) ||
+						compareText(left.categoryId, right.categoryId),
 				)
 				.map((detail) => ({
 					date: detail.date,
@@ -350,6 +362,7 @@ export async function exportPayrollSummaryToPDF(
 ): Promise<Uint8Array> {
 	const absenceSections = buildPayrollAbsenceSections(summary);
 	const absenceReportRows = flattenPayrollAbsenceSections(absenceSections);
+	const sortedEmployees = [...summary.employees].sort(compareEmployees);
 	const { Document, Page, pdf, StyleSheet, Text, View } = await import(
 		"@react-pdf/renderer"
 	);
@@ -428,7 +441,7 @@ export async function exportPayrollSummaryToPDF(
 						</Text>
 						<Text style={[styles.cell, styles.statusCell]}>Status</Text>
 					</View>
-					{summary.employees.map((employee) => (
+					{sortedEmployees.map((employee) => (
 						<View
 							key={employee.id}
 							style={

@@ -1,7 +1,7 @@
 import { Temporal } from "temporal-polyfill";
 import type {
 	PayrollAbsenceDetail,
-	PayrollDayPeriod,
+	PayrollAbsenceDetailPeriod,
 	PayrollPeriod,
 	PayrollSummaryAbsenceRangeRow,
 } from "./types";
@@ -42,10 +42,10 @@ export function buildPayrollAbsenceDetails(
 			Temporal.PlainDate.compare(date, clippedEnd) <= 0;
 			date = date.add({ days: 1 })
 		) {
-			let dayPeriod: PayrollDayPeriod = "full_day";
+			let dayPeriod: PayrollAbsenceDetailPeriod = "full_day";
 
 			if (originalStart.equals(originalEnd)) {
-				if (row.startPeriod === row.endPeriod) dayPeriod = row.startPeriod;
+				dayPeriod = classifySameDayPeriod(row);
 			} else if (date.equals(originalStart)) {
 				dayPeriod = row.startPeriod === "pm" ? "pm" : "full_day";
 			} else if (date.equals(originalEnd)) {
@@ -71,6 +71,29 @@ export function buildPayrollAbsenceDetails(
 	);
 }
 
-export function payrollAbsenceDetailDays(period: PayrollDayPeriod): number {
+export function payrollAbsenceDetailDays(
+	period: PayrollAbsenceDetailPeriod,
+): number {
 	return period === "full_day" ? 1 : 0.5;
+}
+
+function classifySameDayPeriod(
+	row: PayrollSummaryAbsenceRangeRow,
+): PayrollAbsenceDetailPeriod {
+	if (
+		row.startPeriod === "am" &&
+		row.endPeriod === "am" &&
+		row.startTime &&
+		row.endTime
+	) {
+		const noon = Temporal.PlainTime.from("12:00:00");
+		const startTime = Temporal.PlainTime.from(row.startTime);
+		const endTime = Temporal.PlainTime.from(row.endTime);
+
+		if (Temporal.PlainTime.compare(startTime, noon) >= 0) return "pm";
+		if (Temporal.PlainTime.compare(endTime, noon) <= 0) return "am";
+		return "partial_day";
+	}
+
+	return row.startPeriod === row.endPeriod ? row.startPeriod : "full_day";
 }

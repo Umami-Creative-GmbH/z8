@@ -149,6 +149,107 @@ describe("buildPayrollSummaryFromRows", () => {
 		]);
 	});
 
+	it("classifies timed partial absences and counts each as half a day", () => {
+		const summary = buildPayrollSummaryFromRows({
+			organizationName: "Acme GmbH",
+			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
+			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedBy: { id: "payroll-1", name: "Payroll User" },
+			employees: [
+				{
+					id: "employee-1",
+					name: "Ada Lovelace",
+					employeeNumber: "E-1",
+					teamName: "Ops",
+					contractType: "fixed",
+				},
+			],
+			workRows: [],
+			absenceRows: [
+				{
+					employeeId: "employee-1",
+					categoryId: "afternoon",
+					categoryName: "Afternoon",
+					startDate: "2026-06-10",
+					endDate: "2026-06-10",
+					startPeriod: "am",
+					endPeriod: "am",
+					startTime: "14:00:00",
+					endTime: "17:00:00",
+				},
+				{
+					employeeId: "employee-1",
+					categoryId: "morning",
+					categoryName: "Morning",
+					startDate: "2026-06-11",
+					endDate: "2026-06-11",
+					startPeriod: "am",
+					endPeriod: "am",
+					startTime: "09:00:00",
+					endTime: "11:00:00",
+				},
+				{
+					employeeId: "employee-1",
+					categoryId: "cross-noon",
+					categoryName: "Cross noon",
+					startDate: "2026-06-12",
+					endDate: "2026-06-12",
+					startPeriod: "am",
+					endPeriod: "am",
+					startTime: "10:00:00",
+					endTime: "14:00:00",
+				},
+			],
+			blockers: [],
+		});
+
+		expect(summary.employees[0]?.absenceDaysByCategory).toEqual([
+			{ categoryId: "afternoon", categoryName: "Afternoon", days: 0.5 },
+			{ categoryId: "cross-noon", categoryName: "Cross noon", days: 0.5 },
+			{ categoryId: "morning", categoryName: "Morning", days: 0.5 },
+		]);
+		expect(
+			summary.absenceDetails.map(({ date, period }) => ({ date, period })),
+		).toEqual([
+			{ date: "2026-06-10", period: "pm" },
+			{ date: "2026-06-11", period: "am" },
+			{ date: "2026-06-12", period: "partial_day" },
+		]);
+	});
+
+	it("sorts employees with identical names by id", () => {
+		const summary = buildPayrollSummaryFromRows({
+			organizationName: "Acme GmbH",
+			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
+			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedBy: { id: "payroll-1", name: "Payroll User" },
+			employees: [
+				{
+					id: "employee-2",
+					name: "Alex Smith",
+					employeeNumber: null,
+					teamName: null,
+					contractType: "fixed",
+				},
+				{
+					id: "employee-1",
+					name: "Alex Smith",
+					employeeNumber: null,
+					teamName: null,
+					contractType: "fixed",
+				},
+			],
+			workRows: [],
+			absenceRows: [],
+			blockers: [],
+		});
+
+		expect(summary.employees.map((employee) => employee.id)).toEqual([
+			"employee-1",
+			"employee-2",
+		]);
+	});
+
 	it("keeps blockers as warnings and marks affected employees", () => {
 		const summary = buildPayrollSummaryFromRows({
 			organizationName: "Acme GmbH",

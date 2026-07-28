@@ -2,11 +2,11 @@
 
 ## Goal
 
-Make the combined PDF downloaded from `/payroll` suitable for manual documentation in another legal system by showing the exact approved absence dates for each employee.
+Make the combined PDF downloaded from `/payroll` suitable for manual review or entry in another system by showing the exact approved absence dates for each employee.
 
 ## Scope
 
-The combined payroll PDF will list every approved absence category by exact recorded calendar date. Full-day and partial-day absences will be distinguished as `Full day`, `AM`, or `PM`.
+The combined payroll PDF will list every approved absence category by exact recorded calendar date. Absences will be distinguished as `Full day`, `AM`, `PM`, or `Partial day`. `Partial day` identifies an explicitly timed same-day interval that crosses from AM into PM.
 
 This change applies only to the combined PDF downloaded from `/payroll`. It does not change DATEV, Lexware, or Sage files, and it does not change Personio, SuccessFactors, Workday, or other connector payloads.
 
@@ -23,7 +23,7 @@ Extend the payroll workspace summary with day-level absence details. Each detail
 - employee ID
 - absence category ID and name
 - logical ISO calendar date (`YYYY-MM-DD`)
-- day period: `full_day`, `am`, or `pm`
+- day period: `full_day`, `am`, `pm`, or `partial_day`
 
 These dates are logical absence dates. They must not be derived from the payroll officer's or another viewer's timezone.
 
@@ -35,6 +35,7 @@ An approved absence record is expanded into one detail for each recorded calenda
 
 - A same-day full-day absence produces one `full_day` detail.
 - A same-day partial absence produces one `am` or `pm` detail.
+- A same-day absence with explicit clock times uses those times when its stored endpoint periods are generic AM placeholders: an interval beginning at or after 12:00 is `pm`, one ending at or before 12:00 is `am`, and one crossing 12:00 is `partial_day`.
 - For a multi-day absence, the first date is `pm` only when the record starts in the PM; an AM or full-day start produces `full_day` coverage for that date.
 - The last date is `am` only when the record ends in the AM; a PM or full-day end produces `full_day` coverage for that date.
 - All interior dates are `full_day`. Dates that become range boundaries only because the record is clipped to the selected payroll period are also `full_day` unless they are an original record endpoint.
@@ -51,7 +52,7 @@ The section uses a compact table with columns for:
 - employee identity
 - date
 - absence category name
-- `Full day`, `AM`, or `PM`
+- `Full day`, `AM`, `PM`, or `Partial day`
 
 Rows remain contiguous and grouped by employee, with the employee's identity repeated on every row so that each row retains its context across page breaks. Employee groups are sorted by employee name, and rows within each group are sorted by date, category name, and period for deterministic output. Employees without approved absences are omitted from the detail section. If the selected scope has no approved absences, the PDF displays the unchanged message: `No approved absences for the selected period.`
 
@@ -72,7 +73,7 @@ All absence queries remain filtered by `organizationId`, approved status, select
 
 ## Documentation
 
-Update the payroll export guide to explain that payroll officers can use `/payroll` to download a combined PDF containing approved absence dates and full-day or AM/PM detail for manual documentation in downstream legal systems.
+Update the payroll export guide to explain that payroll officers can use `/payroll` to download a combined PDF containing approved absence dates and `Full day`, `AM`, `PM`, or `Partial day` detail for manual review or entry in downstream systems.
 
 The guide must distinguish this combined PDF from configured payroll connector exports, whose formats and payloads are unchanged.
 
@@ -82,6 +83,7 @@ Implementation follows red-green-refactor and covers:
 
 - same-day full-day expansion
 - same-day AM and PM expansion
+- explicitly timed same-day AM, PM, and cross-noon classification
 - multi-day expansion with first and last partial-day boundaries
 - clipping details to the selected payroll period
 - inclusion of all recorded calendar dates, including weekends

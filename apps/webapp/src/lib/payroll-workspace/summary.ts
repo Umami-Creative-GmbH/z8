@@ -85,7 +85,7 @@ export function buildPayrollSummaryFromRows(input: {
 				hasBlockers: employeesWithBlockers.has(employeeRow.id),
 			};
 		})
-		.sort((a, b) => a.name.localeCompare(b.name));
+		.sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
 
 	return {
 		organizationName: input.organizationName,
@@ -343,6 +343,8 @@ async function getAbsenceRows(
 		endDate: (row.endAt ?? row.startAt).toISOString().slice(0, 10),
 		startPeriod: row.startPeriod,
 		endPeriod: row.endPeriod,
+		startTime: row.startAt.toISOString().slice(11, 19),
+		endTime: (row.endAt ?? row.startAt).toISOString().slice(11, 19),
 	}));
 }
 

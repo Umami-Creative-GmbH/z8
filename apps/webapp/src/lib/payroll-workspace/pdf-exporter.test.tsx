@@ -113,8 +113,8 @@ describe("payroll PDF exporter", () => {
 				employeeName: "Ada Lovelace",
 				employeeNumber: "E-1",
 				rows: [
-					{ date: "2026-06-03", categoryName: "Sick", periodLabel: "PM" },
 					{ date: "2026-06-03", categoryName: "Sick", periodLabel: "AM" },
+					{ date: "2026-06-03", categoryName: "Sick", periodLabel: "PM" },
 					{
 						date: "2026-06-03",
 						categoryName: "Vacation",
@@ -133,7 +133,7 @@ describe("payroll PDF exporter", () => {
 		]);
 	});
 
-	it("uses the raw period as the final absence row sort key", () => {
+	it("uses the visible period before category id as an absence row sort key", () => {
 		const sameCategorySummary: PayrollWorkspaceSummary = {
 			...summary,
 			absenceDetails: [
@@ -157,6 +157,37 @@ describe("payroll PDF exporter", () => {
 		expect(buildPayrollAbsenceSections(sameCategorySummary)[0]?.rows).toEqual([
 			{ date: "2026-06-03", categoryName: "Sick", periodLabel: "AM" },
 			{ date: "2026-06-03", categoryName: "Sick", periodLabel: "PM" },
+		]);
+	});
+
+	it("formats crossing timed intervals and sorts by the visible period before category id", () => {
+		const sameCategorySummary: PayrollWorkspaceSummary = {
+			...summary,
+			absenceDetails: [
+				{
+					employeeId: "employee-1",
+					categoryId: "sick-a",
+					categoryName: "Sick",
+					date: "2026-06-03",
+					period: "partial_day",
+				},
+				{
+					employeeId: "employee-1",
+					categoryId: "sick-z",
+					categoryName: "Sick",
+					date: "2026-06-03",
+					period: "am",
+				},
+			],
+		};
+
+		expect(buildPayrollAbsenceSections(sameCategorySummary)[0]?.rows).toEqual([
+			{ date: "2026-06-03", categoryName: "Sick", periodLabel: "AM" },
+			{
+				date: "2026-06-03",
+				categoryName: "Sick",
+				periodLabel: "Partial day",
+			},
 		]);
 	});
 
@@ -187,7 +218,7 @@ describe("payroll PDF exporter", () => {
 		).toEqual(["ada", "Zoe"]);
 	});
 
-	it("preserves summary employee order when names are identical", () => {
+	it("sorts employees with identical names by id", () => {
 		const identicalNamesSummary: PayrollWorkspaceSummary = {
 			...summary,
 			employees: [
@@ -211,7 +242,7 @@ describe("payroll PDF exporter", () => {
 			buildPayrollAbsenceSections(identicalNamesSummary).map(
 				(section) => section.employeeId,
 			),
-		).toEqual(["employee-2", "employee-1"]);
+		).toEqual(["employee-1", "employee-2"]);
 	});
 
 	it("preserves duplicate absence details", () => {

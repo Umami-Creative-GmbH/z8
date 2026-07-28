@@ -2,6 +2,8 @@ import type { DateTime } from "luxon";
 
 export type PayrollDayPeriod = "full_day" | "am" | "pm";
 
+export type PayrollAbsenceDetailPeriod = PayrollDayPeriod | "partial_day";
+
 export type PayrollDateRangeMode = "month" | "week" | "custom";
 
 export interface PayrollPeriod {
@@ -33,6 +35,8 @@ export interface PayrollSummaryAbsenceRangeRow {
 	endDate: string;
 	startPeriod: PayrollDayPeriod;
 	endPeriod: PayrollDayPeriod;
+	startTime?: string;
+	endTime?: string;
 }
 
 export type PayrollSummaryAbsenceRow = PayrollSummaryAbsenceRangeRow;
@@ -42,7 +46,7 @@ export interface PayrollAbsenceDetail {
 	categoryId: string;
 	categoryName: string;
 	date: string;
-	period: PayrollDayPeriod;
+	period: PayrollAbsenceDetailPeriod;
 }
 
 export type PayrollBlockerType =
