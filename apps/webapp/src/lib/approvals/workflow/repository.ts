@@ -2454,11 +2454,13 @@ async function verifyInitialPersistence(
 	dbService: ApprovalDbService,
 	input: InitialApprovalWorkflowPersistenceInput,
 ): Promise<ApprovalWorkflowSnapshot> {
-	const persistedSnapshot = await loadSnapshot(dbService, {
-		organizationId: input.snapshot.organizationId,
-		workflowId: input.snapshot.id,
-	});
-	const persistedEvents = await loadInitialEvents(dbService, input.snapshot);
+	const [persistedSnapshot, persistedEvents] = await Promise.all([
+		loadSnapshot(dbService, {
+			organizationId: input.snapshot.organizationId,
+			workflowId: input.snapshot.id,
+		}),
+		loadInitialEvents(dbService, input.snapshot),
+	]);
 	if (
 		!persistedValuesEqual(persistedSnapshot, input.snapshot) ||
 		persistedEvents.length !== input.events.length ||

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useEffectEvent, useState } from "react";
+import { useState } from "react";
 import { queryKeys } from "@/lib/query/keys";
 
 type PushPermission = "default" | "granted" | "denied" | "unsupported";
@@ -18,6 +18,7 @@ interface UsePushNotificationsResult {
 	permission: PushPermission;
 	isSubscribed: boolean;
 	isLoading: boolean;
+	error: Error | null;
 
 	// Actions
 	subscribe: (deviceName?: string) => Promise<boolean>;
@@ -105,9 +106,6 @@ export function usePushNotifications(
 	options: UsePushNotificationsOptions = {},
 ): UsePushNotificationsResult {
 	const { onSubscribe, onUnsubscribe, onError } = options;
-	const handleError = useEffectEvent((error: Error) => {
-		onError?.(error);
-	});
 	const queryClient = useQueryClient();
 	const [isActionPending, setIsActionPending] = useState(false);
 	const bootstrapQuery = useQuery({
@@ -118,13 +116,15 @@ export function usePushNotifications(
 		retry: false,
 	});
 	const bootstrap = bootstrapQuery.data ?? UNSUPPORTED_PUSH_STATE;
-	const { isSupported, permission, isSubscribed, registration, vapidPublicKey } = bootstrap;
-
-	useEffect(() => {
-		if (bootstrapQuery.error instanceof Error) {
-			handleError(bootstrapQuery.error);
-		}
-	}, [bootstrapQuery.error]);
+	const {
+		isSupported,
+		permission,
+		isSubscribed,
+		registration,
+		vapidPublicKey,
+	} = bootstrap;
+	const error =
+		bootstrapQuery.error instanceof Error ? bootstrapQuery.error : null;
 
 	const updateBootstrap = (updates: Partial<PushBootstrapState>) => {
 		queryClient.setQueryData<PushBootstrapState>(
@@ -257,6 +257,7 @@ export function usePushNotifications(
 		permission,
 		isSubscribed,
 		isLoading: bootstrapQuery.isLoading || isActionPending,
+		error,
 		subscribe,
 		unsubscribe,
 		requestPermission,

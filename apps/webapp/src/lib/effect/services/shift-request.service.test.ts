@@ -170,6 +170,11 @@ function request(overrides: Partial<RequestRow> = {}): RequestRow {
 	};
 }
 
+function jsonRoundTrip<Value>(value: Value): Value {
+	const serialized = JSON.stringify(value);
+	return JSON.parse(serialized as string) as Value;
+}
+
 function paramsFrom(
 	expression: unknown,
 	values: unknown[] = [],
@@ -583,9 +588,11 @@ describe("ShiftRequestService organization containment", () => {
 		const requestById = await harness.run((service) =>
 			service.getRequestById("org-1", "request-1"),
 		);
-		const serializedRequests = JSON.parse(
-			JSON.stringify([pendingRequests[0], requestsByShift[0], requestById]),
-		);
+		const serializedRequests = jsonRoundTrip([
+			pendingRequests[0],
+			requestsByShift[0],
+			requestById,
+		]);
 
 		for (const serialized of serializedRequests) {
 			expect(serialized.requester).toEqual({

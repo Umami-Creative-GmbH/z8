@@ -1385,11 +1385,17 @@ function submissionEffect(
 				),
 			);
 			const deletionTimestamp = period.startTime;
+			const originalsById = new Map<string, (typeof originals)[number]>();
+			for (const original of originals) {
+				if (!originalsById.has(original.id)) {
+					originalsById.set(original.id, original);
+				}
+			}
 			for (const endpoint of [
 				{ endpointType: "clock_in" as const, id: period.clockInId },
 				{ endpointType: "clock_out" as const, id: clockOutId },
 			]) {
-				const original = originals.find((entry) => entry.id === endpoint.id);
+				const original = originalsById.get(endpoint.id);
 				const endpointTimezone = original?.timezone ?? timezone;
 				const timezoneCapture =
 					original?.timezoneSource === "browser"

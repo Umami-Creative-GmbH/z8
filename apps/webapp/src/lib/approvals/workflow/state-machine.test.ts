@@ -242,6 +242,11 @@ function deepFreeze<Value>(value: Value): Value {
 	return value;
 }
 
+function jsonRoundTrip<Value>(value: Value): Value {
+	const serialized = JSON.stringify(value);
+	return JSON.parse(serialized as string) as Value;
+}
+
 function fixtureStage(
 	value: ApprovalWorkflowSnapshot,
 	index: number,
@@ -370,9 +375,9 @@ function expectMachineError(
 	} catch (error) {
 		expect(error).toBeInstanceOf(ApprovalStateMachineError);
 		expect(error).toMatchObject({ code });
-		expect(
-			JSON.parse(JSON.stringify((error as ApprovalStateMachineError).details)),
-		).toEqual((error as ApprovalStateMachineError).details);
+		expect(jsonRoundTrip((error as ApprovalStateMachineError).details)).toEqual(
+			(error as ApprovalStateMachineError).details,
+		);
 		return error as ApprovalStateMachineError;
 	}
 	throw new Error(`Expected ${code}`);
@@ -3092,15 +3097,9 @@ describe("purity and event integrity", () => {
 		const second = planWorkflowTransition(input, command, standardPolicy, now);
 		expect(first).toEqual(second);
 		for (const event of first.events) {
-			expect(JSON.parse(JSON.stringify(event.previousState))).toEqual(
-				event.previousState,
-			);
-			expect(JSON.parse(JSON.stringify(event.resultingState))).toEqual(
-				event.resultingState,
-			);
-			expect(JSON.parse(JSON.stringify(event.metadata))).toEqual(
-				event.metadata,
-			);
+			expect(jsonRoundTrip(event.previousState)).toEqual(event.previousState);
+			expect(jsonRoundTrip(event.resultingState)).toEqual(event.resultingState);
+			expect(jsonRoundTrip(event.metadata)).toEqual(event.metadata);
 		}
 	});
 

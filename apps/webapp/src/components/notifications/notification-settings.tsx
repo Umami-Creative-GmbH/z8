@@ -18,7 +18,7 @@ import {
 	IconUsers,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -226,6 +226,7 @@ export function NotificationSettings() {
 		isSubscribed: isPushSubscribed,
 		subscribe: subscribeToPush,
 		isLoading: isPushLoading,
+		error: pushError,
 	} = usePushNotifications({
 		onSubscribe: () => {
 			toast.success(
@@ -240,13 +241,31 @@ export function NotificationSettings() {
 		},
 		onError: (error) => {
 			toast.error(
-				t("common:notifications.preferences.push.errorToast", "Push notification error"),
+				t(
+					"common:notifications.preferences.push.errorToast",
+					"Push notification error",
+				),
 				{
 					description: error.message,
+					id: "push-notification-error",
 				},
 			);
 		},
 	});
+
+	useEffect(() => {
+		if (!pushError) return;
+		toast.error(
+			t(
+				"common:notifications.preferences.push.errorToast",
+				"Push notification error",
+			),
+			{
+				description: pushError.message,
+				id: "push-notification-error",
+			},
+		);
+	}, [pushError, t]);
 
 	const visibleChannels = NOTIFICATION_CHANNELS.filter((channel) => availableChannels[channel]);
 	const getChannelLabel = (channel: NotificationChannel) =>

@@ -1826,9 +1826,9 @@ describe("approval workflow repository", () => {
 			{ rows: [required(rows.events[0])] },
 			{ rows: [required(rows.events[1])] },
 			{ rows: [rows.root] },
+			{ rows: rows.events },
 			{ rows: [rows.stage] },
 			{ rows: [rows.assignment] },
-			{ rows: rows.events },
 		]);
 
 		await transactionContext(fake.client, async ({ repository }) => {
@@ -2116,9 +2116,9 @@ describe("approval workflow repository", () => {
 			{ rows: [required(initialWorkflowRows(input).events[0])] },
 			{ rows: [required(initialWorkflowRows(input).events[1])] },
 			{ rows: [initialWorkflowRows(input).root] },
+			{ rows: initialWorkflowRows(input).events },
 			{ rows: [initialWorkflowRows(input).stage] },
 			{ rows: [initialWorkflowRows(input).assignment] },
-			{ rows: initialWorkflowRows(input).events },
 		]);
 
 		await transactionContext(fake.client, async ({ repository }) => {
@@ -2349,9 +2349,9 @@ describe("approval workflow repository", () => {
 			{ rows: [required(eventRows[0])] },
 			{ rows: [required(eventRows[1])] },
 			{ rows: [root] },
+			{ rows: eventRows },
 			{ rows: [stagePersistence] },
 			{ rows: [] },
-			{ rows: eventRows },
 		]);
 
 		await transactionContext(created.client, async ({ repository }) => {

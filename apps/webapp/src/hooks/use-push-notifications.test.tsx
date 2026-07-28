@@ -112,7 +112,10 @@ describe("usePushNotifications", () => {
 		expect(result.current.isSupported).toBe(false);
 		expect(result.current.permission).toBe("unsupported");
 		expect(registerMock).not.toHaveBeenCalled();
-		expect(onError).toHaveBeenCalledWith(expect.any(Error));
+		expect(result.current.error).toEqual(
+			expect.objectContaining({ message: "network unavailable" }),
+		);
+		expect(onError).not.toHaveBeenCalled();
 	});
 
 	it("does not rerun push initialization when callback props change", async () => {

@@ -75,31 +75,33 @@ export async function cancelPendingTimeCorrection(
 	try {
 		return await runtime.repository.withTransaction(async (context) => {
 			const database = context.dbService.db as typeof db;
-			const requesters = await database.query.employee.findMany({
-				where: and(
-					eq(employee.id, input.requesterEmployeeId),
-					eq(employee.organizationId, input.organizationId),
-					eq(employee.userId, input.requesterUserId),
-					eq(employee.isActive, true),
-				),
-				limit: 2,
-			});
-			const memberships = await database.query.member.findMany({
-				where: and(
-					eq(member.organizationId, input.organizationId),
-					eq(member.userId, input.requesterUserId),
-					eq(member.status, "approved"),
-				),
-				limit: 2,
-			});
-			const periods = await database.query.workPeriod.findMany({
-				where: and(
-					eq(workPeriod.id, input.workPeriodId),
-					eq(workPeriod.organizationId, input.organizationId),
-					eq(workPeriod.employeeId, input.requesterEmployeeId),
-				),
-				limit: 2,
-			});
+			const [requesters, memberships, periods] = await Promise.all([
+				database.query.employee.findMany({
+					where: and(
+						eq(employee.id, input.requesterEmployeeId),
+						eq(employee.organizationId, input.organizationId),
+						eq(employee.userId, input.requesterUserId),
+						eq(employee.isActive, true),
+					),
+					limit: 2,
+				}),
+				database.query.member.findMany({
+					where: and(
+						eq(member.organizationId, input.organizationId),
+						eq(member.userId, input.requesterUserId),
+						eq(member.status, "approved"),
+					),
+					limit: 2,
+				}),
+				database.query.workPeriod.findMany({
+					where: and(
+						eq(workPeriod.id, input.workPeriodId),
+						eq(workPeriod.organizationId, input.organizationId),
+						eq(workPeriod.employeeId, input.requesterEmployeeId),
+					),
+					limit: 2,
+				}),
+			]);
 			const requester = requesters[0];
 			const membership = memberships[0];
 			const period = periods[0];

@@ -1969,15 +1969,21 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	const correctionEntries = [clockInCorrection, clockOutCorrection].filter(
 		(entry): entry is LockedTimeCorrectionEntry => Boolean(entry),
 	);
+	const originalEntriesById = new Map<string, LockedTimeCorrectionEntry>();
+	for (const entry of originalEntries) {
+		if (!originalEntriesById.has(entry.id)) {
+			originalEntriesById.set(entry.id, entry);
+		}
+	}
 	const modernState =
 		originalEntries.every(
 			(entry) => !entry.isSuperseded && entry.supersededById === null,
 		) && correctionEntries.every((entry) => entry.isSuperseded);
 	const historicalRejectedState =
 		correctionEntries.every((correctionEntry) => {
-			const original = originalEntries.find(
-				(candidate) => candidate.id === correctionEntry.replacesEntryId,
-			);
+			const original = correctionEntry.replacesEntryId
+				? originalEntriesById.get(correctionEntry.replacesEntryId)
+				: undefined;
 			return (
 				Boolean(original) &&
 				original?.isSuperseded === true &&
@@ -2030,9 +2036,9 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			throw timeCorrectionFinalizationConflict();
 		}
 		for (const correctionEntry of correctionEntries) {
-			const original = originalEntries.find(
-				(candidate) => candidate.id === correctionEntry.replacesEntryId,
-			);
+			const original = correctionEntry.replacesEntryId
+				? originalEntriesById.get(correctionEntry.replacesEntryId)
+				: undefined;
 			if (!original) throw timeCorrectionFinalizationConflict();
 			const reactivated = await input.dbService.db
 				.update(timeEntry)

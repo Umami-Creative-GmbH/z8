@@ -2164,27 +2164,28 @@ export async function createManualTimeEntry(
 				},
 				tx,
 			);
-			const clockOutEntry = await createTimeEntry(
-				{
-					employeeId: targetEmployee.id,
-					organizationId: targetEmployee.organizationId,
-					type: "clock_out",
-					timestamp: adjustedClockOut,
-					createdBy: session.user.id,
-					notes: data.reason,
-					...clockOutTimezoneCapture,
-					chainAfter: clockInEntry,
-				},
-				tx,
-			);
-			const surchargeSnapshot =
-				await resolvePolicyClockOutSurchargeSnapshotInTransaction({
+			const [clockOutEntry, surchargeSnapshot] = await Promise.all([
+				createTimeEntry(
+					{
+						employeeId: targetEmployee.id,
+						organizationId: targetEmployee.organizationId,
+						type: "clock_out",
+						timestamp: adjustedClockOut,
+						createdBy: session.user.id,
+						notes: data.reason,
+						...clockOutTimezoneCapture,
+						chainAfter: clockInEntry,
+					},
+					tx,
+				),
+				resolvePolicyClockOutSurchargeSnapshotInTransaction({
 					dbService: context.dbService as never,
 					organizationId: targetEmployee.organizationId,
 					employeeId: targetEmployee.id,
 					startTime: instantFromDate(adjustedClockIn),
 					endTime: instantFromDate(adjustedClockOut),
-				});
+				}),
+			]);
 			if (!requiresApproval) immediateSurchargeSnapshot = surchargeSnapshot;
 			const canonicalRecord =
 				await canonicalWorkRecordClient.createForCompletedPeriod(

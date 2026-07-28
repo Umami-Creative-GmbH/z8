@@ -375,7 +375,8 @@ describe("time correction request safety", () => {
 
 		expect(body).toContain('endpointType: "clock_in"');
 		expect(body).toContain('endpointType: "clock_out"');
-		expect(body).toContain("const original = originals.find");
+		expect(body).toContain("const originalsById = new Map");
+		expect(body).toContain("const original = originalsById.get(endpoint.id)");
 		expect(body).toContain(
 			"const endpointTimezone = original?.timezone ?? timezone",
 		);

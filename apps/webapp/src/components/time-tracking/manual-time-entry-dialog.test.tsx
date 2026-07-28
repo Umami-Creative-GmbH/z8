@@ -159,6 +159,11 @@ function deferredResult<T>() {
 	return { promise, resolve };
 }
 
+function jsonRoundTrip<Value>(value: Value): Value {
+	const serialized = JSON.stringify(value);
+	return JSON.parse(serialized as string) as Value;
+}
+
 afterEach(() => {
 	vi.restoreAllMocks();
 });
@@ -317,9 +322,7 @@ describe("ManualTimeEntryDialog layout", () => {
 			.mockReturnValueOnce(secondSubmissionId);
 		createManualTimeEntry
 			.mockImplementationOnce(async (request) => {
-				const serializedRetry = JSON.parse(
-					JSON.stringify(request),
-				) as typeof request;
+				const serializedRetry = jsonRoundTrip(request);
 				transportSubmissionIds.push(
 					request.submissionId,
 					serializedRetry.submissionId,

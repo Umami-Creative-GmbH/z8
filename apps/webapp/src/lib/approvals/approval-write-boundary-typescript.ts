@@ -1470,9 +1470,10 @@ export function analyzeApprovalWriteMutations(
 						mutation.position < usePosition &&
 						scopeCanReach(mutation.scope, useScope) &&
 						(mutation.path === null ||
-							mutation.path.every(
-								(name, index) => propertyPath[index] === name,
-							)),
+							(mutation.path.length <= propertyPath.length &&
+								mutation.path.every(
+									(name, index) => propertyPath[index] === name,
+								))),
 				)
 				.sort((left, right) => left.position - right.position);
 			for (const mutation of mutations) {
