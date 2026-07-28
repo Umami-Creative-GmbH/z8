@@ -20,6 +20,7 @@ const summary: PayrollWorkspaceSummary = {
 			hasBlockers: true,
 		},
 	],
+	absenceDetails: [],
 	blockers: [
 		{
 			id: "blocker-1",

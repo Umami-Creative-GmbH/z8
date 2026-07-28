@@ -105,6 +105,50 @@ describe("buildPayrollSummaryFromRows", () => {
 		]);
 	});
 
+	it("includes a same-day half-day absence in details and category totals", () => {
+		const summary = buildPayrollSummaryFromRows({
+			organizationName: "Acme GmbH",
+			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
+			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedBy: { id: "payroll-1", name: "Payroll User" },
+			employees: [
+				{
+					id: "employee-1",
+					name: "Ada Lovelace",
+					employeeNumber: "E-1",
+					teamName: "Ops",
+					contractType: "fixed",
+				},
+			],
+			workRows: [],
+			absenceRows: [
+				{
+					employeeId: "employee-1",
+					categoryId: "vacation",
+					categoryName: "Vacation",
+					startDate: "2026-06-10",
+					endDate: "2026-06-10",
+					startPeriod: "am",
+					endPeriod: "am",
+				},
+			],
+			blockers: [],
+		});
+
+		expect(summary.employees[0]?.absenceDaysByCategory).toEqual([
+			{ categoryId: "vacation", categoryName: "Vacation", days: 0.5 },
+		]);
+		expect(summary.absenceDetails).toEqual([
+			{
+				employeeId: "employee-1",
+				categoryId: "vacation",
+				categoryName: "Vacation",
+				date: "2026-06-10",
+				period: "am",
+			},
+		]);
+	});
+
 	it("keeps blockers as warnings and marks affected employees", () => {
 		const summary = buildPayrollSummaryFromRows({
 			organizationName: "Acme GmbH",
