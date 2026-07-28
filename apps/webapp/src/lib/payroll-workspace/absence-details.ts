@@ -47,9 +47,9 @@ export function buildPayrollAbsenceDetails(
 			if (originalStart.equals(originalEnd)) {
 				if (row.startPeriod === row.endPeriod) dayPeriod = row.startPeriod;
 			} else if (date.equals(originalStart)) {
-				dayPeriod = row.startPeriod;
+				dayPeriod = row.startPeriod === "pm" ? "pm" : "full_day";
 			} else if (date.equals(originalEnd)) {
-				dayPeriod = row.endPeriod;
+				dayPeriod = row.endPeriod === "am" ? "am" : "full_day";
 			}
 
 			details.push({

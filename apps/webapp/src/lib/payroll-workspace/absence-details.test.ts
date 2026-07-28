@@ -91,6 +91,28 @@ describe("buildPayrollAbsenceDetails", () => {
 		]);
 	});
 
+	it("normalizes a multi-day AM start and PM end to full days", () => {
+		const details = buildPayrollAbsenceDetails(
+			[
+				{
+					employeeId: "employee-1",
+					categoryId: "vacation",
+					categoryName: "Vacation",
+					startDate: "2026-06-10",
+					endDate: "2026-06-11",
+					startPeriod: "am",
+					endPeriod: "pm",
+				},
+			],
+			june2026,
+		);
+
+		expect(details.map(({ date, period }) => ({ date, period }))).toEqual([
+			{ date: "2026-06-10", period: "full_day" },
+			{ date: "2026-06-11", period: "full_day" },
+		]);
+	});
+
 	it("includes weekends and sorts by employee, date, category name, then category id", () => {
 		const details = buildPayrollAbsenceDetails(
 			[
