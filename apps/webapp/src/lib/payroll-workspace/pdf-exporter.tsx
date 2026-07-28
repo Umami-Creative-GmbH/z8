@@ -1,5 +1,20 @@
 import { DateTime } from "luxon";
-import type { PayrollEmployeeSummary, PayrollWorkspaceSummary } from "./types";
+import type {
+	PayrollDayPeriod,
+	PayrollEmployeeSummary,
+	PayrollWorkspaceSummary,
+} from "./types";
+
+export interface PayrollAbsenceSection {
+	employeeId: string;
+	employeeName: string;
+	employeeNumber: string | null;
+	rows: Array<{
+		date: string;
+		categoryName: string;
+		periodLabel: string;
+	}>;
+}
 
 const styleDefinitions = {
 	page: {
@@ -160,6 +175,61 @@ const styleDefinitions = {
 	muted: {
 		color: "#64748B",
 	},
+	absenceDetailsSection: {
+		marginTop: 14,
+	},
+	employeeCard: {
+		marginBottom: 8,
+		borderWidth: 1,
+		borderColor: "#CBD5E1",
+	},
+	employeeCardHeader: {
+		paddingTop: 5,
+		paddingRight: 7,
+		paddingBottom: 5,
+		paddingLeft: 7,
+		fontSize: 9,
+		fontWeight: "bold" as const,
+		color: "#0F172A",
+		backgroundColor: "#F1F5F9",
+	},
+	absenceDetailHeader: {
+		flexDirection: "row" as const,
+		paddingTop: 4,
+		paddingRight: 7,
+		paddingBottom: 4,
+		paddingLeft: 7,
+		fontSize: 7,
+		fontWeight: "bold" as const,
+		textTransform: "uppercase" as const,
+		color: "#64748B",
+	},
+	absenceDetailRow: {
+		flexDirection: "row" as const,
+		paddingTop: 4,
+		paddingRight: 7,
+		paddingBottom: 4,
+		paddingLeft: 7,
+		borderTopWidth: 1,
+		borderTopColor: "#E2E8F0",
+	},
+	absenceDateColumn: {
+		width: "24%",
+	},
+	absenceCategoryColumn: {
+		width: "58%",
+	},
+	absencePeriodColumn: {
+		width: "18%",
+		textAlign: "right" as const,
+	},
+	emptyState: {
+		padding: 8,
+		borderWidth: 1,
+		borderColor: "#CBD5E1",
+		backgroundColor: "#F8FAFC",
+		color: "#64748B",
+	},
 	footer: {
 		position: "absolute" as const,
 		left: 36,
@@ -179,10 +249,14 @@ function formatHours(hours: number): string {
 }
 
 function formatGeneratedAt(summary: PayrollWorkspaceSummary): string {
-	return DateTime.fromISO(summary.generatedAt, { zone: "utc" }).toFormat("yyyy-LL-dd HH:mm 'UTC'");
+	return DateTime.fromISO(summary.generatedAt, { zone: "utc" }).toFormat(
+		"yyyy-LL-dd HH:mm 'UTC'",
+	);
 }
 
-function formatContractType(contractType: PayrollEmployeeSummary["contractType"]): string {
+function formatContractType(
+	contractType: PayrollEmployeeSummary["contractType"],
+): string {
 	return contractType === "hourly" ? "Hourly" : "Fixed";
 }
 
@@ -196,10 +270,62 @@ function formatAbsences(employee: PayrollEmployeeSummary): string {
 		.join("; ");
 }
 
+function compareText(left: string, right: string): number {
+	if (left < right) return -1;
+	if (left > right) return 1;
+	return 0;
+}
+
+function formatAbsencePeriod(period: PayrollDayPeriod): string {
+	return period === "full_day" ? "Full day" : period.toUpperCase();
+}
+
+export function buildPayrollAbsenceSections(
+	summary: PayrollWorkspaceSummary,
+): PayrollAbsenceSection[] {
+	const detailsByEmployee = new Map<
+		string,
+		PayrollWorkspaceSummary["absenceDetails"]
+	>();
+
+	for (const detail of summary.absenceDetails) {
+		const details = detailsByEmployee.get(detail.employeeId) ?? [];
+		details.push(detail);
+		detailsByEmployee.set(detail.employeeId, details);
+	}
+
+	return summary.employees
+		.filter((employee) => detailsByEmployee.has(employee.id))
+		.sort(
+			(left, right) =>
+				compareText(left.name, right.name) || compareText(left.id, right.id),
+		)
+		.map((employee) => ({
+			employeeId: employee.id,
+			employeeName: employee.name,
+			employeeNumber: employee.employeeNumber,
+			rows: [...(detailsByEmployee.get(employee.id) ?? [])]
+				.sort(
+					(left, right) =>
+						compareText(left.date, right.date) ||
+						compareText(left.categoryName, right.categoryName) ||
+						compareText(left.categoryId, right.categoryId),
+				)
+				.map((detail) => ({
+					date: detail.date,
+					categoryName: detail.categoryName,
+					periodLabel: formatAbsencePeriod(detail.period),
+				})),
+		}));
+}
+
 export async function exportPayrollSummaryToPDF(
 	summary: PayrollWorkspaceSummary,
 ): Promise<Uint8Array> {
-	const { Document, Page, pdf, StyleSheet, Text, View } = await import("@react-pdf/renderer");
+	const absenceSections = buildPayrollAbsenceSections(summary);
+	const { Document, Page, pdf, StyleSheet, Text, View } = await import(
+		"@react-pdf/renderer"
+	);
 	const styles = StyleSheet.create(styleDefinitions);
 
 	const PayrollSummaryPDF = () => (
@@ -212,7 +338,8 @@ export async function exportPayrollSummaryToPDF(
 						<View style={styles.headerItem}>
 							<Text style={styles.label}>Period</Text>
 							<Text style={styles.value}>
-								{summary.period.label} ({summary.period.start} - {summary.period.end})
+								{summary.period.label} ({summary.period.start} -{" "}
+								{summary.period.end})
 							</Text>
 						</View>
 						<View style={styles.headerItem}>
@@ -233,15 +360,21 @@ export async function exportPayrollSummaryToPDF(
 				<View style={styles.metrics}>
 					<View style={styles.metricCard}>
 						<Text style={styles.label}>Employees</Text>
-						<Text style={styles.metricValue}>{summary.totals.employeeCount}</Text>
+						<Text style={styles.metricValue}>
+							{summary.totals.employeeCount}
+						</Text>
 					</View>
 					<View style={styles.metricCard}>
 						<Text style={styles.label}>Worked hours</Text>
-						<Text style={styles.metricValue}>{formatHours(summary.totals.totalWorkedHours)}</Text>
+						<Text style={styles.metricValue}>
+							{formatHours(summary.totals.totalWorkedHours)}
+						</Text>
 					</View>
 					<View style={[styles.metricCard, styles.metricCardLast]}>
 						<Text style={styles.label}>Blockers</Text>
-						<Text style={styles.metricValue}>{summary.totals.blockerCount}</Text>
+						<Text style={styles.metricValue}>
+							{summary.totals.blockerCount}
+						</Text>
 					</View>
 				</View>
 
@@ -263,29 +396,39 @@ export async function exportPayrollSummaryToPDF(
 						<Text style={[styles.cell, styles.teamCell]}>Team</Text>
 						<Text style={[styles.cell, styles.contractCell]}>Contract</Text>
 						<Text style={[styles.cell, styles.hoursCell]}>Hours</Text>
-						<Text style={[styles.cell, styles.absenceCell]}>Absence totals</Text>
+						<Text style={[styles.cell, styles.absenceCell]}>
+							Absence totals
+						</Text>
 						<Text style={[styles.cell, styles.statusCell]}>Status</Text>
 					</View>
 					{summary.employees.map((employee) => (
 						<View
 							key={employee.id}
 							style={
-								employee.hasBlockers ? [styles.tableRow, styles.tableRowBlocked] : styles.tableRow
+								employee.hasBlockers
+									? [styles.tableRow, styles.tableRowBlocked]
+									: styles.tableRow
 							}
 							wrap={false}
 						>
 							<View style={[styles.cell, styles.employeeCell]}>
 								<Text style={styles.employeeName}>{employee.name}</Text>
-								<Text style={styles.muted}>{employee.employeeNumber ?? "No employee no."}</Text>
+								<Text style={styles.muted}>
+									{employee.employeeNumber ?? "No employee no."}
+								</Text>
 							</View>
-							<Text style={[styles.cell, styles.teamCell]}>{employee.teamName ?? "No team"}</Text>
+							<Text style={[styles.cell, styles.teamCell]}>
+								{employee.teamName ?? "No team"}
+							</Text>
 							<Text style={[styles.cell, styles.contractCell]}>
 								{formatContractType(employee.contractType)}
 							</Text>
 							<Text style={[styles.cell, styles.hoursCell]}>
 								{formatHours(employee.workedHours)}
 							</Text>
-							<Text style={[styles.cell, styles.absenceCell]}>{formatAbsences(employee)}</Text>
+							<Text style={[styles.cell, styles.absenceCell]}>
+								{formatAbsences(employee)}
+							</Text>
 							<Text style={[styles.cell, styles.statusCell]}>
 								{employee.hasBlockers ? "Review" : "Clear"}
 							</Text>
@@ -293,9 +436,47 @@ export async function exportPayrollSummaryToPDF(
 					))}
 				</View>
 
+				<View style={styles.absenceDetailsSection}>
+					<Text style={styles.sectionTitle}>Absence details</Text>
+					{absenceSections.length === 0 ? (
+						<Text style={styles.emptyState}>
+							No approved absences for the selected period.
+						</Text>
+					) : (
+						absenceSections.map((section) => (
+							<View key={section.employeeId} style={styles.employeeCard}>
+								<Text style={styles.employeeCardHeader}>
+									{section.employeeName} (
+									{section.employeeNumber ?? "No employee no."})
+								</Text>
+								<View style={styles.absenceDetailHeader}>
+									<Text style={styles.absenceDateColumn}>Date</Text>
+									<Text style={styles.absenceCategoryColumn}>Category</Text>
+									<Text style={styles.absencePeriodColumn}>Period</Text>
+								</View>
+								{section.rows.map((row) => (
+									<View
+										key={`${row.date}-${row.categoryName}-${row.periodLabel}`}
+										style={styles.absenceDetailRow}
+									>
+										<Text style={styles.absenceDateColumn}>{row.date}</Text>
+										<Text style={styles.absenceCategoryColumn}>
+											{row.categoryName}
+										</Text>
+										<Text style={styles.absencePeriodColumn}>
+											{row.periodLabel}
+										</Text>
+									</View>
+								))}
+							</View>
+						))
+					)}
+				</View>
+
 				<Text style={styles.footer}>
-					Audit note: Blockers are informational review markers and did not prevent this export.
-					Confirm unresolved items before payroll submission.
+					Audit note: Blockers are informational review markers and did not
+					prevent this export. Confirm unresolved items before payroll
+					submission.
 				</Text>
 			</Page>
 		</Document>
@@ -305,7 +486,9 @@ export async function exportPayrollSummaryToPDF(
 	return new Uint8Array(await blob.arrayBuffer());
 }
 
-export function generatePayrollPDFFilename(summary: PayrollWorkspaceSummary): string {
+export function generatePayrollPDFFilename(
+	summary: PayrollWorkspaceSummary,
+): string {
 	const organizationSlug =
 		summary.organizationName
 			.toLowerCase()
