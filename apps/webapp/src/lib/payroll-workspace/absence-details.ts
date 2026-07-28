@@ -3,7 +3,7 @@ import type {
 	PayrollAbsenceDetail,
 	PayrollDayPeriod,
 	PayrollPeriod,
-	PayrollSummaryAbsenceRow,
+	PayrollSummaryAbsenceRangeRow,
 } from "./types";
 
 function compareText(left: string, right: string): number {
@@ -13,7 +13,7 @@ function compareText(left: string, right: string): number {
 }
 
 export function buildPayrollAbsenceDetails(
-	rows: PayrollSummaryAbsenceRow[],
+	rows: PayrollSummaryAbsenceRangeRow[],
 	period: Pick<PayrollPeriod, "start" | "end">,
 ): PayrollAbsenceDetail[] {
 	const periodStart = Temporal.PlainDate.from(period.start);
