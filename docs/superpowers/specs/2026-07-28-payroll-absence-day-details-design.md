@@ -6,7 +6,7 @@ Make the combined PDF downloaded from `/payroll` suitable for manual review or e
 
 ## Scope
 
-The combined payroll PDF will list every approved absence category by exact recorded calendar date. Absences will be distinguished as `Full day`, `AM`, `PM`, or `Partial day`. `Partial day` identifies an explicitly timed same-day interval that crosses from AM into PM.
+The combined payroll PDF will list every approved absence category by exact recorded calendar date. Absences will be distinguished as `Full day`, `AM`, `PM`, or `Partial day`. `Partial day` identifies an explicitly timed interval that crosses noon or midnight.
 
 This change applies only to the combined PDF downloaded from `/payroll`. It does not change DATEV, Lexware, or Sage files, and it does not change Personio, SuccessFactors, Workday, or other connector payloads.
 
