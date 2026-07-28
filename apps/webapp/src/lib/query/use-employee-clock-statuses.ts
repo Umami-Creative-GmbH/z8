@@ -2,6 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
+	type EmployeeClockActivity,
+	type EmployeeClockPresenceMap,
 	type EmployeeClockStatusMap,
 	getEmployeeClockStatuses,
 } from "@/app/[locale]/(app)/settings/employees/employee-clock-status.actions";
@@ -15,7 +17,7 @@ interface UseEmployeeClockStatusesOptions {
 	enabled?: boolean;
 }
 
-const EMPTY_STATUSES: EmployeeClockStatusMap = {};
+const EMPTY_SNAPSHOTS: EmployeeClockPresenceMap = {};
 
 function normalizeEmployeeIds(employeeIds: string[]) {
 	return Array.from(new Set(employeeIds.flatMap((id) => {
@@ -35,9 +37,9 @@ export function useEmployeeClockStatuses(
 			organizationId ?? "active",
 			normalizedEmployeeIds,
 		),
-		queryFn: async (): Promise<EmployeeClockStatusMap> => {
+		queryFn: async (): Promise<EmployeeClockPresenceMap> => {
 			const result = await getEmployeeClockStatuses(normalizedEmployeeIds);
-			return result.success ? result.data : EMPTY_STATUSES;
+			return result.success ? result.data : EMPTY_SNAPSHOTS;
 		},
 		enabled: enabled && normalizedEmployeeIds.length > 0,
 		staleTime: 30 * 1000,
@@ -45,15 +47,35 @@ export function useEmployeeClockStatuses(
 		placeholderData: (previousData) => previousData,
 		refetchInterval: polling ? (pollingIntervalMs ?? 30 * 1000) : false,
 	});
-	const statuses = query.data ?? EMPTY_STATUSES;
+	const snapshots = query.data ?? EMPTY_SNAPSHOTS;
+	const statuses = Object.fromEntries(
+		Object.entries(snapshots).map(([employeeId, snapshot]) => [employeeId, snapshot.status]),
+	) as EmployeeClockStatusMap;
 	const getStatus = (employeeId: string): EmployeeClockStatus => {
 		return statuses[employeeId.trim()] ?? "unknown";
+	};
+	const getActivity = (employeeId: string): EmployeeClockActivity | null => {
+		const snapshot = snapshots[employeeId.trim()];
+		if (
+			!snapshot ||
+			snapshot.lastActivityAt === null ||
+			snapshot.lastActivityUtcOffsetMinutes === null
+		) {
+			return null;
+		}
+
+		return {
+			lastActivityAt: snapshot.lastActivityAt,
+			lastActivityUtcOffsetMinutes: snapshot.lastActivityUtcOffsetMinutes,
+		};
 	};
 
 	return {
 		...query,
 		employeeIds: normalizedEmployeeIds,
+		snapshots,
 		statuses,
 		getStatus,
+		getActivity,
 	};
 }

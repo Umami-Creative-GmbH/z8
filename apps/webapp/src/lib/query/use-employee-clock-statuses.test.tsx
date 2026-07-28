@@ -31,7 +31,18 @@ describe("useEmployeeClockStatuses", () => {
 		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 		mocks.getEmployeeClockStatuses.mockResolvedValue({
 			success: true,
-			data: { "emp-1": "clocked-in", "emp-2": "clocked-out" },
+			data: {
+				"emp-1": {
+					status: "clocked-in",
+					lastActivityAt: "2026-07-28T10:30:00.000Z",
+					lastActivityUtcOffsetMinutes: 120,
+				},
+				"emp-2": {
+					status: "clocked-out",
+					lastActivityAt: null,
+					lastActivityUtcOffsetMinutes: null,
+				},
+			},
 		});
 
 		const { result } = renderHook(
@@ -40,9 +51,33 @@ describe("useEmployeeClockStatuses", () => {
 		);
 
 		expect(result.current.getStatus("emp-1")).toBe("unknown");
+		expect(result.current.getActivity("emp-1")).toBeNull();
 
-		await waitFor(() => expect(result.current.getStatus("emp-1")).toBe("clocked-in"));
+		await waitFor(() => expect(result.current.getStatus(" emp-1 ")).toBe("clocked-in"));
 		expect(result.current.getStatus("emp-2")).toBe("clocked-out");
+		expect(result.current.statuses).toEqual({
+			"emp-1": "clocked-in",
+			"emp-2": "clocked-out",
+		});
+		expect(result.current.snapshots).toEqual({
+			"emp-1": {
+				status: "clocked-in",
+				lastActivityAt: "2026-07-28T10:30:00.000Z",
+				lastActivityUtcOffsetMinutes: 120,
+			},
+			"emp-2": {
+				status: "clocked-out",
+				lastActivityAt: null,
+				lastActivityUtcOffsetMinutes: null,
+			},
+		});
+		expect(result.current.getActivity(" emp-1 ")).toEqual({
+			lastActivityAt: "2026-07-28T10:30:00.000Z",
+			lastActivityUtcOffsetMinutes: 120,
+		});
+		expect(result.current.getActivity("emp-2")).toBeNull();
+		expect(result.current.getActivity("omitted")).toBeNull();
+		expect(result.current.getStatus("omitted")).toBe("unknown");
 		expect(mocks.getEmployeeClockStatuses).toHaveBeenCalledWith(["emp-1", "emp-2"]);
 	});
 
@@ -64,5 +99,8 @@ describe("useEmployeeClockStatuses", () => {
 
 		await waitFor(() => expect(mocks.getEmployeeClockStatuses).toHaveBeenCalledTimes(1));
 		expect(result.current.getStatus("emp-1")).toBe("unknown");
+		expect(result.current.getActivity("emp-1")).toBeNull();
+		expect(result.current.snapshots).toEqual({});
+		expect(result.current.statuses).toEqual({});
 	});
 });
