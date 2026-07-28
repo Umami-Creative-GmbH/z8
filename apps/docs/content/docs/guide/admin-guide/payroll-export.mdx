@@ -10,7 +10,7 @@ import { Callout } from "fumadocs-ui/components/callout";
 
 Z8 supports both file exports and selected API-based payroll integrations. The exact behavior depends on the target system.
 
-Users with Payroll access can also review the employees within their authorized scope and download a combined PDF that includes the exact dates of approved absences.
+Users with assigned, active Payroll access can also review the employees within their authorized scope and download a combined PDF that includes the exact dates of approved absences.
 
 Use **Settings** -> **Payroll Export** to configure export targets, store org-specific credentials, maintain wage type mappings, and start exports for a selected period.
 
@@ -147,7 +147,7 @@ Review mappings before every first export for a new target, especially when abse
 
 ## Combined Payroll PDF
 
-Payroll officers and org admins use `/payroll` to review a selected period for the employees within their authorized scope and download a combined payroll PDF.
+Payroll officers, including org admins, must have assigned, active Payroll access to use `/payroll`; the org admin role alone does not grant access. They can review a selected period for the employees within their authorized scope and download a combined payroll PDF.
 
 The PDF includes:
 
@@ -155,9 +155,9 @@ The PDF includes:
 - payroll readiness blockers
 - every approved absence date, its category, and whether it covers a **Full day**, **AM**, or **PM**
 
-For multi-day absence records, the report lists every recorded calendar date in the approved record, including weekends and holidays. It does not remove dates based on work schedules.
+For multi-day absence records, the report lists every recorded calendar date within the selected payroll period, including any weekends and holidays included in the approved record. Dates outside the report period are not shown, and dates are not removed based on work schedules.
 
-Use this report when you need to enter approved time and absence information manually into another legal or payroll system.
+Use this report when you need to enter approved time and absence information manually into a downstream payroll or HR system used for required recordkeeping.
 
 This report is PDF-only. It does not change DATEV, Lexware, or Sage export formats, or Personio, SAP SuccessFactors, or Workday API payloads.
 
