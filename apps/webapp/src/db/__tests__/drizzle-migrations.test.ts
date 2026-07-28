@@ -114,6 +114,14 @@ const migration0055Url = new URL(
 	"../../../drizzle/0055_employee_clock_activity_index.sql",
 	import.meta.url,
 );
+const migration0054SnapshotUrl = new URL(
+	"../../../drizzle/meta/0054_snapshot.json",
+	import.meta.url,
+);
+const migration0055SnapshotUrl = new URL(
+	"../../../drizzle/meta/0055_snapshot.json",
+	import.meta.url,
+);
 
 const migration0004Statements = migration0004
 	.split("--> statement-breakpoint")
@@ -703,5 +711,50 @@ describe("drizzle follow-up migrations", () => {
 		expect(migration0055).toContain('"is_superseded" = false');
 		expect(migration0055).toContain("\"type\" IN ('clock_in', 'clock_out')");
 		expect(migration0055).not.toContain("correction");
+	});
+
+	it("snapshots the latest employee clock activity index", () => {
+		expect(existsSync(migration0055SnapshotUrl)).toBe(true);
+		if (!existsSync(migration0055SnapshotUrl)) return;
+
+		const previousSnapshot = JSON.parse(
+			readFileSync(migration0054SnapshotUrl, "utf8"),
+		) as { id: string };
+		const snapshot = JSON.parse(
+			readFileSync(migration0055SnapshotUrl, "utf8"),
+		) as {
+			prevId: string;
+			tables: Record<
+				string,
+				{
+					indexes: Record<
+						string,
+						{
+							columns: Array<{ expression: string; asc: boolean }>;
+							where?: string;
+						}
+					>;
+				}
+			>;
+		};
+		const activityIndex =
+			snapshot.tables["public.time_entry"]?.indexes
+				.timeEntry_latestClockActivity_idx;
+
+		expect(snapshot.prevId).toBe(previousSnapshot.id);
+		expect(
+			activityIndex?.columns.map(({ expression, asc }) => ({
+				expression,
+				asc,
+			})),
+		).toEqual([
+			{ expression: "organization_id", asc: true },
+			{ expression: "employee_id", asc: true },
+			{ expression: "timestamp", asc: false },
+			{ expression: "id", asc: false },
+		]);
+		expect(activityIndex?.where).toBe(
+			'"time_entry"."is_superseded" = false AND "time_entry"."type" IN (\'clock_in\', \'clock_out\')',
+		);
 	});
 });
