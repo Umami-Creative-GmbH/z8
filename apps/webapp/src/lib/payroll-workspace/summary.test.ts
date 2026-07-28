@@ -2,7 +2,6 @@ import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
 import {
 	buildPayrollSummaryFromRows,
-	calculatePayrollAbsenceDays,
 	calculatePayrollWorkedMinutes,
 	filterMissingClockOutBlockers,
 	filterPendingTimeApprovalBlockers,
@@ -35,6 +34,7 @@ describe("buildPayrollSummaryFromRows", () => {
 		expect(summary.totals.totalWorkedHours).toBe(2.75);
 		expect(summary.employees[0]?.workedHours).toBe(2.75);
 		expect(summary.generatedAt).toBe("2026-06-30T12:00:00.000Z");
+		expect(summary.absenceDetails).toEqual([]);
 	});
 
 	it("groups absence days by employee and category", () => {
@@ -54,8 +54,24 @@ describe("buildPayrollSummaryFromRows", () => {
 			],
 			workRows: [],
 			absenceRows: [
-				{ employeeId: "employee-1", categoryId: "vacation", categoryName: "Vacation", days: 2 },
-				{ employeeId: "employee-1", categoryId: "sick", categoryName: "Sick", days: 1 },
+				{
+					employeeId: "employee-1",
+					categoryId: "sick",
+					categoryName: "Sick",
+					startDate: "2026-06-12",
+					endDate: "2026-06-12",
+					startPeriod: "full_day",
+					endPeriod: "full_day",
+				},
+				{
+					employeeId: "employee-1",
+					categoryId: "vacation",
+					categoryName: "Vacation",
+					startDate: "2026-06-10",
+					endDate: "2026-06-11",
+					startPeriod: "full_day",
+					endPeriod: "full_day",
+				},
 			],
 			blockers: [],
 		});
@@ -63,6 +79,187 @@ describe("buildPayrollSummaryFromRows", () => {
 		expect(summary.employees[0]?.absenceDaysByCategory).toEqual([
 			{ categoryId: "sick", categoryName: "Sick", days: 1 },
 			{ categoryId: "vacation", categoryName: "Vacation", days: 2 },
+		]);
+		expect(summary.absenceDetails).toEqual([
+			{
+				employeeId: "employee-1",
+				categoryId: "vacation",
+				categoryName: "Vacation",
+				date: "2026-06-10",
+				period: "full_day",
+			},
+			{
+				employeeId: "employee-1",
+				categoryId: "vacation",
+				categoryName: "Vacation",
+				date: "2026-06-11",
+				period: "full_day",
+			},
+			{
+				employeeId: "employee-1",
+				categoryId: "sick",
+				categoryName: "Sick",
+				date: "2026-06-12",
+				period: "full_day",
+			},
+		]);
+	});
+
+	it("includes a same-day half-day absence in details and category totals", () => {
+		const summary = buildPayrollSummaryFromRows({
+			organizationName: "Acme GmbH",
+			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
+			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedBy: { id: "payroll-1", name: "Payroll User" },
+			employees: [
+				{
+					id: "employee-1",
+					name: "Ada Lovelace",
+					employeeNumber: "E-1",
+					teamName: "Ops",
+					contractType: "fixed",
+				},
+			],
+			workRows: [],
+			absenceRows: [
+				{
+					employeeId: "employee-1",
+					categoryId: "vacation",
+					categoryName: "Vacation",
+					startDate: "2026-06-10",
+					endDate: "2026-06-10",
+					startPeriod: "am",
+					endPeriod: "am",
+				},
+			],
+			blockers: [],
+		});
+
+		expect(summary.employees[0]?.absenceDaysByCategory).toEqual([
+			{ categoryId: "vacation", categoryName: "Vacation", days: 0.5 },
+		]);
+		expect(summary.absenceDetails).toEqual([
+			{
+				employeeId: "employee-1",
+				categoryId: "vacation",
+				categoryName: "Vacation",
+				date: "2026-06-10",
+				period: "am",
+			},
+		]);
+	});
+
+	it("classifies timed partial absences and counts each as half a day", () => {
+		const summary = buildPayrollSummaryFromRows({
+			organizationName: "Acme GmbH",
+			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
+			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedBy: { id: "payroll-1", name: "Payroll User" },
+			employees: [
+				{
+					id: "employee-1",
+					name: "Ada Lovelace",
+					employeeNumber: "E-1",
+					teamName: "Ops",
+					contractType: "fixed",
+				},
+			],
+			workRows: [],
+			absenceRows: [
+				{
+					employeeId: "employee-1",
+					categoryId: "afternoon",
+					categoryName: "Afternoon",
+					startDate: "2026-06-10",
+					endDate: "2026-06-10",
+					startPeriod: "am",
+					endPeriod: "am",
+					startTime: "14:00:00",
+					endTime: "17:00:00",
+				},
+				{
+					employeeId: "employee-1",
+					categoryId: "morning",
+					categoryName: "Morning",
+					startDate: "2026-06-11",
+					endDate: "2026-06-11",
+					startPeriod: "am",
+					endPeriod: "am",
+					startTime: "09:00:00",
+					endTime: "11:00:00",
+				},
+				{
+					employeeId: "employee-1",
+					categoryId: "cross-noon",
+					categoryName: "Cross noon",
+					startDate: "2026-06-12",
+					endDate: "2026-06-12",
+					startPeriod: "am",
+					endPeriod: "am",
+					startTime: "10:00:00",
+					endTime: "14:00:00",
+				},
+				{
+					employeeId: "employee-1",
+					categoryId: "overnight",
+					categoryName: "Overnight",
+					startDate: "2026-06-13",
+					endDate: "2026-06-14",
+					startPeriod: "am",
+					endPeriod: "am",
+					startTime: "22:00:00",
+					endTime: "02:00:00",
+				},
+			],
+			blockers: [],
+		});
+
+		expect(summary.employees[0]?.absenceDaysByCategory).toEqual([
+			{ categoryId: "afternoon", categoryName: "Afternoon", days: 0.5 },
+			{ categoryId: "cross-noon", categoryName: "Cross noon", days: 0.5 },
+			{ categoryId: "morning", categoryName: "Morning", days: 0.5 },
+			{ categoryId: "overnight", categoryName: "Overnight", days: 0.5 },
+		]);
+		expect(
+			summary.absenceDetails.map(({ date, period }) => ({ date, period })),
+		).toEqual([
+			{ date: "2026-06-10", period: "pm" },
+			{ date: "2026-06-11", period: "am" },
+			{ date: "2026-06-12", period: "partial_day" },
+			{ date: "2026-06-13", period: "partial_day" },
+		]);
+	});
+
+	it("sorts employees with identical names by id", () => {
+		const summary = buildPayrollSummaryFromRows({
+			organizationName: "Acme GmbH",
+			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
+			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedBy: { id: "payroll-1", name: "Payroll User" },
+			employees: [
+				{
+					id: "employee-2",
+					name: "Alex Smith",
+					employeeNumber: null,
+					teamName: null,
+					contractType: "fixed",
+				},
+				{
+					id: "employee-1",
+					name: "Alex Smith",
+					employeeNumber: null,
+					teamName: null,
+					contractType: "fixed",
+				},
+			],
+			workRows: [],
+			absenceRows: [],
+			blockers: [],
+		});
+
+		expect(summary.employees.map((employee) => employee.id)).toEqual([
+			"employee-1",
+			"employee-2",
 		]);
 	});
 
@@ -95,6 +292,7 @@ describe("buildPayrollSummaryFromRows", () => {
 
 		expect(summary.totals.blockerCount).toBe(1);
 		expect(summary.employees[0]?.hasBlockers).toBe(true);
+		expect(summary.absenceDetails).toEqual([]);
 	});
 });
 
@@ -145,53 +343,6 @@ describe("calculatePayrollWorkedMinutes", () => {
 				period,
 			).get("employee-1"),
 		).toBeUndefined();
-	});
-});
-
-describe("calculatePayrollAbsenceDays", () => {
-	it("counts full-day same-day absences as one day", () => {
-		expect(
-			calculatePayrollAbsenceDays({
-				startAt: DateTime.fromISO("2026-06-10T00:00:00Z"),
-				endAt: DateTime.fromISO("2026-06-10T23:59:59Z"),
-				startPeriod: "full_day",
-				endPeriod: "full_day",
-				period: {
-					start: DateTime.fromISO("2026-06-01T00:00:00Z"),
-					end: DateTime.fromISO("2026-06-30T23:59:59Z"),
-				},
-			}),
-		).toBe(1);
-	});
-
-	it("counts same-day half-day absences as half a day", () => {
-		expect(
-			calculatePayrollAbsenceDays({
-				startAt: DateTime.fromISO("2026-06-10T00:00:00Z"),
-				endAt: DateTime.fromISO("2026-06-10T11:59:59Z"),
-				startPeriod: "am",
-				endPeriod: "am",
-				period: {
-					start: DateTime.fromISO("2026-06-01T00:00:00Z"),
-					end: DateTime.fromISO("2026-06-30T23:59:59Z"),
-				},
-			}),
-		).toBe(0.5);
-	});
-
-	it("clips multi-day absences to the selected payroll period", () => {
-		expect(
-			calculatePayrollAbsenceDays({
-				startAt: DateTime.fromISO("2026-05-30T00:00:00Z"),
-				endAt: DateTime.fromISO("2026-06-02T23:59:59Z"),
-				startPeriod: "full_day",
-				endPeriod: "full_day",
-				period: {
-					start: DateTime.fromISO("2026-06-01T00:00:00Z"),
-					end: DateTime.fromISO("2026-06-30T23:59:59Z"),
-				},
-			}),
-		).toBe(2);
 	});
 });
 

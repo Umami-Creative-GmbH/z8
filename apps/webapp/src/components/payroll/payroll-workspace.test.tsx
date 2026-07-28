@@ -60,6 +60,7 @@ const baseSummary: PayrollWorkspaceSummary = {
 			hasBlockers: false,
 		},
 	],
+	absenceDetails: [],
 	blockers: [
 		{
 			id: "blocker-1",
@@ -83,6 +84,7 @@ function buildSummary(overrides: Partial<PayrollWorkspaceSummary> = {}): Payroll
 		period: overrides.period ?? baseSummary.period,
 		totals: overrides.totals ?? baseSummary.totals,
 		employees: overrides.employees ?? baseSummary.employees,
+		absenceDetails: overrides.absenceDetails ?? baseSummary.absenceDetails,
 		blockers: overrides.blockers ?? baseSummary.blockers,
 	};
 }

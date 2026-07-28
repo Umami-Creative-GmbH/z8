@@ -2,24 +2,56 @@
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ManagedEmployee } from "./team-members-data";
 import { TeamMembersList } from "./team-members-list";
 
+const { getActivityMock } = vi.hoisted(() => ({
+	getActivityMock: vi.fn(),
+}));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback: string, params?: Record<string, string>) =>
+		t: (
+			_key: string,
+			fallback: string,
+			params?: Record<string, string | number>,
+		) =>
 			Object.entries(params ?? {}).reduce(
-				(label, [key, value]) => label.replace(`{${key}}`, value),
+				(label, [key, value]) => label.replace(`{${key}}`, String(value)),
 				fallback,
 			),
 	}),
 }));
+vi.mock("@/components/employee-activity-text", () => ({
+	EmployeeActivityText: ({
+		lastActivityAt,
+		lastActivityUtcOffsetMinutes,
+	}: {
+		lastActivityAt: string | null;
+		lastActivityUtcOffsetMinutes: number | null;
+	}) =>
+		lastActivityAt === null || lastActivityUtcOffsetMinutes === null ? null : (
+			<span>
+				activity:{lastActivityAt}:{lastActivityUtcOffsetMinutes}
+			</span>
+		),
+}));
 vi.mock("@/lib/query", () => ({
-	useEmployeeClockStatuses: () => ({ getStatus: () => "unknown" }),
+	useEmployeeClockStatuses: () => ({
+		getStatus: () => "unknown",
+		getActivity: getActivityMock,
+	}),
 }));
 vi.mock("@/navigation", () => ({
-	Link: ({ href, children, ...props }: { href: string; children: ReactNode }) => (
+	Link: ({
+		href,
+		children,
+		...props
+	}: {
+		href: string;
+		children: ReactNode;
+	}) => (
 		<a href={href} {...props}>
 			{children}
 		</a>
@@ -50,7 +82,11 @@ const employee = (overrides: Partial<ManagedEmployee>): ManagedEmployee => ({
 	...overrides,
 });
 
-const timeBalance = (employeeId: string, actualMinutes: number, requiredMinutes: number) => ({
+const timeBalance = (
+	employeeId: string,
+	actualMinutes: number,
+	requiredMinutes: number,
+) => ({
 	employeeId,
 	organizationId: "org-1",
 	actualMinutes,
@@ -62,10 +98,16 @@ const timeBalance = (employeeId: string, actualMinutes: number, requiredMinutes:
 });
 
 describe("TeamMembersList", () => {
+	beforeEach(() => {
+		getActivityMock.mockReset().mockReturnValue(null);
+	});
+
 	it("labels the search input for assistive technology", () => {
 		render(<TeamMembersList employees={[employee({})]} />);
 
-		expect(screen.getByRole("textbox", { name: "Search team members" })).toBeTruthy();
+		expect(
+			screen.getByRole("textbox", { name: "Search team members" }),
+		).toBeTruthy();
 	});
 
 	it("renders the You badge for the current user", () => {
@@ -149,6 +191,24 @@ describe("TeamMembersList", () => {
 		expect(screen.getByTitle("You are the primary manager")).toBeTruthy();
 	});
 
+	it("renders employee clock activity metadata in card and table views", () => {
+		getActivityMock.mockReturnValue({
+			lastActivityAt: "2026-07-28T10:40:00.000Z",
+			lastActivityUtcOffsetMinutes: 120,
+		});
+
+		render(<TeamMembersList employees={[employee({})]} />);
+
+		expect(
+			screen.getByText("activity:2026-07-28T10:40:00.000Z:120"),
+		).toBeTruthy();
+		fireEvent.click(screen.getByRole("radio", { name: "Table view" }));
+		expect(
+			screen.getByText("activity:2026-07-28T10:40:00.000Z:120"),
+		).toBeTruthy();
+		expect(getActivityMock).toHaveBeenCalledWith("employee-1");
+	});
+
 	it("renders and toggles an accessible sortable all-time balance table header", () => {
 		render(
 			<TeamMembersList
@@ -187,7 +247,9 @@ describe("TeamMembersList", () => {
 
 		fireEvent.click(screen.getByRole("radio", { name: "Table view" }));
 
-		const balanceHeader = screen.getByRole("columnheader", { name: /All-time balance/ });
+		const balanceHeader = screen.getByRole("columnheader", {
+			name: /All-time balance/,
+		});
 		const sortButton = screen.getByRole("button", { name: "All-time balance" });
 		expect(balanceHeader.getAttribute("aria-sort")).toBe("none");
 		expect(sortButton.querySelector("svg")).toBeTruthy();
@@ -195,7 +257,9 @@ describe("TeamMembersList", () => {
 		fireEvent.click(sortButton);
 
 		expect(balanceHeader.getAttribute("aria-sort")).toBe("ascending");
-		expect(screen.getByRole("button", { name: "All-time balance (ascending)" })).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "All-time balance (ascending)" }),
+		).toBeTruthy();
 		const bodyRows = screen.getAllByRole("row").slice(1);
 		expect(bodyRows[0]?.textContent).toContain("Grace Hopper");
 		expect(bodyRows[1]?.textContent).toContain("Katherine Johnson");
