@@ -62,6 +62,18 @@ describe("formatEmployeeActivity", () => {
 		).toBe("hours-minutes:5:30");
 	});
 
+	it("uses the event offset to keep different UTC dates relative on the same local date", () => {
+		const offsetNow = parseInstant("2026-07-28T01:00:00Z");
+		expect(
+			formatEmployeeActivity(
+				"2026-07-27T18:00:00Z",
+				-120,
+				templates,
+				offsetNow,
+			),
+		).toBe("hours:7");
+	});
+
 	it("keeps activity under three hours relative across event-local midnight", () => {
 		const midnightNow = parseInstant("2026-07-28T22:30:00Z");
 		expect(
@@ -72,6 +84,24 @@ describe("formatEmployeeActivity", () => {
 				midnightNow,
 			),
 		).toBe("hours-minutes:1:45");
+	});
+
+	it("renders the event-local date when it differs from the event UTC date", () => {
+		expect(
+			formatEmployeeActivity("2026-07-28T00:30:00Z", -120, templates, now),
+		).toBe("date:27.07.");
+	});
+
+	it("renders a date at the strict 180-minute relative threshold", () => {
+		const thresholdNow = parseInstant("2026-07-28T01:00:00Z");
+		expect(
+			formatEmployeeActivity(
+				"2026-07-27T22:00:00Z",
+				0,
+				templates,
+				thresholdNow,
+			),
+		).toBe("date:27.07.");
 	});
 
 	it("renders an older date in the captured event offset", () => {
