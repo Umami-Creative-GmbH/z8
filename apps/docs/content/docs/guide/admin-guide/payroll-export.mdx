@@ -10,6 +10,8 @@ import { Callout } from "fumadocs-ui/components/callout";
 
 Z8 supports both file exports and selected API-based payroll integrations. The exact behavior depends on the target system.
 
+Users with Payroll access can also review the employees within their authorized scope and download a combined PDF that includes the exact dates of approved absences.
+
 Use **Settings** -> **Payroll Export** to configure export targets, store org-specific credentials, maintain wage type mappings, and start exports for a selected period.
 
 Use **Settings** -> **Export Operations** to monitor export failures, upcoming scheduled runs, and recent payroll, audit, and scheduled export activity across the organization.
@@ -140,6 +142,24 @@ Use the **Wage Types** tab to map Z8 work categories, absence categories, and sp
 Each mapping can carry different codes per export target, which lets one organization maintain DATEV, Lexware, Sage, and SuccessFactors mappings without duplicating categories.
 
 Review mappings before every first export for a new target, especially when absences or overtime should be represented differently across systems.
+
+---
+
+## Combined Payroll PDF
+
+Payroll officers and org admins use `/payroll` to review a selected period for the employees within their authorized scope and download a combined payroll PDF.
+
+The PDF includes:
+
+- worked-hour and approved absence totals
+- payroll readiness blockers
+- every approved absence date, its category, and whether it covers a **Full day**, **AM**, or **PM**
+
+For multi-day absence records, the report lists every recorded calendar date in the approved record, including weekends and holidays. It does not remove dates based on work schedules.
+
+Use this report when you need to enter approved time and absence information manually into another legal or payroll system.
+
+This report is PDF-only. It does not change DATEV, Lexware, or Sage export formats, or Personio, SAP SuccessFactors, or Workday API payloads.
 
 ---
 

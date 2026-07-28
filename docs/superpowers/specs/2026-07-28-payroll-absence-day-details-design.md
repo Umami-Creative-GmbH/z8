@@ -35,7 +35,9 @@ An approved absence record is expanded into one detail for each recorded calenda
 
 - A same-day full-day absence produces one `full_day` detail.
 - A same-day partial absence produces one `am` or `pm` detail.
-- For a multi-day absence, the first date retains the record's starting period, the last date retains its ending period, and intermediate dates are `full_day`.
+- For a multi-day absence, the first date is `pm` only when the record starts in the PM; an AM or full-day start produces `full_day` coverage for that date.
+- The last date is `am` only when the record ends in the AM; a PM or full-day end produces `full_day` coverage for that date.
+- All interior dates are `full_day`. Dates that become range boundaries only because the record is clipped to the selected payroll period are also `full_day` unless they are an original record endpoint.
 - Expansion includes every recorded calendar date, including weekends, holidays, and employee non-working days. It does not recalculate the record against work schedules.
 - Details outside the selected payroll period are excluded.
 - An invalid range whose end precedes its start produces no details.
@@ -44,15 +46,16 @@ An approved absence record is expanded into one detail for each recorded calenda
 
 Keep the existing PDF header, metrics, blocker summary, and employee totals table. Add an `Absence details` section after the totals table.
 
-The section is grouped by employee. Each employee group contains rows with:
+The section uses a compact table with columns for:
 
+- employee identity
 - date
 - absence category name
 - `Full day`, `AM`, or `PM`
 
-Employee groups are sorted by employee name. Rows within each group are sorted by date and then category name for deterministic output. Employees without approved absences are omitted from the detail section. If the selected scope has no approved absences, the PDF states that there are no approved absences for the selected period.
+Rows remain contiguous and grouped by employee, with the employee's identity repeated on every row so that each row retains its context across page breaks. Employee groups are sorted by employee name, and rows within each group are sorted by date, category name, and period for deterministic output. Employees without approved absences are omitted from the detail section. If the selected scope has no approved absences, the PDF displays the unchanged message: `No approved absences for the selected period.`
 
-The section may flow across multiple pages. Employee headings and absence rows should remain compact and audit-readable, while avoiding a wide date matrix that would not fit monthly or custom periods.
+The compact table may flow across multiple pages. Its fixed table headers repeat on continuation pages, while the contiguous rows and repeated employee identity keep the report audit-readable without the pagination overhead of separate employee cards or headings.
 
 ## Authorization And Tenant Isolation
 
