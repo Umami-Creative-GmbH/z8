@@ -432,6 +432,12 @@
     }
   },
   "presence": {
+    "activity": {
+      "lastActivity": "letschti Aktivität {date}",
+      "relativeHours": "sit {hours}h",
+      "relativeHoursMinutes": "sit {hours}h {minutes}min",
+      "relativeMinutes": "sit {minutes}min"
+    },
     "clockedIn": "Iigstämplet",
     "clockedOut": "Uusgstämplet"
   },
