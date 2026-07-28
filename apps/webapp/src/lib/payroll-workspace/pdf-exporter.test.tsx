@@ -2,9 +2,18 @@ import { describe, expect, it } from "vitest";
 import {
 	buildPayrollAbsenceSections,
 	exportPayrollSummaryToPDF,
+	flattenPayrollAbsenceSections,
 	generatePayrollPDFFilename,
 } from "./pdf-exporter";
 import type { PayrollWorkspaceSummary } from "./types";
+
+function countPDFPages(pdf: Uint8Array): number {
+	return (
+		Buffer.from(pdf)
+			.toString("latin1")
+			.match(/\/Type \/Page\b/g)?.length ?? 0
+	);
+}
 
 const summary: PayrollWorkspaceSummary = {
 	organizationName: "Acme GmbH",
@@ -218,6 +227,52 @@ describe("payroll PDF exporter", () => {
 		]);
 	});
 
+	it("flattens grouped rows without losing employee context or duplicates", () => {
+		expect(
+			flattenPayrollAbsenceSections([
+				{
+					employeeId: "employee-1",
+					employeeName: "Ada Lovelace",
+					employeeNumber: "E-1",
+					rows: [
+						{ date: "2026-06-03", categoryName: "Sick", periodLabel: "AM" },
+						{ date: "2026-06-03", categoryName: "Sick", periodLabel: "AM" },
+					],
+				},
+				{
+					employeeId: "employee-2",
+					employeeName: "Grace Hopper",
+					employeeNumber: null,
+					rows: [
+						{ date: "2026-06-04", categoryName: "Vacation", periodLabel: "PM" },
+					],
+				},
+			]),
+		).toEqual([
+			{
+				employeeName: "Ada Lovelace",
+				employeeNumber: "E-1",
+				date: "2026-06-03",
+				categoryName: "Sick",
+				periodLabel: "AM",
+			},
+			{
+				employeeName: "Ada Lovelace",
+				employeeNumber: "E-1",
+				date: "2026-06-03",
+				categoryName: "Sick",
+				periodLabel: "AM",
+			},
+			{
+				employeeName: "Grace Hopper",
+				employeeNumber: "No employee no.",
+				date: "2026-06-04",
+				categoryName: "Vacation",
+				periodLabel: "PM",
+			},
+		]);
+	});
+
 	it("omits absence sections when there are no approved details", () => {
 		expect(
 			buildPayrollAbsenceSections({ ...summary, absenceDetails: [] }),
@@ -254,9 +309,37 @@ describe("payroll PDF exporter", () => {
 				period: "full_day" as const,
 			})),
 		});
-		const pdfText = Buffer.from(pdf).toString("latin1");
-		const pageCount = pdfText.match(/\/Type \/Page\b/g)?.length ?? 0;
+		const pageCount = countPDFPages(pdf);
 
 		expect(pageCount).toBeGreaterThan(2);
 	});
+
+	it("keeps one-row employee absence reports compact", async () => {
+		const employees = Array.from({ length: 100 }, (_, index) => {
+			const employeeNumber = String(index + 1).padStart(3, "0");
+			return {
+				...summary.employees[0],
+				id: `employee-${employeeNumber}`,
+				name: `Employee ${employeeNumber}`,
+				employeeNumber: `E-${employeeNumber}`,
+			};
+		});
+		const pdf = await exportPayrollSummaryToPDF({
+			...summary,
+			totals: { ...summary.totals, employeeCount: employees.length },
+			employees,
+			absenceDetails: employees.map((employee) => ({
+				employeeId: employee.id,
+				categoryId: "vacation",
+				categoryName: "Vacation",
+				date: "2026-06-03",
+				period: "full_day" as const,
+			})),
+			blockers: [],
+		});
+
+		const pageCount = countPDFPages(pdf);
+
+		expect(pageCount).toBeLessThan(20);
+	}, 15_000);
 });

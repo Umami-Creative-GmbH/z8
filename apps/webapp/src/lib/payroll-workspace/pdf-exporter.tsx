@@ -16,6 +16,14 @@ export interface PayrollAbsenceSection {
 	}>;
 }
 
+export interface PayrollAbsenceReportRow {
+	employeeName: string;
+	employeeNumber: string;
+	date: string;
+	categoryName: string;
+	periodLabel: string;
+}
+
 const styleDefinitions = {
 	page: {
 		paddingTop: 34,
@@ -179,7 +187,7 @@ const styleDefinitions = {
 		marginTop: 14,
 	},
 	absencePage: {
-		paddingTop: 104,
+		paddingTop: 82,
 		paddingBottom: 60,
 	},
 	absenceReportHeader: {
@@ -194,12 +202,6 @@ const styleDefinitions = {
 	},
 	absenceReportTitle: {
 		fontSize: 11,
-		fontWeight: "bold" as const,
-		color: "#0F172A",
-		marginBottom: 3,
-	},
-	absenceEmployeeName: {
-		fontSize: 9,
 		fontWeight: "bold" as const,
 		color: "#0F172A",
 		marginBottom: 5,
@@ -225,13 +227,16 @@ const styleDefinitions = {
 		borderTopColor: "#E2E8F0",
 	},
 	absenceDateColumn: {
-		width: "24%",
+		width: "18%",
+	},
+	absenceEmployeeColumn: {
+		width: "28%",
 	},
 	absenceCategoryColumn: {
-		width: "58%",
+		width: "39%",
 	},
 	absencePeriodColumn: {
-		width: "18%",
+		width: "15%",
 		textAlign: "right" as const,
 	},
 	emptyState: {
@@ -328,10 +333,23 @@ export function buildPayrollAbsenceSections(
 		}));
 }
 
+export function flattenPayrollAbsenceSections(
+	sections: PayrollAbsenceSection[],
+): PayrollAbsenceReportRow[] {
+	return sections.flatMap((section) =>
+		section.rows.map((row) => ({
+			employeeName: section.employeeName,
+			employeeNumber: section.employeeNumber ?? "No employee no.",
+			...row,
+		})),
+	);
+}
+
 export async function exportPayrollSummaryToPDF(
 	summary: PayrollWorkspaceSummary,
 ): Promise<Uint8Array> {
 	const absenceSections = buildPayrollAbsenceSections(summary);
+	const absenceReportRows = flattenPayrollAbsenceSections(absenceSections);
 	const { Document, Page, pdf, StyleSheet, Text, View } = await import(
 		"@react-pdf/renderer"
 	);
@@ -460,30 +478,27 @@ export async function exportPayrollSummaryToPDF(
 					submission.
 				</Text>
 			</Page>
-			{absenceSections.map((section) => (
-				<Page
-					key={section.employeeId}
-					size="A4"
-					style={[styles.page, styles.absencePage]}
-				>
+			{absenceReportRows.length > 0 && (
+				<Page size="A4" style={[styles.page, styles.absencePage]}>
 					<View fixed style={styles.absenceReportHeader}>
 						<Text style={styles.absenceReportTitle}>Absence details</Text>
-						<Text style={styles.absenceEmployeeName}>
-							{section.employeeName} (
-							{section.employeeNumber ?? "No employee no."})
-						</Text>
 						<View style={styles.absenceDetailHeader}>
+							<Text style={styles.absenceEmployeeColumn}>Employee</Text>
 							<Text style={styles.absenceDateColumn}>Date</Text>
 							<Text style={styles.absenceCategoryColumn}>Category</Text>
 							<Text style={styles.absencePeriodColumn}>Period</Text>
 						</View>
 					</View>
-					{section.rows.map((row, rowIndex) => (
+					{absenceReportRows.map((row, rowIndex) => (
 						<View
 							// biome-ignore lint/suspicious/noArrayIndexKey: Sorted PDF rows are immutable and duplicate details must remain distinct.
-							key={`${row.date}-${row.categoryName}-${row.periodLabel}-${rowIndex}`}
+							key={`${row.employeeName}-${row.date}-${row.categoryName}-${row.periodLabel}-${rowIndex}`}
 							style={styles.absenceDetailRow}
 						>
+							<View style={styles.absenceEmployeeColumn}>
+								<Text style={styles.employeeName}>{row.employeeName}</Text>
+								<Text style={styles.muted}>{row.employeeNumber}</Text>
+							</View>
 							<Text style={styles.absenceDateColumn}>{row.date}</Text>
 							<Text style={styles.absenceCategoryColumn}>
 								{row.categoryName}
@@ -497,7 +512,7 @@ export async function exportPayrollSummaryToPDF(
 						submission.
 					</Text>
 				</Page>
-			))}
+			)}
 		</Document>
 	);
 
