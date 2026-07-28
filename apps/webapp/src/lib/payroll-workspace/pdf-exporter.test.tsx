@@ -54,15 +54,71 @@ const summary: PayrollWorkspaceSummary = {
 };
 
 describe("payroll PDF exporter", () => {
-	it("groups approved absence details by employee in audit order", () => {
-		expect(buildPayrollAbsenceSections(summary)).toEqual([
+	it("sorts employee sections and same-date absence rows in audit order", () => {
+		const orderingSummary: PayrollWorkspaceSummary = {
+			...summary,
+			employees: [
+				{
+					...summary.employees[0],
+					id: "employee-2",
+					name: "Grace Hopper",
+					employeeNumber: "E-2",
+				},
+				summary.employees[0],
+			],
+			absenceDetails: [
+				{
+					employeeId: "employee-2",
+					categoryId: "sick",
+					categoryName: "Sick",
+					date: "2026-06-04",
+					period: "full_day",
+				},
+				{
+					employeeId: "employee-1",
+					categoryId: "vacation",
+					categoryName: "Vacation",
+					date: "2026-06-03",
+					period: "full_day",
+				},
+				{
+					employeeId: "employee-1",
+					categoryId: "sick-b",
+					categoryName: "Sick",
+					date: "2026-06-03",
+					period: "am",
+				},
+				{
+					employeeId: "employee-1",
+					categoryId: "sick-a",
+					categoryName: "Sick",
+					date: "2026-06-03",
+					period: "pm",
+				},
+			],
+		};
+
+		expect(buildPayrollAbsenceSections(orderingSummary)).toEqual([
 			{
 				employeeId: "employee-1",
 				employeeName: "Ada Lovelace",
 				employeeNumber: "E-1",
 				rows: [
-					{ date: "2026-06-03", categoryName: "Sick", periodLabel: "Full day" },
-					{ date: "2026-06-08", categoryName: "Vacation", periodLabel: "AM" },
+					{ date: "2026-06-03", categoryName: "Sick", periodLabel: "PM" },
+					{ date: "2026-06-03", categoryName: "Sick", periodLabel: "AM" },
+					{
+						date: "2026-06-03",
+						categoryName: "Vacation",
+						periodLabel: "Full day",
+					},
+				],
+			},
+			{
+				employeeId: "employee-2",
+				employeeName: "Grace Hopper",
+				employeeNumber: "E-2",
+				rows: [
+					{ date: "2026-06-04", categoryName: "Sick", periodLabel: "Full day" },
 				],
 			},
 		]);
