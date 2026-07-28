@@ -20,17 +20,26 @@ interface UseEmployeeClockStatusesOptions {
 const EMPTY_SNAPSHOTS: EmployeeClockPresenceMap = {};
 
 function normalizeEmployeeIds(employeeIds: string[]) {
-	return Array.from(new Set(employeeIds.flatMap((id) => {
-		const trimmed = id.trim();
-		return trimmed ? [trimmed] : [];
-	}))).toSorted();
+	return Array.from(
+		new Set(
+			employeeIds.flatMap((id) => {
+				const trimmed = id.trim();
+				return trimmed ? [trimmed] : [];
+			}),
+		),
+	).toSorted();
 }
 
 export function useEmployeeClockStatuses(
 	employeeIds: string[],
 	options: UseEmployeeClockStatusesOptions = {},
 ) {
-	const { organizationId, polling = false, pollingIntervalMs, enabled = true } = options;
+	const {
+		organizationId,
+		polling = false,
+		pollingIntervalMs,
+		enabled = true,
+	} = options;
 	const normalizedEmployeeIds = normalizeEmployeeIds(employeeIds);
 	const query = useQuery({
 		queryKey: queryKeys.employeeClockStatuses.list(
@@ -49,7 +58,10 @@ export function useEmployeeClockStatuses(
 	});
 	const snapshots = query.data ?? EMPTY_SNAPSHOTS;
 	const statuses = Object.fromEntries(
-		Object.entries(snapshots).map(([employeeId, snapshot]) => [employeeId, snapshot.status]),
+		Object.entries(snapshots).map(([employeeId, snapshot]) => [
+			employeeId,
+			snapshot.status,
+		]),
 	) as EmployeeClockStatusMap;
 	const getStatus = (employeeId: string): EmployeeClockStatus => {
 		return statuses[employeeId.trim()] ?? "unknown";

@@ -3,43 +3,72 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
 	descCalls: [] as Array<{ columnName: string; tableName: string | undefined }>,
-	eqCalls: [] as Array<{ columnName: string; tableName: string | undefined; value: unknown }>,
+	distinctOnCalls: [] as Array<
+		Array<{ columnName: string; tableName: string | undefined }>
+	>,
+	eqCalls: [] as Array<{
+		columnName: string;
+		tableName: string | undefined;
+		value: unknown;
+	}>,
 	inArrayCalls: [] as Array<{
 		columnName: string;
 		tableName: string | undefined;
 		values: unknown[];
+	}>,
+	orderByFirstColumnCalls: [] as Array<{
+		columnName: string;
+		tableName: string | undefined;
 	}>,
 	getEmployeeSettingsActorContext: vi.fn(),
 	getManagedEmployeeIdsForSettingsActor: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", async () => {
-	const actual = await vi.importActual<typeof import("drizzle-orm")>("drizzle-orm");
+	const actual =
+		await vi.importActual<typeof import("drizzle-orm")>("drizzle-orm");
 
 	return {
 		...actual,
 		desc: vi.fn((column: Parameters<typeof actual.desc>[0]) => {
-			const typedColumn = column as { name?: string; table?: { [key: symbol]: string } };
+			const typedColumn = column as {
+				name?: string;
+				table?: { [key: symbol]: string };
+			};
 			mocks.descCalls.push({
 				columnName: typedColumn.name ?? "",
 				tableName: typedColumn.table?.[Symbol.for("drizzle:Name")],
 			});
 			return actual.desc(column);
 		}),
-		eq: vi.fn((left: Parameters<typeof actual.eq>[0], right: Parameters<typeof actual.eq>[1]) => {
-			const column = left as { name?: string; table?: { [key: symbol]: string } };
+		eq: vi.fn(
+			(
+				left: Parameters<typeof actual.eq>[0],
+				right: Parameters<typeof actual.eq>[1],
+			) => {
+				const column = left as {
+					name?: string;
+					table?: { [key: symbol]: string };
+				};
 
-			mocks.eqCalls.push({
-				columnName: column.name ?? "",
-				tableName: column.table?.[Symbol.for("drizzle:Name")],
-				value: right,
-			});
+				mocks.eqCalls.push({
+					columnName: column.name ?? "",
+					tableName: column.table?.[Symbol.for("drizzle:Name")],
+					value: right,
+				});
 
-			return actual.eq(left, right);
-		}),
+				return actual.eq(left, right);
+			},
+		),
 		inArray: vi.fn(
-			(left: Parameters<typeof actual.inArray>[0], values: Parameters<typeof actual.inArray>[1]) => {
-				const column = left as { name?: string; table?: { [key: symbol]: string } };
+			(
+				left: Parameters<typeof actual.inArray>[0],
+				values: Parameters<typeof actual.inArray>[1],
+			) => {
+				const column = left as {
+					name?: string;
+					table?: { [key: symbol]: string };
+				};
 				mocks.inArrayCalls.push({
 					columnName: column.name ?? "",
 					tableName: column.table?.[Symbol.for("drizzle:Name")],
@@ -53,7 +82,8 @@ vi.mock("drizzle-orm", async () => {
 
 vi.mock("./employee-action-utils", () => ({
 	getEmployeeSettingsActorContext: mocks.getEmployeeSettingsActorContext,
-	getManagedEmployeeIdsForSettingsActor: mocks.getManagedEmployeeIdsForSettingsActor,
+	getManagedEmployeeIdsForSettingsActor:
+		mocks.getManagedEmployeeIdsForSettingsActor,
 }));
 
 vi.mock("@/lib/effect/runtime", async () => {
@@ -66,7 +96,9 @@ vi.mock("@/lib/effect/result", async () => {
 	const { Cause, Effect, Exit, Option } = await import("effect");
 
 	return {
-		runServerActionSafe: async <T>(effect: Parameters<typeof Effect.runPromiseExit<T>>[0]) => {
+		runServerActionSafe: async <T>(
+			effect: Parameters<typeof Effect.runPromiseExit<T>>[0],
+		) => {
 			const exit = await Effect.runPromiseExit(effect);
 
 			return Exit.match(exit, {
@@ -77,7 +109,10 @@ vi.mock("@/lib/effect/result", async () => {
 
 					return {
 						success: false as const,
-						error: error instanceof Error ? error.message : "An unexpected error occurred",
+						error:
+							error instanceof Error
+								? error.message
+								: "An unexpected error occurred",
 						code: "UNKNOWN_ERROR",
 					};
 				},
@@ -102,6 +137,24 @@ function createDbService({
 	}>;
 	organizationEmployeeRows: Array<{ id: string }>;
 }) {
+	const createActivityQuery = () => ({
+		from: vi.fn(() => ({
+			where: vi.fn(() => ({
+				orderBy: vi.fn(
+					(firstColumn: {
+						name?: string;
+						table?: { [key: symbol]: string };
+					}) => {
+						mocks.orderByFirstColumnCalls.push({
+							columnName: firstColumn.name ?? "",
+							tableName: firstColumn.table?.[Symbol.for("drizzle:Name")],
+						});
+						return Promise.resolve([]);
+					},
+				),
+			})),
+		})),
+	});
 	const query = vi.fn((name: string, fn: () => unknown) => {
 		if (name === "getEmployeeClockStatuses:organizationEmployees") {
 			void fn();
@@ -123,6 +176,19 @@ function createDbService({
 	return {
 		query,
 		db: {
+			selectDistinctOn: vi.fn(
+				(
+					columns: Array<{ name?: string; table?: { [key: symbol]: string } }>,
+				) => {
+					mocks.distinctOnCalls.push(
+						columns.map((column) => ({
+							columnName: column.name ?? "",
+							tableName: column.table?.[Symbol.for("drizzle:Name")],
+						})),
+					);
+					return createActivityQuery();
+				},
+			),
 			select: vi.fn(() => ({
 				from: vi.fn((table: { [key: symbol]: string }) => ({
 					where: vi.fn(() =>
@@ -139,8 +205,10 @@ function createDbService({
 describe("getEmployeeClockStatuses", () => {
 	beforeEach(() => {
 		mocks.descCalls.length = 0;
+		mocks.distinctOnCalls.length = 0;
 		mocks.eqCalls.length = 0;
 		mocks.inArrayCalls.length = 0;
+		mocks.orderByFirstColumnCalls.length = 0;
 		vi.clearAllMocks();
 	});
 
@@ -170,7 +238,9 @@ describe("getEmployeeClockStatuses", () => {
 				session: { user: { id: "user-1" } },
 			}),
 		);
-		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(Effect.succeed(null));
+		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(
+			Effect.succeed(null),
+		);
 
 		const result = await getEmployeeClockStatuses(["emp-1", "emp-2"]);
 
@@ -204,7 +274,9 @@ describe("getEmployeeClockStatuses", () => {
 				session: { user: { id: "manager-user" } },
 			}),
 		);
-		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(Effect.succeed(new Set(["emp-1"])));
+		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(
+			Effect.succeed(new Set(["emp-1"])),
+		);
 
 		const result = await getEmployeeClockStatuses(["emp-1", "emp-2"]);
 
@@ -233,7 +305,9 @@ describe("getEmployeeClockStatuses", () => {
 				session: { user: { id: "user-1" } },
 			}),
 		);
-		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(Effect.succeed(null));
+		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(
+			Effect.succeed(null),
+		);
 
 		const result = await getEmployeeClockStatuses(["emp-1", "emp-1", ""]);
 
@@ -269,7 +343,9 @@ describe("getEmployeeClockStatuses", () => {
 				session: { user: { id: "user-1" } },
 			}),
 		);
-		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(Effect.succeed(null));
+		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(
+			Effect.succeed(null),
+		);
 
 		const result = await getEmployeeClockStatuses(["emp-1", "emp-outside-org"]);
 
@@ -302,19 +378,29 @@ describe("getEmployeeClockStatuses", () => {
 				session: { user: { id: "manager-user" } },
 			}),
 		);
-		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(Effect.succeed(new Set(["emp-1"])));
+		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(
+			Effect.succeed(new Set(["emp-1"])),
+		);
 
 		await getEmployeeClockStatuses(["emp-1", "emp-2"]);
 
 		expect(mocks.eqCalls).toEqual(
 			expect.arrayContaining([
-				{ columnName: "organization_id", tableName: "time_entry", value: "org-1" },
+				{
+					columnName: "organization_id",
+					tableName: "time_entry",
+					value: "org-1",
+				},
 				{ columnName: "is_superseded", tableName: "time_entry", value: false },
 			]),
 		);
 		expect(mocks.inArrayCalls).toEqual(
 			expect.arrayContaining([
-				{ columnName: "employee_id", tableName: "time_entry", values: ["emp-1"] },
+				{
+					columnName: "employee_id",
+					tableName: "time_entry",
+					values: ["emp-1"],
+				},
 				{
 					columnName: "type",
 					tableName: "time_entry",
@@ -326,10 +412,19 @@ describe("getEmployeeClockStatuses", () => {
 			{ columnName: "timestamp", tableName: "time_entry" },
 			{ columnName: "id", tableName: "time_entry" },
 		]);
+		expect(mocks.distinctOnCalls).toEqual([
+			[{ columnName: "employee_id", tableName: "time_entry" }],
+		]);
+		expect(mocks.orderByFirstColumnCalls).toEqual([
+			{ columnName: "employee_id", tableName: "time_entry" },
+		]);
 	});
 
 	it("does not query activity when no requested employees are accessible", async () => {
-		const dbService = createDbService({ activeRows: [], organizationEmployeeRows: [] });
+		const dbService = createDbService({
+			activeRows: [],
+			organizationEmployeeRows: [],
+		});
 		mocks.getEmployeeSettingsActorContext.mockReturnValue(
 			Effect.succeed({
 				dbService,
@@ -339,7 +434,9 @@ describe("getEmployeeClockStatuses", () => {
 				session: { user: { id: "user-1" } },
 			}),
 		);
-		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(Effect.succeed(null));
+		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(
+			Effect.succeed(null),
+		);
 
 		const result = await getEmployeeClockStatuses(["inaccessible-emp"]);
 
@@ -364,7 +461,9 @@ describe("getEmployeeClockStatuses", () => {
 				session: { user: { id: "user-1" } },
 			}),
 		);
-		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(Effect.succeed(null));
+		mocks.getManagedEmployeeIdsForSettingsActor.mockReturnValue(
+			Effect.succeed(null),
+		);
 
 		await getEmployeeClockStatuses(["emp-1", "inactive-emp"]);
 
