@@ -10,9 +10,9 @@ import {
 	timeRecordAbsence,
 } from "@/db/schema";
 import { assertCanonicalCutoverReady } from "@/lib/time-record/migration/cutover-state";
+import { buildPayrollAbsenceDetails, payrollAbsenceDetailDays } from "./absence-details";
 import type {
 	PayrollBlocker,
-	PayrollDayPeriod,
 	PayrollPeriod,
 	PayrollSummaryAbsenceRow,
 	PayrollSummaryEmployeeSource,
@@ -54,31 +54,21 @@ export function buildPayrollSummaryFromRows(input: {
 }): PayrollWorkspaceSummary {
 	const summaryPeriod = parsePayrollPeriod(input.period);
 	const workedMinutesByEmployee = calculatePayrollWorkedMinutes(input.workRows, summaryPeriod);
+	const absenceDetails = buildPayrollAbsenceDetails(input.absenceRows, input.period);
 
 	const absenceDaysByEmployee = new Map<
 		string,
 		Map<string, { categoryId: string; categoryName: string; days: number }>
 	>();
-	for (const row of input.absenceRows) {
-		const employeeAbsences = absenceDaysByEmployee.get(row.employeeId) ?? new Map();
-		const existing = employeeAbsences.get(row.categoryId);
-		const days =
-			row.days ??
-			(row.startAt && row.startPeriod && row.endPeriod
-				? calculatePayrollAbsenceDays({
-						startAt: row.startAt,
-						endAt: row.endAt ?? null,
-						startPeriod: row.startPeriod,
-						endPeriod: row.endPeriod,
-						period: summaryPeriod,
-					})
-				: 0);
-		employeeAbsences.set(row.categoryId, {
-			categoryId: row.categoryId,
-			categoryName: row.categoryName,
-			days: (existing?.days ?? 0) + days,
+	for (const detail of absenceDetails) {
+		const employeeAbsences = absenceDaysByEmployee.get(detail.employeeId) ?? new Map();
+		const existing = employeeAbsences.get(detail.categoryId);
+		employeeAbsences.set(detail.categoryId, {
+			categoryId: detail.categoryId,
+			categoryName: detail.categoryName,
+			days: (existing?.days ?? 0) + payrollAbsenceDetailDays(detail.period),
 		});
-		absenceDaysByEmployee.set(row.employeeId, employeeAbsences);
+		absenceDaysByEmployee.set(detail.employeeId, employeeAbsences);
 	}
 
 	const employeesWithBlockers = new Set(input.blockers.map((blocker) => blocker.employeeId));
@@ -96,7 +86,7 @@ export function buildPayrollSummaryFromRows(input: {
 				hasBlockers: employeesWithBlockers.has(employeeRow.id),
 			};
 		})
-		.sort((a, b) => a.name.localeCompare(b.name));
+		.sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
 
 	return {
 		organizationName: input.organizationName,
@@ -111,6 +101,7 @@ export function buildPayrollSummaryFromRows(input: {
 			blockerCount: input.blockers.length,
 		},
 		employees,
+		absenceDetails,
 		blockers: input.blockers,
 	};
 }
@@ -136,39 +127,6 @@ export function calculatePayrollWorkedMinutes(
 	}
 
 	return workedMinutesByEmployee;
-}
-
-export function calculatePayrollAbsenceDays(input: {
-	startAt: DateTime;
-	endAt: DateTime | null;
-	startPeriod: PayrollDayPeriod;
-	endPeriod: PayrollDayPeriod;
-	period: PayrollDateTimePeriod;
-}): number {
-	const recordStartDate = input.startAt.toUTC().startOf("day");
-	const recordEndDate = (input.endAt ?? input.startAt).toUTC().startOf("day");
-	if (recordEndDate < recordStartDate) return 0;
-
-	let days = 0;
-	let day = recordStartDate;
-	while (day <= recordEndDate) {
-		for (const slot of getAbsenceSlotsForDay(
-			day,
-			recordStartDate,
-			recordEndDate,
-			input.startPeriod,
-			input.endPeriod,
-		)) {
-			if (
-				intervalsOverlap(slot.start, slot.end, input.period.start.toUTC(), input.period.end.toUTC())
-			) {
-				days += 0.5;
-			}
-		}
-		day = day.plus({ days: 1 });
-	}
-
-	return roundDays(days);
 }
 
 export function filterPendingTimeApprovalBlockers(input: {
@@ -384,10 +342,12 @@ async function getAbsenceRows(
 		employeeId: row.employeeId,
 		categoryId: row.categoryId,
 		categoryName: row.categoryName,
-		startAt: DateTime.fromJSDate(row.startAt, { zone: "utc" }),
-		endAt: row.endAt ? DateTime.fromJSDate(row.endAt, { zone: "utc" }) : null,
+		startDate: row.startAt.toISOString().slice(0, 10),
+		endDate: (row.endAt ?? row.startAt).toISOString().slice(0, 10),
 		startPeriod: row.startPeriod,
 		endPeriod: row.endPeriod,
+		startTime: row.startAt.toISOString().slice(11, 19),
+		endTime: (row.endAt ?? row.startAt).toISOString().slice(11, 19),
 	}));
 }
 
@@ -547,35 +507,6 @@ function intervalsOverlap(
 	periodEnd: DateTime,
 ): boolean {
 	return startAt.toUTC() <= periodEnd.toUTC() && endAt.toUTC() >= periodStart.toUTC();
-}
-
-function getAbsenceSlotsForDay(
-	day: DateTime,
-	recordStartDate: DateTime,
-	recordEndDate: DateTime,
-	startPeriod: PayrollDayPeriod,
-	endPeriod: PayrollDayPeriod,
-): Array<{ start: DateTime; end: DateTime }> {
-	const slots = [
-		{
-			period: "am" as const,
-			start: day.startOf("day"),
-			end: day.startOf("day").plus({ hours: 12 }),
-		},
-		{ period: "pm" as const, start: day.startOf("day").plus({ hours: 12 }), end: day.endOf("day") },
-	];
-	const startSlot = day.hasSame(recordStartDate, "day") ? firstAbsenceSlot(startPeriod) : "am";
-	const endSlot = day.hasSame(recordEndDate, "day") ? lastAbsenceSlot(endPeriod) : "pm";
-
-	return slots.filter((slot) => slot.period >= startSlot && slot.period <= endSlot);
-}
-
-function firstAbsenceSlot(period: PayrollDayPeriod): "am" | "pm" {
-	return period === "pm" ? "pm" : "am";
-}
-
-function lastAbsenceSlot(period: PayrollDayPeriod): "am" | "pm" {
-	return period === "am" ? "am" : "pm";
 }
 
 function roundHours(hours: number): number {
