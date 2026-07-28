@@ -1,398 +1,398 @@
 {
-	"version": "7",
-	"dialect": "postgresql",
-	"entries": [
-		{
-			"idx": 0,
-			"version": "7",
-			"when": 1771865823588,
-			"tag": "0000_fixed_lockheed",
-			"breakpoints": true
-		},
-		{
-			"idx": 1,
-			"version": "7",
-			"when": 1773776155245,
-			"tag": "0001_watery_stephen_strange",
-			"breakpoints": true
-		},
-		{
-			"idx": 2,
-			"version": "7",
-			"when": 1774282824858,
-			"tag": "0002_petite_eternity",
-			"breakpoints": true
-		},
-		{
-			"idx": 3,
-			"version": "7",
-			"when": 1775930095000,
-			"tag": "0003_app_auth_codes",
-			"breakpoints": true
-		},
-		{
-			"idx": 4,
-			"version": "7",
-			"when": 1776762827111,
-			"tag": "0004_hard_bill_hollister",
-			"breakpoints": true
-		},
-		{
-			"idx": 5,
-			"version": "7",
-			"when": 1777389180000,
-			"tag": "0005_import_review",
-			"breakpoints": true
-		},
-		{
-			"idx": 6,
-			"version": "7",
-			"when": 1777393696559,
-			"tag": "0006_import_review_row_listing_idx",
-			"breakpoints": true
-		},
-		{
-			"idx": 7,
-			"version": "7",
-			"when": 1777399488574,
-			"tag": "0007_import_review_workflow_blockers",
-			"breakpoints": true
-		},
-		{
-			"idx": 8,
-			"version": "7",
-			"when": 1777400000000,
-			"tag": "0008_demo_data_feature_flag",
-			"breakpoints": true
-		},
-		{
-			"idx": 9,
-			"version": "7",
-			"when": 1777552700826,
-			"tag": "0009_organization_email_template",
-			"breakpoints": true
-		},
-		{
-			"idx": 10,
-			"version": "7",
-			"when": 1777809000000,
-			"tag": "0010_user_week_start_day",
-			"breakpoints": true
-		},
-		{
-			"idx": 11,
-			"version": "7",
-			"when": 1777809100000,
-			"tag": "0011_implementation_checklist_manual_state",
-			"breakpoints": true
-		},
-		{
-			"idx": 12,
-			"version": "7",
-			"when": 1777826107256,
-			"tag": "0012_enterprise_identity_setup",
-			"breakpoints": true
-		},
-		{
-			"idx": 13,
-			"version": "7",
-			"when": 1778232000000,
-			"tag": "0013_work_location_remote",
-			"breakpoints": true
-		},
-		{
-			"idx": 14,
-			"version": "7",
-			"when": 1778243622840,
-			"tag": "0014_team_membership_primary_manager",
-			"breakpoints": true
-		},
-		{
-			"idx": 15,
-			"version": "7",
-			"when": 1778245000000,
-			"tag": "0015_absence_entry_category_guard_idx",
-			"breakpoints": true
-		},
-		{
-			"idx": 16,
-			"version": "7",
-			"when": 1778329743178,
-			"tag": "0016_user_time_format",
-			"breakpoints": true
-		},
-		{
-			"idx": 17,
-			"version": "7",
-			"when": 1778330000000,
-			"tag": "0017_employee_pronouns",
-			"breakpoints": true
-		},
-		{
-			"idx": 18,
-			"version": "7",
-			"when": 1778614513000,
-			"tag": "0018_year_specific_holiday_presets",
-			"breakpoints": true
-		},
-		{
-			"idx": 19,
-			"version": "7",
-			"when": 1778661516751,
-			"tag": "0019_regular_sandman",
-			"breakpoints": true
-		},
-		{
-			"idx": 20,
-			"version": "7",
-			"when": 1778836149680,
-			"tag": "0020_drop_organization_fiscal_year",
-			"breakpoints": true
-		},
-		{
-			"idx": 21,
-			"version": "7",
-			"when": 1778827536858,
-			"tag": "0021_sick_detail",
-			"breakpoints": true
-		},
-		{
-			"idx": 22,
-			"version": "7",
-			"when": 1778836149681,
-			"tag": "0022_absence_category_translations",
-			"breakpoints": true
-		},
-		{
-			"idx": 23,
-			"version": "7",
-			"when": 1779299200000,
-			"tag": "0023_billing_local_trials",
-			"breakpoints": true
-		},
-		{
-			"idx": 24,
-			"version": "7",
-			"when": 1779443910353,
-			"tag": "0024_employee_time_balance",
-			"breakpoints": true
-		},
-		{
-			"idx": 25,
-			"version": "7",
-			"when": 1779454874208,
-			"tag": "0025_scaleway_secret_store",
-			"breakpoints": true
-		},
-		{
-			"idx": 26,
-			"version": "7",
-			"when": 1779460000000,
-			"tag": "0026_remove_employee_manager_id",
-			"breakpoints": true
-		},
-		{
-			"idx": 27,
-			"version": "7",
-			"when": 1778889600000,
-			"tag": "0027_employee_work_balance",
-			"breakpoints": true
-		},
-		{
-			"idx": 28,
-			"version": "7",
-			"when": 1779485528823,
-			"tag": "0028_time_correction_approval_links",
-			"breakpoints": true
-		},
-		{
-			"idx": 29,
-			"version": "7",
-			"when": 1779490000000,
-			"tag": "0029_employee_work_balance_recovery",
-			"breakpoints": true
-		},
-		{
-			"idx": 30,
-			"version": "7",
-			"when": 1779490000001,
-			"tag": "0030_platform_system_email_template",
-			"breakpoints": true
-		},
-		{
-			"idx": 31,
-			"version": "7",
-			"when": 1779654701733,
-			"tag": "0031_lean_millenium_guard",
-			"breakpoints": true
-		},
-		{
-			"idx": 32,
-			"version": "7",
-			"when": 1779654701734,
-			"tag": "0032_works_council_feature_flag",
-			"breakpoints": true
-		},
-		{
-			"idx": 33,
-			"version": "7",
-			"when": 1779654701735,
-			"tag": "0033_product_improvement_consent",
-			"breakpoints": true
-		},
-		{
-			"idx": 34,
-			"version": "7",
-			"when": 1779654701736,
-			"tag": "0034_employee_work_balance_period",
-			"breakpoints": true
-		},
-		{
-			"idx": 35,
-			"version": "7",
-			"when": 1780000000000,
-			"tag": "0035_approval_request_metadata_recovery",
-			"breakpoints": true
-		},
-		{
-			"idx": 36,
-			"version": "7",
-			"when": 1780185600000,
-			"tag": "0036_time_entry_timezone_capture",
-			"breakpoints": true
-		},
-		{
-			"idx": 37,
-			"version": "7",
-			"when": 1780185600001,
-			"tag": "0037_holiday_category_assignment",
-			"breakpoints": true
-		},
-		{
-			"idx": 38,
-			"version": "7",
-			"when": 1780185600002,
-			"tag": "0038_work_policy_preset_ownership",
-			"breakpoints": true
-		},
-		{
-			"idx": 39,
-			"version": "7",
-			"when": 1780185600003,
-			"tag": "0039_shift_pickup_requested_notification",
-			"breakpoints": true
-		},
-		{
-			"idx": 40,
-			"version": "7",
-			"when": 1780185600004,
-			"tag": "0040_invitation_target_team",
-			"breakpoints": true
-		},
-		{
-			"idx": 41,
-			"version": "7",
-			"when": 1780185600005,
-			"tag": "0041_invitation_target_team_text_recovery",
-			"breakpoints": true
-		},
-		{
-			"idx": 42,
-			"version": "7",
-			"when": 1780304304743,
-			"tag": "0042_approval_policy_runtime_tables",
-			"breakpoints": true
-		},
-		{
-			"idx": 43,
-			"version": "7",
-			"when": 1780304304744,
-			"tag": "0043_absence_approval_orphan_recovery",
-			"breakpoints": true
-		},
-		{
-			"idx": 44,
-			"version": "7",
-			"when": 1780304304745,
-			"tag": "0044_cron_schedule_override",
-			"breakpoints": true
-		},
-		{
-			"idx": 45,
-			"version": "7",
-			"when": 1780304304746,
-			"tag": "0045_organization_smtp_ip_mode",
-			"breakpoints": true
-		},
-		{
-			"idx": 46,
-			"version": "7",
-			"when": 1780304304747,
-			"tag": "0046_work_period_deletion_metadata",
-			"breakpoints": true
-		},
-		{
-			"idx": 47,
-			"version": "7",
-			"when": 1780304304748,
-			"tag": "0047_scoped_payroll_access",
-			"breakpoints": true
-		},
-		{
-			"idx": 48,
-			"version": "7",
-			"when": 1780773132899,
-			"tag": "0048_payroll_access_scope",
-			"breakpoints": true
-		},
-		{
-			"idx": 49,
-			"version": "7",
-			"when": 1780773132900,
-			"tag": "0049_organization_notification_settings",
-			"breakpoints": true
-		},
-		{
-			"idx": 50,
-			"version": "7",
-			"when": 1780773132901,
-			"tag": "0050_employee_invitation_draft",
-			"breakpoints": true
-		},
-		{
-			"idx": 51,
-			"version": "7",
-			"when": 1780773132902,
-			"tag": "0051_sick_detail_recovery",
-			"breakpoints": true
-		},
-		{
-			"idx": 52,
-			"version": "7",
-			"when": 1780773132903,
-			"tag": "0052_time_entry_timezone_recovery",
-			"breakpoints": true
-		},
-		{
-			"idx": 53,
-			"version": "7",
-			"when": 1781096400000,
-			"tag": "0053_telegram_digest_delivery",
-			"breakpoints": true
-		},
-		{
-			"idx": 54,
-			"version": "7",
-			"when": 1784400735730,
-			"tag": "0054_employee_invitation_draft_identity",
-			"breakpoints": true
-		},
-		{
-			"idx": 55,
-			"version": "7",
-			"when": 1785269198390,
-			"tag": "0055_employee_clock_activity_index",
-			"breakpoints": true
-		}
-	]
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1771865823588,
+      "tag": "0000_fixed_lockheed",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773776155245,
+      "tag": "0001_watery_stephen_strange",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774282824858,
+      "tag": "0002_petite_eternity",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1775930095000,
+      "tag": "0003_app_auth_codes",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1776762827111,
+      "tag": "0004_hard_bill_hollister",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777389180000,
+      "tag": "0005_import_review",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777393696559,
+      "tag": "0006_import_review_row_listing_idx",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777399488574,
+      "tag": "0007_import_review_workflow_blockers",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1777400000000,
+      "tag": "0008_demo_data_feature_flag",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1777552700826,
+      "tag": "0009_organization_email_template",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1777809000000,
+      "tag": "0010_user_week_start_day",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1777809100000,
+      "tag": "0011_implementation_checklist_manual_state",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1777826107256,
+      "tag": "0012_enterprise_identity_setup",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1778232000000,
+      "tag": "0013_work_location_remote",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1778243622840,
+      "tag": "0014_team_membership_primary_manager",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1778245000000,
+      "tag": "0015_absence_entry_category_guard_idx",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1778329743178,
+      "tag": "0016_user_time_format",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1778330000000,
+      "tag": "0017_employee_pronouns",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1778614513000,
+      "tag": "0018_year_specific_holiday_presets",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1778661516751,
+      "tag": "0019_regular_sandman",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1778836149680,
+      "tag": "0020_drop_organization_fiscal_year",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1778827536858,
+      "tag": "0021_sick_detail",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1778836149681,
+      "tag": "0022_absence_category_translations",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1779299200000,
+      "tag": "0023_billing_local_trials",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1779443910353,
+      "tag": "0024_employee_time_balance",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1779454874208,
+      "tag": "0025_scaleway_secret_store",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1779460000000,
+      "tag": "0026_remove_employee_manager_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1778889600000,
+      "tag": "0027_employee_work_balance",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1779485528823,
+      "tag": "0028_time_correction_approval_links",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1779490000000,
+      "tag": "0029_employee_work_balance_recovery",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1779490000001,
+      "tag": "0030_platform_system_email_template",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1779654701733,
+      "tag": "0031_lean_millenium_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1779654701734,
+      "tag": "0032_works_council_feature_flag",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1779654701735,
+      "tag": "0033_product_improvement_consent",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1779654701736,
+      "tag": "0034_employee_work_balance_period",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1780000000000,
+      "tag": "0035_approval_request_metadata_recovery",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1780185600000,
+      "tag": "0036_time_entry_timezone_capture",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1780185600001,
+      "tag": "0037_holiday_category_assignment",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1780185600002,
+      "tag": "0038_work_policy_preset_ownership",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1780185600003,
+      "tag": "0039_shift_pickup_requested_notification",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1780185600004,
+      "tag": "0040_invitation_target_team",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1780185600005,
+      "tag": "0041_invitation_target_team_text_recovery",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1780304304743,
+      "tag": "0042_approval_policy_runtime_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1780304304744,
+      "tag": "0043_absence_approval_orphan_recovery",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1780304304745,
+      "tag": "0044_cron_schedule_override",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1780304304746,
+      "tag": "0045_organization_smtp_ip_mode",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1780304304747,
+      "tag": "0046_work_period_deletion_metadata",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1780304304748,
+      "tag": "0047_scoped_payroll_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1780773132899,
+      "tag": "0048_payroll_access_scope",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1780773132900,
+      "tag": "0049_organization_notification_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1780773132901,
+      "tag": "0050_employee_invitation_draft",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1780773132902,
+      "tag": "0051_sick_detail_recovery",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1780773132903,
+      "tag": "0052_time_entry_timezone_recovery",
+      "breakpoints": true
+	},
+	{
+		"idx": 53,
+		"version": "7",
+		"when": 1781096400000,
+		"tag": "0053_telegram_digest_delivery",
+		"breakpoints": true
+	},
+	{
+		"idx": 54,
+		"version": "7",
+		"when": 1784400735730,
+		"tag": "0054_employee_invitation_draft_identity",
+		"breakpoints": true
+	},
+	{
+		"idx": 55,
+		"version": "7",
+		"when": 1785269198390,
+		"tag": "0055_employee_clock_activity_index",
+		"breakpoints": true
+	}
+  ]
 }
