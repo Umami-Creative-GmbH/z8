@@ -432,6 +432,12 @@
     }
   },
   "presence": {
+    "activity": {
+      "lastActivity": "dernière activité {date}",
+      "relativeHours": "depuis {hours}h",
+      "relativeHoursMinutes": "depuis {hours}h {minutes}min",
+      "relativeMinutes": "depuis {minutes}min"
+    },
     "clockedIn": "Pointage effectué (entrée)",
     "clockedOut": "Pointage effectué (sortie)"
   },

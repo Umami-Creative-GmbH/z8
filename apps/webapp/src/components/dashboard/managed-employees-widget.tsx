@@ -10,6 +10,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
+import { EmployeeActivityText } from "@/components/employee-activity-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
@@ -32,6 +33,8 @@ type ManagedEmployee = {
 		name: string;
 	} | null;
 	clockStatus?: EmployeeClockStatus;
+	lastActivityAt?: string | null;
+	lastActivityUtcOffsetMinutes?: number | null;
 };
 
 function EmployeeCard({ employee }: { employee: ManagedEmployee }) {
@@ -64,6 +67,12 @@ function EmployeeCard({ employee }: { employee: ManagedEmployee }) {
 						<span className="truncate">{employee.user.email}</span>
 					)}
 				</div>
+				<EmployeeActivityText
+					lastActivityAt={employee.lastActivityAt ?? null}
+					lastActivityUtcOffsetMinutes={
+						employee.lastActivityUtcOffsetMinutes ?? null
+					}
+				/>
 			</div>
 
 			{/* Team Badge */}
@@ -115,7 +124,10 @@ export function ManagedEmployeesWidget() {
 			if (!result.success) {
 				throw new Error(
 					result.error ||
-						t("dashboard.managed-employees.error", "Failed to load managed employees"),
+						t(
+							"dashboard.managed-employees.error",
+							"Failed to load managed employees",
+						),
 				);
 			}
 
@@ -131,13 +143,20 @@ export function ManagedEmployeesWidget() {
 		employees.map((employee) => employee.id),
 		{ polling: true },
 	);
-	const employeesWithPresence = employees.map((employee) => ({
-		...employee,
-		clockStatus: presence.getStatus(employee.id),
-	}));
+	const employeesWithPresence = employees.map((employee) => {
+		const activity = presence.getActivity(employee.id);
+		return {
+			...employee,
+			clockStatus: presence.getStatus(employee.id),
+			lastActivityAt: activity?.lastActivityAt ?? null,
+			lastActivityUtcOffsetMinutes:
+				activity?.lastActivityUtcOffsetMinutes ?? null,
+		};
+	});
 	const isManager = managedEmployeesQuery.data?.isManager ?? false;
 	const loading = managedEmployeesQuery.isLoading;
-	const refreshing = managedEmployeesQuery.isFetching && !managedEmployeesQuery.isLoading;
+	const refreshing =
+		managedEmployeesQuery.isFetching && !managedEmployeesQuery.isLoading;
 
 	const refetch = () => {
 		managedEmployeesQuery.refetch();
@@ -151,10 +170,17 @@ export function ManagedEmployeesWidget() {
 				title={t("dashboard.managed-employees.title", "Your Team")}
 				description={
 					employees.length > 0
-						? t("dashboard.managed-employees.direct-reports", "{count} direct reports", {
-								count: employees.length,
-							})
-						: t("dashboard.managed-employees.people-you-manage", "People you manage")
+						? t(
+								"dashboard.managed-employees.direct-reports",
+								"{count} direct reports",
+								{
+									count: employees.length,
+								},
+							)
+						: t(
+								"dashboard.managed-employees.people-you-manage",
+								"People you manage",
+							)
 				}
 				icon={<IconUsers className="size-4 text-indigo-500" />}
 				loading={loading}

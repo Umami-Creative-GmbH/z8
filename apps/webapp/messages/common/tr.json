@@ -432,6 +432,12 @@
     }
   },
   "presence": {
+    "activity": {
+      "lastActivity": "son etkinlik {date}",
+      "relativeHours": "{hours} sa önce",
+      "relativeHoursMinutes": "{hours} sa {minutes} dk önce",
+      "relativeMinutes": "{minutes} dk önce"
+    },
     "clockedIn": "Giriş yapıldı",
     "clockedOut": "Çıkış yapıldı"
   },

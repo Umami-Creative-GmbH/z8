@@ -22,6 +22,7 @@ import {
 } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
+import { EmployeeActivityText } from "@/components/employee-activity-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,6 +45,8 @@ import type { ManagedEmployee } from "./team-members-data";
 
 type ManagedEmployeeWithPresence = ManagedEmployee & {
 	clockStatus?: EmployeeClockStatus;
+	lastActivityAt: string | null;
+	lastActivityUtcOffsetMinutes: number | null;
 };
 
 interface TeamMembersListProps {
@@ -116,10 +119,16 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 		employees.map((employee) => employee.id),
 		{ polling: true },
 	);
-	const employeesWithPresence = employees.map((employee) => ({
-		...employee,
-		clockStatus: presence.getStatus(employee.id),
-	}));
+	const employeesWithPresence = employees.map((employee) => {
+		const activity = presence.getActivity(employee.id);
+		return {
+			...employee,
+			clockStatus: presence.getStatus(employee.id),
+			lastActivityAt: activity?.lastActivityAt ?? null,
+			lastActivityUtcOffsetMinutes:
+				activity?.lastActivityUtcOffsetMinutes ?? null,
+		};
+	});
 
 	const filteredEmployees = employeesWithPresence.filter((emp) => {
 		const search = searchQuery.toLowerCase();
@@ -327,6 +336,12 @@ function TeamMemberCards({
 											{employee.position}
 										</p>
 									)}
+									<EmployeeActivityText
+										lastActivityAt={employee.lastActivityAt}
+										lastActivityUtcOffsetMinutes={
+											employee.lastActivityUtcOffsetMinutes
+										}
+									/>
 								</div>
 							</div>
 							<div className="mt-2 flex items-center justify-between">
@@ -407,6 +422,12 @@ function TeamMembersTable({
 						<div className="text-sm text-muted-foreground">
 							{row.original.user.email}
 						</div>
+						<EmployeeActivityText
+							lastActivityAt={row.original.lastActivityAt}
+							lastActivityUtcOffsetMinutes={
+								row.original.lastActivityUtcOffsetMinutes
+							}
+						/>
 					</div>
 				</Link>
 			),

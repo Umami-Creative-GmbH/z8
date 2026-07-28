@@ -432,6 +432,12 @@
     }
   },
   "presence": {
+    "activity": {
+      "lastActivity": "τελευταία δραστηριότητα {date}",
+      "relativeHours": "πριν από {hours}ω",
+      "relativeHoursMinutes": "πριν από {hours}ω {minutes}λεπ",
+      "relativeMinutes": "πριν από {minutes}λεπ"
+    },
     "clockedIn": "Έναρξη βάρδιας",
     "clockedOut": "Λήξη βάρδιας"
   },

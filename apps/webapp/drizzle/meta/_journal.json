@@ -386,6 +386,13 @@
 		"when": 1784400735730,
 		"tag": "0054_employee_invitation_draft_identity",
 		"breakpoints": true
-    }
+	},
+	{
+		"idx": 55,
+		"version": "7",
+		"when": 1785269198390,
+		"tag": "0055_employee_clock_activity_index",
+		"breakpoints": true
+	}
   ]
 }
