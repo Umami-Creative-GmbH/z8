@@ -2,7 +2,6 @@ import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
 import {
 	buildPayrollSummaryFromRows,
-	calculatePayrollAbsenceDays,
 	calculatePayrollWorkedMinutes,
 	filterMissingClockOutBlockers,
 	filterPendingTimeApprovalBlockers,
@@ -35,6 +34,7 @@ describe("buildPayrollSummaryFromRows", () => {
 		expect(summary.totals.totalWorkedHours).toBe(2.75);
 		expect(summary.employees[0]?.workedHours).toBe(2.75);
 		expect(summary.generatedAt).toBe("2026-06-30T12:00:00.000Z");
+		expect(summary.absenceDetails).toEqual([]);
 	});
 
 	it("groups absence days by employee and category", () => {
@@ -54,8 +54,24 @@ describe("buildPayrollSummaryFromRows", () => {
 			],
 			workRows: [],
 			absenceRows: [
-				{ employeeId: "employee-1", categoryId: "vacation", categoryName: "Vacation", days: 2 },
-				{ employeeId: "employee-1", categoryId: "sick", categoryName: "Sick", days: 1 },
+				{
+					employeeId: "employee-1",
+					categoryId: "sick",
+					categoryName: "Sick",
+					startDate: "2026-06-12",
+					endDate: "2026-06-12",
+					startPeriod: "full_day",
+					endPeriod: "full_day",
+				},
+				{
+					employeeId: "employee-1",
+					categoryId: "vacation",
+					categoryName: "Vacation",
+					startDate: "2026-06-10",
+					endDate: "2026-06-11",
+					startPeriod: "full_day",
+					endPeriod: "full_day",
+				},
 			],
 			blockers: [],
 		});
@@ -63,6 +79,29 @@ describe("buildPayrollSummaryFromRows", () => {
 		expect(summary.employees[0]?.absenceDaysByCategory).toEqual([
 			{ categoryId: "sick", categoryName: "Sick", days: 1 },
 			{ categoryId: "vacation", categoryName: "Vacation", days: 2 },
+		]);
+		expect(summary.absenceDetails).toEqual([
+			{
+				employeeId: "employee-1",
+				categoryId: "vacation",
+				categoryName: "Vacation",
+				date: "2026-06-10",
+				period: "full_day",
+			},
+			{
+				employeeId: "employee-1",
+				categoryId: "vacation",
+				categoryName: "Vacation",
+				date: "2026-06-11",
+				period: "full_day",
+			},
+			{
+				employeeId: "employee-1",
+				categoryId: "sick",
+				categoryName: "Sick",
+				date: "2026-06-12",
+				period: "full_day",
+			},
 		]);
 	});
 
@@ -95,6 +134,7 @@ describe("buildPayrollSummaryFromRows", () => {
 
 		expect(summary.totals.blockerCount).toBe(1);
 		expect(summary.employees[0]?.hasBlockers).toBe(true);
+		expect(summary.absenceDetails).toEqual([]);
 	});
 });
 
@@ -145,53 +185,6 @@ describe("calculatePayrollWorkedMinutes", () => {
 				period,
 			).get("employee-1"),
 		).toBeUndefined();
-	});
-});
-
-describe("calculatePayrollAbsenceDays", () => {
-	it("counts full-day same-day absences as one day", () => {
-		expect(
-			calculatePayrollAbsenceDays({
-				startAt: DateTime.fromISO("2026-06-10T00:00:00Z"),
-				endAt: DateTime.fromISO("2026-06-10T23:59:59Z"),
-				startPeriod: "full_day",
-				endPeriod: "full_day",
-				period: {
-					start: DateTime.fromISO("2026-06-01T00:00:00Z"),
-					end: DateTime.fromISO("2026-06-30T23:59:59Z"),
-				},
-			}),
-		).toBe(1);
-	});
-
-	it("counts same-day half-day absences as half a day", () => {
-		expect(
-			calculatePayrollAbsenceDays({
-				startAt: DateTime.fromISO("2026-06-10T00:00:00Z"),
-				endAt: DateTime.fromISO("2026-06-10T11:59:59Z"),
-				startPeriod: "am",
-				endPeriod: "am",
-				period: {
-					start: DateTime.fromISO("2026-06-01T00:00:00Z"),
-					end: DateTime.fromISO("2026-06-30T23:59:59Z"),
-				},
-			}),
-		).toBe(0.5);
-	});
-
-	it("clips multi-day absences to the selected payroll period", () => {
-		expect(
-			calculatePayrollAbsenceDays({
-				startAt: DateTime.fromISO("2026-05-30T00:00:00Z"),
-				endAt: DateTime.fromISO("2026-06-02T23:59:59Z"),
-				startPeriod: "full_day",
-				endPeriod: "full_day",
-				period: {
-					start: DateTime.fromISO("2026-06-01T00:00:00Z"),
-					end: DateTime.fromISO("2026-06-30T23:59:59Z"),
-				},
-			}),
-		).toBe(2);
 	});
 });
 
