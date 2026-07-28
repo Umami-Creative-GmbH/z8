@@ -199,6 +199,17 @@ describe("buildPayrollSummaryFromRows", () => {
 					startTime: "10:00:00",
 					endTime: "14:00:00",
 				},
+				{
+					employeeId: "employee-1",
+					categoryId: "overnight",
+					categoryName: "Overnight",
+					startDate: "2026-06-13",
+					endDate: "2026-06-14",
+					startPeriod: "am",
+					endPeriod: "am",
+					startTime: "22:00:00",
+					endTime: "02:00:00",
+				},
 			],
 			blockers: [],
 		});
@@ -207,6 +218,7 @@ describe("buildPayrollSummaryFromRows", () => {
 			{ categoryId: "afternoon", categoryName: "Afternoon", days: 0.5 },
 			{ categoryId: "cross-noon", categoryName: "Cross noon", days: 0.5 },
 			{ categoryId: "morning", categoryName: "Morning", days: 0.5 },
+			{ categoryId: "overnight", categoryName: "Overnight", days: 0.5 },
 		]);
 		expect(
 			summary.absenceDetails.map(({ date, period }) => ({ date, period })),
@@ -214,6 +226,7 @@ describe("buildPayrollSummaryFromRows", () => {
 			{ date: "2026-06-10", period: "pm" },
 			{ date: "2026-06-11", period: "am" },
 			{ date: "2026-06-12", period: "partial_day" },
+			{ date: "2026-06-13", period: "partial_day" },
 		]);
 	});
 

@@ -25,6 +25,21 @@ export function buildPayrollAbsenceDetails(
 		const originalEnd = Temporal.PlainDate.from(row.endDate);
 
 		if (Temporal.PlainDate.compare(originalStart, originalEnd) > 0) continue;
+		if (isExplicitOvernightPartial(row, originalStart, originalEnd)) {
+			if (
+				Temporal.PlainDate.compare(originalStart, periodStart) >= 0 &&
+				Temporal.PlainDate.compare(originalStart, periodEnd) <= 0
+			) {
+				details.push({
+					employeeId: row.employeeId,
+					categoryId: row.categoryId,
+					categoryName: row.categoryName,
+					date: originalStart.toString(),
+					period: "partial_day",
+				});
+			}
+			continue;
+		}
 
 		const clippedStart =
 			Temporal.PlainDate.compare(originalStart, periodStart) < 0
@@ -96,4 +111,22 @@ function classifySameDayPeriod(
 	}
 
 	return row.startPeriod === row.endPeriod ? row.startPeriod : "full_day";
+}
+
+function isExplicitOvernightPartial(
+	row: PayrollSummaryAbsenceRangeRow,
+	startDate: Temporal.PlainDate,
+	endDate: Temporal.PlainDate,
+): boolean {
+	return (
+		!startDate.equals(endDate) &&
+		row.startPeriod === "am" &&
+		row.endPeriod === "am" &&
+		row.startTime !== undefined &&
+		row.endTime !== undefined &&
+		Temporal.PlainTime.compare(
+			Temporal.PlainTime.from(row.endTime),
+			Temporal.PlainTime.from(row.startTime),
+		) < 0
+	);
 }

@@ -31,11 +31,12 @@ Existing absence totals remain available for the employee totals table. Totals a
 
 ## Date Expansion
 
-An approved absence record is expanded into one detail for each recorded calendar date that overlaps the selected payroll period.
+An approved absence record is expanded into one detail for each recorded calendar date that overlaps the selected payroll period, except for explicitly timed overnight partials as described below.
 
 - A same-day full-day absence produces one `full_day` detail.
 - A same-day partial absence produces one `am` or `pm` detail.
 - A same-day absence with explicit clock times uses those times when its stored endpoint periods are generic AM placeholders: an interval beginning at or after 12:00 is `pm`, one ending at or before 12:00 is `am`, and one crossing 12:00 is `partial_day`.
+- An explicitly timed overnight partial produces one `partial_day` detail on its recorded start date and counts as 0.5 day. It is included only when that start date is within the selected payroll period.
 - For a multi-day absence, the first date is `pm` only when the record starts in the PM; an AM or full-day start produces `full_day` coverage for that date.
 - The last date is `am` only when the record ends in the AM; a PM or full-day end produces `full_day` coverage for that date.
 - All interior dates are `full_day`. Dates that become range boundaries only because the record is clipped to the selected payroll period are also `full_day` unless they are an original record endpoint.
@@ -84,6 +85,7 @@ Implementation follows red-green-refactor and covers:
 - same-day full-day expansion
 - same-day AM and PM expansion
 - explicitly timed same-day AM, PM, and cross-noon classification
+- explicitly timed overnight classification, start-date assignment, and period clipping
 - multi-day expansion with first and last partial-day boundaries
 - clipping details to the selected payroll period
 - inclusion of all recorded calendar dates, including weekends

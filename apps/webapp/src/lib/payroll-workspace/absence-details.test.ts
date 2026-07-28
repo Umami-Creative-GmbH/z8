@@ -60,6 +60,8 @@ describe("buildPayrollAbsenceDetails", () => {
 	it.each([
 		["14:00:00", "17:00:00", "pm"],
 		["09:00:00", "11:00:00", "am"],
+		["09:00:00", "12:00:00", "am"],
+		["12:00:00", "14:00:00", "pm"],
 		["10:00:00", "14:00:00", "partial_day"],
 	] as const)("classifies an explicit %s-%s interval as %s", (startTime, endTime, expectedPeriod) => {
 		const details = buildPayrollAbsenceDetails(
@@ -80,6 +82,78 @@ describe("buildPayrollAbsenceDetails", () => {
 		);
 
 		expect(details[0]?.period).toBe(expectedPeriod);
+	});
+
+	it("emits an explicit overnight partial only on its logical start date", () => {
+		const row = {
+			employeeId: "employee-1",
+			categoryId: "vacation",
+			categoryName: "Vacation",
+			startDate: "2026-06-10",
+			endDate: "2026-06-11",
+			startPeriod: "am" as const,
+			endPeriod: "am" as const,
+			startTime: "22:00:00",
+			endTime: "02:00:00",
+		};
+
+		expect(buildPayrollAbsenceDetails([row], june2026)).toEqual([
+			{
+				employeeId: "employee-1",
+				categoryId: "vacation",
+				categoryName: "Vacation",
+				date: "2026-06-10",
+				period: "partial_day",
+			},
+		]);
+		expect(
+			buildPayrollAbsenceDetails([row], {
+				start: "2026-06-10",
+				end: "2026-06-10",
+			}),
+		).toHaveLength(1);
+		expect(
+			buildPayrollAbsenceDetails([row], {
+				start: "2026-06-11",
+				end: "2026-06-11",
+			}),
+		).toEqual([]);
+	});
+
+	it("preserves period-only multi-day AM ranges with canonical boundary times", () => {
+		expect(
+			buildPayrollAbsenceDetails(
+				[
+					{
+						employeeId: "employee-1",
+						categoryId: "vacation",
+						categoryName: "Vacation",
+						startDate: "2026-06-10",
+						endDate: "2026-06-11",
+						startPeriod: "am",
+						endPeriod: "am",
+						startTime: "00:00:00",
+						endTime: "11:59:59",
+					},
+				],
+				june2026,
+			),
+		).toEqual([
+			{
+				employeeId: "employee-1",
+				categoryId: "vacation",
+				categoryName: "Vacation",
+				date: "2026-06-10",
+				period: "full_day",
+			},
+			{
+				employeeId: "employee-1",
+				categoryId: "vacation",
+				categoryName: "Vacation",
+				date: "2026-06-11",
+				period: "am",
+			},
+		]);
 	});
 
 	it("clips a multi-day range while preserving only original endpoint periods", () => {
