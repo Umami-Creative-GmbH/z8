@@ -387,14 +387,16 @@ function isConditionalWrite(node: ts.Node, sourceFile: ts.SourceFile): boolean {
 		) {
 			return true;
 		}
-		if (
-			ts.isBinaryExpression(parent) &&
-			(parent.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken ||
-				parent.operatorToken.kind === ts.SyntaxKind.BarBarToken ||
-				parent.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken) &&
-			isWithin(node, parent.right, sourceFile)
-		) {
-			return true;
+		if (ts.isBinaryExpression(parent)) {
+			const operatorKind = parent.operatorToken.kind;
+			if (
+				(operatorKind === ts.SyntaxKind.AmpersandAmpersandToken ||
+					operatorKind === ts.SyntaxKind.BarBarToken ||
+					operatorKind === ts.SyntaxKind.QuestionQuestionToken) &&
+				isWithin(node, parent.right, sourceFile)
+			) {
+				return true;
+			}
 		}
 		if (ts.isCaseClause(parent) || ts.isDefaultClause(parent)) return true;
 		if (
@@ -2164,12 +2166,15 @@ export function analyzeApprovalWriteMutations(
 			)
 		)
 			return [];
-		return [...resolveExpression(builder.arguments[0], position)]
-			.filter((value): value is `table:${ProtectedWriteTable}` =>
-				value.startsWith("table:"),
-			)
-			.map((value) => value.slice(6) as ProtectedWriteTable)
-			.filter((table) => SOURCE_TABLES.has(table));
+		return [...resolveExpression(builder.arguments[0], position)].reduce<
+			ProtectedWriteTable[]
+		>((tables, value) => {
+			if (value.startsWith("table:")) {
+				const table = value.slice(6) as ProtectedWriteTable;
+				if (SOURCE_TABLES.has(table)) tables.push(table);
+			}
+			return tables;
+		}, []);
 	};
 	const inspectSourceDelete = (
 		node: ts.CallExpression,

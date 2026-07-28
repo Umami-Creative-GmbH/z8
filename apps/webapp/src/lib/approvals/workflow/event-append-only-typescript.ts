@@ -444,14 +444,16 @@ export function analyzeApprovalWorkflowEventMutations(
 			) {
 				return true;
 			}
-			if (
-				ts.isBinaryExpression(parent) &&
-				(parent.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken ||
-					parent.operatorToken.kind === ts.SyntaxKind.BarBarToken ||
-					parent.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken) &&
-				isWithin(node, parent.right)
-			) {
-				return true;
+			if (ts.isBinaryExpression(parent)) {
+				const operatorKind = parent.operatorToken.kind;
+				if (
+					(operatorKind === ts.SyntaxKind.AmpersandAmpersandToken ||
+						operatorKind === ts.SyntaxKind.BarBarToken ||
+						operatorKind === ts.SyntaxKind.QuestionQuestionToken) &&
+					isWithin(node, parent.right)
+				) {
+					return true;
+				}
 			}
 			if (ts.isCaseClause(parent) || ts.isDefaultClause(parent)) return true;
 			if (

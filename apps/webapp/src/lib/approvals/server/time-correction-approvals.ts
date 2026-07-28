@@ -4045,30 +4045,28 @@ export async function executeTimeCorrectionDecisionInTransaction(
 						);
 						const stage = stages[0];
 						if (stages.length !== 1 || !stage) return [];
-						return stage.assignments
-							.filter(
-								(assignment) =>
-									(metadata.assignmentId !== null
-										? assignment.id === metadata.assignmentId
-										: request.status === "pending" &&
-											assignment.status === "pending") &&
-									assignment.organizationId === input.organizationId &&
-									assignment.workflowId === workflow.id &&
-									assignment.stageId === stage.id &&
-									assignment.approverEmployeeId === requestRow.approverId,
-							)
-							.map((assignment) => ({ stage, assignment }));
+						return stage.assignments.flatMap((assignment) =>
+							(metadata.assignmentId !== null
+								? assignment.id === metadata.assignmentId
+								: request.status === "pending" &&
+									assignment.status === "pending") &&
+							assignment.organizationId === input.organizationId &&
+							assignment.workflowId === workflow.id &&
+							assignment.stageId === stage.id &&
+							assignment.approverEmployeeId === requestRow.approverId
+								? [{ stage, assignment }]
+								: [],
+						);
 					})()
 				: workflow.stages.flatMap((stage) =>
-						stage.assignments
-							.filter(
-								(assignment) =>
-									assignment.id === input.approvalRequestId &&
-									assignment.organizationId === input.organizationId &&
-									assignment.workflowId === workflow.id &&
-									assignment.stageId === stage.id,
-							)
-							.map((assignment) => ({ stage, assignment })),
+						stage.assignments.flatMap((assignment) =>
+							assignment.id === input.approvalRequestId &&
+							assignment.organizationId === input.organizationId &&
+							assignment.workflowId === workflow.id &&
+							assignment.stageId === stage.id
+								? [{ stage, assignment }]
+								: [],
+						),
 					);
 			const target = targets[0];
 			if (targets.length !== 1 || !target) {

@@ -163,9 +163,10 @@ export async function getWorkPeriods(
 		orderBy: [workPeriod.startTime],
 	});
 
-	const pendingPeriodIds = workPeriods
-		.filter((period) => period.approvalStatus === "pending")
-		.map((period) => period.id);
+	const pendingPeriodIds = workPeriods.reduce<string[]>((ids, period) => {
+		if (period.approvalStatus === "pending") ids.push(period.id);
+		return ids;
+	}, []);
 	const stableTargetByPeriodId = new Map<string, string>();
 	if (pendingPeriodIds.length > 0) {
 		const requests = await db.query.approvalRequest.findMany({

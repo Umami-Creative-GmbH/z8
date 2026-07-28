@@ -890,22 +890,21 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 				(requestRow
 					? stage.legacyApprovalRequestId === input.approvalRequestId
 					: true)
-					? stage.assignments
-							.filter(
-								(assignment) =>
-									(metadata.assignmentId === null ||
-										assignment.id === metadata.assignmentId) &&
-									assignment.status ===
-										(terminalRequestMatches
-											? expectedTerminalStatus
-											: snapshot.status === "pending"
-												? "pending"
-												: expectedTerminalStatus) &&
-									(requestRow
-										? assignment.approverEmployeeId === request.approverId
-										: true),
-							)
-							.map((assignment) => ({ stage, assignment }))
+					? stage.assignments.flatMap((assignment) =>
+							(metadata.assignmentId === null ||
+								assignment.id === metadata.assignmentId) &&
+							assignment.status ===
+								(terminalRequestMatches
+									? expectedTerminalStatus
+									: snapshot.status === "pending"
+										? "pending"
+										: expectedTerminalStatus) &&
+							(requestRow
+								? assignment.approverEmployeeId === request.approverId
+								: true)
+								? [{ stage, assignment }]
+								: [],
+						)
 					: [],
 			);
 			const target = targets[0];

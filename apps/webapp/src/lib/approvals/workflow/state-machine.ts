@@ -570,6 +570,9 @@ function validatePendingHumanStage(stage: ApprovalStageSnapshot): void {
 			stageId: stage.id,
 		});
 	}
+	const assignmentsById = new Map(
+		stage.assignments.map((assignment) => [assignment.id, assignment]),
+	);
 	for (const child of stage.assignments) {
 		if (
 			child.status === "approved" ||
@@ -617,9 +620,7 @@ function validatePendingHumanStage(stage: ApprovalStageSnapshot): void {
 			}
 			continue;
 		}
-		const source = stage.assignments.find(
-			(candidate) => candidate.id === child.reassignedFromAssignmentId,
-		);
+		const source = assignmentsById.get(child.reassignedFromAssignmentId);
 		if (
 			source?.status !== "cancelled" ||
 			source.sequence >= child.sequence ||
@@ -2673,6 +2674,7 @@ export function validateMaterializedApprovalTransitionPlan(
 	) {
 		materializationConflict("materialized_root_change");
 	}
+	const stagesById = new Map(snapshot.stages.map((stage) => [stage.id, stage]));
 	const stageIds = new Set<string>();
 	for (const change of plan.changes.stages) {
 		if (
@@ -2683,9 +2685,7 @@ export function validateMaterializedApprovalTransitionPlan(
 		) {
 			materializationConflict("materialized_stage_change");
 		}
-		const authoritative = snapshot.stages.find(
-			(stage) => stage.id === change.stageId,
-		);
+		const authoritative = stagesById.get(change.stageId);
 		if (!authoritative || !snapshotsEqual(authoritative, change.resulting)) {
 			materializationConflict("materialized_stage_change_result");
 		}
@@ -2695,7 +2695,13 @@ export function validateMaterializedApprovalTransitionPlan(
 		validatePersistedStageChangeShape(change.resulting, snapshot);
 		stageIds.add(change.stageId);
 	}
-	const assignments = snapshot.stages.flatMap((stage) => stage.assignments);
+	const assignmentsById = new Map(
+		snapshot.stages.flatMap((stage) =>
+			stage.assignments.map(
+				(assignment) => [assignment.id, assignment] as const,
+			),
+		),
+	);
 	const assignmentIds = new Set<string>();
 	for (const change of plan.changes.assignments) {
 		if (
@@ -2712,18 +2718,14 @@ export function validateMaterializedApprovalTransitionPlan(
 		) {
 			materializationConflict("materialized_assignment_change");
 		}
-		const authoritative = assignments.find(
-			(assignment) => assignment.id === change.assignmentId,
-		);
+		const authoritative = assignmentsById.get(change.assignmentId);
 		if (!authoritative || !snapshotsEqual(authoritative, change.resulting)) {
 			materializationConflict("materialized_assignment_change_result");
 		}
 		validateExactPersistedAssignmentShape(
 			change.resulting as ApprovalAssignmentSnapshot,
 		);
-		const stage = snapshot.stages.find(
-			(candidate) => candidate.id === authoritative.stageId,
-		);
+		const stage = stagesById.get(authoritative.stageId);
 		if (!stage) materializationConflict("materialized_assignment_stage");
 		validatePersistedAssignmentChangeShape(
 			change.resulting,

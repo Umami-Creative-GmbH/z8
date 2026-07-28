@@ -339,39 +339,48 @@ async function loadPolicyContext(
 	dbService: ApprovalDbService,
 	context: ApprovalPolicyEvaluationContext,
 ) {
-	const policies = await dbService.db.query.approvalPolicy.findMany({
-		where: eq(approvalPolicy.organizationId, context.organizationId),
-		orderBy: [asc(approvalPolicy.priority)],
-		with: { conditions: true, stages: true },
-	});
-	const groupRows =
+	const [
+		policies,
+		groupRows,
+		activeGroups,
+		employees,
+		managerLinks,
+		teamMemberships,
+		teams,
+	] = await Promise.all([
+		dbService.db.query.approvalPolicy.findMany({
+			where: eq(approvalPolicy.organizationId, context.organizationId),
+			orderBy: [asc(approvalPolicy.priority)],
+			with: { conditions: true, stages: true },
+		}),
 		context.employeeGroupIds.length === 0
-			? await dbService.db.query.employeeGroupMember.findMany({
+			? dbService.db.query.employeeGroupMember.findMany({
 					where: and(
 						eq(employeeGroupMember.organizationId, context.organizationId),
 						eq(employeeGroupMember.employeeId, context.requesterEmployeeId),
 					),
 				})
-			: [];
-	const activeGroups = await dbService.db.query.employeeGroup.findMany({
-		where: and(
-			eq(employeeGroup.organizationId, context.organizationId),
-			eq(employeeGroup.isActive, true),
-		),
-	});
-	const employees = await dbService.db.query.employee.findMany({
-		where: eq(employee.organizationId, context.organizationId),
-	});
-	const managerLinks = await dbService.db.query.employeeManagers.findMany();
-	const teamMemberships = await dbService.db.query.teamMembership.findMany({
-		where: and(
-			eq(teamMembership.organizationId, context.organizationId),
-			eq(teamMembership.employeeId, context.requesterEmployeeId),
-		),
-	});
-	const teams = await dbService.db.query.team.findMany({
-		where: eq(team.organizationId, context.organizationId),
-	});
+			: [],
+		dbService.db.query.employeeGroup.findMany({
+			where: and(
+				eq(employeeGroup.organizationId, context.organizationId),
+				eq(employeeGroup.isActive, true),
+			),
+		}),
+		dbService.db.query.employee.findMany({
+			where: eq(employee.organizationId, context.organizationId),
+		}),
+		dbService.db.query.employeeManagers.findMany(),
+		dbService.db.query.teamMembership.findMany({
+			where: and(
+				eq(teamMembership.organizationId, context.organizationId),
+				eq(teamMembership.employeeId, context.requesterEmployeeId),
+			),
+		}),
+		dbService.db.query.team.findMany({
+			where: eq(team.organizationId, context.organizationId),
+		}),
+	]);
 	const activeGroupIds = new Set(
 		(activeGroups as Array<{ id: string }>).map((group) => group.id),
 	);

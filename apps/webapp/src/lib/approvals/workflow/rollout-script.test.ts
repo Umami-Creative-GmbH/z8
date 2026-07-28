@@ -48,8 +48,8 @@ function cli(args: readonly string[]) {
 }
 
 function validCatalog(): ApprovalExpansionCatalog {
-	return JSON.parse(
-		JSON.stringify(APPROVAL_EXPANSION_CONTRACT),
+	return structuredClone(
+		APPROVAL_EXPANSION_CONTRACT,
 	) as ApprovalExpansionCatalog;
 }
 

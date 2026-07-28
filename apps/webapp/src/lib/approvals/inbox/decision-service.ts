@@ -489,10 +489,13 @@ export async function loadApprovalInboxDecisionTargets({
 					limit: missingIds.length,
 				})
 			: [];
+	const missingIdSet = new Set(missingIds);
 	const canonicalById = new Map(
-		canonical
-			.filter((candidate) => missingIds.includes(candidate.item.id))
-			.map((candidate) => [candidate.item.id, candidate.decisionTarget]),
+		canonical.flatMap((candidate) =>
+			missingIdSet.has(candidate.item.id)
+				? [[candidate.item.id, candidate.decisionTarget] as const]
+				: [],
+		),
 	);
 	const terminalMissingIds = missingIds.filter(
 		(approvalId) => !canonicalById.has(approvalId),

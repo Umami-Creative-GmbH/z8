@@ -1618,6 +1618,7 @@ async function allocateMissingLegacyIds(
 	const candidates = [
 		...new Set([...candidatesByStage.values()].flat()),
 	].sort();
+	const candidateSet = new Set(candidates);
 	const candidateValues = sql.join(
 		candidates.map((candidate) => sql`${candidate}`),
 		sql`, `,
@@ -1639,7 +1640,7 @@ async function allocateMissingLegacyIds(
 		approvalRequests.some(
 			(row) =>
 				row.organizationId !== input.organizationId ||
-				!candidates.includes(row.id),
+				!candidateSet.has(row.id),
 		)
 	) {
 		throw new Error(
@@ -1662,7 +1663,7 @@ async function allocateMissingLegacyIds(
 			(row) =>
 				row.organizationId !== input.organizationId ||
 				row.legacyApprovalRequestId === null ||
-				!candidates.includes(row.legacyApprovalRequestId),
+				!candidateSet.has(row.legacyApprovalRequestId),
 		)
 	) {
 		throw new Error(

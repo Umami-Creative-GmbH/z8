@@ -866,9 +866,11 @@ function decodeCapture(
 			requestCancellationMetadata[index] ?? null,
 		),
 	);
-	const requestIds = new Set(requests.map((request) => request.id));
+	const requestsById = new Map(
+		requests.map((request) => [request.id, request] as const),
+	);
 	if (
-		requestIds.size !== requests.length ||
+		requestsById.size !== requests.length ||
 		requests.some(
 			(request) =>
 				request.organizationId !== input.organizationId ||
@@ -937,9 +939,7 @@ function decodeCapture(
 		}
 		const expectedRequestId = expectedCycle.approvalRequestId;
 		if (expectedRequestId) {
-			const currentRequest = requests.find(
-				(request) => request.id === expectedRequestId,
-			);
+			const currentRequest = requestsById.get(expectedRequestId);
 			if (currentRequest) {
 				if (expectedRequestCount !== 1) fail();
 			} else if (chain) {
@@ -1016,17 +1016,21 @@ function decodeCapture(
 		const linkedIds = chainRows.flatMap((row) =>
 			row.approvalRequestId ? [row.approvalRequestId] : [],
 		);
+		const linkedIdSet = new Set(linkedIds);
+		const chainRowsByRequestId = new Map(
+			chainRows.flatMap((row) =>
+				row.approvalRequestId ? [[row.approvalRequestId, row] as const] : [],
+			),
+		);
 		if (
-			new Set(linkedIds).size !== linkedIds.length ||
-			linkedIds.some((id) => !requestIds.has(id)) ||
-			requests.some((request) => !linkedIds.includes(request.id))
+			linkedIdSet.size !== linkedIds.length ||
+			linkedIds.some((id) => !requestsById.has(id)) ||
+			requests.some((request) => !linkedIdSet.has(request.id))
 		) {
 			fail();
 		}
 		for (const request of requests) {
-			const row = chainRows.find(
-				(candidate) => candidate.approvalRequestId === request.id,
-			);
+			const row = chainRowsByRequestId.get(request.id);
 			if (
 				!row ||
 				row.resolvedApproverEmployeeId !== request.approverId ||

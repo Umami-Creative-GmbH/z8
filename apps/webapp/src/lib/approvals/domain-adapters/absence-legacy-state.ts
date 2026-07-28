@@ -433,9 +433,14 @@ export async function captureAbsenceLegacyApprovalState(
 	);
 	if (chain && !currentRow) return fail("ambiguous_chain");
 	const currentRequestId = currentRow?.approvalRequestId;
+	const requestsById = new Map(
+		decodedRequests.map((request) => [request.id, request] as const),
+	);
 	if (
 		chain?.status === "pending" &&
-		!decodedRequests.some((request) => request.id === currentRequestId)
+		(currentRequestId === null ||
+			currentRequestId === undefined ||
+			!requestsById.has(currentRequestId))
 	) {
 		return fail("ambiguous_chain");
 	}
@@ -452,6 +457,11 @@ export async function captureAbsenceLegacyApprovalState(
 			);
 		}
 	}
+	const chainRowsByRequestId = new Map(
+		chainRows.flatMap((row) =>
+			row.approvalRequestId ? [[row.approvalRequestId, row] as const] : [],
+		),
+	);
 	if (chain) {
 		if ([...requestCounts.values()].some((count) => count !== 1)) {
 			return fail("duplicate_approval_request");
@@ -482,9 +492,7 @@ export async function captureAbsenceLegacyApprovalState(
 		return fail("duplicate_approval_request");
 	}
 	for (const request of decodedRequests) {
-		const linkedRow = chainRows.find(
-			(row) => row.approvalRequestId === request.id,
-		);
+		const linkedRow = chainRowsByRequestId.get(request.id);
 		if (
 			chain &&
 			(!linkedRow ||
@@ -497,8 +505,9 @@ export async function captureAbsenceLegacyApprovalState(
 	// The port exposes one request. Historical row-linked requests are still loaded
 	// and validated above; only the current/terminal stage request is returned.
 	const approvalRequest = chain
-		? (decodedRequests.find((request) => request.id === currentRequestId) ??
-			null)
+		? currentRequestId
+			? (requestsById.get(currentRequestId) ?? null)
+			: null
 		: (decodedRequests[0] ?? null);
 	if (chain && currentRow) {
 		const currentIndex = chainRows.indexOf(currentRow);

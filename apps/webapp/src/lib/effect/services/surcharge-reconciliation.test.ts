@@ -591,8 +591,9 @@ function database(options?: {
 				if (insertCount === options?.failOnInsert) {
 					return Promise.reject(new Error("surcharge insert failed"));
 				}
-				inserts.push(values);
-				calculations.push(values);
+				const rows = Array.isArray(values) ? values : [values];
+				inserts.push(...rows);
+				calculations.push(...rows);
 				return Promise.resolve();
 			}),
 		})),
@@ -782,9 +783,10 @@ describe("reconcileSurchargeWorkPeriodsWithDatabase", () => {
 				surchargeMinutes: 15,
 			}),
 		]);
+		expect(fake.tx.insert).toHaveBeenCalledOnce();
 	});
 
-	it("rolls back both split calculations when the second insert fails", async () => {
+	it("rolls back both split calculations when the batch insert fails", async () => {
 		const periods = [
 			{
 				id: "period-1",
@@ -823,7 +825,7 @@ describe("reconcileSurchargeWorkPeriodsWithDatabase", () => {
 				},
 			},
 		];
-		const fake = database({ periods, failOnInsert: 2 });
+		const fake = database({ periods, failOnInsert: 1 });
 
 		await expect(
 			reconcileSurchargeWorkPeriodsWithDatabase(fake.db as never, {

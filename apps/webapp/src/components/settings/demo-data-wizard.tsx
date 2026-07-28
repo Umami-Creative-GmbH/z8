@@ -20,7 +20,7 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useReducer, useState } from "react";
 import {
 	assignWorkCategoriesToPeriodsStepAction,
 	clearTimeDataAction,
@@ -41,7 +41,10 @@ import {
 	type StepGenerationInput,
 } from "@/app/[locale]/(app)/settings/demo/actions";
 import type { DeleteNonAdminResult } from "@/lib/demo/delete-non-admin";
-import type { ClearDataResult, DemoDataResult } from "@/lib/demo/demo-data.service";
+import type {
+	ClearDataResult,
+	DemoDataResult,
+} from "@/lib/demo/demo-data.service";
 import type { GenerateEmployeesResult } from "@/lib/demo/employee-generator";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/navigation";
@@ -57,11 +60,23 @@ import {
 	AlertDialogTrigger,
 } from "../ui/alert-dialog";
 import { Button } from "../ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "../ui/card";
 import { Checkbox } from "../ui/checkbox";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "../ui/select";
 
 interface DemoDataWizardProps {
 	organizationId: string;
@@ -81,6 +96,77 @@ interface GenerationStep {
 	error?: string;
 }
 
+interface WizardState {
+	wizardStep: WizardStep;
+	isGenerating: boolean;
+	steps: GenerationStep[];
+	error: string | null;
+	result: DemoDataResult | null;
+}
+
+type WizardAction =
+	| { type: "set-error"; error: string | null }
+	| { type: "start-generation"; steps: GenerationStep[] }
+	| {
+			type: "update-step";
+			stepId: string;
+			status: StepStatus;
+			result?: string;
+			error?: string;
+	  }
+	| { type: "finish-generation"; result: DemoDataResult }
+	| { type: "fail-generation"; error: string }
+	| { type: "reset" };
+
+const initialWizardState: WizardState = {
+	wizardStep: "configure",
+	isGenerating: false,
+	steps: [],
+	error: null,
+	result: null,
+};
+
+function wizardReducer(state: WizardState, action: WizardAction): WizardState {
+	switch (action.type) {
+		case "set-error":
+			return { ...state, error: action.error };
+		case "start-generation":
+			return {
+				...state,
+				wizardStep: "generating",
+				isGenerating: true,
+				steps: action.steps,
+				error: null,
+				result: null,
+			};
+		case "update-step":
+			return {
+				...state,
+				steps: state.steps.map((step) =>
+					step.id === action.stepId
+						? {
+								...step,
+								status: action.status,
+								result: action.result,
+								error: action.error,
+							}
+						: step,
+				),
+			};
+		case "finish-generation":
+			return {
+				...state,
+				wizardStep: "complete",
+				isGenerating: false,
+				result: action.result,
+			};
+		case "fail-generation":
+			return { ...state, isGenerating: false, error: action.error };
+		case "reset":
+			return initialWizardState;
+	}
+}
+
 function handleSelectableCardKeyDown(
 	event: React.KeyboardEvent<HTMLDivElement>,
 	toggle: () => void,
@@ -93,61 +179,67 @@ function handleSelectableCardKeyDown(
 	toggle();
 }
 
-export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProps) {
+function useDemoDataWizardController({
+	organizationId,
+	employees,
+}: DemoDataWizardProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
-	const [wizardStep, setWizardStep] = useState<WizardStep>("configure");
-	const [isGenerating, setIsGenerating] = useState(false);
+	const [{ wizardStep, isGenerating, steps, error, result }, dispatchWizard] =
+		useReducer(wizardReducer, initialWizardState);
 	const [isClearing, setIsClearing] = useState(false);
 
 	// Form state
-	const [dateRangeType, setDateRangeType] = useState<"last30" | "last60" | "last90" | "thisYear">(
-		"last30",
-	);
+	const [dateRangeType, setDateRangeType] = useState<
+		"last30" | "last60" | "last90" | "thisYear"
+	>("last30");
 	const [includeTimeEntries, setIncludeTimeEntries] = useState(true);
 	const [includeAbsences, setIncludeAbsences] = useState(true);
 	const [includeTeams, setIncludeTeams] = useState(false);
 	const [teamCount, setTeamCount] = useState(4);
 	const [includeProjects, setIncludeProjects] = useState(false);
 	const [projectCount, setProjectCount] = useState(6);
-	const [selectedEmployees, setSelectedEmployees] = useState<"all" | "selected">("all");
+	const [selectedEmployees, setSelectedEmployees] = useState<
+		"all" | "selected"
+	>("all");
 
 	// NEW: Location options
 	const [includeLocations, setIncludeLocations] = useState(false);
 	const [locationCount, setLocationCount] = useState(3);
 	// NEW: Work category options
 	const [includeWorkCategories, setIncludeWorkCategories] = useState(false);
-	const [assignWorkCategoriesToPeriods, setAssignWorkCategoriesToPeriods] = useState(true);
+	const [assignWorkCategoriesToPeriods, setAssignWorkCategoriesToPeriods] =
+		useState(true);
 	// NEW: Change policy options
 	const [includeChangePolicies, setIncludeChangePolicies] = useState(false);
 	// NEW: Shift scheduling options
 	const [includeShifts, setIncludeShifts] = useState(false);
-	const [includePendingAbsenceApprovals, setIncludePendingAbsenceApprovals] = useState(false);
-	const [includePendingTimeCorrectionApprovals, setIncludePendingTimeCorrectionApprovals] =
+	const [includePendingAbsenceApprovals, setIncludePendingAbsenceApprovals] =
 		useState(false);
-
-	// Generation steps state
-	const [steps, setSteps] = useState<GenerationStep[]>([]);
-	const [error, setError] = useState<string | null>(null);
+	const [
+		includePendingTimeCorrectionApprovals,
+		setIncludePendingTimeCorrectionApprovals,
+	] = useState(false);
 
 	// Results
-	const [result, setResult] = useState<DemoDataResult | null>(null);
 	const [clearResult, setClearResult] = useState<ClearDataResult | null>(null);
 	const [confirmText, setConfirmText] = useState("");
 
 	// Employee generation state
 	const [employeeCount, setEmployeeCount] = useState(5);
-	const [includeManagersForEmployees, setIncludeManagersForEmployees] = useState(true);
+	const [includeManagersForEmployees, setIncludeManagersForEmployees] =
+		useState(true);
 	const [isGeneratingEmployees, setIsGeneratingEmployees] = useState(false);
-	const [employeeResult, setEmployeeResult] = useState<GenerateEmployeesResult | null>(null);
+	const [employeeResult, setEmployeeResult] =
+		useState<GenerateEmployeesResult | null>(null);
 	const [employeeError, setEmployeeError] = useState<string | null>(null);
 
 	// Delete non-admin state
 	const [isDeletingNonAdmin, setIsDeletingNonAdmin] = useState(false);
-	const [deleteNonAdminResult, setDeleteNonAdminResult] = useState<DeleteNonAdminResult | null>(
-		null,
-	);
-	const [deleteNonAdminConfirmText, setDeleteNonAdminConfirmText] = useState("");
+	const [deleteNonAdminResult, setDeleteNonAdminResult] =
+		useState<DeleteNonAdminResult | null>(null);
+	const [deleteNonAdminConfirmText, setDeleteNonAdminConfirmText] =
+		useState("");
 
 	const updateStepStatus = (
 		stepId: string,
@@ -155,16 +247,20 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 		result?: string,
 		error?: string,
 	) => {
-		setSteps((prev) => prev.map((s) => (s.id === stepId ? { ...s, status, result, error } : s)));
+		dispatchWizard({ type: "update-step", stepId, status, result, error });
 	};
 
 	const handleGenerate = async () => {
 		if (!organizationId) {
-			setError(t("settings.demo.errors.noOrganization", "No organization selected"));
+			dispatchWizard({
+				type: "set-error",
+				error: t(
+					"settings.demo.errors.noOrganization",
+					"No organization selected",
+				),
+			});
 			return;
 		}
-		setError(null);
-		setResult(null);
 
 		// Build steps based on selected options
 		const activeSteps: GenerationStep[] = [];
@@ -186,7 +282,10 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 			activeSteps.push({
 				id: "projects",
 				label: t("settings.demo.steps.projects.label", "Projects"),
-				description: t("settings.demo.steps.projects.description", "Creating sample projects"),
+				description: t(
+					"settings.demo.steps.projects.description",
+					"Creating sample projects",
+				),
 				icon: <IconBriefcase className="size-4" />,
 				status: "pending",
 			});
@@ -196,7 +295,10 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 		activeSteps.push({
 			id: "managers",
 			label: t("settings.demo.steps.managers.label", "Manager Assignments"),
-			description: t("settings.demo.steps.managers.description", "Assigning managers to employees"),
+			description: t(
+				"settings.demo.steps.managers.description",
+				"Assigning managers to employees",
+			),
 			icon: <IconUserCheck className="size-4" />,
 			status: "pending",
 		});
@@ -218,7 +320,10 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 			activeSteps.push({
 				id: "absences",
 				label: t("settings.demo.steps.absences.label", "Absences"),
-				description: t("settings.demo.steps.absences.description", "Creating absence entries"),
+				description: t(
+					"settings.demo.steps.absences.description",
+					"Creating absence entries",
+				),
 				icon: <IconUsers className="size-4" />,
 				status: "pending",
 			});
@@ -227,7 +332,10 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 		if (includePendingAbsenceApprovals) {
 			activeSteps.push({
 				id: "pending-absence-approvals",
-				label: t("settings.demo.steps.pendingAbsenceApprovals.label", "Pending Absence Approvals"),
+				label: t(
+					"settings.demo.steps.pendingAbsenceApprovals.label",
+					"Pending Absence Approvals",
+				),
 				description: t(
 					"settings.demo.steps.pendingAbsenceApprovals.description",
 					"Creating pending absence approval requests",
@@ -310,17 +418,27 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 			activeSteps.push({
 				id: "shifts",
 				label: t("settings.demo.steps.shifts.label", "Shifts"),
-				description: t("settings.demo.steps.shifts.description", "Creating shifts and requests"),
+				description: t(
+					"settings.demo.steps.shifts.description",
+					"Creating shifts and requests",
+				),
 				icon: <IconCalendarEvent className="size-4" />,
 				status: "pending",
 			});
 		}
 
 		// NEW: Work category assignment to periods (depends on work categories + time entries)
-		if (includeWorkCategories && includeTimeEntries && assignWorkCategoriesToPeriods) {
+		if (
+			includeWorkCategories &&
+			includeTimeEntries &&
+			assignWorkCategoriesToPeriods
+		) {
 			activeSteps.push({
 				id: "assign-categories",
-				label: t("settings.demo.steps.assignCategories.label", "Assign Categories"),
+				label: t(
+					"settings.demo.steps.assignCategories.label",
+					"Assign Categories",
+				),
 				description: t(
 					"settings.demo.steps.assignCategories.description",
 					"Assigning work categories to periods",
@@ -330,9 +448,7 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 			});
 		}
 
-		setSteps(activeSteps);
-		setWizardStep("generating");
-		setIsGenerating(true);
+		dispatchWizard({ type: "start-generation", steps: activeSteps });
 
 		const input: StepGenerationInput = {
 			organizationId,
@@ -380,8 +496,15 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 		// Helper to execute a step
 		const executeStep = async (
 			stepId: string,
-			action: () => Promise<{ success: boolean; data?: unknown; error?: string }>,
-			onSuccess: (data: unknown) => { result: string; updates: Partial<DemoDataResult> },
+			action: () => Promise<{
+				success: boolean;
+				data?: unknown;
+				error?: string;
+			}>,
+			onSuccess: (data: unknown) => {
+				result: string;
+				updates: Partial<DemoDataResult>;
+			},
 		): Promise<boolean> => {
 			updateStepStatus(stepId, "in-progress");
 			try {
@@ -395,13 +518,20 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 				updateStepStatus(stepId, "complete", result);
 				return true;
 			} catch (_err) {
-				updateStepStatus(stepId, "error", undefined, "Unexpected error occurred");
+				updateStepStatus(
+					stepId,
+					"error",
+					undefined,
+					"Unexpected error occurred",
+				);
 				return false;
 			}
 		};
 
 		// Phase 1: Run teams and projects in parallel (independent)
-		const phase1Steps = activeSteps.filter((s) => s.id === "teams" || s.id === "projects");
+		const phase1Steps = activeSteps.filter(
+			(s) => s.id === "teams" || s.id === "projects",
+		);
 		if (phase1Steps.length > 0) {
 			const phase1Results = await Promise.all(
 				phase1Steps.map((step) => {
@@ -410,7 +540,10 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 							step.id,
 							() => generateTeamsStepAction(input),
 							(data) => {
-								const d = data as { teamsCreated: number; employeesAssignedToTeams: number };
+								const d = data as {
+									teamsCreated: number;
+									employeesAssignedToTeams: number;
+								};
 								return {
 									result: `${d.teamsCreated} teams, ${d.employeesAssignedToTeams} assigned`,
 									updates: {
@@ -455,7 +588,9 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 
 		// Phase 3: Run time entries and absences in parallel (independent)
 		if (!hasError) {
-			const phase3Steps = activeSteps.filter((s) => s.id === "time-entries" || s.id === "absences");
+			const phase3Steps = activeSteps.filter(
+				(s) => s.id === "time-entries" || s.id === "absences",
+			);
 			if (phase3Steps.length > 0) {
 				const phase3Results = await Promise.all(
 					phase3Steps.map((step) => {
@@ -464,7 +599,10 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 								step.id,
 								() => generateTimeEntriesStepAction(input),
 								(data) => {
-									const d = data as { timeEntriesCreated: number; workPeriodsCreated: number };
+									const d = data as {
+										timeEntriesCreated: number;
+										workPeriodsCreated: number;
+									};
 									return {
 										result: `${d.timeEntriesCreated} entries, ${d.workPeriodsCreated} periods`,
 										updates: {
@@ -495,7 +633,9 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 		// Approval testing steps need base time/absence data and run before later optional data.
 		if (!hasError) {
 			const approvalSteps = activeSteps.filter(
-				(s) => s.id === "pending-absence-approvals" || s.id === "pending-time-correction-approvals",
+				(s) =>
+					s.id === "pending-absence-approvals" ||
+					s.id === "pending-time-correction-approvals",
 			);
 			if (approvalSteps.length > 0) {
 				const approvalResults = await Promise.all(
@@ -509,7 +649,8 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 									return {
 										result: `${d.pendingAbsenceApprovalsCreated} pending approvals`,
 										updates: {
-											pendingAbsenceApprovalsCreated: d.pendingAbsenceApprovalsCreated,
+											pendingAbsenceApprovalsCreated:
+												d.pendingAbsenceApprovalsCreated,
 										},
 									};
 								},
@@ -519,11 +660,14 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 							step.id,
 							() => generatePendingTimeCorrectionApprovalsStepAction(input),
 							(data) => {
-								const d = data as { pendingTimeCorrectionApprovalsCreated: number };
+								const d = data as {
+									pendingTimeCorrectionApprovalsCreated: number;
+								};
 								return {
 									result: `${d.pendingTimeCorrectionApprovalsCreated} pending approvals`,
 									updates: {
-										pendingTimeCorrectionApprovalsCreated: d.pendingTimeCorrectionApprovalsCreated,
+										pendingTimeCorrectionApprovalsCreated:
+											d.pendingTimeCorrectionApprovalsCreated,
 									},
 								};
 							},
@@ -537,7 +681,10 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 		// Phase 4: Locations (independent, can run in parallel with work categories and change policies)
 		if (!hasError) {
 			const phase4Steps = activeSteps.filter(
-				(s) => s.id === "locations" || s.id === "work-categories" || s.id === "change-policies",
+				(s) =>
+					s.id === "locations" ||
+					s.id === "work-categories" ||
+					s.id === "change-policies",
 			);
 			if (phase4Steps.length > 0) {
 				const phase4Results = await Promise.all(
@@ -557,7 +704,8 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 										updates: {
 											locationsCreated: d.locationsCreated,
 											subareasCreated: d.subareasCreated,
-											locationSupervisorsAssigned: d.supervisorAssignmentsCreated,
+											locationSupervisorsAssigned:
+												d.supervisorAssignmentsCreated,
 										},
 									};
 								},
@@ -588,7 +736,10 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 							step.id,
 							() => generateChangePoliciesStepAction(input),
 							(data) => {
-								const d = data as { policiesCreated: number; assignmentsCreated: number };
+								const d = data as {
+									policiesCreated: number;
+									assignmentsCreated: number;
+								};
 								return {
 									result: `${d.policiesCreated} policies`,
 									updates: {
@@ -653,32 +804,43 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 					const d = data as { workCategoriesAssigned: number };
 					return {
 						result: `${d.workCategoriesAssigned} periods assigned`,
-						updates: { workCategoriesAssignedToPeriods: d.workCategoriesAssigned },
+						updates: {
+							workCategoriesAssignedToPeriods: d.workCategoriesAssigned,
+						},
 					};
 				},
 			);
 			if (!success) hasError = true;
 		}
 
-		setIsGenerating(false);
-
 		if (!hasError) {
-			setResult(finalResult);
-			setWizardStep("complete");
+			dispatchWizard({ type: "finish-generation", result: finalResult });
 		} else {
-			setError(t("settings.demo.errors.generationFailed", "Generation failed. Please try again."));
+			dispatchWizard({
+				type: "fail-generation",
+				error: t(
+					"settings.demo.errors.generationFailed",
+					"Generation failed. Please try again.",
+				),
+			});
 		}
 	};
 
 	const handleClear = async () => {
 		if (!organizationId) {
-			setError(t("settings.demo.errors.noOrganization", "No organization selected"));
+			dispatchWizard({
+				type: "set-error",
+				error: t(
+					"settings.demo.errors.noOrganization",
+					"No organization selected",
+				),
+			});
 			return;
 		}
 		setIsClearing(true);
 		const response = await clearTimeDataAction(organizationId);
 		if (!response.success) {
-			setError(response.error);
+			dispatchWizard({ type: "set-error", error: response.error });
 		} else {
 			setClearResult(response.data);
 		}
@@ -687,15 +849,14 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 	};
 
 	const handleReset = () => {
-		setWizardStep("configure");
-		setSteps([]);
-		setResult(null);
-		setError(null);
+		dispatchWizard({ type: "reset" });
 	};
 
 	const handleGenerateEmployees = async () => {
 		if (!organizationId) {
-			setEmployeeError(t("settings.demo.errors.noOrganization", "No organization selected"));
+			setEmployeeError(
+				t("settings.demo.errors.noOrganization", "No organization selected"),
+			);
 			return;
 		}
 		setEmployeeError(null);
@@ -719,13 +880,19 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 
 	const handleDeleteNonAdmin = async () => {
 		if (!organizationId) {
-			setError(t("settings.demo.errors.noOrganization", "No organization selected"));
+			dispatchWizard({
+				type: "set-error",
+				error: t(
+					"settings.demo.errors.noOrganization",
+					"No organization selected",
+				),
+			});
 			return;
 		}
 		setIsDeletingNonAdmin(true);
 		const response = await deleteNonAdminDataAction(organizationId);
 		if (!response.success) {
-			setError(response.error);
+			dispatchWizard({ type: "set-error", error: response.error });
 		} else {
 			setDeleteNonAdminResult(response.data);
 			router.refresh();
@@ -734,1305 +901,1732 @@ export function DemoDataWizard({ organizationId, employees }: DemoDataWizardProp
 		setIsDeletingNonAdmin(false);
 	};
 
+	return {
+		t,
+		employees,
+		wizardStep,
+		isGenerating,
+		steps,
+		error,
+		result,
+		dateRangeType,
+		setDateRangeType,
+		includeTimeEntries,
+		setIncludeTimeEntries,
+		includeAbsences,
+		setIncludeAbsences,
+		includeTeams,
+		setIncludeTeams,
+		teamCount,
+		setTeamCount,
+		includeProjects,
+		setIncludeProjects,
+		projectCount,
+		setProjectCount,
+		selectedEmployees,
+		setSelectedEmployees,
+		includeLocations,
+		setIncludeLocations,
+		locationCount,
+		setLocationCount,
+		includeWorkCategories,
+		setIncludeWorkCategories,
+		assignWorkCategoriesToPeriods,
+		setAssignWorkCategoriesToPeriods,
+		includeChangePolicies,
+		setIncludeChangePolicies,
+		includeShifts,
+		setIncludeShifts,
+		includePendingAbsenceApprovals,
+		setIncludePendingAbsenceApprovals,
+		includePendingTimeCorrectionApprovals,
+		setIncludePendingTimeCorrectionApprovals,
+		handleGenerate,
+		handleReset,
+		employeeCount,
+		setEmployeeCount,
+		includeManagersForEmployees,
+		setIncludeManagersForEmployees,
+		isGeneratingEmployees,
+		employeeResult,
+		employeeError,
+		handleGenerateEmployees,
+		clearResult,
+		confirmText,
+		setConfirmText,
+		isClearing,
+		handleClear,
+		deleteNonAdminResult,
+		deleteNonAdminConfirmText,
+		setDeleteNonAdminConfirmText,
+		isDeletingNonAdmin,
+		handleDeleteNonAdmin,
+	};
+}
+
+type DemoDataWizardController = ReturnType<typeof useDemoDataWizardController>;
+
+interface PresentationProps {
+	controller: DemoDataWizardController;
+}
+
+export function DemoDataWizard(props: DemoDataWizardProps) {
+	const controller = useDemoDataWizardController(props);
+
 	return (
 		<div className="grid gap-6 lg:grid-cols-2">
-			{/* Generate Demo Data Card */}
-			<Card className="lg:col-span-2">
-				<CardHeader>
-					<CardTitle className="flex items-center gap-2">
-						<IconDatabase className="size-5" />
-						{t("settings.demo.generateData.title", "Generate Demo Data")}
-					</CardTitle>
-					<CardDescription>
+			<DemoDataGenerationCard controller={controller} />
+			<EmployeeGenerationCard controller={controller} />
+			<AvailableDataTypesCard controller={controller} />
+			<DangerZoneCard controller={controller} />
+		</div>
+	);
+}
+
+function ConfigurationFields({ controller }: PresentationProps) {
+	const {
+		t,
+		dateRangeType,
+		setDateRangeType,
+		selectedEmployees,
+		setSelectedEmployees,
+		employees,
+	} = controller;
+
+	return (
+		<div className="grid gap-6 md:grid-cols-2">
+			<div className="space-y-2">
+				<Label htmlFor="dateRange">
+					{t("settings.demo.form.dateRange.label", "Date Range")}
+				</Label>
+				<Select
+					value={dateRangeType}
+					onValueChange={(v) =>
+						setDateRangeType(v as "last30" | "last60" | "last90" | "thisYear")
+					}
+				>
+					<SelectTrigger id="dateRange">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="last30">
+							{t("settings.demo.form.dateRange.last30", "Last 30 days")}
+						</SelectItem>
+						<SelectItem value="last60">
+							{t("settings.demo.form.dateRange.last60", "Last 60 days")}
+						</SelectItem>
+						<SelectItem value="last90">
+							{t("settings.demo.form.dateRange.last90", "Last 90 days")}
+						</SelectItem>
+						<SelectItem value="thisYear">
+							{t("settings.demo.form.dateRange.thisYear", "This year")}
+						</SelectItem>
+					</SelectContent>
+				</Select>
+				<p className="text-xs text-muted-foreground">
+					{t(
+						"settings.demo.form.dateRange.hint",
+						"Time range for generated data",
+					)}
+				</p>
+			</div>
+
+			<div className="space-y-2">
+				<Label htmlFor="employees">
+					{t("settings.demo.form.employees.label", "Employees")}
+				</Label>
+				<Select
+					value={selectedEmployees}
+					onValueChange={(v) => setSelectedEmployees(v as "all" | "selected")}
+				>
+					<SelectTrigger id="employees">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="all">
+							{t(
+								"settings.demo.form.employees.all",
+								"All employees ({count})",
+								{
+									count: employees.length,
+								},
+							)}
+						</SelectItem>
+						<SelectItem value="selected" disabled>
+							{t(
+								"settings.demo.form.employees.selectSpecific",
+								"Select specific employees",
+							)}
+						</SelectItem>
+					</SelectContent>
+				</Select>
+			</div>
+		</div>
+	);
+}
+
+function CoreDataTypeOptions({ controller }: PresentationProps) {
+	const {
+		t,
+		includeTimeEntries,
+		setIncludeTimeEntries,
+		includeAbsences,
+		setIncludeAbsences,
+		includeTeams,
+		setIncludeTeams,
+		teamCount,
+		setTeamCount,
+		includeProjects,
+		setIncludeProjects,
+		projectCount,
+		setProjectCount,
+	} = controller;
+
+	return (
+		<>
+			<div
+				role="checkbox"
+				aria-checked={includeTimeEntries}
+				tabIndex={0}
+				className={cn(
+					"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+					includeTimeEntries
+						? "border-primary bg-primary/5"
+						: "hover:bg-muted/50",
+				)}
+				onClick={() => setIncludeTimeEntries(!includeTimeEntries)}
+				onKeyDown={(event) =>
+					handleSelectableCardKeyDown(event, () =>
+						setIncludeTimeEntries(!includeTimeEntries),
+					)
+				}
+			>
+				<Checkbox
+					checked={includeTimeEntries}
+					onCheckedChange={(v) => setIncludeTimeEntries(v === true)}
+				/>
+				<div className="space-y-1">
+					<div className="flex items-center gap-2 font-medium">
+						<IconClock className="size-4" />
 						{t(
-							"settings.demo.generateData.description",
-							"Create realistic sample data for your organization",
+							"settings.demo.form.dataTypes.timeEntries.title",
+							"Time Entries",
 						)}
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					{wizardStep === "configure" && (
-						<div className="space-y-6">
-							{/* Step indicators */}
-							<div className="flex items-center gap-4">
-								<StepIndicator
-									step={1}
-									label={t("settings.demo.wizard.configure", "Configure")}
-									active={true}
-									completed={false}
-								/>
-								<div className="h-px flex-1 bg-border" />
-								<StepIndicator
-									step={2}
-									label={t("settings.demo.wizard.generate", "Generate")}
-									active={false}
-									completed={false}
-								/>
-								<div className="h-px flex-1 bg-border" />
-								<StepIndicator
-									step={3}
-									label={t("settings.demo.wizard.complete", "Complete")}
-									active={false}
-									completed={false}
-								/>
-							</div>
-
-							{error && (
-								<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-									{error}
-								</div>
-							)}
-
-							{/* Configuration Form */}
-							<div className="grid gap-6 md:grid-cols-2">
-								<div className="space-y-2">
-									<Label htmlFor="dateRange">
-										{t("settings.demo.form.dateRange.label", "Date Range")}
-									</Label>
-									<Select
-										value={dateRangeType}
-										onValueChange={(v) =>
-											setDateRangeType(v as "last30" | "last60" | "last90" | "thisYear")
-										}
-									>
-										<SelectTrigger id="dateRange">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="last30">
-												{t("settings.demo.form.dateRange.last30", "Last 30 days")}
-											</SelectItem>
-											<SelectItem value="last60">
-												{t("settings.demo.form.dateRange.last60", "Last 60 days")}
-											</SelectItem>
-											<SelectItem value="last90">
-												{t("settings.demo.form.dateRange.last90", "Last 90 days")}
-											</SelectItem>
-											<SelectItem value="thisYear">
-												{t("settings.demo.form.dateRange.thisYear", "This year")}
-											</SelectItem>
-										</SelectContent>
-									</Select>
-									<p className="text-xs text-muted-foreground">
-										{t("settings.demo.form.dateRange.hint", "Time range for generated data")}
-									</p>
-								</div>
-
-								<div className="space-y-2">
-									<Label htmlFor="employees">
-										{t("settings.demo.form.employees.label", "Employees")}
-									</Label>
-									<Select
-										value={selectedEmployees}
-										onValueChange={(v) => setSelectedEmployees(v as "all" | "selected")}
-									>
-										<SelectTrigger id="employees">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="all">
-												{t("settings.demo.form.employees.all", "All employees ({count})", {
-													count: employees.length,
-												})}
-											</SelectItem>
-											<SelectItem value="selected" disabled>
-												{t(
-													"settings.demo.form.employees.selectSpecific",
-													"Select specific employees",
-												)}
-											</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
-							</div>
-
-							<div className="space-y-4">
-								<Label>{t("settings.demo.form.dataTypes.label", "Data Types")}</Label>
-								<div className="grid gap-4 md:grid-cols-2">
-									<div
-										role="checkbox"
-										aria-checked={includeTimeEntries}
-										tabIndex={0}
-										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-											includeTimeEntries ? "border-primary bg-primary/5" : "hover:bg-muted/50",
-										)}
-										onClick={() => setIncludeTimeEntries(!includeTimeEntries)}
-										onKeyDown={(event) =>
-											handleSelectableCardKeyDown(event, () =>
-												setIncludeTimeEntries(!includeTimeEntries),
-											)
-										}
-									>
-										<Checkbox
-											checked={includeTimeEntries}
-											onCheckedChange={(v) => setIncludeTimeEntries(v === true)}
-										/>
-										<div className="space-y-1">
-											<div className="flex items-center gap-2 font-medium">
-												<IconClock className="size-4" />
-												{t("settings.demo.form.dataTypes.timeEntries.title", "Time Entries")}
-											</div>
-											<p className="text-xs text-muted-foreground">
-												{t(
-													"settings.demo.form.dataTypes.timeEntries.description",
-													"Clock-in/out records and work periods",
-												)}
-											</p>
-										</div>
-									</div>
-
-									<div
-										role="checkbox"
-										aria-checked={includeAbsences}
-										tabIndex={0}
-										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-											includeAbsences ? "border-primary bg-primary/5" : "hover:bg-muted/50",
-										)}
-										onClick={() => setIncludeAbsences(!includeAbsences)}
-										onKeyDown={(event) =>
-											handleSelectableCardKeyDown(event, () => setIncludeAbsences(!includeAbsences))
-										}
-									>
-										<Checkbox
-											checked={includeAbsences}
-											onCheckedChange={(v) => setIncludeAbsences(v === true)}
-										/>
-										<div className="space-y-1">
-											<div className="flex items-center gap-2 font-medium">
-												<IconUsers className="size-4" />
-												{t("settings.demo.form.dataTypes.absences.title", "Absences")}
-											</div>
-											<p className="text-xs text-muted-foreground">
-												{t(
-													"settings.demo.form.dataTypes.absences.description",
-													"Vacation, sick leave, and other absences",
-												)}
-											</p>
-										</div>
-									</div>
-
-									<div
-										role="checkbox"
-										aria-checked={includeTeams}
-										tabIndex={0}
-										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-											includeTeams ? "border-primary bg-primary/5" : "hover:bg-muted/50",
-										)}
-										onClick={() => setIncludeTeams(!includeTeams)}
-										onKeyDown={(event) =>
-											handleSelectableCardKeyDown(event, () => setIncludeTeams(!includeTeams))
-										}
-									>
-										<Checkbox
-											checked={includeTeams}
-											onCheckedChange={(v) => setIncludeTeams(v === true)}
-										/>
-										<div className="flex-1 space-y-1">
-											<div className="flex items-center gap-2 font-medium">
-												<IconUsersGroup className="size-4" />
-												{t("settings.demo.form.dataTypes.teams.title", "Teams")}
-											</div>
-											<p className="text-xs text-muted-foreground">
-												{t(
-													"settings.demo.form.dataTypes.teams.description",
-													"Create teams and assign employees",
-												)}
-											</p>
-											{includeTeams && (
-												<div className="mt-2 flex items-center gap-2">
-													<Label htmlFor="teamCount" className="text-xs whitespace-nowrap">
-														{t("settings.demo.form.dataTypes.teams.countLabel", "Number of teams:")}
-													</Label>
-													<Input
-														id="teamCount"
-														type="number"
-														min={1}
-														max={10}
-														value={teamCount}
-														onChange={(e) => setTeamCount(parseInt(e.target.value, 10) || 4)}
-														className="h-7 w-16 text-xs"
-														onClick={(e) => e.stopPropagation()}
-														onKeyDown={(e) => e.stopPropagation()}
-													/>
-												</div>
-											)}
-										</div>
-									</div>
-
-									<div
-										role="checkbox"
-										aria-checked={includeProjects}
-										tabIndex={0}
-										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-											includeProjects ? "border-primary bg-primary/5" : "hover:bg-muted/50",
-										)}
-										onClick={() => setIncludeProjects(!includeProjects)}
-										onKeyDown={(event) =>
-											handleSelectableCardKeyDown(event, () => setIncludeProjects(!includeProjects))
-										}
-									>
-										<Checkbox
-											checked={includeProjects}
-											onCheckedChange={(v) => setIncludeProjects(v === true)}
-										/>
-										<div className="flex-1 space-y-1">
-											<div className="flex items-center gap-2 font-medium">
-												<IconBriefcase className="size-4" />
-												{t("settings.demo.form.dataTypes.projects.title", "Projects")}
-											</div>
-											<p className="text-xs text-muted-foreground">
-												{t(
-													"settings.demo.form.dataTypes.projects.description",
-													"Sample projects for time tracking",
-												)}
-											</p>
-											{includeProjects && (
-												<div className="mt-2 flex items-center gap-2">
-													<Label htmlFor="projectCount" className="text-xs whitespace-nowrap">
-														{t(
-															"settings.demo.form.dataTypes.projects.countLabel",
-															"Number of projects:",
-														)}
-													</Label>
-													<Input
-														id="projectCount"
-														type="number"
-														min={1}
-														max={15}
-														value={projectCount}
-														onChange={(e) => setProjectCount(parseInt(e.target.value, 10) || 6)}
-														className="h-7 w-16 text-xs"
-														onClick={(e) => e.stopPropagation()}
-														onKeyDown={(e) => e.stopPropagation()}
-													/>
-												</div>
-											)}
-										</div>
-									</div>
-
-									{/* NEW: Locations checkbox */}
-									<div
-										role="checkbox"
-										aria-checked={includeLocations}
-										tabIndex={0}
-										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-											includeLocations ? "border-primary bg-primary/5" : "hover:bg-muted/50",
-										)}
-										onClick={() => setIncludeLocations(!includeLocations)}
-										onKeyDown={(event) =>
-											handleSelectableCardKeyDown(event, () =>
-												setIncludeLocations(!includeLocations),
-											)
-										}
-									>
-										<Checkbox
-											checked={includeLocations}
-											onCheckedChange={(v) => setIncludeLocations(v === true)}
-										/>
-										<div className="flex-1 space-y-1">
-											<div className="flex items-center gap-2 font-medium">
-												<IconBuilding className="size-4" />
-												{t("settings.demo.form.dataTypes.locations.title", "Locations")}
-											</div>
-											<p className="text-xs text-muted-foreground">
-												{t(
-													"settings.demo.form.dataTypes.locations.description",
-													"Work locations and subareas",
-												)}
-											</p>
-											{includeLocations && (
-												<div className="mt-2 flex items-center gap-2">
-													<Label htmlFor="locationCount" className="text-xs whitespace-nowrap">
-														{t(
-															"settings.demo.form.dataTypes.locations.countLabel",
-															"Number of locations:",
-														)}
-													</Label>
-													<Input
-														id="locationCount"
-														type="number"
-														min={1}
-														max={10}
-														value={locationCount}
-														onChange={(e) => setLocationCount(parseInt(e.target.value, 10) || 3)}
-														className="h-7 w-16 text-xs"
-														onClick={(e) => e.stopPropagation()}
-														onKeyDown={(e) => e.stopPropagation()}
-													/>
-												</div>
-											)}
-										</div>
-									</div>
-
-									{/* NEW: Work Categories checkbox */}
-									<div
-										role="checkbox"
-										aria-checked={includeWorkCategories}
-										tabIndex={0}
-										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-											includeWorkCategories ? "border-primary bg-primary/5" : "hover:bg-muted/50",
-										)}
-										onClick={() => setIncludeWorkCategories(!includeWorkCategories)}
-										onKeyDown={(event) =>
-											handleSelectableCardKeyDown(event, () =>
-												setIncludeWorkCategories(!includeWorkCategories),
-											)
-										}
-									>
-										<Checkbox
-											checked={includeWorkCategories}
-											onCheckedChange={(v) => setIncludeWorkCategories(v === true)}
-										/>
-										<div className="flex-1 space-y-1">
-											<div className="flex items-center gap-2 font-medium">
-												<IconCategory className="size-4" />
-												{t("settings.demo.form.dataTypes.workCategories.title", "Work Categories")}
-											</div>
-											<p className="text-xs text-muted-foreground">
-												{t(
-													"settings.demo.form.dataTypes.workCategories.description",
-													"Category sets for work periods",
-												)}
-											</p>
-											{includeWorkCategories && includeTimeEntries && (
-												<div
-													className="mt-2 flex items-center gap-2"
-													onClick={(e) => e.stopPropagation()}
-													onKeyDown={(e) => e.stopPropagation()}
-												>
-													<Checkbox
-														id="assignCategories"
-														checked={assignWorkCategoriesToPeriods}
-														onCheckedChange={(v) => setAssignWorkCategoriesToPeriods(v === true)}
-													/>
-													<Label htmlFor="assignCategories" className="text-xs cursor-pointer">
-														{t(
-															"settings.demo.form.dataTypes.workCategories.assignLabel",
-															"Also assign to work periods",
-														)}
-													</Label>
-												</div>
-											)}
-										</div>
-									</div>
-
-									{/* NEW: Change Policies checkbox */}
-									<div
-										role="checkbox"
-										aria-checked={includeChangePolicies}
-										tabIndex={0}
-										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-											includeChangePolicies ? "border-primary bg-primary/5" : "hover:bg-muted/50",
-										)}
-										onClick={() => setIncludeChangePolicies(!includeChangePolicies)}
-										onKeyDown={(event) =>
-											handleSelectableCardKeyDown(event, () =>
-												setIncludeChangePolicies(!includeChangePolicies),
-											)
-										}
-									>
-										<Checkbox
-											checked={includeChangePolicies}
-											onCheckedChange={(v) => setIncludeChangePolicies(v === true)}
-										/>
-										<div className="space-y-1">
-											<div className="flex items-center gap-2 font-medium">
-												<IconShieldCheck className="size-4" />
-												{t("settings.demo.form.dataTypes.changePolicies.title", "Change Policies")}
-											</div>
-											<p className="text-xs text-muted-foreground">
-												{t(
-													"settings.demo.form.dataTypes.changePolicies.description",
-													"Time entry change policies",
-												)}
-											</p>
-										</div>
-									</div>
-
-									{/* NEW: Shift Scheduling checkbox */}
-									<div
-										role="checkbox"
-										aria-checked={includeShifts}
-										aria-disabled={!includeLocations}
-										tabIndex={includeLocations ? 0 : -1}
-										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-											includeShifts ? "border-primary bg-primary/5" : "hover:bg-muted/50",
-											!includeLocations && "opacity-50",
-										)}
-										onClick={() => includeLocations && setIncludeShifts(!includeShifts)}
-										onKeyDown={(event) => {
-											if (!includeLocations) return;
-											handleSelectableCardKeyDown(event, () => setIncludeShifts(!includeShifts));
-										}}
-									>
-										<Checkbox
-											checked={includeShifts}
-											disabled={!includeLocations}
-											onCheckedChange={(v) => setIncludeShifts(v === true)}
-										/>
-										<div className="space-y-1">
-											<div className="flex items-center gap-2 font-medium">
-												<IconCalendarEvent className="size-4" />
-												{t(
-													"settings.demo.form.dataTypes.shiftScheduling.title",
-													"Shift Scheduling",
-												)}
-											</div>
-											<p className="text-xs text-muted-foreground">
-												{t(
-													"settings.demo.form.dataTypes.shiftScheduling.description",
-													"Shift templates and scheduled shifts",
-												)}
-											</p>
-											{!includeLocations && (
-												<p className="text-xs text-amber-600 dark:text-amber-400">
-													{t(
-														"settings.demo.form.dataTypes.shiftScheduling.requiresLocations",
-														"Requires Locations to be enabled",
-													)}
-												</p>
-											)}
-										</div>
-									</div>
-								</div>
-							</div>
-
-							<div className="space-y-4">
-								<Label>{t("settings.demo.form.approvalsTesting.label", "Approvals Testing")}</Label>
-								<div className="grid gap-4 md:grid-cols-2">
-									<div
-										role="checkbox"
-										aria-checked={includePendingAbsenceApprovals}
-										tabIndex={0}
-										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-											includePendingAbsenceApprovals
-												? "border-primary bg-primary/5"
-												: "hover:bg-muted/50",
-										)}
-										onClick={() =>
-											setIncludePendingAbsenceApprovals(!includePendingAbsenceApprovals)
-										}
-										onKeyDown={(event) =>
-											handleSelectableCardKeyDown(event, () =>
-												setIncludePendingAbsenceApprovals(!includePendingAbsenceApprovals),
-											)
-										}
-									>
-										<Checkbox
-											tabIndex={-1}
-											aria-hidden="true"
-											checked={includePendingAbsenceApprovals}
-											onCheckedChange={(v) => setIncludePendingAbsenceApprovals(v === true)}
-										/>
-										<div className="space-y-1">
-											<div className="flex items-center gap-2 font-medium">
-												<IconUserCheck className="size-4" aria-hidden="true" />
-												{t(
-													"settings.demo.form.approvalsTesting.pendingAbsences.title",
-													"Pending absence approvals",
-												)}
-											</div>
-											<p className="text-xs text-muted-foreground">
-												{t(
-													"settings.demo.form.approvalsTesting.pendingAbsences.description",
-													"Create absence requests waiting for manager approval",
-												)}
-											</p>
-										</div>
-									</div>
-
-									<div
-										role="checkbox"
-										aria-checked={includePendingTimeCorrectionApprovals}
-										tabIndex={0}
-										className={cn(
-											"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-											includePendingTimeCorrectionApprovals
-												? "border-primary bg-primary/5"
-												: "hover:bg-muted/50",
-										)}
-										onClick={() =>
-											setIncludePendingTimeCorrectionApprovals(
-												!includePendingTimeCorrectionApprovals,
-											)
-										}
-										onKeyDown={(event) =>
-											handleSelectableCardKeyDown(event, () =>
-												setIncludePendingTimeCorrectionApprovals(
-													!includePendingTimeCorrectionApprovals,
-												),
-											)
-										}
-									>
-										<Checkbox
-											tabIndex={-1}
-											aria-hidden="true"
-											checked={includePendingTimeCorrectionApprovals}
-											onCheckedChange={(v) => setIncludePendingTimeCorrectionApprovals(v === true)}
-										/>
-										<div className="space-y-1">
-											<div className="flex items-center gap-2 font-medium">
-												<IconClock className="size-4" aria-hidden="true" />
-												{t(
-													"settings.demo.form.approvalsTesting.pendingTimeCorrections.title",
-													"Pending time correction approvals",
-												)}
-											</div>
-											<p className="text-xs text-muted-foreground">
-												{t(
-													"settings.demo.form.approvalsTesting.pendingTimeCorrections.description",
-													"Create time corrections waiting for manager approval",
-												)}
-											</p>
-										</div>
-									</div>
-								</div>
-							</div>
-
-							<div className="flex justify-end">
-								<Button
-									onClick={handleGenerate}
-									disabled={
-										!includeTimeEntries &&
-										!includeAbsences &&
-										!includeTeams &&
-										!includeProjects &&
-										!includeLocations &&
-										!includeWorkCategories &&
-										!includeChangePolicies &&
-										!includeShifts &&
-										!includePendingAbsenceApprovals &&
-										!includePendingTimeCorrectionApprovals
-									}
-									className="gap-2"
-								>
-									<IconPlayerPlay className="size-4" />
-									{t("settings.demo.generateData.button", "Generate Data")}
-								</Button>
-							</div>
-						</div>
-					)}
-
-					{wizardStep === "generating" && (
-						<div className="space-y-6">
-							{/* Step indicators */}
-							<div className="flex items-center gap-4">
-								<StepIndicator
-									step={1}
-									label={t("settings.demo.wizard.configure", "Configure")}
-									active={false}
-									completed={true}
-								/>
-								<div className="h-px flex-1 bg-primary" />
-								<StepIndicator
-									step={2}
-									label={t("settings.demo.wizard.generate", "Generate")}
-									active={true}
-									completed={false}
-								/>
-								<div className="h-px flex-1 bg-border" />
-								<StepIndicator
-									step={3}
-									label={t("settings.demo.wizard.complete", "Complete")}
-									active={false}
-									completed={false}
-								/>
-							</div>
-
-							{error && (
-								<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-									{error}
-								</div>
-							)}
-
-							{/* Step-by-step progress */}
-							<div className="space-y-3 py-4">
-								{steps.map((step) => (
-									<GenerationStepItem key={step.id} step={step} />
-								))}
-							</div>
-
-							{!isGenerating && error && (
-								<div className="flex justify-center gap-3">
-									<Button variant="outline" onClick={handleReset}>
-										{t("settings.demo.wizard.backToConfig", "Back to Configuration")}
-									</Button>
-								</div>
-							)}
-						</div>
-					)}
-
-					{wizardStep === "complete" && result && (
-						<div className="space-y-6">
-							{/* Step indicators */}
-							<div className="flex items-center gap-4">
-								<StepIndicator
-									step={1}
-									label={t("settings.demo.wizard.configure", "Configure")}
-									active={false}
-									completed={true}
-								/>
-								<div className="h-px flex-1 bg-primary" />
-								<StepIndicator
-									step={2}
-									label={t("settings.demo.wizard.generate", "Generate")}
-									active={false}
-									completed={true}
-								/>
-								<div className="h-px flex-1 bg-primary" />
-								<StepIndicator
-									step={3}
-									label={t("settings.demo.wizard.complete", "Complete")}
-									active={true}
-									completed={true}
-								/>
-							</div>
-
-							<div className="space-y-6 py-4">
-								<div className="flex items-center justify-center gap-3 text-green-600">
-									<div className="flex size-12 items-center justify-center rounded-full bg-green-100">
-										<IconCheck className="size-6" />
-									</div>
-								</div>
-								<p className="text-center text-lg font-medium">
-									{t("settings.demo.results.success", "Demo data generated successfully!")}
-								</p>
-
-								{/* Show completed steps with results */}
-								<div className="space-y-2">
-									{steps.map((step) => (
-										<div
-											key={step.id}
-											className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3"
-										>
-											<div className="flex size-6 items-center justify-center rounded-full bg-green-100 text-green-600">
-												<IconCheck className="size-4" />
-											</div>
-											<div className="flex-1">
-												<span className="font-medium">{step.label}</span>
-												{step.result && (
-													<span className="ml-2 text-sm text-muted-foreground">
-														— {step.result}
-													</span>
-												)}
-											</div>
-										</div>
-									))}
-								</div>
-
-								<div className="flex justify-center">
-									<Button variant="outline" onClick={handleReset}>
-										{t("settings.demo.wizard.generateMore", "Generate More Data")}
-									</Button>
-								</div>
-							</div>
-						</div>
-					)}
-				</CardContent>
-			</Card>
-
-			{/* Generate Employees Card */}
-			<Card>
-				<CardHeader>
-					<CardTitle className="flex items-center gap-2">
-						<IconUsers className="size-5" />
-						{t("settings.demo.generateEmployees.title", "Generate Employees")}
-					</CardTitle>
-					<CardDescription>
+					</div>
+					<p className="text-xs text-muted-foreground">
 						{t(
-							"settings.demo.generateEmployees.description",
-							"Create demo employee accounts for testing",
+							"settings.demo.form.dataTypes.timeEntries.description",
+							"Clock-in/out records and work periods",
 						)}
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="space-y-4">
-						{employeeError && (
-							<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-								{employeeError}
-							</div>
+					</p>
+				</div>
+			</div>
+
+			<div
+				role="checkbox"
+				aria-checked={includeAbsences}
+				tabIndex={0}
+				className={cn(
+					"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+					includeAbsences ? "border-primary bg-primary/5" : "hover:bg-muted/50",
+				)}
+				onClick={() => setIncludeAbsences(!includeAbsences)}
+				onKeyDown={(event) =>
+					handleSelectableCardKeyDown(event, () =>
+						setIncludeAbsences(!includeAbsences),
+					)
+				}
+			>
+				<Checkbox
+					checked={includeAbsences}
+					onCheckedChange={(v) => setIncludeAbsences(v === true)}
+				/>
+				<div className="space-y-1">
+					<div className="flex items-center gap-2 font-medium">
+						<IconUsers className="size-4" />
+						{t("settings.demo.form.dataTypes.absences.title", "Absences")}
+					</div>
+					<p className="text-xs text-muted-foreground">
+						{t(
+							"settings.demo.form.dataTypes.absences.description",
+							"Vacation, sick leave, and other absences",
 						)}
+					</p>
+				</div>
+			</div>
 
-						{employeeResult && (
-							<div className="rounded-lg border border-green-500/50 bg-green-50 p-4 dark:bg-green-950/20">
-								<p className="font-medium text-green-700 dark:text-green-400">
-									{t(
-										"settings.demo.generateEmployees.successTitle",
-										"Employees generated successfully!",
-									)}
-								</p>
-								<ul className="mt-2 space-y-1 text-sm text-green-600 dark:text-green-500">
-									<li>
-										{t("settings.demo.generateEmployees.usersCreated", "{count} users created", {
-											count: employeeResult.usersCreated,
-										})}
-									</li>
-									<li>
-										{t(
-											"settings.demo.generateEmployees.employeesCreated",
-											"{count} employees created",
-											{ count: employeeResult.employeesCreated },
-										)}
-									</li>
-									<li>
-										{t(
-											"settings.demo.generateEmployees.managersCreated",
-											"{count} manager assignments",
-											{ count: employeeResult.managersCreated },
-										)}
-									</li>
-								</ul>
-							</div>
+			<div
+				role="checkbox"
+				aria-checked={includeTeams}
+				tabIndex={0}
+				className={cn(
+					"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+					includeTeams ? "border-primary bg-primary/5" : "hover:bg-muted/50",
+				)}
+				onClick={() => setIncludeTeams(!includeTeams)}
+				onKeyDown={(event) =>
+					handleSelectableCardKeyDown(event, () =>
+						setIncludeTeams(!includeTeams),
+					)
+				}
+			>
+				<Checkbox
+					checked={includeTeams}
+					onCheckedChange={(v) => setIncludeTeams(v === true)}
+				/>
+				<div className="flex-1 space-y-1">
+					<div className="flex items-center gap-2 font-medium">
+						<IconUsersGroup className="size-4" />
+						{t("settings.demo.form.dataTypes.teams.title", "Teams")}
+					</div>
+					<p className="text-xs text-muted-foreground">
+						{t(
+							"settings.demo.form.dataTypes.teams.description",
+							"Create teams and assign employees",
 						)}
-
-						<div className="grid gap-4 md:grid-cols-2">
-							<div className="space-y-2">
-								<Label htmlFor="employeeCount">
-									{t("settings.demo.generateEmployees.countLabel", "Number of Employees")}
-								</Label>
-								<Input
-									id="employeeCount"
-									type="number"
-									min={1}
-									max={50}
-									value={employeeCount}
-									onChange={(e) => setEmployeeCount(parseInt(e.target.value, 10) || 5)}
-								/>
-								<p className="text-xs text-muted-foreground">
-									{t("settings.demo.generateEmployees.countHint", "Maximum 50 employees at a time")}
-								</p>
-							</div>
-
-							<div className="space-y-2">
-								<Label>{t("settings.demo.generateEmployees.options", "Options")}</Label>
-								<div
-									role="button"
-									tabIndex={0}
-									className={cn(
-										"flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
-										includeManagersForEmployees
-											? "border-primary bg-primary/5"
-											: "hover:bg-muted/50",
-									)}
-									onClick={() => setIncludeManagersForEmployees(!includeManagersForEmployees)}
-									onKeyDown={(e) => {
-										if (e.key === "Enter" || e.key === " ") {
-											e.preventDefault();
-											setIncludeManagersForEmployees(!includeManagersForEmployees);
-										}
-									}}
-								>
-									<Checkbox
-										checked={includeManagersForEmployees}
-										onCheckedChange={(v) => setIncludeManagersForEmployees(v === true)}
-									/>
-									<div className="space-y-1">
-										<div className="text-sm font-medium">
-											{t(
-												"settings.demo.generateEmployees.includeManagers",
-												"Include Manager Assignments",
-											)}
-										</div>
-										<p className="text-xs text-muted-foreground">
-											{t(
-												"settings.demo.generateEmployees.managersHint",
-												"Randomly assign managers to new employees",
-											)}
-										</p>
-									</div>
-								</div>
-							</div>
-						</div>
-
-						<div className="flex justify-end">
-							<Button
-								onClick={handleGenerateEmployees}
-								disabled={isGeneratingEmployees || employeeCount < 1}
-								className="gap-2"
-							>
-								{isGeneratingEmployees ? (
-									<>
-										<IconLoader2 className="size-4 animate-spin" />
-										{t("settings.demo.generateEmployees.generating", "Generating...")}
-									</>
-								) : (
-									<>
-										<IconUsers className="size-4" />
-										{t("settings.demo.generateEmployees.button", "Generate {count} Employees", {
-											count: employeeCount,
-										})}
-									</>
+					</p>
+					{includeTeams && (
+						<div className="mt-2 flex items-center gap-2">
+							<Label htmlFor="teamCount" className="text-xs whitespace-nowrap">
+								{t(
+									"settings.demo.form.dataTypes.teams.countLabel",
+									"Number of teams:",
 								)}
-							</Button>
+							</Label>
+							<Input
+								id="teamCount"
+								type="number"
+								min={1}
+								max={10}
+								value={teamCount}
+								onChange={(e) =>
+									setTeamCount(parseInt(e.target.value, 10) || 4)
+								}
+								className="h-7 w-16 text-xs"
+								onClick={(e) => e.stopPropagation()}
+								onKeyDown={(e) => e.stopPropagation()}
+							/>
 						</div>
+					)}
+				</div>
+			</div>
+
+			<div
+				role="checkbox"
+				aria-checked={includeProjects}
+				tabIndex={0}
+				className={cn(
+					"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+					includeProjects ? "border-primary bg-primary/5" : "hover:bg-muted/50",
+				)}
+				onClick={() => setIncludeProjects(!includeProjects)}
+				onKeyDown={(event) =>
+					handleSelectableCardKeyDown(event, () =>
+						setIncludeProjects(!includeProjects),
+					)
+				}
+			>
+				<Checkbox
+					checked={includeProjects}
+					onCheckedChange={(v) => setIncludeProjects(v === true)}
+				/>
+				<div className="flex-1 space-y-1">
+					<div className="flex items-center gap-2 font-medium">
+						<IconBriefcase className="size-4" />
+						{t("settings.demo.form.dataTypes.projects.title", "Projects")}
 					</div>
-				</CardContent>
-			</Card>
+					<p className="text-xs text-muted-foreground">
+						{t(
+							"settings.demo.form.dataTypes.projects.description",
+							"Sample projects for time tracking",
+						)}
+					</p>
+					{includeProjects && (
+						<div className="mt-2 flex items-center gap-2">
+							<Label
+								htmlFor="projectCount"
+								className="text-xs whitespace-nowrap"
+							>
+								{t(
+									"settings.demo.form.dataTypes.projects.countLabel",
+									"Number of projects:",
+								)}
+							</Label>
+							<Input
+								id="projectCount"
+								type="number"
+								min={1}
+								max={15}
+								value={projectCount}
+								onChange={(e) =>
+									setProjectCount(parseInt(e.target.value, 10) || 6)
+								}
+								className="h-7 w-16 text-xs"
+								onClick={(e) => e.stopPropagation()}
+								onKeyDown={(e) => e.stopPropagation()}
+							/>
+						</div>
+					)}
+				</div>
+			</div>
+		</>
+	);
+}
 
-			{/* Feature Info Card */}
-			<Card className="border-dashed">
-				<CardHeader>
-					<CardTitle className="flex items-center gap-2 text-muted-foreground">
-						<IconDatabase className="size-5" />
-						{t("settings.demo.availableTypes.title", "Available Data Types")}
-					</CardTitle>
-					<CardDescription>
-						{t("settings.demo.availableTypes.description", "Types of demo data you can generate")}
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="space-y-3 text-sm text-muted-foreground">
-						<p>{t("settings.demo.availableTypes.supported", "Currently supported:")}</p>
-						<ul className="list-inside list-disc space-y-1">
-							<li>
-								{t("settings.demo.availableTypes.timeEntries", "Time entries and work periods")}
-							</li>
-							<li>
-								{t("settings.demo.availableTypes.absences", "Absences (vacation, sick leave)")}
-							</li>
-							<li>{t("settings.demo.availableTypes.teamsProjects", "Teams and projects")}</li>
-							<li>{t("settings.demo.availableTypes.locations", "Locations and subareas")}</li>
-							<li>{t("settings.demo.availableTypes.workCategories", "Work category sets")}</li>
-							<li>{t("settings.demo.availableTypes.changePolicies", "Change policies")}</li>
-							<li>{t("settings.demo.availableTypes.shifts", "Shift templates and shifts")}</li>
-						</ul>
+function AdvancedDataTypeOptions({ controller }: PresentationProps) {
+	const {
+		t,
+		includeLocations,
+		setIncludeLocations,
+		locationCount,
+		setLocationCount,
+		includeWorkCategories,
+		setIncludeWorkCategories,
+		includeTimeEntries,
+		assignWorkCategoriesToPeriods,
+		setAssignWorkCategoriesToPeriods,
+		includeChangePolicies,
+		setIncludeChangePolicies,
+		includeShifts,
+		setIncludeShifts,
+	} = controller;
+
+	return (
+		<>
+			{/* NEW: Locations checkbox */}
+			<div
+				role="checkbox"
+				aria-checked={includeLocations}
+				tabIndex={0}
+				className={cn(
+					"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+					includeLocations
+						? "border-primary bg-primary/5"
+						: "hover:bg-muted/50",
+				)}
+				onClick={() => setIncludeLocations(!includeLocations)}
+				onKeyDown={(event) =>
+					handleSelectableCardKeyDown(event, () =>
+						setIncludeLocations(!includeLocations),
+					)
+				}
+			>
+				<Checkbox
+					checked={includeLocations}
+					onCheckedChange={(v) => setIncludeLocations(v === true)}
+				/>
+				<div className="flex-1 space-y-1">
+					<div className="flex items-center gap-2 font-medium">
+						<IconBuilding className="size-4" />
+						{t("settings.demo.form.dataTypes.locations.title", "Locations")}
 					</div>
-				</CardContent>
-			</Card>
+					<p className="text-xs text-muted-foreground">
+						{t(
+							"settings.demo.form.dataTypes.locations.description",
+							"Work locations and subareas",
+						)}
+					</p>
+					{includeLocations && (
+						<div className="mt-2 flex items-center gap-2">
+							<Label
+								htmlFor="locationCount"
+								className="text-xs whitespace-nowrap"
+							>
+								{t(
+									"settings.demo.form.dataTypes.locations.countLabel",
+									"Number of locations:",
+								)}
+							</Label>
+							<Input
+								id="locationCount"
+								type="number"
+								min={1}
+								max={10}
+								value={locationCount}
+								onChange={(e) =>
+									setLocationCount(parseInt(e.target.value, 10) || 3)
+								}
+								className="h-7 w-16 text-xs"
+								onClick={(e) => e.stopPropagation()}
+								onKeyDown={(e) => e.stopPropagation()}
+							/>
+						</div>
+					)}
+				</div>
+			</div>
 
-			{/* Danger Zone Card */}
-			<Card className="border-destructive/50 lg:col-span-2">
-				<CardHeader>
-					<CardTitle className="flex items-center gap-2 text-destructive">
-						<IconAlertTriangle className="size-5" />
-						{t("settings.demo.dangerZone.title", "Danger Zone")}
-					</CardTitle>
-					<CardDescription>
-						{t("settings.demo.dangerZone.description", "Destructive actions that cannot be undone")}
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="grid gap-6 md:grid-cols-2">
-						{/* Clear Time Data Section */}
-						<div className="space-y-4">
-							<h3 className="font-medium text-destructive">
-								{t("settings.demo.dangerZone.clearData.title", "Clear Time Data")}
-							</h3>
+			{/* NEW: Work Categories checkbox */}
+			<div
+				role="checkbox"
+				aria-checked={includeWorkCategories}
+				tabIndex={0}
+				className={cn(
+					"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+					includeWorkCategories
+						? "border-primary bg-primary/5"
+						: "hover:bg-muted/50",
+				)}
+				onClick={() => setIncludeWorkCategories(!includeWorkCategories)}
+				onKeyDown={(event) =>
+					handleSelectableCardKeyDown(event, () =>
+						setIncludeWorkCategories(!includeWorkCategories),
+					)
+				}
+			>
+				<Checkbox
+					checked={includeWorkCategories}
+					onCheckedChange={(v) => setIncludeWorkCategories(v === true)}
+				/>
+				<div className="flex-1 space-y-1">
+					<div className="flex items-center gap-2 font-medium">
+						<IconCategory className="size-4" />
+						{t(
+							"settings.demo.form.dataTypes.workCategories.title",
+							"Work Categories",
+						)}
+					</div>
+					<p className="text-xs text-muted-foreground">
+						{t(
+							"settings.demo.form.dataTypes.workCategories.description",
+							"Category sets for work periods",
+						)}
+					</p>
+					{includeWorkCategories && includeTimeEntries && (
+						<div
+							className="mt-2 flex items-center gap-2"
+							onClick={(e) => e.stopPropagation()}
+							onKeyDown={(e) => e.stopPropagation()}
+						>
+							<Checkbox
+								id="assignCategories"
+								checked={assignWorkCategoriesToPeriods}
+								onCheckedChange={(v) =>
+									setAssignWorkCategoriesToPeriods(v === true)
+								}
+							/>
+							<Label
+								htmlFor="assignCategories"
+								className="text-xs cursor-pointer"
+							>
+								{t(
+									"settings.demo.form.dataTypes.workCategories.assignLabel",
+									"Also assign to work periods",
+								)}
+							</Label>
+						</div>
+					)}
+				</div>
+			</div>
 
-							{clearResult && (
-								<div className="rounded-lg border border-green-500/50 bg-green-50 p-4 dark:bg-green-950/20">
-									<p className="font-medium text-green-700 dark:text-green-400">
+			{/* NEW: Change Policies checkbox */}
+			<div
+				role="checkbox"
+				aria-checked={includeChangePolicies}
+				tabIndex={0}
+				className={cn(
+					"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+					includeChangePolicies
+						? "border-primary bg-primary/5"
+						: "hover:bg-muted/50",
+				)}
+				onClick={() => setIncludeChangePolicies(!includeChangePolicies)}
+				onKeyDown={(event) =>
+					handleSelectableCardKeyDown(event, () =>
+						setIncludeChangePolicies(!includeChangePolicies),
+					)
+				}
+			>
+				<Checkbox
+					checked={includeChangePolicies}
+					onCheckedChange={(v) => setIncludeChangePolicies(v === true)}
+				/>
+				<div className="space-y-1">
+					<div className="flex items-center gap-2 font-medium">
+						<IconShieldCheck className="size-4" />
+						{t(
+							"settings.demo.form.dataTypes.changePolicies.title",
+							"Change Policies",
+						)}
+					</div>
+					<p className="text-xs text-muted-foreground">
+						{t(
+							"settings.demo.form.dataTypes.changePolicies.description",
+							"Time entry change policies",
+						)}
+					</p>
+				</div>
+			</div>
+
+			{/* NEW: Shift Scheduling checkbox */}
+			<div
+				role="checkbox"
+				aria-checked={includeShifts}
+				aria-disabled={!includeLocations}
+				tabIndex={includeLocations ? 0 : -1}
+				className={cn(
+					"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+					includeShifts ? "border-primary bg-primary/5" : "hover:bg-muted/50",
+					!includeLocations && "opacity-50",
+				)}
+				onClick={() => includeLocations && setIncludeShifts(!includeShifts)}
+				onKeyDown={(event) => {
+					if (!includeLocations) return;
+					handleSelectableCardKeyDown(event, () =>
+						setIncludeShifts(!includeShifts),
+					);
+				}}
+			>
+				<Checkbox
+					checked={includeShifts}
+					disabled={!includeLocations}
+					onCheckedChange={(v) => setIncludeShifts(v === true)}
+				/>
+				<div className="space-y-1">
+					<div className="flex items-center gap-2 font-medium">
+						<IconCalendarEvent className="size-4" />
+						{t(
+							"settings.demo.form.dataTypes.shiftScheduling.title",
+							"Shift Scheduling",
+						)}
+					</div>
+					<p className="text-xs text-muted-foreground">
+						{t(
+							"settings.demo.form.dataTypes.shiftScheduling.description",
+							"Shift templates and scheduled shifts",
+						)}
+					</p>
+					{!includeLocations && (
+						<p className="text-xs text-amber-600 dark:text-amber-400">
+							{t(
+								"settings.demo.form.dataTypes.shiftScheduling.requiresLocations",
+								"Requires Locations to be enabled",
+							)}
+						</p>
+					)}
+				</div>
+			</div>
+		</>
+	);
+}
+
+function ApprovalTestingOptions({ controller }: PresentationProps) {
+	const {
+		t,
+		includePendingAbsenceApprovals,
+		setIncludePendingAbsenceApprovals,
+		includePendingTimeCorrectionApprovals,
+		setIncludePendingTimeCorrectionApprovals,
+	} = controller;
+
+	return (
+		<div className="space-y-4">
+			<Label>
+				{t("settings.demo.form.approvalsTesting.label", "Approvals Testing")}
+			</Label>
+			<div className="grid gap-4 md:grid-cols-2">
+				<div
+					role="checkbox"
+					aria-checked={includePendingAbsenceApprovals}
+					tabIndex={0}
+					className={cn(
+						"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+						includePendingAbsenceApprovals
+							? "border-primary bg-primary/5"
+							: "hover:bg-muted/50",
+					)}
+					onClick={() =>
+						setIncludePendingAbsenceApprovals(!includePendingAbsenceApprovals)
+					}
+					onKeyDown={(event) =>
+						handleSelectableCardKeyDown(event, () =>
+							setIncludePendingAbsenceApprovals(
+								!includePendingAbsenceApprovals,
+							),
+						)
+					}
+				>
+					<Checkbox
+						tabIndex={-1}
+						aria-hidden="true"
+						checked={includePendingAbsenceApprovals}
+						onCheckedChange={(v) =>
+							setIncludePendingAbsenceApprovals(v === true)
+						}
+					/>
+					<div className="space-y-1">
+						<div className="flex items-center gap-2 font-medium">
+							<IconUserCheck className="size-4" aria-hidden="true" />
+							{t(
+								"settings.demo.form.approvalsTesting.pendingAbsences.title",
+								"Pending absence approvals",
+							)}
+						</div>
+						<p className="text-xs text-muted-foreground">
+							{t(
+								"settings.demo.form.approvalsTesting.pendingAbsences.description",
+								"Create absence requests waiting for manager approval",
+							)}
+						</p>
+					</div>
+				</div>
+
+				<div
+					role="checkbox"
+					aria-checked={includePendingTimeCorrectionApprovals}
+					tabIndex={0}
+					className={cn(
+						"flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+						includePendingTimeCorrectionApprovals
+							? "border-primary bg-primary/5"
+							: "hover:bg-muted/50",
+					)}
+					onClick={() =>
+						setIncludePendingTimeCorrectionApprovals(
+							!includePendingTimeCorrectionApprovals,
+						)
+					}
+					onKeyDown={(event) =>
+						handleSelectableCardKeyDown(event, () =>
+							setIncludePendingTimeCorrectionApprovals(
+								!includePendingTimeCorrectionApprovals,
+							),
+						)
+					}
+				>
+					<Checkbox
+						tabIndex={-1}
+						aria-hidden="true"
+						checked={includePendingTimeCorrectionApprovals}
+						onCheckedChange={(v) =>
+							setIncludePendingTimeCorrectionApprovals(v === true)
+						}
+					/>
+					<div className="space-y-1">
+						<div className="flex items-center gap-2 font-medium">
+							<IconClock className="size-4" aria-hidden="true" />
+							{t(
+								"settings.demo.form.approvalsTesting.pendingTimeCorrections.title",
+								"Pending time correction approvals",
+							)}
+						</div>
+						<p className="text-xs text-muted-foreground">
+							{t(
+								"settings.demo.form.approvalsTesting.pendingTimeCorrections.description",
+								"Create time corrections waiting for manager approval",
+							)}
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function GenerateButton({ controller }: PresentationProps) {
+	const {
+		t,
+		handleGenerate,
+		includeTimeEntries,
+		includeAbsences,
+		includeTeams,
+		includeProjects,
+		includeLocations,
+		includeWorkCategories,
+		includeChangePolicies,
+		includeShifts,
+		includePendingAbsenceApprovals,
+		includePendingTimeCorrectionApprovals,
+	} = controller;
+
+	return (
+		<div className="flex justify-end">
+			<Button
+				onClick={handleGenerate}
+				disabled={
+					!includeTimeEntries &&
+					!includeAbsences &&
+					!includeTeams &&
+					!includeProjects &&
+					!includeLocations &&
+					!includeWorkCategories &&
+					!includeChangePolicies &&
+					!includeShifts &&
+					!includePendingAbsenceApprovals &&
+					!includePendingTimeCorrectionApprovals
+				}
+				className="gap-2"
+			>
+				<IconPlayerPlay className="size-4" />
+				{t("settings.demo.generateData.button", "Generate Data")}
+			</Button>
+		</div>
+	);
+}
+
+function GeneratingWizardStep({ controller }: PresentationProps) {
+	const { t, error, steps, isGenerating, handleReset } = controller;
+
+	return (
+		<div className="space-y-6">
+			{/* Step indicators */}
+			<div className="flex items-center gap-4">
+				<StepIndicator
+					step={1}
+					label={t("settings.demo.wizard.configure", "Configure")}
+					active={false}
+					completed={true}
+				/>
+				<div className="h-px flex-1 bg-primary" />
+				<StepIndicator
+					step={2}
+					label={t("settings.demo.wizard.generate", "Generate")}
+					active={true}
+					completed={false}
+				/>
+				<div className="h-px flex-1 bg-border" />
+				<StepIndicator
+					step={3}
+					label={t("settings.demo.wizard.complete", "Complete")}
+					active={false}
+					completed={false}
+				/>
+			</div>
+
+			{error && (
+				<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+					{error}
+				</div>
+			)}
+
+			{/* Step-by-step progress */}
+			<div className="space-y-3 py-4">
+				{steps.map((step) => (
+					<GenerationStepItem key={step.id} step={step} />
+				))}
+			</div>
+
+			{!isGenerating && error && (
+				<div className="flex justify-center gap-3">
+					<Button variant="outline" onClick={handleReset}>
+						{t("settings.demo.wizard.backToConfig", "Back to Configuration")}
+					</Button>
+				</div>
+			)}
+		</div>
+	);
+}
+
+function CompleteWizardStep({ controller }: PresentationProps) {
+	const { t, steps, handleReset } = controller;
+
+	return (
+		<div className="space-y-6">
+			{/* Step indicators */}
+			<div className="flex items-center gap-4">
+				<StepIndicator
+					step={1}
+					label={t("settings.demo.wizard.configure", "Configure")}
+					active={false}
+					completed={true}
+				/>
+				<div className="h-px flex-1 bg-primary" />
+				<StepIndicator
+					step={2}
+					label={t("settings.demo.wizard.generate", "Generate")}
+					active={false}
+					completed={true}
+				/>
+				<div className="h-px flex-1 bg-primary" />
+				<StepIndicator
+					step={3}
+					label={t("settings.demo.wizard.complete", "Complete")}
+					active={true}
+					completed={true}
+				/>
+			</div>
+
+			<div className="space-y-6 py-4">
+				<div className="flex items-center justify-center gap-3 text-green-600">
+					<div className="flex size-12 items-center justify-center rounded-full bg-green-100">
+						<IconCheck className="size-6" />
+					</div>
+				</div>
+				<p className="text-center text-lg font-medium">
+					{t(
+						"settings.demo.results.success",
+						"Demo data generated successfully!",
+					)}
+				</p>
+
+				{/* Show completed steps with results */}
+				<div className="space-y-2">
+					{steps.map((step) => (
+						<div
+							key={step.id}
+							className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3"
+						>
+							<div className="flex size-6 items-center justify-center rounded-full bg-green-100 text-green-600">
+								<IconCheck className="size-4" />
+							</div>
+							<div className="flex-1">
+								<span className="font-medium">{step.label}</span>
+								{step.result && (
+									<span className="ml-2 text-sm text-muted-foreground">
+										— {step.result}
+									</span>
+								)}
+							</div>
+						</div>
+					))}
+				</div>
+
+				<div className="flex justify-center">
+					<Button variant="outline" onClick={handleReset}>
+						{t("settings.demo.wizard.generateMore", "Generate More Data")}
+					</Button>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function EmployeeGenerationCard({ controller }: PresentationProps) {
+	const {
+		t,
+		employeeError,
+		employeeResult,
+		employeeCount,
+		setEmployeeCount,
+		includeManagersForEmployees,
+		setIncludeManagersForEmployees,
+		isGeneratingEmployees,
+		handleGenerateEmployees,
+	} = controller;
+
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2">
+					<IconUsers className="size-5" />
+					{t("settings.demo.generateEmployees.title", "Generate Employees")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.demo.generateEmployees.description",
+						"Create demo employee accounts for testing",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div className="space-y-4">
+					{employeeError && (
+						<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+							{employeeError}
+						</div>
+					)}
+
+					{employeeResult && (
+						<div className="rounded-lg border border-green-500/50 bg-green-50 p-4 dark:bg-green-950/20">
+							<p className="font-medium text-green-700 dark:text-green-400">
+								{t(
+									"settings.demo.generateEmployees.successTitle",
+									"Employees generated successfully!",
+								)}
+							</p>
+							<ul className="mt-2 space-y-1 text-sm text-green-600 dark:text-green-500">
+								<li>
+									{t(
+										"settings.demo.generateEmployees.usersCreated",
+										"{count} users created",
+										{
+											count: employeeResult.usersCreated,
+										},
+									)}
+								</li>
+								<li>
+									{t(
+										"settings.demo.generateEmployees.employeesCreated",
+										"{count} employees created",
+										{ count: employeeResult.employeesCreated },
+									)}
+								</li>
+								<li>
+									{t(
+										"settings.demo.generateEmployees.managersCreated",
+										"{count} manager assignments",
+										{ count: employeeResult.managersCreated },
+									)}
+								</li>
+							</ul>
+						</div>
+					)}
+
+					<div className="grid gap-4 md:grid-cols-2">
+						<div className="space-y-2">
+							<Label htmlFor="employeeCount">
+								{t(
+									"settings.demo.generateEmployees.countLabel",
+									"Number of Employees",
+								)}
+							</Label>
+							<Input
+								id="employeeCount"
+								type="number"
+								min={1}
+								max={50}
+								value={employeeCount}
+								onChange={(e) =>
+									setEmployeeCount(parseInt(e.target.value, 10) || 5)
+								}
+							/>
+							<p className="text-xs text-muted-foreground">
+								{t(
+									"settings.demo.generateEmployees.countHint",
+									"Maximum 50 employees at a time",
+								)}
+							</p>
+						</div>
+
+						<div className="space-y-2">
+							<Label>
+								{t("settings.demo.generateEmployees.options", "Options")}
+							</Label>
+							<div
+								role="button"
+								tabIndex={0}
+								className={cn(
+									"flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors",
+									includeManagersForEmployees
+										? "border-primary bg-primary/5"
+										: "hover:bg-muted/50",
+								)}
+								onClick={() =>
+									setIncludeManagersForEmployees(!includeManagersForEmployees)
+								}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" || e.key === " ") {
+										e.preventDefault();
+										setIncludeManagersForEmployees(
+											!includeManagersForEmployees,
+										);
+									}
+								}}
+							>
+								<Checkbox
+									checked={includeManagersForEmployees}
+									onCheckedChange={(v) =>
+										setIncludeManagersForEmployees(v === true)
+									}
+								/>
+								<div className="space-y-1">
+									<div className="text-sm font-medium">
 										{t(
-											"settings.demo.dangerZone.clearData.successTitle",
-											"Data cleared successfully!",
+											"settings.demo.generateEmployees.includeManagers",
+											"Include Manager Assignments",
+										)}
+									</div>
+									<p className="text-xs text-muted-foreground">
+										{t(
+											"settings.demo.generateEmployees.managersHint",
+											"Randomly assign managers to new employees",
 										)}
 									</p>
-									<ul className="mt-2 space-y-1 text-sm text-green-600 dark:text-green-500">
-										<li>
-											{t(
-												"settings.demo.dangerZone.clearData.timeEntriesDeleted",
-												"{count} time entries deleted",
-												{ count: clearResult.timeEntriesDeleted },
-											)}
-										</li>
-										<li>
-											{t(
-												"settings.demo.dangerZone.clearData.workPeriodsDeleted",
-												"{count} work periods deleted",
-												{ count: clearResult.workPeriodsDeleted },
-											)}
-										</li>
-										<li>
-											{t(
-												"settings.demo.dangerZone.clearData.absencesDeleted",
-												"{count} absences deleted",
-												{ count: clearResult.absencesDeleted },
-											)}
-										</li>
-										<li>
-											{t(
-												"settings.demo.dangerZone.clearData.vacationAllowancesReset",
-												"{count} vacation allowances reset",
-												{ count: clearResult.vacationAllowancesReset },
-											)}
-										</li>
-										<li>
-											{t(
-												"settings.demo.dangerZone.clearData.teamsDeleted",
-												"{count} teams deleted",
-												{ count: clearResult.teamsDeleted },
-											)}
-										</li>
-										<li>
-											{t(
-												"settings.demo.dangerZone.clearData.projectsDeleted",
-												"{count} projects deleted",
-												{ count: clearResult.projectsDeleted },
-											)}
-										</li>
-										<li>
-											{t(
-												"settings.demo.dangerZone.clearData.managerAssignmentsDeleted",
-												"{count} manager assignments deleted",
-												{ count: clearResult.managerAssignmentsDeleted },
-											)}
-										</li>
-										{/* NEW: Display new cleanup results */}
-										{clearResult.locationsDeleted > 0 && (
-											<li>
-												{t(
-													"settings.demo.dangerZone.clearData.locationsDeleted",
-													"{count} locations deleted",
-													{ count: clearResult.locationsDeleted },
-												)}
-											</li>
-										)}
-										{clearResult.subareasDeleted > 0 && (
-											<li>
-												{t(
-													"settings.demo.dangerZone.clearData.subareasDeleted",
-													"{count} subareas deleted",
-													{ count: clearResult.subareasDeleted },
-												)}
-											</li>
-										)}
-										{clearResult.workCategorySetsDeleted > 0 && (
-											<li>
-												{t(
-													"settings.demo.dangerZone.clearData.workCategorySetsDeleted",
-													"{count} work category sets deleted",
-													{ count: clearResult.workCategorySetsDeleted },
-												)}
-											</li>
-										)}
-										{clearResult.workCategoriesDeleted > 0 && (
-											<li>
-												{t(
-													"settings.demo.dangerZone.clearData.workCategoriesDeleted",
-													"{count} work categories deleted",
-													{ count: clearResult.workCategoriesDeleted },
-												)}
-											</li>
-										)}
-										{clearResult.changePoliciesDeleted > 0 && (
-											<li>
-												{t(
-													"settings.demo.dangerZone.clearData.changePoliciesDeleted",
-													"{count} change policies deleted",
-													{ count: clearResult.changePoliciesDeleted },
-												)}
-											</li>
-										)}
-										{clearResult.shiftTemplatesDeleted > 0 && (
-											<li>
-												{t(
-													"settings.demo.dangerZone.clearData.shiftTemplatesDeleted",
-													"{count} shift templates deleted",
-													{ count: clearResult.shiftTemplatesDeleted },
-												)}
-											</li>
-										)}
-										{clearResult.shiftsDeleted > 0 && (
-											<li>
-												{t(
-													"settings.demo.dangerZone.clearData.shiftsDeleted",
-													"{count} shifts deleted",
-													{ count: clearResult.shiftsDeleted },
-												)}
-											</li>
-										)}
-										{clearResult.shiftRequestsDeleted > 0 && (
-											<li>
-												{t(
-													"settings.demo.dangerZone.clearData.shiftRequestsDeleted",
-													"{count} shift requests deleted",
-													{ count: clearResult.shiftRequestsDeleted },
-												)}
-											</li>
-										)}
-									</ul>
 								</div>
-							)}
-
-							<div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"settings.demo.dangerZone.clearData.willDelete",
-										"This will permanently delete:",
-									)}
-								</p>
-								<ul className="mt-2 list-inside list-disc space-y-1 text-sm">
-									<li>
-										{t(
-											"settings.demo.dangerZone.clearData.items.timeEntries",
-											"All time entries and work periods",
-										)}
-									</li>
-									<li>
-										{t("settings.demo.dangerZone.clearData.items.absences", "All absence entries")}
-									</li>
-									<li>
-										{t(
-											"settings.demo.dangerZone.clearData.items.vacationAllowances",
-											"All vacation allowances",
-										)}
-									</li>
-									<li>
-										{t(
-											"settings.demo.dangerZone.clearData.items.teamsProjects",
-											"All teams and projects",
-										)}
-									</li>
-									<li>
-										{t(
-											"settings.demo.dangerZone.clearData.items.locations",
-											"All locations and subareas",
-										)}
-									</li>
-									<li>
-										{t(
-											"settings.demo.dangerZone.clearData.items.workCategories",
-											"All work categories",
-										)}
-									</li>
-									<li>
-										{t(
-											"settings.demo.dangerZone.clearData.items.changePolicies",
-											"All change policies",
-										)}
-									</li>
-									<li>
-										{t(
-											"settings.demo.dangerZone.clearData.items.shifts",
-											"All shift templates and shifts",
-										)}
-									</li>
-								</ul>
 							</div>
-
-							<AlertDialog>
-								<AlertDialogTrigger asChild>
-									<Button variant="destructive" className="gap-2">
-										<IconTrash className="size-4" />
-										{t("settings.demo.dangerZone.clearData.button", "Clear All Data")}
-									</Button>
-								</AlertDialogTrigger>
-								<AlertDialogContent>
-									<AlertDialogHeader>
-										<AlertDialogTitle>
-											{t("settings.demo.dangerZone.clearData.dialog.title", "Clear All Time Data?")}
-										</AlertDialogTitle>
-										<AlertDialogDescription>
-											{t(
-												"settings.demo.dangerZone.clearData.dialog.description",
-												"This action cannot be undone. All time entries, absences, teams, projects, and related data will be permanently deleted.",
-											)}
-										</AlertDialogDescription>
-									</AlertDialogHeader>
-									<div className="py-4">
-										<Label htmlFor="confirm">
-											{t("settings.demo.dangerZone.typeDelete", "Type DELETE to confirm")}
-										</Label>
-										<Input
-											id="confirm"
-											value={confirmText}
-											onChange={(e) => setConfirmText(e.target.value)}
-											placeholder={t("settings.demo.dangerZone.typeDeletePlaceholder", "DELETE")}
-											className="mt-2"
-										/>
-									</div>
-									<AlertDialogFooter>
-										<AlertDialogCancel onClick={() => setConfirmText("")}>
-											{t("common.cancel", "Cancel")}
-										</AlertDialogCancel>
-										<AlertDialogAction
-											onClick={handleClear}
-											disabled={confirmText !== "DELETE" || isClearing}
-											className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-										>
-											{isClearing ? (
-												<>
-													<IconLoader2 className="mr-2 size-4 animate-spin" />
-													{t("settings.demo.dangerZone.clearing", "Clearing...")}
-												</>
-											) : (
-												t("settings.demo.dangerZone.clearData.dialog.confirm", "Clear All Data")
-											)}
-										</AlertDialogAction>
-									</AlertDialogFooter>
-								</AlertDialogContent>
-							</AlertDialog>
-						</div>
-
-						{/* Delete Non-Admin Employees Section */}
-						<div className="space-y-4">
-							<h3 className="font-medium text-destructive">
-								{t("settings.demo.dangerZone.deleteNonAdmin.title", "Delete Non-Admin Employees")}
-							</h3>
-
-							{deleteNonAdminResult && (
-								<div className="rounded-lg border border-green-500/50 bg-green-50 p-4 dark:bg-green-950/20">
-									<p className="font-medium text-green-700 dark:text-green-400">
-										{t(
-											"settings.demo.dangerZone.deleteNonAdmin.successTitle",
-											"Non-admin employees deleted successfully!",
-										)}
-									</p>
-									<ul className="mt-2 space-y-1 text-sm text-green-600 dark:text-green-500">
-										<li>
-											{t(
-												"settings.demo.dangerZone.deleteNonAdmin.employeesDeleted",
-												"{count} employees deleted",
-												{ count: deleteNonAdminResult.employeesDeleted },
-											)}
-										</li>
-										<li>
-											{t(
-												"settings.demo.dangerZone.deleteNonAdmin.usersDeleted",
-												"{count} users deleted",
-												{ count: deleteNonAdminResult.usersDeleted },
-											)}
-										</li>
-										<li>
-											{t(
-												"settings.demo.dangerZone.deleteNonAdmin.membersDeleted",
-												"{count} members deleted",
-												{ count: deleteNonAdminResult.membersDeleted },
-											)}
-										</li>
-										<li>
-											{t(
-												"settings.demo.dangerZone.deleteNonAdmin.timeEntriesDeleted",
-												"{count} time entries deleted",
-												{ count: deleteNonAdminResult.timeEntriesDeleted },
-											)}
-										</li>
-										<li>
-											{t(
-												"settings.demo.dangerZone.deleteNonAdmin.absencesDeleted",
-												"{count} absences deleted",
-												{ count: deleteNonAdminResult.absencesDeleted },
-											)}
-										</li>
-									</ul>
-								</div>
-							)}
-
-							<div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"settings.demo.dangerZone.deleteNonAdmin.willDelete",
-										"This will permanently delete:",
-									)}
-								</p>
-								<ul className="mt-2 list-inside list-disc space-y-1 text-sm">
-									<li>
-										{t(
-											"settings.demo.dangerZone.deleteNonAdmin.items.employees",
-											"All non-admin employees",
-										)}
-									</li>
-									<li>
-										{t(
-											"settings.demo.dangerZone.deleteNonAdmin.items.demoUsers",
-											"All demo user accounts",
-										)}
-									</li>
-									<li>
-										{t(
-											"settings.demo.dangerZone.deleteNonAdmin.items.timeEntries",
-											"Their time entries and work periods",
-										)}
-									</li>
-									<li>
-										{t(
-											"settings.demo.dangerZone.deleteNonAdmin.items.managerAssignments",
-											"All manager assignments",
-										)}
-									</li>
-								</ul>
-								<p className="mt-2 text-xs text-muted-foreground">
-									{t(
-										"settings.demo.dangerZone.deleteNonAdmin.adminPreserved",
-										"Admin accounts will be preserved",
-									)}
-								</p>
-							</div>
-
-							<AlertDialog>
-								<AlertDialogTrigger asChild>
-									<Button variant="destructive" className="gap-2">
-										<IconUsers className="size-4" />
-										{t(
-											"settings.demo.dangerZone.deleteNonAdmin.button",
-											"Delete Non-Admin Employees",
-										)}
-									</Button>
-								</AlertDialogTrigger>
-								<AlertDialogContent>
-									<AlertDialogHeader>
-										<AlertDialogTitle>
-											{t(
-												"settings.demo.dangerZone.deleteNonAdmin.dialog.title",
-												"Delete Non-Admin Employees?",
-											)}
-										</AlertDialogTitle>
-										<AlertDialogDescription>
-											{t(
-												"settings.demo.dangerZone.deleteNonAdmin.dialog.description",
-												"This action cannot be undone. All non-admin employees and their associated data will be permanently deleted.",
-											)}
-										</AlertDialogDescription>
-									</AlertDialogHeader>
-									<div className="py-4">
-										<Label htmlFor="confirmNonAdmin">
-											{t("settings.demo.dangerZone.typeDelete", "Type DELETE to confirm")}
-										</Label>
-										<Input
-											id="confirmNonAdmin"
-											value={deleteNonAdminConfirmText}
-											onChange={(e) => setDeleteNonAdminConfirmText(e.target.value)}
-											placeholder={t("settings.demo.dangerZone.typeDeletePlaceholder", "DELETE")}
-											className="mt-2"
-										/>
-									</div>
-									<AlertDialogFooter>
-										<AlertDialogCancel onClick={() => setDeleteNonAdminConfirmText("")}>
-											{t("common.cancel", "Cancel")}
-										</AlertDialogCancel>
-										<AlertDialogAction
-											onClick={handleDeleteNonAdmin}
-											disabled={deleteNonAdminConfirmText !== "DELETE" || isDeletingNonAdmin}
-											className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-										>
-											{isDeletingNonAdmin ? (
-												<>
-													<IconLoader2 className="mr-2 size-4 animate-spin" />
-													{t("settings.demo.dangerZone.deleting", "Deleting...")}
-												</>
-											) : (
-												t(
-													"settings.demo.dangerZone.deleteNonAdmin.dialog.confirm",
-													"Delete Non-Admin Employees",
-												)
-											)}
-										</AlertDialogAction>
-									</AlertDialogFooter>
-								</AlertDialogContent>
-							</AlertDialog>
 						</div>
 					</div>
-				</CardContent>
-			</Card>
+
+					<div className="flex justify-end">
+						<Button
+							onClick={handleGenerateEmployees}
+							disabled={isGeneratingEmployees || employeeCount < 1}
+							className="gap-2"
+						>
+							{isGeneratingEmployees ? (
+								<>
+									<IconLoader2 className="size-4 animate-spin" />
+									{t(
+										"settings.demo.generateEmployees.generating",
+										"Generating...",
+									)}
+								</>
+							) : (
+								<>
+									<IconUsers className="size-4" />
+									{t(
+										"settings.demo.generateEmployees.button",
+										"Generate {count} Employees",
+										{
+											count: employeeCount,
+										},
+									)}
+								</>
+							)}
+						</Button>
+					</div>
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
+
+function AvailableDataTypesCard({ controller }: PresentationProps) {
+	const { t } = controller;
+
+	return (
+		<Card className="border-dashed">
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2 text-muted-foreground">
+					<IconDatabase className="size-5" />
+					{t("settings.demo.availableTypes.title", "Available Data Types")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.demo.availableTypes.description",
+						"Types of demo data you can generate",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div className="space-y-3 text-sm text-muted-foreground">
+					<p>
+						{t(
+							"settings.demo.availableTypes.supported",
+							"Currently supported:",
+						)}
+					</p>
+					<ul className="list-inside list-disc space-y-1">
+						<li>
+							{t(
+								"settings.demo.availableTypes.timeEntries",
+								"Time entries and work periods",
+							)}
+						</li>
+						<li>
+							{t(
+								"settings.demo.availableTypes.absences",
+								"Absences (vacation, sick leave)",
+							)}
+						</li>
+						<li>
+							{t(
+								"settings.demo.availableTypes.teamsProjects",
+								"Teams and projects",
+							)}
+						</li>
+						<li>
+							{t(
+								"settings.demo.availableTypes.locations",
+								"Locations and subareas",
+							)}
+						</li>
+						<li>
+							{t(
+								"settings.demo.availableTypes.workCategories",
+								"Work category sets",
+							)}
+						</li>
+						<li>
+							{t(
+								"settings.demo.availableTypes.changePolicies",
+								"Change policies",
+							)}
+						</li>
+						<li>
+							{t(
+								"settings.demo.availableTypes.shifts",
+								"Shift templates and shifts",
+							)}
+						</li>
+					</ul>
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
+
+function ClearDataSection({ controller }: PresentationProps) {
+	const {
+		t,
+		clearResult,
+		confirmText,
+		setConfirmText,
+		isClearing,
+		handleClear,
+	} = controller;
+
+	return (
+		<div className="space-y-4">
+			<h3 className="font-medium text-destructive">
+				{t("settings.demo.dangerZone.clearData.title", "Clear Time Data")}
+			</h3>
+
+			{clearResult && (
+				<div className="rounded-lg border border-green-500/50 bg-green-50 p-4 dark:bg-green-950/20">
+					<p className="font-medium text-green-700 dark:text-green-400">
+						{t(
+							"settings.demo.dangerZone.clearData.successTitle",
+							"Data cleared successfully!",
+						)}
+					</p>
+					<ul className="mt-2 space-y-1 text-sm text-green-600 dark:text-green-500">
+						<li>
+							{t(
+								"settings.demo.dangerZone.clearData.timeEntriesDeleted",
+								"{count} time entries deleted",
+								{ count: clearResult.timeEntriesDeleted },
+							)}
+						</li>
+						<li>
+							{t(
+								"settings.demo.dangerZone.clearData.workPeriodsDeleted",
+								"{count} work periods deleted",
+								{ count: clearResult.workPeriodsDeleted },
+							)}
+						</li>
+						<li>
+							{t(
+								"settings.demo.dangerZone.clearData.absencesDeleted",
+								"{count} absences deleted",
+								{ count: clearResult.absencesDeleted },
+							)}
+						</li>
+						<li>
+							{t(
+								"settings.demo.dangerZone.clearData.vacationAllowancesReset",
+								"{count} vacation allowances reset",
+								{ count: clearResult.vacationAllowancesReset },
+							)}
+						</li>
+						<li>
+							{t(
+								"settings.demo.dangerZone.clearData.teamsDeleted",
+								"{count} teams deleted",
+								{ count: clearResult.teamsDeleted },
+							)}
+						</li>
+						<li>
+							{t(
+								"settings.demo.dangerZone.clearData.projectsDeleted",
+								"{count} projects deleted",
+								{ count: clearResult.projectsDeleted },
+							)}
+						</li>
+						<li>
+							{t(
+								"settings.demo.dangerZone.clearData.managerAssignmentsDeleted",
+								"{count} manager assignments deleted",
+								{ count: clearResult.managerAssignmentsDeleted },
+							)}
+						</li>
+						{/* NEW: Display new cleanup results */}
+						{clearResult.locationsDeleted > 0 && (
+							<li>
+								{t(
+									"settings.demo.dangerZone.clearData.locationsDeleted",
+									"{count} locations deleted",
+									{ count: clearResult.locationsDeleted },
+								)}
+							</li>
+						)}
+						{clearResult.subareasDeleted > 0 && (
+							<li>
+								{t(
+									"settings.demo.dangerZone.clearData.subareasDeleted",
+									"{count} subareas deleted",
+									{ count: clearResult.subareasDeleted },
+								)}
+							</li>
+						)}
+						{clearResult.workCategorySetsDeleted > 0 && (
+							<li>
+								{t(
+									"settings.demo.dangerZone.clearData.workCategorySetsDeleted",
+									"{count} work category sets deleted",
+									{ count: clearResult.workCategorySetsDeleted },
+								)}
+							</li>
+						)}
+						{clearResult.workCategoriesDeleted > 0 && (
+							<li>
+								{t(
+									"settings.demo.dangerZone.clearData.workCategoriesDeleted",
+									"{count} work categories deleted",
+									{ count: clearResult.workCategoriesDeleted },
+								)}
+							</li>
+						)}
+						{clearResult.changePoliciesDeleted > 0 && (
+							<li>
+								{t(
+									"settings.demo.dangerZone.clearData.changePoliciesDeleted",
+									"{count} change policies deleted",
+									{ count: clearResult.changePoliciesDeleted },
+								)}
+							</li>
+						)}
+						{clearResult.shiftTemplatesDeleted > 0 && (
+							<li>
+								{t(
+									"settings.demo.dangerZone.clearData.shiftTemplatesDeleted",
+									"{count} shift templates deleted",
+									{ count: clearResult.shiftTemplatesDeleted },
+								)}
+							</li>
+						)}
+						{clearResult.shiftsDeleted > 0 && (
+							<li>
+								{t(
+									"settings.demo.dangerZone.clearData.shiftsDeleted",
+									"{count} shifts deleted",
+									{ count: clearResult.shiftsDeleted },
+								)}
+							</li>
+						)}
+						{clearResult.shiftRequestsDeleted > 0 && (
+							<li>
+								{t(
+									"settings.demo.dangerZone.clearData.shiftRequestsDeleted",
+									"{count} shift requests deleted",
+									{ count: clearResult.shiftRequestsDeleted },
+								)}
+							</li>
+						)}
+					</ul>
+				</div>
+			)}
+
+			<div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.demo.dangerZone.clearData.willDelete",
+						"This will permanently delete:",
+					)}
+				</p>
+				<ul className="mt-2 list-inside list-disc space-y-1 text-sm">
+					<li>
+						{t(
+							"settings.demo.dangerZone.clearData.items.timeEntries",
+							"All time entries and work periods",
+						)}
+					</li>
+					<li>
+						{t(
+							"settings.demo.dangerZone.clearData.items.absences",
+							"All absence entries",
+						)}
+					</li>
+					<li>
+						{t(
+							"settings.demo.dangerZone.clearData.items.vacationAllowances",
+							"All vacation allowances",
+						)}
+					</li>
+					<li>
+						{t(
+							"settings.demo.dangerZone.clearData.items.teamsProjects",
+							"All teams and projects",
+						)}
+					</li>
+					<li>
+						{t(
+							"settings.demo.dangerZone.clearData.items.locations",
+							"All locations and subareas",
+						)}
+					</li>
+					<li>
+						{t(
+							"settings.demo.dangerZone.clearData.items.workCategories",
+							"All work categories",
+						)}
+					</li>
+					<li>
+						{t(
+							"settings.demo.dangerZone.clearData.items.changePolicies",
+							"All change policies",
+						)}
+					</li>
+					<li>
+						{t(
+							"settings.demo.dangerZone.clearData.items.shifts",
+							"All shift templates and shifts",
+						)}
+					</li>
+				</ul>
+			</div>
+
+			<AlertDialog>
+				<AlertDialogTrigger asChild>
+					<Button variant="destructive" className="gap-2">
+						<IconTrash className="size-4" />
+						{t("settings.demo.dangerZone.clearData.button", "Clear All Data")}
+					</Button>
+				</AlertDialogTrigger>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							{t(
+								"settings.demo.dangerZone.clearData.dialog.title",
+								"Clear All Time Data?",
+							)}
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							{t(
+								"settings.demo.dangerZone.clearData.dialog.description",
+								"This action cannot be undone. All time entries, absences, teams, projects, and related data will be permanently deleted.",
+							)}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<div className="py-4">
+						<Label htmlFor="confirm">
+							{t(
+								"settings.demo.dangerZone.typeDelete",
+								"Type DELETE to confirm",
+							)}
+						</Label>
+						<Input
+							id="confirm"
+							value={confirmText}
+							onChange={(e) => setConfirmText(e.target.value)}
+							placeholder={t(
+								"settings.demo.dangerZone.typeDeletePlaceholder",
+								"DELETE",
+							)}
+							className="mt-2"
+						/>
+					</div>
+					<AlertDialogFooter>
+						<AlertDialogCancel onClick={() => setConfirmText("")}>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleClear}
+							disabled={confirmText !== "DELETE" || isClearing}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							{isClearing ? (
+								<>
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
+									{t("settings.demo.dangerZone.clearing", "Clearing...")}
+								</>
+							) : (
+								t(
+									"settings.demo.dangerZone.clearData.dialog.confirm",
+									"Clear All Data",
+								)
+							)}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</div>
+	);
+}
+
+function DeleteNonAdminSection({ controller }: PresentationProps) {
+	const {
+		t,
+		deleteNonAdminResult,
+		deleteNonAdminConfirmText,
+		setDeleteNonAdminConfirmText,
+		isDeletingNonAdmin,
+		handleDeleteNonAdmin,
+	} = controller;
+
+	return (
+		<div className="space-y-4">
+			<h3 className="font-medium text-destructive">
+				{t(
+					"settings.demo.dangerZone.deleteNonAdmin.title",
+					"Delete Non-Admin Employees",
+				)}
+			</h3>
+
+			{deleteNonAdminResult && (
+				<div className="rounded-lg border border-green-500/50 bg-green-50 p-4 dark:bg-green-950/20">
+					<p className="font-medium text-green-700 dark:text-green-400">
+						{t(
+							"settings.demo.dangerZone.deleteNonAdmin.successTitle",
+							"Non-admin employees deleted successfully!",
+						)}
+					</p>
+					<ul className="mt-2 space-y-1 text-sm text-green-600 dark:text-green-500">
+						<li>
+							{t(
+								"settings.demo.dangerZone.deleteNonAdmin.employeesDeleted",
+								"{count} employees deleted",
+								{ count: deleteNonAdminResult.employeesDeleted },
+							)}
+						</li>
+						<li>
+							{t(
+								"settings.demo.dangerZone.deleteNonAdmin.usersDeleted",
+								"{count} users deleted",
+								{ count: deleteNonAdminResult.usersDeleted },
+							)}
+						</li>
+						<li>
+							{t(
+								"settings.demo.dangerZone.deleteNonAdmin.membersDeleted",
+								"{count} members deleted",
+								{ count: deleteNonAdminResult.membersDeleted },
+							)}
+						</li>
+						<li>
+							{t(
+								"settings.demo.dangerZone.deleteNonAdmin.timeEntriesDeleted",
+								"{count} time entries deleted",
+								{ count: deleteNonAdminResult.timeEntriesDeleted },
+							)}
+						</li>
+						<li>
+							{t(
+								"settings.demo.dangerZone.deleteNonAdmin.absencesDeleted",
+								"{count} absences deleted",
+								{ count: deleteNonAdminResult.absencesDeleted },
+							)}
+						</li>
+					</ul>
+				</div>
+			)}
+
+			<div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.demo.dangerZone.deleteNonAdmin.willDelete",
+						"This will permanently delete:",
+					)}
+				</p>
+				<ul className="mt-2 list-inside list-disc space-y-1 text-sm">
+					<li>
+						{t(
+							"settings.demo.dangerZone.deleteNonAdmin.items.employees",
+							"All non-admin employees",
+						)}
+					</li>
+					<li>
+						{t(
+							"settings.demo.dangerZone.deleteNonAdmin.items.demoUsers",
+							"All demo user accounts",
+						)}
+					</li>
+					<li>
+						{t(
+							"settings.demo.dangerZone.deleteNonAdmin.items.timeEntries",
+							"Their time entries and work periods",
+						)}
+					</li>
+					<li>
+						{t(
+							"settings.demo.dangerZone.deleteNonAdmin.items.managerAssignments",
+							"All manager assignments",
+						)}
+					</li>
+				</ul>
+				<p className="mt-2 text-xs text-muted-foreground">
+					{t(
+						"settings.demo.dangerZone.deleteNonAdmin.adminPreserved",
+						"Admin accounts will be preserved",
+					)}
+				</p>
+			</div>
+
+			<AlertDialog>
+				<AlertDialogTrigger asChild>
+					<Button variant="destructive" className="gap-2">
+						<IconUsers className="size-4" />
+						{t(
+							"settings.demo.dangerZone.deleteNonAdmin.button",
+							"Delete Non-Admin Employees",
+						)}
+					</Button>
+				</AlertDialogTrigger>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							{t(
+								"settings.demo.dangerZone.deleteNonAdmin.dialog.title",
+								"Delete Non-Admin Employees?",
+							)}
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							{t(
+								"settings.demo.dangerZone.deleteNonAdmin.dialog.description",
+								"This action cannot be undone. All non-admin employees and their associated data will be permanently deleted.",
+							)}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<div className="py-4">
+						<Label htmlFor="confirmNonAdmin">
+							{t(
+								"settings.demo.dangerZone.typeDelete",
+								"Type DELETE to confirm",
+							)}
+						</Label>
+						<Input
+							id="confirmNonAdmin"
+							value={deleteNonAdminConfirmText}
+							onChange={(e) => setDeleteNonAdminConfirmText(e.target.value)}
+							placeholder={t(
+								"settings.demo.dangerZone.typeDeletePlaceholder",
+								"DELETE",
+							)}
+							className="mt-2"
+						/>
+					</div>
+					<AlertDialogFooter>
+						<AlertDialogCancel onClick={() => setDeleteNonAdminConfirmText("")}>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleDeleteNonAdmin}
+							disabled={
+								deleteNonAdminConfirmText !== "DELETE" || isDeletingNonAdmin
+							}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							{isDeletingNonAdmin ? (
+								<>
+									<IconLoader2 className="mr-2 size-4 animate-spin" />
+									{t("settings.demo.dangerZone.deleting", "Deleting...")}
+								</>
+							) : (
+								t(
+									"settings.demo.dangerZone.deleteNonAdmin.dialog.confirm",
+									"Delete Non-Admin Employees",
+								)
+							)}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</div>
+	);
+}
+
+function DemoDataGenerationCard({ controller }: PresentationProps) {
+	const { t, wizardStep, result } = controller;
+
+	return (
+		<Card className="lg:col-span-2">
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2">
+					<IconDatabase className="size-5" />
+					{t("settings.demo.generateData.title", "Generate Demo Data")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.demo.generateData.description",
+						"Create realistic sample data for your organization",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{wizardStep === "configure" && (
+					<ConfigureWizardStep controller={controller} />
+				)}
+				{wizardStep === "generating" && (
+					<GeneratingWizardStep controller={controller} />
+				)}
+				{wizardStep === "complete" && result && (
+					<CompleteWizardStep controller={controller} />
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
+function ConfigureWizardStep({ controller }: PresentationProps) {
+	const { t, error } = controller;
+
+	return (
+		<div className="space-y-6">
+			<WizardStepIndicators t={t} activeStep="configure" />
+			{error && (
+				<div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+					{error}
+				</div>
+			)}
+			<ConfigurationFields controller={controller} />
+			<div className="space-y-4">
+				<Label>{t("settings.demo.form.dataTypes.label", "Data Types")}</Label>
+				<div className="grid gap-4 md:grid-cols-2">
+					<CoreDataTypeOptions controller={controller} />
+					<AdvancedDataTypeOptions controller={controller} />
+				</div>
+			</div>
+			<ApprovalTestingOptions controller={controller} />
+			<GenerateButton controller={controller} />
+		</div>
+	);
+}
+
+function DangerZoneCard({ controller }: PresentationProps) {
+	const { t } = controller;
+
+	return (
+		<Card className="border-destructive/50 lg:col-span-2">
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2 text-destructive">
+					<IconAlertTriangle className="size-5" />
+					{t("settings.demo.dangerZone.title", "Danger Zone")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.demo.dangerZone.description",
+						"Destructive actions that cannot be undone",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div className="grid gap-6 md:grid-cols-2">
+					<ClearDataSection controller={controller} />
+					<DeleteNonAdminSection controller={controller} />
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
+
+function WizardStepIndicators({
+	t,
+	activeStep,
+}: {
+	t: DemoDataWizardController["t"];
+	activeStep: WizardStep;
+}) {
+	const isGenerating = activeStep === "generating";
+	const isComplete = activeStep === "complete";
+
+	return (
+		<div className="flex items-center gap-4">
+			<StepIndicator
+				step={1}
+				label={t("settings.demo.wizard.configure", "Configure")}
+				active={activeStep === "configure"}
+				completed={isGenerating || isComplete}
+			/>
+			<div
+				className={cn(
+					"h-px flex-1",
+					isGenerating || isComplete ? "bg-primary" : "bg-border",
+				)}
+			/>
+			<StepIndicator
+				step={2}
+				label={t("settings.demo.wizard.generate", "Generate")}
+				active={isGenerating}
+				completed={isComplete}
+			/>
+			<div
+				className={cn("h-px flex-1", isComplete ? "bg-primary" : "bg-border")}
+			/>
+			<StepIndicator
+				step={3}
+				label={t("settings.demo.wizard.complete", "Complete")}
+				active={isComplete}
+				completed={isComplete}
+			/>
 		</div>
 	);
 }
@@ -2065,7 +2659,9 @@ function StepIndicator({
 			<span
 				className={cn(
 					"text-xs",
-					active || completed ? "font-medium text-foreground" : "text-muted-foreground",
+					active || completed
+						? "font-medium text-foreground"
+						: "text-muted-foreground",
 				)}
 			>
 				{label}
@@ -2079,14 +2675,17 @@ function GenerationStepItem({ step }: { step: GenerationStep }) {
 		<div
 			className={cn(
 				"flex items-center gap-3 rounded-lg border p-3 transition-colors",
-				step.status === "complete" && "border-green-500/50 bg-green-50/50 dark:bg-green-950/20",
+				step.status === "complete" &&
+					"border-green-500/50 bg-green-50/50 dark:bg-green-950/20",
 				step.status === "error" && "border-destructive/50 bg-destructive/10",
 				step.status === "in-progress" && "border-primary/50 bg-primary/5",
 			)}
 		>
 			{/* Status indicator */}
 			<div className="flex size-6 items-center justify-center">
-				{step.status === "pending" && <IconCircle className="size-5 text-muted-foreground/50" />}
+				{step.status === "pending" && (
+					<IconCircle className="size-5 text-muted-foreground/50" />
+				)}
 				{step.status === "in-progress" && (
 					<IconLoader2 className="size-5 animate-spin text-primary" />
 				)}
@@ -2110,7 +2709,8 @@ function GenerationStepItem({ step }: { step: GenerationStep }) {
 						className={cn(
 							"font-medium",
 							step.status === "pending" && "text-muted-foreground",
-							step.status === "complete" && "text-green-700 dark:text-green-400",
+							step.status === "complete" &&
+								"text-green-700 dark:text-green-400",
 							step.status === "error" && "text-destructive",
 						)}
 					>
@@ -2118,10 +2718,14 @@ function GenerationStepItem({ step }: { step: GenerationStep }) {
 					</span>
 				</div>
 				{step.status === "in-progress" && (
-					<p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
+					<p className="text-xs text-muted-foreground mt-0.5">
+						{step.description}
+					</p>
 				)}
 				{step.status === "complete" && step.result && (
-					<p className="text-xs text-green-600 dark:text-green-500 mt-0.5">{step.result}</p>
+					<p className="text-xs text-green-600 dark:text-green-500 mt-0.5">
+						{step.result}
+					</p>
 				)}
 				{step.status === "error" && step.error && (
 					<p className="text-xs text-destructive mt-0.5">{step.error}</p>

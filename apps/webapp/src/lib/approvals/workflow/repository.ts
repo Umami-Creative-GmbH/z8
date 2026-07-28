@@ -778,6 +778,9 @@ function assertInitialLifecycle(
 	) {
 		fail("malformed", { entity: "initial_lifecycle" });
 	}
+	const stagesBySequence = new Map(
+		stages.map((stage) => [stage.sequence, stage]),
+	);
 	for (const stage of stages) {
 		if (stage.sequence > terminalSequence) break;
 		if (stage.activationMode === "requester_auto_approve") {
@@ -785,9 +788,7 @@ function assertInitialLifecycle(
 				fail("malformed", { entity: "initial_lifecycle_stage" });
 			}
 			expected.push({ eventType: "stage.auto_approved", entityId: stage.id });
-			const next = stages.find(
-				(candidate) => candidate.sequence === stage.sequence + 1,
-			);
+			const next = stagesBySequence.get(stage.sequence + 1);
 			if (next) {
 				expected.push({
 					eventType: "workflow.activation_requested",
@@ -1443,11 +1444,10 @@ function assertMaterializedPlan(plan: ApprovalMaterializedTransitionPlan) {
 			fail("malformed", { entity: "event_metadata", eventIndex: index });
 		}
 	}
+	const stagesById = new Map(snapshot.stages.map((stage) => [stage.id, stage]));
 	const changedStageIds = new Set<string>();
 	for (const change of plan.changes.stages) {
-		const authoritative = snapshot.stages.find(
-			(stage) => stage.id === change.stageId,
-		);
+		const authoritative = stagesById.get(change.stageId);
 		if (
 			changedStageIds.has(change.stageId) ||
 			!authoritative ||
@@ -1460,14 +1460,16 @@ function assertMaterializedPlan(plan: ApprovalMaterializedTransitionPlan) {
 		}
 		changedStageIds.add(change.stageId);
 	}
-	const authoritativeAssignments = snapshot.stages.flatMap(
-		(stage) => stage.assignments,
+	const assignmentsById = new Map(
+		snapshot.stages.flatMap((stage) =>
+			stage.assignments.map(
+				(assignment) => [assignment.id, assignment] as const,
+			),
+		),
 	);
 	const changedAssignmentIds = new Set<string>();
 	for (const change of plan.changes.assignments) {
-		const authoritative = authoritativeAssignments.find(
-			(assignment) => assignment.id === change.assignmentId,
-		);
+		const authoritative = assignmentsById.get(change.assignmentId);
 		if (
 			changedAssignmentIds.has(change.assignmentId) ||
 			!authoritative ||
@@ -2193,10 +2195,11 @@ function initialReplayMatches(
 	) {
 		return false;
 	}
+	const persistedStagesById = new Map(
+		persistedSnapshot.stages.map((stage) => [stage.id, stage]),
+	);
 	for (const initialStage of initial.snapshot.stages) {
-		const persistedStage = persistedSnapshot.stages.find(
-			(stage) => stage.id === initialStage.id,
-		);
+		const persistedStage = persistedStagesById.get(initialStage.id);
 		if (
 			!persistedStage ||
 			!persistedValuesEqual(
@@ -2220,9 +2223,15 @@ function initialReplayMatches(
 		) {
 			return false;
 		}
+		const persistedAssignmentsById = new Map(
+			persistedStage.assignments.map((assignment) => [
+				assignment.id,
+				assignment,
+			]),
+		);
 		for (const initialAssignment of initialStage.assignments) {
-			const persistedAssignment = persistedStage.assignments.find(
-				(assignment) => assignment.id === initialAssignment.id,
+			const persistedAssignment = persistedAssignmentsById.get(
+				initialAssignment.id,
 			);
 			if (
 				!persistedAssignment ||

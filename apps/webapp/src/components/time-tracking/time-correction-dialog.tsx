@@ -53,6 +53,64 @@ interface Props {
 	employeeTimezone: string;
 }
 
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+function CorrectionTrigger({
+	isSameDay,
+	t,
+}: {
+	isSameDay: boolean;
+	t: Translate;
+}) {
+	return (
+		<ActionPanelTrigger asChild>
+			<Button variant="ghost" size="icon">
+				<IconEdit className="size-4" />
+				<span className="sr-only">
+					{isSameDay
+						? t("timeTracking.correction.editEntry", "Edit time entry")
+						: t(
+								"timeTracking.correction.requestCorrection",
+								"Request time correction",
+							)}
+				</span>
+			</Button>
+		</ActionPanelTrigger>
+	);
+}
+
+function CorrectionHeader({
+	isSameDay,
+	t,
+}: {
+	isSameDay: boolean;
+	t: Translate;
+}) {
+	return (
+		<ActionPanelHeader>
+			<ActionPanelTitle>
+				{isSameDay
+					? t("timeTracking.correction.editTitle", "Edit Time Entry")
+					: t(
+							"timeTracking.correction.requestTitle",
+							"Request Time Correction",
+						)}
+			</ActionPanelTitle>
+			<ActionPanelDescription>
+				{isSameDay
+					? t(
+							"timeTracking.correction.editDescription",
+							"Make changes to your time entry for today.",
+						)
+					: t(
+							"timeTracking.correction.requestDescription",
+							"Submit a correction request for this time entry. Your manager will need to approve it.",
+						)}
+			</ActionPanelDescription>
+		</ActionPanelHeader>
+	);
+}
+
 export function TimeCorrectionDialog({
 	workPeriod,
 	isSameDay,
@@ -174,41 +232,9 @@ export function TimeCorrectionDialog({
 
 	return (
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
-			<ActionPanelTrigger asChild>
-				<Button variant="ghost" size="icon">
-					<IconEdit className="size-4" />
-					<span className="sr-only">
-						{isSameDay
-							? t("timeTracking.correction.editEntry", "Edit time entry")
-							: t(
-									"timeTracking.correction.requestCorrection",
-									"Request time correction",
-								)}
-					</span>
-				</Button>
-			</ActionPanelTrigger>
+			<CorrectionTrigger isSameDay={isSameDay} t={t} />
 			<ActionPanelContent size="compact">
-				<ActionPanelHeader>
-					<ActionPanelTitle>
-						{isSameDay
-							? t("timeTracking.correction.editTitle", "Edit Time Entry")
-							: t(
-									"timeTracking.correction.requestTitle",
-									"Request Time Correction",
-								)}
-					</ActionPanelTitle>
-					<ActionPanelDescription>
-						{isSameDay
-							? t(
-									"timeTracking.correction.editDescription",
-									"Make changes to your time entry for today.",
-								)
-							: t(
-									"timeTracking.correction.requestDescription",
-									"Submit a correction request for this time entry. Your manager will need to approve it.",
-								)}
-					</ActionPanelDescription>
-				</ActionPanelHeader>
+				<CorrectionHeader isSameDay={isSameDay} t={t} />
 				<ActionPanelBody className="grid gap-4">
 					<p className="text-xs text-muted-foreground">
 						{t(

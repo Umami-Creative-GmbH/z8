@@ -507,7 +507,8 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 	input: ReconcileSurchargeWorkPeriodsInput,
 ): Promise<void> {
 	try {
-		const targetIds = [...new Set(input.surchargePeriodIds)];
+		const targetIdSet = new Set(input.surchargePeriodIds);
+		const targetIds = [...targetIdSet];
 		const staleIds = [...new Set(input.staleSurchargePeriodIds)];
 		if (
 			!input.organizationId ||
@@ -567,7 +568,7 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 			if (
 				periods.some(
 					(period) =>
-						targetIds.includes(period.id) &&
+						targetIdSet.has(period.id) &&
 						(period.approvalStatus !== "approved" || !period.endTime),
 				)
 			) {
@@ -576,7 +577,7 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 			if (
 				periods.some(
 					(period) =>
-						targetIds.includes(period.id) &&
+						targetIdSet.has(period.id) &&
 						(!period.clockIn ||
 							!period.clockOut ||
 							period.clockIn.timestamp.getTime() !==
@@ -603,8 +604,9 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 			if (targetIds.length === 0) return;
 
 			const calculatedAt = new Date();
+			const calculationRows: (typeof surchargeCalculation.$inferInsert)[] = [];
 			for (const period of periods) {
-				if (!targetIds.includes(period.id) || !period.endTime) continue;
+				if (!targetIdSet.has(period.id) || !period.endTime) continue;
 				if (
 					!period.clockIn ||
 					!period.clockOut ||
@@ -632,7 +634,7 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 				});
 				if (result.surchargeMinutes === 0) continue;
 				const primaryRule = result.appliedRules[0];
-				await tx.insert(surchargeCalculation).values({
+				calculationRows.push({
 					employeeId: input.employeeId,
 					organizationId: input.organizationId,
 					workPeriodId: period.id,
@@ -651,6 +653,9 @@ export async function reconcileSurchargeWorkPeriodsWithDatabase(
 						calculatedAt: calculatedAt.toISOString(),
 					},
 				});
+			}
+			if (calculationRows.length > 0) {
+				await tx.insert(surchargeCalculation).values(calculationRows);
 			}
 		});
 	} catch (error) {

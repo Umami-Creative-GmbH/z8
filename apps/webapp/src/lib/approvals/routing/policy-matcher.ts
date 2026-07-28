@@ -230,11 +230,12 @@ function matchesStringList(
 	values: string[],
 	condition: ApprovalPolicyConditionDraft,
 ): boolean {
+	const valueSet = new Set(values);
 	if (condition.operator === "equals") {
-		return condition.value !== undefined && values.includes(condition.value);
+		return condition.value !== undefined && valueSet.has(condition.value);
 	}
 
-	return condition.values?.some((value) => values.includes(value)) ?? false;
+	return condition.values?.some((value) => valueSet.has(value)) ?? false;
 }
 
 function matchesAmount(

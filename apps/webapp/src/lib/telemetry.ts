@@ -184,8 +184,10 @@ export async function getOrCreateTelemetryIdentity(
 ): Promise<TelemetryIdentity> {
 	const store = options.store ?? databaseTelemetryConfigStore;
 	const info = options.info ?? logger.info.bind(logger);
-	const deploymentId = await getOrCreateDeploymentIdFromStore(store);
-	const existing = await readConfig(store, SIGNING_KEY_KEY);
+	const [deploymentId, existing] = await Promise.all([
+		getOrCreateDeploymentIdFromStore(store),
+		readConfig(store, SIGNING_KEY_KEY),
+	]);
 	if (existing !== undefined) {
 		return { deploymentId, signingKey: parseTelemetrySigningKey(existing) };
 	}
