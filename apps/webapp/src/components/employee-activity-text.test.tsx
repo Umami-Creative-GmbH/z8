@@ -5,9 +5,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	type EmployeeActivityTemplates,
-	EmployeeActivityText,
 	formatEmployeeActivity,
-} from "./employee-activity-text";
+} from "./employee-activity-format";
+import { EmployeeActivityText } from "./employee-activity-text";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
