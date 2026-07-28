@@ -29,11 +29,18 @@ export interface PayrollSummaryAbsenceRow {
 	employeeId: string;
 	categoryId: string;
 	categoryName: string;
-	days?: number;
-	startAt?: DateTime;
-	endAt?: DateTime | null;
-	startPeriod?: PayrollDayPeriod;
-	endPeriod?: PayrollDayPeriod;
+	startDate: string;
+	endDate: string;
+	startPeriod: PayrollDayPeriod;
+	endPeriod: PayrollDayPeriod;
+}
+
+export interface PayrollAbsenceDetail {
+	employeeId: string;
+	categoryId: string;
+	categoryName: string;
+	date: string;
+	period: PayrollDayPeriod;
 }
 
 export type PayrollBlockerType =
@@ -71,5 +78,6 @@ export interface PayrollWorkspaceSummary {
 		blockerCount: number;
 	};
 	employees: PayrollEmployeeSummary[];
+	absenceDetails: PayrollAbsenceDetail[];
 	blockers: PayrollBlocker[];
 }
