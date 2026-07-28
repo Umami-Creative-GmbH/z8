@@ -9,6 +9,7 @@ const mockState = vi.hoisted(() => ({
 	organizationFindFirst: vi.fn(),
 	teamsTenantFindFirst: vi.fn(),
 	insertValues: vi.fn(),
+	requireActiveActor: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({
@@ -16,7 +17,8 @@ vi.mock("next/headers", () => ({
 }));
 
 vi.mock("next/server", async () => {
-	const actual = await vi.importActual<typeof import("next/server")>("next/server");
+	const actual =
+		await vi.importActual<typeof import("next/server")>("next/server");
 	return {
 		...actual,
 		connection: vi.fn().mockResolvedValue(undefined),
@@ -33,6 +35,10 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	getAbility: mockState.getAbility,
+}));
+
+vi.mock("@/lib/auth/organization-action-authorization", () => ({
+	runActiveOrganizationActionActorCheck: mockState.requireActiveActor,
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -55,7 +61,10 @@ vi.mock("@/db", () => ({
 }));
 
 vi.mock("@/db/schema", () => ({
-	employee: { userId: "employee.userId", organizationId: "employee.organizationId" },
+	employee: {
+		userId: "employee.userId",
+		organizationId: "employee.organizationId",
+	},
 	teamsTenantConfig: {
 		id: "teamsTenantConfig.id",
 		tenantId: "teamsTenantConfig.tenantId",
@@ -97,6 +106,30 @@ describe("POST /api/teams/setup", () => {
 		mockState.organizationFindFirst.mockResolvedValue({ id: "org-target" });
 		mockState.teamsTenantFindFirst.mockResolvedValue(null);
 		mockState.insertValues.mockResolvedValue(undefined);
+		mockState.requireActiveActor.mockResolvedValue({});
+	});
+
+	it.each([
+		"pending",
+		"rejected",
+		"inactive",
+	])("denies a %s actor before linking the tenant", async (actorState) => {
+		mockState.getSession.mockResolvedValue({
+			user: { id: "user-1" },
+			session: { activeOrganizationId: "org-target" },
+		});
+		mockState.requireActiveActor.mockRejectedValueOnce(new Error(actorState));
+
+		const response = await POST(
+			createRequest({
+				tenantId: "tenant-1",
+				tenantName: "Tenant 1",
+				organizationId: "org-target",
+			}),
+		);
+
+		expect(response.status).toBe(403);
+		expect(mockState.insertValues).not.toHaveBeenCalled();
 	});
 
 	it("rejects setup for a non-active target organization", async () => {

@@ -51,11 +51,11 @@ const productionSource = readFileSync(
 	"utf8",
 );
 const migrationSource = readFileSync(
-	join(process.cwd(), "drizzle/0054_approval_workflow_expand.sql"),
+	join(process.cwd(), "drizzle/0055_approval_workflow_expand.sql"),
 	"utf8",
 );
 const cycleMigrationSource = readFileSync(
-	join(process.cwd(), "drizzle/0055_approval_workflow_cycle_identity.sql"),
+	join(process.cwd(), "drizzle/0056_approval_workflow_cycle_identity.sql"),
 	"utf8",
 );
 const runnerSource = readFileSync(

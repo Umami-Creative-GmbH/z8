@@ -107,19 +107,23 @@ const migration0052Url = new URL(
 	import.meta.url,
 );
 const migration0054Url = new URL(
-	"../../../drizzle/0054_approval_workflow_expand.sql",
+	"../../../drizzle/0055_approval_workflow_expand.sql",
 	import.meta.url,
 );
 const migration0054SnapshotUrl = new URL(
-	"../../../drizzle/meta/0054_snapshot.json",
+	"../../../drizzle/meta/0055_snapshot.json",
 	import.meta.url,
 );
 const migration0055Url = new URL(
-	"../../../drizzle/0055_approval_workflow_cycle_identity.sql",
+	"../../../drizzle/0056_approval_workflow_cycle_identity.sql",
 	import.meta.url,
 );
 const migration0055SnapshotUrl = new URL(
-	"../../../drizzle/meta/0055_snapshot.json",
+	"../../../drizzle/meta/0056_snapshot.json",
+	import.meta.url,
+);
+const migration0054InvitationDraftIdentityUrl = new URL(
+	"../../../drizzle/0054_employee_invitation_draft_identity.sql",
 	import.meta.url,
 );
 
@@ -1721,7 +1725,6 @@ function snapshotColumnMismatches(
 		})
 		.map(([tableName]) => tableName);
 }
-
 const migration0004Statements = migration0004
 	.split("--> statement-breakpoint")
 	.map((statement) => statement.trim())
@@ -1731,7 +1734,7 @@ describe("drizzle follow-up migrations", () => {
 	it("replaces the pending workflow index with exact typed source cycle identity", () => {
 		const migration = readRequiredMigration(
 			migration0055Url,
-			"0055 approval workflow cycle identity migration",
+			"0056 approval workflow cycle identity migration",
 		);
 		const statements = migrationStatements(migration);
 		expect(statements).toHaveLength(2);
@@ -1754,18 +1757,18 @@ describe("drizzle follow-up migrations", () => {
 		]);
 
 		const entries = migrationJournal.entries.filter((entry) =>
-			entry.tag.startsWith("0055_"),
+			entry.tag.startsWith("0056_"),
 		);
 		expect(entries).toEqual([
 			expect.objectContaining({
-				idx: 55,
-				tag: "0055_approval_workflow_cycle_identity",
+				idx: 56,
+				tag: "0056_approval_workflow_cycle_identity",
 				breakpoints: true,
 			}),
 		]);
 		expect(entries[0]?.when).toBeGreaterThan(
 			migrationJournal.entries.find(
-				(entry) => entry.tag === "0054_approval_workflow_expand",
+				(entry) => entry.tag === "0055_approval_workflow_expand",
 			)?.when ?? 0,
 		);
 		expect(existsSync(migration0055SnapshotUrl)).toBe(true);
@@ -2549,10 +2552,10 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 
 	it("registers coherent approval workflow expansion metadata after every prior migration", () => {
 		const migration0054Files = readdirSync(drizzleDirUrl).filter((fileName) =>
-			fileName.startsWith("0054_"),
+			fileName.startsWith("0055_"),
 		);
 		const migration0054Entries = migrationJournal.entries.filter((entry) =>
-			entry.tag.startsWith("0054_"),
+			entry.tag.startsWith("0055_"),
 		);
 		const migration0054Entry = migration0054Entries[0];
 		const priorEntries = migrationJournal.entries.filter(
@@ -2566,9 +2569,9 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 			...priorEntries.map((entry) => entry.idx),
 		);
 
-		expect(migration0054Files).toEqual(["0054_approval_workflow_expand.sql"]);
+		expect(migration0054Files).toEqual(["0055_approval_workflow_expand.sql"]);
 		expect(migration0054Entries.map((entry) => entry.tag)).toEqual([
-			"0054_approval_workflow_expand",
+			"0055_approval_workflow_expand",
 		]);
 		expect(migration0054Entry?.when).toBeGreaterThan(latestPriorWhen);
 		expect(migration0054Entry?.when).toBeGreaterThan(1781096400000);
@@ -2579,7 +2582,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 
 		const previousSnapshot = JSON.parse(
 			readFileSync(
-				new URL("../../../drizzle/meta/0050_snapshot.json", import.meta.url),
+				new URL("../../../drizzle/meta/0054_snapshot.json", import.meta.url),
 				"utf8",
 			),
 		) as { id: string };
@@ -2587,7 +2590,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 			readFileSync(migration0054SnapshotUrl, "utf8"),
 		) as MigrationSnapshot;
 
-		// Journal-only/manual migrations do not create snapshots, so 0054 follows 0050.
+		// Approval expansion follows dev's employee invitation identity snapshot.
 		expect(snapshot.prevId).toBe(previousSnapshot.id);
 		for (const tableName of [
 			"approval_workflow",
@@ -2631,7 +2634,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 	it("recovers the unjournaled daily digest schema idempotently before approval expansion", () => {
 		const migration0054 = readRequiredMigration(
 			migration0054Url,
-			"0054 approval workflow expansion migration",
+			"0055 approval workflow expansion migration",
 		);
 		const recoveryStart = migration0054.indexOf(
 			"-- daily digest recovery: begin",
@@ -2714,10 +2717,10 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		});
 	});
 
-	it("preserves journaled Telegram delivery metadata without recreating it in 0054", () => {
+	it("preserves journaled Telegram delivery metadata without recreating it in 0055", () => {
 		const migration0054 = readRequiredMigration(
 			migration0054Url,
-			"0054 approval workflow expansion migration",
+			"0055 approval workflow expansion migration",
 		);
 		const snapshot = JSON.parse(
 			readFileSync(migration0054SnapshotUrl, "utf8"),
@@ -2739,7 +2742,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 	it("preserves deployed 0050 employee invitation metadata without replaying it", () => {
 		const migration0054 = readRequiredMigration(
 			migration0054Url,
-			"0054 approval workflow expansion migration",
+			"0055 approval workflow expansion migration",
 		);
 		const snapshot0050 = JSON.parse(
 			readFileSync(
@@ -2776,7 +2779,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 	it("matches canonical enum values and table columns in SQL and snapshot", () => {
 		const migration0054 = readRequiredMigration(
 			migration0054Url,
-			"0054 approval workflow expansion migration",
+			"0055 approval workflow expansion migration",
 		);
 		const snapshot = JSON.parse(
 			readFileSync(migration0054SnapshotUrl, "utf8"),
@@ -2815,7 +2818,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 	it("matches canonical composite constraints, foreign keys, and indexes in SQL and snapshot", () => {
 		const migration0054 = readRequiredMigration(
 			migration0054Url,
-			"0054 approval workflow expansion migration",
+			"0055 approval workflow expansion migration",
 		);
 		const snapshot = JSON.parse(
 			readFileSync(migration0054SnapshotUrl, "utf8"),
@@ -2883,7 +2886,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 	it("keeps the approval workflow expansion additive and organization-scoped", () => {
 		const migration0054 = readRequiredMigration(
 			migration0054Url,
-			"0054 approval workflow expansion migration",
+			"0055 approval workflow expansion migration",
 		);
 
 		for (const [tableName, columnName] of [
@@ -2942,6 +2945,156 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		expect(migration0054).not.toContain('CREATE TABLE "daily_digest_delivery"');
 		expect(migration0054).not.toContain(
 			'CREATE TABLE "telegram_digest_delivery"',
+		);
+	});
+
+	it("deterministically repairs employee invitation draft identity", () => {
+		expect(existsSync(migration0054InvitationDraftIdentityUrl)).toBe(true);
+
+		const migration0054 = readFileSync(
+			migration0054InvitationDraftIdentityUrl,
+			"utf8",
+		);
+		const addColumnPosition = migration0054.indexOf(
+			'ADD COLUMN IF NOT EXISTS "normalized_email" text',
+		);
+		const addPermissionColumnPosition = migration0054.indexOf(
+			'ADD COLUMN IF NOT EXISTS "can_create_organizations" boolean DEFAULT false NOT NULL',
+		);
+		const permissionBackfillPosition = migration0054.indexOf(
+			'UPDATE "employee_invitation_draft" AS "draft"\nSET "can_create_organizations"',
+		);
+		const permissionBackfillEnd = migration0054.indexOf(
+			"--> statement-breakpoint",
+			permissionBackfillPosition,
+		);
+		const permissionBackfill = migration0054.slice(
+			permissionBackfillPosition,
+			permissionBackfillEnd,
+		);
+		const backfillPosition = migration0054.indexOf(
+			'UPDATE "employee_invitation_draft" AS "draft"',
+		);
+		const employeeDeletePosition = migration0054.indexOf(
+			'DELETE FROM "employee_invitation_draft" AS "draft"\nUSING "employee"',
+		);
+		const inactiveDeletePosition = migration0054.indexOf(
+			'DELETE FROM "employee_invitation_draft" AS "draft"\nWHERE NOT EXISTS',
+		);
+		const repairTablePosition = migration0054.indexOf(
+			'CREATE TEMP TABLE "employee_invitation_draft_identity_repair"',
+		);
+		const duplicateDeletePosition = migration0054.indexOf(
+			'DELETE FROM "employee_invitation_draft" AS "draft"\nUSING "employee_invitation_draft_identity_repair"',
+		);
+		const relinkPosition = migration0054.indexOf(
+			'UPDATE "employee_invitation_draft" AS "draft"\nSET "invitation_id"',
+		);
+		const notNullPosition = migration0054.indexOf(
+			'ALTER COLUMN "normalized_email" SET NOT NULL',
+		);
+		const uniqueIndexPosition = migration0054.indexOf(
+			'CREATE UNIQUE INDEX IF NOT EXISTS "employeeInvitationDraft_organizationNormalizedEmail_unique_idx"',
+		);
+
+		const repairPhasePositions = [
+			addColumnPosition,
+			addPermissionColumnPosition,
+			permissionBackfillPosition,
+			backfillPosition,
+			employeeDeletePosition,
+			inactiveDeletePosition,
+			repairTablePosition,
+			duplicateDeletePosition,
+			relinkPosition,
+			notNullPosition,
+			uniqueIndexPosition,
+		];
+
+		expect(Math.min(...repairPhasePositions)).toBeGreaterThanOrEqual(0);
+		expect(addColumnPosition).toBeLessThan(backfillPosition);
+		expect(addPermissionColumnPosition).toBeLessThan(
+			permissionBackfillPosition,
+		);
+		expect(permissionBackfillPosition).toBeLessThan(repairTablePosition);
+		expect(permissionBackfillPosition).toBeLessThan(duplicateDeletePosition);
+		expect(permissionBackfillPosition).toBeLessThan(relinkPosition);
+		expect(permissionBackfill).toContain(
+			'SET "can_create_organizations" = COALESCE("invitation"."can_create_organizations", false)',
+		);
+		expect(permissionBackfill).toContain('FROM "invitation" AS "invitation"');
+		expect(permissionBackfill).toContain(
+			'WHERE "invitation"."id" = "draft"."invitation_id"',
+		);
+		expect(permissionBackfill).toContain(
+			'AND "invitation"."organization_id" = "draft"."organization_id"',
+		);
+		expect(backfillPosition).toBeLessThan(employeeDeletePosition);
+		expect(employeeDeletePosition).toBeLessThan(inactiveDeletePosition);
+		expect(inactiveDeletePosition).toBeLessThan(repairTablePosition);
+		expect(repairTablePosition).toBeLessThan(duplicateDeletePosition);
+		expect(duplicateDeletePosition).toBeLessThan(relinkPosition);
+		expect(relinkPosition).toBeLessThan(notNullPosition);
+		expect(notNullPosition).toBeLessThan(uniqueIndexPosition);
+		expect(migration0054).toContain('lower(btrim("invitation"."email"))');
+		expect(migration0054).toContain(
+			'"invitation"."organization_id" = "draft"."organization_id"',
+		);
+		expect(migration0054).toContain(
+			'lower(btrim("user"."email")) = "draft"."normalized_email"',
+		);
+		expect(migration0054).toContain(
+			'"employee"."organization_id" = "draft"."organization_id"',
+		);
+		expect(migration0054).toContain('"invitation"."status" = \'pending\'');
+		expect(migration0054).toContain(
+			'"invitation"."expires_at" > CURRENT_TIMESTAMP',
+		);
+		expect(migration0054).toContain(
+			'PARTITION BY "draft"."organization_id", "draft"."normalized_email"\n\t\t\tORDER BY "draft"."updated_at" DESC, "draft"."created_at" DESC, "draft"."id" DESC',
+		);
+		expect(migration0054).toContain(
+			'PARTITION BY "invitation"."organization_id", lower(btrim("invitation"."email"))\n\t\t\tORDER BY "invitation"."created_at" DESC, "invitation"."id" DESC',
+		);
+		expect(migration0054).not.toContain('CREATE TABLE "daily_digest_delivery"');
+		expect(migration0054).not.toContain(
+			'CREATE TABLE "telegram_digest_delivery"',
+		);
+		expect(migration0054).not.toContain("DROP CONSTRAINT");
+	});
+
+	it("serializes every employee writer by organization and normalized user email", () => {
+		const migration0054 = readFileSync(
+			migration0054InvitationDraftIdentityUrl,
+			"utf8",
+		);
+		const replaceFunctionPosition = migration0054.indexOf(
+			'CREATE OR REPLACE FUNCTION "employee_identity_advisory_lock"()',
+		);
+		const dropTriggerPosition = migration0054.indexOf(
+			'DROP TRIGGER IF EXISTS "employee_identity_advisory_lock_trigger" ON "employee"',
+		);
+		const createTriggerPosition = migration0054.indexOf(
+			'CREATE TRIGGER "employee_identity_advisory_lock_trigger"',
+		);
+
+		expect(replaceFunctionPosition).toBeGreaterThanOrEqual(0);
+		expect(dropTriggerPosition).toBeGreaterThan(replaceFunctionPosition);
+		expect(createTriggerPosition).toBeGreaterThan(dropTriggerPosition);
+		expect(migration0054).toContain(
+			'SELECT lower(btrim("user"."email"))\n\tINTO normalized_email',
+		);
+		expect(migration0054).toContain('WHERE "user"."id" = NEW.user_id');
+		expect(migration0054).toContain("IF normalized_email IS NULL THEN");
+		expect(migration0054).toContain("RAISE EXCEPTION");
+		expect(migration0054).toContain(
+			"pg_advisory_xact_lock(hashtextextended(jsonb_build_array(NEW.organization_id, normalized_email)::text, 0))",
+		);
+		expect(migration0054).toContain(
+			'BEFORE INSERT OR UPDATE OF "user_id", "organization_id" ON "employee"',
+		);
+		expect(migration0054).toContain(
+			'FOR EACH ROW EXECUTE FUNCTION "employee_identity_advisory_lock"()',
 		);
 	});
 });

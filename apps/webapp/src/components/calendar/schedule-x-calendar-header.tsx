@@ -61,8 +61,12 @@ export function ScheduleXCalendarHeader({
 		</>
 	);
 	const viewTabs = (
-		<Tabs value={viewMode} onValueChange={(value) => onViewModeChange(value as ViewMode)}>
-			<TabsList>
+		<Tabs
+			value={viewMode}
+			onValueChange={(value) => onViewModeChange(value as ViewMode)}
+			className="w-full lg:w-auto"
+		>
+			<TabsList className="grid w-full grid-cols-4">
 				<TabsTrigger value="day">{t("calendar.view.day", "Day")}</TabsTrigger>
 				<TabsTrigger value="week">{t("calendar.view.week", "Week")}</TabsTrigger>
 				<TabsTrigger value="month">{t("calendar.view.month", "Month")}</TabsTrigger>
@@ -90,10 +94,12 @@ export function ScheduleXCalendarHeader({
 				</h2>
 				<div
 					data-testid="calendar-mobile-header-controls"
-					className="overflow-x-auto whitespace-nowrap"
+					className="grid gap-2"
 				>
-					<div className="flex w-max items-center gap-2">
+					<div data-testid="calendar-mobile-navigation" className="flex items-center gap-2">
 						{controls}
+					</div>
+					<div data-testid="calendar-mobile-view-tabs" className="w-full">
 						{viewTabs}
 					</div>
 				</div>

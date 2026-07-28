@@ -23,6 +23,7 @@ data:
   # Worker configuration
   worker-concurrency: "5"
   enable-cron-jobs: "true"
+  telemetry-enabled: "true"
 
   # Email
   email-from: "noreply@yourdomain.com"

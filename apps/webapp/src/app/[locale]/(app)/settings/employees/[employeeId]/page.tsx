@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { getEmployee } from "../actions";
+import { getCurrentApprovedMembership } from "../current-approved-membership";
 import { EmployeeDetailPageClient } from "./employee-detail-page-client";
 
 export default async function EmployeeDetailPage({
@@ -16,6 +17,20 @@ export default async function EmployeeDetailPage({
 	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
 		redirect("/settings");
 	}
+	const organizationId =
+		settingsRouteContext.authContext.session.activeOrganizationId;
+	if (!organizationId) {
+		redirect("/settings");
+	}
+	const currentUserId = settingsRouteContext.authContext.user.id;
+	const currentMember = await getCurrentApprovedMembership({
+		userId: currentUserId,
+		organizationId,
+	});
+
+	if (!currentMember) {
+		redirect("/settings");
+	}
 
 	const employeeResult = await getEmployee(employeeId);
 
@@ -27,6 +42,8 @@ export default async function EmployeeDetailPage({
 		<EmployeeDetailPageClient
 			params={Promise.resolve({ employeeId })}
 			accessTier={settingsRouteContext.accessTier}
+			currentUserId={currentUserId}
+			currentMemberRole={currentMember.role}
 		/>
 	);
 }

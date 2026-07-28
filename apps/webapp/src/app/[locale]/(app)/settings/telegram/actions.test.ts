@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
 	requireUser: vi.fn(),
+	requireActiveActor: vi.fn(),
 	memberFindFirst: vi.fn(),
 	update: vi.fn(),
 	set: vi.fn(),
@@ -30,6 +31,10 @@ vi.mock("@/lib/auth-helpers", () => ({
 	requireUser: mocks.requireUser,
 }));
 
+vi.mock("@/lib/auth/organization-action-authorization", () => ({
+	runActiveOrganizationActionActorCheck: mocks.requireActiveActor,
+}));
+
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({ info: vi.fn(), error: vi.fn() }),
 }));
@@ -56,6 +61,7 @@ describe("Telegram settings actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mocks.requireUser.mockResolvedValue({ user: { id: "user-1" } });
+		mocks.requireActiveActor.mockResolvedValue({});
 		mocks.memberFindFirst.mockResolvedValue({
 			id: "member-1",
 			userId: "user-1",
@@ -68,7 +74,27 @@ describe("Telegram settings actions", () => {
 	});
 
 	it.each([
-		["digest time", { ...settings, digestTime: "9:30" }, "Digest time must use HH:mm format"],
+		"pending",
+		"rejected",
+		"inactive",
+	])("does not update settings when the %s actor is denied", async (actorState) => {
+		mocks.requireActiveActor.mockRejectedValueOnce(new Error(actorState));
+
+		const result = await updateTelegramSettings("org-1", settings);
+
+		expect(result).toEqual({
+			success: false,
+			error: "Failed to update Telegram settings",
+		});
+		expect(mocks.update).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		[
+			"digest time",
+			{ ...settings, digestTime: "9:30" },
+			"Digest time must use HH:mm format",
+		],
 		[
 			"digest timezone",
 			{ ...settings, digestTimezone: "+05:45" },
@@ -85,7 +111,10 @@ describe("Telegram settings actions", () => {
 			"Escalation timeout must be at least 1 hour",
 		],
 	] as const)("rejects invalid %s before updating", async (_field, invalidSettings, error) => {
-		const result = await updateTelegramSettings("org-1", invalidSettings as never);
+		const result = await updateTelegramSettings(
+			"org-1",
+			invalidSettings as never,
+		);
 
 		expect(result).toEqual({ success: false, error });
 		expect(mocks.update).not.toHaveBeenCalled();
@@ -103,7 +132,10 @@ describe("Telegram settings actions", () => {
 		"Europe/Berlin",
 		"America/New_York",
 	])("updates a valid digest timezone %s", async (digestTimezone) => {
-		const result = await updateTelegramSettings("org-1", { ...settings, digestTimezone });
+		const result = await updateTelegramSettings("org-1", {
+			...settings,
+			digestTimezone,
+		});
 
 		expect(result).toEqual({ success: true, data: undefined });
 		expect(mocks.set).toHaveBeenCalledWith({ ...settings, digestTimezone });

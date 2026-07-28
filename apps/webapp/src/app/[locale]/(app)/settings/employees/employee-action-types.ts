@@ -1,11 +1,15 @@
 import type { EmployeeClockStatus } from "@/components/user-avatar";
-import type { invitation, user } from "@/db/auth-schema";
+import type { invitation, member, user } from "@/db/auth-schema";
 import type { employee, employeeInvitationDraft, team } from "@/db/schema";
 
 export type EmployeeRole = (typeof employee.$inferSelect)["role"];
 export const EMPLOYEE_DRAFT_ID_PREFIX = "draft:";
 export type EmployeeRecordKind = "employee" | "invitationDraft";
 export type EmployeeDirectoryStatus = "active" | "inactive" | "draft" | "all";
+export type EmployeeMembershipSummary = Pick<
+	typeof member.$inferSelect,
+	"id" | "role" | "status"
+>;
 
 export function encodeEmployeeInvitationDraftId(draftId: string) {
 	return `${EMPLOYEE_DRAFT_ID_PREFIX}${draftId}`;
@@ -22,6 +26,7 @@ export type EmployeeWithRelations = typeof employee.$inferSelect & {
 	kind: "employee";
 	user: typeof user.$inferSelect;
 	team: typeof team.$inferSelect | null;
+	membership: EmployeeMembershipSummary | null;
 };
 
 export type EmployeeInvitationDraftWithRelations = typeof employeeInvitationDraft.$inferSelect & {
@@ -30,6 +35,7 @@ export type EmployeeInvitationDraftWithRelations = typeof employeeInvitationDraf
 	userId: string;
 	invitation: typeof invitation.$inferSelect;
 	team: typeof team.$inferSelect | null;
+	membership: null;
 	user: typeof user.$inferSelect & {
 		canUseWebapp?: boolean;
 		canUseDesktop?: boolean;

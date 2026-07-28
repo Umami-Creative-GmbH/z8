@@ -82,7 +82,9 @@ export async function updateWebhookEndpoint(
 /**
  * Delete a webhook endpoint
  */
-export async function deleteWebhookEndpoint(webhookId: string): Promise<boolean> {
+export async function deleteWebhookEndpoint(
+	webhookId: string,
+): Promise<boolean> {
 	const result = await db
 		.delete(webhookEndpoint)
 		.where(eq(webhookEndpoint.id, webhookId))
@@ -99,9 +101,15 @@ export async function deleteWebhookEndpoint(webhookId: string): Promise<boolean>
 /**
  * Get a webhook endpoint by ID
  */
-export async function getWebhookEndpoint(webhookId: string): Promise<WebhookEndpoint | null> {
+export async function getWebhookEndpoint(
+	webhookId: string,
+	organizationId: string,
+): Promise<WebhookEndpoint | null> {
 	const endpoint = await db.query.webhookEndpoint.findFirst({
-		where: eq(webhookEndpoint.id, webhookId),
+		where: and(
+			eq(webhookEndpoint.id, webhookId),
+			eq(webhookEndpoint.organizationId, organizationId),
+		),
 	});
 	return endpoint ?? null;
 }
@@ -227,7 +235,10 @@ export async function updateDeliveryRecord(
 		nextRetryAt?: Date;
 	},
 ): Promise<void> {
-	await db.update(webhookDelivery).set(update).where(eq(webhookDelivery.id, deliveryId));
+	await db
+		.update(webhookDelivery)
+		.set(update)
+		.where(eq(webhookDelivery.id, deliveryId));
 }
 
 /**
@@ -244,13 +255,20 @@ export async function getDeliveryRecord(deliveryId: string) {
  */
 export async function getDeliveryLogs(
 	webhookId: string,
+	organizationId: string,
 	options: { limit?: number; offset?: number } = {},
-): Promise<{ deliveries: (typeof webhookDelivery.$inferSelect)[]; total: number }> {
+): Promise<{
+	deliveries: (typeof webhookDelivery.$inferSelect)[];
+	total: number;
+}> {
 	const { limit = 50, offset = 0 } = options;
 
 	const [deliveries, [{ count }]] = await Promise.all([
 		db.query.webhookDelivery.findMany({
-			where: eq(webhookDelivery.webhookEndpointId, webhookId),
+			where: and(
+				eq(webhookDelivery.webhookEndpointId, webhookId),
+				eq(webhookDelivery.organizationId, organizationId),
+			),
 			orderBy: (delivery, { desc }) => [desc(delivery.createdAt)],
 			limit,
 			offset,
@@ -258,7 +276,12 @@ export async function getDeliveryLogs(
 		db
 			.select({ count: sql<number>`count(*)::int` })
 			.from(webhookDelivery)
-			.where(eq(webhookDelivery.webhookEndpointId, webhookId)),
+			.where(
+				and(
+					eq(webhookDelivery.webhookEndpointId, webhookId),
+					eq(webhookDelivery.organizationId, organizationId),
+				),
+			),
 	]);
 
 	return { deliveries, total: count };
@@ -313,14 +336,20 @@ export async function checkAndDisableUnhealthyEndpoint(
 		columns: { consecutiveFailures: true, isActive: true },
 	});
 
-	if (endpoint?.isActive && endpoint.consecutiveFailures >= maxConsecutiveFailures) {
+	if (
+		endpoint?.isActive &&
+		endpoint.consecutiveFailures >= maxConsecutiveFailures
+	) {
 		await db
 			.update(webhookEndpoint)
 			.set({ isActive: false })
 			.where(eq(webhookEndpoint.id, webhookEndpointId));
 
 		logger.warn(
-			{ webhookId: webhookEndpointId, consecutiveFailures: endpoint.consecutiveFailures },
+			{
+				webhookId: webhookEndpointId,
+				consecutiveFailures: endpoint.consecutiveFailures,
+			},
 			"Webhook endpoint auto-disabled due to consecutive failures",
 		);
 

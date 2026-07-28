@@ -16,7 +16,7 @@
 
 ## File Map
 
-- Create `apps/webapp/drizzle/0055_approval_workflow_cycle_identity.sql`: replace the pending-source index with the exact canonical source tuple including workflow type.
+- Create `apps/webapp/drizzle/0056_approval_workflow_cycle_identity.sql`: replace the pending-source index with the exact canonical source tuple including workflow type.
 - Create the corresponding generated Drizzle snapshot under `apps/webapp/drizzle/meta/` and update `apps/webapp/drizzle/meta/_journal.json`: record migration 0055 without applying it.
 - Modify `apps/webapp/src/db/schema/approval-workflow.ts`: align the Drizzle partial unique index with exact source identity.
 - Modify `apps/webapp/scripts/approval-workflow-schema-contract.ts`: require the exact pending index contract.
@@ -52,7 +52,7 @@
 ### Task 1: Support Repeated Workflow Cycles
 
 **Files:**
-- Create: `apps/webapp/drizzle/0055_approval_workflow_cycle_identity.sql`
+- Create: `apps/webapp/drizzle/0056_approval_workflow_cycle_identity.sql`
 - Create: `apps/webapp/drizzle/meta/0055_snapshot.json`
 - Modify: `apps/webapp/drizzle/meta/_journal.json`
 - Modify: `apps/webapp/src/db/schema/approval-workflow.ts`
@@ -145,7 +145,7 @@ Generate the migration artifacts with:
 pnpm --filter webapp exec drizzle-kit generate --name approval_workflow_cycle_identity
 ```
 
-Expected: creates `drizzle/0055_approval_workflow_cycle_identity.sql`, `drizzle/meta/0055_snapshot.json`, and journal entry 0055. Inspect the generated SQL against the exact semantic SQL above; do not run `drizzle-kit push` or apply it. Teach `startApprovalWorkflow` that an exact terminal replay returns the existing result without planning or rebinding; a new cycle may bind over only a verified terminal link through the caller callback.
+Expected: creates `drizzle/0056_approval_workflow_cycle_identity.sql`, `drizzle/meta/0056_snapshot.json`, and journal entry 0056. Inspect the generated SQL against the exact semantic SQL above; do not run `drizzle-kit push` or apply it. Teach `startApprovalWorkflow` that an exact terminal replay returns the existing result without planning or rebinding; a new cycle may bind over only a verified terminal link through the caller callback.
 
 - [ ] **Step 5: Run unit, contract, and disposable PostgreSQL tests**
 

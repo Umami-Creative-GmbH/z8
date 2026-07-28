@@ -3,7 +3,10 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const source = readFileSync(
-	join(process.cwd(), "src/app/[locale]/(app)/settings/employees/employees-page-client.tsx"),
+	join(
+		process.cwd(),
+		"src/app/[locale]/(app)/settings/employees/employees-page-client.tsx",
+	),
 	"utf8",
 );
 
@@ -29,5 +32,20 @@ describe("EmployeesPageClient people-management tabs", () => {
 	it("does not send invite actions back to organization settings", () => {
 		expect(source).not.toContain('href="/settings/organizations"');
 		expect(source).not.toContain("href='/settings/organizations'");
+	});
+
+	it("passes actor identity and role to the employee directory", () => {
+		expect(source).toContain("currentUserId={props.currentUserId}");
+		expect(source).toContain("currentMemberRole={props.currentMemberRole}");
+	});
+
+	it("updates exact cached rows without deleting historical employees", () => {
+		expect(source).toContain("row.id === employeeId");
+		expect(source).toContain("updateCachedEmployee(employeeId, { isActive })");
+		expect(source).toContain("membership: null");
+		expect(source).toContain("setQueriesData<PaginatedEmployeeResponse>");
+		expect(source).not.toContain(
+			"employees.filter((row) => row.id !== employeeId)",
+		);
 	});
 });

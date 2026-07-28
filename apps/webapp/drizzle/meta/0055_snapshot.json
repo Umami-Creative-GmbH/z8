@@ -1,6 +1,6 @@
 {
-  "id": "d285d081-a8a1-46b8-b392-e667a1a6859f",
-  "prevId": "b98d02a4-5791-44d4-8b22-b4b6d066a90c",
+  "id": "84b3bc70-9675-480d-afeb-492f0931c6d2",
+  "prevId": "f733bc3f-a283-4bd4-8ab0-7e28ab4f7dca",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -5789,12 +5789,6 @@
           "columns": [
             {
               "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "workflow_type",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -13911,6 +13905,19 @@
           "primaryKey": false,
           "notNull": true
         },
+        "normalized_email": {
+          "name": "normalized_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "can_create_organizations": {
+          "name": "can_create_organizations",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "team_id": {
           "name": "team_id",
           "type": "uuid",
@@ -14021,6 +14028,27 @@
           "columns": [
             {
               "expression": "invitation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "employeeInvitationDraft_organizationNormalizedEmail_unique_idx": {
+          "name": "employeeInvitationDraft_organizationNormalizedEmail_unique_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "normalized_email",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -20636,6 +20664,27 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "employee_organizationId_userId_unique_idx": {
+          "name": "employee_organizationId_userId_unique_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}

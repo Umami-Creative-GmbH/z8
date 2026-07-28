@@ -8,6 +8,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { discordLinkCode, discordUserMapping, employee } from "@/db/schema";
+import { resolveCommandActorEmployee } from "@/lib/integrations/resolve-command-actor";
 import { createLogger } from "@/lib/logger";
 import type { ResolvedDiscordUser } from "./types";
 
@@ -39,6 +40,12 @@ export async function resolveDiscordUser(
 	});
 
 	if (mapping) {
+		const emp = await resolveCommandActorEmployee(
+			mapping.userId,
+			mapping.organizationId,
+		);
+		if (!emp) return { status: "not_linked", discordUserId };
+
 		// Update last seen and username if changed
 		await db
 			.update(discordUserMapping)
@@ -47,16 +54,6 @@ export async function resolveDiscordUser(
 				...(discordUsername ? { discordUsername } : {}),
 			})
 			.where(eq(discordUserMapping.id, mapping.id));
-
-		// Get employee ID
-		const emp = await db.query.employee.findFirst({
-			where: and(eq(employee.userId, mapping.userId), eq(employee.organizationId, organizationId)),
-			columns: { id: true },
-		});
-
-		if (!emp) {
-			return { status: "not_linked", discordUserId };
-		}
 
 		return {
 			status: "found",
@@ -112,7 +109,10 @@ export async function generateLinkCode(
 		status: "pending",
 	});
 
-	logger.info({ userId, organizationId, codeLength: code.length }, "Discord link code generated");
+	logger.info(
+		{ userId, organizationId, codeLength: code.length },
+		"Discord link code generated",
+	);
 
 	return { code, expiresAt };
 }
@@ -146,7 +146,9 @@ export async function claimLinkCode(
 	}
 
 	if (linkCode.status !== "pending") {
-		return { status: linkCode.status === "expired" ? "expired" : "invalid_code" };
+		return {
+			status: linkCode.status === "expired" ? "expired" : "invalid_code",
+		};
 	}
 
 	if (linkCode.expiresAt < new Date()) {
@@ -173,7 +175,10 @@ export async function claimLinkCode(
 
 	// Get employee ID
 	const emp = await db.query.employee.findFirst({
-		where: and(eq(employee.userId, linkCode.userId), eq(employee.organizationId, organizationId)),
+		where: and(
+			eq(employee.userId, linkCode.userId),
+			eq(employee.organizationId, organizationId),
+		),
 		columns: { id: true },
 	});
 
@@ -220,7 +225,10 @@ export async function claimLinkCode(
 /**
  * Unlink a Discord account
  */
-export async function unlinkDiscordUser(userId: string, organizationId: string): Promise<boolean> {
+export async function unlinkDiscordUser(
+	userId: string,
+	organizationId: string,
+): Promise<boolean> {
 	const result = await db
 		.update(discordUserMapping)
 		.set({ isActive: false })

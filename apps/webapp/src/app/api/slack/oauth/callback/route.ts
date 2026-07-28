@@ -12,6 +12,7 @@ import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
 import { slackOAuthState, slackWorkspaceConfig } from "@/db/schema";
 import { env } from "@/env";
+import { runActiveOrganizationActionActorCheck as requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
 import { createLogger } from "@/lib/logger";
 import { exchangeOAuthCode } from "@/lib/slack/api";
 import { storeOrgSecret } from "@/lib/vault";
@@ -66,6 +67,18 @@ async function handleSlackOAuthCallback(request: NextRequest) {
 					),
 				);
 			return NextResponse.redirect(`${settingsUrl}?slack_error=expired_state`);
+		}
+		try {
+			await requireActiveOrganizationActionActor({
+				userId: stateRecord.userId,
+				organizationId: stateRecord.organizationId,
+				requiredRole: "admin",
+				message: "Only active approved admins and owners can configure Slack",
+				resource: "slackIntegration",
+				action: "create",
+			});
+		} catch {
+			return NextResponse.redirect(`${settingsUrl}?slack_error=forbidden`);
 		}
 
 		// Mark state as used

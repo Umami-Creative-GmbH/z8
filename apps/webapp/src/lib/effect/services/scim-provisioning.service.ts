@@ -331,39 +331,33 @@ export const SCIMProvisioningServiceLive = Layer.succeed(
 		onUserReactivated: ({ userId, organizationId }) =>
 			Effect.gen(function* () {
 				try {
-					// Find the employee record
-					const employeeRecord = yield* Effect.tryPromise(() =>
-						db.query.employee.findFirst({
-							where: (emp, { eq: eqOp, and: andOp }) =>
-								andOp(eqOp(emp.userId, userId), eqOp(emp.organizationId, organizationId)),
+					yield* Effect.tryPromise(() =>
+						db.transaction(async (tx) => {
+							const employeeRecord = await tx.query.employee.findFirst({
+								where: (emp, { eq: eqOp, and: andOp }) =>
+									andOp(
+										eqOp(emp.userId, userId),
+										eqOp(emp.organizationId, organizationId),
+									),
+							});
+
+							if (!employeeRecord) return;
+
+							await tx
+								.update(schema.member)
+								.set({ status: "approved" })
+								.where(
+									and(
+										eq(schema.member.userId, userId),
+										eq(schema.member.organizationId, organizationId),
+									),
+								);
+							await tx
+								.update(employee)
+								.set({ isActive: true })
+								.where(eq(employee.id, employeeRecord.id));
 						}),
 					);
-
-					if (employeeRecord) {
-						// Parallelize independent updates for better performance
-						// @see async-parallel rule
-						yield* Effect.all([
-							// Reactivate employee
-							Effect.tryPromise(() =>
-								db
-									.update(employee)
-									.set({ isActive: true })
-									.where(eq(employee.id, employeeRecord.id)),
-							),
-							// Also update member status if suspended
-							Effect.tryPromise(() =>
-								db
-									.update(schema.member)
-									.set({ status: "approved" })
-									.where(
-										and(
-											eq(schema.member.userId, userId),
-											eq(schema.member.organizationId, organizationId),
-										),
-									),
-							),
-						]);
-					}
 
 					// Log the reactivation event
 					yield* Effect.tryPromise(() =>

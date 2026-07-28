@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
 	requireUser: vi.fn(),
+	requireActiveActor: vi.fn(),
 	findMember: vi.fn(),
 	getImportReviewSummary: vi.fn(),
 	listImportReviewRows: vi.fn(),
@@ -25,7 +26,9 @@ vi.mock("drizzle-orm", async (importOriginal) => {
 		...actual,
 		and: vi.fn((...args: unknown[]) => ({ and: args })),
 		eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
-		inArray: vi.fn((left: unknown, right: unknown) => ({ inArray: [left, right] })),
+		inArray: vi.fn((left: unknown, right: unknown) => ({
+			inArray: [left, right],
+		})),
 	};
 });
 
@@ -35,6 +38,10 @@ vi.mock("@/env", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	requireUser: mockState.requireUser,
+}));
+
+vi.mock("@/lib/auth/organization-action-authorization", () => ({
+	runActiveOrganizationActionActorCheck: mockState.requireActiveActor,
 }));
 
 vi.mock("@/db", () => ({
@@ -79,7 +86,8 @@ vi.mock("@/lib/import-review/repository", () => ({
 	getImportReviewSummary: mockState.getImportReviewSummary,
 	listImportReviewRows: mockState.listImportReviewRows,
 	applyImportRowDecision: mockState.applyImportRowDecision,
-	listRejectedImportReviewRowsForExport: mockState.listRejectedImportReviewRowsForExport,
+	listRejectedImportReviewRowsForExport:
+		mockState.listRejectedImportReviewRowsForExport,
 	recordRejectedExport: mockState.recordRejectedExport,
 	createCommitJobsForAcceptedRows: mockState.createCommitJobsForAcceptedRows,
 	readyCommitJobsFromJobs: mockState.readyCommitJobsFromJobs,
@@ -104,6 +112,7 @@ describe("import review decision actions", () => {
 		vi.clearAllMocks();
 		mockState.requireUser.mockResolvedValue({ user: { id: "user_1" } });
 		mockState.findMember.mockResolvedValue({ role: "admin" });
+		mockState.requireActiveActor.mockResolvedValue({});
 		mockState.getImportReviewSummary.mockResolvedValue({
 			totalRows: 4,
 			acceptedRows: 1,
@@ -139,7 +148,7 @@ describe("import review decision actions", () => {
 	});
 
 	it("requires owner or admin before reading review summaries", async () => {
-		mockState.findMember.mockResolvedValue({ role: "member" });
+		mockState.requireActiveActor.mockRejectedValue(new Error("Unauthorized"));
 
 		const result = await getImportReviewSummaryAction("org_1", "batch_1");
 
@@ -174,7 +183,10 @@ describe("import review decision actions", () => {
 			offset: 0,
 		});
 
-		expect(result).toEqual({ success: false, error: "Invalid import review page limit" });
+		expect(result).toEqual({
+			success: false,
+			error: "Invalid import review page limit",
+		});
 		expect(mockState.listImportReviewRows).not.toHaveBeenCalled();
 	});
 
@@ -206,7 +218,10 @@ describe("import review decision actions", () => {
 			decision: "rejected",
 		});
 
-		expect(result).toEqual({ success: false, error: "At least one import review row is required" });
+		expect(result).toEqual({
+			success: false,
+			error: "At least one import review row is required",
+		});
 		expect(mockState.applyImportRowDecision).not.toHaveBeenCalled();
 	});
 
@@ -220,7 +235,10 @@ describe("import review decision actions", () => {
 			issueCount: 8,
 		});
 
-		const result = await exportRejectedRowsAction({ organizationId: "org_1", batchId: "batch_1" });
+		const result = await exportRejectedRowsAction({
+			organizationId: "org_1",
+			batchId: "batch_1",
+		});
 
 		expect(result).toEqual({
 			success: true,
@@ -231,7 +249,9 @@ describe("import review decision actions", () => {
 					'id,entityType,providerSourceId,issueSeverity,decisionReason,normalizedPayload,sourcePayload\nrow_1,employee,provider_1,warning,Duplicate employee,"{""employeeNumber"":""E-1"",""name"":""Ada""}","{""id"":""provider_1""}"',
 			},
 		});
-		expect(mockState.listRejectedImportReviewRowsForExport).toHaveBeenCalledWith({
+		expect(
+			mockState.listRejectedImportReviewRowsForExport,
+		).toHaveBeenCalledWith({
 			organizationId: "org_1",
 			batchId: "batch_1",
 		});
@@ -245,7 +265,10 @@ describe("import review decision actions", () => {
 	});
 
 	it("starts commit jobs for accepted rows and enqueues each job", async () => {
-		const result = await startImportCommitAction({ organizationId: "org_1", batchId: "batch_1" });
+		const result = await startImportCommitAction({
+			organizationId: "org_1",
+			batchId: "batch_1",
+		});
 
 		expect(result).toEqual({ success: true, data: { queuedCount: 2 } });
 		expect(mockState.updateImportBatchStatus).toHaveBeenNthCalledWith(1, {
@@ -277,7 +300,10 @@ describe("import review decision actions", () => {
 			{ id: "job_employee", entityType: "employee" },
 		]);
 
-		const result = await startImportCommitAction({ organizationId: "org_1", batchId: "batch_1" });
+		const result = await startImportCommitAction({
+			organizationId: "org_1",
+			batchId: "batch_1",
+		});
 
 		expect(result).toEqual({ success: true, data: { queuedCount: 2 } });
 		expect(mockState.readyCommitJobsFromJobs).toHaveBeenCalledWith([
@@ -286,14 +312,20 @@ describe("import review decision actions", () => {
 		]);
 		expect(mockState.enqueueImportCommitJob).toHaveBeenCalledTimes(1);
 		expect(mockState.enqueueImportCommitJob).toHaveBeenCalledWith(
-			expect.objectContaining({ jobId: "job_employee", entityType: "employee" }),
+			expect.objectContaining({
+				jobId: "job_employee",
+				entityType: "employee",
+			}),
 		);
 	});
 
 	it("does not transition to committing when there are no accepted rows", async () => {
 		mockState.createCommitJobsForAcceptedRows.mockResolvedValue([]);
 
-		const result = await startImportCommitAction({ organizationId: "org_1", batchId: "batch_1" });
+		const result = await startImportCommitAction({
+			organizationId: "org_1",
+			batchId: "batch_1",
+		});
 
 		expect(result).toEqual({
 			success: false,
@@ -313,7 +345,10 @@ describe("import review decision actions", () => {
 			issueCount: 1,
 		});
 
-		const result = await startImportCommitAction({ organizationId: "org_1", batchId: "batch_1" });
+		const result = await startImportCommitAction({
+			organizationId: "org_1",
+			batchId: "batch_1",
+		});
 
 		expect(result).toEqual({
 			success: false,
@@ -325,9 +360,12 @@ describe("import review decision actions", () => {
 	});
 
 	it("does not mutate batch status when commit authorization fails", async () => {
-		mockState.findMember.mockResolvedValue({ role: "member" });
+		mockState.requireActiveActor.mockRejectedValue(new Error("Unauthorized"));
 
-		const result = await startImportCommitAction({ organizationId: "org_1", batchId: "batch_1" });
+		const result = await startImportCommitAction({
+			organizationId: "org_1",
+			batchId: "batch_1",
+		});
 
 		expect(result).toEqual({ success: false, error: "Unauthorized" });
 		expect(mockState.updateImportBatchStatus).not.toHaveBeenCalled();
@@ -339,9 +377,15 @@ describe("import review decision actions", () => {
 			new Error("queue failed because secret token leaked"),
 		);
 
-		const result = await startImportCommitAction({ organizationId: "org_1", batchId: "batch_1" });
+		const result = await startImportCommitAction({
+			organizationId: "org_1",
+			batchId: "batch_1",
+		});
 
-		expect(result).toEqual({ success: false, error: "queue failed because secret token leaked" });
+		expect(result).toEqual({
+			success: false,
+			error: "queue failed because secret token leaked",
+		});
 		expect(mockState.updateImportBatchStatus).toHaveBeenLastCalledWith({
 			organizationId: "org_1",
 			batchId: "batch_1",
@@ -381,12 +425,16 @@ describe("import review repository decision safety", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.findImportBatch.mockResolvedValue({ id: "batch_1", status: "needs_review" });
-		mockState.transaction.mockImplementation(async (callback: (tx: unknown) => unknown) =>
-			callback({
-				select: mockState.select,
-				update: mockState.update,
-			}),
+		mockState.findImportBatch.mockResolvedValue({
+			id: "batch_1",
+			status: "needs_review",
+		});
+		mockState.transaction.mockImplementation(
+			async (callback: (tx: unknown) => unknown) =>
+				callback({
+					select: mockState.select,
+					update: mockState.update,
+				}),
 		);
 	});
 
@@ -406,7 +454,9 @@ describe("import review repository decision safety", () => {
 			from: vi.fn().mockReturnValue({ where: selectWhere }),
 		});
 		mockState.update.mockReturnValue({
-			set: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ returning: vi.fn() }) }),
+			set: vi.fn().mockReturnValue({
+				where: vi.fn().mockReturnValue({ returning: vi.fn() }),
+			}),
 		});
 
 		const { applyImportRowDecision } = await importActualRepository();
@@ -440,7 +490,9 @@ describe("import review repository decision safety", () => {
 			from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([]) }),
 		});
 		mockState.update.mockReturnValue({
-			set: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ returning: vi.fn() }) }),
+			set: vi.fn().mockReturnValue({
+				where: vi.fn().mockReturnValue({ returning: vi.fn() }),
+			}),
 		});
 
 		const { applyImportRowDecision } = await importActualRepository();
@@ -477,12 +529,14 @@ describe("import review repository decision safety", () => {
 		const { batchFor, batchWhere } = mockLockedBatch("needs_review");
 		mockState.select.mockReturnValueOnce({
 			from: vi.fn().mockReturnValue({
-				where: vi.fn().mockResolvedValue([{ id: "row_1", issueSeverity: "none" }]),
+				where: vi
+					.fn()
+					.mockResolvedValue([{ id: "row_1", issueSeverity: "none" }]),
 			}),
 		});
-		const updateWhere = vi
-			.fn()
-			.mockReturnValue({ returning: vi.fn().mockResolvedValue([{ id: "row_1" }]) });
+		const updateWhere = vi.fn().mockReturnValue({
+			returning: vi.fn().mockResolvedValue([{ id: "row_1" }]),
+		});
 		mockState.update.mockReturnValue({
 			set: vi.fn().mockReturnValue({ where: updateWhere }),
 		});
@@ -502,7 +556,9 @@ describe("import review repository decision safety", () => {
 			expect.objectContaining({
 				and: expect.arrayContaining([
 					expect.objectContaining({ eq: ["importBatch.id", "batch_1"] }),
-					expect.objectContaining({ eq: ["importBatch.organizationId", "org_1"] }),
+					expect.objectContaining({
+						eq: ["importBatch.organizationId", "org_1"],
+					}),
 				]),
 			}),
 		);

@@ -14,6 +14,7 @@ import {
 	type AuthContextUser,
 	mapSessionUserToAuthContextUser,
 } from "@/lib/auth/auth-context-user";
+import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import {
 	type Action,
 	type AppAbility,
@@ -803,25 +804,29 @@ export async function getSettingsAccessInputForUser(
 			.limit(1)
 			.then((records) => records[0] ?? null),
 		db
-			.select({ role: employee.role })
+			.select({ role: employee.role, isActive: employee.isActive })
 			.from(employee)
 			.where(
 				and(
 					eq(employee.userId, userId),
 					eq(employee.organizationId, activeOrganizationId),
-					eq(employee.isActive, true),
 				),
 			)
 			.limit(1)
 			.then((records) => records[0] ?? null),
 	]);
+	const employeeIsInactive = employeeRecord?.isActive === false;
 
 	return {
 		activeOrganizationId,
-		membershipRole: isSettingsAccessMembershipRole(membershipRecord?.role)
-			? membershipRecord.role
-			: null,
-		employeeRole: membershipRecord ? (employeeRecord?.role ?? null) : null,
+		membershipRole:
+			!employeeIsInactive && isSettingsAccessMembershipRole(membershipRecord?.role)
+				? membershipRecord.role
+				: null,
+		employeeRole:
+			membershipRecord && !employeeIsInactive
+				? (employeeRecord?.role ?? null)
+				: null,
 	};
 }
 
@@ -963,20 +968,35 @@ export async function isOrgAdminCasl(organizationId: string): Promise<boolean> {
 
 	// Check if this is the active organization
 	if (session.session?.activeOrganizationId !== organizationId) {
-		// Need to check membership directly for non-active org
-		const [memberRecord] = await db
-			.select()
-			.from(member)
-			.where(
-				and(
-					eq(member.userId, session.user.id),
-					eq(member.organizationId, organizationId),
-					eq(member.status, "approved"),
-				),
-			)
-			.limit(1);
+		const [[memberRecord], [employeeRecord]] = await Promise.all([
+			db
+				.select({ role: member.role })
+				.from(member)
+				.where(
+					and(
+						eq(member.userId, session.user.id),
+						eq(member.organizationId, organizationId),
+						eq(member.status, "approved"),
+					),
+				)
+				.limit(1),
+			db
+				.select({ isActive: employee.isActive })
+				.from(employee)
+				.where(
+					and(
+						eq(employee.userId, session.user.id),
+						eq(employee.organizationId, organizationId),
+					),
+				)
+				.limit(1),
+		]);
 
-		return memberRecord?.role === "admin" || memberRecord?.role === "owner";
+		return (
+			(hasOrganizationRole(memberRecord?.role, "admin") ||
+				hasOrganizationRole(memberRecord?.role, "owner")) &&
+			(employeeRecord?.isActive ?? true)
+		);
 	}
 
 	// For active organization, use CASL

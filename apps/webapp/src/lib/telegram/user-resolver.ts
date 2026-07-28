@@ -8,6 +8,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { employee, telegramLinkCode, telegramUserMapping } from "@/db/schema";
+import { resolveCommandActorEmployee } from "@/lib/integrations/resolve-command-actor";
 import { createLogger } from "@/lib/logger";
 import type { ResolvedTelegramUser } from "./types";
 
@@ -39,6 +40,12 @@ export async function resolveTelegramUser(
 	});
 
 	if (mapping) {
+		const emp = await resolveCommandActorEmployee(
+			mapping.userId,
+			mapping.organizationId,
+		);
+		if (!emp) return { status: "not_linked", telegramUserId };
+
 		// Update last seen and username if changed
 		await db
 			.update(telegramUserMapping)
@@ -48,17 +55,11 @@ export async function resolveTelegramUser(
 			})
 			.where(eq(telegramUserMapping.id, mapping.id));
 
-		// Get employee ID
-		const emp = await db.query.employee.findFirst({
-			where: and(eq(employee.userId, mapping.userId), eq(employee.organizationId, organizationId)),
-			columns: { id: true },
-		});
-
 		return {
 			status: "found",
 			user: {
 				userId: mapping.userId,
-				employeeId: emp?.id || "",
+				employeeId: emp.id,
 				organizationId: mapping.organizationId,
 				telegramUserId: mapping.telegramUserId,
 				telegramUsername: mapping.telegramUsername,
@@ -108,7 +109,10 @@ export async function generateLinkCode(
 		status: "pending",
 	});
 
-	logger.info({ userId, organizationId, codeLength: code.length }, "Link code generated");
+	logger.info(
+		{ userId, organizationId, codeLength: code.length },
+		"Link code generated",
+	);
 
 	return { code, expiresAt };
 }
@@ -142,7 +146,9 @@ export async function claimLinkCode(
 	}
 
 	if (linkCode.status !== "pending") {
-		return { status: linkCode.status === "expired" ? "expired" : "invalid_code" };
+		return {
+			status: linkCode.status === "expired" ? "expired" : "invalid_code",
+		};
 	}
 
 	if (linkCode.expiresAt < new Date()) {
@@ -169,7 +175,10 @@ export async function claimLinkCode(
 
 	// Get employee ID
 	const emp = await db.query.employee.findFirst({
-		where: and(eq(employee.userId, linkCode.userId), eq(employee.organizationId, organizationId)),
+		where: and(
+			eq(employee.userId, linkCode.userId),
+			eq(employee.organizationId, organizationId),
+		),
 		columns: { id: true },
 	});
 
@@ -208,7 +217,10 @@ export async function claimLinkCode(
 /**
  * Unlink a Telegram account
  */
-export async function unlinkTelegramUser(userId: string, organizationId: string): Promise<boolean> {
+export async function unlinkTelegramUser(
+	userId: string,
+	organizationId: string,
+): Promise<boolean> {
 	const result = await db
 		.update(telegramUserMapping)
 		.set({ isActive: false })

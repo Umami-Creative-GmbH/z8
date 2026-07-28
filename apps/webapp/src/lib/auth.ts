@@ -16,6 +16,12 @@ import * as schema from "@/db/auth-schema";
 import { employee, scimProvisioningLog, team } from "@/db/schema";
 import { env } from "@/env";
 import { resolveAuthSecrets } from "@/lib/auth/auth-secrets";
+import {
+	normalizeInvitationEmail,
+	resolveAcceptedInvitationCanCreateOrganizations,
+} from "@/lib/auth/employee-invitation-draft";
+import { createGuardedAuthSecondaryStorage } from "@/lib/auth/guarded-secondary-storage";
+import { completeRemovedMemberCleanup } from "@/lib/auth/member-removal-cleanup";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
 import {
 	getAuthAllowedHosts,
@@ -26,7 +32,10 @@ import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigg
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { getOrganizationBaseUrl } from "./app-url";
 import { getDomainConfig } from "./domain/domain-service";
-import { classifyDomainHost, resolvePlatformOrganization } from "./domain/platform-domain";
+import {
+	classifyDomainHost,
+	resolvePlatformOrganization,
+} from "./domain/platform-domain";
 import { sendEmail } from "./email/email-service";
 import { renderOrganizationEmailTemplate } from "./email/template-renderer";
 import { createLogger } from "./logger";
@@ -34,64 +43,33 @@ import { secondaryStorage } from "./redis";
 
 const logger = createLogger("Auth");
 const targetTeamIdSchema = z.uuid();
+const authSecondaryStorage =
+	createGuardedAuthSecondaryStorage(secondaryStorage);
 
 type InvitationTargetTeamLookupDb = Pick<typeof db, "query">;
-type MemberRemovalDb = Pick<typeof db, "delete" | "select" | "update">;
-type MemberRemovalSecondaryStorage = Pick<typeof secondaryStorage, "delete">;
 
-const memberRemovalSecondaryStorage: MemberRemovalSecondaryStorage = {
-	delete: secondaryStorage.deleteOrThrow,
-};
-
-export async function revokeRemovedMemberAccess(
-	userId: string,
-	organizationId: string,
-	dependencies: {
-		db: MemberRemovalDb;
-		secondaryStorage: MemberRemovalSecondaryStorage;
-	} = { db, secondaryStorage: memberRemovalSecondaryStorage },
-) {
-	const removedSessions = await dependencies.db
-		.select({ token: schema.session.token })
-		.from(schema.session)
-		.where(
-			and(
-				eq(schema.session.userId, userId),
-				eq(schema.session.activeOrganizationId, organizationId),
-			),
-		);
-
-	await dependencies.db
-		.update(employee)
-		.set({ isActive: false })
-		.where(and(eq(employee.userId, userId), eq(employee.organizationId, organizationId)));
-
-	await dependencies.db
-		.delete(schema.session)
-		.where(
-			and(
-				eq(schema.session.userId, userId),
-				eq(schema.session.activeOrganizationId, organizationId),
-			),
-		);
-
-	await Promise.all(
-		removedSessions.map(({ token }) => dependencies.secondaryStorage.delete(token)),
-	);
-}
+export {
+	completeRemovedMemberCleanup,
+	revokeRemovedMemberAccess,
+} from "@/lib/auth/member-removal-cleanup";
 
 export async function resolveInvitationTargetTeamId(
 	dbClient: InvitationTargetTeamLookupDb,
 	organizationId: string,
 	targetTeamId: string | null | undefined,
 ) {
-	const targetTeamIdResult = targetTeamId ? targetTeamIdSchema.safeParse(targetTeamId) : null;
+	const targetTeamIdResult = targetTeamId
+		? targetTeamIdSchema.safeParse(targetTeamId)
+		: null;
 	if (!targetTeamIdResult?.success) {
 		return null;
 	}
 
 	const targetTeam = await dbClient.query.team.findFirst({
-		where: and(eq(team.id, targetTeamIdResult.data), eq(team.organizationId, organizationId)),
+		where: and(
+			eq(team.id, targetTeamIdResult.data),
+			eq(team.organizationId, organizationId),
+		),
 	});
 
 	return targetTeam?.id ?? null;
@@ -104,7 +82,9 @@ function getAuthSecrets() {
 	});
 
 	if (resolved.hadInvalidRotatedSecrets) {
-		logger.warn("BETTER_AUTH_SECRETS was provided but no valid entries were found. Falling back.");
+		logger.warn(
+			"BETTER_AUTH_SECRETS was provided but no valid entries were found. Falling back.",
+		);
 	}
 
 	if (resolved.usedBuildTimeFallback) {
@@ -143,7 +123,9 @@ export async function getSSOTrustedOrigins(
 	return [...origins];
 }
 
-function isSCIMAdministrator(member: { role: string } | null): member is { role: string } {
+function isSCIMAdministrator(
+	member: { role: string } | null,
+): member is { role: string } {
 	if (!member) return false;
 	const roles = member.role.split(",").map((role) => role.trim());
 	return roles.includes("admin") || roles.includes("owner");
@@ -161,7 +143,9 @@ export function assertSCIMAdministrator(
  * Get the primary organization ID for a user (for auth emails)
  * Returns the first organization the user is a member of
  */
-async function getUserPrimaryOrganizationId(userId: string): Promise<string | undefined> {
+async function getUserPrimaryOrganizationId(
+	userId: string,
+): Promise<string | undefined> {
 	try {
 		const membership = await db.query.member.findFirst({
 			where: eq(schema.member.userId, userId),
@@ -192,14 +176,21 @@ async function syncBillingSeats({
 	userId,
 	change,
 }: Parameters<typeof syncBillingSeatsAfterMemberChange>[0]) {
-	await syncBillingSeatsAfterMemberChange({ organizationId, memberId, userId, change });
+	await syncBillingSeatsAfterMemberChange({
+		organizationId,
+		memberId,
+		userId,
+		change,
+	});
 }
 
 type AuthDatabaseAdapterFactory = ReturnType<typeof drizzleAdapter>;
 type AuthDatabaseAdapter = ReturnType<AuthDatabaseAdapterFactory>;
 type AuthFindOneOptions = Parameters<AuthDatabaseAdapter["findOne"]>[0];
 
-function withInsensitiveUserEmailWhere(options: AuthFindOneOptions): AuthFindOneOptions {
+function withInsensitiveUserEmailWhere(
+	options: AuthFindOneOptions,
+): AuthFindOneOptions {
 	if (options.model !== "user" || !Array.isArray(options.where)) {
 		return options;
 	}
@@ -217,10 +208,13 @@ function withInsensitiveUserEmailWhere(options: AuthFindOneOptions): AuthFindOne
 	return changed ? { ...options, where } : options;
 }
 
-function wrapEmailLookupCaseInsensitiveAdapter(adapter: AuthDatabaseAdapter): AuthDatabaseAdapter {
+function wrapEmailLookupCaseInsensitiveAdapter(
+	adapter: AuthDatabaseAdapter,
+): AuthDatabaseAdapter {
 	return {
 		...adapter,
-		findOne: (options) => adapter.findOne(withInsensitiveUserEmailWhere(options)),
+		findOne: (options) =>
+			adapter.findOne(withInsensitiveUserEmailWhere(options)),
 	};
 }
 
@@ -270,7 +264,9 @@ export const auth = betterAuth({
 		try {
 			const platformDomain = classifyDomainHost(normalizedHost);
 			if (platformDomain?.type === "platformOrganization") {
-				const platformOrganization = await resolvePlatformOrganization(platformDomain.label);
+				const platformOrganization = await resolvePlatformOrganization(
+					platformDomain.label,
+				);
 				if (platformOrganization) {
 					origins.push(
 						...getOrganizationPlatformOrigins({
@@ -281,7 +277,10 @@ export const auth = betterAuth({
 				}
 			}
 		} catch (error) {
-			logger.warn({ error, host }, "Failed to verify platform domain for trusted origins");
+			logger.warn(
+				{ error, host },
+				"Failed to verify platform domain for trusted origins",
+			);
 		}
 
 		// Verify against registered custom domains
@@ -292,7 +291,10 @@ export const auth = betterAuth({
 				origins.push(`https://${normalizedHost}`);
 			}
 		} catch (error) {
-			logger.warn({ error, host }, "Failed to verify custom domain for trusted origins");
+			logger.warn(
+				{ error, host },
+				"Failed to verify custom domain for trusted origins",
+			);
 		}
 
 		try {
@@ -318,7 +320,7 @@ export const auth = betterAuth({
 
 	// Secondary storage for session caching (Redis)
 	// This dramatically improves session retrieval performance
-	secondaryStorage,
+	secondaryStorage: authSecondaryStorage,
 
 	verification: {
 		storeIdentifier: {
@@ -388,7 +390,8 @@ export const auth = betterAuth({
 		enabled: true,
 		requireEmailVerification: true,
 		sendResetPassword: async ({ user, url }, _request) => {
-			const { organizationId, correctedUrl } = await getOrganizationEmailContext(user.id, url);
+			const { organizationId, correctedUrl } =
+				await getOrganizationEmailContext(user.id, url);
 
 			const rendered = await renderOrganizationEmailTemplate({
 				organizationId,
@@ -412,10 +415,8 @@ export const auth = betterAuth({
 	emailVerification: {
 		sendOnSignUp: true,
 		sendVerificationEmail: async ({ user, url }, _request) => {
-			const { organizationId, appUrl, correctedUrl } = await getOrganizationEmailContext(
-				user.id,
-				url,
-			);
+			const { organizationId, appUrl, correctedUrl } =
+				await getOrganizationEmailContext(user.id, url);
 
 			const rendered = await renderOrganizationEmailTemplate({
 				organizationId,
@@ -487,7 +488,8 @@ export const auth = betterAuth({
 					where: eq(schema.user.id, user.id),
 				});
 				const userCanCreateOrganizations =
-					userRecord?.role === "admin" || (userRecord?.canCreateOrganizations ?? false);
+					userRecord?.role === "admin" ||
+					(userRecord?.canCreateOrganizations ?? false);
 
 				return canCreateOrganizationsForDeployment(userCanCreateOrganizations);
 			},
@@ -634,22 +636,31 @@ export const auth = betterAuth({
 							eq(schema.invitation.organizationId, invitation.organizationId),
 						),
 					});
-					const targetTeamId = await resolveInvitationTargetTeamId(
-						db,
-						invitation.organizationId,
-						invitationRecord?.targetTeamId,
-					);
+					const [targetTeamId, canCreateOrganizations] = await Promise.all([
+						resolveInvitationTargetTeamId(
+							db,
+							invitation.organizationId,
+							invitationRecord?.targetTeamId,
+						),
+						resolveAcceptedInvitationCanCreateOrganizations(db, {
+							organizationId: invitation.organizationId,
+							normalizedEmail: normalizeInvitationEmail(invitation.email),
+							invitationCanCreateOrganizations:
+								invitationRecord?.canCreateOrganizations ?? false,
+						}),
+					]);
 
 					// Update user's organization creation permission based on invitation
 					await db
 						.update(schema.user)
 						.set({
-							canCreateOrganizations: invitationRecord?.canCreateOrganizations ?? false,
+							canCreateOrganizations,
 							invitedVia: invitation.id,
 						})
 						.where(eq(schema.user.id, user.id));
 
 					await ensureEmployeeForOrganizationMember(db, {
+						mode: "membershipAccepted",
 						userId: user.id,
 						organizationId: invitation.organizationId,
 						memberRole: member.role,
@@ -668,6 +679,7 @@ export const auth = betterAuth({
 				// Create employee record when user is added to organization
 				afterAddMember: async ({ member, user, organization }) => {
 					await ensureEmployeeForOrganizationMember(db, {
+						mode: "membershipAccepted",
 						userId: user.id,
 						organizationId: organization.id,
 						memberRole: member.role,
@@ -681,15 +693,11 @@ export const auth = betterAuth({
 					});
 				},
 
-				// Sync seat count when member is removed
+				// Access and billing cleanup run only after membership removal commits.
 				afterRemoveMember: async ({ member, organization }) => {
-					await revokeRemovedMemberAccess(member.userId, organization.id);
-
-					await syncBillingSeats({
+					await completeRemovedMemberCleanup({
 						organizationId: organization.id,
-						memberId: member.id,
 						userId: member.userId,
-						change: "removed",
 					});
 				},
 			},
@@ -752,11 +760,15 @@ export const auth = betterAuth({
 					});
 
 					const ssoRequiresApproval =
-						(org as { ssoRequiresApproval?: boolean })?.ssoRequiresApproval ?? true;
+						(org as { ssoRequiresApproval?: boolean })?.ssoRequiresApproval ??
+						true;
 
 					const existingEmployee = await db.query.employee.findFirst({
 						where: (emp, { eq, and }) =>
-							and(eq(emp.userId, user.id), eq(emp.organizationId, provider.organizationId!)),
+							and(
+								eq(emp.userId, user.id),
+								eq(emp.organizationId, provider.organizationId!),
+							),
 					});
 
 					if (!existingEmployee) {

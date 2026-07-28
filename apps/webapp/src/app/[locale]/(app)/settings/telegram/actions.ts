@@ -3,10 +3,10 @@
 import { randomBytes } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import * as authSchema from "@/db/auth-schema";
 import { telegramBotConfig, telegramUserMapping } from "@/db/schema";
 import { env } from "@/env";
 import { requireUser } from "@/lib/auth-helpers";
+import { runActiveOrganizationActionActorCheck } from "@/lib/auth/organization-action-authorization";
 import { createLogger } from "@/lib/logger";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 import { deleteOrgSecret, getOrgSecret, storeOrgSecret } from "@/lib/vault";
@@ -104,16 +104,14 @@ function validateTelegramSettings(settings: unknown): string | null {
 
 async function requireAdmin(organizationId: string) {
 	const authContext = await requireUser();
-	const memberRecord = await db.query.member.findFirst({
-		where: and(
-			eq(authSchema.member.userId, authContext.user.id),
-			eq(authSchema.member.organizationId, organizationId),
-		),
+	await runActiveOrganizationActionActorCheck({
+		userId: authContext.user.id,
+		organizationId,
+		requiredRole: "admin",
+		message: "Only active approved admins and owners can manage Telegram",
+		resource: "telegramIntegration",
+		action: "manage",
 	});
-
-	if (!memberRecord || (memberRecord.role !== "owner" && memberRecord.role !== "admin")) {
-		throw new Error("Unauthorized");
-	}
 
 	return authContext;
 }
