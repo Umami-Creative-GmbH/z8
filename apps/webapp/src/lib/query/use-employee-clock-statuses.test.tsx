@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -118,12 +118,49 @@ describe("useEmployeeClockStatuses", () => {
 			},
 		);
 
-		await waitFor(() =>
-			expect(mocks.getEmployeeClockStatuses).toHaveBeenCalledTimes(1),
-		);
+		await waitFor(() => expect(result.current.isError).toBe(true));
 		expect(result.current.getStatus("emp-1")).toBe("unknown");
 		expect(result.current.getActivity("emp-1")).toBeNull();
 		expect(result.current.snapshots).toEqual({});
 		expect(result.current.statuses).toEqual({});
+		expect(result.current.error).toEqual(new Error("denied"));
+	});
+
+	it("preserves prior presence when a background refresh fails", async () => {
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		mocks.getEmployeeClockStatuses
+			.mockResolvedValueOnce({
+				success: true,
+				data: {
+					"emp-1": {
+						status: "clocked-in",
+						lastActivityAt: "2026-07-28T10:30:00.000Z",
+						lastActivityUtcOffsetMinutes: 120,
+					},
+				},
+			})
+			.mockResolvedValueOnce({ success: false, error: "temporary" });
+
+		const { result } = renderHook(
+			() => useEmployeeClockStatuses(["emp-1"], { polling: false }),
+			{ wrapper: wrapper(client) },
+		);
+
+		await waitFor(() =>
+			expect(result.current.getStatus("emp-1")).toBe("clocked-in"),
+		);
+		await act(async () => {
+			await result.current.refetch();
+		});
+
+		await waitFor(() => expect(result.current.isRefetchError).toBe(true));
+		expect(result.current.error).toEqual(new Error("temporary"));
+		expect(result.current.getStatus("emp-1")).toBe("clocked-in");
+		expect(result.current.getActivity("emp-1")).toEqual({
+			lastActivityAt: "2026-07-28T10:30:00.000Z",
+			lastActivityUtcOffsetMinutes: 120,
+		});
 	});
 });

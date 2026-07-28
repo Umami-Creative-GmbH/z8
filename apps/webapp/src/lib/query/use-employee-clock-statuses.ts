@@ -48,7 +48,11 @@ export function useEmployeeClockStatuses(
 		),
 		queryFn: async (): Promise<EmployeeClockPresenceMap> => {
 			const result = await getEmployeeClockStatuses(normalizedEmployeeIds);
-			return result.success ? result.data : EMPTY_SNAPSHOTS;
+			if (!result.success) {
+				throw new Error(result.error);
+			}
+
+			return result.data;
 		},
 		enabled: enabled && normalizedEmployeeIds.length > 0,
 		staleTime: 30 * 1000,
