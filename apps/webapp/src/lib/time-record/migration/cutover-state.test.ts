@@ -72,37 +72,40 @@ describe("assertCanonicalCutoverReady", () => {
 
 	it("throws when repair backfill still leaves canonical mismatches", async () => {
 		findFirstEmployee.mockResolvedValue({ userId: "user-1" });
+		const initialReconciliation = {
+			workCountMismatch: 1,
+			absenceCountMismatch: 0,
+			durationMismatchRecords: 0,
+			missingWorkCanonicalRecords: 0,
+			missingAbsenceCanonicalRecords: 0,
+			missingWorkDetailRows: 0,
+			missingAbsenceDetailRows: 0,
+			missingProjectAllocationRows: 0,
+			approvalStateMismatchRecords: 0,
+			missingAbsenceCanonicalLinks: 0,
+			missingAbsenceOrganizationIds: 0,
+		};
+		const finalReconciliation = {
+			workCountMismatch: 0,
+			absenceCountMismatch: 1,
+			durationMismatchRecords: 2,
+			missingWorkCanonicalRecords: 0,
+			missingAbsenceCanonicalRecords: 0,
+			missingWorkDetailRows: 0,
+			missingAbsenceDetailRows: 0,
+			missingProjectAllocationRows: 0,
+			approvalStateMismatchRecords: 0,
+			missingAbsenceCanonicalLinks: 0,
+			missingAbsenceOrganizationIds: 0,
+		};
 		reconcileLegacyToCanonical
-			.mockResolvedValueOnce({
-				workCountMismatch: 1,
-				absenceCountMismatch: 0,
-				durationMismatchRecords: 0,
-				missingWorkCanonicalRecords: 0,
-				missingAbsenceCanonicalRecords: 0,
-				missingWorkDetailRows: 0,
-				missingAbsenceDetailRows: 0,
-				missingProjectAllocationRows: 0,
-				approvalStateMismatchRecords: 0,
-				missingAbsenceCanonicalLinks: 0,
-				missingAbsenceOrganizationIds: 0,
-			})
-			.mockResolvedValueOnce({
-				workCountMismatch: 1,
-				absenceCountMismatch: 0,
-				durationMismatchRecords: 0,
-				missingWorkCanonicalRecords: 0,
-				missingAbsenceCanonicalRecords: 0,
-				missingWorkDetailRows: 0,
-				missingAbsenceDetailRows: 0,
-				missingProjectAllocationRows: 0,
-				approvalStateMismatchRecords: 0,
-				missingAbsenceCanonicalLinks: 0,
-				missingAbsenceOrganizationIds: 0,
-			});
+			.mockResolvedValueOnce(initialReconciliation)
+			.mockResolvedValueOnce(finalReconciliation);
 
 		await expect(assertCanonicalCutoverReady("org-1")).rejects.toMatchObject({
 			name: "CanonicalCutoverNotReadyError",
 			organizationId: "org-1",
+			reconciliation: finalReconciliation,
 			message:
 				"Canonical time-record backfill is incomplete for organization org-1",
 		});

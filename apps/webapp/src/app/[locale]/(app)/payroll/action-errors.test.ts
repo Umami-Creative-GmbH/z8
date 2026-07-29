@@ -12,8 +12,21 @@ const t = (_key: string, fallback: string) => fallback;
 
 describe("mapPayrollWorkspaceActionError", () => {
 	it("classifies incomplete canonical payroll data as a conflict", () => {
+		const reconciliation = {
+			workCountMismatch: 0,
+			absenceCountMismatch: 0,
+			durationMismatchRecords: 0,
+			missingWorkCanonicalRecords: 0,
+			missingAbsenceCanonicalRecords: 0,
+			missingWorkDetailRows: 0,
+			missingAbsenceDetailRows: 0,
+			missingProjectAllocationRows: 0,
+			approvalStateMismatchRecords: 0,
+			missingAbsenceCanonicalLinks: 0,
+			missingAbsenceOrganizationIds: 0,
+		};
 		const result = mapPayrollWorkspaceActionError(
-			new CanonicalCutoverNotReadyError("org-1"),
+			new CanonicalCutoverNotReadyError("org-1", reconciliation),
 			t,
 		);
 
@@ -21,7 +34,9 @@ describe("mapPayrollWorkspaceActionError", () => {
 			_tag: "ConflictError",
 			conflictType: "canonical_payroll_data_not_ready",
 			message: "Payroll data is temporarily unavailable",
+			details: { organizationId: "org-1", reconciliation },
 		});
+		expect(result.details).toEqual({ organizationId: "org-1", reconciliation });
 		expect(result._tag).not.toBe("ValidationError");
 	});
 
