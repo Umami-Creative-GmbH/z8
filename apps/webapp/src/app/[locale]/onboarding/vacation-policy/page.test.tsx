@@ -246,4 +246,22 @@ describe("VacationPolicyPage load effect", () => {
 		expect(mocks.checkIsAdmin).toHaveBeenCalledTimes(2);
 		expect(mocks.push).not.toHaveBeenCalled();
 	});
+
+	it("ignores an admin check that resolves after unmount", async () => {
+		let resolveAdminCheck: (
+			value: { success: true; data: false },
+		) => void = () => undefined;
+		mocks.checkIsAdmin.mockReturnValue(
+			new Promise((resolve) => {
+				resolveAdminCheck = resolve;
+			}),
+		);
+
+		const { unmount } = render(<VacationPolicyPage />);
+		unmount();
+		resolveAdminCheck({ success: true, data: false });
+
+		await Promise.resolve();
+		expect(mocks.push).not.toHaveBeenCalled();
+	});
 });

@@ -148,9 +148,8 @@ export function CategoryDialog({
 				<CategoryDialogHeader isEditing={isEditing} />
 
 				<form
-					onSubmit={(e) => {
-						e.preventDefault();
-						form.handleSubmit();
+					action={() => {
+						void form.handleSubmit();
 					}}
 					className="flex min-h-0 flex-1 flex-col"
 				>
