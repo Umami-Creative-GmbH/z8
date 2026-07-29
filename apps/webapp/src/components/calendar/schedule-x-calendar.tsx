@@ -20,17 +20,27 @@ import "./schedule-x-calendar.css";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 
+import type { RefObject } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useUserTimezone, useWeekStartDay } from "@/components/providers/user-preferences-provider";
+import {
+	useUserTimezone,
+	useWeekStartDay,
+} from "@/components/providers/user-preferences-provider";
 import { useTheme } from "@/components/theme-provider";
-import { addCalendarDateKey, todayCalendarDateKey } from "@/lib/calendar/date-keys";
+import {
+	addCalendarDateKey,
+	todayCalendarDateKey,
+} from "@/lib/calendar/date-keys";
 import {
 	calendarEventsToScheduleX,
 	generateBreakEvents,
 	getScheduleXCalendars,
 } from "@/lib/calendar/schedule-x-adapter";
 import { toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
-import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
+import type {
+	CalendarEvent,
+	DailyWorkHoursSummaries,
+} from "@/lib/calendar/types";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
 import { ScheduleXCalendarHeader } from "./schedule-x-calendar-header";
 import {
@@ -96,14 +106,20 @@ export function ScheduleXCalendarWrapper({
 	const isDark = resolvedTheme === "dark";
 
 	const nextInitialDateKey = initialDateKey ?? todayCalendarDateKey(timeZone);
-	const [currentDateKey, setCurrentDateKey] = useState(() => nextInitialDateKey);
-	const [previousInitialDateKey, setPreviousInitialDateKey] = useState(() => nextInitialDateKey);
+	const [currentDateKey, setCurrentDateKey] = useState(
+		() => nextInitialDateKey,
+	);
+	const [previousInitialDateKey, setPreviousInitialDateKey] = useState(
+		() => nextInitialDateKey,
+	);
 	if (nextInitialDateKey !== previousInitialDateKey) {
 		setPreviousInitialDateKey(nextInitialDateKey);
 		setCurrentDateKey(nextInitialDateKey);
 	}
 	const currentDate = DateTime.fromISO(currentDateKey, { zone: timeZone });
-	const [runningPeriodNow, setRunningPeriodNow] = useState<Date>(() => new Date());
+	const [runningPeriodNow, setRunningPeriodNow] = useState<Date>(
+		() => new Date(),
+	);
 
 	// Create calendar plugins (must be stable references)
 	const [calendarControls] = useState(() => createCalendarControlsPlugin());
@@ -111,7 +127,9 @@ export function ScheduleXCalendarWrapper({
 
 	const hasVisibleRunningPeriod =
 		(viewMode === "day" || viewMode === "week") &&
-		events.some((event) => event.type === "work_period" && event.metadata.isRunning);
+		events.some(
+			(event) => event.type === "work_period" && event.metadata.isRunning,
+		);
 
 	const liveEvents = hasVisibleRunningPeriod
 		? events.map((event) =>
@@ -183,58 +201,26 @@ export function ScheduleXCalendarWrapper({
 		calendarControls.setDate(Temporal.PlainDate.from(today));
 	};
 
-	// Format the date range display based on view mode
-	const dateRangeDisplay = (() => {
-		const localizedCurrentDate = currentDate.setLocale(locale);
-
-		switch (viewMode) {
-			case "day":
-				return localizedCurrentDate.toFormat("EEEE, MMMM d, yyyy");
-			case "week": {
-				const { start: weekStart, end: weekEnd } = getWeekBounds(
-					localizedCurrentDate,
-					weekStartDay,
-				);
-				if (weekStart.month === weekEnd.month) {
-					return `${weekStart.toFormat("MMMM d")} - ${weekEnd.toFormat("d, yyyy")}`;
-				}
-				return `${weekStart.toFormat("MMM d")} - ${weekEnd.toFormat("MMM d, yyyy")}`;
-			}
-			case "month":
-				return localizedCurrentDate.toFormat("MMMM yyyy");
-			default:
-				return localizedCurrentDate.toFormat("MMMM d, yyyy");
-		}
-	})();
-
-	const mobileDateRangeDisplay = (() => {
-		const localizedCurrentDate = currentDate.setLocale(locale);
-
-		switch (viewMode) {
-			case "day":
-				return localizedCurrentDate.toFormat("ccc, d. LLL yyyy");
-			case "week": {
-				const { start: weekStart, end: weekEnd } = getWeekBounds(
-					localizedCurrentDate,
-					weekStartDay,
-				);
-				if (weekStart.year === weekEnd.year) {
-					return `${weekStart.toFormat("d. LLL")} - ${weekEnd.toFormat("d. LLL yyyy")}`;
-				}
-				return `${weekStart.toFormat("d. LLL yyyy")} - ${weekEnd.toFormat("d. LLL yyyy")}`;
-			}
-			case "month":
-				return localizedCurrentDate.toFormat("LLL yyyy");
-			default:
-				return localizedCurrentDate.toFormat("d. LLL yyyy");
-		}
-	})();
+	const dateRangeDisplay = formatDateRange(
+		currentDate,
+		locale,
+		viewMode,
+		weekStartDay,
+	);
+	const mobileDateRangeDisplay = formatMobileDateRange(
+		currentDate,
+		locale,
+		viewMode,
+		weekStartDay,
+	);
 
 	const visibleRequirementDates = (() => {
 		if (viewMode === "day") return [currentDate.startOf("day")];
 		if (viewMode === "week") {
 			const { start } = getWeekBounds(currentDate, weekStartDay);
-			return Array.from({ length: 7 }, (_, index) => start.plus({ days: index }));
+			return Array.from({ length: 7 }, (_, index) =>
+				start.plus({ days: index }),
+			);
 		}
 		return [];
 	})();
@@ -269,7 +255,12 @@ export function ScheduleXCalendarWrapper({
 
 	// Create calendar instance with controls plugin
 	const calendar = useCalendarApp({
-		views: [createViewDay(), createViewWeek(), createViewMonthGrid(), createViewMonthAgenda()],
+		views: [
+			createViewDay(),
+			createViewWeek(),
+			createViewMonthGrid(),
+			createViewMonthAgenda(),
+		],
 		defaultView: viewModeToScheduleX[viewMode],
 		selectedDate: Temporal.PlainDate.from(currentDateKey),
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -339,30 +330,124 @@ export function ScheduleXCalendarWrapper({
 	});
 
 	if (isLoading) {
-		return (
-			<div className="flex items-center justify-center h-full min-h-[400px]">
-				<div className="animate-pulse text-muted-foreground">
-					{t("calendar.view.loading", "Loading calendar…")}
-				</div>
-			</div>
-		);
+		return <ScheduleXCalendarLoading t={t} />;
 	}
 
+	return (
+		<ScheduleXCalendarBody
+			calendar={calendar}
+			calendarContainerRef={calendarContainerRef}
+			dateRangeDisplay={dateRangeDisplay}
+			mobileDateRangeDisplay={mobileDateRangeDisplay}
+			onNavigateNext={navigateNext}
+			onNavigatePrevious={navigatePrevious}
+			onNavigateToday={navigateToday}
+			onRefresh={onRefresh}
+			onViewModeChange={handleViewModeChange}
+			t={t}
+			viewMode={viewMode}
+		/>
+	);
+}
+
+function formatDateRange(
+	currentDate: DateTime,
+	locale: string,
+	viewMode: ViewMode,
+	weekStartDay: "monday" | "sunday",
+) {
+	const localizedCurrentDate = currentDate.setLocale(locale);
+	switch (viewMode) {
+		case "day":
+			return localizedCurrentDate.toFormat("EEEE, MMMM d, yyyy");
+		case "week": {
+			const { start, end } = getWeekBounds(localizedCurrentDate, weekStartDay);
+			return start.month === end.month
+				? `${start.toFormat("MMMM d")} - ${end.toFormat("d, yyyy")}`
+				: `${start.toFormat("MMM d")} - ${end.toFormat("MMM d, yyyy")}`;
+		}
+		case "month":
+			return localizedCurrentDate.toFormat("MMMM yyyy");
+		default:
+			return localizedCurrentDate.toFormat("MMMM d, yyyy");
+	}
+}
+
+function formatMobileDateRange(
+	currentDate: DateTime,
+	locale: string,
+	viewMode: ViewMode,
+	weekStartDay: "monday" | "sunday",
+) {
+	const localizedCurrentDate = currentDate.setLocale(locale);
+	switch (viewMode) {
+		case "day":
+			return localizedCurrentDate.toFormat("ccc, d. LLL yyyy");
+		case "week": {
+			const { start, end } = getWeekBounds(localizedCurrentDate, weekStartDay);
+			return start.year === end.year
+				? `${start.toFormat("d. LLL")} - ${end.toFormat("d. LLL yyyy")}`
+				: `${start.toFormat("d. LLL yyyy")} - ${end.toFormat("d. LLL yyyy")}`;
+		}
+		case "month":
+			return localizedCurrentDate.toFormat("LLL yyyy");
+		default:
+			return localizedCurrentDate.toFormat("d. LLL yyyy");
+	}
+}
+
+function ScheduleXCalendarLoading({
+	t,
+}: {
+	t: ReturnType<typeof useTranslate>["t"];
+}) {
+	return (
+		<div className="flex items-center justify-center h-full min-h-[400px]">
+			<div className="animate-pulse text-muted-foreground">
+				{t("calendar.view.loading", "Loading calendar…")}
+			</div>
+		</div>
+	);
+}
+
+function ScheduleXCalendarBody({
+	calendar,
+	calendarContainerRef,
+	dateRangeDisplay,
+	mobileDateRangeDisplay,
+	onNavigateNext,
+	onNavigatePrevious,
+	onNavigateToday,
+	onRefresh,
+	onViewModeChange,
+	t,
+	viewMode,
+}: {
+	calendar: ReturnType<typeof useCalendarApp>;
+	calendarContainerRef: RefObject<HTMLDivElement | null>;
+	dateRangeDisplay: string;
+	mobileDateRangeDisplay: string;
+	onNavigateNext: () => void;
+	onNavigatePrevious: () => void;
+	onNavigateToday: () => void;
+	onRefresh?: () => void;
+	onViewModeChange: (mode: ViewMode) => void;
+	t: ReturnType<typeof useTranslate>["t"];
+	viewMode: ViewMode;
+}) {
 	return (
 		<div className="flex flex-col h-full min-h-[500px]">
 			<ScheduleXCalendarHeader
 				dateRangeDisplay={dateRangeDisplay}
 				mobileDateRangeDisplay={mobileDateRangeDisplay}
 				viewMode={viewMode}
-				onNavigatePrevious={navigatePrevious}
-				onNavigateNext={navigateNext}
-				onNavigateToday={navigateToday}
-				onViewModeChange={handleViewModeChange}
+				onNavigatePrevious={onNavigatePrevious}
+				onNavigateNext={onNavigateNext}
+				onNavigateToday={onNavigateToday}
+				onViewModeChange={onViewModeChange}
 				onRefresh={onRefresh}
 				t={t}
 			/>
-
-			{/* Calendar with internal scroll - styles applied via style tag above */}
 			<div
 				ref={calendarContainerRef}
 				className="schedule-x-container flex-1 min-h-0 overflow-hidden"

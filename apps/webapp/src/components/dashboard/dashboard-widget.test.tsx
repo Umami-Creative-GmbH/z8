@@ -2,7 +2,8 @@
 
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { DashboardWidget, DashboardWidgetDraggableProvider } from "./dashboard-widget";
+import { DashboardWidget } from "./dashboard-widget";
+import { DashboardWidgetDraggableProvider } from "./dashboard-widget-draggable-context";
 
 vi.mock("./widget-visibility-context", () => ({
 	useRegisterVisibleWidget: vi.fn(),
@@ -39,7 +40,9 @@ describe("DashboardWidget", () => {
 			</DashboardWidget>,
 		);
 
-		const widget = screen.getByText("Time tracking content").closest("[data-widget-id]");
+		const widget = screen
+			.getByText("Time tracking content")
+			.closest("[data-widget-id]");
 
 		expect(widget?.className).toContain("break-inside-avoid");
 		expect(widget?.className).toContain("mb-4");
@@ -52,7 +55,9 @@ describe("DashboardWidget", () => {
 			</DashboardWidget>,
 		);
 
-		expect(screen.queryByRole("button", { name: "Drag to reorder widget" })).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: "Drag to reorder widget" }),
+		).toBeNull();
 	});
 
 	it("uses an explicit draggable prop over the surrounding draggable default", () => {
@@ -64,6 +69,8 @@ describe("DashboardWidget", () => {
 			</DashboardWidgetDraggableProvider>,
 		);
 
-		expect(screen.getByRole("button", { name: "Drag to reorder widget" })).not.toBeNull();
+		expect(
+			screen.getByRole("button", { name: "Drag to reorder widget" }),
+		).not.toBeNull();
 	});
 });

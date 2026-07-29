@@ -44,7 +44,11 @@ type EmployeeSelectAction =
 	| { type: "set-local-search"; value: string }
 	| { type: "set-selected"; employee: SelectableEmployee; pendingIds: string[] }
 	| { type: "set-deselected"; employeeId: string; pendingIds: string[] }
-	| { type: "select-all"; employees: SelectableEmployee[]; pendingIds: string[] }
+	| {
+			type: "select-all";
+			employees: SelectableEmployee[];
+			pendingIds: string[];
+	  }
 	| { type: "clear-all" };
 
 function getInitialEmployeeSelectState(): EmployeeSelectState {
@@ -110,7 +114,7 @@ function employeeSelectReducer(
 /**
  * Modal dialog for selecting employees with search and filters
  */
-export function EmployeeSelectModal({
+function useEmployeeSelectModalViewModel({
 	open,
 	onOpenChange,
 	listboxId,
@@ -138,7 +142,8 @@ export function EmployeeSelectModal({
 		undefined,
 		getInitialEmployeeSelectState,
 	);
-	const { hasPendingChanges, localSearch, pendingIds, selectedEmployeesMap } = selectionState;
+	const { hasPendingChanges, localSearch, pendingIds, selectedEmployeesMap } =
+		selectionState;
 	const activePendingIds = hasPendingChanges ? pendingIds : selectedIds;
 
 	// Use the employee select hook (only when not using pre-filtered list)
@@ -172,8 +177,12 @@ export function EmployeeSelectModal({
 	})();
 
 	// Select the appropriate data source
-	const employees = usePreFiltered ? filteredPreFilteredEmployees : serverData.employees;
-	const total = usePreFiltered ? (preFilteredEmployees?.length ?? 0) : serverData.total;
+	const employees = usePreFiltered
+		? filteredPreFilteredEmployees
+		: serverData.employees;
+	const total = usePreFiltered
+		? (preFilteredEmployees?.length ?? 0)
+		: serverData.total;
 	const hasMore = usePreFiltered ? false : serverData.hasMore;
 	const isLoading = usePreFiltered ? false : serverData.isLoading;
 	const isFetching = usePreFiltered ? false : serverData.isFetching;
@@ -314,13 +323,90 @@ export function EmployeeSelectModal({
 		dispatchSelection({ type: "clear-all" });
 	};
 
-	const effectiveSelectedIds = mode === "multiple" ? activePendingIds : selectedIds;
+	const effectiveSelectedIds =
+		mode === "multiple" ? activePendingIds : selectedIds;
 	const selectionCount = effectiveSelectedIds.length;
 	const selectedIdSet = new Set(selectedIds);
 	const hasChanges =
 		mode === "multiple" &&
 		(effectiveSelectedIds.length !== selectedIds.length ||
 			!effectiveSelectedIds.every((id) => selectedIdSet.has(id)));
+
+	return {
+		activePendingIds,
+		effectiveSelectedIds,
+		effectiveShowFilters,
+		employees,
+		handleCancel,
+		handleClearAll,
+		handleConfirm,
+		handleDeselect,
+		handleSelect,
+		handleSelectAll,
+		hasChanges,
+		hasMore,
+		isFetching,
+		isLoading,
+		listboxId,
+		loadMore,
+		maxSelections,
+		mode,
+		open,
+		roleFilter,
+		search,
+		selectedEmployeesMap,
+		selectionCount,
+		setRoleFilter,
+		setSearch,
+		setStatusFilter,
+		setTeamFilter,
+		statusFilter,
+		t,
+		teamFilter,
+		teams: teamsQuery.data,
+		total,
+	};
+}
+
+function EmployeeSelectModalView({
+	viewModel,
+}: {
+	viewModel: ReturnType<typeof useEmployeeSelectModalViewModel>;
+}) {
+	const {
+		activePendingIds,
+		effectiveSelectedIds,
+		effectiveShowFilters,
+		employees,
+		handleCancel,
+		handleClearAll,
+		handleConfirm,
+		handleDeselect,
+		handleSelect,
+		handleSelectAll,
+		hasChanges,
+		hasMore,
+		isFetching,
+		isLoading,
+		listboxId,
+		loadMore,
+		maxSelections,
+		mode,
+		open,
+		roleFilter,
+		search,
+		selectedEmployeesMap,
+		selectionCount,
+		setRoleFilter,
+		setSearch,
+		setStatusFilter,
+		setTeamFilter,
+		statusFilter,
+		t,
+		teamFilter,
+		teams,
+		total,
+	} = viewModel;
 
 	return (
 		<ActionPanel open={open} onOpenChange={handleCancel}>
@@ -333,7 +419,10 @@ export function EmployeeSelectModal({
 					</ActionPanelTitle>
 					<ActionPanelDescription>
 						{mode === "single"
-							? t("common:employeeSelect.selectOneEmployee", "Choose an employee from the list")
+							? t(
+									"common:employeeSelect.selectOneEmployee",
+									"Choose an employee from the list",
+								)
 							: t(
 									"common:employeeSelect.selectMultipleEmployees",
 									"Choose one or more employees from the list",
@@ -382,12 +471,20 @@ export function EmployeeSelectModal({
 								{/* Role filter */}
 								<Select value={roleFilter} onValueChange={setRoleFilter}>
 									<SelectTrigger className="w-[120px] h-7 text-xs bg-background/50">
-										<SelectValue placeholder={t("common:employeeSelect.role", "Role")} />
+										<SelectValue
+											placeholder={t("common:employeeSelect.role", "Role")}
+										/>
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="all">{t("common.all", "All")}</SelectItem>
-										<SelectItem value="admin">{t("common:roles.admin", "Admin")}</SelectItem>
-										<SelectItem value="manager">{t("common:roles.manager", "Manager")}</SelectItem>
+										<SelectItem value="all">
+											{t("common.all", "All")}
+										</SelectItem>
+										<SelectItem value="admin">
+											{t("common:roles.admin", "Admin")}
+										</SelectItem>
+										<SelectItem value="manager">
+											{t("common:roles.manager", "Manager")}
+										</SelectItem>
 										<SelectItem value="employee">
 											{t("common:roles.employee", "Employee")}
 										</SelectItem>
@@ -397,11 +494,17 @@ export function EmployeeSelectModal({
 								{/* Status filter */}
 								<Select value={statusFilter} onValueChange={setStatusFilter}>
 									<SelectTrigger className="w-[120px] h-7 text-xs bg-background/50">
-										<SelectValue placeholder={t("common:employeeSelect.status", "Status")} />
+										<SelectValue
+											placeholder={t("common:employeeSelect.status", "Status")}
+										/>
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="all">{t("common.all", "All")}</SelectItem>
-										<SelectItem value="active">{t("common:status.active", "Active")}</SelectItem>
+										<SelectItem value="all">
+											{t("common.all", "All")}
+										</SelectItem>
+										<SelectItem value="active">
+											{t("common:status.active", "Active")}
+										</SelectItem>
 										<SelectItem value="inactive">
 											{t("common:status.inactive", "Inactive")}
 										</SelectItem>
@@ -411,11 +514,15 @@ export function EmployeeSelectModal({
 								{/* Team filter */}
 								<Select value={teamFilter} onValueChange={setTeamFilter}>
 									<SelectTrigger className="w-[140px] h-7 text-xs bg-background/50">
-										<SelectValue placeholder={t("common:employeeSelect.team", "Team")} />
+										<SelectValue
+											placeholder={t("common:employeeSelect.team", "Team")}
+										/>
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="">{t("common.all", "All Teams")}</SelectItem>
-										{teamsQuery.data?.map((team) => (
+										<SelectItem value="">
+											{t("common.all", "All Teams")}
+										</SelectItem>
+										{teams?.map((team) => (
 											<SelectItem key={team.id} value={team.id}>
 												{team.name}
 											</SelectItem>
@@ -433,24 +540,35 @@ export function EmployeeSelectModal({
 										{t("common:employeeSelect.selected", "{count} selected", {
 											count: selectionCount,
 										})}
-										{maxSelections && <span className="ml-1 opacity-60">/ {maxSelections}</span>}
+										{maxSelections && (
+											<span className="ml-1 opacity-60">/ {maxSelections}</span>
+										)}
 									</span>
 
 									{/* Selected badges (show first 3) */}
 									<div className="flex items-center gap-1">
 										{activePendingIds.slice(0, 3).map((id) => {
 											const emp =
-												selectedEmployeesMap.get(id) || employees.find((e) => e.id === id);
+												selectedEmployeesMap.get(id) ||
+												employees.find((e) => e.id === id);
 											if (!emp) return null;
 											const name = buildAuthUserDisplayName(emp.user);
 											return (
-												<Badge key={id} variant="secondary" className="text-xs pl-2 pr-1 gap-1 h-6">
+												<Badge
+													key={id}
+													variant="secondary"
+													className="text-xs pl-2 pr-1 gap-1 h-6"
+												>
 													<span className="truncate max-w-[60px]">{name}</span>
 													<button
 														type="button"
-														aria-label={t("common:employeeSelect.removeSelected", "Remove {name}", {
-															name,
-														})}
+														aria-label={t(
+															"common:employeeSelect.removeSelected",
+															"Remove {name}",
+															{
+																name,
+															},
+														)}
 														onClick={() => handleDeselect(id)}
 														className="hover:bg-muted rounded-full p-0.5"
 													>
@@ -477,7 +595,8 @@ export function EmployeeSelectModal({
 										disabled={
 											isLoading ||
 											employees.length === 0 ||
-											(maxSelections !== undefined && selectionCount >= maxSelections)
+											(maxSelections !== undefined &&
+												selectionCount >= maxSelections)
 										}
 									>
 										{t("common.selectAll", "Select All")}
@@ -517,7 +636,11 @@ export function EmployeeSelectModal({
 						{/* Footer - minimal, integrated */}
 						<div className="flex items-center justify-between px-4 py-2.5 border-t border-border/50 bg-muted/20">
 							<span className="text-xs text-muted-foreground">
-								{t("common:employeeSelect.totalEmployees", "{count} employees", { count: total })}
+								{t(
+									"common:employeeSelect.totalEmployees",
+									"{count} employees",
+									{ count: total },
+								)}
 							</span>
 							<div className="flex gap-2">
 								{mode === "multiple" && (
@@ -539,4 +662,12 @@ export function EmployeeSelectModal({
 			</ActionPanelContent>
 		</ActionPanel>
 	);
+}
+
+/**
+ * Modal dialog for selecting employees with search and filters
+ */
+export function EmployeeSelectModal(props: EmployeeSelectModalProps) {
+	const viewModel = useEmployeeSelectModalViewModel(props);
+	return <EmployeeSelectModalView viewModel={viewModel} />;
 }

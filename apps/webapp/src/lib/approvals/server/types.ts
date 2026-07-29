@@ -43,6 +43,7 @@ export interface ApprovalWithTimeCorrection {
 	entityId: string;
 	entityType: string;
 	status: "pending" | "approved" | "rejected";
+	reason: string | null;
 	createdAt: Date;
 	displayContext?: DisplayContext;
 	requester: {

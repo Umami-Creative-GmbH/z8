@@ -45,6 +45,7 @@ export function LoginScreen({ webappUrl, onLogin, onOpenSettings }: LoginScreenP
       {/* Top buttons */}
       <div className="login-header-buttons">
         <button
+          type="button"
           onClick={cycleTheme}
           className="settings-button"
           title={`Theme: ${theme === "system" ? "System" : theme === "light" ? "Light" : "Dark"}`}
@@ -53,6 +54,7 @@ export function LoginScreen({ webappUrl, onLogin, onOpenSettings }: LoginScreenP
         </button>
         {webappUrl && (
           <button
+            type="button"
             onClick={onOpenSettings}
             className="settings-button"
             title="IconSettings"
@@ -78,7 +80,7 @@ export function LoginScreen({ webappUrl, onLogin, onOpenSettings }: LoginScreenP
             <p className="login-setup-text">
               Configure your webapp URL to get started
             </p>
-            <button onClick={onOpenSettings} className="login-button">
+            <button type="button" onClick={onOpenSettings} className="login-button">
               <SettingsIcon size={20} />
               Open IconSettings
             </button>
@@ -86,6 +88,7 @@ export function LoginScreen({ webappUrl, onLogin, onOpenSettings }: LoginScreenP
         ) : (
           <>
             <button
+              type="button"
               onClick={handleLogin}
               disabled={isLoading}
               className={`login-button ${isLoading ? "login-button-loading" : ""}`}

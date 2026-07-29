@@ -1,18 +1,24 @@
 import React from "react";
 
 import {
-  createRequestAbsencePayload,
-  createRequestAbsenceFormValidator,
-  type RequestAbsenceFormValues,
-} from "./request-absence-form";
-import {
+	createRequestAbsenceFormValidator,
+	createRequestAbsencePayload,
 	formatDatePickerButtonLabel,
 	isoDateToPickerDate,
 	pickerDateToIsoDate,
-} from "./request-absence-screen";
+	type RequestAbsenceFormValues,
+} from "./request-absence-form";
 
 vi.mock("react-native", () => ({
-	Pressable: ({ accessibilityLabel, accessibilityRole, accessibilityState, children, disabled, onPress, ...props }: any) =>
+	Pressable: ({
+		accessibilityLabel,
+		accessibilityRole,
+		accessibilityState,
+		children,
+		disabled,
+		onPress,
+		...props
+	}: any) =>
 		React.createElement(
 			"button",
 			{
@@ -24,29 +30,39 @@ vi.mock("react-native", () => ({
 					: {}),
 				disabled,
 				onClick: disabled ? undefined : onPress,
+				type: "button",
 			},
 			children,
 		),
-	ScrollView: ({ children, ...props }: any) => React.createElement("div", props, children),
+	ScrollView: ({ children, ...props }: any) =>
+		React.createElement("div", props, children),
 	StyleSheet: {
 		create: <T,>(styles: T) => styles,
 	},
-	Text: ({ children, ...props }: any) => React.createElement("span", props, children),
+	Text: ({ children, ...props }: any) =>
+		React.createElement("span", props, children),
 	TextInput: ({ value, onChangeText, ...props }: any) =>
-		React.createElement("input", { ...props, onChange: (event: any) => onChangeText?.(event.target.value), value }),
-	View: ({ children, ...props }: any) => React.createElement("div", props, children),
+		React.createElement("input", {
+			...props,
+			onChange: (event: any) => onChangeText?.(event.target.value),
+			value,
+		}),
+	View: ({ children, ...props }: any) =>
+		React.createElement("div", props, children),
 }));
 
-function createValues(overrides: Partial<RequestAbsenceFormValues> = {}): RequestAbsenceFormValues {
-  return {
-    categoryId: "category-1",
-    startDate: "2026-05-10",
-    startPeriod: "full_day",
-    endDate: "2026-05-10",
-    endPeriod: "full_day",
-    notes: "",
-    ...overrides,
-  };
+function createValues(
+	overrides: Partial<RequestAbsenceFormValues> = {},
+): RequestAbsenceFormValues {
+	return {
+		categoryId: "category-1",
+		startDate: "2026-05-10",
+		startPeriod: "full_day",
+		endDate: "2026-05-10",
+		endPeriod: "full_day",
+		notes: "",
+		...overrides,
+	};
 }
 
 describe("request absence form", () => {
@@ -88,9 +104,15 @@ describe("request absence form", () => {
 	});
 
 	it("includes the selected date in date picker button labels", () => {
-		expect(formatDatePickerButtonLabel("startDate", "2026-05-10")).toBe("Pick start date: 2026-05-10");
-		expect(formatDatePickerButtonLabel("endDate", "2026-05-11")).toBe("Pick end date: 2026-05-11");
-		expect(formatDatePickerButtonLabel("startDate", "")).toBe("Pick start date: no date selected");
+		expect(formatDatePickerButtonLabel("startDate", "2026-05-10")).toBe(
+			"Pick start date: 2026-05-10",
+		);
+		expect(formatDatePickerButtonLabel("endDate", "2026-05-11")).toBe(
+			"Pick end date: 2026-05-11",
+		);
+		expect(formatDatePickerButtonLabel("startDate", "")).toBe(
+			"Pick start date: no date selected",
+		);
 	});
 
 	it("rejects impossible real dates", () => {
@@ -107,18 +129,19 @@ describe("request absence form", () => {
 		});
 	});
 
-  it("rejects same-day pm-to-am range", () => {
-    const validate = createRequestAbsenceFormValidator();
+	it("rejects same-day pm-to-am range", () => {
+		const validate = createRequestAbsenceFormValidator();
 
-    expect(
-      validate(
-        createValues({
-          startPeriod: "pm",
-          endPeriod: "am",
-        }),
-      ),
-    ).toEqual({
-      endPeriod: "Cannot end in the morning if starting in the afternoon on the same day",
-    });
-  });
+		expect(
+			validate(
+				createValues({
+					startPeriod: "pm",
+					endPeriod: "am",
+				}),
+			),
+		).toEqual({
+			endPeriod:
+				"Cannot end in the morning if starting in the afternoon on the same day",
+		});
+	});
 });

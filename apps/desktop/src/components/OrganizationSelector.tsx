@@ -51,6 +51,7 @@ export function OrganizationSelector({
   return (
     <div className="org-selector-wrapper">
       <button
+        type="button"
         className="org-selector"
         onClick={() => setIsOpen(!isOpen)}
         disabled={isSwitching}
@@ -72,11 +73,17 @@ export function OrganizationSelector({
 
       {isOpen && (
         <>
-          <div className="org-dropdown-backdrop" onClick={() => setIsOpen(false)} />
+          <div
+            aria-hidden="true"
+            className="org-dropdown-backdrop"
+            tabIndex={-1}
+            onClick={() => setIsOpen(false)}
+          />
           <div className="org-dropdown">
             <div className="org-dropdown-label">Switch Organization</div>
             {organizations.map((org) => (
               <button
+                type="button"
                 key={org.id}
                 className={`org-dropdown-item ${org.id === activeOrganizationId ? "org-dropdown-item-active" : ""}`}
                 onClick={() => handleSelect(org.id)}

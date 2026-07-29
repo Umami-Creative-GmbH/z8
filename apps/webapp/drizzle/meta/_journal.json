@@ -400,6 +400,13 @@
       "when": 1785232118219,
       "tag": "0056_approval_workflow_cycle_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1785293968831,
+      "tag": "0057_team_permissions_uniqueness",
+      "breakpoints": true
     }
   ]
 }

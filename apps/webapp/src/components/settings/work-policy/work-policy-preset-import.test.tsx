@@ -1,9 +1,10 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type ReactNode, useState } from "react";
+import { toast } from "sonner";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkPolicyPresetWithSource } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import {
@@ -55,7 +56,9 @@ function renderWithQueryClient(children: ReactNode) {
 		},
 	});
 
-	return render(<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>);
+	return render(
+		<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>,
+	);
 }
 
 const systemPreset = {
@@ -116,13 +119,20 @@ describe("WorkPolicyPresetImport", () => {
 
 	it("shows system and custom presets with source-specific actions", async () => {
 		renderWithQueryClient(
-			<WorkPolicyPresetImport organizationId="org-1" onImportSuccess={vi.fn()} />,
+			<WorkPolicyPresetImport
+				organizationId="org-1"
+				onImportSuccess={vi.fn()}
+			/>,
 		);
 
 		expect(await screen.findByText("German Labor Law")).toBeTruthy();
 		expect(screen.getByText("Retail 38h")).toBeTruthy();
-		expect(screen.getAllByRole("button", { name: "Use as policy" })).toHaveLength(2);
-		expect(screen.getByRole("button", { name: "Copy to custom preset" })).toBeTruthy();
+		expect(
+			screen.getAllByRole("button", { name: "Use as policy" }),
+		).toHaveLength(2);
+		expect(
+			screen.getByRole("button", { name: "Copy to custom preset" }),
+		).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Edit preset" })).toBeTruthy();
 	});
 
@@ -130,7 +140,10 @@ describe("WorkPolicyPresetImport", () => {
 		const user = userEvent.setup();
 
 		renderWithQueryClient(
-			<WorkPolicyPresetImport organizationId="org-1" onImportSuccess={vi.fn()} />,
+			<WorkPolicyPresetImport
+				organizationId="org-1"
+				onImportSuccess={vi.fn()}
+			/>,
 		);
 
 		expect(await screen.findByText("German Labor Law")).toBeTruthy();
@@ -143,10 +156,15 @@ describe("WorkPolicyPresetImport", () => {
 
 	it("exposes an accessible search input", async () => {
 		renderWithQueryClient(
-			<WorkPolicyPresetImport organizationId="org-1" onImportSuccess={vi.fn()} />,
+			<WorkPolicyPresetImport
+				organizationId="org-1"
+				onImportSuccess={vi.fn()}
+			/>,
 		);
 
-		const searchInput = await screen.findByRole("textbox", { name: "Search presets" });
+		const searchInput = await screen.findByRole("textbox", {
+			name: "Search presets",
+		});
 
 		expect(searchInput.getAttribute("name")).toBe("preset-search");
 		expect(searchInput.getAttribute("autocomplete")).toBe("off");
@@ -156,14 +174,19 @@ describe("WorkPolicyPresetImport", () => {
 		const user = userEvent.setup();
 
 		renderWithQueryClient(
-			<WorkPolicyPresetImport organizationId="org-1" onImportSuccess={vi.fn()} />,
+			<WorkPolicyPresetImport
+				organizationId="org-1"
+				onImportSuccess={vi.fn()}
+			/>,
 		);
 
 		await screen.findByText("Retail 38h");
 		await user.click(screen.getByRole("button", { name: "Archive" }));
 
 		expect(archiveWorkPolicyPreset).not.toHaveBeenCalled();
-		expect(screen.getByRole("alertdialog", { name: "Archive custom preset?" })).toBeTruthy();
+		expect(
+			screen.getByRole("alertdialog", { name: "Archive custom preset?" }),
+		).toBeTruthy();
 
 		await user.click(screen.getByRole("button", { name: "Archive preset" }));
 
@@ -199,7 +222,9 @@ describe("WorkPolicyPresetReviewDialog", () => {
 		);
 
 		await user.type(screen.getByLabelText("Name"), "Reviewed Custom Preset");
-		await user.click(screen.getByRole("button", { name: "Save custom preset" }));
+		await user.click(
+			screen.getByRole("button", { name: "Save custom preset" }),
+		);
 
 		expect(createWorkPolicyPreset).toHaveBeenCalledWith(
 			"org-1",
@@ -403,9 +428,47 @@ describe("WorkPolicyPresetReviewDialog", () => {
 		);
 
 		await user.type(screen.getByLabelText("Name"), "Duplicate Preset");
-		await user.click(screen.getByRole("button", { name: "Save custom preset" }));
+		await user.click(
+			screen.getByRole("button", { name: "Save custom preset" }),
+		);
 
-		expect(screen.getByText("A preset with this name already exists")).toBeTruthy();
+		expect(
+			screen.getByText("A preset with this name already exists"),
+		).toBeTruthy();
+	});
+
+	it("re-enables submit and keeps the dialog open when creation rejects", async () => {
+		const user = userEvent.setup();
+		const onOpenChange = vi.fn();
+		const onSuccess = vi.fn();
+		vi.mocked(createWorkPolicyPreset).mockRejectedValue(
+			new Error("Network failed"),
+		);
+
+		renderWithQueryClient(
+			<WorkPolicyPresetReviewDialog
+				open
+				onOpenChange={onOpenChange}
+				organizationId="org-1"
+				mode="createCustom"
+				onSuccess={onSuccess}
+			/>,
+		);
+
+		await user.type(screen.getByLabelText("Name"), "Rejected preset");
+		await user.click(
+			screen.getByRole("button", { name: "Save custom preset" }),
+		);
+
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Save custom preset" }),
+			).toHaveProperty("disabled", false),
+		);
+		expect(screen.getByText("Failed to save preset")).toBeTruthy();
+		expect(toast.success).not.toHaveBeenCalled();
+		expect(onSuccess).not.toHaveBeenCalled();
+		expect(onOpenChange).not.toHaveBeenCalled();
 	});
 
 	it("resets reviewed values when reopened for a different preset", async () => {
@@ -413,7 +476,9 @@ describe("WorkPolicyPresetReviewDialog", () => {
 
 		function ReviewHarness() {
 			const [open, setOpen] = useState(false);
-			const [preset, setPreset] = useState<WorkPolicyPresetWithSource | null>(systemPreset);
+			const [preset, setPreset] = useState<WorkPolicyPresetWithSource | null>(
+				systemPreset,
+			);
 
 			return (
 				<>
@@ -460,6 +525,8 @@ describe("WorkPolicyPresetReviewDialog", () => {
 
 		await user.click(screen.getByRole("button", { name: "Open Custom" }));
 
-		expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("Retail 38h");
+		expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe(
+			"Retail 38h",
+		);
 	});
 });

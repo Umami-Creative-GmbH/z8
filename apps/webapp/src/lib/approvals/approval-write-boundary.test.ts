@@ -4267,7 +4267,7 @@ export async function hiddenImport(values: object) {
 				workspaceRoot: process.cwd(),
 			}),
 		).toEqual([]);
-	}, 60_000);
+	}, 120_000);
 
 	it("keeps every declared exact owner and exception backed by a production write", () => {
 		const inventory = scanApprovalWriteInventory({

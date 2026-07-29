@@ -106,12 +106,12 @@ export function ComplianceAlertBanner({
 
 	return (
 		<div className={cn("space-y-2", className)}>
-			{displayAlerts.map((alert, index) => {
+			{displayAlerts.map((alert) => {
 				const config = severityConfig[alert.severity];
 				const Icon = config.icon;
 
 				return (
-					<Alert key={`${alert.alertType}-${index}`} className={cn("py-3", config.className)}>
+					<Alert key={alert.alertType} className={cn("py-3", config.className)}>
 						<Icon className={cn("size-4", config.iconClassName)} aria-hidden="true" />
 						<AlertTitle className="flex items-center gap-2">
 							{alertTypeLabels[alert.alertType] || alert.alertType}

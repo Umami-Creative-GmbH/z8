@@ -31,7 +31,9 @@ vi.mock("@/lib/upload/tus-ownership", () => ({
 }));
 
 vi.mock("file-type", () => ({
-	fileTypeFromBuffer: vi.fn(() => Promise.resolve({ ext: "pdf", mime: "application/pdf" })),
+	fileTypeFromBuffer: vi.fn(() =>
+		Promise.resolve({ ext: "pdf", mime: "application/pdf" }),
+	),
 }));
 
 vi.mock("@/lib/travel-expenses/attachment-validation", () => ({
@@ -39,17 +41,23 @@ vi.mock("@/lib/travel-expenses/attachment-validation", () => ({
 }));
 
 vi.mock("@aws-sdk/client-s3", () => ({
-	GetObjectCommand: vi.fn().mockImplementation(function GetObjectCommand(input) {
-		mockState.getCommand(input);
-		return { input, type: "get" };
-	}),
-	DeleteObjectCommand: vi.fn().mockImplementation(function DeleteObjectCommand(input) {
-		mockState.deleteCommand(input);
-		return { input, type: "delete" };
-	}),
-	PutObjectCommand: vi.fn().mockImplementation(function PutObjectCommand(input) {
-		return { input, type: "put" };
-	}),
+	GetObjectCommand: vi
+		.fn()
+		.mockImplementation(function GetObjectCommand(input) {
+			mockState.getCommand(input);
+			return { input, type: "get" };
+		}),
+	DeleteObjectCommand: vi
+		.fn()
+		.mockImplementation(function DeleteObjectCommand(input) {
+			mockState.deleteCommand(input);
+			return { input, type: "delete" };
+		}),
+	PutObjectCommand: vi
+		.fn()
+		.mockImplementation(function PutObjectCommand(input) {
+			return { input, type: "put" };
+		}),
 }));
 
 vi.mock("@/lib/storage/s3-client", () => ({
@@ -73,6 +81,7 @@ vi.mock("@/db/schema", () => ({
 		id: "claim.id",
 		organizationId: "claim.organizationId",
 		employeeId: "claim.employeeId",
+		status: "claim.status",
 	},
 }));
 
@@ -93,13 +102,15 @@ describe("travel expense upload processing", () => {
 		mockState.claimFindFirst.mockResolvedValue({
 			id: "claim_1",
 			organizationId: "org_1",
+			status: "draft",
 		});
 		mockState.publicSend.mockImplementation((command) => {
 			if (command.type === "get") {
 				return Promise.resolve({
 					ContentLength: 8,
 					Body: {
-						transformToByteArray: () => Promise.resolve(new Uint8Array([1, 2, 3, 4])),
+						transformToByteArray: () =>
+							Promise.resolve(new Uint8Array([1, 2, 3, 4])),
 					},
 				});
 			}
@@ -139,7 +150,9 @@ describe("travel expense upload processing", () => {
 		});
 		expect(mockState.uploadPrivateObject).toHaveBeenCalledWith(
 			"org_1",
-			expect.stringMatching(/^travel-expenses\/org_1\/claim_1\/\d+-receipt\.pdf$/),
+			expect.stringMatching(
+				/^travel-expenses\/org_1\/claim_1\/\d+-receipt\.pdf$/,
+			),
 			expect.any(Buffer),
 			"application/pdf",
 			expect.objectContaining({
@@ -157,5 +170,55 @@ describe("travel expense upload processing", () => {
 			Bucket: "public-temp-bucket",
 			Key: "tus-user_1-upload",
 		});
+	});
+
+	it("does not process an upload for a claim outside the active organization", async () => {
+		mockState.claimFindFirst.mockResolvedValue(null);
+
+		const response = await POST({
+			json: () =>
+				Promise.resolve({
+					tusFileKey: "tus-user_1-upload",
+					claimId: "claim_other_org",
+					fileName: "receipt.pdf",
+				}),
+		} as never);
+
+		expect(response.status).toBe(404);
+		expect(await response.json()).toEqual({
+			error: "Travel expense claim not found",
+		});
+		expect(mockState.publicSend).not.toHaveBeenCalled();
+		expect(mockState.uploadPrivateObject).not.toHaveBeenCalled();
+		expect(mockState.insert).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		"submitted",
+		"rejected",
+		"approved",
+	])("does not process an upload for a %s claim", async (status) => {
+		mockState.claimFindFirst.mockResolvedValue({
+			id: "claim_1",
+			organizationId: "org_1",
+			status,
+		});
+
+		const response = await POST({
+			json: () =>
+				Promise.resolve({
+					tusFileKey: "tus-user_1-upload",
+					claimId: "claim_1",
+					fileName: "receipt.pdf",
+				}),
+		} as never);
+
+		expect(response.status).toBe(404);
+		expect(await response.json()).toEqual({
+			error: "Travel expense claim not found",
+		});
+		expect(mockState.publicSend).not.toHaveBeenCalled();
+		expect(mockState.uploadPrivateObject).not.toHaveBeenCalled();
+		expect(mockState.insert).not.toHaveBeenCalled();
 	});
 });

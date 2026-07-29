@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
@@ -28,7 +28,10 @@ export async function POST(request: NextRequest) {
 		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
 		const activeOrgId = session.session?.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		// Check CASL permissions
@@ -44,125 +47,163 @@ export async function POST(request: NextRequest) {
 
 		if (!validationResult.success) {
 			return NextResponse.json(
-				{ error: "Invalid request body", details: validationResult.error.issues },
+				{
+					error: "Invalid request body",
+					details: validationResult.error.issues,
+				},
 				{ status: 400 },
 			);
 		}
 
-		const { holidays, categoryId, createRecurring, skipDuplicates } = validationResult.data;
+		const { holidays, categoryId, createRecurring, skipDuplicates } =
+			validationResult.data;
 
-		// Get or create "Public Holidays" category
-		let targetCategoryId = categoryId;
+		const result = await db.transaction(async (tx) => {
+			const lockKey = `holiday-import:${activeOrgId}`;
+			await tx.execute(
+				sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`,
+			);
 
-		if (!targetCategoryId) {
-			// Check if "Public Holidays" category exists
-			const [existingCategory] = await db
-				.select({ id: holidayCategory.id })
-				.from(holidayCategory)
+			if (categoryId) {
+				const [category] = await tx
+					.select({ id: holidayCategory.id })
+					.from(holidayCategory)
+					.where(
+						and(
+							eq(holidayCategory.id, categoryId),
+							eq(holidayCategory.organizationId, activeOrgId),
+						),
+					)
+					.limit(1);
+
+				if (!category) return { invalidCategory: true as const };
+			}
+
+			let targetCategoryId = categoryId;
+			if (!targetCategoryId) {
+				const [existingCategory] = await tx
+					.select({ id: holidayCategory.id })
+					.from(holidayCategory)
+					.where(
+						and(
+							eq(holidayCategory.organizationId, activeOrgId),
+							eq(holidayCategory.type, "public_holiday"),
+							eq(holidayCategory.isActive, true),
+						),
+					)
+					.limit(1);
+
+				if (existingCategory) {
+					targetCategoryId = existingCategory.id;
+				} else {
+					const [newCategory] = await tx
+						.insert(holidayCategory)
+						.values({
+							organizationId: activeOrgId,
+							type: "public_holiday",
+							name: "Public Holidays",
+							description: "National and regional public holidays",
+							color: "#EF4444",
+							blocksTimeEntry: true,
+							excludeFromCalculations: true,
+							isActive: true,
+						})
+						.returning({ id: holidayCategory.id });
+
+					if (!newCategory) {
+						throw new Error("Failed to create holiday category");
+					}
+					targetCategoryId = newCategory.id;
+				}
+			}
+
+			const existingHolidays = await tx
+				.select({
+					name: holiday.name,
+					startDate: holiday.startDate,
+					recurrenceRule: holiday.recurrenceRule,
+				})
+				.from(holiday)
 				.where(
 					and(
-						eq(holidayCategory.organizationId, activeOrgId),
-						eq(holidayCategory.type, "public_holiday"),
-						eq(holidayCategory.isActive, true),
+						eq(holiday.organizationId, activeOrgId),
+						eq(holiday.isActive, true),
 					),
-				)
-				.limit(1);
-
-			if (existingCategory) {
-				targetCategoryId = existingCategory.id;
-			} else {
-				// Create the "Public Holidays" category
-				const [newCategory] = await db
-					.insert(holidayCategory)
-					.values({
-						organizationId: activeOrgId,
-						type: "public_holiday",
-						name: "Public Holidays",
-						description: "National and regional public holidays",
-						color: "#EF4444",
-						blocksTimeEntry: true,
-						excludeFromCalculations: true,
-						isActive: true,
-					})
-					.returning({ id: holidayCategory.id });
-
-				targetCategoryId = newCategory.id;
-			}
-		}
-
-		// Get existing holidays to detect duplicates
-		const existingHolidays = await db
-			.select({
-				name: holiday.name,
-				startDate: holiday.startDate,
-				recurrenceRule: holiday.recurrenceRule,
-			})
-			.from(holiday)
-			.where(and(eq(holiday.organizationId, activeOrgId), eq(holiday.isActive, true)));
-
-		// Process holidays
-		let imported = 0;
-		let skipped = 0;
-		const errors: string[] = [];
-
-		for (const h of holidays) {
-			const holidayPreview: HolidayPreview = {
-				name: h.name,
-				date: h.date,
-				startDate: h.startDate,
-				endDate: h.endDate,
-				type: h.type,
-			};
-
-			// Check for duplicates
-			if (skipDuplicates && isHolidayDuplicate(holidayPreview, existingHolidays)) {
-				skipped++;
-				continue;
-			}
-
-			try {
-				const holidayData = mapToHolidayFormValues(
-					holidayPreview,
-					targetCategoryId,
-					createRecurring,
 				);
+			const values: Array<typeof holiday.$inferInsert> = [];
+			const errors: string[] = [];
+			let skipped = 0;
 
-				await db.insert(holiday).values({
-					organizationId: activeOrgId,
-					name: holidayData.name,
-					description: holidayData.description || null,
-					categoryId: holidayData.categoryId,
-					startDate: holidayData.startDate,
-					endDate: holidayData.endDate,
-					recurrenceType: holidayData.recurrenceType,
-					recurrenceRule: holidayData.recurrenceRule || null,
-					recurrenceEndDate: holidayData.recurrenceEndDate || null,
-					isActive: holidayData.isActive,
-					createdBy: session.user.id,
-				});
+			for (const item of holidays) {
+				const holidayPreview: HolidayPreview = {
+					name: item.name,
+					date: item.date,
+					startDate: item.startDate,
+					endDate: item.endDate,
+					type: item.type,
+				};
 
-				imported++;
+				if (
+					skipDuplicates &&
+					isHolidayDuplicate(holidayPreview, existingHolidays)
+				) {
+					skipped++;
+					continue;
+				}
 
-				// Add to existing list to prevent duplicates within same batch
-				existingHolidays.push({
-					name: holidayData.name,
-					startDate: holidayData.startDate,
-					recurrenceRule: holidayData.recurrenceRule || null,
-				});
-			} catch (error) {
-				console.error(`Error importing holiday ${h.name}:`, error);
-				errors.push(`Failed to import "${h.name}"`);
+				try {
+					const holidayData = mapToHolidayFormValues(
+						holidayPreview,
+						targetCategoryId,
+						createRecurring,
+					);
+					values.push({
+						organizationId: activeOrgId,
+						name: holidayData.name,
+						description: holidayData.description || null,
+						categoryId: holidayData.categoryId,
+						startDate: holidayData.startDate,
+						endDate: holidayData.endDate,
+						recurrenceType: holidayData.recurrenceType,
+						recurrenceRule: holidayData.recurrenceRule || null,
+						recurrenceEndDate: holidayData.recurrenceEndDate || null,
+						isActive: holidayData.isActive,
+						createdBy: session.user.id,
+					});
+					existingHolidays.push({
+						name: holidayData.name,
+						startDate: holidayData.startDate,
+						recurrenceRule: holidayData.recurrenceRule || null,
+					});
+				} catch {
+					errors.push(`Failed to import "${item.name}"`);
+				}
 			}
+
+			if (values.length > 0) {
+				await tx.insert(holiday).values(values);
+			}
+
+			return {
+				imported: values.length,
+				skipped,
+				errors,
+				categoryId: targetCategoryId,
+			};
+		});
+		if ("invalidCategory" in result) {
+			return NextResponse.json(
+				{ error: "Invalid holiday category" },
+				{ status: 400 },
+			);
 		}
 
-		return NextResponse.json({
-			imported,
-			skipped,
-			errors,
-			categoryId: targetCategoryId,
-		});
+		return NextResponse.json(result);
 	} catch (error) {
 		console.error("Error importing holidays:", error);
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }

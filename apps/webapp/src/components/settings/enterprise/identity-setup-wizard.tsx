@@ -18,7 +18,13 @@ import {
 } from "@/app/[locale]/(app)/settings/enterprise/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,7 +70,10 @@ const STEP_INDEX = new Map(STEPS.map((step, index) => [step.id, index]));
 const PROVIDER_OPTIONS = Object.values(ENTERPRISE_IDENTITY_PROVIDER_PRESETS);
 const DEFAULT_PRESET = ENTERPRISE_IDENTITY_PROVIDER_PRESETS.generic;
 
-function stepStatus(step: EnterpriseIdentitySetupStep, setup: EnterpriseIdentitySetupState) {
+function stepStatus(
+	step: EnterpriseIdentitySetupStep,
+	setup: EnterpriseIdentitySetupState,
+) {
 	const currentIndex = STEP_INDEX.get(setup.currentStep) ?? 0;
 	const stepIndex = STEP_INDEX.get(step) ?? 0;
 
@@ -73,16 +82,23 @@ function stepStatus(step: EnterpriseIdentitySetupStep, setup: EnterpriseIdentity
 	return "waiting";
 }
 
-function statusBadge(status: string, t: (key: string, fallback: string) => string) {
+function statusBadge(
+	status: string,
+	t: (key: string, fallback: string) => string,
+) {
 	if (status === "complete") {
 		return (
-			<Badge variant="secondary">{t("settings.enterprise.identity.badge.ready", "Ready")}</Badge>
+			<Badge variant="secondary">
+				{t("settings.enterprise.identity.badge.ready", "Ready")}
+			</Badge>
 		);
 	}
 	if (status === "current")
 		return <Badge>{t("settings.enterprise.identity.badge.now", "Now")}</Badge>;
 	return (
-		<Badge variant="outline">{t("settings.enterprise.identity.badge.queued", "Queued")}</Badge>
+		<Badge variant="outline">
+			{t("settings.enterprise.identity.badge.queued", "Queued")}
+		</Badge>
 	);
 }
 
@@ -133,7 +149,10 @@ function getStepCopy(
 			};
 		case "accessPolicy":
 			return {
-				label: t("settings.enterprise.identity.step.accessPolicy", "Access Policy"),
+				label: t(
+					"settings.enterprise.identity.step.accessPolicy",
+					"Access Policy",
+				),
 				description: t(
 					"settings.enterprise.identity.step.accessPolicy.description",
 					"Set enforcement rules",
@@ -141,8 +160,14 @@ function getStepCopy(
 			};
 		case "review":
 			return {
-				label: t("settings.enterprise.identity.step.review", "Review & Activate"),
-				description: t("settings.enterprise.identity.step.review.description", "Guard activation"),
+				label: t(
+					"settings.enterprise.identity.step.review",
+					"Review & Activate",
+				),
+				description: t(
+					"settings.enterprise.identity.step.review.description",
+					"Guard activation",
+				),
 			};
 	}
 }
@@ -191,12 +216,17 @@ function StepRail({ setup }: { setup: EnterpriseIdentitySetupState }) {
 						const copy = getStepCopy(step.id, t);
 
 						return (
-							<li key={step.id} className="rounded-lg border bg-background/80 px-3 py-2 text-sm">
+							<li
+								key={step.id}
+								className="rounded-lg border bg-background/80 px-3 py-2 text-sm"
+							>
 								<div className="flex min-w-0 items-center justify-between gap-2">
 									<span className="truncate font-medium">{copy.label}</span>
 									{statusBadge(status, t)}
 								</div>
-								<p className="mt-1 truncate text-muted-foreground text-xs">{copy.description}</p>
+								<p className="mt-1 truncate text-muted-foreground text-xs">
+									{copy.description}
+								</p>
 							</li>
 						);
 					})}
@@ -243,7 +273,10 @@ function presetIssuerPlaceholder(
 	t: (key: string, fallback: string) => string,
 ) {
 	if (id === "okta") {
-		return t("settings.enterprise.identity.sso.placeholder.issuer.okta", "https://acme.okta.com…");
+		return t(
+			"settings.enterprise.identity.sso.placeholder.issuer.okta",
+			"https://acme.okta.com…",
+		);
 	}
 	if (id === "microsoft-entra") {
 		return t(
@@ -281,32 +314,50 @@ function readinessRequirementLabel(
 	t: (key: string, fallback: string) => string,
 ) {
 	if (item === "provider") {
-		return t("settings.enterprise.identity.review.requirement.provider", "Provider");
+		return t(
+			"settings.enterprise.identity.review.requirement.provider",
+			"Provider",
+		);
 	}
 	if (item === "domain") {
-		return t("settings.enterprise.identity.review.requirement.domain", "Verified domain");
+		return t(
+			"settings.enterprise.identity.review.requirement.domain",
+			"Verified domain",
+		);
 	}
-	return t("settings.enterprise.identity.review.requirement.ssoTest", "SSO test");
+	return t(
+		"settings.enterprise.identity.review.requirement.ssoTest",
+		"SSO test",
+	);
 }
 
-export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySetupWizardProps) {
+function useIdentitySetupController({
+	initialSetup,
+	organizationId,
+}: IdentitySetupWizardProps) {
 	const { t } = useTranslate();
 	const [setup, setSetup] = useState(initialSetup.state);
 	const [scimToken, setScimToken] = useState<string | null>(null);
 	const [defaultRoleTemplateId, setDefaultRoleTemplateId] = useState(
 		initialSetup.defaultRoleTemplateId ?? "none",
 	);
-	const [testEmail, setTestEmail] = useState(initialSetup.state.ssoTest.testEmail ?? "");
-	const [testError, setTestError] = useState(initialSetup.state.ssoTest.error ?? "");
+	const [testEmail, setTestEmail] = useState(
+		initialSetup.state.ssoTest.testEmail ?? "",
+	);
+	const [testError, setTestError] = useState(
+		initialSetup.state.ssoTest.error ?? "",
+	);
 	const [isPending, startTransition] = useTransition();
 	const readiness = getEnterpriseIdentityReadiness(setup);
 	const preset = selectedPreset(setup.provider?.preset ?? "generic");
 	const presetId = setup.provider?.preset ?? "generic";
 	const domain =
-		setup.domain?.domain ?? t("settings.enterprise.identity.domain.notSelected", "Not selected");
+		setup.domain?.domain ??
+		t("settings.enterprise.identity.domain.notSelected", "Not selected");
 	const providerId = setup.provider?.providerId ?? "";
 	const protocol = setup.provider?.protocol ?? preset.defaultProtocol;
-	const scimActivityObserved = setup.scim.verified && !!setup.scim.lastCheckedAt;
+	const scimActivityObserved =
+		setup.scim.verified && !!setup.scim.lastCheckedAt;
 
 	const providerForm = useForm({
 		defaultValues: {
@@ -327,7 +378,10 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 					});
 					setSetup(next.state);
 					toast.success(
-						t("settings.enterprise.identity.toast.providerSaved", "Identity provider saved"),
+						t(
+							"settings.enterprise.identity.toast.providerSaved",
+							"Identity provider saved",
+						),
 					);
 				} catch (error) {
 					toast.error(
@@ -384,7 +438,10 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 					);
 					setSetup(next.state);
 					toast.success(
-						t("settings.enterprise.identity.toast.ssoRegistered", "SSO provider registered"),
+						t(
+							"settings.enterprise.identity.toast.ssoRegistered",
+							"SSO provider registered",
+						),
 					);
 				} catch (error) {
 					toast.error(
@@ -420,14 +477,23 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 					error:
 						status === "failed"
 							? testError ||
-								t("settings.enterprise.identity.ssoTest.defaultFailure", "Live SSO test failed")
+								t(
+									"settings.enterprise.identity.ssoTest.defaultFailure",
+									"Live SSO test failed",
+								)
 							: null,
 				});
 				setSetup(next.state);
 				toast.success(
 					status === "passed"
-						? t("settings.enterprise.identity.toast.ssoTestPassed", "SSO test marked passed")
-						: t("settings.enterprise.identity.toast.ssoTestFailed", "SSO test marked failed"),
+						? t(
+								"settings.enterprise.identity.toast.ssoTestPassed",
+								"SSO test marked passed",
+							)
+						: t(
+								"settings.enterprise.identity.toast.ssoTestFailed",
+								"SSO test marked failed",
+							),
 				);
 			} catch (error) {
 				toast.error(
@@ -457,7 +523,8 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 			try {
 				const result = await generateEnterpriseIdentityScimTokenAction({
 					providerId,
-					defaultRoleTemplateId: defaultRoleTemplateId === "none" ? null : defaultRoleTemplateId,
+					defaultRoleTemplateId:
+						defaultRoleTemplateId === "none" ? null : defaultRoleTemplateId,
 				});
 				setScimToken(result.scimToken ?? null);
 				setSetup((current) => ({
@@ -471,7 +538,10 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 					},
 				}));
 				toast.success(
-					t("settings.enterprise.identity.toast.scimTokenGenerated", "SCIM token generated"),
+					t(
+						"settings.enterprise.identity.toast.scimTokenGenerated",
+						"SCIM token generated",
+					),
 				);
 			} catch (error) {
 				toast.error(
@@ -500,7 +570,10 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 					},
 				}));
 				toast.success(
-					t("settings.enterprise.identity.toast.scimStatusRefreshed", "SCIM status refreshed"),
+					t(
+						"settings.enterprise.identity.toast.scimStatusRefreshed",
+						"SCIM status refreshed",
+					),
 				);
 			} catch (error) {
 				toast.error(
@@ -521,7 +594,10 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 				const next = await refreshEnterpriseIdentityDomainStatusAction();
 				setSetup(next.state);
 				toast.success(
-					t("settings.enterprise.identity.toast.domainStatusRefreshed", "Domain status refreshed"),
+					t(
+						"settings.enterprise.identity.toast.domainStatusRefreshed",
+						"Domain status refreshed",
+					),
 				);
 			} catch (error) {
 				toast.error(
@@ -543,12 +619,16 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 					ssoRequired: setup.enforcement.ssoRequired,
 					domainRestrictionEnabled: setup.enforcement.domainRestrictionEnabled,
 					inviteRestrictionEnabled: setup.enforcement.inviteRestrictionEnabled,
-					defaultRoleTemplateId: defaultRoleTemplateId === "none" ? null : defaultRoleTemplateId,
+					defaultRoleTemplateId:
+						defaultRoleTemplateId === "none" ? null : defaultRoleTemplateId,
 				});
 				setSetup(next.state);
 				setDefaultRoleTemplateId(next.defaultRoleTemplateId ?? "none");
 				toast.success(
-					t("settings.enterprise.identity.toast.accessPolicySaved", "Access policy saved"),
+					t(
+						"settings.enterprise.identity.toast.accessPolicySaved",
+						"Access policy saved",
+					),
 				);
 			} catch (error) {
 				toast.error(
@@ -569,13 +649,19 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 				const next = await activateEnterpriseIdentitySetupAction();
 				setSetup(next.state);
 				toast.success(
-					t("settings.enterprise.identity.toast.activated", "Enterprise identity setup activated"),
+					t(
+						"settings.enterprise.identity.toast.activated",
+						"Enterprise identity setup activated",
+					),
 				);
 			} catch (error) {
 				toast.error(
 					error instanceof Error
 						? error.message
-						: t("settings.enterprise.identity.toast.activateFailed", "Failed to activate setup"),
+						: t(
+								"settings.enterprise.identity.toast.activateFailed",
+								"Failed to activate setup",
+							),
 				);
 			}
 		});
@@ -594,16 +680,63 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 		}));
 	};
 
+	return {
+		activateSetup,
+		defaultRoleTemplateId,
+		domain,
+		generateScimToken,
+		initialSetup,
+		isPending,
+		organizationId,
+		preset,
+		presetId,
+		protocol,
+		providerForm,
+		providerId,
+		readiness,
+		recordSsoTest,
+		refreshDomainStatus,
+		refreshScimStatus,
+		saveAccessPolicy,
+		scimActivityObserved,
+		scimToken,
+		setDefaultRoleTemplateId,
+		setTestEmail,
+		setTestError,
+		setup,
+		ssoForm,
+		t,
+		testEmail,
+		testError,
+		updateEnforcement,
+	};
+}
+
+type IdentitySetupController = ReturnType<typeof useIdentitySetupController>;
+
+function IdentitySetupView({
+	controller,
+}: {
+	controller: IdentitySetupController;
+}) {
+	const { organizationId, setup, t } = controller;
+
 	return (
 		<section className="space-y-4">
 			<div className="rounded-xl border bg-card/60 p-4 text-card-foreground">
 				<div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
 					<div className="min-w-0">
 						<p className="font-medium text-primary text-sm">
-							{t("settings.enterprise.identity.hero.eyebrow", "Enterprise identity")}
+							{t(
+								"settings.enterprise.identity.hero.eyebrow",
+								"Enterprise identity",
+							)}
 						</p>
 						<h2 className="text-xl font-semibold tracking-tight">
-							{t("settings.enterprise.identity.hero.title", "Operational command checklist")}
+							{t(
+								"settings.enterprise.identity.hero.title",
+								"Operational command checklist",
+							)}
 						</h2>
 						<p className="mt-1 text-muted-foreground text-sm">
 							{t(
@@ -613,7 +746,10 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 							)}
 						</p>
 					</div>
-					<Badge variant={setup.activatedAt ? "default" : "outline"} className="w-fit">
+					<Badge
+						variant={setup.activatedAt ? "default" : "outline"}
+						className="w-fit"
+					>
 						{setup.activatedAt
 							? t("settings.enterprise.identity.status.activated", "Activated")
 							: t("settings.enterprise.identity.status.draft", "Draft")}
@@ -625,655 +761,829 @@ export function IdentitySetupWizard({ initialSetup, organizationId }: IdentitySe
 				<StepRail setup={setup} />
 
 				<div className="min-w-0 space-y-4">
-					<WizardCard
-						title={t("settings.enterprise.identity.provider.title", "Provider")}
-						description={t(
-							"settings.enterprise.identity.provider.description",
-							"Choose the identity provider preset, protocol, provider ID, and email domain.",
-						)}
-					>
-						<form
-							className="grid min-w-0 gap-4 sm:grid-cols-2"
-							onSubmit={(event) => {
-								event.preventDefault();
-								providerForm.handleSubmit();
-							}}
-						>
-							<providerForm.Field name="preset">
-								{(field) => (
-									<div className="min-w-0 space-y-2">
-										<Label htmlFor="identity-provider-preset">
-											{t("settings.enterprise.identity.provider.label.preset", "Provider preset")}
-										</Label>
-										<Select
-											value={field.state.value}
-											onValueChange={(value) => {
-												const nextPreset = selectedPreset(
-													value as EnterpriseIdentityProviderPresetId,
-												);
-												field.handleChange(value as EnterpriseIdentityProviderPresetId);
-												providerForm.setFieldValue("protocol", nextPreset.defaultProtocol);
-											}}
-										>
-											<SelectTrigger id="identity-provider-preset" className="w-full min-w-0">
-												<SelectValue
-													placeholder={t(
-														"settings.enterprise.identity.provider.placeholder.provider",
-														"Select provider",
-													)}
-												/>
-											</SelectTrigger>
-											<SelectContent>
-												{PROVIDER_OPTIONS.map((option) => (
-													<SelectItem key={option.id} value={option.id}>
-														{option.name}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										<p className="text-muted-foreground text-sm">
-											{presetDescription(
-												field.state.value as EnterpriseIdentityProviderPresetId,
-												t,
-											)}
-										</p>
-									</div>
-								)}
-							</providerForm.Field>
+					<ProviderStep controller={controller} />
+					<DomainStep controller={controller} />
+					<SsoStep controller={controller} />
+					<SsoTestStep controller={controller} />
+					<ScimStep controller={controller} />
+					<AccessPolicyStep controller={controller} />
+					<ReviewStep controller={controller} />
+				</div>
+			</div>
+		</section>
+	);
+}
 
-							<providerForm.Field name="protocol">
-								{(field) => (
-									<div className="min-w-0 space-y-2">
-										<Label htmlFor="identity-provider-protocol">
-											{t("settings.enterprise.identity.provider.label.protocol", "Protocol")}
-										</Label>
-										<Select
-											value={field.state.value}
-											onValueChange={(value) =>
-												field.handleChange(value as EnterpriseIdentityProtocol)
-											}
-										>
-											<SelectTrigger id="identity-provider-protocol" className="w-full min-w-0">
-												<SelectValue
-													placeholder={t(
-														"settings.enterprise.identity.provider.placeholder.protocol",
-														"Select protocol",
-													)}
-												/>
-											</SelectTrigger>
-											<SelectContent>
-												{preset.supportedProtocols.map((option) => (
-													<SelectItem key={option} value={option}>
-														{option.toUpperCase()}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
-								)}
-							</providerForm.Field>
+function ProviderStep({ controller }: { controller: IdentitySetupController }) {
+	const { isPending, preset, providerForm, t } = controller;
 
-							<providerForm.Field
-								name="providerId"
-								validators={{
-									onChange: ({ value }) =>
-										value.trim()
-											? undefined
-											: t(
-													"settings.enterprise.identity.provider.error.providerIdRequired",
-													"Provider ID is required",
-												),
-								}}
-							>
-								{(field) => (
-									<div className="min-w-0 space-y-2">
-										<Label htmlFor="identity-provider-id">
-											{t("settings.enterprise.identity.provider.label.providerId", "Provider ID")}
-										</Label>
-										<Input
-											id="identity-provider-id"
-											name="providerId"
-											autoComplete="off"
-											spellCheck={false}
-											placeholder={t(
-												"settings.enterprise.identity.provider.placeholder.providerId",
-												"e.g. acme-okta…",
-											)}
-											value={field.state.value}
-											onBlur={field.handleBlur}
-											onChange={(event) => field.handleChange(event.target.value)}
-										/>
-										<FieldError message={field.state.meta.errors[0]} />
-									</div>
-								)}
-							</providerForm.Field>
-
-							<providerForm.Field
-								name="domain"
-								validators={{
-									onChange: ({ value }) =>
-										value.trim()
-											? undefined
-											: t(
-													"settings.enterprise.identity.provider.error.domainRequired",
-													"Domain is required",
-												),
-								}}
-							>
-								{(field) => (
-									<div className="min-w-0 space-y-2">
-										<Label htmlFor="identity-domain">
-											{t("settings.enterprise.identity.provider.label.domain", "Email domain")}
-										</Label>
-										<Input
-											id="identity-domain"
-											name="domain"
-											autoComplete="off"
-											spellCheck={false}
-											placeholder={t(
-												"settings.enterprise.identity.provider.placeholder.domain",
-												"e.g. example.com…",
-											)}
-											value={field.state.value}
-											onBlur={field.handleBlur}
-											onChange={(event) => field.handleChange(event.target.value)}
-										/>
-										<FieldError message={field.state.meta.errors[0]} />
-									</div>
-								)}
-							</providerForm.Field>
-
-							<div className="sm:col-span-2">
-								<Button type="submit" disabled={isPending}>
-									{t("settings.enterprise.identity.provider.action.save", "Save provider")}
-								</Button>
-							</div>
-						</form>
-					</WizardCard>
-
-					<WizardCard
-						title={t("settings.enterprise.identity.domain.title", "Domain")}
-						description={t(
-							"settings.enterprise.identity.domain.description",
-							"Validate the tenant boundary before enforcing SSO for employees.",
-						)}
-					>
-						<div className="rounded-lg border bg-muted/30 p-4">
-							<div className="flex min-w-0 items-center justify-between gap-3">
-								<div className="min-w-0">
-									<p className="text-muted-foreground text-sm">
-										{t("settings.enterprise.identity.domain.selected", "Selected domain")}
-									</p>
-									<p className="truncate font-medium">{domain}</p>
-								</div>
-								<Badge variant={setup.domain?.verified ? "default" : "outline"}>
-									{setup.domain?.verified
-										? t("settings.enterprise.identity.domain.status.verified", "Verified")
-										: t("settings.enterprise.identity.domain.status.pending", "Pending")}
-								</Badge>
-							</div>
-							<p className="mt-3 text-muted-foreground text-sm">
+	return (
+		<WizardCard
+			title={t("settings.enterprise.identity.provider.title", "Provider")}
+			description={t(
+				"settings.enterprise.identity.provider.description",
+				"Choose the identity provider preset, protocol, provider ID, and email domain.",
+			)}
+		>
+			<form
+				className="grid min-w-0 gap-4 sm:grid-cols-2"
+				action={() => providerForm.handleSubmit()}
+			>
+				<providerForm.Field name="preset">
+					{(field) => (
+						<div className="min-w-0 space-y-2">
+							<Label htmlFor="identity-provider-preset">
 								{t(
-									"settings.enterprise.identity.domain.help",
-									"DNS verification uses the existing SSO domain verification actions. Complete that verification before activating enforcement.",
-								)}
-							</p>
-							<Button
-								type="button"
-								variant="outline"
-								className="mt-4"
-								onClick={refreshDomainStatus}
-								disabled={isPending || !providerId || !setup.domain?.domain}
-							>
-								{t("settings.enterprise.identity.domain.action.checkStatus", "Check domain status")}
-							</Button>
-						</div>
-					</WizardCard>
-
-					<WizardCard
-						title={t("settings.enterprise.identity.sso.title", "SSO Configuration")}
-						description={t(
-							"settings.enterprise.identity.sso.description",
-							"Register the external IdP using OIDC client credentials or SAML metadata.",
-						)}
-					>
-						<form
-							className="space-y-4"
-							onSubmit={(event) => {
-								event.preventDefault();
-								ssoForm.handleSubmit();
-							}}
-						>
-							<ssoForm.Field name="issuer">
-								{(field) => (
-									<div className="space-y-2">
-										<Label htmlFor="sso-issuer">
-											{t("settings.enterprise.identity.sso.label.issuer", "Issuer")}
-										</Label>
-										<Input
-											id="sso-issuer"
-											name="issuer"
-											autoComplete="off"
-											spellCheck={false}
-											placeholder={presetIssuerPlaceholder(presetId, t)}
-											value={field.state.value}
-											onChange={(event) => field.handleChange(event.target.value)}
-										/>
-									</div>
-								)}
-							</ssoForm.Field>
-
-							{protocol === "oidc" ? (
-								<div className="grid min-w-0 gap-4 sm:grid-cols-2">
-									<ssoForm.Field name="clientId">
-										{(field) => (
-											<div className="min-w-0 space-y-2">
-												<Label htmlFor="oidc-client-id">
-													{t("settings.enterprise.identity.sso.label.clientId", "Client ID")}
-												</Label>
-												<Input
-													id="oidc-client-id"
-													name="clientId"
-													autoComplete="off"
-													spellCheck={false}
-													value={field.state.value}
-													onChange={(event) => field.handleChange(event.target.value)}
-												/>
-											</div>
-										)}
-									</ssoForm.Field>
-									<ssoForm.Field name="clientSecret">
-										{(field) => (
-											<div className="min-w-0 space-y-2">
-												<Label htmlFor="oidc-client-secret">
-													{t(
-														"settings.enterprise.identity.sso.label.clientSecret",
-														"Client secret",
-													)}
-												</Label>
-												<Input
-													id="oidc-client-secret"
-													name="clientSecret"
-													type="password"
-													autoComplete="off"
-													spellCheck={false}
-													value={field.state.value}
-													onChange={(event) => field.handleChange(event.target.value)}
-												/>
-											</div>
-										)}
-									</ssoForm.Field>
-								</div>
-							) : (
-								<ssoForm.Field name="metadata">
-									{(field) => (
-										<div className="space-y-2">
-											<Label htmlFor="saml-metadata">
-												{t("settings.enterprise.identity.sso.label.metadata", "SAML metadata")}
-											</Label>
-											<Textarea
-												id="saml-metadata"
-												name="metadata"
-												autoComplete="off"
-												spellCheck={false}
-												className="min-h-32"
-												placeholder={t(
-													"settings.enterprise.identity.sso.placeholder.metadata",
-													"Paste IdP metadata XML…",
-												)}
-												value={field.state.value}
-												onChange={(event) => field.handleChange(event.target.value)}
-											/>
-										</div>
-									)}
-								</ssoForm.Field>
-							)}
-
-							<Button type="submit" disabled={isPending || !providerId}>
-								{t("settings.enterprise.identity.sso.action.register", "Register SSO provider")}
-							</Button>
-						</form>
-					</WizardCard>
-
-					<WizardCard
-						title={t("settings.enterprise.identity.ssoTest.title", "Test User")}
-						description={t(
-							"settings.enterprise.identity.ssoTest.description",
-							"Record the result of a live external SSO test before enforcement.",
-						)}
-					>
-						<div className="grid min-w-0 gap-4 sm:grid-cols-2">
-							<div className="min-w-0 space-y-2">
-								<Label htmlFor="sso-test-email">
-									{t("settings.enterprise.identity.ssoTest.label.email", "Test user email")}
-								</Label>
-								<Input
-									id="sso-test-email"
-									name="testEmail"
-									type="email"
-									autoComplete="off"
-									spellCheck={false}
-									value={testEmail}
-									onChange={(event) => setTestEmail(event.target.value)}
-								/>
-							</div>
-							<div className="min-w-0 space-y-2">
-								<Label htmlFor="sso-test-error">
-									{t("settings.enterprise.identity.ssoTest.label.failureNote", "Failure note")}
-								</Label>
-								<Input
-									id="sso-test-error"
-									name="testError"
-									autoComplete="off"
-									value={testError}
-									onChange={(event) => setTestError(event.target.value)}
-								/>
-							</div>
-						</div>
-						<p className="text-muted-foreground text-sm">
-							{t(
-								"settings.enterprise.identity.ssoTest.help",
-								"This records a live external SSO test result. Run the login in the IdP first, then capture pass or fail here for the activation guard.",
-							)}
-						</p>
-						<div className="flex flex-wrap gap-2">
-							<Button
-								type="button"
-								disabled={isPending || !testEmail}
-								onClick={() => recordSsoTest("passed")}
-							>
-								{t("settings.enterprise.identity.ssoTest.action.recordPass", "Record pass")}
-							</Button>
-							<Button
-								type="button"
-								variant="outline"
-								disabled={isPending || !testEmail}
-								onClick={() => recordSsoTest("failed")}
-							>
-								{t("settings.enterprise.identity.ssoTest.action.recordFail", "Record fail")}
-							</Button>
-							<Badge variant={setup.ssoTest.status === "passed" ? "default" : "outline"}>
-								{ssoTestStatusLabel(setup.ssoTest.status, t)}
-							</Badge>
-						</div>
-					</WizardCard>
-
-					<WizardCard
-						title={t("settings.enterprise.identity.scim.title", "SCIM Provisioning")}
-						description={t(
-							"settings.enterprise.identity.scim.cardDescription",
-							"Generate the provisioning token and monitor connection health.",
-						)}
-					>
-						<p className="text-muted-foreground text-sm">
-							{t(
-								"settings.enterprise.identity.scim.description",
-								"SCIM verification updates after your identity provider sends a test user or group change.",
-							)}
-						</p>
-						<div className="grid min-w-0 gap-3 rounded-lg border bg-muted/30 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
-							<div className="min-w-0">
-								<p className="text-muted-foreground text-sm">
-									{t("settings.enterprise.identity.scim.baseUrl", "Base URL")}
-								</p>
-								<code className="block truncate rounded bg-background px-2 py-1 text-sm">
-									/api/auth/scim/v2
-								</code>
-							</div>
-							<Button type="button" onClick={generateScimToken} disabled={isPending || !providerId}>
-								{t("settings.enterprise.identity.scim.action.generateToken", "Generate token")}
-							</Button>
-						</div>
-
-						{scimToken ? (
-							<div className="min-w-0 rounded-lg border border-primary/30 bg-primary/5 p-4">
-								<p className="font-medium text-sm">
-									{t(
-										"settings.enterprise.identity.scim.tokenShownOnce",
-										"This token is shown once",
-									)}
-								</p>
-								<div className="mt-2 flex min-w-0 flex-col gap-2 sm:flex-row">
-									<code className="min-w-0 flex-1 truncate rounded bg-background p-2 text-sm">
-										{scimToken}
-									</code>
-									<Button
-										type="button"
-										variant="outline"
-										onClick={() => navigator.clipboard.writeText(scimToken)}
-									>
-										{t("settings.enterprise.identity.scim.action.copyToken", "Copy token")}
-									</Button>
-								</div>
-							</div>
-						) : null}
-
-						<div className="flex flex-wrap items-center gap-2">
-							<Button
-								type="button"
-								variant="outline"
-								onClick={refreshScimStatus}
-								disabled={isPending}
-							>
-								{t("settings.enterprise.identity.scim.action.refreshStatus", "Refresh status")}
-							</Button>
-							<Badge variant={scimActivityObserved ? "default" : "outline"}>
-								{scimActivityObserved
-									? t(
-											"settings.enterprise.identity.scim.status.observed",
-											"Provisioning activity observed",
-										)
-									: t(
-											"settings.enterprise.identity.scim.status.none",
-											"No provisioning activity yet",
-										)}
-							</Badge>
-							{setup.scim.error ? (
-								<span className="text-destructive text-sm">{setup.scim.error}</span>
-							) : null}
-						</div>
-					</WizardCard>
-
-					<WizardCard
-						title={t("settings.enterprise.identity.accessPolicy.title", "Access Policy")}
-						description={t(
-							"settings.enterprise.identity.accessPolicy.description",
-							"Set domain, invite, and SSO enforcement after the pilot test passes.",
-						)}
-					>
-						<div className="space-y-3">
-							<div className="flex items-start gap-3 rounded-lg border p-3 text-sm">
-								<Checkbox
-									id="identity-access-policy-require-sso"
-									aria-labelledby="identity-access-policy-require-sso-label"
-									aria-describedby="identity-access-policy-require-sso-help"
-									checked={setup.enforcement.ssoRequired}
-									onCheckedChange={(checked) => updateEnforcement("ssoRequired", checked === true)}
-								/>
-								<Label
-									htmlFor="identity-access-policy-require-sso"
-									className="min-w-0 cursor-pointer"
-								>
-									<span id="identity-access-policy-require-sso-label" className="block font-medium">
-										{t("settings.enterprise.identity.accessPolicy.requireSso", "Require SSO")}
-									</span>
-									<span
-										id="identity-access-policy-require-sso-help"
-										className="block text-muted-foreground"
-									>
-										{t(
-											"settings.enterprise.identity.accessPolicy.requireSsoHelp",
-											"Employees must use the enterprise IdP.",
-										)}
-									</span>
-								</Label>
-							</div>
-							<div className="flex items-start gap-3 rounded-lg border p-3 text-sm">
-								<Checkbox
-									id="identity-access-policy-restrict-domain"
-									aria-labelledby="identity-access-policy-restrict-domain-label"
-									aria-describedby="identity-access-policy-restrict-domain-help"
-									checked={setup.enforcement.domainRestrictionEnabled}
-									onCheckedChange={(checked) =>
-										updateEnforcement("domainRestrictionEnabled", checked === true)
-									}
-								/>
-								<Label
-									htmlFor="identity-access-policy-restrict-domain"
-									className="min-w-0 cursor-pointer"
-								>
-									<span
-										id="identity-access-policy-restrict-domain-label"
-										className="block font-medium"
-									>
-										{t(
-											"settings.enterprise.identity.accessPolicy.restrictDomain",
-											"Restrict to verified domain",
-										)}
-									</span>
-									<span
-										id="identity-access-policy-restrict-domain-help"
-										className="block text-muted-foreground"
-									>
-										{t(
-											"settings.enterprise.identity.accessPolicy.restrictDomainHelp",
-											"Block accounts outside the selected domain.",
-										)}
-									</span>
-								</Label>
-							</div>
-							<div className="flex items-start gap-3 rounded-lg border p-3 text-sm">
-								<Checkbox
-									id="identity-access-policy-restrict-invites"
-									aria-labelledby="identity-access-policy-restrict-invites-label"
-									aria-describedby="identity-access-policy-restrict-invites-help"
-									checked={setup.enforcement.inviteRestrictionEnabled}
-									onCheckedChange={(checked) =>
-										updateEnforcement("inviteRestrictionEnabled", checked === true)
-									}
-								/>
-								<Label
-									htmlFor="identity-access-policy-restrict-invites"
-									className="min-w-0 cursor-pointer"
-								>
-									<span
-										id="identity-access-policy-restrict-invites-label"
-										className="block font-medium"
-									>
-										{t(
-											"settings.enterprise.identity.accessPolicy.restrictInvites",
-											"Restrict invites",
-										)}
-									</span>
-									<span
-										id="identity-access-policy-restrict-invites-help"
-										className="block text-muted-foreground"
-									>
-										{t(
-											"settings.enterprise.identity.accessPolicy.restrictInvitesHelp",
-											"Only allow invitations aligned with access policy.",
-										)}
-									</span>
-								</Label>
-							</div>
-						</div>
-
-						<div className="space-y-2">
-							<Label htmlFor="default-role-template">
-								{t(
-									"settings.enterprise.identity.accessPolicy.defaultRoleTemplate",
-									"Default role template",
+									"settings.enterprise.identity.provider.label.preset",
+									"Provider preset",
 								)}
 							</Label>
-							<Select value={defaultRoleTemplateId} onValueChange={setDefaultRoleTemplateId}>
-								<SelectTrigger id="default-role-template" className="w-full min-w-0">
+							<Select
+								value={field.state.value}
+								onValueChange={(value) => {
+									const nextPreset = selectedPreset(
+										value as EnterpriseIdentityProviderPresetId,
+									);
+									field.handleChange(
+										value as EnterpriseIdentityProviderPresetId,
+									);
+									providerForm.setFieldValue(
+										"protocol",
+										nextPreset.defaultProtocol,
+									);
+								}}
+							>
+								<SelectTrigger
+									id="identity-provider-preset"
+									className="w-full min-w-0"
+								>
 									<SelectValue
 										placeholder={t(
-											"settings.enterprise.identity.accessPolicy.placeholder.roleTemplate",
-											"Select role template",
+											"settings.enterprise.identity.provider.placeholder.provider",
+											"Select provider",
 										)}
 									/>
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="none">
-										{t(
-											"settings.enterprise.identity.accessPolicy.noDefaultTemplate",
-											"No default template",
+									{PROVIDER_OPTIONS.map((option) => (
+										<SelectItem key={option.id} value={option.id}>
+											{option.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<p className="text-muted-foreground text-sm">
+								{presetDescription(
+									field.state.value as EnterpriseIdentityProviderPresetId,
+									t,
+								)}
+							</p>
+						</div>
+					)}
+				</providerForm.Field>
+
+				<providerForm.Field name="protocol">
+					{(field) => (
+						<div className="min-w-0 space-y-2">
+							<Label htmlFor="identity-provider-protocol">
+								{t(
+									"settings.enterprise.identity.provider.label.protocol",
+									"Protocol",
+								)}
+							</Label>
+							<Select
+								value={field.state.value}
+								onValueChange={(value) =>
+									field.handleChange(value as EnterpriseIdentityProtocol)
+								}
+							>
+								<SelectTrigger
+									id="identity-provider-protocol"
+									className="w-full min-w-0"
+								>
+									<SelectValue
+										placeholder={t(
+											"settings.enterprise.identity.provider.placeholder.protocol",
+											"Select protocol",
 										)}
-									</SelectItem>
-									{initialSetup.roleTemplates.map((template) => (
-										<SelectItem key={template.id} value={template.id}>
-											{template.name}
+									/>
+								</SelectTrigger>
+								<SelectContent>
+									{preset.supportedProtocols.map((option) => (
+										<SelectItem key={option} value={option}>
+											{option.toUpperCase()}
 										</SelectItem>
 									))}
 								</SelectContent>
 							</Select>
 						</div>
+					)}
+				</providerForm.Field>
 
-						<Button type="button" onClick={saveAccessPolicy} disabled={isPending}>
-							{t("settings.enterprise.identity.accessPolicy.action.save", "Save access policy")}
-						</Button>
-					</WizardCard>
+				<providerForm.Field
+					name="providerId"
+					validators={{
+						onChange: ({ value }) =>
+							value.trim()
+								? undefined
+								: t(
+										"settings.enterprise.identity.provider.error.providerIdRequired",
+										"Provider ID is required",
+									),
+					}}
+				>
+					{(field) => (
+						<div className="min-w-0 space-y-2">
+							<Label htmlFor="identity-provider-id">
+								{t(
+									"settings.enterprise.identity.provider.label.providerId",
+									"Provider ID",
+								)}
+							</Label>
+							<Input
+								id="identity-provider-id"
+								name="providerId"
+								autoComplete="off"
+								spellCheck={false}
+								placeholder={t(
+									"settings.enterprise.identity.provider.placeholder.providerId",
+									"e.g. acme-okta…",
+								)}
+								value={field.state.value}
+								onBlur={field.handleBlur}
+								onChange={(event) => field.handleChange(event.target.value)}
+							/>
+							<FieldError message={field.state.meta.errors[0]} />
+						</div>
+					)}
+				</providerForm.Field>
 
-					<WizardCard
-						title={t("settings.enterprise.identity.review.title", "Review & Activate")}
-						description={t(
-							"settings.enterprise.identity.review.description",
-							"Review guarded activation checks before enabling enterprise identity controls.",
+				<providerForm.Field
+					name="domain"
+					validators={{
+						onChange: ({ value }) =>
+							value.trim()
+								? undefined
+								: t(
+										"settings.enterprise.identity.provider.error.domainRequired",
+										"Domain is required",
+									),
+					}}
+				>
+					{(field) => (
+						<div className="min-w-0 space-y-2">
+							<Label htmlFor="identity-domain">
+								{t(
+									"settings.enterprise.identity.provider.label.domain",
+									"Email domain",
+								)}
+							</Label>
+							<Input
+								id="identity-domain"
+								name="domain"
+								autoComplete="off"
+								spellCheck={false}
+								placeholder={t(
+									"settings.enterprise.identity.provider.placeholder.domain",
+									"e.g. example.com…",
+								)}
+								value={field.state.value}
+								onBlur={field.handleBlur}
+								onChange={(event) => field.handleChange(event.target.value)}
+							/>
+							<FieldError message={field.state.meta.errors[0]} />
+						</div>
+					)}
+				</providerForm.Field>
+
+				<div className="sm:col-span-2">
+					<Button type="submit" disabled={isPending}>
+						{t(
+							"settings.enterprise.identity.provider.action.save",
+							"Save provider",
 						)}
-					>
-						<div className="rounded-lg border bg-muted/30 p-4">
-							<p className="font-medium text-sm">
-								{t("settings.enterprise.identity.review.activationSummary", "Activation summary")}
-							</p>
-							{readiness.missing.length ? (
-								<ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground text-sm">
-									{readiness.missing.map((item) => (
-										<li key={item}>
-											{t(
-												"settings.enterprise.identity.review.missingRequirement",
-												"{item} is required before activation",
-												{ item: readinessRequirementLabel(item, t) },
-											)}
-										</li>
-									))}
-								</ul>
-							) : (
-								<p className="mt-2 text-muted-foreground text-sm">
-									{t(
-										"settings.enterprise.identity.review.prerequisitesComplete",
-										"Provider, verified domain, and SSO test prerequisites are complete.",
-									)}
-								</p>
-							)}
-						</div>
-						<div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
-							<p className="font-medium">
-								{t(
-									"settings.enterprise.identity.review.lockoutWarning",
-									"Current-admin lockout warning",
-								)}
-							</p>
-							<p className="mt-1 text-muted-foreground">
-								{t(
-									"settings.enterprise.identity.review.lockoutWarningHelp",
-									"Confirm your current admin account can sign in through the configured provider before activation. Enforcement may block password fallback for the selected domain.",
-								)}
-							</p>
-						</div>
-						<Button
-							type="button"
-							onClick={activateSetup}
-							disabled={!readiness.canActivate || isPending}
-						>
+					</Button>
+				</div>
+			</form>
+		</WizardCard>
+	);
+}
+
+function DomainStep({ controller }: { controller: IdentitySetupController }) {
+	const { domain, isPending, providerId, refreshDomainStatus, setup, t } =
+		controller;
+
+	return (
+		<WizardCard
+			title={t("settings.enterprise.identity.domain.title", "Domain")}
+			description={t(
+				"settings.enterprise.identity.domain.description",
+				"Validate the tenant boundary before enforcing SSO for employees.",
+			)}
+		>
+			<div className="rounded-lg border bg-muted/30 p-4">
+				<div className="flex min-w-0 items-center justify-between gap-3">
+					<div className="min-w-0">
+						<p className="text-muted-foreground text-sm">
 							{t(
-								"settings.enterprise.identity.review.action.activate",
-								"Activate enterprise identity",
+								"settings.enterprise.identity.domain.selected",
+								"Selected domain",
 							)}
-						</Button>
-					</WizardCard>
+						</p>
+						<p className="truncate font-medium">{domain}</p>
+					</div>
+					<Badge variant={setup.domain?.verified ? "default" : "outline"}>
+						{setup.domain?.verified
+							? t(
+									"settings.enterprise.identity.domain.status.verified",
+									"Verified",
+								)
+							: t(
+									"settings.enterprise.identity.domain.status.pending",
+									"Pending",
+								)}
+					</Badge>
+				</div>
+				<p className="mt-3 text-muted-foreground text-sm">
+					{t(
+						"settings.enterprise.identity.domain.help",
+						"DNS verification uses the existing SSO domain verification actions. Complete that verification before activating enforcement.",
+					)}
+				</p>
+				<Button
+					type="button"
+					variant="outline"
+					className="mt-4"
+					onClick={refreshDomainStatus}
+					disabled={isPending || !providerId || !setup.domain?.domain}
+				>
+					{t(
+						"settings.enterprise.identity.domain.action.checkStatus",
+						"Check domain status",
+					)}
+				</Button>
+			</div>
+		</WizardCard>
+	);
+}
+
+function SsoStep({ controller }: { controller: IdentitySetupController }) {
+	const { isPending, presetId, protocol, providerId, ssoForm, t } = controller;
+
+	return (
+		<WizardCard
+			title={t("settings.enterprise.identity.sso.title", "SSO Configuration")}
+			description={t(
+				"settings.enterprise.identity.sso.description",
+				"Register the external IdP using OIDC client credentials or SAML metadata.",
+			)}
+		>
+			<form className="space-y-4" action={() => ssoForm.handleSubmit()}>
+				<ssoForm.Field name="issuer">
+					{(field) => (
+						<div className="space-y-2">
+							<Label htmlFor="sso-issuer">
+								{t("settings.enterprise.identity.sso.label.issuer", "Issuer")}
+							</Label>
+							<Input
+								id="sso-issuer"
+								name="issuer"
+								autoComplete="off"
+								spellCheck={false}
+								placeholder={presetIssuerPlaceholder(presetId, t)}
+								value={field.state.value}
+								onChange={(event) => field.handleChange(event.target.value)}
+							/>
+						</div>
+					)}
+				</ssoForm.Field>
+
+				{protocol === "oidc" ? (
+					<div className="grid min-w-0 gap-4 sm:grid-cols-2">
+						<ssoForm.Field name="clientId">
+							{(field) => (
+								<div className="min-w-0 space-y-2">
+									<Label htmlFor="oidc-client-id">
+										{t(
+											"settings.enterprise.identity.sso.label.clientId",
+											"Client ID",
+										)}
+									</Label>
+									<Input
+										id="oidc-client-id"
+										name="clientId"
+										autoComplete="off"
+										spellCheck={false}
+										value={field.state.value}
+										onChange={(event) => field.handleChange(event.target.value)}
+									/>
+								</div>
+							)}
+						</ssoForm.Field>
+						<ssoForm.Field name="clientSecret">
+							{(field) => (
+								<div className="min-w-0 space-y-2">
+									<Label htmlFor="oidc-client-secret">
+										{t(
+											"settings.enterprise.identity.sso.label.clientSecret",
+											"Client secret",
+										)}
+									</Label>
+									<Input
+										id="oidc-client-secret"
+										name="clientSecret"
+										type="password"
+										autoComplete="off"
+										spellCheck={false}
+										value={field.state.value}
+										onChange={(event) => field.handleChange(event.target.value)}
+									/>
+								</div>
+							)}
+						</ssoForm.Field>
+					</div>
+				) : (
+					<ssoForm.Field name="metadata">
+						{(field) => (
+							<div className="space-y-2">
+								<Label htmlFor="saml-metadata">
+									{t(
+										"settings.enterprise.identity.sso.label.metadata",
+										"SAML metadata",
+									)}
+								</Label>
+								<Textarea
+									id="saml-metadata"
+									name="metadata"
+									autoComplete="off"
+									spellCheck={false}
+									className="min-h-32"
+									placeholder={t(
+										"settings.enterprise.identity.sso.placeholder.metadata",
+										"Paste IdP metadata XML…",
+									)}
+									value={field.state.value}
+									onChange={(event) => field.handleChange(event.target.value)}
+								/>
+							</div>
+						)}
+					</ssoForm.Field>
+				)}
+
+				<Button type="submit" disabled={isPending || !providerId}>
+					{t(
+						"settings.enterprise.identity.sso.action.register",
+						"Register SSO provider",
+					)}
+				</Button>
+			</form>
+		</WizardCard>
+	);
+}
+
+function SsoTestStep({ controller }: { controller: IdentitySetupController }) {
+	const {
+		isPending,
+		recordSsoTest,
+		setTestEmail,
+		setTestError,
+		setup,
+		t,
+		testEmail,
+		testError,
+	} = controller;
+
+	return (
+		<WizardCard
+			title={t("settings.enterprise.identity.ssoTest.title", "Test User")}
+			description={t(
+				"settings.enterprise.identity.ssoTest.description",
+				"Record the result of a live external SSO test before enforcement.",
+			)}
+		>
+			<div className="grid min-w-0 gap-4 sm:grid-cols-2">
+				<div className="min-w-0 space-y-2">
+					<Label htmlFor="sso-test-email">
+						{t(
+							"settings.enterprise.identity.ssoTest.label.email",
+							"Test user email",
+						)}
+					</Label>
+					<Input
+						id="sso-test-email"
+						name="testEmail"
+						type="email"
+						autoComplete="off"
+						spellCheck={false}
+						value={testEmail}
+						onChange={(event) => setTestEmail(event.target.value)}
+					/>
+				</div>
+				<div className="min-w-0 space-y-2">
+					<Label htmlFor="sso-test-error">
+						{t(
+							"settings.enterprise.identity.ssoTest.label.failureNote",
+							"Failure note",
+						)}
+					</Label>
+					<Input
+						id="sso-test-error"
+						name="testError"
+						autoComplete="off"
+						value={testError}
+						onChange={(event) => setTestError(event.target.value)}
+					/>
 				</div>
 			</div>
-		</section>
+			<p className="text-muted-foreground text-sm">
+				{t(
+					"settings.enterprise.identity.ssoTest.help",
+					"This records a live external SSO test result. Run the login in the IdP first, then capture pass or fail here for the activation guard.",
+				)}
+			</p>
+			<div className="flex flex-wrap gap-2">
+				<Button
+					type="button"
+					disabled={isPending || !testEmail}
+					onClick={() => recordSsoTest("passed")}
+				>
+					{t(
+						"settings.enterprise.identity.ssoTest.action.recordPass",
+						"Record pass",
+					)}
+				</Button>
+				<Button
+					type="button"
+					variant="outline"
+					disabled={isPending || !testEmail}
+					onClick={() => recordSsoTest("failed")}
+				>
+					{t(
+						"settings.enterprise.identity.ssoTest.action.recordFail",
+						"Record fail",
+					)}
+				</Button>
+				<Badge
+					variant={setup.ssoTest.status === "passed" ? "default" : "outline"}
+				>
+					{ssoTestStatusLabel(setup.ssoTest.status, t)}
+				</Badge>
+			</div>
+		</WizardCard>
 	);
+}
+
+function ScimStep({ controller }: { controller: IdentitySetupController }) {
+	const {
+		generateScimToken,
+		isPending,
+		providerId,
+		refreshScimStatus,
+		scimActivityObserved,
+		scimToken,
+		setup,
+		t,
+	} = controller;
+
+	return (
+		<WizardCard
+			title={t("settings.enterprise.identity.scim.title", "SCIM Provisioning")}
+			description={t(
+				"settings.enterprise.identity.scim.cardDescription",
+				"Generate the provisioning token and monitor connection health.",
+			)}
+		>
+			<p className="text-muted-foreground text-sm">
+				{t(
+					"settings.enterprise.identity.scim.description",
+					"SCIM verification updates after your identity provider sends a test user or group change.",
+				)}
+			</p>
+			<div className="grid min-w-0 gap-3 rounded-lg border bg-muted/30 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
+				<div className="min-w-0">
+					<p className="text-muted-foreground text-sm">
+						{t("settings.enterprise.identity.scim.baseUrl", "Base URL")}
+					</p>
+					<code className="block truncate rounded bg-background px-2 py-1 text-sm">
+						/api/auth/scim/v2
+					</code>
+				</div>
+				<Button
+					type="button"
+					onClick={generateScimToken}
+					disabled={isPending || !providerId}
+				>
+					{t(
+						"settings.enterprise.identity.scim.action.generateToken",
+						"Generate token",
+					)}
+				</Button>
+			</div>
+
+			{scimToken ? (
+				<div className="min-w-0 rounded-lg border border-primary/30 bg-primary/5 p-4">
+					<p className="font-medium text-sm">
+						{t(
+							"settings.enterprise.identity.scim.tokenShownOnce",
+							"This token is shown once",
+						)}
+					</p>
+					<div className="mt-2 flex min-w-0 flex-col gap-2 sm:flex-row">
+						<code className="min-w-0 flex-1 truncate rounded bg-background p-2 text-sm">
+							{scimToken}
+						</code>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => navigator.clipboard.writeText(scimToken)}
+						>
+							{t(
+								"settings.enterprise.identity.scim.action.copyToken",
+								"Copy token",
+							)}
+						</Button>
+					</div>
+				</div>
+			) : null}
+
+			<div className="flex flex-wrap items-center gap-2">
+				<Button
+					type="button"
+					variant="outline"
+					onClick={refreshScimStatus}
+					disabled={isPending}
+				>
+					{t(
+						"settings.enterprise.identity.scim.action.refreshStatus",
+						"Refresh status",
+					)}
+				</Button>
+				<Badge variant={scimActivityObserved ? "default" : "outline"}>
+					{scimActivityObserved
+						? t(
+								"settings.enterprise.identity.scim.status.observed",
+								"Provisioning activity observed",
+							)
+						: t(
+								"settings.enterprise.identity.scim.status.none",
+								"No provisioning activity yet",
+							)}
+				</Badge>
+				{setup.scim.error ? (
+					<span className="text-destructive text-sm">{setup.scim.error}</span>
+				) : null}
+			</div>
+		</WizardCard>
+	);
+}
+
+function AccessPolicyStep({
+	controller,
+}: {
+	controller: IdentitySetupController;
+}) {
+	const {
+		defaultRoleTemplateId,
+		initialSetup,
+		isPending,
+		saveAccessPolicy,
+		setDefaultRoleTemplateId,
+		setup,
+		t,
+		updateEnforcement,
+	} = controller;
+
+	return (
+		<WizardCard
+			title={t(
+				"settings.enterprise.identity.accessPolicy.title",
+				"Access Policy",
+			)}
+			description={t(
+				"settings.enterprise.identity.accessPolicy.description",
+				"Set domain, invite, and SSO enforcement after the pilot test passes.",
+			)}
+		>
+			<div className="space-y-3">
+				<div className="flex items-start gap-3 rounded-lg border p-3 text-sm">
+					<Checkbox
+						id="identity-access-policy-require-sso"
+						aria-labelledby="identity-access-policy-require-sso-label"
+						aria-describedby="identity-access-policy-require-sso-help"
+						checked={setup.enforcement.ssoRequired}
+						onCheckedChange={(checked) =>
+							updateEnforcement("ssoRequired", checked === true)
+						}
+					/>
+					<Label
+						htmlFor="identity-access-policy-require-sso"
+						className="min-w-0 cursor-pointer"
+					>
+						<span
+							id="identity-access-policy-require-sso-label"
+							className="block font-medium"
+						>
+							{t(
+								"settings.enterprise.identity.accessPolicy.requireSso",
+								"Require SSO",
+							)}
+						</span>
+						<span
+							id="identity-access-policy-require-sso-help"
+							className="block text-muted-foreground"
+						>
+							{t(
+								"settings.enterprise.identity.accessPolicy.requireSsoHelp",
+								"Employees must use the enterprise IdP.",
+							)}
+						</span>
+					</Label>
+				</div>
+				<div className="flex items-start gap-3 rounded-lg border p-3 text-sm">
+					<Checkbox
+						id="identity-access-policy-restrict-domain"
+						aria-labelledby="identity-access-policy-restrict-domain-label"
+						aria-describedby="identity-access-policy-restrict-domain-help"
+						checked={setup.enforcement.domainRestrictionEnabled}
+						onCheckedChange={(checked) =>
+							updateEnforcement("domainRestrictionEnabled", checked === true)
+						}
+					/>
+					<Label
+						htmlFor="identity-access-policy-restrict-domain"
+						className="min-w-0 cursor-pointer"
+					>
+						<span
+							id="identity-access-policy-restrict-domain-label"
+							className="block font-medium"
+						>
+							{t(
+								"settings.enterprise.identity.accessPolicy.restrictDomain",
+								"Restrict to verified domain",
+							)}
+						</span>
+						<span
+							id="identity-access-policy-restrict-domain-help"
+							className="block text-muted-foreground"
+						>
+							{t(
+								"settings.enterprise.identity.accessPolicy.restrictDomainHelp",
+								"Block accounts outside the selected domain.",
+							)}
+						</span>
+					</Label>
+				</div>
+				<div className="flex items-start gap-3 rounded-lg border p-3 text-sm">
+					<Checkbox
+						id="identity-access-policy-restrict-invites"
+						aria-labelledby="identity-access-policy-restrict-invites-label"
+						aria-describedby="identity-access-policy-restrict-invites-help"
+						checked={setup.enforcement.inviteRestrictionEnabled}
+						onCheckedChange={(checked) =>
+							updateEnforcement("inviteRestrictionEnabled", checked === true)
+						}
+					/>
+					<Label
+						htmlFor="identity-access-policy-restrict-invites"
+						className="min-w-0 cursor-pointer"
+					>
+						<span
+							id="identity-access-policy-restrict-invites-label"
+							className="block font-medium"
+						>
+							{t(
+								"settings.enterprise.identity.accessPolicy.restrictInvites",
+								"Restrict invites",
+							)}
+						</span>
+						<span
+							id="identity-access-policy-restrict-invites-help"
+							className="block text-muted-foreground"
+						>
+							{t(
+								"settings.enterprise.identity.accessPolicy.restrictInvitesHelp",
+								"Only allow invitations aligned with access policy.",
+							)}
+						</span>
+					</Label>
+				</div>
+			</div>
+
+			<div className="space-y-2">
+				<Label htmlFor="default-role-template">
+					{t(
+						"settings.enterprise.identity.accessPolicy.defaultRoleTemplate",
+						"Default role template",
+					)}
+				</Label>
+				<Select
+					value={defaultRoleTemplateId}
+					onValueChange={setDefaultRoleTemplateId}
+				>
+					<SelectTrigger id="default-role-template" className="w-full min-w-0">
+						<SelectValue
+							placeholder={t(
+								"settings.enterprise.identity.accessPolicy.placeholder.roleTemplate",
+								"Select role template",
+							)}
+						/>
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="none">
+							{t(
+								"settings.enterprise.identity.accessPolicy.noDefaultTemplate",
+								"No default template",
+							)}
+						</SelectItem>
+						{initialSetup.roleTemplates.map((template) => (
+							<SelectItem key={template.id} value={template.id}>
+								{template.name}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</div>
+
+			<Button type="button" onClick={saveAccessPolicy} disabled={isPending}>
+				{t(
+					"settings.enterprise.identity.accessPolicy.action.save",
+					"Save access policy",
+				)}
+			</Button>
+		</WizardCard>
+	);
+}
+
+function ReviewStep({ controller }: { controller: IdentitySetupController }) {
+	const { activateSetup, isPending, readiness, t } = controller;
+
+	return (
+		<WizardCard
+			title={t(
+				"settings.enterprise.identity.review.title",
+				"Review & Activate",
+			)}
+			description={t(
+				"settings.enterprise.identity.review.description",
+				"Review guarded activation checks before enabling enterprise identity controls.",
+			)}
+		>
+			<div className="rounded-lg border bg-muted/30 p-4">
+				<p className="font-medium text-sm">
+					{t(
+						"settings.enterprise.identity.review.activationSummary",
+						"Activation summary",
+					)}
+				</p>
+				{readiness.missing.length ? (
+					<ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground text-sm">
+						{readiness.missing.map((item) => (
+							<li key={item}>
+								{t(
+									"settings.enterprise.identity.review.missingRequirement",
+									"{item} is required before activation",
+									{ item: readinessRequirementLabel(item, t) },
+								)}
+							</li>
+						))}
+					</ul>
+				) : (
+					<p className="mt-2 text-muted-foreground text-sm">
+						{t(
+							"settings.enterprise.identity.review.prerequisitesComplete",
+							"Provider, verified domain, and SSO test prerequisites are complete.",
+						)}
+					</p>
+				)}
+			</div>
+			<div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+				<p className="font-medium">
+					{t(
+						"settings.enterprise.identity.review.lockoutWarning",
+						"Current-admin lockout warning",
+					)}
+				</p>
+				<p className="mt-1 text-muted-foreground">
+					{t(
+						"settings.enterprise.identity.review.lockoutWarningHelp",
+						"Confirm your current admin account can sign in through the configured provider before activation. Enforcement may block password fallback for the selected domain.",
+					)}
+				</p>
+			</div>
+			<Button
+				type="button"
+				onClick={activateSetup}
+				disabled={!readiness.canActivate || isPending}
+			>
+				{t(
+					"settings.enterprise.identity.review.action.activate",
+					"Activate enterprise identity",
+				)}
+			</Button>
+		</WizardCard>
+	);
+}
+
+export function IdentitySetupWizard(props: IdentitySetupWizardProps) {
+	return <IdentitySetupView controller={useIdentitySetupController(props)} />;
 }

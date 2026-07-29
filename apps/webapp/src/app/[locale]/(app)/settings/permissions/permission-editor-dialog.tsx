@@ -9,6 +9,7 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import type { EmployeePermissions } from "@/lib/effect/services/permissions.service";
 import type { SelectableEmployee } from "../employees/actions";
 import type { TeamItem } from "./page-utils";
 
@@ -16,22 +17,35 @@ export function PermissionEditorDialog(props: {
 	selectedEmployee: SelectableEmployee | null;
 	currentEmployee: { organizationId: string } | null;
 	teams: TeamItem[];
-	currentPermissions: Record<string, any>;
+	currentPermissions: Record<string, EmployeePermissions>;
 	onClose: () => void;
 	onSuccess: () => void;
 }) {
 	const { t } = useTranslate();
-	const { selectedEmployee, currentEmployee, teams, currentPermissions, onClose, onSuccess } =
-		props;
+	const {
+		selectedEmployee,
+		currentEmployee,
+		teams,
+		currentPermissions,
+		onClose,
+		onSuccess,
+	} = props;
 
 	return (
-		<ActionPanel open={!!selectedEmployee} onOpenChange={(open) => !open && onClose()}>
+		<ActionPanel
+			open={!!selectedEmployee}
+			onOpenChange={(open) => !open && onClose()}
+		>
 			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
 					<ActionPanelTitle>
-						{t("settings.permissions.editor.title", "Edit Permissions - {name}", {
-							name: selectedEmployee?.user.name ?? "",
-						})}
+						{t(
+							"settings.permissions.editor.title",
+							"Edit Permissions - {name}",
+							{
+								name: selectedEmployee?.user.name ?? "",
+							},
+						)}
 					</ActionPanelTitle>
 				</ActionPanelHeader>
 				<ActionPanelBody>
@@ -39,7 +53,6 @@ export function PermissionEditorDialog(props: {
 						<PermissionEditor
 							employeeId={selectedEmployee.id}
 							employeeName={selectedEmployee.user.name}
-							organizationId={currentEmployee.organizationId}
 							currentPermissions={currentPermissions[selectedEmployee.id]}
 							availableTeams={teams}
 							onSuccess={onSuccess}

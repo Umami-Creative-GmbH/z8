@@ -1,21 +1,38 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { configureWellnessOnboardingMock, pushMock } = vi.hoisted(() => ({
+const {
+	configureWellnessOnboardingMock,
+	pushMock,
+	skipWellnessSetupMock,
+	toastErrorMock,
+	toastSuccessMock,
+} = vi.hoisted(() => ({
 	configureWellnessOnboardingMock: vi.fn(),
 	pushMock: vi.fn(),
+	skipWellnessSetupMock: vi.fn(),
+	toastErrorMock: vi.fn(),
+	toastSuccessMock: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
+	useTranslate: () => ({
+		t: (_key: string, fallback?: string) => fallback ?? _key,
+	}),
 }));
 
 vi.mock("sonner", () => ({
 	toast: {
-		success: vi.fn(),
-		error: vi.fn(),
+		success: toastSuccessMock,
+		error: toastErrorMock,
 	},
 }));
 
@@ -29,7 +46,7 @@ vi.mock("@/components/onboarding/progress-indicator", () => ({
 
 vi.mock("./actions", () => ({
 	configureWellnessOnboarding: configureWellnessOnboardingMock,
-	skipWellnessSetup: vi.fn(),
+	skipWellnessSetup: skipWellnessSetupMock,
 }));
 
 import WellnessPage from "./page";
@@ -43,17 +60,91 @@ beforeAll(() => {
 });
 
 describe("WellnessPage", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
 	it("enables water reminders by default during onboarding", async () => {
 		configureWellnessOnboardingMock.mockResolvedValue({ success: true });
 
 		render(<WellnessPage />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+		const continueButton = screen.getByRole("button", { name: "Continue" });
+		fireEvent.click(continueButton);
 
 		await waitFor(() => {
 			expect(configureWellnessOnboardingMock).toHaveBeenCalledWith(
 				expect.objectContaining({ enableWaterReminder: true }),
 			);
 		});
+		expect(pushMock).toHaveBeenCalledWith("/onboarding/notifications");
+		expect(pushMock).toHaveBeenCalledOnce();
+		expect(continueButton).toHaveProperty("disabled", true);
+	});
+
+	it("keeps skip disabled after successful skip navigation", async () => {
+		skipWellnessSetupMock.mockResolvedValue({ success: true });
+		render(<WellnessPage />);
+
+		const skipButton = screen.getByRole("button", { name: "Skip for now" });
+		fireEvent.click(skipButton);
+
+		await waitFor(() =>
+			expect(pushMock).toHaveBeenCalledWith("/onboarding/notifications"),
+		);
+		expect(pushMock).toHaveBeenCalledOnce();
+		expect(skipButton).toHaveProperty("disabled", true);
+	});
+
+	it("resets submit loading and shows a safe error when configuration rejects", async () => {
+		const request = deferred<never>();
+		configureWellnessOnboardingMock.mockReturnValue(request.promise);
+		render(<WellnessPage />);
+
+		const continueButton = screen.getByRole("button", { name: "Continue" });
+		fireEvent.click(continueButton);
+		await waitFor(() =>
+			expect(continueButton).toHaveProperty("disabled", true),
+		);
+
+		await act(async () =>
+			request.reject(new Error("private wellness failure")),
+		);
+
+		await waitFor(() =>
+			expect(continueButton).toHaveProperty("disabled", false),
+		);
+		expect(toastErrorMock).toHaveBeenCalledWith(
+			"Failed to save wellness settings",
+		);
+		expect(toastSuccessMock).not.toHaveBeenCalled();
+		expect(pushMock).not.toHaveBeenCalled();
+	});
+
+	it("resets skip loading and shows a safe error when skipping rejects", async () => {
+		const request = deferred<never>();
+		skipWellnessSetupMock.mockReturnValue(request.promise);
+		render(<WellnessPage />);
+
+		const skipButton = screen.getByRole("button", { name: "Skip for now" });
+		fireEvent.click(skipButton);
+		await waitFor(() => expect(skipButton).toHaveProperty("disabled", true));
+
+		await act(async () => request.reject(new Error("private skip failure")));
+
+		await waitFor(() => expect(skipButton).toHaveProperty("disabled", false));
+		expect(toastErrorMock).toHaveBeenCalledWith(
+			"Failed to skip wellness setup",
+		);
+		expect(toastSuccessMock).not.toHaveBeenCalled();
+		expect(pushMock).not.toHaveBeenCalled();
 	});
 });
+
+function deferred<T>() {
+	let reject!: (reason: unknown) => void;
+	const promise = new Promise<T>((_resolve, rejectPromise) => {
+		reject = rejectPromise;
+	});
+	return { promise, reject };
+}

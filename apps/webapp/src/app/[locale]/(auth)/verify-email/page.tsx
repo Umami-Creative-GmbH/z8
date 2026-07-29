@@ -2,7 +2,14 @@
 
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import {
+	type RefObject,
+	Suspense,
+	useEffect,
+	useLayoutEffect,
+	useRef,
+	useState,
+} from "react";
 import { getPendingInvitation } from "@/app/[locale]/(auth)/invitation-actions";
 import { processPendingInviteCode } from "@/app/[locale]/(auth)/invite-code-actions";
 import { AuthFormWrapper } from "@/components/auth-form-wrapper";
@@ -17,17 +24,49 @@ type JoinResult = {
 } | null;
 
 function VerifyEmailContent() {
-	const { t } = useTranslate();
-	const { push } = useRouter();
 	const searchParams = useSearchParams();
 	const token = searchParams.get("token");
-	const missingTokenMessage = t("auth.missing-verification-token", "Missing verification token");
+	const latestTokenRef = useRef(token);
+
+	useLayoutEffect(() => {
+		latestTokenRef.current = token;
+	}, [token]);
+
+	return (
+		<VerifyEmailTokenContent
+			key={token ?? ""}
+			token={token}
+			latestTokenRef={latestTokenRef}
+		/>
+	);
+}
+
+function VerifyEmailTokenContent({
+	token,
+	latestTokenRef,
+}: {
+	token: string | null;
+	latestTokenRef: RefObject<string | null>;
+}) {
+	const { t } = useTranslate();
+	const { push } = useRouter();
+	const missingTokenMessage = t(
+		"auth.missing-verification-token",
+		"Missing verification token",
+	);
 	const genericErrorMessage = t("common.error-occurred", "An error occurred");
-	const verificationFailedMessage = t("auth.verification-failed-error", "Verification failed");
-	const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+	const verificationFailedMessage = t(
+		"auth.verification-failed-error",
+		"Verification failed",
+	);
+	const [status, setStatus] = useState<"loading" | "success" | "error">(
+		"loading",
+	);
 	const [errorMessage, setErrorMessage] = useState<string>("");
 	const [joinResult, setJoinResult] = useState<JoinResult>(null);
-	const [pendingInvitationId, setPendingInvitationId] = useState<string | null>(null);
+	const [pendingInvitationId, setPendingInvitationId] = useState<string | null>(
+		null,
+	);
 
 	useEffect(() => {
 		let isMounted = true;
@@ -48,9 +87,11 @@ function VerifyEmailContent() {
 				})
 				.catch((error) => ({
 					error: {
-						message: error instanceof Error ? error.message : genericErrorMessage,
+						message:
+							error instanceof Error ? error.message : genericErrorMessage,
 					},
 				}));
+			if (!isMounted) return;
 
 			if (result.error) {
 				setStatus("error");
@@ -68,7 +109,9 @@ function VerifyEmailContent() {
 				setJoinResult(pendingJoinResult);
 			}
 
-			const pendingInvitationResult = await getPendingInvitation().catch(() => null);
+			const pendingInvitationResult = await getPendingInvitation().catch(
+				() => null,
+			);
 			if (!isMounted) return;
 
 			const invitationId =
@@ -79,6 +122,7 @@ function VerifyEmailContent() {
 
 			setStatus("success");
 			redirectTimeout = setTimeout(() => {
+				if (!isMounted || latestTokenRef.current !== token) return;
 				if (pendingJoinResult) {
 					push("/onboarding");
 				} else if (invitationId) {
@@ -97,11 +141,20 @@ function VerifyEmailContent() {
 				clearTimeout(redirectTimeout);
 			}
 		};
-	}, [genericErrorMessage, missingTokenMessage, push, token, verificationFailedMessage]);
+	}, [
+		genericErrorMessage,
+		missingTokenMessage,
+		push,
+		latestTokenRef,
+		token,
+		verificationFailedMessage,
+	]);
 
 	const getTitle = () => {
-		if (status === "loading") return t("auth.verifying-email", "Verifying your email...");
-		if (status === "success") return t("auth.email-verified", "Email Verified!");
+		if (status === "loading")
+			return t("auth.verifying-email", "Verifying your email...");
+		if (status === "success")
+			return t("auth.email-verified", "Email Verified!");
 		return t("auth.verification-failed", "Verification Failed");
 	};
 
@@ -111,7 +164,10 @@ function VerifyEmailContent() {
 				<div className="text-center">
 					<div className="mb-4 text-4xl">⏳</div>
 					<p className="text-muted-foreground">
-						{t("auth.please-wait", "Please wait while we verify your email address.")}
+						{t(
+							"auth.please-wait",
+							"Please wait while we verify your email address.",
+						)}
 					</p>
 				</div>
 			)}
@@ -129,9 +185,13 @@ function VerifyEmailContent() {
 						<div className="mb-4 rounded-lg border bg-muted/50 p-4">
 							<p className="font-medium">
 								{joinResult.status === "approved"
-									? t("auth.joined-organization", "You've joined {organization}!", {
-											organization: joinResult.organizationName,
-										})
+									? t(
+											"auth.joined-organization",
+											"You've joined {organization}!",
+											{
+												organization: joinResult.organizationName,
+											},
+										)
 									: t(
 											"auth.pending-organization-approval",
 											"Your request to join {organization} is pending approval.",
@@ -142,13 +202,19 @@ function VerifyEmailContent() {
 					)}
 					<p className="text-sm text-muted-foreground">
 						{joinResult
-							? t("auth.redirecting-to-onboarding", "Redirecting to complete setup...")
+							? t(
+									"auth.redirecting-to-onboarding",
+									"Redirecting to complete setup...",
+								)
 							: pendingInvitationId
 								? t(
 										"auth.redirecting-to-invitation",
 										"Redirecting to finish your organization invitation...",
 									)
-								: t("auth.redirecting-to-signin", "Redirecting to sign in page in 3 seconds...")}
+								: t(
+										"auth.redirecting-to-signin",
+										"Redirecting to sign in page in 3 seconds...",
+									)}
 					</p>
 					<Button
 						className="mt-4 w-full"
@@ -182,7 +248,9 @@ function VerifyEmailContent() {
 							</Button>
 						</Link>
 						<Link href="/sign-in">
-							<Button className="w-full">{t("auth.try-signin", "Try to Sign In")}</Button>
+							<Button className="w-full">
+								{t("auth.try-signin", "Try to Sign In")}
+							</Button>
 						</Link>
 					</div>
 				</div>

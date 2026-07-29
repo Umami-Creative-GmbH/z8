@@ -174,6 +174,116 @@ describe("buildPendingApprovalResult", () => {
 		expect(result.timeCorrectionApprovals).toEqual([]);
 	});
 
+	it("includes the request reason in time approval DTOs", () => {
+		const result = buildPendingApprovalResult({
+			pendingRequests: [
+				{
+					id: "approval-1",
+					entityId: "period-1",
+					entityType: "time_entry",
+					status: "pending",
+					reason: "Forgot to clock out after the customer visit",
+					createdAt: new Date("2026-05-22T18:28:29.000Z"),
+					metadata: {
+						timeCorrection: { clockInCorrectionId: "clock-in-correction" },
+					},
+					requester: {
+						user: {
+							id: "user-1",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
+							image: null,
+						},
+					},
+				},
+			],
+			absencesById: new Map(),
+			periodsById: new Map([
+				[
+					"period-1",
+					{
+						id: "period-1",
+						startTime: new Date("2026-05-22T14:00:00.000Z"),
+						endTime: null,
+						clockIn: {
+							id: "clock-in-original",
+							timestamp: new Date("2026-05-22T14:00:00.000Z"),
+							utcOffsetMinutes: 120,
+						},
+						clockOut: null,
+						correctionReviewEntries: [
+							{
+								id: "clock-in-correction",
+								timestamp: new Date("2026-05-22T14:15:00.000Z"),
+								replacesEntryId: "clock-in-original",
+								utcOffsetMinutes: 120,
+							},
+						],
+					},
+				],
+			]),
+		});
+
+		expect(result.timeCorrectionApprovals[0]?.reason).toBe(
+			"Forgot to clock out after the customer visit",
+		);
+	});
+
+	it.each([
+		"manual_time_submission",
+		"policy_clock_out",
+	] as const)("includes pending %s requests without treating them as orphaned corrections", (kind) => {
+		const result = buildPendingApprovalResult({
+			pendingRequests: [
+				{
+					id: `approval-${kind}`,
+					entityId: "period-1",
+					entityType: "time_entry",
+					status: "pending",
+					reason: "Manager review requested",
+					createdAt: new Date("2026-05-22T18:28:29.000Z"),
+					metadata: { timeRequest: { kind } },
+					requester: {
+						user: {
+							id: "user-1",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
+							image: null,
+						},
+					},
+				},
+			],
+			absencesById: new Map(),
+			periodsById: new Map([
+				[
+					"period-1",
+					{
+						id: "period-1",
+						startTime: new Date("2026-05-22T14:00:00.000Z"),
+						endTime: new Date("2026-05-22T18:00:00.000Z"),
+						clockIn: {
+							id: "clock-in-original",
+							timestamp: new Date("2026-05-22T14:00:00.000Z"),
+							utcOffsetMinutes: 120,
+						},
+						clockOut: {
+							id: "clock-out-original",
+							timestamp: new Date("2026-05-22T18:00:00.000Z"),
+							utcOffsetMinutes: 120,
+						},
+						correctionReviewEntries: [],
+					},
+				],
+			]),
+		});
+
+		expect(result.timeCorrectionApprovals).toHaveLength(1);
+		expect(result.timeCorrectionApprovals[0]).toMatchObject({
+			id: `approval-${kind}`,
+			reason: "Manager review requested",
+		});
+	});
+
 	it("supports travel expense claims in the richer bulk decision contract", () => {
 		const approvalType: ApprovalType = "travel_expense_claim";
 		const decisionActions: ApprovalDecisionAction[] = ["approve", "reject"];

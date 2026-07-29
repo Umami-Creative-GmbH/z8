@@ -26,6 +26,15 @@ const logger = createLogger("PersonioExporter");
 
 const SYNC_THRESHOLD = 500; // Max records for sync export
 
+export function selectPersonioEmployeeIdentifier(
+	record: { employeeNumber: string | null; email?: string | null },
+	strategy: PersonioConfig["employeeMatchStrategy"],
+): string | null {
+	const identifier =
+		strategy === "email" ? record.email : record.employeeNumber;
+	return identifier || null;
+}
+
 /**
  * Vault keys for Personio credentials
  */
@@ -54,9 +63,13 @@ export class PersonioExporter implements IPayrollExporter {
 
 		if (
 			personioConfig.employeeMatchStrategy &&
-			!["employeeNumber", "email"].includes(personioConfig.employeeMatchStrategy)
+			!["employeeNumber", "email"].includes(
+				personioConfig.employeeMatchStrategy,
+			)
 		) {
-			errors.push("Employee match strategy must be 'employeeNumber' or 'email'");
+			errors.push(
+				"Employee match strategy must be 'employeeNumber' or 'email'",
+			);
 		}
 
 		if (
@@ -68,7 +81,8 @@ export class PersonioExporter implements IPayrollExporter {
 
 		if (
 			personioConfig.apiTimeoutMs !== undefined &&
-			(personioConfig.apiTimeoutMs < 5000 || personioConfig.apiTimeoutMs > 120000)
+			(personioConfig.apiTimeoutMs < 5000 ||
+				personioConfig.apiTimeoutMs > 120000)
 		) {
 			errors.push("API timeout must be between 5000 and 120000 milliseconds");
 		}
@@ -91,12 +105,19 @@ export class PersonioExporter implements IPayrollExporter {
 			if (!credentials) {
 				return {
 					success: false,
-					error: "Personio credentials not configured. Please enter your Client ID and API Secret.",
+					error:
+						"Personio credentials not configured. Please enter your Client ID and API Secret.",
 				};
 			}
 
-			const personioConfig = { ...DEFAULT_PERSONIO_CONFIG, ...config } as PersonioConfig;
-			const client = new PersonioApiClient(credentials, personioConfig.apiTimeoutMs);
+			const personioConfig = {
+				...DEFAULT_PERSONIO_CONFIG,
+				...config,
+			} as PersonioConfig;
+			const client = new PersonioApiClient(
+				credentials,
+				personioConfig.apiTimeoutMs,
+			);
 
 			return await client.testConnection();
 		} catch (error) {
@@ -125,14 +146,20 @@ export class PersonioExporter implements IPayrollExporter {
 			"Starting Personio export",
 		);
 
-		const personioConfig = { ...DEFAULT_PERSONIO_CONFIG, ...config } as PersonioConfig;
+		const personioConfig = {
+			...DEFAULT_PERSONIO_CONFIG,
+			...config,
+		} as PersonioConfig;
 		const credentials = await this.getCredentials(organizationId);
 
 		if (!credentials) {
 			throw new Error("Personio credentials not configured");
 		}
 
-		const client = new PersonioApiClient(credentials, personioConfig.apiTimeoutMs);
+		const client = new PersonioApiClient(
+			credentials,
+			personioConfig.apiTimeoutMs,
+		);
 
 		// Build mapping lookups for absence categories
 		const absenceCategoryMappings = new Map<string, WageTypeMapping>();
@@ -143,7 +170,10 @@ export class PersonioExporter implements IPayrollExporter {
 		}
 
 		// Transform to Personio requests (with original work period tracking)
-		const attendanceData = this.transformWorkPeriods(workPeriods, personioConfig);
+		const attendanceData = this.transformWorkPeriods(
+			workPeriods,
+			personioConfig,
+		);
 		const absenceRequests = this.transformAbsences(
 			absences,
 			absenceCategoryMappings,
@@ -161,12 +191,17 @@ export class PersonioExporter implements IPayrollExporter {
 		}> = [];
 		const attendanceBatches: Array<typeof attendanceData> = [];
 		for (let i = 0; i < attendanceData.length; i += personioConfig.batchSize) {
-			attendanceBatches.push(attendanceData.slice(i, i + personioConfig.batchSize));
+			attendanceBatches.push(
+				attendanceData.slice(i, i + personioConfig.batchSize),
+			);
 		}
 
 		const attendanceBatchResults = await Promise.all(
 			attendanceBatches.map((batch) =>
-				client.createAttendances(batch.map((item) => item.request)),
+				client.createAttendances(
+					batch.map((item) => item.request),
+					personioConfig.employeeMatchStrategy,
+				),
 			),
 		);
 
@@ -204,14 +239,23 @@ export class PersonioExporter implements IPayrollExporter {
 		});
 		const absenceBatches: PersonioAbsenceRequest[][] = [];
 
-		for (let i = 0; i < validAbsenceRequests.length; i += personioConfig.batchSize) {
+		for (
+			let i = 0;
+			i < validAbsenceRequests.length;
+			i += personioConfig.batchSize
+		) {
 			absenceBatches.push(
-				validAbsenceRequests.slice(i, i + personioConfig.batchSize) as PersonioAbsenceRequest[],
+				validAbsenceRequests.slice(
+					i,
+					i + personioConfig.batchSize,
+				) as PersonioAbsenceRequest[],
 			);
 		}
 
 		const absenceBatchResults = await Promise.all(
-			absenceBatches.map((batch) => client.createAbsences(batch)),
+			absenceBatches.map((batch) =>
+				client.createAbsences(batch, personioConfig.employeeMatchStrategy),
+			),
 		);
 		absenceResults.push(...absenceBatchResults.flat());
 		apiCallCount += validAbsenceRequests.length;
@@ -235,7 +279,9 @@ export class PersonioExporter implements IPayrollExporter {
 
 		// Calculate results
 		const totalRecords = workPeriods.length + absences.length;
-		const syncedAttendances = attendanceResults.filter((r) => r.result.success).length;
+		const syncedAttendances = attendanceResults.filter(
+			(r) => r.result.success,
+		).length;
 		const syncedAbsences = absenceResults.filter((r) => r.success).length;
 		const syncedRecords = syncedAttendances + syncedAbsences;
 		const failedRecords = errors.length;
@@ -290,7 +336,10 @@ export class PersonioExporter implements IPayrollExporter {
 		workPeriods: WorkPeriodData[],
 		config: PersonioConfig,
 	): Array<{ request: PersonioAttendanceRequest; workPeriod: WorkPeriodData }> {
-		const results: Array<{ request: PersonioAttendanceRequest; workPeriod: WorkPeriodData }> = [];
+		const results: Array<{
+			request: PersonioAttendanceRequest;
+			workPeriod: WorkPeriodData;
+		}> = [];
 
 		for (const period of workPeriods) {
 			// Skip incomplete periods
@@ -300,9 +349,8 @@ export class PersonioExporter implements IPayrollExporter {
 			if (!config.includeZeroHours && period.durationMinutes === 0) continue;
 
 			// Get employee identifier based on config
-			const employeeIdentifier = this.getEmployeeIdentifier(
-				period.employeeNumber,
-				null, // Email not available in WorkPeriodData
+			const employeeIdentifier = selectPersonioEmployeeIdentifier(
+				period,
 				config.employeeMatchStrategy,
 			);
 
@@ -322,11 +370,12 @@ export class PersonioExporter implements IPayrollExporter {
 			results.push({
 				request: {
 					employee: employeeIdentifier,
-					date: period.startTime.toISODate()!,
+					date: period.startTime.toISODate() as string,
 					start_time: period.startTime.toFormat("HH:mm"),
 					end_time: period.endTime.toFormat("HH:mm"),
 					break: 0, // Could be calculated from gaps between periods
-					comment: commentParts.length > 0 ? commentParts.join(" - ") : undefined,
+					comment:
+						commentParts.length > 0 ? commentParts.join(" - ") : undefined,
 				},
 				workPeriod: period,
 			});
@@ -372,9 +421,8 @@ export class PersonioExporter implements IPayrollExporter {
 			}
 
 			// Get employee identifier based on config
-			const employeeIdentifier = this.getEmployeeIdentifier(
-				absence.employeeNumber,
-				null, // Email not available in AbsenceData
+			const employeeIdentifier = selectPersonioEmployeeIdentifier(
+				absence,
 				config.employeeMatchStrategy,
 			);
 
@@ -397,38 +445,21 @@ export class PersonioExporter implements IPayrollExporter {
 	}
 
 	/**
-	 * Get employee identifier based on matching strategy
-	 */
-	private getEmployeeIdentifier(
-		employeeNumber: string | null,
-		email: string | null,
-		strategy: PersonioConfig["employeeMatchStrategy"],
-	): string | number | null {
-		if (strategy === "employeeNumber") {
-			if (!employeeNumber) return null;
-			// Try to parse as number for Personio
-			const numericId = parseInt(employeeNumber, 10);
-			return Number.isNaN(numericId) ? employeeNumber : numericId;
-		}
-
-		if (strategy === "email") {
-			return email || null;
-		}
-
-		return null;
-	}
-
-	/**
 	 * Get credentials from Vault
 	 */
-	private async getCredentials(organizationId: string): Promise<PersonioCredentials | null> {
+	private async getCredentials(
+		organizationId: string,
+	): Promise<PersonioCredentials | null> {
 		const [clientId, clientSecret] = await Promise.all([
 			getOrgSecret(organizationId, VAULT_KEY_CLIENT_ID),
 			getOrgSecret(organizationId, VAULT_KEY_CLIENT_SECRET),
 		]);
 
 		if (!clientId || !clientSecret) {
-			logger.debug({ organizationId }, "Personio credentials not found in Vault");
+			logger.debug(
+				{ organizationId },
+				"Personio credentials not found in Vault",
+			);
 			return null;
 		}
 

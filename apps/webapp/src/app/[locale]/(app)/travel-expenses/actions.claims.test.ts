@@ -11,12 +11,14 @@ const mockState = vi.hoisted(() => {
 
 	return {
 		getAuthContext: vi.fn(),
+		getEffectiveTimezone: vi.fn(),
 		revalidatePath: vi.fn(),
 		logAudit: vi.fn().mockResolvedValue(undefined),
 		findClaim: vi.fn(),
 		findEmployee: vi.fn(),
 		findEmployees: vi.fn(),
 		findEmployeeManagers: vi.fn(),
+		findProject: vi.fn(),
 		findTeamMemberships: vi.fn(),
 		findTeams: vi.fn(),
 		dbUpdate: vi.fn(() => ({ set: updateSet })),
@@ -37,7 +39,9 @@ vi.mock("drizzle-orm", async (importOriginal) => {
 		...actual,
 		and: vi.fn((...args: unknown[]) => ({ and: args })),
 		eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
-		inArray: vi.fn((left: unknown, right: unknown[]) => ({ inArray: [left, right] })),
+		inArray: vi.fn((left: unknown, right: unknown[]) => ({
+			inArray: [left, right],
+		})),
 		asc: vi.fn((value: unknown) => ({ asc: value })),
 		desc: vi.fn((value: unknown) => ({ desc: value })),
 	};
@@ -69,6 +73,10 @@ vi.mock("@/lib/auth-helpers", () => ({
 	getAuthContext: mockState.getAuthContext,
 }));
 
+vi.mock("@/lib/timezone/effective-timezone", () => ({
+	getEffectiveTimezone: mockState.getEffectiveTimezone,
+}));
+
 vi.mock("@/lib/audit-logger", () => ({
 	AuditAction: {
 		TRAVEL_EXPENSE_DRAFT_CREATED: "travel_expense.draft_created",
@@ -87,6 +95,10 @@ vi.mock("@/db/schema", () => ({
 	},
 	travelExpenseAttachment: {
 		id: "id",
+	},
+	project: {
+		id: "project.id",
+		organizationId: "project.organizationId",
 	},
 	approvalPolicy: {
 		organizationId: "organizationId",
@@ -133,6 +145,9 @@ vi.mock("@/db/schema", () => ({
 vi.mock("@/db", () => ({
 	db: {
 		query: {
+			project: {
+				findFirst: mockState.findProject,
+			},
 			travelExpenseClaim: {
 				findFirst: mockState.findClaim,
 				findMany: vi.fn(),
@@ -157,20 +172,131 @@ vi.mock("@/db", () => ({
 	},
 }));
 
-vi.mock("@/lib/approvals/server/travel-expense-approvals", async (importOriginal) => {
-	const actual = await importOriginal<
-		typeof import("@/lib/approvals/server/travel-expense-approvals")
-	>();
-	return {
-		...actual,
-		createTravelExpenseApprovalWorkflow: vi.fn(actual.createTravelExpenseApprovalWorkflow),
-	};
-});
+vi.mock(
+	"@/lib/approvals/server/travel-expense-approvals",
+	async (importOriginal) => {
+		const actual =
+			await importOriginal<
+				typeof import("@/lib/approvals/server/travel-expense-approvals")
+			>();
+		return {
+			...actual,
+			createTravelExpenseApprovalWorkflow: vi.fn(
+				actual.createTravelExpenseApprovalWorkflow,
+			),
+		};
+	},
+);
 
 const { createTravelExpenseApprovalWorkflow } = await import(
 	"@/lib/approvals/server/travel-expense-approvals"
 );
-const { submitTravelExpenseClaim } = await import("./actions");
+const { createTravelExpenseDraft, submitTravelExpenseClaim } = await import(
+	"./actions"
+);
+
+describe("createTravelExpenseDraft", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockState.getAuthContext.mockResolvedValue({
+			user: { id: "user-1" },
+			session: { activeOrganizationId: "org-1" },
+			employee: {
+				id: "emp-1",
+				organizationId: "org-1",
+				role: "employee",
+				teamId: null,
+			},
+		});
+		mockState.insertValues.mockReturnValue({
+			returning: vi.fn().mockResolvedValue([{ id: "claim-1" }]),
+		});
+		mockState.findProject.mockResolvedValue({ id: "project-1" });
+	});
+
+	it.each([
+		{
+			timezone: "Europe/Berlin",
+			date: "2026-03-29",
+			start: "2026-03-28T23:00:00.000Z",
+			end: "2026-03-29T21:59:59.999Z",
+		},
+		{
+			timezone: "America/New_York",
+			date: "2026-11-01",
+			start: "2026-11-01T04:00:00.000Z",
+			end: "2026-11-02T04:59:59.999Z",
+		},
+		{
+			timezone: "Asia/Kathmandu",
+			date: "2026-05-12",
+			start: "2026-05-11T18:15:00.000Z",
+			end: "2026-05-12T18:14:59.999Z",
+		},
+	])("persists date-only trip boundaries in the authenticated employee zone $timezone", async ({
+		timezone,
+		date,
+		start,
+		end,
+	}) => {
+		mockState.getEffectiveTimezone.mockResolvedValue(timezone);
+
+		const result = await createTravelExpenseDraft({
+			type: "receipt",
+			tripStart: date,
+			tripEnd: date,
+			originalCurrency: "EUR",
+			originalAmount: "42.00",
+			calculatedCurrency: "EUR",
+			calculatedAmount: "42.00",
+		});
+
+		expect(result).toEqual({ success: true, data: { id: "claim-1" } });
+		expect(mockState.getEffectiveTimezone).toHaveBeenCalledWith(
+			"user-1",
+			"org-1",
+		);
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				employeeId: "emp-1",
+				tripStart: new Date(start),
+				tripEnd: new Date(end),
+			}),
+		);
+	});
+
+	it("fails closed when the optional project is outside the active organization", async () => {
+		mockState.getEffectiveTimezone.mockResolvedValue("Europe/Berlin");
+		mockState.findProject.mockResolvedValue(null);
+
+		const result = await createTravelExpenseDraft({
+			type: "receipt",
+			tripStart: "2026-05-12",
+			tripEnd: "2026-05-12",
+			projectId: "project-other-org",
+			originalCurrency: "EUR",
+			originalAmount: "42.00",
+			calculatedCurrency: "EUR",
+			calculatedAmount: "42.00",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Failed to create travel expense draft",
+		});
+		expect(mockState.findProject).toHaveBeenCalledWith({
+			where: {
+				and: [
+					{ eq: ["project.id", "project-other-org"] },
+					{ eq: ["project.organizationId", "org-1"] },
+				],
+			},
+			columns: { id: true },
+		});
+		expect(mockState.insertValues).not.toHaveBeenCalled();
+	});
+});
 
 describe("submitTravelExpenseClaim", () => {
 	beforeEach(() => {
@@ -200,15 +326,22 @@ describe("submitTravelExpenseClaim", () => {
 								isActive: true,
 								role: "employee",
 							},
-							{ id: "manager-1", organizationId: "org-1", isActive: true, role: "manager" },
+							{
+								id: "manager-1",
+								organizationId: "org-1",
+								isActive: true,
+								role: "manager",
+							},
 						]),
 					},
 					employeeManagers: {
-						findMany: vi
-							.fn()
-							.mockResolvedValue([
-								{ employeeId: "emp-1", managerId: "manager-1", isPrimary: true },
-							]),
+						findMany: vi.fn().mockResolvedValue([
+							{
+								employeeId: "emp-1",
+								managerId: "manager-1",
+								isPrimary: true,
+							},
+						]),
 					},
 					teamMembership: {
 						findMany: vi.fn().mockResolvedValue([]),
@@ -262,7 +395,12 @@ describe("submitTravelExpenseClaim", () => {
 				isActive: true,
 				role: "employee",
 			},
-			{ id: "manager-1", organizationId: "org-1", isActive: true, role: "manager" },
+			{
+				id: "manager-1",
+				organizationId: "org-1",
+				isActive: true,
+				role: "manager",
+			},
 		]);
 		mockState.findEmployeeManagers.mockResolvedValue([
 			{ employeeId: "emp-1", managerId: "manager-1", isPrimary: true },
@@ -343,7 +481,9 @@ describe("submitTravelExpenseClaim", () => {
 		mockState.findEmployee.mockResolvedValueOnce({ teamId: null });
 		mockState.findEmployeeManagers.mockResolvedValueOnce([]);
 
-		const result = await submitTravelExpenseClaim({ claimId: "claim-no-manager" });
+		const result = await submitTravelExpenseClaim({
+			claimId: "claim-no-manager",
+		});
 
 		expect(result).toEqual({ success: false, error: "No approver available" });
 		expect(mockState.dbTransaction).not.toHaveBeenCalled();
@@ -383,11 +523,16 @@ describe("submitTravelExpenseClaim", () => {
 		});
 		mockState.findEmployee.mockResolvedValueOnce({ teamId: null });
 		mockState.updateReturning.mockResolvedValue([{ id: "claim-3" }]);
-		mockState.insertValues.mockRejectedValue(new Error("approval request insert failed"));
+		mockState.insertValues.mockRejectedValue(
+			new Error("approval request insert failed"),
+		);
 
 		const result = await submitTravelExpenseClaim({ claimId: "claim-3" });
 
-		expect(result).toEqual({ success: false, error: "Failed to submit travel expense claim" });
+		expect(result).toEqual({
+			success: false,
+			error: "Failed to submit travel expense claim",
+		});
 		expect(mockState.dbTransaction).toHaveBeenCalledTimes(1);
 		expect(mockState.committedUpdates).toEqual([]);
 		expect(mockState.committedInserts).toEqual([]);

@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { AuditConfigForm } from "@/components/settings/audit-export/audit-config-form";
@@ -7,13 +8,16 @@ import { KeyManagement } from "@/components/settings/audit-export/key-management
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import { getAuditConfigAction, getAuditPackagesAction } from "./actions";
 
 export const metadata = {
 	title: "Audit Export Settings",
-	description: "Configure GoBD-compliant audit export hardening with cryptographic proofs",
+	description:
+		"Configure GoBD-compliant audit export hardening with cryptographic proofs",
 };
 
 async function AuditExportSettingsContent() {
@@ -24,6 +28,11 @@ async function AuditExportSettingsContent() {
 		requireOrgAdminSettingsAccess(),
 	]);
 	const { organizationId } = orgAccess;
+	const ownedOrganization = await db.query.organization.findFirst({
+		where: eq(organization.id, organizationId),
+		columns: { timezone: true },
+	});
+	const organizationTimezone = ownedOrganization?.timezone ?? "UTC";
 
 	const [configResult, packagesResult] = await Promise.all([
 		getAuditConfigAction(organizationId),
@@ -63,12 +72,21 @@ async function AuditExportSettingsContent() {
 				</TabsList>
 
 				<TabsContent value="config" className="mt-4 space-y-6">
-					<AuditConfigForm organizationId={organizationId} initialConfig={config} />
+					<AuditConfigForm
+						organizationId={organizationId}
+						initialConfig={config}
+					/>
 				</TabsContent>
 
 				<TabsContent value="packages" className="mt-4 space-y-6">
-					<AuditPackGeneratorCard organizationId={organizationId} />
-					<AuditPackagesTable organizationId={organizationId} packages={packages} />
+					<AuditPackGeneratorCard
+						organizationId={organizationId}
+						organizationTimezone={organizationTimezone}
+					/>
+					<AuditPackagesTable
+						organizationId={organizationId}
+						packages={packages}
+					/>
 				</TabsContent>
 
 				{config && (

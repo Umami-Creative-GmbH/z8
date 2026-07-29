@@ -77,6 +77,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "../ui/select";
+import { runWithBusyState } from "./run-with-busy-state";
 
 interface DemoDataWizardProps {
 	organizationId: string;
@@ -837,15 +838,22 @@ function useDemoDataWizardController({
 			});
 			return;
 		}
-		setIsClearing(true);
-		const response = await clearTimeDataAction(organizationId);
-		if (!response.success) {
-			dispatchWizard({ type: "set-error", error: response.error });
-		} else {
-			setClearResult(response.data);
-		}
-		setConfirmText("");
-		setIsClearing(false);
+		await runWithBusyState(setIsClearing, async () => {
+			try {
+				const response = await clearTimeDataAction(organizationId);
+				if (!response.success) {
+					dispatchWizard({ type: "set-error", error: response.error });
+				} else {
+					setClearResult(response.data);
+				}
+				setConfirmText("");
+			} catch {
+				dispatchWizard({
+					type: "set-error",
+					error: t("common.unexpectedError", "An unexpected error occurred"),
+				});
+			}
+		});
 	};
 
 	const handleReset = () => {
@@ -861,21 +869,26 @@ function useDemoDataWizardController({
 		}
 		setEmployeeError(null);
 		setEmployeeResult(null);
-		setIsGeneratingEmployees(true);
+		await runWithBusyState(setIsGeneratingEmployees, async () => {
+			try {
+				const response = await generateDemoEmployeesAction({
+					organizationId,
+					count: employeeCount,
+					includeManagers: includeManagersForEmployees,
+				});
 
-		const response = await generateDemoEmployeesAction({
-			organizationId,
-			count: employeeCount,
-			includeManagers: includeManagersForEmployees,
+				if (!response.success) {
+					setEmployeeError(response.error);
+				} else {
+					setEmployeeResult(response.data);
+					router.refresh();
+				}
+			} catch {
+				setEmployeeError(
+					t("common.unexpectedError", "An unexpected error occurred"),
+				);
+			}
 		});
-
-		if (!response.success) {
-			setEmployeeError(response.error);
-		} else {
-			setEmployeeResult(response.data);
-			router.refresh();
-		}
-		setIsGeneratingEmployees(false);
 	};
 
 	const handleDeleteNonAdmin = async () => {
@@ -889,16 +902,23 @@ function useDemoDataWizardController({
 			});
 			return;
 		}
-		setIsDeletingNonAdmin(true);
-		const response = await deleteNonAdminDataAction(organizationId);
-		if (!response.success) {
-			dispatchWizard({ type: "set-error", error: response.error });
-		} else {
-			setDeleteNonAdminResult(response.data);
-			router.refresh();
-		}
-		setDeleteNonAdminConfirmText("");
-		setIsDeletingNonAdmin(false);
+		await runWithBusyState(setIsDeletingNonAdmin, async () => {
+			try {
+				const response = await deleteNonAdminDataAction(organizationId);
+				if (!response.success) {
+					dispatchWizard({ type: "set-error", error: response.error });
+				} else {
+					setDeleteNonAdminResult(response.data);
+					router.refresh();
+				}
+				setDeleteNonAdminConfirmText("");
+			} catch {
+				dispatchWizard({
+					type: "set-error",
+					error: t("common.unexpectedError", "An unexpected error occurred"),
+				});
+			}
+		});
 	};
 
 	return {

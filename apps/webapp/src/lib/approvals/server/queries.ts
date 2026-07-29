@@ -8,6 +8,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import type { SickDetail } from "@/lib/absences/types";
+import { classifyTimeApprovalRequest } from "@/lib/approvals/time-request-kind";
 import type { ApprovalWithAbsence, ApprovalWithTimeCorrection } from "./types";
 
 interface PendingRequestRecord {
@@ -15,6 +16,7 @@ interface PendingRequestRecord {
 	entityId: string;
 	entityType: "absence_entry" | "time_entry";
 	status: "pending" | "approved" | "rejected";
+	reason?: string | null;
 	createdAt: Date;
 	metadata?: unknown;
 	requester: {
@@ -193,12 +195,21 @@ export function buildPendingApprovalResult({
 		if (!period?.clockIn) {
 			continue;
 		}
-		if (isOrphanedTimeCorrectionApproval(request, period)) {
+		const workflowKind = classifyTimeApprovalRequest({
+			metadata: request.metadata,
+			reason: request.reason,
+		});
+		if (
+			workflowKind !== "manual_time_submission" &&
+			workflowKind !== "policy_clock_out" &&
+			isOrphanedTimeCorrectionApproval(request, period)
+		) {
 			continue;
 		}
 
 		timeCorrectionApprovals.push({
 			...request,
+			reason: request.reason ?? null,
 			entityType: "time_entry",
 			workPeriod: {
 				id: period.id,

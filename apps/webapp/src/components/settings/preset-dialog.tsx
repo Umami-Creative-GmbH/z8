@@ -1,6 +1,11 @@
 "use client";
 
-import { IconCalendar, IconLoader2, IconMapPin, IconTrash } from "@tabler/icons-react";
+import {
+	IconCalendar,
+	IconLoader2,
+	IconMapPin,
+	IconTrash,
+} from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
@@ -43,7 +48,9 @@ import { queryKeys } from "@/lib/query";
 
 function formatDate(month: number, day: number, locale: string) {
 	return formatPlainDate(
-		parsePlainDate(`2000-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`),
+		parsePlainDate(
+			`2000-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+		),
 		locale,
 		"monthDayLong",
 	);
@@ -88,7 +95,7 @@ interface PresetDetails {
 	holidays: PresetHoliday[];
 }
 
-export function PresetDialog({
+function usePresetDialogController({
 	open,
 	onOpenChange,
 	organizationId,
@@ -157,7 +164,9 @@ export function PresetDialog({
 		}) => updateHolidayPreset(presetId!, values),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(t("settings.holidays.presets.updated", "Preset updated successfully"));
+				toast.success(
+					t("settings.holidays.presets.updated", "Preset updated successfully"),
+				);
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.holidayPresets.list(organizationId),
 				});
@@ -168,12 +177,18 @@ export function PresetDialog({
 				onOpenChange(false);
 			} else {
 				toast.error(
-					result.error || t("settings.holidays.presets.updateFailed", "Failed to update preset"),
+					result.error ||
+						t(
+							"settings.holidays.presets.updateFailed",
+							"Failed to update preset",
+						),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.holidays.presets.updateFailed", "Failed to update preset"));
+			toast.error(
+				t("settings.holidays.presets.updateFailed", "Failed to update preset"),
+			);
 		},
 	});
 
@@ -182,14 +197,19 @@ export function PresetDialog({
 		mutationFn: (holidayId: string) => deleteHolidayFromPreset(holidayId),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(t("settings.holidays.presets.holidayDeleted", "Holiday removed"));
+				toast.success(
+					t("settings.holidays.presets.holidayDeleted", "Holiday removed"),
+				);
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.holidayPresets.detail(presetId!),
 				});
 			} else {
 				toast.error(
 					result.error ||
-						t("settings.holidays.presets.holidayDeleteFailed", "Failed to remove holiday"),
+						t(
+							"settings.holidays.presets.holidayDeleteFailed",
+							"Failed to remove holiday",
+						),
 				);
 			}
 		},
@@ -197,14 +217,35 @@ export function PresetDialog({
 
 	const formatLocation = () => {
 		if (!data?.preset) return null;
-		const parts = [data.preset.countryCode, data.preset.stateCode, data.preset.regionCode].filter(
-			Boolean,
-		);
+		const parts = [
+			data.preset.countryCode,
+			data.preset.stateCode,
+			data.preset.regionCode,
+		].filter(Boolean);
 		return parts.length > 0 ? parts.join(" - ") : null;
 	};
 
+	return {
+		data,
+		deleteHolidayMutation,
+		form,
+		isLoading,
+		locale,
+		location: formatLocation(),
+		onOpenChange,
+		t,
+		updateMutation,
+	};
+}
+
+type PresetDialogController = ReturnType<typeof usePresetDialogController>;
+
+export function PresetDialog(props: PresetDialogProps) {
+	const controller = usePresetDialogController(props);
+	const { isLoading, t } = controller;
+
 	return (
-		<ActionPanel open={open} onOpenChange={onOpenChange}>
+		<ActionPanel open={props.open} onOpenChange={props.onOpenChange}>
 			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
 					<ActionPanelTitle>
@@ -217,225 +258,277 @@ export function PresetDialog({
 						)}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
-
 				{isLoading ? (
-					<ActionPanelBody className="space-y-4">
-						<Skeleton className="h-10 w-full" />
-						<Skeleton className="h-20 w-full" />
-						<Skeleton className="h-40 w-full" />
-					</ActionPanelBody>
+					<PresetDialogSkeleton />
 				) : (
-					<>
-						<ActionPanelBody className="space-y-4">
-							<form
-								onSubmit={(e) => {
-									e.preventDefault();
-									form.handleSubmit();
-								}}
-								className="space-y-4"
-							>
-								{/* Preset Info */}
-								<div className="grid grid-cols-2 gap-4">
-									<form.Field
-										name="name"
-										validators={{
-											onChange: ({ value }) => {
-												if (!value) return "Name is required";
-												if (value.length > 255) return "Name is too long";
-												return undefined;
-											},
-										}}
-									>
-										{(field) => (
-											<div className="space-y-2">
-												<Label>{t("settings.holidays.presets.name", "Name")}</Label>
-												<Input
-													value={field.state.value}
-													onChange={(e) => field.handleChange(e.target.value)}
-													onBlur={field.handleBlur}
-													placeholder="e.g., Germany - Bavaria"
-												/>
-												{field.state.meta.errors.length > 0 && (
-													<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
-												)}
-											</div>
-										)}
-									</form.Field>
-									<form.Field name="color">
-										{(field) => (
-											<div className="space-y-2">
-												<Label>{t("settings.holidays.presets.color", "Color")}</Label>
-												<div className="flex gap-2">
-													<Input
-														type="color"
-														value={field.state.value || "#3B82F6"}
-														onChange={(e) => field.handleChange(e.target.value)}
-														className="w-12 h-10 p-1 cursor-pointer"
-													/>
-													<Input
-														value={field.state.value}
-														onChange={(e) => field.handleChange(e.target.value)}
-														placeholder="#EF4444"
-														className="flex-1"
-													/>
-												</div>
-											</div>
-										)}
-									</form.Field>
-								</div>
-
-								<form.Field name="description">
-									{(field) => (
-										<div className="space-y-2">
-											<Label>
-												{t("settings.holidays.presets.description", "Description")} (
-												{t("common.optional", "optional")})
-											</Label>
-											<Textarea
-												value={field.state.value}
-												onChange={(e) => field.handleChange(e.target.value)}
-												onBlur={field.handleBlur}
-												rows={2}
-											/>
-										</div>
-									)}
-								</form.Field>
-
-								{/* Location Info (read-only) */}
-								{formatLocation() && (
-									<div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
-										<IconMapPin className="size-4" />
-										<span>{formatLocation()}</span>
-									</div>
-								)}
-
-								{data?.preset?.year && (
-									<div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
-										<IconCalendar className="size-4" />
-										<span>
-											{t("settings.holidays.presets.year", "Year")}: {data.preset.year}
-										</span>
-									</div>
-								)}
-
-								<form.Field name="isActive">
-									{(field) => (
-										<div className="flex items-center justify-between rounded-lg border p-3">
-											<div className="space-y-0.5">
-												<Label>{t("settings.holidays.presets.active", "Active")}</Label>
-												<p className="text-sm text-muted-foreground">
-													{t(
-														"settings.holidays.presets.activeDescription",
-														"Inactive presets won't apply to employees",
-													)}
-												</p>
-											</div>
-											<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
-										</div>
-									)}
-								</form.Field>
-							</form>
-
-							{/* Holidays List */}
-							<div className="border-t pt-4">
-								<div className="flex items-center justify-between mb-3">
-									<h4 className="text-sm font-medium flex items-center gap-2">
-										<IconCalendar className="size-4" />
-										{t("settings.holidays.presets.holidaysList", "Holidays")}
-										<Badge variant="secondary">{data?.holidays?.length || 0}</Badge>
-									</h4>
-								</div>
-
-								<ScrollArea className="h-[200px] rounded-md border">
-									{data?.holidays && data.holidays.length > 0 ? (
-										<Table>
-											<TableHeader>
-												<TableRow>
-													<TableHead>{t("common.name", "Name")}</TableHead>
-													<TableHead>{t("settings.holidays.presets.date", "Date")}</TableHead>
-													<TableHead>{t("settings.holidays.presets.type", "Type")}</TableHead>
-													<TableHead className="w-[50px]" />
-												</TableRow>
-											</TableHeader>
-											<TableBody>
-												{data.holidays.map((holiday) => (
-													<TableRow key={holiday.id}>
-														<TableCell className="font-medium">{holiday.name}</TableCell>
-														<TableCell>
-															{formatDate(holiday.month, holiday.day, locale)}
-															{holiday.durationDays > 1 && (
-																<span className="text-muted-foreground ml-1">
-																	(+{holiday.durationDays - 1}d)
-																</span>
-															)}
-														</TableCell>
-														<TableCell>
-															{holiday.category ? (
-																<Badge
-																	variant="outline"
-																	style={{
-																		borderColor: holiday.category.color || undefined,
-																		color: holiday.category.color || undefined,
-																	}}
-																>
-																	{holiday.category.name}
-																</Badge>
-															) : (
-																<span className="text-muted-foreground">
-																	{holiday.holidayType || "-"}
-																</span>
-															)}
-														</TableCell>
-														<TableCell>
-															<Button
-																variant="ghost"
-																size="icon"
-																className="size-8 text-muted-foreground hover:text-destructive"
-																onClick={() => deleteHolidayMutation.mutate(holiday.id)}
-																disabled={deleteHolidayMutation.isPending}
-																aria-label={t(
-																	"settings.holidays.presets.removeHoliday",
-																	'Remove holiday "{holiday}" from preset',
-																	{ holiday: holiday.name },
-																)}
-															>
-																<IconTrash className="size-4" />
-															</Button>
-														</TableCell>
-													</TableRow>
-												))}
-											</TableBody>
-										</Table>
-									) : (
-										<div className="flex items-center justify-center h-full text-muted-foreground">
-											{t("settings.holidays.presets.noHolidays", "No holidays in this preset")}
-										</div>
-									)}
-								</ScrollArea>
-							</div>
-						</ActionPanelBody>
-
-						<ActionPanelFooter>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => onOpenChange(false)}
-								disabled={updateMutation.isPending}
-							>
-								{t("common.cancel", "Cancel")}
-							</Button>
-							<Button
-								type="submit"
-								onClick={() => form.handleSubmit()}
-								disabled={updateMutation.isPending}
-							>
-								{updateMutation.isPending && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-								{t("common.save", "Save")}
-							</Button>
-						</ActionPanelFooter>
-					</>
+					<PresetDialogContent controller={controller} />
 				)}
 			</ActionPanelContent>
 		</ActionPanel>
+	);
+}
+
+function PresetDialogSkeleton() {
+	return (
+		<ActionPanelBody className="space-y-4">
+			<Skeleton className="h-10 w-full" />
+			<Skeleton className="h-20 w-full" />
+			<Skeleton className="h-40 w-full" />
+		</ActionPanelBody>
+	);
+}
+
+function PresetDialogContent({
+	controller,
+}: {
+	controller: PresetDialogController;
+}) {
+	const { form, onOpenChange, t, updateMutation } = controller;
+
+	return (
+		<>
+			<ActionPanelBody className="space-y-4">
+				<PresetDetailsForm controller={controller} />
+				<PresetHolidays controller={controller} />
+			</ActionPanelBody>
+			<ActionPanelFooter>
+				<Button
+					type="button"
+					variant="outline"
+					onClick={() => onOpenChange(false)}
+					disabled={updateMutation.isPending}
+				>
+					{t("common.cancel", "Cancel")}
+				</Button>
+				<Button
+					type="submit"
+					onClick={() => form.handleSubmit()}
+					disabled={updateMutation.isPending}
+				>
+					{updateMutation.isPending && (
+						<IconLoader2 className="mr-2 size-4 animate-spin" />
+					)}
+					{t("common.save", "Save")}
+				</Button>
+			</ActionPanelFooter>
+		</>
+	);
+}
+
+function PresetDetailsForm({
+	controller,
+}: {
+	controller: PresetDialogController;
+}) {
+	const { data, form, location, t } = controller;
+
+	return (
+		<form
+			onSubmit={(e) => {
+				e.preventDefault();
+				form.handleSubmit();
+			}}
+			className="space-y-4"
+		>
+			{/* Preset Info */}
+			<div className="grid grid-cols-2 gap-4">
+				<form.Field
+					name="name"
+					validators={{
+						onChange: ({ value }) => {
+							if (!value) return "Name is required";
+							if (value.length > 255) return "Name is too long";
+							return undefined;
+						},
+					}}
+				>
+					{(field) => (
+						<div className="space-y-2">
+							<Label>{t("settings.holidays.presets.name", "Name")}</Label>
+							<Input
+								value={field.state.value}
+								onChange={(e) => field.handleChange(e.target.value)}
+								onBlur={field.handleBlur}
+								placeholder="e.g., Germany - Bavaria"
+							/>
+							{field.state.meta.errors.length > 0 && (
+								<p className="text-sm text-destructive">
+									{field.state.meta.errors[0]}
+								</p>
+							)}
+						</div>
+					)}
+				</form.Field>
+				<form.Field name="color">
+					{(field) => (
+						<div className="space-y-2">
+							<Label>{t("settings.holidays.presets.color", "Color")}</Label>
+							<div className="flex gap-2">
+								<Input
+									type="color"
+									value={field.state.value || "#3B82F6"}
+									onChange={(e) => field.handleChange(e.target.value)}
+									className="w-12 h-10 p-1 cursor-pointer"
+								/>
+								<Input
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									placeholder="#EF4444"
+									className="flex-1"
+								/>
+							</div>
+						</div>
+					)}
+				</form.Field>
+			</div>
+
+			<form.Field name="description">
+				{(field) => (
+					<div className="space-y-2">
+						<Label>
+							{t("settings.holidays.presets.description", "Description")} (
+							{t("common.optional", "optional")})
+						</Label>
+						<Textarea
+							value={field.state.value}
+							onChange={(e) => field.handleChange(e.target.value)}
+							onBlur={field.handleBlur}
+							rows={2}
+						/>
+					</div>
+				)}
+			</form.Field>
+
+			{/* Location Info (read-only) */}
+			{location && (
+				<div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+					<IconMapPin className="size-4" />
+					<span>{location}</span>
+				</div>
+			)}
+
+			{data?.preset?.year && (
+				<div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+					<IconCalendar className="size-4" />
+					<span>
+						{t("settings.holidays.presets.year", "Year")}: {data.preset.year}
+					</span>
+				</div>
+			)}
+
+			<form.Field name="isActive">
+				{(field) => (
+					<div className="flex items-center justify-between rounded-lg border p-3">
+						<div className="space-y-0.5">
+							<Label>{t("settings.holidays.presets.active", "Active")}</Label>
+							<p className="text-sm text-muted-foreground">
+								{t(
+									"settings.holidays.presets.activeDescription",
+									"Inactive presets won't apply to employees",
+								)}
+							</p>
+						</div>
+						<Switch
+							checked={field.state.value}
+							onCheckedChange={field.handleChange}
+						/>
+					</div>
+				)}
+			</form.Field>
+		</form>
+	);
+}
+
+function PresetHolidays({
+	controller,
+}: {
+	controller: PresetDialogController;
+}) {
+	const { data, deleteHolidayMutation, locale, t } = controller;
+
+	return (
+		<div className="border-t pt-4">
+			<div className="flex items-center justify-between mb-3">
+				<h4 className="text-sm font-medium flex items-center gap-2">
+					<IconCalendar className="size-4" />
+					{t("settings.holidays.presets.holidaysList", "Holidays")}
+					<Badge variant="secondary">{data?.holidays?.length || 0}</Badge>
+				</h4>
+			</div>
+
+			<ScrollArea className="h-[200px] rounded-md border">
+				{data?.holidays && data.holidays.length > 0 ? (
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>{t("common.name", "Name")}</TableHead>
+								<TableHead>
+									{t("settings.holidays.presets.date", "Date")}
+								</TableHead>
+								<TableHead>
+									{t("settings.holidays.presets.type", "Type")}
+								</TableHead>
+								<TableHead className="w-[50px]" />
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{data.holidays.map((holiday) => (
+								<TableRow key={holiday.id}>
+									<TableCell className="font-medium">{holiday.name}</TableCell>
+									<TableCell>
+										{formatDate(holiday.month, holiday.day, locale)}
+										{holiday.durationDays > 1 && (
+											<span className="text-muted-foreground ml-1">
+												(+{holiday.durationDays - 1}d)
+											</span>
+										)}
+									</TableCell>
+									<TableCell>
+										{holiday.category ? (
+											<Badge
+												variant="outline"
+												style={{
+													borderColor: holiday.category.color || undefined,
+													color: holiday.category.color || undefined,
+												}}
+											>
+												{holiday.category.name}
+											</Badge>
+										) : (
+											<span className="text-muted-foreground">
+												{holiday.holidayType || "-"}
+											</span>
+										)}
+									</TableCell>
+									<TableCell>
+										<Button
+											variant="ghost"
+											size="icon"
+											className="size-8 text-muted-foreground hover:text-destructive"
+											onClick={() => deleteHolidayMutation.mutate(holiday.id)}
+											disabled={deleteHolidayMutation.isPending}
+											aria-label={t(
+												"settings.holidays.presets.removeHoliday",
+												'Remove holiday "{holiday}" from preset',
+												{ holiday: holiday.name },
+											)}
+										>
+											<IconTrash className="size-4" />
+										</Button>
+									</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				) : (
+					<div className="flex items-center justify-center h-full text-muted-foreground">
+						{t(
+							"settings.holidays.presets.noHolidays",
+							"No holidays in this preset",
+						)}
+					</div>
+				)}
+			</ScrollArea>
+		</div>
 	);
 }

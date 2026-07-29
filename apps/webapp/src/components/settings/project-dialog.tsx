@@ -76,7 +76,7 @@ interface FormValues {
 	customerId: string;
 }
 
-export function ProjectDialog({
+function useProjectDialogController({
 	organizationId,
 	project,
 	open,
@@ -105,7 +105,9 @@ export function ProjectDialog({
 		status: project?.status || "planned",
 		color: project?.color || "",
 		budgetHours: project?.budgetHours || "",
-		deadline: project?.deadline ? new Date(project.deadline).toISOString().split("T")[0] : "",
+		deadline: project?.deadline
+			? new Date(project.deadline).toISOString().split("T")[0]
+			: "",
 		customerId: project?.customerId || "",
 	};
 
@@ -113,7 +115,9 @@ export function ProjectDialog({
 		defaultValues,
 		onSubmit: async ({ value }) => {
 			setIsSubmitting(true);
-			const budgetHours = value.budgetHours ? parseFloat(value.budgetHours) : undefined;
+			const budgetHours = value.budgetHours
+				? parseFloat(value.budgetHours)
+				: undefined;
 			const deadline = value.deadline ? new Date(value.deadline) : undefined;
 			const customerId = value.customerId || undefined;
 
@@ -129,7 +133,9 @@ export function ProjectDialog({
 				}).catch(() => null);
 
 				if (!result) {
-					toast.error(t("settings.projects.updateFailed", "Failed to update project"));
+					toast.error(
+						t("settings.projects.updateFailed", "Failed to update project"),
+					);
 					setIsSubmitting(false);
 					return;
 				}
@@ -139,7 +145,8 @@ export function ProjectDialog({
 					onSuccess();
 				} else {
 					toast.error(
-						result.error || t("settings.projects.updateFailed", "Failed to update project"),
+						result.error ||
+							t("settings.projects.updateFailed", "Failed to update project"),
 					);
 				}
 				setIsSubmitting(false);
@@ -158,7 +165,9 @@ export function ProjectDialog({
 			}).catch(() => null);
 
 			if (!result) {
-				toast.error(t("settings.projects.createFailed", "Failed to create project"));
+				toast.error(
+					t("settings.projects.createFailed", "Failed to create project"),
+				);
 				setIsSubmitting(false);
 				return;
 			}
@@ -168,7 +177,8 @@ export function ProjectDialog({
 				onSuccess();
 			} else {
 				toast.error(
-					result.error || t("settings.projects.createFailed", "Failed to create project"),
+					result.error ||
+						t("settings.projects.createFailed", "Failed to create project"),
 				);
 			}
 
@@ -176,236 +186,296 @@ export function ProjectDialog({
 		},
 	});
 
+	return {
+		customers,
+		form,
+		isEditing,
+		isSubmitting,
+		onOpenChange,
+		t,
+	};
+}
+
+type ProjectDialogController = ReturnType<typeof useProjectDialogController>;
+
+export function ProjectDialog(props: ProjectDialogProps) {
+	const controller = useProjectDialogController(props);
+
 	return (
-		<ActionPanel open={open} onOpenChange={onOpenChange}>
+		<ActionPanel open={props.open} onOpenChange={props.onOpenChange}>
 			<ActionPanelContent>
-				<ActionPanelHeader>
-					<ActionPanelTitle>
-						{isEditing
-							? t("settings.projects.dialog.editTitle", "Edit Project")
-							: t("settings.projects.dialog.createTitle", "Create Project")}
-					</ActionPanelTitle>
-					<ActionPanelDescription>
-						{isEditing
-							? t("settings.projects.dialog.editDescription", "Update project details")
-							: t(
-									"settings.projects.dialog.createDescription",
-									"Create a new project for time tracking",
-								)}
-					</ActionPanelDescription>
-				</ActionPanelHeader>
-
-				<form
-					onSubmit={(e) => {
-						e.preventDefault();
-						form.handleSubmit();
-					}}
-					className="flex min-h-0 flex-1 flex-col"
-				>
-					<ActionPanelBody className="grid gap-4">
-						{/* Name */}
-						<form.Field name="name">
-							{(field) => (
-								<div className="grid gap-2">
-									<Label htmlFor="name">{t("settings.projects.field.name", "Name")} *</Label>
-									<Input
-										id="name"
-										value={field.state.value}
-										onChange={(e) => field.handleChange(e.target.value)}
-										onBlur={field.handleBlur}
-										placeholder={t("settings.projects.field.namePlaceholder", "Enter project name")}
-									/>
-								</div>
-							)}
-						</form.Field>
-
-						{/* Description */}
-						<form.Field name="description">
-							{(field) => (
-								<div className="grid gap-2">
-									<Label htmlFor="description">
-										{t("settings.projects.field.description", "Description")}
-									</Label>
-									<Textarea
-										id="description"
-										value={field.state.value}
-										onChange={(e) => field.handleChange(e.target.value)}
-										onBlur={field.handleBlur}
-										placeholder={t(
-											"settings.projects.field.descriptionPlaceholder",
-											"Optional project description",
-										)}
-										rows={2}
-									/>
-								</div>
-							)}
-						</form.Field>
-
-						{/* Customer */}
-						{customers.length > 0 && (
-							<form.Field name="customerId">
-								{(field) => (
-									<div className="grid gap-2">
-										<Label htmlFor="customerId">
-											{t("settings.projects.field.customer", "Customer")}
-										</Label>
-										<Select
-											value={field.state.value || NO_CUSTOMER_VALUE}
-											onValueChange={(value) =>
-												field.handleChange(value === NO_CUSTOMER_VALUE ? "" : value)
-											}
-										>
-											<SelectTrigger>
-												<SelectValue
-													placeholder={t(
-														"settings.projects.field.customerPlaceholder",
-														"Select a customer",
-													)}
-												/>
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value={NO_CUSTOMER_VALUE}>
-													{t("settings.projects.field.noCustomer", "No customer")}
-												</SelectItem>
-												{customers.map((c) => (
-													<SelectItem key={c.id} value={c.id}>
-														{c.name}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
-								)}
-							</form.Field>
-						)}
-
-						{/* Status */}
-						<form.Field name="status">
-							{(field) => (
-								<div className="grid gap-2">
-									<Label htmlFor="status">{t("settings.projects.field.status", "Status")}</Label>
-									<Select
-										value={field.state.value}
-										onValueChange={(value) => field.handleChange(value as ProjectStatus)}
-									>
-										<SelectTrigger>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											{STATUS_OPTIONS.map((option) => (
-												<SelectItem key={option.value} value={option.value}>
-													{option.label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-							)}
-						</form.Field>
-
-						{/* Color */}
-						<form.Field name="color">
-							{(field) => (
-								<div className="grid gap-2">
-									<Label>{t("settings.projects.field.color", "Color")}</Label>
-									<div className="flex flex-wrap gap-2">
-										{COLOR_OPTIONS.map((color) => (
-											<button
-												key={color}
-												type="button"
-												aria-label={t(
-													"settings.projects.field.colorOption",
-													"Select color {color}",
-													{
-														color,
-													},
-												)}
-												onClick={() => field.handleChange(color)}
-												className={`size-8 rounded-full border-2 transition-transform hover:scale-110 ${
-													field.state.value === color
-														? "border-foreground ring-2 ring-foreground ring-offset-2"
-														: "border-transparent"
-												}`}
-												style={{ backgroundColor: color }}
-											/>
-										))}
-										<button
-											type="button"
-											aria-label={t("settings.projects.field.clearColor", "Clear color")}
-											onClick={() => field.handleChange("")}
-											className={`flex size-8 items-center justify-center rounded-full border-2 text-xs ${
-												!field.state.value
-													? "border-foreground ring-2 ring-foreground ring-offset-2"
-													: "border-muted"
-											}`}
-										>
-											-
-										</button>
-									</div>
-								</div>
-							)}
-						</form.Field>
-
-						{/* Budget Hours */}
-						<form.Field name="budgetHours">
-							{(field) => (
-								<div className="grid gap-2">
-									<Label htmlFor="budgetHours">
-										{t("settings.projects.field.budget", "Budget (hours)")}
-									</Label>
-									<Input
-										id="budgetHours"
-										type="number"
-										step="0.5"
-										min="0"
-										value={field.state.value}
-										onChange={(e) => field.handleChange(e.target.value)}
-										onBlur={field.handleBlur}
-										placeholder={t("settings.projects.field.budgetPlaceholder", "e.g., 100")}
-									/>
-									<p className="text-xs text-muted-foreground">
-										{t("settings.projects.field.budgetHelp", "Leave empty for unlimited budget")}
-									</p>
-								</div>
-							)}
-						</form.Field>
-
-						{/* Deadline */}
-						<form.Field name="deadline">
-							{(field) => (
-								<div className="grid gap-2">
-									<Label htmlFor="deadline">
-										{t("settings.projects.field.deadline", "Deadline")}
-									</Label>
-									<DatePicker
-										id="deadline"
-										value={field.state.value}
-										onChange={field.handleChange}
-										onBlur={field.handleBlur}
-									/>
-								</div>
-							)}
-						</form.Field>
-					</ActionPanelBody>
-
-					<ActionPanelFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => onOpenChange(false)}
-							disabled={isSubmitting}
-						>
-							{t("common.cancel", "Cancel")}
-						</Button>
-						<Button type="submit" disabled={isSubmitting}>
-							{isSubmitting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-							{isEditing
-								? t("settings.projects.dialog.save", "Save Changes")
-								: t("settings.projects.dialog.create", "Create Project")}
-						</Button>
-					</ActionPanelFooter>
-				</form>
+				<ProjectDialogHeader controller={controller} />
+				<ProjectDialogForm controller={controller} />
 			</ActionPanelContent>
 		</ActionPanel>
+	);
+}
+
+function ProjectDialogHeader({
+	controller,
+}: {
+	controller: ProjectDialogController;
+}) {
+	const { isEditing, t } = controller;
+
+	return (
+		<ActionPanelHeader>
+			<ActionPanelTitle>
+				{isEditing
+					? t("settings.projects.dialog.editTitle", "Edit Project")
+					: t("settings.projects.dialog.createTitle", "Create Project")}
+			</ActionPanelTitle>
+			<ActionPanelDescription>
+				{isEditing
+					? t(
+							"settings.projects.dialog.editDescription",
+							"Update project details",
+						)
+					: t(
+							"settings.projects.dialog.createDescription",
+							"Create a new project for time tracking",
+						)}
+			</ActionPanelDescription>
+		</ActionPanelHeader>
+	);
+}
+
+function ProjectDialogForm({
+	controller,
+}: {
+	controller: ProjectDialogController;
+}) {
+	const { customers, form, isEditing, isSubmitting, onOpenChange, t } =
+		controller;
+
+	return (
+		<form
+			onSubmit={(e) => {
+				e.preventDefault();
+				form.handleSubmit();
+			}}
+			className="flex min-h-0 flex-1 flex-col"
+		>
+			<ActionPanelBody className="grid gap-4">
+				{/* Name */}
+				<form.Field name="name">
+					{(field) => (
+						<div className="grid gap-2">
+							<Label htmlFor="name">
+								{t("settings.projects.field.name", "Name")} *
+							</Label>
+							<Input
+								id="name"
+								value={field.state.value}
+								onChange={(e) => field.handleChange(e.target.value)}
+								onBlur={field.handleBlur}
+								placeholder={t(
+									"settings.projects.field.namePlaceholder",
+									"Enter project name",
+								)}
+							/>
+						</div>
+					)}
+				</form.Field>
+
+				{/* Description */}
+				<form.Field name="description">
+					{(field) => (
+						<div className="grid gap-2">
+							<Label htmlFor="description">
+								{t("settings.projects.field.description", "Description")}
+							</Label>
+							<Textarea
+								id="description"
+								value={field.state.value}
+								onChange={(e) => field.handleChange(e.target.value)}
+								onBlur={field.handleBlur}
+								placeholder={t(
+									"settings.projects.field.descriptionPlaceholder",
+									"Optional project description",
+								)}
+								rows={2}
+							/>
+						</div>
+					)}
+				</form.Field>
+
+				{/* Customer */}
+				{customers.length > 0 && (
+					<form.Field name="customerId">
+						{(field) => (
+							<div className="grid gap-2">
+								<Label htmlFor="customerId">
+									{t("settings.projects.field.customer", "Customer")}
+								</Label>
+								<Select
+									value={field.state.value || NO_CUSTOMER_VALUE}
+									onValueChange={(value) =>
+										field.handleChange(value === NO_CUSTOMER_VALUE ? "" : value)
+									}
+								>
+									<SelectTrigger>
+										<SelectValue
+											placeholder={t(
+												"settings.projects.field.customerPlaceholder",
+												"Select a customer",
+											)}
+										/>
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value={NO_CUSTOMER_VALUE}>
+											{t("settings.projects.field.noCustomer", "No customer")}
+										</SelectItem>
+										{customers.map((c) => (
+											<SelectItem key={c.id} value={c.id}>
+												{c.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						)}
+					</form.Field>
+				)}
+
+				{/* Status */}
+				<form.Field name="status">
+					{(field) => (
+						<div className="grid gap-2">
+							<Label htmlFor="status">
+								{t("settings.projects.field.status", "Status")}
+							</Label>
+							<Select
+								value={field.state.value}
+								onValueChange={(value) =>
+									field.handleChange(value as ProjectStatus)
+								}
+							>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{STATUS_OPTIONS.map((option) => (
+										<SelectItem key={option.value} value={option.value}>
+											{option.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+					)}
+				</form.Field>
+
+				{/* Color */}
+				<form.Field name="color">
+					{(field) => (
+						<div className="grid gap-2">
+							<Label>{t("settings.projects.field.color", "Color")}</Label>
+							<div className="flex flex-wrap gap-2">
+								{COLOR_OPTIONS.map((color) => (
+									<button
+										key={color}
+										type="button"
+										aria-label={t(
+											"settings.projects.field.colorOption",
+											"Select color {color}",
+											{
+												color,
+											},
+										)}
+										onClick={() => field.handleChange(color)}
+										className={`size-8 rounded-full border-2 transition-transform hover:scale-110 ${
+											field.state.value === color
+												? "border-foreground ring-2 ring-foreground ring-offset-2"
+												: "border-transparent"
+										}`}
+										style={{ backgroundColor: color }}
+									/>
+								))}
+								<button
+									type="button"
+									aria-label={t(
+										"settings.projects.field.clearColor",
+										"Clear color",
+									)}
+									onClick={() => field.handleChange("")}
+									className={`flex size-8 items-center justify-center rounded-full border-2 text-xs ${
+										!field.state.value
+											? "border-foreground ring-2 ring-foreground ring-offset-2"
+											: "border-muted"
+									}`}
+								>
+									-
+								</button>
+							</div>
+						</div>
+					)}
+				</form.Field>
+
+				{/* Budget Hours */}
+				<form.Field name="budgetHours">
+					{(field) => (
+						<div className="grid gap-2">
+							<Label htmlFor="budgetHours">
+								{t("settings.projects.field.budget", "Budget (hours)")}
+							</Label>
+							<Input
+								id="budgetHours"
+								type="number"
+								step="0.5"
+								min="0"
+								value={field.state.value}
+								onChange={(e) => field.handleChange(e.target.value)}
+								onBlur={field.handleBlur}
+								placeholder={t(
+									"settings.projects.field.budgetPlaceholder",
+									"e.g., 100",
+								)}
+							/>
+							<p className="text-xs text-muted-foreground">
+								{t(
+									"settings.projects.field.budgetHelp",
+									"Leave empty for unlimited budget",
+								)}
+							</p>
+						</div>
+					)}
+				</form.Field>
+
+				{/* Deadline */}
+				<form.Field name="deadline">
+					{(field) => (
+						<div className="grid gap-2">
+							<Label htmlFor="deadline">
+								{t("settings.projects.field.deadline", "Deadline")}
+							</Label>
+							<DatePicker
+								id="deadline"
+								value={field.state.value}
+								onChange={field.handleChange}
+								onBlur={field.handleBlur}
+							/>
+						</div>
+					)}
+				</form.Field>
+			</ActionPanelBody>
+
+			<ActionPanelFooter>
+				<Button
+					type="button"
+					variant="outline"
+					onClick={() => onOpenChange(false)}
+					disabled={isSubmitting}
+				>
+					{t("common.cancel", "Cancel")}
+				</Button>
+				<Button type="submit" disabled={isSubmitting}>
+					{isSubmitting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+					{isEditing
+						? t("settings.projects.dialog.save", "Save Changes")
+						: t("settings.projects.dialog.create", "Create Project")}
+				</Button>
+			</ActionPanelFooter>
+		</form>
 	);
 }

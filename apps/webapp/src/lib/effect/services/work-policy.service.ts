@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte, or, type sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import {
 	employee,
@@ -233,6 +233,17 @@ function calculateBreakRequirementsInternal(params: {
 	};
 }
 
+function orderEffectiveAssignments(
+	assignment: Pick<typeof workPolicyAssignment, "effectiveFrom" | "createdAt" | "id">,
+	operators: { desc: typeof desc; sql: typeof sql },
+) {
+	return [
+		operators.sql`${assignment.effectiveFrom} desc nulls last`,
+		operators.desc(assignment.createdAt),
+		operators.desc(assignment.id),
+	];
+}
+
 // ============================================
 // SERVICE DEFINITION
 // ============================================
@@ -246,6 +257,7 @@ export class WorkPolicyService extends Context.Tag("WorkPolicyService")<
 		 */
 		readonly getEffectivePolicy: (
 			employeeId: string,
+			organizationId?: string,
 		) => Effect.Effect<EffectiveWorkPolicy | null, NotFoundError | DatabaseError>;
 
 		/**
@@ -400,13 +412,18 @@ export const WorkPolicyServiceLive = Layer.effect(
 		});
 
 		return WorkPolicyService.of({
-			getEffectivePolicy: (employeeId) =>
+			getEffectivePolicy: (employeeId, organizationId) =>
 				Effect.gen(function* (_) {
 					// 1. Get employee with team info
 					const emp = yield* _(
 						dbService.query("getEmployeeForPolicy", async () => {
 							return await dbService.db.query.employee.findFirst({
-								where: eq(employee.id, employeeId),
+								where: organizationId
+									? and(
+											eq(employee.id, employeeId),
+											eq(employee.organizationId, organizationId),
+										)
+									: eq(employee.id, employeeId),
 								with: {
 									team: true,
 								},
@@ -442,13 +459,15 @@ export const WorkPolicyServiceLive = Layer.effect(
 							},
 						},
 					} as const;
-
 					// 2. Check employee-level assignment (priority 2 - highest)
 					const employeeAssignment = yield* _(
 						dbService.query("getEmployeePolicyAssignment", async () => {
-							return await dbService.db.query.workPolicyAssignment.findFirst({
+							const query = {
 								where: and(
 									eq(workPolicyAssignment.employeeId, employeeId),
+									organizationId
+										? eq(workPolicyAssignment.organizationId, organizationId)
+										: undefined,
 									eq(workPolicyAssignment.assignmentType, "employee"),
 									eq(workPolicyAssignment.isActive, true),
 									or(
@@ -465,7 +484,20 @@ export const WorkPolicyServiceLive = Layer.effect(
 										with: policyWith,
 									},
 								},
-							});
+								orderBy: organizationId ? orderEffectiveAssignments : undefined,
+							} as const;
+
+							if (!organizationId) {
+								return await dbService.db.query.workPolicyAssignment.findFirst(query);
+							}
+
+							const assignments =
+								await dbService.db.query.workPolicyAssignment.findMany(query);
+							return assignments.find(
+								(assignment) =>
+									assignment.policy?.isActive &&
+									assignment.policy.organizationId === organizationId,
+							);
 						}),
 					);
 
@@ -482,9 +514,12 @@ export const WorkPolicyServiceLive = Layer.effect(
 						const teamId = emp.teamId;
 						const teamAssignment = yield* _(
 							dbService.query("getTeamPolicyAssignment", async () => {
-								return await dbService.db.query.workPolicyAssignment.findFirst({
+								const query = {
 									where: and(
 										eq(workPolicyAssignment.teamId, teamId),
+										organizationId
+											? eq(workPolicyAssignment.organizationId, organizationId)
+											: undefined,
 										eq(workPolicyAssignment.assignmentType, "team"),
 										eq(workPolicyAssignment.isActive, true),
 										or(
@@ -502,7 +537,20 @@ export const WorkPolicyServiceLive = Layer.effect(
 										},
 										team: true,
 									},
-								});
+									orderBy: organizationId ? orderEffectiveAssignments : undefined,
+								} as const;
+
+								if (!organizationId) {
+									return await dbService.db.query.workPolicyAssignment.findFirst(query);
+								}
+
+								const assignments =
+									await dbService.db.query.workPolicyAssignment.findMany(query);
+								return assignments.find(
+									(assignment) =>
+										assignment.policy?.isActive &&
+										assignment.policy.organizationId === organizationId,
+								);
 							}),
 						);
 
@@ -518,9 +566,12 @@ export const WorkPolicyServiceLive = Layer.effect(
 					// 4. Check organization-level assignment (priority 0 - lowest)
 					const orgAssignment = yield* _(
 						dbService.query("getOrgPolicyAssignment", async () => {
-							return await dbService.db.query.workPolicyAssignment.findFirst({
+							const query = {
 								where: and(
-									eq(workPolicyAssignment.organizationId, emp.organizationId),
+									eq(
+										workPolicyAssignment.organizationId,
+										organizationId ?? emp.organizationId,
+									),
 									eq(workPolicyAssignment.assignmentType, "organization"),
 									eq(workPolicyAssignment.isActive, true),
 									or(
@@ -537,7 +588,20 @@ export const WorkPolicyServiceLive = Layer.effect(
 										with: policyWith,
 									},
 								},
-							});
+								orderBy: organizationId ? orderEffectiveAssignments : undefined,
+							} as const;
+
+							if (!organizationId) {
+								return await dbService.db.query.workPolicyAssignment.findFirst(query);
+							}
+
+							const assignments =
+								await dbService.db.query.workPolicyAssignment.findMany(query);
+							return assignments.find(
+								(assignment) =>
+									assignment.policy?.isActive &&
+									assignment.policy.organizationId === organizationId,
+							);
 						}),
 					);
 

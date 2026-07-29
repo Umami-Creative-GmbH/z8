@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { queryKeys } from "@/lib/query/keys";
 
 type PushPermission = "default" | "granted" | "denied" | "unsupported";
@@ -45,7 +45,26 @@ const UNSUPPORTED_PUSH_STATE: PushBootstrapState = {
 	vapidPublicKey: null,
 };
 
-async function loadPushBootstrap(signal: AbortSignal): Promise<PushBootstrapState> {
+let isBrowserPushActionInFlight = false;
+
+function logCallbackError(error: unknown) {
+	console.error("Push notification callback failed:", error);
+}
+
+function invokeCallback(callback: (() => unknown) | undefined) {
+	try {
+		const result = callback?.();
+		if (result && typeof (result as PromiseLike<unknown>).then === "function") {
+			void Promise.resolve(result).catch(logCallbackError);
+		}
+	} catch (error) {
+		logCallbackError(error);
+	}
+}
+
+async function loadPushBootstrap(
+	signal: AbortSignal,
+): Promise<PushBootstrapState> {
 	if (
 		!("serviceWorker" in navigator) ||
 		!("PushManager" in window) ||
@@ -108,6 +127,10 @@ export function usePushNotifications(
 	const { onSubscribe, onUnsubscribe, onError } = options;
 	const queryClient = useQueryClient();
 	const [isActionPending, setIsActionPending] = useState(false);
+	const callbacksRef = useRef({ onSubscribe, onUnsubscribe, onError });
+	useLayoutEffect(() => {
+		callbacksRef.current = { onSubscribe, onUnsubscribe, onError };
+	}, [onSubscribe, onUnsubscribe, onError]);
 	const bootstrapQuery = useQuery({
 		queryKey: queryKeys.notifications.pushBootstrap(),
 		queryFn: ({ signal }) => loadPushBootstrap(signal),
@@ -132,22 +155,36 @@ export function usePushNotifications(
 			(current) => (current ? { ...current, ...updates } : current),
 		);
 	};
+	const reportError = (error: Error) => {
+		const callback = callbacksRef.current.onError;
+		invokeCallback(callback ? () => callback(error) : undefined);
+	};
 
-	// Request notification permission
-	const requestPermission = async (): Promise<NotificationPermission> => {
+	const requestPermissionOperation = async (): Promise<{
+		permission: NotificationPermission;
+		error: Error | null;
+	}> => {
 		if (!isSupported) {
-			return "denied";
+			return { permission: "denied", error: null };
 		}
 
 		try {
 			const result = await Notification.requestPermission();
 			updateBootstrap({ permission: result });
-			return result;
+			return { permission: result, error: null };
 		} catch (error) {
 			console.error("Failed to request notification permission:", error);
-			onError?.(error as Error);
-			return "denied";
+			return { permission: "denied", error: error as Error };
 		}
+	};
+
+	// Request notification permission
+	const requestPermission = async (): Promise<NotificationPermission> => {
+		const result = await requestPermissionOperation();
+		if (result.error) {
+			reportError(result.error);
+		}
+		return result.permission;
 	};
 
 	// Subscribe to push notifications
@@ -155,54 +192,100 @@ export function usePushNotifications(
 		if (!isSupported || !registration || !vapidPublicKey) {
 			return false;
 		}
-
-		setIsActionPending(true);
-
-		try {
-			// Request permission if not granted
-			let currentPermission = Notification.permission;
-			if (currentPermission === "default") {
-				currentPermission = await requestPermission();
-			}
-
-			if (currentPermission !== "granted") {
-				setIsActionPending(false);
-				return false;
-			}
-
-			// Subscribe to push manager
-			const subscription = await registration.pushManager.subscribe({
-				userVisibleOnly: true,
-				applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-			});
-
-			// Send subscription to server
-			const subscribeResponse = await fetch("/api/notifications/push/subscribe", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					subscription: subscription.toJSON(),
-					deviceName,
-				}),
-			});
-
-			if (!subscribeResponse.ok) {
-				await subscription.unsubscribe().catch(() => false);
-				setIsActionPending(false);
-				onError?.(new Error("Failed to save subscription on server"));
-				return false;
-			}
-
-			updateBootstrap({ isSubscribed: true, permission: currentPermission });
-			setIsActionPending(false);
-			onSubscribe?.();
-			return true;
-		} catch (error) {
-			console.error("Failed to subscribe to push notifications:", error);
-			setIsActionPending(false);
-			onError?.(error as Error);
+		if (isBrowserPushActionInFlight) {
 			return false;
 		}
+
+		isBrowserPushActionInFlight = true;
+		setIsActionPending(true);
+		let actionResult = false;
+		let callbackError: Error | null = null;
+		let shouldNotifySubscribe = false;
+		try {
+			let subscription: PushSubscription | null = null;
+			let serverPersistenceSucceeded = false;
+			const rollbackSubscription = async () => {
+				const currentSubscription = subscription;
+				if (!currentSubscription) return;
+
+				try {
+					await currentSubscription.unsubscribe();
+					updateBootstrap({ isSubscribed: false });
+				} catch {
+					const activeSubscription = await registration.pushManager
+						.getSubscription()
+						.catch(() => currentSubscription);
+					updateBootstrap({ isSubscribed: Boolean(activeSubscription) });
+				}
+			};
+
+			try {
+				// Request permission if not granted
+				let currentPermission = Notification.permission;
+				if (currentPermission === "default") {
+					const permissionResult = await requestPermissionOperation();
+					currentPermission = permissionResult.permission;
+					callbackError = permissionResult.error;
+				}
+
+				if (currentPermission !== "granted") {
+					actionResult = false;
+				} else {
+					// Subscribe to push manager
+					subscription = await registration.pushManager.subscribe({
+						userVisibleOnly: true,
+						applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+					});
+
+					// Send subscription to server
+					const subscribeResponse = await fetch(
+						"/api/notifications/push/subscribe",
+						{
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({
+								subscription: subscription.toJSON(),
+								deviceName,
+							}),
+						},
+					);
+
+					if (!subscribeResponse.ok) {
+						await rollbackSubscription();
+						callbackError = new Error("Failed to save subscription on server");
+					} else {
+						serverPersistenceSucceeded = true;
+						updateBootstrap({
+							isSubscribed: true,
+							permission: currentPermission,
+						});
+						actionResult = true;
+						shouldNotifySubscribe = true;
+					}
+				}
+			} catch (error) {
+				if (subscription && !serverPersistenceSucceeded) {
+					await rollbackSubscription();
+				}
+				console.error("Failed to subscribe to push notifications:", error);
+				callbackError = error as Error;
+			}
+		} catch (error) {
+			console.error(
+				"Unexpected failure while subscribing to push notifications:",
+				error,
+			);
+			if (!callbackError) callbackError = error as Error;
+		}
+		isBrowserPushActionInFlight = false;
+		setIsActionPending(false);
+
+		if (callbackError) {
+			reportError(callbackError);
+		} else if (shouldNotifySubscribe) {
+			invokeCallback(callbacksRef.current.onSubscribe);
+		}
+		return actionResult;
 	};
 
 	// Unsubscribe from push notifications
@@ -210,46 +293,71 @@ export function usePushNotifications(
 		if (!registration) {
 			return false;
 		}
-
-		setIsActionPending(true);
-
-		try {
-			const subscription = await registration.pushManager.getSubscription();
-
-			if (subscription) {
-				const unsubscribeResponse = await fetch("/api/notifications/push/unsubscribe", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						endpoint: subscription.endpoint,
-					}),
-				});
-				if (!unsubscribeResponse.ok) {
-					const error = new Error("Failed to remove subscription from server");
-					console.error("Failed to unsubscribe from push notifications:", error);
-					setIsActionPending(false);
-					onError?.(error);
-					return false;
-				}
-				if (!(await subscription.unsubscribe())) {
-					const error = new Error("Failed to unsubscribe this browser");
-					console.error("Failed to unsubscribe from push notifications:", error);
-					setIsActionPending(false);
-					onError?.(error);
-					return false;
-				}
-			}
-
-			updateBootstrap({ isSubscribed: false });
-			setIsActionPending(false);
-			onUnsubscribe?.();
-			return true;
-		} catch (error) {
-			console.error("Failed to unsubscribe from push notifications:", error);
-			setIsActionPending(false);
-			onError?.(error as Error);
+		if (isBrowserPushActionInFlight) {
 			return false;
 		}
+
+		isBrowserPushActionInFlight = true;
+		setIsActionPending(true);
+		let actionResult = false;
+		let callbackError: Error | null = null;
+		let shouldNotifyUnsubscribe = false;
+
+		try {
+			try {
+				const subscription = await registration.pushManager.getSubscription();
+
+				if (subscription) {
+					const unsubscribeResponse = await fetch(
+						"/api/notifications/push/unsubscribe",
+						{
+							method: "POST",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({
+								endpoint: subscription.endpoint,
+							}),
+						},
+					);
+					if (!unsubscribeResponse.ok) {
+						const error = new Error(
+							"Failed to remove subscription from server",
+						);
+						console.error(
+							"Failed to unsubscribe from push notifications:",
+							error,
+						);
+						callbackError = error;
+					} else {
+						await subscription.unsubscribe();
+						updateBootstrap({ isSubscribed: false });
+						actionResult = true;
+						shouldNotifyUnsubscribe = true;
+					}
+				} else {
+					updateBootstrap({ isSubscribed: false });
+					actionResult = true;
+					shouldNotifyUnsubscribe = true;
+				}
+			} catch (error) {
+				console.error("Failed to unsubscribe from push notifications:", error);
+				callbackError = error as Error;
+			}
+		} catch (error) {
+			console.error(
+				"Unexpected failure while unsubscribing from push notifications:",
+				error,
+			);
+			if (!callbackError) callbackError = error as Error;
+		}
+		isBrowserPushActionInFlight = false;
+		setIsActionPending(false);
+
+		if (callbackError) {
+			reportError(callbackError);
+		} else if (shouldNotifyUnsubscribe) {
+			invokeCallback(callbacksRef.current.onUnsubscribe);
+		}
+		return actionResult;
 	};
 
 	return {

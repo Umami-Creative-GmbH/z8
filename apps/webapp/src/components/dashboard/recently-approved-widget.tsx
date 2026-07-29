@@ -35,7 +35,7 @@ function ApprovedCard({ request }: { request: RecentlyApproved }) {
 	const isAbsence = request.type === "absence";
 
 	return (
-		<div className="group flex items-center gap-3 rounded-xl border bg-card p-3 transition-all hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-800">
+		<div className="group flex items-center gap-3 rounded-xl border bg-card p-3 transition-[border-color,box-shadow] hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-800">
 			{/* Status Icon */}
 			<div
 				className={cn(

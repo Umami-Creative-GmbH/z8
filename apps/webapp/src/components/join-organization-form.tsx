@@ -1,58 +1,55 @@
 "use client";
 
-import {
-	IconBuilding,
-	IconCheck,
-	IconClock,
-	IconLoader2,
-	IconUserPlus,
-	IconX,
-} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
-import { redeemInviteCode, validateInviteCode } from "@/app/[locale]/(auth)/invite-code-actions";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+	redeemInviteCode,
+	validateInviteCode,
+} from "@/app/[locale]/(auth)/invite-code-actions";
 import { useSession } from "@/lib/auth-client";
-import { Link, useRouter } from "@/navigation";
-import { AuthFormWrapper } from "./auth-form-wrapper";
+import { useRouter } from "@/navigation";
+import {
+	JoinOrganizationFormBody,
+	type JoinState,
+} from "./join-organization-form-body";
 
 interface JoinOrganizationFormProps {
 	code?: string;
 }
 
-type JoinState =
-	| "loading"
-	| "invalid"
-	| "valid"
-	| "joining"
-	| "success"
-	| "error"
-	| "already-member";
+export function JoinOrganizationForm({
+	code: initialCode,
+}: JoinOrganizationFormProps) {
+	return (
+		<JoinOrganizationFormContent
+			key={initialCode ?? ""}
+			initialCode={initialCode}
+		/>
+	);
+}
 
-export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationFormProps) {
+function JoinOrganizationFormContent({
+	initialCode,
+}: {
+	initialCode?: string;
+}) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const { data: session, isPending: sessionLoading } = useSession();
 
 	const [code, setCode] = useState(initialCode || "");
-	const [state, setState] = useState<JoinState>(initialCode ? "loading" : "valid");
+	const [state, setState] = useState<JoinState>(
+		initialCode ? "loading" : "valid",
+	);
 	const [error, setError] = useState<string | null>(null);
 	const [organizationName, setOrganizationName] = useState<string | null>(null);
-	const [joinStatus, setJoinStatus] = useState<"pending" | "approved" | null>(null);
-	const hasValidatedInitialCode = useRef(false);
+	const [joinStatus, setJoinStatus] = useState<"pending" | "approved" | null>(
+		null,
+	);
+	const validationOperationRef = useRef(0);
 
 	async function validateCode(codeToValidate: string) {
+		const operation = ++validationOperationRef.current;
 		if (!codeToValidate.trim()) {
 			setState("valid");
 			setError(null);
@@ -63,17 +60,32 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 		setState("loading");
 		setError(null);
 
-		const result = await validateInviteCode(codeToValidate.toUpperCase());
+		let result: Awaited<ReturnType<typeof validateInviteCode>>;
+		try {
+			result = await validateInviteCode(codeToValidate.toUpperCase());
+		} catch {
+			if (validationOperationRef.current !== operation) return;
+			setState("invalid");
+			setError(t("settings.inviteCodes.invalidCode", "Invalid invite code"));
+			return;
+		}
+		if (validationOperationRef.current !== operation) return;
 
 		if (!result.success) {
 			setState("invalid");
-			setError(result.error || t("settings.inviteCodes.invalidCode", "Invalid invite code"));
+			setError(
+				result.error ||
+					t("settings.inviteCodes.invalidCode", "Invalid invite code"),
+			);
 			return;
 		}
 
 		if (!result.data.valid) {
 			setState("invalid");
-			setError(result.data.error || t("settings.inviteCodes.invalidCode", "Invalid invite code"));
+			setError(
+				result.data.error ||
+					t("settings.inviteCodes.invalidCode", "Invalid invite code"),
+			);
 			return;
 		}
 
@@ -81,28 +93,39 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 		setOrganizationName(result.data.inviteCode?.organization?.name || null);
 	}
 
-	// Validate initial code once on mount
 	useEffect(() => {
-		if (!initialCode || hasValidatedInitialCode.current) {
-			return;
-		}
+		let cancelled = false;
 
+		if (!initialCode) return;
 		const codeToValidate = initialCode;
 
-		hasValidatedInitialCode.current = true;
-
 		async function validateInitialCode() {
-			const result = await validateInviteCode(codeToValidate.toUpperCase());
+			let result: Awaited<ReturnType<typeof validateInviteCode>>;
+			try {
+				result = await validateInviteCode(codeToValidate.toUpperCase());
+			} catch {
+				if (cancelled) return;
+				setState("invalid");
+				setError(t("settings.inviteCodes.invalidCode", "Invalid invite code"));
+				return;
+			}
+			if (cancelled) return;
 
 			if (!result.success) {
 				setState("invalid");
-				setError(result.error || t("settings.inviteCodes.invalidCode", "Invalid invite code"));
+				setError(
+					result.error ||
+						t("settings.inviteCodes.invalidCode", "Invalid invite code"),
+				);
 				return;
 			}
 
 			if (!result.data.valid) {
 				setState("invalid");
-				setError(result.data.error || t("settings.inviteCodes.invalidCode", "Invalid invite code"));
+				setError(
+					result.data.error ||
+						t("settings.inviteCodes.invalidCode", "Invalid invite code"),
+				);
 				return;
 			}
 
@@ -110,10 +133,14 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 			setOrganizationName(result.data.inviteCode?.organization?.name || null);
 		}
 
-		validateInitialCode();
+		void validateInitialCode();
+		return () => {
+			cancelled = true;
+		};
 	}, [initialCode, t]);
 
 	const handleCodeChange = (newCode: string) => {
+		validationOperationRef.current += 1;
 		setCode(newCode.toUpperCase());
 		// Reset state when code changes
 		if (newCode !== code) {
@@ -124,7 +151,7 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 	};
 
 	const handleValidateClick = () => {
-		validateCode(code);
+		void validateCode(code);
 	};
 
 	const handleJoin = async () => {
@@ -155,228 +182,19 @@ export function JoinOrganizationForm({ code: initialCode }: JoinOrganizationForm
 		setJoinStatus(result.data.status);
 	};
 
-	// Show loading while checking session
-	if (sessionLoading) {
-		return (
-			<AuthFormWrapper title={t("settings.inviteCodes.joinOrganization", "Join Organization")}>
-				<div className="flex items-center justify-center py-8">
-					<IconLoader2 className="size-8 animate-spin text-muted-foreground" />
-				</div>
-			</AuthFormWrapper>
-		);
-	}
-
-	// Success state
-	if (state === "success") {
-		return (
-			<Card className="mx-auto w-full max-w-md">
-				<CardHeader className="text-center">
-					<div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
-						<IconCheck className="size-8 text-green-600 dark:text-green-400" />
-					</div>
-					<CardTitle>
-						{joinStatus === "pending"
-							? t("settings.inviteCodes.joinRequestSent", "Join Request Sent")
-							: t("settings.inviteCodes.joinedSuccessfully", "Joined Successfully")}
-					</CardTitle>
-					<CardDescription>
-						{joinStatus === "pending"
-							? t(
-									"settings.inviteCodes.pendingApprovalMessage",
-									"Your request to join {organization} has been submitted. An administrator will review your request.",
-									{ organization: organizationName },
-								)
-							: t(
-									"settings.inviteCodes.joinedMessage",
-									"You have successfully joined {organization}.",
-									{ organization: organizationName },
-								)}
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					{joinStatus === "pending" && (
-						<Alert>
-							<IconClock className="size-4" />
-							<AlertTitle>
-								{t("settings.inviteCodes.pendingApproval", "Pending Approval")}
-							</AlertTitle>
-							<AlertDescription>
-								{t(
-									"settings.inviteCodes.pendingApprovalDescription",
-									"You will be notified once your membership is approved.",
-								)}
-							</AlertDescription>
-						</Alert>
-					)}
-				</CardContent>
-				<CardFooter className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-center">
-					<Button asChild>
-						<Link href="/">{t("common.goToDashboard", "Go to Dashboard")}</Link>
-					</Button>
-				</CardFooter>
-			</Card>
-		);
-	}
-
-	// Already a member state
-	if (state === "already-member") {
-		return (
-			<Card className="mx-auto w-full max-w-md">
-				<CardHeader className="text-center">
-					<div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900">
-						<IconBuilding className="size-8 text-yellow-600 dark:text-yellow-400" />
-					</div>
-					<CardTitle>{t("settings.inviteCodes.alreadyMember", "Already a Member")}</CardTitle>
-					<CardDescription>
-						{t(
-							"settings.inviteCodes.alreadyMemberMessage",
-							"You are already a member of this organization.",
-						)}
-					</CardDescription>
-				</CardHeader>
-				<CardFooter className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-center">
-					<Button asChild>
-						<Link href="/">{t("common.goToDashboard", "Go to Dashboard")}</Link>
-					</Button>
-				</CardFooter>
-			</Card>
-		);
-	}
-
 	return (
-		<AuthFormWrapper title={t("settings.inviteCodes.joinOrganization", "Join Organization")}>
-			<div className="space-y-6">
-				{/* Description */}
-				<p className="text-center text-sm text-muted-foreground">
-					{organizationName
-						? t("settings.inviteCodes.joiningOrganization", "You're about to join {organization}", {
-								organization: organizationName,
-							})
-						: t(
-								"settings.inviteCodes.enterCodeDescription",
-								"Enter an invite code to join an organization",
-							)}
-				</p>
-				{/* Code input */}
-				<div className="space-y-2">
-					<Label htmlFor="code">{t("settings.inviteCodes.inviteCode", "Invite Code")}</Label>
-					<div className="flex flex-col gap-2 sm:flex-row">
-						<Input
-							id="code"
-							name="code"
-							type="text"
-							autoComplete="off"
-							placeholder={t("settings.inviteCodes.codePlaceholder", "TEAM-ABC123")}
-							value={code}
-							onChange={(e) => handleCodeChange(e.target.value)}
-							disabled={state === "loading" || state === "joining"}
-							className="font-mono uppercase tracking-[0.2em]"
-						/>
-						{!initialCode && (
-							<Button
-								type="button"
-								variant="outline"
-								className="w-full sm:w-auto"
-								onClick={handleValidateClick}
-								disabled={!code.trim() || state === "loading" || state === "joining"}
-							>
-								{state === "loading" ? (
-									<IconLoader2 className="size-4 animate-spin" />
-								) : (
-									t("common.validate", "Validate")
-								)}
-							</Button>
-						)}
-					</div>
-				</div>
-
-				{/* Error message */}
-				{(state === "invalid" || state === "error") && error && (
-					<Alert variant="destructive">
-						<IconX className="size-4" />
-						<AlertTitle>{t("common.error", "Error")}</AlertTitle>
-						<AlertDescription>{error}</AlertDescription>
-					</Alert>
-				)}
-
-				{/* Organization info */}
-				{organizationName && state === "valid" && (
-					<Alert>
-						<IconBuilding className="size-4" />
-						<AlertTitle>{organizationName}</AlertTitle>
-						<AlertDescription>
-							{t(
-								"settings.inviteCodes.validCodeDescription",
-								"This invite code is valid. Click the button below to join.",
-							)}
-						</AlertDescription>
-					</Alert>
-				)}
-
-				{/* Loading state */}
-				{state === "loading" && (
-					<div className="flex items-center justify-center py-4">
-						<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
-						<span className="ml-2 text-muted-foreground">
-							{t("settings.inviteCodes.validatingCode", "Validating code...")}
-						</span>
-					</div>
-				)}
-
-				{/* Join button */}
-				<Button
-					type="button"
-					className="w-full"
-					onClick={handleJoin}
-					disabled={
-						!code.trim() ||
-						state === "loading" ||
-						state === "joining" ||
-						state === "invalid" ||
-						!organizationName
-					}
-				>
-					{state === "joining" ? (
-						<>
-							<IconLoader2 className="mr-2 size-4 animate-spin" />
-							{t("settings.inviteCodes.joining", "Joining...")}
-						</>
-					) : !session ? (
-						<>
-							<IconUserPlus className="mr-2 size-4" />
-							{t("settings.inviteCodes.signInToJoin", "Sign in to Join")}
-						</>
-					) : (
-						<>
-							<IconUserPlus className="mr-2 size-4" />
-							{t("settings.inviteCodes.joinOrganization", "Join Organization")}
-						</>
-					)}
-				</Button>
-
-				{/* Sign in link for unauthenticated users */}
-				{!session && (
-					<p className="text-center text-sm text-muted-foreground">
-						{t("settings.inviteCodes.alreadyHaveAccount", "Already have an account?")}{" "}
-						<Link
-							href={`/sign-in?callbackUrl=/join/${code}`}
-							className="text-primary hover:underline"
-						>
-							{t("auth.sign-in", "Sign in")}
-						</Link>
-					</p>
-				)}
-
-				{/* Sign up link for new users */}
-				{!session && (
-					<p className="text-center text-sm text-muted-foreground">
-						{t("settings.inviteCodes.needAccount", "Don't have an account?")}{" "}
-						<Link href={`/sign-up?inviteCode=${code}`} className="text-primary hover:underline">
-							{t("auth.sign-up", "Sign up")}
-						</Link>
-					</p>
-				)}
-			</div>
-		</AuthFormWrapper>
+		<JoinOrganizationFormBody
+			code={code}
+			error={error}
+			initialCode={initialCode}
+			joinStatus={joinStatus}
+			onCodeChange={handleCodeChange}
+			onJoin={handleJoin}
+			onValidate={handleValidateClick}
+			organizationName={organizationName}
+			session={Boolean(session)}
+			sessionLoading={sessionLoading}
+			state={state}
+		/>
 	);
 }

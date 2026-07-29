@@ -1,6 +1,12 @@
 "use client";
 
-import { IconPencil, IconPlus, IconShieldCheck, IconTarget, IconTrash } from "@tabler/icons-react";
+import {
+	IconPencil,
+	IconPlus,
+	IconShieldCheck,
+	IconTarget,
+	IconTrash,
+} from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -23,7 +29,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -74,7 +86,8 @@ export function CoverageRulesManagement({
 
 	// Dialog states
 	const [dialogOpen, setDialogOpen] = useState(false);
-	const [editingRule, setEditingRule] = useState<CoverageRuleWithRelations | null>(null);
+	const [editingRule, setEditingRule] =
+		useState<CoverageRuleWithRelations | null>(null);
 	const [deleteRuleId, setDeleteRuleId] = useState<string | null>(null);
 
 	// Fetch coverage rules
@@ -100,7 +113,9 @@ export function CoverageRulesManagement({
 
 	const rules = rulesResult || [];
 	const settings = settingsResult;
-	const manageableSubareaIdSet = manageableSubareaIds ? new Set(manageableSubareaIds) : null;
+	const manageableSubareaIdSet = manageableSubareaIds
+		? new Set(manageableSubareaIds)
+		: null;
 	const visibleRules = manageableSubareaIdSet
 		? rules.filter((rule) => manageableSubareaIdSet.has(rule.subareaId))
 		: rules;
@@ -110,34 +125,54 @@ export function CoverageRulesManagement({
 		mutationFn: (ruleId: string) => deleteCoverageRule(ruleId),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(t("settings.coverageRules.ruleDeleted", "Coverage rule deleted"));
-				queryClient.invalidateQueries({ queryKey: queryKeys.coverage.rules(organizationId) });
+				toast.success(
+					t("settings.coverageRules.ruleDeleted", "Coverage rule deleted"),
+				);
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.coverage.rules(organizationId),
+				});
 			} else {
-				toast.error(result.error || t("settings.coverageRules.deleteFailed", "Failed to delete"));
+				toast.error(
+					result.error ||
+						t("settings.coverageRules.deleteFailed", "Failed to delete"),
+				);
 			}
 			setDeleteRuleId(null);
 		},
 		onError: () => {
-			toast.error(t("settings.coverageRules.deleteFailed", "Failed to delete rule"));
+			toast.error(
+				t("settings.coverageRules.deleteFailed", "Failed to delete rule"),
+			);
 			setDeleteRuleId(null);
 		},
 	});
 
 	// Settings mutation
 	const updateSettingsMutation = useMutation({
-		mutationFn: (data: { allowPublishWithGaps: boolean }) => updateCoverageSettings(data),
+		mutationFn: (data: { allowPublishWithGaps: boolean }) =>
+			updateCoverageSettings(data),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(t("settings.coverageRules.settingsSaved", "Settings saved"));
-				queryClient.invalidateQueries({ queryKey: ["coverage-settings", organizationId] });
+				toast.success(
+					t("settings.coverageRules.settingsSaved", "Settings saved"),
+				);
+				queryClient.invalidateQueries({
+					queryKey: ["coverage-settings", organizationId],
+				});
 			} else {
 				toast.error(
-					result.error || t("settings.coverageRules.settingsFailed", "Failed to save settings"),
+					result.error ||
+						t(
+							"settings.coverageRules.settingsFailed",
+							"Failed to save settings",
+						),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.coverageRules.settingsFailed", "Failed to save settings"));
+			toast.error(
+				t("settings.coverageRules.settingsFailed", "Failed to save settings"),
+			);
 		},
 	});
 
@@ -154,7 +189,9 @@ export function CoverageRulesManagement({
 	const handleDialogSuccess = () => {
 		setDialogOpen(false);
 		setEditingRule(null);
-		queryClient.invalidateQueries({ queryKey: queryKeys.coverage.rules(organizationId) });
+		queryClient.invalidateQueries({
+			queryKey: queryKeys.coverage.rules(organizationId),
+		});
 	};
 
 	// Group rules by subarea for display
@@ -208,46 +245,13 @@ export function CoverageRulesManagement({
 			</div>
 
 			{canManageCoverageSettings ? (
-				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-base">
-							<IconShieldCheck className="size-5" />
-							{t("settings.coverageRules.publishSettings", "Publishing Settings")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.coverageRules.publishSettingsDescription",
-								"Control whether schedules can be published when coverage gaps exist.",
-							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="flex items-center justify-between">
-							<div className="space-y-0.5">
-								<Label htmlFor="allow-publish-gaps">
-									{t(
-										"settings.coverageRules.allowPublishWithGaps",
-										"Allow publishing with coverage gaps",
-									)}
-								</Label>
-								<p className="text-muted-foreground text-sm">
-									{t(
-										"settings.coverageRules.allowPublishWithGapsDescription",
-										"When disabled, managers cannot publish schedules that have understaffed time blocks.",
-									)}
-								</p>
-							</div>
-							<Switch
-								id="allow-publish-gaps"
-								checked={settings?.allowPublishWithGaps ?? true}
-								onCheckedChange={(checked) => {
-									updateSettingsMutation.mutate({ allowPublishWithGaps: checked });
-								}}
-								disabled={updateSettingsMutation.isPending}
-							/>
-						</div>
-					</CardContent>
-				</Card>
+				<CoveragePublishingSettingsCard
+					allowPublishWithGaps={settings?.allowPublishWithGaps ?? true}
+					isPending={updateSettingsMutation.isPending}
+					onChange={(allowPublishWithGaps) =>
+						updateSettingsMutation.mutate({ allowPublishWithGaps })
+					}
+				/>
 			) : null}
 
 			<div className="flex justify-end">
@@ -288,8 +292,12 @@ export function CoverageRulesManagement({
 								<Table>
 									<TableHeader>
 										<TableRow>
-											<TableHead>{t("settings.coverageRules.day", "Day")}</TableHead>
-											<TableHead>{t("settings.coverageRules.timeRange", "Time Range")}</TableHead>
+											<TableHead>
+												{t("settings.coverageRules.day", "Day")}
+											</TableHead>
+											<TableHead>
+												{t("settings.coverageRules.timeRange", "Time Range")}
+											</TableHead>
 											<TableHead className="text-center">
 												{t("settings.coverageRules.minStaff", "Min Staff")}
 											</TableHead>
@@ -359,30 +367,104 @@ export function CoverageRulesManagement({
 			/>
 
 			{/* Delete Confirmation */}
-			<AlertDialog open={!!deleteRuleId} onOpenChange={() => setDeleteRuleId(null)}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.coverageRules.deleteRuleTitle", "Delete Coverage Rule?")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.coverageRules.deleteRuleDescription",
-								"This will permanently delete this coverage rule. This action cannot be undone.",
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-						<AlertDialogAction
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-							onClick={() => deleteRuleId && deleteRuleMutation.mutate(deleteRuleId)}
-						>
-							{t("common.delete", "Delete")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<CoverageRuleDeleteDialog
+				ruleId={deleteRuleId}
+				onClose={() => setDeleteRuleId(null)}
+				onDelete={(ruleId) => deleteRuleMutation.mutate(ruleId)}
+			/>
 		</div>
+	);
+}
+
+function CoverageRuleDeleteDialog({
+	ruleId,
+	onClose,
+	onDelete,
+}: {
+	ruleId: string | null;
+	onClose: () => void;
+	onDelete: (ruleId: string) => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<AlertDialog open={!!ruleId} onOpenChange={onClose}>
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>
+						{t(
+							"settings.coverageRules.deleteRuleTitle",
+							"Delete Coverage Rule?",
+						)}
+					</AlertDialogTitle>
+					<AlertDialogDescription>
+						{t(
+							"settings.coverageRules.deleteRuleDescription",
+							"This will permanently delete this coverage rule. This action cannot be undone.",
+						)}
+					</AlertDialogDescription>
+				</AlertDialogHeader>
+				<AlertDialogFooter>
+					<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+					<AlertDialogAction
+						className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						onClick={() => ruleId && onDelete(ruleId)}
+					>
+						{t("common.delete", "Delete")}
+					</AlertDialogAction>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
+	);
+}
+
+function CoveragePublishingSettingsCard({
+	allowPublishWithGaps,
+	isPending,
+	onChange,
+}: {
+	allowPublishWithGaps: boolean;
+	isPending: boolean;
+	onChange: (checked: boolean) => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2 text-base">
+					<IconShieldCheck className="size-5" aria-hidden="true" />
+					{t("settings.coverageRules.publishSettings", "Publishing Settings")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.coverageRules.publishSettingsDescription",
+						"Control whether schedules can be published when coverage gaps exist.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div className="flex items-center justify-between">
+					<div className="space-y-0.5">
+						<Label htmlFor="allow-publish-gaps">
+							{t(
+								"settings.coverageRules.allowPublishWithGaps",
+								"Allow publishing with coverage gaps",
+							)}
+						</Label>
+						<p className="text-muted-foreground text-sm">
+							{t(
+								"settings.coverageRules.allowPublishWithGapsDescription",
+								"When disabled, managers cannot publish schedules that have understaffed time blocks.",
+							)}
+						</p>
+					</div>
+					<Switch
+						id="allow-publish-gaps"
+						checked={allowPublishWithGaps}
+						onCheckedChange={onChange}
+						disabled={isPending}
+					/>
+				</div>
+			</CardContent>
+		</Card>
 	);
 }

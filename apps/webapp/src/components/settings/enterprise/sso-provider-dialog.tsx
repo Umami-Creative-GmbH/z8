@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { runWithBusyState } from "../run-with-busy-state";
 
 interface SSOProviderDialogProps {
 	open: boolean;
@@ -35,10 +36,15 @@ interface SSOProviderDialogProps {
 	}) => void;
 }
 
-const DOMAIN_REGEX = /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+const DOMAIN_REGEX =
+	/^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
 const PROVIDER_ID_REGEX = /^[a-z0-9-]+$/;
 
-export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOProviderDialogProps) {
+export function SSOProviderDialog({
+	open,
+	onOpenChange,
+	onProviderAdded,
+}: SSOProviderDialogProps) {
 	const { t } = useTranslate();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -51,44 +57,41 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 			clientSecret: "",
 		},
 		onSubmit: async ({ value }) => {
-			setIsSubmitting(true);
-			const result = await registerSSOProviderAction(value as OIDCProviderInput).then(
-				(response) => ({ ok: true as const, response }),
-				(error) => ({ ok: false as const, error }),
-			);
+			await runWithBusyState(setIsSubmitting, async () => {
+				try {
+					const response = await registerSSOProviderAction(
+						value as OIDCProviderInput,
+					);
 
-			if (!result.ok) {
-				if (result.error instanceof Error) {
-					toast.error(result.error.message);
-				} else {
-					toast.error(t("settings.enterprise.sso.addError", "Failed to add SSO provider"));
+					onProviderAdded(response);
+					toast.success(
+						t(
+							"settings.enterprise.sso.addSuccess",
+							"SSO provider added successfully",
+						),
+					);
+					form.reset();
+					onOpenChange(false);
+				} catch (error) {
+					if (error instanceof Error) {
+						toast.error(error.message);
+					} else {
+						toast.error(
+							t(
+								"settings.enterprise.sso.addError",
+								"Failed to add SSO provider",
+							),
+						);
+					}
 				}
-				setIsSubmitting(false);
-				return;
-			}
-
-			onProviderAdded(result.response);
-			toast.success(t("settings.enterprise.sso.addSuccess", "SSO provider added successfully"));
-			form.reset();
-			onOpenChange(false);
-			setIsSubmitting(false);
+			});
 		},
 	});
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent>
-				<ActionPanelHeader>
-					<ActionPanelTitle>
-						{t("settings.enterprise.sso.addTitle", "Add SSO Provider")}
-					</ActionPanelTitle>
-					<ActionPanelDescription>
-						{t(
-							"settings.enterprise.sso.addDescription",
-							"Configure an OIDC identity provider for enterprise single sign-on.",
-						)}
-					</ActionPanelDescription>
-				</ActionPanelHeader>
+				<SSOProviderDialogHeader />
 				<form
 					onSubmit={(e) => {
 						e.preventDefault();
@@ -135,7 +138,9 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 										)}
 									</p>
 									{field.state.meta.errors.length > 0 && (
-										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+										<p className="text-sm text-destructive">
+											{field.state.meta.errors[0]}
+										</p>
 									)}
 								</div>
 							)}
@@ -146,7 +151,10 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 							validators={{
 								onChange: ({ value }) => {
 									if (!value)
-										return t("settings.enterprise.sso.issuerUrlRequired", "Issuer URL is required");
+										return t(
+											"settings.enterprise.sso.issuerUrlRequired",
+											"Issuer URL is required",
+										);
 									try {
 										new URL(value);
 									} catch {
@@ -179,7 +187,9 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 										)}
 									</p>
 									{field.state.meta.errors.length > 0 && (
-										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+										<p className="text-sm text-destructive">
+											{field.state.meta.errors[0]}
+										</p>
 									)}
 								</div>
 							)}
@@ -190,7 +200,10 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 							validators={{
 								onChange: ({ value }) => {
 									if (!value)
-										return t("settings.enterprise.sso.domainRequired", "Domain is required");
+										return t(
+											"settings.enterprise.sso.domainRequired",
+											"Domain is required",
+										);
 									if (!DOMAIN_REGEX.test(value)) {
 										return t(
 											"settings.enterprise.sso.domainInvalid",
@@ -220,7 +233,9 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 										)}
 									</p>
 									{field.state.meta.errors.length > 0 && (
-										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+										<p className="text-sm text-destructive">
+											{field.state.meta.errors[0]}
+										</p>
 									)}
 								</div>
 							)}
@@ -231,14 +246,19 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 							validators={{
 								onChange: ({ value }) => {
 									if (!value)
-										return t("settings.enterprise.clientIdRequired", "Client ID is required");
+										return t(
+											"settings.enterprise.clientIdRequired",
+											"Client ID is required",
+										);
 									return undefined;
 								},
 							}}
 						>
 							{(field) => (
 								<div className="space-y-2">
-									<Label htmlFor="clientId">{t("settings.enterprise.clientId", "Client ID")}</Label>
+									<Label htmlFor="clientId">
+										{t("settings.enterprise.clientId", "Client ID")}
+									</Label>
 									<Input
 										id="clientId"
 										placeholder={t(
@@ -250,7 +270,9 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 										onBlur={field.handleBlur}
 									/>
 									{field.state.meta.errors.length > 0 && (
-										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+										<p className="text-sm text-destructive">
+											{field.state.meta.errors[0]}
+										</p>
 									)}
 								</div>
 							)}
@@ -286,7 +308,9 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 										onBlur={field.handleBlur}
 									/>
 									{field.state.meta.errors.length > 0 && (
-										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+										<p className="text-sm text-destructive">
+											{field.state.meta.errors[0]}
+										</p>
 									)}
 								</div>
 							)}
@@ -294,7 +318,11 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 					</ActionPanelBody>
 
 					<ActionPanelFooter>
-						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => onOpenChange(false)}
+						>
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>
@@ -306,5 +334,22 @@ export function SSOProviderDialog({ open, onOpenChange, onProviderAdded }: SSOPr
 				</form>
 			</ActionPanelContent>
 		</ActionPanel>
+	);
+}
+
+function SSOProviderDialogHeader() {
+	const { t } = useTranslate();
+	return (
+		<ActionPanelHeader>
+			<ActionPanelTitle>
+				{t("settings.enterprise.sso.addTitle", "Add SSO Provider")}
+			</ActionPanelTitle>
+			<ActionPanelDescription>
+				{t(
+					"settings.enterprise.sso.addDescription",
+					"Configure an OIDC identity provider for enterprise single sign-on.",
+				)}
+			</ActionPanelDescription>
+		</ActionPanelHeader>
 	);
 }

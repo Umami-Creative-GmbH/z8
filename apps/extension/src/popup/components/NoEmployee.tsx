@@ -22,6 +22,7 @@ export function NoEmployee() {
         admin or switch organizations.
       </p>
       <button
+        type="button"
         onClick={handleOpenApp}
         className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
       >

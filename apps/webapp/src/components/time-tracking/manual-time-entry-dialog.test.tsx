@@ -12,9 +12,17 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ManualTimeEntryDialog } from "./manual-time-entry-dialog";
 
-const { createManualTimeEntry, refresh, updateTimezone } = vi.hoisted(() => ({
+const {
+	createManualTimeEntry,
+	formatTimeInZone,
+	refresh,
+	toastInfo,
+	updateTimezone,
+} = vi.hoisted(() => ({
 	createManualTimeEntry: vi.fn(),
+	formatTimeInZone: vi.fn(() => "09:00"),
 	refresh: vi.fn(),
+	toastInfo: vi.fn(),
 	updateTimezone: vi.fn(),
 }));
 
@@ -41,8 +49,12 @@ vi.mock("@/components/providers/user-preferences-provider", () => ({
 }));
 
 vi.mock("@/lib/time-tracking/timezone-utils", () => ({
-	formatTimeInZone: () => "09:00",
-	getTimezoneAbbreviation: () => "UTC",
+	formatTimeInZone,
+	getTimezoneAbbreviation: (timezone: string) => timezone,
+}));
+
+vi.mock("sonner", () => ({
+	toast: { error: vi.fn(), info: toastInfo, success: vi.fn() },
 }));
 
 vi.mock("@/lib/time-tracking/timezone-capture", () => ({
@@ -206,10 +218,10 @@ describe("ManualTimeEntryDialog layout", () => {
 		expect(source).toContain("useTimeFormat");
 		expect(source).toContain("formatTimeInZone");
 		expect(source).toMatch(
-			/formatTimeInZone\(\s*result\.data\.adjustedTimes\.clockIn,\s*employeeTimezone,\s*false,\s*timeFormat,\s*\)/,
+			/formatTimeInZone\(\s*result\.data\.adjustedTimes\.clockIn,\s*timezone,\s*false,\s*timeFormat,\s*\)/,
 		);
 		expect(source).toMatch(
-			/formatTimeInZone\(\s*result\.data\.adjustedTimes\.clockOut,\s*employeeTimezone,\s*false,\s*timeFormat,\s*\)/,
+			/formatTimeInZone\(\s*result\.data\.adjustedTimes\.clockOut,\s*timezone,\s*false,\s*timeFormat,\s*\)/,
 		);
 		expect(source).not.toContain('.toFormat("HH:mm")');
 	});
@@ -470,6 +482,128 @@ describe("ManualTimeEntryDialog layout", () => {
 
 		createResult.resolve({ success: true, data: {} });
 		await waitFor(() => expect(refresh).toHaveBeenCalled());
+	});
+
+	it("re-enables mismatch actions when updating the saved timezone fails", async () => {
+		updateTimezone.mockResolvedValue({
+			success: false,
+			error: "Timezone update failed",
+		});
+		renderDialog({
+			open: true,
+			hideTrigger: true,
+			employeeTimezone: "Europe/Berlin",
+			defaultDate: "2026-05-12",
+			defaultClockInTime: "10:15",
+			defaultClockOutTime: "15:45",
+		});
+
+		fireEvent.change(screen.getByLabelText("Reason"), {
+			target: { value: "Calendar adjustment" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+
+		const updateButton = await screen.findByRole("button", {
+			name: "Update timezone and continue",
+		});
+		fireEvent.click(updateButton);
+
+		await waitFor(() => expect(updateTimezone).toHaveBeenCalledOnce());
+		await waitFor(() =>
+			expect(updateButton.hasAttribute("disabled")).toBe(false),
+		);
+		expect(
+			screen
+				.getByRole("button", { name: "Continue once" })
+				.hasAttribute("disabled"),
+		).toBe(false);
+		expect(createManualTimeEntry).not.toHaveBeenCalled();
+	});
+
+	it("keeps the updated employee timezone after the following create fails", async () => {
+		createManualTimeEntry.mockResolvedValue({
+			success: false,
+			error: "Create failed",
+		});
+		renderDialog({
+			open: true,
+			hideTrigger: true,
+			employeeTimezone: "Europe/Berlin",
+			defaultDate: "2026-05-12",
+			defaultClockInTime: "10:15",
+			defaultClockOutTime: "15:45",
+		});
+		fireEvent.change(screen.getByLabelText("Reason"), {
+			target: { value: "Calendar adjustment" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+		fireEvent.click(
+			await screen.findByRole("button", {
+				name: "Update timezone and continue",
+			}),
+		);
+
+		await waitFor(() => expect(createManualTimeEntry).toHaveBeenCalledTimes(1));
+		await waitFor(() =>
+			expect(screen.queryByText(/Your device timezone is/)).toBeNull(),
+		);
+		expect(
+			screen.getByText("Times are in your local timezone (America/New_York)"),
+		).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+		await waitFor(() => expect(createManualTimeEntry).toHaveBeenCalledTimes(2));
+		expect(screen.queryByText(/Your device timezone is/)).toBeNull();
+		expect(createManualTimeEntry).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				timezone: "America/New_York",
+				browserTimezone: "America/New_York",
+			}),
+		);
+	});
+
+	it("formats continue-once adjusted times in the browser parsing zone", async () => {
+		createManualTimeEntry.mockResolvedValue({
+			success: true,
+			data: {
+				wasAdjusted: true,
+				adjustedTimes: {
+					clockIn: "2026-05-12T14:00:00.000Z",
+					clockOut: "2026-05-12T22:00:00.000Z",
+				},
+			},
+		});
+		renderDialog({
+			open: true,
+			hideTrigger: true,
+			employeeTimezone: "Europe/Berlin",
+			defaultDate: "2026-05-12",
+			defaultClockInTime: "10:15",
+			defaultClockOutTime: "15:45",
+		});
+		fireEvent.change(screen.getByLabelText("Reason"), {
+			target: { value: "Calendar adjustment" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+		fireEvent.click(
+			await screen.findByRole("button", { name: "Continue once" }),
+		);
+
+		await waitFor(() => expect(toastInfo).toHaveBeenCalledOnce());
+		expect(formatTimeInZone).toHaveBeenNthCalledWith(
+			1,
+			"2026-05-12T14:00:00.000Z",
+			"America/New_York",
+			false,
+			"24h",
+		);
+		expect(formatTimeInZone).toHaveBeenNthCalledWith(
+			2,
+			"2026-05-12T22:00:00.000Z",
+			"America/New_York",
+			false,
+			"24h",
+		);
 	});
 
 	it("cancels self manual timezone mismatch without submitting", async () => {

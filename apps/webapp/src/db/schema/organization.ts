@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
 	type AnyPgColumn,
 	boolean,
@@ -388,11 +389,11 @@ export const teamPermissions = pgTable(
 		index("teamPermissions_employeeId_idx").on(table.employeeId),
 		index("teamPermissions_organizationId_idx").on(table.organizationId),
 		index("teamPermissions_teamId_idx").on(table.teamId),
-		// One permission record per employee per organization per team (or org-wide with null teamId)
-		uniqueIndex("teamPermissions_unique_idx").on(
-			table.employeeId,
-			table.organizationId,
-			table.teamId,
-		),
+		uniqueIndex("teamPermissions_employeeOrganizationTeam_unique_idx")
+			.on(table.employeeId, table.organizationId, table.teamId)
+			.where(sql`${table.teamId} IS NOT NULL`),
+		uniqueIndex("teamPermissions_employeeOrganizationOrgWide_unique_idx")
+			.on(table.employeeId, table.organizationId)
+			.where(sql`${table.teamId} IS NULL`),
 	],
 );

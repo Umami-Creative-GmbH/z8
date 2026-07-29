@@ -20,7 +20,8 @@ const mockState = vi.hoisted(() => {
 	};
 });
 
-vi.mock("drizzle-orm", () => ({
+vi.mock("drizzle-orm", async (importOriginal) => ({
+	...(await importOriginal<typeof import("drizzle-orm")>()),
 	and: vi.fn((...args: unknown[]) => ({ and: args })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
 	asc: vi.fn((value: unknown) => ({ asc: value })),

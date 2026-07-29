@@ -1,6 +1,11 @@
 "use client";
 
-import { IconCheck, IconInfoCircle, IconLoader2, IconPlugConnected } from "@tabler/icons-react";
+import {
+	IconCheck,
+	IconInfoCircle,
+	IconLoader2,
+	IconPlugConnected,
+} from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import Image from "next/image";
@@ -31,7 +36,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { SuccessFactorsConfig } from "@/lib/payroll-export/types";
 
 interface SuccessFactorsConfigFormProps {
@@ -48,43 +58,49 @@ const DEFAULT_CONFIG: SuccessFactorsConfig = {
 	batchSize: 100,
 	apiTimeoutMs: 60000,
 };
+type Translate = ReturnType<typeof useTranslate>["t"];
 
-export function SuccessFactorsConfigForm({
+export function SuccessFactorsConfigForm(props: SuccessFactorsConfigFormProps) {
+	const { t } = useTranslate();
+	return <SuccessFactorsSettingsView {...props} t={t} />;
+}
+
+function SuccessFactorsSettingsView({
 	organizationId,
 	initialConfig,
 	onConfigSaved,
-}: SuccessFactorsConfigFormProps) {
-	const { t } = useTranslate();
+	t,
+}: SuccessFactorsConfigFormProps & { t: Translate }) {
 	const [isPending, startTransition] = useTransition();
 	const [isTestingConnection, setIsTestingConnection] = useState(false);
-
 	const form = useForm({
-		defaultValues: (initialConfig?.config ?? DEFAULT_CONFIG) satisfies SuccessFactorsConfig,
-		onSubmit: async ({ value }) => {
+		defaultValues: (initialConfig?.config ??
+			DEFAULT_CONFIG) satisfies SuccessFactorsConfig,
+		onSubmit: async ({ value }) =>
 			startTransition(async () => {
 				const result = await saveSuccessFactorsConfigAction({
 					organizationId,
 					config: value,
 				});
-
 				if (result.success) {
 					toast.success(
-						t("settings.payrollExport.successfactors.saveSuccess", "Configuration saved"),
+						t(
+							"settings.payrollExport.successfactors.saveSuccess",
+							"Configuration saved",
+						),
 					);
 					onConfigSaved?.();
-				} else {
+				} else
 					toast.error(
-						t("settings.payrollExport.successfactors.saveError", "Failed to save configuration"),
-						{
-							description: result.error,
-						},
+						t(
+							"settings.payrollExport.successfactors.saveError",
+							"Failed to save configuration",
+						),
+						{ description: result.error },
 					);
-				}
-			});
-		},
+			}),
 	});
-
-	const handleTestConnection = async () => {
+	const testConnection = async () => {
 		setIsTestingConnection(true);
 		const result = await testSuccessFactorsConnectionAction({
 			organizationId,
@@ -93,211 +109,102 @@ export function SuccessFactorsConfigForm({
 			(response) => response,
 			() => null,
 		);
-
-		if (!result) {
-			toast.error(t("settings.payrollExport.successfactors.connectionFailed", "Connection failed"));
-			setIsTestingConnection(false);
-			return;
-		}
-
-		if (result.success && result.data?.success) {
+		if (result?.success && result.data?.success)
 			toast.success(
-				t("settings.payrollExport.successfactors.connectionSuccess", "Connection successful"),
+				t(
+					"settings.payrollExport.successfactors.connectionSuccess",
+					"Connection successful",
+				),
 			);
-		} else {
-			const errorMessage =
-				result.success && result.data
-					? result.data.error
-					: result.success === false
-						? result.error
-						: undefined;
+		else {
+			const description = result?.success ? result.data?.error : result?.error;
 			toast.error(
-				t("settings.payrollExport.successfactors.connectionFailed", "Connection failed"),
-				{
-					description: errorMessage,
-				},
+				t(
+					"settings.payrollExport.successfactors.connectionFailed",
+					"Connection failed",
+				),
+				{ description },
 			);
 		}
-
 		setIsTestingConnection(false);
 	};
 
 	return (
 		<Card>
-			<CardHeader>
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-4">
-						<Image
-							src="/successfactors.svg"
-							alt="SAP SuccessFactors Logo"
-							width={48}
-							height={48}
-							className="size-12"
-						/>
-						<div>
-							<CardTitle className="flex items-center gap-2">
-								{t("settings.payrollExport.successfactors.title", "SAP SuccessFactors")}
-								{initialConfig && (
-									<Badge variant="secondary" className="gap-1">
-										<IconCheck className="size-3" aria-hidden="true" />
-										{t("settings.payrollExport.successfactors.configured", "Configured")}
-									</Badge>
-								)}
-							</CardTitle>
-							<CardDescription>
-								{t(
-									"settings.payrollExport.successfactors.description",
-									"Configure export settings for SAP SuccessFactors Employee Central",
-								)}
-							</CardDescription>
-						</div>
-					</div>
-				</div>
-			</CardHeader>
-			<form
-				className="flex flex-col gap-6"
-				onSubmit={(e) => {
-					e.preventDefault();
-					form.handleSubmit();
-				}}
-			>
+			<SuccessFactorsHeader configured={Boolean(initialConfig)} t={t} />
+			<form className="flex flex-col gap-6" action={() => form.handleSubmit()}>
 				<CardContent className="space-y-4">
 					<form.Field name="instanceUrl">
 						{(field) => (
-							<div className="space-y-2">
-								<div className="flex items-center gap-2">
-									<Label htmlFor="instanceUrl">
-										{t("settings.payrollExport.successfactors.instanceUrl", "Instance URL")}
-									</Label>
-									<TooltipProvider>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<button
-													type="button"
-													className="inline-flex cursor-help"
-													aria-label={t(
-														"settings.payrollExport.successfactors.instanceUrlHelp",
-														"Instance URL help",
-													)}
-												>
-													<IconInfoCircle
-														className="size-4 text-muted-foreground"
-														aria-hidden="true"
-													/>
-												</button>
-											</TooltipTrigger>
-											<TooltipContent className="max-w-xs">
-												<p>
-													{t(
-														"settings.payrollExport.successfactors.instanceUrlTooltip",
-														"Your SAP SuccessFactors API endpoint URL (e.g., https://api.successfactors.com)",
-													)}
-												</p>
-											</TooltipContent>
-										</Tooltip>
-									</TooltipProvider>
-								</div>
-								<Input
-									id="instanceUrl"
-									type="url"
-									autoComplete="url"
-									placeholder="https://api.successfactors.com"
-									value={field.state.value}
-									onChange={(e) => field.handleChange(e.target.value)}
-								/>
-							</div>
+							<HelpInput
+								id="instanceUrl"
+								type="url"
+								autoComplete="url"
+								placeholder="https://api.successfactors.com"
+								label={t(
+									"settings.payrollExport.successfactors.instanceUrl",
+									"Instance URL",
+								)}
+								helpLabel={t(
+									"settings.payrollExport.successfactors.instanceUrlHelp",
+									"Instance URL help",
+								)}
+								help={t(
+									"settings.payrollExport.successfactors.instanceUrlTooltip",
+									"Your SAP SuccessFactors API endpoint URL (e.g., https://api.successfactors.com)",
+								)}
+								value={field.state.value}
+								onChange={field.handleChange}
+							/>
 						)}
 					</form.Field>
-
 					<form.Field name="companyId">
 						{(field) => (
-							<div className="space-y-2">
-								<div className="flex items-center gap-2">
-									<Label htmlFor="companyId">
-										{t("settings.payrollExport.successfactors.companyId", "Company ID")}
-									</Label>
-									<TooltipProvider>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<button
-													type="button"
-													className="inline-flex cursor-help"
-													aria-label={t(
-														"settings.payrollExport.successfactors.companyIdHelp",
-														"Company ID help",
-													)}
-												>
-													<IconInfoCircle
-														className="size-4 text-muted-foreground"
-														aria-hidden="true"
-													/>
-												</button>
-											</TooltipTrigger>
-											<TooltipContent className="max-w-xs">
-												<p>
-													{t(
-														"settings.payrollExport.successfactors.companyIdTooltip",
-														"Your SAP SuccessFactors company identifier",
-													)}
-												</p>
-											</TooltipContent>
-										</Tooltip>
-									</TooltipProvider>
-								</div>
-								<Input
-									id="companyId"
-									type="text"
-									autoComplete="organization"
-									placeholder="COMPANY_ID"
-									value={field.state.value}
-									onChange={(e) => field.handleChange(e.target.value)}
-								/>
-							</div>
+							<HelpInput
+								id="companyId"
+								autoComplete="organization"
+								placeholder="COMPANY_ID"
+								label={t(
+									"settings.payrollExport.successfactors.companyId",
+									"Company ID",
+								)}
+								helpLabel={t(
+									"settings.payrollExport.successfactors.companyIdHelp",
+									"Company ID help",
+								)}
+								help={t(
+									"settings.payrollExport.successfactors.companyIdTooltip",
+									"Your SAP SuccessFactors company identifier",
+								)}
+								value={field.state.value}
+								onChange={field.handleChange}
+							/>
 						)}
 					</form.Field>
-
 					<form.Field name="employeeMatchStrategy">
 						{(field) => (
 							<div className="space-y-2">
-								<div className="flex items-center gap-2">
-									<Label htmlFor="employeeMatchStrategy">
-										{t(
-											"settings.payrollExport.successfactors.employeeMatchStrategy",
-											"Employee Matching",
-										)}
-									</Label>
-									<TooltipProvider>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<button
-													type="button"
-													className="inline-flex cursor-help"
-													aria-label={t(
-														"settings.payrollExport.successfactors.employeeMatchStrategyHelp",
-														"Employee matching help",
-													)}
-												>
-													<IconInfoCircle
-														className="size-4 text-muted-foreground"
-														aria-hidden="true"
-													/>
-												</button>
-											</TooltipTrigger>
-											<TooltipContent className="max-w-xs">
-												<p>
-													{t(
-														"settings.payrollExport.successfactors.employeeMatchStrategyTooltip",
-														"How to match local employees to SAP SuccessFactors users",
-													)}
-												</p>
-											</TooltipContent>
-										</Tooltip>
-									</TooltipProvider>
-								</div>
+								<HelpLabel
+									htmlFor="employeeMatchStrategy"
+									label={t(
+										"settings.payrollExport.successfactors.employeeMatchStrategy",
+										"Employee Matching",
+									)}
+									helpLabel={t(
+										"settings.payrollExport.successfactors.employeeMatchStrategyHelp",
+										"Employee matching help",
+									)}
+									help={t(
+										"settings.payrollExport.successfactors.employeeMatchStrategyTooltip",
+										"How to match local employees to SAP SuccessFactors users",
+									)}
+								/>
 								<Select
 									value={field.state.value}
-									onValueChange={(v) =>
-										field.handleChange(v as "userId" | "personIdExternal" | "email")
+									onValueChange={(value) =>
+										field.handleChange(
+											value as "userId" | "personIdExternal" | "email",
+										)
 									}
 								>
 									<SelectTrigger>
@@ -327,42 +234,24 @@ export function SuccessFactorsConfigForm({
 							</div>
 						)}
 					</form.Field>
-
 					<form.Field name="batchSize">
 						{(field) => (
 							<div className="space-y-2">
-								<div className="flex items-center gap-2">
-									<Label htmlFor="batchSize">
-										{t("settings.payrollExport.successfactors.batchSize", "Batch Size")}
-									</Label>
-									<TooltipProvider>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<button
-													type="button"
-													className="inline-flex cursor-help"
-													aria-label={t(
-														"settings.payrollExport.successfactors.batchSizeHelp",
-														"Batch size help",
-													)}
-												>
-													<IconInfoCircle
-														className="size-4 text-muted-foreground"
-														aria-hidden="true"
-													/>
-												</button>
-											</TooltipTrigger>
-											<TooltipContent className="max-w-xs">
-												<p>
-													{t(
-														"settings.payrollExport.successfactors.batchSizeTooltip",
-														"Number of records per API request (1-100). Lower values are safer but slower.",
-													)}
-												</p>
-											</TooltipContent>
-										</Tooltip>
-									</TooltipProvider>
-								</div>
+								<HelpLabel
+									htmlFor="batchSize"
+									label={t(
+										"settings.payrollExport.successfactors.batchSize",
+										"Batch Size",
+									)}
+									helpLabel={t(
+										"settings.payrollExport.successfactors.batchSizeHelp",
+										"Batch size help",
+									)}
+									help={t(
+										"settings.payrollExport.successfactors.batchSizeTooltip",
+										"Number of records per API request (1-100). Lower values are safer but slower.",
+									)}
+								/>
 								<Input
 									id="batchSize"
 									type="number"
@@ -370,12 +259,13 @@ export function SuccessFactorsConfigForm({
 									min={1}
 									max={100}
 									value={field.state.value}
-									onChange={(e) => field.handleChange(parseInt(e.target.value, 10) || 100)}
+									onChange={(event) =>
+										field.handleChange(parseInt(event.target.value, 10) || 100)
+									}
 								/>
 							</div>
 						)}
 					</form.Field>
-
 					<form.Field name="includeZeroHours">
 						{(field) => (
 							<div className="flex items-center justify-between rounded-lg border p-4">
@@ -401,12 +291,11 @@ export function SuccessFactorsConfigForm({
 							</div>
 						)}
 					</form.Field>
-
 					<div className="pt-2">
 						<Button
 							type="button"
 							variant="outline"
-							onClick={handleTestConnection}
+							onClick={testConnection}
 							disabled={
 								isTestingConnection ||
 								!form.state.values.instanceUrl ||
@@ -415,13 +304,25 @@ export function SuccessFactorsConfigForm({
 						>
 							{isTestingConnection ? (
 								<>
-									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-									{t("settings.payrollExport.successfactors.testingConnection", "Testing...")}
+									<IconLoader2
+										className="mr-2 size-4 animate-spin"
+										aria-hidden="true"
+									/>
+									{t(
+										"settings.payrollExport.successfactors.testingConnection",
+										"Testing...",
+									)}
 								</>
 							) : (
 								<>
-									<IconPlugConnected className="mr-2 size-4" aria-hidden="true" />
-									{t("settings.payrollExport.successfactors.testConnection", "Test Connection")}
+									<IconPlugConnected
+										className="mr-2 size-4"
+										aria-hidden="true"
+									/>
+									{t(
+										"settings.payrollExport.successfactors.testConnection",
+										"Test Connection",
+									)}
 								</>
 							)}
 						</Button>
@@ -431,15 +332,139 @@ export function SuccessFactorsConfigForm({
 					<Button type="submit" disabled={isPending}>
 						{isPending ? (
 							<>
-								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+								<IconLoader2
+									className="mr-2 size-4 animate-spin"
+									aria-hidden="true"
+								/>
 								{t("common.saving", "Saving...")}
 							</>
 						) : (
-							t("settings.payrollExport.successfactors.save", "Save Configuration")
+							t(
+								"settings.payrollExport.successfactors.save",
+								"Save Configuration",
+							)
 						)}
 					</Button>
 				</CardFooter>
 			</form>
 		</Card>
+	);
+}
+
+function SuccessFactorsHeader({
+	configured,
+	t,
+}: {
+	configured: boolean;
+	t: Translate;
+}) {
+	return (
+		<CardHeader>
+			<div className="flex items-center gap-4">
+				<Image
+					src="/successfactors.svg"
+					alt="SAP SuccessFactors Logo"
+					width={48}
+					height={48}
+					className="size-12"
+				/>
+				<div>
+					<CardTitle className="flex items-center gap-2">
+						{t(
+							"settings.payrollExport.successfactors.title",
+							"SAP SuccessFactors",
+						)}
+						{configured ? (
+							<Badge variant="secondary" className="gap-1">
+								<IconCheck className="size-3" aria-hidden="true" />
+								{t(
+									"settings.payrollExport.successfactors.configured",
+									"Configured",
+								)}
+							</Badge>
+						) : null}
+					</CardTitle>
+					<CardDescription>
+						{t(
+							"settings.payrollExport.successfactors.description",
+							"Configure export settings for SAP SuccessFactors Employee Central",
+						)}
+					</CardDescription>
+				</div>
+			</div>
+		</CardHeader>
+	);
+}
+
+function HelpInput({
+	id,
+	type = "text",
+	autoComplete,
+	placeholder,
+	label,
+	helpLabel,
+	help,
+	value,
+	onChange,
+}: {
+	id: string;
+	type?: string;
+	autoComplete: string;
+	placeholder: string;
+	label: string;
+	helpLabel: string;
+	help: string;
+	value: string;
+	onChange: (value: string) => void;
+}) {
+	return (
+		<div className="space-y-2">
+			<HelpLabel htmlFor={id} label={label} helpLabel={helpLabel} help={help} />
+			<Input
+				id={id}
+				type={type}
+				autoComplete={autoComplete}
+				placeholder={placeholder}
+				value={value}
+				onChange={(event) => onChange(event.target.value)}
+			/>
+		</div>
+	);
+}
+
+function HelpLabel({
+	htmlFor,
+	label,
+	helpLabel,
+	help,
+}: {
+	htmlFor: string;
+	label: string;
+	helpLabel: string;
+	help: string;
+}) {
+	return (
+		<div className="flex items-center gap-2">
+			<Label htmlFor={htmlFor}>{label}</Label>
+			<TooltipProvider>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<button
+							type="button"
+							className="inline-flex cursor-help"
+							aria-label={helpLabel}
+						>
+							<IconInfoCircle
+								className="size-4 text-muted-foreground"
+								aria-hidden="true"
+							/>
+						</button>
+					</TooltipTrigger>
+					<TooltipContent className="max-w-xs">
+						<p>{help}</p>
+					</TooltipContent>
+				</Tooltip>
+			</TooltipProvider>
+		</div>
 	);
 }

@@ -68,7 +68,10 @@ function NotificationsInboxSkeleton() {
 	return (
 		<div className="space-y-3">
 			{Array.from({ length: 5 }).map((_, index) => (
-				<div className="flex items-start gap-3 rounded-lg border p-3" key={index.toString()}>
+				<div
+					className="flex items-start gap-3 rounded-lg border p-3"
+					key={index.toString()}
+				>
 					<Skeleton className="mt-3 size-4" />
 					<Skeleton className="size-9 rounded-full" />
 					<div className="flex-1 space-y-2">
@@ -82,7 +85,7 @@ function NotificationsInboxSkeleton() {
 	);
 }
 
-export function NotificationsInbox() {
+function useNotificationsInboxViewModel() {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() || "en";
@@ -104,10 +107,17 @@ export function NotificationsInbox() {
 		isMarkingRead,
 		isDeleting,
 		refresh,
-	} = useNotifications({ enabled: hasOrganization, limit: 100, organizationId });
+	} = useNotifications({
+		enabled: hasOrganization,
+		limit: 100,
+		organizationId,
+	});
 	const readFilters: { label: string; value: ReadFilter }[] = [
 		{ label: t("common:notifications.filters.all", "All"), value: "all" },
-		{ label: t("common:notifications.filters.unread", "Unread"), value: "unread" },
+		{
+			label: t("common:notifications.filters.unread", "Unread"),
+			value: "unread",
+		},
 		{ label: t("common:notifications.filters.read", "Read"), value: "read" },
 	];
 	const getTimelineGroupLabel = (group: TimelineGroup) => {
@@ -137,9 +147,15 @@ export function NotificationsInbox() {
 				return true;
 			}
 
-			const localized = getLocalizedNotificationContent(notification, t, locale);
+			const localized = getLocalizedNotificationContent(
+				notification,
+				t,
+				locale,
+			);
 
-			return `${localized.title} ${localized.message}`.toLowerCase().includes(normalizedSearch);
+			return `${localized.title} ${localized.message}`
+				.toLowerCase()
+				.includes(normalizedSearch);
 		});
 	})();
 
@@ -157,15 +173,21 @@ export function NotificationsInbox() {
 		return groups;
 	})();
 
-	const visibleIds = filteredNotifications.map((notification) => notification.id);
+	const visibleIds = filteredNotifications.map(
+		(notification) => notification.id,
+	);
 	const hasSearch = deferredSearch.trim().length > 0;
 	const selectedVisibleIds = visibleIds.filter((id) => selectedIds.has(id));
-	const selectedUnreadVisibleIds = filteredNotifications.flatMap((notification) =>
-		selectedIds.has(notification.id) && !notification.isRead ? [notification.id] : [],
+	const selectedUnreadVisibleIds = filteredNotifications.flatMap(
+		(notification) =>
+			selectedIds.has(notification.id) && !notification.isRead
+				? [notification.id]
+				: [],
 	);
 	const selectedVisibleCount = selectedVisibleIds.length;
 	const selectedUnreadVisibleCount = selectedUnreadVisibleIds.length;
-	const allVisibleSelected = visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
+	const allVisibleSelected =
+		visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
 	const someVisibleSelected = selectedVisibleCount > 0 && !allVisibleSelected;
 	const hasSelection = selectedVisibleCount > 0;
 	const isMutating = isMarkingRead || isDeleting;
@@ -202,14 +224,21 @@ export function NotificationsInbox() {
 		try {
 			await Promise.all(selectedUnreadVisibleIds.map((id) => markAsRead(id)));
 			toast.success(
-				t("common:notifications.toasts.markedRead", "Marked {count} notifications as read", {
-					count: selectedUnreadVisibleCount,
-				}),
+				t(
+					"common:notifications.toasts.markedRead",
+					"Marked {count} notifications as read",
+					{
+						count: selectedUnreadVisibleCount,
+					},
+				),
 			);
 			clearSelection();
 		} catch {
 			toast.error(
-				t("common:notifications.toasts.markReadFailed", "Failed to mark notifications as read"),
+				t(
+					"common:notifications.toasts.markReadFailed",
+					"Failed to mark notifications as read",
+				),
 			);
 		}
 	};
@@ -219,7 +248,10 @@ export function NotificationsInbox() {
 			? t("common:notifications.empty.unreadTitle", "No unread notifications")
 			: notifications.length === 0
 				? t("common:notifications.empty.title", "No notifications")
-				: t("common:notifications.empty.noMatchesTitle", "No matching notifications");
+				: t(
+						"common:notifications.empty.noMatchesTitle",
+						"No matching notifications",
+					);
 	const emptyDescription =
 		readFilter === "unread" && !hasSearch
 			? t(
@@ -240,15 +272,98 @@ export function NotificationsInbox() {
 		try {
 			await Promise.all(selectedVisibleIds.map((id) => deleteNotification(id)));
 			toast.success(
-				t("common:notifications.toasts.deleted", "Deleted {count} notifications", {
-					count: selectedVisibleCount,
-				}),
+				t(
+					"common:notifications.toasts.deleted",
+					"Deleted {count} notifications",
+					{
+						count: selectedVisibleCount,
+					},
+				),
 			);
 			clearSelection();
 		} catch {
-			toast.error(t("common:notifications.toasts.deleteFailed", "Failed to delete notifications"));
+			toast.error(
+				t(
+					"common:notifications.toasts.deleteFailed",
+					"Failed to delete notifications",
+				),
+			);
 		}
 	};
+
+	return {
+		allVisibleSelected,
+		clearSelection,
+		deleteNotification,
+		emptyDescription,
+		emptyTitle,
+		filteredNotifications,
+		getTimelineGroupLabel,
+		groupedNotifications,
+		handleBulkDelete,
+		handleBulkMarkRead,
+		hasSelection,
+		isError,
+		isFetching,
+		isLoading,
+		isMutating,
+		locale,
+		markAsRead,
+		readFilter,
+		readFilters,
+		refresh,
+		search,
+		selectedIds,
+		selectedUnreadVisibleCount,
+		selectedVisibleCount,
+		setReadFilter,
+		setSearch,
+		setSelected,
+		someVisibleSelected,
+		t,
+		toggleSelectAllVisible,
+		unreadCount,
+	};
+}
+
+function NotificationsInboxView({
+	viewModel,
+}: {
+	viewModel: ReturnType<typeof useNotificationsInboxViewModel>;
+}) {
+	const {
+		allVisibleSelected,
+		clearSelection,
+		deleteNotification,
+		emptyDescription,
+		emptyTitle,
+		filteredNotifications,
+		getTimelineGroupLabel,
+		groupedNotifications,
+		handleBulkDelete,
+		handleBulkMarkRead,
+		hasSelection,
+		isError,
+		isFetching,
+		isLoading,
+		isMutating,
+		locale,
+		markAsRead,
+		readFilter,
+		readFilters,
+		refresh,
+		search,
+		selectedIds,
+		selectedUnreadVisibleCount,
+		selectedVisibleCount,
+		setReadFilter,
+		setSearch,
+		setSelected,
+		someVisibleSelected,
+		t,
+		toggleSelectAllVisible,
+		unreadCount,
+	} = viewModel;
 
 	return (
 		<Card className="gap-0 overflow-hidden">
@@ -260,7 +375,9 @@ export function NotificationsInbox() {
 						</CardTitle>
 						{unreadCount > 0 && (
 							<Badge variant="secondary">
-								{t("common:notifications.unreadBadge", "{count} unread", { count: unreadCount })}
+								{t("common:notifications.unreadBadge", "{count} unread", {
+									count: unreadCount,
+								})}
 							</Badge>
 						)}
 					</div>
@@ -272,8 +389,16 @@ export function NotificationsInbox() {
 					</CardDescription>
 				</div>
 				<CardAction className="flex items-center gap-2">
-					<Button disabled={isFetching} onClick={refresh} size="sm" type="button" variant="outline">
-						<IconRefresh className={cn("size-4", isFetching && "animate-spin")} />
+					<Button
+						disabled={isFetching}
+						onClick={refresh}
+						size="sm"
+						type="button"
+						variant="outline"
+					>
+						<IconRefresh
+							className={cn("size-4", isFetching && "animate-spin")}
+						/>
 						{t("common:actions.refresh", "Refresh")}
 					</Button>
 					<Button asChild size="sm" variant="outline">
@@ -290,10 +415,16 @@ export function NotificationsInbox() {
 					<div className="relative md:w-80">
 						<IconSearch className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
 						<Input
-							aria-label={t("common:notifications.search.ariaLabel", "Search notifications")}
+							aria-label={t(
+								"common:notifications.search.ariaLabel",
+								"Search notifications",
+							)}
 							className="pl-9"
 							onChange={(event) => setSearch(event.target.value)}
-							placeholder={t("common:notifications.search.placeholder", "Search notifications...")}
+							placeholder={t(
+								"common:notifications.search.placeholder",
+								"Search notifications...",
+							)}
 							value={search}
 						/>
 					</div>
@@ -329,10 +460,18 @@ export function NotificationsInbox() {
 					<Alert variant="destructive">
 						<IconBellOff className="size-4" />
 						<AlertTitle>
-							{t("common:notifications.error.title", "Could not load notifications")}
+							{t(
+								"common:notifications.error.title",
+								"Could not load notifications",
+							)}
 						</AlertTitle>
 						<AlertDescription>
-							<Button onClick={refresh} size="sm" type="button" variant="outline">
+							<Button
+								onClick={refresh}
+								size="sm"
+								type="button"
+								variant="outline"
+							>
 								{t("common:common.retry", "Retry")}
 							</Button>
 						</AlertDescription>
@@ -342,9 +481,13 @@ export function NotificationsInbox() {
 				{hasSelection && (
 					<div className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-3 md:flex-row md:items-center md:justify-between">
 						<p className="text-sm text-muted-foreground">
-							{t("common:notifications.selection.visibleSelected", "{count} visible selected", {
-								count: selectedVisibleCount,
-							})}
+							{t(
+								"common:notifications.selection.visibleSelected",
+								"{count} visible selected",
+								{
+									count: selectedVisibleCount,
+								},
+							)}
 						</p>
 						<div className="flex flex-wrap gap-2">
 							<Button
@@ -406,11 +549,18 @@ export function NotificationsInbox() {
 									"common:notifications.selection.selectAllAria",
 									"Select all visible notifications",
 								)}
-								checked={someVisibleSelected ? "indeterminate" : allVisibleSelected}
-								onCheckedChange={(checked) => toggleSelectAllVisible(checked === true)}
+								checked={
+									someVisibleSelected ? "indeterminate" : allVisibleSelected
+								}
+								onCheckedChange={(checked) =>
+									toggleSelectAllVisible(checked === true)
+								}
 							/>
 							<span className="text-sm text-muted-foreground">
-								{t("common:notifications.selection.selectAll", "Select all visible")}
+								{t(
+									"common:notifications.selection.selectAll",
+									"Select all visible",
+								)}
 							</span>
 						</div>
 
@@ -427,15 +577,21 @@ export function NotificationsInbox() {
 									</h2>
 									<div className="divide-y rounded-lg border">
 										{groupNotifications.map((notification) => (
-											<div className="flex items-start gap-2" key={notification.id}>
+											<div
+												className="flex items-start gap-2"
+												key={notification.id}
+											>
 												<div className="flex pt-6 pl-3">
 													<Checkbox
 														aria-label={t(
 															"common:notifications.selection.selectNamedAria",
 															"Select {title}",
 															{
-																title: getLocalizedNotificationContent(notification, t, locale)
-																	.title,
+																title: getLocalizedNotificationContent(
+																	notification,
+																	t,
+																	locale,
+																).title,
 															},
 														)}
 														checked={selectedIds.has(notification.id)}
@@ -462,4 +618,9 @@ export function NotificationsInbox() {
 			</CardContent>
 		</Card>
 	);
+}
+
+export function NotificationsInbox() {
+	const viewModel = useNotificationsInboxViewModel();
+	return <NotificationsInboxView viewModel={viewModel} />;
 }

@@ -49,6 +49,21 @@ interface CustomerDialogProps {
 	onSuccess: () => void;
 }
 
+function getCustomerDefaultValues(
+	customer: CustomerData | null,
+): CustomerDialogFormValues {
+	return {
+		projectId: "",
+		name: customer?.name || "",
+		address: customer?.address || "",
+		vatId: customer?.vatId || "",
+		email: customer?.email || "",
+		contactPerson: customer?.contactPerson || "",
+		phone: customer?.phone || "",
+		website: customer?.website || "",
+	};
+}
+
 export function CustomerDialog({
 	accessTier,
 	organizationId,
@@ -60,33 +75,32 @@ export function CustomerDialog({
 	const { t } = useTranslate();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const isEditing = !!customer;
-	const requiresScopedProject = requiresScopedProjectSelection(accessTier, isEditing);
+	const requiresScopedProject = requiresScopedProjectSelection(
+		accessTier,
+		isEditing,
+	);
 
 	const { data: projectsData } = useQuery({
-		queryKey: queryKeys.projects.list(organizationId, { scope: "customer-dialog" }),
+		queryKey: queryKeys.projects.list(organizationId, {
+			scope: "customer-dialog",
+		}),
 		queryFn: async () => {
 			const result = await getProjects(organizationId);
 			if (!result.success) {
 				return [];
 			}
 
-			return result.data.map((project) => ({ id: project.id, name: project.name }));
+			return result.data.map((project) => ({
+				id: project.id,
+				name: project.name,
+			}));
 		},
 		enabled: open && !isEditing,
 	});
 
 	const availableProjects = projectsData ?? [];
 
-	const defaultValues: CustomerDialogFormValues = {
-		projectId: "",
-		name: customer?.name || "",
-		address: customer?.address || "",
-		vatId: customer?.vatId || "",
-		email: customer?.email || "",
-		contactPerson: customer?.contactPerson || "",
-		phone: customer?.phone || "",
-		website: customer?.website || "",
-	};
+	const defaultValues = getCustomerDefaultValues(customer);
 
 	const form = useForm({
 		defaultValues,
@@ -94,7 +108,9 @@ export function CustomerDialog({
 			setIsSubmitting(true);
 
 			if (requiresScopedProject && !value.projectId) {
-				toast.error(t("settings.customers.projectRequired", "Select a project first"));
+				toast.error(
+					t("settings.customers.projectRequired", "Select a project first"),
+				);
 				setIsSubmitting(false);
 				return;
 			}
@@ -118,11 +134,14 @@ export function CustomerDialog({
 					onSuccess();
 				} else {
 					toast.error(
-						result?.error || t("settings.customers.updateFailed", "Failed to update customer"),
+						result?.error ||
+							t("settings.customers.updateFailed", "Failed to update customer"),
 					);
 				}
 			} else {
-				const result = await createCustomer(buildCreateCustomerInput(organizationId, value)).then(
+				const result = await createCustomer(
+					buildCreateCustomerInput(organizationId, value),
+				).then(
 					(response) => response,
 					() => null,
 				);
@@ -132,7 +151,8 @@ export function CustomerDialog({
 					onSuccess();
 				} else {
 					toast.error(
-						result?.error || t("settings.customers.createFailed", "Failed to create customer"),
+						result?.error ||
+							t("settings.customers.createFailed", "Failed to create customer"),
 					);
 				}
 			}
@@ -144,21 +164,7 @@ export function CustomerDialog({
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent>
-				<ActionPanelHeader>
-					<ActionPanelTitle>
-						{isEditing
-							? t("settings.customers.dialog.editTitle", "Edit Customer")
-							: t("settings.customers.dialog.createTitle", "Add Customer")}
-					</ActionPanelTitle>
-					<ActionPanelDescription>
-						{isEditing
-							? t("settings.customers.dialog.editDescription", "Update customer details")
-							: t(
-									"settings.customers.dialog.createDescription",
-									"Add a new customer for project assignments",
-								)}
-					</ActionPanelDescription>
-				</ActionPanelHeader>
+				<CustomerDialogHeader isEditing={isEditing} />
 
 				<form
 					onSubmit={(e) => {
@@ -229,7 +235,10 @@ export function CustomerDialog({
 							{(field) => (
 								<div className="grid gap-2">
 									<Label htmlFor="contactPerson">
-										{t("settings.customers.field.contactPerson", "Contact Person")}
+										{t(
+											"settings.customers.field.contactPerson",
+											"Contact Person",
+										)}
 									</Label>
 									<Input
 										id="contactPerson"
@@ -250,7 +259,9 @@ export function CustomerDialog({
 							<form.Field name="email">
 								{(field) => (
 									<div className="grid gap-2">
-										<Label htmlFor="email">{t("settings.customers.field.email", "Email")}</Label>
+										<Label htmlFor="email">
+											{t("settings.customers.field.email", "Email")}
+										</Label>
 										<Input
 											id="email"
 											type="email"
@@ -266,7 +277,9 @@ export function CustomerDialog({
 							<form.Field name="phone">
 								{(field) => (
 									<div className="grid gap-2">
-										<Label htmlFor="phone">{t("settings.customers.field.phone", "Phone")}</Label>
+										<Label htmlFor="phone">
+											{t("settings.customers.field.phone", "Phone")}
+										</Label>
 										<Input
 											id="phone"
 											type="tel"
@@ -307,7 +320,9 @@ export function CustomerDialog({
 							<form.Field name="vatId">
 								{(field) => (
 									<div className="grid gap-2">
-										<Label htmlFor="vatId">{t("settings.customers.field.vatId", "VAT ID")}</Label>
+										<Label htmlFor="vatId">
+											{t("settings.customers.field.vatId", "VAT ID")}
+										</Label>
 										<Input
 											id="vatId"
 											value={field.state.value}
@@ -338,24 +353,67 @@ export function CustomerDialog({
 						</div>
 					</ActionPanelBody>
 
-					<ActionPanelFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => onOpenChange(false)}
-							disabled={isSubmitting}
-						>
-							{t("common.cancel", "Cancel")}
-						</Button>
-						<Button type="submit" disabled={isSubmitting}>
-							{isSubmitting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-							{isEditing
-								? t("settings.customers.dialog.save", "Save Changes")
-								: t("settings.customers.dialog.create", "Add Customer")}
-						</Button>
-					</ActionPanelFooter>
+					<CustomerDialogFooter
+						isEditing={isEditing}
+						isSubmitting={isSubmitting}
+						onCancel={() => onOpenChange(false)}
+					/>
 				</form>
 			</ActionPanelContent>
 		</ActionPanel>
+	);
+}
+
+function CustomerDialogFooter({
+	isEditing,
+	isSubmitting,
+	onCancel,
+}: {
+	isEditing: boolean;
+	isSubmitting: boolean;
+	onCancel: () => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<ActionPanelFooter>
+			<Button
+				type="button"
+				variant="outline"
+				onClick={onCancel}
+				disabled={isSubmitting}
+			>
+				{t("common.cancel", "Cancel")}
+			</Button>
+			<Button type="submit" disabled={isSubmitting}>
+				{isSubmitting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+				{isEditing
+					? t("settings.customers.dialog.save", "Save Changes")
+					: t("settings.customers.dialog.create", "Add Customer")}
+			</Button>
+		</ActionPanelFooter>
+	);
+}
+
+function CustomerDialogHeader({ isEditing }: { isEditing: boolean }) {
+	const { t } = useTranslate();
+	return (
+		<ActionPanelHeader>
+			<ActionPanelTitle>
+				{isEditing
+					? t("settings.customers.dialog.editTitle", "Edit Customer")
+					: t("settings.customers.dialog.createTitle", "Add Customer")}
+			</ActionPanelTitle>
+			<ActionPanelDescription>
+				{isEditing
+					? t(
+							"settings.customers.dialog.editDescription",
+							"Update customer details",
+						)
+					: t(
+							"settings.customers.dialog.createDescription",
+							"Add a new customer for project assignments",
+						)}
+			</ActionPanelDescription>
+		</ActionPanelHeader>
 	);
 }

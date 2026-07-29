@@ -2,7 +2,7 @@ import { Effect, Layer } from "effect";
 import { headers } from "next/headers";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { auth } from "@/lib/auth";
-import { ValidationError } from "../errors";
+import { AuthorizationError, ValidationError } from "../errors";
 import { AuthService } from "./auth.service";
 import { DatabaseService } from "./database.service";
 import { OnboardingService, OnboardingServiceLive } from "./onboarding.service";
@@ -497,4 +497,121 @@ describe("OnboardingService.getOnboardingSummary", () => {
 
 		expect(summary.profileCompleted).toBe(true);
 	});
+});
+
+describe("OnboardingService work-template authorization", () => {
+	function makeLayer({
+		activeOrganizationId = "org-active",
+		role,
+	}: {
+		activeOrganizationId?: string | null;
+		role?: "owner" | "admin" | "member";
+	}) {
+		const insert = vi.fn(() => ({
+			values: vi.fn(() => ({
+				onConflictDoUpdate: vi.fn(async () => undefined),
+				returning: vi.fn(async () => [{ id: "created-id" }]),
+			})),
+		}));
+		const findMembership = vi.fn(async () => (role ? { role } : null));
+		const mockDb = {
+			insert,
+			query: { member: { findFirst: findMembership } },
+		};
+		const authLayer = Layer.succeed(
+			AuthService,
+			AuthService.of({
+				getSession: () =>
+					Effect.succeed({
+						user: { id: "user-1" },
+						session: { activeOrganizationId },
+					} as never),
+			}),
+		);
+		const dbLayer = Layer.succeed(
+			DatabaseService,
+			DatabaseService.of({
+				db: mockDb as never,
+				query: (_name, query) => Effect.promise(query) as never,
+			}),
+		);
+
+		return {
+			findMembership,
+			insert,
+			layer: OnboardingServiceLive.pipe(
+				Layer.provide(authLayer),
+				Layer.provide(dbLayer),
+			),
+		};
+	}
+
+	async function runMutation(
+		layer: ReturnType<typeof makeLayer>["layer"],
+		mutation: "create" | "skip",
+	) {
+		return Effect.runPromise(
+			Effect.either(
+				Effect.gen(function* () {
+					const service = yield* OnboardingService;
+					if (mutation === "skip") {
+						return yield* service.skipWorkTemplateSetup();
+					}
+
+					return yield* service.createWorkTemplate({
+						hoursPerWeek: 40,
+						name: "Standard",
+						setAsDefault: true,
+						workingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+					});
+				}).pipe(Effect.provide(layer)),
+			),
+		);
+	}
+
+	it.each(["create", "skip"] as const)(
+		"rejects a member before the %s work-template mutation writes",
+		async (mutation) => {
+			const { insert, layer } = makeLayer({ role: "member" });
+
+			const result = await runMutation(layer, mutation);
+
+			expect(result).toMatchObject({
+				_tag: "Left",
+				left: expect.any(AuthorizationError),
+			});
+			expect(insert).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each(["create", "skip"] as const)(
+		"rejects a missing active organization before the %s work-template mutation writes",
+		async (mutation) => {
+			const { findMembership, insert, layer } = makeLayer({
+				activeOrganizationId: null,
+				role: "owner",
+			});
+
+			const result = await runMutation(layer, mutation);
+
+			expect(result).toMatchObject({
+				_tag: "Left",
+				left: expect.any(AuthorizationError),
+			});
+			expect(findMembership).not.toHaveBeenCalled();
+			expect(insert).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each(["owner", "admin"] as const)(
+		"allows an active-organization %s to skip work-template setup",
+		async (role) => {
+			const { insert, layer } = makeLayer({ role });
+
+			const result = await runMutation(layer, "skip");
+
+			expect(result).toMatchObject({ _tag: "Right" });
+			expect(insert).toHaveBeenCalledOnce();
+		},
+	);
 });

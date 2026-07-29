@@ -51,7 +51,11 @@ interface EmailConfigFormProps {
 	secretStoreStatus: SecretStoreStatus;
 }
 
-function SecretStoreStatusAlert({ secretStoreStatus }: { secretStoreStatus: SecretStoreStatus }) {
+function SecretStoreStatusAlert({
+	secretStoreStatus,
+}: {
+	secretStoreStatus: SecretStoreStatus;
+}) {
 	const { t } = useTranslate();
 
 	if (secretStoreStatus.provider === "scaleway") {
@@ -60,7 +64,10 @@ function SecretStoreStatusAlert({ secretStoreStatus }: { secretStoreStatus: Secr
 				<Alert className="mb-4">
 					<IconShield className="size-4" aria-hidden="true" />
 					<AlertTitle>
-						{t("settings.enterprise.email.scalewayConnected", "Scaleway Secret Store Ready")}
+						{t(
+							"settings.enterprise.email.scalewayConnected",
+							"Scaleway Secret Store Ready",
+						)}
 					</AlertTitle>
 					<AlertDescription>
 						{t(
@@ -77,7 +84,10 @@ function SecretStoreStatusAlert({ secretStoreStatus }: { secretStoreStatus: Secr
 				<Alert className="mb-4">
 					<IconShield className="size-4" aria-hidden="true" />
 					<AlertTitle>
-						{t("settings.enterprise.email.scalewayKeyPending", "Scaleway Key Not Generated Yet")}
+						{t(
+							"settings.enterprise.email.scalewayKeyPending",
+							"Scaleway Key Not Generated Yet",
+						)}
 					</AlertTitle>
 					<AlertDescription>
 						{t(
@@ -93,7 +103,10 @@ function SecretStoreStatusAlert({ secretStoreStatus }: { secretStoreStatus: Secr
 			<Alert variant="destructive" className="mb-4">
 				<IconAlertTriangle className="size-4" aria-hidden="true" />
 				<AlertTitle>
-					{t("settings.enterprise.email.scalewayUnavailable", "Scaleway Secret Store Unavailable")}
+					{t(
+						"settings.enterprise.email.scalewayUnavailable",
+						"Scaleway Secret Store Unavailable",
+					)}
 				</AlertTitle>
 				<AlertDescription>
 					{t(
@@ -126,7 +139,9 @@ function SecretStoreStatusAlert({ secretStoreStatus }: { secretStoreStatus: Secr
 		return (
 			<Alert variant="destructive" className="mb-4">
 				<IconAlertTriangle className="size-4" aria-hidden="true" />
-				<AlertTitle>{t("settings.enterprise.email.vaultSealed", "Vault Sealed")}</AlertTitle>
+				<AlertTitle>
+					{t("settings.enterprise.email.vaultSealed", "Vault Sealed")}
+				</AlertTitle>
 				<AlertDescription>
 					{t(
 						"settings.enterprise.email.vaultSealedDesc",
@@ -140,7 +155,9 @@ function SecretStoreStatusAlert({ secretStoreStatus }: { secretStoreStatus: Secr
 	return (
 		<Alert className="mb-4">
 			<IconShield className="size-4" aria-hidden="true" />
-			<AlertTitle>{t("settings.enterprise.email.vaultConnected", "Vault Connected")}</AlertTitle>
+			<AlertTitle>
+				{t("settings.enterprise.email.vaultConnected", "Vault Connected")}
+			</AlertTitle>
 			<AlertDescription>
 				{t(
 					"settings.enterprise.email.vaultConnectedDesc",
@@ -151,7 +168,7 @@ function SecretStoreStatusAlert({ secretStoreStatus }: { secretStoreStatus: Secr
 	);
 }
 
-export function EmailConfigForm({
+function useEmailConfigController({
 	organizationId,
 	initialConfig,
 	secretStoreStatus,
@@ -184,9 +201,14 @@ export function EmailConfigForm({
 			startTransition(async () => {
 				const result = await saveEmailConfig(organizationId, value);
 				if (result.success) {
-					toast.success(t("settings.enterprise.email.saved", "Email configuration saved"));
+					toast.success(
+						t("settings.enterprise.email.saved", "Email configuration saved"),
+					);
 				} else {
-					toast.error(result.error || t("settings.enterprise.email.saveFailed", "Failed to save"));
+					toast.error(
+						result.error ||
+							t("settings.enterprise.email.saveFailed", "Failed to save"),
+					);
 				}
 			});
 		},
@@ -195,7 +217,10 @@ export function EmailConfigForm({
 	const handleTest = async () => {
 		if (!testEmail) {
 			toast.error(
-				t("settings.enterprise.email.testEmailRequired", "Please enter a test email address"),
+				t(
+					"settings.enterprise.email.testEmailRequired",
+					"Please enter a test email address",
+				),
 			);
 			return;
 		}
@@ -206,16 +231,24 @@ export function EmailConfigForm({
 			() => null,
 		);
 		if (!result) {
-			toast.error(t("settings.enterprise.email.testFailed", "Failed to send test email"));
+			toast.error(
+				t("settings.enterprise.email.testFailed", "Failed to send test email"),
+			);
 			setIsTesting(false);
 			return;
 		}
 
 		if (result.success) {
-			toast.success(t("settings.enterprise.email.testSent", "Test email sent successfully"));
+			toast.success(
+				t("settings.enterprise.email.testSent", "Test email sent successfully"),
+			);
 		} else {
 			toast.error(
-				result.error || t("settings.enterprise.email.testFailed", "Failed to send test email"),
+				result.error ||
+					t(
+						"settings.enterprise.email.testFailed",
+						"Failed to send test email",
+					),
 			);
 		}
 
@@ -237,433 +270,566 @@ export function EmailConfigForm({
 		startTransition(async () => {
 			const result = await deleteEmailConfig(organizationId);
 			if (result.success) {
-				toast.success(t("settings.enterprise.email.deleted", "Email configuration deleted"));
+				toast.success(
+					t("settings.enterprise.email.deleted", "Email configuration deleted"),
+				);
 			} else {
 				toast.error(
-					result.error || t("settings.enterprise.email.deleteFailed", "Failed to delete"),
+					result.error ||
+						t("settings.enterprise.email.deleteFailed", "Failed to delete"),
 				);
 			}
 		});
 	};
 
+	return {
+		form,
+		handleDelete,
+		handleTest,
+		initialConfig,
+		isPending,
+		isTesting,
+		locale,
+		secretStoreStatus,
+		setTestEmail,
+		t,
+		testEmail,
+		timezone,
+	};
+}
+
+type EmailConfigController = ReturnType<typeof useEmailConfigController>;
+
+function ProviderFieldsSection({
+	controller,
+}: {
+	controller: EmailConfigController;
+}) {
+	const { form, initialConfig, t } = controller;
+
 	return (
-		<form
-			onSubmit={(e) => {
-				e.preventDefault();
-				form.handleSubmit();
-			}}
+		<>
+			<div className="space-y-3">
+				<Label>
+					{t("settings.enterprise.email.transportType", "Email Provider")}
+				</Label>
+				<form.Field name="transportType">
+					{(field) => (
+						<RadioGroup
+							value={field.state.value}
+							onValueChange={(value) =>
+								field.handleChange(value as "resend" | "smtp")
+							}
+							className="flex flex-col gap-3"
+						>
+							<div className="flex items-center gap-x-2">
+								<RadioGroupItem value="resend" id="resend" />
+								<Label
+									htmlFor="resend"
+									className="flex items-center gap-2 cursor-pointer"
+								>
+									<IconSend className="size-4" />
+									Resend
+									<Badge variant="secondary" className="text-xs">
+										{t("settings.enterprise.email.recommended", "Recommended")}
+									</Badge>
+								</Label>
+							</div>
+							<div className="flex items-center gap-x-2">
+								<RadioGroupItem value="smtp" id="smtp" />
+								<Label
+									htmlFor="smtp"
+									className="flex items-center gap-2 cursor-pointer"
+								>
+									<IconServer className="size-4" />
+									{t("settings.enterprise.email.smtpServer", "SMTP Server")}
+								</Label>
+							</div>
+						</RadioGroup>
+					)}
+				</form.Field>
+			</div>
+			<Separator />
+			<div className="grid gap-4 md:grid-cols-2">
+				<form.Field name="fromEmail">
+					{(field) => (
+						<div className="space-y-2">
+							<Label htmlFor="fromEmail">
+								{t("settings.enterprise.email.fromEmail", "From Email")} *
+							</Label>
+							<Input
+								id="fromEmail"
+								type="email"
+								placeholder="noreply@yourdomain.com"
+								value={field.state.value}
+								onChange={(e) => field.handleChange(e.target.value)}
+								onBlur={field.handleBlur}
+								required
+							/>
+						</div>
+					)}
+				</form.Field>
+
+				<form.Field name="fromName">
+					{(field) => (
+						<div className="space-y-2">
+							<Label htmlFor="fromName">
+								{t("settings.enterprise.email.fromName", "From Name")}
+							</Label>
+							<Input
+								id="fromName"
+								placeholder="Your Company Name"
+								value={field.state.value ?? ""}
+								onChange={(e) => field.handleChange(e.target.value)}
+								onBlur={field.handleBlur}
+							/>
+						</div>
+					)}
+				</form.Field>
+			</div>
+			<form.Subscribe<EmailConfigInput["transportType"]>
+				selector={(state) => state.values.transportType}
+			>
+				{(transportType: EmailConfigInput["transportType"]) =>
+					transportType === "resend" && (
+						<div className="space-y-4 rounded-lg border p-4">
+							<h4 className="font-medium flex items-center gap-2">
+								<IconSend className="size-4" />
+								{t(
+									"settings.enterprise.email.resendConfig",
+									"Resend Configuration",
+								)}
+							</h4>
+							<form.Field name="resendApiKey">
+								{(field) => (
+									<div className="space-y-2">
+										<Label htmlFor="resendApiKey">
+											{t("settings.enterprise.email.apiKey", "API Key")}
+											{initialConfig?.hasResendApiKey && (
+												<Badge variant="outline" className="ml-2 text-xs">
+													<IconCircleCheck className="size-3 mr-1" />
+													{t("settings.enterprise.email.secretSet", "Set")}
+												</Badge>
+											)}
+										</Label>
+										<Input
+											id="resendApiKey"
+											type="password"
+											placeholder={
+												initialConfig?.hasResendApiKey ? "••••••••" : "re_..."
+											}
+											value={field.state.value ?? ""}
+											onChange={(e) => field.handleChange(e.target.value)}
+											onBlur={field.handleBlur}
+										/>
+										<p className="text-xs text-muted-foreground">
+											{t(
+												"settings.enterprise.email.apiKeyHint",
+												"Leave blank to keep existing key. Get your API key from resend.com",
+											)}
+										</p>
+									</div>
+								)}
+							</form.Field>
+						</div>
+					)
+				}
+			</form.Subscribe>
+		</>
+	);
+}
+
+function SmtpConfigurationSection({
+	controller,
+}: {
+	controller: EmailConfigController;
+}) {
+	const { form, initialConfig, t } = controller;
+
+	return (
+		<form.Subscribe<EmailConfigInput["transportType"]>
+			selector={(state) => state.values.transportType}
 		>
+			{(transportType: EmailConfigInput["transportType"]) =>
+				transportType === "smtp" && (
+					<div className="space-y-4 rounded-lg border p-4">
+						<h4 className="font-medium flex items-center gap-2">
+							<IconServer className="size-4" />
+							{t("settings.enterprise.email.smtpConfig", "SMTP Configuration")}
+						</h4>
+
+						<div className="grid gap-4 md:grid-cols-2">
+							<form.Field name="smtpHost">
+								{(field) => (
+									<div className="space-y-2">
+										<Label htmlFor="smtpHost">
+											{t("settings.enterprise.email.smtpHost", "SMTP Host")} *
+										</Label>
+										<Input
+											id="smtpHost"
+											placeholder="smtp.example.com"
+											value={field.state.value ?? ""}
+											onChange={(e) => field.handleChange(e.target.value)}
+											onBlur={field.handleBlur}
+										/>
+									</div>
+								)}
+							</form.Field>
+
+							<form.Field name="smtpPort">
+								{(field) => (
+									<div className="space-y-2">
+										<Label htmlFor="smtpPort">
+											{t("settings.enterprise.email.smtpPort", "Port")} *
+										</Label>
+										<Input
+											id="smtpPort"
+											type="number"
+											placeholder="587"
+											value={field.state.value ?? 587}
+											onChange={(e) =>
+												field.handleChange(Number.parseInt(e.target.value, 10))
+											}
+											onBlur={field.handleBlur}
+										/>
+									</div>
+								)}
+							</form.Field>
+						</div>
+
+						<form.Field name="smtpIpMode">
+							{(field) => (
+								<div className="space-y-2">
+									<Label htmlFor="smtpIpMode">
+										{t("settings.enterprise.email.smtpIpMode", "IP mode")}
+									</Label>
+									<select
+										id="smtpIpMode"
+										aria-label={t(
+											"settings.enterprise.email.smtpIpMode",
+											"IP mode",
+										)}
+										className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+										value={field.state.value ?? "auto"}
+										onChange={(event) =>
+											field.handleChange(
+												event.target.value as "auto" | "ipv4" | "ipv6",
+											)
+										}
+										onBlur={field.handleBlur}
+									>
+										<option value="auto">
+											{t("settings.enterprise.email.smtpIpMode.auto", "Auto")}
+										</option>
+										<option value="ipv4">
+											{t(
+												"settings.enterprise.email.smtpIpMode.ipv4",
+												"IPv4 only",
+											)}
+										</option>
+										<option value="ipv6">
+											{t(
+												"settings.enterprise.email.smtpIpMode.ipv6",
+												"IPv6 only",
+											)}
+										</option>
+									</select>
+									<p className="text-xs text-muted-foreground">
+										{t(
+											"settings.enterprise.email.smtpIpModeHint",
+											"Use Auto unless your SMTP provider requires a specific IP family.",
+										)}
+									</p>
+								</div>
+							)}
+						</form.Field>
+
+						<div className="grid gap-4 md:grid-cols-2">
+							<form.Field name="smtpUsername">
+								{(field) => (
+									<div className="space-y-2">
+										<Label htmlFor="smtpUsername">
+											{t("settings.enterprise.email.smtpUsername", "Username")}{" "}
+											*
+										</Label>
+										<Input
+											id="smtpUsername"
+											placeholder="user@example.com"
+											value={field.state.value ?? ""}
+											onChange={(e) => field.handleChange(e.target.value)}
+											onBlur={field.handleBlur}
+										/>
+									</div>
+								)}
+							</form.Field>
+
+							<form.Field name="smtpPassword">
+								{(field) => (
+									<div className="space-y-2">
+										<Label htmlFor="smtpPassword">
+											{t("settings.enterprise.email.smtpPassword", "Password")}
+											{initialConfig?.hasSmtpPassword && (
+												<Badge variant="outline" className="ml-2 text-xs">
+													<IconCircleCheck className="size-3 mr-1" />
+													{t("settings.enterprise.email.secretSet", "Set")}
+												</Badge>
+											)}
+										</Label>
+										<Input
+											id="smtpPassword"
+											type="password"
+											placeholder={
+												initialConfig?.hasSmtpPassword ? "••••••••" : ""
+											}
+											value={field.state.value ?? ""}
+											onChange={(e) => field.handleChange(e.target.value)}
+											onBlur={field.handleBlur}
+										/>
+										<p className="text-xs text-muted-foreground">
+											{t(
+												"settings.enterprise.email.passwordHint",
+												"Leave blank to keep existing password",
+											)}
+										</p>
+									</div>
+								)}
+							</form.Field>
+						</div>
+
+						<div className="flex flex-col gap-3">
+							<form.Field name="smtpSecure">
+								{(field) => (
+									<div className="flex items-center gap-x-2">
+										<Checkbox
+											id="smtpSecure"
+											checked={field.state.value ?? true}
+											onCheckedChange={(checked) =>
+												field.handleChange(checked === true)
+											}
+										/>
+										<Label htmlFor="smtpSecure" className="cursor-pointer">
+											{t(
+												"settings.enterprise.email.smtpSecure",
+												"Use TLS (port 465)",
+											)}
+										</Label>
+									</div>
+								)}
+							</form.Field>
+
+							<form.Field name="smtpRequireTls">
+								{(field) => (
+									<div className="flex items-center gap-x-2">
+										<Checkbox
+											id="smtpRequireTls"
+											checked={field.state.value ?? true}
+											onCheckedChange={(checked) =>
+												field.handleChange(checked === true)
+											}
+										/>
+										<Label htmlFor="smtpRequireTls" className="cursor-pointer">
+											{t(
+												"settings.enterprise.email.smtpRequireTls",
+												"Require STARTTLS upgrade",
+											)}
+										</Label>
+									</div>
+								)}
+							</form.Field>
+						</div>
+					</div>
+				)
+			}
+		</form.Subscribe>
+	);
+}
+
+function EmailStatusSection({
+	controller,
+}: {
+	controller: EmailConfigController;
+}) {
+	const {
+		form,
+		handleTest,
+		initialConfig,
+		isTesting,
+		locale,
+		setTestEmail,
+		t,
+		testEmail,
+		timezone,
+	} = controller;
+
+	return (
+		<>
+			<form.Field name="isActive">
+				{(field) => (
+					<div className="flex items-center gap-x-2">
+						<Checkbox
+							id="isActive"
+							checked={field.state.value}
+							onCheckedChange={(checked) =>
+								field.handleChange(checked === true)
+							}
+						/>
+						<Label htmlFor="isActive" className="cursor-pointer">
+							{t(
+								"settings.enterprise.email.isActive",
+								"Enable this email configuration",
+							)}
+						</Label>
+					</div>
+				)}
+			</form.Field>
+			{initialConfig?.lastTestAt && (
+				<div className="rounded-lg border p-4 space-y-2">
+					<h4 className="font-medium">
+						{t("settings.enterprise.email.lastTest", "Last Test")}
+					</h4>
+					<div className="flex items-center gap-2 text-sm">
+						{initialConfig.lastTestSuccess ? (
+							<>
+								<IconCircleCheck className="size-4 text-green-500" />
+								<span className="text-green-600">
+									{t("settings.enterprise.email.testSuccess", "Success")}
+								</span>
+							</>
+						) : (
+							<>
+								<IconCircleX className="size-4 text-red-500" />
+								<span className="text-red-600">
+									{t("settings.enterprise.email.testFailure", "Failed")}
+								</span>
+							</>
+						)}
+						<span className="text-muted-foreground">
+							{formatDateTime(new Date(initialConfig.lastTestAt), {
+								locale,
+								timezone,
+							})}
+						</span>
+					</div>
+					{initialConfig.lastTestError && (
+						<p className="text-sm text-red-600">
+							{initialConfig.lastTestError}
+						</p>
+					)}
+				</div>
+			)}
+			{initialConfig && (
+				<>
+					<Separator />
+					<div className="space-y-3">
+						<Label>
+							{t(
+								"settings.enterprise.email.testSection",
+								"IconSend Test Email",
+							)}
+						</Label>
+						<div className="flex gap-2">
+							<Input
+								type="email"
+								placeholder="test@example.com"
+								value={testEmail}
+								onChange={(e) => setTestEmail(e.target.value)}
+								className="flex-1"
+							/>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={handleTest}
+								disabled={isTesting || !testEmail}
+							>
+								{isTesting ? (
+									<IconLoader2 className="size-4 animate-spin" />
+								) : (
+									<IconSend className="size-4 mr-2" />
+								)}
+								{t("settings.enterprise.email.sendTest", "IconSend Test")}
+							</Button>
+						</div>
+					</div>
+				</>
+			)}
+		</>
+	);
+}
+
+function EmailConfigFooter({
+	controller,
+}: {
+	controller: EmailConfigController;
+}) {
+	const { form, handleDelete, initialConfig, isPending, t } = controller;
+
+	return (
+		<CardFooter className="flex justify-between">
+			{initialConfig && (
+				<Button
+					type="button"
+					variant="destructive"
+					onClick={handleDelete}
+					disabled={isPending}
+				>
+					<IconTrash className="size-4 mr-2" />
+					{t("settings.enterprise.email.delete", "Delete Configuration")}
+				</Button>
+			)}
+			<div className="flex-1" />
+			<form.Subscribe<[boolean, boolean]>
+				selector={(state) => [state.isDirty, state.isSubmitting]}
+			>
+				{([isDirty, isSubmitting]: [boolean, boolean]) => (
+					<Button
+						type="submit"
+						disabled={
+							isPending || isSubmitting || (!isDirty && !!initialConfig)
+						}
+					>
+						{(isPending || isSubmitting) && (
+							<IconLoader2 className="size-4 mr-2 animate-spin" />
+						)}
+						{initialConfig
+							? t("settings.enterprise.email.save", "Save Changes")
+							: t("settings.enterprise.email.create", "Create Configuration")}
+					</Button>
+				)}
+			</form.Subscribe>
+		</CardFooter>
+	);
+}
+
+export function EmailConfigForm(props: EmailConfigFormProps) {
+	const controller = useEmailConfigController(props);
+
+	return (
+		<form action={() => controller.form.handleSubmit()}>
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2">
 						<IconMail className="size-5" />
-						{t("settings.enterprise.email.title", "Email Configuration")}
+						{controller.t(
+							"settings.enterprise.email.title",
+							"Email Configuration",
+						)}
 					</CardTitle>
 					<CardDescription>
-						{t(
+						{controller.t(
 							"settings.enterprise.email.description",
 							"Configure a custom email provider for your organization. All organization emails (notifications, auth, invitations) will use this configuration.",
 						)}
 					</CardDescription>
 				</CardHeader>
-
 				<CardContent className="space-y-6">
-					<SecretStoreStatusAlert secretStoreStatus={secretStoreStatus} />
-
-					{/* Transport Type Selection */}
-					<div className="space-y-3">
-						<Label>{t("settings.enterprise.email.transportType", "Email Provider")}</Label>
-						<form.Field name="transportType">
-							{(field) => (
-								<RadioGroup
-									value={field.state.value}
-									onValueChange={(value) => field.handleChange(value as "resend" | "smtp")}
-									className="flex flex-col gap-3"
-								>
-									<div className="flex items-center gap-x-2">
-										<RadioGroupItem value="resend" id="resend" />
-										<Label htmlFor="resend" className="flex items-center gap-2 cursor-pointer">
-											<IconSend className="size-4" />
-											Resend
-											<Badge variant="secondary" className="text-xs">
-												{t("settings.enterprise.email.recommended", "Recommended")}
-											</Badge>
-										</Label>
-									</div>
-									<div className="flex items-center gap-x-2">
-										<RadioGroupItem value="smtp" id="smtp" />
-										<Label htmlFor="smtp" className="flex items-center gap-2 cursor-pointer">
-											<IconServer className="size-4" />
-											{t("settings.enterprise.email.smtpServer", "SMTP Server")}
-										</Label>
-									</div>
-								</RadioGroup>
-							)}
-						</form.Field>
-					</div>
-
-					<Separator />
-
-					{/* Common Fields */}
-					<div className="grid gap-4 md:grid-cols-2">
-						<form.Field name="fromEmail">
-							{(field) => (
-								<div className="space-y-2">
-									<Label htmlFor="fromEmail">
-										{t("settings.enterprise.email.fromEmail", "From Email")} *
-									</Label>
-									<Input
-										id="fromEmail"
-										type="email"
-										placeholder="noreply@yourdomain.com"
-										value={field.state.value}
-										onChange={(e) => field.handleChange(e.target.value)}
-										onBlur={field.handleBlur}
-										required
-									/>
-								</div>
-							)}
-						</form.Field>
-
-						<form.Field name="fromName">
-							{(field) => (
-								<div className="space-y-2">
-									<Label htmlFor="fromName">
-										{t("settings.enterprise.email.fromName", "From Name")}
-									</Label>
-									<Input
-										id="fromName"
-										placeholder="Your Company Name"
-										value={field.state.value ?? ""}
-										onChange={(e) => field.handleChange(e.target.value)}
-										onBlur={field.handleBlur}
-									/>
-								</div>
-							)}
-						</form.Field>
-					</div>
-
-					{/* Resend Configuration */}
-					<form.Subscribe<EmailConfigInput["transportType"]> selector={(state) => state.values.transportType}>
-						{(transportType: EmailConfigInput["transportType"]) =>
-							transportType === "resend" && (
-								<div className="space-y-4 rounded-lg border p-4">
-									<h4 className="font-medium flex items-center gap-2">
-										<IconSend className="size-4" />
-										{t("settings.enterprise.email.resendConfig", "Resend Configuration")}
-									</h4>
-									<form.Field name="resendApiKey">
-										{(field) => (
-											<div className="space-y-2">
-												<Label htmlFor="resendApiKey">
-													{t("settings.enterprise.email.apiKey", "API Key")}
-													{initialConfig?.hasResendApiKey && (
-														<Badge variant="outline" className="ml-2 text-xs">
-															<IconCircleCheck className="size-3 mr-1" />
-															{t("settings.enterprise.email.secretSet", "Set")}
-														</Badge>
-													)}
-												</Label>
-												<Input
-													id="resendApiKey"
-													type="password"
-													placeholder={initialConfig?.hasResendApiKey ? "••••••••" : "re_..."}
-													value={field.state.value ?? ""}
-													onChange={(e) => field.handleChange(e.target.value)}
-													onBlur={field.handleBlur}
-												/>
-												<p className="text-xs text-muted-foreground">
-													{t(
-														"settings.enterprise.email.apiKeyHint",
-														"Leave blank to keep existing key. Get your API key from resend.com",
-													)}
-												</p>
-											</div>
-										)}
-									</form.Field>
-								</div>
-							)
-						}
-					</form.Subscribe>
-
-					{/* SMTP Configuration */}
-					<form.Subscribe<EmailConfigInput["transportType"]> selector={(state) => state.values.transportType}>
-						{(transportType: EmailConfigInput["transportType"]) =>
-							transportType === "smtp" && (
-								<div className="space-y-4 rounded-lg border p-4">
-									<h4 className="font-medium flex items-center gap-2">
-										<IconServer className="size-4" />
-										{t("settings.enterprise.email.smtpConfig", "SMTP Configuration")}
-									</h4>
-
-									<div className="grid gap-4 md:grid-cols-2">
-										<form.Field name="smtpHost">
-											{(field) => (
-												<div className="space-y-2">
-													<Label htmlFor="smtpHost">
-														{t("settings.enterprise.email.smtpHost", "SMTP Host")} *
-													</Label>
-													<Input
-														id="smtpHost"
-														placeholder="smtp.example.com"
-														value={field.state.value ?? ""}
-														onChange={(e) => field.handleChange(e.target.value)}
-														onBlur={field.handleBlur}
-													/>
-												</div>
-											)}
-										</form.Field>
-
-										<form.Field name="smtpPort">
-											{(field) => (
-												<div className="space-y-2">
-													<Label htmlFor="smtpPort">
-														{t("settings.enterprise.email.smtpPort", "Port")} *
-													</Label>
-													<Input
-														id="smtpPort"
-														type="number"
-														placeholder="587"
-														value={field.state.value ?? 587}
-														onChange={(e) =>
-															field.handleChange(Number.parseInt(e.target.value, 10))
-														}
-														onBlur={field.handleBlur}
-													/>
-												</div>
-											)}
-										</form.Field>
-									</div>
-
-									<form.Field name="smtpIpMode">
-										{(field) => (
-											<div className="space-y-2">
-												<Label htmlFor="smtpIpMode">
-													{t("settings.enterprise.email.smtpIpMode", "IP mode")}
-												</Label>
-												<select
-													id="smtpIpMode"
-													aria-label={t("settings.enterprise.email.smtpIpMode", "IP mode")}
-													className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-													value={field.state.value ?? "auto"}
-													onChange={(event) =>
-														field.handleChange(event.target.value as "auto" | "ipv4" | "ipv6")
-													}
-													onBlur={field.handleBlur}
-												>
-													<option value="auto">
-														{t("settings.enterprise.email.smtpIpMode.auto", "Auto")}
-													</option>
-													<option value="ipv4">
-														{t("settings.enterprise.email.smtpIpMode.ipv4", "IPv4 only")}
-													</option>
-													<option value="ipv6">
-														{t("settings.enterprise.email.smtpIpMode.ipv6", "IPv6 only")}
-													</option>
-												</select>
-												<p className="text-xs text-muted-foreground">
-													{t(
-														"settings.enterprise.email.smtpIpModeHint",
-														"Use Auto unless your SMTP provider requires a specific IP family.",
-													)}
-												</p>
-											</div>
-										)}
-									</form.Field>
-
-									<div className="grid gap-4 md:grid-cols-2">
-										<form.Field name="smtpUsername">
-											{(field) => (
-												<div className="space-y-2">
-													<Label htmlFor="smtpUsername">
-														{t("settings.enterprise.email.smtpUsername", "Username")} *
-													</Label>
-													<Input
-														id="smtpUsername"
-														placeholder="user@example.com"
-														value={field.state.value ?? ""}
-														onChange={(e) => field.handleChange(e.target.value)}
-														onBlur={field.handleBlur}
-													/>
-												</div>
-											)}
-										</form.Field>
-
-										<form.Field name="smtpPassword">
-											{(field) => (
-												<div className="space-y-2">
-													<Label htmlFor="smtpPassword">
-														{t("settings.enterprise.email.smtpPassword", "Password")}
-														{initialConfig?.hasSmtpPassword && (
-															<Badge variant="outline" className="ml-2 text-xs">
-																<IconCircleCheck className="size-3 mr-1" />
-																{t("settings.enterprise.email.secretSet", "Set")}
-															</Badge>
-														)}
-													</Label>
-													<Input
-														id="smtpPassword"
-														type="password"
-														placeholder={initialConfig?.hasSmtpPassword ? "••••••••" : ""}
-														value={field.state.value ?? ""}
-														onChange={(e) => field.handleChange(e.target.value)}
-														onBlur={field.handleBlur}
-													/>
-													<p className="text-xs text-muted-foreground">
-														{t(
-															"settings.enterprise.email.passwordHint",
-															"Leave blank to keep existing password",
-														)}
-													</p>
-												</div>
-											)}
-										</form.Field>
-									</div>
-
-									<div className="flex flex-col gap-3">
-										<form.Field name="smtpSecure">
-											{(field) => (
-												<div className="flex items-center gap-x-2">
-													<Checkbox
-														id="smtpSecure"
-														checked={field.state.value ?? true}
-														onCheckedChange={(checked) => field.handleChange(checked === true)}
-													/>
-													<Label htmlFor="smtpSecure" className="cursor-pointer">
-														{t("settings.enterprise.email.smtpSecure", "Use TLS (port 465)")}
-													</Label>
-												</div>
-											)}
-										</form.Field>
-
-										<form.Field name="smtpRequireTls">
-											{(field) => (
-												<div className="flex items-center gap-x-2">
-													<Checkbox
-														id="smtpRequireTls"
-														checked={field.state.value ?? true}
-														onCheckedChange={(checked) => field.handleChange(checked === true)}
-													/>
-													<Label htmlFor="smtpRequireTls" className="cursor-pointer">
-														{t(
-															"settings.enterprise.email.smtpRequireTls",
-															"Require STARTTLS upgrade",
-														)}
-													</Label>
-												</div>
-											)}
-										</form.Field>
-									</div>
-								</div>
-							)
-						}
-					</form.Subscribe>
-
-					{/* Active Toggle */}
-					<form.Field name="isActive">
-						{(field) => (
-							<div className="flex items-center gap-x-2">
-								<Checkbox
-									id="isActive"
-									checked={field.state.value}
-									onCheckedChange={(checked) => field.handleChange(checked === true)}
-								/>
-								<Label htmlFor="isActive" className="cursor-pointer">
-									{t("settings.enterprise.email.isActive", "Enable this email configuration")}
-								</Label>
-							</div>
-						)}
-					</form.Field>
-
-					{/* Test Status */}
-					{initialConfig?.lastTestAt && (
-						<div className="rounded-lg border p-4 space-y-2">
-							<h4 className="font-medium">
-								{t("settings.enterprise.email.lastTest", "Last Test")}
-							</h4>
-							<div className="flex items-center gap-2 text-sm">
-								{initialConfig.lastTestSuccess ? (
-									<>
-										<IconCircleCheck className="size-4 text-green-500" />
-										<span className="text-green-600">
-											{t("settings.enterprise.email.testSuccess", "Success")}
-										</span>
-									</>
-								) : (
-									<>
-										<IconCircleX className="size-4 text-red-500" />
-										<span className="text-red-600">
-											{t("settings.enterprise.email.testFailure", "Failed")}
-										</span>
-									</>
-								)}
-								<span className="text-muted-foreground">
-									{formatDateTime(new Date(initialConfig.lastTestAt), { locale, timezone })}
-								</span>
-							</div>
-							{initialConfig.lastTestError && (
-								<p className="text-sm text-red-600">{initialConfig.lastTestError}</p>
-							)}
-						</div>
-					)}
-
-					{/* Test Email Section */}
-					{initialConfig && (
-						<>
-							<Separator />
-							<div className="space-y-3">
-								<Label>{t("settings.enterprise.email.testSection", "IconSend Test Email")}</Label>
-								<div className="flex gap-2">
-									<Input
-										type="email"
-										placeholder="test@example.com"
-										value={testEmail}
-										onChange={(e) => setTestEmail(e.target.value)}
-										className="flex-1"
-									/>
-									<Button
-										type="button"
-										variant="outline"
-										onClick={handleTest}
-										disabled={isTesting || !testEmail}
-									>
-										{isTesting ? (
-											<IconLoader2 className="size-4 animate-spin" />
-										) : (
-											<IconSend className="size-4 mr-2" />
-										)}
-										{t("settings.enterprise.email.sendTest", "IconSend Test")}
-									</Button>
-								</div>
-							</div>
-						</>
-					)}
+					<SecretStoreStatusAlert
+						secretStoreStatus={controller.secretStoreStatus}
+					/>
+					<ProviderFieldsSection controller={controller} />
+					<SmtpConfigurationSection controller={controller} />
+					<EmailStatusSection controller={controller} />
 				</CardContent>
-
-				<CardFooter className="flex justify-between">
-					{initialConfig && (
-						<Button type="button" variant="destructive" onClick={handleDelete} disabled={isPending}>
-							<IconTrash className="size-4 mr-2" />
-							{t("settings.enterprise.email.delete", "Delete Configuration")}
-						</Button>
-					)}
-					<div className="flex-1" />
-					<form.Subscribe<[boolean, boolean]> selector={(state) => [state.isDirty, state.isSubmitting]}>
-						{([isDirty, isSubmitting]: [boolean, boolean]) => (
-							<Button
-								type="submit"
-								disabled={isPending || isSubmitting || (!isDirty && !!initialConfig)}
-							>
-								{(isPending || isSubmitting) && (
-									<IconLoader2 className="size-4 mr-2 animate-spin" />
-								)}
-								{initialConfig
-									? t("settings.enterprise.email.save", "Save Changes")
-									: t("settings.enterprise.email.create", "Create Configuration")}
-							</Button>
-						)}
-					</form.Subscribe>
-				</CardFooter>
+				<EmailConfigFooter controller={controller} />
 			</Card>
 		</form>
 	);

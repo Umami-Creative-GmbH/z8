@@ -1,10 +1,10 @@
 import IconSettings from "@tabler/icons-react/dist/esm/icons/IconSettings.mjs";
 
-export function Header() {
-  const handleOpenOptions = () => {
-    chrome.runtime.openOptionsPage();
-  };
+function handleOpenOptions() {
+  chrome.runtime.openOptionsPage();
+}
 
+export function Header() {
   return (
     <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
       <div className="flex items-center gap-2">
@@ -14,6 +14,7 @@ export function Header() {
         <span className="text-sm font-semibold text-slate-950">Time Tracker</span>
       </div>
       <button
+        type="button"
         onClick={handleOpenOptions}
         className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
         title="Settings"

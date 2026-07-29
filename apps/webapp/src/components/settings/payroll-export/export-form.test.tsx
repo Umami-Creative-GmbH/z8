@@ -1,14 +1,33 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render as testingLibraryRender, screen, waitFor, within } from "@testing-library/react";
+import {
+	fireEvent,
+	screen,
+	render as testingLibraryRender,
+	waitFor,
+	within,
+} from "@testing-library/react";
+import { DateTime } from "luxon";
 import type { ReactNode } from "react";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterEach,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 
-const { getFilterOptionsActionMock, startExportActionMock } = vi.hoisted(() => ({
-	getFilterOptionsActionMock: vi.fn(),
-	startExportActionMock: vi.fn(),
-}));
+const { getFilterOptionsActionMock, startExportActionMock, tabMockState } =
+	vi.hoisted(() => ({
+		getFilterOptionsActionMock: vi.fn(),
+		startExportActionMock: vi.fn(),
+		tabMockState: {
+			onValueChange: undefined as ((value: string) => void) | undefined,
+		},
+	}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -30,15 +49,28 @@ vi.mock("sonner", () => ({
 
 vi.mock("@/components/ui/card", () => ({
 	Card: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	CardHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	CardTitle: ({ children }: { children: React.ReactNode }) => <h2>{children}</h2>,
-	CardDescription: ({ children }: { children: React.ReactNode }) => <p>{children}</p>,
-	CardContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	CardFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	CardHeader: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	CardTitle: ({ children }: { children: React.ReactNode }) => (
+		<h2>{children}</h2>
+	),
+	CardDescription: ({ children }: { children: React.ReactNode }) => (
+		<p>{children}</p>
+	),
+	CardContent: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	CardFooter: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
 }));
 
 vi.mock("@/components/ui/button", () => ({
-	Button: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+	Button: ({
+		children,
+		...props
+	}: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
 		<button {...props}>{children}</button>
 	),
 }));
@@ -50,11 +82,17 @@ vi.mock("@/components/ui/badge", () => ({
 }));
 
 vi.mock("@/components/ui/input", () => ({
-	Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} />,
+	Input: (props: React.InputHTMLAttributes<HTMLInputElement>) => (
+		<input {...props} />
+	),
 }));
 
 vi.mock("@/components/ui/label", () => ({
-	Label: ({ children, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) => (
+	Label: ({
+		children,
+		...props
+	}: React.LabelHTMLAttributes<HTMLLabelElement>) => (
+		// biome-ignore lint/a11y/noLabelWithoutControl: Tests preserve the component's label surface while mocking controls.
 		<label {...props}>{children}</label>
 	),
 }));
@@ -69,13 +107,20 @@ vi.mock("@/components/ui/select", () => ({
 		onValueChange: (value: string) => void;
 		children: React.ReactNode;
 	}) => (
-		<select value={value} onChange={(event) => onValueChange(event.target.value)}>
+		<select
+			value={value}
+			onChange={(event) => onValueChange(event.target.value)}
+		>
 			{children}
 		</select>
 	),
-	SelectTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+	SelectTrigger: ({ children }: { children: React.ReactNode }) => (
+		<>{children}</>
+	),
 	SelectValue: () => null,
-	SelectContent: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+	SelectContent: ({ children }: { children: React.ReactNode }) => (
+		<>{children}</>
+	),
 	SelectItem: ({
 		value,
 		children,
@@ -92,12 +137,33 @@ vi.mock("@/components/ui/select", () => ({
 }));
 
 vi.mock("@/components/ui/tabs", () => ({
-	Tabs: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	TabsList: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	TabsTrigger: ({ children }: { children: React.ReactNode }) => (
-		<button type="button">{children}</button>
+	Tabs: ({
+		children,
+		onValueChange,
+	}: {
+		children: React.ReactNode;
+		onValueChange: (value: string) => void;
+	}) => {
+		tabMockState.onValueChange = onValueChange;
+		return <div>{children}</div>;
+	},
+	TabsList: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
 	),
-	TabsContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	TabsTrigger: ({
+		children,
+		value,
+	}: {
+		children: React.ReactNode;
+		value: string;
+	}) => (
+		<button type="button" onClick={() => tabMockState.onValueChange?.(value)}>
+			{children}
+		</button>
+	),
+	TabsContent: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
 }));
 
 vi.mock("@/components/ui/checkbox", () => ({
@@ -107,27 +173,43 @@ vi.mock("@/components/ui/checkbox", () => ({
 }));
 
 vi.mock("@/components/ui/scroll-area", () => ({
-	ScrollArea: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	ScrollArea: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
 }));
 
 vi.mock("@/components/ui/popover", () => ({
-	Popover: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	PopoverTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	PopoverContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	Popover: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	PopoverTrigger: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	PopoverContent: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
 }));
 
 vi.mock("@/components/ui/alert", () => ({
 	Alert: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	AlertTitle: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	AlertDescription: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	AlertTitle: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	AlertDescription: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
 }));
 
 import { ExportForm } from "./export-form";
 
 function render(ui: ReactNode) {
-	const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
 	return testingLibraryRender(ui, {
-		wrapper: ({ children }) => <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>,
+		wrapper: ({ children }) => (
+			<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+		),
 	});
 }
 
@@ -152,8 +234,13 @@ beforeAll(() => {
 });
 
 describe("ExportForm", () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
 	beforeEach(() => {
 		vi.clearAllMocks();
+		tabMockState.onValueChange = undefined;
 		getFilterOptionsActionMock.mockResolvedValue({
 			success: true,
 			data: {
@@ -209,21 +296,29 @@ describe("ExportForm", () => {
 
 		await waitFor(
 			() => {
-				expect(screen.getByRole("button", { name: "Export to DATEV" })).toBeTruthy();
+				expect(
+					screen.getByRole("button", { name: "Export to DATEV" }),
+				).toBeTruthy();
 			},
 			{ timeout: 15000 },
 		);
 
 		const formatSelect = screen
 			.getAllByRole("combobox")
-			.find((combobox) => within(combobox).queryByRole("option", { name: "Workday" }));
+			.find((combobox) =>
+				within(combobox).queryByRole("option", { name: "Workday" }),
+			);
 
 		expect(formatSelect).toBeTruthy();
-		fireEvent.change(formatSelect as HTMLSelectElement, { target: { value: "workday_api" } });
+		fireEvent.change(formatSelect as HTMLSelectElement, {
+			target: { value: "workday_api" },
+		});
 
 		await waitFor(
 			() => {
-				expect(screen.getByRole("button", { name: "Export to Workday" })).toBeTruthy();
+				expect(
+					screen.getByRole("button", { name: "Export to Workday" }),
+				).toBeTruthy();
 			},
 			{ timeout: 15000 },
 		);
@@ -242,6 +337,37 @@ describe("ExportForm", () => {
 		);
 	}, 15_000);
 
+	it("keeps one initial local month snapshot across rerenders and custom export", async () => {
+		const january = DateTime.fromISO("2026-01-31T23:59:59", { zone: "local" });
+		const february = DateTime.fromISO("2026-02-01T00:00:00", { zone: "local" });
+		const nowSpy = vi
+			.spyOn(DateTime, "now")
+			.mockReturnValueOnce(january)
+			.mockReturnValue(february);
+		const createForm = () => (
+			<ExportForm
+				organizationId="org_123"
+				config={null}
+				exportAvailability={fullyConfiguredAvailability}
+			/>
+		);
+
+		const { rerender } = render(createForm());
+		fireEvent.click(screen.getByRole("button", { name: "Custom Range" }));
+		rerender(createForm());
+		fireEvent.click(screen.getByRole("button", { name: "Export to DATEV" }));
+
+		await waitFor(() => {
+			expect(startExportActionMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					startDate: "2026-01-01",
+					endDate: "2026-01-31",
+				}),
+			);
+		});
+		expect(nowSpy).toHaveBeenCalledTimes(1);
+	});
+
 	it("renders all export options and disables unconfigured exporters", async () => {
 		render(
 			<ExportForm
@@ -252,7 +378,10 @@ describe("ExportForm", () => {
 					lexware_lohn: { configured: false, reason: "missingConfiguration" },
 					sage_lohn: { configured: false, reason: "missingConfiguration" },
 					personio: { configured: false, reason: "missingCredentials" },
-					successfactors_api: { configured: false, reason: "missingCredentials" },
+					successfactors_api: {
+						configured: false,
+						reason: "missingCredentials",
+					},
 					successfactors_csv: { configured: true, reason: null },
 					workday_api: { configured: true, reason: null },
 				}}
@@ -265,7 +394,9 @@ describe("ExportForm", () => {
 			return combobox as HTMLSelectElement;
 		});
 
-		const optionLabels = Array.from(formatSelect.options).map((option) => option.textContent);
+		const optionLabels = Array.from(formatSelect.options).map(
+			(option) => option.textContent,
+		);
 		expect(optionLabels).toEqual([
 			"DATEV",
 			"Lexware",
@@ -277,17 +408,32 @@ describe("ExportForm", () => {
 		]);
 
 		expect(
-			(within(formatSelect).getByRole("option", { name: "DATEV" }) as HTMLOptionElement).disabled,
+			(
+				within(formatSelect).getByRole("option", {
+					name: "DATEV",
+				}) as HTMLOptionElement
+			).disabled,
 		).toBe(false);
 		expect(
-			(within(formatSelect).getByRole("option", { name: "Lexware" }) as HTMLOptionElement).disabled,
+			(
+				within(formatSelect).getByRole("option", {
+					name: "Lexware",
+				}) as HTMLOptionElement
+			).disabled,
 		).toBe(true);
 		expect(
-			(within(formatSelect).getByRole("option", { name: "Sage" }) as HTMLOptionElement).disabled,
+			(
+				within(formatSelect).getByRole("option", {
+					name: "Sage",
+				}) as HTMLOptionElement
+			).disabled,
 		).toBe(true);
 		expect(
-			(within(formatSelect).getByRole("option", { name: "Personio" }) as HTMLOptionElement)
-				.disabled,
+			(
+				within(formatSelect).getByRole("option", {
+					name: "Personio",
+				}) as HTMLOptionElement
+			).disabled,
 		).toBe(true);
 		expect(
 			(
@@ -304,12 +450,18 @@ describe("ExportForm", () => {
 			).disabled,
 		).toBe(false);
 		expect(
-			(within(formatSelect).getByRole("option", { name: "Workday" }) as HTMLOptionElement).disabled,
+			(
+				within(formatSelect).getByRole("option", {
+					name: "Workday",
+				}) as HTMLOptionElement
+			).disabled,
 		).toBe(false);
 		expect(screen.getByText("Lexware - config")).toBeTruthy();
 		expect(screen.getByText("Sage - config")).toBeTruthy();
 		expect(screen.getByText("Personio - credentials")).toBeTruthy();
-		expect(screen.getByText("SAP SuccessFactors (API) - credentials")).toBeTruthy();
+		expect(
+			screen.getByText("SAP SuccessFactors (API) - credentials"),
+		).toBeTruthy();
 	}, 15_000);
 
 	it("renders export flow without DATEV config and allows Workday selection", async () => {
@@ -322,8 +474,14 @@ describe("ExportForm", () => {
 					lexware_lohn: { configured: false, reason: "missingConfiguration" },
 					sage_lohn: { configured: false, reason: "missingConfiguration" },
 					personio: { configured: false, reason: "missingConfiguration" },
-					successfactors_api: { configured: false, reason: "missingConfiguration" },
-					successfactors_csv: { configured: false, reason: "missingConfiguration" },
+					successfactors_api: {
+						configured: false,
+						reason: "missingConfiguration",
+					},
+					successfactors_csv: {
+						configured: false,
+						reason: "missingConfiguration",
+					},
 					workday_api: { configured: true, reason: null },
 				}}
 			/>,
@@ -331,21 +489,29 @@ describe("ExportForm", () => {
 
 		await waitFor(
 			() => {
-				expect(screen.getByRole("button", { name: "Export to Workday" })).toBeTruthy();
+				expect(
+					screen.getByRole("button", { name: "Export to Workday" }),
+				).toBeTruthy();
 			},
 			{ timeout: 5000 },
 		);
 
 		const formatSelect = screen
 			.getAllByRole("combobox")
-			.find((combobox) => within(combobox).queryByRole("option", { name: "Workday" }));
+			.find((combobox) =>
+				within(combobox).queryByRole("option", { name: "Workday" }),
+			);
 
 		expect(formatSelect).toBeTruthy();
-		fireEvent.change(formatSelect as HTMLSelectElement, { target: { value: "workday_api" } });
+		fireEvent.change(formatSelect as HTMLSelectElement, {
+			target: { value: "workday_api" },
+		});
 
 		await waitFor(
 			() => {
-				expect(screen.getByRole("button", { name: "Export to Workday" })).toBeTruthy();
+				expect(
+					screen.getByRole("button", { name: "Export to Workday" }),
+				).toBeTruthy();
 			},
 			{ timeout: 5000 },
 		);
@@ -372,7 +538,10 @@ describe("ExportForm", () => {
 					lexware_lohn: { configured: false, reason: "missingConfiguration" },
 					sage_lohn: { configured: false, reason: "missingConfiguration" },
 					personio: { configured: false, reason: "missingConfiguration" },
-					successfactors_api: { configured: false, reason: "missingCredentials" },
+					successfactors_api: {
+						configured: false,
+						reason: "missingCredentials",
+					},
 					successfactors_csv: { configured: true, reason: null },
 					workday_api: { configured: false, reason: "missingConfiguration" },
 				}}
@@ -380,11 +549,11 @@ describe("ExportForm", () => {
 		);
 
 		const formatSelect = await waitFor(() => {
-			const combobox = screen
-				.getAllByRole("combobox")
-				.find((combobox) =>
-					within(combobox).queryByRole("option", { name: "SAP SuccessFactors (CSV)" }),
-				);
+			const combobox = screen.getAllByRole("combobox").find((combobox) =>
+				within(combobox).queryByRole("option", {
+					name: "SAP SuccessFactors (CSV)",
+				}),
+			);
 			expect(combobox).toBeTruthy();
 			return combobox as HTMLSelectElement;
 		});
@@ -394,10 +563,14 @@ describe("ExportForm", () => {
 		});
 
 		await waitFor(() => {
-			expect(screen.getByRole("button", { name: "Export SAP SuccessFactors CSV" })).toBeTruthy();
+			expect(
+				screen.getByRole("button", { name: "Export SAP SuccessFactors CSV" }),
+			).toBeTruthy();
 		});
 
-		fireEvent.click(screen.getByRole("button", { name: "Export SAP SuccessFactors CSV" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Export SAP SuccessFactors CSV" }),
+		);
 
 		await waitFor(() => {
 			expect(startExportActionMock).toHaveBeenCalledWith(

@@ -6,16 +6,18 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TimeCorrectionApprovalsTable } from "./time-correction-approvals-table";
 
-const { actionMocks, approval } = vi.hoisted(() => ({
+const { actionMocks, approval, queryMocks, toastMocks } = vi.hoisted(() => ({
 	actionMocks: {
-		approveTimeCorrection: vi.fn(),
-		rejectTimeCorrection: vi.fn(),
+		dispatchApprovalDecision: vi.fn(),
 	},
+	queryMocks: { getPendingApprovals: vi.fn() },
+	toastMocks: { success: vi.fn(), error: vi.fn() },
 	approval: {
 		id: "approval-stable-1",
 		entityId: "work-period-display-1",
 		entityType: "time_entry",
 		status: "pending" as const,
+		reason: "Forgot to clock out after the customer visit",
 		createdAt: new Date("2026-05-01T00:00:00.000Z"),
 		displayContext: {
 			locale: "en",
@@ -68,16 +70,15 @@ vi.mock("@/components/providers/user-preferences-provider", () => ({
 }));
 
 vi.mock("sonner", () => ({
-	toast: { success: vi.fn(), error: vi.fn() },
+	toast: toastMocks,
 }));
 
 vi.mock("@/app/[locale]/(app)/approvals/actions", () => ({
-	getPendingApprovals: vi.fn().mockResolvedValue({
-		absenceApprovals: [],
-		timeCorrectionApprovals: [approval],
-	}),
-	approveTimeCorrection: actionMocks.approveTimeCorrection,
-	rejectTimeCorrection: actionMocks.rejectTimeCorrection,
+	getPendingApprovals: queryMocks.getPendingApprovals,
+}));
+
+vi.mock("@/lib/query/use-approval-inbox", () => ({
+	dispatchApprovalDecision: actionMocks.dispatchApprovalDecision,
 }));
 
 function renderTable() {
@@ -100,19 +101,54 @@ function lastButton(buttons: HTMLElement[]): HTMLElement {
 describe("TimeCorrectionApprovalsTable stable decision target", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		actionMocks.approveTimeCorrection.mockResolvedValue({ success: true });
-		actionMocks.rejectTimeCorrection.mockResolvedValue({ success: true });
+		queryMocks.getPendingApprovals.mockResolvedValue({
+			absenceApprovals: [],
+			timeCorrectionApprovals: [approval],
+		});
+		actionMocks.dispatchApprovalDecision.mockImplementation(
+			({
+				approvalId,
+				action,
+			}: {
+				approvalId: string;
+				action: "approve" | "reject";
+			}) =>
+				Promise.resolve({
+					success: true,
+					result: {
+						id: approvalId,
+						type: "time_entry",
+						status: action === "approve" ? "approved" : "rejected",
+					},
+				}),
+		);
 	});
 
-	it("approves by approval ID instead of the work-period display/cache ID", async () => {
+	it.each([
+		[
+			"time correction",
+			{ timeCorrection: { clockInCorrectionId: "correction-1" } },
+		],
+		[
+			"manual time submission",
+			{ timeRequest: { kind: "manual_time_submission" } },
+		],
+		["policy clock-out", { timeRequest: { kind: "policy_clock_out" } }],
+	])("approves a %s through the canonical decision dispatcher", async (_label, metadata) => {
 		const user = userEvent.setup();
-		let resolveAction: ((value: { success: true }) => void) | undefined;
-		actionMocks.approveTimeCorrection.mockImplementation(
+		let resolveAction:
+			| ((value: { success: true; result: object }) => void)
+			| undefined;
+		actionMocks.dispatchApprovalDecision.mockImplementation(
 			() =>
 				new Promise((resolve) => {
 					resolveAction = resolve;
 				}),
 		);
+		queryMocks.getPendingApprovals.mockResolvedValue({
+			absenceApprovals: [],
+			timeCorrectionApprovals: [{ ...approval, metadata }],
+		});
 		renderTable();
 
 		await user.click(await screen.findByRole("button", { name: "Approve" }));
@@ -120,19 +156,38 @@ describe("TimeCorrectionApprovalsTable stable decision target", () => {
 		await user.click(lastButton(confirmations));
 
 		await waitFor(() =>
-			expect(actionMocks.approveTimeCorrection).toHaveBeenCalledWith(
-				"approval-stable-1",
-			),
-		);
-		expect(actionMocks.approveTimeCorrection).not.toHaveBeenCalledWith(
-			"work-period-display-1",
+			expect(actionMocks.dispatchApprovalDecision).toHaveBeenCalledWith({
+				action: "approve",
+				approvalId: "approval-stable-1",
+			}),
 		);
 		await waitFor(() => expect(screen.queryByText("Ada Lovelace")).toBeNull());
-		resolveAction?.({ success: true });
+		resolveAction?.({
+			success: true,
+			result: {
+				id: "approval-stable-1",
+				type: "time_entry",
+				status: "approved",
+			},
+		});
 	});
 
-	it("rejects by approval ID and preserves the entered reason", async () => {
+	it.each([
+		[
+			"time correction",
+			{ timeCorrection: { clockInCorrectionId: "correction-1" } },
+		],
+		[
+			"manual time submission",
+			{ timeRequest: { kind: "manual_time_submission" } },
+		],
+		["policy clock-out", { timeRequest: { kind: "policy_clock_out" } }],
+	])("rejects a %s through the canonical decision dispatcher", async (_label, metadata) => {
 		const user = userEvent.setup();
+		queryMocks.getPendingApprovals.mockResolvedValue({
+			absenceApprovals: [],
+			timeCorrectionApprovals: [{ ...approval, metadata }],
+		});
 		renderTable();
 
 		await user.click(await screen.findByRole("button", { name: "Reject" }));
@@ -144,14 +199,39 @@ describe("TimeCorrectionApprovalsTable stable decision target", () => {
 		await user.click(lastButton(confirmations));
 
 		await waitFor(() =>
-			expect(actionMocks.rejectTimeCorrection).toHaveBeenCalledWith(
-				"approval-stable-1",
-				"Incorrect shift",
-			),
+			expect(actionMocks.dispatchApprovalDecision).toHaveBeenCalledWith({
+				action: "reject",
+				approvalId: "approval-stable-1",
+				reason: "Incorrect shift",
+			}),
 		);
-		expect(actionMocks.rejectTimeCorrection).not.toHaveBeenCalledWith(
-			"work-period-display-1",
-			"Incorrect shift",
+	});
+
+	it("renders the request reason from the pending approval DTO", async () => {
+		renderTable();
+
+		expect(
+			await screen.findByText("Forgot to clock out after the customer visit"),
+		).not.toBeNull();
+	});
+
+	it("restores an optimistically removed request when canonical dispatch fails", async () => {
+		const user = userEvent.setup();
+		actionMocks.dispatchApprovalDecision.mockResolvedValue({
+			success: false,
+			error: "Request is already approved",
+		});
+		renderTable();
+
+		await user.click(await screen.findByRole("button", { name: "Approve" }));
+		const confirmations = screen.getAllByRole("button", { name: "Approve" });
+		await user.click(lastButton(confirmations));
+
+		await waitFor(() =>
+			expect(screen.getByText("Ada Lovelace")).not.toBeNull(),
+		);
+		expect(toastMocks.error).toHaveBeenCalledWith(
+			"Request is already approved",
 		);
 	});
 });
