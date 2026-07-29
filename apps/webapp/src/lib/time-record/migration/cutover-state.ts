@@ -1,17 +1,23 @@
 import { eq } from "drizzle-orm";
 import { db, employee } from "@/db";
 import { runCanonicalBackfill } from "./backfill";
+import type { LegacyCanonicalReconciliation } from "./reconciliation";
 import { reconcileLegacyToCanonical } from "./reconciliation";
 
 export class CanonicalCutoverNotReadyError extends Error {
 	readonly organizationId: string;
+	readonly reconciliation: LegacyCanonicalReconciliation;
 
-	constructor(organizationId: string) {
+	constructor(
+		organizationId: string,
+		reconciliation: LegacyCanonicalReconciliation,
+	) {
 		super(
 			`Canonical time-record backfill is incomplete for organization ${organizationId}`,
 		);
 		this.name = "CanonicalCutoverNotReadyError";
 		this.organizationId = organizationId;
+		this.reconciliation = reconciliation;
 	}
 }
 
@@ -37,7 +43,7 @@ export async function assertCanonicalCutoverReady(organizationId: string) {
 	}
 
 	if (hasReconciliationMismatch(reconciliation)) {
-		throw new CanonicalCutoverNotReadyError(organizationId);
+		throw new CanonicalCutoverNotReadyError(organizationId, reconciliation);
 	}
 }
 

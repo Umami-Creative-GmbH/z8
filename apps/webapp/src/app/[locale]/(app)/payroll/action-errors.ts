@@ -25,6 +25,10 @@ export function mapPayrollWorkspaceActionError(
 				"Payroll data is temporarily unavailable",
 			),
 			conflictType: "canonical_payroll_data_not_ready",
+			details: {
+				organizationId: error.organizationId,
+				reconciliation: error.reconciliation,
+			},
 		});
 	}
 
