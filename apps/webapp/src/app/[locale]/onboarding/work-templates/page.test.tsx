@@ -21,7 +21,13 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback?: string) => fallback ?? _key,
+		t: (_key: string, fallback?: string, values?: Record<string, unknown>) => {
+			if (!fallback || !values) return fallback ?? _key;
+			return Object.entries(values).reduce(
+				(result, [key, value]) => result.replace(`{${key}}`, String(value)),
+				fallback,
+			);
+		},
 	}),
 }));
 
@@ -78,6 +84,71 @@ describe("WorkTemplatesPage load effect", () => {
 		);
 		expect(mocks.push).toHaveBeenCalledOnce();
 		expect(continueButton).toHaveProperty("disabled", true);
+	});
+
+	it("preserves edited state and submits selected weekdays while loading", async () => {
+		const request = deferred<{ success: true }>();
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		mocks.createWorkTemplateOnboarding.mockReturnValue(request.promise);
+		render(<WorkTemplatesPage />);
+
+		expect(
+			await screen.findByText("5 working days, 8.0 hours per day"),
+		).toBeTruthy();
+		const weekdayCheckboxes = screen.getAllByRole("checkbox");
+		fireEvent.change(screen.getByLabelText("Template Name"), {
+			target: { value: "Compressed" },
+		});
+		fireEvent.change(screen.getByLabelText("Hours per Week"), {
+			target: { value: "50" },
+		});
+		fireEvent.click(weekdayCheckboxes[0]);
+		fireEvent.click(weekdayCheckboxes[5]);
+		expect(screen.getByText("5 working days, 10.0 hours per day")).toBeTruthy();
+
+		const continueButton = screen.getByRole("button", { name: "Continue" });
+		fireEvent.click(continueButton);
+
+		await waitFor(() => {
+			expect(mocks.createWorkTemplateOnboarding).toHaveBeenCalledWith({
+				name: "Compressed",
+				hoursPerWeek: 50,
+				workingDays: [
+					"tuesday",
+					"wednesday",
+					"thursday",
+					"friday",
+					"saturday",
+				],
+				setAsDefault: true,
+			});
+			expect(continueButton).toHaveProperty("disabled", true);
+			expect(screen.getByLabelText("Hours per Week")).toHaveProperty(
+				"disabled",
+				true,
+			);
+		});
+
+		request.resolve({ success: true });
+		await waitFor(() =>
+			expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"),
+		);
+	});
+
+	it("keeps invalid template state on screen and blocks submission", async () => {
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		mocks.createWorkTemplateOnboarding.mockResolvedValue({ success: true });
+		render(<WorkTemplatesPage />);
+
+		const nameInput = await screen.findByLabelText("Template Name");
+		fireEvent.change(nameInput, { target: { value: "" } });
+		fireEvent.blur(nameInput);
+		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+		expect(await screen.findByText("Template name is required")).toBeTruthy();
+		expect(nameInput).toHaveProperty("value", "");
+		expect(mocks.createWorkTemplateOnboarding).not.toHaveBeenCalled();
+		expect(mocks.push).not.toHaveBeenCalledWith("/onboarding/notifications");
 	});
 
 	it("keeps skip disabled after successful skip navigation", async () => {

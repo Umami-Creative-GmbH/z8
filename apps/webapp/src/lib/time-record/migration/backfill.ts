@@ -1,4 +1,4 @@
-import { eq, inArray, isNull } from "drizzle-orm";
+import { eq, inArray, isNull, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 
 import {
@@ -20,6 +20,7 @@ type LegacyApprovalStatus = "pending" | "approved" | "rejected";
 type CanonicalDayPeriod = "full_day" | "am" | "pm";
 type LegacyDayPeriod = CanonicalDayPeriod | "morning" | "afternoon";
 type LegacyEntityType = "time_entry" | "absence_entry";
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export type LegacyWorkPeriod = {
 	id: string;
@@ -315,7 +316,7 @@ export async function runCanonicalBackfill(
 	const payload = buildCanonicalBackfillPayload(resolvedInput);
 
 	await db.transaction(async (tx) => {
-		await insertIfPresent(tx, timeRecord, payload.timeRecords);
+		await upsertCanonicalTimeRecords(tx, payload.timeRecords);
 		await insertIfPresent(tx, timeRecordWork, payload.timeRecordWork);
 		await insertIfPresent(tx, timeRecordAbsence, payload.timeRecordAbsence);
 
@@ -431,6 +432,26 @@ async function loadCanonicalBackfillInput(
 			absenceCategories,
 		},
 	};
+}
+
+async function upsertCanonicalTimeRecords(
+	tx: Transaction,
+	values: CanonicalBackfillPayload["timeRecords"],
+) {
+	if (values.length === 0) {
+		return;
+	}
+
+	await tx
+		.insert(timeRecord)
+		.values(values)
+		.onConflictDoUpdate({
+			target: [timeRecord.id, timeRecord.organizationId],
+			set: {
+				durationMinutes: sql.raw("excluded.duration_minutes"),
+				approvalState: sql.raw("excluded.approval_state"),
+			},
+		});
 }
 
 async function insertIfPresent<TTable, TValue>(

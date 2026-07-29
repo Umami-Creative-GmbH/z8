@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { boolean, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "@/lib/datetime/drizzle-schema";
+import { currentTimestamp } from "./timestamp";
 
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";

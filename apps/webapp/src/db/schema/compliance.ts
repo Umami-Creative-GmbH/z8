@@ -8,14 +8,16 @@ import {
 	timestamp,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "@/lib/datetime/drizzle-schema";
-
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
 import { approvalWorkflow } from "./approval-workflow";
-import { complianceExceptionStatusEnum, complianceExceptionTypeEnum } from "./enums";
+import {
+	complianceExceptionStatusEnum,
+	complianceExceptionTypeEnum,
+} from "./enums";
 import { employee } from "./organization";
 import { workPeriod } from "./time-tracking";
+import { currentTimestamp } from "./timestamp";
 
 // ============================================
 // COMPLIANCE EXCEPTIONS (Pre-approval & Post-hoc)
@@ -47,7 +49,9 @@ export const complianceException = pgTable(
 		exceptionType: complianceExceptionTypeEnum("exception_type").notNull(),
 
 		// Current status
-		status: complianceExceptionStatusEnum("status").default("pending").notNull(),
+		status: complianceExceptionStatusEnum("status")
+			.default("pending")
+			.notNull(),
 
 		// Request details
 		reason: text("reason").notNull(), // Why the exception is needed
@@ -75,7 +79,9 @@ export const complianceException = pgTable(
 		approvalWorkflowId: uuid("approval_workflow_id"),
 
 		// Audit fields
-		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
 		createdBy: text("created_by")
 			.notNull()
 			.references(() => user.id),
@@ -97,7 +103,10 @@ export const complianceException = pgTable(
 			table.validUntil,
 		),
 		// Composite index for manager approvals
-		index("complianceException_org_status_idx").on(table.organizationId, table.status),
+		index("complianceException_org_status_idx").on(
+			table.organizationId,
+			table.status,
+		),
 		index("complianceException_org_approvalWorkflowId_idx").on(
 			table.organizationId,
 			table.approvalWorkflowId,
@@ -119,12 +128,18 @@ export const schedulePublishComplianceAck = pgTable(
 		actorEmployeeId: uuid("actor_employee_id")
 			.notNull()
 			.references(() => employee.id, { onDelete: "cascade" }),
-		publishedRangeStart: timestamp("published_range_start", { withTimezone: true }).notNull(),
-		publishedRangeEnd: timestamp("published_range_end", { withTimezone: true }).notNull(),
+		publishedRangeStart: timestamp("published_range_start", {
+			withTimezone: true,
+		}).notNull(),
+		publishedRangeEnd: timestamp("published_range_end", {
+			withTimezone: true,
+		}).notNull(),
 		warningCountTotal: integer("warning_count_total").notNull(),
 		warningCountsByType: text("warning_counts_by_type").notNull(),
 		evaluationFingerprint: text("evaluation_fingerprint").notNull(),
-		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
 	},
 	(table) => [
 		index("schedulePublishComplianceAck_org_createdAt_idx").on(

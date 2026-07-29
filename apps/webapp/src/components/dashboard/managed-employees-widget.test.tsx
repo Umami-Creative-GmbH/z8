@@ -3,16 +3,22 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getCurrentEmployeeMock, getManagedEmployeesMock } = vi.hoisted(() => ({
-	getCurrentEmployeeMock: vi.fn(),
-	getManagedEmployeesMock: vi.fn(),
-}));
+const { getActivityMock, getCurrentEmployeeMock, getManagedEmployeesMock } =
+	vi.hoisted(() => ({
+		getActivityMock: vi.fn(),
+		getCurrentEmployeeMock: vi.fn(),
+		getManagedEmployeesMock: vi.fn(),
+	}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
+		t: (
+			_key: string,
+			fallback: string,
+			params?: Record<string, string | number>,
+		) =>
 			Object.entries(params ?? {}).reduce(
 				(message, [key, value]) => message.replace(`{${key}}`, String(value)),
 				fallback,
@@ -28,8 +34,25 @@ vi.mock("@/components/user-avatar", () => ({
 	UserAvatar: ({ name }: { name: string }) => <div>{name}</div>,
 }));
 
+vi.mock("@/components/employee-activity-text", () => ({
+	EmployeeActivityText: ({
+		lastActivityAt,
+		lastActivityUtcOffsetMinutes,
+	}: {
+		lastActivityAt: string | null;
+		lastActivityUtcOffsetMinutes: number | null;
+	}) => (
+		<span>
+			activity:{lastActivityAt}:{lastActivityUtcOffsetMinutes}
+		</span>
+	),
+}));
+
 vi.mock("@/lib/query", () => ({
-	useEmployeeClockStatuses: () => ({ getStatus: () => "unknown" }),
+	useEmployeeClockStatuses: () => ({
+		getStatus: () => "unknown",
+		getActivity: getActivityMock,
+	}),
 }));
 
 vi.mock("@/navigation", () => ({
@@ -84,15 +107,27 @@ function renderManagedEmployeesWidget() {
 }
 
 describe("ManagedEmployeesWidget", () => {
+	beforeEach(() => {
+		getActivityMock.mockReset().mockReturnValue(null);
+	});
+
 	it("scopes employee card hover styles to the hovered employee only", async () => {
-		getCurrentEmployeeMock.mockResolvedValue({ id: "manager-1", role: "manager" });
+		getCurrentEmployeeMock.mockResolvedValue({
+			id: "manager-1",
+			role: "manager",
+		});
 		getManagedEmployeesMock.mockResolvedValue({
 			success: true,
 			data: [
 				{
 					id: "employee-1",
 					position: "Designer",
-					user: { id: "user-1", name: "Ada Lovelace", email: "ada@example.com", image: null },
+					user: {
+						id: "user-1",
+						name: "Ada Lovelace",
+						email: "ada@example.com",
+						image: null,
+					},
 					team: { name: "Ops" },
 				},
 			],
@@ -100,12 +135,15 @@ describe("ManagedEmployeesWidget", () => {
 
 		renderManagedEmployeesWidget();
 
-		const employeeLink = await screen.findByRole("link", { name: /ada lovelace/i });
+		const employeeLink = await screen.findByRole("link", {
+			name: /ada lovelace/i,
+		});
 		const name = within(employeeLink)
 			.getAllByText("Ada Lovelace")
 			.find((element) => element.className.includes("font-medium"));
-		const arrow = Array.from(employeeLink.querySelectorAll("svg")).find((element) =>
-			element.getAttribute("class")?.includes("tabler-icon-arrow-right"),
+		const arrow = Array.from(employeeLink.querySelectorAll("svg")).find(
+			(element) =>
+				element.getAttribute("class")?.includes("tabler-icon-arrow-right"),
 		);
 
 		expect(employeeLink.className).toContain("group/employee");
@@ -115,5 +153,42 @@ describe("ManagedEmployeesWidget", () => {
 		expect(arrow?.getAttribute("class")).toContain(
 			"transition-[opacity,translate]",
 		);
+	});
+
+	it("renders employee clock activity metadata in the employee link", async () => {
+		getCurrentEmployeeMock.mockResolvedValue({
+			id: "manager-1",
+			role: "manager",
+		});
+		getManagedEmployeesMock.mockResolvedValue({
+			success: true,
+			data: [
+				{
+					id: "employee-1",
+					position: "Designer",
+					user: {
+						id: "user-1",
+						name: "Ada Lovelace",
+						email: "ada@example.com",
+						image: null,
+					},
+					team: { name: "Ops" },
+				},
+			],
+		});
+		getActivityMock.mockReturnValue({
+			lastActivityAt: "2026-07-28T10:40:00.000Z",
+			lastActivityUtcOffsetMinutes: 120,
+		});
+
+		renderManagedEmployeesWidget();
+
+		const employeeLink = await screen.findByRole("link", {
+			name: /ada lovelace/i,
+		});
+		expect(
+			within(employeeLink).getByText("activity:2026-07-28T10:40:00.000Z:120"),
+		).toBeTruthy();
+		expect(getActivityMock).toHaveBeenCalledWith("employee-1");
 	});
 });

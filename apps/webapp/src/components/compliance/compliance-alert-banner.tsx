@@ -93,11 +93,15 @@ export function ComplianceAlertBanner({
 					className,
 				)}
 			>
-				<Icon className={cn("size-4 shrink-0", config.iconClassName)} aria-hidden="true" />
+				<Icon
+					className={cn("size-4 shrink-0", config.iconClassName)}
+					aria-hidden="true"
+				/>
 				<span className="flex-1 truncate">{alert.message}</span>
 				{sortedAlerts.length > 1 && (
 					<span className="shrink-0 text-xs opacity-70">
-						+{sortedAlerts.length - 1} {t("compliance:compliance.moreAlerts", "more")}
+						+{sortedAlerts.length - 1}{" "}
+						{t("compliance:compliance.moreAlerts", "more")}
 					</span>
 				)}
 			</div>
@@ -112,15 +116,19 @@ export function ComplianceAlertBanner({
 
 				return (
 					<Alert key={alert.alertType} className={cn("py-3", config.className)}>
-						<Icon className={cn("size-4", config.iconClassName)} aria-hidden="true" />
+						<Icon
+							className={cn("size-4", config.iconClassName)}
+							aria-hidden="true"
+						/>
 						<AlertTitle className="flex items-center gap-2">
 							{alertTypeLabels[alert.alertType] || alert.alertType}
-							{alert.currentMinutes !== undefined && alert.thresholdMinutes !== undefined && (
-								<span className="text-xs font-normal opacity-70">
-									({Math.floor(alert.currentMinutes / 60)}h /{" "}
-									{Math.floor(alert.thresholdMinutes / 60)}h)
-								</span>
-							)}
+							{alert.currentMinutes !== undefined &&
+								alert.thresholdMinutes !== undefined && (
+									<span className="text-xs font-normal opacity-70">
+										({Math.floor(alert.currentMinutes / 60)}h /{" "}
+										{Math.floor(alert.thresholdMinutes / 60)}h)
+									</span>
+								)}
 						</AlertTitle>
 						<AlertDescription className="flex items-start justify-between gap-4">
 							<span>{alert.message}</span>
@@ -132,7 +140,10 @@ export function ComplianceAlertBanner({
 									onClick={() => onRequestException(alert.alertType)}
 								>
 									<IconShield className="mr-1.5 size-3" aria-hidden="true" />
-									{t("compliance:compliance.requestException", "Request Exception")}
+									{t(
+										"compliance:compliance.requestException",
+										"Request Exception",
+									)}
 								</Button>
 							)}
 						</AlertDescription>
@@ -163,7 +174,9 @@ export function RestPeriodBlocker({
 	const hoursRemaining = Math.floor(minutesUntilAllowed / 60);
 	const minsRemaining = minutesUntilAllowed % 60;
 	const timeStr =
-		hoursRemaining > 0 ? `${hoursRemaining}h ${minsRemaining}m` : `${minsRemaining} minutes`;
+		hoursRemaining > 0
+			? `${hoursRemaining}h ${minsRemaining}m`
+			: `${minsRemaining} minutes`;
 
 	// Use Intl.DateTimeFormat for hydration-safe time formatting
 	const formattedNextAllowed = Intl.DateTimeFormat(locale, {
@@ -174,7 +187,10 @@ export function RestPeriodBlocker({
 
 	return (
 		<Alert className="border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-100">
-			<IconClock className="size-4 text-red-600 dark:text-red-400" aria-hidden="true" />
+			<IconClock
+				className="size-4 text-red-600 dark:text-red-400"
+				aria-hidden="true"
+			/>
 			<AlertTitle>
 				{t("compliance:compliance.restPeriodRequired", "Rest Period Required")}
 			</AlertTitle>

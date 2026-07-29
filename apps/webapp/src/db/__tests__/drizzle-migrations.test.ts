@@ -126,6 +126,18 @@ const migration0054InvitationDraftIdentityUrl = new URL(
 	"../../../drizzle/0054_employee_invitation_draft_identity.sql",
 	import.meta.url,
 );
+const migration0058ActivityUrl = new URL(
+	"../../../drizzle/0058_employee_clock_activity_index.sql",
+	import.meta.url,
+);
+const migration0057SnapshotUrl = new URL(
+	"../../../drizzle/meta/0057_snapshot.json",
+	import.meta.url,
+);
+const migration0058ActivitySnapshotUrl = new URL(
+	"../../../drizzle/meta/0058_snapshot.json",
+	import.meta.url,
+);
 
 function readRequiredMigration(url: URL, label: string): string {
 	const exists = existsSync(url);
@@ -3095,6 +3107,79 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		);
 		expect(migration0054).toContain(
 			'FOR EACH ROW EXECUTE FUNCTION "employee_identity_advisory_lock"()',
+		);
+	});
+
+	it("registers the latest employee clock activity index migration", () => {
+		expect(existsSync(migration0058ActivityUrl)).toBe(true);
+		if (!existsSync(migration0058ActivityUrl)) return;
+
+		const migrationIndex = migrationJournal.entries.findIndex(
+			(entry) => entry.tag === "0058_employee_clock_activity_index",
+		);
+		const migrationEntry = migrationJournal.entries[migrationIndex];
+		const latestPriorWhen = Math.max(
+			...migrationJournal.entries
+				.slice(0, migrationIndex)
+				.map((entry) => entry.when),
+		);
+		const migration0058 = readFileSync(migration0058ActivityUrl, "utf8");
+
+		expect(migrationIndex).toBe(migrationJournal.entries.length - 1);
+		expect(migrationEntry?.when).toBeGreaterThan(latestPriorWhen);
+		expect(migration0058).toContain(
+			'CREATE INDEX IF NOT EXISTS "timeEntry_latestClockActivity_idx"',
+		);
+		expect(migration0058).toMatch(
+			/ON "time_entry" USING btree \("organization_id",\s*"employee_id",\s*"timestamp" DESC,\s*"id" DESC\)/,
+		);
+		expect(migration0058).toContain('"is_superseded" = false');
+		expect(migration0058).toContain("\"type\" IN ('clock_in', 'clock_out')");
+		expect(migration0058).not.toContain("correction");
+	});
+
+	it("snapshots the latest employee clock activity index", () => {
+		expect(existsSync(migration0058ActivitySnapshotUrl)).toBe(true);
+		if (!existsSync(migration0058ActivitySnapshotUrl)) return;
+
+		const previousSnapshot = JSON.parse(
+			readFileSync(migration0057SnapshotUrl, "utf8"),
+		) as { id: string };
+		const snapshot = JSON.parse(
+			readFileSync(migration0058ActivitySnapshotUrl, "utf8"),
+		) as {
+			prevId: string;
+			tables: Record<
+				string,
+				{
+					indexes: Record<
+						string,
+						{
+							columns: Array<{ expression: string; asc: boolean }>;
+							where?: string;
+						}
+					>;
+				}
+			>;
+		};
+		const activityIndex =
+			snapshot.tables["public.time_entry"]?.indexes
+				.timeEntry_latestClockActivity_idx;
+
+		expect(snapshot.prevId).toBe(previousSnapshot.id);
+		expect(
+			activityIndex?.columns.map(({ expression, asc }) => ({
+				expression,
+				asc,
+			})),
+		).toEqual([
+			{ expression: "organization_id", asc: true },
+			{ expression: "employee_id", asc: true },
+			{ expression: "timestamp", asc: false },
+			{ expression: "id", asc: false },
+		]);
+		expect(activityIndex?.where).toBe(
+			'"time_entry"."is_superseded" = false AND "time_entry"."type" IN (\'clock_in\', \'clock_out\')',
 		);
 	});
 });

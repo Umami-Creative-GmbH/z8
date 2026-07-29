@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
 	boolean,
 	date,
@@ -11,23 +12,29 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "@/lib/datetime/drizzle-schema";
-
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
 import { approvalRequest } from "./approval";
 import { approvalWorkflow } from "./approval-workflow";
-import { approvalStatusEnum, timeEntryTypeEnum, workLocationTypeEnum } from "./enums";
+import {
+	approvalStatusEnum,
+	timeEntryTypeEnum,
+	workLocationTypeEnum,
+} from "./enums";
 import { employee } from "./organization";
 import { project } from "./project";
 import { timeRecord } from "./time-record";
-import type { WorkPeriodAutoAdjustmentReason, WorkPeriodPendingChanges } from "./types";
+import { currentTimestamp } from "./timestamp";
+import type {
+	WorkPeriodAutoAdjustmentReason,
+	WorkPeriodPendingChanges,
+} from "./types";
 import { workCategory } from "./work-category";
 
-export const employeeWorkBalancePeriodTypeEnum = pgEnum("employee_work_balance_period_type", [
-	"month",
-	"year",
-]);
+export const employeeWorkBalancePeriodTypeEnum = pgEnum(
+	"employee_work_balance_period_type",
+	["month", "year"],
+);
 
 // ============================================
 // TIME TRACKING
@@ -90,6 +97,16 @@ export const timeEntry = pgTable(
 			table.isSuperseded,
 			table.timestamp,
 		),
+		index("timeEntry_latestClockActivity_idx")
+			.on(
+				table.organizationId,
+				table.employeeId,
+				table.timestamp.desc(),
+				table.id.desc(),
+			)
+			.where(
+				sql`${table.isSuperseded} = false AND ${table.type} IN ('clock_in', 'clock_out')`,
+			),
 	],
 );
 
@@ -134,7 +151,9 @@ export const workPeriod = pgTable(
 		// "approved" = normal working period (default)
 		// "pending" = awaiting manager approval (when change policy requires it)
 		// "rejected" = manager rejected the change (reverted to original times)
-		approvalStatus: approvalStatusEnum("approval_status").default("approved").notNull(),
+		approvalStatus: approvalStatusEnum("approval_status")
+			.default("approved")
+			.notNull(),
 
 		// Pending changes stored when approval is required
 		// Contains the requested changes while waiting for approval
@@ -146,7 +165,9 @@ export const workPeriod = pgTable(
 
 		// Auto-adjustment tracking for break enforcement
 		wasAutoAdjusted: boolean("was_auto_adjusted").default(false).notNull(),
-		autoAdjustmentReason: text("auto_adjustment_reason").$type<WorkPeriodAutoAdjustmentReason>(),
+		autoAdjustmentReason: text(
+			"auto_adjustment_reason",
+		).$type<WorkPeriodAutoAdjustmentReason>(),
 		autoAdjustedAt: timestamp("auto_adjusted_at", { withTimezone: true }),
 		originalEndTime: timestamp("original_end_time", { withTimezone: true }), // Audit trail
 		originalDurationMinutes: integer("original_duration_minutes"),
@@ -167,8 +188,14 @@ export const workPeriod = pgTable(
 		index("workPeriod_projectId_idx").on(table.projectId),
 		index("workPeriod_workCategoryId_idx").on(table.workCategoryId),
 		index("workPeriod_approvalStatus_idx").on(table.approvalStatus),
-		index("workPeriod_org_canonicalRecordId_idx").on(table.organizationId, table.canonicalRecordId),
-		index("workPeriod_org_deletedAt_idx").on(table.organizationId, table.deletedAt),
+		index("workPeriod_org_canonicalRecordId_idx").on(
+			table.organizationId,
+			table.canonicalRecordId,
+		),
+		index("workPeriod_org_deletedAt_idx").on(
+			table.organizationId,
+			table.deletedAt,
+		),
 		foreignKey({
 			columns: [table.canonicalRecordId, table.organizationId],
 			foreignColumns: [timeRecord.id, timeRecord.organizationId],
@@ -186,7 +213,10 @@ export const workPeriod = pgTable(
 			foreignColumns: [approvalRequest.id, approvalRequest.organizationId],
 		}),
 		// Composite index for calendar queries (most common)
-		index("workPeriod_org_startTime_idx").on(table.organizationId, table.startTime),
+		index("workPeriod_org_startTime_idx").on(
+			table.organizationId,
+			table.startTime,
+		),
 		// Composite index for employee-org queries
 		index("workPeriod_emp_org_startTime_idx").on(
 			table.employeeId,
@@ -223,7 +253,10 @@ export const employeeTimeBalance = pgTable(
 			table.employeeId,
 			table.year,
 		),
-		index("employeeTimeBalance_org_year_idx").on(table.organizationId, table.year),
+		index("employeeTimeBalance_org_year_idx").on(
+			table.organizationId,
+			table.year,
+		),
 		index("employeeTimeBalance_employee_org_year_idx").on(
 			table.employeeId,
 			table.organizationId,
@@ -251,21 +284,36 @@ export const employeeWorkBalance = pgTable(
 		balanceMinutes: integer("balance_minutes").notNull(),
 		computedFromDate: date("computed_from_date").notNull(),
 		computedThroughDate: date("computed_through_date").notNull(),
-		computedAt: timestamp("computed_at", { withTimezone: true }).defaultNow().notNull(),
+		computedAt: timestamp("computed_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
 		isDirty: boolean("is_dirty").default(false).notNull(),
 		dirtyFromDate: date("dirty_from_date"),
-		refreshRequestedAt: timestamp("refresh_requested_at", { withTimezone: true }),
+		refreshRequestedAt: timestamp("refresh_requested_at", {
+			withTimezone: true,
+		}),
 		lastError: text("last_error"),
-		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
 	(table) => [
-		uniqueIndex("employeeWorkBalance_org_employee_idx").on(table.organizationId, table.employeeId),
+		uniqueIndex("employeeWorkBalance_org_employee_idx").on(
+			table.organizationId,
+			table.employeeId,
+		),
 		index("employeeWorkBalance_org_idx").on(table.organizationId),
-		index("employeeWorkBalance_employee_org_idx").on(table.employeeId, table.organizationId),
-		index("employeeWorkBalance_dirty_idx").on(table.isDirty, table.refreshRequestedAt),
+		index("employeeWorkBalance_employee_org_idx").on(
+			table.employeeId,
+			table.organizationId,
+		),
+		index("employeeWorkBalance_dirty_idx").on(
+			table.isDirty,
+			table.refreshRequestedAt,
+		),
 		foreignKey({
 			columns: [table.employeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
@@ -289,13 +337,19 @@ export const employeeWorkBalancePeriod = pgTable(
 		actualMinutes: integer("actual_minutes").default(0).notNull(),
 		requiredMinutes: integer("required_minutes").default(0).notNull(),
 		balanceMinutes: integer("balance_minutes").default(0).notNull(),
-		computedAt: timestamp("computed_at", { withTimezone: true }).defaultNow().notNull(),
+		computedAt: timestamp("computed_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
 		isClosed: boolean("is_closed").default(false).notNull(),
 		isDirty: boolean("is_dirty").default(false).notNull(),
 		dirtyFromDate: date("dirty_from_date"),
-		refreshRequestedAt: timestamp("refresh_requested_at", { withTimezone: true }),
+		refreshRequestedAt: timestamp("refresh_requested_at", {
+			withTimezone: true,
+		}),
 		lastError: text("last_error"),
-		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
@@ -312,8 +366,14 @@ export const employeeWorkBalancePeriod = pgTable(
 			table.periodType,
 			table.periodStart,
 		),
-		index("employeeWorkBalancePeriod_employee_org_idx").on(table.employeeId, table.organizationId),
-		index("employeeWorkBalancePeriod_dirty_idx").on(table.isDirty, table.refreshRequestedAt),
+		index("employeeWorkBalancePeriod_employee_org_idx").on(
+			table.employeeId,
+			table.organizationId,
+		),
+		index("employeeWorkBalancePeriod_dirty_idx").on(
+			table.isDirty,
+			table.refreshRequestedAt,
+		),
 		foreignKey({
 			columns: [table.employeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],

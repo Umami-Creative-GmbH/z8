@@ -432,6 +432,12 @@
     }
   },
   "presence": {
+    "activity": {
+      "lastActivity": "última actividad {date}",
+      "relativeHours": "hace {hours}h",
+      "relativeHoursMinutes": "hace {hours}h {minutes}min",
+      "relativeMinutes": "hace {minutes}min"
+    },
     "clockedIn": "Fichaje de entrada realizado",
     "clockedOut": "Fichaje de salida realizado"
   },

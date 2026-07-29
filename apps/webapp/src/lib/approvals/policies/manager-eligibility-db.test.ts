@@ -133,7 +133,7 @@ describe("getEligibleApprovalScopesForManager", () => {
 });
 
 describe("getEligibleManagerIdsForRequester", () => {
-	it("starts all independent eligibility reads together", async () => {
+	it("starts manager and team eligibility reads after the organization employee read resolves", async () => {
 		const employees = createDeferred<unknown[]>();
 		const managerLinks = createDeferred<unknown[]>();
 		const memberships = createDeferred<unknown[]>();
@@ -154,9 +154,9 @@ describe("getEligibleManagerIdsForRequester", () => {
 		});
 
 		expect(db.query.employee.findMany).toHaveBeenCalledOnce();
-		expect(db.query.employeeManagers.findMany).toHaveBeenCalledOnce();
-		expect(db.query.teamMembership.findMany).toHaveBeenCalledOnce();
-		expect(db.query.team.findMany).toHaveBeenCalledOnce();
+		expect(db.query.employeeManagers.findMany).not.toHaveBeenCalled();
+		expect(db.query.teamMembership.findMany).not.toHaveBeenCalled();
+		expect(db.query.team.findMany).not.toHaveBeenCalled();
 
 		employees.resolve([
 			{
@@ -172,6 +172,13 @@ describe("getEligibleManagerIdsForRequester", () => {
 				role: "manager",
 			},
 		]);
+		await employees.promise;
+		await Promise.resolve();
+
+		expect(db.query.employeeManagers.findMany).toHaveBeenCalledOnce();
+		expect(db.query.teamMembership.findMany).toHaveBeenCalledOnce();
+		expect(db.query.team.findMany).toHaveBeenCalledOnce();
+
 		managerLinks.resolve([
 			{ employeeId: "requester-1", managerId: "manager-1", isPrimary: true },
 		]);
@@ -182,7 +189,7 @@ describe("getEligibleManagerIdsForRequester", () => {
 });
 
 describe("getPrimaryEligibleManagerIdForRequester", () => {
-	it("starts all independent eligibility reads together", async () => {
+	it("starts manager and team eligibility reads after the organization employee read resolves", async () => {
 		const employees = createDeferred<unknown[]>();
 		const managerLinks = createDeferred<unknown[]>();
 		const memberships = createDeferred<unknown[]>();
@@ -203,9 +210,9 @@ describe("getPrimaryEligibleManagerIdForRequester", () => {
 		});
 
 		expect(db.query.employee.findMany).toHaveBeenCalledOnce();
-		expect(db.query.employeeManagers.findMany).toHaveBeenCalledOnce();
-		expect(db.query.teamMembership.findMany).toHaveBeenCalledOnce();
-		expect(db.query.team.findMany).toHaveBeenCalledOnce();
+		expect(db.query.employeeManagers.findMany).not.toHaveBeenCalled();
+		expect(db.query.teamMembership.findMany).not.toHaveBeenCalled();
+		expect(db.query.team.findMany).not.toHaveBeenCalled();
 
 		employees.resolve([
 			{
@@ -221,6 +228,13 @@ describe("getPrimaryEligibleManagerIdForRequester", () => {
 				role: "manager",
 			},
 		]);
+		await employees.promise;
+		await Promise.resolve();
+
+		expect(db.query.employeeManagers.findMany).toHaveBeenCalledOnce();
+		expect(db.query.teamMembership.findMany).toHaveBeenCalledOnce();
+		expect(db.query.team.findMany).toHaveBeenCalledOnce();
+
 		managerLinks.resolve([
 			{ employeeId: "requester-1", managerId: "manager-1", isPrimary: true },
 		]);

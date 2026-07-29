@@ -12,7 +12,7 @@ import {
 	unique,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "@/lib/datetime/drizzle-schema";
+import { currentTimestamp } from "./timestamp";
 
 export type LocaleTranslationMap = Record<string, string>;
 

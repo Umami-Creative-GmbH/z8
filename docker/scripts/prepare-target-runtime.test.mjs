@@ -201,18 +201,35 @@ test("generated worker manifest includes React for TSX email templates", async (
 	assert.ok(packageJson.dependencies.react);
 });
 
-test("generated worker runtime includes temporal-polyfill without the champion polyfill", async () => {
-	const [packageJsonText, lockfile] = await Promise.all([
+test("generated worker manifest uses the webapp temporal-polyfill version", async () => {
+	const [webappPackageJsonText, packageJsonText, lockfile] = await Promise.all([
+		fs.readFile(new URL("../../apps/webapp/package.json", import.meta.url), "utf8"),
 		fs.readFile(new URL("../targets/worker/package.json", import.meta.url), "utf8"),
 		fs.readFile(new URL("../targets/worker/pnpm-lock.yaml", import.meta.url), "utf8"),
 	]);
+	const webappPackageJson = JSON.parse(webappPackageJsonText);
 	const packageJson = JSON.parse(packageJsonText);
+	const temporalPolyfillVersion = webappPackageJson.dependencies["temporal-polyfill"];
 
 	assert.equal(packageJson.type, "module");
-	assert.equal(packageJson.dependencies["temporal-polyfill"], "1.0.1");
-	assert.match(lockfile, /temporal-polyfill@1\.0\.1:/);
+	assert.equal(packageJson.dependencies["temporal-polyfill"], temporalPolyfillVersion);
+	assert.ok(lockfile.includes(`temporal-polyfill@${temporalPolyfillVersion}:`));
 	assert.doesNotMatch(packageJsonText, /@js-temporal\/polyfill/);
 	assert.doesNotMatch(lockfile, /@js-temporal\/polyfill/);
+});
+
+test("generated migrated runtime manifests exclude the champion polyfill", async () => {
+	const targets = ["worker", "migration", "db-seed"];
+
+	for (const target of targets) {
+		const [packageJsonText, lockfile] = await Promise.all([
+			fs.readFile(new URL(`../targets/${target}/package.json`, import.meta.url), "utf8"),
+			fs.readFile(new URL(`../targets/${target}/pnpm-lock.yaml`, import.meta.url), "utf8"),
+		]);
+
+		assert.doesNotMatch(packageJsonText, /@js-temporal\/polyfill/);
+		assert.doesNotMatch(lockfile, /@js-temporal\/polyfill/);
+	}
 });
 
 test("generated schema-only runtimes exclude untraced Temporal packages", async () => {
@@ -223,7 +240,11 @@ test("generated schema-only runtimes exclude untraced Temporal packages", async 
 		]);
 		const packageJson = JSON.parse(packageJsonText);
 
-		assert.equal(packageJson.type, "module");
+		assert.equal(
+			packageJson.type,
+			"module",
+			`${target} must execute traced TypeScript as ESM for import-only packages`,
+		);
 		assert.equal(packageJson.dependencies["temporal-polyfill"], undefined);
 		assert.doesNotMatch(lockfile, /temporal-polyfill@/);
 		assert.doesNotMatch(packageJsonText, /@js-temporal\/polyfill/);

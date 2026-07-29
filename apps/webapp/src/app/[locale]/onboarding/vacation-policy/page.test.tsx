@@ -80,6 +80,63 @@ describe("VacationPolicyPage load effect", () => {
 		expect(continueButton).toHaveProperty("disabled", true);
 	});
 
+	it("preserves carryover state and submits the policy while loading", async () => {
+		const request = deferred<{ success: true }>();
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		mocks.createVacationPolicyOnboarding.mockReturnValue(request.promise);
+		render(<VacationPolicyPage />);
+
+		const carryoverSwitch = await screen.findByRole("switch");
+		const carryoverInput = screen.getByPlaceholderText("5");
+		fireEvent.change(carryoverInput, { target: { value: "7" } });
+		fireEvent.click(carryoverSwitch);
+		await waitFor(() =>
+			expect(screen.queryByPlaceholderText("5")).toBeNull(),
+		);
+		fireEvent.click(carryoverSwitch);
+		await waitFor(() =>
+			expect(screen.getByPlaceholderText("5")).toHaveProperty("value", "7"),
+		);
+
+		const continueButton = screen.getByRole("button", { name: "Continue" });
+		fireEvent.click(continueButton);
+
+		await waitFor(() => {
+			expect(mocks.createVacationPolicyOnboarding).toHaveBeenCalledWith({
+				name: "Standard",
+				defaultAnnualDays: 25,
+				accrualType: "annual",
+				allowCarryover: true,
+				maxCarryoverDays: 7,
+			});
+			expect(continueButton).toHaveProperty("disabled", true);
+			expect(carryoverSwitch).toHaveProperty("disabled", true);
+		});
+
+		request.resolve({ success: true });
+		await waitFor(() =>
+			expect(mocks.push).toHaveBeenCalledWith("/onboarding/holiday-setup"),
+		);
+	});
+
+	it("keeps invalid policy state on screen and blocks submission", async () => {
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		mocks.createVacationPolicyOnboarding.mockResolvedValue({ success: true });
+		render(<VacationPolicyPage />);
+
+		const nameInput = await screen.findByPlaceholderText(
+			"e.g., Standard, Senior",
+		);
+		fireEvent.change(nameInput, { target: { value: "" } });
+		fireEvent.blur(nameInput);
+		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+		expect(await screen.findByText("Policy name is required")).toBeTruthy();
+		expect(nameInput).toHaveProperty("value", "");
+		expect(mocks.createVacationPolicyOnboarding).not.toHaveBeenCalled();
+		expect(mocks.push).not.toHaveBeenCalledWith("/onboarding/holiday-setup");
+	});
+
 	it("keeps skip disabled after successful skip navigation", async () => {
 		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
 		mocks.skipVacationPolicySetup.mockResolvedValue({ success: true });

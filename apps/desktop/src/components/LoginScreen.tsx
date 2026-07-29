@@ -46,6 +46,7 @@ export function LoginScreen({ webappUrl, onLogin, onOpenSettings }: LoginScreenP
       <div className="login-header-buttons">
         <button
           type="button"
+          aria-label={`Change theme. Current theme: ${theme === "system" ? "System" : theme === "light" ? "Light" : "Dark"}`}
           onClick={cycleTheme}
           className="settings-button"
           title={`Theme: ${theme === "system" ? "System" : theme === "light" ? "Light" : "Dark"}`}
@@ -55,6 +56,7 @@ export function LoginScreen({ webappUrl, onLogin, onOpenSettings }: LoginScreenP
         {webappUrl && (
           <button
             type="button"
+            aria-label="Open settings"
             onClick={onOpenSettings}
             className="settings-button"
             title="IconSettings"

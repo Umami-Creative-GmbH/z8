@@ -1,12 +1,27 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getWorkPeriodsForMonth, workPeriodOverlapsCalendarMonth } from "./work-period-service";
+import {
+	getWorkPeriodsForMonth,
+	workPeriodOverlapsCalendarMonth,
+} from "./work-period-service";
 
 const mockOperators = vi.hoisted(() => ({
 	and: vi.fn((...conditions: unknown[]) => ({ conditions, type: "and" })),
-	eq: vi.fn((column: unknown, value: unknown) => ({ column, type: "eq", value })),
-	gt: vi.fn((column: unknown, value: unknown) => ({ column, type: "gt", value })),
+	eq: vi.fn((column: unknown, value: unknown) => ({
+		column,
+		type: "eq",
+		value,
+	})),
+	gt: vi.fn((column: unknown, value: unknown) => ({
+		column,
+		type: "gt",
+		value,
+	})),
 	isNull: vi.fn((column: unknown) => ({ column, type: "isNull" })),
-	lt: vi.fn((column: unknown, value: unknown) => ({ column, type: "lt", value })),
+	lt: vi.fn((column: unknown, value: unknown) => ({
+		column,
+		type: "lt",
+		value,
+	})),
 	not: vi.fn((condition: unknown) => ({ condition, type: "not" })),
 	or: vi.fn((...conditions: unknown[]) => ({ conditions, type: "or" })),
 }));
@@ -47,7 +62,10 @@ describe("getWorkPeriodsForMonth", () => {
 			innerJoin: mockDb.innerJoin,
 			leftJoin: mockDb.leftJoin,
 		});
-		mockDb.leftJoin.mockReturnValue({ leftJoin: mockDb.leftJoin, where: mockDb.where });
+		mockDb.leftJoin.mockReturnValue({
+			leftJoin: mockDb.leftJoin,
+			where: mockDb.where,
+		});
 	});
 
 	afterEach(() => {
@@ -74,7 +92,10 @@ describe("getWorkPeriodsForMonth", () => {
 			new Date("2026-06-01T04:00:00.000Z"),
 		);
 		expect(mockOperators.eq).toHaveBeenCalledWith(expect.anything(), "org-1");
-		expect(mockOperators.eq).toHaveBeenCalledWith(expect.anything(), "employee-1");
+		expect(mockOperators.eq).toHaveBeenCalledWith(
+			expect.anything(),
+			"employee-1",
+		);
 	});
 
 	it("returns an active work period as a running calendar event ending now", async () => {
@@ -107,6 +128,7 @@ describe("getWorkPeriodsForMonth", () => {
 					calculationDetails: {
 						rulesApplied: [
 							{
+								ruleId: "rule-night",
 								ruleName: "Night",
 								ruleType: "time_window",
 								percentage: 25,
@@ -120,7 +142,9 @@ describe("getWorkPeriodsForMonth", () => {
 			},
 		]);
 
-		const events = await getWorkPeriodsForMonth(4, 2026, { organizationId: "org-1" });
+		const events = await getWorkPeriodsForMonth(4, 2026, {
+			organizationId: "org-1",
+		});
 
 		expect(events).toHaveLength(1);
 		expect(events[0]).toMatchObject({
@@ -191,7 +215,9 @@ describe("getWorkPeriodsForMonth", () => {
 			},
 		]);
 
-		const events = await getWorkPeriodsForMonth(4, 2026, { organizationId: "org-1" });
+		const events = await getWorkPeriodsForMonth(4, 2026, {
+			organizationId: "org-1",
+		});
 
 		expect(events).toHaveLength(1);
 		expect(events[0]).toMatchObject({

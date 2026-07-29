@@ -383,6 +383,56 @@ describe("WebhookFormDialog", () => {
 		}
 	});
 
+	it("preserves local state on parent rerender and resets on keyed replacement", async () => {
+		function KeyedHarness() {
+			const [renderVersion, setRenderVersion] = useState(0);
+			const [formKey, setFormKey] = useState(0);
+
+			return (
+				<>
+					<button
+						type="button"
+						onClick={() => setRenderVersion((version) => version + 1)}
+					>
+						Rerender parent
+					</button>
+					<button type="button" onClick={() => setFormKey((key) => key + 1)}>
+						Replace form
+					</button>
+					<WebhookFormDialog
+						key={formKey}
+						organizationId={`org-${renderVersion}`}
+						open
+						onOpenChange={vi.fn()}
+						onSuccess={mocks.onSuccess}
+					/>
+				</>
+			);
+		}
+
+		const user = userEvent.setup();
+		render(<KeyedHarness />);
+		await user.type(screen.getByLabelText("Name"), "Changed name");
+		await user.click(screen.getByText("Absences"));
+		expect(
+			screen.queryByRole("checkbox", { name: "absence_request_submitted" }),
+		).toBeNull();
+
+		await user.click(screen.getByRole("button", { name: "Rerender parent" }));
+		expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe(
+			"Changed name",
+		);
+		expect(
+			screen.queryByRole("checkbox", { name: "absence_request_submitted" }),
+		).toBeNull();
+
+		await user.click(screen.getByRole("button", { name: "Replace form" }));
+		expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("");
+		expect(
+			screen.getByRole("checkbox", { name: "absence_request_submitted" }),
+		).toBeTruthy();
+	});
+
 	it("wires required validation to accessible TanStack field errors", async () => {
 		renderCreateDialog();
 		const form = formFor("Create Webhook");

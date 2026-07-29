@@ -11,7 +11,6 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "@/lib/datetime/drizzle-schema";
 import { organization, user } from "../auth-schema";
 import {
 	approvalActorKindEnum,
@@ -28,6 +27,7 @@ import {
 	approvalWorkflowTypeEnum,
 } from "./enums";
 import { employee } from "./organization";
+import { currentTimestamp } from "./timestamp";
 
 type JsonObject = Record<string, unknown>;
 

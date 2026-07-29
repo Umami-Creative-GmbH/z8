@@ -1,6 +1,9 @@
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
-import { type DisplayContext, formatInstant } from "@/lib/datetime/temporal-format";
+import {
+	type DisplayContext,
+	formatInstant,
+} from "@/lib/datetime/temporal-format";
 
 export interface WorkPeriodDialogMetadata {
 	durationMinutes: number;
@@ -12,6 +15,7 @@ export interface WorkPeriodDialogMetadata {
 	surchargeMinutes?: number;
 	totalCreditedMinutes?: number;
 	surchargeBreakdown?: Array<{
+		ruleId: string;
 		ruleName: string;
 		ruleType: "day_of_week" | "time_window" | "date_based";
 		percentage: number;
@@ -21,7 +25,9 @@ export interface WorkPeriodDialogMetadata {
 	approvalStatus?: "approved" | "pending" | "rejected";
 }
 
-export function getWorkPeriodDialogMetadata(event: CalendarEvent): WorkPeriodDialogMetadata {
+export function getWorkPeriodDialogMetadata(
+	event: CalendarEvent,
+): WorkPeriodDialogMetadata {
 	return event.metadata as WorkPeriodDialogMetadata;
 }
 
@@ -40,7 +46,10 @@ export function formatDuration(minutes: number): string {
 	return `${hours}h ${mins}m`;
 }
 
-export function formatEventTimeRange(event: CalendarEvent, context: DisplayContext): string {
+export function formatEventTimeRange(
+	event: CalendarEvent,
+	context: DisplayContext,
+): string {
 	return `${formatInstant(instantFromDate(event.date), context, "time")} - ${event.endDate ? formatInstant(instantFromDate(event.endDate), context, "time") : "—"}`;
 }
 

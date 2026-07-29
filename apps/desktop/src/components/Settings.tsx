@@ -376,6 +376,9 @@ export function Settings({
           inset: 0,
           background: "rgba(0, 0, 0, 0.4)",
           backdropFilter: "blur(4px)",
+          border: 0,
+          outline: "none",
+          padding: 0,
         }}
         onClick={onClose}
       />

@@ -1,5 +1,5 @@
 import { index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "@/lib/datetime/drizzle-schema";
+import { currentTimestamp } from "./timestamp";
 
 import { organization, user } from "../auth-schema";
 import {

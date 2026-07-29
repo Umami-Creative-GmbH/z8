@@ -64,19 +64,44 @@ describe("WellnessPage", () => {
 		vi.clearAllMocks();
 	});
 
-	it("enables water reminders by default during onboarding", async () => {
-		configureWellnessOnboardingMock.mockResolvedValue({ success: true });
+	it("preserves enabled reminder values and submits them while loading", async () => {
+		const request = deferred<{ success: true }>();
+		configureWellnessOnboardingMock.mockReturnValue(request.promise);
 
 		render(<WellnessPage />);
+
+		const reminderSwitch = screen.getByRole("switch");
+		expect(reminderSwitch.getAttribute("aria-checked")).toBe("true");
+		expect(
+			screen.getByText("Every 45 minutes - recommended for most people"),
+		).toBeTruthy();
+		expect(screen.getByText("8 glasses")).toBeTruthy();
+
+		fireEvent.click(reminderSwitch);
+		expect(screen.queryByText("Reminder Frequency")).toBeNull();
+		fireEvent.click(reminderSwitch);
+		expect(
+			screen.getByText("Every 45 minutes - recommended for most people"),
+		).toBeTruthy();
 
 		const continueButton = screen.getByRole("button", { name: "Continue" });
 		fireEvent.click(continueButton);
 
 		await waitFor(() => {
-			expect(configureWellnessOnboardingMock).toHaveBeenCalledWith(
-				expect.objectContaining({ enableWaterReminder: true }),
-			);
+			expect(configureWellnessOnboardingMock).toHaveBeenCalledWith({
+				enableWaterReminder: true,
+				waterReminderPreset: "moderate",
+				waterReminderIntervalMinutes: 45,
+				waterReminderDailyGoal: 8,
+			});
+			expect(continueButton).toHaveProperty("disabled", true);
+			expect(reminderSwitch).toHaveProperty("disabled", true);
 		});
+
+		request.resolve({ success: true });
+		await waitFor(() =>
+			expect(pushMock).toHaveBeenCalledWith("/onboarding/notifications"),
+		);
 		expect(pushMock).toHaveBeenCalledWith("/onboarding/notifications");
 		expect(pushMock).toHaveBeenCalledOnce();
 		expect(continueButton).toHaveProperty("disabled", true);
@@ -142,9 +167,11 @@ describe("WellnessPage", () => {
 });
 
 function deferred<T>() {
+	let resolve!: (value: T) => void;
 	let reject!: (reason: unknown) => void;
-	const promise = new Promise<T>((_resolve, rejectPromise) => {
+	const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+		resolve = resolvePromise;
 		reject = rejectPromise;
 	});
-	return { promise, reject };
+	return { promise, reject, resolve };
 }

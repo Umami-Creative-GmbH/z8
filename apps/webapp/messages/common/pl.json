@@ -432,6 +432,12 @@
     }
   },
   "presence": {
+    "activity": {
+      "lastActivity": "ostatnia aktywność {date}",
+      "relativeHours": "od {hours}h",
+      "relativeHoursMinutes": "od {hours}h {minutes}min",
+      "relativeMinutes": "od {minutes}min"
+    },
     "clockedIn": "Rozpoczęto pracę",
     "clockedOut": "Zakończono pracę"
   },

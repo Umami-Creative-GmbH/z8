@@ -60,6 +60,8 @@ const UNZONED_LUXON_NOW = /\bDateTime\.now\(\)(?!\s*\.setZone\s*\()/;
 const UNZONED_LUXON_FROM_ISO = /\bDateTime\.fromISO\(\s*[^,)]*\)(?!\s*\.setZone\s*\()/;
 const NATIVE_SCHEDULING_HOUR_MATH = /\.setHours\s*\(/;
 const DATE_FNS_P_FORMAT = /\bformat\s*\([^,]+,\s*["']P{1,4}p{0,2}["']\s*\)/;
+const APPLICATION_DRIZZLE_ADAPTER_IMPORT =
+	/from\s+["']@\/lib\/datetime\/drizzle-adapter["']/;
 
 function collectSourceFiles(directory: string): string[] {
 	return readdirSync(directory).flatMap((entry) => {
@@ -96,6 +98,19 @@ describe("Temporal source guard", () => {
 			.filter((filePath) => TEMPORAL_GLOBAL_IMPORT.test(readFileSync(filePath, "utf8")))
 			.map((filePath) => relative(SOURCE_ROOT, filePath))
 			.filter((filePath) => !SCHEDULE_X_GLOBAL_POLYFILL_ALLOWLIST.has(filePath));
+
+		expect(offenders).toEqual([]);
+	});
+
+	it("keeps Drizzle schema modules free of application datetime runtime dependencies", () => {
+		const schemaRoot = join(SOURCE_ROOT, "db/schema");
+		const offenders = collectSourceFiles(schemaRoot)
+			.filter((filePath) => {
+				const relativePath = relative(schemaRoot, filePath);
+				return !/(?:^|[/\\])__tests__(?:[/\\]|$)|\.test\.tsx?$/.test(relativePath);
+			})
+			.filter((filePath) => APPLICATION_DRIZZLE_ADAPTER_IMPORT.test(readFileSync(filePath, "utf8")))
+			.map((filePath) => relative(SOURCE_ROOT, filePath));
 
 		expect(offenders).toEqual([]);
 	});

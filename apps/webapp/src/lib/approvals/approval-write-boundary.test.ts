@@ -3900,7 +3900,7 @@ db.delete(approvalOutbox);`,
 				},
 				{
 					columns: [],
-					functionName: "insertIfPresent",
+					functionName: "upsertCanonicalTimeRecords",
 					operation: "insert",
 					semantic: "policy_clock_out_terminal_break",
 					table: "time_record",
