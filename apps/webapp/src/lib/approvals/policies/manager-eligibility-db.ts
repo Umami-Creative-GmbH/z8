@@ -108,10 +108,10 @@ export async function getEligibleManagerIdsForRequester(input: {
 	requesterEmployeeId: string;
 	organizationId: string;
 }) {
-	const employees = await input.db.query.employee.findMany({
-		where: eq(employee.organizationId, input.organizationId),
-	});
-	const [managerLinks, { memberships, teams }] = await Promise.all([
+	const [employees, managerLinks, { memberships, teams }] = await Promise.all([
+		input.db.query.employee.findMany({
+			where: eq(employee.organizationId, input.organizationId),
+		}),
 		input.db.query.employeeManagers.findMany({
 			where: eq(employeeManagers.employeeId, input.requesterEmployeeId),
 		}),
@@ -137,10 +137,10 @@ export async function getPrimaryEligibleManagerIdForRequester(input: {
 	requesterEmployeeId: string;
 	organizationId: string;
 }): Promise<string | null> {
-	const employees = await input.db.query.employee.findMany({
-		where: eq(employee.organizationId, input.organizationId),
-	});
-	const [managerLinks, { memberships, teams }] = await Promise.all([
+	const [employees, managerLinks, { memberships, teams }] = await Promise.all([
+		input.db.query.employee.findMany({
+			where: eq(employee.organizationId, input.organizationId),
+		}),
 		input.db.query.employeeManagers.findMany({
 			where: eq(employeeManagers.employeeId, input.requesterEmployeeId),
 		}),

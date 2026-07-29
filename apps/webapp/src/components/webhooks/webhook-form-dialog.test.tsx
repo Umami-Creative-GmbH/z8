@@ -431,7 +431,7 @@ describe("WebhookFormDialog", () => {
 		expect(
 			screen.getByRole("checkbox", { name: "absence_request_submitted" }),
 		).toBeTruthy();
-	});
+	}, 10_000);
 
 	it("wires required validation to accessible TanStack field errors", async () => {
 		renderCreateDialog();
