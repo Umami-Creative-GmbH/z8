@@ -9,7 +9,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { currentTimestamp } from "./timestamp";
 import { organization, user } from "../auth-schema";
 import { absenceEntry } from "./absence";
 import { employee, team } from "./organization";

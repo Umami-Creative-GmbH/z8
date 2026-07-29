@@ -8,7 +8,7 @@ import {
 	timestamp,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { currentTimestamp } from "./timestamp";
 
 // Import auth tables for FK references
 import { user } from "../auth-schema";

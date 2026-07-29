@@ -2,12 +2,18 @@ import { and, eq, inArray } from "drizzle-orm";
 import { Cause, Effect, Exit, Option } from "effect";
 import { db } from "@/db";
 import { approvalRequest } from "@/db/schema";
-import type { ApprovalActionOptions, ApprovalTypeHandler } from "@/lib/approvals/domain/types";
+import type {
+	ApprovalActionOptions,
+	ApprovalTypeHandler,
+} from "@/lib/approvals/domain/types";
 import { ApprovalAuditLoggerLive } from "@/lib/approvals/infrastructure/audit-logger";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runtime } from "@/lib/effect/runtime";
 import { createLogger } from "@/lib/logger";
-import { getSupportedInboxHandler, isSupportedInboxType } from "./source-adapters";
+import {
+	getSupportedInboxHandler,
+	isSupportedInboxType,
+} from "./source-adapters";
 import type {
 	ApprovalInboxBulkDecisionResult,
 	ApprovalInboxDecisionFailure,
@@ -79,15 +85,27 @@ export async function decideApprovalInboxItemFromRequest({
 	if (action === "reject" && !trimmedReason) {
 		throw new Error("Rejection reason is required");
 	}
-	const actionOptions: ApprovalActionOptions =
+	const actionOptions: ApprovalActionOptions & { organizationId: string } =
 		actorEmployeeId === request.approverId
-			? { approvalRequestId: request.id }
-			: { approvalRequestId: request.id, allowAnyApprover: true };
+			? {
+					approvalRequestId: request.id,
+					organizationId: request.organizationId,
+				}
+			: {
+					approvalRequestId: request.id,
+					allowAnyApprover: true,
+					organizationId: request.organizationId,
+				};
 
 	const effect =
 		action === "approve"
 			? handler.approve(request.entityId, actorEmployeeId, actionOptions)
-			: handler.reject(request.entityId, actorEmployeeId, trimmedReason ?? "", actionOptions);
+			: handler.reject(
+					request.entityId,
+					actorEmployeeId,
+					trimmedReason ?? "",
+					actionOptions,
+				);
 	const exit = await runEffect(effect);
 
 	return Exit.match(exit, {
@@ -215,7 +233,12 @@ export async function approveApprovalInboxItem({
 	organizationId: string;
 } & DecisionVisibilityInput): Promise<ApprovalInboxDecisionSuccess> {
 	const request = await loadDecisionRequest(approvalId, organizationId);
-	assertCanDecideRequest({ request, actorEmployeeId, includeAllApprovers, eligibleApprovalScopes });
+	assertCanDecideRequest({
+		request,
+		actorEmployeeId,
+		includeAllApprovers,
+		eligibleApprovalScopes,
+	});
 	const handler = getSupportedInboxHandler(request.entityType);
 	if (!handler) {
 		throw new Error(`Unsupported approval type: ${request.entityType}`);
@@ -243,7 +266,12 @@ export async function rejectApprovalInboxItem({
 	reason: string;
 } & DecisionVisibilityInput): Promise<ApprovalInboxDecisionSuccess> {
 	const request = await loadDecisionRequest(approvalId, organizationId);
-	assertCanDecideRequest({ request, actorEmployeeId, includeAllApprovers, eligibleApprovalScopes });
+	assertCanDecideRequest({
+		request,
+		actorEmployeeId,
+		includeAllApprovers,
+		eligibleApprovalScopes,
+	});
 	const handler = getSupportedInboxHandler(request.entityType);
 	if (!handler) {
 		throw new Error(`Unsupported approval type: ${request.entityType}`);
@@ -313,7 +341,9 @@ function withMissingApprovalFailures(
 	result: ApprovalInboxBulkDecisionResult,
 ): ApprovalInboxBulkDecisionResult {
 	const foundIds = new Set(requests.map((request) => request.id));
-	const requestedOrder = new Map(approvalIds.map((approvalId, index) => [approvalId, index]));
+	const requestedOrder = new Map(
+		approvalIds.map((approvalId, index) => [approvalId, index]),
+	);
 	const failed = [...result.failed];
 
 	for (const approvalId of approvalIds) {
@@ -321,7 +351,11 @@ function withMissingApprovalFailures(
 			continue;
 		}
 
-		failed.push({ id: approvalId, code: "not_found", message: "Approval not found" });
+		failed.push({
+			id: approvalId,
+			code: "not_found",
+			message: "Approval not found",
+		});
 	}
 
 	failed.sort((first, second) => {
@@ -370,11 +404,15 @@ async function loadDecisionRequests(
 			eq(approvalRequest.organizationId, organizationId),
 		),
 	});
-	const requestsById = new Map(requests.map((request) => [request.id, request]));
+	const requestsById = new Map(
+		requests.map((request) => [request.id, request]),
+	);
 
 	return approvalIds
 		.map((approvalId) => requestsById.get(approvalId))
-		.filter((request): request is NonNullable<typeof request> => Boolean(request))
+		.filter((request): request is NonNullable<typeof request> =>
+			Boolean(request),
+		)
 		.map(toPersistedDecisionRequest);
 }
 
@@ -407,7 +445,14 @@ function assertCanDecideRequest({
 	request: PersistedApprovalRequestForDecision;
 	actorEmployeeId: string;
 } & DecisionVisibilityInput): void {
-	if (canDecideRequest({ request, actorEmployeeId, includeAllApprovers, eligibleApprovalScopes })) {
+	if (
+		canDecideRequest({
+			request,
+			actorEmployeeId,
+			includeAllApprovers,
+			eligibleApprovalScopes,
+		})
+	) {
 		return;
 	}
 
@@ -442,21 +487,36 @@ function canDecideRequest({
 }
 
 function extractEffectError(cause: Cause.Cause<unknown>): unknown {
-	return Option.getOrNull(Cause.failureOption(cause)) ?? [...Cause.defects(cause)][0] ?? cause;
+	return (
+		Option.getOrNull(Cause.failureOption(cause)) ??
+		[...Cause.defects(cause)][0] ??
+		cause
+	);
 }
 
-function mapDecisionFailure(id: string, error: unknown): ApprovalInboxDecisionFailure {
-	const message = error instanceof Error ? error.message : getErrorMessage(error);
-	const tag = error && typeof error === "object" && "_tag" in error ? String(error._tag) : null;
+function mapDecisionFailure(
+	id: string,
+	error: unknown,
+): ApprovalInboxDecisionFailure {
+	const message =
+		error instanceof Error ? error.message : getErrorMessage(error);
+	const tag =
+		error && typeof error === "object" && "_tag" in error
+			? String(error._tag)
+			: null;
 	const normalizedMessage = message.toLowerCase();
 	const hasStaleMessage = isStaleDecisionMessage(normalizedMessage);
-	const hasAuthorizationMessage = isAuthorizationFailureMessage(normalizedMessage);
+	const hasAuthorizationMessage =
+		isAuthorizationFailureMessage(normalizedMessage);
 
 	if (message.startsWith("Unsupported approval type")) {
 		return { id, code: "unsupported", message };
 	}
 
-	if ((hasStaleMessage && !hasAuthorizationMessage) || tag === "ConflictError") {
+	if (
+		(hasStaleMessage && !hasAuthorizationMessage) ||
+		tag === "ConflictError"
+	) {
 		return { id, code: "stale", message };
 	}
 
@@ -470,10 +530,17 @@ function mapDecisionFailure(id: string, error: unknown): ApprovalInboxDecisionFa
 		tag === "AuthenticationError" ||
 		tag === "AppAccessDeniedError"
 	) {
-		return { id, code: "forbidden", message: getSafeAuthorizationMessage(message) };
+		return {
+			id,
+			code: "forbidden",
+			message: getSafeAuthorizationMessage(message),
+		};
 	}
 
-	logger.error({ error, approvalId: id }, "Approval inbox bulk decision failed");
+	logger.error(
+		{ error, approvalId: id },
+		"Approval inbox bulk decision failed",
+	);
 	return { id, code: "validation_failed", message: "Approval decision failed" };
 }
 

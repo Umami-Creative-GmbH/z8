@@ -38,7 +38,7 @@ function AbsenceCard({ employee }: { employee: AbsentEmployee }) {
 	const locale = tolgee.getLanguage() || "en";
 	const returnDate = formatDashboardDate(employee.returnDate, locale);
 	return (
-		<div className="group flex items-center gap-3 rounded-xl border bg-card p-3 transition-all hover:shadow-md hover:border-primary/20">
+		<div className="group flex items-center gap-3 rounded-xl border bg-card p-3 transition-[border-color,box-shadow] hover:shadow-md hover:border-primary/20">
 			<UserAvatar
 				seed={employee.userId}
 				image={employee.image}

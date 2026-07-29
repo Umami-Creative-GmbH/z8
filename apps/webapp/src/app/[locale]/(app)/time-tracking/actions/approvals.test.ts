@@ -37,16 +37,29 @@ vi.mock("@/lib/notifications/triggers", () => ({
 
 vi.mock("./shared", () => ({ logger: mockState.logger }));
 
-const { createTimeEntryApprovalRequest } = await import("./approvals");
+const {
+	createClockOutApprovalRequest,
+	createManualEntryApprovalRequest,
+	createTimeEntryApprovalRequest,
+} = await import("./approvals");
 
 describe("time tracking approval requests", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.findEmployee.mockResolvedValue({ teamId: null, organizationId: "org-1" });
+		mockState.findEmployee.mockResolvedValue({
+			teamId: null,
+			organizationId: "org-1",
+		});
 		mockState.findGroupMembers.mockResolvedValue([]);
 		mockState.findManagerLinks.mockResolvedValue([]);
 		mockState.findEmployees.mockResolvedValue([
-			{ id: "emp-1", userId: "user-1", organizationId: "org-1", isActive: true, role: "employee" },
+			{
+				id: "emp-1",
+				userId: "user-1",
+				organizationId: "org-1",
+				isActive: true,
+				role: "employee",
+			},
 			{
 				id: "manager-1",
 				userId: "manager-user-1",
@@ -67,7 +80,11 @@ describe("time tracking approval requests", () => {
 				isActive: true,
 				priority: 1,
 				conditions: [
-					{ conditionType: "approval_type", operator: "equals", valueJson: "time_entry" },
+					{
+						conditionType: "approval_type",
+						operator: "equals",
+						valueJson: "time_entry",
+					},
 				],
 				stages: [
 					{
@@ -87,6 +104,7 @@ describe("time tracking approval requests", () => {
 			managerId: "manager-1",
 			organizationId: "org-1",
 			reason: "Clock-out requires approval",
+			requestKind: "policy_clock_out",
 			overtimeRisk: "warning",
 		});
 
@@ -99,6 +117,34 @@ describe("time tracking approval requests", () => {
 				approverId: "manager-1",
 				status: "pending",
 				reason: "Clock-out requires approval",
+				metadata: { timeRequest: { kind: "policy_clock_out" } },
+			}),
+		);
+	});
+
+	it.each([
+		["manual_time_submission", createManualEntryApprovalRequest],
+		["policy_clock_out", createClockOutApprovalRequest],
+	] as const)("writes strict %s metadata through the policy creator", async (kind, createRequest) => {
+		mockState.findPolicies.mockResolvedValue([]);
+
+		await createRequest({
+			workPeriodId: "work-period-1",
+			employeeId: "emp-1",
+			managerId: "manager-1",
+			organizationId: "org-1",
+			startTime: new Date("2026-05-22T08:00:00.000Z"),
+			endTime: new Date("2026-05-22T16:00:00.000Z"),
+			durationMinutes: 480,
+			...(kind === "manual_time_submission"
+				? { reason: "Forgot to clock" }
+				: {}),
+		} as never);
+
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				entityType: "time_entry",
+				metadata: { timeRequest: { kind } },
 			}),
 		);
 	});

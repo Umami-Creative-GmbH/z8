@@ -60,12 +60,18 @@ export function Settings({
       }}
     >
       {/* Backdrop */}
-      <div
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-hidden="true"
         style={{
           position: "absolute",
           inset: 0,
           background: "rgba(0, 0, 0, 0.4)",
           backdropFilter: "blur(4px)",
+          border: 0,
+          outline: "none",
+          padding: 0,
         }}
         onClick={onClose}
       />
@@ -110,6 +116,8 @@ export function Settings({
             <h2 style={{ fontSize: "18px", fontWeight: 600, margin: 0 }}>Settings</h2>
           </div>
           <button
+            type="button"
+            aria-label="Close settings"
             onClick={onClose}
             style={{
               padding: "8px",
@@ -194,12 +202,18 @@ export function Settings({
             }}
           >
             <div>
-              <label style={{ fontSize: "14px", fontWeight: 500 }}>Always on top</label>
+              <span id="always-on-top-label" style={{ fontSize: "14px", fontWeight: 500 }}>
+                Always on top
+              </span>
               <p style={{ fontSize: "12px", color: "var(--color-muted-foreground)", margin: 0 }}>
                 Keep window above other apps
               </p>
             </div>
             <button
+              type="button"
+              role="switch"
+              aria-checked={alwaysOnTop}
+              aria-labelledby="always-on-top-label"
               onClick={() => setAlwaysOnTop(!alwaysOnTop)}
               style={{
                 position: "relative",
@@ -240,12 +254,18 @@ export function Settings({
             }}
           >
             <div>
-              <label style={{ fontSize: "14px", fontWeight: 500 }}>Start with Windows</label>
+              <span id="auto-startup-label" style={{ fontSize: "14px", fontWeight: 500 }}>
+                Start with Windows
+              </span>
               <p style={{ fontSize: "12px", color: "var(--color-muted-foreground)", margin: 0 }}>
                 Launch automatically on login
               </p>
             </div>
             <button
+              type="button"
+              role="switch"
+              aria-checked={autoStartup}
+              aria-labelledby="auto-startup-label"
               onClick={() => setAutoStartup(!autoStartup)}
               style={{
                 position: "relative",
@@ -280,6 +300,7 @@ export function Settings({
           {/* Logout button */}
           {isAuthenticated && (
             <button
+              type="button"
               onClick={handleLogout}
               onMouseEnter={() => setLogoutHovered(true)}
               onMouseLeave={() => setLogoutHovered(false)}
@@ -320,6 +341,7 @@ export function Settings({
         {/* Footer */}
         <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
           <button
+            type="button"
             onClick={onClose}
             onMouseEnter={() => setCancelHovered(true)}
             onMouseLeave={() => setCancelHovered(false)}
@@ -339,6 +361,7 @@ export function Settings({
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleSave}
             disabled={isSaving || !webappUrl}
             onMouseEnter={() => setSaveHovered(true)}

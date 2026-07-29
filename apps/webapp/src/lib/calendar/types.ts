@@ -1,4 +1,9 @@
-export type CalendarEventType = "holiday" | "absence" | "time_entry" | "work_period" | "break";
+export type CalendarEventType =
+	| "holiday"
+	| "absence"
+	| "time_entry"
+	| "work_period"
+	| "break";
 
 export interface CalendarEvent {
 	id: string;
@@ -68,6 +73,7 @@ export interface TimeEntryEvent extends CalendarEvent {
 }
 
 export interface SurchargeBreakdown {
+	ruleId: string;
 	ruleName: string;
 	ruleType: "day_of_week" | "time_window" | "date_based";
 	percentage: number;

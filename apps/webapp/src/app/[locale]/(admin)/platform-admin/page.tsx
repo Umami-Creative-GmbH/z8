@@ -70,7 +70,7 @@ function StatCard({ title, value, description, icon, href, variant = "default" }
 						{icon}
 					</div>
 					<IconArrowUpRight
-						className="size-4 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-muted-foreground"
+						className="size-4 text-muted-foreground/50 transition-[color,transform] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-muted-foreground"
 						aria-hidden="true"
 					/>
 				</CardHeader>
@@ -279,7 +279,7 @@ interface QuickActionCardProps {
 function QuickActionCard({ title, description, href, icon }: QuickActionCardProps) {
 	return (
 		<Link href={href} className="group block">
-			<Card className="h-full transition-all duration-200 hover:border-border hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/20">
+			<Card className="h-full transition-[border-color,box-shadow] duration-200 hover:border-border hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/20">
 				<CardContent className="flex items-start gap-4 p-6">
 					<div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
 						{icon}
@@ -288,7 +288,7 @@ function QuickActionCard({ title, description, href, icon }: QuickActionCardProp
 						<div className="flex items-center justify-between">
 							<CardTitle className="text-base">{title}</CardTitle>
 							<IconChevronRight
-								className="size-4 text-muted-foreground/50 transition-all group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+								className="size-4 text-muted-foreground/50 transition-[color,transform] group-hover:translate-x-0.5 group-hover:text-muted-foreground"
 								aria-hidden="true"
 							/>
 						</div>

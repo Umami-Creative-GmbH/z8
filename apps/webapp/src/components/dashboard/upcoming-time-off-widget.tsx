@@ -95,7 +95,7 @@ function AbsenceCard({ absence }: { absence: UpcomingAbsence }) {
 			: t("dashboard.upcoming-time-off.days", "days");
 
 	return (
-		<div className="flex items-start gap-3 rounded-xl border bg-card p-3 transition-all hover:shadow-md hover:border-primary/20">
+		<div className="flex items-start gap-3 rounded-xl border bg-card p-3 transition-[border-color,box-shadow] hover:shadow-md hover:border-primary/20">
 			{/* Timeline Marker */}
 			<TimelineMarker daysUntil={Math.max(0, daysUntil)} />
 

@@ -28,7 +28,10 @@ export async function POST(request: NextRequest) {
 		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
 		const activeOrgId = session.session?.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		// Check CASL permissions
@@ -44,12 +47,16 @@ export async function POST(request: NextRequest) {
 
 		if (!validationResult.success) {
 			return NextResponse.json(
-				{ error: "Invalid request body", details: validationResult.error.issues },
+				{
+					error: "Invalid request body",
+					details: validationResult.error.issues,
+				},
 				{ status: 400 },
 			);
 		}
 
-		const { holidays, categoryId, createRecurring, skipDuplicates } = validationResult.data;
+		const { holidays, categoryId, createRecurring, skipDuplicates } =
+			validationResult.data;
 
 		// Get or create "Public Holidays" category
 		let targetCategoryId = categoryId;
@@ -98,12 +105,16 @@ export async function POST(request: NextRequest) {
 				recurrenceRule: holiday.recurrenceRule,
 			})
 			.from(holiday)
-			.where(and(eq(holiday.organizationId, activeOrgId), eq(holiday.isActive, true)));
+			.where(
+				and(
+					eq(holiday.organizationId, activeOrgId),
+					eq(holiday.isActive, true),
+				),
+			);
 
-		// Process holidays
-		let imported = 0;
+		// Plan the batch synchronously so duplicate detection still sees earlier input rows.
 		let skipped = 0;
-		const errors: string[] = [];
+		const holidaysToImport = [];
 
 		for (const h of holidays) {
 			const holidayPreview: HolidayPreview = {
@@ -115,45 +126,56 @@ export async function POST(request: NextRequest) {
 			};
 
 			// Check for duplicates
-			if (skipDuplicates && isHolidayDuplicate(holidayPreview, existingHolidays)) {
+			if (
+				skipDuplicates &&
+				isHolidayDuplicate(holidayPreview, existingHolidays)
+			) {
 				skipped++;
 				continue;
 			}
 
-			try {
-				const holidayData = mapToHolidayFormValues(
-					holidayPreview,
-					targetCategoryId,
-					createRecurring,
-				);
+			const holidayData = mapToHolidayFormValues(
+				holidayPreview,
+				targetCategoryId,
+				createRecurring,
+			);
+			holidaysToImport.push({ holidayData, sourceName: h.name });
 
-				await db.insert(holiday).values({
-					organizationId: activeOrgId,
-					name: holidayData.name,
-					description: holidayData.description || null,
-					categoryId: holidayData.categoryId,
-					startDate: holidayData.startDate,
-					endDate: holidayData.endDate,
-					recurrenceType: holidayData.recurrenceType,
-					recurrenceRule: holidayData.recurrenceRule || null,
-					recurrenceEndDate: holidayData.recurrenceEndDate || null,
-					isActive: holidayData.isActive,
-					createdBy: session.user.id,
-				});
-
-				imported++;
-
-				// Add to existing list to prevent duplicates within same batch
-				existingHolidays.push({
-					name: holidayData.name,
-					startDate: holidayData.startDate,
-					recurrenceRule: holidayData.recurrenceRule || null,
-				});
-			} catch (error) {
-				console.error(`Error importing holiday ${h.name}:`, error);
-				errors.push(`Failed to import "${h.name}"`);
-			}
+			// Add to existing list to prevent duplicates within the same input batch.
+			existingHolidays.push({
+				name: holidayData.name,
+				startDate: holidayData.startDate,
+				recurrenceRule: holidayData.recurrenceRule || null,
+			});
 		}
+
+		const importResults = await Promise.all(
+			holidaysToImport.map(async ({ holidayData, sourceName }) => {
+				try {
+					await db.insert(holiday).values({
+						organizationId: activeOrgId,
+						name: holidayData.name,
+						description: holidayData.description || null,
+						categoryId: holidayData.categoryId,
+						startDate: holidayData.startDate,
+						endDate: holidayData.endDate,
+						recurrenceType: holidayData.recurrenceType,
+						recurrenceRule: holidayData.recurrenceRule || null,
+						recurrenceEndDate: holidayData.recurrenceEndDate || null,
+						isActive: holidayData.isActive,
+						createdBy: session.user.id,
+					});
+					return null;
+				} catch (error) {
+					console.error(`Error importing holiday ${sourceName}:`, error);
+					return `Failed to import "${sourceName}"`;
+				}
+			}),
+		);
+		const errors = importResults.filter(
+			(error): error is string => error !== null,
+		);
+		const imported = holidaysToImport.length - errors.length;
 
 		return NextResponse.json({
 			imported,
@@ -163,6 +185,9 @@ export async function POST(request: NextRequest) {
 		});
 	} catch (error) {
 		console.error("Error importing holidays:", error);
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }

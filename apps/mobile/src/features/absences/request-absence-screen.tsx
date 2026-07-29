@@ -64,6 +64,153 @@ export function formatDatePickerButtonLabel(fieldName: DateFieldName, value: str
 	return `Pick ${label}: ${selectedDate}`;
 }
 
+function RequestAbsenceHeader({ vacationBalance }: { vacationBalance: MobileVacationBalance }) {
+  return (
+    <View style={styles.headerSurface}>
+      <Text style={styles.eyebrow}>Request absence</Text>
+      <Text style={styles.title}>Submit a time-off request</Text>
+      <Text style={styles.description}>
+        Keep the request short and precise so it can be reviewed quickly.
+      </Text>
+      <View style={styles.balanceRow}>
+        <Text style={styles.balanceLabel}>Remaining vacation</Text>
+        <Text style={styles.balanceValue}>{vacationBalance.remainingDays} days</Text>
+      </View>
+    </View>
+  );
+}
+
+function CategoryPicker({
+  categories,
+  error,
+  value,
+  onChange,
+}: {
+  categories: MobileAbsenceCategory[];
+  error?: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.label}>Absence type</Text>
+      <View style={styles.chipWrap}>
+        {categories.map((category) => {
+          const isSelected = value === category.id;
+          return (
+            <Pressable
+              accessibilityLabel={category.name}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
+              key={category.id}
+              onPress={() => onChange(category.id)}
+              style={[styles.choiceChip, isSelected && styles.choiceChipActive]}
+            >
+              <Text style={[styles.choiceChipLabel, isSelected && styles.choiceChipLabelActive]}>
+                {category.name}
+              </Text>
+            </Pressable>
+          );
+        })}
+        {categories.length === 0 ? (
+          <Text style={styles.helperText}>No absence types available right now.</Text>
+        ) : null}
+      </View>
+      {error ? <Text style={styles.fieldError}>{error}</Text> : null}
+    </View>
+  );
+}
+
+function AbsenceDatePicker({
+  activeDatePicker,
+  error,
+  fieldName,
+  label,
+  value,
+  onChange,
+  onClose,
+  onOpen,
+}: {
+  activeDatePicker: DateFieldName | null;
+  error?: string;
+  fieldName: DateFieldName;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  onClose: () => void;
+  onOpen: () => void;
+}) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.label}>{label}</Text>
+      <Pressable
+        accessibilityLabel={formatDatePickerButtonLabel(fieldName, value)}
+        accessibilityRole="button"
+        onPress={onOpen}
+      >
+        <UiTextInput
+          key={`${fieldName}-${value}`}
+          defaultValue={value}
+          editable={false}
+          style={styles.dateInput}
+          testID={`${fieldName === "startDate" ? "start" : "end"}-date-input`}
+          textStyle={styles.dateInputText}
+        />
+      </Pressable>
+      {activeDatePicker === fieldName ? (
+        <DateTimePicker
+          mode="date"
+          onDismiss={onClose}
+          onValueChange={(_event, selectedDate) => onChange(pickerDateToIsoDate(selectedDate))}
+          presentation="dialog"
+          testID={`${fieldName === "startDate" ? "start" : "end"}-date-picker`}
+          value={isoDateToPickerDate(value)}
+        />
+      ) : null}
+      <UiText textStyle={styles.dateHelperText}>Tap to choose a date</UiText>
+      {error ? <Text style={styles.fieldError}>{error}</Text> : null}
+    </View>
+  );
+}
+
+function PeriodPicker({
+  error,
+  label,
+  value,
+  onChange,
+}: {
+  error?: string;
+  label: string;
+  value: MobileAbsenceDayPeriod;
+  onChange: (value: MobileAbsenceDayPeriod) => void;
+}) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.label}>{label} period</Text>
+      <View style={styles.segmentedControl}>
+        {PERIOD_OPTIONS.map((option) => {
+          const isSelected = value === option.value;
+          return (
+            <Pressable
+              accessibilityLabel={`${label} period ${option.label}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
+              key={option.value}
+              onPress={() => onChange(option.value)}
+              style={[styles.segment, isSelected && styles.segmentActive]}
+            >
+              <Text style={[styles.segmentLabel, isSelected && styles.segmentLabelActive]}>
+                {option.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      {error ? <Text style={styles.fieldError}>{error}</Text> : null}
+    </View>
+  );
+}
+
 export function RequestAbsenceScreen({
   categories,
   vacationBalance,
@@ -109,18 +256,7 @@ export function RequestAbsenceScreen({
     <Host style={styles.container}>
     <ScrollView contentContainerStyle={styles.content} style={styles.container}>
       <Column spacing={16}>
-      <View style={styles.headerSurface}>
-        <Text style={styles.eyebrow}>Request absence</Text>
-        <Text style={styles.title}>Submit a time-off request</Text>
-        <Text style={styles.description}>
-          Keep the request short and precise so it can be reviewed quickly.
-        </Text>
-
-        <View style={styles.balanceRow}>
-          <Text style={styles.balanceLabel}>Remaining vacation</Text>
-          <Text style={styles.balanceValue}>{vacationBalance.remainingDays} days</Text>
-        </View>
-      </View>
+      <RequestAbsenceHeader vacationBalance={vacationBalance} />
 
       <FieldGroup style={styles.fieldGroupSurface}>
         <Column spacing={16}>
@@ -132,180 +268,77 @@ export function RequestAbsenceScreen({
 
         <form.Field name="categoryId">
           {(field) => (
-            <View style={styles.section}>
-              <Text style={styles.label}>Absence type</Text>
-              <View style={styles.chipWrap}>
-                {categories.map((category) => {
-                  const isSelected = field.state.value === category.id;
-
-                  return (
-                    <Pressable
-                      accessibilityLabel={category.name}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: isSelected }}
-                      key={category.id}
-                      onPress={() => {
-                        field.handleChange(category.id);
-                        setValidationErrors((current) => ({ ...current, categoryId: undefined }));
-                      }}
-                      style={[styles.choiceChip, isSelected && styles.choiceChipActive]}
-                    >
-                      <Text style={[styles.choiceChipLabel, isSelected && styles.choiceChipLabelActive]}>
-                        {category.name}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-                {categories.length === 0 ? (
-                  <Text style={styles.helperText}>No absence types available right now.</Text>
-                ) : null}
-              </View>
-              {validationErrors.categoryId ? (
-                <Text style={styles.fieldError}>{validationErrors.categoryId}</Text>
-              ) : null}
-            </View>
+            <CategoryPicker
+              categories={categories}
+              error={validationErrors.categoryId}
+              value={field.state.value}
+              onChange={(value) => {
+                field.handleChange(value);
+                setValidationErrors((current) => ({ ...current, categoryId: undefined }));
+              }}
+            />
           )}
         </form.Field>
 
         <form.Field name="startDate">
           {(field) => (
-            <View style={styles.section}>
-              <Text style={styles.label}>Start date</Text>
-              <Pressable
-                accessibilityLabel={formatDatePickerButtonLabel("startDate", field.state.value)}
-                accessibilityRole="button"
-                onPress={() => setActiveDatePicker("startDate")}
-              >
-                <UiTextInput
-                  key={`start-${field.state.value}`}
-                  defaultValue={field.state.value}
-                  editable={false}
-                  style={styles.dateInput}
-                  testID="start-date-input"
-                  textStyle={styles.dateInputText}
-                />
-              </Pressable>
-              {activeDatePicker === "startDate" ? (
-                <DateTimePicker
-                  mode="date"
-                  onDismiss={() => setActiveDatePicker(null)}
-                  onValueChange={(_event, selectedDate) => {
-                    field.handleChange(pickerDateToIsoDate(selectedDate));
-                    setValidationErrors((current) => ({ ...current, startDate: undefined }));
-                    setActiveDatePicker(null);
-                  }}
-                  presentation="dialog"
-                  testID="start-date-picker"
-                  value={isoDateToPickerDate(field.state.value)}
-                />
-              ) : null}
-              <UiText textStyle={styles.dateHelperText}>Tap to choose a date</UiText>
-              {validationErrors.startDate ? (
-                <Text style={styles.fieldError}>{validationErrors.startDate}</Text>
-              ) : null}
-            </View>
+            <AbsenceDatePicker
+              activeDatePicker={activeDatePicker}
+              error={validationErrors.startDate}
+              fieldName="startDate"
+              label="Start date"
+              value={field.state.value}
+              onChange={(value) => {
+                field.handleChange(value);
+                setValidationErrors((current) => ({ ...current, startDate: undefined }));
+                setActiveDatePicker(null);
+              }}
+              onClose={() => setActiveDatePicker(null)}
+              onOpen={() => setActiveDatePicker("startDate")}
+            />
           )}
         </form.Field>
 
         <form.Field name="startPeriod">
           {(field) => (
-            <View style={styles.section}>
-              <Text style={styles.label}>Start period</Text>
-              <View style={styles.segmentedControl}>
-                {PERIOD_OPTIONS.map((option) => {
-                  const isSelected = field.state.value === option.value;
-
-                  return (
-                    <Pressable
-                      accessibilityLabel={`Start period ${option.label}`}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: isSelected }}
-                      key={option.value}
-                      onPress={() => field.handleChange(option.value)}
-                      style={[styles.segment, isSelected && styles.segmentActive]}
-                    >
-                      <Text style={[styles.segmentLabel, isSelected && styles.segmentLabelActive]}>
-                        {option.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
+            <PeriodPicker label="Start" value={field.state.value} onChange={field.handleChange} />
           )}
         </form.Field>
 
         <form.Field name="endDate">
           {(field) => (
-            <View style={styles.section}>
-              <Text style={styles.label}>End date</Text>
-              <Pressable
-                accessibilityLabel={formatDatePickerButtonLabel("endDate", field.state.value)}
-                accessibilityRole="button"
-                onPress={() => setActiveDatePicker("endDate")}
-              >
-                <UiTextInput
-                  key={`end-${field.state.value}`}
-                  defaultValue={field.state.value}
-                  editable={false}
-                  style={styles.dateInput}
-                  testID="end-date-input"
-                  textStyle={styles.dateInputText}
-                />
-              </Pressable>
-              {activeDatePicker === "endDate" ? (
-                <DateTimePicker
-                  mode="date"
-                  onDismiss={() => setActiveDatePicker(null)}
-                  onValueChange={(_event, selectedDate) => {
-                    field.handleChange(pickerDateToIsoDate(selectedDate));
-                    setValidationErrors((current) => ({ ...current, endDate: undefined, endPeriod: undefined }));
-                    setActiveDatePicker(null);
-                  }}
-                  presentation="dialog"
-                  testID="end-date-picker"
-                  value={isoDateToPickerDate(field.state.value)}
-                />
-              ) : null}
-              <UiText textStyle={styles.dateHelperText}>Tap to choose a date</UiText>
-              {validationErrors.endDate ? (
-                <Text style={styles.fieldError}>{validationErrors.endDate}</Text>
-              ) : null}
-            </View>
+            <AbsenceDatePicker
+              activeDatePicker={activeDatePicker}
+              error={validationErrors.endDate}
+              fieldName="endDate"
+              label="End date"
+              value={field.state.value}
+              onChange={(value) => {
+                field.handleChange(value);
+                setValidationErrors((current) => ({
+                  ...current,
+                  endDate: undefined,
+                  endPeriod: undefined,
+                }));
+                setActiveDatePicker(null);
+              }}
+              onClose={() => setActiveDatePicker(null)}
+              onOpen={() => setActiveDatePicker("endDate")}
+            />
           )}
         </form.Field>
 
         <form.Field name="endPeriod">
           {(field) => (
-            <View style={styles.section}>
-              <Text style={styles.label}>End period</Text>
-              <View style={styles.segmentedControl}>
-                {PERIOD_OPTIONS.map((option) => {
-                  const isSelected = field.state.value === option.value;
-
-                  return (
-                    <Pressable
-                      accessibilityLabel={`End period ${option.label}`}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: isSelected }}
-                      key={option.value}
-                      onPress={() => {
-                        field.handleChange(option.value);
-                        setValidationErrors((current) => ({ ...current, endPeriod: undefined }));
-                      }}
-                      style={[styles.segment, isSelected && styles.segmentActive]}
-                    >
-                      <Text style={[styles.segmentLabel, isSelected && styles.segmentLabelActive]}>
-                        {option.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-              {validationErrors.endPeriod ? (
-                <Text style={styles.fieldError}>{validationErrors.endPeriod}</Text>
-              ) : null}
-            </View>
+            <PeriodPicker
+              error={validationErrors.endPeriod}
+              label="End"
+              value={field.state.value}
+              onChange={(value) => {
+                field.handleChange(value);
+                setValidationErrors((current) => ({ ...current, endPeriod: undefined }));
+              }}
+            />
           )}
         </form.Field>
 

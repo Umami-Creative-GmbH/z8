@@ -48,6 +48,8 @@ export function ClockButton({
 
       {/* Main clock button */}
       <button
+        type="button"
+        aria-label={isClockedIn ? "Clock out" : "Clock in"}
         onClick={handleClick}
         disabled={isLoading || disabled}
         className={`clock-button ${isClockedIn ? "clock-button-stop" : "clock-button-start"} ${isLoading || disabled ? "clock-button-disabled" : ""}`}

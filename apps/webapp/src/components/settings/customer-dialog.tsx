@@ -49,34 +49,39 @@ interface CustomerDialogProps {
 	onSuccess: () => void;
 }
 
-export function CustomerDialog({
+interface CustomerProjectOption {
+	id: string;
+	name: string;
+}
+
+function useCustomerDialogForm({
 	accessTier,
 	organizationId,
 	customer,
 	open,
-	onOpenChange,
 	onSuccess,
 }: CustomerDialogProps) {
 	const { t } = useTranslate();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const isEditing = !!customer;
-	const requiresScopedProject = requiresScopedProjectSelection(accessTier, isEditing);
-
+	const requiresScopedProject = requiresScopedProjectSelection(
+		accessTier,
+		isEditing,
+	);
 	const { data: projectsData } = useQuery({
-		queryKey: queryKeys.projects.list(organizationId, { scope: "customer-dialog" }),
+		queryKey: queryKeys.projects.list(organizationId, {
+			scope: "customer-dialog",
+		}),
 		queryFn: async () => {
 			const result = await getProjects(organizationId);
-			if (!result.success) {
-				return [];
-			}
-
-			return result.data.map((project) => ({ id: project.id, name: project.name }));
+			if (!result.success) return [];
+			return result.data.map((project) => ({
+				id: project.id,
+				name: project.name,
+			}));
 		},
 		enabled: open && !isEditing,
 	});
-
-	const availableProjects = projectsData ?? [];
-
 	const defaultValues: CustomerDialogFormValues = {
 		projectId: "",
 		name: customer?.name || "",
@@ -87,19 +92,19 @@ export function CustomerDialog({
 		phone: customer?.phone || "",
 		website: customer?.website || "",
 	};
-
 	const form = useForm({
 		defaultValues,
 		onSubmit: async ({ value }) => {
 			setIsSubmitting(true);
-
 			if (requiresScopedProject && !value.projectId) {
-				toast.error(t("settings.customers.projectRequired", "Select a project first"));
+				toast.error(
+					t("settings.customers.projectRequired", "Select a project first"),
+				);
 				setIsSubmitting(false);
 				return;
 			}
 
-			if (isEditing && customer) {
+			if (customer) {
 				const result = await updateCustomer(customer.id, {
 					name: value.name,
 					address: value.address || null,
@@ -112,34 +117,57 @@ export function CustomerDialog({
 					(response) => response,
 					() => null,
 				);
-
 				if (result?.success) {
 					toast.success(t("settings.customers.updated", "Customer updated"));
 					onSuccess();
 				} else {
 					toast.error(
-						result?.error || t("settings.customers.updateFailed", "Failed to update customer"),
+						result?.error ||
+							t("settings.customers.updateFailed", "Failed to update customer"),
 					);
 				}
 			} else {
-				const result = await createCustomer(buildCreateCustomerInput(organizationId, value)).then(
+				const result = await createCustomer(
+					buildCreateCustomerInput(organizationId, value),
+				).then(
 					(response) => response,
 					() => null,
 				);
-
 				if (result?.success) {
 					toast.success(t("settings.customers.created", "Customer created"));
 					onSuccess();
 				} else {
 					toast.error(
-						result?.error || t("settings.customers.createFailed", "Failed to create customer"),
+						result?.error ||
+							t("settings.customers.createFailed", "Failed to create customer"),
 					);
 				}
 			}
-
 			setIsSubmitting(false);
 		},
 	});
+
+	return {
+		availableProjects: projectsData ?? [],
+		form,
+		isEditing,
+		isSubmitting,
+		requiresScopedProject,
+	};
+}
+
+type CustomerFormApi = ReturnType<typeof useCustomerDialogForm>["form"];
+
+export function CustomerDialog(props: CustomerDialogProps) {
+	const { open, onOpenChange } = props;
+	const { t } = useTranslate();
+	const {
+		availableProjects,
+		form,
+		isEditing,
+		isSubmitting,
+		requiresScopedProject,
+	} = useCustomerDialogForm(props);
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
@@ -152,192 +180,34 @@ export function CustomerDialog({
 					</ActionPanelTitle>
 					<ActionPanelDescription>
 						{isEditing
-							? t("settings.customers.dialog.editDescription", "Update customer details")
+							? t(
+									"settings.customers.dialog.editDescription",
+									"Update customer details",
+								)
 							: t(
 									"settings.customers.dialog.createDescription",
 									"Add a new customer for project assignments",
 								)}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
-
 				<form
-					onSubmit={(e) => {
-						e.preventDefault();
+					onSubmit={(event) => {
+						event.preventDefault();
 						form.handleSubmit();
 					}}
 					className="flex min-h-0 flex-1 flex-col"
 				>
 					<ActionPanelBody className="grid gap-4">
-						{/* Company Name (required) */}
-						{!isEditing && availableProjects.length > 0 ? (
-							<form.Field name="projectId">
-								{(field) => (
-									<div className="grid gap-2">
-										<Label htmlFor="projectId">
-											{requiresScopedProject
-												? `${t("settings.customers.field.project", "Project")} *`
-												: t("settings.customers.field.project", "Project")}
-										</Label>
-										<Select
-											value={field.state.value}
-											onValueChange={(value) => field.handleChange(value)}
-										>
-											<SelectTrigger>
-												<SelectValue
-													placeholder={t(
-														"settings.customers.field.projectPlaceholder",
-														"Select a project",
-													)}
-												/>
-											</SelectTrigger>
-											<SelectContent>
-												{availableProjects.map((project) => (
-													<SelectItem key={project.id} value={project.id}>
-														{project.name}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
-								)}
-							</form.Field>
-						) : null}
-
-						{/* Company Name (required) */}
-						<form.Field name="name">
-							{(field) => (
-								<div className="grid gap-2">
-									<Label htmlFor="name">
-										{t("settings.customers.field.name", "Company Name")} *
-									</Label>
-									<Input
-										id="name"
-										value={field.state.value}
-										onChange={(e) => field.handleChange(e.target.value)}
-										onBlur={field.handleBlur}
-										placeholder={t(
-											"settings.customers.field.namePlaceholder",
-											"Enter company name",
-										)}
-									/>
-								</div>
-							)}
-						</form.Field>
-
-						{/* Contact Person */}
-						<form.Field name="contactPerson">
-							{(field) => (
-								<div className="grid gap-2">
-									<Label htmlFor="contactPerson">
-										{t("settings.customers.field.contactPerson", "Contact Person")}
-									</Label>
-									<Input
-										id="contactPerson"
-										value={field.state.value}
-										onChange={(e) => field.handleChange(e.target.value)}
-										onBlur={field.handleBlur}
-										placeholder={t(
-											"settings.customers.field.contactPersonPlaceholder",
-											"e.g., John Smith",
-										)}
-									/>
-								</div>
-							)}
-						</form.Field>
-
-						{/* Email & Phone in two columns */}
-						<div className="grid grid-cols-2 gap-4">
-							<form.Field name="email">
-								{(field) => (
-									<div className="grid gap-2">
-										<Label htmlFor="email">{t("settings.customers.field.email", "Email")}</Label>
-										<Input
-											id="email"
-											type="email"
-											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
-											onBlur={field.handleBlur}
-											placeholder="email@example.com"
-										/>
-									</div>
-								)}
-							</form.Field>
-
-							<form.Field name="phone">
-								{(field) => (
-									<div className="grid gap-2">
-										<Label htmlFor="phone">{t("settings.customers.field.phone", "Phone")}</Label>
-										<Input
-											id="phone"
-											type="tel"
-											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
-											onBlur={field.handleBlur}
-											placeholder="+49 ..."
-										/>
-									</div>
-								)}
-							</form.Field>
-						</div>
-
-						{/* Address */}
-						<form.Field name="address">
-							{(field) => (
-								<div className="grid gap-2">
-									<Label htmlFor="address">
-										{t("settings.customers.field.address", "Address")}
-									</Label>
-									<Textarea
-										id="address"
-										value={field.state.value}
-										onChange={(e) => field.handleChange(e.target.value)}
-										onBlur={field.handleBlur}
-										placeholder={t(
-											"settings.customers.field.addressPlaceholder",
-											"Street, City, ZIP",
-										)}
-										rows={2}
-									/>
-								</div>
-							)}
-						</form.Field>
-
-						{/* VAT & Website in two columns */}
-						<div className="grid grid-cols-2 gap-4">
-							<form.Field name="vatId">
-								{(field) => (
-									<div className="grid gap-2">
-										<Label htmlFor="vatId">{t("settings.customers.field.vatId", "VAT ID")}</Label>
-										<Input
-											id="vatId"
-											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
-											onBlur={field.handleBlur}
-											placeholder="DE123456789"
-										/>
-									</div>
-								)}
-							</form.Field>
-
-							<form.Field name="website">
-								{(field) => (
-									<div className="grid gap-2">
-										<Label htmlFor="website">
-											{t("settings.customers.field.website", "Website")}
-										</Label>
-										<Input
-											id="website"
-											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
-											onBlur={field.handleBlur}
-											placeholder="https://..."
-										/>
-									</div>
-								)}
-							</form.Field>
-						</div>
+						{!isEditing && availableProjects.length > 0 && (
+							<CustomerProjectField
+								form={form}
+								projects={availableProjects}
+								required={requiresScopedProject}
+							/>
+						)}
+						<CustomerContactFields form={form} />
+						<CustomerBusinessFields form={form} />
 					</ActionPanelBody>
-
 					<ActionPanelFooter>
 						<Button
 							type="button"
@@ -348,7 +218,9 @@ export function CustomerDialog({
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>
-							{isSubmitting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+							{isSubmitting && (
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
+							)}
 							{isEditing
 								? t("settings.customers.dialog.save", "Save Changes")
 								: t("settings.customers.dialog.create", "Add Customer")}
@@ -357,5 +229,191 @@ export function CustomerDialog({
 				</form>
 			</ActionPanelContent>
 		</ActionPanel>
+	);
+}
+
+function CustomerProjectField({
+	form,
+	projects,
+	required,
+}: {
+	form: CustomerFormApi;
+	projects: CustomerProjectOption[];
+	required: boolean;
+}) {
+	const { t } = useTranslate();
+	return (
+		<form.Field name="projectId">
+			{(field) => (
+				<div className="grid gap-2">
+					<Label htmlFor="projectId">
+						{required
+							? `${t("settings.customers.field.project", "Project")} *`
+							: t("settings.customers.field.project", "Project")}
+					</Label>
+					<Select value={field.state.value} onValueChange={field.handleChange}>
+						<SelectTrigger>
+							<SelectValue
+								placeholder={t(
+									"settings.customers.field.projectPlaceholder",
+									"Select a project",
+								)}
+							/>
+						</SelectTrigger>
+						<SelectContent>
+							{projects.map((project) => (
+								<SelectItem key={project.id} value={project.id}>
+									{project.name}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+			)}
+		</form.Field>
+	);
+}
+
+function CustomerContactFields({ form }: { form: CustomerFormApi }) {
+	const { t } = useTranslate();
+	return (
+		<>
+			<form.Field name="name">
+				{(field) => (
+					<div className="grid gap-2">
+						<Label htmlFor="name">
+							{t("settings.customers.field.name", "Company Name")} *
+						</Label>
+						<Input
+							id="name"
+							value={field.state.value}
+							onChange={(event) => field.handleChange(event.target.value)}
+							onBlur={field.handleBlur}
+							placeholder={t(
+								"settings.customers.field.namePlaceholder",
+								"Enter company name",
+							)}
+						/>
+					</div>
+				)}
+			</form.Field>
+			<form.Field name="contactPerson">
+				{(field) => (
+					<div className="grid gap-2">
+						<Label htmlFor="contactPerson">
+							{t("settings.customers.field.contactPerson", "Contact Person")}
+						</Label>
+						<Input
+							id="contactPerson"
+							value={field.state.value}
+							onChange={(event) => field.handleChange(event.target.value)}
+							onBlur={field.handleBlur}
+							placeholder={t(
+								"settings.customers.field.contactPersonPlaceholder",
+								"e.g., John Smith",
+							)}
+						/>
+					</div>
+				)}
+			</form.Field>
+			<div className="grid grid-cols-2 gap-4">
+				<form.Field name="email">
+					{(field) => (
+						<div className="grid gap-2">
+							<Label htmlFor="email">
+								{t("settings.customers.field.email", "Email")}
+							</Label>
+							<Input
+								id="email"
+								type="email"
+								value={field.state.value}
+								onChange={(event) => field.handleChange(event.target.value)}
+								onBlur={field.handleBlur}
+								placeholder="email@example.com"
+							/>
+						</div>
+					)}
+				</form.Field>
+				<form.Field name="phone">
+					{(field) => (
+						<div className="grid gap-2">
+							<Label htmlFor="phone">
+								{t("settings.customers.field.phone", "Phone")}
+							</Label>
+							<Input
+								id="phone"
+								type="tel"
+								value={field.state.value}
+								onChange={(event) => field.handleChange(event.target.value)}
+								onBlur={field.handleBlur}
+								placeholder="+49 ..."
+							/>
+						</div>
+					)}
+				</form.Field>
+			</div>
+		</>
+	);
+}
+
+function CustomerBusinessFields({ form }: { form: CustomerFormApi }) {
+	const { t } = useTranslate();
+	return (
+		<>
+			<form.Field name="address">
+				{(field) => (
+					<div className="grid gap-2">
+						<Label htmlFor="address">
+							{t("settings.customers.field.address", "Address")}
+						</Label>
+						<Textarea
+							id="address"
+							value={field.state.value}
+							onChange={(event) => field.handleChange(event.target.value)}
+							onBlur={field.handleBlur}
+							placeholder={t(
+								"settings.customers.field.addressPlaceholder",
+								"Street, City, ZIP",
+							)}
+							rows={2}
+						/>
+					</div>
+				)}
+			</form.Field>
+			<div className="grid grid-cols-2 gap-4">
+				<form.Field name="vatId">
+					{(field) => (
+						<div className="grid gap-2">
+							<Label htmlFor="vatId">
+								{t("settings.customers.field.vatId", "VAT ID")}
+							</Label>
+							<Input
+								id="vatId"
+								value={field.state.value}
+								onChange={(event) => field.handleChange(event.target.value)}
+								onBlur={field.handleBlur}
+								placeholder="DE123456789"
+							/>
+						</div>
+					)}
+				</form.Field>
+				<form.Field name="website">
+					{(field) => (
+						<div className="grid gap-2">
+							<Label htmlFor="website">
+								{t("settings.customers.field.website", "Website")}
+							</Label>
+							<Input
+								id="website"
+								value={field.state.value}
+								onChange={(event) => field.handleChange(event.target.value)}
+								onBlur={field.handleBlur}
+								placeholder="https://..."
+							/>
+						</div>
+					)}
+				</form.Field>
+			</div>
+		</>
 	);
 }

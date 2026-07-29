@@ -20,11 +20,17 @@ async function getApprovalNotificationParticipants(
 ) {
 	const [employeeData, managerData] = await Promise.all([
 		db.query.employee.findFirst({
-			where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
+			where: and(
+				eq(employee.id, employeeId),
+				eq(employee.organizationId, organizationId),
+			),
 			with: { user: { columns: { id: true, name: true } } },
 		}),
 		db.query.employee.findFirst({
-			where: and(eq(employee.id, managerId), eq(employee.organizationId, organizationId)),
+			where: and(
+				eq(employee.id, managerId),
+				eq(employee.organizationId, organizationId),
+			),
 			columns: { userId: true },
 		}),
 	]);
@@ -47,11 +53,12 @@ async function sendPendingApprovalNotifications(params: {
 	employeeLogMessage: string;
 	managerLogMessage: string;
 }) {
-	const { employeeUserId, employeeName, managerUserId } = await getApprovalNotificationParticipants(
-		params.employeeId,
-		params.managerId,
-		params.organizationId,
-	);
+	const { employeeUserId, employeeName, managerUserId } =
+		await getApprovalNotificationParticipants(
+			params.employeeId,
+			params.managerId,
+			params.organizationId,
+		);
 
 	if (employeeUserId) {
 		void onClockOutPendingApproval({
@@ -102,6 +109,7 @@ async function createDefaultTimeEntryApprovalRequest(
 		managerId: string;
 		organizationId: string;
 		reason: string;
+		requestKind: "manual_time_submission" | "policy_clock_out";
 	},
 	dbService: ApprovalDbService,
 ) {
@@ -113,6 +121,7 @@ async function createDefaultTimeEntryApprovalRequest(
 		approverId: params.managerId,
 		status: "pending",
 		reason: params.reason,
+		metadata: { timeRequest: { kind: params.requestKind } },
 	});
 }
 
@@ -123,6 +132,7 @@ export async function createTimeEntryApprovalRequest(
 		managerId: string;
 		organizationId: string;
 		reason: string;
+		requestKind: "manual_time_submission" | "policy_clock_out";
 		overtimeRisk: ApprovalPolicyOvertimeRisk;
 	},
 	options?: ApprovalRequestOptions,
@@ -144,7 +154,9 @@ export async function createTimeEntryApprovalRequest(
 					approvalType: "time_entry",
 					requesterEmployeeId: params.employeeId,
 					teamId:
-						requester?.organizationId === params.organizationId ? (requester.teamId ?? null) : null,
+						requester?.organizationId === params.organizationId
+							? (requester.teamId ?? null)
+							: null,
 					locationId: null,
 					absenceCategoryId: null,
 					travelExpenseAmount: null,
@@ -155,6 +167,7 @@ export async function createTimeEntryApprovalRequest(
 				},
 				defaultApproverId: params.managerId,
 				reason: params.reason,
+				metadata: { timeRequest: { kind: params.requestKind } },
 			}),
 		);
 	} catch (error) {
@@ -183,6 +196,7 @@ export async function createClockOutApprovalRequest(
 			{
 				...params,
 				reason: "Clock-out requires approval (0-day policy)",
+				requestKind: "policy_clock_out",
 				overtimeRisk: "warning",
 			},
 			options,
@@ -221,8 +235,10 @@ export async function sendClockOutApprovalNotifications(params: {
 }) {
 	await sendPendingApprovalNotifications({
 		...params,
-		employeeLogMessage: "Failed to send clock-out pending notification to employee",
-		managerLogMessage: "Failed to send clock-out pending notification to manager",
+		employeeLogMessage:
+			"Failed to send clock-out pending notification to employee",
+		managerLogMessage:
+			"Failed to send clock-out pending notification to manager",
 	});
 }
 
@@ -244,6 +260,7 @@ export async function createManualEntryApprovalRequest(
 			{
 				...params,
 				reason: `Manual time entry: ${params.reason}`,
+				requestKind: "manual_time_submission",
 				overtimeRisk: "none",
 			},
 			options,
@@ -282,7 +299,9 @@ export async function sendManualEntryApprovalNotifications(params: {
 }) {
 	await sendPendingApprovalNotifications({
 		...params,
-		employeeLogMessage: "Failed to send manual entry pending notification to employee",
-		managerLogMessage: "Failed to send manual entry pending notification to manager",
+		employeeLogMessage:
+			"Failed to send manual entry pending notification to employee",
+		managerLogMessage:
+			"Failed to send manual entry pending notification to manager",
 	});
 }

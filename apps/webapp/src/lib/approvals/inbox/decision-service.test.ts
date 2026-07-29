@@ -42,7 +42,11 @@ describe("approval inbox decision service", () => {
 				actorEmployeeId: "manager-1",
 				action: "reject",
 				reason: "   ",
-				handler: { type: "absence_entry", reject: vi.fn(), approve: vi.fn() } as never,
+				handler: {
+					type: "absence_entry",
+					reject: vi.fn(),
+					approve: vi.fn(),
+				} as never,
 			}),
 		).rejects.toThrow("Rejection reason is required");
 	});
@@ -64,9 +68,14 @@ describe("approval inbox decision service", () => {
 				action: "approve",
 				handler: { type: "absence_entry", approve, reject: vi.fn() } as never,
 			}),
-		).resolves.toEqual({ id: "approval-1", type: "absence_entry", status: "approved" });
+		).resolves.toEqual({
+			id: "approval-1",
+			type: "absence_entry",
+			status: "approved",
+		});
 		expect(approve).toHaveBeenCalledWith("absence-1", "manager-1", {
 			approvalRequestId: "approval-1",
+			organizationId: "org-1",
 		});
 	});
 
@@ -87,10 +96,15 @@ describe("approval inbox decision service", () => {
 				action: "approve",
 				handler: { type: "absence_entry", approve, reject: vi.fn() } as never,
 			}),
-		).resolves.toEqual({ id: "approval-1", type: "absence_entry", status: "approved" });
+		).resolves.toEqual({
+			id: "approval-1",
+			type: "absence_entry",
+			status: "approved",
+		});
 		expect(approve).toHaveBeenCalledWith("absence-1", "delegate-1", {
 			approvalRequestId: "approval-1",
 			allowAnyApprover: true,
+			organizationId: "org-1",
 		});
 	});
 
@@ -110,10 +124,18 @@ describe("approval inbox decision service", () => {
 				},
 				actorEmployeeId: "manager-1",
 				action: "approve",
-				handler: { type: "absence_entry", approve: vi.fn(() => effect), reject: vi.fn() } as never,
+				handler: {
+					type: "absence_entry",
+					approve: vi.fn(() => effect),
+					reject: vi.fn(),
+				} as never,
 				runEffect,
 			}),
-		).resolves.toEqual({ id: "approval-1", type: "absence_entry", status: "approved" });
+		).resolves.toEqual({
+			id: "approval-1",
+			type: "absence_entry",
+			status: "approved",
+		});
 		expect(runEffect).toHaveBeenCalledWith(effect);
 	});
 
@@ -135,10 +157,20 @@ describe("approval inbox decision service", () => {
 				reason: "  Missing documentation  ",
 				handler: { type: "absence_entry", approve: vi.fn(), reject } as never,
 			}),
-		).resolves.toEqual({ id: "approval-1", type: "absence_entry", status: "rejected" });
-		expect(reject).toHaveBeenCalledWith("absence-1", "manager-1", "Missing documentation", {
-			approvalRequestId: "approval-1",
+		).resolves.toEqual({
+			id: "approval-1",
+			type: "absence_entry",
+			status: "rejected",
 		});
+		expect(reject).toHaveBeenCalledWith(
+			"absence-1",
+			"manager-1",
+			"Missing documentation",
+			{
+				approvalRequestId: "approval-1",
+				organizationId: "org-1",
+			},
+		);
 	});
 
 	it("passes approval request options when rejecting as a non-assigned actor", async () => {
@@ -159,11 +191,21 @@ describe("approval inbox decision service", () => {
 				reason: "  Missing documentation  ",
 				handler: { type: "absence_entry", approve: vi.fn(), reject } as never,
 			}),
-		).resolves.toEqual({ id: "approval-1", type: "absence_entry", status: "rejected" });
-		expect(reject).toHaveBeenCalledWith("absence-1", "delegate-1", "Missing documentation", {
-			approvalRequestId: "approval-1",
-			allowAnyApprover: true,
+		).resolves.toEqual({
+			id: "approval-1",
+			type: "absence_entry",
+			status: "rejected",
 		});
+		expect(reject).toHaveBeenCalledWith(
+			"absence-1",
+			"delegate-1",
+			"Missing documentation",
+			{
+				approvalRequestId: "approval-1",
+				allowAnyApprover: true,
+				organizationId: "org-1",
+			},
+		);
 	});
 
 	it("rejects wrong handler type without calling the handler", async () => {
@@ -200,7 +242,11 @@ describe("approval inbox decision service", () => {
 				},
 				actorEmployeeId: "manager-1",
 				action: "approve",
-				handler: { type: "absence_entry", approve: vi.fn(), reject: vi.fn() } as never,
+				handler: {
+					type: "absence_entry",
+					approve: vi.fn(),
+					reject: vi.fn(),
+				} as never,
 			}),
 		).rejects.toThrow("Request is already approved");
 	});
@@ -218,7 +264,11 @@ describe("approval inbox decision service", () => {
 				},
 				actorEmployeeId: "manager-1",
 				action: "approve",
-				handler: { type: "absence_entry", approve: vi.fn(), reject: vi.fn() } as never,
+				handler: {
+					type: "absence_entry",
+					approve: vi.fn(),
+					reject: vi.fn(),
+				} as never,
 			}),
 		).rejects.toThrow("Unsupported approval type: shift_request");
 	});
@@ -277,7 +327,11 @@ describe("approval inbox decision service", () => {
 
 		expect(result.succeeded).toHaveLength(1);
 		expect(result.failed).toEqual([
-			{ id: "approval-2", code: "stale", message: "Request is already approved" },
+			{
+				id: "approval-2",
+				code: "stale",
+				message: "Request is already approved",
+			},
 		]);
 	});
 
@@ -307,7 +361,11 @@ describe("approval inbox decision service", () => {
 				code: "unsupported",
 				message: "Unsupported approval type: unsupported_type",
 			},
-			{ id: "missing-approval", code: "not_found", message: "Approval not found" },
+			{
+				id: "missing-approval",
+				code: "not_found",
+				message: "Approval not found",
+			},
 		]);
 	});
 
@@ -328,7 +386,8 @@ describe("approval inbox decision service", () => {
 			],
 			actorEmployeeId: "manager-2",
 			action: "approve",
-			resolveHandler: () => ({ type: "absence_entry", approve, reject: vi.fn() }) as never,
+			resolveHandler: () =>
+				({ type: "absence_entry", approve, reject: vi.fn() }) as never,
 		});
 
 		expect(result.succeeded).toEqual([]);
@@ -365,7 +424,8 @@ describe("approval inbox decision service", () => {
 					eligibleApproverIds: ["manager-1", "manager-2"],
 				},
 			],
-			resolveHandler: () => ({ type: "absence_entry", approve, reject: vi.fn() }) as never,
+			resolveHandler: () =>
+				({ type: "absence_entry", approve, reject: vi.fn() }) as never,
 		});
 
 		expect(result.succeeded).toEqual([
@@ -375,6 +435,7 @@ describe("approval inbox decision service", () => {
 		expect(approve).toHaveBeenCalledWith("absence-1", "manager-2", {
 			approvalRequestId: "approval-1",
 			allowAnyApprover: true,
+			organizationId: "org-1",
 		});
 	});
 
@@ -397,17 +458,24 @@ describe("approval inbox decision service", () => {
 			action: "reject",
 			reason: "Missing documentation",
 			includeAllApprovers: true,
-			resolveHandler: () => ({ type: "absence_entry", approve: vi.fn(), reject }) as never,
+			resolveHandler: () =>
+				({ type: "absence_entry", approve: vi.fn(), reject }) as never,
 		});
 
 		expect(result.succeeded).toEqual([
 			{ id: "approval-1", type: "absence_entry", status: "rejected" },
 		]);
 		expect(result.failed).toEqual([]);
-		expect(reject).toHaveBeenCalledWith("absence-1", "admin-1", "Missing documentation", {
-			approvalRequestId: "approval-1",
-			allowAnyApprover: true,
-		});
+		expect(reject).toHaveBeenCalledWith(
+			"absence-1",
+			"admin-1",
+			"Missing documentation",
+			{
+				approvalRequestId: "approval-1",
+				allowAnyApprover: true,
+				organizationId: "org-1",
+			},
+		);
 	});
 
 	it("passes an injected effect runner through bulk successful decisions", async () => {
@@ -428,7 +496,11 @@ describe("approval inbox decision service", () => {
 			actorEmployeeId: "manager-1",
 			action: "approve",
 			resolveHandler: () =>
-				({ type: "absence_entry", approve: vi.fn(() => effect), reject: vi.fn() }) as never,
+				({
+					type: "absence_entry",
+					approve: vi.fn(() => effect),
+					reject: vi.fn(),
+				}) as never,
 			runEffect,
 		});
 
@@ -455,7 +527,8 @@ describe("approval inbox decision service", () => {
 			],
 			actorEmployeeId: "manager-1",
 			action: "approve",
-			resolveHandler: () => ({ type: "time_entry", approve, reject: vi.fn() }) as never,
+			resolveHandler: () =>
+				({ type: "time_entry", approve, reject: vi.fn() }) as never,
 		});
 
 		expect(result.succeeded).toEqual([]);
@@ -516,7 +589,8 @@ describe("approval inbox decision service", () => {
 					approve: vi.fn(() =>
 						Effect.fail({
 							_tag: "AuthorizationError",
-							message: "Approval request not found, already processed, or you are not the approver",
+							message:
+								"Approval request not found, already processed, or you are not the approver",
 						}),
 					),
 					reject: vi.fn(),
@@ -550,7 +624,9 @@ describe("approval inbox decision service", () => {
 			resolveHandler: () =>
 				({
 					type: "absence_entry",
-					approve: vi.fn(() => Effect.fail(new Error("Approval request is already approved"))),
+					approve: vi.fn(() =>
+						Effect.fail(new Error("Approval request is already approved")),
+					),
 					reject: vi.fn(),
 				}) as never,
 		});
@@ -583,7 +659,9 @@ describe("approval inbox decision service", () => {
 				({
 					type: "absence_entry",
 					approve: vi.fn(() =>
-						Effect.fail(new Error("database password connection string leaked")),
+						Effect.fail(
+							new Error("database password connection string leaked"),
+						),
 					),
 					reject: vi.fn(),
 				}) as never,

@@ -1,9 +1,24 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render as testingLibraryRender, screen, waitFor, within } from "@testing-library/react";
+import {
+	fireEvent,
+	screen,
+	render as testingLibraryRender,
+	waitFor,
+	within,
+} from "@testing-library/react";
+import { DateTime } from "luxon";
 import type { ReactNode } from "react";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterEach,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 
 const { getFilterOptionsActionMock, startExportActionMock } = vi.hoisted(() => ({
 	getFilterOptionsActionMock: vi.fn(),
@@ -152,6 +167,10 @@ beforeAll(() => {
 });
 
 describe("ExportForm", () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 		getFilterOptionsActionMock.mockResolvedValue({
@@ -241,6 +260,40 @@ describe("ExportForm", () => {
 			}),
 		);
 	}, 15_000);
+
+	it("does not recompute initial custom dates on rerender and preserves the monthly range", async () => {
+		const now = DateTime.fromISO("2026-02-15T12:00:00.000Z");
+		vi.spyOn(DateTime, "now").mockReturnValue(now);
+		const startOfSpy = vi.spyOn(DateTime.prototype, "startOf");
+		const endOfSpy = vi.spyOn(DateTime.prototype, "endOf");
+		const createForm = () => (
+			<ExportForm
+				organizationId="org_123"
+				config={null}
+				exportAvailability={fullyConfiguredAvailability}
+			/>
+		);
+
+		const { rerender } = render(createForm());
+		const initialStartOfCalls = startOfSpy.mock.calls.length;
+		const initialEndOfCalls = endOfSpy.mock.calls.length;
+
+		rerender(createForm());
+
+		expect(startOfSpy).toHaveBeenCalledTimes(initialStartOfCalls);
+		expect(endOfSpy).toHaveBeenCalledTimes(initialEndOfCalls);
+
+		fireEvent.click(screen.getByRole("button", { name: "Export to DATEV" }));
+
+		await waitFor(() => {
+			expect(startExportActionMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					startDate: "2026-02-01",
+					endDate: "2026-02-28",
+				}),
+			);
+		});
+	});
 
 	it("renders all export options and disables unconfigured exporters", async () => {
 		render(

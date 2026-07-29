@@ -110,7 +110,7 @@ export function WebhookFormDialog({
 		new Set((webhook?.subscribedEvents as string[]) ?? []),
 	);
 	const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-		new Set(Object.keys(EVENT_CATEGORIES)),
+		() => new Set(Object.keys(EVENT_CATEGORIES)),
 	);
 
 	// Secret dialog state (for new webhooks)

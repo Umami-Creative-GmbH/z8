@@ -41,7 +41,7 @@ function EmployeeCard({ employee }: { employee: ManagedEmployee }) {
 	return (
 		<Link
 			href={`/settings/employees/${employee.id}`}
-			className="group/employee flex items-center gap-3 rounded-xl border bg-card p-3 transition-all hover:shadow-md hover:border-primary/20"
+			className="group/employee flex items-center gap-3 rounded-xl border bg-card p-3 transition-[border-color,box-shadow] hover:shadow-md hover:border-primary/20"
 		>
 			{/* Avatar */}
 			<UserAvatar
@@ -83,7 +83,7 @@ function EmployeeCard({ employee }: { employee: ManagedEmployee }) {
 			)}
 
 			{/* Arrow */}
-			<IconArrowRight className="size-4 text-muted-foreground opacity-0 transition-all group-hover/employee:opacity-100 group-hover/employee:translate-x-1" />
+			<IconArrowRight className="size-4 text-muted-foreground opacity-0 transition-[opacity,transform] group-hover/employee:opacity-100 group-hover/employee:translate-x-1" />
 		</Link>
 	);
 }
