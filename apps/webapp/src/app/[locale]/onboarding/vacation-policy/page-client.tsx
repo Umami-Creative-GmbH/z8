@@ -418,8 +418,12 @@ export default function VacationPolicyPage() {
 	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
 	useEffect(() => {
-		async function checkAdmin() {
-			const result = await checkIsAdmin();
+		let ignore = false;
+
+		void checkIsAdmin().then((result) => {
+			if (ignore) {
+				return;
+			}
 			if (result.success) {
 				setIsAdmin(result.data);
 				if (!result.data) {
@@ -428,8 +432,11 @@ export default function VacationPolicyPage() {
 			} else {
 				push("/onboarding/notifications");
 			}
-		}
-		checkAdmin();
+		});
+
+		return () => {
+			ignore = true;
+		};
 	}, [push]);
 
 	if (isAdmin === null) {

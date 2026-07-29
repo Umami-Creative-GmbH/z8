@@ -103,4 +103,22 @@ describe("VacationPolicyPage", () => {
 		expect(createVacationPolicyOnboardingMock).not.toHaveBeenCalled();
 		expect(pushMock).not.toHaveBeenCalledWith("/onboarding/holiday-setup");
 	});
+
+	it("ignores an admin check that resolves after unmount", async () => {
+		let resolveAdminCheck: (
+			value: { success: true; data: false },
+		) => void = () => undefined;
+		checkIsAdminMock.mockReturnValue(
+			new Promise((resolve) => {
+				resolveAdminCheck = resolve;
+			}),
+		);
+
+		const { unmount } = render(<VacationPolicyPage />);
+		unmount();
+		resolveAdminCheck({ success: true, data: false });
+
+		await Promise.resolve();
+		expect(pushMock).not.toHaveBeenCalled();
+	});
 });
