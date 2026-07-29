@@ -135,18 +135,3 @@ export function useNamespaces(namespaces: Namespace[]): {
 
 	return { isLoading: loadState.isLoading, isLoaded: loadState.isLoaded };
 }
-
-/**
- * Preload namespaces without blocking render
- * Call this early in a component to start loading namespaces in the background
- */
-export function preloadNamespaces(namespaces: Namespace[]): void {
-	if (typeof window !== "undefined" && namespaces.length > 0) {
-		const instance = tolgeeCache.values().next().value;
-		if (instance) {
-			instance.addActiveNs(namespaces).catch((error: unknown) => {
-				console.warn("Failed to preload namespaces:", namespaces, error);
-			});
-		}
-	}
-}

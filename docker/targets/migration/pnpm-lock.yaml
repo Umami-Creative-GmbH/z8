@@ -10,10 +10,10 @@ overrides:
   dompurify: 3.4.0
   esbuild: 0.25.12
   axios: 1.16.1
-  effect: 3.21.2
+  effect: 3.22.0
   fast-uri: 3.1.2
   fast-xml-builder: 1.1.7
-  fast-xml-parser: 5.8.0
+  fast-xml-parser: 5.10.1
   follow-redirects: 1.16.0
   brace-expansion@1.1.12: 1.1.13
   brace-expansion@2.0.2: 2.0.3
@@ -27,14 +27,14 @@ overrides:
   minimatch@3.1.5>brace-expansion: 1.1.13
   minimatch@5.1.9>brace-expansion: 2.0.3
   pako: 1.0.11
-  postcss: 8.5.15
+  postcss: 8.5.24
   mermaid: 11.15.0
   protobufjs: 8.2.0
   samlify: 2.13.0
   srvx: 0.11.13
   tinyglobby: 0.2.16
   tmp: 0.2.6
-  undici: 7.24.0
+  undici: 8.9.0
   uuid: 14.0.0
   ws@8.18.3: 8.21.0
 
@@ -57,9 +57,6 @@ importers:
       pg:
         specifier: ^8.22.0
         version: 8.22.0
-      temporal-polyfill:
-        specifier: 1.0.1
-        version: 1.0.1
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -71,11 +68,11 @@ packages:
 
   '@esbuild-kit/core-utils@3.3.2':
     resolution: {integrity: sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ==}
-    deprecated: 'Merged into tsx: https://tsx.is'
+    deprecated: 'Merged into tsx: https://tsx.hirok.io'
 
   '@esbuild-kit/esm-loader@2.6.5':
     resolution: {integrity: sha512-FxEMIkJKnodyA1OaCUoEvbYRkoZlLZ4d/eXFu9Fh8CbBBgP5EmZxrfTRyN0qpXZ4vOvqnE5YdRdcrmUUXuU+dA==}
-    deprecated: 'Merged into tsx: https://tsx.is'
+    deprecated: 'Merged into tsx: https://tsx.hirok.io'
 
   '@esbuild/aix-ppc64@0.25.12':
     resolution: {integrity: sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==}
@@ -447,15 +444,6 @@ packages:
     resolution: {integrity: sha512-UcjcJOWknrNkF6PLX83qcHM6KHgVKNkV62Y8a5uYDVv9ydGQVwAHMKqHdJje1VTWpljG0WYpCDhrCdAOYH4TWg==}
     engines: {node: '>= 10.x'}
 
-  temporal-polyfill@1.0.1:
-    resolution: {integrity: sha512-N2SoI9olnW7BUsU8RosDphZQl9s+WJ8O7PoJMFCr/e5/1rFkVI4GNOWaSeySG+UoP04foPYsnLWbJmbXOiShZg==}
-
-  temporal-spec@1.0.0:
-    resolution: {integrity: sha512-00Ahj1e1ifaERTMOIIGpOCdOo9IEk2m6GGSMedsn9a2SIsGLdOTbmME1Htv6IM82b6VHrzSUTIVc7YHy6hdhFQ==}
-
-  temporal-utils@1.0.1:
-    resolution: {integrity: sha512-HAixuesxFQIUaQk3ptX2jhfO/FsOkgVkDDMawvp6n/fkB1q6BKfs3lURw9I+pK/2e2e/q/vrLrxmeqauBoyGMQ==}
-
   tsx@4.22.3:
     resolution: {integrity: sha512-mdoNxBC/cSQObGGVQ5Bpn5i+yv7j68gk3Nfm3wFjcJg3Z0Mix9jzAFfP12prmm5eVGmDKtp0yyArrs0Q+8gZHg==}
     engines: {node: '>=18.0.0'}
@@ -676,15 +664,6 @@ snapshots:
   source-map@0.6.1: {}
 
   split2@4.2.0: {}
-
-  temporal-polyfill@1.0.1:
-    dependencies:
-      temporal-spec: 1.0.0
-      temporal-utils: 1.0.1
-
-  temporal-spec@1.0.0: {}
-
-  temporal-utils@1.0.1: {}
 
   tsx@4.22.3:
     dependencies:

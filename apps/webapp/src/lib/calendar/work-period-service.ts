@@ -4,7 +4,13 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import type { SurchargeCalculationDetails } from "@/db/schema";
-import { employee, project, surchargeCalculation, timeEntry, workPeriod } from "@/db/schema";
+import {
+	employee,
+	project,
+	surchargeCalculation,
+	timeEntry,
+	workPeriod,
+} from "@/db/schema";
 import { dateFromDB } from "@/lib/datetime/drizzle-adapter";
 import { localMonthRange } from "@/lib/datetime/temporal-boundaries";
 import {
@@ -113,7 +119,10 @@ export async function getWorkPeriodsForMonth(
 			.innerJoin(user, eq(employee.userId, user.id))
 			.leftJoin(clockInEntry, eq(workPeriod.clockInId, clockInEntry.id))
 			.leftJoin(clockOutEntry, eq(workPeriod.clockOutId, clockOutEntry.id))
-			.leftJoin(surchargeCalculation, eq(surchargeCalculation.workPeriodId, workPeriod.id))
+			.leftJoin(
+				surchargeCalculation,
+				eq(surchargeCalculation.workPeriodId, workPeriod.id),
+			)
 			.leftJoin(project, eq(workPeriod.projectId, project.id))
 			.where(and(...conditions));
 
@@ -121,7 +130,14 @@ export async function getWorkPeriodsForMonth(
 		// This allows the calendar to show work blocks at specific times
 		// Breaks appear as gaps between the green work blocks
 		return periods.map(
-			({ period, user, clockInEntry, clockOutEntry, surcharge, project: proj }) => {
+			({
+				period,
+				user,
+				clockInEntry,
+				clockOutEntry,
+				surcharge,
+				project: proj,
+			}) => {
 				const notes = clockOutEntry?.notes?.trim();
 				const projectPrefix = proj?.name ? `[${proj.name}] ` : "";
 
@@ -132,16 +148,20 @@ export async function getWorkPeriodsForMonth(
 				const startDT = dateFromDB(period.startTime);
 				const endDT = period.endTime ? dateFromDB(period.endTime) : null;
 				const startTimeFormatted =
-					startDT?.setLocale("en-US").toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
+					startDT?.setLocale("en-US").toLocaleString(DateTime.TIME_SIMPLE) ??
+					undefined;
 				const endTimeFormatted =
-					endDT?.setLocale("en-US").toLocaleString(DateTime.TIME_SIMPLE) ?? undefined;
+					endDT?.setLocale("en-US").toLocaleString(DateTime.TIME_SIMPLE) ??
+					undefined;
 				const isRunning = period.isActive && !period.endTime;
 
 				if (isRunning) {
 					const startInstant = instantFromDate(period.startTime);
 					const durationMinutes = Math.max(
 						0,
-						Math.floor(nowInstant.since(startInstant).total({ unit: "minutes" })),
+						Math.floor(
+							nowInstant.since(startInstant).total({ unit: "minutes" }),
+						),
 					);
 
 					return {
@@ -194,9 +214,11 @@ export async function getWorkPeriodsForMonth(
 				// Parse surcharge breakdown from calculation details
 				let surchargeBreakdown: SurchargeBreakdown[] | undefined;
 				if (surcharge?.calculationDetails) {
-					const details = surcharge.calculationDetails as SurchargeCalculationDetails;
+					const details =
+						surcharge.calculationDetails as SurchargeCalculationDetails;
 					if (details.rulesApplied && details.rulesApplied.length > 0) {
 						surchargeBreakdown = details.rulesApplied.map((rule) => ({
+							ruleId: rule.ruleId,
 							ruleName: rule.ruleName,
 							ruleType: rule.ruleType as SurchargeBreakdown["ruleType"],
 							percentage: rule.percentage,
@@ -213,7 +235,9 @@ export async function getWorkPeriodsForMonth(
 					endDate: period.endTime ?? undefined,
 					title,
 					description: notes || "Work period",
-					descriptionKey: notes ? undefined : "calendar.calendar.workPeriod.fallbackDescription",
+					descriptionKey: notes
+						? undefined
+						: "calendar.calendar.workPeriod.fallbackDescription",
 					color: eventColor,
 					metadata: {
 						durationMinutes,

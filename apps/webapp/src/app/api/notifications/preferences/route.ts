@@ -48,10 +48,10 @@ export async function GET() {
 		};
 
 		// Build preference matrix (all types x all channels, defaulting to true)
-		const matrix: Record<NotificationType, Record<NotificationChannel, boolean>> = {} as Record<
+		const matrix: Record<
 			NotificationType,
 			Record<NotificationChannel, boolean>
-		>;
+		> = {} as Record<NotificationType, Record<NotificationChannel, boolean>>;
 
 		// Initialize all to true (default enabled)
 		for (const type of NOTIFICATION_TYPES) {
@@ -77,7 +77,10 @@ export async function GET() {
 		return NextResponse.json(response);
 	} catch (error) {
 		console.error("Error fetching notification preferences:", error);
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }
 
@@ -104,13 +107,19 @@ export async function PUT(request: NextRequest) {
 
 		// Validate inputs
 		if (!NOTIFICATION_TYPES.includes(notificationType)) {
-			return NextResponse.json({ error: "Invalid notification type" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Invalid notification type" },
+				{ status: 400 },
+			);
 		}
 		if (!NOTIFICATION_CHANNELS.includes(channel)) {
 			return NextResponse.json({ error: "Invalid channel" }, { status: 400 });
 		}
 		if (typeof enabled !== "boolean") {
-			return NextResponse.json({ error: "Invalid enabled value" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Invalid enabled value" },
+				{ status: 400 },
+			);
 		}
 
 		// Upsert the preference (user-level, not org-specific)
@@ -141,7 +150,10 @@ export async function PUT(request: NextRequest) {
 		return NextResponse.json({ success: true });
 	} catch (error) {
 		console.error("Error updating notification preference:", error);
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }
 
@@ -169,7 +181,10 @@ export async function POST(request: NextRequest) {
 		const { preferences: updates } = body;
 
 		if (!Array.isArray(updates)) {
-			return NextResponse.json({ error: "Invalid preferences array" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Invalid preferences array" },
+				{ status: 400 },
+			);
 		}
 
 		// Validate all updates first
@@ -181,41 +196,65 @@ export async function POST(request: NextRequest) {
 				);
 			}
 			if (!NOTIFICATION_CHANNELS.includes(update.channel)) {
-				return NextResponse.json({ error: `Invalid channel: ${update.channel}` }, { status: 400 });
+				return NextResponse.json(
+					{ error: `Invalid channel: ${update.channel}` },
+					{ status: 400 },
+				);
 			}
 			if (typeof update.enabled !== "boolean") {
-				return NextResponse.json({ error: "Invalid enabled value" }, { status: 400 });
+				return NextResponse.json(
+					{ error: "Invalid enabled value" },
+					{ status: 400 },
+				);
 			}
 		}
 
-		// Process each update (user-level, not org-specific)
-		for (const update of updates) {
-			const existing = await db.query.notificationPreference.findFirst({
-				where: and(
-					eq(notificationPreference.userId, session.user.id),
-					eq(notificationPreference.notificationType, update.notificationType),
-					eq(notificationPreference.channel, update.channel),
-				),
-			});
+		// Preserve "last update wins" for duplicate keys, then persist independent keys concurrently.
+		const distinctUpdates = [
+			...new Map(
+				updates.map((update) => [
+					`${update.notificationType}:${update.channel}`,
+					update,
+				]),
+			).values(),
+		];
 
-			if (existing) {
-				await db
-					.update(notificationPreference)
-					.set({ enabled: update.enabled })
-					.where(eq(notificationPreference.id, existing.id));
-			} else {
+		await Promise.all(
+			distinctUpdates.map(async (update) => {
+				const existing = await db.query.notificationPreference.findFirst({
+					where: and(
+						eq(notificationPreference.userId, session.user.id),
+						eq(
+							notificationPreference.notificationType,
+							update.notificationType,
+						),
+						eq(notificationPreference.channel, update.channel),
+					),
+				});
+
+				if (existing) {
+					await db
+						.update(notificationPreference)
+						.set({ enabled: update.enabled })
+						.where(eq(notificationPreference.id, existing.id));
+					return;
+				}
+
 				await db.insert(notificationPreference).values({
 					userId: session.user.id,
 					notificationType: update.notificationType,
 					channel: update.channel,
 					enabled: update.enabled,
 				});
-			}
-		}
+			}),
+		);
 
 		return NextResponse.json({ success: true, updated: updates.length });
 	} catch (error) {
 		console.error("Error bulk updating notification preferences:", error);
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }

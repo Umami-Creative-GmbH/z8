@@ -1,5 +1,11 @@
 import { and, eq, inArray, type SQL } from "drizzle-orm";
-import { approvalRequest, employee, employeeManagers, team, teamMembership } from "@/db/schema";
+import {
+	approvalRequest,
+	employee,
+	employeeManagers,
+	team,
+	teamMembership,
+} from "@/db/schema";
 import {
 	type EligibleManagerEmployee,
 	type EligibleManagerLink,
@@ -79,7 +85,9 @@ async function getTeamEligibilityInputs(input: {
 						)
 					: eq(teamMembership.organizationId, input.organizationId),
 			}),
-			input.db.query.team.findMany({ where: eq(team.organizationId, input.organizationId) }),
+			input.db.query.team.findMany({
+				where: eq(team.organizationId, input.organizationId),
+			}),
 		]);
 
 		return {
@@ -101,7 +109,9 @@ export async function getEligibleManagerIdsForRequester(input: {
 	organizationId: string;
 }) {
 	const [employees, managerLinks, { memberships, teams }] = await Promise.all([
-		input.db.query.employee.findMany({ where: eq(employee.organizationId, input.organizationId) }),
+		input.db.query.employee.findMany({
+			where: eq(employee.organizationId, input.organizationId),
+		}),
 		input.db.query.employeeManagers.findMany({
 			where: eq(employeeManagers.employeeId, input.requesterEmployeeId),
 		}),
@@ -128,7 +138,9 @@ export async function getPrimaryEligibleManagerIdForRequester(input: {
 	organizationId: string;
 }): Promise<string | null> {
 	const [employees, managerLinks, { memberships, teams }] = await Promise.all([
-		input.db.query.employee.findMany({ where: eq(employee.organizationId, input.organizationId) }),
+		input.db.query.employee.findMany({
+			where: eq(employee.organizationId, input.organizationId),
+		}),
 		input.db.query.employeeManagers.findMany({
 			where: eq(employeeManagers.employeeId, input.requesterEmployeeId),
 		}),
@@ -216,7 +228,12 @@ export async function getEligibleApprovalScopesForManager(input: {
 		});
 
 		return eligibleManagerIds.includes(input.managerEmployeeId)
-			? [{ requesterEmployeeId: requester.id, eligibleApproverIds: eligibleManagerIds }]
+			? [
+					{
+						requesterEmployeeId: requester.id,
+						eligibleApproverIds: eligibleManagerIds,
+					},
+				]
 			: [];
 	});
 }

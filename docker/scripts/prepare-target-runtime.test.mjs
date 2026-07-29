@@ -201,7 +201,21 @@ test("generated worker manifest includes React for TSX email templates", async (
 	assert.ok(packageJson.dependencies.react);
 });
 
-test("generated migrated runtime manifests include temporal-polyfill without the champion polyfill", async () => {
+test("generated worker manifest uses the webapp temporal-polyfill version", async () => {
+	const [webappPackageJsonText, packageJsonText, lockfile] = await Promise.all([
+		fs.readFile(new URL("../../apps/webapp/package.json", import.meta.url), "utf8"),
+		fs.readFile(new URL("../targets/worker/package.json", import.meta.url), "utf8"),
+		fs.readFile(new URL("../targets/worker/pnpm-lock.yaml", import.meta.url), "utf8"),
+	]);
+	const webappPackageJson = JSON.parse(webappPackageJsonText);
+	const packageJson = JSON.parse(packageJsonText);
+	const temporalPolyfillVersion = webappPackageJson.dependencies["temporal-polyfill"];
+
+	assert.equal(packageJson.dependencies["temporal-polyfill"], temporalPolyfillVersion);
+	assert.ok(lockfile.includes(`temporal-polyfill@${temporalPolyfillVersion}:`));
+});
+
+test("generated migrated runtime manifests exclude the champion polyfill", async () => {
 	const targets = ["worker", "migration", "db-seed"];
 
 	for (const target of targets) {
@@ -216,8 +230,6 @@ test("generated migrated runtime manifests include temporal-polyfill without the
 			"module",
 			`${target} must execute traced TypeScript as ESM for import-only packages`,
 		);
-		assert.equal(packageJson.dependencies["temporal-polyfill"], "1.0.1");
-		assert.match(lockfile, /temporal-polyfill@1\.0\.1:/);
 		assert.doesNotMatch(packageJsonText, /@js-temporal\/polyfill/);
 		assert.doesNotMatch(lockfile, /@js-temporal\/polyfill/);
 	}

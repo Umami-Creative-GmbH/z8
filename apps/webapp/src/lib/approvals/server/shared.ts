@@ -9,7 +9,10 @@ import {
 	ConflictError,
 	NotFoundError,
 } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -96,7 +99,9 @@ function loadPendingApprovalRequest(
 							eq(approvalRequest.organizationId, actorOrganizationId),
 							eq(approvalRequest.entityType, entityType),
 							eq(approvalRequest.entityId, entityId),
-							...(options?.allowAnyApprover ? [] : [eq(approvalRequest.approverId, approverId)]),
+							...(options?.allowAnyApprover
+								? []
+								: [eq(approvalRequest.approverId, approverId)]),
 							eq(approvalRequest.status, "pending"),
 						)
 					: and(
@@ -113,7 +118,8 @@ function loadPendingApprovalRequest(
 				if (!request) {
 					return Effect.fail(
 						new AuthorizationError({
-							message: "Approval request not found, already processed, or you are not the approver",
+							message:
+								"Approval request not found, already processed, or you are not the approver",
 							userId: approverId,
 							resource: entityType,
 							action,
@@ -122,10 +128,14 @@ function loadPendingApprovalRequest(
 				}
 
 				const pendingRequest = request as PendingApprovalRequest;
-				if (options?.allowAnyApprover && pendingRequest.organizationId !== actorOrganizationId) {
+				if (
+					options?.allowAnyApprover &&
+					pendingRequest.organizationId !== actorOrganizationId
+				) {
 					return Effect.fail(
 						new AuthorizationError({
-							message: "Approval request not found, already processed, or you are not the approver",
+							message:
+								"Approval request not found, already processed, or you are not the approver",
 							userId: approverId,
 							resource: entityType,
 							action,
@@ -158,7 +168,9 @@ function updatePendingApprovalRequest(
 				);
 
 			const updatedRows =
-				updateQuery && typeof updateQuery === "object" && "returning" in updateQuery
+				updateQuery &&
+				typeof updateQuery === "object" &&
+				"returning" in updateQuery
 					? await updateQuery.returning({ id: approvalRequest.id })
 					: await updateQuery;
 
@@ -166,7 +178,7 @@ function updatePendingApprovalRequest(
 		})
 		.pipe(
 			Effect.flatMap((updatedRows) =>
-				Array.isArray(updatedRows) && updatedRows.length === 0
+				Array.isArray(updatedRows) && updatedRows.length !== 1
 					? Effect.fail(
 							new ConflictError({
 								message: "Approval request is no longer pending",
@@ -255,7 +267,9 @@ function executeApprovalWithCurrentEmployee<T>(
 
 		let domainResult: T | undefined;
 		if (updateEntity && shouldRunDomainSideEffect) {
-			domainResult = yield* _(updateEntity(dbService, entityId, currentEmployee, approval));
+			domainResult = yield* _(
+				updateEntity(dbService, entityId, currentEmployee, approval),
+			);
 		}
 
 		yield* _(
@@ -336,7 +350,9 @@ export function processApprovalWithCurrentEmployee<T>(
 							db: tx,
 							query: dbService.query,
 						};
-						const transactionalAuditLogger = createApprovalAuditLogger(transactionalDbService);
+						const transactionalAuditLogger = createApprovalAuditLogger(
+							transactionalDbService,
+						);
 
 						const exit = await Effect.runPromiseExit(
 							// Transactional approvals currently run only self-contained handlers.
@@ -351,7 +367,10 @@ export function processApprovalWithCurrentEmployee<T>(
 								preflightEntity,
 								options,
 							).pipe(
-								Effect.provideService(ApprovalAuditLogger, transactionalAuditLogger),
+								Effect.provideService(
+									ApprovalAuditLogger,
+									transactionalAuditLogger,
+								),
 								Effect.provide(callerContext),
 							) as Effect.Effect<T | undefined, AnyAppError, never>,
 						);
@@ -444,7 +463,10 @@ export async function processApproval<T>(
 							message: String(error),
 						});
 
-						logger.error({ error, entityType, entityId, action }, "Failed to process approval");
+						logger.error(
+							{ error, entityType, entityId, action },
+							"Failed to process approval",
+						);
 						return yield* _(Effect.fail(error as AnyAppError));
 					}),
 				),
@@ -455,5 +477,7 @@ export async function processApproval<T>(
 		},
 	);
 
-	return runServerActionSafe(effect as Effect.Effect<T | undefined, AnyAppError, never>);
+	return runServerActionSafe(
+		effect as Effect.Effect<T | undefined, AnyAppError, never>,
+	);
 }

@@ -59,7 +59,7 @@ function CircularProgress({
 					fill="none"
 					strokeWidth={strokeWidth}
 					strokeLinecap="round"
-					className="stroke-emerald-500 transition-all duration-500 ease-out"
+					className="stroke-emerald-500 transition-[stroke-dashoffset] duration-500 ease-out"
 					style={{
 						strokeDasharray: circumference,
 						strokeDashoffset,

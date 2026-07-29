@@ -1,11 +1,43 @@
 import { describe, expect, it, vi } from "vitest";
 import {
 	getEligibleApprovalScopesForManager,
+	getEligibleManagerIdsForRequester,
 	getPrimaryEligibleManagerIdForRequester,
 } from "./manager-eligibility-db";
 
 function createPgError(code: string) {
 	return Object.assign(new Error(`Postgres error ${code}`), { code });
+}
+
+function createDeferred<T>() {
+	let resolve!: (value: T) => void;
+	const promise = new Promise<T>((resolvePromise) => {
+		resolve = resolvePromise;
+	});
+
+	return { promise, resolve };
+}
+
+function createDeferredEligibilityDb() {
+	const employees = createDeferred<unknown[]>();
+	const managerLinks = createDeferred<unknown[]>();
+	const memberships = createDeferred<unknown[]>();
+	const teams = createDeferred<unknown[]>();
+
+	return {
+		employees,
+		managerLinks,
+		memberships,
+		teams,
+		db: {
+			query: {
+				employee: { findMany: vi.fn(() => employees.promise) },
+				employeeManagers: { findMany: vi.fn(() => managerLinks.promise) },
+				teamMembership: { findMany: vi.fn(() => memberships.promise) },
+				team: { findMany: vi.fn(() => teams.promise) },
+			},
+		},
+	};
 }
 
 describe("getEligibleApprovalScopesForManager", () => {
@@ -14,13 +46,27 @@ describe("getEligibleApprovalScopesForManager", () => {
 			query: {
 				employee: {
 					findMany: vi.fn(async () => [
-						{ id: "requester-1", organizationId: "org-1", isActive: true, role: "employee" },
-						{ id: "manager-1", organizationId: "org-1", isActive: true, role: "manager" },
+						{
+							id: "requester-1",
+							organizationId: "org-1",
+							isActive: true,
+							role: "employee",
+						},
+						{
+							id: "manager-1",
+							organizationId: "org-1",
+							isActive: true,
+							role: "manager",
+						},
 					]),
 				},
 				employeeManagers: {
 					findMany: vi.fn(async () => [
-						{ employeeId: "requester-1", managerId: "manager-1", isPrimary: true },
+						{
+							employeeId: "requester-1",
+							managerId: "manager-1",
+							isPrimary: true,
+						},
 					]),
 				},
 				teamMembership: {
@@ -41,26 +87,107 @@ describe("getEligibleApprovalScopesForManager", () => {
 				organizationId: "org-1",
 			}),
 		).resolves.toEqual([
-			{ requesterEmployeeId: "requester-1", eligibleApproverIds: ["manager-1"] },
+			{
+				requesterEmployeeId: "requester-1",
+				eligibleApproverIds: ["manager-1"],
+			},
 		]);
 	});
 });
 
 describe("getPrimaryEligibleManagerIdForRequester", () => {
+	it("starts all reads concurrently when resolving eligible manager IDs", async () => {
+		const pending = createDeferredEligibilityDb();
+		const result = getEligibleManagerIdsForRequester({
+			db: pending.db,
+			requesterEmployeeId: "requester-1",
+			organizationId: "org-1",
+		});
+
+		expect(pending.db.query.employee.findMany).toHaveBeenCalledOnce();
+		expect(pending.db.query.employeeManagers.findMany).toHaveBeenCalledOnce();
+		expect(pending.db.query.teamMembership.findMany).toHaveBeenCalledOnce();
+		expect(pending.db.query.team.findMany).toHaveBeenCalledOnce();
+
+		pending.employees.resolve([
+			{
+				id: "requester-1",
+				organizationId: "org-1",
+				isActive: true,
+				role: "employee",
+			},
+		]);
+		pending.managerLinks.resolve([]);
+		pending.memberships.resolve([]);
+		pending.teams.resolve([]);
+		await expect(result).resolves.toEqual([]);
+	});
+
+	it("starts all reads concurrently when resolving the primary manager", async () => {
+		const pending = createDeferredEligibilityDb();
+
+		const result = getPrimaryEligibleManagerIdForRequester({
+			db: pending.db,
+			requesterEmployeeId: "requester-1",
+			organizationId: "org-1",
+		});
+
+		expect(pending.db.query.employee.findMany).toHaveBeenCalledOnce();
+		expect(pending.db.query.employeeManagers.findMany).toHaveBeenCalledOnce();
+		expect(pending.db.query.teamMembership.findMany).toHaveBeenCalledOnce();
+		expect(pending.db.query.team.findMany).toHaveBeenCalledOnce();
+
+		pending.employees.resolve([
+			{
+				id: "requester-1",
+				organizationId: "org-1",
+				isActive: true,
+				role: "employee",
+			},
+		]);
+		pending.managerLinks.resolve([]);
+		pending.memberships.resolve([]);
+		pending.teams.resolve([]);
+		await expect(result).resolves.toBeNull();
+	});
+
 	it("returns the primary direct manager when multiple direct manager links exist", async () => {
 		const db = {
 			query: {
 				employee: {
 					findMany: vi.fn(async () => [
-						{ id: "requester-1", organizationId: "org-1", isActive: true, role: "employee" },
-						{ id: "manager-1", organizationId: "org-1", isActive: true, role: "manager" },
-						{ id: "manager-2", organizationId: "org-1", isActive: true, role: "manager" },
+						{
+							id: "requester-1",
+							organizationId: "org-1",
+							isActive: true,
+							role: "employee",
+						},
+						{
+							id: "manager-1",
+							organizationId: "org-1",
+							isActive: true,
+							role: "manager",
+						},
+						{
+							id: "manager-2",
+							organizationId: "org-1",
+							isActive: true,
+							role: "manager",
+						},
 					]),
 				},
 				employeeManagers: {
 					findMany: vi.fn(async () => [
-						{ employeeId: "requester-1", managerId: "manager-1", isPrimary: false },
-						{ employeeId: "requester-1", managerId: "manager-2", isPrimary: true },
+						{
+							employeeId: "requester-1",
+							managerId: "manager-1",
+							isPrimary: false,
+						},
+						{
+							employeeId: "requester-1",
+							managerId: "manager-2",
+							isPrimary: true,
+						},
 					]),
 				},
 				teamMembership: {
@@ -86,19 +213,35 @@ describe("getPrimaryEligibleManagerIdForRequester", () => {
 			query: {
 				employee: {
 					findMany: vi.fn(async () => [
-						{ id: "requester-1", organizationId: "org-1", isActive: true, role: "employee" },
-						{ id: "manager-1", organizationId: "org-1", isActive: true, role: "manager" },
+						{
+							id: "requester-1",
+							organizationId: "org-1",
+							isActive: true,
+							role: "employee",
+						},
+						{
+							id: "manager-1",
+							organizationId: "org-1",
+							isActive: true,
+							role: "manager",
+						},
 					]),
 				},
 				employeeManagers: {
 					findMany: vi.fn(async () => []),
 				},
 				teamMembership: {
-					findMany: vi.fn(async () => [{ employeeId: "requester-1", teamId: "team-1" }]),
+					findMany: vi.fn(async () => [
+						{ employeeId: "requester-1", teamId: "team-1" },
+					]),
 				},
 				team: {
 					findMany: vi.fn(async () => [
-						{ id: "team-1", organizationId: "org-1", primaryManagerId: "manager-1" },
+						{
+							id: "team-1",
+							organizationId: "org-1",
+							primaryManagerId: "manager-1",
+						},
 					]),
 				},
 			},
@@ -118,7 +261,12 @@ describe("getPrimaryEligibleManagerIdForRequester", () => {
 			query: {
 				employee: {
 					findMany: vi.fn(async () => [
-						{ id: "requester-1", organizationId: "org-1", isActive: true, role: "employee" },
+						{
+							id: "requester-1",
+							organizationId: "org-1",
+							isActive: true,
+							role: "employee",
+						},
 					]),
 				},
 				employeeManagers: {

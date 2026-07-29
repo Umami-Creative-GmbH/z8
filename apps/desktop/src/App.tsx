@@ -171,6 +171,7 @@ function AppContent() {
             </div>
           )}
           <button
+            type="button"
             onClick={cycleTheme}
             className="settings-button"
             title={`Theme: ${theme === "system" ? "System" : theme === "light" ? "Light" : "Dark"}`}
@@ -179,6 +180,7 @@ function AppContent() {
             <ThemeIcon size={18} />
           </button>
           <button
+            type="button"
             onClick={() => setIsSettingsOpen(true)}
             className="settings-button"
             title="Settings"

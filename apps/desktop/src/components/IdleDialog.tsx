@@ -39,6 +39,7 @@ export function IdleDialog({
           <div className="flex flex-col gap-3">
             {/* Break button */}
             <button
+              type="button"
               onClick={onBreak}
               disabled={isLoading}
               className={cn(
@@ -54,6 +55,7 @@ export function IdleDialog({
 
             {/* Working button */}
             <button
+              type="button"
               onClick={onResume}
               disabled={isLoading}
               className={cn(

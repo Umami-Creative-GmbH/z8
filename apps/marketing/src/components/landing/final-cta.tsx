@@ -35,7 +35,7 @@ export function FinalCta({ copy }: FinalCtaProps) {
 				<div className="flex items-center justify-center gap-3">
 					<a
 						href="mailto:hello@z8.app"
-						className="rounded-xl px-8 py-4 text-[14px] font-bold transition-all"
+						className="rounded-xl px-8 py-4 text-[14px] font-bold transition-[background-color,color]"
 						style={{
 							backgroundColor: dark ? "#0a0a0a" : "#fff",
 							color: dark ? "#e8e8e8" : "#1a1a1a",

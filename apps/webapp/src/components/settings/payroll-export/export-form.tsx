@@ -124,10 +124,10 @@ export function ExportForm({
 	const [selectedYear, setSelectedYear] = useState<number>(DateTime.now().year);
 	const [selectedMonth, setSelectedMonth] = useState<number>(DateTime.now().month);
 	const [customStartDate, setCustomStartDate] = useState<string>(
-		DateTime.now().startOf("month").toISODate() || "",
+		() => DateTime.now().startOf("month").toISODate() || "",
 	);
 	const [customEndDate, setCustomEndDate] = useState<string>(
-		DateTime.now().endOf("month").toISODate() || "",
+		() => DateTime.now().endOf("month").toISODate() || "",
 	);
 
 	// Filters

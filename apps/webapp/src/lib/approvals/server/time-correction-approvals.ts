@@ -756,7 +756,7 @@ function rollbackRejectedTimeCorrection(
 	});
 }
 
-function handleApprovedTimeCorrection(
+export function handleApprovedTimeCorrection(
 	dbService: ApprovalDbService,
 	entityId: string,
 	currentEmployee: CurrentApprover,
@@ -906,7 +906,7 @@ function handleApprovedTimeCorrection(
 	});
 }
 
-function handleRejectedTimeCorrection(
+export function handleRejectedTimeCorrection(
 	dbService: ApprovalDbService,
 	entityId: string,
 	currentEmployee: CurrentApprover,

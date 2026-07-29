@@ -33,7 +33,8 @@ vi.mock("@/lib/effect/services/database.service", async () => {
 						},
 					},
 				},
-				query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
+				query: (_name: string, fn: () => Promise<unknown>) =>
+					Effect.promise(fn),
 			}),
 		),
 	};
@@ -58,7 +59,10 @@ vi.mock("@/lib/logger", () => ({
 	createLogger: () => mockState.logger,
 }));
 
-import { BulkApprovalService, BulkApprovalServiceLive } from "./bulk-approval.service";
+import {
+	BulkApprovalService,
+	BulkApprovalServiceLive,
+} from "./bulk-approval.service";
 
 describe("BulkApprovalService", () => {
 	beforeEach(() => {
@@ -82,7 +86,9 @@ describe("BulkApprovalService", () => {
 		const result = await Effect.runPromise(
 			Effect.gen(function* (_) {
 				const service = yield* _(BulkApprovalService);
-				return yield* _(service.bulkDecide(["approval-1"], "employee-1", "org-1", "approve"));
+				return yield* _(
+					service.bulkDecide(["approval-1"], "employee-1", "org-1", "approve"),
+				);
 			}).pipe(Effect.provide(BulkApprovalServiceLive)),
 		);
 
@@ -96,7 +102,43 @@ describe("BulkApprovalService", () => {
 			],
 			failed: [],
 		});
+		expect(mockState.approve).toHaveBeenCalledWith("claim-1", "employee-1", {
+			approvalRequestId: "approval-1",
+			organizationId: "org-1",
+		});
 		expect(mockState.logBatch).not.toHaveBeenCalled();
 		expect(mockState.logger.error).not.toHaveBeenCalled();
+	});
+
+	it("blocks time corrections instead of deciding them from an ID-only prequery", async () => {
+		mockState.findMany.mockResolvedValueOnce([
+			{
+				id: "approval-1",
+				entityType: "time_entry",
+				entityId: "period-1",
+				approverId: "employee-1",
+				organizationId: "org-1",
+				status: "pending",
+			},
+		]);
+
+		const result = await Effect.runPromise(
+			Effect.gen(function* (_) {
+				const service = yield* _(BulkApprovalService);
+				return yield* _(
+					service.bulkDecide(["approval-1"], "employee-1", "org-1", "approve"),
+				);
+			}).pipe(Effect.provide(BulkApprovalServiceLive)),
+		);
+
+		expect(result.succeeded).toEqual([]);
+		expect(result.failed).toEqual([
+			{
+				id: "approval-1",
+				code: "unsupported",
+				message: "Bulk approve not supported for Time Correction",
+			},
+		]);
+		expect(mockState.approve).not.toHaveBeenCalled();
 	});
 });

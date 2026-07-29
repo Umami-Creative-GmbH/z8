@@ -2,7 +2,7 @@
 
 import { IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState, useTransition } from "react";
+import { useReducer, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { createWebhook, updateWebhook } from "@/app/[locale]/(app)/settings/webhooks/actions";
 import {
@@ -30,6 +30,47 @@ interface WebhookFormDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onSuccess: (webhook: WebhookEndpoint) => void;
+}
+
+interface WebhookFormState {
+	name: string;
+	url: string;
+	description: string;
+	selectedEvents: Set<string>;
+}
+
+type WebhookFormAction =
+	| {
+			type: "fieldChanged";
+			field: "name" | "url" | "description";
+			value: string;
+	  }
+	| { type: "eventsChanged"; value: Set<string> }
+	| { type: "reset" };
+
+function createWebhookFormState(
+	webhook?: PublicWebhookEndpoint,
+): WebhookFormState {
+	return {
+		name: webhook?.name ?? "",
+		url: webhook?.url ?? "",
+		description: webhook?.description ?? "",
+		selectedEvents: new Set((webhook?.subscribedEvents as string[]) ?? []),
+	};
+}
+
+function webhookFormReducer(
+	state: WebhookFormState,
+	action: WebhookFormAction,
+): WebhookFormState {
+	switch (action.type) {
+		case "fieldChanged":
+			return { ...state, [action.field]: action.value };
+		case "eventsChanged":
+			return { ...state, selectedEvents: action.value };
+		case "reset":
+			return createWebhookFormState();
+	}
 }
 
 // Group events by category for better UX
@@ -102,15 +143,14 @@ export function WebhookFormDialog({
 
 	const isEditing = !!webhook;
 
-	// Form state
-	const [name, setName] = useState(webhook?.name ?? "");
-	const [url, setUrl] = useState(webhook?.url ?? "");
-	const [description, setDescription] = useState(webhook?.description ?? "");
-	const [selectedEvents, setSelectedEvents] = useState<Set<string>>(
-		new Set((webhook?.subscribedEvents as string[]) ?? []),
+	const [formState, dispatch] = useReducer(
+		webhookFormReducer,
+		webhook,
+		createWebhookFormState,
 	);
+	const { name, url, description, selectedEvents } = formState;
 	const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-		new Set(Object.keys(EVENT_CATEGORIES)),
+		() => new Set(Object.keys(EVENT_CATEGORIES)),
 	);
 
 	// Secret dialog state (for new webhooks)
@@ -118,32 +158,28 @@ export function WebhookFormDialog({
 	const [isSecretDialogOpen, setIsSecretDialogOpen] = useState(false);
 
 	const handleEventToggle = (event: string) => {
-		setSelectedEvents((prev) => {
-			const next = new Set(prev);
-			if (next.has(event)) {
-				next.delete(event);
-			} else {
-				next.add(event);
-			}
-			return next;
-		});
+		const next = new Set(selectedEvents);
+		if (next.has(event)) {
+			next.delete(event);
+		} else {
+			next.add(event);
+		}
+		dispatch({ type: "eventsChanged", value: next });
 	};
 
 	const handleCategoryToggle = (categoryKey: string) => {
 		const category = EVENT_CATEGORIES[categoryKey as keyof typeof EVENT_CATEGORIES];
 		const allSelected = category.events.every((e) => selectedEvents.has(e));
 
-		setSelectedEvents((prev) => {
-			const next = new Set(prev);
-			for (const event of category.events) {
-				if (allSelected) {
-					next.delete(event);
-				} else {
-					next.add(event);
-				}
+		const next = new Set(selectedEvents);
+		for (const event of category.events) {
+			if (allSelected) {
+				next.delete(event);
+			} else {
+				next.add(event);
 			}
-			return next;
-		});
+		}
+		dispatch({ type: "eventsChanged", value: next });
 	};
 
 	const handleSelectAll = () => {
@@ -151,9 +187,9 @@ export function WebhookFormDialog({
 		const allSelected = allEvents.every((e) => selectedEvents.has(e));
 
 		if (allSelected) {
-			setSelectedEvents(new Set());
+			dispatch({ type: "eventsChanged", value: new Set() });
 		} else {
-			setSelectedEvents(new Set(allEvents));
+			dispatch({ type: "eventsChanged", value: new Set(allEvents) });
 		}
 	};
 
@@ -211,10 +247,7 @@ export function WebhookFormDialog({
 				onOpenChange(false);
 				startTransition(() => refresh());
 				// Reset form
-				setName("");
-				setUrl("");
-				setDescription("");
-				setSelectedEvents(new Set());
+				dispatch({ type: "reset" });
 			} else {
 				toast.error(
 					result.error ?? t("webhooks:webhooks.create-failed", "Failed to create webhook"),
@@ -257,7 +290,13 @@ export function WebhookFormDialog({
 									<Input
 										id="webhook-name"
 										value={name}
-										onChange={(e) => setName(e.target.value)}
+										onChange={(e) =>
+											dispatch({
+												type: "fieldChanged",
+												field: "name",
+												value: e.target.value,
+											})
+										}
 										placeholder={t("webhooks:webhooks.form.name-placeholder", "My Webhook")}
 										required
 									/>
@@ -271,7 +310,13 @@ export function WebhookFormDialog({
 										id="webhook-url"
 										type="url"
 										value={url}
-										onChange={(e) => setUrl(e.target.value)}
+										onChange={(e) =>
+											dispatch({
+												type: "fieldChanged",
+												field: "url",
+												value: e.target.value,
+											})
+										}
 										placeholder="https://example.com/webhook"
 										required
 									/>
@@ -291,7 +336,13 @@ export function WebhookFormDialog({
 									<Textarea
 										id="webhook-description"
 										value={description}
-										onChange={(e) => setDescription(e.target.value)}
+										onChange={(e) =>
+											dispatch({
+												type: "fieldChanged",
+												field: "description",
+												value: e.target.value,
+											})
+										}
 										placeholder={t(
 											"webhooks:webhooks.form.description-placeholder",
 											"What is this webhook used for?",
@@ -304,7 +355,9 @@ export function WebhookFormDialog({
 							{/* Event Selection */}
 							<div className="space-y-3">
 								<div className="flex items-center justify-between">
-									<Label>{t("webhooks:webhooks.form.events", "Events to receive")}</Label>
+									<span className="text-sm font-medium">
+										{t("webhooks:webhooks.form.events", "Events to receive")}
+									</span>
 									<Button type="button" variant="ghost" size="sm" onClick={handleSelectAll}>
 										{selectedEvents.size === allEventsCount
 											? t("webhooks:webhooks.form.deselect-all", "Deselect All")
@@ -356,18 +409,24 @@ export function WebhookFormDialog({
 														{selectedCount}/{categoryEvents.length}
 													</span>
 												</div>
-												<CollapsibleContent>
-													<div className="px-6 pb-3 space-y-2">
-														{categoryEvents.map((event) => (
-															<label key={event} className="flex items-center gap-2 cursor-pointer">
-																<Checkbox
-																	checked={selectedEvents.has(event)}
-																	onCheckedChange={() => handleEventToggle(event)}
-																/>
-																<span className="text-sm font-mono">{event}</span>
-															</label>
-														))}
-													</div>
+														<CollapsibleContent>
+															<div className="px-6 pb-3 space-y-2">
+																{categoryEvents.map((event) => (
+																	<div key={event} className="flex items-center gap-2">
+																		<Checkbox
+																			id={`webhook-event-${event}`}
+																			checked={selectedEvents.has(event)}
+																			onCheckedChange={() => handleEventToggle(event)}
+																		/>
+																		<Label
+																			htmlFor={`webhook-event-${event}`}
+																			className="cursor-pointer font-mono text-sm"
+																		>
+																			{event}
+																		</Label>
+																	</div>
+																))}
+															</div>
 												</CollapsibleContent>
 											</Collapsible>
 										);

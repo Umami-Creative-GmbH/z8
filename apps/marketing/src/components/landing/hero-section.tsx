@@ -40,7 +40,7 @@ export function HeroSection({ copy }: HeroSectionProps) {
 					>
 						<a
 							href="#contact"
-							className="rounded-xl px-7 py-4 text-[15px] font-bold transition-all hover:opacity-90"
+							className="rounded-xl px-7 py-4 text-[15px] font-bold transition-[background-color,color,opacity] hover:opacity-90"
 							style={{ backgroundColor: t.surface, color: t.surfaceText }}
 						>
 							{copy.primaryCta}
@@ -177,7 +177,7 @@ export function HeroSection({ copy }: HeroSectionProps) {
 									{[40, 65, 55, 80, 70, 90, 60, 75, 85, 50, 70, 88].map((h, i) => (
 										<div
 											key={i}
-											className="flex-1 rounded-t-sm transition-all"
+											className="flex-1 rounded-t-sm transition-[background-color]"
 											style={{
 												height: `${h}%`,
 												backgroundColor: i === 11 ? t.chartBarActive : t.chartBar,
