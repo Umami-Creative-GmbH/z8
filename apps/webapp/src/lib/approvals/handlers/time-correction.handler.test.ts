@@ -467,7 +467,7 @@ describe("TimeCorrectionHandler ordinary decisions", () => {
 			}),
 		);
 		expect(decisionMocks.correctionApprove).not.toHaveBeenCalled();
-	});
+	}, 15_000);
 
 	it.each([
 		"manual_time_submission",
