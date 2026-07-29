@@ -1,8 +1,16 @@
+import { sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
-	insertValues: vi.fn(),
+	timeRecordTable: {
+		id: "time-record-id",
+		organizationId: "time-record-organization-id",
+	},
+	timeRecordInsertValues: vi.fn(),
+	detailInsertValues: vi.fn(),
+	timeRecordOnConflictDoNothing: vi.fn(),
 	onConflictDoNothing: vi.fn(),
+	onConflictDoUpdate: vi.fn(),
 	updateSet: vi.fn(),
 	updateWhere: vi.fn(),
 	deleteWhere: vi.fn(),
@@ -40,9 +48,7 @@ vi.mock("@/db", () => ({
 	approvalRequest: {
 		id: "approval-request-id",
 	},
-	timeRecord: {
-		id: "time-record-id",
-	},
+	timeRecord: mockState.timeRecordTable,
 	timeRecordAbsence: {
 		recordId: "time-record-absence-record-id",
 	},
@@ -74,11 +80,22 @@ describe("canonical backfill period normalization", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 
+		mockState.timeRecordOnConflictDoNothing.mockResolvedValue(undefined);
 		mockState.onConflictDoNothing.mockResolvedValue(undefined);
-		mockState.insertValues.mockReturnValue({
+		mockState.onConflictDoUpdate.mockResolvedValue(undefined);
+		mockState.timeRecordInsertValues.mockReturnValue({
+			onConflictDoNothing: mockState.timeRecordOnConflictDoNothing,
+			onConflictDoUpdate: mockState.onConflictDoUpdate,
+		});
+		mockState.detailInsertValues.mockReturnValue({
 			onConflictDoNothing: mockState.onConflictDoNothing,
 		});
-		mockState.dbInsert.mockReturnValue({ values: mockState.insertValues });
+		mockState.dbInsert.mockImplementation((table) => ({
+			values:
+				table === mockState.timeRecordTable
+					? mockState.timeRecordInsertValues
+					: mockState.detailInsertValues,
+		}));
 
 		mockState.updateWhere.mockResolvedValue(undefined);
 		mockState.updateSet.mockReturnValue({ where: mockState.updateWhere });
@@ -292,7 +309,61 @@ describe("canonical backfill period normalization", () => {
 			2,
 			expect.objectContaining({ canonicalRecordId: "absence-1", organizationId: "org-1" }),
 		);
-		expect(mockState.onConflictDoNothing).toHaveBeenCalledTimes(3);
+		expect(mockState.onConflictDoNothing).toHaveBeenCalledTimes(2);
+		expect(mockState.onConflictDoUpdate).toHaveBeenCalledTimes(1);
+	});
+
+	it("upserts canonical time records by id and organization with reconciled fields only", async () => {
+		await runCanonicalBackfill({
+			organizationId: "org-1",
+			actorId: "actor-1",
+			legacy: {
+				workPeriods: [
+					{
+						id: "work-1",
+						organizationId: "org-1",
+						employeeId: "employee-1",
+						startTime: new Date("2026-01-15T08:00:00.000Z"),
+						endTime: new Date("2026-01-15T16:00:00.000Z"),
+						durationMinutes: 480,
+						approvalStatus: "approved",
+						projectId: null,
+						workCategoryId: null,
+						workLocationType: "office",
+						createdAt: new Date("2026-01-10T00:00:00.000Z"),
+						updatedAt: new Date("2026-01-10T00:00:00.000Z"),
+					},
+				],
+				absenceEntries: [],
+				approvalRequests: [],
+				absenceCategories: [],
+			},
+		});
+
+		expect(mockState.onConflictDoUpdate).toHaveBeenCalledTimes(1);
+		expect(mockState.onConflictDoUpdate).toHaveBeenCalledWith({
+			target: ["time-record-id", "time-record-organization-id"],
+			set: {
+				durationMinutes: sql.raw("excluded.duration_minutes"),
+				approvalState: sql.raw("excluded.approval_state"),
+			},
+		});
+	});
+
+	it("skips canonical inserts and conflict updates for an empty payload", async () => {
+		await runCanonicalBackfill({
+			organizationId: "org-1",
+			actorId: "actor-1",
+			legacy: {
+				workPeriods: [],
+				absenceEntries: [],
+				approvalRequests: [],
+				absenceCategories: [],
+			},
+		});
+
+		expect(mockState.onConflictDoUpdate).not.toHaveBeenCalled();
+		expect(mockState.dbInsert).not.toHaveBeenCalled();
 	});
 
 	it("returns the generated payload after executing idempotent writes", async () => {
