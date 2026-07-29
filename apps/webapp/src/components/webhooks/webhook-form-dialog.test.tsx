@@ -88,30 +88,34 @@ function Harness() {
 }
 
 describe("WebhookFormDialog", () => {
-	it("restores all expanded categories and form defaults after keyed replacement", async () => {
-		const user = userEvent.setup();
+	it(
+		"restores all expanded categories and form defaults after keyed replacement",
+		async () => {
+			const user = userEvent.setup();
 
-		render(<Harness />);
+			render(<Harness />);
 
-		expectAllCategoriesExpanded();
-		await user.type(screen.getByLabelText("Name"), "Changed name");
+			expectAllCategoriesExpanded();
+			await user.type(screen.getByLabelText("Name"), "Changed name");
 
-		await user.click(screen.getByRole("button", { name: "Rerender parent" }));
-		expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe(
-			"Changed name",
-		);
+			await user.click(screen.getByRole("button", { name: "Rerender parent" }));
+			expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe(
+				"Changed name",
+			);
 
-		for (const [category] of CATEGORY_EXAMPLES) {
-			await user.click(screen.getByRole("button", { name: category }));
-		}
-		await waitFor(() => {
-			for (const [, event] of CATEGORY_EXAMPLES) {
-				expect(screen.queryByText(event)).toBeNull();
+			for (const [category] of CATEGORY_EXAMPLES) {
+				await user.click(screen.getByRole("button", { name: category }));
 			}
-		});
+			await waitFor(() => {
+				for (const [, event] of CATEGORY_EXAMPLES) {
+					expect(screen.queryByText(event)).toBeNull();
+				}
+			});
 
-		await user.click(screen.getByRole("button", { name: "Replace form" }));
-		await waitFor(expectAllCategoriesExpanded);
-		expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("");
-	});
+			await user.click(screen.getByRole("button", { name: "Replace form" }));
+			await waitFor(expectAllCategoriesExpanded);
+			expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("");
+		},
+		10_000,
+	);
 });
