@@ -1,14 +1,4 @@
-import {
-	and,
-	eq,
-	gte,
-	inArray,
-	isNotNull,
-	isNull,
-	lte,
-	or,
-	type SQL,
-} from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
 import { organization, user } from "@/db/auth-schema";
@@ -17,7 +7,6 @@ import {
 	absenceEntry,
 	approvalRequest,
 	employee,
-	payrollBlockerDismissal,
 	team,
 	timeRecord,
 	timeRecordAbsence,
@@ -26,10 +15,7 @@ import {
 import { assertCanonicalCutoverReady } from "@/lib/time-record/migration/cutover-state";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { buildPayrollAbsenceDetails, payrollAbsenceDetailDays } from "./absence-details";
-import {
-	filterDismissedPayrollBlockers,
-	type PayrollBlockerDismissalKey,
-} from "./blocker-dismissals";
+import { filterDismissedPayrollBlockerCandidates } from "./blocker-dismissal-loader";
 import type {
 	PayrollBlocker,
 	PayrollPeriod,
@@ -59,11 +45,6 @@ export interface MissingClockOutBlockerRow {
 	id: string;
 	employeeId: string;
 	startAt: DateTime;
-}
-
-interface PayrollBlockerDismissalQuery {
-	where: SQL | undefined;
-	columns: { blockerType: true; sourceId: true };
 }
 
 export function buildPayrollSummaryFromRows(input: {
@@ -234,29 +215,6 @@ export function buildPendingAbsenceBlockers(
 		date: row.startDate,
 		time: null,
 	}));
-}
-
-export async function filterDismissedPayrollBlockerCandidates(input: {
-	organizationId: string;
-	blockerCandidates: PayrollBlocker[];
-	findDismissals: (
-		query: PayrollBlockerDismissalQuery,
-	) => Promise<PayrollBlockerDismissalKey[]>;
-}): Promise<PayrollBlocker[]> {
-	if (input.blockerCandidates.length === 0) return input.blockerCandidates;
-
-	const candidateSourceIds = Array.from(
-		new Set(input.blockerCandidates.map((blocker) => blocker.id)),
-	);
-	const dismissals = await input.findDismissals({
-		where: and(
-			eq(payrollBlockerDismissal.organizationId, input.organizationId),
-			inArray(payrollBlockerDismissal.sourceId, candidateSourceIds),
-		),
-		columns: { blockerType: true, sourceId: true },
-	});
-
-	return filterDismissedPayrollBlockers(input.blockerCandidates, dismissals);
 }
 
 export async function getPayrollWorkspaceSummary(input: {

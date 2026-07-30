@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { filterDismissedPayrollBlockerCandidates } from "./summary";
+import { filterDismissedPayrollBlockerCandidates } from "./blocker-dismissal-loader";
 import type { PayrollBlocker } from "./types";
 
 const candidates: PayrollBlocker[] = [
