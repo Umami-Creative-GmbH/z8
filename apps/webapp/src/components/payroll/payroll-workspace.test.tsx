@@ -475,6 +475,124 @@ describe("PayrollWorkspace", () => {
 		await waitFor(() => expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalled());
 	});
 
+	it("keeps concurrent rows pending independently and finishes with the last server refresh", async () => {
+		const firstDismissal = deferred<{ success: true; data: { dismissed: true } }>();
+		const secondDismissal = deferred<{ success: true; data: { dismissed: true } }>();
+		const firstRefresh = deferred<{ success: true; data: PayrollWorkspaceSummary }>();
+		const secondRefresh = deferred<{ success: true; data: PayrollWorkspaceSummary }>();
+		const thirdBlocker = {
+			id: "blocker-3",
+			employeeId: "employee-2",
+			type: "pending_time_correction" as const,
+			label: "Pending time correction",
+			date: "2026-06-05",
+			time: "10:00",
+		};
+		const concurrentSummary = buildSummary({
+			totals: { employeeCount: 2, totalWorkedHours: 8, blockerCount: 3 },
+			blockers: [...baseSummary.blockers, thirdBlocker],
+		});
+		const afterFirstRefresh = buildSummary({
+			totals: { employeeCount: 2, totalWorkedHours: 8, blockerCount: 2 },
+			blockers: [baseSummary.blockers[1], thirdBlocker],
+		});
+		const finalSummary = buildSummary({
+			totals: { employeeCount: 2, totalWorkedHours: 8, blockerCount: 1 },
+			employees: baseSummary.employees.map((employee) => ({
+				...employee,
+				hasBlockers: employee.id === "employee-2",
+			})),
+			blockers: [thirdBlocker],
+		});
+		actionMocks.dismissPayrollBlockerAction.mockImplementation(
+			(request: { blockerId: string }) =>
+				request.blockerId === "blocker-1" ? firstDismissal.promise : secondDismissal.promise,
+		);
+		actionMocks.getPayrollWorkspaceSummaryAction
+			.mockReturnValueOnce(firstRefresh.promise)
+			.mockReturnValueOnce(secondRefresh.promise);
+
+		render(
+			<PayrollWorkspace
+				initialSummary={concurrentSummary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		const firstRow = document.querySelector('[data-payroll-blocker-id="blocker-1"]');
+		const secondRow = document.querySelector('[data-payroll-blocker-id="blocker-2"]');
+		const untouchedRow = document.querySelector('[data-payroll-blocker-id="blocker-3"]');
+		fireEvent.click(
+			within(firstRow as HTMLElement).getByRole("button", {
+				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+			}),
+		);
+		fireEvent.click(
+			within(secondRow as HTMLElement).getByRole("button", {
+				name: /Clear false positive.*Ada Lovelace.*Pending absence/,
+			}),
+		);
+
+		await waitFor(() => {
+			expect(
+				within(firstRow as HTMLElement).getByRole("button", {
+					name: /Clearing false positive.*Ada Lovelace.*Missing clock-out/,
+				}),
+			).toBeTruthy();
+			expect(
+				within(secondRow as HTMLElement).getByRole("button", {
+					name: /Clearing false positive.*Ada Lovelace.*Pending absence/,
+				}),
+			).toBeTruthy();
+		});
+		expect(
+			(within(untouchedRow as HTMLElement).getByRole("button", {
+				name: /Clear false positive.*Grace Hopper.*Pending time correction/,
+			}) as HTMLButtonElement).disabled,
+		).toBe(false);
+		expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenCalledTimes(1);
+
+		firstDismissal.resolve({ success: true, data: { dismissed: true } });
+		await waitFor(() =>
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1),
+		);
+		expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenCalledTimes(1);
+		firstRefresh.resolve({ success: true, data: afterFirstRefresh });
+
+		await waitFor(() => {
+			expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenCalledTimes(2);
+			expect(document.querySelector('[data-payroll-blocker-id="blocker-1"]')).toBeNull();
+		});
+		const stillPendingSecondRow = document.querySelector(
+			'[data-payroll-blocker-id="blocker-2"]',
+		);
+		expect(
+			within(stillPendingSecondRow as HTMLElement).getByRole("button", {
+				name: /Clearing false positive.*Ada Lovelace.*Pending absence/,
+			}),
+		).toBeTruthy();
+		expect(
+			(within(
+				document.querySelector('[data-payroll-blocker-id="blocker-3"]') as HTMLElement,
+			).getByRole("button", {
+				name: /Clear false positive.*Grace Hopper.*Pending time correction/,
+			}) as HTMLButtonElement).disabled,
+		).toBe(false);
+
+		secondDismissal.resolve({ success: true, data: { dismissed: true } });
+		await waitFor(() =>
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(2),
+		);
+		secondRefresh.resolve({ success: true, data: finalSummary });
+
+		await waitFor(() => {
+			expect(document.querySelector('[data-payroll-blocker-id="blocker-2"]')).toBeNull();
+		});
+		const blockerSummaryCard = screen.getByText("Blockers").closest('[data-slot="card"]');
+		expect(within(blockerSummaryCard as HTMLElement).getByText("1")).toBeTruthy();
+		expect(document.querySelector('[data-payroll-blocker-id="blocker-3"]')).toBeTruthy();
+	});
+
 	it("refreshes from server truth with the same request after dismissal", async () => {
 		const refreshedSummary = buildSummary({
 			totals: { employeeCount: 2, totalWorkedHours: 8, blockerCount: 0 },
@@ -516,10 +634,8 @@ describe("PayrollWorkspace", () => {
 	});
 
 	it("keeps the blocker and shows the safe dismissal error when clearing fails", async () => {
-		actionMocks.dismissPayrollBlockerAction.mockResolvedValueOnce({
-			success: false,
-			error: "This blocker can no longer be cleared",
-		});
+		const dismissal = deferred<{ success: false; error: string }>();
+		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(dismissal.promise);
 		render(
 			<PayrollWorkspace
 				initialSummary={summary}
@@ -533,6 +649,16 @@ describe("PayrollWorkspace", () => {
 				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
 			}),
 		);
+		expect(
+			await within(blockerRow as HTMLElement).findByRole("button", {
+				name: /Clearing false positive.*Ada Lovelace.*Missing clock-out/,
+			}),
+		).toBeTruthy();
+
+		dismissal.resolve({
+			success: false,
+			error: "This blocker can no longer be cleared",
+		});
 
 		await waitFor(() =>
 			expect(toastMocks.error).toHaveBeenCalledWith("This blocker can no longer be cleared"),
@@ -574,11 +700,8 @@ describe("PayrollWorkspace", () => {
 	])(
 		"preserves the summary and uses the refresh-specific error after dismissal on %s",
 		async (_case, refreshOutcome) => {
-			if (refreshOutcome instanceof Error) {
-				actionMocks.getPayrollWorkspaceSummaryAction.mockRejectedValueOnce(refreshOutcome);
-			} else {
-				actionMocks.getPayrollWorkspaceSummaryAction.mockResolvedValueOnce(refreshOutcome);
-			}
+			const refresh = deferred<{ success: false; error: string }>();
+			actionMocks.getPayrollWorkspaceSummaryAction.mockReturnValueOnce(refresh.promise);
 			render(
 				<PayrollWorkspace
 					initialSummary={summary}
@@ -592,6 +715,20 @@ describe("PayrollWorkspace", () => {
 					name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
 				}),
 			);
+			expect(
+				await within(blockerRow as HTMLElement).findByRole("button", {
+					name: /Clearing false positive.*Ada Lovelace.*Missing clock-out/,
+				}),
+			).toBeTruthy();
+			await waitFor(() =>
+				expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1),
+			);
+
+			if (refreshOutcome instanceof Error) {
+				refresh.reject(refreshOutcome);
+			} else {
+				refresh.resolve(refreshOutcome);
+			}
 
 			await waitFor(() =>
 				expect(toastMocks.error).toHaveBeenCalledWith(
