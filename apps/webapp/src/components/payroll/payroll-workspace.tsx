@@ -16,7 +16,7 @@ import { DateTime } from "luxon";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import type React from "react";
-import { useReducer, useRef, useState, useTransition } from "react";
+import { useEffect, useReducer, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	dismissPayrollBlockerAction,
@@ -91,6 +91,15 @@ type PayrollWorkspaceAction =
 	| { type: "teamFilterChanged"; teamNames: string[] }
 	| { type: "formatChanged"; formatId: string };
 
+type SummaryLoadResult =
+	| { status: "applied"; summary: PayrollWorkspaceSummary }
+	| { status: "failed" | "stale" | "unmounted" };
+
+interface BlockerFocusRequest {
+	id: number;
+	targetBlockerId: string | null;
+}
+
 function payrollWorkspaceReducer(
 	state: PayrollWorkspaceState,
 	action: PayrollWorkspaceAction,
@@ -118,27 +127,104 @@ function payrollWorkspaceReducer(
 	}
 }
 
+function useMountedRef() {
+	const isMountedRef = useRef(true);
+
+	useEffect(() => {
+		isMountedRef.current = true;
+		return () => {
+			isMountedRef.current = false;
+		};
+	}, []);
+
+	return isMountedRef;
+}
+
+function usePayrollSummaryLoader({
+	dispatch,
+	initialRequest,
+	isMountedRef,
+}: {
+	dispatch: React.Dispatch<PayrollWorkspaceAction>;
+	initialRequest: PayrollPeriodRequest;
+	isMountedRef: React.RefObject<boolean>;
+}) {
+	const latestRequestRef = useRef(initialRequest);
+	const requestGenerationRef = useRef(0);
+
+	async function loadSummary(
+		nextRequest: PayrollPeriodRequest,
+		options: {
+			onError: (error?: string) => void;
+			onSuccess?: () => void;
+		},
+	): Promise<SummaryLoadResult> {
+		if (!isMountedRef.current) return { status: "unmounted" };
+
+		latestRequestRef.current = nextRequest;
+		const requestGeneration = requestGenerationRef.current + 1;
+		requestGenerationRef.current = requestGeneration;
+
+		try {
+			const result = await getPayrollWorkspaceSummaryAction(nextRequest);
+
+			if (!isMountedRef.current) return { status: "unmounted" };
+			if (requestGeneration !== requestGenerationRef.current) return { status: "stale" };
+
+			if (!result.success) {
+				options.onError(result.error);
+				return { status: "failed" };
+			}
+
+			dispatch({ type: "summaryRefreshed", summary: result.data });
+			options.onSuccess?.();
+			return { status: "applied", summary: result.data };
+		} catch {
+			if (!isMountedRef.current) return { status: "unmounted" };
+			if (requestGeneration !== requestGenerationRef.current) return { status: "stale" };
+
+			options.onError();
+			return { status: "failed" };
+		}
+	}
+
+	function refreshLatestSummary(options: {
+		onError: (error?: string) => void;
+	}): Promise<SummaryLoadResult> {
+		return loadSummary(latestRequestRef.current, options);
+	}
+
+	return { loadSummary, refreshLatestSummary };
+}
+
 async function clearPayrollBlockerAndRefresh({
 	blocker,
-	currentRequest,
+	clickRequest,
+	isMountedRef,
 	onFinished,
-	onSummaryRefreshed,
+	onRemoved,
+	refreshLatestSummary,
 	t,
 }: {
 	blocker: PayrollWorkspaceSummary["blockers"][number];
-	currentRequest: PayrollPeriodRequest;
+	clickRequest: PayrollPeriodRequest;
+	isMountedRef: React.RefObject<boolean>;
 	onFinished: (blockerId: string) => void;
-	onSummaryRefreshed: (summary: PayrollWorkspaceSummary) => void;
+	onRemoved: (summary: PayrollWorkspaceSummary) => void;
+	refreshLatestSummary: (options: {
+		onError: (error?: string) => void;
+	}) => Promise<SummaryLoadResult>;
 	t: PayrollTranslate;
 }) {
 	let dismissalSucceeded = false;
 
 	try {
 		const dismissalResult = await dismissPayrollBlockerAction({
-			...currentRequest,
+			...clickRequest,
 			blockerId: blocker.id,
 			blockerType: blocker.type,
 		});
+		if (!isMountedRef.current) return;
 
 		if (!dismissalResult.success) {
 			toast.error(
@@ -149,40 +235,52 @@ async function clearPayrollBlockerAndRefresh({
 		}
 
 		dismissalSucceeded = true;
-		const refreshResult = await getPayrollWorkspaceSummaryAction(currentRequest);
-
-		if (!refreshResult.success) {
-			toast.error(
+		const refreshResult = await refreshLatestSummary({
+			onError: () =>
+				toast.error(
 				t(
 					"payroll.blockers.refreshAfterClearFailed",
 					"Blocker cleared, but payroll could not be refreshed",
 				),
-			);
-			return;
-		}
+				),
+		});
+		if (!isMountedRef.current) return;
 
-		onSummaryRefreshed(refreshResult.data);
+		if (
+			refreshResult.status === "applied" &&
+			!refreshResult.summary.blockers.some((currentBlocker) => currentBlocker.id === blocker.id)
+		) {
+			onRemoved(refreshResult.summary);
+		}
 	} catch {
-		toast.error(
+		if (isMountedRef.current) {
+			toast.error(
 			dismissalSucceeded
 				? t(
 						"payroll.blockers.refreshAfterClearFailed",
 						"Blocker cleared, but payroll could not be refreshed",
 					)
 				: t("payroll.blockers.clearFailed", "Could not clear payroll blocker"),
-		);
+			);
+		}
 	} finally {
-		onFinished(blocker.id);
+		if (isMountedRef.current) onFinished(blocker.id);
 	}
 }
 
 function usePayrollBlockerClearing({
-	dispatch,
-	request,
+	blockers,
+	clickRequest,
+	isMountedRef,
+	refreshLatestSummary,
 	t,
 }: {
-	dispatch: React.Dispatch<PayrollWorkspaceAction>;
-	request: PayrollPeriodRequest;
+	blockers: PayrollWorkspaceSummary["blockers"];
+	clickRequest: PayrollPeriodRequest;
+	isMountedRef: React.RefObject<boolean>;
+	refreshLatestSummary: (options: {
+		onError: (error?: string) => void;
+	}) => Promise<SummaryLoadResult>;
 	t: PayrollTranslate;
 }) {
 	const [clearingBlockerIds, setClearingBlockerIds] = useState<ReadonlySet<string>>(
@@ -190,18 +288,24 @@ function usePayrollBlockerClearing({
 	);
 	const clearingBlockerIdsRef = useRef(new Set<string>());
 	const clearBlockerQueueRef = useRef<Promise<void> | null>(null);
+	const focusRequestIdRef = useRef(0);
+	const [focusRequest, setFocusRequest] = useState<BlockerFocusRequest | null>(null);
 
 	function clearPayrollBlocker(blocker: PayrollWorkspaceSummary["blockers"][number]) {
+		if (!isMountedRef.current) return;
 		if (clearingBlockerIdsRef.current.has(blocker.id)) return;
 
 		clearingBlockerIdsRef.current.add(blocker.id);
 		setClearingBlockerIds((currentIds) => new Set(currentIds).add(blocker.id));
-		const currentRequest = request;
+		const currentClickRequest = clickRequest;
+		const blockerOrder = blockers.map((currentBlocker) => currentBlocker.id);
 
 		clearBlockerQueueRef.current = (clearBlockerQueueRef.current ?? Promise.resolve()).then(() =>
-			clearPayrollBlockerAndRefresh({
+			isMountedRef.current
+				? clearPayrollBlockerAndRefresh({
 				blocker,
-				currentRequest,
+				clickRequest: currentClickRequest,
+				isMountedRef,
 				onFinished: (blockerId) => {
 					clearingBlockerIdsRef.current.delete(blockerId);
 					setClearingBlockerIds((currentIds) => {
@@ -210,14 +314,32 @@ function usePayrollBlockerClearing({
 						return nextIds;
 					});
 				},
-				onSummaryRefreshed: (nextSummary) =>
-					dispatch({ type: "summaryRefreshed", summary: nextSummary }),
+				onRemoved: (nextSummary) => {
+					const removedIndex = blockerOrder.indexOf(blocker.id);
+					const remainingBlockerIds = new Set(
+						nextSummary.blockers.map((currentBlocker) => currentBlocker.id),
+					);
+					const nextBlockerId = blockerOrder
+						.slice(removedIndex + 1)
+						.find((blockerId) => remainingBlockerIds.has(blockerId));
+					const previousBlockerId = blockerOrder
+						.slice(0, removedIndex)
+						.reverse()
+						.find((blockerId) => remainingBlockerIds.has(blockerId));
+					focusRequestIdRef.current += 1;
+					setFocusRequest({
+						id: focusRequestIdRef.current,
+						targetBlockerId: nextBlockerId ?? previousBlockerId ?? null,
+					});
+				},
+				refreshLatestSummary,
 				t,
-			}),
+				})
+				: undefined,
 		);
 	}
 
-	return { clearingBlockerIds, clearPayrollBlocker };
+	return { clearingBlockerIds, clearPayrollBlocker, focusRequest };
 }
 
 export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorkspaceProps) {
@@ -241,6 +363,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		formatId,
 	} = state;
 	const [isPending, startTransition] = useTransition();
+	const isMountedRef = useMountedRef();
 
 	const scopedEmployees = initialSummary.employees;
 	const teamOptions = getTeamOptions(scopedEmployees);
@@ -263,9 +386,16 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		label: summary.period.label,
 		employeeIds: filteredEmployeeIds,
 	};
-	const { clearingBlockerIds, clearPayrollBlocker } = usePayrollBlockerClearing({
+	const { loadSummary, refreshLatestSummary } = usePayrollSummaryLoader({
 		dispatch,
-		request,
+		initialRequest: request,
+		isMountedRef,
+	});
+	const { clearingBlockerIds, clearPayrollBlocker, focusRequest } = usePayrollBlockerClearing({
+		blockers: displayedBlockers,
+		clickRequest: request,
+		isMountedRef,
+		refreshLatestSummary,
 		t,
 	});
 
@@ -285,15 +415,16 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		}
 
 		startTransition(async () => {
-			const result = await getPayrollWorkspaceSummaryAction({ ...nextRequest, employeeIds });
-
-			if (!result.success) {
-				toast.error(result.error);
-				return;
-			}
-
-			dispatch({ type: "summaryRefreshed", summary: result.data });
-			onSuccess?.();
+			await loadSummary(
+				{ ...nextRequest, employeeIds },
+				{
+					onError: (error) =>
+						toast.error(
+							error ?? t("payroll.errors.actionFailed", "Payroll workspace action failed"),
+						),
+					onSuccess,
+				},
+			);
 		});
 	}
 
@@ -497,6 +628,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				blockers={displayedBlockers}
 				clearingBlockerIds={clearingBlockerIds}
 				employees={displayedEmployees}
+				focusRequest={focusRequest}
 				onClearBlocker={clearPayrollBlocker}
 				t={t}
 			/>
@@ -1105,17 +1237,26 @@ function PayrollBlockersAlert({
 	blockers,
 	clearingBlockerIds,
 	employees,
+	focusRequest,
 	onClearBlocker,
 	t,
 }: {
 	blockers: PayrollWorkspaceSummary["blockers"];
 	clearingBlockerIds: ReadonlySet<string>;
 	employees: PayrollWorkspaceSummary["employees"];
+	focusRequest: BlockerFocusRequest | null;
 	onClearBlocker: (blocker: PayrollWorkspaceSummary["blockers"][number]) => void;
 	t: PayrollTranslate;
 }) {
 	const locale = useLocale();
-	if (blockers.length === 0) return null;
+	const headingRef = useRef<HTMLHeadingElement | null>(null);
+	const handledFocusRequestIdRef = useRef(0);
+	const blockerControlRefs = useRef(
+		new Map<
+			string,
+			{ action: HTMLAnchorElement | null; clear: HTMLButtonElement | null }
+		>(),
+	);
 	const employeeNames = new Map(
 		employees.map((employee) => [employee.id, employee.name]),
 	);
@@ -1127,6 +1268,43 @@ function PayrollBlockersAlert({
 		},
 	);
 
+	useEffect(() => {
+		if (!focusRequest || handledFocusRequestIdRef.current === focusRequest.id) return;
+
+		handledFocusRequestIdRef.current = focusRequest.id;
+		const controls = focusRequest.targetBlockerId
+			? blockerControlRefs.current.get(focusRequest.targetBlockerId)
+			: undefined;
+		const targetControl =
+			controls?.clear && !controls.clear.disabled ? controls.clear : controls?.action;
+		(targetControl ?? headingRef.current)?.focus();
+	}, [focusRequest]);
+
+	function setBlockerControlRef(
+		blockerId: string,
+		control: "action" | "clear",
+		node: HTMLAnchorElement | HTMLButtonElement | null,
+	) {
+		const refs = blockerControlRefs.current.get(blockerId) ?? { action: null, clear: null };
+		if (control === "action") refs.action = node as HTMLAnchorElement | null;
+		else refs.clear = node as HTMLButtonElement | null;
+
+		if (!refs.action && !refs.clear) blockerControlRefs.current.delete(blockerId);
+		else blockerControlRefs.current.set(blockerId, refs);
+	}
+
+	if (blockers.length === 0) {
+		if (!focusRequest) return null;
+
+		return (
+			<div className="sr-only">
+				<h2 id="payroll-blockers-title" ref={headingRef} tabIndex={-1}>
+					{title}
+				</h2>
+			</div>
+		);
+	}
+
 	return (
 		<section
 			aria-labelledby="payroll-blockers-title"
@@ -1137,7 +1315,12 @@ function PayrollBlockersAlert({
 					aria-hidden="true"
 					className="mt-0.5 size-4 shrink-0"
 				/>
-				<h2 className="font-medium leading-none" id="payroll-blockers-title">
+				<h2
+					className="font-medium leading-none"
+					id="payroll-blockers-title"
+					ref={headingRef}
+					tabIndex={-1}
+				>
 					{title}
 				</h2>
 			</header>
@@ -1228,6 +1411,7 @@ function PayrollBlockersAlert({
 									<Link
 										aria-label={`${actionLabel}: ${employeeName}, ${blockerType}, ${metadata}`}
 										href={href}
+										ref={(node) => setBlockerControlRef(blocker.id, "action", node)}
 									>
 										{actionLabel}
 									</Link>
@@ -1248,6 +1432,7 @@ function PayrollBlockersAlert({
 									className="w-full lg:w-auto"
 									disabled={isClearing}
 									onClick={() => onClearBlocker(blocker)}
+									ref={(node) => setBlockerControlRef(blocker.id, "clear", node)}
 									size="sm"
 									type="button"
 									variant="ghost"
