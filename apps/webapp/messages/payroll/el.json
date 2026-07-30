@@ -11,7 +11,14 @@
       "triggerExport": "Ενεργοποίηση εξαγωγής"
     },
     "blockers": {
-      "needReview": "{count} εμπόδια μισθοδοσίας χρειάζονται έλεγχο"
+      "dateUnavailable": "Η ημερομηνία δεν είναι διαθέσιμη",
+      "missingClockOut": "Λείπει η καταγραφή εξόδου",
+      "needReview": "{count} εμπόδια μισθοδοσίας χρειάζονται έλεγχο",
+      "openApprovals": "Άνοιγμα εγκρίσεων",
+      "openCalendar": "Άνοιγμα ημερολογίου",
+      "pendingAbsence": "Εκκρεμής απουσία",
+      "pendingTimeCorrection": "Εκκρεμής διόρθωση χρόνου",
+      "unknownEmployee": "Άγνωστος εργαζόμενος"
     },
     "description": "Ελέγξτε τα σύνολα μισθοδοσίας, την ετοιμότητα και τις εξαγωγές για την επιλεγμένη περίοδο.",
     "employeeTotals": {
