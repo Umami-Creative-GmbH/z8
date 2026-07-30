@@ -663,12 +663,22 @@ describe("PayrollWorkspace", () => {
 		await waitFor(() =>
 			expect(toastMocks.error).toHaveBeenCalledWith("This blocker can no longer be cleared"),
 		);
+		const resetButton = await within(blockerRow as HTMLElement).findByRole("button", {
+			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+		});
+		expect((resetButton as HTMLButtonElement).disabled).toBe(false);
+		expect(
+			within(blockerRow as HTMLElement).queryByRole("button", {
+				name: /Clearing false positive.*Ada Lovelace.*Missing clock-out/,
+			}),
+		).toBeNull();
 		expect(document.querySelector('[data-payroll-blocker-id="blocker-1"]')).toBeTruthy();
 		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
 	});
 
 	it("keeps the blocker, clears pending state, and shows a localized error on dismissal rejection", async () => {
-		actionMocks.dismissPayrollBlockerAction.mockRejectedValueOnce(new Error("network detail"));
+		const dismissal = deferred<never>();
+		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(dismissal.promise);
 		render(
 			<PayrollWorkspace
 				initialSummary={summary}
@@ -682,16 +692,28 @@ describe("PayrollWorkspace", () => {
 				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
 			}),
 		);
+		const pendingButton = await within(blockerRow as HTMLElement).findByRole("button", {
+			name: /Clearing false positive.*Ada Lovelace.*Missing clock-out/,
+		});
+		expect((pendingButton as HTMLButtonElement).disabled).toBe(true);
+
+		dismissal.reject(new Error("network detail"));
 
 		await waitFor(() =>
 			expect(toastMocks.error).toHaveBeenCalledWith("Could not clear payroll blocker"),
 		);
+		const resetButton = await within(blockerRow as HTMLElement).findByRole("button", {
+			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+		});
+		expect((resetButton as HTMLButtonElement).disabled).toBe(false);
 		expect(
-			within(blockerRow as HTMLElement).getByRole("button", {
-				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+			within(blockerRow as HTMLElement).queryByRole("button", {
+				name: /Clearing false positive.*Ada Lovelace.*Missing clock-out/,
 			}),
-		).toBeTruthy();
+		).toBeNull();
 		expect(document.querySelector('[data-payroll-blocker-id="blocker-1"]')).toBeTruthy();
+		const blockerSummaryCard = screen.getByText("Blockers").closest('[data-slot="card"]');
+		expect(within(blockerSummaryCard as HTMLElement).getByText("2")).toBeTruthy();
 	});
 
 	it.each([
