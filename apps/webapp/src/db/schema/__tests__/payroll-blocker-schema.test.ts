@@ -31,6 +31,7 @@ describe("payroll blocker dismissal schema", () => {
 		expect(payrollBlockerDismissal.dismissedAt).toMatchObject({
 			hasDefault: true,
 			notNull: true,
+			withTimezone: true,
 		});
 	});
 
@@ -98,7 +99,7 @@ describe("payroll blocker dismissal schema", () => {
 					columns: ["dismissed_by_employee_id", "organization_id"],
 					foreignColumns: ["id", "organization_id"],
 					foreignTable: employee,
-					onDelete: "cascade",
+					onDelete: "no action",
 				},
 			]),
 		);
@@ -121,7 +122,19 @@ describe("payroll blocker dismissal schema", () => {
 			'FOREIGN KEY ("employee_id","organization_id") REFERENCES "public"."employee"("id","organization_id") ON DELETE cascade',
 		);
 		expect(migration).toContain(
+			'FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade',
+		);
+		expect(migration).toContain(
+			'FOREIGN KEY ("dismissed_by_employee_id","organization_id") REFERENCES "public"."employee"("id","organization_id") ON DELETE no action',
+		);
+		expect(migration).not.toContain(
 			'FOREIGN KEY ("dismissed_by_employee_id","organization_id") REFERENCES "public"."employee"("id","organization_id") ON DELETE cascade',
+		);
+		expect(migration).toContain(
+			'"dismissed_at" timestamp with time zone DEFAULT now() NOT NULL',
+		);
+		expect(migration).not.toMatch(
+			/"dismissed_at" timestamp(?! with time zone)/,
 		);
 		expect(migration).toContain(
 			"CHECK (\"blocker_type\" IN ('missing_clock_out', 'pending_absence', 'pending_time_correction'))",
@@ -200,6 +213,7 @@ describe("payroll blocker dismissal schema", () => {
 		expect(table?.columns).toMatchObject({
 			blocker_type: { notNull: true, type: "text" },
 			dismissed_by_employee_id: { notNull: true, type: "uuid" },
+			dismissed_at: { notNull: true, type: "timestamp with time zone" },
 			employee_id: { notNull: true, type: "uuid" },
 			organization_id: { notNull: true, type: "text" },
 			source_id: { notNull: true, type: "uuid" },
@@ -211,6 +225,12 @@ describe("payroll blocker dismissal schema", () => {
 		expect(Object.values(table?.foreignKeys ?? {})).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({
+					columnsFrom: ["organization_id"],
+					columnsTo: ["id"],
+					onDelete: "cascade",
+					tableTo: "organization",
+				}),
+				expect.objectContaining({
 					columnsFrom: ["employee_id", "organization_id"],
 					columnsTo: ["id", "organization_id"],
 					onDelete: "cascade",
@@ -219,7 +239,7 @@ describe("payroll blocker dismissal schema", () => {
 				expect.objectContaining({
 					columnsFrom: ["dismissed_by_employee_id", "organization_id"],
 					columnsTo: ["id", "organization_id"],
-					onDelete: "cascade",
+					onDelete: "no action",
 					tableTo: "employee",
 				}),
 			]),

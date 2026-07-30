@@ -29,7 +29,9 @@ export const payrollBlockerDismissal = pgTable(
 		sourceId: uuid("source_id").notNull(),
 		employeeId: uuid("employee_id").notNull(),
 		dismissedByEmployeeId: uuid("dismissed_by_employee_id").notNull(),
-		dismissedAt: timestamp("dismissed_at").defaultNow().notNull(),
+		dismissedAt: timestamp("dismissed_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
 	},
 	(table) => [
 		unique("payrollBlockerDismissal_org_type_source_unique_idx").on(
@@ -53,7 +55,7 @@ export const payrollBlockerDismissal = pgTable(
 			name: "payroll_blocker_dismissal_dismissed_by_employee_org_fk",
 			columns: [table.dismissedByEmployeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
-		}).onDelete("cascade"),
+		}),
 		check(
 			"payroll_blocker_dismissal_blocker_type_check",
 			sql`${table.blockerType} IN ('missing_clock_out', 'pending_absence', 'pending_time_correction')`,

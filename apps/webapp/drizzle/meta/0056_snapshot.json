@@ -20591,7 +20591,7 @@
         },
         "dismissed_at": {
           "name": "dismissed_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
@@ -20676,7 +20676,7 @@
             "id",
             "organization_id"
           ],
-          "onDelete": "cascade",
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
