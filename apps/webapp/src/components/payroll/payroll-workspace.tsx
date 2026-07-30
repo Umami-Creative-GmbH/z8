@@ -27,13 +27,7 @@ import {
 } from "@/app/[locale]/(app)/payroll/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -66,10 +60,7 @@ import {
 	type PayrollBlockerIdentity,
 	payrollBlockerIdentity,
 } from "@/lib/payroll-workspace/blocker-identity";
-import type {
-	PayrollDateRangeMode,
-	PayrollWorkspaceSummary,
-} from "@/lib/payroll-workspace/types";
+import type { PayrollDateRangeMode, PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 
 type PayrollTranslate = ReturnType<typeof useTranslate>["t"];
 
@@ -182,8 +173,7 @@ function usePayrollSummaryLoader({
 			const result = await getPayrollWorkspaceSummaryAction(nextRequest);
 
 			if (!isMountedRef.current) return { status: "unmounted" };
-			if (requestGeneration !== requestGenerationRef.current)
-				return { status: "stale" };
+			if (requestGeneration !== requestGenerationRef.current) return { status: "stale" };
 
 			if (!result.success) {
 				options.onError(result.error);
@@ -195,8 +185,7 @@ function usePayrollSummaryLoader({
 			return { status: "applied", summary: result.data };
 		} catch {
 			if (!isMountedRef.current) return { status: "unmounted" };
-			if (requestGeneration !== requestGenerationRef.current)
-				return { status: "stale" };
+			if (requestGeneration !== requestGenerationRef.current) return { status: "stale" };
 
 			options.onError();
 			return { status: "failed" };
@@ -254,10 +243,10 @@ async function clearPayrollBlockerAndRefresh({
 		const refreshResult = await refreshLatestSummary({
 			onError: () =>
 				toast.error(
-					t(
-						"payroll.blockers.refreshAfterClearFailed",
-						"Blocker cleared, but payroll could not be refreshed",
-					),
+				t(
+					"payroll.blockers.refreshAfterClearFailed",
+					"Blocker cleared, but payroll could not be refreshed",
+				),
 				),
 		});
 		if (!isMountedRef.current) return;
@@ -265,8 +254,7 @@ async function clearPayrollBlockerAndRefresh({
 		if (
 			refreshResult.status === "applied" &&
 			!refreshResult.summary.blockers.some(
-				(currentBlocker) =>
-					payrollBlockerIdentity(currentBlocker) === blockerKey,
+				(currentBlocker) => payrollBlockerIdentity(currentBlocker) === blockerKey,
 			)
 		) {
 			onRemoved(refreshResult.summary);
@@ -274,15 +262,12 @@ async function clearPayrollBlockerAndRefresh({
 	} catch {
 		if (isMountedRef.current) {
 			toast.error(
-				dismissalSucceeded
-					? t(
-							"payroll.blockers.refreshAfterClearFailed",
-							"Blocker cleared, but payroll could not be refreshed",
-						)
-					: t(
-							"payroll.blockers.clearFailed",
-							"Could not clear payroll blocker",
-						),
+			dismissalSucceeded
+				? t(
+						"payroll.blockers.refreshAfterClearFailed",
+						"Blocker cleared, but payroll could not be refreshed",
+					)
+				: t("payroll.blockers.clearFailed", "Could not clear payroll blocker"),
 			);
 		}
 	} finally {
@@ -311,9 +296,7 @@ function usePayrollBlockerClearing({
 	const clearingBlockerKeysRef = useRef(new Set<PayrollBlockerIdentity>());
 	const clearBlockerQueueRef = useRef<Promise<void> | null>(null);
 	const focusRequestIdRef = useRef(0);
-	const [focusRequest, setFocusRequest] = useState<BlockerFocusRequest | null>(
-		null,
-	);
+	const [focusRequest, setFocusRequest] = useState<BlockerFocusRequest | null>(null);
 
 	function clearPayrollBlocker(
 		blocker: PayrollWorkspaceSummary["blockers"][number],
@@ -324,55 +307,47 @@ function usePayrollBlockerClearing({
 		if (clearingBlockerKeysRef.current.has(blockerKey)) return;
 
 		clearingBlockerKeysRef.current.add(blockerKey);
-		setClearingBlockerKeys((currentKeys) =>
-			new Set(currentKeys).add(blockerKey),
-		);
+		setClearingBlockerKeys((currentKeys) => new Set(currentKeys).add(blockerKey));
 		const currentClickRequest = clickRequest;
 		const blockerOrder = blockers.map(payrollBlockerIdentity);
 
-		clearBlockerQueueRef.current = (
-			clearBlockerQueueRef.current ?? Promise.resolve()
-		).then(() =>
+		clearBlockerQueueRef.current = (clearBlockerQueueRef.current ?? Promise.resolve()).then(() =>
 			isMountedRef.current
 				? clearPayrollBlockerAndRefresh({
-						blocker,
-						clickRequest: currentClickRequest,
-						isMountedRef,
-						onFinished: (finishedBlockerKey) => {
-							clearingBlockerKeysRef.current.delete(finishedBlockerKey);
-							setClearingBlockerKeys((currentKeys) => {
-								const nextKeys = new Set(currentKeys);
-								nextKeys.delete(finishedBlockerKey);
-								return nextKeys;
-							});
-						},
-						onRemoved: (nextSummary) => {
-							if (document.activeElement !== activatedControl) return;
+				blocker,
+				clickRequest: currentClickRequest,
+				isMountedRef,
+				onFinished: (finishedBlockerKey) => {
+					clearingBlockerKeysRef.current.delete(finishedBlockerKey);
+					setClearingBlockerKeys((currentKeys) => {
+						const nextKeys = new Set(currentKeys);
+						nextKeys.delete(finishedBlockerKey);
+						return nextKeys;
+					});
+				},
+				onRemoved: (nextSummary) => {
+					if (document.activeElement !== activatedControl) return;
 
-							const removedIndex = blockerOrder.indexOf(blockerKey);
-							const remainingBlockerKeys = new Set(
-								nextSummary.blockers.map(payrollBlockerIdentity),
-							);
-							const nextBlockerKey = blockerOrder
-								.slice(removedIndex + 1)
-								.find((currentBlockerKey) =>
-									remainingBlockerKeys.has(currentBlockerKey),
-								);
-							const previousBlockerKey = blockerOrder
-								.slice(0, removedIndex)
-								.reverse()
-								.find((currentBlockerKey) =>
-									remainingBlockerKeys.has(currentBlockerKey),
-								);
-							focusRequestIdRef.current += 1;
-							setFocusRequest({
-								id: focusRequestIdRef.current,
-								targetBlockerKey: nextBlockerKey ?? previousBlockerKey ?? null,
-							});
-						},
-						refreshLatestSummary,
-						t,
-					})
+					const removedIndex = blockerOrder.indexOf(blockerKey);
+					const remainingBlockerKeys = new Set(
+						nextSummary.blockers.map(payrollBlockerIdentity),
+					);
+					const nextBlockerKey = blockerOrder
+						.slice(removedIndex + 1)
+						.find((currentBlockerKey) => remainingBlockerKeys.has(currentBlockerKey));
+					const previousBlockerKey = blockerOrder
+						.slice(0, removedIndex)
+						.reverse()
+						.find((currentBlockerKey) => remainingBlockerKeys.has(currentBlockerKey));
+					focusRequestIdRef.current += 1;
+					setFocusRequest({
+						id: focusRequestIdRef.current,
+						targetBlockerKey: nextBlockerKey ?? previousBlockerKey ?? null,
+					});
+				},
+				refreshLatestSummary,
+				t,
+				})
 				: undefined,
 		);
 	}
@@ -380,10 +355,7 @@ function usePayrollBlockerClearing({
 	return { clearingBlockerKeys, clearPayrollBlocker, focusRequest };
 }
 
-export function PayrollWorkspace({
-	initialSummary,
-	exportFormats,
-}: PayrollWorkspaceProps) {
+export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorkspaceProps) {
 	const { t } = useTranslate();
 	const [state, dispatch] = useReducer(payrollWorkspaceReducer, {
 		summary: initialSummary,
@@ -421,9 +393,7 @@ export function PayrollWorkspace({
 	const displayedTotals = filtersHaveNoMatches
 		? { employeeCount: 0, totalWorkedHours: 0, blockerCount: 0 }
 		: summary.totals;
-	const readyEmployeeCount = displayedEmployees.filter(
-		(employee) => !employee.hasBlockers,
-	).length;
+	const readyEmployeeCount = displayedEmployees.filter((employee) => !employee.hasBlockers).length;
 	const request = {
 		startDate: summary.period.start,
 		endDate: summary.period.end,
@@ -435,14 +405,13 @@ export function PayrollWorkspace({
 		initialRequest: request,
 		isMountedRef,
 	});
-	const { clearingBlockerKeys, clearPayrollBlocker, focusRequest } =
-		usePayrollBlockerClearing({
-			blockers: displayedBlockers,
-			clickRequest: request,
-			isMountedRef,
-			refreshLatestSummary,
-			t,
-		});
+	const { clearingBlockerKeys, clearPayrollBlocker, focusRequest } = usePayrollBlockerClearing({
+		blockers: displayedBlockers,
+		clickRequest: request,
+		isMountedRef,
+		refreshLatestSummary,
+		t,
+	});
 
 	function refreshSummary(
 		nextRequest: PayrollPeriodRequest,
@@ -465,11 +434,7 @@ export function PayrollWorkspace({
 				{
 					onError: (error) =>
 						toast.error(
-							error ??
-								t(
-									"payroll.errors.actionFailed",
-									"Payroll workspace action failed",
-								),
+							error ?? t("payroll.errors.actionFailed", "Payroll workspace action failed"),
 						),
 					onSuccess,
 				},
@@ -477,10 +442,7 @@ export function PayrollWorkspace({
 		});
 	}
 
-	function applyEmployeeFilter(
-		nextEmployeeIds: string[],
-		onSuccess?: () => void,
-	) {
+	function applyEmployeeFilter(nextEmployeeIds: string[], onSuccess?: () => void) {
 		const nextFilteredEmployeeIds = getFilteredEmployeeIds(
 			scopedEmployees,
 			nextEmployeeIds,
@@ -536,13 +498,9 @@ export function PayrollWorkspace({
 	function navigatePeriod(direction: "previous" | "next") {
 		if (dateMode === "custom") return;
 
-		const currentStart = DateTime.fromISO(summary.period.start, {
-			zone: "utc",
-		});
+		const currentStart = DateTime.fromISO(summary.period.start, { zone: "utc" });
 		const amount = direction === "previous" ? -1 : 1;
-		const nextStart = currentStart
-			.plus({ [dateMode]: amount })
-			.startOf(dateMode);
+		const nextStart = currentStart.plus({ [dateMode]: amount }).startOf(dateMode);
 
 		refreshSummary(buildPeriodRequest(nextStart, dateMode));
 	}
@@ -550,9 +508,7 @@ export function PayrollWorkspace({
 	function returnToCurrentPeriod() {
 		if (dateMode === "custom") return;
 
-		refreshSummary(
-			buildPeriodRequest(DateTime.utc().startOf(dateMode), dateMode),
-		);
+		refreshSummary(buildPeriodRequest(DateTime.utc().startOf(dateMode), dateMode));
 	}
 
 	function applyCustomRange() {
@@ -585,9 +541,7 @@ export function PayrollWorkspace({
 				return;
 			}
 
-			const blob = new Blob([new Uint8Array(result.data.data)], {
-				type: "application/pdf",
-			});
+			const blob = new Blob([new Uint8Array(result.data.data)], { type: "application/pdf" });
 			const url = URL.createObjectURL(blob);
 			const link = document.createElement("a");
 			link.href = url;
@@ -612,10 +566,7 @@ export function PayrollWorkspace({
 		}
 
 		startTransition(async () => {
-			const result = await startScopedPayrollExportAction({
-				...request,
-				formatId,
-			});
+			const result = await startScopedPayrollExportAction({ ...request, formatId });
 
 			if (!result.success) {
 				toast.error(result.error);
@@ -706,9 +657,7 @@ function PayrollHeader({ t }: { t: PayrollTranslate }) {
 	return (
 		<header className="space-y-1">
 			<div className="space-y-1">
-				<h1 className="text-3xl font-semibold tracking-tight">
-					{t("payroll.title", "Payroll")}
-				</h1>
+				<h1 className="text-3xl font-semibold tracking-tight">{t("payroll.title", "Payroll")}</h1>
 				<p className="text-muted-foreground">
 					{t(
 						"payroll.description",
@@ -779,13 +728,9 @@ function PayrollPeriodCard({
 						</CardDescription>
 					</div>
 					<p className="text-muted-foreground text-sm">
-						{t(
-							"payroll.period.employeesInScope",
-							"{count} employees in scope",
-							{
-								count: displayedTotals.employeeCount,
-							},
-						)}
+						{t("payroll.period.employeesInScope", "{count} employees in scope", {
+							count: displayedTotals.employeeCount,
+						})}
 					</p>
 					{filtersHaveNoMatches ? (
 						<p className="text-destructive text-sm">
@@ -902,9 +847,7 @@ function PayrollDateControls({
 
 			<div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
 				<div className="space-y-1">
-					<Label htmlFor="payroll-start-date">
-						{t("payroll.period.start", "Start")}
-					</Label>
+					<Label htmlFor="payroll-start-date">{t("payroll.period.start", "Start")}</Label>
 					<Input
 						id="payroll-start-date"
 						name="payroll-start-date"
@@ -912,15 +855,11 @@ function PayrollDateControls({
 						type="date"
 						value={startDate}
 						disabled={dateMode !== "custom" || isPending}
-						onChange={(event) =>
-							dispatch({ type: "startDateChanged", value: event.target.value })
-						}
+						onChange={(event) => dispatch({ type: "startDateChanged", value: event.target.value })}
 					/>
 				</div>
 				<div className="space-y-1">
-					<Label htmlFor="payroll-end-date">
-						{t("payroll.period.end", "End")}
-					</Label>
+					<Label htmlFor="payroll-end-date">{t("payroll.period.end", "End")}</Label>
 					<Input
 						id="payroll-end-date"
 						name="payroll-end-date"
@@ -928,9 +867,7 @@ function PayrollDateControls({
 						type="date"
 						value={endDate}
 						disabled={dateMode !== "custom" || isPending}
-						onChange={(event) =>
-							dispatch({ type: "endDateChanged", value: event.target.value })
-						}
+						onChange={(event) => dispatch({ type: "endDateChanged", value: event.target.value })}
 					/>
 				</div>
 				<Button
@@ -983,15 +920,11 @@ function PayrollExportControls({
 				</Label>
 				<Select
 					value={formatId}
-					onValueChange={(formatId) =>
-						dispatch({ type: "formatChanged", formatId })
-					}
+					onValueChange={(formatId) => dispatch({ type: "formatChanged", formatId })}
 					disabled={!hasExportFormats || isPending}
 				>
 					<SelectTrigger id="payroll-export-target" className="w-full">
-						<SelectValue
-							placeholder={t("payroll.export.selectFormat", "Select format")}
-						/>
+						<SelectValue placeholder={t("payroll.export.selectFormat", "Select format")} />
 					</SelectTrigger>
 					<SelectContent>
 						{exportFormats.map((format) => (
@@ -1003,10 +936,7 @@ function PayrollExportControls({
 				</Select>
 				{!hasExportFormats ? (
 					<p className="text-muted-foreground text-sm">
-						{t(
-							"payroll.export.noConfiguredTarget",
-							"No configured payroll export target",
-						)}
+						{t("payroll.export.noConfiguredTarget", "No configured payroll export target")}
 					</p>
 				) : null}
 			</div>
@@ -1070,11 +1000,7 @@ function PayrollScopeCard({
 	const [draftEmployeeIds, setDraftEmployeeIds] = useState(selectedEmployeeIds);
 	const [teamSheetOpen, setTeamSheetOpen] = useState(false);
 	const [draftTeamNames, setDraftTeamNames] = useState(selectedTeamNames);
-	const scopeSummary = getPayrollScopeSummary({
-		selectedEmployeeIds,
-		selectedTeamNames,
-		t,
-	});
+	const scopeSummary = getPayrollScopeSummary({ selectedEmployeeIds, selectedTeamNames, t });
 
 	function openTeamSheet(open: boolean) {
 		setTeamSheetOpen(open);
@@ -1094,9 +1020,7 @@ function PayrollScopeCard({
 		setDraftTeamNames((currentTeamNames) =>
 			checked
 				? [...currentTeamNames, teamName]
-				: currentTeamNames.filter(
-						(currentTeamName) => currentTeamName !== teamName,
-					),
+				: currentTeamNames.filter((currentTeamName) => currentTeamName !== teamName),
 		);
 	}
 
@@ -1126,9 +1050,7 @@ function PayrollScopeCard({
 		const selectedEmployeeIdSet = new Set(selectedEmployeeIds);
 		const employeeDraftChanged =
 			draftEmployeeIds.length !== selectedEmployeeIds.length ||
-			draftEmployeeIds.some(
-				(employeeId) => !selectedEmployeeIdSet.has(employeeId),
-			);
+			draftEmployeeIds.some((employeeId) => !selectedEmployeeIdSet.has(employeeId));
 
 		if (employeeDraftChanged) {
 			onApplyEmployees(draftEmployeeIds, () => setEmployeeSheetOpen(false));
@@ -1169,9 +1091,7 @@ function PayrollScopeCard({
 						</SheetTrigger>
 						<SheetContent className="overflow-y-auto">
 							<SheetHeader>
-								<SheetTitle>
-									{t("payroll.scope.specificTeams", "Specific teams")}
-								</SheetTitle>
+								<SheetTitle>{t("payroll.scope.specificTeams", "Specific teams")}</SheetTitle>
 								<SheetDescription>
 									{t(
 										"payroll.scope.specificTeamsDescription",
@@ -1189,14 +1109,9 @@ function PayrollScopeCard({
 												checked={draftTeamNameSet.has(teamName)}
 												disabled={isPending}
 												id={checkboxId}
-												onCheckedChange={(checked) =>
-													toggleDraftTeam(teamName, checked === true)
-												}
+												onCheckedChange={(checked) => toggleDraftTeam(teamName, checked === true)}
 											/>
-											<label
-												className="cursor-pointer font-medium text-sm"
-												htmlFor={checkboxId}
-											>
+											<label className="cursor-pointer font-medium text-sm" htmlFor={checkboxId}>
 												{teamName}
 											</label>
 										</div>
@@ -1212,11 +1127,7 @@ function PayrollScopeCard({
 								)}
 							</div>
 							<SheetFooter>
-								<Button
-									disabled={isPending}
-									type="button"
-									onClick={applyTeamDraft}
-								>
+								<Button disabled={isPending} type="button" onClick={applyTeamDraft}>
 									{t("payroll.scope.apply", "Apply")}
 								</Button>
 								<SheetClose asChild>
@@ -1260,10 +1171,7 @@ function PayrollScopeCard({
 													toggleDraftEmployee(employee.id, checked === true)
 												}
 											/>
-											<label
-												className="cursor-pointer font-medium text-sm"
-												htmlFor={checkboxId}
-											>
+											<label className="cursor-pointer font-medium text-sm" htmlFor={checkboxId}>
 												{employee.name}
 											</label>
 										</div>
@@ -1279,11 +1187,7 @@ function PayrollScopeCard({
 								)}
 							</div>
 							<SheetFooter>
-								<Button
-									disabled={isPending}
-									type="button"
-									onClick={applyEmployeeDraft}
-								>
+								<Button disabled={isPending} type="button" onClick={applyEmployeeDraft}>
 									{t("payroll.scope.apply", "Apply")}
 								</Button>
 								<SheetClose asChild>
@@ -1386,19 +1290,15 @@ function PayrollBlockersAlert({
 	);
 
 	useEffect(() => {
-		if (!focusRequest || handledFocusRequestIdRef.current === focusRequest.id)
-			return;
+		if (!focusRequest || handledFocusRequestIdRef.current === focusRequest.id) return;
 
 		handledFocusRequestIdRef.current = focusRequest.id;
 		const controls = focusRequest.targetBlockerKey
 			? blockerControlRefs.current.get(focusRequest.targetBlockerKey)
 			: undefined;
 		const targetControl =
-			controls?.clear && !controls.clear.disabled
-				? controls.clear
-				: controls?.action;
-		const fallbackTarget =
-			blockers.length === 0 ? fallbackFocusRef.current : headingRef.current;
+			controls?.clear && !controls.clear.disabled ? controls.clear : controls?.action;
+		const fallbackTarget = blockers.length === 0 ? fallbackFocusRef.current : headingRef.current;
 		(targetControl ?? fallbackTarget)?.focus();
 	}, [blockers.length, fallbackFocusRef, focusRequest]);
 
@@ -1407,15 +1307,11 @@ function PayrollBlockersAlert({
 		control: "action" | "clear",
 		node: HTMLAnchorElement | HTMLButtonElement | null,
 	) {
-		const refs = blockerControlRefs.current.get(blockerKey) ?? {
-			action: null,
-			clear: null,
-		};
+		const refs = blockerControlRefs.current.get(blockerKey) ?? { action: null, clear: null };
 		if (control === "action") refs.action = node as HTMLAnchorElement | null;
 		else refs.clear = node as HTMLButtonElement | null;
 
-		if (!refs.action && !refs.clear)
-			blockerControlRefs.current.delete(blockerKey);
+		if (!refs.action && !refs.clear) blockerControlRefs.current.delete(blockerKey);
 		else blockerControlRefs.current.set(blockerKey, refs);
 	}
 
@@ -1498,7 +1394,6 @@ function PayrollBlockersAlert({
 						<li
 							className="grid min-w-0 gap-2 rounded-md border bg-background px-3 py-2 text-foreground lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-4"
 							data-payroll-blocker-key={blockerKey}
-							data-payroll-blocker-id={blocker.id}
 							key={blockerKey}
 						>
 							<div className="grid min-w-0 gap-1 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,auto)] lg:items-center lg:gap-4">
@@ -1529,9 +1424,7 @@ function PayrollBlockersAlert({
 									<Link
 										aria-label={`${actionLabel}: ${employeeName}, ${blockerType}, ${metadata}`}
 										href={href}
-										ref={(node) =>
-											setBlockerControlRef(blockerKey, "action", node)
-										}
+										ref={(node) => setBlockerControlRef(blockerKey, "action", node)}
 									>
 										{actionLabel}
 									</Link>
@@ -1551,12 +1444,8 @@ function PayrollBlockersAlert({
 									aria-busy={isClearing}
 									className="w-full lg:w-auto"
 									disabled={isClearing}
-									onClick={(event) =>
-										onClearBlocker(blocker, event.currentTarget)
-									}
-									ref={(node) =>
-										setBlockerControlRef(blockerKey, "clear", node)
-									}
+									onClick={(event) => onClearBlocker(blocker, event.currentTarget)}
+									ref={(node) => setBlockerControlRef(blockerKey, "clear", node)}
 									size="sm"
 									type="button"
 									variant="ghost"
@@ -1618,9 +1507,7 @@ function EmployeeTotalsCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>
-					{t("payroll.employeeTotals.title", "Employee totals")}
-				</CardTitle>
+				<CardTitle>{t("payroll.employeeTotals.title", "Employee totals")}</CardTitle>
 				<CardDescription>
 					{t(
 						"payroll.employeeTotals.description",
@@ -1633,24 +1520,14 @@ function EmployeeTotalsCard({
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>
-									{t("payroll.employeeTotals.employee", "Employee")}
-								</TableHead>
-								<TableHead>
-									{t("payroll.employeeTotals.team", "Team")}
-								</TableHead>
-								<TableHead>
-									{t("payroll.employeeTotals.contract", "Contract")}
-								</TableHead>
+								<TableHead>{t("payroll.employeeTotals.employee", "Employee")}</TableHead>
+								<TableHead>{t("payroll.employeeTotals.team", "Team")}</TableHead>
+								<TableHead>{t("payroll.employeeTotals.contract", "Contract")}</TableHead>
 								<TableHead className="text-right">
 									{t("payroll.employeeTotals.hours", "Hours")}
 								</TableHead>
-								<TableHead>
-									{t("payroll.employeeTotals.absences", "Absences")}
-								</TableHead>
-								<TableHead>
-									{t("payroll.employeeTotals.status", "Status")}
-								</TableHead>
+								<TableHead>{t("payroll.employeeTotals.absences", "Absences")}</TableHead>
+								<TableHead>{t("payroll.employeeTotals.status", "Status")}</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -1661,24 +1538,14 @@ function EmployeeTotalsCard({
 											<div className="font-medium">{employee.name}</div>
 											<div className="text-muted-foreground text-xs">
 												{employee.employeeNumber ??
-													t(
-														"payroll.employeeTotals.noEmployeeNumber",
-														"No employee number",
-													)}
+													t("payroll.employeeTotals.noEmployeeNumber", "No employee number")}
 											</div>
 										</TableCell>
 										<TableCell>
-											{employee.teamName ??
-												t("payroll.employeeTotals.noTeam", "No team")}
+											{employee.teamName ?? t("payroll.employeeTotals.noTeam", "No team")}
 										</TableCell>
 										<TableCell>
-											<Badge
-												variant={
-													employee.contractType === "hourly"
-														? "default"
-														: "secondary"
-												}
-											>
+											<Badge variant={employee.contractType === "hourly" ? "default" : "secondary"}>
 												{employee.contractType === "hourly"
 													? t("payroll.employeeTotals.contractHourly", "Hourly")
 													: t("payroll.employeeTotals.contractFixed", "Fixed")}
@@ -1687,31 +1554,19 @@ function EmployeeTotalsCard({
 										<TableCell className="text-right tabular-nums">
 											{formatTableHours(employee.workedHours)}
 										</TableCell>
+										<TableCell>{formatAbsences(t, employee.absenceDaysByCategory)}</TableCell>
 										<TableCell>
-											{formatAbsences(t, employee.absenceDaysByCategory)}
-										</TableCell>
-										<TableCell>
-											<Badge
-												variant={
-													employee.hasBlockers ? "destructive" : "secondary"
-												}
-											>
+											<Badge variant={employee.hasBlockers ? "destructive" : "secondary"}>
 												{employee.hasBlockers
 													? t("payroll.employeeTotals.blocked", "Blocked")
-													: t(
-															"payroll.employeeTotals.readyForPayroll",
-															"Ready for payroll",
-														)}
+													: t("payroll.employeeTotals.readyForPayroll", "Ready for payroll")}
 											</Badge>
 										</TableCell>
 									</TableRow>
 								))
 							) : (
 								<TableRow>
-									<TableCell
-										colSpan={6}
-										className="py-8 text-center text-muted-foreground"
-									>
+									<TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
 										{t(
 											"payroll.filters.noMatchingEmployees",
 											"No employees match the selected payroll filters.",
@@ -1778,12 +1633,9 @@ function formatAbsences(
 	t: PayrollTranslate,
 	absences: PayrollWorkspaceSummary["employees"][number]["absenceDaysByCategory"],
 ) {
-	if (absences.length === 0)
-		return t("payroll.employeeTotals.noAbsences", "None");
+	if (absences.length === 0) return t("payroll.employeeTotals.noAbsences", "None");
 
-	return absences
-		.map((absence) => `${absence.categoryName}: ${absence.days}`)
-		.join(", ");
+	return absences.map((absence) => `${absence.categoryName}: ${absence.days}`).join(", ");
 }
 
 function getDateModeLabel(t: PayrollTranslate, mode: PayrollDateRangeMode) {
@@ -1793,9 +1645,7 @@ function getDateModeLabel(t: PayrollTranslate, mode: PayrollDateRangeMode) {
 	return t("payroll.period.mode.custom", "Custom");
 }
 
-function basePeriodRequest(
-	summary: PayrollWorkspaceSummary,
-): PayrollPeriodRequest {
+function basePeriodRequest(summary: PayrollWorkspaceSummary): PayrollPeriodRequest {
 	return {
 		startDate: summary.period.start,
 		endDate: summary.period.end,
@@ -1803,10 +1653,7 @@ function basePeriodRequest(
 	};
 }
 
-function buildPeriodRequest(
-	start: DateTime,
-	mode: Exclude<PayrollDateRangeMode, "custom">,
-) {
+function buildPeriodRequest(start: DateTime, mode: Exclude<PayrollDateRangeMode, "custom">) {
 	const normalizedStart = start.startOf(mode);
 	const end = normalizedStart.endOf(mode);
 
@@ -1817,15 +1664,9 @@ function buildPeriodRequest(
 	};
 }
 
-function getTeamOptions(
-	employees: PayrollWorkspaceSummary["employees"],
-): string[] {
+function getTeamOptions(employees: PayrollWorkspaceSummary["employees"]): string[] {
 	return Array.from(
-		new Set(
-			employees.flatMap((employee) =>
-				employee.teamName ? [employee.teamName] : [],
-			),
-		),
+		new Set(employees.flatMap((employee) => (employee.teamName ? [employee.teamName] : []))),
 	).toSorted() as string[];
 }
 
@@ -1834,8 +1675,7 @@ function getFilteredEmployeeIds(
 	selectedEmployeeIds: string[],
 	selectedTeamNames: string[],
 ): string[] | undefined {
-	if (selectedEmployeeIds.length === 0 && selectedTeamNames.length === 0)
-		return undefined;
+	if (selectedEmployeeIds.length === 0 && selectedTeamNames.length === 0) return undefined;
 
 	const selectedEmployeeIdSet = new Set(selectedEmployeeIds);
 	const selectedTeamNameSet = new Set(selectedTeamNames);
@@ -1843,12 +1683,10 @@ function getFilteredEmployeeIds(
 
 	for (const employee of employees) {
 		const matchesEmployee =
-			selectedEmployeeIds.length === 0 ||
-			selectedEmployeeIdSet.has(employee.id);
+			selectedEmployeeIds.length === 0 || selectedEmployeeIdSet.has(employee.id);
 		const matchesTeam =
 			selectedTeamNames.length === 0 ||
-			(employee.teamName !== null &&
-				selectedTeamNameSet.has(employee.teamName));
+			(employee.teamName !== null && selectedTeamNameSet.has(employee.teamName));
 
 		if (matchesEmployee && matchesTeam) {
 			employeeIds.push(employee.id);
@@ -1858,14 +1696,9 @@ function getFilteredEmployeeIds(
 	return employeeIds;
 }
 
-function formatPeriodLabel(
-	start: DateTime,
-	end: DateTime,
-	mode: PayrollDateRangeMode,
-) {
+function formatPeriodLabel(start: DateTime, end: DateTime, mode: PayrollDateRangeMode) {
 	if (mode === "month") return start.toFormat("LLLL yyyy");
-	if (mode === "week")
-		return `${start.toFormat("LLL d")} - ${end.toFormat("LLL d, yyyy")}`;
+	if (mode === "week") return `${start.toFormat("LLL d")} - ${end.toFormat("LLL d, yyyy")}`;
 
 	return `${start.toISODate()} - ${end.toISODate()}`;
 }
