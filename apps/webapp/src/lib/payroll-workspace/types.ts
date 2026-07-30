@@ -59,6 +59,8 @@ export interface PayrollBlocker {
 	employeeId: string;
 	type: PayrollBlockerType;
 	label: string;
+	date: string | null;
+	time: string | null;
 }
 
 export interface PayrollAbsenceDaysByCategory {

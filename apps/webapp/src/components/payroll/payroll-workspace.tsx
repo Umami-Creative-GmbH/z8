@@ -13,6 +13,8 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
+import Link from "next/link";
+import { useLocale } from "next-intl";
 import type React from "react";
 import { useReducer, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -22,7 +24,6 @@ import {
 	type PayrollExportFormatOption,
 	startScopedPayrollExportAction,
 } from "@/app/[locale]/(app)/payroll/actions";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -384,7 +385,11 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				t={t}
 			/>
 
-			<PayrollBlockersAlert blockers={displayedBlockers} t={t} />
+			<PayrollBlockersAlert
+				blockers={displayedBlockers}
+				employees={displayedEmployees}
+				t={t}
+			/>
 			<EmployeeTotalsCard employees={displayedEmployees} t={t} />
 		</div>
 	);
@@ -988,30 +993,163 @@ function getPayrollScopeSummary({
 
 function PayrollBlockersAlert({
 	blockers,
+	employees,
 	t,
 }: {
 	blockers: PayrollWorkspaceSummary["blockers"];
+	employees: PayrollWorkspaceSummary["employees"];
 	t: PayrollTranslate;
 }) {
+	const locale = useLocale();
 	if (blockers.length === 0) return null;
+	const employeeNames = new Map(
+		employees.map((employee) => [employee.id, employee.name]),
+	);
+	const title = t(
+		"payroll.blockers.needReview",
+		"{count} payroll blockers need review",
+		{
+			count: blockers.length,
+		},
+	);
 
 	return (
-		<Alert className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
-			<IconAlertTriangle aria-hidden="true" className="size-4" />
-			<AlertTitle>
-				{t("payroll.blockers.needReview", "{count} payroll blockers need review", {
-					count: blockers.length,
+		<section
+			aria-labelledby="payroll-blockers-title"
+			className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 text-sm dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100"
+		>
+			<header className="flex items-start gap-3">
+				<IconAlertTriangle
+					aria-hidden="true"
+					className="mt-0.5 size-4 shrink-0"
+				/>
+				<h2 className="font-medium leading-none" id="payroll-blockers-title">
+					{title}
+				</h2>
+			</header>
+			<ul className="mt-3 grid gap-2">
+				{blockers.map((blocker) => {
+					const summaryEmployeeName = employeeNames.get(blocker.employeeId);
+					const employeeName =
+						summaryEmployeeName && summaryEmployeeName !== blocker.employeeId
+							? summaryEmployeeName
+							: t("payroll.blockers.unknownEmployee", "Unknown employee");
+					const formattedDate = formatPayrollBlockerDate(blocker.date, locale);
+					const metadata = formattedDate
+						? [formattedDate, blocker.time].filter(Boolean).join(", ")
+						: t("payroll.blockers.dateUnavailable", "Date unavailable");
+					let blockerType: string;
+					let actionLabel: string;
+					let href: string;
+
+					switch (blocker.type) {
+						case "missing_clock_out":
+							blockerType = t(
+								"payroll.blockers.missingClockOut",
+								"Missing clock-out",
+							);
+							actionLabel = t("payroll.blockers.openCalendar", "Open calendar");
+							href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
+								formattedDate && blocker.date
+									? `?date=${encodeURIComponent(blocker.date)}`
+									: ""
+							}`;
+							break;
+						case "pending_time_correction":
+							blockerType = t(
+								"payroll.blockers.pendingTimeCorrection",
+								"Pending time correction",
+							);
+							actionLabel = t(
+								"payroll.blockers.openApprovals",
+								"Open approvals",
+							);
+							href = "/approvals/inbox?types=time_entry";
+							break;
+						case "pending_absence":
+							blockerType = t(
+								"payroll.blockers.pendingAbsence",
+								"Pending absence",
+							);
+							actionLabel = t(
+								"payroll.blockers.openApprovals",
+								"Open approvals",
+							);
+							href = "/approvals/inbox?types=absence_entry";
+							break;
+					}
+
+					return (
+						<li
+							className="grid min-w-0 gap-2 rounded-md border bg-background px-3 py-2 text-foreground lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-4"
+							data-payroll-blocker-id={blocker.id}
+							key={blocker.id}
+						>
+							<div className="grid min-w-0 gap-1 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,auto)] lg:items-center lg:gap-4">
+								<span className="min-w-0 break-words font-medium">
+									{employeeName}
+								</span>
+								<span className="min-w-0 break-words">{blockerType}</span>
+								{formattedDate && blocker.date ? (
+									<time
+										className="min-w-0 text-muted-foreground text-xs tabular-nums"
+										dateTime={`${blocker.date}${blocker.time ? `T${blocker.time}` : ""}`}
+									>
+										{metadata}
+									</time>
+								) : (
+									<span className="text-muted-foreground text-xs">
+										{metadata}
+									</span>
+								)}
+							</div>
+							<Button
+								asChild
+								className="w-full lg:w-auto"
+								size="sm"
+								variant="outline"
+							>
+								<Link
+									aria-label={`${actionLabel}: ${employeeName}, ${blockerType}, ${metadata}`}
+									href={href}
+								>
+									{actionLabel}
+								</Link>
+							</Button>
+						</li>
+					);
 				})}
-			</AlertTitle>
-			<AlertDescription>
-				<ul className="mt-2 grid gap-1">
-					{blockers.map((blocker) => (
-						<li key={blocker.id}>{blocker.label}</li>
-					))}
-				</ul>
-			</AlertDescription>
-		</Alert>
+			</ul>
+		</section>
 	);
+}
+
+function formatPayrollBlockerDate(
+	date: string | null,
+	locale: string,
+): string | null {
+	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date ?? "");
+	if (!match) return null;
+
+	const year = Number(match[1]);
+	const month = Number(match[2]);
+	const day = Number(match[3]);
+	const bridgeDate = new Date(0);
+	bridgeDate.setUTCFullYear(year, month - 1, day);
+	bridgeDate.setUTCHours(0, 0, 0, 0);
+
+	if (
+		bridgeDate.getUTCFullYear() !== year ||
+		bridgeDate.getUTCMonth() !== month - 1 ||
+		bridgeDate.getUTCDate() !== day
+	) {
+		return null;
+	}
+
+	return Intl.DateTimeFormat(locale, {
+		dateStyle: "medium",
+		timeZone: "UTC",
+	}).format(bridgeDate);
 }
 
 function EmployeeTotalsCard({

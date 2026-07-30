@@ -11,7 +11,14 @@
       "triggerExport": "Dışa aktarmayı tetikle"
     },
     "blockers": {
-      "needReview": "{count} bordro engelinin gözden geçirilmesi gerekiyor"
+      "dateUnavailable": "Tarih kullanılamıyor",
+      "missingClockOut": "Eksik çıkış kaydı",
+      "needReview": "{count} bordro engelinin gözden geçirilmesi gerekiyor",
+      "openApprovals": "Onayları aç",
+      "openCalendar": "Takvimi aç",
+      "pendingAbsence": "Bekleyen izin",
+      "pendingTimeCorrection": "Bekleyen zaman düzeltmesi",
+      "unknownEmployee": "Bilinmeyen çalışan"
     },
     "description": "Seçilen dönem için bordro toplamlarını, hazırlık durumunu ve dışa aktarımları gözden geçirin.",
     "employeeTotals": {

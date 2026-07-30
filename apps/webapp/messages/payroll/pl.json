@@ -11,7 +11,14 @@
       "triggerExport": "Uruchom eksport"
     },
     "blockers": {
-      "needReview": "{count, plural, one {# blokada płacowa wymaga sprawdzenia} few {# blokady płacowe wymagają sprawdzenia} other {# blokad płacowych wymaga sprawdzenia}}"
+      "dateUnavailable": "Data niedostępna",
+      "missingClockOut": "Brak odbicia wyjścia",
+      "needReview": "{count, plural, one {# blokada płacowa wymaga sprawdzenia} few {# blokady płacowe wymagają sprawdzenia} other {# blokad płacowych wymaga sprawdzenia}}",
+      "openApprovals": "Otwórz zatwierdzenia",
+      "openCalendar": "Otwórz kalendarz",
+      "pendingAbsence": "Oczekująca nieobecność",
+      "pendingTimeCorrection": "Oczekująca korekta czasu",
+      "unknownEmployee": "Nieznany pracownik"
     },
     "description": "Sprawdź sumy płac, gotowość i eksporty dla wybranego okresu.",
     "employeeTotals": {

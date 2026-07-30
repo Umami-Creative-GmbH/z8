@@ -11,7 +11,14 @@
       "triggerExport": "Trigger export"
     },
     "blockers": {
-      "needReview": "{count} payroll blockers need review"
+      "dateUnavailable": "Date unavailable",
+      "missingClockOut": "Missing clock-out",
+      "needReview": "{count} payroll blockers need review",
+      "openApprovals": "Open approvals",
+      "openCalendar": "Open calendar",
+      "pendingAbsence": "Pending absence",
+      "pendingTimeCorrection": "Pending time correction",
+      "unknownEmployee": "Unknown employee"
     },
     "description": "Review payroll totals, readiness, and exports for the selected period.",
     "employeeTotals": {

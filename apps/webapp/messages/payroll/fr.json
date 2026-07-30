@@ -11,7 +11,14 @@
       "triggerExport": "Déclencher l'exportation"
     },
     "blockers": {
-      "needReview": "{count} blocages de paie nécessitent une vérification"
+      "dateUnavailable": "Date indisponible",
+      "missingClockOut": "Pointage de sortie manquant",
+      "needReview": "{count} blocages de paie nécessitent une vérification",
+      "openApprovals": "Ouvrir les approbations",
+      "openCalendar": "Ouvrir le calendrier",
+      "pendingAbsence": "Absence en attente",
+      "pendingTimeCorrection": "Correction du temps en attente",
+      "unknownEmployee": "Employé inconnu"
     },
     "description": "Vérifiez les totaux de paie, l'état de préparation et les exportations pour la période sélectionnée.",
     "employeeTotals": {
