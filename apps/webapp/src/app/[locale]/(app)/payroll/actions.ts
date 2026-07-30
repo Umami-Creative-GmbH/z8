@@ -134,7 +134,7 @@ export async function dismissPayrollBlockerAction(
 			throwPayrollBlockerAuthorizationError(t, authContext.user.id);
 		}
 
-		await db
+		const insertedDismissals = await db
 			.insert(payrollBlockerDismissal)
 			.values({
 				organizationId,
@@ -143,7 +143,16 @@ export async function dismissPayrollBlockerAction(
 				employeeId: blocker.employeeId,
 				dismissedByEmployeeId: authContext.employee.id,
 			})
-			.onConflictDoNothing();
+			.onConflictDoNothing()
+			.returning({ id: payrollBlockerDismissal.id });
+
+		if (insertedDismissals.length === 0) {
+			if (dismissalIsInScope(await findExistingDismissal())) {
+				return { dismissed: true };
+			}
+
+			throwPayrollBlockerAuthorizationError(t, authContext.user.id);
+		}
 
 		return { dismissed: true };
 	});

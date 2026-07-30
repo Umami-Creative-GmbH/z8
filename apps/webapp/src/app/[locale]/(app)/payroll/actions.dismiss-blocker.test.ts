@@ -6,7 +6,8 @@ import type {
 } from "@/lib/payroll-workspace/types";
 
 const mockState = vi.hoisted(() => {
-	const onConflictDoNothing = vi.fn(async () => undefined);
+	const returning = vi.fn(async () => [{ id: "dismissal-1" }]);
+	const onConflictDoNothing = vi.fn(() => ({ returning }));
 	const values = vi.fn(() => ({ onConflictDoNothing }));
 
 	return {
@@ -30,6 +31,7 @@ const mockState = vi.hoisted(() => {
 		resolvePayrollAccessibleEmployeeIds: vi.fn(async () => [
 			"22222222-2222-4222-8222-222222222222",
 		]),
+		returning,
 		values,
 	};
 });
@@ -150,6 +152,7 @@ describe("dismissPayrollBlockerAction", () => {
 		mockState.resolvePayrollAccessibleEmployeeIds.mockResolvedValue([
 			employeeId,
 		]);
+		mockState.returning.mockResolvedValue([{ id: "dismissal-1" }]);
 	});
 
 	it("inserts only server-resolved values for an in-scope live blocker", async () => {
@@ -172,6 +175,7 @@ describe("dismissPayrollBlockerAction", () => {
 			dismissedByEmployeeId: actorEmployeeId,
 		});
 		expect(mockState.onConflictDoNothing).toHaveBeenCalledOnce();
+		expect(mockState.returning).toHaveBeenCalledOnce();
 
 		const query = mockState.findFirst.mock.calls[0]?.[0];
 		const compiled = new PgDialect().sqlToQuery(query.where);
@@ -322,14 +326,55 @@ describe("dismissPayrollBlockerAction", () => {
 		});
 	});
 
-	it("treats a concurrent duplicate conflict as idempotent success", async () => {
-		mockState.onConflictDoNothing.mockResolvedValueOnce(undefined);
+	it("returns idempotent success when a concurrent conflict row remains in scope", async () => {
+		mockState.returning.mockResolvedValueOnce([]);
+		mockState.findFirst.mockResolvedValueOnce(undefined).mockResolvedValueOnce({
+			organizationId: "org-1",
+			blockerType: "missing_clock_out",
+			sourceId,
+			employeeId,
+		});
 
 		await expect(dismissPayrollBlockerAction(baseRequest)).resolves.toEqual({
 			success: true,
 			data: { dismissed: true },
 		});
+		expect(mockState.insert).toHaveBeenCalledOnce();
 		expect(mockState.onConflictDoNothing).toHaveBeenCalledOnce();
+		expect(mockState.returning).toHaveBeenCalledOnce();
+		expect(mockState.findFirst).toHaveBeenCalledTimes(2);
+	});
+
+	it("rejects a concurrent conflict row outside the freshly resolved scope", async () => {
+		mockState.returning.mockResolvedValueOnce([]);
+		mockState.findFirst.mockResolvedValueOnce(undefined).mockResolvedValueOnce({
+			organizationId: "org-1",
+			blockerType: "missing_clock_out",
+			sourceId,
+			employeeId: "44444444-4444-4444-8444-444444444444",
+		});
+
+		const result = await dismissPayrollBlockerAction(baseRequest);
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+		expect(mockState.insert).toHaveBeenCalledOnce();
+		expect(mockState.findFirst).toHaveBeenCalledTimes(2);
+	});
+
+	it("rejects a reported conflict when the exact dismissal row is absent", async () => {
+		mockState.returning.mockResolvedValueOnce([]);
+
+		const result = await dismissPayrollBlockerAction(baseRequest);
+
+		expect(result).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+		expect(mockState.insert).toHaveBeenCalledOnce();
+		expect(mockState.findFirst).toHaveBeenCalledTimes(2);
 	});
 
 	it("returns idempotent success when a concurrent dismissal hides the rebuilt blocker", async () => {
