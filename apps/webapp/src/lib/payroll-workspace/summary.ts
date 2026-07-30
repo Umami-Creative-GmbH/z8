@@ -7,6 +7,7 @@ import {
 	absenceEntry,
 	approvalRequest,
 	employee,
+	payrollBlockerDismissal,
 	team,
 	timeRecord,
 	timeRecordAbsence,
@@ -15,6 +16,7 @@ import {
 import { assertCanonicalCutoverReady } from "@/lib/time-record/migration/cutover-state";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { buildPayrollAbsenceDetails, payrollAbsenceDetailDays } from "./absence-details";
+import { filterDismissedPayrollBlockers } from "./blocker-dismissals";
 import type {
 	PayrollBlocker,
 	PayrollPeriod,
@@ -551,11 +553,25 @@ async function getBlockers(
 		})),
 	});
 
-	return [
+	const blockerCandidates = [
 		...missingClockOutBlockers,
 		...buildPendingAbsenceBlockers(pendingAbsenceRows),
 		...pendingApprovalBlockers,
 	];
+	if (blockerCandidates.length === 0) return blockerCandidates;
+
+	const candidateSourceIds = Array.from(
+		new Set(blockerCandidates.map((blocker) => blocker.id)),
+	);
+	const dismissals = await db.query.payrollBlockerDismissal.findMany({
+		where: and(
+			eq(payrollBlockerDismissal.organizationId, organizationId),
+			inArray(payrollBlockerDismissal.sourceId, candidateSourceIds),
+		),
+		columns: { blockerType: true, sourceId: true },
+	});
+
+	return filterDismissedPayrollBlockers(blockerCandidates, dismissals);
 }
 
 function localizeBlockerInstant(

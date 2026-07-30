@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
+import { filterDismissedPayrollBlockers } from "./blocker-dismissals";
 import {
 	buildPayrollSummaryFromRows,
 	buildPendingAbsenceBlockers,
@@ -296,6 +297,71 @@ describe("buildPayrollSummaryFromRows", () => {
 		expect(summary.totals.blockerCount).toBe(1);
 		expect(summary.employees[0]?.hasBlockers).toBe(true);
 		expect(summary.absenceDetails).toEqual([]);
+	});
+
+	it("derives list, count, and employee status only from blockers remaining after dismissal", () => {
+		const remainingBlockers = filterDismissedPayrollBlockers(
+			[
+				{
+					id: "source-1",
+					employeeId: "employee-1",
+					type: "missing_clock_out",
+					label: "Missing clock-out",
+					date: "2026-06-10",
+					time: "09:00",
+				},
+				{
+					id: "source-2",
+					employeeId: "employee-2",
+					type: "pending_absence",
+					label: "Pending absence",
+					date: "2026-06-11",
+					time: null,
+				},
+			],
+			[{ blockerType: "missing_clock_out", sourceId: "source-1" }],
+		);
+		const summary = buildPayrollSummaryFromRows({
+			organizationName: "Acme GmbH",
+			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
+			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedBy: { id: "payroll-1", name: "Payroll User" },
+			employees: [
+				{
+					id: "employee-1",
+					name: "Ada Lovelace",
+					employeeNumber: "E-1",
+					teamName: "Ops",
+					contractType: "hourly",
+				},
+				{
+					id: "employee-2",
+					name: "Grace Hopper",
+					employeeNumber: "E-2",
+					teamName: "Ops",
+					contractType: "hourly",
+				},
+			],
+			workRows: [{ employeeId: "employee-1", durationMinutes: 120 }],
+			absenceRows: [],
+			blockers: remainingBlockers,
+		});
+
+		expect(summary.blockers).toEqual([
+			expect.objectContaining({ id: "source-2", type: "pending_absence" }),
+		]);
+		expect(summary.totals).toMatchObject({
+			blockerCount: 1,
+			totalWorkedHours: 2,
+		});
+		expect(summary.employees).toEqual([
+			expect.objectContaining({
+				id: "employee-1",
+				hasBlockers: false,
+				workedHours: 2,
+			}),
+			expect.objectContaining({ id: "employee-2", hasBlockers: true }),
+		]);
 	});
 });
 
