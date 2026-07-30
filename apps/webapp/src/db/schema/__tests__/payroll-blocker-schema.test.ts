@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { getTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { employee, payrollBlockerDismissal } from "@/db/schema";
@@ -162,5 +162,67 @@ describe("payroll blocker dismissal schema", () => {
 			version: "7",
 		});
 		expect(migrationEntry?.when).toBeGreaterThan(latestPriorWhen);
+	});
+
+	it("snapshots the dismissal table after snapshot 0055", () => {
+		const snapshotPath = "drizzle/meta/0056_snapshot.json";
+
+		expect(existsSync(snapshotPath)).toBe(true);
+		if (!existsSync(snapshotPath)) return;
+
+		const previousSnapshot = JSON.parse(
+			readFileSync("drizzle/meta/0055_snapshot.json", "utf8"),
+		) as { id: string };
+		const snapshot = JSON.parse(readFileSync(snapshotPath, "utf8")) as {
+			prevId: string;
+			tables: Record<
+				string,
+				{
+					columns: Record<string, { type: string; notNull: boolean }>;
+					foreignKeys: Record<
+						string,
+						{
+							columnsFrom: string[];
+							columnsTo: string[];
+							onDelete: string;
+							tableTo: string;
+						}
+					>;
+					name: string;
+					uniqueConstraints: Record<string, { columns: string[] }>;
+				}
+			>;
+		};
+		const table = snapshot.tables["public.payroll_blocker_dismissal"];
+
+		expect(snapshot.prevId).toBe(previousSnapshot.id);
+		expect(table?.name).toBe("payroll_blocker_dismissal");
+		expect(table?.columns).toMatchObject({
+			blocker_type: { notNull: true, type: "text" },
+			dismissed_by_employee_id: { notNull: true, type: "uuid" },
+			employee_id: { notNull: true, type: "uuid" },
+			organization_id: { notNull: true, type: "text" },
+			source_id: { notNull: true, type: "uuid" },
+		});
+		expect(
+			table?.uniqueConstraints
+				.payrollBlockerDismissal_org_type_source_unique_idx?.columns,
+		).toEqual(["organization_id", "blocker_type", "source_id"]);
+		expect(Object.values(table?.foreignKeys ?? {})).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					columnsFrom: ["employee_id", "organization_id"],
+					columnsTo: ["id", "organization_id"],
+					onDelete: "cascade",
+					tableTo: "employee",
+				}),
+				expect.objectContaining({
+					columnsFrom: ["dismissed_by_employee_id", "organization_id"],
+					columnsTo: ["id", "organization_id"],
+					onDelete: "cascade",
+					tableTo: "employee",
+				}),
+			]),
+		);
 	});
 });
