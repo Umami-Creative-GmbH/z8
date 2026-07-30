@@ -11,6 +11,9 @@
       "triggerExport": "Avvia esportazione"
     },
     "blockers": {
+      "clearFailed": "Impossibile rimuovere il blocco delle buste paga",
+      "clearFalsePositive": "Rimuovi falso positivo",
+      "clearingFalsePositive": "Rimozione del falso positivo",
       "dateUnavailable": "Data non disponibile",
       "missingClockOut": "Timbratura di uscita mancante",
       "needReview": "{count} blocchi delle buste paga richiedono una revisione",
@@ -18,6 +21,7 @@
       "openCalendar": "Apri calendario",
       "pendingAbsence": "Assenza in attesa",
       "pendingTimeCorrection": "Correzione oraria in attesa",
+      "refreshAfterClearFailed": "Blocco rimosso, ma non è stato possibile aggiornare le buste paga",
       "unknownEmployee": "Dipendente sconosciuto"
     },
     "description": "Revisiona i totali delle buste paga, la preparazione e le esportazioni per il periodo selezionato.",

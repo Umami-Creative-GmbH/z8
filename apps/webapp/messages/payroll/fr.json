@@ -11,6 +11,9 @@
       "triggerExport": "Déclencher l'exportation"
     },
     "blockers": {
+      "clearFailed": "Impossible de supprimer le blocage de paie",
+      "clearFalsePositive": "Écarter le faux positif",
+      "clearingFalsePositive": "Suppression du faux positif",
       "dateUnavailable": "Date indisponible",
       "missingClockOut": "Pointage de sortie manquant",
       "needReview": "{count} blocages de paie nécessitent une vérification",
@@ -18,6 +21,7 @@
       "openCalendar": "Ouvrir le calendrier",
       "pendingAbsence": "Absence en attente",
       "pendingTimeCorrection": "Correction du temps en attente",
+      "refreshAfterClearFailed": "Blocage supprimé, mais la paie n’a pas pu être actualisée",
       "unknownEmployee": "Employé inconnu"
     },
     "description": "Vérifiez les totaux de paie, l'état de préparation et les exportations pour la période sélectionnée.",

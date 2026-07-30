@@ -54,6 +54,7 @@ export * from "./organization";
 export * from "./organization-notification-settings";
 // Payroll export
 export * from "./payroll-access";
+export * from "./payroll-blocker";
 export * from "./payroll-export";
 // Platform admin (audit log, org suspension)
 export * from "./platform-admin";

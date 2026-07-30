@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { payrollBlockerIdentity } from "./blocker-identity";
 import type {
 	PayrollAbsenceDetailPeriod,
 	PayrollEmployeeSummary,
@@ -422,7 +423,10 @@ export async function exportPayrollSummaryToPDF(
 					<View style={styles.blockerBand}>
 						<Text style={styles.blockerTitle}>Blocker review required</Text>
 						{summary.blockers.map((blocker) => (
-							<Text key={blocker.id} style={styles.blockerText}>
+							<Text
+								key={payrollBlockerIdentity(blocker)}
+								style={styles.blockerText}
+							>
 								{blocker.label}
 							</Text>
 						))}

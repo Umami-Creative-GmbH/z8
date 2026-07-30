@@ -15,6 +15,7 @@ import {
 import { assertCanonicalCutoverReady } from "@/lib/time-record/migration/cutover-state";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { buildPayrollAbsenceDetails, payrollAbsenceDetailDays } from "./absence-details";
+import { filterDismissedPayrollBlockerCandidates } from "./blocker-dismissal-loader";
 import type {
 	PayrollBlocker,
 	PayrollPeriod,
@@ -551,11 +552,18 @@ async function getBlockers(
 		})),
 	});
 
-	return [
+	const blockerCandidates = [
 		...missingClockOutBlockers,
 		...buildPendingAbsenceBlockers(pendingAbsenceRows),
 		...pendingApprovalBlockers,
 	];
+
+	return filterDismissedPayrollBlockerCandidates({
+		organizationId,
+		blockerCandidates,
+		findDismissals: (query) =>
+			db.query.payrollBlockerDismissal.findMany(query),
+	});
 }
 
 function localizeBlockerInstant(

@@ -3,7 +3,9 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
+import { z } from "zod";
 import { db, payrollExportConfig, payrollExportFormat } from "@/db";
+import { payrollBlockerDismissal } from "@/db/schema";
 import { type AuthContext, getAuthContext } from "@/lib/auth-helpers";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -21,7 +23,10 @@ import {
 	generatePayrollPDFFilename,
 } from "@/lib/payroll-workspace/pdf-exporter";
 import { getPayrollWorkspaceSummary } from "@/lib/payroll-workspace/summary";
-import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
+import type {
+	PayrollBlockerType,
+	PayrollWorkspaceSummary,
+} from "@/lib/payroll-workspace/types";
 import { getTranslate } from "@/tolgee/server";
 import { mapPayrollWorkspaceActionError } from "./action-errors";
 import { resolveScopedPayrollEmployeeIdsForAction } from "./action-helpers";
@@ -35,12 +40,22 @@ export interface PayrollWorkspaceRequest {
 	employeeIds?: string[];
 }
 
+export interface DismissPayrollBlockerRequest extends PayrollWorkspaceRequest {
+	blockerId: string;
+	blockerType: PayrollBlockerType;
+}
+
 export interface PayrollExportFormatOption {
 	id: string;
 	label: string;
 }
 
 const PAYROLL_WORKSPACE_EXPORT_FORMATS = ["datev_lohn", "lexware_lohn", "sage_lohn"] as const;
+const PAYROLL_BLOCKER_TYPES = [
+	"missing_clock_out",
+	"pending_absence",
+	"pending_time_correction",
+] as const satisfies readonly PayrollBlockerType[];
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 type PayrollWorkspaceExportFormatId = (typeof PAYROLL_WORKSPACE_EXPORT_FORMATS)[number];
@@ -48,6 +63,99 @@ export async function getPayrollWorkspaceSummaryAction(
 	request: PayrollWorkspaceRequest,
 ): Promise<ServerActionResult<PayrollWorkspaceSummary>> {
 	return runPayrollWorkspaceAction((t) => buildScopedPayrollWorkspaceSummary(t, request));
+}
+
+export async function dismissPayrollBlockerAction(
+	request: DismissPayrollBlockerRequest,
+): Promise<ServerActionResult<{ dismissed: true }>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const authenticatedContext = await requireActiveOrganizationEmployee(t);
+		const { blockerId, blockerType } = validatePayrollBlockerDismissalRequest(t, request);
+		const { authContext, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
+			t,
+			request,
+			authenticatedContext,
+		);
+		const organizationId = authContext.employee.organizationId;
+		const findExistingDismissal = () =>
+			db.query.payrollBlockerDismissal.findFirst({
+				columns: {
+					organizationId: true,
+					blockerType: true,
+					sourceId: true,
+					employeeId: true,
+				},
+				where: and(
+					eq(payrollBlockerDismissal.organizationId, organizationId),
+					eq(payrollBlockerDismissal.blockerType, blockerType),
+					eq(payrollBlockerDismissal.sourceId, blockerId),
+				),
+			});
+		const dismissalIsInScope = (
+			dismissal: Awaited<ReturnType<typeof findExistingDismissal>>,
+		) =>
+			dismissal?.organizationId === organizationId &&
+			dismissal.blockerType === blockerType &&
+			dismissal.sourceId === blockerId &&
+			scopedEmployeeIds.includes(dismissal.employeeId);
+
+		const existingDismissal = await findExistingDismissal();
+
+		if (existingDismissal) {
+			if (dismissalIsInScope(existingDismissal)) {
+				return { dismissed: true };
+			}
+
+			throwPayrollBlockerAuthorizationError(t, authContext.user.id);
+		}
+
+		const summary = await getPayrollWorkspaceSummary({
+			organizationId,
+			allowedEmployeeIds: scopedEmployeeIds,
+			period,
+			generatedBy: {
+				id: authContext.employee.id,
+				name: authContext.user.name || authContext.user.email,
+			},
+		});
+		const blocker = summary.blockers.find(
+			(candidate) => candidate.id === blockerId && candidate.type === blockerType,
+		);
+
+		if (!blocker) {
+			if (dismissalIsInScope(await findExistingDismissal())) {
+				return { dismissed: true };
+			}
+
+			throwPayrollBlockerAuthorizationError(t, authContext.user.id);
+		}
+
+		if (!scopedEmployeeIds.includes(blocker.employeeId)) {
+			throwPayrollBlockerAuthorizationError(t, authContext.user.id);
+		}
+
+		const insertedDismissals = await db
+			.insert(payrollBlockerDismissal)
+			.values({
+				organizationId,
+				blockerType,
+				sourceId: blockerId,
+				employeeId: blocker.employeeId,
+				dismissedByEmployeeId: authContext.employee.id,
+			})
+			.onConflictDoNothing()
+			.returning({ id: payrollBlockerDismissal.id });
+
+		if (insertedDismissals.length === 0) {
+			if (dismissalIsInScope(await findExistingDismissal())) {
+				return { dismissed: true };
+			}
+
+			throwPayrollBlockerAuthorizationError(t, authContext.user.id);
+		}
+
+		return { dismissed: true };
+	});
 }
 
 export async function exportPayrollPdfAction(
@@ -175,12 +283,13 @@ async function buildScopedPayrollWorkspaceSummary(
 async function resolvePayrollWorkspaceActionContext(
 	t: PayrollTranslate,
 	request: PayrollWorkspaceRequest,
+	authenticatedContext?: AuthContext & { employee: NonNullable<AuthContext["employee"]> },
 ): Promise<{
 	authContext: AuthContext & { employee: NonNullable<AuthContext["employee"]> };
 	period: { start: DateTime; end: DateTime; label: string };
 	scopedEmployeeIds: string[];
 }> {
-	const authContext = await requireActiveOrganizationEmployee(t);
+	const authContext = authenticatedContext ?? (await requireActiveOrganizationEmployee(t));
 	const period = validatePayrollWorkspaceRequest(t, request);
 	const requestedEmployeeIds = validateRequestedEmployeeIds(t, request.employeeIds);
 	const allowedEmployeeIds = await resolvePayrollAccessibleEmployeeIds({
@@ -223,6 +332,42 @@ async function resolvePayrollWorkspaceActionContext(
 		period,
 		scopedEmployeeIds: scopedResult.employeeIds,
 	};
+}
+
+function validatePayrollBlockerDismissalRequest(
+	t: PayrollTranslate,
+	request: DismissPayrollBlockerRequest,
+): { blockerId: string; blockerType: PayrollBlockerType } {
+	if (!z.uuid().safeParse(request.blockerId).success) {
+		throw new ValidationError({
+			message: t("payroll.errors.invalidBlockerId", "Invalid payroll blocker ID"),
+			field: "blockerId",
+		});
+	}
+
+	if (
+		typeof request.blockerType !== "string" ||
+		!PAYROLL_BLOCKER_TYPES.includes(request.blockerType as PayrollBlockerType)
+	) {
+		throw new ValidationError({
+			message: t("payroll.errors.invalidBlockerType", "Invalid payroll blocker type"),
+			field: "blockerType",
+		});
+	}
+
+	return { blockerId: request.blockerId, blockerType: request.blockerType };
+}
+
+function throwPayrollBlockerAuthorizationError(t: PayrollTranslate, userId: string): never {
+	throw new AuthorizationError({
+		message: t(
+			"payroll.errors.blockerNotDismissible",
+			"Payroll blocker cannot be dismissed",
+		),
+		userId,
+		resource: "payroll_workspace",
+		action: "write",
+	});
 }
 
 async function requireActiveOrganizationEmployee(

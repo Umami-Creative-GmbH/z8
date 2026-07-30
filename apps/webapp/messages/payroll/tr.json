@@ -11,6 +11,9 @@
       "triggerExport": "Dışa aktarmayı tetikle"
     },
     "blockers": {
+      "clearFailed": "Bordro engeli kaldırılamadı",
+      "clearFalsePositive": "Yanlış pozitif kaydı kaldır",
+      "clearingFalsePositive": "Yanlış pozitif kayıt kaldırılıyor",
       "dateUnavailable": "Tarih kullanılamıyor",
       "missingClockOut": "Eksik çıkış kaydı",
       "needReview": "{count} bordro engelinin gözden geçirilmesi gerekiyor",
@@ -18,6 +21,7 @@
       "openCalendar": "Takvimi aç",
       "pendingAbsence": "Bekleyen izin",
       "pendingTimeCorrection": "Bekleyen zaman düzeltmesi",
+      "refreshAfterClearFailed": "Engel kaldırıldı ancak bordro yenilenemedi",
       "unknownEmployee": "Bilinmeyen çalışan"
     },
     "description": "Seçilen dönem için bordro toplamlarını, hazırlık durumunu ve dışa aktarımları gözden geçirin.",

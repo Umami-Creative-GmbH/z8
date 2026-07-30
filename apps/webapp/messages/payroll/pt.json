@@ -11,6 +11,9 @@
       "triggerExport": "Acionar exportação"
     },
     "blockers": {
+      "clearFailed": "Não foi possível remover o bloqueio da folha de pagamento",
+      "clearFalsePositive": "Remover falso positivo",
+      "clearingFalsePositive": "Removendo falso positivo",
       "dateUnavailable": "Data indisponível",
       "missingClockOut": "Registro de saída em falta",
       "needReview": "{count} bloqueios de folha de pagamento precisam de revisão",
@@ -18,6 +21,7 @@
       "openCalendar": "Abrir calendário",
       "pendingAbsence": "Ausência pendente",
       "pendingTimeCorrection": "Correção de horário pendente",
+      "refreshAfterClearFailed": "Bloqueio removido, mas não foi possível atualizar a folha de pagamento",
       "unknownEmployee": "Funcionário desconhecido"
     },
     "description": "Revise os totais da folha de pagamento, prontidão e exportações para o período selecionado.",
