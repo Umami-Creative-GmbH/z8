@@ -1,10 +1,10 @@
-import { and, eq, inArray, type SQL } from "drizzle-orm";
+import { and, eq, inArray, or, type SQL } from "drizzle-orm";
 import { payrollBlockerDismissal } from "@/db/schema";
 import {
 	filterDismissedPayrollBlockers,
 	type PayrollBlockerDismissalKey,
 } from "./blocker-dismissals";
-import type { PayrollBlocker } from "./types";
+import type { PayrollBlocker, PayrollBlockerType } from "./types";
 
 interface PayrollBlockerDismissalQuery {
 	where: SQL | undefined;
@@ -20,13 +20,26 @@ export async function filterDismissedPayrollBlockerCandidates(input: {
 }): Promise<PayrollBlocker[]> {
 	if (input.blockerCandidates.length === 0) return input.blockerCandidates;
 
-	const candidateSourceIds = Array.from(
-		new Set(input.blockerCandidates.map((blocker) => blocker.id)),
+	const sourceIdsByType = new Map<PayrollBlockerType, Set<string>>();
+	for (const blocker of input.blockerCandidates) {
+		const sourceIds = sourceIdsByType.get(blocker.type) ?? new Set();
+		sourceIds.add(blocker.id);
+		sourceIdsByType.set(blocker.type, sourceIds);
+	}
+	const typePredicates = Array.from(
+		sourceIdsByType,
+		([blockerType, sourceIds]) =>
+			and(
+				eq(payrollBlockerDismissal.blockerType, blockerType),
+				inArray(payrollBlockerDismissal.sourceId, Array.from(sourceIds)),
+			),
 	);
+	if (typePredicates.length === 0) return input.blockerCandidates;
+
 	const dismissals = await input.findDismissals({
 		where: and(
 			eq(payrollBlockerDismissal.organizationId, input.organizationId),
-			inArray(payrollBlockerDismissal.sourceId, candidateSourceIds),
+			or(...typePredicates),
 		),
 		columns: { blockerType: true, sourceId: true },
 	});
