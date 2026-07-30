@@ -685,7 +685,7 @@ describe("drizzle follow-up migrations", () => {
 		);
 	});
 
-	it("registers the latest employee clock activity index migration", () => {
+	it("registers the employee clock activity index migration", () => {
 		expect(existsSync(migration0055Url)).toBe(true);
 		if (!existsSync(migration0055Url)) return;
 
@@ -700,7 +700,7 @@ describe("drizzle follow-up migrations", () => {
 		);
 		const migration0055 = readFileSync(migration0055Url, "utf8");
 
-		expect(migrationIndex).toBe(migrationJournal.entries.length - 1);
+		expect(migrationIndex).toBeGreaterThanOrEqual(0);
 		expect(migrationEntry?.when).toBeGreaterThan(latestPriorWhen);
 		expect(migration0055).toContain(
 			'CREATE INDEX IF NOT EXISTS "timeEntry_latestClockActivity_idx"',

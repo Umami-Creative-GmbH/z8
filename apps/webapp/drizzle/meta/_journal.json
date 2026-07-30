@@ -393,6 +393,13 @@
 		"when": 1785269198390,
 		"tag": "0055_employee_clock_activity_index",
 		"breakpoints": true
+	},
+	{
+		"idx": 56,
+		"version": "7",
+		"when": 1785269198391,
+		"tag": "0056_payroll_blocker_dismissal",
+		"breakpoints": true
 	}
   ]
 }
