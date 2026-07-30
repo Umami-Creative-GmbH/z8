@@ -874,6 +874,44 @@ describe("PayrollWorkspace", () => {
 		});
 	});
 
+	it("preserves focus moved elsewhere before a deferred removal completes", async () => {
+		const refresh = deferred<{ success: true; data: PayrollWorkspaceSummary }>();
+		actionMocks.getPayrollWorkspaceSummaryAction.mockReturnValueOnce(refresh.promise);
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+		const firstRow = document.querySelector('[data-payroll-blocker-id="blocker-1"]');
+		const clearButton = within(firstRow as HTMLElement).getByRole("button", {
+			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+		}) as HTMLButtonElement;
+		clearButton.focus();
+		fireEvent.click(clearButton);
+		await waitFor(() =>
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1),
+		);
+		const chosenControl = screen.getByRole("button", { name: "Download PDF" });
+		chosenControl.focus();
+		expect(document.activeElement).toBe(chosenControl);
+
+		await act(async () => {
+			refresh.resolve({
+				success: true,
+				data: buildSummary({
+					totals: { employeeCount: 2, totalWorkedHours: 8, blockerCount: 1 },
+					blockers: [baseSummary.blockers[1]],
+				}),
+			});
+			await refresh.promise;
+		});
+		await waitFor(() =>
+			expect(document.querySelector('[data-payroll-blocker-id="blocker-1"]')).toBeNull(),
+		);
+		expect(document.activeElement).toBe(chosenControl);
+	});
+
 	it("focuses the previous blocker clear control when the last row is removed", async () => {
 		actionMocks.getPayrollWorkspaceSummaryAction.mockResolvedValueOnce({
 			success: true,
@@ -905,7 +943,7 @@ describe("PayrollWorkspace", () => {
 		});
 	});
 
-	it("focuses the blockers heading when successful removal leaves no row", async () => {
+	it("focuses the visible blockers summary card when successful removal leaves no row", async () => {
 		const singleBlockerSummary = buildSummary({
 			totals: { employeeCount: 2, totalWorkedHours: 8, blockerCount: 1 },
 			blockers: [baseSummary.blockers[0]],
@@ -931,10 +969,12 @@ describe("PayrollWorkspace", () => {
 		fireEvent.click(clearButton);
 
 		await waitFor(() => {
-			expect(document.activeElement).toBe(
-				screen.getByRole("heading", { name: "0 payroll blockers need review" }),
-			);
+			const blockerSummaryCard = screen.getByText("Blockers").closest('[data-slot="card"]');
+			expect(document.activeElement).toBe(blockerSummaryCard);
+			expect(blockerSummaryCard?.getAttribute("tabindex")).toBe("-1");
+			expect(blockerSummaryCard?.className).toContain("focus-visible:ring");
 		});
+		expect(screen.queryByRole("heading", { name: "0 payroll blockers need review" })).toBeNull();
 	});
 
 	it("keeps focus on the activated clear control when dismissal fails", async () => {

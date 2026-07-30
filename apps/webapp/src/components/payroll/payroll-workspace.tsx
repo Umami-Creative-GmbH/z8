@@ -291,7 +291,10 @@ function usePayrollBlockerClearing({
 	const focusRequestIdRef = useRef(0);
 	const [focusRequest, setFocusRequest] = useState<BlockerFocusRequest | null>(null);
 
-	function clearPayrollBlocker(blocker: PayrollWorkspaceSummary["blockers"][number]) {
+	function clearPayrollBlocker(
+		blocker: PayrollWorkspaceSummary["blockers"][number],
+		activatedControl: HTMLButtonElement,
+	) {
 		if (!isMountedRef.current) return;
 		if (clearingBlockerIdsRef.current.has(blocker.id)) return;
 
@@ -315,6 +318,8 @@ function usePayrollBlockerClearing({
 					});
 				},
 				onRemoved: (nextSummary) => {
+					if (document.activeElement !== activatedControl) return;
+
 					const removedIndex = blockerOrder.indexOf(blocker.id);
 					const remainingBlockerIds = new Set(
 						nextSummary.blockers.map((currentBlocker) => currentBlocker.id),
@@ -364,6 +369,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 	} = state;
 	const [isPending, startTransition] = useTransition();
 	const isMountedRef = useMountedRef();
+	const blockersSummaryRef = useRef<HTMLDivElement | null>(null);
 
 	const scopedEmployees = initialSummary.employees;
 	const teamOptions = getTeamOptions(scopedEmployees);
@@ -606,6 +612,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 					value={readyEmployeeCount.toString()}
 				/>
 				<SummaryCard
+					focusRef={blockersSummaryRef}
 					label={t("payroll.summary.blockers", "Blockers")}
 					value={displayedTotals.blockerCount.toString()}
 					tone={displayedTotals.blockerCount > 0 ? "warning" : "default"}
@@ -628,6 +635,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				blockers={displayedBlockers}
 				clearingBlockerIds={clearingBlockerIds}
 				employees={displayedEmployees}
+				fallbackFocusRef={blockersSummaryRef}
 				focusRequest={focusRequest}
 				onClearBlocker={clearPayrollBlocker}
 				t={t}
@@ -1237,6 +1245,7 @@ function PayrollBlockersAlert({
 	blockers,
 	clearingBlockerIds,
 	employees,
+	fallbackFocusRef,
 	focusRequest,
 	onClearBlocker,
 	t,
@@ -1244,8 +1253,12 @@ function PayrollBlockersAlert({
 	blockers: PayrollWorkspaceSummary["blockers"];
 	clearingBlockerIds: ReadonlySet<string>;
 	employees: PayrollWorkspaceSummary["employees"];
+	fallbackFocusRef: React.RefObject<HTMLDivElement | null>;
 	focusRequest: BlockerFocusRequest | null;
-	onClearBlocker: (blocker: PayrollWorkspaceSummary["blockers"][number]) => void;
+	onClearBlocker: (
+		blocker: PayrollWorkspaceSummary["blockers"][number],
+		activatedControl: HTMLButtonElement,
+	) => void;
 	t: PayrollTranslate;
 }) {
 	const locale = useLocale();
@@ -1277,8 +1290,9 @@ function PayrollBlockersAlert({
 			: undefined;
 		const targetControl =
 			controls?.clear && !controls.clear.disabled ? controls.clear : controls?.action;
-		(targetControl ?? headingRef.current)?.focus();
-	}, [focusRequest]);
+		const fallbackTarget = blockers.length === 0 ? fallbackFocusRef.current : headingRef.current;
+		(targetControl ?? fallbackTarget)?.focus();
+	}, [blockers.length, fallbackFocusRef, focusRequest]);
 
 	function setBlockerControlRef(
 		blockerId: string,
@@ -1293,17 +1307,7 @@ function PayrollBlockersAlert({
 		else blockerControlRefs.current.set(blockerId, refs);
 	}
 
-	if (blockers.length === 0) {
-		if (!focusRequest) return null;
-
-		return (
-			<div className="sr-only">
-				<h2 id="payroll-blockers-title" ref={headingRef} tabIndex={-1}>
-					{title}
-				</h2>
-			</div>
-		);
-	}
+	if (blockers.length === 0) return null;
 
 	return (
 		<section
@@ -1316,7 +1320,7 @@ function PayrollBlockersAlert({
 					className="mt-0.5 size-4 shrink-0"
 				/>
 				<h2
-					className="font-medium leading-none"
+					className="rounded-sm font-medium leading-none focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
 					id="payroll-blockers-title"
 					ref={headingRef}
 					tabIndex={-1}
@@ -1431,7 +1435,7 @@ function PayrollBlockersAlert({
 									aria-busy={isClearing}
 									className="w-full lg:w-auto"
 									disabled={isClearing}
-									onClick={() => onClearBlocker(blocker)}
+									onClick={(event) => onClearBlocker(blocker, event.currentTarget)}
 									ref={(node) => setBlockerControlRef(blocker.id, "clear", node)}
 									size="sm"
 									type="button"
@@ -1570,11 +1574,13 @@ function EmployeeTotalsCard({
 }
 
 function SummaryCard({
+	focusRef,
 	icon,
 	label,
 	value,
 	tone = "default",
 }: {
+	focusRef?: React.Ref<HTMLDivElement>;
 	icon?: React.ReactNode;
 	label: string;
 	value: string;
@@ -1582,11 +1588,18 @@ function SummaryCard({
 }) {
 	return (
 		<Card
-			className={
+			className={[
 				tone === "warning"
 					? "border-amber-200 bg-amber-50/60 dark:border-amber-900/60 dark:bg-amber-950/20"
-					: undefined
-			}
+					: undefined,
+				focusRef
+					? "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+					: undefined,
+			]
+				.filter(Boolean)
+				.join(" ")}
+			ref={focusRef}
+			tabIndex={focusRef ? -1 : undefined}
 		>
 			<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 				<CardDescription>{label}</CardDescription>
