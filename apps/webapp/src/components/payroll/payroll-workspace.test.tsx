@@ -12,6 +12,7 @@ const actionMocks = vi.hoisted(() => ({
 }));
 
 let translateOverrides: Record<string, string> = {};
+let activeLocale = "en";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -24,6 +25,9 @@ vi.mock("@tolgee/react", () => ({
 			);
 		},
 	}),
+}));
+vi.mock("next-intl", () => ({
+	useLocale: () => activeLocale,
 }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock("@/app/[locale]/(app)/payroll/actions", () => ({
@@ -67,12 +71,16 @@ const baseSummary: PayrollWorkspaceSummary = {
 			employeeId: "employee-1",
 			type: "missing_clock_out",
 			label: "Missing clock-out",
+			date: "2026-06-03",
+			time: "09:00",
 		},
 		{
 			id: "blocker-2",
 			employeeId: "employee-1",
 			type: "pending_absence",
 			label: "Pending absence approval",
+			date: "2026-06-04",
+			time: null,
 		},
 	],
 };
@@ -95,6 +103,7 @@ describe("PayrollWorkspace", () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
 		translateOverrides = {};
+		activeLocale = "en";
 		actionMocks.getPayrollWorkspaceSummaryAction.mockResolvedValue({
 			success: true,
 			data: summary,
@@ -166,6 +175,273 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByText("Missing clock-out")).toBeTruthy();
 		expect(screen.getByText("Download PDF")).toBeTruthy();
 		expect(screen.getByText("Trigger export")).toBeTruthy();
+	});
+
+	it("renders blocker exceptions with employee context and authorized workflow links", () => {
+		activeLocale = "de-DE";
+		translateOverrides = {
+			"payroll.blockers.missingClockOut": "Fehlende Ausstempelung",
+			"payroll.blockers.needReview": "{count} Lohnblocker prüfen",
+			"payroll.blockers.openApprovals": "Genehmigungen öffnen",
+			"payroll.blockers.openCalendar": "Kalender öffnen",
+			"payroll.blockers.pendingAbsence": "Ausstehende Abwesenheit",
+			"payroll.blockers.pendingTimeCorrection": "Ausstehende Zeitkorrektur",
+		};
+		const blockersSummary = buildSummary({
+			totals: { employeeCount: 2, totalWorkedHours: 8, blockerCount: 4 },
+			blockers: [
+				{
+					id: "missing-ada",
+					employeeId: "employee-1",
+					type: "missing_clock_out",
+					label: "Backend label must not be displayed",
+					date: "2026-06-03",
+					time: "09:00",
+				},
+				{
+					id: "missing-grace",
+					employeeId: "employee-2",
+					type: "missing_clock_out",
+					label: "Another backend label",
+					date: "2026-06-05",
+					time: "17:30",
+				},
+				{
+					id: "correction-ada",
+					employeeId: "employee-1",
+					type: "pending_time_correction",
+					label: "Correction backend label",
+					date: "2026-06-07",
+					time: "14:15",
+				},
+				{
+					id: "absence-grace",
+					employeeId: "employee-2",
+					type: "pending_absence",
+					label: "Absence backend label",
+					date: "2026-06-08",
+					time: null,
+				},
+			],
+		});
+
+		render(
+			<PayrollWorkspace
+				initialSummary={blockersSummary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		const blockersRegion = screen.getByRole("region", {
+			name: "4 Lohnblocker prüfen",
+		});
+		expect(screen.queryByRole("alert")).toBeNull();
+
+		const adaMissingRow = blockersRegion.querySelector(
+			'[data-payroll-blocker-id="missing-ada"]',
+		);
+		expect(adaMissingRow).toBeTruthy();
+		expect(adaMissingRow?.className).toContain(
+			"lg:grid-cols-[minmax(0,1fr)_auto]",
+		);
+		expect(adaMissingRow?.className).not.toContain("sm:grid-cols");
+		expect(
+			within(adaMissingRow as HTMLElement).getByText("Ada Lovelace"),
+		).toBeTruthy();
+		expect(
+			within(adaMissingRow as HTMLElement).getByText("Fehlende Ausstempelung"),
+		).toBeTruthy();
+		expect(
+			within(adaMissingRow as HTMLElement).getByText("03.06.2026, 09:00"),
+		).toBeTruthy();
+		expect(
+			within(adaMissingRow as HTMLElement)
+				.getByRole("link", {
+					name: /Kalender öffnen.*Ada Lovelace.*Fehlende Ausstempelung.*03.06.2026, 09:00/,
+				})
+				.getAttribute("href"),
+		).toBe("/calendar/employee-1?date=2026-06-03");
+
+		const graceMissingRow = blockersRegion.querySelector(
+			'[data-payroll-blocker-id="missing-grace"]',
+		);
+		expect(graceMissingRow).toBeTruthy();
+		expect(
+			within(graceMissingRow as HTMLElement).getByText("Grace Hopper"),
+		).toBeTruthy();
+		expect(
+			within(graceMissingRow as HTMLElement).getByText(
+				"Fehlende Ausstempelung",
+			),
+		).toBeTruthy();
+		expect(
+			within(graceMissingRow as HTMLElement).getByText("05.06.2026, 17:30"),
+		).toBeTruthy();
+		expect(
+			within(graceMissingRow as HTMLElement)
+				.getByRole("link", {
+					name: /Kalender öffnen.*Grace Hopper.*05.06.2026, 17:30/,
+				})
+				.getAttribute("href"),
+		).toBe("/calendar/employee-2?date=2026-06-05");
+
+		const correctionRow = blockersRegion.querySelector(
+			'[data-payroll-blocker-id="correction-ada"]',
+		);
+		expect(correctionRow).toBeTruthy();
+		expect(
+			within(correctionRow as HTMLElement).getByText("Ada Lovelace"),
+		).toBeTruthy();
+		expect(
+			within(correctionRow as HTMLElement).getByText(
+				"Ausstehende Zeitkorrektur",
+			),
+		).toBeTruthy();
+		expect(
+			within(correctionRow as HTMLElement).getByText("07.06.2026, 14:15"),
+		).toBeTruthy();
+		expect(
+			within(correctionRow as HTMLElement)
+				.getByRole("link", {
+					name: /Genehmigungen öffnen.*Ada Lovelace.*07.06.2026, 14:15/,
+				})
+				.getAttribute("href"),
+		).toBe("/approvals/inbox?types=time_entry");
+
+		const absenceRow = blockersRegion.querySelector(
+			'[data-payroll-blocker-id="absence-grace"]',
+		);
+		expect(absenceRow).toBeTruthy();
+		expect(
+			within(absenceRow as HTMLElement).getByText("Grace Hopper"),
+		).toBeTruthy();
+		expect(
+			within(absenceRow as HTMLElement).getByText("Ausstehende Abwesenheit"),
+		).toBeTruthy();
+		expect(
+			within(absenceRow as HTMLElement).getByText("08.06.2026"),
+		).toBeTruthy();
+		expect(
+			within(absenceRow as HTMLElement)
+				.getByRole("link", {
+					name: /Genehmigungen öffnen.*Grace Hopper.*08.06.2026/,
+				})
+				.getAttribute("href"),
+		).toBe("/approvals/inbox?types=absence_entry");
+
+		expect(
+			within(blockersRegion).queryByText("Backend label must not be displayed"),
+		).toBeNull();
+		expect(
+			within(blockersRegion).queryByText("Another backend label"),
+		).toBeNull();
+		expect(
+			within(blockersRegion).queryByText("Correction backend label"),
+		).toBeNull();
+		expect(
+			within(blockersRegion).queryByText("Absence backend label"),
+		).toBeNull();
+	});
+
+	it("falls back for an unscoped employee and an invalid blocker date", () => {
+		translateOverrides = {
+			"payroll.blockers.dateUnavailable": "Datum nicht verfügbar",
+			"payroll.blockers.missingClockOut": "Fehlende Ausstempelung",
+			"payroll.blockers.openCalendar": "Kalender öffnen",
+			"payroll.blockers.unknownEmployee": "Unbekannter Mitarbeiter",
+		};
+		const blockersSummary = buildSummary({
+			totals: { employeeCount: 2, totalWorkedHours: 8, blockerCount: 1 },
+			blockers: [
+				{
+					id: "missing-unknown",
+					employeeId: "employee-outside-scope",
+					type: "missing_clock_out",
+					label: "Backend label",
+					date: "2026-02-30",
+					time: null,
+				},
+			],
+		});
+
+		render(
+			<PayrollWorkspace
+				initialSummary={blockersSummary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		const blockersRegion = screen.getByRole("region", {
+			name: "1 payroll blockers need review",
+		});
+		const blockerRow = blockersRegion.querySelector(
+			'[data-payroll-blocker-id="missing-unknown"]',
+		);
+		expect(blockerRow).toBeTruthy();
+		expect(
+			within(blockerRow as HTMLElement).getByText("Unbekannter Mitarbeiter"),
+		).toBeTruthy();
+		expect(
+			within(blockerRow as HTMLElement).getByText("Fehlende Ausstempelung"),
+		).toBeTruthy();
+		expect(
+			within(blockerRow as HTMLElement).getByText("Datum nicht verfügbar"),
+		).toBeTruthy();
+		expect(
+			within(blockerRow as HTMLElement).queryByText("Backend label"),
+		).toBeNull();
+		expect(
+			within(blockerRow as HTMLElement)
+				.getByRole("link", {
+					name: /Kalender öffnen.*Unbekannter Mitarbeiter.*Fehlende Ausstempelung.*Datum nicht verfügbar/,
+				})
+				.getAttribute("href"),
+		).toBe("/calendar/employee-outside-scope");
+	});
+
+	it("hides an employee ID used as the blocker employee name", () => {
+		const employeeId = "550e8400-e29b-41d4-a716-446655440000";
+		translateOverrides = {
+			"payroll.blockers.unknownEmployee": "Unbekannter Mitarbeiter",
+		};
+		const blockersSummary = buildSummary({
+			employees: [
+				{
+					...baseSummary.employees[0],
+					id: employeeId,
+					name: employeeId,
+				},
+			],
+			blockers: [
+				{
+					id: "uuid-name-blocker",
+					employeeId,
+					type: "missing_clock_out",
+					label: "Backend label",
+					date: "2026-06-09",
+					time: "08:00",
+				},
+			],
+		});
+
+		render(
+			<PayrollWorkspace
+				initialSummary={blockersSummary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		const blockersRegion = screen.getByRole("region", {
+			name: "1 payroll blockers need review",
+		});
+		const blockerRow = blockersRegion.querySelector(
+			'[data-payroll-blocker-id="uuid-name-blocker"]',
+		);
+		expect(blockerRow).toBeTruthy();
+		expect(
+			within(blockerRow as HTMLElement).getByText("Unbekannter Mitarbeiter"),
+		).toBeTruthy();
+		expect(blockerRow?.textContent).not.toContain(employeeId);
 	});
 
 	it("keeps payroll period controls on aligned grid rails", () => {

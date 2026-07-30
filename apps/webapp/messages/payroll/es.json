@@ -11,7 +11,14 @@
       "triggerExport": "Iniciar exportación"
     },
     "blockers": {
-      "needReview": "{count} bloqueos de nómina requieren revisión"
+      "dateUnavailable": "Fecha no disponible",
+      "missingClockOut": "Falta el fichaje de salida",
+      "needReview": "{count} bloqueos de nómina requieren revisión",
+      "openApprovals": "Abrir aprobaciones",
+      "openCalendar": "Abrir calendario",
+      "pendingAbsence": "Ausencia pendiente",
+      "pendingTimeCorrection": "Corrección de tiempo pendiente",
+      "unknownEmployee": "Empleado desconocido"
     },
     "description": "Revisa los totales de nómina, la preparación y las exportaciones para el periodo seleccionado.",
     "employeeTotals": {

@@ -58,6 +58,8 @@ const summary: PayrollWorkspaceSummary = {
 			employeeId: "employee-1",
 			type: "missing_clock_out",
 			label: "Missing clock-out",
+			date: "2026-06-03",
+			time: "09:00",
 		},
 	],
 };

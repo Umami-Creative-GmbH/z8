@@ -5,11 +5,14 @@ import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { resolveAuthorizedCalendarEmployeeContext } from "@/lib/calendar/calendar-employee-context";
+import { resolveCalendarInitialDate } from "@/lib/calendar/initial-date";
 
 export async function CalendarPageContent({
 	selectedEmployeeId,
+	requestedDate,
 }: {
 	selectedEmployeeId?: string;
+	requestedDate?: string;
 } = {}) {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
@@ -22,13 +25,14 @@ export async function CalendarPageContent({
 			</div>
 		);
 	}
-	const calendarEmployeeContext = await resolveAuthorizedCalendarEmployeeContext({
-		userId: authContext.user.id,
-		isPlatformAdmin: authContext.user.role === "admin",
-		organizationId: authContext.employee.organizationId,
-		currentEmployeeId: authContext.employee.id,
-		requestedEmployeeId: selectedEmployeeId,
-	});
+	const calendarEmployeeContext =
+		await resolveAuthorizedCalendarEmployeeContext({
+			userId: authContext.user.id,
+			isPlatformAdmin: authContext.user.role === "admin",
+			organizationId: authContext.employee.organizationId,
+			currentEmployeeId: authContext.employee.id,
+			requestedEmployeeId: selectedEmployeeId,
+		});
 
 	if (!calendarEmployeeContext) {
 		return (
@@ -43,7 +47,10 @@ export async function CalendarPageContent({
 			organizationId={authContext.employee.organizationId}
 			currentEmployeeId={authContext.employee.id}
 			initialSelectedEmployeeId={calendarEmployeeContext.employeeId}
-			initialDateKey={calendarEmployeeContext.initialDateKey}
+			initialDateKey={resolveCalendarInitialDate(
+				requestedDate,
+				calendarEmployeeContext.initialDateKey,
+			)}
 			initialTimezone={calendarEmployeeContext.timezone}
 		/>
 	);
