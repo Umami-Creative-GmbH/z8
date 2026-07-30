@@ -19,6 +19,7 @@ import type React from "react";
 import { useReducer, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
+	dismissPayrollBlockerAction,
 	exportPayrollPdfAction,
 	getPayrollWorkspaceSummaryAction,
 	type PayrollExportFormatOption,
@@ -117,6 +118,67 @@ function payrollWorkspaceReducer(
 	}
 }
 
+async function clearPayrollBlockerAndRefresh({
+	blocker,
+	currentRequest,
+	onFinished,
+	onStarted,
+	onSummaryRefreshed,
+	t,
+}: {
+	blocker: PayrollWorkspaceSummary["blockers"][number];
+	currentRequest: PayrollPeriodRequest;
+	onFinished: (blockerId: string) => void;
+	onStarted: (blockerId: string) => void;
+	onSummaryRefreshed: (summary: PayrollWorkspaceSummary) => void;
+	t: PayrollTranslate;
+}) {
+	let dismissalSucceeded = false;
+	onStarted(blocker.id);
+
+	try {
+		const dismissalResult = await dismissPayrollBlockerAction({
+			...currentRequest,
+			blockerId: blocker.id,
+			blockerType: blocker.type,
+		});
+
+		if (!dismissalResult.success) {
+			toast.error(
+				dismissalResult.error ||
+					t("payroll.blockers.clearFailed", "Could not clear payroll blocker"),
+			);
+			return;
+		}
+
+		dismissalSucceeded = true;
+		const refreshResult = await getPayrollWorkspaceSummaryAction(currentRequest);
+
+		if (!refreshResult.success) {
+			toast.error(
+				t(
+					"payroll.blockers.refreshAfterClearFailed",
+					"Blocker cleared, but payroll could not be refreshed",
+				),
+			);
+			return;
+		}
+
+		onSummaryRefreshed(refreshResult.data);
+	} catch {
+		toast.error(
+			dismissalSucceeded
+				? t(
+						"payroll.blockers.refreshAfterClearFailed",
+						"Blocker cleared, but payroll could not be refreshed",
+					)
+				: t("payroll.blockers.clearFailed", "Could not clear payroll blocker"),
+		);
+	} finally {
+		onFinished(blocker.id);
+	}
+}
+
 export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorkspaceProps) {
 	const { t } = useTranslate();
 	const [state, dispatch] = useReducer(payrollWorkspaceReducer, {
@@ -138,6 +200,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		formatId,
 	} = state;
 	const [isPending, startTransition] = useTransition();
+	const [clearingBlockerId, setClearingBlockerId] = useState<string | null>(null);
 
 	const scopedEmployees = initialSummary.employees;
 	const teamOptions = getTeamOptions(scopedEmployees);
@@ -328,6 +391,21 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		});
 	}
 
+	function clearPayrollBlocker(blocker: PayrollWorkspaceSummary["blockers"][number]) {
+		if (clearingBlockerId === blocker.id) return;
+
+		void clearPayrollBlockerAndRefresh({
+			blocker,
+			currentRequest: request,
+			onFinished: (blockerId) =>
+				setClearingBlockerId((currentId) => (currentId === blockerId ? null : currentId)),
+			onStarted: setClearingBlockerId,
+			onSummaryRefreshed: (nextSummary) =>
+				dispatch({ type: "summaryRefreshed", summary: nextSummary }),
+			t,
+		});
+	}
+
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
 			<PayrollHeader t={t} />
@@ -387,7 +465,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 
 			<PayrollBlockersAlert
 				blockers={displayedBlockers}
+				clearingBlockerId={clearingBlockerId}
 				employees={displayedEmployees}
+				onClearBlocker={clearPayrollBlocker}
 				t={t}
 			/>
 			<EmployeeTotalsCard employees={displayedEmployees} t={t} />
@@ -993,11 +1073,15 @@ function getPayrollScopeSummary({
 
 function PayrollBlockersAlert({
 	blockers,
+	clearingBlockerId,
 	employees,
+	onClearBlocker,
 	t,
 }: {
 	blockers: PayrollWorkspaceSummary["blockers"];
+	clearingBlockerId: string | null;
 	employees: PayrollWorkspaceSummary["employees"];
+	onClearBlocker: (blocker: PayrollWorkspaceSummary["blockers"][number]) => void;
 	t: PayrollTranslate;
 }) {
 	const locale = useLocale();
@@ -1029,6 +1113,7 @@ function PayrollBlockersAlert({
 			</header>
 			<ul className="mt-3 grid gap-2">
 				{blockers.map((blocker) => {
+					const isClearing = clearingBlockerId === blocker.id;
 					const summaryEmployeeName = employeeNames.get(blocker.employeeId);
 					const employeeName =
 						summaryEmployeeName && summaryEmployeeName !== blocker.employeeId
@@ -1103,19 +1188,51 @@ function PayrollBlockersAlert({
 									</span>
 								)}
 							</div>
-							<Button
-								asChild
-								className="w-full lg:w-auto"
-								size="sm"
-								variant="outline"
-							>
-								<Link
-									aria-label={`${actionLabel}: ${employeeName}, ${blockerType}, ${metadata}`}
-									href={href}
+							<div className="grid gap-1 sm:grid-cols-2 lg:flex lg:items-center lg:justify-end">
+								<Button
+									asChild
+									className="w-full lg:w-auto"
+									size="sm"
+									variant="outline"
 								>
-									{actionLabel}
-								</Link>
-							</Button>
+									<Link
+										aria-label={`${actionLabel}: ${employeeName}, ${blockerType}, ${metadata}`}
+										href={href}
+									>
+										{actionLabel}
+									</Link>
+								</Button>
+								<Button
+									aria-label={`${
+										isClearing
+											? t(
+													"payroll.blockers.clearingFalsePositive",
+													"Clearing false positive",
+												)
+											: t(
+													"payroll.blockers.clearFalsePositive",
+													"Clear false positive",
+												)
+									}: ${employeeName}, ${blockerType}, ${metadata}`}
+									aria-busy={isClearing}
+									className="w-full lg:w-auto"
+									disabled={isClearing}
+									onClick={() => onClearBlocker(blocker)}
+									size="sm"
+									type="button"
+									variant="ghost"
+								>
+									{isClearing
+										? t(
+												"payroll.blockers.clearingFalsePositive",
+												"Clearing false positive",
+											)
+										: t(
+												"payroll.blockers.clearFalsePositive",
+												"Clear false positive",
+											)}
+								</Button>
+							</div>
 						</li>
 					);
 				})}

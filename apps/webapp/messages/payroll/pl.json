@@ -11,6 +11,9 @@
       "triggerExport": "Uruchom eksport"
     },
     "blockers": {
+      "clearFailed": "Nie udało się usunąć blokady płacowej",
+      "clearFalsePositive": "Usuń fałszywy alarm",
+      "clearingFalsePositive": "Usuwanie fałszywego alarmu",
       "dateUnavailable": "Data niedostępna",
       "missingClockOut": "Brak odbicia wyjścia",
       "needReview": "{count, plural, one {# blokada płacowa wymaga sprawdzenia} few {# blokady płacowe wymagają sprawdzenia} other {# blokad płacowych wymaga sprawdzenia}}",
@@ -18,6 +21,7 @@
       "openCalendar": "Otwórz kalendarz",
       "pendingAbsence": "Oczekująca nieobecność",
       "pendingTimeCorrection": "Oczekująca korekta czasu",
+      "refreshAfterClearFailed": "Blokada została usunięta, ale nie udało się odświeżyć listy płac",
       "unknownEmployee": "Nieznany pracownik"
     },
     "description": "Sprawdź sumy płac, gotowość i eksporty dla wybranego okresu.",

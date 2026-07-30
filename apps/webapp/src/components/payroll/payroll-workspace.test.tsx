@@ -6,10 +6,13 @@ import type { PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import { PayrollWorkspace } from "./payroll-workspace";
 
 const actionMocks = vi.hoisted(() => ({
+	dismissPayrollBlockerAction: vi.fn(),
 	exportPayrollPdfAction: vi.fn(),
 	getPayrollWorkspaceSummaryAction: vi.fn(),
 	startScopedPayrollExportAction: vi.fn(),
 }));
+
+const toastMocks = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
 
 let translateOverrides: Record<string, string> = {};
 let activeLocale = "en";
@@ -29,8 +32,9 @@ vi.mock("@tolgee/react", () => ({
 vi.mock("next-intl", () => ({
 	useLocale: () => activeLocale,
 }));
-vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: toastMocks }));
 vi.mock("@/app/[locale]/(app)/payroll/actions", () => ({
+	dismissPayrollBlockerAction: actionMocks.dismissPayrollBlockerAction,
 	exportPayrollPdfAction: actionMocks.exportPayrollPdfAction,
 	getPayrollWorkspaceSummaryAction: actionMocks.getPayrollWorkspaceSummaryAction,
 	startScopedPayrollExportAction: actionMocks.startScopedPayrollExportAction,
@@ -99,11 +103,26 @@ function buildSummary(overrides: Partial<PayrollWorkspaceSummary> = {}): Payroll
 
 const summary = buildSummary();
 
+function deferred<T>() {
+	let resolve!: (value: T) => void;
+	let reject!: (reason?: unknown) => void;
+	const promise = new Promise<T>((promiseResolve, promiseReject) => {
+		resolve = promiseResolve;
+		reject = promiseReject;
+	});
+
+	return { promise, reject, resolve };
+}
+
 describe("PayrollWorkspace", () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
 		translateOverrides = {};
 		activeLocale = "en";
+		actionMocks.dismissPayrollBlockerAction.mockResolvedValue({
+			success: true,
+			data: { dismissed: true },
+		});
 		actionMocks.getPayrollWorkspaceSummaryAction.mockResolvedValue({
 			success: true,
 			data: summary,
@@ -342,6 +361,251 @@ describe("PayrollWorkspace", () => {
 			within(blockersRegion).queryByText("Absence backend label"),
 		).toBeNull();
 	});
+
+	it("renders a distinguishable clear control beside every blocker workflow link", () => {
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		const missingRow = document.querySelector('[data-payroll-blocker-id="blocker-1"]');
+		const absenceRow = document.querySelector('[data-payroll-blocker-id="blocker-2"]');
+		expect(missingRow).toBeTruthy();
+		expect(absenceRow).toBeTruthy();
+		expect(
+			within(missingRow as HTMLElement).getByRole("link", { name: /Open calendar/ }),
+		).toBeTruthy();
+		expect(
+			within(missingRow as HTMLElement).getByRole("button", {
+				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+			}),
+		).toBeTruthy();
+		expect(
+			within(absenceRow as HTMLElement).getByRole("link", { name: /Open approvals/ }),
+		).toBeTruthy();
+		expect(
+			within(absenceRow as HTMLElement).getByRole("button", {
+				name: /Clear false positive.*Ada Lovelace.*Pending absence/,
+			}),
+		).toBeTruthy();
+	});
+
+	it("sends only the clicked blocker and current period and filter request", async () => {
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
+		const sheet = await screen.findByRole("dialog");
+		fireEvent.click(within(sheet).getByRole("checkbox", { name: "Ada Lovelace" }));
+		fireEvent.click(within(sheet).getByRole("button", { name: "Apply" }));
+		await waitFor(() => expect(screen.getByText("1 employees selected")).toBeTruthy());
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+		const blockerRow = document.querySelector('[data-payroll-blocker-id="blocker-1"]');
+		fireEvent.click(
+			within(blockerRow as HTMLElement).getByRole("button", {
+				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+			}),
+		);
+
+		await waitFor(() => {
+			expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenCalledWith({
+				blockerId: "blocker-1",
+				blockerType: "missing_clock_out",
+				startDate: "2026-06-01",
+				endDate: "2026-06-30",
+				label: "June 2026",
+				employeeIds: ["employee-1"],
+			});
+		});
+		expect(Object.keys(actionMocks.dismissPayrollBlockerAction.mock.calls[0][0]).sort()).toEqual([
+			"blockerId",
+			"blockerType",
+			"employeeIds",
+			"endDate",
+			"label",
+			"startDate",
+		]);
+	});
+
+	it("keeps pending state on only the clicked blocker and prevents a duplicate click", async () => {
+		const dismissal = deferred<{ success: true; data: { dismissed: true } }>();
+		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(dismissal.promise);
+
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		const missingRow = document.querySelector('[data-payroll-blocker-id="blocker-1"]');
+		const absenceRow = document.querySelector('[data-payroll-blocker-id="blocker-2"]');
+		const clickedButton = within(missingRow as HTMLElement).getByRole("button", {
+			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+		}) as HTMLButtonElement;
+		fireEvent.click(clickedButton);
+
+		await waitFor(() => {
+			expect(
+				within(missingRow as HTMLElement).getByRole("button", {
+					name: /Clearing false positive.*Ada Lovelace.*Missing clock-out/,
+				}),
+			).toBeTruthy();
+		});
+		const pendingButton = within(missingRow as HTMLElement).getByRole("button", {
+			name: /Clearing false positive.*Ada Lovelace.*Missing clock-out/,
+		}) as HTMLButtonElement;
+		const otherButton = within(absenceRow as HTMLElement).getByRole("button", {
+			name: /Clear false positive.*Ada Lovelace.*Pending absence/,
+		}) as HTMLButtonElement;
+		expect(pendingButton.disabled).toBe(true);
+		expect(otherButton.disabled).toBe(false);
+		expect(document.querySelector('[data-payroll-blocker-id="blocker-1"]')).toBeTruthy();
+		fireEvent.click(pendingButton);
+		expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenCalledTimes(1);
+
+		dismissal.resolve({ success: true, data: { dismissed: true } });
+		await waitFor(() => expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalled());
+	});
+
+	it("refreshes from server truth with the same request after dismissal", async () => {
+		const refreshedSummary = buildSummary({
+			totals: { employeeCount: 2, totalWorkedHours: 8, blockerCount: 0 },
+			employees: baseSummary.employees.map((employee) => ({ ...employee, hasBlockers: false })),
+			blockers: [],
+		});
+		actionMocks.getPayrollWorkspaceSummaryAction.mockResolvedValueOnce({
+			success: true,
+			data: refreshedSummary,
+		});
+
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+		const blockerRow = document.querySelector('[data-payroll-blocker-id="blocker-1"]');
+		fireEvent.click(
+			within(blockerRow as HTMLElement).getByRole("button", {
+				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+			}),
+		);
+
+		await waitFor(() => {
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledWith({
+				startDate: "2026-06-01",
+				endDate: "2026-06-30",
+				label: "June 2026",
+				employeeIds: undefined,
+			});
+		});
+		await waitFor(() => {
+			expect(screen.queryByRole("region", { name: /payroll blockers need review/ })).toBeNull();
+		});
+		const blockerSummaryCard = screen.getByText("Blockers").closest('[data-slot="card"]');
+		expect(within(blockerSummaryCard as HTMLElement).getByText("0")).toBeTruthy();
+		expect(screen.getAllByText("Ready for payroll")).toHaveLength(2);
+	});
+
+	it("keeps the blocker and shows the safe dismissal error when clearing fails", async () => {
+		actionMocks.dismissPayrollBlockerAction.mockResolvedValueOnce({
+			success: false,
+			error: "This blocker can no longer be cleared",
+		});
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		const blockerRow = document.querySelector('[data-payroll-blocker-id="blocker-1"]');
+		fireEvent.click(
+			within(blockerRow as HTMLElement).getByRole("button", {
+				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+			}),
+		);
+
+		await waitFor(() =>
+			expect(toastMocks.error).toHaveBeenCalledWith("This blocker can no longer be cleared"),
+		);
+		expect(document.querySelector('[data-payroll-blocker-id="blocker-1"]')).toBeTruthy();
+		expect(actionMocks.getPayrollWorkspaceSummaryAction).not.toHaveBeenCalled();
+	});
+
+	it("keeps the blocker, clears pending state, and shows a localized error on dismissal rejection", async () => {
+		actionMocks.dismissPayrollBlockerAction.mockRejectedValueOnce(new Error("network detail"));
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		const blockerRow = document.querySelector('[data-payroll-blocker-id="blocker-1"]');
+		fireEvent.click(
+			within(blockerRow as HTMLElement).getByRole("button", {
+				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+			}),
+		);
+
+		await waitFor(() =>
+			expect(toastMocks.error).toHaveBeenCalledWith("Could not clear payroll blocker"),
+		);
+		expect(
+			within(blockerRow as HTMLElement).getByRole("button", {
+				name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+			}),
+		).toBeTruthy();
+		expect(document.querySelector('[data-payroll-blocker-id="blocker-1"]')).toBeTruthy();
+	});
+
+	it.each([
+		["result failure", { success: false, error: "Unsafe refresh detail" }],
+		["rejection", new Error("network detail")],
+	])(
+		"preserves the summary and uses the refresh-specific error after dismissal on %s",
+		async (_case, refreshOutcome) => {
+			if (refreshOutcome instanceof Error) {
+				actionMocks.getPayrollWorkspaceSummaryAction.mockRejectedValueOnce(refreshOutcome);
+			} else {
+				actionMocks.getPayrollWorkspaceSummaryAction.mockResolvedValueOnce(refreshOutcome);
+			}
+			render(
+				<PayrollWorkspace
+					initialSummary={summary}
+					exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+				/>,
+			);
+
+			const blockerRow = document.querySelector('[data-payroll-blocker-id="blocker-1"]');
+			fireEvent.click(
+				within(blockerRow as HTMLElement).getByRole("button", {
+					name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+				}),
+			);
+
+			await waitFor(() =>
+				expect(toastMocks.error).toHaveBeenCalledWith(
+					"Blocker cleared, but payroll could not be refreshed",
+				),
+			);
+			expect(document.querySelector('[data-payroll-blocker-id="blocker-1"]')).toBeTruthy();
+			expect(
+				within(blockerRow as HTMLElement).getByRole("button", {
+					name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
+				}),
+			).toBeTruthy();
+		},
+	);
 
 	it("falls back for an unscoped employee and an invalid blocker date", () => {
 		translateOverrides = {
