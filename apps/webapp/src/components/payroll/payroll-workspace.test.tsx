@@ -485,14 +485,36 @@ describe("PayrollWorkspace", () => {
 
 	it("tracks same-source blockers of different types independently", async () => {
 		const sharedId = "11111111-1111-4111-8111-111111111111";
-		const dismissal = deferred<{ success: true; data: { dismissed: true } }>();
+		const firstDismissal = deferred<{ success: true; data: { dismissed: true } }>();
+		const secondDismissal = deferred<{ success: true; data: { dismissed: true } }>();
+		const firstRefresh = deferred<{ success: true; data: PayrollWorkspaceSummary }>();
+		const secondRefresh = deferred<{ success: true; data: PayrollWorkspaceSummary }>();
+		const missingBlocker = { ...baseSummary.blockers[0], id: sharedId };
+		const absenceBlocker = { ...baseSummary.blockers[1], id: sharedId };
 		const collisionSummary = buildSummary({
-			blockers: [
-				{ ...baseSummary.blockers[0], id: sharedId },
-				{ ...baseSummary.blockers[1], id: sharedId },
-			],
+			blockers: [missingBlocker, absenceBlocker],
 		});
-		actionMocks.dismissPayrollBlockerAction.mockReturnValueOnce(dismissal.promise);
+		const afterFirstRefresh = buildSummary({
+			totals: { employeeCount: 2, totalWorkedHours: 8, blockerCount: 1 },
+			blockers: [absenceBlocker],
+		});
+		const finalSummary = buildSummary({
+			totals: { employeeCount: 2, totalWorkedHours: 8, blockerCount: 0 },
+			employees: baseSummary.employees.map((employee) => ({
+				...employee,
+				hasBlockers: false,
+			})),
+			blockers: [],
+		});
+		actionMocks.dismissPayrollBlockerAction.mockImplementation(
+			(request: { blockerType: string }) =>
+				request.blockerType === "missing_clock_out"
+					? firstDismissal.promise
+					: secondDismissal.promise,
+		);
+		actionMocks.getPayrollWorkspaceSummaryAction
+			.mockReturnValueOnce(firstRefresh.promise)
+			.mockReturnValueOnce(secondRefresh.promise);
 
 		render(
 			<PayrollWorkspace
@@ -534,9 +556,55 @@ describe("PayrollWorkspace", () => {
 			).toBe(true);
 		});
 		expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenCalledTimes(1);
+		expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenNthCalledWith(
+			1,
+			expect.objectContaining({ blockerId: sharedId, blockerType: "missing_clock_out" }),
+		);
 
-		dismissal.resolve({ success: true, data: { dismissed: true } });
-		await waitFor(() => expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalled());
+		firstDismissal.resolve({ success: true, data: { dismissed: true } });
+		await waitFor(() =>
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1),
+		);
+		expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenCalledTimes(1);
+
+		firstRefresh.resolve({ success: true, data: afterFirstRefresh });
+		await waitFor(() => {
+			expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenCalledTimes(2);
+			expect(
+				document.querySelector(blockerSelector("missing_clock_out", sharedId)),
+			).toBeNull();
+		});
+		expect(actionMocks.dismissPayrollBlockerAction).toHaveBeenNthCalledWith(
+			2,
+			expect.objectContaining({ blockerId: sharedId, blockerType: "pending_absence" }),
+		);
+		const pendingAbsenceRow = document.querySelector(
+			blockerSelector("pending_absence", sharedId),
+		);
+		expect(
+			(within(pendingAbsenceRow as HTMLElement).getByRole("button", {
+				name: /Clearing false positive.*Pending absence/,
+			}) as HTMLButtonElement).disabled,
+		).toBe(true);
+		expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(1);
+
+		secondDismissal.resolve({ success: true, data: { dismissed: true } });
+		await waitFor(() =>
+			expect(actionMocks.getPayrollWorkspaceSummaryAction).toHaveBeenCalledTimes(2),
+		);
+		expect(
+			(within(pendingAbsenceRow as HTMLElement).getByRole("button", {
+				name: /Clearing false positive.*Pending absence/,
+			}) as HTMLButtonElement).disabled,
+		).toBe(true);
+
+		secondRefresh.resolve({ success: true, data: finalSummary });
+		await waitFor(() => {
+			expect(document.querySelector(blockerSelector("pending_absence", sharedId))).toBeNull();
+			expect(screen.queryByRole("heading", { name: /payroll blockers need review/ })).toBeNull();
+		});
+		const blockerSummaryCard = screen.getByText("Blockers").closest('[data-slot="card"]');
+		expect(within(blockerSummaryCard as HTMLElement).getByText("0")).toBeTruthy();
 	});
 
 	it("keeps concurrent rows pending independently and finishes with the last server refresh", async () => {

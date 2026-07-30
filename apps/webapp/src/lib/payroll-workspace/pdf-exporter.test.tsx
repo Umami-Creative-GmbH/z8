@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
 	buildPayrollAbsenceSections,
 	exportPayrollSummaryToPDF,
@@ -321,6 +321,46 @@ describe("payroll PDF exporter", () => {
 	it("generates a PDF byte array", async () => {
 		const pdf = await exportPayrollSummaryToPDF(summary);
 		expect(pdf.byteLength).toBeGreaterThan(1000);
+	});
+
+	it("exports same-source blockers of different types without duplicate keys or omission", async () => {
+		const sharedId = "11111111-1111-4111-8111-111111111111";
+		const consoleError = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => undefined);
+
+		try {
+			const singleBlockerPDF = await exportPayrollSummaryToPDF({
+				...summary,
+				blockers: [{ ...summary.blockers[0], id: sharedId }],
+			});
+			const collidingBlockersPDF = await exportPayrollSummaryToPDF({
+				...summary,
+				totals: { ...summary.totals, blockerCount: 2 },
+				blockers: [
+					{
+						...summary.blockers[0],
+						id: sharedId,
+						label: "Missing clock-out collision",
+					},
+					{
+						...summary.blockers[0],
+						id: sharedId,
+						type: "pending_absence",
+						label: "Pending absence collision",
+					},
+				],
+			});
+
+			expect(collidingBlockersPDF.byteLength).toBeGreaterThan(
+				singleBlockerPDF.byteLength,
+			);
+			expect(consoleError.mock.calls.flat().join(" ")).not.toContain(
+				"Encountered two children with the same key",
+			);
+		} finally {
+			consoleError.mockRestore();
+		}
 	});
 
 	it("generates a PDF byte array without absence details", async () => {
