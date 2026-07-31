@@ -112,6 +112,16 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
 	return outputArray;
 }
 
+function createBrowserPushSubscription(
+	registration: ServiceWorkerRegistration,
+	vapidPublicKey: string,
+): Promise<PushSubscription> {
+	return registration.pushManager.subscribe({
+		userVisibleOnly: true,
+		applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+	});
+}
+
 /**
  * Hook for managing push notifications
  *
@@ -232,10 +242,10 @@ export function usePushNotifications(
 					actionResult = false;
 				} else {
 					// Subscribe to push manager
-					subscription = await registration.pushManager.subscribe({
-						userVisibleOnly: true,
-						applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-					});
+					subscription = await createBrowserPushSubscription(
+						registration,
+						vapidPublicKey,
+					);
 
 					// Send subscription to server
 					const subscribeResponse = await fetch(
