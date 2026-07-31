@@ -3110,7 +3110,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		);
 	});
 
-	it("registers the latest employee clock activity index migration", () => {
+	it("registers the employee clock activity index migration after its predecessors", () => {
 		expect(existsSync(migration0058ActivityUrl)).toBe(true);
 		if (!existsSync(migration0058ActivityUrl)) return;
 
@@ -3125,7 +3125,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		);
 		const migration0058 = readFileSync(migration0058ActivityUrl, "utf8");
 
-		expect(migrationIndex).toBe(migrationJournal.entries.length - 1);
+		expect(migrationIndex).toBeGreaterThanOrEqual(0);
 		expect(migrationEntry?.when).toBeGreaterThan(latestPriorWhen);
 		expect(migration0058).toContain(
 			'CREATE INDEX IF NOT EXISTS "timeEntry_latestClockActivity_idx"',

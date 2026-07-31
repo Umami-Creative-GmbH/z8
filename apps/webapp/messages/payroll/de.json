@@ -11,7 +11,18 @@
       "triggerExport": "Export auslösen"
     },
     "blockers": {
-      "needReview": "{count} Lohnabrechnungsblocker müssen überprüft werden"
+      "clearFailed": "Lohnabrechnungsblocker konnte nicht entfernt werden",
+      "clearFalsePositive": "Fehlalarm entfernen",
+      "clearingFalsePositive": "Fehlalarm wird entfernt",
+      "dateUnavailable": "Datum nicht verfügbar",
+      "missingClockOut": "Fehlende Ausstempelung",
+      "needReview": "{count} Lohnabrechnungsblocker müssen überprüft werden",
+      "openApprovals": "Genehmigungen öffnen",
+      "openCalendar": "Kalender öffnen",
+      "pendingAbsence": "Ausstehender Abwesenheitsantrag",
+      "pendingTimeCorrection": "Ausstehende Zeitkorrektur",
+      "refreshAfterClearFailed": "Blocker entfernt, aber die Lohnabrechnung konnte nicht aktualisiert werden",
+      "unknownEmployee": "Unbekannter Mitarbeiter"
     },
     "description": "Überprüfen Sie die Lohnabrechnungssummen, die Bereitschaft und die Exporte für den ausgewählten Zeitraum.",
     "employeeTotals": {

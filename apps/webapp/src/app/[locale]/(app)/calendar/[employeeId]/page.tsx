@@ -16,14 +16,19 @@ function CalendarPageLoading() {
 
 export default async function CalendarEmployeePage({
 	params,
+	searchParams,
 }: {
 	params: Promise<{ employeeId: string }>;
+	searchParams: Promise<{ date?: string }>;
 }) {
-	const { employeeId } = await params;
+	const [{ employeeId }, { date }] = await Promise.all([params, searchParams]);
 
 	return (
 		<Suspense fallback={<CalendarPageLoading />}>
-			<CalendarPageContent selectedEmployeeId={employeeId} />
+			<CalendarPageContent
+				requestedDate={date}
+				selectedEmployeeId={employeeId}
+			/>
 		</Suspense>
 	);
 }

@@ -1,7 +1,9 @@
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
+import { filterDismissedPayrollBlockers } from "./blocker-dismissals";
 import {
 	buildPayrollSummaryFromRows,
+	buildPendingAbsenceBlockers,
 	calculatePayrollWorkedMinutes,
 	filterMissingClockOutBlockers,
 	filterPendingTimeApprovalBlockers,
@@ -286,6 +288,8 @@ describe("buildPayrollSummaryFromRows", () => {
 					employeeId: "employee-1",
 					type: "missing_clock_out",
 					label: "Missing clock-out",
+					date: "2026-06-10",
+					time: "09:00",
 				},
 			],
 		});
@@ -293,6 +297,71 @@ describe("buildPayrollSummaryFromRows", () => {
 		expect(summary.totals.blockerCount).toBe(1);
 		expect(summary.employees[0]?.hasBlockers).toBe(true);
 		expect(summary.absenceDetails).toEqual([]);
+	});
+
+	it("derives list, count, and employee status only from blockers remaining after dismissal", () => {
+		const remainingBlockers = filterDismissedPayrollBlockers(
+			[
+				{
+					id: "source-1",
+					employeeId: "employee-1",
+					type: "missing_clock_out",
+					label: "Missing clock-out",
+					date: "2026-06-10",
+					time: "09:00",
+				},
+				{
+					id: "source-2",
+					employeeId: "employee-2",
+					type: "pending_absence",
+					label: "Pending absence",
+					date: "2026-06-11",
+					time: null,
+				},
+			],
+			[{ blockerType: "missing_clock_out", sourceId: "source-1" }],
+		);
+		const summary = buildPayrollSummaryFromRows({
+			organizationName: "Acme GmbH",
+			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
+			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedBy: { id: "payroll-1", name: "Payroll User" },
+			employees: [
+				{
+					id: "employee-1",
+					name: "Ada Lovelace",
+					employeeNumber: "E-1",
+					teamName: "Ops",
+					contractType: "hourly",
+				},
+				{
+					id: "employee-2",
+					name: "Grace Hopper",
+					employeeNumber: "E-2",
+					teamName: "Ops",
+					contractType: "hourly",
+				},
+			],
+			workRows: [{ employeeId: "employee-1", durationMinutes: 120 }],
+			absenceRows: [],
+			blockers: remainingBlockers,
+		});
+
+		expect(summary.blockers).toEqual([
+			expect.objectContaining({ id: "source-2", type: "pending_absence" }),
+		]);
+		expect(summary.totals).toMatchObject({
+			blockerCount: 1,
+			totalWorkedHours: 2,
+		});
+		expect(summary.employees).toEqual([
+			expect.objectContaining({
+				id: "employee-1",
+				hasBlockers: false,
+				workedHours: 2,
+			}),
+			expect.objectContaining({ id: "employee-2", hasBlockers: true }),
+		]);
 	});
 });
 
@@ -347,6 +416,64 @@ describe("calculatePayrollWorkedMinutes", () => {
 });
 
 describe("filterPendingTimeApprovalBlockers", () => {
+	it("uses the employee timezone to localize the correction start", () => {
+		const blockers = filterPendingTimeApprovalBlockers({
+			organizationId: "org-1",
+			allowedEmployeeIds: ["employee-1"],
+			period: {
+				start: DateTime.fromISO("2026-06-01T00:00:00Z"),
+				end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+			},
+			timezoneByEmployeeId: new Map([["employee-1", "America/New_York"]]),
+			rows: [
+				{
+					id: "approval-1",
+					organizationId: "org-1",
+					requestedBy: "employee-1",
+					status: "pending",
+					entityType: "time_entry",
+					canonicalRecordId: "record-1",
+					recordId: "record-1",
+					recordOrganizationId: "org-1",
+					employeeId: "employee-1",
+					startAt: DateTime.fromISO("2026-06-01T01:30:00Z"),
+					endAt: DateTime.fromISO("2026-06-01T02:30:00Z"),
+				},
+			],
+		});
+
+		expect(blockers[0]).toMatchObject({ date: "2026-05-31", time: "21:30" });
+	});
+
+	it("retains a correction with invalid instant metadata without local date/time", () => {
+		const blockers = filterPendingTimeApprovalBlockers({
+			organizationId: "org-1",
+			allowedEmployeeIds: ["employee-1"],
+			period: {
+				start: DateTime.fromISO("2026-06-01T00:00:00Z"),
+				end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+			},
+			timezoneByEmployeeId: new Map([["employee-1", "America/New_York"]]),
+			rows: [
+				{
+					id: "approval-1",
+					organizationId: "org-1",
+					requestedBy: "employee-1",
+					status: "pending",
+					entityType: "time_entry",
+					canonicalRecordId: "record-1",
+					recordId: "record-1",
+					recordOrganizationId: "org-1",
+					employeeId: "employee-1",
+					startAt: DateTime.invalid("invalid metadata"),
+					endAt: DateTime.fromISO("2026-06-01T02:30:00Z"),
+				},
+			],
+		});
+
+		expect(blockers[0]).toMatchObject({ date: null, time: null });
+	});
+
 	it("keeps only pending time approvals linked to overlapping canonical time records", () => {
 		const blockers = filterPendingTimeApprovalBlockers({
 			organizationId: "org-1",
@@ -355,6 +482,7 @@ describe("filterPendingTimeApprovalBlockers", () => {
 				start: DateTime.fromISO("2026-06-01T00:00:00Z"),
 				end: DateTime.fromISO("2026-06-30T23:59:59Z"),
 			},
+			timezoneByEmployeeId: new Map(),
 			rows: [
 				{
 					id: "approval-1",
@@ -404,18 +532,87 @@ describe("filterPendingTimeApprovalBlockers", () => {
 				employeeId: "employee-1",
 				type: "pending_time_correction",
 				label: "Pending time correction",
+				date: null,
+				time: null,
 			},
 		]);
 	});
 });
 
 describe("filterMissingClockOutBlockers", () => {
+	it("uses the employee timezone to localize the missing clock-out start", () => {
+		const blockers = filterMissingClockOutBlockers({
+			period: {
+				start: DateTime.fromISO("2026-06-01T00:00:00Z"),
+				end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+			},
+			timezoneByEmployeeId: new Map([["employee-1", "America/New_York"]]),
+			rows: [
+				{
+					id: "record-1",
+					employeeId: "employee-1",
+					startAt: DateTime.fromISO("2026-06-01T01:30:00Z"),
+				},
+			],
+		});
+
+		expect(blockers[0]).toMatchObject({ date: "2026-05-31", time: "21:30" });
+	});
+
+	it("retains a missing clock-out when the employee timezone is invalid", () => {
+		const blockers = filterMissingClockOutBlockers({
+			period: {
+				start: DateTime.fromISO("2026-06-01T00:00:00Z"),
+				end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+			},
+			timezoneByEmployeeId: new Map([["employee-1", "Invalid/Timezone"]]),
+			rows: [
+				{
+					id: "record-1",
+					employeeId: "employee-1",
+					startAt: DateTime.fromISO("2026-06-01T01:30:00Z"),
+				},
+			],
+		});
+
+		expect(blockers).toEqual([
+			{
+				id: "record-1",
+				employeeId: "employee-1",
+				type: "missing_clock_out",
+				label: "Missing clock-out",
+				date: null,
+				time: null,
+			},
+		]);
+	});
+
+	it("retains a missing clock-out with invalid instant metadata", () => {
+		const blockers = filterMissingClockOutBlockers({
+			period: {
+				start: DateTime.fromISO("2026-06-01T00:00:00Z"),
+				end: DateTime.fromISO("2026-06-30T23:59:59Z"),
+			},
+			timezoneByEmployeeId: new Map([["employee-1", "America/New_York"]]),
+			rows: [
+				{
+					id: "record-1",
+					employeeId: "employee-1",
+					startAt: DateTime.invalid("invalid metadata"),
+				},
+			],
+		});
+
+		expect(blockers[0]).toMatchObject({ date: null, time: null });
+	});
+
 	it("includes open work records that started before the payroll period", () => {
 		const blockers = filterMissingClockOutBlockers({
 			period: {
 				start: DateTime.fromISO("2026-06-01T00:00:00Z"),
 				end: DateTime.fromISO("2026-06-30T23:59:59Z"),
 			},
+			timezoneByEmployeeId: new Map(),
 			rows: [
 				{
 					id: "record-1",
@@ -436,6 +633,27 @@ describe("filterMissingClockOutBlockers", () => {
 				employeeId: "employee-1",
 				type: "missing_clock_out",
 				label: "Missing clock-out",
+				date: null,
+				time: null,
+			},
+		]);
+	});
+});
+
+describe("buildPendingAbsenceBlockers", () => {
+	it("uses the logical absence start date without an event time", () => {
+		expect(
+			buildPendingAbsenceBlockers([
+				{ id: "absence-1", employeeId: "employee-1", startDate: "2026-06-12" },
+			]),
+		).toEqual([
+			{
+				id: "absence-1",
+				employeeId: "employee-1",
+				type: "pending_absence",
+				label: "Pending absence",
+				date: "2026-06-12",
+				time: null,
 			},
 		]);
 	});

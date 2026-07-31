@@ -8,7 +8,7 @@
     "start": "next start -p 3000"
   },
   "dependencies": {
-    "@tabler/icons-react": "^3.45.0",
+    "@tabler/icons-react": "^3.46.0",
     "next": "16.2.12",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -20,7 +20,7 @@
     "@types/node": "^26.1.2",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
-    "postcss": "8.5.24",
+    "postcss": "8.5.25",
     "tailwindcss": "^4.3.3"
   },
   "pnpm": {

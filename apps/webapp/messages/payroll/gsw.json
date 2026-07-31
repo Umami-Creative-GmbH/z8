@@ -11,7 +11,18 @@
       "triggerExport": "Export starte"
     },
     "blockers": {
-      "needReview": "{count} Lohnabrächnigshindernis bruched e Prüefig"
+      "clearFailed": "S Lohnabrächnigshindernis het nöd chönne entfernt werde",
+      "clearFalsePositive": "Falschmäldig entferne",
+      "clearingFalsePositive": "Falschmäldig wird entfernt",
+      "dateUnavailable": "Datum nöd verfüegbar",
+      "missingClockOut": "Fählendi Uusstämplig",
+      "needReview": "{count} Lohnabrächnigshindernis bruched e Prüefig",
+      "openApprovals": "Genehmigunge öffne",
+      "openCalendar": "Kaländer öffne",
+      "pendingAbsence": "Uusstahendi Abweseheit",
+      "pendingTimeCorrection": "Uusstahendi Ziitkorrektur",
+      "refreshAfterClearFailed": "S Hindernis isch entfernt, aber d Lohnabrächnig het nöd chönne aktualisiert werde",
+      "unknownEmployee": "Unbekannte Aagstellte"
     },
     "description": "Prüef d Lohnsumme, d Bereitschaft und d Export für die gwählti Periode.",
     "employeeTotals": {
