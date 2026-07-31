@@ -16,6 +16,7 @@ import {
 	type OrdinaryWorkPeriodWorkflowPayload,
 	parseOrdinaryWorkPeriodWorkflowPayload,
 } from "../domain-adapters/work-period-contract";
+import { mapSequentially } from "../sequential";
 import type {
 	ApprovalCommandResult,
 	ApprovalDbService,
@@ -121,7 +122,7 @@ export async function cancelLegacyTimeCorrectionApprovalRows(input: {
 												approvalChainStageInstance.approvalRequestId,
 												stage.approvalRequestId,
 											)
-									: isNull(approvalChainStageInstance.approvalRequestId),
+										: isNull(approvalChainStageInstance.approvalRequestId),
 								),
 							),
 						),
@@ -2111,9 +2112,9 @@ export function createApprovalCompatibilityWriter(
 				);
 			}
 			await dependencies.projectionWriter.write(result.projection);
-			for (const outbox of result.outbox) {
-				await dependencies.outboxWriter.write(outbox);
-			}
+			await mapSequentially(result.outbox, (outbox) =>
+				dependencies.outboxWriter.write(outbox),
+			);
 			return result;
 		},
 

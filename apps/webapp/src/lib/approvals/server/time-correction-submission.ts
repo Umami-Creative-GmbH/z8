@@ -34,6 +34,7 @@ import {
 	type TimeCorrectionEndpointEvidence,
 } from "@/lib/approvals/domain-adapters/time-correction-contract";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
+import { mapSequentially } from "@/lib/approvals/sequential";
 import {
 	deleteCancelledTimeCorrectionsInTransaction,
 	executeTimeCorrectionSubmissionInTransaction,
@@ -961,7 +962,7 @@ export async function submitCorrection(input: {
 			correction,
 		})) as Omit<ApprovalResult, "correctionEntryIds">;
 		if (result.disposition === "replayed") {
-			for (const inserted of [...newlyInserted].reverse()) {
+			await mapSequentially([...newlyInserted].reverse(), async (inserted) => {
 				const deleted = await tx
 					.delete(timeEntry)
 					.where(
@@ -982,7 +983,7 @@ export async function submitCorrection(input: {
 						conflictType: "time_correction_identity",
 					});
 				}
-			}
+			});
 		}
 		return {
 			...result,

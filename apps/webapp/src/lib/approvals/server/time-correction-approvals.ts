@@ -78,6 +78,7 @@ import type {
 	ApprovalPolicyEvaluationContext,
 	ApprovalPolicyOvertimeRisk,
 } from "../policies/types";
+import { mapSequentially } from "../sequential";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
 import type { ApprovalWorkflowSnapshot } from "../workflow/ports";
@@ -2048,7 +2049,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		) {
 			throw timeCorrectionFinalizationConflict();
 		}
-		for (const correctionEntry of correctionEntries) {
+		await mapSequentially(correctionEntries, async (correctionEntry) => {
 			const original = correctionEntry.replacesEntryId
 				? originalEntriesById.get(correctionEntry.replacesEntryId)
 				: undefined;
@@ -2085,7 +2086,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				)
 				.returning({ id: timeEntry.id });
 			requireSingleMutation(deactivated, correctionEntry.id);
-		}
+		});
 		return {
 			transition: "rejected",
 			requesterEmployeeId: period.employeeId,
@@ -2122,44 +2123,47 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			: []),
 	]);
 
-	for (const [original, correctionEntry] of [
-		[originalClockIn, clockInCorrection],
-		[originalClockOut, clockOutCorrection],
-	] as const) {
-		if (!original || !correctionEntry) continue;
-		const activated = await input.dbService.db
-			.update(timeEntry)
-			.set({ isSuperseded: false, supersededById: null })
-			.where(
-				and(
-					eq(timeEntry.id, correctionEntry.id),
-					eq(timeEntry.organizationId, input.organizationId),
-					eq(timeEntry.employeeId, period.employeeId),
-					eq(timeEntry.type, "correction"),
-					eq(timeEntry.replacesEntryId, original.id),
-					eq(timeEntry.isSuperseded, true),
-					isNull(timeEntry.supersededById),
-				),
-			)
-			.returning({ id: timeEntry.id });
-		requireSingleMutation(activated, correctionEntry.id);
-		const superseded = await input.dbService.db
-			.update(timeEntry)
-			.set({ isSuperseded: true, supersededById: correctionEntry.id })
-			.where(
-				and(
-					eq(timeEntry.id, original.id),
-					eq(timeEntry.organizationId, input.organizationId),
-					eq(timeEntry.employeeId, period.employeeId),
-					eq(timeEntry.type, original.type),
-					eq(timeEntry.isSuperseded, false),
-					isNull(timeEntry.supersededById),
-					exactReplacementLineage(original),
-				),
-			)
-			.returning({ id: timeEntry.id });
-		requireSingleMutation(superseded, original.id);
-	}
+	await mapSequentially(
+		[
+			[originalClockIn, clockInCorrection],
+			[originalClockOut, clockOutCorrection],
+		] as const,
+		async ([original, correctionEntry]) => {
+			if (!original || !correctionEntry) return;
+			const activated = await input.dbService.db
+				.update(timeEntry)
+				.set({ isSuperseded: false, supersededById: null })
+				.where(
+					and(
+						eq(timeEntry.id, correctionEntry.id),
+						eq(timeEntry.organizationId, input.organizationId),
+						eq(timeEntry.employeeId, period.employeeId),
+						eq(timeEntry.type, "correction"),
+						eq(timeEntry.replacesEntryId, original.id),
+						eq(timeEntry.isSuperseded, true),
+						isNull(timeEntry.supersededById),
+					),
+				)
+				.returning({ id: timeEntry.id });
+			requireSingleMutation(activated, correctionEntry.id);
+			const superseded = await input.dbService.db
+				.update(timeEntry)
+				.set({ isSuperseded: true, supersededById: correctionEntry.id })
+				.where(
+					and(
+						eq(timeEntry.id, original.id),
+						eq(timeEntry.organizationId, input.organizationId),
+						eq(timeEntry.employeeId, period.employeeId),
+						eq(timeEntry.type, original.type),
+						eq(timeEntry.isSuperseded, false),
+						isNull(timeEntry.supersededById),
+						exactReplacementLineage(original),
+					),
+				)
+				.returning({ id: timeEntry.id });
+			requireSingleMutation(superseded, original.id);
+		},
+	);
 
 	const finalizedAt = instantToTimeCorrectionDate(input.finalizedAt);
 	const updatedPeriods = await input.dbService.db

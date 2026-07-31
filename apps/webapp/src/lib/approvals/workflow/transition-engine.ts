@@ -6,6 +6,7 @@ import type {
 	ApprovalTerminalFinalizationResult,
 	ApprovalWorkflowTransactionContext,
 } from "../domain-adapters/types";
+import { mapSequentially } from "../sequential";
 import type {
 	ApprovalCommandActorResolver,
 	ApprovalCommandResult,
@@ -745,9 +746,9 @@ export function createApprovalTransitionEngine(
 					.mirrorCanonicalToLegacy({ result });
 			}
 			await context.projectionWriter.write(result.projection);
-			for (const outbox of result.outbox) {
-				await context.outboxWriter.write(outbox);
-			}
+			await mapSequentially(result.outbox, (outbox) =>
+				context.outboxWriter.write(outbox),
+			);
 			await context.repository.completeCommand({ ...receipt, result });
 			return { result, disposition: "executed", finalization };
 		};

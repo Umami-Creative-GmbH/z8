@@ -12,6 +12,7 @@ import type { ApprovalProjectionWriteInput } from "../projection/contracts";
 import { ApprovalStageActivationError } from "../routing/approver-resolver";
 import { findMatchingRoutingPolicy } from "../routing/policy-matcher";
 import type { ApprovalRoutingContext } from "../routing/types";
+import { mapSequentially } from "../sequential";
 import {
 	deriveApprovalAssignmentId,
 	deriveApprovalEventId,
@@ -1058,10 +1059,10 @@ export async function startApprovalWorkflow(
 		return fail("SOURCE_BINDING_MISMATCH");
 	}
 	await input.context.projectionWriter.write(projection);
-	const outboxResults: ApprovalOutboxWriteResult[] = [];
-	for (const item of outbox) {
-		outboxResults.push(await input.context.outboxWriter.write(item));
-	}
+	const outboxResults: ApprovalOutboxWriteResult[] = await mapSequentially(
+		outbox,
+		(item) => input.context.outboxWriter.write(item),
+	);
 	return {
 		kind: "created",
 		status: currentSnapshot.status,

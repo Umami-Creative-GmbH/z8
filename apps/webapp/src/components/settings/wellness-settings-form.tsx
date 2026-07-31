@@ -29,6 +29,11 @@ import {
 } from "@/lib/wellness/water-presets";
 import { runWithBusyState } from "./run-with-busy-state";
 
+const DAILY_GOAL_DROPLET_KEYS = Array.from(
+	{ length: DAILY_GOAL_RANGE.max },
+	(_, index) => `daily-goal-droplet-${index + 1}`,
+);
+
 interface WellnessSettingsFormProps {
 	initialSettings: WaterReminderSettings;
 }
@@ -256,12 +261,14 @@ export function WellnessSettingsForm({
 										<IconMinus className="size-4" aria-hidden="true" />
 									</Button>
 									<div className="flex flex-wrap gap-1 flex-1 justify-center">
-										{Array.from({ length: field.state.value }, (_, i) => (
-											<IconDropletFilled
-												key={i}
-												className="size-5 text-blue-500"
-											/>
-										))}
+										{DAILY_GOAL_DROPLET_KEYS.slice(0, field.state.value).map(
+											(key) => (
+												<IconDropletFilled
+													key={key}
+													className="size-5 text-blue-500"
+												/>
+											),
+										)}
 									</div>
 									<Button
 										type="button"

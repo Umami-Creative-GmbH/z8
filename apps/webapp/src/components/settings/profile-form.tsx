@@ -580,13 +580,7 @@ function ProfileEditor(props: ProfileEditorProps) {
 	} = props;
 
 	return (
-		<form
-			onSubmit={(event) => {
-				event.preventDefault();
-				form.handleSubmit();
-			}}
-			className="space-y-6"
-		>
+		<form action={() => form.handleSubmit()} className="space-y-6">
 			<ProfileAvatarAndNames {...props} />
 			{isUploadingAvatar && (
 				<ProfileUploadProgress progress={uploadProgress} t={t} />
