@@ -35,7 +35,7 @@
     "notes": "Notize",
     "noTimeCorrectionApprovals": "Kei offeni Zitkorrekturaträg zum Prüefe.",
     "offFrom": "abwesend vom",
-    "openDetailsFor": "Details öffne für ${item.summary.title}",
+    "openDetailsFor": "Details öffne für {title}",
     "openInbox": "Postig öffne",
     "originalTimes": "Ursprünglichi Zite",
     "pendingRequests": "Offeni Aaträg",

@@ -454,7 +454,7 @@
       "title": "Notification Settings"
     },
     "organizations": {
-      "description": "Manage organization members, invitations, and details",
+      "description": "Manage organization details and configuration",
       "notFound": {
         "description": "The organization could not be found or you don't have access to it.",
         "title": "Organization Not Found"

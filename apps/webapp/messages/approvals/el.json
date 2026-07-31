@@ -35,7 +35,7 @@
     "notes": "Σημειώσεις",
     "noTimeCorrectionApprovals": "Δεν υπάρχουν εκκρεμή αιτήματα διόρθωσης χρόνου προς έλεγχο.",
     "offFrom": "απουσία από",
-    "openDetailsFor": "Άνοιγμα λεπτομερειών για ${item.summary.title}",
+    "openDetailsFor": "Άνοιγμα λεπτομερειών για {title}",
     "openInbox": "Άνοιγμα εισερχομένων",
     "originalTimes": "Αρχικοί χρόνοι",
     "pendingRequests": "Εκκρεμή αιτήματα",

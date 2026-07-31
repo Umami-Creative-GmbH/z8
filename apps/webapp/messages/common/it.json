@@ -329,6 +329,14 @@
       "viewAll": "Visualizza tutte le notifiche"
     },
     "content": {
+      "absenceRequestSubmitted": {
+        "message": "La tua richiesta {categoryName} per {dateRange} è stata inviata ed è in attesa di approvazione.",
+        "title": "Richiesta di assenza inviata"
+      },
+      "teamMemberRemoved": {
+        "message": "Sei stato rimosso dal team {teamName} da {performedByName}.",
+        "title": "Rimosso dal team"
+      },
       "passwordChanged": {
         "message": "La tua password è stata modificata correttamente. Se non hai effettuato questa modifica, contatta immediatamente l'assistenza.",
         "title": "Password modificata"

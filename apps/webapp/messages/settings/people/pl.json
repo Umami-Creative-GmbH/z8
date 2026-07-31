@@ -78,7 +78,7 @@
         "title": "Zaproszenia"
       },
       "lifecycle": {
-        "actionsLabel": "Działania dotyczące pracownika ${target.displayName}",
+        "actionsLabel": "Działania dotyczące pracownika {name}",
         "deactivate": "Dezaktywuj",
         "deactivateDescription": "Spowoduje to zawieszenie dostępu do tej organizacji i zakończenie bieżących sesji. Historia pracownika zostanie zachowana.",
         "deactivateError": "Nie udało się dezaktywować pracownika",
@@ -86,6 +86,8 @@
         "deactivateTitle": "Dezaktywować pracownika?",
         "deactivating": "Dezaktywowanie...",
         "deactivatingStatus": "Dezaktywowanie pracownika",
+        "finalOwnerDeactivateGuidance": "Najpierw przypisz i aktywuj innego zatwierdzonego właściciela, zanim dezaktywujesz tego pracownika.",
+        "finalOwnerRemoveGuidance": "Najpierw przypisz i aktywuj innego zatwierdzonego właściciela, zanim odbierzesz temu pracownikowi dostęp.",
         "reactivate": "Aktywuj ponownie",
         "reactivateDescription": "Spowoduje to przywrócenie dostępu do tej organizacji przy użyciu istniejącego rekordu pracownika.",
         "reactivateError": "Nie udało się ponownie aktywować pracownika",

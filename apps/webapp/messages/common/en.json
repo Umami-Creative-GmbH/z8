@@ -329,6 +329,14 @@
       "viewAll": "View all notifications"
     },
     "content": {
+      "absenceRequestSubmitted": {
+        "message": "Your {categoryName} request for {dateRange} has been submitted and is pending approval.",
+        "title": "Absence request submitted"
+      },
+      "teamMemberRemoved": {
+        "message": "You have been removed from the {teamName} team by {performedByName}.",
+        "title": "Removed from team"
+      },
       "passwordChanged": {
         "message": "Your password was successfully changed. If you didn't make this change, please contact support immediately.",
         "title": "Password changed"

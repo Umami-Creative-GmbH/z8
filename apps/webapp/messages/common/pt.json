@@ -329,6 +329,14 @@
       "viewAll": "Ver todas as notificações"
     },
     "content": {
+      "absenceRequestSubmitted": {
+        "message": "Sua solicitação de {categoryName} para {dateRange} foi enviada e está aguardando aprovação.",
+        "title": "Solicitação de ausência enviada"
+      },
+      "teamMemberRemoved": {
+        "message": "Você foi removido da equipe {teamName} por {performedByName}.",
+        "title": "Removido da equipe"
+      },
       "passwordChanged": {
         "message": "Sua senha foi alterada com sucesso. Se você não realizou essa alteração, entre em contato com o suporte imediatamente.",
         "title": "Senha alterada"
