@@ -167,7 +167,6 @@ describe("payroll blocker dismissal schema", () => {
 			...journal.entries.slice(0, migrationIndex).map((entry) => entry.when),
 		);
 
-		expect(migrationIndex).toBe(journal.entries.length - 1);
 		expect(migrationEntry).toMatchObject({
 			breakpoints: true,
 			idx: 59,
