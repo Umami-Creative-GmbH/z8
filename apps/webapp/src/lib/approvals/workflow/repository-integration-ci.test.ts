@@ -36,13 +36,10 @@ describe("approval workflow repository integration CI contract", () => {
           database_name="approval_workflow_repository_test_\${GITHUB_RUN_ID}_\${GITHUB_RUN_ATTEMPT}"`,
 		);
 		expect(workflow).toContain(
-			"SKIP_ENV_VALIDATION=1 pnpm --filter webapp exec drizzle-kit migrate",
-		);
-		expect(workflow).toContain(
-			`APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/\${database_name}"`,
-		);
-		expect(workflow).toContain(
-			"APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test",
+			`SKIP_ENV_VALIDATION=1 \\
+          APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/\${database_name}" \\
+          APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test \\
+          pnpm --filter webapp exec tsx scripts/verify-approval-migration-recovery.ts`,
 		);
 		expect(workflow).toContain("APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED=1");
 		expect(workflow).toContain(

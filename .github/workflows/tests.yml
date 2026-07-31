@@ -99,7 +99,10 @@ jobs:
           export POSTGRES_USER=postgres
           export POSTGRES_PASSWORD=postgres
           export POSTGRES_SSL_MODE=disable
-          SKIP_ENV_VALIDATION=1 pnpm --filter webapp exec drizzle-kit migrate
+          SKIP_ENV_VALIDATION=1 \
+          APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/${database_name}" \
+          APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test \
+          pnpm --filter webapp exec tsx scripts/verify-approval-migration-recovery.ts
 
           APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/${database_name}" \
           APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test \

@@ -45,7 +45,15 @@ const migrationJournal = JSON.parse(
 		new URL("../../../drizzle/meta/_journal.json", import.meta.url),
 		"utf8",
 	),
-) as { entries: Array<{ idx: number; tag: string; when: number }> };
+) as {
+	entries: Array<{
+		idx: number;
+		version: string;
+		when: number;
+		tag: string;
+		breakpoints: boolean;
+	}>;
+};
 const migration0008Snapshot = JSON.parse(
 	readFileSync(
 		new URL("../../../drizzle/meta/0008_snapshot.json", import.meta.url),
@@ -136,6 +144,10 @@ const migration0057SnapshotUrl = new URL(
 );
 const migration0058ActivitySnapshotUrl = new URL(
 	"../../../drizzle/meta/0058_snapshot.json",
+	import.meta.url,
+);
+const migration0060Url = new URL(
+	"../../../drizzle/0060_approval_workflow_recovery.sql",
 	import.meta.url,
 );
 
@@ -1458,6 +1470,56 @@ function dailyRecoveryViolations(sql: string): string[] {
 	return violations;
 }
 
+function approvalRecoveryDestructiveOperationViolations(sql: string): string[] {
+	const withoutRequiredDeleteActions = sql.replaceAll(
+		/\bON\s+DELETE\s+CASCADE\b/gi,
+		"",
+	);
+	const violations: string[] = [];
+	const forbiddenOperations: Array<[label: string, pattern: RegExp]> = [
+		["DROP TABLE", /\bDROP\s+TABLE\b/i],
+		["DROP TYPE", /\bDROP\s+TYPE\b/i],
+		["DROP COLUMN", /\bDROP\s+COLUMN\b/i],
+		["ALTER COLUMN", /\bALTER\s+COLUMN\b/i],
+		["RENAME", /\bRENAME\b/i],
+		["TRUNCATE", /\bTRUNCATE\b/i],
+	];
+
+	if (/\bCASCADE\b/i.test(withoutRequiredDeleteActions)) {
+		violations.push("CASCADE");
+	}
+	for (const [label, pattern] of forbiddenOperations) {
+		if (pattern.test(sql)) violations.push(label);
+	}
+	if (/\bDELETE\s+FROM\s+(?:"public"\.)?"?approval_/i.test(sql)) {
+		violations.push("approval DELETE");
+	}
+	if (/\bUPDATE\s+(?:"public"\.)?"?approval_/i.test(sql)) {
+		violations.push("approval UPDATE");
+	}
+
+	return violations;
+}
+
+function uniqueMarkerIndex(sql: string, marker: string): number {
+	const firstIndex = sql.indexOf(marker);
+	if (firstIndex < 0 || sql.indexOf(marker, firstIndex + marker.length) >= 0) {
+		throw new Error(`Expected exactly one migration marker: ${marker}`);
+	}
+	return firstIndex;
+}
+
+function normalizeMigrationParity(sql: string): string {
+	return sql
+		.replaceAll("\r\n", "\n")
+		.replaceAll("\r", "\n")
+		.replaceAll(/\s*-->\s*statement-breakpoint\s*/g, "\n")
+		.split("\n")
+		.map((line) => line.trim())
+		.filter(Boolean)
+		.join("\n");
+}
+
 function enumMismatches(sql: string, expected: ExpectedEnum[]): string[] {
 	const actual = parsedEnums(sql);
 	return expected
@@ -1743,6 +1805,336 @@ const migration0004Statements = migration0004
 	.filter(Boolean);
 
 describe("drizzle follow-up migrations", () => {
+	it("allows only documented historical journal timestamp inversions", () => {
+		const allowedInversionTags = [
+			"0021_sick_detail",
+			"0027_employee_work_balance",
+		];
+		const inspectTimestamps = (entries: typeof migrationJournal.entries) => {
+			const inversions: Array<{ tag: string; context: string }> = [];
+			const violations: string[] = [];
+
+			entries.slice(1).forEach((entry, index) => {
+				const previous = entries[index];
+				if (entry.when === previous.when) {
+					violations.push(
+						`${entry.tag} (${entry.when}) must not equal ${previous.tag} (${previous.when})`,
+					);
+					return;
+				}
+				if (entry.when > previous.when) return;
+
+				const inversion = {
+					tag: entry.tag,
+					context: `${entry.tag} (${entry.when}) is earlier than ${previous.tag} (${previous.when})`,
+				};
+				inversions.push(inversion);
+				if (!allowedInversionTags.includes(entry.tag)) {
+					violations.push(inversion.context);
+				}
+			});
+
+			return { inversions, violations };
+		};
+		const { inversions, violations } = inspectTimestamps(
+			migrationJournal.entries,
+		);
+
+		expect(
+			violations,
+			"journal timestamp inversions must be explicitly allowlisted",
+		).toEqual([]);
+		expect(
+			inversions.map(({ tag }) => tag).sort(),
+			"historical journal timestamp inversion allowlist must remain necessary",
+		).toEqual([...allowedInversionTags].sort());
+
+		const equalityMutation = migrationJournal.entries.map(
+			(entry, index, entries) =>
+				entry.tag === "0021_sick_detail"
+					? { ...entry, when: entries[index - 1]?.when ?? entry.when }
+					: entry,
+		);
+		expect(inspectTimestamps(equalityMutation).violations).toEqual([
+			expect.stringContaining("0021_sick_detail"),
+		]);
+	});
+
+	it("keeps journal indices contiguous and aligned with tag prefixes", () => {
+		const violations = migrationJournal.entries.flatMap((entry, position) => {
+			const entryViolations: string[] = [];
+			if (entry.idx !== position) {
+				entryViolations.push(
+					`${entry.tag} has idx ${entry.idx}; expected contiguous idx ${position}`,
+				);
+			}
+
+			const tagPrefix = entry.tag.match(/^(\d{4})_/)?.[1];
+			const expectedPrefix = String(entry.idx).padStart(4, "0");
+			if (tagPrefix !== expectedPrefix) {
+				entryViolations.push(
+					`${entry.tag} prefix ${tagPrefix ?? "<missing>"} must match idx ${entry.idx} (${expectedPrefix})`,
+				);
+			}
+
+			return entryViolations;
+		});
+
+		expect(violations, "journal idx and tag prefix violations").toEqual([]);
+	});
+
+	it("keeps SQL migration tags aligned with the journal", () => {
+		const journalTags = migrationJournal.entries.map(({ tag }) => tag).sort();
+		const sqlTags = readdirSync(drizzleDirUrl)
+			.filter((filename) => /^\d{4}_.+\.sql$/.test(filename))
+			.map((filename) => filename.replace(/\.sql$/, ""));
+		const trackedSqlTags = sqlTags
+			.filter((tag) => tag !== "0051_daily_digest_delivery")
+			.sort();
+		const missingSqlTags = journalTags.filter(
+			(tag) => !trackedSqlTags.includes(tag),
+		);
+
+		expect(missingSqlTags, "journal tags missing a matching SQL file").toEqual(
+			[],
+		);
+		expect(
+			trackedSqlTags,
+			"SQL tags must match journal tags except 0051_daily_digest_delivery",
+		).toEqual(journalTags);
+	});
+
+	it("rejects duplicate SQL migration prefixes except historical 0051", () => {
+		const filenamesByPrefix = new Map<string, string[]>();
+		for (const filename of readdirSync(drizzleDirUrl).filter((filename) =>
+			/^\d{4}_.+\.sql$/.test(filename),
+		)) {
+			const prefix = filename.slice(0, 4);
+			filenamesByPrefix.set(prefix, [
+				...(filenamesByPrefix.get(prefix) ?? []),
+				filename,
+			]);
+		}
+		const duplicatePrefixes = Array.from(filenamesByPrefix)
+			.filter(
+				([prefix, filenames]) => prefix !== "0051" && filenames.length > 1,
+			)
+			.map(
+				([prefix, filenames]) => `${prefix}: ${filenames.sort().join(", ")}`,
+			);
+
+		expect(duplicatePrefixes, "duplicate four-digit SQL prefixes").toEqual([]);
+	});
+
+	it("registers the 0060 approval workflow recovery migration after 0059", () => {
+		const expectedTag = "0060_approval_workflow_recovery";
+		const recoveryIndex = migrationJournal.entries.findIndex(
+			({ tag }) => tag === expectedTag,
+		);
+		const payrollBlockerIndex = migrationJournal.entries.findIndex(
+			({ tag }) => tag === "0059_payroll_blocker_dismissal",
+		);
+		const recoveryEntry = migrationJournal.entries[recoveryIndex];
+		const latestPriorWhen = Math.max(
+			...migrationJournal.entries
+				.slice(0, recoveryIndex)
+				.map(({ when }) => when),
+		);
+
+		expect.soft(payrollBlockerIndex).toBeGreaterThanOrEqual(0);
+		expect.soft(recoveryIndex).toBeGreaterThan(payrollBlockerIndex);
+		expect.soft(recoveryEntry?.idx).toBe(60);
+		expect.soft(recoveryEntry?.tag).toBe(expectedTag);
+		expect.soft(recoveryEntry?.version).toBe("7");
+		expect.soft(recoveryEntry?.breakpoints).toBe(true);
+		expect
+			.soft(
+				recoveryEntry?.when ?? 0,
+				`${expectedTag} must be later than all prior entries`,
+			)
+			.toBeGreaterThan(latestPriorWhen);
+		expect
+			.soft(existsSync(migration0060Url), `${expectedTag}.sql must exist`)
+			.toBe(true);
+	});
+
+	it("recovers skipped approval workflow migrations without mutating approval rows", () => {
+		const migration = readRequiredMigration(
+			migration0060Url,
+			"0060 approval workflow recovery migration",
+		);
+		const recoveryGuard =
+			"IF to_regclass('public.approval_workflow') IS NULL THEN";
+		const recoveryGuardPosition = migration.indexOf(recoveryGuard);
+		const dailyRecoveryEndPosition = migration.indexOf(
+			"-- daily digest recovery: end",
+		);
+		const firstApprovalTypePosition = migration.indexOf(
+			'CREATE TYPE "public"."approval_actor_kind"',
+		);
+
+		expect(migration).toContain(recoveryGuard);
+		expect(dailyRecoveryViolations(migration)).toEqual([]);
+		expect(dailyRecoveryEndPosition).toBeLessThan(recoveryGuardPosition);
+		expect(recoveryGuardPosition).toBeLessThan(firstApprovalTypePosition);
+
+		for (const { name } of approvalWorkflowEnums) {
+			expect(migration, `missing approval enum ${name}`).toContain(
+				`CREATE TYPE "public"."${name}" AS ENUM`,
+			);
+		}
+		for (const table of Object.keys(canonicalApprovalTableColumns)) {
+			expect(migration, `missing canonical approval table ${table}`).toContain(
+				`CREATE TABLE "${table}" (`,
+			);
+		}
+		for (const table of [
+			"absence_entry",
+			"compliance_exception",
+			"shift_request",
+			"work_period",
+			"travel_expense_claim",
+		]) {
+			expect(migration, `missing ${table}.approval_workflow_id`).toContain(
+				`ALTER TABLE "${table}" ADD COLUMN "approval_workflow_id" uuid;`,
+			);
+		}
+
+		const pendingIndex: ExpectedIndex = {
+			name: "approvalWorkflow_org_source_pending_idx",
+			table: "approval_workflow",
+			columns: ["organization_id", "workflow_type", "source_type", "source_id"],
+			unique: true,
+			where: "status = 'pending'",
+		};
+		expect(migration).toContain(
+			'DROP INDEX IF EXISTS "approvalWorkflow_org_source_pending_idx";\n--> statement-breakpoint\nCREATE UNIQUE INDEX "approvalWorkflow_org_source_pending_idx" ON "approval_workflow" USING btree ("organization_id","workflow_type","source_type","source_id") WHERE status = \'pending\';',
+		);
+		expect(
+			parsedIndexes(migration).filter(({ name }) => name === pendingIndex.name),
+		).toEqual([pendingIndex]);
+
+		expect(approvalRecoveryDestructiveOperationViolations(migration)).toEqual(
+			[],
+		);
+
+		for (const unsafeSql of [
+			'DROP TABLE "approval_workflow";',
+			'DrOp TyPe "approval_workflow_status";',
+			'ALTER TABLE "approval_workflow" DROP COLUMN "status";',
+			'ALTER TABLE "approval_workflow" ALTER COLUMN "status" TYPE text;',
+			'ALTER TABLE "approval_workflow" RENAME COLUMN "status" TO "state";',
+			'TrUnCaTe TABLE "approval_workflow";',
+			'DELETE FROM "approval_workflow";',
+			'UPDATE "public"."approval_workflow" SET "status" = \'approved\';',
+			'DROP TABLE "approval_workflow" CASCADE;',
+		]) {
+			expect(
+				approvalRecoveryDestructiveOperationViolations(unsafeSql),
+				unsafeSql,
+			).not.toEqual([]);
+		}
+
+		expect(
+			approvalRecoveryDestructiveOperationViolations(`
+ALTER TABLE "absence_entry" DROP CONSTRAINT "absence_entry_organization_id_organization_id_fk";
+DROP INDEX IF EXISTS "approvalWorkflow_org_source_pending_idx";
+ALTER TABLE "approval_workflow_stage" ADD CONSTRAINT "stage_workflow_fk" FOREIGN KEY ("workflow_id") REFERENCES "approval_workflow"("id") ON DELETE cascade;
+`),
+		).toEqual([]);
+	});
+
+	it("preserves exact 0055 and 0056 approval migration semantics", () => {
+		const migration0055 = readFileSync(migration0054Url, "utf8");
+		const migration0056 = readFileSync(migration0055Url, "utf8");
+		const migration0060 = readRequiredMigration(
+			migration0060Url,
+			"0060 approval workflow recovery migration",
+		);
+		const dailyStartMarker = "-- daily digest recovery: begin";
+		const dailyEndMarker = "-- daily digest recovery: end";
+		const guardMarker =
+			"IF to_regclass('public.approval_workflow') IS NULL THEN";
+		const guardEndMarker = "\n\tEND IF;\nEND\n$approval_recovery$;";
+		const doEndMarker = "$approval_recovery$;";
+		const sourceDailyStart = uniqueMarkerIndex(migration0055, dailyStartMarker);
+		const sourceDailyEnd =
+			uniqueMarkerIndex(migration0055, dailyEndMarker) + dailyEndMarker.length;
+		const recoveryDailyStart = uniqueMarkerIndex(
+			migration0060,
+			dailyStartMarker,
+		);
+		const recoveryDailyEnd =
+			uniqueMarkerIndex(migration0060, dailyEndMarker) + dailyEndMarker.length;
+		const recoveryGuardStart =
+			uniqueMarkerIndex(migration0060, guardMarker) + guardMarker.length;
+		const recoveryGuardEnd = uniqueMarkerIndex(migration0060, guardEndMarker);
+		const recoveryTailStart =
+			uniqueMarkerIndex(migration0060, doEndMarker) + doEndMarker.length;
+		const sourceDaily = migration0055.slice(sourceDailyStart, sourceDailyEnd);
+		const recoveryDaily = migration0060.slice(
+			recoveryDailyStart,
+			recoveryDailyEnd,
+		);
+		const sourceApproval = migration0055.slice(sourceDailyEnd);
+		const recoveryApproval = migration0060.slice(
+			recoveryGuardStart,
+			recoveryGuardEnd,
+		);
+		const recoveryIndexTail = migration0060.slice(recoveryTailStart);
+		const normalizedSourceApproval = normalizeMigrationParity(sourceApproval);
+		const normalizedSourceIndexTail = normalizeMigrationParity(migration0056);
+		const normalizedRecoveryIndexTail = normalizeMigrationParity(
+			recoveryIndexTail,
+		).replace(
+			'DROP INDEX IF EXISTS "approvalWorkflow_org_source_pending_idx";',
+			'DROP INDEX "approvalWorkflow_org_source_pending_idx";',
+		);
+
+		expect(normalizeMigrationParity(recoveryDaily)).toBe(
+			normalizeMigrationParity(sourceDaily),
+		);
+		expect(normalizeMigrationParity(recoveryApproval)).toBe(
+			normalizedSourceApproval,
+		);
+		expect(normalizedRecoveryIndexTail).toBe(normalizedSourceIndexTail);
+
+		const compositeForeignKey = sourceApproval
+			.split(/\r?\n/)
+			.find((line) =>
+				line.includes(
+					'CONSTRAINT "approval_outbox_workflow_id_event_id_organization_id_event_type_',
+				),
+			);
+		if (!compositeForeignKey) {
+			throw new Error("Expected composite approval outbox foreign key in 0055");
+		}
+		for (const [label, mutatedApproval] of [
+			[
+				"removed composite foreign key",
+				sourceApproval.replace(compositeForeignKey, ""),
+			],
+			[
+				"changed enum value",
+				sourceApproval.replace("'legacy_unknown'", "'unknown'"),
+			],
+			[
+				"changed pending index column order",
+				sourceApproval.replace(
+					'("organization_id","source_type","source_id") WHERE status = \'pending\'',
+					'("organization_id","source_id","source_type") WHERE status = \'pending\'',
+				),
+			],
+		] as const) {
+			expect(mutatedApproval, `${label} mutation must change 0055`).not.toBe(
+				sourceApproval,
+			);
+			expect(normalizeMigrationParity(mutatedApproval), label).not.toBe(
+				normalizedSourceApproval,
+			);
+		}
+	});
+
 	it("replaces the pending workflow index with exact typed source cycle identity", () => {
 		const migration = readRequiredMigration(
 			migration0055Url,

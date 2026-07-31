@@ -19,16 +19,7 @@ describe("approval workflow repository integration runner", () => {
 		);
 		expect(runner).toContain("approval_workflow_repository_test_");
 		expect(runner).toContain("pg_isready");
-		expect(runner).toContain(
-			'pnpm --dir "$app_directory" exec drizzle-kit migrate',
-		);
-		expect(runner).toContain("SKIP_ENV_VALIDATION=1");
-		expect(runner).toContain(
-			"APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test",
-		);
 		expect(runner).toContain("APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED=1");
-		expect(runner).toContain('POSTGRES_DB="$database_name"');
-		expect(runner).toContain('POSTGRES_PORT="$host_port"');
 		expect(runner).toContain(`POSTGRES_HOST=127.0.0.1 \\
 POSTGRES_PORT="$host_port" \\
 POSTGRES_DB="$database_name" \\
@@ -36,8 +27,8 @@ POSTGRES_USER=postgres \\
 POSTGRES_PASSWORD="$database_password" \\
 POSTGRES_SSL_MODE=disable \\
 PGOPTIONS="-c statement_timeout=15000 -c timezone=UTC" \\
-NODE_OPTIONS="\${NODE_OPTIONS:+\${NODE_OPTIONS} }--throw-deprecation" \\
 APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=`);
+		expect(runner).not.toContain("--throw-deprecation");
 		expect(runner).toContain("docker inspect");
 		expect(runner).toContain("trap cleanup EXIT");
 		expect(runner).toContain("Verified container ownership label");
@@ -52,5 +43,27 @@ APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=`);
 		expect(runner).toContain(
 			"src/lib/approvals/server/work-period-approvals.integration.test.ts",
 		);
+	});
+
+	it("passes the required database safety environment to the migration verifier", async () => {
+		const runner = await readFile(runnerPath, "utf8");
+		const verifierCommandBlock = runner.match(
+			/(?:^[A-Z][A-Z_]*=.* \\\n)+^pnpm --dir "\$app_directory" exec tsx \.\/scripts\/verify-approval-migration-recovery\.ts$/m,
+		)?.[0];
+
+		expect(verifierCommandBlock).toBeDefined();
+		for (const assignment of [
+			"POSTGRES_HOST=127.0.0.1",
+			'POSTGRES_PORT="$host_port"',
+			'POSTGRES_DB="$database_name"',
+			"POSTGRES_USER=postgres",
+			'POSTGRES_PASSWORD="$database_password"',
+			"POSTGRES_SSL_MODE=disable",
+			"SKIP_ENV_VALIDATION=1",
+			"APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=",
+			"APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test",
+		]) {
+			expect(verifierCommandBlock).toContain(assignment);
+		}
 	});
 });
