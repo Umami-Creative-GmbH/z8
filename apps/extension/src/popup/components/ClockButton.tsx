@@ -29,6 +29,7 @@ export function ClockButton({
 
   return (
     <button
+      type="button"
       onClick={handleClick}
       disabled={isLoading || disabled}
       className={cn(

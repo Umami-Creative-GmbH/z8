@@ -6,8 +6,6 @@ import {
 	IconPercentage,
 	IconPlus,
 	IconTrash,
-	IconUser,
-	IconUsers,
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
@@ -27,42 +25,26 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query";
+import {
+	type SurchargeAssignmentData,
+	SurchargeEmployeeAssignmentsCard,
+	SurchargeTeamAssignmentsCard,
+} from "./surcharge-assignment-cards";
 
 interface SurchargeAssignmentManagerProps {
 	canManage: boolean;
 	organizationId: string;
 	onAssignClick: (type: "organization" | "team" | "employee") => void;
-}
-
-interface SurchargeAssignmentData {
-	id: string;
-	modelId: string;
-	assignmentType: "organization" | "team" | "employee";
-	teamId: string | null;
-	employeeId: string | null;
-	priority: number;
-	effectiveFrom: Date | null;
-	effectiveUntil: Date | null;
-	isActive: boolean;
-	createdAt: Date;
-	model: {
-		id: string;
-		name: string;
-	};
-	team: {
-		id: string;
-		name: string;
-	} | null;
-	employee: {
-		id: string;
-		firstName: string | null;
-		lastName: string | null;
-	} | null;
 }
 
 export function SurchargeAssignmentManager({
@@ -73,9 +55,8 @@ export function SurchargeAssignmentManager({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [selectedAssignment, setSelectedAssignment] = useState<SurchargeAssignmentData | null>(
-		null,
-	);
+	const [selectedAssignment, setSelectedAssignment] =
+		useState<SurchargeAssignmentData | null>(null);
 
 	// Fetch assignments
 	const {
@@ -90,16 +71,21 @@ export function SurchargeAssignmentManager({
 				throw new Error(result.error || "Failed to fetch assignments");
 			}
 			// Filter only active assignments
-			return (result.data as SurchargeAssignmentData[]).filter((a) => a.isActive);
+			return (result.data as SurchargeAssignmentData[]).filter(
+				(a) => a.isActive,
+			);
 		},
 	});
 
 	// Delete assignment mutation
 	const deleteMutation = useMutation({
-		mutationFn: (assignmentId: string) => deleteSurchargeAssignment(assignmentId),
+		mutationFn: (assignmentId: string) =>
+			deleteSurchargeAssignment(assignmentId),
 		onSuccess: (result) => {
 			if (result.success) {
-				toast.success(t("settings.surcharges.assignmentDeleted", "Assignment removed"));
+				toast.success(
+					t("settings.surcharges.assignmentDeleted", "Assignment removed"),
+				);
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.surcharges.assignments.list(organizationId),
 				});
@@ -108,12 +94,20 @@ export function SurchargeAssignmentManager({
 			} else {
 				toast.error(
 					result.error ||
-						t("settings.surcharges.assignmentDeleteFailed", "Failed to remove assignment"),
+						t(
+							"settings.surcharges.assignmentDeleteFailed",
+							"Failed to remove assignment",
+						),
 				);
 			}
 		},
 		onError: () => {
-			toast.error(t("settings.surcharges.assignmentDeleteFailed", "Failed to remove assignment"));
+			toast.error(
+				t(
+					"settings.surcharges.assignmentDeleteFailed",
+					"Failed to remove assignment",
+				),
+			);
 		},
 	});
 
@@ -130,9 +124,15 @@ export function SurchargeAssignmentManager({
 
 	// Group assignments by type
 	const allAssignments = assignments || [];
-	const orgAssignment = allAssignments.find((a) => a.assignmentType === "organization");
-	const teamAssignments = allAssignments.filter((a) => a.assignmentType === "team");
-	const employeeAssignments = allAssignments.filter((a) => a.assignmentType === "employee");
+	const orgAssignment = allAssignments.find(
+		(a) => a.assignmentType === "organization",
+	);
+	const teamAssignments = allAssignments.filter(
+		(a) => a.assignmentType === "team",
+	);
+	const employeeAssignments = allAssignments.filter(
+		(a) => a.assignmentType === "employee",
+	);
 
 	if (isLoading) {
 		return (
@@ -191,7 +191,11 @@ export function SurchargeAssignmentManager({
 								{t("settings.surcharges.defaultModel", "Default Model")}
 							</h4>
 							{canManage && !orgAssignment && (
-								<Button onClick={() => onAssignClick("organization")} size="sm" variant="outline">
+								<Button
+									onClick={() => onAssignClick("organization")}
+									size="sm"
+									variant="outline"
+								>
 									<IconPlus className="mr-2 size-4" />
 									{t("settings.surcharges.setDefault", "Set Default")}
 								</Button>
@@ -201,10 +205,16 @@ export function SurchargeAssignmentManager({
 							<div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors">
 								<div className="flex items-center gap-3">
 									<IconPercentage className="size-4 text-muted-foreground" />
-									<span className="font-medium">{orgAssignment.model.name}</span>
+									<span className="font-medium">
+										{orgAssignment.model.name}
+									</span>
 								</div>
 								{canManage ? (
 									<Button
+										aria-label={t(
+											"settings.surcharges.removeOrganizationAssignment",
+											"Remove organization assignment",
+										)}
 										variant="ghost"
 										size="icon"
 										className="size-8 text-muted-foreground hover:text-destructive"
@@ -216,157 +226,42 @@ export function SurchargeAssignmentManager({
 							</div>
 						) : (
 							<p className="text-sm text-muted-foreground text-center py-2 border rounded-lg bg-muted/30">
-								{t("settings.surcharges.noOrgDefault", "No default surcharge model set")}
+								{t(
+									"settings.surcharges.noOrgDefault",
+									"No default surcharge model set",
+								)}
 							</p>
 						)}
 					</CardContent>
 				</Card>
 
-				{/* Team Level */}
-				<Card>
-					<CardHeader>
-						<div className="flex items-center gap-2">
-							<IconUsers className="size-5 text-muted-foreground" />
-							<div>
-								<CardTitle className="text-base">
-									{t("settings.surcharges.teamLevel", "Team Level")}
-									{teamAssignments.length > 0 && (
-										<Badge variant="secondary" className="ml-2">
-											{teamAssignments.length}
-										</Badge>
-									)}
-								</CardTitle>
-								<CardDescription>
-									{t(
-										"settings.surcharges.teamLevelDescription",
-										"Override organization defaults for specific teams",
-									)}
-								</CardDescription>
-							</div>
-						</div>
-					</CardHeader>
-					<CardContent>
-						{canManage ? (
-							<div className="flex justify-end mb-2">
-								<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
-									<IconPlus className="mr-2 size-4" />
-									{t("settings.surcharges.assignTeam", "Assign to Team")}
-								</Button>
-							</div>
-						) : null}
-						{teamAssignments.length > 0 ? (
-							<div className="space-y-2">
-								{teamAssignments.map((assignment) => (
-									<div
-										key={assignment.id}
-										className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
-									>
-										<div className="flex items-center gap-3">
-											<IconUsers className="size-4 text-muted-foreground" />
-											<div>
-												<span className="font-medium">{assignment.team?.name}</span>
-												<span className="text-muted-foreground mx-2">→</span>
-												<span className="text-sm">{assignment.model.name}</span>
-											</div>
-										</div>
-										{canManage ? (
-											<Button
-												variant="ghost"
-												size="icon"
-												className="size-8 text-muted-foreground hover:text-destructive"
-												onClick={() => handleDeleteClick(assignment)}
-											>
-												<IconTrash className="size-4" />
-											</Button>
-										) : null}
-									</div>
-								))}
-							</div>
-						) : (
-							<p className="text-sm text-muted-foreground text-center py-4">
-								{t("settings.surcharges.noTeamAssignments", "No team-level assignments")}
-							</p>
-						)}
-					</CardContent>
-				</Card>
+				<SurchargeTeamAssignmentsCard
+					assignments={teamAssignments}
+					canManage={canManage}
+					onAssign={() => onAssignClick("team")}
+					onDelete={handleDeleteClick}
+				/>
 
-				{/* Employee Level */}
-				<Card>
-					<CardHeader>
-						<div className="flex items-center gap-2">
-							<IconUser className="size-5 text-muted-foreground" />
-							<div>
-								<CardTitle className="text-base">
-									{t("settings.surcharges.employeeLevel", "Employee Overrides")}
-									{employeeAssignments.length > 0 && (
-										<Badge variant="secondary" className="ml-2">
-											{employeeAssignments.length}
-										</Badge>
-									)}
-								</CardTitle>
-								<CardDescription>
-									{t(
-										"settings.surcharges.employeeLevelDescription",
-										"Override team or organization defaults for specific employees",
-									)}
-								</CardDescription>
-							</div>
-						</div>
-					</CardHeader>
-					<CardContent>
-						{canManage ? (
-							<div className="flex justify-end mb-2">
-								<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-									<IconPlus className="mr-2 size-4" />
-									{t("settings.surcharges.assignEmployee", "Assign to Employee")}
-								</Button>
-							</div>
-						) : null}
-						{employeeAssignments.length > 0 ? (
-							<div className="space-y-2">
-								{employeeAssignments.map((assignment) => (
-									<div
-										key={assignment.id}
-										className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
-									>
-										<div className="flex items-center gap-3">
-											<IconUser className="size-4 text-muted-foreground" />
-											<div>
-												<span className="font-medium">
-													{assignment.employee?.firstName} {assignment.employee?.lastName}
-												</span>
-												<span className="text-muted-foreground mx-2">→</span>
-												<span className="text-sm">{assignment.model.name}</span>
-											</div>
-										</div>
-										{canManage ? (
-											<Button
-												variant="ghost"
-												size="icon"
-												className="size-8 text-muted-foreground hover:text-destructive"
-												onClick={() => handleDeleteClick(assignment)}
-											>
-												<IconTrash className="size-4" />
-											</Button>
-										) : null}
-									</div>
-								))}
-							</div>
-						) : (
-							<p className="text-sm text-muted-foreground text-center py-4">
-								{t("settings.surcharges.noEmployeeAssignments", "No employee-level overrides")}
-							</p>
-						)}
-					</CardContent>
-				</Card>
+				<SurchargeEmployeeAssignmentsCard
+					assignments={employeeAssignments}
+					canManage={canManage}
+					onAssign={() => onAssignClick("employee")}
+					onDelete={handleDeleteClick}
+				/>
 			</div>
 
 			{/* Delete Confirmation Dialog */}
-			<AlertDialog open={canManage && deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+			<AlertDialog
+				open={canManage && deleteDialogOpen}
+				onOpenChange={setDeleteDialogOpen}
+			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
-							{t("settings.surcharges.deleteAssignmentTitle", "Remove Assignment?")}
+							{t(
+								"settings.surcharges.deleteAssignmentTitle",
+								"Remove Assignment?",
+							)}
 						</AlertDialogTitle>
 						<AlertDialogDescription>
 							{selectedAssignment?.assignmentType === "organization" &&

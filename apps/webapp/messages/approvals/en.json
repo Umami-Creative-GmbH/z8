@@ -35,7 +35,7 @@
     "notes": "Notes",
     "noTimeCorrectionApprovals": "No pending time correction requests to review.",
     "offFrom": "off from",
-    "openDetailsFor": "Open details for ${item.summary.title}",
+    "openDetailsFor": "Open details for {title}",
     "openInbox": "Open Inbox",
     "originalTimes": "Original Times",
     "pendingRequests": "Pending Requests",

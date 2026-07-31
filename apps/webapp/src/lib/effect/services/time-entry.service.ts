@@ -1,7 +1,27 @@
-import { and, desc, eq, gte, isNull, lte, type SQL } from "drizzle-orm";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	gte,
+	isNull,
+	lte,
+	or,
+	type SQL,
+} from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { DateTime } from "luxon";
-import { employee, timeEntry, timeRecord, workPeriod } from "@/db/schema";
+import type { db } from "@/db";
+import { member } from "@/db/auth-schema";
+import {
+	approvalRequest,
+	approvalWorkflow,
+	employee,
+	employeeManagers,
+	timeEntry,
+	timeRecord,
+	workPeriod,
+} from "@/db/schema";
+import { compareInstants } from "@/lib/datetime/temporal-core";
 import {
 	type ChainValidationResult,
 	calculateHash,
@@ -9,12 +29,20 @@ import {
 	validateChainDetailed,
 	verifyHash,
 } from "@/lib/time-tracking/blockchain";
+import { instantFromTimeCorrectionBoundary } from "@/lib/time-tracking/time-correction-temporal";
 import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
-import { ConflictError, type DatabaseError, NotFoundError, ValidationError } from "../errors";
+import {
+	AuthorizationError,
+	ConflictError,
+	type DatabaseError,
+	NotFoundError,
+	ValidationError,
+} from "../errors";
 import { DatabaseService } from "./database.service";
 
 type TimeEntry = typeof timeEntry.$inferSelect;
 type TimeEntryType = "clock_in" | "clock_out" | "correction";
+type TransactionClient = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export interface CreateTimeEntryInput {
 	employeeId: string;
@@ -44,7 +72,8 @@ export interface CreateCorrectionInput {
 	utcOffsetMinutes: number;
 	timezone: string;
 	timezoneSource: TimeEntryTimezoneSource;
-	workPeriodId?: string;
+	workPeriodId: string;
+	transaction?: TransactionClient;
 }
 
 export interface GetTimeEntriesInput {
@@ -61,11 +90,21 @@ export class TimeEntryService extends Context.Tag("TimeEntryService")<
 	{
 		readonly createTimeEntry: (
 			input: CreateTimeEntryInput,
-		) => Effect.Effect<TimeEntry, NotFoundError | ValidationError | DatabaseError>;
+		) => Effect.Effect<
+			TimeEntry,
+			NotFoundError | ValidationError | DatabaseError
+		>;
 
 		readonly createCorrectionEntry: (
 			input: CreateCorrectionInput,
-		) => Effect.Effect<TimeEntry, NotFoundError | ValidationError | ConflictError | DatabaseError>;
+		) => Effect.Effect<
+			TimeEntry,
+			| NotFoundError
+			| ValidationError
+			| ConflictError
+			| AuthorizationError
+			| DatabaseError
+		>;
 
 		readonly getTimeEntries: (
 			input: GetTimeEntriesInput,
@@ -186,116 +225,218 @@ export const TimeEntryServiceLive = Layer.effect(
 
 			createCorrectionEntry: (input) =>
 				Effect.gen(function* (_) {
-					// Verify employee exists in the specified organization
-					const employeeRecord = yield* _(
-						dbService.query("verifyEmployeeForCorrection", async () => {
-							return await dbService.db.query.employee.findFirst({
-								where: and(
-									eq(employee.id, input.employeeId),
-									eq(employee.organizationId, input.organizationId),
-								),
-							});
-						}),
-					);
-
-					if (!employeeRecord) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Employee not found in organization",
-									entityType: "employee",
-									entityId: input.employeeId,
-								}),
-							),
-						);
-					}
-
-					// Verify the entry being replaced exists and belongs to the same org
-					const entryToReplace = yield* _(
-						dbService.query("getEntryToReplace", async () => {
-							const [entry] = await dbService.db
-								.select()
-								.from(timeEntry)
-								.where(
-									and(
-										eq(timeEntry.id, input.replacesEntryId),
-										eq(timeEntry.organizationId, input.organizationId),
-									),
-								)
-								.limit(1);
-							return entry ?? null;
-						}),
-					);
-
-					if (!entryToReplace) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Time entry to replace not found",
-									entityType: "timeEntry",
-									entityId: input.replacesEntryId,
-								}),
-							),
-						);
-					}
-
-					// Validate the entry belongs to the same employee
-					if (entryToReplace.employeeId !== input.employeeId) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Cannot correct another employee's time entry",
-									field: "replacesEntryId",
-									value: input.replacesEntryId,
-								}),
-							),
-						);
-					}
-
-					// Check if entry is already superseded
-					if (entryToReplace.isSuperseded) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "This time entry has already been corrected",
-									field: "replacesEntryId",
-									value: input.replacesEntryId,
-								}),
-							),
-						);
-					}
-
-					// Get previous entry for blockchain linking (per employee-per-org)
-					const previousEntry = yield* _(
-						dbService.query("getPreviousEntryForCorrection", async () => {
-							const [entry] = await dbService.db
-								.select()
-								.from(timeEntry)
-								.where(
-									and(
-										eq(timeEntry.employeeId, input.employeeId),
-										eq(timeEntry.organizationId, input.organizationId),
-									),
-								)
-								.orderBy(desc(timeEntry.createdAt))
-								.limit(1);
-							return entry ?? null;
-						}),
-					);
-
-					// Calculate hash for the correction entry
-					const hash = calculateHash({
-						employeeId: input.employeeId,
-						type: "correction",
-						timestamp: input.timestamp.toISOString(),
-						previousHash: previousEntry?.hash ?? null,
-					});
-
-					// Create correction entry and optionally keep it inactive while approval is pending.
 					const correctionEntry = yield* _(
 						Effect.catchTag(
 							dbService.query("createCorrectionEntry", async () => {
-								return await dbService.db.transaction(async (tx) => {
+								if (!input.workPeriodId) {
+									throw new ValidationError({
+										message: "Work period is required for a correction",
+										field: "workPeriodId",
+									});
+								}
+								const workPeriodId = input.workPeriodId;
+								const applyCorrectionWritesInTransaction = async (
+									tx: TransactionClient,
+								) => {
+									// Global lock order: actor and target employees by ascending ID,
+									// followed by authorization rows, then the work period.
+									const lockedEmployees = await tx
+										.select({
+											id: employee.id,
+											userId: employee.userId,
+											organizationId: employee.organizationId,
+											isActive: employee.isActive,
+											role: employee.role,
+										})
+										.from(employee)
+										.where(
+											and(
+												eq(employee.organizationId, input.organizationId),
+												or(
+													eq(employee.id, input.employeeId),
+													eq(employee.userId, input.createdBy),
+												),
+											),
+										)
+										.orderBy(asc(employee.id))
+										.for("update");
+									const targetEmployees = lockedEmployees.filter(
+										(candidate) => candidate.id === input.employeeId,
+									);
+									if (
+										targetEmployees.length !== 1 ||
+										targetEmployees[0]?.organizationId !==
+											input.organizationId ||
+										targetEmployees[0]?.isActive !== true
+									) {
+										throw new NotFoundError({
+											message: "Employee not found in organization",
+											entityType: "employee",
+											entityId: input.employeeId,
+										});
+									}
+									const actorEmployees = lockedEmployees.filter(
+										(candidate) => candidate.userId === input.createdBy,
+									);
+									const actorEmployee = actorEmployees[0];
+									const expectedEmployeeCount =
+										actorEmployee?.id === input.employeeId ? 1 : 2;
+									if (
+										actorEmployees.length !== 1 ||
+										!actorEmployee ||
+										actorEmployee.organizationId !== input.organizationId ||
+										actorEmployee.isActive !== true ||
+										lockedEmployees.length !== expectedEmployeeCount ||
+										new Set(lockedEmployees.map(({ id }) => id)).size !==
+											expectedEmployeeCount
+									) {
+										throw new AuthorizationError({
+											message: "Not authorized to correct this time entry",
+											userId: input.createdBy,
+											resource: "time_entry",
+											action: "correct",
+										});
+									}
+									const [actorMembership] = await tx
+										.select({ id: member.id })
+										.from(member)
+										.where(
+											and(
+												eq(member.userId, input.createdBy),
+												eq(member.organizationId, input.organizationId),
+												eq(member.status, "approved"),
+											),
+										)
+										.for("update");
+									if (!actorMembership) {
+										throw new AuthorizationError({
+											message: "Not authorized to correct this time entry",
+											userId: input.createdBy,
+											resource: "time_entry",
+											action: "correct",
+										});
+									}
+									if (
+										actorEmployee.id !== input.employeeId &&
+										actorEmployee.role !== "admin"
+									) {
+										const [managerAssignment] = await tx
+											.select({ id: employeeManagers.id })
+											.from(employeeManagers)
+											.where(
+												and(
+													eq(employeeManagers.employeeId, input.employeeId),
+													eq(employeeManagers.managerId, actorEmployee.id),
+												),
+											)
+											.for("update");
+										if (!managerAssignment) {
+											throw new AuthorizationError({
+												message: "Not authorized to correct this time entry",
+												userId: input.createdBy,
+												resource: "time_entry",
+												action: "correct",
+											});
+										}
+									}
+									const [period] = await tx
+										.select()
+										.from(workPeriod)
+										.where(
+											and(
+												eq(workPeriod.id, workPeriodId),
+												eq(workPeriod.employeeId, input.employeeId),
+												eq(workPeriod.organizationId, input.organizationId),
+												isNull(workPeriod.deletedAt),
+											),
+										)
+										.for("update");
+									if (!period) {
+										throw new NotFoundError({
+											message: "Work period not found",
+											entityType: "workPeriod",
+											entityId: workPeriodId,
+										});
+									}
+									const correctsClockIn =
+										period.clockInId === input.replacesEntryId;
+									const correctsClockOut =
+										period.clockOutId === input.replacesEntryId;
+									if (!correctsClockIn && !correctsClockOut) {
+										throw new ConflictError({
+											message:
+												"Work period no longer contains the corrected time entry",
+											conflictType: "time_correction_work_period_stale",
+										});
+									}
+									const [entryToReplace] = await tx
+										.select()
+										.from(timeEntry)
+										.where(
+											and(
+												eq(timeEntry.id, input.replacesEntryId),
+												eq(timeEntry.employeeId, input.employeeId),
+												eq(timeEntry.organizationId, input.organizationId),
+												eq(timeEntry.isSuperseded, false),
+											),
+										)
+										.for("update");
+									if (!entryToReplace) {
+										throw new ConflictError({
+											message:
+												"Time entry was already corrected by another process",
+											conflictType: "time_entry_already_corrected",
+										});
+									}
+									const [legacyPending, canonicalPending] = await Promise.all([
+										tx.query.approvalRequest.findFirst({
+											where: and(
+												eq(
+													approvalRequest.organizationId,
+													input.organizationId,
+												),
+												eq(approvalRequest.entityType, "time_entry"),
+												eq(approvalRequest.entityId, workPeriodId),
+												eq(approvalRequest.status, "pending"),
+											),
+										}),
+										tx.query.approvalWorkflow.findFirst({
+											where: and(
+												eq(
+													approvalWorkflow.organizationId,
+													input.organizationId,
+												),
+												eq(approvalWorkflow.workflowType, "time_correction"),
+												eq(approvalWorkflow.sourceType, "time_entry"),
+												eq(approvalWorkflow.sourceId, workPeriodId),
+												eq(approvalWorkflow.status, "pending"),
+											),
+										}),
+									]);
+									if (legacyPending || canonicalPending) {
+										throw new ConflictError({
+											message:
+												"A time correction approval is already pending for this work period",
+											conflictType: "pending_time_correction_approval",
+										});
+									}
+									const [previousEntry] = await tx
+										.select()
+										.from(timeEntry)
+										.where(
+											and(
+												eq(timeEntry.employeeId, input.employeeId),
+												eq(timeEntry.organizationId, input.organizationId),
+											),
+										)
+										.orderBy(desc(timeEntry.createdAt))
+										.limit(1);
+									const hash = calculateHash({
+										employeeId: input.employeeId,
+										type: "correction",
+										timestamp: input.timestamp.toISOString(),
+										previousHash: previousEntry?.hash ?? null,
+									});
 									const [newEntry] = await tx
 										.insert(timeEntry)
 										.values({
@@ -339,116 +480,97 @@ export const TimeEntryServiceLive = Layer.effect(
 
 										if (supersededEntries.length === 0) {
 											throw new ConflictError({
-												message: "Time entry was already corrected by another process",
+												message:
+													"Time entry was already corrected by another process",
 												conflictType: "time_entry_already_corrected",
 											});
 										}
 
-										if (input.workPeriodId) {
-											const [period] = await tx
-												.select()
-												.from(workPeriod)
-												.where(
-													and(
-														eq(workPeriod.id, input.workPeriodId),
-														eq(workPeriod.employeeId, input.employeeId),
-														eq(workPeriod.organizationId, input.organizationId),
-														isNull(workPeriod.deletedAt),
-													),
-												)
-												.for("update");
+										const startTime = correctsClockIn
+											? input.timestamp
+											: period.startTime;
+										const endTime = correctsClockOut
+											? input.timestamp
+											: period.endTime;
+										const start = instantFromTimeCorrectionBoundary(startTime);
+										const end = endTime
+											? instantFromTimeCorrectionBoundary(endTime)
+											: null;
+										if (end && compareInstants(end, start) <= 0) {
+											throw new ValidationError({
+												message: "Clock out time must be after clock in time",
+												field: "workPeriodId",
+												value: input.workPeriodId,
+											});
+										}
+										const durationMinutes = end
+											? Math.floor(start.until(end).total("minutes"))
+											: null;
+										const endpointCondition = correctsClockIn
+											? eq(workPeriod.clockInId, input.replacesEntryId)
+											: eq(workPeriod.clockOutId, input.replacesEntryId);
+										const updatedPeriods = await tx
+											.update(workPeriod)
+											.set({
+												...(correctsClockIn
+													? { clockInId: newEntry.id, startTime }
+													: { clockOutId: newEntry.id, endTime }),
+												durationMinutes,
+												updatedAt: new Date(),
+											})
+											.where(
+												and(
+													eq(workPeriod.id, workPeriodId),
+													eq(workPeriod.employeeId, input.employeeId),
+													eq(workPeriod.organizationId, input.organizationId),
+													isNull(workPeriod.deletedAt),
+													endpointCondition,
+												),
+											)
+											.returning({ id: workPeriod.id });
 
-											if (!period) {
-												throw new NotFoundError({
-													message: "Work period not found",
-													entityType: "workPeriod",
-													entityId: input.workPeriodId,
-												});
-											}
+										if (updatedPeriods.length === 0) {
+											throw new ConflictError({
+												message:
+													"Work period changed while applying the correction",
+												conflictType: "time_correction_work_period_stale",
+												details: { workPeriodId: period.id },
+											});
+										}
 
-											const correctsClockIn = period.clockInId === input.replacesEntryId;
-											const correctsClockOut = period.clockOutId === input.replacesEntryId;
-											if (!correctsClockIn && !correctsClockOut) {
-												throw new ConflictError({
-													message: "Work period no longer contains the corrected time entry",
-													conflictType: "time_correction_work_period_stale",
-													details: { workPeriodId: period.id },
-												});
-											}
-
-											const startTime = correctsClockIn ? input.timestamp : period.startTime;
-											const endTime = correctsClockOut ? input.timestamp : period.endTime;
-											const start = DateTime.fromJSDate(startTime, { zone: "utc" });
-											const end = endTime ? DateTime.fromJSDate(endTime, { zone: "utc" }) : null;
-											if (end && end <= start) {
-												throw new ValidationError({
-													message: "Clock out time must be after clock in time",
-													field: "workPeriodId",
-													value: input.workPeriodId,
-												});
-											}
-											const durationMinutes = end
-												? Math.floor(end.diff(start, "minutes").minutes)
-												: null;
-											const endpointCondition = correctsClockIn
-												? eq(workPeriod.clockInId, input.replacesEntryId)
-												: eq(workPeriod.clockOutId, input.replacesEntryId);
-											const updatedPeriods = await tx
-												.update(workPeriod)
+										if (period.canonicalRecordId) {
+											await tx
+												.update(timeRecord)
 												.set({
-													...(correctsClockIn
-														? { clockInId: newEntry.id, startTime }
-														: { clockOutId: newEntry.id, endTime }),
+													startAt: startTime,
+													endAt: endTime,
 													durationMinutes,
-													updatedAt: new Date(),
+													updatedBy: input.createdBy,
 												})
 												.where(
 													and(
-														eq(workPeriod.id, input.workPeriodId),
-														eq(workPeriod.employeeId, input.employeeId),
-														eq(workPeriod.organizationId, input.organizationId),
-														isNull(workPeriod.deletedAt),
-														endpointCondition,
+														eq(timeRecord.id, period.canonicalRecordId),
+														eq(timeRecord.employeeId, input.employeeId),
+														eq(timeRecord.organizationId, input.organizationId),
+														eq(timeRecord.recordKind, "work"),
 													),
-												)
-												.returning({ id: workPeriod.id });
-
-											if (updatedPeriods.length === 0) {
-												throw new ConflictError({
-													message: "Work period changed while applying the correction",
-													conflictType: "time_correction_work_period_stale",
-													details: { workPeriodId: period.id },
-												});
-											}
-
-											if (period.canonicalRecordId) {
-												await tx
-													.update(timeRecord)
-													.set({
-														startAt: startTime,
-														endAt: endTime,
-														durationMinutes,
-														updatedBy: input.createdBy,
-													})
-													.where(
-														and(
-															eq(timeRecord.id, period.canonicalRecordId),
-															eq(timeRecord.employeeId, input.employeeId),
-															eq(timeRecord.organizationId, input.organizationId),
-															eq(timeRecord.recordKind, "work"),
-														),
-													);
-											}
+												);
 										}
 									}
 
 									return newEntry;
-								});
+								};
+								return input.transaction
+									? applyCorrectionWritesInTransaction(input.transaction)
+									: dbService.db.transaction(
+											applyCorrectionWritesInTransaction,
+										);
 							}),
 							"DatabaseError",
 							(error) =>
 								Effect.fail(
 									error.cause instanceof ConflictError ||
+										error.cause instanceof AuthorizationError ||
 										error.cause instanceof NotFoundError ||
 										error.cause instanceof ValidationError
 										? error.cause
@@ -545,7 +667,12 @@ export const TimeEntryServiceLive = Layer.effect(
 							const [result] = await dbService.db
 								.select()
 								.from(timeEntry)
-								.where(and(eq(timeEntry.id, entryId), eq(timeEntry.organizationId, organizationId)))
+								.where(
+									and(
+										eq(timeEntry.id, entryId),
+										eq(timeEntry.organizationId, organizationId),
+									),
+								)
 								.limit(1);
 							return result ?? null;
 						}),

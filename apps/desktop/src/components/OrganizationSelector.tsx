@@ -73,13 +73,11 @@ export function OrganizationSelector({
 
       {isOpen && (
         <>
-          <button
-            type="button"
+          <div
+            aria-hidden="true"
             className="org-dropdown-backdrop"
             tabIndex={-1}
-            aria-hidden="true"
             onClick={() => setIsOpen(false)}
-            style={{ background: "transparent", border: 0, outline: "none", padding: 0 }}
           />
           <div className="org-dropdown">
             <div className="org-dropdown-label">Switch Organization</div>

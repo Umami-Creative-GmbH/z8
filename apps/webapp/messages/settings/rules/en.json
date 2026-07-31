@@ -86,6 +86,13 @@
       "addPolicy": "Add Policy",
       "approvalType": {
         "absenceRequests": "Absence requests",
+        "absence": "Absence",
+        "complianceException": "Compliance exception",
+        "manualTimeSubmission": "Manual time submission",
+        "policyClockOut": "Policy clock-out",
+        "shiftRequest": "Shift request",
+        "timeCorrection": "Time correction",
+        "travelExpense": "Travel expense",
         "timeEntryChanges": "Time entry changes",
         "travelExpenses": "Travel expenses"
       },
@@ -124,6 +131,21 @@
       "toast": {
         "created": "Approval policy created",
         "saveFailed": "Approval policy could not be saved."
+      },
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Send the request to the default manager when this stage cannot resolve an approver.",
+          "label": "Default manager"
+        },
+        "fail": {
+          "description": "Reject the request when this stage cannot resolve an approver.",
+          "label": "Fail request"
+        },
+        "label": "Fallback behavior",
+        "organizationAdmin": {
+          "description": "Send the request to an organization admin when this stage cannot resolve an approver.",
+          "label": "Organization admin"
+        }
       },
       "validation": {
         "activePolicyRequiresStage": "Active policies require at least one approval stage.",

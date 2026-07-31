@@ -42,6 +42,7 @@ export function createMobileClockInAction({
 export function createMobileClockOutAction(options: ActionEvidenceOptions = {}) {
 	return {
 		action: "clock_out" as const,
+		submissionId: crypto.randomUUID(),
 		...captureActionEvidence(options),
 	};
 }

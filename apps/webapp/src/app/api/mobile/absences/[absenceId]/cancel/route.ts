@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { cancelAbsenceRequestForEmployee } from "@/app/[locale]/(app)/absences/actions";
+import { cancelAbsenceRequestForExpectedEmployee } from "@/app/[locale]/(app)/absences/cancel-absence-service";
 import {
 	MobileApiError,
 	requireMobileEmployee,
@@ -11,15 +11,22 @@ export async function POST(
 	{ params }: { params: Promise<{ absenceId: string }> },
 ) {
 	try {
-		const { session, activeOrganizationId } = await requireMobileSessionContext(request);
+		const { session, activeOrganizationId } =
+			await requireMobileSessionContext(request);
 
 		if (!activeOrganizationId) {
 			throw new MobileApiError(400, "Active organization required");
 		}
 
-		const employeeRecord = await requireMobileEmployee(session.user.id, activeOrganizationId);
+		const employeeRecord = await requireMobileEmployee(
+			session.user.id,
+			activeOrganizationId,
+		);
 		const { absenceId } = await params;
-		const result = await cancelAbsenceRequestForEmployee(absenceId, employeeRecord);
+		const result = await cancelAbsenceRequestForExpectedEmployee(
+			absenceId,
+			employeeRecord,
+		);
 
 		if (!result.success) {
 			if (result.error === "billing_required") {
@@ -28,7 +35,10 @@ export async function POST(
 						? result.reason
 						: "subscription_required";
 
-				return NextResponse.json({ error: "billing_required", reason }, { status: 402 });
+				return NextResponse.json(
+					{ error: "billing_required", reason },
+					{ status: 402 },
+				);
 			}
 
 			return NextResponse.json(
@@ -40,9 +50,15 @@ export async function POST(
 		return NextResponse.json(result);
 	} catch (error) {
 		if (error instanceof MobileApiError) {
-			return NextResponse.json({ error: error.message }, { status: error.status });
+			return NextResponse.json(
+				{ error: error.message },
+				{ status: error.status },
+			);
 		}
 
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }

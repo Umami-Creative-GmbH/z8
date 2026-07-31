@@ -8,18 +8,41 @@ import type { PieLabelRenderProps } from "recharts";
 import { Badge } from "@/components/ui/badge";
 
 // Dynamic imports for recharts to reduce initial bundle size
-const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), { ssr: false });
-const BarChart = dynamic(() => import("recharts").then((mod) => mod.BarChart), { ssr: false });
-const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.CartesianGrid), {
+const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), {
 	ssr: false,
 });
-const Cell = dynamic(() => import("recharts").then((mod) => mod.Cell), { ssr: false });
-const Pie = dynamic(() => import("recharts").then((mod) => mod.Pie), { ssr: false });
-const PieChart = dynamic(() => import("recharts").then((mod) => mod.PieChart), { ssr: false });
-const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
-const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
+const BarChart = dynamic(() => import("recharts").then((mod) => mod.BarChart), {
+	ssr: false,
+});
+const CartesianGrid = dynamic(
+	() => import("recharts").then((mod) => mod.CartesianGrid),
+	{
+		ssr: false,
+	},
+);
+const Cell = dynamic(() => import("recharts").then((mod) => mod.Cell), {
+	ssr: false,
+});
+const Pie = dynamic(() => import("recharts").then((mod) => mod.Pie), {
+	ssr: false,
+});
+const PieChart = dynamic(() => import("recharts").then((mod) => mod.PieChart), {
+	ssr: false,
+});
+const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), {
+	ssr: false,
+});
+const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), {
+	ssr: false,
+});
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import {
 	type ChartConfig,
 	ChartContainer,
@@ -63,11 +86,21 @@ export function ProjectTeamBreakdown({
 	employeeBreakdown,
 }: ProjectTeamBreakdownProps) {
 	const { t } = useTranslate();
-	const [activeTab, setActiveTab] = useState<"employees" | "teams">("employees");
+	const [activeTab, setActiveTab] = useState<"employees" | "teams">(
+		"employees",
+	);
+	const sortedEmployeeBreakdown = [...employeeBreakdown].sort(
+		(a, b) => b.totalHours - a.totalHours,
+	);
+	const sortedTeamBreakdown = [...teamBreakdown]
+		.sort((a, b) => b.totalHours - a.totalHours)
+		.map((team) => ({
+			...team,
+			members: [...team.members].sort((a, b) => b.totalHours - a.totalHours),
+		}));
 
 	// Prepare chart data
-	const employeeChartData = employeeBreakdown
-		.sort((a, b) => b.totalHours - a.totalHours)
+	const employeeChartData = sortedEmployeeBreakdown
 		.slice(0, 10)
 		.map((emp, index) => ({
 			name: emp.employeeName,
@@ -75,18 +108,19 @@ export function ProjectTeamBreakdown({
 			fill: COLORS[index % COLORS.length],
 		}));
 
-	const teamChartData = teamBreakdown
-		.sort((a, b) => b.totalHours - a.totalHours)
-		.map((team, index) => ({
-			name: team.teamName,
-			hours: team.totalHours,
-			fill: COLORS[index % COLORS.length],
-		}));
+	const teamChartData = sortedTeamBreakdown.map((team, index) => ({
+		name: team.teamName,
+		hours: team.totalHours,
+		fill: COLORS[index % COLORS.length],
+	}));
 
-	const employeeChartConfig: ChartConfig = employeeChartData.reduce((acc, emp) => {
-		acc[emp.name] = { label: emp.name, color: emp.fill };
-		return acc;
-	}, {} as ChartConfig);
+	const employeeChartConfig: ChartConfig = employeeChartData.reduce(
+		(acc, emp) => {
+			acc[emp.name] = { label: emp.name, color: emp.fill };
+			return acc;
+		},
+		{} as ChartConfig,
+	);
 
 	const teamChartConfig: ChartConfig = teamChartData.reduce((acc, team) => {
 		acc[team.name] = { label: team.name, color: team.fill };
@@ -127,18 +161,26 @@ export function ProjectTeamBreakdown({
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "employees" | "teams")}>
+				<Tabs
+					value={activeTab}
+					onValueChange={(v) => setActiveTab(v as "employees" | "teams")}
+				>
 					<TabsList className="mb-4">
 						<TabsTrigger value="employees">
 							{t("reports.projects.team.byEmployee", "By Employee")}
 						</TabsTrigger>
-						<TabsTrigger value="teams">{t("reports.projects.team.byTeam", "By Team")}</TabsTrigger>
+						<TabsTrigger value="teams">
+							{t("reports.projects.team.byTeam", "By Team")}
+						</TabsTrigger>
 					</TabsList>
 
 					<TabsContent value="employees" className="space-y-4">
 						<div className="grid gap-4 lg:grid-cols-2">
 							{/* Pie Chart */}
-							<ChartContainer config={employeeChartConfig} className="h-[300px]">
+							<ChartContainer
+								config={employeeChartConfig}
+								className="h-[300px]"
+							>
 								<PieChart>
 									<ChartTooltip
 										content={
@@ -174,7 +216,9 @@ export function ProjectTeamBreakdown({
 								<Table>
 									<TableHeader>
 										<TableRow>
-											<TableHead>{t("reports.projects.team.employee", "Employee")}</TableHead>
+											<TableHead>
+												{t("reports.projects.team.employee", "Employee")}
+											</TableHead>
 											<TableHead className="text-right">
 												{t("reports.projects.team.hours", "Hours")}
 											</TableHead>
@@ -185,22 +229,22 @@ export function ProjectTeamBreakdown({
 										</TableRow>
 									</TableHeader>
 									<TableBody>
-										{employeeBreakdown
-											.sort((a, b) => b.totalHours - a.totalHours)
-											.map((emp) => (
-												<TableRow key={emp.employeeId}>
-													<TableCell className="font-medium">{emp.employeeName}</TableCell>
-													<TableCell className="text-right tabular-nums">
-														{emp.totalHours.toFixed(1)}h
-													</TableCell>
-													<TableCell className="text-right tabular-nums">
-														{emp.percentOfTotal.toFixed(0)}%
-													</TableCell>
-													<TableCell className="text-right tabular-nums">
-														{emp.workPeriodCount}
-													</TableCell>
-												</TableRow>
-											))}
+										{sortedEmployeeBreakdown.map((emp) => (
+											<TableRow key={emp.employeeId}>
+												<TableCell className="font-medium">
+													{emp.employeeName}
+												</TableCell>
+												<TableCell className="text-right tabular-nums">
+													{emp.totalHours.toFixed(1)}h
+												</TableCell>
+												<TableCell className="text-right tabular-nums">
+													{emp.percentOfTotal.toFixed(0)}%
+												</TableCell>
+												<TableCell className="text-right tabular-nums">
+													{emp.workPeriodCount}
+												</TableCell>
+											</TableRow>
+										))}
 									</TableBody>
 								</Table>
 							</div>
@@ -253,31 +297,30 @@ export function ProjectTeamBreakdown({
 
 							{/* Team Details */}
 							<div className="space-y-4 overflow-auto max-h-[300px]">
-								{teamBreakdown
-									.sort((a, b) => b.totalHours - a.totalHours)
-									.map((team) => (
-										<div key={team.teamId} className="space-y-2">
-											<div className="flex items-center justify-between">
-												<span className="font-medium">{team.teamName}</span>
-												<Badge variant="secondary">
-													{team.totalHours.toFixed(1)}h ({team.percentOfTotal.toFixed(0)}%)
-												</Badge>
-											</div>
-											<div className="pl-4 space-y-1">
-												{team.members
-													.sort((a, b) => b.totalHours - a.totalHours)
-													.map((member) => (
-														<div
-															key={member.employeeId}
-															className="flex justify-between text-sm text-muted-foreground"
-														>
-															<span>{member.employeeName}</span>
-															<span className="tabular-nums">{member.totalHours.toFixed(1)}h</span>
-														</div>
-													))}
-											</div>
+								{sortedTeamBreakdown.map((team) => (
+									<div key={team.teamId} className="space-y-2">
+										<div className="flex items-center justify-between">
+											<span className="font-medium">{team.teamName}</span>
+											<Badge variant="secondary">
+												{team.totalHours.toFixed(1)}h (
+												{team.percentOfTotal.toFixed(0)}%)
+											</Badge>
 										</div>
-									))}
+										<div className="pl-4 space-y-1">
+											{team.members.map((member) => (
+												<div
+													key={member.employeeId}
+													className="flex justify-between text-sm text-muted-foreground"
+												>
+													<span>{member.employeeName}</span>
+													<span className="tabular-nums">
+														{member.totalHours.toFixed(1)}h
+													</span>
+												</div>
+											))}
+										</div>
+									</div>
+								))}
 							</div>
 						</div>
 					</TabsContent>

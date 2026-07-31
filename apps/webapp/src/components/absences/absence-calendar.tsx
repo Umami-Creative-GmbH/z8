@@ -38,88 +38,7 @@ interface DateStatus {
 	holidays?: Array<Pick<Holiday, "id" | "name">>;
 }
 
-function AbsenceCalendarHeader({
-	title,
-	onPreviousMonth,
-	onNextMonth,
-}: {
-	title: string;
-	onPreviousMonth: () => void;
-	onNextMonth: () => void;
-}) {
-	return (
-		<CardHeader>
-			<div className="flex items-center justify-between">
-				<CardTitle>{title}</CardTitle>
-				<div className="flex gap-2">
-					<Button variant="outline" size="icon" onClick={onPreviousMonth}>
-						<IconChevronLeft className="size-4" />
-					</Button>
-					<Button variant="outline" size="icon" onClick={onNextMonth}>
-						<IconChevronRight className="size-4" />
-					</Button>
-				</div>
-			</div>
-		</CardHeader>
-	);
-}
-
-function AbsenceCalendarLegend() {
-	const { t } = useTranslate();
-
-	return (
-		<div className="mt-6 flex flex-wrap gap-4 border-t pt-6 text-sm">
-			<div className="flex items-center gap-2">
-				<div className="size-3 rounded bg-blue-500/20" />
-				<span className="text-muted-foreground">
-					{t("absences.calendar.legend.approved", "Approved")}
-				</span>
-			</div>
-			<div className="flex items-center gap-2">
-				<div className="size-3 rounded bg-yellow-500/20" />
-				<span className="text-muted-foreground">
-					{t("absences.calendar.legend.pending", "Pending")}
-				</span>
-			</div>
-			<div className="flex items-center gap-2">
-				<div className="size-3 rounded bg-red-500/20" />
-				<span className="text-muted-foreground">
-					{t("absences.calendar.legend.rejected", "Rejected")}
-				</span>
-			</div>
-			<div className="flex items-center gap-2">
-				<div className="size-3 rounded bg-muted" />
-				<span className="text-muted-foreground">
-					{t("absences.calendar.legend.holiday", "Holiday")}
-				</span>
-			</div>
-			<div className="flex items-center gap-2">
-				<div
-					className="size-3 rounded"
-					style={{
-						background:
-							"linear-gradient(to bottom, rgba(59, 130, 246, 0.2) 50%, transparent 50%)",
-					}}
-				/>
-				<span className="text-muted-foreground">
-					{t("absences.calendar.legend.halfDayAm", "Half day (AM)")}
-				</span>
-			</div>
-			<div className="flex items-center gap-2">
-				<div
-					className="size-3 rounded"
-					style={{
-						background:
-							"linear-gradient(to top, rgba(59, 130, 246, 0.2) 50%, transparent 50%)",
-					}}
-				/>
-				<span className="text-muted-foreground">
-					{t("absences.calendar.legend.halfDayPm", "Half day (PM)")}
-				</span>
-			</div>
-		</div>
-	);
-}
+type Translate = ReturnType<typeof useTranslate>["t"];
 
 export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 	const { t } = useTranslate();
@@ -158,7 +77,6 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 			? [...sundayFirstWeekdays.slice(1), sundayFirstWeekdays[0]]
 			: sundayFirstWeekdays;
 
-	const daysInMonth = new Date(year, month + 1, 0).getDate();
 	const firstDay = new Date(year, month, 1).getDay();
 	const firstDayOfMonth =
 		weekStartDay === "monday" ? (firstDay + 6) % 7 : firstDay;
@@ -172,7 +90,57 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 		setCurrentDate(new Date(year, month + 1, 1));
 	};
 
-	// Check if a date has an absence
+	return (
+		<Card>
+			<CardHeader>
+				<div className="flex items-center justify-between">
+					<CardTitle>
+						{monthNames[month]} {year}
+					</CardTitle>
+					<div className="flex gap-2">
+						<Button variant="outline" size="icon" onClick={previousMonth}>
+							<IconChevronLeft className="size-4" />
+						</Button>
+						<Button variant="outline" size="icon" onClick={nextMonth}>
+							<IconChevronRight className="size-4" />
+						</Button>
+					</div>
+				</div>
+			</CardHeader>
+			<CardContent>
+				<AbsenceCalendarGrid
+					absences={absences}
+					firstDayOfMonth={firstDayOfMonth}
+					holidays={holidays}
+					month={month}
+					t={t}
+					weekdays={weekdays}
+					year={year}
+				/>
+				<AbsenceCalendarLegend t={t} />
+			</CardContent>
+		</Card>
+	);
+}
+
+function AbsenceCalendarGrid({
+	absences,
+	firstDayOfMonth,
+	holidays,
+	month,
+	t,
+	weekdays,
+	year,
+}: {
+	absences: AbsenceWithCategory[];
+	firstDayOfMonth: number;
+	holidays: Holiday[];
+	month: number;
+	t: Translate;
+	weekdays: string[];
+	year: number;
+}) {
+	const daysInMonth = new Date(year, month + 1, 0).getDate();
 	const getDateStatus = (day: number): DateStatus | null => {
 		// Create YYYY-MM-DD string for comparison
 		const dateStr = DateTime.local(year, month + 1, day).toFormat("yyyy-MM-dd");
@@ -244,7 +212,6 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 		return null;
 	};
 
-	// Generate calendar days
 	const days = [];
 	for (let i = 0; i < firstDayOfMonth; i++) {
 		const emptyDateKey = new Date(
@@ -369,32 +336,73 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 	}
 
 	return (
-		<Card>
-			<AbsenceCalendarHeader
-				title={`${monthNames[month]} ${year}`}
-				onPreviousMonth={previousMonth}
-				onNextMonth={nextMonth}
-			/>
-			<CardContent>
-				<TooltipProvider delayDuration={150}>
-					<div className="grid grid-cols-7 gap-2">
-						{/* Day Headers */}
-						{weekdays.map((day) => (
-							<div
-								key={day}
-								className="text-center text-sm font-medium text-muted-foreground pb-2"
-							>
-								{day}
-							</div>
-						))}
-
-						{/* Calendar Days */}
-						{days}
+		<TooltipProvider delayDuration={150}>
+			<div className="grid grid-cols-7 gap-2">
+				{weekdays.map((day) => (
+					<div
+						key={day}
+						className="text-center text-sm font-medium text-muted-foreground pb-2"
+					>
+						{day}
 					</div>
-				</TooltipProvider>
+				))}
+				{days}
+			</div>
+		</TooltipProvider>
+	);
+}
 
-				<AbsenceCalendarLegend />
-			</CardContent>
-		</Card>
+function AbsenceCalendarLegend({ t }: { t: Translate }) {
+	return (
+		<div className="mt-6 pt-6 border-t flex flex-wrap gap-4 text-sm">
+			<div className="flex items-center gap-2">
+				<div className="size-3 rounded bg-blue-500/20" />
+				<span className="text-muted-foreground">
+					{t("absences.calendar.legend.approved", "Approved")}
+				</span>
+			</div>
+			<div className="flex items-center gap-2">
+				<div className="size-3 rounded bg-yellow-500/20" />
+				<span className="text-muted-foreground">
+					{t("absences.calendar.legend.pending", "Pending")}
+				</span>
+			</div>
+			<div className="flex items-center gap-2">
+				<div className="size-3 rounded bg-red-500/20" />
+				<span className="text-muted-foreground">
+					{t("absences.calendar.legend.rejected", "Rejected")}
+				</span>
+			</div>
+			<div className="flex items-center gap-2">
+				<div className="size-3 rounded bg-muted" />
+				<span className="text-muted-foreground">
+					{t("absences.calendar.legend.holiday", "Holiday")}
+				</span>
+			</div>
+			<div className="flex items-center gap-2">
+				<div
+					className="size-3 rounded"
+					style={{
+						background:
+							"linear-gradient(to bottom, rgba(59, 130, 246, 0.2) 50%, transparent 50%)",
+					}}
+				/>
+				<span className="text-muted-foreground">
+					{t("absences.calendar.legend.halfDayAm", "Half day (AM)")}
+				</span>
+			</div>
+			<div className="flex items-center gap-2">
+				<div
+					className="size-3 rounded"
+					style={{
+						background:
+							"linear-gradient(to top, rgba(59, 130, 246, 0.2) 50%, transparent 50%)",
+					}}
+				/>
+				<span className="text-muted-foreground">
+					{t("absences.calendar.legend.halfDayPm", "Half day (PM)")}
+				</span>
+			</div>
+		</div>
 	);
 }

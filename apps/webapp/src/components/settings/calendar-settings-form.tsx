@@ -12,7 +12,7 @@ import {
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { type ComponentProps, type ReactNode, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	type CalendarSettings,
@@ -34,6 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { runWithBusyState } from "./run-with-busy-state";
 
 const READ_ONLY_CALENDAR_SETTINGS_DEFAULTS: CalendarSettingsFormValues = {
 	googleEnabled: false,
@@ -69,30 +70,34 @@ function useCalendarSettingsForm(manageableSettings: CalendarSettings | null) {
 				}
 			: READ_ONLY_CALENDAR_SETTINGS_DEFAULTS,
 		onSubmit: async ({ value }) => {
-			if (!manageableSettings) {
-				return;
-			}
-
-			setLoading(true);
-
-			const result = await updateCalendarSettings(value);
-
-			setLoading(false);
-
-			if (result.success) {
-				toast.success(t("settings.calendar.saved", "Calendar settings saved"));
-			} else {
-				toast.error(
-					result.error ||
+			if (!manageableSettings) return;
+			await runWithBusyState(setLoading, async () => {
+				try {
+					const result = await updateCalendarSettings(value);
+					if (result.success) {
+						toast.success(
+							t("settings.calendar.saved", "Calendar settings saved"),
+						);
+					} else {
+						toast.error(
+							result.error ||
+								t(
+									"settings.calendar.saveError",
+									"Failed to save calendar settings",
+								),
+						);
+					}
+				} catch {
+					toast.error(
 						t(
 							"settings.calendar.saveError",
 							"Failed to save calendar settings",
 						),
-				);
-			}
+					);
+				}
+			});
 		},
 	});
-
 	return { form, loading };
 }
 
@@ -141,7 +146,6 @@ export function CalendarSettingsForm({
 			className="space-y-6"
 		>
 			<CalendarConnectionsCard relevantConnections={relevantConnections} />
-
 			<CalendarProvidersCard
 				form={form}
 				settings={manageableSettings}
@@ -167,17 +171,49 @@ export function CalendarSettingsForm({
 	);
 }
 
-interface CalendarFormSectionProps {
-	form: CalendarSettingsFormApi;
-	controlsDisabled: boolean;
-}
-
 function CalendarProvidersCard({
 	form,
 	settings,
 	controlsDisabled,
-}: CalendarFormSectionProps & { settings: CalendarSettings }) {
+}: {
+	form: CalendarSettingsFormApi;
+	settings: CalendarSettings;
+	controlsDisabled: boolean;
+}) {
 	const { t } = useTranslate();
+	const providers = [
+		{
+			name: "googleEnabled" as const,
+			available: settings.googleAvailable,
+			labelId: "google-calendar-label",
+			descriptionId: "google-calendar-desc",
+			label: t("settings.calendar.providers.google", "Google Calendar"),
+			description: t(
+				"settings.calendar.providers.googleDesc",
+				"Sync absences with Google Calendar",
+			),
+			icon: (
+				<IconBrandGoogle className="size-5 text-red-500" aria-hidden="true" />
+			),
+			iconClassName: "bg-red-100 dark:bg-red-900/30",
+		},
+		{
+			name: "microsoft365Enabled" as const,
+			available: settings.microsoft365Available,
+			labelId: "microsoft-calendar-label",
+			descriptionId: "microsoft-calendar-desc",
+			label: t("settings.calendar.providers.microsoft", "Microsoft 365"),
+			description: t(
+				"settings.calendar.providers.microsoftDesc",
+				"Sync absences with Outlook Calendar",
+			),
+			icon: (
+				<IconBrandWindows className="size-5 text-blue-500" aria-hidden="true" />
+			),
+			iconClassName: "bg-blue-100 dark:bg-blue-900/30",
+		},
+	];
+
 	return (
 		<Card>
 			<CardHeader>
@@ -193,64 +229,49 @@ function CalendarProvidersCard({
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				<CalendarProviderRow
-					labelId="google-calendar-label"
-					descriptionId="google-calendar-desc"
-					label={t("settings.calendar.providers.google", "Google Calendar")}
-					description={t(
-						"settings.calendar.providers.googleDesc",
-						"Sync absences with Google Calendar",
-					)}
-					available={settings.googleAvailable}
-					icon={
-						<IconBrandGoogle
-							className="size-5 text-red-500"
-							aria-hidden="true"
-						/>
-					}
-					iconClassName="bg-red-100 dark:bg-red-900/30"
-				>
-					<form.Field name="googleEnabled">
-						{(field) => (
-							<Switch
-								checked={field.state.value}
-								onCheckedChange={field.handleChange}
-								disabled={controlsDisabled || !settings.googleAvailable}
-								aria-labelledby="google-calendar-label"
-								aria-describedby="google-calendar-desc"
-							/>
-						)}
-					</form.Field>
-				</CalendarProviderRow>
-				<CalendarProviderRow
-					labelId="microsoft-calendar-label"
-					descriptionId="microsoft-calendar-desc"
-					label={t("settings.calendar.providers.microsoft", "Microsoft 365")}
-					description={t(
-						"settings.calendar.providers.microsoftDesc",
-						"Sync absences with Outlook Calendar",
-					)}
-					available={settings.microsoft365Available}
-					icon={
-						<IconBrandWindows
-							className="size-5 text-blue-500"
-							aria-hidden="true"
-						/>
-					}
-					iconClassName="bg-blue-100 dark:bg-blue-900/30"
-				>
-					<form.Field name="microsoft365Enabled">
-						{(field) => (
-							<Switch
-								checked={field.state.value}
-								onCheckedChange={field.handleChange}
-								disabled={controlsDisabled || !settings.microsoft365Available}
-								aria-labelledby="microsoft-calendar-label"
-								aria-describedby="microsoft-calendar-desc"
-							/>
-						)}
-					</form.Field>
-				</CalendarProviderRow>
+				{providers.map((provider) => (
+					<div
+						key={provider.name}
+						className="flex items-center justify-between rounded-lg border p-4"
+					>
+						<div className="flex items-center gap-3">
+							<div
+								className={`flex size-10 items-center justify-center rounded-full ${provider.iconClassName}`}
+							>
+								{provider.icon}
+							</div>
+							<div>
+								<div className="flex items-center gap-2">
+									<span id={provider.labelId} className="font-medium">
+										{provider.label}
+									</span>
+									{!provider.available && (
+										<Badge variant="secondary" className="text-xs">
+											{t("settings.calendar.notConfigured", "Not Configured")}
+										</Badge>
+									)}
+								</div>
+								<p
+									id={provider.descriptionId}
+									className="text-sm text-muted-foreground"
+								>
+									{provider.description}
+								</p>
+							</div>
+						</div>
+						<form.Field name={provider.name}>
+							{(field) => (
+								<Switch
+									checked={field.state.value}
+									onCheckedChange={field.handleChange}
+									disabled={controlsDisabled || !provider.available}
+									aria-labelledby={provider.labelId}
+									aria-describedby={provider.descriptionId}
+								/>
+							)}
+						</form.Field>
+					</div>
+				))}
 				{!settings.googleAvailable && !settings.microsoft365Available && (
 					<Alert>
 						<IconInfoCircle className="size-4" aria-hidden="true" />
@@ -267,57 +288,46 @@ function CalendarProvidersCard({
 	);
 }
 
-function CalendarProviderRow({
-	labelId,
-	descriptionId,
-	label,
-	description,
-	available,
-	icon,
-	iconClassName,
-	children,
+function IcsFeedsCard({
+	form,
+	controlsDisabled,
 }: {
-	labelId: string;
-	descriptionId: string;
-	label: string;
-	description: string;
-	available: boolean;
-	icon: ReactNode;
-	iconClassName: string;
-	children: ReactNode;
+	form: CalendarSettingsFormApi;
+	controlsDisabled: boolean;
 }) {
 	const { t } = useTranslate();
-	return (
-		<div className="flex items-center justify-between rounded-lg border p-4">
-			<div className="flex items-center gap-3">
-				<div
-					className={`flex size-10 items-center justify-center rounded-full ${iconClassName}`}
-				>
-					{icon}
-				</div>
-				<div>
-					<div className="flex items-center gap-2">
-						<span id={labelId} className="font-medium">
-							{label}
-						</span>
-						{!available && (
-							<Badge variant="secondary" className="text-xs">
-								{t("settings.calendar.notConfigured", "Not Configured")}
-							</Badge>
-						)}
-					</div>
-					<p id={descriptionId} className="text-sm text-muted-foreground">
-						{description}
-					</p>
-				</div>
-			</div>
-			{children}
-		</div>
-	);
-}
+	const feeds = [
+		{
+			name: "icsFeedsEnabled" as const,
+			labelId: "personal-ics-label",
+			descriptionId: "personal-ics-desc",
+			label: t("settings.calendar.icsFeeds.personal", "Personal ICS Feeds"),
+			description: t(
+				"settings.calendar.icsFeeds.personalDesc",
+				"Employees can create read-only calendar subscriptions for their absences",
+			),
+			icon: (
+				<IconCalendarShare
+					className="size-5 text-purple-500"
+					aria-hidden="true"
+				/>
+			),
+			iconClassName: "bg-purple-100 dark:bg-purple-900/30",
+		},
+		{
+			name: "teamIcsFeedsEnabled" as const,
+			labelId: "team-ics-label",
+			descriptionId: "team-ics-desc",
+			label: t("settings.calendar.icsFeeds.team", "Team ICS Feeds"),
+			description: t(
+				"settings.calendar.icsFeeds.teamDesc",
+				"Team leads can create shared feeds showing all team absences",
+			),
+			icon: <IconUsers className="size-5 text-green-500" aria-hidden="true" />,
+			iconClassName: "bg-green-100 dark:bg-green-900/30",
+		},
+	];
 
-function IcsFeedsCard({ form, controlsDisabled }: CalendarFormSectionProps) {
-	const { t } = useTranslate();
 	return (
 		<Card>
 			<CardHeader>
@@ -333,74 +343,54 @@ function IcsFeedsCard({ form, controlsDisabled }: CalendarFormSectionProps) {
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				<IcsFeedRow
-					labelId="personal-ics-label"
-					descriptionId="personal-ics-desc"
-					label={t("settings.calendar.icsFeeds.personal", "Personal ICS Feeds")}
-					description={t(
-						"settings.calendar.icsFeeds.personalDesc",
-						"Employees can create read-only calendar subscriptions for their absences",
-					)}
-					icon={
-						<IconCalendarShare
-							className="size-5 text-purple-500"
-							aria-hidden="true"
-						/>
-					}
-					iconClassName="bg-purple-100 dark:bg-purple-900/30"
-				>
-					<form.Field name="icsFeedsEnabled">
-						{(field) => (
-							<Switch
-								checked={field.state.value}
-								onCheckedChange={field.handleChange}
-								disabled={controlsDisabled}
-								aria-labelledby="personal-ics-label"
-								aria-describedby="personal-ics-desc"
-							/>
-						)}
-					</form.Field>
-				</IcsFeedRow>
-				<IcsFeedRow
-					labelId="team-ics-label"
-					descriptionId="team-ics-desc"
-					label={t("settings.calendar.icsFeeds.team", "Team ICS Feeds")}
-					description={t(
-						"settings.calendar.icsFeeds.teamDesc",
-						"Team leads can create shared feeds showing all team absences",
-					)}
-					icon={
-						<IconUsers className="size-5 text-green-500" aria-hidden="true" />
-					}
-					iconClassName="bg-green-100 dark:bg-green-900/30"
-				>
-					<form.Field name="teamIcsFeedsEnabled">
-						{(field) => (
-							<Switch
-								checked={field.state.value}
-								onCheckedChange={field.handleChange}
-								disabled={controlsDisabled}
-								aria-labelledby="team-ics-label"
-								aria-describedby="team-ics-desc"
-							/>
-						)}
-					</form.Field>
-				</IcsFeedRow>
+				{feeds.map((feed) => (
+					<div
+						key={feed.name}
+						className="flex items-center justify-between rounded-lg border p-4"
+					>
+						<div className="flex items-center gap-3">
+							<div
+								className={`flex size-10 items-center justify-center rounded-full ${feed.iconClassName}`}
+							>
+								{feed.icon}
+							</div>
+							<div>
+								<span id={feed.labelId} className="font-medium">
+									{feed.label}
+								</span>
+								<p
+									id={feed.descriptionId}
+									className="text-sm text-muted-foreground"
+								>
+									{feed.description}
+								</p>
+							</div>
+						</div>
+						<form.Field name={feed.name}>
+							{(field) => (
+								<Switch
+									checked={field.state.value}
+									onCheckedChange={field.handleChange}
+									disabled={controlsDisabled}
+									aria-labelledby={feed.labelId}
+									aria-describedby={feed.descriptionId}
+								/>
+							)}
+						</form.Field>
+					</div>
+				))}
 			</CardContent>
 		</Card>
 	);
 }
 
-function IcsFeedRow(
-	props: Omit<ComponentProps<typeof CalendarProviderRow>, "available">,
-) {
-	return <CalendarProviderRow {...props} available />;
-}
-
 function SyncBehaviorCard({
 	form,
 	controlsDisabled,
-}: CalendarFormSectionProps) {
+}: {
+	form: CalendarSettingsFormApi;
+	controlsDisabled: boolean;
+}) {
 	const { t } = useTranslate();
 	return (
 		<Card>
@@ -416,7 +406,9 @@ function SyncBehaviorCard({
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				<SwitchSetting
+				<CalendarSwitchField
+					form={form}
+					name="autoSyncOnApproval"
 					labelId="auto-sync-label"
 					descriptionId="auto-sync-desc"
 					label={t(
@@ -427,21 +419,12 @@ function SyncBehaviorCard({
 						"settings.calendar.syncBehavior.autoSyncDesc",
 						"Automatically sync absences to connected calendars when approved",
 					)}
-				>
-					<form.Field name="autoSyncOnApproval">
-						{(field) => (
-							<Switch
-								checked={field.state.value}
-								onCheckedChange={field.handleChange}
-								disabled={controlsDisabled}
-								aria-labelledby="auto-sync-label"
-								aria-describedby="auto-sync-desc"
-							/>
-						)}
-					</form.Field>
-				</SwitchSetting>
+					disabled={controlsDisabled}
+				/>
 				<div className="h-px bg-border" />
-				<SwitchSetting
+				<CalendarSwitchField
+					form={form}
+					name="conflictDetectionRequired"
 					labelId="conflict-check-label"
 					descriptionId="conflict-check-desc"
 					label={t(
@@ -452,36 +435,29 @@ function SyncBehaviorCard({
 						"settings.calendar.syncBehavior.conflictRequiredDesc",
 						"Require employees to check for calendar conflicts before submitting absences",
 					)}
-				>
-					<form.Field name="conflictDetectionRequired">
-						{(field) => (
-							<Switch
-								checked={field.state.value}
-								onCheckedChange={field.handleChange}
-								disabled={controlsDisabled}
-								aria-labelledby="conflict-check-label"
-								aria-describedby="conflict-check-desc"
-							/>
-						)}
-					</form.Field>
-				</SwitchSetting>
+					disabled={controlsDisabled}
+				/>
 			</CardContent>
 		</Card>
 	);
 }
 
-function SwitchSetting({
+function CalendarSwitchField({
+	form,
+	name,
 	labelId,
 	descriptionId,
 	label,
 	description,
-	children,
+	disabled,
 }: {
+	form: CalendarSettingsFormApi;
+	name: "autoSyncOnApproval" | "conflictDetectionRequired";
 	labelId: string;
 	descriptionId: string;
 	label: string;
 	description: string;
-	children: ReactNode;
+	disabled: boolean;
 }) {
 	return (
 		<div className="flex items-center justify-between">
@@ -493,7 +469,17 @@ function SwitchSetting({
 					{description}
 				</p>
 			</div>
-			{children}
+			<form.Field name={name}>
+				{(field) => (
+					<Switch
+						checked={field.state.value}
+						onCheckedChange={field.handleChange}
+						disabled={disabled}
+						aria-labelledby={labelId}
+						aria-describedby={descriptionId}
+					/>
+				)}
+			</form.Field>
 		</div>
 	);
 }
@@ -501,7 +487,10 @@ function SwitchSetting({
 function EventCustomizationCard({
 	form,
 	controlsDisabled,
-}: CalendarFormSectionProps) {
+}: {
+	form: CalendarSettingsFormApi;
+	controlsDisabled: boolean;
+}) {
 	const { t } = useTranslate();
 	return (
 		<Card>
@@ -529,7 +518,7 @@ function EventCustomizationCard({
 							<Input
 								id="eventTitleTemplate"
 								value={field.state.value}
-								onChange={(e) => field.handleChange(e.target.value)}
+								onChange={(event) => field.handleChange(event.target.value)}
 								placeholder="Out of Office - {categoryName}"
 								disabled={controlsDisabled}
 							/>
@@ -554,7 +543,9 @@ function EventCustomizationCard({
 							<Textarea
 								id="eventDescriptionTemplate"
 								value={field.state.value ?? ""}
-								onChange={(e) => field.handleChange(e.target.value || null)}
+								onChange={(event) =>
+									field.handleChange(event.target.value || null)
+								}
 								placeholder={t(
 									"settings.calendar.customization.descriptionPlaceholder",
 									"Absence recorded in Z8",

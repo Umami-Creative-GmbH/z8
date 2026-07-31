@@ -1,6 +1,11 @@
 import { eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	createEmptyAbility,
+	defineAbilityFor,
+	type PrincipalContext,
+} from "@/lib/authorization/ability";
 
 vi.mock("drizzle-orm", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("drizzle-orm")>();
@@ -74,12 +79,16 @@ vi.mock("@/db/schema", () => ({
 	},
 }));
 
-vi.mock("@/lib/authorization", () => ({
-	UnsupportedAuthorizationConditionError: mockState.UnsupportedAuthorizationConditionError,
-	accessibleByDrizzle: mockState.accessibleByDrizzle,
-	ForbiddenError: class ForbiddenError extends Error {},
-	toHttpError: vi.fn(() => ({ body: { error: "Forbidden" }, status: 403 })),
-}));
+vi.mock("@/lib/authorization", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/authorization")>();
+	return {
+		...actual,
+		UnsupportedAuthorizationConditionError: mockState.UnsupportedAuthorizationConditionError,
+		accessibleByDrizzle: mockState.accessibleByDrizzle,
+		ForbiddenError: class ForbiddenError extends Error {},
+		toHttpError: vi.fn(() => ({ body: { error: "Forbidden" }, status: 403 })),
+	};
+});
 
 vi.mock("@/lib/approvals/inbox/read-service", () => ({
 	getApprovalInboxList: mockState.getApprovalInboxList,
@@ -104,6 +113,24 @@ function createRequest(url: string): NextRequest {
 	} as unknown as NextRequest;
 }
 
+function createEmployeeAbility(role: "admin" | "manager" = "manager") {
+	return defineAbilityFor({
+		userId: "user-1",
+		isPlatformAdmin: false,
+		activeOrganizationId: "org-1",
+		orgMembership: { organizationId: "org-1", role: "member", status: "active" },
+		employee: {
+			id: "employee-1",
+			organizationId: "org-1",
+			role,
+			teamId: null,
+		},
+		permissions: { orgWide: null, byTeamId: new Map() },
+		managedEmployeeIds: [],
+		customRoles: [],
+	} satisfies PrincipalContext);
+}
+
 describe("GET /api/approvals/inbox", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -119,6 +146,7 @@ describe("GET /api/approvals/inbox", () => {
 		mockState.findEmployee.mockResolvedValue({
 			id: "employee-1",
 			organizationId: "org-1",
+			role: "manager",
 		});
 		mockState.getEligibleApprovalScopesForManager.mockResolvedValue([]);
 		mockState.accessibleByDrizzle.mockReturnValue({ type: "sql", source: "approval-access" });
@@ -152,9 +180,38 @@ describe("GET /api/approvals/inbox", () => {
 		expect(mockState.getApprovalInboxList).not.toHaveBeenCalled();
 	});
 
+	it("rejects an active manager when approved membership is absent from the ability", async () => {
+		mockState.getAbility.mockResolvedValue(createEmptyAbility());
+
+		const response = await GET(createRequest("https://app.example.com/api/approvals/inbox"));
+
+		expect(response.status).toBe(403);
+		expect(mockState.getEligibleApprovalScopesForManager).not.toHaveBeenCalled();
+		expect(mockState.getApprovalInboxList).not.toHaveBeenCalled();
+	});
+
 	it("rejects users without approval permission even when they have eligible requesters", async () => {
-		mockState.getAbility.mockResolvedValue({
-			cannot: vi.fn(() => true),
+		mockState.getAbility.mockResolvedValue(
+			defineAbilityFor({
+				userId: "user-1",
+				isPlatformAdmin: false,
+				activeOrganizationId: "org-1",
+				orgMembership: { organizationId: "org-1", role: "member", status: "active" },
+				employee: {
+					id: "employee-1",
+					organizationId: "org-1",
+					role: "employee",
+					teamId: null,
+				},
+				permissions: { orgWide: null, byTeamId: new Map() },
+				managedEmployeeIds: [],
+				customRoles: [],
+			} satisfies PrincipalContext),
+		);
+		mockState.findEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			role: "employee",
 		});
 		mockState.getEligibleApprovalScopesForManager.mockResolvedValue([
 			{ requesterEmployeeId: "employee-2", eligibleApproverIds: ["employee-1"] },
@@ -164,6 +221,47 @@ describe("GET /api/approvals/inbox", () => {
 
 		expect(response.status).toBe(403);
 		expect(mockState.getApprovalInboxList).not.toHaveBeenCalled();
+	});
+
+	it("allows a team-primary manager with no direct reports to reach scoped inbox eligibility", async () => {
+		mockState.getAbility.mockResolvedValue(createEmployeeAbility());
+		mockState.getEligibleApprovalScopesForManager.mockResolvedValue([
+			{ requesterEmployeeId: "employee-2", eligibleApproverIds: ["employee-1"] },
+		]);
+
+		const response = await GET(createRequest("https://app.example.com/api/approvals/inbox"));
+
+		expect(response.status).toBe(200);
+		expect(mockState.getApprovalInboxList).toHaveBeenCalledWith(
+			expect.objectContaining({
+				approverId: "employee-1",
+				organizationId: "org-1",
+				eligibleApprovalScopes: [
+					{ requesterEmployeeId: "employee-2", eligibleApproverIds: ["employee-1"] },
+				],
+			}),
+		);
+	});
+
+	it("returns no pending inbox item for a requester-resolved stage", async () => {
+		mockState.getAbility.mockResolvedValue(createEmployeeAbility());
+		mockState.getApprovalInboxList.mockResolvedValue({
+			items: [],
+			nextCursor: null,
+			hasMore: false,
+			total: 0,
+			counts: {},
+			supportedTypes: [],
+			warnings: [],
+		});
+
+		const response = await GET(createRequest("https://app.example.com/api/approvals/inbox"));
+
+		expect(response.status).toBe(200);
+		await expect(response.json()).resolves.toMatchObject({ items: [], total: 0 });
+		expect(mockState.getApprovalInboxList).toHaveBeenCalledWith(
+			expect.objectContaining({ status: "pending" }),
+		);
 	});
 
 	it("preserves employee lookup and delegates assigned approval reads to the inbox list service", async () => {
@@ -315,8 +413,11 @@ describe("GET /api/approvals/inbox", () => {
 	});
 
 	it("sets includeAllApprovers for manage-Approval users so admins see org-wide approvals", async () => {
-		mockState.getAbility.mockResolvedValue({
-			cannot: vi.fn((action) => action !== "manage"),
+		mockState.getAbility.mockResolvedValue(createEmployeeAbility("admin"));
+		mockState.findEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			role: "admin",
 		});
 
 		const response = await GET(createRequest("https://app.example.com/api/approvals/inbox"));

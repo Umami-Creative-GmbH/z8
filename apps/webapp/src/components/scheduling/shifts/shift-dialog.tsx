@@ -150,8 +150,6 @@ export function ShiftDialog({
 		},
 	});
 
-	const isPending = upsertMutation.isPending || deleteMutation.isPending;
-
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent>
@@ -182,16 +180,34 @@ export function ShiftDialog({
 						/>
 					</ActionPanelBody>
 
-					<ShiftDialogFooterActions
-						key={`${open ? "open" : "closed"}-${shift?.id ?? "new"}`}
-						isEditing={isEditing}
-						isManager={isManager}
-						isPending={isPending}
-						isSaving={upsertMutation.isPending}
-						isDeleting={deleteMutation.isPending}
-						onDelete={deleteMutation.mutate}
-						onCancel={() => onOpenChange(false)}
-					/>
+					{isManager ? (
+						shift ? (
+							<ShiftDialogFooterActions
+								key={`${open ? "open" : "closed"}-${shift.id}`}
+								mode="edit"
+								status={deleteMutation.isPending ? "deleting" : upsertMutation.isPending ? "saving" : "idle"}
+								canManage
+								onDelete={deleteMutation.mutate}
+								onCancel={() => onOpenChange(false)}
+							/>
+						) : (
+							<ShiftDialogFooterActions
+								key={`${open ? "open" : "closed"}-new`}
+								mode="create"
+								status={upsertMutation.isPending ? "saving" : "idle"}
+								canManage
+								onCancel={() => onOpenChange(false)}
+							/>
+						)
+					) : (
+						<ShiftDialogFooterActions
+							key={`${open ? "open" : "closed"}-${shift?.id ?? "new"}`}
+							mode={shift ? "edit" : "create"}
+							status="idle"
+							canManage={false}
+							onCancel={() => onOpenChange(false)}
+						/>
+					)}
 				</form>
 			</ActionPanelContent>
 		</ActionPanel>

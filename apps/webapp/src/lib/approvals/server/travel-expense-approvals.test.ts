@@ -67,6 +67,7 @@ import type { ApprovalDbService, CurrentApprover } from "@/lib/approvals/server/
 
 function createPolicyResolutionDbService(policies: unknown[]) {
 	const inserts: Array<{ table: unknown; values: Record<string, unknown> }> = [];
+	const updates: Record<string, unknown>[] = [];
 	const dbService = {
 		db: {
 			query: {
@@ -84,6 +85,18 @@ function createPolicyResolutionDbService(policies: unknown[]) {
 						},
 						{ id: "emp-manager", organizationId: "org-1", isActive: true, role: "manager" },
 					]),
+					findFirst: vi.fn().mockResolvedValue({
+						id: "emp-requester",
+						userId: "user-requester",
+						organizationId: "org-1",
+						role: "employee",
+						user: {
+							id: "user-requester",
+							name: "Avery Requester",
+							email: "avery@example.com",
+							image: null,
+						},
+					}),
 				},
 				employeeManagers: {
 					findMany: vi
@@ -101,12 +114,19 @@ function createPolicyResolutionDbService(policies: unknown[]) {
 					return { returning: vi.fn().mockResolvedValue([{ id: `insert-${inserts.length}` }]) };
 				}),
 			})),
-			update: vi.fn(() => ({ set: vi.fn(() => ({ where: vi.fn() })) })),
+			update: vi.fn(() => ({
+				set: vi.fn((values: Record<string, unknown>) => ({
+					where: vi.fn(() => {
+						updates.push(values);
+						return { returning: vi.fn().mockResolvedValue([{ id: "claim-1" }]) };
+					}),
+				})),
+			})),
 		},
 		query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
 	} as unknown as ApprovalDbService;
 
-	return { dbService, inserts };
+	return { dbService, inserts, updates };
 }
 
 const travelPolicyContext = buildTravelExpenseApprovalPolicyContext({
@@ -632,6 +652,7 @@ describe("travel expense approval policy resolution", () => {
 						label: "Manager",
 						approverType: "direct_manager",
 						approverEmployeeId: null,
+						fallbackBehavior: "fail",
 					},
 				],
 			},
@@ -665,5 +686,42 @@ describe("travel expense approval policy resolution", () => {
 			approvalRequestId: "insert-2",
 			resolvedApproverEmployeeId: "emp-manager",
 		});
+	});
+
+	it("finalizes an auto-completed requester claim without notifying inside the transaction", async () => {
+		onTravelExpenseApproved.mockClear();
+		const { dbService, inserts, updates } = createPolicyResolutionDbService([]);
+
+		const result = await Effect.runPromise(
+			createTravelExpenseApprovalWorkflow(dbService, {
+				claim: {
+					id: "claim-1",
+					organizationId: "org-1",
+					employeeId: "emp-requester",
+					totalAmount: "1200.50",
+					employee: { teamId: "team-1" },
+				},
+				defaultApproverId: "emp-requester",
+			}),
+		);
+
+		expect(result).toMatchObject({ kind: "auto_completed", reason: "requester_is_approver" });
+		expect(inserts[0].values).toMatchObject({
+			approverId: "emp-requester",
+			status: "approved",
+		});
+		expect(updates).toEqual(
+			expect.arrayContaining([expect.objectContaining({ status: "approved" })]),
+	);
+		expect(inserts.map((insert) => insert.values)).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					claimId: "claim-1",
+					actorEmployeeId: "emp-requester",
+					action: "approved",
+				}),
+			]),
+		);
+		expect(onTravelExpenseApproved).not.toHaveBeenCalled();
 	});
 });

@@ -1,7 +1,8 @@
 /* @vitest-environment jsdom */
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	DEFAULT_WORKS_COUNCIL_SETTINGS,
 	type WorksCouncilSettingsFormValues,
@@ -9,7 +10,9 @@ import {
 import { WorksCouncilSettingsForm } from "./works-council-settings-form";
 
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
+	useTranslate: () => ({
+		t: (_key: string, fallback?: string) => fallback ?? _key,
+	}),
 }));
 
 vi.mock("sonner", () => ({
@@ -25,35 +28,60 @@ beforeAll(() => {
 });
 
 describe("WorksCouncilSettingsForm", () => {
+	beforeEach(() => vi.clearAllMocks());
+
 	it("shows conservative default controls", () => {
 		render(
 			<WorksCouncilSettingsForm
-				initialSettings={{ organizationId: "org_1", ...DEFAULT_WORKS_COUNCIL_SETTINGS }}
+				initialSettings={{
+					organizationId: "org_1",
+					...DEFAULT_WORKS_COUNCIL_SETTINGS,
+				}}
 			/>,
 		);
 
-		expect(screen.queryByRole("switch", { name: "Enable Works Council Mode" })).toBeNull();
 		expect(
-			screen.getByRole("switch", { name: "Enable review exports" }).getAttribute("aria-checked"),
+			screen.queryByRole("switch", { name: "Enable Works Council Mode" }),
+		).toBeNull();
+		expect(
+			screen
+				.getByRole("switch", { name: "Enable review exports" })
+				.getAttribute("aria-checked"),
 		).toBe("false");
-		expect((screen.getByLabelText("Identity visibility") as HTMLSelectElement).value).toBe(
-			"aggregated",
-		);
-		expect((screen.getByLabelText("Absence visibility") as HTMLSelectElement).value).toBe("hidden");
-		expect((screen.getByLabelText("Minimum aggregation threshold") as HTMLInputElement).value).toBe(
-			"5",
-		);
-		expect(screen.getByLabelText("Visible team IDs") as HTMLInputElement).toBeTruthy();
-		expect(screen.getByLabelText("Visible location IDs") as HTMLInputElement).toBeTruthy();
+		expect(
+			(screen.getByLabelText("Identity visibility") as HTMLSelectElement).value,
+		).toBe("aggregated");
+		expect(
+			(screen.getByLabelText("Absence visibility") as HTMLSelectElement).value,
+		).toBe("hidden");
+		expect(
+			(
+				screen.getByLabelText(
+					"Minimum aggregation threshold",
+				) as HTMLInputElement
+			).value,
+		).toBe("5");
+		expect(
+			screen.getByLabelText("Visible team IDs") as HTMLInputElement,
+		).toBeTruthy();
+		expect(
+			screen.getByLabelText("Visible location IDs") as HTMLInputElement,
+		).toBeTruthy();
 	});
 
 	it("saves the current settings payload", async () => {
-		const onSave = vi.fn<(_values: WorksCouncilSettingsFormValues) => Promise<{ success: true }>>();
+		const onSave =
+			vi.fn<
+				(_values: WorksCouncilSettingsFormValues) => Promise<{ success: true }>
+			>();
 		onSave.mockResolvedValue({ success: true });
 
 		render(
 			<WorksCouncilSettingsForm
-				initialSettings={{ organizationId: "org_1", ...DEFAULT_WORKS_COUNCIL_SETTINGS }}
+				initialSettings={{
+					organizationId: "org_1",
+					...DEFAULT_WORKS_COUNCIL_SETTINGS,
+				}}
 				onSave={onSave}
 			/>,
 		);
@@ -64,7 +92,9 @@ describe("WorksCouncilSettingsForm", () => {
 		fireEvent.change(screen.getByLabelText("Absence visibility"), {
 			target: { value: "grouped" },
 		});
-		fireEvent.click(screen.getByRole("switch", { name: "Enable review exports" }));
+		fireEvent.click(
+			screen.getByRole("switch", { name: "Enable review exports" }),
+		);
 		fireEvent.change(screen.getByLabelText("Minimum aggregation threshold"), {
 			target: { value: "8" },
 		});
@@ -87,5 +117,31 @@ describe("WorksCouncilSettingsForm", () => {
 				visibleLocationIds: ["location_1"],
 			});
 		});
+	});
+
+	it("re-enables save and reports the existing error when saving rejects", async () => {
+		const onSave = vi.fn().mockRejectedValue(new Error("Network failed"));
+
+		render(
+			<WorksCouncilSettingsForm
+				initialSettings={{
+					organizationId: "org_1",
+					...DEFAULT_WORKS_COUNCIL_SETTINGS,
+				}}
+				onSave={onSave}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Save settings" }));
+
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Save settings" }),
+			).toHaveProperty("disabled", false),
+		);
+		expect(toast.error).toHaveBeenCalledWith(
+			"Failed to save Works Council settings",
+		);
+		expect(toast.success).not.toHaveBeenCalled();
 	});
 });

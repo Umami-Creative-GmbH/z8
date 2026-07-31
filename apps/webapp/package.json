@@ -8,11 +8,12 @@
 		"build": "TZ=UTC pnpm run generate-licenses && TZ=UTC next build",
 		"start": "TZ=UTC next start",
 		"test": "TZ=UTC vitest run",
+		"test:approval-workflow-repository:integration": "bash ./scripts/run-approval-workflow-repository-integration.sh",
 		"test:watch": "TZ=UTC vitest",
 		"test:coverage": "TZ=UTC vitest run --coverage",
 		"auth:generate": "TZ=UTC NODE_OPTIONS='--require=./scripts/register-auth-generate-alias.cjs' pnpm dlx auth@latest generate --config ./src/lib/auth.ts --output ./src/db/auth-schema.ts",
 		"auth:migrate": "TZ=UTC pnpm run auth:generate && TZ=UTC pnpm drizzle-kit push",
-		"typecheck": "next typegen && tsc --project tsconfig.typecheck.json --noEmit --incremental false",
+		"typecheck": "next typegen && tsc --project tsconfig.typecheck.json --noEmit --incremental false && tsc --project tsconfig.workflow-contracts.json --noEmit --incremental false",
 		"generate-licenses": "mkdir -p ./src/data && pnpm dlx license-report --only=prod --output=json --config license-report-config.json > ./src/data/licenses.json",
 		"db:seed": "TZ=UTC tsx src/db/seed/do-seed.ts"
 	},

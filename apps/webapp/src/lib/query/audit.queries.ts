@@ -5,7 +5,7 @@
  * Supports pagination, filtering by entity type, date range, and user.
  */
 
-import { and, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, like, lt, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { auditLog } from "@/db/schema";
@@ -18,6 +18,7 @@ export interface AuditLogFilters {
 	action?: string;
 	startDate?: Date;
 	endDate?: Date;
+	endDateExclusive?: Date;
 	search?: string;
 	limit?: number;
 	offset?: number;
@@ -77,6 +78,10 @@ export async function getAuditLogs(filters: AuditLogFilters): Promise<{
 
 	if (filters.endDate) {
 		conditions.push(lte(auditLog.timestamp, filters.endDate));
+	}
+
+	if (filters.endDateExclusive) {
+		conditions.push(lt(auditLog.timestamp, filters.endDateExclusive));
 	}
 
 	if (filters.search) {
@@ -200,6 +205,7 @@ export async function getAuditLogStats(
 	organizationId: string,
 	startDate: Date,
 	endDate: Date,
+	options?: { endExclusive?: boolean },
 ): Promise<{
 	totalEvents: number;
 	byAction: Array<{ action: string; count: number }>;
@@ -208,54 +214,67 @@ export async function getAuditLogStats(
 	topIpAddresses: Array<{ ipAddress: string; count: number }>;
 }> {
 	const orgFilter = eq(auditLog.organizationId, organizationId);
-	const dateFilter = and(gte(auditLog.timestamp, startDate), lte(auditLog.timestamp, endDate));
+	const dateFilter = and(
+		gte(auditLog.timestamp, startDate),
+		options?.endExclusive
+			? lt(auditLog.timestamp, endDate)
+			: lte(auditLog.timestamp, endDate),
+	);
 	const whereClause = and(orgFilter, dateFilter);
 
-	const [totalResult, byActionResult, byEntityTypeResult, byUserResult, topIpResult] =
-		await Promise.all([
-			db.select({ count: sql<number>`count(*)::int` }).from(auditLog).where(whereClause),
-			db
-				.select({
-					action: auditLog.action,
-					count: sql<number>`count(*)::int`,
-				})
-				.from(auditLog)
-				.where(whereClause)
-				.groupBy(auditLog.action)
-				.orderBy(desc(sql`count(*)`))
-				.limit(10),
-			db
-				.select({
-					entityType: auditLog.entityType,
-					count: sql<number>`count(*)::int`,
-				})
-				.from(auditLog)
-				.where(whereClause)
-				.groupBy(auditLog.entityType)
-				.orderBy(desc(sql`count(*)`)),
-			db
-				.select({
-					userId: auditLog.performedBy,
-					userName: user.name,
-					count: sql<number>`count(*)::int`,
-				})
-				.from(auditLog)
-				.leftJoin(user, eq(auditLog.performedBy, user.id))
-				.where(whereClause)
-				.groupBy(auditLog.performedBy, user.name)
-				.orderBy(desc(sql`count(*)`))
-				.limit(10),
-			db
-				.select({
-					ipAddress: auditLog.ipAddress,
-					count: sql<number>`count(*)::int`,
-				})
-				.from(auditLog)
-				.where(and(whereClause, sql`${auditLog.ipAddress} IS NOT NULL`))
-				.groupBy(auditLog.ipAddress)
-				.orderBy(desc(sql`count(*)`))
-				.limit(10),
-		]);
+	const [
+		totalResult,
+		byActionResult,
+		byEntityTypeResult,
+		byUserResult,
+		topIpResult,
+	] = await Promise.all([
+		db
+			.select({ count: sql<number>`count(*)::int` })
+			.from(auditLog)
+			.where(whereClause),
+		db
+			.select({
+				action: auditLog.action,
+				count: sql<number>`count(*)::int`,
+			})
+			.from(auditLog)
+			.where(whereClause)
+			.groupBy(auditLog.action)
+			.orderBy(desc(sql`count(*)`))
+			.limit(10),
+		db
+			.select({
+				entityType: auditLog.entityType,
+				count: sql<number>`count(*)::int`,
+			})
+			.from(auditLog)
+			.where(whereClause)
+			.groupBy(auditLog.entityType)
+			.orderBy(desc(sql`count(*)`)),
+		db
+			.select({
+				userId: auditLog.performedBy,
+				userName: user.name,
+				count: sql<number>`count(*)::int`,
+			})
+			.from(auditLog)
+			.leftJoin(user, eq(auditLog.performedBy, user.id))
+			.where(whereClause)
+			.groupBy(auditLog.performedBy, user.name)
+			.orderBy(desc(sql`count(*)`))
+			.limit(10),
+		db
+			.select({
+				ipAddress: auditLog.ipAddress,
+				count: sql<number>`count(*)::int`,
+			})
+			.from(auditLog)
+			.where(and(whereClause, sql`${auditLog.ipAddress} IS NOT NULL`))
+			.groupBy(auditLog.ipAddress)
+			.orderBy(desc(sql`count(*)`))
+			.limit(10),
+	]);
 	const totalEvents = totalResult[0]?.count || 0;
 
 	return {
@@ -324,13 +343,13 @@ export async function getAuditLogsByAction(
 export async function exportAuditLogs(
 	organizationId: string,
 	startDate: Date,
-	endDate: Date,
+	endDateExclusive: Date,
 ): Promise<AuditLogResult[]> {
 	// Get all logs in date range (no pagination for export)
 	const result = await getAuditLogs({
 		organizationId,
 		startDate,
-		endDate,
+		endDateExclusive,
 		limit: 10000, // Reasonable max for export
 	});
 	return result.logs;

@@ -30,6 +30,7 @@
 export {
 	type AppAbility,
 	can,
+	canAccessApprovalInbox,
 	cannot,
 	createEmptyAbility,
 	defineAbilityFor,

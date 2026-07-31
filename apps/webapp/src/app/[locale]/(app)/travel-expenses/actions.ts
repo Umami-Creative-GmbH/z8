@@ -4,7 +4,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { employee, travelExpenseClaim } from "@/db/schema";
+import { employee, project, travelExpenseClaim } from "@/db/schema";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { processApproval } from "@/lib/approvals/server/shared";
 import {
@@ -16,14 +16,20 @@ import {
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { getAuthContext } from "@/lib/auth-helpers";
+import {
+	comparePlainDates,
+	dateFromInstant,
+	parsePlainDate,
+} from "@/lib/datetime/temporal-core";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
+import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { TRAVEL_EXPENSE_VALIDATION_MESSAGES } from "@/lib/travel-expenses/types";
 
 export interface CreateTravelExpenseDraftInput {
 	type: "receipt" | "mileage" | "per_diem";
-	tripStart: Date;
-	tripEnd: Date;
+	tripStart: string;
+	tripEnd: string;
 	destinationCity?: string | null;
 	destinationCountry?: string | null;
 	projectId?: string | null;
@@ -47,7 +53,10 @@ export async function getMyTravelExpenseClaims(): Promise<
 
 		const claims = await db.query.travelExpenseClaim.findMany({
 			where: and(
-				eq(travelExpenseClaim.organizationId, authContext.employee.organizationId),
+				eq(
+					travelExpenseClaim.organizationId,
+					authContext.employee.organizationId,
+				),
 				eq(travelExpenseClaim.employeeId, authContext.employee.id),
 			),
 			orderBy: [desc(travelExpenseClaim.createdAt)],
@@ -68,6 +77,45 @@ export async function createTravelExpenseDraft(
 		if (!authContext?.employee) {
 			return { success: false, error: "Unauthorized" };
 		}
+		let projectId: string | null = null;
+		if (input.projectId) {
+			const ownedProject = await db.query.project.findFirst({
+				where: and(
+					eq(project.id, input.projectId),
+					eq(project.organizationId, authContext.employee.organizationId),
+				),
+				columns: { id: true },
+			});
+			if (!ownedProject) {
+				return {
+					success: false,
+					error: "Failed to create travel expense draft",
+				};
+			}
+			projectId = ownedProject.id;
+		}
+		const timezone = await getEffectiveTimezone(
+			authContext.user.id,
+			authContext.employee.organizationId,
+		);
+		const tripStartDate = parsePlainDate(input.tripStart);
+		const tripEndDate = parsePlainDate(input.tripEnd);
+		if (comparePlainDates(tripEndDate, tripStartDate) < 0) {
+			return {
+				success: false,
+				error: "Trip end date cannot be before trip start date",
+			};
+		}
+		const tripStart = dateFromInstant(
+			tripStartDate.toZonedDateTime(timezone).toInstant(),
+		);
+		const tripEnd = dateFromInstant(
+			tripEndDate
+				.add({ days: 1 })
+				.toZonedDateTime(timezone)
+				.toInstant()
+				.subtract({ milliseconds: 1 }),
+		);
 
 		const [createdClaim] = await db
 			.insert(travelExpenseClaim)
@@ -76,11 +124,11 @@ export async function createTravelExpenseDraft(
 				employeeId: authContext.employee.id,
 				type: input.type,
 				status: "draft",
-				tripStart: input.tripStart,
-				tripEnd: input.tripEnd,
+				tripStart,
+				tripEnd,
 				destinationCity: input.destinationCity ?? null,
 				destinationCountry: input.destinationCountry ?? null,
-				projectId: input.projectId ?? null,
+				projectId,
 				originalCurrency: input.originalCurrency,
 				originalAmount: input.originalAmount,
 				calculatedCurrency: input.calculatedCurrency,
@@ -107,7 +155,9 @@ export async function createTravelExpenseDraft(
 				type: input.type,
 			},
 			timestamp: new Date(),
-		}).catch((error) => logger.error({ error }, "Failed to log travel expense draft creation"));
+		}).catch((error) =>
+			logger.error({ error }, "Failed to log travel expense draft creation"),
+		);
 
 		revalidatePath("/travel-expenses");
 		return { success: true, data: { id: createdClaim.id } };
@@ -119,7 +169,7 @@ export async function createTravelExpenseDraft(
 
 export async function submitTravelExpenseClaim(input: {
 	claimId: string;
-}): Promise<ServerActionResult<{ status: "submitted" }>> {
+}): Promise<ServerActionResult<{ status: "submitted" | "approved" }>> {
 	try {
 		const authContext = await getAuthContext();
 		if (!authContext?.employee) {
@@ -184,7 +234,7 @@ export async function submitTravelExpenseClaim(input: {
 		}
 
 		const submittedAt = new Date();
-		const updatedClaim = await db.transaction(async (tx) => {
+		const submission = await db.transaction(async (tx) => {
 			const [submittedClaim] = await tx
 				.update(travelExpenseClaim)
 				.set({
@@ -197,7 +247,10 @@ export async function submitTravelExpenseClaim(input: {
 				.where(
 					and(
 						eq(travelExpenseClaim.id, claim.id),
-						eq(travelExpenseClaim.organizationId, currentEmployee.organizationId),
+						eq(
+							travelExpenseClaim.organizationId,
+							currentEmployee.organizationId,
+						),
 						eq(travelExpenseClaim.status, "draft"),
 					),
 				)
@@ -212,7 +265,7 @@ export async function submitTravelExpenseClaim(input: {
 				query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
 			} satisfies ApprovalDbService;
 
-			await Effect.runPromise(
+			const approvalResult = await Effect.runPromise(
 				createTravelExpenseApprovalWorkflow(approvalDbService, {
 					claim: {
 						id: claim.id,
@@ -225,10 +278,10 @@ export async function submitTravelExpenseClaim(input: {
 				}),
 			);
 
-			return submittedClaim;
+			return { submittedClaim, approvalResult };
 		});
 
-		if (!updatedClaim) {
+		if (!submission) {
 			return { success: false, error: "Only draft claims can be submitted" };
 		}
 
@@ -244,10 +297,20 @@ export async function submitTravelExpenseClaim(input: {
 				type: claim.type,
 			},
 			timestamp: submittedAt,
-		}).catch((error) => logger.error({ error }, "Failed to log travel expense submission"));
+		}).catch((error) =>
+			logger.error({ error }, "Failed to log travel expense submission"),
+		);
 
 		revalidatePath("/travel-expenses");
-		return { success: true, data: { status: "submitted" } };
+		return {
+			success: true,
+			data: {
+				status:
+					submission.approvalResult.kind === "auto_completed"
+						? "approved"
+						: "submitted",
+			},
+		};
 	} catch (error) {
 		logger.error({ error }, "Failed to submit travel expense claim");
 		return { success: false, error: "Failed to submit travel expense claim" };
@@ -270,9 +333,20 @@ export async function approveTravelExpenseClaim(input: {
 			"approve",
 			undefined,
 			(dbService, claimId, currentEmployee) =>
-				persistTravelExpenseDecision(dbService, claimId, currentEmployee, "approve", input.note),
+				persistTravelExpenseDecision(
+					dbService,
+					claimId,
+					currentEmployee,
+					"approve",
+					input.note,
+				),
 			(dbService, claimId, currentEmployee) =>
-				preflightTravelExpenseDecision(dbService, claimId, currentEmployee, "approve"),
+				preflightTravelExpenseDecision(
+					dbService,
+					claimId,
+					currentEmployee,
+					"approve",
+				),
 			{ transactional: true },
 		);
 
@@ -318,9 +392,20 @@ export async function rejectTravelExpenseClaim(input: {
 			"reject",
 			input.reason,
 			(dbService, claimId, currentEmployee) =>
-				persistTravelExpenseDecision(dbService, claimId, currentEmployee, "reject", input.reason),
+				persistTravelExpenseDecision(
+					dbService,
+					claimId,
+					currentEmployee,
+					"reject",
+					input.reason,
+				),
 			(dbService, claimId, currentEmployee) =>
-				preflightTravelExpenseDecision(dbService, claimId, currentEmployee, "reject"),
+				preflightTravelExpenseDecision(
+					dbService,
+					claimId,
+					currentEmployee,
+					"reject",
+				),
 			{ transactional: true },
 		);
 

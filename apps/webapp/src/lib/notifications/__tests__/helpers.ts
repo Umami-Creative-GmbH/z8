@@ -7,7 +7,9 @@ import type { Notification, NotificationPreference } from "../types";
 /**
  * Create a mock notification with default values
  */
-export function createMockNotification(overrides?: Partial<Notification>): Notification {
+export function createMockNotification(
+	overrides?: Partial<Notification>,
+): Notification {
 	return {
 		id: overrides?.id ?? "notif-1",
 		userId: overrides?.userId ?? "user-1",
@@ -21,6 +23,7 @@ export function createMockNotification(overrides?: Partial<Notification>): Notif
 		entityId: overrides?.entityId ?? null,
 		actionUrl: overrides?.actionUrl ?? null,
 		metadata: overrides?.metadata ?? null,
+		idempotencyKey: overrides?.idempotencyKey ?? null,
 		createdAt: overrides?.createdAt ?? new Date(),
 	};
 }
@@ -35,7 +38,8 @@ export function createMockPreference(
 		id: overrides?.id ?? "pref-1",
 		userId: overrides?.userId ?? "user-1",
 		organizationId: overrides?.organizationId ?? null,
-		notificationType: overrides?.notificationType ?? "approval_request_submitted",
+		notificationType:
+			overrides?.notificationType ?? "approval_request_submitted",
 		channel: overrides?.channel ?? "in_app",
 		enabled: overrides?.enabled ?? true,
 		createdAt: overrides?.createdAt ?? new Date(),

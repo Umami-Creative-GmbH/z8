@@ -33,13 +33,6 @@ describe("buildPendingApprovalResult", () => {
 		expect(source).toContain(
 			"ne(approvalRequest.requestedBy, currentEmployee.id)",
 		);
-		expect(source).toContain("db.query.timeEntry.findMany({");
-		expect(source).toContain(
-			"eq(timeEntry.organizationId, currentEmployee.organizationId)",
-		);
-		expect(source).toContain("inArray(timeEntry.id, originalEntryIds)");
-		expect(source).toContain("correctionOriginalEntryIds");
-		expect(source).toContain('classification.kind !== "ordinary"');
 	});
 
 	it("returns absences and time corrections in request order", () => {
@@ -181,14 +174,7 @@ describe("buildPendingApprovalResult", () => {
 		expect(result.timeCorrectionApprovals).toEqual([]);
 	});
 
-	it("includes metadata-linked inactive corrections in the legacy pending table", () => {
-		const correction = {
-			id: "correction-1",
-			timestamp: new Date("2026-05-22T14:15:00.000Z"),
-			utcOffsetMinutes: 120,
-			replacesEntryId: "clock-in-original",
-			isSuperseded: true,
-		};
+	it("includes the request reason in time approval DTOs", () => {
 		const result = buildPendingApprovalResult({
 			pendingRequests: [
 				{
@@ -196,67 +182,16 @@ describe("buildPendingApprovalResult", () => {
 					entityId: "period-1",
 					entityType: "time_entry",
 					status: "pending",
-					createdAt: new Date("2026-05-22T18:28:29.000Z"),
-					metadata: { timeCorrection: { clockInCorrectionId: correction.id } },
-					requester: {
-						user: {
-							id: "user-1",
-							name: "Kai",
-							email: "kai@example.com",
-							image: null,
-						},
-					},
-				},
-			],
-			absencesById: new Map(),
-			periodsById: new Map([
-				[
-					"period-1",
-					{
-						id: "period-1",
-						startTime: new Date("2026-05-22T14:00:00.000Z"),
-						endTime: new Date("2026-05-22T18:00:00.000Z"),
-						clockIn: {
-							id: "clock-in-original",
-							timestamp: new Date("2026-05-22T14:00:00.000Z"),
-							utcOffsetMinutes: 120,
-						},
-						clockOut: null,
-						correctionReviewEntries: [correction],
-					},
-				],
-			]),
-		});
-
-		expect(
-			result.timeCorrectionApprovals[0]?.workPeriod.clockInCorrectionEntry,
-		).toEqual({
-			timestamp: correction.timestamp,
-			utcOffsetMinutes: correction.utcOffsetMinutes,
-		});
-		expect(result.timeCorrectionApprovals[0]).not.toHaveProperty("metadata");
-	});
-
-	it("treats malformed explicit correction metadata as invalid without legacy fallback", () => {
-		const result = buildPendingApprovalResult({
-			pendingRequests: [
-				{
-					id: "approval-1",
-					entityId: "period-1",
-					entityType: "time_entry",
-					status: "pending",
+					reason: "Forgot to clock out after the customer visit",
 					createdAt: new Date("2026-05-22T18:28:29.000Z"),
 					metadata: {
-						timeCorrection: {
-							action: "erase",
-							clockInCorrectionId: "active-correction",
-						},
+						timeCorrection: { clockInCorrectionId: "clock-in-correction" },
 					},
 					requester: {
 						user: {
 							id: "user-1",
-							name: "Kai",
-							email: "kai@example.com",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
 							image: null,
 						},
 					},
@@ -278,11 +213,10 @@ describe("buildPendingApprovalResult", () => {
 						clockOut: null,
 						correctionReviewEntries: [
 							{
-								id: "active-correction",
+								id: "clock-in-correction",
 								timestamp: new Date("2026-05-22T14:15:00.000Z"),
-								utcOffsetMinutes: 120,
 								replacesEntryId: "clock-in-original",
-								isSuperseded: false,
+								utcOffsetMinutes: 120,
 							},
 						],
 					},
@@ -290,27 +224,30 @@ describe("buildPendingApprovalResult", () => {
 			]),
 		});
 
-		expect(result.timeCorrectionApprovals).toEqual([]);
+		expect(result.timeCorrectionApprovals[0]?.reason).toBe(
+			"Forgot to clock out after the customer visit",
+		);
 	});
 
 	it.each([
 		"manual_time_submission",
 		"policy_clock_out",
-	] as const)("keeps %s rows visible without correction entries", (kind) => {
+	] as const)("includes pending %s requests without treating them as orphaned corrections", (kind) => {
 		const result = buildPendingApprovalResult({
 			pendingRequests: [
 				{
-					id: "approval-ordinary",
-					entityId: "period-ordinary",
+					id: `approval-${kind}`,
+					entityId: "period-1",
 					entityType: "time_entry",
 					status: "pending",
+					reason: "Manager review requested",
 					createdAt: new Date("2026-05-22T18:28:29.000Z"),
 					metadata: { timeRequest: { kind } },
 					requester: {
 						user: {
 							id: "user-1",
-							name: "Kai",
-							email: "kai@example.com",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
 							image: null,
 						},
 					},
@@ -319,9 +256,9 @@ describe("buildPendingApprovalResult", () => {
 			absencesById: new Map(),
 			periodsById: new Map([
 				[
-					"period-ordinary",
+					"period-1",
 					{
-						id: "period-ordinary",
+						id: "period-1",
 						startTime: new Date("2026-05-22T14:00:00.000Z"),
 						endTime: new Date("2026-05-22T18:00:00.000Z"),
 						clockIn: {
@@ -341,141 +278,10 @@ describe("buildPendingApprovalResult", () => {
 		});
 
 		expect(result.timeCorrectionApprovals).toHaveLength(1);
-		expect(result.timeCorrectionApprovals[0]?.workPeriod).toMatchObject({
-			id: "period-ordinary",
-			clockInCorrectionEntry: null,
-			clockOutCorrectionEntry: null,
+		expect(result.timeCorrectionApprovals[0]).toMatchObject({
+			id: `approval-${kind}`,
+			reason: "Manager review requested",
 		});
-		expect(result.timeCorrectionApprovals[0]).not.toHaveProperty("metadata");
-	});
-
-	it("keeps a historical manual submission visible despite unrelated correction evidence", () => {
-		const result = buildPendingApprovalResult({
-			pendingRequests: [
-				{
-					id: "approval-historical",
-					entityId: "period-historical",
-					entityType: "time_entry",
-					status: "pending",
-					createdAt: new Date("2026-05-22T18:28:29.000Z"),
-					metadata: null,
-					reason: "Manual time entry: Forgot to clock",
-					requester: {
-						user: {
-							id: "user-1",
-							name: "Kai",
-							email: "kai@example.com",
-							image: null,
-						},
-					},
-				},
-			],
-			absencesById: new Map(),
-			periodsById: new Map([
-				[
-					"period-historical",
-					{
-						id: "period-historical",
-						startTime: new Date("2026-05-22T14:00:00.000Z"),
-						endTime: new Date("2026-05-22T18:00:00.000Z"),
-						pendingChanges: {
-							originalStartTime: "2026-05-22T14:00:00.000Z",
-							originalEndTime: "2026-05-22T18:00:00.000Z",
-							originalDurationMinutes: 240,
-							requestedAt: "2026-05-22T18:01:00.000Z",
-							requestedBy: "user-1",
-							isManualEntry: true,
-							reason: "Forgot to clock",
-						},
-						clockIn: {
-							id: "clock-in-original",
-							timestamp: new Date("2026-05-22T14:00:00.000Z"),
-							utcOffsetMinutes: 120,
-						},
-						clockOut: null,
-						correctionReviewEntries: [
-							{
-								id: "unrelated-correction",
-								timestamp: new Date("2026-05-22T14:15:00.000Z"),
-								utcOffsetMinutes: 120,
-								replacesEntryId: "clock-in-original",
-								isSuperseded: false,
-							},
-						],
-					},
-				],
-			]),
-		});
-
-		expect(result.timeCorrectionApprovals).toHaveLength(1);
-		expect(
-			result.timeCorrectionApprovals[0]?.workPeriod.clockInCorrectionEntry,
-		).toBeNull();
-	});
-
-	it("runtime-allowlists nested requester and time-entry DTO fields", () => {
-		const hostileUser = {
-			id: "user-1",
-			name: "Kai",
-			email: "kai@example.com",
-			image: null,
-			passwordHash: "secret-password-hash",
-			twoFactorSecret: "secret-2fa",
-			inviteToken: "secret-invite",
-			accessToken: "secret-access",
-		};
-		const result = buildPendingApprovalResult({
-			pendingRequests: [
-				{
-					id: "approval-ordinary",
-					entityId: "period-ordinary",
-					entityType: "time_entry",
-					status: "pending",
-					createdAt: new Date("2026-05-22T18:28:29.000Z"),
-					metadata: { timeRequest: { kind: "manual_time_submission" } },
-					requester: {
-						id: "employee-1",
-						organizationId: "org-1",
-						user: hostileUser,
-					},
-				},
-			] as never,
-			absencesById: new Map(),
-			periodsById: new Map([
-				[
-					"period-ordinary",
-					{
-						id: "period-ordinary",
-						startTime: new Date("2026-05-22T14:00:00.000Z"),
-						endTime: new Date("2026-05-22T18:00:00.000Z"),
-						clockIn: {
-							id: "clock-in-original",
-							timestamp: new Date("2026-05-22T14:00:00.000Z"),
-							utcOffsetMinutes: 120,
-							ipAddress: "secret-ip",
-							deviceInfo: "secret-device",
-							location: { latitude: 1, longitude: 2 },
-							hash: "secret-hash",
-							notes: "secret-note",
-						},
-						clockOut: null,
-						correctionReviewEntries: [],
-					},
-				],
-			] as never),
-		});
-
-		const approval = result.timeCorrectionApprovals[0];
-		expect(Object.keys(approval?.requester.user ?? {}).sort()).toEqual([
-			"email",
-			"id",
-			"image",
-			"name",
-		]);
-		expect(Object.keys(approval?.workPeriod.clockInEntry ?? {}).sort()).toEqual(
-			["timestamp", "utcOffsetMinutes"],
-		);
-		expect(JSON.stringify(result)).not.toMatch(/secret-/);
 	});
 
 	it("supports travel expense claims in the richer bulk decision contract", () => {

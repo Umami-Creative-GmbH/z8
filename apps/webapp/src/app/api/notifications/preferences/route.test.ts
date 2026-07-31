@@ -4,7 +4,8 @@ const mockState = vi.hoisted(() => {
 	const updateWhere = vi.fn(async () => undefined);
 	const updateSet = vi.fn(() => ({ where: updateWhere }));
 	const update = vi.fn(() => ({ set: updateSet }));
-	const values = vi.fn(async () => undefined);
+	const onConflictDoUpdate = vi.fn(async () => undefined);
+	const values = vi.fn(() => ({ onConflictDoUpdate }));
 	const insert = vi.fn(() => ({ values }));
 	const findFirst = vi.fn(async () => null);
 	const where = vi.fn(async () => []);
@@ -18,6 +19,7 @@ const mockState = vi.hoisted(() => {
 		headers: vi.fn(),
 		insert,
 		isTelegramEnabledForOrganization: vi.fn(),
+		onConflictDoUpdate,
 		select,
 		update,
 		updateSet,
@@ -32,7 +34,8 @@ vi.mock("next/headers", () => ({
 }));
 
 vi.mock("next/server", async () => {
-	const actual = await vi.importActual<typeof import("next/server")>("next/server");
+	const actual =
+		await vi.importActual<typeof import("next/server")>("next/server");
 	return {
 		...actual,
 		connection: mockState.connection,
@@ -67,6 +70,7 @@ vi.mock("@/db/schema", () => ({
 		id: "notificationPreference.id",
 		notificationType: "notificationPreference.notificationType",
 		organizationId: "notificationPreference.organizationId",
+		updatedAt: "notificationPreference.updatedAt",
 		userId: "notificationPreference.userId",
 	},
 }));
@@ -78,6 +82,7 @@ vi.mock("@/lib/telegram", () => ({
 vi.mock("drizzle-orm", () => ({
 	and: (...conditions: unknown[]) => ({ conditions, type: "and" }),
 	eq: (column: unknown, value: unknown) => ({ column, type: "eq", value }),
+	sql: (strings: TemplateStringsArray) => ({ sql: strings.join("") }),
 }));
 
 const { GET } = await import("./route");
@@ -112,7 +117,9 @@ describe("GET /api/notifications/preferences", () => {
 		});
 		expect(JSON.stringify(body)).not.toContain("botToken");
 		expect(JSON.stringify(body)).not.toContain("webhookSecret");
-		expect(mockState.isTelegramEnabledForOrganization).toHaveBeenCalledWith("org-active");
+		expect(mockState.isTelegramEnabledForOrganization).toHaveBeenCalledWith(
+			"org-active",
+		);
 	});
 
 	it("reads preferences by user while keeping channel availability organization-scoped", async () => {
@@ -123,7 +130,9 @@ describe("GET /api/notifications/preferences", () => {
 			type: "eq",
 			value: "user-1",
 		});
-		expect(mockState.isTelegramEnabledForOrganization).toHaveBeenCalledWith("org-active");
+		expect(mockState.isTelegramEnabledForOrganization).toHaveBeenCalledWith(
+			"org-active",
+		);
 	});
 
 	it("rejects bulk updates when enabled is not boolean", async () => {
@@ -148,9 +157,40 @@ describe("GET /api/notifications/preferences", () => {
 		expect(mockState.findFirst).not.toHaveBeenCalled();
 	});
 
-	it("persists bulk updates using the user-level unique key without stamping organizationId", async () => {
+	it("rejects a null bulk update before starting a write", async () => {
 		const { POST } = await import("./route");
-		mockState.findFirst.mockResolvedValue({ id: "pref-1" });
+		const response = await POST(
+			new Request("https://z8.test/api/notifications/preferences", {
+				body: JSON.stringify({ preferences: [null] }),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({
+			error: "Invalid preference update",
+		});
+		expect(mockState.insert).not.toHaveBeenCalled();
+	});
+
+	it("rejects a null request body before starting a write", async () => {
+		const { POST } = await import("./route");
+		const response = await POST(
+			new Request("https://z8.test/api/notifications/preferences", {
+				body: JSON.stringify(null),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({
+			error: "Invalid preferences array",
+		});
+		expect(mockState.insert).not.toHaveBeenCalled();
+	});
+
+	it("persists deduplicated bulk updates in one user-level upsert with last-write-wins", async () => {
+		const { POST } = await import("./route");
 
 		const response = await POST(
 			new Request("https://z8.test/api/notifications/preferences", {
@@ -161,6 +201,16 @@ describe("GET /api/notifications/preferences", () => {
 							enabled: false,
 							notificationType: "approval_request_submitted",
 						},
+						{
+							channel: "push",
+							enabled: false,
+							notificationType: "approval_request_approved",
+						},
+						{
+							channel: "email",
+							enabled: true,
+							notificationType: "approval_request_submitted",
+						},
 					],
 				}),
 				method: "POST",
@@ -168,22 +218,61 @@ describe("GET /api/notifications/preferences", () => {
 		);
 
 		expect(response.status).toBe(200);
-		expect(mockState.findFirst).toHaveBeenCalledWith({
-			where: {
-				conditions: [
-					{ column: "notificationPreference.userId", type: "eq", value: "user-1" },
-					{
-						column: "notificationPreference.notificationType",
-						type: "eq",
-						value: "approval_request_submitted",
-					},
-					{ column: "notificationPreference.channel", type: "eq", value: "email" },
-				],
-				type: "and",
+		expect(await response.json()).toEqual({ success: true, updated: 3 });
+		expect(mockState.values).toHaveBeenCalledTimes(1);
+		expect(mockState.values).toHaveBeenCalledWith([
+			{
+				channel: "email",
+				enabled: true,
+				notificationType: "approval_request_submitted",
+				userId: "user-1",
 			},
+			{
+				channel: "push",
+				enabled: false,
+				notificationType: "approval_request_approved",
+				userId: "user-1",
+			},
+		]);
+		expect(mockState.onConflictDoUpdate).toHaveBeenCalledWith({
+			set: {
+				enabled: expect.anything(),
+				updatedAt: expect.anything(),
+			},
+			target: [
+				"notificationPreference.userId",
+				"notificationPreference.notificationType",
+				"notificationPreference.channel",
+			],
 		});
-		expect(mockState.updateSet).toHaveBeenCalledWith({
-			enabled: false,
-		});
+		expect(mockState.findFirst).not.toHaveBeenCalled();
+		expect(mockState.update).not.toHaveBeenCalled();
+		expect(mockState.insert).toHaveBeenCalledTimes(1);
+	});
+
+	it("validates every bulk update before starting the upsert", async () => {
+		const { POST } = await import("./route");
+		const response = await POST(
+			new Request("https://z8.test/api/notifications/preferences", {
+				body: JSON.stringify({
+					preferences: [
+						{
+							channel: "email",
+							enabled: false,
+							notificationType: "approval_request_submitted",
+						},
+						{
+							channel: "invalid",
+							enabled: true,
+							notificationType: "approval_request_approved",
+						},
+					],
+				}),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(400);
+		expect(mockState.insert).not.toHaveBeenCalled();
 	});
 });

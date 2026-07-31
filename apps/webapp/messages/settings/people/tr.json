@@ -78,7 +78,7 @@
         "title": "Davetler"
       },
       "lifecycle": {
-        "actionsLabel": "${target.displayName} için çalışan işlemleri",
+        "actionsLabel": "{name} için çalışan işlemleri",
         "deactivate": "Devre dışı bırak",
         "deactivateDescription": "Bu işlem, bu kuruluşa erişimi askıya alır ve şu anda onu kullanan oturumları sonlandırır. Çalışan geçmişi korunur.",
         "deactivateError": "Çalışan devre dışı bırakılamadı",
@@ -86,6 +86,8 @@
         "deactivateTitle": "Çalışan devre dışı bırakılsın mı?",
         "deactivating": "Devre dışı bırakılıyor...",
         "deactivatingStatus": "Çalışan devre dışı bırakılıyor",
+        "finalOwnerDeactivateGuidance": "Bu çalışanı devre dışı bırakmadan önce onaylanmış başka bir sahip atayın ve etkinleştirin.",
+        "finalOwnerRemoveGuidance": "Bu çalışanın erişimini kaldırmadan önce onaylanmış başka bir sahip atayın ve etkinleştirin.",
         "reactivate": "Yeniden etkinleştir",
         "reactivateDescription": "Bu işlem, mevcut çalışan kaydını kullanarak bu kuruluşa erişimi geri yükler.",
         "reactivateError": "Çalışan yeniden etkinleştirilemedi",

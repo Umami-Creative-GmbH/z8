@@ -20,6 +20,12 @@ let localStorageData: Record<string, string> = {};
 let isClockedInMock = false;
 let activeWorkPeriodMock: { startTime: string } | null = null;
 
+function getPopoverClockButton(name: "Clock In" | "Clock Out"): HTMLElement {
+	const button = screen.getAllByRole("button", { name }).at(-1);
+	if (!button) throw new Error(`${name} popover button not found`);
+	return button;
+}
+
 vi.mock("@/lib/query", () => ({
 	useElapsedTimer: () => useElapsedTimerMock(),
 	useTimeClock: () => ({
@@ -41,7 +47,11 @@ vi.mock("@/lib/query", () => ({
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback: string, values?: Record<string, string | number>) => {
+		t: (
+			_key: string,
+			fallback: string,
+			values?: Record<string, string | number>,
+		) => {
 			if (!values) return fallback;
 			return Object.entries(values).reduce(
 				(text, [key, value]) => text.replace(`{${key}}`, String(value)),
@@ -95,10 +105,14 @@ describe("TimeClockPopover", () => {
 	it("submits office as the default quick clock-in work location", async () => {
 		render(<TimeClockPopover />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Clock In" }));
-		fireEvent.click(screen.getAllByRole("button", { name: "Clock In" }).at(-1)!);
+		const mobileTrigger = screen.getByRole("button", { name: "Clock In" });
+		expect(mobileTrigger.getAttribute("aria-label")).toBe("Clock In");
+		fireEvent.click(mobileTrigger);
+		fireEvent.click(getPopoverClockButton("Clock In"));
 
-		await waitFor(() => expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "office" }));
+		await waitFor(() =>
+			expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "office" }),
+		);
 	});
 
 	it("submits remote when selected before quick clock-in", async () => {
@@ -106,9 +120,11 @@ describe("TimeClockPopover", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Clock In" }));
 		fireEvent.click(screen.getByRole("radio", { name: "Remote" }));
-		fireEvent.click(screen.getAllByRole("button", { name: "Clock In" }).at(-1)!);
+		fireEvent.click(getPopoverClockButton("Clock In"));
 
-		await waitFor(() => expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "remote" }));
+		await waitFor(() =>
+			expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "remote" }),
+		);
 	});
 
 	it("shows an icon-only quick break trigger next to the header clock-out button while clocked in", () => {
@@ -138,7 +154,9 @@ describe("TimeClockPopover", () => {
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Apply" }));
 
-		await waitFor(() => expect(addBreakMock).toHaveBeenCalledWith({ breakMinutes: 15 }));
+		await waitFor(() =>
+			expect(addBreakMock).toHaveBeenCalledWith({ breakMinutes: 15 }),
+		);
 	});
 
 	it("does not show the header quick break trigger while clocked out", () => {

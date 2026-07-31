@@ -4,28 +4,60 @@ import {
 	type ApproverDirectoryManagerLink,
 	resolveApproverFromDirectory,
 } from "@/lib/approvals/policies/approver-resolution";
-import { findMatchingPolicy, validatePolicyDraft } from "@/lib/approvals/policies/matcher";
+import {
+	findMatchingPolicy,
+	validatePolicyDraft,
+} from "@/lib/approvals/policies/matcher";
 import type {
 	ApprovalPolicyDraft,
 	ApprovalPolicyEvaluationContext,
 } from "@/lib/approvals/policies/types";
+import { ROUTING_STAGE_FALLBACKS } from "@/lib/approvals/routing/types";
+import { APPROVAL_WORKFLOW_TYPES } from "@/lib/approvals/workflow/types";
 
-const conditionSchema = z.object({
-	conditionType: z.enum([
-		"approval_type",
-		"team",
-		"location",
-		"absence_category",
-		"travel_expense_amount",
-		"overtime_risk",
-		"employee_group",
-	]),
+const approvalTypeValues = [
+	...APPROVAL_WORKFLOW_TYPES,
+	"absence_entry",
+	"time_entry",
+	"shift_request",
+	"travel_expense_claim",
+] as const;
+const approvalTypeValueSchema = z
+	.string()
+	.trim()
+	.refine(
+		(value) =>
+			approvalTypeValues.includes(value as (typeof approvalTypeValues)[number]),
+		"An approval workflow type or legacy value is required.",
+	);
+
+const conditionFields = {
 	operator: z.enum(["equals", "in", "gte", "lte", "between"]),
 	value: z.string().trim().optional(),
 	values: z.array(z.string().trim().min(1)).optional(),
 	amountMin: z.number().optional(),
 	amountMax: z.number().optional(),
-});
+};
+
+const conditionSchema = z.union([
+	z.object({
+		conditionType: z.literal("approval_type"),
+		...conditionFields,
+		value: approvalTypeValueSchema.optional(),
+		values: z.array(approvalTypeValueSchema).optional(),
+	}),
+	z.object({
+		conditionType: z.enum([
+			"team",
+			"location",
+			"absence_category",
+			"travel_expense_amount",
+			"overtime_risk",
+			"employee_group",
+		]),
+		...conditionFields,
+	}),
+]);
 
 export const policyInputSchema = z.object({
 	name: z.string().trim().min(1),
@@ -46,6 +78,7 @@ export const policyInputSchema = z.object({
 				"team_lead",
 			]),
 			approverEmployeeId: z.string().trim().optional(),
+			fallbackBehavior: z.enum(ROUTING_STAGE_FALLBACKS).default("fail"),
 		}),
 	),
 });
@@ -81,7 +114,9 @@ function validatePolicyConditionValues(input: PolicyInput) {
 	return null;
 }
 
-export function normalizeApprovalPolicyInputForTest(input: PolicyInput) {
+export function normalizeApprovalPolicyInputForTest(
+	input: z.input<typeof policyInputSchema>,
+) {
 	const parsed = policyInputSchema.safeParse(input);
 	if (!parsed.success) {
 		return { success: false as const, error: firstZodError(parsed.error) };

@@ -1,6 +1,7 @@
-import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
+import type { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import {
 	employee,
@@ -11,6 +12,22 @@ import {
 	type surchargeRule,
 	workPeriod,
 } from "@/db/schema";
+import {
+	compareInstants,
+	comparePlainDates,
+	type Instant,
+	instantFromDate,
+	isInstant,
+	parseInstant,
+	parsePlainDate,
+	parsePlainTimeMinute,
+} from "@/lib/datetime/temporal-core";
+import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
+import type {
+	PolicyClockOutSurchargeRuleSnapshot,
+	PolicyClockOutSurchargeSnapshot,
+} from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
+import { isValidIanaTimezone } from "@/lib/time-tracking/timezone-capture";
 import { DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService } from "./database.service";
 
@@ -64,6 +81,14 @@ export type SurchargeSummary = {
 	byRuleType: Record<string, { minutes: number; count: number }>;
 };
 
+export interface ReconcileSurchargeWorkPeriodsInput {
+	organizationId: string;
+	employeeId: string;
+	surchargePeriodIds: string[];
+	staleSurchargePeriodIds: string[];
+	surchargeSnapshot: PolicyClockOutSurchargeSnapshot | null;
+}
+
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
@@ -72,7 +97,11 @@ export type SurchargeSummary = {
  * Check if a given timestamp falls within a time window.
  * Handles windows that span midnight (e.g., 22:00-06:00).
  */
-function isWithinTimeWindow(timestamp: DateTime, windowStart: string, windowEnd: string): boolean {
+function isWithinTimeWindow(
+	timestamp: DateTime,
+	windowStart: string,
+	windowEnd: string,
+): boolean {
 	const [startHour, startMin] = windowStart.split(":").map(Number);
 	const [endHour, endMin] = windowEnd.split(":").map(Number);
 
@@ -92,7 +121,10 @@ function isWithinTimeWindow(timestamp: DateTime, windowStart: string, windowEnd:
 /**
  * Check if a rule applies to a given minute timestamp.
  */
-function ruleAppliesToMinute(rule: EffectiveSurchargeModel["rules"][0], minute: DateTime): boolean {
+function ruleAppliesToMinute(
+	rule: EffectiveSurchargeModel["rules"][0],
+	minute: DateTime,
+): boolean {
 	// Check validity period
 	if (rule.validFrom && minute.toJSDate() < rule.validFrom) return false;
 	if (rule.validUntil && minute.toJSDate() > rule.validUntil) return false;
@@ -113,7 +145,11 @@ function ruleAppliesToMinute(rule: EffectiveSurchargeModel["rules"][0], minute: 
 
 		case "time_window": {
 			if (!rule.windowStartTime || !rule.windowEndTime) return false;
-			return isWithinTimeWindow(minute, rule.windowStartTime, rule.windowEndTime);
+			return isWithinTimeWindow(
+				minute,
+				rule.windowStartTime,
+				rule.windowEndTime,
+			);
 		}
 
 		case "date_based": {
@@ -123,7 +159,9 @@ function ruleAppliesToMinute(rule: EffectiveSurchargeModel["rules"][0], minute: 
 				return minuteDate.equals(ruleDate);
 			}
 			if (rule.dateRangeStart && rule.dateRangeEnd) {
-				const rangeStart = DateTime.fromJSDate(rule.dateRangeStart).startOf("day");
+				const rangeStart = DateTime.fromJSDate(rule.dateRangeStart).startOf(
+					"day",
+				);
 				const rangeEnd = DateTime.fromJSDate(rule.dateRangeEnd).startOf("day");
 				return minuteDate >= rangeStart && minuteDate <= rangeEnd;
 			}
@@ -167,7 +205,9 @@ function calculateSurchargesInternal(
 		const currentMinute = start.plus({ minutes: i });
 
 		// Find all applicable rules for this minute
-		const applicableRules = rules.filter((rule) => ruleAppliesToMinute(rule, currentMinute));
+		const applicableRules = rules.filter((rule) =>
+			ruleAppliesToMinute(rule, currentMinute),
+		);
 
 		if (applicableRules.length > 0) {
 			// "Max wins" - use highest percentage
@@ -175,7 +215,10 @@ function calculateSurchargesInternal(
 				parseFloat(rule.percentage) > parseFloat(max.percentage) ? rule : max,
 			);
 
-			ruleQualifyingMinutes.set(maxRule.id, (ruleQualifyingMinutes.get(maxRule.id) ?? 0) + 1);
+			ruleQualifyingMinutes.set(
+				maxRule.id,
+				(ruleQualifyingMinutes.get(maxRule.id) ?? 0) + 1,
+			);
 		}
 	}
 
@@ -213,6 +256,413 @@ function calculateSurchargesInternal(
 	};
 }
 
+export interface SurchargeEndpointCapture {
+	instant: Instant;
+	utcOffsetMinutes: number;
+	timezone: string;
+}
+
+function isValidSurchargeUtcOffset(value: unknown): value is number {
+	return (
+		typeof value === "number" &&
+		Number.isSafeInteger(value) &&
+		value >= -840 &&
+		value <= 840
+	);
+}
+
+function validateSurchargeEndpointCapture(
+	capture: SurchargeEndpointCapture,
+): void {
+	if (
+		!isInstant(capture.instant) ||
+		!isValidSurchargeUtcOffset(capture.utcOffsetMinutes) ||
+		!isValidIanaTimezone(capture.timezone)
+	) {
+		throw new Error("Surcharge endpoint capture is invalid");
+	}
+}
+
+function localBoundaryToInstant(
+	date: ReturnType<typeof parsePlainDate>,
+	time: ReturnType<typeof parsePlainTimeMinute>,
+	utcOffsetMinutes: number,
+): Instant {
+	return date
+		.toPlainDateTime(time)
+		.toZonedDateTime(offsetMinutesToTimeZoneId(utcOffsetMinutes))
+		.toInstant();
+}
+
+function snapshotRuleIsValidAt(
+	rule: PolicyClockOutSurchargeRuleSnapshot,
+	minute: Instant,
+): boolean {
+	if (
+		rule.validFrom &&
+		compareInstants(minute, parseInstant(rule.validFrom)) < 0
+	)
+		return false;
+	if (
+		rule.validUntil &&
+		compareInstants(minute, parseInstant(rule.validUntil)) > 0
+	)
+		return false;
+	return true;
+}
+
+function localDateMatchesRule(
+	rule: PolicyClockOutSurchargeRuleSnapshot,
+	date: ReturnType<typeof parsePlainDate>,
+): boolean {
+	switch (rule.ruleType) {
+		case "day_of_week": {
+			const day = [
+				"monday",
+				"tuesday",
+				"wednesday",
+				"thursday",
+				"friday",
+				"saturday",
+				"sunday",
+			][date.dayOfWeek - 1];
+			return rule.dayOfWeek === day;
+		}
+		case "time_window":
+			return true;
+		case "date_based": {
+			if (rule.specificDate)
+				return date.equals(parsePlainDate(rule.specificDate));
+			return Boolean(
+				rule.dateRangeStart &&
+					rule.dateRangeEnd &&
+					date.since(parsePlainDate(rule.dateRangeStart)).sign >= 0 &&
+					date.until(parsePlainDate(rule.dateRangeEnd)).sign >= 0,
+			);
+		}
+	}
+}
+
+function snapshotRuleIntervals(input: {
+	rule: PolicyClockOutSurchargeRuleSnapshot;
+	start: SurchargeEndpointCapture;
+	end: SurchargeEndpointCapture;
+}): Array<{ start: Instant; end: Instant }> {
+	// Endpoint offsets are the audit evidence: openings use clock-in and
+	// closings use clock-out. Never infer an unrecorded transition between them.
+	const windowOpening =
+		input.rule.ruleType === "time_window" && input.rule.windowStartTime
+			? parsePlainTimeMinute(input.rule.windowStartTime)
+			: null;
+	const windowClosing =
+		input.rule.ruleType === "time_window" && input.rule.windowEndTime
+			? parsePlainTimeMinute(input.rule.windowEndTime)
+			: null;
+	if (windowOpening && windowClosing && windowOpening.equals(windowClosing)) {
+		return [];
+	}
+	if (
+		input.rule.ruleType === "date_based" &&
+		input.rule.dateRangeStart &&
+		input.rule.dateRangeEnd
+	) {
+		const midnight = parsePlainTimeMinute("00:00");
+		const opening = localBoundaryToInstant(
+			parsePlainDate(input.rule.dateRangeStart),
+			midnight,
+			input.start.utcOffsetMinutes,
+		);
+		const closing = localBoundaryToInstant(
+			parsePlainDate(input.rule.dateRangeEnd).add({ days: 1 }),
+			midnight,
+			input.end.utcOffsetMinutes,
+		);
+		return compareInstants(opening, closing) < 0
+			? [{ start: opening, end: closing }]
+			: [];
+	}
+	const startOffset = offsetMinutesToTimeZoneId(input.start.utcOffsetMinutes);
+	const endOffset = offsetMinutesToTimeZoneId(input.end.utcOffsetMinutes);
+	const startLocalDate = input.start.instant
+		.toZonedDateTimeISO(startOffset)
+		.toPlainDate();
+	const endLocalDate = input.end.instant
+		.toZonedDateTimeISO(endOffset)
+		.toPlainDate();
+	let date =
+		comparePlainDates(startLocalDate, endLocalDate) <= 0
+			? startLocalDate.subtract({ days: 1 })
+			: endLocalDate.subtract({ days: 1 });
+	const finalDate =
+		comparePlainDates(startLocalDate, endLocalDate) >= 0
+			? startLocalDate.add({ days: 1 })
+			: endLocalDate.add({ days: 1 });
+	const intervals: Array<{ start: Instant; end: Instant }> = [];
+	while (comparePlainDates(date, finalDate) <= 0) {
+		if (localDateMatchesRule(input.rule, date)) {
+			const openingTime = windowOpening ?? parsePlainTimeMinute("00:00");
+			const closingTime = windowClosing ?? parsePlainTimeMinute("00:00");
+			const closingDate =
+				input.rule.ruleType !== "time_window" ||
+				closingTime.hour * 60 + closingTime.minute <=
+					openingTime.hour * 60 + openingTime.minute
+					? date.add({ days: 1 })
+					: date;
+			const opening = localBoundaryToInstant(
+				date,
+				openingTime,
+				input.start.utcOffsetMinutes,
+			);
+			const closing = localBoundaryToInstant(
+				closingDate,
+				closingTime,
+				input.end.utcOffsetMinutes,
+			);
+			if (compareInstants(opening, closing) < 0) {
+				intervals.push({ start: opening, end: closing });
+			}
+		}
+		date = date.add({ days: 1 });
+	}
+	return intervals;
+}
+
+export function evaluateSurchargeSnapshot(input: {
+	snapshot: PolicyClockOutSurchargeSnapshot;
+	start: SurchargeEndpointCapture;
+	end: SurchargeEndpointCapture;
+}): SurchargeCalculationResult {
+	validateSurchargeEndpointCapture(input.start);
+	validateSurchargeEndpointCapture(input.end);
+	const totalMinutes = Math.floor(
+		input.end.instant.since(input.start.instant).total({ unit: "minutes" }),
+	);
+	const rules =
+		input.snapshot.resolution.kind === "surcharge_model"
+			? input.snapshot.resolution.rules
+			: [];
+	if (totalMinutes <= 0 || rules.length === 0) {
+		return {
+			baseMinutes: Math.max(0, totalMinutes),
+			qualifyingMinutes: 0,
+			surchargeMinutes: 0,
+			totalCreditedMinutes: Math.max(0, totalMinutes),
+			appliedRules: [],
+		};
+	}
+	const intervals = new Map(
+		rules.map((rule) => [
+			rule.id,
+			snapshotRuleIntervals({ rule, start: input.start, end: input.end }),
+		]),
+	);
+	const qualifying = new Map<string, number>();
+	for (let minuteIndex = 0; minuteIndex < totalMinutes; minuteIndex += 1) {
+		const minute = input.start.instant.add({ minutes: minuteIndex });
+		const applicable = rules.filter(
+			(rule) =>
+				snapshotRuleIsValidAt(rule, minute) &&
+				(intervals.get(rule.id) ?? []).some(
+					(interval) =>
+						compareInstants(minute, interval.start) >= 0 &&
+						compareInstants(minute, interval.end) < 0,
+				),
+		);
+		if (applicable.length === 0) continue;
+		const winner = applicable.reduce((highest, rule) =>
+			Number(rule.percentage) > Number(highest.percentage) ? rule : highest,
+		);
+		qualifying.set(winner.id, (qualifying.get(winner.id) ?? 0) + 1);
+	}
+	const appliedRules: SurchargeCalculationResult["appliedRules"] = [];
+	let qualifyingMinutes = 0;
+	let surchargeMinutes = 0;
+	for (const rule of rules) {
+		const ruleMinutes = qualifying.get(rule.id) ?? 0;
+		if (ruleMinutes === 0) continue;
+		const percentage = Number(rule.percentage);
+		const ruleSurchargeMinutes = Math.round(ruleMinutes * percentage);
+		appliedRules.push({
+			ruleId: rule.id,
+			ruleName: rule.name,
+			ruleType: rule.ruleType,
+			percentage,
+			qualifyingMinutes: ruleMinutes,
+			surchargeMinutes: ruleSurchargeMinutes,
+		});
+		qualifyingMinutes += ruleMinutes;
+		surchargeMinutes += ruleSurchargeMinutes;
+	}
+	return {
+		baseMinutes: totalMinutes,
+		qualifyingMinutes,
+		surchargeMinutes,
+		totalCreditedMinutes: totalMinutes + surchargeMinutes,
+		appliedRules,
+	};
+}
+
+export async function reconcileSurchargeWorkPeriodsWithDatabase(
+	database: typeof db,
+	input: ReconcileSurchargeWorkPeriodsInput,
+): Promise<void> {
+	try {
+		const targetIdSet = new Set(input.surchargePeriodIds);
+		const targetIds = [...targetIdSet];
+		const staleIds = [...new Set(input.staleSurchargePeriodIds)];
+		if (
+			!input.organizationId ||
+			!input.employeeId ||
+			targetIds.length !== input.surchargePeriodIds.length ||
+			staleIds.length !== input.staleSurchargePeriodIds.length ||
+			(targetIds.length > 0 && input.surchargeSnapshot === null)
+		) {
+			throw new Error("invalid reconciliation input");
+		}
+		const allIds = [...new Set([...targetIds, ...staleIds])];
+		await database.transaction(async (tx) => {
+			if (allIds.length === 0) return;
+			const periods = await tx.query.workPeriod.findMany({
+				where: and(
+					inArray(workPeriod.id, allIds),
+					eq(workPeriod.organizationId, input.organizationId),
+					eq(workPeriod.employeeId, input.employeeId),
+				),
+				columns: {
+					id: true,
+					organizationId: true,
+					employeeId: true,
+					startTime: true,
+					endTime: true,
+					approvalStatus: true,
+				},
+				with: {
+					clockIn: {
+						columns: {
+							timestamp: true,
+							timezone: true,
+							utcOffsetMinutes: true,
+						},
+					},
+					clockOut: {
+						columns: {
+							timestamp: true,
+							timezone: true,
+							utcOffsetMinutes: true,
+						},
+					},
+				},
+			});
+			const foundIds = new Set(periods.map((period) => period.id));
+			if (
+				periods.length !== allIds.length ||
+				allIds.some((id) => !foundIds.has(id)) ||
+				periods.some(
+					(period) =>
+						period.organizationId !== input.organizationId ||
+						period.employeeId !== input.employeeId,
+				)
+			) {
+				throw new Error("period ownership mismatch");
+			}
+			if (
+				periods.some(
+					(period) =>
+						targetIdSet.has(period.id) &&
+						(period.approvalStatus !== "approved" || !period.endTime),
+				)
+			) {
+				throw new Error("target period is not approved");
+			}
+			if (
+				periods.some(
+					(period) =>
+						targetIdSet.has(period.id) &&
+						(!period.clockIn ||
+							!period.clockOut ||
+							period.clockIn.timestamp.getTime() !==
+								period.startTime.getTime() ||
+							period.clockOut.timestamp.getTime() !==
+								period.endTime?.getTime() ||
+							!isValidSurchargeUtcOffset(period.clockIn.utcOffsetMinutes) ||
+							!isValidSurchargeUtcOffset(period.clockOut.utcOffsetMinutes) ||
+							!isValidIanaTimezone(period.clockIn.timezone) ||
+							!isValidIanaTimezone(period.clockOut.timezone)),
+				)
+			) {
+				throw new Error("period timezone evidence mismatch");
+			}
+			await tx
+				.delete(surchargeCalculation)
+				.where(
+					and(
+						eq(surchargeCalculation.organizationId, input.organizationId),
+						eq(surchargeCalculation.employeeId, input.employeeId),
+						inArray(surchargeCalculation.workPeriodId, allIds),
+					),
+				);
+			if (targetIds.length === 0) return;
+
+			const calculatedAt = new Date();
+			const calculationRows: (typeof surchargeCalculation.$inferInsert)[] = [];
+			for (const period of periods) {
+				if (!targetIdSet.has(period.id) || !period.endTime) continue;
+				if (
+					!period.clockIn ||
+					!period.clockOut ||
+					period.clockIn.timestamp.getTime() !== period.startTime.getTime() ||
+					period.clockOut.timestamp.getTime() !== period.endTime.getTime() ||
+					!Number.isInteger(period.clockIn.utcOffsetMinutes) ||
+					!Number.isInteger(period.clockOut.utcOffsetMinutes) ||
+					!isValidIanaTimezone(period.clockIn.timezone) ||
+					!isValidIanaTimezone(period.clockOut.timezone)
+				) {
+					throw new Error("period timezone evidence mismatch");
+				}
+				const result = evaluateSurchargeSnapshot({
+					snapshot: input.surchargeSnapshot as PolicyClockOutSurchargeSnapshot,
+					start: {
+						instant: instantFromDate(period.clockIn.timestamp),
+						utcOffsetMinutes: period.clockIn.utcOffsetMinutes,
+						timezone: period.clockIn.timezone,
+					},
+					end: {
+						instant: instantFromDate(period.clockOut.timestamp),
+						utcOffsetMinutes: period.clockOut.utcOffsetMinutes,
+						timezone: period.clockOut.timezone,
+					},
+				});
+				if (result.surchargeMinutes === 0) continue;
+				const primaryRule = result.appliedRules[0];
+				calculationRows.push({
+					employeeId: input.employeeId,
+					organizationId: input.organizationId,
+					workPeriodId: period.id,
+					surchargeRuleId: null,
+					surchargeModelId: null,
+					calculationDate: calculatedAt,
+					baseMinutes: result.baseMinutes,
+					qualifyingMinutes: result.qualifyingMinutes,
+					surchargeMinutes: result.surchargeMinutes,
+					appliedPercentage: primaryRule?.percentage.toString() ?? "0",
+					calculationDetails: {
+						workPeriodStartTime: period.startTime.toISOString(),
+						workPeriodEndTime: period.endTime.toISOString(),
+						rulesApplied: result.appliedRules,
+						overlapPolicy: "max_wins",
+						calculatedAt: calculatedAt.toISOString(),
+					},
+				});
+			}
+			if (calculationRows.length > 0) {
+				await tx.insert(surchargeCalculation).values(calculationRows);
+			}
+		});
+	} catch (error) {
+		throw new Error("Surcharge reconciliation failed", { cause: error });
+	}
+}
+
 // ============================================
 // SERVICE INTERFACE
 // ============================================
@@ -226,7 +676,10 @@ export class SurchargeService extends Context.Tag("SurchargeService")<
 		 */
 		readonly getEffectiveSurchargeModel: (
 			employeeId: string,
-		) => Effect.Effect<EffectiveSurchargeModel | null, NotFoundError | DatabaseError>;
+		) => Effect.Effect<
+			EffectiveSurchargeModel | null,
+			NotFoundError | DatabaseError
+		>;
 
 		/**
 		 * Calculate surcharges for a completed work period.
@@ -234,7 +687,10 @@ export class SurchargeService extends Context.Tag("SurchargeService")<
 		 */
 		readonly calculateSurcharges: (
 			workPeriodId: string,
-		) => Effect.Effect<SurchargeCalculationResult | null, NotFoundError | DatabaseError>;
+		) => Effect.Effect<
+			SurchargeCalculationResult | null,
+			NotFoundError | DatabaseError
+		>;
 
 		/**
 		 * Calculate and persist surcharge calculation for a work period.
@@ -242,7 +698,10 @@ export class SurchargeService extends Context.Tag("SurchargeService")<
 		 */
 		readonly persistSurchargeCalculation: (
 			workPeriodId: string,
-		) => Effect.Effect<SurchargeCalculationResult | null, NotFoundError | DatabaseError>;
+		) => Effect.Effect<
+			SurchargeCalculationResult | null,
+			NotFoundError | DatabaseError
+		>;
 
 		/**
 		 * Recalculate surcharges for a work period (e.g., after correction).
@@ -250,7 +709,14 @@ export class SurchargeService extends Context.Tag("SurchargeService")<
 		 */
 		readonly recalculateSurcharges: (
 			workPeriodId: string,
-		) => Effect.Effect<SurchargeCalculationResult | null, NotFoundError | DatabaseError>;
+		) => Effect.Effect<
+			SurchargeCalculationResult | null,
+			NotFoundError | DatabaseError
+		>;
+
+		readonly reconcileWorkPeriods: (
+			input: ReconcileSurchargeWorkPeriodsInput,
+		) => Effect.Effect<void, DatabaseError>;
 
 		/**
 		 * Get surcharge credits for an employee in a date range.
@@ -264,9 +730,56 @@ export class SurchargeService extends Context.Tag("SurchargeService")<
 		/**
 		 * Check if surcharges are enabled for an organization.
 		 */
-		readonly isSurchargesEnabled: (organizationId: string) => Effect.Effect<boolean, DatabaseError>;
+		readonly isSurchargesEnabled: (
+			organizationId: string,
+		) => Effect.Effect<boolean, DatabaseError>;
 	}
 >() {}
+
+interface SurchargeCalculationOperations {
+	readonly isSurchargesEnabled: (
+		organizationId: string,
+	) => Effect.Effect<boolean, DatabaseError>;
+	readonly persistSurchargeCalculation: (
+		workPeriodId: string,
+	) => Effect.Effect<
+		SurchargeCalculationResult | null,
+		NotFoundError | DatabaseError
+	>;
+	readonly reconcileWorkPeriods: (
+		input: ReconcileSurchargeWorkPeriodsInput,
+	) => Effect.Effect<void, DatabaseError>;
+}
+
+export function calculateSurchargeForWorkPeriod(
+	surchargeService: SurchargeCalculationOperations,
+	input: {
+		workPeriodId: string;
+		organizationId: string;
+		immutableEvidence?: {
+			employeeId: string;
+			snapshot: PolicyClockOutSurchargeSnapshot;
+		};
+	},
+) {
+	if (input.immutableEvidence) {
+		return surchargeService.reconcileWorkPeriods({
+			organizationId: input.organizationId,
+			employeeId: input.immutableEvidence.employeeId,
+			surchargePeriodIds: [input.workPeriodId],
+			staleSurchargePeriodIds: [],
+			surchargeSnapshot: input.immutableEvidence.snapshot,
+		});
+	}
+
+	return Effect.gen(function* (_) {
+		const isEnabled = yield* _(
+			surchargeService.isSurchargesEnabled(input.organizationId),
+		);
+		if (!isEnabled) return;
+		yield* _(surchargeService.persistSurchargeCalculation(input.workPeriodId));
+	});
+}
 
 // ============================================
 // SERVICE IMPLEMENTATION
@@ -310,6 +823,17 @@ export const SurchargeServiceLive = Layer.effect(
 		});
 
 		return SurchargeService.of({
+			reconcileWorkPeriods: (input) =>
+				Effect.tryPromise({
+					try: () =>
+						reconcileSurchargeWorkPeriodsWithDatabase(dbService.db, input),
+					catch: (error) =>
+						new DatabaseError({
+							message: "Surcharge reconciliation failed",
+							operation: "reconcileWorkPeriods",
+							cause: error,
+						}),
+				}),
 			getEffectiveSurchargeModel: (employeeId) =>
 				Effect.gen(function* (_) {
 					// 1. Get employee with team info
@@ -342,44 +866,11 @@ export const SurchargeServiceLive = Layer.effect(
 					// 2. Check employee-level assignment (priority 2 - highest)
 					const employeeAssignment = yield* _(
 						dbService.query("getEmployeeSurchargeAssignment", async () => {
-							return await dbService.db.query.surchargeModelAssignment.findFirst({
-								where: and(
-									eq(surchargeModelAssignment.employeeId, employeeId),
-									eq(surchargeModelAssignment.assignmentType, "employee"),
-									eq(surchargeModelAssignment.isActive, true),
-									or(
-										isNull(surchargeModelAssignment.effectiveFrom),
-										lte(surchargeModelAssignment.effectiveFrom, now),
-									),
-									or(
-										isNull(surchargeModelAssignment.effectiveUntil),
-										gte(surchargeModelAssignment.effectiveUntil, now),
-									),
-								),
-								with: {
-									model: {
-										with: {
-											rules: true,
-										},
-									},
-								},
-							});
-						}),
-					);
-
-					if (employeeAssignment?.model?.isActive) {
-						return mapToEffective(employeeAssignment.model, "employee", "Individual");
-					}
-
-					// 3. Check team-level assignment (priority 1)
-					if (emp.teamId) {
-						const teamId = emp.teamId;
-						const teamAssignment = yield* _(
-							dbService.query("getTeamSurchargeAssignment", async () => {
-								return await dbService.db.query.surchargeModelAssignment.findFirst({
+							return await dbService.db.query.surchargeModelAssignment.findFirst(
+								{
 									where: and(
-										eq(surchargeModelAssignment.teamId, teamId),
-										eq(surchargeModelAssignment.assignmentType, "team"),
+										eq(surchargeModelAssignment.employeeId, employeeId),
+										eq(surchargeModelAssignment.assignmentType, "employee"),
 										eq(surchargeModelAssignment.isActive, true),
 										or(
 											isNull(surchargeModelAssignment.effectiveFrom),
@@ -396,9 +887,50 @@ export const SurchargeServiceLive = Layer.effect(
 												rules: true,
 											},
 										},
-										team: true,
 									},
-								});
+								},
+							);
+						}),
+					);
+
+					if (employeeAssignment?.model?.isActive) {
+						return mapToEffective(
+							employeeAssignment.model,
+							"employee",
+							"Individual",
+						);
+					}
+
+					// 3. Check team-level assignment (priority 1)
+					if (emp.teamId) {
+						const teamId = emp.teamId;
+						const teamAssignment = yield* _(
+							dbService.query("getTeamSurchargeAssignment", async () => {
+								return await dbService.db.query.surchargeModelAssignment.findFirst(
+									{
+										where: and(
+											eq(surchargeModelAssignment.teamId, teamId),
+											eq(surchargeModelAssignment.assignmentType, "team"),
+											eq(surchargeModelAssignment.isActive, true),
+											or(
+												isNull(surchargeModelAssignment.effectiveFrom),
+												lte(surchargeModelAssignment.effectiveFrom, now),
+											),
+											or(
+												isNull(surchargeModelAssignment.effectiveUntil),
+												gte(surchargeModelAssignment.effectiveUntil, now),
+											),
+										),
+										with: {
+											model: {
+												with: {
+													rules: true,
+												},
+											},
+											team: true,
+										},
+									},
+								);
 							}),
 						);
 
@@ -414,33 +946,42 @@ export const SurchargeServiceLive = Layer.effect(
 					// 4. Check organization-level assignment (priority 0 - lowest)
 					const orgAssignment = yield* _(
 						dbService.query("getOrgSurchargeAssignment", async () => {
-							return await dbService.db.query.surchargeModelAssignment.findFirst({
-								where: and(
-									eq(surchargeModelAssignment.organizationId, emp.organizationId),
-									eq(surchargeModelAssignment.assignmentType, "organization"),
-									eq(surchargeModelAssignment.isActive, true),
-									or(
-										isNull(surchargeModelAssignment.effectiveFrom),
-										lte(surchargeModelAssignment.effectiveFrom, now),
+							return await dbService.db.query.surchargeModelAssignment.findFirst(
+								{
+									where: and(
+										eq(
+											surchargeModelAssignment.organizationId,
+											emp.organizationId,
+										),
+										eq(surchargeModelAssignment.assignmentType, "organization"),
+										eq(surchargeModelAssignment.isActive, true),
+										or(
+											isNull(surchargeModelAssignment.effectiveFrom),
+											lte(surchargeModelAssignment.effectiveFrom, now),
+										),
+										or(
+											isNull(surchargeModelAssignment.effectiveUntil),
+											gte(surchargeModelAssignment.effectiveUntil, now),
+										),
 									),
-									or(
-										isNull(surchargeModelAssignment.effectiveUntil),
-										gte(surchargeModelAssignment.effectiveUntil, now),
-									),
-								),
-								with: {
-									model: {
-										with: {
-											rules: true,
+									with: {
+										model: {
+											with: {
+												rules: true,
+											},
 										},
 									},
 								},
-							});
+							);
 						}),
 					);
 
 					if (orgAssignment?.model?.isActive) {
-						return mapToEffective(orgAssignment.model, "organization", "Organization Default");
+						return mapToEffective(
+							orgAssignment.model,
+							"organization",
+							"Organization Default",
+						);
 					}
 
 					// No surcharge model assigned
@@ -516,31 +1057,37 @@ export const SurchargeServiceLive = Layer.effect(
 									});
 
 								if (employeeAssignment?.model?.isActive) {
-									return mapToEffective(employeeAssignment.model, "employee", "Individual");
+									return mapToEffective(
+										employeeAssignment.model,
+										"employee",
+										"Individual",
+									);
 								}
 
 								// Team-level
 								if (emp.teamId) {
 									const teamAssignment =
-										await dbService.db.query.surchargeModelAssignment.findFirst({
-											where: and(
-												eq(surchargeModelAssignment.teamId, emp.teamId),
-												eq(surchargeModelAssignment.assignmentType, "team"),
-												eq(surchargeModelAssignment.isActive, true),
-												or(
-													isNull(surchargeModelAssignment.effectiveFrom),
-													lte(surchargeModelAssignment.effectiveFrom, now),
+										await dbService.db.query.surchargeModelAssignment.findFirst(
+											{
+												where: and(
+													eq(surchargeModelAssignment.teamId, emp.teamId),
+													eq(surchargeModelAssignment.assignmentType, "team"),
+													eq(surchargeModelAssignment.isActive, true),
+													or(
+														isNull(surchargeModelAssignment.effectiveFrom),
+														lte(surchargeModelAssignment.effectiveFrom, now),
+													),
+													or(
+														isNull(surchargeModelAssignment.effectiveUntil),
+														gte(surchargeModelAssignment.effectiveUntil, now),
+													),
 												),
-												or(
-													isNull(surchargeModelAssignment.effectiveUntil),
-													gte(surchargeModelAssignment.effectiveUntil, now),
-												),
-											),
-											with: {
-												model: { with: { rules: true } },
-												team: true,
+												with: {
+													model: { with: { rules: true } },
+													team: true,
+												},
 											},
-										});
+										);
 
 									if (teamAssignment?.model?.isActive) {
 										return mapToEffective(
@@ -552,24 +1099,31 @@ export const SurchargeServiceLive = Layer.effect(
 								}
 
 								// Org-level
-								const orgAssignment = await dbService.db.query.surchargeModelAssignment.findFirst({
-									where: and(
-										eq(surchargeModelAssignment.organizationId, emp.organizationId),
-										eq(surchargeModelAssignment.assignmentType, "organization"),
-										eq(surchargeModelAssignment.isActive, true),
-										or(
-											isNull(surchargeModelAssignment.effectiveFrom),
-											lte(surchargeModelAssignment.effectiveFrom, now),
+								const orgAssignment =
+									await dbService.db.query.surchargeModelAssignment.findFirst({
+										where: and(
+											eq(
+												surchargeModelAssignment.organizationId,
+												emp.organizationId,
+											),
+											eq(
+												surchargeModelAssignment.assignmentType,
+												"organization",
+											),
+											eq(surchargeModelAssignment.isActive, true),
+											or(
+												isNull(surchargeModelAssignment.effectiveFrom),
+												lte(surchargeModelAssignment.effectiveFrom, now),
+											),
+											or(
+												isNull(surchargeModelAssignment.effectiveUntil),
+												gte(surchargeModelAssignment.effectiveUntil, now),
+											),
 										),
-										or(
-											isNull(surchargeModelAssignment.effectiveUntil),
-											gte(surchargeModelAssignment.effectiveUntil, now),
-										),
-									),
-									with: {
-										model: { with: { rules: true } },
-									},
-								});
+										with: {
+											model: { with: { rules: true } },
+										},
+									});
 
 								if (orgAssignment?.model?.isActive) {
 									return mapToEffective(
@@ -649,10 +1203,12 @@ export const SurchargeServiceLive = Layer.effect(
 							baseMinutes: existing.baseMinutes,
 							qualifyingMinutes: existing.qualifyingMinutes,
 							surchargeMinutes: existing.surchargeMinutes,
-							totalCreditedMinutes: existing.baseMinutes + existing.surchargeMinutes,
+							totalCreditedMinutes:
+								existing.baseMinutes + existing.surchargeMinutes,
 							appliedRules:
-								(existing.calculationDetails as SurchargeCalculationDetails | null)?.rulesApplied ??
-								[],
+								(
+									existing.calculationDetails as SurchargeCalculationDetails | null
+								)?.rulesApplied ?? [],
 						};
 					}
 
@@ -685,31 +1241,37 @@ export const SurchargeServiceLive = Layer.effect(
 									});
 
 								if (employeeAssignment?.model?.isActive) {
-									return mapToEffective(employeeAssignment.model, "employee", "Individual");
+									return mapToEffective(
+										employeeAssignment.model,
+										"employee",
+										"Individual",
+									);
 								}
 
 								// Team-level
 								if (emp.teamId) {
 									const teamAssignment =
-										await dbService.db.query.surchargeModelAssignment.findFirst({
-											where: and(
-												eq(surchargeModelAssignment.teamId, emp.teamId),
-												eq(surchargeModelAssignment.assignmentType, "team"),
-												eq(surchargeModelAssignment.isActive, true),
-												or(
-													isNull(surchargeModelAssignment.effectiveFrom),
-													lte(surchargeModelAssignment.effectiveFrom, now),
+										await dbService.db.query.surchargeModelAssignment.findFirst(
+											{
+												where: and(
+													eq(surchargeModelAssignment.teamId, emp.teamId),
+													eq(surchargeModelAssignment.assignmentType, "team"),
+													eq(surchargeModelAssignment.isActive, true),
+													or(
+														isNull(surchargeModelAssignment.effectiveFrom),
+														lte(surchargeModelAssignment.effectiveFrom, now),
+													),
+													or(
+														isNull(surchargeModelAssignment.effectiveUntil),
+														gte(surchargeModelAssignment.effectiveUntil, now),
+													),
 												),
-												or(
-													isNull(surchargeModelAssignment.effectiveUntil),
-													gte(surchargeModelAssignment.effectiveUntil, now),
-												),
-											),
-											with: {
-												model: { with: { rules: true } },
-												team: true,
+												with: {
+													model: { with: { rules: true } },
+													team: true,
+												},
 											},
-										});
+										);
 
 									if (teamAssignment?.model?.isActive) {
 										return mapToEffective(
@@ -721,24 +1283,31 @@ export const SurchargeServiceLive = Layer.effect(
 								}
 
 								// Org-level
-								const orgAssignment = await dbService.db.query.surchargeModelAssignment.findFirst({
-									where: and(
-										eq(surchargeModelAssignment.organizationId, emp.organizationId),
-										eq(surchargeModelAssignment.assignmentType, "organization"),
-										eq(surchargeModelAssignment.isActive, true),
-										or(
-											isNull(surchargeModelAssignment.effectiveFrom),
-											lte(surchargeModelAssignment.effectiveFrom, now),
+								const orgAssignment =
+									await dbService.db.query.surchargeModelAssignment.findFirst({
+										where: and(
+											eq(
+												surchargeModelAssignment.organizationId,
+												emp.organizationId,
+											),
+											eq(
+												surchargeModelAssignment.assignmentType,
+												"organization",
+											),
+											eq(surchargeModelAssignment.isActive, true),
+											or(
+												isNull(surchargeModelAssignment.effectiveFrom),
+												lte(surchargeModelAssignment.effectiveFrom, now),
+											),
+											or(
+												isNull(surchargeModelAssignment.effectiveUntil),
+												gte(surchargeModelAssignment.effectiveUntil, now),
+											),
 										),
-										or(
-											isNull(surchargeModelAssignment.effectiveUntil),
-											gte(surchargeModelAssignment.effectiveUntil, now),
-										),
-									),
-									with: {
-										model: { with: { rules: true } },
-									},
-								});
+										with: {
+											model: { with: { rules: true } },
+										},
+									});
 
 								if (orgAssignment?.model?.isActive) {
 									return mapToEffective(
@@ -874,30 +1443,36 @@ export const SurchargeServiceLive = Layer.effect(
 									});
 
 								if (employeeAssignment?.model?.isActive) {
-									model = mapToEffective(employeeAssignment.model, "employee", "Individual");
+									model = mapToEffective(
+										employeeAssignment.model,
+										"employee",
+										"Individual",
+									);
 								}
 
 								if (!model && emp.teamId) {
 									const teamAssignment =
-										await dbService.db.query.surchargeModelAssignment.findFirst({
-											where: and(
-												eq(surchargeModelAssignment.teamId, emp.teamId),
-												eq(surchargeModelAssignment.assignmentType, "team"),
-												eq(surchargeModelAssignment.isActive, true),
-												or(
-													isNull(surchargeModelAssignment.effectiveFrom),
-													lte(surchargeModelAssignment.effectiveFrom, now),
+										await dbService.db.query.surchargeModelAssignment.findFirst(
+											{
+												where: and(
+													eq(surchargeModelAssignment.teamId, emp.teamId),
+													eq(surchargeModelAssignment.assignmentType, "team"),
+													eq(surchargeModelAssignment.isActive, true),
+													or(
+														isNull(surchargeModelAssignment.effectiveFrom),
+														lte(surchargeModelAssignment.effectiveFrom, now),
+													),
+													or(
+														isNull(surchargeModelAssignment.effectiveUntil),
+														gte(surchargeModelAssignment.effectiveUntil, now),
+													),
 												),
-												or(
-													isNull(surchargeModelAssignment.effectiveUntil),
-													gte(surchargeModelAssignment.effectiveUntil, now),
-												),
-											),
-											with: {
-												model: { with: { rules: true } },
-												team: true,
+												with: {
+													model: { with: { rules: true } },
+													team: true,
+												},
 											},
-										});
+										);
 
 									if (teamAssignment?.model?.isActive) {
 										model = mapToEffective(
@@ -909,24 +1484,31 @@ export const SurchargeServiceLive = Layer.effect(
 								}
 
 								if (!model) {
-									const orgAssignment = await dbService.db.query.surchargeModelAssignment.findFirst(
-										{
-											where: and(
-												eq(surchargeModelAssignment.organizationId, emp.organizationId),
-												eq(surchargeModelAssignment.assignmentType, "organization"),
-												eq(surchargeModelAssignment.isActive, true),
-												or(
-													isNull(surchargeModelAssignment.effectiveFrom),
-													lte(surchargeModelAssignment.effectiveFrom, now),
+									const orgAssignment =
+										await dbService.db.query.surchargeModelAssignment.findFirst(
+											{
+												where: and(
+													eq(
+														surchargeModelAssignment.organizationId,
+														emp.organizationId,
+													),
+													eq(
+														surchargeModelAssignment.assignmentType,
+														"organization",
+													),
+													eq(surchargeModelAssignment.isActive, true),
+													or(
+														isNull(surchargeModelAssignment.effectiveFrom),
+														lte(surchargeModelAssignment.effectiveFrom, now),
+													),
+													or(
+														isNull(surchargeModelAssignment.effectiveUntil),
+														gte(surchargeModelAssignment.effectiveUntil, now),
+													),
 												),
-												or(
-													isNull(surchargeModelAssignment.effectiveUntil),
-													gte(surchargeModelAssignment.effectiveUntil, now),
-												),
-											),
-											with: { model: { with: { rules: true } } },
-										},
-									);
+												with: { model: { with: { rules: true } } },
+											},
+										);
 
 									if (orgAssignment?.model?.isActive) {
 										model = mapToEffective(
@@ -1018,14 +1600,16 @@ export const SurchargeServiceLive = Layer.effect(
 
 					let baseMinutes = 0;
 					let totalSurchargeMinutes = 0;
-					const byRuleType: Record<string, { minutes: number; count: number }> = {};
+					const byRuleType: Record<string, { minutes: number; count: number }> =
+						{};
 
 					for (const calc of calculations) {
 						baseMinutes += calc.baseMinutes;
 						totalSurchargeMinutes += calc.surchargeMinutes;
 
 						// Aggregate by rule type from details
-						const details = calc.calculationDetails as SurchargeCalculationDetails | null;
+						const details =
+							calc.calculationDetails as SurchargeCalculationDetails | null;
 						if (details?.rulesApplied) {
 							for (const rule of details.rulesApplied) {
 								if (!byRuleType[rule.ruleType]) {

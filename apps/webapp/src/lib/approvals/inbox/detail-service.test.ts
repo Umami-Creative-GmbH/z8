@@ -1,6 +1,10 @@
 import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import { getApprovalInboxDetailFromRequest } from "@/lib/approvals/inbox/read-service";
+import type { OrdinaryCanonicalApproval } from "@/lib/approvals/inbox/ordinary-canonical-read";
+import {
+	getApprovalInboxDetail,
+	getApprovalInboxDetailFromRequest,
+} from "@/lib/approvals/inbox/read-service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 
 const request = {
@@ -60,6 +64,39 @@ function createHandler(detail = createDetail(), type = "absence_entry") {
 }
 
 describe("getApprovalInboxDetailFromRequest", () => {
+	it("resolves canonical-only detail by assignment id", async () => {
+		const detail = {
+			item: { id: "assignment-1" },
+			sections: [],
+			actions: {},
+		};
+		const canonical = {
+			item: { id: "assignment-1" },
+			detail,
+		} as unknown as OrdinaryCanonicalApproval;
+		const loadCanonicalOrdinaryApprovals = vi.fn(async () => [canonical]);
+
+		await expect(
+			getApprovalInboxDetail({
+				approvalId: "assignment-1",
+				organizationId: "org-1",
+				approverId: "manager-1",
+				database: {
+					query: { approvalRequest: { findFirst: async () => null } },
+				},
+				loadCanonicalOrdinaryApprovals,
+			}),
+		).resolves.toBe(detail);
+		expect(loadCanonicalOrdinaryApprovals).toHaveBeenCalledWith({
+			approverId: "manager-1",
+			organizationId: "org-1",
+			includeAllApprovers: undefined,
+			eligibleApprovalScopes: undefined,
+			assignmentId: "assignment-1",
+			limit: 1,
+		});
+	});
+
 	it("returns serializable generic detail sections", async () => {
 		const result = await getApprovalInboxDetailFromRequest({
 			request,
@@ -67,7 +104,10 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		});
 
 		expect(result.item.id).toBe("approval-1");
-		expect(result.sections.map((section) => section.type)).toEqual(["key_value", "timeline"]);
+		expect(result.sections.map((section) => section.type)).toEqual([
+			"key_value",
+			"timeline",
+		]);
 		expect(JSON.parse(JSON.stringify(result))).toEqual(result);
 	});
 
@@ -85,7 +125,10 @@ describe("getApprovalInboxDetailFromRequest", () => {
 			),
 		} as never;
 
-		const result = await getApprovalInboxDetailFromRequest({ request, handler });
+		const result = await getApprovalInboxDetailFromRequest({
+			request,
+			handler,
+		});
 
 		expect(result.item.id).toBe("approval-1");
 		expect(handler.getDetail).toHaveBeenCalledWith("absence-1", "org-1", {
@@ -103,7 +146,11 @@ describe("getApprovalInboxDetailFromRequest", () => {
 			approvalType: "time_entry",
 			entityId: "period-1",
 			typeName: "Time Correction",
-			display: { title: "Time Correction", subtitle: "May 31", summary: "Pending correction" },
+			display: {
+				title: "Time Correction",
+				subtitle: "May 31",
+				summary: "Pending correction",
+			},
 		});
 		detail.entity = {
 			pendingCorrection: {
@@ -134,6 +181,18 @@ describe("getApprovalInboxDetailFromRequest", () => {
 				{ label: "Clock out", value: "16:00 -> 16:30" },
 			],
 		});
+		expect(result.sections).toContainEqual({
+			type: "timeline",
+			title: "Timeline",
+			events: [
+				{
+					id: "created",
+					label: "Request created",
+					at: "2026-05-31T09:00:00.000Z",
+					actorName: "Avery Employee",
+				},
+			],
+		});
 	});
 
 	it("warns when a pending time correction approval has missing correction entries", async () => {
@@ -146,12 +205,19 @@ describe("getApprovalInboxDetailFromRequest", () => {
 			approvalType: "time_entry",
 			entityId: "period-1",
 			typeName: "Time Correction",
-			display: { title: "Time Correction", subtitle: "May 31", summary: "Pending correction" },
+			display: {
+				title: "Time Correction",
+				subtitle: "May 31",
+				summary: "Pending correction",
+			},
 		});
 		detail.entity = {
 			pendingCorrection: {
 				action: "edit",
-				clockIn: { original: new Date("2026-05-31T08:00:00.000Z"), requested: null },
+				clockIn: {
+					original: new Date("2026-05-31T08:00:00.000Z"),
+					requested: null,
+				},
 				clockOut: null,
 				isOrphaned: true,
 			},
@@ -170,6 +236,49 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		});
 		expect(result.actions.canApprove).toBe(false);
 		expect(result.actions.canReject).toBe(true);
+	});
+
+	it("warns and disables decisions for an unclassified legacy time approval", async () => {
+		const timeRequest = {
+			...request,
+			entityType: "time_entry",
+			entityId: "period-1",
+		};
+		const warning =
+			"This legacy time approval could not be classified. Reconcile it before making a decision.";
+		const detail = createDetail({
+			approvalType: "time_entry",
+			entityId: "period-1",
+			typeName: "Unclassified Time Approval",
+			isActionable: false,
+			warning,
+			display: {
+				title: "Unclassified Time Approval",
+				subtitle: "May 31",
+				summary: warning,
+			},
+		});
+		detail.entity = {
+			timeApprovalKind: "unclassified",
+			timeRequestWarning: warning,
+		};
+
+		const result = await getApprovalInboxDetailFromRequest({
+			request: timeRequest,
+			handler: createHandler(detail, "time_entry"),
+		});
+
+		expect(result.sections).toContainEqual({
+			type: "callout",
+			title: "Reconciliation required",
+			body: warning,
+			tone: "warning",
+		});
+		expect(result.actions).toMatchObject({
+			canApprove: false,
+			canReject: false,
+			canBulkApprove: false,
+		});
 	});
 
 	it("rejects unsupported entity types before calling the handler", async () => {

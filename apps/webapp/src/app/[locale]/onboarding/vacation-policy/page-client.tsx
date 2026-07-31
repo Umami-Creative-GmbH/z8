@@ -4,7 +4,7 @@ import { IconBeach, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useRouter } from "@/navigation";
+import { runOnboardingAction } from "../run-onboarding-action";
 import {
 	checkIsAdmin,
 	createVacationPolicyOnboarding,
@@ -84,302 +85,76 @@ function VacationPolicyActions({
 	);
 }
 
-type VacationPolicyValues = {
-	name: string;
-	defaultAnnualDays: number;
-	accrualType: "annual" | "monthly" | "biweekly";
-	allowCarryover: boolean;
-	maxCarryoverDays: number;
-};
+type Translate = ReturnType<typeof useTranslate>["t"];
 
-function useVacationPolicyForm(
-	defaultName: string,
-	onSubmit: (value: VacationPolicyValues) => Promise<void>,
-) {
+function useVacationPolicyForm({
+	push,
+	setLoading,
+	t,
+}: {
+	push: ReturnType<typeof useRouter>["push"];
+	setLoading: Dispatch<SetStateAction<boolean>>;
+	t: Translate;
+}) {
 	return useForm({
 		defaultValues: {
-			name: defaultName,
+			name: t("onboarding.vacationPolicy.defaultName", "Standard"),
 			defaultAnnualDays: 25,
-			accrualType: "annual" as VacationPolicyValues["accrualType"],
+			accrualType: "annual" as "annual" | "monthly" | "biweekly",
 			allowCarryover: true,
 			maxCarryoverDays: 5,
 		},
-		onSubmit: ({ value }) => onSubmit(value),
-	});
-}
-
-type VacationPolicyForm = ReturnType<typeof useVacationPolicyForm>;
-
-function VacationPolicyFields({
-	form,
-	loading,
-	allowCarryover,
-}: {
-	form: VacationPolicyForm;
-	loading: boolean;
-	allowCarryover: boolean;
-}) {
-	const { t } = useTranslate();
-	return (
-		<>
-			<form.Field
-				name="name"
-				validators={{
-					onChange: z.string().min(1, "Policy name is required").max(100),
-				}}
-			>
-				{(field) => (
-					<div className="space-y-2">
-						<Label>{t("onboarding.vacationPolicy.name", "Policy Name")}</Label>
-						<Input
-							value={field.state.value}
-							onChange={(event) => field.handleChange(event.target.value)}
-							onBlur={field.handleBlur}
-							placeholder={t(
-								"onboarding.vacationPolicy.namePlaceholder",
-								"e.g., Standard, Senior",
-							)}
-							disabled={loading}
-						/>
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"onboarding.vacationPolicy.nameDesc",
-								"A name to identify this policy.",
-							)}
-						</p>
-						{field.state.meta.errors.length > 0 && (
-							<p className="text-sm font-medium text-destructive">
-								{typeof field.state.meta.errors[0] === "string"
-									? field.state.meta.errors[0]
-									: (field.state.meta.errors[0] as { message?: string })
-											?.message}
-							</p>
-						)}
-					</div>
-				)}
-			</form.Field>
-
-			<form.Field
-				name="defaultAnnualDays"
-				validators={{ onChange: z.number().min(0).max(365) }}
-			>
-				{(field) => (
-					<div className="space-y-2">
-						<Label>
-							{t(
-								"onboarding.vacationPolicy.annualDays",
-								"Annual Vacation Days",
-							)}
-						</Label>
-						<Input
-							type="number"
-							min={0}
-							max={365}
-							placeholder={t(
-								"onboarding.vacationPolicy.annualDaysPlaceholder",
-								"25",
-							)}
-							disabled={loading}
-							value={field.state.value}
-							onChange={(event) =>
-								field.handleChange(parseInt(event.target.value, 10) || 0)
-							}
-							onBlur={field.handleBlur}
-						/>
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"onboarding.vacationPolicy.annualDaysDesc",
-								"Number of vacation days per year.",
-							)}
-						</p>
-						{field.state.meta.errors.length > 0 && (
-							<p className="text-sm font-medium text-destructive">
-								{typeof field.state.meta.errors[0] === "string"
-									? field.state.meta.errors[0]
-									: (field.state.meta.errors[0] as { message?: string })
-											?.message}
-							</p>
-						)}
-					</div>
-				)}
-			</form.Field>
-
-			<form.Field name="accrualType">
-				{(field) => (
-					<div className="space-y-2">
-						<Label>
-							{t("onboarding.vacationPolicy.accrualType", "Accrual Type")}
-						</Label>
-						<Select
-							onValueChange={(value) =>
-								field.handleChange(value as "annual" | "monthly" | "biweekly")
-							}
-							value={field.state.value}
-							disabled={loading}
-						>
-							<SelectTrigger>
-								<SelectValue
-									placeholder={t(
-										"onboarding.vacationPolicy.selectAccrualType",
-										"Select accrual type",
-									)}
-								/>
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="annual">
-									{t(
-										"onboarding.vacationPolicy.annual",
-										"Annual (all at once)",
-									)}
-								</SelectItem>
-								<SelectItem value="monthly">
-									{t("onboarding.vacationPolicy.monthly", "Monthly accrual")}
-								</SelectItem>
-								<SelectItem value="biweekly">
-									{t("onboarding.vacationPolicy.biweekly", "Biweekly accrual")}
-								</SelectItem>
-							</SelectContent>
-						</Select>
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"onboarding.vacationPolicy.accrualTypeDesc",
-								"How vacation days are granted throughout the year.",
-							)}
-						</p>
-					</div>
-				)}
-			</form.Field>
-
-			<form.Field name="allowCarryover">
-				{(field) => (
-					<div className="flex flex-row items-center justify-between rounded-lg border p-4">
-						<div className="space-y-0.5">
-							<Label className="text-base">
-								{t(
-									"onboarding.vacationPolicy.allowCarryover",
-									"Allow Carryover",
-								)}
-							</Label>
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"onboarding.vacationPolicy.allowCarryoverDesc",
-									"Allow unused days to be carried to next year.",
-								)}
-							</p>
-						</div>
-						<Switch
-							checked={field.state.value}
-							onCheckedChange={field.handleChange}
-							disabled={loading}
-						/>
-					</div>
-				)}
-			</form.Field>
-
-			{allowCarryover && (
-				<form.Field
-					name="maxCarryoverDays"
-					validators={{ onChange: z.number().min(0).max(365) }}
-				>
-					{(field) => (
-						<div className="space-y-2">
-							<Label>
-								{t(
-									"onboarding.vacationPolicy.maxCarryover",
-									"Max Carryover Days",
-								)}
-							</Label>
-							<Input
-								type="number"
-								min={0}
-								max={365}
-								placeholder={t(
-									"onboarding.vacationPolicy.maxCarryoverPlaceholder",
-									"5",
-								)}
-								disabled={loading}
-								value={field.state.value}
-								onChange={(event) =>
-									field.handleChange(parseInt(event.target.value, 10) || 0)
-								}
-								onBlur={field.handleBlur}
-							/>
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"onboarding.vacationPolicy.maxCarryoverDesc",
-									"Maximum days that can be carried over.",
-								)}
-							</p>
-							{field.state.meta.errors.length > 0 && (
-								<p className="text-sm font-medium text-destructive">
-									{typeof field.state.meta.errors[0] === "string"
-										? field.state.meta.errors[0]
-										: (field.state.meta.errors[0] as { message?: string })
-												?.message}
-								</p>
-							)}
-						</div>
-					)}
-				</form.Field>
-			)}
-		</>
-	);
-}
-
-function VacationPolicyFormSection() {
-	const { t } = useTranslate();
-	const { push } = useRouter();
-	const [loading, setLoading] = useState(false);
-
-	const form = useVacationPolicyForm(
-		t("onboarding.vacationPolicy.defaultName", "Standard"),
-		async (value) => {
-			setLoading(true);
-
-			const result = await createVacationPolicyOnboarding(value);
-
-			if (result.success) {
-				toast.success(
-					t("onboarding.vacationPolicy.success", "Vacation policy created!"),
-				);
-				push("/onboarding/holiday-setup");
-			} else {
-				setLoading(false);
-				toast.error(
-					result.error ||
+		onSubmit: async ({ value }) => {
+			await runOnboardingAction({
+				action: () => createVacationPolicyOnboarding(value),
+				onResult: (result) => {
+					if (result.success) {
+						toast.success(
+							t(
+								"onboarding.vacationPolicy.success",
+								"Vacation policy created!",
+							),
+						);
+						push("/onboarding/holiday-setup");
+						return true;
+					}
+					toast.error(
+						result.error ||
+							t(
+								"onboarding.vacationPolicy.error",
+								"Failed to create vacation policy",
+							),
+					);
+				},
+				onRejected: () => {
+					toast.error(
 						t(
 							"onboarding.vacationPolicy.error",
 							"Failed to create vacation policy",
 						),
-				);
-			}
+					);
+				},
+				setLoading,
+			});
 		},
-	);
+	});
+}
 
-	const allowCarryover = useStore(
-		form.store,
-		(state) => state.values.allowCarryover,
-	);
+type VacationPolicyFormApi = ReturnType<typeof useVacationPolicyForm>;
 
-	async function handleSkip() {
-		setLoading(true);
-
-		const result = await skipVacationPolicySetup();
-
-		if (result.success) {
-			push("/onboarding/holiday-setup");
-		} else {
-			setLoading(false);
-			toast.error(
-				result.error ||
-					t(
-						"onboarding.vacationPolicy.skipError",
-						"Failed to skip vacation policy setup",
-					),
-			);
-		}
-	}
-
+function VacationPolicyForm({
+	allowCarryover,
+	form,
+	loading,
+	onSkip,
+	t,
+}: {
+	allowCarryover: boolean;
+	form: VacationPolicyFormApi;
+	loading: boolean;
+	onSkip: () => void;
+	t: Translate;
+}) {
 	return (
 		<Card>
 			<CardHeader>
@@ -400,12 +175,219 @@ function VacationPolicyFormSection() {
 					}}
 					className="space-y-6"
 				>
-					<VacationPolicyFields
-						form={form}
-						loading={loading}
-						allowCarryover={allowCarryover}
-					/>
-					<VacationPolicyActions loading={loading} onSkip={handleSkip} t={t} />
+					<form.Field
+						name="name"
+						validators={{
+							onChange: z.string().min(1, "Policy name is required").max(100),
+						}}
+					>
+						{(field) => (
+							<div className="space-y-2">
+								<Label>
+									{t("onboarding.vacationPolicy.name", "Policy Name")}
+								</Label>
+								<Input
+									value={field.state.value}
+									onChange={(event) => field.handleChange(event.target.value)}
+									onBlur={field.handleBlur}
+									placeholder={t(
+										"onboarding.vacationPolicy.namePlaceholder",
+										"e.g., Standard, Senior",
+									)}
+									disabled={loading}
+								/>
+								<p className="text-sm text-muted-foreground">
+									{t(
+										"onboarding.vacationPolicy.nameDesc",
+										"A name to identify this policy.",
+									)}
+								</p>
+								{field.state.meta.errors.length > 0 && (
+									<p className="text-sm font-medium text-destructive">
+										{typeof field.state.meta.errors[0] === "string"
+											? field.state.meta.errors[0]
+											: field.state.meta.errors[0]?.message}
+									</p>
+								)}
+							</div>
+						)}
+					</form.Field>
+
+					<form.Field
+						name="defaultAnnualDays"
+						validators={{ onChange: z.number().min(0).max(365) }}
+					>
+						{(field) => (
+							<div className="space-y-2">
+								<Label>
+									{t(
+										"onboarding.vacationPolicy.annualDays",
+										"Annual Vacation Days",
+									)}
+								</Label>
+								<Input
+									type="number"
+									min={0}
+									max={365}
+									placeholder={t(
+										"onboarding.vacationPolicy.annualDaysPlaceholder",
+										"25",
+									)}
+									disabled={loading}
+									value={field.state.value}
+									onChange={(event) =>
+										field.handleChange(
+											Number.parseInt(event.target.value, 10) || 0,
+										)
+									}
+									onBlur={field.handleBlur}
+								/>
+								<p className="text-sm text-muted-foreground">
+									{t(
+										"onboarding.vacationPolicy.annualDaysDesc",
+										"Number of vacation days per year.",
+									)}
+								</p>
+								{field.state.meta.errors.length > 0 && (
+									<p className="text-sm font-medium text-destructive">
+										{typeof field.state.meta.errors[0] === "string"
+											? field.state.meta.errors[0]
+											: field.state.meta.errors[0]?.message}
+									</p>
+								)}
+							</div>
+						)}
+					</form.Field>
+
+					<form.Field name="accrualType">
+						{(field) => (
+							<div className="space-y-2">
+								<Label>
+									{t("onboarding.vacationPolicy.accrualType", "Accrual Type")}
+								</Label>
+								<Select
+									onValueChange={(value) =>
+										field.handleChange(
+											value as "annual" | "monthly" | "biweekly",
+										)
+									}
+									value={field.state.value}
+									disabled={loading}
+								>
+									<SelectTrigger>
+										<SelectValue
+											placeholder={t(
+												"onboarding.vacationPolicy.selectAccrualType",
+												"Select accrual type",
+											)}
+										/>
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="annual">
+											{t(
+												"onboarding.vacationPolicy.annual",
+												"Annual (all at once)",
+											)}
+										</SelectItem>
+										<SelectItem value="monthly">
+											{t(
+												"onboarding.vacationPolicy.monthly",
+												"Monthly accrual",
+											)}
+										</SelectItem>
+										<SelectItem value="biweekly">
+											{t(
+												"onboarding.vacationPolicy.biweekly",
+												"Biweekly accrual",
+											)}
+										</SelectItem>
+									</SelectContent>
+								</Select>
+								<p className="text-sm text-muted-foreground">
+									{t(
+										"onboarding.vacationPolicy.accrualTypeDesc",
+										"How vacation days are granted throughout the year.",
+									)}
+								</p>
+							</div>
+						)}
+					</form.Field>
+
+					<form.Field name="allowCarryover">
+						{(field) => (
+							<div className="flex flex-row items-center justify-between rounded-lg border p-4">
+								<div className="space-y-0.5">
+									<Label className="text-base">
+										{t(
+											"onboarding.vacationPolicy.allowCarryover",
+											"Allow Carryover",
+										)}
+									</Label>
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"onboarding.vacationPolicy.allowCarryoverDesc",
+											"Allow unused days to be carried to next year.",
+										)}
+									</p>
+								</div>
+								<Switch
+									checked={field.state.value}
+									onCheckedChange={field.handleChange}
+									disabled={loading}
+								/>
+							</div>
+						)}
+					</form.Field>
+
+					{allowCarryover && (
+						<form.Field
+							name="maxCarryoverDays"
+							validators={{ onChange: z.number().min(0).max(365) }}
+						>
+							{(field) => (
+								<div className="space-y-2">
+									<Label>
+										{t(
+											"onboarding.vacationPolicy.maxCarryover",
+											"Max Carryover Days",
+										)}
+									</Label>
+									<Input
+										type="number"
+										min={0}
+										max={365}
+										placeholder={t(
+											"onboarding.vacationPolicy.maxCarryoverPlaceholder",
+											"5",
+										)}
+										disabled={loading}
+										value={field.state.value}
+										onChange={(event) =>
+											field.handleChange(
+												Number.parseInt(event.target.value, 10) || 0,
+											)
+										}
+										onBlur={field.handleBlur}
+									/>
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"onboarding.vacationPolicy.maxCarryoverDesc",
+											"Maximum days that can be carried over.",
+										)}
+									</p>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm font-medium text-destructive">
+											{typeof field.state.meta.errors[0] === "string"
+												? field.state.meta.errors[0]
+												: field.state.meta.errors[0]?.message}
+										</p>
+									)}
+								</div>
+							)}
+						</form.Field>
+					)}
+
+					<VacationPolicyActions loading={loading} onSkip={onSkip} t={t} />
 				</form>
 			</CardContent>
 		</Card>
@@ -415,30 +397,80 @@ function VacationPolicyFormSection() {
 export default function VacationPolicyPage() {
 	const { t } = useTranslate();
 	const { push } = useRouter();
+	const [loading, setLoading] = useState(false);
 	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
-	useEffect(() => {
-		let ignore = false;
+	const form = useVacationPolicyForm({ push, setLoading, t });
 
-		void checkIsAdmin().then((result) => {
-			if (ignore) {
-				return;
-			}
-			if (result.success) {
-				setIsAdmin(result.data);
-				if (!result.data) {
+	// Check if user is admin, redirect if not
+	useEffect(() => {
+		let cancelled = false;
+
+		async function checkAdmin() {
+			try {
+				const result = await checkIsAdmin();
+				if (cancelled) {
+					return;
+				}
+
+				if (result.success) {
+					setIsAdmin(result.data);
+					if (!result.data) {
+						// Not an admin, skip to notifications
+						push("/onboarding/notifications");
+					}
+				} else {
+					// Error checking admin status, redirect to notifications
 					push("/onboarding/notifications");
 				}
-			} else {
-				push("/onboarding/notifications");
+			} catch {
+				if (!cancelled) {
+					push("/onboarding/notifications");
+				}
 			}
-		});
+		}
+		void checkAdmin();
 
 		return () => {
-			ignore = true;
+			cancelled = true;
 		};
 	}, [push]);
 
+	const allowCarryover = useStore(
+		form.store,
+		(state) => state.values.allowCarryover,
+	);
+
+	async function handleSkip() {
+		await runOnboardingAction({
+			action: skipVacationPolicySetup,
+			onResult: (result) => {
+				if (result.success) {
+					push("/onboarding/holiday-setup");
+					return true;
+				} else {
+					toast.error(
+						result.error ||
+							t(
+								"onboarding.vacationPolicy.skipError",
+								"Failed to skip vacation policy setup",
+							),
+					);
+				}
+			},
+			onRejected: () => {
+				toast.error(
+					t(
+						"onboarding.vacationPolicy.skipError",
+						"Failed to skip vacation policy setup",
+					),
+				);
+			},
+			setLoading,
+		});
+	}
+
+	// Show loading while checking admin status
 	if (isAdmin === null) {
 		return (
 			<div className="flex min-h-[50vh] items-center justify-center">
@@ -455,9 +487,17 @@ export default function VacationPolicyPage() {
 	return (
 		<>
 			<ProgressIndicator currentStep="vacation_policy" />
+
 			<div className="mx-auto max-w-2xl">
 				<VacationPolicyHeader t={t} />
-				<VacationPolicyFormSection />
+
+				<VacationPolicyForm
+					allowCarryover={allowCarryover}
+					form={form}
+					loading={loading}
+					onSkip={handleSkip}
+					t={t}
+				/>
 			</div>
 		</>
 	);

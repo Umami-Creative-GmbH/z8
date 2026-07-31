@@ -77,7 +77,7 @@ function isInvitationExpired(expiresAt: Date) {
 	return new Date(expiresAt) < new Date();
 }
 
-export function MembersTable({
+function useMembersTableController({
 	organizationId,
 	members: initialMembers,
 	invitations: initialInvitations,
@@ -703,6 +703,186 @@ export function MembersTable({
 		},
 	];
 
+	return {
+		defaultTab,
+		organizationId,
+		members,
+		invitations,
+		memberSearch,
+		setMemberSearch,
+		invitationSearch,
+		setInvitationSearch,
+		filteredMembers,
+		filteredInvitations,
+		memberColumns,
+		invitationColumns,
+		onRefresh,
+		isRefreshing,
+		invitationToEditTargetTeam,
+		editTargetTeamDialogOpen,
+		handleEditTargetTeamOpenChange,
+		handleInvitationTargetTeamUpdated,
+		t,
+	};
+}
+
+function MembersView({
+	members,
+	filteredMembers,
+	memberColumns,
+	memberSearch,
+	onMemberSearchChange,
+	onRefresh,
+	isRefreshing,
+	t,
+}: {
+	members: MemberWithUserAndEmployee[];
+	filteredMembers: MemberWithUserAndEmployee[];
+	memberColumns: ColumnDef<MemberWithUserAndEmployee>[];
+	memberSearch: string;
+	onMemberSearchChange: (search: string) => void;
+	onRefresh?: () => void;
+	isRefreshing?: boolean;
+	t: ReturnType<typeof useTranslate>["t"];
+}) {
+	return (
+		<TabsContent value="members" className="space-y-4">
+			<div className="flex items-center justify-between">
+				<div>
+					<h3 className="text-lg font-semibold">
+						{t("organization.members.activeMembers", "Active Members")}
+					</h3>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"organization.members.memberCount",
+							"{count} member(s) in this organization",
+							{ count: members.length },
+						)}
+					</p>
+				</div>
+			</div>
+			<DataTableToolbar
+				search={memberSearch}
+				onSearchChange={onMemberSearchChange}
+				searchPlaceholder={t(
+					"organization.members.searchMembers",
+					"Search members...",
+				)}
+				actions={
+					onRefresh && (
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={onRefresh}
+							disabled={isRefreshing}
+						>
+							{isRefreshing ? (
+								<IconLoader2 className="size-4 animate-spin" />
+							) : (
+								<IconRefresh className="size-4" />
+							)}
+							<span className="ml-2">{t("common.refresh", "Refresh")}</span>
+						</Button>
+					)
+				}
+			/>
+			<DataTable
+				columns={memberColumns}
+				data={filteredMembers}
+				isFetching={isRefreshing}
+				emptyMessage={
+					memberSearch
+						? t(
+								"organization.members.noMemberResults",
+								"No members match your search.",
+							)
+						: t(
+								"organization.members.noMembers",
+								"No members in this organization.",
+							)
+				}
+			/>
+		</TabsContent>
+	);
+}
+
+function InvitationsView({
+	invitations,
+	filteredInvitations,
+	invitationColumns,
+	invitationSearch,
+	onInvitationSearchChange,
+	t,
+}: {
+	invitations: InvitationWithInviter[];
+	filteredInvitations: InvitationWithInviter[];
+	invitationColumns: ColumnDef<InvitationWithInviter>[];
+	invitationSearch: string;
+	onInvitationSearchChange: (search: string) => void;
+	t: ReturnType<typeof useTranslate>["t"];
+}) {
+	return (
+		<TabsContent value="invitations" className="space-y-4">
+			<div>
+				<h3 className="text-lg font-semibold">
+					{t("organization.members.pendingInvitations", "Pending Invitations")}
+				</h3>
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"organization.members.invitationsWaiting",
+						"{count} invitation(s) waiting to be accepted",
+						{ count: invitations.length },
+					)}
+				</p>
+			</div>
+			<DataTableToolbar
+				search={invitationSearch}
+				onSearchChange={onInvitationSearchChange}
+				searchPlaceholder={t(
+					"organization.members.searchInvitations",
+					"Search invitations...",
+				)}
+			/>
+			<DataTable
+				columns={invitationColumns}
+				data={filteredInvitations}
+				emptyMessage={
+					invitationSearch
+						? t(
+								"organization.members.noInvitationResults",
+								"No invitations match your search.",
+							)
+						: t("organization.members.noInvitations", "No pending invitations.")
+				}
+			/>
+		</TabsContent>
+	);
+}
+
+export function MembersTable(props: MembersTableProps) {
+	const controller = useMembersTableController(props);
+	const {
+		defaultTab,
+		organizationId,
+		members,
+		invitations,
+		memberSearch,
+		setMemberSearch,
+		invitationSearch,
+		setInvitationSearch,
+		filteredMembers,
+		filteredInvitations,
+		memberColumns,
+		invitationColumns,
+		onRefresh,
+		isRefreshing,
+		invitationToEditTargetTeam,
+		editTargetTeamDialogOpen,
+		handleEditTargetTeamOpenChange,
+		handleInvitationTargetTeamUpdated,
+		t,
+	} = controller;
+
 	return (
 		<div className="space-y-6">
 			<Tabs defaultValue={defaultTab} className="space-y-4">
@@ -719,115 +899,25 @@ export function MembersTable({
 						({invitations.length})
 					</TabsTrigger>
 				</TabsList>
-
-				<TabsContent value="members" className="space-y-4">
-					<div className="flex items-center justify-between">
-						<div>
-							<h3 className="text-lg font-semibold">
-								{t("organization.members.activeMembers", "Active Members")}
-							</h3>
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"organization.members.memberCount",
-									"{count} member(s) in this organization",
-									{
-										count: members.length,
-									},
-								)}
-							</p>
-						</div>
-					</div>
-
-					<DataTableToolbar
-						search={memberSearch}
-						onSearchChange={setMemberSearch}
-						searchPlaceholder={t(
-							"organization.members.searchMembers",
-							"Search members...",
-						)}
-						actions={
-							onRefresh && (
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={onRefresh}
-									disabled={isRefreshing}
-								>
-									{isRefreshing ? (
-										<IconLoader2 className="size-4 animate-spin" />
-									) : (
-										<IconRefresh className="size-4" />
-									)}
-									<span className="ml-2">{t("common.refresh", "Refresh")}</span>
-								</Button>
-							)
-						}
-					/>
-
-					<DataTable
-						columns={memberColumns}
-						data={filteredMembers}
-						isFetching={isRefreshing}
-						emptyMessage={
-							memberSearch
-								? t(
-										"organization.members.noMemberResults",
-										"No members match your search.",
-									)
-								: t(
-										"organization.members.noMembers",
-										"No members in this organization.",
-									)
-						}
-					/>
-				</TabsContent>
-
-				<TabsContent value="invitations" className="space-y-4">
-					<div>
-						<h3 className="text-lg font-semibold">
-							{t(
-								"organization.members.pendingInvitations",
-								"Pending Invitations",
-							)}
-						</h3>
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"organization.members.invitationsWaiting",
-								"{count} invitation(s) waiting to be accepted",
-								{
-									count: invitations.length,
-								},
-							)}
-						</p>
-					</div>
-
-					<DataTableToolbar
-						search={invitationSearch}
-						onSearchChange={setInvitationSearch}
-						searchPlaceholder={t(
-							"organization.members.searchInvitations",
-							"Search invitations...",
-						)}
-					/>
-
-					<DataTable
-						columns={invitationColumns}
-						data={filteredInvitations}
-						emptyMessage={
-							invitationSearch
-								? t(
-										"organization.members.noInvitationResults",
-										"No invitations match your search.",
-									)
-								: t(
-										"organization.members.noInvitations",
-										"No pending invitations.",
-									)
-						}
-					/>
-				</TabsContent>
+				<MembersView
+					members={members}
+					filteredMembers={filteredMembers}
+					memberColumns={memberColumns}
+					memberSearch={memberSearch}
+					onMemberSearchChange={setMemberSearch}
+					onRefresh={onRefresh}
+					isRefreshing={isRefreshing}
+					t={t}
+				/>
+				<InvitationsView
+					invitations={invitations}
+					filteredInvitations={filteredInvitations}
+					invitationColumns={invitationColumns}
+					invitationSearch={invitationSearch}
+					onInvitationSearchChange={setInvitationSearch}
+					t={t}
+				/>
 			</Tabs>
-
 			<EditInvitationTargetTeamDialog
 				organizationId={organizationId}
 				invitation={invitationToEditTargetTeam}

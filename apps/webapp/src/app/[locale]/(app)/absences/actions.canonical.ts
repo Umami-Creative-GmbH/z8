@@ -12,7 +12,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 type DayPeriod = "full_day" | "am" | "pm";
 type CanonicalAbsenceTransaction = Pick<
 	Parameters<Parameters<typeof db.transaction>[0]>[0],
-	"update"
+	"delete" | "update"
 >;
 
 export function mapAbsenceRangeToCanonicalTimestamps(input: {
@@ -36,11 +36,16 @@ export function mapAbsenceRangeToCanonicalTimestamps(input: {
 	const startOfStartDate = DateTime.fromISO(input.startDate, {
 		zone: "utc",
 	}).startOf("day");
-	const endOfEndDate = DateTime.fromISO(input.endDate, { zone: "utc" }).endOf("day");
+	const endOfEndDate = DateTime.fromISO(input.endDate, { zone: "utc" }).endOf(
+		"day",
+	);
 
 	const startAt =
-		input.startPeriod === "pm" ? startOfStartDate.plus({ hours: 12 }) : startOfStartDate;
-	const endAt = input.endPeriod === "am" ? endOfEndDate.minus({ hours: 12 }) : endOfEndDate;
+		input.startPeriod === "pm"
+			? startOfStartDate.plus({ hours: 12 })
+			: startOfStartDate;
+	const endAt =
+		input.endPeriod === "am" ? endOfEndDate.minus({ hours: 12 }) : endOfEndDate;
 
 	return {
 		startAt: startAt.toJSDate(),
@@ -72,8 +77,13 @@ export function buildCanonicalAbsenceRecordValues(input: {
 			recordKind: "absence" as const,
 			startAt,
 			endAt,
-			durationMinutes: Math.max(0, Math.floor((endAt.getTime() - startAt.getTime()) / 60000)),
-			approvalState: input.requiresApproval ? ("pending" as const) : ("approved" as const),
+			durationMinutes: Math.max(
+				0,
+				Math.floor((endAt.getTime() - startAt.getTime()) / 60000),
+			),
+			approvalState: input.requiresApproval
+				? ("pending" as const)
+				: ("approved" as const),
 			origin: "manual" as const,
 			createdBy: input.createdBy,
 			updatedBy: input.createdBy,
@@ -147,7 +157,10 @@ export async function updateCanonicalAbsenceRangeInTransaction(
 		.set({
 			startAt,
 			endAt,
-			durationMinutes: Math.max(0, Math.floor((endAt.getTime() - startAt.getTime()) / 60000)),
+			durationMinutes: Math.max(
+				0,
+				Math.floor((endAt.getTime() - startAt.getTime()) / 60000),
+			),
 			updatedAt: currentTimestamp(),
 			updatedBy: input.updatedBy,
 		})
@@ -267,8 +280,20 @@ export async function syncCanonicalAbsenceApprovalStateInTransaction(
 export async function removeCanonicalAbsenceRecord(input: {
 	organizationId: string;
 	canonicalRecordId: string | null;
+	expectedEmployeeId?: string;
+	expectedApprovalState?: "pending" | "approved";
 }): Promise<void> {
 	if (!input.canonicalRecordId) {
+		return;
+	}
+
+	if (input.expectedApprovalState && input.expectedEmployeeId) {
+		await removeCanonicalAbsenceRecordInTransaction(db, {
+			organizationId: input.organizationId,
+			canonicalRecordId: input.canonicalRecordId,
+			expectedEmployeeId: input.expectedEmployeeId,
+			expectedApprovalState: input.expectedApprovalState,
+		});
 		return;
 	}
 
@@ -281,4 +306,44 @@ export async function removeCanonicalAbsenceRecord(input: {
 				eq(timeRecord.recordKind, "absence"),
 			),
 		);
+}
+
+export async function removeCanonicalAbsenceRecordInTransaction(
+	tx: CanonicalAbsenceTransaction,
+	input: {
+		organizationId: string;
+		canonicalRecordId: string;
+		expectedEmployeeId: string;
+		expectedApprovalState: "pending" | "approved";
+	},
+): Promise<void> {
+	const deleted = await tx
+		.delete(timeRecord)
+		.where(
+			and(
+				eq(timeRecord.id, input.canonicalRecordId),
+				eq(timeRecord.organizationId, input.organizationId),
+				eq(timeRecord.recordKind, "absence"),
+				eq(timeRecord.approvalState, input.expectedApprovalState),
+				eq(timeRecord.employeeId, input.expectedEmployeeId),
+			),
+		)
+		.returning({
+			id: timeRecord.id,
+			organizationId: timeRecord.organizationId,
+			employeeId: timeRecord.employeeId,
+			recordKind: timeRecord.recordKind,
+			approvalState: timeRecord.approvalState,
+		});
+	const row = deleted[0];
+	if (
+		deleted.length !== 1 ||
+		row?.id !== input.canonicalRecordId ||
+		row.organizationId !== input.organizationId ||
+		row.recordKind !== "absence" ||
+		row.approvalState !== input.expectedApprovalState ||
+		row.employeeId !== input.expectedEmployeeId
+	) {
+		throw new Error("Canonical absence deletion affected-row mismatch");
+	}
 }

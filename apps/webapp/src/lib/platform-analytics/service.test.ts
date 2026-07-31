@@ -1,3 +1,5 @@
+import type { SQL } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { groupByArgs, selectMock, executeMock } = vi.hoisted(() => ({
@@ -59,7 +61,10 @@ describe("getPlatformAnalyticsData", () => {
 		queueCurrentTotal([{ value: 7 }]);
 		queueCurrentTotal([{ value: 4 }]);
 
-		const data = await getPlatformAnalyticsData({ range: "7d", bucket: "day" }, false);
+		const data = await getPlatformAnalyticsData(
+			{ range: "7d", bucket: "day" },
+			false,
+		);
 
 		expect(data.billingEnabled).toBe(false);
 		expect(data.params).toMatchObject({ range: "7d", bucket: "day" });
@@ -96,12 +101,21 @@ describe("getPlatformAnalyticsData", () => {
 		queueCurrentTotal([{ value: 2 }]);
 		queueCurrentTotal([{ value: 0 }]);
 		queueCurrentTotal([{ seats: 9, mrr: 32 }]);
-		executeMock.mockResolvedValueOnce([{ bucket: "2026-05-10T00:00:00.000Z", seats: 8, mrr: 28 }]);
+		executeMock.mockResolvedValueOnce([
+			{ bucket: "2026-05-10T00:00:00.000Z", seats: 8, mrr: 28 },
+		]);
 
-		const data = await getPlatformAnalyticsData({ range: "7d", bucket: "day" }, true);
+		const data = await getPlatformAnalyticsData(
+			{ range: "7d", bucket: "day" },
+			true,
+		);
 
 		expect(data.billingEnabled).toBe(true);
-		expect(data.series.at(-1)).toMatchObject({ seats: 8, mrr: 28, estimatedBilling: true });
+		expect(data.series.at(-1)).toMatchObject({
+			seats: 8,
+			mrr: 28,
+			estimatedBilling: true,
+		});
 		expect(data.kpis).toMatchObject({
 			organizations: 2,
 			seats: 9,
@@ -119,10 +133,14 @@ describe("getPlatformAnalyticsData", () => {
 		queueCurrentTotal([{ value: 7 }]);
 		queueCurrentTotal([{ value: 4 }]);
 
-		const data = await getPlatformAnalyticsData({ range: "7d", bucket: "day" }, true, {
-			includeBilling: false,
-			includeTimeRecords: false,
-		});
+		const data = await getPlatformAnalyticsData(
+			{ range: "7d", bucket: "day" },
+			true,
+			{
+				includeBilling: false,
+				includeTimeRecords: false,
+			},
+		);
 
 		expect(data.billingEnabled).toBe(false);
 		expect(data.series.at(-1)).toMatchObject({
@@ -155,7 +173,10 @@ describe("getPlatformAnalyticsData", () => {
 		queueCurrentTotal([{ value: 7 }]);
 		queueCurrentTotal([{ value: 3 }]);
 
-		const data = await getPlatformAnalyticsData({ range: "7d", bucket: "day" }, false);
+		const data = await getPlatformAnalyticsData(
+			{ range: "7d", bucket: "day" },
+			false,
+		);
 
 		expect(data.series.at(-1)).toMatchObject({ activeUsers: 0 });
 		expect(data.kpis.activeUsers).toBe(3);
@@ -180,6 +201,34 @@ describe("getPlatformAnalyticsData", () => {
 		expect(generatedSql).toContain("AT TIME ZONE 'UTC'");
 	});
 
+	it("binds bucket intervals while preserving organization-correlated billing audits", async () => {
+		queueSelectResult([]);
+		queueSelectResult([]);
+		queueSelectResult([]);
+		queueSelectResult([]);
+		queueSelectResult([]);
+		queueCurrentTotal([{ value: 2 }]);
+		queueCurrentTotal([{ value: 0 }]);
+		queueCurrentTotal([{ seats: 9, mrr: 32 }]);
+		executeMock.mockResolvedValueOnce([]);
+
+		await getPlatformAnalyticsData({ range: "30d", bucket: "week" }, true);
+
+		const compiled = new PgDialect().sqlToQuery(
+			executeMock.mock.calls[0]?.[0] as SQL,
+		);
+
+		expect(compiled.params.filter((param) => param === "7 days")).toEqual([
+			"7 days",
+			"7 days",
+			"7 days",
+		]);
+		expect(compiled.sql).not.toContain("'7 days'::interval");
+		expect(compiled.sql).toContain(
+			'"billing_seat_audit"."organization_id" = "subscription"."organization_id"',
+		);
+	});
+
 	it("groups aggregate queries by the selected bucket expression ordinal", async () => {
 		queueSelectResult([]);
 		queueSelectResult([]);
@@ -192,14 +241,19 @@ describe("getPlatformAnalyticsData", () => {
 			includeTimeRecords: false,
 		});
 
-		const generatedSql = groupByArgs.map((arg) => collectStrings(arg, new WeakSet()).join(" "));
+		const generatedSql = groupByArgs.map((arg) =>
+			collectStrings(arg, new WeakSet()).join(" "),
+		);
 
 		expect(generatedSql).toEqual(["1", "1", "1", "1"]);
 	});
 });
 
 function getExecutedSqlText() {
-	return collectStrings(executeMock.mock.calls[0]?.[0] ?? {}, new WeakSet()).join(" ");
+	return collectStrings(
+		executeMock.mock.calls[0]?.[0] ?? {},
+		new WeakSet(),
+	).join(" ");
 }
 
 function collectStrings(value: unknown, seen: WeakSet<object>): string[] {

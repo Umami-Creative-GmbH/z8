@@ -1,6 +1,12 @@
 "use client";
 
-import { IconCheck, IconClock, IconDownload, IconLoader2, IconX } from "@tabler/icons-react";
+import {
+	IconCheck,
+	IconClock,
+	IconDownload,
+	IconLoader2,
+	IconX,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useTransition } from "react";
@@ -8,7 +14,13 @@ import { toast } from "sonner";
 import { getExportDownloadUrlAction } from "@/app/[locale]/(app)/settings/payroll-export/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import {
 	Table,
 	TableBody,
@@ -51,10 +63,13 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 			const result = await getExportDownloadUrlAction(organizationId, jobId);
 
 			if (result.success && result.data) {
-				window.open(result.data, "_blank");
+				window.open(result.data, "_blank", "noopener,noreferrer");
 			} else {
 				toast.error(
-					t("settings.payrollExport.history.downloadError", "Failed to get download URL"),
+					t(
+						"settings.payrollExport.history.downloadError",
+						"Failed to get download URL",
+					),
 				);
 			}
 		});
@@ -64,16 +79,25 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 		switch (status) {
 			case "completed":
 				return (
-					<Badge variant="secondary" className="gap-1 bg-green-100 text-green-700">
+					<Badge
+						variant="secondary"
+						className="gap-1 bg-green-100 text-green-700"
+					>
 						<IconCheck className="size-3" aria-hidden="true" />
 						{t("settings.payrollExport.history.status.completed", "Completed")}
 					</Badge>
 				);
 			case "processing":
 				return (
-					<Badge variant="secondary" className="gap-1 bg-blue-100 text-blue-700">
+					<Badge
+						variant="secondary"
+						className="gap-1 bg-blue-100 text-blue-700"
+					>
 						<IconLoader2 className="size-3 animate-spin" aria-hidden="true" />
-						{t("settings.payrollExport.history.status.processing", "Processing")}
+						{t(
+							"settings.payrollExport.history.status.processing",
+							"Processing",
+						)}
 					</Badge>
 				);
 			case "pending":
@@ -98,7 +122,9 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("settings.payrollExport.history.title", "Export History")}</CardTitle>
+				<CardTitle>
+					{t("settings.payrollExport.history.title", "Export History")}
+				</CardTitle>
 				<CardDescription>
 					{t(
 						"settings.payrollExport.history.description",
@@ -116,15 +142,25 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 						<TableHeader>
 							<TableRow>
 								<TableHead>
-									{t("settings.payrollExport.history.table.dateRange", "Date Range")}
+									{t(
+										"settings.payrollExport.history.table.dateRange",
+										"Date Range",
+									)}
 								</TableHead>
-								<TableHead>{t("settings.payrollExport.history.table.status", "Status")}</TableHead>
+								<TableHead>
+									{t("settings.payrollExport.history.table.status", "Status")}
+								</TableHead>
 								<TableHead>
 									{t("settings.payrollExport.history.table.records", "Records")}
 								</TableHead>
-								<TableHead>{t("settings.payrollExport.history.table.size", "Size")}</TableHead>
 								<TableHead>
-									{t("settings.payrollExport.history.table.createdAt", "Created")}
+									{t("settings.payrollExport.history.table.size", "Size")}
+								</TableHead>
+								<TableHead>
+									{t(
+										"settings.payrollExport.history.table.createdAt",
+										"Created",
+									)}
 								</TableHead>
 								<TableHead className="w-[100px]" />
 							</TableRow>
@@ -132,7 +168,9 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 						<TableBody>
 							{exports.map((exp) => (
 								<TableRow key={exp.id}>
-									<TableCell className="font-medium">{formatDateRange(exp.filters)}</TableCell>
+									<TableCell className="font-medium">
+										{formatDateRange(exp.filters)}
+									</TableCell>
 									<TableCell>{getStatusBadge(exp.status)}</TableCell>
 									<TableCell>
 										{exp.workPeriodCount !== null ? (
@@ -143,7 +181,11 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 													<span className="text-muted-foreground">
 														{" "}
 														({exp.employeeCount}{" "}
-														{t("settings.payrollExport.history.employees", "employees")})
+														{t(
+															"settings.payrollExport.history.employees",
+															"employees",
+														)}
+														)
 													</span>
 												)}
 											</span>
@@ -153,7 +195,9 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 									</TableCell>
 									<TableCell>{formatFileSize(exp.fileSizeBytes)}</TableCell>
 									<TableCell className="text-muted-foreground">
-										{DateTime.fromJSDate(new Date(exp.createdAt)).toFormat("dd.MM.yyyy HH:mm")}
+										{DateTime.fromJSDate(new Date(exp.createdAt)).toFormat(
+											"dd.MM.yyyy HH:mm",
+										)}
 									</TableCell>
 									<TableCell>
 										{exp.status === "completed" && exp.fileName && (
@@ -162,7 +206,10 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 												size="icon"
 												onClick={() => handleDownload(exp.id)}
 												disabled={isPending}
-												aria-label={t("settings.payrollExport.history.download", "Download export")}
+												aria-label={t(
+													"settings.payrollExport.history.download",
+													"Download export",
+												)}
 											>
 												{isPending ? (
 													<IconLoader2 className="size-4 animate-spin" />

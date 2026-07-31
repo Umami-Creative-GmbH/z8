@@ -329,6 +329,14 @@
       "viewAll": "Wyświetl wszystkie powiadomienia"
     },
     "content": {
+      "absenceRequestSubmitted": {
+        "message": "Twój wniosek {categoryName} na {dateRange} został wysłany i oczekuje na zatwierdzenie.",
+        "title": "Wniosek o nieobecność wysłany"
+      },
+      "teamMemberRemoved": {
+        "message": "Zostałeś usunięty z zespołu {teamName} przez {performedByName}.",
+        "title": "Usunięto z zespołu"
+      },
       "passwordChanged": {
         "message": "Twoje hasło zostało pomyślnie zmienione. Jeśli nie dokonałeś tej zmiany, skontaktuj się natychmiast z działem wsparcia.",
         "title": "Hasło zmienione"

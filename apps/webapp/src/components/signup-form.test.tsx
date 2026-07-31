@@ -1,19 +1,33 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { pushMock, signInSocialMock, signUpEmailMock, useTurnstileMock } = vi.hoisted(() => ({
-	pushMock: vi.fn(),
-	signInSocialMock: vi.fn(),
-	signUpEmailMock: vi.fn(),
-	useTurnstileMock: vi.fn(),
+const mocks = vi.hoisted(() => ({
+	enabledProviders: [] as Array<{ id: string; name: string; icon: () => null }>,
+	push: vi.fn(),
+	signInSocial: vi.fn(),
+	signUpEmail: vi.fn(),
+	storePendingInviteCode: vi.fn(),
+	storePendingInvitation: vi.fn(),
+	useTurnstile: vi.fn(),
+	validateInviteCode: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, defaultValue?: string, params?: Record<string, string | number>) => {
+		t: (
+			_key: string,
+			defaultValue?: string,
+			params?: Record<string, string | number>,
+		) => {
 			if (!defaultValue) {
 				return _key;
 			}
@@ -26,33 +40,33 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 vi.mock("@/app/[locale]/(auth)/invite-code-actions", () => ({
-	storePendingInviteCode: vi.fn(),
-	validateInviteCode: vi.fn(),
+	storePendingInviteCode: mocks.storePendingInviteCode,
+	validateInviteCode: mocks.validateInviteCode,
 }));
 
 vi.mock("@/app/[locale]/(auth)/invitation-actions", () => ({
-	storePendingInvitation: vi.fn(),
+	storePendingInvitation: mocks.storePendingInvitation,
 }));
 
 vi.mock("@/lib/auth/domain-auth-context", () => ({
 	useDomainAuth: () => null,
-	useTurnstile: useTurnstileMock,
+	useTurnstile: mocks.useTurnstile,
 }));
 
 vi.mock("@/lib/auth-client", () => ({
 	authClient: {
 		signIn: {
-			social: signInSocialMock,
+			social: mocks.signInSocial,
 		},
 		signUp: {
-			email: signUpEmailMock,
+			email: mocks.signUpEmail,
 		},
 	},
 }));
 
 vi.mock("@/lib/hooks/use-enabled-providers", () => ({
 	useEnabledProviders: () => ({
-		enabledProviders: [],
+		enabledProviders: mocks.enabledProviders,
 		isLoading: false,
 	}),
 }));
@@ -65,7 +79,7 @@ vi.mock("@/navigation", () => ({
 	Link: ({ children, href }: { children: ReactNode; href: string }) => (
 		<a href={href}>{children}</a>
 	),
-	useRouter: () => ({ push: pushMock }),
+	useRouter: () => ({ push: mocks.push }),
 }));
 
 vi.mock("./auth-form-wrapper", () => ({
@@ -73,12 +87,14 @@ vi.mock("./auth-form-wrapper", () => ({
 		children,
 		formProps,
 		title,
+		...props
 	}: {
 		children: ReactNode;
 		formProps?: React.ComponentProps<"form">;
 		title: string;
+		[key: string]: unknown;
 	}) => (
-		<form {...formProps}>
+		<form {...formProps} {...props}>
 			<h1>{title}</h1>
 			{children}
 		</form>
@@ -91,14 +107,39 @@ vi.mock("./turnstile-widget", () => ({
 
 import { SignupForm } from "./signup-form";
 
+function deferred<T>() {
+	let resolve!: (value: T) => void;
+	const promise = new Promise<T>((resolvePromise) => {
+		resolve = resolvePromise;
+	});
+	return { promise, resolve };
+}
+
+function fillValidSignupForm() {
+	fireEvent.change(screen.getByLabelText("First Name"), {
+		target: { value: "Jamie" },
+	});
+	fireEvent.change(screen.getByLabelText("Last Name"), {
+		target: { value: "Admin" },
+	});
+	fireEvent.change(screen.getByLabelText("Email"), {
+		target: { value: "jamie@example.com" },
+	});
+	fireEvent.change(screen.getByLabelText("Password"), {
+		target: { value: "Password1234" },
+	});
+	fireEvent.change(screen.getByLabelText("Confirm Password"), {
+		target: { value: "Password1234" },
+	});
+}
+
 describe("SignupForm", () => {
 	beforeEach(() => {
-		pushMock.mockReset();
-		signInSocialMock.mockReset();
-		signUpEmailMock.mockReset();
-		signUpEmailMock.mockResolvedValue({ error: null });
-		useTurnstileMock.mockReset();
-		useTurnstileMock.mockReturnValue(null);
+		vi.clearAllMocks();
+		mocks.enabledProviders.length = 0;
+		mocks.signUpEmail.mockResolvedValue({ error: null });
+		mocks.storePendingInviteCode.mockResolvedValue(undefined);
+		mocks.useTurnstile.mockReturnValue(null);
 	});
 
 	it("uses the setup password strength UI and validation rules", () => {
@@ -112,8 +153,12 @@ describe("SignupForm", () => {
 		expect(screen.getByText("Uppercase letter")).toBeTruthy();
 		expect(screen.getByText("Lowercase letter")).toBeTruthy();
 		expect(screen.getByText("Number")).toBeTruthy();
-		expect(screen.queryByText("Add one special character to finish.")).toBeNull();
-		expect(screen.getByText("Password must be at least 12 characters")).toBeTruthy();
+		expect(
+			screen.queryByText("Add one special character to finish."),
+		).toBeNull();
+		expect(
+			screen.getByText("Password must be at least 12 characters"),
+		).toBeTruthy();
 	});
 
 	it("uses setup-style inline confirmation validation", () => {
@@ -143,17 +188,27 @@ describe("SignupForm", () => {
 		const firstNameInput = screen.getByLabelText("First Name");
 		await waitFor(() => {
 			expect(document.activeElement).toBe(firstNameInput);
-			expect(firstNameInput.getAttribute("aria-describedby")).toContain("firstName-error");
-			expect(screen.getByText("First Name is required").id).toBe("firstName-error");
+			expect(firstNameInput.getAttribute("aria-describedby")).toContain(
+				"firstName-error",
+			);
+			expect(screen.getByText("First Name is required").id).toBe(
+				"firstName-error",
+			);
 		});
 	});
 
 	it("uses example-style placeholders for the structured name fields", () => {
 		render(<SignupForm />);
 
-		expect(screen.getByLabelText("First Name").getAttribute("placeholder")).toBe("John…");
-		expect(screen.getByLabelText("Last Name").getAttribute("placeholder")).toBe("Doe…");
-		expect(screen.getByLabelText("Email").getAttribute("placeholder")).toBe("jane@example.com…");
+		expect(
+			screen.getByLabelText("First Name").getAttribute("placeholder"),
+		).toBe("John…");
+		expect(screen.getByLabelText("Last Name").getAttribute("placeholder")).toBe(
+			"Doe…",
+		);
+		expect(screen.getByLabelText("Email").getAttribute("placeholder")).toBe(
+			"jane@example.com…",
+		);
 	});
 
 	it("wires the last-name required error to the input on blur", () => {
@@ -167,7 +222,9 @@ describe("SignupForm", () => {
 
 		const errorMessage = screen.getByText("Last Name is required");
 		expect(errorMessage.id).toBe("lastName-error");
-		expect(lastNameInput.getAttribute("aria-describedby")).toContain("lastName-error");
+		expect(lastNameInput.getAttribute("aria-describedby")).toContain(
+			"lastName-error",
+		);
 	});
 
 	it("uses the required confirmation message for an empty confirm-password blur", () => {
@@ -184,7 +241,7 @@ describe("SignupForm", () => {
 	});
 
 	it("keeps submit available when turnstile is enabled and explains what is missing", async () => {
-		useTurnstileMock.mockReturnValue({
+		mocks.useTurnstile.mockReturnValue({
 			enabled: true,
 			siteKey: "site-key",
 		});
@@ -212,9 +269,11 @@ describe("SignupForm", () => {
 		fireEvent.click(submitButton);
 
 		await waitFor(() => {
-			expect(screen.getByText("Please complete the verification.")).toBeTruthy();
+			expect(
+				screen.getByText("Please complete the verification."),
+			).toBeTruthy();
 		});
-		expect(signUpEmailMock).not.toHaveBeenCalled();
+		expect(mocks.signUpEmail).not.toHaveBeenCalled();
 		expect(submitButton.hasAttribute("disabled")).toBe(false);
 		expect(screen.queryByText("Loading…")).toBeNull();
 	});
@@ -241,7 +300,7 @@ describe("SignupForm", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Sign up" }));
 
 		await waitFor(() => {
-			expect(signUpEmailMock).toHaveBeenCalledWith({
+			expect(mocks.signUpEmail).toHaveBeenCalledWith({
 				email: "jamie@example.com",
 				password: "Password1234",
 				firstName: "Jamie",
@@ -249,5 +308,109 @@ describe("SignupForm", () => {
 				name: "Jamie Admin",
 			});
 		});
+	});
+
+	it("keeps only the current invite-code validation result", async () => {
+		const first = deferred<{
+			success: true;
+			data: { valid: true; inviteCode: { organization: { name: string } } };
+		}>();
+		const second = deferred<{
+			success: true;
+			data: { valid: true; inviteCode: { organization: { name: string } } };
+		}>();
+		mocks.validateInviteCode
+			.mockReturnValueOnce(first.promise)
+			.mockReturnValueOnce(second.promise);
+		const { rerender } = render(<SignupForm inviteCode="CODE-A" />);
+		await waitFor(() =>
+			expect(mocks.validateInviteCode).toHaveBeenCalledWith("CODE-A"),
+		);
+
+		rerender(<SignupForm inviteCode="CODE-B" />);
+		await waitFor(() =>
+			expect(mocks.validateInviteCode).toHaveBeenCalledWith("CODE-B"),
+		);
+		await act(async () => {
+			second.resolve({
+				success: true,
+				data: {
+					valid: true,
+					inviteCode: { organization: { name: "Organization B" } },
+				},
+			});
+			await second.promise;
+		});
+		expect(await screen.findByText(/Organization B/)).toBeTruthy();
+
+		await act(async () => {
+			first.resolve({
+				success: true,
+				data: {
+					valid: true,
+					inviteCode: { organization: { name: "Organization A" } },
+				},
+			});
+			await first.promise;
+		});
+		expect(screen.queryByText(/Organization A/)).toBeNull();
+		expect(screen.getByText(/Organization B/)).toBeTruthy();
+	});
+
+	it("resets invite validity while a replacement code is pending", async () => {
+		mocks.enabledProviders.push({
+			id: "google",
+			name: "Google",
+			icon: () => null,
+		});
+		mocks.validateInviteCode
+			.mockResolvedValueOnce({
+				success: true,
+				data: {
+					valid: true,
+					inviteCode: { organization: { name: "Organization A" } },
+				},
+			})
+			.mockReturnValueOnce(new Promise(() => undefined));
+		const { rerender, unmount } = render(<SignupForm inviteCode="CODE-A" />);
+		expect(await screen.findByText(/Organization A/)).toBeTruthy();
+
+		rerender(<SignupForm inviteCode="CODE-B" />);
+		await waitFor(() =>
+			expect(mocks.validateInviteCode).toHaveBeenCalledWith("CODE-B"),
+		);
+		expect(screen.queryByText(/Organization A/)).toBeNull();
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Sign up with Google" }),
+		);
+		await waitFor(() =>
+			expect(mocks.signInSocial).toHaveBeenCalledWith({
+				provider: "google",
+				callbackURL: "/",
+			}),
+		);
+
+		unmount();
+		mocks.validateInviteCode.mockReturnValueOnce(new Promise(() => undefined));
+		render(<SignupForm inviteCode="CODE-B" />);
+		fillValidSignupForm();
+		fireEvent.click(screen.getByRole("button", { name: "Sign up" }));
+		await waitFor(() => expect(mocks.push).toHaveBeenCalledOnce());
+		expect(mocks.storePendingInviteCode).not.toHaveBeenCalled();
+	});
+
+	it("does not forward auth-only props to the DOM", () => {
+		render(
+			<SignupForm
+				callbackUrl="/dashboard"
+				initialInvitationId="invitation-1"
+				data-testid="signup-wrapper"
+			/>,
+		);
+
+		const wrapper = screen.getByTestId("signup-wrapper");
+		expect(wrapper.hasAttribute("callbackurl")).toBe(false);
+		expect(wrapper.hasAttribute("initialinvitationid")).toBe(false);
 	});
 });

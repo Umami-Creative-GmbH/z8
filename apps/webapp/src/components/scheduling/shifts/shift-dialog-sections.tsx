@@ -40,15 +40,34 @@ interface ShiftDialogSectionsProps {
 	shift: ShiftWithRelations | null;
 }
 
-interface ShiftDialogFooterProps {
-	isEditing: boolean;
-	isManager: boolean;
-	isPending: boolean;
-	isSaving: boolean;
-	isDeleting: boolean;
-	onDelete: () => void;
+interface ShiftDialogFooterBaseProps {
 	onCancel: () => void;
 }
+
+export type ShiftDialogFooterProps = ShiftDialogFooterBaseProps &
+	(
+		| {
+				mode: "create";
+				canManage: true;
+				status: "idle" | "saving";
+		  }
+		| {
+				mode: "edit";
+				canManage: true;
+				status: "idle" | "saving" | "deleting";
+				onDelete: () => void;
+		  }
+		| {
+				mode: "create";
+				canManage: false;
+				status: "idle";
+		  }
+		| {
+				mode: "edit";
+				canManage: false;
+				status: "idle";
+		  }
+	);
 
 function getFieldErrorMessage(error: unknown) {
 	if (typeof error === "string") {
@@ -309,11 +328,11 @@ export function ShiftDialogSections({
 										<SelectItem key={employee.id} value={employee.id}>
 											<span className="flex items-center gap-2">
 												{buildAuthUserDisplayName(employee.user) || employee.id}
-												{field.state.value === employee.id &&
-													skillValidation &&
-													!skillValidation.isQualified && (
-														<SkillWarningBadge validation={skillValidation} />
-													)}
+										{field.state.value === employee.id &&
+											skillValidation &&
+											!skillValidation.isQualified && (
+												<SkillWarningBadge validation={skillValidation} />
+											)}
 											</span>
 										</SelectItem>
 									))}
@@ -370,27 +389,20 @@ export function ShiftDialogSections({
 	);
 }
 
-export function ShiftDialogFooterActions({
-	isEditing,
-	isManager,
-	isPending,
-	isSaving,
-	isDeleting,
-	onDelete,
-	onCancel,
-}: ShiftDialogFooterProps) {
+export function ShiftDialogFooterActions(props: ShiftDialogFooterProps) {
 	const { t } = useTranslate();
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+	const isPending = props.status !== "idle";
 
 	return (
 		<ActionPanelFooter className="gap-2 sm:gap-0">
-			{isEditing && isManager && (
+			{props.mode === "edit" && props.canManage && (
 				<Button
 					type="button"
 					variant="destructive"
 					onClick={() => {
 						if (showDeleteConfirm) {
-							onDelete();
+							props.onDelete();
 							return;
 						}
 
@@ -398,7 +410,7 @@ export function ShiftDialogFooterActions({
 					}}
 					disabled={isPending}
 				>
-					{isDeleting ? (
+					{props.status === "deleting" ? (
 						<IconLoader2 className="size-4 animate-spin" />
 					) : (
 						<>
@@ -415,20 +427,20 @@ export function ShiftDialogFooterActions({
 				variant="outline"
 				onClick={() => {
 					setShowDeleteConfirm(false);
-					onCancel();
+					props.onCancel();
 				}}
 				disabled={isPending}
 			>
 				{t("common.cancel", "Cancel")}
 			</Button>
-			{isManager && (
+			{props.canManage && (
 				<Button type="submit" disabled={isPending}>
-					{isSaving ? (
+					{props.status === "saving" ? (
 						<>
 							<IconLoader2 className="size-4 mr-2 animate-spin" />
 							{t("common.saving", "Saving...")}
 						</>
-					) : isEditing ? (
+					) : props.mode === "edit" ? (
 						t("scheduling:scheduling.shiftDialog.updateShift", "Update Shift")
 					) : (
 						t("scheduling:scheduling.shiftDialog.createShift", "Create Shift")

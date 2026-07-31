@@ -7,7 +7,10 @@ import {
 	snoozeWaterReminder,
 } from "@/app/[locale]/(app)/wellness/actions";
 import { queryKeys } from "@/lib/query/keys";
-import type { HydrationStats, LogWaterIntakeFormValues } from "@/lib/validations/wellness";
+import type {
+	HydrationStats,
+	LogWaterIntakeFormValues,
+} from "@/lib/validations/wellness";
 
 export interface UseHydrationStatsOptions {
 	/**
@@ -55,20 +58,25 @@ export function useHydrationStats(options: UseHydrationStatsOptions = {}) {
 		},
 		onSuccess: (data) => {
 			// Optimistically update stats
-			queryClient.setQueryData(queryKeys.hydration.stats(), (old: HydrationStats | undefined) => {
-				if (!old || !data) return old;
-				return {
-					...old,
-					todayIntake: data.todayIntake,
-					goalProgress: data.goalProgress,
-					currentStreak: data.currentStreak,
-					longestStreak: data.longestStreak,
-				};
-			});
+			queryClient.setQueryData(
+				queryKeys.hydration.stats(),
+				(old: HydrationStats | undefined) => {
+					if (!old || !data) return old;
+					return {
+						...old,
+						todayIntake: data.todayIntake,
+						goalProgress: data.goalProgress,
+						currentStreak: data.currentStreak,
+						longestStreak: data.longestStreak,
+					};
+				},
+			);
 			// Then invalidate to ensure consistency
 			queryClient.invalidateQueries({ queryKey: queryKeys.hydration.stats() });
 			// Also invalidate reminder status
-			queryClient.invalidateQueries({ queryKey: queryKeys.hydration.reminderStatus() });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.hydration.reminderStatus(),
+			});
 		},
 	});
 
@@ -83,21 +91,27 @@ export function useHydrationStats(options: UseHydrationStatsOptions = {}) {
 		},
 		onSuccess: (data) => {
 			// Update stats with new snooze time
-			queryClient.setQueryData(queryKeys.hydration.stats(), (old: HydrationStats | undefined) => {
-				if (!old || !data) return old;
-				return {
-					...old,
-					snoozedUntil: data.snoozedUntil,
-				};
-			});
+			queryClient.setQueryData(
+				queryKeys.hydration.stats(),
+				(old: HydrationStats | undefined) => {
+					if (!old || !data) return old;
+					return {
+						...old,
+						snoozedUntil: data.snoozedUntil,
+					};
+				},
+			);
 			// Invalidate reminder status
-			queryClient.invalidateQueries({ queryKey: queryKeys.hydration.reminderStatus() });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.hydration.reminderStatus(),
+			});
 		},
 	});
-
 	// Refetch stats manually
 	const refetchStats = () => {
-		return queryClient.invalidateQueries({ queryKey: queryKeys.hydration.stats() });
+		return queryClient.invalidateQueries({
+			queryKey: queryKeys.hydration.stats(),
+		});
 	};
 
 	const stats = statsQuery.data;

@@ -83,7 +83,7 @@ function EmployeeCard({ employee }: { employee: ManagedEmployee }) {
 			)}
 
 			{/* Arrow */}
-			<IconArrowRight className="size-4 text-muted-foreground opacity-0 transition-[opacity,transform] group-hover/employee:opacity-100 group-hover/employee:translate-x-1" />
+			<IconArrowRight className="size-4 text-muted-foreground opacity-0 transition-[opacity,translate] group-hover/employee:opacity-100 group-hover/employee:translate-x-1" />
 		</Link>
 	);
 }

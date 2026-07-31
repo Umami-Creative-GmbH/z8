@@ -78,7 +78,7 @@
         "title": "Invitations"
       },
       "lifecycle": {
-        "actionsLabel": "Actions de l'employé pour ${target.displayName}",
+        "actionsLabel": "Actions concernant {name}",
         "deactivate": "Désactiver",
         "deactivateDescription": "Ceci suspend l'accès à cette organisation et met fin aux sessions en cours l'utilisant. L'historique de l'employé est conservé.",
         "deactivateError": "Échec de la désactivation de l'employé",
@@ -86,6 +86,8 @@
         "deactivateTitle": "Désactiver l'employé ?",
         "deactivating": "Désactivation en cours...",
         "deactivatingStatus": "Désactivation de l'employé",
+        "finalOwnerDeactivateGuidance": "Désignez et activez d'abord un autre propriétaire approuvé avant de désactiver cet employé.",
+        "finalOwnerRemoveGuidance": "Désignez et activez d'abord un autre propriétaire approuvé avant de retirer l'accès de cet employé.",
         "reactivate": "Réactiver",
         "reactivateDescription": "Ceci restaure l'accès à cette organisation en utilisant le dossier d'employé existant.",
         "reactivateError": "Échec de la réactivation de l'employé",

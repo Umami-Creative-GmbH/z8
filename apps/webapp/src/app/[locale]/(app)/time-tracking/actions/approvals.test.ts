@@ -1,151 +1,99 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockState = vi.hoisted(() => ({
+const mocks = vi.hoisted(() => ({
 	findEmployee: vi.fn(),
-	findPolicies: vi.fn(),
-	findGroupMembers: vi.fn(),
-	findEmployees: vi.fn(),
-	findManagerLinks: vi.fn(),
-	insertValues: vi.fn(),
-	logger: {
-		info: vi.fn(),
-		warn: vi.fn(),
-		error: vi.fn(),
-	},
+	onClockOutPendingApproval: vi.fn(),
+	onClockOutPendingApprovalToManager: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
-	db: {
-		query: {
-			employee: {
-				findFirst: mockState.findEmployee,
-				findMany: mockState.findEmployees,
-			},
-			approvalPolicy: { findMany: mockState.findPolicies },
-			employeeGroupMember: { findMany: mockState.findGroupMembers },
-			employeeGroup: { findMany: vi.fn().mockResolvedValue([]) },
-			employeeManagers: { findMany: mockState.findManagerLinks },
-		},
-		insert: vi.fn(() => ({ values: mockState.insertValues })),
-	},
+	db: { query: { employee: { findFirst: mocks.findEmployee } } },
 }));
 
 vi.mock("@/lib/notifications/triggers", () => ({
-	onClockOutPendingApproval: vi.fn().mockResolvedValue(undefined),
-	onClockOutPendingApprovalToManager: vi.fn().mockResolvedValue(undefined),
+	onClockOutApproved: vi.fn(),
+	onClockOutPendingApproval: mocks.onClockOutPendingApproval,
+	onClockOutPendingApprovalToManager: mocks.onClockOutPendingApprovalToManager,
+	onManualEntryApproved: vi.fn(),
 }));
 
-vi.mock("./shared", () => ({ logger: mockState.logger }));
+const source = readFileSync(
+	fileURLToPath(new URL("./approvals.ts", import.meta.url)),
+	"utf8",
+);
 
-const {
-	createClockOutApprovalRequest,
-	createManualEntryApprovalRequest,
-	createTimeEntryApprovalRequest,
-} = await import("./approvals");
+describe("ordinary approval ownership", () => {
+	it("contains notification delivery only", () => {
+		expect(source).not.toContain("resolvePolicyAndCreateApproval");
+		expect(source).not.toContain("createTimeEntryApprovalRequest");
+		expect(source).not.toContain("createClockOutApprovalRequest");
+		expect(source).not.toContain("createManualEntryApprovalRequest");
+		expect(source).not.toContain(".insert(approvalRequest)");
+	});
+});
 
-describe("time tracking approval requests", () => {
+describe("ordinary approval notifications", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.findEmployee.mockResolvedValue({
-			teamId: null,
-			organizationId: "org-1",
-		});
-		mockState.findGroupMembers.mockResolvedValue([]);
-		mockState.findManagerLinks.mockResolvedValue([]);
-		mockState.findEmployees.mockResolvedValue([
-			{
-				id: "emp-1",
-				userId: "user-1",
-				organizationId: "org-1",
-				isActive: true,
-				role: "employee",
-			},
-			{
-				id: "manager-1",
-				userId: "manager-user-1",
-				organizationId: "org-1",
-				isActive: true,
-				role: "manager",
-			},
-		]);
-		mockState.insertValues.mockResolvedValue(undefined);
+		mocks.findEmployee
+			.mockResolvedValueOnce({
+				userId: "user-employee",
+				user: { name: "Avery" },
+			})
+			.mockResolvedValueOnce({ userId: "user-manager" });
 	});
 
-	it("falls back to manager approval when a matched policy cannot resolve", async () => {
-		mockState.findPolicies.mockResolvedValue([
-			{
-				id: "policy-1",
-				organizationId: "org-1",
-				name: "Broken time policy",
-				isActive: true,
-				priority: 1,
-				conditions: [
-					{
-						conditionType: "approval_type",
-						operator: "equals",
-						valueJson: "time_entry",
-					},
-				],
-				stages: [
-					{
-						id: "stage-1",
-						stepOrder: 1,
-						label: "Missing approver",
-						approverType: "specific_employee",
-						approverEmployeeId: "missing-employee",
-					},
-				],
-			},
-		]);
-
-		await createTimeEntryApprovalRequest({
-			workPeriodId: "work-period-1",
-			employeeId: "emp-1",
-			managerId: "manager-1",
-			organizationId: "org-1",
-			reason: "Clock-out requires approval",
-			requestKind: "policy_clock_out",
-			overtimeRisk: "warning",
-		});
-
-		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({
-				organizationId: "org-1",
-				entityType: "time_entry",
-				entityId: "work-period-1",
-				requestedBy: "emp-1",
-				approverId: "manager-1",
-				status: "pending",
-				reason: "Clock-out requires approval",
-				metadata: { timeRequest: { kind: "policy_clock_out" } },
+	it("awaits both durable pending notifications with stable distinct keys", async () => {
+		let resolveEmployee!: () => void;
+		let resolveManager!: () => void;
+		mocks.onClockOutPendingApproval.mockReturnValue(
+			new Promise<void>((resolve) => {
+				resolveEmployee = resolve;
 			}),
 		);
-	});
-
-	it.each([
-		["manual_time_submission", createManualEntryApprovalRequest],
-		["policy_clock_out", createClockOutApprovalRequest],
-	] as const)("writes strict %s metadata through the policy creator", async (kind, createRequest) => {
-		mockState.findPolicies.mockResolvedValue([]);
-
-		await createRequest({
-			workPeriodId: "work-period-1",
-			employeeId: "emp-1",
+		mocks.onClockOutPendingApprovalToManager.mockReturnValue(
+			new Promise<void>((resolve) => {
+				resolveManager = resolve;
+			}),
+		);
+		const { sendClockOutApprovalNotifications } = await import("./approvals");
+		let settled = false;
+		const pending = sendClockOutApprovalNotifications({
+			workPeriodId: "period-1",
+			employeeId: "employee-1",
 			managerId: "manager-1",
 			organizationId: "org-1",
-			startTime: new Date("2026-05-22T08:00:00.000Z"),
-			endTime: new Date("2026-05-22T16:00:00.000Z"),
+			startTime: new Date("2026-05-11T08:00:00.000Z"),
+			endTime: new Date("2026-05-11T16:00:00.000Z"),
 			durationMinutes: 480,
-			...(kind === "manual_time_submission"
-				? { reason: "Forgot to clock" }
-				: {}),
-		} as never);
+			dedupeKey: "submission:default_created",
+		}).then(() => {
+			settled = true;
+		});
 
-		expect(mockState.insertValues).toHaveBeenCalledWith(
+		await vi.waitFor(() => {
+			expect(mocks.onClockOutPendingApproval).toHaveBeenCalledOnce();
+			expect(mocks.onClockOutPendingApprovalToManager).toHaveBeenCalledOnce();
+		});
+		expect(mocks.onClockOutPendingApproval).toHaveBeenCalledWith(
 			expect.objectContaining({
-				entityType: "time_entry",
-				metadata: { timeRequest: { kind } },
+				idempotencyKey: "submission:default_created:employee:pending",
+				durable: true,
 			}),
 		);
+		expect(mocks.onClockOutPendingApprovalToManager).toHaveBeenCalledWith(
+			expect.objectContaining({
+				idempotencyKey: "submission:default_created:manager:pending",
+				durable: true,
+			}),
+		);
+		resolveEmployee();
+		await Promise.resolve();
+		expect(settled).toBe(false);
+		resolveManager();
+		await pending;
+		expect(settled).toBe(true);
 	});
 });

@@ -28,10 +28,16 @@ const profileImageSchema = z
 
 const structuredNamePartSchema = z.string();
 
-export const profileStructuredNameRequiredMessage = "Enter a first or last name";
+export const profileStructuredNameRequiredMessage =
+	"Enter a first or last name";
 
-function hasStructuredProfileName(firstName: string, lastName: string): boolean {
-	return Boolean(trimStructuredNamePart(firstName) || trimStructuredNamePart(lastName));
+function hasStructuredProfileName(
+	firstName: string,
+	lastName: string,
+): boolean {
+	return Boolean(
+		trimStructuredNamePart(firstName) || trimStructuredNamePart(lastName),
+	);
 }
 
 export function validateStructuredProfileNameField(
@@ -55,8 +61,15 @@ export const profileDetailsUpdateSchema = z
 		gender: genderSchema.optional().nullable(),
 		pronouns: pronounsSchema,
 		birthday: z.preprocess(
-			(value) => birthdayInputToUTCDate(value as Date | string | null | undefined),
-			z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
+			(value) =>
+				birthdayInputToUTCDate(value as Date | string | null | undefined),
+			z
+				.date()
+				.refine((birthday) => birthday.getTime() <= Date.now(), {
+					message: "Birthday must be in the past",
+				})
+				.optional()
+				.nullable(),
 		),
 		image: profileImageSchema,
 		helpImproveProduct: z.boolean().optional(),

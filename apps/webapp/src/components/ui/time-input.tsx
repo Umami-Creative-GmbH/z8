@@ -2,7 +2,14 @@
 
 import { IconClock } from "@tabler/icons-react";
 import type * as React from "react";
-import { startTransition, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import {
+	startTransition,
+	useEffect,
+	useId,
+	useLayoutEffect,
+	useRef,
+	useState,
+} from "react";
 import { TimepickerUI } from "timepicker-ui";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
@@ -13,7 +20,10 @@ import {
 } from "@/lib/user-preferences/time-format";
 import { cn } from "@/lib/utils";
 
-type TimeInputProps = Omit<React.ComponentProps<"input">, "readOnly" | "type"> & {
+type TimeInputProps = Omit<
+	React.ComponentProps<"input">,
+	"readOnly" | "type"
+> & {
 	timeFormat?: TimeFormat | string | null;
 };
 
@@ -34,7 +44,9 @@ function createChangeEvent(value: string): React.ChangeEvent<HTMLInputElement> {
 	} as React.ChangeEvent<HTMLInputElement>;
 }
 
-function getPeriodFromTime(value: string | number | readonly string[] | undefined): Period {
+function getPeriodFromTime(
+	value: string | number | readonly string[] | undefined,
+): Period {
 	if (typeof value !== "string") {
 		return "AM";
 	}
@@ -84,7 +96,11 @@ function formatTypedTimeInput(value: string): string {
 	return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 }
 
-function parseMaskedTime(value: string, timeFormat: TimeFormat, period: Period): string | null {
+function parseMaskedTime(
+	value: string,
+	timeFormat: TimeFormat,
+	period: Period,
+): string | null {
 	const match = /^(\d{2}):(\d{2})$/.exec(value);
 	if (!match) {
 		return null;
@@ -92,7 +108,8 @@ function parseMaskedTime(value: string, timeFormat: TimeFormat, period: Period):
 
 	const hour = Number(match[1]);
 	const minutes = Number(match[2]);
-	const validHour = timeFormat === "12h" ? hour >= 1 && hour <= 12 : hour >= 0 && hour <= 23;
+	const validHour =
+		timeFormat === "12h" ? hour >= 1 && hour <= 12 : hour >= 0 && hour <= 23;
 	if (!validHour || minutes < 0 || minutes > 59) {
 		return null;
 	}
@@ -121,7 +138,12 @@ function normalizePickerConfirmTime(
 
 	const hour = Number(data.hour);
 	const minutes = Number(data.minutes);
-	if (!Number.isInteger(hour) || !Number.isInteger(minutes) || minutes < 0 || minutes > 59) {
+	if (
+		!Number.isInteger(hour) ||
+		!Number.isInteger(minutes) ||
+		minutes < 0 ||
+		minutes > 59
+	) {
 		return null;
 	}
 
@@ -161,9 +183,13 @@ function TimeInput({
 	const [displayValue, setDisplayValue] = useState(() =>
 		formatTimeForMaskedInput(value ?? defaultValue, pickerFormat),
 	);
-	const [period, setPeriod] = useState<Period>(() => getPeriodFromTime(value ?? defaultValue));
+	const [period, setPeriod] = useState<Period>(() =>
+		getPeriodFromTime(value ?? defaultValue),
+	);
 	const pickerAnchorValue =
-		typeof displayValue === "string" && displayValue !== "" && pickerFormat === "12h"
+		typeof displayValue === "string" &&
+		displayValue !== "" &&
+		pickerFormat === "12h"
 			? `${displayValue} ${period}`
 			: typeof displayValue === "string"
 				? displayValue
@@ -256,17 +282,14 @@ function TimeInput({
 	}
 
 	function handlePeriodToggle() {
-		setPeriod((currentPeriod) => {
-			const nextPeriod = currentPeriod === "AM" ? "PM" : "AM";
-			if (typeof displayValue === "string") {
-				const nextValue = parseMaskedTime(displayValue, pickerFormat, nextPeriod);
-				if (nextValue) {
-					emitChange(nextValue);
-				}
+		const nextPeriod = period === "AM" ? "PM" : "AM";
+		setPeriod(nextPeriod);
+		if (typeof displayValue === "string") {
+			const nextValue = parseMaskedTime(displayValue, pickerFormat, nextPeriod);
+			if (nextValue) {
+				emitChange(nextValue);
 			}
-
-			return nextPeriod;
-		});
+		}
 	}
 
 	return (
@@ -287,7 +310,9 @@ function TimeInput({
 					className="min-w-0 flex-1 border-0 bg-transparent px-3 py-1 text-base outline-none selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed md:text-sm"
 					data-slot="time-input-field"
 					inputMode={props.inputMode ?? "numeric"}
-					onChange={(event) => handleMaskedValueChange(event.currentTarget.value)}
+					onChange={(event) =>
+						handleMaskedValueChange(event.currentTarget.value)
+					}
 					ref={inputRef}
 					type="text"
 					value={typeof displayValue === "string" ? displayValue : ""}

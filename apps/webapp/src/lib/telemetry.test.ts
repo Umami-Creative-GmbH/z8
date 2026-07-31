@@ -121,6 +121,36 @@ class MemoryTelemetryConfigStore implements TelemetryConfigStore {
 describe("getOrCreateTelemetryIdentity", () => {
 	beforeEach(() => vi.clearAllMocks());
 
+	it("starts deployment identity creation and signing-key lookup concurrently", async () => {
+		const signingKey = generateTelemetrySigningKey();
+		let resolveDeploymentRead: ((value: string) => void) | undefined;
+		const deploymentRead = new Promise<string>((resolve) => {
+			resolveDeploymentRead = resolve;
+		});
+		const read = vi.fn((key: string) => {
+			if (key === "deployment_id") return deploymentRead;
+			return Promise.resolve(JSON.stringify(signingKey));
+		});
+		const store: TelemetryConfigStore = {
+			read,
+			insertIfAbsent: vi.fn(async () => false),
+		};
+
+		const identityPromise = getOrCreateTelemetryIdentity({
+			store,
+			info: vi.fn(),
+		});
+		await Promise.resolve();
+
+		expect(read).toHaveBeenCalledWith("deployment_id");
+		expect(read).toHaveBeenCalledWith("telemetry_signing_key");
+		resolveDeploymentRead?.(DEPLOYMENT_ID);
+		await expect(identityPromise).resolves.toEqual({
+			deploymentId: DEPLOYMENT_ID,
+			signingKey,
+		});
+	});
+
 	it("retains an existing deployment ID and adds a missing signing key", async () => {
 		const store = new MemoryTelemetryConfigStore({
 			deployment_id: DEPLOYMENT_ID,
@@ -255,15 +285,15 @@ describe("getOrCreateTelemetryIdentity", () => {
 			["deployment_id", DEPLOYMENT_ID],
 			["telemetry_signing_key", JSON.stringify(winnerKey)],
 		]);
+		const readCounts = new Map<string, number>();
 		const store: TelemetryConfigStore = {
-			read: vi.fn(async (key) => winners.get(key)),
+			read: vi.fn(async (key) => {
+				const count = readCounts.get(key) ?? 0;
+				readCounts.set(key, count + 1);
+				return count === 0 ? undefined : winners.get(key);
+			}),
 			insertIfAbsent: vi.fn(async () => false),
 		};
-		vi.mocked(store.read)
-			.mockResolvedValueOnce(undefined)
-			.mockResolvedValueOnce(DEPLOYMENT_ID)
-			.mockResolvedValueOnce(undefined)
-			.mockResolvedValueOnce(JSON.stringify(winnerKey));
 
 		const identity = await getOrCreateTelemetryIdentity({
 			store,

@@ -18,7 +18,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import {
+	TFormControl,
+	TFormItem,
+	TFormLabel,
+	TFormMessage,
+} from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	type ApprovalPolicyFormValues,
@@ -31,7 +36,9 @@ import { ApprovalPolicyStagesField } from "./approval-policy-stages-field";
 interface ApprovalPolicyDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	onSubmit: (payload: ReturnType<typeof buildApprovalPolicyPayload>) => Promise<void>;
+	onSubmit: (
+		payload: ReturnType<typeof buildApprovalPolicyPayload>,
+	) => Promise<void>;
 }
 
 function newStage(label: string): ApprovalPolicyFormValues["stages"][number] {
@@ -40,19 +47,52 @@ function newStage(label: string): ApprovalPolicyFormValues["stages"][number] {
 		label,
 		approverType: "direct_manager",
 		approverEmployeeId: "",
+		fallbackBehavior: "fail",
 	};
 }
 
-export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalPolicyDialogProps) {
+export function ApprovalPolicyDialog({
+	open,
+	onOpenChange,
+	onSubmit,
+}: ApprovalPolicyDialogProps) {
 	const { t } = useTranslate();
-	function approvalTypeLabel(value: (typeof approvalTypeOptions)[number]["value"]) {
+	function approvalTypeLabel(
+		value: (typeof approvalTypeOptions)[number]["value"],
+	) {
 		switch (value) {
-			case "absence_entry":
-				return t("settings.approvalPolicies.approvalType.absenceRequests", "Absence requests");
-			case "time_entry":
-				return t("settings.approvalPolicies.approvalType.timeEntryChanges", "Time entry changes");
-			case "travel_expense_claim":
-				return t("settings.approvalPolicies.approvalType.travelExpenses", "Travel expenses");
+			case "absence":
+				return t("settings.approvalPolicies.approvalType.absence", "Absence");
+			case "time_correction":
+				return t(
+					"settings.approvalPolicies.approvalType.timeCorrection",
+					"Time correction",
+				);
+			case "manual_time_submission":
+				return t(
+					"settings.approvalPolicies.approvalType.manualTimeSubmission",
+					"Manual time submission",
+				);
+			case "policy_clock_out":
+				return t(
+					"settings.approvalPolicies.approvalType.policyClockOut",
+					"Policy clock-out",
+				);
+			case "travel_expense":
+				return t(
+					"settings.approvalPolicies.approvalType.travelExpense",
+					"Travel expense",
+				);
+			case "shift_request":
+				return t(
+					"settings.approvalPolicies.approvalType.shiftRequest",
+					"Shift request",
+				);
+			case "compliance_exception":
+				return t(
+					"settings.approvalPolicies.approvalType.complianceException",
+					"Compliance exception",
+				);
 		}
 	}
 	const form = useForm({
@@ -95,7 +135,10 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 			<ActionPanelContent size="wide">
 				<ActionPanelHeader>
 					<ActionPanelTitle>
-						{t("settings.approvalPolicies.createPolicy", "Create Approval Policy")}
+						{t(
+							"settings.approvalPolicies.createPolicy",
+							"Create Approval Policy",
+						)}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
 						{t(
@@ -122,7 +165,9 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 											name="name"
 											autoComplete="off"
 											value={field.state.value}
-											onChange={(event) => field.handleChange(event.target.value)}
+											onChange={(event) =>
+												field.handleChange(event.target.value)
+											}
 											onBlur={field.handleBlur}
 											placeholder={t(
 												"settings.approvalPolicies.namePlaceholder",
@@ -138,13 +183,17 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 						<form.Field name="description">
 							{(field) => (
 								<TFormItem>
-									<TFormLabel>{t("common.description", "Description")}</TFormLabel>
+									<TFormLabel>
+										{t("common.description", "Description")}
+									</TFormLabel>
 									<TFormControl>
 										<Textarea
 											name="description"
 											autoComplete="off"
 											value={field.state.value}
-											onChange={(event) => field.handleChange(event.target.value)}
+											onChange={(event) =>
+												field.handleChange(event.target.value)
+											}
 											onBlur={field.handleBlur}
 											placeholder={t(
 												"settings.approvalPolicies.descriptionPlaceholder",
@@ -172,7 +221,9 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 												min="1"
 												step="1"
 												value={field.state.value}
-												onChange={(event) => field.handleChange(event.target.value)}
+												onChange={(event) =>
+													field.handleChange(event.target.value)
+												}
 												onBlur={field.handleBlur}
 											/>
 										</TFormControl>
@@ -185,8 +236,14 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 								{(field) => (
 									<div className="flex items-center justify-between rounded-lg border p-4">
 										<div className="space-y-0.5">
-											<Label htmlFor="approval-policy-active" className="text-base">
-												{t("settings.approvalPolicies.activeLabel", "Active policy")}
+											<Label
+												htmlFor="approval-policy-active"
+												className="text-base"
+											>
+												{t(
+													"settings.approvalPolicies.activeLabel",
+													"Active policy",
+												)}
 											</Label>
 											<p className="text-sm text-muted-foreground">
 												{t(
@@ -209,11 +266,17 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 							{(field) => (
 								<fieldset className="space-y-3 rounded-lg border p-4">
 									<legend className="text-sm font-medium">
-										{t("settings.approvalPolicies.approvalTypes", "Approval types")}
+										{t(
+											"settings.approvalPolicies.approvalTypes",
+											"Approval types",
+										)}
 									</legend>
 									<div className="grid gap-2 sm:grid-cols-3">
 										{approvalTypeOptions.map((option) => (
-											<label key={option.value} className="flex items-center gap-2 text-sm">
+											<label
+												key={option.value}
+												className="flex items-center gap-2 text-sm"
+											>
 												<input
 													type="checkbox"
 													aria-label={approvalTypeLabel(option.value)}
@@ -222,7 +285,9 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 														field.handleChange(
 															event.target.checked
 																? [...field.state.value, option.value]
-																: field.state.value.filter((value) => value !== option.value),
+																: field.state.value.filter(
+																		(value) => value !== option.value,
+																	),
 														)
 													}
 												/>
@@ -242,7 +307,12 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 									onAddStage={() =>
 										field.handleChange([
 											...field.state.value,
-											newStage(t("settings.approvalPolicies.defaultStageLabel", "Manager review")),
+											newStage(
+												t(
+													"settings.approvalPolicies.defaultStageLabel",
+													"Manager review",
+												),
+											),
 										])
 									}
 									t={t}
@@ -262,7 +332,10 @@ export function ApprovalPolicyDialog({ open, onOpenChange, onSubmit }: ApprovalP
 						</Button>
 						<Button type="submit" disabled={form.state.isSubmitting}>
 							{form.state.isSubmitting && (
-								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+								<IconLoader2
+									className="mr-2 size-4 animate-spin"
+									aria-hidden="true"
+								/>
 							)}
 							{t("common.create", "Create")}
 						</Button>

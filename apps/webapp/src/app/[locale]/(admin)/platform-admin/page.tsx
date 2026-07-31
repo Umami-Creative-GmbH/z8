@@ -70,7 +70,7 @@ function StatCard({ title, value, description, icon, href, variant = "default" }
 						{icon}
 					</div>
 					<IconArrowUpRight
-						className="size-4 text-muted-foreground/50 transition-[color,transform] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-muted-foreground"
+						className="size-4 text-muted-foreground/50 transition-[color,translate] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-muted-foreground"
 						aria-hidden="true"
 					/>
 				</CardHeader>
@@ -288,7 +288,7 @@ function QuickActionCard({ title, description, href, icon }: QuickActionCardProp
 						<div className="flex items-center justify-between">
 							<CardTitle className="text-base">{title}</CardTitle>
 							<IconChevronRight
-								className="size-4 text-muted-foreground/50 transition-[color,transform] group-hover:translate-x-0.5 group-hover:text-muted-foreground"
+								className="size-4 text-muted-foreground/50 transition-[color,translate] group-hover:translate-x-0.5 group-hover:text-muted-foreground"
 								aria-hidden="true"
 							/>
 						</div>

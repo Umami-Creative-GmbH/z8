@@ -9,6 +9,14 @@ import { normalizeInvitationEmail } from "./employee-invitation-draft";
 import { deleteOrganizationActiveSessionRows } from "./organization-session-revocation";
 
 type MemberRemovalDb = Pick<typeof db, "transaction">;
+type MemberRemovalTransaction = Parameters<
+	Parameters<typeof db.transaction>[0]
+>[0];
+
+export type RemovedMemberAccessOutcome = {
+	accessRestored: boolean;
+	sessionTokens: string[];
+};
 
 const memberAccessRevocationDependencies = {
 	db,
@@ -24,47 +32,9 @@ export async function revokeRemovedMemberAccess(
 		deleteSecondarySession: (token: string) => Promise<void>;
 	} = memberAccessRevocationDependencies,
 ) {
-	const outcome = await dependencies.db.transaction(async (tx) => {
-		const targetUser = await tx.query.user.findFirst({
-			where: eq(authSchema.user.id, userId),
-			columns: { email: true },
-		});
-		if (!targetUser) throw new Error("Member cleanup user not found");
-
-		await acquireEmployeeIdentityLock(tx, {
-			organizationId,
-			normalizedEmail: normalizeInvitationEmail(targetUser.email),
-		});
-
-		const replacementMembership = await tx.query.member.findFirst({
-			where: and(
-				eq(authSchema.member.userId, userId),
-				eq(authSchema.member.organizationId, organizationId),
-				eq(authSchema.member.status, "approved"),
-			),
-			columns: { id: true },
-		});
-		if (replacementMembership) {
-			return { accessRestored: true as const, sessionTokens: [] };
-		}
-
-		const sessionTokens = await deleteOrganizationActiveSessionRows(
-			userId,
-			organizationId,
-			tx,
-		);
-		await tx
-			.update(employee)
-			.set({ isActive: false })
-			.where(
-				and(
-					eq(employee.userId, userId),
-					eq(employee.organizationId, organizationId),
-				),
-			);
-
-		return { accessRestored: false as const, sessionTokens };
-	});
+	const outcome = await dependencies.db.transaction((tx) =>
+		revokeRemovedMemberAccessInTransaction(tx, userId, organizationId),
+	);
 
 	await Promise.all(
 		outcome.sessionTokens.map((token) =>
@@ -74,10 +44,80 @@ export async function revokeRemovedMemberAccess(
 	return { accessRestored: outcome.accessRestored };
 }
 
+export async function revokeRemovedMemberAccessInTransaction(
+	dbClient: MemberRemovalTransaction,
+	userId: string,
+	organizationId: string,
+): Promise<RemovedMemberAccessOutcome> {
+	const targetUser = await dbClient.query.user.findFirst({
+		where: eq(authSchema.user.id, userId),
+		columns: { email: true },
+	});
+	if (!targetUser) throw new Error("Member cleanup user not found");
+
+	// All membership writers take this identity lock before checking replacement access.
+	await acquireEmployeeIdentityLock(dbClient, {
+		organizationId,
+		normalizedEmail: normalizeInvitationEmail(targetUser.email),
+	});
+
+	const replacementMembership = await dbClient.query.member.findFirst({
+		where: and(
+			eq(authSchema.member.userId, userId),
+			eq(authSchema.member.organizationId, organizationId),
+			eq(authSchema.member.status, "approved"),
+		),
+		columns: { id: true },
+	});
+	if (replacementMembership) {
+		return { accessRestored: true, sessionTokens: [] };
+	}
+
+	const sessionTokens = await deleteOrganizationActiveSessionRows(
+		userId,
+		organizationId,
+		dbClient,
+	);
+	await dbClient
+		.update(employee)
+		.set({ isActive: false })
+		.where(
+			and(
+				eq(employee.userId, userId),
+				eq(employee.organizationId, organizationId),
+			),
+		);
+
+	return { accessRestored: false, sessionTokens };
+}
+
 const postRemovalCleanupDependencies = {
-	revokeRemovedMemberAccess,
+	db,
+	deleteSecondarySession: (token: string) =>
+		secondaryStorage.deleteOrThrow(token),
 	reconcileBillingSeatsForOrganization,
 };
+
+export async function completeRemovedMemberCleanupPostCommit(
+	input: {
+		organizationId: string;
+		sessionTokens: string[];
+	},
+	dependencies: {
+		deleteSecondarySession: (token: string) => Promise<void>;
+		reconcileBillingSeatsForOrganization: typeof reconcileBillingSeatsForOrganization;
+	} = postRemovalCleanupDependencies,
+) {
+	await Promise.all(
+		input.sessionTokens.map((token) =>
+			dependencies.deleteSecondarySession(token),
+		),
+	);
+	await dependencies.reconcileBillingSeatsForOrganization(
+		input.organizationId,
+		{ strict: true },
+	);
+}
 
 export async function completeRemovedMemberCleanup(
 	input: {
@@ -96,19 +136,32 @@ export async function completeRemovedMemberCleanup(
 			input.userId,
 			input.organizationId,
 		);
-	} else {
-		if (!dependencies.db || !dependencies.deleteSecondarySession) {
-			throw new Error("Member cleanup dependencies are incomplete");
-		}
-		await revokeRemovedMemberAccess(input.userId, input.organizationId, {
-			db: dependencies.db,
-			deleteSecondarySession: dependencies.deleteSecondarySession,
-		});
+		await dependencies.reconcileBillingSeatsForOrganization(
+			input.organizationId,
+			{ strict: true },
+		);
+		return;
 	}
-	await dependencies.reconcileBillingSeatsForOrganization(
-		input.organizationId,
+
+	if (!dependencies.db || !dependencies.deleteSecondarySession) {
+		throw new Error("Member cleanup dependencies are incomplete");
+	}
+	const outcome = await dependencies.db.transaction((tx) =>
+		revokeRemovedMemberAccessInTransaction(
+			tx,
+			input.userId,
+			input.organizationId,
+		),
+	);
+	await completeRemovedMemberCleanupPostCommit(
 		{
-			strict: true,
+			organizationId: input.organizationId,
+			sessionTokens: outcome.sessionTokens,
+		},
+		{
+			deleteSecondarySession: dependencies.deleteSecondarySession,
+			reconcileBillingSeatsForOrganization:
+				dependencies.reconcileBillingSeatsForOrganization,
 		},
 	);
 }

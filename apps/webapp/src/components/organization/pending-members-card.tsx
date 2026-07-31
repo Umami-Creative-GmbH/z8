@@ -1,6 +1,12 @@
 "use client";
 
-import { IconCheck, IconLoader2, IconUserCheck, IconUserX, IconX } from "@tabler/icons-react";
+import {
+	IconCheck,
+	IconLoader2,
+	IconUserCheck,
+	IconUserX,
+	IconX,
+} from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
@@ -25,7 +31,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Select,
@@ -42,12 +54,19 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatDateOnly } from "@/lib/datetime/format";
 import type { PendingMember } from "@/lib/effect/services/pending-member.service";
 import { queryKeys } from "@/lib/query";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
-import { buildBulkApproveRequests, resolveApproveTeamId } from "./pending-members-card.utils";
+import {
+	buildBulkApproveRequests,
+	resolveApproveTeamId,
+} from "./pending-members-card.utils";
 
 interface PendingMembersCardProps {
 	organizationId: string;
@@ -56,22 +75,332 @@ interface PendingMembersCardProps {
 
 const NO_TEAM_VALUE = "none";
 
-function formatDate(date: Date | string | null | undefined, locale: string, timezone: string) {
+function formatDate(
+	date: Date | string | null | undefined,
+	locale: string,
+	timezone: string,
+) {
 	if (!date) return "-";
 	return formatDateOnly(new Date(date), { locale, timezone });
 }
 
-export function PendingMembersCard({ organizationId, currentMemberRole }: PendingMembersCardProps) {
+function PendingMembersTable({
+	pendingMembers,
+	selectedMembers,
+	teams,
+	locale,
+	timezone,
+	approvePending,
+	onSelectAll,
+	onSelectMember,
+	onTeamChange,
+	getTeamSelectValue,
+	getApproveTeamId,
+	onApprove,
+	onReject,
+	t,
+}: {
+	pendingMembers: PendingMember[];
+	selectedMembers: Set<string>;
+	teams: Array<{ id: string; name: string }>;
+	locale: string;
+	timezone: string;
+	approvePending: boolean;
+	onSelectAll: (checked: boolean) => void;
+	onSelectMember: (memberId: string, checked: boolean) => void;
+	onTeamChange: (memberId: string, teamId: string) => void;
+	getTeamSelectValue: (member: PendingMember) => string;
+	getApproveTeamId: (member: PendingMember) => string | null | undefined;
+	onApprove: (memberId: string, teamId: string | null | undefined) => void;
+	onReject: (member: PendingMember) => void;
+	t: ReturnType<typeof useTranslate>["t"];
+}) {
+	return (
+		<Table>
+			<TableHeader>
+				<TableRow>
+					<TableHead className="w-[50px]">
+						<Checkbox
+							checked={
+								selectedMembers.size === pendingMembers.length &&
+								pendingMembers.length > 0
+							}
+							onCheckedChange={onSelectAll}
+							aria-label={t(
+								"settings.pendingMembers.selectAll",
+								"Select all pending members",
+							)}
+						/>
+					</TableHead>
+					<TableHead>{t("settings.pendingMembers.user", "User")}</TableHead>
+					<TableHead>{t("settings.pendingMembers.email", "Email")}</TableHead>
+					<TableHead>
+						{t("settings.pendingMembers.joinedVia", "Joined Via")}
+					</TableHead>
+					<TableHead>
+						{t("settings.pendingMembers.requestedAt", "Requested")}
+					</TableHead>
+					<TableHead>
+						{t("settings.pendingMembers.assignTeam", "Assign Team")}
+					</TableHead>
+					<TableHead className="text-right">
+						{t("common.actions", "Actions")}
+					</TableHead>
+				</TableRow>
+			</TableHeader>
+			<TableBody>
+				{pendingMembers.map((member) => (
+					<TableRow key={member.id}>
+						<TableCell>
+							<Checkbox
+								checked={selectedMembers.has(member.id)}
+								onCheckedChange={(checked) =>
+									onSelectMember(member.id, checked === true)
+								}
+								aria-label={t(
+									"settings.pendingMembers.selectMember",
+									"Select {name}",
+									{
+										name: member.user?.name || member.user?.email || "member",
+									},
+								)}
+							/>
+						</TableCell>
+						<TableCell>
+							<div className="font-medium">{member.user?.name || "-"}</div>
+						</TableCell>
+						<TableCell>
+							<div className="text-muted-foreground">
+								{member.user?.email || "-"}
+							</div>
+						</TableCell>
+						<TableCell>
+							{member.inviteCode ? (
+								<Badge variant="outline">
+									{member.inviteCode.label || member.inviteCode.code}
+								</Badge>
+							) : (
+								<Badge variant="secondary">
+									{t("settings.pendingMembers.sso", "SSO")}
+								</Badge>
+							)}
+						</TableCell>
+						<TableCell>
+							{formatDate(member.createdAt, locale, timezone)}
+						</TableCell>
+						<TableCell>
+							<Select
+								value={getTeamSelectValue(member)}
+								onValueChange={(value) => onTeamChange(member.id, value)}
+							>
+								<SelectTrigger className="w-[180px]">
+									<SelectValue
+										placeholder={t("settings.pendingMembers.noTeam", "No team")}
+									/>
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value={NO_TEAM_VALUE}>
+										{t("settings.pendingMembers.noTeam", "No team")}
+									</SelectItem>
+									{teams.map((team) => (
+										<SelectItem key={team.id} value={team.id}>
+											{team.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</TableCell>
+						<TableCell className="text-right">
+							<div className="flex items-center justify-end gap-1">
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="sm"
+											className="text-green-600 hover:text-green-700 hover:bg-green-50"
+											onClick={() =>
+												onApprove(member.id, getApproveTeamId(member))
+											}
+											disabled={approvePending}
+											aria-label={t(
+												"settings.pendingMembers.approveMember",
+												"Approve {name}",
+												{
+													name: member.user?.name || "member",
+												},
+											)}
+										>
+											{approvePending ? (
+												<IconLoader2 className="size-4 animate-spin" />
+											) : (
+												<IconCheck className="size-4" />
+											)}
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										{t("settings.pendingMembers.approve", "Approve")}
+									</TooltipContent>
+								</Tooltip>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="sm"
+											className="text-destructive hover:text-destructive hover:bg-destructive/10"
+											onClick={() => onReject(member)}
+											aria-label={t(
+												"settings.pendingMembers.rejectMember",
+												"Reject {name}",
+												{
+													name: member.user?.name || "member",
+												},
+											)}
+										>
+											<IconX className="size-4" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										{t("settings.pendingMembers.reject", "Reject")}
+									</TooltipContent>
+								</Tooltip>
+							</div>
+						</TableCell>
+					</TableRow>
+				))}
+			</TableBody>
+		</Table>
+	);
+}
+
+function PendingMemberDialogStack({
+	rejectDialogMember,
+	bulkRejectDialogOpen,
+	selectedCount,
+	rejectPending,
+	bulkRejectPending,
+	onRejectDialogChange,
+	onBulkRejectDialogChange,
+	onReject,
+	onBulkReject,
+	t,
+}: {
+	rejectDialogMember: PendingMember | null;
+	bulkRejectDialogOpen: boolean;
+	selectedCount: number;
+	rejectPending: boolean;
+	bulkRejectPending: boolean;
+	onRejectDialogChange: (open: boolean) => void;
+	onBulkRejectDialogChange: (open: boolean) => void;
+	onReject: (memberId: string) => void;
+	onBulkReject: () => void;
+	t: ReturnType<typeof useTranslate>["t"];
+}) {
+	return (
+		<>
+			<AlertDialog
+				open={!!rejectDialogMember}
+				onOpenChange={onRejectDialogChange}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							{t("settings.pendingMembers.rejectTitle", "Reject Member")}
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							{t(
+								"settings.pendingMembers.rejectDescription",
+								"Are you sure you want to reject {name}? They will be removed from the pending list and will need to request access again.",
+								{
+									name:
+										rejectDialogMember?.user?.name ||
+										rejectDialogMember?.user?.email ||
+										"this user",
+								},
+							)}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={() =>
+								rejectDialogMember && onReject(rejectDialogMember.id)
+							}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							{rejectPending ? (
+								<IconLoader2 className="size-4 animate-spin mr-2" />
+							) : (
+								<IconUserX className="size-4 mr-2" />
+							)}
+							{t("settings.pendingMembers.reject", "Reject")}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+			<AlertDialog
+				open={bulkRejectDialogOpen}
+				onOpenChange={onBulkRejectDialogChange}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							{t(
+								"settings.pendingMembers.bulkRejectTitle",
+								"Reject Selected Members",
+							)}
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							{t(
+								"settings.pendingMembers.bulkRejectDescription",
+								"Are you sure you want to reject {count} selected members? They will be removed from the pending list.",
+								{ count: selectedCount },
+							)}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>
+							{t("common.cancel", "Cancel")}
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={onBulkReject}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							{bulkRejectPending ? (
+								<IconLoader2 className="size-4 animate-spin mr-2" />
+							) : (
+								<IconUserX className="size-4 mr-2" />
+							)}
+							{t("settings.pendingMembers.rejectSelected", "Reject Selected")}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</>
+	);
+}
+
+export function PendingMembersCard({
+	organizationId,
+	currentMemberRole,
+}: PendingMembersCardProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const timezone = useOrganizationTimezone();
 	const queryClient = useQueryClient();
-	const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
-	const [rejectDialogMember, setRejectDialogMember] = useState<PendingMember | null>(null);
+	const [selectedMembers, setSelectedMembers] = useState<Set<string>>(
+		new Set(),
+	);
+	const [rejectDialogMember, setRejectDialogMember] =
+		useState<PendingMember | null>(null);
 	const [bulkRejectDialogOpen, setBulkRejectDialogOpen] = useState(false);
-	const [teamAssignments, setTeamAssignments] = useState<Record<string, string | null>>({});
+	const [teamAssignments, setTeamAssignments] = useState<
+		Record<string, string | null>
+	>({});
 
-	const canManage = currentMemberRole === "admin" || currentMemberRole === "owner";
+	const canManage =
+		currentMemberRole === "admin" || currentMemberRole === "owner";
 
 	// Fetch pending members
 	const { data: pendingMembersResult, isLoading } = useQuery({
@@ -80,7 +409,9 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 		enabled: canManage,
 	});
 
-	const pendingMembers = pendingMembersResult?.success ? pendingMembersResult.data : [];
+	const pendingMembers = pendingMembersResult?.success
+		? pendingMembersResult.data
+		: [];
 
 	// Fetch teams for assignment
 	const { data: teamsResult } = useQuery({
@@ -93,7 +424,13 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 
 	// Approve mutation
 	const approveMutation = useMutation({
-		mutationFn: async ({ memberId, teamId }: { memberId: string; teamId?: string | null }) => {
+		mutationFn: async ({
+			memberId,
+			teamId,
+		}: {
+			memberId: string;
+			teamId?: string | null;
+		}) => {
 			const result = await approvePendingMember({
 				memberId,
 				organizationId,
@@ -103,8 +440,12 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 			return result.data;
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.pendingMembers.list(organizationId) });
-			queryClient.invalidateQueries({ queryKey: queryKeys.members.list(organizationId) });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.pendingMembers.list(organizationId),
+			});
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.members.list(organizationId),
+			});
 			toast.success(t("settings.pendingMembers.approved", "Member approved"));
 		},
 		onError: (error) => {
@@ -122,7 +463,9 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 			if (!result.success) throw new Error(result.error || "Failed to reject");
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.pendingMembers.list(organizationId) });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.pendingMembers.list(organizationId),
+			});
 			toast.success(t("settings.pendingMembers.rejected", "Member rejected"));
 			setRejectDialogMember(null);
 		},
@@ -135,7 +478,11 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 	const bulkApproveMutation = useMutation({
 		mutationFn: async () => {
 			const memberIds = Array.from(selectedMembers);
-			const requests = buildBulkApproveRequests(pendingMembers, memberIds, teamAssignments);
+			const requests = buildBulkApproveRequests(
+				pendingMembers,
+				memberIds,
+				teamAssignments,
+			);
 
 			await Promise.all(
 				requests.map(async ({ memberId, teamId }) => {
@@ -145,15 +492,20 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 						assignedTeamId: teamId,
 					});
 
-					if (!result.success) throw new Error(result.error || "Failed to approve");
+					if (!result.success)
+						throw new Error(result.error || "Failed to approve");
 				}),
 			);
 
 			return { approved: requests.length, failed: 0 };
 		},
 		onSuccess: (data) => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.pendingMembers.list(organizationId) });
-			queryClient.invalidateQueries({ queryKey: queryKeys.members.list(organizationId) });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.pendingMembers.list(organizationId),
+			});
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.members.list(organizationId),
+			});
 			toast.success(
 				t("settings.pendingMembers.bulkApproved", "{count} members approved", {
 					count: data.approved,
@@ -176,7 +528,9 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 			return result.data;
 		},
 		onSuccess: (data) => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.pendingMembers.list(organizationId) });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.pendingMembers.list(organizationId),
+			});
 			toast.success(
 				t("settings.pendingMembers.bulkRejected", "{count} members rejected", {
 					count: data.rejected,
@@ -263,8 +617,8 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 								disabled={bulkRejectMutation.isPending}
 							>
 								<IconUserX className="mr-2 size-4" />
-								{t("settings.pendingMembers.rejectSelected", "Reject Selected")} (
-								{selectedMembers.size})
+								{t("settings.pendingMembers.rejectSelected", "Reject Selected")}{" "}
+								({selectedMembers.size})
 							</Button>
 							<Button
 								size="sm"
@@ -276,8 +630,11 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 								) : (
 									<IconUserCheck className="mr-2 size-4" />
 								)}
-								{t("settings.pendingMembers.approveSelected", "Approve Selected")} (
-								{selectedMembers.size})
+								{t(
+									"settings.pendingMembers.approveSelected",
+									"Approve Selected",
+								)}{" "}
+								({selectedMembers.size})
 							</Button>
 						</div>
 					)}
@@ -289,207 +646,38 @@ export function PendingMembersCard({ organizationId, currentMemberRole }: Pendin
 						<IconLoader2 className="size-6 animate-spin text-muted-foreground" />
 					</div>
 				) : (
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead className="w-[50px]">
-									<Checkbox
-										checked={
-											selectedMembers.size === pendingMembers.length && pendingMembers.length > 0
-										}
-										onCheckedChange={handleSelectAll}
-										aria-label={t(
-											"settings.pendingMembers.selectAll",
-											"Select all pending members",
-										)}
-									/>
-								</TableHead>
-								<TableHead>{t("settings.pendingMembers.user", "User")}</TableHead>
-								<TableHead>{t("settings.pendingMembers.email", "Email")}</TableHead>
-								<TableHead>{t("settings.pendingMembers.joinedVia", "Joined Via")}</TableHead>
-								<TableHead>{t("settings.pendingMembers.requestedAt", "Requested")}</TableHead>
-								<TableHead>{t("settings.pendingMembers.assignTeam", "Assign Team")}</TableHead>
-								<TableHead className="text-right">{t("common.actions", "Actions")}</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{pendingMembers.map((member) => (
-								<TableRow key={member.id}>
-									<TableCell>
-										<Checkbox
-											checked={selectedMembers.has(member.id)}
-											onCheckedChange={(checked) => handleSelectMember(member.id, checked === true)}
-											aria-label={t("settings.pendingMembers.selectMember", "Select {name}", {
-												name: member.user?.name || member.user?.email || "member",
-											})}
-										/>
-									</TableCell>
-									<TableCell>
-										<div className="font-medium">{member.user?.name || "-"}</div>
-									</TableCell>
-									<TableCell>
-										<div className="text-muted-foreground">{member.user?.email || "-"}</div>
-									</TableCell>
-									<TableCell>
-										{member.inviteCode ? (
-											<Badge variant="outline">
-												{member.inviteCode.label || member.inviteCode.code}
-											</Badge>
-										) : (
-											<Badge variant="secondary">{t("settings.pendingMembers.sso", "SSO")}</Badge>
-										)}
-									</TableCell>
-									<TableCell>{formatDate(member.createdAt, locale, timezone)}</TableCell>
-									<TableCell>
-										<Select
-											value={getTeamSelectValue(member)}
-											onValueChange={(value) => handleTeamChange(member.id, value)}
-										>
-											<SelectTrigger className="w-[180px]">
-												<SelectValue placeholder={t("settings.pendingMembers.noTeam", "No team")} />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value={NO_TEAM_VALUE}>
-													{t("settings.pendingMembers.noTeam", "No team")}
-												</SelectItem>
-												{teams.map((team) => (
-													<SelectItem key={team.id} value={team.id}>
-														{team.name}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</TableCell>
-									<TableCell className="text-right">
-										<div className="flex items-center justify-end gap-1">
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														variant="ghost"
-														size="sm"
-														className="text-green-600 hover:text-green-700 hover:bg-green-50"
-														onClick={() =>
-															approveMutation.mutate({
-																memberId: member.id,
-																teamId: getApproveTeamId(member),
-															})
-														}
-														disabled={approveMutation.isPending}
-														aria-label={t(
-															"settings.pendingMembers.approveMember",
-															"Approve {name}",
-															{ name: member.user?.name || "member" },
-														)}
-													>
-														{approveMutation.isPending ? (
-															<IconLoader2 className="size-4 animate-spin" />
-														) : (
-															<IconCheck className="size-4" />
-														)}
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													{t("settings.pendingMembers.approve", "Approve")}
-												</TooltipContent>
-											</Tooltip>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														variant="ghost"
-														size="sm"
-														className="text-destructive hover:text-destructive hover:bg-destructive/10"
-														onClick={() => setRejectDialogMember(member)}
-														aria-label={t("settings.pendingMembers.rejectMember", "Reject {name}", {
-															name: member.user?.name || "member",
-														})}
-													>
-														<IconX className="size-4" />
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													{t("settings.pendingMembers.reject", "Reject")}
-												</TooltipContent>
-											</Tooltip>
-										</div>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
+					<PendingMembersTable
+						pendingMembers={pendingMembers}
+						selectedMembers={selectedMembers}
+						teams={teams}
+						locale={locale}
+						timezone={timezone}
+						approvePending={approveMutation.isPending}
+						onSelectAll={handleSelectAll}
+						onSelectMember={handleSelectMember}
+						onTeamChange={handleTeamChange}
+						getTeamSelectValue={getTeamSelectValue}
+						getApproveTeamId={getApproveTeamId}
+						onApprove={(memberId, teamId) =>
+							approveMutation.mutate({ memberId, teamId })
+						}
+						onReject={setRejectDialogMember}
+						t={t}
+					/>
 				)}
 			</CardContent>
-
-			{/* Reject Confirmation Dialog */}
-			<AlertDialog
-				open={!!rejectDialogMember}
-				onOpenChange={(open) => !open && setRejectDialogMember(null)}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.pendingMembers.rejectTitle", "Reject Member")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.pendingMembers.rejectDescription",
-								"Are you sure you want to reject {name}? They will be removed from the pending list and will need to request access again.",
-								{
-									name:
-										rejectDialogMember?.user?.name ||
-										rejectDialogMember?.user?.email ||
-										"this user",
-								},
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={() => rejectDialogMember && rejectMutation.mutate(rejectDialogMember.id)}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{rejectMutation.isPending ? (
-								<IconLoader2 className="size-4 animate-spin mr-2" />
-							) : (
-								<IconUserX className="size-4 mr-2" />
-							)}
-							{t("settings.pendingMembers.reject", "Reject")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
-
-			{/* Bulk Reject Confirmation Dialog */}
-			<AlertDialog open={bulkRejectDialogOpen} onOpenChange={setBulkRejectDialogOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.pendingMembers.bulkRejectTitle", "Reject Selected Members")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{t(
-								"settings.pendingMembers.bulkRejectDescription",
-								"Are you sure you want to reject {count} selected members? They will be removed from the pending list.",
-								{ count: selectedMembers.size },
-							)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={() => bulkRejectMutation.mutate()}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-						>
-							{bulkRejectMutation.isPending ? (
-								<IconLoader2 className="size-4 animate-spin mr-2" />
-							) : (
-								<IconUserX className="size-4 mr-2" />
-							)}
-							{t("settings.pendingMembers.rejectSelected", "Reject Selected")}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<PendingMemberDialogStack
+				rejectDialogMember={rejectDialogMember}
+				bulkRejectDialogOpen={bulkRejectDialogOpen}
+				selectedCount={selectedMembers.size}
+				rejectPending={rejectMutation.isPending}
+				bulkRejectPending={bulkRejectMutation.isPending}
+				onRejectDialogChange={(open) => !open && setRejectDialogMember(null)}
+				onBulkRejectDialogChange={setBulkRejectDialogOpen}
+				onReject={(memberId) => rejectMutation.mutate(memberId)}
+				onBulkReject={() => bulkRejectMutation.mutate()}
+				t={t}
+			/>
 		</Card>
 	);
 }

@@ -372,34 +372,55 @@
       "when": 1780773132903,
       "tag": "0052_time_entry_timezone_recovery",
       "breakpoints": true
-	},
-	{
-		"idx": 53,
-		"version": "7",
-		"when": 1781096400000,
-		"tag": "0053_telegram_digest_delivery",
-		"breakpoints": true
-	},
-	{
-		"idx": 54,
-		"version": "7",
-		"when": 1784400735730,
-		"tag": "0054_employee_invitation_draft_identity",
-		"breakpoints": true
-	},
-	{
-		"idx": 55,
-		"version": "7",
-		"when": 1785269198390,
-		"tag": "0055_employee_clock_activity_index",
-		"breakpoints": true
-	},
-	{
-		"idx": 56,
-		"version": "7",
-		"when": 1785269198391,
-		"tag": "0056_payroll_blocker_dismissal",
-		"breakpoints": true
-	}
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1781096400000,
+      "tag": "0053_telegram_digest_delivery",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1784400735730,
+      "tag": "0054_employee_invitation_draft_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1785232090757,
+      "tag": "0055_approval_workflow_expand",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1785232118219,
+      "tag": "0056_approval_workflow_cycle_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1785293968831,
+      "tag": "0057_team_permissions_uniqueness",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1785293968832,
+      "tag": "0058_employee_clock_activity_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1785493929039,
+      "tag": "0059_payroll_blocker_dismissal",
+      "breakpoints": true
+    }
   ]
 }

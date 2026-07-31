@@ -1,21 +1,20 @@
 name: Tests
 
 on:
-  # Temporarily disabled for pull requests.
-  # pull_request:
-  #   branches:
-  #     - main
-  #   paths:
-  #     - "apps/**"
-  #     - "packages/**"
-  #     - "docker/scripts/**"
-  #     - "docker/Dockerfile.*"
-  #     - "docker/targets/**"
-  #     - "package.json"
-  #     - "pnpm-lock.yaml"
-  #     - "pnpm-workspace.yaml"
-  #     - "turbo.json"
-  #     - ".github/workflows/tests.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "docker/scripts/**"
+      - "docker/Dockerfile.*"
+      - "docker/targets/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+      - ".github/workflows/tests.yml"
   workflow_dispatch:
 
 permissions:
@@ -30,6 +29,21 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready --username=postgres --dbname=postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
 
     steps:
       - name: Checkout
@@ -69,4 +83,28 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
-          exit "$status"
+           exit "$status"
+
+      - name: Run approval workflow repository PostgreSQL integration contract
+        run: |
+          set -euo pipefail
+          database_name="approval_workflow_repository_test_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          export PGPASSWORD=postgres
+          psql --host 127.0.0.1 --port 5432 --username postgres --dbname postgres \
+            --command "create database \"${database_name}\""
+
+          export POSTGRES_HOST=127.0.0.1
+          export POSTGRES_PORT=5432
+          export POSTGRES_DB="$database_name"
+          export POSTGRES_USER=postgres
+          export POSTGRES_PASSWORD=postgres
+          export POSTGRES_SSL_MODE=disable
+          SKIP_ENV_VALIDATION=1 pnpm --filter webapp exec drizzle-kit migrate
+
+          APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/${database_name}" \
+          APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test \
+          APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED=1 \
+          pnpm --filter webapp exec vitest run src/lib/approvals/workflow/repository.integration.test.ts \
+            src/lib/approvals/workflow/transition-engine.integration.test.ts \
+            src/lib/approvals/server/time-correction-approvals.integration.test.ts \
+            src/lib/approvals/server/work-period-approvals.integration.test.ts

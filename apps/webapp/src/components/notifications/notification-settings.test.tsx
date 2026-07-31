@@ -69,6 +69,7 @@ describe("NotificationSettings", () => {
 			requestPermission: vi.fn(),
 			registration: null,
 			isLoading: false,
+			error: null,
 		});
 
 		mockNotificationPreferences({

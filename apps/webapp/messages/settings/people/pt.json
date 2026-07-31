@@ -78,7 +78,7 @@
         "title": "Convites"
       },
       "lifecycle": {
-        "actionsLabel": "Ações do funcionário para ${target.displayName}",
+        "actionsLabel": "Ações do funcionário {name}",
         "deactivate": "Desativar",
         "deactivateDescription": "Isso suspende o acesso a esta organização e encerra as sessões que a utilizam atualmente. O histórico do funcionário é mantido.",
         "deactivateError": "Falha ao desativar funcionário",
@@ -86,6 +86,8 @@
         "deactivateTitle": "Desativar funcionário?",
         "deactivating": "Desativando...",
         "deactivatingStatus": "Desativando funcionário",
+        "finalOwnerDeactivateGuidance": "Atribua e ative primeiro outro proprietário aprovado antes de desativar este funcionário.",
+        "finalOwnerRemoveGuidance": "Atribua e ative primeiro outro proprietário aprovado antes de remover o acesso deste funcionário.",
         "reactivate": "Reativar",
         "reactivateDescription": "Isso restaura o acesso a esta organização usando o registro de funcionário existente.",
         "reactivateError": "Falha ao reativar funcionário",

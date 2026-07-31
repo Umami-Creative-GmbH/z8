@@ -7,14 +7,28 @@
 import type { TurnContext } from "botbuilder";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { absenceEntry, approvalRequest, employee, teamsApprovalCard, timeEntry } from "@/db/schema";
-import { decideBotApproval } from "@/lib/bot-platform/approval-decision";
+import {
+	absenceEntry,
+	approvalRequest,
+	employee,
+	teamsApprovalCard,
+	timeEntry,
+} from "@/db/schema";
+import {
+	canAttemptBotApprovalDecision,
+	decideBotApproval,
+	loadBotApprovalDecisionTarget,
+} from "@/lib/bot-platform/approval-decision";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
 import { updateMessage } from "./bot-adapter";
 import { buildResolvedApprovalCard } from "./cards/approval-card";
 import { getStoredConversation } from "./conversation-manager";
-import type { ApprovalCardData, ResolvedTeamsUser, ResolvedTenant } from "./types";
+import type {
+	ApprovalCardData,
+	ResolvedTeamsUser,
+	ResolvedTenant,
+} from "./types";
 import { TeamsError } from "./types";
 
 const logger = createLogger("TeamsApprovalHandler");
@@ -47,13 +61,20 @@ export async function handleApprovalAction(
 		if (!approval) {
 			throw new TeamsError("Approval not found", "APPROVAL_NOT_FOUND");
 		}
+		const decisionTarget = await loadBotApprovalDecisionTarget({
+			approvalId,
+			organizationId: tenant.organizationId,
+		});
 
-		if (approval.status !== "pending") {
-			throw new TeamsError("Approval already resolved", "APPROVAL_ALREADY_RESOLVED");
+		if (!canAttemptBotApprovalDecision(decisionTarget)) {
+			throw new TeamsError(
+				"Approval already resolved",
+				"APPROVAL_ALREADY_RESOLVED",
+			);
 		}
 
 		// Verify user is the approver
-		if (approval.approverId !== resolvedUser.employeeId) {
+		if (decisionTarget.approverId !== resolvedUser.employeeId) {
 			throw new TeamsError("Not authorized to approve", "NOT_AUTHORIZED");
 		}
 
@@ -93,7 +114,10 @@ export async function handleApprovalAction(
 
 		if (cardRecord?.teamsActivityId) {
 			// Get conversation reference
-			const conversation = await getStoredConversation(resolvedUser.userId, tenant.organizationId);
+			const conversation = await getStoredConversation(
+				resolvedUser.userId,
+				tenant.organizationId,
+			);
 
 			if (conversation) {
 				// Build original card data for resolved card
@@ -116,19 +140,26 @@ export async function handleApprovalAction(
 
 					// Update the card in Teams
 					try {
-						await updateMessage(conversation.conversationReference, cardRecord.teamsActivityId, {
-							type: "message",
-							text: `Approval ${action}d`,
-							attachments: [
-								{
-									contentType: "application/vnd.microsoft.card.adaptive",
-									content: resolvedCard,
-								},
-							],
-						});
+						await updateMessage(
+							conversation.conversationReference,
+							cardRecord.teamsActivityId,
+							{
+								type: "message",
+								text: `Approval ${action}d`,
+								attachments: [
+									{
+										contentType: "application/vnd.microsoft.card.adaptive",
+										content: resolvedCard,
+									},
+								],
+							},
+						);
 					} catch (updateError) {
 						// Log but don't fail - the action already succeeded
-						logger.warn({ error: updateError, approvalId }, "Failed to update Teams card");
+						logger.warn(
+							{ error: updateError, approvalId },
+							"Failed to update Teams card",
+						);
 					}
 				}
 			}
@@ -148,7 +179,10 @@ export async function handleApprovalAction(
 			`Request ${action === "approve" ? "approved" : "rejected"} successfully.`,
 		);
 	} catch (error) {
-		logger.error({ error, approvalId, action }, "Failed to process approval action");
+		logger.error(
+			{ error, approvalId, action },
+			"Failed to process approval action",
+		);
 
 		if (error instanceof TeamsError) {
 			throw error;
@@ -249,7 +283,10 @@ export async function sendApprovalCardToManager(
 	try {
 		// Get approver's user ID
 		const approverEmployee = await db.query.employee.findFirst({
-			where: and(eq(employee.id, approverId), eq(employee.organizationId, organizationId)),
+			where: and(
+				eq(employee.id, approverId),
+				eq(employee.organizationId, organizationId),
+			),
 			columns: { userId: true },
 		});
 
@@ -265,7 +302,10 @@ export async function sendApprovalCardToManager(
 		);
 
 		if (!conversationRef) {
-			logger.debug({ approverId, organizationId }, "No Teams conversation for approver");
+			logger.debug(
+				{ approverId, organizationId },
+				"No Teams conversation for approver",
+			);
 			return;
 		}
 
@@ -314,6 +354,9 @@ export async function sendApprovalCardToManager(
 			);
 		}
 	} catch (error) {
-		logger.error({ error, approvalId, approverId }, "Failed to send approval card to manager");
+		logger.error(
+			{ error, approvalId, approverId },
+			"Failed to send approval card to manager",
+		);
 	}
 }

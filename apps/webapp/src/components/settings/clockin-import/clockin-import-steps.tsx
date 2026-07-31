@@ -1,0 +1,443 @@
+"use client";
+
+import {
+	IconArrowLeft,
+	IconArrowRight,
+	IconCheck,
+	IconKey,
+	IconLoader2,
+	IconUsers,
+} from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Link } from "@/navigation";
+import type { ClockinImportController } from "./clockin-import-controller";
+
+export function ClockinImportStepRenderer({
+	controller,
+}: {
+	controller: ClockinImportController;
+}) {
+	return (
+		<div className="space-y-6">
+			{controller.step === "connect" && (
+				<ClockinConnectStep controller={controller} />
+			)}
+			{controller.step === "preview" && controller.preview && (
+				<ClockinPreviewStep controller={controller} />
+			)}
+			{controller.step === "mapping" && (
+				<ClockinMappingStep controller={controller} />
+			)}
+			{controller.step === "selection" && (
+				<ClockinSelectionStep controller={controller} />
+			)}
+			{controller.step === "importing" && <ClockinImportingStep />}
+			{controller.step === "review" && controller.reviewBatchId && (
+				<ClockinReviewStep controller={controller} />
+			)}
+		</div>
+	);
+}
+
+function ClockinConnectStep({
+	controller,
+}: {
+	controller: ClockinImportController;
+}) {
+	const { t } = useTranslate();
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2">
+					<IconKey className="size-5" />
+					{t("settings.clockinImport.credentials.title", "Clockin API Token")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.clockinImport.credentials.description",
+						"Enter a Clockin customer API bearer token. The token is only used for this import session.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-4">
+				<div className="space-y-2">
+					<Label htmlFor="clockin-token">
+						{t("settings.clockinImport.credentials.token", "Bearer Token")}
+					</Label>
+					<Input
+						id="clockin-token"
+						type="password"
+						value={controller.token}
+						onChange={(event) => controller.setToken(event.target.value)}
+						placeholder="clk_..."
+						autoComplete="off"
+					/>
+				</div>
+				<div className="flex justify-end">
+					<Button
+						onClick={controller.handleConnect}
+						disabled={
+							!controller.token.trim() || controller.busyAction === "connect"
+						}
+					>
+						{controller.busyAction === "connect" ? (
+							<IconLoader2 className="mr-2 size-4 animate-spin" />
+						) : (
+							<IconArrowRight className="mr-2 size-4" />
+						)}
+						{t(
+							"settings.clockinImport.credentials.connect",
+							"Connect & Preview",
+						)}
+					</Button>
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
+
+function ClockinPreviewStep({
+	controller,
+}: {
+	controller: ClockinImportController;
+}) {
+	const { t } = useTranslate();
+	const preview = controller.preview;
+	if (!preview) return null;
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>
+					{t("settings.clockinImport.preview.title", "Clockin Preview")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.clockinImport.preview.description",
+						"Review what Clockin data is available before mapping employees and scanning records.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-4">
+				<div className="grid gap-3 sm:grid-cols-3">
+					<PreviewStat
+						label={t("settings.clockinImport.preview.employees", "Employees")}
+						value={preview.employees}
+					/>
+					<PreviewStat
+						label={t("settings.clockinImport.preview.workdays", "Workdays")}
+						value={preview.workdays}
+					/>
+					<PreviewStat
+						label={t("settings.clockinImport.preview.absences", "Absences")}
+						value={preview.absences}
+					/>
+				</div>
+				<div className="flex justify-between">
+					<Button
+						variant="outline"
+						onClick={() => controller.setStep("connect")}
+					>
+						<IconArrowLeft className="mr-2 size-4" />
+						{t("common.back", "Back")}
+					</Button>
+					<Button
+						onClick={controller.handleLoadMappings}
+						disabled={controller.busyAction === "mapping"}
+					>
+						{controller.busyAction === "mapping" ? (
+							<IconLoader2 className="mr-2 size-4 animate-spin" />
+						) : (
+							<IconUsers className="mr-2 size-4" />
+						)}
+						{t("settings.clockinImport.preview.next", "Map Employees")}
+					</Button>
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
+
+function ClockinMappingStep({
+	controller,
+}: {
+	controller: ClockinImportController;
+}) {
+	const { t } = useTranslate();
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>
+					{t("settings.clockinImport.mapping.title", "Map Employees")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.clockinImport.mapping.description",
+						"Match Clockin employees to existing Z8 employees. Automatic email matches are preselected.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-4">
+				<p className="text-sm text-muted-foreground">
+					{t("settings.clockinImport.mapping.summary", "Mapped employees")}:{" "}
+					{controller.mappedCount}/{controller.mappings.length}
+				</p>
+				<div className="space-y-3">
+					{controller.mappings.map((entry) => (
+						<div
+							key={entry.clockinEmployeeId}
+							className="grid gap-2 rounded-lg border p-3 md:grid-cols-[1.3fr_1fr]"
+						>
+							<div>
+								<p className="font-medium">{entry.clockinEmployeeName}</p>
+								<p className="text-sm text-muted-foreground">
+									{entry.clockinEmployeeEmail ??
+										t(
+											"settings.clockinImport.mapping.noEmail",
+											"No email in Clockin",
+										)}
+								</p>
+							</div>
+							<select
+								value={entry.employeeId ?? ""}
+								aria-label={`${t("settings.clockinImport.mapping.mapEmployee", "Map")} ${entry.clockinEmployeeName}`}
+								onChange={(event) =>
+									controller.updateMapping(
+										entry.clockinEmployeeId,
+										event.target.value,
+									)
+								}
+								className="h-10 rounded-md border border-input px-3 text-sm"
+							>
+								<option value="">
+									{t(
+										"settings.clockinImport.mapping.skipEmployee",
+										"Skip this employee",
+									)}
+								</option>
+								{controller.z8Employees.map((employee) => (
+									<option key={employee.id} value={employee.id}>
+										{employee.name} ({employee.email})
+									</option>
+								))}
+							</select>
+						</div>
+					))}
+				</div>
+				<div className="flex justify-between">
+					<Button
+						variant="outline"
+						onClick={() => controller.setStep("preview")}
+					>
+						<IconArrowLeft className="mr-2 size-4" />
+						{t("common.back", "Back")}
+					</Button>
+					<Button onClick={() => controller.setStep("selection")}>
+						<IconArrowRight className="mr-2 size-4" />
+						{t("common.continue", "Continue")}
+					</Button>
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
+
+function ClockinSelectionStep({
+	controller,
+}: {
+	controller: ClockinImportController;
+}) {
+	const { t } = useTranslate();
+	const selections = controller.selections;
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>
+					{t("settings.clockinImport.selection.title", "Import Scope")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.clockinImport.selection.description",
+						"Choose which Clockin records to scan for review. Records must be reviewed before commit.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-4">
+				<label className="flex items-center gap-3 text-sm">
+					<input
+						type="checkbox"
+						aria-label={t(
+							"settings.clockinImport.selection.workdays",
+							"Workdays / Work periods",
+						)}
+						checked={selections.workdays}
+						onChange={(event) =>
+							controller.setSelections((current) => ({
+								...current,
+								workdays: event.target.checked,
+							}))
+						}
+					/>
+					<span>
+						{t(
+							"settings.clockinImport.selection.workdays",
+							"Workdays / Work periods",
+						)}
+					</span>
+				</label>
+				<label className="flex items-center gap-3 text-sm">
+					<input
+						type="checkbox"
+						aria-label={t(
+							"settings.clockinImport.selection.absences",
+							"Absences",
+						)}
+						checked={selections.absences}
+						onChange={(event) =>
+							controller.setSelections((current) => ({
+								...current,
+								absences: event.target.checked,
+							}))
+						}
+					/>
+					<span>
+						{t("settings.clockinImport.selection.absences", "Absences")}
+					</span>
+				</label>
+				<div className="grid gap-4 md:grid-cols-2">
+					<div className="space-y-2">
+						<Label htmlFor="clockin-start-date">
+							{t("settings.clockinImport.selection.startDate", "Start date")}
+						</Label>
+						<DatePicker
+							id="clockin-start-date"
+							value={selections.dateRange.startDate}
+							onChange={(value) =>
+								controller.setSelections((current) => ({
+									...current,
+									dateRange: { ...current.dateRange, startDate: value },
+								}))
+							}
+						/>
+					</div>
+					<div className="space-y-2">
+						<Label htmlFor="clockin-end-date">
+							{t("settings.clockinImport.selection.endDate", "End date")}
+						</Label>
+						<DatePicker
+							id="clockin-end-date"
+							value={selections.dateRange.endDate}
+							onChange={(value) =>
+								controller.setSelections((current) => ({
+									...current,
+									dateRange: { ...current.dateRange, endDate: value },
+								}))
+							}
+						/>
+					</div>
+				</div>
+				<div className="flex justify-between">
+					<Button
+						variant="outline"
+						onClick={() => controller.setStep("mapping")}
+					>
+						<IconArrowLeft className="mr-2 size-4" />
+						{t("common.back", "Back")}
+					</Button>
+					<Button
+						onClick={controller.handleImport}
+						disabled={
+							controller.busyAction === "import" ||
+							(!selections.workdays && !selections.absences) ||
+							!selections.dateRange.startDate ||
+							!selections.dateRange.endDate
+						}
+					>
+						<IconArrowRight className="mr-2 size-4" />
+						{t(
+							"settings.clockinImport.selection.startReviewScan",
+							"Start Review Scan",
+						)}
+					</Button>
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
+
+function ClockinImportingStep() {
+	const { t } = useTranslate();
+	return (
+		<Card>
+			<CardContent className="flex items-center gap-3 py-8 text-sm text-muted-foreground">
+				<IconLoader2 className="size-4 animate-spin" />
+				{t(
+					"settings.clockinImport.review.starting",
+					"Starting Clockin import review scan…",
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
+function ClockinReviewStep({
+	controller,
+}: {
+	controller: ClockinImportController;
+}) {
+	const { t } = useTranslate();
+	const reviewBatchId = controller.reviewBatchId;
+	if (!reviewBatchId) return null;
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2">
+					<IconCheck className="size-5 text-green-600" aria-hidden="true" />
+					{t(
+						"settings.clockinImport.review.startedTitle",
+						"Import review scan started",
+					)}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.clockinImport.review.scanningDescription",
+						"Review batch {reviewBatchId} is scanning. Review and approve records before commit.",
+						{ reviewBatchId },
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.clockinImport.review.noProductionRecords",
+						"No production records have been imported yet.",
+					)}
+				</p>
+				<Button asChild>
+					<Link href={`/settings/import/${reviewBatchId}`}>
+						{t("settings.clockinImport.review.openReview", "Open review")}
+					</Link>
+				</Button>
+			</CardContent>
+		</Card>
+	);
+}
+
+function PreviewStat({ label, value }: { label: string; value: number }) {
+	return (
+		<div className="rounded-lg border p-4">
+			<p className="text-sm text-muted-foreground">{label}</p>
+			<p className="font-semibold text-2xl">{value}</p>
+		</div>
+	);
+}

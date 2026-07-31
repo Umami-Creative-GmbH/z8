@@ -1,10 +1,14 @@
+import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
+	foreignKey,
 	index,
 	integer,
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
@@ -12,9 +16,11 @@ import { currentTimestamp } from "./timestamp";
 
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
+import { approvalWorkflow } from "./approval-workflow";
 import {
 	approvalStatusEnum,
 	shiftRecurrenceTypeEnum,
+	shiftRequestStatusEnum,
 	shiftRequestTypeEnum,
 	shiftStatusEnum,
 } from "./enums";
@@ -182,6 +188,7 @@ export const shift = pgTable(
 		index("shift_org_date_status_idx").on(table.organizationId, table.date, table.status),
 		index("shift_org_employee_date_idx").on(table.organizationId, table.employeeId, table.date),
 		index("shift_org_subarea_date_idx").on(table.organizationId, table.subareaId, table.date),
+		unique("shift_organizationId_id_idx").on(table.organizationId, table.id),
 	],
 );
 
@@ -190,12 +197,17 @@ export const shiftRequest = pgTable(
 	"shift_request",
 	{
 		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id").references(() => organization.id, {
+			onDelete: "cascade",
+		}),
 		shiftId: uuid("shift_id")
 			.notNull()
 			.references(() => shift.id, { onDelete: "cascade" }),
 
 		type: shiftRequestTypeEnum("type").notNull(),
 		status: approvalStatusEnum("status").default("pending").notNull(),
+		lifecycleStatus: shiftRequestStatusEnum("lifecycle_status"),
+		approvalWorkflowId: uuid("approval_workflow_id"),
 
 		// Who is requesting
 		requesterId: uuid("requester_id")
@@ -229,5 +241,21 @@ export const shiftRequest = pgTable(
 		index("shiftRequest_approverId_idx").on(table.approverId),
 		index("shiftRequest_status_idx").on(table.status),
 		index("shiftRequest_type_status_idx").on(table.type, table.status),
+		index("shiftRequest_org_approvalWorkflowId_idx").on(
+			table.organizationId,
+			table.approvalWorkflowId,
+		),
+		foreignKey({
+			columns: [table.approvalWorkflowId, table.organizationId],
+			foreignColumns: [approvalWorkflow.id, approvalWorkflow.organizationId],
+		}),
+		foreignKey({
+			columns: [table.organizationId, table.shiftId],
+			foreignColumns: [shift.organizationId, shift.id],
+		}).onDelete("cascade"),
+		check(
+			"shift_request_approval_workflow_organization_check",
+			sql`${table.approvalWorkflowId} IS NULL OR ${table.organizationId} IS NOT NULL`,
+		),
 	],
 );

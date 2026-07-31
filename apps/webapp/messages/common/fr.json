@@ -329,6 +329,14 @@
       "viewAll": "Voir toutes les notifications"
     },
     "content": {
+      "absenceRequestSubmitted": {
+        "message": "Votre demande {categoryName} pour {dateRange} a été envoyée et est en attente d'approbation.",
+        "title": "Demande d'absence envoyée"
+      },
+      "teamMemberRemoved": {
+        "message": "Vous avez été retiré de l'équipe {teamName} par {performedByName}.",
+        "title": "Retiré de l'équipe"
+      },
       "passwordChanged": {
         "message": "Votre mot de passe a été modifié avec succès. Si vous n'êtes pas à l'origine de ce changement, veuillez contacter immédiatement le support.",
         "title": "Mot de passe modifié"

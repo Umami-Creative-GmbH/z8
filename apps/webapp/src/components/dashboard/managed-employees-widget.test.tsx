@@ -148,11 +148,10 @@ describe("ManagedEmployeesWidget", () => {
 
 		expect(employeeLink.className).toContain("group/employee");
 		expect(name?.className).toContain("group-hover/employee:text-primary");
+		expect(arrow?.getAttribute("class")).toContain("group-hover/employee:opacity-100");
+		expect(arrow?.getAttribute("class")).toContain("group-hover/employee:translate-x-1");
 		expect(arrow?.getAttribute("class")).toContain(
-			"group-hover/employee:opacity-100",
-		);
-		expect(arrow?.getAttribute("class")).toContain(
-			"group-hover/employee:translate-x-1",
+			"transition-[opacity,translate]",
 		);
 	});
 

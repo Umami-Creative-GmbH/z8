@@ -23,6 +23,31 @@ const PLAIN_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const PLAIN_TIME_MINUTE = /^\d{2}:\d{2}$/;
 const JS_DATE_LIMIT_MS = 8_640_000_000_000_000;
 const NANOSECONDS_PER_MILLISECOND = BigInt(1_000_000);
+const instantEpochNanosecondsGetter = Object.getOwnPropertyDescriptor(
+	Temporal.Instant.prototype,
+	"epochNanoseconds",
+)?.get;
+const instantToString = Temporal.Instant.prototype.toString;
+
+export function isInstant(value: unknown): value is Instant {
+	if (
+		typeof value !== "object" ||
+		value === null ||
+		!instantEpochNanosecondsGetter
+	) {
+		return false;
+	}
+	try {
+		instantEpochNanosecondsGetter.call(value);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+export function instantToCanonicalString(value: Instant): string {
+	return instantToString.call(value);
+}
 
 export function parseInstant(value: string): Instant {
 	if (typeof value !== "string" || !INSTANT_WITH_OFFSET.test(value)) {

@@ -107,7 +107,7 @@ describe("payroll blocker dismissal schema", () => {
 
 	it("creates the matching SQL table and constraints", () => {
 		const migration = readFileSync(
-			"drizzle/0056_payroll_blocker_dismissal.sql",
+			"drizzle/0059_payroll_blocker_dismissal.sql",
 			"utf8",
 		);
 
@@ -147,7 +147,7 @@ describe("payroll blocker dismissal schema", () => {
 		);
 	});
 
-	it("registers migration 0056 after every predecessor", () => {
+	it("registers migration 0059 after every predecessor", () => {
 		const journal = JSON.parse(
 			readFileSync("drizzle/meta/_journal.json", "utf8"),
 		) as {
@@ -160,7 +160,7 @@ describe("payroll blocker dismissal schema", () => {
 			}>;
 		};
 		const migrationIndex = journal.entries.findIndex(
-			(entry) => entry.tag === "0056_payroll_blocker_dismissal",
+			(entry) => entry.tag === "0059_payroll_blocker_dismissal",
 		);
 		const migrationEntry = journal.entries[migrationIndex];
 		const latestPriorWhen = Math.max(
@@ -170,21 +170,21 @@ describe("payroll blocker dismissal schema", () => {
 		expect(migrationIndex).toBe(journal.entries.length - 1);
 		expect(migrationEntry).toMatchObject({
 			breakpoints: true,
-			idx: 56,
-			tag: "0056_payroll_blocker_dismissal",
+			idx: 59,
+			tag: "0059_payroll_blocker_dismissal",
 			version: "7",
 		});
 		expect(migrationEntry?.when).toBeGreaterThan(latestPriorWhen);
 	});
 
-	it("snapshots the dismissal table after snapshot 0055", () => {
-		const snapshotPath = "drizzle/meta/0056_snapshot.json";
+	it("snapshots the dismissal table after snapshot 0058", () => {
+		const snapshotPath = "drizzle/meta/0059_snapshot.json";
 
 		expect(existsSync(snapshotPath)).toBe(true);
 		if (!existsSync(snapshotPath)) return;
 
 		const previousSnapshot = JSON.parse(
-			readFileSync("drizzle/meta/0055_snapshot.json", "utf8"),
+			readFileSync("drizzle/meta/0058_snapshot.json", "utf8"),
 		) as { id: string };
 		const snapshot = JSON.parse(readFileSync(snapshotPath, "utf8")) as {
 			prevId: string;

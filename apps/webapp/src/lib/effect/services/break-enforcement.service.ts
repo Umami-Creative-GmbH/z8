@@ -1,14 +1,22 @@
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
-import { timeEntry, type WorkPeriodAutoAdjustmentReason, workPeriod } from "@/db/schema";
+import {
+	timeEntry,
+	type WorkPeriodAutoAdjustmentReason,
+	workPeriod,
+} from "@/db/schema";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { calculateBreakDeficit } from "@/lib/time-tracking/break-policy-calculation";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import { type DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService, DatabaseServiceLive } from "./database.service";
-import { WorkPolicyService, WorkPolicyServiceLive } from "./work-policy.service";
+import {
+	WorkPolicyService,
+	WorkPolicyServiceLive,
+} from "./work-policy.service";
 
 // ============================================
 // TYPES
@@ -25,6 +33,7 @@ export interface EnforceBreaksInput {
 
 export interface BreakEnforcementResult {
 	wasAdjusted: boolean;
+	affectedWorkPeriodIds: string[];
 	adjustment?: {
 		breakMinutes: number;
 		breakInsertedAt: string; // ISO timestamp
@@ -32,6 +41,15 @@ export interface BreakEnforcementResult {
 		originalDurationMinutes: number;
 		adjustedDurationMinutes: number;
 	};
+}
+
+export function resolveAffectedWorkPeriodIds(
+	originalWorkPeriodId: string,
+	insertedWorkPeriodId?: string,
+): string[] {
+	return insertedWorkPeriodId
+		? [originalWorkPeriodId, insertedWorkPeriodId]
+		: [originalWorkPeriodId];
 }
 
 export interface ProcessUnprocessedPeriodsInput {
@@ -49,7 +67,9 @@ export interface ProcessUnprocessedPeriodsResult {
 // SERVICE INTERFACE
 // ============================================
 
-export class BreakEnforcementService extends Context.Tag("BreakEnforcementService")<
+export class BreakEnforcementService extends Context.Tag(
+	"BreakEnforcementService",
+)<
 	BreakEnforcementService,
 	{
 		/**
@@ -111,9 +131,11 @@ export const BreakEnforcementServiceLive = Layer.effect(
 			timezone: string,
 		): Effect.Effect<number, DatabaseError> =>
 			Effect.gen(function* (_) {
-				const { start: todayStartDT, end: todayEndDT } = getTodayRangeInTimezone(timezone);
-				const todayStart = dateToDB(todayStartDT)!;
-				const todayEnd = dateToDB(todayEndDT)!;
+				const { start: todayStartDT, end: todayEndDT } =
+					getTodayRangeInTimezone(timezone);
+				const todayStart = dateToDB(todayStartDT);
+				const todayEnd = dateToDB(todayEndDT);
+				if (!todayStart || !todayEnd) return 0;
 
 				const periods = yield* _(
 					dbService.query("getWorkPeriodsForBreakCalc", async () => {
@@ -240,7 +262,9 @@ export const BreakEnforcementServiceLive = Layer.effect(
 			NotFoundError | DatabaseError
 		> =>
 			Effect.gen(function* (_) {
-				const policy = yield* _(workPolicyService.getEffectivePolicy(params.employeeId));
+				const policy = yield* _(
+					workPolicyService.getEffectivePolicy(params.employeeId),
+				);
 
 				// If no policy or no regulation enabled, no break requirements
 				if (!policy?.regulation) {
@@ -253,44 +277,16 @@ export const BreakEnforcementServiceLive = Layer.effect(
 					};
 				}
 
-				const { regulation } = policy;
-
-				// Find the applicable break rule (highest threshold that applies)
-				const applicableRule = regulation.breakRules.reduce<
-					(typeof regulation.breakRules)[number] | undefined
-				>((best, rule) => {
-					if (params.sessionDurationMinutes <= rule.workingMinutesThreshold) {
-						return best;
-					}
-
-					return !best || rule.workingMinutesThreshold > best.workingMinutesThreshold ? rule : best;
-				}, undefined);
-
-				if (!applicableRule) {
-					return {
-						deficit: 0,
-						applicableRule: null,
-						regulationId: policy.policyId,
-						regulationName: policy.policyName,
-						maxUninterruptedMinutes: regulation.maxUninterruptedMinutes,
-					};
-				}
-
-				const deficit = Math.max(
-					0,
-					applicableRule.requiredBreakMinutes - params.breaksTakenMinutes,
-				);
-
-				return {
-					deficit,
-					applicableRule: {
-						workingMinutesThreshold: applicableRule.workingMinutesThreshold,
-						requiredBreakMinutes: applicableRule.requiredBreakMinutes,
+				return calculateBreakDeficit({
+					sessionDurationMinutes: params.sessionDurationMinutes,
+					alreadyTakenBreakMinutes: params.breaksTakenMinutes,
+					regulation: {
+						id: policy.policyId,
+						name: policy.policyName,
+						maxUninterruptedMinutes: policy.regulation.maxUninterruptedMinutes,
+						breakRules: policy.regulation.breakRules,
 					},
-					regulationId: policy.policyId,
-					regulationName: policy.policyName,
-					maxUninterruptedMinutes: regulation.maxUninterruptedMinutes,
-				};
+				});
 			});
 
 		/**
@@ -324,11 +320,18 @@ export const BreakEnforcementServiceLive = Layer.effect(
 
 				// Skip if already auto-adjusted
 				if (period.wasAutoAdjusted) {
-					return { wasAdjusted: false };
+					return {
+						wasAdjusted: false,
+						affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
+							input.workPeriodId,
+						),
+					};
 				}
 
 				// Calculate breaks taken today
-				const breaksTaken = yield* _(calculateBreaksTakenToday(input.employeeId, input.timezone));
+				const breaksTaken = yield* _(
+					calculateBreaksTakenToday(input.employeeId, input.timezone),
+				);
 
 				// Calculate break deficit
 				const deficitResult = yield* _(
@@ -340,21 +343,39 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				);
 
 				// No enforcement needed if no deficit or no applicable rule
-				if (deficitResult.deficit <= 0 || !deficitResult.applicableRule) {
-					return { wasAdjusted: false };
+				if (
+					deficitResult.deficit <= 0 ||
+					!deficitResult.applicableRule ||
+					!deficitResult.regulationId ||
+					!deficitResult.regulationName
+				) {
+					return {
+						wasAdjusted: false,
+						affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
+							input.workPeriodId,
+						),
+					};
 				}
 
 				// Determine where to insert the break
 				// Insert after maxUninterruptedMinutes from start, or after the threshold
 				const maxUninterrupted = deficitResult.maxUninterruptedMinutes;
 				const insertAfterMinutes = maxUninterrupted
-					? Math.min(maxUninterrupted, deficitResult.applicableRule.workingMinutesThreshold)
+					? Math.min(
+							maxUninterrupted,
+							deficitResult.applicableRule.workingMinutesThreshold,
+						)
 					: deficitResult.applicableRule.workingMinutesThreshold;
 
 				// Calculate break insertion point
 				const startDT = dateFromDB(period.startTime);
 				if (!startDT || !period.endTime) {
-					return { wasAdjusted: false };
+					return {
+						wasAdjusted: false,
+						affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
+							input.workPeriodId,
+						),
+					};
 				}
 
 				const breakStartDT = startDT.plus({ minutes: insertAfterMinutes });
@@ -365,17 +386,31 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				const breakEndDate = dateToDB(breakEndDT);
 
 				if (!breakStartDate || !breakEndDate) {
-					return { wasAdjusted: false };
+					return {
+						wasAdjusted: false,
+						affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
+							input.workPeriodId,
+						),
+					};
 				}
 
 				// Validate break times are within the work period
-				if (breakStartDate <= period.startTime || breakEndDate >= period.endTime) {
-					return { wasAdjusted: false };
+				if (
+					breakStartDate <= period.startTime ||
+					breakEndDate >= period.endTime
+				) {
+					return {
+						wasAdjusted: false,
+						affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
+							input.workPeriodId,
+						),
+					};
 				}
 
 				// Store original values for audit trail
 				const originalEndTime = period.endTime;
-				const originalDurationMinutes = period.durationMinutes || input.sessionDurationMinutes;
+				const originalDurationMinutes =
+					period.durationMinutes || input.sessionDurationMinutes;
 
 				// Create clock-out entry for first period at break start
 				const firstClockOut = yield* _(
@@ -404,17 +439,19 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				);
 
 				// Calculate new durations
-				const firstDurationMs = breakStartDate.getTime() - period.startTime.getTime();
+				const firstDurationMs =
+					breakStartDate.getTime() - period.startTime.getTime();
 				const firstDurationMinutes = Math.floor(firstDurationMs / 60000);
 
-				const secondDurationMs = period.endTime.getTime() - breakEndDate.getTime();
+				const secondDurationMs =
+					period.endTime.getTime() - breakEndDate.getTime();
 				const secondDurationMinutes = Math.floor(secondDurationMs / 60000);
 
 				// Build auto-adjustment reason
 				const adjustmentReason: WorkPeriodAutoAdjustmentReason = {
 					type: "break_enforcement",
-					regulationId: deficitResult.regulationId!,
-					regulationName: deficitResult.regulationName!,
+					regulationId: deficitResult.regulationId,
+					regulationName: deficitResult.regulationName,
 					breakInsertedMinutes: deficitResult.deficit,
 					breakInsertedAt: breakStartDate.toISOString(),
 					originalDurationMinutes,
@@ -443,35 +480,49 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				);
 
 				// Create a new work period for the second segment
-				yield* _(
+				const insertedPeriodId = yield* _(
 					dbService.query("createSecondWorkPeriod", async () => {
-						await dbService.db.insert(workPeriod).values({
-							employeeId: input.employeeId,
-							organizationId: input.organizationId,
-							clockInId: secondClockIn.id,
-							clockOutId: period.clockOutId,
-							startTime: breakEndDate,
-							endTime: period.endTime,
-							durationMinutes: secondDurationMinutes,
-							projectId: period.projectId,
-							isActive: false,
-							wasAutoAdjusted: true,
-							autoAdjustmentReason: adjustmentReason,
-							autoAdjustedAt: new Date(),
-							originalEndTime: null, // Only first period has original values
-							originalDurationMinutes: null,
-						});
+						const [insertedPeriod] = await dbService.db
+							.insert(workPeriod)
+							.values({
+								employeeId: input.employeeId,
+								organizationId: input.organizationId,
+								clockInId: secondClockIn.id,
+								clockOutId: period.clockOutId,
+								startTime: breakEndDate,
+								endTime: period.endTime,
+								durationMinutes: secondDurationMinutes,
+								projectId: period.projectId,
+								isActive: false,
+								wasAutoAdjusted: true,
+								autoAdjustmentReason: adjustmentReason,
+								autoAdjustedAt: new Date(),
+								originalEndTime: null, // Only first period has original values
+								originalDurationMinutes: null,
+							})
+							.returning({ id: workPeriod.id });
+						if (!insertedPeriod) {
+							throw new Error(
+								"Break enforcement did not create a second work period",
+							);
+						}
+						return insertedPeriod.id;
 					}),
 				);
 
 				return {
 					wasAdjusted: true,
+					affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
+						input.workPeriodId,
+						insertedPeriodId,
+					),
 					adjustment: {
 						breakMinutes: deficitResult.deficit,
 						breakInsertedAt: breakStartDate.toISOString(),
-						regulationName: deficitResult.regulationName!,
+						regulationName: deficitResult.regulationName,
 						originalDurationMinutes,
-						adjustedDurationMinutes: firstDurationMinutes + secondDurationMinutes,
+						adjustedDurationMinutes:
+							firstDurationMinutes + secondDurationMinutes,
 					},
 				};
 			});
@@ -479,7 +530,8 @@ export const BreakEnforcementServiceLive = Layer.effect(
 		return BreakEnforcementService.of({
 			calculateBreakDeficit: (params) => calculateBreakDeficitInternal(params),
 
-			enforceBreaksAfterClockOut: (input) => enforceBreaksAfterClockOutInternal(input),
+			enforceBreaksAfterClockOut: (input) =>
+				enforceBreaksAfterClockOutInternal(input),
 
 			processUnprocessedPeriods: (input) =>
 				Effect.gen(function* (_) {
@@ -531,7 +583,10 @@ export const BreakEnforcementServiceLive = Layer.effect(
 
 					for (const period of periods) {
 						// Filter by organization if specified
-						if (input.organizationId && period.employee?.organizationId !== input.organizationId) {
+						if (
+							input.organizationId &&
+							period.employee?.organizationId !== input.organizationId
+						) {
 							continue;
 						}
 
@@ -676,51 +731,19 @@ export const calculateBreakDeficitForTesting = (
 	never
 > =>
 	Effect.gen(function* (_) {
-		const policy = yield* _(mockPolicyService.getEffectivePolicy(params.employeeId));
-
-		if (!policy?.regulation) {
-			return {
-				deficit: 0,
-				applicableRule: null,
-				regulationId: null,
-				regulationName: null,
-				maxUninterruptedMinutes: null,
-			};
-		}
-
-		const { regulation } = policy;
-
-		// Find the applicable break rule (highest threshold that applies)
-		const applicableRule = regulation.breakRules.reduce<
-			(typeof regulation.breakRules)[number] | undefined
-		>((best, rule) => {
-			if (params.sessionDurationMinutes <= rule.workingMinutesThreshold) {
-				return best;
-			}
-
-			return !best || rule.workingMinutesThreshold > best.workingMinutesThreshold ? rule : best;
-		}, undefined);
-
-		if (!applicableRule) {
-			return {
-				deficit: 0,
-				applicableRule: null,
-				regulationId: policy.policyId,
-				regulationName: policy.policyName,
-				maxUninterruptedMinutes: regulation.maxUninterruptedMinutes,
-			};
-		}
-
-		const deficit = Math.max(0, applicableRule.requiredBreakMinutes - params.breaksTakenMinutes);
-
-		return {
-			deficit,
-			applicableRule: {
-				workingMinutesThreshold: applicableRule.workingMinutesThreshold,
-				requiredBreakMinutes: applicableRule.requiredBreakMinutes,
-			},
-			regulationId: policy.policyId,
-			regulationName: policy.policyName,
-			maxUninterruptedMinutes: regulation.maxUninterruptedMinutes,
-		};
+		const policy = yield* _(
+			mockPolicyService.getEffectivePolicy(params.employeeId),
+		);
+		return calculateBreakDeficit({
+			sessionDurationMinutes: params.sessionDurationMinutes,
+			alreadyTakenBreakMinutes: params.breaksTakenMinutes,
+			regulation: policy?.regulation
+				? {
+						id: policy.policyId,
+						name: policy.policyName,
+						maxUninterruptedMinutes: policy.regulation.maxUninterruptedMinutes,
+						breakRules: policy.regulation.breakRules,
+					}
+				: null,
+		});
 	});

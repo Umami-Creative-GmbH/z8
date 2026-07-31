@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { runWithBusyState } from "../run-with-busy-state";
 
 interface DomainAddDialogProps {
 	open: boolean;
@@ -39,9 +40,14 @@ interface DomainAddDialogProps {
 	}) => void;
 }
 
-const DOMAIN_REGEX = /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+const DOMAIN_REGEX =
+	/^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
 
-export function DomainAddDialog({ open, onOpenChange, onDomainAdded }: DomainAddDialogProps) {
+export function DomainAddDialog({
+	open,
+	onOpenChange,
+	onDomainAdded,
+}: DomainAddDialogProps) {
 	const { t } = useTranslate();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -58,41 +64,43 @@ export function DomainAddDialog({ open, onOpenChange, onDomainAdded }: DomainAdd
 				return;
 			}
 
-			setIsSubmitting(true);
-			const result = await addDomainAction(value.domain).catch((error: unknown) => {
-				if (error instanceof Error) {
-					toast.error(error.message);
-				} else {
-					toast.error(t("settings.enterprise.domains.addFailed", "Failed to add domain"));
+			await runWithBusyState(setIsSubmitting, async () => {
+				try {
+					const result = await addDomainAction(value.domain);
+					const now = DateTime.now();
+
+					onDomainAdded({
+						id: result.id,
+						domain: value.domain.toLowerCase(),
+						domainVerified: false,
+						isPrimary: false,
+						verificationToken: result.verificationToken,
+						verificationTokenExpiresAt: now.plus({ days: 7 }).toJSDate(),
+						authConfig: {
+							emailPasswordEnabled: true,
+							socialProvidersEnabled: [],
+							ssoEnabled: false,
+							passkeyEnabled: true,
+						},
+						createdAt: now.toJSDate(),
+					});
+					form.reset();
+					toast.success(
+						t("settings.enterprise.domains.added", "Domain added successfully"),
+					);
+				} catch (error) {
+					if (error instanceof Error) {
+						toast.error(error.message);
+					} else {
+						toast.error(
+							t(
+								"settings.enterprise.domains.addFailed",
+								"Failed to add domain",
+							),
+						);
+					}
 				}
-				return null;
 			});
-
-			if (!result) {
-				setIsSubmitting(false);
-				return;
-			}
-
-			const now = DateTime.now();
-
-			onDomainAdded({
-				id: result.id,
-				domain: value.domain.toLowerCase(),
-				domainVerified: false,
-				isPrimary: false,
-				verificationToken: result.verificationToken,
-				verificationTokenExpiresAt: now.plus({ days: 7 }).toJSDate(),
-				authConfig: {
-					emailPasswordEnabled: true,
-					socialProvidersEnabled: [],
-					ssoEnabled: false,
-					passkeyEnabled: true,
-				},
-				createdAt: now.toJSDate(),
-			});
-			form.reset();
-			toast.success(t("settings.enterprise.domains.added", "Domain added successfully"));
-			setIsSubmitting(false);
 		},
 	});
 
@@ -123,7 +131,10 @@ export function DomainAddDialog({ open, onOpenChange, onDomainAdded }: DomainAdd
 							validators={{
 								onChange: ({ value }) => {
 									if (!value)
-										return t("settings.enterprise.domains.domainRequired", "Domain is required");
+										return t(
+											"settings.enterprise.domains.domainRequired",
+											"Domain is required",
+										);
 									if (!DOMAIN_REGEX.test(value)) {
 										return t(
 											"settings.enterprise.domains.domainInvalid",
@@ -153,14 +164,20 @@ export function DomainAddDialog({ open, onOpenChange, onDomainAdded }: DomainAdd
 										)}
 									</p>
 									{field.state.meta.errors.length > 0 && (
-										<p className="text-sm text-destructive">{field.state.meta.errors[0]}</p>
+										<p className="text-sm text-destructive">
+											{field.state.meta.errors[0]}
+										</p>
 									)}
 								</div>
 							)}
 						</form.Field>
 					</ActionPanelBody>
 					<ActionPanelFooter>
-						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => onOpenChange(false)}
+						>
 							{t("common.cancel", "Cancel")}
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>

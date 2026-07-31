@@ -329,6 +329,14 @@
       "viewAll": "Tüm bildirimleri görüntüle"
     },
     "content": {
+      "absenceRequestSubmitted": {
+        "message": "{dateRange} için {categoryName} talebiniz gönderildi ve onay bekliyor.",
+        "title": "Devamsızlık talebi gönderildi"
+      },
+      "teamMemberRemoved": {
+        "message": "{performedByName} tarafından {teamName} ekibinden çıkarıldınız.",
+        "title": "Ekipten çıkarıldı"
+      },
       "passwordChanged": {
         "message": "Parolanız başarıyla değiştirildi. Bu değişikliği siz yapmadıysanız, lütfen derhal destek ekibiyle iletişime geçin.",
         "title": "Parola değiştirildi"

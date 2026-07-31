@@ -2,6 +2,9 @@
 // TYPESCRIPT TYPE DEFINITIONS
 // ============================================
 
+import type { PolicyClockOutBreakSnapshot } from "@/lib/time-tracking/policy-clock-out-break-snapshot.types";
+import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot.types";
+
 // Auth method configuration type for custom domains
 export type AuthConfig = {
 	emailPasswordEnabled: boolean;
@@ -109,8 +112,10 @@ export type WorkPeriodPendingChanges = {
 	reason?: string;
 	// For 0-day policy where clock-out itself triggers approval
 	isNewClockOut?: boolean;
-	// For historical manual submissions created before request metadata existed
+	// For manual work periods submitted for approval
 	isManualEntry?: boolean;
+	breakPolicySnapshot?: PolicyClockOutBreakSnapshot;
+	surchargeSnapshot?: PolicyClockOutSurchargeSnapshot;
 };
 
 // ============================================

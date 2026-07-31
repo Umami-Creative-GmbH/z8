@@ -2,18 +2,35 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { approveApprovalInboxItemMock, rejectApprovalInboxItemMock } = vi.hoisted(() => ({
+const {
+	approveApprovalInboxItemMock,
+	rejectApprovalInboxItemMock,
+	loadApprovalInboxDecisionTargetMock,
+} = vi.hoisted(() => ({
 	approveApprovalInboxItemMock: vi.fn(),
 	rejectApprovalInboxItemMock: vi.fn(),
+	loadApprovalInboxDecisionTargetMock: vi.fn(),
 }));
 
 vi.mock("@/lib/approvals/init", () => ({}));
 vi.mock("@/lib/approvals/inbox/decision-service", () => ({
 	approveApprovalInboxItem: approveApprovalInboxItemMock,
 	rejectApprovalInboxItem: rejectApprovalInboxItemMock,
+	loadApprovalInboxDecisionTarget: loadApprovalInboxDecisionTargetMock,
+	canAttemptApprovalInboxDecisionTarget: ({
+		status,
+		workflowKind,
+	}: Record<string, string>) =>
+		status === "pending" ||
+		((status === "approved" || status === "rejected") &&
+			(workflowKind === "manual_time_submission" ||
+				workflowKind === "policy_clock_out")),
 }));
 
-import { decideBotApproval } from "./approval-decision";
+import {
+	canAttemptBotApprovalDecision,
+	decideBotApproval,
+} from "./approval-decision";
 
 describe("bot approval decisions", () => {
 	beforeEach(() => {
@@ -67,6 +84,19 @@ describe("bot approval decisions", () => {
 		});
 		expect(approveApprovalInboxItemMock).not.toHaveBeenCalled();
 	});
+
+	it.each([
+		["pending", "time_correction", true],
+		["approved", "manual_time_submission", true],
+		["rejected", "policy_clock_out", true],
+		["approved", "time_correction", false],
+		["rejected", "unclassified", false],
+		["cancelled", "manual_time_submission", false],
+	] as const)("returns %s/%s eligibility as %s", (status, workflowKind, expected) => {
+		expect(canAttemptBotApprovalDecision({ status, workflowKind })).toBe(
+			expected,
+		);
+	});
 });
 
 describe("external approval handler architecture", () => {
@@ -77,7 +107,9 @@ describe("external approval handler architecture", () => {
 		new URL("../teams/approval-handler.ts", import.meta.url),
 	];
 
-	it.each(handlerUrls)("routes %s through the shared canonical adapter", (handlerUrl) => {
+	it.each(
+		handlerUrls,
+	)("routes %s through the shared canonical adapter", (handlerUrl) => {
 		const source = readFileSync(fileURLToPath(handlerUrl), "utf8");
 
 		expect(source).toContain("decideBotApproval");

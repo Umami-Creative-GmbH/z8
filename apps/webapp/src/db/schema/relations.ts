@@ -7,6 +7,19 @@ import { absenceCategory, absenceEntry } from "./absence";
 import { accessPolicy, accessViolationLog, sessionExtension, trustedDevice } from "./access-policy";
 import { approvalRequest } from "./approval";
 import {
+	approvalInboxProjection,
+	approvalOutbox,
+	approvalOutboxDelivery,
+	approvalRequesterProjection,
+	approvalStageAssignment,
+	approvalWorkflow,
+	approvalWorkflowCommand,
+	approvalWorkflowEvent,
+	approvalWorkflowMigrationIssue,
+	approvalWorkflowRollout,
+	approvalWorkflowStage,
+} from "./approval-workflow";
+import {
 	approvalChainInstance,
 	approvalChainStageInstance,
 	approvalPolicy,
@@ -182,6 +195,7 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	// Shift scheduling
 	shiftTemplates: many(shiftTemplate),
 	shifts: many(shift),
+	shiftRequests: many(shiftRequest),
 	// Customers
 	customers: many(customer),
 	// Cost centers
@@ -234,6 +248,17 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	employeeGroupMembers: many(employeeGroupMember),
 	approvalChainInstances: many(approvalChainInstance),
 	approvalChainStageInstances: many(approvalChainStageInstance),
+	approvalWorkflows: many(approvalWorkflow),
+	approvalWorkflowStages: many(approvalWorkflowStage),
+	approvalStageAssignments: many(approvalStageAssignment),
+	approvalWorkflowEvents: many(approvalWorkflowEvent),
+	approvalWorkflowCommands: many(approvalWorkflowCommand),
+	approvalRequesterProjections: many(approvalRequesterProjection),
+	approvalInboxProjections: many(approvalInboxProjection),
+	approvalOutboxMessages: many(approvalOutbox),
+	approvalOutboxDeliveries: many(approvalOutboxDelivery),
+	approvalWorkflowRollouts: many(approvalWorkflowRollout),
+	approvalWorkflowMigrationIssues: many(approvalWorkflowMigrationIssue),
 	// Compliance exceptions
 	complianceExceptions: many(complianceException),
 	schedulePublishComplianceAcks: many(schedulePublishComplianceAck),
@@ -382,6 +407,278 @@ export const approvalChainStageInstanceRelations = relations(
 		resolvedApprover: one(employee, {
 			fields: [approvalChainStageInstance.resolvedApproverEmployeeId],
 			references: [employee.id],
+		}),
+	}),
+);
+
+export const approvalWorkflowRelations = relations(approvalWorkflow, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [approvalWorkflow.organizationId],
+		references: [organization.id],
+	}),
+	requester: one(employee, {
+		fields: [approvalWorkflow.requesterEmployeeId, approvalWorkflow.organizationId],
+		references: [employee.id, employee.organizationId],
+		relationName: "approval_workflow_requester",
+	}),
+	stages: many(approvalWorkflowStage),
+	assignments: many(approvalStageAssignment),
+	events: many(approvalWorkflowEvent),
+	commands: many(approvalWorkflowCommand),
+	requesterProjection: one(approvalRequesterProjection),
+	inboxProjections: many(approvalInboxProjection),
+	outboxMessages: many(approvalOutbox),
+	migrationIssues: many(approvalWorkflowMigrationIssue),
+	absenceEntries: many(absenceEntry),
+	workPeriods: many(workPeriod),
+	travelExpenseClaims: many(travelExpenseClaim),
+	shiftRequests: many(shiftRequest),
+	complianceExceptions: many(complianceException),
+}));
+
+export const approvalWorkflowStageRelations = relations(
+	approvalWorkflowStage,
+	({ one, many }) => ({
+		organization: one(organization, {
+			fields: [approvalWorkflowStage.organizationId],
+			references: [organization.id],
+		}),
+		workflow: one(approvalWorkflow, {
+			fields: [approvalWorkflowStage.workflowId, approvalWorkflowStage.organizationId],
+			references: [approvalWorkflow.id, approvalWorkflow.organizationId],
+		}),
+		assignments: many(approvalStageAssignment),
+		inboxProjections: many(approvalInboxProjection),
+	}),
+);
+
+export const approvalStageAssignmentRelations = relations(
+	approvalStageAssignment,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [approvalStageAssignment.organizationId],
+			references: [organization.id],
+		}),
+		workflow: one(approvalWorkflow, {
+			fields: [approvalStageAssignment.workflowId, approvalStageAssignment.organizationId],
+			references: [approvalWorkflow.id, approvalWorkflow.organizationId],
+		}),
+		stage: one(approvalWorkflowStage, {
+			fields: [
+				approvalStageAssignment.workflowId,
+				approvalStageAssignment.stageId,
+				approvalStageAssignment.organizationId,
+			],
+			references: [
+				approvalWorkflowStage.workflowId,
+				approvalWorkflowStage.id,
+				approvalWorkflowStage.organizationId,
+			],
+		}),
+		approver: one(employee, {
+			fields: [
+				approvalStageAssignment.approverEmployeeId,
+				approvalStageAssignment.organizationId,
+			],
+			references: [employee.id, employee.organizationId],
+			relationName: "approval_stage_assignment_approver",
+		}),
+		resolvedByActor: one(employee, {
+			fields: [
+				approvalStageAssignment.resolvedByActorId,
+				approvalStageAssignment.organizationId,
+			],
+			references: [employee.id, employee.organizationId],
+			relationName: "approval_stage_assignment_resolved_by_actor",
+		}),
+		reassignedByEmployee: one(employee, {
+			fields: [
+				approvalStageAssignment.reassignedByEmployeeId,
+				approvalStageAssignment.organizationId,
+			],
+			references: [employee.id, employee.organizationId],
+			relationName: "approval_stage_assignment_reassigned_by_employee",
+		}),
+		reassignedFromAssignment: one(approvalStageAssignment, {
+			fields: [
+				approvalStageAssignment.workflowId,
+				approvalStageAssignment.stageId,
+				approvalStageAssignment.reassignedFromAssignmentId,
+				approvalStageAssignment.organizationId,
+			],
+			references: [
+				approvalStageAssignment.workflowId,
+				approvalStageAssignment.stageId,
+				approvalStageAssignment.id,
+				approvalStageAssignment.organizationId,
+			],
+			relationName: "approval_stage_assignment_reassignment",
+		}),
+	}),
+);
+
+export const approvalWorkflowEventRelations = relations(approvalWorkflowEvent, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [approvalWorkflowEvent.organizationId],
+		references: [organization.id],
+	}),
+	workflow: one(approvalWorkflow, {
+		fields: [approvalWorkflowEvent.workflowId, approvalWorkflowEvent.organizationId],
+		references: [approvalWorkflow.id, approvalWorkflow.organizationId],
+	}),
+	actorEmployee: one(employee, {
+		fields: [approvalWorkflowEvent.actorEmployeeId, approvalWorkflowEvent.organizationId],
+		references: [employee.id, employee.organizationId],
+		relationName: "approval_workflow_event_actor",
+	}),
+	actorUser: one(user, {
+		fields: [approvalWorkflowEvent.actorUserId],
+		references: [user.id],
+		relationName: "approval_workflow_event_actor_user",
+	}),
+	outboxMessages: many(approvalOutbox),
+}));
+
+export const approvalWorkflowCommandRelations = relations(approvalWorkflowCommand, ({ one }) => ({
+	organization: one(organization, {
+		fields: [approvalWorkflowCommand.organizationId],
+		references: [organization.id],
+	}),
+	workflow: one(approvalWorkflow, {
+		fields: [approvalWorkflowCommand.workflowId, approvalWorkflowCommand.organizationId],
+		references: [approvalWorkflow.id, approvalWorkflow.organizationId],
+	}),
+}));
+
+export const approvalRequesterProjectionRelations = relations(
+	approvalRequesterProjection,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [approvalRequesterProjection.organizationId],
+			references: [organization.id],
+		}),
+		workflow: one(approvalWorkflow, {
+			fields: [
+				approvalRequesterProjection.workflowId,
+				approvalRequesterProjection.organizationId,
+			],
+			references: [approvalWorkflow.id, approvalWorkflow.organizationId],
+		}),
+		requester: one(employee, {
+			fields: [
+				approvalRequesterProjection.requesterEmployeeId,
+				approvalRequesterProjection.organizationId,
+			],
+			references: [employee.id, employee.organizationId],
+			relationName: "approval_requester_projection_requester",
+		}),
+	}),
+);
+
+export const approvalInboxProjectionRelations = relations(
+	approvalInboxProjection,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [approvalInboxProjection.organizationId],
+			references: [organization.id],
+		}),
+		workflow: one(approvalWorkflow, {
+			fields: [approvalInboxProjection.workflowId, approvalInboxProjection.organizationId],
+			references: [approvalWorkflow.id, approvalWorkflow.organizationId],
+		}),
+		activeStage: one(approvalWorkflowStage, {
+			fields: [
+				approvalInboxProjection.workflowId,
+				approvalInboxProjection.activeStageId,
+				approvalInboxProjection.organizationId,
+			],
+			references: [
+				approvalWorkflowStage.workflowId,
+				approvalWorkflowStage.id,
+				approvalWorkflowStage.organizationId,
+			],
+		}),
+	}),
+);
+
+export const approvalOutboxRelations = relations(approvalOutbox, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [approvalOutbox.organizationId],
+		references: [organization.id],
+	}),
+	workflow: one(approvalWorkflow, {
+		fields: [approvalOutbox.workflowId, approvalOutbox.organizationId],
+		references: [approvalWorkflow.id, approvalWorkflow.organizationId],
+	}),
+	event: one(approvalWorkflowEvent, {
+		fields: [
+			approvalOutbox.workflowId,
+			approvalOutbox.eventId,
+			approvalOutbox.organizationId,
+			approvalOutbox.eventType,
+		],
+		references: [
+			approvalWorkflowEvent.workflowId,
+			approvalWorkflowEvent.id,
+			approvalWorkflowEvent.organizationId,
+			approvalWorkflowEvent.eventType,
+		],
+	}),
+	deliveries: many(approvalOutboxDelivery),
+}));
+
+export const approvalOutboxDeliveryRelations = relations(approvalOutboxDelivery, ({ one }) => ({
+	organization: one(organization, {
+		fields: [approvalOutboxDelivery.organizationId],
+		references: [organization.id],
+	}),
+	outbox: one(approvalOutbox, {
+		fields: [
+			approvalOutboxDelivery.outboxId,
+			approvalOutboxDelivery.organizationId,
+			approvalOutboxDelivery.disposition,
+		],
+		references: [
+			approvalOutbox.id,
+			approvalOutbox.organizationId,
+			approvalOutbox.disposition,
+		],
+	}),
+	recipientEmployee: one(employee, {
+		fields: [
+			approvalOutboxDelivery.recipientEmployeeId,
+			approvalOutboxDelivery.organizationId,
+		],
+		references: [employee.id, employee.organizationId],
+		relationName: "approval_outbox_delivery_recipient",
+	}),
+}));
+
+export const approvalWorkflowRolloutRelations = relations(approvalWorkflowRollout, ({ one }) => ({
+	organization: one(organization, {
+		fields: [approvalWorkflowRollout.organizationId],
+		references: [organization.id],
+	}),
+}));
+
+export const approvalWorkflowMigrationIssueRelations = relations(
+	approvalWorkflowMigrationIssue,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [approvalWorkflowMigrationIssue.organizationId],
+			references: [organization.id],
+		}),
+		workflow: one(approvalWorkflow, {
+			fields: [
+				approvalWorkflowMigrationIssue.workflowId,
+				approvalWorkflowMigrationIssue.organizationId,
+			],
+			references: [approvalWorkflow.id, approvalWorkflow.organizationId],
+		}),
+		operatorUser: one(user, {
+			fields: [approvalWorkflowMigrationIssue.operatorUserId],
+			references: [user.id],
+			relationName: "approval_workflow_migration_issue_operator",
 		}),
 	}),
 );
@@ -751,6 +1048,10 @@ export const workPeriodRelations = relations(workPeriod, ({ one }) => ({
 		fields: [workPeriod.workCategoryId],
 		references: [workCategory.id],
 	}),
+	approvalWorkflow: one(approvalWorkflow, {
+		fields: [workPeriod.approvalWorkflowId, workPeriod.organizationId],
+		references: [approvalWorkflow.id, approvalWorkflow.organizationId],
+	}),
 }));
 
 export const employeeTimeBalanceRelations = relations(employeeTimeBalance, ({ one }) => ({
@@ -924,6 +1225,10 @@ export const absenceEntryRelations = relations(absenceEntry, ({ one }) => ({
 	approver: one(employee, {
 		fields: [absenceEntry.approvedBy],
 		references: [employee.id],
+	}),
+	approvalWorkflow: one(approvalWorkflow, {
+		fields: [absenceEntry.approvalWorkflowId, absenceEntry.organizationId],
+		references: [approvalWorkflow.id, approvalWorkflow.organizationId],
 	}),
 }));
 
@@ -1236,7 +1541,9 @@ export const shiftRelations = relations(shift, ({ one, many }) => ({
 		fields: [shift.recurrenceId],
 		references: [shiftRecurrence.id],
 	}),
-	requests: many(shiftRequest),
+	requests: many(shiftRequest, {
+		relationName: "shift_request_shift",
+	}),
 	creator: one(user, {
 		fields: [shift.createdBy],
 		references: [user.id],
@@ -1250,9 +1557,19 @@ export const shiftRelations = relations(shift, ({ one, many }) => ({
 }));
 
 export const shiftRequestRelations = relations(shiftRequest, ({ one }) => ({
+	organization: one(organization, {
+		fields: [shiftRequest.organizationId],
+		references: [organization.id],
+	}),
 	shift: one(shift, {
 		fields: [shiftRequest.shiftId],
 		references: [shift.id],
+		relationName: "shift_request_shift",
+	}),
+	organizationScopedShift: one(shift, {
+		fields: [shiftRequest.organizationId, shiftRequest.shiftId],
+		references: [shift.organizationId, shift.id],
+		relationName: "shift_request_organization_scoped_shift",
 	}),
 	requester: one(employee, {
 		fields: [shiftRequest.requesterId],
@@ -1268,6 +1585,10 @@ export const shiftRequestRelations = relations(shiftRequest, ({ one }) => ({
 		fields: [shiftRequest.approverId],
 		references: [employee.id],
 		relationName: "shift_request_approver",
+	}),
+	approvalWorkflow: one(approvalWorkflow, {
+		fields: [shiftRequest.approvalWorkflowId, shiftRequest.organizationId],
+		references: [approvalWorkflow.id, approvalWorkflow.organizationId],
 	}),
 }));
 
@@ -1371,6 +1692,10 @@ export const travelExpenseClaimRelations = relations(travelExpenseClaim, ({ one,
 	updater: one(user, {
 		fields: [travelExpenseClaim.updatedBy],
 		references: [user.id],
+	}),
+	approvalWorkflow: one(approvalWorkflow, {
+		fields: [travelExpenseClaim.approvalWorkflowId, travelExpenseClaim.organizationId],
+		references: [approvalWorkflow.id, approvalWorkflow.organizationId],
 	}),
 }));
 
@@ -2188,6 +2513,10 @@ export const complianceExceptionRelations = relations(complianceException, ({ on
 	creator: one(user, {
 		fields: [complianceException.createdBy],
 		references: [user.id],
+	}),
+	approvalWorkflow: one(approvalWorkflow, {
+		fields: [complianceException.approvalWorkflowId, complianceException.organizationId],
+		references: [approvalWorkflow.id, approvalWorkflow.organizationId],
 	}),
 }));
 

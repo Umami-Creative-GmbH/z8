@@ -86,6 +86,13 @@
       "addPolicy": "Dodaj politykę",
       "approvalType": {
         "absenceRequests": "Wnioski o nieobecność",
+        "absence": "Nieobecność",
+        "complianceException": "Wyjątek zgodności",
+        "manualTimeSubmission": "Ręczne przesłanie czasu",
+        "policyClockOut": "Wyjście zgodne z zasadą",
+        "shiftRequest": "Wniosek o zmianę",
+        "timeCorrection": "Korekta czasu",
+        "travelExpense": "Wydatek na podróż",
         "timeEntryChanges": "Zmiany w ewidencji czasu pracy",
         "travelExpenses": "Wydatki podróżne"
       },
@@ -124,6 +131,21 @@
       "toast": {
         "created": "Zasada zatwierdzania została utworzona",
         "saveFailed": "Nie udało się zapisać zasady zatwierdzania."
+      },
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Wyślij wniosek do domyślnego przełożonego, gdy ten etap nie może wskazać osoby zatwierdzającej.",
+          "label": "Domyślny przełożony"
+        },
+        "fail": {
+          "description": "Odrzuć wniosek, gdy ten etap nie może wskazać osoby zatwierdzającej.",
+          "label": "Odrzuć wniosek"
+        },
+        "label": "Zachowanie awaryjne",
+        "organizationAdmin": {
+          "description": "Wyślij wniosek do administratora organizacji, gdy ten etap nie może wskazać osoby zatwierdzającej.",
+          "label": "Administrator organizacji"
+        }
       },
       "validation": {
         "activePolicyRequiresStage": "Aktywne zasady wymagają co najmniej jednego etapu zatwierdzania.",

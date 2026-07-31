@@ -41,6 +41,65 @@ function createDeferredEligibilityDb() {
 }
 
 describe("getEligibleApprovalScopesForManager", () => {
+	it("starts manager and team eligibility reads after the organization employee read resolves", async () => {
+		const employees = createDeferred<unknown[]>();
+		const managerLinks = createDeferred<unknown[]>();
+		const memberships = createDeferred<unknown[]>();
+		const teams = createDeferred<unknown[]>();
+		const db = {
+			query: {
+				employee: { findMany: vi.fn(() => employees.promise) },
+				employeeManagers: { findMany: vi.fn(() => managerLinks.promise) },
+				teamMembership: { findMany: vi.fn(() => memberships.promise) },
+				team: { findMany: vi.fn(() => teams.promise) },
+			},
+		};
+
+		const result = getEligibleApprovalScopesForManager({
+			db,
+			managerEmployeeId: "manager-1",
+			organizationId: "org-1",
+		});
+
+		expect(db.query.employee.findMany).toHaveBeenCalledOnce();
+		expect(db.query.employeeManagers.findMany).not.toHaveBeenCalled();
+		expect(db.query.teamMembership.findMany).not.toHaveBeenCalled();
+		expect(db.query.team.findMany).not.toHaveBeenCalled();
+
+		employees.resolve([
+			{
+				id: "requester-1",
+				organizationId: "org-1",
+				isActive: true,
+				role: "employee",
+			},
+			{
+				id: "manager-1",
+				organizationId: "org-1",
+				isActive: true,
+				role: "manager",
+			},
+		]);
+		await employees.promise;
+		await Promise.resolve();
+
+		expect(db.query.employeeManagers.findMany).toHaveBeenCalledOnce();
+		expect(db.query.teamMembership.findMany).toHaveBeenCalledOnce();
+		expect(db.query.team.findMany).toHaveBeenCalledOnce();
+
+		managerLinks.resolve([
+			{ employeeId: "requester-1", managerId: "manager-1", isPrimary: true },
+		]);
+		memberships.resolve([]);
+		teams.resolve([]);
+		await expect(result).resolves.toEqual([
+			{
+				requesterEmployeeId: "requester-1",
+				eligibleApproverIds: ["manager-1"],
+			},
+		]);
+	});
+
 	it("falls back to direct approval visibility when team eligibility schema is not migrated", async () => {
 		const db = {
 			query: {
@@ -95,8 +154,8 @@ describe("getEligibleApprovalScopesForManager", () => {
 	});
 });
 
-describe("getPrimaryEligibleManagerIdForRequester", () => {
-	it("starts all reads concurrently when resolving eligible manager IDs", async () => {
+describe("getEligibleManagerIdsForRequester", () => {
+	it("starts all reads concurrently", async () => {
 		const pending = createDeferredEligibilityDb();
 		const result = getEligibleManagerIdsForRequester({
 			db: pending.db,
@@ -122,10 +181,11 @@ describe("getPrimaryEligibleManagerIdForRequester", () => {
 		pending.teams.resolve([]);
 		await expect(result).resolves.toEqual([]);
 	});
+});
 
-	it("starts all reads concurrently when resolving the primary manager", async () => {
+describe("getPrimaryEligibleManagerIdForRequester", () => {
+	it("starts all reads concurrently", async () => {
 		const pending = createDeferredEligibilityDb();
-
 		const result = getPrimaryEligibleManagerIdForRequester({
 			db: pending.db,
 			requesterEmployeeId: "requester-1",

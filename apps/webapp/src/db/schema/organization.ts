@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
 	type AnyPgColumn,
 	boolean,
@@ -11,11 +12,10 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "./timestamp";
-
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
 import { contractTypeEnum, genderEnum, roleEnum } from "./enums";
+import { currentTimestamp } from "./timestamp";
 
 // ============================================
 // ORGANIZATION STRUCTURE
@@ -388,11 +388,11 @@ export const teamPermissions = pgTable(
 		index("teamPermissions_employeeId_idx").on(table.employeeId),
 		index("teamPermissions_organizationId_idx").on(table.organizationId),
 		index("teamPermissions_teamId_idx").on(table.teamId),
-		// One permission record per employee per organization per team (or org-wide with null teamId)
-		uniqueIndex("teamPermissions_unique_idx").on(
-			table.employeeId,
-			table.organizationId,
-			table.teamId,
-		),
+		uniqueIndex("teamPermissions_employeeOrganizationTeam_unique_idx")
+			.on(table.employeeId, table.organizationId, table.teamId)
+			.where(sql`${table.teamId} IS NOT NULL`),
+		uniqueIndex("teamPermissions_employeeOrganizationOrgWide_unique_idx")
+			.on(table.employeeId, table.organizationId)
+			.where(sql`${table.teamId} IS NULL`),
 	],
 );

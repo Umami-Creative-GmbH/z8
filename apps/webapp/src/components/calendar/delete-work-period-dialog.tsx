@@ -1,8 +1,13 @@
 "use client";
 
-import { IconAlertTriangle, IconLoader2, IconTrash, IconX } from "@tabler/icons-react";
+import {
+	IconAlertTriangle,
+	IconLoader2,
+	IconTrash,
+	IconX,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { requestTimeEntryDeletion } from "@/app/[locale]/(app)/time-tracking/actions/corrections";
 import {
@@ -18,8 +23,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
-import { type DisplayContext, formatInstant } from "@/lib/datetime/temporal-format";
-import { formatDuration, getWorkPeriodDialogMetadata } from "./work-period-dialog-utils";
+import {
+	type DisplayContext,
+	formatInstant,
+} from "@/lib/datetime/temporal-format";
+import {
+	formatDuration,
+	getWorkPeriodDialogMetadata,
+} from "./work-period-dialog-utils";
 
 interface DeleteWorkPeriodDialogProps {
 	event: CalendarEvent;
@@ -40,6 +51,11 @@ export function DeleteWorkPeriodDialog({
 	const reasonId = useId();
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [reason, setReason] = useState("");
+	const submissionIdRef = useRef<string | null>(null);
+
+	useEffect(() => {
+		if (!open) submissionIdRef.current = null;
+	}, [open]);
 
 	// Get metadata with defaults
 	const metadata = getWorkPeriodDialogMetadata(event);
@@ -47,6 +63,7 @@ export function DeleteWorkPeriodDialog({
 	const handleOpenChange = (nextOpen: boolean) => {
 		if (!nextOpen) {
 			setReason("");
+			submissionIdRef.current = null;
 		}
 
 		onOpenChange(nextOpen);
@@ -61,22 +78,35 @@ export function DeleteWorkPeriodDialog({
 		}
 
 		setIsDeleting(true);
+		const submissionId =
+			submissionIdRef.current ?? globalThis.crypto.randomUUID();
+		submissionIdRef.current = submissionId;
 		const result = await requestTimeEntryDeletion({
 			workPeriodId: event.id,
+			submissionId,
 			reason: trimmedReason,
 		}).catch(() => null);
 
 		if (!result) {
 			toast.error(t("calendar.delete.failed", "Failed to delete work period"));
 		} else if (result.success) {
+			submissionIdRef.current = null;
 			toast.success(
-				t("calendar.delete.success", "Deletion request submitted for manager approval"),
+				result.data.status === "approved"
+					? t("calendar.delete.applied", "Time entry deletion applied")
+					: t(
+							"calendar.delete.success",
+							"Deletion request submitted for manager approval",
+						),
 			);
 			onDeleteComplete?.();
 			setReason("");
 			onOpenChange(false);
 		} else {
-			toast.error(result.error || t("calendar.delete.failed", "Failed to delete work period"));
+			toast.error(
+				result.error ||
+					t("calendar.delete.failed", "Failed to delete work period"),
+			);
 		}
 
 		setIsDeleting(false);
@@ -88,7 +118,9 @@ export function DeleteWorkPeriodDialog({
 				<AlertDialogHeader>
 					<div className="flex items-center gap-2 text-destructive">
 						<IconAlertTriangle className="size-5" aria-hidden="true" />
-						<AlertDialogTitle>{t("calendar.delete.title", "Request deletion?")}</AlertDialogTitle>
+						<AlertDialogTitle>
+							{t("calendar.delete.title", "Request deletion?")}
+						</AlertDialogTitle>
 					</div>
 					<AlertDialogDescription>
 						{t(
@@ -100,12 +132,25 @@ export function DeleteWorkPeriodDialog({
 					<div className="space-y-3 text-sm">
 						<div className="rounded-lg bg-muted p-3 space-y-1">
 							<div className="font-medium">
-								{formatInstant(instantFromDate(event.date), displayContext, "dateMedium")}
+								{formatInstant(
+									instantFromDate(event.date),
+									displayContext,
+									"dateMedium",
+								)}
 							</div>
 							<div className="text-sm">
-								{formatInstant(instantFromDate(event.date), displayContext, "time")} -{" "}
+								{formatInstant(
+									instantFromDate(event.date),
+									displayContext,
+									"time",
+								)}{" "}
+								-{" "}
 								{event.endDate
-									? formatInstant(instantFromDate(event.endDate), displayContext, "time")
+									? formatInstant(
+											instantFromDate(event.endDate),
+											displayContext,
+											"time",
+										)
 									: "—"}
 								<span className="ml-2 text-muted-foreground">
 									({formatDuration(metadata.durationMinutes)})
@@ -126,7 +171,10 @@ export function DeleteWorkPeriodDialog({
 								id={reasonId}
 								name="deletionReason"
 								autoComplete="off"
-								aria-label={t("calendar.delete.reasonLabel", "Reason for deletion")}
+								aria-label={t(
+									"calendar.delete.reasonLabel",
+									"Reason for deletion",
+								)}
 								value={reason}
 								onChange={(event) => setReason(event.target.value)}
 								required
@@ -144,13 +192,24 @@ export function DeleteWorkPeriodDialog({
 				</AlertDialogHeader>
 
 				<AlertDialogFooter>
-					<Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isDeleting}>
+					<Button
+						variant="outline"
+						onClick={() => handleOpenChange(false)}
+						disabled={isDeleting}
+					>
 						<IconX className="size-4 mr-1" aria-hidden="true" />
 						{t("common.cancel", "Cancel")}
 					</Button>
-					<Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+					<Button
+						variant="destructive"
+						onClick={handleDelete}
+						disabled={isDeleting}
+					>
 						{isDeleting ? (
-							<IconLoader2 className="size-4 animate-spin mr-1" aria-hidden="true" />
+							<IconLoader2
+								className="size-4 animate-spin mr-1"
+								aria-hidden="true"
+							/>
 						) : (
 							<IconTrash className="size-4 mr-1" aria-hidden="true" />
 						)}

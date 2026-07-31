@@ -1,11 +1,85 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
+function readOrganizationComponent(fileName: string) {
+	return readFileSync(
+		join(process.cwd(), `src/components/organization/${fileName}.tsx`),
+		"utf8",
+	);
+}
+
+function getOversizedComponents(fileName: string) {
+	const source = readOrganizationComponent(fileName);
+	const sourceFile = ts.createSourceFile(
+		`${fileName}.tsx`,
+		source,
+		ts.ScriptTarget.Latest,
+		true,
+		ts.ScriptKind.TSX,
+	);
+	const oversized: string[] = [];
+
+	function visit(node: ts.Node) {
+		if (
+			ts.isFunctionDeclaration(node) &&
+			node.name &&
+			/^[A-Z]/.test(node.name.text) &&
+			node.body
+		) {
+			const start = sourceFile.getLineAndCharacterOfPosition(
+				node.body.getStart(),
+			).line;
+			const end = sourceFile.getLineAndCharacterOfPosition(
+				node.body.getEnd(),
+			).line;
+			if (end - start + 1 > 300) oversized.push(node.name.text);
+		}
+		ts.forEachChild(node, visit);
+	}
+
+	visit(sourceFile);
+	return oversized;
+}
+
 describe("InviteCodeManagement responsive UX", () => {
+	it("keeps organization management components within coherent AST-sized boundaries", () => {
+		const expectedExtractions = {
+			"invite-code-dialog": ["InviteCodeFormFields"],
+			"invite-code-management": [
+				"InviteCodeDesktopTable",
+				"InviteCodeDialogStack",
+			],
+			"members-table": [
+				"useMembersTableController",
+				"MembersView",
+				"InvitationsView",
+			],
+			"pending-members-card": [
+				"PendingMembersTable",
+				"PendingMemberDialogStack",
+			],
+			"teams-tab": ["TeamsView", "TeamDialogStack"],
+		};
+
+		for (const [fileName, extractions] of Object.entries(expectedExtractions)) {
+			const source = readOrganizationComponent(fileName);
+			for (const extraction of extractions) {
+				expect(source, `${fileName} should define ${extraction}`).toContain(
+					`function ${extraction}`,
+				);
+			}
+			expect(getOversizedComponents(fileName)).toEqual([]);
+		}
+	});
+
 	it("keeps the table for desktop and renders mobile invite cards", () => {
 		const source = readFileSync(
-			join(process.cwd(), "src/components/organization/invite-code-management.tsx"),
+			join(
+				process.cwd(),
+				"src/components/organization/invite-code-management.tsx",
+			),
 			"utf8",
 		);
 
@@ -16,19 +90,27 @@ describe("InviteCodeManagement responsive UX", () => {
 
 	it("makes copy URL and QR primary mobile actions", () => {
 		const source = readFileSync(
-			join(process.cwd(), "src/components/organization/invite-code-management.tsx"),
+			join(
+				process.cwd(),
+				"src/components/organization/invite-code-management.tsx",
+			),
 			"utf8",
 		);
 
 		expect(source).toContain("settings.inviteCodes.copyUrl");
 		expect(source).toContain("settings.inviteCodes.qrCode");
-		expect(source).toContain("font-mono text-sm font-semibold tracking-[0.12em]");
+		expect(source).toContain(
+			"font-mono text-sm font-semibold tracking-[0.12em]",
+		);
 		expect(source).toContain("sm:text-base sm:tracking-[0.18em]");
 	});
 
 	it("prevents mobile invite cards from overflowing narrow screens", () => {
 		const source = readFileSync(
-			join(process.cwd(), "src/components/organization/invite-code-management.tsx"),
+			join(
+				process.cwd(),
+				"src/components/organization/invite-code-management.tsx",
+			),
 			"utf8",
 		);
 
@@ -44,11 +126,17 @@ describe("InviteCodeManagement responsive UX", () => {
 			"utf8",
 		);
 		const memberPanel = readFileSync(
-			join(process.cwd(), "src/components/organization/invite-member-dialog.tsx"),
+			join(
+				process.cwd(),
+				"src/components/organization/invite-member-dialog.tsx",
+			),
 			"utf8",
 		);
 		const qrPanel = readFileSync(
-			join(process.cwd(), "src/components/organization/invite-code-qr-dialog.tsx"),
+			join(
+				process.cwd(),
+				"src/components/organization/invite-code-qr-dialog.tsx",
+			),
 			"utf8",
 		);
 
@@ -65,36 +153,59 @@ describe("InviteCodeManagement responsive UX", () => {
 			"utf8",
 		);
 
-		expect(createPanel).toContain('t("settings.inviteCodes.targetTeam", "Target team")');
-		expect(createPanel).toContain('t("settings.inviteCodes.noTargetTeam", "No team")');
+		expect(createPanel).toContain(
+			't("settings.inviteCodes.targetTeam", "Target team")',
+		);
+		expect(createPanel).toContain(
+			't("settings.inviteCodes.noTargetTeam", "No team")',
+		);
 		expect(createPanel).toContain('"settings.inviteCodes.targetTeamHelp"');
-		expect(createPanel).toContain('"New members will use this team by default when they join."');
-		expect(createPanel).toContain("defaultTeamId: formValues.defaultTeamId || undefined");
-		expect(createPanel).toContain("defaultTeamId: formValues.defaultTeamId || null");
+		expect(createPanel).toContain(
+			'"New members will use this team by default when they join."',
+		);
+		expect(createPanel).toContain(
+			"defaultTeamId: formValues.defaultTeamId || undefined",
+		);
+		expect(createPanel).toContain(
+			"defaultTeamId: formValues.defaultTeamId || null",
+		);
 	});
 
 	it("shows the target team column on desktop and mobile invite code cards", () => {
 		const source = readFileSync(
-			join(process.cwd(), "src/components/organization/invite-code-management.tsx"),
+			join(
+				process.cwd(),
+				"src/components/organization/invite-code-management.tsx",
+			),
 			"utf8",
 		);
 
-		expect(source).toContain('t("settings.inviteCodes.targetTeam", "Target team")');
+		expect(source).toContain(
+			't("settings.inviteCodes.targetTeam", "Target team")',
+		);
 		expect(source).toContain('code.defaultTeam?.name || "-"');
 		expect(source).toContain("sm:grid-cols-2");
 	});
 
 	it("makes pending-member invite-code team prefill explicitly clearable", () => {
 		const componentSource = readFileSync(
-			join(process.cwd(), "src/components/organization/pending-members-card.tsx"),
+			join(
+				process.cwd(),
+				"src/components/organization/pending-members-card.tsx",
+			),
 			"utf8",
 		);
 		const utilsSource = readFileSync(
-			join(process.cwd(), "src/components/organization/pending-members-card.utils.ts"),
+			join(
+				process.cwd(),
+				"src/components/organization/pending-members-card.utils.ts",
+			),
 			"utf8",
 		);
 
-		expect(componentSource).toContain("useState<Record<string, string | null>>({})");
+		expect(componentSource).toMatch(
+			/useState<\s*Record<string, string \| null>\s*>\(\{\}\)/,
+		);
 		expect(componentSource).toContain('const NO_TEAM_VALUE = "none"');
 		expect(utilsSource).toContain("member.id in teamAssignments");
 		expect(utilsSource).toContain("teamAssignments[member.id] === null");

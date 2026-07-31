@@ -79,9 +79,10 @@ describe("absence canonical action routing", () => {
 	});
 
 	it("fails the action when canonical sync fails", async () => {
-		vi.spyOn(canonicalActions.canonicalAbsenceRecordClient, "create").mockRejectedValue(
-			new Error("canonical write failed"),
-		);
+		vi.spyOn(
+			canonicalActions.canonicalAbsenceRecordClient,
+			"create",
+		).mockRejectedValue(new Error("canonical write failed"));
 
 		await expect(
 			canonicalActions.syncAbsenceRequestToCanonicalRecord({
@@ -110,8 +111,9 @@ describe("absence canonical action routing", () => {
 			.mockReturnValueOnce({ values: valuesRecord })
 			.mockReturnValueOnce({ values: valuesAbsence });
 
-		mockState.dbTransaction.mockImplementation(async (callback: any) =>
-			callback({ insert: txInsert }),
+		mockState.dbTransaction.mockImplementation(
+			async (callback: (tx: { insert: typeof txInsert }) => unknown) =>
+				callback({ insert: txInsert }),
 		);
 
 		const record = await canonicalActions.canonicalAbsenceRecordClient.create({
@@ -174,15 +176,18 @@ describe("absence canonical action routing", () => {
 				.mockReturnValueOnce({ set: setAbsence }),
 		};
 
-		await canonicalActions.updateCanonicalAbsenceRangeInTransaction(tx as never, {
-			canonicalRecordId: "record-1",
-			organizationId: "org-1",
-			startDate: "2026-02-10",
-			startPeriod: "full_day",
-			endDate: "2026-02-12",
-			endPeriod: "full_day",
-			updatedBy: "user-1",
-		});
+		await canonicalActions.updateCanonicalAbsenceRangeInTransaction(
+			tx as never,
+			{
+				canonicalRecordId: "record-1",
+				organizationId: "org-1",
+				startDate: "2026-02-10",
+				startPeriod: "full_day",
+				endDate: "2026-02-12",
+				endPeriod: "full_day",
+				updatedBy: "user-1",
+			},
+		);
 
 		expect(mockState.dbTransaction).not.toHaveBeenCalled();
 		expect(tx.update).toHaveBeenCalledTimes(2);
@@ -193,11 +198,23 @@ describe("absence canonical action routing", () => {
 				updatedBy: "user-1",
 			}),
 		);
-		expect(setAbsence).toHaveBeenCalledWith({ startPeriod: "full_day", endPeriod: "full_day" });
+		expect(setAbsence).toHaveBeenCalledWith({
+			startPeriod: "full_day",
+			endPeriod: "full_day",
+		});
 	});
 
 	it("deletes canonical absence record on cancellation when linked", async () => {
-		const whereDelete = vi.fn().mockResolvedValue(undefined);
+		const returning = vi.fn().mockResolvedValue([
+			{
+				id: "record-1",
+				organizationId: "org-1",
+				employeeId: "emp-1",
+				recordKind: "absence",
+				approvalState: "pending",
+			},
+		]);
+		const whereDelete = vi.fn().mockReturnValue({ returning });
 		mockState.dbDelete.mockReturnValue({ where: whereDelete });
 
 		await canonicalActions.removeCanonicalAbsenceRecord({
@@ -207,6 +224,112 @@ describe("absence canonical action routing", () => {
 
 		expect(mockState.dbDelete).toHaveBeenCalledTimes(1);
 		expect(whereDelete).toHaveBeenCalledTimes(1);
+	});
+
+	it("deletes exactly one scoped canonical absence record in an existing transaction", async () => {
+		const returning = vi.fn().mockResolvedValue([
+			{
+				id: "record-1",
+				organizationId: "org-1",
+				employeeId: "emp-1",
+				recordKind: "absence",
+				approvalState: "pending",
+			},
+		]);
+		const where = vi.fn().mockReturnValue({ returning });
+		const tx = { delete: vi.fn().mockReturnValue({ where }) };
+
+		await canonicalActions.removeCanonicalAbsenceRecordInTransaction(
+			tx as never,
+			{
+				canonicalRecordId: "record-1",
+				organizationId: "org-1",
+				expectedEmployeeId: "emp-1",
+				expectedApprovalState: "pending",
+			},
+		);
+
+		expect(mockState.dbDelete).not.toHaveBeenCalled();
+		expect(tx.delete).toHaveBeenCalledTimes(1);
+		expect(where).toHaveBeenCalledTimes(1);
+		expect(returning).toHaveBeenCalledTimes(1);
+	});
+
+	it.each([
+		{ rows: [] },
+		{
+			rows: [
+				{
+					id: "record-1",
+					organizationId: "org-2",
+					employeeId: "emp-1",
+					recordKind: "absence",
+					approvalState: "pending",
+				},
+			],
+		},
+		{
+			rows: [
+				{
+					id: "record-1",
+					organizationId: "org-1",
+					employeeId: "emp-1",
+					recordKind: "absence",
+					approvalState: "pending",
+				},
+				{
+					id: "record-1",
+					organizationId: "org-1",
+					employeeId: "emp-1",
+					recordKind: "absence",
+					approvalState: "pending",
+				},
+			],
+		},
+	])("rejects non-exact canonical deletion evidence", async ({ rows }) => {
+		const tx = {
+			delete: vi.fn().mockReturnValue({
+				where: vi.fn().mockReturnValue({
+					returning: vi.fn().mockResolvedValue(rows),
+				}),
+			}),
+		};
+
+		await expect(
+			canonicalActions.removeCanonicalAbsenceRecordInTransaction(tx as never, {
+				canonicalRecordId: "record-1",
+				organizationId: "org-1",
+				expectedEmployeeId: "emp-1",
+				expectedApprovalState: "pending",
+			}),
+		).rejects.toThrow(/affected-row mismatch/i);
+	});
+
+	it("rejects canonical deletion when approval state changed before cancellation", async () => {
+		const tx = {
+			delete: vi.fn().mockReturnValue({
+				where: vi.fn().mockReturnValue({
+					returning: vi.fn().mockResolvedValue([
+						{
+							id: "record-1",
+							organizationId: "org-1",
+							employeeId: "emp-1",
+							recordKind: "absence",
+							approvalState: "approved",
+						},
+					]),
+				}),
+			}),
+		};
+
+		await expect(
+			canonicalActions.removeCanonicalAbsenceRecordInTransaction(tx as never, {
+				canonicalRecordId: "record-1",
+				organizationId: "org-1",
+				expectedEmployeeId: "emp-1",
+				expectedApprovalState: "pending",
+			}),
+		).rejects.toThrow(/affected-row mismatch/i);
 	});
 
 	it("skips canonical absence deletion when no linkage exists", async () => {

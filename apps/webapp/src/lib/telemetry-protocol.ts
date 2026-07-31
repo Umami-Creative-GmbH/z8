@@ -95,6 +95,7 @@ function hasExactKeys(
 	optionalKey?: string,
 ): boolean {
 	const keys = Reflect.ownKeys(value);
+	const requiredKeySet = new Set(requiredKeys);
 	const allowedCount =
 		requiredKeys.length + (optionalKey && optionalKey in value ? 1 : 0);
 
@@ -104,7 +105,7 @@ function hasExactKeys(
 			(key) =>
 				typeof key === "string" &&
 				Object.prototype.propertyIsEnumerable.call(value, key) &&
-				(requiredKeys.includes(key) || key === optionalKey),
+				(requiredKeySet.has(key) || key === optionalKey),
 		)
 	);
 }

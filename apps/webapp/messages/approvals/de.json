@@ -35,7 +35,7 @@
     "notes": "Notizen",
     "noTimeCorrectionApprovals": "Keine ausstehenden Zeitkorrekturanfragen zur Überprüfung.",
     "offFrom": "frei ab",
-    "openDetailsFor": "Details öffnen für ${item.summary.title}",
+    "openDetailsFor": "Details öffnen für {title}",
     "openInbox": "Posteingang öffnen",
     "originalTimes": "Ursprüngliche Zeiten",
     "pendingRequests": "Ausstehende Anfragen",

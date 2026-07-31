@@ -86,6 +86,13 @@
       "addPolicy": "Richtlinie hinzufüege",
       "approvalType": {
         "absenceRequests": "Abweseheitsaaträg",
+        "absence": "Abweseheit",
+        "complianceException": "Compliance-Uusnahm",
+        "manualTimeSubmission": "Manuelli Ziiterfassig",
+        "policyClockOut": "Uusstemple gemäss Richtlinie",
+        "shiftRequest": "Schichtaafrag",
+        "timeCorrection": "Ziitkorrektur",
+        "travelExpense": "Reisespese",
         "timeEntryChanges": "Änderige a de Ziiterfassig",
         "travelExpenses": "Spese"
       },
@@ -124,6 +131,21 @@
       "toast": {
         "created": "Freigaberichtlinie erstellt",
         "saveFailed": "Freigaberichtlinie hät nöd chönne gspeicheret werde."
+      },
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Schick de Aatrag a de Standard-Vorgesetzte, wenn i dere Stufe kei Freigabeberechtigti Person ermittelt werde cha.",
+          "label": "Standard-Vorgesetzte"
+        },
+        "fail": {
+          "description": "Wiis de Aatrag ab, wenn i dere Stufe kei Freigabeberechtigti Person ermittelt werde cha.",
+          "label": "Aatrag abwiise"
+        },
+        "label": "Ersatzverhalte",
+        "organizationAdmin": {
+          "description": "Schick de Aatrag an en Organisations-Admin, wenn i dere Stufe kei Freigabeberechtigti Person ermittelt werde cha.",
+          "label": "Organisations-Admin"
+        }
       },
       "validation": {
         "activePolicyRequiresStage": "Aktivi Richtlinie bruched mindestens eini Freigabestufe.",

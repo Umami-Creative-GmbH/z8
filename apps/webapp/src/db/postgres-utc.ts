@@ -7,7 +7,9 @@ const UTC_SESSION_OPTION_PATTERN = /(?:^|\s)-c\s+timezone=UTC(?:\s|$)/;
 const TIMESTAMP_PATTERN =
 	/^(\d{4,})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,6}))?(?: (BC))?$/;
 
-function parseTimestampWithoutTimeZoneAsUtc(value: string): Date | number {
+export function parsePostgresTimestampWithoutTimeZoneAsUtc(
+	value: string,
+): Date | number {
 	if (value === "infinity") {
 		return Infinity;
 	}
@@ -20,8 +22,17 @@ function parseTimestampWithoutTimeZoneAsUtc(value: string): Date | number {
 		throw new Error(`Invalid PostgreSQL timestamp without time zone: ${value}`);
 	}
 
-	const [, yearText, monthText, dayText, hourText, minuteText, secondText, fractionText, era] =
-		match;
+	const [
+		,
+		yearText,
+		monthText,
+		dayText,
+		hourText,
+		minuteText,
+		secondText,
+		fractionText,
+		era,
+	] = match;
 	const parsedYear = Number.parseInt(yearText, 10);
 	const year = era === "BC" ? 1 - parsedYear : parsedYear;
 	const month = Number.parseInt(monthText, 10);
@@ -29,7 +40,10 @@ function parseTimestampWithoutTimeZoneAsUtc(value: string): Date | number {
 	const hour = Number.parseInt(hourText, 10);
 	const minute = Number.parseInt(minuteText, 10);
 	const second = Number.parseInt(secondText, 10);
-	const millisecond = Number.parseInt((fractionText ?? "").padEnd(3, "0").slice(0, 3) || "0", 10);
+	const millisecond = Number.parseInt(
+		(fractionText ?? "").padEnd(3, "0").slice(0, 3) || "0",
+		10,
+	);
 	const timestamp = new Date(0);
 
 	timestamp.setUTCFullYear(year, month - 1, day);
@@ -52,7 +66,10 @@ function parseTimestampWithoutTimeZoneAsUtc(value: string): Date | number {
 
 export function configurePostgresUtcTypes(): void {
 	defaults.parseInputDatesAsUTC = true;
-	types.setTypeParser(TIMESTAMP_WITHOUT_TIME_ZONE_OID, parseTimestampWithoutTimeZoneAsUtc);
+	types.setTypeParser(
+		TIMESTAMP_WITHOUT_TIME_ZONE_OID,
+		parsePostgresTimestampWithoutTimeZoneAsUtc,
+	);
 }
 
 export function withUtcPostgresSession(config: PoolConfig): PoolConfig {

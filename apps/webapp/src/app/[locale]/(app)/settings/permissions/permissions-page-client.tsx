@@ -1,11 +1,9 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useReducer } from "react";
+import { useEffect, useLayoutEffect, useReducer, useRef } from "react";
 import { toast } from "sonner";
-import { listEmployeesForSelect } from "../employees/actions";
-import { listTeams } from "../teams/actions";
-import { listEmployeePermissions } from "./actions";
+import { loadPermissionsPageData } from "./actions";
 import {
 	PermissionEditorDialog,
 	PermissionsEmptyState,
@@ -19,34 +17,129 @@ import {
 	permissionsPageReducer,
 } from "./page-utils";
 
-export function PermissionsPageClient(props: { organizationId: string; isOrgAdmin: boolean }) {
+export function PermissionsPageClient(props: {
+	organizationId: string;
+	isOrgAdmin: boolean;
+}) {
 	const { t } = useTranslate();
-	const [state, dispatch] = useReducer(permissionsPageReducer, initialPermissionsPageState);
+	const [state, dispatch] = useReducer(
+		permissionsPageReducer,
+		initialPermissionsPageState,
+	);
+	const requestSequence = useRef(0);
+	const activeOrganizationId = useRef(props.organizationId);
+	const mounted = useRef(false);
+	const deniedOrganizationId = useRef<string | null>(null);
+
+	useLayoutEffect(() => {
+		mounted.current = true;
+		return () => {
+			mounted.current = false;
+			requestSequence.current++;
+		};
+	}, []);
+
+	useLayoutEffect(() => {
+		activeOrganizationId.current = props.organizationId;
+		requestSequence.current++;
+	}, [props.organizationId]);
 
 	useEffect(() => {
+		if (!props.isOrgAdmin) {
+			if (deniedOrganizationId.current === props.organizationId) return;
+			deniedOrganizationId.current = props.organizationId;
+			toast.error(
+				t(
+					"settings.permissions.toast.adminRequired",
+					"You must be an admin to manage permissions",
+				),
+			);
+			dispatch({
+				type: "setBootstrapped",
+				payload: {
+					currentEmployee: {
+						id: props.organizationId,
+						role: "employee",
+						organizationId: props.organizationId,
+					},
+					isAdmin: false,
+					noEmployee: true,
+					employees: [],
+					teams: [],
+					permissions: {},
+				},
+			});
+			return;
+		}
+		deniedOrganizationId.current = null;
+		let cancelled = false;
+		const requestId = ++requestSequence.current;
+		dispatch({ type: "setLoading", value: true });
+		dispatch({ type: "setEmployees", employees: [] });
+		dispatch({ type: "setPermissions", permissions: {} });
+		dispatch({ type: "setSelectedEmployee", employee: null });
+
 		async function loadData() {
-			if (!props.isOrgAdmin) {
+			let result: Awaited<ReturnType<typeof loadPermissionsPageData>>;
+			try {
+				result = await loadPermissionsPageData(props.organizationId);
+			} catch {
+				if (cancelled) return;
+				if (requestSequence.current !== requestId) return;
 				toast.error(
 					t(
-						"settings.permissions.toast.adminRequired",
-						"You must be an admin to manage permissions",
+						"settings.permissions.toast.loadEmployeesFailed",
+						"Failed to load employees",
 					),
 				);
-				dispatch({ type: "setNoEmployee", value: true });
+				dispatch({
+					type: "setBootstrapped",
+					payload: {
+						currentEmployee: {
+							id: props.organizationId,
+							role: "admin",
+							organizationId: props.organizationId,
+						},
+						isAdmin: props.isOrgAdmin,
+						noEmployee: false,
+						employees: [],
+						teams: [],
+						permissions: {},
+					},
+				});
 				return;
 			}
+			if (cancelled) return;
+			if (requestSequence.current !== requestId) return;
 
-			const [employeesResult, teamsResult, permissionsResult] = await Promise.all([
-				listEmployeesForSelect({ limit: 1000 }),
-				listTeams(props.organizationId),
-				listEmployeePermissions(props.organizationId),
-			]);
-
-			if (!employeesResult.success) {
+			if (
+				!result.success ||
+				!result.data ||
+				result.data.organizationId !== props.organizationId
+			) {
 				toast.error(
-					employeesResult.error ||
-						t("settings.permissions.toast.loadEmployeesFailed", "Failed to load employees"),
+					(!result.success ? result.error : undefined) ||
+						t(
+							"settings.permissions.toast.loadEmployeesFailed",
+							"Failed to load employees",
+						),
 				);
+				dispatch({
+					type: "setBootstrapped",
+					payload: {
+						currentEmployee: {
+							id: props.organizationId,
+							role: "admin",
+							organizationId: props.organizationId,
+						},
+						isAdmin: props.isOrgAdmin,
+						noEmployee: false,
+						employees: [],
+						teams: [],
+						permissions: {},
+					},
+				});
+				return;
 			}
 
 			dispatch({
@@ -55,46 +148,102 @@ export function PermissionsPageClient(props: { organizationId: string; isOrgAdmi
 					currentEmployee: {
 						id: props.organizationId,
 						role: "admin",
-						organizationId: props.organizationId,
+						organizationId: result.data.organizationId,
 					},
 					isAdmin: props.isOrgAdmin,
 					noEmployee: false,
-					employees:
-						employeesResult.success && employeesResult.data ? employeesResult.data.employees : [],
-					teams: teamsResult.success && teamsResult.data ? teamsResult.data : [],
-					permissions:
-						permissionsResult.success && permissionsResult.data
-							? buildPermissionMap(permissionsResult.data)
-							: {},
+					employees: result.data.employees,
+					teams: result.data.teams,
+					permissions: buildPermissionMap(result.data.permissions),
 				},
 			});
 		}
 
 		void loadData();
+		return () => {
+			cancelled = true;
+		};
 	}, [props.isOrgAdmin, props.organizationId, t]);
 
 	const handleRefresh = async () => {
+		const organizationId = props.organizationId;
+		if (!mounted.current) return;
+		if (activeOrganizationId.current !== organizationId) return;
+		const requestId = ++requestSequence.current;
 		dispatch({ type: "setLoading", value: true });
 
-		const [permissionsResult, employeesResult] = await Promise.all([
-			listEmployeePermissions(props.organizationId),
-			listEmployeesForSelect({ limit: 1000 }),
-		]);
+		let result: Awaited<ReturnType<typeof loadPermissionsPageData>>;
+		try {
+			result = await loadPermissionsPageData(organizationId);
+		} catch {
+			if (
+				!mounted.current ||
+				requestSequence.current !== requestId ||
+				activeOrganizationId.current !== organizationId
+			)
+				return;
+			toast.error(
+				t(
+					"settings.permissions.toast.loadEmployeesFailed",
+					"Failed to load employees",
+				),
+			);
+			dispatch({ type: "setLoading", value: false });
+			return;
+		}
+		if (
+			!mounted.current ||
+			requestSequence.current !== requestId ||
+			activeOrganizationId.current !== organizationId
+		)
+			return;
 
-		if (permissionsResult.success && permissionsResult.data) {
-			dispatch({ type: "setPermissions", permissions: buildPermissionMap(permissionsResult.data) });
+		if (
+			!result.success ||
+			!result.data ||
+			result.data.organizationId !== organizationId
+		) {
+			toast.error(
+				(!result.success ? result.error : undefined) ||
+					t(
+						"settings.permissions.toast.loadEmployeesFailed",
+						"Failed to load employees",
+					),
+			);
+			dispatch({ type: "setLoading", value: false });
+			return;
 		}
 
-		if (employeesResult.success && employeesResult.data) {
-			dispatch({ type: "setEmployees", employees: employeesResult.data.employees });
-		}
-
-		dispatch({ type: "setLoading", value: false });
+		dispatch({
+			type: "setBootstrapped",
+			payload: {
+				currentEmployee: {
+					id: organizationId,
+					role: "admin",
+					organizationId: result.data.organizationId,
+				},
+				isAdmin: props.isOrgAdmin,
+				noEmployee: false,
+				employees: result.data.employees,
+				teams: result.data.teams,
+				permissions: buildPermissionMap(result.data.permissions),
+			},
+		});
 	};
 
-	const filteredEmployees = filterEmployeesByQuery(state.employees, state.searchQuery);
+	const filteredEmployees = filterEmployeesByQuery(
+		state.employees,
+		state.searchQuery,
+	);
+	const isCurrentOrganization =
+		state.currentEmployee?.organizationId === props.organizationId &&
+		state.isAdmin === props.isOrgAdmin;
 
-	if (state.noEmployee || !state.isAdmin) {
+	if (!props.isOrgAdmin) {
+		return <PermissionsEmptyState noEmployee />;
+	}
+
+	if (isCurrentOrganization && (state.noEmployee || !state.isAdmin)) {
 		return <PermissionsEmptyState noEmployee={state.noEmployee} />;
 	}
 
@@ -115,21 +264,29 @@ export function PermissionsPageClient(props: { organizationId: string; isOrgAdmi
 			</div>
 
 			<PermissionsTableCard
-				loading={state.loading}
+				loading={state.loading || !isCurrentOrganization}
 				searchQuery={state.searchQuery}
-				onSearchChange={(searchQuery) => dispatch({ type: "setSearchQuery", searchQuery })}
+				onSearchChange={(searchQuery) =>
+					dispatch({ type: "setSearchQuery", searchQuery })
+				}
 				onRefresh={handleRefresh}
-				employees={filteredEmployees}
-				onEdit={(employee) => dispatch({ type: "setSelectedEmployee", employee })}
-				getSummary={(employeeId) => getPermissionSummary(state.permissions, employeeId)}
+				employees={isCurrentOrganization ? filteredEmployees : []}
+				onEdit={(employee) =>
+					dispatch({ type: "setSelectedEmployee", employee })
+				}
+				getSummary={(employeeId) =>
+					getPermissionSummary(state.permissions, employeeId)
+				}
 			/>
 
 			<PermissionEditorDialog
-				selectedEmployee={state.selectedEmployee}
-				currentEmployee={state.currentEmployee}
-				teams={state.teams}
-				currentPermissions={state.permissions}
-				onClose={() => dispatch({ type: "setSelectedEmployee", employee: null })}
+				selectedEmployee={isCurrentOrganization ? state.selectedEmployee : null}
+				currentEmployee={isCurrentOrganization ? state.currentEmployee : null}
+				teams={isCurrentOrganization ? state.teams : []}
+				currentPermissions={isCurrentOrganization ? state.permissions : {}}
+				onClose={() =>
+					dispatch({ type: "setSelectedEmployee", employee: null })
+				}
 				onSuccess={() => {
 					dispatch({ type: "setSelectedEmployee", employee: null });
 					void handleRefresh();

@@ -3,7 +3,7 @@
 import { IconDroplet, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { Button } from "@/components/ui/button";
@@ -31,14 +31,40 @@ import {
 	type WaterReminderPreset,
 } from "@/lib/wellness/water-presets";
 import { useRouter } from "@/navigation";
+import { runOnboardingAction } from "../run-onboarding-action";
 import { configureWellnessOnboarding, skipWellnessSetup } from "./actions";
 
-function WellnessFormSection() {
-	const { t } = useTranslate();
-	const { push } = useRouter();
-	const [loading, setLoading] = useState(false);
+type Translate = ReturnType<typeof useTranslate>["t"];
 
-	const form = useForm({
+function WellnessHeader({ t }: { t: Translate }) {
+	return (
+		<div className="mb-8 text-center">
+			<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
+				<IconDroplet className="size-8 text-blue-600 dark:text-blue-400" />
+			</div>
+			<h1 className="mb-4 text-3xl font-bold tracking-tight">
+				{t("onboarding.wellness.title", "Stay Hydrated")}
+			</h1>
+			<p className="text-muted-foreground">
+				{t(
+					"onboarding.wellness.subtitle",
+					"Set up water reminders to stay healthy during your workday. You'll receive gentle notifications to drink water while clocked in.",
+				)}
+			</p>
+		</div>
+	);
+}
+
+function useWellnessForm({
+	push,
+	setLoading,
+	t,
+}: {
+	push: ReturnType<typeof useRouter>["push"];
+	setLoading: Dispatch<SetStateAction<boolean>>;
+	t: Translate;
+}) {
+	return useForm({
 		defaultValues: {
 			enableWaterReminder: true,
 			waterReminderPreset: "moderate" as WaterReminderPreset,
@@ -46,41 +72,207 @@ function WellnessFormSection() {
 			waterReminderDailyGoal: 8,
 		},
 		onSubmit: async ({ value }) => {
-			setLoading(true);
-
-			const result = await configureWellnessOnboarding(value);
-
-			if (result.success) {
-				if (value.enableWaterReminder) {
-					toast.success(
-						t("onboarding.wellness.success", "Water reminder enabled!"),
+			await runOnboardingAction({
+				action: () => configureWellnessOnboarding(value),
+				onResult: (result) => {
+					if (result.success) {
+						if (value.enableWaterReminder) {
+							toast.success(
+								t("onboarding.wellness.success", "Water reminder enabled!"),
+							);
+						}
+						push("/onboarding/notifications");
+						return true;
+					}
+					toast.error(
+						result.error ||
+							t(
+								"onboarding.wellness.error",
+								"Failed to save wellness settings",
+							),
 					);
-				}
-				push("/onboarding/notifications");
-			} else {
-				setLoading(false);
-				toast.error(
-					result.error ||
+				},
+				onRejected: () => {
+					toast.error(
 						t("onboarding.wellness.error", "Failed to save wellness settings"),
-				);
-			}
+					);
+				},
+				setLoading,
+			});
 		},
 	});
+}
+
+type WellnessFormApi = ReturnType<typeof useWellnessForm>;
+
+function WellnessSettings({
+	form,
+	isCustom,
+	loading,
+	onPresetChange,
+	selectedPreset,
+	t,
+}: {
+	form: WellnessFormApi;
+	isCustom: boolean;
+	loading: boolean;
+	onPresetChange: (preset: WaterReminderPreset) => void;
+	selectedPreset: WaterReminderPreset;
+	t: Translate;
+}) {
+	return (
+		<div className="space-y-4 rounded-lg bg-muted/50 p-4">
+			<div className="space-y-2">
+				<Label>
+					{t("onboarding.wellness.reminderFrequency", "Reminder Frequency")}
+				</Label>
+				<Select value={selectedPreset} onValueChange={onPresetChange}>
+					<SelectTrigger>
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{Object.values(WATER_PRESETS).map((preset) => (
+							<SelectItem key={preset.id} value={preset.id}>
+								<span className="flex items-center gap-2">
+									{preset.label}
+									{preset.recommended && (
+										<span className="text-xs text-primary">
+											{t("onboarding.wellness.recommended", "(Recommended)")}
+										</span>
+									)}
+								</span>
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+				<p className="text-xs text-muted-foreground">
+					{WATER_PRESETS[selectedPreset].description}
+				</p>
+			</div>
+
+			{isCustom && (
+				<form.Field name="waterReminderIntervalMinutes">
+					{(field) => (
+						<div className="space-y-2">
+							<div className="flex items-center justify-between">
+								<Label>
+									{t("onboarding.wellness.customInterval", "Custom Interval")}
+								</Label>
+								<span className="text-sm font-medium">
+									{field.state.value} min
+								</span>
+							</div>
+							<Slider
+								value={[field.state.value]}
+								onValueChange={(value) => field.handleChange(value[0])}
+								min={CUSTOM_INTERVAL_RANGE.min}
+								max={CUSTOM_INTERVAL_RANGE.max}
+								step={5}
+								disabled={loading}
+							/>
+							<div className="flex justify-between text-xs text-muted-foreground">
+								<span>{CUSTOM_INTERVAL_RANGE.min} min</span>
+								<span>{CUSTOM_INTERVAL_RANGE.max} min</span>
+							</div>
+						</div>
+					)}
+				</form.Field>
+			)}
+
+			<form.Field name="waterReminderDailyGoal">
+				{(field) => (
+					<div className="space-y-2">
+						<div className="flex items-center justify-between">
+							<Label>{t("onboarding.wellness.dailyGoal", "Daily Goal")}</Label>
+							<span className="text-sm font-medium">
+								{field.state.value}{" "}
+								{t("onboarding.wellness.glasses", "glasses")}
+							</span>
+						</div>
+						<Slider
+							value={[field.state.value]}
+							onValueChange={(value) => field.handleChange(value[0])}
+							min={DAILY_GOAL_RANGE.min}
+							max={DAILY_GOAL_RANGE.max}
+							step={1}
+							disabled={loading}
+						/>
+						<div className="flex justify-between text-xs text-muted-foreground">
+							<span>
+								{DAILY_GOAL_RANGE.min} {t("onboarding.wellness.glass", "glass")}
+							</span>
+							<span>
+								{DAILY_GOAL_RANGE.max}{" "}
+								{t("onboarding.wellness.glasses", "glasses")}
+							</span>
+						</div>
+					</div>
+				)}
+			</form.Field>
+
+			<div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+				<h4 className="mb-1 text-sm font-medium text-blue-900 dark:text-blue-100">
+					{t("onboarding.wellness.features", "What you'll get")}
+				</h4>
+				<ul className="space-y-1 text-xs text-blue-800 dark:text-blue-200">
+					<li>
+						{t(
+							"onboarding.wellness.feature1",
+							"Gentle reminders while clocked in",
+						)}
+					</li>
+					<li>
+						{t("onboarding.wellness.feature2", "Track your daily water intake")}
+					</li>
+					<li>
+						{t(
+							"onboarding.wellness.feature3",
+							"Build healthy streaks with gamification",
+						)}
+					</li>
+					<li>
+						{t(
+							"onboarding.wellness.feature4",
+							"Dashboard widget to track progress",
+						)}
+					</li>
+				</ul>
+			</div>
+		</div>
+	);
+}
+
+export default function WellnessPage() {
+	const { t } = useTranslate();
+	const { push } = useRouter();
+	const [loading, setLoading] = useState(false);
+
+	const form = useWellnessForm({ push, setLoading, t });
 
 	async function handleSkip() {
-		setLoading(true);
-
-		const result = await skipWellnessSetup();
-
-		if (result.success) {
-			push("/onboarding/notifications");
-		} else {
-			setLoading(false);
-			toast.error(
-				result.error ||
+		await runOnboardingAction({
+			action: skipWellnessSetup,
+			onResult: (result) => {
+				if (result.success) {
+					push("/onboarding/notifications");
+					return true;
+				} else {
+					toast.error(
+						result.error ||
+							t(
+								"onboarding.wellness.skipError",
+								"Failed to skip wellness setup",
+							),
+					);
+				}
+			},
+			onRejected: () => {
+				toast.error(
 					t("onboarding.wellness.skipError", "Failed to skip wellness setup"),
-			);
-		}
+				);
+			},
+			setLoading,
+		});
 	}
 
 	// Track form values for conditional rendering
@@ -113,241 +305,91 @@ function WellnessFormSection() {
 	}
 
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle className="flex items-center gap-2">
-					<IconDroplet className="size-5" />
-					{t("onboarding.wellness.cardTitle", "Water Reminders")}
-				</CardTitle>
-				<CardDescription>
-					{t(
-						"onboarding.wellness.cardDesc",
-						"Enable optional hydration reminders while you work. You can always adjust these settings later.",
-					)}
-				</CardDescription>
-			</CardHeader>
-			<CardContent>
-				<form
-					action={() => {
-						void form.handleSubmit();
-					}}
-					className="space-y-6"
-				>
-					{/* Enable Toggle */}
-					<form.Field name="enableWaterReminder">
-						{(field) => (
-							<div className="flex flex-row items-center justify-between rounded-lg border p-4">
-								<div className="space-y-0.5">
-									<Label className="text-base">
-										{t(
-											"onboarding.wellness.enableReminder",
-											"Enable Water Reminders",
-										)}
-									</Label>
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"onboarding.wellness.enableReminderDesc",
-											"Receive gentle reminders to drink water during work hours.",
-										)}
-									</p>
-								</div>
-								<Switch
-									checked={field.state.value}
-									onCheckedChange={field.handleChange}
-									disabled={loading}
-								/>
-							</div>
-						)}
-					</form.Field>
+		<>
+			<ProgressIndicator currentStep="wellness" />
 
-					{/* Settings when enabled */}
-					{isEnabled && (
-						<div className="space-y-4 rounded-lg bg-muted/50 p-4">
-							{/* Preset Selection */}
-							<div className="space-y-2">
-								<Label>
-									{t(
-										"onboarding.wellness.reminderFrequency",
-										"Reminder Frequency",
-									)}
-								</Label>
-								<Select
-									value={selectedPreset}
-									onValueChange={handlePresetChange}
-								>
-									<SelectTrigger>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										{Object.values(WATER_PRESETS).map((preset) => (
-											<SelectItem key={preset.id} value={preset.id}>
-												<span className="flex items-center gap-2">
-													{preset.label}
-													{preset.recommended && (
-														<span className="text-xs text-primary">
-															{t(
-																"onboarding.wellness.recommended",
-																"(Recommended)",
-															)}
-														</span>
-													)}
-												</span>
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								<p className="text-xs text-muted-foreground">
-									{WATER_PRESETS[selectedPreset].description}
-								</p>
-							</div>
+			<div className="mx-auto max-w-2xl">
+				<WellnessHeader t={t} />
 
-							{/* Custom Interval Slider */}
-							{isCustom && (
-								<form.Field name="waterReminderIntervalMinutes">
-									{(field) => (
-										<div className="space-y-2">
-											<div className="flex items-center justify-between">
-												<Label>
-													{t(
-														"onboarding.wellness.customInterval",
-														"Custom Interval",
-													)}
-												</Label>
-												<span className="text-sm font-medium">
-													{field.state.value} min
-												</span>
-											</div>
-											<Slider
-												value={[field.state.value]}
-												onValueChange={(value) => field.handleChange(value[0])}
-												min={CUSTOM_INTERVAL_RANGE.min}
-												max={CUSTOM_INTERVAL_RANGE.max}
-												step={5}
-												disabled={loading}
-											/>
-											<div className="flex justify-between text-xs text-muted-foreground">
-												<span>{CUSTOM_INTERVAL_RANGE.min} min</span>
-												<span>{CUSTOM_INTERVAL_RANGE.max} min</span>
-											</div>
-										</div>
-									)}
-								</form.Field>
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<IconDroplet className="size-5" />
+							{t("onboarding.wellness.cardTitle", "Water Reminders")}
+						</CardTitle>
+						<CardDescription>
+							{t(
+								"onboarding.wellness.cardDesc",
+								"Enable optional hydration reminders while you work. You can always adjust these settings later.",
 							)}
-
-							{/* Daily Goal */}
-							<form.Field name="waterReminderDailyGoal">
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<form
+							action={() => {
+								void form.handleSubmit();
+							}}
+							className="space-y-6"
+						>
+							{/* Enable Toggle */}
+							<form.Field name="enableWaterReminder">
 								{(field) => (
-									<div className="space-y-2">
-										<div className="flex items-center justify-between">
-											<Label>
-												{t("onboarding.wellness.dailyGoal", "Daily Goal")}
+									<div className="flex flex-row items-center justify-between rounded-lg border p-4">
+										<div className="space-y-0.5">
+											<Label className="text-base">
+												{t(
+													"onboarding.wellness.enableReminder",
+													"Enable Water Reminders",
+												)}
 											</Label>
-											<span className="text-sm font-medium">
-												{field.state.value}{" "}
-												{t("onboarding.wellness.glasses", "glasses")}
-											</span>
+											<p className="text-sm text-muted-foreground">
+												{t(
+													"onboarding.wellness.enableReminderDesc",
+													"Receive gentle reminders to drink water during work hours.",
+												)}
+											</p>
 										</div>
-										<Slider
-											value={[field.state.value]}
-											onValueChange={(value) => field.handleChange(value[0])}
-											min={DAILY_GOAL_RANGE.min}
-											max={DAILY_GOAL_RANGE.max}
-											step={1}
+										<Switch
+											checked={field.state.value}
+											onCheckedChange={field.handleChange}
 											disabled={loading}
 										/>
-										<div className="flex justify-between text-xs text-muted-foreground">
-											<span>
-												{DAILY_GOAL_RANGE.min}{" "}
-												{t("onboarding.wellness.glass", "glass")}
-											</span>
-											<span>
-												{DAILY_GOAL_RANGE.max}{" "}
-												{t("onboarding.wellness.glasses", "glasses")}
-											</span>
-										</div>
 									</div>
 								)}
 							</form.Field>
 
-							{/* Feature Info */}
-							<div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
-								<h4 className="mb-1 text-sm font-medium text-blue-900 dark:text-blue-100">
-									{t("onboarding.wellness.features", "What you'll get")}
-								</h4>
-								<ul className="space-y-1 text-xs text-blue-800 dark:text-blue-200">
-									<li>
-										{t(
-											"onboarding.wellness.feature1",
-											"Gentle reminders while clocked in",
-										)}
-									</li>
-									<li>
-										{t(
-											"onboarding.wellness.feature2",
-											"Track your daily water intake",
-										)}
-									</li>
-									<li>
-										{t(
-											"onboarding.wellness.feature3",
-											"Build healthy streaks with gamification",
-										)}
-									</li>
-									<li>
-										{t(
-											"onboarding.wellness.feature4",
-											"Dashboard widget to track progress",
-										)}
-									</li>
-								</ul>
+							{isEnabled && (
+								<WellnessSettings
+									form={form}
+									isCustom={isCustom}
+									loading={loading}
+									onPresetChange={handlePresetChange}
+									selectedPreset={selectedPreset}
+									t={t}
+								/>
+							)}
+
+							{/* Action Buttons */}
+							<div className="flex gap-3 pt-4">
+								<Button
+									type="button"
+									variant="outline"
+									onClick={handleSkip}
+									disabled={loading}
+									className="flex-1"
+								>
+									{t("onboarding.wellness.skip", "Skip for now")}
+								</Button>
+								<Button type="submit" disabled={loading} className="flex-1">
+									{loading && (
+										<IconLoader2 className="mr-2 size-4 animate-spin" />
+									)}
+									{t("onboarding.wellness.continue", "Continue")}
+								</Button>
 							</div>
-						</div>
-					)}
-
-					{/* Action Buttons */}
-					<div className="flex gap-3 pt-4">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={handleSkip}
-							disabled={loading}
-							className="flex-1"
-						>
-							{t("onboarding.wellness.skip", "Skip for now")}
-						</Button>
-						<Button type="submit" disabled={loading} className="flex-1">
-							{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-							{t("onboarding.wellness.continue", "Continue")}
-						</Button>
-					</div>
-				</form>
-			</CardContent>
-		</Card>
-	);
-}
-
-export default function WellnessPage() {
-	const { t } = useTranslate();
-
-	return (
-		<>
-			<ProgressIndicator currentStep="wellness" />
-			<div className="mx-auto max-w-2xl">
-				<div className="mb-8 text-center">
-					<div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
-						<IconDroplet className="size-8 text-blue-600 dark:text-blue-400" />
-					</div>
-					<h1 className="mb-4 text-3xl font-bold tracking-tight">
-						{t("onboarding.wellness.title", "Stay Hydrated")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"onboarding.wellness.subtitle",
-							"Set up water reminders to stay healthy during your workday. You'll receive gentle notifications to drink water while clocked in.",
-						)}
-					</p>
-				</div>
-				<WellnessFormSection />
+						</form>
+					</CardContent>
+				</Card>
 			</div>
 		</>
 	);

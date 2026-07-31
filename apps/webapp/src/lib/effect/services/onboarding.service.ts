@@ -36,6 +36,7 @@ import type { OrganizationFormValues } from "@/lib/validations/organization";
 import type { OnboardingWellnessFormValues } from "@/lib/validations/wellness";
 import {
 	type AuthenticationError,
+	AuthorizationError,
 	type DatabaseError,
 	type NotFoundError,
 	ValidationError,
@@ -112,8 +113,11 @@ export class OnboardingService extends Context.Tag("OnboardingService")<
 		// Admin setup - Work Schedule Templates
 		readonly createWorkTemplate: (
 			data: OnboardingWorkTemplateFormValues,
-		) => Effect.Effect<void, AuthenticationError | DatabaseError>;
-		readonly skipWorkTemplateSetup: () => Effect.Effect<void, AuthenticationError | DatabaseError>;
+		) => Effect.Effect<void, AuthenticationError | AuthorizationError | DatabaseError>;
+		readonly skipWorkTemplateSetup: () => Effect.Effect<
+			void,
+			AuthenticationError | AuthorizationError | DatabaseError
+		>;
 
 		// Wellness setup
 		readonly configureWellness: (
@@ -149,6 +153,41 @@ export const OnboardingServiceLive = Layer.effect(
 	Effect.gen(function* () {
 		const authService = yield* AuthService;
 		const dbService = yield* DatabaseService;
+		const requireWorkTemplateAdmin = (userId: string, activeOrganizationId: string | null) =>
+			Effect.gen(function* () {
+				if (!activeOrganizationId) {
+					return yield* Effect.fail(
+						new AuthorizationError({
+							action: "manage",
+							message: "An active organization owner or admin is required",
+							resource: "work_template",
+							userId,
+						}),
+					);
+				}
+
+				const membership = yield* dbService.query("requireWorkTemplateAdmin", async () =>
+					dbService.db.query.member.findFirst({
+						where: and(
+							eq(member.userId, userId),
+							eq(member.organizationId, activeOrganizationId),
+						),
+					}),
+				);
+
+				if (membership?.role !== "owner" && membership?.role !== "admin") {
+					return yield* Effect.fail(
+						new AuthorizationError({
+							action: "manage",
+							message: "Only organization owners and admins can manage work templates",
+							resource: "work_template",
+							userId,
+						}),
+					);
+				}
+
+				return activeOrganizationId;
+			});
 
 		return OnboardingService.of({
 			// Start onboarding
@@ -728,23 +767,12 @@ export const OnboardingServiceLive = Layer.effect(
 			createWorkTemplate: (data: OnboardingWorkTemplateFormValues) =>
 				Effect.gen(function* () {
 					const session = yield* authService.getSession();
-					const activeOrgId = session.session.activeOrganizationId;
+					const activeOrgId = yield* requireWorkTemplateAdmin(
+						session.user.id,
+						session.session.activeOrganizationId,
+					);
 
 					yield* dbService.query("createWorkTemplate", async () => {
-						if (!activeOrgId) {
-							await dbService.db
-								.insert(userSettings)
-								.values({
-									userId: session.user.id,
-									onboardingStep: "wellness",
-								})
-								.onConflictDoUpdate({
-									target: userSettings.userId,
-									set: { onboardingStep: "wellness" },
-								});
-							return;
-						}
-
 						// Create work policy
 						const [policy] = await dbService.db
 							.insert(workPolicy)
@@ -830,6 +858,10 @@ export const OnboardingServiceLive = Layer.effect(
 			skipWorkTemplateSetup: () =>
 				Effect.gen(function* () {
 					const session = yield* authService.getSession();
+					yield* requireWorkTemplateAdmin(
+						session.user.id,
+						session.session.activeOrganizationId,
+					);
 
 					yield* dbService.query("skipWorkTemplateSetup", async () => {
 						await dbService.db

@@ -184,8 +184,11 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 	});
 
 	useEffect(() => {
+		let cancelled = false;
+
 		async function loadData() {
 			const current = await getCurrentEmployee();
+			if (cancelled) return;
 			if (!current) {
 				setNoEmployee(true);
 				return;
@@ -204,6 +207,7 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 				getEmployeePolicyAssignment(employeeId),
 				getEmployeeAdjustmentTotal(employeeId, currentYear),
 			]);
+			if (cancelled) return;
 
 			if (empResult.success && empResult.data) {
 				setEmployee(empResult.data as EmployeeAllowanceView);
@@ -247,6 +251,9 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 		}
 
 		void loadData();
+		return () => {
+			cancelled = true;
+		};
 	}, [employeeId, currentYear, form]);
 
 	return {

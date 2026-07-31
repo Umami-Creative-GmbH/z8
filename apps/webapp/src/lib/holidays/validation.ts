@@ -34,6 +34,16 @@ export type HolidayFormValues = z.infer<typeof holidayFormSchema>;
 export type CategoryFormValues = z.infer<typeof categoryFormSchema>;
 
 // Holiday import schemas
+export const MAX_HOLIDAY_IMPORT_BATCH_SIZE = 366;
+
+const importedHolidaySchema = z.object({
+	name: z.string(),
+	date: z.string(),
+	startDate: z.coerce.date(),
+	endDate: z.coerce.date(),
+	type: z.enum(["public", "bank", "optional", "school", "observance"]),
+});
+
 export const holidayImportParamsSchema = z.object({
 	countryCode: z.string().length(2, "Country code must be 2 characters"),
 	stateCode: z.string().optional(),
@@ -45,15 +55,7 @@ export const holidayImportParamsSchema = z.object({
 });
 
 export const holidayImportSchema = z.object({
-	holidays: z.array(
-		z.object({
-			name: z.string(),
-			date: z.string(),
-			startDate: z.coerce.date(),
-			endDate: z.coerce.date(),
-			type: z.enum(["public", "bank", "optional", "school", "observance"]),
-		}),
-	),
+	holidays: z.array(importedHolidaySchema).max(MAX_HOLIDAY_IMPORT_BATCH_SIZE),
 	categoryId: z.uuid().optional(),
 	createRecurring: z.boolean().default(true),
 	skipDuplicates: z.boolean().default(true),
@@ -156,15 +158,7 @@ export const holidayPresetImportSchema = z.object({
 	stateCode: z.string().optional(),
 	regionCode: z.string().optional(),
 	year: z.number().min(2000).max(2100),
-	holidays: z.array(
-		z.object({
-			name: z.string(),
-			date: z.string(),
-			startDate: z.coerce.date(),
-			endDate: z.coerce.date(),
-			type: z.enum(["public", "bank", "optional", "school", "observance"]),
-		}),
-	),
+	holidays: z.array(importedHolidaySchema),
 	presetName: z.string().min(1, "Preset name is required").max(255),
 	presetDescription: z.string().optional(),
 	presetColor: z
