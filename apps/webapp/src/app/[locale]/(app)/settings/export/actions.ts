@@ -5,12 +5,22 @@ import { Effect } from "effect";
 import { db, exportStorageConfig } from "@/db";
 import { employee } from "@/db/schema";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
-import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import {
+	AuthorizationError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { EXPORT_CATEGORIES, type ExportCategory } from "@/lib/export/data-fetchers";
+import {
+	EXPORT_CATEGORIES,
+	type ExportCategory,
+} from "@/lib/export/data-fetchers";
 import {
 	createExportRequest,
 	deleteExportRecord,
@@ -70,7 +80,9 @@ export async function startExportAction(
 		);
 
 		// Step 3: Verify user is org admin
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
+		);
 
 		if (!hasPermission) {
 			yield* _(
@@ -86,7 +98,9 @@ export async function startExportAction(
 		}
 
 		// Step 4: Validate categories
-		const validCategories = input.categories.filter((cat) => EXPORT_CATEGORIES.includes(cat));
+		const validCategories = input.categories.filter((cat) =>
+			EXPORT_CATEGORIES.includes(cat),
+		);
 
 		if (validCategories.length === 0) {
 			throw new Error("At least one valid export category must be selected");
@@ -149,7 +163,9 @@ export async function getExportHistoryAction(
 		);
 
 		// Step 3: Verify user is org admin
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
+		);
 
 		if (!hasPermission) {
 			yield* _(
@@ -165,7 +181,9 @@ export async function getExportHistoryAction(
 		}
 
 		// Step 4: Get export history
-		const exports = yield* _(Effect.promise(() => getExportHistory(organizationId)));
+		const exports = yield* _(
+			Effect.promise(() => getExportHistory(organizationId)),
+		);
 
 		return exports;
 	});
@@ -186,7 +204,9 @@ export async function regenerateDownloadUrlAction(
 		const session = yield* _(authService.getSession());
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
+		);
 
 		if (!hasPermission) {
 			yield* _(
@@ -202,7 +222,9 @@ export async function regenerateDownloadUrlAction(
 		}
 
 		// Step 3: Regenerate URL
-		const url = yield* _(Effect.promise(() => regeneratePresignedUrl(exportId, organizationId)));
+		const url = yield* _(
+			Effect.promise(() => regeneratePresignedUrl(exportId, organizationId)),
+		);
 
 		return url;
 	});
@@ -223,7 +245,9 @@ export async function deleteExportAction(
 		const session = yield* _(authService.getSession());
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
+		);
 
 		if (!hasPermission) {
 			yield* _(
@@ -239,7 +263,9 @@ export async function deleteExportAction(
 		}
 
 		// Step 3: Delete export
-		yield* _(Effect.promise(() => deleteExportRecord(exportId, organizationId)));
+		yield* _(
+			Effect.promise(() => deleteExportRecord(exportId, organizationId)),
+		);
 	});
 
 	return runServerActionSafe(effect.pipe(Effect.provide(AppLayer)));
@@ -252,8 +278,8 @@ export async function deleteExportAction(
 export interface StorageConfigInput {
 	organizationId: string;
 	bucket: string;
-	accessKeyId: string;
-	secretAccessKey: string;
+	accessKeyId?: string;
+	secretAccessKey?: string;
 	region: string;
 	endpoint?: string;
 }
@@ -281,7 +307,9 @@ export async function getStorageConfigAction(
 		const session = yield* _(authService.getSession());
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
+		);
 
 		if (!hasPermission) {
 			yield* _(
@@ -338,7 +366,9 @@ export async function saveStorageConfigAction(
 		const session = yield* _(authService.getSession());
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdminCasl(input.organizationId)),
+		);
 
 		if (!hasPermission) {
 			yield* _(
@@ -353,24 +383,49 @@ export async function saveStorageConfigAction(
 			);
 		}
 
-		// Step 3: Store secrets in Vault
+		const existing = yield* _(
+			Effect.promise(() =>
+				db.query.exportStorageConfig.findFirst({
+					where: eq(exportStorageConfig.organizationId, input.organizationId),
+				}),
+			),
+		);
+		const hasAccessKey = Boolean(input.accessKeyId);
+		const hasSecretKey = Boolean(input.secretAccessKey);
+		if (hasAccessKey !== hasSecretKey || (!existing && !hasAccessKey)) {
+			yield* _(
+				Effect.fail(
+					new ValidationError({
+						message:
+							"Both storage credentials are required when replacing credentials",
+					}),
+				),
+			);
+		}
+
+		// Step 3: Store only explicitly replaced secrets in Vault.
 		yield* _(
 			Effect.promise(async () => {
-				await Promise.all([
-					storeOrgSecret(input.organizationId, "storage/access_key_id", input.accessKeyId),
-					storeOrgSecret(input.organizationId, "storage/secret_access_key", input.secretAccessKey),
-				]);
+				if (input.accessKeyId && input.secretAccessKey) {
+					await Promise.all([
+						storeOrgSecret(
+							input.organizationId,
+							"storage/access_key_id",
+							input.accessKeyId,
+						),
+						storeOrgSecret(
+							input.organizationId,
+							"storage/secret_access_key",
+							input.secretAccessKey,
+						),
+					]);
+				}
 			}),
 		);
 
 		// Step 4: Save or update non-secret config in database
 		const config = yield* _(
 			Effect.promise(async () => {
-				// Check if config exists
-				const existing = await db.query.exportStorageConfig.findFirst({
-					where: eq(exportStorageConfig.organizationId, input.organizationId),
-				});
-
 				if (existing) {
 					// Update existing
 					const [updated] = await db
@@ -436,7 +491,9 @@ export async function testStorageConnectionAction(
 		const session = yield* _(authService.getSession());
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
+		);
 
 		if (!hasPermission) {
 			yield* _(
@@ -473,7 +530,9 @@ export async function testStorageConnectionAction(
 				// Otherwise get from database + Vault
 				const storedConfig = await getStorageConfig(organizationId);
 				if (!storedConfig) {
-					throw new Error("No storage configuration found. Please save your configuration first.");
+					throw new Error(
+						"No storage configuration found. Please save your configuration first.",
+					);
 				}
 
 				// Merge with any provided overrides (except secrets)
@@ -526,7 +585,9 @@ export async function deleteStorageConfigAction(
 		const session = yield* _(authService.getSession());
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* _(
+			Effect.promise(() => isOrgAdminCasl(organizationId)),
+		);
 
 		if (!hasPermission) {
 			yield* _(

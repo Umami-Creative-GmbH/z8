@@ -153,13 +153,21 @@ export class SHA256HashProvider implements IHashProvider {
 					const currentIdx = leafIndices[leafIdx];
 					if (currentIdx === i) {
 						// This leaf is on the left, add right sibling to proof
-						proofs.get(leafIdx)!.path.push(new SHA256Hash(right));
-						proofs.get(leafIdx)!.indices.push("right");
+						const proof = proofs.get(leafIdx);
+						if (!proof) {
+							throw new Error(`Missing Merkle proof for leaf ${leafIdx}`);
+						}
+						proof.path.push(new SHA256Hash(right));
+						proof.indices.push("right");
 						nextLeafIndices[leafIdx] = Math.floor(i / 2);
 					} else if (currentIdx === i + 1) {
 						// This leaf is on the right, add left sibling to proof
-						proofs.get(leafIdx)!.path.push(new SHA256Hash(left));
-						proofs.get(leafIdx)!.indices.push("left");
+						const proof = proofs.get(leafIdx);
+						if (!proof) {
+							throw new Error(`Missing Merkle proof for leaf ${leafIdx}`);
+						}
+						proof.path.push(new SHA256Hash(left));
+						proof.indices.push("left");
 						nextLeafIndices[leafIdx] = Math.floor(i / 2);
 					} else if (nextLeafIndices[leafIdx] === undefined) {
 						nextLeafIndices[leafIdx] = Math.floor(currentIdx / 2);
@@ -181,7 +189,11 @@ export class SHA256HashProvider implements IHashProvider {
 	/**
 	 * Verify a Merkle proof for a specific leaf
 	 */
-	verifyMerkleProof(leafHash: SHA256Hash, proof: MerkleProof, expectedRoot: SHA256Hash): boolean {
+	verifyMerkleProof(
+		leafHash: SHA256Hash,
+		proof: MerkleProof,
+		expectedRoot: SHA256Hash,
+	): boolean {
 		let currentHash = leafHash.toString();
 
 		for (let i = 0; i < proof.path.length; i++) {

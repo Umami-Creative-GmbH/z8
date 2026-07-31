@@ -134,11 +134,8 @@
         "ascending": "croissant",
         "descending": "décroissant"
       },
-      "sortByTimeBalance": "Trier par solde annuel",
-      "sortByTimeBalanceWithDirection": "Trier par solde annuel ({direction})",
       "status": "Statut",
-      "team": "Équipe",
-      "timeBalance": "Solde annuel"
+      "team": "Équipe"
     },
     "title": "Votre équipe",
     "view": {

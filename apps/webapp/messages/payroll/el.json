@@ -1,28 +1,23 @@
 {
   "payroll": {
-    "accessDenied": {
-      "description": "Δεν έχετε πρόσβαση στα δεδομένα μισθοδοσίας για τον ενεργό οργανισμό.",
-      "help": "Ζητήστε από έναν διαχειριστή του οργανισμού να σας εκχωρήσει πρόσβαση στη μισθοδοσία εάν χρειάζεστε αυτόν τον χώρο εργασίας.",
-      "title": "Καμία πρόσβαση στη μισθοδοσία"
-    },
     "actions": {
       "apply": "Εφαρμογή",
       "downloadPdf": "Λήψη PDF",
       "triggerExport": "Ενεργοποίηση εξαγωγής"
     },
     "blockers": {
-      "clearFailed": "Δεν ήταν δυνατή η κατάργηση του εμποδίου μισθοδοσίας",
-      "clearFalsePositive": "Κατάργηση ψευδώς θετικού",
-      "clearingFalsePositive": "Κατάργηση ψευδώς θετικού",
+      "clearFailed": "Δεν ήταν δυνατή η εκκαθάριση του εμποδίου μισθοδοσίας",
+      "clearFalsePositive": "Εκκαθάριση ψευδώς θετικού",
+      "clearingFalsePositive": "Εκκαθάριση ψευδώς θετικού",
       "dateUnavailable": "Η ημερομηνία δεν είναι διαθέσιμη",
-      "missingClockOut": "Λείπει η καταγραφή εξόδου",
+      "missingClockOut": "Έλλειψη σήμανσης εξόδου",
       "needReview": "{count} εμπόδια μισθοδοσίας χρειάζονται έλεγχο",
-      "openApprovals": "Άνοιγμα εγκρίσεων",
+      "openApprovals": "Εκκρεμείς εγκρίσεις",
       "openCalendar": "Άνοιγμα ημερολογίου",
       "pendingAbsence": "Εκκρεμής απουσία",
       "pendingTimeCorrection": "Εκκρεμής διόρθωση χρόνου",
-      "refreshAfterClearFailed": "Το εμπόδιο καταργήθηκε, αλλά η μισθοδοσία δεν μπόρεσε να ανανεωθεί",
-      "unknownEmployee": "Άγνωστος εργαζόμενος"
+      "refreshAfterClearFailed": "Το εμπόδιο εκκαθαρίστηκε, αλλά η μισθοδοσία δεν μπόρεσε να ανανεωθεί",
+      "unknownEmployee": "Άγνωστος υπάλληλος"
     },
     "description": "Ελέγξτε τα σύνολα μισθοδοσίας, την ετοιμότητα και τις εξαγωγές για την επιλεγμένη περίοδο.",
     "employeeTotals": {
@@ -46,10 +41,13 @@
       "actionFailed": "Η ενέργεια του χώρου εργασίας μισθοδοσίας απέτυχε",
       "activeOrganizationEmployeeRequired": "Απαιτείται ενεργό πλαίσιο εργαζομένου οργανισμού",
       "authenticationRequired": "Απαιτείται έλεγχος ταυτότητας",
+      "blockerNotDismissible": "Το εμπόδιο μισθοδοσίας δεν μπορεί να απορριφθεί",
       "employeeIdsMustBeArray": "Τα employeeIds πρέπει να είναι πίνακας",
       "employeeIdsMustContainOnlyStrings": "Τα employeeIds πρέπει να περιέχουν μόνο συμβολοσειρές",
       "endDateAfterStart": "Η ημερομηνία λήξης πρέπει να είναι μεταγενέστερη ή ίση με την ημερομηνία έναρξης",
       "exportFormatNotConfigured": "Η μορφή εξαγωγής μισθοδοσίας δεν έχει ρυθμιστεί",
+      "invalidBlockerId": "Μη έγκυρο αναγνωριστικό εμποδίου μισθοδοσίας",
+      "invalidBlockerType": "Μη έγκυρος τύπος εμποδίου μισθοδοσίας",
       "mustBeIsoDate": "Το πεδίο {field} πρέπει να είναι ημερομηνία ISO",
       "mustBeValidIsoDate": "Το πεδίο {field} πρέπει να είναι έγκυρη ημερομηνία ISO",
       "noAssignedEmployees": "Δεν έχουν ανατεθεί υπάλληλοι μισθοδοσίας στο πεδίο πρόσβασής σας",
@@ -84,10 +82,20 @@
       "start": "Έναρξη"
     },
     "scope": {
-      "assignedEmployees": "Ανατεθειμένοι υπάλληλοι",
-      "assignedTeams": "Ανατεθειμένες ομάδες",
+      "allManaged": "Όλοι οι υπάλληλοι και οι ομάδες που διαχειρίζομαι",
+      "apply": "Εφαρμογή",
+      "cancel": "Ακύρωση",
+      "currentScope": "Τρέχον πεδίο εφαρμογής",
       "description": "Περιορίστε αυτόν τον χώρο εργασίας μισθοδοσίας ανά ανατεθειμένους υπαλλήλους ή ομάδες.",
+      "noAssignedEmployees": "Δεν υπάρχουν ανατεθειμένοι υπάλληλοι σε αυτό το πεδίο μισθοδοσίας.",
       "noAssignedTeams": "Δεν υπάρχουν ανατεθειμένες ομάδες σε αυτό το πεδίο μισθοδοσίας.",
+      "selectedEmployeesCount": "{count} υπάλληλοι",
+      "selectedSummary": "{summary} επιλεγμένα",
+      "selectedTeamsCount": "{count} ομάδες",
+      "specificEmployees": "Συγκεκριμένοι υπάλληλοι",
+      "specificEmployeesDescription": "Επιλέξτε τους υπαλλήλους που θα συμπεριληφθούν σε αυτό το πεδίο μισθοδοσίας.",
+      "specificTeams": "Συγκεκριμένες ομάδες",
+      "specificTeamsDescription": "Επιλέξτε τις ομάδες που θα συμπεριληφθούν σε αυτό το πεδίο μισθοδοσίας.",
       "title": "Πεδίο μισθοδοσίας"
     },
     "summary": {

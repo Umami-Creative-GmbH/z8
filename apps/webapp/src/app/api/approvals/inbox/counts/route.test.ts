@@ -1,5 +1,10 @@
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	createEmptyAbility,
+	defineAbilityFor,
+	type PrincipalContext,
+} from "@/lib/authorization/ability";
 
 vi.mock("drizzle-orm", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("drizzle-orm")>();
@@ -70,6 +75,24 @@ vi.mock("@/lib/logger", () => ({
 
 const { GET } = await import("./route");
 
+function createEmployeeAbility(role: "admin" | "manager" = "manager") {
+	return defineAbilityFor({
+		userId: "user-1",
+		isPlatformAdmin: false,
+		activeOrganizationId: "org-1",
+		orgMembership: { organizationId: "org-1", role: "member", status: "active" },
+		employee: {
+			id: "employee-1",
+			organizationId: "org-1",
+			role,
+			teamId: null,
+		},
+		permissions: { orgWide: null, byTeamId: new Map() },
+		managedEmployeeIds: [],
+		customRoles: [],
+	} satisfies PrincipalContext);
+}
+
 describe("GET /api/approvals/inbox/counts", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -84,6 +107,7 @@ describe("GET /api/approvals/inbox/counts", () => {
 		mockState.findEmployee.mockResolvedValue({
 			id: "employee-1",
 			organizationId: "org-1",
+			role: "manager",
 		});
 		mockState.getEligibleApprovalScopesForManager.mockResolvedValue([]);
 		mockState.getApprovalInboxCounts.mockResolvedValue({
@@ -115,6 +139,16 @@ describe("GET /api/approvals/inbox/counts", () => {
 		expect(mockState.getApprovalInboxCounts).not.toHaveBeenCalled();
 	});
 
+	it("rejects an active manager when approved membership is absent from the ability", async () => {
+		mockState.getAbility.mockResolvedValue(createEmptyAbility());
+
+		const response = await GET();
+
+		expect(response.status).toBe(403);
+		expect(mockState.getEligibleApprovalScopesForManager).not.toHaveBeenCalled();
+		expect(mockState.getApprovalInboxCounts).not.toHaveBeenCalled();
+	});
+
 	it("preserves employee lookup and delegates count reads to the inbox counts service", async () => {
 		const response = await GET();
 
@@ -132,8 +166,11 @@ describe("GET /api/approvals/inbox/counts", () => {
 	});
 
 	it("includes all organization approvals in counts for manage-Approval users", async () => {
-		mockState.getAbility.mockResolvedValue({
-			cannot: vi.fn((action) => action !== "manage"),
+		mockState.getAbility.mockResolvedValue(createEmployeeAbility("admin"));
+		mockState.findEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			role: "admin",
 		});
 
 		const response = await GET();
@@ -150,13 +187,11 @@ describe("GET /api/approvals/inbox/counts", () => {
 		});
 	});
 
-	it("includes manager-routed eligible approval scopes in counts for approve-only users", async () => {
+	it("includes team-primary scopes for a manager with no direct reports", async () => {
 		const eligibleApprovalScopes = [
 			{ requesterEmployeeId: "employee-2", eligibleApproverIds: ["employee-1", "employee-3"] },
 		];
-		mockState.getAbility.mockResolvedValue({
-			cannot: vi.fn((action) => action === "manage"),
-		});
+		mockState.getAbility.mockResolvedValue(createEmployeeAbility());
 		mockState.getEligibleApprovalScopesForManager.mockResolvedValue(eligibleApprovalScopes);
 
 		const response = await GET();

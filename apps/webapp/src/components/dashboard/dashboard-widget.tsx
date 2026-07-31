@@ -4,9 +4,10 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { IconGripVertical } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { type CSSProperties, createContext, type ReactNode, use } from "react";
+import { type CSSProperties, type ReactNode, use } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { DashboardWidgetDraggableContext } from "./dashboard-widget-draggable-context";
 import type { WidgetId } from "./widget-registry";
 import { useRegisterVisibleWidget } from "./widget-visibility-context";
 
@@ -18,10 +19,6 @@ interface DashboardWidgetProps {
 	/** Whether this widget can be reordered with drag-and-drop */
 	draggable?: boolean;
 }
-
-const DashboardWidgetDraggableContext = createContext(true);
-
-export const DashboardWidgetDraggableProvider = DashboardWidgetDraggableContext.Provider;
 
 /**
  * Dashboard widget wrapper that handles:
@@ -43,14 +40,25 @@ export const DashboardWidgetDraggableProvider = DashboardWidgetDraggableContext.
  * }
  * ```
  */
-export function DashboardWidget({ id, children, draggable }: DashboardWidgetProps) {
+export function DashboardWidget({
+	id,
+	children,
+	draggable,
+}: DashboardWidgetProps) {
 	const { t } = useTranslate();
 	// Register as visible when mounted
 	useRegisterVisibleWidget(id);
 	const contextDraggable = use(DashboardWidgetDraggableContext);
 	const effectiveDraggable = draggable ?? contextDraggable;
 
-	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+	const {
+		attributes,
+		listeners,
+		setNodeRef,
+		transform,
+		transition,
+		isDragging,
+	} = useSortable({
 		id,
 	});
 
@@ -64,7 +72,10 @@ export function DashboardWidget({ id, children, draggable }: DashboardWidgetProp
 		<div
 			ref={setNodeRef}
 			style={style}
-			className={cn("relative group mb-4 break-inside-avoid", isDragging && "z-50")}
+			className={cn(
+				"relative group mb-4 break-inside-avoid",
+				isDragging && "z-50",
+			)}
 			data-widget-id={id}
 			data-dragging={isDragging}
 		>
@@ -82,9 +93,15 @@ export function DashboardWidget({ id, children, draggable }: DashboardWidgetProp
 					)}
 					{...attributes}
 					{...listeners}
-					aria-label={t("dashboard.widgets.dragToReorder", "Drag to reorder widget")}
+					aria-label={t(
+						"dashboard.widgets.dragToReorder",
+						"Drag to reorder widget",
+					)}
 				>
-					<IconGripVertical className="size-4 text-muted-foreground" aria-hidden="true" />
+					<IconGripVertical
+						className="size-4 text-muted-foreground"
+						aria-hidden="true"
+					/>
 				</Button>
 			) : null}
 			{children}

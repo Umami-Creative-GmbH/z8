@@ -6,6 +6,10 @@ const source = readFileSync(
 	fileURLToPath(new URL("./actions/clocking.ts", import.meta.url)),
 	"utf8",
 );
+const monolithicSource = readFileSync(
+	fileURLToPath(new URL("./actions.ts", import.meta.url)),
+	"utf8",
+);
 
 function functionBody(name: string) {
 	const match = new RegExp(`export\\s+async function ${name}\\s*\\(`).exec(
@@ -49,9 +53,6 @@ describe("clocking service delegation", () => {
 		);
 		const billingIndex = body.indexOf("requireBillingForMutation(");
 		const approvalPolicyIndex = body.indexOf("checkClockOutNeedsApproval(");
-		const managerIndex = body.indexOf(
-			"await getPrimaryEligibleManagerIdForRequester({",
-		);
 		const canonicalIndex = body.indexOf(
 			"canonicalWorkRecordClient.createForCompletedPeriod(",
 		);
@@ -60,9 +61,49 @@ describe("clocking service delegation", () => {
 		expect(projectValidationIndex).toBeGreaterThanOrEqual(0);
 		expect(billingIndex).toBeGreaterThan(projectValidationIndex);
 		expect(approvalPolicyIndex).toBeGreaterThan(billingIndex);
-		expect(managerIndex).toBeGreaterThan(approvalPolicyIndex);
-		expect(canonicalIndex).toBeGreaterThan(managerIndex);
-		expect(delegateIndex).toBeGreaterThan(canonicalIndex);
-		expect(body).toContain("createClockOutApprovalRequest(");
+		expect(body).not.toContain("getPrimaryEligibleManagerIdForRequester");
+		expect(canonicalIndex).toBeGreaterThan(approvalPolicyIndex);
+		expect(canonicalIndex).toBeGreaterThan(delegateIndex);
+		expect(body).toContain("beforePeriodClose:");
+		expect(body).toContain("afterPeriodClose:");
+		expect(body).toContain("runtime.repository.withTransaction(");
+		expect(body).toContain("executeOrdinaryWorkPeriodSubmissionInTransaction(");
+		expect(body).not.toContain("createClockOutApprovalRequest(");
+	});
+
+	it("creates manual source and approval state in one workflow transaction", () => {
+		const body = functionBody("createManualTimeEntry");
+
+		expect(body).toContain("runtime.repository.withTransaction(");
+		expect(body).toContain("executeOrdinaryWorkPeriodSubmissionInTransaction(");
+		expect(body).not.toContain("await db.transaction(");
+		expect(body).not.toContain("createManualEntryApprovalRequest(");
+		expect(body).toContain(
+			"eq(workPeriod.organizationId, targetEmployee.organizationId)",
+		);
+		const categoryGuard = body.indexOf("validateWorkCategoryAssignment(");
+		const replayTransaction = body.indexOf(
+			"runtime.repository.withTransaction(",
+		);
+		const creationTransaction = body.lastIndexOf(
+			"runtime.repository.withTransaction(",
+		);
+		expect(categoryGuard).toBeGreaterThanOrEqual(0);
+		expect(replayTransaction).toBeLessThan(categoryGuard);
+		expect(categoryGuard).toBeLessThan(creationTransaction);
+	});
+
+	it("keeps the monolithic action as an authenticated billing-guarded delegate", () => {
+		const start = monolithicSource.indexOf(
+			"export async function createManualTimeEntry(",
+		);
+		const end = monolithicSource.indexOf("export async function", start + 1);
+		const body = monolithicSource.slice(start, end);
+
+		expect(body).toContain("auth.api.getSession(");
+		expect(body).toContain("requireBillingForMutation(");
+		expect(body).toContain("createManualTimeEntryModular(data)");
+		expect(body).not.toContain("createTimeEntry(");
+		expect(body).not.toContain("createManualEntryApprovalRequest(");
 	});
 });

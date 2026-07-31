@@ -207,6 +207,7 @@
         "sessions": "Sesiones",
         "title": "Desglose del equipo"
       },
+      "title": "Informes de proyectos",
       "toast": {
         "failedGenerate": "Error al generar informe",
         "failedPortfolio": "Error al generar informe de portafolio",

@@ -59,6 +59,21 @@ describe("GET /api/mobile/my-requests", () => {
 					sourceHref: "/absences",
 				},
 				{
+					id: "approval-time-1",
+					sourceType: "time_correction",
+					sourceId: "10000000-0000-4000-8000-000000000003",
+					organizationId: "org-1",
+					employeeId: "emp-1",
+					status: "pending",
+					submittedAt: new Date("2026-04-09T09:00:00.000Z"),
+					resolvedAt: null,
+					title: "time_correction",
+					subtitle: "time_entry_correction",
+					decisionReason: null,
+					availableActions: ["cancel", "view"],
+					sourceHref: "/time-tracking",
+				},
+				{
 					id: "absence:absence-1",
 					sourceType: "absence",
 					sourceId: "absence-1",
@@ -81,16 +96,24 @@ describe("GET /api/mobile/my-requests", () => {
 				total: 1,
 			},
 			sourceErrors: [
-				{ sourceType: "travel_expense", message: "Travel expense requests could not be loaded." },
+				{
+					sourceType: "travel_expense",
+					message: "Travel expense requests could not be loaded.",
+				},
 			],
 		});
 	});
 
 	it("returns the employee's self-service requests for the active organization", async () => {
-		const response = await GET(new Request("https://app.example.com/api/mobile/my-requests"));
+		const response = await GET(
+			new Request("https://app.example.com/api/mobile/my-requests"),
+		);
 
 		expect(response.status).toBe(200);
-		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith("user-1", "org-1");
+		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith(
+			"user-1",
+			"org-1",
+		);
 		expect(mockState.getSelfServiceRequests).toHaveBeenCalledWith({
 			employeeId: "emp-1",
 			organizationId: "org-1",
@@ -112,6 +135,21 @@ describe("GET /api/mobile/my-requests", () => {
 					decisionReason: null,
 					availableActions: ["view"],
 					sourceHref: "/absences",
+				},
+				{
+					id: "approval-time-1",
+					sourceType: "time_correction",
+					sourceId: "10000000-0000-4000-8000-000000000003",
+					organizationId: "org-1",
+					employeeId: "emp-1",
+					status: "pending",
+					submittedAt: "2026-04-09T09:00:00.000Z",
+					resolvedAt: null,
+					title: "time_correction",
+					subtitle: "time_entry_correction",
+					decisionReason: null,
+					availableActions: ["view"],
+					sourceHref: "/time-tracking",
 				},
 				{
 					id: "absence:absence-1",
@@ -136,7 +174,10 @@ describe("GET /api/mobile/my-requests", () => {
 				total: 1,
 			},
 			sourceErrors: [
-				{ sourceType: "travel_expense", message: "Travel expense requests could not be loaded." },
+				{
+					sourceType: "travel_expense",
+					message: "Travel expense requests could not be loaded.",
+				},
 			],
 		});
 	});
@@ -151,10 +192,14 @@ describe("GET /api/mobile/my-requests", () => {
 			memberships: [],
 		});
 
-		const response = await GET(new Request("https://app.example.com/api/mobile/my-requests"));
+		const response = await GET(
+			new Request("https://app.example.com/api/mobile/my-requests"),
+		);
 
 		expect(response.status).toBe(400);
-		expect(await response.json()).toEqual({ error: "Active organization required" });
+		expect(await response.json()).toEqual({
+			error: "Active organization required",
+		});
 		expect(mockState.requireMobileEmployee).not.toHaveBeenCalled();
 		expect(mockState.getSelfServiceRequests).not.toHaveBeenCalled();
 	});

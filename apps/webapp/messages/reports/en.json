@@ -207,6 +207,7 @@
         "sessions": "Sessions",
         "title": "Team Breakdown"
       },
+      "title": "Project Reports",
       "toast": {
         "failedGenerate": "Failed to generate report",
         "failedPortfolio": "Failed to generate portfolio report",

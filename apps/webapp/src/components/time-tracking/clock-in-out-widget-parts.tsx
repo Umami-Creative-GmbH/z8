@@ -171,7 +171,7 @@ export function PostClockOutNotesForm({
 	t: TFnType;
 }) {
 	return (
-		<div className="flex flex-col gap-3 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-2 motion-safe:duration-200">
+		<div className="flex flex-col gap-3 motion-safe:transition-[opacity,transform] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-2 motion-safe:duration-200">
 			<div className="text-sm text-muted-foreground">
 				{t("timeTracking.addNotePrompt", "Add a note about your work (optional)")}
 			</div>

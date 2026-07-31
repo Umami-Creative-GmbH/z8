@@ -45,35 +45,42 @@ export function useWebhookDeliveryLogs(webhookId: string, open: boolean) {
 		latestLoadKey.current = loadKey;
 		let cancelled = false;
 
-		void Promise.resolve().then(async () => {
-			if (cancelled) {
-				return;
-			}
+		void Promise.resolve()
+			.then(() => {
+				if (cancelled) {
+					return null;
+				}
 
-			setRequestError(null);
-			setIsLoading(true);
-			const result = await getWebhookDeliveryLogs(webhookId, {
-				limit: WEBHOOK_DELIVERY_LOGS_PAGE_SIZE,
-				offset,
-			}).catch(() => null);
-			if (cancelled || requestId !== requestSequence.current || loadKey !== latestLoadKey.current) {
-				return;
-			}
-			if (result?.success && result.data) {
-				setDeliveryPage({
-					requestKey,
-					deliveries: result.data.deliveries,
-					total: result.data.total,
-				});
-			} else {
-				setRequestError({
-					requestKey,
-					message: result && !result.success ? result.error : "",
-				});
-			}
-			setLoadedRequestKey(requestKey);
-			setIsLoading(false);
-		});
+				setRequestError(null);
+				setIsLoading(true);
+				return getWebhookDeliveryLogs(webhookId, {
+					limit: WEBHOOK_DELIVERY_LOGS_PAGE_SIZE,
+					offset,
+				}).catch(() => null);
+			})
+			.then((result) => {
+				if (
+					cancelled ||
+					requestId !== requestSequence.current ||
+					loadKey !== latestLoadKey.current
+				) {
+					return;
+				}
+				if (result?.success && result.data) {
+					setDeliveryPage({
+						requestKey,
+						deliveries: result.data.deliveries,
+						total: result.data.total,
+					});
+				} else {
+					setRequestError({
+						requestKey,
+						message: result && !result.success ? result.error : "",
+					});
+				}
+				setLoadedRequestKey(requestKey);
+				setIsLoading(false);
+			});
 
 		return () => {
 			cancelled = true;

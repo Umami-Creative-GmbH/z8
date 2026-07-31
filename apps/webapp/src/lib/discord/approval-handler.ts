@@ -8,7 +8,11 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { approvalRequest, discordApprovalMessage, employee } from "@/db/schema";
-import { decideBotApproval } from "@/lib/bot-platform/approval-decision";
+import {
+	canAttemptBotApprovalDecision,
+	decideBotApproval,
+	loadBotApprovalDecisionTarget,
+} from "@/lib/bot-platform/approval-decision";
 import { createLogger } from "@/lib/logger";
 import { createInteractionResponse, sendMessage } from "./api";
 import { getChannelIdForUser } from "./conversation-manager";
@@ -37,7 +41,10 @@ export async function handleApprovalButtonClick(
 	const approvalId = data.id;
 
 	// Resolve user
-	const userResult = await resolveDiscordUser(discordUserId, bot.organizationId);
+	const userResult = await resolveDiscordUser(
+		discordUserId,
+		bot.organizationId,
+	);
 	if (userResult.status !== "found") {
 		logger.warn({ discordUserId }, "Unlinked user tried to act on approval");
 		await createInteractionResponse(
@@ -68,8 +75,12 @@ export async function handleApprovalButtonClick(
 			);
 			return;
 		}
+		const decisionTarget = await loadBotApprovalDecisionTarget({
+			approvalId,
+			organizationId: bot.organizationId,
+		});
 
-		if (approval.status !== "pending") {
+		if (!canAttemptBotApprovalDecision(decisionTarget)) {
 			// Update the message to show it's already resolved
 			await createInteractionResponse(
 				interaction.id,
@@ -81,7 +92,7 @@ export async function handleApprovalButtonClick(
 		}
 
 		// Verify user is the approver
-		if (approval.approverId !== userResult.user.employeeId) {
+		if (decisionTarget.approverId !== userResult.user.employeeId) {
 			logger.warn(
 				{ approvalId, employeeId: userResult.user.employeeId },
 				"Unauthorized approval attempt",
@@ -90,7 +101,10 @@ export async function handleApprovalButtonClick(
 				interaction.id,
 				interaction.token,
 				InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-				{ content: "You are not authorized to act on this approval.", flags: 64 },
+				{
+					content: "You are not authorized to act on this approval.",
+					flags: 64,
+				},
 			);
 			return;
 		}
@@ -166,7 +180,10 @@ export async function handleApprovalButtonClick(
 				.where(eq(discordApprovalMessage.id, msgRecord.id));
 		}
 	} catch (error) {
-		logger.error({ error, approvalId, action }, "Failed to process approval action");
+		logger.error(
+			{ error, approvalId, action },
+			"Failed to process approval action",
+		);
 	}
 }
 
@@ -183,7 +200,10 @@ export async function sendApprovalMessageToManager(
 	try {
 		// Get approver's user ID
 		const approverEmployee = await db.query.employee.findFirst({
-			where: and(eq(employee.id, approverId), eq(employee.organizationId, organizationId)),
+			where: and(
+				eq(employee.id, approverId),
+				eq(employee.organizationId, organizationId),
+			),
 			columns: { userId: true },
 		});
 
@@ -193,9 +213,15 @@ export async function sendApprovalMessageToManager(
 		}
 
 		// Get DM channel for the approver
-		const channelId = await getChannelIdForUser(approverEmployee.userId, organizationId);
+		const channelId = await getChannelIdForUser(
+			approverEmployee.userId,
+			organizationId,
+		);
 		if (!channelId) {
-			logger.debug({ approverId, organizationId }, "No Discord DM channel for approver");
+			logger.debug(
+				{ approverId, organizationId },
+				"No Discord DM channel for approver",
+			);
 			return;
 		}
 
@@ -242,7 +268,10 @@ export async function sendApprovalMessageToManager(
 			);
 		}
 	} catch (error) {
-		logger.error({ error, approvalId, approverId }, "Failed to send Discord approval message");
+		logger.error(
+			{ error, approvalId, approverId },
+			"Failed to send Discord approval message",
+		);
 	}
 }
 

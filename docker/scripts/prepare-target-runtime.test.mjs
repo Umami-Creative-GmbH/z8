@@ -211,14 +211,29 @@ test("generated worker manifest uses the webapp temporal-polyfill version", asyn
 	const packageJson = JSON.parse(packageJsonText);
 	const temporalPolyfillVersion = webappPackageJson.dependencies["temporal-polyfill"];
 
+	assert.equal(packageJson.type, "module");
 	assert.equal(packageJson.dependencies["temporal-polyfill"], temporalPolyfillVersion);
 	assert.ok(lockfile.includes(`temporal-polyfill@${temporalPolyfillVersion}:`));
+	assert.doesNotMatch(packageJsonText, /@js-temporal\/polyfill/);
+	assert.doesNotMatch(lockfile, /@js-temporal\/polyfill/);
 });
 
 test("generated migrated runtime manifests exclude the champion polyfill", async () => {
 	const targets = ["worker", "migration", "db-seed"];
 
 	for (const target of targets) {
+		const [packageJsonText, lockfile] = await Promise.all([
+			fs.readFile(new URL(`../targets/${target}/package.json`, import.meta.url), "utf8"),
+			fs.readFile(new URL(`../targets/${target}/pnpm-lock.yaml`, import.meta.url), "utf8"),
+		]);
+
+		assert.doesNotMatch(packageJsonText, /@js-temporal\/polyfill/);
+		assert.doesNotMatch(lockfile, /@js-temporal\/polyfill/);
+	}
+});
+
+test("generated schema-only runtimes exclude untraced Temporal packages", async () => {
+	for (const target of ["migration", "db-seed"]) {
 		const [packageJsonText, lockfile] = await Promise.all([
 			fs.readFile(new URL(`../targets/${target}/package.json`, import.meta.url), "utf8"),
 			fs.readFile(new URL(`../targets/${target}/pnpm-lock.yaml`, import.meta.url), "utf8"),
@@ -230,6 +245,8 @@ test("generated migrated runtime manifests exclude the champion polyfill", async
 			"module",
 			`${target} must execute traced TypeScript as ESM for import-only packages`,
 		);
+		assert.equal(packageJson.dependencies["temporal-polyfill"], undefined);
+		assert.doesNotMatch(lockfile, /temporal-polyfill@/);
 		assert.doesNotMatch(packageJsonText, /@js-temporal\/polyfill/);
 		assert.doesNotMatch(lockfile, /@js-temporal\/polyfill/);
 	}

@@ -13,7 +13,7 @@ import { getApprovalInboxCounts } from "@/lib/approvals/inbox/read-service";
 import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import { canAccessApprovalInbox, ForbiddenError, toHttpError } from "@/lib/authorization";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -57,10 +57,7 @@ export async function GET() {
 		}
 
 		const canManageApprovals = ability.cannot("manage", "Approval") === false;
-		const canApproveOrManage =
-			ability.cannot("approve", "Approval") === false || canManageApprovals;
-
-		if (!canApproveOrManage) {
+		if (!canAccessApprovalInbox(ability, currentEmployee)) {
 			const error = new ForbiddenError("approve", "Approval");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });

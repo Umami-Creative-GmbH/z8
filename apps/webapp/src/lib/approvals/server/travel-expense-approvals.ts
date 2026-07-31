@@ -66,7 +66,56 @@ export function createTravelExpenseApprovalWorkflow(
 	return resolvePolicyAndCreateApproval(dbService, {
 		context: buildTravelExpenseApprovalPolicyContext(input.claim),
 		defaultApproverId: input.defaultApproverId,
-	});
+	}).pipe(
+		Effect.flatMap(
+			(
+				result,
+			): Effect.Effect<ResolvePolicyAndCreateApprovalResult, AnyAppError, never> =>
+			result.kind === "auto_completed"
+				? loadAutoApprovalRequester(
+						dbService,
+						input.claim.employeeId,
+						input.claim.organizationId,
+					).pipe(
+						Effect.flatMap((requester) =>
+							persistTravelExpenseDecision(dbService, input.claim.id, requester, "approve"),
+						),
+						Effect.as(result),
+					)
+				: Effect.succeed(result),
+		),
+	);
+}
+
+function loadAutoApprovalRequester(
+	dbService: ApprovalDbService,
+	requesterEmployeeId: string,
+	organizationId: string,
+) {
+	return dbService
+		.query("getAutoApprovalRequester", async () => {
+			return await dbService.db.query.employee.findFirst({
+				where: and(
+					eq(employee.id, requesterEmployeeId),
+					eq(employee.organizationId, organizationId),
+					eq(employee.isActive, true),
+				),
+				with: { user: true },
+			});
+		})
+		.pipe(
+			Effect.flatMap((requester) =>
+				requester
+					? Effect.succeed(requester as CurrentApprover)
+					: Effect.fail(
+							new NotFoundError({
+								message: "Auto-approval requester not found",
+								entityType: "employee",
+								entityId: requesterEmployeeId,
+							}),
+						),
+			),
+		);
 }
 
 export function loadTravelExpenseApprover(

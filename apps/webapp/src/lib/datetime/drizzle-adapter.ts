@@ -10,7 +10,12 @@
 
 import { DateTime } from "luxon";
 import { fromJSDate, toJSDate, toUTC } from "./luxon-utils";
-import { dateFromInstant, type Instant, instantFromDate, systemClock } from "./temporal-core";
+import {
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+	systemClock,
+} from "./temporal-core";
 
 // ============================================================================
 // READING FROM DATABASE

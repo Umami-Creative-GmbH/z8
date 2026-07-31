@@ -15,6 +15,7 @@ import {
 } from "@tanstack/react-query";
 import type {
 	ApprovalInboxBulkDecisionResult,
+	ApprovalInboxDecisionSuccess,
 	ApprovalInboxDetailResult,
 	ApprovalInboxItem,
 	ApprovalInboxListResult,
@@ -72,7 +73,10 @@ async function fetchApprovals(
 	return response.json();
 }
 
-export async function readQueryError(response: Response, fallback: string): Promise<never> {
+export async function readQueryError(
+	response: Response,
+	fallback: string,
+): Promise<never> {
 	const rawPayload = await response.text();
 	let payload: unknown = null;
 
@@ -94,7 +98,9 @@ export async function readQueryError(response: Response, fallback: string): Prom
 	);
 }
 
-async function fetchApprovalCounts(): Promise<Record<ApprovalInboxType, number>> {
+async function fetchApprovalCounts(): Promise<
+	Record<ApprovalInboxType, number>
+> {
 	const response = await fetch("/api/approvals/inbox/counts");
 	if (!response.ok) {
 		throw new Error("Failed to fetch approval counts");
@@ -102,7 +108,9 @@ async function fetchApprovalCounts(): Promise<Record<ApprovalInboxType, number>>
 	return response.json();
 }
 
-async function fetchApprovalDetail(approvalId: string): Promise<ApprovalInboxDetailResult> {
+async function fetchApprovalDetail(
+	approvalId: string,
+): Promise<ApprovalInboxDetailResult> {
 	const response = await fetch(`/api/approvals/inbox/${approvalId}`);
 	if (!response.ok) {
 		throw new Error("Failed to fetch approval detail");
@@ -110,23 +118,120 @@ async function fetchApprovalDetail(approvalId: string): Promise<ApprovalInboxDet
 	return response.json();
 }
 
-async function approveApproval(approvalId: string): Promise<{ success: boolean; error?: string }> {
-	const response = await fetch(`/api/approvals/inbox/${approvalId}/approve`, {
-		method: "POST",
-	});
-	return response.json();
+export type ApprovalDecisionResult =
+	| {
+			success: true;
+			result: ApprovalInboxDecisionSuccess;
+			[key: string]: unknown;
+	  }
+	| { success: false; error?: string; [key: string]: unknown };
+
+export type ApprovalDecisionInput =
+	| { approvalId: string; action: "approve" }
+	| { approvalId: string; action: "reject"; reason: string };
+
+function isApprovalDecisionResult(
+	value: unknown,
+): value is ApprovalDecisionResult {
+	if (
+		typeof value !== "object" ||
+		value === null ||
+		Array.isArray(value) ||
+		!("success" in value) ||
+		!Object.hasOwn(value, "success")
+	)
+		return false;
+	if (value.success === true) {
+		return (
+			"result" in value &&
+			Object.hasOwn(value, "result") &&
+			isBulkDecisionSuccess(value.result)
+		);
+	}
+
+	return (
+		value.success === false &&
+		(!Object.hasOwn(value, "error") ||
+			("error" in value && typeof value.error === "string"))
+	);
 }
 
-async function rejectApproval(
-	approvalId: string,
-	reason: string,
-): Promise<{ success: boolean; error?: string }> {
-	const response = await fetch(`/api/approvals/inbox/${approvalId}/reject`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ reason }),
-	});
-	return response.json();
+function isApprovalRouteError(value: unknown): value is { error: string } {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		!Array.isArray(value) &&
+		"error" in value &&
+		Object.hasOwn(value, "error") &&
+		typeof value.error === "string"
+	);
+}
+
+async function readApprovalDecisionResult(
+	response: Response,
+	fallback: string,
+	expectedStatus: ApprovalInboxDecisionSuccess["status"],
+): Promise<ApprovalDecisionResult> {
+	const rawPayload = await response.text();
+	let payload: unknown;
+
+	try {
+		payload = JSON.parse(rawPayload);
+	} catch {
+		return { success: false, error: fallback };
+	}
+
+	if (isApprovalDecisionResult(payload) && response.ok === payload.success) {
+		if (payload.success && payload.result.status !== expectedStatus) {
+			return { success: false, error: fallback };
+		}
+		return payload;
+	}
+
+	if (!response.ok && isApprovalRouteError(payload)) {
+		return { ...payload, success: false };
+	}
+
+	return { success: false, error: fallback };
+}
+
+async function readApprovalDecisionRequest(
+	request: () => Promise<Response>,
+	fallback: string,
+	expectedStatus: ApprovalInboxDecisionSuccess["status"],
+): Promise<ApprovalDecisionResult> {
+	try {
+		return await readApprovalDecisionResult(
+			await request(),
+			fallback,
+			expectedStatus,
+		);
+	} catch {
+		return { success: false, error: fallback };
+	}
+}
+
+export async function dispatchApprovalDecision(
+	input: ApprovalDecisionInput,
+): Promise<ApprovalDecisionResult> {
+	const fallback =
+		input.action === "approve" ? "Failed to approve" : "Failed to reject";
+	const expectedStatus = input.action === "approve" ? "approved" : "rejected";
+
+	return readApprovalDecisionRequest(
+		() =>
+			fetch(`/api/approvals/inbox/${input.approvalId}/${input.action}`, {
+				method: "POST",
+				...(input.action === "reject"
+					? {
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({ reason: input.reason }),
+						}
+					: {}),
+			}),
+		fallback,
+		expectedStatus,
+	);
 }
 
 type BulkDecisionAction = "approve" | "reject";
@@ -180,7 +285,9 @@ export async function readBulkDecisionResult(
 	return payload as ApprovalInboxBulkDecisionResult;
 }
 
-function isBulkDecisionSuccess(value: unknown): boolean {
+function isBulkDecisionSuccess(
+	value: unknown,
+): value is ApprovalInboxDecisionSuccess {
 	return (
 		typeof value === "object" &&
 		value !== null &&
@@ -243,7 +350,8 @@ export function useApprovalInbox(filters: ApprovalInboxFilters = {}) {
 
 	return useInfiniteQuery({
 		queryKey: queryKeys.approvals.inbox(filters),
-		queryFn: ({ pageParam }) => fetchApprovals(filters, pageParam as string | undefined),
+		queryFn: ({ pageParam }) =>
+			fetchApprovals(filters, pageParam as string | undefined),
 		getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
 		initialPageParam: undefined as string | undefined,
 		placeholderData: keepPreviousData,
@@ -285,9 +393,12 @@ export function useApproveApproval() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: approveApproval,
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.approvals.all });
+		mutationFn: (approvalId: string) =>
+			dispatchApprovalDecision({ approvalId, action: "approve" }),
+		onSuccess: (result) => {
+			if (result.success) {
+				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.all });
+			}
 		},
 	});
 }
@@ -299,10 +410,17 @@ export function useRejectApproval() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ approvalId, reason }: { approvalId: string; reason: string }) =>
-			rejectApproval(approvalId, reason),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.approvals.all });
+		mutationFn: ({
+			approvalId,
+			reason,
+		}: {
+			approvalId: string;
+			reason: string;
+		}) => dispatchApprovalDecision({ approvalId, action: "reject", reason }),
+		onSuccess: (result) => {
+			if (result.success) {
+				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.all });
+			}
 		},
 	});
 }
@@ -328,8 +446,13 @@ export function useBulkReject() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ approvalIds, reason }: { approvalIds: string[]; reason: string }) =>
-			bulkRejectApprovals(approvalIds, reason),
+		mutationFn: ({
+			approvalIds,
+			reason,
+		}: {
+			approvalIds: string[];
+			reason: string;
+		}) => bulkRejectApprovals(approvalIds, reason),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.approvals.all });
 		},
@@ -339,7 +462,9 @@ export function useBulkReject() {
 /**
  * Helper hook to get all loaded approval items from infinite query.
  */
-export function useApprovalItems(filters: ApprovalInboxFilters = {}): ApprovalInboxItem[] {
+export function useApprovalItems(
+	filters: ApprovalInboxFilters = {},
+): ApprovalInboxItem[] {
 	const { data } = useApprovalInbox(filters);
 	return data?.pages.flatMap((page) => page.items) ?? [];
 }

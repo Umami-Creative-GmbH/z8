@@ -1,20 +1,28 @@
 "use server";
 
-import { and, eq, gte, isNull, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import * as z from "zod";
 import { db } from "@/db";
 import {
+	approvalRequest,
+	approvalStageAssignment,
+	approvalWorkflow,
+	approvalWorkflowStage,
 	employee,
 	surchargeCalculation,
 	workPeriod,
 	workPolicy,
 	workPolicyPresence,
 } from "@/db/schema";
+import { parseOrdinaryWorkPeriodWorkflowPayload } from "@/lib/approvals/domain-adapters/work-period-contract";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { AuthorizationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import {
@@ -22,7 +30,10 @@ import {
 	ChangePolicyServiceLive,
 	type EditCapability,
 } from "@/lib/effect/services/change-policy.service";
-import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import {
+	DatabaseService,
+	DatabaseServiceLive,
+} from "@/lib/effect/services/database.service";
 import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
 import {
 	getMonthRangeInTimezone,
@@ -30,12 +41,18 @@ import {
 	getWeekRangeInTimezone,
 } from "@/lib/time-tracking/timezone-utils";
 import type { TimeSummary } from "@/lib/time-tracking/types";
-import { getWeekBounds, type WeekStartDay } from "@/lib/user-preferences/week-start";
+import {
+	getWeekBounds,
+	type WeekStartDay,
+} from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import type { WorkPeriodWithEntries } from "../types";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import { getAssignedProjectsWithHours } from "./entry-helpers";
-import { calculatePresenceStatusCounts, type PresenceDayOfWeek } from "./presence-status";
+import {
+	calculatePresenceStatusCounts,
+	type PresenceDayOfWeek,
+} from "./presence-status";
 import { logger } from "./shared";
 import type { AssignedProject } from "./types";
 
@@ -43,12 +60,14 @@ function mapWorkPeriodWithEntries(
 	period: typeof workPeriod.$inferSelect & {
 		clockIn: WorkPeriodWithEntries["clockIn"];
 		clockOut: WorkPeriodWithEntries["clockOut"] | null;
+		approvalRequestId?: string | null;
 	},
 ): WorkPeriodWithEntries {
 	return {
 		...period,
 		clockIn: period.clockIn,
 		clockOut: period.clockOut || undefined,
+		approvalRequestId: period.approvalRequestId ?? null,
 	};
 }
 
@@ -60,13 +79,23 @@ export async function getTimeClockStatus(): Promise<{
 }> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
-		return { hasEmployee: false, employeeId: null, isClockedIn: false, activeWorkPeriod: null };
+		return {
+			hasEmployee: false,
+			employeeId: null,
+			isClockedIn: false,
+			activeWorkPeriod: null,
+		};
 	}
 
 	const currentEmployee = await getCurrentEmployee();
 
 	if (!currentEmployee) {
-		return { hasEmployee: false, employeeId: null, isClockedIn: false, activeWorkPeriod: null };
+		return {
+			hasEmployee: false,
+			employeeId: null,
+			isClockedIn: false,
+			activeWorkPeriod: null,
+		};
 	}
 
 	const activeWorkPeriod = await db.query.workPeriod.findFirst({
@@ -91,7 +120,10 @@ export async function getActiveWorkPeriod(
 	employeeId: string,
 ): Promise<WorkPeriodWithEntries | null> {
 	const activeWorkPeriod = await db.query.workPeriod.findFirst({
-		where: and(eq(workPeriod.employeeId, employeeId), isNull(workPeriod.endTime)),
+		where: and(
+			eq(workPeriod.employeeId, employeeId),
+			isNull(workPeriod.endTime),
+		),
 		with: {
 			clockIn: true,
 			clockOut: true,
@@ -100,7 +132,9 @@ export async function getActiveWorkPeriod(
 
 	return activeWorkPeriod
 		? mapWorkPeriodWithEntries(
-				activeWorkPeriod as unknown as Parameters<typeof mapWorkPeriodWithEntries>[0],
+				activeWorkPeriod as unknown as Parameters<
+					typeof mapWorkPeriodWithEntries
+				>[0],
 			)
 		: null;
 }
@@ -129,9 +163,80 @@ export async function getWorkPeriods(
 		orderBy: [workPeriod.startTime],
 	});
 
-	return (workPeriods as unknown as Parameters<typeof mapWorkPeriodWithEntries>[0][])
+	const pendingPeriodIds = workPeriods.reduce<string[]>((ids, period) => {
+		if (period.approvalStatus === "pending") ids.push(period.id);
+		return ids;
+	}, []);
+	const stableTargetByPeriodId = new Map<string, string>();
+	if (pendingPeriodIds.length > 0) {
+		const requests = await db.query.approvalRequest.findMany({
+			where: and(
+				eq(approvalRequest.organizationId, currentEmployee.organizationId),
+				eq(approvalRequest.entityType, "time_entry"),
+				inArray(approvalRequest.entityId, pendingPeriodIds),
+				eq(approvalRequest.status, "pending"),
+			),
+			columns: { id: true, entityId: true, metadata: true },
+		});
+		for (const request of requests) {
+			try {
+				parseOrdinaryWorkPeriodWorkflowPayload(request.metadata);
+				if (!stableTargetByPeriodId.has(request.entityId)) {
+					stableTargetByPeriodId.set(request.entityId, request.id);
+				}
+			} catch {
+				// A time-correction request is not an ordinary work-period target.
+			}
+		}
+
+		const workflows = await db.query.approvalWorkflow.findMany({
+			where: and(
+				eq(approvalWorkflow.organizationId, currentEmployee.organizationId),
+				eq(approvalWorkflow.sourceType, "time_entry"),
+				inArray(approvalWorkflow.sourceId, pendingPeriodIds),
+				inArray(approvalWorkflow.workflowType, [
+					"manual_time_submission",
+					"policy_clock_out",
+				]),
+				eq(approvalWorkflow.status, "pending"),
+			),
+			columns: { id: true, sourceId: true, currentStageOrder: true },
+			with: {
+				stages: {
+					where: eq(approvalWorkflowStage.status, "pending"),
+					columns: { id: true, sequence: true },
+					with: {
+						assignments: {
+							where: eq(approvalStageAssignment.status, "pending"),
+							columns: { id: true },
+							orderBy: [approvalStageAssignment.sequence],
+							limit: 1,
+						},
+					},
+				},
+			},
+		});
+		for (const workflow of workflows) {
+			if (stableTargetByPeriodId.has(workflow.sourceId)) continue;
+			const stage = workflow.stages.find(
+				(candidate) => candidate.sequence === workflow.currentStageOrder,
+			);
+			const assignment = stage?.assignments[0];
+			if (assignment)
+				stableTargetByPeriodId.set(workflow.sourceId, assignment.id);
+		}
+	}
+
+	return (
+		workPeriods as unknown as Parameters<typeof mapWorkPeriodWithEntries>[0][]
+	)
 		.reverse()
-		.map(mapWorkPeriodWithEntries);
+		.map((period) =>
+			mapWorkPeriodWithEntries({
+				...period,
+				approvalRequestId: stableTargetByPeriodId.get(period.id) ?? null,
+			}),
+		);
 }
 
 export async function getTimeSummary(
@@ -143,16 +248,12 @@ export async function getTimeSummary(
 	if (!currentEmployee || currentEmployee.id !== employeeId) {
 		return { todayMinutes: 0, weekMinutes: 0, monthMinutes: 0 };
 	}
-	const { start: todayStartDateTime, end: todayEndDateTime } = getTodayRangeInTimezone(timezone);
-	const { start: weekStartDateTime, end: weekEndDateTime } = getWeekRangeInTimezone(
-		new Date(),
-		timezone,
-		weekStartDay,
-	);
-	const { start: monthStartDateTime, end: monthEndDateTime } = getMonthRangeInTimezone(
-		new Date(),
-		timezone,
-	);
+	const { start: todayStartDateTime, end: todayEndDateTime } =
+		getTodayRangeInTimezone(timezone);
+	const { start: weekStartDateTime, end: weekEndDateTime } =
+		getWeekRangeInTimezone(new Date(), timezone, weekStartDay);
+	const { start: monthStartDateTime, end: monthEndDateTime } =
+		getMonthRangeInTimezone(new Date(), timezone);
 
 	const todayStart = dateToDB(todayStartDateTime)!;
 	const todayEnd = dateToDB(todayEndDateTime)!;
@@ -168,7 +269,10 @@ export async function getTimeSummary(
 			surchargeMinutes: surchargeCalculation.surchargeMinutes,
 		})
 		.from(workPeriod)
-		.leftJoin(surchargeCalculation, eq(surchargeCalculation.workPeriodId, workPeriod.id))
+		.leftJoin(
+			surchargeCalculation,
+			eq(surchargeCalculation.workPeriodId, workPeriod.id),
+		)
 		.where(
 			and(
 				eq(workPeriod.employeeId, employeeId),
@@ -217,18 +321,21 @@ export async function getTimeSummary(
 	};
 }
 
-export async function getAssignedProjects(): Promise<ServerActionResult<AssignedProject[]>> {
+export async function getAssignedProjects(): Promise<
+	ServerActionResult<AssignedProject[]>
+> {
 	const currentEmployee = await getCurrentEmployee();
 	if (!currentEmployee) {
 		return { success: false, error: "Employee profile not found" };
 	}
 
 	try {
-		const { projectsById, hoursByProjectId } = await getAssignedProjectsWithHours(
-			currentEmployee.id,
-			currentEmployee.organizationId,
-			currentEmployee.teamId,
-		);
+		const { projectsById, hoursByProjectId } =
+			await getAssignedProjectsWithHours(
+				currentEmployee.id,
+				currentEmployee.organizationId,
+				currentEmployee.teamId,
+			);
 
 		const projects = Array.from(projectsById.values())
 			.map((project) => ({
@@ -249,7 +356,9 @@ export async function getAssignedProjects(): Promise<ServerActionResult<Assigned
 	}
 }
 
-export async function getWorkPeriodEditCapability(workPeriodId: string): Promise<
+export async function getWorkPeriodEditCapability(
+	workPeriodId: string,
+): Promise<
 	ServerActionResult<{
 		capability: EditCapability;
 		policyName: string | null;
@@ -267,7 +376,11 @@ export async function getWorkPeriodEditCapability(workPeriodId: string): Promise
 
 	const [timezone, [selectedWorkPeriod]] = await Promise.all([
 		getUserTimezone(session.user.id),
-		db.select().from(workPeriod).where(eq(workPeriod.id, workPeriodId)).limit(1),
+		db
+			.select()
+			.from(workPeriod)
+			.where(eq(workPeriod.id, workPeriodId))
+			.limit(1),
 	]);
 
 	if (!selectedWorkPeriod) {
@@ -275,14 +388,21 @@ export async function getWorkPeriodEditCapability(workPeriodId: string): Promise
 	}
 
 	if (selectedWorkPeriod.employeeId !== currentEmployee.id) {
-		return { success: false, error: "You can only check your own work periods" };
+		return {
+			success: false,
+			error: "You can only check your own work periods",
+		};
 	}
 
 	if (!selectedWorkPeriod.endTime) {
 		return {
 			success: true,
 			data: {
-				capability: { type: "forbidden", reason: "beyond_approval_window", daysBack: 0 },
+				capability: {
+					type: "forbidden",
+					reason: "beyond_approval_window",
+					daysBack: 0,
+				},
 				policyName: null,
 			},
 		};
@@ -292,7 +412,9 @@ export async function getWorkPeriodEditCapability(workPeriodId: string): Promise
 		const result = await Effect.runPromise(
 			Effect.gen(function* (_) {
 				const policyService = yield* _(ChangePolicyService);
-				const policy = yield* _(policyService.resolvePolicy(currentEmployee.id));
+				const policy = yield* _(
+					policyService.resolvePolicy(currentEmployee.id),
+				);
 				const capability = yield* _(
 					policyService.getEditCapability({
 						employeeId: currentEmployee.id,
@@ -305,7 +427,10 @@ export async function getWorkPeriodEditCapability(workPeriodId: string): Promise
 					capability,
 					policyName: policy?.policyName || null,
 				};
-			}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive)),
+			}).pipe(
+				Effect.provide(ChangePolicyServiceLive),
+				Effect.provide(DatabaseServiceLive),
+			),
 		);
 
 		return { success: true, data: result };
@@ -324,10 +449,15 @@ export async function getPresenceStatus(employeeId: string): Promise<
 		presenceEnabled: boolean;
 	}>
 > {
-	const parsed = z.object({ employeeId: z.uuid("Invalid employee ID") }).safeParse({ employeeId });
+	const parsed = z
+		.object({ employeeId: z.uuid("Invalid employee ID") })
+		.safeParse({ employeeId });
 
 	if (!parsed.success) {
-		return { success: false as const, error: parsed.error.issues[0]?.message || "Invalid input" };
+		return {
+			success: false as const,
+			error: parsed.error.issues[0]?.message || "Invalid input",
+		};
 	}
 
 	const validatedEmployeeId = parsed.data.employeeId;
@@ -376,7 +506,9 @@ export async function getPresenceStatus(employeeId: string): Promise<
 		}
 
 		const workPolicyService = yield* _(WorkPolicyService);
-		const effectivePolicy = yield* _(workPolicyService.getEffectivePolicy(validatedEmployeeId));
+		const effectivePolicy = yield* _(
+			workPolicyService.getEffectivePolicy(validatedEmployeeId),
+		);
 
 		if (!effectivePolicy) {
 			return {
@@ -425,8 +557,13 @@ export async function getPresenceStatus(employeeId: string): Promise<
 			};
 		}
 
-		const weekStartDay = yield* _(Effect.promise(() => getUserWeekStartDay(session.user.id)));
-		const { start: weekStart, end: weekEnd } = getWeekBounds(DateTime.now(), weekStartDay);
+		const weekStartDay = yield* _(
+			Effect.promise(() => getUserWeekStartDay(session.user.id)),
+		);
+		const { start: weekStart, end: weekEnd } = getWeekBounds(
+			DateTime.now(),
+			weekStartDay,
+		);
 		const workPeriods = yield* _(
 			dbService.query("getWeekWorkPeriods", async () => {
 				return dbService.db.query.workPeriod.findMany({
@@ -444,7 +581,9 @@ export async function getPresenceStatus(employeeId: string): Promise<
 			presenceMode: presenceConfig.presenceMode,
 			requiredOnsiteDays: presenceConfig.requiredOnsiteDays,
 			requiredOnsiteFixedDays: presenceConfig.requiredOnsiteFixedDays
-				? (JSON.parse(presenceConfig.requiredOnsiteFixedDays) as PresenceDayOfWeek[])
+				? (JSON.parse(
+						presenceConfig.requiredOnsiteFixedDays,
+					) as PresenceDayOfWeek[])
 				: null,
 			workPeriods,
 		});

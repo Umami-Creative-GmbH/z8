@@ -6,12 +6,22 @@ import { useTranslate } from "@tolgee/react";
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import type { WorksCouncilAbsenceVisibility, WorksCouncilIdentityVisibility } from "@/db/schema";
+import type {
+	WorksCouncilAbsenceVisibility,
+	WorksCouncilIdentityVisibility,
+} from "@/db/schema";
 import type { WorksCouncilSettingsFormValues } from "@/lib/works-council/settings";
+import { runWithBusyState } from "./run-with-busy-state";
 
 function parseCommaSeparatedIds(value: string) {
 	return value.split(",").flatMap((item) => {
@@ -49,18 +59,32 @@ export function WorksCouncilSettingsForm({
 				return;
 			}
 
-			setLoading(true);
-			const result = await onSave(value);
-			setLoading(false);
+			await runWithBusyState(setLoading, async () => {
+				try {
+					const result = await onSave(value);
 
-			if (result.success) {
-				toast.success(t("settings.worksCouncil.saved", "Works Council settings saved"));
-			} else {
-				toast.error(
-					result.error ??
-						t("settings.worksCouncil.saveError", "Failed to save Works Council settings"),
-				);
-			}
+					if (result.success) {
+						toast.success(
+							t("settings.worksCouncil.saved", "Works Council settings saved"),
+						);
+					} else {
+						toast.error(
+							result.error ??
+								t(
+									"settings.worksCouncil.saveError",
+									"Failed to save Works Council settings",
+								),
+						);
+					}
+				} catch {
+					toast.error(
+						t(
+							"settings.worksCouncil.saveError",
+							"Failed to save Works Council settings",
+						),
+					);
+				}
+			});
 		},
 	});
 	const controlsDisabled = loading;
@@ -92,24 +116,38 @@ export function WorksCouncilSettingsForm({
 							{(field) => (
 								<div className="space-y-2">
 									<Label htmlFor="works-council-identity-visibility">
-										{t("settings.worksCouncil.identityVisibility", "Identity visibility")}
+										{t(
+											"settings.worksCouncil.identityVisibility",
+											"Identity visibility",
+										)}
 									</Label>
 									<select
 										id="works-council-identity-visibility"
-										aria-label={t("settings.worksCouncil.identityVisibility", "Identity visibility")}
+										aria-label={t(
+											"settings.worksCouncil.identityVisibility",
+											"Identity visibility",
+										)}
 										name="identityVisibility"
 										className="flex h-10 w-full rounded-md border border-input px-3 py-2 text-sm text-foreground"
 										value={field.state.value}
 										onChange={(event) =>
-											field.handleChange(event.target.value as WorksCouncilIdentityVisibility)
+											field.handleChange(
+												event.target.value as WorksCouncilIdentityVisibility,
+											)
 										}
 										disabled={controlsDisabled}
 									>
 										<option value="aggregated">
-											{t("settings.worksCouncil.identity.aggregated", "Aggregated")}
+											{t(
+												"settings.worksCouncil.identity.aggregated",
+												"Aggregated",
+											)}
 										</option>
 										<option value="pseudonymized">
-											{t("settings.worksCouncil.identity.pseudonymized", "Pseudonymized")}
+											{t(
+												"settings.worksCouncil.identity.pseudonymized",
+												"Pseudonymized",
+											)}
 										</option>
 										<option value="named">
 											{t("settings.worksCouncil.identity.named", "Named")}
@@ -123,16 +161,24 @@ export function WorksCouncilSettingsForm({
 							{(field) => (
 								<div className="space-y-2">
 									<Label htmlFor="works-council-absence-visibility">
-										{t("settings.worksCouncil.absenceVisibility", "Absence visibility")}
+										{t(
+											"settings.worksCouncil.absenceVisibility",
+											"Absence visibility",
+										)}
 									</Label>
 									<select
 										id="works-council-absence-visibility"
-										aria-label={t("settings.worksCouncil.absenceVisibility", "Absence visibility")}
+										aria-label={t(
+											"settings.worksCouncil.absenceVisibility",
+											"Absence visibility",
+										)}
 										name="absenceVisibility"
 										className="flex h-10 w-full rounded-md border border-input px-3 py-2 text-sm text-foreground"
 										value={field.state.value}
 										onChange={(event) =>
-											field.handleChange(event.target.value as WorksCouncilAbsenceVisibility)
+											field.handleChange(
+												event.target.value as WorksCouncilAbsenceVisibility,
+											)
 										}
 										disabled={controlsDisabled}
 									>
@@ -143,7 +189,10 @@ export function WorksCouncilSettingsForm({
 											{t("settings.worksCouncil.absence.grouped", "Grouped")}
 										</option>
 										<option value="category">
-											{t("settings.worksCouncil.absence.category", "Category names")}
+											{t(
+												"settings.worksCouncil.absence.category",
+												"Category names",
+											)}
 										</option>
 									</select>
 								</div>
@@ -152,7 +201,10 @@ export function WorksCouncilSettingsForm({
 					</div>
 
 					<SwitchField
-						label={t("settings.worksCouncil.exportEnabled", "Enable review exports")}
+						label={t(
+							"settings.worksCouncil.exportEnabled",
+							"Enable review exports",
+						)}
 						description={t(
 							"settings.worksCouncil.exportEnabledDescription",
 							"Allow authorized works council users to generate privacy-filtered review packs.",
@@ -164,7 +216,10 @@ export function WorksCouncilSettingsForm({
 									checked={field.state.value}
 									onCheckedChange={field.handleChange}
 									disabled={controlsDisabled}
-									aria-label={t("settings.worksCouncil.exportEnabled", "Enable review exports")}
+									aria-label={t(
+										"settings.worksCouncil.exportEnabled",
+										"Enable review exports",
+									)}
 								/>
 							)}
 						</form.Field>
@@ -174,7 +229,10 @@ export function WorksCouncilSettingsForm({
 						{(field) => (
 							<div className="space-y-2">
 								<Label htmlFor="works-council-minimum-threshold">
-									{t("settings.worksCouncil.minimumThreshold", "Minimum aggregation threshold")}
+									{t(
+										"settings.worksCouncil.minimumThreshold",
+										"Minimum aggregation threshold",
+									)}
 								</Label>
 								<Input
 									id="works-council-minimum-threshold"
@@ -184,7 +242,9 @@ export function WorksCouncilSettingsForm({
 									autoComplete="off"
 									min={5}
 									value={field.state.value}
-									onChange={(event) => field.handleChange(Number(event.target.value))}
+									onChange={(event) =>
+										field.handleChange(Number(event.target.value))
+									}
 									disabled={controlsDisabled}
 								/>
 								<p className="text-sm text-muted-foreground">
@@ -202,7 +262,10 @@ export function WorksCouncilSettingsForm({
 							{(field) => (
 								<div className="space-y-2">
 									<Label htmlFor="works-council-visible-team-ids">
-										{t("settings.worksCouncil.visibleTeamIds", "Visible team IDs")}
+										{t(
+											"settings.worksCouncil.visibleTeamIds",
+											"Visible team IDs",
+										)}
 									</Label>
 									<Input
 										id="works-council-visible-team-ids"
@@ -210,7 +273,9 @@ export function WorksCouncilSettingsForm({
 										autoComplete="off"
 										value={field.state.value.join(", ")}
 										onChange={(event) =>
-											field.handleChange(parseCommaSeparatedIds(event.target.value))
+											field.handleChange(
+												parseCommaSeparatedIds(event.target.value),
+											)
 										}
 										disabled={controlsDisabled}
 									/>
@@ -228,7 +293,10 @@ export function WorksCouncilSettingsForm({
 							{(field) => (
 								<div className="space-y-2">
 									<Label htmlFor="works-council-visible-location-ids">
-										{t("settings.worksCouncil.visibleLocationIds", "Visible location IDs")}
+										{t(
+											"settings.worksCouncil.visibleLocationIds",
+											"Visible location IDs",
+										)}
 									</Label>
 									<Input
 										id="works-council-visible-location-ids"
@@ -236,7 +304,9 @@ export function WorksCouncilSettingsForm({
 										autoComplete="off"
 										value={field.state.value.join(", ")}
 										onChange={(event) =>
-											field.handleChange(parseCommaSeparatedIds(event.target.value))
+											field.handleChange(
+												parseCommaSeparatedIds(event.target.value),
+											)
 										}
 										disabled={controlsDisabled}
 									/>
@@ -252,7 +322,12 @@ export function WorksCouncilSettingsForm({
 					</div>
 
 					<Button type="submit" disabled={loading}>
-						{loading && <IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />}
+						{loading && (
+							<IconLoader2
+								className="mr-2 size-4 animate-spin"
+								aria-hidden="true"
+							/>
+						)}
 						{t("settings.worksCouncil.save", "Save settings")}
 					</Button>
 				</CardContent>

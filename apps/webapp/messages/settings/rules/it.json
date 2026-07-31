@@ -84,22 +84,19 @@
       "activePolicyTableDescription": "Le policy vengono valutate per priorità; la prima policy attiva corrispondente fornisce la catena di approvazione.",
       "activeStatus": "Stato attivo",
       "addPolicy": "Aggiungi policy",
-      "addStage": "Aggiungi fase",
       "approvalType": {
         "absenceRequests": "Richieste di assenza",
+        "absence": "Assenza",
+        "complianceException": "Eccezione di conformità",
+        "manualTimeSubmission": "Inserimento manuale delle ore",
+        "policyClockOut": "Uscita con timbratura secondo la policy",
+        "shiftRequest": "Richiesta di turno",
+        "timeCorrection": "Correzione orario",
+        "travelExpense": "Spesa di viaggio",
         "timeEntryChanges": "Modifiche alle registrazioni orarie",
         "travelExpenses": "Spese di viaggio"
       },
       "approvalTypes": "Tipi di approvazione",
-      "approver": "Approvatore",
-      "approverEmployeeId": "ID dipendente dell'approvatore",
-      "approverEmployeeIdPlaceholder": "Esempio: dipendente_123…",
-      "approverType": {
-        "directManager": "Manager diretto",
-        "managerManager": "Manager del manager",
-        "organizationAdmin": "Amministratore dell'organizzazione",
-        "specificEmployee": "Dipendente specifico"
-      },
       "conditionsCount": "Conteggio condizioni",
       "createPolicy": "Crea politica di approvazione",
       "defaultStageLabel": "Revisione del manager",
@@ -111,7 +108,6 @@
       "loadFailed": "Impossibile caricare le politiche di approvazione.",
       "loading": "Caricamento politiche in corso…",
       "namePlaceholder": "Esempio: Escalation assenze…",
-      "noStages": "Nessuna fase di approvazione configurata.",
       "preview": {
         "ariaLabel": "Anteprima catena di approvazione",
         "badge": "Shell di anteprima",
@@ -126,11 +122,7 @@
         "title": "Riepilogo anteprima catena"
       },
       "priority": "Priorità",
-      "removeStage": "Rimuovi fase",
-      "stageNumber": "Fase {number}",
-      "stages": "Fasi di approvazione",
       "stagesCount": "Conteggio fasi",
-      "stagesDescription": "Le fasi vengono eseguite in ordine; ogni richiesta avanza solo dopo che l'approvatore corrente l'ha accettata.",
       "status": {
         "active": "Attiva",
         "inactive": "Inattiva"
@@ -139,6 +131,21 @@
       "toast": {
         "created": "Politica di approvazione creata",
         "saveFailed": "Impossibile salvare la politica di approvazione."
+      },
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Invia la richiesta al responsabile predefinito quando questa fase non riesce a individuare un approvatore.",
+          "label": "Responsabile predefinito"
+        },
+        "fail": {
+          "description": "Rifiuta la richiesta quando questa fase non riesce a individuare un approvatore.",
+          "label": "Rifiuta richiesta"
+        },
+        "label": "Comportamento alternativo",
+        "organizationAdmin": {
+          "description": "Invia la richiesta a un amministratore dell'organizzazione quando questa fase non riesce a individuare un approvatore.",
+          "label": "Amministratore dell'organizzazione"
+        }
       },
       "validation": {
         "activePolicyRequiresStage": "Le politiche attive richiedono almeno una fase di approvazione.",

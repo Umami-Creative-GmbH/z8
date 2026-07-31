@@ -109,6 +109,7 @@
     "add": "Hinzufügen",
     "adding": "Hinzufügen...",
     "all": "Alle",
+    "appName": "Z8",
     "approve": "Genehmigen",
     "assign": "Zuweisen",
     "back": "Zurück",
@@ -138,7 +139,6 @@
     "deselectAll": "Alle abwählen",
     "details": "Details",
     "download": "Herunterladen",
-    "duplicate": "Duplizieren",
     "edit": "Bearbeiten",
     "enabled": "Aktiviert",
     "error": "Fehler",
@@ -150,7 +150,6 @@
     },
     "goToDashboard": "Zum Dashboard",
     "inactive": "Inaktiv",
-    "label": "Bezeichnung",
     "loading": "Laden...",
     "loadMore": "Mehr laden",
     "months": {
@@ -247,6 +246,7 @@
     "countSelected": "{count} Mitarbeiter ausgewählt",
     "countWithMore": "{count} Mitarbeiter (+{more} weitere)",
     "noEmployeesFound": "Keine Mitarbeiter gefunden",
+    "removeSelected": "{name} entfernen",
     "role": "Rolle",
     "searchPlaceholder": "Suche nach Name, E-Mail oder Position...",
     "selected": "{count} ausgewählt",
@@ -297,6 +297,7 @@
   },
   "nav": {
     "absences": "Abwesenheiten",
+    "analytics": "Analysen",
     "approvals": "Genehmigungen",
     "calendar": "Kalender",
     "compliance": "Compliance",
@@ -314,6 +315,7 @@
     "teamAbsences": "Team-Abwesenheiten",
     "team-label": "Team",
     "time-tracking": "Zeiterfassung",
+    "today": "Heute",
     "travel-expenses": "Reisekosten",
     "worksCouncil": "Betriebsrat"
   },
@@ -326,28 +328,28 @@
       "settings": "Benachrichtigungseinstellungen",
       "viewAll": "Alle Benachrichtigungen anzeigen"
     },
-		"content": {
-			"absenceRequestSubmitted": {
-				"message": "Ihre Anfrage für {categoryName} für {dateRange} wurde eingereicht und wartet auf Genehmigung.",
-				"title": "Abwesenheitsanfrage eingereicht"
-			},
-			"passwordChanged": {
-				"message": "Ihr Passwort wurde erfolgreich geändert. Wenn Sie diese Änderung nicht vorgenommen haben, wenden Sie sich bitte sofort an den Support.",
-				"title": "Passwort geändert"
-			},
-			"shiftAssigned": {
-				"message": "Ihnen wurde eine Schicht am {shiftDate} von {startTime} bis {endTime} von {assignedByName} zugewiesen.",
-				"title": "Schicht zugewiesen"
-			},
-			"teamMemberAdded": {
-				"message": "Sie wurden von {performedByName} zum Team {teamName} hinzugefügt.",
-				"title": "Zum Team hinzugefügt"
-			},
-			"teamMemberRemoved": {
-				"message": "Sie wurden von {performedByName} aus dem Team {teamName} entfernt.",
-				"title": "Aus dem Team entfernt"
-			}
-		},
+    "content": {
+      "absenceRequestSubmitted": {
+        "message": "Ihre Anfrage für {categoryName} für {dateRange} wurde eingereicht und wartet auf Genehmigung.",
+        "title": "Abwesenheitsanfrage eingereicht"
+      },
+      "teamMemberRemoved": {
+        "message": "Sie wurden von {performedByName} aus dem Team {teamName} entfernt.",
+        "title": "Aus dem Team entfernt"
+      },
+      "passwordChanged": {
+        "message": "Ihr Passwort wurde erfolgreich geändert. Wenn Sie diese Änderung nicht vorgenommen haben, wenden Sie sich bitte sofort an den Support.",
+        "title": "Passwort geändert"
+      },
+      "shiftAssigned": {
+        "message": "Ihnen wurde eine Schicht am {shiftDate} von {startTime} bis {endTime} von {assignedByName} zugewiesen.",
+        "title": "Schicht zugewiesen"
+      },
+      "teamMemberAdded": {
+        "message": "Sie wurden von {performedByName} zum Team {teamName} hinzugefügt.",
+        "title": "Zum Team hinzugefügt"
+      }
+    },
     "description": "Überprüfen Sie Updates, Genehmigungen und Systemmeldungen in einer Zeitleiste.",
     "empty": {
       "description": "Sie sind auf dem neuesten Stand! Neue Benachrichtigungen erscheinen hier.",
@@ -434,9 +436,9 @@
   "presence": {
     "activity": {
       "lastActivity": "letzte Aktivität {date}",
-      "relativeHours": "seit {hours}h",
-      "relativeHoursMinutes": "seit {hours}h {minutes}min",
-      "relativeMinutes": "seit {minutes}min"
+      "relativeHours": "seit {hours} Std.",
+      "relativeHoursMinutes": "seit {hours} Std. {minutes} Min.",
+      "relativeMinutes": "seit {minutes} Min."
     },
     "clockedIn": "Eingestempelt",
     "clockedOut": "Ausgestempelt"

@@ -3,7 +3,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterEach,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 
 const {
 	getCurrentEmployeeMock,
@@ -13,6 +21,7 @@ const {
 	toastSuccessMock,
 	updateProfileDetailsMock,
 	updateProfileImageMock,
+	calendarProps,
 } = vi.hoisted(() => ({
 	getCurrentEmployeeMock: vi.fn(),
 	refreshMock: vi.fn(),
@@ -21,6 +30,7 @@ const {
 	toastSuccessMock: vi.fn(),
 	updateProfileDetailsMock: vi.fn(),
 	updateProfileImageMock: vi.fn(),
+	calendarProps: [] as Array<{ endMonth?: Date }>,
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -68,12 +78,19 @@ vi.mock("@/components/user-avatar", () => ({
 
 vi.mock("@/components/ui/popover", () => ({
 	Popover: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-	PopoverContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-	PopoverTrigger: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	PopoverContent: ({ children }: { children: ReactNode }) => (
+		<div>{children}</div>
+	),
+	PopoverTrigger: ({ children }: { children: ReactNode }) => (
+		<div>{children}</div>
+	),
 }));
 
 vi.mock("@/components/ui/calendar", () => ({
-	Calendar: () => <div>calendar</div>,
+	Calendar: (props: { endMonth?: Date }) => {
+		calendarProps.push(props);
+		return <div>calendar</div>;
+	},
 }));
 
 import { ProfileForm } from "./profile-form";
@@ -126,6 +143,7 @@ function renderProfileForm(user?: {
 describe("ProfileForm", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		calendarProps.length = 0;
 		getCurrentEmployeeMock.mockResolvedValue({
 			firstName: "Employee",
 			lastName: "Record",
@@ -133,8 +151,36 @@ describe("ProfileForm", () => {
 			pronouns: "she/her",
 			birthday: "2020-01-02T00:00:00.000Z",
 		});
-		updateProfileDetailsMock.mockResolvedValue({ success: true, data: undefined });
-		updateProfileImageMock.mockResolvedValue({ success: true, data: undefined });
+		updateProfileDetailsMock.mockResolvedValue({
+			success: true,
+			data: undefined,
+		});
+		updateProfileImageMock.mockResolvedValue({
+			success: true,
+			data: undefined,
+		});
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("captures a fresh UTC calendar limit for each mounted form", async () => {
+		vi.useFakeTimers({ toFake: ["Date"] });
+		vi.setSystemTime("2026-01-02T03:04:05.000Z");
+		const first = renderProfileForm();
+		await screen.findByLabelText("Birthday");
+		expect(calendarProps.at(-1)?.endMonth?.toISOString()).toBe(
+			"2026-01-02T03:04:05.000Z",
+		);
+
+		first.unmount();
+		vi.setSystemTime("2026-07-30T12:13:14.000Z");
+		renderProfileForm();
+		await screen.findByLabelText("Birthday");
+		expect(calendarProps.at(-1)?.endMonth?.toISOString()).toBe(
+			"2026-07-30T12:13:14.000Z",
+		);
 	});
 
 	it("renders first and last name fields without the old Name input", async () => {
@@ -151,8 +197,14 @@ describe("ProfileForm", () => {
 
 		expect(await screen.findByText("Profile Information")).toBeTruthy();
 
-		expect(tMock).toHaveBeenCalledWith("settings.profile.information", "Profile Information");
-		expect(tMock).toHaveBeenCalledWith("settings.profile.firstName", "First Name");
+		expect(tMock).toHaveBeenCalledWith(
+			"settings.profile.information",
+			"Profile Information",
+		);
+		expect(tMock).toHaveBeenCalledWith(
+			"settings.profile.firstName",
+			"First Name",
+		);
 		expect(tMock).toHaveBeenCalledWith("settings.profile.gender.male", "Male");
 		expect(tMock).toHaveBeenCalledWith(
 			"settings.profile.birthday.placeholder",
@@ -206,7 +258,9 @@ describe("ProfileForm", () => {
 
 		expect(helpImproveProduct.getAttribute("aria-checked")).toBe("false");
 		expect(
-			screen.getByText("Share usage insights so we can make Z8 more reliable and useful."),
+			screen.getByText(
+				"Share usage insights so we can make Z8 more reliable and useful.",
+			),
 		).toBeTruthy();
 	});
 
@@ -277,7 +331,9 @@ describe("ProfileForm", () => {
 		fireEvent.change(pronounsInput, { target: { value: "x".repeat(51) } });
 		fireEvent.click(screen.getByRole("button", { name: "Update Profile" }));
 
-		expect(await screen.findByText("Pronouns must be 50 characters or less")).toBeTruthy();
+		expect(
+			await screen.findByText("Pronouns must be 50 characters or less"),
+		).toBeTruthy();
 		expect(updateProfileDetailsMock).not.toHaveBeenCalled();
 	});
 
@@ -325,7 +381,9 @@ describe("ProfileForm", () => {
 	});
 
 	it("uses example-style placeholders and the saving ellipsis in the profile form", async () => {
-		let resolveUpdate: ((value: { success: true; data: undefined }) => void) | undefined;
+		let resolveUpdate:
+			| ((value: { success: true; data: undefined }) => void)
+			| undefined;
 		updateProfileDetailsMock.mockImplementation(
 			() =>
 				new Promise<{ success: true; data: undefined }>((resolve) => {
@@ -340,9 +398,9 @@ describe("ProfileForm", () => {
 
 		expect(firstNameInput.getAttribute("placeholder")).toBe("Ada…");
 		expect(lastNameInput.getAttribute("placeholder")).toBe("Lovelace…");
-		expect(screen.getByLabelText("Custom pronouns").getAttribute("placeholder")).toBe(
-			"e.g., xe/xem…",
-		);
+		expect(
+			screen.getByLabelText("Custom pronouns").getAttribute("placeholder"),
+		).toBe("e.g., xe/xem…");
 
 		fireEvent.click(screen.getByRole("button", { name: "Update Profile" }));
 
@@ -360,10 +418,16 @@ describe("ProfileForm", () => {
 		await screen.findByRole("button", { name: "Remove Picture" });
 
 		expect(screen.queryByText("Profile Picture")).toBeNull();
-		expect(screen.queryByText("JPG, PNG or WebP. Max 5MB. Recommended 400x400px")).toBeNull();
-		expect(screen.getAllByRole("button", { name: "Change Picture" })).toHaveLength(1);
+		expect(
+			screen.queryByText("JPG, PNG or WebP. Max 5MB. Recommended 400x400px"),
+		).toBeNull();
+		expect(
+			screen.getAllByRole("button", { name: "Change Picture" }),
+		).toHaveLength(1);
 
-		const removePictureButton = screen.getByRole("button", { name: "Remove Picture" });
+		const removePictureButton = screen.getByRole("button", {
+			name: "Remove Picture",
+		});
 		expect(removePictureButton.className).toContain("absolute");
 		expect(removePictureButton.className).toContain("top-0");
 		expect(removePictureButton.className).toContain("right-0");

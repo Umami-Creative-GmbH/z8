@@ -48,6 +48,7 @@
       "event": "Event",
       "failed": "Failed",
       "http": "HTTP",
+      "loadError": "Failed to load delivery logs",
       "payload": "Payload",
       "pending": "Pending",
       "response": "Response",

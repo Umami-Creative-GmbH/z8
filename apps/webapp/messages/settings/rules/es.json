@@ -84,22 +84,19 @@
       "activePolicyTableDescription": "Las políticas se evalúan por prioridad; la primera política activa que coincida proporciona la cadena de aprobación.",
       "activeStatus": "Estado activo",
       "addPolicy": "Añadir política",
-      "addStage": "Añadir etapa",
       "approvalType": {
         "absenceRequests": "Solicitudes de ausencia",
+        "absence": "Ausencia",
+        "complianceException": "Excepción de cumplimiento",
+        "manualTimeSubmission": "Envío manual de tiempo",
+        "policyClockOut": "Salida de reloj según la política",
+        "shiftRequest": "Solicitud de turno",
+        "timeCorrection": "Corrección de tiempo",
+        "travelExpense": "Gasto de viaje",
         "timeEntryChanges": "Cambios en el registro de tiempo",
         "travelExpenses": "Gastos de viaje"
       },
       "approvalTypes": "Tipos de aprobación",
-      "approver": "Aprobador",
-      "approverEmployeeId": "ID de empleado del aprobador",
-      "approverEmployeeIdPlaceholder": "Ejemplo: empleado_123…",
-      "approverType": {
-        "directManager": "Gerente directo",
-        "managerManager": "Gerente del gerente",
-        "organizationAdmin": "Administrador de la organización",
-        "specificEmployee": "Empleado específico"
-      },
       "conditionsCount": "Número de condiciones",
       "createPolicy": "Crear política de aprobación",
       "defaultStageLabel": "Revisión del gerente",
@@ -111,7 +108,6 @@
       "loadFailed": "No se pudieron cargar las políticas de aprobación.",
       "loading": "Cargando políticas…",
       "namePlaceholder": "Ejemplo: Escalada de ausencias…",
-      "noStages": "Aún no hay etapas de aprobación configuradas.",
       "preview": {
         "ariaLabel": "Vista previa de la cadena de aprobación",
         "badge": "Shell de vista previa",
@@ -126,11 +122,7 @@
         "title": "Resumen de la cadena de vista previa"
       },
       "priority": "Prioridad",
-      "removeStage": "Eliminar etapa",
-      "stageNumber": "Etapa {number}",
-      "stages": "Etapas de aprobación",
       "stagesCount": "Número de etapas",
-      "stagesDescription": "Las etapas se ejecutan en orden; cada solicitud avanza solo después de que el aprobador actual la acepta.",
       "status": {
         "active": "Activo",
         "inactive": "Inactivo"
@@ -139,6 +131,21 @@
       "toast": {
         "created": "Política de aprobación creada",
         "saveFailed": "No se pudo guardar la política de aprobación."
+      },
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Envíe la solicitud al gerente predeterminado cuando esta etapa no pueda resolver un aprobador.",
+          "label": "Gerente predeterminado"
+        },
+        "fail": {
+          "description": "Rechace la solicitud cuando esta etapa no pueda resolver un aprobador.",
+          "label": "Rechazar solicitud"
+        },
+        "label": "Comportamiento alternativo",
+        "organizationAdmin": {
+          "description": "Envíe la solicitud a un administrador de la organización cuando esta etapa no pueda resolver un aprobador.",
+          "label": "Administrador de la organización"
+        }
       },
       "validation": {
         "activePolicyRequiresStage": "Las políticas activas requieren al menos una etapa de aprobación.",

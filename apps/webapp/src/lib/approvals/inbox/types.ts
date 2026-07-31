@@ -28,6 +28,7 @@ export interface ApprovalInboxSummary {
 	subtitle: string;
 	detail: string;
 	badge: { label: string; color: string | null } | null;
+	stage?: { name: string; order: number };
 }
 
 export interface ApprovalInboxTiming {
@@ -69,15 +70,29 @@ export type ApprovalInboxDetailSection =
 	| {
 			type: "key_value";
 			title: string;
-			rows: Array<{ label: string; value: string; tone?: "default" | "warning" | "danger" }>;
+			rows: Array<{
+				label: string;
+				value: string;
+				tone?: "default" | "warning" | "danger";
+			}>;
 	  }
 	| { type: "text"; title: string; body: string }
 	| {
 			type: "timeline";
 			title: string;
-			events: Array<{ id: string; label: string; at: string; actorName: string | null }>;
+			events: Array<{
+				id: string;
+				label: string;
+				at: string;
+				actorName: string | null;
+			}>;
 	  }
-	| { type: "callout"; title: string; body: string; tone: "info" | "warning" | "danger" };
+	| {
+			type: "callout";
+			title: string;
+			body: string;
+			tone: "info" | "warning" | "danger";
+	  };
 
 export interface ApprovalInboxDetailResult {
 	item: ApprovalInboxItem;
@@ -108,7 +123,12 @@ export interface ApprovalInboxDecisionSuccess {
 
 export interface ApprovalInboxDecisionFailure {
 	id: string;
-	code: "stale" | "forbidden" | "not_found" | "unsupported" | "validation_failed";
+	code:
+		| "stale"
+		| "forbidden"
+		| "not_found"
+		| "unsupported"
+		| "validation_failed";
 	message: string;
 }
 

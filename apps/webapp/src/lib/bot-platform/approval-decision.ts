@@ -1,6 +1,8 @@
 import "@/lib/approvals/init";
 import {
 	approveApprovalInboxItem,
+	canAttemptApprovalInboxDecisionTarget,
+	loadApprovalInboxDecisionTarget,
 	rejectApprovalInboxItem,
 } from "@/lib/approvals/inbox/decision-service";
 import type { BotPlatform } from "./types";
@@ -11,6 +13,25 @@ const platformNames: Record<BotPlatform, string> = {
 	discord: "Discord",
 	slack: "Slack",
 };
+
+export function canAttemptBotApprovalDecision(input: {
+	status: string;
+	workflowKind:
+		| "time_correction"
+		| "manual_time_submission"
+		| "policy_clock_out"
+		| "unclassified"
+		| null;
+}): boolean {
+	return canAttemptApprovalInboxDecisionTarget(input);
+}
+
+export function loadBotApprovalDecisionTarget(input: {
+	approvalId: string;
+	organizationId: string;
+}) {
+	return loadApprovalInboxDecisionTarget(input);
+}
 
 export async function decideBotApproval({
 	approvalId,
@@ -26,7 +47,11 @@ export async function decideBotApproval({
 	platform: BotPlatform;
 }) {
 	if (action === "approve") {
-		return approveApprovalInboxItem({ approvalId, actorEmployeeId, organizationId });
+		return approveApprovalInboxItem({
+			approvalId,
+			actorEmployeeId,
+			organizationId,
+		});
 	}
 
 	const platformName = platformNames[platform];

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { ApprovalRoutingPolicyValidationError } from "../routing/policy-matcher";
 import { findMatchingPolicy, validatePolicyDraft } from "./matcher";
-import type { ApprovalPolicyDraft, ApprovalPolicyEvaluationContext } from "./types";
+import type {
+	ApprovalPolicyDraft,
+	ApprovalPolicyEvaluationContext,
+} from "./types";
 
 const context: ApprovalPolicyEvaluationContext = {
 	organizationId: "org_1",
@@ -23,12 +27,24 @@ const matchingPolicy: ApprovalPolicyDraft = {
 	isActive: true,
 	priority: 10,
 	conditions: [
-		{ conditionType: "approval_type", operator: "in", values: ["absence_entry"] },
+		{
+			conditionType: "approval_type",
+			operator: "in",
+			values: ["absence_entry"],
+		},
 		{ conditionType: "team", operator: "equals", value: "team_1" },
 		{ conditionType: "location", operator: "equals", value: "loc_1" },
 		{ conditionType: "absence_category", operator: "equals", value: "cat_1" },
-		{ conditionType: "employee_group", operator: "in", values: ["group_1", "group_2"] },
-		{ conditionType: "overtime_risk", operator: "in", values: ["warning", "violation"] },
+		{
+			conditionType: "employee_group",
+			operator: "in",
+			values: ["group_1", "group_2"],
+		},
+		{
+			conditionType: "overtime_risk",
+			operator: "in",
+			values: ["warning", "violation"],
+		},
 		{
 			conditionType: "travel_expense_amount",
 			operator: "between",
@@ -36,7 +52,15 @@ const matchingPolicy: ApprovalPolicyDraft = {
 			amountMax: 1000,
 		},
 	],
-	stages: [{ id: "stage_1", stepOrder: 1, label: "Manager", approverType: "direct_manager" }],
+	stages: [
+		{
+			id: "stage_1",
+			stepOrder: 1,
+			label: "Manager",
+			approverType: "direct_manager",
+			fallbackBehavior: "fail",
+		},
+	],
 };
 
 describe("findMatchingPolicy", () => {
@@ -54,44 +78,171 @@ describe("findMatchingPolicy", () => {
 			{ ...matchingPolicy, isActive: false },
 			{
 				...matchingPolicy,
-				conditions: [{ conditionType: "team", operator: "equals", value: "team_x" }],
+				conditions: [
+					{ conditionType: "team", operator: "equals", value: "team_x" },
+				],
 			},
 		]);
 
 		expect(result).toBeNull();
 	});
 
-	it("rejects employee group conditions with unsupported operators", () => {
-		const result = findMatchingPolicy(context, [
+	it("throws for active employee group conditions with unsupported operators", () => {
+		expect(() =>
+			findMatchingPolicy(context, [
+				{
+					...matchingPolicy,
+					conditions: [
+						{
+							conditionType: "employee_group",
+							operator: "gte",
+							value: "group_1",
+						},
+					],
+				},
+			]),
+		).toThrow(ApprovalRoutingPolicyValidationError);
+	});
+
+	it("throws for active string conditions without in values", () => {
+		expect(() =>
+			findMatchingPolicy(context, [
+				{
+					...matchingPolicy,
+					conditions: [
+						{ conditionType: "team", operator: "in", value: "team_1" },
+					],
+				},
+			]),
+		).toThrow(ApprovalRoutingPolicyValidationError);
+	});
+
+	it("throws for active employee group conditions without in values", () => {
+		expect(() =>
+			findMatchingPolicy(context, [
+				{
+					...matchingPolicy,
+					conditions: [
+						{
+							conditionType: "employee_group",
+							operator: "in",
+							value: "group_1",
+						},
+					],
+				},
+			]),
+		).toThrow(ApprovalRoutingPolicyValidationError);
+	});
+
+	it("matches a canonical time correction policy for legacy time entries", () => {
+		const result = findMatchingPolicy(
+			{ ...context, approvalType: "time_entry" },
+			[
+				{
+					...matchingPolicy,
+					conditions: [
+						{
+							conditionType: "approval_type",
+							operator: "equals",
+							value: "time_correction",
+						},
+					],
+				},
+			],
+		);
+
+		expect(result?.id).toBe(matchingPolicy.id);
+	});
+
+	it("does not broaden a null legacy team to a team condition", () => {
+		const result = findMatchingPolicy({ ...context, teamId: null }, [
 			{
 				...matchingPolicy,
-				conditions: [{ conditionType: "employee_group", operator: "gte", value: "group_1" }],
+				conditions: [
+					{ conditionType: "team", operator: "equals", value: "team_1" },
+				],
 			},
 		]);
 
 		expect(result).toBeNull();
 	});
 
-	it("does not treat value as values for in string conditions", () => {
-		const result = findMatchingPolicy(context, [
-			{
-				...matchingPolicy,
-				conditions: [{ conditionType: "team", operator: "in", value: "team_1" }],
-			},
-		]);
+	it("fails closed for an unknown runtime legacy approval type", () => {
+		const result = findMatchingPolicy(
+			{ ...context, approvalType: "unknown_type" as never },
+			[{ ...matchingPolicy, conditions: [] }],
+		);
 
 		expect(result).toBeNull();
 	});
 
-	it("does not treat value as values for in employee group conditions", () => {
+	it("throws for a malformed active organization policy before a lower policy can match", () => {
+		const malformedPolicy: ApprovalPolicyDraft = {
+			...matchingPolicy,
+			id: "malformed",
+			priority: 1,
+			conditions: [{ conditionType: "team", operator: "gte", value: "team_1" }],
+		};
+		const lowerPriorityPolicy: ApprovalPolicyDraft = {
+			...matchingPolicy,
+			id: "lower-priority",
+			priority: 2,
+			conditions: [],
+		};
+
+		expect(() =>
+			findMatchingPolicy(context, [lowerPriorityPolicy, malformedPolicy]),
+		).toThrow(ApprovalRoutingPolicyValidationError);
+	});
+
+	it("throws when a later active organization policy is malformed after an earlier match", () => {
+		expect(() =>
+			findMatchingPolicy(context, [
+				{ ...matchingPolicy, id: "first-match", priority: 1, conditions: [] },
+				{
+					...matchingPolicy,
+					id: "later-malformed",
+					priority: 2,
+					conditions: [
+						{ conditionType: "team", operator: "gte", value: "team_1" },
+					],
+				},
+			]),
+		).toThrow(ApprovalRoutingPolicyValidationError);
+	});
+
+	it("ignores a malformed foreign policy", () => {
 		const result = findMatchingPolicy(context, [
 			{
 				...matchingPolicy,
-				conditions: [{ conditionType: "employee_group", operator: "in", value: "group_1" }],
+				id: "foreign-malformed",
+				organizationId: "org_foreign",
+				priority: 1,
+				conditions: [
+					{ conditionType: "team", operator: "gte", value: "team_1" },
+				],
 			},
+			{ ...matchingPolicy, id: "eligible", priority: 2, conditions: [] },
 		]);
 
-		expect(result).toBeNull();
+		expect(result?.id).toBe("eligible");
+	});
+
+	it("ignores a malformed inactive policy", () => {
+		const result = findMatchingPolicy(context, [
+			{
+				...matchingPolicy,
+				id: "inactive-malformed",
+				isActive: false,
+				priority: 1,
+				conditions: [
+					{ conditionType: "team", operator: "gte", value: "team_1" },
+				],
+			},
+			{ ...matchingPolicy, id: "eligible", priority: 2, conditions: [] },
+		]);
+
+		expect(result?.id).toBe("eligible");
 	});
 });
 
@@ -106,9 +257,35 @@ describe("validatePolicyDraft", () => {
 		expect(
 			validatePolicyDraft({
 				...matchingPolicy,
-				stages: [{ id: "stage_1", stepOrder: 1, label: "Team Lead", approverType: "team_lead" }],
+				stages: [
+					{
+						id: "stage_1",
+						stepOrder: 1,
+						label: "Team Lead",
+						approverType: "team_lead",
+						fallbackBehavior: "fail",
+					},
+				],
 			}),
-		).toContain("Team lead approver stages are not available until team lead relationships exist.");
+		).toContain(
+			"Team lead approver stages are not available until team lead relationships exist.",
+		);
+	});
+
+	it("returns a legacy validation message for unsupported stage fallbacks", () => {
+		expect(
+			validatePolicyDraft({
+				...matchingPolicy,
+				stages: [
+					{
+						...matchingPolicy.stages[0],
+						fallbackBehavior: "manager" as never,
+					},
+				],
+			}),
+		).toEqual([
+			"Invalid stages[0].fallbackBehavior: an unsupported fallback behavior was provided.",
+		]);
 	});
 
 	it("rejects invalid string condition operator and value shapes", () => {
@@ -133,7 +310,11 @@ describe("validatePolicyDraft", () => {
 			validatePolicyDraft({
 				...matchingPolicy,
 				conditions: [
-					{ conditionType: "travel_expense_amount", operator: "equals", value: "750" },
+					{
+						conditionType: "travel_expense_amount",
+						operator: "equals",
+						value: "750",
+					},
 					{ conditionType: "travel_expense_amount", operator: "gte" },
 					{ conditionType: "travel_expense_amount", operator: "lte" },
 					{

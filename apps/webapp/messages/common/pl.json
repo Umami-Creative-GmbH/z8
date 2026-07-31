@@ -109,6 +109,7 @@
     "add": "Dodaj",
     "adding": "Dodawanie...",
     "all": "Wszystkie",
+    "appName": "Z8",
     "approve": "Zatwierdź",
     "assign": "Przypisz",
     "back": "Wstecz",
@@ -138,7 +139,6 @@
     "deselectAll": "Odznacz wszystko",
     "details": "Szczegóły",
     "download": "Pobierz",
-    "duplicate": "Duplikuj",
     "edit": "Edytuj",
     "enabled": "Włączone",
     "error": "Błąd",
@@ -150,7 +150,6 @@
     },
     "goToDashboard": "Przejdź do pulpitu",
     "inactive": "Nieaktywne",
-    "label": "Etykieta",
     "loading": "Ładowanie...",
     "loadMore": "Załaduj więcej",
     "months": {
@@ -247,6 +246,7 @@
     "countSelected": "Wybrano {count} pracowników",
     "countWithMore": "{count} pracowników (+{more} więcej)",
     "noEmployeesFound": "Nie znaleziono pracowników",
+    "removeSelected": "Usuń {name}",
     "role": "Rola",
     "searchPlaceholder": "Szukaj według imienia, nazwiska, adresu e-mail lub stanowiska...",
     "selected": "Wybrano {count}",
@@ -297,6 +297,7 @@
   },
   "nav": {
     "absences": "Nieobecności",
+    "analytics": "Analityka",
     "approvals": "Zatwierdzenia",
     "calendar": "Kalendarz",
     "compliance": "Zgodność",
@@ -314,6 +315,7 @@
     "teamAbsences": "Nieobecności zespołu",
     "team-label": "Zespół",
     "time-tracking": "Rejestracja czasu pracy",
+    "today": "Dzisiaj",
     "travel-expenses": "Wydatki podróżne",
     "worksCouncil": "Rada Zakładowa"
   },
@@ -326,28 +328,28 @@
       "settings": "Ustawienia powiadomień",
       "viewAll": "Wyświetl wszystkie powiadomienia"
     },
-		"content": {
-			"absenceRequestSubmitted": {
-				"message": "Twój wniosek {categoryName} na {dateRange} został wysłany i oczekuje na zatwierdzenie.",
-				"title": "Wniosek o nieobecność wysłany"
-			},
-			"passwordChanged": {
-				"message": "Twoje hasło zostało pomyślnie zmienione. Jeśli nie dokonałeś tej zmiany, skontaktuj się natychmiast z działem wsparcia.",
-				"title": "Hasło zmienione"
-			},
+    "content": {
+      "absenceRequestSubmitted": {
+        "message": "Twój wniosek {categoryName} na {dateRange} został wysłany i oczekuje na zatwierdzenie.",
+        "title": "Wniosek o nieobecność wysłany"
+      },
+      "teamMemberRemoved": {
+        "message": "Zostałeś usunięty z zespołu {teamName} przez {performedByName}.",
+        "title": "Usunięto z zespołu"
+      },
+      "passwordChanged": {
+        "message": "Twoje hasło zostało pomyślnie zmienione. Jeśli nie dokonałeś tej zmiany, skontaktuj się natychmiast z działem wsparcia.",
+        "title": "Hasło zmienione"
+      },
       "shiftAssigned": {
         "message": "Przydzielono Ci zmianę w dniu {shiftDate} od {startTime} do {endTime} przez {assignedByName}.",
         "title": "Zmiana przydzielona"
       },
-			"teamMemberAdded": {
-				"message": "Zostałeś dodany do zespołu {teamName} przez {performedByName}.",
-				"title": "Dodano do zespołu"
-			},
-			"teamMemberRemoved": {
-				"message": "Zostałeś usunięty z zespołu {teamName} przez {performedByName}.",
-				"title": "Usunięto z zespołu"
-			}
-		},
+      "teamMemberAdded": {
+        "message": "Zostałeś dodany do zespołu {teamName} przez {performedByName}.",
+        "title": "Dodano do zespołu"
+      }
+    },
     "description": "Przeglądaj aktualizacje, zatwierdzenia i alerty systemowe na jednej osi czasu.",
     "empty": {
       "description": "Jesteś na bieżąco! Nowe powiadomienia pojawią się tutaj.",
@@ -434,9 +436,9 @@
   "presence": {
     "activity": {
       "lastActivity": "ostatnia aktywność {date}",
-      "relativeHours": "od {hours}h",
-      "relativeHoursMinutes": "od {hours}h {minutes}min",
-      "relativeMinutes": "od {minutes}min"
+      "relativeHours": "od {hours} godz.",
+      "relativeHoursMinutes": "od {hours} godz. {minutes} min",
+      "relativeMinutes": "od {minutes} min"
     },
     "clockedIn": "Rozpoczęto pracę",
     "clockedOut": "Zakończono pracę"

@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
@@ -178,6 +178,12 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 		const body = await request.json();
+		if (typeof body !== "object" || body === null) {
+			return NextResponse.json(
+				{ error: "Invalid preferences array" },
+				{ status: 400 },
+			);
+		}
 		const { preferences: updates } = body;
 
 		if (!Array.isArray(updates)) {
@@ -189,6 +195,12 @@ export async function POST(request: NextRequest) {
 
 		// Validate all updates first
 		for (const update of updates) {
+			if (typeof update !== "object" || update === null) {
+				return NextResponse.json(
+					{ error: "Invalid preference update" },
+					{ status: 400 },
+				);
+			}
 			if (!NOTIFICATION_TYPES.includes(update.notificationType)) {
 				return NextResponse.json(
 					{ error: `Invalid notification type: ${update.notificationType}` },
@@ -209,45 +221,37 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
-		// Preserve "last update wins" for duplicate keys, then persist independent keys concurrently.
-		const distinctUpdates = [
-			...new Map(
-				updates.map((update) => [
-					`${update.notificationType}:${update.channel}`,
-					update,
-				]),
-			).values(),
-		];
+		const deduplicatedUpdates = new Map();
+		for (const update of updates) {
+			deduplicatedUpdates.set(
+				`${update.notificationType}:${update.channel}`,
+				update,
+			);
+		}
 
-		await Promise.all(
-			distinctUpdates.map(async (update) => {
-				const existing = await db.query.notificationPreference.findFirst({
-					where: and(
-						eq(notificationPreference.userId, session.user.id),
-						eq(
-							notificationPreference.notificationType,
-							update.notificationType,
-						),
-						eq(notificationPreference.channel, update.channel),
-					),
+		if (deduplicatedUpdates.size > 0) {
+			await db
+				.insert(notificationPreference)
+				.values(
+					Array.from(deduplicatedUpdates.values(), (update) => ({
+						userId: session.user.id,
+						notificationType: update.notificationType,
+						channel: update.channel,
+						enabled: update.enabled,
+					})),
+				)
+				.onConflictDoUpdate({
+					target: [
+						notificationPreference.userId,
+						notificationPreference.notificationType,
+						notificationPreference.channel,
+					],
+					set: {
+						enabled: sql`excluded.enabled`,
+						updatedAt: sql`CURRENT_TIMESTAMP`,
+					},
 				});
-
-				if (existing) {
-					await db
-						.update(notificationPreference)
-						.set({ enabled: update.enabled })
-						.where(eq(notificationPreference.id, existing.id));
-					return;
-				}
-
-				await db.insert(notificationPreference).values({
-					userId: session.user.id,
-					notificationType: update.notificationType,
-					channel: update.channel,
-					enabled: update.enabled,
-				});
-			}),
-		);
+		}
 
 		return NextResponse.json({ success: true, updated: updates.length });
 	} catch (error) {

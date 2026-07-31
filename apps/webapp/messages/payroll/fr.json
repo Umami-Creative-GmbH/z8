@@ -1,27 +1,22 @@
 {
   "payroll": {
-    "accessDenied": {
-      "description": "Vous n'avez pas accès aux données de paie pour l'organisation active.",
-      "help": "Demandez à un administrateur de l'organisation de vous accorder l'accès à la paie si vous avez besoin de cet espace de travail.",
-      "title": "Aucun accès à la paie"
-    },
     "actions": {
       "apply": "Appliquer",
       "downloadPdf": "Télécharger le PDF",
       "triggerExport": "Déclencher l'exportation"
     },
     "blockers": {
-      "clearFailed": "Impossible de supprimer le blocage de paie",
-      "clearFalsePositive": "Écarter le faux positif",
+      "clearFailed": "Impossible de supprimer le blocage de la paie",
+      "clearFalsePositive": "Supprimer le faux positif",
       "clearingFalsePositive": "Suppression du faux positif",
       "dateUnavailable": "Date indisponible",
       "missingClockOut": "Pointage de sortie manquant",
       "needReview": "{count} blocages de paie nécessitent une vérification",
-      "openApprovals": "Ouvrir les approbations",
+      "openApprovals": "Approbations en attente",
       "openCalendar": "Ouvrir le calendrier",
       "pendingAbsence": "Absence en attente",
-      "pendingTimeCorrection": "Correction du temps en attente",
-      "refreshAfterClearFailed": "Blocage supprimé, mais la paie n’a pas pu être actualisée",
+      "pendingTimeCorrection": "Correction de temps en attente",
+      "refreshAfterClearFailed": "Blocage levé, mais la paie n'a pas pu être actualisée",
       "unknownEmployee": "Employé inconnu"
     },
     "description": "Vérifiez les totaux de paie, l'état de préparation et les exportations pour la période sélectionnée.",
@@ -46,10 +41,13 @@
       "actionFailed": "L'action de l'espace de travail de paie a échoué",
       "activeOrganizationEmployeeRequired": "Le contexte de l'employé de l'organisation active est requis",
       "authenticationRequired": "Authentification requise",
+      "blockerNotDismissible": "Le blocage de paie ne peut pas être ignoré",
       "employeeIdsMustBeArray": "employeeIds doit être un tableau",
       "employeeIdsMustContainOnlyStrings": "employeeIds ne doit contenir que des chaînes de caractères",
       "endDateAfterStart": "La date de fin doit être postérieure ou égale à la date de début",
       "exportFormatNotConfigured": "Le format d'exportation de la paie n'est pas configuré",
+      "invalidBlockerId": "ID de blocage de paie invalide",
+      "invalidBlockerType": "Type de blocage de paie invalide",
       "mustBeIsoDate": "{field} doit être une date ISO",
       "mustBeValidIsoDate": "{field} doit être une date ISO valide",
       "noAssignedEmployees": "Aucun employé de paie n'est assigné à votre périmètre d'accès",
@@ -84,10 +82,20 @@
       "start": "Début"
     },
     "scope": {
-      "assignedEmployees": "Employés assignés",
-      "assignedTeams": "Équipes assignées",
+      "allManaged": "Tous les employés et équipes que je gère",
+      "apply": "Appliquer",
+      "cancel": "Annuler",
+      "currentScope": "Périmètre actuel",
       "description": "Restreignez cet espace de travail de paie aux employés ou équipes assignés.",
+      "noAssignedEmployees": "Aucun employé assigné dans ce périmètre de paie.",
       "noAssignedTeams": "Aucune équipe assignée dans ce périmètre de paie.",
+      "selectedEmployeesCount": "{count} employés",
+      "selectedSummary": "{summary} sélectionné(s)",
+      "selectedTeamsCount": "{count} équipes",
+      "specificEmployees": "Employés spécifiques",
+      "specificEmployeesDescription": "Choisissez les employés à inclure dans ce périmètre de paie.",
+      "specificTeams": "Équipes spécifiques",
+      "specificTeamsDescription": "Choisissez les équipes à inclure dans ce périmètre de paie.",
       "title": "Périmètre de paie"
     },
     "summary": {

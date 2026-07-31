@@ -1,17 +1,14 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
 import { db } from "@/db";
-import { approvalRequest, employee } from "@/db/schema";
-import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
-import type { ApprovalPolicyOvertimeRisk } from "@/lib/approvals/policies/types";
-import type { ApprovalDbService } from "@/lib/approvals/server/types";
+import { employee } from "@/db/schema";
 import {
+	onClockOutApproved,
 	onClockOutPendingApproval,
 	onClockOutPendingApprovalToManager,
+	onManualEntryApproved,
 } from "@/lib/notifications/triggers";
-import { logger } from "./shared";
 
 async function getApprovalNotificationParticipants(
 	employeeId: string,
@@ -50,8 +47,7 @@ async function sendPendingApprovalNotifications(params: {
 	startTime: Date;
 	endTime: Date;
 	durationMinutes: number;
-	employeeLogMessage: string;
-	managerLogMessage: string;
+	dedupeKey: string;
 }) {
 	const { employeeUserId, employeeName, managerUserId } =
 		await getApprovalNotificationParticipants(
@@ -60,168 +56,46 @@ async function sendPendingApprovalNotifications(params: {
 			params.organizationId,
 		);
 
+	const notifications: Promise<void>[] = [];
 	if (employeeUserId) {
-		void onClockOutPendingApproval({
-			workPeriodId: params.workPeriodId,
-			employeeUserId,
-			employeeName,
-			organizationId: params.organizationId,
-			startTime: params.startTime,
-			endTime: params.endTime,
-			durationMinutes: params.durationMinutes,
-		}).catch((error) => {
-			logger.error({ error }, params.employeeLogMessage);
-		});
+		notifications.push(
+			onClockOutPendingApproval({
+				workPeriodId: params.workPeriodId,
+				employeeUserId,
+				employeeName,
+				organizationId: params.organizationId,
+				startTime: params.startTime,
+				endTime: params.endTime,
+				durationMinutes: params.durationMinutes,
+				idempotencyKey: `${params.dedupeKey}:employee:pending`,
+				durable: true,
+			}),
+		);
 	}
 
 	if (managerUserId) {
-		void onClockOutPendingApprovalToManager({
-			workPeriodId: params.workPeriodId,
-			employeeUserId: employeeUserId || "",
-			employeeName,
-			organizationId: params.organizationId,
-			startTime: params.startTime,
-			endTime: params.endTime,
-			durationMinutes: params.durationMinutes,
-			managerUserId,
-		}).catch((error) => {
-			logger.error({ error }, params.managerLogMessage);
-		});
-	}
-
-	return { employeeName };
-}
-
-const approvalDbService = {
-	db,
-	query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
-} satisfies ApprovalDbService;
-
-type ApprovalRequestOptions = {
-	dbService?: ApprovalDbService;
-	notify?: boolean;
-};
-
-async function createDefaultTimeEntryApprovalRequest(
-	params: {
-		workPeriodId: string;
-		employeeId: string;
-		managerId: string;
-		organizationId: string;
-		reason: string;
-		requestKind: "manual_time_submission" | "policy_clock_out";
-	},
-	dbService: ApprovalDbService,
-) {
-	await dbService.db.insert(approvalRequest).values({
-		organizationId: params.organizationId,
-		entityType: "time_entry",
-		entityId: params.workPeriodId,
-		requestedBy: params.employeeId,
-		approverId: params.managerId,
-		status: "pending",
-		reason: params.reason,
-		metadata: { timeRequest: { kind: params.requestKind } },
-	});
-}
-
-export async function createTimeEntryApprovalRequest(
-	params: {
-		workPeriodId: string;
-		employeeId: string;
-		managerId: string;
-		organizationId: string;
-		reason: string;
-		requestKind: "manual_time_submission" | "policy_clock_out";
-		overtimeRisk: ApprovalPolicyOvertimeRisk;
-	},
-	options?: ApprovalRequestOptions,
-) {
-	const requestDbService = options?.dbService ?? approvalDbService;
-	const requester = await requestDbService.db.query.employee.findFirst({
-		where: and(
-			eq(employee.id, params.employeeId),
-			eq(employee.organizationId, params.organizationId),
-		),
-		columns: { teamId: true, organizationId: true },
-	});
-
-	try {
-		await Effect.runPromise(
-			resolvePolicyAndCreateApproval(requestDbService, {
-				context: {
-					organizationId: params.organizationId,
-					approvalType: "time_entry",
-					requesterEmployeeId: params.employeeId,
-					teamId:
-						requester?.organizationId === params.organizationId
-							? (requester.teamId ?? null)
-							: null,
-					locationId: null,
-					absenceCategoryId: null,
-					travelExpenseAmount: null,
-					overtimeRisk: params.overtimeRisk,
-					employeeGroupIds: [],
-					entityType: "time_entry",
-					entityId: params.workPeriodId,
-				},
-				defaultApproverId: params.managerId,
-				reason: params.reason,
-				metadata: { timeRequest: { kind: params.requestKind } },
+		notifications.push(
+			onClockOutPendingApprovalToManager({
+				workPeriodId: params.workPeriodId,
+				employeeUserId: employeeUserId || "",
+				employeeName,
+				organizationId: params.organizationId,
+				startTime: params.startTime,
+				endTime: params.endTime,
+				durationMinutes: params.durationMinutes,
+				managerUserId,
+				idempotencyKey: `${params.dedupeKey}:manager:pending`,
+				durable: true,
 			}),
 		);
-	} catch (error) {
-		logger.error(
-			{ error, workPeriodId: params.workPeriodId },
-			"Failed to resolve time-entry approval policy; using manager fallback",
-		);
-		await createDefaultTimeEntryApprovalRequest(params, requestDbService);
 	}
-}
+	const settled = await Promise.allSettled(notifications);
+	const rejected = settled.find(
+		(result): result is PromiseRejectedResult => result.status === "rejected",
+	);
+	if (rejected) throw rejected.reason;
 
-export async function createClockOutApprovalRequest(
-	params: {
-		workPeriodId: string;
-		employeeId: string;
-		managerId: string;
-		organizationId: string;
-		startTime: Date;
-		endTime: Date;
-		durationMinutes: number;
-	},
-	options?: ApprovalRequestOptions,
-): Promise<void> {
-	try {
-		await createTimeEntryApprovalRequest(
-			{
-				...params,
-				reason: "Clock-out requires approval (0-day policy)",
-				requestKind: "policy_clock_out",
-				overtimeRisk: "warning",
-			},
-			options,
-		);
-
-		if (options?.notify !== false) {
-			await sendClockOutApprovalNotifications(params);
-		}
-
-		logger.info(
-			{
-				workPeriodId: params.workPeriodId,
-				employeeId: params.employeeId,
-				managerId: params.managerId,
-				durationMinutes: params.durationMinutes,
-			},
-			"Clock-out approval request created",
-		);
-	} catch (error) {
-		logger.error(
-			{ error, workPeriodId: params.workPeriodId },
-			"Failed to create clock-out approval request",
-		);
-		throw error;
-	}
+	return { employeeUserId, employeeName };
 }
 
 export async function sendClockOutApprovalNotifications(params: {
@@ -232,60 +106,40 @@ export async function sendClockOutApprovalNotifications(params: {
 	startTime: Date;
 	endTime: Date;
 	durationMinutes: number;
+	dedupeKey: string;
 }) {
 	await sendPendingApprovalNotifications({
 		...params,
-		employeeLogMessage:
-			"Failed to send clock-out pending notification to employee",
-		managerLogMessage:
-			"Failed to send clock-out pending notification to manager",
 	});
 }
 
-export async function createManualEntryApprovalRequest(
-	params: {
-		workPeriodId: string;
-		employeeId: string;
-		managerId: string;
-		organizationId: string;
-		startTime: Date;
-		endTime: Date;
-		durationMinutes: number;
-		reason: string;
-	},
-	options?: ApprovalRequestOptions,
-): Promise<void> {
-	try {
-		await createTimeEntryApprovalRequest(
-			{
-				...params,
-				reason: `Manual time entry: ${params.reason}`,
-				requestKind: "manual_time_submission",
-				overtimeRisk: "none",
-			},
-			options,
+export async function sendClockOutApprovedNotification(params: {
+	workPeriodId: string;
+	employeeId: string;
+	managerId: string;
+	organizationId: string;
+	startTime: Date;
+	endTime: Date;
+	dedupeKey: string;
+}) {
+	const { employeeUserId, employeeName } =
+		await getApprovalNotificationParticipants(
+			params.employeeId,
+			params.managerId,
+			params.organizationId,
 		);
+	if (!employeeUserId) return;
 
-		if (options?.notify !== false) {
-			await sendManualEntryApprovalNotifications(params);
-		}
-
-		logger.info(
-			{
-				workPeriodId: params.workPeriodId,
-				employeeId: params.employeeId,
-				managerId: params.managerId,
-				durationMinutes: params.durationMinutes,
-			},
-			"Manual entry approval request created",
-		);
-	} catch (error) {
-		logger.error(
-			{ error, workPeriodId: params.workPeriodId },
-			"Failed to create manual entry approval request",
-		);
-		throw error;
-	}
+	await onClockOutApproved({
+		workPeriodId: params.workPeriodId,
+		employeeUserId,
+		organizationId: params.organizationId,
+		approverName: employeeName,
+		startTime: params.startTime,
+		endTime: params.endTime,
+		idempotencyKey: `${params.dedupeKey}:employee:approved`,
+		durable: true,
+	});
 }
 
 export async function sendManualEntryApprovalNotifications(params: {
@@ -296,12 +150,39 @@ export async function sendManualEntryApprovalNotifications(params: {
 	startTime: Date;
 	endTime: Date;
 	durationMinutes: number;
+	dedupeKey: string;
 }) {
 	await sendPendingApprovalNotifications({
 		...params,
-		employeeLogMessage:
-			"Failed to send manual entry pending notification to employee",
-		managerLogMessage:
-			"Failed to send manual entry pending notification to manager",
+	});
+}
+
+export async function sendManualEntryApprovedNotification(params: {
+	workPeriodId: string;
+	employeeId: string;
+	managerId: string;
+	organizationId: string;
+	startTime: Date;
+	endTime: Date;
+	durationMinutes: number;
+	dedupeKey: string;
+}) {
+	const { employeeUserId, employeeName } =
+		await getApprovalNotificationParticipants(
+			params.employeeId,
+			params.managerId,
+			params.organizationId,
+		);
+	if (!employeeUserId) return;
+
+	await onManualEntryApproved({
+		workPeriodId: params.workPeriodId,
+		employeeUserId,
+		organizationId: params.organizationId,
+		approverName: employeeName,
+		startTime: params.startTime,
+		endTime: params.endTime,
+		idempotencyKey: `${params.dedupeKey}:employee:approved`,
+		durable: true,
 	});
 }

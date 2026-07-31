@@ -18,6 +18,21 @@ function optimisticStateToStatus(optimisticState: OptimisticState): ClockStatus 
   };
 }
 
+function notifyBackgroundScript(type: string = "CLOCK_STATUS_CHANGED") {
+  chrome.runtime.sendMessage({ type }, () => {
+    if (chrome.runtime.lastError) {
+      console.warn("Failed to notify background script:", chrome.runtime.lastError.message);
+    }
+  });
+}
+
+function subscribeToStorageChanges(
+  listener: Parameters<typeof chrome.storage.onChanged.addListener>[0]
+) {
+  chrome.storage.onChanged.addListener(listener);
+  return () => chrome.storage.onChanged.removeListener(listener);
+}
+
 export function useClock() {
   const queryClient = useQueryClient();
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -44,11 +59,11 @@ export function useClock() {
       setLastActionState((changes.lastAction.newValue as LastAction | undefined) ?? null);
     };
 
-    chrome.storage.onChanged.addListener(handleStorageChange);
+    const removeStorageChangeListener = subscribeToStorageChanges(handleStorageChange);
 
     return () => {
       isMounted = false;
-      chrome.storage.onChanged.removeListener(handleStorageChange);
+      removeStorageChangeListener();
     };
   }, []);
 
@@ -89,21 +104,13 @@ export function useClock() {
     };
 
     updateQueueLength();
-    chrome.storage.onChanged.addListener(handleStorageChange);
+    const removeStorageChangeListener = subscribeToStorageChanges(handleStorageChange);
 
     return () => {
       isMounted = false;
-      chrome.storage.onChanged.removeListener(handleStorageChange);
+      removeStorageChangeListener();
     };
   }, []);
-
-  const notifyBackgroundScript = (type: string = "CLOCK_STATUS_CHANGED") => {
-    chrome.runtime.sendMessage({ type }, () => {
-      if (chrome.runtime.lastError) {
-        console.warn("Failed to notify background script:", chrome.runtime.lastError.message);
-      }
-    });
-  };
 
   const storeLastAction = async (action: LastAction) => {
     await storage.setLastAction(action);

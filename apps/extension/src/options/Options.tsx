@@ -21,6 +21,14 @@ function handleTest(webappUrl: string) {
   }
 }
 
+function handleTestNotification() {
+  chrome.runtime.sendMessage({
+    type: "SHOW_NOTIFICATION",
+    notificationType: "clock_in",
+    message: "This is a test notification!",
+  });
+}
+
 export function Options() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -71,14 +79,6 @@ export function Options() {
     });
   }, [form]);
 
-  const handleTestNotification = () => {
-    chrome.runtime.sendMessage({
-      type: "SHOW_NOTIFICATION",
-      notificationType: "clock_in",
-      message: "This is a test notification!",
-    });
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center text-slate-950" role="status">
@@ -114,26 +114,28 @@ export function Options() {
           >
             {/* Webapp URL */}
             <div>
-              <label
-                htmlFor="webapp-url"
-                className="block text-sm font-medium text-slate-700 mb-1.5"
-              >
-                Webapp URL
-              </label>
               <form.Field name="webappUrl">
                 {(field) => (
-                  <input
-                    id="webapp-url"
-                    name={field.name}
-                    type="url"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder="https://app.example.com…"
-                    autoComplete="url"
-                    aria-invalid={error ? "true" : undefined}
-                    aria-describedby="webapp-url-help webapp-url-error"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                  />
+                  <>
+                    <label
+                      htmlFor="webapp-url"
+                      className="block text-sm font-medium text-slate-700 mb-1.5"
+                    >
+                      Webapp URL
+                    </label>
+                    <input
+                      id="webapp-url"
+                      name={field.name}
+                      type="url"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="https://app.example.com…"
+                      autoComplete="url"
+                      aria-invalid={error ? "true" : undefined}
+                      aria-describedby="webapp-url-help webapp-url-error"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    />
+                  </>
                 )}
               </form.Field>
               <p id="webapp-url-help" className="text-xs text-slate-500 mt-1.5">
@@ -164,10 +166,14 @@ export function Options() {
               </div>
 
               <div className="space-y-3">
-                <label className="flex items-center gap-3 cursor-pointer">
+                <label
+                  htmlFor="notifications-enabled"
+                  className="flex items-center gap-3 cursor-pointer"
+                >
                   <form.Field name="notificationsEnabled">
                     {(field) => (
                       <input
+                        id="notifications-enabled"
                         name={field.name}
                         type="checkbox"
                         aria-label="Enable notifications"
@@ -186,10 +192,14 @@ export function Options() {
                   {(notificationsEnabled: boolean) =>
                     notificationsEnabled && (
                       <div className="ml-7 space-y-2">
-                        <label className="flex items-center gap-3 cursor-pointer">
+                        <label
+                          htmlFor="notify-on-clock-in"
+                          className="flex items-center gap-3 cursor-pointer"
+                        >
                           <form.Field name="notifyOnClockIn">
                             {(field) => (
                               <input
+                                id="notify-on-clock-in"
                                 name={field.name}
                                 type="checkbox"
                                 aria-label="Notify on clock in"
@@ -204,10 +214,14 @@ export function Options() {
                           </span>
                         </label>
 
-                        <label className="flex items-center gap-3 cursor-pointer">
+                        <label
+                          htmlFor="notify-on-clock-out"
+                          className="flex items-center gap-3 cursor-pointer"
+                        >
                           <form.Field name="notifyOnClockOut">
                             {(field) => (
                               <input
+                                id="notify-on-clock-out"
                                 name={field.name}
                                 type="checkbox"
                                 aria-label="Notify on clock out"

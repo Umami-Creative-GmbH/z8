@@ -348,25 +348,19 @@ export default function WorkHoursPage() {
 		const range = dateRange;
 		let isCurrent = true;
 
-		async function loadData() {
-			setLoading(true);
-			try {
+		setLoading(true);
+		void Promise.resolve()
+			.then(() => getWorkHoursAnalyticsData(range))
+			.then((result) => {
 				if (!isCurrent) {
-					return;
-				}
-
-				// Organization ID is now derived server-side from authenticated session
-				const result = await getWorkHoursAnalyticsData(range);
-				const shouldUpdate = isCurrent;
-
-				if (!shouldUpdate) {
 					return;
 				}
 
 				if (result.success && result.data) {
 					setWorkHoursData(result.data);
 				}
-			} catch (error) {
+			})
+			.catch((error) => {
 				if (!isCurrent) {
 					return;
 				}
@@ -375,14 +369,12 @@ export default function WorkHoursPage() {
 				toast.error(
 					t("analytics.workHours.errors.loadData", "Failed to load work hours analytics data"),
 				);
-			}
-
-			if (isCurrent) {
-				setLoading(false);
-			}
-		}
-
-		loadData();
+			})
+			.finally(() => {
+				if (isCurrent) {
+					setLoading(false);
+				}
+			});
 
 		return () => {
 			isCurrent = false;

@@ -1,14 +1,23 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
+import { StrictMode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { checkIsAdminMock, createVacationPolicyOnboardingMock, pushMock } =
-	vi.hoisted(() => ({
-		checkIsAdminMock: vi.fn(),
-		createVacationPolicyOnboardingMock: vi.fn(),
-		pushMock: vi.fn(),
-	}));
+const mocks = vi.hoisted(() => ({
+	checkIsAdmin: vi.fn(),
+	createVacationPolicyOnboarding: vi.fn(),
+	push: vi.fn(),
+	skipVacationPolicySetup: vi.fn(),
+	toastError: vi.fn(),
+	toastSuccess: vi.fn(),
+}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -16,79 +25,103 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 
-vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
-vi.mock("@/navigation", () => ({ useRouter: () => ({ push: pushMock }) }));
+vi.mock("sonner", () => ({
+	toast: { error: mocks.toastError, success: mocks.toastSuccess },
+}));
+
+vi.mock("@/navigation", () => ({
+	useRouter: () => ({ push: mocks.push }),
+}));
+
 vi.mock("@/components/onboarding/progress-indicator", () => ({
 	ProgressIndicator: () => null,
 }));
+
 vi.mock("./actions", () => ({
-	checkIsAdmin: checkIsAdminMock,
-	createVacationPolicyOnboarding: createVacationPolicyOnboardingMock,
-	skipVacationPolicySetup: vi.fn(),
+	checkIsAdmin: mocks.checkIsAdmin,
+	createVacationPolicyOnboarding: mocks.createVacationPolicyOnboarding,
+	skipVacationPolicySetup: mocks.skipVacationPolicySetup,
 }));
 
-import VacationPolicyPage from "./page";
+import VacationPolicyPage from "./page-client";
 
-describe("VacationPolicyPage", () => {
+function deferred<T>() {
+	let resolve!: (value: T) => void;
+	let reject!: (reason: unknown) => void;
+	const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+		resolve = resolvePromise;
+		reject = rejectPromise;
+	});
+	return { promise, reject, resolve };
+}
+
+describe("VacationPolicyPage load effect", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mocks.checkIsAdmin.mockReset();
+		mocks.createVacationPolicyOnboarding.mockReset();
+		mocks.skipVacationPolicySetup.mockReset();
 	});
 
-	it("preserves carryover state and submits the policy while loading", async () => {
-		checkIsAdminMock.mockResolvedValue({ success: true, data: true });
-		let resolveSubmit: (value: { success: true }) => void = () => undefined;
-		createVacationPolicyOnboardingMock.mockReturnValue(
-			new Promise((resolve) => {
-				resolveSubmit = resolve;
-			}),
-		);
-
+	it("keeps submit disabled after successful creation navigation", async () => {
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		mocks.createVacationPolicyOnboarding.mockResolvedValue({ success: true });
 		render(<VacationPolicyPage />);
-
-		const carryoverSwitch = await screen.findByRole("switch");
-		const carryoverInput = screen.getByPlaceholderText("5");
-		expect(carryoverSwitch.getAttribute("aria-checked")).toBe("true");
-		expect((carryoverInput as HTMLInputElement).value).toBe("5");
-
-		fireEvent.change(carryoverInput, { target: { value: "7" } });
-		fireEvent.click(screen.getByRole("switch"));
-		await waitFor(() => {
-			expect(screen.queryByPlaceholderText("5")).toBeNull();
-		});
-		fireEvent.click(screen.getByRole("switch"));
-		await waitFor(() => {
-			expect((screen.getByPlaceholderText("5") as HTMLInputElement).value).toBe(
-				"7",
-			);
-		});
 
 		const continueButton = await screen.findByRole("button", {
 			name: "Continue",
 		});
 		fireEvent.click(continueButton);
 
+		await waitFor(() =>
+			expect(mocks.push).toHaveBeenCalledWith("/onboarding/holiday-setup"),
+		);
+		expect(mocks.push).toHaveBeenCalledOnce();
+		expect(continueButton).toHaveProperty("disabled", true);
+	});
+
+	it("preserves carryover state and submits the policy while loading", async () => {
+		const request = deferred<{ success: true }>();
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		mocks.createVacationPolicyOnboarding.mockReturnValue(request.promise);
+		render(<VacationPolicyPage />);
+
+		const carryoverSwitch = await screen.findByRole("switch");
+		const carryoverInput = screen.getByPlaceholderText("5");
+		fireEvent.change(carryoverInput, { target: { value: "7" } });
+		fireEvent.click(carryoverSwitch);
+		await waitFor(() =>
+			expect(screen.queryByPlaceholderText("5")).toBeNull(),
+		);
+		fireEvent.click(carryoverSwitch);
+		await waitFor(() =>
+			expect(screen.getByPlaceholderText("5")).toHaveProperty("value", "7"),
+		);
+
+		const continueButton = screen.getByRole("button", { name: "Continue" });
+		fireEvent.click(continueButton);
+
 		await waitFor(() => {
-			expect(createVacationPolicyOnboardingMock).toHaveBeenCalledWith({
+			expect(mocks.createVacationPolicyOnboarding).toHaveBeenCalledWith({
 				name: "Standard",
 				defaultAnnualDays: 25,
 				accrualType: "annual",
 				allowCarryover: true,
 				maxCarryoverDays: 7,
 			});
-			expect(continueButton.hasAttribute("disabled")).toBe(true);
-			expect(carryoverSwitch.hasAttribute("disabled")).toBe(true);
+			expect(continueButton).toHaveProperty("disabled", true);
+			expect(carryoverSwitch).toHaveProperty("disabled", true);
 		});
 
-		resolveSubmit({ success: true });
-		await waitFor(() => {
-			expect(pushMock).toHaveBeenCalledWith("/onboarding/holiday-setup");
-		});
+		request.resolve({ success: true });
+		await waitFor(() =>
+			expect(mocks.push).toHaveBeenCalledWith("/onboarding/holiday-setup"),
+		);
 	});
 
 	it("keeps invalid policy state on screen and blocks submission", async () => {
-		checkIsAdminMock.mockResolvedValue({ success: true, data: true });
-		createVacationPolicyOnboardingMock.mockResolvedValue({ success: true });
-
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		mocks.createVacationPolicyOnboarding.mockResolvedValue({ success: true });
 		render(<VacationPolicyPage />);
 
 		const nameInput = await screen.findByPlaceholderText(
@@ -99,16 +132,126 @@ describe("VacationPolicyPage", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
 		expect(await screen.findByText("Policy name is required")).toBeTruthy();
-		expect((nameInput as HTMLInputElement).value).toBe("");
-		expect(createVacationPolicyOnboardingMock).not.toHaveBeenCalled();
-		expect(pushMock).not.toHaveBeenCalledWith("/onboarding/holiday-setup");
+		expect(nameInput).toHaveProperty("value", "");
+		expect(mocks.createVacationPolicyOnboarding).not.toHaveBeenCalled();
+		expect(mocks.push).not.toHaveBeenCalledWith("/onboarding/holiday-setup");
+	});
+
+	it("keeps skip disabled after successful skip navigation", async () => {
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		mocks.skipVacationPolicySetup.mockResolvedValue({ success: true });
+		render(<VacationPolicyPage />);
+
+		const skipButton = await screen.findByRole("button", {
+			name: "Skip for now",
+		});
+		fireEvent.click(skipButton);
+
+		await waitFor(() =>
+			expect(mocks.push).toHaveBeenCalledWith("/onboarding/holiday-setup"),
+		);
+		expect(mocks.push).toHaveBeenCalledOnce();
+		expect(skipButton).toHaveProperty("disabled", true);
+	});
+
+	it("resets submit loading and shows a safe error when creation rejects", async () => {
+		const request = deferred<never>();
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		mocks.createVacationPolicyOnboarding.mockReturnValue(request.promise);
+		render(<VacationPolicyPage />);
+
+		const continueButton = await screen.findByRole("button", {
+			name: "Continue",
+		});
+		fireEvent.click(continueButton);
+		await waitFor(() =>
+			expect(continueButton).toHaveProperty("disabled", true),
+		);
+
+		await act(async () =>
+			request.reject(new Error("private creation failure")),
+		);
+
+		await waitFor(() =>
+			expect(continueButton).toHaveProperty("disabled", false),
+		);
+		expect(mocks.toastError).toHaveBeenCalledWith(
+			"Failed to create vacation policy",
+		);
+		expect(mocks.toastSuccess).not.toHaveBeenCalled();
+		expect(mocks.push).not.toHaveBeenCalled();
+	});
+
+	it("resets skip loading and shows a safe error when skipping rejects", async () => {
+		const request = deferred<never>();
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+		mocks.skipVacationPolicySetup.mockReturnValue(request.promise);
+		render(<VacationPolicyPage />);
+
+		const skipButton = await screen.findByRole("button", {
+			name: "Skip for now",
+		});
+		fireEvent.click(skipButton);
+		await waitFor(() => expect(skipButton).toHaveProperty("disabled", true));
+
+		await act(async () => request.reject(new Error("private skip failure")));
+
+		await waitFor(() => expect(skipButton).toHaveProperty("disabled", false));
+		expect(mocks.toastError).toHaveBeenCalledWith(
+			"Failed to skip vacation policy setup",
+		);
+		expect(mocks.toastSuccess).not.toHaveBeenCalled();
+		expect(mocks.push).not.toHaveBeenCalled();
+	});
+
+	it("ignores an admin result that resolves after unmount", async () => {
+		const request = deferred<{ success: true; data: false }>();
+		mocks.checkIsAdmin.mockReturnValue(request.promise);
+		const { unmount } = render(<VacationPolicyPage />);
+		await waitFor(() => expect(mocks.checkIsAdmin).toHaveBeenCalledOnce());
+
+		unmount();
+		await act(async () => {
+			request.resolve({ success: true, data: false });
+			await request.promise;
+		});
+
+		expect(mocks.push).not.toHaveBeenCalled();
+	});
+
+	it("uses the safe fallback route when the admin check rejects", async () => {
+		const request = deferred<never>();
+		mocks.checkIsAdmin.mockReturnValue(request.promise);
+		render(<VacationPolicyPage />);
+
+		await act(async () => {
+			request.reject(new Error("private admin failure"));
+		});
+
+		await waitFor(() =>
+			expect(mocks.push).toHaveBeenCalledWith("/onboarding/notifications"),
+		);
+	});
+
+	it("keeps a live admin request during StrictMode replay", async () => {
+		mocks.checkIsAdmin.mockResolvedValue({ success: true, data: true });
+
+		render(
+			<StrictMode>
+				<VacationPolicyPage />
+			</StrictMode>,
+		);
+
+		expect(await screen.findByText("Set up vacation policy")).toBeTruthy();
+		expect(mocks.checkIsAdmin).toHaveBeenCalledTimes(2);
+		expect(mocks.push).not.toHaveBeenCalled();
 	});
 
 	it("ignores an admin check that resolves after unmount", async () => {
 		let resolveAdminCheck: (
 			value: { success: true; data: false },
 		) => void = () => undefined;
-		checkIsAdminMock.mockReturnValue(
+		mocks.checkIsAdmin.mockReturnValue(
 			new Promise((resolve) => {
 				resolveAdminCheck = resolve;
 			}),
@@ -119,6 +262,6 @@ describe("VacationPolicyPage", () => {
 		resolveAdminCheck({ success: true, data: false });
 
 		await Promise.resolve();
-		expect(pushMock).not.toHaveBeenCalled();
+		expect(mocks.push).not.toHaveBeenCalled();
 	});
 });

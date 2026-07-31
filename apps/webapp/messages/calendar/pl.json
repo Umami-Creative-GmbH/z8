@@ -234,17 +234,23 @@
       "weekSum": "Suma"
     },
     "split": {
+      "ambiguousTime": "Wybierz wystąpienie, którego chcesz użyć",
+      "chooseOccurrence": "Wybierz wystąpienie",
       "confirm": "Podziel okres pracy",
       "currentPeriod": "Bieżący okres pracy",
       "description": "Podziel ten okres pracy na dwie oddzielne sesje.",
+      "earlierOccurrence": "Wcześniejsze wystąpienie",
       "failed": "Nie udało się podzielić okresu pracy",
       "firstNotes": "Notatki dla pierwszego okresu (opcjonalnie)",
       "firstPeriod": "Pierwszy okres",
       "invalidTime": "Czas podziału musi mieścić się między czasem rozpoczęcia a zakończenia",
+      "laterOccurrence": "Późniejsze wystąpienie",
+      "nonexistentTime": "Czas podziału nie istnieje w tej dacie",
       "preview": "Podgląd",
       "secondNotes": "Notatki dla drugiego okresu (opcjonalnie)",
       "secondPeriod": "Drugi okres",
       "splitAt": "Podziel w",
+      "splitDate": "Data podziału",
       "success": "Okres pracy został pomyślnie podzielony",
       "title": "Podziel okres pracy"
     },

@@ -48,6 +48,7 @@
       "event": "Événement",
       "failed": "Échec",
       "http": "HTTP",
+      "loadError": "Échec du chargement des journaux de livraison",
       "payload": "Charge utile",
       "pending": "En attente",
       "response": "Réponse",

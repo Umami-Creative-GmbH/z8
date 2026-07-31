@@ -1,24 +1,46 @@
 "use client";
 
-import { IconDropletFilled, IconLoader2, IconMinus, IconPlus } from "@tabler/icons-react";
+import {
+	IconDropletFilled,
+	IconLoader2,
+	IconMinus,
+	IconPlus,
+} from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { updateWellnessSettings } from "@/app/[locale]/(app)/settings/wellness/actions";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import type { WaterReminderSettings } from "@/lib/validations/wellness";
-import { CUSTOM_INTERVAL_RANGE, DAILY_GOAL_RANGE } from "@/lib/wellness/water-presets";
+import {
+	CUSTOM_INTERVAL_RANGE,
+	DAILY_GOAL_RANGE,
+} from "@/lib/wellness/water-presets";
+import { runWithBusyState } from "./run-with-busy-state";
+
+const DAILY_GOAL_DROPLET_KEYS = Array.from(
+	{ length: DAILY_GOAL_RANGE.max },
+	(_, index) => `daily-goal-droplet-${index + 1}`,
+);
 
 interface WellnessSettingsFormProps {
 	initialSettings: WaterReminderSettings;
 }
 
-export function WellnessSettingsForm({ initialSettings }: WellnessSettingsFormProps) {
+export function WellnessSettingsForm({
+	initialSettings,
+}: WellnessSettingsFormProps) {
 	const { t } = useTranslate();
 	const [loading, setLoading] = useState(false);
 
@@ -30,19 +52,32 @@ export function WellnessSettingsForm({ initialSettings }: WellnessSettingsFormPr
 			dailyGoal: initialSettings.dailyGoal,
 		},
 		onSubmit: async ({ value }) => {
-			setLoading(true);
+			await runWithBusyState(setLoading, async () => {
+				try {
+					const result = await updateWellnessSettings(value);
 
-			const result = await updateWellnessSettings(value);
-
-			setLoading(false);
-
-			if (result.success) {
-				toast.success(t("settings.wellness.saved", "Wellness settings saved"));
-			} else {
-				toast.error(
-					result.error || t("settings.wellness.saveError", "Failed to save wellness settings"),
-				);
-			}
+					if (result.success) {
+						toast.success(
+							t("settings.wellness.saved", "Wellness settings saved"),
+						);
+					} else {
+						toast.error(
+							result.error ||
+								t(
+									"settings.wellness.saveError",
+									"Failed to save wellness settings",
+								),
+						);
+					}
+				} catch {
+					toast.error(
+						t(
+							"settings.wellness.saveError",
+							"Failed to save wellness settings",
+						),
+					);
+				}
+			});
 		},
 	});
 
@@ -78,9 +113,14 @@ export function WellnessSettingsForm({ initialSettings }: WellnessSettingsFormPr
 								<IconDropletFilled className="size-5 text-blue-500" />
 							</div>
 							<div>
-								<CardTitle>{t("settings.wellness.cardTitle", "Water Reminders")}</CardTitle>
+								<CardTitle>
+									{t("settings.wellness.cardTitle", "Water Reminders")}
+								</CardTitle>
 								<CardDescription className="mt-0.5">
-									{t("settings.wellness.cardDescShort", "Stay hydrated while you work")}
+									{t(
+										"settings.wellness.cardDescShort",
+										"Stay hydrated while you work",
+									)}
 								</CardDescription>
 							</div>
 						</div>
@@ -117,7 +157,10 @@ export function WellnessSettingsForm({ initialSettings }: WellnessSettingsFormPr
 								<div className="space-y-3">
 									<div className="flex items-center justify-between">
 										<Label className="text-sm font-medium">
-											{t("settings.wellness.reminderFrequency", "Reminder Frequency")}
+											{t(
+												"settings.wellness.reminderFrequency",
+												"Reminder Frequency",
+											)}
 										</Label>
 										<div className="flex items-center gap-2">
 											<span className="text-sm tabular-nums">{value} min</span>
@@ -158,7 +201,8 @@ export function WellnessSettingsForm({ initialSettings }: WellnessSettingsFormPr
 											{[30, 45, 60].map((val) => {
 												const percent =
 													((val - CUSTOM_INTERVAL_RANGE.min) /
-														(CUSTOM_INTERVAL_RANGE.max - CUSTOM_INTERVAL_RANGE.min)) *
+														(CUSTOM_INTERVAL_RANGE.max -
+															CUSTOM_INTERVAL_RANGE.min)) *
 													100;
 												return (
 													<span
@@ -189,38 +233,62 @@ export function WellnessSettingsForm({ initialSettings }: WellnessSettingsFormPr
 										{t("settings.wellness.dailyGoal", "Daily Goal")}
 									</Label>
 									<span className="text-sm tabular-nums">
-										{field.state.value} {t("settings.wellness.glasses", "glasses")}
+										{field.state.value}{" "}
+										{t("settings.wellness.glasses", "glasses")}
 									</span>
 								</div>
 								<div className="flex items-center gap-3">
 									<Button
 										type="button"
-										aria-label={t("settings.wellness.decreaseDailyGoal", "Decrease daily goal")}
+										aria-label={t(
+											"settings.wellness.decreaseDailyGoal",
+											"Decrease daily goal",
+										)}
 										variant="outline"
 										size="icon"
 										className="size-9 shrink-0 rounded-full"
 										onClick={() =>
-											field.handleChange(Math.max(DAILY_GOAL_RANGE.min, field.state.value - 1))
+											field.handleChange(
+												Math.max(DAILY_GOAL_RANGE.min, field.state.value - 1),
+											)
 										}
-										disabled={loading || !isEnabled || field.state.value <= DAILY_GOAL_RANGE.min}
+										disabled={
+											loading ||
+											!isEnabled ||
+											field.state.value <= DAILY_GOAL_RANGE.min
+										}
 									>
 										<IconMinus className="size-4" aria-hidden="true" />
 									</Button>
 									<div className="flex flex-wrap gap-1 flex-1 justify-center">
-										{Array.from({ length: field.state.value }, (_, i) => (
-											<IconDropletFilled key={i} className="size-5 text-blue-500" />
-										))}
+										{DAILY_GOAL_DROPLET_KEYS.slice(0, field.state.value).map(
+											(key) => (
+												<IconDropletFilled
+													key={key}
+													className="size-5 text-blue-500"
+												/>
+											),
+										)}
 									</div>
 									<Button
 										type="button"
-										aria-label={t("settings.wellness.increaseDailyGoal", "Increase daily goal")}
+										aria-label={t(
+											"settings.wellness.increaseDailyGoal",
+											"Increase daily goal",
+										)}
 										variant="outline"
 										size="icon"
 										className="size-9 shrink-0 rounded-full"
 										onClick={() =>
-											field.handleChange(Math.min(DAILY_GOAL_RANGE.max, field.state.value + 1))
+											field.handleChange(
+												Math.min(DAILY_GOAL_RANGE.max, field.state.value + 1),
+											)
 										}
-										disabled={loading || !isEnabled || field.state.value >= DAILY_GOAL_RANGE.max}
+										disabled={
+											loading ||
+											!isEnabled ||
+											field.state.value >= DAILY_GOAL_RANGE.max
+										}
 									>
 										<IconPlus className="size-4" aria-hidden="true" />
 									</Button>
@@ -232,7 +300,11 @@ export function WellnessSettingsForm({ initialSettings }: WellnessSettingsFormPr
 					<div className="h-px bg-border" />
 
 					{/* Save Button */}
-					<Button type="submit" disabled={loading || !isDirty} className="w-full">
+					<Button
+						type="submit"
+						disabled={loading || !isDirty}
+						className="w-full"
+					>
 						{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
 						{t("common.saveChanges", "Save Changes")}
 					</Button>

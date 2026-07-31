@@ -1,8 +1,12 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { member } from "@/db/auth-schema";
-import { employee, teamPermissions } from "@/db/schema";
-import { AuthorizationError, type DatabaseError, NotFoundError } from "../errors";
+import { employee, team, teamPermissions } from "@/db/schema";
+import {
+	AuthorizationError,
+	type DatabaseError,
+	NotFoundError,
+} from "../errors";
 import { DatabaseService } from "./database.service";
 
 export interface PermissionFlags {
@@ -30,6 +34,14 @@ export type TeamPermission =
 	| "canManageTeamSettings"
 	| "canApproveTeamRequests";
 
+function permissionMutationLockKey(
+	organizationId: string,
+	employeeId: string,
+	teamId: string | null,
+) {
+	return `team-permissions:${organizationId}:${employeeId}:${teamId ?? "organization-wide"}`;
+}
+
 export class PermissionsService extends Context.Tag("PermissionsService")<
 	PermissionsService,
 	{
@@ -40,6 +52,7 @@ export class PermissionsService extends Context.Tag("PermissionsService")<
 		) => Effect.Effect<boolean, DatabaseError>;
 		readonly getEmployeePermissions: (
 			employeeId: string,
+			organizationId: string,
 		) => Effect.Effect<EmployeePermissions[], NotFoundError | DatabaseError>;
 		readonly grantPermissions: (
 			employeeId: string,
@@ -47,7 +60,10 @@ export class PermissionsService extends Context.Tag("PermissionsService")<
 			permissions: PermissionFlags,
 			teamId: string | null,
 			grantedBy: string,
-		) => Effect.Effect<void, NotFoundError | AuthorizationError | DatabaseError>;
+		) => Effect.Effect<
+			void,
+			NotFoundError | AuthorizationError | DatabaseError
+		>;
 		readonly revokePermissions: (
 			employeeId: string,
 			organizationId: string,
@@ -122,13 +138,16 @@ export const PermissionsServiceLive = Layer.effect(
 					return false;
 				}),
 
-			getEmployeePermissions: (employeeId) =>
+			getEmployeePermissions: (employeeId, organizationId) =>
 				Effect.gen(function* (_) {
 					// Verify employee exists
 					const _emp = yield* _(
 						dbService.query("getEmployeeById", async () => {
 							return await dbService.db.query.employee.findFirst({
-								where: eq(employee.id, employeeId),
+								where: and(
+									eq(employee.id, employeeId),
+									eq(employee.organizationId, organizationId),
+								),
 							});
 						}),
 						Effect.flatMap((e) =>
@@ -148,7 +167,10 @@ export const PermissionsServiceLive = Layer.effect(
 					const permissions = yield* _(
 						dbService.query("getEmployeePermissions", async () => {
 							return await dbService.db.query.teamPermissions.findMany({
-								where: eq(teamPermissions.employeeId, employeeId),
+								where: and(
+									eq(teamPermissions.employeeId, employeeId),
+									eq(teamPermissions.organizationId, organizationId),
+								),
 							});
 						}),
 					);
@@ -166,71 +188,169 @@ export const PermissionsServiceLive = Layer.effect(
 					}));
 				}),
 
-			grantPermissions: (employeeId, organizationId, permissions, teamId, grantedBy) =>
+			grantPermissions: (
+				employeeId,
+				organizationId,
+				permissions,
+				teamId,
+				grantedBy,
+			) =>
 				Effect.gen(function* (_) {
-					// Step 1: Verify employee exists
-					const emp = yield* _(
-						dbService.query("getEmployeeById", async () => {
-							return await dbService.db.query.employee.findFirst({
-								where: eq(employee.id, employeeId),
+					const outcome = yield* _(
+						dbService.query("grantPermissions", async () => {
+							return await dbService.db.transaction(async (tx) => {
+								const target = await tx.query.employee.findFirst({
+									where: and(
+										eq(employee.id, employeeId),
+										eq(employee.organizationId, organizationId),
+									),
+								});
+								if (!target) return { _tag: "TargetNotFound" } as const;
+
+								const granter = await tx.query.employee.findFirst({
+									where: and(
+										eq(employee.id, grantedBy),
+										eq(employee.organizationId, organizationId),
+									),
+								});
+								if (!granter) return { _tag: "GranterNotFound" } as const;
+
+								let canGrant = granter.role === "admin";
+								if (!canGrant) {
+									const granterMembership = await tx.query.member.findFirst({
+										where: and(
+											eq(member.userId, granter.userId),
+											eq(member.organizationId, organizationId),
+										),
+										columns: { role: true },
+									});
+									canGrant =
+										granterMembership?.role === "owner" ||
+										granterMembership?.role === "admin";
+								}
+								if (!canGrant) return { _tag: "Unauthorized" } as const;
+
+								if (teamId) {
+									const targetTeam = await tx.query.team.findFirst({
+										where: and(
+											eq(team.id, teamId),
+											eq(team.organizationId, organizationId),
+										),
+									});
+									if (!targetTeam) return { _tag: "TeamNotFound" } as const;
+								}
+
+								const lockKey = permissionMutationLockKey(
+									organizationId,
+									employeeId,
+									teamId,
+								);
+								await tx.execute(
+									sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`,
+								);
+
+								const scopeWhere = and(
+									eq(teamPermissions.employeeId, employeeId),
+									eq(teamPermissions.organizationId, organizationId),
+									teamId
+										? eq(teamPermissions.teamId, teamId)
+										: isNull(teamPermissions.teamId),
+								);
+								const existing = await tx.query.teamPermissions.findMany({
+									where: scopeWhere,
+									orderBy: (permission, { asc }) => [asc(permission.id)],
+								});
+
+								const primary = existing[0];
+								if (primary) {
+									await tx
+										.update(teamPermissions)
+										.set({
+											canCreateTeams:
+												permissions.canCreateTeams ?? primary.canCreateTeams,
+											canManageTeamMembers:
+												permissions.canManageTeamMembers ??
+												primary.canManageTeamMembers,
+											canManageTeamSettings:
+												permissions.canManageTeamSettings ??
+												primary.canManageTeamSettings,
+											canApproveTeamRequests:
+												permissions.canApproveTeamRequests ??
+												primary.canApproveTeamRequests,
+											grantedBy,
+											grantedAt: new Date(),
+											updatedAt: new Date(),
+										})
+										.where(and(eq(teamPermissions.id, primary.id), scopeWhere));
+
+									const duplicateIds = existing.slice(1).map((row) => row.id);
+									if (duplicateIds.length > 0) {
+										await tx
+											.delete(teamPermissions)
+											.where(
+												and(
+													eq(teamPermissions.organizationId, organizationId),
+													eq(teamPermissions.employeeId, employeeId),
+													inArray(teamPermissions.id, duplicateIds),
+												),
+											);
+									}
+								} else {
+									await tx.insert(teamPermissions).values({
+										employeeId,
+										organizationId,
+										teamId,
+										canCreateTeams: permissions.canCreateTeams ?? false,
+										canManageTeamMembers:
+											permissions.canManageTeamMembers ?? false,
+										canManageTeamSettings:
+											permissions.canManageTeamSettings ?? false,
+										canApproveTeamRequests:
+											permissions.canApproveTeamRequests ?? false,
+										grantedBy,
+									});
+								}
+
+								return { _tag: "Success" } as const;
 							});
 						}),
-						Effect.flatMap((e) =>
-							e
-								? Effect.succeed(e)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Employee not found",
-											entityType: "employee",
-											entityId: employeeId,
-										}),
-									),
-						),
 					);
 
-					// Step 2: Verify employee belongs to the organization
-					if (emp.organizationId !== organizationId) {
-						yield* _(
+					if (outcome._tag === "TargetNotFound") {
+						return yield* _(
 							Effect.fail(
-								new AuthorizationError({
-									message: "Employee does not belong to this organization",
-									userId: employeeId,
-									resource: "team_permissions",
-									action: "grant",
+								new NotFoundError({
+									message: "Employee not found",
+									entityType: "employee",
+									entityId: employeeId,
 								}),
 							),
 						);
 					}
-
-					// Step 3: Verify granter has org-admin access.
-					const granter = yield* _(
-						dbService.query("getGranterEmployee", async () => {
-							return await dbService.db.query.employee.findFirst({
-								where: eq(employee.id, grantedBy),
-							});
-						}),
-					);
-
-					let canGrant = granter?.role === "admin";
-
-					if (!canGrant) {
-						const granterMembership = yield* _(
-							dbService.query("getGranterMembership", async () => {
-								return await dbService.db.query.member.findFirst({
-									where: and(
-										eq(member.userId, grantedBy),
-										eq(member.organizationId, organizationId),
-									),
-									columns: { role: true },
-								});
-							}),
+					if (outcome._tag === "GranterNotFound") {
+						return yield* _(
+							Effect.fail(
+								new NotFoundError({
+									message: "Granting employee not found",
+									entityType: "employee",
+									entityId: grantedBy,
+								}),
+							),
 						);
-
-						canGrant = granterMembership?.role === "owner" || granterMembership?.role === "admin";
 					}
-
-					if (!canGrant) {
-						yield* _(
+					if (outcome._tag === "TeamNotFound") {
+						return yield* _(
+							Effect.fail(
+								new NotFoundError({
+									message: "Team not found",
+									entityType: "team",
+									entityId: teamId ?? undefined,
+								}),
+							),
+						);
+					}
+					if (outcome._tag === "Unauthorized") {
+						return yield* _(
 							Effect.fail(
 								new AuthorizationError({
 									message: "Only org admins can grant permissions",
@@ -241,96 +361,77 @@ export const PermissionsServiceLive = Layer.effect(
 							),
 						);
 					}
-
-					// Step 4: Check if permissions already exist
-					const existing = yield* _(
-						dbService.query("checkExistingPermissions", async () => {
-							return await dbService.db.query.teamPermissions.findFirst({
-								where: and(
-									eq(teamPermissions.employeeId, employeeId),
-									eq(teamPermissions.organizationId, organizationId),
-									teamId ? eq(teamPermissions.teamId, teamId) : isNull(teamPermissions.teamId),
-								),
-							});
-						}),
-					);
-
-					if (existing) {
-						// Update existing permissions
-						yield* _(
-							dbService.query("updatePermissions", async () => {
-								await dbService.db
-									.update(teamPermissions)
-									.set({
-										canCreateTeams: permissions.canCreateTeams ?? existing.canCreateTeams,
-										canManageTeamMembers:
-											permissions.canManageTeamMembers ?? existing.canManageTeamMembers,
-										canManageTeamSettings:
-											permissions.canManageTeamSettings ?? existing.canManageTeamSettings,
-										canApproveTeamRequests:
-											permissions.canApproveTeamRequests ?? existing.canApproveTeamRequests,
-										grantedBy,
-										grantedAt: new Date(),
-										updatedAt: new Date(),
-									})
-									.where(eq(teamPermissions.id, existing.id));
-							}),
-						);
-					} else {
-						// Create new permissions
-						yield* _(
-							dbService.query("createPermissions", async () => {
-								await dbService.db.insert(teamPermissions).values({
-									employeeId,
-									organizationId,
-									teamId: teamId ?? null, // null = org-wide permissions
-									canCreateTeams: permissions.canCreateTeams ?? false,
-									canManageTeamMembers: permissions.canManageTeamMembers ?? false,
-									canManageTeamSettings: permissions.canManageTeamSettings ?? false,
-									canApproveTeamRequests: permissions.canApproveTeamRequests ?? false,
-									grantedBy,
-								});
-							}),
-						);
-					}
 				}),
 
 			revokePermissions: (employeeId, organizationId, teamId = null) =>
 				Effect.gen(function* (_) {
-					// Verify employee exists
-					const _emp = yield* _(
-						dbService.query("getEmployeeById", async () => {
-							return await dbService.db.query.employee.findFirst({
-								where: eq(employee.id, employeeId),
+					const outcome = yield* _(
+						dbService.query("revokePermissions", async () => {
+							return await dbService.db.transaction(async (tx) => {
+								const target = await tx.query.employee.findFirst({
+									where: and(
+										eq(employee.id, employeeId),
+										eq(employee.organizationId, organizationId),
+									),
+								});
+								if (!target) return { _tag: "TargetNotFound" } as const;
+
+								if (teamId) {
+									const targetTeam = await tx.query.team.findFirst({
+										where: and(
+											eq(team.id, teamId),
+											eq(team.organizationId, organizationId),
+										),
+									});
+									if (!targetTeam) return { _tag: "TeamNotFound" } as const;
+								}
+
+								const lockKey = permissionMutationLockKey(
+									organizationId,
+									employeeId,
+									teamId,
+								);
+								await tx.execute(
+									sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`,
+								);
+								await tx
+									.delete(teamPermissions)
+									.where(
+										and(
+											eq(teamPermissions.employeeId, employeeId),
+											eq(teamPermissions.organizationId, organizationId),
+											teamId
+												? eq(teamPermissions.teamId, teamId)
+												: isNull(teamPermissions.teamId),
+										),
+									);
+								return { _tag: "Success" } as const;
 							});
 						}),
-						Effect.flatMap((e) =>
-							e
-								? Effect.succeed(e)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Employee not found",
-											entityType: "employee",
-											entityId: employeeId,
-										}),
-									),
-						),
 					);
 
-					// Delete permissions
-					yield* _(
-						dbService.query("revokePermissions", async () => {
-							await dbService.db
-								.delete(teamPermissions)
-								.where(
-									and(
-										eq(teamPermissions.employeeId, employeeId),
-										eq(teamPermissions.organizationId, organizationId),
-										teamId ? eq(teamPermissions.teamId, teamId) : isNull(teamPermissions.teamId),
-									),
-								);
-						}),
-					);
+					if (outcome._tag === "TargetNotFound") {
+						return yield* _(
+							Effect.fail(
+								new NotFoundError({
+									message: "Employee not found",
+									entityType: "employee",
+									entityId: employeeId,
+								}),
+							),
+						);
+					}
+					if (outcome._tag === "TeamNotFound") {
+						return yield* _(
+							Effect.fail(
+								new NotFoundError({
+									message: "Team not found",
+									entityType: "team",
+									entityId: teamId ?? undefined,
+								}),
+							),
+						);
+					}
 				}),
 		});
 	}),

@@ -127,7 +127,10 @@ describe("approvals canonical sync", () => {
 	});
 
 	it("resolves the current recipient profile inside the active organization before formatting rows", () => {
-		const source = readFileSync("src/app/[locale]/(app)/approvals/actions.ts", "utf8");
+		const source = readFileSync(
+			"src/app/[locale]/(app)/approvals/actions.ts",
+			"utf8",
+		);
 
 		expect(source).toContain(
 			"getEffectiveTimezone(currentEmployee.userId, currentEmployee.organizationId)",

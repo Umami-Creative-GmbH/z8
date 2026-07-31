@@ -55,6 +55,216 @@ interface InviteCodeFormValues {
 	status: "active" | "paused";
 }
 
+function InviteCodeFormFields({
+	values,
+	updateDraft,
+	isEditing,
+	minExpiryDate,
+	teams,
+	onGenerateCode,
+	t,
+}: {
+	values: InviteCodeFormValues;
+	updateDraft: (updates: Partial<InviteCodeFormValues>) => void;
+	isEditing: boolean;
+	minExpiryDate: string;
+	teams: Array<{ id: string; name: string }>;
+	onGenerateCode: () => void;
+	t: ReturnType<typeof useTranslate>["t"];
+}) {
+	return (
+		<ActionPanelBody className="space-y-5">
+			<div className="grid gap-2">
+				<Label htmlFor="code">{t("settings.inviteCodes.code", "Code")}</Label>
+				<div className="flex flex-col gap-2 sm:flex-row">
+					<Input
+						id="code"
+						value={values.code}
+						onChange={(event) =>
+							updateDraft({ code: event.target.value.toUpperCase() })
+						}
+						placeholder={t(
+							"settings.inviteCodes.codePlaceholder",
+							"TEAM-ABC123",
+						)}
+						disabled={isEditing}
+						className="font-mono uppercase tracking-[0.18em]"
+					/>
+					{!isEditing && (
+						<Button
+							type="button"
+							variant="outline"
+							onClick={onGenerateCode}
+							className="w-full sm:w-auto"
+							aria-label={t(
+								"settings.inviteCodes.generateCode",
+								"Generate new code",
+							)}
+						>
+							<IconRefresh className="size-4" />
+						</Button>
+					)}
+				</div>
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.inviteCodes.codeHelp",
+						"4-20 characters, letters, numbers, and hyphens only",
+					)}
+				</p>
+			</div>
+
+			<div className="grid gap-2">
+				<Label htmlFor="label">
+					{t("settings.inviteCodes.label", "Label")} *
+				</Label>
+				<Input
+					id="label"
+					value={values.label}
+					onChange={(event) => updateDraft({ label: event.target.value })}
+					placeholder={t(
+						"settings.inviteCodes.labelPlaceholder",
+						"e.g., Public Recruitment 2024",
+					)}
+					required
+				/>
+			</div>
+
+			<div className="grid gap-2">
+				<Label htmlFor="description">
+					{t("settings.inviteCodes.description", "Description")}
+				</Label>
+				<Textarea
+					id="description"
+					value={values.description}
+					onChange={(event) => updateDraft({ description: event.target.value })}
+					placeholder={t(
+						"settings.inviteCodes.descriptionPlaceholder",
+						"Optional description...",
+					)}
+					rows={2}
+				/>
+			</div>
+
+			<div className="grid gap-2">
+				<Label htmlFor="maxUses">
+					{t("settings.inviteCodes.maxUses", "Maximum Uses")}
+				</Label>
+				<Input
+					id="maxUses"
+					type="number"
+					min="1"
+					value={values.maxUses}
+					onChange={(event) => updateDraft({ maxUses: event.target.value })}
+					placeholder={t("settings.inviteCodes.unlimited", "Unlimited")}
+				/>
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.inviteCodes.maxUsesHelp",
+						"Leave empty for unlimited uses",
+					)}
+				</p>
+			</div>
+
+			<div className="grid gap-2">
+				<Label htmlFor="expiresAt">
+					{t("settings.inviteCodes.expiresAt", "Expiration Date")}
+				</Label>
+				<DatePicker
+					id="expiresAt"
+					value={values.expiresAt}
+					onChange={(value) => updateDraft({ expiresAt: value })}
+					min={minExpiryDate}
+				/>
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.inviteCodes.expiresAtHelp",
+						"Leave empty for no expiration",
+					)}
+				</p>
+			</div>
+
+			<div className="grid gap-2">
+				<Label htmlFor="defaultTeam">
+					{t("settings.inviteCodes.targetTeam", "Target team")}
+				</Label>
+				<Select
+					value={values.defaultTeamId || "none"}
+					onValueChange={(value) =>
+						updateDraft({ defaultTeamId: value === "none" ? "" : value })
+					}
+				>
+					<SelectTrigger>
+						<SelectValue
+							placeholder={t("settings.inviteCodes.noTargetTeam", "No team")}
+						/>
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="none">
+							{t("settings.inviteCodes.noTargetTeam", "No team")}
+						</SelectItem>
+						{teams.map((team) => (
+							<SelectItem key={team.id} value={team.id}>
+								{team.name}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.inviteCodes.targetTeamHelp",
+						"New members will use this team by default when they join.",
+					)}
+				</p>
+			</div>
+
+			<div className="flex items-center gap-x-2">
+				<Checkbox
+					id="requiresApproval"
+					checked={values.requiresApproval}
+					onCheckedChange={(checked) =>
+						updateDraft({ requiresApproval: checked === true })
+					}
+				/>
+				<Label htmlFor="requiresApproval" className="cursor-pointer">
+					{t("settings.inviteCodes.requiresApproval", "Require admin approval")}
+				</Label>
+			</div>
+			<p className="text-sm text-muted-foreground">
+				{t(
+					"settings.inviteCodes.requiresApprovalHelp",
+					"When enabled, new members will be pending until an admin approves them",
+				)}
+			</p>
+
+			{isEditing && (
+				<div className="grid gap-2">
+					<Label htmlFor="status">
+						{t("settings.inviteCodes.status", "Status")}
+					</Label>
+					<Select
+						value={values.status}
+						onValueChange={(value) =>
+							updateDraft({ status: value as "active" | "paused" })
+						}
+					>
+						<SelectTrigger>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="active">
+								{t("settings.inviteCodes.status.active", "Active")}
+							</SelectItem>
+							<SelectItem value="paused">
+								{t("settings.inviteCodes.status.paused", "Paused")}
+							</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
+			)}
+		</ActionPanelBody>
+	);
+}
+
 export function InviteCodeDialog({
 	organizationId,
 	minExpiryDate,
@@ -106,11 +316,13 @@ export function InviteCodeDialog({
 		status: inviteCode?.status === "paused" ? "paused" : "active",
 	};
 
-	const values = draftState?.scopeKey === formScopeKey ? draftState.values : initialValues;
+	const values =
+		draftState?.scopeKey === formScopeKey ? draftState.values : initialValues;
 
 	const updateDraft = (updates: Partial<InviteCodeFormValues>) => {
 		setDraftState((prev) => {
-			const baseValues = prev?.scopeKey === formScopeKey ? prev.values : initialValues;
+			const baseValues =
+				prev?.scopeKey === formScopeKey ? prev.values : initialValues;
 			return {
 				scopeKey: formScopeKey,
 				values: {
@@ -137,12 +349,17 @@ export function InviteCodeDialog({
 				code: formValues.code || undefined,
 				label: formValues.label,
 				description: formValues.description || undefined,
-				maxUses: formValues.maxUses ? parseInt(formValues.maxUses, 10) : undefined,
-				expiresAt: formValues.expiresAt ? new Date(formValues.expiresAt) : undefined,
+				maxUses: formValues.maxUses
+					? parseInt(formValues.maxUses, 10)
+					: undefined,
+				expiresAt: formValues.expiresAt
+					? new Date(formValues.expiresAt)
+					: undefined,
 				defaultTeamId: formValues.defaultTeamId || undefined,
 				requiresApproval: formValues.requiresApproval,
 			});
-			if (!result.success) throw new Error(result.error || "Failed to create invite code");
+			if (!result.success)
+				throw new Error(result.error || "Failed to create invite code");
 			return result.data;
 		},
 		onSuccess: () => {
@@ -169,7 +386,8 @@ export function InviteCodeDialog({
 				requiresApproval: formValues.requiresApproval,
 				status: formValues.status,
 			});
-			if (!result.success) throw new Error(result.error || "Failed to update invite code");
+			if (!result.success)
+				throw new Error(result.error || "Failed to update invite code");
 			return result.data;
 		},
 		onSuccess: () => {
@@ -218,183 +436,34 @@ export function InviteCodeDialog({
 				</ActionPanelHeader>
 
 				<form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-					<ActionPanelBody className="space-y-5">
-						{/* Code */}
-						<div className="grid gap-2">
-							<Label htmlFor="code">{t("settings.inviteCodes.code", "Code")}</Label>
-							<div className="flex flex-col gap-2 sm:flex-row">
-								<Input
-									id="code"
-									value={values.code}
-									onChange={(e) => updateDraft({ code: e.target.value.toUpperCase() })}
-									placeholder={t("settings.inviteCodes.codePlaceholder", "TEAM-ABC123")}
-									disabled={isEditing}
-									className="font-mono uppercase tracking-[0.18em]"
-								/>
-								{!isEditing && (
-									<Button
-										type="button"
-										variant="outline"
-										onClick={handleGenerateCode}
-										className="w-full sm:w-auto"
-										aria-label={t("settings.inviteCodes.generateCode", "Generate new code")}
-									>
-										<IconRefresh className="size-4" />
-									</Button>
-								)}
-							</div>
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"settings.inviteCodes.codeHelp",
-									"4-20 characters, letters, numbers, and hyphens only",
-								)}
-							</p>
-						</div>
-
-						{/* Label */}
-						<div className="grid gap-2">
-							<Label htmlFor="label">{t("settings.inviteCodes.label", "Label")} *</Label>
-							<Input
-								id="label"
-								value={values.label}
-								onChange={(e) => updateDraft({ label: e.target.value })}
-								placeholder={t(
-									"settings.inviteCodes.labelPlaceholder",
-									"e.g., Public Recruitment 2024",
-								)}
-								required
-							/>
-						</div>
-
-						{/* Description */}
-						<div className="grid gap-2">
-							<Label htmlFor="description">
-								{t("settings.inviteCodes.description", "Description")}
-							</Label>
-							<Textarea
-								id="description"
-								value={values.description}
-								onChange={(e) => updateDraft({ description: e.target.value })}
-								placeholder={t(
-									"settings.inviteCodes.descriptionPlaceholder",
-									"Optional description...",
-								)}
-								rows={2}
-							/>
-						</div>
-
-						{/* Max Uses */}
-						<div className="grid gap-2">
-							<Label htmlFor="maxUses">{t("settings.inviteCodes.maxUses", "Maximum Uses")}</Label>
-							<Input
-								id="maxUses"
-								type="number"
-								min="1"
-								value={values.maxUses}
-								onChange={(e) => updateDraft({ maxUses: e.target.value })}
-								placeholder={t("settings.inviteCodes.unlimited", "Unlimited")}
-							/>
-							<p className="text-sm text-muted-foreground">
-								{t("settings.inviteCodes.maxUsesHelp", "Leave empty for unlimited uses")}
-							</p>
-						</div>
-
-						{/* Expires At */}
-						<div className="grid gap-2">
-							<Label htmlFor="expiresAt">
-								{t("settings.inviteCodes.expiresAt", "Expiration Date")}
-							</Label>
-							<DatePicker
-								id="expiresAt"
-								value={values.expiresAt}
-								onChange={(value) => updateDraft({ expiresAt: value })}
-								min={minExpiryDate}
-							/>
-							<p className="text-sm text-muted-foreground">
-								{t("settings.inviteCodes.expiresAtHelp", "Leave empty for no expiration")}
-							</p>
-						</div>
-
-						{/* Default Team */}
-						<div className="grid gap-2">
-							<Label htmlFor="defaultTeam">
-								{t("settings.inviteCodes.targetTeam", "Target team")}
-							</Label>
-							<Select
-								value={values.defaultTeamId || "none"}
-								onValueChange={(v) => updateDraft({ defaultTeamId: v === "none" ? "" : v })}
-							>
-								<SelectTrigger>
-									<SelectValue placeholder={t("settings.inviteCodes.noTargetTeam", "No team")} />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="none">
-										{t("settings.inviteCodes.noTargetTeam", "No team")}
-									</SelectItem>
-									{teams.map((team) => (
-										<SelectItem key={team.id} value={team.id}>
-											{team.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"settings.inviteCodes.targetTeamHelp",
-									"New members will use this team by default when they join.",
-								)}
-							</p>
-						</div>
-
-						{/* Requires Approval */}
-						<div className="flex items-center gap-x-2">
-							<Checkbox
-								id="requiresApproval"
-								checked={values.requiresApproval}
-								onCheckedChange={(checked) => updateDraft({ requiresApproval: checked === true })}
-							/>
-							<Label htmlFor="requiresApproval" className="cursor-pointer">
-								{t("settings.inviteCodes.requiresApproval", "Require admin approval")}
-							</Label>
-						</div>
-						<p className="text-sm text-muted-foreground">
-							{t(
-								"settings.inviteCodes.requiresApprovalHelp",
-								"When enabled, new members will be pending until an admin approves them",
-							)}
-						</p>
-
-						{/* Status (only for editing) */}
-						{isEditing && (
-							<div className="grid gap-2">
-								<Label htmlFor="status">{t("settings.inviteCodes.status", "Status")}</Label>
-								<Select
-									value={values.status}
-									onValueChange={(v) => updateDraft({ status: v as "active" | "paused" })}
-								>
-									<SelectTrigger>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="active">
-											{t("settings.inviteCodes.status.active", "Active")}
-										</SelectItem>
-										<SelectItem value="paused">
-											{t("settings.inviteCodes.status.paused", "Paused")}
-										</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-						)}
-					</ActionPanelBody>
+					<InviteCodeFormFields
+						values={values}
+						updateDraft={updateDraft}
+						isEditing={isEditing}
+						minExpiryDate={minExpiryDate}
+						teams={teams}
+						onGenerateCode={handleGenerateCode}
+						t={t}
+					/>
 
 					<ActionPanelFooter>
-						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => onOpenChange(false)}
+						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<Button type="submit" disabled={isSubmitting || !values.label.trim()}>
-							{isSubmitting && <IconLoader2 className="mr-2 size-4 animate-spin" />}
-							{isEditing ? t("common.save", "Save") : t("settings.inviteCodes.create", "Create")}
+						<Button
+							type="submit"
+							disabled={isSubmitting || !values.label.trim()}
+						>
+							{isSubmitting && (
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
+							)}
+							{isEditing
+								? t("common.save", "Save")
+								: t("settings.inviteCodes.create", "Create")}
 						</Button>
 					</ActionPanelFooter>
 				</form>

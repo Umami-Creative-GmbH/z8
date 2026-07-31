@@ -48,6 +48,7 @@
       "event": "Olay",
       "failed": "Başarısız",
       "http": "HTTP",
+      "loadError": "Teslimat günlükleri yüklenemedi",
       "payload": "Yük (Payload)",
       "pending": "Beklemede",
       "response": "Yanıt",

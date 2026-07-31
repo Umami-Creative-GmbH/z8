@@ -109,6 +109,7 @@
     "add": "Aggiungi",
     "adding": "Aggiunta in corso...",
     "all": "Tutti",
+    "appName": "Z8",
     "approve": "Approva",
     "assign": "Assegna",
     "back": "Indietro",
@@ -138,7 +139,6 @@
     "deselectAll": "Deseleziona tutto",
     "details": "Dettagli",
     "download": "Scarica",
-    "duplicate": "Duplica",
     "edit": "Modifica",
     "enabled": "Abilitato",
     "error": "Errore",
@@ -150,7 +150,6 @@
     },
     "goToDashboard": "Vai alla Dashboard",
     "inactive": "Inattivo",
-    "label": "Etichetta",
     "loading": "Caricamento...",
     "loadMore": "Carica altro",
     "months": {
@@ -247,6 +246,7 @@
     "countSelected": "{count} dipendenti selezionati",
     "countWithMore": "{count} dipendenti (+altri {more})",
     "noEmployeesFound": "Nessun dipendente trovato",
+    "removeSelected": "Rimuovi {name}",
     "role": "Ruolo",
     "searchPlaceholder": "Cerca per nome, email o posizione...",
     "selected": "{count} selezionati",
@@ -297,6 +297,7 @@
   },
   "nav": {
     "absences": "Assenze",
+    "analytics": "Analisi",
     "approvals": "Approvazioni",
     "calendar": "Calendario",
     "compliance": "Conformità",
@@ -314,6 +315,7 @@
     "teamAbsences": "Assenze del team",
     "team-label": "Team",
     "time-tracking": "Rilevazione Tempo",
+    "today": "Oggi",
     "travel-expenses": "Spese di viaggio",
     "worksCouncil": "Consiglio di fabbrica"
   },
@@ -326,28 +328,28 @@
       "settings": "Impostazioni notifiche",
       "viewAll": "Visualizza tutte le notifiche"
     },
-		"content": {
-			"absenceRequestSubmitted": {
-				"message": "La tua richiesta {categoryName} per {dateRange} è stata inviata ed è in attesa di approvazione.",
-				"title": "Richiesta di assenza inviata"
-			},
-			"passwordChanged": {
-				"message": "La tua password è stata modificata correttamente. Se non hai effettuato questa modifica, contatta immediatamente l'assistenza.",
-				"title": "Password modificata"
-			},
+    "content": {
+      "absenceRequestSubmitted": {
+        "message": "La tua richiesta {categoryName} per {dateRange} è stata inviata ed è in attesa di approvazione.",
+        "title": "Richiesta di assenza inviata"
+      },
+      "teamMemberRemoved": {
+        "message": "Sei stato rimosso dal team {teamName} da {performedByName}.",
+        "title": "Rimosso dal team"
+      },
+      "passwordChanged": {
+        "message": "La tua password è stata modificata correttamente. Se non hai effettuato questa modifica, contatta immediatamente l'assistenza.",
+        "title": "Password modificata"
+      },
       "shiftAssigned": {
         "message": "Ti è stato assegnato un turno il {shiftDate} dalle {startTime} alle {endTime} da {assignedByName}.",
         "title": "Turno assegnato"
       },
-			"teamMemberAdded": {
-				"message": "Sei stato aggiunto al team {teamName} da {performedByName}.",
-				"title": "Aggiunto al team"
-			},
-			"teamMemberRemoved": {
-				"message": "Sei stato rimosso dal team {teamName} da {performedByName}.",
-				"title": "Rimosso dal team"
-			}
-		},
+      "teamMemberAdded": {
+        "message": "Sei stato aggiunto al team {teamName} da {performedByName}.",
+        "title": "Aggiunto al team"
+      }
+    },
     "description": "Controlla aggiornamenti, approvazioni e avvisi di sistema in un'unica timeline.",
     "empty": {
       "description": "Sei in pari! Le nuove notifiche appariranno qui.",

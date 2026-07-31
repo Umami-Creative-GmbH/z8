@@ -1,5 +1,6 @@
 import { and, eq, gt, inArray, isNull, lte, or } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
+import { z } from "zod";
 import {
 	type employeeSkill as EmployeeSkillTable,
 	employee,
@@ -24,6 +25,8 @@ type EmployeeSkill = typeof EmployeeSkillTable.$inferSelect;
 type SubareaSkillReq = typeof SubareaSkillReqTable.$inferSelect;
 type TemplateSkillReq = typeof TemplateSkillReqTable.$inferSelect;
 type SkillOverride = typeof OverrideTable.$inferSelect;
+
+const missingSkillIdsSchema = z.array(z.string().min(1)).min(1);
 
 type SkillCategory = "safety" | "equipment" | "certification" | "training" | "language" | "custom";
 
@@ -1020,15 +1023,19 @@ export const SkillServiceLive = Layer.effect(
 								limit: options?.limit ?? 50,
 							});
 
-							return results;
+							return results.map((override) => ({
+								override,
+								missingSkillIds: missingSkillIdsSchema.parse(
+									JSON.parse(override.missingSkillIds),
+								),
+							}));
 						}),
 					);
 
 					// Resolve skill names for missing skills
 					const allSkillIds = new Set<string>();
-					for (const o of overrides) {
-						const ids = JSON.parse(o.missingSkillIds) as string[];
-						for (const id of ids) {
+					for (const { missingSkillIds } of overrides) {
+						for (const id of missingSkillIds) {
 							allSkillIds.add(id);
 						}
 					}
@@ -1038,7 +1045,10 @@ export const SkillServiceLive = Layer.effect(
 							if (allSkillIds.size === 0) return new Map<string, string>();
 
 							const skills = await dbService.db.query.skill.findMany({
-								where: inArray(skill.id, Array.from(allSkillIds)),
+								where: and(
+									eq(skill.organizationId, organizationId),
+									inArray(skill.id, Array.from(allSkillIds)),
+								),
 								columns: { id: true, name: true },
 							});
 
@@ -1046,9 +1056,9 @@ export const SkillServiceLive = Layer.effect(
 						}),
 					);
 
-					return overrides.map((o) => ({
-						...o,
-						missingSkillNames: (JSON.parse(o.missingSkillIds) as string[]).map(
+					return overrides.map(({ override, missingSkillIds }) => ({
+						...override,
+						missingSkillNames: missingSkillIds.map(
 							(id) => skillNames.get(id) ?? "Unknown Skill",
 						),
 					})) as OverrideHistoryEntry[];

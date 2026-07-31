@@ -21,6 +21,7 @@ export function LoginRequired() {
         Please sign in to the Z8 webapp to use the time tracker.
       </p>
       <button
+        type="button"
         onClick={handleLogin}
         className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
       >

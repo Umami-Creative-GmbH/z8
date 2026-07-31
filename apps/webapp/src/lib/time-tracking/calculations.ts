@@ -5,12 +5,14 @@ import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import { shouldExcludeFromCalculations } from "@/lib/calendar/holiday-service";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { endOfDay, fromJSDate, startOfDay, toDateKey } from "@/lib/datetime/luxon-utils";
-import { runEffect } from "@/lib/effect/runtime";
 import {
-	type EffectiveWorkPolicy,
-	WorkPolicyService,
-} from "@/lib/effect/services/work-policy.service";
+	endOfDay,
+	fromJSDate,
+	startOfDay,
+	toDateKey,
+} from "@/lib/datetime/luxon-utils";
+import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";
+import { runEmployeePolicyLookup } from "@/lib/effect/work-policy-runtime";
 
 export interface WorkHoursSummary {
 	totalMinutes: number;
@@ -25,10 +27,23 @@ export interface WorkHoursSummary {
  */
 function luxonWeekdayToScheduleDay(
 	luxonWeekday: number,
-): "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday" {
+):
+	| "monday"
+	| "tuesday"
+	| "wednesday"
+	| "thursday"
+	| "friday"
+	| "saturday"
+	| "sunday" {
 	const dayMap: Record<
 		number,
-		"monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday"
+		| "monday"
+		| "tuesday"
+		| "wednesday"
+		| "thursday"
+		| "friday"
+		| "saturday"
+		| "sunday"
 	> = {
 		1: "monday",
 		2: "tuesday",
@@ -44,7 +59,10 @@ function luxonWeekdayToScheduleDay(
 /**
  * Get expected hours for a specific day based on work policy schedule
  */
-function getExpectedHoursForDay(policy: EffectiveWorkPolicy | null, luxonWeekday: number): number {
+function getExpectedHoursForDay(
+	policy: EffectiveWorkPolicy | null,
+	luxonWeekday: number,
+): number {
 	// Default to 8 hours on weekdays if no schedule
 	if (!policy?.schedule) {
 		return luxonWeekday >= 1 && luxonWeekday <= 5 ? 8 : 0;
@@ -64,7 +82,10 @@ function getExpectedHoursForDay(policy: EffectiveWorkPolicy | null, luxonWeekday
 /**
  * Check if a day is a working day based on policy schedule
  */
-function isWorkingDay(policy: EffectiveWorkPolicy | null, luxonWeekday: number): boolean {
+function isWorkingDay(
+	policy: EffectiveWorkPolicy | null,
+	luxonWeekday: number,
+): boolean {
 	// Default to weekdays if no schedule
 	if (!policy?.schedule) {
 		return luxonWeekday >= 1 && luxonWeekday <= 5;
@@ -114,7 +135,10 @@ export async function calculateWorkHours(
 	const periodsWithExclusion = await Promise.all(
 		periods.map(async (period) => ({
 			period,
-			shouldExclude: await shouldExcludeFromCalculations(organizationId, period.startTime),
+			shouldExclude: await shouldExcludeFromCalculations(
+				organizationId,
+				period.startTime,
+			),
 		})),
 	);
 
@@ -159,7 +183,12 @@ export async function calculateWorkHoursByEmployee(
 	const summaries = await Promise.all(
 		employeeIds.map(async (employeeId) => ({
 			employeeId,
-			summary: await calculateWorkHours(employeeId, organizationId, startDate, endDate),
+			summary: await calculateWorkHours(
+				employeeId,
+				organizationId,
+				startDate,
+				endDate,
+			),
 		})),
 	);
 
@@ -174,16 +203,12 @@ export async function calculateWorkHoursByEmployee(
  * Get employee's effective work policy
  * Returns null if no policy is assigned
  */
-export async function getEmployeePolicy(employeeId: string): Promise<EffectiveWorkPolicy | null> {
-	const { Effect } = await import("effect");
+export async function getEmployeePolicy(
+	employeeId: string,
+	organizationId: string,
+): Promise<EffectiveWorkPolicy | null> {
 	try {
-		const result = await runEffect(
-			Effect.gen(function* () {
-				const service = yield* WorkPolicyService;
-				return yield* service.getEffectivePolicy(employeeId);
-			}),
-		);
-		return result;
+		return await runEmployeePolicyLookup(employeeId, organizationId);
 	} catch {
 		// Return null if service fails or employee not found
 		return null;
@@ -254,9 +279,11 @@ export async function calculateExpectedWorkHoursForEmployee(
 	startDate: Date,
 	endDate: Date,
 	timezone?: string,
-): Promise<WorkHoursSummary & { scheduleInfo: { name: string; source: string } | null }> {
+): Promise<
+	WorkHoursSummary & { scheduleInfo: { name: string; source: string } | null }
+> {
 	// Get employee's effective policy
-	const policy = await getEmployeePolicy(employeeId);
+	const policy = await getEmployeePolicy(employeeId, organizationId);
 
 	let currentDT = fromJSDate(startDate, timezone);
 	const endDT = fromJSDate(endDate, timezone);
@@ -319,14 +346,21 @@ export async function compareWorkHours(
 	endDate: Date,
 ): Promise<{
 	actual: WorkHoursSummary;
-	expected: WorkHoursSummary & { scheduleInfo: { name: string; source: string } | null };
+	expected: WorkHoursSummary & {
+		scheduleInfo: { name: string; source: string } | null;
+	};
 	differenceMinutes: number;
 	differenceHours: number;
 	percentageOfExpected: number;
 }> {
 	const [actual, expected] = await Promise.all([
 		calculateWorkHours(employeeId, organizationId, startDate, endDate),
-		calculateExpectedWorkHoursForEmployee(employeeId, organizationId, startDate, endDate),
+		calculateExpectedWorkHoursForEmployee(
+			employeeId,
+			organizationId,
+			startDate,
+			endDate,
+		),
 	]);
 
 	const differenceMinutes = actual.totalMinutes - expected.totalMinutes;

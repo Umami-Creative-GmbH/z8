@@ -7,7 +7,12 @@
 
 import type { ForcedSubject } from "@casl/ability";
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { createEmptyAbility, defineAbilityFor, type PrincipalContext } from "../index";
+import {
+	canAccessApprovalInbox,
+	createEmptyAbility,
+	defineAbilityFor,
+	type PrincipalContext,
+} from "../index";
 import { asAppSubject } from "../subjects";
 
 describe("asAppSubject types", () => {
@@ -349,6 +354,39 @@ describe("Employee Manager", () => {
 		expect(ability.can("approve", "Approval")).toBe(false);
 	});
 
+	it("can reach inbox eligibility without gaining organization-wide approval ability", () => {
+		const managerNoReports = createPrincipal({
+			employee: {
+				id: EMPLOYEE_1,
+				organizationId: ORG_1,
+				role: "manager",
+				teamId: TEAM_1,
+			},
+			managedEmployeeIds: [],
+		});
+		const ability = defineAbilityFor(managerNoReports);
+
+		expect(
+			canAccessApprovalInbox(ability, {
+				id: EMPLOYEE_1,
+				organizationId: ORG_1,
+				role: "manager",
+			}),
+		).toBe(true);
+		expect(ability.can("approve", "Approval")).toBe(false);
+		expect(
+			ability.can(
+				"approve",
+				asAppSubject("Approval", {
+					organizationId: ORG_1,
+					requestedBy: "emp-unmanaged",
+					approverId: EMPLOYEE_1,
+					status: "pending",
+				}),
+			),
+		).toBe(false);
+	});
+
 	it("can view own team", () => {
 		const ability = defineAbilityFor(managerPrincipal);
 
@@ -409,6 +447,42 @@ describe("Employee (Regular)", () => {
 		const ability = defineAbilityFor(employeePrincipal);
 
 		expect(ability.can("approve", "Approval")).toBe(false);
+		expect(
+			canAccessApprovalInbox(ability, {
+				id: EMPLOYEE_1,
+				organizationId: ORG_1,
+				role: "employee",
+			}),
+		).toBe(false);
+	});
+});
+
+describe("Approval Inbox Coarse Access", () => {
+	it.each(["manager", "admin"] as const)(
+		"denies an active %s employee when the ability has no approved principal",
+		(role) => {
+			const ability = createEmptyAbility();
+
+			expect(
+				canAccessApprovalInbox(ability, {
+					id: EMPLOYEE_1,
+					organizationId: ORG_1,
+					role,
+				}),
+			).toBe(false);
+		},
+	);
+
+	it("allows a platform manage override for the active employee identity", () => {
+		const ability = defineAbilityFor(createPrincipal({ isPlatformAdmin: true }));
+
+		expect(
+			canAccessApprovalInbox(ability, {
+				id: EMPLOYEE_1,
+				organizationId: ORG_1,
+				role: "manager",
+			}),
+		).toBe(true);
 	});
 });
 

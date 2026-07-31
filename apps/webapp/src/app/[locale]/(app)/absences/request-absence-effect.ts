@@ -1,5 +1,7 @@
+import "server-only";
+
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import {
@@ -9,7 +11,10 @@ import {
 	timeRecord,
 	timeRecordAbsence,
 } from "@/db/schema";
-import { calculateBusinessDaysWithHalfDays, dateRangesOverlap } from "@/lib/absences/date-utils";
+import {
+	calculateBusinessDaysWithHalfDays,
+	dateRangesOverlap,
+} from "@/lib/absences/date-utils";
 import {
 	type NormalizedAbsenceDurationInput,
 	normalizeAbsenceDurationInput,
@@ -23,11 +28,42 @@ import {
 } from "@/lib/absences/sick-vacation-override";
 import type { AbsenceRequest } from "@/lib/absences/types";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
+import { captureAbsenceLegacyApprovalState } from "@/lib/approvals/domain-adapters/absence-legacy-state";
+import { createLegacyApprovalWriteCoordinator } from "@/lib/approvals/domain-adapters/legacy-write-coordinator";
+import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
-import { createAbsenceApprovalWorkflow } from "@/lib/approvals/server/absence-approvals";
+import {
+	type AbsenceApprovalWorkflowResult,
+	type ApprovedAbsenceResult,
+	createAbsenceApprovalWorkflow,
+	finalizeAbsenceTerminalInTransaction,
+	runAutoCompletedAbsenceMaintenance,
+} from "@/lib/approvals/server/absence-approvals";
+import {
+	deleteCancelledTimeCorrectionsInTransaction,
+	finalizeTimeCorrectionTerminalInTransaction,
+} from "@/lib/approvals/server/time-correction-approvals";
+import type { ApprovalDbService } from "@/lib/approvals/server/types";
+import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
+import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
+import {
+	ApprovalWorkflowStartError,
+	type StartApprovalWorkflowInput,
+	startApprovalWorkflow,
+} from "@/lib/approvals/workflow/start-workflow";
+import { getAbility } from "@/lib/auth-helpers";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	type AnyAppError,
+	ConflictError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -49,7 +85,6 @@ import {
 import {
 	createSickDetailValidationError,
 	enqueueVacationOverrideCalendarSyncJobs,
-	getMissingAbsenceApproverMessage,
 	markAutoApprovedAbsenceWorkBalanceDirtyBestEffort,
 	shouldApplySickVacationOverrideImmediately,
 	validateAbsenceSickDetail,
@@ -61,6 +96,88 @@ export interface RequestAbsenceEmployeeContext {
 	id: string;
 	organizationId: string;
 	teamId?: string | null;
+}
+
+interface AbsenceSubmissionApprovalLifecycle {
+	withApprovalTransaction<T>(
+		operation: (context: ApprovalWorkflowTransactionContext) => Promise<T>,
+	): Promise<T>;
+	captureLegacyState: typeof captureAbsenceLegacyApprovalState;
+	startCanonicalWorkflow: typeof startApprovalWorkflow;
+	finalizeCanonicalAutoCompletion: typeof finalizeAbsenceTerminalInTransaction;
+	nowInstant(): Instant;
+}
+
+type RequestedAbsenceApprovalWorkflowResult =
+	| AbsenceApprovalWorkflowResult
+	| {
+			kind: "canonical";
+			workflowId: string;
+			status: "pending" | "approved" | "rejected" | "cancelled" | "expired";
+	  };
+
+function createTransactionDbService(
+	dbService: typeof DatabaseService.Service,
+	contextDbService: ApprovalWorkflowTransactionContext["dbService"],
+): ApprovalDbService {
+	return {
+		db: contextDbService.db as ApprovalDbService["db"],
+		query: dbService.query,
+	};
+}
+
+function createDefaultAbsenceSubmissionApprovalLifecycle(
+	dbService: typeof DatabaseService.Service,
+	currentEmployee: RequestAbsenceEmployeeContext,
+): AbsenceSubmissionApprovalLifecycle {
+	const runtime = createProductionApprovalWorkflowRuntime({
+		db: dbService.db,
+		adapters: {
+			absence: {
+				clock: systemClock,
+				finalizeAbsenceTerminal: async (input) =>
+					await finalizeAbsenceTerminalInTransaction({
+						...input,
+						dbService: createTransactionDbService(dbService, input.dbService),
+					}),
+				deleteCancelledAbsence: async () => {
+					throw new Error(
+						"Absence cancellation is not wired into the approval workflow runtime",
+					);
+				},
+			},
+			timeCorrection: {
+				clock: systemClock,
+				finalizeTimeCorrectionTerminal:
+					finalizeTimeCorrectionTerminalInTransaction,
+				deleteCancelledCorrections: deleteCancelledTimeCorrectionsInTransaction,
+			},
+			ordinaryWorkPeriod: {
+				finalizeTerminal:
+					finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
+			},
+		},
+		canManageApproval: async ({ organizationId, actorEmployeeId }) => {
+			if (
+				organizationId !== currentEmployee.organizationId ||
+				actorEmployeeId !== currentEmployee.id
+			) {
+				return false;
+			}
+			const ability = await getAbility();
+			return ability?.cannot("manage", "Approval") === false;
+		},
+		clock: systemClock,
+	});
+
+	return {
+		withApprovalTransaction: (operation) =>
+			runtime.repository.withTransaction(operation),
+		captureLegacyState: captureAbsenceLegacyApprovalState,
+		startCanonicalWorkflow: startApprovalWorkflow,
+		finalizeCanonicalAutoCompletion: finalizeAbsenceTerminalInTransaction,
+		nowInstant: () => systemClock.nowInstant(),
+	};
 }
 
 type EmployeeWithUserContact = {
@@ -99,7 +216,10 @@ function checkForOverlappingAbsences(
 					where: and(
 						eq(absenceEntry.employeeId, currentEmployee.id),
 						eq(absenceEntry.organizationId, currentEmployee.organizationId),
-						or(eq(absenceEntry.status, "approved"), eq(absenceEntry.status, "pending")),
+						or(
+							eq(absenceEntry.status, "approved"),
+							eq(absenceEntry.status, "pending"),
+						),
 					),
 					with: { category: true },
 				});
@@ -107,7 +227,14 @@ function checkForOverlappingAbsences(
 		);
 
 		for (const existing of overlappingAbsences) {
-			if (!dateRangesOverlap(data.startDate, data.endDate, existing.startDate, existing.endDate)) {
+			if (
+				!dateRangesOverlap(
+					data.startDate,
+					data.endDate,
+					existing.startDate,
+					existing.endDate,
+				)
+			) {
 				continue;
 			}
 
@@ -208,128 +335,410 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 	dbService: typeof DatabaseService.Service;
 	currentEmployee: RequestAbsenceEmployeeContext;
 	data: NormalizedAbsenceDurationInput & Pick<AbsenceRequest, "sickDetail">;
-	category: { countsAgainstVacation: boolean; requiresApproval: boolean; type: string };
+	category: {
+		name: string;
+		countsAgainstVacation: boolean;
+		requiresApproval: boolean;
+		type: string;
+	};
 	createdBy: string;
 	hasManagerApprovalWorkflow: boolean;
 	approvalWorkflow?: {
 		categoryId: string;
-		approverId: string;
+		approverId: string | null;
 		create?: typeof createApprovalWorkflow;
 	};
+	approvalLifecycle?: AbsenceSubmissionApprovalLifecycle;
 }) {
-	const { dbService, currentEmployee, data, category, createdBy, hasManagerApprovalWorkflow } =
-		params;
+	const {
+		dbService,
+		currentEmployee,
+		data,
+		category,
+		createdBy,
+		hasManagerApprovalWorkflow,
+	} = params;
+	const approvalLifecycle = params.approvalWorkflow
+		? (params.approvalLifecycle ??
+			createDefaultAbsenceSubmissionApprovalLifecycle(
+				dbService,
+				currentEmployee,
+			))
+		: undefined;
 
-	return dbService.query("createRequestedAbsenceRecords", async () => {
-		return await dbService.db.transaction(async (tx) => {
-			let vacationOverrideSummary: VacationOverrideSummary = {
-				updatedAbsenceIds: [],
-				createdAbsenceIds: [],
-				deletedAbsenceIds: [],
+	return dbService
+		.query("createRequestedAbsenceRecords", async () => {
+			const createRecords = async (
+				tx: ApprovalDbService["db"],
+				approvalContext?: ApprovalWorkflowTransactionContext,
+			) => {
+				let vacationOverrideSummary: VacationOverrideSummary = {
+					updatedAbsenceIds: [],
+					createdAbsenceIds: [],
+					deletedAbsenceIds: [],
+				};
+
+				if (
+					shouldApplySickVacationOverrideImmediately({
+						categoryType: category.type,
+						startPeriod: data.startPeriod,
+						endPeriod: data.endPeriod,
+						requiresApproval: category.requiresApproval,
+						hasManagerApprovalWorkflow,
+					})
+				) {
+					vacationOverrideSummary = await adjustVacationAbsencesForSickness({
+						tx,
+						organizationId: currentEmployee.organizationId,
+						employeeId: currentEmployee.id,
+						sickStartDate: data.startDate,
+						sickEndDate: data.endDate,
+						updatedBy: createdBy,
+					});
+				}
+
+				const entryDuration = toAbsenceEntryDurationFields(data);
+				const [newAbsence] = await tx
+					.insert(absenceEntry)
+					.values({
+						employeeId: currentEmployee.id,
+						organizationId: currentEmployee.organizationId,
+						categoryId: data.categoryId,
+						startDate: entryDuration.startDate,
+						startPeriod: entryDuration.startPeriod,
+						endDate: entryDuration.endDate,
+						endPeriod: entryDuration.endPeriod,
+						notes: data.notes,
+						sickDetail: data.sickDetail ?? null,
+						status: "pending",
+					})
+					.returning();
+
+				const canonicalValues = buildCanonicalAbsenceRecordValues({
+					organizationId: currentEmployee.organizationId,
+					employeeId: currentEmployee.id,
+					absenceCategoryId: data.categoryId,
+					startDate: data.startDate,
+					startPeriod: data.startPeriod,
+					endDate: data.endDate,
+					endPeriod: data.endPeriod,
+					durationKind: data.durationKind,
+					startTime: data.startTime,
+					endTime: data.endTime,
+					countsAgainstVacation: category.countsAgainstVacation,
+					requiresApproval: category.requiresApproval,
+					createdBy,
+				});
+
+				const [canonicalRecord] = await tx
+					.insert(timeRecord)
+					.values(canonicalValues.timeRecord)
+					.returning({ id: timeRecord.id });
+
+				await Promise.all([
+					tx.insert(timeRecordAbsence).values({
+						recordId: canonicalRecord.id,
+						...canonicalValues.timeRecordAbsence,
+					}),
+					tx
+						.update(absenceEntry)
+						.set({ canonicalRecordId: canonicalRecord.id })
+						.where(
+							and(
+								eq(absenceEntry.id, newAbsence.id),
+								eq(absenceEntry.organizationId, currentEmployee.organizationId),
+							),
+						),
+				]);
+
+				let approvalWorkflowResult:
+					| RequestedAbsenceApprovalWorkflowResult
+					| undefined;
+				let autoCompletion: ApprovedAbsenceResult | undefined;
+				if (params.approvalWorkflow) {
+					if (!approvalContext || !approvalLifecycle) {
+						throw new Error("Approval transaction context is required");
+					}
+					const sourceIdentity = {
+						organizationId: currentEmployee.organizationId,
+						workflowType: "absence" as const,
+						sourceType: "absence_entry",
+						sourceId: newAbsence.id,
+					};
+					const actor = {
+						kind: "employee" as const,
+						employeeId: currentEmployee.id,
+						userId: createdBy,
+					};
+					const submissionKey = `absence:${newAbsence.id}:submission`;
+					const gate = await approvalContext.writeGate.acquire({
+						organizationId: currentEmployee.organizationId,
+						workflowType: "absence",
+					});
+					const fixedGate = {
+						acquire: async (input: {
+							organizationId: string;
+							workflowType: "absence";
+						}) => {
+							if (
+								input.organizationId !== currentEmployee.organizationId ||
+								input.workflowType !== "absence"
+							) {
+								throw new Error("Approval submission gate scope mismatch");
+							}
+							return gate;
+						},
+					};
+					const context = {
+						...approvalContext,
+						writeGate: fixedGate,
+					} as ApprovalWorkflowTransactionContext;
+					const bindSourceWorkflow: StartApprovalWorkflowInput["bindSourceWorkflow"] =
+						async (workflowId) => {
+							const rows = await tx
+								.update(absenceEntry)
+								.set({ approvalWorkflowId: workflowId })
+								.where(
+									and(
+										eq(absenceEntry.id, newAbsence.id),
+										eq(
+											absenceEntry.organizationId,
+											currentEmployee.organizationId,
+										),
+										isNull(absenceEntry.approvalWorkflowId),
+									),
+								)
+								.returning({
+									id: absenceEntry.id,
+									organizationId: absenceEntry.organizationId,
+									approvalWorkflowId: absenceEntry.approvalWorkflowId,
+								});
+							if (
+								rows.length !== 1 ||
+								rows[0]?.id !== newAbsence.id ||
+								rows[0]?.organizationId !== currentEmployee.organizationId ||
+								rows[0]?.approvalWorkflowId !== workflowId
+							) {
+								throw new Error(
+									"Scoped absence workflow binding affected an unexpected row count",
+								);
+							}
+							return {
+								organizationId: currentEmployee.organizationId,
+								sourceType: "absence_entry",
+								sourceId: newAbsence.id,
+								workflowId,
+								affectedRows: 1,
+							};
+						};
+
+					if (
+						gate.mode === "legacy" ||
+						gate.mode === "shadow" ||
+						gate.mode === "ready"
+					) {
+						const transactionalDbService = createTransactionDbService(
+							dbService,
+							approvalContext.dbService,
+						);
+						const create =
+							params.approvalWorkflow.create ?? createApprovalWorkflow;
+						const capturedAt = approvalLifecycle.nowInstant();
+						const coordinator = createLegacyApprovalWriteCoordinator({
+							writeGate: fixedGate,
+							compatibilityWriter: approvalContext.compatibilityWriter,
+						});
+
+						approvalWorkflowResult = await coordinator.execute({
+							organizationId: currentEmployee.organizationId,
+							workflowType: "absence",
+							sourceIdentity,
+							actor,
+							idempotencyKey: submissionKey,
+							expectedVersion: null,
+							captureState: () =>
+								approvalLifecycle.captureLegacyState({
+									dbService: approvalContext.dbService,
+									organizationId: currentEmployee.organizationId,
+									absenceId: newAbsence.id,
+									capturedAt,
+								}),
+							mutate:
+								async (): Promise<RequestedAbsenceApprovalWorkflowResult> => {
+									const result = await Effect.runPromise(
+										Effect.either(
+											create(
+												transactionalDbService,
+												currentEmployee,
+												newAbsence.id,
+												params.approvalWorkflow?.categoryId ?? data.categoryId,
+												params.approvalWorkflow?.approverId ?? null,
+											),
+										),
+									);
+									if (result._tag === "Left") throw result.left;
+									return result.right as RequestedAbsenceApprovalWorkflowResult;
+								},
+							afterMirror: async (observed) => {
+								if (
+									observed.snapshot.organizationId !==
+										currentEmployee.organizationId ||
+									observed.snapshot.workflowType !== "absence" ||
+									observed.snapshot.sourceType !== "absence_entry" ||
+									observed.snapshot.sourceId !== newAbsence.id
+								) {
+									throw new Error("Observed absence workflow scope mismatch");
+								}
+								await bindSourceWorkflow(observed.snapshot.id);
+							},
+						});
+						if (approvalWorkflowResult.kind === "auto_completed") {
+							autoCompletion = approvalWorkflowResult.autoCompletion;
+						}
+					} else {
+						const verifySourceWorkflow: StartApprovalWorkflowInput["verifySourceWorkflow"] =
+							async (workflowId) => {
+								const linked = await tx.query.absenceEntry.findFirst({
+									where: and(
+										eq(absenceEntry.id, newAbsence.id),
+										eq(
+											absenceEntry.organizationId,
+											currentEmployee.organizationId,
+										),
+										eq(absenceEntry.approvalWorkflowId, workflowId),
+									),
+									columns: { id: true },
+								});
+								return {
+									organizationId: currentEmployee.organizationId,
+									sourceType: "absence_entry",
+									sourceId: newAbsence.id,
+									workflowId,
+									affectedRows: linked?.id === newAbsence.id ? 1 : 0,
+								};
+							};
+						const startResult = await approvalLifecycle.startCanonicalWorkflow({
+							context,
+							organizationId: currentEmployee.organizationId,
+							workflowType: "absence",
+							sourceIdentity,
+							requesterEmployeeId: currentEmployee.id,
+							actor,
+							submissionKey,
+							defaultApproverEmployeeId: params.approvalWorkflow.approverId,
+							routingContext: {
+								organizationId: currentEmployee.organizationId,
+								workflowType: "absence",
+								source: { type: "absence_entry", id: newAbsence.id },
+								requesterEmployeeId: currentEmployee.id,
+								teamIds: currentEmployee.teamId ? [currentEmployee.teamId] : [],
+								locationId: null,
+								absenceCategoryId: data.categoryId,
+								travelExpenseAmount: null,
+								overtimeRisk: null,
+								employeeGroupIds: [],
+							},
+							displayProjection: {
+								displayPayload: {
+									absenceId: newAbsence.id,
+									employeeId: currentEmployee.id,
+									categoryName: category.name,
+									startDate: data.startDate,
+									endDate: data.endDate,
+								},
+								searchText: `${category.name} ${data.startDate} ${data.endDate}`,
+							},
+							bindSourceWorkflow,
+							verifySourceWorkflow,
+						});
+						approvalWorkflowResult = {
+							kind: "canonical",
+							workflowId: startResult.snapshot.id,
+							status: startResult.status,
+						};
+						if (
+							startResult.kind === "created" &&
+							startResult.status === "approved"
+						) {
+							autoCompletion =
+								(await approvalLifecycle.finalizeCanonicalAutoCompletion({
+									dbService: createTransactionDbService(
+										dbService,
+										approvalContext.dbService,
+									),
+									organizationId: currentEmployee.organizationId,
+									absenceId: newAbsence.id,
+									expectedApprovalWorkflowId: startResult.snapshot.id,
+									expectedCanonicalRecordId: canonicalRecord.id,
+									actorEmployeeId: currentEmployee.id,
+									actorUserId: createdBy,
+									transition: { kind: "approve" },
+									finalizedAt:
+										startResult.snapshot.completedAt ??
+										approvalLifecycle.nowInstant(),
+								})) as ApprovedAbsenceResult;
+						}
+						if (gate.mode === "canonical") {
+							await approvalContext.compatibilityWriter.mirrorCanonicalToLegacy(
+								{
+									result: {
+										snapshot: startResult.snapshot,
+										events: startResult.events,
+										projection: startResult.projection,
+										outbox: startResult.outbox,
+									},
+								},
+							);
+						}
+					}
+				}
+
+				return {
+					...newAbsence,
+					status: autoCompletion?.absence.status ?? newAbsence.status,
+					canonicalRecordId: canonicalRecord.id,
+					vacationOverrideSummary,
+					approvalWorkflowResult,
+					autoCompletion,
+				};
 			};
 
-			if (
-				shouldApplySickVacationOverrideImmediately({
-					categoryType: category.type,
-					startPeriod: data.startPeriod,
-					endPeriod: data.endPeriod,
-					requiresApproval: category.requiresApproval,
-					hasManagerApprovalWorkflow,
-				})
-			) {
-				vacationOverrideSummary = await adjustVacationAbsencesForSickness({
-					tx,
-					organizationId: currentEmployee.organizationId,
-					employeeId: currentEmployee.id,
-					sickStartDate: data.startDate,
-					sickEndDate: data.endDate,
-					updatedBy: createdBy,
-				});
-			}
-
-			const entryDuration = toAbsenceEntryDurationFields(data);
-			const [newAbsence] = await tx
-				.insert(absenceEntry)
-				.values({
-					employeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
-					categoryId: data.categoryId,
-					startDate: entryDuration.startDate,
-					startPeriod: entryDuration.startPeriod,
-					endDate: entryDuration.endDate,
-					endPeriod: entryDuration.endPeriod,
-					notes: data.notes,
-					sickDetail: data.sickDetail ?? null,
-					status: "pending",
-				})
-				.returning();
-
-			const canonicalValues = buildCanonicalAbsenceRecordValues({
-				organizationId: currentEmployee.organizationId,
-				employeeId: currentEmployee.id,
-				absenceCategoryId: data.categoryId,
-				startDate: data.startDate,
-				startPeriod: data.startPeriod,
-				endDate: data.endDate,
-				endPeriod: data.endPeriod,
-				durationKind: data.durationKind,
-				startTime: data.startTime,
-				endTime: data.endTime,
-				countsAgainstVacation: category.countsAgainstVacation,
-				requiresApproval: category.requiresApproval,
-				createdBy,
-			});
-
-			const [canonicalRecord] = await tx
-				.insert(timeRecord)
-				.values(canonicalValues.timeRecord)
-				.returning({ id: timeRecord.id });
-
-			await Promise.all([
-				tx.insert(timeRecordAbsence).values({
-					recordId: canonicalRecord.id,
-					...canonicalValues.timeRecordAbsence,
-				}),
-				tx
-					.update(absenceEntry)
-					.set({ canonicalRecordId: canonicalRecord.id })
-					.where(
-						and(
-							eq(absenceEntry.id, newAbsence.id),
-							eq(absenceEntry.organizationId, currentEmployee.organizationId),
-						),
-					),
-			]);
-
 			if (params.approvalWorkflow) {
-				const transactionalDbService = {
-					db: tx,
-					query: dbService.query,
-				} as unknown as typeof DatabaseService.Service;
-				const create = params.approvalWorkflow.create ?? createApprovalWorkflow;
-
-				await Effect.runPromise(
-					create(
-						transactionalDbService,
-						currentEmployee,
-						newAbsence.id,
-						params.approvalWorkflow.categoryId,
-						params.approvalWorkflow.approverId,
+				if (!approvalLifecycle)
+					throw new Error("Approval lifecycle is unavailable");
+				return await approvalLifecycle.withApprovalTransaction((context) =>
+					createRecords(
+						context.dbService.db as ApprovalDbService["db"],
+						context,
 					),
 				);
 			}
 
-			return { ...newAbsence, canonicalRecordId: canonicalRecord.id, vacationOverrideSummary };
-		});
-	});
+			return await dbService.db.transaction((tx) => createRecords(tx));
+		})
+		.pipe(
+			Effect.mapError((error) => {
+				if (error.cause instanceof ValidationError) return error.cause;
+				if (
+					error.cause instanceof ApprovalWorkflowStartError &&
+					error.cause.code === "NO_DEFAULT_APPROVER"
+				) {
+					return new ValidationError({
+						message: "No manager assigned to approve absence requests",
+						field: "managerId",
+					});
+				}
+				return error;
+			}),
+		);
 }
 
 function createApprovalWorkflow(
-	dbService: typeof DatabaseService.Service,
+	dbService: ApprovalDbService,
 	currentEmployee: RequestAbsenceEmployeeContext,
 	absenceId: string,
 	categoryId: string,
-	approverId: string,
+	approverId: string | null,
 ) {
 	return createAbsenceApprovalWorkflow(dbService, {
 		absence: {
@@ -340,6 +749,7 @@ function createApprovalWorkflow(
 			employee: { teamId: currentEmployee.teamId ?? null },
 		},
 		defaultApproverId: approverId,
+		transactionBehavior: "existing",
 	});
 }
 
@@ -429,15 +839,28 @@ function formatDisplayDate(dateStr: string) {
 function renderApprovalEmails(params: {
 	organizationId: string;
 	manager: { user: { name: string; email: string }; userId: string };
-	employeeRecord: { user: { name: string; email: string }; userId: string; organizationId: string };
+	employeeRecord: {
+		user: { name: string; email: string };
+		userId: string;
+		organizationId: string;
+	};
 	data: AbsenceRequest;
 	categoryName: string;
 	businessDays: number;
 }) {
-	const { organizationId, manager, employeeRecord, data, categoryName, businessDays } = params;
+	const {
+		organizationId,
+		manager,
+		employeeRecord,
+		data,
+		categoryName,
+		businessDays,
+	} = params;
 
 	return Effect.gen(function* (_) {
-		const appUrl = yield* _(Effect.promise(() => getOrganizationBaseUrl(organizationId)));
+		const appUrl = yield* _(
+			Effect.promise(() => getOrganizationBaseUrl(organizationId)),
+		);
 
 		const [employeeHtml, managerHtml] = yield* _(
 			Effect.all([
@@ -495,6 +918,81 @@ function sendApprovalEmails(
 	);
 }
 
+async function deliverPendingAbsenceSubmissionBestEffort(params: {
+	dbService: typeof DatabaseService.Service;
+	emailService: typeof EmailService.Service;
+	currentEmployee: RequestAbsenceEmployeeContext;
+	defaultApproverId: string;
+	absenceId: string;
+	data: AbsenceRequest;
+	categoryName: string;
+	businessDays: number;
+}) {
+	try {
+		const [manager, employeeRecord] = await Effect.runPromise(
+			getManagerAndEmployeeDetails(
+				params.dbService,
+				params.defaultApproverId,
+				params.currentEmployee.id,
+			),
+		);
+		const { employeeHtml, managerHtml } = await Effect.runPromise(
+			renderApprovalEmails({
+				organizationId: params.currentEmployee.organizationId,
+				manager,
+				employeeRecord,
+				data: params.data,
+				categoryName: params.categoryName,
+				businessDays: params.businessDays,
+			}),
+		);
+		await Effect.runPromise(
+			sendApprovalEmails(
+				params.emailService,
+				manager,
+				employeeRecord,
+				employeeHtml,
+				managerHtml,
+			),
+		);
+		await Promise.all([
+			onAbsenceRequestSubmitted({
+				absenceId: params.absenceId,
+				employeeUserId: employeeRecord.userId,
+				employeeName: employeeRecord.user.name,
+				organizationId: employeeRecord.organizationId,
+				categoryName: params.categoryName,
+				startDate: params.data.startDate,
+				endDate: params.data.endDate,
+			}),
+			onAbsenceRequestPendingApproval({
+				absenceId: params.absenceId,
+				employeeUserId: employeeRecord.userId,
+				employeeName: employeeRecord.user.name,
+				organizationId: employeeRecord.organizationId,
+				categoryName: params.categoryName,
+				startDate: params.data.startDate,
+				endDate: params.data.endDate,
+				managerUserId: manager.userId,
+				managerName: manager.user.name,
+			}),
+		]);
+		logger.info(
+			{
+				absenceId: params.absenceId,
+				employeeEmail: employeeRecord.user.email,
+				managerEmail: manager.user.email,
+			},
+			"Absence request notifications sent",
+		);
+	} catch (error) {
+		logger.error(
+			{ error, absenceId: params.absenceId },
+			"Failed to deliver absence submission notifications after commit",
+		);
+	}
+}
+
 /**
  * Request an absence with Effect-based workflow
  * - Type-safe error handling
@@ -512,7 +1010,11 @@ export async function requestAbsenceEffect(
 			const session = yield* _(authService.getSession());
 			const dbService = yield* _(DatabaseService);
 			const currentEmployee = yield* _(
-				getRequestingEmployee(dbService, session.user.id, session.session.activeOrganizationId),
+				getRequestingEmployee(
+					dbService,
+					session.user.id,
+					session.session.activeOrganizationId,
+				),
 			);
 
 			return {
@@ -527,6 +1029,7 @@ export async function requestAbsenceForEmployeeEffect(
 	data: AbsenceRequest,
 	currentEmployee: RequestAbsenceEmployeeContext,
 	userId: string,
+	approvalLifecycle?: AbsenceSubmissionApprovalLifecycle,
 ): Promise<ServerActionResult<{ absenceId: string }>> {
 	return requestAbsenceWithResolverEffect(
 		data,
@@ -534,6 +1037,7 @@ export async function requestAbsenceForEmployeeEffect(
 			currentEmployee,
 			userId,
 		}),
+		approvalLifecycle,
 	);
 }
 
@@ -541,9 +1045,10 @@ function requestAbsenceWithResolverEffect(
 	data: AbsenceRequest,
 	resolveRequester: Effect.Effect<
 		{ currentEmployee: RequestAbsenceEmployeeContext; userId: string },
-		any,
-		any
+		AnyAppError,
+		AuthService | DatabaseService
 	>,
+	approvalLifecycle?: AbsenceSubmissionApprovalLifecycle,
 ): Promise<ServerActionResult<{ absenceId: string }>> {
 	const normalizedData = normalizeAbsenceDurationInput(data);
 	const requestData = { ...normalizedData, sickDetail: data.sickDetail };
@@ -582,7 +1087,11 @@ function requestAbsenceWithResolverEffect(
 
 				yield* _(validateRequestDates(requestData));
 				const category = yield* _(
-					getAbsenceCategory(dbService, requestData.categoryId, currentEmployee.organizationId),
+					getAbsenceCategory(
+						dbService,
+						requestData.categoryId,
+						currentEmployee.organizationId,
+					),
 				);
 
 				const sickDetailError = validateAbsenceSickDetail({
@@ -590,27 +1099,14 @@ function requestAbsenceWithResolverEffect(
 					sickDetail: data.sickDetail,
 				});
 				if (sickDetailError) {
-					yield* _(Effect.fail(createSickDetailValidationError(sickDetailError)));
+					yield* _(
+						Effect.fail(createSickDetailValidationError(sickDetailError)),
+					);
 				}
 
 				const defaultApproverId = category.requiresApproval
 					? yield* _(getAbsenceDefaultApproverId(dbService, currentEmployee))
 					: null;
-				const missingApproverMessage = getMissingAbsenceApproverMessage({
-					requiresApproval: category.requiresApproval,
-					approverId: defaultApproverId,
-				});
-				if (missingApproverMessage) {
-					yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: missingApproverMessage,
-								field: "managerId",
-							}),
-						),
-					);
-				}
-
 				yield* _(
 					checkForOverlappingAbsences(
 						dbService,
@@ -622,7 +1118,10 @@ function requestAbsenceWithResolverEffect(
 				);
 
 				span.setAttribute("absence.category_name", category.name);
-				span.setAttribute("absence.requires_approval", category.requiresApproval);
+				span.setAttribute(
+					"absence.requires_approval",
+					category.requiresApproval,
+				);
 
 				const businessDays = calculateBusinessDaysWithHalfDays(
 					requestData.startDate,
@@ -650,14 +1149,14 @@ function requestAbsenceWithResolverEffect(
 						data: requestData,
 						category,
 						createdBy: userId,
-						hasManagerApprovalWorkflow: Boolean(defaultApproverId),
-						approvalWorkflow:
-							category.requiresApproval && defaultApproverId
-								? {
-										categoryId: requestData.categoryId,
-										approverId: defaultApproverId,
-									}
-								: undefined,
+						hasManagerApprovalWorkflow: category.requiresApproval,
+						approvalWorkflow: category.requiresApproval
+							? {
+									categoryId: requestData.categoryId,
+									approverId: defaultApproverId,
+								}
+							: undefined,
+						approvalLifecycle,
 					}),
 				);
 
@@ -671,64 +1170,45 @@ function requestAbsenceWithResolverEffect(
 				});
 
 				logger.info({ absenceId: newAbsence.id }, "Absence entry created");
-
-				if (category.requiresApproval && defaultApproverId) {
-					span.setAttribute("absence.has_approval_request", true);
-					span.setAttribute("absence.approver_id", defaultApproverId);
-
-					const [manager, employeeRecord] = yield* _(
-						getManagerAndEmployeeDetails(dbService, defaultApproverId, currentEmployee.id),
-					);
-
-					const { employeeHtml, managerHtml } = yield* _(
-						renderApprovalEmails({
-							organizationId: currentEmployee.organizationId,
-							manager,
-							employeeRecord,
-							data: requestData,
-							categoryName: category.name,
-							businessDays,
-						}),
-					);
-
-					const emailService = yield* _(EmailService);
-
+				const autoCompletion = newAbsence.autoCompletion;
+				if (autoCompletion) {
 					yield* _(
-						sendApprovalEmails(emailService, manager, employeeRecord, employeeHtml, managerHtml),
+						Effect.promise(() =>
+							runAutoCompletedAbsenceMaintenance(autoCompletion),
+						),
 					);
-
-					void onAbsenceRequestSubmitted({
-						absenceId: newAbsence.id,
-						employeeUserId: employeeRecord.userId,
-						employeeName: employeeRecord.user.name,
-						organizationId: employeeRecord.organizationId,
-						categoryName: category.name,
-						startDate: requestData.startDate,
-						endDate: requestData.endDate,
-					});
-
-					void onAbsenceRequestPendingApproval({
-						absenceId: newAbsence.id,
-						employeeUserId: employeeRecord.userId,
-						employeeName: employeeRecord.user.name,
-						organizationId: employeeRecord.organizationId,
-						categoryName: category.name,
-						startDate: requestData.startDate,
-						endDate: requestData.endDate,
-						managerUserId: manager.userId,
-						managerName: manager.user.name,
-					});
-
-					logger.info(
-						{
-							absenceId: newAbsence.id,
-							employeeEmail: employeeRecord.user.email,
-							managerEmail: manager.user.email,
-						},
-						"Absence request notifications sent",
-					);
+					span.setAttribute("absence.auto_approved", true);
+				} else if (category.requiresApproval) {
+					if (
+						defaultApproverId &&
+						newAbsence.approvalWorkflowResult?.kind !== "canonical"
+					) {
+						span.setAttribute("absence.has_approval_request", true);
+						span.setAttribute("absence.approver_id", defaultApproverId);
+						const emailService = yield* _(EmailService);
+						yield* _(
+							Effect.promise(() =>
+								deliverPendingAbsenceSubmissionBestEffort({
+									dbService,
+									emailService,
+									currentEmployee,
+									defaultApproverId,
+									absenceId: newAbsence.id,
+									data: requestData,
+									categoryName: category.name,
+									businessDays,
+								}),
+							),
+						);
+					}
 				} else if (!category.requiresApproval) {
-					yield* _(updateAutoApprovedAbsence(dbService, newAbsence.id, "autoApproveAbsence"));
+					yield* _(
+						updateAutoApprovedAbsence(
+							dbService,
+							newAbsence.id,
+							"autoApproveAbsence",
+						),
+					);
 					yield* _(
 						Effect.promise(() =>
 							markAutoApprovedAbsenceWorkBalanceDirtyBestEffort({
@@ -752,41 +1232,6 @@ function requestAbsenceWithResolverEffect(
 					);
 
 					span.setAttribute("absence.auto_approved", true);
-
-					void addCalendarSyncJob({
-						absenceId: newAbsence.id,
-						employeeId: currentEmployee.id,
-						organizationId: currentEmployee.organizationId,
-						action: "create",
-					});
-
-					logger.info({ absenceId: newAbsence.id }, "Absence auto-approved (no approval required)");
-				} else {
-					yield* _(updateAutoApprovedAbsence(dbService, newAbsence.id, "autoApproveNoManager"));
-					yield* _(
-						Effect.promise(() =>
-							markAutoApprovedAbsenceWorkBalanceDirtyBestEffort({
-								employeeId: currentEmployee.id,
-								organizationId: currentEmployee.organizationId,
-								absenceId: newAbsence.id,
-								startDate: requestData.startDate,
-							}),
-						),
-					);
-
-					yield* _(
-						Effect.promise(() =>
-							syncCanonicalAbsenceApprovalState({
-								organizationId: currentEmployee.organizationId,
-								canonicalRecordId,
-								approvalState: "approved",
-								updatedBy: userId,
-							}),
-						),
-					);
-
-					span.setAttribute("absence.auto_approved", true);
-					span.setAttribute("absence.no_manager", true);
 
 					void addCalendarSyncJob({
 						absenceId: newAbsence.id,
@@ -796,11 +1241,8 @@ function requestAbsenceWithResolverEffect(
 					});
 
 					logger.info(
-						{
-							absenceId: newAbsence.id,
-							employeeId: currentEmployee.id,
-						},
-						"Absence auto-approved (no manager assigned)",
+						{ absenceId: newAbsence.id },
+						"Absence auto-approved (no approval required)",
 					);
 				}
 

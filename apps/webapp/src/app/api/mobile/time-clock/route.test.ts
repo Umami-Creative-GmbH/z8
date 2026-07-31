@@ -8,6 +8,8 @@ function utcActionEvidence() {
 	};
 }
 
+const submissionId = "10000000-0000-4000-8000-000000000099";
+
 const mockState = vi.hoisted(() => ({
 	MobileApiError: class MobileApiError extends Error {
 		constructor(
@@ -174,6 +176,7 @@ describe("POST /api/mobile/time-clock", () => {
 				method: "POST",
 				body: JSON.stringify({
 					action: "clock_out",
+					submissionId,
 					timestamp: new Date().toISOString(),
 					browserTimezone: "Not/AZone",
 					utcOffsetMinutes: 0,
@@ -186,12 +189,45 @@ describe("POST /api/mobile/time-clock", () => {
 		expect(mockState.clockOut).not.toHaveBeenCalled();
 	});
 
+	it("passes the canonical mobile clock-out submission id to the action", async () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-07-10T12:30:00.000Z"));
+		mockState.clockOut.mockResolvedValue({
+			success: true,
+			data: { id: "entry-1" },
+		});
+
+		const response = await POST(
+			new Request("https://app.example.com/api/mobile/time-clock", {
+				method: "POST",
+				body: JSON.stringify({
+					action: "clock_out",
+					submissionId,
+					timestamp: "2026-07-10T12:30:00.000Z",
+					browserTimezone: "UTC",
+					utcOffsetMinutes: 0,
+				}),
+				headers: { "content-type": "application/json" },
+			}),
+		);
+
+		expect(response.status).toBe(200);
+		expect(mockState.clockOut).toHaveBeenCalledWith(undefined, undefined, {
+			browserTimezone: "UTC",
+			deviceInfo: "mobile",
+			instant: expect.anything(),
+			submissionId,
+		});
+		vi.useRealTimers();
+	});
+
 	it("rejects an offset that does not match the supplied timezone at the action instant", async () => {
 		const response = await POST(
 			new Request("https://app.example.com/api/mobile/time-clock", {
 				method: "POST",
 				body: JSON.stringify({
 					action: "clock_out",
+					submissionId,
 					timestamp: new Date().toISOString(),
 					browserTimezone: "Asia/Kathmandu",
 					utcOffsetMinutes: 0,
@@ -212,6 +248,7 @@ describe("POST /api/mobile/time-clock", () => {
 				method: "POST",
 				body: JSON.stringify({
 					action: "clock_out",
+					submissionId,
 					timestamp: "2026-07-10T12:35:00.001Z",
 					browserTimezone: "UTC",
 					utcOffsetMinutes: 0,
@@ -315,7 +352,11 @@ describe("POST /api/mobile/time-clock", () => {
 		const response = await POST(
 			new Request("https://app.example.com/api/mobile/time-clock", {
 				method: "POST",
-				body: JSON.stringify({ action: "clock_out", ...utcActionEvidence() }),
+				body: JSON.stringify({
+					action: "clock_out",
+					submissionId,
+					...utcActionEvidence(),
+				}),
 				headers: {
 					"content-type": "application/json",
 				},
@@ -355,7 +396,11 @@ describe("POST /api/mobile/time-clock", () => {
 		const response = await POST(
 			new Request("https://app.example.com/api/mobile/time-clock", {
 				method: "POST",
-				body: JSON.stringify({ action: "clock_out", ...utcActionEvidence() }),
+				body: JSON.stringify({
+					action: "clock_out",
+					submissionId,
+					...utcActionEvidence(),
+				}),
 				headers: {
 					"content-type": "application/json",
 				},

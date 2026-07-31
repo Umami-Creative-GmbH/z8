@@ -19,7 +19,10 @@ import { organization, session, user } from "@/db/auth-schema";
 import { billingSeatAudit, subscription, timeRecord } from "@/db/schema";
 import { env } from "@/env";
 import { buildPlatformAnalyticsSeries, getLatestPointKpis } from "./normalize";
-import { buildPlatformAnalyticsBuckets, parsePlatformAnalyticsParams } from "./range";
+import {
+	buildPlatformAnalyticsBuckets,
+	parsePlatformAnalyticsParams,
+} from "./range";
 import type {
 	ParsedPlatformAnalyticsParams,
 	PlatformAnalyticsAggregateRow,
@@ -28,7 +31,16 @@ import type {
 	PlatformAnalyticsSearchParams,
 } from "./types";
 
-const BILLING_SUBSCRIPTION_STATUSES = ["active", "trialing", "past_due"] as const;
+const BILLING_SUBSCRIPTION_STATUSES = [
+	"active",
+	"trialing",
+	"past_due",
+] as const;
+const INTERVAL_BY_BUCKET = {
+	day: "1 day",
+	week: "7 days",
+	month: "1 month",
+} satisfies Record<PlatformAnalyticsBucket, string>;
 
 type PlatformAnalyticsDataOptions = {
 	includeBilling?: boolean;
@@ -59,10 +71,14 @@ export async function getPlatformAnalyticsData(
 		getOrganizationsByBucket(parsedParams),
 		getActiveUsersByBucket(parsedParams),
 		getSessionsByBucket(parsedParams),
-		includeTimeRecords ? getTimeRecordsByBucket(parsedParams) : Promise.resolve([]),
+		includeTimeRecords
+			? getTimeRecordsByBucket(parsedParams)
+			: Promise.resolve([]),
 		getCurrentOrganizations(),
 		getCurrentActiveUsers(),
-		effectiveBillingEnabled ? getBillingAnalytics(parsedParams) : Promise.resolve(null),
+		effectiveBillingEnabled
+			? getBillingAnalytics(parsedParams)
+			: Promise.resolve(null),
 	]);
 
 	const series = buildPlatformAnalyticsSeries(
@@ -124,13 +140,21 @@ function getActiveUsersByBucket(params: ParsedPlatformAnalyticsParams) {
 		.groupBy(sql`1`);
 }
 
-function getCountByBucket(column: AnyPgColumn, params: ParsedPlatformAnalyticsParams) {
+function getCountByBucket(
+	column: AnyPgColumn,
+	params: ParsedPlatformAnalyticsParams,
+) {
 	const bucket = getBucketSql(column, params);
 
 	return db
 		.select({ bucket, value: count() })
 		.from(column.table)
-		.where(and(gte(column, toDate(params.startIso)), lt(column, toDate(params.endIso))))
+		.where(
+			and(
+				gte(column, toDate(params.startIso)),
+				lt(column, toDate(params.endIso)),
+			),
+		)
 		.groupBy(sql`1`);
 }
 
@@ -161,7 +185,10 @@ async function getBillingAnalytics(params: ParsedPlatformAnalyticsParams) {
 	return {
 		currentSeats: currentTotals.seats,
 		currentMrr: currentTotals.mrr,
-		seats: estimatedRows.map((row) => ({ bucket: row.bucket, value: row.seats })),
+		seats: estimatedRows.map((row) => ({
+			bucket: row.bucket,
+			value: row.seats,
+		})),
 		mrr: estimatedRows.map((row) => ({ bucket: row.bucket, value: row.mrr })),
 	};
 }
@@ -217,7 +244,10 @@ async function getEstimatedBillingRows(params: ParsedPlatformAnalyticsParams) {
 	}));
 }
 
-function getBucketSql(column: AnyPgColumn, params: ParsedPlatformAnalyticsParams): SQL<Date> {
+function getBucketSql(
+	column: AnyPgColumn,
+	params: ParsedPlatformAnalyticsParams,
+): SQL<Date> {
 	if (params.bucket === "week") {
 		return sql<Date>`date_bin('7 days'::interval, ${column}, ${toDate(params.startIso)}::timestamp)`;
 	}
@@ -226,15 +256,8 @@ function getBucketSql(column: AnyPgColumn, params: ParsedPlatformAnalyticsParams
 	return sql<Date>`date_trunc(${params.bucket}, ${column})`;
 }
 
-function getIntervalSql(bucket: PlatformAnalyticsBucket) {
-	switch (bucket) {
-		case "day":
-			return sql.raw("'1 day'::interval");
-		case "week":
-			return sql.raw("'7 days'::interval");
-		case "month":
-			return sql.raw("'1 month'::interval");
-	}
+function getIntervalSql(bucket: PlatformAnalyticsBucket): SQL {
+	return sql`${INTERVAL_BY_BUCKET[bucket]}::interval`;
 }
 
 function getRows<T>(rows: T[] | { rows: T[] }) {

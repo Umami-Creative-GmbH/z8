@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import { StrictMode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { createMock, destroyMock, instances } = vi.hoisted(() => ({
@@ -29,15 +30,17 @@ const { createMock, destroyMock, instances } = vi.hoisted(() => ({
 }));
 
 vi.mock("timepicker-ui", () => ({
-	TimepickerUI: vi.fn().mockImplementation(function TimepickerUIMock(input, options) {
-		const open = vi.fn();
-		input.addEventListener("click", open);
-		instances.push({ input, options, open });
-		return {
-			create: createMock,
-			destroy: destroyMock,
-		};
-	}),
+	TimepickerUI: vi
+		.fn()
+		.mockImplementation(function TimepickerUIMock(input, options) {
+			const open = vi.fn();
+			input.addEventListener("click", open);
+			instances.push({ input, options, open });
+			return {
+				create: createMock,
+				destroy: destroyMock,
+			};
+		}),
 }));
 
 import { UserPreferencesProvider } from "@/components/providers/user-preferences-provider";
@@ -51,7 +54,9 @@ describe("TimeInput", () => {
 	});
 
 	it("uses a masked text input and a separate picker anchor", () => {
-		render(<TimeInput aria-label="Start time" value="09:00" onChange={vi.fn()} />);
+		render(
+			<TimeInput aria-label="Start time" value="09:00" onChange={vi.fn()} />,
+		);
 
 		const input = screen.getByLabelText("Start time");
 		const button = screen.getByRole("button", { name: "Open time picker" });
@@ -67,25 +72,42 @@ describe("TimeInput", () => {
 	});
 
 	it("keeps the picker anchor value synchronized with the displayed time", () => {
-		render(<TimeInput aria-label="Start time" timeFormat="12h" value="14:05" onChange={vi.fn()} />);
+		render(
+			<TimeInput
+				aria-label="Start time"
+				timeFormat="12h"
+				value="14:05"
+				onChange={vi.fn()}
+			/>,
+		);
 
-		expect(screen.getByLabelText<HTMLInputElement>("Start time").value).toBe("02:05");
+		expect(screen.getByLabelText<HTMLInputElement>("Start time").value).toBe(
+			"02:05",
+		);
 		expect(instances[0]?.input.value).toBe("02:05 PM");
 
 		fireEvent.click(screen.getByRole("button", { name: "Switch to AM" }));
 		expect(instances[0]?.input.value).toBe("02:05 AM");
 
 		act(() => {
-			instances[0]?.options.callbacks?.onConfirm?.({ hour: "9", minutes: "30", type: "AM" });
+			instances[0]?.options.callbacks?.onConfirm?.({
+				hour: "9",
+				minutes: "30",
+				type: "AM",
+			});
 		});
 		expect(instances[0]?.input.value).toBe("09:30 AM");
 
-		fireEvent.change(screen.getByLabelText("Start time"), { target: { value: "10:45" } });
+		fireEvent.change(screen.getByLabelText("Start time"), {
+			target: { value: "10:45" },
+		});
 		expect(instances[0]?.input.value).toBe("10:45 AM");
 	});
 
 	it("opens the picker only from the connected button", () => {
-		render(<TimeInput aria-label="Start time" value="09:00" onChange={vi.fn()} />);
+		render(
+			<TimeInput aria-label="Start time" value="09:00" onChange={vi.fn()} />,
+		);
 
 		const input = screen.getByLabelText("Start time");
 		const button = screen.getByRole("button", { name: "Open time picker" });
@@ -99,31 +121,69 @@ describe("TimeInput", () => {
 	});
 
 	it("disables the input and picker trigger together", () => {
-		render(<TimeInput aria-label="Start time" value="09:00" onChange={vi.fn()} disabled />);
+		render(
+			<TimeInput
+				aria-label="Start time"
+				value="09:00"
+				onChange={vi.fn()}
+				disabled
+			/>,
+		);
 
-		expect(screen.getByLabelText<HTMLInputElement>("Start time").disabled).toBe(true);
+		expect(screen.getByLabelText<HTMLInputElement>("Start time").disabled).toBe(
+			true,
+		);
 		expect(
-			screen.getByRole<HTMLButtonElement>("button", { name: "Open time picker" }).disabled,
+			screen.getByRole<HTMLButtonElement>("button", {
+				name: "Open time picker",
+			}).disabled,
 		).toBe(true);
 	});
 
 	it("passes the 12-hour preference to timepicker-ui", () => {
-		render(<TimeInput aria-label="Start time" onChange={vi.fn()} timeFormat="12h" value="09:00" />);
+		render(
+			<TimeInput
+				aria-label="Start time"
+				onChange={vi.fn()}
+				timeFormat="12h"
+				value="09:00"
+			/>,
+		);
 
 		expect(instances[0]?.options.clock?.type).toBe("12h");
 	});
 
 	it("displays controlled values with the 12-hour preference", () => {
-		render(<TimeInput aria-label="Start time" onChange={vi.fn()} timeFormat="12h" value="14:05" />);
+		render(
+			<TimeInput
+				aria-label="Start time"
+				onChange={vi.fn()}
+				timeFormat="12h"
+				value="14:05"
+			/>,
+		);
 
-		expect(screen.getByLabelText<HTMLInputElement>("Start time").value).toBe("02:05");
-		expect(screen.getByRole("button", { name: "Switch to AM" }).textContent).toBe("PM");
+		expect(screen.getByLabelText<HTMLInputElement>("Start time").value).toBe(
+			"02:05",
+		);
+		expect(
+			screen.getByRole("button", { name: "Switch to AM" }).textContent,
+		).toBe("PM");
 	});
 
 	it("displays controlled values with the 24-hour preference", () => {
-		render(<TimeInput aria-label="Start time" onChange={vi.fn()} timeFormat="24h" value="14:05" />);
+		render(
+			<TimeInput
+				aria-label="Start time"
+				onChange={vi.fn()}
+				timeFormat="24h"
+				value="14:05"
+			/>,
+		);
 
-		expect(screen.getByLabelText<HTMLInputElement>("Start time").value).toBe("14:05");
+		expect(screen.getByLabelText<HTMLInputElement>("Start time").value).toBe(
+			"14:05",
+		);
 	});
 
 	it("uses the provider time format when no explicit time format is passed", () => {
@@ -139,7 +199,12 @@ describe("TimeInput", () => {
 	it("uses an explicit time format over the provider time format", () => {
 		render(
 			<UserPreferencesProvider timeFormat="12h" weekStartDay="sunday">
-				<TimeInput aria-label="Start time" onChange={vi.fn()} timeFormat="24h" value="09:00" />
+				<TimeInput
+					aria-label="Start time"
+					onChange={vi.fn()}
+					timeFormat="24h"
+					value="09:00"
+				/>
 			</UserPreferencesProvider>,
 		);
 
@@ -148,10 +213,19 @@ describe("TimeInput", () => {
 
 	it("emits standard change events when a 24-hour time is confirmed", () => {
 		const handleChange = vi.fn();
-		render(<TimeInput aria-label="Start time" value="09:00" onChange={handleChange} />);
+		render(
+			<TimeInput
+				aria-label="Start time"
+				value="09:00"
+				onChange={handleChange}
+			/>,
+		);
 
 		act(() => {
-			instances[0]?.options.callbacks?.onConfirm?.({ hour: "14", minutes: "30" });
+			instances[0]?.options.callbacks?.onConfirm?.({
+				hour: "14",
+				minutes: "30",
+			});
 		});
 
 		expect(handleChange).toHaveBeenCalledTimes(1);
@@ -163,29 +237,51 @@ describe("TimeInput", () => {
 	it("converts confirmed PM times to stored 24-hour values in 12-hour mode", () => {
 		const handleChange = vi.fn();
 		render(
-			<TimeInput aria-label="Start time" timeFormat="12h" value="09:00" onChange={handleChange} />,
+			<TimeInput
+				aria-label="Start time"
+				timeFormat="12h"
+				value="09:00"
+				onChange={handleChange}
+			/>,
 		);
 
 		act(() => {
-			instances[0]?.options.callbacks?.onConfirm?.({ hour: "2", minutes: "05", type: "PM" });
+			instances[0]?.options.callbacks?.onConfirm?.({
+				hour: "2",
+				minutes: "05",
+				type: "PM",
+			});
 		});
 
 		expect(handleChange).toHaveBeenCalledTimes(1);
 		expect(handleChange.mock.calls[0]?.[0].target.value).toBe("14:05");
 		expect(handleChange.mock.calls[0]?.[0].currentTarget.value).toBe("14:05");
 		expect(handleChange.mock.calls[0]?.[0].type).toBe("change");
-		expect(screen.getByLabelText<HTMLInputElement>("Start time").value).toBe("02:05");
-		expect(screen.getByRole("button", { name: "Switch to AM" }).textContent).toBe("PM");
+		expect(screen.getByLabelText<HTMLInputElement>("Start time").value).toBe(
+			"02:05",
+		);
+		expect(
+			screen.getByRole("button", { name: "Switch to AM" }).textContent,
+		).toBe("PM");
 	});
 
 	it("converts confirmed AM midnight to stored 24-hour values in 12-hour mode", () => {
 		const handleChange = vi.fn();
 		render(
-			<TimeInput aria-label="Start time" timeFormat="12h" value="09:00" onChange={handleChange} />,
+			<TimeInput
+				aria-label="Start time"
+				timeFormat="12h"
+				value="09:00"
+				onChange={handleChange}
+			/>,
 		);
 
 		act(() => {
-			instances[0]?.options.callbacks?.onConfirm?.({ hour: "12", minutes: "00", type: "AM" });
+			instances[0]?.options.callbacks?.onConfirm?.({
+				hour: "12",
+				minutes: "00",
+				type: "AM",
+			});
 		});
 
 		expect(handleChange).toHaveBeenCalledTimes(1);
@@ -195,11 +291,20 @@ describe("TimeInput", () => {
 	it("treats unknown marker types as 24-hour values", () => {
 		const handleChange = vi.fn();
 		render(
-			<TimeInput aria-label="Start time" timeFormat="12h" value="09:00" onChange={handleChange} />,
+			<TimeInput
+				aria-label="Start time"
+				timeFormat="12h"
+				value="09:00"
+				onChange={handleChange}
+			/>,
 		);
 
 		act(() => {
-			instances[0]?.options.callbacks?.onConfirm?.({ hour: "12", minutes: "00", type: "unknown" });
+			instances[0]?.options.callbacks?.onConfirm?.({
+				hour: "12",
+				minutes: "00",
+				type: "unknown",
+			});
 		});
 
 		expect(handleChange).toHaveBeenCalledTimes(1);
@@ -211,16 +316,27 @@ describe("TimeInput", () => {
 			<TimeInput aria-label="Start time" timeFormat="24h" value="09:00" />,
 		);
 
-		rerender(<TimeInput aria-label="Start time" timeFormat="12h" value="09:00" />);
+		rerender(
+			<TimeInput aria-label="Start time" timeFormat="12h" value="09:00" />,
+		);
 
 		expect(destroyMock).toHaveBeenCalledWith({ keepInputValue: true });
 	});
 
 	it("emits normalized values from valid 24-hour typing", () => {
 		const handleChange = vi.fn();
-		render(<TimeInput aria-label="Start time" timeFormat="24h" value="" onChange={handleChange} />);
+		render(
+			<TimeInput
+				aria-label="Start time"
+				timeFormat="24h"
+				value=""
+				onChange={handleChange}
+			/>,
+		);
 
-		fireEvent.change(screen.getByLabelText("Start time"), { target: { value: "14:30" } });
+		fireEvent.change(screen.getByLabelText("Start time"), {
+			target: { value: "14:30" },
+		});
 
 		expect(handleChange).toHaveBeenCalledTimes(1);
 		expect(handleChange.mock.calls[0]?.[0].target.value).toBe("14:30");
@@ -229,7 +345,14 @@ describe("TimeInput", () => {
 
 	it("formats typed digits into an HH:mm display value", () => {
 		const handleChange = vi.fn();
-		render(<TimeInput aria-label="Start time" timeFormat="24h" value="" onChange={handleChange} />);
+		render(
+			<TimeInput
+				aria-label="Start time"
+				timeFormat="24h"
+				value=""
+				onChange={handleChange}
+			/>,
+		);
 
 		const input = screen.getByLabelText<HTMLInputElement>("Start time");
 		fireEvent.change(input, { target: { value: "1430" } });
@@ -241,7 +364,14 @@ describe("TimeInput", () => {
 
 	it("ignores non-digits and limits typed time input to four digits", () => {
 		const handleChange = vi.fn();
-		render(<TimeInput aria-label="Start time" timeFormat="24h" value="" onChange={handleChange} />);
+		render(
+			<TimeInput
+				aria-label="Start time"
+				timeFormat="24h"
+				value=""
+				onChange={handleChange}
+			/>,
+		);
 
 		const input = screen.getByLabelText<HTMLInputElement>("Start time");
 		fireEvent.change(input, { target: { value: "ab12345cd" } });
@@ -253,9 +383,18 @@ describe("TimeInput", () => {
 
 	it("does not emit changes for incomplete typed values", () => {
 		const handleChange = vi.fn();
-		render(<TimeInput aria-label="Start time" timeFormat="24h" value="" onChange={handleChange} />);
+		render(
+			<TimeInput
+				aria-label="Start time"
+				timeFormat="24h"
+				value=""
+				onChange={handleChange}
+			/>,
+		);
 
-		fireEvent.change(screen.getByLabelText("Start time"), { target: { value: "14:" } });
+		fireEvent.change(screen.getByLabelText("Start time"), {
+			target: { value: "14:" },
+		});
 
 		expect(handleChange).not.toHaveBeenCalled();
 	});
@@ -263,10 +402,17 @@ describe("TimeInput", () => {
 	it("emits an empty string when clearing a populated time", () => {
 		const handleChange = vi.fn();
 		render(
-			<TimeInput aria-label="Start time" timeFormat="24h" value="14:30" onChange={handleChange} />,
+			<TimeInput
+				aria-label="Start time"
+				timeFormat="24h"
+				value="14:30"
+				onChange={handleChange}
+			/>,
 		);
 
-		fireEvent.change(screen.getByLabelText("Start time"), { target: { value: "" } });
+		fireEvent.change(screen.getByLabelText("Start time"), {
+			target: { value: "" },
+		});
 
 		expect(handleChange).toHaveBeenCalledTimes(1);
 		expect(handleChange.mock.calls[0]?.[0].target.value).toBe("");
@@ -275,9 +421,18 @@ describe("TimeInput", () => {
 
 	it("emits normalized values from 12-hour typing and AM/PM state", () => {
 		const handleChange = vi.fn();
-		render(<TimeInput aria-label="Start time" timeFormat="12h" value="" onChange={handleChange} />);
+		render(
+			<TimeInput
+				aria-label="Start time"
+				timeFormat="12h"
+				value=""
+				onChange={handleChange}
+			/>,
+		);
 
-		fireEvent.change(screen.getByLabelText("Start time"), { target: { value: "02:05" } });
+		fireEvent.change(screen.getByLabelText("Start time"), {
+			target: { value: "02:05" },
+		});
 		fireEvent.click(screen.getByRole("button", { name: "Switch to PM" }));
 
 		expect(handleChange).toHaveBeenLastCalledWith(
@@ -288,14 +443,37 @@ describe("TimeInput", () => {
 		);
 	});
 
+	it("emits one change when toggling the period in StrictMode", () => {
+		const handleChange = vi.fn();
+		render(
+			<StrictMode>
+				<TimeInput
+					aria-label="Start time"
+					timeFormat="12h"
+					defaultValue="02:05"
+					onChange={handleChange}
+				/>
+			</StrictMode>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Switch to PM" }));
+
+		expect(handleChange).toHaveBeenCalledTimes(1);
+		expect(handleChange.mock.calls[0]?.[0].target.value).toBe("14:05");
+	});
+
 	it("appends the picker modal inside the component subtree", () => {
-		render(<TimeInput aria-label="Start time" value="09:00" onChange={vi.fn()} />);
+		render(
+			<TimeInput aria-label="Start time" value="09:00" onChange={vi.fn()} />,
+		);
 
 		const modalRootSelector = instances[0]?.options.ui?.appendModalSelector;
 
 		expect(modalRootSelector).toMatch(/^#time-input-/);
-		expect(document.querySelector(modalRootSelector ?? "")?.contains(instances[0]?.input)).toBe(
-			true,
-		);
+		expect(
+			document
+				.querySelector(modalRootSelector ?? "")
+				?.contains(instances[0]?.input),
+		).toBe(true);
 	});
 });

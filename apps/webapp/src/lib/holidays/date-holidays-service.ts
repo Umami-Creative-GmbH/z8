@@ -1,4 +1,5 @@
 import Holidays from "date-holidays";
+import { Temporal } from "temporal-polyfill";
 
 export interface CountryOption {
 	code: string;
@@ -19,6 +20,28 @@ export interface HolidayPreview {
 }
 
 export type HolidayType = "public" | "bank" | "optional" | "school" | "observance";
+
+function holidayPlainDate(date: string): Temporal.PlainDate {
+	return Temporal.PlainDate.from(date.slice(0, 10), { overflow: "reject" });
+}
+
+function databasePlainDate(date: Date): Temporal.PlainDate {
+	return Temporal.Instant.from(date.toISOString()).toZonedDateTimeISO("UTC").toPlainDate();
+}
+
+function holidayDurationDays(holiday: HolidayPreview, startDate: Temporal.PlainDate): number {
+	const start = Temporal.Instant.from(holiday.startDate.toISOString());
+	const end = Temporal.Instant.from(holiday.endDate.toISOString());
+	if (Temporal.Instant.compare(end, start) < 0) {
+		throw new RangeError("Holiday end date must not precede its start date");
+	}
+
+	// date-holidays exposes instants but no end-date key. Rounding the elapsed hours
+	// recovers its local calendar-day count across 23- and 25-hour DST days.
+	const elapsedHours = end.since(start).total({ unit: "hours" });
+	const endExclusive = startDate.add({ days: Math.max(1, Math.round(elapsedHours / 24)) });
+	return startDate.until(endExclusive, { largestUnit: "days" }).days;
+}
 
 /**
  * Get list of all supported countries
@@ -74,7 +97,7 @@ export function getHolidaysForYear(
 	year?: number,
 	types?: HolidayType[],
 ): HolidayPreview[] {
-	const targetYear = year ?? new Date().getFullYear();
+	const targetYear = year ?? Temporal.Now.plainDateISO("UTC").year;
 
 	// Initialize with appropriate specificity
 	let hd: Holidays;
@@ -124,9 +147,8 @@ export function mapToHolidayFormValues(
 } {
 	const startDate = new Date(holiday.startDate);
 	const endDate = new Date(holiday.endDate);
-
-	// Calculate duration in days for multi-day holidays
-	const durationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+	const calendarStartDate = holidayPlainDate(holiday.date);
+	const durationDays = holidayDurationDays(holiday, calendarStartDate);
 
 	return {
 		name: holiday.name,
@@ -137,8 +159,8 @@ export function mapToHolidayFormValues(
 		recurrenceType: createRecurring ? "yearly" : "none",
 		recurrenceRule: createRecurring
 			? JSON.stringify({
-					month: startDate.getMonth() + 1,
-					day: startDate.getDate(),
+					month: calendarStartDate.month,
+					day: calendarStartDate.day,
 					duration: durationDays > 1 ? durationDays : undefined,
 				})
 			: undefined,
@@ -158,9 +180,9 @@ export function isHolidayDuplicate(
 		recurrenceRule: string | null;
 	}>,
 ): boolean {
-	const startDate = new Date(holiday.startDate);
-	const month = startDate.getMonth() + 1;
-	const day = startDate.getDate();
+	const startDate = holidayPlainDate(holiday.date);
+	const month = startDate.month;
+	const day = startDate.day;
 
 	return existingHolidays.some((existing) => {
 		// Check by name (case-insensitive)
@@ -175,12 +197,12 @@ export function isHolidayDuplicate(
 				dateMatch = rule.month === month && rule.day === day;
 			} catch {
 				// If rule is not valid JSON, compare dates directly
-				const existingDate = new Date(existing.startDate);
-				dateMatch = existingDate.getMonth() + 1 === month && existingDate.getDate() === day;
+				const existingDate = databasePlainDate(existing.startDate);
+				dateMatch = existingDate.month === month && existingDate.day === day;
 			}
 		} else {
-			const existingDate = new Date(existing.startDate);
-			dateMatch = existingDate.getMonth() + 1 === month && existingDate.getDate() === day;
+			const existingDate = databasePlainDate(existing.startDate);
+			dateMatch = existingDate.month === month && existingDate.day === day;
 		}
 
 		return nameMatch || dateMatch;

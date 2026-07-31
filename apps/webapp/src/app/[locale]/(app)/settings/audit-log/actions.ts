@@ -1,6 +1,12 @@
 "use server";
 
-import { canManageCurrentOrganizationSettings, requireUser } from "@/lib/auth-helpers";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
+import {
+	canManageCurrentOrganizationSettings,
+	requireUser,
+} from "@/lib/auth-helpers";
 import {
 	type AuditLogFilters,
 	type AuditLogResult,
@@ -8,6 +14,7 @@ import {
 	getAuditLogStats,
 	getAuditLogs,
 } from "@/lib/query/audit.queries";
+import { resolveAuditDateRange } from "@/lib/query/audit-date-range";
 
 export interface AuditLogResponse {
 	success: boolean;
@@ -43,7 +50,33 @@ async function requireAuditLogOrgAdmin() {
 		return { error: "Access denied. Admin role required." } as const;
 	}
 
-	return { organizationId } as const;
+	const ownedOrganization = await db.query.organization.findFirst({
+		where: eq(organization.id, organizationId),
+		columns: { timezone: true },
+	});
+	if (!ownedOrganization) {
+		return { error: "Organization not found" } as const;
+	}
+
+	return {
+		organizationId,
+		timezone: ownedOrganization.timezone ?? "UTC",
+	} as const;
+}
+
+function dateFilters(
+	startDate: string | undefined,
+	endDate: string | undefined,
+	timezone: string,
+) {
+	if (!startDate && !endDate) return {};
+	if (!startDate || !endDate) {
+		throw new RangeError(
+			"Audit log date filters require both start and end dates",
+		);
+	}
+	const range = resolveAuditDateRange(startDate, endDate, timezone);
+	return { startDate: range.start, endDateExclusive: range.endExclusive };
 }
 
 /**
@@ -74,8 +107,7 @@ export async function getAuditLogsAction(filters: {
 			entityType: filters.entityType,
 			action: filters.action,
 			performedBy: filters.performedBy,
-			startDate: filters.startDate ? new Date(filters.startDate) : undefined,
-			endDate: filters.endDate ? new Date(filters.endDate) : undefined,
+			...dateFilters(filters.startDate, filters.endDate, access.timezone),
 			search: filters.search,
 			limit: filters.limit || 50,
 			offset: filters.offset || 0,
@@ -113,10 +145,12 @@ export async function getAuditStatsAction(
 			};
 		}
 
+		const range = resolveAuditDateRange(startDate, endDate, access.timezone);
 		const stats = await getAuditLogStats(
 			access.organizationId,
-			new Date(startDate),
-			new Date(endDate),
+			range.start,
+			range.endExclusive,
+			{ endExclusive: true },
 		);
 
 		return {
@@ -149,10 +183,11 @@ export async function exportAuditLogsAction(
 			};
 		}
 
+		const range = resolveAuditDateRange(startDate, endDate, access.timezone);
 		const logs = await exportAuditLogs(
 			access.organizationId,
-			new Date(startDate),
-			new Date(endDate),
+			range.start,
+			range.endExclusive,
 		);
 
 		return {

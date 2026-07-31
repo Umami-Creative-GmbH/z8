@@ -1,4 +1,16 @@
 import { pgEnum } from "drizzle-orm/pg-core";
+import {
+	APPROVAL_ACTOR_KINDS,
+	APPROVAL_ASSIGNMENT_STATUSES,
+	APPROVAL_COMMAND_STATES,
+	APPROVAL_OUTBOX_CHANNELS,
+	APPROVAL_OUTBOX_DISPOSITIONS,
+	APPROVAL_OUTBOX_EXPANSION_STATUSES,
+	APPROVAL_OUTBOX_STATUSES,
+	APPROVAL_STAGE_STATUSES,
+	APPROVAL_WORKFLOW_STATUSES,
+	APPROVAL_WORKFLOW_TYPES,
+} from "@/lib/approvals/workflow/types";
 
 // ============================================
 // ENUMS
@@ -16,6 +28,54 @@ export const absenceTypeEnum = pgEnum("absence_type", [
 	"custom",
 ]);
 export const approvalStatusEnum = pgEnum("approval_status", ["pending", "approved", "rejected"]);
+export const approvalWorkflowTypeEnum = pgEnum(
+	"approval_workflow_type",
+	APPROVAL_WORKFLOW_TYPES,
+);
+export const approvalWorkflowStatusEnum = pgEnum(
+	"approval_workflow_status",
+	APPROVAL_WORKFLOW_STATUSES,
+);
+export const approvalStageStatusEnum = pgEnum(
+	"approval_stage_status",
+	APPROVAL_STAGE_STATUSES,
+);
+export const approvalAssignmentStatusEnum = pgEnum(
+	"approval_assignment_status",
+	APPROVAL_ASSIGNMENT_STATUSES,
+);
+export const approvalActorKindEnum = pgEnum(
+	"approval_actor_kind",
+	APPROVAL_ACTOR_KINDS,
+);
+export const approvalCommandStateEnum = pgEnum(
+	"approval_command_state",
+	APPROVAL_COMMAND_STATES,
+);
+export const approvalOutboxDispositionEnum = pgEnum(
+	"approval_outbox_disposition",
+	APPROVAL_OUTBOX_DISPOSITIONS,
+);
+export const approvalOutboxStatusEnum = pgEnum(
+	"approval_outbox_status",
+	APPROVAL_OUTBOX_STATUSES,
+);
+export const approvalOutboxExpansionStatusEnum = pgEnum(
+	"approval_outbox_expansion_status",
+	APPROVAL_OUTBOX_EXPANSION_STATUSES,
+);
+export const approvalOutboxChannelEnum = pgEnum(
+	"approval_outbox_channel",
+	APPROVAL_OUTBOX_CHANNELS,
+);
+export const approvalWorkflowLifecycleModeEnum = pgEnum(
+	"approval_workflow_lifecycle_mode",
+	["legacy", "shadow", "ready", "canonical", "complete"],
+);
+export const approvalSideEffectModeEnum = pgEnum("approval_side_effect_mode", [
+	"legacy",
+	"canonical",
+]);
 export const approvalPolicyConditionTypeEnum = pgEnum("approval_policy_condition_type", [
 	"approval_type",
 	"team",
@@ -202,6 +262,12 @@ export const notificationChannelEnum = pgEnum("notification_channel", [
 // Shift scheduling enums
 export const shiftStatusEnum = pgEnum("shift_status", ["draft", "published"]);
 export const shiftRequestTypeEnum = pgEnum("shift_request_type", ["swap", "assignment", "pickup"]);
+export const shiftRequestStatusEnum = pgEnum("shift_request_status", [
+	"pending",
+	"approved",
+	"rejected",
+	"cancelled",
+]);
 export const shiftRecurrenceTypeEnum = pgEnum("shift_recurrence_type", [
 	"daily",
 	"weekly",

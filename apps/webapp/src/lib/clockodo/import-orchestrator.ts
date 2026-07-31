@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { member as authMember, user as authUser } from "@/db/auth-schema";
 import {
@@ -46,6 +46,40 @@ import type {
 } from "./types";
 
 const logger = createLogger("ClockodoImport");
+const CLOCKODO_IMPORT_QUERY_CHUNK_SIZE = 500;
+const CLOCKODO_IMPORT_CONCURRENCY = 4;
+
+function chunkRows<T>(rows: readonly T[], size: number): T[][] {
+	return Array.from({ length: Math.ceil(rows.length / size) }, (_, index) =>
+		rows.slice(index * size, (index + 1) * size),
+	);
+}
+
+function mapInBoundedBatches<T, R>(
+	items: readonly T[],
+	concurrency: number,
+	operation: (item: T) => Promise<R>,
+): Promise<R[]> {
+	const results: R[] = [];
+	const processWindow = (offset: number): Promise<R[]> => {
+		const window = items.slice(offset, offset + concurrency);
+		if (window.length === 0) return Promise.resolve(results);
+
+		return Promise.allSettled(window.map(operation)).then((settled) => {
+			const failure = settled.find(
+				(result): result is PromiseRejectedResult =>
+					result.status === "rejected",
+			);
+			if (failure) return Promise.reject(failure.reason);
+			settled.forEach((result) => {
+				if (result.status === "fulfilled") results.push(result.value);
+			});
+			return processWindow(offset + concurrency);
+		});
+	};
+
+	return processWindow(0);
+}
 
 function emptyResult(): EntityImportResult {
 	return { imported: 0, skipped: 0, errors: [] };
@@ -60,11 +94,18 @@ export interface ImportUserMapping {
 }
 
 /** Resolve a DateRangeFilter preset into concrete start/end ISO strings */
-function resolveDateRange(dateRange: DateRangeFilter): { startDate: string; endDate: string } {
+function resolveDateRange(dateRange: DateRangeFilter): {
+	startDate: string;
+	endDate: string;
+} {
 	const now = new Date();
 	const endDate = `${now.toISOString().slice(0, 19)}Z`;
 
-	if (dateRange.preset === "custom" && dateRange.startDate && dateRange.endDate) {
+	if (
+		dateRange.preset === "custom" &&
+		dateRange.startDate &&
+		dateRange.endDate
+	) {
 		return {
 			startDate: `${new Date(dateRange.startDate).toISOString().slice(0, 19)}Z`,
 			endDate: `${new Date(dateRange.endDate).toISOString().slice(0, 19)}Z`,
@@ -100,10 +141,17 @@ function resolveDateRange(dateRange: DateRangeFilter): { startDate: string; endD
 }
 
 /** Resolve a DateRangeFilter to a year range for the absences API */
-function resolveYearRange(dateRange: DateRangeFilter): { startYear: number; endYear: number } {
+function resolveYearRange(dateRange: DateRangeFilter): {
+	startYear: number;
+	endYear: number;
+} {
 	const currentYear = new Date().getFullYear();
 
-	if (dateRange.preset === "custom" && dateRange.startDate && dateRange.endDate) {
+	if (
+		dateRange.preset === "custom" &&
+		dateRange.startDate &&
+		dateRange.endDate
+	) {
 		return {
 			startYear: new Date(dateRange.startDate).getFullYear(),
 			endYear: new Date(dateRange.endDate).getFullYear(),
@@ -189,27 +237,49 @@ export async function orchestrateImport(
 
 		// Phase 3: Services → Work Categories
 		if (selections.services) {
-			result.services = await importServices(client, organizationId, userId, idMappings);
+			result.services = await importServices(
+				client,
+				organizationId,
+				userId,
+				idMappings,
+			);
 		}
 
 		// Phase 4: Target Hours → Work Policies
 		if (selections.targetHours) {
-			result.targetHours = await importTargetHours(client, organizationId, userId, idMappings);
+			result.targetHours = await importTargetHours(
+				client,
+				organizationId,
+				userId,
+				idMappings,
+			);
 		}
 
 		// Phase 5: Holiday Quotas → Vacation Allowances
 		if (selections.holidayQuotas) {
-			result.holidayQuotas = await importHolidayQuotas(client, organizationId, idMappings);
+			result.holidayQuotas = await importHolidayQuotas(
+				client,
+				organizationId,
+				idMappings,
+			);
 		}
 
 		// Phase 6: Non-Business Days → Holidays
 		if (selections.nonBusinessDays) {
-			result.nonBusinessDays = await importNonBusinessDays(client, organizationId, userId);
+			result.nonBusinessDays = await importNonBusinessDays(
+				client,
+				organizationId,
+				userId,
+			);
 		}
 
 		// Phase 7: Surcharges
 		if (selections.surcharges) {
-			result.surcharges = await importSurcharges(client, organizationId, userId);
+			result.surcharges = await importSurcharges(
+				client,
+				organizationId,
+				userId,
+			);
 		}
 
 		// Phase 8: Absences
@@ -224,7 +294,7 @@ export async function orchestrateImport(
 
 		// Phase 9: Time Entries
 		if (selections.entries) {
-			result.entries = await importEntries(
+			result.entries = await importClockodoData(
 				client,
 				organizationId,
 				userId,
@@ -235,17 +305,21 @@ export async function orchestrateImport(
 
 		// Determine overall status
 		const hasErrors = Object.values(result)
-			.filter((v): v is EntityImportResult => typeof v === "object" && "errors" in v)
+			.filter(
+				(v): v is EntityImportResult => typeof v === "object" && "errors" in v,
+			)
 			.some((r) => r.errors.length > 0);
 		const hasImports = Object.values(result)
-			.filter((v): v is EntityImportResult => typeof v === "object" && "imported" in v)
+			.filter(
+				(v): v is EntityImportResult =>
+					typeof v === "object" && "imported" in v,
+			)
 			.some((r) => r.imported > 0);
 
 		result.status = hasErrors ? (hasImports ? "partial" : "failed") : "success";
 	} catch (error) {
 		logger.error({ error }, "Import orchestration failed");
-		result.status = "failed";
-		result.errorMessage = error instanceof Error ? error.message : "Unknown error";
+		throw error;
 	}
 
 	result.durationMs = Date.now() - startTime;
@@ -262,39 +336,127 @@ async function importTeams(
 	idMappings: IdMappings,
 ): Promise<EntityImportResult> {
 	const result = emptyResult();
+	let clockodoTeams: Awaited<ReturnType<typeof client.getTeams>>;
 
 	try {
-		const clockodoTeams = await client.getTeams();
-
-		for (const ct of clockodoTeams) {
-			try {
-				// Check for duplicate by name
-				const existing = await db.query.team.findFirst({
-					where: and(eq(team.organizationId, organizationId), eq(team.name, ct.name)),
-				});
-
-				if (existing) {
-					idMappings.teams.set(ct.id, existing.id);
-					result.skipped++;
-					continue;
-				}
-
-				const mapped = mapTeamToZ8(ct, organizationId);
-				const [inserted] = await db.insert(team).values(mapped).returning({ id: team.id });
-				idMappings.teams.set(ct.id, inserted.id);
-				result.imported++;
-			} catch (error) {
-				result.errors.push(
-					`Team "${ct.name}": ${error instanceof Error ? error.message : "Unknown error"}`,
-				);
-			}
-		}
+		clockodoTeams = await client.getTeams();
 	} catch (error) {
 		result.errors.push(
 			`Failed to fetch teams: ${error instanceof Error ? error.message : "Unknown error"}`,
 		);
+		return result;
+	}
+	if (clockodoTeams.length === 0) return result;
+
+	type PreparedTeam = {
+		name: string;
+		insertValue: ReturnType<typeof mapTeamToZ8>;
+	};
+	const preparedTeams = clockodoTeams.map(({ id, name }) => ({ id, name }));
+	const firstByName = new Map<string, PreparedTeam>();
+	for (const clockodoTeam of clockodoTeams) {
+		if (!firstByName.has(clockodoTeam.name)) {
+			firstByName.set(clockodoTeam.name, {
+				name: clockodoTeam.name,
+				insertValue: mapTeamToZ8(clockodoTeam, organizationId),
+			});
+		}
 	}
 
+	const names = [...firstByName.keys()];
+	const resolvedTeams = await db.transaction(
+		async (tx) => {
+			const nameChunks = chunkRows(names, CLOCKODO_IMPORT_QUERY_CHUNK_SIZE);
+			const existingTeams = (
+				await mapInBoundedBatches(
+					nameChunks,
+					CLOCKODO_IMPORT_CONCURRENCY,
+					(nameChunk) =>
+						tx.query.team.findMany({
+							where: and(
+								eq(team.organizationId, organizationId),
+								inArray(team.name, nameChunk),
+							),
+							columns: { id: true, name: true },
+						}),
+				)
+			).flat();
+			const existingByName = new Map<string, string>();
+			for (const existingTeam of existingTeams) {
+				if (!existingByName.has(existingTeam.name)) {
+					existingByName.set(existingTeam.name, existingTeam.id);
+				}
+			}
+
+			const missingRepresentatives = [...firstByName.values()].filter(
+				(preparedTeam) => !existingByName.has(preparedTeam.name),
+			);
+			const insertChunks = chunkRows(
+				missingRepresentatives.map(({ insertValue }) => insertValue),
+				CLOCKODO_IMPORT_QUERY_CHUNK_SIZE,
+			);
+			const returnedTeams = (
+				await mapInBoundedBatches(
+					insertChunks,
+					CLOCKODO_IMPORT_CONCURRENCY,
+					(insertChunk) =>
+						tx
+							.insert(team)
+							.values(insertChunk)
+							.returning({ id: team.id, name: team.name }),
+				)
+			).flat();
+
+			const returnedByName = new Map<string, typeof returnedTeams>();
+			for (const returnedTeam of returnedTeams) {
+				const matching = returnedByName.get(returnedTeam.name) ?? [];
+				matching.push(returnedTeam);
+				returnedByName.set(returnedTeam.name, matching);
+			}
+			const missingNames = new Set(
+				missingRepresentatives.map(({ name }) => name),
+			);
+			const insertedByName = new Map<string, string>();
+			for (const missingTeam of missingRepresentatives) {
+				const matching = returnedByName.get(missingTeam.name) ?? [];
+				if (matching.length !== 1) {
+					throw new Error(
+						`Team "${missingTeam.name}": insert did not return exactly one matching team`,
+					);
+				}
+				insertedByName.set(missingTeam.name, matching[0].id);
+			}
+			for (const returnedTeam of returnedTeams) {
+				if (!missingNames.has(returnedTeam.name)) {
+					throw new Error(
+						`Team insert returned unexpected team "${returnedTeam.name}"`,
+					);
+				}
+			}
+			return preparedTeams.map((preparedTeam) => {
+				const existingId = existingByName.get(preparedTeam.name);
+				return {
+					...preparedTeam,
+					teamId:
+						existingId ?? (insertedByName.get(preparedTeam.name) as string),
+					existed: existingId !== undefined,
+				};
+			});
+		},
+		{ isolationLevel: "serializable" },
+	);
+
+	const seenNames = new Set<string>();
+	for (const resolvedTeam of resolvedTeams) {
+		idMappings.teams.set(resolvedTeam.id, resolvedTeam.teamId);
+		if (resolvedTeam.existed) {
+			result.skipped++;
+			continue;
+		}
+		if (seenNames.has(resolvedTeam.name)) result.skipped++;
+		else result.imported++;
+		seenNames.add(resolvedTeam.name);
+	}
 	return result;
 }
 
@@ -340,7 +502,11 @@ async function importUsers(
 				}
 
 				// If mapping is "manual" and has an existing employeeId + userId, use that directly
-				if (mapping?.mappingType === "manual" && mapping.employeeId && mapping.userId) {
+				if (
+					mapping?.mappingType === "manual" &&
+					mapping.employeeId &&
+					mapping.userId
+				) {
 					idMappings.users.set(cu.id, {
 						employeeId: mapping.employeeId,
 						userId: mapping.userId,
@@ -350,7 +516,11 @@ async function importUsers(
 				}
 
 				// If mapping is "auto_email" and has an existing employeeId + userId, use that
-				if (mapping?.mappingType === "auto_email" && mapping.employeeId && mapping.userId) {
+				if (
+					mapping?.mappingType === "auto_email" &&
+					mapping.employeeId &&
+					mapping.userId
+				) {
 					idMappings.users.set(cu.id, {
 						employeeId: mapping.employeeId,
 						userId: mapping.userId,
@@ -425,7 +595,10 @@ async function importUsers(
 
 				// Check if employee already exists for this user in this org
 				const existingEmployee = await db.query.employee.findFirst({
-					where: and(eq(employee.userId, authUserId), eq(employee.organizationId, organizationId)),
+					where: and(
+						eq(employee.userId, authUserId),
+						eq(employee.organizationId, organizationId),
+					),
 				});
 
 				if (existingEmployee) {
@@ -442,10 +615,15 @@ async function importUsers(
 
 				// Assign team if available
 				if (cu.teams_id && idMappings.teams.has(cu.teams_id)) {
-					(mapped as Record<string, unknown>).teamId = idMappings.teams.get(cu.teams_id);
+					(mapped as Record<string, unknown>).teamId = idMappings.teams.get(
+						cu.teams_id,
+					);
 				}
 
-				const [inserted] = await db.insert(employee).values(mapped).returning({ id: employee.id });
+				const [inserted] = await db
+					.insert(employee)
+					.values(mapped)
+					.returning({ id: employee.id });
 
 				idMappings.users.set(cu.id, {
 					employeeId: inserted.id,
@@ -622,8 +800,12 @@ async function importTargetHours(
 						assignmentType: "employee",
 						employeeId: employeeMapping.employeeId,
 						priority: 2,
-						effectiveFrom: mapped.dateSince ? new Date(mapped.dateSince) : undefined,
-						effectiveUntil: mapped.dateUntil ? new Date(mapped.dateUntil) : undefined,
+						effectiveFrom: mapped.dateSince
+							? new Date(mapped.dateSince)
+							: undefined,
+						effectiveUntil: mapped.dateUntil
+							? new Date(mapped.dateUntil)
+							: undefined,
 						createdBy: userId,
 					});
 				}
@@ -650,52 +832,195 @@ async function importTargetHours(
 
 async function importHolidayQuotas(
 	client: ClockodoClient,
-	_organizationId: string,
+	organizationId: string,
 	idMappings: IdMappings,
 ): Promise<EntityImportResult> {
 	const result = emptyResult();
+	let quotas: Awaited<ReturnType<typeof client.getHolidayQuotas>>;
 
 	try {
-		const quotas = await client.getHolidayQuotas();
-
-		for (const quota of quotas) {
-			try {
-				const employeeMapping = idMappings.users.get(quota.users_id);
-				if (!employeeMapping) {
-					result.errors.push(
-						`Holiday quota for user ${quota.users_id}: no matching employee found`,
-					);
-					continue;
-				}
-
-				// Check for duplicate
-				const existing = await db.query.employeeVacationAllowance.findFirst({
-					where: and(
-						eq(employeeVacationAllowance.employeeId, employeeMapping.employeeId),
-						eq(employeeVacationAllowance.year, quota.year_since),
-					),
-				});
-
-				if (existing) {
-					result.skipped++;
-					continue;
-				}
-
-				const mapped = mapHolidayQuotaToVacationAllowance(quota, employeeMapping.employeeId);
-				await db.insert(employeeVacationAllowance).values(mapped);
-				result.imported++;
-			} catch (error) {
-				result.errors.push(
-					`Holiday quota (user ${quota.users_id}, year ${quota.year_since}): ${error instanceof Error ? error.message : "Unknown error"}`,
-				);
-			}
-		}
+		quotas = await client.getHolidayQuotas();
 	} catch (error) {
 		result.errors.push(
 			`Failed to fetch holiday quotas: ${error instanceof Error ? error.message : "Unknown error"}`,
 		);
+		return result;
+	}
+	if (quotas.length === 0) return result;
+
+	type PreparedQuotaRow = {
+		userId: number;
+		year: number;
+		employeeId: string;
+		key: string;
+		insertValue: ReturnType<typeof mapHolidayQuotaToVacationAllowance>;
+	};
+	type QuotaRow = { error: string } | Omit<PreparedQuotaRow, "insertValue">;
+	const rows: QuotaRow[] = [];
+	const firstByKey = new Map<string, PreparedQuotaRow>();
+	const mappedEmployeeIds: string[] = [];
+	const seenEmployeeIds = new Set<string>();
+	for (const quota of quotas) {
+		const userId = quota.users_id;
+		const mapping = idMappings.users.get(userId);
+		if (!mapping) {
+			rows.push({
+				error: `Holiday quota for user ${userId}: no matching employee found`,
+			});
+			continue;
+		}
+		const year = quota.year_since;
+		const key = `${mapping.employeeId}:${year}`;
+		const row = { userId, year, employeeId: mapping.employeeId, key };
+		rows.push(row);
+		if (!firstByKey.has(key)) {
+			firstByKey.set(key, {
+				...row,
+				insertValue: mapHolidayQuotaToVacationAllowance(
+					quota,
+					mapping.employeeId,
+				),
+			});
+		}
+		if (!seenEmployeeIds.has(mapping.employeeId)) {
+			seenEmployeeIds.add(mapping.employeeId);
+			mappedEmployeeIds.push(mapping.employeeId);
+		}
+	}
+	if (mappedEmployeeIds.length === 0) {
+		for (const row of rows) {
+			if ("error" in row) result.errors.push(row.error);
+		}
+		return result;
 	}
 
+	const { validatedEmployees, existingKeys } = await db.transaction(
+		async (tx) => {
+			const employeeIdChunks = chunkRows(
+				mappedEmployeeIds,
+				CLOCKODO_IMPORT_QUERY_CHUNK_SIZE,
+			);
+			const validatedEmployees = new Set(
+				(
+					await mapInBoundedBatches(
+						employeeIdChunks,
+						CLOCKODO_IMPORT_CONCURRENCY,
+						(employeeIds) =>
+							tx.query.employee.findMany({
+								where: and(
+									eq(employee.organizationId, organizationId),
+									inArray(employee.id, employeeIds),
+								),
+								columns: { id: true },
+							}),
+					)
+				).flatMap((employeeRows) => employeeRows.map(({ id }) => id)),
+			);
+			const uniqueRows = [...firstByKey.values()].filter(({ employeeId }) =>
+				validatedEmployees.has(employeeId),
+			);
+			const candidateQueries = chunkRows(
+				uniqueRows,
+				CLOCKODO_IMPORT_QUERY_CHUNK_SIZE,
+			).map((candidateRows) => ({
+				requested: new Set(candidateRows.map(({ key }) => key)),
+				employeeIds: [
+					...new Set(candidateRows.map(({ employeeId }) => employeeId)),
+				],
+				years: [...new Set(candidateRows.map(({ year }) => year))],
+			}));
+			const candidateChunks = await mapInBoundedBatches(
+				candidateQueries,
+				CLOCKODO_IMPORT_CONCURRENCY,
+				({ requested, employeeIds, years }) =>
+					tx.query.employeeVacationAllowance
+						.findMany({
+							where: and(
+								inArray(employeeVacationAllowance.employeeId, employeeIds),
+								inArray(employeeVacationAllowance.year, years),
+							),
+							columns: { employeeId: true, year: true },
+						})
+						.then((candidates) =>
+							candidates.filter((candidate) =>
+								requested.has(`${candidate.employeeId}:${candidate.year}`),
+							),
+						),
+			);
+			const existingKeys = new Set(
+				candidateChunks
+					.flat()
+					.map(({ employeeId, year }) => `${employeeId}:${year}`),
+			);
+			const missingRepresentatives = uniqueRows.filter(
+				({ key }) => !existingKeys.has(key),
+			);
+			const insertChunks = chunkRows(
+				missingRepresentatives.map(({ insertValue }) => insertValue),
+				CLOCKODO_IMPORT_QUERY_CHUNK_SIZE,
+			);
+			const returnedAllowances = (
+				await mapInBoundedBatches(
+					insertChunks,
+					CLOCKODO_IMPORT_CONCURRENCY,
+					(insertChunk) =>
+						tx.insert(employeeVacationAllowance).values(insertChunk).returning({
+							employeeId: employeeVacationAllowance.employeeId,
+							year: employeeVacationAllowance.year,
+						}),
+				)
+			).flat();
+
+			const returnedByKey = new Map<string, typeof returnedAllowances>();
+			for (const returned of returnedAllowances) {
+				const key = `${returned.employeeId}:${returned.year}`;
+				const matching = returnedByKey.get(key) ?? [];
+				matching.push(returned);
+				returnedByKey.set(key, matching);
+			}
+			const expectedInsertedKeys = new Set(
+				missingRepresentatives.map(({ key }) => key),
+			);
+			for (const missingRow of missingRepresentatives) {
+				if ((returnedByKey.get(missingRow.key) ?? []).length !== 1) {
+					throw new Error(
+						`Holiday quota (user ${missingRow.userId}, year ${missingRow.year}): insert did not return exactly one matching allowance`,
+					);
+				}
+			}
+			for (const returned of returnedAllowances) {
+				const key = `${returned.employeeId}:${returned.year}`;
+				if (!expectedInsertedKeys.has(key)) {
+					throw new Error(
+						`Holiday quota insert returned unexpected allowance for employee ${returned.employeeId}, year ${returned.year}`,
+					);
+				}
+			}
+			return { validatedEmployees, existingKeys };
+		},
+		{ isolationLevel: "serializable" },
+	);
+
+	const countedInsertedKeys = new Set<string>();
+	for (const row of rows) {
+		if ("error" in row) {
+			result.errors.push(row.error);
+			continue;
+		}
+		if (!validatedEmployees.has(row.employeeId)) {
+			result.errors.push(
+				`Holiday quota for user ${row.userId}: mapped employee ${row.employeeId} was not found in organization ${organizationId}`,
+			);
+			continue;
+		}
+		if (existingKeys.has(row.key)) {
+			result.skipped++;
+			continue;
+		}
+		if (countedInsertedKeys.has(row.key)) result.skipped++;
+		else result.imported++;
+		countedInsertedKeys.add(row.key);
+	}
 	return result;
 }
 
@@ -756,7 +1081,12 @@ async function importNonBusinessDays(
 					continue;
 				}
 
-				const mapped = mapNonBusinessDayToHoliday(nbd, organizationId, categoryId, userId);
+				const mapped = mapNonBusinessDayToHoliday(
+					nbd,
+					organizationId,
+					categoryId,
+					userId,
+				);
 				await db.insert(holiday).values(mapped);
 				result.imported++;
 			} catch (error) {
@@ -858,14 +1188,18 @@ async function importAbsences(
 				{ length: endYear - startYear + 1 },
 				(_, index) => startYear + index,
 			);
-			const allAbsences = (await Promise.all(years.map((year) => client.getAbsences(year)))).flat();
+			const allAbsences = (
+				await Promise.all(years.map((year) => client.getAbsences(year)))
+			).flat();
 
 			// Filter by exact date range if custom or preset
 			const resolved = resolveDateRange(dateRange);
 			const rangeStart = resolved.startDate.slice(0, 10); // YYYY-MM-DD
 			const rangeEnd = resolved.endDate.slice(0, 10);
 
-			absences = allAbsences.filter((a) => a.date_until >= rangeStart && a.date_since <= rangeEnd);
+			absences = allAbsences.filter(
+				(a) => a.date_until >= rangeStart && a.date_since <= rangeEnd,
+			);
 		} else {
 			absences = await client.getAbsences();
 		}
@@ -929,7 +1263,11 @@ async function importAbsences(
 					continue;
 				}
 
-				const mapped = mapAbsenceToZ8(absence, employeeMapping.employeeId, categoryId);
+				const mapped = mapAbsenceToZ8(
+					absence,
+					employeeMapping.employeeId,
+					categoryId,
+				);
 				await db.insert(absenceEntry).values(mapped);
 				result.imported++;
 			} catch (error) {
@@ -951,7 +1289,7 @@ async function importAbsences(
 // TIME ENTRY → WORK PERIOD IMPORT
 // ============================================
 
-async function importEntries(
+async function importClockodoData(
 	client: ClockodoClient,
 	organizationId: string,
 	_userId: string,
@@ -987,7 +1325,9 @@ async function importEntries(
 
 				const employeeMapping = idMappings.users.get(entry.users_id);
 				if (!employeeMapping) {
-					result.errors.push(`Entry ${entry.id}: no matching employee for user ${entry.users_id}`);
+					result.errors.push(
+						`Entry ${entry.id}: no matching employee for user ${entry.users_id}`,
+					);
 					continue;
 				}
 

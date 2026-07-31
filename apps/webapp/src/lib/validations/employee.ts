@@ -1,3 +1,4 @@
+import { Temporal } from "temporal-polyfill";
 import * as z from "zod";
 
 // Gender enum matching database enum
@@ -38,6 +39,15 @@ const authUserNamePartSchema = z.preprocess(
 	z.string().min(1, "Name is required").max(100, "Name is too long").optional(),
 );
 
+const birthdaySchema = z.date().refine((date) => {
+	const birthday = Temporal.Instant.from(date.toISOString())
+		.toZonedDateTimeISO("UTC")
+		.toPlainDate();
+	return (
+		Temporal.PlainDate.compare(birthday, Temporal.Now.plainDateISO("UTC")) <= 0
+	);
+}, "Birthday must be in the past");
+
 // Rate history entry schema
 export const createRateHistorySchema = z.object({
 	hourlyRate: z.string().refine(
@@ -59,10 +69,14 @@ export const personalInformationSchema = z.object({
 		.min(1, "First name is required")
 		.max(100, "First name is too long")
 		.optional(),
-	lastName: z.string().min(1, "Last name is required").max(100, "Last name is too long").optional(),
+	lastName: z
+		.string()
+		.min(1, "Last name is required")
+		.max(100, "Last name is too long")
+		.optional(),
 	gender: genderSchema.optional(),
 	pronouns: pronounsSchema,
-	birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
+	birthday: birthdaySchema.optional().nullable(),
 });
 
 // Full employee creation schema
@@ -81,7 +95,7 @@ export const createEmployeeSchema = z.object({
 	// Personal information owned by the employee record
 	gender: genderSchema.optional().nullable(),
 	pronouns: pronounsSchema,
-	birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
+	birthday: birthdaySchema.optional().nullable(),
 
 	// Dates
 	startDate: z.date().optional().nullable(),
@@ -97,12 +111,16 @@ const updateEmployeeFieldsSchema = z.object({
 	teamId: z.uuid("Invalid team ID").optional().nullable(),
 	role: employeeRoleSchema.optional(),
 	position: z.string().max(100, "Position is too long").optional().nullable(),
-	employeeNumber: z.string().max(50, "Employee number is too long").optional().nullable(),
+	employeeNumber: z
+		.string()
+		.max(50, "Employee number is too long")
+		.optional()
+		.nullable(),
 
 	// Personal information owned by the employee record
 	gender: genderSchema.optional().nullable(),
 	pronouns: pronounsSchema,
-	birthday: z.date().max(new Date(), "Birthday must be in the past").optional().nullable(),
+	birthday: birthdaySchema.optional().nullable(),
 
 	// Dates
 	startDate: z.date().optional().nullable(),
@@ -137,21 +155,22 @@ export const updateEmployeeSchema = updateEmployeeFieldsSchema.refine(
 	},
 );
 
-export const updateEmployeeInvitationDraftSchema = updateEmployeeFieldsSchema.pick({
-	teamId: true,
-	role: true,
-	position: true,
-	employeeNumber: true,
-	gender: true,
-	pronouns: true,
-	birthday: true,
-	startDate: true,
-	endDate: true,
-	contractType: true,
-	hourlyRate: true,
-	firstName: true,
-	lastName: true,
-});
+export const updateEmployeeInvitationDraftSchema =
+	updateEmployeeFieldsSchema.pick({
+		teamId: true,
+		role: true,
+		position: true,
+		employeeNumber: true,
+		gender: true,
+		pronouns: true,
+		birthday: true,
+		startDate: true,
+		endDate: true,
+		contractType: true,
+		hourlyRate: true,
+		firstName: true,
+		lastName: true,
+	});
 
 // Manager assignment schema
 export const managerAssignmentSchema = z.object({
@@ -162,7 +181,9 @@ export const managerAssignmentSchema = z.object({
 // Multiple managers assignment schema
 export const assignManagersSchema = z
 	.object({
-		managers: z.array(managerAssignmentSchema).min(1, "At least one manager is required"),
+		managers: z
+			.array(managerAssignmentSchema)
+			.min(1, "At least one manager is required"),
 	})
 	.refine(
 		(data) => {
@@ -195,7 +216,9 @@ export type ContractType = z.infer<typeof contractTypeSchema>;
 export type PersonalInformation = z.infer<typeof personalInformationSchema>;
 export type CreateEmployee = z.infer<typeof createEmployeeSchema>;
 export type UpdateEmployee = z.infer<typeof updateEmployeeSchema>;
-export type UpdateEmployeeInvitationDraft = z.infer<typeof updateEmployeeInvitationDraftSchema>;
+export type UpdateEmployeeInvitationDraft = z.infer<
+	typeof updateEmployeeInvitationDraftSchema
+>;
 export type ManagerAssignment = z.infer<typeof managerAssignmentSchema>;
 export type AssignManagers = z.infer<typeof assignManagersSchema>;
 export type CreateRateHistory = z.infer<typeof createRateHistorySchema>;

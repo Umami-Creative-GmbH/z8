@@ -1,0 +1,290 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
+import type { ApprovalDbService } from "../workflow/ports";
+import {
+	type FinalizeOrdinaryWorkPeriodTerminalAdapterInput,
+	type FinalizeOrdinaryWorkPeriodTerminalInput,
+	type OrdinaryWorkPeriodFinalizerDatabase,
+	parseOrdinaryWorkPeriodWorkflowPayload,
+} from "./work-period-contract";
+
+describe("ordinary work-period workflow contract", () => {
+	const breakPolicySnapshot = {
+		version: 1,
+		evaluatedAt: "2026-03-29T08:01:00Z",
+		resolution: "none",
+	} as const;
+	const surchargeSnapshot = {
+		version: 1,
+		evaluatedAt: "2026-03-29T08:01:00Z",
+		resolution: { kind: "none" },
+	} as const;
+	it("requires the strict manual surcharge payload without break-policy evidence", () => {
+		const parsed = parseOrdinaryWorkPeriodWorkflowPayload(
+			{
+				timeRequest: { kind: "manual_time_submission" },
+				surchargeSnapshot,
+			},
+			"manual_time_submission",
+		);
+
+		expect(parsed).toEqual({
+			timeRequest: { kind: "manual_time_submission" },
+			surchargeSnapshot,
+		});
+		expect(Reflect.ownKeys(parsed)).toEqual([
+			"timeRequest",
+			"surchargeSnapshot",
+		]);
+		expect(Object.isFrozen(parsed.surchargeSnapshot)).toBe(true);
+		expect(() =>
+			parseOrdinaryWorkPeriodWorkflowPayload(
+				{ timeRequest: { kind: "manual_time_submission" } },
+				"manual_time_submission",
+			),
+		).toThrow("Ordinary work-period workflow payload is invalid");
+		expect(() =>
+			parseOrdinaryWorkPeriodWorkflowPayload(
+				{
+					timeRequest: { kind: "manual_time_submission" },
+					breakPolicySnapshot,
+					surchargeSnapshot,
+				},
+				"manual_time_submission",
+			),
+		).toThrow("Ordinary work-period workflow payload is invalid");
+	});
+	it("keeps the adapter and runtime independent of server modules", () => {
+		for (const relativePath of [
+			"src/lib/approvals/domain-adapters/work-period.adapter.ts",
+			"src/lib/approvals/workflow/runtime.ts",
+		]) {
+			const source = readFileSync(join(process.cwd(), relativePath), "utf8");
+			expect(source).not.toMatch(/from ["'][^"']*server\//);
+		}
+	});
+
+	it("separates the workflow transaction bridge from the full Drizzle finalizer capability", () => {
+		expectTypeOf<
+			FinalizeOrdinaryWorkPeriodTerminalAdapterInput["dbService"]
+		>().toEqualTypeOf<ApprovalDbService>();
+		expectTypeOf<
+			FinalizeOrdinaryWorkPeriodTerminalInput["dbService"]["db"]
+		>().toEqualTypeOf<OrdinaryWorkPeriodFinalizerDatabase>();
+	});
+
+	it("parses a canonical manual payload with exact enumerable data properties", () => {
+		const kind = "manual_time_submission";
+		const parsed = parseOrdinaryWorkPeriodWorkflowPayload({
+			timeRequest: { kind },
+			surchargeSnapshot,
+		});
+
+		expect(parsed).toEqual({ timeRequest: { kind }, surchargeSnapshot });
+		expect(Reflect.ownKeys(parsed)).toEqual([
+			"timeRequest",
+			"surchargeSnapshot",
+		]);
+		expect(Reflect.ownKeys(parsed.timeRequest)).toEqual(["kind"]);
+		expect(
+			Object.getOwnPropertyDescriptor(parsed, "timeRequest"),
+		).toMatchObject({
+			enumerable: true,
+			value: parsed.timeRequest,
+		});
+		expect(
+			Object.getOwnPropertyDescriptor(parsed.timeRequest, "kind"),
+		).toMatchObject({ enumerable: true, value: kind });
+		expect(JSON.stringify(parsed)).toContain(
+			`"timeRequest":{"kind":"${kind}"}`,
+		);
+	});
+
+	it("rejects policy clock-out context without both immutable policy snapshots", () => {
+		expect(() =>
+			parseOrdinaryWorkPeriodWorkflowPayload(
+				{ timeRequest: { kind: "policy_clock_out" } },
+				"policy_clock_out",
+			),
+		).toThrow("Ordinary work-period workflow payload is invalid");
+		expect(() =>
+			parseOrdinaryWorkPeriodWorkflowPayload(
+				{ timeRequest: { kind: "policy_clock_out" }, breakPolicySnapshot },
+				"policy_clock_out",
+			),
+		).toThrow("Ordinary work-period workflow payload is invalid");
+	});
+
+	it("keeps canonical payload evidence independent of ordinary source UUIDs", () => {
+		const first = {
+			id: "10000000-0000-4000-8000-000000000001",
+			payload: parseOrdinaryWorkPeriodWorkflowPayload({
+				timeRequest: { kind: "manual_time_submission" },
+				surchargeSnapshot,
+			}),
+		};
+		const second = {
+			id: "20000000-0000-4000-8000-000000000002",
+			payload: parseOrdinaryWorkPeriodWorkflowPayload({
+				timeRequest: { kind: "manual_time_submission" },
+				surchargeSnapshot,
+			}),
+		};
+
+		expect(first.id).not.toBe(second.id);
+		expect(JSON.stringify(first.payload)).toBe(JSON.stringify(second.payload));
+	});
+
+	it("parses and deeply freezes policy clock-out snapshot evidence", () => {
+		const parsed = parseOrdinaryWorkPeriodWorkflowPayload(
+			{
+				timeRequest: { kind: "policy_clock_out" },
+				breakPolicySnapshot,
+				surchargeSnapshot,
+			},
+			"policy_clock_out",
+		);
+
+		expect(parsed).toEqual({
+			timeRequest: { kind: "policy_clock_out" },
+			breakPolicySnapshot,
+			surchargeSnapshot,
+		});
+		expect(Object.isFrozen(parsed.breakPolicySnapshot)).toBe(true);
+		expect(Object.isFrozen(parsed.surchargeSnapshot)).toBe(true);
+		expect(Object.isFrozen(parsed.surchargeSnapshot?.resolution)).toBe(true);
+	});
+
+	it("rejects break-policy evidence for manual submissions", () => {
+		expect(() =>
+			parseOrdinaryWorkPeriodWorkflowPayload({
+				timeRequest: { kind: "manual_time_submission" },
+				breakPolicySnapshot,
+				surchargeSnapshot,
+			}),
+		).toThrow(Error);
+	});
+
+	it.each([
+		["a primitive", null],
+		["a root array", [{ timeRequest: { kind: "manual_time_submission" } }]],
+		["a nested array", { timeRequest: ["manual_time_submission"] }],
+		["an empty root", {}],
+		["an empty request", { timeRequest: {} }],
+		["an unknown kind", { timeRequest: { kind: "time_correction" } }],
+		[
+			"an unknown root key",
+			{
+				timeRequest: { kind: "manual_time_submission" },
+				sourceId: "10000000-0000-4000-8000-000000000001",
+			},
+		],
+		[
+			"an unknown request key",
+			{
+				timeRequest: {
+					kind: "manual_time_submission",
+					sourceId: "10000000-0000-4000-8000-000000000001",
+				},
+			},
+		],
+	] as const)("rejects %s", (_name, value) => {
+		expect(() => parseOrdinaryWorkPeriodWorkflowPayload(value)).toThrow(Error);
+	});
+
+	it.each([
+		"root",
+		"nested",
+	] as const)("rejects a custom or null prototype at the %s level", (level) => {
+		for (const prototype of [null, { inherited: true }]) {
+			const unusual = Object.assign(
+				Object.create(prototype),
+				level === "root"
+					? { timeRequest: { kind: "manual_time_submission" } }
+					: { kind: "manual_time_submission" },
+			);
+			const value = level === "root" ? unusual : { timeRequest: unusual };
+
+			expect(() => parseOrdinaryWorkPeriodWorkflowPayload(value)).toThrow(
+				Error,
+			);
+		}
+	});
+
+	it.each([
+		"root",
+		"nested",
+	] as const)("rejects non-enumerable and symbol properties at the %s level", (level) => {
+		for (const property of ["hidden", Symbol("hidden")]) {
+			const target =
+				level === "root"
+					? { timeRequest: { kind: "manual_time_submission" } }
+					: { kind: "manual_time_submission" };
+			Object.defineProperty(target, property, {
+				enumerable: false,
+				value: "private",
+			});
+			const value = level === "root" ? target : { timeRequest: target };
+
+			expect(() => parseOrdinaryWorkPeriodWorkflowPayload(value)).toThrow(
+				Error,
+			);
+		}
+	});
+
+	it.each([
+		"root",
+		"nested",
+	] as const)("rejects accessors at the %s level without invoking them", (level) => {
+		let accesses = 0;
+		const target = Object.defineProperty(
+			{},
+			level === "root" ? "timeRequest" : "kind",
+			{
+				enumerable: true,
+				get() {
+					accesses += 1;
+					return level === "root"
+						? { kind: "manual_time_submission" }
+						: "manual_time_submission";
+				},
+			},
+		);
+		const value = level === "root" ? target : { timeRequest: target };
+
+		expect(() => parseOrdinaryWorkPeriodWorkflowPayload(value)).toThrow(Error);
+		expect(accesses).toBe(0);
+	});
+
+	it("rejects a fixed-kind mismatch without serializing attacker evidence", () => {
+		const serialize = vi.spyOn(JSON, "stringify");
+		const payload = { timeRequest: { kind: "policy_clock_out" } };
+
+		try {
+			parseOrdinaryWorkPeriodWorkflowPayload(payload, "manual_time_submission");
+			expect.unreachable("mismatched payload should be rejected");
+		} catch (error) {
+			expect(error).toBeInstanceOf(Error);
+			expect(String(error)).not.toContain("policy_clock_out");
+		}
+		expect(serialize).not.toHaveBeenCalled();
+		serialize.mockRestore();
+	});
+
+	it("returns newly allocated recursively frozen evidence", () => {
+		const input = {
+			timeRequest: { kind: "manual_time_submission" as const },
+			surchargeSnapshot,
+		};
+
+		const parsed = parseOrdinaryWorkPeriodWorkflowPayload(input);
+
+		expect(parsed).not.toBe(input);
+		expect(parsed.timeRequest).not.toBe(input.timeRequest);
+		expect(Object.isFrozen(parsed)).toBe(true);
+		expect(Object.isFrozen(parsed.timeRequest)).toBe(true);
+		input.timeRequest.kind = "policy_clock_out" as never;
+		expect(parsed.timeRequest.kind).toBe("manual_time_submission");
+	});
+});

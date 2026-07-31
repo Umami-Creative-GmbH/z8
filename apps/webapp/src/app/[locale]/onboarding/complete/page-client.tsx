@@ -2,7 +2,7 @@
 
 import { IconCheck, IconRocket } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { Button } from "@/components/ui/button";
@@ -17,37 +17,80 @@ export default function CompletePage() {
 	const [summary, setSummary] = useState<{
 		hasOrganization: boolean;
 	} | null>(null);
+	const completionPromiseRef = useRef<ReturnType<
+		typeof completeOnboarding
+	> | null>(null);
 
 	useEffect(() => {
+		let cancelled = false;
+		const completionPromise =
+			completionPromiseRef.current ?? completeOnboarding();
+		completionPromiseRef.current = completionPromise;
+
 		async function finishOnboarding() {
-			// Mark onboarding as complete
-			const completeResult = await completeOnboarding();
+			let completeResult: Awaited<ReturnType<typeof completeOnboarding>>;
+			try {
+				completeResult = await completionPromise;
+			} catch {
+				if (cancelled) return;
+				toast.error(
+					t(
+						"onboarding.complete.completeError",
+						"Failed to complete onboarding",
+					),
+				);
+				setLoading(false);
+				return;
+			}
+			if (cancelled) return;
 
 			if (!completeResult.success) {
 				toast.error(
 					completeResult.error ||
-						t("onboarding.complete.completeError", "Failed to complete onboarding"),
+						t(
+							"onboarding.complete.completeError",
+							"Failed to complete onboarding",
+						),
 				);
 				setLoading(false);
 				return;
 			}
 
-			// Get onboarding summary
-			const summaryResult = await getOnboardingSummary();
+			let summaryResult: Awaited<ReturnType<typeof getOnboardingSummary>>;
+			try {
+				summaryResult = await getOnboardingSummary();
+			} catch {
+				if (cancelled) return;
+				toast.error(
+					t(
+						"onboarding.complete.summaryError",
+						"Failed to get onboarding summary",
+					),
+				);
+				setLoading(false);
+				return;
+			}
+			if (cancelled) return;
 
 			if (summaryResult.success) {
 				setSummary(summaryResult.data);
 			} else {
 				toast.error(
 					summaryResult.error ||
-						t("onboarding.complete.summaryError", "Failed to get onboarding summary"),
+						t(
+							"onboarding.complete.summaryError",
+							"Failed to get onboarding summary",
+						),
 				);
 			}
 
 			setLoading(false);
 		}
 
-		finishOnboarding();
+		void finishOnboarding();
+		return () => {
+			cancelled = true;
+		};
 	}, [t]);
 
 	const handleGoToDashboard = () => {
@@ -74,13 +117,13 @@ export default function CompletePage() {
 			<div className="mx-auto max-w-2xl">
 				{/* Success Message */}
 				<div className="mb-8 text-center">
-					<div className="mb-4 inline-flex size-20 items-center justify-center rounded-full bg-green-500/10 animate-in zoom-in duration-500">
+					<div className="mb-4 inline-flex size-20 items-center justify-center rounded-full bg-green-500/10 transition-transform animate-in zoom-in duration-500">
 						<IconCheck className="size-10 text-green-500" />
 					</div>
-					<h1 className="mb-4 text-3xl font-bold tracking-tight animate-in fade-in slide-in-from-bottom-4 duration-700">
+					<h1 className="mb-4 text-3xl font-bold tracking-tight transition-[opacity,transform] animate-in fade-in slide-in-from-bottom-4 duration-700">
 						{t("onboarding.complete.title", "You're all set!")}
 					</h1>
-					<p className="text-lg text-muted-foreground animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+					<p className="text-lg text-muted-foreground transition-[opacity,transform] animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
 						{t(
 							"onboarding.complete.subtitle",
 							"Your account is ready to use. Welcome to the team!",
@@ -89,9 +132,11 @@ export default function CompletePage() {
 				</div>
 
 				{/* Next Steps */}
-				<Card className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
+				<Card className="mb-8 transition-[opacity,transform] animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
 					<CardHeader>
-						<CardTitle>{t("onboarding.complete.nextStepsTitle", "Next Steps")}</CardTitle>
+						<CardTitle>
+							{t("onboarding.complete.nextStepsTitle", "Next Steps")}
+						</CardTitle>
 					</CardHeader>
 					<CardContent className="space-y-3">
 						<div className="flex items-start gap-3">
@@ -100,7 +145,10 @@ export default function CompletePage() {
 							</div>
 							<div className="flex-1">
 								<p className="font-medium">
-									{t("onboarding.complete.exploreDashboard", "Explore your dashboard")}
+									{t(
+										"onboarding.complete.exploreDashboard",
+										"Explore your dashboard",
+									)}
 								</p>
 								<p className="text-sm text-muted-foreground">
 									{t(
@@ -118,7 +166,10 @@ export default function CompletePage() {
 								</div>
 								<div className="flex-1">
 									<p className="font-medium">
-										{t("onboarding.complete.inviteTeam", "Invite your team members")}
+										{t(
+											"onboarding.complete.inviteTeam",
+											"Invite your team members",
+										)}
 									</p>
 									<p className="text-sm text-muted-foreground">
 										{t(
@@ -133,8 +184,12 @@ export default function CompletePage() {
 				</Card>
 
 				{/* CTA Button */}
-				<div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
-					<Button size="lg" onClick={handleGoToDashboard} className="w-full sm:w-auto">
+				<div className="text-center transition-[opacity,transform] animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+					<Button
+						size="lg"
+						onClick={handleGoToDashboard}
+						className="w-full sm:w-auto"
+					>
 						{t("onboarding.complete.goToDashboard", "Go to Dashboard")}
 					</Button>
 				</div>

@@ -75,7 +75,6 @@
     "startTrial": "Rozpocznij bezpłatny okres próbny",
     "status": {
       "canceled": "Anulowano",
-      "noSubscription": "Brak subskrypcji",
       "pastDue": "Zaległa płatność",
       "trial": "Okres próbny"
     },

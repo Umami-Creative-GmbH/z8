@@ -23,11 +23,13 @@ import type {
 	AbsenceAuthorizationSubject,
 	Action,
 	ApprovalAuthorizationSubject,
+	EmployeeInfo,
 	EmployeeAuthorizationSubject,
 	PrincipalContext,
 	Subject,
 	TimeEntryAuthorizationSubject,
 } from "./types";
+import { asAppSubject } from "./subjects";
 
 // ============================================
 // ABILITY TYPE
@@ -345,6 +347,33 @@ function applyPermissionFlags(
  */
 export function createEmptyAbility(): AppAbility {
 	return createMongoAbility<[Action, Subject]>([]);
+}
+
+/**
+ * Coarse access only. Approval assignment and manager eligibility must still
+ * be enforced for each request by the inbox route or service.
+ */
+export function canAccessApprovalInbox(
+	ability: AppAbility,
+	employee: Pick<EmployeeInfo, "id" | "organizationId" | "role">,
+): boolean {
+	const hasEmployeePrincipal =
+		ability.cannot(
+			"read",
+			asAppSubject("Employee", {
+				id: employee.id,
+				employeeId: employee.id,
+				organizationId: employee.organizationId,
+			}),
+		) === false;
+
+	return (
+		hasEmployeePrincipal &&
+		(employee.role === "manager" ||
+			employee.role === "admin" ||
+			ability.cannot("approve", "Approval") === false ||
+			ability.cannot("manage", "Approval") === false)
+	);
 }
 
 /**

@@ -12,10 +12,14 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
-import { arrayMove, rectSortingStrategy, SortableContext } from "@dnd-kit/sortable";
+import {
+	arrayMove,
+	rectSortingStrategy,
+	SortableContext,
+} from "@dnd-kit/sortable";
 import { useTranslate } from "@tolgee/react";
 import { type ReactNode, useId, useState } from "react";
-import { DashboardWidgetDraggableProvider } from "./dashboard-widget";
+import { DashboardWidgetDraggableProvider } from "./dashboard-widget-draggable-context";
 import type { WidgetId } from "./widget-registry";
 import { useVisibleWidgets } from "./widget-visibility-context";
 
@@ -32,7 +36,11 @@ interface SortableWidgetGridProps {
  * Grid container that enables drag-and-drop reordering of widgets.
  * Uses visibility context to only include actually-rendered widgets in sortable context.
  */
-export function SortableWidgetGrid({ widgetOrder, onReorder, children }: SortableWidgetGridProps) {
+export function SortableWidgetGrid({
+	widgetOrder,
+	onReorder,
+	children,
+}: SortableWidgetGridProps) {
 	const { t } = useTranslate();
 	const sortableId = useId();
 	const [activeId, setActiveId] = useState<WidgetId | null>(null);
@@ -76,7 +84,9 @@ export function SortableWidgetGrid({ widgetOrder, onReorder, children }: Sortabl
 				const newVisibleOrder = arrayMove(sortableItems, oldIndex, newIndex);
 
 				// Merge back with hidden widgets, preserving their relative positions
-				const hiddenWidgets = widgetOrder.filter((id) => !visibleWidgetSet.has(id));
+				const hiddenWidgets = widgetOrder.filter(
+					(id) => !visibleWidgetSet.has(id),
+				);
 
 				// Create final order: visible widgets in new order + hidden widgets at the end
 				const newOrder = [...newVisibleOrder, ...hiddenWidgets];

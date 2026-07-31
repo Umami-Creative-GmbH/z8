@@ -31,7 +31,6 @@
         },
         "countFound": "{count} employee(s) found",
         "emptyState": "No employees found",
-        "inviteEmployee": "Invite Employee",
         "loading": "Loading employees...",
         "noEmployeeFeature": "manage employees",
         "pagination": {
@@ -71,8 +70,12 @@
         "deleting": "Deleting draft...",
         "resend": "Resend invitation",
         "resendError": "Failed to resend invitation",
-        "resendSuccess": "Invitation resent successfully",
-        "resending": "Resending invitation..."
+        "resending": "Resending invitation...",
+        "resendSuccess": "Invitation resent successfully"
+      },
+      "invitations": {
+        "description": "Invite members and review pending join requests",
+        "title": "Invitations"
       },
       "lifecycle": {
         "actionsLabel": "Employee actions for {name}",
@@ -101,6 +104,12 @@
         "removing": "Removing access...",
         "removingStatus": "Removing organization access"
       },
+      "tabs": {
+        "employees": "Employees",
+        "invitations": "Invitations",
+        "inviteCodes": "Invite Codes",
+        "members": "Members"
+      },
       "title": "Employees"
     },
     "employmentHistory": {
@@ -122,35 +131,24 @@
       "effectiveDate": "Effective Date",
       "effectiveDateHelp": "When this contract context takes effect",
       "effectiveDateRequired": "Effective Date is required",
-      "effectiveDateValue": "Effective {date}",
-      "emptyTimeline": "No contract or work-model history yet.",
       "hourlyRate": "Hourly Rate",
-      "hourlyRateValue": "{rate} / hour",
       "inheritWorkPolicy": "Inherit team/org policy",
       "nextScheduledConfirmed": "Next scheduled confirmed",
       "noCurrentContext": "No confirmed contract context",
       "noScheduledChange": "No confirmed change scheduled",
-      "policyValue": "Policy: {policyName}",
       "probationEnd": "Probation End",
-      "probationRange": "Probation {startDate} - {endDate}",
       "probationStart": "Probation Start",
       "reasonNote": "Reason / Note",
       "reasonPlaceholder": "Annual review, role change, or work-model update…",
       "reviewState": "Review State",
       "saveChange": "Save Change",
-      "selectContractType": "Select contract type",
-      "selectReviewState": "Select review state",
-      "selectWorkModel": "Select work model",
-      "selectWorkPolicy": "Select work policy",
       "states": {
         "confirmed": "confirmed",
         "draft": "draft",
         "pending": "pending"
       },
-      "timeline": "Timeline",
       "title": "Contract & Work Model",
       "weeklyHours": "Weekly Hours",
-      "weeklyHoursValue": "{hours} / week",
       "workModel": "Work Model",
       "workModels": {
         "flexible": "flexible",

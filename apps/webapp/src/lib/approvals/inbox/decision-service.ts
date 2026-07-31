@@ -1,15 +1,25 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, or } from "drizzle-orm";
 import { Cause, Effect, Exit, Option } from "effect";
 import { db } from "@/db";
-import { approvalRequest } from "@/db/schema";
+import {
+	approvalRequest,
+	approvalStageAssignment,
+	timeEntry,
+	workPeriod,
+} from "@/db/schema";
 import type {
 	ApprovalActionOptions,
 	ApprovalTypeHandler,
 } from "@/lib/approvals/domain/types";
 import { ApprovalAuditLoggerLive } from "@/lib/approvals/infrastructure/audit-logger";
-import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
+import {
+	classifyTimeApprovalRequest,
+	type TimeApprovalKind,
+} from "@/lib/approvals/time-request-kind";
+import { NotFoundError } from "@/lib/effect/errors";
 import { runtime } from "@/lib/effect/runtime";
 import { createLogger } from "@/lib/logger";
+import { loadOrdinaryCanonicalApprovals } from "./ordinary-canonical-read";
 import {
 	getSupportedInboxHandler,
 	isSupportedInboxType,
@@ -24,7 +34,7 @@ import type {
 type InboxDecisionAction = "approve" | "reject";
 // Matches ApprovalTypeHandler approve/reject effects, which may require any app service layer.
 type DecisionEffectRunner = (
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	// biome-ignore lint/suspicious/noExplicitAny: handlers may require any application service layer
 	effect: Effect.Effect<void, unknown, any>,
 ) => Promise<Exit.Exit<void, unknown>>;
 type EligibleApprovalScope = {
@@ -45,12 +55,26 @@ const logger = createLogger("ApprovalInboxDecisionService");
 
 export interface PersistedApprovalRequestForDecision {
 	id: string;
+	targetType: "compatibility_request" | "canonical_assignment";
 	entityType: string;
 	entityId: string;
 	organizationId: string;
 	approverId: string;
 	requesterEmployeeId: string;
 	status: ApprovalInboxStatus;
+	workflowKind: TimeApprovalKind | null;
+}
+
+export function canAttemptApprovalInboxDecisionTarget(input: {
+	status: ApprovalInboxStatus | string;
+	workflowKind: TimeApprovalKind | null;
+}): boolean {
+	return (
+		input.status === "pending" ||
+		((input.status === "approved" || input.status === "rejected") &&
+			(input.workflowKind === "manual_time_submission" ||
+				input.workflowKind === "policy_clock_out"))
+	);
 }
 
 export async function decideApprovalInboxItemFromRequest({
@@ -59,6 +83,7 @@ export async function decideApprovalInboxItemFromRequest({
 	action,
 	reason,
 	handler,
+	allowOrganizationWideApprover,
 	runEffect = defaultDecisionEffectRunner,
 }: {
 	request: PersistedApprovalRequestForDecision;
@@ -66,6 +91,7 @@ export async function decideApprovalInboxItemFromRequest({
 	action: InboxDecisionAction;
 	reason?: string;
 	handler: ApprovalTypeHandler;
+	allowOrganizationWideApprover?: boolean;
 	runEffect?: DecisionEffectRunner;
 }): Promise<ApprovalInboxDecisionSuccess> {
 	const requestType = request.entityType;
@@ -77,7 +103,7 @@ export async function decideApprovalInboxItemFromRequest({
 		throw new Error(`Unsupported approval type: ${request.entityType}`);
 	}
 
-	if (request.status !== "pending") {
+	if (!canAttemptApprovalInboxDecisionTarget(request)) {
 		throw new Error(`Request is already ${request.status}`);
 	}
 
@@ -85,17 +111,12 @@ export async function decideApprovalInboxItemFromRequest({
 	if (action === "reject" && !trimmedReason) {
 		throw new Error("Rejection reason is required");
 	}
-	const actionOptions: ApprovalActionOptions & { organizationId: string } =
+	const actionOptions: ApprovalActionOptions =
 		actorEmployeeId === request.approverId
-			? {
-					approvalRequestId: request.id,
-					organizationId: request.organizationId,
-				}
-			: {
-					approvalRequestId: request.id,
-					allowAnyApprover: true,
-					organizationId: request.organizationId,
-				};
+			? { approvalRequestId: request.id }
+			: allowOrganizationWideApprover
+				? { approvalRequestId: request.id, allowOrganizationWideApprover: true }
+				: { approvalRequestId: request.id, allowAnyApprover: true };
 
 	const effect =
 		action === "approve"
@@ -143,6 +164,24 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 
 	const decisions = await Promise.all(
 		requests.map(async (request): Promise<BulkDecisionOutcome> => {
+			if (
+				!canDecideRequest({
+					request,
+					actorEmployeeId,
+					includeAllApprovers,
+					eligibleApprovalScopes,
+				})
+			) {
+				return {
+					status: "failed" as const,
+					failure: {
+						id: request.id,
+						code: "not_found",
+						message: "Approval not found",
+					},
+				};
+			}
+
 			const handler = resolveHandler(request.entityType);
 
 			if (
@@ -160,31 +199,13 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 				};
 			}
 
-			if (request.status !== "pending") {
+			if (!canAttemptApprovalInboxDecisionTarget(request)) {
 				return {
 					status: "failed" as const,
 					failure: {
 						id: request.id,
 						code: "stale",
 						message: `Request is already ${request.status}`,
-					},
-				};
-			}
-
-			if (
-				!canDecideRequest({
-					request,
-					actorEmployeeId,
-					includeAllApprovers,
-					eligibleApprovalScopes,
-				})
-			) {
-				return {
-					status: "failed" as const,
-					failure: {
-						id: request.id,
-						code: "forbidden",
-						message: "You are not authorized to decide this request",
 					},
 				};
 			}
@@ -198,6 +219,7 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 						action,
 						reason,
 						handler,
+						allowOrganizationWideApprover: includeAllApprovers === true,
 						runEffect,
 					}),
 				};
@@ -232,7 +254,10 @@ export async function approveApprovalInboxItem({
 	actorEmployeeId: string;
 	organizationId: string;
 } & DecisionVisibilityInput): Promise<ApprovalInboxDecisionSuccess> {
-	const request = await loadDecisionRequest(approvalId, organizationId);
+	const request = await loadApprovalInboxDecisionTarget({
+		approvalId,
+		organizationId,
+	});
 	assertCanDecideRequest({
 		request,
 		actorEmployeeId,
@@ -249,6 +274,7 @@ export async function approveApprovalInboxItem({
 		actorEmployeeId,
 		action: "approve",
 		handler,
+		allowOrganizationWideApprover: includeAllApprovers === true,
 	});
 }
 
@@ -265,7 +291,10 @@ export async function rejectApprovalInboxItem({
 	organizationId: string;
 	reason: string;
 } & DecisionVisibilityInput): Promise<ApprovalInboxDecisionSuccess> {
-	const request = await loadDecisionRequest(approvalId, organizationId);
+	const request = await loadApprovalInboxDecisionTarget({
+		approvalId,
+		organizationId,
+	});
 	assertCanDecideRequest({
 		request,
 		actorEmployeeId,
@@ -283,6 +312,7 @@ export async function rejectApprovalInboxItem({
 		action: "reject",
 		reason,
 		handler,
+		allowOrganizationWideApprover: includeAllApprovers === true,
 	});
 }
 
@@ -297,7 +327,10 @@ export async function bulkApproveApprovalInboxItems({
 	actorEmployeeId: string;
 	organizationId: string;
 } & DecisionVisibilityInput): Promise<ApprovalInboxBulkDecisionResult> {
-	const requests = await loadDecisionRequests(approvalIds, organizationId);
+	const requests = await loadApprovalInboxDecisionTargets({
+		approvalIds,
+		organizationId,
+	});
 	const result = await bulkDecideApprovalInboxItemsFromRequests({
 		requests,
 		actorEmployeeId,
@@ -322,7 +355,10 @@ export async function bulkRejectApprovalInboxItems({
 	organizationId: string;
 	reason: string;
 } & DecisionVisibilityInput): Promise<ApprovalInboxBulkDecisionResult> {
-	const requests = await loadDecisionRequests(approvalIds, organizationId);
+	const requests = await loadApprovalInboxDecisionTargets({
+		approvalIds,
+		organizationId,
+	});
 	const result = await bulkDecideApprovalInboxItemsFromRequests({
 		requests,
 		actorEmployeeId,
@@ -368,11 +404,16 @@ function withMissingApprovalFailures(
 	return { succeeded: result.succeeded, failed };
 }
 
-async function loadDecisionRequest(
-	approvalId: string,
-	organizationId: string,
-): Promise<PersistedApprovalRequestForDecision> {
-	const request = await db.query.approvalRequest.findFirst({
+export async function loadApprovalInboxDecisionTarget({
+	approvalId,
+	organizationId,
+	database = db,
+}: {
+	approvalId: string;
+	organizationId: string;
+	database?: typeof db;
+}): Promise<PersistedApprovalRequestForDecision> {
+	const request = await database.query.approvalRequest.findFirst({
 		where: and(
 			eq(approvalRequest.id, approvalId),
 			eq(approvalRequest.organizationId, organizationId),
@@ -380,25 +421,52 @@ async function loadDecisionRequest(
 	});
 
 	if (!request) {
-		throw new NotFoundError({
-			message: "Approval not found",
-			entityType: "approval_request",
-			entityId: approvalId,
+		const canonical = await loadOrdinaryCanonicalApprovals({
+			database,
+			organizationId,
+			approverId: "canonical-decision-discovery",
+			includeAllApprovers: true,
+			assignmentId: approvalId,
+			limit: 1,
 		});
+		const canonicalTarget = canonical.find(
+			(candidate) => candidate.item.id === approvalId,
+		)?.decisionTarget;
+		if (canonicalTarget) return canonicalTarget;
+		const assignment = await database.query.approvalStageAssignment.findFirst({
+			where: and(
+				eq(approvalStageAssignment.id, approvalId),
+				eq(approvalStageAssignment.organizationId, organizationId),
+			),
+			with: { workflow: true, stage: true },
+		});
+		if (assignment?.status === "pending") throw approvalNotFound(approvalId);
+		const terminalCanonical = toPersistedCanonicalDecisionRequest(
+			assignment,
+			approvalId,
+			organizationId,
+		);
+		if (terminalCanonical) return terminalCanonical;
+		throw approvalNotFound(approvalId);
 	}
 
-	return toPersistedDecisionRequest(request);
+	return await toPersistedDecisionRequest(request, database);
 }
 
-async function loadDecisionRequests(
-	approvalIds: string[],
-	organizationId: string,
-): Promise<PersistedApprovalRequestForDecision[]> {
+export async function loadApprovalInboxDecisionTargets({
+	approvalIds,
+	organizationId,
+	database = db,
+}: {
+	approvalIds: string[];
+	organizationId: string;
+	database?: typeof db;
+}): Promise<PersistedApprovalRequestForDecision[]> {
 	if (approvalIds.length === 0) {
 		return [];
 	}
 
-	const requests = await db.query.approvalRequest.findMany({
+	const requests = await database.query.approvalRequest.findMany({
 		where: and(
 			inArray(approvalRequest.id, approvalIds),
 			eq(approvalRequest.organizationId, organizationId),
@@ -407,32 +475,261 @@ async function loadDecisionRequests(
 	const requestsById = new Map(
 		requests.map((request) => [request.id, request]),
 	);
+	const missingIds = approvalIds.filter(
+		(approvalId) => !requestsById.has(approvalId),
+	);
+	const canonical =
+		missingIds.length > 0
+			? await loadOrdinaryCanonicalApprovals({
+					database,
+					organizationId,
+					approverId: "canonical-decision-discovery",
+					includeAllApprovers: true,
+					assignmentIds: missingIds,
+					limit: missingIds.length,
+				})
+			: [];
+	const missingIdSet = new Set(missingIds);
+	const canonicalById = new Map(
+		canonical.flatMap((candidate) =>
+			missingIdSet.has(candidate.item.id)
+				? [[candidate.item.id, candidate.decisionTarget] as const]
+				: [],
+		),
+	);
+	const terminalMissingIds = missingIds.filter(
+		(approvalId) => !canonicalById.has(approvalId),
+	);
+	const assignments =
+		terminalMissingIds.length === 0
+			? []
+			: await database.query.approvalStageAssignment.findMany({
+					where: and(
+						inArray(approvalStageAssignment.id, terminalMissingIds),
+						eq(approvalStageAssignment.organizationId, organizationId),
+					),
+					with: { workflow: true, stage: true },
+				});
+	const assignmentsById = new Map(
+		assignments.flatMap((assignment) => {
+			if (assignment.status === "pending") return [];
+			const decision = toPersistedCanonicalDecisionRequest(
+				assignment,
+				assignment.id,
+				organizationId,
+			);
+			return decision ? [[decision.id, decision] as const] : [];
+		}),
+	);
 
-	return approvalIds
-		.map((approvalId) => requestsById.get(approvalId))
+	const ordered = approvalIds
+		.map((approvalId) => {
+			const request = requestsById.get(approvalId);
+			return request
+				? request
+				: (canonicalById.get(approvalId) ?? assignmentsById.get(approvalId));
+		})
 		.filter((request): request is NonNullable<typeof request> =>
 			Boolean(request),
-		)
-		.map(toPersistedDecisionRequest);
+		);
+	return await Promise.all(
+		ordered.map((request) =>
+			"requestedBy" in request
+				? toPersistedDecisionRequest(request, database)
+				: Promise.resolve(request),
+		),
+	);
 }
 
-function toPersistedDecisionRequest(request: {
-	id: string;
-	entityType: string;
-	entityId: string;
-	organizationId: string;
-	approverId: string;
-	requestedBy: string;
-	status: string;
-}): PersistedApprovalRequestForDecision {
+function approvalNotFound(approvalId: string): NotFoundError {
+	return new NotFoundError({
+		message: "Approval not found",
+		entityType: "approval_request",
+		entityId: approvalId,
+	});
+}
+
+function toPersistedCanonicalDecisionRequest(
+	assignment:
+		| {
+				id: string;
+				organizationId: string;
+				workflowId: string;
+				stageId: string;
+				approverEmployeeId: string;
+				status: string;
+				workflow: {
+					id: string;
+					organizationId: string;
+					workflowType: string;
+					sourceType: string;
+					sourceId: string;
+					requesterEmployeeId: string | null;
+					status: string;
+					currentStageOrder: number | null;
+				} | null;
+				stage: {
+					id: string;
+					organizationId: string;
+					workflowId: string;
+					sequence: number;
+					status: string;
+				} | null;
+		  }
+		| null
+		| undefined,
+	approvalId: string,
+	organizationId: string,
+): PersistedApprovalRequestForDecision | null {
+	const workflow = assignment?.workflow;
+	const stage = assignment?.stage;
+	const supportedWorkflow =
+		workflow?.workflowType === "manual_time_submission" ||
+		workflow?.workflowType === "policy_clock_out" ||
+		workflow?.workflowType === "time_correction";
+	const ordinaryWorkflow =
+		workflow?.workflowType === "manual_time_submission" ||
+		workflow?.workflowType === "policy_clock_out";
+	const pendingTarget =
+		assignment?.status === "pending" &&
+		stage?.status === "pending" &&
+		workflow?.status === "pending" &&
+		stage.sequence === workflow.currentStageOrder;
+	const terminalTarget =
+		(assignment?.status === "approved" || assignment?.status === "rejected") &&
+		stage?.status === assignment.status &&
+		((workflow?.status === assignment.status &&
+			workflow.currentStageOrder === null) ||
+			(ordinaryWorkflow &&
+				workflow?.status === "pending" &&
+				assignment.status === "approved" &&
+				typeof workflow.currentStageOrder === "number" &&
+				stage.sequence < workflow.currentStageOrder));
+	if (
+		!assignment ||
+		!workflow ||
+		!stage ||
+		assignment.id !== approvalId ||
+		assignment.organizationId !== organizationId ||
+		assignment.workflowId !== workflow.id ||
+		assignment.stageId !== stage.id ||
+		workflow.organizationId !== organizationId ||
+		stage.organizationId !== organizationId ||
+		stage.workflowId !== workflow.id ||
+		workflow.sourceType !== "time_entry" ||
+		!workflow.sourceId ||
+		!workflow.requesterEmployeeId ||
+		!supportedWorkflow ||
+		(!pendingTarget && !terminalTarget)
+	) {
+		return null;
+	}
+	return {
+		id: assignment.id,
+		targetType: "canonical_assignment",
+		entityType: "time_entry",
+		entityId: workflow.sourceId,
+		organizationId,
+		approverId: assignment.approverEmployeeId,
+		requesterEmployeeId: workflow.requesterEmployeeId,
+		status: assignment.status as ApprovalInboxStatus,
+		workflowKind: workflow.workflowType as TimeApprovalKind,
+	};
+}
+
+async function toPersistedDecisionRequest(
+	request: {
+		id: string;
+		entityType: string;
+		entityId: string;
+		organizationId: string;
+		approverId: string;
+		requestedBy: string;
+		status: string;
+		metadata?: unknown;
+		reason?: string | null;
+	},
+	database: typeof db,
+): Promise<PersistedApprovalRequestForDecision> {
+	let workflowKind: TimeApprovalKind | null = null;
+	if (request.entityType === "time_entry") {
+		const period = await database.query.workPeriod.findFirst({
+			where: and(
+				eq(workPeriod.id, request.entityId),
+				eq(workPeriod.organizationId, request.organizationId),
+				eq(workPeriod.employeeId, request.requestedBy),
+			),
+			columns: {
+				pendingChanges: true,
+				clockInId: true,
+				clockOutId: true,
+			},
+		});
+		workflowKind = period
+			? classifyTimeApprovalRequest({
+					metadata: request.metadata,
+					reason: request.reason,
+					pendingChanges: period.pendingChanges,
+				})
+			: "unclassified";
+		if (period && workflowKind === "unclassified") {
+			const endpointIds = [period.clockInId, period.clockOutId].filter(
+				(id): id is string => Boolean(id),
+			);
+			const correctionEvidence = endpointIds.length
+				? await database.query.timeEntry.findMany({
+						where: and(
+							eq(timeEntry.organizationId, request.organizationId),
+							eq(timeEntry.employeeId, request.requestedBy),
+							eq(timeEntry.type, "correction"),
+							eq(timeEntry.isSuperseded, false),
+							or(
+								inArray(timeEntry.id, endpointIds),
+								inArray(timeEntry.replacesEntryId, endpointIds),
+							),
+						),
+						columns: { id: true, replacesEntryId: true },
+					})
+				: [];
+			const verifiedRelationalCorrectionIds: string[] = [];
+			const verifiedRelationalCorrectionIdsByEndpoint: {
+				clockIn: string[];
+				clockOut: string[];
+			} = { clockIn: [], clockOut: [] };
+			for (const entry of correctionEvidence) {
+				verifiedRelationalCorrectionIds.push(entry.id);
+				if (
+					entry.id === period.clockInId ||
+					entry.replacesEntryId === period.clockInId
+				) {
+					verifiedRelationalCorrectionIdsByEndpoint.clockIn.push(entry.id);
+				}
+				if (
+					entry.id === period.clockOutId ||
+					entry.replacesEntryId === period.clockOutId
+				) {
+					verifiedRelationalCorrectionIdsByEndpoint.clockOut.push(entry.id);
+				}
+			}
+			workflowKind = classifyTimeApprovalRequest({
+				metadata: request.metadata,
+				reason: request.reason,
+				pendingChanges: period.pendingChanges,
+				verifiedRelationalCorrectionIds,
+				verifiedRelationalCorrectionIdsByEndpoint,
+			});
+		}
+	}
 	return {
 		id: request.id,
+		targetType: "compatibility_request",
 		entityType: request.entityType,
 		entityId: request.entityId,
 		organizationId: request.organizationId,
 		approverId: request.approverId,
 		requesterEmployeeId: request.requestedBy,
 		status: request.status as ApprovalInboxStatus,
+		workflowKind,
 	};
 }
 
@@ -456,10 +753,10 @@ function assertCanDecideRequest({
 		return;
 	}
 
-	throw new AuthorizationError({
-		message: "You are not authorized to decide this request",
-		resource: "Approval",
-		action: "decide",
+	throw new NotFoundError({
+		message: "Approval not found",
+		entityType: "approval_request",
+		entityId: request.id,
 	});
 }
 
@@ -522,6 +819,10 @@ function mapDecisionFailure(
 
 	if (tag === "NotFoundError") {
 		return { id, code: "not_found", message: "Approval not found" };
+	}
+
+	if (tag === "ValidationError") {
+		return { id, code: "validation_failed", message };
 	}
 
 	if (

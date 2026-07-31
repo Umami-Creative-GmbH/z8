@@ -109,6 +109,7 @@
     "add": "Προσθήκη",
     "adding": "Προσθήκη...",
     "all": "Όλα",
+    "appName": "Z8",
     "approve": "Έγκριση",
     "assign": "Ανάθεση",
     "back": "Πίσω",
@@ -138,7 +139,6 @@
     "deselectAll": "Αποεπιλογή όλων",
     "details": "Λεπτομέρειες",
     "download": "Λήψη",
-    "duplicate": "Αντίγραφο",
     "edit": "Επεξεργασία",
     "enabled": "Ενεργοποιημένο",
     "error": "Σφάλμα",
@@ -150,7 +150,6 @@
     },
     "goToDashboard": "Μετάβαση στον πίνακα ελέγχου",
     "inactive": "Ανενεργό",
-    "label": "Ετικέτα",
     "loading": "Φόρτωση...",
     "loadMore": "Φόρτωση περισσότερων",
     "months": {
@@ -247,6 +246,7 @@
     "countSelected": "{count} υπάλληλοι επιλέχθηκαν",
     "countWithMore": "{count} υπάλληλοι (+{more} ακόμη)",
     "noEmployeesFound": "Δεν βρέθηκαν υπάλληλοι",
+    "removeSelected": "Κατάργηση {name}",
     "role": "Ρόλος",
     "searchPlaceholder": "Αναζήτηση με όνομα, email ή θέση...",
     "selected": "{count} επιλέχθηκαν",
@@ -297,6 +297,7 @@
   },
   "nav": {
     "absences": "Απουσίες",
+    "analytics": "Αναλυτικά στοιχεία",
     "approvals": "Εγκρίσεις",
     "calendar": "Ημερολόγιο",
     "compliance": "Συμμόρφωση",
@@ -314,6 +315,7 @@
     "teamAbsences": "Απουσίες Ομάδας",
     "team-label": "Ομάδα",
     "time-tracking": "Καταγραφή χρόνου",
+    "today": "Σήμερα",
     "travel-expenses": "Έξοδα ταξιδιού",
     "worksCouncil": "Συμβούλιο Εργαζομένων"
   },
@@ -326,28 +328,28 @@
       "settings": "Ρυθμίσεις ειδοποιήσεων",
       "viewAll": "Προβολή όλων των ειδοποιήσεων"
     },
-		"content": {
-			"absenceRequestSubmitted": {
-				"message": "Το αίτημά σας για {categoryName} για {dateRange} υποβλήθηκε και εκκρεμεί έγκριση.",
-				"title": "Το αίτημα απουσίας υποβλήθηκε"
-			},
-			"passwordChanged": {
-				"message": "Ο κωδικός πρόσβασής σας άλλαξε με επιτυχία. Εάν δεν πραγματοποιήσατε εσείς αυτήν την αλλαγή, επικοινωνήστε αμέσως με την υποστήριξη.",
-				"title": "Ο κωδικός πρόσβασης άλλαξε"
-			},
+    "content": {
+      "absenceRequestSubmitted": {
+        "message": "Το αίτημά σας για {categoryName} για {dateRange} υποβλήθηκε και εκκρεμεί έγκριση.",
+        "title": "Το αίτημα απουσίας υποβλήθηκε"
+      },
+      "teamMemberRemoved": {
+        "message": "Αφαιρεθήκατε από την ομάδα {teamName} από τον/την {performedByName}.",
+        "title": "Αφαίρεση από την ομάδα"
+      },
+      "passwordChanged": {
+        "message": "Ο κωδικός πρόσβασής σας άλλαξε με επιτυχία. Εάν δεν πραγματοποιήσατε εσείς αυτήν την αλλαγή, επικοινωνήστε αμέσως με την υποστήριξη.",
+        "title": "Ο κωδικός πρόσβασης άλλαξε"
+      },
       "shiftAssigned": {
         "message": "Σας έχει ανατεθεί μια βάρδια στις {shiftDate} από τις {startTime} έως τις {endTime} από τον/την {assignedByName}.",
         "title": "Η βάρδια ανατέθηκε"
       },
-			"teamMemberAdded": {
-				"message": "Προστέθηκατε στην ομάδα {teamName} από τον/την {performedByName}.",
-				"title": "Προσθήκη στην ομάδα"
-			},
-			"teamMemberRemoved": {
-				"message": "Αφαιρεθήκατε από την ομάδα {teamName} από τον/την {performedByName}.",
-				"title": "Αφαίρεση από την ομάδα"
-			}
-		},
+      "teamMemberAdded": {
+        "message": "Προστέθηκατε στην ομάδα {teamName} από τον/την {performedByName}.",
+        "title": "Προσθήκη στην ομάδα"
+      }
+    },
     "description": "Ελέγξτε ενημερώσεις, εγκρίσεις και ειδοποιήσεις συστήματος σε ένα χρονολόγιο.",
     "empty": {
       "description": "Είστε πλήρως ενημερωμένοι! Οι νέες ειδοποιήσεις θα εμφανίζονται εδώ.",
@@ -434,9 +436,9 @@
   "presence": {
     "activity": {
       "lastActivity": "τελευταία δραστηριότητα {date}",
-      "relativeHours": "πριν από {hours}ω",
-      "relativeHoursMinutes": "πριν από {hours}ω {minutes}λεπ",
-      "relativeMinutes": "πριν από {minutes}λεπ"
+      "relativeHours": "από {hours}ώ",
+      "relativeHoursMinutes": "από {hours}ώ {minutes}λ",
+      "relativeMinutes": "από {minutes}λ"
     },
     "clockedIn": "Έναρξη βάρδιας",
     "clockedOut": "Λήξη βάρδιας"

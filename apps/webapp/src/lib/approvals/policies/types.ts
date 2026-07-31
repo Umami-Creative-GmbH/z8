@@ -1,4 +1,5 @@
 import type { ApprovalType } from "@/lib/approvals/domain/types";
+import type { RoutingStageFallback } from "../routing/types";
 
 export type ApprovalPolicyConditionType =
 	| "approval_type"
@@ -9,7 +10,12 @@ export type ApprovalPolicyConditionType =
 	| "overtime_risk"
 	| "employee_group";
 
-export type ApprovalPolicyConditionOperator = "equals" | "in" | "gte" | "lte" | "between";
+export type ApprovalPolicyConditionOperator =
+	| "equals"
+	| "in"
+	| "gte"
+	| "lte"
+	| "between";
 export type ApprovalPolicyApproverType =
 	| "direct_manager"
 	| "manager_manager"
@@ -47,6 +53,7 @@ export interface ApprovalPolicyStageDraft {
 	label: string;
 	approverType: ApprovalPolicyApproverType;
 	approverEmployeeId?: string;
+	fallbackBehavior: RoutingStageFallback;
 }
 
 export interface ApprovalPolicyDraft {

@@ -134,11 +134,8 @@
         "ascending": "artan",
         "descending": "azalan"
       },
-      "sortByTimeBalance": "Yıl bakiyesine göre sırala",
-      "sortByTimeBalanceWithDirection": "Yıl bakiyesine göre sırala ({direction})",
       "status": "Durum",
-      "team": "Ekip",
-      "timeBalance": "Yıl bakiyesi"
+      "team": "Ekip"
     },
     "title": "Ekibiniz",
     "view": {

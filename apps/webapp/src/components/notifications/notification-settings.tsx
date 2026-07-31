@@ -18,11 +18,17 @@ import {
 	IconUsers,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
@@ -34,7 +40,10 @@ import {
 } from "@/lib/notifications/types";
 import { PushPermissionModal } from "./push-permission-modal";
 
-const LOAD_FAILED_FALLBACK = ["Unable to load", "notification preferences"].join(" ");
+const LOAD_FAILED_FALLBACK = [
+	"Unable to load",
+	"notification preferences",
+].join(" ");
 
 // Group notification types by category for better UX
 const NOTIFICATION_CATEGORIES = [
@@ -42,8 +51,10 @@ const NOTIFICATION_CATEGORIES = [
 		id: "approvals",
 		titleKey: "common:notifications.preferences.categories.approvals.title",
 		titleFallback: "Approvals",
-		descriptionKey: "common:notifications.preferences.categories.approvals.description",
-		descriptionFallback: "Notifications about approval requests and their status",
+		descriptionKey:
+			"common:notifications.preferences.categories.approvals.description",
+		descriptionFallback:
+			"Notifications about approval requests and their status",
 		icon: IconCheck,
 		types: [
 			"approval_request_submitted",
@@ -55,7 +66,8 @@ const NOTIFICATION_CATEGORIES = [
 		id: "time",
 		titleKey: "common:notifications.preferences.categories.time.title",
 		titleFallback: "Time Corrections",
-		descriptionKey: "common:notifications.preferences.categories.time.description",
+		descriptionKey:
+			"common:notifications.preferences.categories.time.description",
 		descriptionFallback: "Notifications about time tracking corrections",
 		icon: IconClock,
 		types: [
@@ -68,7 +80,8 @@ const NOTIFICATION_CATEGORIES = [
 		id: "absences",
 		titleKey: "common:notifications.preferences.categories.absences.title",
 		titleFallback: "Absences",
-		descriptionKey: "common:notifications.preferences.categories.absences.description",
+		descriptionKey:
+			"common:notifications.preferences.categories.absences.description",
 		descriptionFallback: "Notifications about absence requests",
 		icon: IconCalendar,
 		types: [
@@ -81,7 +94,8 @@ const NOTIFICATION_CATEGORIES = [
 		id: "team",
 		titleKey: "common:notifications.preferences.categories.team.title",
 		titleFallback: "Team",
-		descriptionKey: "common:notifications.preferences.categories.team.description",
+		descriptionKey:
+			"common:notifications.preferences.categories.team.description",
 		descriptionFallback: "Notifications about team membership changes",
 		icon: IconUsers,
 		types: ["team_member_added", "team_member_removed"] as NotificationType[],
@@ -90,25 +104,35 @@ const NOTIFICATION_CATEGORIES = [
 		id: "security",
 		titleKey: "common:notifications.preferences.categories.security.title",
 		titleFallback: "Security",
-		descriptionKey: "common:notifications.preferences.categories.security.description",
+		descriptionKey:
+			"common:notifications.preferences.categories.security.description",
 		descriptionFallback: "Important security notifications",
 		icon: IconShield,
-		types: ["password_changed", "two_factor_enabled", "two_factor_disabled"] as NotificationType[],
+		types: [
+			"password_changed",
+			"two_factor_enabled",
+			"two_factor_disabled",
+		] as NotificationType[],
 	},
 	{
 		id: "reminders",
 		titleKey: "common:notifications.preferences.categories.reminders.title",
 		titleFallback: "Reminders",
-		descriptionKey: "common:notifications.preferences.categories.reminders.description",
+		descriptionKey:
+			"common:notifications.preferences.categories.reminders.description",
 		descriptionFallback: "Helpful reminders and alerts",
 		icon: IconBell,
-		types: ["birthday_reminder", "vacation_balance_alert"] as NotificationType[],
+		types: [
+			"birthday_reminder",
+			"vacation_balance_alert",
+		] as NotificationType[],
 	},
 	{
 		id: "scheduling",
 		titleKey: "common:notifications.preferences.categories.scheduling.title",
 		titleFallback: "Shift Scheduling",
-		descriptionKey: "common:notifications.preferences.categories.scheduling.description",
+		descriptionKey:
+			"common:notifications.preferences.categories.scheduling.description",
 		descriptionFallback: "Notifications about shift assignments and swaps",
 		icon: IconCalendarEvent,
 		types: [
@@ -215,7 +239,7 @@ const CHANNEL_CONFIG: Record<
 	},
 };
 
-export function NotificationSettings() {
+function useNotificationSettingsViewModel() {
 	const { t } = useTranslate();
 	const { matrix, availableChannels, isLoading, updatePreference, isUpdating } =
 		useNotificationPreferences();
@@ -226,10 +250,14 @@ export function NotificationSettings() {
 		isSubscribed: isPushSubscribed,
 		subscribe: subscribeToPush,
 		isLoading: isPushLoading,
+		error: pushError,
 	} = usePushNotifications({
 		onSubscribe: () => {
 			toast.success(
-				t("common:notifications.preferences.push.enabledToast", "Push notifications enabled"),
+				t(
+					"common:notifications.preferences.push.enabledToast",
+					"Push notifications enabled",
+				),
 				{
 					description: t(
 						"common:notifications.preferences.push.enabledToastDescription",
@@ -240,17 +268,40 @@ export function NotificationSettings() {
 		},
 		onError: (error) => {
 			toast.error(
-				t("common:notifications.preferences.push.errorToast", "Push notification error"),
+				t(
+					"common:notifications.preferences.push.errorToast",
+					"Push notification error",
+				),
 				{
 					description: error.message,
+					id: "push-notification-error",
 				},
 			);
 		},
 	});
 
-	const visibleChannels = NOTIFICATION_CHANNELS.filter((channel) => availableChannels[channel]);
+	useEffect(() => {
+		if (!pushError) return;
+		toast.error(
+			t(
+				"common:notifications.preferences.push.errorToast",
+				"Push notification error",
+			),
+			{
+				description: pushError.message,
+				id: "push-notification-error",
+			},
+		);
+	}, [pushError, t]);
+
+	const visibleChannels = NOTIFICATION_CHANNELS.filter(
+		(channel) => availableChannels[channel],
+	);
 	const getChannelLabel = (channel: NotificationChannel) =>
-		t(`common:notifications.preferences.channels.${channel}.label`, CHANNEL_CONFIG[channel].label);
+		t(
+			`common:notifications.preferences.channels.${channel}.label`,
+			CHANNEL_CONFIG[channel].label,
+		);
 	const getChannelDescription = (channel: NotificationChannel) =>
 		t(
 			`common:notifications.preferences.channels.${channel}.description`,
@@ -298,13 +349,22 @@ export function NotificationSettings() {
 					onSuccess: () => {
 						toast.success(
 							enabled
-								? t("common:notifications.preferences.enabled", "Notification enabled")
-								: t("common:notifications.preferences.disabled", "Notification disabled"),
+								? t(
+										"common:notifications.preferences.enabled",
+										"Notification enabled",
+									)
+								: t(
+										"common:notifications.preferences.disabled",
+										"Notification disabled",
+									),
 						);
 					},
 					onError: () => {
 						toast.error(
-							t("common:notifications.preferences.updateFailed", "Failed to update preference"),
+							t(
+								"common:notifications.preferences.updateFailed",
+								"Failed to update preference",
+							),
 						);
 					},
 					onSettled: () => {
@@ -317,6 +377,52 @@ export function NotificationSettings() {
 		}
 	};
 
+	return {
+		getChannelDescription,
+		getChannelLabel,
+		getTypeLabel,
+		handleRequestPermission,
+		handleToggle,
+		isLoading,
+		isPushLoading,
+		isPushSubscribed,
+		isPushSupported,
+		isUpdating,
+		matrix,
+		pendingToggle,
+		pushPermission,
+		setShowPermissionModal,
+		showPermissionModal,
+		t,
+		visibleChannels,
+	};
+}
+
+function NotificationSettingsView({
+	viewModel,
+}: {
+	viewModel: ReturnType<typeof useNotificationSettingsViewModel>;
+}) {
+	const {
+		getChannelDescription,
+		getChannelLabel,
+		getTypeLabel,
+		handleRequestPermission,
+		handleToggle,
+		isLoading,
+		isPushLoading,
+		isPushSubscribed,
+		isPushSupported,
+		isUpdating,
+		matrix,
+		pendingToggle,
+		pushPermission,
+		setShowPermissionModal,
+		showPermissionModal,
+		t,
+		visibleChannels,
+	} = viewModel;
+
 	if (isLoading) {
 		return <NotificationSettingsSkeleton />;
 	}
@@ -326,7 +432,10 @@ export function NotificationSettings() {
 			<Card>
 				<CardContent className="py-8 text-center">
 					<p className="text-muted-foreground">
-						{t("common:notifications.preferences.loadFailed", LOAD_FAILED_FALLBACK)}
+						{t(
+							"common:notifications.preferences.loadFailed",
+							LOAD_FAILED_FALLBACK,
+						)}
 					</p>
 				</CardContent>
 			</Card>
@@ -359,11 +468,21 @@ export function NotificationSettings() {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<Button onClick={() => setShowPermissionModal(true)} disabled={isPushLoading} size="sm">
+						<Button
+							onClick={() => setShowPermissionModal(true)}
+							disabled={isPushLoading}
+							size="sm"
+						>
 							{isPushLoading && (
-								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+								<IconLoader2
+									className="mr-2 size-4 animate-spin"
+									aria-hidden="true"
+								/>
 							)}
-							{t("common:notifications.preferences.push.enableButton", "Enable Push Notifications")}
+							{t(
+								"common:notifications.preferences.push.enableButton",
+								"Enable Push Notifications",
+							)}
 						</Button>
 					</CardContent>
 				</Card>
@@ -416,7 +535,10 @@ export function NotificationSettings() {
 							"Push notifications are enabled",
 						)}
 					</span>
-					<Badge variant="outline" className="ml-auto border-green-300 text-green-700">
+					<Badge
+						variant="outline"
+						className="ml-auto border-green-300 text-green-700"
+					>
 						{t("common:common.active", "Active")}
 					</Badge>
 				</div>
@@ -449,7 +571,10 @@ export function NotificationSettings() {
 				<Card key={category.id}>
 					<CardHeader className="pb-3">
 						<div className="flex items-center gap-2">
-							<category.icon className="size-5 text-muted-foreground" aria-hidden="true" />
+							<category.icon
+								className="size-5 text-muted-foreground"
+								aria-hidden="true"
+							/>
 							<CardTitle className="text-base">
 								{t(category.titleKey, category.titleFallback)}
 							</CardTitle>
@@ -465,7 +590,9 @@ export function NotificationSettings() {
 									key={type}
 									className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between"
 								>
-									<span className="text-sm font-medium">{getTypeLabel(type)}</span>
+									<span className="text-sm font-medium">
+										{getTypeLabel(type)}
+									</span>
 									<div className="flex max-w-full flex-wrap items-center gap-3">
 										{visibleChannels.map((channel) => {
 											const isEnabled = matrix[type]?.[channel] ?? true;
@@ -476,7 +603,9 @@ export function NotificationSettings() {
 											const typeLabel = getTypeLabel(type);
 
 											const isDisabled =
-												isPending || isUpdating || (channel === "push" && !isPushSupported);
+												isPending ||
+												isUpdating ||
+												(channel === "push" && !isPushSupported);
 
 											return (
 												<div
@@ -490,7 +619,9 @@ export function NotificationSettings() {
 													/>
 													<Switch
 														checked={isEnabled}
-														onCheckedChange={(checked) => handleToggle(type, channel, checked)}
+														onCheckedChange={(checked) =>
+															handleToggle(type, channel, checked)
+														}
 														disabled={isDisabled}
 														aria-label={t(
 															"common:notifications.preferences.toggleAria",
@@ -511,6 +642,11 @@ export function NotificationSettings() {
 			))}
 		</div>
 	);
+}
+
+export function NotificationSettings() {
+	const viewModel = useNotificationSettingsViewModel();
+	return <NotificationSettingsView viewModel={viewModel} />;
 }
 
 function NotificationSettingsSkeleton() {

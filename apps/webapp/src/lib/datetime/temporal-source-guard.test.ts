@@ -105,6 +105,10 @@ describe("Temporal source guard", () => {
 	it("keeps Drizzle schema modules free of application datetime runtime dependencies", () => {
 		const schemaRoot = join(SOURCE_ROOT, "db/schema");
 		const offenders = collectSourceFiles(schemaRoot)
+			.filter((filePath) => {
+				const relativePath = relative(schemaRoot, filePath);
+				return !/(?:^|[/\\])__tests__(?:[/\\]|$)|\.test\.tsx?$/.test(relativePath);
+			})
 			.filter((filePath) => APPLICATION_DRIZZLE_ADAPTER_IMPORT.test(readFileSync(filePath, "utf8")))
 			.map((filePath) => relative(SOURCE_ROOT, filePath));
 

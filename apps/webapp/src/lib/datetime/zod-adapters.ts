@@ -7,6 +7,7 @@
  */
 
 import type { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import { fromJSDate, isValid, now, parseISO } from "./luxon-utils";
 
@@ -22,7 +23,9 @@ export const dateTimeSchema = z
 	.union([
 		z.date().transform((d) => fromJSDate(d, "utc")),
 		z.iso.datetime().transform((s) => parseISO(s, "utc")),
-		z.custom<DateTime>((val) => val && typeof val === "object" && "toJSDate" in val),
+		z.custom<DateTime>(
+			(val) => val && typeof val === "object" && "toJSDate" in val,
+		),
 	])
 	.refine((val) => isValid(val as DateTime), { message: "Invalid date" });
 
@@ -62,7 +65,9 @@ export function pastDateSchema(message: string = "Date must be in the past") {
 /**
  * Create a schema for dates that must be in the future
  */
-export function futureDateSchema(message: string = "Date must be in the future") {
+export function futureDateSchema(
+	message: string = "Date must be in the future",
+) {
 	return dateTimeSchema.refine((dt) => dt >= now(), { message });
 }
 
@@ -173,13 +178,34 @@ export function apiDateOnlySchema() {
 // PRE-DEFINED COMMON SCHEMAS
 // ============================================================================
 
+function isBirthdayOnOrBeforeToday(date: Date): boolean {
+	const birthday = Temporal.Instant.from(date.toISOString())
+		.toZonedDateTimeISO("UTC")
+		.toPlainDate();
+	return (
+		Temporal.PlainDate.compare(birthday, Temporal.Now.plainDateISO("UTC")) <= 0
+	);
+}
+
+function isBirthdayOnOrAfter1900(date: Date): boolean {
+	const birthday = Temporal.Instant.from(date.toISOString())
+		.toZonedDateTimeISO("UTC")
+		.toPlainDate();
+	return (
+		Temporal.PlainDate.compare(
+			birthday,
+			Temporal.PlainDate.from("1900-01-01"),
+		) >= 0
+	);
+}
+
 /**
  * Birthday schema (must be in the past, reasonable date range)
  */
 export const birthdaySchema = z
 	.date()
-	.max(new Date(), "Birthday must be in the past")
-	.min(new Date(1900, 0, 1), "Birthday must be after 1900")
+	.refine(isBirthdayOnOrBeforeToday, "Birthday must be in the past")
+	.refine(isBirthdayOnOrAfter1900, "Birthday must be after 1900")
 	.transform((d) => fromJSDate(d, "utc"));
 
 /**
@@ -187,8 +213,8 @@ export const birthdaySchema = z
  */
 export const birthdaySchemaOptional = z
 	.date()
-	.max(new Date(), "Birthday must be in the past")
-	.min(new Date(1900, 0, 1), "Birthday must be after 1900")
+	.refine(isBirthdayOnOrBeforeToday, "Birthday must be in the past")
+	.refine(isBirthdayOnOrAfter1900, "Birthday must be after 1900")
 	.optional()
 	.nullable()
 	.transform((d) => (d ? fromJSDate(d, "utc") : null));
@@ -218,10 +244,13 @@ export const workScheduleDateRangeSchema = z
 			.nullable()
 			.transform((d) => (d ? fromJSDate(d, "utc") : null)),
 	})
-	.refine((data) => !data.effectiveUntil || data.effectiveFrom <= data.effectiveUntil, {
-		message: "Effective until date must be after effective from date",
-		path: ["effectiveUntil"],
-	});
+	.refine(
+		(data) => !data.effectiveUntil || data.effectiveFrom <= data.effectiveUntil,
+		{
+			message: "Effective until date must be after effective from date",
+			path: ["effectiveUntil"],
+		},
+	);
 
 // ============================================================================
 // TRANSFORMATION HELPERS
@@ -272,4 +301,8 @@ export function transformToDateTime(value: unknown): DateTime | null {
  * Type helper for inferred DateTime from schema
  */
 export type InferDateTime<T extends z.ZodType<any, any, any>> =
-	T extends z.ZodType<infer U, any, any> ? (U extends DateTime ? U : never) : never;
+	T extends z.ZodType<infer U, any, any>
+		? U extends DateTime
+			? U
+			: never
+		: never;

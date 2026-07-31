@@ -48,6 +48,7 @@
       "event": "Zdarzenie",
       "failed": "Niepowodzenie",
       "http": "HTTP",
+      "loadError": "Nie udało się załadować dzienników dostarczania",
       "payload": "Ładunek (Payload)",
       "pending": "Oczekujące",
       "response": "Odpowiedź",

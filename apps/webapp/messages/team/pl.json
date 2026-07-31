@@ -134,11 +134,8 @@
         "ascending": "rosnąco",
         "descending": "malejąco"
       },
-      "sortByTimeBalance": "Sortuj według salda rocznego",
-      "sortByTimeBalanceWithDirection": "Sortuj według salda rocznego ({direction})",
       "status": "Status",
-      "team": "Zespół",
-      "timeBalance": "Saldo roczne"
+      "team": "Zespół"
     },
     "title": "Twój zespół",
     "view": {

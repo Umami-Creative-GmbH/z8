@@ -134,11 +134,8 @@
         "ascending": "ufstigend",
         "descending": "abstigend"
       },
-      "sortByTimeBalance": "Sortiere nach Jahresguthabe",
-      "sortByTimeBalanceWithDirection": "Sortiere nach Jahresguthabe ({direction})",
       "status": "Status",
-      "team": "Team",
-      "timeBalance": "Jahresguthabe"
+      "team": "Team"
     },
     "title": "Dis Team",
     "view": {

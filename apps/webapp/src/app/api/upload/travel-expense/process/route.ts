@@ -46,7 +46,10 @@ export async function POST(request: NextRequest) {
 		const { tusFileKey, claimId, fileName } = body;
 
 		if (!tusFileKey || !claimId) {
-			return NextResponse.json({ error: "Missing tusFileKey or claimId" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Missing tusFileKey or claimId" },
+				{ status: 400 },
+			);
 		}
 
 		const safeTusFileKey = sanitizeTusFileKey(tusFileKey, authContext.user.id);
@@ -57,14 +60,21 @@ export async function POST(request: NextRequest) {
 		const claim = await db.query.travelExpenseClaim.findFirst({
 			where: and(
 				eq(travelExpenseClaim.id, claimId),
-				eq(travelExpenseClaim.organizationId, authContext.employee.organizationId),
+				eq(
+					travelExpenseClaim.organizationId,
+					authContext.employee.organizationId,
+				),
 				eq(travelExpenseClaim.employeeId, authContext.employee.id),
+				eq(travelExpenseClaim.status, "draft"),
 			),
-			columns: { id: true, organizationId: true },
+			columns: { id: true, organizationId: true, status: true },
 		});
 
-		if (!claim) {
-			return NextResponse.json({ error: "Travel expense claim not found" }, { status: 404 });
+		if (claim?.status !== "draft") {
+			return NextResponse.json(
+				{ error: "Travel expense claim not found" },
+				{ status: 404 },
+			);
 		}
 
 		const getResponse = await s3Client.send(
@@ -74,28 +84,45 @@ export async function POST(request: NextRequest) {
 			}),
 		);
 
-		if (getResponse.ContentLength && getResponse.ContentLength > MAX_FILE_SIZE_BYTES) {
-			return NextResponse.json({ error: "File too large. Maximum size is 10MB" }, { status: 413 });
+		if (
+			getResponse.ContentLength &&
+			getResponse.ContentLength > MAX_FILE_SIZE_BYTES
+		) {
+			return NextResponse.json(
+				{ error: "File too large. Maximum size is 10MB" },
+				{ status: 413 },
+			);
 		}
 
 		const byteArray = await getResponse.Body?.transformToByteArray();
 		if (!byteArray) {
-			return NextResponse.json({ error: "Failed to read uploaded file" }, { status: 500 });
+			return NextResponse.json(
+				{ error: "Failed to read uploaded file" },
+				{ status: 500 },
+			);
 		}
 
 		const buffer = Buffer.from(byteArray);
 		if (buffer.length > MAX_FILE_SIZE_BYTES) {
-			return NextResponse.json({ error: "File too large. Maximum size is 10MB" }, { status: 413 });
+			return NextResponse.json(
+				{ error: "File too large. Maximum size is 10MB" },
+				{ status: 413 },
+			);
 		}
 
 		const detectedType = await fileTypeFromBuffer(buffer);
 		if (!detectedType || !isAllowedTravelExpenseMime(detectedType.mime)) {
-			return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Unsupported file type" },
+				{ status: 400 },
+			);
 		}
 
 		const providedName = fileName?.trim() || `attachment.${detectedType.ext}`;
 		const safeName = sanitizeFileName(providedName);
-		const finalName = safeName.includes(".") ? safeName : `${safeName}.${detectedType.ext}`;
+		const finalName = safeName.includes(".")
+			? safeName
+			: `${safeName}.${detectedType.ext}`;
 		const timestamp = Date.now();
 		const finalStorageKey = `travel-expenses/${claim.organizationId}/${claim.id}/${timestamp}-${finalName}`;
 
@@ -133,7 +160,10 @@ export async function POST(request: NextRequest) {
 			});
 
 		if (!createdAttachment) {
-			return NextResponse.json({ error: "Failed to create attachment record" }, { status: 500 });
+			return NextResponse.json(
+				{ error: "Failed to create attachment record" },
+				{ status: 500 },
+			);
 		}
 
 		await s3Client.send(

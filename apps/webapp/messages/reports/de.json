@@ -207,6 +207,7 @@
         "sessions": "Sitzungen",
         "title": "Teamaufschlüsselung"
       },
+      "title": "Projektberichte",
       "toast": {
         "failedGenerate": "Bericht konnte nicht generiert werden",
         "failedPortfolio": "Portfoliobericht konnte nicht generiert werden",

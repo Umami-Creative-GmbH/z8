@@ -1,18 +1,64 @@
 import { Effect, Exit } from "effect";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	AuthorizationError,
+	ConflictError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 
-const { approvalRequestFindManyMock } = vi.hoisted(() => ({
+const {
+	approvalRequestFindFirstMock,
+	approvalRequestFindManyMock,
+	assignmentFindFirstMock,
+	assignmentFindManyMock,
+	workPeriodFindFirstMock,
+	timeEntryFindManyMock,
+	completeHandlerApproveMock,
+	loadOrdinaryCanonicalApprovalsMock,
+} = vi.hoisted(() => ({
+	approvalRequestFindFirstMock: vi.fn(),
 	approvalRequestFindManyMock: vi.fn(),
+	assignmentFindFirstMock: vi.fn(),
+	assignmentFindManyMock: vi.fn(),
+	workPeriodFindFirstMock: vi.fn(),
+	timeEntryFindManyMock: vi.fn(),
+	completeHandlerApproveMock: vi.fn(),
+	loadOrdinaryCanonicalApprovalsMock: vi.fn(),
+}));
+
+vi.mock("@/lib/approvals/inbox/ordinary-canonical-read", () => ({
+	loadOrdinaryCanonicalApprovals: loadOrdinaryCanonicalApprovalsMock,
 }));
 
 vi.mock("@/db", () => ({
 	db: {
 		query: {
 			approvalRequest: {
+				findFirst: approvalRequestFindFirstMock,
 				findMany: approvalRequestFindManyMock,
 			},
+			approvalStageAssignment: {
+				findFirst: assignmentFindFirstMock,
+				findMany: assignmentFindManyMock,
+			},
+			workPeriod: { findFirst: workPeriodFindFirstMock },
+			timeEntry: { findMany: timeEntryFindManyMock },
 		},
 	},
+}));
+
+vi.mock("@/lib/approvals/inbox/source-adapters", () => ({
+	isSupportedInboxType: (type: string) =>
+		type === "time_entry" || type === "absence_entry",
+	getSupportedInboxHandler: (type: string) =>
+		type === "time_entry"
+			? {
+					type: "time_entry",
+					approve: completeHandlerApproveMock,
+					reject: vi.fn(() => Effect.void),
+				}
+			: null,
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -22,12 +68,439 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 import {
+	approveApprovalInboxItem,
 	bulkApproveApprovalInboxItems,
 	bulkDecideApprovalInboxItemsFromRequests,
+	canAttemptApprovalInboxDecisionTarget,
 	decideApprovalInboxItemFromRequest,
+	loadApprovalInboxDecisionTarget,
 } from "@/lib/approvals/inbox/decision-service";
 
 describe("approval inbox decision service", () => {
+	beforeEach(() => {
+		approvalRequestFindFirstMock.mockReset();
+		approvalRequestFindManyMock.mockReset();
+		assignmentFindFirstMock.mockReset();
+		assignmentFindManyMock.mockReset().mockResolvedValue([]);
+		workPeriodFindFirstMock.mockReset().mockResolvedValue(null);
+		timeEntryFindManyMock.mockReset().mockResolvedValue([]);
+		completeHandlerApproveMock.mockClear();
+		completeHandlerApproveMock.mockReturnValue(Effect.void);
+		loadOrdinaryCanonicalApprovalsMock.mockReset().mockResolvedValue([]);
+	});
+
+	it("fails closed for unexpected statuses even with an ordinary kind", () => {
+		expect(
+			canAttemptApprovalInboxDecisionTarget({
+				status: "cancelled",
+				workflowKind: "manual_time_submission",
+			}),
+		).toBe(false);
+	});
+
+	it("loads an exact active complete-mode assignment as a time-entry decision target", async () => {
+		approvalRequestFindFirstMock.mockResolvedValue(null);
+		loadOrdinaryCanonicalApprovalsMock.mockResolvedValue([
+			{
+				item: { id: "assignment-1" },
+				decisionTarget: {
+					id: "assignment-1",
+					targetType: "canonical_assignment",
+					entityType: "time_entry",
+					entityId: "period-1",
+					organizationId: "org-1",
+					approverId: "manager-1",
+					requesterEmployeeId: "employee-1",
+					status: "pending",
+					workflowKind: "manual_time_submission",
+				},
+			},
+		]);
+		assignmentFindFirstMock.mockResolvedValue({
+			id: "assignment-1",
+			organizationId: "org-1",
+			workflowId: "workflow-1",
+			stageId: "stage-1",
+			approverEmployeeId: "manager-1",
+			status: "pending",
+			workflow: {
+				id: "workflow-1",
+				organizationId: "org-1",
+				workflowType: "manual_time_submission",
+				sourceType: "time_entry",
+				sourceId: "period-1",
+				requesterEmployeeId: "employee-1",
+				status: "pending",
+				currentStageOrder: 2,
+			},
+			stage: {
+				id: "stage-1",
+				organizationId: "org-1",
+				workflowId: "workflow-1",
+				sequence: 2,
+				status: "pending",
+			},
+		});
+
+		await expect(
+			approveApprovalInboxItem({
+				approvalId: "assignment-1",
+				actorEmployeeId: "manager-1",
+				organizationId: "org-1",
+			}),
+		).resolves.toEqual({
+			id: "assignment-1",
+			type: "time_entry",
+			status: "approved",
+		});
+		expect(completeHandlerApproveMock).toHaveBeenCalledWith(
+			"period-1",
+			"manager-1",
+			{ approvalRequestId: "assignment-1" },
+		);
+		expect(loadOrdinaryCanonicalApprovalsMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				assignmentId: "assignment-1",
+				limit: 1,
+			}),
+		);
+	});
+
+	it("does not fall back to an unvalidated pending assignment", async () => {
+		approvalRequestFindFirstMock.mockResolvedValue(null);
+		assignmentFindFirstMock.mockResolvedValue({
+			id: "assignment-1",
+			organizationId: "org-1",
+			workflowId: "workflow-1",
+			stageId: "stage-1",
+			approverEmployeeId: "manager-1",
+			status: "pending",
+			workflow: {
+				id: "workflow-1",
+				organizationId: "org-1",
+				workflowType: "manual_time_submission",
+				sourceType: "time_entry",
+				sourceId: "period-1",
+				requesterEmployeeId: "employee-1",
+				status: "pending",
+				currentStageOrder: 1,
+			},
+			stage: {
+				id: "stage-1",
+				organizationId: "org-1",
+				workflowId: "workflow-1",
+				sequence: 1,
+				status: "pending",
+			},
+		});
+
+		await expect(
+			loadApprovalInboxDecisionTarget({
+				approvalId: "assignment-1",
+				organizationId: "org-1",
+			}),
+		).rejects.toMatchObject({ _tag: "NotFoundError" });
+	});
+
+	it("loads an exact terminal ordinary assignment so the owner can determine replay", async () => {
+		approvalRequestFindFirstMock.mockResolvedValue(null);
+		assignmentFindFirstMock.mockResolvedValue({
+			id: "assignment-1",
+			organizationId: "org-1",
+			workflowId: "workflow-1",
+			stageId: "stage-1",
+			approverEmployeeId: "manager-1",
+			status: "approved",
+			workflow: {
+				id: "workflow-1",
+				organizationId: "org-1",
+				workflowType: "manual_time_submission",
+				sourceType: "time_entry",
+				sourceId: "period-1",
+				requesterEmployeeId: "employee-1",
+				status: "approved",
+				currentStageOrder: null,
+			},
+			stage: {
+				id: "stage-1",
+				organizationId: "org-1",
+				workflowId: "workflow-1",
+				sequence: 1,
+				status: "approved",
+			},
+		});
+
+		await approveApprovalInboxItem({
+			approvalId: "assignment-1",
+			actorEmployeeId: "manager-1",
+			organizationId: "org-1",
+		});
+
+		expect(completeHandlerApproveMock).toHaveBeenCalledWith(
+			"period-1",
+			"manager-1",
+			{ approvalRequestId: "assignment-1" },
+		);
+	});
+
+	it("classifies canonical terminal time corrections and rejects them as already processed", async () => {
+		approvalRequestFindFirstMock.mockResolvedValue(null);
+		assignmentFindFirstMock.mockResolvedValue({
+			id: "assignment-1",
+			organizationId: "org-1",
+			workflowId: "workflow-1",
+			stageId: "stage-1",
+			approverEmployeeId: "manager-1",
+			status: "approved",
+			workflow: {
+				id: "workflow-1",
+				organizationId: "org-1",
+				workflowType: "time_correction",
+				sourceType: "time_entry",
+				sourceId: "period-1",
+				requesterEmployeeId: "employee-1",
+				status: "approved",
+				currentStageOrder: null,
+			},
+			stage: {
+				id: "stage-1",
+				organizationId: "org-1",
+				workflowId: "workflow-1",
+				sequence: 1,
+				status: "approved",
+			},
+		});
+
+		const target = await loadApprovalInboxDecisionTarget({
+			approvalId: "assignment-1",
+			organizationId: "org-1",
+		});
+		expect(target.workflowKind).toBe("time_correction");
+		await expect(
+			approveApprovalInboxItem({
+				approvalId: "assignment-1",
+				actorEmployeeId: "manager-1",
+				organizationId: "org-1",
+			}),
+		).rejects.toThrow("Request is already approved");
+		expect(completeHandlerApproveMock).not.toHaveBeenCalled();
+	});
+
+	it("classifies metadata-free terminal ordinary requests from exact source evidence", async () => {
+		approvalRequestFindFirstMock.mockResolvedValue({
+			id: "approval-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			organizationId: "org-1",
+			approverId: "manager-1",
+			requestedBy: "employee-1",
+			status: "approved",
+			metadata: null,
+			reason: null,
+		});
+		workPeriodFindFirstMock.mockResolvedValue({
+			id: "period-1",
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			pendingChanges: { isManualEntry: true },
+			clockInId: "clock-in-1",
+			clockOutId: "clock-out-1",
+		});
+
+		const target = await loadApprovalInboxDecisionTarget({
+			approvalId: "approval-1",
+			organizationId: "org-1",
+		});
+
+		expect(target.workflowKind).toBe("manual_time_submission");
+	});
+
+	it("classifies metadata-free terminal corrections from exact relational evidence", async () => {
+		approvalRequestFindFirstMock.mockResolvedValue({
+			id: "approval-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			organizationId: "org-1",
+			approverId: "manager-1",
+			requestedBy: "employee-1",
+			status: "approved",
+			metadata: null,
+			reason: null,
+		});
+		workPeriodFindFirstMock.mockResolvedValue({
+			id: "period-1",
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			pendingChanges: null,
+			clockInId: "clock-in-1",
+			clockOutId: "clock-out-1",
+		});
+		timeEntryFindManyMock.mockResolvedValue([{ id: "correction-1" }]);
+
+		const target = await loadApprovalInboxDecisionTarget({
+			approvalId: "approval-1",
+			organizationId: "org-1",
+		});
+
+		expect(target.workflowKind).toBe("time_correction");
+		await expect(
+			approveApprovalInboxItem({
+				approvalId: "approval-1",
+				actorEmployeeId: "manager-1",
+				organizationId: "org-1",
+			}),
+		).rejects.toThrow("Request is already approved");
+		expect(completeHandlerApproveMock).not.toHaveBeenCalled();
+	});
+
+	it("fails closed when legacy request metadata contradicts exact source evidence", async () => {
+		approvalRequestFindFirstMock.mockResolvedValue({
+			id: "approval-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			organizationId: "org-1",
+			approverId: "manager-1",
+			requestedBy: "employee-1",
+			status: "approved",
+			metadata: { timeRequest: { kind: "policy_clock_out" } },
+			reason: null,
+		});
+		workPeriodFindFirstMock.mockResolvedValue({
+			id: "period-1",
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			pendingChanges: { isManualEntry: true },
+			clockInId: "clock-in-1",
+			clockOutId: "clock-out-1",
+		});
+
+		const target = await loadApprovalInboxDecisionTarget({
+			approvalId: "approval-1",
+			organizationId: "org-1",
+		});
+
+		expect(target.workflowKind).toBe("unclassified");
+		await expect(
+			approveApprovalInboxItem({
+				approvalId: "approval-1",
+				actorEmployeeId: "manager-1",
+				organizationId: "org-1",
+			}),
+		).rejects.toThrow("Request is already approved");
+		expect(completeHandlerApproveMock).not.toHaveBeenCalled();
+	});
+
+	it("loads exact terminal ordinary assignments for bulk replay", async () => {
+		approvalRequestFindManyMock.mockResolvedValue([]);
+		assignmentFindManyMock.mockResolvedValue([
+			{
+				id: "assignment-1",
+				organizationId: "org-1",
+				workflowId: "workflow-1",
+				stageId: "stage-1",
+				approverEmployeeId: "manager-1",
+				status: "approved",
+				workflow: {
+					id: "workflow-1",
+					organizationId: "org-1",
+					workflowType: "manual_time_submission",
+					sourceType: "time_entry",
+					sourceId: "period-1",
+					requesterEmployeeId: "employee-1",
+					status: "approved",
+					currentStageOrder: null,
+				},
+				stage: {
+					id: "stage-1",
+					organizationId: "org-1",
+					workflowId: "workflow-1",
+					sequence: 1,
+					status: "approved",
+				},
+			},
+		]);
+
+		const result = await bulkApproveApprovalInboxItems({
+			approvalIds: ["assignment-1"],
+			actorEmployeeId: "manager-1",
+			organizationId: "org-1",
+		});
+
+		expect(result.failed).toEqual([]);
+		expect(completeHandlerApproveMock).toHaveBeenCalledWith(
+			"period-1",
+			"manager-1",
+			{ approvalRequestId: "assignment-1" },
+		);
+	});
+	it("returns the same generic not-found error for missing and inaccessible single IDs", async () => {
+		approvalRequestFindFirstMock
+			.mockResolvedValueOnce(null)
+			.mockResolvedValueOnce({
+				id: "approval-inaccessible",
+				entityType: "absence_entry",
+				entityId: "absence-1",
+				organizationId: "org-1",
+				approverId: "manager-1",
+				requestedBy: "employee-1",
+				status: "pending",
+			});
+		const decide = (approvalId: string) =>
+			approveApprovalInboxItem({
+				approvalId,
+				actorEmployeeId: "outsider-1",
+				organizationId: "org-1",
+			});
+
+		const missing = await decide("approval-missing").catch((error) => error);
+		const inaccessible = await decide("approval-inaccessible").catch(
+			(error) => error,
+		);
+
+		expect(missing).toBeInstanceOf(NotFoundError);
+		expect(inaccessible).toBeInstanceOf(NotFoundError);
+		expect({ tag: missing._tag, message: missing.message }).toEqual({
+			tag: inaccessible._tag,
+			message: inaccessible.message,
+		});
+		expect(missing.message).toBe("Approval not found");
+		expect(approvalRequestFindFirstMock).toHaveBeenCalledTimes(2);
+	});
+
+	it("does not reveal which bulk IDs exist but are inaccessible", async () => {
+		approvalRequestFindManyMock.mockResolvedValueOnce([
+			{
+				id: "approval-inaccessible",
+				entityType: "absence_entry",
+				entityId: "absence-1",
+				organizationId: "org-1",
+				approverId: "manager-1",
+				requestedBy: "employee-1",
+				status: "pending",
+			},
+		]);
+
+		const result = await bulkApproveApprovalInboxItems({
+			approvalIds: ["approval-missing", "approval-inaccessible"],
+			actorEmployeeId: "outsider-1",
+			organizationId: "org-1",
+		});
+
+		expect(result.succeeded).toEqual([]);
+		expect(result.failed).toEqual([
+			{
+				id: "approval-missing",
+				code: "not_found",
+				message: "Approval not found",
+			},
+			{
+				id: "approval-inaccessible",
+				code: "not_found",
+				message: "Approval not found",
+			},
+		]);
+	});
 	it("requires rejection reasons", async () => {
 		await expect(
 			decideApprovalInboxItemFromRequest({
@@ -75,7 +548,29 @@ describe("approval inbox decision service", () => {
 		});
 		expect(approve).toHaveBeenCalledWith("absence-1", "manager-1", {
 			approvalRequestId: "approval-1",
-			organizationId: "org-1",
+		});
+	});
+
+	it("passes the stable time-correction inbox request ID to the handler", async () => {
+		const approve = vi.fn(() => Effect.succeed(undefined));
+
+		await decideApprovalInboxItemFromRequest({
+			request: {
+				id: "time-request-1",
+				entityType: "time_entry",
+				entityId: "work-period-1",
+				organizationId: "org-1",
+				approverId: "manager-1",
+				requesterEmployeeId: "employee-1",
+				status: "pending",
+			},
+			actorEmployeeId: "manager-1",
+			action: "approve",
+			handler: { type: "time_entry", approve, reject: vi.fn() } as never,
+		});
+
+		expect(approve).toHaveBeenCalledWith("work-period-1", "manager-1", {
+			approvalRequestId: "time-request-1",
 		});
 	});
 
@@ -104,7 +599,6 @@ describe("approval inbox decision service", () => {
 		expect(approve).toHaveBeenCalledWith("absence-1", "delegate-1", {
 			approvalRequestId: "approval-1",
 			allowAnyApprover: true,
-			organizationId: "org-1",
 		});
 	});
 
@@ -168,7 +662,6 @@ describe("approval inbox decision service", () => {
 			"Missing documentation",
 			{
 				approvalRequestId: "approval-1",
-				organizationId: "org-1",
 			},
 		);
 	});
@@ -203,7 +696,6 @@ describe("approval inbox decision service", () => {
 			{
 				approvalRequestId: "approval-1",
 				allowAnyApprover: true,
-				organizationId: "org-1",
 			},
 		);
 	});
@@ -394,8 +886,8 @@ describe("approval inbox decision service", () => {
 		expect(result.failed).toEqual([
 			{
 				id: "approval-1",
-				code: "forbidden",
-				message: "You are not authorized to decide this request",
+				code: "not_found",
+				message: "Approval not found",
 			},
 		]);
 		expect(approve).not.toHaveBeenCalled();
@@ -435,7 +927,6 @@ describe("approval inbox decision service", () => {
 		expect(approve).toHaveBeenCalledWith("absence-1", "manager-2", {
 			approvalRequestId: "approval-1",
 			allowAnyApprover: true,
-			organizationId: "org-1",
 		});
 	});
 
@@ -472,8 +963,7 @@ describe("approval inbox decision service", () => {
 			"Missing documentation",
 			{
 				approvalRequestId: "approval-1",
-				allowAnyApprover: true,
-				organizationId: "org-1",
+				allowOrganizationWideApprover: true,
 			},
 		);
 	});
@@ -625,7 +1115,12 @@ describe("approval inbox decision service", () => {
 				({
 					type: "absence_entry",
 					approve: vi.fn(() =>
-						Effect.fail(new Error("Approval request is already approved")),
+						Effect.fail(
+							new ConflictError({
+								message: "Approval request is already approved",
+								conflictType: "approval_status",
+							}),
+						),
 					),
 					reject: vi.fn(),
 				}) as never,
@@ -675,5 +1170,80 @@ describe("approval inbox decision service", () => {
 				message: "Approval decision failed",
 			},
 		]);
+	});
+
+	it.each([
+		{
+			code: "forbidden",
+			error: new AuthorizationError({
+				message: "You are not authorized to decide this request",
+			}),
+			expectedCode: "forbidden",
+			expectedMessage: "You are not authorized to decide this request",
+		},
+		{
+			code: "version_conflict",
+			error: new ConflictError({
+				message: "Approval workflow decision conflicts with the current state",
+				conflictType: "approval_transition",
+			}),
+			expectedCode: "stale",
+			expectedMessage:
+				"Approval workflow decision conflicts with the current state",
+		},
+		{
+			code: "idempotency_mismatch",
+			error: new ConflictError({
+				message: "Approval workflow decision conflicts with the current state",
+				conflictType: "approval_transition",
+			}),
+			expectedCode: "stale",
+			expectedMessage:
+				"Approval workflow decision conflicts with the current state",
+		},
+		{
+			code: "malformed_command",
+			error: new ValidationError({
+				message: "Approval workflow decision is invalid",
+			}),
+			expectedCode: "validation_failed",
+			expectedMessage: "Approval workflow decision is invalid",
+		},
+	])("maps translated canonical $code errors to a specific bulk failure", async ({
+		error,
+		expectedCode,
+		expectedMessage,
+	}) => {
+		const result = await bulkDecideApprovalInboxItemsFromRequests({
+			requests: [
+				{
+					id: "approval-1",
+					entityType: "absence_entry",
+					entityId: "absence-1",
+					organizationId: "org-1",
+					approverId: "manager-1",
+					status: "pending",
+				},
+			],
+			actorEmployeeId: "manager-1",
+			action: "approve",
+			resolveHandler: () =>
+				({
+					type: "absence_entry",
+					approve: vi.fn(() => Effect.fail(error)),
+					reject: vi.fn(),
+				}) as never,
+		});
+
+		expect(result).toEqual({
+			succeeded: [],
+			failed: [
+				{
+					id: "approval-1",
+					code: expectedCode,
+					message: expectedMessage,
+				},
+			],
+		});
 	});
 });

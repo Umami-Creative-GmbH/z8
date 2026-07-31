@@ -8,13 +8,21 @@ import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { approvalRequest, employee } from "@/db/schema";
-import { rejectApprovalInboxItem } from "@/lib/approvals/inbox/decision-service";
+import { employee } from "@/db/schema";
+import {
+	canAttemptApprovalInboxDecisionTarget,
+	loadApprovalInboxDecisionTarget,
+	rejectApprovalInboxItem,
+} from "@/lib/approvals/inbox/decision-service";
 import { isSupportedInboxType } from "@/lib/approvals/inbox/source-adapters";
 import { isEligibleManagerForApprovalRequest } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import {
+	canAccessApprovalInbox,
+	ForbiddenError,
+	toHttpError,
+} from "@/lib/authorization";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -48,7 +56,10 @@ function toApprovalErrorResponse(error: unknown) {
 	return null;
 }
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+	request: NextRequest,
+	{ params }: { params: Promise<{ id: string }> },
+) {
 	try {
 		const { id } = await params;
 
@@ -60,7 +71,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
 		const activeOrganizationId = session.session?.activeOrganizationId;
 		if (!activeOrganizationId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		const ability = await getAbility();
@@ -80,56 +94,64 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 		});
 
 		if (!currentEmployee) {
-			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
-		}
-
-		// Get the approval request
-		const approvalReq = await db.query.approvalRequest.findFirst({
-			where: and(
-				eq(approvalRequest.id, id),
-				eq(approvalRequest.organizationId, currentEmployee.organizationId),
-			),
-		});
-
-		if (!approvalReq) {
-			return NextResponse.json({ error: "Approval not found" }, { status: 404 });
-		}
-
-		if (approvalReq.organizationId !== currentEmployee.organizationId) {
-			return NextResponse.json({ error: "Approval not found" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Employee not found" },
+				{ status: 404 },
+			);
 		}
 
 		const canManageApprovals = ability.cannot("manage", "Approval") === false;
-		const canApproveApprovals = ability.cannot("approve", "Approval") === false;
-		if (!canApproveApprovals && !canManageApprovals) {
+		if (!canAccessApprovalInbox(ability, currentEmployee)) {
 			const error = new ForbiddenError("approve", "Approval");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
+		const approvalReq = await loadApprovalInboxDecisionTarget({
+			approvalId: id,
+			organizationId: currentEmployee.organizationId,
+		});
+
+		if (!approvalReq) {
+			return NextResponse.json(
+				{ error: "Approval not found" },
+				{ status: 404 },
+			);
+		}
+
+		if (approvalReq.organizationId !== currentEmployee.organizationId) {
+			return NextResponse.json(
+				{ error: "Approval not found" },
+				{ status: 404 },
+			);
+		}
+
 		const isAssignedApprover = approvalReq.approverId === currentEmployee.id;
 		const isEligibleManager = isAssignedApprover
 			? true
-			: await isEligibleManagerForApprovalRequest({
-					db,
-					approvalRequestId: approvalReq.id,
-					managerEmployeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
-				});
+			: approvalReq.targetType === "compatibility_request"
+				? await isEligibleManagerForApprovalRequest({
+						db,
+						approvalRequestId: approvalReq.id,
+						managerEmployeeId: currentEmployee.id,
+						organizationId: currentEmployee.organizationId,
+					})
+				: false;
 
 		if (!isAssignedApprover && !isEligibleManager && !canManageApprovals) {
 			return NextResponse.json(
-				{ error: "You are not authorized to reject this request" },
-				{ status: 403 },
+				{ error: "Approval not found" },
+				{ status: 404 },
 			);
 		}
 
 		if (!isSupportedInboxType(approvalReq.entityType)) {
-			return NextResponse.json({ error: "Unsupported approval type" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Unsupported approval type" },
+				{ status: 400 },
+			);
 		}
-
-		// Check status
-		if (approvalReq.status !== "pending") {
+		if (!canAttemptApprovalInboxDecisionTarget(approvalReq)) {
 			return NextResponse.json(
 				{ error: `Request is already ${approvalReq.status}` },
 				{ status: 409 },
@@ -141,7 +163,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 		const reason = typeof body.reason === "string" ? body.reason : "";
 
 		if (!reason || reason.trim().length === 0) {
-			return NextResponse.json({ error: "Rejection reason is required" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Rejection reason is required" },
+				{ status: 400 },
+			);
 		}
 
 		const result = await rejectApprovalInboxItem({
@@ -154,8 +179,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 				!canManageApprovals && isEligibleManager
 					? [
 							{
-								requesterEmployeeId: approvalReq.requestedBy,
-								eligibleApproverIds: [approvalReq.approverId, currentEmployee.id],
+								requesterEmployeeId: approvalReq.requesterEmployeeId,
+								eligibleApproverIds: [
+									approvalReq.approverId,
+									currentEmployee.id,
+								],
 							},
 						]
 					: [],

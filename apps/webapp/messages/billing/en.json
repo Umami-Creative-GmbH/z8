@@ -75,7 +75,6 @@
     "startTrial": "Start Free Trial",
     "status": {
       "canceled": "Canceled",
-      "noSubscription": "No Subscription",
       "pastDue": "Past Due",
       "trial": "Trial"
     },

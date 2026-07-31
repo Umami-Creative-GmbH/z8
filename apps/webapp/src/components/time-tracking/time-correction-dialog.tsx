@@ -3,7 +3,7 @@
 import { IconEdit, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	editSameDayTimeEntry,
@@ -22,7 +22,12 @@ import {
 } from "@/components/ui/action-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
+import {
+	TFormControl,
+	TFormItem,
+	TFormLabel,
+	TFormMessage,
+} from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
@@ -48,9 +53,72 @@ interface Props {
 	employeeTimezone: string;
 }
 
-export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }: Props) {
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+function CorrectionTrigger({
+	isSameDay,
+	t,
+}: {
+	isSameDay: boolean;
+	t: Translate;
+}) {
+	return (
+		<ActionPanelTrigger asChild>
+			<Button variant="ghost" size="icon">
+				<IconEdit className="size-4" />
+				<span className="sr-only">
+					{isSameDay
+						? t("timeTracking.correction.editEntry", "Edit time entry")
+						: t(
+								"timeTracking.correction.requestCorrection",
+								"Request time correction",
+							)}
+				</span>
+			</Button>
+		</ActionPanelTrigger>
+	);
+}
+
+function CorrectionHeader({
+	isSameDay,
+	t,
+}: {
+	isSameDay: boolean;
+	t: Translate;
+}) {
+	return (
+		<ActionPanelHeader>
+			<ActionPanelTitle>
+				{isSameDay
+					? t("timeTracking.correction.editTitle", "Edit Time Entry")
+					: t(
+							"timeTracking.correction.requestTitle",
+							"Request Time Correction",
+						)}
+			</ActionPanelTitle>
+			<ActionPanelDescription>
+				{isSameDay
+					? t(
+							"timeTracking.correction.editDescription",
+							"Make changes to your time entry for today.",
+						)
+					: t(
+							"timeTracking.correction.requestDescription",
+							"Submit a correction request for this time entry. Your manager will need to approve it.",
+						)}
+			</ActionPanelDescription>
+		</ActionPanelHeader>
+	);
+}
+
+export function TimeCorrectionDialog({
+	workPeriod,
+	isSameDay,
+	employeeTimezone,
+}: Props) {
 	const { t } = useTranslate();
 	const [open, setOpen] = useState(false);
+	const submissionIdRef = useRef<string | null>(null);
 	const router = useRouter();
 	const timezoneAbbr = getTimezoneAbbreviation(employeeTimezone);
 
@@ -77,7 +145,14 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 				return;
 			}
 
-			if (isDirectSameDayEdit({ isSameDay, workPeriod, employeeTimezone, values: value })) {
+			if (
+				isDirectSameDayEdit({
+					isSameDay,
+					workPeriod,
+					employeeTimezone,
+					values: value,
+				})
+			) {
 				const result = await editSameDayTimeEntry({
 					workPeriodId: workPeriod.id,
 					newClockInDate: value.clockInDate,
@@ -89,19 +164,29 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 
 				if (result.success) {
 					toast.success(
-						t("timeTracking.correction.success.updated", "Time entry updated successfully"),
+						t(
+							"timeTracking.correction.success.updated",
+							"Time entry updated successfully",
+						),
 					);
 					setOpen(false);
 					router.refresh();
 				} else {
 					toast.error(
 						result.error ||
-							t("timeTracking.correction.errors.updateFailed", "Failed to update time entry"),
+							t(
+								"timeTracking.correction.errors.updateFailed",
+								"Failed to update time entry",
+							),
 					);
 				}
 			} else {
+				const submissionId =
+					submissionIdRef.current ?? globalThis.crypto.randomUUID();
+				submissionIdRef.current = submissionId;
 				const result = await requestTimeCorrection({
 					workPeriodId: workPeriod.id,
+					submissionId,
 					newClockInDate: value.clockInDate,
 					newClockInTime: value.clockInTime,
 					newClockOutDate: value.clockOutDate || undefined,
@@ -110,17 +195,27 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 				});
 
 				if (result.success) {
+					submissionIdRef.current = null;
 					toast.success(
-						t(
-							"timeTracking.correction.success.submitted",
-							"Correction request submitted for manager approval",
-						),
+						result.data.status === "approved"
+							? t(
+									"timeTracking.correction.success.applied",
+									"Correction applied successfully",
+								)
+							: t(
+									"timeTracking.correction.success.submitted",
+									"Correction request submitted for manager approval",
+								),
 					);
 					setOpen(false);
+					if (result.data.status === "approved") router.refresh();
 				} else {
 					toast.error(
 						result.error ||
-							t("timeTracking.correction.errors.submitFailed", "Failed to submit correction"),
+							t(
+								"timeTracking.correction.errors.submitFailed",
+								"Failed to submit correction",
+							),
 					);
 				}
 			}
@@ -129,6 +224,7 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 
 	const handleOpenChange = (isOpen: boolean) => {
 		if (isOpen) {
+			submissionIdRef.current = null;
 			form.reset(getDefaultValues());
 		}
 		setOpen(isOpen);
@@ -136,35 +232,9 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 
 	return (
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
-			<ActionPanelTrigger asChild>
-				<Button variant="ghost" size="icon">
-					<IconEdit className="size-4" />
-					<span className="sr-only">
-						{isSameDay
-							? t("timeTracking.correction.editEntry", "Edit time entry")
-							: t("timeTracking.correction.requestCorrection", "Request time correction")}
-					</span>
-				</Button>
-			</ActionPanelTrigger>
+			<CorrectionTrigger isSameDay={isSameDay} t={t} />
 			<ActionPanelContent size="compact">
-				<ActionPanelHeader>
-					<ActionPanelTitle>
-						{isSameDay
-							? t("timeTracking.correction.editTitle", "Edit Time Entry")
-							: t("timeTracking.correction.requestTitle", "Request Time Correction")}
-					</ActionPanelTitle>
-					<ActionPanelDescription>
-						{isSameDay
-							? t(
-									"timeTracking.correction.editDescription",
-									"Make changes to your time entry for today.",
-								)
-							: t(
-									"timeTracking.correction.requestDescription",
-									"Submit a correction request for this time entry. Your manager will need to approve it.",
-								)}
-					</ActionPanelDescription>
-				</ActionPanelHeader>
+				<CorrectionHeader isSameDay={isSameDay} t={t} />
 				<ActionPanelBody className="grid gap-4">
 					<p className="text-xs text-muted-foreground">
 						{t(
@@ -223,7 +293,10 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 									{(field) => (
 										<TFormItem>
 											<TFormLabel hasError={fieldHasError(field)} required>
-												{t("timeTracking.correction.clockOutDate", "Clock Out Date")}
+												{t(
+													"timeTracking.correction.clockOutDate",
+													"Clock Out Date",
+												)}
 											</TFormLabel>
 											<TFormControl hasError={fieldHasError(field)}>
 												<Input
@@ -270,7 +343,10 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 								<TFormLabel hasError={fieldHasError(field)}>
 									{isSameDay
 										? t("timeTracking.correction.noteLabel", "Note (optional)")
-										: t("timeTracking.correction.reasonLabel", "Reason for Correction")}
+										: t(
+												"timeTracking.correction.reasonLabel",
+												"Reason for Correction",
+											)}
 								</TFormLabel>
 								<TFormControl hasError={fieldHasError(field)}>
 									<Textarea
@@ -307,7 +383,11 @@ export function TimeCorrectionDialog({ workPeriod, isSameDay, employeeTimezone }
 					</ActionPanelClose>
 					<form.Subscribe<boolean> selector={(state) => state.isSubmitting}>
 						{(isSubmitting: boolean) => (
-							<Button type="button" onClick={() => form.handleSubmit()} disabled={isSubmitting}>
+							<Button
+								type="button"
+								onClick={() => form.handleSubmit()}
+								disabled={isSubmitting}
+							>
 								{isSubmitting ? (
 									<>
 										<IconLoader2 className="size-4 animate-spin" />

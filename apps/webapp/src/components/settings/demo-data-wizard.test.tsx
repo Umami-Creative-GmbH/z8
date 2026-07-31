@@ -24,11 +24,12 @@ const actionMocks = vi.hoisted(() => ({
 	generateTimeEntriesStepAction: vi.fn(),
 	generateWorkCategoriesStepAction: vi.fn(),
 }));
+const refresh = vi.fn();
 
 vi.mock("@/app/[locale]/(app)/settings/demo/actions", () => actionMocks);
 
 vi.mock("@/navigation", () => ({
-	useRouter: () => ({ refresh: vi.fn() }),
+	useRouter: () => ({ refresh }),
 }));
 
 const getMessage = (key: string): string | undefined => {
@@ -47,12 +48,18 @@ const getMessage = (key: string): string | undefined => {
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (key: string, fallback?: string, params?: Record<string, string | number>) => {
+		t: (
+			key: string,
+			fallback?: string,
+			params?: Record<string, string | number>,
+		) => {
 			const message = getMessage(key) ?? fallback ?? key;
 			if (/\$\{[^}]+\}/.test(message)) {
 				throw new SyntaxError("MALFORMED_ARGUMENT");
 			}
-			return message.replace(/\{(\w+)\}/g, (_match, name: string) => String(params?.[name] ?? ""));
+			return message.replace(/\{(\w+)\}/g, (_match, name: string) =>
+				String(params?.[name] ?? ""),
+			);
 		},
 	}),
 }));
@@ -76,10 +83,12 @@ describe("DemoDataWizard", () => {
 			success: true,
 			data: { pendingAbsenceApprovalsCreated: 2 },
 		});
-		actionMocks.generatePendingTimeCorrectionApprovalsStepAction.mockResolvedValue({
-			success: true,
-			data: { pendingTimeCorrectionApprovalsCreated: 1 },
-		});
+		actionMocks.generatePendingTimeCorrectionApprovalsStepAction.mockResolvedValue(
+			{
+				success: true,
+				data: { pendingTimeCorrectionApprovalsCreated: 1 },
+			},
+		);
 	});
 
 	it("renders the all employees option with the localized employee count", () => {
@@ -130,7 +139,9 @@ describe("DemoDataWizard", () => {
 		await user.click(screen.getByRole("button", { name: /generate data/i }));
 
 		await waitFor(() => {
-			expect(actionMocks.generatePendingAbsenceApprovalsStepAction).toHaveBeenCalledWith(
+			expect(
+				actionMocks.generatePendingAbsenceApprovalsStepAction,
+			).toHaveBeenCalledWith(
 				expect.objectContaining({
 					includePendingAbsenceApprovals: true,
 					includePendingTimeCorrectionApprovals: true,
@@ -138,12 +149,86 @@ describe("DemoDataWizard", () => {
 				}),
 			);
 		});
-		expect(actionMocks.generatePendingTimeCorrectionApprovalsStepAction).toHaveBeenCalledWith(
+		expect(
+			actionMocks.generatePendingTimeCorrectionApprovalsStepAction,
+		).toHaveBeenCalledWith(
 			expect.objectContaining({
 				includePendingAbsenceApprovals: true,
 				includePendingTimeCorrectionApprovals: true,
 				organizationId: "org_1",
 			}),
 		);
+	});
+
+	it("re-enables employee generation and does not refresh when generation rejects", async () => {
+		const user = userEvent.setup();
+		actionMocks.generateDemoEmployeesAction.mockRejectedValue(
+			new Error("Network failed"),
+		);
+		render(<DemoDataWizard employees={[]} organizationId="org_1" />);
+
+		await user.click(
+			screen.getByRole("button", { name: "Generate 5 Employees" }),
+		);
+
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Generate 5 Employees" }),
+			).toHaveProperty("disabled", false),
+		);
+		expect(screen.getByText("An unexpected error occurred")).toBeTruthy();
+		expect(screen.queryByText("Employees generated successfully!")).toBeNull();
+		expect(refresh).not.toHaveBeenCalled();
+	});
+
+	it("re-enables clear after the action rejects", async () => {
+		const user = userEvent.setup();
+		actionMocks.clearTimeDataAction.mockRejectedValue(
+			new Error("Network failed"),
+		);
+		render(<DemoDataWizard employees={[]} organizationId="org_1" />);
+
+		await user.click(screen.getByRole("button", { name: "Clear All Data" }));
+		await user.type(screen.getByLabelText("Type DELETE to confirm"), "DELETE");
+		await user.click(screen.getByRole("button", { name: "Clear All Data" }));
+		await user.click(screen.getByRole("button", { name: "Clear All Data" }));
+
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Clear All Data" }),
+			).toHaveProperty("disabled", false),
+		);
+		expect(screen.getByText("An unexpected error occurred")).toBeTruthy();
+		expect(screen.queryByText("Data cleared successfully!")).toBeNull();
+	});
+
+	it("re-enables non-admin deletion and does not refresh when deletion rejects", async () => {
+		const user = userEvent.setup();
+		actionMocks.deleteNonAdminDataAction.mockRejectedValue(
+			new Error("Network failed"),
+		);
+		render(<DemoDataWizard employees={[]} organizationId="org_1" />);
+
+		await user.click(
+			screen.getByRole("button", { name: "Delete Non-Admin Employees" }),
+		);
+		await user.type(screen.getByLabelText("Type DELETE to confirm"), "DELETE");
+		await user.click(
+			screen.getByRole("button", { name: "Delete Non-Admin Employees" }),
+		);
+		await user.click(
+			screen.getByRole("button", { name: "Delete Non-Admin Employees" }),
+		);
+
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Delete Non-Admin Employees" }),
+			).toHaveProperty("disabled", false),
+		);
+		expect(screen.getByText("An unexpected error occurred")).toBeTruthy();
+		expect(
+			screen.queryByText("Non-admin employees deleted successfully!"),
+		).toBeNull();
+		expect(refresh).not.toHaveBeenCalled();
 	});
 });

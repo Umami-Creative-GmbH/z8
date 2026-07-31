@@ -297,25 +297,19 @@ export default function VacationTrendsPage() {
 		const range = dateRange;
 		let isCurrent = true;
 
-		async function loadData() {
-			setLoading(true);
-			try {
+		setLoading(true);
+		void Promise.resolve()
+			.then(() => getVacationTrendsData(range))
+			.then((result) => {
 				if (!isCurrent) {
-					return;
-				}
-
-				// Organization ID is now derived server-side from authenticated session
-				const result = await getVacationTrendsData(range);
-				const shouldUpdate = isCurrent;
-
-				if (!shouldUpdate) {
 					return;
 				}
 
 				if (result.success && result.data) {
 					setVacationData(result.data);
 				}
-			} catch (error) {
+			})
+			.catch((error) => {
 				if (!isCurrent) {
 					return;
 				}
@@ -324,14 +318,12 @@ export default function VacationTrendsPage() {
 				toast.error(
 					t("analytics.vacationTrends.errors.loadData", "Failed to load vacation trends data"),
 				);
-			}
-
-			if (isCurrent) {
-				setLoading(false);
-			}
-		}
-
-		loadData();
+			})
+			.finally(() => {
+				if (isCurrent) {
+					setLoading(false);
+				}
+			});
 
 		return () => {
 			isCurrent = false;

@@ -1,7 +1,12 @@
 import { readFileSync } from "node:fs";
-import { getTableConfig } from "drizzle-orm/pg-core";
+import type { SQL } from "drizzle-orm";
+import { getTableConfig, PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import { employeeInvitationDraft } from "../employee-invitation-draft";
+
+function sqlText(value: SQL): string {
+	return new PgDialect().sqlToQuery(value).sql;
+}
 
 describe("employee invitation draft schema", () => {
 	it("defines organization-scoped invitation draft fields", () => {
@@ -10,7 +15,18 @@ describe("employee invitation draft schema", () => {
 		expect(employeeInvitationDraft.teamId.name).toBe("team_id");
 		expect(employeeInvitationDraft.role.name).toBe("role");
 		expect(employeeInvitationDraft.contractType.name).toBe("contract_type");
-		expect(employeeInvitationDraft.currentHourlyRate.name).toBe("current_hourly_rate");
+		expect(employeeInvitationDraft.currentHourlyRate.name).toBe(
+			"current_hourly_rate",
+		);
+	});
+
+	it("models the deployed updated_at database default", () => {
+		const updatedAt = getTableConfig(employeeInvitationDraft).columns.find(
+			(column) => column.name === "updated_at",
+		);
+
+		expect(updatedAt?.default).toBeDefined();
+		expect(sqlText(updatedAt?.default as SQL)).toBe("now()");
 	});
 
 	it("stores a required normalized email with organization-scoped uniqueness", () => {
@@ -18,7 +34,9 @@ describe("employee invitation draft schema", () => {
 		const normalizedEmail = tableConfig.columns.find(
 			(column) => column.name === "normalized_email",
 		);
-		const uniqueIndexes = tableConfig.indexes.filter((index) => index.config.unique);
+		const uniqueIndexes = tableConfig.indexes.filter(
+			(index) => index.config.unique,
+		);
 
 		expect(normalizedEmail?.notNull).toBe(true);
 		expect(
@@ -54,26 +72,43 @@ describe("employee invitation draft schema", () => {
 	});
 
 	it("registers the migration after its predecessor", () => {
-		const migration = readFileSync("drizzle/0050_employee_invitation_draft.sql", "utf8");
-		const schema = readFileSync("src/db/schema/employee-invitation-draft.ts", "utf8");
-		const journal = JSON.parse(readFileSync("drizzle/meta/_journal.json", "utf8"));
-		expect(migration).toContain('CREATE TABLE IF NOT EXISTS "employee_invitation_draft"');
+		const migration = readFileSync(
+			"drizzle/0050_employee_invitation_draft.sql",
+			"utf8",
+		);
+		const schema = readFileSync(
+			"src/db/schema/employee-invitation-draft.ts",
+			"utf8",
+		);
+		const journal = JSON.parse(
+			readFileSync("drizzle/meta/_journal.json", "utf8"),
+		);
+		expect(migration).toContain(
+			'CREATE TABLE IF NOT EXISTS "employee_invitation_draft"',
+		);
 		expect(migration).toContain('"invitation_id" text NOT NULL');
 		expect(migration).toContain('"organization_id" text NOT NULL');
 		expect(migration).toContain(
 			'CREATE UNIQUE INDEX IF NOT EXISTS "employeeInvitationDraft_invitationId_unique_idx"',
 		);
 		expect(migration).toContain("employee_invitation_draft_invitation_org_fk");
-		expect(migration).toContain('FOREIGN KEY ("invitation_id","organization_id")');
-		expect(migration).toContain('REFERENCES "public"."invitation"("id","organization_id")');
+		expect(migration).toContain(
+			'FOREIGN KEY ("invitation_id","organization_id")',
+		);
+		expect(migration).toContain(
+			'REFERENCES "public"."invitation"("id","organization_id")',
+		);
 		expect(schema).not.toContain("employee_invitation_draft_invitation_org_fk");
 		expect(migration).toContain("employee_invitation_draft_team_org_fk");
 		expect(migration).toContain('FOREIGN KEY ("team_id","organization_id")');
 		expect(migration).toContain('ON DELETE SET NULL ("team_id")');
-		const snapshot = JSON.parse(readFileSync("drizzle/meta/0050_snapshot.json", "utf8"));
+		const snapshot = JSON.parse(
+			readFileSync("drizzle/meta/0050_snapshot.json", "utf8"),
+		);
 		expect(snapshot.tables["public.employee_invitation_draft"]).toBeTruthy();
 		const migrationEntry = journal.entries.find(
-			(entry: { tag: string }) => entry.tag === "0050_employee_invitation_draft",
+			(entry: { tag: string }) =>
+				entry.tag === "0050_employee_invitation_draft",
 		);
 		expect(migrationEntry).toMatchObject({
 			idx: 50,
@@ -87,8 +122,12 @@ describe("employee invitation draft schema", () => {
 			"drizzle/0054_employee_invitation_draft_identity.sql",
 			"utf8",
 		);
-		const snapshot = JSON.parse(readFileSync("drizzle/meta/0054_snapshot.json", "utf8"));
-		const journal = JSON.parse(readFileSync("drizzle/meta/_journal.json", "utf8")) as {
+		const snapshot = JSON.parse(
+			readFileSync("drizzle/meta/0054_snapshot.json", "utf8"),
+		);
+		const journal = JSON.parse(
+			readFileSync("drizzle/meta/_journal.json", "utf8"),
+		) as {
 			entries: Array<{ idx: number; tag: string; when: number }>;
 		};
 		const migrationIndex = journal.entries.findIndex(
@@ -100,7 +139,8 @@ describe("employee invitation draft schema", () => {
 		);
 		const draftSnapshot = snapshot.tables["public.employee_invitation_draft"];
 		const invitationSnapshot = snapshot.tables["public.invitation"];
-		const telegramDigestSnapshot = snapshot.tables["public.telegram_digest_delivery"];
+		const telegramDigestSnapshot =
+			snapshot.tables["public.telegram_digest_delivery"];
 
 		expect(migrationEntry).toMatchObject({
 			idx: 54,
@@ -123,23 +163,30 @@ describe("employee invitation draft schema", () => {
 		expect(draftSnapshot?.columns.updated_at?.default).toBe("now()");
 		expect(telegramDigestSnapshot?.columns.updated_at?.default).toBe("now()");
 		expect(
-			draftSnapshot?.indexes.employeeInvitationDraft_organizationNormalizedEmail_unique_idx,
+			draftSnapshot?.indexes
+				.employeeInvitationDraft_organizationNormalizedEmail_unique_idx,
 		).toMatchObject({ isUnique: true });
-		expect(draftSnapshot?.foreignKeys.employee_invitation_draft_invitation_org_fk).toMatchObject({
+		expect(
+			draftSnapshot?.foreignKeys.employee_invitation_draft_invitation_org_fk,
+		).toMatchObject({
 			tableFrom: "employee_invitation_draft",
 			tableTo: "invitation",
 			columnsFrom: ["invitation_id", "organization_id"],
 			columnsTo: ["id", "organization_id"],
 			onDelete: "cascade",
 		});
-		expect(draftSnapshot?.foreignKeys.employee_invitation_draft_team_org_fk).toMatchObject({
+		expect(
+			draftSnapshot?.foreignKeys.employee_invitation_draft_team_org_fk,
+		).toMatchObject({
 			tableFrom: "employee_invitation_draft",
 			tableTo: "team",
 			columnsFrom: ["team_id", "organization_id"],
 			columnsTo: ["id", "organization_id"],
 			onDelete: "set null",
 		});
-		expect(invitationSnapshot?.indexes.invitation_id_organization_id_idx).toMatchObject({
+		expect(
+			invitationSnapshot?.indexes.invitation_id_organization_id_idx,
+		).toMatchObject({
 			isUnique: true,
 			columns: [
 				expect.objectContaining({ expression: "id" }),
@@ -148,6 +195,8 @@ describe("employee invitation draft schema", () => {
 		});
 		expect(snapshot.tables).not.toHaveProperty("public.daily_digest_delivery");
 		expect(migration).not.toContain("DROP CONSTRAINT");
-		expect(migration).not.toContain('DROP INDEX "invitation_id_organization_id_idx"');
+		expect(migration).not.toContain(
+			'DROP INDEX "invitation_id_organization_id_idx"',
+		);
 	});
 });

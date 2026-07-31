@@ -3,6 +3,7 @@ import type { timeEntry, workPeriod } from "@/db/schema";
 export type WorkPeriodWithEntries = typeof workPeriod.$inferSelect & {
 	clockIn: typeof timeEntry.$inferSelect;
 	clockOut: typeof timeEntry.$inferSelect | undefined;
+	approvalRequestId: string | null;
 };
 
 export interface TimeSummary {

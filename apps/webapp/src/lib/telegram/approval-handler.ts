@@ -7,14 +7,26 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { approvalRequest, employee, telegramApprovalMessage } from "@/db/schema";
-import { decideBotApproval } from "@/lib/bot-platform/approval-decision";
+import {
+	approvalRequest,
+	employee,
+	telegramApprovalMessage,
+} from "@/db/schema";
+import {
+	canAttemptBotApprovalDecision,
+	decideBotApproval,
+	loadBotApprovalDecisionTarget,
+} from "@/lib/bot-platform/approval-decision";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import { editMessageText, sendMessage } from "./api";
 import { getChatIdForUser } from "./conversation-manager";
-import { buildApprovalMessage, buildResolvedApprovalMessage, escapeMarkdownV2 } from "./formatters";
+import {
+	buildApprovalMessage,
+	buildResolvedApprovalMessage,
+	escapeMarkdownV2,
+} from "./formatters";
 import type {
 	ApprovalCallbackData,
 	ApprovalCardData,
@@ -38,7 +50,10 @@ export async function handleApprovalCallback(
 	const approvalId = data.id;
 
 	// Resolve user
-	const userResult = await resolveTelegramUser(telegramUserId, bot.organizationId);
+	const userResult = await resolveTelegramUser(
+		telegramUserId,
+		bot.organizationId,
+	);
 	if (userResult.status !== "found") {
 		logger.warn({ telegramUserId }, "Unlinked user tried to act on approval");
 		return;
@@ -57,8 +72,12 @@ export async function handleApprovalCallback(
 			logger.warn({ approvalId }, "Approval not found");
 			return;
 		}
+		const decisionTarget = await loadBotApprovalDecisionTarget({
+			approvalId,
+			organizationId: bot.organizationId,
+		});
 
-		if (approval.status !== "pending") {
+		if (!canAttemptBotApprovalDecision(decisionTarget)) {
 			// Update the message to show it's already resolved
 			if (query.message) {
 				const locale = await getUserLocale(userResult.user.userId);
@@ -67,7 +86,10 @@ export async function handleApprovalCallback(
 					chat_id: query.message.chat.id,
 					message_id: query.message.message_id,
 					text: escapeMarkdownV2(
-						t("bot.approval.alreadyProcessed", "This approval has already been processed."),
+						t(
+							"bot.approval.alreadyProcessed",
+							"This approval has already been processed.",
+						),
 					),
 					parse_mode: "MarkdownV2",
 				});
@@ -76,7 +98,7 @@ export async function handleApprovalCallback(
 		}
 
 		// Verify user is the approver
-		if (approval.approverId !== userResult.user.employeeId) {
+		if (decisionTarget.approverId !== userResult.user.employeeId) {
 			logger.warn(
 				{ approvalId, employeeId: userResult.user.employeeId },
 				"Unauthorized approval attempt",
@@ -169,7 +191,10 @@ export async function handleApprovalCallback(
 				);
 		}
 	} catch (error) {
-		logger.error({ error, approvalId, action }, "Failed to process approval action");
+		logger.error(
+			{ error, approvalId, action },
+			"Failed to process approval action",
+		);
 	}
 }
 
@@ -186,7 +211,10 @@ export async function sendApprovalMessageToManager(
 	try {
 		// Get approver's user ID
 		const approverEmployee = await db.query.employee.findFirst({
-			where: and(eq(employee.id, approverId), eq(employee.organizationId, organizationId)),
+			where: and(
+				eq(employee.id, approverId),
+				eq(employee.organizationId, organizationId),
+			),
 			columns: { userId: true },
 		});
 
@@ -209,9 +237,15 @@ export async function sendApprovalMessageToManager(
 		}
 
 		// Resolve the recipient only after proving this approval belongs to the organization.
-		const chatId = await getChatIdForUser(approverEmployee.userId, organizationId);
+		const chatId = await getChatIdForUser(
+			approverEmployee.userId,
+			organizationId,
+		);
 		if (!chatId) {
-			logger.debug({ approverId, organizationId }, "No Telegram chat for approver");
+			logger.debug(
+				{ approverId, organizationId },
+				"No Telegram chat for approver",
+			);
 			return;
 		}
 
@@ -256,7 +290,10 @@ export async function sendApprovalMessageToManager(
 			);
 		}
 	} catch (error) {
-		logger.error({ error, approvalId, approverId }, "Failed to send approval message");
+		logger.error(
+			{ error, approvalId, approverId },
+			"Failed to send approval message",
+		);
 	}
 }
 
@@ -268,7 +305,10 @@ async function buildApprovalCardData(
 	organizationId: string,
 ): Promise<ApprovalCardData | null> {
 	const requester = await db.query.employee.findFirst({
-		where: and(eq(employee.id, approval.requestedBy), eq(employee.organizationId, organizationId)),
+		where: and(
+			eq(employee.id, approval.requestedBy),
+			eq(employee.organizationId, organizationId),
+		),
 		with: { user: { columns: { name: true, email: true } } },
 	});
 

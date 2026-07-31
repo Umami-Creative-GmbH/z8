@@ -41,7 +41,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -61,16 +67,21 @@ import {
 
 // Dynamic imports for heavy dialog components (bundle-dynamic-imports)
 const ScheduledExportDialog = dynamic(
-	() => import("./scheduled-export-dialog").then((m) => m.ScheduledExportDialog),
+	() =>
+		import("./scheduled-export-dialog").then((m) => m.ScheduledExportDialog),
 	{ ssr: false },
 );
 const ExecutionHistoryDialog = dynamic(
-	() => import("./execution-history-dialog").then((m) => m.ExecutionHistoryDialog),
+	() =>
+		import("./execution-history-dialog").then((m) => m.ExecutionHistoryDialog),
 	{ ssr: false },
 );
-const RunNowDialog = dynamic(() => import("./run-now-dialog").then((m) => m.RunNowDialog), {
-	ssr: false,
-});
+const RunNowDialog = dynamic(
+	() => import("./run-now-dialog").then((m) => m.RunNowDialog),
+	{
+		ssr: false,
+	},
+);
 
 interface ScheduledExportsTableProps {
 	organizationId: string;
@@ -90,15 +101,24 @@ export function ScheduledExportsTable({
 	// Dialog states
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 	const [editScheduleId, setEditScheduleId] = useState<string | null>(null);
-	const [historySchedule, setHistorySchedule] = useState<ScheduledExportSummary | null>(null);
-	const [runNowSchedule, setRunNowSchedule] = useState<ScheduledExportSummary | null>(null);
-	const [deleteSchedule, setDeleteSchedule] = useState<ScheduledExportSummary | null>(null);
+	const [historySchedule, setHistorySchedule] =
+		useState<ScheduledExportSummary | null>(null);
+	const [runNowSchedule, setRunNowSchedule] =
+		useState<ScheduledExportSummary | null>(null);
+	const [deleteSchedule, setDeleteSchedule] =
+		useState<ScheduledExportSummary | null>(null);
 
 	// Filter options and payroll configs for the dialog
-	const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(initialFilterOptions);
-	const [payrollConfigs, setPayrollConfigs] =
-		useState<PayrollConfigSummary[]>(initialPayrollConfigs);
-	const [editInitialValues, setEditInitialValues] = useState<Record<string, unknown> | null>(null);
+	const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(
+		initialFilterOptions,
+	);
+	const [payrollConfigs, setPayrollConfigs] = useState<PayrollConfigSummary[]>(
+		initialPayrollConfigs,
+	);
+	const [editInitialValues, setEditInitialValues] = useState<Record<
+		string,
+		unknown
+	> | null>(null);
 
 	// Fetch schedules with SWR for automatic deduplication and caching
 	const {
@@ -115,7 +135,10 @@ export function ScheduledExportsTable({
 			}
 			throw new Error(
 				result.error ||
-					t("settings.scheduledExports.error.loadFailed", "Failed to load scheduled exports"),
+					t(
+						"settings.scheduledExports.error.loadFailed",
+						"Failed to load scheduled exports",
+					),
 			);
 		},
 		{
@@ -185,15 +208,23 @@ export function ScheduledExportsTable({
 		if (!schedules) return;
 
 		// Optimistic update
-		const optimisticData = schedules.map((s) => (s.id === scheduleId ? { ...s, isActive } : s));
+		const optimisticData = schedules.map((s) =>
+			s.id === scheduleId ? { ...s, isActive } : s,
+		);
 
 		await mutate(
 			async () => {
-				const result = await toggleScheduledExportAction(organizationId, scheduleId, isActive);
+				const result = await toggleScheduledExportAction(
+					organizationId,
+					scheduleId,
+					isActive,
+				);
 				if (result.success) {
 					return optimisticData;
 				}
-				throw new Error(t("settings.scheduledExports.error.toggleFailed", "Toggle failed"));
+				throw new Error(
+					t("settings.scheduledExports.error.toggleFailed", "Toggle failed"),
+				);
 			},
 			{
 				optimisticData,
@@ -215,11 +246,16 @@ export function ScheduledExportsTable({
 
 		await mutate(
 			async () => {
-				const result = await deleteScheduledExportAction(organizationId, scheduleId);
+				const result = await deleteScheduledExportAction(
+					organizationId,
+					scheduleId,
+				);
 				if (result.success) {
 					return optimisticData;
 				}
-				throw new Error(t("settings.scheduledExports.error.deleteFailed", "Delete failed"));
+				throw new Error(
+					t("settings.scheduledExports.error.deleteFailed", "Delete failed"),
+				);
 			},
 			{
 				optimisticData,
@@ -239,10 +275,14 @@ export function ScheduledExportsTable({
 			case "monthly":
 				return t("settings.scheduledExports.scheduleType.monthly", "Monthly");
 			case "quarterly":
-				return t("settings.scheduledExports.scheduleType.quarterly", "Quarterly");
+				return t(
+					"settings.scheduledExports.scheduleType.quarterly",
+					"Quarterly",
+				);
 			case "cron":
 				return (
-					schedule.cronExpression || t("settings.scheduledExports.scheduleType.custom", "Custom")
+					schedule.cronExpression ||
+					t("settings.scheduledExports.scheduleType.custom", "Custom")
 				);
 			default:
 				return t("settings.scheduledExports.scheduleType.unknown", "Unknown");
@@ -253,7 +293,10 @@ export function ScheduledExportsTable({
 	const getReportTypeLabel = (type: string): string => {
 		switch (type) {
 			case "payroll_export":
-				return t("settings.scheduledExports.reportType.payrollShort", "Payroll");
+				return t(
+					"settings.scheduledExports.reportType.payrollShort",
+					"Payroll",
+				);
 			case "data_export":
 				return t("settings.scheduledExports.reportType.dataShort", "Data");
 			case "audit_report":
@@ -282,286 +325,488 @@ export function ScheduledExportsTable({
 
 	return (
 		<div className="space-y-6">
-			{/* Header */}
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-2xl font-semibold">
-						{t("settings.scheduledExports.title", "Scheduled Exports")}
-					</h1>
-					<p className="text-muted-foreground">
-						{t(
-							"settings.scheduledExports.description",
-							"Configure recurring exports for payroll, data, and audit reports.",
-						)}
-					</p>
-				</div>
-				<Button onClick={handleOpenCreate}>
-					<IconPlus className="size-4 mr-2" aria-hidden="true" />
-					{t("settings.scheduledExports.newSchedule", "New Schedule")}
-				</Button>
-			</div>
+			<ScheduledExportsHeader onCreate={handleOpenCreate} />
 
-			{/* Error state */}
-			{error && (
-				<Card className="border-destructive">
-					<CardContent className="pt-6">
-						<div className="flex items-center gap-2 text-destructive" role="alert">
-							<IconAlertCircle className="size-5" aria-hidden="true" />
-							<p>
-								{error instanceof Error
-									? error.message
-									: t(
-											"settings.scheduledExports.error.loadFailed",
-											"Failed to load scheduled exports",
-										)}
-							</p>
-						</div>
-					</CardContent>
-				</Card>
-			)}
+			<ScheduledExportsStatus
+				error={error}
+				onCreate={handleOpenCreate}
+				schedules={schedules}
+			/>
 
-			{/* Empty state */}
-			{!error && schedules?.length === 0 && (
-				<Card>
-					<CardContent className="py-12">
-						<div className="text-center">
-							<IconCalendar
-								className="size-12 mx-auto text-muted-foreground mb-4"
-								aria-hidden="true"
-							/>
-							<h3 className="text-lg font-medium mb-2">
-								{t("settings.scheduledExports.empty.title", "No scheduled exports")}
-							</h3>
-							<p className="text-muted-foreground mb-6">
-								{t(
-									"settings.scheduledExports.empty.description",
-									"Create your first scheduled export to automate recurring reports.",
-								)}
-							</p>
-							<Button onClick={handleOpenCreate}>
-								<IconPlus className="size-4 mr-2" aria-hidden="true" />
-								{t("settings.scheduledExports.empty.createButton", "Create Schedule")}
-							</Button>
-						</div>
-					</CardContent>
-				</Card>
-			)}
-
-			{/* Schedules table */}
 			{schedules && schedules.length > 0 && (
-				<Card>
-					<CardHeader>
-						<CardTitle>{t("settings.scheduledExports.table.title", "Active Schedules")}</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.scheduledExports.table.description",
-								"Manage your recurring export schedules",
-							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>{t("settings.scheduledExports.table.name", "Name")}</TableHead>
-									<TableHead>{t("settings.scheduledExports.table.type", "Type")}</TableHead>
-									<TableHead>{t("settings.scheduledExports.table.schedule", "Schedule")}</TableHead>
-									<TableHead>{t("settings.scheduledExports.table.lastRun", "Last Run")}</TableHead>
-									<TableHead>{t("settings.scheduledExports.table.nextRun", "Next Run")}</TableHead>
-									<TableHead>{t("settings.scheduledExports.table.status", "Status")}</TableHead>
-									<TableHead className="w-[80px]">
-										<span className="sr-only">
-											{t("settings.scheduledExports.table.actions", "Actions")}
-										</span>
-									</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{schedules.map((schedule) => (
-									<TableRow key={schedule.id}>
-										<TableCell>
-											<div className="font-medium">{schedule.name}</div>
-											{schedule.description && (
-												<div className="text-sm text-muted-foreground">{schedule.description}</div>
-											)}
-										</TableCell>
-										<TableCell>
-											<Badge variant="secondary">{getReportTypeLabel(schedule.reportType)}</Badge>
-										</TableCell>
-										<TableCell>
-											<div className="flex items-center gap-2">
-												<IconClock className="size-4 text-muted-foreground" aria-hidden="true" />
-												{getScheduleLabel(schedule)}
-											</div>
-											<div className="text-xs text-muted-foreground">{schedule.timezone}</div>
-										</TableCell>
-										<TableCell className="text-muted-foreground">
-											{formatDate(schedule.lastExecutionAt)}
-										</TableCell>
-										<TableCell>
-											{schedule.isActive ? (
-												formatDate(schedule.nextExecutionAt)
-											) : (
-												<span className="text-muted-foreground">
-													{t("settings.scheduledExports.table.paused", "Paused")}
-												</span>
-											)}
-										</TableCell>
-										<TableCell>
-											<div className="flex items-center gap-2">
-												<Switch
-													checked={schedule.isActive}
-													onCheckedChange={(checked) => handleToggle(schedule.id, checked)}
-													aria-label={
-														schedule.isActive
-															? t(
-																	"settings.scheduledExports.table.deactivate",
-																	"Deactivate schedule",
-																)
-															: t("settings.scheduledExports.table.activate", "Activate schedule")
-													}
-												/>
-												{schedule.isActive ? (
-													<IconCircleCheck
-														className="size-4 text-green-500"
-														aria-label={t("settings.scheduledExports.table.active", "Active")}
-													/>
-												) : (
-													<IconAlertCircle
-														className="size-4 text-muted-foreground"
-														aria-label={t("settings.scheduledExports.table.inactive", "Inactive")}
-													/>
-												)}
-											</div>
-										</TableCell>
-										<TableCell>
-											<DropdownMenu>
-												<DropdownMenuTrigger asChild>
-													<Button
-														variant="ghost"
-														size="sm"
-														aria-label={t(
-															"settings.scheduledExports.table.openMenu",
-															"Open actions menu",
-														)}
-													>
-														<IconDots className="size-4" aria-hidden="true" />
-													</Button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent align="end">
-													<DropdownMenuItem onClick={() => handleOpenEdit(schedule.id)}>
-														<IconPencil className="size-4 mr-2" aria-hidden="true" />
-														{t("settings.scheduledExports.actions.edit", "Edit")}
-													</DropdownMenuItem>
-													<DropdownMenuItem onClick={() => setHistorySchedule(schedule)}>
-														<IconHistory className="size-4 mr-2" aria-hidden="true" />
-														{t("settings.scheduledExports.actions.viewHistory", "View IconHistory")}
-													</DropdownMenuItem>
-													<DropdownMenuItem onClick={() => setRunNowSchedule(schedule)}>
-														<IconPlayerPlay className="size-4 mr-2" aria-hidden="true" />
-														{t("settings.scheduledExports.actions.runNow", "Run Now")}
-													</DropdownMenuItem>
-													<DropdownMenuSeparator />
-													<DropdownMenuItem
-														className="text-destructive"
-														onClick={() => setDeleteSchedule(schedule)}
-													>
-														<IconTrash className="size-4 mr-2" aria-hidden="true" />
-														{t("settings.scheduledExports.actions.delete", "Delete")}
-													</DropdownMenuItem>
-												</DropdownMenuContent>
-											</DropdownMenu>
-										</TableCell>
-									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					</CardContent>
-				</Card>
+				<SchedulesCard
+					formatDate={formatDate}
+					getReportTypeLabel={getReportTypeLabel}
+					getScheduleLabel={getScheduleLabel}
+					onDelete={setDeleteSchedule}
+					onEdit={handleOpenEdit}
+					onHistory={setHistorySchedule}
+					onRunNow={setRunNowSchedule}
+					onToggle={handleToggle}
+					schedules={schedules}
+				/>
 			)}
 
-			{/* Help text */}
-			<Card>
-				<CardContent className="pt-6">
-					<div className="text-sm text-muted-foreground space-y-2">
-						<p>
-							<strong>
-								{t("settings.scheduledExports.help.scheduleTypes", "Schedule Types:")}
-							</strong>{" "}
-							{t(
-								"settings.scheduledExports.help.scheduleTypesDesc",
-								"Daily, Weekly (Monday), Monthly (1st), Quarterly (Jan/Apr/Jul/Oct 1st), or custom cron expressions.",
-							)}
-						</p>
-						<p>
-							<strong>{t("settings.scheduledExports.help.delivery", "Delivery:")}</strong>{" "}
-							{t(
-								"settings.scheduledExports.help.deliveryDesc",
-								"Exports are uploaded to S3 and email notifications with download links are sent to configured recipients.",
-							)}
-						</p>
-						<p>
-							<strong>{t("settings.scheduledExports.help.dateRanges", "Date Ranges:")}</strong>{" "}
-							{t(
-								"settings.scheduledExports.help.dateRangesDesc",
-								"Automatically calculated based on the schedule frequency (e.g., previous month for monthly exports).",
-							)}
-						</p>
-					</div>
-				</CardContent>
-			</Card>
-
-			{/* Create/Edit Dialog */}
-			<ScheduledExportDialog
-				open={isCreateDialogOpen}
-				onOpenChange={(open: boolean) => {
+			<ScheduledExportsHelp />
+			<ScheduledExportDialogs
+				deleteSchedule={deleteSchedule}
+				editInitialValues={editInitialValues}
+				editScheduleId={editScheduleId}
+				filterOptions={filterOptions}
+				historySchedule={historySchedule}
+				isCreateDialogOpen={isCreateDialogOpen}
+				onCloseDelete={() => setDeleteSchedule(null)}
+				onCloseHistory={() => setHistorySchedule(null)}
+				onCloseRunNow={() => setRunNowSchedule(null)}
+				onConfirmDelete={handleConfirmDelete}
+				onCreateOpenChange={(open) => {
 					setIsCreateDialogOpen(open);
 					if (!open) {
 						setEditScheduleId(null);
 						setEditInitialValues(null);
 					}
 				}}
+				onSuccess={() => mutate()}
+				organizationId={organizationId}
+				payrollConfigs={payrollConfigs}
+				runNowSchedule={runNowSchedule}
+			/>
+		</div>
+	);
+}
+
+function ScheduledExportsHeader({ onCreate }: { onCreate: () => void }) {
+	const { t } = useTranslate();
+
+	return (
+		<div className="flex items-center justify-between">
+			<div>
+				<h1 className="text-2xl font-semibold">
+					{t("settings.scheduledExports.title", "Scheduled Exports")}
+				</h1>
+				<p className="text-muted-foreground">
+					{t(
+						"settings.scheduledExports.description",
+						"Configure recurring exports for payroll, data, and audit reports.",
+					)}
+				</p>
+			</div>
+			<Button onClick={onCreate}>
+				<IconPlus className="size-4 mr-2" aria-hidden="true" />
+				{t("settings.scheduledExports.newSchedule", "New Schedule")}
+			</Button>
+		</div>
+	);
+}
+
+function ScheduledExportsStatus({
+	error,
+	onCreate,
+	schedules,
+}: {
+	error: unknown;
+	onCreate: () => void;
+	schedules: ScheduledExportSummary[] | undefined;
+}) {
+	const { t } = useTranslate();
+
+	if (error) {
+		return (
+			<Card className="border-destructive">
+				<CardContent className="pt-6">
+					<div
+						className="flex items-center gap-2 text-destructive"
+						role="alert"
+					>
+						<IconAlertCircle className="size-5" aria-hidden="true" />
+						<p>
+							{error instanceof Error
+								? error.message
+								: t(
+										"settings.scheduledExports.error.loadFailed",
+										"Failed to load scheduled exports",
+									)}
+						</p>
+					</div>
+				</CardContent>
+			</Card>
+		);
+	}
+
+	if (schedules?.length !== 0) return null;
+
+	return (
+		<Card>
+			<CardContent className="py-12">
+				<div className="text-center">
+					<IconCalendar
+						className="size-12 mx-auto text-muted-foreground mb-4"
+						aria-hidden="true"
+					/>
+					<h3 className="text-lg font-medium mb-2">
+						{t("settings.scheduledExports.empty.title", "No scheduled exports")}
+					</h3>
+					<p className="text-muted-foreground mb-6">
+						{t(
+							"settings.scheduledExports.empty.description",
+							"Create your first scheduled export to automate recurring reports.",
+						)}
+					</p>
+					<Button onClick={onCreate}>
+						<IconPlus className="size-4 mr-2" aria-hidden="true" />
+						{t(
+							"settings.scheduledExports.empty.createButton",
+							"Create Schedule",
+						)}
+					</Button>
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
+
+interface SchedulesCardProps {
+	formatDate: (date: Date | null) => string;
+	getReportTypeLabel: (type: string) => string;
+	getScheduleLabel: (schedule: ScheduledExportSummary) => string;
+	onDelete: (schedule: ScheduledExportSummary) => void;
+	onEdit: (scheduleId: string) => void;
+	onHistory: (schedule: ScheduledExportSummary) => void;
+	onRunNow: (schedule: ScheduledExportSummary) => void;
+	onToggle: (scheduleId: string, isActive: boolean) => void;
+	schedules: ScheduledExportSummary[];
+}
+
+function SchedulesCard({
+	formatDate,
+	getReportTypeLabel,
+	getScheduleLabel,
+	onDelete,
+	onEdit,
+	onHistory,
+	onRunNow,
+	onToggle,
+	schedules,
+}: SchedulesCardProps) {
+	const { t } = useTranslate();
+
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>
+					{t("settings.scheduledExports.table.title", "Active Schedules")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.scheduledExports.table.description",
+						"Manage your recurring export schedules",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<Table>
+					<TableHeader>
+						<TableRow>
+							<TableHead>
+								{t("settings.scheduledExports.table.name", "Name")}
+							</TableHead>
+							<TableHead>
+								{t("settings.scheduledExports.table.type", "Type")}
+							</TableHead>
+							<TableHead>
+								{t("settings.scheduledExports.table.schedule", "Schedule")}
+							</TableHead>
+							<TableHead>
+								{t("settings.scheduledExports.table.lastRun", "Last Run")}
+							</TableHead>
+							<TableHead>
+								{t("settings.scheduledExports.table.nextRun", "Next Run")}
+							</TableHead>
+							<TableHead>
+								{t("settings.scheduledExports.table.status", "Status")}
+							</TableHead>
+							<TableHead className="w-[80px]">
+								<span className="sr-only">
+									{t("settings.scheduledExports.table.actions", "Actions")}
+								</span>
+							</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{schedules.map((schedule) => (
+							<ScheduledExportRow
+								formatDate={formatDate}
+								getReportTypeLabel={getReportTypeLabel}
+								getScheduleLabel={getScheduleLabel}
+								key={schedule.id}
+								onDelete={onDelete}
+								onEdit={onEdit}
+								onHistory={onHistory}
+								onRunNow={onRunNow}
+								onToggle={onToggle}
+								schedule={schedule}
+							/>
+						))}
+					</TableBody>
+				</Table>
+			</CardContent>
+		</Card>
+	);
+}
+
+function ScheduledExportRow({
+	formatDate,
+	getReportTypeLabel,
+	getScheduleLabel,
+	onDelete,
+	onEdit,
+	onHistory,
+	onRunNow,
+	onToggle,
+	schedule,
+}: Omit<SchedulesCardProps, "schedules"> & {
+	schedule: ScheduledExportSummary;
+}) {
+	const { t } = useTranslate();
+
+	return (
+		<TableRow>
+			<TableCell>
+				<div className="font-medium">{schedule.name}</div>
+				{schedule.description && (
+					<div className="text-sm text-muted-foreground">
+						{schedule.description}
+					</div>
+				)}
+			</TableCell>
+			<TableCell>
+				<Badge variant="secondary">
+					{getReportTypeLabel(schedule.reportType)}
+				</Badge>
+			</TableCell>
+			<TableCell>
+				<div className="flex items-center gap-2">
+					<IconClock
+						className="size-4 text-muted-foreground"
+						aria-hidden="true"
+					/>
+					{getScheduleLabel(schedule)}
+				</div>
+				<div className="text-xs text-muted-foreground">{schedule.timezone}</div>
+			</TableCell>
+			<TableCell className="text-muted-foreground">
+				{formatDate(schedule.lastExecutionAt)}
+			</TableCell>
+			<TableCell>
+				{schedule.isActive ? (
+					formatDate(schedule.nextExecutionAt)
+				) : (
+					<span className="text-muted-foreground">
+						{t("settings.scheduledExports.table.paused", "Paused")}
+					</span>
+				)}
+			</TableCell>
+			<TableCell>
+				<div className="flex items-center gap-2">
+					<Switch
+						checked={schedule.isActive}
+						onCheckedChange={(checked) => onToggle(schedule.id, checked)}
+						aria-label={
+							schedule.isActive
+								? t(
+										"settings.scheduledExports.table.deactivate",
+										"Deactivate schedule",
+									)
+								: t(
+										"settings.scheduledExports.table.activate",
+										"Activate schedule",
+									)
+						}
+					/>
+					{schedule.isActive ? (
+						<IconCircleCheck
+							className="size-4 text-green-500"
+							aria-label={t("settings.scheduledExports.table.active", "Active")}
+						/>
+					) : (
+						<IconAlertCircle
+							className="size-4 text-muted-foreground"
+							aria-label={t(
+								"settings.scheduledExports.table.inactive",
+								"Inactive",
+							)}
+						/>
+					)}
+				</div>
+			</TableCell>
+			<TableCell>
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button
+							variant="ghost"
+							size="sm"
+							aria-label={t(
+								"settings.scheduledExports.table.openMenu",
+								"Open actions menu",
+							)}
+						>
+							<IconDots className="size-4" aria-hidden="true" />
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end">
+						<DropdownMenuItem onClick={() => onEdit(schedule.id)}>
+							<IconPencil className="size-4 mr-2" aria-hidden="true" />
+							{t("settings.scheduledExports.actions.edit", "Edit")}
+						</DropdownMenuItem>
+						<DropdownMenuItem onClick={() => onHistory(schedule)}>
+							<IconHistory className="size-4 mr-2" aria-hidden="true" />
+							{t(
+								"settings.scheduledExports.actions.viewHistory",
+								"View IconHistory",
+							)}
+						</DropdownMenuItem>
+						<DropdownMenuItem onClick={() => onRunNow(schedule)}>
+							<IconPlayerPlay className="size-4 mr-2" aria-hidden="true" />
+							{t("settings.scheduledExports.actions.runNow", "Run Now")}
+						</DropdownMenuItem>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem
+							className="text-destructive"
+							onClick={() => onDelete(schedule)}
+						>
+							<IconTrash className="size-4 mr-2" aria-hidden="true" />
+							{t("settings.scheduledExports.actions.delete", "Delete")}
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</TableCell>
+		</TableRow>
+	);
+}
+
+function ScheduledExportsHelp() {
+	const { t } = useTranslate();
+
+	return (
+		<Card>
+			<CardContent className="pt-6">
+				<div className="text-sm text-muted-foreground space-y-2">
+					<p>
+						<strong>
+							{t(
+								"settings.scheduledExports.help.scheduleTypes",
+								"Schedule Types:",
+							)}
+						</strong>{" "}
+						{t(
+							"settings.scheduledExports.help.scheduleTypesDesc",
+							"Daily, Weekly (Monday), Monthly (1st), Quarterly (Jan/Apr/Jul/Oct 1st), or custom cron expressions.",
+						)}
+					</p>
+					<p>
+						<strong>
+							{t("settings.scheduledExports.help.delivery", "Delivery:")}
+						</strong>{" "}
+						{t(
+							"settings.scheduledExports.help.deliveryDesc",
+							"Exports are uploaded to S3 and email notifications with download links are sent to configured recipients.",
+						)}
+					</p>
+					<p>
+						<strong>
+							{t("settings.scheduledExports.help.dateRanges", "Date Ranges:")}
+						</strong>{" "}
+						{t(
+							"settings.scheduledExports.help.dateRangesDesc",
+							"Automatically calculated based on the schedule frequency (e.g., previous month for monthly exports).",
+						)}
+					</p>
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
+
+interface ScheduledExportDialogsProps {
+	deleteSchedule: ScheduledExportSummary | null;
+	editInitialValues: Record<string, unknown> | null;
+	editScheduleId: string | null;
+	filterOptions: FilterOptions | null;
+	historySchedule: ScheduledExportSummary | null;
+	isCreateDialogOpen: boolean;
+	onCloseDelete: () => void;
+	onCloseHistory: () => void;
+	onCloseRunNow: () => void;
+	onConfirmDelete: () => void;
+	onCreateOpenChange: (open: boolean) => void;
+	onSuccess: () => void;
+	organizationId: string;
+	payrollConfigs: PayrollConfigSummary[];
+	runNowSchedule: ScheduledExportSummary | null;
+}
+
+function ScheduledExportDialogs({
+	deleteSchedule,
+	editInitialValues,
+	editScheduleId,
+	filterOptions,
+	historySchedule,
+	isCreateDialogOpen,
+	onCloseDelete,
+	onCloseHistory,
+	onCloseRunNow,
+	onConfirmDelete,
+	onCreateOpenChange,
+	onSuccess,
+	organizationId,
+	payrollConfigs,
+	runNowSchedule,
+}: ScheduledExportDialogsProps) {
+	const { t } = useTranslate();
+
+	return (
+		<>
+			<ScheduledExportDialog
+				open={isCreateDialogOpen}
+				onOpenChange={onCreateOpenChange}
 				organizationId={organizationId}
 				editScheduleId={editScheduleId ?? undefined}
 				initialValues={editInitialValues ?? undefined}
 				payrollConfigs={payrollConfigs}
 				filterOptions={filterOptions}
-				onSuccess={() => mutate()}
+				onSuccess={onSuccess}
 			/>
-
-			{/* Execution IconHistory Dialog */}
 			{historySchedule && (
 				<ExecutionHistoryDialog
 					open={Boolean(historySchedule)}
-					onOpenChange={(open: boolean) => !open && setHistorySchedule(null)}
+					onOpenChange={(open: boolean) => !open && onCloseHistory()}
 					organizationId={organizationId}
 					scheduleId={historySchedule.id}
 					scheduleName={historySchedule.name}
 				/>
 			)}
-
-			{/* Run Now Dialog */}
 			{runNowSchedule && (
 				<RunNowDialog
 					open={Boolean(runNowSchedule)}
-					onOpenChange={(open: boolean) => !open && setRunNowSchedule(null)}
+					onOpenChange={(open: boolean) => !open && onCloseRunNow()}
 					organizationId={organizationId}
 					scheduleId={runNowSchedule.id}
 					scheduleName={runNowSchedule.name}
 					dateRangeStrategy={runNowSchedule.dateRangeStrategy}
-					onSuccess={() => mutate()}
+					onSuccess={onSuccess}
 				/>
 			)}
-
-			{/* Delete Confirmation Dialog */}
 			<AlertDialog
 				open={Boolean(deleteSchedule)}
-				onOpenChange={(open: boolean) => !open && setDeleteSchedule(null)}
+				onOpenChange={(open: boolean) => !open && onCloseDelete()}
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
-							{t("settings.scheduledExports.deleteDialog.title", "Delete Scheduled Export")}
+							{t(
+								"settings.scheduledExports.deleteDialog.title",
+								"Delete Scheduled Export",
+							)}
 						</AlertDialogTitle>
 						<AlertDialogDescription>
 							{t(
@@ -576,7 +821,7 @@ export function ScheduledExportsTable({
 							{t("settings.scheduledExports.deleteDialog.cancel", "Cancel")}
 						</AlertDialogCancel>
 						<AlertDialogAction
-							onClick={handleConfirmDelete}
+							onClick={onConfirmDelete}
 							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
 							{t("settings.scheduledExports.deleteDialog.confirm", "Delete")}
@@ -584,6 +829,6 @@ export function ScheduledExportsTable({
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
-		</div>
+		</>
 	);
 }

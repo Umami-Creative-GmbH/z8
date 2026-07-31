@@ -134,11 +134,8 @@
         "ascending": "ascendente",
         "descending": "descendente"
       },
-      "sortByTimeBalance": "Ordenar por saldo anual",
-      "sortByTimeBalanceWithDirection": "Ordenar por saldo anual ({direction})",
       "status": "Estado",
-      "team": "Equipo",
-      "timeBalance": "Saldo anual"
+      "team": "Equipo"
     },
     "title": "Tu equipo",
     "view": {

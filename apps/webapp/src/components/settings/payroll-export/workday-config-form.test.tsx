@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
 	saveWorkdayConfigActionMock,
@@ -48,6 +48,11 @@ beforeAll(() => {
 });
 
 describe("WorkdayConfigForm", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		saveWorkdayCredentialsActionMock.mockResolvedValue({ success: true });
+	});
+
 	it("renders key controls and triggers Test Connection action", async () => {
 		testWorkdayConnectionActionMock.mockResolvedValue({
 			success: true,
@@ -82,7 +87,9 @@ describe("WorkdayConfigForm", () => {
 		expect(screen.getByLabelText("Tenant ID")).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Save Settings" })).toBeTruthy();
 
-		const testConnectionButton = screen.getByRole("button", { name: "Test Connection" });
+		const testConnectionButton = screen.getByRole("button", {
+			name: "Test Connection",
+		});
 		expect(testConnectionButton.hasAttribute("disabled")).toBe(false);
 
 		fireEvent.click(testConnectionButton);
@@ -101,6 +108,26 @@ describe("WorkdayConfigForm", () => {
 				batchSize: 100,
 				apiTimeoutMs: 30000,
 			},
+		});
+	});
+
+	it("keeps credential payloads organization-scoped", async () => {
+		render(<WorkdayConfigForm organizationId="org_123" initialConfig={null} />);
+
+		fireEvent.change(screen.getByLabelText("Client ID"), {
+			target: { value: "client-1" },
+		});
+		fireEvent.change(screen.getByLabelText("Client Secret"), {
+			target: { value: "secret-1" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Save Credentials" }));
+
+		await waitFor(() => {
+			expect(saveWorkdayCredentialsActionMock).toHaveBeenCalledWith({
+				organizationId: "org_123",
+				clientId: "client-1",
+				clientSecret: "secret-1",
+			});
 		});
 	});
 });

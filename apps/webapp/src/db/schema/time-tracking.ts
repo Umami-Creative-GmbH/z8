@@ -12,11 +12,10 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "./timestamp";
-
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
 import { approvalRequest } from "./approval";
+import { approvalWorkflow } from "./approval-workflow";
 import {
 	approvalStatusEnum,
 	timeEntryTypeEnum,
@@ -25,6 +24,7 @@ import {
 import { employee } from "./organization";
 import { project } from "./project";
 import { timeRecord } from "./time-record";
+import { currentTimestamp } from "./timestamp";
 import type {
 	WorkPeriodAutoAdjustmentReason,
 	WorkPeriodPendingChanges,
@@ -174,6 +174,7 @@ export const workPeriod = pgTable(
 
 		// Legacy-to-canonical linkage used during big-bang cutover.
 		canonicalRecordId: uuid("canonical_record_id"),
+		approvalWorkflowId: uuid("approval_workflow_id"),
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
@@ -199,6 +200,14 @@ export const workPeriod = pgTable(
 			columns: [table.canonicalRecordId, table.organizationId],
 			foreignColumns: [timeRecord.id, timeRecord.organizationId],
 		}),
+		foreignKey({
+			columns: [table.approvalWorkflowId, table.organizationId],
+			foreignColumns: [approvalWorkflow.id, approvalWorkflow.organizationId],
+		}),
+		index("workPeriod_org_approvalWorkflowId_idx").on(
+			table.organizationId,
+			table.approvalWorkflowId,
+		),
 		foreignKey({
 			columns: [table.deletionApprovalRequestId, table.organizationId],
 			foreignColumns: [approvalRequest.id, approvalRequest.organizationId],

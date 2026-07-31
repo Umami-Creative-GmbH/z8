@@ -4,9 +4,7 @@
  * Handles bulk approval operations with transaction support.
  */
 
-import { and, eq, inArray } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { approvalRequest } from "@/db/schema";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -20,12 +18,15 @@ import {
 } from "@/lib/effect/services/database.service";
 import { getApprovalHandler } from "../domain/registry";
 import type {
-	ApprovalActionOptions,
 	ApprovalDecisionAction,
 	ApprovalType,
 	BulkDecisionFailure,
 	BulkDecisionResult,
 } from "../domain/types";
+import {
+	canAttemptApprovalInboxDecisionTarget,
+	loadApprovalInboxDecisionTargets,
+} from "../inbox/decision-service";
 import { ApprovalAuditLoggerLive } from "../infrastructure/audit-logger";
 
 const BULK_DECISION_NOT_FOUND_MESSAGE = "Approval request not found";
@@ -119,16 +120,15 @@ export const BulkApprovalServiceLive = Layer.effect(
 						failed: [],
 					};
 
-					// Fetch all approval requests to get their types
+					// Resolve compatibility requests and canonical assignments through one boundary.
 					const requests = yield* _(
-						dbService.query("getBulkApprovalRequests", async () => {
-							return await dbService.db.query.approvalRequest.findMany({
-								where: and(
-									inArray(approvalRequest.id, approvalIds),
-									eq(approvalRequest.organizationId, organizationId),
-								),
-							});
-						}),
+						dbService.query("getBulkApprovalDecisionTargets", async () =>
+							loadApprovalInboxDecisionTargets({
+								approvalIds,
+								organizationId,
+								database: dbService.db,
+							}),
+						),
 					);
 
 					const requestsById = new Map(
@@ -148,15 +148,6 @@ export const BulkApprovalServiceLive = Layer.effect(
 							continue;
 						}
 
-						if (request.entityType === "time_entry") {
-							result.failed.push({
-								id: request.id,
-								code: "unsupported",
-								message: `Bulk ${action} not supported for Time Correction`,
-							});
-							continue;
-						}
-
 						if (request.approverId !== approverId) {
 							result.failed.push({
 								id: request.id,
@@ -166,7 +157,16 @@ export const BulkApprovalServiceLive = Layer.effect(
 							continue;
 						}
 
-						if (request.status !== "pending") {
+						if (request.organizationId !== organizationId) {
+							result.failed.push({
+								id: request.id,
+								code: "forbidden",
+								message: "Request belongs to a different organization",
+							});
+							continue;
+						}
+
+						if (!canAttemptApprovalInboxDecisionTarget(request)) {
 							result.failed.push({
 								id: request.id,
 								code: "stale",
@@ -198,20 +198,16 @@ export const BulkApprovalServiceLive = Layer.effect(
 							continue;
 						}
 
-						const decisionOptions: ApprovalActionOptions & {
-							organizationId: string;
-						} = {
-							approvalRequestId: request.id,
-							organizationId,
-						};
 						const decisionEffect =
 							action === "approve"
-								? handler.approve(request.entityId, approverId, decisionOptions)
+								? handler.approve(request.entityId, approverId, {
+										approvalRequestId: request.id,
+									})
 								: handler.reject(
 										request.entityId,
 										approverId,
 										reason ?? "Rejected in bulk",
-										decisionOptions,
+										{ approvalRequestId: request.id },
 									);
 
 						const decisionResult = yield* _(

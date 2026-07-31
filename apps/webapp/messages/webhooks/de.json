@@ -48,6 +48,7 @@
       "event": "Ereignis",
       "failed": "Fehlgeschlagen",
       "http": "HTTP",
+      "loadError": "Laden der Übermittlungsprotokolle fehlgeschlagen",
       "payload": "Nutzlast",
       "pending": "Ausstehend",
       "response": "Antwort",

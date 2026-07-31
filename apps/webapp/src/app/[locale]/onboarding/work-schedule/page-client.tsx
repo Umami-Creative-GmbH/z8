@@ -5,10 +5,17 @@ import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import { ProgressIndicator } from "@/components/onboarding/progress-indicator";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -19,12 +26,16 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useRouter } from "@/navigation";
-import { checkIsAdmin, setWorkScheduleOnboarding, skipWorkScheduleSetup } from "./actions";
+import { runOnboardingAction } from "../run-onboarding-action";
+import {
+	checkIsAdmin,
+	setWorkScheduleOnboarding,
+	skipWorkScheduleSetup,
+} from "./actions";
 
 const defaultValues = {
 	hoursPerWeek: 40,
 	workClassification: "weekly" as "daily" | "weekly" | "monthly",
-	effectiveFrom: new Date(),
 };
 
 export default function WorkSchedulePage() {
@@ -32,67 +43,117 @@ export default function WorkSchedulePage() {
 	const { push, replace } = useRouter();
 	const [loading, setLoading] = useState(false);
 	const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+	const [effectiveFrom] = useState(
+		() => new Date(Temporal.Now.instant().toString()),
+	);
 
 	const form = useForm({
-		defaultValues,
+		defaultValues: { ...defaultValues, effectiveFrom },
 		onSubmit: async ({ value }) => {
-			setLoading(true);
-
-			const result = await setWorkScheduleOnboarding(value);
-
-			if (!result.success) {
-				setLoading(false);
-				toast.error(
-					result.error || t("onboarding.workSchedule.error", "Failed to set work schedule"),
-				);
-				return;
-			}
-			toast.success(t("onboarding.workSchedule.success", "Work schedule set successfully!"));
-			push(result.data.nextStep);
+			await runOnboardingAction({
+				action: () => setWorkScheduleOnboarding(value),
+				onResult: (result) => {
+					if (!result.success) {
+						toast.error(
+							result.error ||
+								t(
+									"onboarding.workSchedule.error",
+									"Failed to set work schedule",
+								),
+						);
+						return;
+					}
+					toast.success(
+						t(
+							"onboarding.workSchedule.success",
+							"Work schedule set successfully!",
+						),
+					);
+					push(result.data.nextStep);
+					return true;
+				},
+				onRejected: () => {
+					toast.error(
+						t("onboarding.workSchedule.error", "Failed to set work schedule"),
+					);
+				},
+				setLoading,
+			});
 		},
 	});
 
 	useEffect(() => {
+		let cancelled = false;
+
 		async function loadAccess() {
-			const accessResult = await checkIsAdmin();
-
-			if (!accessResult.success) {
-				replace("/onboarding/wellness");
-				return;
-			}
-
-			if (!accessResult.data) {
-				const skipResult = await skipWorkScheduleSetup();
-
-				if (skipResult.success) {
-					replace(skipResult.data.nextStep);
+			try {
+				const accessResult = await checkIsAdmin();
+				if (cancelled) {
 					return;
 				}
 
-				replace("/onboarding/wellness");
-				return;
-			}
+				if (!accessResult.success) {
+					replace("/onboarding/wellness");
+					return;
+				}
 
-			setIsAdmin(true);
+				if (!accessResult.data) {
+					const skipResult = await skipWorkScheduleSetup();
+					if (cancelled) {
+						return;
+					}
+
+					if (skipResult.success) {
+						replace(skipResult.data.nextStep);
+						return;
+					}
+
+					replace("/onboarding/wellness");
+					return;
+				}
+
+				setIsAdmin(true);
+			} catch {
+				if (!cancelled) {
+					replace("/onboarding/wellness");
+				}
+			}
 		}
 
 		void loadAccess();
+
+		return () => {
+			cancelled = true;
+		};
 	}, [replace]);
 
 	async function handleSkip() {
-		setLoading(true);
-
-		const result = await skipWorkScheduleSetup();
-
-		if (!result.success) {
-			setLoading(false);
-			toast.error(
-				result.error ||
-					t("onboarding.workSchedule.skipError", "Failed to skip work schedule setup"),
-			);
-			return;
-		}
-		push(result.data.nextStep);
+		await runOnboardingAction({
+			action: skipWorkScheduleSetup,
+			onResult: (result) => {
+				if (!result.success) {
+					toast.error(
+						result.error ||
+							t(
+								"onboarding.workSchedule.skipError",
+								"Failed to skip work schedule setup",
+							),
+					);
+					return;
+				}
+				push(result.data.nextStep);
+				return true;
+			},
+			onRejected: () => {
+				toast.error(
+					t(
+						"onboarding.workSchedule.skipError",
+						"Failed to skip work schedule setup",
+					),
+				);
+			},
+			setLoading,
+		});
 	}
 
 	if (isAdmin === null) {
@@ -100,7 +161,9 @@ export default function WorkSchedulePage() {
 			<div className="flex min-h-[50vh] items-center justify-center">
 				<div className="text-center">
 					<div className="inline-block size-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
-					<p className="mt-4 text-muted-foreground">{t("common.loading", "Loading...")}</p>
+					<p className="mt-4 text-muted-foreground">
+						{t("common.loading", "Loading...")}
+					</p>
 				</div>
 			</div>
 		);
@@ -128,7 +191,9 @@ export default function WorkSchedulePage() {
 
 				<Card>
 					<CardHeader>
-						<CardTitle>{t("onboarding.workSchedule.scheduleTitle", "Work Schedule")}</CardTitle>
+						<CardTitle>
+							{t("onboarding.workSchedule.scheduleTitle", "Work Schedule")}
+						</CardTitle>
 						<CardDescription>
 							{t(
 								"onboarding.workSchedule.scheduleDesc",
@@ -152,15 +217,25 @@ export default function WorkSchedulePage() {
 							>
 								{(field) => (
 									<div className="space-y-2">
-										<Label>{t("onboarding.workSchedule.hoursPerWeek", "Hours per Week")}</Label>
+										<Label>
+											{t(
+												"onboarding.workSchedule.hoursPerWeek",
+												"Hours per Week",
+											)}
+										</Label>
 										<Input
 											type="number"
 											min={0}
 											max={168}
-											placeholder={t("onboarding.workSchedule.hoursPerWeekPlaceholder", "40")}
+											placeholder={t(
+												"onboarding.workSchedule.hoursPerWeekPlaceholder",
+												"40",
+											)}
 											disabled={loading}
 											value={field.state.value}
-											onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
+											onChange={(e) =>
+												field.handleChange(parseFloat(e.target.value) || 0)
+											}
 											onBlur={field.handleBlur}
 										/>
 										<p className="text-sm text-muted-foreground">
@@ -185,11 +260,16 @@ export default function WorkSchedulePage() {
 								{(field) => (
 									<div className="space-y-2">
 										<Label>
-											{t("onboarding.workSchedule.classification", "Work Classification")}
+											{t(
+												"onboarding.workSchedule.classification",
+												"Work Classification",
+											)}
 										</Label>
 										<Select
 											onValueChange={(value) =>
-												field.handleChange(value as "daily" | "weekly" | "monthly")
+												field.handleChange(
+													value as "daily" | "weekly" | "monthly",
+												)
 											}
 											value={field.state.value}
 											disabled={loading}
@@ -236,7 +316,9 @@ export default function WorkSchedulePage() {
 									{t("onboarding.workSchedule.skip", "Skip for now")}
 								</Button>
 								<Button type="submit" disabled={loading} className="flex-1">
-									{loading && <IconLoader2 className="mr-2 size-4 animate-spin" />}
+									{loading && (
+										<IconLoader2 className="mr-2 size-4 animate-spin" />
+									)}
 									{t("onboarding.workSchedule.continue", "Continue")}
 								</Button>
 							</div>

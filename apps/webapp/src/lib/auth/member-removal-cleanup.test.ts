@@ -85,6 +85,7 @@ function setup(
 		deleteRows,
 		deleteWhere,
 		events,
+		execute,
 		memberFindFirst,
 		reconcileBillingSeatsForOrganization,
 		select,
@@ -120,7 +121,7 @@ describe("completeRemovedMemberCleanup", () => {
 		).toHaveBeenCalledExactlyOnceWith("org-1", { strict: true });
 	});
 
-	it("skips access cleanup when a differently identified approved replacement exists", async () => {
+	it("serializes replacement membership before preserving employee and session access", async () => {
 		const harness = setup({
 			replacementMembership: { id: "replacement-member-id" },
 		});
@@ -136,6 +137,10 @@ describe("completeRemovedMemberCleanup", () => {
 		);
 		expect(membershipQuery.params).toEqual(["user-1", "org-1", "approved"]);
 		expect(membershipQuery.params).not.toContain("replacement-member-id");
+		const identityLock = new PgDialect().sqlToQuery(
+			harness.execute.mock.calls[0]?.[0] as SQL,
+		);
+		expect(identityLock.params).toEqual(["org-1", "person@example.com"]);
 		expect(harness.select).not.toHaveBeenCalled();
 		expect(harness.deleteRows).not.toHaveBeenCalled();
 		expect(harness.update).not.toHaveBeenCalled();

@@ -15,7 +15,9 @@ export function validateAbsenceSickDetail(input: {
 	return validateSickDetailForCategory(input);
 }
 
-export function createSickDetailValidationError(message: string): ValidationError {
+export function createSickDetailValidationError(
+	message: string,
+): ValidationError {
 	return new ValidationError({
 		message,
 		field: "sickDetail",
@@ -36,15 +38,6 @@ export function shouldApplySickVacationOverrideImmediately(input: {
 		input.endPeriod === "full_day" &&
 		!(input.requiresApproval && input.hasManagerApprovalWorkflow)
 	);
-}
-
-export function getMissingAbsenceApproverMessage(input: {
-	requiresApproval: boolean;
-	approverId: string | null;
-}): string | null {
-	return input.requiresApproval && !input.approverId
-		? "No manager assigned to approve absence requests"
-		: null;
 }
 
 export function enqueueVacationOverrideCalendarSyncJobs(input: {

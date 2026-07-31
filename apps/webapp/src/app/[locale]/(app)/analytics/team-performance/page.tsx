@@ -83,25 +83,19 @@ export default function TeamPerformancePage() {
 		const range = dateRange;
 		let isCurrent = true;
 
-		async function loadData() {
-			setLoading(true);
-			try {
+		setLoading(true);
+		void Promise.resolve()
+			.then(() => getTeamPerformanceData(range))
+			.then((result) => {
 				if (!isCurrent) {
-					return;
-				}
-
-				// Organization ID is now derived server-side from authenticated session
-				const result = await getTeamPerformanceData(range);
-				const shouldUpdate = isCurrent;
-
-				if (!shouldUpdate) {
 					return;
 				}
 
 				if (result.success && result.data) {
 					setTeamData(result.data);
 				}
-			} catch (error) {
+			})
+			.catch((error) => {
 				if (!isCurrent) {
 					return;
 				}
@@ -110,14 +104,12 @@ export default function TeamPerformancePage() {
 				toast.error(
 					t("analytics.teamPerformance.errors.loadData", "Failed to load team performance data"),
 				);
-			}
-
-			if (isCurrent) {
-				setLoading(false);
-			}
-		}
-
-		loadData();
+			})
+			.finally(() => {
+				if (isCurrent) {
+					setLoading(false);
+				}
+			});
 
 		return () => {
 			isCurrent = false;

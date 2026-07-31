@@ -1,42 +1,28 @@
 import { readFileSync } from "node:fs";
-import { sql } from "drizzle-orm";
 import { Effect } from "effect";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	approvalRequest,
-	auditLog,
-	timeRecord,
-	timeRecordApprovalDecision,
-	workPeriod,
-} from "@/db/schema";
+import { describe, expect, it, vi } from "vitest";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { ApprovalAuditLogger } from "../infrastructure/audit-logger";
+import type { ApprovalDbService } from "../server/types";
 
 const decisionMocks = vi.hoisted(() => ({
-	correctionApprove: vi.fn(),
-	correctionReject: vi.fn(),
+	approveCorrection: vi.fn(() => Effect.void),
+	approveOrdinary: vi.fn(() => Effect.void),
 }));
 
-vi.mock("../policies/chain-service", () => ({
-	progressApprovalChainIfLinked: vi.fn(() =>
-		Effect.succeed({ kind: "not_linked" }),
-	),
-}));
-
-vi.mock("../server/time-correction-approvals", () => ({
+vi.mock("@/lib/approvals/server/time-correction-approvals", () => ({
 	approveTimeCorrectionWithCurrentApproverEffect:
-		decisionMocks.correctionApprove,
-	rejectTimeCorrectionWithCurrentApproverEffect: decisionMocks.correctionReject,
-	handleApprovedTimeCorrection: decisionMocks.correctionApprove,
-	handleRejectedTimeCorrection: decisionMocks.correctionReject,
+		decisionMocks.approveCorrection,
+	decideTimeCorrectionWithStableTargetEffect: decisionMocks.approveCorrection,
+}));
+
+vi.mock("@/lib/approvals/server/work-period-approvals", () => ({
+	approveWorkPeriodWithCurrentApproverEffect: decisionMocks.approveOrdinary,
 }));
 
 import {
 	buildPendingCorrectionReview,
-	buildTimeRequestDisplayMetadata,
-	buildWorkPeriodDetailEntity,
-	classifyTimeRequest,
-	classifyTimeRequestMetadata,
+	buildTimeApprovalReview,
+	buildTimeApprovalTimelineMessage,
 	TimeCorrectionHandler,
 } from "./time-correction.handler";
 
@@ -47,7 +33,7 @@ const source = readFileSync(
 
 function handlerSection() {
 	const start = source.indexOf("getDetail: (entityId");
-	const end = source.indexOf("approve: (entityId", start);
+	const end = source.indexOf("approve: (_entityId", start);
 
 	expect(start).toBeGreaterThanOrEqual(0);
 	expect(end).toBeGreaterThan(start);
@@ -83,6 +69,10 @@ describe("TimeCorrectionHandler detail loading", () => {
 describe("buildPendingCorrectionReview", () => {
 	const period = {
 		id: "period-1",
+		employeeId: "emp-1",
+		organizationId: "org-1",
+		clockInId: "clock-in-original",
+		clockOutId: "clock-out-original",
 		startTime: new Date("2026-05-22T14:00:00.000Z"),
 		endTime: new Date("2026-05-22T18:00:00.000Z"),
 		durationMinutes: 240,
@@ -100,12 +90,29 @@ describe("buildPendingCorrectionReview", () => {
 		},
 		clockIn: {
 			id: "clock-in-original",
+			organizationId: "org-1",
+			employeeId: "emp-1",
+			type: "clock_in",
 			timestamp: new Date("2026-05-22T14:00:00.000Z"),
+			utcOffsetMinutes: 120,
+			replacesEntryId: null,
+			isSuperseded: false,
+			supersededById: null,
+			replacesEntry: null,
 		},
 		clockOut: {
 			id: "clock-out-original",
+			organizationId: "org-1",
+			employeeId: "emp-1",
+			type: "clock_out",
 			timestamp: new Date("2026-05-22T18:00:00.000Z"),
+			utcOffsetMinutes: -300,
+			replacesEntryId: null,
+			isSuperseded: false,
+			supersededById: null,
+			replacesEntry: null,
 		},
+		pendingChanges: null,
 	};
 
 	it("treats legacy requests without resolvable correction entries as orphaned", () => {
@@ -161,16 +168,291 @@ describe("buildPendingCorrectionReview", () => {
 			isOrphaned: false,
 		});
 	});
+});
 
-	it("resolves an explicitly linked inactive modern correction", () => {
+describe("shared time-entry approval presentation", () => {
+	const period = {
+		id: "period-1",
+		employeeId: "emp-1",
+		organizationId: "org-1",
+		clockInId: "clock-in-original",
+		clockOutId: "clock-out-original",
+		startTime: new Date("2026-05-22T14:00:00.000Z"),
+		endTime: new Date("2026-05-22T18:00:00.000Z"),
+		durationMinutes: 240,
+		pendingChanges: null,
+		employee: {
+			id: "emp-1",
+			userId: "user-1",
+			teamId: null,
+			organizationId: "org-1",
+			user: {
+				id: "user-1",
+				name: "Kai Hentschel",
+				email: "kai@example.com",
+				image: null,
+			},
+		},
+		clockIn: {
+			id: "clock-in-original",
+			organizationId: "org-1",
+			employeeId: "emp-1",
+			type: "clock_in",
+			timestamp: new Date("2026-05-22T14:00:00.000Z"),
+			utcOffsetMinutes: 120,
+			replacesEntryId: null,
+			isSuperseded: false,
+			supersededById: null,
+			replacesEntry: null,
+		},
+		clockOut: {
+			id: "clock-out-original",
+			organizationId: "org-1",
+			employeeId: "emp-1",
+			type: "clock_out",
+			timestamp: new Date("2026-05-22T18:00:00.000Z"),
+			utcOffsetMinutes: -300,
+			replacesEntryId: null,
+			isSuperseded: false,
+			supersededById: null,
+			replacesEntry: null,
+		},
+	};
+
+	it("keeps manual submissions visible without correction entries", () => {
+		const review = buildTimeApprovalReview(
+			period,
+			{
+				metadata: { timeRequest: { kind: "manual_time_submission" } },
+				reason: "Manual time entry: missed punch",
+			},
+			[],
+		);
+
+		expect(review).toMatchObject({
+			kind: "manual_time_submission",
+			isActionable: true,
+			warning: null,
+			display: {
+				title: "Manual Time Submission",
+				badge: { label: "Manual" },
+				icon: "clock-plus",
+			},
+		});
+		expect(review.pendingCorrection).toBeUndefined();
+	});
+
+	it("keeps policy clock-outs visible without correction entries", () => {
+		const review = buildTimeApprovalReview(
+			period,
+			{
+				metadata: { timeRequest: { kind: "policy_clock_out" } },
+				reason: "Clock-out requires approval (0-day policy)",
+			},
+			[],
+		);
+
+		expect(review).toMatchObject({
+			kind: "policy_clock_out",
+			isActionable: true,
+			display: {
+				title: "Clock-out Approval",
+				badge: { label: "Clock-out" },
+				icon: "clock-check",
+			},
+		});
+		expect(review.pendingCorrection).toBeUndefined();
+	});
+
+	it.each([
+		["missing kind", { timeRequest: {} }, "Manual time entry: private reason"],
+		[
+			"extra marker field",
+			{
+				timeRequest: {
+					kind: "manual_time_submission",
+					workflowId: "private-workflow-id",
+				},
+			},
+			"Manual time entry: private reason",
+		],
+		[
+			"foreign kind with correction evidence",
+			{
+				timeRequest: { kind: "absence" },
+				timeCorrection: { clockInCorrectionId: "clock-in-correction" },
+			},
+			null,
+		],
+	] as const)("fails closed for %s metadata instead of using weaker evidence", (_label, metadata, reason) => {
+		const review = buildTimeApprovalReview(period, { metadata, reason }, [
+			{
+				id: "clock-in-correction",
+				timestamp: new Date("2026-05-22T14:15:00.000Z"),
+				replacesEntryId: "clock-in-original",
+				isSuperseded: false,
+			},
+		]);
+
+		expect(review).toMatchObject({
+			kind: "unclassified",
+			isActionable: false,
+		});
+		expect(review.pendingCorrection).toBeUndefined();
+	});
+
+	it.each([
+		{
+			metadata: {
+				timeRequest: { kind: "manual_time_submission" },
+				timeCorrection: { clockInCorrectionId: "clock-in-correction" },
+			},
+			reason: null,
+		},
+		{
+			metadata: { timeRequest: { kind: "manual_time_submission" } },
+			reason: "Clock-out requires approval (0-day policy)",
+		},
+	] as const)("keeps ambiguous or contradictory ordinary evidence unclassified", (request) => {
+		const review = buildTimeApprovalReview(period, request, []);
+
+		expect(review).toMatchObject({
+			kind: "unclassified",
+			isActionable: false,
+		});
+		expect(review.pendingCorrection).toBeUndefined();
+	});
+
+	it.each([
+		{
+			pendingChanges: "{malformed",
+			metadata: null,
+			reason: "Manual time entry: private reason",
+		},
+	] as const)("fails closed for malformed or contradictory historical evidence", (evidence) => {
+		const review = buildTimeApprovalReview(
+			{ ...period, pendingChanges: evidence.pendingChanges },
+			{ metadata: evidence.metadata, reason: evidence.reason },
+			[
+				{
+					id: "clock-in-correction",
+					timestamp: new Date("2026-05-22T14:15:00.000Z"),
+					replacesEntryId: "clock-in-original",
+					isSuperseded: false,
+				},
+			],
+		);
+
+		expect(review).toMatchObject({
+			kind: "unclassified",
+			isActionable: false,
+		});
+		expect(review.pendingCorrection).toBeUndefined();
+	});
+
+	it("keeps verified correction metadata authoritative over historical ordinary markers", () => {
 		const correction = {
-			id: "clock-in-correction",
+			id: "10000000-0000-4000-8000-000000000001",
 			timestamp: new Date("2026-05-22T14:15:00.000Z"),
 			replacesEntryId: "clock-in-original",
-			isSuperseded: true,
+			isSuperseded: false,
 		};
+		const review = buildTimeApprovalReview(
+			{ ...period, pendingChanges: { isManualEntry: true } },
+			{
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						clockInCorrectionId: correction.id,
+					},
+				},
+				reason: "Manual time entry: historical prose",
+			},
+			[correction],
+		);
 
-		const review = buildPendingCorrectionReview(
+		expect(review).toMatchObject({
+			kind: "time_correction",
+			isActionable: true,
+			pendingCorrection: { isOrphaned: false },
+		});
+	});
+
+	it("renders manual and clock-out endpoints in their independently captured offsets", () => {
+		const review = buildTimeApprovalReview(
+			{
+				...period,
+				clockIn: {
+					...period.clockIn,
+					utcOffsetMinutes: 120,
+					timezone: "Europe/Berlin",
+				},
+				clockOut: {
+					...period.clockOut,
+					utcOffsetMinutes: -300,
+					timezone: "America/New_York",
+				},
+			},
+			{
+				metadata: { timeRequest: { kind: "manual_time_submission" } },
+				reason: null,
+			},
+			[],
+		);
+
+		expect(review.display.subtitle).toBe("May 22, 2026 - 16:00 to 13:00");
+	});
+
+	it("keeps unclassified legacy rows visible with a non-actionable warning", () => {
+		const review = buildTimeApprovalReview(
+			period,
+			{ metadata: null, reason: "Please review" },
+			[],
+		);
+
+		expect(review).toMatchObject({
+			kind: "unclassified",
+			isActionable: false,
+			warning:
+				"This legacy time approval could not be classified. Reconcile it before making a decision.",
+			display: {
+				title: "Unclassified Time Approval",
+				badge: { label: "Needs reconciliation" },
+			},
+		});
+	});
+
+	it("keeps a list row unclassified when only superseded correction history exists", () => {
+		const review = buildTimeApprovalReview(
+			period,
+			{ metadata: null, reason: "Please review" },
+			[
+				{
+					id: "historical-correction",
+					timestamp: new Date("2026-05-22T13:45:00.000Z"),
+					replacesEntryId: "clock-in-original",
+					isSuperseded: true,
+				},
+			],
+		);
+
+		expect(review).toMatchObject({
+			kind: "unclassified",
+			isActionable: false,
+			warning:
+				"This legacy time approval could not be classified. Reconcile it before making a decision.",
+		});
+		expect(review.pendingCorrection).toBeUndefined();
+	});
+
+	it("preserves correction diff and priority presentation", () => {
+		const correction = {
+			id: "10000000-0000-4000-8000-000000000001",
+			timestamp: new Date("2026-05-22T14:15:00.000Z"),
+			replacesEntryId: "clock-in-original",
+			isSuperseded: false,
+		};
+		const review = buildTimeApprovalReview(
 			period,
 			{
 				metadata: {
@@ -179,549 +461,701 @@ describe("buildPendingCorrectionReview", () => {
 						clockInCorrectionId: correction.id,
 					},
 				},
+				reason: null,
 			},
 			[correction],
 		);
 
 		expect(review).toMatchObject({
-			clockIn: { requested: correction.timestamp },
+			kind: "time_correction",
+			isActionable: true,
+			display: { title: "Time Correction", badge: { label: "Correction" } },
+			pendingCorrection: {
+				clockIn: { requested: correction.timestamp },
+				isOrphaned: false,
+			},
+		});
+	});
+
+	it("dispatches correction decisions by stable inbox target", () => {
+		expect(source).toContain("decideTimeCorrectionWithStableTargetEffect");
+		expect(source).toContain("options.approvalRequestId");
+	});
+
+	it("scopes inbox work-period loading to the requested organization", () => {
+		expect(source).toContain(
+			"eq(workPeriod.organizationId, params.organizationId)",
+		);
+	});
+});
+
+describe("resolved time approval timeline labels", () => {
+	it.each([
+		["time_correction", "approved", undefined, "Correction approved"],
+		[
+			"time_correction",
+			"rejected",
+			"Wrong time",
+			"Correction rejected: Wrong time",
+		],
+		[
+			"manual_time_submission",
+			"approved",
+			undefined,
+			"Manual time submission approved",
+		],
+		[
+			"manual_time_submission",
+			"rejected",
+			"Overlap",
+			"Manual time submission rejected: Overlap",
+		],
+		["policy_clock_out", "approved", undefined, "Clock-out approved"],
+		[
+			"policy_clock_out",
+			"rejected",
+			"Policy exception",
+			"Clock-out rejected: Policy exception",
+		],
+	] as const)("renders %s %s as a distinct detail timeline label", (kind, status, reason, expected) => {
+		expect(buildTimeApprovalTimelineMessage(kind, status, reason)).toBe(
+			expected,
+		);
+	});
+});
+
+function createSupersededHistoryDbService() {
+	const period = {
+		id: "period-1",
+		organizationId: "org-1",
+		employeeId: "emp-1",
+		startTime: new Date("2026-05-22T14:00:00.000Z"),
+		endTime: new Date("2026-05-22T18:00:00.000Z"),
+		durationMinutes: 240,
+		pendingChanges: null,
+		clockInId: "clock-in-original",
+		clockOutId: "clock-out-original",
+		employee: {
+			id: "emp-1",
+			userId: "user-1",
+			teamId: null,
+			organizationId: "org-1",
+			user: {
+				id: "user-1",
+				name: "Kai Hentschel",
+				email: "kai@example.com",
+				image: null,
+			},
+		},
+		clockIn: {
+			id: "clock-in-original",
+			organizationId: "org-1",
+			employeeId: "emp-1",
+			type: "clock_in",
+			timestamp: new Date("2026-05-22T14:00:00.000Z"),
+			utcOffsetMinutes: 120,
+			replacesEntryId: null,
+			isSuperseded: false,
+			supersededById: null,
+			replacesEntry: null,
+		},
+		clockOut: {
+			id: "clock-out-original",
+			organizationId: "org-1",
+			employeeId: "emp-1",
+			type: "clock_out",
+			timestamp: new Date("2026-05-22T18:00:00.000Z"),
+			utcOffsetMinutes: -300,
+			replacesEntryId: null,
+			isSuperseded: false,
+			supersededById: null,
+			replacesEntry: null,
+		},
+	};
+	const request = {
+		id: "approval-1",
+		entityType: "time_entry",
+		entityId: "period-1",
+		organizationId: "org-1",
+		requestedBy: "emp-1",
+		approverId: "manager-1",
+		status: "pending",
+		reason: "Please review",
+		metadata: null,
+		createdAt: new Date("2026-05-22T18:05:00.000Z"),
+		approvedAt: null,
+		rejectionReason: null,
+		requester: period.employee,
+		approver: null,
+	};
+	const supersededCorrection = {
+		id: "historical-correction",
+		type: "correction",
+		employeeId: "emp-1",
+		organizationId: "org-1",
+		timestamp: new Date("2026-05-22T13:45:00.000Z"),
+		replacesEntryId: "clock-in-original",
+		isSuperseded: true,
+	};
+	const queryNames: string[] = [];
+	const approvalFindFirst = vi.fn().mockResolvedValue(request);
+	const approvalChainStageFindMany = vi.fn().mockResolvedValue([]);
+	const approvalChainStageFindFirst = vi.fn().mockResolvedValue(null);
+	const workPeriodFindMany = vi.fn().mockResolvedValue([period]);
+	const timeEntryFindMany = vi.fn().mockResolvedValue([supersededCorrection]);
+	const dbService = {
+		db: {
+			query: {
+				employee: {
+					findFirst: vi.fn().mockResolvedValue({
+						id: "manager-1",
+						userId: "manager-user-1",
+						organizationId: "org-1",
+						isActive: true,
+						user: {
+							id: "manager-user-1",
+							name: "Morgan Manager",
+							email: "manager@example.com",
+							image: null,
+						},
+					}),
+				},
+				approvalRequest: {
+					findMany: vi.fn().mockResolvedValue([request]),
+					findFirst: approvalFindFirst,
+				},
+				approvalChainStageInstance: {
+					findMany: approvalChainStageFindMany,
+					findFirst: approvalChainStageFindFirst,
+				},
+				workPeriod: {
+					findMany: workPeriodFindMany,
+					findFirst: vi.fn().mockResolvedValue(period),
+				},
+				timeEntry: {
+					findMany: timeEntryFindMany,
+					findFirst: vi.fn().mockResolvedValue(supersededCorrection),
+				},
+			},
+		},
+		query: <T>(name: string, fn: () => Promise<T>) => {
+			queryNames.push(name);
+			return Effect.promise(fn);
+		},
+	} as unknown as ApprovalDbService;
+
+	return {
+		approvalChainStageFindFirst,
+		approvalChainStageFindMany,
+		approvalFindFirst,
+		dbService,
+		period,
+		queryNames,
+		request,
+		timeEntryFindMany,
+		workPeriodFindMany,
+	};
+}
+
+function configureCorrectedCurrentEndpoint(
+	fixture: ReturnType<typeof createSupersededHistoryDbService>,
+	endpointName: "clockIn" | "clockOut",
+) {
+	const endpoint = fixture.period[endpointName];
+	const expectedType = endpointName === "clockIn" ? "clock_in" : "clock_out";
+	const originalId = endpoint.id;
+	const currentId = `${originalId}-current-correction`;
+	const pendingId =
+		endpointName === "clockIn"
+			? "10000000-0000-4000-8000-000000000001"
+			: "10000000-0000-4000-8000-000000000002";
+	const predecessor = {
+		...endpoint,
+		type: expectedType,
+		replacesEntryId: null,
+		isSuperseded: true,
+		supersededById: currentId,
+		replacesEntry: null,
+	};
+
+	Object.assign(endpoint, {
+		id: currentId,
+		type: "correction",
+		replacesEntryId: originalId,
+		isSuperseded: false,
+		supersededById: null,
+		replacesEntry: predecessor,
+	});
+	if (endpointName === "clockIn") {
+		fixture.period.clockInId = currentId;
+		fixture.request.metadata = {
+			timeCorrection: { action: "edit", clockInCorrectionId: pendingId },
+		};
+	} else {
+		fixture.period.clockOutId = currentId;
+		fixture.request.metadata = {
+			timeCorrection: { action: "edit", clockOutCorrectionId: pendingId },
+		};
+	}
+	fixture.request.reason = null;
+	const pendingCorrection = {
+		id: pendingId,
+		type: "correction",
+		employeeId: "emp-1",
+		organizationId: "org-1",
+		timestamp: new Date("2026-05-22T14:15:00.000Z"),
+		replacesEntryId: currentId,
+		isSuperseded: false,
+		supersededById: null,
+	};
+	fixture.timeEntryFindMany.mockResolvedValue([pendingCorrection]);
+
+	return { pendingCorrection };
+}
+
+describe("superseded correction history regression", () => {
+	const staleEndpointCases = (["clockIn", "clockOut"] as const).flatMap(
+		(endpointName) =>
+			(["native", "corrected"] as const).flatMap((endpointKind) => [
+				{
+					name: `a ${endpointKind} ${endpointName} marked superseded`,
+					mutate: (
+						fixture: ReturnType<typeof createSupersededHistoryDbService>,
+					) => {
+						if (endpointKind === "corrected") {
+							configureCorrectedCurrentEndpoint(fixture, endpointName);
+						}
+						fixture.period[endpointName].isSuperseded = true;
+					},
+				},
+				{
+					name: `a ${endpointKind} ${endpointName} linked to a successor`,
+					mutate: (
+						fixture: ReturnType<typeof createSupersededHistoryDbService>,
+					) => {
+						if (endpointKind === "corrected") {
+							configureCorrectedCurrentEndpoint(fixture, endpointName);
+						}
+						fixture.period[endpointName].supersededById =
+							`${endpointName}-successor`;
+					},
+				},
+			]),
+	);
+	const invalidEndpointCases = [
+		{
+			name: "a foreign-organization clock-in",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.clockIn.organizationId = "org-foreign";
+			},
+		},
+		{
+			name: "a wrong-employee clock-in",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.clockIn.employeeId = "emp-foreign";
+			},
+		},
+		{
+			name: "a mismatched clock-in link",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.clockIn.id = "clock-in-foreign";
+			},
+		},
+		{
+			name: "an arbitrary correction clock-in without replacement lineage",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.clockIn.type = "correction";
+			},
+		},
+		{
+			name: "a foreign-organization clock-out",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.clockOut.organizationId = "org-foreign";
+			},
+		},
+		{
+			name: "a wrong-employee clock-out",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.clockOut.employeeId = "emp-foreign";
+			},
+		},
+		{
+			name: "a mismatched clock-out link",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.clockOut.id = "clock-out-foreign";
+			},
+		},
+		{
+			name: "an arbitrary correction clock-out without replacement lineage",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.clockOut.type = "correction";
+			},
+		},
+		...staleEndpointCases,
+	] as const;
+
+	it.each([
+		"clockIn",
+		"clockOut",
+	] as const)("preserves list and detail correction reads with a corrected current %s endpoint", async (endpointName) => {
+		const fixture = createSupersededHistoryDbService();
+		const { pendingCorrection } = configureCorrectedCurrentEndpoint(
+			fixture,
+			endpointName,
+		);
+
+		const list = await Effect.runPromise(
+			TimeCorrectionHandler.getApprovals({
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+				limit: 20,
+			}).pipe(Effect.provideService(DatabaseService, fixture.dbService)),
+		);
+		const detail = await Effect.runPromise(
+			TimeCorrectionHandler.getDetail("period-1", "org-1", {
+				approvalId: "approval-1",
+			}).pipe(Effect.provideService(DatabaseService, fixture.dbService)),
+		);
+
+		expect(list).toHaveLength(1);
+		expect(list[0]).toMatchObject({
+			typeName: "Time Correction",
+			isActionable: true,
+		});
+		expect(detail.approval).toMatchObject({
+			typeName: "Time Correction",
+			isActionable: true,
+		});
+		expect(detail.entity.pendingCorrection).toMatchObject({
+			[endpointName]: { requested: pendingCorrection.timestamp },
 			isOrphaned: false,
 		});
 	});
 
-	it("does not fall back when explicit correction metadata is malformed", () => {
-		const unrelatedActiveCorrection = {
-			id: "clock-in-correction",
-			timestamp: new Date("2026-05-22T14:15:00.000Z"),
-			replacesEntryId: "clock-in-original",
-			isSuperseded: false,
-		};
+	it.each(
+		invalidEndpointCases,
+	)("omits list rows joined to $name without exposing endpoint or requester data", async ({
+		mutate,
+	}) => {
+		const fixture = createSupersededHistoryDbService();
+		mutate(fixture);
 
-		const review = buildPendingCorrectionReview(
-			period,
-			{
-				metadata: {
-					timeCorrection: { action: "edit", clockInCorrectionId: "" },
-				},
-			},
-			[unrelatedActiveCorrection],
-		);
-
-		expect(review).toMatchObject({
-			clockIn: { requested: null },
-			isOrphaned: true,
-		});
-	});
-
-	it("does not fall back when an explicit correction has foreign lineage", () => {
-		const declaredCorrection = {
-			id: "declared-correction",
-			timestamp: new Date("2026-05-22T14:15:00.000Z"),
-			replacesEntryId: "another-original",
-			isSuperseded: true,
-		};
-		const unrelatedActiveCorrection = {
-			id: "active-correction",
-			timestamp: new Date("2026-05-22T14:30:00.000Z"),
-			replacesEntryId: "clock-in-original",
-			isSuperseded: false,
-		};
-
-		const review = buildPendingCorrectionReview(
-			period,
-			{
-				metadata: {
-					timeCorrection: {
-						action: "edit",
-						clockInCorrectionId: declaredCorrection.id,
-					},
-				},
-			},
-			[declaredCorrection, unrelatedActiveCorrection],
-		);
-
-		expect(review).toMatchObject({
-			clockIn: { requested: null },
-			isOrphaned: true,
-		});
-	});
-
-	it.each([
-		"manual_time_submission",
-		"policy_clock_out",
-	] as const)("classifies %s metadata as a valid ordinary time request", (kind) => {
-		expect(classifyTimeRequestMetadata({ timeRequest: { kind } })).toEqual({
-			kind: "ordinary",
-			requestKind: kind,
-		});
-	});
-
-	it("classifies metadata-null manual submissions only from exact period and reason evidence", () => {
-		expect(
-			classifyTimeRequest({
-				metadata: null,
-				reason: "Manual time entry: Forgot to clock",
-				pendingChanges: {
-					originalStartTime: "2026-05-22T14:00:00.000Z",
-					originalEndTime: "2026-05-22T18:00:00.000Z",
-					originalDurationMinutes: 240,
-					requestedAt: "2026-05-22T18:01:00.000Z",
-					requestedBy: "user-1",
-					isManualEntry: true,
-					reason: "Forgot to clock",
-				},
-				clockInId: "clock-in-original",
-				clockOutId: "clock-out-original",
-				correctionEntries: [],
-			}),
-		).toEqual({ kind: "ordinary", requestKind: "manual_time_submission" });
-	});
-
-	it("classifies metadata-null policy clock-out only from exact period and reason evidence", () => {
-		expect(
-			classifyTimeRequest({
-				metadata: null,
-				reason: "Clock-out requires approval (0-day policy)",
-				pendingChanges: {
-					originalStartTime: "2026-05-22T14:00:00.000Z",
-					originalEndTime: "2026-05-22T18:00:00.000Z",
-					originalDurationMinutes: 240,
-					requestedAt: "2026-05-22T18:01:00.000Z",
-					requestedBy: "user-1",
-					isNewClockOut: true,
-				},
-				clockInId: "clock-in-original",
-				clockOutId: "clock-out-original",
-				correctionEntries: [],
-			}),
-		).toEqual({ kind: "ordinary", requestKind: "policy_clock_out" });
-	});
-
-	it("leaves ambiguous metadata-null rows unclassified", () => {
-		expect(
-			classifyTimeRequest({
-				metadata: null,
-				reason: "Manual time entry: Forgot to clock",
-				pendingChanges: null,
-				clockInId: "clock-in-original",
-				clockOutId: "clock-out-original",
-				correctionEntries: [],
-			}),
-		).toEqual({ kind: "unclassified" });
-	});
-
-	it("uses exact relational evidence for metadata-null historical corrections", () => {
-		expect(
-			classifyTimeRequest({
-				metadata: null,
-				reason: "Adjust clock-in",
-				pendingChanges: null,
-				clockInId: "clock-in-original",
-				clockOutId: "clock-out-original",
-				correctionEntries: [
-					{
-						id: "correction-1",
-						replacesEntryId: "clock-in-original",
-						isSuperseded: false,
-					},
-				],
-			}),
-		).toEqual({ kind: "legacy" });
-	});
-
-	it("keeps malformed explicit correction metadata invalid", () => {
-		expect(
-			classifyTimeRequestMetadata({
-				timeCorrection: { action: "edit", clockInCorrectionId: "" },
-			}),
-		).toEqual({ kind: "invalid" });
-	});
-
-	it("lets malformed explicit metadata override historical ordinary evidence", () => {
-		expect(
-			classifyTimeRequest({
-				metadata: {
-					timeCorrection: { action: "edit", clockInCorrectionId: "" },
-				},
-				reason: "Clock-out requires approval (0-day policy)",
-				pendingChanges: {
-					originalStartTime: "2026-05-22T14:00:00.000Z",
-					originalEndTime: "2026-05-22T18:00:00.000Z",
-					originalDurationMinutes: 240,
-					requestedAt: "2026-05-22T18:01:00.000Z",
-					requestedBy: "user-1",
-					isNewClockOut: true,
-				},
-				clockInId: "clock-in-original",
-				clockOutId: "clock-out-original",
-				correctionEntries: [],
-			}),
-		).toEqual({ kind: "invalid" });
-	});
-
-	it.each([
-		["manual_time_submission", "Manual Time Entry"],
-		["policy_clock_out", "Clock-out Approval"],
-	] as const)("uses ordinary display metadata for %s", (kind, title) => {
-		expect(
-			buildTimeRequestDisplayMetadata(period, {
-				kind: "ordinary",
-				requestKind: kind,
-			}),
-		).toMatchObject({ title, badge: { label: "Time Request" } });
-	});
-});
-
-describe("buildWorkPeriodDetailEntity", () => {
-	it("runtime-allowlists nested detail fields", () => {
-		const detail = buildWorkPeriodDetailEntity({
-			id: "period-1",
-			startTime: new Date("2026-05-22T14:00:00.000Z"),
-			endTime: new Date("2026-05-22T18:00:00.000Z"),
-			durationMinutes: 240,
-			pendingChanges: { requestedBy: "secret-requester" },
-			internalNotes: "secret-period-note",
-			employee: {
-				id: "employee-1",
-				userId: "user-1",
-				teamId: null,
+		const items = await Effect.runPromise(
+			TimeCorrectionHandler.getApprovals({
+				approverId: "manager-1",
 				organizationId: "org-1",
-				authToken: "secret-auth-token",
-				user: {
-					id: "user-1",
-					name: "Kai",
-					email: "kai@example.com",
-					image: null,
-					passwordHash: "secret-password-hash",
-					twoFactorSecret: "secret-2fa",
-				},
-			},
-			clockIn: {
-				id: "clock-in-1",
-				timestamp: new Date("2026-05-22T14:00:00.000Z"),
-				ipAddress: "secret-ip",
-				deviceInfo: "secret-device",
-				hash: "secret-hash",
-			},
-			clockOut: null,
-		} as never);
+				status: "pending",
+				limit: 20,
+			}).pipe(Effect.provideService(DatabaseService, fixture.dbService)),
+		);
 
-		expect(Object.keys(detail.employee.user).sort()).toEqual([
-			"email",
-			"id",
-			"image",
-			"name",
-		]);
-		expect(Object.keys(detail.clockIn).sort()).toEqual(["id", "timestamp"]);
-		expect(JSON.stringify(detail)).not.toMatch(/secret-/);
-		expect(detail).not.toHaveProperty("pendingChanges");
+		const serialized = JSON.stringify(items);
+		expect(items).toEqual([]);
+		expect(serialized).not.toContain("May 22, 2026");
+		expect(serialized).not.toContain("16:00");
+		expect(serialized).not.toContain("13:00");
+		expect(serialized).not.toContain("Kai Hentschel");
+		expect(fixture.timeEntryFindMany).not.toHaveBeenCalled();
 	});
-});
 
-describe("TimeCorrectionHandler organization scoping", () => {
-	it("scopes actor, batch, period, request, and correction reads in SQL", () => {
-		expect(source).toContain("eq(employee.organizationId, organizationId)");
-		expect(source).toContain(
-			"eq(workPeriod.organizationId, params.organizationId)",
-		);
-		expect(source).toContain(
-			"eq(timeEntry.organizationId, params.organizationId)",
-		);
-		expect(source).toContain('dbService.query("batchGetOriginalTimeEntries"');
-		expect(source).toContain(
-			'dbService.query("getOriginalTimeEntriesForDetail"',
-		);
-		expect(source).toContain('classification.kind !== "ordinary"');
-		expect(source).toContain("correctionPeriodRows");
-		expect(source).not.toContain("...(organizationId ?");
-	});
-});
+	it.each(
+		invalidEndpointCases,
+	)("rejects detail rows joined to $name without exposing endpoint or requester data", async ({
+		mutate,
+	}) => {
+		const fixture = createSupersededHistoryDbService();
+		mutate(fixture);
 
-describe("TimeCorrectionHandler ordinary decisions", () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-		decisionMocks.correctionApprove.mockReturnValue(Effect.void);
-		decisionMocks.correctionReject.mockReturnValue(Effect.void);
+		let rejection: unknown;
+		try {
+			await Effect.runPromise(
+				TimeCorrectionHandler.getDetail("period-1", "org-1", {
+					approvalId: "approval-1",
+				}).pipe(Effect.provideService(DatabaseService, fixture.dbService)),
+			);
+		} catch (error) {
+			rejection = error;
+		}
+
+		const serialized = JSON.stringify(rejection);
+		expect(rejection).toBeDefined();
+		expect(String(rejection)).toContain("Work period not found");
+		expect(serialized).not.toContain("2026-05-22");
+		expect(serialized).not.toContain("120");
+		expect(serialized).not.toContain("-300");
+		expect(serialized).not.toContain("Kai Hentschel");
+		expect(fixture.timeEntryFindMany).not.toHaveBeenCalled();
 	});
 
 	it.each([
-		"manual_time_submission",
-		"policy_clock_out",
-	] as const)("approves %s through the transaction-row ordinary finalizer", async (kind) => {
-		const { dbService, updateValues } = createDecisionHarness(kind);
+		{
+			name: "an employee from another organization",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.employee.organizationId = "org-foreign";
+			},
+		},
+		{
+			name: "a request owned by another employee",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.request.requestedBy = "emp-foreign";
+			},
+		},
+	] as const)("omits list rows with $name before correction evidence loading", async ({
+		mutate,
+	}) => {
+		const fixture = createSupersededHistoryDbService();
+		mutate(fixture);
+
+		const items = await Effect.runPromise(
+			TimeCorrectionHandler.getApprovals({
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+				limit: 20,
+			}).pipe(Effect.provideService(DatabaseService, fixture.dbService)),
+		);
+
+		expect(items).toEqual([]);
+		expect(fixture.timeEntryFindMany).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		{
+			name: "an employee from another organization",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.period.employee.organizationId = "org-foreign";
+			},
+		},
+		{
+			name: "a request owned by another employee",
+			mutate: (
+				fixture: ReturnType<typeof createSupersededHistoryDbService>,
+			) => {
+				fixture.request.requestedBy = "emp-foreign";
+			},
+		},
+	] as const)("rejects detail rows with $name before correction evidence loading", async ({
+		mutate,
+	}) => {
+		const fixture = createSupersededHistoryDbService();
+		mutate(fixture);
+
+		await expect(
+			Effect.runPromise(
+				TimeCorrectionHandler.getDetail("period-1", "org-1", {
+					approvalId: "approval-1",
+				}).pipe(Effect.provideService(DatabaseService, fixture.dbService)),
+			),
+		).rejects.toThrow("Work period not found");
+		expect(fixture.timeEntryFindMany).not.toHaveBeenCalled();
+	});
+
+	it("loads a sanitized public stage for an ordinary compatibility row", async () => {
+		const { approvalChainStageFindMany, dbService, period, request } =
+			createSupersededHistoryDbService();
+		period.pendingChanges = { isManualEntry: true } as never;
+		request.metadata = {
+			timeRequest: { kind: "manual_time_submission" },
+			stage: {
+				id: "50000000-0000-4000-8000-000000000001",
+				sequence: 2,
+			},
+		};
+		request.reason = null;
+		approvalChainStageFindMany.mockResolvedValue([
+			{
+				id: "50000000-0000-4000-8000-000000000001",
+				organizationId: "org-1",
+				approvalRequestId: "approval-1",
+				labelSnapshot: "Manager review",
+				stepOrder: 2,
+			},
+		]);
+
+		const items = await Effect.runPromise(
+			TimeCorrectionHandler.getApprovals({
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+				limit: 20,
+			}).pipe(Effect.provideService(DatabaseService, dbService)),
+		);
+
+		expect(items[0]).toMatchObject({
+			typeName: "Manual Time Submission",
+			display: { stage: { name: "Manager review", order: 2 } },
+		});
+		expect(JSON.stringify(items[0])).not.toContain(
+			"50000000-0000-4000-8000-000000000001",
+		);
+	});
+
+	it("uses the same metadata fallback for malformed list and detail stages", async () => {
+		const fixture = createSupersededHistoryDbService();
+		fixture.period.pendingChanges = { isManualEntry: true } as never;
+		fixture.request.metadata = {
+			timeRequest: { kind: "manual_time_submission" },
+			stage: {
+				id: "50000000-0000-4000-8000-000000000001",
+				sequence: 3,
+			},
+		};
+		fixture.request.reason = null;
+		const malformedStage = {
+			approvalRequestId: "approval-1",
+			labelSnapshot: "",
+			stepOrder: 0,
+		};
+		fixture.approvalChainStageFindMany.mockResolvedValue([malformedStage]);
+		fixture.approvalChainStageFindFirst.mockResolvedValue(malformedStage);
+
+		const list = await Effect.runPromise(
+			TimeCorrectionHandler.getApprovals({
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+				limit: 20,
+			}).pipe(Effect.provideService(DatabaseService, fixture.dbService)),
+		);
+		const detail = await Effect.runPromise(
+			TimeCorrectionHandler.getDetail("period-1", "org-1", {
+				approvalId: "approval-1",
+			}).pipe(Effect.provideService(DatabaseService, fixture.dbService)),
+		);
+
+		expect(list[0]?.display.stage).toEqual({ name: "Approval", order: 3 });
+		expect(detail.approval.display.stage).toEqual(list[0]?.display.stage);
+	});
+
+	it("keeps the real inbox list item visible and non-actionable", async () => {
+		const { dbService } = createSupersededHistoryDbService();
+		const items = await Effect.runPromise(
+			TimeCorrectionHandler.getApprovals({
+				approverId: "manager-1",
+				organizationId: "org-1",
+				status: "pending",
+				limit: 20,
+			}).pipe(Effect.provideService(DatabaseService, dbService)),
+		);
+
+		expect(items).toHaveLength(1);
+		expect(items[0]).toMatchObject({
+			typeName: "Unclassified Time Approval",
+			isActionable: false,
+			warning:
+				"This legacy time approval could not be classified. Reconcile it before making a decision.",
+		});
+	});
+
+	it("keeps the real detail visible and non-actionable", async () => {
+		const { dbService } = createSupersededHistoryDbService();
+		const detail = await Effect.runPromise(
+			TimeCorrectionHandler.getDetail("period-1", "org-1", {
+				approvalId: "approval-1",
+			}).pipe(Effect.provideService(DatabaseService, dbService)),
+		);
+
+		expect(detail.approval).toMatchObject({
+			typeName: "Unclassified Time Approval",
+			isActionable: false,
+		});
+		expect(detail.entity).toMatchObject({
+			timeApprovalKind: "unclassified",
+			timeRequestActionable: false,
+		});
+		expect(detail.entity.pendingCorrection).toBeUndefined();
+	});
+
+	it("defers subtype classification to the stable transaction boundary", async () => {
+		decisionMocks.approveCorrection.mockClear();
+		const { dbService } = createSupersededHistoryDbService();
 
 		await Effect.runPromise(
 			TimeCorrectionHandler.approve("period-1", "manager-1", {
 				approvalRequestId: "approval-1",
-				organizationId: "org-1",
-			} as never).pipe(
-				Effect.provideService(DatabaseService, dbService),
-				Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
-			),
+			}).pipe(Effect.provideService(DatabaseService, dbService)),
 		);
-
-		expect(updateValues).toContainEqual(
-			expect.objectContaining({
-				approvalStatus: "approved",
-				pendingChanges: null,
-			}),
+		expect(decisionMocks.approveCorrection).toHaveBeenCalledWith(
+			dbService,
+			expect.objectContaining({ id: "manager-1" }),
+			"approval-1",
+			"approve",
+			undefined,
+			{ approvalRequestId: "approval-1" },
 		);
-		expect(decisionMocks.correctionApprove).not.toHaveBeenCalled();
-	}, 15_000);
-
-	it.each([
-		"manual_time_submission",
-		"policy_clock_out",
-	] as const)("rejects %s through the transaction-row ordinary finalizer", async (kind) => {
-		const { dbService, updateValues } = createDecisionHarness(kind);
-
-		await Effect.runPromise(
-			TimeCorrectionHandler.reject("period-1", "manager-1", "Policy denied", {
-				approvalRequestId: "approval-1",
-				organizationId: "org-1",
-			} as never).pipe(
-				Effect.provideService(DatabaseService, dbService),
-				Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
-			),
-		);
-
-		expect(updateValues).toContainEqual(
-			expect.objectContaining({
-				approvalStatus: "rejected",
-				pendingChanges: null,
-			}),
-		);
-		expect(decisionMocks.correctionReject).not.toHaveBeenCalled();
 	});
 
 	it.each([
-		["approve", "workPeriod"],
-		["reject", "workPeriod"],
-		["approve", "timeRecord"],
-		["reject", "timeRecord"],
-	] as const)("rolls back an ordinary %s when the %s CAS loses a race", async (action, raceAt) => {
-		const harness = createStatefulDecisionHarness(raceAt);
-		const effect =
+		["approve", "approved"],
+		["reject", "rejected"],
+	] as const)("defers a handler-visible %s status to transaction reload before %s", async (action, status) => {
+		decisionMocks.approveCorrection.mockClear();
+		const { approvalFindFirst, dbService, request } =
+			createSupersededHistoryDbService();
+		approvalFindFirst.mockResolvedValueOnce({ ...request, status });
+
+		const decision =
 			action === "approve"
 				? TimeCorrectionHandler.approve("period-1", "manager-1", {
 						approvalRequestId: "approval-1",
-						organizationId: "org-1",
-					} as never)
-				: TimeCorrectionHandler.reject("period-1", "manager-1", "Denied", {
+					})
+				: TimeCorrectionHandler.reject("period-1", "manager-1", "No", {
 						approvalRequestId: "approval-1",
-						organizationId: "org-1",
-					} as never);
-
-		await expect(
-			Effect.runPromise(
-				effect.pipe(
-					Effect.provideService(DatabaseService, harness.dbService),
-					Effect.provideService(ApprovalAuditLogger, createAuditLogger()),
-				),
-			),
-		).rejects.toThrow(
-			raceAt === "workPeriod"
-				? "Work period approval is no longer pending"
-				: "Canonical time record approval is no longer pending",
+					});
+		await Effect.runPromise(
+			decision.pipe(Effect.provideService(DatabaseService, dbService)),
 		);
-		expect(harness.state()).toEqual({
-			approvalStatus: "pending",
-			workPeriodStatus: "pending",
-			timeRecordStatus: "pending",
-			decisionCount: 0,
-			auditCount: 0,
+		expect(decisionMocks.approveCorrection).toHaveBeenCalledOnce();
+	});
+
+	it("keeps a later manual-entry chain stage actionable from the period marker", async () => {
+		decisionMocks.approveOrdinary.mockClear();
+		const { approvalFindFirst, dbService, period, request } =
+			createSupersededHistoryDbService();
+		period.pendingChanges = { isManualEntry: true } as never;
+		approvalFindFirst.mockResolvedValueOnce({
+			...request,
+			reason: null,
+			metadata: { approvalChain: { stageOrder: 2 } },
 		});
+
+		await Effect.runPromise(
+			TimeCorrectionHandler.approve("period-1", "manager-1", {
+				approvalRequestId: "approval-1",
+			}).pipe(Effect.provideService(DatabaseService, dbService)),
+		);
+
+		expect(decisionMocks.approveOrdinary).not.toHaveBeenCalled();
+		expect(decisionMocks.approveCorrection).toHaveBeenCalledWith(
+			dbService,
+			expect.objectContaining({ id: "manager-1", organizationId: "org-1" }),
+			"approval-1",
+			"approve",
+			undefined,
+			{ approvalRequestId: "approval-1" },
+		);
 	});
 });
-
-function createAuditLogger() {
-	return ApprovalAuditLogger.of({
-		log: vi.fn(() => Effect.void),
-		logBatch: vi.fn(() => Effect.void),
-	});
-}
-
-function createDecisionHarness(
-	kind: "manual_time_submission" | "policy_clock_out",
-) {
-	const updateValues: unknown[] = [];
-	const returning = vi.fn(async () => [{ id: "updated" }]);
-	const update = vi.fn(() => ({
-		set: vi.fn((values: unknown) => {
-			updateValues.push(values);
-			return { where: vi.fn(() => ({ returning })) };
-		}),
-	}));
-	const tx = {
-		query: {
-			approvalRequest: {
-				findFirst: vi.fn(async () => ({
-					id: "approval-1",
-					entityId: "period-1",
-					entityType: "time_entry",
-					approverId: "manager-1",
-					organizationId: "org-1",
-					status: "pending",
-					reason: "Review time",
-					approvedAt: null,
-					rejectionReason: null,
-					metadata: { timeRequest: { kind } },
-					updatedAt: new Date("2026-05-22T18:30:00.000Z"),
-				})),
-			},
-			workPeriod: {
-				findFirst: vi.fn(async () => ({
-					id: "period-1",
-					organizationId: "org-1",
-					canonicalRecordId: "record-1",
-					approvalStatus: "pending",
-				})),
-			},
-		},
-		update,
-		insert: vi.fn(() => ({ values: vi.fn(async () => undefined) })),
-	};
-	const dbService = DatabaseService.of({
-		db: {
-			select: vi.fn(() => ({
-				from: vi.fn(() => ({ where: vi.fn(() => sql`true`) })),
-			})),
-			query: {
-				employee: {
-					findFirst: vi.fn(async () => ({
-						id: "manager-1",
-						userId: "manager-user-1",
-						organizationId: "org-1",
-						isActive: true,
-						user: {
-							id: "manager-user-1",
-							name: "Morgan Manager",
-							email: "morgan@example.com",
-							image: null,
-						},
-					})),
-				},
-			},
-			transaction: vi.fn(
-				async (callback: (client: typeof tx) => Promise<void>) => callback(tx),
-			),
-		} as never,
-		query: (_name, operation) => Effect.promise(operation),
-	});
-
-	return { dbService, updateValues };
-}
-
-function createStatefulDecisionHarness(raceAt: "workPeriod" | "timeRecord") {
-	let state = {
-		approvalStatus: "pending",
-		workPeriodStatus: "pending",
-		timeRecordStatus: "pending",
-		decisionCount: 0,
-		auditCount: 0,
-	};
-	const tx = {
-		query: {
-			approvalRequest: {
-				findFirst: vi.fn(async () =>
-					state.approvalStatus === "pending"
-						? {
-								id: "approval-1",
-								entityId: "period-1",
-								entityType: "time_entry",
-								approverId: "manager-1",
-								organizationId: "org-1",
-								status: "pending",
-								reason: "Manual time entry: Forgot to clock",
-								metadata: {
-									timeRequest: { kind: "manual_time_submission" },
-								},
-							}
-						: undefined,
-				),
-			},
-			workPeriod: {
-				findFirst: vi.fn(async () => ({
-					id: "period-1",
-					canonicalRecordId: "record-1",
-					approvalStatus: state.workPeriodStatus,
-				})),
-			},
-		},
-		update: vi.fn((table: unknown) => ({
-			set: vi.fn((values: Record<string, unknown>) => ({
-				where: vi.fn(() => ({
-					returning: vi.fn(async () => {
-						if (table === approvalRequest) {
-							if (state.approvalStatus !== "pending") return [];
-							state.approvalStatus = values.status as string;
-							return [{ id: "approval-1" }];
-						}
-						if (table === workPeriod) {
-							if (
-								raceAt === "workPeriod" ||
-								state.workPeriodStatus !== "pending"
-							)
-								return [];
-							state.workPeriodStatus = values.approvalStatus as string;
-							return [{ id: "period-1" }];
-						}
-						if (table === timeRecord) {
-							if (
-								raceAt === "timeRecord" ||
-								state.timeRecordStatus !== "pending"
-							)
-								return [];
-							state.timeRecordStatus = values.approvalState as string;
-							return [{ id: "record-1" }];
-						}
-						return [];
-					}),
-				})),
-			})),
-		})),
-		insert: vi.fn((table: unknown) => ({
-			values: vi.fn(async () => {
-				if (table === timeRecordApprovalDecision) state.decisionCount += 1;
-				if (table === auditLog) state.auditCount += 1;
-			}),
-		})),
-	};
-	const dbService = DatabaseService.of({
-		db: {
-			select: vi.fn(() => ({
-				from: vi.fn(() => ({ where: vi.fn(() => sql`true`) })),
-			})),
-			query: {
-				employee: {
-					findFirst: vi.fn(async () => ({
-						id: "manager-1",
-						userId: "manager-user-1",
-						organizationId: "org-1",
-						isActive: true,
-						user: {
-							id: "manager-user-1",
-							name: "Morgan Manager",
-							email: "morgan@example.com",
-							image: null,
-						},
-					})),
-				},
-			},
-			transaction: vi.fn(
-				async (callback: (client: typeof tx) => Promise<void>) => {
-					const snapshot = { ...state };
-					try {
-						await callback(tx);
-					} catch (error) {
-						state = snapshot;
-						throw error;
-					}
-				},
-			),
-		} as never,
-		query: (_name, operation) => Effect.promise(operation),
-	});
-
-	return { dbService, state: () => state };
-}

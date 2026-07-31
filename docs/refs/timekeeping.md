@@ -42,6 +42,15 @@ The correct model is:
 
 Do not normalize both endpoints to the viewer's timezone for audit meaning.
 
+For surcharge rules, a completed segment is the half-open UTC interval from its
+linked clock-in instant to its linked clock-out instant. Local opening boundaries
+use the clock-in entry's captured fixed offset, and local closing boundaries use
+the clock-out entry's captured fixed offset. The IANA timezone names are required
+supporting evidence but never replace those offsets. If the offsets differ because
+of travel or DST, do not invent an interior transition; intersect the resulting
+local rule interval with the authoritative UTC segment duration. Synthetic split
+segments follow the same rule using their linked entries' stored captures.
+
 ## Manual Entries
 
 Manual entry wall-clock times must be interpreted in the timezone the UI says they are in.
