@@ -75,7 +75,6 @@
     "startTrial": "Ücretsiz Denemeyi Başlat",
     "status": {
       "canceled": "İptal edildi",
-      "noSubscription": "Abonelik Yok",
       "pastDue": "Vadesi Geçmiş",
       "trial": "Deneme"
     },

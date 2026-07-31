@@ -134,11 +134,8 @@
         "ascending": "αύξουσα",
         "descending": "φθίνουσα"
       },
-      "sortByTimeBalance": "Ταξινόμηση κατά ετήσιο υπόλοιπο",
-      "sortByTimeBalanceWithDirection": "Ταξινόμηση κατά ετήσιο υπόλοιπο ({direction})",
       "status": "Κατάσταση",
-      "team": "Ομάδα",
-      "timeBalance": "Ετήσιο υπόλοιπο"
+      "team": "Ομάδα"
     },
     "title": "Η ομάδα σας",
     "view": {

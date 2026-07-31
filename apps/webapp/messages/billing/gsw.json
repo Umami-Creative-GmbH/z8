@@ -75,7 +75,6 @@
     "startTrial": "Choschtelos teste",
     "status": {
       "canceled": "Chündigt",
-      "noSubscription": "Keis Abo",
       "pastDue": "Überfällig",
       "trial": "Testabo"
     },

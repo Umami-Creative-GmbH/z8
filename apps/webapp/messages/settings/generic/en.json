@@ -454,7 +454,7 @@
       "title": "Notification Settings"
     },
     "organizations": {
-      "description": "Manage organization details and configuration",
+      "description": "Manage organization members, invitations, and details",
       "notFound": {
         "description": "The organization could not be found or you don't have access to it.",
         "title": "Organization Not Found"
@@ -830,8 +830,10 @@
       "cardDescShort": "Stay hydrated while you work",
       "cardTitle": "Water Reminders",
       "dailyGoal": "Daily Goal",
+      "decreaseDailyGoal": "Decrease daily goal",
       "description": "Configure water reminders and hydration tracking during your work sessions",
       "glasses": "glasses",
+      "increaseDailyGoal": "Increase daily goal",
       "reminderFrequency": "Reminder Frequency",
       "saved": "Wellness settings saved",
       "saveError": "Failed to save wellness settings",

@@ -234,17 +234,23 @@
       "weekSum": "Toplam"
     },
     "split": {
+      "ambiguousTime": "Hangi yinelemenin kullanılacağını seçin",
+      "chooseOccurrence": "Yineleme seçin",
       "confirm": "Çalışma Dönemini Böl",
       "currentPeriod": "Mevcut Çalışma Dönemi",
       "description": "Bu çalışma dönemini iki ayrı oturuma bölün.",
+      "earlierOccurrence": "Daha önceki yineleme",
       "failed": "Çalışma dönemi bölünemedi",
       "firstNotes": "İlk dönem için notlar (isteğe bağlı)",
       "firstPeriod": "İlk Dönem",
       "invalidTime": "Bölünme zamanı, başlangıç ve bitiş zamanları arasında olmalıdır",
+      "laterOccurrence": "Daha sonraki yineleme",
+      "nonexistentTime": "Bu tarihte bölünmüş zaman mevcut değil",
       "preview": "Önizleme",
       "secondNotes": "İkinci dönem için notlar (isteğe bağlı)",
       "secondPeriod": "İkinci Dönem",
       "splitAt": "Bölünme zamanı",
+      "splitDate": "Bölünmüş tarih",
       "success": "Çalışma dönemi başarıyla bölündü",
       "title": "Çalışma Dönemini Böl"
     },

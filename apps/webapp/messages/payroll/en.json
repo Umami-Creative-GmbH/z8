@@ -1,10 +1,5 @@
 {
   "payroll": {
-    "accessDenied": {
-      "description": "You do not have access to payroll data for the active organization.",
-      "help": "Ask an organization administrator to assign payroll access if you need this workspace.",
-      "title": "No payroll access"
-    },
     "actions": {
       "apply": "Apply",
       "downloadPdf": "Download PDF",
@@ -46,10 +41,13 @@
       "actionFailed": "Payroll workspace action failed",
       "activeOrganizationEmployeeRequired": "Active organization employee context is required",
       "authenticationRequired": "Authentication required",
+      "blockerNotDismissible": "Payroll blocker cannot be dismissed",
       "employeeIdsMustBeArray": "employeeIds must be an array",
       "employeeIdsMustContainOnlyStrings": "employeeIds must contain only strings",
       "endDateAfterStart": "End date must be on or after start date",
       "exportFormatNotConfigured": "Payroll export format is not configured",
+      "invalidBlockerId": "Invalid payroll blocker ID",
+      "invalidBlockerType": "Invalid payroll blocker type",
       "mustBeIsoDate": "{field} must be an ISO date",
       "mustBeValidIsoDate": "{field} must be a valid ISO date",
       "noAssignedEmployees": "No payroll employees are assigned to your access scope",
@@ -84,10 +82,20 @@
       "start": "Start"
     },
     "scope": {
-      "assignedEmployees": "Assigned employees",
-      "assignedTeams": "Assigned teams",
+      "allManaged": "All employees and teams I manage",
+      "apply": "Apply",
+      "cancel": "Cancel",
+      "currentScope": "Current scope",
       "description": "Narrow this payroll workspace by assigned employees or teams.",
+      "noAssignedEmployees": "No assigned employees in this payroll scope.",
       "noAssignedTeams": "No assigned teams in this payroll scope.",
+      "selectedEmployeesCount": "{count} employees",
+      "selectedSummary": "{summary} selected",
+      "selectedTeamsCount": "{count} teams",
+      "specificEmployees": "Specific employees",
+      "specificEmployeesDescription": "Choose employees to include in this payroll scope.",
+      "specificTeams": "Specific teams",
+      "specificTeamsDescription": "Choose teams to include in this payroll scope.",
       "title": "Payroll scope"
     },
     "summary": {

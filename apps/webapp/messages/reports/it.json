@@ -207,6 +207,7 @@
         "sessions": "Sessioni",
         "title": "Ripartizione team"
       },
+      "title": "Report di progetto",
       "toast": {
         "failedGenerate": "Impossibile generare report",
         "failedPortfolio": "Impossibile generare report portafoglio",

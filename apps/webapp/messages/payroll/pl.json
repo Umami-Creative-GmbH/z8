@@ -1,10 +1,5 @@
 {
   "payroll": {
-    "accessDenied": {
-      "description": "Nie masz dostępu do danych płacowych dla aktywnej organizacji.",
-      "help": "Poproś administratora organizacji o przyznanie dostępu do płac, jeśli potrzebujesz tego obszaru roboczego.",
-      "title": "Brak dostępu do płac"
-    },
     "actions": {
       "apply": "Zastosuj",
       "downloadPdf": "Pobierz PDF",
@@ -15,13 +10,13 @@
       "clearFalsePositive": "Usuń fałszywy alarm",
       "clearingFalsePositive": "Usuwanie fałszywego alarmu",
       "dateUnavailable": "Data niedostępna",
-      "missingClockOut": "Brak odbicia wyjścia",
+      "missingClockOut": "Brak godziny wyjścia",
       "needReview": "{count, plural, one {# blokada płacowa wymaga sprawdzenia} few {# blokady płacowe wymagają sprawdzenia} other {# blokad płacowych wymaga sprawdzenia}}",
-      "openApprovals": "Otwórz zatwierdzenia",
+      "openApprovals": "Otwarte zatwierdzenia",
       "openCalendar": "Otwórz kalendarz",
       "pendingAbsence": "Oczekująca nieobecność",
       "pendingTimeCorrection": "Oczekująca korekta czasu",
-      "refreshAfterClearFailed": "Blokada została usunięta, ale nie udało się odświeżyć listy płac",
+      "refreshAfterClearFailed": "Blokada usunięta, ale nie można było odświeżyć listy płac",
       "unknownEmployee": "Nieznany pracownik"
     },
     "description": "Sprawdź sumy płac, gotowość i eksporty dla wybranego okresu.",
@@ -46,10 +41,13 @@
       "actionFailed": "Akcja w obszarze roboczym płac nie powiodła się",
       "activeOrganizationEmployeeRequired": "Wymagany jest kontekst aktywnego pracownika organizacji",
       "authenticationRequired": "Wymagane uwierzytelnienie",
+      "blockerNotDismissible": "Nie można odrzucić blokady listy płac",
       "employeeIdsMustBeArray": "employeeIds musi być tablicą",
       "employeeIdsMustContainOnlyStrings": "employeeIds musi zawierać tylko ciągi znaków",
       "endDateAfterStart": "Data końcowa musi być późniejsza lub równa dacie początkowej",
       "exportFormatNotConfigured": "Format eksportu płac nie jest skonfigurowany",
+      "invalidBlockerId": "Nieprawidłowy identyfikator blokady listy płac",
+      "invalidBlockerType": "Nieprawidłowy typ blokady listy płac",
       "mustBeIsoDate": "{field} musi być datą w formacie ISO",
       "mustBeValidIsoDate": "{field} musi być poprawną datą w formacie ISO",
       "noAssignedEmployees": "Brak pracowników płacowych przypisanych do Twojego zakresu dostępu",
@@ -84,10 +82,20 @@
       "start": "Start"
     },
     "scope": {
-      "assignedEmployees": "Przypisani pracownicy",
-      "assignedTeams": "Przypisane zespoły",
+      "allManaged": "Wszyscy pracownicy i zespoły, którymi zarządzam",
+      "apply": "Zastosuj",
+      "cancel": "Anuluj",
+      "currentScope": "Bieżący zakres",
       "description": "Zawęź ten obszar roboczy listy płac według przypisanych pracowników lub zespołów.",
+      "noAssignedEmployees": "Brak przypisanych pracowników w tym zakresie listy płac.",
       "noAssignedTeams": "Brak przypisanych zespołów w tym zakresie listy płac.",
+      "selectedEmployeesCount": "{count} pracowników",
+      "selectedSummary": "Wybrano: {summary}",
+      "selectedTeamsCount": "{count} zespołów",
+      "specificEmployees": "Określeni pracownicy",
+      "specificEmployeesDescription": "Wybierz pracowników, których chcesz uwzględnić w tym zakresie listy płac.",
+      "specificTeams": "Określone zespoły",
+      "specificTeamsDescription": "Wybierz zespoły, które chcesz uwzględnić w tym zakresie listy płac.",
       "title": "Zakres listy płac"
     },
     "summary": {

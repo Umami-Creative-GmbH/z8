@@ -515,6 +515,7 @@
         "deleteDialogDescription": "Bu SSO sağlayıcısını silmek istediğinizden emin misiniz? Kullanıcılar artık bu kimlik sağlayıcısını kullanarak giriş yapamayacak.",
         "deleteDialogTitle": "SSO Sağlayıcısını Sil",
         "deleteError": "SSO sağlayıcısı silinemedi",
+        "deleteProviderAria": "SSO sağlayıcısı {provider} silinsin mi?",
         "deleteSuccess": "SSO sağlayıcısı silindi",
         "description": "Kuruluşunuz için SSO'yu etkinleştirmek üzere OIDC kimlik sağlayıcıları ekleyin.",
         "domainInvalid": "Lütfen geçerli bir alan adı girin (ör. example.com)",

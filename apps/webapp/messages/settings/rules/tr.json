@@ -84,7 +84,6 @@
       "activePolicyTableDescription": "Politikalar önceliğe göre değerlendirilir; eşleşen ilk aktif politika onay zincirini sağlar.",
       "activeStatus": "Aktif durum",
       "addPolicy": "Politika Ekle",
-      "addStage": "Aşama ekle",
       "approvalType": {
         "absenceRequests": "İzin talepleri",
         "absence": "Devamsızlık",
@@ -98,15 +97,6 @@
         "travelExpenses": "Seyahat masrafları"
       },
       "approvalTypes": "Onay türleri",
-      "approver": "Onaylayan",
-      "approverEmployeeId": "Onaylayan Çalışan Kimliği",
-      "approverEmployeeIdPlaceholder": "Örnek: calisan_123…",
-      "approverType": {
-        "directManager": "Doğrudan yönetici",
-        "managerManager": "Yöneticinin yöneticisi",
-        "organizationAdmin": "Kuruluş yöneticisi",
-        "specificEmployee": "Belirli bir çalışan"
-      },
       "conditionsCount": "Koşul sayısı",
       "createPolicy": "Onay Politikası Oluştur",
       "defaultStageLabel": "Yönetici incelemesi",
@@ -118,7 +108,6 @@
       "loadFailed": "Onay politikaları yüklenemedi.",
       "loading": "Politikalar yükleniyor…",
       "namePlaceholder": "Örnek: İzin yükseltme…",
-      "noStages": "Henüz yapılandırılmış onay aşaması yok.",
       "preview": {
         "ariaLabel": "Onay zinciri önizlemesi",
         "badge": "Önizleme kabuğu",
@@ -133,11 +122,7 @@
         "title": "Onay zinciri özeti"
       },
       "priority": "Öncelik",
-      "removeStage": "Aşamayı kaldır",
-      "stageNumber": "{number}. Aşama",
-      "stages": "Onay aşamaları",
       "stagesCount": "Aşama sayısı",
-      "stagesDescription": "Aşamalar sırayla çalışır; her talep ancak mevcut onaylayan kişi kabul ettikten sonra ilerler.",
       "status": {
         "active": "Aktif",
         "inactive": "Pasif"

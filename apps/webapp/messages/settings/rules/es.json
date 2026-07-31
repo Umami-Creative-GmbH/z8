@@ -84,7 +84,6 @@
       "activePolicyTableDescription": "Las políticas se evalúan por prioridad; la primera política activa que coincida proporciona la cadena de aprobación.",
       "activeStatus": "Estado activo",
       "addPolicy": "Añadir política",
-      "addStage": "Añadir etapa",
       "approvalType": {
         "absenceRequests": "Solicitudes de ausencia",
         "absence": "Ausencia",
@@ -98,15 +97,6 @@
         "travelExpenses": "Gastos de viaje"
       },
       "approvalTypes": "Tipos de aprobación",
-      "approver": "Aprobador",
-      "approverEmployeeId": "ID de empleado del aprobador",
-      "approverEmployeeIdPlaceholder": "Ejemplo: empleado_123…",
-      "approverType": {
-        "directManager": "Gerente directo",
-        "managerManager": "Gerente del gerente",
-        "organizationAdmin": "Administrador de la organización",
-        "specificEmployee": "Empleado específico"
-      },
       "conditionsCount": "Número de condiciones",
       "createPolicy": "Crear política de aprobación",
       "defaultStageLabel": "Revisión del gerente",
@@ -118,7 +108,6 @@
       "loadFailed": "No se pudieron cargar las políticas de aprobación.",
       "loading": "Cargando políticas…",
       "namePlaceholder": "Ejemplo: Escalada de ausencias…",
-      "noStages": "Aún no hay etapas de aprobación configuradas.",
       "preview": {
         "ariaLabel": "Vista previa de la cadena de aprobación",
         "badge": "Shell de vista previa",
@@ -133,11 +122,7 @@
         "title": "Resumen de la cadena de vista previa"
       },
       "priority": "Prioridad",
-      "removeStage": "Eliminar etapa",
-      "stageNumber": "Etapa {number}",
-      "stages": "Etapas de aprobación",
       "stagesCount": "Número de etapas",
-      "stagesDescription": "Las etapas se ejecutan en orden; cada solicitud avanza solo después de que el aprobador actual la acepta.",
       "status": {
         "active": "Activo",
         "inactive": "Inactivo"

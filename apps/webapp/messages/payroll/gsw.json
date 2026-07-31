@@ -1,28 +1,23 @@
 {
   "payroll": {
-    "accessDenied": {
-      "description": "Du häsch kei Zuegriff uf d Lohnabrächnigsdate für die aktivi Organisation.",
-      "help": "Bitt en Organisations-Administrator, dir Lohnabrächnigszuegriff z gäh, wänn du dä Arbetsberiich bruchsch.",
-      "title": "Kei Zuegriff uf d Lohnabrächnig"
-    },
     "actions": {
       "apply": "Aawände",
       "downloadPdf": "PDF abelade",
       "triggerExport": "Export starte"
     },
     "blockers": {
-      "clearFailed": "S Lohnabrächnigshindernis het nöd chönne entfernt werde",
-      "clearFalsePositive": "Falschmäldig entferne",
-      "clearingFalsePositive": "Falschmäldig wird entfernt",
-      "dateUnavailable": "Datum nöd verfüegbar",
-      "missingClockOut": "Fählendi Uusstämplig",
+      "clearFailed": "Lohn-Blockierig het nid chönne ufghebt wärde",
+      "clearFalsePositive": "Falsch-Positiv uflöse",
+      "clearingFalsePositive": "Falsch-Positiv wird ufghebt",
+      "dateUnavailable": "Datum nid verfügbar",
+      "missingClockOut": "Stämpelig bim Usgoh fählt",
       "needReview": "{count} Lohnabrächnigshindernis bruched e Prüefig",
-      "openApprovals": "Genehmigunge öffne",
+      "openApprovals": "Offeni Freigabe",
       "openCalendar": "Kaländer öffne",
-      "pendingAbsence": "Uusstahendi Abweseheit",
-      "pendingTimeCorrection": "Uusstahendi Ziitkorrektur",
-      "refreshAfterClearFailed": "S Hindernis isch entfernt, aber d Lohnabrächnig het nöd chönne aktualisiert werde",
-      "unknownEmployee": "Unbekannte Aagstellte"
+      "pendingAbsence": "Pendendi Abweseheit",
+      "pendingTimeCorrection": "Hängigi Ziitkorrektur",
+      "refreshAfterClearFailed": "Blocker isch ufghobe, aber d Lohnabrächnig het nid chönne aktualisiert wärde",
+      "unknownEmployee": "Unbekannte Mitarbeiter"
     },
     "description": "Prüef d Lohnsumme, d Bereitschaft und d Export für die gwählti Periode.",
     "employeeTotals": {
@@ -46,10 +41,13 @@
       "actionFailed": "D'Aktion im Lohnabrechnungs-Arbeitsbereich isch fählgschlage",
       "activeOrganizationEmployeeRequired": "Es isch en aktive Organisations-Mitarbeiter-Kontext erforderlech",
       "authenticationRequired": "Authentifizierig erforderlich",
+      "blockerNotDismissible": "Lohnabrächnigs-Blocker cha nid entfernt wärde",
       "employeeIdsMustBeArray": "employeeIds mues es Array si",
       "employeeIdsMustContainOnlyStrings": "employeeIds dörfe nume Strings enthaute",
       "endDateAfterStart": "S'Änddatum mues glich oder nach em Startdatum si",
       "exportFormatNotConfigured": "S'Format für de Lohnabrechnungs-Export isch nid konfiguriert",
+      "invalidBlockerId": "Ungültigi Lohnabrächnigs-Blocker-ID",
+      "invalidBlockerType": "Ungültige Lohnabrächnigs-Blocker-Typ",
       "mustBeIsoDate": "{field} mues es ISO-Datum si",
       "mustBeValidIsoDate": "{field} mues es gültigs ISO-Datum si",
       "noAssignedEmployees": "Es sind keini Lohnabrechnungs-Mitarbeiter für dine Zuegriffsbereich zuegwise",
@@ -84,10 +82,20 @@
       "start": "Start"
     },
     "scope": {
-      "assignedEmployees": "Zuegordneti Aagstellti",
-      "assignedTeams": "Zuegordneti Teams",
+      "allManaged": "Alli Mitarbeiter und Teams, wo ich verwalte",
+      "apply": "Überneh",
+      "cancel": "Abbräche",
+      "currentScope": "Aktuelle Umfang",
       "description": "Schränk dä Lohn-Arbetsberiich uf zuegordneti Aagstellti oder Teams ii.",
+      "noAssignedEmployees": "Kei zuegordneti Mitarbeiter in däm Lohnabrächnigs-Umfang.",
       "noAssignedTeams": "Kei zuegordneti Teams in däm Lohn-Umfang.",
+      "selectedEmployeesCount": "{count} Mitarbeiter",
+      "selectedSummary": "{summary} usgwählt",
+      "selectedTeamsCount": "{count} Teams",
+      "specificEmployees": "Bstimmti Mitarbeiter",
+      "specificEmployeesDescription": "Wähled Sie d Mitarbeiter us, wo in däm Lohnabrächnigs-Umfang enthalte si sölled.",
+      "specificTeams": "Bstimmti Teams",
+      "specificTeamsDescription": "Wähled Sie d Teams us, wo in däm Lohnabrächnigs-Umfang enthalte si sölled.",
       "title": "Lohn-Umfang"
     },
     "summary": {

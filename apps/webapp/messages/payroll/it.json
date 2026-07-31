@@ -1,26 +1,21 @@
 {
   "payroll": {
-    "accessDenied": {
-      "description": "Non hai accesso ai dati delle buste paga per l'organizzazione attiva.",
-      "help": "Chiedi a un amministratore dell'organizzazione di assegnarti l'accesso alle buste paga se hai bisogno di questo spazio di lavoro.",
-      "title": "Nessun accesso alle buste paga"
-    },
     "actions": {
       "apply": "Applica",
       "downloadPdf": "Scarica PDF",
       "triggerExport": "Avvia esportazione"
     },
     "blockers": {
-      "clearFailed": "Impossibile rimuovere il blocco delle buste paga",
+      "clearFailed": "Impossibile rimuovere il blocco busta paga",
       "clearFalsePositive": "Rimuovi falso positivo",
-      "clearingFalsePositive": "Rimozione del falso positivo",
+      "clearingFalsePositive": "Rimozione falso positivo in corso",
       "dateUnavailable": "Data non disponibile",
-      "missingClockOut": "Timbratura di uscita mancante",
+      "missingClockOut": "Uscita mancante",
       "needReview": "{count} blocchi delle buste paga richiedono una revisione",
-      "openApprovals": "Apri approvazioni",
+      "openApprovals": "Approvazioni aperte",
       "openCalendar": "Apri calendario",
-      "pendingAbsence": "Assenza in attesa",
-      "pendingTimeCorrection": "Correzione oraria in attesa",
+      "pendingAbsence": "Assenza in sospeso",
+      "pendingTimeCorrection": "Correzione oraria in sospeso",
       "refreshAfterClearFailed": "Blocco rimosso, ma non è stato possibile aggiornare le buste paga",
       "unknownEmployee": "Dipendente sconosciuto"
     },
@@ -46,10 +41,13 @@
       "actionFailed": "Azione nell'area di lavoro buste paga non riuscita",
       "activeOrganizationEmployeeRequired": "È richiesto il contesto del dipendente dell'organizzazione attiva",
       "authenticationRequired": "Autenticazione richiesta",
+      "blockerNotDismissible": "Impossibile rimuovere il blocco delle buste paga",
       "employeeIdsMustBeArray": "employeeIds deve essere un array",
       "employeeIdsMustContainOnlyStrings": "employeeIds deve contenere solo stringhe",
       "endDateAfterStart": "La data di fine deve essere uguale o successiva alla data di inizio",
       "exportFormatNotConfigured": "Il formato di esportazione buste paga non è configurato",
+      "invalidBlockerId": "ID blocco buste paga non valido",
+      "invalidBlockerType": "Tipo di blocco buste paga non valido",
       "mustBeIsoDate": "{field} deve essere una data ISO",
       "mustBeValidIsoDate": "{field} deve essere una data ISO valida",
       "noAssignedEmployees": "Nessun dipendente buste paga è assegnato al tuo ambito di accesso",
@@ -84,10 +82,20 @@
       "start": "Inizio"
     },
     "scope": {
-      "assignedEmployees": "Dipendenti assegnati",
-      "assignedTeams": "Team assegnati",
+      "allManaged": "Tutti i dipendenti e i team che gestisco",
+      "apply": "Applica",
+      "cancel": "Annulla",
+      "currentScope": "Ambito corrente",
       "description": "Filtra quest'area di lavoro buste paga per dipendenti o team assegnati.",
+      "noAssignedEmployees": "Nessun dipendente assegnato a questo ambito di busta paga.",
       "noAssignedTeams": "Nessun team assegnato in questo ambito buste paga.",
+      "selectedEmployeesCount": "{count} dipendenti",
+      "selectedSummary": "{summary} selezionati",
+      "selectedTeamsCount": "{count} team",
+      "specificEmployees": "Dipendenti specifici",
+      "specificEmployeesDescription": "Scegli i dipendenti da includere in questo ambito di busta paga.",
+      "specificTeams": "Team specifici",
+      "specificTeamsDescription": "Scegli i team da includere in questo ambito di busta paga.",
       "title": "Ambito buste paga"
     },
     "summary": {

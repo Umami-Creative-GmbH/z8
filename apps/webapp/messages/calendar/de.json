@@ -234,17 +234,23 @@
       "weekSum": "Summe"
     },
     "split": {
+      "ambiguousTime": "Wählen Sie das zu verwendende Vorkommen",
+      "chooseOccurrence": "Vorkommen wählen",
       "confirm": "Arbeitszeitraum teilen",
       "currentPeriod": "Aktueller Arbeitszeitraum",
       "description": "Teilen Sie diesen Arbeitszeitraum in zwei separate Sitzungen auf.",
+      "earlierOccurrence": "Früheres Vorkommen",
       "failed": "Teilen des Arbeitszeitraums fehlgeschlagen",
       "firstNotes": "Notizen für den ersten Zeitraum (optional)",
       "firstPeriod": "Erster Zeitraum",
       "invalidTime": "Der Teilungszeitpunkt muss zwischen Start- und Endzeit liegen",
+      "laterOccurrence": "Späteres Vorkommen",
+      "nonexistentTime": "Die geteilte Zeit existiert an diesem Datum nicht",
       "preview": "Vorschau",
       "secondNotes": "Notizen für den zweiten Zeitraum (optional)",
       "secondPeriod": "Zweiter Zeitraum",
       "splitAt": "Teilen um",
+      "splitDate": "Geteiltes Datum",
       "success": "Arbeitszeitraum erfolgreich geteilt",
       "title": "Arbeitszeitraum teilen"
     },

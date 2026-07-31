@@ -134,11 +134,8 @@
         "ascending": "ascending",
         "descending": "descending"
       },
-      "sortByTimeBalance": "Sort by Year balance",
-      "sortByTimeBalanceWithDirection": "Sort by Year balance ({direction})",
       "status": "Status",
-      "team": "Team",
-      "timeBalance": "Year balance"
+      "team": "Team"
     },
     "title": "Your Team",
     "view": {

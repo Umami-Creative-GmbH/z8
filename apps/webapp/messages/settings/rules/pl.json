@@ -84,7 +84,6 @@
       "activePolicyTableDescription": "Polityki są oceniane według priorytetu; pierwsza pasująca aktywna polityka określa ścieżkę zatwierdzania.",
       "activeStatus": "Status aktywny",
       "addPolicy": "Dodaj politykę",
-      "addStage": "Dodaj etap",
       "approvalType": {
         "absenceRequests": "Wnioski o nieobecność",
         "absence": "Nieobecność",
@@ -98,15 +97,6 @@
         "travelExpenses": "Wydatki podróżne"
       },
       "approvalTypes": "Typy zatwierdzeń",
-      "approver": "Osoba zatwierdzająca",
-      "approverEmployeeId": "ID pracownika zatwierdzającego",
-      "approverEmployeeIdPlaceholder": "Przykład: pracownik_123…",
-      "approverType": {
-        "directManager": "Bezpośredni przełożony",
-        "managerManager": "Przełożony przełożonego",
-        "organizationAdmin": "Administrator organizacji",
-        "specificEmployee": "Konkretny pracownik"
-      },
       "conditionsCount": "Liczba warunków",
       "createPolicy": "Utwórz politykę zatwierdzania",
       "defaultStageLabel": "Weryfikacja przez przełożonego",
@@ -118,7 +108,6 @@
       "loadFailed": "Nie udało się załadować polityk zatwierdzania.",
       "loading": "Ładowanie polityk…",
       "namePlaceholder": "Przykład: Eskalacja nieobecności…",
-      "noStages": "Nie skonfigurowano jeszcze żadnych etapów zatwierdzania.",
       "preview": {
         "ariaLabel": "Podgląd ścieżki zatwierdzania",
         "badge": "Powłoka podglądu",
@@ -133,11 +122,7 @@
         "title": "Podsumowanie ścieżki zatwierdzania"
       },
       "priority": "Priorytet",
-      "removeStage": "Usuń etap",
-      "stageNumber": "Etap {number}",
-      "stages": "Etapy zatwierdzania",
       "stagesCount": "Liczba etapów",
-      "stagesDescription": "Etapy są realizowane w kolejności; każdy wniosek przechodzi dalej dopiero po zaakceptowaniu go przez bieżącego osobę zatwierdzającą.",
       "status": {
         "active": "Aktywna",
         "inactive": "Nieaktywna"

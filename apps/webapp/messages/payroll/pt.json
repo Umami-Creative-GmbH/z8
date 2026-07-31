@@ -1,27 +1,22 @@
 {
   "payroll": {
-    "accessDenied": {
-      "description": "Você não tem acesso aos dados de folha de pagamento da organização ativa.",
-      "help": "Peça a um administrador da organização para atribuir acesso à folha de pagamento se você precisar deste espaço de trabalho.",
-      "title": "Sem acesso à folha de pagamento"
-    },
     "actions": {
       "apply": "Aplicar",
       "downloadPdf": "Baixar PDF",
       "triggerExport": "Acionar exportação"
     },
     "blockers": {
-      "clearFailed": "Não foi possível remover o bloqueio da folha de pagamento",
-      "clearFalsePositive": "Remover falso positivo",
-      "clearingFalsePositive": "Removendo falso positivo",
+      "clearFailed": "Não foi possível limpar o bloqueador de folha de pagamento",
+      "clearFalsePositive": "Limpar falso positivo",
+      "clearingFalsePositive": "Limpando falso positivo",
       "dateUnavailable": "Data indisponível",
-      "missingClockOut": "Registro de saída em falta",
+      "missingClockOut": "Saída não registrada",
       "needReview": "{count} bloqueios de folha de pagamento precisam de revisão",
-      "openApprovals": "Abrir aprovações",
+      "openApprovals": "Aprovações pendentes",
       "openCalendar": "Abrir calendário",
       "pendingAbsence": "Ausência pendente",
-      "pendingTimeCorrection": "Correção de horário pendente",
-      "refreshAfterClearFailed": "Bloqueio removido, mas não foi possível atualizar a folha de pagamento",
+      "pendingTimeCorrection": "Correção de tempo pendente",
+      "refreshAfterClearFailed": "Bloqueio removido, mas a folha de pagamento não pôde ser atualizada",
       "unknownEmployee": "Funcionário desconhecido"
     },
     "description": "Revise os totais da folha de pagamento, prontidão e exportações para o período selecionado.",
@@ -46,10 +41,13 @@
       "actionFailed": "A ação no espaço de trabalho da folha de pagamento falhou",
       "activeOrganizationEmployeeRequired": "O contexto do funcionário da organização ativa é obrigatório",
       "authenticationRequired": "Autenticação necessária",
+      "blockerNotDismissible": "O bloqueio da folha de pagamento não pode ser dispensado",
       "employeeIdsMustBeArray": "employeeIds deve ser uma matriz",
       "employeeIdsMustContainOnlyStrings": "employeeIds deve conter apenas strings",
       "endDateAfterStart": "A data de término deve ser igual ou posterior à data de início",
       "exportFormatNotConfigured": "O formato de exportação da folha de pagamento não está configurado",
+      "invalidBlockerId": "ID de bloqueio da folha de pagamento inválido",
+      "invalidBlockerType": "Tipo de bloqueio da folha de pagamento inválido",
       "mustBeIsoDate": "{field} deve ser uma data ISO",
       "mustBeValidIsoDate": "{field} deve ser uma data ISO válida",
       "noAssignedEmployees": "Nenhum funcionário da folha de pagamento está atribuído ao seu escopo de acesso",
@@ -84,10 +82,20 @@
       "start": "Início"
     },
     "scope": {
-      "assignedEmployees": "Funcionários atribuídos",
-      "assignedTeams": "Equipes atribuídas",
+      "allManaged": "Todos os funcionários e equipes que gerencio",
+      "apply": "Aplicar",
+      "cancel": "Cancelar",
+      "currentScope": "Escopo atual",
       "description": "Filtre este espaço de trabalho de folha de pagamento por funcionários ou equipes atribuídas.",
+      "noAssignedEmployees": "Nenhum funcionário atribuído neste escopo de folha de pagamento.",
       "noAssignedTeams": "Nenhuma equipe atribuída neste escopo de folha de pagamento.",
+      "selectedEmployeesCount": "{count} funcionários",
+      "selectedSummary": "{summary} selecionado",
+      "selectedTeamsCount": "{count} equipes",
+      "specificEmployees": "Funcionários específicos",
+      "specificEmployeesDescription": "Escolha os funcionários para incluir neste escopo de folha de pagamento.",
+      "specificTeams": "Equipes específicas",
+      "specificTeamsDescription": "Escolha as equipes para incluir neste escopo de folha de pagamento.",
       "title": "Escopo da folha de pagamento"
     },
     "summary": {

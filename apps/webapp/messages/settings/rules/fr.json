@@ -84,7 +84,6 @@
       "activePolicyTableDescription": "Les politiques sont évaluées par priorité ; la première politique active correspondante fournit la chaîne d'approbation.",
       "activeStatus": "Statut actif",
       "addPolicy": "Ajouter une politique",
-      "addStage": "Ajouter une étape",
       "approvalType": {
         "absenceRequests": "Demandes d'absence",
         "absence": "Absence",
@@ -98,15 +97,6 @@
         "travelExpenses": "Frais de déplacement"
       },
       "approvalTypes": "Types d'approbation",
-      "approver": "Approbateur",
-      "approverEmployeeId": "ID employé de l'approbateur",
-      "approverEmployeeIdPlaceholder": "Exemple : employé_123…",
-      "approverType": {
-        "directManager": "Manager direct",
-        "managerManager": "Manager du manager",
-        "organizationAdmin": "Administrateur de l'organisation",
-        "specificEmployee": "Employé spécifique"
-      },
       "conditionsCount": "Nombre de conditions",
       "createPolicy": "Créer une politique d'approbation",
       "defaultStageLabel": "Examen par le manager",
@@ -118,7 +108,6 @@
       "loadFailed": "Les politiques d'approbation n'ont pas pu être chargées.",
       "loading": "Chargement des politiques…",
       "namePlaceholder": "Exemple : Escalade d'absence…",
-      "noStages": "Aucune étape d'approbation configurée pour le moment.",
       "preview": {
         "ariaLabel": "Aperçu de la chaîne d'approbation",
         "badge": "Shell d'aperçu",
@@ -133,11 +122,7 @@
         "title": "Résumé de la chaîne d'aperçu"
       },
       "priority": "Priorité",
-      "removeStage": "Supprimer l'étape",
-      "stageNumber": "Étape {number}",
-      "stages": "Étapes d'approbation",
       "stagesCount": "Nombre d'étapes",
-      "stagesDescription": "Les étapes s'exécutent dans l'ordre ; chaque demande n'avance qu'après que l'approbateur actuel l'a acceptée.",
       "status": {
         "active": "Actif",
         "inactive": "Inactif"

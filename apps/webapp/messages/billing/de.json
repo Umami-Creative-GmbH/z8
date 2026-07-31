@@ -75,7 +75,6 @@
     "startTrial": "Kostenlose Testversion starten",
     "status": {
       "canceled": "Gekündigt",
-      "noSubscription": "Kein Abonnement",
       "pastDue": "Überfällig",
       "trial": "Testversion"
     },

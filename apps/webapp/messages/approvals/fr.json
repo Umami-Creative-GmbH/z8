@@ -35,7 +35,7 @@
     "notes": "Notes",
     "noTimeCorrectionApprovals": "Aucune demande de correction de temps en attente à examiner.",
     "offFrom": "congé du",
-    "openDetailsFor": "Ouvrir les détails pour {title}",
+    "openDetailsFor": "Ouvrir les détails pour ${item.summary.title}",
     "openInbox": "Ouvrir la boîte de réception",
     "originalTimes": "Horaires initiaux",
     "pendingRequests": "Demandes en attente",

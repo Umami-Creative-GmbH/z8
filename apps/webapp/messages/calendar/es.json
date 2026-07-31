@@ -234,17 +234,23 @@
       "weekSum": "Suma"
     },
     "split": {
+      "ambiguousTime": "Elige qué ocurrencia usar",
+      "chooseOccurrence": "Elegir ocurrencia",
       "confirm": "Dividir período de trabajo",
       "currentPeriod": "Período de trabajo actual",
       "description": "Divida este período de trabajo en dos sesiones separadas.",
+      "earlierOccurrence": "Ocurrencia anterior",
       "failed": "Error al dividir el período de trabajo",
       "firstNotes": "Notas para el primer período (opcional)",
       "firstPeriod": "Primer período",
       "invalidTime": "La hora de división debe estar entre la hora de inicio y fin",
+      "laterOccurrence": "Ocurrencia posterior",
+      "nonexistentTime": "La hora de división no existe en esta fecha",
       "preview": "Vista previa",
       "secondNotes": "Notas para el segundo período (opcional)",
       "secondPeriod": "Segundo período",
       "splitAt": "Dividir en",
+      "splitDate": "Fecha de división",
       "success": "Período de trabajo dividido con éxito",
       "title": "Dividir período de trabajo"
     },

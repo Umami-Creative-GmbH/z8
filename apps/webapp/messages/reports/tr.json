@@ -207,6 +207,7 @@
         "sessions": "Oturumlar",
         "title": "Ekip Dağılımı"
       },
+      "title": "Proje Raporları",
       "toast": {
         "failedGenerate": "Rapor oluşturulamadı",
         "failedPortfolio": "Portföy raporu oluşturulamadı",

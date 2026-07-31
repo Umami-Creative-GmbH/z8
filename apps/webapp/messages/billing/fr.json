@@ -75,7 +75,6 @@
     "startTrial": "Commencer l'essai gratuit",
     "status": {
       "canceled": "Annulé",
-      "noSubscription": "Aucun abonnement",
       "pastDue": "En retard",
       "trial": "Essai"
     },

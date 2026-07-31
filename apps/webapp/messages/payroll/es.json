@@ -1,27 +1,22 @@
 {
   "payroll": {
-    "accessDenied": {
-      "description": "No tienes acceso a los datos de nómina de la organización activa.",
-      "help": "Pide a un administrador de la organización que te asigne acceso a la nómina si necesitas este espacio de trabajo.",
-      "title": "Sin acceso a nómina"
-    },
     "actions": {
       "apply": "Aplicar",
       "downloadPdf": "Descargar PDF",
       "triggerExport": "Iniciar exportación"
     },
     "blockers": {
-      "clearFailed": "No se pudo eliminar el bloqueo de nómina",
-      "clearFalsePositive": "Descartar falso positivo",
-      "clearingFalsePositive": "Descartando falso positivo",
+      "clearFailed": "No se pudo eliminar el bloqueador de nómina",
+      "clearFalsePositive": "Eliminar falso positivo",
+      "clearingFalsePositive": "Eliminando falso positivo",
       "dateUnavailable": "Fecha no disponible",
-      "missingClockOut": "Falta el fichaje de salida",
+      "missingClockOut": "Falta registro de salida",
       "needReview": "{count} bloqueos de nómina requieren revisión",
-      "openApprovals": "Abrir aprobaciones",
+      "openApprovals": "Aprobaciones pendientes",
       "openCalendar": "Abrir calendario",
       "pendingAbsence": "Ausencia pendiente",
       "pendingTimeCorrection": "Corrección de tiempo pendiente",
-      "refreshAfterClearFailed": "El bloqueo se eliminó, pero no se pudo actualizar la nómina",
+      "refreshAfterClearFailed": "Bloqueo eliminado, pero no se pudo actualizar la nómina",
       "unknownEmployee": "Empleado desconocido"
     },
     "description": "Revisa los totales de nómina, la preparación y las exportaciones para el periodo seleccionado.",
@@ -46,10 +41,13 @@
       "actionFailed": "La acción del espacio de trabajo de nómina falló",
       "activeOrganizationEmployeeRequired": "Se requiere el contexto del empleado de la organización activa",
       "authenticationRequired": "Se requiere autenticación",
+      "blockerNotDismissible": "No se puede descartar el bloqueo de nómina",
       "employeeIdsMustBeArray": "employeeIds debe ser una matriz",
       "employeeIdsMustContainOnlyStrings": "employeeIds solo debe contener cadenas",
       "endDateAfterStart": "La fecha de finalización debe ser igual o posterior a la fecha de inicio",
       "exportFormatNotConfigured": "El formato de exportación de nómina no está configurado",
+      "invalidBlockerId": "ID de bloqueo de nómina no válido",
+      "invalidBlockerType": "Tipo de bloqueo de nómina no válido",
       "mustBeIsoDate": "{field} debe ser una fecha ISO",
       "mustBeValidIsoDate": "{field} debe ser una fecha ISO válida",
       "noAssignedEmployees": "No hay empleados de nómina asignados a su ámbito de acceso",
@@ -84,10 +82,20 @@
       "start": "Inicio"
     },
     "scope": {
-      "assignedEmployees": "Empleados asignados",
-      "assignedTeams": "Equipos asignados",
+      "allManaged": "Todos los empleados y equipos que gestiono",
+      "apply": "Aplicar",
+      "cancel": "Cancelar",
+      "currentScope": "Alcance actual",
       "description": "Filtre este espacio de trabajo de nómina por empleados o equipos asignados.",
+      "noAssignedEmployees": "No hay empleados asignados en este alcance de nómina.",
       "noAssignedTeams": "No hay equipos asignados en este ámbito de nómina.",
+      "selectedEmployeesCount": "{count} empleados",
+      "selectedSummary": "{summary} seleccionados",
+      "selectedTeamsCount": "{count} equipos",
+      "specificEmployees": "Empleados específicos",
+      "specificEmployeesDescription": "Elija los empleados que desea incluir en este alcance de nómina.",
+      "specificTeams": "Equipos específicos",
+      "specificTeamsDescription": "Elija los equipos que desea incluir en este alcance de nómina.",
       "title": "Ámbito de nómina"
     },
     "summary": {
