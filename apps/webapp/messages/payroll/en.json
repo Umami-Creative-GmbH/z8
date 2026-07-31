@@ -11,6 +11,9 @@
       "triggerExport": "Trigger export"
     },
     "blockers": {
+      "clearFailed": "Could not clear payroll blocker",
+      "clearFalsePositive": "Clear false positive",
+      "clearingFalsePositive": "Clearing false positive",
       "dateUnavailable": "Date unavailable",
       "missingClockOut": "Missing clock-out",
       "needReview": "{count} payroll blockers need review",
@@ -18,6 +21,7 @@
       "openCalendar": "Open calendar",
       "pendingAbsence": "Pending absence",
       "pendingTimeCorrection": "Pending time correction",
+      "refreshAfterClearFailed": "Blocker cleared, but payroll could not be refreshed",
       "unknownEmployee": "Unknown employee"
     },
     "description": "Review payroll totals, readiness, and exports for the selected period.",

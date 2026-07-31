@@ -11,6 +11,9 @@
       "triggerExport": "Iniciar exportación"
     },
     "blockers": {
+      "clearFailed": "No se pudo eliminar el bloqueo de nómina",
+      "clearFalsePositive": "Descartar falso positivo",
+      "clearingFalsePositive": "Descartando falso positivo",
       "dateUnavailable": "Fecha no disponible",
       "missingClockOut": "Falta el fichaje de salida",
       "needReview": "{count} bloqueos de nómina requieren revisión",
@@ -18,6 +21,7 @@
       "openCalendar": "Abrir calendario",
       "pendingAbsence": "Ausencia pendiente",
       "pendingTimeCorrection": "Corrección de tiempo pendiente",
+      "refreshAfterClearFailed": "El bloqueo se eliminó, pero no se pudo actualizar la nómina",
       "unknownEmployee": "Empleado desconocido"
     },
     "description": "Revisa los totales de nómina, la preparación y las exportaciones para el periodo seleccionado.",
