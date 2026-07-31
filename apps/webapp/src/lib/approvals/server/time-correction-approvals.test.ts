@@ -5230,7 +5230,7 @@ describe("deleteCancelledTimeCorrectionsInTransaction", () => {
 			canonical?: Record<string, unknown>;
 			entries?: Array<Record<string, unknown>>;
 			historicalEntries?: Array<Record<string, unknown>>;
-			deleteRows?: Array<Array<Record<string, unknown>>>;
+			deleteRows?: Array<Record<string, unknown>>;
 		} = {},
 	) {
 		const lockedEmployee = options.employee ?? {
@@ -5261,11 +5261,9 @@ describe("deleteCancelledTimeCorrectionsInTransaction", () => {
 			correctionIn,
 			correctionOut,
 		];
-		const deleteRows = [
-			...(options.deleteRows ?? [
-				[{ id: cancellationIds.correctionIn }],
-				[{ id: cancellationIds.correctionOut }],
-			]),
+		const deleteRows = options.deleteRows ?? [
+			{ id: cancellationIds.correctionIn },
+			{ id: cancellationIds.correctionOut },
 		];
 		const locks: Array<{ table: unknown; where: unknown }> = [];
 		const deletes: Array<{ table: unknown; where: unknown }> = [];
@@ -5301,7 +5299,7 @@ describe("deleteCancelledTimeCorrectionsInTransaction", () => {
 				where: vi.fn((where: unknown) => {
 					deletes.push({ table, where });
 					return {
-						returning: vi.fn().mockResolvedValue(deleteRows.shift() ?? []),
+						returning: vi.fn().mockResolvedValue(deleteRows),
 					};
 				}),
 			})),
@@ -5329,7 +5327,7 @@ describe("deleteCancelledTimeCorrectionsInTransaction", () => {
 		};
 	}
 
-	it("locks exact source evidence and deletes only inactive corrections once", async () => {
+	it("deletes the exact pending correction set with one scoped mutation", async () => {
 		const fixture = cancellationDb();
 		await deleteCancelledTimeCorrectionsInTransaction(
 			cancellationInput(fixture.dbService),
@@ -5341,16 +5339,30 @@ describe("deleteCancelledTimeCorrectionsInTransaction", () => {
 			timeEntry,
 			timeRecord,
 		]);
-		expect(fixture.deletes.map((item) => item.table)).toEqual([
-			timeEntry,
-			timeEntry,
+		expect(fixture.deletes.map((item) => item.table)).toEqual([timeEntry]);
+		const deletion = new PgDialect().sqlToQuery(
+			fixture.deletes[0]?.where as SQL,
+		);
+		expect(deletion.sql).toContain('"time_entry"."organization_id" = $1');
+		expect(deletion.sql).toContain('"time_entry"."employee_id" = $2');
+		expect(deletion.sql).toContain('"time_entry"."type" = $3');
+		expect(deletion.sql).toContain('"time_entry"."is_superseded" = $4');
+		expect(deletion.sql).toContain(
+			'"time_entry"."superseded_by_id" is null',
+		);
+		expect(deletion.sql).toContain(
+			'("time_entry"."id" = $5 and "time_entry"."replaces_entry_id" = $6) or ("time_entry"."id" = $7 and "time_entry"."replaces_entry_id" = $8)',
+		);
+		expect(deletion.params).toEqual([
+			"org-1",
+			cancellationIds.employee,
+			"correction",
+			true,
+			cancellationIds.correctionIn,
+			cancellationIds.originalIn,
+			cancellationIds.correctionOut,
+			cancellationIds.originalOut,
 		]);
-		for (const item of fixture.deletes) {
-			const values = collectCancellationBoundValues(item.where);
-			expect(values).toEqual(
-				expect.arrayContaining(["org-1", cancellationIds.employee, true]),
-			);
-		}
 		expect(fixture.update).not.toHaveBeenCalled();
 		expect(fixture.transaction).not.toHaveBeenCalled();
 	});
@@ -5822,7 +5834,7 @@ describe("deleteCancelledTimeCorrectionsInTransaction", () => {
 			}),
 		);
 
-		expect(fixture.deletes).toHaveLength(2);
+		expect(fixture.deletes).toHaveLength(1);
 		expect(
 			fixture.deletes.flatMap((item) =>
 				collectCancellationBoundValues(item.where),
@@ -5840,23 +5852,29 @@ describe("deleteCancelledTimeCorrectionsInTransaction", () => {
 	});
 
 	it.each([
-		{ deleteRows: [[], [{ id: cancellationIds.correctionOut }]] },
-		{
-			deleteRows: [
-				[
-					{ id: cancellationIds.correctionIn },
-					{ id: cancellationIds.correctionIn },
-				],
-				[{ id: cancellationIds.correctionOut }],
+		["a partial returned set", [{ id: cancellationIds.correctionIn }]],
+		[
+			"a duplicate returned ID",
+			[
+				{ id: cancellationIds.correctionIn },
+				{ id: cancellationIds.correctionIn },
 			],
-		},
-	])("rejects cancellation delete CAS mismatch %#", async (options) => {
+		],
+		[
+			"an equal-count unexpected ID",
+			[
+				{ id: cancellationIds.correctionIn },
+				{ id: cancellationIds.priorIn },
+			],
+		],
+	] as const)("rejects %s", async (_label, deleteRows) => {
+		const options = { deleteRows: [...deleteRows] };
 		const fixture = cancellationDb(options);
 		await expect(
 			deleteCancelledTimeCorrectionsInTransaction(
 				cancellationInput(fixture.dbService),
 			),
-		).rejects.toThrow(/cancel/i);
+		).rejects.toThrow("Time correction cancellation delete conflict");
 	});
 });
 

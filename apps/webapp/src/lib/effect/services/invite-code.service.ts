@@ -1,8 +1,19 @@
-import { and, desc, eq, inArray, type SQL, sql } from "drizzle-orm";
+import {
+	and,
+	desc,
+	eq,
+	inArray,
+	isNull,
+	lt,
+	or,
+	type SQL,
+	sql,
+} from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { nanoid } from "nanoid";
 import { member, user } from "@/db/auth-schema";
 import {
+	auditLog,
 	employee,
 	type inviteCode as InviteCodeTable,
 	type inviteCodeUsage as InviteCodeUsageTable,
@@ -207,7 +218,7 @@ export const InviteCodeServiceLive = Layer.effect(
 		};
 
 		// Helper to check if code is expired or exhausted
-		const isCodeUsable = (
+		const validateInviteCodeUsability = (
 			inviteCodeRecord: InviteCode,
 		): { usable: boolean; reason?: string } => {
 			if (inviteCodeRecord.status !== "active") {
@@ -228,10 +239,64 @@ export const InviteCodeServiceLive = Layer.effect(
 			return { usable: true };
 		};
 
+		const resolveRedemptionStatus = (
+			memberStatus: string | null | undefined,
+		): Effect.Effect<"pending" | "approved", ValidationError> => {
+			if (memberStatus === "rejected") {
+				return Effect.fail(
+					new ValidationError({
+						message: "Membership for this invite code was rejected",
+						field: "code",
+					}),
+				);
+			}
+			return Effect.succeed(
+				memberStatus === "pending" ? "pending" : "approved",
+			);
+		};
+
+		const getRejectionAuditUserId = (
+			metadata: string | null,
+			inviteCodeId: string,
+		) => {
+			if (!metadata) return null;
+			try {
+				const details: unknown = JSON.parse(metadata);
+				if (
+					details !== null &&
+					typeof details === "object" &&
+					"userId" in details &&
+					typeof details.userId === "string" &&
+					"inviteCodeId" in details &&
+					details.inviteCodeId === inviteCodeId
+				) {
+					return details.userId;
+				}
+			} catch {
+				// Historical audit metadata is unconstrained text.
+			}
+			return null;
+		};
+
 		type RedemptionDb = Pick<
 			typeof dbService.db,
 			"execute" | "query" | "insert" | "update"
 		>;
+
+		const clearPendingInviteCodeIfCurrent = async (
+			dbClient: Pick<typeof dbService.db, "update">,
+			userId: string,
+			expectedCode: string,
+		) => {
+			const [clearedUser] = await dbClient
+				.update(user)
+				.set({ pendingInviteCode: null })
+				.where(
+					and(eq(user.id, userId), eq(user.pendingInviteCode, expectedCode)),
+				)
+				.returning({ id: user.id });
+			return Boolean(clearedUser);
+		};
 
 		const resolveInviteCodeTargetTeamId = async (
 			dbClient: RedemptionDb,
@@ -256,18 +321,19 @@ export const InviteCodeServiceLive = Layer.effect(
 			userId: string,
 			memberRole: unknown,
 		) => {
-			const existingEmployee = await dbClient.query.employee.findFirst({
-				where: and(
-					eq(employee.userId, userId),
-					eq(employee.organizationId, inviteCodeRecord.organizationId),
+			const [existingEmployee, targetTeamId] = await Promise.all([
+				dbClient.query.employee.findFirst({
+					where: and(
+						eq(employee.userId, userId),
+						eq(employee.organizationId, inviteCodeRecord.organizationId),
+					),
+				}),
+				resolveInviteCodeTargetTeamId(
+					dbClient,
+					inviteCodeRecord.organizationId,
+					inviteCodeRecord.defaultTeamId,
 				),
-			});
-
-			const targetTeamId = await resolveInviteCodeTargetTeamId(
-				dbClient,
-				inviteCodeRecord.organizationId,
-				inviteCodeRecord.defaultTeamId,
-			);
+			]);
 
 			if (existingEmployee) {
 				if (!existingEmployee.isActive) {
@@ -306,10 +372,34 @@ export const InviteCodeServiceLive = Layer.effect(
 				userId: string;
 				ipAddress?: string | null;
 				userAgent?: string | null;
+				expectedPendingInviteCode?: string;
 			},
 		) =>
 			dbService.db.transaction(async (tx) => {
 				const redemptionDb = tx as RedemptionDb;
+				await redemptionDb.execute(sql`
+					SELECT ${inviteCode.id}
+					FROM ${inviteCode}
+					WHERE ${inviteCode.id} = ${inviteCodeRecord.id}
+						AND ${inviteCode.organizationId} = ${inviteCodeRecord.organizationId}
+					FOR UPDATE
+				`);
+
+				const lockedInviteCode = await redemptionDb.query.inviteCode.findFirst({
+					where: and(
+						eq(inviteCode.id, inviteCodeRecord.id),
+						eq(inviteCode.organizationId, inviteCodeRecord.organizationId),
+					),
+					with: {
+						organization: {
+							columns: { id: true, name: true, slug: true },
+						},
+					},
+				});
+				if (!lockedInviteCode) {
+					return { unusableReason: "Code is not usable" } as const;
+				}
+
 				const targetUser = await redemptionDb.query.user.findFirst({
 					where: eq(user.id, input.userId),
 					columns: { email: true },
@@ -317,24 +407,91 @@ export const InviteCodeServiceLive = Layer.effect(
 				if (!targetUser) throw new Error("Invite code user not found");
 
 				await acquireEmployeeIdentityLock(redemptionDb, {
-					organizationId: inviteCodeRecord.organizationId,
+					organizationId: lockedInviteCode.organizationId,
 					normalizedEmail: normalizeInvitationEmail(targetUser.email),
 				});
 
 				const existingMember = await redemptionDb.query.member.findFirst({
 					where: and(
 						eq(member.userId, input.userId),
-						eq(member.organizationId, inviteCodeRecord.organizationId),
+						eq(member.organizationId, lockedInviteCode.organizationId),
 					),
 				});
+				if (existingMember?.status === "rejected") {
+					return { rejected: true } as const;
+				}
+
+				const rejectionAudits = await redemptionDb.query.auditLog.findMany({
+					where: and(
+						eq(auditLog.organizationId, lockedInviteCode.organizationId),
+						eq(auditLog.entityType, "membership"),
+						eq(auditLog.entityId, lockedInviteCode.id),
+						eq(auditLog.action, "reject"),
+					),
+					columns: { metadata: true },
+					orderBy: [desc(auditLog.timestamp)],
+				});
+				if (
+					rejectionAudits.some(
+						(audit) =>
+							getRejectionAuditUserId(audit.metadata, lockedInviteCode.id) ===
+							input.userId,
+					)
+				) {
+					return { rejected: true } as const;
+				}
+
+				const { usable, reason } =
+					validateInviteCodeUsability(lockedInviteCode);
+				if (!usable) {
+					if (
+						input.expectedPendingInviteCode &&
+						!(await clearPendingInviteCodeIfCurrent(
+							redemptionDb,
+							input.userId,
+							input.expectedPendingInviteCode,
+						))
+					) {
+						return null;
+					}
+					return { unusableReason: reason ?? "Code is not usable" } as const;
+				}
+
+				let enterpriseDenial: string | undefined;
+				try {
+					await assertEnterpriseIdentityInviteCodeRedemptionAllowed({
+						organizationId: lockedInviteCode.organizationId,
+						userId: input.userId,
+					});
+				} catch (error) {
+					enterpriseDenial =
+						error instanceof Error
+							? error.message
+							: "Invite code redemption is not allowed";
+				}
+
+				if (
+					input.expectedPendingInviteCode &&
+					!(await clearPendingInviteCodeIfCurrent(
+						redemptionDb,
+						input.userId,
+						input.expectedPendingInviteCode,
+					))
+				) {
+					return null;
+				}
+				if (enterpriseDenial) {
+					return { enterpriseDenial } as const;
+				}
+
 				if (existingMember) {
 					if (
-						!inviteCodeRecord.requiresApproval &&
+						!lockedInviteCode.requiresApproval &&
 						existingMember.status === "approved"
 					) {
 						await provisionEmployeeForInviteCode(
 							redemptionDb,
-							inviteCodeRecord,
+							lockedInviteCode,
 							input.userId,
 							existingMember.role,
 						);
@@ -342,7 +499,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					return { member: existingMember, created: false };
 				}
 
-				const memberStatus = inviteCodeRecord.requiresApproval
+				const memberStatus = lockedInviteCode.requiresApproval
 					? "pending"
 					: "approved";
 				const [createdMember] = await redemptionDb
@@ -350,35 +507,52 @@ export const InviteCodeServiceLive = Layer.effect(
 					.values({
 						id: nanoid(),
 						userId: input.userId,
-						organizationId: inviteCodeRecord.organizationId,
+						organizationId: lockedInviteCode.organizationId,
 						role: "member",
 						status: memberStatus,
-						inviteCodeId: inviteCodeRecord.id,
+						inviteCodeId: lockedInviteCode.id,
 						createdAt: new Date(),
 					})
 					.returning();
 
 				await redemptionDb.insert(inviteCodeUsage).values({
-					inviteCodeId: inviteCodeRecord.id,
+					inviteCodeId: lockedInviteCode.id,
 					userId: input.userId,
 					memberId: createdMember.id,
 					ipAddress: input.ipAddress,
 					userAgent: input.userAgent,
 				});
 
-				if (!inviteCodeRecord.requiresApproval) {
+				if (!lockedInviteCode.requiresApproval) {
 					await provisionEmployeeForInviteCode(
 						redemptionDb,
-						inviteCodeRecord,
+						lockedInviteCode,
 						input.userId,
 						createdMember.role,
 					);
 				}
 
-				await redemptionDb
+				const [incrementedInviteCode] = await redemptionDb
 					.update(inviteCode)
 					.set({ currentUses: sql`${inviteCode.currentUses} + 1` })
-					.where(eq(inviteCode.id, inviteCodeRecord.id));
+					.where(
+						and(
+							eq(inviteCode.id, lockedInviteCode.id),
+							eq(inviteCode.organizationId, lockedInviteCode.organizationId),
+							eq(inviteCode.status, "active"),
+							or(
+								isNull(inviteCode.maxUses),
+								lt(inviteCode.currentUses, inviteCode.maxUses),
+							),
+						),
+					)
+					.returning({
+						id: inviteCode.id,
+						currentUses: inviteCode.currentUses,
+					});
+				if (!incrementedInviteCode) {
+					throw new Error("Invite code changed before usage increment");
+				}
 
 				return { member: createdMember, created: true };
 			});
@@ -755,7 +929,7 @@ export const InviteCodeServiceLive = Layer.effect(
 						return { valid: false, error: "Invalid invite code" };
 					}
 
-					const { usable, reason } = isCodeUsable(result);
+					const { usable, reason } = validateInviteCodeUsability(result);
 					if (!usable) {
 						return {
 							valid: false,
@@ -772,7 +946,7 @@ export const InviteCodeServiceLive = Layer.effect(
 					// Validate the code first
 					const validationResult = yield* _(
 						dbService.query("findInviteCode", async () => {
-							return await dbService.db.query.inviteCode.findFirst({
+							const matches = await dbService.db.query.inviteCode.findMany({
 								where: eq(inviteCode.code, input.code.toUpperCase()),
 								with: {
 									organization: {
@@ -783,7 +957,9 @@ export const InviteCodeServiceLive = Layer.effect(
 										},
 									},
 								},
+								limit: 2,
 							});
+							return matches.length === 1 ? matches[0] : null;
 						}),
 					);
 
@@ -800,45 +976,50 @@ export const InviteCodeServiceLive = Layer.effect(
 					}
 
 					const inviteCodeRecord = validationResult;
-					const { usable, reason } = isCodeUsable(inviteCodeRecord);
-
-					if (!usable) {
-						yield* _(
+					const redemption = yield* _(
+						dbService.query("redeemInviteCode", async () => {
+							return await redeemInviteCodeInTransaction(
+								inviteCodeRecord,
+								input,
+							);
+						}),
+					);
+					if (!redemption) {
+						return yield* _(
+							Effect.die(
+								"Direct invite-code redemption unexpectedly became stale",
+							),
+						);
+					}
+					if (redemption.rejected === true) {
+						yield* _(resolveRedemptionStatus("rejected"));
+						return yield* _(
+							Effect.die("Rejected redemption unexpectedly resolved"),
+						);
+					}
+					if (typeof redemption.unusableReason === "string") {
+						return yield* _(
 							Effect.fail(
 								new ValidationError({
-									message: reason || "Code is not usable",
+									message: redemption.unusableReason,
 									field: "code",
 								}),
 							),
 						);
 					}
-
-					yield* _(
-						Effect.tryPromise({
-							try: async () => {
-								await assertEnterpriseIdentityInviteCodeRedemptionAllowed({
-									organizationId: inviteCodeRecord.organizationId,
-									userId: input.userId,
-								});
-							},
-							catch: (error) =>
+					if (typeof redemption.enterpriseDenial === "string") {
+						return yield* _(
+							Effect.fail(
 								new ValidationError({
-									message:
-										error instanceof Error
-											? error.message
-											: "Invite code redemption is not allowed",
+									message: redemption.enterpriseDenial,
 									field: "domainRestrictionEnabled",
 								}),
-						}),
+							),
+						);
+					}
+					const redemptionStatus = yield* _(
+						resolveRedemptionStatus(redemption.member.status),
 					);
-
-					const redemption = yield* _(
-						dbService.query("redeemInviteCode", async () => {
-							return await redeemInviteCodeInTransaction(inviteCodeRecord, input);
-						}),
-					);
-					const redemptionStatus =
-						redemption.member.status === "pending" ? "pending" : "approved";
 
 					if (redemption.created && redemptionStatus === "approved") {
 						yield* _(
@@ -866,19 +1047,83 @@ export const InviteCodeServiceLive = Layer.effect(
 
 			getUsageStats: (inviteCodeId, organizationId) =>
 				Effect.gen(function* (_) {
-					// Verify code exists
-					const existing = yield* _(
-						dbService.query("getInviteCodeById", async () => {
-							return await dbService.db.query.inviteCode.findFirst({
-								where: and(
-									eq(inviteCode.id, inviteCodeId),
-									eq(inviteCode.organizationId, organizationId),
-								),
-							});
+					const stats = yield* _(
+						dbService.query("getUsageStats", async () => {
+							return dbService.db.transaction(
+								async (tx) => {
+									const existing = await tx.query.inviteCode.findFirst({
+										where: and(
+											eq(inviteCode.id, inviteCodeId),
+											eq(inviteCode.organizationId, organizationId),
+										),
+										columns: { id: true },
+									});
+									if (!existing) return null;
+
+									const [usages, rejectionAudits] = await Promise.all([
+										tx.query.inviteCodeUsage.findMany({
+											where: eq(inviteCodeUsage.inviteCodeId, inviteCodeId),
+										}),
+										tx.query.auditLog.findMany({
+											where: and(
+												eq(auditLog.organizationId, organizationId),
+												eq(auditLog.entityType, "membership"),
+												eq(auditLog.entityId, inviteCodeId),
+												eq(auditLog.action, "reject"),
+											),
+										}),
+									]);
+
+									const rejectedUserIds = new Set<string>();
+									for (const audit of rejectionAudits) {
+										const rejectedUserId = getRejectionAuditUserId(
+											audit.metadata,
+											inviteCodeId,
+										);
+										if (rejectedUserId) rejectedUserIds.add(rejectedUserId);
+									}
+
+									const memberIds = usages.map((u) => u.memberId);
+									const approvals = memberIds.length
+										? await tx.query.memberApproval.findMany({
+												where: and(
+													sql`${memberApproval.memberId} = ANY(${memberIds})`,
+													eq(memberApproval.organizationId, organizationId),
+												),
+											})
+										: [];
+
+									const approvalMap = new Map(
+										approvals.map((a) => [a.memberId, a.status]),
+									);
+
+									let pending = 0;
+									let approved = 0;
+									const rejected = rejectedUserIds.size;
+
+									for (const usage of usages) {
+										if (rejectedUserIds.has(usage.userId)) continue;
+										const status = approvalMap.get(usage.memberId);
+										if (status === "approved") {
+											approved++;
+										} else {
+											pending++;
+										}
+									}
+
+									return {
+										total: pending + approved + rejected,
+										pending,
+										approved,
+										rejected,
+									};
+								},
+								{ isolationLevel: "repeatable read" },
+							);
 						}),
 					);
 
-					if (!existing) {
+					if (!stats) {
 						return yield* _(
 							Effect.fail(
 								new NotFoundError({
@@ -889,47 +1134,6 @@ export const InviteCodeServiceLive = Layer.effect(
 							),
 						);
 					}
-
-					const stats = yield* _(
-						dbService.query("getUsageStats", async () => {
-							const usages = await dbService.db.query.inviteCodeUsage.findMany({
-								where: eq(inviteCodeUsage.inviteCodeId, inviteCodeId),
-							});
-
-							// Get member approvals for these members
-							const memberIds = usages.map((u) => u.memberId);
-
-							if (memberIds.length === 0) {
-								return { total: 0, pending: 0, approved: 0, rejected: 0 };
-							}
-
-							const approvals =
-								await dbService.db.query.memberApproval.findMany({
-									where: sql`${memberApproval.memberId} = ANY(${memberIds})`,
-								});
-
-							const approvalMap = new Map(
-								approvals.map((a) => [a.memberId, a.status]),
-							);
-
-							let pending = 0;
-							let approved = 0;
-							let rejected = 0;
-
-							for (const usage of usages) {
-								const status = approvalMap.get(usage.memberId);
-								if (status === "approved") {
-									approved++;
-								} else if (status === "rejected") {
-									rejected++;
-								} else {
-									pending++;
-								}
-							}
-
-							return { total: usages.length, pending, approved, rejected };
-						}),
-					);
 
 					return stats;
 				}),
@@ -958,7 +1162,8 @@ export const InviteCodeServiceLive = Layer.effect(
 						);
 					}
 
-					const { usable, reason } = isCodeUsable(validationResult);
+					const { usable, reason } =
+						validateInviteCodeUsability(validationResult);
 					if (!usable) {
 						yield* _(
 							Effect.fail(
@@ -999,73 +1204,85 @@ export const InviteCodeServiceLive = Layer.effect(
 
 					const code = userRecord.pendingInviteCode;
 
-					// Clear the pending code first (regardless of outcome)
-					yield* _(
+					const clearPendingCode = () =>
 						dbService.query("clearPendingInviteCode", async () => {
-							await dbService.db
-								.update(user)
-								.set({ pendingInviteCode: null })
-								.where(eq(user.id, userId));
-						}),
+							return await clearPendingInviteCodeIfCurrent(
+								dbService.db,
+								userId,
+								code,
+							);
+						});
+
+					const preRedemptionResult = yield* _(
+						Effect.gen(function* (_) {
+							const validationResult = yield* _(
+								dbService.query("findInviteCode", async () => {
+									const matches = await dbService.db.query.inviteCode.findMany({
+										where: eq(inviteCode.code, code.toUpperCase()),
+										with: {
+											organization: {
+												columns: {
+													id: true,
+													name: true,
+													slug: true,
+												},
+											},
+										},
+										limit: 2,
+									});
+									return matches.length === 1 ? matches[0] : null;
+								}),
+							);
+
+							if (!validationResult) return null;
+
+							return validationResult;
+						}).pipe(Effect.either),
 					);
 
-					// Now use the code
-					const validationResult = yield* _(
-						dbService.query("findInviteCode", async () => {
-							return await dbService.db.query.inviteCode.findFirst({
-								where: eq(inviteCode.code, code.toUpperCase()),
-								with: {
-									organization: {
-										columns: {
-											id: true,
-											name: true,
-											slug: true,
-										},
-									},
-								},
+					if (preRedemptionResult._tag === "Left") {
+						const cleared = yield* _(clearPendingCode());
+						if (!cleared) return null;
+						return yield* _(Effect.fail(preRedemptionResult.left));
+					}
+
+					if (!preRedemptionResult.right) {
+						yield* _(clearPendingCode());
+						return null;
+					}
+
+					const inviteCodeRecord = preRedemptionResult.right;
+					const redemption = yield* _(
+						dbService.query("redeemPendingInviteCode", async () => {
+							return await redeemInviteCodeInTransaction(inviteCodeRecord, {
+								userId,
+								expectedPendingInviteCode: code,
 							});
 						}),
 					);
-
-					if (!validationResult) {
-						// Code is no longer valid, but we already cleared it
+					if (!redemption) return null;
+					if (redemption.rejected === true) {
+						yield* _(resolveRedemptionStatus("rejected"));
+						return yield* _(
+							Effect.die("Rejected redemption unexpectedly resolved"),
+						);
+					}
+					if (typeof redemption.unusableReason === "string") {
 						return null;
 					}
-
-					const inviteCodeRecord = validationResult;
-					const { usable } = isCodeUsable(inviteCodeRecord);
-
-					if (!usable) {
-						// Code is expired/exhausted, but we already cleared it
-						return null;
-					}
-
-					yield* _(
-						Effect.tryPromise({
-							try: async () => {
-								await assertEnterpriseIdentityInviteCodeRedemptionAllowed({
-									organizationId: inviteCodeRecord.organizationId,
-									userId,
-								});
-							},
-							catch: (error) =>
+					if (typeof redemption.enterpriseDenial === "string") {
+						return yield* _(
+							Effect.fail(
 								new ValidationError({
-									message:
-										error instanceof Error
-											? error.message
-											: "Invite code redemption is not allowed",
+									message: redemption.enterpriseDenial,
 									field: "domainRestrictionEnabled",
 								}),
-						}),
+							),
+						);
+					}
+					const redemptionStatus = yield* _(
+						resolveRedemptionStatus(redemption.member.status),
 					);
-
-					const redemption = yield* _(
-						dbService.query("redeemPendingInviteCode", async () => {
-							return await redeemInviteCodeInTransaction(inviteCodeRecord, { userId });
-						}),
-					);
-					const redemptionStatus =
-						redemption.member.status === "pending" ? "pending" : "approved";
 
 					if (redemption.created && redemptionStatus === "approved") {
 						yield* _(

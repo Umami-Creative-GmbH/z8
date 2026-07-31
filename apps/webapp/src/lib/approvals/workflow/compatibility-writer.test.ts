@@ -1,8 +1,13 @@
 import { PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it, vi } from "vitest";
+import {
+	approvalChainInstance,
+	approvalChainStageInstance,
+} from "@/db/schema";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { TimeCorrectionWorkflowPayload } from "../domain-adapters/time-correction-contract";
 import {
+	cancelLegacyTimeCorrectionApprovalRows,
 	createApprovalCompatibilityWriter,
 	createLegacyApprovalRowWriter,
 	deterministicLegacyApprovalRequestId,
@@ -227,6 +232,184 @@ function legacyState(
 		capturedAt: occurredAt,
 	};
 }
+
+const cancellationChainId = "70000000-0000-4000-8000-000000000001";
+const cancellationStageIds = [
+	"72000000-0000-4000-8000-000000000001",
+	"72000000-0000-4000-8000-000000000002",
+] as const;
+const unexpectedCancellationStageId = "72000000-0000-4000-8000-999999999999";
+
+function cancellationMutationHarness(
+	returnedStageIds: string[] = [...cancellationStageIds],
+) {
+	const state = legacyState("pending");
+	const inheritedRequest = state.approvalRequest;
+	if (!inheritedRequest) throw new Error("Invalid test fixture");
+	state.source = {
+		...state.source,
+		workflowType: "time_correction",
+		sourceType: "time_entry",
+	};
+	const request = { ...inheritedRequest, entityType: "time_entry" };
+	state.approvalRequest = request;
+	state.chain = {
+		id: cancellationChainId,
+		organizationId: source.organizationId,
+		policyId: "71000000-0000-4000-8000-000000000001",
+		policyNameSnapshot: "Time correction",
+		entityType: "time_entry",
+		entityId: source.sourceId,
+		requesterEmployeeId: request.requestedBy,
+		currentStageOrder: 1,
+		status: "pending",
+		createdAt: occurredAt,
+		updatedAt: occurredAt,
+		completedAt: null,
+	};
+	state.chainRows = cancellationStageIds.map((id, index) => ({
+		id,
+		organizationId: source.organizationId,
+		chainInstanceId: cancellationChainId,
+		policyStageId: `73000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
+		stepOrder: index + 1,
+		labelSnapshot: index === 0 ? "Manager" : "HR",
+		approverTypeSnapshot: "direct_manager",
+		resolvedApproverEmployeeId: `40000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
+		approvalRequestId: index === 0 ? request.id : null,
+		status: "pending",
+		decidedBy: null,
+		decidedAt: null,
+		createdAt: occurredAt,
+		updatedAt: occurredAt,
+	}));
+
+	const events: string[] = [];
+	const updateTables: unknown[] = [];
+	const statements: Array<{ sql: string; params: unknown[] }> = [];
+	const eventFor = (table: unknown) =>
+		table === approvalChainStageInstance
+			? "stage"
+			: table === approvalChainInstance
+				? "chain"
+				: "request";
+	const returnedIdsFor = (table: unknown) =>
+		table === approvalChainStageInstance
+			? returnedStageIds
+			: table === approvalChainInstance
+				? [cancellationChainId]
+				: [request.id];
+	const mutationBuilder = (table: unknown) => ({
+		set: () => ({
+			where: (condition: Parameters<PgDialect["sqlToQuery"]>[0]) => {
+				statements.push(sqlDialect.sqlToQuery(condition));
+				return {
+					returning: async () => {
+						events.push(eventFor(table));
+						return returnedIdsFor(table).map((id) => ({ id }));
+					},
+				};
+			},
+		}),
+	});
+	const deleteBuilder = (table: unknown) => ({
+		where: (condition: Parameters<PgDialect["sqlToQuery"]>[0]) => {
+			statements.push(sqlDialect.sqlToQuery(condition));
+			return {
+				returning: async () => {
+					events.push(eventFor(table));
+					return returnedIdsFor(table).map((id) => ({ id }));
+				},
+			};
+		},
+	});
+	const input: Parameters<typeof cancelLegacyTimeCorrectionApprovalRows>[0] = {
+		dbService: {
+			db: {
+				update: (table: unknown) => {
+					updateTables.push(table);
+					return mutationBuilder(table);
+				},
+				delete: (table: unknown) => deleteBuilder(table),
+			} as never,
+		},
+		organizationId: source.organizationId,
+		workPeriodId: source.sourceId,
+		requesterEmployeeId: request.requestedBy,
+		state,
+		cancelledAt: new Date(occurredAt.toString()),
+		retainDirectCancellation: true,
+		directCancellationMetadata: { cancellation: "retained" },
+	};
+	return { events, input, statements, updateTables };
+}
+
+describe("legacy time correction cancellation mutations", () => {
+	it("cancels two pending stages in one scoped update before the chain", async () => {
+		const harness = cancellationMutationHarness();
+
+		await cancelLegacyTimeCorrectionApprovalRows(harness.input);
+
+		expect(
+			harness.updateTables.filter(
+				(table) => table === approvalChainStageInstance,
+			),
+		).toHaveLength(1);
+		expect(harness.events.indexOf("stage")).toBeLessThan(
+			harness.events.indexOf("chain"),
+		);
+		const stageMutation = harness.statements[0];
+		expect(stageMutation?.sql).toMatch(/organization_id/i);
+		expect(stageMutation?.sql).toMatch(/chain_instance_id/i);
+		expect(stageMutation?.sql).toMatch(/status/i);
+		expect(stageMutation?.sql).toMatch(/approval_request_id[^)]*is null/i);
+		expect(stageMutation?.params).toEqual(
+			expect.arrayContaining([
+				source.organizationId,
+				cancellationChainId,
+				"pending",
+				...cancellationStageIds,
+				harness.input.state.approvalRequest?.id,
+			]),
+		);
+	});
+
+	it("rejects a partial returned stage set before chain or request mutation", async () => {
+		const harness = cancellationMutationHarness([cancellationStageIds[0]]);
+
+		await expect(
+			cancelLegacyTimeCorrectionApprovalRows(harness.input),
+		).rejects.toThrow("Time correction cancellation is unavailable");
+		expect(harness.updateTables).toEqual([approvalChainStageInstance]);
+		expect(harness.events).toEqual(["stage"]);
+	});
+
+	it("rejects duplicate returned stage IDs before later phases", async () => {
+		const harness = cancellationMutationHarness([
+			cancellationStageIds[0],
+			cancellationStageIds[0],
+		]);
+
+		await expect(
+			cancelLegacyTimeCorrectionApprovalRows(harness.input),
+		).rejects.toThrow("Time correction cancellation is unavailable");
+		expect(harness.updateTables).toEqual([approvalChainStageInstance]);
+		expect(harness.events).toEqual(["stage"]);
+	});
+
+	it("rejects an equal-count unexpected returned stage ID before later phases", async () => {
+		const harness = cancellationMutationHarness([
+			cancellationStageIds[0],
+			unexpectedCancellationStageId,
+		]);
+
+		await expect(
+			cancelLegacyTimeCorrectionApprovalRows(harness.input),
+		).rejects.toThrow("Time correction cancellation is unavailable");
+		expect(harness.updateTables).toEqual([approvalChainStageInstance]);
+		expect(harness.events).toEqual(["stage"]);
+	});
+});
 
 function commandResult(
 	status: "pending" | "approved" | "rejected" | "cancelled",

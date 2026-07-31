@@ -2,6 +2,7 @@ import { and, count, desc, eq, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { member, user } from "@/db/auth-schema";
 import {
+	auditLog,
 	employee,
 	inviteCode,
 	inviteCodeUsage,
@@ -10,6 +11,10 @@ import {
 } from "@/db/schema";
 import { acquireEmployeeIdentityLock } from "@/lib/auth/employee-identity-lock";
 import { normalizeInvitationEmail } from "@/lib/auth/employee-invitation-draft";
+import {
+	completeRemovedMemberCleanupPostCommit,
+	revokeRemovedMemberAccessInTransaction,
+} from "@/lib/auth/member-removal-cleanup";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import {
 	type AuthorizationError,
@@ -238,24 +243,25 @@ export const PendingMemberServiceLive = Layer.effect(
 					.returning();
 				if (!approvedMember) return null;
 
-				const [approval] = await tx
-					.insert(memberApproval)
-					.values({
-						memberId: input.memberId,
-						organizationId: input.organizationId,
-						status: "approved",
-						assignedTeamId: input.assignedTeamId,
-						approvedBy: input.approvedBy,
-						notes: input.notes,
-					})
-					.returning();
-
-				const existingEmployee = await tx.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, approvedMember.userId),
-						eq(employee.organizationId, input.organizationId),
-					),
-				});
+				const [[approval], existingEmployee] = await Promise.all([
+					tx
+						.insert(memberApproval)
+						.values({
+							memberId: input.memberId,
+							organizationId: input.organizationId,
+							status: "approved",
+							assignedTeamId: input.assignedTeamId,
+							approvedBy: input.approvedBy,
+							notes: input.notes,
+						})
+						.returning(),
+					tx.query.employee.findFirst({
+						where: and(
+							eq(employee.userId, approvedMember.userId),
+							eq(employee.organizationId, input.organizationId),
+						),
+					}),
+				]);
 
 				if (!existingEmployee) {
 					await tx.insert(employee).values({
@@ -283,8 +289,35 @@ export const PendingMemberServiceLive = Layer.effect(
 				return approval;
 			});
 
-		const rejectPendingMemberAtomically = async (input: RejectMemberInput) =>
-			dbService.db.transaction(async (tx) => {
+		const rejectPendingMemberAtomically = async (input: RejectMemberInput) => {
+			const result = await dbService.db.transaction(async (tx) => {
+				const candidate = await tx.query.member.findFirst({
+					where: and(
+						eq(member.id, input.memberId),
+						eq(member.organizationId, input.organizationId),
+						eq(member.status, "pending"),
+					),
+				});
+				if (
+					!candidate ||
+					candidate.id !== input.memberId ||
+					candidate.organizationId !== input.organizationId ||
+					candidate.status !== "pending"
+				) {
+					return null;
+				}
+
+				const userRecord = await tx.query.user.findFirst({
+					where: eq(user.id, candidate.userId),
+				});
+				if (!userRecord) throw new Error("Pending member user not found");
+
+				// Match approval and redemption ordering: identity lock, then member row lock.
+				await acquireEmployeeIdentityLock(tx, {
+					organizationId: input.organizationId,
+					normalizedEmail: normalizeInvitationEmail(userRecord.email),
+				});
+
 				await tx.execute(sql`
 					SELECT ${member.id}
 					FROM ${member}
@@ -316,11 +349,6 @@ export const PendingMemberServiceLive = Layer.effect(
 					),
 				});
 				if (existingApproval) return null;
-
-				const userRecord = await tx.query.user.findFirst({
-					where: eq(user.id, memberRecord.userId),
-				});
-				if (!userRecord) throw new Error("Pending member user not found");
 
 				const usage = await tx.query.inviteCodeUsage.findFirst({
 					where: eq(inviteCodeUsage.memberId, input.memberId),
@@ -364,6 +392,30 @@ export const PendingMemberServiceLive = Layer.effect(
 					})
 					.returning();
 
+				const inviteIdentity =
+					usage?.inviteCode?.id ?? memberRecord.inviteCodeId;
+				if (!inviteIdentity) {
+					throw new Error("Pending member invite identity not found");
+				}
+
+				await tx.insert(auditLog).values({
+					organizationId: input.organizationId,
+					entityType: "membership",
+					entityId: inviteIdentity,
+					action: "reject",
+					performedBy: input.rejectedBy,
+					changes: JSON.stringify({
+						status: { from: "pending", to: "rejected" },
+					}),
+					metadata: JSON.stringify({
+						memberId: memberRecord.id,
+						userId: memberRecord.userId,
+						inviteCodeId: inviteIdentity,
+						inviteCode: usage?.inviteCode?.code ?? null,
+						notes: input.notes,
+					}),
+				});
+
 				const [removedMember] = await tx
 					.delete(member)
 					.where(
@@ -378,8 +430,23 @@ export const PendingMemberServiceLive = Layer.effect(
 					throw new Error("Pending member changed before rejection");
 				}
 
-				return { pendingMember, rejection };
+				const cleanup = await revokeRemovedMemberAccessInTransaction(
+					tx,
+					memberRecord.userId,
+					input.organizationId,
+				);
+
+				return { cleanup, pendingMember, rejection };
 			});
+
+			if (result) {
+				await completeRemovedMemberCleanupPostCommit({
+					organizationId: input.organizationId,
+					sessionTokens: result.cleanup.sessionTokens,
+				});
+			}
+			return result;
+		};
 
 		return PendingMemberService.of({
 			listPending: (query) =>

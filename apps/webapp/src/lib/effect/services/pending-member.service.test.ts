@@ -1,7 +1,9 @@
+import type { SQL } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
 import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { member } from "@/db/auth-schema";
-import { employee, memberApproval } from "@/db/schema";
+import { auditLog, employee, memberApproval } from "@/db/schema";
 import { DatabaseError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
 import {
@@ -13,14 +15,40 @@ const billingMock = vi.hoisted(() => ({
 	sync: vi.fn(async () => undefined),
 }));
 
+const removalCleanupMock = vi.hoisted(() => ({
+	complete: vi.fn(async () => undefined),
+	completePostCommit: vi.fn(async () => undefined),
+	revokeInTransaction: vi.fn(async () => ({
+		accessRestored: false,
+		sessionTokens: ["session-token"],
+	})),
+}));
+
 vi.mock("@/lib/billing/seat-sync-trigger", () => ({
 	syncBillingSeatsAfterMemberChange: billingMock.sync,
 }));
+
+vi.mock("@/lib/auth/member-removal-cleanup", () => ({
+	completeRemovedMemberCleanup: removalCleanupMock.complete,
+	completeRemovedMemberCleanupPostCommit: removalCleanupMock.completePostCommit,
+	revokeRemovedMemberAccessInTransaction:
+		removalCleanupMock.revokeInTransaction,
+}));
+
+function deferred<T>() {
+	let resolve!: (value: T) => void;
+	const promise = new Promise<T>((resolvePromise) => {
+		resolve = resolvePromise;
+	});
+	return { promise, resolve };
+}
 
 type ApprovalFakeOptions = {
 	memberOrganizationId?: string;
 	transitionWins?: boolean;
 	provisioningFails?: boolean;
+	approvalInsertPromise?: Promise<void>;
+	employeeReadPromise?: Promise<void>;
 };
 
 function collectColumnNames(value: unknown): string[] {
@@ -91,7 +119,13 @@ function approvalLayer(options: ApprovalFakeOptions = {}) {
 			inviteCodeUsage: { findFirst: vi.fn(async () => null) },
 			memberApproval: { findFirst: vi.fn(async () => null) },
 			team: { findFirst: vi.fn(async () => ({ id: "team-1" })) },
-			employee: { findFirst: vi.fn(async () => null) },
+			employee: {
+				findFirst: vi.fn(async () => {
+					events.push("employee-read-start");
+					await options.employeeReadPromise;
+					return null;
+				}),
+			},
 		},
 		execute: vi.fn(async () => {
 			events.push("identity-lock");
@@ -118,7 +152,11 @@ function approvalLayer(options: ApprovalFakeOptions = {}) {
 				if (table === memberApproval) {
 					approvals.push(values);
 					return {
-						returning: vi.fn(async () => [{ id: "approval-1", ...values }]),
+						returning: vi.fn(async () => {
+							events.push("approval-insert-start");
+							await options.approvalInsertPromise;
+							return [{ id: "approval-1", ...values }];
+						}),
 					};
 				}
 				if (table === employee) {
@@ -232,6 +270,33 @@ describe("PendingMemberService approval transactions", () => {
 		});
 	});
 
+	it("starts the approval insert and employee read together after winning the transition", async () => {
+		const approvalInsert = deferred<void>();
+		const employeeRead = deferred<void>();
+		const fake = approvalLayer({
+			approvalInsertPromise: approvalInsert.promise,
+			employeeReadPromise: employeeRead.promise,
+		});
+		const approval = approveWith(fake.layer);
+		let approvalOutcome!: PromiseSettledResult<Awaited<typeof approval>>;
+
+		try {
+			await vi.waitFor(() => {
+				expect(fake.events).toContain("approval-insert-start");
+			});
+			expect(fake.events).toContain("employee-read-start");
+		} finally {
+			approvalInsert.resolve();
+			employeeRead.resolve();
+			[approvalOutcome] = await Promise.allSettled([approval]);
+		}
+
+		if (approvalOutcome.status === "rejected") {
+			throw approvalOutcome.reason;
+		}
+		expect(approvalOutcome.value).toMatchObject({ success: true });
+	});
+
 	it("rolls back the member and approval when employee provisioning fails", async () => {
 		const fake = approvalLayer({ provisioningFails: true });
 
@@ -296,17 +361,20 @@ describe("PendingMemberService approval transactions", () => {
 		["a lost pending-status race", { transitionWins: false }],
 		["an employee provisioning rollback", { provisioningFails: true }],
 		["a cross-organization member", { memberOrganizationId: "org-other" }],
-	] as const)("counts %s as a bulk failure without committed side effects", async (_case, options) => {
-		const fake = approvalLayer(options);
+	] as const)(
+		"counts %s as a bulk failure without committed side effects",
+		async (_case, options) => {
+			const fake = approvalLayer(options);
 
-		await expect(bulkApproveWith(fake.layer)).resolves.toEqual({
-			approved: 0,
-			failed: 1,
-		});
-		expect(fake.approvals).toEqual([]);
-		expect(fake.employees).toEqual([]);
-		expect(billingMock.sync).not.toHaveBeenCalled();
-	});
+			await expect(bulkApproveWith(fake.layer)).resolves.toEqual({
+				approved: 0,
+				failed: 1,
+			});
+			expect(fake.approvals).toEqual([]);
+			expect(fake.employees).toEqual([]);
+			expect(billingMock.sync).not.toHaveBeenCalled();
+		},
+	);
 });
 
 describe("PendingMemberService pending-state queries", () => {
@@ -409,23 +477,49 @@ describe("PendingMemberService pending-state queries", () => {
 type RejectionFakeOptions = {
 	memberOrganizationId?: string;
 	memberStatus?: string;
-	statusRace?: boolean;
+	transitionWins?: boolean;
 	existingApproval?: boolean;
 };
 
 function rejectionLayer(options: RejectionFakeOptions = {}) {
-	const approvals: Array<Record<string, unknown>> = [];
-	const deletes: unknown[] = [];
+	const members = [
+		{
+			id: "member-1",
+			userId: "user-1",
+			organizationId: options.memberOrganizationId ?? "org-1",
+			role: "member",
+			status: options.memberStatus ?? "pending",
+			createdAt: new Date("2026-01-01T00:00:00.000Z"),
+		},
+	];
+	const approvals: Array<Record<string, unknown>> = options.existingApproval
+		? [
+				{
+					id: "approval-existing",
+					memberId: "member-1",
+					organizationId: "org-1",
+					status: "approved",
+				},
+			]
+		: [];
+	const inviteCodeUsages: Array<Record<string, unknown>> = [
+		{
+			id: "usage-1",
+			inviteCodeId: "invite-1",
+			memberId: "member-1",
+			userId: "user-1",
+			usedAt: new Date("2026-01-01T00:00:00.000Z"),
+			inviteCode: { id: "invite-1", code: "JOIN-TEAM", label: "Invite" },
+		},
+	];
+	const memberUpdates: Array<Record<string, unknown>> = [];
+	const audits: Array<Record<string, unknown>> = [];
+	const employeeUpdates: Array<Record<string, unknown>> = [];
+	const deletedMembers: Array<Record<string, unknown>> = [];
 	const memberLookups: unknown[] = [];
+	const memberUpdatePredicates: unknown[] = [];
+	const memberDeletePredicates: unknown[] = [];
 	const events: string[] = [];
-	const record = {
-		id: "member-1",
-		userId: "user-1",
-		organizationId: options.memberOrganizationId ?? "org-1",
-		role: "member",
-		status: options.memberStatus ?? "pending",
-		createdAt: new Date("2026-01-01T00:00:00.000Z"),
-	};
 	const userRecord = {
 		id: "user-1",
 		name: "Ada Lovelace",
@@ -438,35 +532,71 @@ function rejectionLayer(options: RejectionFakeOptions = {}) {
 			member: {
 				findFirst: vi.fn(async (query) => {
 					memberLookups.push(query.where);
-					return record;
+					return members[0] ?? null;
 				}),
 			},
 			user: { findFirst: vi.fn(async () => userRecord) },
-			inviteCodeUsage: { findFirst: vi.fn(async () => null) },
+			inviteCodeUsage: {
+				findFirst: vi.fn(async () => inviteCodeUsages[0] ?? null),
+			},
 			memberApproval: {
-				findFirst: vi.fn(async () =>
-					options.existingApproval ? { status: "approved" } : null,
-				),
+				findFirst: vi.fn(async () => approvals[0] ?? null),
 			},
 		},
-		execute: vi.fn(async () => {
-			events.push("lock");
+		execute: vi.fn(async (statement: SQL) => {
+			const query = new PgDialect().sqlToQuery(statement);
+			events.push(
+				query.sql.includes("pg_advisory_xact_lock")
+					? "identity-lock"
+					: "member-lock",
+			);
 		}),
-		insert: vi.fn(() => ({
+		insert: vi.fn((table) => ({
 			values: vi.fn((values: Record<string, unknown>) => {
-				approvals.push(values);
+				if (table === auditLog) {
+					audits.push(values);
+					return {
+						returning: vi.fn(async () => [{ id: "audit-1", ...values }]),
+					};
+				}
+				if (table === memberApproval) approvals.push(values);
 				return {
 					returning: vi.fn(async () => [{ id: "approval-1", ...values }]),
 				};
 			}),
 		})),
+		update: vi.fn((table) => ({
+			set: vi.fn((values: Record<string, unknown>) => ({
+				where: vi.fn((where: unknown) => {
+					if (table === employee) {
+						employeeUpdates.push(values);
+						return Promise.resolve(undefined);
+					}
+					if (table !== member) return Promise.resolve(undefined);
+					memberUpdatePredicates.push(where);
+					return {
+						returning: vi.fn(async () => {
+							if (options.transitionWins === false || !members[0]) return [];
+							memberUpdates.push(values);
+							Object.assign(members[0], values);
+							return [{ id: members[0].id, status: members[0].status }];
+						}),
+					};
+				}),
+			})),
+		})),
 		delete: vi.fn(() => ({
 			where: vi.fn((where: unknown) => {
-				deletes.push(where);
+				memberDeletePredicates.push(where);
 				return {
-					returning: vi.fn(async () =>
-						options.statusRace ? [] : [{ ...record }],
-					),
+					returning: vi.fn(async () => {
+						if (options.transitionWins === false || !members[0]) return [];
+						const [removed] = members.splice(0, 1);
+						deletedMembers.push(removed as Record<string, unknown>);
+						approvals.length = 0;
+						inviteCodeUsages.length = 0;
+						return [{ id: removed?.id }];
+					}),
 				};
 			}),
 		})),
@@ -475,19 +605,48 @@ function rejectionLayer(options: RejectionFakeOptions = {}) {
 		query: tx.query,
 		execute: tx.execute,
 		insert: tx.insert,
+		update: tx.update,
 		delete: tx.delete,
 		transaction: vi.fn(
 			async (callback: (client: typeof tx) => Promise<unknown>) => {
-				const approvalCount = approvals.length;
-				const deleteCount = deletes.length;
+				const snapshots = {
+					members: members.map((record) => ({ ...record })),
+					approvals: approvals.map((record) => ({ ...record })),
+					audits: audits.map((record) => ({ ...record })),
+					employeeUpdates: employeeUpdates.map((record) => ({ ...record })),
+					inviteCodeUsages: inviteCodeUsages.map((record) => ({ ...record })),
+					memberUpdates: memberUpdates.map((record) => ({ ...record })),
+					deletedMembers: deletedMembers.map((record) => ({ ...record })),
+				};
 				events.push("transaction-start");
 				try {
 					const result = await callback(tx);
 					events.push("transaction-commit");
 					return result;
 				} catch (error) {
-					approvals.length = approvalCount;
-					deletes.length = deleteCount;
+					members.splice(0, members.length, ...snapshots.members);
+					approvals.splice(0, approvals.length, ...snapshots.approvals);
+					audits.splice(0, audits.length, ...snapshots.audits);
+					employeeUpdates.splice(
+						0,
+						employeeUpdates.length,
+						...snapshots.employeeUpdates,
+					);
+					inviteCodeUsages.splice(
+						0,
+						inviteCodeUsages.length,
+						...snapshots.inviteCodeUsages,
+					);
+					memberUpdates.splice(
+						0,
+						memberUpdates.length,
+						...snapshots.memberUpdates,
+					);
+					deletedMembers.splice(
+						0,
+						deletedMembers.length,
+						...snapshots.deletedMembers,
+					);
 					events.push("transaction-rollback");
 					throw error;
 				}
@@ -497,17 +656,25 @@ function rejectionLayer(options: RejectionFakeOptions = {}) {
 
 	return {
 		approvals,
+		audits,
 		db,
-		deletes,
+		deletedMembers,
+		employeeUpdates,
 		events,
+		inviteCodeUsages,
 		layer: serviceLayer(db),
 		memberLookups,
+		memberDeletePredicates,
+		members,
+		memberUpdatePredicates,
+		memberUpdates,
 	};
 }
 
 async function rejectWith(
 	layer: ReturnType<typeof rejectionLayer>["layer"],
 	memberIds: string[] = ["member-1"],
+	notes?: string,
 ) {
 	return Effect.runPromise(
 		Effect.gen(function* () {
@@ -517,6 +684,7 @@ async function rejectWith(
 					memberId: memberIds[0] as string,
 					organizationId: "org-1",
 					rejectedBy: "admin-1",
+					notes,
 				});
 			}
 			return yield* service.bulkReject(memberIds, "org-1", "admin-1");
@@ -525,6 +693,18 @@ async function rejectWith(
 }
 
 describe("PendingMemberService rejection isolation", () => {
+	beforeEach(() => {
+		removalCleanupMock.complete.mockReset();
+		removalCleanupMock.complete.mockResolvedValue(undefined);
+		removalCleanupMock.completePostCommit.mockReset();
+		removalCleanupMock.completePostCommit.mockResolvedValue(undefined);
+		removalCleanupMock.revokeInTransaction.mockReset();
+		removalCleanupMock.revokeInTransaction.mockResolvedValue({
+			accessRestored: false,
+			sessionTokens: ["session-token"],
+		});
+	});
+
 	it.each([
 		["approved without an approval row", { memberStatus: "approved" }],
 		["a known cross-organization UUID", { memberOrganizationId: "org-other" }],
@@ -535,10 +715,11 @@ describe("PendingMemberService rejection isolation", () => {
 
 		expect(fake.db.transaction).toHaveBeenCalledOnce();
 		expect(fake.approvals).toEqual([]);
-		expect(fake.deletes).toEqual([]);
+		expect(fake.memberUpdates).toEqual([]);
+		expect(fake.deletedMembers).toEqual([]);
 	});
 
-	it("resolves and deletes an individual member by id, organization, and pending status under lock", async () => {
+	it("takes the identity advisory lock before the member row lock", async () => {
 		const fake = rejectionLayer();
 
 		await expect(rejectWith(fake.layer)).resolves.toMatchObject({
@@ -547,25 +728,166 @@ describe("PendingMemberService rejection isolation", () => {
 
 		expect(fake.events).toEqual([
 			"transaction-start",
-			"lock",
+			"identity-lock",
+			"member-lock",
 			"transaction-commit",
 		]);
 		expect(collectColumnNames(fake.memberLookups[0])).toEqual(
 			expect.arrayContaining(["id", "organization_id", "status"]),
 		);
-		expect(collectColumnNames(fake.deletes[0])).toEqual(
+		expect(collectColumnNames(fake.memberDeletePredicates[0])).toEqual(
 			expect.arrayContaining(["id", "organization_id", "status"]),
 		);
 	});
 
-	it("rolls back the rejection record when the final pending-status delete loses a race", async () => {
-		const fake = rejectionLayer({ statusRace: true });
+	it("creates no rejection audit when the pending-to-rejected transition loses", async () => {
+		const fake = rejectionLayer({ transitionWins: false });
+
+		const result = await Effect.runPromise(
+			Effect.either(
+				Effect.gen(function* () {
+					const service = yield* PendingMemberService;
+					return yield* service.reject({
+						memberId: "member-1",
+						organizationId: "org-1",
+						rejectedBy: "admin-1",
+					});
+				}).pipe(Effect.provide(fake.layer)),
+			),
+		);
+
+		expect(result).toMatchObject({
+			_tag: "Left",
+			left: expect.any(DatabaseError),
+		});
+		expect(fake.events).toContain("transaction-rollback");
+		expect(fake.approvals).toEqual([]);
+		expect(fake.inviteCodeUsages).toHaveLength(1);
+		expect(fake.members).toEqual([
+			expect.objectContaining({ id: "member-1", status: "pending" }),
+		]);
+		expect(fake.deletedMembers).toEqual([]);
+	});
+
+	it("removes member authorization while retaining durable rejection identity", async () => {
+		const fake = rejectionLayer();
+		removalCleanupMock.revokeInTransaction.mockImplementation(async () => {
+			fake.events.push("transactional-cleanup");
+			return { accessRestored: false, sessionTokens: ["session-token"] };
+		});
+		removalCleanupMock.completePostCommit.mockImplementation(async () => {
+			fake.events.push("post-commit-cleanup");
+		});
+
+		await expect(rejectWith(fake.layer)).resolves.toMatchObject({
+			success: true,
+		});
+
+		expect(fake.members).toEqual([]);
+		expect(fake.deletedMembers).toEqual([
+			expect.objectContaining({
+				id: "member-1",
+				organizationId: "org-1",
+			}),
+		]);
+		expect(fake.approvals).toEqual([]);
+		expect(fake.inviteCodeUsages).toEqual([]);
+		expect(fake.employeeUpdates).toEqual([]);
+		expect(fake.audits).toEqual([
+			expect.objectContaining({
+				organizationId: "org-1",
+				entityType: "membership",
+				action: "reject",
+				performedBy: "admin-1",
+				metadata: expect.any(String),
+			}),
+		]);
+		expect(JSON.parse(fake.audits[0]?.metadata as string)).toMatchObject({
+			memberId: "member-1",
+			userId: "user-1",
+			inviteCodeId: "invite-1",
+			inviteCode: "JOIN-TEAM",
+		});
+		expect(
+			removalCleanupMock.revokeInTransaction,
+		).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({ query: fake.db.query }),
+			"user-1",
+			"org-1",
+		);
+		expect(
+			removalCleanupMock.completePostCommit,
+		).toHaveBeenCalledExactlyOnceWith({
+			organizationId: "org-1",
+			sessionTokens: ["session-token"],
+		});
+		expect(fake.events).toContain("transactional-cleanup");
+		expect(fake.events.indexOf("transactional-cleanup")).toBeLessThan(
+			fake.events.indexOf("transaction-commit"),
+		);
+		expect(fake.events.at(-2)).toBe("transaction-commit");
+		expect(fake.events.at(-1)).toBe("post-commit-cleanup");
+	});
+
+	it("retains rejection notes in the durable audit after member cascade", async () => {
+		const fake = rejectionLayer();
+
+		await expect(
+			rejectWith(fake.layer, ["member-1"], "Identity could not be verified"),
+		).resolves.toMatchObject({ success: true });
+
+		expect(JSON.parse(fake.audits[0]?.metadata as string)).toMatchObject({
+			memberId: "member-1",
+			userId: "user-1",
+			notes: "Identity could not be verified",
+		});
+	});
+
+	it("rolls back rejection when transactional access cleanup fails", async () => {
+		const fake = rejectionLayer();
+		removalCleanupMock.revokeInTransaction.mockRejectedValue(
+			new Error("database session cleanup failed"),
+		);
 
 		await expect(rejectWith(fake.layer)).rejects.toBeDefined();
 
 		expect(fake.events).toContain("transaction-rollback");
-		expect(fake.approvals).toEqual([]);
-		expect(fake.deletes).toEqual([]);
+		expect(fake.events).not.toContain("transaction-commit");
+		expect(fake.members).toEqual([
+			expect.objectContaining({ id: "member-1", status: "pending" }),
+		]);
+		expect(fake.audits).toEqual([]);
+		expect(fake.inviteCodeUsages).toHaveLength(1);
+		expect(removalCleanupMock.completePostCommit).not.toHaveBeenCalled();
+	});
+
+	it("keeps committed rejection while surfacing post-commit cleanup failure", async () => {
+		const fake = rejectionLayer();
+		removalCleanupMock.completePostCommit.mockRejectedValue(
+			new Error("redis unavailable"),
+		);
+
+		const result = await Effect.runPromise(
+			Effect.either(
+				Effect.gen(function* () {
+					const service = yield* PendingMemberService;
+					return yield* service.reject({
+						memberId: "member-1",
+						organizationId: "org-1",
+						rejectedBy: "admin-1",
+					});
+				}).pipe(Effect.provide(fake.layer)),
+			),
+		);
+
+		expect(result).toMatchObject({
+			_tag: "Left",
+			left: expect.any(DatabaseError),
+		});
+		expect(fake.events).toContain("transaction-commit");
+		expect(fake.events).not.toContain("transaction-rollback");
+		expect(fake.members).toEqual([]);
+		expect(fake.audits).toHaveLength(1);
 	});
 
 	it("bulk rejection safely ignores duplicate member IDs", async () => {
@@ -584,8 +906,9 @@ describe("PendingMemberService rejection isolation", () => {
 			),
 		).resolves.toEqual({ rejected: 1, failed: 0 });
 		expect(fake.db.transaction).toHaveBeenCalledOnce();
-		expect(fake.approvals).toHaveLength(1);
-		expect(fake.deletes).toHaveLength(1);
+		expect(fake.approvals).toEqual([]);
+		expect(fake.audits).toHaveLength(1);
+		expect(fake.members).toEqual([]);
 	});
 
 	it("bulk mixed input rejects the foreign UUID without rolling back the authorized member", async () => {
@@ -604,36 +927,44 @@ describe("PendingMemberService rejection isolation", () => {
 			),
 		).resolves.toEqual({ rejected: 1, failed: 1 });
 		expect(fake.db.transaction).toHaveBeenCalledTimes(2);
-		expect(fake.approvals).toEqual([
+		expect(fake.audits).toEqual([
 			expect.objectContaining({
-				memberId: "member-1",
 				organizationId: "org-1",
+				action: "reject",
 			}),
 		]);
-		expect(fake.deletes).toHaveLength(1);
+		expect(fake.approvals).toEqual([]);
+		expect(fake.members).toEqual([]);
 	});
 
 	it.each([
 		["a cross-organization member", { memberOrganizationId: "org-other" }],
 		["an approved member", { memberStatus: "approved" }],
 		["an already processed member", { existingApproval: true }],
-	] as const)("bulk rejection does not write or delete %s", async (_case, options) => {
-		const fake = rejectionLayer(options);
+	] as const)(
+		"bulk rejection does not write or transition %s",
+		async (_case, options) => {
+			const fake = rejectionLayer(options);
+			const initialApprovals = [...fake.approvals];
 
-		await expect(
-			Effect.runPromise(
-				Effect.gen(function* () {
-					const service = yield* PendingMemberService;
-					return yield* service.bulkReject(["member-1"], "org-1", "admin-1");
-				}).pipe(Effect.provide(fake.layer)),
-			),
-		).resolves.toEqual({ rejected: 0, failed: 1 });
-		expect(fake.approvals).toEqual([]);
-		expect(fake.deletes).toEqual([]);
-	});
+			await expect(
+				Effect.runPromise(
+					Effect.gen(function* () {
+						const service = yield* PendingMemberService;
+						return yield* service.bulkReject(["member-1"], "org-1", "admin-1");
+					}).pipe(Effect.provide(fake.layer)),
+				),
+			).resolves.toEqual({ rejected: 0, failed: 1 });
+			expect(fake.approvals).toEqual(initialApprovals);
+			expect(fake.memberUpdates).toEqual([]);
+			expect(fake.deletedMembers).toEqual([]);
+			expect(removalCleanupMock.revokeInTransaction).not.toHaveBeenCalled();
+			expect(removalCleanupMock.completePostCommit).not.toHaveBeenCalled();
+		},
+	);
 
-	it("bulk rejection rolls back an item's audit when its final delete loses the status race", async () => {
-		const fake = rejectionLayer({ statusRace: true });
+	it("bulk rejection rolls back an item's audit when its guarded transition loses the status race", async () => {
+		const fake = rejectionLayer({ transitionWins: false });
 
 		await expect(
 			Effect.runPromise(
@@ -645,6 +976,9 @@ describe("PendingMemberService rejection isolation", () => {
 		).resolves.toEqual({ rejected: 0, failed: 1 });
 		expect(fake.events).toContain("transaction-rollback");
 		expect(fake.approvals).toEqual([]);
-		expect(fake.deletes).toEqual([]);
+		expect(fake.memberUpdates).toEqual([]);
+		expect(fake.deletedMembers).toEqual([]);
+		expect(removalCleanupMock.revokeInTransaction).not.toHaveBeenCalled();
+		expect(removalCleanupMock.completePostCommit).not.toHaveBeenCalled();
 	});
 });

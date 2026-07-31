@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
@@ -167,12 +167,22 @@ async function deleteScopedAbsence(
 	});
 }
 
-async function updateExactlyOne(
-	query: PromiseLike<unknown[]>,
+function assertExactIds(
+	rows: Array<{ id: string }>,
+	expectedIds: string[],
 	message: string,
-): Promise<void> {
-	const rows = await query;
-	if (rows.length !== 1) fail(message);
+): void {
+	const expected = new Set(expectedIds);
+	const returnedIds = rows.map((row) => row.id);
+	const returned = new Set(returnedIds);
+	if (
+		expected.size !== expectedIds.length ||
+		returned.size !== returnedIds.length ||
+		rows.length !== expectedIds.length ||
+		returnedIds.some((id) => !expected.has(id))
+	) {
+		fail(message);
+	}
 }
 
 async function cancelLegacyApprovalRows(
@@ -209,72 +219,99 @@ async function cancelLegacyApprovalRows(
 	) {
 		fail("Legacy approval request linkage is invalid");
 	}
-	for (const chain of input.chains) {
-		for (const stage of chain.stages ?? []) {
-			if (stage.status !== "pending") continue;
-			await updateExactlyOne(
-				dbService.db
-					.update(approvalChainStageInstance)
-					.set({
-						status: "cancelled",
-						approvalRequestId: null,
-						decidedBy: null,
-						decidedAt: null,
-					})
-					.where(
-						and(
-							eq(approvalChainStageInstance.id, stage.id),
-							eq(
-								approvalChainStageInstance.organizationId,
-								input.organizationId,
+	const pendingStages = input.chains.flatMap((chain) =>
+		(chain.stages ?? []).flatMap((stage) =>
+			stage.status === "pending" ? [{ chainId: chain.id, stage }] : [],
+		),
+	);
+	if (pendingStages.length > 0) {
+		const updatedStages = await dbService.db
+			.update(approvalChainStageInstance)
+			.set({
+				status: "cancelled",
+				approvalRequestId: null,
+				decidedBy: null,
+				decidedAt: null,
+			})
+			.where(
+				and(
+					eq(approvalChainStageInstance.organizationId, input.organizationId),
+					eq(approvalChainStageInstance.status, "pending"),
+					or(
+						...pendingStages.map(({ chainId, stage }) =>
+							and(
+								eq(approvalChainStageInstance.id, stage.id),
+								eq(approvalChainStageInstance.chainInstanceId, chainId),
+								stage.approvalRequestId === null
+									? isNull(approvalChainStageInstance.approvalRequestId)
+									: eq(
+											approvalChainStageInstance.approvalRequestId,
+											stage.approvalRequestId,
+										),
 							),
-							eq(approvalChainStageInstance.chainInstanceId, chain.id),
-							eq(approvalChainStageInstance.status, "pending"),
-							stage.approvalRequestId === null
-								? isNull(approvalChainStageInstance.approvalRequestId)
-								: eq(
-										approvalChainStageInstance.approvalRequestId,
-										stage.approvalRequestId,
-									),
 						),
-					)
-					.returning({ id: approvalChainStageInstance.id }),
-				"Legacy approval stage changed during cancellation",
-			);
-		}
-		await updateExactlyOne(
-			dbService.db
-				.update(approvalChainInstance)
-				.set({ status: "cancelled", completedAt: input.cancelledAt })
-				.where(
-					and(
-						eq(approvalChainInstance.id, chain.id),
-						eq(approvalChainInstance.organizationId, input.organizationId),
-						eq(approvalChainInstance.entityType, "absence_entry"),
-						eq(approvalChainInstance.entityId, input.absenceId),
-						eq(approvalChainInstance.status, chain.status),
 					),
-				)
-				.returning({ id: approvalChainInstance.id }),
+				),
+			)
+			.returning({ id: approvalChainStageInstance.id });
+		assertExactIds(
+			updatedStages,
+			pendingStages.map(({ stage }) => stage.id),
+			"Legacy approval stage changed during cancellation",
+		);
+	}
+
+	if (input.chains.length > 0) {
+		const updatedChains = await dbService.db
+			.update(approvalChainInstance)
+			.set({ status: "cancelled", completedAt: input.cancelledAt })
+			.where(
+				and(
+					eq(approvalChainInstance.organizationId, input.organizationId),
+					eq(approvalChainInstance.entityType, "absence_entry"),
+					eq(approvalChainInstance.entityId, input.absenceId),
+					or(
+						...input.chains.map((chain) =>
+							and(
+								eq(approvalChainInstance.id, chain.id),
+								eq(approvalChainInstance.status, chain.status),
+							),
+						),
+					),
+				),
+			)
+			.returning({ id: approvalChainInstance.id });
+		assertExactIds(
+			updatedChains,
+			input.chains.map((chain) => chain.id),
 			"Legacy approval chain changed during cancellation",
 		);
 	}
-	for (const request of requestsToDelete) {
-		const deleted = await dbService.db
+
+	if (requestsToDelete.length > 0) {
+		const deletedRequests = await dbService.db
 			.delete(approvalRequest)
 			.where(
 				and(
-					eq(approvalRequest.id, request.id),
 					eq(approvalRequest.organizationId, input.organizationId),
 					eq(approvalRequest.entityType, "absence_entry"),
 					eq(approvalRequest.entityId, input.absenceId),
-					eq(approvalRequest.status, request.status),
+					or(
+						...requestsToDelete.map((request) =>
+							and(
+								eq(approvalRequest.id, request.id),
+								eq(approvalRequest.status, request.status),
+							),
+						),
+					),
 				),
 			)
 			.returning({ id: approvalRequest.id });
-		if (deleted.length !== 1) {
-			fail("Legacy approval request changed during cancellation");
-		}
+		assertExactIds(
+			deletedRequests,
+			requestsToDelete.map((request) => request.id),
+			"Legacy approval request changed during cancellation",
+		);
 	}
 }
 

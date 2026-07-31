@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { parsePostgresTimestampWithoutTimeZoneAsUtc } from "@/db/postgres-utc";
 import {
@@ -93,7 +93,9 @@ export async function cancelLegacyTimeCorrectionApprovalRows(input: {
 		const pendingStages = input.state.chainRows.filter(
 			(stage) => stage.status === "pending",
 		);
-		for (const stage of pendingStages) {
+		if (pendingStages.length > 0) {
+			const expectedStageIds = pendingStages.map((stage) => stage.id);
+			const expectedStageIdSet = new Set(expectedStageIds);
 			const updated = await input.dbService.db
 				.update(approvalChainStageInstance)
 				.set({
@@ -104,23 +106,36 @@ export async function cancelLegacyTimeCorrectionApprovalRows(input: {
 				})
 				.where(
 					and(
-						eq(approvalChainStageInstance.id, stage.id),
 						eq(approvalChainStageInstance.organizationId, input.organizationId),
 						eq(
 							approvalChainStageInstance.chainInstanceId,
 							input.state.chain.id,
 						),
 						eq(approvalChainStageInstance.status, "pending"),
-						stage.approvalRequestId
-							? eq(
-									approvalChainStageInstance.approvalRequestId,
-									stage.approvalRequestId,
-								)
-							: isNull(approvalChainStageInstance.approvalRequestId),
+						or(
+							...pendingStages.map((stage) =>
+								and(
+									eq(approvalChainStageInstance.id, stage.id),
+									stage.approvalRequestId
+										? eq(
+												approvalChainStageInstance.approvalRequestId,
+												stage.approvalRequestId,
+											)
+									: isNull(approvalChainStageInstance.approvalRequestId),
+								),
+							),
+						),
 					),
 				)
 				.returning({ id: approvalChainStageInstance.id });
-			if (updated.length !== 1 || updated[0]?.id !== stage.id) {
+			const updatedStageIdSet = new Set(updated.map((stage) => stage.id));
+			if (
+				expectedStageIdSet.size !== expectedStageIds.length ||
+				updated.length !== expectedStageIds.length ||
+				updatedStageIdSet.size !== updated.length ||
+				updatedStageIdSet.size !== expectedStageIdSet.size ||
+				[...updatedStageIdSet].some((id) => !expectedStageIdSet.has(id))
+			) {
 				throw new Error("Time correction cancellation is unavailable");
 			}
 		}

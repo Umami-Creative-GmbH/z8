@@ -10,6 +10,7 @@ import type { ApprovalCompatibilityWriter } from "@/lib/approvals/workflow/compa
 import { parseInstant } from "@/lib/datetime/temporal-core";
 
 function collectSqlColumnNames(value: unknown): string[] {
+	if (Array.isArray(value)) return value.flatMap(collectSqlColumnNames);
 	if (!value || typeof value !== "object") return [];
 	const candidate = value as {
 		config?: { name?: unknown };
@@ -24,6 +25,7 @@ function collectSqlColumnNames(value: unknown): string[] {
 }
 
 function collectSqlBoundValues(value: unknown): unknown[] {
+	if (Array.isArray(value)) return value.flatMap(collectSqlBoundValues);
 	if (!value || typeof value !== "object") return [];
 	const candidate = value as { value?: unknown; queryChunks?: unknown[] };
 	return [
@@ -104,7 +106,55 @@ const categoryId = "40000000-0000-4000-8000-000000000001";
 const canonicalRecordId = "50000000-0000-4000-8000-000000000001";
 const workflowId = "60000000-0000-4000-8000-000000000001";
 const requestId = "70000000-0000-4000-8000-000000000001";
+const secondRequestId = "70000000-0000-4000-8000-000000000002";
 const chainId = "80000000-0000-4000-8000-000000000001";
+
+function twoPendingStageRows() {
+	return {
+		requests: [
+			{
+				id: requestId,
+				organizationId,
+				entityType: "absence_entry",
+				entityId: absenceId,
+				status: "pending",
+			},
+			{
+				id: secondRequestId,
+				organizationId,
+				entityType: "absence_entry",
+				entityId: absenceId,
+				status: "pending",
+			},
+		],
+		chains: [
+			{
+				id: chainId,
+				organizationId,
+				entityType: "absence_entry",
+				entityId: absenceId,
+				requesterEmployeeId: employeeId,
+				status: "pending",
+				stages: [
+					{
+						id: "stage-1",
+						organizationId,
+						chainInstanceId: chainId,
+						approvalRequestId: requestId,
+						status: "pending",
+					},
+					{
+						id: "stage-2",
+						organizationId,
+						chainInstanceId: chainId,
+						approvalRequestId: secondRequestId,
+						status: "pending",
+					},
+				],
+			},
+		],
+	};
+}
 
 function source(overrides: Record<string, unknown> = {}) {
 	return {
@@ -208,6 +258,9 @@ function harness(
 		workflowRow?: Record<string, unknown> | null;
 		requests?: Record<string, unknown>[];
 		chains?: Record<string, unknown>[];
+		returnedStageIds?: string[];
+		returnedChainIds?: string[];
+		returnedRequestIds?: string[];
 	} = {},
 ) {
 	const mode = input.mode ?? "legacy";
@@ -291,6 +344,27 @@ function harness(
 			],
 		},
 	];
+	const expectedStageIds = chains.flatMap((chain) =>
+		((chain.stages as Record<string, unknown>[] | undefined) ?? []).flatMap(
+			(stage) => (stage.status === "pending" ? [stage.id as string] : []),
+		),
+	);
+	const expectedChainIds = chains.map((chain) => chain.id as string);
+	const activeRequestIds = new Set(
+		chains.flatMap((chain) =>
+			((chain.stages as Record<string, unknown>[] | undefined) ?? []).flatMap(
+				(stage) =>
+					stage.status === "pending" && stage.approvalRequestId
+						? [stage.approvalRequestId as string]
+						: [],
+			),
+		),
+	);
+	const expectedRequestIds = (
+		chains.length === 0
+			? requests
+			: requests.filter((request) => activeRequestIds.has(request.id as string))
+	).map((request) => request.id as string);
 
 	const deleteReturning = vi.fn().mockImplementation(async () => [
 		{
@@ -332,28 +406,37 @@ function harness(
 						if (!requiredColumns.every((column) => columns.includes(column))) {
 							return [];
 						}
-						const index = requestRows.findIndex(
-							(request) =>
-								values.includes(request.id) &&
-								values.includes(request.organizationId) &&
-								values.includes(request.entityType) &&
-								values.includes(request.entityId) &&
-								values.includes(request.status),
-						);
-						if (index < 0) return [];
-						const [deleted] = requestRows.splice(index, 1);
-						return deleted ? [{ id: deleted.id }] : [];
+						const returnedIds = input.returnedRequestIds ?? expectedRequestIds;
+						events.push(`request-delete:${returnedIds.join(",")}`);
+						for (const id of new Set(returnedIds)) {
+							const index = requestRows.findIndex(
+								(request) =>
+									request.id === id &&
+									values.includes(request.id) &&
+									values.includes(request.organizationId) &&
+									values.includes(request.entityType) &&
+									values.includes(request.entityId) &&
+									values.includes(request.status),
+							);
+							if (index >= 0) requestRows.splice(index, 1);
+						}
+						return returnedIds.map((id) => ({ id }));
 					}),
 				})),
 			};
 		}
 		throw new Error("Unexpected cancellation delete table");
 	});
-	const updateReturning = vi
-		.fn()
-		.mockImplementation(async () => [{ id: "updated" }]);
-	const updateWhere = vi.fn().mockReturnValue({ returning: updateReturning });
-	const updateSet = vi.fn().mockReturnValue({ where: updateWhere });
+	const stageUpdateReturning = vi.fn().mockImplementation(async () => {
+		const returnedIds = input.returnedStageIds ?? expectedStageIds;
+		events.push(`stage-update:${returnedIds.join(",")}`);
+		return returnedIds.map((id) => ({ id }));
+	});
+	const chainUpdateReturning = vi.fn().mockImplementation(async () => {
+		const returnedIds = input.returnedChainIds ?? expectedChainIds;
+		events.push(`chain-update:${returnedIds.join(",")}`);
+		return returnedIds.map((id) => ({ id }));
+	});
 	let recordedLegacyMutation = false;
 	const txUpdate = vi.fn().mockImplementation((table) => {
 		if (
@@ -364,7 +447,18 @@ function harness(
 			events.push("legacy-mutation");
 			transactionState.legacyStatus = "cancelled";
 		}
-		return { set: updateSet };
+		const returning =
+			table === approvalChainStageInstance
+				? stageUpdateReturning
+				: table === approvalChainInstance
+					? chainUpdateReturning
+					: undefined;
+		if (!returning) throw new Error("Unexpected cancellation update table");
+		return {
+			set: vi.fn().mockReturnValue({
+				where: vi.fn().mockReturnValue({ returning }),
+			}),
+		};
 	});
 	const transactionDb = {
 		query: {
@@ -373,7 +467,13 @@ function harness(
 			organization: { findFirst: vi.fn().mockResolvedValue(organization) },
 			timeRecord: { findFirst: vi.fn().mockResolvedValue(canonical) },
 			approvalWorkflow: { findFirst: vi.fn().mockResolvedValue(workflowRow) },
-			approvalRequest: { findMany: vi.fn().mockResolvedValue(requestRows) },
+			approvalRequest: {
+				findMany: vi
+					.fn()
+					.mockImplementation(async () =>
+						requestRows.map((request) => ({ ...request })),
+					),
+			},
 			approvalChainInstance: { findMany: vi.fn().mockResolvedValue(chains) },
 		},
 		delete: txDelete,
@@ -462,6 +562,7 @@ function harness(
 	const withTransaction = vi.fn().mockImplementation(async (operation) => {
 		events.push("begin");
 		transactionState = { ...committedState };
+		const requestRowsSnapshot = requestRows.map((request) => ({ ...request }));
 		try {
 			const result = await operation(context);
 			committedState = { ...transactionState };
@@ -470,6 +571,7 @@ function harness(
 			return result;
 		} catch (error) {
 			transactionState = { ...committedState };
+			requestRows.splice(0, requestRows.length, ...requestRowsSnapshot);
 			throw error;
 		}
 	});
@@ -508,6 +610,7 @@ function harness(
 		committed: () => committed,
 		snapshot: () => ({ ...committedState }),
 		context,
+		chainUpdateReturning,
 		deleteReturning,
 		events,
 		executeInTransaction,
@@ -517,7 +620,7 @@ function harness(
 		requestRows: () => requestRows.map((request) => ({ ...request })),
 		runtime,
 		transactionDb,
-		updateReturning,
+		stageUpdateReturning,
 		withTransaction,
 	};
 }
@@ -580,6 +683,9 @@ describe("absence cancellation", () => {
 				"begin",
 				"gate",
 				"legacy-mutation",
+				"stage-update:stage-1",
+				`chain-update:${chainId}`,
+				`request-delete:${requestId}`,
 				"source-delete",
 				"canonical-delete",
 				"commit",
@@ -593,6 +699,9 @@ describe("absence cancellation", () => {
 				"gate",
 				"capture-before",
 				"legacy-mutation",
+				"stage-update:stage-1",
+				`chain-update:${chainId}`,
+				`request-delete:${requestId}`,
 				"capture-after",
 				"mirror",
 				"source-delete",
@@ -608,6 +717,9 @@ describe("absence cancellation", () => {
 				"gate",
 				"capture-before",
 				"legacy-mutation",
+				"stage-update:stage-1",
+				`chain-update:${chainId}`,
+				`request-delete:${requestId}`,
 				"capture-after",
 				"mirror",
 				"source-delete",
@@ -719,6 +831,7 @@ describe("absence cancellation", () => {
 			"gate",
 			"capture-before",
 			"legacy-mutation",
+			`chain-update:${chainId}`,
 			"capture-after",
 			"mirror",
 			"source-delete",
@@ -768,6 +881,7 @@ describe("absence cancellation", () => {
 			"begin",
 			"gate",
 			"capture-before",
+			`request-delete:${requestId}`,
 			"capture-after",
 			"mirror",
 			"source-delete",
@@ -891,6 +1005,166 @@ describe("absence cancellation", () => {
 				expectedApprovalState: "pending",
 			},
 		);
+	});
+
+	it("cancels all legacy stages, then chains, then requests in three global phases", async () => {
+		const test = harness(twoPendingStageRows());
+
+		const result = await mutations.cancelAbsenceRequestForEmployee(absenceId, {
+			id: employeeId,
+			organizationId,
+		});
+
+		expect(result).toEqual({ success: true });
+		expect(test.stageUpdateReturning).toHaveBeenCalledOnce();
+		expect(test.chainUpdateReturning).toHaveBeenCalledOnce();
+		expect(test.requestDeleteReturning).toHaveBeenCalledOnce();
+		const stageEvent = "stage-update:stage-1,stage-2";
+		const chainEvent = `chain-update:${chainId}`;
+		const requestEvent = `request-delete:${requestId},${secondRequestId}`;
+		expect(test.events).toEqual(
+			expect.arrayContaining([stageEvent, chainEvent, requestEvent]),
+		);
+		expect(test.events.indexOf(stageEvent)).toBeLessThan(
+			test.events.indexOf(chainEvent),
+		);
+		expect(test.events.indexOf(chainEvent)).toBeLessThan(
+			test.events.indexOf(requestEvent),
+		);
+		expect(test.requestRows()).toEqual([]);
+	});
+
+	it("fails closed before chains when only some legacy stages are updated", async () => {
+		const test = harness({
+			...twoPendingStageRows(),
+			returnedStageIds: ["stage-1"],
+		});
+
+		const result = await mutations.cancelAbsenceRequestForEmployee(absenceId, {
+			id: employeeId,
+			organizationId,
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Legacy approval stage changed during cancellation",
+		});
+		expect(test.chainUpdateReturning).not.toHaveBeenCalled();
+		expect(test.requestDeleteReturning).not.toHaveBeenCalled();
+		expect(test.committed()).toBe(false);
+		expect(test.snapshot()).toEqual({
+			absencePresent: true,
+			canonicalPresent: true,
+			legacyStatus: "pending",
+			workflowStatus: "pending",
+		});
+	});
+
+	it("fails closed before requests when only some legacy chains are updated", async () => {
+		const test = harness({
+			...twoPendingStageRows(),
+			returnedChainIds: [],
+		});
+
+		const result = await mutations.cancelAbsenceRequestForEmployee(absenceId, {
+			id: employeeId,
+			organizationId,
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Legacy approval chain changed during cancellation",
+		});
+		expect(test.stageUpdateReturning).toHaveBeenCalledOnce();
+		expect(test.requestDeleteReturning).not.toHaveBeenCalled();
+		expect(test.committed()).toBe(false);
+		expect(test.snapshot()).toEqual({
+			absencePresent: true,
+			canonicalPresent: true,
+			legacyStatus: "pending",
+			workflowStatus: "pending",
+		});
+	});
+
+	it("rolls back partially deleted legacy requests", async () => {
+		const rows = twoPendingStageRows();
+		const test = harness({
+			...rows,
+			returnedRequestIds: [requestId],
+		});
+
+		const result = await mutations.cancelAbsenceRequestForEmployee(absenceId, {
+			id: employeeId,
+			organizationId,
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Legacy approval request changed during cancellation",
+		});
+		expect(test.stageUpdateReturning).toHaveBeenCalledOnce();
+		expect(test.chainUpdateReturning).toHaveBeenCalledOnce();
+		expect(test.requestDeleteReturning).toHaveBeenCalledOnce();
+		expect(test.deleteReturning).not.toHaveBeenCalled();
+		expect(test.committed()).toBe(false);
+		expect(test.snapshot()).toEqual({
+			absencePresent: true,
+			canonicalPresent: true,
+			legacyStatus: "pending",
+			workflowStatus: "pending",
+		});
+		expect(test.requestRows()).toEqual(rows.requests);
+	});
+
+	it("fails closed on duplicate legacy stage IDs returned by the database", async () => {
+		const test = harness({
+			...twoPendingStageRows(),
+			returnedStageIds: ["stage-1", "stage-1"],
+		});
+
+		const result = await mutations.cancelAbsenceRequestForEmployee(absenceId, {
+			id: employeeId,
+			organizationId,
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Legacy approval stage changed during cancellation",
+		});
+		expect(test.chainUpdateReturning).not.toHaveBeenCalled();
+		expect(test.requestDeleteReturning).not.toHaveBeenCalled();
+		expect(test.committed()).toBe(false);
+		expect(test.snapshot()).toEqual({
+			absencePresent: true,
+			canonicalPresent: true,
+			legacyStatus: "pending",
+			workflowStatus: "pending",
+		});
+	});
+
+	it("fails closed on an equal-count unexpected legacy chain ID", async () => {
+		const test = harness({
+			...twoPendingStageRows(),
+			returnedChainIds: ["unexpected-chain"],
+		});
+
+		const result = await mutations.cancelAbsenceRequestForEmployee(absenceId, {
+			id: employeeId,
+			organizationId,
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Legacy approval chain changed during cancellation",
+		});
+		expect(test.requestDeleteReturning).not.toHaveBeenCalled();
+		expect(test.committed()).toBe(false);
+		expect(test.snapshot()).toEqual({
+			absencePresent: true,
+			canonicalPresent: true,
+			legacyStatus: "pending",
+			workflowStatus: "pending",
+		});
 	});
 
 	it("preserves historical approved legacy requests while cancelling the active stage", async () => {

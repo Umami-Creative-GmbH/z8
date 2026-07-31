@@ -1096,24 +1096,37 @@ export async function deleteCancelledTimeCorrectionsInTransaction(input: {
 		}
 	}
 
-	for (const expected of correctionEntries) {
-		const deleted = await input.dbService.db
-			.delete(timeEntry)
-			.where(
-				and(
-					eq(timeEntry.id, expected.id),
-					eq(timeEntry.organizationId, input.organizationId),
-					eq(timeEntry.employeeId, input.expectedSource.employeeId),
-					eq(timeEntry.type, "correction"),
-					eq(timeEntry.replacesEntryId, expected.originalId),
-					eq(timeEntry.isSuperseded, true),
-					isNull(timeEntry.supersededById),
+	if (correctionEntries.length === 0) return;
+	const deleted = await input.dbService.db
+		.delete(timeEntry)
+		.where(
+			and(
+				eq(timeEntry.organizationId, input.organizationId),
+				eq(timeEntry.employeeId, input.expectedSource.employeeId),
+				eq(timeEntry.type, "correction"),
+				eq(timeEntry.isSuperseded, true),
+				isNull(timeEntry.supersededById),
+				or(
+					...correctionEntries.map((entry) =>
+						and(
+							eq(timeEntry.id, entry.id),
+							eq(timeEntry.replacesEntryId, entry.originalId),
+						),
+					),
 				),
-			)
-			.returning({ id: timeEntry.id });
-		if (deleted.length !== 1 || deleted[0]?.id !== expected.id) {
-			throw new Error("Time correction cancellation delete conflict");
-		}
+			),
+		)
+		.returning({ id: timeEntry.id });
+	const expectedIds = correctionEntries.map((entry) => entry.id);
+	const expectedIdSet = new Set(expectedIds);
+	const deletedIds = new Set(deleted.map((entry) => entry.id));
+	if (
+		expectedIdSet.size !== expectedIds.length ||
+		deletedIds.size !== deleted.length ||
+		deletedIds.size !== expectedIdSet.size ||
+		[...expectedIdSet].some((id) => !deletedIds.has(id))
+	) {
+		throw new Error("Time correction cancellation delete conflict");
 	}
 }
 
