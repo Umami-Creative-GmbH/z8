@@ -10,7 +10,7 @@ overrides:
   dompurify: 3.4.0
   esbuild: 0.25.12
   axios: 1.16.1
-  effect: 3.22.0
+  effect: 3.22.1
   fast-uri: 3.1.2
   fast-xml-builder: 1.1.7
   fast-xml-parser: 5.10.1
@@ -27,7 +27,7 @@ overrides:
   minimatch@3.1.5>brace-expansion: 1.1.13
   minimatch@5.1.9>brace-expansion: 2.0.3
   pako: 1.0.11
-  postcss: 8.5.24
+  postcss: 8.5.25
   mermaid: 11.15.0
   protobufjs: 8.2.0
   samlify: 2.13.0
@@ -109,8 +109,8 @@ importers:
         specifier: ^0.45.2
         version: 0.45.2(@opentelemetry/api@1.9.1)(@upstash/redis@1.38.0)(kysely@0.28.17)(pg@8.22.0)
       effect:
-        specifier: 3.22.0
-        version: 3.22.0
+        specifier: 3.22.1
+        version: 3.22.1
       exceljs:
         specifier: ^4.4.0
         version: 4.4.0
@@ -1652,8 +1652,8 @@ packages:
   ecdsa-sig-formatter@1.0.11:
     resolution: {integrity: sha512-nagl3RYrbNv6kQkeJIpt6NJZy8twLB/2vtz6yN9Z4vRKHN4/QZJIEbqohALSgwKdnksuY3k5Addp5lg8sVoVcQ==}
 
-  effect@3.22.0:
-    resolution: {integrity: sha512-jhYFe0zTlIRqYFrKTS+6luhmS/Tm0f+JLo0K9KUxvtFab1SUGEszQi2ehOP6QzAZvy831lDmTwwzvVDZSPNz3g==}
+  effect@3.22.1:
+    resolution: {integrity: sha512-TNoXushmPOBAjJlthF5d2QwnX2xBPEtcNJr5XKNKbRLbDvBcOYkXlYDfvGfSA0zriwLFuCll5MDtNMAdZL17PQ==}
 
   end-of-stream@1.4.5:
     resolution: {integrity: sha512-ooEGc6HP26xXq/N+GCGOT0JKCLDGrq2bQUZrQ7gyrJiZANJ/8YDTxTpQBXGMn+WbIQXNVpyWymm7KYVICQnyOg==}
@@ -2288,8 +2288,8 @@ packages:
   postal-mime@2.7.5:
     resolution: {integrity: sha512-GNEXKvWFQnbgO5NlrGzVa0FmWzBZ24PersAWErttSg1Hjpf0ATxTwS5DOMGaOpTG6bUh5cTr7xi0jAD942wCJA==}
 
-  postcss@8.5.24:
-    resolution: {integrity: sha512-8RyVklq0owXUTa4xlpzu4l9AaVKIdQvAcOHZWaMh98HgySsUtxRVf/chRe3dsSLqb6i40BzGRzEUddRaI+9TSw==}
+  postcss@8.5.25:
+    resolution: {integrity: sha512-DTPx3RWSSnWyzLxQnlH0rJP+EW5ekl16ZU4/psbIhA0e53kJfdgaN5vKM+xP7yJtXVu+nfdVFmlgFDEKAe4Pyw==}
     engines: {node: ^10 || ^12 || >=14}
 
   postgres-array@2.0.0:
@@ -4208,7 +4208,7 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  effect@3.22.0:
+  effect@3.22.1:
     dependencies:
       '@standard-schema/spec': 1.1.0
       fast-check: 3.23.2
@@ -4703,7 +4703,7 @@ snapshots:
       '@swc/helpers': 0.5.15
       baseline-browser-mapping: 2.10.31
       caniuse-lite: 1.0.30001793
-      postcss: 8.5.24
+      postcss: 8.5.25
       react: 19.2.8
       react-dom: 19.2.6(react@19.2.8)
       styled-jsx: 5.1.6(react@19.2.8)
@@ -4876,7 +4876,7 @@ snapshots:
 
   postal-mime@2.7.5: {}
 
-  postcss@8.5.24:
+  postcss@8.5.25:
     dependencies:
       nanoid: 3.3.16
       picocolors: 1.1.1
@@ -5036,7 +5036,7 @@ snapshots:
       is-plain-object: 5.0.0
       launder: 1.7.1
       parse-srcset: 1.0.2
-      postcss: 8.5.24
+      postcss: 8.5.25
 
   saxes@5.0.1:
     dependencies:
