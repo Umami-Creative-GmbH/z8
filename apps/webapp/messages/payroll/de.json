@@ -1,10 +1,5 @@
 {
   "payroll": {
-    "accessDenied": {
-      "description": "Sie haben keinen Zugriff auf die Lohnabrechnungsdaten für die aktive Organisation.",
-      "help": "Bitten Sie einen Organisationsadministrator, Ihnen Zugriff auf die Lohnabrechnung zu gewähren, falls Sie diesen Arbeitsbereich benötigen.",
-      "title": "Kein Zugriff auf Lohnabrechnung"
-    },
     "actions": {
       "apply": "Anwenden",
       "downloadPdf": "PDF herunterladen",
@@ -12,16 +7,16 @@
     },
     "blockers": {
       "clearFailed": "Lohnabrechnungsblocker konnte nicht entfernt werden",
-      "clearFalsePositive": "Fehlalarm entfernen",
-      "clearingFalsePositive": "Fehlalarm wird entfernt",
+      "clearFalsePositive": "Fehlalarm löschen",
+      "clearingFalsePositive": "Fehlalarm wird gelöscht",
       "dateUnavailable": "Datum nicht verfügbar",
-      "missingClockOut": "Fehlende Ausstempelung",
+      "missingClockOut": "Fehlendes Ausstempeln",
       "needReview": "{count} Lohnabrechnungsblocker müssen überprüft werden",
-      "openApprovals": "Genehmigungen öffnen",
+      "openApprovals": "Offene Genehmigungen",
       "openCalendar": "Kalender öffnen",
-      "pendingAbsence": "Ausstehender Abwesenheitsantrag",
+      "pendingAbsence": "Ausstehende Abwesenheit",
       "pendingTimeCorrection": "Ausstehende Zeitkorrektur",
-      "refreshAfterClearFailed": "Blocker entfernt, aber die Lohnabrechnung konnte nicht aktualisiert werden",
+      "refreshAfterClearFailed": "Blocker entfernt, aber die Gehaltsabrechnung konnte nicht aktualisiert werden",
       "unknownEmployee": "Unbekannter Mitarbeiter"
     },
     "description": "Überprüfen Sie die Lohnabrechnungssummen, die Bereitschaft und die Exporte für den ausgewählten Zeitraum.",
@@ -46,10 +41,13 @@
       "actionFailed": "Aktion im Lohnabrechnungs-Arbeitsbereich fehlgeschlagen",
       "activeOrganizationEmployeeRequired": "Aktiver Organisations-Mitarbeiterkontext ist erforderlich",
       "authenticationRequired": "Authentifizierung erforderlich",
+      "blockerNotDismissible": "Gehaltsabrechnungs-Blocker kann nicht verworfen werden",
       "employeeIdsMustBeArray": "employeeIds muss ein Array sein",
       "employeeIdsMustContainOnlyStrings": "employeeIds darf nur Strings enthalten",
       "endDateAfterStart": "Das Enddatum muss nach oder am Startdatum liegen",
       "exportFormatNotConfigured": "Das Lohnabrechnungs-Exportformat ist nicht konfiguriert",
+      "invalidBlockerId": "Ungültige Gehaltsabrechnungs-Blocker-ID",
+      "invalidBlockerType": "Ungültiger Gehaltsabrechnungs-Blockertyp",
       "mustBeIsoDate": "{field} muss ein ISO-Datum sein",
       "mustBeValidIsoDate": "{field} muss ein gültiges ISO-Datum sein",
       "noAssignedEmployees": "Ihrem Zugriffsbereich sind keine Lohnabrechnungs-Mitarbeiter zugewiesen",
@@ -84,10 +82,20 @@
       "start": "Start"
     },
     "scope": {
-      "assignedEmployees": "Zugewiesene Mitarbeiter",
-      "assignedTeams": "Zugewiesene Teams",
+      "allManaged": "Alle Mitarbeiter und Teams, die ich verwalte",
+      "apply": "Anwenden",
+      "cancel": "Abbrechen",
+      "currentScope": "Aktueller Geltungsbereich",
       "description": "Grenzen Sie diesen Lohnabrechnungsbereich nach zugewiesenen Mitarbeitern oder Teams ein.",
+      "noAssignedEmployees": "Keine zugewiesenen Mitarbeiter in diesem Gehaltsabrechnungsbereich.",
       "noAssignedTeams": "Keine zugewiesenen Teams in diesem Lohnabrechnungsbereich.",
+      "selectedEmployeesCount": "{count} Mitarbeiter",
+      "selectedSummary": "{summary} ausgewählt",
+      "selectedTeamsCount": "{count} Teams",
+      "specificEmployees": "Bestimmte Mitarbeiter",
+      "specificEmployeesDescription": "Wählen Sie Mitarbeiter aus, die in diesen Gehaltsabrechnungsbereich aufgenommen werden sollen.",
+      "specificTeams": "Bestimmte Teams",
+      "specificTeamsDescription": "Wählen Sie Teams aus, die in diesen Gehaltsabrechnungsbereich aufgenommen werden sollen.",
       "title": "Lohnabrechnungsbereich"
     },
     "summary": {

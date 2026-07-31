@@ -207,6 +207,7 @@
         "sessions": "Sesje",
         "title": "Podział zespołu"
       },
+      "title": "Raporty projektowe",
       "toast": {
         "failedGenerate": "Nie udało się wygenerować raportu",
         "failedPortfolio": "Nie udało się wygenerować raportu portfela",

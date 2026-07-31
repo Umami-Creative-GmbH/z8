@@ -84,22 +84,12 @@
       "activePolicyTableDescription": "Οι πολιτικές αξιολογούνται κατά προτεραιότητα· η πρώτη ενεργή πολιτική που ταιριάζει παρέχει την αλυσίδα έγκρισης.",
       "activeStatus": "Ενεργή κατάσταση",
       "addPolicy": "Προσθήκη πολιτικής",
-      "addStage": "Προσθήκη σταδίου",
       "approvalType": {
         "absenceRequests": "Αιτήματα απουσίας",
         "timeEntryChanges": "Αλλαγές καταχώρισης χρόνου",
         "travelExpenses": "Έξοδα ταξιδιού"
       },
       "approvalTypes": "Τύποι έγκρισης",
-      "approver": "Εγκρίνων",
-      "approverEmployeeId": "Αναγνωριστικό υπαλλήλου εγκρίνοντος",
-      "approverEmployeeIdPlaceholder": "Παράδειγμα: employee_123…",
-      "approverType": {
-        "directManager": "Άμεσος προϊστάμενος",
-        "managerManager": "Προϊστάμενος του προϊσταμένου",
-        "organizationAdmin": "Διαχειριστής οργανισμού",
-        "specificEmployee": "Συγκεκριμένος υπάλληλος"
-      },
       "conditionsCount": "Πλήθος συνθηκών",
       "createPolicy": "Δημιουργία πολιτικής έγκρισης",
       "defaultStageLabel": "Επανεξέταση από προϊστάμενο",
@@ -111,7 +101,6 @@
       "loadFailed": "Δεν ήταν δυνατή η φόρτωση των πολιτικών έγκρισης.",
       "loading": "Φόρτωση πολιτικών…",
       "namePlaceholder": "Παράδειγμα: Κλιμάκωση απουσίας…",
-      "noStages": "Δεν έχουν διαμορφωθεί ακόμη στάδια έγκρισης.",
       "preview": {
         "ariaLabel": "Προεπισκόπηση αλυσίδας έγκρισης",
         "badge": "Προεπισκόπηση κελύφους",
@@ -126,11 +115,7 @@
         "title": "Σύνοψη αλυσίδας προεπισκόπησης"
       },
       "priority": "Προτεραιότητα",
-      "removeStage": "Κατάργηση σταδίου",
-      "stageNumber": "Στάδιο {number}",
-      "stages": "Στάδια έγκρισης",
       "stagesCount": "Πλήθος σταδίων",
-      "stagesDescription": "Τα στάδια εκτελούνται με τη σειρά· κάθε αίτημα προχωρά μόνο αφού το αποδεχτεί ο τρέχων εγκρίνων.",
       "status": {
         "active": "Ενεργό",
         "inactive": "Ανενεργό"

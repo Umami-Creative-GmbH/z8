@@ -234,17 +234,23 @@
       "weekSum": "Somma"
     },
     "split": {
+      "ambiguousTime": "Scegli quale occorrenza utilizzare",
+      "chooseOccurrence": "Scegli occorrenza",
       "confirm": "Dividi periodo di lavoro",
       "currentPeriod": "Periodo di lavoro attuale",
       "description": "Dividi questo periodo di lavoro in due sessioni separate.",
+      "earlierOccurrence": "Occorrenza precedente",
       "failed": "Impossibile dividere il periodo di lavoro",
       "firstNotes": "Note per il primo periodo (opzionale)",
       "firstPeriod": "Primo periodo",
       "invalidTime": "L'ora di divisione deve essere compresa tra l'ora di inizio e di fine",
+      "laterOccurrence": "Occorrenza successiva",
+      "nonexistentTime": "L'orario di suddivisione non esiste in questa data",
       "preview": "Anteprima",
       "secondNotes": "Note per il secondo periodo (opzionale)",
       "secondPeriod": "Secondo periodo",
       "splitAt": "Dividi a",
+      "splitDate": "Data di suddivisione",
       "success": "Periodo di lavoro diviso con successo",
       "title": "Dividi periodo di lavoro"
     },

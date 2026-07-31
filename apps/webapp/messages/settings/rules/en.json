@@ -84,22 +84,12 @@
       "activePolicyTableDescription": "Policies are evaluated by priority; the first matching active policy provides the approval chain.",
       "activeStatus": "Active status",
       "addPolicy": "Add Policy",
-      "addStage": "Add stage",
       "approvalType": {
         "absenceRequests": "Absence requests",
         "timeEntryChanges": "Time entry changes",
         "travelExpenses": "Travel expenses"
       },
       "approvalTypes": "Approval types",
-      "approver": "Approver",
-      "approverEmployeeId": "Approver Employee ID",
-      "approverEmployeeIdPlaceholder": "Example: employee_123…",
-      "approverType": {
-        "directManager": "Direct manager",
-        "managerManager": "Manager's manager",
-        "organizationAdmin": "Organization admin",
-        "specificEmployee": "Specific employee"
-      },
       "conditionsCount": "Conditions count",
       "createPolicy": "Create Approval Policy",
       "defaultStageLabel": "Manager review",
@@ -111,7 +101,6 @@
       "loadFailed": "Approval policies could not be loaded.",
       "loading": "Loading policies…",
       "namePlaceholder": "Example: Absence escalation…",
-      "noStages": "No approval stages configured yet.",
       "preview": {
         "ariaLabel": "Approval chain preview",
         "badge": "Preview shell",
@@ -126,11 +115,7 @@
         "title": "Preview chain summary"
       },
       "priority": "Priority",
-      "removeStage": "Remove stage",
-      "stageNumber": "Stage {number}",
-      "stages": "Approval stages",
       "stagesCount": "Stages count",
-      "stagesDescription": "Stages run in order; each request advances only after the current approver accepts it.",
       "status": {
         "active": "Active",
         "inactive": "Inactive"

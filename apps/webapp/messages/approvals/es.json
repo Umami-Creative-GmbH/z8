@@ -35,7 +35,7 @@
     "notes": "Notas",
     "noTimeCorrectionApprovals": "No hay solicitudes de corrección de tiempo pendientes por revisar.",
     "offFrom": "ausente desde",
-    "openDetailsFor": "Abrir detalles de {title}",
+    "openDetailsFor": "Abrir detalles de ${item.summary.title}",
     "openInbox": "Abrir bandeja de entrada",
     "originalTimes": "Horarios originales",
     "pendingRequests": "Solicitudes pendientes",

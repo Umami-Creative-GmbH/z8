@@ -234,17 +234,23 @@
       "weekSum": "Somme"
     },
     "split": {
+      "ambiguousTime": "Choisir l'occurrence à utiliser",
+      "chooseOccurrence": "Choisir l'occurrence",
       "confirm": "Diviser la période de travail",
       "currentPeriod": "Période de travail actuelle",
       "description": "Divisez cette période de travail en deux sessions distinctes.",
+      "earlierOccurrence": "Occurrence précédente",
       "failed": "Échec de la division de la période de travail",
       "firstNotes": "Notes pour la première période (facultatif)",
       "firstPeriod": "Première période",
       "invalidTime": "L'heure de division doit être comprise entre l'heure de début et de fin",
+      "laterOccurrence": "Occurrence suivante",
+      "nonexistentTime": "L'heure de fractionnement n'existe pas à cette date",
       "preview": "Aperçu",
       "secondNotes": "Notes pour la seconde période (facultatif)",
       "secondPeriod": "Seconde période",
       "splitAt": "Diviser à",
+      "splitDate": "Date de fractionnement",
       "success": "Période de travail divisée avec succès",
       "title": "Diviser la période de travail"
     },

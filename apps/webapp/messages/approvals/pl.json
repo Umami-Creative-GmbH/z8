@@ -35,7 +35,7 @@
     "notes": "Notatki",
     "noTimeCorrectionApprovals": "Brak oczekujących wniosków o korektę czasu do przejrzenia.",
     "offFrom": "nieobecny od",
-    "openDetailsFor": "Otwórz szczegóły dla {title}",
+    "openDetailsFor": "Otwórz szczegóły dla ${item.summary.title}",
     "openInbox": "Otwórz skrzynkę odbiorczą",
     "originalTimes": "Oryginalne czasy",
     "pendingRequests": "Oczekujące wnioski",

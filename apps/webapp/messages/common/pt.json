@@ -109,6 +109,7 @@
     "add": "Adicionar",
     "adding": "Adicionando...",
     "all": "Tudo",
+    "appName": "Z8",
     "approve": "Aprovar",
     "assign": "Atribuir",
     "back": "Voltar",
@@ -138,7 +139,6 @@
     "deselectAll": "Desmarcar tudo",
     "details": "Detalhes",
     "download": "Baixar",
-    "duplicate": "Duplicar",
     "edit": "Editar",
     "enabled": "Ativado",
     "error": "Erro",
@@ -150,7 +150,6 @@
     },
     "goToDashboard": "Ir para o Painel",
     "inactive": "Inativo",
-    "label": "Rótulo",
     "loading": "A carregar...",
     "loadMore": "Carregar Mais",
     "months": {
@@ -247,6 +246,7 @@
     "countSelected": "{count} funcionários selecionados",
     "countWithMore": "{count} funcionários (+{more} outros)",
     "noEmployeesFound": "Nenhum funcionário encontrado",
+    "removeSelected": "Remover {name}",
     "role": "Cargo",
     "searchPlaceholder": "Pesquisar por nome, e-mail ou cargo...",
     "selected": "{count} selecionado(s)",
@@ -297,6 +297,7 @@
   },
   "nav": {
     "absences": "Ausências",
+    "analytics": "Análise",
     "approvals": "Aprovações",
     "calendar": "Calendário",
     "compliance": "Conformidade",
@@ -314,6 +315,7 @@
     "teamAbsences": "Ausências da Equipe",
     "team-label": "Equipa",
     "time-tracking": "Rastreio de Tempo",
+    "today": "Hoje",
     "travel-expenses": "Despesas de Viagem",
     "worksCouncil": "Conselho de Empresa"
   },
@@ -326,28 +328,20 @@
       "settings": "Configurações de notificação",
       "viewAll": "Ver todas as notificações"
     },
-		"content": {
-			"absenceRequestSubmitted": {
-				"message": "Sua solicitação de {categoryName} para {dateRange} foi enviada e está aguardando aprovação.",
-				"title": "Solicitação de ausência enviada"
-			},
-			"passwordChanged": {
-				"message": "Sua senha foi alterada com sucesso. Se você não realizou essa alteração, entre em contato com o suporte imediatamente.",
-				"title": "Senha alterada"
-			},
+    "content": {
+      "passwordChanged": {
+        "message": "Sua senha foi alterada com sucesso. Se você não realizou essa alteração, entre em contato com o suporte imediatamente.",
+        "title": "Senha alterada"
+      },
       "shiftAssigned": {
         "message": "Você foi designado para um turno em {shiftDate} das {startTime} às {endTime} por {assignedByName}.",
         "title": "Turno designado"
       },
-			"teamMemberAdded": {
-				"message": "Você foi adicionado à equipe {teamName} por {performedByName}.",
-				"title": "Adicionado à equipe"
-			},
-			"teamMemberRemoved": {
-				"message": "Você foi removido da equipe {teamName} por {performedByName}.",
-				"title": "Removido da equipe"
-			}
-		},
+      "teamMemberAdded": {
+        "message": "Você foi adicionado à equipe {teamName} por {performedByName}.",
+        "title": "Adicionado à equipe"
+      }
+    },
     "description": "Revise atualizações, aprovações e alertas do sistema em uma única linha do tempo.",
     "empty": {
       "description": "Você está em dia! Novas notificações aparecerão aqui.",
@@ -434,9 +428,9 @@
   "presence": {
     "activity": {
       "lastActivity": "última atividade {date}",
-      "relativeHours": "há {hours}h",
-      "relativeHoursMinutes": "há {hours}h {minutes}min",
-      "relativeMinutes": "há {minutes}min"
+      "relativeHours": "desde {hours}h",
+      "relativeHoursMinutes": "desde {hours}h {minutes}min",
+      "relativeMinutes": "desde {minutes}min"
     },
     "clockedIn": "Registrou entrada",
     "clockedOut": "Registrou saída"

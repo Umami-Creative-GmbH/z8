@@ -48,6 +48,7 @@
       "event": "Ereignis",
       "failed": "Fehlgeschlagen",
       "http": "HTTP",
+      "loadError": "Übermittligsprotokoll händ nöd chönne glade werde",
       "payload": "Payload",
       "pending": "Ausstehend",
       "response": "Antwort",

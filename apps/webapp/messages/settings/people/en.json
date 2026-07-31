@@ -12,7 +12,7 @@
       "title": "Employee Groups"
     },
     "employees": {
-      "description": "Manage employees, members, and invites",
+      "description": "Manage employee profiles, teams, and permissions",
       "details": "Employee Details",
       "detailView": {
         "loadingEmployeeData": "Loading employee data",
@@ -31,7 +31,6 @@
         },
         "countFound": "{count} employee(s) found",
         "emptyState": "No employees found",
-        "inviteEmployee": "Invite Employee",
         "loading": "Loading employees...",
         "noEmployeeFeature": "manage employees",
         "pagination": {
@@ -71,11 +70,15 @@
         "deleting": "Deleting draft...",
         "resend": "Resend invitation",
         "resendError": "Failed to resend invitation",
-        "resendSuccess": "Invitation resent successfully",
-        "resending": "Resending invitation..."
+        "resending": "Resending invitation...",
+        "resendSuccess": "Invitation resent successfully"
+      },
+      "invitations": {
+        "description": "Invite members and review pending join requests",
+        "title": "Invitations"
       },
       "lifecycle": {
-        "actionsLabel": "Employee actions for {name}",
+        "actionsLabel": "Employee actions for ${target.displayName}",
         "deactivate": "Deactivate",
         "deactivateDescription": "This suspends access to this organization and ends sessions currently using it. Employee history is retained.",
         "deactivateError": "Failed to deactivate employee",
@@ -83,8 +86,6 @@
         "deactivateTitle": "Deactivate employee?",
         "deactivating": "Deactivating...",
         "deactivatingStatus": "Deactivating employee",
-        "finalOwnerDeactivateGuidance": "Assign and activate another approved owner before deactivating this employee.",
-        "finalOwnerRemoveGuidance": "Assign and activate another approved owner before removing this employee's access.",
         "reactivate": "Reactivate",
         "reactivateDescription": "This restores access to this organization using the existing employee record.",
         "reactivateError": "Failed to reactivate employee",
@@ -100,6 +101,12 @@
         "removeTitle": "Remove organization access?",
         "removing": "Removing access...",
         "removingStatus": "Removing organization access"
+      },
+      "tabs": {
+        "employees": "Employees",
+        "invitations": "Invitations",
+        "inviteCodes": "Invite Codes",
+        "members": "Members"
       },
       "title": "Employees"
     },
@@ -122,35 +129,24 @@
       "effectiveDate": "Effective Date",
       "effectiveDateHelp": "When this contract context takes effect",
       "effectiveDateRequired": "Effective Date is required",
-      "effectiveDateValue": "Effective {date}",
-      "emptyTimeline": "No contract or work-model history yet.",
       "hourlyRate": "Hourly Rate",
-      "hourlyRateValue": "{rate} / hour",
       "inheritWorkPolicy": "Inherit team/org policy",
       "nextScheduledConfirmed": "Next scheduled confirmed",
       "noCurrentContext": "No confirmed contract context",
       "noScheduledChange": "No confirmed change scheduled",
-      "policyValue": "Policy: {policyName}",
       "probationEnd": "Probation End",
-      "probationRange": "Probation {startDate} - {endDate}",
       "probationStart": "Probation Start",
       "reasonNote": "Reason / Note",
       "reasonPlaceholder": "Annual review, role change, or work-model update…",
       "reviewState": "Review State",
       "saveChange": "Save Change",
-      "selectContractType": "Select contract type",
-      "selectReviewState": "Select review state",
-      "selectWorkModel": "Select work model",
-      "selectWorkPolicy": "Select work policy",
       "states": {
         "confirmed": "confirmed",
         "draft": "draft",
         "pending": "pending"
       },
-      "timeline": "Timeline",
       "title": "Contract & Work Model",
       "weeklyHours": "Weekly Hours",
-      "weeklyHoursValue": "{hours} / week",
       "workModel": "Work Model",
       "workModels": {
         "flexible": "flexible",

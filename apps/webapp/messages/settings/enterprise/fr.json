@@ -515,6 +515,7 @@
         "deleteDialogDescription": "Êtes-vous sûr de vouloir supprimer ce fournisseur SSO ? Les utilisateurs ne pourront plus se connecter en utilisant ce fournisseur d'identité.",
         "deleteDialogTitle": "Supprimer le fournisseur SSO",
         "deleteError": "Échec de la suppression du fournisseur SSO",
+        "deleteProviderAria": "Supprimer le fournisseur SSO {provider}",
         "deleteSuccess": "Fournisseur SSO supprimé",
         "description": "Ajoutez des fournisseurs d'identité OIDC pour activer le SSO pour votre organisation.",
         "domainInvalid": "Veuillez saisir un domaine valide (par ex., exemple.com)",

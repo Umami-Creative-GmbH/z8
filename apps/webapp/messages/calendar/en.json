@@ -234,17 +234,23 @@
       "weekSum": "Sum"
     },
     "split": {
+      "ambiguousTime": "Choose which occurrence to use",
+      "chooseOccurrence": "Choose occurrence",
       "confirm": "Split Work Period",
       "currentPeriod": "Current Work Period",
       "description": "Divide this work period into two separate sessions.",
+      "earlierOccurrence": "Earlier occurrence",
       "failed": "Failed to split work period",
       "firstNotes": "Notes for first period (optional)",
       "firstPeriod": "First Period",
       "invalidTime": "Split time must be between start and end times",
+      "laterOccurrence": "Later occurrence",
+      "nonexistentTime": "Split time does not exist on this date",
       "preview": "Preview",
       "secondNotes": "Notes for second period (optional)",
       "secondPeriod": "Second Period",
       "splitAt": "Split at",
+      "splitDate": "Split date",
       "success": "Work period split successfully",
       "title": "Split Work Period"
     },

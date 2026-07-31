@@ -84,22 +84,12 @@
       "activePolicyTableDescription": "Le policy vengono valutate per priorità; la prima policy attiva corrispondente fornisce la catena di approvazione.",
       "activeStatus": "Stato attivo",
       "addPolicy": "Aggiungi policy",
-      "addStage": "Aggiungi fase",
       "approvalType": {
         "absenceRequests": "Richieste di assenza",
         "timeEntryChanges": "Modifiche alle registrazioni orarie",
         "travelExpenses": "Spese di viaggio"
       },
       "approvalTypes": "Tipi di approvazione",
-      "approver": "Approvatore",
-      "approverEmployeeId": "ID dipendente dell'approvatore",
-      "approverEmployeeIdPlaceholder": "Esempio: dipendente_123…",
-      "approverType": {
-        "directManager": "Manager diretto",
-        "managerManager": "Manager del manager",
-        "organizationAdmin": "Amministratore dell'organizzazione",
-        "specificEmployee": "Dipendente specifico"
-      },
       "conditionsCount": "Conteggio condizioni",
       "createPolicy": "Crea politica di approvazione",
       "defaultStageLabel": "Revisione del manager",
@@ -111,7 +101,6 @@
       "loadFailed": "Impossibile caricare le politiche di approvazione.",
       "loading": "Caricamento politiche in corso…",
       "namePlaceholder": "Esempio: Escalation assenze…",
-      "noStages": "Nessuna fase di approvazione configurata.",
       "preview": {
         "ariaLabel": "Anteprima catena di approvazione",
         "badge": "Shell di anteprima",
@@ -126,11 +115,7 @@
         "title": "Riepilogo anteprima catena"
       },
       "priority": "Priorità",
-      "removeStage": "Rimuovi fase",
-      "stageNumber": "Fase {number}",
-      "stages": "Fasi di approvazione",
       "stagesCount": "Conteggio fasi",
-      "stagesDescription": "Le fasi vengono eseguite in ordine; ogni richiesta avanza solo dopo che l'approvatore corrente l'ha accettata.",
       "status": {
         "active": "Attiva",
         "inactive": "Inattiva"

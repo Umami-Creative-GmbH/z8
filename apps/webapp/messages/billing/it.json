@@ -75,7 +75,6 @@
     "startTrial": "Avvia Prova Gratuita",
     "status": {
       "canceled": "Annullato",
-      "noSubscription": "Nessun Abbonamento",
       "pastDue": "Scaduto",
       "trial": "Prova"
     },

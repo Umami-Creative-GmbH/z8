@@ -109,6 +109,7 @@
     "add": "Add",
     "adding": "Adding...",
     "all": "All",
+    "appName": "Z8",
     "approve": "Approve",
     "assign": "Assign",
     "back": "Back",
@@ -138,7 +139,6 @@
     "deselectAll": "Deselect All",
     "details": "Details",
     "download": "Download",
-    "duplicate": "Duplicate",
     "edit": "Edit",
     "enabled": "Enabled",
     "error": "Error",
@@ -150,7 +150,6 @@
     },
     "goToDashboard": "Go to Dashboard",
     "inactive": "Inactive",
-    "label": "Label",
     "loading": "Loading...",
     "loadMore": "Load More",
     "months": {
@@ -247,6 +246,7 @@
     "countSelected": "{count} employees selected",
     "countWithMore": "{count} employees (+{more} more)",
     "noEmployeesFound": "No employees found",
+    "removeSelected": "Remove {name}",
     "role": "Role",
     "searchPlaceholder": "Search by name, email, or position...",
     "selected": "{count} selected",
@@ -297,6 +297,7 @@
   },
   "nav": {
     "absences": "Absences",
+    "analytics": "Analytics",
     "approvals": "Approvals",
     "calendar": "Calendar",
     "compliance": "Compliance",
@@ -314,6 +315,7 @@
     "teamAbsences": "Team Absences",
     "team-label": "Team",
     "time-tracking": "Time Tracking",
+    "today": "Today",
     "travel-expenses": "Travel Expenses",
     "worksCouncil": "Works Council"
   },
@@ -326,28 +328,20 @@
       "settings": "Notification settings",
       "viewAll": "View all notifications"
     },
-		"content": {
-			"absenceRequestSubmitted": {
-				"message": "Your {categoryName} request for {dateRange} has been submitted and is pending approval.",
-				"title": "Absence request submitted"
-			},
-			"passwordChanged": {
-				"message": "Your password was successfully changed. If you didn't make this change, please contact support immediately.",
-				"title": "Password changed"
-			},
+    "content": {
+      "passwordChanged": {
+        "message": "Your password was successfully changed. If you didn't make this change, please contact support immediately.",
+        "title": "Password changed"
+      },
       "shiftAssigned": {
         "message": "You have been assigned a shift on {shiftDate} from {startTime} to {endTime} by {assignedByName}.",
         "title": "Shift assigned"
       },
-			"teamMemberAdded": {
-				"message": "You have been added to the {teamName} team by {performedByName}.",
-				"title": "Added to team"
-			},
-			"teamMemberRemoved": {
-				"message": "You have been removed from the {teamName} team by {performedByName}.",
-				"title": "Removed from team"
-			}
-		},
+      "teamMemberAdded": {
+        "message": "You have been added to the {teamName} team by {performedByName}.",
+        "title": "Added to team"
+      }
+    },
     "description": "Review updates, approvals, and system alerts in one timeline.",
     "empty": {
       "description": "You're all caught up! New notifications will appear here.",

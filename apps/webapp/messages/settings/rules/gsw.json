@@ -84,22 +84,12 @@
       "activePolicyTableDescription": "Richtlinie wärded nach Priorität bewärtet; die erschti passendi aktivi Richtlinie bestimmt d'Freigabeketti.",
       "activeStatus": "Aktive Status",
       "addPolicy": "Richtlinie hinzufüege",
-      "addStage": "Stufe hinzufüege",
       "approvalType": {
         "absenceRequests": "Abweseheitsaaträg",
         "timeEntryChanges": "Änderige a de Ziiterfassig",
         "travelExpenses": "Spese"
       },
       "approvalTypes": "Freigabetype",
-      "approver": "Freigabeberechtigti Person",
-      "approverEmployeeId": "Personalnummer vom Freigabeberechtigte",
-      "approverEmployeeIdPlaceholder": "Byspil: employee_123…",
-      "approverType": {
-        "directManager": "Direkte Vorgesetzte",
-        "managerManager": "Vorgesetzte vom Vorgesetzte",
-        "organizationAdmin": "Organisations-Admin",
-        "specificEmployee": "Bestimmti Person"
-      },
       "conditionsCount": "Aazahl Bedingige",
       "createPolicy": "Freigaberichtlinie erstelle",
       "defaultStageLabel": "Prüfig dur Vorgesetzte",
@@ -111,7 +101,6 @@
       "loadFailed": "Freigaberichtlinie händ nid chönne glade wärde.",
       "loading": "Richtlinie wärded glade…",
       "namePlaceholder": "Byspil: Abweseheits-Eskalation…",
-      "noStages": "Es sind no kei Freigabestufe konfiguriert.",
       "preview": {
         "ariaLabel": "Vorschau vo de Freigabeketti",
         "badge": "Vorschau-Shell",
@@ -126,11 +115,7 @@
         "title": "Zämefassig vo de Vorschau-Chetti"
       },
       "priority": "Priorität",
-      "removeStage": "Stufe entferne",
-      "stageNumber": "Stufe {number}",
-      "stages": "Freigabestufe",
       "stagesCount": "Azahl Stufe",
-      "stagesDescription": "D Stufe laufed nacheinander; jede Aatrag gaht erst witer, wenn de aktuell Freigabeberechtigt zuegstimmt hät.",
       "status": {
         "active": "Aktiv",
         "inactive": "Inaktiv"

@@ -234,17 +234,23 @@
       "weekSum": "Summe"
     },
     "split": {
+      "ambiguousTime": "Wähle us, weles Eräignis bruucht wird",
+      "chooseOccurrence": "Eräignis uswähle",
       "confirm": "Arbetsperiode teile",
       "currentPeriod": "Aktuelli Arbetsperiode",
       "description": "Die Arbetsperiode in zwei einzelni Sitzige ufteile.",
+      "earlierOccurrence": "Früheres Eräignis",
       "failed": "Arbetsperiode cha nöd teilt werde",
       "firstNotes": "Notize für die erschti Periode (optional)",
       "firstPeriod": "Erschti Periode",
       "invalidTime": "D'Ziit zum Teile muess zwüschem Start und em Ändi ligge",
+      "laterOccurrence": "Späteres Eräignis",
+      "nonexistentTime": "Split-Ziit git s a däm Datum nid",
       "preview": "Vorschau",
       "secondNotes": "Notize für die zweiti Periode (optional)",
       "secondPeriod": "Zweiti Periode",
       "splitAt": "Teile um",
+      "splitDate": "Split-Datum",
       "success": "Arbetsperiode erfolgriich teilt",
       "title": "Arbetsperiode teile"
     },

@@ -35,7 +35,7 @@
     "notes": "Note",
     "noTimeCorrectionApprovals": "Nessuna richiesta di correzione oraria in sospeso da revisionare.",
     "offFrom": "assente dal",
-    "openDetailsFor": "Apri i dettagli per {title}",
+    "openDetailsFor": "Apri i dettagli per ${item.summary.title}",
     "openInbox": "Apri posta in arrivo",
     "originalTimes": "Orari originali",
     "pendingRequests": "Richieste in sospeso",
