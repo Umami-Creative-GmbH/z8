@@ -24,7 +24,7 @@ import type {
 	ApprovalTimelineEvent,
 	ApprovalTypeHandler,
 } from "../domain/types";
-import { buildSLAInfo, fetchApprovals, getApprovalCount } from "./base-handler";
+import { buildSLAInfo, fetchApprovals } from "./base-handler";
 
 // Type for absence entity with relations
 interface AbsenceWithRelations {
@@ -109,6 +109,10 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 						return map;
 					}),
 				filterEntity: (entity, params) => {
+					if (entity.status !== (params.status ?? "pending")) {
+						return false;
+					}
+
 					// Apply team filter
 					if (params.teamId && entity.employee.teamId !== params.teamId) {
 						return false;
@@ -164,7 +168,13 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 			}),
 
 		getCount: (approverId, organizationId, visibility) =>
-			getApprovalCount("absence_entry", approverId, organizationId, visibility),
+			AbsenceRequestHandler.getApprovals({
+				approverId,
+				organizationId,
+				status: "pending",
+				limit: 1,
+				...visibility,
+			}).pipe(Effect.map((approvals) => approvals.length)),
 
 		getDetail: (entityId, organizationId) =>
 			Effect.gen(function* (_) {

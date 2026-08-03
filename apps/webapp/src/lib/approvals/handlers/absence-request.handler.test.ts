@@ -138,6 +138,67 @@ describe("absence approval handler tenant scope", () => {
 		).toEqual(expect.arrayContaining(["id", "organization_id"]));
 	});
 
+	it.each(["approved", "rejected"] as const)(
+		"omits a pending approval request whose absence is already %s",
+		async (status) => {
+			const dbService = DatabaseService.of({
+				db: {
+					query: {
+						approvalRequest: {
+							findMany: vi.fn().mockResolvedValue([approval]),
+						},
+						absenceEntry: {
+							findMany: vi.fn().mockResolvedValue([{ ...absence, status }]),
+						},
+					},
+				},
+				query: (_name: string, operation: () => Promise<unknown>) =>
+					Effect.promise(operation),
+			});
+
+			const result = await Effect.runPromise(
+				AbsenceRequestHandler.getApprovals({
+					approverId: "employee-2",
+					organizationId: "org-1",
+				}).pipe(Effect.provideService(DatabaseService, dbService)),
+			);
+
+			expect(result).toEqual([]);
+		},
+	);
+
+	it("excludes stale absence requests from the pending count", async () => {
+		const dbService = DatabaseService.of({
+			db: {
+				query: {
+					approvalRequest: {
+						findMany: vi.fn().mockResolvedValue([approval]),
+					},
+					absenceEntry: {
+						findMany: vi
+							.fn()
+							.mockResolvedValue([{ ...absence, status: "approved" }]),
+					},
+				},
+				select: vi.fn(() => ({
+					from: vi.fn(() => ({
+						where: vi.fn().mockResolvedValue([{ count: 1 }]),
+					})),
+				})),
+			},
+			query: (_name: string, operation: () => Promise<unknown>) =>
+				Effect.promise(operation),
+		});
+
+		const result = await Effect.runPromise(
+			AbsenceRequestHandler.getCount("employee-2", "org-1").pipe(
+				Effect.provideService(DatabaseService, dbService),
+			),
+		);
+
+		expect(result).toBe(0);
+	});
+
 	it("scopes both detail reads to the requested organization", async () => {
 		const absenceFindFirst = vi.fn().mockResolvedValue(absence);
 		const requestFindFirst = vi.fn().mockResolvedValue(approval);
@@ -172,39 +233,42 @@ describe("absence approval handler tenant scope", () => {
 	it.each([
 		["approve", undefined],
 		["reject", "Needs clarification"],
-	] as const)("dispatches %s through authenticated identity resolution", async (action, reason) => {
-		const executeAuthenticatedAbsenceDecision = vi
-			.fn()
-			.mockResolvedValue(undefined);
-		vi.doMock("@/lib/approvals/server/absence-approvals", () => ({
-			executeAuthenticatedAbsenceDecision,
-		}));
+	] as const)(
+		"dispatches %s through authenticated identity resolution",
+		async (action, reason) => {
+			const executeAuthenticatedAbsenceDecision = vi
+				.fn()
+				.mockResolvedValue(undefined);
+			vi.doMock("@/lib/approvals/server/absence-approvals", () => ({
+				executeAuthenticatedAbsenceDecision,
+			}));
 
-		if (action === "approve") {
-			await Effect.runPromise(
-				AbsenceRequestHandler.approve("absence-1", "caller-employee", {
-					approvalRequestId: "approval-1",
-				}),
-			);
-		} else {
-			await Effect.runPromise(
-				AbsenceRequestHandler.reject("absence-1", "caller-employee", reason, {
-					approvalRequestId: "approval-1",
-				}),
-			);
-		}
+			if (action === "approve") {
+				await Effect.runPromise(
+					AbsenceRequestHandler.approve("absence-1", "caller-employee", {
+						approvalRequestId: "approval-1",
+					}),
+				);
+			} else {
+				await Effect.runPromise(
+					AbsenceRequestHandler.reject("absence-1", "caller-employee", reason, {
+						approvalRequestId: "approval-1",
+					}),
+				);
+			}
 
-		expect(executeAuthenticatedAbsenceDecision).toHaveBeenCalledWith(
-			"absence-1",
-			action,
-			reason,
-			{ approvalRequestId: "approval-1" },
-		);
-		expect(executeAuthenticatedAbsenceDecision.mock.calls[0]).not.toContain(
-			"caller-employee",
-		);
-		vi.doUnmock("@/lib/approvals/server/absence-approvals");
-	});
+			expect(executeAuthenticatedAbsenceDecision).toHaveBeenCalledWith(
+				"absence-1",
+				action,
+				reason,
+				{ approvalRequestId: "approval-1" },
+			);
+			expect(executeAuthenticatedAbsenceDecision.mock.calls[0]).not.toContain(
+				"caller-employee",
+			);
+			vi.doUnmock("@/lib/approvals/server/absence-approvals");
+		},
+	);
 
 	it.each([
 		new NotFoundError({
