@@ -3,6 +3,7 @@
 import {
 	IconAlertTriangle,
 	IconCalendarWeek,
+	IconChevronDown,
 	IconChevronLeft,
 	IconChevronRight,
 	IconDownload,
@@ -29,6 +30,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -1270,7 +1276,7 @@ function PayrollBlockersAlert({
 	t: PayrollTranslate;
 }) {
 	const locale = useLocale();
-	const headingRef = useRef<HTMLHeadingElement | null>(null);
+	const triggerRef = useRef<HTMLButtonElement | null>(null);
 	const handledFocusRequestIdRef = useRef(0);
 	const blockerControlRefs = useRef(
 		new Map<
@@ -1298,7 +1304,7 @@ function PayrollBlockersAlert({
 			: undefined;
 		const targetControl =
 			controls?.clear && !controls.clear.disabled ? controls.clear : controls?.action;
-		const fallbackTarget = blockers.length === 0 ? fallbackFocusRef.current : headingRef.current;
+		const fallbackTarget = blockers.length === 0 ? fallbackFocusRef.current : triggerRef.current;
 		(targetControl ?? fallbackTarget)?.focus();
 	}, [blockers.length, fallbackFocusRef, focusRequest]);
 
@@ -1318,25 +1324,34 @@ function PayrollBlockersAlert({
 	if (blockers.length === 0) return null;
 
 	return (
-		<section
-			aria-labelledby="payroll-blockers-title"
-			className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 text-sm dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100"
-		>
-			<header className="flex items-start gap-3">
-				<IconAlertTriangle
-					aria-hidden="true"
-					className="mt-0.5 size-4 shrink-0"
-				/>
-				<h2
-					className="rounded-sm font-medium leading-none focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-					id="payroll-blockers-title"
-					ref={headingRef}
-					tabIndex={-1}
-				>
-					{title}
-				</h2>
-			</header>
-			<ul className="mt-3 grid gap-2">
+		<Collapsible asChild>
+			<section
+				aria-labelledby="payroll-blockers-title"
+				className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 text-sm dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100"
+			>
+				<header>
+					<h2 id="payroll-blockers-title">
+						<CollapsibleTrigger asChild>
+							<button
+								className="flex w-full items-start gap-3 rounded-sm text-left font-medium leading-none outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 [&[data-panel-open]>svg:last-child]:rotate-180"
+								ref={triggerRef}
+								type="button"
+							>
+								<IconAlertTriangle
+									aria-hidden="true"
+									className="mt-0.5 size-4 shrink-0"
+								/>
+								<span className="min-w-0 flex-1">{title}</span>
+								<IconChevronDown
+									aria-hidden="true"
+									className="size-4 shrink-0 transition-transform"
+								/>
+							</button>
+						</CollapsibleTrigger>
+					</h2>
+				</header>
+				<CollapsibleContent asChild>
+					<ul className="mt-3 grid gap-2">
 				{blockers.map((blocker) => {
 					const blockerKey = payrollBlockerIdentity(blocker);
 					const isClearing = clearingBlockerKeys.has(blockerKey);
@@ -1464,8 +1479,10 @@ function PayrollBlockersAlert({
 						</li>
 					);
 				})}
-			</ul>
-		</section>
+					</ul>
+				</CollapsibleContent>
+			</section>
+		</Collapsible>
 	);
 }
 

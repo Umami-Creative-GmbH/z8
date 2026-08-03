@@ -109,6 +109,13 @@ function blockerSelector(type: PayrollBlockerType, id: string) {
 	return `[data-payroll-blocker-key="${payrollBlockerIdentity({ id, type })}"]`;
 }
 
+function expandPayrollBlockers(name: string | RegExp = /payroll blockers need review/) {
+	const region = screen.getByRole("region", { name });
+	const trigger = within(region).getByRole("button", { name });
+	if (trigger.getAttribute("aria-expanded") === "false") fireEvent.click(trigger);
+	return region;
+}
+
 const summary = buildSummary();
 
 function deferred<T>() {
@@ -160,6 +167,31 @@ describe("PayrollWorkspace", () => {
 		expect(screen.getByRole("button", { name: "Translated trigger export" })).toBeTruthy();
 	});
 
+	it("collapses blocker rows by default", () => {
+		render(
+			<PayrollWorkspace
+				initialSummary={summary}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+
+		const trigger = screen.getByRole("button", {
+			name: "2 payroll blockers need review",
+		});
+		expect(trigger.getAttribute("aria-expanded")).toBe("false");
+		expect(screen.queryByText("Missing clock-out")).toBeNull();
+
+		fireEvent.click(trigger);
+
+		expect(trigger.getAttribute("aria-expanded")).toBe("true");
+		expect(screen.getByText("Missing clock-out")).toBeTruthy();
+
+		fireEvent.click(trigger);
+
+		expect(trigger.getAttribute("aria-expanded")).toBe("false");
+		expect(screen.queryByText("Missing clock-out")).toBeNull();
+	});
+
 	it("renders summary cards, employee rows, period controls, and blockers", () => {
 		render(
 			<PayrollWorkspace
@@ -167,6 +199,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 		expect(screen.getByText("Payroll")).toBeTruthy();
 		expect(
 			screen.getByText("Review payroll totals, readiness, and exports for the selected period."),
@@ -259,9 +292,7 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 
-		const blockersRegion = screen.getByRole("region", {
-			name: "4 Lohnblocker prüfen",
-		});
+		const blockersRegion = expandPayrollBlockers("4 Lohnblocker prüfen");
 		expect(screen.queryByRole("alert")).toBeNull();
 
 		const adaMissingRow = blockersRegion.querySelector(
@@ -377,6 +408,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 
 		const missingRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
 		const absenceRow = document.querySelector(blockerSelector("pending_absence", "blocker-2"));
@@ -407,6 +439,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 
 		fireEvent.click(screen.getByRole("button", { name: "Specific employees" }));
 		const sheet = await screen.findByRole("dialog");
@@ -452,6 +485,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 
 		const missingRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
 		const absenceRow = document.querySelector(blockerSelector("pending_absence", "blocker-2"));
@@ -522,6 +556,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 
 		const missingRow = document.querySelector(
 			blockerSelector("missing_clock_out", sharedId),
@@ -650,6 +685,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 
 		const firstRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
 		const secondRow = document.querySelector(blockerSelector("pending_absence", "blocker-2"));
@@ -748,6 +784,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 		const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
 		fireEvent.click(
 			within(blockerRow as HTMLElement).getByRole("button", {
@@ -794,6 +831,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 		const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
 		fireEvent.click(
 			within(blockerRow as HTMLElement).getByRole("button", {
@@ -858,6 +896,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 		const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
 		fireEvent.click(
 			within(blockerRow as HTMLElement).getByRole("button", {
@@ -927,6 +966,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 		const firstRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
 		const secondRow = document.querySelector(blockerSelector("pending_absence", "blocker-2"));
 		fireEvent.click(
@@ -961,6 +1001,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 		const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
 		fireEvent.click(
 			within(blockerRow as HTMLElement).getByRole("button", {
@@ -995,6 +1036,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 		const firstRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
 		const clearButton = within(firstRow as HTMLElement).getByRole("button", {
 			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
@@ -1030,6 +1072,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 		const missingRow = document.querySelector(
 			blockerSelector("missing_clock_out", sharedId),
 		);
@@ -1061,6 +1104,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 		const firstRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
 		const clearButton = within(firstRow as HTMLElement).getByRole("button", {
 			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
@@ -1104,6 +1148,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 		const secondRow = document.querySelector(blockerSelector("pending_absence", "blocker-2"));
 		const clearButton = within(secondRow as HTMLElement).getByRole("button", {
 			name: /Clear false positive.*Ada Lovelace.*Pending absence/,
@@ -1141,6 +1186,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 		const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
 		const clearButton = within(blockerRow as HTMLElement).getByRole("button", {
 			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
@@ -1166,6 +1212,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 		const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
 		const clearButton = within(blockerRow as HTMLElement).getByRole("button", {
 			name: /Clear false positive.*Ada Lovelace.*Missing clock-out/,
@@ -1192,6 +1239,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 
 		const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
 		fireEvent.click(
@@ -1235,6 +1283,7 @@ describe("PayrollWorkspace", () => {
 				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 			/>,
 		);
+		expandPayrollBlockers();
 
 		const blockerRow = document.querySelector(blockerSelector("missing_clock_out", "blocker-1"));
 		fireEvent.click(
@@ -1280,6 +1329,7 @@ describe("PayrollWorkspace", () => {
 					exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
 				/>,
 			);
+			expandPayrollBlockers();
 
 			const blockerRow = document.querySelector(
 				blockerSelector("missing_clock_out", "blocker-1"),
@@ -1348,9 +1398,7 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 
-		const blockersRegion = screen.getByRole("region", {
-			name: "1 payroll blockers need review",
-		});
+		const blockersRegion = expandPayrollBlockers("1 payroll blockers need review");
 		const blockerRow = blockersRegion.querySelector(
 			blockerSelector("missing_clock_out", "missing-unknown"),
 		);
@@ -1408,9 +1456,7 @@ describe("PayrollWorkspace", () => {
 			/>,
 		);
 
-		const blockersRegion = screen.getByRole("region", {
-			name: "1 payroll blockers need review",
-		});
+		const blockersRegion = expandPayrollBlockers("1 payroll blockers need review");
 		const blockerRow = blockersRegion.querySelector(
 			blockerSelector("missing_clock_out", "uuid-name-blocker"),
 		);
