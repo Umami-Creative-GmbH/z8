@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
@@ -28,6 +28,20 @@ describe("Tolgee route translations", () => {
 			}
 		}
 	});
+
+	it.each(ALL_LANGUAGES)(
+		"defines approval timeline actor placeholders in %s",
+		(locale) => {
+			const catalog = JSON.parse(
+				readFileSync(join(process.cwd(), `messages/approvals/${locale}.json`), "utf8"),
+			) as { approvals?: { timelineActor?: unknown } };
+			const message = catalog.approvals?.timelineActor;
+
+			expect(message, `${locale}: approvals.timelineActor`).toEqual(expect.any(String));
+			expect(message, `${locale}: approvals.timelineActor`).toContain("{at}");
+			expect(message, `${locale}: approvals.timelineActor`).toContain("{actorName}");
+		},
+	);
 
 	it("loads app search strings from the common namespace", async () => {
 		const translations = await loadRouteTranslations("de", "/");

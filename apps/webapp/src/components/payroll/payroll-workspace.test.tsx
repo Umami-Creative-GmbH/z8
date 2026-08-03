@@ -178,6 +178,7 @@ describe("PayrollWorkspace", () => {
 		const trigger = screen.getByRole("button", {
 			name: "2 payroll blockers need review",
 		});
+		expect(trigger.classList.contains("min-h-11")).toBe(true);
 		expect(trigger.getAttribute("aria-expanded")).toBe("false");
 		expect(screen.queryByText("Missing clock-out")).toBeNull();
 

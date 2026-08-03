@@ -65,6 +65,7 @@
     "timeCorrectionRejected": "Korekta czasu odrzucona",
     "timeCorrections": "Korekty czasu pracy",
     "timeCorrectionsDescription": "Przeglądaj i zatwierdzaj wnioski o korektę czasu pracy członków swojego zespołu",
+    "timelineActor": "{at} przez {actorName}",
     "title": "Zatwierdzenia",
     "totalCount": "${totalCount} oczekujących",
     "type": "Typ",

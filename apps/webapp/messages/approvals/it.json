@@ -65,6 +65,7 @@
     "timeCorrectionRejected": "Correzione orario respinta",
     "timeCorrections": "Correzioni orario",
     "timeCorrectionsDescription": "Esamina e approva le richieste di correzione delle registrazioni orarie dei membri del tuo team",
+    "timelineActor": "{at} da {actorName}",
     "title": "Approvazioni",
     "totalCount": "${totalCount} in sospeso",
     "type": "Tipo",

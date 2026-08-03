@@ -65,6 +65,7 @@
     "timeCorrectionRejected": "Zaman düzeltmesi reddedildi",
     "timeCorrections": "Zaman Düzeltmeleri",
     "timeCorrectionsDescription": "Ekip üyelerinizden gelen zaman girişi düzeltme taleplerini inceleyin ve onaylayın",
+    "timelineActor": "{at}, {actorName} tarafından",
     "title": "Onaylar",
     "totalCount": "${totalCount} beklemede",
     "type": "Tür",

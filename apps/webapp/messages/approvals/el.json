@@ -65,6 +65,7 @@
     "timeCorrectionRejected": "Η διόρθωση χρόνου απορρίφθηκε",
     "timeCorrections": "Διορθώσεις χρόνου",
     "timeCorrectionsDescription": "Ελέγξτε και εγκρίνετε αιτήματα διόρθωσης καταχώρισης χρόνου από τα μέλη της ομάδας σας",
+    "timelineActor": "{at} από {actorName}",
     "title": "Εγκρίσεις",
     "totalCount": "${totalCount} σε εκκρεμότητα",
     "type": "Τύπος",

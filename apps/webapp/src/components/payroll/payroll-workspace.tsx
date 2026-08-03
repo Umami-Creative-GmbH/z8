@@ -1333,7 +1333,7 @@ function PayrollBlockersAlert({
 					<h2 id="payroll-blockers-title">
 						<CollapsibleTrigger asChild>
 							<button
-								className="flex w-full items-start gap-3 rounded-sm text-left font-medium leading-none outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 [&[data-panel-open]>svg:last-child]:rotate-180"
+								className="flex min-h-11 w-full items-start gap-3 rounded-sm text-left font-medium leading-none outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 [&[data-panel-open]>svg:last-child]:rotate-180"
 								ref={triggerRef}
 								type="button"
 							>
