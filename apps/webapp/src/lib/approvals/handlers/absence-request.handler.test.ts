@@ -1,4 +1,5 @@
 import { Cause, Effect, Exit, Option } from "effect";
+import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { describe, expect, it, vi } from "vitest";
 import { absenceEntry, approvalRequest } from "@/db/schema";
 import {
@@ -24,34 +25,6 @@ function collectColumnNames(value: unknown): string[] {
 			? [candidate.config.name]
 			: []),
 		...(candidate.queryChunks?.flatMap(collectColumnNames) ?? []),
-	];
-}
-
-function collectColumns(value: unknown): object[] {
-	if (!value || typeof value !== "object") return [];
-	const candidate = value as {
-		config?: { name?: unknown };
-		queryChunks?: unknown[];
-	};
-	return [
-		...(typeof candidate.config?.name === "string" ? [value] : []),
-		...(candidate.queryChunks?.flatMap(collectColumns) ?? []),
-	];
-}
-
-function collectParamValues(value: unknown): unknown[] {
-	if (!value || typeof value !== "object") return [];
-	const candidate = value as {
-		value?: unknown;
-		queryChunks?: unknown[];
-	};
-	return [
-		...(Object.hasOwn(candidate, "value")
-			? Array.isArray(candidate.value)
-				? candidate.value
-				: [candidate.value]
-			: []),
-		...(candidate.queryChunks?.flatMap(collectParamValues) ?? []),
 	];
 }
 
@@ -102,6 +75,36 @@ const approval = {
 	requester: absence.employee,
 	approver: null,
 };
+
+function createCountQueryDb(aggregateCount: number) {
+	const approvalFindMany = vi.fn();
+	const absenceFindMany = vi.fn();
+	const where = vi.fn().mockResolvedValue([{ count: aggregateCount }]);
+	const innerJoin = vi.fn(() => ({ where }));
+	const from = vi.fn(() => ({ innerJoin }));
+	const select = vi.fn((_selection?: unknown) => ({ from }));
+	const dbService = DatabaseService.of({
+		db: {
+			query: {
+				approvalRequest: { findMany: approvalFindMany },
+				absenceEntry: { findMany: absenceFindMany },
+			},
+			select,
+		},
+		query: (_name: string, operation: () => Promise<unknown>) =>
+			Effect.promise(operation),
+	});
+
+	return {
+		absenceFindMany,
+		approvalFindMany,
+		dbService,
+		from,
+		innerJoin,
+		select,
+		where,
+	};
+}
 
 describe("redactNonSickAbsenceSickDetail", () => {
 	it("redacts stale sick detail from non-sick absence entities", () => {
@@ -197,39 +200,15 @@ describe("absence approval handler tenant scope", () => {
 	);
 
 	it("counts visible pending absences in an organization-scoped SQL join", async () => {
-		const approvals = ["absence-1", "absence-2", "absence-3", "absence-4"].map(
-			(entityId, index) => ({
-				...approval,
-				id: `approval-${index + 1}`,
-				entityId,
-			}),
-		);
-		const absences = (["pending", "pending", "approved", "rejected"] as const).map(
-			(status, index) => ({
-				...absence,
-				id: `absence-${index + 1}`,
-				status,
-			}),
-		);
-		const where = vi.fn().mockResolvedValue([{ count: 2 }]);
-		const innerJoin = vi.fn(() => ({ where }));
-		const from = vi.fn(() => ({ innerJoin }));
-		const select = vi.fn(() => ({ from }));
-		const dbService = DatabaseService.of({
-			db: {
-				query: {
-					approvalRequest: {
-						findMany: vi.fn().mockResolvedValue(approvals),
-					},
-					absenceEntry: {
-						findMany: vi.fn().mockResolvedValue(absences),
-					},
-				},
-				select,
-			},
-			query: (_name: string, operation: () => Promise<unknown>) =>
-				Effect.promise(operation),
-		});
+		const {
+			absenceFindMany,
+			approvalFindMany,
+			dbService,
+			from,
+			innerJoin,
+			select,
+			where,
+		} = createCountQueryDb(2);
 
 		const result = await Effect.runPromise(
 			AbsenceRequestHandler.getCount("employee-2", "org-1", {
@@ -249,37 +228,85 @@ describe("absence approval handler tenant scope", () => {
 		expect(select).toHaveBeenCalledTimes(1);
 		expect(from).toHaveBeenCalledWith(approvalRequest);
 		expect(innerJoin).toHaveBeenCalledWith(absenceEntry, expect.anything());
+		expect(approvalFindMany).not.toHaveBeenCalled();
+		expect(absenceFindMany).not.toHaveBeenCalled();
 
-		const joinColumns = collectColumns(innerJoin.mock.calls[0]?.[1]);
-		expect(joinColumns).toEqual(
-			expect.arrayContaining([
-				absenceEntry.id,
-				approvalRequest.entityId,
-				absenceEntry.organizationId,
-			]),
-		);
-		expect(collectParamValues(innerJoin.mock.calls[0]?.[1])).toContain("org-1");
+		const dialect = new PgDialect();
+		const selection = select.mock.calls[0]?.[0] as { count: SQL };
+		expect(dialect.sqlToQuery(selection.count)).toEqual({
+			sql: "count(*)",
+			params: [],
+		});
+		const joinQuery = dialect.sqlToQuery(innerJoin.mock.calls[0]?.[1] as SQL);
+		expect(joinQuery.sql).toContain('"absence_entry"."id"');
+		expect(joinQuery.sql).toContain('"approval_request"."entity_id"');
+		expect(joinQuery.sql).toContain('"absence_entry"."organization_id"');
+		expect(joinQuery.params).toEqual(["org-1"]);
 
-		const whereColumns = collectColumns(where.mock.calls[0]?.[0]);
-		expect(whereColumns).toEqual(
-			expect.arrayContaining([
-				approvalRequest.entityType,
-				approvalRequest.organizationId,
-				approvalRequest.status,
-				approvalRequest.approverId,
-				approvalRequest.requestedBy,
-				absenceEntry.status,
-			]),
+		const whereQuery = dialect.sqlToQuery(where.mock.calls[0]?.[0] as SQL);
+		expect(whereQuery.sql).toContain('"approval_request"."entity_type"');
+		expect(whereQuery.sql).toContain('"approval_request"."organization_id"');
+		expect(whereQuery.sql).toContain('"approval_request"."status"');
+		expect(whereQuery.sql).toContain('"absence_entry"."status"');
+		expect(whereQuery.params).toEqual([
+			"absence_entry",
+			"org-1",
+			"pending",
+			"employee-2",
+			"employee-3",
+			"employee-4",
+			"pending",
+		]);
+		expect(whereQuery.sql).toContain(
+			'("approval_request"."approver_id" = $4 or ("approval_request"."requested_by" = $5 and "approval_request"."approver_id" in ($6)))',
 		);
-		expect(collectParamValues(where.mock.calls[0]?.[0])).toEqual(
-			expect.arrayContaining([
-				"absence_entry",
-				"org-1",
-				"pending",
-				"employee-2",
-				"employee-3",
-			]),
+	});
+
+	it("counts all approvers without assigned or eligible visibility restrictions", async () => {
+		const {
+			absenceFindMany,
+			approvalFindMany,
+			dbService,
+			innerJoin,
+			where,
+		} = createCountQueryDb(4);
+
+		const result = await Effect.runPromise(
+			AbsenceRequestHandler.getCount("employee-2", "org-1", {
+				includeAllApprovers: true,
+				eligibleApprovalScopes: [
+					{
+						requesterEmployeeId: "employee-3",
+						eligibleApproverIds: ["employee-4"],
+					},
+				],
+			}).pipe(Effect.provideService(DatabaseService, dbService)),
 		);
+
+		expect(result).toBe(4);
+		expect(approvalFindMany).not.toHaveBeenCalled();
+		expect(absenceFindMany).not.toHaveBeenCalled();
+
+		const dialect = new PgDialect();
+		const joinQuery = dialect.sqlToQuery(innerJoin.mock.calls[0]?.[1] as SQL);
+		expect(joinQuery.sql).toContain('"absence_entry"."id"');
+		expect(joinQuery.sql).toContain('"approval_request"."entity_id"');
+		expect(joinQuery.sql).toContain('"absence_entry"."organization_id"');
+		expect(joinQuery.params).toEqual(["org-1"]);
+
+		const whereQuery = dialect.sqlToQuery(where.mock.calls[0]?.[0] as SQL);
+		expect(whereQuery.sql).toContain('"approval_request"."entity_type"');
+		expect(whereQuery.sql).toContain('"approval_request"."organization_id"');
+		expect(whereQuery.sql).toContain('"approval_request"."status"');
+		expect(whereQuery.sql).toContain('"absence_entry"."status"');
+		expect(whereQuery.sql).not.toContain('"approver_id"');
+		expect(whereQuery.sql).not.toContain('"requested_by"');
+		expect(whereQuery.params).toEqual([
+			"absence_entry",
+			"org-1",
+			"pending",
+			"pending",
+		]);
 	});
 
 	it("scopes both detail reads to the requested organization", async () => {
