@@ -6,7 +6,7 @@
  */
 
 import { IconCalendarOff } from "@tabler/icons-react";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, count, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { absenceEntry, approvalRequest } from "@/db/schema";
@@ -24,7 +24,11 @@ import type {
 	ApprovalTimelineEvent,
 	ApprovalTypeHandler,
 } from "../domain/types";
-import { buildSLAInfo, fetchApprovals } from "./base-handler";
+import {
+	buildBaseConditions,
+	buildSLAInfo,
+	fetchApprovals,
+} from "./base-handler";
 
 // Type for absence entity with relations
 interface AbsenceWithRelations {
@@ -168,13 +172,34 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 			}),
 
 		getCount: (approverId, organizationId, visibility) =>
-			AbsenceRequestHandler.getApprovals({
-				approverId,
-				organizationId,
-				status: "pending",
-				limit: 1,
-				...visibility,
-			}).pipe(Effect.map((approvals) => approvals.length)),
+			Effect.gen(function* (_) {
+				const dbService = yield* _(DatabaseService);
+				const conditions = buildBaseConditions("absence_entry", {
+					approverId,
+					organizationId,
+					status: "pending",
+					limit: 1,
+					...visibility,
+				});
+
+				const result = yield* _(
+					dbService.query("getabsence_entryCount", async () => {
+						return await dbService.db
+							.select({ count: count() })
+							.from(approvalRequest)
+							.innerJoin(
+								absenceEntry,
+								and(
+									eq(absenceEntry.id, approvalRequest.entityId),
+									eq(absenceEntry.organizationId, organizationId),
+								),
+							)
+							.where(and(...conditions, eq(absenceEntry.status, "pending")));
+					}),
+				);
+
+				return result[0]?.count ?? 0;
+			}),
 
 		getDetail: (entityId, organizationId) =>
 			Effect.gen(function* (_) {

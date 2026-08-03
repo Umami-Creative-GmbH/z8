@@ -1,5 +1,6 @@
 import { Cause, Effect, Exit, Option } from "effect";
 import { describe, expect, it, vi } from "vitest";
+import { absenceEntry, approvalRequest } from "@/db/schema";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -23,6 +24,34 @@ function collectColumnNames(value: unknown): string[] {
 			? [candidate.config.name]
 			: []),
 		...(candidate.queryChunks?.flatMap(collectColumnNames) ?? []),
+	];
+}
+
+function collectColumns(value: unknown): object[] {
+	if (!value || typeof value !== "object") return [];
+	const candidate = value as {
+		config?: { name?: unknown };
+		queryChunks?: unknown[];
+	};
+	return [
+		...(typeof candidate.config?.name === "string" ? [value] : []),
+		...(candidate.queryChunks?.flatMap(collectColumns) ?? []),
+	];
+}
+
+function collectParamValues(value: unknown): unknown[] {
+	if (!value || typeof value !== "object") return [];
+	const candidate = value as {
+		value?: unknown;
+		queryChunks?: unknown[];
+	};
+	return [
+		...(Object.hasOwn(candidate, "value")
+			? Array.isArray(candidate.value)
+				? candidate.value
+				: [candidate.value]
+			: []),
+		...(candidate.queryChunks?.flatMap(collectParamValues) ?? []),
 	];
 }
 
@@ -167,36 +196,90 @@ describe("absence approval handler tenant scope", () => {
 		},
 	);
 
-	it("excludes stale absence requests from the pending count", async () => {
+	it("counts visible pending absences in an organization-scoped SQL join", async () => {
+		const approvals = ["absence-1", "absence-2", "absence-3", "absence-4"].map(
+			(entityId, index) => ({
+				...approval,
+				id: `approval-${index + 1}`,
+				entityId,
+			}),
+		);
+		const absences = (["pending", "pending", "approved", "rejected"] as const).map(
+			(status, index) => ({
+				...absence,
+				id: `absence-${index + 1}`,
+				status,
+			}),
+		);
+		const where = vi.fn().mockResolvedValue([{ count: 2 }]);
+		const innerJoin = vi.fn(() => ({ where }));
+		const from = vi.fn(() => ({ innerJoin }));
+		const select = vi.fn(() => ({ from }));
 		const dbService = DatabaseService.of({
 			db: {
 				query: {
 					approvalRequest: {
-						findMany: vi.fn().mockResolvedValue([approval]),
+						findMany: vi.fn().mockResolvedValue(approvals),
 					},
 					absenceEntry: {
-						findMany: vi
-							.fn()
-							.mockResolvedValue([{ ...absence, status: "approved" }]),
+						findMany: vi.fn().mockResolvedValue(absences),
 					},
 				},
-				select: vi.fn(() => ({
-					from: vi.fn(() => ({
-						where: vi.fn().mockResolvedValue([{ count: 1 }]),
-					})),
-				})),
+				select,
 			},
 			query: (_name: string, operation: () => Promise<unknown>) =>
 				Effect.promise(operation),
 		});
 
 		const result = await Effect.runPromise(
-			AbsenceRequestHandler.getCount("employee-2", "org-1").pipe(
+			AbsenceRequestHandler.getCount("employee-2", "org-1", {
+				includeAllApprovers: false,
+				eligibleApprovalScopes: [
+					{
+						requesterEmployeeId: "employee-3",
+						eligibleApproverIds: ["employee-4"],
+					},
+				],
+			}).pipe(
 				Effect.provideService(DatabaseService, dbService),
 			),
 		);
 
-		expect(result).toBe(0);
+		expect(result).toBe(2);
+		expect(select).toHaveBeenCalledTimes(1);
+		expect(from).toHaveBeenCalledWith(approvalRequest);
+		expect(innerJoin).toHaveBeenCalledWith(absenceEntry, expect.anything());
+
+		const joinColumns = collectColumns(innerJoin.mock.calls[0]?.[1]);
+		expect(joinColumns).toEqual(
+			expect.arrayContaining([
+				absenceEntry.id,
+				approvalRequest.entityId,
+				absenceEntry.organizationId,
+			]),
+		);
+		expect(collectParamValues(innerJoin.mock.calls[0]?.[1])).toContain("org-1");
+
+		const whereColumns = collectColumns(where.mock.calls[0]?.[0]);
+		expect(whereColumns).toEqual(
+			expect.arrayContaining([
+				approvalRequest.entityType,
+				approvalRequest.organizationId,
+				approvalRequest.status,
+				approvalRequest.approverId,
+				approvalRequest.requestedBy,
+				absenceEntry.status,
+			]),
+		);
+		expect(collectParamValues(where.mock.calls[0]?.[0])).toEqual(
+			expect.arrayContaining([
+				"absence_entry",
+				"org-1",
+				"pending",
+				"employee-2",
+				"employee-3",
+			]),
+		);
 	});
 
 	it("scopes both detail reads to the requested organization", async () => {
