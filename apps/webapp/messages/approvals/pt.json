@@ -65,6 +65,7 @@
     "timeCorrectionRejected": "Correção de tempo rejeitada",
     "timeCorrections": "Correções de Horário",
     "timeCorrectionsDescription": "Revise e aprove as solicitações de correção de registro de horas dos membros da sua equipe",
+    "timelineActor": "{at} por {actorName}",
     "title": "Aprovações",
     "totalCount": "${totalCount} pendente(s)",
     "type": "Tipo",

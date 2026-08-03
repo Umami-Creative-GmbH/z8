@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
@@ -11,23 +11,63 @@ import {
 
 describe("Tolgee route translations", () => {
 	it("lists every language supported by Tolgee and the language switchers", () => {
-		expect(ALL_LANGUAGES).toEqual(["en", "de", "fr", "es", "it", "pt", "el", "pl", "tr", "gsw"]);
-		expect(Object.keys(LANGUAGE_CONFIG)).toEqual(expect.arrayContaining(ALL_LANGUAGES));
+		expect(ALL_LANGUAGES).toEqual([
+			"en",
+			"de",
+			"fr",
+			"es",
+			"it",
+			"pt",
+			"el",
+			"pl",
+			"tr",
+			"gsw",
+		]);
+		expect(Object.keys(LANGUAGE_CONFIG)).toEqual(
+			expect.arrayContaining(ALL_LANGUAGES),
+		);
 	});
 
 	it("does not keep unnamespaced root locale files", () => {
 		for (const locale of ALL_LANGUAGES) {
-			expect(existsSync(join(process.cwd(), `messages/${locale}.json`))).toBe(false);
+			expect(existsSync(join(process.cwd(), `messages/${locale}.json`))).toBe(
+				false,
+			);
 		}
 	});
 
 	it("keeps a namespace file for every supported locale", () => {
 		for (const namespace of ALL_NAMESPACES) {
 			for (const locale of ALL_LANGUAGES) {
-				expect(existsSync(join(process.cwd(), `messages/${namespace}/${locale}.json`))).toBe(true);
+				expect(
+					existsSync(
+						join(process.cwd(), `messages/${namespace}/${locale}.json`),
+					),
+				).toBe(true);
 			}
 		}
 	});
+
+	it.each(ALL_LANGUAGES)(
+		"defines approval timeline actor placeholders in %s",
+		(locale) => {
+			const catalog = JSON.parse(
+				readFileSync(
+					join(process.cwd(), `messages/approvals/${locale}.json`),
+					"utf8",
+				),
+			) as { approvals?: { timelineActor?: unknown } };
+			const message = catalog.approvals?.timelineActor;
+
+			expect(message, `${locale}: approvals.timelineActor`).toEqual(
+				expect.any(String),
+			);
+			expect(message, `${locale}: approvals.timelineActor`).toContain("{at}");
+			expect(message, `${locale}: approvals.timelineActor`).toContain(
+				"{actorName}",
+			);
+		},
+	);
 
 	it("loads app search strings from the common namespace", async () => {
 		const translations = await loadRouteTranslations("de", "/");
@@ -52,7 +92,10 @@ describe("Tolgee route translations", () => {
 	});
 
 	it("loads dedicated analytics route translations", async () => {
-		const translations = await loadRouteTranslations("en", "/analytics/work-hours");
+		const translations = await loadRouteTranslations(
+			"en",
+			"/analytics/work-hours",
+		);
 
 		expect(translations.en).toMatchObject({
 			analytics: {

@@ -65,6 +65,7 @@
     "timeCorrectionRejected": "Ziitkorrektur abglähnt",
     "timeCorrections": "Ziitkorrekture",
     "timeCorrectionsDescription": "Prüfe und genehmige Aaträg für Ziitkorrekture vo dim Team",
+    "timelineActor": "{at} vo {actorName}",
     "title": "Genehmigunge",
     "totalCount": "${totalCount} usstehend",
     "type": "Typ",

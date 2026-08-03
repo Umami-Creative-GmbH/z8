@@ -41,7 +41,10 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 	);
 }
 
-function renderDetailSection(section: ApprovalInboxDetailSection) {
+function renderDetailSection(
+	t: ReturnType<typeof useTranslate>["t"],
+	section: ApprovalInboxDetailSection,
+) {
 	switch (section.type) {
 		case "key_value":
 			return (
@@ -86,8 +89,13 @@ function renderDetailSection(section: ApprovalInboxDetailSection) {
 							<div key={event.id} className="border-l-2 border-primary/30 pl-3">
 								<p className="text-sm font-semibold">{event.label}</p>
 								<p className="text-xs text-muted-foreground">
-									{event.at}
-									{event.actorName ? ` by ${event.actorName}` : ""}
+									{event.actorName
+										? t(
+												"approvals:approvals.timelineActor",
+												"{at} by {actorName}",
+												{ at: event.at, actorName: event.actorName },
+											)
+										: event.at}
 								</p>
 							</div>
 						))}
@@ -230,7 +238,7 @@ export function ApprovalDetailPanel({
 
 					{sections.length > 0 && <Separator />}
 
-					{sections.map(renderDetailSection)}
+					{sections.map((section) => renderDetailSection(t, section))}
 				</div>
 
 				<SheetFooter className="border-t bg-muted/95 px-5 py-4 sm:px-6">

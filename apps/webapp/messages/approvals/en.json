@@ -65,6 +65,7 @@
     "timeCorrectionRejected": "Time correction rejected",
     "timeCorrections": "Time Corrections",
     "timeCorrectionsDescription": "Review and approve time entry correction requests from your team members",
+    "timelineActor": "{at} by {actorName}",
     "title": "Approvals",
     "totalCount": "${totalCount} pending",
     "type": "Type",

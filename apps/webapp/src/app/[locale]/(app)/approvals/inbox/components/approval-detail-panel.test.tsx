@@ -7,7 +7,12 @@ import { ApprovalDetailPanel } from "./approval-detail-panel";
 import { normalizeTravelExpenseDetailEntity } from "./approval-detail-utils";
 
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+	useTranslate: () => ({
+		t: (key: string, fallback: string, params?: Record<string, string>) =>
+			key === "approvals:approvals.timelineActor"
+				? `${params?.at} durch ${params?.actorName}`
+				: fallback,
+	}),
 }));
 
 vi.mock("sonner", () => ({
@@ -51,6 +56,18 @@ vi.mock("@/lib/query/use-approval-inbox", () => ({
 					rows: [{ label: "Type", value: "Absence Request" }],
 				},
 				{ type: "callout", title: "Risk", body: "No conflicts detected.", tone: "info" },
+				{
+					type: "timeline",
+					title: "Timeline",
+					events: [
+						{
+							id: "event-1",
+							label: "Request created",
+							at: "May 1, 2026",
+							actorName: "Ada Lovelace",
+						},
+					],
+				},
 			],
 			actions: mockState.actions,
 		},
@@ -155,6 +172,19 @@ describe("ApprovalDetailPanel", () => {
 		expect(await screen.findByText("Request")).toBeTruthy();
 		expect(screen.getByText("Absence Request")).toBeTruthy();
 		expect(screen.getByText("No conflicts detected.")).toBeTruthy();
+	});
+
+	it("translates the timeline actor connector", async () => {
+		render(
+			<ApprovalDetailPanel
+				approval={approvalItem}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		expect(await screen.findByText("May 1, 2026 durch Ada Lovelace")).toBeTruthy();
 	});
 
 	it("keeps the header badge clear of the close button and pads the detail content", async () => {
