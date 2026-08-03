@@ -33,13 +33,20 @@ describe("Tolgee route translations", () => {
 		"defines approval timeline actor placeholders in %s",
 		(locale) => {
 			const catalog = JSON.parse(
-				readFileSync(join(process.cwd(), `messages/approvals/${locale}.json`), "utf8"),
+				readFileSync(
+					join(process.cwd(), `messages/approvals/${locale}.json`),
+					"utf8",
+				),
 			) as { approvals?: { timelineActor?: unknown } };
 			const message = catalog.approvals?.timelineActor;
 
-			expect(message, `${locale}: approvals.timelineActor`).toEqual(expect.any(String));
+			expect(message, `${locale}: approvals.timelineActor`).toEqual(
+				expect.any(String),
+			);
 			expect(message, `${locale}: approvals.timelineActor`).toContain("{at}");
-			expect(message, `${locale}: approvals.timelineActor`).toContain("{actorName}");
+			expect(message, `${locale}: approvals.timelineActor`).toContain(
+				"{actorName}",
+			);
 		},
 	);
 
