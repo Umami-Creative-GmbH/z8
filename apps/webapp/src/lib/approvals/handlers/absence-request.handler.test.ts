@@ -1,5 +1,5 @@
-import { Cause, Effect, Exit, Option } from "effect";
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
+import { Cause, Effect, Exit, Option } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { absenceEntry, approvalRequest } from "@/db/schema";
 import {
@@ -219,9 +219,7 @@ describe("absence approval handler tenant scope", () => {
 						eligibleApproverIds: ["employee-4"],
 					},
 				],
-			}).pipe(
-				Effect.provideService(DatabaseService, dbService),
-			),
+			}).pipe(Effect.provideService(DatabaseService, dbService)),
 		);
 
 		expect(result).toBe(2);
@@ -263,13 +261,8 @@ describe("absence approval handler tenant scope", () => {
 	});
 
 	it("counts all approvers without assigned or eligible visibility restrictions", async () => {
-		const {
-			absenceFindMany,
-			approvalFindMany,
-			dbService,
-			innerJoin,
-			where,
-		} = createCountQueryDb(4);
+		const { absenceFindMany, approvalFindMany, dbService, innerJoin, where } =
+			createCountQueryDb(4);
 
 		const result = await Effect.runPromise(
 			AbsenceRequestHandler.getCount("employee-2", "org-1", {
