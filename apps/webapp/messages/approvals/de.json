@@ -65,6 +65,7 @@
     "timeCorrectionRejected": "Zeitkorrektur abgelehnt",
     "timeCorrections": "Zeitkorrekturen",
     "timeCorrectionsDescription": "Überprüfen und genehmigen Sie Anträge auf Zeitkorrekturen Ihrer Teammitglieder",
+    "timelineActor": "{at} von {actorName}",
     "title": "Genehmigungen",
     "totalCount": "${totalCount} ausstehend",
     "type": "Typ",
