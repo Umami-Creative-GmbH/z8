@@ -294,6 +294,12 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 	],
 	"src/lib/approvals/server/work-period-approvals.ts": [
 		{
+			columns: ["approval_workflow_id"],
+			functionName: "bindPreCanonicalOrdinaryWorkflow",
+			operation: "update",
+			table: "work_period",
+		},
+		{
 			columns: ["approval_status", "pending_changes"],
 			functionName: "finalizeOrdinaryWorkPeriodTerminal",
 			operation: "update",

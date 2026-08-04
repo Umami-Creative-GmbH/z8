@@ -4,6 +4,7 @@ import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
+import { createLegacyApprovalObservationPlanner } from "../workflow/legacy-observation-planner";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
 import { fingerprintApprovalWorkflowCommand } from "../workflow/transition-engine";
 import type { ApprovalDbService, CurrentApprover } from "./types";
@@ -944,6 +945,167 @@ describe("stable ordinary work-period decisions", () => {
 	});
 
 	it.each([
+		["shadow", "approve"],
+		["shadow", "reject"],
+		["ready", "approve"],
+		["ready", "reject"],
+	] as const)(
+		"bootstraps a pre-canonical manual submission in %s mode for %s",
+		async (mode, action) => {
+			const pendingAt = parseInstant("2026-07-15T09:59:00Z");
+			const terminalAt = parseInstant("2026-07-15T10:00:00Z");
+			const pendingState = {
+				organizationId: "org-1",
+				source: {
+					organizationId: "org-1",
+					workflowType: "manual_time_submission" as const,
+					sourceType: "time_entry",
+					sourceId: "period-1",
+				},
+				approvalRequest: {
+					...approval,
+					metadata: {
+						timeRequest: { kind: "manual_time_submission" },
+						surchargeSnapshot,
+					},
+					updatedAt: pendingAt,
+				},
+				chain: null,
+				chainRows: [],
+				sourceSnapshot: {
+					status: "pending",
+					timeRequest: { kind: "manual_time_submission" },
+					surchargeSnapshot,
+				},
+				capturedAt: pendingAt,
+			};
+			const dbService = createDecisionDbService({
+				unlinked: true,
+				autoApprovalRequest: {
+					metadata: { timeRequest: { kind: "manual_time_submission" } },
+				},
+			});
+			const database = dbService.db as unknown as {
+				query: Record<string, Record<string, ReturnType<typeof vi.fn>>>;
+			};
+			database.query.employee.findMany = vi
+				.fn()
+				.mockResolvedValue([currentApprover]);
+			database.query.workPeriod.findFirst.mockResolvedValue({
+				...period,
+				approvalWorkflowId: null,
+			});
+			legacyCaptureMocks.load.mockResolvedValue(pendingState);
+			const terminalState = {
+				...pendingState,
+				approvalRequest: {
+					...pendingState.approvalRequest,
+					status: action === "approve" ? "approved" : "rejected",
+					approvedAt: action === "approve" ? terminalAt : null,
+					rejectionReason: action === "reject" ? "Orphaned request" : null,
+					updatedAt: terminalAt,
+				},
+				sourceSnapshot: {
+					...pendingState.sourceSnapshot,
+					status: action === "approve" ? "approved" : "rejected",
+				},
+				capturedAt: terminalAt,
+			};
+			legacyCaptureMocks.capture.mockResolvedValue(terminalState);
+			const planner = createLegacyApprovalObservationPlanner({
+				clock: { nowInstant: () => terminalAt },
+			});
+			const mirrorLegacyToCanonical = vi.fn(async (transition) => {
+				const sourceId = "10000000-0000-4000-8000-000000000001";
+				const requesterId = "20000000-0000-4000-8000-000000000001";
+				const approverId = "30000000-0000-4000-8000-000000000001";
+				const sourceIdentity = { ...transition.before.source, sourceId };
+				const canonicalState = (state: typeof pendingState) => ({
+					...state,
+					source: sourceIdentity,
+					approvalRequest: state.approvalRequest
+						? {
+								...state.approvalRequest,
+								id: "40000000-0000-4000-8000-000000000001",
+								entityId: sourceId,
+								requestedBy: requesterId,
+								approverId,
+							}
+						: null,
+				});
+				const planned = await planner.plan({
+					...transition,
+					organizationId: transition.before.organizationId,
+					source: sourceIdentity,
+					before: canonicalState(transition.before),
+					after: canonicalState(transition.after),
+					actor: {
+						kind: "employee",
+						employeeId: approverId,
+						userId: "manager-user-1",
+					},
+				});
+				return {
+					...planned,
+					snapshot: {
+						...planned.snapshot,
+						organizationId: "org-1",
+						sourceId: "period-1",
+						requesterEmployeeId: "employee-1",
+					},
+				};
+			});
+			const context = {
+				dbService: { db: dbService.db },
+				writeGate: { acquire: vi.fn().mockResolvedValue({ mode }) },
+				compatibilityWriter: {
+					withWriteGate: vi.fn().mockReturnValue({
+						withWriteGate: vi.fn().mockReturnThis(),
+						mirrorLegacyToCanonical,
+					}),
+					mirrorLegacyToCanonical,
+				},
+				repository: { loadSnapshot: vi.fn() },
+			};
+
+			const executed = await executeOrdinaryWorkPeriodDecisionInTransaction({
+				dbService,
+				runtime: {
+					repository: { withTransaction: async (run) => run(context) },
+					transitionEngine: { executeInTransactionWithDisposition: vi.fn() },
+				} as never,
+				organizationId: "org-1",
+				approvalRequestId: "approval-1",
+				workPeriodId: "period-1",
+				actor: currentApprover,
+				decision:
+					action === "approve"
+						? { kind: "approve", reason: null }
+						: { kind: "reject", reason: "Orphaned request" },
+			});
+
+			expect(executed.result).toMatchObject({
+				kind: "manual_time_submission",
+				action,
+			});
+			expect(executed.postCommit).toMatchObject({
+				disposition: "dispatch",
+				event: action === "approve" ? "approved" : "rejected",
+			});
+			expect(context.repository.loadSnapshot).not.toHaveBeenCalled();
+			expect(mirrorLegacyToCanonical).toHaveBeenCalledTimes(2);
+			expect(
+				mirrorLegacyToCanonical.mock.calls.map(
+					([call]) => call.expectedVersion,
+				),
+			).toEqual([null, 1]);
+			expect(dbService.updateSets).toContainEqual(
+				expect.objectContaining({ approvalWorkflowId: expect.any(String) }),
+			);
+		},
+	);
+
+	it.each([
 		"shadow",
 		"ready",
 	] as const)("captures an approved intermediate request with a pending %s source before terminal finalization", async (mode) => {
@@ -1570,6 +1732,10 @@ function createDecisionDbService(options?: {
 }) {
 	const updateSets: Record<string, unknown>[] = [];
 	const insertedValues: Record<string, unknown>[] = [];
+	let currentApprovalWorkflowId =
+		options?.autoCompleted || options?.unlinked
+			? null
+			: period.approvalWorkflowId;
 	const returningResults = [
 		...(options?.autoCompleted ? [] : [[{ id: "approval-1" }]]),
 		options?.staleWorkPeriod ? [] : [{ id: "period-1" }],
@@ -1617,12 +1783,11 @@ function createDecisionDbService(options?: {
 				}),
 			},
 			workPeriod: {
-				findFirst: vi.fn().mockResolvedValue({
-					approvalWorkflowId:
-						options?.autoCompleted || options?.unlinked
-							? null
-							: period.approvalWorkflowId,
-				}),
+				findFirst: vi
+					.fn()
+					.mockImplementation(() =>
+						Promise.resolve({ approvalWorkflowId: currentApprovalWorkflowId }),
+					),
 			},
 			timeEntry: {
 				findFirst: vi.fn().mockResolvedValue({
@@ -1642,7 +1807,7 @@ function createDecisionDbService(options?: {
 									options?.autoCompleted || options?.unlinked
 										? {
 												...period,
-												approvalWorkflowId: null,
+												approvalWorkflowId: currentApprovalWorkflowId,
 												...(options?.kind === "policy_clock_out"
 													? {
 															pendingChanges: {
@@ -1680,6 +1845,23 @@ function createDecisionDbService(options?: {
 		update: vi.fn(() => ({
 			set: vi.fn((values: Record<string, unknown>) => {
 				updateSets.push(values);
+				const bindingWorkflowId = values.approvalWorkflowId;
+				if (typeof bindingWorkflowId === "string") {
+					currentApprovalWorkflowId = bindingWorkflowId;
+					return {
+						where: vi.fn(() => ({
+							returning: vi.fn().mockResolvedValue([
+								{
+									id: "period-1",
+									organizationId: "org-1",
+									employeeId: "employee-1",
+									canonicalRecordId: "record-1",
+									approvalWorkflowId: bindingWorkflowId,
+								},
+							]),
+						})),
+					};
+				}
 				return {
 					where: vi.fn(() => ({
 						returning: vi

@@ -14,6 +14,7 @@ import * as authSchema from "@/db/auth-schema";
 import { configurePostgresUtcTypes } from "@/db/postgres-utc";
 import * as schema from "@/db/schema";
 import { TimeCorrectionHandler } from "@/lib/approvals/handlers/time-correction.handler";
+import { loadOrdinaryWorkPeriodLegacyDecisionEvidence } from "../domain-adapters/work-period-legacy-state";
 import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
@@ -53,6 +54,7 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 	it("registers the complete Task 11 mode, rollback, race, isolation, and split matrix", () => {
 		for (const scenario of [
 			"composes submission and terminal decisions in %s mode",
+			"bootstraps an unmarked pre-canonical manual $action in $mode mode",
 			"preserves policy snapshot through production submission capture in %s mode",
 			"retains terminal policy evidence for $action with split=$split in $mode mode",
 			"rolls back terminal policy $evidence evidence in $mode mode",
@@ -1698,6 +1700,81 @@ describeIntegration(
 			expect(typeof typedSource?.pendingChanges).toBe("string");
 			await expect(submit("manual_time_submission")).resolves.toMatchObject({
 				disposition: "executed",
+			});
+		});
+
+		it.each(
+			(["shadow", "ready"] as const).flatMap((mode) => [
+				{ mode, action: "approve" as const },
+				{ mode, action: "reject" as const },
+			]),
+		)("bootstraps an unmarked pre-canonical manual $action in $mode mode", async ({
+			mode,
+			action,
+		}) => {
+			await seed("manual_time_submission", false, "legacy");
+			const submitted = await submit("manual_time_submission");
+			await pool.query(
+				`update work_period set pending_changes = '{"isManualEntry":true}'
+				 where id = $1 and organization_id = $2 and employee_id = $3`,
+				[ids.period, ids.organization, ids.requester],
+			);
+			const unmarked = await pool.query(
+				`update approval_request set metadata = '{"timeRequest":{"kind":"manual_time_submission"}}'::jsonb
+				 where id = $1 and organization_id = $2 and entity_type = 'time_entry'
+				 and entity_id = $3 and status = 'pending' returning id`,
+				[submitted.result.approvalRequestId, ids.organization, ids.period],
+			);
+			expect(unmarked.rows).toEqual([
+				{ id: submitted.result.approvalRequestId },
+			]);
+			await expect(
+				loadOrdinaryWorkPeriodLegacyDecisionEvidence({
+					dbService: dbService(database),
+					organizationId: ids.organization,
+					workPeriodId: ids.period,
+					expectedRequesterEmployeeId: ids.requester,
+					approvalRequestId: submitted.result.approvalRequestId,
+					expectedRequestStatus: "pending",
+				}),
+			).resolves.toMatchObject({
+				source: { workflowType: "manual_time_submission" },
+			});
+			const before = await snapshot();
+			expect(before.approval_workflow).toEqual([]);
+			expect(
+				(before.work_period as Array<Record<string, unknown>>)[0]
+					?.approval_workflow_id,
+			).toBeNull();
+
+			await pool.query(
+				`update approval_workflow_rollout set lifecycle_mode = $1, updated_at = now()
+				 where organization_id = $2 and workflow_type = 'manual_time_submission'`,
+				[mode, ids.organization],
+			);
+			await expect(
+				decide(
+					submitted.result.approvalRequestId,
+					action === "approve"
+						? { kind: "approve", reason: null }
+						: { kind: "reject", reason: "Missing details" },
+				),
+			).resolves.toMatchObject({ result: { action } });
+
+			const graph = await snapshot();
+			const expectedStatus = action === "approve" ? "approved" : "rejected";
+			const periods = graph.work_period as Array<Record<string, unknown>>;
+			const workflows = graph.approval_workflow as Array<
+				Record<string, unknown>
+			>;
+			expect(workflows).toHaveLength(1);
+			expect(workflows[0]).toMatchObject({
+				status: expectedStatus,
+				version: 2,
+			});
+			expect(periods[0]).toMatchObject({
+				approval_status: expectedStatus,
+				approval_workflow_id: workflows[0]?.id,
 			});
 		});
 
