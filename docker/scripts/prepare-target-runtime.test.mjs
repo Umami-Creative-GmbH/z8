@@ -186,6 +186,7 @@ test("collectTarget lists traced worker runtime files and packages", async () =>
   assert.ok(Array.isArray(result.files));
   assert.ok(Array.isArray(result.packages));
   assert.ok(result.files.includes("src/worker.ts"));
+	assert.ok(result.files.includes("scripts/obliterate-job-queue.ts"));
 	assert.ok(result.files.includes("tsconfig.json"));
 	assert.ok(result.packages.includes("bullmq"));
 	assert.ok(result.packages.includes("dotenv"));

@@ -7,43 +7,34 @@ type SchedulerCronJobData = {
 	triggeredAt: string;
 };
 
-type CronQueue = Queue<JobData | SchedulerCronJobData, JobResult>;
-type RepeatableJob = Awaited<ReturnType<CronQueue["getRepeatableJobs"]>>[number];
+type CronQueue = Pick<Queue<JobData | SchedulerCronJobData, JobResult>, "upsertJobScheduler">;
 
 export interface CronScheduleInput {
 	pattern: string;
 }
 
 export type CronReconciliationResult =
-	| { success: true; removedCount: number }
-	| { success: false; removedCount: 0; error: string };
+	| { success: true }
+	| { success: false; error: string };
 
 export async function reconcileCronJobSchedule({
 	queue,
 	jobName,
 	pattern,
 }: {
-	queue: Pick<CronQueue, "getRepeatableJobs" | "removeRepeatableByKey" | "add">;
+	queue: CronQueue;
 	jobName: CronJobName;
 	pattern: string;
 }): Promise<CronReconciliationResult> {
 	try {
-		const repeatableJobs = await queue.getRepeatableJobs();
-		const targetRepeatables = repeatableJobs.filter((job) => job.name === jobName);
-		const matchingRepeatables = targetRepeatables.filter((job) => job.pattern === pattern);
-		const staleRepeatables = targetRepeatables.filter(
-			(job): job is RepeatableJob & { key: string } =>
-				job.pattern !== pattern && typeof job.key === "string" && job.key.length > 0,
-		);
-
-		if (matchingRepeatables.length === 0) {
-			await queue.add(
-				jobName,
-				{ type: jobName, triggeredAt: new Date().toISOString() },
-				{
+		await queue.upsertJobScheduler(
+			`cron-${jobName}`,
+			{ pattern },
+			{
+				name: jobName,
+				data: { type: jobName, triggeredAt: new Date().toISOString() },
+				opts: {
 					...CRON_JOBS[jobName].defaultJobOptions,
-					repeat: { pattern },
-					jobId: `cron-${jobName}`,
 					removeOnComplete: {
 						count: 50,
 						age: 24 * 60 * 60,
@@ -53,16 +44,13 @@ export async function reconcileCronJobSchedule({
 						age: 7 * 24 * 60 * 60,
 					},
 				},
-			);
-		}
+			},
+		);
 
-		await Promise.all(staleRepeatables.map((job) => queue.removeRepeatableByKey(job.key)));
-
-		return { success: true, removedCount: staleRepeatables.length };
+		return { success: true };
 	} catch (error) {
 		return {
 			success: false,
-			removedCount: 0,
 			error: error instanceof Error ? error.message : String(error),
 		};
 	}
@@ -72,13 +60,13 @@ export async function reconcileCronSchedules({
 	queue,
 	schedules,
 }: {
-	queue: Pick<CronQueue, "getRepeatableJobs" | "removeRepeatableByKey" | "add">;
+	queue: CronQueue;
 	schedules: Record<CronJobName, CronScheduleInput>;
 }): Promise<{
-	reconciled: Array<{ jobName: CronJobName; removedCount: number }>;
+	reconciled: Array<{ jobName: CronJobName }>;
 	failed: Array<{ jobName: CronJobName; error: string }>;
 }> {
-	const reconciled: Array<{ jobName: CronJobName; removedCount: number }> = [];
+	const reconciled: Array<{ jobName: CronJobName }> = [];
 	const failed: Array<{ jobName: CronJobName; error: string }> = [];
 
 	const results = await Promise.all(
@@ -92,7 +80,7 @@ export async function reconcileCronSchedules({
 
 	for (const { jobName, result } of results) {
 		if (result.success) {
-			reconciled.push({ jobName, removedCount: result.removedCount });
+			reconciled.push({ jobName });
 		} else {
 			failed.push({ jobName, error: result.error });
 		}

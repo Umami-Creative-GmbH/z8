@@ -70,7 +70,7 @@ describe("cron schedule presets", () => {
 		});
 	});
 
-	it("builds rows with mismatch status from BullMQ repeatables", () => {
+	it("builds rows with mismatch status from BullMQ Job Schedulers", () => {
 		const rows = buildScheduledJobRows({
 			overrides: [
 				{
@@ -79,7 +79,7 @@ describe("cron schedule presets", () => {
 					pattern: "0 * * * *",
 				},
 			],
-			repeatableJobs: [
+			jobSchedulers: [
 				{
 					name: "cron:export",
 					pattern: "*/5 * * * *",
@@ -98,7 +98,7 @@ describe("cron schedule presets", () => {
 		});
 	});
 
-	it("marks duplicate repeatables as mismatched when matching and stale schedules coexist", () => {
+	it("builds rows from the matching Job Scheduler", () => {
 		const rows = buildScheduledJobRows({
 			overrides: [
 				{
@@ -107,16 +107,11 @@ describe("cron schedule presets", () => {
 					pattern: "0 * * * *",
 				},
 			],
-			repeatableJobs: [
-				{
-					name: "cron:export",
-					pattern: "*/5 * * * *",
-					next: "2026-06-03T12:05:00.000Z",
-				},
+			jobSchedulers: [
 				{
 					name: "cron:export",
 					pattern: "0 * * * *",
-					next: "2026-06-03T13:00:00.000Z",
+					next: Date.parse("2026-06-03T13:00:00.000Z"),
 				},
 			],
 		});
@@ -126,15 +121,15 @@ describe("cron schedule presets", () => {
 			name: "cron:export",
 			effectivePattern: "0 * * * *",
 			currentBullMqPattern: "0 * * * *",
-			next: "2026-06-03T13:00:00.000Z",
-			hasScheduleMismatch: true,
+			next: Date.parse("2026-06-03T13:00:00.000Z"),
+			hasScheduleMismatch: false,
 		});
 	});
 
-	it("marks missing repeatables as mismatched", () => {
+	it("marks missing Job Schedulers as mismatched", () => {
 		const rows = buildScheduledJobRows({
 			overrides: [],
-			repeatableJobs: [],
+			jobSchedulers: [],
 		});
 
 		const exportRow = rows.find((row) => row.name === "cron:export");

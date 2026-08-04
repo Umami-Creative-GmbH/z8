@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
 	getJobExecutionByBullmqJobId: vi.fn(),
 	getOrCreateSchedulerJobExecution: vi.fn(),
 	loggerError: vi.fn(),
+	loggerWarn: vi.fn(),
 	markJobCompleted: vi.fn(),
 	markJobFailed: vi.fn(),
 	markJobRunning: vi.fn(),
@@ -52,7 +53,7 @@ vi.mock("@/lib/logger", () => ({
 		debug: vi.fn(),
 		error: mocks.loggerError,
 		info: vi.fn(),
-		warn: vi.fn(),
+		warn: mocks.loggerWarn,
 	}),
 }));
 
@@ -63,12 +64,28 @@ vi.mock("@/lib/queue", async (importOriginal) => ({
 }));
 
 const {
+	logRegisteredJobSchedulers,
 	processJob,
 	processOneOffJob,
 	reconcileCronJobCompletion,
 	reconcileCronJobFailure,
 	registerCronTrackingListeners,
 } = await import("@/worker");
+
+describe("logRegisteredJobSchedulers", () => {
+	it("warns without throwing when scheduler inspection fails", async () => {
+		const error = new Error("Redis unavailable");
+		const queue = {
+			getJobSchedulers: vi.fn().mockRejectedValue(error),
+		};
+
+		await expect(logRegisteredJobSchedulers(queue)).resolves.toBeUndefined();
+		expect(mocks.loggerWarn).toHaveBeenCalledWith(
+			{ error },
+			"Failed to list registered job schedulers; worker startup will continue",
+		);
+	});
+});
 
 function createCronJob({
 	executionId,

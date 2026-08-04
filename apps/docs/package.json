@@ -10,9 +10,9 @@
 	},
 	"dependencies": {
 		"@tabler/icons-react": "^3.46.0",
-		"fumadocs-core": "^16.13.0",
-		"fumadocs-mdx": "^15.2.0",
-		"fumadocs-ui": "^16.13.0",
+		"fumadocs-core": "^16.14.0",
+		"fumadocs-mdx": "^15.2.2",
+		"fumadocs-ui": "^16.14.0",
 		"next": "16.2.12",
 		"react": "19.2.8",
 		"react-dom": "19.2.8"
@@ -20,7 +20,7 @@
 	"devDependencies": {
 		"@tailwindcss/postcss": "^4.3.3",
 		"@types/node": "^26.1.2",
-		"@types/react": "19.2.17",
+		"@types/react": "19.2.18",
 		"postcss": "8.5.25",
 		"tailwindcss": "^4.3.3",
 		"typescript": "^6.0.3"

@@ -1,12 +1,12 @@
 /**
- * BullMQ Worker Process with Repeatable Cron Jobs
+ * BullMQ Worker Process with Scheduled Cron Jobs
  *
  * Dedicated worker for background job processing and scheduled cron tasks.
  * Runs separately from the webapp for independent scaling.
  *
  * Features:
  * - Processes one-off jobs (exports, emails, reports, cleanup)
- * - Runs repeatable cron jobs on schedule (vacation, telemetry, etc.)
+ * - Runs scheduled cron jobs (vacation, telemetry, etc.)
  * - Full job execution tracking in database
  * - Graceful shutdown with signal handling
  * - Health checks via Redis connection
@@ -17,7 +17,7 @@
  * - REDIS_PASSWORD: Redis-compatible password (optional)
  * - REDIS_TLS: Enable TLS for managed Redis providers (default: false)
  * - WORKER_CONCURRENCY: Number of concurrent jobs (default: 5)
- * - ENABLE_CRON_JOBS: Enable repeatable cron jobs (default: true)
+ * - ENABLE_CRON_JOBS: Enable scheduled cron jobs (default: true)
  */
 
 import "dotenv/config";
@@ -51,13 +51,13 @@ type AllJobData = JobData | CronJobData;
  *
  * Handles both:
  * - API-triggered jobs (have executionId in job data)
- * - Repeatable jobs (need to create executionId on the fly)
+ * - Scheduled jobs (need to create executionId on the fly)
  */
 async function processCronJob(job: Job<CronJobData>): Promise<JobResult> {
 	const { type, executionId: providedExecutionId, manualParams } = job.data;
 	const startTime = Date.now();
 
-	// Ensure executionId exists (create one for repeatable jobs)
+	// Ensure executionId exists (create one for scheduled jobs)
 	let executionId: string | undefined = providedExecutionId;
 	if (!executionId) {
 		if (!job.id) {
@@ -320,15 +320,10 @@ export function registerCronTrackingListeners(worker: ReturnType<typeof createWo
 }
 
 /**
- * Setup repeatable cron jobs from the registry
+ * Setup scheduled cron jobs from the registry
  *
- * BullMQ handles deduplication automatically:
- * - Repeatable jobs with the same name + repeat options are deduplicated
- * - Multiple workers calling setupCronJobs will NOT create duplicate jobs
- * - This is safe to call from every worker instance
- *
- * The job key is computed from: name + repeat pattern + jobId (if any)
- * See: https://docs.bullmq.io/guide/jobs/repeatable
+ * Deterministic Job Scheduler IDs make reconciliation idempotent when
+ * setupCronJobs runs concurrently across worker instances.
  */
 async function setupCronJobs(queue: Queue): Promise<void> {
 	const enableCron = env.ENABLE_CRON_JOBS !== "false";
@@ -338,7 +333,7 @@ async function setupCronJobs(queue: Queue): Promise<void> {
 		return;
 	}
 
-	logger.info("Reconciling repeatable cron jobs from effective schedules...");
+	logger.info("Reconciling cron job schedulers from effective schedules...");
 
 	try {
 		let overrides: Awaited<ReturnType<typeof listCronScheduleOverrides>> = [];
@@ -377,14 +372,16 @@ async function setupCronJobs(queue: Queue): Promise<void> {
 				{
 					type: job.jobName,
 					pattern: schedules[job.jobName].pattern,
-					removedCount: job.removedCount,
 				},
-				"Reconciled repeatable cron job",
+				"Reconciled cron job scheduler",
 			);
 		}
 
 		for (const job of result.failed) {
-			logger.error({ error: job.error, type: job.jobName }, "Failed to reconcile cron job");
+			logger.error(
+				{ error: job.error, type: job.jobName },
+				"Failed to reconcile cron job scheduler",
+			);
 		}
 
 		logger.info(
@@ -392,12 +389,36 @@ async function setupCronJobs(queue: Queue): Promise<void> {
 				reconciled: result.reconciled.length,
 				failed: result.failed.length,
 			},
-			"Cron job schedule reconciliation completed",
+			"Cron job scheduler reconciliation completed",
 		);
 	} catch (error) {
 		logger.error(
 			{ error },
-			"Cron job schedule reconciliation failed; worker startup will continue",
+			"Cron job scheduler reconciliation failed; worker startup will continue",
+		);
+	}
+}
+
+export async function logRegisteredJobSchedulers(
+	queue: Pick<Queue, "getJobSchedulers">,
+): Promise<void> {
+	try {
+		const jobSchedulers = await queue.getJobSchedulers();
+		logger.info(
+			{
+				jobSchedulers: jobSchedulers.map((scheduler) => ({
+					id: scheduler.key,
+					name: scheduler.name,
+					pattern: scheduler.pattern,
+					next: scheduler.next ? new Date(scheduler.next).toISOString() : null,
+				})),
+			},
+			"Worker started with job schedulers",
+		);
+	} catch (error) {
+		logger.warn(
+			{ error },
+			"Failed to list registered job schedulers; worker startup will continue",
 		);
 	}
 }
@@ -422,7 +443,7 @@ async function main(): Promise<void> {
 	// Get the job queue
 	const queue = getJobQueue();
 
-	// Setup repeatable cron jobs from registry
+	// Setup scheduled cron jobs from registry
 	await setupCronJobs(queue);
 
 	// Create the worker
@@ -452,18 +473,7 @@ async function main(): Promise<void> {
 	process.on("SIGTERM", () => shutdown("SIGTERM"));
 	process.on("SIGINT", () => shutdown("SIGINT"));
 
-	// Log registered cron jobs on startup
-	const repeatableJobs = await queue.getRepeatableJobs();
-	logger.info(
-		{
-			repeatableJobs: repeatableJobs.map((j) => ({
-				name: j.name,
-				pattern: j.pattern,
-				next: j.next ? new Date(j.next).toISOString() : null,
-			})),
-		},
-		"Worker started with repeatable jobs",
-	);
+	await logRegisteredJobSchedulers(queue);
 }
 
 // Start the worker when this file is executed as the worker entrypoint.

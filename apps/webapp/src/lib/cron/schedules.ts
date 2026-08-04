@@ -12,7 +12,7 @@ export interface CronScheduleOverrideLike {
 	pattern: string;
 }
 
-export interface RepeatableCronJobLike {
+export interface CronJobSchedulerLike {
 	name: string;
 	pattern?: string | null;
 	next?: string | number | null;
@@ -109,14 +109,17 @@ export function resolveEffectiveCronSchedules({
 
 export function buildScheduledJobRows({
 	overrides,
-	repeatableJobs,
+	jobSchedulers,
 }: {
 	overrides: readonly CronScheduleOverrideLike[];
-	repeatableJobs: readonly RepeatableCronJobLike[];
+	jobSchedulers: readonly CronJobSchedulerLike[];
 }): ScheduledCronJobRow[] {
-	const repeatableJobsByName = new Map<string, RepeatableCronJobLike[]>();
-	for (const job of repeatableJobs) {
-		repeatableJobsByName.set(job.name, [...(repeatableJobsByName.get(job.name) ?? []), job]);
+	const jobSchedulersByName = new Map<string, CronJobSchedulerLike[]>();
+	for (const scheduler of jobSchedulers) {
+		jobSchedulersByName.set(scheduler.name, [
+			...(jobSchedulersByName.get(scheduler.name) ?? []),
+			scheduler,
+		]);
 	}
 
 	const schedules = resolveEffectiveCronSchedules({ overrides });
@@ -124,21 +127,23 @@ export function buildScheduledJobRows({
 	return getAllCronJobNames()
 		.map((name) => {
 			const schedule = schedules[name];
-			const jobs = repeatableJobsByName.get(name) ?? [];
-			const sortedJobs = jobs.toSorted((left, right) =>
+			const schedulers = jobSchedulersByName.get(name) ?? [];
+			const sortedSchedulers = schedulers.toSorted((left, right) =>
 				(left.pattern ?? "").localeCompare(right.pattern ?? ""),
 			);
-			const selectedJob =
-				jobs.find((job) => job.pattern === schedule.effectivePattern) ?? sortedJobs[0];
-			const currentBullMqPattern = selectedJob?.pattern ?? null;
+			const selectedScheduler =
+				schedulers.find((scheduler) => scheduler.pattern === schedule.effectivePattern) ??
+				sortedSchedulers[0];
+			const currentBullMqPattern = selectedScheduler?.pattern ?? null;
 
 			return {
 				...schedule,
 				name,
-				next: selectedJob?.next ?? null,
+				next: selectedScheduler?.next ?? null,
 				currentBullMqPattern,
 				hasScheduleMismatch:
-					jobs.length === 0 || jobs.some((job) => job.pattern !== schedule.effectivePattern),
+					schedulers.length === 0 ||
+					schedulers.some((scheduler) => scheduler.pattern !== schedule.effectivePattern),
 			};
 		})
 		.sort((left, right) => left.name.localeCompare(right.name));
