@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
+import { env } from "@/env";
 import { auth } from "@/lib/auth";
 import {
 	createAvatarStorageKey,
@@ -13,8 +14,23 @@ import {
 import { getPublicUrl, S3_PUBLIC_BUCKET, s3Client } from "@/lib/storage/s3-client";
 import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = Number(env.IMAGE_MAX_UPLOAD_SIZE_BYTES);
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+function formatFileSize(bytes: number): string {
+	const units = ["bytes", "KB", "MB", "GB"];
+	let size = bytes;
+	let unitIndex = 0;
+
+	while (size >= 1024 && size % 1024 === 0 && unitIndex < units.length - 1) {
+		size /= 1024;
+		unitIndex++;
+	}
+
+	return unitIndex === 0
+		? `${size} ${size === 1 ? "byte" : "bytes"}`
+		: `${size}${units[unitIndex]}`;
+}
 
 interface ProcessRequest {
 	tusFileKey: string;
@@ -82,7 +98,9 @@ export async function POST(request: NextRequest) {
 		const contentLength = getResponse.ContentLength;
 		if (contentLength && contentLength > MAX_FILE_SIZE) {
 			return NextResponse.json(
-				{ error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+				{
+					error: `File too large. Maximum size is ${formatFileSize(MAX_FILE_SIZE)}`,
+				},
 				{ status: 413 },
 			);
 		}
@@ -96,7 +114,9 @@ export async function POST(request: NextRequest) {
 		// Validate file size after reading (double-check)
 		if (buffer.length > MAX_FILE_SIZE) {
 			return NextResponse.json(
-				{ error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+				{
+					error: `File too large. Maximum size is ${formatFileSize(MAX_FILE_SIZE)}`,
+				},
 				{ status: 413 },
 			);
 		}

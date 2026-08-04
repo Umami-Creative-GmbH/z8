@@ -36,7 +36,19 @@ vi.mock("@/lib/logger", () => ({
 	}),
 }));
 
-const { getWebhookEndpointsByOrganization } = await import("./webhook-service");
+vi.mock("./webhook-config.server", () => ({
+	MAX_ATTEMPTS: 3,
+	RETRY_DELAYS_MS: [0, 2000, 6000],
+}));
+
+const { getRetryDelay, getWebhookEndpointsByOrganization } = await import("./webhook-service");
+
+describe("getRetryDelay", () => {
+	it("uses the next attempt delay after a failed attempt", () => {
+		expect(getRetryDelay(1)).toBe(2000);
+		expect(getRetryDelay(2)).toBe(6000);
+	});
+});
 
 describe("getWebhookEndpointsByOrganization", () => {
 	it("does not return webhook signing secrets for client-facing lists", async () => {

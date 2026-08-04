@@ -8,6 +8,46 @@ const skipEnvValidation =
 
 const optionalEnv = (value: string | undefined) => (value === "" ? undefined : value);
 
+const MAX_TIMEOUT_MS = 2_147_483_647;
+const MIN_TUS_MULTIPART_PART_SIZE_BYTES = 5_242_880;
+const MAX_TUS_MULTIPART_PART_SIZE_BYTES = 5_368_709_120;
+
+const positiveDecimalIntegerString = z
+	.string()
+	.regex(/^\d+$/, "must be a positive decimal integer")
+	.refine((value) => Number.isSafeInteger(Number(value)), "must be a safe integer")
+	.refine((value) => Number(value) > 0, "must be greater than zero");
+
+const positiveMillisecondString = positiveDecimalIntegerString.refine(
+	(value) => Number(value) <= MAX_TIMEOUT_MS,
+	`must not exceed ${MAX_TIMEOUT_MS} milliseconds`,
+);
+
+const tusMultipartPartSizeString = positiveDecimalIntegerString.refine(
+	(value) => {
+		const bytes = Number(value);
+		return (
+			bytes >= MIN_TUS_MULTIPART_PART_SIZE_BYTES &&
+			bytes <= MAX_TUS_MULTIPART_PART_SIZE_BYTES
+		);
+	},
+	`must be between ${MIN_TUS_MULTIPART_PART_SIZE_BYTES} and ${MAX_TUS_MULTIPART_PART_SIZE_BYTES} bytes`,
+);
+
+const nonNegativeDecimalIntegerList = z
+	.string()
+	.regex(/^\d+(,\d+)*$/, "must be a comma-separated list of non-negative decimal integers")
+	.refine(
+		(value) =>
+			value
+				.split(",")
+				.every(
+					(entry) =>
+						Number.isSafeInteger(Number(entry)) && Number(entry) <= MAX_TIMEOUT_MS,
+				),
+		`entries must be safe integers no greater than ${MAX_TIMEOUT_MS}`,
+	);
+
 const parsedEnv = createEnv({
 	server: {
 		APP_URL: z.url().optional(),
@@ -42,6 +82,45 @@ const parsedEnv = createEnv({
 		REDIS_PASSWORD: z.string().optional(),
 		REDIS_TLS: z.enum(["true", "false"]).default("false"),
 		REDIS_CA_CERT: z.string().optional(),
+		REDIS_COMMAND_TIMEOUT_MS: z
+			.string()
+			.regex(/^\d+$/, "REDIS_COMMAND_TIMEOUT_MS must be a positive integer")
+			.refine((value) => Number(value) > 0, "REDIS_COMMAND_TIMEOUT_MS must be greater than zero")
+			.default("2000"),
+		QUEUE_HEALTH_TIMEOUT_MS: positiveMillisecondString.default("1000"),
+		QUEUE_JOB_ATTEMPTS: positiveDecimalIntegerString.default("3"),
+		QUEUE_JOB_BACKOFF_DELAY_MS: positiveMillisecondString.default("1000"),
+		QUEUE_COMPLETED_JOB_RETENTION_COUNT: positiveDecimalIntegerString.default("100"),
+		QUEUE_COMPLETED_JOB_RETENTION_SECONDS: positiveDecimalIntegerString.default("86400"),
+		QUEUE_FAILED_JOB_RETENTION_COUNT: positiveDecimalIntegerString.default("500"),
+		QUEUE_FAILED_JOB_RETENTION_SECONDS: positiveDecimalIntegerString.default("604800"),
+		REDIS_MAX_RECONNECT_ATTEMPTS: positiveDecimalIntegerString.default("8"),
+		REDIS_LOG_THROTTLE_MS: positiveMillisecondString.default("30000"),
+		REDIS_MAX_RETRIES_PER_REQUEST: positiveDecimalIntegerString.default("1"),
+		REDIS_RECONNECT_BASE_DELAY_MS: positiveMillisecondString.default("100"),
+		REDIS_RECONNECT_MAX_DELAY_MS: positiveMillisecondString.default("2000"),
+		REDIS_HEALTH_TIMEOUT_MS: positiveMillisecondString.default("1000"),
+		SMTP_CONNECTION_TIMEOUT_MS: positiveMillisecondString.default("10000"),
+		SMTP_GREETING_TIMEOUT_MS: positiveMillisecondString.default("10000"),
+		SMTP_SOCKET_TIMEOUT_MS: positiveMillisecondString.default("30000"),
+		TURNSTILE_TIMEOUT_MS: positiveMillisecondString.default("5000"),
+		WEBHOOK_RETRY_DELAYS_MS: nonNegativeDecimalIntegerList.default(
+			"0,1000,5000,30000,120000,600000",
+		),
+		WEBHOOK_MAX_ATTEMPTS: positiveDecimalIntegerString.default("6"),
+		WEBHOOK_TIMEOUT_MS: positiveMillisecondString.default("30000"),
+		WEBHOOK_MAX_RESPONSE_BODY_LENGTH: positiveDecimalIntegerString.default("10240"),
+		WORK_BALANCE_JOB_BATCH_LIMIT: positiveDecimalIntegerString.default("1000"),
+		CLOCKODO_IMPORT_QUERY_CHUNK_SIZE: positiveDecimalIntegerString.default("500"),
+		CLOCKODO_IMPORT_CONCURRENCY: positiveDecimalIntegerString.default("4"),
+		EXPORT_FETCH_BATCH_SIZE: positiveDecimalIntegerString.default("1000"),
+		TUS_MAX_UPLOAD_SIZE_BYTES: positiveDecimalIntegerString.default("10485760"),
+		IMAGE_MAX_UPLOAD_SIZE_BYTES: positiveDecimalIntegerString.default("10485760"),
+		TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES: positiveDecimalIntegerString.default("10485760"),
+		TUS_MULTIPART_PART_SIZE_BYTES: tusMultipartPartSizeString.default("8388608"),
+		JOB_EXECUTION_RETENTION_DAYS: positiveDecimalIntegerString.default("90"),
+		DOMAIN_CACHE_TTL_SECONDS: positiveDecimalIntegerString.default("300"),
+		SECRET_STORE_STATUS_CACHE_TTL_SECONDS: positiveDecimalIntegerString.default("86400"),
 
 		// Public AWS S3 / Object Storage (REQUIRED)
 		// S3-compatible storage is required for public file uploads
@@ -205,6 +284,62 @@ const parsedEnv = createEnv({
 		REDIS_PASSWORD: process.env.REDIS_PASSWORD,
 		REDIS_TLS: process.env.REDIS_TLS ?? "false",
 		REDIS_CA_CERT: process.env.REDIS_CA_CERT,
+		REDIS_COMMAND_TIMEOUT_MS: process.env.REDIS_COMMAND_TIMEOUT_MS,
+		QUEUE_HEALTH_TIMEOUT_MS: optionalEnv(process.env.QUEUE_HEALTH_TIMEOUT_MS) ?? "1000",
+		QUEUE_JOB_ATTEMPTS: optionalEnv(process.env.QUEUE_JOB_ATTEMPTS) ?? "3",
+		QUEUE_JOB_BACKOFF_DELAY_MS:
+			optionalEnv(process.env.QUEUE_JOB_BACKOFF_DELAY_MS) ?? "1000",
+		QUEUE_COMPLETED_JOB_RETENTION_COUNT:
+			optionalEnv(process.env.QUEUE_COMPLETED_JOB_RETENTION_COUNT) ?? "100",
+		QUEUE_COMPLETED_JOB_RETENTION_SECONDS:
+			optionalEnv(process.env.QUEUE_COMPLETED_JOB_RETENTION_SECONDS) ?? "86400",
+		QUEUE_FAILED_JOB_RETENTION_COUNT:
+			optionalEnv(process.env.QUEUE_FAILED_JOB_RETENTION_COUNT) ?? "500",
+		QUEUE_FAILED_JOB_RETENTION_SECONDS:
+			optionalEnv(process.env.QUEUE_FAILED_JOB_RETENTION_SECONDS) ?? "604800",
+		REDIS_MAX_RECONNECT_ATTEMPTS:
+			optionalEnv(process.env.REDIS_MAX_RECONNECT_ATTEMPTS) ?? "8",
+		REDIS_LOG_THROTTLE_MS: optionalEnv(process.env.REDIS_LOG_THROTTLE_MS) ?? "30000",
+		REDIS_MAX_RETRIES_PER_REQUEST:
+			optionalEnv(process.env.REDIS_MAX_RETRIES_PER_REQUEST) ?? "1",
+		REDIS_RECONNECT_BASE_DELAY_MS:
+			optionalEnv(process.env.REDIS_RECONNECT_BASE_DELAY_MS) ?? "100",
+		REDIS_RECONNECT_MAX_DELAY_MS:
+			optionalEnv(process.env.REDIS_RECONNECT_MAX_DELAY_MS) ?? "2000",
+		REDIS_HEALTH_TIMEOUT_MS: optionalEnv(process.env.REDIS_HEALTH_TIMEOUT_MS) ?? "1000",
+		SMTP_CONNECTION_TIMEOUT_MS:
+			optionalEnv(process.env.SMTP_CONNECTION_TIMEOUT_MS) ?? "10000",
+		SMTP_GREETING_TIMEOUT_MS:
+			optionalEnv(process.env.SMTP_GREETING_TIMEOUT_MS) ?? "10000",
+		SMTP_SOCKET_TIMEOUT_MS: optionalEnv(process.env.SMTP_SOCKET_TIMEOUT_MS) ?? "30000",
+		TURNSTILE_TIMEOUT_MS: optionalEnv(process.env.TURNSTILE_TIMEOUT_MS) ?? "5000",
+		WEBHOOK_RETRY_DELAYS_MS:
+			optionalEnv(process.env.WEBHOOK_RETRY_DELAYS_MS) ??
+			"0,1000,5000,30000,120000,600000",
+		WEBHOOK_MAX_ATTEMPTS: optionalEnv(process.env.WEBHOOK_MAX_ATTEMPTS) ?? "6",
+		WEBHOOK_TIMEOUT_MS: optionalEnv(process.env.WEBHOOK_TIMEOUT_MS) ?? "30000",
+		WEBHOOK_MAX_RESPONSE_BODY_LENGTH:
+			optionalEnv(process.env.WEBHOOK_MAX_RESPONSE_BODY_LENGTH) ?? "10240",
+		WORK_BALANCE_JOB_BATCH_LIMIT:
+			optionalEnv(process.env.WORK_BALANCE_JOB_BATCH_LIMIT) ?? "1000",
+		CLOCKODO_IMPORT_QUERY_CHUNK_SIZE:
+			optionalEnv(process.env.CLOCKODO_IMPORT_QUERY_CHUNK_SIZE) ?? "500",
+		CLOCKODO_IMPORT_CONCURRENCY:
+			optionalEnv(process.env.CLOCKODO_IMPORT_CONCURRENCY) ?? "4",
+		EXPORT_FETCH_BATCH_SIZE: optionalEnv(process.env.EXPORT_FETCH_BATCH_SIZE) ?? "1000",
+		TUS_MAX_UPLOAD_SIZE_BYTES:
+			optionalEnv(process.env.TUS_MAX_UPLOAD_SIZE_BYTES) ?? "10485760",
+		IMAGE_MAX_UPLOAD_SIZE_BYTES:
+			optionalEnv(process.env.IMAGE_MAX_UPLOAD_SIZE_BYTES) ?? "10485760",
+		TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES:
+			optionalEnv(process.env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES) ?? "10485760",
+		TUS_MULTIPART_PART_SIZE_BYTES:
+			optionalEnv(process.env.TUS_MULTIPART_PART_SIZE_BYTES) ?? "8388608",
+		JOB_EXECUTION_RETENTION_DAYS:
+			optionalEnv(process.env.JOB_EXECUTION_RETENTION_DAYS) ?? "90",
+		DOMAIN_CACHE_TTL_SECONDS: optionalEnv(process.env.DOMAIN_CACHE_TTL_SECONDS) ?? "300",
+		SECRET_STORE_STATUS_CACHE_TTL_SECONDS:
+			optionalEnv(process.env.SECRET_STORE_STATUS_CACHE_TTL_SECONDS) ?? "86400",
 
 		S3_PUBLIC_BUCKET: process.env.S3_PUBLIC_BUCKET,
 		S3_PUBLIC_ACCESS_KEY_ID: process.env.S3_PUBLIC_ACCESS_KEY_ID,
@@ -307,22 +442,34 @@ const parsedEnv = createEnv({
 	},
 	createFinalSchema: (shape) =>
 		z.object(shape).superRefine((env, ctx) => {
-			if (env.SECRET_STORE_PROVIDER !== "scaleway") return;
+			if (env.SECRET_STORE_PROVIDER === "scaleway") {
+				const missingScalewayEnvVars = [
+					"SCALEWAY_ACCESS_KEY",
+					"SCALEWAY_SECRET_KEY",
+					"SCALEWAY_PROJECT_ID",
+				] as const;
 
-			const missingScalewayEnvVars = [
-				"SCALEWAY_ACCESS_KEY",
-				"SCALEWAY_SECRET_KEY",
-				"SCALEWAY_PROJECT_ID",
-			] as const;
-
-			for (const key of missingScalewayEnvVars) {
-				if (!env[key]) {
-					ctx.addIssue({
-						code: "custom",
-						path: [key],
-						message: `${key} is required when SECRET_STORE_PROVIDER=scaleway`,
-					});
+				for (const key of missingScalewayEnvVars) {
+					if (!env[key]) {
+						ctx.addIssue({
+							code: "custom",
+							path: [key],
+							message: `${key} is required when SECRET_STORE_PROVIDER=scaleway`,
+						});
+					}
 				}
+			}
+
+			if (
+				env.WEBHOOK_MAX_ATTEMPTS &&
+				env.WEBHOOK_RETRY_DELAYS_MS &&
+				Number(env.WEBHOOK_MAX_ATTEMPTS) > env.WEBHOOK_RETRY_DELAYS_MS.split(",").length
+			) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["WEBHOOK_MAX_ATTEMPTS"],
+					message: "WEBHOOK_MAX_ATTEMPTS cannot exceed the number of webhook retry delays",
+				});
 			}
 		}),
 	skipValidation: skipEnvValidation,

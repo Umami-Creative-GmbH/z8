@@ -69,29 +69,3 @@ export interface WebhookDeliveryResult {
 	errorMessage?: string;
 	durationMs: number;
 }
-
-/**
- * Retry delays in milliseconds (exponential backoff)
- * Attempt 1: immediate
- * Attempt 2: 1s
- * Attempt 3: 5s
- * Attempt 4: 30s
- * Attempt 5: 2m
- * Attempt 6: 10m
- */
-export const RETRY_DELAYS_MS = [0, 1000, 5000, 30000, 120000, 600000] as const;
-
-/**
- * Maximum number of delivery attempts
- */
-export const MAX_ATTEMPTS = 6;
-
-/**
- * HTTP timeout for webhook requests (30 seconds)
- */
-export const WEBHOOK_TIMEOUT_MS = 30000;
-
-/**
- * Maximum response body to store (10KB)
- */
-export const MAX_RESPONSE_BODY_LENGTH = 10240;

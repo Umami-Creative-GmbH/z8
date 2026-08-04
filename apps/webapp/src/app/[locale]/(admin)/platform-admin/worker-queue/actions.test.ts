@@ -186,20 +186,25 @@ describe("worker queue action helpers", () => {
 describe("getWorkerQueueStats", () => {
 	it("includes visible scheduled cron rows with override mismatch status", async () => {
 		mocks.isQueueHealthy.mockResolvedValue(true);
+		const getJobSchedulers = vi.fn().mockResolvedValue([
+			{
+				key: "cron:export",
+				name: "cron:export",
+				pattern: "*/5 * * * *",
+				next: Date.parse("2026-06-03T12:05:00.000Z"),
+			},
+			{
+				key: "cron:telemetry",
+				name: "cron:telemetry",
+				pattern: "* * * * *",
+				next: Date.parse("2026-06-03T12:01:00.000Z"),
+			},
+		]);
+		const isPaused = vi.fn().mockResolvedValue(true);
 		mocks.getJobQueue.mockReturnValue({
-			getJobCounts: vi.fn().mockResolvedValue({}),
-			getRepeatableJobs: vi.fn().mockResolvedValue([
-				{
-					name: "cron:export",
-					pattern: "*/5 * * * *",
-					next: Date.parse("2026-06-03T12:05:00.000Z"),
-				},
-				{
-					name: "cron:telemetry",
-					pattern: "* * * * *",
-					next: Date.parse("2026-06-03T12:01:00.000Z"),
-				},
-			]),
+			getJobCounts: vi.fn().mockResolvedValue({ waiting: 3 }),
+			getJobSchedulers,
+			isPaused,
 		});
 		mocks.listCronScheduleOverrides.mockResolvedValue([
 			{
@@ -215,6 +220,11 @@ describe("getWorkerQueueStats", () => {
 		if (!result.success) {
 			throw new Error(result.error);
 		}
+		expect(result.data.counts.waiting).toBe(3);
+		expect(result.data.counts).not.toHaveProperty("paused");
+		expect(result.data.isPaused).toBe(true);
+		expect(getJobSchedulers).toHaveBeenCalledTimes(1);
+		expect(isPaused).toHaveBeenCalledTimes(1);
 		expect(result.data.scheduledJobs).toContainEqual(
 			expect.objectContaining({
 				name: "cron:export",
@@ -224,6 +234,41 @@ describe("getWorkerQueueStats", () => {
 			}),
 		);
 		expect(result.data.scheduledJobs.some((job) => job.name === "cron:telemetry")).toBe(false);
+	});
+
+	it("returns empty scheduler data when fetching Job Schedulers fails", async () => {
+		mocks.isQueueHealthy.mockResolvedValue(true);
+		mocks.getJobQueue.mockReturnValue({
+			getJobCounts: vi.fn().mockResolvedValue({}),
+			getJobSchedulers: vi.fn().mockRejectedValue(new Error("Redis unavailable")),
+			isPaused: vi.fn().mockResolvedValue(false),
+		});
+
+		const result = await getWorkerQueueStats();
+
+		expect(result.success).toBe(true);
+		if (!result.success) {
+			throw new Error(result.error);
+		}
+		expect(result.data.repeatableJobs).toEqual([]);
+		expect(result.data.isPaused).toBe(false);
+	});
+
+	it("returns an unavailable pause state when checking queue state fails", async () => {
+		mocks.isQueueHealthy.mockResolvedValue(true);
+		mocks.getJobQueue.mockReturnValue({
+			getJobCounts: vi.fn().mockResolvedValue({}),
+			getJobSchedulers: vi.fn().mockResolvedValue([]),
+			isPaused: vi.fn().mockRejectedValue(new Error("Redis unavailable")),
+		});
+
+		const result = await getWorkerQueueStats();
+
+		expect(result.success).toBe(true);
+		if (!result.success) {
+			throw new Error(result.error);
+		}
+		expect(result.data.isPaused).toBeNull();
 	});
 });
 

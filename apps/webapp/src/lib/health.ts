@@ -8,7 +8,7 @@ import { redis } from "@/lib/redis";
 import { S3_PUBLIC_BUCKET, s3Client } from "@/lib/storage/s3-client";
 
 const logger = createLogger("Health");
-const REDIS_HEALTH_TIMEOUT_MS = 1_000;
+const redisHealthTimeoutMs = Number(env.REDIS_HEALTH_TIMEOUT_MS);
 
 export type ServiceStatus = "healthy" | "degraded" | "unhealthy";
 
@@ -73,7 +73,7 @@ export async function checkDatabase(): Promise<ServiceHealth> {
 export async function checkCache(): Promise<ServiceHealth> {
 	const start = performance.now();
 	try {
-		await withTimeout(redis.ping(), REDIS_HEALTH_TIMEOUT_MS, "Redis health check timed out");
+		await withTimeout(redis.ping(), redisHealthTimeoutMs, "Redis health check timed out");
 		return {
 			status: "healthy",
 			latencyMs: Math.round(performance.now() - start),

@@ -30,6 +30,12 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
+vi.mock("@/env", () => ({
+	env: {
+		IMAGE_MAX_UPLOAD_SIZE_BYTES: "1024",
+	},
+}));
+
 vi.mock("@/db/auth-schema", () => ({
 	member: {
 		userId: "member.userId",
@@ -174,6 +180,65 @@ describe("image upload processing", () => {
 
 		expect(response.status).toBe(200);
 		expect(mockState.deleteCommand).not.toHaveBeenCalled();
+	});
+
+	it("rejects image uploads whose metadata exceeds the configured limit", async () => {
+		mockState.s3Send.mockResolvedValueOnce({ ContentLength: 1025 });
+
+		const response = await POST({
+			json: () =>
+				Promise.resolve({
+					tusFileKey: ".tmp/tus/dXNlcl8x-upload",
+					uploadType: "avatar",
+				}),
+		} as never);
+
+		expect(response.status).toBe(413);
+		await expect(response.json()).resolves.toEqual({
+			error: "File too large. Maximum size is 1KB",
+		});
+	});
+
+	it("rejects image uploads whose downloaded buffer exceeds the configured limit", async () => {
+		mockState.s3Send.mockResolvedValueOnce({
+			ContentLength: 1024,
+			Body: {
+				transformToByteArray: () => Promise.resolve(new Uint8Array(1025)),
+			},
+		});
+
+		const response = await POST({
+			json: () =>
+				Promise.resolve({
+					tusFileKey: ".tmp/tus/dXNlcl8x-upload",
+					uploadType: "avatar",
+				}),
+		} as never);
+
+		expect(response.status).toBe(413);
+		await expect(response.json()).resolves.toEqual({
+			error: "File too large. Maximum size is 1KB",
+		});
+	});
+
+	it("processes an image whose downloaded buffer equals the configured limit", async () => {
+		mockState.s3Send.mockResolvedValueOnce({
+			ContentLength: 1024,
+			Body: {
+				transformToByteArray: () => Promise.resolve(new Uint8Array(1024)),
+			},
+		});
+
+		const response = await POST({
+			json: () =>
+				Promise.resolve({
+					tusFileKey: ".tmp/tus/dXNlcl8x-upload",
+					uploadType: "avatar",
+				}),
+		} as never);
+
+		expect(response.status).toBe(200);
+		expect(mockState.putCommand).toHaveBeenCalled();
 	});
 
 	it("returns a generic error without leaking internal storage details", async () => {

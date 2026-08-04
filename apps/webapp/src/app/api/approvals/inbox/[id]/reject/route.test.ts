@@ -595,6 +595,37 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 		});
 	});
 
+	it("logs actionable context for an unhandled decision failure", async () => {
+		const error = Object.assign(
+			new Error("Canonical approval invariant failed"),
+			{
+				_tag: "ApprovalTransitionEngineError",
+				code: "invariant",
+			},
+		);
+		mockState.rejectApprovalInboxItem.mockRejectedValue(error);
+
+		const response = await POST(createRequest({ reason: "Missing receipt" }), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(500);
+		expect(mockState.logger.error).toHaveBeenCalledWith(
+			{
+				err: error,
+				action: "reject",
+				approvalId: "approval-1",
+				decisionStage: "decision",
+				entityType: "absence_entry",
+				targetType: "compatibility_request",
+				requestStatus: "pending",
+				errorTag: "ApprovalTransitionEngineError",
+				errorCode: "invariant",
+			},
+			"Failed to reject",
+		);
+	});
+
 	it.each([
 		{
 			code: "forbidden",
@@ -626,19 +657,22 @@ describe("POST /api/approvals/inbox/[id]/reject", () => {
 			}),
 			status: 400,
 		},
-	])("returns translated canonical $code errors without a 500", async ({
-		error,
-		status,
-	}) => {
-		mockState.rejectApprovalInboxItem.mockRejectedValue(error);
+	])(
+		"returns translated canonical $code errors without a 500",
+		async ({ error, status }) => {
+			mockState.rejectApprovalInboxItem.mockRejectedValue(error);
 
-		const response = await POST(createRequest({ reason: "Missing receipt" }), {
-			params: Promise.resolve({ id: "approval-1" }),
-		});
+			const response = await POST(
+				createRequest({ reason: "Missing receipt" }),
+				{
+					params: Promise.resolve({ id: "approval-1" }),
+				},
+			);
 
-		expect(response.status).toBe(status);
-		await expect(response.json()).resolves.toEqual({ error: error.message });
-	});
+			expect(response.status).toBe(status);
+			await expect(response.json()).resolves.toEqual({ error: error.message });
+		},
+	);
 
 	it("delegates an exact terminal ordinary request for owner replay", async () => {
 		mockState.findApprovalRequest.mockResolvedValue({

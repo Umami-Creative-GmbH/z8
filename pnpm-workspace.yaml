@@ -24,6 +24,7 @@ minimumReleaseAgeExclude:
   - tmp@0.2.6
   - oxlint-plugin-react-doctor@0.5.1
   - react-doctor@0.5.1
+  - bullmq@6.0.7
 
 overrides:
   '@hono/node-server': 1.19.13

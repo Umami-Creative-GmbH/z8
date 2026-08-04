@@ -83,12 +83,9 @@ export class SmtpTransport implements EmailTransport {
 				user: config.auth.user,
 				pass: config.auth.pass,
 			},
-			// Connection timeout
-			connectionTimeout: 10000, // 10 seconds
-			// Greeting timeout
-			greetingTimeout: 10000,
-			// Socket timeout
-			socketTimeout: 30000,
+			connectionTimeout: Number(env.SMTP_CONNECTION_TIMEOUT_MS),
+			greetingTimeout: Number(env.SMTP_GREETING_TIMEOUT_MS),
+			socketTimeout: Number(env.SMTP_SOCKET_TIMEOUT_MS),
 		});
 	}
 

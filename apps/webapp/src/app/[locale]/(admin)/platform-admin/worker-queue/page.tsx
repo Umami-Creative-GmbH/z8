@@ -214,6 +214,15 @@ function QueueCountsSection({
 	stats: WorkerQueueStats;
 	locale: string;
 }) {
+	const queueState =
+		stats.isPaused === null
+			? t("settings.workerQueue.cards.unknown", "Unknown")
+			: stats.isPaused
+				? t("settings.workerQueue.cards.paused", "Paused")
+				: t("settings.workerQueue.cards.running", "Running");
+	const queueStateVariant =
+		stats.isPaused === null ? "default" : stats.isPaused ? "warning" : "success";
+
 	return (
 		<section>
 			<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
@@ -263,12 +272,15 @@ function QueueCountsSection({
 					icon={<IconClock className="size-4" />}
 				/>
 				<StatCard
-					title={t("settings.workerQueue.cards.paused", "Paused")}
-					value={stats.counts.paused}
+					title={t("settings.workerQueue.cards.queueState", "Queue")}
+					value={queueState}
 					locale={locale}
-					description={t("settings.workerQueue.cards.pausedDescription", "Paused jobs")}
+					description={t(
+						"settings.workerQueue.cards.queueStateDescription",
+						"Whether workers can take waiting jobs",
+					)}
 					icon={<IconPlayerPause className="size-4" />}
-					variant={stats.counts.paused > 0 ? "warning" : "default"}
+					variant={queueStateVariant}
 				/>
 			</div>
 		</section>
@@ -716,7 +728,7 @@ async function WorkerQueueContent({ locale }: { locale: string }) {
 }
 
 function WorkerQueueLoading() {
-	const queueSkeletonKeys = ["waiting", "active", "completed", "failed", "delayed", "paused"];
+	const queueSkeletonKeys = ["waiting", "active", "completed", "failed", "delayed", "queue-state"];
 	const reliabilitySkeletonKeys = ["success-rate", "failed-runs", "stale-jobs", "avg-duration"];
 
 	return (

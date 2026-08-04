@@ -19,7 +19,13 @@ import { createLogger } from "@/lib/logger";
 import { createRedisConnectionOptions } from "@/lib/redis-config";
 
 const logger = createLogger("JobQueue");
-const QUEUE_HEALTH_TIMEOUT_MS = 1_000;
+const queueHealthTimeoutMs = Number(env.QUEUE_HEALTH_TIMEOUT_MS);
+const queueJobAttempts = Number(env.QUEUE_JOB_ATTEMPTS);
+const queueJobBackoffDelayMs = Number(env.QUEUE_JOB_BACKOFF_DELAY_MS);
+const queueCompletedJobRetentionCount = Number(env.QUEUE_COMPLETED_JOB_RETENTION_COUNT);
+const queueCompletedJobRetentionSeconds = Number(env.QUEUE_COMPLETED_JOB_RETENTION_SECONDS);
+const queueFailedJobRetentionCount = Number(env.QUEUE_FAILED_JOB_RETENTION_COUNT);
+const queueFailedJobRetentionSeconds = Number(env.QUEUE_FAILED_JOB_RETENTION_SECONDS);
 
 // Connection configuration for Redis-compatible backend
 const connection: ConnectionOptions = {
@@ -141,18 +147,18 @@ export interface JobResult {
 
 // Default job options
 const defaultJobOptions: JobsOptions = {
-	attempts: 3,
+	attempts: queueJobAttempts,
 	backoff: {
 		type: "exponential",
-		delay: 1000,
+		delay: queueJobBackoffDelayMs,
 	},
 	removeOnComplete: {
-		count: 100, // Keep last 100 completed jobs
-		age: 24 * 60 * 60, // Keep for 24 hours
+		count: queueCompletedJobRetentionCount,
+		age: queueCompletedJobRetentionSeconds,
 	},
 	removeOnFail: {
-		count: 500, // Keep last 500 failed jobs for debugging
-		age: 7 * 24 * 60 * 60, // Keep for 7 days
+		count: queueFailedJobRetentionCount,
+		age: queueFailedJobRetentionSeconds,
 	},
 };
 
@@ -369,7 +375,7 @@ export function createWorker(
 export async function isQueueHealthy(): Promise<boolean> {
 	try {
 		const queue = getJobQueue();
-		await withTimeout(queue.getJobCounts(), QUEUE_HEALTH_TIMEOUT_MS);
+		await withTimeout(queue.getJobCounts(), queueHealthTimeoutMs);
 		return true;
 	} catch {
 		return false;

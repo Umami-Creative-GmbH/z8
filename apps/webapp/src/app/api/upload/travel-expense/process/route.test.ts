@@ -22,6 +22,12 @@ vi.mock("next/server", () => ({
 	},
 }));
 
+vi.mock("@/env", () => ({
+	env: {
+		TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES: "1024",
+	},
+}));
+
 vi.mock("@/lib/auth-helpers", () => ({
 	getAuthContext: vi.fn(() => mockState.authContext),
 }));
@@ -191,6 +197,68 @@ describe("travel expense upload processing", () => {
 		expect(mockState.publicSend).not.toHaveBeenCalled();
 		expect(mockState.uploadPrivateObject).not.toHaveBeenCalled();
 		expect(mockState.insert).not.toHaveBeenCalled();
+	});
+
+	it("rejects travel expense uploads whose metadata exceeds the configured limit", async () => {
+		mockState.publicSend.mockResolvedValueOnce({ ContentLength: 1025 });
+
+		const response = await POST({
+			json: () =>
+				Promise.resolve({
+					tusFileKey: "tus-user_1-upload",
+					claimId: "claim_1",
+					fileName: "receipt.pdf",
+				}),
+		} as never);
+
+		expect(response.status).toBe(413);
+		await expect(response.json()).resolves.toEqual({
+			error: "File too large. Maximum size is 1KB",
+		});
+	});
+
+	it("rejects travel expense uploads whose downloaded buffer exceeds the configured limit", async () => {
+		mockState.publicSend.mockResolvedValueOnce({
+			ContentLength: 1024,
+			Body: {
+				transformToByteArray: () => Promise.resolve(new Uint8Array(1025)),
+			},
+		});
+
+		const response = await POST({
+			json: () =>
+				Promise.resolve({
+					tusFileKey: "tus-user_1-upload",
+					claimId: "claim_1",
+					fileName: "receipt.pdf",
+				}),
+		} as never);
+
+		expect(response.status).toBe(413);
+		await expect(response.json()).resolves.toEqual({
+			error: "File too large. Maximum size is 1KB",
+		});
+	});
+
+	it("processes a travel expense whose downloaded buffer equals the configured limit", async () => {
+		mockState.publicSend.mockResolvedValueOnce({
+			ContentLength: 1024,
+			Body: {
+				transformToByteArray: () => Promise.resolve(new Uint8Array(1024)),
+			},
+		});
+
+		const response = await POST({
+			json: () =>
+				Promise.resolve({
+					tusFileKey: "tus-user_1-upload",
+					claimId: "claim_1",
+					fileName: "receipt.pdf",
+				}),
+		} as never);
+
+		expect(response.status).toBe(200);
+		expect(mockState.uploadPrivateObject).toHaveBeenCalled();
 	});
 
 	it.each([

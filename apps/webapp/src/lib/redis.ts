@@ -4,9 +4,12 @@ import { createLogger } from "@/lib/logger";
 import { createRedisConnectionOptions } from "@/lib/redis-config";
 
 const logger = createLogger("Redis");
-const REDIS_COMMAND_TIMEOUT_MS = 1_000;
-const REDIS_MAX_RECONNECT_ATTEMPTS = 8;
-const REDIS_LOG_THROTTLE_MS = 30_000;
+const redisCommandTimeoutMs = Number(env.REDIS_COMMAND_TIMEOUT_MS);
+const redisMaxReconnectAttempts = Number(env.REDIS_MAX_RECONNECT_ATTEMPTS);
+const redisLogThrottleMs = Number(env.REDIS_LOG_THROTTLE_MS);
+const redisMaxRetriesPerRequest = Number(env.REDIS_MAX_RETRIES_PER_REQUEST);
+const redisReconnectBaseDelayMs = Number(env.REDIS_RECONNECT_BASE_DELAY_MS);
+const redisReconnectMaxDelayMs = Number(env.REDIS_RECONNECT_MAX_DELAY_MS);
 const hasRedisConfig = Boolean(env.REDIS_HOST);
 const shouldDisableRedisDuringBuild =
 	(!hasRedisConfig && env.NODE_ENV === "production") ||
@@ -39,7 +42,7 @@ let lastReconnectLogAt = 0;
 const activeStatuses = new Set<RedisStatus>(["ready", "connect", "connecting"]);
 
 function shouldLogRedisEvent(lastLogAt: number): boolean {
-	return Date.now() - lastLogAt >= REDIS_LOG_THROTTLE_MS;
+	return Date.now() - lastLogAt >= redisLogThrottleMs;
 }
 
 function isAlreadyConnectingError(error: unknown): boolean {
@@ -54,15 +57,18 @@ function createRedisClient(): Redis {
 
 	const client = new Redis({
 		...redisConnectionOptions,
-		connectTimeout: REDIS_COMMAND_TIMEOUT_MS,
-		commandTimeout: REDIS_COMMAND_TIMEOUT_MS,
-		maxRetriesPerRequest: 1,
+		connectTimeout: redisCommandTimeoutMs,
+		commandTimeout: redisCommandTimeoutMs,
+		maxRetriesPerRequest: redisMaxRetriesPerRequest,
 		retryStrategy(times) {
-			if (times > REDIS_MAX_RECONNECT_ATTEMPTS) {
+			if (times > redisMaxReconnectAttempts) {
 				return null;
 			}
 
-			return Math.min(100 * 2 ** (times - 1), 2_000);
+			return Math.min(
+				redisReconnectBaseDelayMs * 2 ** (times - 1),
+				redisReconnectMaxDelayMs,
+			);
 		},
 		lazyConnect: true,
 		enableReadyCheck: true,

@@ -1,0 +1,10 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"allowJs": false,
+		"incremental": false,
+		"noEmit": true
+	},
+	"include": ["scripts/smoke-bullmq-v6.ts"],
+	"exclude": []
+}

@@ -39,7 +39,6 @@ export interface QueueCounts {
 	completed: number;
 	failed: number;
 	delayed: number;
-	paused: number;
 }
 
 export interface RepeatableJob {
@@ -69,6 +68,7 @@ export interface JobMetric {
 
 export interface WorkerQueueStats {
 	isConnected: boolean;
+	isPaused: boolean | null;
 	counts: QueueCounts;
 	repeatableJobs: RepeatableJob[];
 	scheduledJobs: ScheduledCronJobRow[];
@@ -268,9 +268,9 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 			completed: 0,
 			failed: 0,
 			delayed: 0,
-			paused: 0,
 		};
 
+		let isPaused: boolean | null = null;
 		let repeatableJobs: RepeatableJob[] = [];
 
 		if (isConnected) {
@@ -291,14 +291,22 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 				completed: jobCounts.completed ?? 0,
 				failed: jobCounts.failed ?? 0,
 				delayed: jobCounts.delayed ?? 0,
-				paused: jobCounts.paused ?? 0,
 			};
 
-			const repeatables = yield* Effect.promise(() => queue.getRepeatableJobs()).pipe(
-				Effect.orElseSucceed(() => [] as Awaited<ReturnType<typeof queue.getRepeatableJobs>>),
+			const jobSchedulers = yield* Effect.tryPromise({
+				try: () => queue.getJobSchedulers(),
+				catch: (error) => error,
+			}).pipe(
+				Effect.orElseSucceed(() => [] as Awaited<ReturnType<typeof queue.getJobSchedulers>>),
+			);
+			isPaused = yield* Effect.tryPromise({
+				try: () => queue.isPaused(),
+				catch: (error) => error,
+			}).pipe(
+				Effect.orElseSucceed(() => null),
 			);
 
-			repeatableJobs = repeatables.flatMap((job) =>
+			repeatableJobs = jobSchedulers.flatMap((job) =>
 				isVisibleCronJobName(job.name)
 					? [
 							{
@@ -323,7 +331,7 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 
 		const scheduledJobs = buildScheduledJobRows({
 			overrides: scheduleOverrides,
-			repeatableJobs,
+			jobSchedulers: repeatableJobs,
 		}).filter((job) => isVisibleCronJobName(job.name));
 
 		const executions = yield* Effect.tryPromise({
@@ -407,6 +415,7 @@ export async function getWorkerQueueStats(): Promise<ServerActionResult<WorkerQu
 
 		return {
 			isConnected,
+			isPaused,
 			counts,
 			repeatableJobs,
 			scheduledJobs,
