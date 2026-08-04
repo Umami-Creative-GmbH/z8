@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import {
 	listEmployeesForWorkBalanceBatch,
@@ -17,7 +18,7 @@ export interface WorkBalanceJobResult {
 }
 
 export async function runWorkBalanceRefresh(): Promise<WorkBalanceJobResult> {
-	const batchLimit = 1000;
+	const batchLimit = Number(env.WORK_BALANCE_JOB_BATCH_LIMIT);
 	const employees = await listEmployeesForWorkBalanceBatch(batchLimit);
 	const result: WorkBalanceJobResult = {
 		success: true,

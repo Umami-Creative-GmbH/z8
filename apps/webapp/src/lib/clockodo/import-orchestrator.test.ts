@@ -8,6 +8,10 @@ import type {
 } from "./types";
 
 const mocks = vi.hoisted(() => ({
+	env: {
+		CLOCKODO_IMPORT_QUERY_CHUNK_SIZE: "500",
+		CLOCKODO_IMPORT_CONCURRENCY: "4",
+	},
 	teamFindFirst: vi.fn(),
 	teamFindMany: vi.fn(),
 	employeeFindMany: vi.fn(),
@@ -25,6 +29,7 @@ const mocks = vi.hoisted(() => ({
 	returnAllowances: vi.fn(),
 }));
 
+vi.mock("@/env", () => ({ env: mocks.env }));
 vi.mock("@/db", () => ({
 	db: {
 		query: {
@@ -230,6 +235,72 @@ beforeEach(() => {
 });
 
 describe("orchestrateImport team batching", () => {
+	it("uses configured query chunk size and concurrency", async () => {
+		mocks.env.CLOCKODO_IMPORT_QUERY_CHUNK_SIZE = "2";
+		mocks.env.CLOCKODO_IMPORT_CONCURRENCY = "2";
+		vi.resetModules();
+		const configuredModule = await import("./import-orchestrator");
+		const teams = Array.from({ length: 5 }, (_, index) =>
+			team(index + 1, `Configured team ${index + 1}`),
+		);
+		const settlers: Array<() => void> = [];
+		let active = 0;
+		let maxActive = 0;
+		mocks.teamFindMany.mockImplementation(({ where }) => {
+			const names = collectParams(where).filter(
+				(value): value is string =>
+					typeof value === "string" && value.startsWith("Configured team "),
+			);
+			active++;
+			maxActive = Math.max(maxActive, active);
+			return new Promise((resolve) => {
+				let pending = true;
+				settlers.push(() => {
+					if (!pending) return;
+					pending = false;
+					active--;
+					resolve(names.map((name) => ({ id: `existing-${name}`, name })));
+				});
+			});
+		});
+
+		const importing = configuredModule.orchestrateImport(
+			client({ getTeams: vi.fn().mockResolvedValue(teams) }),
+			"org-1",
+			"user-1",
+			selections({ teams: true }),
+		);
+		try {
+			await vi.waitFor(() =>
+				expect(mocks.teamFindMany).toHaveBeenCalledTimes(2),
+			);
+			expect(maxActive).toBe(2);
+			for (const settle of settlers.slice(0, 2)) settle();
+			await vi.waitFor(() =>
+				expect(mocks.teamFindMany).toHaveBeenCalledTimes(3),
+			);
+			expect(maxActive).toBe(2);
+		} finally {
+			try {
+				await settleDeferredImport(importing, settlers);
+			} finally {
+				mocks.env.CLOCKODO_IMPORT_QUERY_CHUNK_SIZE = "500";
+				mocks.env.CLOCKODO_IMPORT_CONCURRENCY = "4";
+				vi.resetModules();
+			}
+		}
+
+		expect(
+			mocks.teamFindMany.mock.calls.map(
+				([{ where }]) =>
+					collectParams(where).filter(
+						(value) =>
+							typeof value === "string" && value.startsWith("Configured team "),
+					).length,
+			),
+		).toEqual([2, 2, 1]);
+	});
+
 	it("finishes source preparation before opening the team transaction", async () => {
 		let insideTransaction = false;
 		let queryChunksConstructedInsideTransaction = false;

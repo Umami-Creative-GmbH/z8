@@ -8,7 +8,7 @@ import type { Job } from "bullmq";
 import { createLogger } from "@/lib/logger";
 import type { JobResult } from "@/lib/queue";
 import type { WebhookJobData } from "./types";
-import { MAX_ATTEMPTS } from "./types";
+import { MAX_ATTEMPTS } from "./webhook-config.server";
 import { executeWebhookRequest } from "./webhook-delivery";
 import { scheduleWebhookRetry } from "./webhook-queue";
 import {

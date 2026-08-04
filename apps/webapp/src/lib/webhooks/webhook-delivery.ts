@@ -10,8 +10,8 @@ import { WEBHOOK_HEADERS } from "@/lib/events/types";
 import { createLogger } from "@/lib/logger";
 import { generateWebhookSignature } from "./signature";
 import type { WebhookDeliveryResult, WebhookPayloadData } from "./types";
-import { MAX_RESPONSE_BODY_LENGTH, WEBHOOK_TIMEOUT_MS } from "./types";
 import { type ResolvedWebhookAddress, resolveAndValidateUrl } from "./url-validation";
+import { MAX_RESPONSE_BODY_LENGTH, WEBHOOK_TIMEOUT_MS } from "./webhook-config.server";
 
 const logger = createLogger("WebhookDelivery");
 

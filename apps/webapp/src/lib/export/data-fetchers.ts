@@ -33,6 +33,7 @@ import {
 	workPolicySchedule,
 	workPolicyScheduleDay,
 } from "@/db";
+import { env } from "@/env";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { createLogger } from "@/lib/logger";
 
@@ -762,7 +763,7 @@ export async function fetchExportData(
 // These generator functions fetch data in batches to prevent memory issues
 // with large organizations (5,000-7,000 employees)
 
-const BATCH_SIZE = 1000;
+const BATCH_SIZE = Number(env.EXPORT_FETCH_BATCH_SIZE);
 
 /**
  * Stream time entries in batches using a generator

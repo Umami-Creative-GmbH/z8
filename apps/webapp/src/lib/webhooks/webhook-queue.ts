@@ -9,7 +9,7 @@ import { createLogger } from "@/lib/logger";
 import type { NotificationType } from "@/lib/notifications/types";
 import { addJob, type WebhookJobData as QueueWebhookJobData } from "@/lib/queue";
 import type { WebhookPayloadData } from "./types";
-import { RETRY_DELAYS_MS } from "./types";
+import { MAX_ATTEMPTS, RETRY_DELAYS_MS } from "./webhook-config.server";
 
 const logger = createLogger("WebhookQueue");
 
@@ -87,8 +87,7 @@ export async function scheduleWebhookRetry(params: {
 	attemptNumber: number;
 }): Promise<Job | null> {
 	// Check if we should retry
-	const maxAttempts = RETRY_DELAYS_MS.length;
-	if (params.attemptNumber >= maxAttempts) {
+	if (params.attemptNumber >= MAX_ATTEMPTS) {
 		logger.info(
 			{ deliveryId: params.deliveryId, attemptNumber: params.attemptNumber },
 			"Max retry attempts reached, not scheduling retry",

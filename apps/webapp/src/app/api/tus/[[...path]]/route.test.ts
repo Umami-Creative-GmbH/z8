@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockState = vi.hoisted(() => ({
 	handleWeb: vi.fn(),
 	serverOptions: undefined as Record<string, unknown> | undefined,
+	storeOptions: undefined as Record<string, unknown> | undefined,
 }));
 
 vi.mock("next/headers", () => ({
@@ -26,6 +27,8 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/env", () => ({
 	env: {
+		TUS_MAX_UPLOAD_SIZE_BYTES: "1024",
+		TUS_MULTIPART_PART_SIZE_BYTES: "5242880",
 		S3_PUBLIC_ENDPOINT: "https://s3.example.com",
 		S3_PUBLIC_FORCE_PATH_STYLE: "true",
 		S3_PUBLIC_ACCESS_KEY_ID: "access-key",
@@ -45,6 +48,7 @@ vi.mock("@tus/s3-store", () => ({
 
 			constructor(options: unknown) {
 				this.options = options;
+				mockState.storeOptions = options as Record<string, unknown>;
 			}
 		},
 	),
@@ -118,6 +122,22 @@ describe("TUS route", () => {
 		expect(mockState.handleWeb).not.toHaveBeenCalled();
 	});
 
+	it("rejects scientific notation upload-length before TUS handling", async () => {
+		const response = await POST(
+			new Request("https://app.example.com/api/tus", {
+				method: "POST",
+				headers: {
+					"upload-length": "5000000000000e-6",
+					"upload-metadata": `content-type ${btoa("image/png")}`,
+				},
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		await expect(response.json()).resolves.toEqual({ error: "Invalid upload length" });
+		expect(mockState.handleWeb).not.toHaveBeenCalled();
+	});
+
 	it("rejects POST upload creation requests with deferred upload length", async () => {
 		const response = await POST(
 			new Request("https://app.example.com/api/tus", {
@@ -140,9 +160,12 @@ describe("TUS route", () => {
 
 		expect(options?.generateUrl).toBeTypeOf("function");
 		expect(options?.getFileIdFromRequest).toBeTypeOf("function");
+		if (!options) {
+			throw new Error("Expected TUS server options to be captured");
+		}
 
 		const location = (
-			options?.generateUrl as (
+			options.generateUrl as (
 				request: Request,
 				params: { proto: string; host: string; path: string; id: string },
 			) => string
@@ -155,7 +178,7 @@ describe("TUS route", () => {
 		expect(location).toBe("https://app.example.com/api/tus/.tmp%2Ftus%2FdXNlcl8x-upload");
 
 		const uploadRequest = new Request(location);
-		expect((options?.getFileIdFromRequest as (request: Request) => string)(uploadRequest)).toBe(id);
+		expect((options.getFileIdFromRequest as (request: Request) => string)(uploadRequest)).toBe(id);
 	});
 
 	it("rejects oversized POST upload creation requests before TUS handling", async () => {
@@ -163,7 +186,7 @@ describe("TUS route", () => {
 			new Request("https://app.example.com/api/tus", {
 				method: "POST",
 				headers: {
-					"upload-length": String(10 * 1024 * 1024 + 1),
+					"upload-length": "1025",
 					"upload-metadata": `content-type ${btoa("image/png")}`,
 				},
 			}),
@@ -172,6 +195,14 @@ describe("TUS route", () => {
 		expect(response.status).toBe(413);
 		await expect(response.json()).resolves.toEqual({ error: "File too large" });
 		expect(mockState.handleWeb).not.toHaveBeenCalled();
+	});
+
+	it("configures the S3 store multipart part size from the environment", () => {
+		expect(mockState.storeOptions).toEqual(
+			expect.objectContaining({
+				partSize: 5_242_880,
+			}),
+		);
 	});
 
 	it("rejects POST upload creation requests missing upload metadata", async () => {

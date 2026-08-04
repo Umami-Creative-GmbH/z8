@@ -10,7 +10,7 @@ import { ALLOWED_TRAVEL_EXPENSE_MIME_TYPES } from "@/lib/travel-expenses/attachm
 import { createOwnedTusFileKey, isTusFileKeyOwnedByUser } from "@/lib/upload/tus-ownership";
 
 const tusUploadOwnerContext = new AsyncLocalStorage<string>();
-const MAX_TUS_UPLOAD_SIZE = 10 * 1024 * 1024;
+const MAX_TUS_UPLOAD_SIZE = Number(env.TUS_MAX_UPLOAD_SIZE_BYTES);
 const ALLOWED_MIME_TYPES = new Set<string>(ALLOWED_TRAVEL_EXPENSE_MIME_TYPES);
 const MIME_METADATA_KEYS = new Set([
 	"content-type",
@@ -26,7 +26,7 @@ const MIME_METADATA_KEYS = new Set([
  * All uploads go to S3 (RustFS, MinIO, AWS S3, etc.)
  */
 const store = new S3Store({
-	partSize: 8 * 1024 * 1024, // 8MB parts for efficient multipart uploads
+	partSize: Number(env.TUS_MULTIPART_PART_SIZE_BYTES),
 	s3ClientConfig: {
 		bucket: S3_PUBLIC_BUCKET,
 		region: S3_PUBLIC_REGION,
@@ -67,12 +67,12 @@ function validateTusUploadRequest(request: Request): Response | null {
 
 	const uploadLength = request.headers.get("upload-length");
 	const normalizedUploadLength = uploadLength?.trim();
-	if (!normalizedUploadLength) {
+	if (!normalizedUploadLength || !/^\d+$/.test(normalizedUploadLength)) {
 		return NextResponse.json({ error: "Invalid upload length" }, { status: 400 });
 	}
 
 	const parsedLength = Number(normalizedUploadLength);
-	if (!Number.isFinite(parsedLength) || parsedLength < 0 || !Number.isInteger(parsedLength)) {
+	if (!Number.isSafeInteger(parsedLength) || parsedLength < 0) {
 		return NextResponse.json({ error: "Invalid upload length" }, { status: 400 });
 	}
 

@@ -104,7 +104,7 @@ export interface OrganizationCleanupResult {
 export interface ExecutionCleanupResult {
 	success: true;
 	deletedCount: number;
-	daysToKeep: 90;
+	daysToKeep: number;
 }
 
 /** Result from break enforcement job */
@@ -266,7 +266,7 @@ export const CRON_JOBS = {
 
 	"cron:execution-cleanup": {
 		schedule: "30 2 * * *", // Daily at 2:30 AM
-		description: "Delete cron execution records older than 90 days",
+		description: "Delete cron execution records past the configured retention period",
 		processor: async (): Promise<ExecutionCleanupResult> => {
 			const { runExecutionCleanup } = await import("@/lib/jobs/execution-cleanup");
 			return runExecutionCleanup();

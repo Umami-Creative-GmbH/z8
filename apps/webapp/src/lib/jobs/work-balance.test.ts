@@ -10,6 +10,10 @@ vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({ error: vi.fn() }),
 }));
 
+vi.mock("@/env", () => ({
+	env: { WORK_BALANCE_JOB_BATCH_LIMIT: "7" },
+}));
+
 vi.mock("@/lib/work-balance/service", () => ({
 	listEmployeesForWorkBalanceBatch: mockState.listEmployeesForWorkBalanceBatch,
 	markEmployeeWorkBalanceFailed: mockState.markEmployeeWorkBalanceFailed,
@@ -53,6 +57,9 @@ describe("runWorkBalanceRefresh", () => {
 		try {
 			const result = await runWorkBalanceRefresh();
 
+			expect(mockState.listEmployeesForWorkBalanceBatch).toHaveBeenCalledWith(
+				7,
+			);
 			expect(mockState.refreshEmployeeWorkBalanceFromPeriods).toHaveBeenNthCalledWith(1, {
 				employeeId: "employee-1",
 				organizationId: "org-1",
@@ -77,7 +84,7 @@ describe("runWorkBalanceRefresh", () => {
 				employeesProcessed: 2,
 				balancesUpdated: 1,
 				skipped: 0,
-				batchLimit: 1000,
+				batchLimit: 7,
 				errors: [
 					{
 						employeeId: "employee-2",

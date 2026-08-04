@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-	env: { SECRET_STORE_PROVIDER: "vault" },
+	env: {
+		SECRET_STORE_PROVIDER: "vault",
+		SCALEWAY_KEY_MANAGER_API_URL: "https://key-manager.test",
+		SCALEWAY_SECRET_KEY: "secret-key",
+		SCALEWAY_PROJECT_ID: "project-1",
+		SCALEWAY_REGION: "fr-par",
+		SECRET_STORE_STATUS_CACHE_TTL_SECONDS: "123",
+	},
 	db: {
 		query: {
 			organizationSecretKey: { findFirst: vi.fn() },
@@ -128,8 +135,12 @@ describe("secret store status", () => {
 		expect(mocks.client.getKey).not.toHaveBeenCalled();
 		expect(mocks.redis.set).toHaveBeenCalledWith(
 			"secret-store-status:scaleway:org-1",
-			JSON.stringify({ provider: "scaleway", available: false, reason: "missing-key" }),
-			86400,
+			JSON.stringify({
+				provider: "scaleway",
+				available: false,
+				reason: "missing-key",
+			}),
+			123,
 		);
 	});
 

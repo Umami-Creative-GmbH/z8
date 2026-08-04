@@ -13,9 +13,6 @@ export interface TurnstileVerifyResult {
 	error?: string;
 }
 
-// Timeout for Turnstile API calls (5 seconds)
-const TURNSTILE_TIMEOUT_MS = 5000;
-
 /**
  * Verify a Turnstile token on the server
  *
@@ -56,7 +53,10 @@ export async function verifyTurnstileToken(
 
 		// Verify with Cloudflare Turnstile API (with timeout)
 		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), TURNSTILE_TIMEOUT_MS);
+		const timeoutId = setTimeout(
+			() => controller.abort(),
+			Number(env.TURNSTILE_TIMEOUT_MS),
+		);
 
 		try {
 			const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
