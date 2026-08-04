@@ -92,12 +92,18 @@ describe("ApprovalInboxTable", () => {
 			const tolgee = TolgeeBase().init({ language: locale, staticData });
 			await tolgee.run();
 
-			expect(
-				tolgee.t("approvals:approvals.openDetailsFor", "Open details for Vacation request", {
-					title: "Vacation request",
-				}),
-				locale,
-			).toContain("Vacation request");
+			try {
+				expect(
+					tolgee.t("approvals:approvals.openDetailsFor", "Open details for Vacation request", {
+						title: "Vacation request",
+					}),
+					locale,
+				).toContain("Vacation request");
+			} finally {
+				tolgee.stop();
+			}
+
+			expect(tolgee.isRunning()).toBe(false);
 		}
 	});
 
