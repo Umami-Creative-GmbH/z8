@@ -10,9 +10,14 @@ import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
 import {
+	type ApprovalDecisionDiagnosticStage,
+	buildApprovalDecisionFailureLog,
+} from "@/lib/approvals/inbox/decision-diagnostics";
+import {
 	approveApprovalInboxItem,
 	canAttemptApprovalInboxDecisionTarget,
 	loadApprovalInboxDecisionTarget,
+	type PersistedApprovalRequestForDecision,
 } from "@/lib/approvals/inbox/decision-service";
 import { isSupportedInboxType } from "@/lib/approvals/inbox/source-adapters";
 import { isEligibleManagerForApprovalRequest } from "@/lib/approvals/policies/manager-eligibility-db";
@@ -60,10 +65,15 @@ export async function POST(
 	_request: NextRequest,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
+	let approvalId: string | null = null;
+	let decisionStage: ApprovalDecisionDiagnosticStage = "route";
+	let decisionTarget: PersistedApprovalRequestForDecision | null = null;
 	try {
 		const { id } = await params;
+		approvalId = id;
 
 		// Authenticate
+		decisionStage = "authentication";
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -78,6 +88,7 @@ export async function POST(
 			);
 		}
 
+		decisionStage = "authorization";
 		const ability = await getAbility();
 		if (!ability) {
 			const error = new ForbiddenError("approve", "Approval");
@@ -86,6 +97,7 @@ export async function POST(
 		}
 
 		// Get current employee for the active organization
+		decisionStage = "actor_lookup";
 		const currentEmployee = await db.query.employee.findFirst({
 			where: and(
 				eq(employee.userId, session.user.id),
@@ -108,10 +120,12 @@ export async function POST(
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
+		decisionStage = "target_lookup";
 		const request = await loadApprovalInboxDecisionTarget({
 			approvalId: id,
 			organizationId: currentEmployee.organizationId,
 		});
+		decisionTarget = request;
 
 		if (!request) {
 			return NextResponse.json(
@@ -127,6 +141,7 @@ export async function POST(
 			);
 		}
 
+		decisionStage = "target_authorization";
 		const isAssignedApprover = request.approverId === currentEmployee.id;
 		const isEligibleManager = isAssignedApprover
 			? true
@@ -159,6 +174,7 @@ export async function POST(
 			);
 		}
 
+		decisionStage = "decision";
 		const result = await approveApprovalInboxItem({
 			approvalId: id,
 			actorEmployeeId: currentEmployee.id,
@@ -192,7 +208,16 @@ export async function POST(
 			return errorResponse;
 		}
 
-		logger.error({ error }, "Failed to approve");
+		logger.error(
+			buildApprovalDecisionFailureLog({
+				error,
+				action: "approve",
+				approvalId,
+				decisionStage,
+				target: decisionTarget,
+			}),
+			"Failed to approve",
+		);
 		return NextResponse.json(
 			{ success: false, error: "Failed to approve request" },
 			{ status: 500 },

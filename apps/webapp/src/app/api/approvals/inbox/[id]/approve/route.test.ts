@@ -569,6 +569,37 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		});
 	});
 
+	it("logs actionable context for an unhandled decision failure", async () => {
+		const error = Object.assign(
+			new Error("Canonical approval invariant failed"),
+			{
+				_tag: "ApprovalTransitionEngineError",
+				code: "invariant",
+			},
+		);
+		mockState.approveApprovalInboxItem.mockRejectedValue(error);
+
+		const response = await POST(createRequest(), {
+			params: Promise.resolve({ id: "approval-1" }),
+		});
+
+		expect(response.status).toBe(500);
+		expect(mockState.logger.error).toHaveBeenCalledWith(
+			{
+				err: error,
+				action: "approve",
+				approvalId: "approval-1",
+				decisionStage: "decision",
+				entityType: "absence_entry",
+				targetType: "compatibility_request",
+				requestStatus: "pending",
+				errorTag: "ApprovalTransitionEngineError",
+				errorCode: "invariant",
+			},
+			"Failed to approve",
+		);
+	});
+
 	it.each([
 		{
 			code: "forbidden",
@@ -600,19 +631,19 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 			}),
 			status: 400,
 		},
-	])("returns translated canonical $code errors without a 500", async ({
-		error,
-		status,
-	}) => {
-		mockState.approveApprovalInboxItem.mockRejectedValue(error);
+	])(
+		"returns translated canonical $code errors without a 500",
+		async ({ error, status }) => {
+			mockState.approveApprovalInboxItem.mockRejectedValue(error);
 
-		const response = await POST(createRequest(), {
-			params: Promise.resolve({ id: "approval-1" }),
-		});
+			const response = await POST(createRequest(), {
+				params: Promise.resolve({ id: "approval-1" }),
+			});
 
-		expect(response.status).toBe(status);
-		await expect(response.json()).resolves.toEqual({ error: error.message });
-	});
+			expect(response.status).toBe(status);
+			await expect(response.json()).resolves.toEqual({ error: error.message });
+		},
+	);
 
 	it("delegates an exact terminal ordinary request for owner replay", async () => {
 		mockState.findApprovalRequest.mockResolvedValue({
