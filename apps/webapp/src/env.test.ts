@@ -159,6 +159,31 @@ describe("env", () => {
 		expect(env.REDIS_CA_CERT).toBe(redisCaCert);
 	});
 
+	test("defaults the Redis command timeout to two seconds", async () => {
+		const { env } = await importEnv({ REDIS_COMMAND_TIMEOUT_MS: undefined });
+
+		expect(env.REDIS_COMMAND_TIMEOUT_MS).toBe("2000");
+	});
+
+	test("accepts a custom Redis command timeout", async () => {
+		const { env } = await importEnv({ REDIS_COMMAND_TIMEOUT_MS: "3500" });
+
+		expect(env.REDIS_COMMAND_TIMEOUT_MS).toBe("3500");
+	});
+
+	test.each(["0", "-1", "1.5", "invalid"])(
+		"rejects invalid Redis command timeout %s",
+		async (timeout) => {
+			vi.spyOn(process, "exit").mockImplementation((code) => {
+				throw new Error(`process.exit:${code}`);
+			});
+
+			await expect(importEnv({ REDIS_COMMAND_TIMEOUT_MS: timeout })).rejects.toThrow(
+				"process.exit:1",
+			);
+		},
+	);
+
 	test("exposes PostgreSQL startup options through the validated environment", async () => {
 		const { env } = await importEnv({ PGOPTIONS: "-c statement_timeout=5000" });
 

@@ -4,7 +4,7 @@ import { createLogger } from "@/lib/logger";
 import { createRedisConnectionOptions } from "@/lib/redis-config";
 
 const logger = createLogger("Redis");
-const REDIS_COMMAND_TIMEOUT_MS = 1_000;
+const redisCommandTimeoutMs = Number(env.REDIS_COMMAND_TIMEOUT_MS);
 const REDIS_MAX_RECONNECT_ATTEMPTS = 8;
 const REDIS_LOG_THROTTLE_MS = 30_000;
 const hasRedisConfig = Boolean(env.REDIS_HOST);
@@ -54,8 +54,8 @@ function createRedisClient(): Redis {
 
 	const client = new Redis({
 		...redisConnectionOptions,
-		connectTimeout: REDIS_COMMAND_TIMEOUT_MS,
-		commandTimeout: REDIS_COMMAND_TIMEOUT_MS,
+		connectTimeout: redisCommandTimeoutMs,
+		commandTimeout: redisCommandTimeoutMs,
 		maxRetriesPerRequest: 1,
 		retryStrategy(times) {
 			if (times > REDIS_MAX_RECONNECT_ATTEMPTS) {

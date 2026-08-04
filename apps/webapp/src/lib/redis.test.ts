@@ -23,6 +23,7 @@ vi.mock("@/env", () => ({
 		REDIS_HOST: "redis.internal",
 		REDIS_PORT: "6379",
 		REDIS_TLS: "false",
+		REDIS_COMMAND_TIMEOUT_MS: "3500",
 	},
 }));
 
@@ -46,6 +47,8 @@ describe("Redis client configuration", () => {
 
 		expect(mocks.Redis).toHaveBeenCalled();
 		expect(mocks.Redis.mock.calls[0]?.[0]).toMatchObject({
+			commandTimeout: 3_500,
+			connectTimeout: 3_500,
 			enableOfflineQueue: true,
 			lazyConnect: true,
 		});

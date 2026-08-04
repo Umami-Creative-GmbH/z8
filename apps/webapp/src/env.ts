@@ -42,6 +42,11 @@ const parsedEnv = createEnv({
 		REDIS_PASSWORD: z.string().optional(),
 		REDIS_TLS: z.enum(["true", "false"]).default("false"),
 		REDIS_CA_CERT: z.string().optional(),
+		REDIS_COMMAND_TIMEOUT_MS: z
+			.string()
+			.regex(/^\d+$/, "REDIS_COMMAND_TIMEOUT_MS must be a positive integer")
+			.refine((value) => Number(value) > 0, "REDIS_COMMAND_TIMEOUT_MS must be greater than zero")
+			.default("2000"),
 
 		// Public AWS S3 / Object Storage (REQUIRED)
 		// S3-compatible storage is required for public file uploads
@@ -205,6 +210,7 @@ const parsedEnv = createEnv({
 		REDIS_PASSWORD: process.env.REDIS_PASSWORD,
 		REDIS_TLS: process.env.REDIS_TLS ?? "false",
 		REDIS_CA_CERT: process.env.REDIS_CA_CERT,
+		REDIS_COMMAND_TIMEOUT_MS: process.env.REDIS_COMMAND_TIMEOUT_MS,
 
 		S3_PUBLIC_BUCKET: process.env.S3_PUBLIC_BUCKET,
 		S3_PUBLIC_ACCESS_KEY_ID: process.env.S3_PUBLIC_ACCESS_KEY_ID,
