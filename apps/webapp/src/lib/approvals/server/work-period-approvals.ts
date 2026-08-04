@@ -315,6 +315,50 @@ function isVerifiedLegacyIntermediateReplay(input: {
 	);
 }
 
+async function bindPreCanonicalOrdinaryWorkflow(input: {
+	dbService: ApprovalDbService;
+	organizationId: string;
+	workPeriodId: string;
+	requesterEmployeeId: string;
+	canonicalRecordId: string;
+	workflowId: string;
+	approvalStatus: "approved" | "rejected";
+}) {
+	const bound = await input.dbService.db
+		.update(workPeriod)
+		.set({ approvalWorkflowId: input.workflowId })
+		.where(
+			and(
+				eq(workPeriod.id, input.workPeriodId),
+				eq(workPeriod.organizationId, input.organizationId),
+				eq(workPeriod.employeeId, input.requesterEmployeeId),
+				eq(workPeriod.canonicalRecordId, input.canonicalRecordId),
+				isNull(workPeriod.approvalWorkflowId),
+				eq(workPeriod.approvalStatus, input.approvalStatus),
+				eq(workPeriod.isActive, false),
+				isNull(workPeriod.deletedAt),
+			),
+		)
+		.returning({
+			id: workPeriod.id,
+			organizationId: workPeriod.organizationId,
+			employeeId: workPeriod.employeeId,
+			canonicalRecordId: workPeriod.canonicalRecordId,
+			approvalWorkflowId: workPeriod.approvalWorkflowId,
+		});
+	const row = bound[0];
+	if (
+		bound.length !== 1 ||
+		row?.id !== input.workPeriodId ||
+		row.organizationId !== input.organizationId ||
+		row.employeeId !== input.requesterEmployeeId ||
+		row.canonicalRecordId !== input.canonicalRecordId ||
+		row.approvalWorkflowId !== input.workflowId
+	) {
+		throw new Error(ORDINARY_DECISION_ERROR);
+	}
+}
+
 export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 	dbService: ApprovalDbService;
 	runtime: ReturnType<typeof createProductionApprovalWorkflowRuntime>;
@@ -694,6 +738,44 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 				if (!requestRow || request.status !== "pending") {
 					throw new Error(ORDINARY_DECISION_ERROR);
 				}
+				let expectedObservedVersion = observedWorkflow?.version ?? null;
+				let bootstrappedWorkflowId: string | null = null;
+				if (authority.mode !== "legacy" && !observedWorkflow) {
+					if (!verifiedLegacyState) {
+						throw new Error(ORDINARY_DECISION_ERROR);
+					}
+					const bootstrapped =
+						await decisionContext.compatibilityWriter.mirrorLegacyToCanonical({
+							before: {
+								...verifiedLegacyState,
+								approvalRequest: null,
+								chain: null,
+								chainRows: [],
+							},
+							after: verifiedLegacyState,
+							actor: {
+								kind: "employee",
+								employeeId: actor.id,
+								userId: actor.userId,
+							},
+							idempotencyKey: `ordinary-bootstrap:${input.organizationId}:${period.id}:${input.approvalRequestId}`,
+							expectedVersion: null,
+						});
+					if (
+						!bootstrapped ||
+						bootstrapped.snapshot.organizationId !== input.organizationId ||
+						bootstrapped.snapshot.workflowType !== metadata.kind ||
+						bootstrapped.snapshot.sourceType !== "time_entry" ||
+						bootstrapped.snapshot.sourceId !== period.id ||
+						bootstrapped.snapshot.requesterEmployeeId !== period.employeeId ||
+						bootstrapped.snapshot.status !== "pending" ||
+						bootstrapped.snapshot.version !== 1
+					) {
+						throw new Error(ORDINARY_DECISION_ERROR);
+					}
+					bootstrappedWorkflowId = bootstrapped.snapshot.id;
+					expectedObservedVersion = bootstrapped.snapshot.version;
+				}
 				const coordinator = createLegacyApprovalWriteCoordinator({
 					writeGate: fixedGate,
 					compatibilityWriter: decisionContext.compatibilityWriter,
@@ -715,7 +797,7 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 						userId: actor.userId,
 					},
 					idempotencyKey: `ordinary-decision:${input.organizationId}:${period.id}:${input.approvalRequestId}:${input.decision.kind}:${input.decision.reason ?? ""}`,
-					expectedVersion: observedWorkflow?.version ?? null,
+					expectedVersion: expectedObservedVersion,
 					captureState:
 						authority.mode === "legacy"
 							? undefined
@@ -779,6 +861,30 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 							>,
 						);
 						return mutationResult;
+					},
+					afterMirror: async (observed) => {
+						if (!bootstrappedWorkflowId) return;
+						if (
+							observed.snapshot.id !== bootstrappedWorkflowId ||
+							observed.snapshot.organizationId !== input.organizationId ||
+							observed.snapshot.workflowType !== metadata.kind ||
+							observed.snapshot.sourceType !== "time_entry" ||
+							observed.snapshot.sourceId !== period.id ||
+							observed.snapshot.requesterEmployeeId !== period.employeeId ||
+							observed.snapshot.status !== expectedTerminalStatus ||
+							observed.snapshot.version !== 2
+						) {
+							throw new Error(ORDINARY_DECISION_ERROR);
+						}
+						await bindPreCanonicalOrdinaryWorkflow({
+							dbService: { db: database, query: input.dbService.query },
+							organizationId: input.organizationId,
+							workPeriodId: period.id,
+							requesterEmployeeId: period.employeeId,
+							canonicalRecordId: decisionPeriod.canonicalRecordId,
+							workflowId: bootstrappedWorkflowId,
+							approvalStatus: expectedTerminalStatus,
+						});
 					},
 				});
 				const result =
