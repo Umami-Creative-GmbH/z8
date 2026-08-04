@@ -944,6 +944,97 @@ describe("stable ordinary work-period decisions", () => {
 	});
 
 	it.each([
+		["shadow", "approve"],
+		["shadow", "reject"],
+		["ready", "approve"],
+		["ready", "reject"],
+	] as const)(
+		"bootstraps a pre-canonical manual submission in %s mode for %s",
+		async (mode, action) => {
+			const dbService = createDecisionDbService({
+				unlinked: true,
+				autoApprovalRequest: {
+					metadata: { timeRequest: { kind: "manual_time_submission" } },
+				},
+			});
+			const database = dbService.db as unknown as {
+				query: Record<string, Record<string, ReturnType<typeof vi.fn>>>;
+			};
+			database.query.employee.findMany = vi
+				.fn()
+				.mockResolvedValue([currentApprover]);
+			database.query.workPeriod.findFirst.mockResolvedValue({
+				...period,
+				approvalWorkflowId: null,
+			});
+			legacyCaptureMocks.capture.mockResolvedValue({
+				organizationId: "org-1",
+				source: {
+					organizationId: "org-1",
+					workflowType: "manual_time_submission",
+					sourceType: "time_entry",
+					sourceId: "period-1",
+				},
+				approvalRequest: {
+					...approval,
+					status: action === "approve" ? "approved" : "rejected",
+				},
+				chain: null,
+				chainRows: [],
+				sourceSnapshot: { timeRequest: { kind: "manual_time_submission" } },
+				capturedAt: parseInstant("2026-07-15T10:00:00Z"),
+			});
+			const mirrorLegacyToCanonical = vi.fn().mockResolvedValue({
+				snapshot: {
+					id: "workflow-bootstrapped",
+					status: action === "approve" ? "approved" : "rejected",
+				},
+			});
+			const context = {
+				dbService: { db: dbService.db },
+				writeGate: { acquire: vi.fn().mockResolvedValue({ mode }) },
+				compatibilityWriter: {
+					withWriteGate: vi.fn().mockReturnValue({
+						withWriteGate: vi.fn().mockReturnThis(),
+						mirrorLegacyToCanonical,
+					}),
+					mirrorLegacyToCanonical,
+				},
+				repository: { loadSnapshot: vi.fn() },
+			};
+
+			const executed = await executeOrdinaryWorkPeriodDecisionInTransaction({
+				dbService,
+				runtime: {
+					repository: { withTransaction: async (run) => run(context) },
+					transitionEngine: { executeInTransactionWithDisposition: vi.fn() },
+				} as never,
+				organizationId: "org-1",
+				approvalRequestId: "approval-1",
+				workPeriodId: "period-1",
+				actor: currentApprover,
+				decision:
+					action === "approve"
+						? { kind: "approve", reason: null }
+						: { kind: "reject", reason: "Orphaned request" },
+			});
+
+			expect(executed.result).toMatchObject({
+				kind: "manual_time_submission",
+				action,
+			});
+			expect(executed.postCommit).toMatchObject({
+				disposition: "dispatch",
+				event: action === "approve" ? "approved" : "rejected",
+			});
+			expect(context.repository.loadSnapshot).not.toHaveBeenCalled();
+			expect(mirrorLegacyToCanonical).toHaveBeenCalledWith(
+				expect.objectContaining({ expectedVersion: null }),
+			);
+		},
+	);
+
+	it.each([
 		"shadow",
 		"ready",
 	] as const)("captures an approved intermediate request with a pending %s source before terminal finalization", async (mode) => {

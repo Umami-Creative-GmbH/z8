@@ -698,14 +698,6 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 					writeGate: fixedGate,
 					compatibilityWriter: decisionContext.compatibilityWriter,
 				});
-				if (
-					authority.mode !== "legacy" &&
-					(!observedWorkflow ||
-						!Number.isSafeInteger(observedWorkflow.version) ||
-						observedWorkflow.version < 1)
-				) {
-					throw new Error(ORDINARY_DECISION_ERROR);
-				}
 				let mutationResult: WorkPeriodApprovalResult | undefined;
 				let captureCount = 0;
 				const domainResult = await coordinator.execute({
