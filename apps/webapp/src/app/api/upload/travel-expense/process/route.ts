@@ -4,13 +4,29 @@ import { fileTypeFromBuffer } from "file-type";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { travelExpenseAttachment, travelExpenseClaim } from "@/db/schema";
+import { env } from "@/env";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { uploadPrivateObject } from "@/lib/storage/export-s3-client";
 import { S3_PUBLIC_BUCKET, s3Client } from "@/lib/storage/s3-client";
 import { isAllowedTravelExpenseMime } from "@/lib/travel-expenses/attachment-validation";
 import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
 
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES);
+
+function formatFileSize(bytes: number): string {
+	const units = ["bytes", "KB", "MB", "GB"];
+	let size = bytes;
+	let unitIndex = 0;
+
+	while (size >= 1024 && size % 1024 === 0 && unitIndex < units.length - 1) {
+		size /= 1024;
+		unitIndex++;
+	}
+
+	return unitIndex === 0
+		? `${size} ${size === 1 ? "byte" : "bytes"}`
+		: `${size}${units[unitIndex]}`;
+}
 
 interface ProcessTravelExpenseUploadRequest {
 	tusFileKey: string;
@@ -89,7 +105,9 @@ export async function POST(request: NextRequest) {
 			getResponse.ContentLength > MAX_FILE_SIZE_BYTES
 		) {
 			return NextResponse.json(
-				{ error: "File too large. Maximum size is 10MB" },
+				{
+					error: `File too large. Maximum size is ${formatFileSize(MAX_FILE_SIZE_BYTES)}`,
+				},
 				{ status: 413 },
 			);
 		}
@@ -105,7 +123,9 @@ export async function POST(request: NextRequest) {
 		const buffer = Buffer.from(byteArray);
 		if (buffer.length > MAX_FILE_SIZE_BYTES) {
 			return NextResponse.json(
-				{ error: "File too large. Maximum size is 10MB" },
+				{
+					error: `File too large. Maximum size is ${formatFileSize(MAX_FILE_SIZE_BYTES)}`,
+				},
 				{ status: 413 },
 			);
 		}

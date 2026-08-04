@@ -6,18 +6,22 @@ vi.mock("@/lib/cron/tracking", () => ({
 	cleanupOldExecutions: cleanupOldExecutionsMock,
 }));
 
+vi.mock("@/env", () => ({
+	env: { JOB_EXECUTION_RETENTION_DAYS: "45" },
+}));
+
 beforeEach(() => {
 	cleanupOldExecutionsMock.mockReset();
 });
 
 describe("runExecutionCleanup", () => {
-	it("deletes executions older than 90 days and returns cleanup metadata", async () => {
+	it("uses the configured retention period and returns cleanup metadata", async () => {
 		cleanupOldExecutionsMock.mockResolvedValue(12);
 
 		const { runExecutionCleanup } = await import("./execution-cleanup");
 		const result = await runExecutionCleanup();
 
-		expect(cleanupOldExecutionsMock).toHaveBeenCalledWith(90);
-		expect(result).toEqual({ success: true, deletedCount: 12, daysToKeep: 90 });
+		expect(cleanupOldExecutionsMock).toHaveBeenCalledWith(45);
+		expect(result).toEqual({ success: true, deletedCount: 12, daysToKeep: 45 });
 	});
 });

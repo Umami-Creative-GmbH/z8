@@ -22,6 +22,7 @@ import {
 	workPolicySchedule,
 	workPolicyScheduleDay,
 } from "@/db/schema";
+import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import type { ClockodoClient } from "./client";
 import {
@@ -46,8 +47,10 @@ import type {
 } from "./types";
 
 const logger = createLogger("ClockodoImport");
-const CLOCKODO_IMPORT_QUERY_CHUNK_SIZE = 500;
-const CLOCKODO_IMPORT_CONCURRENCY = 4;
+const CLOCKODO_IMPORT_QUERY_CHUNK_SIZE = Number(
+	env.CLOCKODO_IMPORT_QUERY_CHUNK_SIZE,
+);
+const CLOCKODO_IMPORT_CONCURRENCY = Number(env.CLOCKODO_IMPORT_CONCURRENCY);
 
 function chunkRows<T>(rows: readonly T[], size: number): T[][] {
 	return Array.from({ length: Math.ceil(rows.length / size) }, (_, index) =>

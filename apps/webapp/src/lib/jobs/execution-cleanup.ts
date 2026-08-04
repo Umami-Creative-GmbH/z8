@@ -1,6 +1,7 @@
+import { env } from "@/env";
 import { cleanupOldExecutions } from "@/lib/cron/tracking";
 
-const DAYS_TO_KEEP = 90;
+const DAYS_TO_KEEP = Number(env.JOB_EXECUTION_RETENTION_DAYS);
 
 export interface ExecutionCleanupResult {
 	success: true;

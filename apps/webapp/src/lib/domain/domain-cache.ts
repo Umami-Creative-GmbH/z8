@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import type { DomainAuthContext } from "./types";
 
 /**
@@ -6,7 +7,7 @@ import type { DomainAuthContext } from "./types";
  */
 class DomainCache {
 	private cache: Map<string, { data: DomainAuthContext; expiresAt: number }> = new Map();
-	private readonly TTL_MS = 5 * 60 * 1000; // 5 minutes cache TTL
+	private readonly TTL_MS = Number(env.DOMAIN_CACHE_TTL_SECONDS) * 1000;
 
 	/**
 	 * Get cached domain config

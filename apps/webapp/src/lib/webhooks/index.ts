@@ -18,7 +18,6 @@ export type {
 	WebhookJobData,
 	WebhookPayloadData,
 } from "./types";
-export { MAX_ATTEMPTS, RETRY_DELAYS_MS, WEBHOOK_TIMEOUT_MS } from "./types";
 // Queue functions
 export { addWebhookJob, scheduleWebhookRetry } from "./webhook-queue";
 // Service functions

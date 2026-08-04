@@ -18,7 +18,7 @@ import type {
 	WebhookEndpoint,
 	WebhookPayloadData,
 } from "./types";
-import { MAX_ATTEMPTS, RETRY_DELAYS_MS } from "./types";
+import { MAX_ATTEMPTS, RETRY_DELAYS_MS } from "./webhook-config.server";
 
 const logger = createLogger("WebhookService");
 
@@ -321,7 +321,7 @@ export async function updateEndpointStats(
  */
 export function getRetryDelay(attemptNumber: number): number {
 	const index = Math.min(attemptNumber, RETRY_DELAYS_MS.length - 1);
-	return RETRY_DELAYS_MS[index];
+	return RETRY_DELAYS_MS[index] ?? 0;
 }
 
 /**

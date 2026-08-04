@@ -9,7 +9,9 @@ import { ScalewayKeyManagerClient } from "./scaleway-key-manager-client";
 import { isCompatibleScalewayKey } from "./scaleway-key-utils";
 
 const logger = createLogger("SecretStoreStatus");
-const SCALEWAY_STATUS_CACHE_TTL_SECONDS = 86_400;
+const SCALEWAY_STATUS_CACHE_TTL_SECONDS = Number(
+	env.SECRET_STORE_STATUS_CACHE_TTL_SECONDS,
+);
 const PROVIDER_SCALEWAY = "scaleway";
 
 export type VaultSecretStoreStatus = {
