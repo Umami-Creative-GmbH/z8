@@ -1,19 +1,22 @@
 export type CheckDecisionInput = {
-	idleThresholdMs: number;
+	checkCooldownMs: number;
 	isDocumentHidden: boolean;
-	lastActivityAt: number;
+	lastCheckStartedAt: number;
 	now: number;
 };
 
-export function shouldCheckDeploymentVersion({
-	idleThresholdMs,
-	isDocumentHidden,
-	lastActivityAt,
-	now,
-}: CheckDecisionInput) {
-	return isDocumentHidden || now - lastActivityAt >= idleThresholdMs;
+export function shouldCheckDeploymentVersion(input: CheckDecisionInput) {
+	return (
+		!input.isDocumentHidden &&
+		input.now - input.lastCheckStartedAt >= input.checkCooldownMs
+	);
 }
 
-export function shouldReloadForBuildHash(clientBuildHash: string, serverBuildHash: string | null) {
-	return Boolean(clientBuildHash && serverBuildHash && clientBuildHash !== serverBuildHash);
+export function shouldPromptForBuildHash(
+	clientBuildHash: string,
+	serverBuildHash: string | null,
+) {
+	return Boolean(
+		clientBuildHash && serverBuildHash && clientBuildHash !== serverBuildHash,
+	);
 }

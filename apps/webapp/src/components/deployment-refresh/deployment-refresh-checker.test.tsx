@@ -1,17 +1,34 @@
 /* @vitest-environment jsdom */
 
 import { act, render } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CHECK_INTERVAL_MS, DeploymentRefreshChecker } from "./deployment-refresh-checker";
+import {
+	CHECK_COOLDOWN_MS,
+	DeploymentRefreshChecker,
+} from "./deployment-refresh-checker";
 import {
 	shouldCheckDeploymentVersion,
-	shouldReloadForBuildHash,
+	shouldPromptForBuildHash,
 } from "./deployment-refresh-checker-utils";
 
+const toastMocks = vi.hoisted(() => ({
+	dismiss: vi.fn(),
+	show: vi.fn(() => "deployment-update"),
+}));
+
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
+
+vi.mock("sonner", () => ({
+	toast: Object.assign(toastMocks.show, { dismiss: toastMocks.dismiss }),
+}));
+
 const originalFetch = globalThis.fetch;
-const originalLocationDescriptor = Object.getOwnPropertyDescriptor(window, "location");
+const originalLocationDescriptor = Object.getOwnPropertyDescriptor(
+	window,
+	"location",
+);
 
 function setDocumentHidden(isHidden: boolean) {
 	Object.defineProperty(document, "hidden", {
@@ -20,10 +37,16 @@ function setDocumentHidden(isHidden: boolean) {
 	});
 }
 
-function mockFetchBuildHash(buildHash: unknown) {
+function mockFetchResponse({
+	buildHash,
+	ok = true,
+}: {
+	buildHash: unknown;
+	ok?: boolean;
+}) {
 	const fetchMock = vi.fn().mockResolvedValue({
 		json: vi.fn().mockResolvedValue({ buildHash }),
-		ok: true,
+		ok,
 	});
 
 	vi.stubGlobal("fetch", fetchMock);
@@ -44,8 +67,14 @@ function createDeferred<T>() {
 function mockLocationReload() {
 	const reloadMock = vi.fn();
 	const originalLocation = window.location;
-	const locationDescriptor = Object.getOwnPropertyDescriptor(window, "location");
-	const reloadDescriptor = Object.getOwnPropertyDescriptor(window.location, "reload");
+	const locationDescriptor = Object.getOwnPropertyDescriptor(
+		window,
+		"location",
+	);
+	const reloadDescriptor = Object.getOwnPropertyDescriptor(
+		window.location,
+		"reload",
+	);
 
 	if (reloadDescriptor?.configurable) {
 		Object.defineProperty(window.location, "reload", {
@@ -71,15 +100,37 @@ function mockLocationReload() {
 	return vi.spyOn(window.location, "reload").mockImplementation(reloadMock);
 }
 
-function renderWithQueryClient(children: ReactNode) {
-	const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+async function dispatchWindowEvent(event: Event) {
+	await act(async () => {
+		window.dispatchEvent(event);
+		await Promise.resolve();
+		await Promise.resolve();
+	});
+}
 
-	return render(<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>);
+async function dispatchVisibilityChange() {
+	await act(async () => {
+		document.dispatchEvent(new Event("visibilitychange"));
+		await Promise.resolve();
+		await Promise.resolve();
+	});
+}
+
+function getToastOptions() {
+	return toastMocks.show.mock.calls[0]?.[1] as
+		| {
+				action: { label: string; onClick: () => void };
+				cancel: { label: string; onClick: () => void };
+				description: string;
+				duration: number;
+		  }
+		| undefined;
 }
 
 beforeEach(() => {
 	vi.useFakeTimers();
-	vi.setSystemTime(0);
+	vi.setSystemTime(1_000);
+	vi.clearAllMocks();
 	setDocumentHidden(false);
 });
 
@@ -95,143 +146,340 @@ afterEach(() => {
 });
 
 describe("shouldCheckDeploymentVersion", () => {
-	it("allows checks when the document is hidden", () => {
+	it("returns true for a visible page at exactly the six-hour cooldown", () => {
 		expect(
 			shouldCheckDeploymentVersion({
-				idleThresholdMs: 300_000,
+				checkCooldownMs: CHECK_COOLDOWN_MS,
+				isDocumentHidden: false,
+				lastCheckStartedAt: 1_000,
+				now: 1_000 + CHECK_COOLDOWN_MS,
+			}),
+		).toBe(true);
+	});
+
+	it("returns false for a hidden page even after the cooldown", () => {
+		expect(
+			shouldCheckDeploymentVersion({
+				checkCooldownMs: CHECK_COOLDOWN_MS,
 				isDocumentHidden: true,
-				lastActivityAt: 1_000,
-				now: 1_001,
+				lastCheckStartedAt: 1_000,
+				now: 1_000 + CHECK_COOLDOWN_MS + 1,
 			}),
-		).toBe(true);
+		).toBe(false);
 	});
 
-	it("allows checks when the visible document is idle", () => {
+	it("returns false before the cooldown", () => {
 		expect(
 			shouldCheckDeploymentVersion({
-				idleThresholdMs: 300_000,
+				checkCooldownMs: CHECK_COOLDOWN_MS,
 				isDocumentHidden: false,
-				lastActivityAt: 1_000,
-				now: 301_000,
-			}),
-		).toBe(true);
-	});
-
-	it("skips checks when the visible document was recently active", () => {
-		expect(
-			shouldCheckDeploymentVersion({
-				idleThresholdMs: 300_000,
-				isDocumentHidden: false,
-				lastActivityAt: 1_000,
-				now: 299_999,
+				lastCheckStartedAt: 1_000,
+				now: 1_000 + CHECK_COOLDOWN_MS - 1,
 			}),
 		).toBe(false);
 	});
 });
 
-describe("shouldReloadForBuildHash", () => {
-	it("reloads when both hashes exist and differ", () => {
-		expect(shouldReloadForBuildHash("client-a", "server-b")).toBe(true);
+describe("shouldPromptForBuildHash", () => {
+	it("returns true for two present differing hashes", () => {
+		expect(shouldPromptForBuildHash("client-a", "server-b")).toBe(true);
 	});
 
-	it("does not reload when hashes match", () => {
-		expect(shouldReloadForBuildHash("client-a", "client-a")).toBe(false);
-	});
-
-	it("does not reload when a hash is missing", () => {
-		expect(shouldReloadForBuildHash("client-a", null)).toBe(false);
-		expect(shouldReloadForBuildHash("", "server-b")).toBe(false);
+	it("returns false for matching or missing hashes", () => {
+		expect(shouldPromptForBuildHash("client-a", "client-a")).toBe(false);
+		expect(shouldPromptForBuildHash("client-a", null)).toBe(false);
+		expect(shouldPromptForBuildHash("", "server-b")).toBe(false);
 	});
 });
 
 describe("DeploymentRefreshChecker", () => {
-	it("does not fetch while a visible page is active after an activity event", async () => {
-		const fetchMock = mockFetchBuildHash("server-b");
+	it("does not poll on mount or as twelve hours pass without an event", async () => {
+		const fetchMock = mockFetchResponse({ buildHash: "server-b" });
 
-		renderWithQueryClient(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+		render(<DeploymentRefreshChecker clientBuildHash="client-a" />);
 
 		await act(async () => {
-			await vi.advanceTimersByTimeAsync(1_000);
-			window.dispatchEvent(new KeyboardEvent("keydown"));
-			await vi.advanceTimersByTimeAsync(CHECK_INTERVAL_MS - 1_000);
+			await vi.advanceTimersByTimeAsync(12 * 60 * 60 * 1000);
 		});
 
 		expect(fetchMock).not.toHaveBeenCalled();
 	});
 
-	it("reloads once when a hidden page sees a different build hash across two intervals", async () => {
+	it("does not fetch for a visibility event while hidden", async () => {
+		const fetchMock = mockFetchResponse({ buildHash: "server-b" });
+		render(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+		vi.setSystemTime(1_000 + CHECK_COOLDOWN_MS);
 		setDocumentHidden(true);
-		const fetchMock = mockFetchBuildHash("server-b");
-		const reloadMock = mockLocationReload();
 
-		renderWithQueryClient(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+		await dispatchVisibilityChange();
 
-		await act(async () => {
-			await vi.advanceTimersByTimeAsync(CHECK_INTERVAL_MS);
-			await vi.advanceTimersByTimeAsync(CHECK_INTERVAL_MS);
-		});
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it("fetches once when the page becomes visible after the cooldown", async () => {
+		setDocumentHidden(true);
+		const fetchMock = mockFetchResponse({ buildHash: "client-a" });
+		render(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+		vi.setSystemTime(1_000 + CHECK_COOLDOWN_MS);
+		setDocumentHidden(false);
+
+		await dispatchVisibilityChange();
 
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 		expect(fetchMock).toHaveBeenCalledWith("/api/app-version", {
 			cache: "no-store",
 			headers: { accept: "application/json" },
+			signal: expect.any(AbortSignal),
 		});
-		expect(reloadMock).toHaveBeenCalledTimes(1);
 	});
 
-	it("does not reload when the server hash matches", async () => {
-		setDocumentHidden(true);
-		mockFetchBuildHash("client-a");
-		const reloadMock = mockLocationReload();
-
-		renderWithQueryClient(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+	it("deduplicates simultaneous focus and visibility events and enforces the cooldown", async () => {
+		const fetchMock = mockFetchResponse({ buildHash: "client-a" });
+		render(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+		vi.setSystemTime(1_000 + CHECK_COOLDOWN_MS);
 
 		await act(async () => {
-			await vi.advanceTimersByTimeAsync(CHECK_INTERVAL_MS);
+			window.dispatchEvent(new Event("focus"));
+			document.dispatchEvent(new Event("visibilitychange"));
+			await Promise.resolve();
+			await Promise.resolve();
 		});
-
-		expect(reloadMock).not.toHaveBeenCalled();
-	});
-
-	it("does not start another fetch on the next interval while a check is in flight", async () => {
-		setDocumentHidden(true);
-		const pendingResponse = createDeferred<Response>();
-		const fetchMock = vi.fn().mockReturnValue(pendingResponse.promise);
-		vi.stubGlobal("fetch", fetchMock);
-
-		renderWithQueryClient(<DeploymentRefreshChecker clientBuildHash="client-a" />);
-
-		await act(async () => {
-			await vi.advanceTimersByTimeAsync(CHECK_INTERVAL_MS);
-			await vi.advanceTimersByTimeAsync(CHECK_INTERVAL_MS);
-		});
+		await dispatchWindowEvent(new Event("focus"));
 
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 	});
 
-	it("does not reload after unmount when a pending version response resolves", async () => {
-		setDocumentHidden(true);
+	it("does not fetch without a client build hash", async () => {
+		const fetchMock = mockFetchResponse({ buildHash: "server-b" });
+		render(<DeploymentRefreshChecker clientBuildHash="" />);
+		vi.setSystemTime(1_000 + CHECK_COOLDOWN_MS);
+
+		await dispatchWindowEvent(new Event("focus"));
+
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it("does not prompt or reload for a matching hash", async () => {
+		mockFetchResponse({ buildHash: "client-a" });
+		const reloadMock = mockLocationReload();
+		render(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+		vi.setSystemTime(1_000 + CHECK_COOLDOWN_MS);
+
+		await dispatchWindowEvent(new Event("focus"));
+
+		expect(toastMocks.show).not.toHaveBeenCalled();
+		expect(reloadMock).not.toHaveBeenCalled();
+	});
+
+	it("shows one persistent translated prompt for a differing hash without reloading", async () => {
+		mockFetchResponse({ buildHash: "server-b" });
+		const reloadMock = mockLocationReload();
+		render(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+		vi.setSystemTime(1_000 + CHECK_COOLDOWN_MS);
+
+		await dispatchWindowEvent(new Event("focus"));
+
+		expect(toastMocks.show).toHaveBeenCalledTimes(1);
+		expect(toastMocks.show).toHaveBeenCalledWith("Update available", {
+			description: "A new version is ready. Reload to update.",
+			duration: Infinity,
+			action: { label: "Reload", onClick: expect.any(Function) },
+			cancel: { label: "Later", onClick: expect.any(Function) },
+		});
+		expect(reloadMock).not.toHaveBeenCalled();
+	});
+
+	it("reloads exactly once when the Reload action is selected", async () => {
+		mockFetchResponse({ buildHash: "server-b" });
+		const reloadMock = mockLocationReload();
+		render(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+		vi.setSystemTime(1_000 + CHECK_COOLDOWN_MS);
+		await dispatchWindowEvent(new Event("focus"));
+
+		getToastOptions()?.action.onClick();
+
+		expect(reloadMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("Later does not reload and prevents future checks or prompts in this mount", async () => {
+		const fetchMock = mockFetchResponse({ buildHash: "server-b" });
+		const reloadMock = mockLocationReload();
+		render(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+		vi.setSystemTime(1_000 + CHECK_COOLDOWN_MS);
+		await dispatchWindowEvent(new Event("focus"));
+
+		getToastOptions()?.cancel.onClick();
+		vi.setSystemTime(1_000 + 2 * CHECK_COOLDOWN_MS);
+		await dispatchWindowEvent(new Event("focus"));
+
+		expect(reloadMock).not.toHaveBeenCalled();
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		expect(toastMocks.show).toHaveBeenCalledTimes(1);
+	});
+
+	it("does not reset the mounted-session prompt guard when the client hash changes", async () => {
+		const fetchMock = mockFetchResponse({ buildHash: "server-b" });
+		const { rerender } = render(
+			<DeploymentRefreshChecker clientBuildHash="client-a" />,
+		);
+		vi.setSystemTime(1_000 + CHECK_COOLDOWN_MS);
+		await dispatchWindowEvent(new Event("focus"));
+
+		rerender(<DeploymentRefreshChecker clientBuildHash="client-c" />);
+		vi.setSystemTime(1_000 + 2 * CHECK_COOLDOWN_MS);
+		await dispatchWindowEvent(new Event("focus"));
+
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		expect(toastMocks.show).toHaveBeenCalledTimes(1);
+	});
+
+	it("compares a pending response with the latest client build hash", async () => {
+		const pendingResponse = createDeferred<Response>();
+		vi.stubGlobal("fetch", vi.fn().mockReturnValue(pendingResponse.promise));
+		const { rerender } = render(
+			<DeploymentRefreshChecker clientBuildHash="client-a" />,
+		);
+		vi.setSystemTime(1_000 + CHECK_COOLDOWN_MS);
+		await dispatchWindowEvent(new Event("focus"));
+
+		rerender(<DeploymentRefreshChecker clientBuildHash="client-b" />);
+		await act(async () => {
+			pendingResponse.resolve({
+				json: vi.fn().mockResolvedValue({ buildHash: "client-b" }),
+				ok: true,
+			} as unknown as Response);
+			await pendingResponse.promise;
+			await Promise.resolve();
+		});
+
+		expect(toastMocks.show).not.toHaveBeenCalled();
+	});
+
+	it("does not overlap requests even after another cooldown elapses", async () => {
 		const pendingResponse = createDeferred<Response>();
 		const fetchMock = vi.fn().mockReturnValue(pendingResponse.promise);
 		vi.stubGlobal("fetch", fetchMock);
-		const reloadMock = mockLocationReload();
+		render(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+		vi.setSystemTime(1_000 + CHECK_COOLDOWN_MS);
+		await dispatchWindowEvent(new Event("focus"));
+		vi.setSystemTime(1_000 + 2 * CHECK_COOLDOWN_MS);
 
-		const { unmount } = renderWithQueryClient(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+		await dispatchVisibilityChange();
 
-		await act(async () => {
-			await vi.advanceTimersByTimeAsync(CHECK_INTERVAL_MS);
-		});
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("aborts the active version request on unmount", async () => {
+		const pendingResponse = createDeferred<Response>();
+		let requestSignal: AbortSignal | null | undefined;
+		vi.stubGlobal(
+			"fetch",
+			vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+				requestSignal = init?.signal;
+				return pendingResponse.promise;
+			}),
+		);
+		const { unmount } = render(
+			<DeploymentRefreshChecker clientBuildHash="client-a" />,
+		);
+		vi.setSystemTime(1_000 + CHECK_COOLDOWN_MS);
+		await dispatchWindowEvent(new Event("focus"));
 
 		unmount();
 
+		expect(requestSignal?.aborted).toBe(true);
+	});
+
+	it("does not show a late prompt after unmount", async () => {
+		const pendingResponse = createDeferred<Response>();
+		vi.stubGlobal("fetch", vi.fn().mockReturnValue(pendingResponse.promise));
+		const { unmount } = render(
+			<DeploymentRefreshChecker clientBuildHash="client-a" />,
+		);
+		vi.setSystemTime(1_000 + CHECK_COOLDOWN_MS);
+		await dispatchWindowEvent(new Event("focus"));
+
+		unmount();
 		await act(async () => {
 			pendingResponse.resolve({
 				json: vi.fn().mockResolvedValue({ buildHash: "server-b" }),
 				ok: true,
 			} as unknown as Response);
 			await pendingResponse.promise;
+			await Promise.resolve();
 		});
 
-		expect(reloadMock).not.toHaveBeenCalled();
+		expect(toastMocks.show).not.toHaveBeenCalled();
+	});
+
+	it.each([null, "", 123])(
+		"ignores invalid server build hash %j",
+		async (buildHash) => {
+			mockFetchResponse({ buildHash });
+			const reloadMock = mockLocationReload();
+			render(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+			vi.setSystemTime(1_000 + CHECK_COOLDOWN_MS);
+
+			await dispatchWindowEvent(new Event("focus"));
+
+			expect(toastMocks.show).not.toHaveBeenCalled();
+			expect(reloadMock).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each([
+		[
+			"network rejection",
+			() => vi.fn().mockRejectedValue(new Error("offline")),
+		],
+		[
+			"non-2xx response",
+			() => vi.fn().mockResolvedValue({ json: vi.fn(), ok: false }),
+		],
+		[
+			"malformed JSON",
+			() =>
+				vi.fn().mockResolvedValue({
+					json: vi.fn().mockRejectedValue(new SyntaxError("invalid JSON")),
+					ok: true,
+				}),
+		],
+	])(
+		"silently ignores %s without allowing an immediate retry",
+		async (_name, createFetchMock) => {
+			const fetchMock = createFetchMock();
+			vi.stubGlobal("fetch", fetchMock);
+			render(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+			vi.setSystemTime(1_000 + CHECK_COOLDOWN_MS);
+
+			await dispatchWindowEvent(new Event("focus"));
+			await dispatchVisibilityChange();
+
+			expect(fetchMock).toHaveBeenCalledTimes(1);
+			expect(toastMocks.show).not.toHaveBeenCalled();
+		},
+	);
+
+	it("removes listeners and dismisses a shown toast on unmount", async () => {
+		mockFetchResponse({ buildHash: "server-b" });
+		const removeWindowListener = vi.spyOn(window, "removeEventListener");
+		const removeDocumentListener = vi.spyOn(document, "removeEventListener");
+		const { unmount } = render(
+			<DeploymentRefreshChecker clientBuildHash="client-a" />,
+		);
+		vi.setSystemTime(1_000 + CHECK_COOLDOWN_MS);
+		await dispatchWindowEvent(new Event("focus"));
+
+		unmount();
+
+		expect(removeWindowListener).toHaveBeenCalledWith(
+			"focus",
+			expect.any(Function),
+		);
+		expect(removeDocumentListener).toHaveBeenCalledWith(
+			"visibilitychange",
+			expect.any(Function),
+		);
+		expect(toastMocks.dismiss).toHaveBeenCalledWith("deployment-update");
 	});
 });
