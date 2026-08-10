@@ -44,7 +44,7 @@ function TodayPageLoading() {
 	return (
 		<div
 			aria-label="Loading today's manager briefing"
-			className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6"
+			className="@container/main flex flex-1 flex-col gap-6 px-4 py-4 md:py-6 lg:px-6"
 			role="status"
 		>
 			<div className="space-y-3">

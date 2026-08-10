@@ -231,8 +231,11 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/today/page.tsx",
 		fallbackComponent: "TodayPageLoading",
 		contentComponent: "TodayPageContent",
-		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-6 p-4 md:p-6",
 		fallbackAriaLabel: "Loading today's manager briefing",
+		resolvedComponentFile: "src/app/[locale]/(app)/today/today-briefing.tsx",
+		resolvedComponent: "TodayBriefing",
+		resolvedOuterFrameClass:
+			"@container/main flex flex-1 flex-col gap-6 px-4 py-4 md:py-6 lg:px-6",
 		requiresSynchronousDefaultExport: true,
 	},
 	{
@@ -256,8 +259,12 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/my-requests/page.tsx",
 		fallbackComponent: "MyRequestsPageLoading",
 		contentComponent: "MyRequestsPageContent",
-		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-6 p-4 md:p-6",
 		fallbackAriaLabel: "Loading your requests",
+		resolvedComponentFile:
+			"src/app/[locale]/(app)/my-requests/my-requests-client.tsx",
+		resolvedComponent: "MyRequestsClient",
+		resolvedOuterFrameClass:
+			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
 		requiresSynchronousDefaultExport: true,
 	},
 	{
@@ -282,11 +289,21 @@ const SHELL_WORK_QUEUE = [
 
 type QualityReviewedShellRoute = Extract<
 	(typeof SHELL_WORK_QUEUE)[number],
-	{ fallbackFrameClass: string }
+	{ fallbackAriaLabel: string }
+>;
+
+type CrossFileResolvedShellRoute = Extract<
+	(typeof SHELL_WORK_QUEUE)[number],
+	{ resolvedComponentFile: string }
 >;
 
 const QUALITY_REVIEWED_SHELL_ROUTES = SHELL_WORK_QUEUE.filter(
-	(route): route is QualityReviewedShellRoute => "fallbackFrameClass" in route,
+	(route): route is QualityReviewedShellRoute => "fallbackAriaLabel" in route,
+);
+
+const CROSS_FILE_RESOLVED_SHELL_ROUTES = SHELL_WORK_QUEUE.filter(
+	(route): route is CrossFileResolvedShellRoute =>
+		"resolvedComponentFile" in route,
 );
 
 function appPath(file: string): string {
@@ -558,12 +575,12 @@ function hasExpectedLoadingFrame(
 	source: string,
 	{
 		fallbackComponent,
-		fallbackFrameClass,
 		fallbackAriaLabel,
+		expectedOuterFrameClass,
 	}: {
 		fallbackComponent: string;
-		fallbackFrameClass: string;
 		fallbackAriaLabel: string;
+		expectedOuterFrameClass: string;
 	},
 ): boolean {
 	const fallbackBody = findNamedFunctionBody(source, fallbackComponent);
@@ -574,12 +591,36 @@ function hasExpectedLoadingFrame(
 	const skeletons = [...fallbackBody.matchAll(/<Skeleton\b[^>]*>/g)];
 
 	return (
-		outerElement.includes(`className="${fallbackFrameClass}"`) &&
+		outerElement.includes(`className="${expectedOuterFrameClass}"`) &&
 		outerElement.includes('role="status"') &&
 		outerElement.includes(`aria-label="${fallbackAriaLabel}"`) &&
 		skeletons.length > 0 &&
 		skeletons.every(([skeleton]) => skeleton.includes('aria-hidden="true"'))
 	);
+}
+
+function hasExpectedResolvedOuterFrame(
+	source: string,
+	{
+		resolvedComponent,
+		resolvedOuterFrameClass,
+	}: {
+		resolvedComponent: string;
+		resolvedOuterFrameClass: string;
+	},
+): boolean {
+	const resolvedBody = findNamedFunctionBody(source, resolvedComponent);
+	const outerElement = resolvedBody?.match(/<div\b[^>]*>/)?.[0];
+
+	return (
+		outerElement?.includes(`className="${resolvedOuterFrameClass}"`) ?? false
+	);
+}
+
+function expectedOuterFrameClass(route: QualityReviewedShellRoute): string {
+	return "resolvedOuterFrameClass" in route
+		? route.resolvedOuterFrameClass
+		: route.fallbackFrameClass;
 }
 
 describe("connection call source detection", () => {
@@ -659,6 +700,35 @@ describe("focused Suspense boundary detection", () => {
 	});
 });
 
+describe("loading frame alignment", () => {
+	it("rejects a fallback frame that differs from the resolved component frame", () => {
+		const fallbackSource = `
+			function RouteLoading() {
+				return <div className="declared-frame" role="status" aria-label="Loading route"><Skeleton aria-hidden="true" /></div>;
+			}
+		`;
+		const resolvedSource = `
+			function RouteContent() {
+				return <div className="resolved-frame">Content</div>;
+			}
+		`;
+
+		expect(
+			hasExpectedResolvedOuterFrame(resolvedSource, {
+				resolvedComponent: "RouteContent",
+				resolvedOuterFrameClass: "resolved-frame",
+			}),
+		).toBe(true);
+		expect(
+			hasExpectedLoadingFrame(fallbackSource, {
+				fallbackComponent: "RouteLoading",
+				fallbackAriaLabel: "Loading route",
+				expectedOuterFrameClass: "resolved-frame",
+			}),
+		).toBe(false);
+	});
+});
+
 describe("App Router connection escape hatches", () => {
 	it("matches the reviewed and pending page/layout inventory exactly", () => {
 		const actualFiles = globSync("**/{page,layout}.tsx", { cwd: APP_ROOT })
@@ -712,7 +782,28 @@ describe("low-risk route streaming boundaries", () => {
 				hasDefaultExportFocusedSuspenseBoundary(source, route),
 				route.file,
 			).toBe(true);
-			expect(hasExpectedLoadingFrame(source, route), route.file).toBe(true);
+			expect(
+				hasExpectedLoadingFrame(source, {
+					...route,
+					expectedOuterFrameClass: expectedOuterFrameClass(route),
+				}),
+				route.file,
+			).toBe(true);
+		},
+	);
+
+	it.each(CROSS_FILE_RESOLVED_SHELL_ROUTES)(
+		"derives the fallback frame from resolved content in $file",
+		(route) => {
+			const resolvedSource = readFileSync(
+				appPath(route.resolvedComponentFile),
+				"utf8",
+			);
+
+			expect(
+				hasExpectedResolvedOuterFrame(resolvedSource, route),
+				route.resolvedComponentFile,
+			).toBe(true);
 		},
 	);
 
