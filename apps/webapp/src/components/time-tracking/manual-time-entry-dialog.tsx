@@ -355,7 +355,6 @@ function ManualEntryFormContent({
 							<ProjectSelector
 								value={field.state.value}
 								onValueChange={field.handleChange}
-								autoSelectLast={false}
 							/>
 						)}
 					</form.Field>
@@ -365,7 +364,6 @@ function ManualEntryFormContent({
 								employeeId={targetEmployeeId ?? employeeId}
 								value={field.state.value}
 								onValueChange={field.handleChange}
-								autoSelectLast={false}
 							/>
 						)}
 					</form.Field>

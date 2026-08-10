@@ -1,10 +1,7 @@
 "use client";
 
 import { IconLoader2, IconTag } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef } from "react";
-import { getAvailableCategoriesForEmployee } from "@/app/[locale]/(app)/settings/work-categories/actions";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,19 +11,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { queryKeys } from "@/lib/query";
 import { formatFactorAsMultiplier } from "@/lib/work-category/work-category.service";
-
-const LAST_CATEGORY_KEY = "z8-last-work-category-id";
-
-const EMPTY_CATEGORIES: WorkCategory[] = [];
-
-interface WorkCategory {
-	id: string;
-	name: string;
-	factor: string;
-	color: string | null;
-}
+import { writeLastWorkCategoryId } from "./selection-preferences";
+import {
+	useAvailableWorkCategories,
+	type WorkCategory,
+} from "./use-available-work-categories";
 
 interface WorkCategorySelectorProps {
 	/**
@@ -49,77 +39,45 @@ interface WorkCategorySelectorProps {
 	 * Whether to show the label
 	 */
 	showLabel?: boolean;
-	/**
-	 * Whether to auto-select the last used category
-	 */
-	autoSelectLast?: boolean;
+}
+
+interface WorkCategorySelectorViewProps extends WorkCategorySelectorProps {
+	categories: WorkCategory[];
+	isLoading: boolean;
+	isError: boolean;
 }
 
 /**
  * Work category selector component for time tracking
  * Shows available work categories based on employee's assigned category set
  */
-export function WorkCategorySelector({
-	employeeId,
+export function WorkCategorySelector({ ...props }: WorkCategorySelectorProps) {
+	const query = useAvailableWorkCategories(props.employeeId);
+
+	return <WorkCategorySelectorView {...props} {...query} />;
+}
+
+export function WorkCategorySelectorView({
 	value,
 	onValueChange,
 	disabled = false,
 	showLabel = true,
-	autoSelectLast = true,
-}: WorkCategorySelectorProps) {
+	categories,
+	isLoading,
+	isError,
+}: WorkCategorySelectorViewProps) {
 	const { t } = useTranslate();
-	const hasAutoSelectedRef = useRef(false);
-	const lastCategoryIdRef = useRef<string | null>(
-		typeof window === "undefined" ? null : localStorage.getItem(LAST_CATEGORY_KEY),
-	);
-
-	// Fetch available categories for this employee
-	const {
-		data: categoriesResult,
-		isLoading,
-		isError,
-	} = useQuery({
-		queryKey: queryKeys.workCategories.available(employeeId),
-		queryFn: async () => {
-			const result = await getAvailableCategoriesForEmployee(employeeId);
-			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch categories");
-			}
-			return result.data as WorkCategory[];
-		},
-		enabled: !!employeeId,
-	});
-
-	const categories = categoriesResult || EMPTY_CATEGORIES;
 
 	// Build a Map for O(1) category lookups
 	const categoriesMap = new Map(categories.map((c) => [c.id, c]));
 
-	// Auto-select last used category on initial load
-	useEffect(() => {
-		if (
-			autoSelectLast &&
-			!hasAutoSelectedRef.current &&
-			categories.length > 0 &&
-			value === undefined
-		) {
-			const lastCategoryId = lastCategoryIdRef.current;
-			if (lastCategoryId && categories.some((category) => category.id === lastCategoryId)) {
-				onValueChange(lastCategoryId);
-			}
-			hasAutoSelectedRef.current = true;
-		}
-	}, [autoSelectLast, categories, value, onValueChange]);
-
 	// Save selected category to localStorage and update cache
 	const handleValueChange = (newValue: string) => {
 		if (newValue === "none") {
-			localStorage.removeItem(LAST_CATEGORY_KEY);
-			lastCategoryIdRef.current = null;
+			writeLastWorkCategoryId(undefined);
 			onValueChange(undefined);
 		} else {
-			localStorage.setItem(LAST_CATEGORY_KEY, newValue);
-			lastCategoryIdRef.current = newValue;
+			writeLastWorkCategoryId(newValue);
 			onValueChange(newValue);
 		}
 	};
