@@ -10,10 +10,15 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { DateTime } from "luxon";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
@@ -30,7 +35,10 @@ import { getWorkerQueueStats, type WorkerQueueStats } from "./actions";
 import { RecentExecutions } from "./recent-executions";
 import type { ReliabilityHealth } from "./reliability";
 import { WorkerReliabilityCharts } from "./reliability-charts";
-import { ScheduleControls, type ScheduleControlsLabels } from "./schedule-controls";
+import {
+	ScheduleControls,
+	type ScheduleControlsLabels,
+} from "./schedule-controls";
 
 type Translate = Awaited<ReturnType<typeof getTranslate>>;
 
@@ -43,7 +51,14 @@ interface StatCardProps {
 	variant?: "default" | "success" | "warning" | "destructive";
 }
 
-function StatCard({ title, value, locale, description, icon, variant = "default" }: StatCardProps) {
+function StatCard({
+	title,
+	value,
+	locale,
+	description,
+	icon,
+	variant = "default",
+}: StatCardProps) {
 	const variantStyles = {
 		default: "",
 		success: "border-green-500/50",
@@ -54,7 +69,9 @@ function StatCard({ title, value, locale, description, icon, variant = "default"
 	return (
 		<Card className={variantStyles[variant]}>
 			<CardHeader className="flex flex-row items-center justify-between pb-2">
-				<CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+				<CardTitle className="text-sm font-medium text-muted-foreground">
+					{title}
+				</CardTitle>
 				<div className="text-muted-foreground" aria-hidden="true">
 					{icon}
 				</div>
@@ -63,13 +80,19 @@ function StatCard({ title, value, locale, description, icon, variant = "default"
 				<div className="text-2xl font-bold">
 					{typeof value === "number" ? value.toLocaleString(locale) : value}
 				</div>
-				{description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
+				{description && (
+					<p className="text-xs text-muted-foreground mt-1">{description}</p>
+				)}
 			</CardContent>
 		</Card>
 	);
 }
 
-function formatPercent(value: number | null, unknownLabel: string, locale: string): string {
+function formatPercent(
+	value: number | null,
+	unknownLabel: string,
+	locale: string,
+): string {
 	if (value === null) {
 		return unknownLabel;
 	}
@@ -81,7 +104,11 @@ function formatPercent(value: number | null, unknownLabel: string, locale: strin
 	});
 }
 
-function formatDuration(value: number | null, unknownLabel: string, locale: string): string {
+function formatDuration(
+	value: number | null,
+	unknownLabel: string,
+	locale: string,
+): string {
 	if (value === null) {
 		return unknownLabel;
 	}
@@ -114,7 +141,9 @@ function formatDateTime(value: string | number | null, locale: string): string {
 			? DateTime.fromMillis(value).setLocale(locale)
 			: DateTime.fromISO(value).setLocale(locale);
 
-	return dateTime.isValid ? dateTime.toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS) : "-";
+	return dateTime.isValid
+		? dateTime.toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS)
+		: "-";
 }
 
 function HealthBadge({
@@ -127,28 +156,40 @@ function HealthBadge({
 	switch (health) {
 		case "healthy":
 			return (
-				<Badge variant="outline" className="border-green-500 text-green-700 dark:text-green-400">
+				<Badge
+					variant="outline"
+					className="border-green-500 text-green-700 dark:text-green-400"
+				>
 					<IconCheck className="size-3 mr-1" aria-hidden="true" />
 					{labels.healthy}
 				</Badge>
 			);
 		case "warning":
 			return (
-				<Badge variant="outline" className="border-yellow-500 text-yellow-700 dark:text-yellow-400">
+				<Badge
+					variant="outline"
+					className="border-yellow-500 text-yellow-700 dark:text-yellow-400"
+				>
 					<IconAlertCircle className="size-3 mr-1" aria-hidden="true" />
 					{labels.warning}
 				</Badge>
 			);
 		case "failing":
 			return (
-				<Badge variant="outline" className="border-red-500 text-red-700 dark:text-red-400">
+				<Badge
+					variant="outline"
+					className="border-red-500 text-red-700 dark:text-red-400"
+				>
 					<IconX className="size-3 mr-1" aria-hidden="true" />
 					{labels.failing}
 				</Badge>
 			);
 		case "stale":
 			return (
-				<Badge variant="outline" className="border-orange-500 text-orange-700 dark:text-orange-400">
+				<Badge
+					variant="outline"
+					className="border-orange-500 text-orange-700 dark:text-orange-400"
+				>
 					<IconClock className="size-3 mr-1" aria-hidden="true" />
 					{labels.stale}
 				</Badge>
@@ -183,7 +224,11 @@ function WorkerQueuePageHeader({
 			<div className="flex items-center gap-2">
 				<Badge
 					variant={stats.isConnected ? "outline" : "destructive"}
-					className={stats.isConnected ? "border-green-500 text-green-700 dark:text-green-400" : ""}
+					className={
+						stats.isConnected
+							? "border-green-500 text-green-700 dark:text-green-400"
+							: ""
+					}
 				>
 					{stats.isConnected ? (
 						<>
@@ -221,7 +266,11 @@ function QueueCountsSection({
 				? t("settings.workerQueue.cards.paused", "Paused")
 				: t("settings.workerQueue.cards.running", "Running");
 	const queueStateVariant =
-		stats.isPaused === null ? "default" : stats.isPaused ? "warning" : "success";
+		stats.isPaused === null
+			? "default"
+			: stats.isPaused
+				? "warning"
+				: "success";
 
 	return (
 		<section>
@@ -244,7 +293,10 @@ function QueueCountsSection({
 					title={t("settings.workerQueue.cards.active", "Active")}
 					value={stats.counts.active}
 					locale={locale}
-					description={t("settings.workerQueue.cards.activeDescription", "Currently processing")}
+					description={t(
+						"settings.workerQueue.cards.activeDescription",
+						"Currently processing",
+					)}
 					icon={<IconLoader className="size-4" />}
 					variant={stats.counts.active > 0 ? "success" : "default"}
 				/>
@@ -252,7 +304,10 @@ function QueueCountsSection({
 					title={t("settings.workerQueue.cards.completed", "Completed")}
 					value={stats.counts.completed}
 					locale={locale}
-					description={t("settings.workerQueue.cards.completedDescription", "Recently completed")}
+					description={t(
+						"settings.workerQueue.cards.completedDescription",
+						"Recently completed",
+					)}
 					icon={<IconCheck className="size-4" />}
 					variant="success"
 				/>
@@ -260,7 +315,10 @@ function QueueCountsSection({
 					title={t("settings.workerQueue.cards.failed", "Failed")}
 					value={stats.counts.failed}
 					locale={locale}
-					description={t("settings.workerQueue.cards.failedDescription", "Recently failed")}
+					description={t(
+						"settings.workerQueue.cards.failedDescription",
+						"Recently failed",
+					)}
 					icon={<IconX className="size-4" />}
 					variant={stats.counts.failed > 0 ? "destructive" : "default"}
 				/>
@@ -268,7 +326,10 @@ function QueueCountsSection({
 					title={t("settings.workerQueue.cards.delayed", "Delayed")}
 					value={stats.counts.delayed}
 					locale={locale}
-					description={t("settings.workerQueue.cards.delayedDescription", "Scheduled for later")}
+					description={t(
+						"settings.workerQueue.cards.delayedDescription",
+						"Scheduled for later",
+					)}
 					icon={<IconClock className="size-4" />}
 				/>
 				<StatCard
@@ -308,8 +369,15 @@ function ReliabilitySection({
 			</h2>
 			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 				<StatCard
-					title={t("settings.workerQueue.reliability.successRate", "Success Rate")}
-					value={formatPercent(stats.reliability.summary.successRate, unknownLabel, locale)}
+					title={t(
+						"settings.workerQueue.reliability.successRate",
+						"Success Rate",
+					)}
+					value={formatPercent(
+						stats.reliability.summary.successRate,
+						unknownLabel,
+						locale,
+					)}
 					locale={locale}
 					description={t(
 						"settings.workerQueue.reliability.successRateDescription",
@@ -324,12 +392,20 @@ function ReliabilitySection({
 					}
 				/>
 				<StatCard
-					title={t("settings.workerQueue.reliability.failedRuns", "Failed Runs")}
+					title={t(
+						"settings.workerQueue.reliability.failedRuns",
+						"Failed Runs",
+					)}
 					value={stats.reliability.summary.failedRuns}
 					locale={locale}
-					description={t("settings.workerQueue.reliability.failedRunsDescription", "Last 30 days")}
+					description={t(
+						"settings.workerQueue.reliability.failedRunsDescription",
+						"Last 30 days",
+					)}
 					icon={<IconX className="size-4" />}
-					variant={stats.reliability.summary.failedRuns > 0 ? "destructive" : "default"}
+					variant={
+						stats.reliability.summary.failedRuns > 0 ? "destructive" : "default"
+					}
 				/>
 				<StatCard
 					title={t("settings.workerQueue.reliability.staleJobs", "Stale Jobs")}
@@ -340,11 +416,20 @@ function ReliabilitySection({
 						"Past expected schedule",
 					)}
 					icon={<IconAlertCircle className="size-4" />}
-					variant={stats.reliability.summary.staleJobs > 0 ? "warning" : "default"}
+					variant={
+						stats.reliability.summary.staleJobs > 0 ? "warning" : "default"
+					}
 				/>
 				<StatCard
-					title={t("settings.workerQueue.reliability.avgDuration", "Avg Duration")}
-					value={formatDuration(stats.reliability.summary.averageDurationMs, unknownLabel, locale)}
+					title={t(
+						"settings.workerQueue.reliability.avgDuration",
+						"Avg Duration",
+					)}
+					value={formatDuration(
+						stats.reliability.summary.averageDurationMs,
+						unknownLabel,
+						locale,
+					)}
 					locale={locale}
 					description={t(
 						"settings.workerQueue.reliability.avgDurationDescription",
@@ -358,7 +443,9 @@ function ReliabilitySection({
 			</div>
 			<Card className="mt-4">
 				<CardHeader>
-					<CardTitle>{t("settings.workerQueue.reliability.jobHealth", "Job Health")}</CardTitle>
+					<CardTitle>
+						{t("settings.workerQueue.reliability.jobHealth", "Job Health")}
+					</CardTitle>
 					<CardDescription>
 						{t(
 							"settings.workerQueue.reliability.jobHealthDescription",
@@ -369,43 +456,75 @@ function ReliabilitySection({
 				<CardContent>
 					{stats.reliability.jobs.length === 0 ? (
 						<p className="text-muted-foreground text-sm">
-							{t("settings.workerQueue.reliability.noJobs", "No reliability data found")}
+							{t(
+								"settings.workerQueue.reliability.noJobs",
+								"No reliability data found",
+							)}
 						</p>
 					) : (
 						<div className="overflow-x-auto">
 							<Table>
 								<TableHeader>
 									<TableRow>
-										<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
-										<TableHead>{t("settings.workerQueue.table.health", "Health")}</TableHead>
-										<TableHead>{t("settings.workerQueue.table.lastRun", "Last Run")}</TableHead>
-										<TableHead>{t("settings.workerQueue.table.nextRun", "Next Run")}</TableHead>
+										<TableHead>
+											{t("settings.workerQueue.table.jobName", "Job Name")}
+										</TableHead>
+										<TableHead>
+											{t("settings.workerQueue.table.health", "Health")}
+										</TableHead>
+										<TableHead>
+											{t("settings.workerQueue.table.lastRun", "Last Run")}
+										</TableHead>
+										<TableHead>
+											{t("settings.workerQueue.table.nextRun", "Next Run")}
+										</TableHead>
 										<TableHead className="text-right">
-											{t("settings.workerQueue.table.successRate", "Success Rate")}
+											{t(
+												"settings.workerQueue.table.successRate",
+												"Success Rate",
+											)}
 										</TableHead>
 										<TableHead className="text-right">
 											{t("settings.workerQueue.table.failed", "Failed")}
 										</TableHead>
 										<TableHead className="text-right">
-											{t("settings.workerQueue.table.avgDuration", "Avg Duration")}
+											{t(
+												"settings.workerQueue.table.avgDuration",
+												"Avg Duration",
+											)}
 										</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
 									{stats.reliability.jobs.map((job) => (
 										<TableRow key={job.jobName}>
-											<TableCell className="font-mono text-sm">{job.jobName}</TableCell>
-											<TableCell>
-												<HealthBadge health={job.health} labels={healthLabels} />
+											<TableCell className="font-mono text-sm">
+												{job.jobName}
 											</TableCell>
-											<TableCell>{formatDateTime(job.lastRunAt, locale)}</TableCell>
-											<TableCell>{formatDateTime(job.nextRunAt, locale)}</TableCell>
+											<TableCell>
+												<HealthBadge
+													health={job.health}
+													labels={healthLabels}
+												/>
+											</TableCell>
+											<TableCell>
+												{formatDateTime(job.lastRunAt, locale)}
+											</TableCell>
+											<TableCell>
+												{formatDateTime(job.nextRunAt, locale)}
+											</TableCell>
 											<TableCell className="text-right">
 												{formatPercent(job.successRate, unknownLabel, locale)}
 											</TableCell>
-											<TableCell className="text-right text-red-600">{job.failedRuns}</TableCell>
+											<TableCell className="text-right text-red-600">
+												{job.failedRuns}
+											</TableCell>
 											<TableCell className="text-right">
-												{formatDuration(job.averageDurationMs, unknownLabel, locale)}
+												{formatDuration(
+													job.averageDurationMs,
+													unknownLabel,
+													locale,
+												)}
 											</TableCell>
 										</TableRow>
 									))}
@@ -436,7 +555,10 @@ function ScheduledJobsSection({
 		<section>
 			<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
 				<IconRefresh className="size-5" aria-hidden="true" />
-				{t("settings.workerQueue.sections.scheduledJobs", "Scheduled Cron Jobs")}
+				{t(
+					"settings.workerQueue.sections.scheduledJobs",
+					"Scheduled Cron Jobs",
+				)}
 			</h2>
 			<Card>
 				<CardHeader>
@@ -450,25 +572,39 @@ function ScheduledJobsSection({
 				<CardContent>
 					{stats.scheduledJobs.length === 0 ? (
 						<p className="text-muted-foreground text-sm">
-							{t("settings.workerQueue.noScheduledJobs", "No scheduled jobs found")}
+							{t(
+								"settings.workerQueue.noScheduledJobs",
+								"No scheduled jobs found",
+							)}
 						</p>
 					) : (
 						<div className="overflow-x-auto">
 							<Table>
 								<TableHeader>
 									<TableRow>
-										<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
-										<TableHead>{t("settings.workerQueue.table.schedule", "Schedule")}</TableHead>
-										<TableHead>{t("settings.workerQueue.table.default", "Default")}</TableHead>
-										<TableHead>{t("settings.workerQueue.table.nextRun", "Next Run")}</TableHead>
-										<TableHead>{t("settings.workerQueue.table.actions", "Actions")}</TableHead>
+										<TableHead>
+											{t("settings.workerQueue.table.jobName", "Job Name")}
+										</TableHead>
+										<TableHead>
+											{t("settings.workerQueue.table.schedule", "Schedule")}
+										</TableHead>
+										<TableHead>
+											{t("settings.workerQueue.table.default", "Default")}
+										</TableHead>
+										<TableHead>
+											{t("settings.workerQueue.table.nextRun", "Next Run")}
+										</TableHead>
+										<TableHead>
+											{t("settings.workerQueue.table.actions", "Actions")}
+										</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
 									{stats.scheduledJobs.map((job) => {
 										const presetLabel =
-											CRON_SCHEDULE_PRESETS.find((preset) => preset.id === job.presetId)?.label ??
-											unknownLabel;
+											CRON_SCHEDULE_PRESETS.find(
+												(preset) => preset.id === job.presetId,
+											)?.label ?? unknownLabel;
 
 										return (
 											<TableRow key={job.name}>
@@ -483,7 +619,10 @@ function ScheduledJobsSection({
 														<span>{presetLabel}</span>
 														{job.isOverridden ? (
 															<Badge variant="outline">
-																{t("settings.workerQueue.schedule.overridden", "Overridden")}
+																{t(
+																	"settings.workerQueue.schedule.overridden",
+																	"Overridden",
+																)}
 															</Badge>
 														) : null}
 													</div>
@@ -534,7 +673,10 @@ function JobMetricsSection({
 		<section>
 			<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
 				<IconServer className="size-5" aria-hidden="true" />
-				{t("settings.workerQueue.sections.jobMetrics", "Job Metrics (Last 30 Days)")}
+				{t(
+					"settings.workerQueue.sections.jobMetrics",
+					"Job Metrics (Last 30 Days)",
+				)}
 			</h2>
 			<Card>
 				<CardContent className="pt-6">
@@ -542,7 +684,9 @@ function JobMetricsSection({
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>{t("settings.workerQueue.table.jobName", "Job Name")}</TableHead>
+									<TableHead>
+										{t("settings.workerQueue.table.jobName", "Job Name")}
+									</TableHead>
 									<TableHead className="text-right">
 										{t("settings.workerQueue.table.totalRuns", "Total Runs")}
 									</TableHead>
@@ -553,22 +697,34 @@ function JobMetricsSection({
 										{t("settings.workerQueue.table.failed", "Failed")}
 									</TableHead>
 									<TableHead className="text-right">
-										{t("settings.workerQueue.table.successRate", "Success Rate")}
+										{t(
+											"settings.workerQueue.table.successRate",
+											"Success Rate",
+										)}
 									</TableHead>
 									<TableHead className="text-right">
-										{t("settings.workerQueue.table.avgDuration", "Avg Duration")}
+										{t(
+											"settings.workerQueue.table.avgDuration",
+											"Avg Duration",
+										)}
 									</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
 								{stats.jobMetrics.map((metric) => (
 									<TableRow key={metric.jobName}>
-										<TableCell className="font-mono text-sm">{metric.jobName}</TableCell>
-										<TableCell className="text-right">{metric.totalRuns}</TableCell>
+										<TableCell className="font-mono text-sm">
+											{metric.jobName}
+										</TableCell>
+										<TableCell className="text-right">
+											{metric.totalRuns}
+										</TableCell>
 										<TableCell className="text-right text-green-600">
 											{metric.successfulRuns}
 										</TableCell>
-										<TableCell className="text-right text-red-600">{metric.failedRuns}</TableCell>
+										<TableCell className="text-right text-red-600">
+											{metric.failedRuns}
+										</TableCell>
 										<TableCell className="text-right">
 											<span
 												className={
@@ -579,11 +735,19 @@ function JobMetricsSection({
 															: "text-red-600"
 												}
 											>
-												{formatPercent(metric.successRate, unknownLabel, locale)}
+												{formatPercent(
+													metric.successRate,
+													unknownLabel,
+													locale,
+												)}
 											</span>
 										</TableCell>
 										<TableCell className="text-right">
-											{formatDuration(metric.avgDurationMs, unknownLabel, locale)}
+											{formatDuration(
+												metric.avgDurationMs,
+												unknownLabel,
+												locale,
+											)}
 										</TableCell>
 									</TableRow>
 								))}
@@ -596,10 +760,16 @@ function JobMetricsSection({
 	);
 }
 
-async function WorkerQueueContent({ locale }: { locale: string }) {
-	await connection();
-
-	const [t, statsResult] = await Promise.all([getTranslate(), getWorkerQueueStats()]);
+async function WorkerQueueContent({
+	params,
+}: {
+	params: Promise<{ locale: string }>;
+}) {
+	const [{ locale }, t, statsResult] = await Promise.all([
+		params,
+		getTranslate(),
+		getWorkerQueueStats(),
+	]);
 
 	if (!statsResult.success) {
 		return (
@@ -639,11 +809,23 @@ async function WorkerQueueContent({ locale }: { locale: string }) {
 			"settings.workerQueue.recentExecutionsDescription",
 			"Last 50 job executions tracked in the database.",
 		),
-		filterLabel: t("settings.workerQueue.recentExecutions.filterLabel", "Filter by job"),
+		filterLabel: t(
+			"settings.workerQueue.recentExecutions.filterLabel",
+			"Filter by job",
+		),
 		allJobs: t("settings.workerQueue.recentExecutions.allJobs", "All jobs"),
-		loading: t("settings.workerQueue.recentExecutions.loading", "Loading executions…"),
-		error: t("settings.workerQueue.recentExecutions.error", "Failed to load executions"),
-		noExecutions: t("settings.workerQueue.noExecutions", "No recent executions found"),
+		loading: t(
+			"settings.workerQueue.recentExecutions.loading",
+			"Loading executions…",
+		),
+		error: t(
+			"settings.workerQueue.recentExecutions.error",
+			"Failed to load executions",
+		),
+		noExecutions: t(
+			"settings.workerQueue.noExecutions",
+			"No recent executions found",
+		),
 		unknown: unknownLabel,
 		status: statusLabels,
 		table: {
@@ -666,8 +848,14 @@ async function WorkerQueueContent({ locale }: { locale: string }) {
 		reset: t("settings.workerQueue.scheduleControls.reset", "Reset"),
 		save: t("settings.workerQueue.scheduleControls.save", "Save schedule"),
 		cancel: t("settings.workerQueue.scheduleControls.cancel", "Cancel"),
-		presetLabel: t("settings.workerQueue.scheduleControls.presetLabel", "Schedule preset"),
-		highRiskTitle: t("settings.workerQueue.scheduleControls.highRiskTitle", "High-risk schedule"),
+		presetLabel: t(
+			"settings.workerQueue.scheduleControls.presetLabel",
+			"Schedule preset",
+		),
+		highRiskTitle: t(
+			"settings.workerQueue.scheduleControls.highRiskTitle",
+			"High-risk schedule",
+		),
 		highRiskDescription: t(
 			"settings.workerQueue.scheduleControls.highRiskDescription",
 			"Changing this job can affect billing, cleanup, integrations, compliance, or operational automation.",
@@ -678,9 +866,18 @@ async function WorkerQueueContent({ locale }: { locale: string }) {
 		),
 		confirmationText: "I understand the operational impact",
 		saved: t("settings.workerQueue.scheduleControls.saved", "Schedule saved"),
-		resetSaved: t("settings.workerQueue.scheduleControls.resetSaved", "Schedule reset"),
-		warningPrefix: t("settings.workerQueue.scheduleControls.warningPrefix", "Saved with warning"),
-		failed: t("settings.workerQueue.scheduleControls.failed", "Schedule change failed"),
+		resetSaved: t(
+			"settings.workerQueue.scheduleControls.resetSaved",
+			"Schedule reset",
+		),
+		warningPrefix: t(
+			"settings.workerQueue.scheduleControls.warningPrefix",
+			"Saved with warning",
+		),
+		failed: t(
+			"settings.workerQueue.scheduleControls.failed",
+			"Schedule change failed",
+		),
 		mismatch: t(
 			"settings.workerQueue.scheduleControls.mismatch",
 			"BullMQ currently differs from the saved schedule; worker startup will reconcile it.",
@@ -709,12 +906,20 @@ async function WorkerQueueContent({ locale }: { locale: string }) {
 				unknownLabel={unknownLabel}
 				scheduleControlLabels={scheduleControlLabels}
 			/>
-			<JobMetricsSection t={t} stats={stats} locale={locale} unknownLabel={unknownLabel} />
+			<JobMetricsSection
+				t={t}
+				stats={stats}
+				locale={locale}
+				unknownLabel={unknownLabel}
+			/>
 
 			<section>
 				<h2 className="text-lg font-medium mb-4 flex items-center gap-2">
 					<IconClock className="size-5" aria-hidden="true" />
-					{t("settings.workerQueue.sections.recentExecutions", "Recent Executions")}
+					{t(
+						"settings.workerQueue.sections.recentExecutions",
+						"Recent Executions",
+					)}
 				</h2>
 				<RecentExecutions
 					availableJobNames={stats.availableJobNames}
@@ -728,27 +933,43 @@ async function WorkerQueueContent({ locale }: { locale: string }) {
 }
 
 function WorkerQueueLoading() {
-	const queueSkeletonKeys = ["waiting", "active", "completed", "failed", "delayed", "queue-state"];
-	const reliabilitySkeletonKeys = ["success-rate", "failed-runs", "stale-jobs", "avg-duration"];
+	const QUEUE_LOADING_KEYS = [
+		"waiting",
+		"active",
+		"completed",
+		"failed",
+		"delayed",
+		"queue-state",
+	];
+	const RELIABILITY_LOADING_KEYS = [
+		"success-rate",
+		"failed-runs",
+		"stale-jobs",
+		"avg-duration",
+	];
 
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div
+			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
+			role="status"
+			aria-label="Loading worker queue"
+		>
 			<div className="space-y-2">
-				<Skeleton className="h-8 w-48" />
-				<Skeleton className="h-4 w-96" />
+				<Skeleton aria-hidden="true" className="h-8 w-48" />
+				<Skeleton aria-hidden="true" className="h-4 w-96 max-w-full" />
 			</div>
 
 			<section>
-				<Skeleton className="h-6 w-32 mb-4" />
+				<Skeleton aria-hidden="true" className="h-6 w-32 mb-4" />
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-					{queueSkeletonKeys.map((key) => (
+					{QUEUE_LOADING_KEYS.map((key) => (
 						<Card key={key}>
 							<CardHeader className="pb-2">
-								<Skeleton className="h-4 w-24" />
+								<Skeleton aria-hidden="true" className="h-4 w-24" />
 							</CardHeader>
 							<CardContent>
-								<Skeleton className="h-8 w-16" />
-								<Skeleton className="h-3 w-32 mt-2" />
+								<Skeleton aria-hidden="true" className="h-8 w-16" />
+								<Skeleton aria-hidden="true" className="h-3 w-32 mt-2" />
 							</CardContent>
 						</Card>
 					))}
@@ -756,16 +977,16 @@ function WorkerQueueLoading() {
 			</section>
 
 			<section>
-				<Skeleton className="h-6 w-36 mb-4" />
+				<Skeleton aria-hidden="true" className="h-6 w-36 mb-4" />
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-					{reliabilitySkeletonKeys.map((key) => (
+					{RELIABILITY_LOADING_KEYS.map((key) => (
 						<Card key={key}>
 							<CardHeader className="pb-2">
-								<Skeleton className="h-4 w-24" />
+								<Skeleton aria-hidden="true" className="h-4 w-24" />
 							</CardHeader>
 							<CardContent>
-								<Skeleton className="h-8 w-16" />
-								<Skeleton className="h-3 w-32 mt-2" />
+								<Skeleton aria-hidden="true" className="h-8 w-16" />
+								<Skeleton aria-hidden="true" className="h-3 w-32 mt-2" />
 							</CardContent>
 						</Card>
 					))}
@@ -773,42 +994,42 @@ function WorkerQueueLoading() {
 				<div className="grid gap-4 lg:grid-cols-2 mt-4">
 					<Card>
 						<CardHeader>
-							<Skeleton className="h-5 w-36" />
-							<Skeleton className="h-4 w-64" />
+							<Skeleton aria-hidden="true" className="h-5 w-36" />
+							<Skeleton aria-hidden="true" className="h-4 w-64 max-w-full" />
 						</CardHeader>
 						<CardContent>
-							<Skeleton className="h-[300px] w-full" />
+							<Skeleton aria-hidden="true" className="h-[300px] w-full" />
 						</CardContent>
 					</Card>
 					<Card>
 						<CardHeader>
-							<Skeleton className="h-5 w-36" />
-							<Skeleton className="h-4 w-64" />
+							<Skeleton aria-hidden="true" className="h-5 w-36" />
+							<Skeleton aria-hidden="true" className="h-4 w-64 max-w-full" />
 						</CardHeader>
 						<CardContent>
-							<Skeleton className="h-[300px] w-full" />
+							<Skeleton aria-hidden="true" className="h-[300px] w-full" />
 						</CardContent>
 					</Card>
 				</div>
 				<Card className="mt-4">
 					<CardHeader>
-						<Skeleton className="h-5 w-28" />
-						<Skeleton className="h-4 w-72" />
+						<Skeleton aria-hidden="true" className="h-5 w-28" />
+						<Skeleton aria-hidden="true" className="h-4 w-72 max-w-full" />
 					</CardHeader>
 					<CardContent>
-						<Skeleton className="h-32 w-full" />
+						<Skeleton aria-hidden="true" className="h-32 w-full" />
 					</CardContent>
 				</Card>
 			</section>
 
 			<section>
-				<Skeleton className="h-6 w-40 mb-4" />
+				<Skeleton aria-hidden="true" className="h-6 w-40 mb-4" />
 				<Card>
 					<CardHeader>
-						<Skeleton className="h-4 w-64" />
+						<Skeleton aria-hidden="true" className="h-4 w-64 max-w-full" />
 					</CardHeader>
 					<CardContent>
-						<Skeleton className="h-32 w-full" />
+						<Skeleton aria-hidden="true" className="h-32 w-full" />
 					</CardContent>
 				</Card>
 			</section>
@@ -816,12 +1037,14 @@ function WorkerQueueLoading() {
 	);
 }
 
-export default async function WorkerQueuePage({ params }: { params: Promise<{ locale: string }> }) {
-	const { locale } = await params;
-
+export default function WorkerQueuePage({
+	params,
+}: {
+	params: Promise<{ locale: string }>;
+}) {
 	return (
 		<Suspense fallback={<WorkerQueueLoading />}>
-			<WorkerQueueContent locale={locale} />
+			<WorkerQueueContent params={params} />
 		</Suspense>
 	);
 }

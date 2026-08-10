@@ -47,17 +47,21 @@ describe("platform admin layout", () => {
 		expect(source).toContain("admin:admin.layout.nav.analytics");
 	});
 
-	it("checks the billing flag at request time on the billing page", () => {
+	it("checks the billing flag inside the billing page content boundary", () => {
 		const source = stripComments(
 			readFileSync(join(PLATFORM_ADMIN_ROOT, "billing/page.tsx"), "utf8"),
 		);
-		const dynamicBoundary = "await connection()";
+		const dynamicBoundary = "async function AdminBillingPageContent";
 		const billingEnabledCheck = 'if (env.BILLING_ENABLED !== "true")';
 
+		expect(source).toContain(
+			"<Suspense fallback={<AdminBillingPageLoading />}>",
+		);
 		expect(source).toContain(dynamicBoundary);
 		expect(source.indexOf(dynamicBoundary)).toBeLessThan(
 			source.indexOf(billingEnabledCheck),
 		);
+		expect(source).not.toContain("connection()");
 	});
 
 	it("links to deployment diagnostics from platform-admin navigation and overview", () => {

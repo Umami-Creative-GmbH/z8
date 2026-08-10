@@ -17,11 +17,6 @@ const REVIEWED_RETAINED_CONNECTION_FILES = [
 ] as const;
 
 const PENDING_CONNECTION_FILES = [
-	"src/app/[locale]/(admin)/platform-admin/analytics/page.tsx",
-	"src/app/[locale]/(admin)/platform-admin/billing/page.tsx",
-	"src/app/[locale]/(admin)/platform-admin/diagnostics/page.tsx",
-	"src/app/[locale]/(admin)/platform-admin/page.tsx",
-	"src/app/[locale]/(admin)/platform-admin/worker-queue/page.tsx",
 	"src/app/[locale]/(app)/analytics/layout.tsx",
 	"src/app/[locale]/(app)/settings/audit-export/page.tsx",
 	"src/app/[locale]/(app)/settings/coverage-rules/page.tsx",
@@ -32,7 +27,6 @@ const PENDING_CONNECTION_FILES = [
 	"src/app/[locale]/(app)/settings/import/page.tsx",
 	"src/app/[locale]/(app)/settings/payroll-export/page.tsx",
 	"src/app/[locale]/(app)/settings/scheduled-exports/page.tsx",
-	"src/app/[locale]/(auth)/verify-2fa/page.tsx",
 	"src/app/[locale]/(setup)/setup/page.tsx",
 ] as const;
 
@@ -305,6 +299,102 @@ const SHELL_WORK_QUEUE = [
 		fallbackFrameClass:
 			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
 		fallbackAriaLabel: "Loading project reports",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(admin)/platform-admin/page.tsx",
+		fallbackComponent: "AdminDashboardLoading",
+		contentComponent: "AdminDashboardContent",
+		fallbackFrameClass: "space-y-10",
+		fallbackAriaLabel: "Loading platform admin overview",
+		fallbackGeometryGroups: [
+			{
+				component: "DashboardStatsLoading",
+				keyArray: "DASHBOARD_STATS_LOADING_KEYS",
+				itemCount: 4,
+				frameClass: "grid gap-4 sm:grid-cols-2 lg:grid-cols-4",
+			},
+		],
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(admin)/platform-admin/analytics/page.tsx",
+		fallbackComponent: "PlatformAnalyticsPageLoading",
+		contentComponent: "PlatformAnalyticsPageContent",
+		fallbackFrameClass: "space-y-8",
+		fallbackAriaLabel: "Loading platform analytics",
+		fallbackGeometryGroups: [
+			{
+				component: "PlatformAnalyticsLoading",
+				keyArray: "PLATFORM_ANALYTICS_KPI_LOADING_KEYS",
+				itemCount: 4,
+				frameClass: "grid gap-4 sm:grid-cols-2 xl:grid-cols-4",
+			},
+			{
+				component: "PlatformAnalyticsLoading",
+				keyArray: "PLATFORM_ANALYTICS_CHART_LOADING_KEYS",
+				itemCount: 2,
+				frameClass: "grid gap-4 xl:grid-cols-2",
+			},
+		],
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(admin)/platform-admin/billing/page.tsx",
+		fallbackComponent: "AdminBillingPageLoading",
+		contentComponent: "AdminBillingPageContent",
+		fallbackFrameClass: "space-y-10",
+		fallbackAriaLabel: "Loading platform billing",
+		fallbackGeometryGroups: [
+			{
+				component: "BillingStatsLoading",
+				keyArray: "BILLING_STATS_LOADING_KEYS",
+				itemCount: 6,
+				frameClass: "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6",
+			},
+			{
+				component: "SubscriptionsTableLoading",
+				keyArray: "SUBSCRIPTIONS_LOADING_KEYS",
+				itemCount: 5,
+				frameClass: "p-6 space-y-3",
+			},
+		],
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(admin)/platform-admin/diagnostics/page.tsx",
+		fallbackComponent: "PlatformDiagnosticsPageLoading",
+		contentComponent: "PlatformDiagnosticsPageContent",
+		fallbackFrameClass: "space-y-10",
+		fallbackAriaLabel: "Loading deployment diagnostics",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(admin)/platform-admin/worker-queue/page.tsx",
+		fallbackComponent: "WorkerQueueLoading",
+		contentComponent: "WorkerQueueContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackAriaLabel: "Loading worker queue",
+		fallbackGeometryGroups: [
+			{
+				keyArray: "QUEUE_LOADING_KEYS",
+				itemCount: 6,
+				frameClass: "grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6",
+			},
+			{
+				keyArray: "RELIABILITY_LOADING_KEYS",
+				itemCount: 4,
+				frameClass: "grid gap-4 md:grid-cols-2 lg:grid-cols-4",
+			},
+		],
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(auth)/verify-2fa/page.tsx",
+		fallbackComponent: "Verify2FAPageLoading",
+		contentComponent: "Verify2FAPageContent",
+		fallbackFrameClass: "mx-auto w-full max-w-md",
+		fallbackAriaLabel: "Loading two-factor verification",
 		requiresSynchronousDefaultExport: true,
 	},
 ] as const;
@@ -665,15 +755,18 @@ function hasExpectedMappedLoadingGeometry(
 	source: string,
 	fallbackComponent: string,
 	groups: readonly {
+		component?: string;
 		keyArray: string;
 		itemCount: number;
 		frameClass: string;
 	}[],
 ): boolean {
-	const fallbackBody = findNamedFunctionBody(source, fallbackComponent);
-	if (!fallbackBody) return false;
-
-	return groups.every(({ keyArray, itemCount, frameClass }) => {
+	return groups.every(({ component, keyArray, itemCount, frameClass }) => {
+		const fallbackBody = findNamedFunctionBody(
+			source,
+			component ?? fallbackComponent,
+		);
+		if (!fallbackBody) return false;
 		const keyArrayPattern = new RegExp(
 			`const\\s+${escapeRegExp(keyArray)}\\s*=\\s*\\[([^\\]]*)\\]`,
 		);
@@ -867,7 +960,7 @@ describe("low-risk route streaming boundaries", () => {
 	it("registers every shell work queue route exactly once", () => {
 		const workQueueFiles = SHELL_WORK_QUEUE.map(({ file }) => file);
 
-		expect(workQueueFiles).toHaveLength(39);
+		expect(workQueueFiles).toHaveLength(45);
 		expect(new Set(workQueueFiles).size).toBe(workQueueFiles.length);
 	});
 
