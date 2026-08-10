@@ -1,6 +1,11 @@
 /* @vitest-environment jsdom */
 
-import { act, render } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+	act,
+	render as renderWithTestingLibrary,
+} from "@testing-library/react";
+import type { ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	CHECK_COOLDOWN_MS,
@@ -127,6 +132,20 @@ function getToastOptions() {
 		| undefined;
 }
 
+function render(ui: ReactElement) {
+	const queryClient = new QueryClient({
+		defaultOptions: {
+			queries: { retry: false },
+		},
+	});
+
+	return renderWithTestingLibrary(ui, {
+		wrapper: ({ children }) => (
+			<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+		),
+	});
+}
+
 beforeEach(() => {
 	vi.useFakeTimers();
 	vi.setSystemTime(1_000);
@@ -247,6 +266,32 @@ describe("DeploymentRefreshChecker", () => {
 		await dispatchWindowEvent(new Event("focus"));
 
 		expect(fetchMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("shares one version request across mounted checkers", async () => {
+		const pendingResponse = createDeferred<Response>();
+		const fetchMock = vi.fn().mockReturnValue(pendingResponse.promise);
+		vi.stubGlobal("fetch", fetchMock);
+		render(
+			<>
+				<DeploymentRefreshChecker clientBuildHash="client-a" />
+				<DeploymentRefreshChecker clientBuildHash="client-a" />
+			</>,
+		);
+		vi.setSystemTime(1_000 + CHECK_COOLDOWN_MS);
+
+		await dispatchWindowEvent(new Event("focus"));
+
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+
+		await act(async () => {
+			pendingResponse.resolve({
+				json: vi.fn().mockResolvedValue({ buildHash: "client-a" }),
+				ok: true,
+			} as unknown as Response);
+			await pendingResponse.promise;
+			await Promise.resolve();
+		});
 	});
 
 	it("does not fetch without a client build hash", async () => {

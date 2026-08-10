@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useEffectEvent } from "react";
 import { toast } from "sonner";
@@ -9,6 +10,8 @@ import {
 } from "./deployment-refresh-checker-utils";
 
 export const CHECK_COOLDOWN_MS = 6 * 60 * 60 * 1000;
+
+const APP_VERSION_QUERY_KEY = ["app-version"] as const;
 
 type AppVersionResponse = {
 	buildHash?: unknown;
@@ -39,13 +42,22 @@ export function DeploymentRefreshChecker({
 	clientBuildHash,
 }: DeploymentRefreshCheckerProps) {
 	const { t } = useTranslate();
+	const { refetch: refetchAppVersion } = useQuery({
+		queryKey: APP_VERSION_QUERY_KEY,
+		queryFn: ({ signal }) => fetchAppVersion(signal),
+		enabled: false,
+		retry: false,
+		staleTime: 0,
+	});
 	const getCurrentClientBuildHash = useEffectEvent(() => clientBuildHash);
 	const getCurrentTranslator = useEffectEvent(() => t);
+	const getCurrentAppVersion = useEffectEvent(async () => {
+		const { data } = await refetchAppVersion({ cancelRefetch: false });
+		return data ?? null;
+	});
 
 	useEffect(() => {
 		let mounted = true;
-		let requestInFlight = false;
-		let activeAbortController: AbortController | null = null;
 		let promptShown = false;
 		let toastId: string | number | undefined;
 		let lastCheckStartedAt = Date.now();
@@ -55,7 +67,6 @@ export function DeploymentRefreshChecker({
 			const currentClientBuildHash = getCurrentClientBuildHash();
 			if (
 				!currentClientBuildHash ||
-				requestInFlight ||
 				promptShown ||
 				!shouldCheckDeploymentVersion({
 					checkCooldownMs: CHECK_COOLDOWN_MS,
@@ -68,13 +79,7 @@ export function DeploymentRefreshChecker({
 			}
 
 			lastCheckStartedAt = now;
-			requestInFlight = true;
-			const abortController = new AbortController();
-			activeAbortController = abortController;
-			const appVersion = await fetchAppVersion(abortController.signal);
-			if (activeAbortController === abortController)
-				activeAbortController = null;
-			requestInFlight = false;
+			const appVersion = await getCurrentAppVersion();
 			if (!appVersion || !mounted || promptShown) return;
 
 			const latestClientBuildHash = getCurrentClientBuildHash();
@@ -114,7 +119,6 @@ export function DeploymentRefreshChecker({
 
 		return () => {
 			mounted = false;
-			activeAbortController?.abort();
 			document.removeEventListener("visibilitychange", handleForegroundEvent);
 			window.removeEventListener("focus", handleForegroundEvent);
 			if (toastId !== undefined) toast.dismiss(toastId);
