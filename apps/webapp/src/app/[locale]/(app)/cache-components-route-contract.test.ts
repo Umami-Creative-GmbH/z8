@@ -29,38 +29,14 @@ const PENDING_CONNECTION_FILES = [
 	"src/app/[locale]/(app)/reports/projects/page.tsx",
 	"src/app/[locale]/(app)/scheduling/page.tsx",
 	"src/app/[locale]/(app)/settings/audit-export/page.tsx",
-	"src/app/[locale]/(app)/settings/avv/page.tsx",
-	"src/app/[locale]/(app)/settings/billing/page.tsx",
-	"src/app/[locale]/(app)/settings/calendar/page.tsx",
-	"src/app/[locale]/(app)/settings/change-policies/page.tsx",
-	"src/app/[locale]/(app)/settings/compliance/page.tsx",
-	"src/app/[locale]/(app)/settings/compliance/works-council/page.tsx",
 	"src/app/[locale]/(app)/settings/coverage-rules/page.tsx",
-	"src/app/[locale]/(app)/settings/customers/page.tsx",
 	"src/app/[locale]/(app)/settings/demo/page.tsx",
-	"src/app/[locale]/(app)/settings/email-templates/page.tsx",
-	"src/app/[locale]/(app)/settings/enterprise/email/page.tsx",
 	"src/app/[locale]/(app)/settings/export-operations/page.tsx",
 	"src/app/[locale]/(app)/settings/export/page.tsx",
-	"src/app/[locale]/(app)/settings/holidays/page.tsx",
-	"src/app/[locale]/(app)/settings/implementation-checklist/page.tsx",
 	"src/app/[locale]/(app)/settings/import/[batchId]/page.tsx",
 	"src/app/[locale]/(app)/settings/import/page.tsx",
-	"src/app/[locale]/(app)/settings/locations/page.tsx",
-	"src/app/[locale]/(app)/settings/organizations/page.tsx",
-	"src/app/[locale]/(app)/settings/payroll-access/page.tsx",
 	"src/app/[locale]/(app)/settings/payroll-export/page.tsx",
-	"src/app/[locale]/(app)/settings/projects/page.tsx",
-	"src/app/[locale]/(app)/settings/roles/page.tsx",
 	"src/app/[locale]/(app)/settings/scheduled-exports/page.tsx",
-	"src/app/[locale]/(app)/settings/shifts/page.tsx",
-	"src/app/[locale]/(app)/settings/skills/page.tsx",
-	"src/app/[locale]/(app)/settings/statistics/page.tsx",
-	"src/app/[locale]/(app)/settings/surcharges/page.tsx",
-	"src/app/[locale]/(app)/settings/telegram/page.tsx",
-	"src/app/[locale]/(app)/settings/travel-expenses/page.tsx",
-	"src/app/[locale]/(app)/settings/vacation/page.tsx",
-	"src/app/[locale]/(app)/settings/work-policies/page.tsx",
 	"src/app/[locale]/(app)/today/page.tsx",
 	"src/app/[locale]/(app)/travel-expenses/page.tsx",
 	"src/app/[locale]/(auth)/verify-2fa/page.tsx",
@@ -109,27 +85,126 @@ const SHELL_WORK_QUEUE = [
 		contentComponent: "WorkCategoriesSettingsContent",
 	},
 	{
-		file: "src/app/[locale]/(app)/settings/locations/page.tsx",
-		requiresNewShell: true,
+		file: "src/app/[locale]/(app)/settings/avv/page.tsx",
+		fallbackComponent: "AvvPageLoading",
+		contentComponent: "AvvPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/shifts/page.tsx",
+		fallbackComponent: "ShiftTemplatesPageLoading",
+		contentComponent: "ShiftTemplatesPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/statistics/page.tsx",
+		fallbackComponent: "StatisticsLoading",
+		contentComponent: "StatisticsContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/compliance/page.tsx",
+		fallbackComponent: "ComplianceSettingsLoading",
+		contentComponent: "ComplianceSettingsContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/implementation-checklist/page.tsx",
+		fallbackComponent: "ImplementationChecklistPageLoading",
+		contentComponent: "ImplementationChecklistPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/surcharges/page.tsx",
+		fallbackComponent: "SurchargeSettingsPageLoading",
+		contentComponent: "SurchargeSettingsPageContent",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/change-policies/page.tsx",
-		requiresNewShell: true,
+		fallbackComponent: "ChangePoliciesSettingsPageLoading",
+		contentComponent: "ChangePoliciesSettingsPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/payroll-access/page.tsx",
+		fallbackComponent: "PayrollAccessSettingsPageLoading",
+		contentComponent: "PayrollAccessSettingsPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/vacation/page.tsx",
+		fallbackComponent: "VacationSettingsLoading",
+		contentComponent: "VacationSettingsContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/calendar/page.tsx",
+		fallbackComponent: "CalendarSettingsPageLoading",
+		contentComponent: "CalendarSettingsPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/work-policies/page.tsx",
+		fallbackComponent: "WorkPoliciesPageLoading",
+		contentComponent: "WorkPoliciesPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/roles/page.tsx",
+		fallbackComponent: "CustomRolesSettingsPageLoading",
+		contentComponent: "CustomRolesSettingsPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/projects/page.tsx",
+		fallbackComponent: "ProjectSettingsPageLoading",
+		contentComponent: "ProjectSettingsPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/holidays/page.tsx",
+		fallbackComponent: "HolidaySettingsPageLoading",
+		contentComponent: "HolidaySettingsPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/compliance/works-council/page.tsx",
+		fallbackComponent: "WorksCouncilSettingsPageLoading",
+		contentComponent: "WorksCouncilSettingsPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/locations/page.tsx",
+		fallbackComponent: "LocationSettingsPageLoading",
+		contentComponent: "LocationSettingsPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/telegram/page.tsx",
+		fallbackComponent: "TelegramSettingsLoading",
+		contentComponent: "TelegramSettingsContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/email-templates/page.tsx",
+		fallbackComponent: "EmailTemplatesSettingsPageLoading",
+		contentComponent: "EmailTemplatesSettingsPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/enterprise/email/page.tsx",
+		fallbackComponent: "EmailConfigLoading",
+		contentComponent: "EmailConfigContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/skills/page.tsx",
+		fallbackComponent: "SkillsSettingsPageLoading",
+		contentComponent: "SkillsSettingsPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/billing/page.tsx",
+		fallbackComponent: "BillingSettingsLoading",
+		contentComponent: "BillingSettingsContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/organizations/page.tsx",
+		fallbackComponent: "OrganizationsPageLoading",
+		contentComponent: "OrganizationsPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/travel-expenses/page.tsx",
+		fallbackComponent: "TravelExpenseSettingsPageLoading",
+		contentComponent: "TravelExpenseSettingsPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/customers/page.tsx",
+		fallbackComponent: "CustomerSettingsPageLoading",
+		contentComponent: "CustomerSettingsPageContent",
 	},
 ] as const;
-
-type RouteWithExistingBoundary = Extract<
-	(typeof SHELL_WORK_QUEUE)[number],
-	{ fallbackComponent: string }
->;
-
-const ROUTES_WITH_EXISTING_BOUNDARIES = SHELL_WORK_QUEUE.filter(
-	(route): route is RouteWithExistingBoundary => "fallbackComponent" in route,
-);
-
-const ROUTES_REQUIRING_NEW_SHELL = SHELL_WORK_QUEUE.filter(
-	(route) => "requiresNewShell" in route,
-);
 
 function appPath(file: string): string {
 	return join(APP_ROOT, file.replace(/^src\/app\//, ""));
@@ -419,39 +494,20 @@ describe("App Router connection escape hatches", () => {
 });
 
 describe("low-risk route streaming boundaries", () => {
-	it("classifies every shell work queue route exactly once", () => {
+	it("registers every shell work queue route exactly once", () => {
 		const workQueueFiles = SHELL_WORK_QUEUE.map(({ file }) => file);
-		const classifiedFiles = [
-			...ROUTES_WITH_EXISTING_BOUNDARIES,
-			...ROUTES_REQUIRING_NEW_SHELL,
-		].map(({ file }) => file);
 
-		expect(workQueueFiles).toHaveLength(10);
+		expect(workQueueFiles).toHaveLength(32);
 		expect(new Set(workQueueFiles).size).toBe(workQueueFiles.length);
-		expect(classifiedFiles.sort()).toEqual([...workQueueFiles].sort());
 	});
 
-	it.each(ROUTES_WITH_EXISTING_BOUNDARIES)(
+	it.each(SHELL_WORK_QUEUE)(
 		"keeps a focused Suspense fallback in $file",
 		(route) => {
 			const { file } = route;
 			const source = readFileSync(appPath(file), "utf8");
 
 			expect(hasFocusedSuspenseBoundary(source, route), file).toBe(true);
-		},
-	);
-
-	it.each(ROUTES_REQUIRING_NEW_SHELL)(
-		"records $file as requiring a focused shell",
-		({ file }) => {
-			const path = appPath(file);
-
-			expect(existsSync(path), file).toBe(true);
-
-			const source = readFileSync(path, "utf8");
-
-			expect(hasImportedConnectionCall(source)).toBe(true);
-			expect(maskStrings(maskComments(source))).not.toMatch(/<Suspense\b/);
 		},
 	);
 });

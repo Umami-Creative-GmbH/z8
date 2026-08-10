@@ -7,7 +7,6 @@ import {
 } from "@tabler/icons-react";
 import { DateTime } from "luxon";
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,12 +31,16 @@ function StatCard({ title, value, description, icon, trend }: StatCardProps) {
 	return (
 		<Card>
 			<CardHeader className="flex flex-row items-center justify-between pb-2">
-				<CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+				<CardTitle className="text-sm font-medium text-muted-foreground">
+					{title}
+				</CardTitle>
 				<div className="text-muted-foreground">{icon}</div>
 			</CardHeader>
 			<CardContent>
 				<div className="text-2xl font-bold">{value.toLocaleString()}</div>
-				{description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
+				{description && (
+					<p className="mt-1 text-xs text-muted-foreground">{description}</p>
+				)}
 				{trend && (
 					<p
 						className={`mt-1 text-xs ${trend.positive ? "text-green-600" : trend.positive === false ? "text-red-600" : "text-muted-foreground"}`}
@@ -52,8 +55,6 @@ function StatCard({ title, value, description, icon, trend }: StatCardProps) {
 }
 
 async function StatisticsContent() {
-	await connection();
-
 	const [settingsRouteContext, t] = await Promise.all([
 		getCurrentSettingsRouteContext(),
 		getTranslate(),
@@ -79,7 +80,9 @@ async function StatisticsContent() {
 		return (
 			<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
 				<div className="space-y-1">
-					<h1 className="text-2xl font-semibold">{t("settings.statistics.title", "Statistics")}</h1>
+					<h1 className="text-2xl font-semibold">
+						{t("settings.statistics.title", "Statistics")}
+					</h1>
 					<p className="text-muted-foreground">
 						{canViewOrgWideStatistics
 							? t(
@@ -95,7 +98,8 @@ async function StatisticsContent() {
 				<Card className="border-destructive">
 					<CardContent className="pt-6">
 						<p className="text-destructive">
-							{t("settings.statistics.loadError", "Failed to load statistics")}: {statsResult.error}
+							{t("settings.statistics.loadError", "Failed to load statistics")}:{" "}
+							{statsResult.error}
 						</p>
 					</CardContent>
 				</Card>
@@ -103,17 +107,26 @@ async function StatisticsContent() {
 		);
 	}
 
-	const stats = statsResult.data as OrganizationStats | ManagerStatisticsReadView;
-	const timeEntryChange = stats.timeEntriesThisMonth - stats.timeEntriesLastMonth;
-	const lastUpdated = DateTime.fromISO(stats.fetchedAt).toLocaleString(DateTime.DATETIME_SHORT);
+	const stats = statsResult.data as
+		| OrganizationStats
+		| ManagerStatisticsReadView;
+	const timeEntryChange =
+		stats.timeEntriesThisMonth - stats.timeEntriesLastMonth;
+	const lastUpdated = DateTime.fromISO(stats.fetchedAt).toLocaleString(
+		DateTime.DATETIME_SHORT,
+	);
 
-	const orgStats = canViewOrgWideStatistics ? (stats as OrganizationStats) : null;
+	const orgStats = canViewOrgWideStatistics
+		? (stats as OrganizationStats)
+		: null;
 
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
 			<div className="flex items-start justify-between gap-4">
 				<div className="space-y-1">
-					<h1 className="text-2xl font-semibold">{t("settings.statistics.title", "Statistics")}</h1>
+					<h1 className="text-2xl font-semibold">
+						{t("settings.statistics.title", "Statistics")}
+					</h1>
 					<p className="text-muted-foreground">
 						{canViewOrgWideStatistics
 							? t(
@@ -136,7 +149,10 @@ async function StatisticsContent() {
 					<IconUsers className="size-5" />
 					{canViewOrgWideStatistics
 						? t("settings.statistics.sections.coreCounts", "Core Counts")
-						: t("settings.statistics.sections.managedScope", "Managed Team Scope")}
+						: t(
+								"settings.statistics.sections.managedScope",
+								"Managed Team Scope",
+							)}
 				</h2>
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 					<StatCard
@@ -145,7 +161,10 @@ async function StatisticsContent() {
 						description={t(
 							"settings.statistics.cards.employeesDescription",
 							"{active} active, {inactive} inactive",
-							{ active: stats.activeEmployees, inactive: stats.inactiveEmployees },
+							{
+								active: stats.activeEmployees,
+								inactive: stats.inactiveEmployees,
+							},
 						)}
 						icon={<IconUsers className="size-4" />}
 					/>
@@ -160,39 +179,70 @@ async function StatisticsContent() {
 			<section>
 				<h2 className="mb-4 flex items-center gap-2 text-lg font-medium">
 					<IconCalendarStats className="size-5" />
-					{t("settings.statistics.sections.activityMetrics", "Activity Metrics")}
+					{t(
+						"settings.statistics.sections.activityMetrics",
+						"Activity Metrics",
+					)}
 				</h2>
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 					<StatCard
-						title={t("settings.statistics.cards.totalTimeEntries", "Total Time Entries")}
+						title={t(
+							"settings.statistics.cards.totalTimeEntries",
+							"Total Time Entries",
+						)}
 						value={stats.totalTimeEntries}
 						icon={<IconClock className="size-4" />}
 						trend={{
 							value: timeEntryChange,
-							label: t("settings.statistics.cards.vsLastMonth", "vs last month"),
-							positive: timeEntryChange > 0 ? true : timeEntryChange < 0 ? false : undefined,
+							label: t(
+								"settings.statistics.cards.vsLastMonth",
+								"vs last month",
+							),
+							positive:
+								timeEntryChange > 0
+									? true
+									: timeEntryChange < 0
+										? false
+										: undefined,
 						}}
 					/>
 					<StatCard
 						title={t("settings.statistics.cards.thisMonth", "This Month")}
 						value={stats.timeEntriesThisMonth}
-						description={t("settings.statistics.cards.timeEntries", "Time entries")}
+						description={t(
+							"settings.statistics.cards.timeEntries",
+							"Time entries",
+						)}
 						icon={<IconClock className="size-4" />}
 					/>
 					<StatCard
-						title={t("settings.statistics.cards.totalAbsences", "Total Absences")}
+						title={t(
+							"settings.statistics.cards.totalAbsences",
+							"Total Absences",
+						)}
 						value={stats.totalAbsences}
-						description={t("settings.statistics.cards.pendingCount", "{count} pending", {
-							count: stats.pendingAbsences,
-						})}
+						description={t(
+							"settings.statistics.cards.pendingCount",
+							"{count} pending",
+							{
+								count: stats.pendingAbsences,
+							},
+						)}
 						icon={<IconCalendarStats className="size-4" />}
 					/>
 					<StatCard
-						title={t("settings.statistics.cards.approvalRequests", "Approval Requests")}
+						title={t(
+							"settings.statistics.cards.approvalRequests",
+							"Approval Requests",
+						)}
 						value={stats.totalApprovals}
-						description={t("settings.statistics.cards.pendingCount", "{count} pending", {
-							count: stats.pendingApprovals,
-						})}
+						description={t(
+							"settings.statistics.cards.pendingCount",
+							"{count} pending",
+							{
+								count: stats.pendingApprovals,
+							},
+						)}
 						icon={<IconChartBar className="size-4" />}
 					/>
 				</div>
@@ -201,21 +251,33 @@ async function StatisticsContent() {
 			<section>
 				<h2 className="mb-4 flex items-center gap-2 text-lg font-medium">
 					<IconChartBar className="size-5" />
-					{t("settings.statistics.sections.absenceBreakdown", "Absence Breakdown")}
+					{t(
+						"settings.statistics.sections.absenceBreakdown",
+						"Absence Breakdown",
+					)}
 				</h2>
 				<div className="grid gap-4 md:grid-cols-3">
 					<StatCard
-						title={t("settings.statistics.cards.pendingAbsences", "Pending Absences")}
+						title={t(
+							"settings.statistics.cards.pendingAbsences",
+							"Pending Absences",
+						)}
 						value={stats.pendingAbsences}
 						icon={<div className="size-3 rounded-full bg-yellow-500" />}
 					/>
 					<StatCard
-						title={t("settings.statistics.cards.approvedAbsences", "Approved Absences")}
+						title={t(
+							"settings.statistics.cards.approvedAbsences",
+							"Approved Absences",
+						)}
 						value={stats.approvedAbsences}
 						icon={<div className="size-3 rounded-full bg-green-500" />}
 					/>
 					<StatCard
-						title={t("settings.statistics.cards.rejectedAbsences", "Rejected Absences")}
+						title={t(
+							"settings.statistics.cards.rejectedAbsences",
+							"Rejected Absences",
+						)}
 						value={stats.rejectedAbsences}
 						icon={<div className="size-3 rounded-full bg-red-500" />}
 					/>
@@ -230,7 +292,10 @@ async function StatisticsContent() {
 					</h2>
 					<div className="grid gap-4 md:grid-cols-3">
 						<StatCard
-							title={t("settings.statistics.cards.activeSessions", "Active Sessions")}
+							title={t(
+								"settings.statistics.cards.activeSessions",
+								"Active Sessions",
+							)}
 							value={orgStats.activeSessions}
 							description={t(
 								"settings.statistics.cards.activeSessionsDescription",

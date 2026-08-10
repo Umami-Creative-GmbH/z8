@@ -1,8 +1,15 @@
 import { and, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
+import { Suspense } from "react";
 import { AvvDownloadButton } from "@/components/settings/avv/avv-download-button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { env } from "@/env";
@@ -10,9 +17,7 @@ import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { avvHostingDetails } from "@/lib/avv/avv-details";
 import { getTranslate } from "@/tolgee/server";
 
-export default async function AvvPage() {
-	await connection();
-
+async function AvvPageContent() {
 	if (env.BILLING_ENABLED !== "true") {
 		redirect("/settings");
 	}
@@ -56,7 +61,9 @@ export default async function AvvPage() {
 
 			<Card>
 				<CardHeader>
-					<CardTitle>{t("settings.avv.contractDetails.title", "Vertragsdetails")}</CardTitle>
+					<CardTitle>
+						{t("settings.avv.contractDetails.title", "Vertragsdetails")}
+					</CardTitle>
 					<CardDescription>
 						{t(
 							"settings.avv.contractDetails.descriptionPrefix",
@@ -69,14 +76,20 @@ export default async function AvvPage() {
 					<div className="grid gap-6 sm:grid-cols-2">
 						<div className="space-y-1">
 							<h2 className="text-sm font-medium text-muted-foreground">
-								{t("settings.avv.contractDetails.controller", "Auftraggeber (Verantwortlicher)")}
+								{t(
+									"settings.avv.contractDetails.controller",
+									"Auftraggeber (Verantwortlicher)",
+								)}
 							</h2>
 							<p className="font-medium">{organization.name}</p>
 						</div>
 
 						<div className="space-y-1">
 							<h2 className="text-sm font-medium text-muted-foreground">
-								{t("settings.avv.contractDetails.processor", "Auftragnehmer (Auftragsverarbeiter)")}
+								{t(
+									"settings.avv.contractDetails.processor",
+									"Auftragnehmer (Auftragsverarbeiter)",
+								)}
 							</h2>
 							<div className="text-sm">
 								<p className="font-medium">Umami Creative GmbH</p>
@@ -92,7 +105,10 @@ export default async function AvvPage() {
 							{t("settings.avv.hosting.title", "Hosting & Subprozessoren")}
 						</h2>
 						<p className="text-sm">
-							{t("settings.avv.hosting.descriptionPrefix", "Alle Daten werden auf Servern der ")}
+							{t(
+								"settings.avv.hosting.descriptionPrefix",
+								"Alle Daten werden auf Servern der ",
+							)}
 							{avvHostingDetails.displayText}
 							{t(
 								"settings.avv.hosting.descriptionSuffix",
@@ -101,7 +117,9 @@ export default async function AvvPage() {
 						</p>
 						<ul className="list-disc space-y-1 pl-5 text-sm">
 							{avvHostingDetails.subprocessors.map((subprocessor) => (
-								<li key={subprocessor.providerName}>{subprocessor.displayText}</li>
+								<li key={subprocessor.providerName}>
+									{subprocessor.displayText}
+								</li>
 							))}
 						</ul>
 					</div>
@@ -112,5 +130,25 @@ export default async function AvvPage() {
 				</CardContent>
 			</Card>
 		</div>
+	);
+}
+
+function AvvPageLoading() {
+	return (
+		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+			<div className="space-y-2">
+				<Skeleton className="h-8 w-72" />
+				<Skeleton className="h-5 w-full max-w-xl" />
+			</div>
+			<Skeleton className="h-80 w-full" />
+		</div>
+	);
+}
+
+export default function AvvPage() {
+	return (
+		<Suspense fallback={<AvvPageLoading />}>
+			<AvvPageContent />
+		</Suspense>
 	);
 }

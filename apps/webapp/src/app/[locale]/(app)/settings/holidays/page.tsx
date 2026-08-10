@@ -1,11 +1,10 @@
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
+import { Suspense } from "react";
 import { HolidayManagement } from "@/components/settings/holiday/holiday-management";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
-export default async function HolidaySettingsPage() {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
+async function HolidaySettingsPageContent() {
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
 	if (!settingsRouteContext) {
@@ -20,6 +19,26 @@ export default async function HolidaySettingsPage() {
 	}
 
 	return (
-		<HolidayManagement organizationId={organizationId} canManage={accessTier === "orgAdmin"} />
+		<HolidayManagement
+			organizationId={organizationId}
+			canManage={accessTier === "orgAdmin"}
+		/>
+	);
+}
+
+function HolidaySettingsPageLoading() {
+	return (
+		<div className="space-y-4">
+			<Skeleton className="h-8 w-48" />
+			<Skeleton className="h-64 w-full" />
+		</div>
+	);
+}
+
+export default function HolidaySettingsPage() {
+	return (
+		<Suspense fallback={<HolidaySettingsPageLoading />}>
+			<HolidaySettingsPageContent />
+		</Suspense>
 	);
 }

@@ -1,13 +1,12 @@
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
+import { Suspense } from "react";
 import { CalendarSettingsForm } from "@/components/settings/calendar-settings-form";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 import { getCalendarSettings, getManagerCalendarReadView } from "./actions";
 
-export default async function CalendarSettingsPage() {
-	await connection();
-
+async function CalendarSettingsPageContent() {
 	const [settingsRouteContext, t] = await Promise.all([
 		getCurrentSettingsRouteContext(),
 		getTranslate(),
@@ -60,8 +59,33 @@ export default async function CalendarSettingsPage() {
 					</p>
 				</div>
 
-				<CalendarSettingsForm initialSettings={settings} canManage={canManageCalendarSettings} />
+				<CalendarSettingsForm
+					initialSettings={settings}
+					canManage={canManageCalendarSettings}
+				/>
 			</div>
 		</div>
+	);
+}
+
+function CalendarSettingsPageLoading() {
+	return (
+		<div className="p-6">
+			<div className="mx-auto max-w-3xl space-y-6">
+				<div className="space-y-2">
+					<Skeleton className="h-8 w-48" />
+					<Skeleton className="h-5 w-full max-w-xl" />
+				</div>
+				<Skeleton className="h-64 w-full" />
+			</div>
+		</div>
+	);
+}
+
+export default function CalendarSettingsPage() {
+	return (
+		<Suspense fallback={<CalendarSettingsPageLoading />}>
+			<CalendarSettingsPageContent />
+		</Suspense>
 	);
 }

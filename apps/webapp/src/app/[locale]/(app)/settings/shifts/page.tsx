@@ -1,14 +1,13 @@
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
+import { Suspense } from "react";
 import { ShiftTemplateManagement } from "@/components/settings/shift-template-management";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
 	getSchedulingSettingsAccessContext,
 	getScopedSchedulingLocationsForSettings,
 } from "@/lib/settings-scheduling-access";
 
-export default async function ShiftTemplatesPage() {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
+async function ShiftTemplatesPageContent() {
 	const accessContext = await getSchedulingSettingsAccessContext();
 
 	if (!accessContext?.canAccessShiftTemplates) {
@@ -30,5 +29,22 @@ export default async function ShiftTemplatesPage() {
 					: null
 			}
 		/>
+	);
+}
+
+function ShiftTemplatesPageLoading() {
+	return (
+		<div className="space-y-4">
+			<Skeleton className="h-8 w-48" />
+			<Skeleton className="h-64 w-full" />
+		</div>
+	);
+}
+
+export default function ShiftTemplatesPage() {
+	return (
+		<Suspense fallback={<ShiftTemplatesPageLoading />}>
+			<ShiftTemplatesPageContent />
+		</Suspense>
 	);
 }

@@ -1,6 +1,5 @@
-import { and, eq, count } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { OrganizationsPageClient } from "@/components/organization/organizations-page-client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,8 +11,6 @@ import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation
 import { getTranslate } from "@/tolgee/server";
 
 async function OrganizationsPageContent() {
-	await connection();
-
 	const [settingsRouteContext, t] = await Promise.all([
 		getCurrentSettingsRouteContext(),
 		getTranslate(),
@@ -35,30 +32,37 @@ async function OrganizationsPageContent() {
 	}
 
 	const memberTable = authSchema.member;
-	const [organization, currentMember, memberCountRows, organizationNotificationSettingsRecord] =
-		await Promise.all([
-			db.query.organization.findFirst({
-				where: eq(authSchema.organization.id, organizationId),
-			}),
-			db
-				.select({ role: memberTable.role })
-				.from(memberTable)
-				.where(
-					and(
-						eq(memberTable.userId, authContext.user.id),
-						eq(memberTable.organizationId, organizationId),
-					),
-				)
-				.limit(1),
-			db
-				.select({ value: count() })
-				.from(memberTable)
-				.where(eq(memberTable.organizationId, organizationId)),
-			db.query.organizationNotificationSettings.findFirst({
-				where: eq(organizationNotificationSettings.organizationId, organizationId),
-				columns: { defaultLanguage: true },
-			}),
-		]);
+	const [
+		organization,
+		currentMember,
+		memberCountRows,
+		organizationNotificationSettingsRecord,
+	] = await Promise.all([
+		db.query.organization.findFirst({
+			where: eq(authSchema.organization.id, organizationId),
+		}),
+		db
+			.select({ role: memberTable.role })
+			.from(memberTable)
+			.where(
+				and(
+					eq(memberTable.userId, authContext.user.id),
+					eq(memberTable.organizationId, organizationId),
+				),
+			)
+			.limit(1),
+		db
+			.select({ value: count() })
+			.from(memberTable)
+			.where(eq(memberTable.organizationId, organizationId)),
+		db.query.organizationNotificationSettings.findFirst({
+			where: eq(
+				organizationNotificationSettings.organizationId,
+				organizationId,
+			),
+			columns: { defaultLanguage: true },
+		}),
+	]);
 
 	const [currentMemberRecord] = currentMember;
 
@@ -67,7 +71,10 @@ async function OrganizationsPageContent() {
 			<div className="flex-1 p-6">
 				<div className="mx-auto max-w-4xl">
 					<h1 className="text-2xl font-semibold">
-						{t("settings.organizations.notFound.title", "Organization Not Found")}
+						{t(
+							"settings.organizations.notFound.title",
+							"Organization Not Found",
+						)}
 					</h1>
 					<p className="text-muted-foreground mt-2">
 						{t(
@@ -84,10 +91,15 @@ async function OrganizationsPageContent() {
 		<OrganizationsPageClient
 			organization={organization}
 			memberCount={memberCountRows[0]?.value ?? 0}
-			currentMemberRole={currentMemberRecord.role as "owner" | "admin" | "member"}
-			defaultNotificationLanguage={organizationNotificationSettingsRecord?.defaultLanguage ?? "en"}
+			currentMemberRole={
+				currentMemberRecord.role as "owner" | "admin" | "member"
+			}
+			defaultNotificationLanguage={
+				organizationNotificationSettingsRecord?.defaultLanguage ?? "en"
+			}
 			canCreateOrganizations={canCreateOrganizationsForDeployment(
-				authContext.user.canCreateOrganizations || authContext.user.role === "admin",
+				authContext.user.canCreateOrganizations ||
+					authContext.user.role === "admin",
 			)}
 		/>
 	);

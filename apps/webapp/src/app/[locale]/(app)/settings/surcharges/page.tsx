@@ -1,16 +1,11 @@
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
+import { Suspense } from "react";
 import { SurchargeManagement } from "@/components/settings/surcharge-management";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
-import { getTranslate } from "@/tolgee/server";
 
-export default async function SurchargeSettingsPage() {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
-	const [, settingsRouteContext] = await Promise.all([
-		getTranslate(),
-		getCurrentSettingsRouteContext(),
-	]);
+async function SurchargeSettingsPageContent() {
+	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
 	if (!settingsRouteContext) {
 		redirect("/settings");
@@ -24,6 +19,26 @@ export default async function SurchargeSettingsPage() {
 	}
 
 	return (
-		<SurchargeManagement organizationId={organizationId} canManage={accessTier === "orgAdmin"} />
+		<SurchargeManagement
+			organizationId={organizationId}
+			canManage={accessTier === "orgAdmin"}
+		/>
+	);
+}
+
+function SurchargeSettingsPageLoading() {
+	return (
+		<div className="space-y-4">
+			<Skeleton className="h-8 w-48" />
+			<Skeleton className="h-64 w-full" />
+		</div>
+	);
+}
+
+export default function SurchargeSettingsPage() {
+	return (
+		<Suspense fallback={<SurchargeSettingsPageLoading />}>
+			<SurchargeSettingsPageContent />
+		</Suspense>
 	);
 }

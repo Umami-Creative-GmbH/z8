@@ -1,4 +1,3 @@
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { EmailConfigForm } from "@/components/settings/enterprise/email-config-form";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -7,21 +6,20 @@ import { getTranslate } from "@/tolgee/server";
 import { getEmailConfig, getSecretStoreConnectionStatus } from "./actions";
 
 async function EmailConfigContent() {
-	await connection();
-
 	const authContextPromise = requireOrgAdminSettingsAccess();
 	const emailConfigPromise = authContextPromise.then(({ organizationId }) =>
 		getEmailConfig(organizationId),
 	);
-	const secretStoreStatusPromise = authContextPromise.then(({ organizationId }) =>
-		getSecretStoreConnectionStatus(organizationId),
+	const secretStoreStatusPromise = authContextPromise.then(
+		({ organizationId }) => getSecretStoreConnectionStatus(organizationId),
 	);
-	const [{ organizationId }, t, emailConfig, secretStoreStatus] = await Promise.all([
-		authContextPromise,
-		getTranslate(),
-		emailConfigPromise,
-		secretStoreStatusPromise,
-	]);
+	const [{ organizationId }, t, emailConfig, secretStoreStatus] =
+		await Promise.all([
+			authContextPromise,
+			getTranslate(),
+			emailConfigPromise,
+			secretStoreStatusPromise,
+		]);
 
 	return (
 		<div className="p-6">

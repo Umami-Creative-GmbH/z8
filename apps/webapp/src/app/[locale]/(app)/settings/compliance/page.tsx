@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ComplianceExceptionsManager } from "@/components/settings/compliance-exceptions-manager";
@@ -8,12 +7,11 @@ import { getAuthContext } from "@/lib/auth-helpers";
 
 export const metadata = {
 	title: "Compliance Settings | ArbZG",
-	description: "Configure ArbZG compliance settings and manage exception requests",
+	description:
+		"Configure ArbZG compliance settings and manage exception requests",
 };
 
 async function ComplianceSettingsContent() {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
 	const authContext = await getAuthContext();
 
 	if (!authContext?.employee) {
