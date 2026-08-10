@@ -1,11 +1,12 @@
 import { createServerInstance } from "@tolgee/react/server";
 import { getLocale } from "next-intl/server";
-import { ALL_NAMESPACES, loadNamespaces, TolgeeBase } from "./shared";
+import { loadRouteTranslations } from "./load-translations";
+import { TolgeeBase } from "./shared";
 
 export const { getTolgee, getTranslate, T } = createServerInstance({
 	getLocale,
 	createTolgee: async (language) => {
-		const staticData = await loadNamespaces(language, ALL_NAMESPACES);
+		const staticData = await loadRouteTranslations(language);
 
 		return TolgeeBase().init({
 			observerOptions: {

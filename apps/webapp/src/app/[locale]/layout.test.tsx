@@ -219,23 +219,17 @@ describe("LocaleLayout", () => {
 		expect(source).not.toContain("pathname");
 	});
 
-	it("isolates route content behind a non-null translation fallback shell", () => {
+	it("keeps route content out of the non-null translation fallback shell", () => {
 		const source = readFileSync("src/app/[locale]/layout.tsx", "utf8");
 
 		expect(source).toMatch(
-			/<TranslationProviders locale=\{locale\} records=\{\{\}\}>\s*<Suspense fallback=\{<RootRouteShell \/>\}>\s*<ApplicationContent>\{children\}<\/ApplicationContent>\s*<\/Suspense>\s*<\/TranslationProviders>/,
-		);
-		expect(source).not.toMatch(
-			/<TranslationProviders locale=\{locale\} records=\{\{\}\}>\s*<Suspense fallback=\{null\}>/,
+			/<TranslationProviders locale=\{locale\} records=\{\{\}\}>\s*<ApplicationContent>\s*<RootRouteShell \/>\s*<\/ApplicationContent>\s*<\/TranslationProviders>/,
 		);
 	});
 
-	it("streams a neutral route shell when translations and route content are pending", async () => {
+	it("streams a neutral shell without rendering route content twice", async () => {
 		let resolveTranslations: (translations: Record<string, unknown>) => void = () => {};
-		let resolveChild: () => void = () => {};
-		const childPending = new Promise<void>((resolve) => {
-			resolveChild = resolve;
-		});
+		let childRenderCount = 0;
 		mockState.loadRouteTranslations.mockImplementation(
 			() =>
 				new Promise<Record<string, unknown>>((resolve) => {
@@ -243,14 +237,14 @@ describe("LocaleLayout", () => {
 				}),
 		);
 
-		async function SuspendingChild() {
-			await childPending;
+		function CountedChild() {
+			childRenderCount += 1;
 			return <main data-testid="resolved-child">Resolved route content</main>;
 		}
 
 		try {
 			const layout = await LocaleLayout({
-				children: <SuspendingChild />,
+				children: <CountedChild />,
 				params: Promise.resolve({ locale: "en" }),
 			});
 			const streamResult = await Promise.race([
@@ -285,9 +279,9 @@ describe("LocaleLayout", () => {
 			expect(routeShell).not.toBeNull();
 			expect(routeShell?.classList.contains("min-h-svh")).toBe(true);
 			expect(routeShell?.classList.contains("bg-background")).toBe(true);
+			expect(childRenderCount).toBe(0);
 
 			resolveTranslations({});
-			resolveChild();
 			let streamedHtml = firstChunk;
 			while (true) {
 				const next = await reader.read();
@@ -299,14 +293,14 @@ describe("LocaleLayout", () => {
 			streamedHtml += decoder.decode();
 
 			expect(streamedHtml).toContain("Resolved route content");
+			expect(childRenderCount).toBe(1);
 		} finally {
 			resolveTranslations({});
-			resolveChild();
 			mockState.loadRouteTranslations.mockImplementation(async () => ({}));
 		}
 	});
 
-	it("renders the translation-context fallback while route translations are pending", async () => {
+	it("renders the translation-context shell while route translations are pending", async () => {
 		let resolveTranslations: (translations: Record<string, unknown>) => void = () => {};
 		mockState.loadRouteTranslations.mockImplementation(
 			() =>
@@ -338,9 +332,10 @@ describe("LocaleLayout", () => {
 			expect(intlProvider).not.toBeNull();
 			expect(intlProvider?.getAttribute("data-next-intl-messages")).toBe('{"locale":"en"}');
 			expect(intlProvider?.querySelector('[data-testid="application-shell"]')).not.toBeNull();
-			expect(intlProvider?.querySelector('[data-testid="application-child"]')?.textContent).toBe(
-				"Auth content",
-			);
+			expect(intlProvider?.querySelector('[data-testid="application-child"]')).toBeNull();
+			expect(
+				intlProvider?.querySelector('main[aria-busy="true"][aria-label="Loading application"]'),
+			).not.toBeNull();
 		} finally {
 			mockState.loadRouteTranslations.mockImplementation(async () => ({}));
 		}

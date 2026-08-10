@@ -85,9 +85,9 @@ function AppProviders({ children, locale }: { children: ReactNode; locale: strin
 				<Suspense
 					fallback={
 						<TranslationProviders locale={locale} records={{}}>
-							<Suspense fallback={<RootRouteShell />}>
-								<ApplicationContent>{children}</ApplicationContent>
-							</Suspense>
+							<ApplicationContent>
+								<RootRouteShell />
+							</ApplicationContent>
 						</TranslationProviders>
 					}
 				>
