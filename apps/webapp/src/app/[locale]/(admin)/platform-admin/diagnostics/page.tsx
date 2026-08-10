@@ -16,15 +16,15 @@ export default function PlatformDiagnosticsPage() {
 	);
 }
 
-async function PlatformDiagnosticsPageContent() {
-	const [t, snapshot, admin] = await Promise.all([
+export async function PlatformDiagnosticsPageContent() {
+	const admin = await Effect.runPromise(
+		Effect.flatMap(PlatformAdminService, (adminService) =>
+			adminService.requirePlatformAdmin(),
+		).pipe(Effect.provide(AppLayer)),
+	);
+	const [t, snapshot] = await Promise.all([
 		getTranslate(),
 		collectPlatformDiagnostics(),
-		Effect.runPromise(
-			Effect.flatMap(PlatformAdminService, (adminService) =>
-				adminService.requirePlatformAdmin(),
-			).pipe(Effect.provide(AppLayer)),
-		),
 	]);
 
 	return (
@@ -57,19 +57,30 @@ function PlatformDiagnosticsPageLoading() {
 				<Skeleton aria-hidden="true" className="h-8 w-64" />
 				<Skeleton aria-hidden="true" className="h-5 w-full max-w-xl" />
 			</div>
-			<div className="grid gap-4 lg:grid-cols-2">
-				{["configuration", "health"].map((key) => (
-					<Card key={key}>
-						<CardHeader className="space-y-2">
-							<Skeleton aria-hidden="true" className="h-5 w-40" />
-							<Skeleton aria-hidden="true" className="h-4 w-64 max-w-full" />
-						</CardHeader>
-						<CardContent className="space-y-3">
-							<Skeleton aria-hidden="true" className="h-12 w-full" />
-							<Skeleton aria-hidden="true" className="h-12 w-full" />
-						</CardContent>
-					</Card>
-				))}
+			<div className="space-y-6">
+				<Card>
+					<CardHeader className="space-y-2">
+						<Skeleton aria-hidden="true" className="h-6 w-52" />
+						<Skeleton aria-hidden="true" className="h-4 w-80 max-w-full" />
+					</CardHeader>
+					<CardContent>
+						<Skeleton aria-hidden="true" className="h-16 w-full" />
+					</CardContent>
+				</Card>
+				<div className="grid gap-6 xl:grid-cols-2">
+					{["configuration", "health"].map((key) => (
+						<Card key={key}>
+							<CardHeader className="space-y-2">
+								<Skeleton aria-hidden="true" className="h-5 w-40" />
+								<Skeleton aria-hidden="true" className="h-4 w-64 max-w-full" />
+							</CardHeader>
+							<CardContent className="space-y-3">
+								<Skeleton aria-hidden="true" className="h-12 w-full" />
+								<Skeleton aria-hidden="true" className="h-12 w-full" />
+							</CardContent>
+						</Card>
+					))}
+				</div>
 			</div>
 		</div>
 	);

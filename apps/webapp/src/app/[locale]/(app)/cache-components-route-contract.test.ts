@@ -761,12 +761,24 @@ function hasExpectedMappedLoadingGeometry(
 		frameClass: string;
 	}[],
 ): boolean {
+	const fallbackBody = findNamedFunctionBody(source, fallbackComponent);
+	if (!fallbackBody) return false;
+
 	return groups.every(({ component, keyArray, itemCount, frameClass }) => {
-		const fallbackBody = findNamedFunctionBody(
+		if (
+			component &&
+			!new RegExp(`<${escapeRegExp(component)}\\b`).test(
+				maskStrings(maskComments(fallbackBody)),
+			)
+		) {
+			return false;
+		}
+
+		const geometryBody = findNamedFunctionBody(
 			source,
 			component ?? fallbackComponent,
 		);
-		if (!fallbackBody) return false;
+		if (!geometryBody) return false;
 		const keyArrayPattern = new RegExp(
 			`const\\s+${escapeRegExp(keyArray)}\\s*=\\s*\\[([^\\]]*)\\]`,
 		);
@@ -775,8 +787,8 @@ function hasExpectedMappedLoadingGeometry(
 
 		return (
 			keys.length === itemCount &&
-			fallbackBody.includes(`className="${frameClass}"`) &&
-			fallbackBody.includes(`${keyArray}.map`)
+			geometryBody.includes(`className="${frameClass}"`) &&
+			geometryBody.includes(`${keyArray}.map`)
 		);
 	});
 }
@@ -923,6 +935,38 @@ describe("loading frame alignment", () => {
 				{
 					keyArray: "SUMMARY_KEYS",
 					itemCount: 3,
+					frameClass: "summary-grid",
+				},
+			]),
+		).toBe(false);
+	});
+
+	it("rejects dead nested geometry that is not rendered by the reachable fallback", () => {
+		const source = `
+			const SUMMARY_KEYS = ["one", "two"] as const;
+			function DeadSummaryLoading() {
+				return <div className="summary-grid">{SUMMARY_KEYS.map((key) => <Skeleton key={key} />)}</div>;
+			}
+			function RouteLoading() {
+				return <DifferentLoading />;
+			}
+			export default function Page() {
+				return <Suspense fallback={<RouteLoading />}><RouteContent /></Suspense>;
+			}
+		`;
+
+		expect(
+			hasDefaultExportFocusedSuspenseBoundary(source, {
+				fallbackComponent: "RouteLoading",
+				contentComponent: "RouteContent",
+			}),
+		).toBe(true);
+		expect(
+			hasExpectedMappedLoadingGeometry(source, "RouteLoading", [
+				{
+					component: "DeadSummaryLoading",
+					keyArray: "SUMMARY_KEYS",
+					itemCount: 2,
 					frameClass: "summary-grid",
 				},
 			]),
