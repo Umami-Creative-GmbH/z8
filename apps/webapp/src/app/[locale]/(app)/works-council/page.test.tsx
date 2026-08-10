@@ -1,3 +1,4 @@
+import { isValidElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
 
@@ -61,6 +62,20 @@ vi.mock("@/components/works-council/works-council-dashboard", () => ({
 
 const { default: WorksCouncilPage } = await import("./page");
 
+async function renderWorksCouncilContent() {
+	const page = WorksCouncilPage({});
+	if (!isValidElement(page) || !isValidElement(page.props.children)) {
+		throw new Error("Expected a focused Works Council boundary");
+	}
+	const content = page.props.children as React.ReactElement<
+		{ searchParams?: Promise<{ from?: string; to?: string }> },
+		(props: {
+			searchParams?: Promise<{ from?: string; to?: string }>;
+		}) => Promise<React.ReactNode>
+	>;
+	return content.type(content.props);
+}
+
 function createPrincipal(): PrincipalContext {
 	return {
 		userId: "user-1",
@@ -85,14 +100,18 @@ describe("WorksCouncilPage", () => {
 			user: { id: "user-1" },
 			session: { activeOrganizationId: "org-1" },
 		});
-		mockState.requireAbility.mockResolvedValue(defineAbilityFor(createPrincipal()));
+		mockState.requireAbility.mockResolvedValue(
+			defineAbilityFor(createPrincipal()),
+		);
 		mockState.findOrganization.mockResolvedValue({ worksCouncilEnabled: true });
 	});
 
 	it("redirects before loading Works Council data when the organization feature is disabled", async () => {
-		mockState.findOrganization.mockResolvedValue({ worksCouncilEnabled: false });
+		mockState.findOrganization.mockResolvedValue({
+			worksCouncilEnabled: false,
+		});
 
-		await expect(WorksCouncilPage({})).rejects.toThrow("redirect:/");
+		await expect(renderWorksCouncilContent()).rejects.toThrow("redirect:/");
 
 		expect(mockState.redirect).toHaveBeenCalledWith("/");
 		expect(mockState.loadWorksCouncilSettings).not.toHaveBeenCalled();

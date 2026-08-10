@@ -1,5 +1,4 @@
 import { eq } from "drizzle-orm";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { AuditConfigForm } from "@/components/settings/audit-export/audit-config-form";
 import { AuditPackGeneratorCard } from "@/components/settings/audit-export/audit-pack-generator-card";
@@ -22,8 +21,7 @@ export const metadata = {
 
 async function AuditExportSettingsContent() {
 	// Parallelize all initial fetches to avoid waterfalls
-	const [, t, orgAccess] = await Promise.all([
-		connection(),
+	const [t, orgAccess] = await Promise.all([
 		getTranslate(),
 		requireOrgAdminSettingsAccess(),
 	]);
@@ -105,20 +103,24 @@ async function AuditExportSettingsContent() {
 
 function AuditExportSettingsLoading() {
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div
+			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
+			role="status"
+			aria-label="Loading audit export settings"
+		>
 			<div className="space-y-2">
-				<Skeleton className="h-8 w-48" />
-				<Skeleton className="h-4 w-96" />
+				<Skeleton aria-hidden="true" className="h-8 w-48" />
+				<Skeleton aria-hidden="true" className="h-4 w-96" />
 			</div>
 			<Card>
 				<CardHeader>
-					<Skeleton className="h-6 w-48" />
-					<Skeleton className="h-4 w-72" />
+					<Skeleton aria-hidden="true" className="h-6 w-48" />
+					<Skeleton aria-hidden="true" className="h-4 w-72" />
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-4">
-						<Skeleton className="h-32 w-full" />
-						<Skeleton className="h-10 w-32" />
+						<Skeleton aria-hidden="true" className="h-32 w-full" />
+						<Skeleton aria-hidden="true" className="h-10 w-32" />
 					</div>
 				</CardContent>
 			</Card>

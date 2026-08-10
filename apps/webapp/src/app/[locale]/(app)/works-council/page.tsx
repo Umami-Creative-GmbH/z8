@@ -2,6 +2,8 @@ import { eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
+import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { WorksCouncilDashboard } from "@/components/works-council/works-council-dashboard";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
@@ -33,13 +35,15 @@ function getRange(searchParams?: { from?: string; to?: string }) {
 	};
 }
 
-export default async function WorksCouncilPage({
-	searchParams,
-}: {
+type WorksCouncilPageProps = {
 	searchParams?: Promise<{ from?: string; to?: string }>;
-}) {
-	await connection();
+};
 
+async function WorksCouncilPageContent({
+	searchParams,
+}: WorksCouncilPageProps) {
+	// This protected view must execute per request so authorization and audit are not reused.
+	await connection();
 	const authContext = await requireUser();
 	const organizationId = authContext.session.activeOrganizationId;
 
@@ -49,7 +53,11 @@ export default async function WorksCouncilPage({
 
 	const ability = await requireAbility();
 	if (
-		!canViewWorksCouncilPortal(ability, organizationId, authContext.session.activeOrganizationId)
+		!canViewWorksCouncilPortal(
+			ability,
+			organizationId,
+			authContext.session.activeOrganizationId,
+		)
 	) {
 		redirect("/");
 	}
@@ -78,4 +86,33 @@ export default async function WorksCouncilPage({
 	});
 
 	return <WorksCouncilDashboard model={model} />;
+}
+
+function WorksCouncilPageLoading() {
+	return (
+		<div
+			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
+			role="status"
+			aria-label="Loading Works Council portal"
+		>
+			<div className="space-y-2">
+				<Skeleton aria-hidden="true" className="h-8 w-64" />
+				<Skeleton aria-hidden="true" className="h-4 w-96 max-w-full" />
+			</div>
+			<div className="grid gap-4 md:grid-cols-3">
+				<Skeleton aria-hidden="true" className="h-28 w-full" />
+				<Skeleton aria-hidden="true" className="h-28 w-full" />
+				<Skeleton aria-hidden="true" className="h-28 w-full" />
+			</div>
+			<Skeleton aria-hidden="true" className="h-80 w-full" />
+		</div>
+	);
+}
+
+export default function WorksCouncilPage(props: WorksCouncilPageProps) {
+	return (
+		<Suspense fallback={<WorksCouncilPageLoading />}>
+			<WorksCouncilPageContent {...props} />
+		</Suspense>
+	);
 }

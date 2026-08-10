@@ -1,6 +1,8 @@
 import { DateTime } from "luxon";
 import { connection } from "next/server";
+import { Suspense } from "react";
 import { PayrollReadinessDashboard } from "@/components/settings/payroll-readiness/payroll-readiness-dashboard";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getPayrollReadiness } from "@/lib/payroll-readiness/get-payroll-readiness";
 import { getTranslate } from "@/tolgee/server";
@@ -15,17 +17,20 @@ type PayrollReadinessSearchParams = {
 	end?: string;
 };
 
-export default async function PayrollReadinessPage({
-	searchParams,
-}: {
+type PayrollReadinessPageProps = {
 	searchParams?: Promise<PayrollReadinessSearchParams>;
-}) {
-	await connection();
+};
+
+async function PayrollReadinessPageContent({
+	searchParams,
+}: PayrollReadinessPageProps) {
 	const [{ organizationId }, t, resolvedSearchParams] = await Promise.all([
 		requireOrgAdminSettingsAccess(),
 		getTranslate(),
 		searchParams ?? Promise.resolve({}),
 	]);
+	// The default payroll-readiness period must be resolved per request.
+	await connection();
 	const period = getPayrollReadinessPeriod(resolvedSearchParams);
 	const data = await getPayrollReadiness({ organizationId, period });
 
@@ -44,6 +49,35 @@ export default async function PayrollReadinessPage({
 			</div>
 			<PayrollReadinessDashboard t={t} data={data} />
 		</div>
+	);
+}
+
+function PayrollReadinessPageLoading() {
+	return (
+		<div
+			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
+			role="status"
+			aria-label="Loading payroll readiness"
+		>
+			<div className="space-y-2">
+				<Skeleton aria-hidden="true" className="h-8 w-56" />
+				<Skeleton aria-hidden="true" className="h-4 w-full max-w-2xl" />
+			</div>
+			<div className="grid gap-4 md:grid-cols-3">
+				<Skeleton aria-hidden="true" className="h-28 w-full" />
+				<Skeleton aria-hidden="true" className="h-28 w-full" />
+				<Skeleton aria-hidden="true" className="h-28 w-full" />
+			</div>
+			<Skeleton aria-hidden="true" className="h-72 w-full" />
+		</div>
+	);
+}
+
+export default function PayrollReadinessPage(props: PayrollReadinessPageProps) {
+	return (
+		<Suspense fallback={<PayrollReadinessPageLoading />}>
+			<PayrollReadinessPageContent {...props} />
+		</Suspense>
 	);
 }
 

@@ -13,22 +13,103 @@ const REVIEWED_RETAINED_CONNECTION_FILES = [
 	"src/app/[locale]/(app)/settings/wellness/page.tsx",
 	"src/app/[locale]/(app)/works-council/page.tsx",
 	"src/app/[locale]/(auth)/layout.tsx",
+	"src/app/[locale]/(setup)/setup/page.tsx",
 	"src/app/[locale]/onboarding/layout.tsx",
 ] as const;
 
-const PENDING_CONNECTION_FILES = [
-	"src/app/[locale]/(app)/analytics/layout.tsx",
-	"src/app/[locale]/(app)/settings/audit-export/page.tsx",
-	"src/app/[locale]/(app)/settings/coverage-rules/page.tsx",
-	"src/app/[locale]/(app)/settings/demo/page.tsx",
-	"src/app/[locale]/(app)/settings/export-operations/page.tsx",
-	"src/app/[locale]/(app)/settings/export/page.tsx",
-	"src/app/[locale]/(app)/settings/import/[batchId]/page.tsx",
-	"src/app/[locale]/(app)/settings/import/page.tsx",
-	"src/app/[locale]/(app)/settings/payroll-export/page.tsx",
-	"src/app/[locale]/(app)/settings/scheduled-exports/page.tsx",
-	"src/app/[locale]/(setup)/setup/page.tsx",
+const PENDING_CONNECTION_FILES = [] as const;
+
+const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
+	{
+		file: "src/app/[locale]/(auth)/layout.tsx",
+		contentComponent: "AuthLayoutContent",
+		fallbackComponent: "AuthLayoutLoading",
+		reasonCategory: "trusted-request-auth",
+		reason:
+			"Host, domain, consent, Turnstile, and random auth data must remain request-specific.",
+		operation: "const headersList = await headers();",
+	},
+	{
+		file: "src/app/[locale]/onboarding/layout.tsx",
+		contentComponent: "OnboardingLayoutContent",
+		fallbackComponent: "OnboardingLayoutLoading",
+		reasonCategory: "random-selection",
+		reason: "Random onboarding backgrounds must be selected per request.",
+		operation: "const backgroundImage = selectRandomAuthBackgroundImage();",
+	},
+	{
+		file: "src/app/[locale]/(app)/payroll/page.tsx",
+		contentComponent: "PayrollPageContent",
+		fallbackComponent: "PayrollPageLoading",
+		reasonCategory: "current-period",
+		reason: "The current payroll period must be resolved per request.",
+		operation: "const now = DateTime.utc();",
+	},
+	{
+		file: "src/app/[locale]/(app)/absences/page.tsx",
+		contentComponent: "AbsencesPageContent",
+		fallbackComponent: "AbsencesPageLoading",
+		reasonCategory: "current-calendar",
+		reason:
+			"The employee's current local calendar year must be resolved per request.",
+		operation: "const now = DateTime.now().setZone(timezone);",
+	},
+	{
+		file: "src/app/[locale]/(app)/works-council/page.tsx",
+		contentComponent: "WorksCouncilPageContent",
+		fallbackComponent: "WorksCouncilPageLoading",
+		reasonCategory: "authorization-audit",
+		reason:
+			"This protected view must execute per request so authorization and audit are not reused.",
+		operation: "const authContext = await requireUser();",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/wellness/page.tsx",
+		contentComponent: "WellnessPageContent",
+		fallbackComponent: "WellnessPageLoading",
+		reasonCategory: "effect-current-time",
+		reason:
+			"The wellness Effect program requires synchronous current-time execution per request.",
+		operation: "const [, settingsResult, t] = await Promise.all([",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/payroll-readiness/page.tsx",
+		contentComponent: "PayrollReadinessPageContent",
+		fallbackComponent: "PayrollReadinessPageLoading",
+		reasonCategory: "current-period",
+		reason:
+			"The default payroll-readiness period must be resolved per request.",
+		operation:
+			"const period = getPayrollReadinessPeriod(resolvedSearchParams);",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/vacation/employees/page.tsx",
+		contentComponent: "EmployeeAllowancesContent",
+		fallbackComponent: "EmployeeAllowancesLoading",
+		reasonCategory: "current-calendar",
+		reason: "The current vacation allowance year must be resolved per request.",
+		operation: "const currentYear = new Date().getFullYear();",
+	},
+	{
+		file: "src/app/[locale]/(setup)/setup/page.tsx",
+		contentComponent: "SetupPageContent",
+		fallbackComponent: "SetupPageLoading",
+		reasonCategory: "instrumentation-randomness",
+		reason:
+			"OpenTelemetry database instrumentation creates synchronous random trace IDs per request.",
+		operation: "const configured = await isPlatformConfigured();",
+	},
 ] as const;
+
+const APPROVED_CONNECTION_REASON_CATEGORIES = new Set([
+	"authorization-audit",
+	"current-calendar",
+	"current-period",
+	"effect-current-time",
+	"instrumentation-randomness",
+	"random-selection",
+	"trusted-request-auth",
+]);
 
 const SHELL_WORK_QUEUE = [
 	{
@@ -395,6 +476,160 @@ const SHELL_WORK_QUEUE = [
 		contentComponent: "Verify2FAPageContent",
 		fallbackFrameClass: "mx-auto w-full max-w-md",
 		fallbackAriaLabel: "Loading two-factor verification",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/audit-export/page.tsx",
+		fallbackComponent: "AuditExportSettingsLoading",
+		contentComponent: "AuditExportSettingsContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackAriaLabel: "Loading audit export settings",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/coverage-rules/page.tsx",
+		fallbackComponent: "CoverageRulesSettingsLoading",
+		contentComponent: "CoverageRulesSettingsContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackAriaLabel: "Loading coverage rule settings",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/demo/page.tsx",
+		fallbackComponent: "DemoSettingsLoading",
+		contentComponent: "DemoSettingsContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackAriaLabel: "Loading demo data settings",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/export-operations/page.tsx",
+		fallbackComponent: "ExportOperationsPageLoading",
+		contentComponent: "ExportOperationsPageContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackAriaLabel: "Loading export operations",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/export/page.tsx",
+		fallbackComponent: "ExportSettingsLoading",
+		contentComponent: "ExportSettingsContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackAriaLabel: "Loading data export settings",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/import/[batchId]/page.tsx",
+		fallbackComponent: "ImportReviewRouteLoading",
+		contentComponent: "ImportReviewRouteContent",
+		fallbackFrameClass: "p-6",
+		fallbackAriaLabel: "Loading import review",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/import/page.tsx",
+		fallbackComponent: "ImportPageLoading",
+		contentComponent: "ImportPageContent",
+		fallbackFrameClass: "p-6",
+		fallbackAriaLabel: "Loading import settings",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/payroll-export/page.tsx",
+		fallbackComponent: "PayrollExportLoading",
+		contentComponent: "PayrollExportContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackAriaLabel: "Loading payroll export settings",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/scheduled-exports/page.tsx",
+		fallbackComponent: "ScheduledExportsLoading",
+		contentComponent: "ScheduledExportsContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackAriaLabel: "Loading scheduled exports",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/analytics/layout.tsx",
+		fallbackComponent: "AnalyticsLayoutLoading",
+		contentComponent: "AnalyticsLayoutContent",
+		fallbackFrameClass:
+			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+		fallbackAriaLabel: "Loading analytics navigation",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(auth)/layout.tsx",
+		fallbackComponent: "AuthLayoutLoading",
+		contentComponent: "AuthLayoutContent",
+		fallbackFrameClass: "relative min-h-svh overflow-x-hidden bg-background",
+		fallbackAriaLabel: "Loading authentication",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/onboarding/layout.tsx",
+		fallbackComponent: "OnboardingLayoutLoading",
+		contentComponent: "OnboardingLayoutContent",
+		fallbackFrameClass: "relative min-h-svh overflow-x-hidden bg-background",
+		fallbackAriaLabel: "Loading onboarding",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/payroll/page.tsx",
+		fallbackComponent: "PayrollPageLoading",
+		contentComponent: "PayrollPageContent",
+		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackAriaLabel: "Loading payroll workspace",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/absences/page.tsx",
+		fallbackComponent: "AbsencesPageLoading",
+		contentComponent: "AbsencesPageContent",
+		fallbackFrameClass:
+			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+		fallbackAriaLabel: "Loading absences",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/works-council/page.tsx",
+		fallbackComponent: "WorksCouncilPageLoading",
+		contentComponent: "WorksCouncilPageContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackAriaLabel: "Loading Works Council portal",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/wellness/page.tsx",
+		fallbackComponent: "WellnessPageLoading",
+		contentComponent: "WellnessPageContent",
+		fallbackFrameClass: "p-6",
+		fallbackAriaLabel: "Loading wellness settings",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/payroll-readiness/page.tsx",
+		fallbackComponent: "PayrollReadinessPageLoading",
+		contentComponent: "PayrollReadinessPageContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackAriaLabel: "Loading payroll readiness",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/vacation/employees/page.tsx",
+		fallbackComponent: "EmployeeAllowancesLoading",
+		contentComponent: "EmployeeAllowancesContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackAriaLabel: "Loading employee vacation allowances",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(setup)/setup/page.tsx",
+		fallbackComponent: "SetupPageLoading",
+		contentComponent: "SetupPageContent",
+		fallbackFrameClass: "w-full max-w-md",
+		fallbackAriaLabel: "Loading platform setup",
 		requiresSynchronousDefaultExport: true,
 	},
 ] as const;
@@ -975,6 +1210,11 @@ describe("loading frame alignment", () => {
 });
 
 describe("App Router connection escape hatches", () => {
+	it("keeps the pending inventory empty and the retained inventory exact", () => {
+		expect(PENDING_CONNECTION_FILES).toHaveLength(0);
+		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(9);
+	});
+
 	it("matches the reviewed and pending page/layout inventory exactly", () => {
 		const actualFiles = globSync("**/{page,layout}.tsx", { cwd: APP_ROOT })
 			.filter((file) =>
@@ -998,13 +1238,35 @@ describe("App Router connection escape hatches", () => {
 			expect(existsSync(appPath(file)), file).toBe(true);
 		}
 	});
+
+	it.each(REVIEWED_RETAINED_CONNECTION_BOUNDARIES)(
+		"keeps an approved reachable request boundary in $file",
+		(boundary) => {
+			const source = readFileSync(appPath(boundary.file), "utf8");
+			const contentBody = findNamedFunctionBody(
+				source,
+				boundary.contentComponent,
+			);
+			const reasonAndOperation = `// ${boundary.reason}\n\tawait connection();\n\t${boundary.operation}`;
+
+			expect(
+				APPROVED_CONNECTION_REASON_CATEGORIES.has(boundary.reasonCategory),
+			).toBe(true);
+			expect(hasImportedConnectionCall(source), boundary.file).toBe(true);
+			expect(contentBody, boundary.file).toContain(reasonAndOperation);
+			expect(
+				hasDefaultExportFocusedSuspenseBoundary(source, boundary),
+				boundary.file,
+			).toBe(true);
+		},
+	);
 });
 
 describe("low-risk route streaming boundaries", () => {
 	it("registers every shell work queue route exactly once", () => {
 		const workQueueFiles = SHELL_WORK_QUEUE.map(({ file }) => file);
 
-		expect(workQueueFiles).toHaveLength(45);
+		expect(workQueueFiles).toHaveLength(64);
 		expect(new Set(workQueueFiles).size).toBe(workQueueFiles.length);
 	});
 

@@ -3,7 +3,13 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
@@ -17,27 +23,33 @@ import { UserAvatar } from "@/components/user-avatar";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
-import { getCompanyDefaultVacationPolicy, getEmployeesWithAllowances } from "../actions";
+import {
+	getCompanyDefaultVacationPolicy,
+	getEmployeesWithAllowances,
+} from "../actions";
 import { getVacationPolicyAssignments } from "../assignment-actions";
 
 async function EmployeeAllowancesContent() {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
 	const [{ organizationId }, t] = await Promise.all([
 		requireOrgAdminSettingsAccess(),
 		getTranslate(),
 	]);
 
+	// The current vacation allowance year must be resolved per request.
+	await connection();
 	const currentYear = new Date().getFullYear();
-	const [employeesResult, policyResult, policyAssignmentsResult] = await Promise.all([
-		getEmployeesWithAllowances(organizationId, currentYear),
-		getCompanyDefaultVacationPolicy(organizationId),
-		getVacationPolicyAssignments(organizationId),
-	]);
+	const [employeesResult, policyResult, policyAssignmentsResult] =
+		await Promise.all([
+			getEmployeesWithAllowances(organizationId, currentYear),
+			getCompanyDefaultVacationPolicy(organizationId),
+			getVacationPolicyAssignments(organizationId),
+		]);
 
 	const employees = employeesResult.success ? employeesResult.data : [];
 	const orgPolicy = policyResult.success ? policyResult.data : null;
-	const policyAssignments = policyAssignmentsResult.success ? policyAssignmentsResult.data : [];
+	const policyAssignments = policyAssignmentsResult.success
+		? policyAssignmentsResult.data
+		: [];
 	const defaultDays = orgPolicy?.defaultAnnualDays || "0";
 
 	// Build a map of employeeId -> policy assignment (only employee-level assignments)
@@ -89,9 +101,13 @@ async function EmployeeAllowancesContent() {
 							</CardDescription>
 						</div>
 						<Badge variant="secondary">
-							{t("settings.vacation.employees.employeeCount", "{{count}} employees", {
-								count: employees.length,
-							})}
+							{t(
+								"settings.vacation.employees.employeeCount",
+								"{{count}} employees",
+								{
+									count: employees.length,
+								},
+							)}
 						</Badge>
 					</div>
 				</CardHeader>
@@ -100,7 +116,10 @@ async function EmployeeAllowancesContent() {
 						<div className="rounded-lg border border-dashed p-8 text-center">
 							<IconUser className="mx-auto size-10 text-muted-foreground" />
 							<h3 className="mt-4 text-lg font-semibold">
-								{t("settings.vacation.employees.emptyTitle", "No employees found")}
+								{t(
+									"settings.vacation.employees.emptyTitle",
+									"No employees found",
+								)}
 							</h3>
 							<p className="mt-2 text-sm text-muted-foreground">
 								{t(
@@ -115,30 +134,58 @@ async function EmployeeAllowancesContent() {
 								<TableHeader>
 									<TableRow>
 										<TableHead>
-											{t("settings.vacation.employees.table.employee", "Employee")}
+											{t(
+												"settings.vacation.employees.table.employee",
+												"Employee",
+											)}
 										</TableHead>
-										<TableHead>{t("settings.vacation.employees.table.policy", "Policy")}</TableHead>
-										<TableHead>{t("settings.vacation.employees.table.team", "Team")}</TableHead>
 										<TableHead>
-											{t("settings.vacation.employees.table.managers", "Managers")}
+											{t("settings.vacation.employees.table.policy", "Policy")}
+										</TableHead>
+										<TableHead>
+											{t("settings.vacation.employees.table.team", "Team")}
+										</TableHead>
+										<TableHead>
+											{t(
+												"settings.vacation.employees.table.managers",
+												"Managers",
+											)}
 										</TableHead>
 										<TableHead className="text-right">
-											{t("settings.vacation.employees.table.defaultDays", "Default Days")}
+											{t(
+												"settings.vacation.employees.table.defaultDays",
+												"Default Days",
+											)}
 										</TableHead>
 										<TableHead className="text-right">
-											{t("settings.vacation.employees.table.customDays", "Custom Days")}
+											{t(
+												"settings.vacation.employees.table.customDays",
+												"Custom Days",
+											)}
 										</TableHead>
 										<TableHead className="text-right">
-											{t("settings.vacation.employees.table.carryover", "Carryover")}
+											{t(
+												"settings.vacation.employees.table.carryover",
+												"Carryover",
+											)}
 										</TableHead>
 										<TableHead className="text-right">
-											{t("settings.vacation.employees.table.adjustments", "Adjustments")}
+											{t(
+												"settings.vacation.employees.table.adjustments",
+												"Adjustments",
+											)}
 										</TableHead>
 										<TableHead className="text-right">
-											{t("settings.vacation.employees.table.totalAvailable", "Total Available")}
+											{t(
+												"settings.vacation.employees.table.totalAvailable",
+												"Total Available",
+											)}
 										</TableHead>
 										<TableHead className="text-right">
-											{t("settings.vacation.employees.table.actions", "Actions")}
+											{t(
+												"settings.vacation.employees.table.actions",
+												"Actions",
+											)}
 										</TableHead>
 									</TableRow>
 								</TableHeader>
@@ -148,7 +195,10 @@ async function EmployeeAllowancesContent() {
 										const customDays = allowance?.customAnnualDays
 											? parseFloat(allowance.customAnnualDays)
 											: null;
-										const annualDays = customDays !== null ? customDays : parseFloat(defaultDays);
+										const annualDays =
+											customDays !== null
+												? customDays
+												: parseFloat(defaultDays);
 										const carryover = allowance?.customCarryoverDays
 											? parseFloat(allowance.customCarryoverDays)
 											: 0;
@@ -171,16 +221,23 @@ async function EmployeeAllowancesContent() {
 														/>
 														<div>
 															<div className="font-medium">{emp.user.name}</div>
-															<div className="text-xs text-muted-foreground">{emp.user.email}</div>
+															<div className="text-xs text-muted-foreground">
+																{emp.user.email}
+															</div>
 														</div>
 													</div>
 												</TableCell>
 												<TableCell>
 													{policyAssignment ? (
-														<Badge variant="outline">{policyAssignment.policy?.name}</Badge>
+														<Badge variant="outline">
+															{policyAssignment.policy?.name}
+														</Badge>
 													) : (
 														<span className="text-muted-foreground text-sm">
-															{t("settings.vacation.employees.defaultPolicy", "Default")}
+															{t(
+																"settings.vacation.employees.defaultPolicy",
+																"Default",
+															)}
 														</span>
 													)}
 												</TableCell>
@@ -189,11 +246,22 @@ async function EmployeeAllowancesContent() {
 													{emp.managers && emp.managers.length > 0 ? (
 														<div className="flex flex-col gap-1">
 															{emp.managers.map((m: any) => (
-																<div key={m.id} className="flex items-center gap-1">
-																	<span className="text-sm">{m.manager.user.name}</span>
+																<div
+																	key={m.id}
+																	className="flex items-center gap-1"
+																>
+																	<span className="text-sm">
+																		{m.manager.user.name}
+																	</span>
 																	{m.isPrimary && (
-																		<Badge variant="secondary" className="text-xs">
-																			{t("settings.vacation.employees.primaryManager", "Primary")}
+																		<Badge
+																			variant="secondary"
+																			className="text-xs"
+																		>
+																			{t(
+																				"settings.vacation.employees.primaryManager",
+																				"Primary",
+																			)}
 																		</Badge>
 																	)}
 																</div>
@@ -205,7 +273,9 @@ async function EmployeeAllowancesContent() {
 												</TableCell>
 												<TableCell className="text-right tabular-nums">
 													{customDays === null ? (
-														<span className="text-muted-foreground">{defaultDays}</span>
+														<span className="text-muted-foreground">
+															{defaultDays}
+														</span>
 													) : (
 														<span className="text-muted-foreground line-through">
 															{defaultDays}
@@ -228,7 +298,13 @@ async function EmployeeAllowancesContent() {
 												</TableCell>
 												<TableCell className="text-right tabular-nums">
 													{adjustments !== 0 ? (
-														<span className={adjustments > 0 ? "text-green-600" : "text-red-600"}>
+														<span
+															className={
+																adjustments > 0
+																	? "text-green-600"
+																	: "text-red-600"
+															}
+														>
 															{adjustments > 0 ? "+" : ""}
 															{adjustments}
 														</span>
@@ -241,9 +317,14 @@ async function EmployeeAllowancesContent() {
 												</TableCell>
 												<TableCell className="text-right">
 													<Button variant="ghost" size="sm" asChild>
-														<Link href={`/settings/vacation/employees/${emp.id}`}>
+														<Link
+															href={`/settings/vacation/employees/${emp.id}`}
+														>
 															<IconEdit className="mr-1 size-4" />
-															{t("settings.vacation.employees.actions.edit", "Edit")}
+															{t(
+																"settings.vacation.employees.actions.edit",
+																"Edit",
+															)}
 														</Link>
 													</Button>
 												</TableCell>
@@ -262,21 +343,25 @@ async function EmployeeAllowancesContent() {
 
 function EmployeeAllowancesLoading() {
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
+		<div
+			className="flex flex-1 flex-col gap-4 p-4"
+			role="status"
+			aria-label="Loading employee vacation allowances"
+		>
 			<div className="space-y-2">
-				<Skeleton className="h-8 w-64" />
-				<Skeleton className="h-4 w-96" />
+				<Skeleton aria-hidden="true" className="h-8 w-64" />
+				<Skeleton aria-hidden="true" className="h-4 w-96" />
 			</div>
 			<Card>
 				<CardHeader>
-					<Skeleton className="h-6 w-48" />
-					<Skeleton className="h-4 w-96" />
+					<Skeleton aria-hidden="true" className="h-6 w-48" />
+					<Skeleton aria-hidden="true" className="h-4 w-96" />
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-3">
-						<Skeleton className="h-12 w-full" />
-						<Skeleton className="h-12 w-full" />
-						<Skeleton className="h-12 w-full" />
+						<Skeleton aria-hidden="true" className="h-12 w-full" />
+						<Skeleton aria-hidden="true" className="h-12 w-full" />
+						<Skeleton aria-hidden="true" className="h-12 w-full" />
 					</div>
 				</CardContent>
 			</Card>

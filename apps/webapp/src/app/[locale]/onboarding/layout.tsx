@@ -1,12 +1,59 @@
 import { connection } from "next/server";
+import { Suspense } from "react";
 import { AuthBackgroundImage } from "@/components/auth-background-image";
 import { selectRandomAuthBackgroundImage } from "@/components/auth-background-images";
 import { FontSizeToggle } from "@/components/font-size-toggle";
 import { InfoFooter } from "@/components/info-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default async function OnboardingLayout({ children }: { children: React.ReactNode }) {
+export default function OnboardingLayout({
+	children,
+}: {
+	children: React.ReactNode;
+}) {
+	return (
+		<Suspense fallback={<OnboardingLayoutLoading />}>
+			<OnboardingLayoutContent>{children}</OnboardingLayoutContent>
+		</Suspense>
+	);
+}
+
+function OnboardingLayoutLoading() {
+	return (
+		<div
+			className="relative min-h-svh overflow-x-hidden bg-background"
+			role="status"
+			aria-label="Loading onboarding"
+		>
+			<div className="flex min-h-svh flex-col px-4 pt-4 sm:px-8 sm:pt-6 lg:px-10">
+				<div className="flex justify-end gap-2">
+					<Skeleton aria-hidden="true" className="size-9 rounded-md" />
+					<Skeleton aria-hidden="true" className="size-9 rounded-md" />
+					<Skeleton aria-hidden="true" className="h-9 w-28 rounded-md" />
+				</div>
+				<main className="flex flex-1 items-center justify-center py-8 sm:py-10">
+					<Skeleton
+						aria-hidden="true"
+						className="h-[30rem] w-full max-w-5xl rounded-xl"
+					/>
+				</main>
+				<Skeleton
+					aria-hidden="true"
+					className="mx-auto mb-3 h-4 w-64 max-w-full"
+				/>
+			</div>
+		</div>
+	);
+}
+
+async function OnboardingLayoutContent({
+	children,
+}: {
+	children: React.ReactNode;
+}) {
+	// Random onboarding backgrounds must be selected per request.
 	await connection();
 	const backgroundImage = selectRandomAuthBackgroundImage();
 

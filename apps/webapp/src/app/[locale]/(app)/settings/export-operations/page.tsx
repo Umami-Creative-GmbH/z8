@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { ExportOperationsDashboard } from "@/components/settings/export-operations/export-operations-dashboard";
@@ -8,6 +7,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getExportOperationsCockpit } from "@/lib/export-operations/get-export-operations-cockpit";
 import { getTranslate } from "@/tolgee/server";
+
+const EXPORT_SUMMARY_LOADING_KEYS = [
+	"payroll",
+	"audit",
+	"scheduled",
+	"storage",
+] as const;
+const EXPORT_DETAIL_LOADING_KEYS = ["failures", "destinations"] as const;
 
 export async function generateMetadata(): Promise<Metadata> {
 	const t = await getTranslate();
@@ -22,8 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function ExportOperationsPageContent() {
-	const [, t, { organizationId }] = await Promise.all([
-		connection(),
+	const [t, { organizationId }] = await Promise.all([
 		getTranslate(),
 		requireOrgAdminSettingsAccess(),
 	]);
@@ -49,35 +55,39 @@ async function ExportOperationsPageContent() {
 
 function ExportOperationsPageLoading() {
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div
+			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
+			role="status"
+			aria-label="Loading export operations"
+		>
 			<div className="space-y-2">
-				<Skeleton className="h-8 w-48" />
-				<Skeleton className="h-4 w-[32rem] max-w-full" />
+				<Skeleton aria-hidden="true" className="h-8 w-48" />
+				<Skeleton aria-hidden="true" className="h-4 w-[32rem] max-w-full" />
 			</div>
 			<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-				{Array.from({ length: 4 }).map((_, index) => (
-					<Card key={index}>
+				{EXPORT_SUMMARY_LOADING_KEYS.map((key) => (
+					<Card key={key}>
 						<CardHeader>
-							<Skeleton className="h-4 w-28" />
-							<Skeleton className="h-5 w-36" />
+							<Skeleton aria-hidden="true" className="h-4 w-28" />
+							<Skeleton aria-hidden="true" className="h-5 w-36" />
 						</CardHeader>
 						<CardContent>
-							<Skeleton className="h-8 w-24" />
+							<Skeleton aria-hidden="true" className="h-8 w-24" />
 						</CardContent>
 					</Card>
 				))}
 			</div>
 			<div className="grid gap-6 xl:grid-cols-2">
-				{Array.from({ length: 2 }).map((_, index) => (
-					<Card key={index}>
+				{EXPORT_DETAIL_LOADING_KEYS.map((key) => (
+					<Card key={key}>
 						<CardHeader>
-							<Skeleton className="h-6 w-40" />
-							<Skeleton className="h-4 w-72" />
+							<Skeleton aria-hidden="true" className="h-6 w-40" />
+							<Skeleton aria-hidden="true" className="h-4 w-72" />
 						</CardHeader>
 						<CardContent>
 							<div className="space-y-3">
-								<Skeleton className="h-10 w-full" />
-								<Skeleton className="h-10 w-full" />
+								<Skeleton aria-hidden="true" className="h-10 w-full" />
+								<Skeleton aria-hidden="true" className="h-10 w-full" />
 							</div>
 						</CardContent>
 					</Card>
@@ -85,14 +95,14 @@ function ExportOperationsPageLoading() {
 			</div>
 			<Card>
 				<CardHeader>
-					<Skeleton className="h-6 w-40" />
-					<Skeleton className="h-4 w-72" />
+					<Skeleton aria-hidden="true" className="h-6 w-40" />
+					<Skeleton aria-hidden="true" className="h-4 w-72" />
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-3">
-						<Skeleton className="h-10 w-full" />
-						<Skeleton className="h-10 w-full" />
-						<Skeleton className="h-10 w-full" />
+						<Skeleton aria-hidden="true" className="h-10 w-full" />
+						<Skeleton aria-hidden="true" className="h-10 w-full" />
+						<Skeleton aria-hidden="true" className="h-10 w-full" />
 					</div>
 				</CardContent>
 			</Card>

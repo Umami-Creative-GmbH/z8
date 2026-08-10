@@ -4,6 +4,7 @@ import { render, screen } from "@testing-library/react";
 import { isValidElement, Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AuthLayout, { AuthLayoutContent } from "./layout";
+import source from "./layout.tsx?raw";
 
 const mockState = vi.hoisted(() => ({
 	headers: vi.fn(async () => new Headers()),
@@ -33,7 +34,9 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("next/script", () => ({
-	default: (props: Record<string, unknown>) => <div data-testid={String(props.id)} {...props} />,
+	default: (props: Record<string, unknown>) => (
+		<div data-testid={String(props.id)} {...props} />
+	),
 }));
 
 vi.mock("next/server", () => ({
@@ -91,7 +94,10 @@ describe("AuthLayout", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.headers.mockResolvedValue(new Headers());
-		mockState.classifyDomainHost.mockReturnValue({ type: "main", hostname: "app.z8.test" });
+		mockState.classifyDomainHost.mockReturnValue({
+			type: "main",
+			hostname: "app.z8.test",
+		});
 		mockState.getCookieConsentScript.mockResolvedValue(null);
 		mockState.getDomainConfig.mockResolvedValue(null);
 		mockState.getPlatformDomainConfig.mockResolvedValue(null);
@@ -106,8 +112,38 @@ describe("AuthLayout", () => {
 
 		expect(layout).not.toBeInstanceOf(Promise);
 		expect(isValidElement(layout)).toBe(true);
-		if (!isValidElement(layout)) throw new Error("Expected AuthLayout to return a React element");
+		if (!isValidElement(layout))
+			throw new Error("Expected AuthLayout to return a React element");
 		expect(layout.type).toBe(Suspense);
+	});
+
+	it("renders neutral fallback geometry without tenant or child data", () => {
+		const layout = AuthLayout({
+			children: <div>secret.acme.example tenant sign-in</div>,
+		});
+		if (!isValidElement<{ fallback: React.ReactNode }>(layout)) {
+			throw new Error("Expected AuthLayout to return Suspense");
+		}
+
+		render(layout.props.fallback);
+
+		expect(
+			screen.getByRole("status", { name: "Loading authentication" }),
+		).toBeTruthy();
+		expect(
+			screen.queryByText(/secret\.acme\.example|tenant sign-in/i),
+		).toBeNull();
+	});
+
+	it("keeps connection inside the async auth content", () => {
+		const contentStart = source.indexOf(
+			"export async function AuthLayoutContent",
+		);
+		const connectionCall = source.indexOf("await connection()", contentStart);
+
+		expect(contentStart).toBeGreaterThan(-1);
+		expect(connectionCall).toBeGreaterThan(contentStart);
+		expect(source.slice(0, contentStart)).not.toContain("connection()");
 	});
 
 	it("uses a full-page background image behind the auth content", async () => {
@@ -127,15 +163,23 @@ describe("AuthLayout", () => {
 		expect(backgroundImage.className).toContain("inset-0");
 		expect(backgroundImage.className).toContain("object-cover");
 		expect(backgroundImage.closest("aside")).toBeNull();
-		const controls = screen.getByRole("button", { name: "Font size" }).closest("div");
+		const controls = screen
+			.getByRole("button", { name: "Font size" })
+			.closest("div");
 		expect(controls?.className).toContain("auth-shell-controls");
 		expect(controls?.className).toContain("auth-shell-controls-readable");
-		expect(controls?.className).toContain("[&_[data-slot=dropdown-menu-trigger]]:!bg-slate-950/85");
-		expect(controls?.className).toContain("[&_[data-slot=select-trigger]]:!bg-slate-950/85");
+		expect(controls?.className).toContain(
+			"[&_[data-slot=dropdown-menu-trigger]]:!bg-slate-950/85",
+		);
+		expect(controls?.className).toContain(
+			"[&_[data-slot=select-trigger]]:!bg-slate-950/85",
+		);
 	});
 
 	it("does not fall back to the platform cookie script on custom domains", async () => {
-		mockState.headers.mockResolvedValue(new Headers({ host: "login.acme.test" }));
+		mockState.headers.mockResolvedValue(
+			new Headers({ host: "login.acme.test" }),
+		);
 		mockState.classifyDomainHost.mockReturnValue({
 			type: "customDomain",
 			hostname: "login.acme.test",
@@ -172,7 +216,9 @@ describe("AuthLayout", () => {
 	});
 
 	it("uses platform organization context on platform subdomains", async () => {
-		mockState.headers.mockResolvedValue(new Headers({ host: "acme.ui.z8-time.app" }));
+		mockState.headers.mockResolvedValue(
+			new Headers({ host: "acme.ui.z8-time.app" }),
+		);
 		mockState.classifyDomainHost.mockReturnValue({
 			type: "platformOrganization",
 			hostname: "acme.ui.z8-time.app",
@@ -180,7 +226,9 @@ describe("AuthLayout", () => {
 			rootDomain: "ui.z8-time.app",
 		});
 		mockState.env.TURNSTILE_SITE_KEY = "site_key";
-		mockState.getCookieConsentScript.mockResolvedValue("<script>platform()</script>");
+		mockState.getCookieConsentScript.mockResolvedValue(
+			"<script>platform()</script>",
+		);
 		mockState.getPlatformDomainConfig.mockResolvedValue({
 			organizationId: "org_123",
 			organizationSlug: "acme",
@@ -209,7 +257,9 @@ describe("AuthLayout", () => {
 
 		render(await AuthLayoutContent({ children: <div>Auth content</div> }));
 
-		expect(mockState.getPlatformDomainConfig).toHaveBeenCalledWith("acme.ui.z8-time.app");
+		expect(mockState.getPlatformDomainConfig).toHaveBeenCalledWith(
+			"acme.ui.z8-time.app",
+		);
 		expect(mockState.getDomainConfig).not.toHaveBeenCalled();
 		expect(mockState.getCookieConsentScript).toHaveBeenCalled();
 		expect(mockState.domainAuthProviderContext).toMatchObject({
@@ -223,16 +273,18 @@ describe("AuthLayout", () => {
 	});
 
 	it("rejects unsupported platform subdomains instead of using global auth context", async () => {
-		mockState.headers.mockResolvedValue(new Headers({ host: "deep.acme.ui.z8-time.app" }));
+		mockState.headers.mockResolvedValue(
+			new Headers({ host: "deep.acme.ui.z8-time.app" }),
+		);
 		mockState.classifyDomainHost.mockReturnValue({
 			type: "unknownPlatform",
 			hostname: "deep.acme.ui.z8-time.app",
 			rootDomain: "ui.z8-time.app",
 		});
 
-		await expect(AuthLayoutContent({ children: <div>Auth content</div> })).rejects.toThrow(
-			"NEXT_NOT_FOUND",
-		);
+		await expect(
+			AuthLayoutContent({ children: <div>Auth content</div> }),
+		).rejects.toThrow("NEXT_NOT_FOUND");
 
 		expect(mockState.notFound).toHaveBeenCalled();
 		expect(mockState.getPlatformDomainConfig).not.toHaveBeenCalled();
@@ -240,7 +292,9 @@ describe("AuthLayout", () => {
 	});
 
 	it("rejects missing platform organizations instead of using global auth context", async () => {
-		mockState.headers.mockResolvedValue(new Headers({ host: "missing.ui.z8-time.app" }));
+		mockState.headers.mockResolvedValue(
+			new Headers({ host: "missing.ui.z8-time.app" }),
+		);
 		mockState.classifyDomainHost.mockReturnValue({
 			type: "platformOrganization",
 			hostname: "missing.ui.z8-time.app",
@@ -249,19 +303,24 @@ describe("AuthLayout", () => {
 		});
 		mockState.getPlatformDomainConfig.mockResolvedValue(null);
 
-		await expect(AuthLayoutContent({ children: <div>Auth content</div> })).rejects.toThrow(
-			"NEXT_NOT_FOUND",
-		);
+		await expect(
+			AuthLayoutContent({ children: <div>Auth content</div> }),
+		).rejects.toThrow("NEXT_NOT_FOUND");
 
 		expect(mockState.notFound).toHaveBeenCalled();
-		expect(mockState.getPlatformDomainConfig).toHaveBeenCalledWith("missing.ui.z8-time.app");
+		expect(mockState.getPlatformDomainConfig).toHaveBeenCalledWith(
+			"missing.ui.z8-time.app",
+		);
 		expect(mockState.getDomainConfig).not.toHaveBeenCalled();
 		expect(mockState.domainAuthProviderContext).toBeNull();
 	});
 
 	it("renders external cookie consent snippets as src scripts", async () => {
 		mockState.headers.mockResolvedValue(new Headers({ host: "app.z8.test" }));
-		mockState.classifyDomainHost.mockReturnValue({ type: "main", hostname: "app.z8.test" });
+		mockState.classifyDomainHost.mockReturnValue({
+			type: "main",
+			hostname: "app.z8.test",
+		});
 		mockState.getCookieConsentScript.mockResolvedValue(
 			'<script id="Cookiebot" src="https://consent.example/uc.js" data-cbid="abc" async></script>',
 		);
