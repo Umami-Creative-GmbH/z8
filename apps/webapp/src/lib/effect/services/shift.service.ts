@@ -823,18 +823,32 @@ export const ShiftServiceLive = Layer.effect(
 						);
 					}
 
-					yield* _(
+					const deleted = yield* _(
 						dbService.query("deleteShift", async () => {
-							await dbService.db
+							return await dbService.db
 								.delete(shift)
 								.where(
 									and(
 										eq(shift.id, id),
 										eq(shift.organizationId, actorScope.organizationId),
+										eq(shift.status, "draft"),
 									),
-								);
+								)
+								.returning({ id: shift.id });
 						}),
 					);
+
+					if (deleted.length !== 1 || deleted[0]?.id !== id) {
+						return yield* _(
+							Effect.fail(
+								new NotFoundError({
+									message: "Shift not found",
+									entityType: "shift",
+									entityId: id,
+								}),
+							),
+						);
+					}
 				}),
 
 			getShifts: (query) =>

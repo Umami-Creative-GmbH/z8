@@ -13,6 +13,7 @@ type DeleteShiftActorScope = {
 function createDeleteShiftTestContext({
 	shiftRecord,
 	actorEmployee,
+	deletedRows,
 }: {
 	shiftRecord: {
 		id: string;
@@ -26,8 +27,12 @@ function createDeleteShiftTestContext({
 		organizationId: string;
 		role: "admin" | "manager" | "employee";
 	} | null;
+	deletedRows?: Array<{ id: string }>;
 }) {
-	const deleteWhere = vi.fn(async () => undefined);
+	const returning = vi.fn(
+		async () => deletedRows ?? (shiftRecord ? [{ id: shiftRecord.id }] : []),
+	);
+	const deleteWhere = vi.fn(() => ({ returning }));
 	const mockDb = {
 		query: {
 			shift: {
@@ -55,6 +60,7 @@ function createDeleteShiftTestContext({
 	return {
 		deleteWhere,
 		mockDb,
+		returning,
 		runDeleteShift: (shiftId: string, actorScope: DeleteShiftActorScope) =>
 			Effect.runPromise(
 				Effect.either(
@@ -229,5 +235,37 @@ describe("ShiftService.deleteShift", () => {
 			_tag: "Left",
 		});
 		expect(deleteWhere).not.toHaveBeenCalled();
+	});
+
+	it("does not report success when a draft shift becomes published before delete", async () => {
+		const { deleteWhere, returning, runDeleteShift } =
+			createDeleteShiftTestContext({
+				shiftRecord: {
+					id: "shift-raced",
+					organizationId: "org-1",
+					status: "draft",
+				},
+				actorEmployee: {
+					id: "manager-1",
+					isActive: true,
+					userId: "user-1",
+					organizationId: "org-1",
+					role: "manager",
+				},
+				deletedRows: [],
+			});
+
+		expect(
+			await runDeleteShift("shift-raced", {
+				employeeId: "manager-1",
+				organizationId: "org-1",
+				userId: "user-1",
+			}),
+		).toMatchObject({
+			_tag: "Left",
+			left: expect.any(NotFoundError),
+		});
+		expect(deleteWhere).toHaveBeenCalledOnce();
+		expect(returning).toHaveBeenCalledOnce();
 	});
 });
