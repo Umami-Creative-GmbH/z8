@@ -75,33 +75,338 @@ const PENDING_CONNECTION_FILES = [
 	"src/app/[locale]/(setup)/setup/page.tsx",
 ] as const;
 
-const ROUTES_WITH_EXISTING_BOUNDARIES = [
-	"src/app/[locale]/(app)/organization/page.tsx",
-	"src/app/[locale]/(app)/calendar/page.tsx",
-	"src/app/[locale]/(app)/time-tracking/page.tsx",
-	"src/app/[locale]/(app)/team/absences/page.tsx",
-	"src/app/[locale]/(app)/settings/locations/[locationId]/page.tsx",
-	"src/app/[locale]/(app)/settings/approval-policies/page.tsx",
-	"src/app/[locale]/(app)/settings/permissions/page.tsx",
-	"src/app/[locale]/(app)/settings/work-categories/page.tsx",
+const SHELL_WORK_QUEUE = [
+	{
+		file: "src/app/[locale]/(app)/organization/page.tsx",
+		fallbackComponent: "OrganizationPageLoading",
+		contentComponent: "OrganizationPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/calendar/page.tsx",
+		fallbackComponent: "CalendarPageLoading",
+		contentComponent: "CalendarPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/time-tracking/page.tsx",
+		fallbackComponent: "TimeTrackingPageLoading",
+		contentComponent: "TimeTrackingPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/team/absences/page.tsx",
+		fallbackComponent: "TeamAbsencesPageLoading",
+		contentComponent: "TeamAbsencesPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/locations/[locationId]/page.tsx",
+		fallbackComponent: "LocationDetailPageLoading",
+		contentComponent: "LocationDetailPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/approval-policies/page.tsx",
+		fallbackComponent: "ApprovalPoliciesSettingsLoading",
+		contentComponent: "ApprovalPoliciesSettingsContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/permissions/page.tsx",
+		fallbackComponent: "PermissionsPageLoading",
+		contentComponent: "PermissionsPageContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/work-categories/page.tsx",
+		fallbackComponent: "WorkCategoriesSettingsLoading",
+		contentComponent: "WorkCategoriesSettingsContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/locations/page.tsx",
+		requiresNewShell: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/change-policies/page.tsx",
+		requiresNewShell: true,
+	},
 ] as const;
 
-const ROUTES_REQUIRING_NEW_SHELL = [
-	"src/app/[locale]/(app)/settings/locations/page.tsx",
-	"src/app/[locale]/(app)/settings/change-policies/page.tsx",
-] as const;
+type RouteWithExistingBoundary = Extract<
+	(typeof SHELL_WORK_QUEUE)[number],
+	{ fallbackComponent: string }
+>;
+
+const ROUTES_WITH_EXISTING_BOUNDARIES = SHELL_WORK_QUEUE.filter(
+	(route): route is RouteWithExistingBoundary => "fallbackComponent" in route,
+);
+
+const ROUTES_REQUIRING_NEW_SHELL = SHELL_WORK_QUEUE.filter(
+	(route) => "requiresNewShell" in route,
+);
 
 function appPath(file: string): string {
 	return join(APP_ROOT, file.replace(/^src\/app\//, ""));
 }
 
+function normalizeGlobPath(file: string): string {
+	return file.replaceAll("\\", "/");
+}
+
+function maskComments(source: string): string {
+	let result = "";
+	let index = 0;
+	let quote: '"' | "'" | "`" | undefined;
+
+	while (index < source.length) {
+		const character = source[index];
+		const nextCharacter = source[index + 1];
+
+		if (quote) {
+			result += character;
+			if (character === "\\") {
+				index += 1;
+				result += source[index] ?? "";
+			} else if (character === quote) {
+				quote = undefined;
+			}
+			index += 1;
+			continue;
+		}
+
+		if (character === '"' || character === "'" || character === "`") {
+			quote = character;
+			result += character;
+			index += 1;
+			continue;
+		}
+
+		if (character === "/" && nextCharacter === "/") {
+			result += "  ";
+			index += 2;
+			while (index < source.length && source[index] !== "\n") {
+				result += " ";
+				index += 1;
+			}
+			continue;
+		}
+
+		if (character === "/" && nextCharacter === "*") {
+			result += "  ";
+			index += 2;
+			while (index < source.length) {
+				if (source[index] === "*" && source[index + 1] === "/") {
+					result += "  ";
+					index += 2;
+					break;
+				}
+				result += source[index] === "\n" ? "\n" : " ";
+				index += 1;
+			}
+			continue;
+		}
+
+		result += character;
+		index += 1;
+	}
+
+	return result;
+}
+
+function maskStrings(source: string): string {
+	let result = "";
+	let index = 0;
+
+	while (index < source.length) {
+		const quote = source[index];
+		if (quote !== '"' && quote !== "'" && quote !== "`") {
+			result += quote;
+			index += 1;
+			continue;
+		}
+
+		result += " ";
+		index += 1;
+		while (index < source.length) {
+			const character = source[index];
+			result += character === "\n" ? "\n" : " ";
+			index += 1;
+			if (character === "\\") {
+				result += source[index] === "\n" ? "\n" : " ";
+				index += 1;
+			} else if (character === quote) {
+				break;
+			}
+		}
+	}
+
+	return result;
+}
+
+function escapeRegExp(value: string): string {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function hasImportedConnectionCall(source: string): boolean {
+	const sourceWithoutComments = maskComments(source);
+	const localIdentifiers: string[] = [];
+	const namedNextServerImport =
+		/\bimport\s*\{([^}]*)\}\s*from\s*(["'])next\/server\2/g;
+
+	for (const match of sourceWithoutComments.matchAll(namedNextServerImport)) {
+		for (const specifier of match[1].split(",")) {
+			const connectionImport = specifier.match(
+				/^\s*connection(?:\s+as\s+([A-Za-z_$][\w$]*))?\s*$/,
+			);
+			if (connectionImport) {
+				localIdentifiers.push(connectionImport[1] ?? "connection");
+			}
+		}
+	}
+
+	const callableSource = maskStrings(sourceWithoutComments);
+	return localIdentifiers.some((identifier) =>
+		new RegExp(`(?<![\\w$.])${escapeRegExp(identifier)}\\s*\\(`).test(
+			callableSource,
+		),
+	);
+}
+
+function findJsxOpeningTagEnd(
+	source: string,
+	start: number,
+): number | undefined {
+	let braceDepth = 0;
+
+	for (let index = start; index < source.length; index += 1) {
+		if (source[index] === "{") {
+			braceDepth += 1;
+		} else if (source[index] === "}") {
+			braceDepth -= 1;
+		} else if (source[index] === ">" && braceDepth === 0) {
+			return index + 1;
+		}
+	}
+
+	return undefined;
+}
+
+function findMatchingSuspenseClose(
+	source: string,
+	openingTagEnd: number,
+): number | undefined {
+	const suspenseTag = /<\/?Suspense\b/g;
+	suspenseTag.lastIndex = openingTagEnd;
+	let depth = 1;
+
+	for (const match of source.matchAll(suspenseTag)) {
+		if (match[0].startsWith("</")) {
+			depth -= 1;
+			if (depth === 0) {
+				return match.index;
+			}
+		} else {
+			depth += 1;
+		}
+	}
+
+	return undefined;
+}
+
+function hasFocusedSuspenseBoundary(
+	source: string,
+	{
+		fallbackComponent,
+		contentComponent,
+	}: { fallbackComponent: string; contentComponent: string },
+): boolean {
+	const searchableSource = maskStrings(maskComments(source));
+	const suspenseOpening = /<Suspense\b/g;
+	const fallbackPattern = new RegExp(
+		`\\bfallback\\s*=\\s*\\{\\s*<${escapeRegExp(fallbackComponent)}\\s*\\/>\\s*\\}`,
+	);
+	const contentPattern = new RegExp(`<${escapeRegExp(contentComponent)}\\b`);
+
+	for (const match of searchableSource.matchAll(suspenseOpening)) {
+		const openingTagEnd = findJsxOpeningTagEnd(searchableSource, match.index);
+		if (!openingTagEnd) continue;
+
+		const openingTag = searchableSource.slice(match.index, openingTagEnd);
+		if (!fallbackPattern.test(openingTag)) continue;
+
+		const closingTagStart = findMatchingSuspenseClose(
+			searchableSource,
+			openingTagEnd,
+		);
+		if (!closingTagStart) continue;
+
+		if (
+			contentPattern.test(
+				searchableSource.slice(openingTagEnd, closingTagStart),
+			)
+		) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+describe("connection call source detection", () => {
+	it.each([
+		['import { connection } from "next/server"; await connection();', true],
+		[
+			'import { connection as waitForRequest } from "next/server"; await waitForRequest();',
+			true,
+		],
+		[
+			'import { connection } from "next/server"; // connection()\nreturn null;',
+			false,
+		],
+		['import { connection } from "next/server"; database.connection();', false],
+		[
+			'import { connection } from "next/server"; const text = "connection()";',
+			false,
+		],
+		['import { connection } from "next/server"; return null;', false],
+		["await connection();", false],
+	])("detects only an imported direct call in %#", (source, expected) => {
+		expect(hasImportedConnectionCall(source)).toBe(expected);
+	});
+
+	it("normalizes platform-specific glob separators", () => {
+		expect(normalizeGlobPath("[locale]\\(app)\\page.tsx")).toBe(
+			"[locale]/(app)/page.tsx",
+		);
+	});
+});
+
+describe("focused Suspense boundary detection", () => {
+	const boundary = {
+		fallbackComponent: "RouteLoading",
+		contentComponent: "RouteContent",
+	};
+
+	it("accepts a named fallback wrapping the expected content", () => {
+		expect(
+			hasFocusedSuspenseBoundary(
+				"<Suspense fallback={<RouteLoading />}><RouteContent /></Suspense>",
+				boundary,
+			),
+		).toBe(true);
+	});
+
+	it.each([
+		"<Suspense fallback={<><RouteLoading /></>}><RouteContent /></Suspense>",
+		"<Suspense><Other /></Suspense><div fallback={<RouteLoading />}><RouteContent /></div>",
+		"<Suspense fallback={null}><RouteContent /></Suspense>",
+		"<Suspense fallback={<RouteLoading />}><Other /></Suspense><RouteContent />",
+	])("rejects an invalid boundary in %#", (source) => {
+		expect(hasFocusedSuspenseBoundary(source, boundary)).toBe(false);
+	});
+});
+
 describe("App Router connection escape hatches", () => {
 	it("matches the reviewed and pending page/layout inventory exactly", () => {
 		const actualFiles = globSync("**/{page,layout}.tsx", { cwd: APP_ROOT })
 			.filter((file) =>
-				/\bconnection\s*\(/.test(readFileSync(join(APP_ROOT, file), "utf8")),
+				hasImportedConnectionCall(readFileSync(join(APP_ROOT, file), "utf8")),
 			)
-			.map((file) => `src/app/${file}`)
+			.map((file) => `src/app/${normalizeGlobPath(file)}`)
 			.sort();
 		const retainedFiles = [...REVIEWED_RETAINED_CONNECTION_FILES].sort();
 		const pendingFiles = [...PENDING_CONNECTION_FILES].sort();
@@ -122,28 +427,39 @@ describe("App Router connection escape hatches", () => {
 });
 
 describe("low-risk route streaming boundaries", () => {
-	it.each(ROUTES_WITH_EXISTING_BOUNDARIES)(
-		"keeps a non-null Suspense fallback in %s",
-		(file) => {
-			const source = readFileSync(appPath(file), "utf8");
-			const suspenseWithFallback =
-				/<Suspense\b[\s\S]*?\bfallback\s*=\s*\{\s*(?:\(\s*)?</;
+	it("classifies every shell work queue route exactly once", () => {
+		const workQueueFiles = SHELL_WORK_QUEUE.map(({ file }) => file);
+		const classifiedFiles = [
+			...ROUTES_WITH_EXISTING_BOUNDARIES,
+			...ROUTES_REQUIRING_NEW_SHELL,
+		].map(({ file }) => file);
 
-			expect(source).toMatch(suspenseWithFallback);
+		expect(workQueueFiles).toHaveLength(10);
+		expect(new Set(workQueueFiles).size).toBe(workQueueFiles.length);
+		expect(classifiedFiles.sort()).toEqual([...workQueueFiles].sort());
+	});
+
+	it.each(ROUTES_WITH_EXISTING_BOUNDARIES)(
+		"keeps a focused Suspense fallback in $file",
+		(route) => {
+			const { file } = route;
+			const source = readFileSync(appPath(file), "utf8");
+
+			expect(hasFocusedSuspenseBoundary(source, route), file).toBe(true);
 		},
 	);
 
 	it.each(ROUTES_REQUIRING_NEW_SHELL)(
-		"records %s as requiring a focused shell",
-		(file) => {
+		"records $file as requiring a focused shell",
+		({ file }) => {
 			const path = appPath(file);
 
 			expect(existsSync(path), file).toBe(true);
 
 			const source = readFileSync(path, "utf8");
 
-			expect(source).toMatch(/\bconnection\s*\(/);
-			expect(source).not.toMatch(/<Suspense\b/);
+			expect(hasImportedConnectionCall(source)).toBe(true);
+			expect(maskStrings(maskComments(source))).not.toMatch(/<Suspense\b/);
 		},
 	);
 });
