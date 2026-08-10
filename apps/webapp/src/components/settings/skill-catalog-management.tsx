@@ -110,8 +110,13 @@ export function SkillCatalogManagement({
 				method: "GET",
 			});
 
+			if (!response.ok) {
+				const errorResult = await response.json().catch(() => null);
+				throw new Error(errorResult?.error ?? t("common.error-occurred", "An error occurred"));
+			}
+
 			const result = await response.json().catch(() => null);
-			if (!response.ok || !result?.success) {
+			if (!result?.success) {
 				throw new Error(result?.error ?? t("common.error-occurred", "An error occurred"));
 			}
 
@@ -129,7 +134,9 @@ export function SkillCatalogManagement({
 		},
 		onSuccess: () => {
 			toast.success(t("settings.skills.skillDeleted", "Skill deleted"));
-			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId) });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.skills.list(organizationId),
+			});
 		},
 		onError: (error) => {
 			toast.error(error.message || t("settings.skills.deleteError", "Failed to delete skill"));
@@ -155,7 +162,9 @@ export function SkillCatalogManagement({
 	};
 
 	const handleSuccess = () => {
-		queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId) });
+		queryClient.invalidateQueries({
+			queryKey: queryKeys.skills.list(organizationId),
+		});
 		setDialogOpen(false);
 		setEditingSkill(null);
 	};
@@ -387,7 +396,9 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 			return result.data;
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId) });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.skills.list(organizationId),
+			});
 			toast.success(t("settings.skills.skillCreated", "Skill created"));
 			onSuccess();
 		},
@@ -409,7 +420,9 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 			return result.data;
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: queryKeys.skills.list(organizationId) });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.skills.list(organizationId),
+			});
 			toast.success(t("settings.skills.skillUpdated", "Skill updated"));
 			onSuccess();
 		},
@@ -508,7 +521,9 @@ function SkillDialog({ organizationId, skill, open, onOpenChange, onSuccess }: S
 						</form.Field>
 
 						{/* Custom Category Name (conditional) */}
-						<form.Subscribe<SkillFormValues["category"]> selector={(state) => state.values.category}>
+						<form.Subscribe<SkillFormValues["category"]>
+							selector={(state) => state.values.category}
+						>
 							{(category: SkillFormValues["category"]) =>
 								category === "custom" && (
 									<form.Field name="customCategoryName">

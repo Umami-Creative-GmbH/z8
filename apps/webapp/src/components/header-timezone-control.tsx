@@ -10,6 +10,7 @@ import { TimezonePicker } from "@/components/settings/timezone-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useRouter } from "@/navigation";
 import { formatHeaderTimezone } from "./header-timezone-control-utils";
 
@@ -58,29 +59,27 @@ export function HeaderTimezoneControl() {
 	async function handleSave() {
 		setPending(true);
 
+		await runWithCleanup(async () => {
 		try {
 			const result = await updateTimezone(selectedTimezone);
 
 			if (!result) {
 				toast.error("An error occurred while updating timezone");
-				setPending(false);
 				return;
 			}
 
 			if (!result.success) {
 				toast.error(result.error || "Failed to update timezone");
-				setPending(false);
 				return;
 			}
 
 			toast.success("Timezone updated successfully");
-			setPending(false);
 			setOpen(false);
 			router.refresh();
 		} catch {
 			toast.error("An error occurred while updating timezone");
-			setPending(false);
 		}
+		}, () => setPending(false));
 	}
 
 	return (

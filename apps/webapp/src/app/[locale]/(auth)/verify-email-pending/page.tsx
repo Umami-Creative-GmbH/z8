@@ -7,6 +7,7 @@ import { AuthFormWrapper } from "@/components/auth-form-wrapper";
 import { Button } from "@/components/ui/button";
 import { sanitizeCallbackUrl, withCallbackUrl } from "@/lib/auth/callback-url";
 import { authClient, useSession } from "@/lib/auth-client";
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { Link } from "@/navigation";
 
 function VerifyEmailPendingContent() {
@@ -21,7 +22,6 @@ function VerifyEmailPendingContent() {
 	const email = (getSearchParam("email") || session?.user?.email || "").trim();
 
 	const handleResendEmail = async () => {
-		setIsResending(true);
 		setResendMessage("");
 
 		if (!email) {
@@ -31,39 +31,39 @@ function VerifyEmailPendingContent() {
 					"Please return to sign in and enter your email address again.",
 				),
 			);
-			setIsResending(false);
 			return;
 		}
 
-		const result = await authClient
-			.sendVerificationEmail({
-				email,
-				callbackURL: "/verify-email",
-			})
-			.catch((error) => ({
-				error: {
-					message:
-						error instanceof Error
-							? error.message
-							: t("common.error-occurred", "An error occurred"),
-				},
-			}));
+		setIsResending(true);
+		await runWithCleanup(async () => {
+			const result = await authClient
+				.sendVerificationEmail({
+					email,
+					callbackURL: "/verify-email",
+				})
+				.catch((error) => ({
+					error: {
+						message:
+							error instanceof Error
+								? error.message
+								: t("common.error-occurred", "An error occurred"),
+					},
+				}));
 
-		if (result.error) {
-			setResendMessage(
-				result.error.message ||
-					t("auth.resend-verification-failed", "Failed to resend verification email"),
-			);
-		} else {
-			setResendMessage(
-				t(
-					"auth.verification-email-resent",
-					"Verification email has been resent! Please check your inbox.",
-				),
-			);
-		}
-
-		setIsResending(false);
+			if (result.error) {
+				setResendMessage(
+					result.error.message ||
+						t("auth.resend-verification-failed", "Failed to resend verification email"),
+				);
+			} else {
+				setResendMessage(
+					t(
+						"auth.verification-email-resent",
+						"Verification email has been resent! Please check your inbox.",
+					),
+				);
+			}
+		}, () => setIsResending(false));
 	};
 
 	return (

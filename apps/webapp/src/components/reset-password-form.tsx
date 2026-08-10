@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { passwordSchema } from "@/lib/validations/password";
 import { Link } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
@@ -119,50 +120,48 @@ function ResetPasswordFormContent({ className, ...props }: React.ComponentProps<
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		setIsLoading(true);
 		setError(null);
 
 		const result = resetPasswordSchema.safeParse(formData);
 
 		if (!result.success) {
 			handleValidationErrors(result.error);
-			setIsLoading(false);
 			return;
 		}
 
 		if (!token) {
 			setError(t("auth.reset-password-no-token", "Invalid reset link. Please request a new one."));
-			setIsLoading(false);
 			return;
 		}
 
-		const response = await authClient
-			.resetPassword({
-				newPassword: formData.password,
-				token,
-			})
-			.catch((err) => ({
-				error: {
-					message:
-						err instanceof Error
-							? err.message
-							: t("auth.reset-password-error", "An error occurred. Please try again."),
-				},
-			}));
+		setIsLoading(true);
+		await runWithCleanup(async () => {
+			const response = await authClient
+				.resetPassword({
+					newPassword: formData.password,
+					token,
+				})
+				.catch((err) => ({
+					error: {
+						message:
+							err instanceof Error
+								? err.message
+								: t("auth.reset-password-error", "An error occurred. Please try again."),
+					},
+				}));
 
-		if (response.error) {
-			setError(
-				getAuthErrorMessage(
-					response.error,
-					t("auth.reset-password-failed", "Failed to reset password. Please try again."),
-				),
-			);
-			setIsLoading(false);
-			return;
-		}
+			if (response.error) {
+				setError(
+					getAuthErrorMessage(
+						response.error,
+						t("auth.reset-password-failed", "Failed to reset password. Please try again."),
+					),
+				);
+				return;
+			}
 
-		setSuccess(true);
-		setIsLoading(false);
+			setSuccess(true);
+		}, () => setIsLoading(false));
 	};
 
 	// Show error state for invalid/expired token

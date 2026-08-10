@@ -28,6 +28,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useRouter } from "@/navigation";
 import {
 	createVacationAdjustmentAction,
@@ -97,6 +98,7 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 		defaultValues,
 		onSubmit: async ({ value }) => {
 			setLoading(true);
+			await runWithCleanup(async () => {
 			try {
 				const currentPolicyId = currentAssignment?.policyId || "";
 				const newPolicyId =
@@ -115,7 +117,6 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 									"Failed to update policy assignment",
 								),
 						);
-						setLoading(false);
 						return;
 					}
 				}
@@ -137,7 +138,6 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 									"Failed to update allowance",
 								),
 						);
-						setLoading(false);
 						return;
 					}
 				}
@@ -159,7 +159,6 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 									"Failed to create adjustment",
 								),
 						);
-						setLoading(false);
 						return;
 					}
 				}
@@ -179,7 +178,7 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 					),
 				);
 			}
-			setLoading(false);
+			}, () => setLoading(false));
 		},
 	});
 
