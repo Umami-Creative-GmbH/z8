@@ -11,9 +11,13 @@ async function CustomRolesSettingsPageContent() {
 
 function CustomRolesSettingsPageLoading() {
 	return (
-		<div className="space-y-4">
-			<Skeleton className="h-8 w-48" />
-			<Skeleton className="h-64 w-full" />
+		<div
+			className="flex flex-1 flex-col gap-4 p-4"
+			role="status"
+			aria-label="Loading custom role settings"
+		>
+			<Skeleton className="h-8 w-48" aria-hidden="true" />
+			<Skeleton className="h-64 w-full" aria-hidden="true" />
 		</div>
 	);
 }

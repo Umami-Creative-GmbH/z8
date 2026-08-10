@@ -93,6 +93,8 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/shifts/page.tsx",
 		fallbackComponent: "ShiftTemplatesPageLoading",
 		contentComponent: "ShiftTemplatesPageContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackAriaLabel: "Loading shift template settings",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/statistics/page.tsx",
@@ -113,11 +115,15 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/surcharges/page.tsx",
 		fallbackComponent: "SurchargeSettingsPageLoading",
 		contentComponent: "SurchargeSettingsPageContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackAriaLabel: "Loading surcharge settings",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/change-policies/page.tsx",
 		fallbackComponent: "ChangePoliciesSettingsPageLoading",
 		contentComponent: "ChangePoliciesSettingsPageContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackAriaLabel: "Loading change policy settings",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/payroll-access/page.tsx",
@@ -138,21 +144,29 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/work-policies/page.tsx",
 		fallbackComponent: "WorkPoliciesPageLoading",
 		contentComponent: "WorkPoliciesPageContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackAriaLabel: "Loading work policy settings",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/roles/page.tsx",
 		fallbackComponent: "CustomRolesSettingsPageLoading",
 		contentComponent: "CustomRolesSettingsPageContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackAriaLabel: "Loading custom role settings",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/projects/page.tsx",
 		fallbackComponent: "ProjectSettingsPageLoading",
 		contentComponent: "ProjectSettingsPageContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackAriaLabel: "Loading project settings",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/holidays/page.tsx",
 		fallbackComponent: "HolidaySettingsPageLoading",
 		contentComponent: "HolidaySettingsPageContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackAriaLabel: "Loading holiday settings",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/compliance/works-council/page.tsx",
@@ -163,6 +177,8 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/locations/page.tsx",
 		fallbackComponent: "LocationSettingsPageLoading",
 		contentComponent: "LocationSettingsPageContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackAriaLabel: "Loading location settings",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/telegram/page.tsx",
@@ -183,6 +199,8 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/skills/page.tsx",
 		fallbackComponent: "SkillsSettingsPageLoading",
 		contentComponent: "SkillsSettingsPageContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackAriaLabel: "Loading skill settings",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/billing/page.tsx",
@@ -198,13 +216,26 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/travel-expenses/page.tsx",
 		fallbackComponent: "TravelExpenseSettingsPageLoading",
 		contentComponent: "TravelExpenseSettingsPageContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackAriaLabel: "Loading travel expense settings",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/customers/page.tsx",
 		fallbackComponent: "CustomerSettingsPageLoading",
 		contentComponent: "CustomerSettingsPageContent",
+		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
+		fallbackAriaLabel: "Loading customer settings",
 	},
 ] as const;
+
+type QualityReviewedShellRoute = Extract<
+	(typeof SHELL_WORK_QUEUE)[number],
+	{ fallbackFrameClass: string }
+>;
+
+const QUALITY_REVIEWED_SHELL_ROUTES = SHELL_WORK_QUEUE.filter(
+	(route): route is QualityReviewedShellRoute => "fallbackFrameClass" in route,
+);
 
 function appPath(file: string): string {
 	return join(APP_ROOT, file.replace(/^src\/app\//, ""));
@@ -374,6 +405,39 @@ function findMatchingSuspenseClose(
 	return undefined;
 }
 
+function findNamedFunctionBody(
+	source: string,
+	functionName: string,
+): string | undefined {
+	const searchableSource = maskStrings(maskComments(source));
+	const declarationPattern = new RegExp(
+		`\\bfunction\\s+${escapeRegExp(functionName)}\\s*\\([^)]*\\)\\s*\\{`,
+	);
+	const declaration = declarationPattern.exec(searchableSource);
+
+	if (!declaration) return undefined;
+
+	const openingBrace = declaration.index + declaration[0].lastIndexOf("{");
+	let depth = 1;
+
+	for (
+		let index = openingBrace + 1;
+		index < searchableSource.length;
+		index += 1
+	) {
+		if (searchableSource[index] === "{") {
+			depth += 1;
+		} else if (searchableSource[index] === "}") {
+			depth -= 1;
+			if (depth === 0) {
+				return source.slice(openingBrace + 1, index);
+			}
+		}
+	}
+
+	return undefined;
+}
+
 function hasFocusedSuspenseBoundary(
 	source: string,
 	{
@@ -411,6 +475,51 @@ function hasFocusedSuspenseBoundary(
 	}
 
 	return false;
+}
+
+function hasDefaultExportFocusedSuspenseBoundary(
+	source: string,
+	boundary: { fallbackComponent: string; contentComponent: string },
+): boolean {
+	const searchableSource = maskStrings(maskComments(source));
+	const defaultExport = searchableSource.match(
+		/\bexport\s+default\s+(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/,
+	);
+	const defaultExportBody = defaultExport
+		? findNamedFunctionBody(source, defaultExport[1])
+		: undefined;
+
+	return defaultExportBody
+		? hasFocusedSuspenseBoundary(defaultExportBody, boundary)
+		: false;
+}
+
+function hasExpectedLoadingFrame(
+	source: string,
+	{
+		fallbackComponent,
+		fallbackFrameClass,
+		fallbackAriaLabel,
+	}: {
+		fallbackComponent: string;
+		fallbackFrameClass: string;
+		fallbackAriaLabel: string;
+	},
+): boolean {
+	const fallbackBody = findNamedFunctionBody(source, fallbackComponent);
+	const outerElement = fallbackBody?.match(/<div\b[^>]*>/)?.[0];
+
+	if (!fallbackBody || !outerElement) return false;
+
+	const skeletons = [...fallbackBody.matchAll(/<Skeleton\b[^>]*>/g)];
+
+	return (
+		outerElement.includes(`className="${fallbackFrameClass}"`) &&
+		outerElement.includes('role="status"') &&
+		outerElement.includes(`aria-label="${fallbackAriaLabel}"`) &&
+		skeletons.length > 0 &&
+		skeletons.every(([skeleton]) => skeleton.includes('aria-hidden="true"'))
+	);
 }
 
 describe("connection call source detection", () => {
@@ -455,6 +564,29 @@ describe("focused Suspense boundary detection", () => {
 				boundary,
 			),
 		).toBe(true);
+	});
+
+	it("requires the focused boundary to be returned by the default export", () => {
+		expect(
+			hasDefaultExportFocusedSuspenseBoundary(
+				"export default function Page() { return <Suspense fallback={<RouteLoading />}><RouteContent /></Suspense>; }",
+				boundary,
+			),
+		).toBe(true);
+	});
+
+	it("rejects a focused boundary disconnected from the default export", () => {
+		const source = `
+			function Disconnected() {
+				return <Suspense fallback={<RouteLoading />}><RouteContent /></Suspense>;
+			}
+			export default function Page() { return <Other />; }
+		`;
+
+		expect(hasFocusedSuspenseBoundary(source, boundary)).toBe(true);
+		expect(hasDefaultExportFocusedSuspenseBoundary(source, boundary)).toBe(
+			false,
+		);
 	});
 
 	it.each([
@@ -508,6 +640,19 @@ describe("low-risk route streaming boundaries", () => {
 			const source = readFileSync(appPath(file), "utf8");
 
 			expect(hasFocusedSuspenseBoundary(source, route), file).toBe(true);
+		},
+	);
+
+	it.each(QUALITY_REVIEWED_SHELL_ROUTES)(
+		"keeps an aligned accessible loading frame in $file",
+		(route) => {
+			const source = readFileSync(appPath(route.file), "utf8");
+
+			expect(
+				hasDefaultExportFocusedSuspenseBoundary(source, route),
+				route.file,
+			).toBe(true);
+			expect(hasExpectedLoadingFrame(source, route), route.file).toBe(true);
 		},
 	);
 });
