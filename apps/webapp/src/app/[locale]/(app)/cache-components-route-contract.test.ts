@@ -23,11 +23,6 @@ const PENDING_CONNECTION_FILES = [
 	"src/app/[locale]/(admin)/platform-admin/page.tsx",
 	"src/app/[locale]/(admin)/platform-admin/worker-queue/page.tsx",
 	"src/app/[locale]/(app)/analytics/layout.tsx",
-	"src/app/[locale]/(app)/my-requests/page.tsx",
-	"src/app/[locale]/(app)/page.tsx",
-	"src/app/[locale]/(app)/reports/page.tsx",
-	"src/app/[locale]/(app)/reports/projects/page.tsx",
-	"src/app/[locale]/(app)/scheduling/page.tsx",
 	"src/app/[locale]/(app)/settings/audit-export/page.tsx",
 	"src/app/[locale]/(app)/settings/coverage-rules/page.tsx",
 	"src/app/[locale]/(app)/settings/demo/page.tsx",
@@ -37,8 +32,6 @@ const PENDING_CONNECTION_FILES = [
 	"src/app/[locale]/(app)/settings/import/page.tsx",
 	"src/app/[locale]/(app)/settings/payroll-export/page.tsx",
 	"src/app/[locale]/(app)/settings/scheduled-exports/page.tsx",
-	"src/app/[locale]/(app)/today/page.tsx",
-	"src/app/[locale]/(app)/travel-expenses/page.tsx",
 	"src/app/[locale]/(auth)/verify-2fa/page.tsx",
 	"src/app/[locale]/(setup)/setup/page.tsx",
 ] as const;
@@ -225,6 +218,65 @@ const SHELL_WORK_QUEUE = [
 		contentComponent: "CustomerSettingsPageContent",
 		fallbackFrameClass: "flex flex-1 flex-col gap-4 p-4",
 		fallbackAriaLabel: "Loading customer settings",
+	},
+	{
+		file: "src/app/[locale]/(app)/page.tsx",
+		fallbackComponent: "DashboardPageLoading",
+		contentComponent: "DashboardPageContent",
+		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-2",
+		fallbackAriaLabel: "Loading dashboard",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/today/page.tsx",
+		fallbackComponent: "TodayPageLoading",
+		contentComponent: "TodayPageContent",
+		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackAriaLabel: "Loading today's manager briefing",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/scheduling/page.tsx",
+		fallbackComponent: "SchedulingPageLoading",
+		contentComponent: "SchedulingPageContent",
+		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-2",
+		fallbackAriaLabel: "Loading shift schedule",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/travel-expenses/page.tsx",
+		fallbackComponent: "TravelExpensesPageLoading",
+		contentComponent: "TravelExpensesPageContent",
+		fallbackFrameClass:
+			"@container/main flex flex-1 flex-col gap-4 py-4 md:py-6",
+		fallbackAriaLabel: "Loading travel expenses",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/my-requests/page.tsx",
+		fallbackComponent: "MyRequestsPageLoading",
+		contentComponent: "MyRequestsPageContent",
+		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-6 p-4 md:p-6",
+		fallbackAriaLabel: "Loading your requests",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/reports/page.tsx",
+		fallbackComponent: "ReportsPageLoading",
+		contentComponent: "ReportsPageContent",
+		fallbackFrameClass:
+			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+		fallbackAriaLabel: "Loading employee reports",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(app)/reports/projects/page.tsx",
+		fallbackComponent: "ProjectReportsPageLoading",
+		contentComponent: "ProjectReportsPageContent",
+		fallbackFrameClass:
+			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+		fallbackAriaLabel: "Loading project reports",
+		requiresSynchronousDefaultExport: true,
 	},
 ] as const;
 
@@ -494,6 +546,14 @@ function hasDefaultExportFocusedSuspenseBoundary(
 		: false;
 }
 
+function hasSynchronousDefaultExport(source: string): boolean {
+	const searchableSource = maskStrings(maskComments(source));
+
+	return /\bexport\s+default\s+function\s+[A-Za-z_$][\w$]*\s*\(/.test(
+		searchableSource,
+	);
+}
+
 function hasExpectedLoadingFrame(
 	source: string,
 	{
@@ -629,7 +689,7 @@ describe("low-risk route streaming boundaries", () => {
 	it("registers every shell work queue route exactly once", () => {
 		const workQueueFiles = SHELL_WORK_QUEUE.map(({ file }) => file);
 
-		expect(workQueueFiles).toHaveLength(32);
+		expect(workQueueFiles).toHaveLength(39);
 		expect(new Set(workQueueFiles).size).toBe(workQueueFiles.length);
 	});
 
@@ -653,6 +713,21 @@ describe("low-risk route streaming boundaries", () => {
 				route.file,
 			).toBe(true);
 			expect(hasExpectedLoadingFrame(source, route), route.file).toBe(true);
+		},
+	);
+
+	it.each(
+		SHELL_WORK_QUEUE.filter(
+			(route) =>
+				"requiresSynchronousDefaultExport" in route &&
+				route.requiresSynchronousDefaultExport,
+		),
+	)(
+		"keeps request reads behind the default export boundary in $file",
+		(route) => {
+			const source = readFileSync(appPath(route.file), "utf8");
+
+			expect(hasSynchronousDefaultExport(source), route.file).toBe(true);
 		},
 	);
 });

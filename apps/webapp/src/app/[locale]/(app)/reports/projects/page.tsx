@@ -1,19 +1,23 @@
-import { connection } from "next/server";
+import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ProjectReportsContainer } from "@/components/reports/projects/project-reports-container";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getTranslate } from "@/tolgee/server";
 import { getCurrentEmployeeProjectReportAccess } from "./actions";
 
-export default async function ProjectReportsPage() {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
+async function ProjectReportsPageContent() {
 	// Auth is checked in layout
-	const [t, access] = await Promise.all([getTranslate(), getCurrentEmployeeProjectReportAccess()]);
+	const [t, access] = await Promise.all([
+		getTranslate(),
+		getCurrentEmployeeProjectReportAccess(),
+	]);
 
 	if (!access) {
 		return (
 			<div className="@container/main flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature={t("reports.projects.page.feature", "view project reports")} />
+				<NoEmployeeError
+					feature={t("reports.projects.page.feature", "view project reports")}
+				/>
 			</div>
 		);
 	}
@@ -54,5 +58,31 @@ export default async function ProjectReportsPage() {
 			{/* Reports Container */}
 			<ProjectReportsContainer />
 		</div>
+	);
+}
+
+function ProjectReportsPageLoading() {
+	return (
+		<div
+			aria-label="Loading project reports"
+			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
+			role="status"
+		>
+			<div className="space-y-3 px-4 lg:px-6">
+				<Skeleton aria-hidden="true" className="h-9 w-56" />
+				<Skeleton aria-hidden="true" className="h-5 w-full max-w-2xl" />
+			</div>
+			<div className="px-4 lg:px-6">
+				<Skeleton aria-hidden="true" className="h-96 w-full" />
+			</div>
+		</div>
+	);
+}
+
+export default function ProjectReportsPage() {
+	return (
+		<Suspense fallback={<ProjectReportsPageLoading />}>
+			<ProjectReportsPageContent />
+		</Suspense>
 	);
 }

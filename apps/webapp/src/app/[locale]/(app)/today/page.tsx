@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,8 +7,6 @@ import { getCurrentEmployee } from "../team/actions";
 import { TodayBriefing } from "./today-briefing";
 
 async function TodayPageContent() {
-	await connection();
-
 	const currentEmployee = await getCurrentEmployee();
 
 	if (!currentEmployee) {
@@ -45,17 +42,21 @@ async function TodayPageContent() {
 
 function TodayPageLoading() {
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div
+			aria-label="Loading today's manager briefing"
+			className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6"
+			role="status"
+		>
 			<div className="space-y-3">
-				<Skeleton className="h-8 w-48" />
-				<Skeleton className="h-5 w-full max-w-2xl" />
+				<Skeleton aria-hidden="true" className="h-8 w-48" />
+				<Skeleton aria-hidden="true" className="h-5 w-full max-w-2xl" />
 			</div>
 			<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
 				{["summary", "coverage", "approvals", "exceptions"].map((key) => (
-					<Skeleton key={key} className="h-32 w-full" />
+					<Skeleton aria-hidden="true" key={key} className="h-32 w-full" />
 				))}
 			</div>
-			<Skeleton className="h-[420px] w-full" />
+			<Skeleton aria-hidden="true" className="h-[420px] w-full" />
 		</div>
 	);
 }
