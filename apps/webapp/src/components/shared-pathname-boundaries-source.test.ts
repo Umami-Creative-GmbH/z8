@@ -15,7 +15,11 @@ describe("shared pathname consumer boundaries", () => {
 			/<Suspense fallback=\{<SidebarNavigationLoading rows=\{4\} \/>\}>\s*\{isManagerOrAbove\(employeeRole\) && <NavTeam[\s\S]*?<\/Suspense>/,
 		);
 		expect(source).toMatch(
-			/<Suspense fallback=\{<SidebarNavigationLoading rows=\{3\} \/>\}>\s*<NavSecondary[\s\S]*?<\/Suspense>/,
+			/<Suspense fallback=\{<SidebarSecondaryNavigationLoading \/>\}>\s*<NavSecondary className="mt-auto"[\s\S]*?<\/Suspense>/,
+		);
+		expect(source).toContain("function SidebarSecondaryNavigationLoading");
+		expect(source).toMatch(
+			/<SidebarGroup aria-hidden="true" className="mt-auto">[\s\S]*?<SidebarNavigationLoading rows=\{3\} \/>[\s\S]*?<\/SidebarGroup>/,
 		);
 
 		const fallbackSource = source.slice(

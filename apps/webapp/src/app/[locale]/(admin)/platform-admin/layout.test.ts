@@ -191,17 +191,26 @@ describe("platform admin layout", () => {
 		expect(source).not.toMatch(/["']use cache(?:: private|: remote)?["']/);
 	});
 
-	it("isolates each pathname-aware admin control with a neutral local fallback", () => {
+	it("matches each pathname-aware admin fallback to the resolved responsive visibility", () => {
 		const source = readAdminLayoutSource();
 
+		expect(source).toContain("function AdminMobileMenuLoading");
+		expect(source).toContain('className="size-9 rounded-md md:hidden"');
 		expect(source).toMatch(
-			/<Suspense fallback=\{<AdminHeaderControlLoading \/>\}>\s*<PlatformAdminMobileMenu[\s\S]*?<\/Suspense>/,
+			/<Suspense fallback=\{<AdminMobileMenuLoading \/>\}>\s*<PlatformAdminMobileMenu[\s\S]*?<\/Suspense>/,
 		);
-		expect(
-			source.match(/<Suspense fallback=\{<AdminHeaderControlLoading \/>\}>/g),
-		).toHaveLength(4);
+
+		expect(source).toContain("function AdminDesktopNavigationLoading");
+		expect(source).toContain('className="hidden items-center gap-1 md:flex"');
+		expect(source).toMatch(
+			/<Suspense fallback=\{<AdminDesktopNavigationLoading \/>\}>\s*<PlatformAdminHeaderActions[\s\S]*?showExit=\{false\}[\s\S]*?<\/Suspense>/,
+		);
+
 		expect(source).toMatch(
 			/<Suspense fallback=\{<AdminHeaderControlLoading \/>\}>\s*<LanguageSwitcher variant="compact" \/>\s*<\/Suspense>/,
+		);
+		expect(source).toMatch(
+			/<Suspense fallback=\{<AdminHeaderControlLoading \/>\}>\s*<PlatformAdminHeaderActions\s*navItems=\{\[\]\}[\s\S]*?<\/Suspense>/,
 		);
 	});
 

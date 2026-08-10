@@ -34,6 +34,8 @@ import {
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
+	SidebarGroup,
+	SidebarGroupContent,
 	SidebarHeader,
 	SidebarMenu,
 	SidebarMenuItem,
@@ -89,6 +91,16 @@ function SidebarNavigationLoading({ rows }: { rows: number }) {
 				</SidebarMenuItem>
 			))}
 		</SidebarMenu>
+	);
+}
+
+function SidebarSecondaryNavigationLoading() {
+	return (
+		<SidebarGroup aria-hidden="true" className="mt-auto">
+			<SidebarGroupContent>
+				<SidebarNavigationLoading rows={3} />
+			</SidebarGroupContent>
+		</SidebarGroup>
 	);
 }
 
@@ -266,7 +278,7 @@ export function AppSidebar({
 				<Suspense fallback={<SidebarNavigationLoading rows={4} />}>
 					{isManagerOrAbove(employeeRole) && <NavTeam items={navTeam} />}
 				</Suspense>
-				<Suspense fallback={<SidebarNavigationLoading rows={3} />}>
+				<Suspense fallback={<SidebarSecondaryNavigationLoading />}>
 					<NavSecondary className="mt-auto" items={navSecondary} />
 				</Suspense>
 			</SidebarContent>

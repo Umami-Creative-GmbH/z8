@@ -30,7 +30,7 @@ describe("settings layout sidebar", () => {
 		expect(source).not.toContain("SettingsLayoutLoading({ children }");
 	});
 
-	it("streams request-bound navigation and URL breadcrumbs independently", () => {
+	it("keeps primary navigation non-null while URL breadcrumbs use a zero-height fallback", () => {
 		const source = readFileSync(
 			"src/app/[locale]/(app)/settings/layout.tsx",
 			"utf8",
@@ -42,8 +42,10 @@ describe("settings layout sidebar", () => {
 		expect(source).toContain(
 			"<Suspense fallback={<SettingsNavigationLoading />}>",
 		);
-		expect(source).toContain(
-			"<Suspense fallback={<SettingsBreadcrumbsLoading />}>",
+		expect(source).toContain("<Suspense fallback={null}>");
+		expect(source).not.toContain("SettingsBreadcrumbsLoading");
+		expect(source).toMatch(
+			/<Suspense fallback=\{null\}>\s*<SettingsBreadcrumbs \/>\s*<\/Suspense>/,
 		);
 		expect(source.match(/\{children\}/g)).toHaveLength(1);
 	});

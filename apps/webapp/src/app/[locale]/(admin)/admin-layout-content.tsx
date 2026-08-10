@@ -16,6 +16,20 @@ function AdminHeaderControlLoading() {
 	return <Skeleton aria-hidden="true" className="size-9 rounded-md" />;
 }
 
+function AdminMobileMenuLoading() {
+	return (
+		<Skeleton aria-hidden="true" className="size-9 rounded-md md:hidden" />
+	);
+}
+
+function AdminDesktopNavigationLoading() {
+	return (
+		<div aria-hidden="true" className="hidden items-center gap-1 md:flex">
+			<Skeleton className="size-9 rounded-md" />
+		</div>
+	);
+}
+
 export async function AdminLayoutContent({
 	children,
 }: {
@@ -101,7 +115,7 @@ export async function AdminLayoutContent({
 				<div className="mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-6 lg:px-8">
 					{/* Left: Branding + Nav */}
 					<div className="flex items-center gap-8">
-						<Suspense fallback={<AdminHeaderControlLoading />}>
+						<Suspense fallback={<AdminMobileMenuLoading />}>
 							<PlatformAdminMobileMenu
 								navItems={navItems}
 								openMenuLabel={t(
@@ -133,7 +147,7 @@ export async function AdminLayoutContent({
 						{/* Divider */}
 						<div className="hidden h-6 w-px bg-border/60 md:block" />
 
-						<Suspense fallback={<AdminHeaderControlLoading />}>
+						<Suspense fallback={<AdminDesktopNavigationLoading />}>
 							<PlatformAdminHeaderActions
 								navItems={navItems}
 								exitLabel={t("admin:admin.layout.exitAdmin", "Exit Admin")}
