@@ -39,11 +39,11 @@
 		"docker:prod:logs": "docker compose -f docker-compose.prod.yml logs -f"
 	},
 	"devDependencies": {
-		"@esbuild/win32-x64": "^0.28.1",
-		"puppeteer-core": "^25.4.0",
-		"react-doctor": "^0.9.3",
-		"shadcn": "^4.16.1",
-		"turbo": "^2.10.8"
+		"@esbuild/win32-x64": "^0.28.2",
+		"puppeteer-core": "^25.5.0",
+		"react-doctor": "^0.9.11",
+		"shadcn": "^4.16.2",
+		"turbo": "^2.10.9"
 	},
-	"packageManager": "pnpm@11.20.0"
+	"packageManager": "pnpm@11.21.0"
 }
