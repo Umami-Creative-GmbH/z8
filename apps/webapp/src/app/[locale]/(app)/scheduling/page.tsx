@@ -1,33 +1,24 @@
-import { eq } from "drizzle-orm";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ShiftScheduler } from "@/components/scheduling/scheduler/shift-scheduler";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
-import { organization } from "@/db/auth-schema";
-import { employee } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { getAuthContext } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
 async function SchedulingPageContent() {
-	// Auth is checked in layout - session is guaranteed to exist
-	const [session, t] = await Promise.all([
-		auth.api.getSession({ headers: await headers() }),
+	const [authContext, t] = await Promise.all([
+		getAuthContext(),
 		getTranslate(),
 	]);
-	const currentSession = session!;
 
-	// Get current employee
-	const emp = await db.query.employee.findFirst({
-		where: eq(employee.userId, currentSession.user.id),
-	});
-
-	if (!emp) {
+	if (!authContext?.employee) {
 		redirect("/onboarding/welcome");
 	}
+
+	const emp = authContext.employee;
 	const org = await db.query.organization.findFirst({
-		where: eq(organization.id, emp.organizationId),
+		where: (table, { eq }) => eq(table.id, emp.organizationId),
 		columns: { timezone: true },
 	});
 

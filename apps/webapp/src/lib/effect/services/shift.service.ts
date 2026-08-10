@@ -14,7 +14,12 @@ import {
 } from "@/db/schema";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
-import { AuthorizationError, type DatabaseError, NotFoundError, ValidationError } from "../errors";
+import {
+	AuthorizationError,
+	type DatabaseError,
+	NotFoundError,
+	ValidationError,
+} from "../errors";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
@@ -64,6 +69,12 @@ export interface ShiftQuery {
 	subareaId?: string; // Filter by subarea
 	status?: ShiftStatus;
 	includeOpenShifts?: boolean;
+}
+
+export interface DeleteShiftActorScope {
+	employeeId: string;
+	organizationId: string;
+	userId: string;
 }
 
 export interface DateRange {
@@ -131,9 +142,14 @@ export class ShiftService extends Context.Tag("ShiftService")<
 		readonly updateTemplate: (
 			id: string,
 			input: UpdateTemplateInput,
-		) => Effect.Effect<ShiftTemplate, NotFoundError | ValidationError | DatabaseError>;
+		) => Effect.Effect<
+			ShiftTemplate,
+			NotFoundError | ValidationError | DatabaseError
+		>;
 
-		readonly deleteTemplate: (id: string) => Effect.Effect<void, NotFoundError | DatabaseError>;
+		readonly deleteTemplate: (
+			id: string,
+		) => Effect.Effect<void, NotFoundError | DatabaseError>;
 
 		readonly getTemplates: (
 			organizationId: string,
@@ -149,12 +165,19 @@ export class ShiftService extends Context.Tag("ShiftService")<
 
 		readonly deleteShift: (
 			id: string,
-			userId: string,
-		) => Effect.Effect<void, NotFoundError | AuthorizationError | DatabaseError>;
+			actorScope: DeleteShiftActorScope,
+		) => Effect.Effect<
+			void,
+			NotFoundError | AuthorizationError | DatabaseError
+		>;
 
-		readonly getShifts: (query: ShiftQuery) => Effect.Effect<ShiftWithRelations[], DatabaseError>;
+		readonly getShifts: (
+			query: ShiftQuery,
+		) => Effect.Effect<ShiftWithRelations[], DatabaseError>;
 
-		readonly getShiftById: (id: string) => Effect.Effect<ShiftWithRelations | null, DatabaseError>;
+		readonly getShiftById: (
+			id: string,
+		) => Effect.Effect<ShiftWithRelations | null, DatabaseError>;
 
 		// Publishing workflow
 		readonly publishShifts: (
@@ -185,7 +208,10 @@ export const ShiftServiceLive = Layer.effect(
 			createTemplate: (input) =>
 				Effect.gen(function* (_) {
 					// Validate time format
-					if (!isValidTimeFormat(input.startTime) || !isValidTimeFormat(input.endTime)) {
+					if (
+						!isValidTimeFormat(input.startTime) ||
+						!isValidTimeFormat(input.endTime)
+					) {
 						yield* _(
 							Effect.fail(
 								new ValidationError({
@@ -344,7 +370,10 @@ export const ShiftServiceLive = Layer.effect(
 			upsertShift: (input) =>
 				Effect.gen(function* (_) {
 					// Validate time format
-					if (!isValidTimeFormat(input.startTime) || !isValidTimeFormat(input.endTime)) {
+					if (
+						!isValidTimeFormat(input.startTime) ||
+						!isValidTimeFormat(input.endTime)
+					) {
 						yield* _(
 							Effect.fail(
 								new ValidationError({
@@ -363,7 +392,10 @@ export const ShiftServiceLive = Layer.effect(
 							});
 						}),
 					);
-					if (!subareaRecord || subareaRecord.location.organizationId !== input.organizationId) {
+					if (
+						!subareaRecord ||
+						subareaRecord.location.organizationId !== input.organizationId
+					) {
 						yield* _(
 							Effect.fail(
 								new ValidationError({
@@ -441,7 +473,9 @@ export const ShiftServiceLive = Layer.effect(
 									.toString();
 								const dayRange = localDayRange(dateKey, input.timezone);
 								const dayStart = new Date(dayRange.start.epochMilliseconds);
-								const dayEndExclusive = new Date(dayRange.endExclusive.epochMilliseconds);
+								const dayEndExclusive = new Date(
+									dayRange.endExclusive.epochMilliseconds,
+								);
 
 								const existingShifts = await dbService.db.query.shift.findMany({
 									where: and(
@@ -454,7 +488,12 @@ export const ShiftServiceLive = Layer.effect(
 
 								// Check for time overlaps
 								return existingShifts.flatMap((s) =>
-									timesOverlap(input.startTime, input.endTime, s.startTime, s.endTime)
+									timesOverlap(
+										input.startTime,
+										input.endTime,
+										s.startTime,
+										s.endTime,
+									)
 										? [
 												{
 													id: s.id,
@@ -481,7 +520,10 @@ export const ShiftServiceLive = Layer.effect(
 								return await dbService.db.query.employeeSkill.findMany({
 									where: and(
 										eq(employeeSkill.employeeId, empId),
-										or(isNull(employeeSkill.expiresAt), gt(employeeSkill.expiresAt, now)),
+										or(
+											isNull(employeeSkill.expiresAt),
+											gt(employeeSkill.expiresAt, now),
+										),
 									),
 									with: { skill: true },
 								});
@@ -501,15 +543,22 @@ export const ShiftServiceLive = Layer.effect(
 							}),
 						);
 
-						const validSkillIds = new Set(validEmployeeSkills.map((es) => es.skillId));
+						const validSkillIds = new Set(
+							validEmployeeSkills.map((es) => es.skillId),
+						);
 
 						// Get subarea requirements
 						const subareaReqs = yield* _(
 							dbService.query("getSubareaSkillRequirements", async () => {
-								return await dbService.db.query.subareaSkillRequirement.findMany({
-									where: eq(subareaSkillRequirement.subareaId, input.subareaId),
-									with: { skill: true },
-								});
+								return await dbService.db.query.subareaSkillRequirement.findMany(
+									{
+										where: eq(
+											subareaSkillRequirement.subareaId,
+											input.subareaId,
+										),
+										with: { skill: true },
+									},
+								);
 							}),
 						);
 
@@ -523,10 +572,15 @@ export const ShiftServiceLive = Layer.effect(
 							const templateId = input.templateId;
 							templateReqs = yield* _(
 								dbService.query("getTemplateSkillRequirements", async () => {
-									return await dbService.db.query.shiftTemplateSkillRequirement.findMany({
-										where: eq(shiftTemplateSkillRequirement.templateId, templateId),
-										with: { skill: true },
-									});
+									return await dbService.db.query.shiftTemplateSkillRequirement.findMany(
+										{
+											where: eq(
+												shiftTemplateSkillRequirement.templateId,
+												templateId,
+											),
+											with: { skill: true },
+										},
+									);
 								}),
 							);
 						}
@@ -548,7 +602,10 @@ export const ShiftServiceLive = Layer.effect(
 
 						// Find missing skills
 						const missingSkills: SkillWarning["missingSkills"] = [];
-						for (const [skillId, { skill: skillData, isRequired }] of allRequirements) {
+						for (const [
+							skillId,
+							{ skill: skillData, isRequired },
+						] of allRequirements) {
 							if (!validSkillIds.has(skillId)) {
 								missingSkills.push({
 									id: skillId,
@@ -563,7 +620,10 @@ export const ShiftServiceLive = Layer.effect(
 						const expiredSkills: SkillWarning["expiredSkills"] = [];
 						for (const es of expiredEmployeeSkills) {
 							const expiresAt = es.expiresAt;
-							if (!allRequirements.has(es.skillId) || !(expiresAt instanceof Date)) {
+							if (
+								!allRequirements.has(es.skillId) ||
+								!(expiresAt instanceof Date)
+							) {
 								continue;
 							}
 
@@ -594,7 +654,10 @@ export const ShiftServiceLive = Layer.effect(
 						const existing = yield* _(
 							dbService.query("getShiftById", async () => {
 								return await dbService.db.query.shift.findFirst({
-									where: and(eq(shift.id, shiftId), eq(shift.organizationId, input.organizationId)),
+									where: and(
+										eq(shift.id, shiftId),
+										eq(shift.organizationId, input.organizationId),
+									),
 								});
 							}),
 						);
@@ -625,7 +688,12 @@ export const ShiftServiceLive = Layer.effect(
 										notes: input.notes,
 										color: input.color,
 									})
-									.where(and(eq(shift.id, shiftId), eq(shift.organizationId, input.organizationId)))
+									.where(
+										and(
+											eq(shift.id, shiftId),
+											eq(shift.organizationId, input.organizationId),
+										),
+									)
 									.returning();
 								return s;
 							}),
@@ -666,22 +734,33 @@ export const ShiftServiceLive = Layer.effect(
 					};
 				}),
 
-			deleteShift: (id, userId) =>
+			deleteShift: (id, actorScope) =>
 				Effect.gen(function* (_) {
 					const actingEmployee = yield* _(
 						dbService.query("getActingEmployee", async () => {
 							return await dbService.db.query.employee.findFirst({
-								where: eq(employee.userId, userId),
+								where: and(
+									eq(employee.id, actorScope.employeeId),
+									eq(employee.userId, actorScope.userId),
+									eq(employee.organizationId, actorScope.organizationId),
+									eq(employee.isActive, true),
+								),
 							});
 						}),
 					);
 
-					if (!actingEmployee) {
+					if (
+						!actingEmployee ||
+						actingEmployee.id !== actorScope.employeeId ||
+						actingEmployee.userId !== actorScope.userId ||
+						actingEmployee.organizationId !== actorScope.organizationId ||
+						!actingEmployee.isActive
+					) {
 						return yield* _(
 							Effect.fail(
 								new AuthorizationError({
 									message: "Employee context is required to delete shifts",
-									userId,
+									userId: actorScope.userId,
 									resource: "shift",
 									action: "delete",
 								}),
@@ -689,12 +768,15 @@ export const ShiftServiceLive = Layer.effect(
 						);
 					}
 
-					if (actingEmployee.role !== "manager" && actingEmployee.role !== "admin") {
+					if (
+						actingEmployee.role !== "manager" &&
+						actingEmployee.role !== "admin"
+					) {
 						yield* _(
 							Effect.fail(
 								new AuthorizationError({
 									message: "Only managers and admins can delete shifts",
-									userId,
+									userId: actorScope.userId,
 									resource: "shift",
 									action: "delete",
 								}),
@@ -707,13 +789,16 @@ export const ShiftServiceLive = Layer.effect(
 							return await dbService.db.query.shift.findFirst({
 								where: and(
 									eq(shift.id, id),
-									eq(shift.organizationId, actingEmployee.organizationId),
+									eq(shift.organizationId, actorScope.organizationId),
 								),
 							});
 						}),
 					);
 
-					if (!existing) {
+					if (
+						!existing ||
+						existing.organizationId !== actorScope.organizationId
+					) {
 						return yield* _(
 							Effect.fail(
 								new NotFoundError({
@@ -730,7 +815,7 @@ export const ShiftServiceLive = Layer.effect(
 							Effect.fail(
 								new AuthorizationError({
 									message: "Cannot delete published shifts",
-									userId,
+									userId: actorScope.userId,
 									resource: "shift",
 									action: "delete",
 								}),
@@ -743,7 +828,10 @@ export const ShiftServiceLive = Layer.effect(
 							await dbService.db
 								.delete(shift)
 								.where(
-									and(eq(shift.id, id), eq(shift.organizationId, actingEmployee.organizationId)),
+									and(
+										eq(shift.id, id),
+										eq(shift.organizationId, actorScope.organizationId),
+									),
 								);
 						}),
 					);
@@ -753,7 +841,9 @@ export const ShiftServiceLive = Layer.effect(
 				Effect.gen(function* (_) {
 					const shifts = yield* _(
 						dbService.query("getShifts", async () => {
-							const conditions = [eq(shift.organizationId, query.organizationId)];
+							const conditions = [
+								eq(shift.organizationId, query.organizationId),
+							];
 
 							if (query.startDate) {
 								conditions.push(gte(shift.date, query.startDate));
@@ -870,7 +960,9 @@ export const ShiftServiceLive = Layer.effect(
 					// Collect unique employee IDs (excluding open shifts)
 					const affectedEmployeeIds = [
 						...new Set(
-							draftShifts.filter((s) => s.employeeId !== null).map((s) => s.employeeId as string),
+							draftShifts
+								.filter((s) => s.employeeId !== null)
+								.map((s) => s.employeeId as string),
 						),
 					];
 
@@ -943,7 +1035,12 @@ function isValidTimeFormat(time: string): boolean {
 	return regex.test(time);
 }
 
-function timesOverlap(start1: string, end1: string, start2: string, end2: string): boolean {
+function timesOverlap(
+	start1: string,
+	end1: string,
+	start2: string,
+	end2: string,
+): boolean {
 	// Convert HH:mm to minutes for comparison
 	const toMinutes = (time: string) => {
 		const [hours, minutes] = time.split(":").map(Number);

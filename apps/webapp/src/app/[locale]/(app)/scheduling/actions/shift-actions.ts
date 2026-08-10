@@ -97,15 +97,18 @@ function getEffectiveShiftQuery(
 
 function getScheduleComplianceEvaluation(
 	dateRange: DateRange,
-	context: Pick<CurrentEmployee, "organizationId"> & { session: { user: { id: string } } },
+	context: Pick<CurrentEmployee, "organizationId"> & {
+		session: { user: { id: string } };
+	},
 ) {
 	return Effect.gen(function* (_) {
 		const dbService = yield* _(DatabaseService);
 		const scheduleComplianceService = yield* _(ScheduleComplianceService);
 
 		const timezone = yield* _(
-			dbService.query("getOrganizationTimezoneForScheduleCompliance", async () =>
-				getOrganizationTimezone(context.organizationId),
+			dbService.query(
+				"getOrganizationTimezoneForScheduleCompliance",
+				async () => getOrganizationTimezone(context.organizationId),
 			),
 		);
 		const range = toServiceDateRange(dateRange, timezone);
@@ -142,10 +145,19 @@ export async function upsertShift(
 			),
 		);
 		const shiftDate = dateFromInstant(
-			resolveScheduleWallTime({ date: input.date, time: "00:00" }, timezone).toInstant(),
+			resolveScheduleWallTime(
+				{ date: input.date, time: "00:00" },
+				timezone,
+			).toInstant(),
 		);
-		resolveScheduleWallTime({ date: input.date, time: input.startTime }, timezone);
-		resolveScheduleWallTime({ date: input.date, time: input.endTime }, timezone);
+		resolveScheduleWallTime(
+			{ date: input.date, time: input.startTime },
+			timezone,
+		);
+		resolveScheduleWallTime(
+			{ date: input.date, time: input.endTime },
+			timezone,
+		);
 
 		return yield* _(
 			shiftService.upsertShift({
@@ -168,12 +180,26 @@ export async function upsertShift(
 	return runSchedulingAction("upsertShift", effect);
 }
 
-export async function deleteShift(id: string): Promise<SchedulingActionResult<void>> {
+export async function deleteShift(
+	id: string,
+): Promise<SchedulingActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
 		const shiftService = yield* _(ShiftService);
-		const { session } = yield* _(requireCurrentEmployee("getCurrentEmployeeForDeleteShift"));
+		const { currentEmployee, session } = yield* _(
+			requireManagerEmployee({
+				resource: "shift",
+				action: "delete",
+				message: "Only managers and admins can delete shifts",
+			}),
+		);
 
-		yield* _(shiftService.deleteShift(id, session.user.id));
+		yield* _(
+			shiftService.deleteShift(id, {
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				userId: session.user.id,
+			}),
+		);
 	});
 
 	return runSchedulingAction("deleteShift", effect);
@@ -224,7 +250,9 @@ export async function publishShifts(
 		);
 		const serviceDateRange = toServiceDateRange(dateRange, timezone);
 
-		const settings = yield* _(coverageService.getCoverageSettings(currentEmployee.organizationId));
+		const settings = yield* _(
+			coverageService.getCoverageSettings(currentEmployee.organizationId),
+		);
 
 		if (!settings.allowPublishWithGaps) {
 			const validation = yield* _(
@@ -270,7 +298,11 @@ export async function publishShifts(
 		}
 
 		const result = yield* _(
-			shiftService.publishShifts(currentEmployee.organizationId, serviceDateRange, session.user.id),
+			shiftService.publishShifts(
+				currentEmployee.organizationId,
+				serviceDateRange,
+				session.user.id,
+			),
 		);
 
 		if (evaluation.summary.totalFindings > 0) {
@@ -288,7 +320,10 @@ export async function publishShifts(
 		}
 
 		logger.info(
-			{ count: result.count, affectedEmployees: result.affectedEmployeeIds.length },
+			{
+				count: result.count,
+				affectedEmployees: result.affectedEmployeeIds.length,
+			},
 			"Published shifts",
 		);
 
@@ -327,7 +362,9 @@ export async function getIncompleteDays(
 	return runSchedulingAction("getIncompleteDays", effect);
 }
 
-export async function getScheduleComplianceSummary(dateRange: DateRange): Promise<
+export async function getScheduleComplianceSummary(
+	dateRange: DateRange,
+): Promise<
 	SchedulingActionResult<{
 		summary: ScheduleComplianceSummary;
 		evaluationFingerprint: string;
@@ -338,7 +375,8 @@ export async function getScheduleComplianceSummary(dateRange: DateRange): Promis
 			requireManagerEmployee({
 				resource: "shift",
 				action: "read",
-				message: "Only managers and admins can view schedule compliance warnings",
+				message:
+					"Only managers and admins can view schedule compliance warnings",
 				queryName: "getCurrentEmployeeForScheduleComplianceSummary",
 			}),
 		);
