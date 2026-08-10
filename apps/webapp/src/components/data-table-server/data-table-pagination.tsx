@@ -6,7 +6,7 @@ import {
 	IconChevronsLeft,
 	IconChevronsRight,
 } from "@tabler/icons-react";
-import type { Table } from "@tanstack/react-table";
+import type { ReactTable, RowData } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 
 import { Button } from "@/components/ui/button";
@@ -17,9 +17,25 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import type { DataTableFeatures } from "./data-table-features";
 
-interface DataTablePaginationProps<TData> {
-	table: Table<TData>;
+export type DataTablePaginationTable<TData extends RowData> = Pick<
+	ReactTable<DataTableFeatures, TData>,
+	| "getPageCount"
+	| "getFilteredRowModel"
+	| "getFilteredSelectedRowModel"
+	| "setPageSize"
+	| "setPageIndex"
+	| "getCanPreviousPage"
+	| "previousPage"
+	| "getCanNextPage"
+	| "nextPage"
+> & {
+	state: Pick<ReactTable<DataTableFeatures, TData>["state"], "pagination">;
+};
+
+interface DataTablePaginationProps<TData extends RowData> {
+	table: DataTablePaginationTable<TData>;
 	/**
 	 * Total number of rows (for server-side pagination)
 	 */
@@ -36,7 +52,7 @@ interface DataTablePaginationProps<TData> {
 	showSelectedCount?: boolean;
 }
 
-export function DataTablePagination<TData>({
+export function DataTablePagination<TData extends RowData>({
 	table,
 	totalRows,
 	pageSizeOptions = [10, 20, 30, 50],
@@ -45,8 +61,8 @@ export function DataTablePagination<TData>({
 	const { t } = useTranslate();
 
 	const pageCount = table.getPageCount();
-	const currentPage = table.getState().pagination.pageIndex + 1;
-	const pageSize = table.getState().pagination.pageSize;
+	const currentPage = table.state.pagination.pageIndex + 1;
+	const pageSize = table.state.pagination.pageSize;
 
 	// Use totalRows if provided (server-side), otherwise use filtered row count
 	const total = totalRows ?? table.getFilteredRowModel().rows.length;

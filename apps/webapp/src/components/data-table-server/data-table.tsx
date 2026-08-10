@@ -3,22 +3,21 @@
 import {
 	type ColumnDef,
 	type ColumnFiltersState,
+	type ColumnVisibilityState,
 	flexRender,
-	getCoreRowModel,
-	getFacetedRowModel,
-	getFacetedUniqueValues,
-	getFilteredRowModel,
-	getPaginationRowModel,
-	getSortedRowModel,
 	type OnChangeFn,
 	type PaginationState,
+	type RowData,
 	type RowSelectionState,
 	type SortingState,
-	type VisibilityState,
+	useTable,
 } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
-
+import {
+	type DataTableFeatures,
+	dataTableFeatures,
+} from "@/components/data-table-server/data-table-features";
 import {
 	Table,
 	TableBody,
@@ -27,14 +26,13 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { useCompilerSafeReactTable } from "@/components/use-compiler-safe-react-table";
 import { cn } from "@/lib/utils";
 
-interface DataTableProps<TData, TValue> {
+interface DataTableProps<TData extends RowData> {
 	/**
 	 * Column definitions
 	 */
-	columns: ColumnDef<TData, TValue>[];
+	columns: ColumnDef<DataTableFeatures, TData>[];
 	/**
 	 * Data to display
 	 */
@@ -113,7 +111,7 @@ interface DataTableProps<TData, TValue> {
 	rowClassName?: string | ((row: TData) => string);
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends RowData>({
 	columns,
 	data,
 	pageCount,
@@ -133,25 +131,30 @@ export function DataTable<TData, TValue>({
 	className,
 	onRowClick,
 	rowClassName,
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps<TData>) {
 	const { t } = useTranslate();
 
 	// Internal state for uncontrolled mode
 	const [internalSorting, setInternalSorting] = useState<SortingState>([]);
-	const [internalPagination, setInternalPagination] = useState<PaginationState>({
-		pageIndex: 0,
-		pageSize: 10,
-	});
-	const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
+	const [internalPagination, setInternalPagination] = useState<PaginationState>(
+		{
+			pageIndex: 0,
+			pageSize: 10,
+		},
+	);
+	const [internalRowSelection, setInternalRowSelection] =
+		useState<RowSelectionState>({});
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+	const [columnVisibility, setColumnVisibility] =
+		useState<ColumnVisibilityState>({});
 
 	// Use external state if provided, otherwise use internal state
 	const sorting = externalSorting ?? internalSorting;
 	const currentPagination = pagination ?? internalPagination;
 	const rowSelection = externalRowSelection ?? internalRowSelection;
 
-	const table = useCompilerSafeReactTable({
+	const table = useTable({
+		features: dataTableFeatures,
 		data,
 		columns,
 		pageCount: manualPagination ? pageCount : undefined,
@@ -172,12 +175,6 @@ export function DataTable<TData, TValue>({
 		onColumnFiltersChange: setColumnFilters,
 		onColumnVisibilityChange: setColumnVisibility,
 		onPaginationChange: onPaginationChange ?? setInternalPagination,
-		getCoreRowModel: getCoreRowModel(),
-		getFilteredRowModel: manualFiltering ? undefined : getFilteredRowModel(),
-		getPaginationRowModel: manualPagination ? undefined : getPaginationRowModel(),
-		getSortedRowModel: manualSorting ? undefined : getSortedRowModel(),
-		getFacetedRowModel: getFacetedRowModel(),
-		getFacetedUniqueValues: getFacetedUniqueValues(),
 	});
 
 	return (
@@ -196,7 +193,10 @@ export function DataTable<TData, TValue>({
 								<TableHead key={header.id} colSpan={header.colSpan}>
 									{header.isPlaceholder
 										? null
-										: flexRender(header.column.columnDef.header, header.getContext())}
+										: flexRender(
+												header.column.columnDef.header,
+												header.getContext(),
+											)}
 								</TableHead>
 							))}
 						</TableRow>
@@ -206,18 +206,25 @@ export function DataTable<TData, TValue>({
 					{table.getRowModel().rows?.length ? (
 						table.getRowModel().rows.map((row) => {
 							const rowClassNameValue =
-								typeof rowClassName === "function" ? rowClassName(row.original) : rowClassName;
+								typeof rowClassName === "function"
+									? rowClassName(row.original)
+									: rowClassName;
 
 							return (
 								<TableRow
 									key={row.id}
 									data-state={row.getIsSelected() && "selected"}
 									className={rowClassNameValue}
-									onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+									onClick={
+										onRowClick ? () => onRowClick(row.original) : undefined
+									}
 								>
 									{row.getVisibleCells().map((cell) => (
 										<TableCell key={cell.id}>
-											{flexRender(cell.column.columnDef.cell, cell.getContext())}
+											{flexRender(
+												cell.column.columnDef.cell,
+												cell.getContext(),
+											)}
 										</TableCell>
 									))}
 								</TableRow>

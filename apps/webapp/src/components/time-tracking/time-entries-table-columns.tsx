@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import type { TFnType } from "@tolgee/react";
 import type { ReactNode } from "react";
+import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { Badge } from "@/components/ui/badge";
 import type { WorkPeriodAutoAdjustmentReason } from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
@@ -47,7 +48,7 @@ export function getTimeEntriesColumns({
 	hasManager: boolean;
 	renderEditAction: (period: WorkPeriodData, isSameDay: boolean) => ReactNode;
 	renderAdminAction?: (period: WorkPeriodData) => ReactNode;
-}): ColumnDef<WorkPeriodData>[] {
+}): ColumnDef<DataTableFeatures, WorkPeriodData>[] {
 	return [
 		{
 			accessorKey: "startTime",

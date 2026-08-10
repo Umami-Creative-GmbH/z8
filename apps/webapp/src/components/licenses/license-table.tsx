@@ -1,14 +1,26 @@
 "use client";
 
-import { IconArrowsUpDown, IconExternalLink, IconSearch } from "@tabler/icons-react";
+import {
+	IconArrowsUpDown,
+	IconExternalLink,
+	IconSearch,
+} from "@tabler/icons-react";
 import {
 	type ColumnDef,
 	type ColumnFiltersState,
+	columnFilteringFeature,
+	columnVisibilityFeature,
+	createFilteredRowModel,
+	createSortedRowModel,
+	filterFn_includesString,
 	flexRender,
-	getCoreRowModel,
-	getFilteredRowModel,
-	getSortedRowModel,
+	globalFilteringFeature,
+	rowSortingFeature,
 	type SortingState,
+	sortFn_alphanumeric,
+	sortFn_text,
+	tableFeatures,
+	useTable,
 } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -23,15 +35,40 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { useCompilerSafeReactTable } from "@/components/use-compiler-safe-react-table";
 import type { LicenseInfo, LicenseReport } from "@/types/license";
 
 type LicenseTableProps = {
 	licenses: LicenseReport;
 };
 
-function getLicenseBadgeVariant(license: string): "default" | "secondary" | "outline" {
-	const permissive = ["MIT", "ISC", "BSD", "Apache", "0BSD", "Unlicense", "CC0"];
+const licenseTableFeatures = tableFeatures({
+	columnFilteringFeature,
+	globalFilteringFeature,
+	columnVisibilityFeature,
+	rowSortingFeature,
+	filteredRowModel: createFilteredRowModel(),
+	sortedRowModel: createSortedRowModel(),
+	filterFns: {
+		includesString: filterFn_includesString,
+	},
+	sortFns: {
+		alphanumeric: sortFn_alphanumeric,
+		text: sortFn_text,
+	},
+});
+
+function getLicenseBadgeVariant(
+	license: string,
+): "default" | "secondary" | "outline" {
+	const permissive = [
+		"MIT",
+		"ISC",
+		"BSD",
+		"Apache",
+		"0BSD",
+		"Unlicense",
+		"CC0",
+	];
 	if (permissive.some((p) => license.toUpperCase().includes(p.toUpperCase()))) {
 		return "secondary";
 	}
@@ -53,7 +90,11 @@ function normalizeRepoUrl(
 
 export function LicenseTable({ licenses }: LicenseTableProps) {
 	const { t } = useTranslate();
-	const columns: ColumnDef<LicenseInfo>[] = [
+	const searchLabel = t(
+		"settings.licenses.searchPlaceholder",
+		"Search packages or licenses…",
+	);
+	const columns: ColumnDef<typeof licenseTableFeatures, LicenseInfo>[] = [
 		{
 			accessorKey: "name",
 			header: ({ column }) => (
@@ -66,7 +107,9 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 					<IconArrowsUpDown aria-hidden="true" className="ml-2 size-4" />
 				</Button>
 			),
-			cell: ({ row }) => <span className="font-medium">{row.getValue("name")}</span>,
+			cell: ({ row }) => (
+				<span className="font-medium">{row.getValue("name")}</span>
+			),
 		},
 		{
 			accessorKey: "license",
@@ -106,7 +149,9 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 								target="_blank"
 							>
 								<IconExternalLink aria-hidden="true" className="size-4" />
-								<span className="sr-only">{t("settings.licenses.repository", "Repository")}</span>
+								<span className="sr-only">
+									{t("settings.licenses.repository", "Repository")}
+								</span>
 							</a>
 						)}
 						{homepage && homepage !== repoUrl && (
@@ -117,7 +162,9 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 								target="_blank"
 							>
 								<IconExternalLink aria-hidden="true" className="size-4" />
-								<span className="sr-only">{t("settings.licenses.homepage", "Homepage")}</span>
+								<span className="sr-only">
+									{t("settings.licenses.homepage", "Homepage")}
+								</span>
 							</a>
 						)}
 					</div>
@@ -125,11 +172,14 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 			},
 		},
 	];
-	const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: false }]);
+	const [sorting, setSorting] = useState<SortingState>([
+		{ id: "name", desc: false },
+	]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [globalFilter, setGlobalFilter] = useState("");
 
-	const table = useCompilerSafeReactTable({
+	const table = useTable({
+		features: licenseTableFeatures,
 		data: licenses,
 		columns,
 		state: {
@@ -140,9 +190,6 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 		onSortingChange: setSorting,
 		onColumnFiltersChange: setColumnFilters,
 		onGlobalFilterChange: setGlobalFilter,
-		getCoreRowModel: getCoreRowModel(),
-		getSortedRowModel: getSortedRowModel(),
-		getFilteredRowModel: getFilteredRowModel(),
 	});
 
 	const stats = (() => {
@@ -167,20 +214,27 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 							className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground"
 						/>
 						<Input
+							aria-label={searchLabel}
 							className="pl-9"
 							onChange={(e) => setGlobalFilter(e.target.value)}
-							placeholder={t("settings.licenses.searchPlaceholder", "Search packages or licenses…")}
+							placeholder={searchLabel}
 							value={globalFilter}
 						/>
 					</div>
 					<div className="flex gap-4 text-muted-foreground text-sm">
 						<span>
-							{t("settings.licenses.packagesCount", "{count} packages", { count: stats.total })}
+							{t("settings.licenses.packagesCount", "{count} packages", {
+								count: stats.total,
+							})}
 						</span>
 						<span>
-							{t("settings.licenses.licenseTypesCount", "{count} license types", {
-								count: stats.uniqueLicenses,
-							})}
+							{t(
+								"settings.licenses.licenseTypesCount",
+								"{count} license types",
+								{
+									count: stats.uniqueLicenses,
+								},
+							)}
 						</span>
 					</div>
 				</div>
@@ -198,7 +252,10 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 									>
 										{header.isPlaceholder
 											? null
-											: flexRender(header.column.columnDef.header, header.getContext())}
+											: flexRender(
+													header.column.columnDef.header,
+													header.getContext(),
+												)}
 									</TableHead>
 								))}
 							</TableRow>
@@ -210,14 +267,20 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 								<TableRow key={row.id}>
 									{row.getVisibleCells().map((cell) => (
 										<TableCell key={cell.id}>
-											{flexRender(cell.column.columnDef.cell, cell.getContext())}
+											{flexRender(
+												cell.column.columnDef.cell,
+												cell.getContext(),
+											)}
 										</TableCell>
 									))}
 								</TableRow>
 							))
 						) : (
 							<TableRow>
-								<TableCell className="h-24 text-center" colSpan={columns.length}>
+								<TableCell
+									className="h-24 text-center"
+									colSpan={columns.length}
+								>
 									{t("settings.licenses.noPackages", "No packages found.")}
 								</TableCell>
 							</TableRow>

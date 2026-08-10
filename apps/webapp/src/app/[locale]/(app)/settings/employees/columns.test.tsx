@@ -9,6 +9,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { EmployeeWithRelations } from "./actions";
 import { createEmployeeColumns } from "./columns";
 import type { EmployeeDirectoryRow } from "./employee-action-types";
+import type { EmployeeTableFeatures } from "./employee-table-features";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
@@ -54,9 +55,12 @@ function getColumns(overrides: Partial<typeof defaultColumnOptions> = {}) {
 	return createEmployeeColumns({ ...defaultColumnOptions, ...overrides });
 }
 
-function renderEmployeeCell(employee: EmployeeWithRelations) {
+function renderEmployeeCell(employee: EmployeeDirectoryRow) {
 	const columns = getColumns();
-	const employeeColumn = columns[0] as ColumnDef<EmployeeWithRelations>;
+	const employeeColumn = columns[0] as ColumnDef<
+		EmployeeTableFeatures,
+		EmployeeDirectoryRow
+	>;
 	const cell = employeeColumn.cell;
 
 	if (typeof cell !== "function")
@@ -260,7 +264,9 @@ describe("employee directory columns", () => {
 
 		const columns = getColumns();
 		const statusColumn = columns.find(
-			(column) => column.id === "status" || column.accessorKey === "isActive",
+			(column) =>
+				column.id === "status" ||
+				("accessorKey" in column && column.accessorKey === "isActive"),
 		);
 		const statusCell = statusColumn?.cell;
 		if (typeof statusCell !== "function")

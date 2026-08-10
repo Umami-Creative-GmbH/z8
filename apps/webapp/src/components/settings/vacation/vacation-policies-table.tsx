@@ -19,6 +19,7 @@ import {
 	getVacationPolicies,
 } from "@/app/[locale]/(app)/settings/vacation/actions";
 import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
+import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -178,7 +179,7 @@ export function VacationPoliciesTable({
 	})();
 
 	// Column definitions
-	const columns: ColumnDef<VacationPolicy>[] = [
+	const columns: ColumnDef<DataTableFeatures, VacationPolicy>[] = [
 		{
 			accessorKey: "name",
 			header: t("vacation.policies.header.name", "Name"),

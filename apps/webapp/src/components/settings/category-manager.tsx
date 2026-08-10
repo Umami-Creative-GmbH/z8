@@ -11,6 +11,7 @@ import {
 	getHolidayCategories,
 } from "@/app/[locale]/(app)/settings/holidays/actions";
 import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
+import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -129,7 +130,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 	})();
 
 	// Column definitions
-	const columns: ColumnDef<HolidayCategory>[] = [
+	const columns: ColumnDef<DataTableFeatures, HolidayCategory>[] = [
 		{
 			accessorKey: "name",
 			header: t("settings.holidays.categories.name", "Name"),
