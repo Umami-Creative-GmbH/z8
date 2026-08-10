@@ -1,4 +1,5 @@
 import { IconEdit, IconUser } from "@tabler/icons-react";
+import { eq } from "drizzle-orm";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +21,11 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { UserAvatar } from "@/components/user-avatar";
+import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { calendarYearAt, systemClock } from "@/lib/datetime/temporal-core";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 import {
@@ -34,10 +39,17 @@ async function EmployeeAllowancesContent() {
 		requireOrgAdminSettingsAccess(),
 		getTranslate(),
 	]);
+	const ownedOrganization = await db.query.organization.findFirst({
+		where: eq(organization.id, organizationId),
+		columns: { timezone: true },
+	});
+	const timezone = resolveOrganizationTimezone(
+		ownedOrganization?.timezone,
+	).timezone;
 
 	// The current vacation allowance year must be resolved per request.
 	await connection();
-	const currentYear = new Date().getFullYear();
+	const currentYear = calendarYearAt(systemClock.nowInstant(), timezone);
 	const [employeesResult, policyResult, policyAssignmentsResult] =
 		await Promise.all([
 			getEmployeesWithAllowances(organizationId, currentYear),

@@ -112,3 +112,7 @@ export function compareInstants(left: Instant, right: Instant): number {
 export function comparePlainDates(left: PlainDate, right: PlainDate): number {
 	return Temporal.PlainDate.compare(left, right);
 }
+
+export function calendarYearAt(instant: Instant, timezone: string): number {
+	return instant.toZonedDateTimeISO(timezone).toPlainDate().year;
+}

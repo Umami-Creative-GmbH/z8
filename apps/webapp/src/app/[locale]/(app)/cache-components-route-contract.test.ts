@@ -88,7 +88,7 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		fallbackComponent: "EmployeeAllowancesLoading",
 		reasonCategory: "current-calendar",
 		reason: "The current vacation allowance year must be resolved per request.",
-		operation: "const currentYear = new Date().getFullYear();",
+		operation: "const currentYear = calendarYearAt(",
 	},
 	{
 		file: "src/app/[locale]/(setup)/setup/page.tsx",
