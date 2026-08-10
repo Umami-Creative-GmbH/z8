@@ -1,13 +1,23 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
-import {
-	ALL_LANGUAGES,
-	ALL_NAMESPACES,
-	loadRouteTranslations,
-	mergeTreeTranslations,
-} from "./shared";
+import { loadRouteTranslations } from "./load-translations";
+import { ALL_LANGUAGES, ALL_NAMESPACES, mergeTreeTranslations } from "./shared";
+
+const mockState = vi.hoisted(() => ({
+	cacheLife: vi.fn(),
+}));
+
+vi.mock("server-only", () => ({}));
+
+vi.mock("next/cache", () => ({
+	cacheLife: mockState.cacheLife,
+}));
+
+beforeEach(() => {
+	mockState.cacheLife.mockClear();
+});
 
 describe("Tolgee route translations", () => {
 	it("lists every language supported by Tolgee and the language switchers", () => {
@@ -70,7 +80,7 @@ describe("Tolgee route translations", () => {
 	);
 
 	it("loads app search strings from the common namespace", async () => {
-		const translations = await loadRouteTranslations("de", "/");
+		const translations = await loadRouteTranslations("de");
 
 		expect(translations.de).toMatchObject({
 			appSearch: {
@@ -80,7 +90,7 @@ describe("Tolgee route translations", () => {
 	});
 
 	it("keeps German translations available after navigating from settings to dashboard", async () => {
-		const translations = await loadRouteTranslations("de", "/settings");
+		const translations = await loadRouteTranslations("de");
 
 		expect(translations.de).toMatchObject({
 			dashboard: {
@@ -92,10 +102,7 @@ describe("Tolgee route translations", () => {
 	});
 
 	it("loads dedicated analytics route translations", async () => {
-		const translations = await loadRouteTranslations(
-			"en",
-			"/analytics/work-hours",
-		);
+		const translations = await loadRouteTranslations("en");
 
 		expect(translations.en).toMatchObject({
 			analytics: {
@@ -107,7 +114,7 @@ describe("Tolgee route translations", () => {
 	});
 
 	it("loads dedicated today route translations", async () => {
-		const translations = await loadRouteTranslations("en", "/today");
+		const translations = await loadRouteTranslations("en");
 
 		expect(translations.en).toMatchObject({
 			today: {
@@ -116,6 +123,12 @@ describe("Tolgee route translations", () => {
 				},
 			},
 		});
+	});
+
+	it("caches bundled translations with the max cache profile", async () => {
+		await loadRouteTranslations("en");
+
+		expect(mockState.cacheLife).toHaveBeenCalledWith("max");
 	});
 });
 

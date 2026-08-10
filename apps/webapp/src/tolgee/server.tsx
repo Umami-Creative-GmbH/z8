@@ -1,20 +1,11 @@
 import { createServerInstance } from "@tolgee/react/server";
-import { headers } from "next/headers";
 import { getLocale } from "next-intl/server";
-import { DOMAIN_HEADERS } from "@/proxy";
-import { getNamespacesForRoute, loadNamespaces, TolgeeBase } from "./shared";
+import { ALL_NAMESPACES, loadNamespaces, TolgeeBase } from "./shared";
 
 export const { getTolgee, getTranslate, T } = createServerInstance({
 	getLocale,
 	createTolgee: async (language) => {
-		// Get current pathname to determine which namespaces to load
-		const headersList = await headers();
-		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || "/";
-		const pathnameWithoutLocale = pathname.replace(new RegExp(`^/${language}`), "") || "/";
-
-		// Load namespaces for the current route
-		const namespaces = getNamespacesForRoute(pathnameWithoutLocale);
-		const staticData = await loadNamespaces(language, namespaces);
+		const staticData = await loadNamespaces(language, ALL_NAMESPACES);
 
 		return TolgeeBase().init({
 			observerOptions: {

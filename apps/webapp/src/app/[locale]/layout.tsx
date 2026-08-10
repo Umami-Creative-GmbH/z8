@@ -1,4 +1,3 @@
-import { headers } from "next/headers";
 import { setRequestLocale } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
 import { Toaster } from "sonner";
@@ -8,8 +7,8 @@ import { FontSizeProvider } from "@/components/font-size-preference";
 import { OfflineBanner, SWUpdatePrompt } from "@/components/offline";
 import { ThemeProvider } from "@/components/theme-provider";
 import { env } from "@/env";
-import { DOMAIN_HEADERS } from "@/proxy";
-import { ALL_LANGUAGES, loadRouteTranslations } from "@/tolgee/shared";
+import { loadRouteTranslations } from "@/tolgee/load-translations";
+import { ALL_LANGUAGES } from "@/tolgee/shared";
 import "../globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/lib/query";
@@ -27,13 +26,7 @@ export async function generateStaticParams() {
 
 // Separate component for loading translations to wrap in Suspense
 async function TranslationProvider({ locale, children }: { locale: string; children: ReactNode }) {
-	// Get the current pathname to determine which namespaces to load
-	const headersList = await headers();
-	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || "/";
-	// Strip locale prefix from pathname (e.g., /en/settings -> /settings)
-	const pathnameWithoutLocale = pathname.replace(new RegExp(`^/${locale}`), "") || "/";
-
-	const records = await loadRouteTranslations(locale, pathnameWithoutLocale).catch((error) => {
+	const records = await loadRouteTranslations(locale).catch((error) => {
 		console.warn("Failed to load Tolgee records:", error);
 		return {};
 	});
@@ -86,9 +79,7 @@ function AppProviders({ children, locale }: { children: ReactNode; locale: strin
 				<Suspense
 					fallback={
 						<TranslationProviders locale={locale} records={{}}>
-							<Suspense fallback={null}>
-								<ApplicationContent>{children}</ApplicationContent>
-							</Suspense>
+							<ApplicationContent>{children}</ApplicationContent>
 						</TranslationProviders>
 					}
 				>

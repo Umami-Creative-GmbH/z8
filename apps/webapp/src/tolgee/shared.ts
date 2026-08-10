@@ -203,19 +203,6 @@ export async function loadNamespaces(
 	return result;
 }
 
-/**
- * Load translations for a specific route
- */
-export async function loadRouteTranslations(
-	locale: string,
-	pathname: string,
-): Promise<TolgeeStaticData> {
-	// The locale layout persists across client-side navigation, so route-scoped
-	// payloads leave newly visited pages without translations until a full refresh.
-	void pathname;
-	return loadNamespaces(locale, ALL_NAMESPACES);
-}
-
 // Tolgee's expected translation data type
 type TreeTranslationsData = { [key: string]: TreeTranslationsData | string };
 

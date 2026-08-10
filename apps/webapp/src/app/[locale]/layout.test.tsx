@@ -41,14 +41,10 @@ function findFontSizeInitScript(node: React.ReactNode): {
 }
 
 const mockState = vi.hoisted(() => ({
-	headers: vi.fn(async () => new Headers({ "x-pathname": "/en/sign-in" })),
 	getSession: vi.fn(async () => null),
 	findUserSettings: vi.fn(),
+	loadRouteTranslations: vi.fn(async () => ({})),
 	setRequestLocale: vi.fn(),
-}));
-
-vi.mock("next/headers", () => ({
-	headers: mockState.headers,
 }));
 
 vi.mock("next-intl", () => ({
@@ -128,12 +124,6 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/proxy", () => ({
-	DOMAIN_HEADERS: {
-		PATHNAME: "x-pathname",
-	},
-}));
-
 vi.mock("@/tolgee/client", () => ({
 	TolgeeNextProvider: ({
 		children,
@@ -150,9 +140,12 @@ vi.mock("@/tolgee/client", () => ({
 	),
 }));
 
+vi.mock("@/tolgee/load-translations", () => ({
+	loadRouteTranslations: mockState.loadRouteTranslations,
+}));
+
 vi.mock("@/tolgee/shared", () => ({
 	ALL_LANGUAGES: ["en"],
-	loadRouteTranslations: vi.fn(async () => ({})),
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -206,20 +199,43 @@ describe("LocaleLayout", () => {
 		expect(layoutSource).not.toContain('from "next-intl"');
 	});
 
-	it("isolates route content when the translation fallback is rendered", () => {
+	it("loads translations by locale without reading request headers", async () => {
+		const layout = await LocaleLayout({
+			children: <div>Auth content</div>,
+			params: Promise.resolve({ locale: "en" }),
+		});
+		const stream = await renderToReadableStream(layout);
+		const reader = stream.getReader();
+		while (!(await reader.read()).done) {
+			// Consume the stream so the async translation provider resolves.
+		}
+
+		expect(mockState.loadRouteTranslations).toHaveBeenCalledWith("en");
+		expect(mockState.loadRouteTranslations.mock.calls[0]).toHaveLength(1);
+
+		const source = readFileSync("src/app/[locale]/layout.tsx", "utf8");
+		expect(source).not.toContain("next/headers");
+		expect(source).not.toContain("DOMAIN_HEADERS");
+		expect(source).not.toContain("pathname");
+	});
+
+	it("renders route content directly inside the translation fallback", () => {
 		const source = readFileSync("src/app/[locale]/layout.tsx", "utf8");
 
 		expect(source).toMatch(
-			/<TranslationProviders locale=\{locale\} records=\{\{\}\}>\s*<Suspense fallback=\{null\}>\s*<ApplicationContent>\{children\}<\/ApplicationContent>\s*<\/Suspense>\s*<\/TranslationProviders>/,
+			/<TranslationProviders locale=\{locale\} records=\{\{\}\}>\s*<ApplicationContent>\{children\}<\/ApplicationContent>\s*<\/TranslationProviders>/,
+		);
+		expect(source).not.toMatch(
+			/<TranslationProviders locale=\{locale\} records=\{\{\}\}>\s*<Suspense fallback=\{null\}>/,
 		);
 	});
 
 	it("renders the translation-context fallback while route translations are pending", async () => {
-		let resolveHeaders: (headers: Headers) => void = () => {};
-		mockState.headers.mockImplementation(
+		let resolveTranslations: (translations: Record<string, unknown>) => void = () => {};
+		mockState.loadRouteTranslations.mockImplementation(
 			() =>
-				new Promise<Headers>((resolve) => {
-					resolveHeaders = resolve;
+				new Promise<Record<string, unknown>>((resolve) => {
+					resolveTranslations = resolve;
 				}),
 		);
 
@@ -231,7 +247,7 @@ describe("LocaleLayout", () => {
 			const stream = await renderToReadableStream(layout);
 			const reader = stream.getReader();
 			const { value } = await reader.read();
-			resolveHeaders(new Headers({ "x-pathname": "/en/sign-in" }));
+			resolveTranslations({});
 			while (!(await reader.read()).done) {
 				// Consume the resolved translation branch so the stream ends without an abort.
 			}
@@ -250,9 +266,7 @@ describe("LocaleLayout", () => {
 				"Auth content",
 			);
 		} finally {
-			mockState.headers.mockImplementation(
-				async () => new Headers({ "x-pathname": "/en/sign-in" }),
-			);
+			mockState.loadRouteTranslations.mockImplementation(async () => ({}));
 		}
 	});
 });
