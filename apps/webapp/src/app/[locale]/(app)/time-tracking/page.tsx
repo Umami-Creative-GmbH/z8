@@ -1,4 +1,3 @@
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
@@ -14,8 +13,6 @@ interface TimeTrackingPageProps {
 }
 
 async function TimeTrackingPageContent({ searchParams }: TimeTrackingPageProps) {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
 	const pageData = await getTimeTrackingPageData(await searchParams);
 
 	if (!pageData.currentEmployee) {

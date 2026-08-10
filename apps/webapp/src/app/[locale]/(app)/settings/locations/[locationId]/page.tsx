@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { LocationDetail } from "@/components/settings/location-detail";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,8 +9,6 @@ interface LocationDetailPageProps {
 }
 
 async function LocationDetailPageContent({ params }: LocationDetailPageProps) {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
 	const [{ locationId }, settingsRouteContext] = await Promise.all([
 		params,
 		getCurrentSettingsRouteContext(),
