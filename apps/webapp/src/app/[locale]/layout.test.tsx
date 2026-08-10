@@ -219,15 +219,91 @@ describe("LocaleLayout", () => {
 		expect(source).not.toContain("pathname");
 	});
 
-	it("renders route content directly inside the translation fallback", () => {
+	it("isolates route content behind a non-null translation fallback shell", () => {
 		const source = readFileSync("src/app/[locale]/layout.tsx", "utf8");
 
 		expect(source).toMatch(
-			/<TranslationProviders locale=\{locale\} records=\{\{\}\}>\s*<ApplicationContent>\{children\}<\/ApplicationContent>\s*<\/TranslationProviders>/,
+			/<TranslationProviders locale=\{locale\} records=\{\{\}\}>\s*<Suspense fallback=\{<RootRouteShell \/>\}>\s*<ApplicationContent>\{children\}<\/ApplicationContent>\s*<\/Suspense>\s*<\/TranslationProviders>/,
 		);
 		expect(source).not.toMatch(
 			/<TranslationProviders locale=\{locale\} records=\{\{\}\}>\s*<Suspense fallback=\{null\}>/,
 		);
+	});
+
+	it("streams a neutral route shell when translations and route content are pending", async () => {
+		let resolveTranslations: (translations: Record<string, unknown>) => void = () => {};
+		let resolveChild: () => void = () => {};
+		const childPending = new Promise<void>((resolve) => {
+			resolveChild = resolve;
+		});
+		mockState.loadRouteTranslations.mockImplementation(
+			() =>
+				new Promise<Record<string, unknown>>((resolve) => {
+					resolveTranslations = resolve;
+				}),
+		);
+
+		async function SuspendingChild() {
+			await childPending;
+			return <main data-testid="resolved-child">Resolved route content</main>;
+		}
+
+		try {
+			const layout = await LocaleLayout({
+				children: <SuspendingChild />,
+				params: Promise.resolve({ locale: "en" }),
+			});
+			const streamResult = await Promise.race([
+				renderToReadableStream(layout),
+				new Promise<"timed-out">((resolve) => setTimeout(() => resolve("timed-out"), 1000)),
+			]);
+			expect(streamResult).not.toBe("timed-out");
+			if (streamResult === "timed-out") {
+				return;
+			}
+
+			const stream = streamResult;
+			const reader = stream.getReader();
+			const firstRead = await Promise.race([
+				reader.read(),
+				new Promise<"timed-out">((resolve) => setTimeout(() => resolve("timed-out"), 1000)),
+			]);
+
+			expect(firstRead).not.toBe("timed-out");
+			if (firstRead === "timed-out") {
+				return;
+			}
+
+			const decoder = new TextDecoder();
+			const firstChunk = decoder.decode(firstRead.value, { stream: true });
+			const container = document.createElement("div");
+			container.innerHTML = firstChunk;
+			const routeShell = container.querySelector(
+				'main[aria-busy="true"][aria-label="Loading application"]',
+			);
+
+			expect(routeShell).not.toBeNull();
+			expect(routeShell?.classList.contains("min-h-svh")).toBe(true);
+			expect(routeShell?.classList.contains("bg-background")).toBe(true);
+
+			resolveTranslations({});
+			resolveChild();
+			let streamedHtml = firstChunk;
+			while (true) {
+				const next = await reader.read();
+				if (next.done) {
+					break;
+				}
+				streamedHtml += decoder.decode(next.value, { stream: true });
+			}
+			streamedHtml += decoder.decode();
+
+			expect(streamedHtml).toContain("Resolved route content");
+		} finally {
+			resolveTranslations({});
+			resolveChild();
+			mockState.loadRouteTranslations.mockImplementation(async () => ({}));
+		}
 	});
 
 	it("renders the translation-context fallback while route translations are pending", async () => {

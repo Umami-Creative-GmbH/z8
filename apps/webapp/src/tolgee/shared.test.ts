@@ -3,7 +3,12 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
 import { loadRouteTranslations } from "./load-translations";
-import { ALL_LANGUAGES, ALL_NAMESPACES, mergeTreeTranslations } from "./shared";
+import {
+	ALL_LANGUAGES,
+	ALL_NAMESPACES,
+	loadNamespaceImport,
+	mergeTreeTranslations,
+} from "./shared";
 
 const mockState = vi.hoisted(() => ({
 	cacheLife: vi.fn(),
@@ -133,6 +138,40 @@ describe("Tolgee route translations", () => {
 });
 
 describe("translation namespace merging", () => {
+	it("rejects namespace import failures in strict mode", async () => {
+		const importError = new Error("broken translation bundle");
+
+		await expect(
+			loadNamespaceImport(
+				"common",
+				"en",
+				async () => {
+					throw importError;
+				},
+				{ strict: true },
+			),
+		).rejects.toBe(importError);
+	});
+
+	it("returns empty namespace data for import failures by default", async () => {
+		const importError = new Error("broken translation bundle");
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+		try {
+			await expect(
+				loadNamespaceImport("common", "en", async () => {
+					throw importError;
+				}),
+			).resolves.toEqual({ ns: "common", data: {} });
+			expect(warn).toHaveBeenCalledWith(
+				"Failed to load namespace common for en:",
+				importError,
+			);
+		} finally {
+			warn.mockRestore();
+		}
+	});
+
 	it("deep merges split settings namespaces without overwriting sibling groups", () => {
 		const merged = mergeTreeTranslations([
 			{

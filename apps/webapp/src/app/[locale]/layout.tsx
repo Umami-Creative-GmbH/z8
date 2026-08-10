@@ -72,6 +72,12 @@ function ApplicationContent({ children }: { children: ReactNode }) {
 	);
 }
 
+function RootRouteShell() {
+	return (
+		<main aria-busy="true" aria-label="Loading application" className="min-h-svh bg-background" />
+	);
+}
+
 function AppProviders({ children, locale }: { children: ReactNode; locale: string }) {
 	return (
 		<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
@@ -79,7 +85,9 @@ function AppProviders({ children, locale }: { children: ReactNode; locale: strin
 				<Suspense
 					fallback={
 						<TranslationProviders locale={locale} records={{}}>
-							<ApplicationContent>{children}</ApplicationContent>
+							<Suspense fallback={<RootRouteShell />}>
+								<ApplicationContent>{children}</ApplicationContent>
+							</Suspense>
 						</TranslationProviders>
 					}
 				>
