@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { NoOrganizationError } from "@/components/errors/no-organization-error";
 import { SectionCards, SectionCardsSkeleton } from "@/components/section-cards";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
 	getOnboardingStatus,
 	getPendingInvitationId,
@@ -55,14 +54,8 @@ function DashboardPageLoading() {
 			className="@container/main flex flex-1 flex-col gap-2"
 			role="status"
 		>
-			<div className="grid gap-4 px-4 py-4 md:grid-cols-2 md:py-6 lg:px-6 xl:grid-cols-3">
-				{["primary", "secondary", "tertiary"].map((key) => (
-					<Skeleton
-						aria-hidden="true"
-						className="h-40 w-full rounded-xl"
-						key={key}
-					/>
-				))}
+			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+				<SectionCardsSkeleton aria-hidden="true" />
 			</div>
 		</div>
 	);

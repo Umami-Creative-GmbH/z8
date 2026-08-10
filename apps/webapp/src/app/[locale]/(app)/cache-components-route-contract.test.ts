@@ -225,17 +225,39 @@ const SHELL_WORK_QUEUE = [
 		contentComponent: "DashboardPageContent",
 		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-2",
 		fallbackAriaLabel: "Loading dashboard",
+		fallbackNestedSkeletonComponent: "SectionCardsSkeleton",
+		fallbackNestedSkeletonFile: "src/components/section-cards.tsx",
+		fallbackNestedSkeletonItems: 8,
 		requiresSynchronousDefaultExport: true,
 	},
 	{
 		file: "src/app/[locale]/(app)/today/page.tsx",
 		fallbackComponent: "TodayPageLoading",
+		fallbackComponentFile: "src/app/[locale]/(app)/today/today-loading.tsx",
 		contentComponent: "TodayPageContent",
 		fallbackAriaLabel: "Loading today's manager briefing",
 		resolvedComponentFile: "src/app/[locale]/(app)/today/today-briefing.tsx",
 		resolvedComponent: "TodayBriefing",
 		resolvedOuterFrameClass:
 			"@container/main flex flex-1 flex-col gap-6 px-4 py-4 md:py-6 lg:px-6",
+		fallbackGeometryGroups: [
+			{
+				keyArray: "TODAY_SUMMARY_LOADING_KEYS",
+				itemCount: 6,
+				frameClass: "grid gap-3 sm:grid-cols-2 xl:grid-cols-6",
+			},
+			{
+				keyArray: "TODAY_ACTION_LOADING_KEYS",
+				itemCount: 2,
+				frameClass:
+					"grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]",
+			},
+			{
+				keyArray: "TODAY_SUPPORTING_LOADING_KEYS",
+				itemCount: 5,
+				frameClass: "grid gap-4 md:grid-cols-2 xl:grid-cols-3",
+			},
+		],
 		requiresSynchronousDefaultExport: true,
 	},
 	{
@@ -308,6 +330,15 @@ const CROSS_FILE_RESOLVED_SHELL_ROUTES = SHELL_WORK_QUEUE.filter(
 
 function appPath(file: string): string {
 	return join(APP_ROOT, file.replace(/^src\/app\//, ""));
+}
+
+function getFallbackSource(
+	route: QualityReviewedShellRoute,
+	routeSource: string,
+): string {
+	return "fallbackComponentFile" in route
+		? readFileSync(appPath(route.fallbackComponentFile), "utf8")
+		: routeSource;
 }
 
 function normalizeGlobPath(file: string): string {
@@ -577,10 +608,12 @@ function hasExpectedLoadingFrame(
 		fallbackComponent,
 		fallbackAriaLabel,
 		expectedOuterFrameClass,
+		fallbackNestedSkeletonComponent,
 	}: {
 		fallbackComponent: string;
 		fallbackAriaLabel: string;
 		expectedOuterFrameClass: string;
+		fallbackNestedSkeletonComponent?: string;
 	},
 ): boolean {
 	const fallbackBody = findNamedFunctionBody(source, fallbackComponent);
@@ -589,14 +622,70 @@ function hasExpectedLoadingFrame(
 	if (!fallbackBody || !outerElement) return false;
 
 	const skeletons = [...fallbackBody.matchAll(/<Skeleton\b[^>]*>/g)];
+	const hasHiddenSkeletonContent = fallbackNestedSkeletonComponent
+		? new RegExp(
+				`<${escapeRegExp(fallbackNestedSkeletonComponent)}\\b[^>]*aria-hidden="true"[^>]*/>`,
+			).test(fallbackBody)
+		: skeletons.length > 0 &&
+			skeletons.every(([skeleton]) => skeleton.includes('aria-hidden="true"'));
 
 	return (
 		outerElement.includes(`className="${expectedOuterFrameClass}"`) &&
 		outerElement.includes('role="status"') &&
 		outerElement.includes(`aria-label="${fallbackAriaLabel}"`) &&
-		skeletons.length > 0 &&
-		skeletons.every(([skeleton]) => skeleton.includes('aria-hidden="true"'))
+		hasHiddenSkeletonContent
 	);
+}
+
+function hasExpectedNestedSkeletonGeometry(
+	routeSource: string,
+	nestedSource: string,
+	{
+		fallbackComponent,
+		fallbackNestedSkeletonComponent,
+		fallbackNestedSkeletonItems,
+	}: {
+		fallbackComponent: string;
+		fallbackNestedSkeletonComponent: string;
+		fallbackNestedSkeletonItems: number;
+	},
+): boolean {
+	const fallbackBody = findNamedFunctionBody(routeSource, fallbackComponent);
+	const nestedItemCount = nestedSource.match(
+		/const\s+WIDGET_SKELETON_KEYS\s*=\s*Array\.from\(\s*\{\s*length:\s*(\d+)\s*\}/,
+	)?.[1];
+
+	return (
+		fallbackBody?.includes(`<${fallbackNestedSkeletonComponent}`) === true &&
+		Number(nestedItemCount) === fallbackNestedSkeletonItems
+	);
+}
+
+function hasExpectedMappedLoadingGeometry(
+	source: string,
+	fallbackComponent: string,
+	groups: readonly {
+		keyArray: string;
+		itemCount: number;
+		frameClass: string;
+	}[],
+): boolean {
+	const fallbackBody = findNamedFunctionBody(source, fallbackComponent);
+	if (!fallbackBody) return false;
+
+	return groups.every(({ keyArray, itemCount, frameClass }) => {
+		const keyArrayPattern = new RegExp(
+			`const\\s+${escapeRegExp(keyArray)}\\s*=\\s*\\[([^\\]]*)\\]`,
+		);
+		const arrayBody = source.match(keyArrayPattern)?.[1];
+		const keys = arrayBody?.match(/["'][^"']+["']/g) ?? [];
+
+		return (
+			keys.length === itemCount &&
+			fallbackBody.includes(`className="${frameClass}"`) &&
+			fallbackBody.includes(`${keyArray}.map`)
+		);
+	});
 }
 
 function hasExpectedResolvedOuterFrame(
@@ -727,6 +816,25 @@ describe("loading frame alignment", () => {
 			}),
 		).toBe(false);
 	});
+
+	it("rejects mapped loading geometry with the wrong item count", () => {
+		const source = `
+			const SUMMARY_KEYS = ["one", "two"] as const;
+			function RouteLoading() {
+				return <div className="summary-grid">{SUMMARY_KEYS.map((key) => <Skeleton key={key} />)}</div>;
+			}
+		`;
+
+		expect(
+			hasExpectedMappedLoadingGeometry(source, "RouteLoading", [
+				{
+					keyArray: "SUMMARY_KEYS",
+					itemCount: 3,
+					frameClass: "summary-grid",
+				},
+			]),
+		).toBe(false);
+	});
 });
 
 describe("App Router connection escape hatches", () => {
@@ -777,13 +885,14 @@ describe("low-risk route streaming boundaries", () => {
 		"keeps an aligned accessible loading frame in $file",
 		(route) => {
 			const source = readFileSync(appPath(route.file), "utf8");
+			const fallbackSource = getFallbackSource(route, source);
 
 			expect(
 				hasDefaultExportFocusedSuspenseBoundary(source, route),
 				route.file,
 			).toBe(true);
 			expect(
-				hasExpectedLoadingFrame(source, {
+				hasExpectedLoadingFrame(fallbackSource, {
 					...route,
 					expectedOuterFrameClass: expectedOuterFrameClass(route),
 				}),
@@ -806,6 +915,42 @@ describe("low-risk route streaming boundaries", () => {
 			).toBe(true);
 		},
 	);
+
+	it.each(
+		SHELL_WORK_QUEUE.filter(
+			(route) => "fallbackNestedSkeletonComponent" in route,
+		),
+	)("reuses the reviewed feature skeleton geometry in $file", (route) => {
+		const source = readFileSync(appPath(route.file), "utf8");
+		const nestedSource = readFileSync(
+			join(APP_ROOT, "../..", route.fallbackNestedSkeletonFile),
+			"utf8",
+		);
+
+		expect(
+			hasExpectedNestedSkeletonGeometry(source, nestedSource, route),
+			route.file,
+		).toBe(true);
+	});
+
+	it.each(
+		SHELL_WORK_QUEUE.filter((route) => "fallbackGeometryGroups" in route),
+	)("keeps meaningful loading geometry in $file", (route) => {
+		const source = readFileSync(appPath(route.file), "utf8");
+		const fallbackSource =
+			"fallbackComponentFile" in route
+				? readFileSync(appPath(route.fallbackComponentFile), "utf8")
+				: source;
+
+		expect(
+			hasExpectedMappedLoadingGeometry(
+				fallbackSource,
+				route.fallbackComponent,
+				route.fallbackGeometryGroups,
+			),
+			route.file,
+		).toBe(true);
+	});
 
 	it.each(
 		SHELL_WORK_QUEUE.filter(
