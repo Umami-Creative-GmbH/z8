@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import type { ReactNode } from "react";
+import { type ReactNode, Suspense } from "react";
 import { TrialBanner } from "@/components/billing/trial-banner";
 import { PushPermissionProvider } from "@/components/notifications/push-permission-provider";
 import { OrganizationDeletionBanner } from "@/components/organization/organization-deletion-banner";
@@ -12,6 +12,7 @@ import { UserPreferencesProvider } from "@/components/providers/user-preferences
 import { ServerAppSidebar } from "@/components/server-app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { subscription, userSettings } from "@/db/schema";
@@ -45,6 +46,19 @@ const billingCheckFailedAccess: BillingAccessResult = {
 interface AuthenticatedAppContentProps {
 	children: ReactNode;
 	params: Promise<{ locale: string }>;
+}
+
+function SiteHeaderLoading() {
+	return (
+		<header className="flex h-(--header-height) shrink-0 items-center border-b px-4 lg:px-6">
+			<Skeleton className="h-5 w-40" />
+			<div className="ml-auto flex items-center gap-2">
+				<Skeleton className="size-8 rounded-md" />
+				<Skeleton className="size-8 rounded-md" />
+				<Skeleton className="size-8 rounded-md" />
+			</div>
+		</header>
+	);
 }
 
 export async function AuthenticatedAppContent({
@@ -175,7 +189,9 @@ export async function AuthenticatedAppContent({
 								showWorksCouncilNav={Boolean(activeOrganizationId)}
 							/>
 							<SidebarInset>
-								<SiteHeader />
+								<Suspense fallback={<SiteHeaderLoading />}>
+									<SiteHeader />
+								</Suspense>
 								{showTrialBanner ? (
 									<TrialBanner
 										daysRemaining={trialDaysRemaining}
