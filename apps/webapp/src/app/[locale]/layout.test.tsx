@@ -279,6 +279,7 @@ describe("LocaleLayout", () => {
 			expect(routeShell).not.toBeNull();
 			expect(routeShell?.classList.contains("min-h-svh")).toBe(true);
 			expect(routeShell?.classList.contains("bg-background")).toBe(true);
+			expect(routeShell?.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThanOrEqual(3);
 			expect(childRenderCount).toBe(0);
 
 			resolveTranslations({});
@@ -336,6 +337,9 @@ describe("LocaleLayout", () => {
 			expect(
 				intlProvider?.querySelector('main[aria-busy="true"][aria-label="Loading application"]'),
 			).not.toBeNull();
+			expect(
+				intlProvider?.querySelectorAll('[data-slot="skeleton"]').length,
+			).toBeGreaterThanOrEqual(3);
 		} finally {
 			mockState.loadRouteTranslations.mockImplementation(async () => ({}));
 		}

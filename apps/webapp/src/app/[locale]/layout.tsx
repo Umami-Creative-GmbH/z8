@@ -6,6 +6,7 @@ import { DeploymentRefreshChecker } from "@/components/deployment-refresh";
 import { FontSizeProvider } from "@/components/font-size-preference";
 import { OfflineBanner, SWUpdatePrompt } from "@/components/offline";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
 import { loadRouteTranslations } from "@/tolgee/load-translations";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
@@ -74,7 +75,28 @@ function ApplicationContent({ children }: { children: ReactNode }) {
 
 function RootRouteShell() {
 	return (
-		<main aria-busy="true" aria-label="Loading application" className="min-h-svh bg-background" />
+		<main
+			aria-busy="true"
+			aria-label="Loading application"
+			className="flex min-h-svh bg-background"
+		>
+			<aside className="hidden w-72 shrink-0 space-y-4 border-r p-4 md:block">
+				<Skeleton className="h-10 w-full" />
+				<Skeleton className="mt-6 h-9 w-full" />
+				<Skeleton className="h-9 w-5/6" />
+			</aside>
+			<section className="flex min-w-0 flex-1 flex-col">
+				<header className="flex h-12 shrink-0 items-center gap-3 border-b px-4 lg:px-6">
+					<Skeleton className="size-7" />
+					<Skeleton className="h-5 w-36" />
+				</header>
+				<div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
+					<Skeleton className="h-8 w-48" />
+					<Skeleton className="h-5 w-full max-w-2xl" />
+					<Skeleton className="min-h-64 w-full flex-1" />
+				</div>
+			</section>
+		</main>
 	);
 }
 
