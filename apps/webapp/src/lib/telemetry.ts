@@ -144,6 +144,23 @@ async function insertConfig(
 	}
 }
 
+async function persistTelemetrySigningKey(
+	store: TelemetryConfigStore,
+	value: string,
+) {
+	const inserted = await insertConfig(store, {
+		key: SIGNING_KEY_KEY,
+		value,
+		description:
+			"Ed25519 signing identity for authenticated telemetry reporting",
+	});
+
+	return {
+		inserted,
+		winner: await readConfig(store, SIGNING_KEY_KEY),
+	};
+}
+
 async function getOrCreateDeploymentIdFromStore(
 	store: TelemetryConfigStore,
 ): Promise<string> {
@@ -194,13 +211,10 @@ export async function getOrCreateTelemetryIdentity(
 
 	const candidate = generateTelemetrySigningKey();
 	const serializedCandidate = JSON.stringify(candidate);
-	const inserted = await insertConfig(store, {
-		key: SIGNING_KEY_KEY,
-		value: serializedCandidate,
-		description:
-			"Ed25519 signing identity for authenticated telemetry reporting",
-	});
-	const winner = await readConfig(store, SIGNING_KEY_KEY);
+	const { inserted, winner } = await persistTelemetrySigningKey(
+		store,
+		serializedCandidate,
+	);
 	if (winner === undefined) {
 		throw new TelemetryValidationError(
 			"Telemetry signing key was not persisted",
