@@ -941,11 +941,21 @@ describe("org-admin settings route access", () => {
 				"utf8",
 			),
 		);
+		const controllerSource = stripComments(
+			readFileSync(
+				join(SETTINGS_ROOT, "teams/[teamId]/use-team-detail-page.ts"),
+				"utf8",
+			),
+		);
 
 		expect(pageSource.includes("getCurrentEmployee(")).toBe(false);
-		expect(clientSource.includes("team?.canManageSettings")).toBe(true);
-		expect(clientSource.includes("team?.canManageMembers")).toBe(true);
-		expect(clientSource.includes('currentEmployee?.role === "admin"')).toBe(false);
+		expect(controllerSource.includes("team?.canManageSettings")).toBe(true);
+		expect(controllerSource.includes("team?.canManageMembers")).toBe(true);
+		expect(
+			`${clientSource}\n${controllerSource}`.includes(
+				'currentEmployee?.role === "admin"',
+			),
+		).toBe(false);
 	});
 
 	it.each(ORG_ADMIN_SETTINGS_ROUTES)(

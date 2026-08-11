@@ -1,0 +1,284 @@
+"use client";
+
+import { useForm } from "@tanstack/react-form";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
+import { toast } from "sonner";
+import { queryKeys } from "@/lib/query";
+import { useRouter } from "@/navigation";
+import { listEmployeesForSelect } from "../../employees/actions";
+import {
+	addTeamMember,
+	deleteTeam,
+	getTeam,
+	removeTeamMember,
+	updateTeam,
+} from "../actions";
+import {
+	extractTeamMemberIds,
+	type TeamFormValues,
+	useTeamPageUiState,
+} from "./page-state";
+
+type TeamDetail = Extract<
+	Awaited<ReturnType<typeof getTeam>>,
+	{ success: true }
+>["data"];
+
+export function useTeamDetailPage(teamId: string) {
+	const { t } = useTranslate();
+	const { push } = useRouter();
+	const queryClient = useQueryClient();
+	const [uiState, dispatch] = useTeamPageUiState();
+
+	const form = useForm({
+		defaultValues: {
+			name: "",
+			description: "",
+			primaryManagerId: null as string | null,
+		},
+		onSubmit: async ({ value }) => updateTeamMutation.mutate(value),
+	});
+
+	const { data: team, isLoading: isLoadingTeam } = useQuery({
+		queryKey: queryKeys.teams.detail(teamId),
+		queryFn: async () => {
+			const result = await getTeam(teamId);
+			if (!result.success) {
+				throw new Error(
+					result.error ||
+						t("settings.teams.detail.errors.loadTeam", "Failed to load team"),
+				);
+			}
+			return result.data;
+		},
+	});
+
+	const canManageSettings = team?.canManageSettings ?? false;
+	const canManageMembers = team?.canManageMembers ?? false;
+
+	const { data: managerOptions = [] } = useQuery({
+		queryKey: ["teams", teamId, "primary-manager-options"],
+		queryFn: async () => {
+			const result = await listEmployeesForSelect({
+				limit: 1000,
+				roles: ["manager", "admin"],
+				status: "active",
+			});
+			if (!result.success) {
+				throw new Error(result.error || "Failed to load manager options");
+			}
+			return result.data.employees.filter(
+				(employee) =>
+					employee.isActive &&
+					(employee.role === "manager" || employee.role === "admin"),
+			);
+		},
+		enabled: canManageSettings,
+	});
+
+	async function loadAvailableEmployees() {
+		if (!team) return;
+
+		const result = await listEmployeesForSelect({
+			limit: 1000,
+			excludeIds: extractTeamMemberIds(team),
+		});
+
+		if (result.success && result.data) {
+			dispatch({
+				type: "setAvailableEmployees",
+				employees: result.data.employees,
+			});
+		}
+	}
+
+	const updateTeamMutation = useMutation({
+		mutationFn: async (values: TeamFormValues) => {
+			const result = await updateTeam(teamId, values);
+			if (!result.success) {
+				throw new Error(
+					result.error ||
+						t(
+							"settings.teams.detail.errors.updateTeam",
+							"Failed to update team",
+						),
+				);
+			}
+			return result;
+		},
+		onSuccess: () => {
+			toast.success(
+				t(
+					"settings.teams.detail.toasts.teamUpdated",
+					"Team updated successfully",
+				),
+			);
+			dispatch({ type: "setEditing", value: false });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.teams.detail(teamId),
+			});
+			queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
+		},
+		onError: (error: Error) => toast.error(error.message),
+	});
+
+	const addMemberMutation = useMutation({
+		mutationFn: async (employeeId: string) => {
+			const result = await addTeamMember(teamId, employeeId);
+			if (!result.success) {
+				throw new Error(
+					result.error ||
+						t(
+							"settings.teams.detail.errors.addTeamMember",
+							"Failed to add team member",
+						),
+				);
+			}
+			return result;
+		},
+		onSuccess: () => {
+			toast.success(
+				t(
+					"settings.teams.detail.toasts.teamMemberAdded",
+					"Team member added successfully",
+				),
+			);
+			dispatch({ type: "resetAddMemberDialog" });
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.teams.detail(teamId),
+			});
+			queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
+			queryClient.invalidateQueries({ queryKey: queryKeys.employees.all });
+		},
+		onError: (error: Error) => toast.error(error.message),
+	});
+
+	const removeMemberMutation = useMutation({
+		mutationFn: async (employeeId: string) => {
+			const result = await removeTeamMember(teamId, employeeId);
+			if (!result.success) {
+				throw new Error(
+					result.error ||
+						t(
+							"settings.teams.detail.errors.removeTeamMember",
+							"Failed to remove team member",
+						),
+				);
+			}
+			return result;
+		},
+		onMutate: async (employeeId) => {
+			await queryClient.cancelQueries({
+				queryKey: queryKeys.teams.detail(teamId),
+			});
+			const previousTeam = queryClient.getQueryData<TeamDetail>(
+				queryKeys.teams.detail(teamId),
+			);
+
+			queryClient.setQueryData<TeamDetail>(
+				queryKeys.teams.detail(teamId),
+				(old) => {
+					if (!old) return old;
+					return {
+						...old,
+						employees:
+							old.employees?.filter((employee) => employee.id !== employeeId) ||
+							[],
+					};
+				},
+			);
+
+			return { previousTeam };
+		},
+		onSuccess: () => {
+			toast.success(
+				t(
+					"settings.teams.detail.toasts.teamMemberRemoved",
+					"Team member removed successfully",
+				),
+			);
+			dispatch({ type: "setSelectedMemberToRemove", employeeId: null });
+			queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
+			queryClient.invalidateQueries({ queryKey: queryKeys.employees.all });
+		},
+		onError: (error: Error, _employeeId, context) => {
+			if (context?.previousTeam) {
+				queryClient.setQueryData(
+					queryKeys.teams.detail(teamId),
+					context.previousTeam,
+				);
+			}
+			toast.error(error.message);
+		},
+		onSettled: () => {
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.teams.detail(teamId),
+			});
+		},
+	});
+
+	const deleteTeamMutation = useMutation({
+		mutationFn: async () => {
+			const result = await deleteTeam(teamId);
+			if (!result.success) {
+				throw new Error(
+					result.error ||
+						t(
+							"settings.teams.detail.errors.deleteTeam",
+							"Failed to delete team",
+						),
+				);
+			}
+			return result;
+		},
+		onSuccess: () => {
+			toast.success(
+				t(
+					"settings.teams.detail.toasts.teamDeleted",
+					"Team deleted successfully",
+				),
+			);
+			queryClient.invalidateQueries({ queryKey: queryKeys.teams.all });
+			push("/settings/teams");
+		},
+		onError: (error: Error) => toast.error(error.message),
+		onSettled: () => dispatch({ type: "setShowDeleteDialog", value: false }),
+	});
+
+	function handleAddMember() {
+		if (!uiState.selectedEmployee) {
+			toast.error(
+				t(
+					"settings.teams.detail.validation.selectEmployee",
+					"Please select an employee",
+				),
+			);
+			return;
+		}
+
+		addMemberMutation.mutate(uiState.selectedEmployee);
+	}
+
+	const loading =
+		updateTeamMutation.isPending ||
+		addMemberMutation.isPending ||
+		removeMemberMutation.isPending ||
+		deleteTeamMutation.isPending;
+
+	return {
+		canManageMembers,
+		canManageSettings,
+		deleteTeamMutation,
+		dispatch,
+		form,
+		handleAddMember,
+		isLoadingTeam,
+		loading,
+		loadAvailableEmployees,
+		managerOptions,
+		removeMemberMutation,
+		team,
+		uiState,
+	};
+}
