@@ -1,13 +1,10 @@
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { ApprovalPolicyManagement } from "@/components/settings/approval-policy/approval-policy-management";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
 async function ApprovalPoliciesSettingsContent() {
-	await connection();
-
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
 	if (settingsRouteContext?.accessTier !== "orgAdmin") {

@@ -26,24 +26,34 @@ export default function SetupPage(props: SetupPageProps) {
 
 function SetupPageLoading() {
 	return (
-		<div className="w-full max-w-md space-y-4" aria-busy="true" role="status">
+		<div
+			aria-busy="true"
+			aria-label="Loading platform setup"
+			className="w-full max-w-md"
+			role="status"
+		>
 			<LocalizedLoadingLabel
 				translationKey="common:loading.setup"
 				fallback="Loading setup"
 			/>
-			<Skeleton className="h-8 w-48" />
-			<Skeleton className="h-[420px] w-full" />
+			<div className="space-y-6 rounded-xl border p-6">
+				<div className="space-y-2">
+					<Skeleton aria-hidden="true" className="h-8 w-48" />
+					<Skeleton aria-hidden="true" className="h-4 w-full" />
+				</div>
+				<Skeleton aria-hidden="true" className="h-10 w-full" />
+				<Skeleton aria-hidden="true" className="h-10 w-full" />
+				<Skeleton aria-hidden="true" className="h-10 w-32" />
+			</div>
 		</div>
 	);
 }
 
 async function SetupPageContent({ params }: SetupPageProps) {
-	// Signal dynamic rendering before any database calls (OpenTelemetry uses Math.random for trace IDs)
-	const [{ locale }, , configured] = await Promise.all([
-		params,
-		connection(),
-		isPlatformConfigured(),
-	]);
+	const { locale } = await params;
+	// OpenTelemetry database instrumentation creates synchronous random trace IDs per request.
+	await connection();
+	const configured = await isPlatformConfigured();
 	if (configured) {
 		redirect(`/${locale}/`);
 	}

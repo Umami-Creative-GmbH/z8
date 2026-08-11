@@ -13,11 +13,33 @@ import type {
 import { getTranslate } from "@/tolgee/server";
 import { PlatformAnalyticsControls } from "./analytics-controls";
 
-export default async function PlatformAnalyticsPage({
+const PLATFORM_ANALYTICS_KPI_LOADING_KEYS = [
+	"kpi-1",
+	"kpi-2",
+	"kpi-3",
+	"kpi-4",
+];
+const PLATFORM_ANALYTICS_CHART_LOADING_KEYS = ["chart-1", "chart-2"];
+
+export default function PlatformAnalyticsPage({
 	searchParams,
 }: {
 	searchParams?: Promise<PlatformAnalyticsSearchParams>;
 }) {
+	return (
+		<Suspense fallback={<PlatformAnalyticsPageLoading />}>
+			<PlatformAnalyticsPageContent searchParams={searchParams} />
+		</Suspense>
+	);
+}
+
+async function PlatformAnalyticsPageContent({
+	searchParams,
+}: {
+	searchParams?: Promise<PlatformAnalyticsSearchParams>;
+}) {
+	// Live platform analytics Effect data must resolve per request outside the prerendered shell.
+	await connection();
 	const t = await getTranslate();
 	const sectionTitle = t(
 		"admin:admin.analytics.sectionTitle",
@@ -119,8 +141,6 @@ async function PlatformAnalyticsDataSection({
 }: {
 	parsedParams: ParsedPlatformAnalyticsParams;
 }) {
-	await connection();
-
 	const data = await getPlatformAnalyticsData(parsedParams);
 
 	return <PlatformAnalyticsCharts data={data} />;
@@ -130,28 +150,28 @@ function PlatformAnalyticsLoading() {
 	return (
 		<div className="space-y-4">
 			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-				{["kpi-1", "kpi-2", "kpi-3", "kpi-4"].map((key) => (
+				{PLATFORM_ANALYTICS_KPI_LOADING_KEYS.map((key) => (
 					<Card key={key}>
 						<CardHeader className="pb-0">
-							<Skeleton className="h-4 w-28" />
+							<Skeleton aria-hidden="true" className="h-4 w-28" />
 						</CardHeader>
 						<CardContent className="space-y-2">
-							<Skeleton className="h-8 w-20" />
-							<Skeleton className="h-3 w-32" />
+							<Skeleton aria-hidden="true" className="h-8 w-20" />
+							<Skeleton aria-hidden="true" className="h-3 w-32" />
 						</CardContent>
 					</Card>
 				))}
 			</div>
 
 			<div className="grid gap-4 xl:grid-cols-2">
-				{["chart-1", "chart-2"].map((key) => (
+				{PLATFORM_ANALYTICS_CHART_LOADING_KEYS.map((key) => (
 					<Card key={key}>
 						<CardHeader className="space-y-2">
-							<Skeleton className="h-5 w-32" />
-							<Skeleton className="h-4 w-64 max-w-full" />
+							<Skeleton aria-hidden="true" className="h-5 w-32" />
+							<Skeleton aria-hidden="true" className="h-4 w-64 max-w-full" />
 						</CardHeader>
 						<CardContent>
-							<Skeleton className="h-[260px] w-full" />
+							<Skeleton aria-hidden="true" className="h-[260px] w-full" />
 						</CardContent>
 					</Card>
 				))}
@@ -223,6 +243,31 @@ function PlatformAnalyticsSectionHeading({
 				{sectionTitle}
 			</h2>
 			<p className="text-sm text-muted-foreground">{sectionDescription}</p>
+		</div>
+	);
+}
+
+function PlatformAnalyticsPageLoading() {
+	return (
+		<div
+			className="space-y-8"
+			role="status"
+			aria-label="Loading platform analytics"
+		>
+			<div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+				<div className="space-y-2">
+					<Skeleton aria-hidden="true" className="h-8 w-56" />
+					<Skeleton aria-hidden="true" className="h-5 w-full max-w-2xl" />
+				</div>
+				<PlatformAnalyticsControlsLoading />
+			</div>
+			<section className="space-y-4">
+				<div className="space-y-2">
+					<Skeleton aria-hidden="true" className="h-5 w-36" />
+					<Skeleton aria-hidden="true" className="h-4 w-96 max-w-full" />
+				</div>
+				<PlatformAnalyticsLoading />
+			</section>
 		</div>
 	);
 }

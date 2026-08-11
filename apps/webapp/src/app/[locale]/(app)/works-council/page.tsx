@@ -40,50 +40,11 @@ type WorksCouncilPageProps = {
 	searchParams?: Promise<{ from?: string; to?: string }>;
 };
 
-export default function WorksCouncilPage(props: WorksCouncilPageProps) {
-	return (
-		<Suspense fallback={<WorksCouncilLoading />}>
-			<WorksCouncilContent {...props} />
-		</Suspense>
-	);
-}
-
-function WorksCouncilLoading() {
-	return (
-		<div
-			aria-busy="true"
-			aria-live="polite"
-			className="space-y-6 p-4 md:p-6"
-			data-testid="works-council-loading"
-			role="status"
-		>
-			<Suspense fallback={null}>
-				<WorksCouncilLoadingStatus />
-			</Suspense>
-			<div className="space-y-2">
-				<Skeleton aria-hidden="true" className="h-8 w-64 max-w-full" />
-				<Skeleton aria-hidden="true" className="h-4 w-96 max-w-full" />
-			</div>
-			<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-				<Skeleton aria-hidden="true" className="h-36 w-full" />
-				<Skeleton aria-hidden="true" className="h-36 w-full" />
-				<Skeleton aria-hidden="true" className="h-36 w-full" />
-			</div>
-			<Skeleton aria-hidden="true" className="h-72 w-full" />
-		</div>
-	);
-}
-
-async function WorksCouncilLoadingStatus() {
-	const t = await getTranslate();
-	const loadingLabel = t("worksCouncil.loadingLabel", "Loading works council");
-
-	return <span className="sr-only">{loadingLabel}</span>;
-}
-
-async function WorksCouncilContent({ searchParams }: WorksCouncilPageProps) {
+async function WorksCouncilPageContent({
+	searchParams,
+}: WorksCouncilPageProps) {
+	// This protected view must execute per request so authorization and audit are not reused.
 	await connection();
-
 	const authContext = await requireUser();
 	const organizationId = authContext.session.activeOrganizationId;
 
@@ -126,4 +87,51 @@ async function WorksCouncilContent({ searchParams }: WorksCouncilPageProps) {
 	});
 
 	return <WorksCouncilDashboard model={model} />;
+}
+
+function WorksCouncilPageLoading() {
+	return (
+		<div
+			aria-busy="true"
+			aria-label="Loading Works Council portal"
+			aria-labelledby="works-council-loading-label"
+			aria-live="polite"
+			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
+			data-testid="works-council-loading"
+			role="status"
+		>
+			<Suspense fallback={null}>
+				<WorksCouncilLoadingStatus />
+			</Suspense>
+			<div className="space-y-2">
+				<Skeleton aria-hidden="true" className="h-8 w-64" />
+				<Skeleton aria-hidden="true" className="h-4 w-96 max-w-full" />
+			</div>
+			<div className="grid gap-4 md:grid-cols-3">
+				<Skeleton aria-hidden="true" className="h-28 w-full" />
+				<Skeleton aria-hidden="true" className="h-28 w-full" />
+				<Skeleton aria-hidden="true" className="h-28 w-full" />
+			</div>
+			<Skeleton aria-hidden="true" className="h-80 w-full" />
+		</div>
+	);
+}
+
+async function WorksCouncilLoadingStatus() {
+	const t = await getTranslate();
+	const loadingLabel = t("worksCouncil.loadingLabel", "Loading works council");
+
+	return (
+		<span id="works-council-loading-label" className="sr-only">
+			{loadingLabel}
+		</span>
+	);
+}
+
+export default function WorksCouncilPage(props: WorksCouncilPageProps) {
+	return (
+		<Suspense fallback={<WorksCouncilPageLoading />}>
+			<WorksCouncilPageContent {...props} />
+		</Suspense>
+	);
 }

@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,8 +30,6 @@ function parsePositiveInteger(value: string | undefined): number | undefined {
 }
 
 export async function TeamAbsencesPageContent({ searchParams }: TeamAbsencesPageProps) {
-	await connection();
-
 	const [t, currentEmployee, params] = await Promise.all([
 		getTranslate(),
 		getCurrentEmployee(),

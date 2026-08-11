@@ -54,7 +54,9 @@ vi.mock(
 const { default: PayrollReadinessPage } = await import("./page");
 
 function getContentElement(page: ReturnType<typeof PayrollReadinessPage>) {
-	return page.props.children[1].props.children;
+	const pageContent = page.props.children;
+	const contentFrame = pageContent.type(pageContent.props);
+	return contentFrame.props.children[1].props.children;
 }
 
 describe("PayrollReadinessPage", () => {
@@ -86,9 +88,11 @@ describe("PayrollReadinessPage", () => {
 				_name === "search params" ? pendingSearchParams : Promise.resolve({});
 
 			const page = PayrollReadinessPage({ searchParams });
+			const pageContent = page.props.children;
+			const contentFrame = pageContent.type(pageContent.props);
 
-			expect(page.type).toBe("div");
-			expect(page.props.children).toHaveLength(2);
+			expect(contentFrame.type).toBe("div");
+			expect(contentFrame.props.children).toHaveLength(2);
 			render(page);
 
 			expect(
@@ -101,7 +105,9 @@ describe("PayrollReadinessPage", () => {
 
 	it("renders the localized header after translation resolves", async () => {
 		const page = PayrollReadinessPage({});
-		const headerElement = page.props.children[0].props.children;
+		const pageContent = page.props.children;
+		const contentFrame = pageContent.type(pageContent.props);
+		const headerElement = contentFrame.props.children[0].props.children;
 
 		render(await headerElement.type());
 

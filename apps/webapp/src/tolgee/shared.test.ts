@@ -1,13 +1,28 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
+import { loadRouteTranslations } from "./load-translations";
 import {
 	ALL_LANGUAGES,
 	ALL_NAMESPACES,
-	loadRouteTranslations,
+	loadNamespaceImport,
 	mergeTreeTranslations,
 } from "./shared";
+
+const mockState = vi.hoisted(() => ({
+	cacheLife: vi.fn(),
+}));
+
+vi.mock("server-only", () => ({}));
+
+vi.mock("next/cache", () => ({
+	cacheLife: mockState.cacheLife,
+}));
+
+beforeEach(() => {
+	mockState.cacheLife.mockClear();
+});
 
 describe("Tolgee route translations", () => {
 	it("lists every language supported by Tolgee and the language switchers", () => {
@@ -70,7 +85,7 @@ describe("Tolgee route translations", () => {
 	);
 
 	it("loads app search strings from the common namespace", async () => {
-		const translations = await loadRouteTranslations("de", "/");
+		const translations = await loadRouteTranslations("de");
 
 		expect(translations.de).toMatchObject({
 			appSearch: {
@@ -80,7 +95,7 @@ describe("Tolgee route translations", () => {
 	});
 
 	it("keeps German translations available after navigating from settings to dashboard", async () => {
-		const translations = await loadRouteTranslations("de", "/settings");
+		const translations = await loadRouteTranslations("de");
 
 		expect(translations.de).toMatchObject({
 			dashboard: {
@@ -92,10 +107,7 @@ describe("Tolgee route translations", () => {
 	});
 
 	it("loads dedicated analytics route translations", async () => {
-		const translations = await loadRouteTranslations(
-			"en",
-			"/analytics/work-hours",
-		);
+		const translations = await loadRouteTranslations("en");
 
 		expect(translations.en).toMatchObject({
 			analytics: {
@@ -107,7 +119,7 @@ describe("Tolgee route translations", () => {
 	});
 
 	it("loads dedicated today route translations", async () => {
-		const translations = await loadRouteTranslations("en", "/today");
+		const translations = await loadRouteTranslations("en");
 
 		expect(translations.en).toMatchObject({
 			today: {
@@ -117,9 +129,49 @@ describe("Tolgee route translations", () => {
 			},
 		});
 	});
+
+	it("caches bundled translations with the max cache profile", async () => {
+		await loadRouteTranslations("en");
+
+		expect(mockState.cacheLife).toHaveBeenCalledWith("max");
+	});
 });
 
 describe("translation namespace merging", () => {
+	it("rejects namespace import failures in strict mode", async () => {
+		const importError = new Error("broken translation bundle");
+
+		await expect(
+			loadNamespaceImport(
+				"common",
+				"en",
+				async () => {
+					throw importError;
+				},
+				{ strict: true },
+			),
+		).rejects.toBe(importError);
+	});
+
+	it("returns empty namespace data for import failures by default", async () => {
+		const importError = new Error("broken translation bundle");
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+		try {
+			await expect(
+				loadNamespaceImport("common", "en", async () => {
+					throw importError;
+				}),
+			).resolves.toEqual({ ns: "common", data: {} });
+			expect(warn).toHaveBeenCalledWith(
+				"Failed to load namespace common for en:",
+				importError,
+			);
+		} finally {
+			warn.mockRestore();
+		}
+	});
+
 	it("deep merges split settings namespaces without overwriting sibling groups", () => {
 		const merged = mergeTreeTranslations([
 			{

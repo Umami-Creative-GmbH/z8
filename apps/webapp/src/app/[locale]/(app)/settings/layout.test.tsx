@@ -42,10 +42,13 @@ describe("SettingsLayout", () => {
 	it("keeps navigation and breadcrumbs outside the child content boundary", () => {
 		const layout = SettingsLayout({ children: <PendingContent /> });
 		const [navigationBoundary, main] = layout.props.children;
-		const [breadcrumbs, contentBoundary] = main.props.children;
+		const [breadcrumbsBoundary, contentBoundary] = main.props.children;
 
 		expect(navigationBoundary.type).toBe(Suspense);
-		expect(breadcrumbs.type.name).toBe("SettingsBreadcrumbs");
+		expect(breadcrumbsBoundary.type).toBe(Suspense);
+		expect(breadcrumbsBoundary.props.children.type.name).toBe(
+			"SettingsBreadcrumbs",
+		);
 		expect(contentBoundary.type).toBe(Suspense);
 		expect(contentBoundary.props.fallback.type).toBe(SettingsContentLoading);
 		expect(contentBoundary.props.children.props.children.type).toBe(

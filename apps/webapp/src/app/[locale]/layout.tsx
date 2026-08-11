@@ -1,4 +1,3 @@
-import { headers } from "next/headers";
 import { setRequestLocale } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
 import { Toaster } from "sonner";
@@ -6,11 +5,11 @@ import { BProgressBar } from "@/components/bprogress/bprogress";
 import { DeploymentRefreshChecker } from "@/components/deployment-refresh";
 import { FontSizeProvider } from "@/components/font-size-preference";
 import { OfflineBanner, SWUpdatePrompt } from "@/components/offline";
-import { NeutralAppFrameLoading } from "@/components/shells/app-frame-loading";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
-import { DOMAIN_HEADERS } from "@/proxy";
-import { ALL_LANGUAGES, loadRouteTranslations } from "@/tolgee/shared";
+import { loadRouteTranslations } from "@/tolgee/load-translations";
+import { ALL_LANGUAGES } from "@/tolgee/shared";
 import "../globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/lib/query";
@@ -34,17 +33,7 @@ async function TranslationProvider({
 	locale: string;
 	children: ReactNode;
 }) {
-	// Get the current pathname to determine which namespaces to load
-	const headersList = await headers();
-	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || "/";
-	// Strip locale prefix from pathname (e.g., /en/settings -> /settings)
-	const pathnameWithoutLocale =
-		pathname.replace(new RegExp(`^/${locale}`), "") || "/";
-
-	const records = await loadRouteTranslations(
-		locale,
-		pathnameWithoutLocale,
-	).catch((error) => {
+	const records = await loadRouteTranslations(locale).catch((error) => {
 		console.warn("Failed to load Tolgee records:", error);
 		return {};
 	});
@@ -92,6 +81,33 @@ function ApplicationContent({ children }: { children: ReactNode }) {
 	);
 }
 
+function RootRouteShell() {
+	return (
+		<main
+			aria-busy="true"
+			aria-label="Loading application"
+			className="flex min-h-svh bg-background"
+		>
+			<aside className="hidden w-72 shrink-0 space-y-4 border-r p-4 md:block">
+				<Skeleton className="h-10 w-full" />
+				<Skeleton className="mt-6 h-9 w-full" />
+				<Skeleton className="h-9 w-5/6" />
+			</aside>
+			<section className="flex min-w-0 flex-1 flex-col">
+				<header className="flex h-12 shrink-0 items-center gap-3 border-b px-4 lg:px-6">
+					<Skeleton className="size-7" />
+					<Skeleton className="h-5 w-36" />
+				</header>
+				<div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
+					<Skeleton className="h-8 w-48" />
+					<Skeleton className="h-5 w-full max-w-2xl" />
+					<Skeleton className="min-h-64 w-full flex-1" />
+				</div>
+			</section>
+		</main>
+	);
+}
+
 function AppProviders({
 	children,
 	locale,
@@ -111,7 +127,7 @@ function AppProviders({
 					fallback={
 						<TranslationProviders locale={locale} records={{}}>
 							<ApplicationContent>
-								<NeutralAppFrameLoading />
+								<RootRouteShell />
 							</ApplicationContent>
 						</TranslationProviders>
 					}

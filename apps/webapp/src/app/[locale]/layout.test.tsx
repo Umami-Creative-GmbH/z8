@@ -1,7 +1,6 @@
 /* @vitest-environment jsdom */
 
 import { readFileSync } from "node:fs";
-import { Suspense } from "react";
 import { renderToReadableStream } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import LocaleLayout from "./layout";
@@ -42,14 +41,10 @@ function findFontSizeInitScript(node: React.ReactNode): {
 }
 
 const mockState = vi.hoisted(() => ({
-	headers: vi.fn(async () => new Headers({ "x-pathname": "/en/sign-in" })),
 	getSession: vi.fn(async () => null),
 	findUserSettings: vi.fn(),
+	loadRouteTranslations: vi.fn(async () => ({})),
 	setRequestLocale: vi.fn(),
-}));
-
-vi.mock("next/headers", () => ({
-	headers: mockState.headers,
 }));
 
 vi.mock("next-intl", () => ({
@@ -142,12 +137,6 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/proxy", () => ({
-	DOMAIN_HEADERS: {
-		PATHNAME: "x-pathname",
-	},
-}));
-
 vi.mock("@/tolgee/client", () => ({
 	TolgeeNextProvider: ({
 		children,
@@ -167,9 +156,12 @@ vi.mock("@/tolgee/client", () => ({
 	),
 }));
 
+vi.mock("@/tolgee/load-translations", () => ({
+	loadRouteTranslations: mockState.loadRouteTranslations,
+}));
+
 vi.mock("@/tolgee/shared", () => ({
 	ALL_LANGUAGES: ["en"],
-	loadRouteTranslations: vi.fn(async () => ({})),
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -228,58 +220,134 @@ describe("LocaleLayout", () => {
 		expect(layoutSource).not.toContain('from "next-intl"');
 	});
 
-	it("shows the app frame while primary route content is pending in the translation fallback", () => {
+	it("loads translations by locale without reading request headers", async () => {
+		const layout = await LocaleLayout({
+			children: <div>Auth content</div>,
+			params: Promise.resolve({ locale: "en" }),
+		});
+		const stream = await renderToReadableStream(layout);
+		const reader = stream.getReader();
+		while (!(await reader.read()).done) {
+			// Consume the stream so the async translation provider resolves.
+		}
+
+		expect(mockState.loadRouteTranslations).toHaveBeenCalledWith("en");
+		expect(mockState.loadRouteTranslations.mock.calls[0]).toHaveLength(1);
+
+		const source = readFileSync("src/app/[locale]/layout.tsx", "utf8");
+		expect(source).not.toContain("next/headers");
+		expect(source).not.toContain("DOMAIN_HEADERS");
+		expect(source).not.toContain("pathname");
+	});
+
+	it("keeps route content out of the non-null translation fallback shell", () => {
 		const source = readFileSync("src/app/[locale]/layout.tsx", "utf8");
 
 		expect(source).toMatch(
-			/<TranslationProviders locale=\{locale\} records=\{\{\}\}>\s*<ApplicationContent>\s*<NeutralAppFrameLoading \/>\s*<\/ApplicationContent>\s*<\/TranslationProviders>/,
+			/<TranslationProviders locale=\{locale\} records=\{\{\}\}>\s*<ApplicationContent>\s*<RootRouteShell \/>\s*<\/ApplicationContent>\s*<\/TranslationProviders>/,
 		);
 	});
 
-	it("renders the translation-context fallback while route translations are pending", async () => {
-		let resolveHeaders: (headers: Headers) => void = () => {};
-		let resolveRoute: () => void = () => {};
-		let routeResolved = false;
-		const pendingRoute = new Promise<void>((resolve) => {
-			resolveRoute = () => {
-				routeResolved = true;
-				resolve();
-			};
-		});
-		function PendingRoute() {
-			if (!routeResolved) {
-				throw pendingRoute;
-			}
-			return <main data-testid="application-child">Auth content</main>;
-		}
-		function RouteWithLocalFallback() {
-			return (
-				<Suspense
-					fallback={
-						<p data-testid="route-local-fallback">Loading route details</p>
-					}
-				>
-					<PendingRoute />
-				</Suspense>
-			);
-		}
-		mockState.headers.mockImplementation(
+	it("streams a neutral shell without rendering route content twice", async () => {
+		let resolveTranslations: (translations: Record<string, unknown>) => void =
+			() => {};
+		let childRenderCount = 0;
+		mockState.loadRouteTranslations.mockImplementation(
 			() =>
-				new Promise<Headers>((resolve) => {
-					resolveHeaders = resolve;
+				new Promise<Record<string, unknown>>((resolve) => {
+					resolveTranslations = resolve;
+				}),
+		);
+
+		function CountedChild() {
+			childRenderCount += 1;
+			return <main data-testid="resolved-child">Resolved route content</main>;
+		}
+
+		try {
+			const layout = await LocaleLayout({
+				children: <CountedChild />,
+				params: Promise.resolve({ locale: "en" }),
+			});
+			const streamResult = await Promise.race([
+				renderToReadableStream(layout),
+				new Promise<"timed-out">((resolve) =>
+					setTimeout(() => resolve("timed-out"), 1000),
+				),
+			]);
+			expect(streamResult).not.toBe("timed-out");
+			if (streamResult === "timed-out") {
+				return;
+			}
+
+			const stream = streamResult;
+			const reader = stream.getReader();
+			const firstRead = await Promise.race([
+				reader.read(),
+				new Promise<"timed-out">((resolve) =>
+					setTimeout(() => resolve("timed-out"), 1000),
+				),
+			]);
+
+			expect(firstRead).not.toBe("timed-out");
+			if (firstRead === "timed-out") {
+				return;
+			}
+
+			const decoder = new TextDecoder();
+			const firstChunk = decoder.decode(firstRead.value, { stream: true });
+			const container = document.createElement("div");
+			container.innerHTML = firstChunk;
+			const routeShell = container.querySelector(
+				'main[aria-busy="true"][aria-label="Loading application"]',
+			);
+
+			expect(routeShell).not.toBeNull();
+			expect(routeShell?.classList.contains("min-h-svh")).toBe(true);
+			expect(routeShell?.classList.contains("bg-background")).toBe(true);
+			expect(
+				routeShell?.querySelectorAll('[data-slot="skeleton"]').length,
+			).toBeGreaterThanOrEqual(3);
+			expect(childRenderCount).toBe(0);
+
+			resolveTranslations({});
+			let streamedHtml = firstChunk;
+			while (true) {
+				const next = await reader.read();
+				if (next.done) {
+					break;
+				}
+				streamedHtml += decoder.decode(next.value, { stream: true });
+			}
+			streamedHtml += decoder.decode();
+
+			expect(streamedHtml).toContain("Resolved route content");
+			expect(childRenderCount).toBe(1);
+		} finally {
+			resolveTranslations({});
+			mockState.loadRouteTranslations.mockImplementation(async () => ({}));
+		}
+	});
+
+	it("renders the translation-context shell while route translations are pending", async () => {
+		let resolveTranslations: (translations: Record<string, unknown>) => void =
+			() => {};
+		mockState.loadRouteTranslations.mockImplementation(
+			() =>
+				new Promise<Record<string, unknown>>((resolve) => {
+					resolveTranslations = resolve;
 				}),
 		);
 
 		try {
 			const layout = await LocaleLayout({
-				children: <RouteWithLocalFallback />,
+				children: <main data-testid="application-child">Auth content</main>,
 				params: Promise.resolve({ locale: "en" }),
 			});
 			const stream = await renderToReadableStream(layout);
 			const reader = stream.getReader();
 			const { value } = await reader.read();
-			resolveHeaders(new Headers({ "x-pathname": "/en/sign-in" }));
-			resolveRoute();
+			resolveTranslations({});
 			while (!(await reader.read()).done) {
 				// Consume the resolved translation branch so the stream ends without an abort.
 			}
@@ -301,24 +369,22 @@ describe("LocaleLayout", () => {
 			expect(intlProvider?.getAttribute("data-next-intl-messages")).toBe(
 				'{"locale":"en"}',
 			);
-			const loading = intlProvider?.querySelector('[role="status"]');
-			expect(loading?.getAttribute("aria-busy")).toBe("true");
-			expect(loading?.textContent).toBe("");
 			expect(
-				loading?.querySelector('[data-testid="app-sidebar-loading"]'),
+				intlProvider?.querySelector('[data-testid="application-shell"]'),
 			).not.toBeNull();
-			expect(container.textContent).not.toContain("Loading application");
-			expect(container.textContent).not.toContain("Loading route details");
 			expect(
-				container.querySelector('[data-testid="route-local-fallback"]'),
+				intlProvider?.querySelector('[data-testid="application-child"]'),
 			).toBeNull();
 			expect(
-				container.querySelector('[data-testid="application-child"]'),
-			).toBeNull();
+				intlProvider?.querySelector(
+					'main[aria-busy="true"][aria-label="Loading application"]',
+				),
+			).not.toBeNull();
+			expect(
+				intlProvider?.querySelectorAll('[data-slot="skeleton"]').length,
+			).toBeGreaterThanOrEqual(3);
 		} finally {
-			mockState.headers.mockImplementation(
-				async () => new Headers({ "x-pathname": "/en/sign-in" }),
-			);
+			mockState.loadRouteTranslations.mockImplementation(async () => ({}));
 		}
 	});
 

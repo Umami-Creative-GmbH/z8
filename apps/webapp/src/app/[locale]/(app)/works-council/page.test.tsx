@@ -3,6 +3,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { render, screen, within } from "@testing-library/react";
+import { isValidElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
 
@@ -76,8 +77,20 @@ vi.mock("@/components/works-council/works-council-dashboard", () => ({
 
 const { default: WorksCouncilPage } = await import("./page");
 
-function getContentElement(page: ReturnType<typeof WorksCouncilPage>) {
-	return page.props.children;
+async function renderWorksCouncilContent(
+	props: Parameters<typeof WorksCouncilPage>[0] = {},
+) {
+	const page = WorksCouncilPage(props);
+	if (!isValidElement(page) || !isValidElement(page.props.children)) {
+		throw new Error("Expected a focused Works Council boundary");
+	}
+	const content = page.props.children as React.ReactElement<
+		{ searchParams?: Promise<{ from?: string; to?: string }> },
+		(props: {
+			searchParams?: Promise<{ from?: string; to?: string }>;
+		}) => Promise<React.ReactNode>
+	>;
+	return content.type(content.props);
 }
 
 function createPrincipal(): PrincipalContext {
@@ -118,20 +131,22 @@ describe("WorksCouncilPage", () => {
 	it("renders the generic visual shell while translation and access remain unresolved", () => {
 		mockState.requireUser.mockReturnValue(new Promise(() => {}));
 		mockState.getTranslate.mockReturnValue(new Promise(() => {}));
-		const page = WorksCouncilPage({
-			searchParams: new Promise(() => {}),
+
+		render(
+			WorksCouncilPage({
+				searchParams: new Promise(() => {}),
+			}),
+		);
+
+		const status = screen.getByRole("status", {
+			name: "Loading Works Council portal",
 		});
-
-		render(page);
-
-		const status = screen.getByRole("status");
 		expect(status).toBe(screen.getByTestId("works-council-loading"));
 		expect(status.getAttribute("aria-live")).toBe("polite");
 		expect(status.getAttribute("aria-busy")).toBe("true");
 		expect(
 			within(status).queryByText("Betriebsratsportal wird geladen"),
 		).toBeNull();
-		expect(screen.queryByLabelText("Loading works council")).toBeNull();
 		expect(screen.queryByText(/org-1|user-1/i)).toBeNull();
 	});
 
@@ -139,11 +154,14 @@ describe("WorksCouncilPage", () => {
 		mockState.requireUser.mockReturnValue(new Promise(() => {}));
 
 		render(WorksCouncilPage({}));
-		const status = screen.getByRole("status");
+		const status = screen.getByTestId("works-council-loading");
 
 		expect(
 			await within(status).findByText("Betriebsratsportal wird geladen"),
 		).toBeTruthy();
+		expect(status.getAttribute("aria-labelledby")).toBe(
+			"works-council-loading-label",
+		);
 		expect(screen.getAllByRole("status")).toHaveLength(1);
 		expect(mockState.translate).toHaveBeenCalledWith(
 			"worksCouncil.loadingLabel",
@@ -185,11 +203,8 @@ describe("WorksCouncilPage", () => {
 		mockState.findOrganization.mockResolvedValue({
 			worksCouncilEnabled: false,
 		});
-		const contentElement = getContentElement(WorksCouncilPage({}));
 
-		await expect(contentElement.type(contentElement.props)).rejects.toThrow(
-			"redirect:/",
-		);
+		await expect(renderWorksCouncilContent()).rejects.toThrow("redirect:/");
 
 		expect(mockState.redirect).toHaveBeenCalledWith("/");
 		expect(mockState.loadWorksCouncilSettings).not.toHaveBeenCalled();
@@ -198,14 +213,14 @@ describe("WorksCouncilPage", () => {
 	});
 
 	it("keeps audit and model loading scoped to the active organization", async () => {
-		const contentElement = getContentElement(
-			WorksCouncilPage({
-				searchParams: Promise.resolve({ from: "2026-07-01", to: "2026-07-31" }),
+		const dashboard = await renderWorksCouncilContent({
+			searchParams: Promise.resolve({
+				from: "2026-07-01",
+				to: "2026-07-31",
 			}),
-		);
+		});
 
-		const dashboard = await contentElement.type(contentElement.props);
-
+		expect(mockState.connection).toHaveBeenCalledOnce();
 		expect(mockState.loadWorksCouncilSettings).toHaveBeenCalledWith("org-1");
 		expect(mockState.auditWorksCouncilPortalViewed).toHaveBeenCalledWith(
 			expect.objectContaining({

@@ -46,8 +46,11 @@ export default function AuthLayout({
 function AuthLayoutLoading() {
 	return (
 		<div
+			aria-busy="true"
+			aria-label="Loading authentication"
 			className="relative min-h-svh overflow-x-hidden bg-background"
 			data-testid="auth-layout-loading"
+			role="status"
 		>
 			<section className="flex min-h-svh flex-col px-4 pt-4 pb-0 sm:px-8 sm:pt-6 lg:px-10">
 				<div
@@ -55,9 +58,9 @@ function AuthLayoutLoading() {
 					className="flex h-9 items-center justify-end gap-2"
 					data-testid="auth-controls-loading"
 				>
-					<Skeleton className="size-9 rounded-md" />
-					<Skeleton className="size-9 rounded-md" />
-					<Skeleton className="h-9 w-24 rounded-md" />
+					<Skeleton aria-hidden="true" className="size-9 rounded-md" />
+					<Skeleton aria-hidden="true" className="size-9 rounded-md" />
+					<Skeleton aria-hidden="true" className="h-9 w-24 rounded-md" />
 				</div>
 
 				<main className="flex flex-1 items-center justify-center py-8 sm:py-10">
@@ -71,9 +74,9 @@ function AuthLayoutLoading() {
 					className="flex min-h-10 items-center justify-center gap-3 pt-2 pb-2"
 					data-testid="auth-footer-loading"
 				>
-					<Skeleton className="h-3 w-20" />
-					<Skeleton className="h-3 w-16" />
-					<Skeleton className="h-3 w-24" />
+					<Skeleton aria-hidden="true" className="h-3 w-20" />
+					<Skeleton aria-hidden="true" className="h-3 w-16" />
+					<Skeleton aria-hidden="true" className="h-3 w-24" />
 				</div>
 			</section>
 		</div>
@@ -85,9 +88,8 @@ export async function AuthLayoutContent({
 }: {
 	children: React.ReactNode;
 }) {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
-	// Derive custom domains from the trusted request Host header.
+	// Host, domain, consent, Turnstile, and random auth data must remain request-specific.
+	await connection();
 	const headersList = await headers();
 	const host = headersList.get("host");
 	const domainClassification = classifyDomainHost(host);

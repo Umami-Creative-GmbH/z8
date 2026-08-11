@@ -29,4 +29,26 @@ describe("settings layout sidebar", () => {
 		).toHaveLength(1);
 		expect(source).not.toContain("SettingsLayoutLoading({ children }");
 	});
+
+	it("keeps primary navigation and URL breadcrumb geometry visible while they resolve", () => {
+		const source = readFileSync(
+			"src/app/[locale]/(app)/settings/layout.tsx",
+			"utf8",
+		);
+
+		expect(source).not.toContain('from "next/server"');
+		expect(source).not.toContain("connection()");
+		expect(source).toContain("getCurrentSettingsRouteContext()");
+		expect(source).toContain(
+			"<Suspense fallback={<SettingsNavigationLoading />}>",
+		);
+		expect(source).toContain("function SettingsBreadcrumbsLoading()");
+		expect(source).toContain(
+			"<Suspense fallback={<SettingsBreadcrumbsLoading />}>",
+		);
+		expect(source).toMatch(
+			/<Suspense fallback=\{<SettingsBreadcrumbsLoading \/>\}>\s*<SettingsBreadcrumbs \/>\s*<\/Suspense>/,
+		);
+		expect(source.match(/\{children\}/g)).toHaveLength(1);
+	});
 });

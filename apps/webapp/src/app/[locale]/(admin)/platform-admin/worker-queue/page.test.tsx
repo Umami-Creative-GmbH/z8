@@ -33,13 +33,13 @@ describe("WorkerQueuePage", () => {
 		expect(screen.getByText("Auftragswarteschlange wird geladen")).toBeTruthy();
 	});
 
-	it("passes the resolved locale to the existing queue content", async () => {
+	it("passes locale params to the protected queue content", async () => {
 		const page = WorkerQueuePage({
 			params: Promise.resolve({ locale: "de" }),
 		});
-		const content = await page.props.children.type(page.props.children.props);
+		const content = page.props.children;
 
-		expect(content.props).toEqual({ locale: "de" });
 		expect(content.type.name).toBe("WorkerQueueContent");
+		await expect(content.props.params).resolves.toEqual({ locale: "de" });
 	});
 });

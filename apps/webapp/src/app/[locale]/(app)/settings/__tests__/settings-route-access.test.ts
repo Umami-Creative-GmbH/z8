@@ -44,19 +44,35 @@ function stripComments(source: string): string {
 
 describe("org-admin settings route access", () => {
 	it("keeps settings layout mobile overflow guards in place", () => {
-		const source = stripComments(readFileSync(join(SETTINGS_ROOT, "layout.tsx"), "utf8"));
+		const source = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "layout.tsx"), "utf8"),
+		);
 
-		expect(source).toContain('className="flex min-h-0 min-w-0 flex-1 overflow-hidden"');
-		expect(source).toContain('className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"');
-		expect(source).toContain('className="min-w-0 flex-1 overflow-auto overflow-x-hidden"');
+		expect(source).toContain(
+			'className="flex min-h-0 min-w-0 flex-1 overflow-hidden"',
+		);
+		expect(source).toContain(
+			'className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"',
+		);
+		expect(source).toContain(
+			'className="min-w-0 flex-1 overflow-auto overflow-x-hidden"',
+		);
 	});
 
 	it("keeps third-party notification settings pages mobile-safe", () => {
-		for (const pagePath of ["slack/page.tsx", "discord/page.tsx", "teams-notifications/page.tsx"]) {
-			const source = stripComments(readFileSync(join(SETTINGS_ROOT, pagePath), "utf8"));
+		for (const pagePath of [
+			"slack/page.tsx",
+			"discord/page.tsx",
+			"teams-notifications/page.tsx",
+		]) {
+			const source = stripComments(
+				readFileSync(join(SETTINGS_ROOT, pagePath), "utf8"),
+			);
 
 			expect(source).toContain('className="p-4 sm:p-6"');
-			expect(source).toContain('className="mx-auto min-w-0 max-w-3xl space-y-6"');
+			expect(source).toContain(
+				'className="mx-auto min-w-0 max-w-3xl space-y-6"',
+			);
 		}
 	});
 
@@ -65,7 +81,9 @@ describe("org-admin settings route access", () => {
 			readFileSync(join(SETTINGS_ROOT, "payroll-access/page.tsx"), "utf8"),
 		);
 
-		expect(source).toContain('className="flex flex-1 flex-col gap-6 p-4 md:p-6"');
+		expect(source).toContain(
+			'className="flex flex-1 flex-col gap-6 p-4 md:p-6"',
+		);
 		expect(source).toContain('className="space-y-1"');
 		expect(source).toContain('className="text-2xl font-semibold"');
 	});
@@ -127,42 +145,93 @@ describe("org-admin settings route access", () => {
 			employeeRole: "manager",
 		});
 
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/organizations")).toBe(false);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/teams")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/statistics")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/change-policies")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/employees")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/holidays")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/locations")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/skills")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/vacation")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/work-categories")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/work-policies")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/shifts")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/coverage-rules")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/projects")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/customers")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/surcharges")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/calendar")).toBe(true);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/billing")).toBe(false);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/slack")).toBe(false);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/discord")).toBe(false);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/teams-notifications")).toBe(false);
-		expect(canResolvedTierAccessRoute(managerTier, "/settings/implementation-checklist")).toBe(
+		expect(
+			canResolvedTierAccessRoute(managerTier, "/settings/organizations"),
+		).toBe(false);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/teams")).toBe(
+			true,
+		);
+		expect(
+			canResolvedTierAccessRoute(managerTier, "/settings/statistics"),
+		).toBe(true);
+		expect(
+			canResolvedTierAccessRoute(managerTier, "/settings/change-policies"),
+		).toBe(true);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/employees")).toBe(
+			true,
+		);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/holidays")).toBe(
+			true,
+		);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/locations")).toBe(
+			true,
+		);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/skills")).toBe(
+			true,
+		);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/vacation")).toBe(
+			true,
+		);
+		expect(
+			canResolvedTierAccessRoute(managerTier, "/settings/work-categories"),
+		).toBe(true);
+		expect(
+			canResolvedTierAccessRoute(managerTier, "/settings/work-policies"),
+		).toBe(true);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/shifts")).toBe(
+			true,
+		);
+		expect(
+			canResolvedTierAccessRoute(managerTier, "/settings/coverage-rules"),
+		).toBe(true);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/projects")).toBe(
+			true,
+		);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/customers")).toBe(
+			true,
+		);
+		expect(
+			canResolvedTierAccessRoute(managerTier, "/settings/surcharges"),
+		).toBe(true);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/calendar")).toBe(
+			true,
+		);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/billing")).toBe(
 			false,
 		);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/slack")).toBe(
+			false,
+		);
+		expect(canResolvedTierAccessRoute(managerTier, "/settings/discord")).toBe(
+			false,
+		);
+		expect(
+			canResolvedTierAccessRoute(managerTier, "/settings/teams-notifications"),
+		).toBe(false);
+		expect(
+			canResolvedTierAccessRoute(
+				managerTier,
+				"/settings/implementation-checklist",
+			),
+		).toBe(false);
 	});
 
 	it("guards direct demo route and mutations with the demo data feature helper", () => {
-		const pageSource = stripComments(readFileSync(join(SETTINGS_ROOT, "demo/page.tsx"), "utf8"));
+		const pageSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "demo/page.tsx"), "utf8"),
+		);
 		const actionsSource = stripComments(
 			readFileSync(join(SETTINGS_ROOT, "demo/actions.ts"), "utf8"),
 		);
 
-		expect(pageSource.includes("assertDemoDataEnabledForOrganization(")).toBe(true);
+		expect(pageSource.includes("assertDemoDataEnabledForOrganization(")).toBe(
+			true,
+		);
 		expect(pageSource.includes("notFound(")).toBe(true);
 		expect(actionsSource.includes("canUseDemoData(")).toBe(true);
-		expect(actionsSource).not.toMatch(/Effect\.promise\(\(\) => isOrgAdminCasl\(/);
+		expect(actionsSource).not.toMatch(
+			/Effect\.promise\(\(\) => isOrgAdminCasl\(/,
+		);
 	});
 
 	it("lets the calendar route use scoped settings access while keeping mutations org-admin only", () => {
@@ -178,7 +247,9 @@ describe("org-admin settings route access", () => {
 		expect(pageSource.includes('accessTier === "member"')).toBe(true);
 		expect(pageSource.includes("getManagerCalendarReadView(")).toBe(true);
 		expect(pageSource.includes("getCalendarSettings(")).toBe(true);
-		expect(pageSource.includes('canManage={accessTier === "orgAdmin"}')).toBe(false);
+		expect(pageSource.includes('canManage={accessTier === "orgAdmin"}')).toBe(
+			false,
+		);
 		expect(pageSource.includes("googleEnabled: true")).toBe(false);
 		expect(pageSource.includes("microsoft365Enabled: true")).toBe(false);
 		expect(pageSource.includes("if (!settingsResult.success)")).toBe(true);
@@ -187,8 +258,12 @@ describe("org-admin settings route access", () => {
 		expect(actionsSource.includes("subareaEmployee")).toBe(true);
 		expect(actionsSource.includes("projectManager")).toBe(true);
 		expect(actionsSource.includes("projectAssignment")).toBe(true);
-		expect(actionsSource.includes("projectAssignment.organizationId")).toBe(true);
-		expect(actionsSource.includes("requireOrgAdminCalendarSettingsAccess(")).toBe(true);
+		expect(actionsSource.includes("projectAssignment.organizationId")).toBe(
+			true,
+		);
+		expect(
+			actionsSource.includes("requireOrgAdminCalendarSettingsAccess("),
+		).toBe(true);
 		expect(actionsSource.includes("getManagerCalendarReadView")).toBe(true);
 	});
 
@@ -203,16 +278,22 @@ describe("org-admin settings route access", () => {
 		expect(pageSource.includes("getCurrentSettingsRouteContext(")).toBe(true);
 		expect(pageSource.includes("requireOrgAdminSettingsAccess(")).toBe(false);
 		expect(pageSource.includes('accessTier === "member"')).toBe(true);
-		expect(pageSource.includes('canManage={accessTier === "orgAdmin"}')).toBe(true);
+		expect(pageSource.includes('canManage={accessTier === "orgAdmin"}')).toBe(
+			true,
+		);
 		expect(actionsSource.includes("requireOrgAdminSurchargeActor(")).toBe(true);
 		expect(actionsSource.includes("projectManager")).toBe(true);
 		expect(actionsSource.includes("locationEmployee")).toBe(true);
 		expect(actionsSource.includes("subareaEmployee")).toBe(true);
-		expect(actionsSource.includes('authContext.employee.role !== "admin"')).toBe(false);
+		expect(
+			actionsSource.includes('authContext.employee.role !== "admin"'),
+		).toBe(false);
 	});
 
 	it("lets the locations route use scoped settings access instead of the org-admin helper", () => {
-		const source = stripComments(readFileSync(join(SETTINGS_ROOT, "locations/page.tsx"), "utf8"));
+		const source = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "locations/page.tsx"), "utf8"),
+		);
 
 		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
 		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(false);
@@ -220,7 +301,10 @@ describe("org-admin settings route access", () => {
 
 	it("checks location detail access from the shared settings route context before rendering", () => {
 		const source = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "locations/[locationId]/page.tsx"), "utf8"),
+			readFileSync(
+				join(SETTINGS_ROOT, "locations/[locationId]/page.tsx"),
+				"utf8",
+			),
 		);
 
 		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
@@ -231,7 +315,10 @@ describe("org-admin settings route access", () => {
 
 	it("uses shared org-admin parity helpers for location assignment mutations", () => {
 		const source = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "locations/assignment-actions.ts"), "utf8"),
+			readFileSync(
+				join(SETTINGS_ROOT, "locations/assignment-actions.ts"),
+				"utf8",
+			),
 		);
 
 		expect(source.includes("getLocationSettingsActorContext(")).toBe(true);
@@ -243,7 +330,9 @@ describe("org-admin settings route access", () => {
 		const pages = ["shifts/page.tsx", "coverage-rules/page.tsx"];
 
 		for (const relativePath of pages) {
-			const source = stripComments(readFileSync(join(SETTINGS_ROOT, relativePath), "utf8"));
+			const source = stripComments(
+				readFileSync(join(SETTINGS_ROOT, relativePath), "utf8"),
+			);
 
 			expect(source.includes("getSchedulingSettingsAccessContext(")).toBe(true);
 			expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(false);
@@ -254,7 +343,9 @@ describe("org-admin settings route access", () => {
 		const pages = ["projects/page.tsx", "customers/page.tsx"];
 
 		for (const relativePath of pages) {
-			const source = stripComments(readFileSync(join(SETTINGS_ROOT, relativePath), "utf8"));
+			const source = stripComments(
+				readFileSync(join(SETTINGS_ROOT, relativePath), "utf8"),
+			);
 
 			expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
 			expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(false);
@@ -262,7 +353,9 @@ describe("org-admin settings route access", () => {
 	});
 
 	it("lets the holidays route use scoped settings access instead of the org-admin helper", () => {
-		const source = stripComments(readFileSync(join(SETTINGS_ROOT, "holidays/page.tsx"), "utf8"));
+		const source = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "holidays/page.tsx"), "utf8"),
+		);
 
 		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
 		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(false);
@@ -273,7 +366,9 @@ describe("org-admin settings route access", () => {
 		const pages = ["vacation/page.tsx", "work-policies/page.tsx"];
 
 		for (const relativePath of pages) {
-			const source = stripComments(readFileSync(join(SETTINGS_ROOT, relativePath), "utf8"));
+			const source = stripComments(
+				readFileSync(join(SETTINGS_ROOT, relativePath), "utf8"),
+			);
 
 			expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
 			expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(false);
@@ -287,7 +382,9 @@ describe("org-admin settings route access", () => {
 
 		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(true);
 		expect(source.includes("getCurrentEmployee(")).toBe(false);
-		expect(source.includes('authContext.employee.role !== "admin"')).toBe(false);
+		expect(source.includes('authContext.employee.role !== "admin"')).toBe(
+			false,
+		);
 	});
 
 	it("lets the work-categories route use scoped settings access and read-only manager controls", () => {
@@ -300,17 +397,31 @@ describe("org-admin settings route access", () => {
 
 		expect(pageSource.includes("getCurrentSettingsRouteContext(")).toBe(true);
 		expect(pageSource.includes("requireOrgAdminSettingsAccess(")).toBe(false);
-		expect(pageSource.includes('canManage={accessTier === "orgAdmin"}')).toBe(true);
-		expect(actionsSource.includes("getEmployeeSettingsActorContext(")).toBe(true);
-		expect(actionsSource.includes("requireOrgAdminEmployeeSettingsAccess(")).toBe(true);
-		expect(actionsSource.includes('employeeRecord.role !== "admin"')).toBe(false);
+		expect(pageSource.includes('canManage={accessTier === "orgAdmin"}')).toBe(
+			true,
+		);
+		expect(actionsSource.includes("getEmployeeSettingsActorContext(")).toBe(
+			true,
+		);
+		expect(
+			actionsSource.includes("requireOrgAdminEmployeeSettingsAccess("),
+		).toBe(true);
+		expect(actionsSource.includes('employeeRecord.role !== "admin"')).toBe(
+			false,
+		);
 	});
 
 	it("lets employee and skill settings pages use scoped settings access instead of the org-admin helper", () => {
-		const pages = ["employees/page.tsx", "employees/[employeeId]/page.tsx", "skills/page.tsx"];
+		const pages = [
+			"employees/page.tsx",
+			"employees/[employeeId]/page.tsx",
+			"skills/page.tsx",
+		];
 
 		for (const relativePath of pages) {
-			const source = stripComments(readFileSync(join(SETTINGS_ROOT, relativePath), "utf8"));
+			const source = stripComments(
+				readFileSync(join(SETTINGS_ROOT, relativePath), "utf8"),
+			);
 
 			expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
 			expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(false);
@@ -319,7 +430,10 @@ describe("org-admin settings route access", () => {
 
 	it("checks employee detail access at page entry before rendering the client surface", () => {
 		const source = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "employees/[employeeId]/page.tsx"), "utf8"),
+			readFileSync(
+				join(SETTINGS_ROOT, "employees/[employeeId]/page.tsx"),
+				"utf8",
+			),
 		);
 
 		expect(source.includes("getEmployee(")).toBe(true);
@@ -329,7 +443,10 @@ describe("org-admin settings route access", () => {
 	it("wraps employee app access switch fields in a TanStack form item", () => {
 		const source = stripComments(
 			readFileSync(
-				join(SETTINGS_ROOT, "employees/[employeeId]/employee-app-access-fields.tsx"),
+				join(
+					SETTINGS_ROOT,
+					"employees/[employeeId]/employee-app-access-fields.tsx",
+				),
 				"utf8",
 			),
 		);
@@ -344,22 +461,40 @@ describe("org-admin settings route access", () => {
 
 	it("uses shared scoped access helpers instead of admin-only checks for employee and skill actions", () => {
 		const employeeMutationsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "employees/employee-mutations.actions.ts"), "utf8"),
+			readFileSync(
+				join(SETTINGS_ROOT, "employees/employee-mutations.actions.ts"),
+				"utf8",
+			),
 		);
 		const rateMutationsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "employees/rate-mutations.actions.ts"), "utf8"),
+			readFileSync(
+				join(SETTINGS_ROOT, "employees/rate-mutations.actions.ts"),
+				"utf8",
+			),
 		);
 		const skillsActionsSource = stripComments(
 			readFileSync(join(SETTINGS_ROOT, "skills/actions.ts"), "utf8"),
 		);
 
-		expect(employeeMutationsSource.includes("requireAdmin(currentEmployee")).toBe(false);
-		expect(employeeMutationsSource.includes("ensureSettingsActorCanAccessEmployeeTarget(")).toBe(
-			true,
+		expect(
+			employeeMutationsSource.includes("requireAdmin(currentEmployee"),
+		).toBe(false);
+		expect(
+			employeeMutationsSource.includes(
+				"ensureSettingsActorCanAccessEmployeeTarget(",
+			),
+		).toBe(true);
+		expect(rateMutationsSource.includes("requireAdmin(currentEmployee")).toBe(
+			false,
 		);
-		expect(rateMutationsSource.includes("requireAdmin(currentEmployee")).toBe(false);
-		expect(rateMutationsSource.includes("ensureSettingsActorCanAccessEmployeeTarget(")).toBe(true);
-		expect(skillsActionsSource.includes('currentEmployee.role !== "admin"')).toBe(false);
+		expect(
+			rateMutationsSource.includes(
+				"ensureSettingsActorCanAccessEmployeeTarget(",
+			),
+		).toBe(true);
+		expect(
+			skillsActionsSource.includes('currentEmployee.role !== "admin"'),
+		).toBe(false);
 	});
 
 	it("does not re-export type-only skill shapes from the server actions module", () => {
@@ -367,17 +502,29 @@ describe("org-admin settings route access", () => {
 			readFileSync(join(SETTINGS_ROOT, "skills/actions.ts"), "utf8"),
 		);
 
-		expect(skillsActionsSource).not.toMatch(/export\s+type\s+\{[^}]*EmployeeSkillWithDetails/);
-		expect(skillsActionsSource).not.toMatch(/export\s+type\s+\{[^}]*SkillValidationResult/);
-		expect(skillsActionsSource).not.toMatch(/export\s+type\s+\{[^}]*SkillWithRelations/);
+		expect(skillsActionsSource).not.toMatch(
+			/export\s+type\s+\{[^}]*EmployeeSkillWithDetails/,
+		);
+		expect(skillsActionsSource).not.toMatch(
+			/export\s+type\s+\{[^}]*SkillValidationResult/,
+		);
+		expect(skillsActionsSource).not.toMatch(
+			/export\s+type\s+\{[^}]*SkillWithRelations/,
+		);
 	});
 
 	it("keeps the implementation checklist context loader server-only", () => {
 		const actionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "implementation-checklist/actions.ts"), "utf8"),
+			readFileSync(
+				join(SETTINGS_ROOT, "implementation-checklist/actions.ts"),
+				"utf8",
+			),
 		);
 		const queriesSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "implementation-checklist/queries.ts"), "utf8"),
+			readFileSync(
+				join(SETTINGS_ROOT, "implementation-checklist/queries.ts"),
+				"utf8",
+			),
 		);
 
 		expect(actionsSource).not.toMatch(
@@ -394,28 +541,55 @@ describe("org-admin settings route access", () => {
 			readFileSync(join(SETTINGS_ROOT, "vacation/actions.ts"), "utf8"),
 		);
 		const vacationAssignmentActionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "vacation/assignment-actions.ts"), "utf8"),
+			readFileSync(
+				join(SETTINGS_ROOT, "vacation/assignment-actions.ts"),
+				"utf8",
+			),
 		);
 		const workPolicyActionsSource = stripComments(
 			readFileSync(join(SETTINGS_ROOT, "work-policies/actions.ts"), "utf8"),
 		);
 
-		expect(vacationActionsSource.includes("getEmployeeSettingsActorContext(")).toBe(true);
-		expect(vacationActionsSource.includes("ensureSettingsActorCanAccessEmployeeTarget(")).toBe(
-			true,
-		);
-		expect(vacationAssignmentActionsSource.includes("getEmployeeSettingsActorContext(")).toBe(true);
 		expect(
-			vacationAssignmentActionsSource.includes("ensureSettingsActorCanAccessEmployeeTarget("),
+			vacationActionsSource.includes("getEmployeeSettingsActorContext("),
 		).toBe(true);
-		expect(workPolicyActionsSource.includes("getEmployeeSettingsActorContext(")).toBe(true);
-		expect(workPolicyActionsSource.includes("ensureSettingsActorCanAccessEmployeeTarget(")).toBe(
-			true,
-		);
-		expect(workPolicyActionsSource.includes("policyBelongsToOrganization(")).toBe(true);
-		expect(workPolicyActionsSource.includes("canAccessWorkPolicyComplianceActions(")).toBe(true);
-		expect(vacationAssignmentActionsSource.includes('employeeRecord.role !== "admin"')).toBe(false);
-		expect(workPolicyActionsSource.includes('employeeRecord.role !== "admin"')).toBe(false);
+		expect(
+			vacationActionsSource.includes(
+				"ensureSettingsActorCanAccessEmployeeTarget(",
+			),
+		).toBe(true);
+		expect(
+			vacationAssignmentActionsSource.includes(
+				"getEmployeeSettingsActorContext(",
+			),
+		).toBe(true);
+		expect(
+			vacationAssignmentActionsSource.includes(
+				"ensureSettingsActorCanAccessEmployeeTarget(",
+			),
+		).toBe(true);
+		expect(
+			workPolicyActionsSource.includes("getEmployeeSettingsActorContext("),
+		).toBe(true);
+		expect(
+			workPolicyActionsSource.includes(
+				"ensureSettingsActorCanAccessEmployeeTarget(",
+			),
+		).toBe(true);
+		expect(
+			workPolicyActionsSource.includes("policyBelongsToOrganization("),
+		).toBe(true);
+		expect(
+			workPolicyActionsSource.includes("canAccessWorkPolicyComplianceActions("),
+		).toBe(true);
+		expect(
+			vacationAssignmentActionsSource.includes(
+				'employeeRecord.role !== "admin"',
+			),
+		).toBe(false);
+		expect(
+			workPolicyActionsSource.includes('employeeRecord.role !== "admin"'),
+		).toBe(false);
 	});
 
 	it("uses scoped holiday access helpers for reads while keeping mutations org-admin only", () => {
@@ -426,18 +600,38 @@ describe("org-admin settings route access", () => {
 			readFileSync(join(SETTINGS_ROOT, "holidays/preset-actions.ts"), "utf8"),
 		);
 
-		expect(holidayActionsSource.includes("getEmployeeSettingsActorContext(")).toBe(true);
-		expect(holidayActionsSource.includes("getScopedHolidayAccessContext(")).toBe(true);
-		expect(holidayActionsSource.includes("filterAssignmentsForManagerHolidayScope(")).toBe(true);
-		expect(holidayActionsSource.includes("requireOrgAdminEmployeeSettingsAccess(")).toBe(true);
+		expect(
+			holidayActionsSource.includes("getEmployeeSettingsActorContext("),
+		).toBe(true);
+		expect(
+			holidayActionsSource.includes("getScopedHolidayAccessContext("),
+		).toBe(true);
+		expect(
+			holidayActionsSource.includes("filterAssignmentsForManagerHolidayScope("),
+		).toBe(true);
+		expect(
+			holidayActionsSource.includes("requireOrgAdminEmployeeSettingsAccess("),
+		).toBe(true);
 		expect(holidayActionsSource.includes("manageableTeamIds")).toBe(true);
-		expect(holidayActionsSource.includes('employeeRecord.role !== "admin"')).toBe(false);
-		expect(presetActionsSource.includes("getEmployeeSettingsActorContext(")).toBe(true);
-		expect(presetActionsSource.includes("getScopedHolidayAccessContext(")).toBe(true);
-		expect(presetActionsSource.includes("filterAssignmentsForManagerHolidayScope(")).toBe(true);
-		expect(presetActionsSource.includes("requireOrgAdminEmployeeSettingsAccess(")).toBe(true);
+		expect(
+			holidayActionsSource.includes('employeeRecord.role !== "admin"'),
+		).toBe(false);
+		expect(
+			presetActionsSource.includes("getEmployeeSettingsActorContext("),
+		).toBe(true);
+		expect(presetActionsSource.includes("getScopedHolidayAccessContext(")).toBe(
+			true,
+		);
+		expect(
+			presetActionsSource.includes("filterAssignmentsForManagerHolidayScope("),
+		).toBe(true);
+		expect(
+			presetActionsSource.includes("requireOrgAdminEmployeeSettingsAccess("),
+		).toBe(true);
 		expect(presetActionsSource.includes("manageableTeamIds")).toBe(true);
-		expect(presetActionsSource.includes('employeeRecord.role !== "admin"')).toBe(false);
+		expect(
+			presetActionsSource.includes('employeeRecord.role !== "admin"'),
+		).toBe(false);
 	});
 
 	it("lets the change-policies route use scoped settings access and manager-aware actions", () => {
@@ -451,11 +645,21 @@ describe("org-admin settings route access", () => {
 		expect(pageSource.includes("getCurrentSettingsRouteContext(")).toBe(true);
 		expect(pageSource.includes("requireOrgAdminSettingsAccess(")).toBe(false);
 		expect(pageSource.includes('accessTier === "member"')).toBe(true);
-		expect(pageSource.includes('canManage={accessTier === "orgAdmin"}')).toBe(true);
-		expect(actionsSource.includes("getEmployeeSettingsActorContext(")).toBe(true);
-		expect(actionsSource.includes("requireOrgAdminEmployeeSettingsAccess(")).toBe(true);
-		expect(actionsSource.includes("getManagedEmployeeIdsForSettingsActor(")).toBe(true);
-		expect(actionsSource.includes('employeeRecord.role !== "admin"')).toBe(false);
+		expect(pageSource.includes('canManage={accessTier === "orgAdmin"}')).toBe(
+			true,
+		);
+		expect(actionsSource.includes("getEmployeeSettingsActorContext(")).toBe(
+			true,
+		);
+		expect(
+			actionsSource.includes("requireOrgAdminEmployeeSettingsAccess("),
+		).toBe(true);
+		expect(
+			actionsSource.includes("getManagedEmployeeIdsForSettingsActor("),
+		).toBe(true);
+		expect(actionsSource.includes('employeeRecord.role !== "admin"')).toBe(
+			false,
+		);
 	});
 
 	it("uses shared scoped access helpers for project and customer actions", () => {
@@ -466,40 +670,70 @@ describe("org-admin settings route access", () => {
 			readFileSync(join(SETTINGS_ROOT, "customers/actions.ts"), "utf8"),
 		);
 
-		expect(projectActionsSource.includes("getProjectSettingsActorContext(")).toBe(true);
-		expect(projectActionsSource.includes("ensureSettingsActorCanAccessProjectTarget(")).toBe(true);
+		expect(
+			projectActionsSource.includes("getProjectSettingsActorContext("),
+		).toBe(true);
+		expect(
+			projectActionsSource.includes(
+				"ensureSettingsActorCanAccessProjectTarget(",
+			),
+		).toBe(true);
 		expect(projectActionsSource.includes('emp?.role === "admin"')).toBe(false);
-		expect(customerActionsSource.includes("getProjectSettingsActorContext(")).toBe(true);
-		expect(customerActionsSource.includes("ensureSettingsActorCanAccessCustomerTarget(")).toBe(
-			true,
-		);
+		expect(
+			customerActionsSource.includes("getProjectSettingsActorContext("),
+		).toBe(true);
+		expect(
+			customerActionsSource.includes(
+				"ensureSettingsActorCanAccessCustomerTarget(",
+			),
+		).toBe(true);
 		expect(customerActionsSource.includes('emp?.role === "admin"')).toBe(false);
 	});
 
 	it("uses shared scheduling scope helpers for shift templates and coverage actions", () => {
 		const templateActionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "../scheduling/actions/template-actions.ts"), "utf8"),
+			readFileSync(
+				join(SETTINGS_ROOT, "../scheduling/actions/template-actions.ts"),
+				"utf8",
+			),
 		);
 		const coverageActionsSource = stripComments(
 			readFileSync(join(SETTINGS_ROOT, "coverage-rules/actions.ts"), "utf8"),
 		);
 
-		expect(templateActionsSource.includes("getSchedulingSettingsAccessContext(")).toBe(true);
-		expect(templateActionsSource.includes("canManageScopedSchedulingSubarea(")).toBe(true);
-		expect(templateActionsSource.includes("requireManagerEmployee(")).toBe(false);
-		expect(coverageActionsSource.includes("getSchedulingSettingsAccessContext(")).toBe(true);
-		expect(coverageActionsSource.includes("canManageScopedSchedulingSubarea(")).toBe(true);
-		expect(coverageActionsSource.includes('authContext.employee.role !== "admin"')).toBe(false);
+		expect(
+			templateActionsSource.includes("getSchedulingSettingsAccessContext("),
+		).toBe(true);
+		expect(
+			templateActionsSource.includes("canManageScopedSchedulingSubarea("),
+		).toBe(true);
+		expect(templateActionsSource.includes("requireManagerEmployee(")).toBe(
+			false,
+		);
+		expect(
+			coverageActionsSource.includes("getSchedulingSettingsAccessContext("),
+		).toBe(true);
+		expect(
+			coverageActionsSource.includes("canManageScopedSchedulingSubarea("),
+		).toBe(true);
+		expect(
+			coverageActionsSource.includes('authContext.employee.role !== "admin"'),
+		).toBe(false);
 	});
 
 	it("keeps the skills read api on settings access tier checks instead of employee-only role checks", () => {
 		const source = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "../../../api/settings/skills/route.ts"), "utf8"),
+			readFileSync(
+				join(SETTINGS_ROOT, "../../../api/settings/skills/route.ts"),
+				"utf8",
+			),
 		);
 
 		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
 		expect(source.includes("authContext?.employee")).toBe(false);
-		expect(source.includes('authContext.employee.role !== "admin"')).toBe(false);
+		expect(source.includes('authContext.employee.role !== "admin"')).toBe(
+			false,
+		);
 	});
 
 	it("keeps audit log and permissions settings surfaces on shared settings access helpers", () => {
@@ -516,16 +750,36 @@ describe("org-admin settings route access", () => {
 			readFileSync(join(SETTINGS_ROOT, "permissions/actions.ts"), "utf8"),
 		);
 
-		expect(auditLogSource.includes("requireOrgAdminSettingsAccess(")).toBe(true);
-		expect(auditLogSource.includes('authContext.employee?.role !== "admin"')).toBe(false);
-		expect(auditLogActionsSource.includes("canManageCurrentOrganizationSettings(")).toBe(true);
-		expect(auditLogActionsSource.includes('employee?.role !== "admin"')).toBe(false);
-		expect(permissionsSource.includes("getCurrentSettingsRouteContext(")).toBe(true);
+		expect(auditLogSource.includes("requireOrgAdminSettingsAccess(")).toBe(
+			true,
+		);
+		expect(
+			auditLogSource.includes('authContext.employee?.role !== "admin"'),
+		).toBe(false);
+		expect(
+			auditLogActionsSource.includes("canManageCurrentOrganizationSettings("),
+		).toBe(true);
+		expect(auditLogActionsSource.includes('employee?.role !== "admin"')).toBe(
+			false,
+		);
+		expect(permissionsSource.includes("getCurrentSettingsRouteContext(")).toBe(
+			true,
+		);
 		expect(permissionsSource.includes("getCurrentEmployee(")).toBe(false);
-		expect(permissionsSource.includes('currentEmployee.role !== "admin"')).toBe(false);
-		expect(permissionsActionsSource.includes("getEmployeeSettingsActorContext(")).toBe(true);
-		expect(permissionsActionsSource.includes("requireOrgAdminEmployeeSettingsAccess(")).toBe(true);
-		expect(permissionsActionsSource.includes('currentEmployee.role !== "admin"')).toBe(false);
+		expect(permissionsSource.includes('currentEmployee.role !== "admin"')).toBe(
+			false,
+		);
+		expect(
+			permissionsActionsSource.includes("getEmployeeSettingsActorContext("),
+		).toBe(true);
+		expect(
+			permissionsActionsSource.includes(
+				"requireOrgAdminEmployeeSettingsAccess(",
+			),
+		).toBe(true);
+		expect(
+			permissionsActionsSource.includes('currentEmployee.role !== "admin"'),
+		).toBe(false);
 	});
 
 	it("keeps enterprise and travel-expense actions on shared org-admin helpers instead of employee-role checks", () => {
@@ -536,23 +790,43 @@ describe("org-admin settings route access", () => {
 			readFileSync(join(SETTINGS_ROOT, "enterprise/actions.ts"), "utf8"),
 		);
 
-		expect(travelExpensesSource.includes("canManageCurrentOrganizationSettings(")).toBe(true);
-		expect(travelExpensesSource.includes('authContext.employee.role !== "admin"')).toBe(false);
-		expect(enterpriseActionsSource.includes("canManageCurrentOrganizationSettings(")).toBe(true);
-		expect(enterpriseActionsSource.includes('authContext.employee?.role !== "admin"')).toBe(false);
+		expect(
+			travelExpensesSource.includes("canManageCurrentOrganizationSettings("),
+		).toBe(true);
+		expect(
+			travelExpensesSource.includes('authContext.employee.role !== "admin"'),
+		).toBe(false);
+		expect(
+			enterpriseActionsSource.includes("canManageCurrentOrganizationSettings("),
+		).toBe(true);
+		expect(
+			enterpriseActionsSource.includes(
+				'authContext.employee?.role !== "admin"',
+			),
+		).toBe(false);
 	});
 
 	it("keeps enterprise identity setup on org-admin settings access", () => {
 		const setupPageSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "enterprise/identity-setup/page.tsx"), "utf8"),
+			readFileSync(
+				join(SETTINGS_ROOT, "enterprise/identity-setup/page.tsx"),
+				"utf8",
+			),
 		);
 		const settingsAccessSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "../../../../lib/settings-access.ts"), "utf8"),
+			readFileSync(
+				join(SETTINGS_ROOT, "../../../../lib/settings-access.ts"),
+				"utf8",
+			),
 		);
 
-		expect(setupPageSource.includes("requireOrgAdminSettingsAccess(")).toBe(true);
+		expect(setupPageSource.includes("requireOrgAdminSettingsAccess(")).toBe(
+			true,
+		);
 		expect(setupPageSource.includes('employee?.role !== "admin"')).toBe(false);
-		expect(settingsAccessSource.includes('"/settings/enterprise/identity-setup"')).toBe(true);
+		expect(
+			settingsAccessSource.includes('"/settings/enterprise/identity-setup"'),
+		).toBe(true);
 	});
 
 	it("keeps the scheduled exports page shell on shared org-admin parity helpers", () => {
@@ -561,7 +835,9 @@ describe("org-admin settings route access", () => {
 		);
 
 		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(true);
-		expect(source.includes('authContext.employee.role !== "admin"')).toBe(false);
+		expect(source.includes('authContext.employee.role !== "admin"')).toBe(
+			false,
+		);
 	});
 
 	it("keeps the demo data feature flag out of direct Better Auth organization input", () => {
@@ -578,7 +854,13 @@ describe("org-admin settings route access", () => {
 
 	it("narrows manager employee editing away from org-admin-only form controls", () => {
 		const source = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "employees/[employeeId]/employee-edit-form-card.tsx"), "utf8"),
+			readFileSync(
+				join(
+					SETTINGS_ROOT,
+					"employees/[employeeId]/employee-edit-form-card.tsx",
+				),
+				"utf8",
+			),
 		);
 
 		expect(source.includes("canEditOrgAdminFields")).toBe(true);
@@ -589,13 +871,19 @@ describe("org-admin settings route access", () => {
 	it("keeps the employee skill controls visible for scoped managers instead of admin-only clients", () => {
 		const detailClientSource = stripComments(
 			readFileSync(
-				join(SETTINGS_ROOT, "employees/[employeeId]/employee-detail-page-client.tsx"),
+				join(
+					SETTINGS_ROOT,
+					"employees/[employeeId]/employee-detail-page-client.tsx",
+				),
 				"utf8",
 			),
 		);
 		const employeeSkillsCardSource = stripComments(
 			readFileSync(
-				join(SETTINGS_ROOT, "../../../../components/settings/employee-skills-card.tsx"),
+				join(
+					SETTINGS_ROOT,
+					"../../../../components/settings/employee-skills-card.tsx",
+				),
 				"utf8",
 			),
 		);
@@ -608,16 +896,28 @@ describe("org-admin settings route access", () => {
 
 	it("keeps employee list invite visibility on settings access tier instead of employee admin role", () => {
 		const pageClientSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "employees/employees-page-client.tsx"), "utf8"),
+			readFileSync(
+				join(SETTINGS_ROOT, "employees/employees-page-client.tsx"),
+				"utf8",
+			),
 		);
 		const querySource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "../../../../lib/query/use-employees.ts"), "utf8"),
+			readFileSync(
+				join(SETTINGS_ROOT, "../../../../lib/query/use-employees.ts"),
+				"utf8",
+			),
 		);
 
-		expect(pageClientSource.includes('props.accessTier === "orgAdmin"')).toBe(true);
+		expect(pageClientSource.includes('props.accessTier === "orgAdmin"')).toBe(
+			true,
+		);
 		expect(pageClientSource.includes("{isAdmin && (")).toBe(false);
-		expect(querySource.includes('currentEmployeeQuery.data?.role === "admin"')).toBe(false);
-		expect(querySource.includes('isAdmin: options.accessTier === "orgAdmin"')).toBe(true);
+		expect(
+			querySource.includes('currentEmployeeQuery.data?.role === "admin"'),
+		).toBe(false);
+		expect(
+			querySource.includes('isAdmin: options.accessTier === "orgAdmin"'),
+		).toBe(true);
 	});
 
 	it("keeps organization management org-admin-only and separate from teams", () => {
@@ -648,29 +948,30 @@ describe("org-admin settings route access", () => {
 		expect(clientSource.includes('currentEmployee?.role === "admin"')).toBe(false);
 	});
 
-	it.each(
-		ORG_ADMIN_SETTINGS_ROUTES,
-	)("permits owner and admin through %s while keeping members out", (route) => {
-		const ownerTier = resolveSettingsTierFromContext({
-			activeOrganizationId: "org-1",
-			membershipRole: "owner",
-			employeeRole: null,
-		});
-		const adminTier = resolveSettingsTierFromContext({
-			activeOrganizationId: "org-1",
-			membershipRole: "admin",
-			employeeRole: "admin",
-		});
-		const memberTier = resolveSettingsTierFromContext({
-			activeOrganizationId: "org-1",
-			membershipRole: "member",
-			employeeRole: "employee",
-		});
+	it.each(ORG_ADMIN_SETTINGS_ROUTES)(
+		"permits owner and admin through %s while keeping members out",
+		(route) => {
+			const ownerTier = resolveSettingsTierFromContext({
+				activeOrganizationId: "org-1",
+				membershipRole: "owner",
+				employeeRole: null,
+			});
+			const adminTier = resolveSettingsTierFromContext({
+				activeOrganizationId: "org-1",
+				membershipRole: "admin",
+				employeeRole: "admin",
+			});
+			const memberTier = resolveSettingsTierFromContext({
+				activeOrganizationId: "org-1",
+				membershipRole: "member",
+				employeeRole: "employee",
+			});
 
-		expect(canResolvedTierAccessRoute(ownerTier, route)).toBe(true);
-		expect(canResolvedTierAccessRoute(adminTier, route)).toBe(true);
-		expect(canResolvedTierAccessRoute(memberTier, route)).toBe(false);
-	});
+			expect(canResolvedTierAccessRoute(ownerTier, route)).toBe(true);
+			expect(canResolvedTierAccessRoute(adminTier, route)).toBe(true);
+			expect(canResolvedTierAccessRoute(memberTier, route)).toBe(false);
+		},
+	);
 
 	it("replaces direct admin-only page guards with the shared org-admin helper", () => {
 		const offenders: string[] = [];
@@ -691,8 +992,12 @@ describe("org-admin settings route access", () => {
 
 			if (
 				source.includes('employee.role !== "admin"') ||
-				source.includes('memberRecord?.role !== "owner" && memberRecord?.role !== "admin"') ||
-				source.includes('memberRecord.role !== "owner" && memberRecord.role !== "admin"')
+				source.includes(
+					'memberRecord?.role !== "owner" && memberRecord?.role !== "admin"',
+				) ||
+				source.includes(
+					'memberRecord.role !== "owner" && memberRecord.role !== "admin"',
+				)
 			) {
 				offenders.push(relativePath);
 			}
@@ -701,29 +1006,43 @@ describe("org-admin settings route access", () => {
 		expect(offenders).toEqual([]);
 	});
 
-	it("marks billing and avv settings pages as fully dynamic before auth checks", () => {
+	it("streams fail-closed billing access behind a focused boundary", () => {
 		const billingSource = stripComments(
 			readFileSync(join(SETTINGS_ROOT, "billing/page.tsx"), "utf8"),
 		);
-		const avvSource = stripComments(readFileSync(join(SETTINGS_ROOT, "avv/page.tsx"), "utf8"));
 
-		expect(billingSource.indexOf("await connection(")).toBeGreaterThan(-1);
+		expect(billingSource).not.toContain("connection(");
+		expect(billingSource).toContain("async function BillingSettingsContent()");
+		expect(billingSource).toContain(
+			"<Suspense fallback={<BillingSettingsLoading />}>\n\t\t\t<BillingSettingsContent />\n\t\t</Suspense>",
+		);
 		expect(
-			billingSource.indexOf("await connection(") <
+			billingSource.indexOf("async function BillingSettingsContent()") <
 				billingSource.indexOf('if (env.BILLING_ENABLED !== "true")'),
 		).toBe(true);
 		expect(
-			billingSource.indexOf("await connection(") <
+			billingSource.indexOf('if (env.BILLING_ENABLED !== "true")') <
 				billingSource.indexOf("await requireOrgAdminSettingsAccess()"),
 		).toBe(true);
+	});
 
-		expect(avvSource.indexOf("await connection(")).toBeGreaterThan(-1);
+	it("streams fail-closed AVV access behind a focused boundary", () => {
+		const avvSource = stripComments(
+			readFileSync(join(SETTINGS_ROOT, "avv/page.tsx"), "utf8"),
+		);
+
+		expect(avvSource).not.toContain("connection(");
+		expect(avvSource).toContain("async function AvvPageContent()");
+		expect(avvSource).toContain(
+			"<Suspense fallback={<AvvPageLoading />}>\n\t\t\t<AvvPageContent />\n\t\t</Suspense>",
+		);
 		expect(
-			avvSource.indexOf("await connection(") <
+			avvSource.indexOf("async function AvvPageContent()") <
 				avvSource.indexOf('if (env.BILLING_ENABLED !== "true")'),
 		).toBe(true);
 		expect(
-			avvSource.indexOf("await connection(") < avvSource.indexOf("requireOrgAdminSettingsAccess()"),
+			avvSource.indexOf('if (env.BILLING_ENABLED !== "true")') <
+				avvSource.indexOf("requireOrgAdminSettingsAccess()"),
 		).toBe(true);
 	});
 });

@@ -9,7 +9,6 @@ import {
 import { and, count, desc, eq, inArray, like, notLike } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -30,14 +29,30 @@ import { cn } from "@/lib/utils";
 import { getTranslate } from "@/tolgee/server";
 import { SyncSeatsButton } from "./sync-seats-button";
 
+const BILLING_STATS_LOADING_KEYS = [
+	"mrr",
+	"seats",
+	"active",
+	"past-due",
+	"conversion",
+	"trial",
+];
+const SUBSCRIPTIONS_LOADING_KEYS = ["one", "two", "three", "four", "five"];
+
 const formatDate = (date: Date | null) => {
 	if (!date) return "—";
 	return DateTime.fromJSDate(date).toLocaleString(DateTime.DATE_MED);
 };
 
-export default async function AdminBillingPage() {
-	await connection();
+export default function AdminBillingPage() {
+	return (
+		<Suspense fallback={<AdminBillingPageLoading />}>
+			<AdminBillingPageContent />
+		</Suspense>
+	);
+}
 
+async function AdminBillingPageContent() {
 	// Check if billing is enabled
 	if (env.BILLING_ENABLED !== "true") {
 		redirect("/platform-admin");
@@ -73,7 +88,10 @@ export default async function AdminBillingPage() {
 			{/* Subscriptions Table */}
 			<section className="space-y-4">
 				<h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-					{t("admin:admin.billing.sections.recentSubscriptions", "Recent Subscriptions")}
+					{t(
+						"admin:admin.billing.sections.recentSubscriptions",
+						"Recent Subscriptions",
+					)}
 				</h2>
 				<Suspense fallback={<SubscriptionsTableLoading />}>
 					<SubscriptionsTable />
@@ -91,11 +109,18 @@ interface StatCardProps {
 	variant?: "default" | "warning" | "success";
 }
 
-function StatCard({ title, value, description, icon, variant = "default" }: StatCardProps) {
+function StatCard({
+	title,
+	value,
+	description,
+	icon,
+	variant = "default",
+}: StatCardProps) {
 	const variantStyles = {
 		default: "hover:border-border",
 		warning: "border-amber-500/30 bg-amber-500/5 hover:border-amber-500/50",
-		success: "border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/50",
+		success:
+			"border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/50",
 	};
 
 	const iconStyles = {
@@ -113,13 +138,18 @@ function StatCard({ title, value, description, icon, variant = "default" }: Stat
 		>
 			<CardHeader className="flex flex-row items-start justify-between gap-y-0 pb-3">
 				<div
-					className={cn("flex size-10 items-center justify-center rounded-lg", iconStyles[variant])}
+					className={cn(
+						"flex size-10 items-center justify-center rounded-lg",
+						iconStyles[variant],
+					)}
 				>
 					{icon}
 				</div>
 			</CardHeader>
 			<CardContent className="space-y-1">
-				<div className="text-3xl font-bold tabular-nums tracking-tight">{value}</div>
+				<div className="text-3xl font-bold tabular-nums tracking-tight">
+					{value}
+				</div>
 				<div className="text-sm font-medium">{title}</div>
 				<p className="text-xs text-muted-foreground">{description}</p>
 			</CardContent>
@@ -128,8 +158,6 @@ function StatCard({ title, value, description, icon, variant = "default" }: Stat
 }
 
 async function BillingStats() {
-	await connection();
-
 	// Get all subscriptions
 	const [t, allSubscriptions] = await Promise.all([
 		getTranslate(),
@@ -145,10 +173,16 @@ async function BillingStats() {
 
 	// Calculate metrics
 	const activeSubscriptions = allSubscriptions.filter(
-		(s) => s.status === "active" || s.status === "trialing" || s.status === "past_due",
+		(s) =>
+			s.status === "active" ||
+			s.status === "trialing" ||
+			s.status === "past_due",
 	);
 
-	const totalSeats = activeSubscriptions.reduce((sum, s) => sum + s.currentSeats, 0);
+	const totalSeats = activeSubscriptions.reduce(
+		(sum, s) => sum + s.currentSeats,
+		0,
+	);
 
 	// MRR calculation: monthly = seats * 4, yearly = seats * 3
 	const mrr = activeSubscriptions.reduce((sum, s) => {
@@ -157,24 +191,35 @@ async function BillingStats() {
 	}, 0);
 
 	// Trialing count
-	const trialingCount = allSubscriptions.filter((s) => s.status === "trialing").length;
+	const trialingCount = allSubscriptions.filter(
+		(s) => s.status === "trialing",
+	).length;
 
 	// Past due count
-	const pastDueCount = allSubscriptions.filter((s) => s.status === "past_due").length;
+	const pastDueCount = allSubscriptions.filter(
+		(s) => s.status === "past_due",
+	).length;
 
 	// Trial conversion rate (trials that converted to active)
 	// Count subscriptions that were trialing and are now active
-	const activeCount = allSubscriptions.filter((s) => s.status === "active").length;
+	const activeCount = allSubscriptions.filter(
+		(s) => s.status === "active",
+	).length;
 	const totalTrialsAndActive = trialingCount + activeCount;
 	const conversionRate =
-		totalTrialsAndActive > 0 ? Math.round((activeCount / totalTrialsAndActive) * 100) : 0;
+		totalTrialsAndActive > 0
+			? Math.round((activeCount / totalTrialsAndActive) * 100)
+			: 0;
 
 	return (
 		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
 			<StatCard
 				title={t("admin:admin.billing.metrics.mrr", "MRR")}
 				value={`€${mrr.toLocaleString()}`}
-				description={t("admin:admin.billing.metrics.mrrDescription", "Monthly recurring revenue")}
+				description={t(
+					"admin:admin.billing.metrics.mrrDescription",
+					"Monthly recurring revenue",
+				)}
 				icon={<IconCurrencyEuro className="size-5" aria-hidden="true" />}
 				variant="success"
 			/>
@@ -188,7 +233,10 @@ async function BillingStats() {
 				icon={<IconUsers className="size-5" aria-hidden="true" />}
 			/>
 			<StatCard
-				title={t("admin:admin.billing.metrics.activeSubscriptions", "Active Subscriptions")}
+				title={t(
+					"admin:admin.billing.metrics.activeSubscriptions",
+					"Active Subscriptions",
+				)}
 				value={activeSubscriptions.length}
 				description={t(
 					"admin:admin.billing.metrics.activeSubscriptionsDescription",
@@ -200,20 +248,32 @@ async function BillingStats() {
 			<StatCard
 				title={t("admin:admin.billing.metrics.pastDue", "Past Due")}
 				value={pastDueCount}
-				description={t("admin:admin.billing.metrics.pastDueDescription", "Payment issues")}
+				description={t(
+					"admin:admin.billing.metrics.pastDueDescription",
+					"Payment issues",
+				)}
 				icon={<IconAlertTriangle className="size-5" aria-hidden="true" />}
 				variant={pastDueCount > 0 ? "warning" : "default"}
 			/>
 			<StatCard
-				title={t("admin:admin.billing.metrics.conversionRate", "Conversion Rate")}
+				title={t(
+					"admin:admin.billing.metrics.conversionRate",
+					"Conversion Rate",
+				)}
 				value={`${conversionRate}%`}
-				description={t("admin:admin.billing.metrics.conversionRateDescription", "Trials to paid")}
+				description={t(
+					"admin:admin.billing.metrics.conversionRateDescription",
+					"Trials to paid",
+				)}
 				icon={<IconTrendingUp className="size-5" aria-hidden="true" />}
 			/>
 			<StatCard
 				title={t("admin:admin.billing.metrics.trialing", "Trialing")}
 				value={trialingCount}
-				description={t("admin:admin.billing.metrics.trialingDescription", "In trial period")}
+				description={t(
+					"admin:admin.billing.metrics.trialingDescription",
+					"In trial period",
+				)}
 				icon={<IconClock className="size-5" aria-hidden="true" />}
 			/>
 		</div>
@@ -223,15 +283,15 @@ async function BillingStats() {
 function BillingStatsLoading() {
 	return (
 		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-			{[...Array(6)].map((_, i) => (
-				<Card key={i}>
+			{BILLING_STATS_LOADING_KEYS.map((key) => (
+				<Card key={key}>
 					<CardHeader className="pb-3">
-						<Skeleton className="size-10 rounded-lg" />
+						<Skeleton aria-hidden="true" className="size-10 rounded-lg" />
 					</CardHeader>
 					<CardContent className="space-y-2">
-						<Skeleton className="h-8 w-20" />
-						<Skeleton className="h-4 w-24" />
-						<Skeleton className="h-3 w-28" />
+						<Skeleton aria-hidden="true" className="h-8 w-20" />
+						<Skeleton aria-hidden="true" className="h-4 w-24" />
+						<Skeleton aria-hidden="true" className="h-3 w-28" />
 					</CardContent>
 				</Card>
 			))}
@@ -240,8 +300,6 @@ function BillingStatsLoading() {
 }
 
 async function SubscriptionsTable() {
-	await connection();
-
 	const [t, subscriptions] = await Promise.all([
 		getTranslate(),
 		db
@@ -260,7 +318,9 @@ async function SubscriptionsTable() {
 			.limit(50),
 	]);
 
-	const organizationIds = [...new Set(subscriptions.map((s) => s.organizationId))];
+	const organizationIds = [
+		...new Set(subscriptions.map((s) => s.organizationId)),
+	];
 	const [orgs, usedSeatCounts, demoUserCounts] =
 		organizationIds.length > 0
 			? await Promise.all([
@@ -294,13 +354,21 @@ async function SubscriptionsTable() {
 				])
 			: [[], [], []];
 	const orgMap = new Map(orgs.map((o) => [o.id, o.name]));
-	const usedSeatCountMap = new Map(usedSeatCounts.map((row) => [row.organizationId, row.total]));
-	const demoUserCountMap = new Map(demoUserCounts.map((row) => [row.organizationId, row.total]));
+	const usedSeatCountMap = new Map(
+		usedSeatCounts.map((row) => [row.organizationId, row.total]),
+	);
+	const demoUserCountMap = new Map(
+		demoUserCounts.map((row) => [row.organizationId, row.total]),
+	);
 
 	const getStatusBadge = (status: string) => {
 		switch (status) {
 			case "trialing":
-				return <Badge variant="default">{t("admin:admin.billing.status.trialing", "Trial")}</Badge>;
+				return (
+					<Badge variant="default">
+						{t("admin:admin.billing.status.trialing", "Trial")}
+					</Badge>
+				);
 			case "active":
 				return (
 					<Badge variant="default" className="bg-green-600">
@@ -309,11 +377,15 @@ async function SubscriptionsTable() {
 				);
 			case "past_due":
 				return (
-					<Badge variant="destructive">{t("admin:admin.billing.status.pastDue", "Past Due")}</Badge>
+					<Badge variant="destructive">
+						{t("admin:admin.billing.status.pastDue", "Past Due")}
+					</Badge>
 				);
 			case "canceled":
 				return (
-					<Badge variant="secondary">{t("admin:admin.billing.status.canceled", "Canceled")}</Badge>
+					<Badge variant="secondary">
+						{t("admin:admin.billing.status.canceled", "Canceled")}
+					</Badge>
 				);
 			default:
 				return <Badge variant="outline">{status}</Badge>;
@@ -337,8 +409,12 @@ async function SubscriptionsTable() {
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>{t("admin:admin.billing.table.organization", "Organization")}</TableHead>
-							<TableHead>{t("admin:admin.billing.table.status", "Status")}</TableHead>
+							<TableHead>
+								{t("admin:admin.billing.table.organization", "Organization")}
+							</TableHead>
+							<TableHead>
+								{t("admin:admin.billing.table.status", "Status")}
+							</TableHead>
 							<TableHead className="text-right">
 								{t("admin:admin.billing.table.licensedSeats", "Licensed seats")}
 							</TableHead>
@@ -348,37 +424,57 @@ async function SubscriptionsTable() {
 							<TableHead className="text-right">
 								{t("admin:admin.billing.table.demoUsers", "Demo users")}
 							</TableHead>
-							<TableHead>{t("admin:admin.billing.table.billing", "Billing")}</TableHead>
-							<TableHead>{t("admin:admin.billing.table.periodEnd", "Period End")}</TableHead>
-							<TableHead>{t("admin:admin.billing.table.created", "Created")}</TableHead>
 							<TableHead>
-								<span className="sr-only">{t("admin:admin.billing.table.actions", "Actions")}</span>
+								{t("admin:admin.billing.table.billing", "Billing")}
+							</TableHead>
+							<TableHead>
+								{t("admin:admin.billing.table.periodEnd", "Period End")}
+							</TableHead>
+							<TableHead>
+								{t("admin:admin.billing.table.created", "Created")}
+							</TableHead>
+							<TableHead>
+								<span className="sr-only">
+									{t("admin:admin.billing.table.actions", "Actions")}
+								</span>
 							</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
 						{subscriptions.length === 0 ? (
 							<TableRow>
-								<TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-									{t("admin:admin.billing.table.noSubscriptions", "No subscriptions yet")}
+								<TableCell
+									colSpan={9}
+									className="text-center text-muted-foreground py-8"
+								>
+									{t(
+										"admin:admin.billing.table.noSubscriptions",
+										"No subscriptions yet",
+									)}
 								</TableCell>
 							</TableRow>
 						) : (
 							subscriptions.map((sub) => {
-								const orgName = orgMap.get(sub.organizationId) || sub.organizationId.slice(0, 8);
+								const orgName =
+									orgMap.get(sub.organizationId) ||
+									sub.organizationId.slice(0, 8);
 
 								return (
 									<TableRow key={sub.id}>
 										<TableCell className="font-medium">{orgName}</TableCell>
 										<TableCell>{getStatusBadge(sub.status)}</TableCell>
-										<TableCell className="text-right tabular-nums">{sub.currentSeats}</TableCell>
+										<TableCell className="text-right tabular-nums">
+											{sub.currentSeats}
+										</TableCell>
 										<TableCell className="text-right tabular-nums">
 											{usedSeatCountMap.get(sub.organizationId) ?? 0}
 										</TableCell>
 										<TableCell className="text-right tabular-nums">
 											{demoUserCountMap.get(sub.organizationId) ?? 0}
 										</TableCell>
-										<TableCell>{formatBillingInterval(sub.billingInterval)}</TableCell>
+										<TableCell>
+											{formatBillingInterval(sub.billingInterval)}
+										</TableCell>
 										<TableCell>
 											{sub.status === "trialing"
 												? formatDate(sub.trialEnd)
@@ -408,10 +504,37 @@ function SubscriptionsTableLoading() {
 	return (
 		<Card>
 			<CardContent className="p-6 space-y-3">
-				{[...Array(5)].map((_, i) => (
-					<Skeleton key={i} className="h-14 w-full rounded-lg" />
+				{SUBSCRIPTIONS_LOADING_KEYS.map((key) => (
+					<Skeleton
+						aria-hidden="true"
+						key={key}
+						className="h-14 w-full rounded-lg"
+					/>
 				))}
 			</CardContent>
 		</Card>
+	);
+}
+
+function AdminBillingPageLoading() {
+	return (
+		<div
+			className="space-y-10"
+			role="status"
+			aria-label="Loading platform billing"
+		>
+			<div className="space-y-2">
+				<Skeleton aria-hidden="true" className="h-8 w-52" />
+				<Skeleton aria-hidden="true" className="h-5 w-80 max-w-full" />
+			</div>
+			<section className="space-y-4">
+				<Skeleton aria-hidden="true" className="h-5 w-36" />
+				<BillingStatsLoading />
+			</section>
+			<section className="space-y-4">
+				<Skeleton aria-hidden="true" className="h-5 w-44" />
+				<SubscriptionsTableLoading />
+			</section>
+		</div>
 	);
 }

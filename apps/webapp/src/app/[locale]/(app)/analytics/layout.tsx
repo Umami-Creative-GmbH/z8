@@ -8,8 +8,9 @@ import {
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
+import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
@@ -23,11 +24,46 @@ async function getCurrentEmployee(userId: string) {
 	});
 }
 
-export default async function AnalyticsLayout({ children }: { children: React.ReactNode }) {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
+export default function AnalyticsLayout({
+	children,
+}: {
+	children: React.ReactNode;
+}) {
+	return (
+		<Suspense fallback={<AnalyticsLayoutLoading />}>
+			<AnalyticsLayoutContent>{children}</AnalyticsLayoutContent>
+		</Suspense>
+	);
+}
+
+function AnalyticsLayoutLoading() {
+	return (
+		<div
+			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
+			role="status"
+			aria-label="Loading analytics navigation"
+		>
+			<div className="space-y-2 px-4 lg:px-6">
+				<Skeleton aria-hidden="true" className="h-9 w-48" />
+				<Skeleton aria-hidden="true" className="h-5 w-full max-w-2xl" />
+			</div>
+			<div className="px-4 lg:px-6">
+				<Skeleton aria-hidden="true" className="h-10 w-full max-w-3xl" />
+			</div>
+		</div>
+	);
+}
+
+async function AnalyticsLayoutContent({
+	children,
+}: {
+	children: React.ReactNode;
+}) {
 	const [t, session] = await Promise.all([
 		getTranslate(),
-		headers().then((requestHeaders) => auth.api.getSession({ headers: requestHeaders })),
+		headers().then((requestHeaders) =>
+			auth.api.getSession({ headers: requestHeaders }),
+		),
 	]);
 	if (!session?.user) {
 		redirect("/sign-in");
@@ -38,7 +74,9 @@ export default async function AnalyticsLayout({ children }: { children: React.Re
 	if (!currentEmployee) {
 		return (
 			<div className="@container/main flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature={t("analytics.access.noEmployeeFeature", "view analytics")} />
+				<NoEmployeeError
+					feature={t("analytics.access.noEmployeeFeature", "view analytics")}
+				/>
 			</div>
 		);
 	}
@@ -108,7 +146,10 @@ export default async function AnalyticsLayout({ children }: { children: React.Re
 						<TabsTrigger value="overtime-burn-down" asChild>
 							<Link href="/analytics/overtime-burn-down">
 								<IconClock className="mr-2 size-4" />
-								{t("analytics.layout.tabs.overtimeBurnDown", "Overtime Burn-Down")}
+								{t(
+									"analytics.layout.tabs.overtimeBurnDown",
+									"Overtime Burn-Down",
+								)}
 							</Link>
 						</TabsTrigger>
 					</TabsList>

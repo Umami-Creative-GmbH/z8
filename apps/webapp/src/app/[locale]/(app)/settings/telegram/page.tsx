@@ -1,5 +1,4 @@
 import { and, eq } from "drizzle-orm";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { TelegramSettings } from "@/components/settings/telegram-settings";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,8 +8,6 @@ import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
 async function TelegramSettingsContent() {
-	await connection();
-
 	const [{ authContext, organizationId }, t] = await Promise.all([
 		requireOrgAdminSettingsAccess(),
 		getTranslate(),
@@ -61,7 +58,9 @@ async function TelegramSettingsContent() {
 		<div className="p-6">
 			<div className="mx-auto max-w-3xl space-y-6">
 				<div>
-					<h1 className="text-2xl font-semibold">{t("settings.telegram.title", "Telegram")}</h1>
+					<h1 className="text-2xl font-semibold">
+						{t("settings.telegram.title", "Telegram")}
+					</h1>
 					<p className="text-muted-foreground">
 						{t(
 							"settings.telegram.description",

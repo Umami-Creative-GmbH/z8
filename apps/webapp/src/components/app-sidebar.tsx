@@ -22,6 +22,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import type * as React from "react";
+import { Suspense } from "react";
 import { AppSearch } from "@/components/app-search";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
@@ -29,7 +30,17 @@ import { NavTeam } from "@/components/nav-team";
 import { NavUser } from "@/components/nav-user";
 import { OrganizationSwitcher } from "@/components/organization-switcher";
 import type { FeatureFlagState } from "@/components/settings/settings-config";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
+import {
+	Sidebar,
+	SidebarContent,
+	SidebarFooter,
+	SidebarGroup,
+	SidebarGroupContent,
+	SidebarHeader,
+	SidebarMenu,
+	SidebarMenuItem,
+	SidebarMenuSkeleton,
+} from "@/components/ui/sidebar";
 import { buildStaticAppCommands } from "@/lib/app-search/static-commands";
 import { buildStaticAppSearchResults } from "@/lib/app-search/static-results";
 import type { StaticAppSearchInput } from "@/lib/app-search/types";
@@ -56,7 +67,9 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	canCreateOrganizations?: boolean;
 }
 
-const isManagerOrAbove = (role: "admin" | "manager" | "employee" | null | undefined): boolean => {
+const isManagerOrAbove = (
+	role: "admin" | "manager" | "employee" | null | undefined,
+): boolean => {
 	return role === "admin" || role === "manager";
 };
 
@@ -68,6 +81,28 @@ const DEFAULT_NAVIGATION_CAPABILITIES: NavigationCapabilities = {
 	worksCouncil: false,
 	platformAdmin: false,
 };
+
+function SidebarNavigationLoading({ rows }: { rows: number }) {
+	return (
+		<SidebarMenu aria-hidden="true">
+			{Array.from({ length: rows }, (_, index) => index + 1).map((row) => (
+				<SidebarMenuItem key={row}>
+					<SidebarMenuSkeleton showIcon />
+				</SidebarMenuItem>
+			))}
+		</SidebarMenu>
+	);
+}
+
+function SidebarSecondaryNavigationLoading() {
+	return (
+		<SidebarGroup aria-hidden="true" className="mt-auto">
+			<SidebarGroupContent>
+				<SidebarNavigationLoading rows={3} />
+			</SidebarGroupContent>
+		</SidebarGroup>
+	);
+}
 
 export function AppSidebar({
 	organizations = EMPTY_ORGANIZATIONS,
@@ -233,10 +268,19 @@ export function AppSidebar({
 				/>
 			</SidebarHeader>
 			<SidebarContent>
-				<AppSearch staticCommands={staticCommands} staticResults={staticSearchResults} />
-				<NavMain items={navPersonal} label="z8 app" />
-				{isManagerOrAbove(employeeRole) && <NavTeam items={navTeam} />}
-				<NavSecondary className="mt-auto" items={navSecondary} />
+				<AppSearch
+					staticCommands={staticCommands}
+					staticResults={staticSearchResults}
+				/>
+				<Suspense fallback={<SidebarNavigationLoading rows={8} />}>
+					<NavMain items={navPersonal} label="z8 app" />
+				</Suspense>
+				<Suspense fallback={<SidebarNavigationLoading rows={4} />}>
+					{isManagerOrAbove(employeeRole) && <NavTeam items={navTeam} />}
+				</Suspense>
+				<Suspense fallback={<SidebarSecondaryNavigationLoading />}>
+					<NavSecondary className="mt-auto" items={navSecondary} />
+				</Suspense>
 			</SidebarContent>
 			<SidebarFooter>
 				<NavUser

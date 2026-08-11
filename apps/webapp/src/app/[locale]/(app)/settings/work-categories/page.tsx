@@ -1,6 +1,5 @@
 import { IconTag } from "@tabler/icons-react";
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { WorkCategoryManagement } from "@/components/settings/work-category/work-category-management";
 import { WorkCategorySetsTable } from "@/components/settings/work-category/work-category-sets-table";
@@ -9,8 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
 async function WorkCategoriesSettingsContent() {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
 	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {

@@ -1,49 +1,27 @@
 /* @vitest-environment jsdom */
 
 import { render, screen } from "@testing-library/react";
+import { isValidElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
-}));
-
 const mockState = vi.hoisted(() => ({
-	connection: vi.fn(async () => undefined),
+	callOrder: [] as string[],
 	findBatch: vi.fn(),
 	getImportReviewSummary: vi.fn(),
 	listImportReviewRows: vi.fn(),
 	notFound: vi.fn(() => {
 		throw new Error("NEXT_NOT_FOUND");
 	}),
-	requireImportAdmin: vi.fn(),
+	requireOrgAdminSettingsAccess: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", () => ({
-	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
+	and: (...conditions: unknown[]) => ["and", ...conditions],
+	eq: (column: unknown, value: unknown) => ["eq", column, value],
 }));
 
-vi.mock("next/navigation", () => ({ notFound: mockState.notFound }));
-vi.mock("next/server", () => ({ connection: mockState.connection }));
-
-vi.mock("@/db", () => ({
-	db: {
-		query: {
-			importBatch: { findFirst: mockState.findBatch },
-		},
-	},
-}));
-
-vi.mock("@/db/schema", () => ({
-	importBatch: { id: "importBatch.id" },
-}));
-
-vi.mock("@/lib/import-review/repository", () => ({
-	getImportReviewSummary: mockState.getImportReviewSummary,
-	listImportReviewRows: mockState.listImportReviewRows,
-}));
-
-vi.mock("../review-actions", () => ({
-	requireImportAdmin: mockState.requireImportAdmin,
+vi.mock("next/navigation", () => ({
+	notFound: mockState.notFound,
 }));
 
 vi.mock("@/components/settings/import/import-review-page", () => ({
@@ -52,46 +30,86 @@ vi.mock("@/components/settings/import/import-review-page", () => ({
 	),
 }));
 
+vi.mock("@/db", () => ({
+	db: {
+		query: {
+			importBatch: {
+				findFirst: mockState.findBatch,
+			},
+		},
+	},
+}));
+
+vi.mock("@/db/schema", () => ({
+	importBatch: {
+		id: "importBatch.id",
+		organizationId: "importBatch.organizationId",
+	},
+}));
+
+vi.mock("@/lib/auth-helpers", () => ({
+	requireOrgAdminSettingsAccess: mockState.requireOrgAdminSettingsAccess,
+}));
+
+vi.mock("@/lib/import-review/repository", () => ({
+	getImportReviewSummary: mockState.getImportReviewSummary,
+	listImportReviewRows: mockState.listImportReviewRows,
+}));
+
 const { default: ImportReviewRoute } = await import("./page");
 
-function getContentElement(page: ReturnType<typeof ImportReviewRoute>) {
-	return page.props.children;
+async function renderRequestContent(batchId: string) {
+	const route = ImportReviewRoute({ params: Promise.resolve({ batchId }) });
+	if (!isValidElement(route) || !isValidElement(route.props.children)) {
+		throw new Error("Expected a focused import review boundary");
+	}
+
+	const content = route.props.children as React.ReactElement<
+		{ params: Promise<{ batchId: string }> },
+		(props: {
+			params: Promise<{ batchId: string }>;
+		}) => Promise<React.ReactNode>
+	>;
+	return content.type(content.props);
 }
 
 describe("ImportReviewRoute", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.findBatch.mockResolvedValue({
-			id: "batch-1",
-			organizationId: "org-1",
+		mockState.callOrder.length = 0;
+		mockState.requireOrgAdminSettingsAccess.mockImplementation(async () => {
+			mockState.callOrder.push("authorize");
+			return { organizationId: "org-1" };
+		});
+		mockState.findBatch.mockImplementation(async () => {
+			mockState.callOrder.push("query");
+			return { id: "batch-1", organizationId: "org-1" };
 		});
 		mockState.getImportReviewSummary.mockResolvedValue({ total: 1 });
 		mockState.listImportReviewRows.mockResolvedValue([{ id: "row-1" }]);
 	});
 
-	it("renders the settings fallback while params remain unresolved", () => {
+	it("renders the import review shell while params remain unresolved", () => {
 		const page = ImportReviewRoute({ params: new Promise<never>(() => {}) });
 
 		expect(page).not.toBeInstanceOf(Promise);
 		render(page);
 
-		expect(screen.getByLabelText("Loading settings")).toBeTruthy();
+		expect(screen.getByLabelText("Loading import review")).toBeTruthy();
 		expect(mockState.findBatch).not.toHaveBeenCalled();
 	});
 
-	it("authorizes the batch organization and keeps review queries tenant scoped", async () => {
-		const page = ImportReviewRoute({
-			params: Promise.resolve({ batchId: "batch-1" }),
-		});
-		const contentElement = getContentElement(page);
+	it("authorizes before a tenant-scoped lookup and scopes review queries", async () => {
+		const reviewPage = await renderRequestContent("batch-1");
 
-		const reviewPage = await contentElement.type(contentElement.props);
-
-		expect(mockState.connection).toHaveBeenCalledOnce();
+		expect(mockState.callOrder).toEqual(["authorize", "query"]);
 		expect(mockState.findBatch).toHaveBeenCalledWith({
-			where: { eq: ["importBatch.id", "batch-1"] },
+			where: [
+				"and",
+				["eq", "importBatch.id", "batch-1"],
+				["eq", "importBatch.organizationId", "org-1"],
+			],
 		});
-		expect(mockState.requireImportAdmin).toHaveBeenCalledWith("org-1");
 		expect(mockState.getImportReviewSummary).toHaveBeenCalledWith({
 			batchId: "batch-1",
 			organizationId: "org-1",
@@ -110,17 +128,12 @@ describe("ImportReviewRoute", () => {
 		});
 	});
 
-	it("returns not found before authorization when the batch does not exist", async () => {
+	it("hides another organization's batch", async () => {
 		mockState.findBatch.mockResolvedValue(undefined);
-		const page = ImportReviewRoute({
-			params: Promise.resolve({ batchId: "missing" }),
-		});
-		const contentElement = getContentElement(page);
 
-		await expect(contentElement.type(contentElement.props)).rejects.toThrow(
+		await expect(renderRequestContent("batch-foreign")).rejects.toThrow(
 			"NEXT_NOT_FOUND",
 		);
-		expect(mockState.requireImportAdmin).not.toHaveBeenCalled();
 		expect(mockState.getImportReviewSummary).not.toHaveBeenCalled();
 		expect(mockState.listImportReviewRows).not.toHaveBeenCalled();
 	});

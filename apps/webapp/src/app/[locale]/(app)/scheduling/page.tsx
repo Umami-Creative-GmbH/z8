@@ -1,36 +1,24 @@
-import { eq } from "drizzle-orm";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { ShiftScheduler } from "@/components/scheduling/scheduler/shift-scheduler";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
-import { organization } from "@/db/auth-schema";
-import { employee } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { getAuthContext } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
 async function SchedulingPageContent() {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
-	// Auth is checked in layout - session is guaranteed to exist
-	const [session, t] = await Promise.all([
-		auth.api.getSession({ headers: await headers() }),
+	const [authContext, t] = await Promise.all([
+		getAuthContext(),
 		getTranslate(),
 	]);
-	const currentSession = session!;
 
-	// Get current employee
-	const emp = await db.query.employee.findFirst({
-		where: eq(employee.userId, currentSession.user.id),
-	});
-
-	if (!emp) {
+	if (!authContext?.employee) {
 		redirect("/onboarding/welcome");
 	}
+
+	const emp = authContext.employee;
 	const org = await db.query.organization.findFirst({
-		where: eq(organization.id, emp.organizationId),
+		where: (table, { eq }) => eq(table.id, emp.organizationId),
 		columns: { timezone: true },
 	});
 
@@ -71,11 +59,15 @@ async function SchedulingPageContent() {
 
 function SchedulingPageLoading() {
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-2 p-4">
-			<div className="space-y-4">
-				<Skeleton className="h-8 w-56" />
-				<Skeleton className="h-5 w-80" />
-				<Skeleton className="h-[520px] w-full" />
+		<div
+			aria-label="Loading shift schedule"
+			className="@container/main flex flex-1 flex-col gap-2"
+			role="status"
+		>
+			<div className="space-y-4 p-4">
+				<Skeleton aria-hidden="true" className="h-8 w-56" />
+				<Skeleton aria-hidden="true" className="h-5 w-80" />
+				<Skeleton aria-hidden="true" className="h-[520px] w-full" />
 			</div>
 		</div>
 	);

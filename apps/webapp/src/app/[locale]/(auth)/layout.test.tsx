@@ -4,6 +4,7 @@ import { render, screen } from "@testing-library/react";
 import { isValidElement, Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AuthLayout, { AuthLayoutContent } from "./layout";
+import source from "./layout.tsx?raw";
 
 const mockState = vi.hoisted(() => ({
 	headers: vi.fn(async () => new Headers()),
@@ -125,15 +126,24 @@ describe("AuthLayout", () => {
 		expect(layout.type).toBe(Suspense);
 	});
 
-	it("preserves a neutral, accessible auth shell while domain configuration loads", () => {
-		const layout = AuthLayout({ children: <div>Tenant sign in</div> });
+	it("renders neutral fallback geometry without tenant or child data", () => {
+		const layout = AuthLayout({
+			children: <div>secret.acme.example tenant sign-in</div>,
+		});
 		if (!isValidElement<{ fallback: React.ReactNode }>(layout)) {
-			throw new Error("Expected AuthLayout to return a React element");
+			throw new Error("Expected AuthLayout to return Suspense");
 		}
 
 		render(layout.props.fallback);
 
-		expect(screen.getByRole("status").getAttribute("aria-busy")).toBe("true");
+		expect(
+			screen
+				.getByRole("status", { name: "Loading authentication" })
+				.getAttribute("aria-busy"),
+		).toBe("true");
+		expect(
+			screen.getByTestId("auth-layout-loading").getAttribute("aria-busy"),
+		).toBe("true");
 		expect(screen.getByText("Anmeldung wird geladen")).toBeTruthy();
 		expect(screen.getByTestId("auth-layout-loading").className).toContain(
 			"min-h-svh",
@@ -143,7 +153,20 @@ describe("AuthLayout", () => {
 		);
 		expect(screen.getByTestId("auth-controls-loading")).toBeTruthy();
 		expect(screen.getByTestId("auth-footer-loading")).toBeTruthy();
-		expect(screen.queryByText(/tenant|organization|acme/i)).toBeNull();
+		expect(
+			screen.queryByText(/secret\.acme\.example|tenant sign-in/i),
+		).toBeNull();
+	});
+
+	it("keeps connection inside the async auth content", () => {
+		const contentStart = source.indexOf(
+			"export async function AuthLayoutContent",
+		);
+		const connectionCall = source.indexOf("await connection()", contentStart);
+
+		expect(contentStart).toBeGreaterThan(-1);
+		expect(connectionCall).toBeGreaterThan(contentStart);
+		expect(source.slice(0, contentStart)).not.toContain("connection()");
 	});
 
 	it("uses a full-page background image behind the auth content", async () => {

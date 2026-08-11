@@ -15,7 +15,13 @@ import { count, eq, inArray, isNull } from "drizzle-orm";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { PlatformAnalyticsPreviewCharts } from "@/components/platform-admin/platform-analytics-charts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { organization, user } from "@/db/auth-schema";
@@ -50,7 +56,22 @@ const STAT_CARD_ICON_STYLES = {
 	success: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
 };
 
-function StatCard({ title, value, description, icon, href, variant = "default" }: StatCardProps) {
+const DASHBOARD_STATS_LOADING_KEYS = [
+	"users",
+	"banned",
+	"organizations",
+	"suspended",
+];
+const DASHBOARD_BILLING_LOADING_KEYS = ["mrr", "licensed-seats"];
+
+function StatCard({
+	title,
+	value,
+	description,
+	icon,
+	href,
+	variant = "default",
+}: StatCardProps) {
 	return (
 		<Link href={href} className="group block">
 			<Card
@@ -87,37 +108,45 @@ function StatCard({ title, value, description, icon, href, variant = "default" }
 }
 
 async function DashboardStats() {
-	await connection();
-
 	const t = await getTranslate();
 	const billingEnabled = env.BILLING_ENABLED === "true";
 
 	// Run all queries in parallel to avoid waterfalls (async-parallel)
-	const [[{ totalUsers }], [{ bannedUsers }], [{ totalOrgs }], [{ suspendedOrgs }], subscriptions] =
-		await Promise.all([
-			// Get total users count
-			db.select({ totalUsers: count() }).from(user),
-			// Get banned users count
-			db.select({ bannedUsers: count() }).from(user).where(eq(user.banned, true)),
-			// Get total organizations count (excluding deleted)
-			db.select({ totalOrgs: count() }).from(organization).where(isNull(organization.deletedAt)),
-			// Get suspended organizations count
-			db
-				.select({ suspendedOrgs: count() })
-				.from(organizationSuspension)
-				.where(eq(organizationSuspension.isActive, true)),
-			// Billing stats (only when billing is enabled)
-			billingEnabled
-				? db
-						.select({
-							currentSeats: subscription.currentSeats,
-							billingInterval: subscription.billingInterval,
-							status: subscription.status,
-						})
-						.from(subscription)
-						.where(inArray(subscription.status, ["active", "trialing", "past_due"]))
-				: Promise.resolve([]),
-		]);
+	const [
+		[{ totalUsers }],
+		[{ bannedUsers }],
+		[{ totalOrgs }],
+		[{ suspendedOrgs }],
+		subscriptions,
+	] = await Promise.all([
+		// Get total users count
+		db.select({ totalUsers: count() }).from(user),
+		// Get banned users count
+		db.select({ bannedUsers: count() }).from(user).where(eq(user.banned, true)),
+		// Get total organizations count (excluding deleted)
+		db
+			.select({ totalOrgs: count() })
+			.from(organization)
+			.where(isNull(organization.deletedAt)),
+		// Get suspended organizations count
+		db
+			.select({ suspendedOrgs: count() })
+			.from(organizationSuspension)
+			.where(eq(organizationSuspension.isActive, true)),
+		// Billing stats (only when billing is enabled)
+		billingEnabled
+			? db
+					.select({
+						currentSeats: subscription.currentSeats,
+						billingInterval: subscription.billingInterval,
+						status: subscription.status,
+					})
+					.from(subscription)
+					.where(
+						inArray(subscription.status, ["active", "trialing", "past_due"]),
+					)
+			: Promise.resolve([]),
+	]);
 
 	// Calculate billing stats from results
 	const billingStats = {
@@ -188,7 +217,10 @@ async function DashboardStats() {
 						variant="success"
 					/>
 					<StatCard
-						title={t("admin:admin.overview.metrics.licensedSeats", "Licensed Seats")}
+						title={t(
+							"admin:admin.overview.metrics.licensedSeats",
+							"Licensed Seats",
+						)}
 						value={billingStats.totalSeats}
 						description={t(
 							"admin:admin.overview.metrics.licensedSeatsDescription",
@@ -205,33 +237,39 @@ async function DashboardStats() {
 
 function DashboardStatsLoading() {
 	const billingEnabled = env.BILLING_ENABLED === "true";
-	const cardCount = billingEnabled ? 6 : 4;
-	const skeletonCardKeys = Array.from(
-		{ length: cardCount },
-		(_, index) => `dashboard-stat-skeleton-${index}`,
-	);
 
 	return (
 		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-			{skeletonCardKeys.map((key) => (
-				<Card key={key}>
-					<CardHeader className="pb-3">
-						<Skeleton className="size-10 rounded-lg" />
-					</CardHeader>
-					<CardContent className="space-y-2">
-						<Skeleton className="h-8 w-20" />
-						<Skeleton className="h-4 w-24" />
-						<Skeleton className="h-3 w-32" />
-					</CardContent>
-				</Card>
+			{DASHBOARD_STATS_LOADING_KEYS.map((key) => (
+				<DashboardStatSkeleton key={key} />
 			))}
+			{billingEnabled
+				? DASHBOARD_BILLING_LOADING_KEYS.map((key) => (
+						<DashboardStatSkeleton key={key} />
+					))
+				: null}
 		</div>
 	);
 }
 
-async function DashboardAnalyticsPreview() {
-	await connection();
+function DashboardStatSkeleton() {
+	return (
+		<Card>
+			<CardHeader className="pb-3">
+				<Skeleton aria-hidden="true" className="size-10 rounded-lg" />
+			</CardHeader>
+			<CardContent className="space-y-2">
+				<Skeleton aria-hidden="true" className="h-8 w-20" />
+				<Skeleton aria-hidden="true" className="h-4 w-24" />
+				<Skeleton aria-hidden="true" className="h-3 w-32" />
+			</CardContent>
+		</Card>
+	);
+}
 
+async function DashboardAnalyticsPreview() {
+	// The current analytics preview range and live platform analytics must be resolved per request.
+	await connection();
 	const params = parsePlatformAnalyticsParams({ range: "30d", bucket: "week" });
 	const data = await getPlatformAnalyticsData(params, undefined, {
 		includeBilling: false,
@@ -252,18 +290,20 @@ function DashboardAnalyticsPreviewLoading() {
 				<Skeleton className="h-5 w-28" />
 			</CardHeader>
 			<CardContent className="grid gap-4 lg:grid-cols-2">
-				{["analytics-preview-growth", "analytics-preview-engagement"].map((key) => (
-					<Card key={key} className="gap-4 border-muted/80 shadow-none">
-						<CardHeader className="space-y-2">
-							<Skeleton className="h-5 w-32" />
-							<Skeleton className="h-4 w-56 max-w-full" />
-						</CardHeader>
-						<CardContent className="space-y-3">
-							<Skeleton className="h-4 w-48" />
-							<Skeleton className="h-[180px] w-full" />
-						</CardContent>
-					</Card>
-				))}
+				{["analytics-preview-growth", "analytics-preview-engagement"].map(
+					(key) => (
+						<Card key={key} className="gap-4 border-muted/80 shadow-none">
+							<CardHeader className="space-y-2">
+								<Skeleton className="h-5 w-32" />
+								<Skeleton className="h-4 w-56 max-w-full" />
+							</CardHeader>
+							<CardContent className="space-y-3">
+								<Skeleton className="h-4 w-48" />
+								<Skeleton className="h-[180px] w-full" />
+							</CardContent>
+						</Card>
+					),
+				)}
 			</CardContent>
 		</Card>
 	);
@@ -276,7 +316,12 @@ interface QuickActionCardProps {
 	icon: React.ReactNode;
 }
 
-function QuickActionCard({ title, description, href, icon }: QuickActionCardProps) {
+function QuickActionCard({
+	title,
+	description,
+	href,
+	icon,
+}: QuickActionCardProps) {
 	return (
 		<Link href={href} className="group block">
 			<Card className="h-full transition-[border-color,box-shadow] duration-200 hover:border-border hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/20">
@@ -311,7 +356,10 @@ async function AdminDashboardContent() {
 					{t("admin:admin.overview.title", "Overview")}
 				</h1>
 				<p className="text-muted-foreground">
-					{t("admin:admin.overview.description", "Platform metrics and quick actions")}
+					{t(
+						"admin:admin.overview.description",
+						"Platform metrics and quick actions",
+					)}
 				</p>
 			</div>
 
@@ -342,7 +390,10 @@ async function AdminDashboardContent() {
 				</h2>
 				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 					<QuickActionCard
-						title={t("admin:admin.overview.quickActions.users.title", "User Management")}
+						title={t(
+							"admin:admin.overview.quickActions.users.title",
+							"User Management",
+						)}
 						description={t(
 							"admin:admin.overview.quickActions.users.description",
 							"Ban/unban users, manage sessions, view activity",
@@ -372,7 +423,9 @@ async function AdminDashboardContent() {
 							"Review safe config and app health checks",
 						)}
 						href="/platform-admin/diagnostics"
-						icon={<IconActivityHeartbeat className="size-5" aria-hidden="true" />}
+						icon={
+							<IconActivityHeartbeat className="size-5" aria-hidden="true" />
+						}
 					/>
 					<QuickActionCard
 						title={t(
@@ -408,17 +461,21 @@ async function AdminDashboardContent() {
 
 function AdminDashboardLoading() {
 	return (
-		<div className="space-y-10">
+		<div
+			className="space-y-10"
+			role="status"
+			aria-label="Loading platform admin overview"
+		>
 			<div className="space-y-2">
-				<Skeleton className="h-8 w-36" />
-				<Skeleton className="h-5 w-72" />
+				<Skeleton aria-hidden="true" className="h-8 w-36" />
+				<Skeleton aria-hidden="true" className="h-5 w-72" />
 			</div>
 			<section className="space-y-4">
-				<Skeleton className="h-5 w-36" />
+				<Skeleton aria-hidden="true" className="h-5 w-36" />
 				<DashboardStatsLoading />
 			</section>
 			<section className="space-y-4">
-				<Skeleton className="h-5 w-36" />
+				<Skeleton aria-hidden="true" className="h-5 w-36" />
 				<DashboardAnalyticsPreviewLoading />
 			</section>
 		</div>
