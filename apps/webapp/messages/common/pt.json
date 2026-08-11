@@ -295,6 +295,18 @@
     "imprint": "Expediente",
     "trust-center": "Central de Confiança"
   },
+  "loading": {
+    "application": "A carregar aplicação",
+    "authentication": "A carregar autenticação",
+    "calendar": "A carregar calendário",
+    "chart": "A carregar gráfico",
+    "licenses": "A carregar licenças",
+    "platformAnalytics": "A carregar análises da plataforma",
+    "settings": "A carregar definições",
+    "setup": "A carregar configuração",
+    "teamAbsences": "A carregar ausências da equipa",
+    "workerQueue": "A carregar fila de trabalhos"
+  },
   "nav": {
     "absences": "Ausências",
     "analytics": "Análise",
@@ -527,6 +539,9 @@
     "invalid-password": "Senha inválida",
     "last-name-required": "O sobrenome é obrigatório",
     "password-required": "A senha é obrigatória"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Carregando o portal do conselho de trabalhadores"
   },
   "workBalance": {
     "label": "Saldo total",

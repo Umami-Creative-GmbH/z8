@@ -11,6 +11,10 @@ export default defineConfig({
 		},
 		include: ["src/**/*.test.{ts,tsx}"],
 		alias: {
+			"@/data/licenses.json": path.resolve(
+				__dirname,
+				"./src/test/licenses.ts",
+			),
 			"@": path.resolve(__dirname, "./src"),
 			"@/db": path.resolve(__dirname, "./src/db"),
 			"@/lib": path.resolve(__dirname, "./src/lib"),

@@ -53,54 +53,54 @@ async function syncEvent(event) {
 			signal: controller.signal,
 		});
 
-		if (response.ok) {
-			const data = await response.json();
-			return {
-				success: true,
-				serverId: data.entry?.id || data.id,
-			};
-		}
+		if (!response.ok) {
+			// Error payloads are read only after the HTTP failure is established.
+			const errorData = await response.json().catch(() => ({}));
+			const errorMessage = errorData.error || `HTTP ${response.status}`;
 
-		// Handle specific error codes
-		const errorData = await response.json().catch(() => ({}));
-		const errorMessage = errorData.error || `HTTP ${response.status}`;
+			// 409 Conflict - already clocked in/out
+			if (response.status === 409) {
+				return {
+					success: false,
+					error: errorMessage,
+					isConflict: true,
+					statusCode: 409,
+				};
+			}
 
-		// 409 Conflict - already clocked in/out
-		if (response.status === 409) {
+			// 401 Unauthorized - session expired
+			if (response.status === 401) {
+				return {
+					success: false,
+					error: "Session expired. Please log in again.",
+					isConflict: false,
+					statusCode: 401,
+				};
+			}
+
+			// 400 Bad Request - validation error
+			if (response.status === 400) {
+				return {
+					success: false,
+					error: errorMessage,
+					isConflict: true, // Treat as conflict to remove from queue
+					statusCode: 400,
+				};
+			}
+
+			// Other errors - retry later
 			return {
 				success: false,
 				error: errorMessage,
-				isConflict: true,
-				statusCode: 409,
-			};
-		}
-
-		// 401 Unauthorized - session expired
-		if (response.status === 401) {
-			return {
-				success: false,
-				error: "Session expired. Please log in again.",
 				isConflict: false,
-				statusCode: 401,
+				statusCode: response.status,
 			};
 		}
 
-		// 400 Bad Request - validation error
-		if (response.status === 400) {
-			return {
-				success: false,
-				error: errorMessage,
-				isConflict: true, // Treat as conflict to remove from queue
-				statusCode: 400,
-			};
-		}
-
-		// Other errors - retry later
+		const data = await response.json();
 		return {
-			success: false,
-			error: errorMessage,
-			isConflict: false,
-			statusCode: response.status,
+			success: true,
+			serverId: data.entry?.id || data.id,
 		};
 	} catch (error) {
 		// Network or timeout error - retry later

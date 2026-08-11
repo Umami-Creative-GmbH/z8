@@ -21,6 +21,7 @@ import {
 	setAbsenceCategoryActive,
 } from "@/app/[locale]/(app)/settings/vacation/actions";
 import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
+import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -166,7 +167,7 @@ export function AbsenceCategoriesTable({
 		});
 	})();
 
-	const columns: ColumnDef<AbsenceCategoryForSettings>[] = [
+	const columns: ColumnDef<DataTableFeatures, AbsenceCategoryForSettings>[] = [
 		{
 			accessorKey: "name",
 			header: t("settings.absenceCategories.header.name", "Name"),

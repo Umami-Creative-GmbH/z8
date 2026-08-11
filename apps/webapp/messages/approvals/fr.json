@@ -28,6 +28,7 @@
     "inboxErrorDescription": "Échec de la récupération des approbations",
     "inboxErrorTitle": "Impossible de charger la boîte de réception des approbations",
     "loadError": "Échec du chargement des approbations",
+    "loadingInbox": "Chargement de la boîte de réception des approbations",
     "noAbsenceApprovals": "Aucune demande d'absence en attente à examiner.",
     "noRequests": "Aucune demande en attente",
     "noRequestsDescription": "Les nouvelles demandes d'approbation apparaîtront ici lorsqu'elles nécessiteront l'examen d'un responsable.",

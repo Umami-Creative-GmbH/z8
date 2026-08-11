@@ -1,7 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { BillingPageClient } from "@/components/billing/billing-page-client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,8 +27,6 @@ const billingCheckFailedAccess: BillingAccessResult = {
 };
 
 async function BillingSettingsContent() {
-	await connection();
-
 	// Check if billing is enabled
 	if (env.BILLING_ENABLED !== "true") {
 		redirect("/settings");
@@ -92,7 +89,8 @@ async function BillingSettingsContent() {
 							isPastDue: subscription.isPastDue,
 							currentSeats: subscription.currentSeats,
 							trialEnd: subscription.trialEnd?.toISOString() ?? null,
-							currentPeriodEnd: subscription.currentPeriodEnd?.toISOString() ?? null,
+							currentPeriodEnd:
+								subscription.currentPeriodEnd?.toISOString() ?? null,
 							billingInterval: subscription.billingInterval,
 							cancelAt: subscription.cancelAt?.toISOString() ?? null,
 						}

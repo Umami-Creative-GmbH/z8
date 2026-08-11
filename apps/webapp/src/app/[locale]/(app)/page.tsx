@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { NoOrganizationError } from "@/components/errors/no-organization-error";
 import { SectionCards, SectionCardsSkeleton } from "@/components/section-cards";
@@ -10,15 +9,14 @@ import {
 } from "@/lib/auth-helpers";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 
-export default async function Page() {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
+async function DashboardPageContent() {
 	// Fetch onboarding status and organizations in parallel to eliminate waterfall
-	const [onboardingStatus, organizations, pendingInvitationId] = await Promise.all([
-		getOnboardingStatus(),
-		getUserOrganizations(),
-		getPendingInvitationId(),
-	]);
+	const [onboardingStatus, organizations, pendingInvitationId] =
+		await Promise.all([
+			getOnboardingStatus(),
+			getUserOrganizations(),
+			getPendingInvitationId(),
+		]);
 	const hasOrganizations = organizations.length > 0;
 
 	if (!hasOrganizations && pendingInvitationId) {
@@ -46,5 +44,27 @@ export default async function Page() {
 				</Suspense>
 			</div>
 		</div>
+	);
+}
+
+function DashboardPageLoading() {
+	return (
+		<div
+			aria-label="Loading dashboard"
+			className="@container/main flex flex-1 flex-col gap-2"
+			role="status"
+		>
+			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+				<SectionCardsSkeleton aria-hidden="true" />
+			</div>
+		</div>
+	);
+}
+
+export default function Page() {
+	return (
+		<Suspense fallback={<DashboardPageLoading />}>
+			<DashboardPageContent />
+		</Suspense>
 	);
 }

@@ -1,22 +1,27 @@
-import { Effect } from "effect";
 import { connection } from "next/server";
-import { AppLayer } from "@/lib/effect/runtime";
-import { PlatformAdminService } from "@/lib/effect/services/platform-admin.service";
+import { Suspense } from "react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { requirePlatformAdmin } from "@/lib/effect/services/platform-admin.service";
 import { collectPlatformDiagnostics } from "@/lib/platform-diagnostics";
 import { getTranslate } from "@/tolgee/server";
 import { DiagnosticsClient } from "./diagnostics-client";
 
-export default async function PlatformDiagnosticsPage() {
-	await connection();
+export default function PlatformDiagnosticsPage() {
+	return (
+		<Suspense fallback={<PlatformDiagnosticsPageLoading />}>
+			<PlatformDiagnosticsPageContent />
+		</Suspense>
+	);
+}
 
-	const [t, snapshot, admin] = await Promise.all([
+export async function PlatformDiagnosticsPageContent() {
+	const admin = await requirePlatformAdmin();
+	// Diagnostics Effect runtime performs synchronous current-time work and must execute per request outside prerendered shell.
+	await connection();
+	const [t, snapshot] = await Promise.all([
 		getTranslate(),
 		collectPlatformDiagnostics(),
-		Effect.runPromise(
-			Effect.flatMap(PlatformAdminService, (adminService) =>
-				adminService.requirePlatformAdmin(),
-			).pipe(Effect.provide(AppLayer)),
-		),
 	]);
 
 	return (
@@ -34,6 +39,46 @@ export default async function PlatformDiagnosticsPage() {
 			</div>
 
 			<DiagnosticsClient initialSnapshot={snapshot} adminEmail={admin.email} />
+		</div>
+	);
+}
+
+function PlatformDiagnosticsPageLoading() {
+	return (
+		<div
+			className="space-y-10"
+			role="status"
+			aria-label="Loading deployment diagnostics"
+		>
+			<div className="space-y-2">
+				<Skeleton aria-hidden="true" className="h-8 w-64" />
+				<Skeleton aria-hidden="true" className="h-5 w-full max-w-xl" />
+			</div>
+			<div className="space-y-6">
+				<Card>
+					<CardHeader className="space-y-2">
+						<Skeleton aria-hidden="true" className="h-6 w-52" />
+						<Skeleton aria-hidden="true" className="h-4 w-80 max-w-full" />
+					</CardHeader>
+					<CardContent>
+						<Skeleton aria-hidden="true" className="h-16 w-full" />
+					</CardContent>
+				</Card>
+				<div className="grid gap-6 xl:grid-cols-2">
+					{["configuration", "health"].map((key) => (
+						<Card key={key}>
+							<CardHeader className="space-y-2">
+								<Skeleton aria-hidden="true" className="h-5 w-40" />
+								<Skeleton aria-hidden="true" className="h-4 w-64 max-w-full" />
+							</CardHeader>
+							<CardContent className="space-y-3">
+								<Skeleton aria-hidden="true" className="h-12 w-full" />
+								<Skeleton aria-hidden="true" className="h-12 w-full" />
+							</CardContent>
+						</Card>
+					))}
+				</div>
+			</div>
 		</div>
 	);
 }

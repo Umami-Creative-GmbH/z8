@@ -1,14 +1,12 @@
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { SettingsBreadcrumbs } from "@/components/settings/settings-breadcrumbs";
 import { SettingsNav } from "@/components/settings/settings-nav";
+import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
 async function SettingsNavigation() {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
 	const accessTier = settingsRouteContext?.accessTier ?? "member";
 	const billingEnabled = env.BILLING_ENABLED === "true";
@@ -33,6 +31,18 @@ function SettingsNavigationLoading() {
 	);
 }
 
+function SettingsBreadcrumbsLoading() {
+	return (
+		<div
+			aria-hidden="true"
+			className="mb-4 flex h-9 items-center gap-2 px-6 pt-4"
+		>
+			<Skeleton className="size-4" />
+			<Skeleton className="h-4 w-40" />
+		</div>
+	);
+}
+
 export default function SettingsLayout({
 	children,
 }: {
@@ -45,8 +55,14 @@ export default function SettingsLayout({
 				<SettingsNavigation />
 			</Suspense>
 			<main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-				<SettingsBreadcrumbs />
-				<div className="min-w-0 flex-1 overflow-auto overflow-x-hidden">{children}</div>
+				<Suspense fallback={<SettingsBreadcrumbsLoading />}>
+					<SettingsBreadcrumbs />
+				</Suspense>
+				<Suspense fallback={<SettingsContentLoading />}>
+					<div className="min-w-0 flex-1 overflow-auto overflow-x-hidden">
+						{children}
+					</div>
+				</Suspense>
 			</main>
 		</div>
 	);

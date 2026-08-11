@@ -1,282 +1,84 @@
-import { IconEdit, IconUser } from "@tabler/icons-react";
+import { eq } from "drizzle-orm";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
-import { UserAvatar } from "@/components/user-avatar";
+import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
-import { Link } from "@/navigation";
+import { calendarYearAt, systemClock } from "@/lib/datetime/temporal-core";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import { getTranslate } from "@/tolgee/server";
-import { getCompanyDefaultVacationPolicy, getEmployeesWithAllowances } from "../actions";
+import {
+	getCompanyDefaultVacationPolicy,
+	getEmployeesWithAllowances,
+} from "../actions";
 import { getVacationPolicyAssignments } from "../assignment-actions";
+import { EmployeeAllowancesView } from "./employee-allowances-view";
 
 async function EmployeeAllowancesContent() {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
 	const [{ organizationId }, t] = await Promise.all([
 		requireOrgAdminSettingsAccess(),
 		getTranslate(),
 	]);
+	const ownedOrganization = await db.query.organization.findFirst({
+		where: eq(organization.id, organizationId),
+		columns: { timezone: true },
+	});
+	const timezone = resolveOrganizationTimezone(
+		ownedOrganization?.timezone,
+	).timezone;
 
-	const currentYear = new Date().getFullYear();
-	const [employeesResult, policyResult, policyAssignmentsResult] = await Promise.all([
-		getEmployeesWithAllowances(organizationId, currentYear),
-		getCompanyDefaultVacationPolicy(organizationId),
-		getVacationPolicyAssignments(organizationId),
-	]);
+	// The current vacation allowance year must be resolved per request.
+	await connection();
+	const currentYear = calendarYearAt(systemClock.nowInstant(), timezone);
+	const [employeesResult, policyResult, policyAssignmentsResult] =
+		await Promise.all([
+			getEmployeesWithAllowances(organizationId, currentYear),
+			getCompanyDefaultVacationPolicy(organizationId),
+			getVacationPolicyAssignments(organizationId),
+		]);
 
 	const employees = employeesResult.success ? employeesResult.data : [];
 	const orgPolicy = policyResult.success ? policyResult.data : null;
-	const policyAssignments = policyAssignmentsResult.success ? policyAssignmentsResult.data : [];
+	const policyAssignments = policyAssignmentsResult.success
+		? policyAssignmentsResult.data
+		: [];
 	const defaultDays = orgPolicy?.defaultAnnualDays || "0";
 
-	// Build a map of employeeId -> policy assignment (only employee-level assignments)
-	const employeePolicyMap = new Map<string, any>();
-	policyAssignments?.forEach((assignment: any) => {
-		if (assignment.assignmentType === "employee" && assignment.employeeId) {
-			employeePolicyMap.set(assignment.employeeId, assignment);
-		}
-	});
-
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("settings.vacation.employees.title", "Employee Allowances")}
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"settings.vacation.employees.description",
-							"Configure custom vacation allowances for individual employees",
-						)}
-					</p>
-				</div>
-			</div>
-
-			<Card>
-				<CardHeader>
-					<div className="flex items-center justify-between">
-						<div>
-							<CardTitle>
-								{t(
-									"settings.vacation.employees.allowancesForYear",
-									"Vacation Allowances for {{year}}",
-									{ year: currentYear },
-								)}
-							</CardTitle>
-							<CardDescription>
-								{t(
-									"settings.vacation.employees.defaultAllowanceDescription",
-									"Default allowance: {{days}} days per year",
-									{ days: defaultDays },
-								)}
-								{!orgPolicy &&
-									t(
-										"settings.vacation.employees.noOrgPolicyConfigured",
-										" (No org policy configured)",
-									)}
-							</CardDescription>
-						</div>
-						<Badge variant="secondary">
-							{t("settings.vacation.employees.employeeCount", "{{count}} employees", {
-								count: employees.length,
-							})}
-						</Badge>
-					</div>
-				</CardHeader>
-				<CardContent>
-					{employees.length === 0 ? (
-						<div className="rounded-lg border border-dashed p-8 text-center">
-							<IconUser className="mx-auto size-10 text-muted-foreground" />
-							<h3 className="mt-4 text-lg font-semibold">
-								{t("settings.vacation.employees.emptyTitle", "No employees found")}
-							</h3>
-							<p className="mt-2 text-sm text-muted-foreground">
-								{t(
-									"settings.vacation.employees.emptyDescription",
-									"Add employees to your organization to manage their vacation allowances.",
-								)}
-							</p>
-						</div>
-					) : (
-						<div className="rounded-md border">
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>
-											{t("settings.vacation.employees.table.employee", "Employee")}
-										</TableHead>
-										<TableHead>{t("settings.vacation.employees.table.policy", "Policy")}</TableHead>
-										<TableHead>{t("settings.vacation.employees.table.team", "Team")}</TableHead>
-										<TableHead>
-											{t("settings.vacation.employees.table.managers", "Managers")}
-										</TableHead>
-										<TableHead className="text-right">
-											{t("settings.vacation.employees.table.defaultDays", "Default Days")}
-										</TableHead>
-										<TableHead className="text-right">
-											{t("settings.vacation.employees.table.customDays", "Custom Days")}
-										</TableHead>
-										<TableHead className="text-right">
-											{t("settings.vacation.employees.table.carryover", "Carryover")}
-										</TableHead>
-										<TableHead className="text-right">
-											{t("settings.vacation.employees.table.adjustments", "Adjustments")}
-										</TableHead>
-										<TableHead className="text-right">
-											{t("settings.vacation.employees.table.totalAvailable", "Total Available")}
-										</TableHead>
-										<TableHead className="text-right">
-											{t("settings.vacation.employees.table.actions", "Actions")}
-										</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{employees.map((emp) => {
-										const allowance = emp.vacationAllowances[0];
-										const customDays = allowance?.customAnnualDays
-											? parseFloat(allowance.customAnnualDays)
-											: null;
-										const annualDays = customDays !== null ? customDays : parseFloat(defaultDays);
-										const carryover = allowance?.customCarryoverDays
-											? parseFloat(allowance.customCarryoverDays)
-											: 0;
-										const adjustments = allowance?.adjustmentDays
-											? parseFloat(allowance.adjustmentDays)
-											: 0;
-										const total = annualDays + carryover + adjustments;
-										const policyAssignment = employeePolicyMap.get(emp.id);
-
-										return (
-											<TableRow key={emp.id}>
-												<TableCell>
-													<div className="flex items-center gap-3">
-														<UserAvatar
-															image={emp.user.image}
-															seed={emp.id}
-															name={emp.user.name}
-															size="sm"
-															clockStatus="unknown"
-														/>
-														<div>
-															<div className="font-medium">{emp.user.name}</div>
-															<div className="text-xs text-muted-foreground">{emp.user.email}</div>
-														</div>
-													</div>
-												</TableCell>
-												<TableCell>
-													{policyAssignment ? (
-														<Badge variant="outline">{policyAssignment.policy?.name}</Badge>
-													) : (
-														<span className="text-muted-foreground text-sm">
-															{t("settings.vacation.employees.defaultPolicy", "Default")}
-														</span>
-													)}
-												</TableCell>
-												<TableCell>{emp.team?.name || "—"}</TableCell>
-												<TableCell>
-													{emp.managers && emp.managers.length > 0 ? (
-														<div className="flex flex-col gap-1">
-															{emp.managers.map((m: any) => (
-																<div key={m.id} className="flex items-center gap-1">
-																	<span className="text-sm">{m.manager.user.name}</span>
-																	{m.isPrimary && (
-																		<Badge variant="secondary" className="text-xs">
-																			{t("settings.vacation.employees.primaryManager", "Primary")}
-																		</Badge>
-																	)}
-																</div>
-															))}
-														</div>
-													) : (
-														<span className="text-muted-foreground">—</span>
-													)}
-												</TableCell>
-												<TableCell className="text-right tabular-nums">
-													{customDays === null ? (
-														<span className="text-muted-foreground">{defaultDays}</span>
-													) : (
-														<span className="text-muted-foreground line-through">
-															{defaultDays}
-														</span>
-													)}
-												</TableCell>
-												<TableCell className="text-right tabular-nums">
-													{customDays !== null ? (
-														<Badge variant="default">{customDays}</Badge>
-													) : (
-														<span className="text-muted-foreground">—</span>
-													)}
-												</TableCell>
-												<TableCell className="text-right tabular-nums">
-													{carryover > 0 ? (
-														<span className="text-green-600">+{carryover}</span>
-													) : (
-														<span className="text-muted-foreground">—</span>
-													)}
-												</TableCell>
-												<TableCell className="text-right tabular-nums">
-													{adjustments !== 0 ? (
-														<span className={adjustments > 0 ? "text-green-600" : "text-red-600"}>
-															{adjustments > 0 ? "+" : ""}
-															{adjustments}
-														</span>
-													) : (
-														<span className="text-muted-foreground">—</span>
-													)}
-												</TableCell>
-												<TableCell className="text-right font-semibold tabular-nums">
-													{total}
-												</TableCell>
-												<TableCell className="text-right">
-													<Button variant="ghost" size="sm" asChild>
-														<Link href={`/settings/vacation/employees/${emp.id}`}>
-															<IconEdit className="mr-1 size-4" />
-															{t("settings.vacation.employees.actions.edit", "Edit")}
-														</Link>
-													</Button>
-												</TableCell>
-											</TableRow>
-										);
-									})}
-								</TableBody>
-							</Table>
-						</div>
-					)}
-				</CardContent>
-			</Card>
-		</div>
+		<EmployeeAllowancesView
+			currentYear={currentYear}
+			defaultDays={defaultDays}
+			employees={employees}
+			hasOrganizationPolicy={Boolean(orgPolicy)}
+			policyAssignments={policyAssignments}
+			t={t}
+		/>
 	);
 }
 
 function EmployeeAllowancesLoading() {
 	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
+		<div
+			className="flex flex-1 flex-col gap-4 p-4"
+			role="status"
+			aria-label="Loading employee vacation allowances"
+		>
 			<div className="space-y-2">
-				<Skeleton className="h-8 w-64" />
-				<Skeleton className="h-4 w-96" />
+				<Skeleton aria-hidden="true" className="h-8 w-64" />
+				<Skeleton aria-hidden="true" className="h-4 w-96" />
 			</div>
 			<Card>
 				<CardHeader>
-					<Skeleton className="h-6 w-48" />
-					<Skeleton className="h-4 w-96" />
+					<Skeleton aria-hidden="true" className="h-6 w-48" />
+					<Skeleton aria-hidden="true" className="h-4 w-96" />
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-3">
-						<Skeleton className="h-12 w-full" />
-						<Skeleton className="h-12 w-full" />
-						<Skeleton className="h-12 w-full" />
+						<Skeleton aria-hidden="true" className="h-12 w-full" />
+						<Skeleton aria-hidden="true" className="h-12 w-full" />
+						<Skeleton aria-hidden="true" className="h-12 w-full" />
 					</div>
 				</CardContent>
 			</Card>

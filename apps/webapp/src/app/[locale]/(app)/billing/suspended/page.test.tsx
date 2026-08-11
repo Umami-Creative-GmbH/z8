@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const routePath = "src/app/[locale]/(app)/billing/suspended/page.tsx";
-const layoutPath = "src/app/[locale]/(app)/layout.tsx";
+const layoutPath = "src/app/[locale]/(app)/app-layout-content.tsx";
 const billingSettingsPath = "src/app/[locale]/(app)/settings/billing/page.tsx";
 
 describe("suspended billing recovery route", () => {
@@ -35,14 +35,18 @@ describe("suspended billing recovery route", () => {
 		expect(layoutSource).toContain("/settings/billing");
 		expect(layoutSource).toContain("billingAccess.canAccess === false");
 		expect(layoutSource).toContain("!isBillingRecoveryPath");
-		expect(layoutSource).toContain("redirect(`/${locale}/billing/suspended`)");
+		expect(layoutSource).toMatch(
+			/redirect\(`\/\$\{locale\}\/billing\/suspended`\)/,
+		);
 	});
 
 	it("fails closed when the app layout billing check fails", () => {
 		const layoutSource = readFileSync(join(process.cwd(), layoutPath), "utf8");
 
 		expect(layoutSource).not.toContain(".catch(() => billingDisabledAccess)");
-		expect(layoutSource).not.toMatch(/catch\s*\([^)]*\)\s*=>\s*\(\s*\{\s*canAccess:\s*true/);
+		expect(layoutSource).not.toMatch(
+			/catch\s*\([^)]*\)\s*=>\s*\(\s*\{\s*canAccess:\s*true/,
+		);
 		expect(layoutSource).toContain("billingCheckFailedAccess");
 		expect(layoutSource).toContain("canAccess: false");
 		expect(layoutSource).toContain('state: "suspended"');
@@ -51,9 +55,14 @@ describe("suspended billing recovery route", () => {
 	});
 
 	it("keeps the billing settings page from defaulting to allowed access on billing check failure", () => {
-		const billingSettingsSource = readFileSync(join(process.cwd(), billingSettingsPath), "utf8");
+		const billingSettingsSource = readFileSync(
+			join(process.cwd(), billingSettingsPath),
+			"utf8",
+		);
 
-		expect(billingSettingsSource).not.toContain("let accessResult = { canAccess: true }");
+		expect(billingSettingsSource).not.toContain(
+			"let accessResult = { canAccess: true }",
+		);
 		expect(billingSettingsSource).not.toMatch(
 			/catch\s*\{[\s\S]*accessResult\s*=\s*\{\s*canAccess:\s*true/,
 		);
@@ -76,10 +85,15 @@ describe("suspended billing recovery route", () => {
 
 		for (const locale of ["de", "en", "es", "fr", "it", "pt"]) {
 			const messages = JSON.parse(
-				readFileSync(join(process.cwd(), `messages/common/${locale}.json`), "utf8"),
+				readFileSync(
+					join(process.cwd(), `messages/common/${locale}.json`),
+					"utf8",
+				),
 			);
 			expect(messages.billing.suspended).toBeDefined();
-			expect(existsSync(join(process.cwd(), `messages/${locale}.json`))).toBe(false);
+			expect(existsSync(join(process.cwd(), `messages/${locale}.json`))).toBe(
+				false,
+			);
 		}
 
 		const englishMessages = JSON.parse(

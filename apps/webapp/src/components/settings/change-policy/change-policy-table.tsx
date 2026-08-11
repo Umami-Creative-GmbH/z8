@@ -19,6 +19,7 @@ import {
 	getChangePolicies,
 } from "@/app/[locale]/(app)/settings/change-policies/actions";
 import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
+import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -134,7 +135,7 @@ export function ChangePolicyTable({
 	};
 
 	// Column definitions
-	const columns: ColumnDef<ChangePolicyRecord>[] = [
+	const columns: ColumnDef<DataTableFeatures, ChangePolicyRecord>[] = [
 		{
 			accessorKey: "name",
 			header: t("settings.changePolicies.name", "Name"),

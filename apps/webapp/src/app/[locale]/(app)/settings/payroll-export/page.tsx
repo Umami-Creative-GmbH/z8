@@ -1,4 +1,3 @@
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { DatevConfigForm } from "@/components/settings/payroll-export/datev-config-form";
 import { ExportForm } from "@/components/settings/payroll-export/export-form";
@@ -30,8 +29,7 @@ type ExportAvailabilityEntry = {
 };
 
 async function PayrollExportContent() {
-	const [, t, { organizationId }] = await Promise.all([
-		connection(), // Mark as fully dynamic
+	const [t, { organizationId }] = await Promise.all([
 		getTranslate(),
 		requireOrgAdminSettingsAccess(),
 	]);
@@ -56,13 +54,19 @@ async function PayrollExportContent() {
 	]);
 
 	const datevConfig = datevConfigResult.success ? datevConfigResult.data : null;
-	const lexwareConfig = lexwareConfigResult.success ? lexwareConfigResult.data : null;
+	const lexwareConfig = lexwareConfigResult.success
+		? lexwareConfigResult.data
+		: null;
 	const sageConfig = sageConfigResult.success ? sageConfigResult.data : null;
-	const personioConfig = personioConfigResult.success ? personioConfigResult.data : null;
+	const personioConfig = personioConfigResult.success
+		? personioConfigResult.data
+		: null;
 	const successFactorsConfig = successFactorsConfigResult.success
 		? successFactorsConfigResult.data
 		: null;
-	const workdayConfig = workdayConfigResult.success ? workdayConfigResult.data : null;
+	const workdayConfig = workdayConfigResult.success
+		? workdayConfigResult.data
+		: null;
 	const exports = historyResult.success ? historyResult.data : [];
 	const exportAvailability: Record<string, ExportAvailabilityEntry> = {
 		datev_lohn: {
@@ -126,21 +130,31 @@ async function PayrollExportContent() {
 				</p>
 			</div>
 
-			<Tabs defaultValue={hasConfiguredExportTarget ? "export" : "datev"} className="w-full">
+			<Tabs
+				defaultValue={hasConfiguredExportTarget ? "export" : "datev"}
+				className="w-full"
+			>
 				<TabsList>
 					<TabsTrigger value="export">
 						{t("settings.payrollExport.tabs.export", "Export")}
 					</TabsTrigger>
-					<TabsTrigger value="datev">{t("settings.payrollExport.tabs.datev", "DATEV")}</TabsTrigger>
+					<TabsTrigger value="datev">
+						{t("settings.payrollExport.tabs.datev", "DATEV")}
+					</TabsTrigger>
 					<TabsTrigger value="lexware">
 						{t("settings.payrollExport.tabs.lexware", "Lexware")}
 					</TabsTrigger>
-					<TabsTrigger value="sage">{t("settings.payrollExport.tabs.sage", "Sage")}</TabsTrigger>
+					<TabsTrigger value="sage">
+						{t("settings.payrollExport.tabs.sage", "Sage")}
+					</TabsTrigger>
 					<TabsTrigger value="personio">
 						{t("settings.payrollExport.tabs.personio", "Personio")}
 					</TabsTrigger>
 					<TabsTrigger value="successfactors">
-						{t("settings.payrollExport.tabs.successfactors", "SAP SuccessFactors")}
+						{t(
+							"settings.payrollExport.tabs.successfactors",
+							"SAP SuccessFactors",
+						)}
 					</TabsTrigger>
 					<TabsTrigger value="workday">
 						{t("settings.payrollExport.tabs.workday", "Workday")}
@@ -162,19 +176,31 @@ async function PayrollExportContent() {
 				</TabsContent>
 
 				<TabsContent value="datev" className="mt-4">
-					<DatevConfigForm organizationId={organizationId} initialConfig={datevConfig} />
+					<DatevConfigForm
+						organizationId={organizationId}
+						initialConfig={datevConfig}
+					/>
 				</TabsContent>
 
 				<TabsContent value="lexware" className="mt-4">
-					<LexwareConfigForm organizationId={organizationId} initialConfig={lexwareConfig} />
+					<LexwareConfigForm
+						organizationId={organizationId}
+						initialConfig={lexwareConfig}
+					/>
 				</TabsContent>
 
 				<TabsContent value="sage" className="mt-4">
-					<SageConfigForm organizationId={organizationId} initialConfig={sageConfig} />
+					<SageConfigForm
+						organizationId={organizationId}
+						initialConfig={sageConfig}
+					/>
 				</TabsContent>
 
 				<TabsContent value="personio" className="mt-4">
-					<PersonioConfigForm organizationId={organizationId} initialConfig={personioConfig} />
+					<PersonioConfigForm
+						organizationId={organizationId}
+						initialConfig={personioConfig}
+					/>
 				</TabsContent>
 
 				<TabsContent value="successfactors" className="mt-4">
@@ -185,7 +211,10 @@ async function PayrollExportContent() {
 				</TabsContent>
 
 				<TabsContent value="workday" className="mt-4">
-					<WorkdayConfigForm organizationId={organizationId} initialConfig={workdayConfig} />
+					<WorkdayConfigForm
+						organizationId={organizationId}
+						initialConfig={workdayConfig}
+					/>
 				</TabsContent>
 
 				<TabsContent value="mappings" className="mt-4">
@@ -202,20 +231,24 @@ async function PayrollExportContent() {
 
 function PayrollExportLoading() {
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div
+			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
+			role="status"
+			aria-label="Loading payroll export settings"
+		>
 			<div className="space-y-2">
-				<Skeleton className="h-8 w-48" />
-				<Skeleton className="h-4 w-96" />
+				<Skeleton aria-hidden="true" className="h-8 w-48" />
+				<Skeleton aria-hidden="true" className="h-4 w-96" />
 			</div>
 			<Card>
 				<CardHeader>
-					<Skeleton className="h-6 w-48" />
-					<Skeleton className="h-4 w-72" />
+					<Skeleton aria-hidden="true" className="h-6 w-48" />
+					<Skeleton aria-hidden="true" className="h-4 w-72" />
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-4">
-						<Skeleton className="h-32 w-full" />
-						<Skeleton className="h-10 w-32" />
+						<Skeleton aria-hidden="true" className="h-32 w-full" />
+						<Skeleton aria-hidden="true" className="h-10 w-32" />
 					</div>
 				</CardContent>
 			</Card>

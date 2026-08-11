@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useTurnstile } from "@/lib/auth/domain-auth-context";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { verifyTurnstileWithServer } from "@/lib/turnstile/verify";
 import { Link } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
@@ -118,7 +119,6 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		setIsLoading(true);
 		setError(null);
 		setSuccess(false);
 
@@ -126,62 +126,60 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 
 		if (!result.success) {
 			handleValidationErrors(result.error);
-			setIsLoading(false);
 			return;
 		}
 
 		// Verify Turnstile if enabled
 		if (turnstileConfig?.enabled && !turnstileToken) {
 			setError(t("auth.turnstile-required", "Please complete the verification."));
-			setIsLoading(false);
 			return;
 		}
 
-		// Verify Turnstile token server-side if enabled
-		if (turnstileConfig?.enabled && turnstileToken) {
-			const verifyResult = await verifyTurnstileWithServer(turnstileToken).catch(() => null);
-			if (!verifyResult?.success) {
-				setError(verifyResult?.error || t("auth.turnstile-failed", "Verification failed."));
-				setTurnstileToken(null);
-				turnstileRef.current?.reset();
-				setIsLoading(false);
+		setIsLoading(true);
+		await runWithCleanup(async () => {
+			// Verify Turnstile token server-side if enabled
+			if (turnstileConfig?.enabled && turnstileToken) {
+				const verifyResult = await verifyTurnstileWithServer(turnstileToken).catch(() => null);
+				if (!verifyResult?.success) {
+					setError(verifyResult?.error || t("auth.turnstile-failed", "Verification failed."));
+					setTurnstileToken(null);
+					turnstileRef.current?.reset();
+					return;
+				}
+			}
+
+			// Better Auth forgot password API
+			const response = await authClient
+				.requestPasswordReset({
+					email: formData.email,
+					redirectTo: `${window.location.origin}/${locale}/reset-password`,
+				})
+				.catch((err) => ({
+					error: {
+						message:
+							err instanceof Error
+								? err.message
+								: t("auth.forgot-password-error", "An error occurred. Please try again."),
+					},
+				}));
+
+			if (response.error) {
+				setError(
+					getAuthErrorMessage(
+						response.error,
+						t("auth.forgot-password-error", "Failed to send reset email. Please try again."),
+					),
+				);
+				// Reset Turnstile for retry (tokens are single-use)
+				if (turnstileConfig?.enabled) {
+					setTurnstileToken(null);
+					turnstileRef.current?.reset();
+				}
 				return;
 			}
-		}
 
-		// Better Auth forgot password API
-		const response = await authClient
-			.requestPasswordReset({
-				email: formData.email,
-				redirectTo: `${window.location.origin}/${locale}/reset-password`,
-			})
-			.catch((err) => ({
-				error: {
-					message:
-						err instanceof Error
-							? err.message
-							: t("auth.forgot-password-error", "An error occurred. Please try again."),
-				},
-			}));
-
-		if (response.error) {
-			setError(
-				getAuthErrorMessage(
-					response.error,
-					t("auth.forgot-password-error", "Failed to send reset email. Please try again."),
-				),
-			);
-			// Reset Turnstile for retry (tokens are single-use)
-			if (turnstileConfig?.enabled) {
-				setTurnstileToken(null);
-				turnstileRef.current?.reset();
-			}
-			setIsLoading(false);
-			return;
-		}
-
-		setSuccess(true);
-		setIsLoading(false);
+			setSuccess(true);
+		}, () => setIsLoading(false));
 	};
 
 	if (success) {

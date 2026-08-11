@@ -146,16 +146,52 @@ const namespaceImports: Record<
 	Namespace,
 	Record<string, () => Promise<unknown>>
 > = Object.fromEntries(
-	ALL_NAMESPACES.map((namespace) => [
-		namespace,
-		Object.fromEntries(
-			ALL_LANGUAGES.map((language) => [
-				language,
-				() => import(`../../messages/${namespace}/${language}.json`),
-			]),
-		),
-	]),
+	ALL_NAMESPACES.map((namespace) => {
+		const settingsNamespace = namespace.startsWith("settings/")
+			? namespace.slice("settings/".length)
+			: null;
+
+		return [
+			namespace,
+			Object.fromEntries(
+				ALL_LANGUAGES.map((language) => [
+					language,
+					settingsNamespace
+						? () => import(`../../messages/settings/${settingsNamespace}/${language}.json`)
+						: () => import(`../../messages/${namespace}/${language}.json`),
+				]),
+			),
+		];
+	}),
 ) as Record<Namespace, Record<string, () => Promise<unknown>>>;
+
+// Tolgee's expected translation data type
+type TreeTranslationsData = { [key: string]: TreeTranslationsData | string };
+
+export type LoadNamespacesOptions = {
+	strict?: boolean;
+};
+
+export async function loadNamespaceImport(
+	ns: Namespace,
+	lang: string,
+	importFn: () => Promise<unknown>,
+	options: LoadNamespacesOptions = {},
+): Promise<{ ns: Namespace; data: TreeTranslationsData }> {
+	try {
+		const mod = await importFn();
+		const data =
+			(mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
+		return { ns, data };
+	} catch (error) {
+		if (options.strict) {
+			throw error;
+		}
+
+		console.warn(`Failed to load namespace ${ns} for ${lang}:`, error);
+		return { ns, data: {} };
+	}
+}
 
 /**
  * Load specific namespaces for SSR
@@ -165,6 +201,7 @@ const namespaceImports: Record<
 export async function loadNamespaces(
 	locale: string,
 	namespaces: readonly Namespace[],
+	options: LoadNamespacesOptions = {},
 ): Promise<TolgeeStaticData> {
 	const lang = ALL_LANGUAGES.includes(locale) ? locale : DEFAULT_LANGUAGE;
 
@@ -172,16 +209,7 @@ export async function loadNamespaces(
 	const loadPromises = namespaces.map((ns) => {
 		const importFn = namespaceImports[ns]?.[lang];
 		if (importFn) {
-			return importFn()
-				.then((mod) => {
-					const data =
-						(mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
-					return { ns, data };
-				})
-				.catch((error) => {
-					console.warn(`Failed to load namespace ${ns} for ${lang}:`, error);
-					return { ns, data: {} as TreeTranslationsData };
-				});
+			return loadNamespaceImport(ns, lang, importFn, options);
 		}
 		return Promise.resolve({ ns, data: {} as TreeTranslationsData });
 	});
@@ -202,22 +230,6 @@ export async function loadNamespaces(
 
 	return result;
 }
-
-/**
- * Load translations for a specific route
- */
-export async function loadRouteTranslations(
-	locale: string,
-	pathname: string,
-): Promise<TolgeeStaticData> {
-	// The locale layout persists across client-side navigation, so route-scoped
-	// payloads leave newly visited pages without translations until a full refresh.
-	void pathname;
-	return loadNamespaces(locale, ALL_NAMESPACES);
-}
-
-// Tolgee's expected translation data type
-type TreeTranslationsData = { [key: string]: TreeTranslationsData | string };
 
 export function mergeTreeTranslations(
 	items: readonly TreeTranslationsData[],

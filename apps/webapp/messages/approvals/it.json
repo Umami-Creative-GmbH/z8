@@ -28,6 +28,7 @@
     "inboxErrorDescription": "Impossibile recuperare le approvazioni",
     "inboxErrorTitle": "Impossibile caricare la posta in arrivo delle approvazioni",
     "loadError": "Impossibile caricare le approvazioni",
+    "loadingInbox": "Caricamento della casella delle approvazioni",
     "noAbsenceApprovals": "Nessuna richiesta di assenza in sospeso da esaminare.",
     "noRequests": "Nessuna richiesta in sospeso",
     "noRequestsDescription": "Le nuove richieste di approvazione appariranno qui quando necessitano della revisione di un manager.",

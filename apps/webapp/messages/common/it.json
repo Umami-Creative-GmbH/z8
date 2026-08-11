@@ -295,6 +295,18 @@
     "imprint": "Note legali",
     "trust-center": "Centro di fiducia"
   },
+  "loading": {
+    "application": "Caricamento dell’applicazione",
+    "authentication": "Caricamento dell’autenticazione",
+    "calendar": "Caricamento del calendario",
+    "chart": "Caricamento del grafico",
+    "licenses": "Caricamento delle licenze",
+    "platformAnalytics": "Caricamento delle analisi della piattaforma",
+    "settings": "Caricamento delle impostazioni",
+    "setup": "Caricamento della configurazione",
+    "teamAbsences": "Caricamento delle assenze del team",
+    "workerQueue": "Caricamento della coda di lavoro"
+  },
   "nav": {
     "absences": "Assenze",
     "analytics": "Analisi",
@@ -527,6 +539,9 @@
     "invalid-password": "Password non valida",
     "last-name-required": "Il cognome è obbligatorio",
     "password-required": "La password è obbligatoria"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Caricamento del portale del consiglio di fabbrica"
   },
   "workBalance": {
     "label": "Saldo totale",

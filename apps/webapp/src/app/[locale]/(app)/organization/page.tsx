@@ -8,8 +8,8 @@ import { getOrgChartInitialGraph } from "./actions";
 import { OrgChartClient } from "./org-chart-client";
 
 async function OrganizationPageContent() {
+	// Effect runtime performs synchronous current-time work and must execute per request outside prerendered shell.
 	await connection();
-
 	const [t, result] = await Promise.all([getTranslate(), getOrgChartInitialGraph()]);
 
 	if (!result.success) {

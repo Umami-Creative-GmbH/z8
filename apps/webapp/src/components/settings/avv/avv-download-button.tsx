@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { exportAvvToPDF, generateAvvFilename } from "@/lib/avv/avv-pdf-generator";
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 
 interface AvvDownloadButtonProps {
 	organizationName: string;
@@ -15,44 +16,43 @@ export function AvvDownloadButton({ organizationName }: AvvDownloadButtonProps) 
 
 	const handleDownload = async () => {
 		setLoading(true);
+		await runWithCleanup(async () => {
+			const downloadResult = await exportAvvToPDF(organizationName)
+				.then((data) => ({
+					ok: true as const,
+					value: {
+						data,
+						filename: generateAvvFilename(organizationName),
+					},
+				}))
+				.catch((error) => ({ ok: false as const, error }));
 
-		const downloadResult = await exportAvvToPDF(organizationName)
-			.then((data) => ({
-				ok: true as const,
-				value: {
-					data,
-					filename: generateAvvFilename(organizationName),
-				},
-			}))
-			.catch((error) => ({ ok: false as const, error }));
+			if (!downloadResult.ok) {
+				console.error("AVV download failed:", downloadResult.error);
+				toast.error("IconDownload fehlgeschlagen", {
+					description:
+						downloadResult.error instanceof Error
+							? downloadResult.error.message
+							: "Ein Fehler ist aufgetreten",
+				});
+				return;
+			}
 
-		if (!downloadResult.ok) {
-			console.error("AVV download failed:", downloadResult.error);
-			toast.error("IconDownload fehlgeschlagen", {
-				description:
-					downloadResult.error instanceof Error
-						? downloadResult.error.message
-						: "Ein Fehler ist aufgetreten",
+			const { data, filename } = downloadResult.value;
+			const blob = new Blob([data as BlobPart], { type: "application/pdf" });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = filename;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+
+			toast.success("AVV erfolgreich heruntergeladen", {
+				description: `Datei: ${filename}`,
 			});
-			setLoading(false);
-			return;
-		}
-
-		const { data, filename } = downloadResult.value;
-		const blob = new Blob([data as BlobPart], { type: "application/pdf" });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = filename;
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
-		URL.revokeObjectURL(url);
-
-		toast.success("AVV erfolgreich heruntergeladen", {
-			description: `Datei: ${filename}`,
-		});
-		setLoading(false);
+		}, () => setLoading(false));
 	};
 
 	return (

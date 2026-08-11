@@ -45,6 +45,14 @@ vi.mock("@/lib/query", () => ({
 	}),
 }));
 
+vi.mock("@/lib/query/use-assigned-projects", () => ({
+	useAssignedProjects: () => ({
+		projects: [{ id: "project-1", name: "Project One" }],
+		isLoading: false,
+		isError: false,
+	}),
+}));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (
@@ -79,10 +87,20 @@ vi.mock("sonner", () => ({
 
 vi.mock("@/components/time-tracking/project-selector", () => ({
 	ProjectSelector: () => null,
+	ProjectSelectorView: () => null,
 }));
 
 vi.mock("@/components/time-tracking/work-category-selector", () => ({
 	WorkCategorySelector: () => null,
+	WorkCategorySelectorView: () => null,
+}));
+
+vi.mock("@/components/time-tracking/use-available-work-categories", () => ({
+	useAvailableWorkCategories: () => ({
+		categories: [{ id: "category-1", name: "Category One" }],
+		isLoading: false,
+		isError: false,
+	}),
 }));
 
 describe("TimeClockPopover", () => {
@@ -165,5 +183,27 @@ describe("TimeClockPopover", () => {
 		render(<TimeClockPopover />);
 
 		expect(screen.queryByRole("button", { name: "Add break" })).toBeNull();
+	});
+
+	it("submits valid stored project and work category defaults when clocking out", async () => {
+		localStorageData = {
+			"z8-last-project-id": "project-1",
+			"z8-last-work-category-id": "category-1",
+		};
+		isClockedInMock = true;
+		activeWorkPeriodMock = { startTime: "2026-05-18T08:00:00.000Z" };
+		clockOutMock.mockResolvedValue({ success: true, queued: true });
+
+		render(<TimeClockPopover />);
+
+		fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
+		fireEvent.click(getPopoverClockButton("Clock Out"));
+
+		await waitFor(() =>
+			expect(clockOutMock).toHaveBeenCalledWith({
+				projectId: "project-1",
+				workCategoryId: "category-1",
+			}),
+		);
 	});
 });

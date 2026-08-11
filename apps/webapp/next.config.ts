@@ -23,15 +23,15 @@ function getBuildHash() {
 
 	try {
 		return execFileSync("git", ["rev-parse", "--short", "HEAD"], {
-		cwd: workspaceRoot,
-		encoding: "utf8",
-		stdio: ["ignore", "pipe", "ignore"],
+			cwd: workspaceRoot,
+			encoding: "utf8",
+			stdio: ["ignore", "pipe", "ignore"],
 		}).trim();
 	} catch {
 		if (process.env.NODE_ENV === "production") {
-		throw new Error(
-			"Missing deployment/build hash. Set NEXT_DEPLOYMENT_ID or BUILD_HASH during next build."
-		);
+			throw new Error(
+				"Missing deployment/build hash. Set NEXT_DEPLOYMENT_ID or BUILD_HASH during next build.",
+			);
 		}
 
 		return "dev";
@@ -71,10 +71,12 @@ const nextConfig: NextConfig = {
 	// Enable cache components for static dashboard shells and improved performance
 	// Components using connection() will still be dynamic
 	cacheComponents: true,
+	partialPrefetching: true,
 	images: {
 		unoptimized: false,
 	},
 	experimental: {
+		useTypeScriptCli: true,
 		optimizePackageImports: ["@tabler/icons-react", "recharts"],
 	},
 	turbopack: {

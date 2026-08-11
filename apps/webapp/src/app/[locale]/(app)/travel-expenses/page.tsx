@@ -1,34 +1,42 @@
 import { IconArrowRight, IconInbox } from "@tabler/icons-react";
-import { connection } from "next/server";
+import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { TravelExpenseManagement } from "@/components/travel-expenses/travel-expense-management";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 
-export default async function TravelExpensesPage() {
-	await connection();
-
-	const [t, authContext] = await Promise.all([getTranslate(), getAuthContext()]);
+async function TravelExpensesPageContent() {
+	const [t, authContext] = await Promise.all([
+		getTranslate(),
+		getAuthContext(),
+	]);
 
 	if (!authContext?.employee) {
 		return (
 			<div className="@container/main flex flex-1 items-center justify-center p-6">
-				<NoEmployeeError feature={t("travelExpenses.feature", "manage travel expenses")} />
+				<NoEmployeeError
+					feature={t("travelExpenses.feature", "manage travel expenses")}
+				/>
 			</div>
 		);
 	}
 
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-4 py-4 md:py-6">
-			{(authContext.employee.role === "manager" || authContext.employee.role === "admin") && (
+			{(authContext.employee.role === "manager" ||
+				authContext.employee.role === "admin") && (
 				<div className="px-4 lg:px-6">
 					<Alert>
 						<IconInbox aria-hidden="true" className="size-4" />
 						<AlertTitle>
-							{t("travelExpenses.approvals.title", "Review Pending Travel Expense Approvals")}
+							{t(
+								"travelExpenses.approvals.title",
+								"Review Pending Travel Expense Approvals",
+							)}
 						</AlertTitle>
 						<AlertDescription className="flex items-center justify-between gap-4">
 							<span>
@@ -53,5 +61,29 @@ export default async function TravelExpensesPage() {
 				employeeId={authContext.employee.id}
 			/>
 		</div>
+	);
+}
+
+function TravelExpensesPageLoading() {
+	return (
+		<div
+			aria-label="Loading travel expenses"
+			className="@container/main flex flex-1 flex-col gap-4 py-4 md:py-6"
+			role="status"
+		>
+			<div className="space-y-4 px-4 lg:px-6">
+				<Skeleton aria-hidden="true" className="h-24 w-full" />
+				<Skeleton aria-hidden="true" className="h-10 w-64" />
+				<Skeleton aria-hidden="true" className="h-96 w-full" />
+			</div>
+		</div>
+	);
+}
+
+export default function TravelExpensesPage() {
+	return (
+		<Suspense fallback={<TravelExpensesPageLoading />}>
+			<TravelExpensesPageContent />
+		</Suspense>
 	);
 }

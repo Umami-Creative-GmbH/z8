@@ -6,6 +6,7 @@ import { useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { cn } from "@/lib/utils";
 
 interface QuickBreakPopoverProps {
@@ -64,14 +65,13 @@ export function QuickBreakPopover({
 		submittingRef.current = true;
 		setLocalSubmitting(true);
 
+		await runWithCleanup(async () => {
 		try {
 			const result = await onAddBreak(parsedMinutes);
 
 			if (result.success) {
 				setOpen(false);
 				setMinutes("30");
-				submittingRef.current = false;
-				setLocalSubmitting(false);
 				return;
 			}
 
@@ -84,9 +84,10 @@ export function QuickBreakPopover({
 				t("timeTracking.quickBreak.errors.addFailed", "Failed to add break. Please try again."),
 			);
 		}
-
-		submittingRef.current = false;
-		setLocalSubmitting(false);
+		}, () => {
+			submittingRef.current = false;
+			setLocalSubmitting(false);
+		});
 	};
 
 	return (

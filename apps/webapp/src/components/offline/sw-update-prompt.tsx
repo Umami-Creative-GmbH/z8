@@ -4,6 +4,87 @@ import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+interface ServiceWorkerSubscriptionOptions {
+	onRegistration: (registration: ServiceWorkerRegistration) => void;
+	onUpdateAvailable: () => void;
+	shouldReloadOnControllerChangeRef: { current: boolean };
+}
+
+function subscribeToServiceWorkerUpdates({
+	onRegistration,
+	onUpdateAvailable,
+	shouldReloadOnControllerChangeRef,
+}: ServiceWorkerSubscriptionOptions) {
+	if (!("serviceWorker" in navigator)) {
+		return () => undefined;
+	}
+
+	let active = true;
+	let observedRegistration: ServiceWorkerRegistration | null = null;
+	let observedWorker: ServiceWorker | null = null;
+
+	const handleWorkerStateChange = () => {
+		if (
+			observedWorker?.state === "installed" &&
+			navigator.serviceWorker.controller &&
+			active
+		) {
+			onUpdateAvailable();
+		}
+	};
+	const handleUpdateFound = () => {
+		const newWorker = observedRegistration?.installing;
+		if (!newWorker) return;
+
+		observedWorker?.removeEventListener("statechange", handleWorkerStateChange);
+		observedWorker = newWorker;
+		observedWorker.addEventListener("statechange", handleWorkerStateChange);
+	};
+	const handleControllerChange = () => {
+		if (!shouldReloadOnControllerChangeRef.current) return;
+
+		shouldReloadOnControllerChangeRef.current = false;
+		window.location.reload();
+	};
+	const handleMessage = (event: MessageEvent) => {
+		if (event.data?.type === "SW_UPDATE_AVAILABLE") {
+			onUpdateAvailable();
+		}
+	};
+
+	void navigator.serviceWorker.ready
+		.then((registration) => {
+			if (!active) return;
+
+			onRegistration(registration);
+			observedRegistration = registration;
+			if (registration.waiting) {
+				onUpdateAvailable();
+			}
+			registration.addEventListener("updatefound", handleUpdateFound);
+		})
+		.catch((error) => {
+			console.warn("[SWUpdate] Failed to check for updates:", error);
+		});
+
+	navigator.serviceWorker.addEventListener(
+		"controllerchange",
+		handleControllerChange,
+	);
+	navigator.serviceWorker.addEventListener("message", handleMessage);
+
+	return () => {
+		active = false;
+		observedRegistration?.removeEventListener("updatefound", handleUpdateFound);
+		observedWorker?.removeEventListener("statechange", handleWorkerStateChange);
+		navigator.serviceWorker.removeEventListener(
+			"controllerchange",
+			handleControllerChange,
+		);
+		navigator.serviceWorker.removeEventListener("message", handleMessage);
+	};
+}
+
 /**
  * Prompts the user when a new service worker version is available
  *
@@ -13,7 +94,8 @@ import { toast } from "sonner";
 export function SWUpdatePrompt() {
 	const { t } = useTranslate();
 	const [updateAvailable, setUpdateAvailable] = useState(false);
-	const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
+	const [registration, setRegistration] =
+		useState<ServiceWorkerRegistration | null>(null);
 	const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
 	const shouldReloadOnControllerChangeRef = useRef(false);
 
@@ -29,78 +111,11 @@ export function SWUpdatePrompt() {
 
 	// Listen for SW updates
 	useEffect(() => {
-		if (!("serviceWorker" in navigator)) {
-			return;
-		}
-
-		let mounted = true;
-		let observedRegistration: ServiceWorkerRegistration | null = null;
-		let observedWorker: ServiceWorker | null = null;
-
-		const handleWorkerStateChange = () => {
-			if (observedWorker?.state === "installed" && navigator.serviceWorker.controller && mounted) {
-				setUpdateAvailable(true);
-			}
-		};
-
-		const handleUpdateFound = () => {
-			const newWorker = observedRegistration?.installing;
-			if (!newWorker) return;
-
-			observedWorker?.removeEventListener("statechange", handleWorkerStateChange);
-			observedWorker = newWorker;
-			observedWorker.addEventListener("statechange", handleWorkerStateChange);
-		};
-
-		const checkForUpdates = async () => {
-			try {
-				const reg = await navigator.serviceWorker.ready;
-
-				if (!mounted) return;
-
-				setRegistration(reg);
-				observedRegistration = reg;
-
-				// Check if there's already a waiting worker
-				if (reg.waiting) {
-					setUpdateAvailable(true);
-				}
-
-				// Listen for new service workers
-				reg.addEventListener("updatefound", handleUpdateFound);
-			} catch (error) {
-				console.warn("[SWUpdate] Failed to check for updates:", error);
-			}
-		};
-
-		checkForUpdates();
-
-		// Also listen for controllerchange (SW took over)
-		const handleControllerChange = () => {
-			if (!shouldReloadOnControllerChangeRef.current) return;
-
-			shouldReloadOnControllerChangeRef.current = false;
-			window.location.reload();
-		};
-
-		navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
-
-		// Listen for SW messages about updates
-		const handleMessage = (event: MessageEvent) => {
-			if (event.data?.type === "SW_UPDATE_AVAILABLE") {
-				setUpdateAvailable(true);
-			}
-		};
-
-		navigator.serviceWorker.addEventListener("message", handleMessage);
-
-		return () => {
-			mounted = false;
-			observedRegistration?.removeEventListener("updatefound", handleUpdateFound);
-			observedWorker?.removeEventListener("statechange", handleWorkerStateChange);
-			navigator.serviceWorker.removeEventListener("controllerchange", handleControllerChange);
-			navigator.serviceWorker.removeEventListener("message", handleMessage);
-		};
+		return subscribeToServiceWorkerUpdates({
+			onRegistration: setRegistration,
+			onUpdateAvailable: () => setUpdateAvailable(true),
+			shouldReloadOnControllerChangeRef,
+		});
 	}, []);
 
 	// Show toast when update is available
@@ -110,7 +125,10 @@ export function SWUpdatePrompt() {
 		// Use ref to get current t without triggering effect on t changes
 		const t = tRef.current;
 		const toastId = toast(t("common.sw.update.title", "Update available"), {
-			description: t("common.sw.update.description", "A new version is ready. Reload to update."),
+			description: t(
+				"common.sw.update.description",
+				"A new version is ready. Reload to update.",
+			),
 			duration: Infinity, // Don't auto-dismiss
 			action: {
 				label: t("common.sw.update.reload", "Reload"),

@@ -9,7 +9,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useReducer, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
@@ -20,95 +20,20 @@ import {
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { useElapsedTimer, useTimeClock } from "@/lib/query";
+import type { AssignedProject } from "@/lib/query/use-assigned-projects";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
-import {
-	normalizeWorkLocationType,
-	type WorkLocationType,
-} from "@/lib/time-tracking/work-location";
+import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import {
 	getTimeFormatDateTimeOptions,
 	type TimeFormat,
 } from "@/lib/user-preferences/time-format";
 import { WorkLocationSelector } from "./clock-in-out-widget-parts";
-import { ProjectSelector } from "./project-selector";
+import { ProjectSelectorView } from "./project-selector";
 import { QuickBreakPopover } from "./quick-break-popover";
+import type { WorkCategory } from "./use-available-work-categories";
 import { useQuickBreakHandler } from "./use-quick-break-handler";
-import { WorkCategorySelector } from "./work-category-selector";
-
-interface TimeClockPopoverState {
-	showNotesInput: boolean;
-	lastClockOutEntryId: string | null;
-	notesText: string;
-	selectedProjectId: string | undefined;
-	selectedWorkCategoryId: string | undefined;
-	workLocationType: WorkLocationType;
-}
-
-type TimeClockPopoverAction =
-	| { type: "setNotesText"; value: string }
-	| { type: "setSelectedProjectId"; value: string | undefined }
-	| { type: "setSelectedWorkCategoryId"; value: string | undefined }
-	| { type: "setWorkLocationType"; value: WorkLocationType }
-	| { type: "openNotesInput"; entryId: string }
-	| { type: "closeNotesInput" }
-	| { type: "resetClockOutSelections" };
-
-function getInitialWorkLocationType(): WorkLocationType {
-	if (typeof window === "undefined") {
-		return "office";
-	}
-
-	return normalizeWorkLocationType(
-		localStorage.getItem("z8-work-location-type"),
-	);
-}
-
-function createInitialState(): TimeClockPopoverState {
-	return {
-		showNotesInput: false,
-		lastClockOutEntryId: null,
-		notesText: "",
-		selectedProjectId: undefined,
-		selectedWorkCategoryId: undefined,
-		workLocationType: getInitialWorkLocationType(),
-	};
-}
-
-function timeClockPopoverReducer(
-	state: TimeClockPopoverState,
-	action: TimeClockPopoverAction,
-): TimeClockPopoverState {
-	switch (action.type) {
-		case "setNotesText":
-			return { ...state, notesText: action.value };
-		case "setSelectedProjectId":
-			return { ...state, selectedProjectId: action.value };
-		case "setSelectedWorkCategoryId":
-			return { ...state, selectedWorkCategoryId: action.value };
-		case "setWorkLocationType":
-			return { ...state, workLocationType: action.value };
-		case "openNotesInput":
-			return {
-				...state,
-				showNotesInput: true,
-				lastClockOutEntryId: action.entryId,
-				notesText: "",
-			};
-		case "closeNotesInput":
-			return {
-				...state,
-				showNotesInput: false,
-				lastClockOutEntryId: null,
-				notesText: "",
-			};
-		case "resetClockOutSelections":
-			return {
-				...state,
-				selectedProjectId: undefined,
-				selectedWorkCategoryId: undefined,
-			};
-	}
-}
+import { useTimeClockPopoverState } from "./use-time-clock-popover-state";
+import { WorkCategorySelectorView } from "./work-category-selector";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -191,10 +116,16 @@ interface ClockControlsViewProps {
 	onProjectChange: (value: string | undefined) => void;
 	onWorkCategoryChange: (value: string | undefined) => void;
 	onWorkLocationChange: (value: WorkLocationType) => void;
+	projects: AssignedProject[];
+	projectsIsError: boolean;
+	projectsIsLoading: boolean;
 	selectedProjectId: string | undefined;
 	selectedWorkCategoryId: string | undefined;
 	t: Translate;
 	timeFormatter: Intl.DateTimeFormat;
+	workCategories: WorkCategory[];
+	workCategoriesIsError: boolean;
+	workCategoriesIsLoading: boolean;
 	workLocationType: WorkLocationType;
 }
 
@@ -209,10 +140,16 @@ function ClockControlsView({
 	onProjectChange,
 	onWorkCategoryChange,
 	onWorkLocationChange,
+	projects,
+	projectsIsError,
+	projectsIsLoading,
 	selectedProjectId,
 	selectedWorkCategoryId,
 	t,
 	timeFormatter,
+	workCategories,
+	workCategoriesIsError,
+	workCategoriesIsLoading,
 	workLocationType,
 }: ClockControlsViewProps) {
 	return (
@@ -234,18 +171,24 @@ function ClockControlsView({
 				</div>
 			)}
 			{isClockedIn && (
-				<ProjectSelector
+				<ProjectSelectorView
 					value={selectedProjectId}
 					onValueChange={onProjectChange}
 					disabled={isMutating}
+					projects={projects}
+					isLoading={projectsIsLoading}
+					isError={projectsIsError}
 				/>
 			)}
 			{isClockedIn && employeeId && (
-				<WorkCategorySelector
+				<WorkCategorySelectorView
 					employeeId={employeeId}
 					value={selectedWorkCategoryId}
 					onValueChange={onWorkCategoryChange}
 					disabled={isMutating}
+					categories={workCategories}
+					isLoading={workCategoriesIsLoading}
+					isError={workCategoriesIsError}
 				/>
 			)}
 			{!isClockedIn && (
@@ -296,11 +239,6 @@ export function TimeClockPopover({
 	const locale = useLocale();
 	const timezone = useUserTimezone();
 	const [open, setOpen] = useState(false);
-	const [uiState, dispatch] = useReducer(
-		timeClockPopoverReducer,
-		undefined,
-		createInitialState,
-	);
 	const timeFormatter = Intl.DateTimeFormat(locale, {
 		...getTimeFormatDateTimeOptions(timeFormat),
 		timeZone: timezone,
@@ -321,6 +259,8 @@ export function TimeClockPopover({
 		isUpdatingNotes,
 		isMutating,
 	} = useTimeClock();
+	const { uiState, dispatch, assignedProjects, availableWorkCategories } =
+		useTimeClockPopoverState({ employeeId, isClockedIn });
 	const handleAddBreak = useQuickBreakHandler(addBreak, t);
 
 	// Separate timer hook to isolate per-second re-renders to this component only
@@ -532,10 +472,16 @@ export function TimeClockPopover({
 								onWorkLocationChange={(value) =>
 									dispatch({ type: "setWorkLocationType", value })
 								}
+								projects={assignedProjects.projects}
+								projectsIsError={assignedProjects.isError}
+								projectsIsLoading={assignedProjects.isLoading}
 								selectedProjectId={uiState.selectedProjectId}
 								selectedWorkCategoryId={uiState.selectedWorkCategoryId}
 								t={t}
 								timeFormatter={timeFormatter}
+								workCategories={availableWorkCategories.categories}
+								workCategoriesIsError={availableWorkCategories.isError}
+								workCategoriesIsLoading={availableWorkCategories.isLoading}
 								workLocationType={uiState.workLocationType}
 							/>
 						)}

@@ -9,8 +9,9 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { dirname, join, relative } from "node:path";
+import { describe, expect, it, vi } from "vitest";
+import * as nativeSourceAnalysis from "@/lib/typescript/native-source-analysis";
 import * as approvalWriteBoundary from "./approval-write-boundary";
 import {
 	CANONICAL_SOURCE_WRITE_OWNERS,
@@ -25,7 +26,10 @@ import {
 	findProtectedApprovalSqlMutations,
 	PROTECTED_APPROVAL_TABLES,
 } from "./approval-write-boundary-sql";
-import { analyzeApprovalWriteMutations } from "./approval-write-boundary-typescript";
+import {
+	analyzeApprovalWriteMutationSources,
+	analyzeApprovalWriteMutations,
+} from "./approval-write-boundary-typescript";
 
 const FILE_NAME = "/repo/apps/webapp/src/lib/approvals/fixture.ts";
 const CHAIN_SERVICE_FILE_NAME =
@@ -928,16 +932,19 @@ function mutate(patch: object) {
 			"work_period",
 			"update",
 		],
-	] as const)("fails closed for an unresolved targeted Drizzle %s payload", (_name, source, table, operation) => {
-		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
-			expect.objectContaining({
-				functionName: "mutate",
-				operation,
-				table,
-				uncertainty: "dynamic_payload",
-			}),
-		]);
-	});
+	] as const)(
+		"fails closed for an unresolved targeted Drizzle %s payload",
+		(_name, source, table, operation) => {
+			expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
+				expect.objectContaining({
+					functionName: "mutate",
+					operation,
+					table,
+					uncertainty: "dynamic_payload",
+				}),
+			]);
+		},
+	);
 
 	it("ignores a statically complete unrelated source payload", () => {
 		const source = `import { db, workPeriod } from "@/db";
@@ -1186,21 +1193,137 @@ db.delete(condition ? approvalRequest : unrelatedTable);`;
 		]);
 	});
 
-	it.each([
-		"||=",
-		"&&=",
-		"??=",
-	] as const)("conservatively tracks a protected logical assignment through %s", (operator) => {
-		const source = `import { approvalRequest, db } from "@/db";
+	it.each(["||=", "&&=", "??="] as const)(
+		"conservatively tracks a protected logical assignment through %s",
+		(operator) => {
+			const source = `import { approvalRequest, db } from "@/db";
 let table = unrelatedTable;
 table ${operator} approvalRequest;
 db.delete(table);`;
 
-		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toHaveLength(1);
-		expect(analyzeApprovalWriteMutations(source, FILE_NAME)[0]).toMatchObject({
-			operation: "delete",
-			table: "approval_request",
-		});
+			expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toHaveLength(1);
+			expect(analyzeApprovalWriteMutations(source, FILE_NAME)[0]).toMatchObject(
+				{
+					operation: "delete",
+					table: "approval_request",
+				},
+			);
+		},
+	);
+
+	it.each([
+		[
+			"comments between an ESM import clause, from, and module",
+			`import { db as client } /* clause */ from /* module */ "@/db";
+const operation = "del" + "ete";
+const table = "approval_" + "request";
+client.execute(operation + " from " + table);`,
+		],
+		[
+			"a comment between from and its module literal",
+			`import { db as client } from /* module */ "@/db";
+const operation = "del" + "ete";
+const table = "approval_" + "request";
+client.execute(operation + " from " + table);`,
+		],
+		[
+			"an escaped imported database identifier",
+			`import { d\\u0062 as client } from "@/db";
+const operation = "del" + "ete";
+const table = "approval_" + "request";
+client.execute(operation + " from " + table);`,
+		],
+		[
+			"a commented require call",
+			`const { db: client } = require /* call */ ("@/db");
+const operation = "del" + "ete";
+const table = "approval_" + "request";
+client.execute(operation + " from " + table);`,
+		],
+		[
+			"an ESM namespace with trivia and a bracket call",
+			`import /* import */ * as database from /* module */ "@/db";
+const operation = "del" + "ete";
+const table = "approval_" + "request";
+database.db["execute"](operation + " from " + table);`,
+		],
+		[
+			"a dynamic import with call trivia",
+			`const database = await import /* call */ ("@/db");
+const operation = "del" + "ete";
+const table = "approval_" + "request";
+database.db.execute(operation + " from " + table);`,
+		],
+		[
+			"an import type with from trivia",
+			`import type { ApprovalDatabase as Db } from /* module */ "@/lib/approvals/server/types";
+declare const client: Db;
+const operation = "del" + "ete";
+const table = "approval_" + "request";
+client["execute"](operation + " from " + table);`,
+		],
+		[
+			"an escaped Drizzle SQL identifier",
+			`import { s\\u0071l as query } /* clause */ from /* module */ "drizzle-orm";
+const operation = "del" + "ete";
+const table = "approval_" + "request";
+query\`\${operation} from \${table}\`;`,
+		],
+	] as const)(
+		"keeps trusted-module trivia scanner-equivalent for %s",
+		(_name, source) => {
+			withApprovalWriteTree(
+				{ "scripts/module-trivia.ts": source },
+				(workspaceRoot) => {
+					const path = "scripts/module-trivia.ts";
+					const expected = analyzeApprovalWriteMutations(
+						source,
+						join(workspaceRoot, path),
+					).map(({ fileName: _fileName, ...mutation }) => ({
+						...mutation,
+						kind: "mutation" as const,
+						path,
+					}));
+					expect(expected).toHaveLength(1);
+					expect(
+						scanApprovalWriteInventory({ roots: ["scripts"], workspaceRoot }),
+					).toEqual(expected);
+				},
+			);
+		},
+	);
+
+	it.each([
+		[
+			"ambiguous slash syntax",
+			`import { db } from "@/db";
+const pattern = /approval/i;
+db.execute(dynamicStatement);`,
+		],
+		[
+			"an unsupported alphanumeric escape",
+			`import { db } from "@/db";
+const label = "\\q";
+db.execute(dynamicStatement);`,
+		],
+	] as const)("fails the literal screen open for %s", (_name, source) => {
+		withApprovalWriteTree(
+			{ "scripts/unknown-literal-syntax.ts": source },
+			(workspaceRoot) => {
+				const withNativeProgram = vi.spyOn(
+					nativeSourceAnalysis,
+					"withNativeProgram",
+				);
+				try {
+					expect(
+						scanApprovalWriteInventory({ roots: ["scripts"], workspaceRoot }),
+					).toEqual([]);
+					expect(withNativeProgram).toHaveBeenCalledTimes(1);
+				} finally {
+					withNativeProgram.mockRestore();
+				}
+			},
+		);
 	});
 
 	it.each([
@@ -1305,8 +1428,10 @@ mutate();
 table = unrelatedTable;
 database = unrelatedDatabase;`,
 		],
-	] as const)("unions possible ancestor table and receiver writes %s", (_name, writesAndCall) => {
-		const source = `import { approvalRequest, db } from "@/db";
+	] as const)(
+		"unions possible ancestor table and receiver writes %s",
+		(_name, writesAndCall) => {
+			const source = `import { approvalRequest, db } from "@/db";
 let table = unrelatedTable;
 let database = unrelatedDatabase;
 function mutate() {
@@ -1314,16 +1439,17 @@ function mutate() {
 }
 ${writesAndCall}`;
 
-		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
-			{
-				column: 2,
-				fileName: FILE_NAME,
-				line: 5,
-				operation: "delete",
-				table: "approval_request",
-			},
-		]);
-	});
+			expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
+				{
+					column: 2,
+					fileName: FILE_NAME,
+					line: 5,
+					operation: "delete",
+					table: "approval_request",
+				},
+			]);
+		},
+	);
 
 	it("handles quoted, schema-qualified, ONLY, commented, and multiple statements", () => {
 		expect(
@@ -1438,9 +1564,12 @@ COPY "public"."approval_outbox_delivery" (id, outbox_id) FROM STDIN;
 		"TRUNCATE TABLE approval_request,",
 		"COPY approval_outbox (id) FROM",
 		"COPY approval_outbox (id) TO STDOUT",
-	] as const)("ignores malformed or non-writing extended SQL: %s", (sqlText) => {
-		expect(findProtectedApprovalSqlMutations(sqlText)).toEqual([]);
-	});
+	] as const)(
+		"ignores malformed or non-writing extended SQL: %s",
+		(sqlText) => {
+			expect(findProtectedApprovalSqlMutations(sqlText)).toEqual([]);
+		},
+	);
 
 	it("integrates MERGE, TRUNCATE, and COPY through TypeScript SQL forms", () => {
 		const source = `import { db } from "@/db";
@@ -1591,23 +1720,163 @@ db.execute("COPY approval_outbox_delivery (id) FROM STDIN");`;
 	it.each([
 		["statement count", "select 1;".repeat(1_025), "sql_statement_count"],
 		["token count", "x ".repeat(100_001), "sql_token_count"],
-	] as const)("fails closed at the raw SQL %s limit", (_name, sqlText, limit) => {
-		let error: unknown;
-		try {
-			findProtectedApprovalSqlMutations(sqlText);
-		} catch (caught) {
-			error = caught;
-		}
+	] as const)(
+		"fails closed at the raw SQL %s limit",
+		(_name, sqlText, limit) => {
+			let error: unknown;
+			try {
+				findProtectedApprovalSqlMutations(sqlText);
+			} catch (caught) {
+				error = caught;
+			}
 
-		expect(error).toBeInstanceOf(ApprovalWriteBoundaryAnalysisLimitError);
-		expect(error).toMatchObject({
-			code: "APPROVAL_WRITE_BOUNDARY_ANALYSIS_LIMIT",
-			limit,
-		});
-	});
+			expect(error).toBeInstanceOf(ApprovalWriteBoundaryAnalysisLimitError);
+			expect(error).toMatchObject({
+				code: "APPROVAL_WRITE_BOUNDARY_ANALYSIS_LIMIT",
+				limit,
+			});
+		},
+	);
 });
 
 describe("approval write boundary TypeScript analyzer", () => {
+	it("matches independent analysis and preserves deterministic source order in a batch", () => {
+		const sources = [
+			{
+				fileName: "/repo/apps/webapp/src/lib/approvals/z-last.ts",
+				source:
+					'import { approvalOutbox, db } from "@/db";\ndb.insert(approvalOutbox);',
+			},
+			{
+				fileName: "/repo/apps/webapp/src/lib/approvals/a-first.ts",
+				source:
+					'import { approvalRequest, db } from "@/db";\ndb.delete(approvalRequest);',
+			},
+		] as const;
+
+		expect(analyzeApprovalWriteMutationSources(sources)).toEqual(
+			sources.map(({ fileName, source }) => ({
+				fileName,
+				mutations: analyzeApprovalWriteMutations(source, fileName),
+				ok: true,
+			})),
+		);
+	});
+
+	it.each(["ts", "js", "cjs", "tsx"] as const)(
+		"isolates duplicate script globals in batched .%s analysis",
+		(extension) => {
+			const safe = {
+				fileName: `/repo/scripts/a-safe.${extension}`,
+				source: 'const statement = "select 1";',
+			};
+			const dangerous = {
+				fileName: `/repo/scripts/z-dangerous.${extension}`,
+				source: `const { sql } = require("drizzle-orm");
+const statement = "delete from approval_request";
+sql.raw(statement);`,
+			};
+			const independent = analyzeApprovalWriteMutations(
+				dangerous.source,
+				dangerous.fileName,
+			);
+
+			expect(independent).toHaveLength(1);
+			expect(analyzeApprovalWriteMutationSources([safe, dangerous])).toEqual([
+				{ fileName: safe.fileName, mutations: [], ok: true },
+				{ fileName: dangerous.fileName, mutations: independent, ok: true },
+			]);
+		},
+	);
+
+	it("isolates malformed source errors within a batch", () => {
+		const sources = [
+			{
+				fileName: "/repo/apps/webapp/src/lib/approvals/good.ts",
+				source:
+					'import { approvalRequest, db } from "@/db";\ndb.delete(approvalRequest);',
+			},
+			{
+				fileName: "/repo/apps/webapp/src/lib/approvals/broken.ts",
+				source: 'import { approvalRequest, db } from "@/db";\ndb.delete(',
+			},
+			{
+				fileName: "/repo/apps/webapp/src/lib/approvals/harmless.ts",
+				source: "formatter.delete(localTable);",
+			},
+		] as const;
+
+		const results = analyzeApprovalWriteMutationSources(sources);
+
+		expect(results[0]).toMatchObject({
+			fileName: sources[0].fileName,
+			mutations: [expect.objectContaining({ table: "approval_request" })],
+			ok: true,
+		});
+		expect(results[1]).toMatchObject({
+			error: expect.stringContaining("analysis parse error"),
+			fileName: sources[1].fileName,
+			ok: false,
+		});
+		expect(results[2]).toEqual({
+			fileName: sources[2].fileName,
+			mutations: [],
+			ok: true,
+		});
+	});
+
+	it("returns deterministic per-file errors for a normalized batch path collision", () => {
+		const sources = [
+			{
+				fileName: "/repo/nested/../same.ts",
+				source: 'const statement = "select 1";',
+			},
+			{
+				fileName: "/repo/same.ts",
+				source: 'const statement = "delete from approval_request";',
+			},
+		] as const;
+		const error =
+			"Native source path collision at /repo/same.ts: /repo/nested/../same.ts, /repo/same.ts";
+
+		expect(analyzeApprovalWriteMutationSources(sources)).toEqual(
+			sources.map(({ fileName }) => ({ error, fileName, ok: false })),
+		);
+	});
+
+	it("does not retain source or provenance when analyzing the same file again", () => {
+		const protectedSource = `import { approvalRequest, db } from "@/db";
+db.delete(approvalRequest);`;
+		const harmlessSource = `const approvalRequest = localTable;
+const db = formatter;
+db.delete(approvalRequest);`;
+
+		expect(
+			analyzeApprovalWriteMutations(protectedSource, FILE_NAME),
+		).toHaveLength(1);
+		expect(analyzeApprovalWriteMutations(harmlessSource, FILE_NAME)).toEqual(
+			[],
+		);
+	});
+
+	it("canonicalizes Windows dot segments before resolving relative DB imports", () => {
+		const source = `import { approvalRequest } from "../../db/schema/approval";
+import { db } from "../../db";
+db.delete(approvalRequest);`;
+		const fileName =
+			"C:\\repo\\apps\\webapp\\src\\junk\\..\\lib\\approvals\\fixture.ts";
+
+		expect(analyzeApprovalWriteMutations(source, fileName)).toEqual([
+			{
+				column: 1,
+				fileName,
+				line: 3,
+				operation: "delete",
+				table: "approval_request",
+			},
+		]);
+	});
+
 	it("trusts transaction callback parameters and their aliases from a trusted database", () => {
 		const source = `import { approvalRequest, db } from "@/db";
 db.transaction(async (transaction) => {
@@ -2148,13 +2417,16 @@ const client = new pg.Client();
 client.query("delete from approval_request");`,
 			"/repo/apps/webapp/scripts/client.mjs",
 		],
-	] as const)("tracks a trusted pg Client receiver from %s", (_name, source, fileName) => {
-		expect(
-			analyzeApprovalWriteMutations(source, fileName).map(
-				({ operation, table }) => ({ operation, table }),
-			),
-		).toEqual([{ operation: "delete", table: "approval_request" }]);
-	});
+	] as const)(
+		"tracks a trusted pg Client receiver from %s",
+		(_name, source, fileName) => {
+			expect(
+				analyzeApprovalWriteMutations(source, fileName).map(
+					({ operation, table }) => ({ operation, table }),
+				),
+			).toEqual([{ operation: "delete", table: "approval_request" }]);
+		},
+	);
 
 	it("does not trust pg Client names from unrelated sources", () => {
 		const source = `import { Client } from "unrelated-pg";
@@ -2212,13 +2484,16 @@ const database = createDb(client);
 database.delete(approvalRequest);`,
 			"/repo/apps/webapp/scripts/database.mjs",
 		],
-	] as const)("tracks a locally constructed Drizzle receiver from a trusted %s", (_name, source, fileName) => {
-		expect(
-			analyzeApprovalWriteMutations(source, fileName).map(
-				({ operation, table }) => ({ operation, table }),
-			),
-		).toEqual([{ operation: "delete", table: "approval_request" }]);
-	});
+	] as const)(
+		"tracks a locally constructed Drizzle receiver from a trusted %s",
+		(_name, source, fileName) => {
+			expect(
+				analyzeApprovalWriteMutations(source, fileName).map(
+					({ operation, table }) => ({ operation, table }),
+				),
+			).toEqual([{ operation: "delete", table: "approval_request" }]);
+		},
+	);
 
 	it("does not trust local or unrelated drizzle factories", () => {
 		const source = `import { drizzle as importedDrizzle } from "unrelated-drizzle";
@@ -2335,20 +2610,23 @@ catch { table = otherTable; }`,
 			"conditional expression",
 			"condition ? (table = approvalRequest) : (table = otherTable);",
 		],
-	] as const)("preserves possible protected provenance across %s writes", (_name, writes) => {
-		const startsProtected = _name === "short-circuit expression";
-		const source = `import { approvalRequest, db } from "@/db";
+	] as const)(
+		"preserves possible protected provenance across %s writes",
+		(_name, writes) => {
+			const startsProtected = _name === "short-circuit expression";
+			const source = `import { approvalRequest, db } from "@/db";
 let table = ${startsProtected ? "approvalRequest" : "otherTable"};
 ${writes}
 db.delete(table);`;
-		const result = analyzeApprovalWriteMutations(source, FILE_NAME);
+			const result = analyzeApprovalWriteMutations(source, FILE_NAME);
 
-		expect(result).toHaveLength(1);
-		expect(result[0]).toMatchObject({
-			operation: "delete",
-			table: "approval_request",
-		});
-	});
+			expect(result).toHaveLength(1);
+			expect(result[0]).toMatchObject({
+				operation: "delete",
+				table: "approval_request",
+			});
+		},
+	);
 
 	it("tracks database-service type aliases and destructured db parameters", () => {
 		const source = `import type { ApprovalDbService } from "@/lib/approvals/server/types";
@@ -2437,12 +2715,15 @@ client.query("delete from approval_request");`,
 			"delete",
 			"approval_request",
 		],
-	] as const)("tracks a trusted %s receiver declaration", (_name, source, operation, table) => {
-		const result = analyzeApprovalWriteMutations(source, FILE_NAME);
+	] as const)(
+		"tracks a trusted %s receiver declaration",
+		(_name, source, operation, table) => {
+			const result = analyzeApprovalWriteMutations(source, FILE_NAME);
 
-		expect(result).toHaveLength(1);
-		expect(result[0]).toMatchObject({ operation, table });
-	});
+			expect(result).toHaveLength(1);
+			expect(result[0]).toMatchObject({ operation, table });
+		},
+	);
 
 	it("substitutes a protected table into direct SQL passed to a trusted client", () => {
 		const source = `import type { PoolClient } from "pg";
@@ -2503,15 +2784,18 @@ declare const entryType: string;
 db.execute(\`insert into time_entry (type) values ('\${entryType}')\`);`,
 			"insert",
 		],
-	] as const)("fails closed when dynamic raw SQL controls a protected source %s", (_name, source, operation) => {
-		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
-			expect.objectContaining({
-				operation,
-				table: "time_entry",
-				uncertainty: "dynamic_sql",
-			}),
-		]);
-	});
+	] as const)(
+		"fails closed when dynamic raw SQL controls a protected source %s",
+		(_name, source, operation) => {
+			expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
+				expect.objectContaining({
+					operation,
+					table: "time_entry",
+					uncertainty: "dynamic_sql",
+				}),
+			]);
+		},
+	);
 
 	it.each([
 		[
@@ -2536,15 +2820,18 @@ declare const entryType: string;
 db.execute("insert into time_entry (type) values ('" + entryType + "')");`,
 			"insert",
 		],
-	] as const)("fails closed for concatenated protected source SQL %s", (_name, source, operation) => {
-		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
-			expect.objectContaining({
-				operation,
-				table: "time_entry",
-				uncertainty: "dynamic_sql",
-			}),
-		]);
-	});
+	] as const)(
+		"fails closed for concatenated protected source SQL %s",
+		(_name, source, operation) => {
+			expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual([
+				expect.objectContaining({
+					operation,
+					table: "time_entry",
+					uncertainty: "dynamic_sql",
+				}),
+			]);
+		},
+	);
 
 	it("does not mark ordinary dynamic SQL values as unresolved structure", () => {
 		const source = `import { db } from "@/db";
@@ -2760,33 +3047,34 @@ sql\`select \${table}, \${table}, \${table}, \${table}, \${table}\`;`,
 		});
 	});
 
-	it.each([
-		20, 24,
-	] as const)("rejects a %i-level doubled constant before constructing its expansion", (level) => {
-		const source = [
-			'import { sql } from "drizzle-orm";',
-			'const text0 = "x";',
-			...Array.from(
-				{ length: level },
-				(_, index) => `const text${index + 1} = text${index} + text${index};`,
-			),
-			`sql.raw("delete from approval_request where id = '" + text${level} + "'");`,
-		].join("\n");
-		let error: unknown;
+	it.each([20, 24] as const)(
+		"rejects a %i-level doubled constant before constructing its expansion",
+		(level) => {
+			const source = [
+				'import { sql } from "drizzle-orm";',
+				'const text0 = "x";',
+				...Array.from(
+					{ length: level },
+					(_, index) => `const text${index + 1} = text${index} + text${index};`,
+				),
+				`sql.raw("delete from approval_request where id = '" + text${level} + "'");`,
+			].join("\n");
+			let error: unknown;
 
-		try {
-			analyzeApprovalWriteMutations(source, FILE_NAME);
-		} catch (caught) {
-			error = caught;
-		}
+			try {
+				analyzeApprovalWriteMutations(source, FILE_NAME);
+			} catch (caught) {
+				error = caught;
+			}
 
-		expect(error).toMatchObject({
-			cause: {
-				code: "APPROVAL_WRITE_BOUNDARY_ANALYSIS_LIMIT",
-				limit: "constant_evaluator_output_length",
-			},
-		});
-	});
+			expect(error).toMatchObject({
+				cause: {
+					code: "APPROVAL_WRITE_BOUNDARY_ANALYSIS_LIMIT",
+					limit: "constant_evaluator_output_length",
+				},
+			});
+		},
+	);
 
 	it("fails closed after a small deterministic reaching-write budget", () => {
 		const source = [
@@ -2853,6 +3141,43 @@ const WORKFLOW_INSERT = `import { approvalWorkflow, db } from "@/db";
 db.insert(approvalWorkflow).values({});`;
 
 describe("approval write boundary production ownership", () => {
+	it("analyzes every admitted candidate in one native program batch", () => {
+		withApprovalWriteTree(
+			{
+				"src/a-protected.ts": WORKFLOW_INSERT,
+				"src/harmless.ts": "formatter.delete(localTable);",
+				"src/plausible.ts": 'const table = "approval_workflow";',
+				"src/z-protected.ts":
+					'import { approvalRequest, db } from "@/db";\ndb.delete(approvalRequest);',
+			},
+			(workspaceRoot) => {
+				const withNativeProgram = vi.spyOn(
+					nativeSourceAnalysis,
+					"withNativeProgram",
+				);
+				try {
+					const findings = scanApprovalWriteBoundary({
+						roots: ["src"],
+						workspaceRoot,
+					});
+					expect(findings.map(({ path }) => path)).toEqual([
+						"src/a-protected.ts",
+						"src/z-protected.ts",
+					]);
+					expect(withNativeProgram).toHaveBeenCalledTimes(1);
+					const batchSources = withNativeProgram.mock.calls[0]?.[0];
+					expect(
+						[...(batchSources?.keys() ?? [])].map((fileName) =>
+							relative(workspaceRoot, fileName),
+						),
+					).toEqual(["src/a-protected.ts", "src/z-protected.ts"]);
+				} finally {
+					withNativeProgram.mockRestore();
+				}
+			},
+		);
+	});
+
 	it("fails closed when a configured root is a symlink", () => {
 		withApprovalWriteTree(
 			{ "real-src/unowned.ts": WORKFLOW_INSERT },
@@ -2983,30 +3308,585 @@ sql.raw(statement);`;
 		);
 	});
 
-	it.each([
-		"js",
-		"mjs",
-		"cjs",
-		"ts",
-		"mts",
-		"cts",
-	] as const)("scans an unowned executable .%s production script", (extension) => {
-		withApprovalWriteTree(
-			{ [`scripts/unowned.${extension}`]: WORKFLOW_INSERT },
-			(workspaceRoot) => {
-				expect(
-					scanApprovalWriteBoundary({ roots: ["scripts"], workspaceRoot }),
-				).toEqual([
-					expect.objectContaining({
-						kind: "mutation",
-						operation: "insert",
-						path: `scripts/unowned.${extension}`,
-						table: "approval_workflow",
+	it("matches single-source analysis when protected SQL table names are split across constants", () => {
+		const files = {
+			"scripts/split-db-execute.ts": `import { db } from "@/db";
+		const operation = "upd" + "ate";
+		const target = "appro" + "val_workflow";
+		const statement = operation + " " + target + " set version = 2";
+		db.execute(statement);`,
+			"scripts/split-pg-query.ts": `import { Pool } from "pg";
+		const client = new Pool();
+		const operation = "del" + "ete";
+		const target = "appro" + "val_request";
+		client.query(operation + " from " + target);`,
+			"scripts/split-sql-alias.ts": `import { sql as drizzleSql } from "drizzle-orm";
+		const operation = "upd" + "ate";
+		const prefix = "appro";
+		const suffix = "val_outbox";
+		const target = prefix + suffix;
+		const statement = \`\${operation} \${target} set payload = '{}'\`;
+		const raw = drizzleSql.raw;
+		raw(statement);`,
+			"scripts/split-sql-raw.ts": `import { sql } from "drizzle-orm";
+		const operation = "del" + "ete";
+		const target = "appro" + "val_request";
+		sql.raw(operation + " from " + target);`,
+			"scripts/split-sql-tag.ts": `import { sql as query } from "drizzle-orm";
+		const operation = "del" + "ete";
+		const target = "appro" + "val_request";
+		query\`\${operation} from \${target}\`;`,
+		} as const;
+
+		withApprovalWriteTree(files, (workspaceRoot) => {
+			const expected = Object.entries(files).flatMap(([path, source]) =>
+				analyzeApprovalWriteMutations(source, join(workspaceRoot, path)).map(
+					({ fileName: _fileName, ...mutation }) => ({
+						...mutation,
+						kind: "mutation" as const,
+						path,
 					}),
-				]);
+				),
+			);
+
+			expect(expected).toHaveLength(5);
+			const withNativeProgram = vi.spyOn(
+				nativeSourceAnalysis,
+				"withNativeProgram",
+			);
+			try {
+				expect(
+					scanApprovalWriteInventory({ roots: ["scripts"], workspaceRoot }),
+				).toEqual(expected);
+				expect(withNativeProgram).toHaveBeenCalledTimes(1);
+				expect(withNativeProgram.mock.calls[0]?.[0].size).toBe(5);
+			} finally {
+				withNativeProgram.mockRestore();
+			}
+		});
+	});
+
+	it.each([
+		[
+			"escaped delete method",
+			String.raw`import { db, approvalWorkflowEvent } from "@/db";
+db.d\u0065lete(approvalWorkflowEvent);`,
+		],
+		[
+			"escaped table export",
+			String.raw`import { db, approvalW\u006frkflowEvent as eventTable } from "@/db";
+db.delete(eventTable);`,
+		],
+		[
+			"escaped update method",
+			String.raw`import { db, approvalWorkflowEvent } from "@/db";
+db.upd\u0061te(approvalWorkflowEvent).set({});`,
+		],
+		[
+			"escaped insert method",
+			String.raw`import { db, approvalWorkflowEvent } from "@/db";
+db.ins\u0065rt(approvalWorkflowEvent).values({});`,
+		],
+		[
+			"escaped execute method",
+			String.raw`import { db } from "@/db";
+db.exec\u0075te("delete from approval_workflow_event");`,
+		],
+		[
+			"escaped query method",
+			String.raw`import { Client } from "pg";
+const client = new Client();
+client.qu\u0065ry("delete from approval_workflow_event");`,
+		],
+		[
+			"escaped raw alias",
+			String.raw`import { sql } from "drizzle-orm";
+const { r\u0061w: run } = sql;
+run("delete from approval_workflow_event");`,
+		],
+		[
+			"escaped SQL tag alias",
+			`${String.raw`import { s\u0071l as query } from "drizzle-orm";`}\nquery\`delete from approval_workflow_event\`;`,
+		],
+	] as const)("matches independent analysis for an %s", (_name, source) => {
+		withApprovalWriteTree(
+			{ "scripts/escaped-identifier.ts": source },
+			(workspaceRoot) => {
+				const path = "scripts/escaped-identifier.ts";
+				const expected = analyzeApprovalWriteMutations(
+					source,
+					join(workspaceRoot, path),
+				).map(({ fileName: _fileName, ...mutation }) => ({
+					...mutation,
+					kind: "mutation" as const,
+					path,
+				}));
+
+				expect(expected.length).toBeGreaterThan(0);
+				expect(
+					scanApprovalWriteInventory({ roots: ["scripts"], workspaceRoot }),
+				).toEqual(expected);
 			},
 		);
 	});
+
+	it.each([
+		[
+			"block comment between dot and property",
+			`import { db, approvalWorkflowEvent } from "@/db";
+db./* mutation */delete(approvalWorkflowEvent);`,
+		],
+		[
+			"block comments between receiver, dot, and property",
+			`import { db, approvalWorkflowEvent } from "@/db";
+db/* receiver */./* mutation */delete(approvalWorkflowEvent);`,
+		],
+		[
+			"line comment between receiver and dot",
+			`import { db, approvalWorkflowEvent } from "@/db";
+db // receiver
+  .delete(approvalWorkflowEvent);`,
+		],
+		[
+			"line comment between dot and property",
+			`import { db, approvalWorkflowEvent } from "@/db";
+db. // mutation
+  delete(approvalWorkflowEvent);`,
+		],
+		[
+			"block comment between bracket and string property",
+			`import { db, approvalWorkflowEvent } from "@/db";
+db[/* mutation */"delete"](approvalWorkflowEvent);`,
+		],
+		[
+			"line comment between bracket and string property",
+			`import { db, approvalWorkflowEvent } from "@/db";
+db[ // mutation
+  "delete"](approvalWorkflowEvent);`,
+		],
+		[
+			"comments around bracket and string property",
+			`import { db, approvalWorkflowEvent } from "@/db";
+db/* receiver */[/* open */"delete"/* close */](approvalWorkflowEvent);`,
+		],
+		[
+			"block comment between property and call parenthesis",
+			`import { db } from "@/db";
+db.execute/* call */("delete from approval_workflow_event");`,
+		],
+		[
+			"line comment between property and call parenthesis",
+			`import { db } from "@/db";
+db.execute // call
+  ("delete from approval_workflow_event");`,
+		],
+		[
+			"comments across a query property and call",
+			`import { Client } from "pg";
+const client = new Client();
+client. /* property */ query /* call */ ("delete from approval_workflow_event");`,
+		],
+		[
+			"comments across a raw property and call",
+			`import { sql } from "drizzle-orm";
+sql./* property */raw/* call */("delete from approval_workflow_event");`,
+		],
+		[
+			"block comment between SQL tag and backtick",
+			`import { sql as query } from "drizzle-orm";
+query/* tag */\`delete from approval_workflow_event\`;`,
+		],
+		[
+			"line comment between SQL tag and backtick",
+			`import { sql as query } from "drizzle-orm";
+query // tag
+  \`delete from approval_workflow_event\`;`,
+		],
+		[
+			"Unicode-escaped delete property with comments",
+			String.raw`import { db, approvalWorkflowEvent } from "@/db";
+db./* mutation */d\u0065lete/* call */(approvalWorkflowEvent);`,
+		],
+		[
+			"Unicode-escaped execute property with comments",
+			String.raw`import { db } from "@/db";
+db./* mutation */exec\u0075te/* call */("delete from approval_workflow_event");`,
+		],
+		[
+			"Unicode-escaped SQL tag alias with comments",
+			`${String.raw`import { s\u0071l as query } from "drizzle-orm";`}\nquery/* tag */\`delete from approval_workflow_event\`;`,
+		],
+	] as const)(
+		"matches independent analysis for JavaScript trivia: %s",
+		(_name, source) => {
+			withApprovalWriteTree(
+				{ "scripts/trivia.js": source },
+				(workspaceRoot) => {
+					const path = "scripts/trivia.js";
+					const expected = analyzeApprovalWriteMutations(
+						source,
+						join(workspaceRoot, path),
+					).map(({ fileName: _fileName, ...mutation }) => ({
+						...mutation,
+						kind: "mutation" as const,
+						path,
+					}));
+
+					expect(expected.length).toBeGreaterThan(0);
+					expect(
+						scanApprovalWriteInventory({ roots: ["scripts"], workspaceRoot }),
+					).toEqual(expected);
+				},
+			);
+		},
+	);
+
+	it.each([
+		["direct SQL", `db.execute("delete from approval_request");`],
+		[
+			"reversed declaration order",
+			`const table = "approval_" + "request";
+const operation = "del" + "ete";
+db.execute(operation + " from " + table);`,
+		],
+		[
+			"one-character fragments",
+			`const operation = "d" + "e" + "l" + "e" + "t" + "e";
+const table = "a" + "p" + "p" + "r" + "o" + "v" + "a" + "l" + "_" + "r" + "e" + "q" + "u" + "e" + "s" + "t";
+db.execute(operation + " from " + table);`,
+		],
+		[
+			"template spans",
+			`const operation = "upd" + "ate";
+const table = "approval_" + "workflow";
+db.execute(\`\${operation} \${table} set version = 2\`);`,
+		],
+		[
+			"aliases and parentheses",
+			`const operation = (("ins" + "ert"));
+const target = ("approval_" + "outbox");
+const alias = target;
+db.execute((operation + " into " + alias + " default values"));`,
+		],
+		[
+			"escaped underscores and quotes",
+			`const operation = "del\\x65te";
+const table = 'approval\\x5frequest';
+db.execute(operation + " from \\"" + table + "\\"");`,
+		],
+		[
+			"comments between fragments",
+			`const operation = "del" /* operation */ + "ete";
+const table = "approval_" // table prefix
+	+ "request";
+db.execute(operation + " from " + table);`,
+		],
+		[
+			"unrelated interspersed literals",
+			`const operation = "upd";
+const unrelated = "calendar notification wellness";
+const table = "approval_";
+const other = "select employee from organization";
+db.execute(operation + "ate " + table + "workflow set version = 2");`,
+		],
+		[
+			"dynamic values beside constant protected SQL",
+			`db.execute(dynamicStatement);
+const operation = "del" + "ete";
+const table = "approval_" + "request";
+db.execute(operation + " from " + table);`,
+		],
+	] as const)(
+		"keeps literal-fragment composability scanner-equivalent for %s",
+		(_name, body) => {
+			const source = `import { db } from "@/db";\n${body}`;
+			withApprovalWriteTree(
+				{ "scripts/literal-fragments.ts": source },
+				(workspaceRoot) => {
+					const path = "scripts/literal-fragments.ts";
+					const expected = analyzeApprovalWriteMutations(
+						source,
+						join(workspaceRoot, path),
+					).map(({ fileName: _fileName, ...mutation }) => ({
+						...mutation,
+						kind: "mutation" as const,
+						path,
+					}));
+					expect(expected.length).toBeGreaterThan(0);
+					expect(
+						scanApprovalWriteInventory({ roots: ["scripts"], workspaceRoot }),
+					).toEqual(expected);
+				},
+			);
+		},
+	);
+
+	it.each([
+		[
+			"dynamic-only SQL",
+			`import { db } from "@/db";
+db.execute(dynamicStatement);`,
+		],
+		[
+			"constant non-mutation SQL",
+			`import { sql } from "drizzle-orm";
+sql\`select employee_id from organization\`;`,
+		],
+	] as const)(
+		"excludes a trusted raw surface with no composable protected mutation: %s",
+		(_name, source) => {
+			withApprovalWriteTree(
+				{ "scripts/non-mutation.ts": source },
+				(workspaceRoot) => {
+					const withNativeProgram = vi.spyOn(
+						nativeSourceAnalysis,
+						"withNativeProgram",
+					);
+					try {
+						expect(
+							analyzeApprovalWriteMutations(source, "scripts/non-mutation.ts"),
+						).toEqual([]);
+						expect(
+							scanApprovalWriteInventory({ roots: ["scripts"], workspaceRoot }),
+						).toEqual([]);
+						expect(withNativeProgram).not.toHaveBeenCalled();
+					} finally {
+						withNativeProgram.mockRestore();
+					}
+				},
+			);
+		},
+	);
+
+	it.each([
+		[
+			"a database namespace destructuring alias",
+			"scripts/split-provenance.ts",
+			`import * as database from "@/db";
+const { db: client } = database;
+const operation = "upd" + "ate";
+const target = "appro" + "val_workflow";
+const statement = operation + " " + target + " set version = 2";
+client.execute(statement);`,
+		],
+		[
+			"an imported database type alias",
+			"scripts/split-provenance.ts",
+			`import type { ApprovalDatabase as Db } from "@/lib/approvals/server/types";
+declare const client: Db;
+const operation = "del" + "ete";
+const target = "appro" + "val_request";
+const statement = operation + " from " + target;
+client.execute(statement);`,
+		],
+		[
+			"a Drizzle namespace destructuring alias",
+			"scripts/split-provenance.ts",
+			`import * as drizzle from "drizzle-orm";
+const { sql: query } = drizzle;
+const operation = "del" + "ete";
+const target = "appro" + "val_request";
+query\`\${operation} from \${target}\`;`,
+		],
+		[
+			"a workflow-port transaction type alias",
+			"scripts/split-provenance.ts",
+			`import type { ApprovalTransactionClient as Client } from "@/lib/approvals/workflow/ports";
+declare const client: Client;
+const operation = "del" + "ete";
+const target = "appro" + "val_request";
+client.execute(operation + " from " + target);`,
+		],
+		[
+			"an Effect database service",
+			"scripts/split-provenance.ts",
+			`import { Effect } from "effect";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+const operation = "del" + "ete";
+const target = "appro" + "val_request";
+Effect.gen(function* (_) {
+	const service = yield* _(DatabaseService);
+	service.db.execute(operation + " from " + target);
+});`,
+		],
+		[
+			"an aliased pg client constructor",
+			"scripts/split-provenance.ts",
+			`import { Client as PgClient } from "pg";
+const client = new PgClient();
+const operation = "del" + "ete";
+const target = "appro" + "val_request";
+client.query(operation + " from " + target);`,
+		],
+		[
+			"a Drizzle node-postgres namespace factory",
+			"scripts/split-provenance.ts",
+			`import * as nodePg from "drizzle-orm/node-postgres";
+const client = nodePg.drizzle(driver);
+const operation = "del" + "ete";
+const target = "appro" + "val_request";
+client.execute(operation + " from " + target);`,
+		],
+		[
+			"a CommonJS database namespace",
+			"apps/webapp/scripts/split-provenance.cjs",
+			`const database = require("../src/db");
+const operation = "del" + "ete";
+const target = "appro" + "val_request";
+database.db.execute(operation + " from " + target);`,
+		],
+		[
+			"a dynamic database namespace",
+			"apps/webapp/scripts/split-provenance.mjs",
+			`const database = await import("../src/db");
+const operation = "del" + "ete";
+const target = "appro" + "val_request";
+database.db.execute(operation + " from " + target);`,
+		],
+		[
+			"a relative database import alias",
+			"apps/webapp/scripts/split-provenance.ts",
+			`import { db as client } from "../src/db";
+const operation = "del" + "ete";
+const target = "appro" + "val_request";
+client.execute(operation + " from " + target);`,
+		],
+		[
+			"a relative trusted type-module alias",
+			"apps/webapp/scripts/split-provenance.ts",
+			`import type { ApprovalDatabase as Db } from "../src/lib/approvals/server/types";
+declare const client: Db;
+const operation = "del" + "ete";
+const target = "appro" + "val_request";
+client.execute(operation + " from " + target);`,
+		],
+		[
+			"a relative Effect database service",
+			"apps/webapp/scripts/split-provenance.ts",
+			`import { Effect } from "effect";
+import { DatabaseService as DbTag } from "../src/lib/effect/services/database.service";
+const operation = "del" + "ete";
+const target = "appro" + "val_request";
+Effect.gen(function* (_) {
+	const service = yield* _(DbTag);
+	service.db.execute(operation + " from " + target);
+});`,
+		],
+	] as const)(
+		"matches independent split SQL analysis through %s",
+		(_name, path, source) => {
+			withApprovalWriteTree({ [path]: source }, (workspaceRoot) => {
+				const expected = analyzeApprovalWriteMutations(
+					source,
+					join(workspaceRoot, path),
+				).map(({ fileName: _fileName, ...mutation }) => ({
+					...mutation,
+					kind: "mutation" as const,
+					path,
+				}));
+
+				expect(expected).toHaveLength(1);
+				expect(
+					scanApprovalWriteInventory({
+						roots: [dirname(path)],
+						workspaceRoot,
+					}),
+				).toEqual(expected);
+			});
+		},
+	);
+
+	it.each([
+		[
+			"trusted-name lookalikes",
+			`interface ApprovalDatabase {}
+const DatabaseService = formatter;
+const operation = "del" + "ete";
+const target = "appro" + "val_request";
+execute(operation + " from " + target);`,
+			false,
+		],
+		[
+			"a Drizzle non-SQL import",
+			`import { eq } from "drizzle-orm";
+const operation = "del" + "ete";
+const target = "appro" + "val_request";
+query(operation + " from " + target);`,
+			true,
+		],
+		[
+			"a schema-only import",
+			`import { employee } from "@/db/schema";
+const operation = "del" + "ete";
+const target = "appro" + "val_request";
+execute(operation + " from " + target);`,
+			true,
+		],
+		[
+			"protected table text without provenance or a mutation surface",
+			`const table = "approval_workflow";
+const description = table + " rows";`,
+			false,
+		],
+		[
+			"a database-service label query",
+			`import { DatabaseService } from "@/lib/effect/services/database.service";
+const operation = "del" + "ete";
+const target = "appro" + "val_request";
+dbService.query(operation + " from " + target, loadRows);`,
+			true,
+		],
+		[
+			"an unrelated query beside a Drizzle SQL import",
+			`import { sql } from "drizzle-orm";
+const operation = "del" + "ete";
+const target = "appro" + "val_request";
+client.query(operation + " from " + target);`,
+			true,
+		],
+	] as const)(
+		"keeps semantic findings exact for %s",
+		(_name, source, admitted) => {
+			withApprovalWriteTree(
+				{ "scripts/untrusted-raw-surface.ts": source },
+				(workspaceRoot) => {
+					const withNativeProgram = vi.spyOn(
+						nativeSourceAnalysis,
+						"withNativeProgram",
+					);
+					try {
+						expect(
+							scanApprovalWriteInventory({ roots: ["scripts"], workspaceRoot }),
+						).toEqual([]);
+						expect(withNativeProgram).toHaveBeenCalledTimes(admitted ? 1 : 0);
+					} finally {
+						withNativeProgram.mockRestore();
+					}
+				},
+			);
+		},
+	);
+
+	it.each(["js", "mjs", "cjs", "ts", "mts", "cts"] as const)(
+		"scans an unowned executable .%s production script",
+		(extension) => {
+			withApprovalWriteTree(
+				{ [`scripts/unowned.${extension}`]: WORKFLOW_INSERT },
+				(workspaceRoot) => {
+					expect(
+						scanApprovalWriteBoundary({ roots: ["scripts"], workspaceRoot }),
+					).toEqual([
+						expect.objectContaining({
+							kind: "mutation",
+							operation: "insert",
+							path: `scripts/unowned.${extension}`,
+							table: "approval_workflow",
+						}),
+					]);
+				},
+			);
+		},
+	);
 
 	it("allows only an exact normalized path, table, and operation entry", () => {
 		withApprovalWriteTree(
@@ -3180,18 +4060,21 @@ db.delete(approvalOutbox);`,
 			'import { approvalWorkflow } from "@/db";\nconst broken = (',
 		],
 		["table name", 'const table = "approval_workflow";\nconst broken = ('],
-	] as const)("does not prefilter a malformed plausible protected write by %s", (_name, source) => {
-		withApprovalWriteTree({ "src/plausible.ts": source }, (workspaceRoot) => {
-			expect(
-				scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot }),
-			).toEqual([
-				expect.objectContaining({
-					kind: "error",
-					path: "src/plausible.ts",
-				}),
-			]);
-		});
-	});
+	] as const)(
+		"does not prefilter a malformed plausible protected write by %s",
+		(_name, source) => {
+			withApprovalWriteTree({ "src/plausible.ts": source }, (workspaceRoot) => {
+				expect(
+					scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot }),
+				).toEqual([
+					expect.objectContaining({
+						kind: "error",
+						path: "src/plausible.ts",
+					}),
+				]);
+			});
+		},
+	);
 
 	it("fails closed when a production source cannot be read", () => {
 		withApprovalWriteTree(
@@ -3979,31 +4862,34 @@ db.delete(approvalOutbox);`,
 	it.each([
 		["renamed owner", "finalizeOrdinaryWorkPeriodTerminalWrong"],
 		["endpoint owner", "POST"],
-	] as const)("rejects an ordinary finalization from a %s", (_label, functionName) => {
-		const path =
-			functionName === "POST"
-				? "src/app/api/approvals/finalize/route.ts"
-				: "src/lib/approvals/server/work-period-approvals.ts";
-		withApprovalWriteTree(
-			{
-				[path]: `import { db, workPeriod } from "@/db";
+	] as const)(
+		"rejects an ordinary finalization from a %s",
+		(_label, functionName) => {
+			const path =
+				functionName === "POST"
+					? "src/app/api/approvals/finalize/route.ts"
+					: "src/lib/approvals/server/work-period-approvals.ts";
+			withApprovalWriteTree(
+				{
+					[path]: `import { db, workPeriod } from "@/db";
 export function ${functionName}() {
   return db.update(workPeriod).set({ approvalStatus: "approved", pendingChanges: null });
 }`,
-			},
-			(workspaceRoot) => {
-				expect(
-					scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot }),
-				).toEqual([
-					expect.objectContaining({
-						functionName,
-						path,
-						table: "work_period",
-					}),
-				]);
-			},
-		);
-	});
+				},
+				(workspaceRoot) => {
+					expect(
+						scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot }),
+					).toEqual([
+						expect.objectContaining({
+							functionName,
+							path,
+							table: "work_period",
+						}),
+					]);
+				},
+			);
+		},
+	);
 
 	it("rejects a dynamic payload and a new bypass file while allowing the exact finalizer", () => {
 		const ownerPath = "src/lib/approvals/server/work-period-approvals.ts";

@@ -6,6 +6,21 @@ const WORKFLOW_FILE_NAME =
 	"/repo/apps/webapp/src/lib/approvals/workflow/fixture.ts";
 
 describe("analyzeApprovalWorkflowEventMutations", () => {
+	it("does not retain source or provenance when analyzing the same file again", () => {
+		const protectedSource = `import { approvalWorkflowEvent, db } from "@/db";
+db.delete(approvalWorkflowEvent);`;
+		const harmlessSource = `const approvalWorkflowEvent = localTable;
+const db = formatter;
+db.delete(approvalWorkflowEvent);`;
+
+		expect(
+			analyzeApprovalWorkflowEventMutations(protectedSource, FILE_NAME),
+		).toHaveLength(1);
+		expect(
+			analyzeApprovalWorkflowEventMutations(harmlessSource, FILE_NAME),
+		).toEqual([]);
+	});
+
 	it("rejects malformed source before returning a partial violation result", () => {
 		const source = `import { approvalWorkflowEvent, db } from "@/db";
 db.delete(approvalWorkflowEvent);
@@ -31,6 +46,23 @@ import { db } from "../../../db";
 db.delete(approvalWorkflowEvent);`;
 		const fileName =
 			"C:\\repo\\apps\\webapp\\src\\lib\\approvals\\workflow\\fixture.ts";
+
+		expect(analyzeApprovalWorkflowEventMutations(source, fileName)).toEqual([
+			{
+				column: 1,
+				fileName,
+				kind: "drizzle_delete",
+				line: 3,
+			},
+		]);
+	});
+
+	it("canonicalizes Windows dot segments before resolving relative DB imports", () => {
+		const source = `import { approvalWorkflowEvent } from "../../../db/schema/approval-workflow";
+import { db } from "../../../db";
+db.delete(approvalWorkflowEvent);`;
+		const fileName =
+			"C:\\repo\\apps\\webapp\\src\\junk\\..\\lib\\approvals\\workflow\\fixture.ts";
 
 		expect(analyzeApprovalWorkflowEventMutations(source, fileName)).toEqual([
 			{
@@ -476,16 +508,19 @@ client.query("delete from approval_workflow_event");`,
 declare const client: pg.Client;
 client.query("delete from approval_workflow_event");`,
 		],
-	] as const)("tracks a trusted pg Client receiver from %s", (_name, source) => {
-		expect(analyzeApprovalWorkflowEventMutations(source, FILE_NAME)).toEqual([
-			{
-				column: 1,
-				fileName: FILE_NAME,
-				kind: "raw_sql_delete",
-				line: 3,
-			},
-		]);
-	});
+	] as const)(
+		"tracks a trusted pg Client receiver from %s",
+		(_name, source) => {
+			expect(analyzeApprovalWorkflowEventMutations(source, FILE_NAME)).toEqual([
+				{
+					column: 1,
+					fileName: FILE_NAME,
+					kind: "raw_sql_delete",
+					line: 3,
+				},
+			]);
+		},
+	);
 
 	it("does not trust pg Client names from unrelated sources", () => {
 		const source = `import { Client } from "unrelated-pg";
@@ -515,16 +550,19 @@ import { approvalWorkflowEvent } from "@/db";
 const database = nodePg.drizzle(client);
 database.delete(approvalWorkflowEvent);`,
 		],
-	] as const)("tracks a locally constructed Drizzle receiver from a trusted %s", (_name, source) => {
-		expect(analyzeApprovalWorkflowEventMutations(source, FILE_NAME)).toEqual([
-			{
-				column: 1,
-				fileName: FILE_NAME,
-				kind: "drizzle_delete",
-				line: 4,
-			},
-		]);
-	});
+	] as const)(
+		"tracks a locally constructed Drizzle receiver from a trusted %s",
+		(_name, source) => {
+			expect(analyzeApprovalWorkflowEventMutations(source, FILE_NAME)).toEqual([
+				{
+					column: 1,
+					fileName: FILE_NAME,
+					kind: "drizzle_delete",
+					line: 4,
+				},
+			]);
+		},
+	);
 
 	it("does not trust local or unrelated drizzle factories", () => {
 		const source = `import { drizzle as importedDrizzle } from "unrelated-drizzle";
@@ -546,8 +584,10 @@ namespaceDatabase.delete(approvalWorkflowEvent);`;
 	it.each([
 		["relative", "./ports"],
 		["alias", "@/lib/approvals/workflow/ports"],
-	] as const)("recognizes aliased workflow DB types from an approved %s module", (_name, moduleName) => {
-		const source = `import type {
+	] as const)(
+		"recognizes aliased workflow DB types from an approved %s module",
+		(_name, moduleName) => {
+			const source = `import type {
 	ApprovalDbService as WorkflowDbService,
 	ApprovalTransactionClient as Transaction,
 } from "${moduleName}";
@@ -556,29 +596,29 @@ declare const transaction: Transaction;
 service.db.execute("delete from approval_workflow_event");
 transaction.execute("update approval_workflow_event set version = 2");`;
 
-		expect(
-			analyzeApprovalWorkflowEventMutations(source, WORKFLOW_FILE_NAME),
-		).toEqual([
-			{
-				column: 1,
-				fileName: WORKFLOW_FILE_NAME,
-				kind: "raw_sql_delete",
-				line: 7,
-			},
-			{
-				column: 1,
-				fileName: WORKFLOW_FILE_NAME,
-				kind: "raw_sql_update",
-				line: 8,
-			},
-		]);
-	});
+			expect(
+				analyzeApprovalWorkflowEventMutations(source, WORKFLOW_FILE_NAME),
+			).toEqual([
+				{
+					column: 1,
+					fileName: WORKFLOW_FILE_NAME,
+					kind: "raw_sql_delete",
+					line: 7,
+				},
+				{
+					column: 1,
+					fileName: WORKFLOW_FILE_NAME,
+					kind: "raw_sql_update",
+					line: 8,
+				},
+			]);
+		},
+	);
 
-	it.each([
-		"workflow-ports-lookalike",
-		"@/lib/approvals/other/ports",
-	] as const)("does not trust workflow DB type names from unrelated module %s", (moduleName) => {
-		const source = `import type {
+	it.each(["workflow-ports-lookalike", "@/lib/approvals/other/ports"] as const)(
+		"does not trust workflow DB type names from unrelated module %s",
+		(moduleName) => {
+			const source = `import type {
 	ApprovalDbService,
 	ApprovalTransactionClient,
 } from "${moduleName}";
@@ -587,10 +627,11 @@ declare const transaction: ApprovalTransactionClient;
 service.db.execute("delete from approval_workflow_event");
 transaction.execute("update approval_workflow_event set version = 2");`;
 
-		expect(
-			analyzeApprovalWorkflowEventMutations(source, WORKFLOW_FILE_NAME),
-		).toEqual([]);
-	});
+			expect(
+				analyzeApprovalWorkflowEventMutations(source, WORKFLOW_FILE_NAME),
+			).toEqual([]);
+		},
+	);
 
 	it("does not trust an unrelated query or execute receiver", () => {
 		const source = `declare const runner: {

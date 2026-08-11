@@ -145,18 +145,18 @@ test("docs runtime Dockerfile starts Next.js on the Kubernetes service port", as
 	assert.match(contents, /CMD \["node", "node_modules\/next\/dist\/bin\/next", "start", "-p", "3001"\]/);
 });
 
-test("docs uses a TypeScript version compatible with its Next.js build", async () => {
+test("docs uses TypeScript 7 supported by its Next.js build", async () => {
 	const packageJson = JSON.parse(
 		await fs.readFile(new URL("../../apps/docs/package.json", import.meta.url), "utf8"),
 	);
 
 	assert.ok(
-		Number.parseInt(packageJson.devDependencies.typescript.replace(/^[~^]/, ""), 10) < 7,
-		"Next.js 16.2 resolves typescript/lib/typescript.js, which TypeScript 7 no longer ships",
+		Number.parseInt(packageJson.devDependencies.typescript.replace(/^[~^]/, ""), 10) >= 7,
+		"Next.js 16.3 supports TypeScript 7",
 	);
 });
 
-test("marketing and webapp use TypeScript versions compatible with their Next.js builds", async () => {
+test("marketing and webapp use TypeScript 7 supported by their Next.js builds", async () => {
 	for (const app of ["marketing", "webapp"]) {
 		const packageJson = JSON.parse(
 			await fs.readFile(new URL(`../../apps/${app}/package.json`, import.meta.url), "utf8"),
@@ -164,8 +164,8 @@ test("marketing and webapp use TypeScript versions compatible with their Next.js
 		const typescript = packageJson.dependencies.typescript ?? packageJson.devDependencies.typescript;
 
 		assert.ok(
-			Number.parseInt(typescript.replace(/^[~^]/, ""), 10) < 7,
-			`${app} must use TypeScript 6.x until its Next.js version supports TypeScript 7`,
+			Number.parseInt(typescript.replace(/^[~^]/, ""), 10) >= 7,
+			`${app} must use TypeScript 7 with Next.js 16.3`,
 		);
 	}
 });

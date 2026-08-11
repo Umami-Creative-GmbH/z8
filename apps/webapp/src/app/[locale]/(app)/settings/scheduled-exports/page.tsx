@@ -1,4 +1,3 @@
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { ScheduledExportsTable } from "@/components/settings/scheduled-exports/scheduled-exports-table";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -12,26 +11,29 @@ import {
 
 export const metadata = {
 	title: "Scheduled Exports",
-	description: "Configure recurring exports for payroll, data, and audit reports",
+	description:
+		"Configure recurring exports for payroll, data, and audit reports",
 };
 
 async function ScheduledExportsContent() {
-	const [, { organizationId }] = await Promise.all([
-		connection(), // Mark as fully dynamic
-		requireOrgAdminSettingsAccess(),
-	]);
+	const { organizationId } = await requireOrgAdminSettingsAccess();
 
 	// Fetch initial data in parallel after the org access guard supplies organizationId.
 	// eslint-disable-next-line react-doctor/server-sequential-independent-await
-	const [schedulesResult, filterOptionsResult, payrollConfigsResult] = await Promise.all([
-		getScheduledExportsAction(organizationId),
-		getFilterOptionsAction(organizationId),
-		getPayrollConfigsAction(organizationId),
-	]);
+	const [schedulesResult, filterOptionsResult, payrollConfigsResult] =
+		await Promise.all([
+			getScheduledExportsAction(organizationId),
+			getFilterOptionsAction(organizationId),
+			getPayrollConfigsAction(organizationId),
+		]);
 
 	const schedules = schedulesResult.success ? schedulesResult.data : [];
-	const filterOptions = filterOptionsResult.success ? filterOptionsResult.data : null;
-	const payrollConfigs = payrollConfigsResult.success ? payrollConfigsResult.data : [];
+	const filterOptions = filterOptionsResult.success
+		? filterOptionsResult.data
+		: null;
+	const payrollConfigs = payrollConfigsResult.success
+		? payrollConfigsResult.data
+		: [];
 
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
@@ -47,21 +49,25 @@ async function ScheduledExportsContent() {
 
 function ScheduledExportsLoading() {
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div
+			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
+			role="status"
+			aria-label="Loading scheduled exports"
+		>
 			<div className="space-y-2">
-				<Skeleton className="h-8 w-48" />
-				<Skeleton className="h-4 w-96" />
+				<Skeleton aria-hidden="true" className="h-8 w-48" />
+				<Skeleton aria-hidden="true" className="h-4 w-96" />
 			</div>
 			<Card>
 				<CardHeader>
-					<Skeleton className="h-6 w-48" />
-					<Skeleton className="h-4 w-72" />
+					<Skeleton aria-hidden="true" className="h-6 w-48" />
+					<Skeleton aria-hidden="true" className="h-4 w-72" />
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-4">
-						<Skeleton className="h-10 w-full" />
-						<Skeleton className="h-10 w-full" />
-						<Skeleton className="h-10 w-full" />
+						<Skeleton aria-hidden="true" className="h-10 w-full" />
+						<Skeleton aria-hidden="true" className="h-10 w-full" />
+						<Skeleton aria-hidden="true" className="h-10 w-full" />
 					</div>
 				</CardContent>
 			</Card>

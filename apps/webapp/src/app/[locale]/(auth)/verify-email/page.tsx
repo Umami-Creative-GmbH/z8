@@ -13,6 +13,7 @@ import {
 import { getPendingInvitation } from "@/app/[locale]/(auth)/invitation-actions";
 import { processPendingInviteCode } from "@/app/[locale]/(auth)/invite-code-actions";
 import { AuthFormWrapper } from "@/components/auth-form-wrapper";
+import { AuthContentLoading } from "@/components/shells/auth-content-loading";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { Link, useRouter } from "@/navigation";
@@ -261,7 +262,7 @@ function VerifyEmailTokenContent({
 
 export default function VerifyEmailPage() {
 	return (
-		<Suspense fallback={null}>
+		<Suspense fallback={<AuthContentLoading />}>
 			<VerifyEmailContent />
 		</Suspense>
 	);

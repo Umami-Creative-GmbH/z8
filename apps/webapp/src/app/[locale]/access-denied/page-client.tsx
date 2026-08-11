@@ -3,8 +3,15 @@
 import { IconLock, IconLogout } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Suspense, use } from "react";
+import { AuthContentLoading } from "@/components/shells/auth-content-loading";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "@/navigation";
 
@@ -14,7 +21,22 @@ const appTypeLabels: Record<string, string> = {
 	mobile: "mobile application",
 };
 
-function AccessDeniedContent({ searchParams }: { searchParams: Promise<{ app?: string }> }) {
+function AccessDeniedLoading() {
+	return (
+		<div
+			className="flex min-h-screen items-center justify-center bg-background p-4"
+			data-testid="access-denied-loading"
+		>
+			<AuthContentLoading />
+		</div>
+	);
+}
+
+function AccessDeniedContent({
+	searchParams,
+}: {
+	searchParams: Promise<{ app?: string }>;
+}) {
 	const params = use(searchParams);
 	const { t } = useTranslate();
 	const { push } = useRouter();
@@ -61,9 +83,11 @@ function AccessDeniedContent({ searchParams }: { searchParams: Promise<{ app?: s
 	);
 }
 
-export default function AccessDeniedPage(props: { searchParams: Promise<{ app?: string }> }) {
+export default function AccessDeniedPage(props: {
+	searchParams: Promise<{ app?: string }>;
+}) {
 	return (
-		<Suspense fallback={null}>
+		<Suspense fallback={<AccessDeniedLoading />}>
 			<AccessDeniedContent {...props} />
 		</Suspense>
 	);

@@ -28,6 +28,7 @@
     "inboxErrorDescription": "Failed to fetch approvals",
     "inboxErrorTitle": "Unable to load approval inbox",
     "loadError": "Failed to load approvals",
+    "loadingInbox": "Loading approval inbox",
     "noAbsenceApprovals": "No pending absence requests to review.",
     "noRequests": "No pending requests",
     "noRequestsDescription": "New approval requests will appear here when they need manager review.",

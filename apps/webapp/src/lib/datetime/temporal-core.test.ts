@@ -2,6 +2,7 @@ import { Temporal } from "temporal-polyfill";
 import { describe, expect, it, vi } from "vitest";
 import {
 	type Clock,
+	calendarYearAt,
 	compareInstants,
 	comparePlainDates,
 	dateFromInstant,
@@ -14,6 +15,26 @@ import {
 } from "./temporal-core";
 
 describe("temporal core", () => {
+	it.each([
+		{
+			instant: "2025-12-31T10:30:00Z",
+			timezone: "Pacific/Kiritimati",
+			expectedYear: 2026,
+		},
+		{
+			instant: "2026-01-01T00:30:00Z",
+			timezone: "America/Los_Angeles",
+			expectedYear: 2025,
+		},
+	])(
+		"resolves $instant to organization calendar year $expectedYear in $timezone",
+		({ instant, timezone, expectedYear }) => {
+			expect(calendarYearAt(parseInstant(instant), timezone)).toBe(
+				expectedYear,
+			);
+		},
+	);
+
 	it("parses fixed UTC instants", () => {
 		const instant = parseInstant("2024-01-15T10:30:00.123Z");
 

@@ -1,5 +1,7 @@
-import ts from "typescript";
+import * as ts from "typescript/unstable/ast";
+import type { Checker } from "typescript/unstable/sync";
 import { describe, expect, it } from "vitest";
+import { withNativeProgram } from "@/lib/typescript/native-source-analysis";
 import {
 	ApprovalWorkflowEventAnalysisLimitError,
 	evaluateConstantSql,
@@ -7,7 +9,7 @@ import {
 } from "./event-append-only-sql";
 
 interface EvaluatorFixtureContext {
-	checker: ts.TypeChecker;
+	checker: Checker;
 	resultExpression: ts.Expression;
 	sourceFiles: ReadonlyMap<string, ts.SourceFile>;
 }
@@ -27,59 +29,42 @@ function evaluateFixture(
 		[fileName, source],
 		...Object.entries(options.additionalFiles ?? {}),
 	]);
-	const sourceFiles = new Map(
-		[...sources].map(([candidate, contents]) => [
-			candidate,
-			ts.createSourceFile(
-				candidate,
-				contents,
-				ts.ScriptTarget.Latest,
-				true,
-				ts.ScriptKind.TS,
-			),
-		]),
+	return withNativeProgram(
+		sources,
+		fileName,
+		({ checker, program, sourceFile }) => {
+			const sourceFiles = new Map<string, ts.SourceFile>();
+			for (const candidate of program.getSourceFileNames()) {
+				const candidateSourceFile = program.getSourceFile(candidate);
+				if (candidateSourceFile) {
+					sourceFiles.set(candidate, candidateSourceFile);
+				}
+			}
+			let resultExpression: ts.Expression | undefined;
+			const visit = (node: ts.Node): void => {
+				if (
+					ts.isVariableDeclaration(node) &&
+					ts.isIdentifier(node.name) &&
+					node.name.text === "result"
+				) {
+					resultExpression = node.initializer;
+				}
+				node.forEachChild(visit);
+			};
+			visit(sourceFile);
+			if (!resultExpression)
+				throw new Error("Fixture must declare const result");
+			options.prepare?.({ checker, resultExpression, sourceFiles });
+			let result: string | null = null;
+			for (let count = 0; count < (options.evaluationCount ?? 1); count += 1) {
+				result = evaluateConstantSql(resultExpression, {
+					checker,
+					usePosition: resultExpression.getStart(sourceFile),
+				});
+			}
+			return result;
+		},
 	);
-	const sourceFile = sourceFiles.get(fileName);
-	if (!sourceFile) throw new Error("Fixture entry file was not created");
-	const compilerOptions: ts.CompilerOptions = {
-		noLib: true,
-		target: ts.ScriptTarget.Latest,
-	};
-	const host: ts.CompilerHost = {
-		fileExists: (candidate) => sources.has(candidate),
-		getCanonicalFileName: (candidate) => candidate,
-		getCurrentDirectory: () => "/",
-		getDefaultLibFileName: () => "lib.d.ts",
-		getNewLine: () => "\n",
-		getSourceFile: (candidate) => sourceFiles.get(candidate),
-		readFile: (candidate) => sources.get(candidate),
-		useCaseSensitiveFileNames: () => true,
-		writeFile: () => undefined,
-	};
-	const program = ts.createProgram([...sources.keys()], compilerOptions, host);
-	const checker = program.getTypeChecker();
-	let resultExpression: ts.Expression | undefined;
-	const visit = (node: ts.Node): void => {
-		if (
-			ts.isVariableDeclaration(node) &&
-			ts.isIdentifier(node.name) &&
-			node.name.text === "result"
-		) {
-			resultExpression = node.initializer;
-		}
-		ts.forEachChild(node, visit);
-	};
-	visit(sourceFile);
-	if (!resultExpression) throw new Error("Fixture must declare const result");
-	options.prepare?.({ checker, resultExpression, sourceFiles });
-	let result: string | null = null;
-	for (let count = 0; count < (options.evaluationCount ?? 1); count += 1) {
-		result = evaluateConstantSql(resultExpression, {
-			checker,
-			usePosition: resultExpression.getStart(sourceFile),
-		});
-	}
-	return result;
 }
 
 function expectAnalysisLimit(
@@ -289,9 +274,12 @@ describe("findEventTableSqlMutations", () => {
 		String.raw`UPDATE U&"broken\".approval_workflow_event SET version = 2`,
 		String.raw`UPDATE U&"\D83D".approval_workflow_event SET version = 2`,
 		String.raw`UPDATE U&"approval_workflow_\006Gvent" SET version = 2`,
-	] as const)("rejects a malformed Unicode quoted identifier: %s", (sqlText) => {
-		expect(findEventTableSqlMutations(sqlText)).toEqual([]);
-	});
+	] as const)(
+		"rejects a malformed Unicode quoted identifier: %s",
+		(sqlText) => {
+			expect(findEventTableSqlMutations(sqlText)).toEqual([]);
+		},
+	);
 
 	it.each([
 		[
@@ -367,9 +355,12 @@ DELETE FROM approval_workflow_event WHERE id IN (SELECT id FROM changed);
 			"EXPLAIN (ANALYZE 0) UPDATE approval_workflow_event SET version = 2",
 			[],
 		],
-	] as const)("classifies %s by whether EXPLAIN executes", (_name, sqlText, expected) => {
-		expect(findEventTableSqlMutations(sqlText)).toEqual(expected);
-	});
+	] as const)(
+		"classifies %s by whether EXPLAIN executes",
+		(_name, sqlText, expected) => {
+			expect(findEventTableSqlMutations(sqlText)).toEqual(expected);
+		},
+	);
 
 	it("parses SEARCH and CYCLE suffixes before the final WITH command", () => {
 		expect(
@@ -486,17 +477,24 @@ const result = alias;
 	it("rejects an identifier declared in another source file", () => {
 		expect(
 			evaluateFixture(
-				`const padding = "make the use position exceed the other initializer";
+				`import { sql } from "./shared";
+const padding = "make the use position exceed the other initializer";
 const result = sql;`,
 				{
 					additionalFiles: {
-						"/shared.ts": 'const sql = "update approval_workflow_event";',
+						"/shared.ts":
+							'export const sql = "update approval_workflow_event";',
 					},
 					prepare: ({ checker, resultExpression }) => {
 						const symbol = checker.getSymbolAtLocation(resultExpression);
-						expect(symbol?.declarations?.[0]?.getSourceFile().fileName).toBe(
-							"/shared.ts",
-						);
+						const aliasedSymbol =
+							symbol === undefined
+								? undefined
+								: checker.getAliasedSymbol(symbol);
+						expect(
+							aliasedSymbol?.declarations[0]?.resolve()?.getSourceFile()
+								.fileName,
+						).toBe("/shared.ts");
 					},
 				},
 			),
@@ -511,7 +509,7 @@ const result = sql;`,
 					prepare: ({ checker, resultExpression }) => {
 						const symbol = checker.getSymbolAtLocation(resultExpression);
 						expect(symbol?.declarations).toHaveLength(2);
-						const declaration = symbol?.declarations?.[0];
+						const declaration = symbol?.declarations[0]?.resolve();
 						if (
 							!declaration ||
 							!ts.isVariableDeclaration(declaration) ||
@@ -519,7 +517,9 @@ const result = sql;`,
 						) {
 							throw new Error("Expected a merged variable symbol");
 						}
-						declaration.parent.flags |= ts.NodeFlags.Const;
+						Object.defineProperty(declaration.parent, "flags", {
+							value: declaration.parent.flags | ts.NodeFlags.Const,
+						});
 					},
 				},
 			),
@@ -531,7 +531,7 @@ const result = sql;`,
 			evaluateFixture("const sql: string; const result = sql;", {
 				prepare: ({ checker, resultExpression }) => {
 					const symbol = checker.getSymbolAtLocation(resultExpression);
-					const declaration = symbol?.declarations?.[0];
+					const declaration = symbol?.declarations[0]?.resolve();
 					expect(
 						declaration && ts.isVariableDeclaration(declaration)
 							? declaration.initializer
@@ -574,9 +574,12 @@ const result = sql;`,
 const sql = "update approval_workflow_event set version = 2";
 [sql] = source;
 const result = sql;`,
-	] as const)("rejects real destructuring assignment-target writes", (source) => {
-		expect(evaluateFixture(source)).toBeNull();
-	});
+	] as const)(
+		"rejects real destructuring assignment-target writes",
+		(source) => {
+			expect(evaluateFixture(source)).toBeNull();
+		},
+	);
 
 	it("rejects an alias cycle after both declarations pass ordering checks", () => {
 		let orderingChecks = 0;
@@ -606,7 +609,7 @@ const result = sql;`,
 									},
 								});
 							}
-							ts.forEachChild(node, visit);
+							node.forEachChild(visit);
 						};
 						visit(sourceFile);
 					},
@@ -640,32 +643,32 @@ const result = "update " + dynamicSql;
 		).toBeNull();
 	});
 
-	it.each([
-		"sql++",
-		"++sql",
-	] as const)("rejects prefix and postfix writes: %s", (write) => {
-		expect(
-			evaluateFixture(`
+	it.each(["sql++", "++sql"] as const)(
+		"rejects prefix and postfix writes: %s",
+		(write) => {
+			expect(
+				evaluateFixture(`
 const sql = "update approval_workflow_event set version = 2";
 ${write};
 const result = sql;
 `),
-		).toBeNull();
-	});
+			).toBeNull();
+		},
+	);
 
-	it.each([
-		"for (sql in source) {}",
-		"for (sql of source) {}",
-	] as const)("rejects for-in/of assignment-target writes: %s", (loop) => {
-		expect(
-			evaluateFixture(`
+	it.each(["for (sql in source) {}", "for (sql of source) {}"] as const)(
+		"rejects for-in/of assignment-target writes: %s",
+		(loop) => {
+			expect(
+				evaluateFixture(`
 declare const source: any;
 const sql = "delete from approval_workflow_event";
 ${loop}
 const result = sql;
 `),
-		).toBeNull();
-	});
+			).toBeNull();
+		},
+	);
 
 	it("builds the write-symbol index once per source file and checker", () => {
 		let assignmentTargetLookups = 0;

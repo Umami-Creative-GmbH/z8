@@ -1,14 +1,17 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useTranslate } from "@tolgee/react";
+import { useEffect, useEffectEvent } from "react";
+import { toast } from "sonner";
 import {
 	shouldCheckDeploymentVersion,
-	shouldReloadForBuildHash,
+	shouldPromptForBuildHash,
 } from "./deployment-refresh-checker-utils";
 
-export const CHECK_INTERVAL_MS = 5 * 60 * 1000;
-const IDLE_THRESHOLD_MS = CHECK_INTERVAL_MS;
+export const CHECK_COOLDOWN_MS = 6 * 60 * 60 * 1000;
+
+const APP_VERSION_QUERY_KEY = ["app-version"] as const;
 
 type AppVersionResponse = {
 	buildHash?: unknown;
@@ -18,85 +21,107 @@ type DeploymentRefreshCheckerProps = {
 	clientBuildHash: string;
 };
 
-async function fetchAppVersion() {
-	const response = await fetch("/api/app-version", {
-		cache: "no-store",
-		headers: { accept: "application/json" },
-	});
+async function fetchAppVersion(
+	signal: AbortSignal,
+): Promise<AppVersionResponse | null> {
+	try {
+		const response = await fetch("/api/app-version", {
+			cache: "no-store",
+			headers: { accept: "application/json" },
+			signal,
+		});
+		if (!response.ok) return null;
 
-	if (!response.ok) return null;
-
-	return (await response.json()) as AppVersionResponse;
+		return (await response.json()) as AppVersionResponse;
+	} catch {
+		return null;
+	}
 }
 
-export function DeploymentRefreshChecker({ clientBuildHash }: DeploymentRefreshCheckerProps) {
-	const lastActivityAtRef = useRef(0);
-	const mountedRef = useRef(true);
-	const reloadStartedRef = useRef(false);
-
-	useQuery({
-		queryKey: ["app-version", clientBuildHash],
-		queryFn: async () => {
-			if (
-				reloadStartedRef.current ||
-				!shouldCheckDeploymentVersion({
-					idleThresholdMs: IDLE_THRESHOLD_MS,
-					isDocumentHidden: document.hidden,
-					lastActivityAt: lastActivityAtRef.current,
-					now: Date.now(),
-				})
-			) {
-				return null;
-			}
-
-			const appVersion = await fetchAppVersion();
-			if (!clientBuildHash || !appVersion || !mountedRef.current || reloadStartedRef.current) return appVersion;
-
-			const serverBuildHash =
-				typeof appVersion.buildHash === "string" && appVersion.buildHash.length > 0
-					? appVersion.buildHash
-					: null;
-
-			if (shouldReloadForBuildHash(clientBuildHash, serverBuildHash)) {
-				reloadStartedRef.current = true;
-				window.location.reload();
-			}
-
-			return appVersion;
-		},
-		enabled: Boolean(clientBuildHash),
-		initialData: null,
-		initialDataUpdatedAt: () => Date.now(),
-		refetchInterval: CHECK_INTERVAL_MS,
-		refetchIntervalInBackground: true,
+export function DeploymentRefreshChecker({
+	clientBuildHash,
+}: DeploymentRefreshCheckerProps) {
+	const { t } = useTranslate();
+	const { refetch: refetchAppVersion } = useQuery({
+		queryKey: APP_VERSION_QUERY_KEY,
+		queryFn: ({ signal }) => fetchAppVersion(signal),
+		enabled: false,
 		retry: false,
-		staleTime: CHECK_INTERVAL_MS,
+		staleTime: 0,
+	});
+	const getCurrentClientBuildHash = useEffectEvent(() => clientBuildHash);
+	const getCurrentTranslator = useEffectEvent(() => t);
+	const getCurrentAppVersion = useEffectEvent(async () => {
+		const { data } = await refetchAppVersion({ cancelRefetch: false });
+		return data ?? null;
 	});
 
 	useEffect(() => {
-		mountedRef.current = true;
-		lastActivityAtRef.current = Date.now();
+		let mounted = true;
+		let promptShown = false;
+		let toastId: string | number | undefined;
+		let lastCheckStartedAt = Date.now();
 
-		const recordActivity = () => {
-			lastActivityAtRef.current = Date.now();
+		const checkDeploymentVersion = async () => {
+			const now = Date.now();
+			const currentClientBuildHash = getCurrentClientBuildHash();
+			if (
+				!currentClientBuildHash ||
+				promptShown ||
+				!shouldCheckDeploymentVersion({
+					checkCooldownMs: CHECK_COOLDOWN_MS,
+					isDocumentHidden: document.hidden,
+					lastCheckStartedAt,
+					now,
+				})
+			) {
+				return;
+			}
+
+			lastCheckStartedAt = now;
+			const appVersion = await getCurrentAppVersion();
+			if (!appVersion || !mounted || promptShown) return;
+
+			const latestClientBuildHash = getCurrentClientBuildHash();
+			const serverBuildHash =
+				typeof appVersion.buildHash === "string" &&
+				appVersion.buildHash.length > 0
+					? appVersion.buildHash
+					: null;
+			if (!shouldPromptForBuildHash(latestClientBuildHash, serverBuildHash))
+				return;
+
+			promptShown = true;
+			const currentT = getCurrentTranslator();
+			toastId = toast(currentT("common.sw.update.title", "Update available"), {
+				description: currentT(
+					"common.sw.update.description",
+					"A new version is ready. Reload to update.",
+				),
+				duration: Infinity,
+				action: {
+					label: currentT("common.sw.update.reload", "Reload"),
+					onClick: () => window.location.reload(),
+				},
+				cancel: {
+					label: currentT("common.sw.update.later", "Later"),
+					onClick: () => {},
+				},
+			});
 		};
 
-		window.addEventListener("focus", recordActivity, { passive: true });
-		window.addEventListener("keydown", recordActivity, { passive: true });
-		window.addEventListener("mousedown", recordActivity, { passive: true });
-		window.addEventListener("pointerdown", recordActivity, { passive: true });
-		window.addEventListener("touchstart", recordActivity, { passive: true });
-		window.addEventListener("wheel", recordActivity, { passive: true });
+		const handleForegroundEvent = () => {
+			void checkDeploymentVersion();
+		};
+
+		document.addEventListener("visibilitychange", handleForegroundEvent);
+		window.addEventListener("focus", handleForegroundEvent);
 
 		return () => {
-			mountedRef.current = false;
-
-			window.removeEventListener("focus", recordActivity);
-			window.removeEventListener("keydown", recordActivity);
-			window.removeEventListener("mousedown", recordActivity);
-			window.removeEventListener("pointerdown", recordActivity);
-			window.removeEventListener("touchstart", recordActivity);
-			window.removeEventListener("wheel", recordActivity);
+			mounted = false;
+			document.removeEventListener("visibilitychange", handleForegroundEvent);
+			window.removeEventListener("focus", handleForegroundEvent);
+			if (toastId !== undefined) toast.dismiss(toastId);
 		};
 	}, []);
 

@@ -9,6 +9,7 @@ import { normalizePronouns } from "@/lib/employee-identity";
 import { ContractTypeCell } from "./contract-type-cell";
 import type { EmployeeDirectoryRow } from "./employee-action-types";
 import { EmployeeHeader } from "./employee-header";
+import type { EmployeeTableFeatures } from "./employee-table-features";
 import { StatusCell } from "./status-cell";
 import { TranslatedColumnHeader } from "./translated-column-header";
 import { ViewDetailsCell } from "./view-details-cell";
@@ -27,7 +28,10 @@ export function createEmployeeColumns({
 	currentMemberRole,
 	onOptimisticStatusChange,
 	onRemoved,
-}: CreateEmployeeColumnsOptions): ColumnDef<EmployeeDirectoryRow>[] {
+}: CreateEmployeeColumnsOptions): ColumnDef<
+	EmployeeTableFeatures,
+	EmployeeDirectoryRow
+>[] {
 	return [
 		{
 			id: "employeeName",

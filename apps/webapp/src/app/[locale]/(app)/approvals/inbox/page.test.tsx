@@ -1,6 +1,13 @@
 /* @vitest-environment jsdom */
 
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
+import { isValidElement } from "react";
 import { hydrateRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -19,6 +26,7 @@ const {
 	refetchMock,
 	toastErrorMock,
 	toastSuccessMock,
+	translateMock,
 } = vi.hoisted(() => ({
 	approvalInboxMock: vi.fn(),
 	bulkApproveMutateAsyncMock: vi.fn(),
@@ -28,11 +36,12 @@ const {
 	refetchMock: vi.fn(),
 	toastErrorMock: vi.fn(),
 	toastSuccessMock: vi.fn(),
+	translateMock: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, defaultValue?: string) => defaultValue ?? _key,
+		t: translateMock,
 	}),
 }));
 
@@ -62,7 +71,10 @@ vi.mock("./components/approval-inbox-toolbar", () => ({
 			<button type="button" onClick={() => onSelectAll(true)}>
 				Select All
 			</button>
-			<button type="button" onClick={() => onFiltersChange({ ...filters, search: "avery" })}>
+			<button
+				type="button"
+				onClick={() => onFiltersChange({ ...filters, search: "avery" })}
+			>
 				Search Avery
 			</button>
 			{supportedTypes.map((type) => (
@@ -122,27 +134,48 @@ vi.mock("./components/approval-fast-lanes", () => ({
 }));
 
 vi.mock("@/components/ui/button", () => ({
-	Button: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+	Button: ({
+		children,
+		...props
+	}: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
 		<button {...props}>{children}</button>
 	),
 }));
 
 vi.mock("@/components/ui/card", () => ({
 	Card: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	CardContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	CardDescription: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	CardHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	CardTitle: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	CardContent: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	CardDescription: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	CardHeader: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	CardTitle: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
 }));
 
 vi.mock("@/components/ui/dialog", () => ({
 	Dialog: ({ children, open }: { children: React.ReactNode; open: boolean }) =>
 		open ? <div>{children}</div> : null,
-	DialogContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	DialogDescription: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	DialogFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	DialogHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-	DialogTitle: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	DialogContent: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	DialogDescription: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	DialogFooter: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	DialogHeader: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	DialogTitle: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
 }));
 
 vi.mock("@/components/ui/skeleton", () => ({
@@ -150,7 +183,9 @@ vi.mock("@/components/ui/skeleton", () => ({
 }));
 
 vi.mock("@/components/ui/textarea", () => ({
-	Textarea: (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => <textarea {...props} />,
+	Textarea: (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
+		<textarea {...props} />
+	),
 }));
 
 vi.mock("@/lib/query/use-approval-inbox", () => ({
@@ -175,7 +210,9 @@ vi.mock("@/lib/query/use-approval-inbox", () => ({
 
 import ApprovalInboxPage from "./page";
 
-function makeApprovalInboxItem(overrides: Partial<ApprovalInboxItem> = {}): ApprovalInboxItem {
+function makeApprovalInboxItem(
+	overrides: Partial<ApprovalInboxItem> = {},
+): ApprovalInboxItem {
 	return {
 		id: "approval-1",
 		type: "absence_entry",
@@ -226,9 +263,12 @@ function makeApprovalInboxPage(
 		items,
 		total: items.length,
 		counts: {
-			absence_entry: items.filter((item) => item.type === "absence_entry").length,
+			absence_entry: items.filter((item) => item.type === "absence_entry")
+				.length,
 			time_entry: items.filter((item) => item.type === "time_entry").length,
-			travel_expense_claim: items.filter((item) => item.type === "travel_expense_claim").length,
+			travel_expense_claim: items.filter(
+				(item) => item.type === "travel_expense_claim",
+			).length,
 		},
 		supportedTypes: ["absence_entry", "time_entry", "travel_expense_claim"],
 		warnings: [],
@@ -241,6 +281,9 @@ function makeApprovalInboxPage(
 describe("ApprovalInboxPage", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		translateMock.mockImplementation(
+			(_key: string, defaultValue?: string) => defaultValue ?? _key,
+		);
 		approvalInboxMock.mockReturnValue({
 			data: {
 				pages: [makeApprovalInboxPage()],
@@ -261,6 +304,32 @@ describe("ApprovalInboxPage", () => {
 		});
 		approveMutateAsyncMock.mockResolvedValue({ success: true });
 		rejectMutateAsyncMock.mockResolvedValue({ success: true });
+	});
+
+	it("provides an accessible toolbar, table, and detail shell while URL state loads", () => {
+		translateMock.mockImplementation((key: string, defaultValue?: string) =>
+			key === "approvals:approvals.loadingInbox"
+				? "Posteingang wird geladen"
+				: (defaultValue ?? key),
+		);
+		const page = ApprovalInboxPage();
+		if (!isValidElement<{ fallback: React.ReactNode }>(page)) {
+			throw new Error("Expected ApprovalInboxPage to return a React element");
+		}
+
+		render(page.props.fallback);
+
+		expect(
+			screen.getByRole("status", { name: "Posteingang wird geladen" }),
+		).toBeTruthy();
+		expect(translateMock).toHaveBeenCalledWith(
+			"approvals:approvals.loadingInbox",
+			"Loading approval inbox",
+		);
+		expect(screen.getByTestId("approval-toolbar-loading")).toBeTruthy();
+		expect(screen.getByTestId("approval-table-loading")).toBeTruthy();
+		expect(screen.getByTestId("approval-detail-loading")).toBeTruthy();
+		expect(screen.queryByText(/avery|employee|request/i)).toBeNull();
 	});
 
 	it("renders new inbox contract content and supported type filters", () => {
@@ -298,7 +367,9 @@ describe("ApprovalInboxPage", () => {
 		expect(container.firstElementChild?.className).toContain(
 			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
 		);
-		expect(container.querySelectorAll(":scope > div > .px-4.lg\\:px-6")).toHaveLength(2);
+		expect(
+			container.querySelectorAll(":scope > div > .px-4.lg\\:px-6"),
+		).toHaveLength(2);
 	});
 
 	it("keeps the first hydrated render consistent when client query data is already cached", async () => {
@@ -336,7 +407,9 @@ describe("ApprovalInboxPage", () => {
 
 		try {
 			await act(async () => {
-				root = hydrateRoot(container, <ApprovalInboxPage />, { onRecoverableError });
+				root = hydrateRoot(container, <ApprovalInboxPage />, {
+					onRecoverableError,
+				});
 			});
 
 			await waitFor(() => {
@@ -350,7 +423,9 @@ describe("ApprovalInboxPage", () => {
 	});
 
 	it("shows a toast when bulk approve throws instead of leaving an uncaught rejection", async () => {
-		bulkApproveMutateAsyncMock.mockRejectedValue(new Error("Bulk approve failed"));
+		bulkApproveMutateAsyncMock.mockRejectedValue(
+			new Error("Bulk approve failed"),
+		);
 
 		render(<ApprovalInboxPage />);
 
@@ -361,12 +436,16 @@ describe("ApprovalInboxPage", () => {
 			expect(toastErrorMock).toHaveBeenCalledWith("Bulk approve failed");
 		});
 		expect(refetchMock).not.toHaveBeenCalled();
-		expect(screen.getByRole("button", { name: /Approve Selected/ })).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: /Approve Selected/ }),
+		).toBeTruthy();
 	});
 
 	it("handles bulk reject partial success through the page dialog flow", async () => {
 		bulkRejectMutateAsyncMock.mockResolvedValue({
-			succeeded: [{ id: "approval-1", type: "travel_expense_claim", status: "rejected" }],
+			succeeded: [
+				{ id: "approval-1", type: "travel_expense_claim", status: "rejected" },
+			],
 			failed: [{ id: "approval-2", code: "stale", message: "Already handled" }],
 		});
 
@@ -385,7 +464,9 @@ describe("ApprovalInboxPage", () => {
 				reason: "Missing receipt",
 			});
 			expect(toastSuccessMock).toHaveBeenCalledWith("1 request(s) rejected");
-			expect(toastErrorMock).toHaveBeenCalledWith("1 request(s) failed\nAlready handled");
+			expect(toastErrorMock).toHaveBeenCalledWith(
+				"1 request(s) failed\nAlready handled",
+			);
 		});
 		expect(refetchMock).toHaveBeenCalled();
 	});
@@ -452,7 +533,8 @@ describe("ApprovalInboxPage", () => {
 	});
 
 	it("bulk approve selected approvals ignores duplicate rapid submissions while in flight", async () => {
-		let resolveApproval: (value: { succeeded: []; failed: [] }) => void = () => undefined;
+		let resolveApproval: (value: { succeeded: []; failed: [] }) => void = () =>
+			undefined;
 		bulkApproveMutateAsyncMock.mockImplementation(
 			() =>
 				new Promise((resolve) => {
@@ -463,7 +545,9 @@ describe("ApprovalInboxPage", () => {
 		render(<ApprovalInboxPage />);
 
 		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
-		const approveButton = screen.getByRole("button", { name: /Approve Selected/ });
+		const approveButton = screen.getByRole("button", {
+			name: /Approve Selected/,
+		});
 		fireEvent.click(approveButton);
 		fireEvent.click(approveButton);
 
@@ -503,7 +587,9 @@ describe("ApprovalInboxPage", () => {
 		render(<ApprovalInboxPage />);
 
 		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
-		const approveButton = screen.getByRole("button", { name: /Approve Selected/ });
+		const approveButton = screen.getByRole("button", {
+			name: /Approve Selected/,
+		});
 		expect(approveButton).toHaveProperty("disabled", true);
 
 		fireEvent.click(approveButton);
@@ -592,7 +678,9 @@ describe("ApprovalInboxPage", () => {
 		render(<ApprovalInboxPage />);
 
 		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
-		const rejectButton = screen.getByRole("button", { name: /Reject Selected/ });
+		const rejectButton = screen.getByRole("button", {
+			name: /Reject Selected/,
+		});
 		expect(rejectButton).toHaveProperty("disabled", true);
 
 		fireEvent.click(rejectButton);
@@ -603,7 +691,9 @@ describe("ApprovalInboxPage", () => {
 
 	it("clears the full selection after a fast-lane approval succeeds", async () => {
 		bulkApproveMutateAsyncMock.mockResolvedValue({
-			succeeded: [{ id: "approval-1", type: "absence_entry", status: "approved" }],
+			succeeded: [
+				{ id: "approval-1", type: "absence_entry", status: "approved" },
+			],
 			failed: [],
 		});
 		approvalInboxMock.mockReturnValue({
@@ -653,12 +743,18 @@ describe("ApprovalInboxPage", () => {
 		render(<ApprovalInboxPage />);
 
 		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
-		expect(screen.getByRole("button", { name: /Approve Selected/ })).toBeTruthy();
-		fireEvent.click(screen.getByRole("button", { name: "Approve Low-risk absences" }));
+		expect(
+			screen.getByRole("button", { name: /Approve Selected/ }),
+		).toBeTruthy();
+		fireEvent.click(
+			screen.getByRole("button", { name: "Approve Low-risk absences" }),
+		);
 
 		await waitFor(() => {
 			expect(bulkApproveMutateAsyncMock).toHaveBeenCalledWith(["approval-1"]);
-			expect(screen.queryByRole("button", { name: /Approve Selected/ })).toBeNull();
+			expect(
+				screen.queryByRole("button", { name: /Approve Selected/ }),
+			).toBeNull();
 		});
 	});
 
@@ -686,11 +782,15 @@ describe("ApprovalInboxPage", () => {
 		render(<ApprovalInboxPage />);
 
 		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
-		expect(screen.getByRole("button", { name: /Approve Selected/ })).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: /Approve Selected/ }),
+		).toBeTruthy();
 
 		fireEvent.click(screen.getByRole("button", { name: "Search Avery" }));
 
-		expect(screen.queryByRole("button", { name: /Approve Selected/ })).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: /Approve Selected/ }),
+		).toBeNull();
 		expect(bulkApproveMutateAsyncMock).not.toHaveBeenCalled();
 	});
 
@@ -722,8 +822,14 @@ describe("ApprovalInboxPage", () => {
 				pages: [
 					makeApprovalInboxPage(undefined, {
 						warnings: [
-							{ source: "Import warning", message: "Some approvals could not be loaded." },
-							{ source: "Import warning", message: "Some approvals could not be loaded." },
+							{
+								source: "Import warning",
+								message: "Some approvals could not be loaded.",
+							},
+							{
+								source: "Import warning",
+								message: "Some approvals could not be loaded.",
+							},
 						],
 					}),
 				],
@@ -741,6 +847,8 @@ describe("ApprovalInboxPage", () => {
 		render(<ApprovalInboxPage />);
 
 		expect(screen.getAllByText("Import warning")).toHaveLength(1);
-		expect(screen.getAllByText("Some approvals could not be loaded.")).toHaveLength(1);
+		expect(
+			screen.getAllByText("Some approvals could not be loaded."),
+		).toHaveLength(1);
 	});
 });

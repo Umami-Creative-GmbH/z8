@@ -2,13 +2,13 @@
 	"name": "@z8-target/migration",
 	"private": true,
 	"type": "module",
-	"packageManager": "pnpm@11.20.0",
+	"packageManager": "pnpm@11.21.0",
 	"dependencies": {
 		"@t3-oss/env-nextjs": "^0.13.11",
 		"drizzle-kit": "^0.31.10",
 		"drizzle-orm": "^0.45.2",
 		"luxon": "^3.7.2",
-		"pg": "^8.22.0",
+		"pg": "^8.23.0",
 		"zod": "^4.4.3"
 	}
 }

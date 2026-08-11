@@ -1,6 +1,7 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -10,12 +11,18 @@ import {
 	PasswordVisibilityInput,
 } from "@/components/auth/password-fields";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import {
+	TFormControl,
+	TFormItem,
+	TFormLabel,
+	TFormMessage,
+} from "@/components/ui/tanstack-form";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
 import { passwordSchema } from "@/lib/validations/password";
 import { Link } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
+import { AuthContentLoading } from "./shells/auth-content-loading";
 
 const resetPasswordSchema = z
 	.object({
@@ -27,268 +34,277 @@ const resetPasswordSchema = z
 		path: ["confirmPassword"],
 	});
 
-function ResetPasswordFormContent({ className, ...props }: React.ComponentProps<"div">) {
-	const { t } = useTranslate();
-	const searchParams = useSearchParams();
-	const { get } = searchParams;
-	const getSearchParam = (key: string) => get.call(searchParams, key);
+type Translate = ReturnType<typeof useTranslate>["t"];
+type WrapperProps = React.ComponentProps<"div">;
 
-	const token = getSearchParam("token");
-	const errorParam = getSearchParam("error");
-
-	const [isLoading, setIsLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-	const [success, setSuccess] = useState(false);
-	const [formData, setFormData] = useState({
-		password: "",
-		confirmPassword: "",
-	});
-	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-
-	const handleChange = (field: string, value: string) => {
-		setFormData((prev) => ({ ...prev, [field]: value }));
-		if (fieldErrors[field]) {
-			setFieldErrors((prev) => {
-				const newErrors = { ...prev };
-				delete newErrors[field];
-				return newErrors;
-			});
-		}
-		if (error) {
-			setError(null);
-		}
-	};
-
-	const clearFieldError = (field: string) => {
-		setFieldErrors((prev) => {
-			const newErrors = { ...prev };
-			delete newErrors[field];
-			return newErrors;
-		});
-	};
-
-	const setFieldError = (field: string, message: string) => {
-		setFieldErrors((prev) => ({
-			...prev,
-			[field]: message,
-		}));
-	};
-
-	const validatePassword = (value: string) => {
-		const result = passwordSchema.safeParse(value);
-		if (result.success) {
-			clearFieldError("password");
-		} else {
-			setFieldError(
-				"password",
-				result.error?.issues?.[0]?.message || t("validation.invalid-password", "Invalid password"),
-			);
-		}
-	};
-
-	const validateConfirmPassword = (value: string) => {
-		if (value !== formData.password) {
-			setFieldError("confirmPassword", t("auth.passwords-no-match", "Passwords do not match"));
-		} else {
-			clearFieldError("confirmPassword");
-		}
-	};
-
-	const validateField = (field: string, value: string) => {
-		switch (field) {
-			case "password":
-				validatePassword(value);
-				break;
-			case "confirmPassword":
-				validateConfirmPassword(value);
-				break;
-			default:
-				break;
-		}
-	};
-
-	const handleValidationErrors = (errors: z.ZodError) => {
-		const errorMap: Record<string, string> = {};
-		for (const err of errors.issues) {
-			if (err.path[0]) {
-				errorMap[err.path[0] as string] = err.message;
-			}
-		}
-		setFieldErrors(errorMap);
-	};
-
-	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		setIsLoading(true);
-		setError(null);
-
-		const result = resetPasswordSchema.safeParse(formData);
-
-		if (!result.success) {
-			handleValidationErrors(result.error);
-			setIsLoading(false);
-			return;
-		}
-
-		if (!token) {
-			setError(t("auth.reset-password-no-token", "Invalid reset link. Please request a new one."));
-			setIsLoading(false);
-			return;
-		}
-
-		const response = await authClient
-			.resetPassword({
-				newPassword: formData.password,
-				token,
-			})
-			.catch((err) => ({
-				error: {
-					message:
-						err instanceof Error
-							? err.message
-							: t("auth.reset-password-error", "An error occurred. Please try again."),
-				},
-			}));
-
-		if (response.error) {
-			setError(
-				getAuthErrorMessage(
-					response.error,
-					t("auth.reset-password-failed", "Failed to reset password. Please try again."),
-				),
-			);
-			setIsLoading(false);
-			return;
-		}
-
-		setSuccess(true);
-		setIsLoading(false);
-	};
-
-	// Show error state for invalid/expired token
-	if (errorParam === "INVALID_TOKEN") {
-		return (
-			<AuthFormWrapper
-				className={className}
-				title={t("auth.reset-password-invalid", "Invalid reset link")}
-				{...props}
-			>
-				<div className="rounded-md bg-destructive/15 p-3 text-destructive text-sm">
-					{t(
-						"auth.reset-password-invalid-message",
-						"This password reset link is invalid or has expired. Please request a new one.",
-					)}
-				</div>
-				<div className="text-center text-sm">
-					<Link className="underline underline-offset-4" href="/forgot-password">
-						{t("auth.request-new-reset", "Request a new reset link")}
-					</Link>
-				</div>
-			</AuthFormWrapper>
-		);
+function getFieldError(errors: unknown[]): string | undefined {
+	const error = errors[0];
+	if (typeof error === "string") {
+		return error;
 	}
-
-	// Show success state after password reset
-	if (success) {
-		return (
-			<AuthFormWrapper
-				className={className}
-				title={t("auth.password-reset-success", "Password reset successful")}
-				{...props}
-			>
-				<div className="rounded-md bg-green-500/15 p-3 text-green-600 dark:text-green-400 text-sm">
-					{t(
-						"auth.password-reset-success-message",
-						"Your password has been reset successfully. You can now sign in with your new password.",
-					)}
-				</div>
-				<Button asChild className="w-full">
-					<Link href="/sign-in">{t("auth.sign-in", "Sign in")}</Link>
-				</Button>
-			</AuthFormWrapper>
-		);
+	if (error && typeof error === "object" && "message" in error) {
+		return String(error.message);
 	}
+	return undefined;
+}
 
-	// Show error if no token provided
-	if (!token) {
-		return (
-			<AuthFormWrapper
-				className={className}
-				title={t("auth.reset-password-invalid", "Invalid reset link")}
-				{...props}
-			>
-				<div className="rounded-md bg-destructive/15 p-3 text-destructive text-sm">
-					{t(
-						"auth.reset-password-no-token-message",
-						"No reset token found. Please request a new password reset link.",
-					)}
-				</div>
-				<div className="text-center text-sm">
-					<Link className="underline underline-offset-4" href="/forgot-password">
-						{t("auth.request-new-reset", "Request a new reset link")}
-					</Link>
-				</div>
-			</AuthFormWrapper>
-		);
+function validateResetPasswordField(
+	values: { password: string; confirmPassword: string },
+	field: "password" | "confirmPassword",
+) {
+	const result = resetPasswordSchema.safeParse(values);
+	if (result.success) {
+		return undefined;
 	}
+	return result.error.issues.reduce<string | undefined>(
+		(message, issue) => (issue.path[0] === field ? issue.message : message),
+		undefined,
+	);
+}
 
-	// Show reset password form
+function ResetLinkError({
+	className,
+	message,
+	t,
+	...props
+}: WrapperProps & { message: string; t: Translate }) {
 	return (
 		<AuthFormWrapper
 			className={className}
-			formProps={{ onSubmit: handleSubmit }}
+			title={t("auth.reset-password-invalid", "Invalid reset link")}
+			{...props}
+		>
+			<div className="rounded-md bg-destructive/15 p-3 text-destructive text-sm">
+				{message}
+			</div>
+			<div className="text-center text-sm">
+				<Link className="underline underline-offset-4" href="/forgot-password">
+					{t("auth.request-new-reset", "Request a new reset link")}
+				</Link>
+			</div>
+		</AuthFormWrapper>
+	);
+}
+
+function ResetPasswordSuccess({
+	className,
+	t,
+	...props
+}: WrapperProps & { t: Translate }) {
+	return (
+		<AuthFormWrapper
+			className={className}
+			title={t("auth.password-reset-success", "Password reset successful")}
+			{...props}
+		>
+			<div className="rounded-md bg-green-500/15 p-3 text-green-600 dark:text-green-400 text-sm">
+				{t(
+					"auth.password-reset-success-message",
+					"Your password has been reset successfully. You can now sign in with your new password.",
+				)}
+			</div>
+			<Button asChild className="w-full">
+				<Link href="/sign-in">{t("auth.sign-in", "Sign in")}</Link>
+			</Button>
+		</AuthFormWrapper>
+	);
+}
+
+function useResetPasswordForm(token: string, t: Translate) {
+	const [error, setError] = useState<string | null>(null);
+	const [success, setSuccess] = useState(false);
+	const form = useForm({
+		defaultValues: { password: "", confirmPassword: "" },
+		onSubmit: async ({ value }) => {
+			setError(null);
+			const response = await authClient
+				.resetPassword({ newPassword: value.password, token })
+				.catch((caughtError) => ({
+					error: {
+						message:
+							caughtError instanceof Error
+								? caughtError.message
+								: t(
+										"auth.reset-password-error",
+										"An error occurred. Please try again.",
+									),
+					},
+				}));
+
+			if (response.error) {
+				setError(
+					getAuthErrorMessage(
+						response.error,
+						t(
+							"auth.reset-password-failed",
+							"Failed to reset password. Please try again.",
+						),
+					),
+				);
+				return;
+			}
+			setSuccess(true);
+		},
+	});
+
+	return { clearError: () => setError(null), error, form, success };
+}
+
+type ResetPasswordController = ReturnType<typeof useResetPasswordForm>;
+
+function NewPasswordField({
+	controller,
+	t,
+}: {
+	controller: ResetPasswordController;
+	t: Translate;
+}) {
+	return (
+		<controller.form.Field
+			name="password"
+			validators={{
+				onChange: passwordSchema,
+				onSubmit: ({ value }) =>
+					validateResetPasswordField(
+						{
+							password: value,
+							confirmPassword: controller.form.getFieldValue("confirmPassword"),
+						},
+						"password",
+					),
+			}}
+		>
+			{(field) => {
+				const error = getFieldError(field.state.meta.errors);
+				return (
+					<TFormItem className="gap-3">
+						<TFormLabel hasError={Boolean(error)}>
+							{t("auth.new-password", "New Password")}
+						</TFormLabel>
+						<TFormControl hasError={Boolean(error)}>
+							<PasswordVisibilityInput
+								name={field.name}
+								autoComplete="new-password"
+								onBlur={field.handleBlur}
+								onChange={(event) => {
+									field.handleChange(event.target.value);
+									controller.clearError();
+								}}
+								required
+								value={field.state.value}
+							/>
+						</TFormControl>
+						<PasswordStrengthIndicator password={field.state.value} />
+						<TFormMessage>{error}</TFormMessage>
+					</TFormItem>
+				);
+			}}
+		</controller.form.Field>
+	);
+}
+
+function ConfirmPasswordField({
+	controller,
+	t,
+}: {
+	controller: ResetPasswordController;
+	t: Translate;
+}) {
+	return (
+		<controller.form.Field
+			name="confirmPassword"
+			validators={{
+				onChangeListenTo: ["password"],
+				onChange: ({ value }) =>
+					value === controller.form.getFieldValue("password")
+						? undefined
+						: t("auth.passwords-no-match", "Passwords do not match"),
+				onSubmit: ({ value }) =>
+					validateResetPasswordField(
+						{
+							password: controller.form.getFieldValue("password"),
+							confirmPassword: value,
+						},
+						"confirmPassword",
+					),
+			}}
+		>
+			{(field) => {
+				const error = getFieldError(field.state.meta.errors);
+				return (
+					<TFormItem className="gap-3">
+						<TFormLabel hasError={Boolean(error)}>
+							{t("auth.confirm-new-password", "Confirm New Password")}
+						</TFormLabel>
+						<TFormControl hasError={Boolean(error)}>
+							<PasswordVisibilityInput
+								name={field.name}
+								autoComplete="new-password"
+								onBlur={field.handleBlur}
+								onChange={(event) => {
+									field.handleChange(event.target.value);
+									controller.clearError();
+								}}
+								required
+								value={field.state.value}
+							/>
+						</TFormControl>
+						<TFormMessage>{error}</TFormMessage>
+					</TFormItem>
+				);
+			}}
+		</controller.form.Field>
+	);
+}
+
+function ResetPasswordEditor({
+	className,
+	t,
+	token,
+	...props
+}: WrapperProps & { t: Translate; token: string }) {
+	const controller = useResetPasswordForm(token, t);
+
+	if (controller.success) {
+		return <ResetPasswordSuccess className={className} t={t} {...props} />;
+	}
+
+	return (
+		<AuthFormWrapper
+			className={className}
+			formProps={{
+				onSubmit: (event) => {
+					event.preventDefault();
+					controller.form.handleSubmit();
+				},
+			}}
 			title={t("auth.reset-your-password", "Reset your password")}
 			{...props}
 		>
 			<p className="text-balance text-muted-foreground text-center text-sm">
 				{t("auth.enter-new-password", "Enter your new password below.")}
 			</p>
-			{error ? (
-				<div className="rounded-md bg-destructive/15 p-3 text-destructive text-sm">{error}</div>
+			{controller.error ? (
+				<div className="rounded-md bg-destructive/15 p-3 text-destructive text-sm">
+					{controller.error}
+				</div>
 			) : null}
-			<div className="grid gap-3">
-				<Label htmlFor="password">{t("auth.new-password", "New Password")}</Label>
-				<PasswordVisibilityInput
-					id="password"
-					name="password"
-					autoComplete="new-password"
-					onBlur={(e) => validateField("password", e.target.value)}
-					onChange={(e) => handleChange("password", e.target.value)}
-					required
-					value={formData.password}
-				/>
-				<PasswordStrengthIndicator password={formData.password} />
-				{fieldErrors.password ? (
-					<p className="text-destructive text-sm">{fieldErrors.password}</p>
-				) : null}
-			</div>
-			<div className="grid gap-3">
-				<Label htmlFor="confirmPassword">
-					{t("auth.confirm-new-password", "Confirm New Password")}
-				</Label>
-				<PasswordVisibilityInput
-					id="confirmPassword"
-					name="confirmPassword"
-					autoComplete="new-password"
-					onBlur={(e) => validateField("confirmPassword", e.target.value)}
-					onChange={(e) => handleChange("confirmPassword", e.target.value)}
-					required
-					value={formData.confirmPassword}
-				/>
-				{fieldErrors.confirmPassword ? (
-					<p className="text-destructive text-sm">{fieldErrors.confirmPassword}</p>
-				) : null}
-			</div>
-			<Button className="w-full" disabled={isLoading} type="submit">
-				{isLoading ? (
-					<>
-						<IconLoader2 className="mr-2 size-4 animate-spin" />
-						{t("common.loading", "Loading…")}
-					</>
-				) : (
-					t("auth.reset-password-button", "Reset Password")
+			<NewPasswordField controller={controller} t={t} />
+			<ConfirmPasswordField controller={controller} t={t} />
+			<controller.form.Subscribe selector={(state) => state.isSubmitting}>
+				{(isSubmitting) => (
+					<Button className="w-full" disabled={isSubmitting} type="submit">
+						{isSubmitting ? (
+							<>
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
+								{t("common.loading", "Loading…")}
+							</>
+						) : (
+							t("auth.reset-password-button", "Reset Password")
+						)}
+					</Button>
 				)}
-			</Button>
+			</controller.form.Subscribe>
 			<div className="text-center text-sm">
 				{t("auth.remember-password", "Remember your password?")}{" "}
 				<Link className="underline underline-offset-4" href="/sign-in">
@@ -299,9 +315,43 @@ function ResetPasswordFormContent({ className, ...props }: React.ComponentProps<
 	);
 }
 
-export function ResetPasswordForm(props: React.ComponentProps<"div">) {
+function ResetPasswordFormContent(props: WrapperProps) {
+	const { t } = useTranslate();
+	const searchParams = useSearchParams();
+	const token = searchParams.get("token");
+
+	if (searchParams.get("error") === "INVALID_TOKEN") {
+		return (
+			<ResetLinkError
+				message={t(
+					"auth.reset-password-invalid-message",
+					"This password reset link is invalid or has expired. Please request a new one.",
+				)}
+				t={t}
+				{...props}
+			/>
+		);
+	}
+
+	if (!token) {
+		return (
+			<ResetLinkError
+				message={t(
+					"auth.reset-password-no-token-message",
+					"No reset token found. Please request a new password reset link.",
+				)}
+				t={t}
+				{...props}
+			/>
+		);
+	}
+
+	return <ResetPasswordEditor t={t} token={token} {...props} />;
+}
+
+export function ResetPasswordForm(props: WrapperProps) {
 	return (
-		<Suspense fallback={null}>
+		<Suspense fallback={<AuthContentLoading />}>
 			<ResetPasswordFormContent {...props} />
 		</Suspense>
 	);

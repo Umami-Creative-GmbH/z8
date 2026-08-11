@@ -1,7 +1,13 @@
 import { eq } from "drizzle-orm";
+import { Suspense } from "react";
 import { AcceptInvitationForm } from "@/components/accept-invitation-form";
+import { AuthContentLoading } from "@/components/shells/auth-content-loading";
 import { db, invitation as invitationTable } from "@/db";
-import { compareInstants, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	compareInstants,
+	instantFromDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 
 interface AcceptInvitationPageProps {
 	params: Promise<{ invitationId: string }>;
@@ -12,7 +18,17 @@ type InvitationWithRelations = typeof invitationTable.$inferSelect & {
 	user: { name: string | null } | null;
 };
 
-export default async function AcceptInvitationPage({ params }: AcceptInvitationPageProps) {
+export default function AcceptInvitationPage(props: AcceptInvitationPageProps) {
+	return (
+		<Suspense fallback={<AuthContentLoading />}>
+			<AcceptInvitationPageContent {...props} />
+		</Suspense>
+	);
+}
+
+async function AcceptInvitationPageContent({
+	params,
+}: AcceptInvitationPageProps) {
 	const { invitationId } = await params;
 
 	const invitation = await db.query.invitation.findFirst({
@@ -30,7 +46,9 @@ export default async function AcceptInvitationPage({ params }: AcceptInvitationP
 			},
 		},
 	});
-	const typedInvitation = invitation as unknown as InvitationWithRelations | undefined;
+	const typedInvitation = invitation as unknown as
+		| InvitationWithRelations
+		| undefined;
 
 	return (
 		<AcceptInvitationForm

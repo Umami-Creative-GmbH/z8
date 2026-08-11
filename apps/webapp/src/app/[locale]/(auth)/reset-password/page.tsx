@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { ResetPasswordForm } from "@/components/reset-password-form";
+import { AuthContentLoading } from "@/components/shells/auth-content-loading";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 
 export async function generateStaticParams() {
@@ -8,7 +9,7 @@ export async function generateStaticParams() {
 
 export default function Page() {
 	return (
-		<Suspense fallback={null}>
+		<Suspense fallback={<AuthContentLoading />}>
 			<ResetPasswordForm />
 		</Suspense>
 	);

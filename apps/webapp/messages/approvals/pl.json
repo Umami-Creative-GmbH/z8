@@ -28,6 +28,7 @@
     "inboxErrorDescription": "Pobranie zatwierdzeń nie powiodło się",
     "inboxErrorTitle": "Nie można załadować skrzynki zatwierdzeń",
     "loadError": "Załadowanie zatwierdzeń nie powiodło się",
+    "loadingInbox": "Ładowanie skrzynki zatwierdzeń",
     "noAbsenceApprovals": "Brak oczekujących wniosków o nieobecność do przejrzenia.",
     "noRequests": "Brak oczekujących wniosków",
     "noRequestsDescription": "Tutaj pojawią się nowe wnioski o zatwierdzenie, gdy będą wymagały sprawdzenia przez menedżera.",

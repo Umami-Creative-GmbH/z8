@@ -14,6 +14,7 @@ import {
 } from "@/app/[locale]/(app)/approvals/actions";
 import { CategoryBadge } from "@/components/absences/category-badge";
 import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
+import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { calculateBusinessDaysWithHalfDays, formatDateRange } from "@/lib/absences/date-utils";
@@ -155,7 +156,7 @@ export function AbsenceApprovalsTable() {
 	})();
 
 	// Column definitions
-	const columns: ColumnDef<ApprovalWithAbsence>[] = [
+	const columns: ColumnDef<DataTableFeatures, ApprovalWithAbsence>[] = [
 		{
 			accessorKey: "requester",
 			header: t("approvals:approvals.employee", "Employee"),

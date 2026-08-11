@@ -1,4 +1,8 @@
-import ts from "typescript";
+import * as ts from "typescript/unstable/ast";
+import type {
+	Checker,
+	Symbol as TypeScriptSymbol,
+} from "typescript/unstable/sync";
 
 export type EventTableSqlMutationKind = "raw_sql_update" | "raw_sql_delete";
 
@@ -650,7 +654,7 @@ export function findEventTableSqlMutations(
 }
 
 export interface ConstantSqlContext {
-	checker: ts.TypeChecker;
+	checker: Checker;
 	usePosition: number;
 }
 
@@ -658,13 +662,13 @@ const MAX_CONSTANT_SQL_EVALUATION_DEPTH = 128;
 
 const writeSymbolIndexCache = new WeakMap<
 	ts.SourceFile,
-	WeakMap<ts.TypeChecker, Set<ts.Symbol>>
+	WeakMap<Checker, Set<TypeScriptSymbol>>
 >();
 
 function collectAssignmentTarget(
 	target: ts.Node,
-	writeSymbols: Set<ts.Symbol>,
-	checker: ts.TypeChecker,
+	writeSymbols: Set<TypeScriptSymbol>,
+	checker: Checker,
 ): void {
 	if (ts.isIdentifier(target)) {
 		const symbol = checker.getSymbolAtLocation(target);
@@ -707,8 +711,8 @@ function collectAssignmentTarget(
 
 function writeSymbolsFor(
 	sourceFile: ts.SourceFile,
-	checker: ts.TypeChecker,
-): Set<ts.Symbol> {
+	checker: Checker,
+): Set<TypeScriptSymbol> {
 	let indexesByChecker = writeSymbolIndexCache.get(sourceFile);
 	if (!indexesByChecker) {
 		indexesByChecker = new WeakMap();
@@ -717,7 +721,7 @@ function writeSymbolsFor(
 	const existing = indexesByChecker.get(checker);
 	if (existing) return existing;
 
-	const writeSymbols = new Set<ts.Symbol>();
+	const writeSymbols = new Set<TypeScriptSymbol>();
 	indexesByChecker.set(checker, writeSymbols);
 	const visit = (node: ts.Node): void => {
 		if (
@@ -740,7 +744,7 @@ function writeSymbolsFor(
 		) {
 			collectAssignmentTarget(node.initializer, writeSymbols, checker);
 		}
-		ts.forEachChild(node, visit);
+		node.forEachChild(visit);
 	};
 	visit(sourceFile);
 	return writeSymbols;
@@ -750,7 +754,7 @@ export function evaluateConstantSql(
 	expression: ts.Expression,
 	context: ConstantSqlContext,
 ): string | null {
-	const activeSymbols = new Set<ts.Symbol>();
+	const activeSymbols = new Set<TypeScriptSymbol>();
 	const evaluate = (
 		candidate: ts.Expression,
 		usePosition: number,
@@ -770,7 +774,7 @@ export function evaluateConstantSql(
 		if (
 			ts.isParenthesizedExpression(candidate) ||
 			ts.isAsExpression(candidate) ||
-			ts.isTypeAssertionExpression(candidate) ||
+			ts.isTypeAssertion(candidate) ||
 			ts.isNonNullExpression(candidate) ||
 			ts.isSatisfiesExpression(candidate)
 		) {
@@ -796,7 +800,9 @@ export function evaluateConstantSql(
 		}
 		if (ts.isIdentifier(candidate)) {
 			const symbol = context.checker.getSymbolAtLocation(candidate);
-			const declarations = symbol?.declarations;
+			const declarations = symbol?.declarations
+				.map((declaration) => declaration.resolve())
+				.filter((declaration) => declaration !== undefined);
 			if (
 				!symbol ||
 				declarations?.length !== 1 ||

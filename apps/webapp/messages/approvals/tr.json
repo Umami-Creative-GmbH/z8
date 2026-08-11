@@ -28,6 +28,7 @@
     "inboxErrorDescription": "Onaylar getirilemedi",
     "inboxErrorTitle": "Onay gelen kutusu yüklenemedi",
     "loadError": "Onaylar yüklenemedi",
+    "loadingInbox": "Onay gelen kutusu yükleniyor",
     "noAbsenceApprovals": "İncelenecek bekleyen izin talebi yok.",
     "noRequests": "Bekleyen talep yok",
     "noRequestsDescription": "Yeni onay istekleri, yönetici incelemesi gerektiğinde burada görünecektir.",

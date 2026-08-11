@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { generateSlug } from "@/lib/validations/organization";
 
 interface CreateOrganizationDialogProps {
@@ -55,54 +56,52 @@ export function CreateOrganizationDialog({
 			}
 
 			setLoading(true);
+			await runWithCleanup(async () => {
+				// Create organization using Better Auth
+				const result = await authClient.organization
+					.create({
+						name: value.name,
+						slug: value.slug,
+					})
+					.catch((error: unknown) => {
+						console.error("Error creating organization:", error);
+						const message =
+							error instanceof Error
+								? error.message
+								: t("organization.createError", "Failed to create organization");
+						toast.error(message);
+						return null;
+					});
 
-			// Create organization using Better Auth
-			const result = await authClient.organization
-				.create({
-					name: value.name,
-					slug: value.slug,
-				})
-				.catch((error: unknown) => {
-					console.error("Error creating organization:", error);
-					const message =
-						error instanceof Error
-							? error.message
-							: t("organization.createError", "Failed to create organization");
-					toast.error(message);
-					return null;
-				});
+				if (!result) {
+					return;
+				}
 
-			if (!result) {
-				setLoading(false);
-				return;
-			}
+				if (result.error) {
+					toast.error(
+						getAuthErrorMessage(
+							result.error,
+							t("organization.createError", "Failed to create organization"),
+						),
+					);
+					return;
+				}
 
-			if (result.error) {
-				toast.error(
-					getAuthErrorMessage(
-						result.error,
-						t("organization.createError", "Failed to create organization"),
-					),
-				);
-				setLoading(false);
-				return;
-			}
+				toast.success(t("organization.createSuccess", "Organization created successfully!"));
 
-			toast.success(t("organization.createSuccess", "Organization created successfully!"));
+				// Reset form
+				form.reset();
+				slugManuallyEdited.current = false;
 
-			// Reset form
-			form.reset();
-			slugManuallyEdited.current = false;
+				// Close dialog
+				onOpenChange(false);
 
-			// Close dialog
-			onOpenChange(false);
+				// Call success callback
+				onSuccess?.();
 
-			// Call success callback
-			onSuccess?.();
-
-			// Refresh the page to update organization context
-			router.refresh();
-			setLoading(false);
+				// Refresh the page to update organization context
+				router.refresh();
+			}, () => setLoading(false));
 		},
 	});
 

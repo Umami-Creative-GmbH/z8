@@ -21,6 +21,8 @@ import {
 	DataTableSkeleton,
 	DataTableToolbar,
 } from "@/components/data-table-server";
+import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
+import type { DataTablePaginationTable } from "@/components/data-table-server/data-table-pagination";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -202,7 +204,7 @@ export function HolidayList({
 	})();
 
 	// Column definitions
-	const columns: ColumnDef<HolidayWithCategory>[] = [
+	const columns: ColumnDef<DataTableFeatures, HolidayWithCategory>[] = [
 		...(canManage ? [createSelectionColumn<HolidayWithCategory>()] : []),
 		{
 			accessorKey: "name",
@@ -406,7 +408,7 @@ export function HolidayList({
 				<DataTablePagination
 					table={
 						{
-							getState: () => ({ pagination }),
+							state: { pagination },
 							getPageCount: () => pageCount,
 							getCanPreviousPage: () => pagination.pageIndex > 0,
 							getCanNextPage: () => pagination.pageIndex < pageCount - 1,
@@ -420,12 +422,20 @@ export function HolidayList({
 									...prev,
 									pageIndex: prev.pageIndex + 1,
 								})),
-							setPageIndex: (index: number) =>
-								setPagination((prev) => ({ ...prev, pageIndex: index })),
-							setPageSize: (size: number) => setPagination({ pageIndex: 0, pageSize: size }),
-							getFilteredSelectedRowModel: () => ({ rows: [] }),
-							getFilteredRowModel: () => ({ rows: [] }),
-						} as any
+							setPageIndex: (updater) =>
+								setPagination((prev) => ({
+									...prev,
+									pageIndex:
+										typeof updater === "function" ? updater(prev.pageIndex) : updater,
+								})),
+							setPageSize: (updater) =>
+								setPagination((prev) => ({
+									pageIndex: 0,
+									pageSize: typeof updater === "function" ? updater(prev.pageSize) : updater,
+								})),
+							getFilteredSelectedRowModel: () => ({ rows: [], flatRows: [], rowsById: {} }),
+							getFilteredRowModel: () => ({ rows: [], flatRows: [], rowsById: {} }),
+						} satisfies DataTablePaginationTable<HolidayWithCategory>
 					}
 					totalRows={total}
 					showSelectedCount={canManage && selectedCount > 0}

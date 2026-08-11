@@ -189,6 +189,9 @@ export async function syncInvitationTargetTeam(
 				),
 			)
 			.for("update");
+		if (draft != null && draft.invitationId !== input.invitationId) {
+			throw new Error("Invitation target team conflict");
+		}
 
 		const [lockedInvitation] = await tx
 			.select({
@@ -207,8 +210,7 @@ export async function syncInvitationTargetTeam(
 
 		if (
 			lockedInvitation?.status !== "pending" ||
-			normalizeInvitationEmail(lockedInvitation.email) !== normalizedEmail ||
-			(draft != null && draft.invitationId !== input.invitationId)
+			normalizeInvitationEmail(lockedInvitation.email) !== normalizedEmail
 		) {
 			throw new Error("Invitation target team conflict");
 		}

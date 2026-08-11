@@ -1,4 +1,3 @@
-import { headers } from "next/headers";
 import { setRequestLocale } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
 import { Toaster } from "sonner";
@@ -7,9 +6,10 @@ import { DeploymentRefreshChecker } from "@/components/deployment-refresh";
 import { FontSizeProvider } from "@/components/font-size-preference";
 import { OfflineBanner, SWUpdatePrompt } from "@/components/offline";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
-import { DOMAIN_HEADERS } from "@/proxy";
-import { ALL_LANGUAGES, loadRouteTranslations } from "@/tolgee/shared";
+import { loadRouteTranslations } from "@/tolgee/load-translations";
+import { ALL_LANGUAGES } from "@/tolgee/shared";
 import "../globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/lib/query";
@@ -26,14 +26,14 @@ export async function generateStaticParams() {
 }
 
 // Separate component for loading translations to wrap in Suspense
-async function TranslationProvider({ locale, children }: { locale: string; children: ReactNode }) {
-	// Get the current pathname to determine which namespaces to load
-	const headersList = await headers();
-	const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || "/";
-	// Strip locale prefix from pathname (e.g., /en/settings -> /settings)
-	const pathnameWithoutLocale = pathname.replace(new RegExp(`^/${locale}`), "") || "/";
-
-	const records = await loadRouteTranslations(locale, pathnameWithoutLocale).catch((error) => {
+async function TranslationProvider({
+	locale,
+	children,
+}: {
+	locale: string;
+	children: ReactNode;
+}) {
+	const records = await loadRouteTranslations(locale).catch((error) => {
 		console.warn("Failed to load Tolgee records:", error);
 		return {};
 	});
@@ -70,7 +70,9 @@ function ApplicationContent({ children }: { children: ReactNode }) {
 				<OfflineBanner />
 				<SWUpdatePrompt />
 				<Suspense fallback={null}>
-					<DeploymentRefreshChecker clientBuildHash={env.NEXT_PUBLIC_BUILD_HASH ?? "development"} />
+					<DeploymentRefreshChecker
+						clientBuildHash={env.NEXT_PUBLIC_BUILD_HASH ?? "development"}
+					/>
 				</Suspense>
 				{children}
 				<Toaster position="bottom-right" richColors />
@@ -79,16 +81,54 @@ function ApplicationContent({ children }: { children: ReactNode }) {
 	);
 }
 
-function AppProviders({ children, locale }: { children: ReactNode; locale: string }) {
+function RootRouteShell() {
 	return (
-		<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+		<main
+			aria-busy="true"
+			aria-label="Loading application"
+			className="flex min-h-svh bg-background"
+		>
+			<aside className="hidden w-72 shrink-0 space-y-4 border-r p-4 md:block">
+				<Skeleton className="h-10 w-full" />
+				<Skeleton className="mt-6 h-9 w-full" />
+				<Skeleton className="h-9 w-5/6" />
+			</aside>
+			<section className="flex min-w-0 flex-1 flex-col">
+				<header className="flex h-12 shrink-0 items-center gap-3 border-b px-4 lg:px-6">
+					<Skeleton className="size-7" />
+					<Skeleton className="h-5 w-36" />
+				</header>
+				<div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
+					<Skeleton className="h-8 w-48" />
+					<Skeleton className="h-5 w-full max-w-2xl" />
+					<Skeleton className="min-h-64 w-full flex-1" />
+				</div>
+			</section>
+		</main>
+	);
+}
+
+function AppProviders({
+	children,
+	locale,
+}: {
+	children: ReactNode;
+	locale: string;
+}) {
+	return (
+		<ThemeProvider
+			attribute="class"
+			defaultTheme="system"
+			enableSystem
+			disableTransitionOnChange
+		>
 			<FontSizeProvider>
 				<Suspense
 					fallback={
 						<TranslationProviders locale={locale} records={{}}>
-							<Suspense fallback={null}>
-								<ApplicationContent>{children}</ApplicationContent>
-							</Suspense>
+							<ApplicationContent>
+								<RootRouteShell />
+							</ApplicationContent>
 						</TranslationProviders>
 					}
 				>
@@ -113,9 +153,23 @@ export default async function LocaleLayout({ children, params }: Props) {
 				<meta content="#000000" name="theme-color" />
 				<meta content="light dark" name="color-scheme" />
 				<link href="/favicon.ico" rel="icon" sizes="any" type="image/x-icon" />
-				<link href="/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180" />
-				<link href="/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
-				<link href="/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+				<link
+					href="/apple-touch-icon.png"
+					rel="apple-touch-icon"
+					sizes="180x180"
+				/>
+				<link
+					href="/favicon-32x32.png"
+					rel="icon"
+					sizes="32x32"
+					type="image/png"
+				/>
+				<link
+					href="/favicon-16x16.png"
+					rel="icon"
+					sizes="16x16"
+					type="image/png"
+				/>
 				<link href="/site.webmanifest" rel="manifest" />
 				<link color="#000000" href="/safari-pinned-tab.svg" rel="mask-icon" />
 				<meta content="#000000" name="msapplication-TileColor" />

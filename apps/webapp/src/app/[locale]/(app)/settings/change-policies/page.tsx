@@ -1,16 +1,11 @@
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
+import { Suspense } from "react";
 import { ChangePolicyManagement } from "@/components/settings/change-policy/change-policy-management";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
-import { getTranslate } from "@/tolgee/server";
 
-export default async function ChangePoliciesSettingsPage() {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
-	const [, settingsRouteContext] = await Promise.all([
-		getTranslate(),
-		getCurrentSettingsRouteContext(),
-	]);
+async function ChangePoliciesSettingsPageContent() {
+	const settingsRouteContext = await getCurrentSettingsRouteContext();
 
 	if (!settingsRouteContext) {
 		redirect("/settings");
@@ -24,6 +19,30 @@ export default async function ChangePoliciesSettingsPage() {
 	}
 
 	return (
-		<ChangePolicyManagement organizationId={organizationId} canManage={accessTier === "orgAdmin"} />
+		<ChangePolicyManagement
+			organizationId={organizationId}
+			canManage={accessTier === "orgAdmin"}
+		/>
+	);
+}
+
+function ChangePoliciesSettingsPageLoading() {
+	return (
+		<div
+			className="flex flex-1 flex-col gap-4 p-4"
+			role="status"
+			aria-label="Loading change policy settings"
+		>
+			<Skeleton className="h-8 w-48" aria-hidden="true" />
+			<Skeleton className="h-64 w-full" aria-hidden="true" />
+		</div>
+	);
+}
+
+export default function ChangePoliciesSettingsPage() {
+	return (
+		<Suspense fallback={<ChangePoliciesSettingsPageLoading />}>
+			<ChangePoliciesSettingsPageContent />
+		</Suspense>
 	);
 }

@@ -1,4 +1,3 @@
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { CalendarView } from "@/components/calendar/calendar-view";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
@@ -14,8 +13,6 @@ export async function CalendarPageContent({
 	selectedEmployeeId?: string;
 	requestedDate?: string;
 } = {}) {
-	await connection(); // Mark as fully dynamic for cacheComponents mode
-
 	const authContext = await getAuthContext();
 
 	if (!authContext?.employee) {

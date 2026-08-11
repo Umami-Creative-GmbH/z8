@@ -9,12 +9,7 @@ import {
 	IconUser,
 } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-	flexRender,
-	getCoreRowModel,
-	getSortedRowModel,
-	type SortingState,
-} from "@tanstack/react-table";
+import { flexRender, type SortingState, useTable } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState, useTransition } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
@@ -51,7 +46,6 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCompilerSafeReactTable } from "@/components/use-compiler-safe-react-table";
 import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import { useEmployees } from "@/lib/query/use-employees";
 import type { SettingsAccessTier } from "@/lib/settings-access";
@@ -61,6 +55,7 @@ import type {
 	EmployeeDirectoryStatus,
 	PaginatedEmployeeResponse,
 } from "./employee-action-types";
+import { employeeTableFeatures } from "./employee-table-features";
 
 export interface EmployeesPagePeopleProps {
 	organizationName: string;
@@ -382,17 +377,15 @@ function EmployeeDirectoryTab(props: {
 		return () => clearTimeout(timer);
 	}, [searchInput, setSearch]);
 
-	const table = useCompilerSafeReactTable<EmployeeDirectoryRow>({
+	const table = useTable({
+		features: employeeTableFeatures,
 		data: employeesWithPresence,
 		columns,
 		state: { sorting, pagination },
 		onSortingChange: setSorting,
 		onPaginationChange: setPagination,
-		getCoreRowModel: getCoreRowModel(),
-		getSortedRowModel: getSortedRowModel(),
 		manualPagination: true,
 		pageCount,
-		manualFiltering: true,
 	});
 
 	if (!hasEmployee && !isLoading) {
@@ -553,7 +546,7 @@ function EmployeeDirectoryTab(props: {
 											"settings.employees.directory.pagination.pageOf",
 											"Page {page} of {total}",
 											{
-												page: table.getState().pagination.pageIndex + 1,
+												page: table.state.pagination.pageIndex + 1,
 												total: table.getPageCount(),
 											},
 										)}

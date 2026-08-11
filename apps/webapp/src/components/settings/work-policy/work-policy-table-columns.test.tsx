@@ -7,6 +7,7 @@ import type { TFnType } from "@tolgee/react";
 import type { ReactNode } from "react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { WorkPolicyWithDetails } from "@/app/[locale]/(app)/settings/work-policies/actions";
+import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { getWorkPolicyTableColumns } from "./work-policy-table-columns";
 
 beforeAll(() => {
@@ -64,9 +65,15 @@ function renderActions({
 	}
 
 	const cell = actionsColumn.cell as (
-		context: CellContext<WorkPolicyWithDetails, unknown>,
+		context: CellContext<DataTableFeatures, WorkPolicyWithDetails, unknown>,
 	) => ReactNode;
-	return render(cell({ row: { original: policy } } as CellContext<WorkPolicyWithDetails, unknown>));
+	return render(
+		cell({ row: { original: policy } } as CellContext<
+			DataTableFeatures,
+			WorkPolicyWithDetails,
+			unknown
+		>),
+	);
 }
 
 describe("getWorkPolicyTableColumns", () => {

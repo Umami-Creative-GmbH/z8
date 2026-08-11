@@ -2,7 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useId } from "react";
+import { useId } from "react";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -40,20 +40,6 @@ export function PlatformAnalyticsControls({
 	range: PlatformAnalyticsRange;
 	bucket: PlatformAnalyticsBucket;
 }) {
-	return (
-		<Suspense fallback={null}>
-			<PlatformAnalyticsControlsContent range={range} bucket={bucket} />
-		</Suspense>
-	);
-}
-
-function PlatformAnalyticsControlsContent({
-	range,
-	bucket,
-}: {
-	range: PlatformAnalyticsRange;
-	bucket: PlatformAnalyticsBucket;
-}) {
 	const { t } = useTranslate();
 	const { push } = useRouter();
 	const searchParams = useSearchParams();
@@ -61,7 +47,10 @@ function PlatformAnalyticsControlsContent({
 	const bucketId = useId();
 	const bucketOptions = getPlatformAnalyticsBucketOptions(range);
 
-	function pushParams(nextRange: PlatformAnalyticsRange, nextBucket: PlatformAnalyticsBucket) {
+	function pushParams(
+		nextRange: PlatformAnalyticsRange,
+		nextBucket: PlatformAnalyticsBucket,
+	) {
 		const params = new URLSearchParams(searchParams.toString());
 		params.set("range", nextRange);
 		params.set("bucket", nextBucket);
@@ -71,7 +60,9 @@ function PlatformAnalyticsControlsContent({
 	function handleRangeChange(value: string) {
 		const nextRange = value as PlatformAnalyticsRange;
 		const nextBucketOptions = getPlatformAnalyticsBucketOptions(nextRange);
-		const nextBucket = nextBucketOptions.includes(bucket) ? bucket : nextBucketOptions[0];
+		const nextBucket = nextBucketOptions.includes(bucket)
+			? bucket
+			: nextBucketOptions[0];
 
 		pushParams(nextRange, nextBucket);
 	}
@@ -93,14 +84,20 @@ function PlatformAnalyticsControlsContent({
 					<SelectTrigger
 						id={rangeId}
 						className="w-full sm:w-[180px]"
-						aria-label={t("admin:admin.analytics.controls.range.ariaLabel", "Analytics range")}
+						aria-label={t(
+							"admin:admin.analytics.controls.range.ariaLabel",
+							"Analytics range",
+						)}
 					>
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
 						{RANGE_OPTIONS.map((option) => (
 							<SelectItem key={option} value={option}>
-								{t(`admin:admin.analytics.controls.range.${option}`, RANGE_LABELS[option])}
+								{t(
+									`admin:admin.analytics.controls.range.${option}`,
+									RANGE_LABELS[option],
+								)}
 							</SelectItem>
 						))}
 					</SelectContent>
@@ -118,14 +115,20 @@ function PlatformAnalyticsControlsContent({
 					<SelectTrigger
 						id={bucketId}
 						className="w-full sm:w-[160px]"
-						aria-label={t("admin:admin.analytics.controls.bucket.ariaLabel", "Analytics bucket")}
+						aria-label={t(
+							"admin:admin.analytics.controls.bucket.ariaLabel",
+							"Analytics bucket",
+						)}
 					>
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
 						{bucketOptions.map((option) => (
 							<SelectItem key={option} value={option}>
-								{t(`admin:admin.analytics.controls.bucket.${option}`, BUCKET_LABELS[option])}
+								{t(
+									`admin:admin.analytics.controls.bucket.${option}`,
+									BUCKET_LABELS[option],
+								)}
 							</SelectItem>
 						))}
 					</SelectContent>

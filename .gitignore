@@ -47,6 +47,7 @@ next-env.d.ts
 
 # Git worktrees
 .worktrees/
+.superpowers/
 
 # Turborepo
 .turbo
