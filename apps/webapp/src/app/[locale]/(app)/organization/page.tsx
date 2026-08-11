@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -7,6 +8,8 @@ import { getOrgChartInitialGraph } from "./actions";
 import { OrgChartClient } from "./org-chart-client";
 
 async function OrganizationPageContent() {
+	// Effect runtime performs synchronous current-time work and must execute per request outside prerendered shell.
+	await connection();
 	const [t, result] = await Promise.all([getTranslate(), getOrgChartInitialGraph()]);
 
 	if (!result.success) {

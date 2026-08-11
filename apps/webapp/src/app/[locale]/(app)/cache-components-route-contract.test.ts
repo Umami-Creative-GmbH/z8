@@ -7,6 +7,7 @@ const APP_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
 const REVIEWED_RETAINED_CONNECTION_FILES = [
 	"src/app/[locale]/(app)/absences/page.tsx",
+	"src/app/[locale]/(app)/organization/page.tsx",
 	"src/app/[locale]/(app)/payroll/page.tsx",
 	"src/app/[locale]/(app)/settings/payroll-readiness/page.tsx",
 	"src/app/[locale]/(app)/settings/vacation/employees/page.tsx",
@@ -36,6 +37,16 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		reasonCategory: "random-selection",
 		reason: "Random onboarding backgrounds must be selected per request.",
 		operation: "const backgroundImage = selectRandomAuthBackgroundImage();",
+	},
+	{
+		file: "src/app/[locale]/(app)/organization/page.tsx",
+		contentComponent: "OrganizationPageContent",
+		fallbackComponent: "OrganizationPageLoading",
+		reasonCategory: "effect-current-time",
+		reason:
+			"Effect runtime performs synchronous current-time work and must execute per request outside prerendered shell.",
+		operation:
+			"const [t, result] = await Promise.all([getTranslate(), getOrgChartInitialGraph()]);",
 	},
 	{
 		file: "src/app/[locale]/(app)/payroll/page.tsx",
@@ -1212,7 +1223,7 @@ describe("loading frame alignment", () => {
 describe("App Router connection escape hatches", () => {
 	it("keeps the pending inventory empty and the retained inventory exact", () => {
 		expect(PENDING_CONNECTION_FILES).toHaveLength(0);
-		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(9);
+		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(10);
 	});
 
 	it("matches the reviewed and pending page/layout inventory exactly", () => {
