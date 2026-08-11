@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 const APP_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
 const REVIEWED_RETAINED_CONNECTION_FILES = [
+	"src/app/[locale]/(admin)/platform-admin/diagnostics/page.tsx",
 	"src/app/[locale]/(app)/absences/page.tsx",
 	"src/app/[locale]/(app)/organization/page.tsx",
 	"src/app/[locale]/(app)/payroll/page.tsx",
@@ -21,6 +22,15 @@ const REVIEWED_RETAINED_CONNECTION_FILES = [
 const PENDING_CONNECTION_FILES = [] as const;
 
 const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
+	{
+		file: "src/app/[locale]/(admin)/platform-admin/diagnostics/page.tsx",
+		contentComponent: "PlatformDiagnosticsPageContent",
+		fallbackComponent: "PlatformDiagnosticsPageLoading",
+		reasonCategory: "effect-current-time",
+		reason:
+			"Diagnostics Effect runtime performs synchronous current-time work and must execute per request outside prerendered shell.",
+		operation: "const [t, snapshot] = await Promise.all([",
+	},
 	{
 		file: "src/app/[locale]/(auth)/layout.tsx",
 		contentComponent: "AuthLayoutContent",
@@ -1223,7 +1233,7 @@ describe("loading frame alignment", () => {
 describe("App Router connection escape hatches", () => {
 	it("keeps the pending inventory empty and the retained inventory exact", () => {
 		expect(PENDING_CONNECTION_FILES).toHaveLength(0);
-		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(10);
+		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(11);
 	});
 
 	it("matches the reviewed and pending page/layout inventory exactly", () => {

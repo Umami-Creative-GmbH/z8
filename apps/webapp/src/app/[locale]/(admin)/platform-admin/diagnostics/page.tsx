@@ -1,9 +1,8 @@
-import { Effect } from "effect";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AppLayer } from "@/lib/effect/runtime";
-import { PlatformAdminService } from "@/lib/effect/services/platform-admin.service";
+import { requirePlatformAdmin } from "@/lib/effect/services/platform-admin.service";
 import { collectPlatformDiagnostics } from "@/lib/platform-diagnostics";
 import { getTranslate } from "@/tolgee/server";
 import { DiagnosticsClient } from "./diagnostics-client";
@@ -17,11 +16,9 @@ export default function PlatformDiagnosticsPage() {
 }
 
 export async function PlatformDiagnosticsPageContent() {
-	const admin = await Effect.runPromise(
-		Effect.flatMap(PlatformAdminService, (adminService) =>
-			adminService.requirePlatformAdmin(),
-		).pipe(Effect.provide(AppLayer)),
-	);
+	const admin = await requirePlatformAdmin();
+	// Diagnostics Effect runtime performs synchronous current-time work and must execute per request outside prerendered shell.
+	await connection();
 	const [t, snapshot] = await Promise.all([
 		getTranslate(),
 		collectPlatformDiagnostics(),

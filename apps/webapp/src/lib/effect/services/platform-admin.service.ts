@@ -166,6 +166,40 @@ export class PlatformAdminService extends Context.Tag("PlatformAdminService")<
 	}
 >() {}
 
+export async function requirePlatformAdmin(): Promise<{
+	userId: string;
+	email: string;
+}> {
+	try {
+		const sessionData = await auth.api.getSession({
+			headers: await headers(),
+		});
+
+		if (!sessionData?.user) {
+			throw new Error("Not authenticated");
+		}
+
+		if (sessionData.user.role !== "admin") {
+			throw new Error("Not a platform admin");
+		}
+
+		if (sessionData.user.banned) {
+			throw new Error("Account is banned");
+		}
+
+		return {
+			userId: sessionData.user.id,
+			email: sessionData.user.email,
+		};
+	} catch {
+		throw new AuthorizationError({
+			message: "Platform admin access required",
+			resource: "platform_admin",
+			action: "access",
+		});
+	}
+}
+
 // Service implementation
 export const PlatformAdminServiceLive = Layer.effect(
 	PlatformAdminService,
@@ -173,29 +207,7 @@ export const PlatformAdminServiceLive = Layer.effect(
 		PlatformAdminService.of({
 			requirePlatformAdmin: () =>
 				Effect.tryPromise({
-					try: async () => {
-						const sessionData = await auth.api.getSession({
-							headers: await headers(),
-						});
-
-						if (!sessionData?.user) {
-							throw new Error("Not authenticated");
-						}
-
-						if (sessionData.user.role !== "admin") {
-							throw new Error("Not a platform admin");
-						}
-
-						// Check if admin is banned
-						if (sessionData.user.banned) {
-							throw new Error("Account is banned");
-						}
-
-						return {
-							userId: sessionData.user.id,
-							email: sessionData.user.email,
-						};
-					},
+					try: requirePlatformAdmin,
 					catch: () =>
 						new AuthorizationError({
 							message: "Platform admin access required",
