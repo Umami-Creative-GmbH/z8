@@ -1,4 +1,13 @@
-import ts from "typescript";
+import * as ts from "typescript/unstable/ast";
+import type {
+	Diagnostic,
+	Symbol as TypeScriptSymbol,
+} from "typescript/unstable/sync";
+import {
+	type NativeSourceContext,
+	withNativeProgram,
+	withNativeSource,
+} from "@/lib/typescript/native-source-analysis";
 import {
 	APPROVAL_DYNAMIC_SQL_MARKER,
 	type ApprovalSourceMutationSemantic,
@@ -22,6 +31,24 @@ export interface ApprovalWriteMutationLocation {
 	table: ProtectedWriteTable;
 	uncertainty?: ApprovalSourceMutationUncertainty;
 }
+
+export interface ApprovalWriteMutationSource {
+	fileName: string;
+	source: string;
+	syntaxOnly?: boolean;
+}
+
+export type ApprovalWriteMutationSourceResult =
+	| {
+			fileName: string;
+			mutations: ApprovalWriteMutationLocation[];
+			ok: true;
+	  }
+	| {
+			error: string;
+			fileName: string;
+			ok: false;
+	  };
 
 type Provenance =
 	| "approval_db_service"
@@ -129,14 +156,15 @@ const TIME_ENTRY_LIFECYCLE_COLUMNS = new Set([
 	"superseded_by_id",
 ]);
 
-const SCHEMA_MODULES = new Set([
+export const APPROVAL_WRITE_SCHEMA_MODULE_SPECIFIERS = [
 	"@/db",
 	"@/db/schema",
 	"@/db/schema/approval",
 	"@/db/schema/approval-policy",
 	"@/db/schema/approval-workflow",
 	"@/db/schema/time-record",
-]);
+] as const;
+const SCHEMA_MODULES = new Set<string>(APPROVAL_WRITE_SCHEMA_MODULE_SPECIFIERS);
 const MAX_PROVENANCE_DEPTH = 128;
 const MAX_HELPER_CALLS = 4_096;
 const MAX_HELPER_PROPAGATION_ITERATIONS = 32;
@@ -147,7 +175,31 @@ const CHAIN_SERVICE_PATH =
 	"/apps/webapp/src/lib/approvals/policies/chain-service.ts";
 
 function normalizeFileName(fileName: string): string {
-	return fileName.replaceAll("\\", "/");
+	const normalized = fileName.replaceAll("\\", "/");
+	const absolute = normalized.startsWith("/");
+	const drivePrefixed = /^[A-Za-z]:\//.test(normalized);
+	const segments: string[] = [];
+	for (const segment of normalized.split("/")) {
+		if (!segment || segment === ".") continue;
+		if (segment === "..") {
+			const atDriveRoot = drivePrefixed && segments.length === 1;
+			if (segments.length > 0 && segments.at(-1) !== ".." && !atDriveRoot) {
+				segments.pop();
+			} else if (!absolute && !drivePrefixed) {
+				segments.push(segment);
+			}
+			continue;
+		}
+		segments.push(segment);
+	}
+	return `${absolute ? "/" : ""}${segments.join("/")}`;
+}
+
+function formatDiagnosticText(diagnostic: Diagnostic): string {
+	return [
+		diagnostic.text,
+		...(diagnostic.messageChain ?? []).map(formatDiagnosticText),
+	].join(" ");
 }
 
 function relativeModulePath(fileName: string, moduleName: string): string {
@@ -164,7 +216,10 @@ function relativeModulePath(fileName: string, moduleName: string): string {
 		.replace(/\/index$/, "");
 }
 
-function isSchemaModule(moduleName: string, fileName: string): boolean {
+export function isApprovalWriteSchemaModuleSpecifier(
+	moduleName: string,
+	fileName: string,
+): boolean {
 	if (SCHEMA_MODULES.has(moduleName)) return true;
 	if (!moduleName.startsWith(".")) return false;
 	const resolved = relativeModulePath(fileName, moduleName);
@@ -217,6 +272,89 @@ function isDatabaseServiceModule(
 	);
 }
 
+export function isApprovalWriteDatabaseServiceModuleSpecifier(
+	moduleName: string,
+	fileName: string,
+): boolean {
+	return isDatabaseServiceModule(moduleName, fileName);
+}
+
+export function isApprovalWriteDrizzleSqlModuleSpecifier(
+	moduleName: string,
+): boolean {
+	return moduleName === "drizzle-orm";
+}
+
+export function isApprovalWriteTrustedProvenanceModuleSpecifier(
+	moduleName: string,
+	fileName: string,
+): boolean {
+	return (
+		moduleName === "pg" ||
+		moduleName === "drizzle-orm" ||
+		moduleName === "drizzle-orm/node-postgres" ||
+		isDatabaseModule(moduleName, fileName) ||
+		isApprovalWriteSchemaModuleSpecifier(moduleName, fileName) ||
+		isApprovalDbTypesModule(moduleName, fileName) ||
+		isDatabaseServiceModule(moduleName, fileName)
+	);
+}
+
+export const APPROVAL_WRITE_DATABASE_TYPE_EXPORTS = [
+	"ApprovalDatabase",
+	"ApprovalDbService",
+	"ApprovalTransactionClient",
+] as const;
+export const APPROVAL_WRITE_PG_RECEIVER_EXPORTS = [
+	"Client",
+	"Pool",
+	"PoolClient",
+] as const;
+export const APPROVAL_WRITE_DRIZZLE_NODE_PG_RECEIVER_EXPORTS = [
+	"NodePgDatabase",
+	"drizzle",
+] as const;
+
+export function isApprovalWriteTrustedReceiverImport(
+	moduleName: string,
+	importedName: string,
+	fileName: string,
+): boolean {
+	if (isDatabaseModule(moduleName, fileName)) return importedName === "db";
+	if (isDatabaseServiceModule(moduleName, fileName)) {
+		return importedName === "DatabaseService";
+	}
+	if (isApprovalDbTypesModule(moduleName, fileName)) {
+		return APPROVAL_WRITE_DATABASE_TYPE_EXPORTS.some(
+			(name) => name === importedName,
+		);
+	}
+	if (moduleName === "pg") {
+		return APPROVAL_WRITE_PG_RECEIVER_EXPORTS.some(
+			(name) => name === importedName,
+		);
+	}
+	if (moduleName === "drizzle-orm") return importedName === "sql";
+	if (moduleName === "drizzle-orm/node-postgres") {
+		return APPROVAL_WRITE_DRIZZLE_NODE_PG_RECEIVER_EXPORTS.some(
+			(name) => name === importedName,
+		);
+	}
+	return false;
+}
+
+export function allowsApprovalWriteTrustedReceiverNamespace(
+	moduleName: string,
+	fileName: string,
+): boolean {
+	return (
+		moduleName === "pg" ||
+		moduleName === "drizzle-orm" ||
+		moduleName === "drizzle-orm/node-postgres" ||
+		isDatabaseModule(moduleName, fileName)
+	);
+}
+
 function unwrap(expression: ts.Expression): ts.Expression {
 	let current = expression;
 	while (true) {
@@ -229,7 +367,7 @@ function unwrap(expression: ts.Expression): ts.Expression {
 			ts.isParenthesizedExpression(current) ||
 			ts.isAwaitExpression(current) ||
 			ts.isAsExpression(current) ||
-			ts.isTypeAssertionExpression(current) ||
+			ts.isTypeAssertion(current) ||
 			ts.isNonNullExpression(current) ||
 			ts.isSatisfiesExpression(current)
 		) {
@@ -242,7 +380,7 @@ function unwrap(expression: ts.Expression): ts.Expression {
 
 function staticName(node: ts.Node): string | null {
 	return ts.isIdentifier(node) ||
-		ts.isStringLiteralLike(node) ||
+		ts.isStringLiteralLikeNode(node) ||
 		ts.isNumericLiteral(node)
 		? node.text
 		: null;
@@ -258,7 +396,7 @@ function propertyAccess(
 	if (ts.isElementAccessExpression(candidate) && candidate.argumentExpression) {
 		const argument = unwrap(candidate.argumentExpression);
 		const name =
-			ts.isStringLiteralLike(argument) || ts.isNumericLiteral(argument)
+			ts.isStringLiteralLikeNode(argument) || ts.isNumericLiteral(argument)
 				? argument.text
 				: null;
 		return name === null ? null : { name, target: candidate.expression };
@@ -298,55 +436,6 @@ function applyProperty(
 	if (provenance.startsWith("table:")) return null;
 	if (provenance === "database_receiver") return null;
 	return null;
-}
-
-function createProgram(
-	source: string,
-	fileName: string,
-): {
-	checker: ts.TypeChecker;
-	program: ts.Program;
-	sourceFile: ts.SourceFile;
-} {
-	const normalized = normalizeFileName(fileName);
-	const extension = normalized.toLowerCase().split(".").at(-1);
-	const scriptKind =
-		extension === "js" || extension === "mjs" || extension === "cjs"
-			? ts.ScriptKind.JS
-			: extension === "jsx"
-				? ts.ScriptKind.JSX
-				: extension === "tsx"
-					? ts.ScriptKind.TSX
-					: ts.ScriptKind.TS;
-	const sourceFile = ts.createSourceFile(
-		normalized,
-		source,
-		ts.ScriptTarget.Latest,
-		true,
-		scriptKind,
-	);
-	const options: ts.CompilerOptions = {
-		allowJs:
-			scriptKind === ts.ScriptKind.JS || scriptKind === ts.ScriptKind.JSX,
-		module: ts.ModuleKind.ESNext,
-		noLib: true,
-		noResolve: true,
-		target: ts.ScriptTarget.Latest,
-	};
-	const host: ts.CompilerHost = {
-		fileExists: (candidate) => candidate === normalized,
-		getCanonicalFileName: (candidate) => candidate,
-		getCurrentDirectory: () => "/",
-		getDefaultLibFileName: () => "lib.d.ts",
-		getNewLine: () => "\n",
-		getSourceFile: (candidate) =>
-			candidate === normalized ? sourceFile : undefined,
-		readFile: (candidate) => (candidate === normalized ? source : undefined),
-		useCaseSensitiveFileNames: () => true,
-		writeFile: () => undefined,
-	};
-	const program = ts.createProgram([normalized], options, host);
-	return { checker: program.getTypeChecker(), program, sourceFile };
 }
 
 function isWithin(
@@ -406,7 +495,7 @@ function isConditionalWrite(node: ts.Node, sourceFile: ts.SourceFile): boolean {
 		) {
 			return true;
 		}
-		if (ts.isFunctionLike(parent)) return false;
+		if (ts.isFunctionLikeDeclaration(parent)) return false;
 	}
 	return false;
 }
@@ -415,37 +504,46 @@ function compareAscii(left: string, right: string): number {
 	return left < right ? -1 : left > right ? 1 : 0;
 }
 
-export function analyzeApprovalWriteMutations(
-	source: string,
+function assertNoSyntacticDiagnostics(
+	{ program, sourceFile }: Pick<NativeSourceContext, "program" | "sourceFile">,
 	fileName: string,
-): ApprovalWriteMutationLocation[] {
-	const { checker, program, sourceFile } = createProgram(source, fileName);
-	const constantEvaluationBudget = createApprovalConstantEvaluationBudget();
-	const diagnostic = [...program.getSyntacticDiagnostics(sourceFile)].sort(
-		(left, right) =>
-			(left.start ?? 0) - (right.start ?? 0) || left.code - right.code,
-	)[0];
-	if (diagnostic) {
-		const location = sourceFile.getLineAndCharacterOfPosition(
-			diagnostic.start ?? 0,
-		);
-		throw new Error(
-			`Approval write boundary analysis parse error at ${normalizeFileName(fileName)}:${location.line + 1}:${location.character + 1} [TS${diagnostic.code}] ${ts.flattenDiagnosticMessageText(diagnostic.messageText, " ")}`,
-		);
-	}
+	diagnostics?: readonly Diagnostic[],
+): void {
+	const diagnostic = [
+		...(diagnostics ?? program.getSyntacticDiagnostics(sourceFile.fileName)),
+	].sort((left, right) => left.pos - right.pos || left.code - right.code)[0];
+	if (!diagnostic) return;
+	const location = sourceFile.getLineAndCharacterOfPosition(diagnostic.pos);
+	throw new Error(
+		`Approval write boundary analysis parse error at ${normalizeFileName(fileName)}:${location.line + 1}:${location.character + 1} [TS${diagnostic.code}] ${formatDiagnosticText(diagnostic)}`,
+	);
+}
 
-	const roots = new Map<ts.Symbol, Set<Provenance>>();
-	const knownTypes = new Map<ts.Symbol, Provenance>();
-	const writes = new Map<ts.Symbol, SymbolWrite[]>();
-	const objectMutations = new Map<ts.Symbol, ObjectMutation[]>();
-	const typedDeclarations: Array<{ name: ts.BindingName; type: ts.TypeNode }> =
-		[];
+function analyzeApprovalWriteMutationsInContext(
+	{ checker, program, sourceFile }: NativeSourceContext,
+	fileName: string,
+	diagnostics?: readonly Diagnostic[],
+): ApprovalWriteMutationLocation[] {
+	assertNoSyntacticDiagnostics({ program, sourceFile }, fileName, diagnostics);
+	const constantEvaluationBudget = createApprovalConstantEvaluationBudget();
+
+	const roots = new Map<TypeScriptSymbol, Set<Provenance>>();
+	const knownTypes = new Map<TypeScriptSymbol, Provenance>();
+	const writes = new Map<TypeScriptSymbol, SymbolWrite[]>();
+	const objectMutations = new Map<TypeScriptSymbol, ObjectMutation[]>();
+	const typedDeclarations: Array<{
+		name: ts.BindingName;
+		type: ts.TypeNode;
+	}> = [];
 	const transactionCallbacks: Array<{
 		callPosition: number;
 		parameter: ts.BindingName;
 		target: ts.Expression;
 	}> = [];
-	const localFunctions = new Map<ts.Symbol, ts.FunctionLikeDeclaration>();
+	const localFunctions = new Map<
+		TypeScriptSymbol,
+		ts.FunctionLikeDeclaration
+	>();
 	const possibleHelperCalls: ts.CallExpression[] = [];
 	const effectGeneratorCallbacks: Array<{
 		parameter: ts.BindingName;
@@ -453,7 +551,7 @@ export function analyzeApprovalWriteMutations(
 	}> = [];
 	const enclosingFunction = (node: ts.Node): ts.SignatureDeclaration | null => {
 		for (let parent = node.parent; parent; parent = parent.parent) {
-			if (ts.isFunctionLike(parent)) return parent;
+			if (ts.isFunctionLikeDeclaration(parent)) return parent;
 		}
 		return null;
 	};
@@ -475,7 +573,7 @@ export function analyzeApprovalWriteMutations(
 		roots.set(symbol, values);
 	};
 	const addSymbolWrite = (
-		symbol: ts.Symbol,
+		symbol: TypeScriptSymbol,
 		value: ts.Expression,
 		position: number,
 		propertyPath: readonly string[] = [],
@@ -536,7 +634,7 @@ export function analyzeApprovalWriteMutations(
 			if (!target) return null;
 			const argument = unwrap(candidate.argumentExpression);
 			const name =
-				ts.isStringLiteralLike(argument) || ts.isNumericLiteral(argument)
+				ts.isStringLiteralLikeNode(argument) || ts.isNumericLiteral(argument)
 					? argument.text
 					: null;
 			return {
@@ -577,6 +675,7 @@ export function analyzeApprovalWriteMutations(
 		}
 		for (const [index, element] of name.elements.entries()) {
 			if (ts.isOmittedExpression(element)) continue;
+			if (!element.name) continue;
 			const propertyName = ts.isObjectBindingPattern(name)
 				? staticName(element.propertyName ?? element.name)
 				: String(index);
@@ -641,7 +740,10 @@ export function analyzeApprovalWriteMutations(
 							conditional,
 						);
 					}
-				} else if (ts.isShorthandPropertyAssignment(property)) {
+				} else if (
+					ts.isShorthandPropertyAssignment(property) &&
+					ts.isIdentifier(property.name)
+				) {
 					const symbol = checker.getShorthandAssignmentValueSymbol(property);
 					if (symbol) {
 						addSymbolWrite(
@@ -683,7 +785,7 @@ export function analyzeApprovalWriteMutations(
 		}
 	};
 
-	const activeTypeSymbols = new Set<ts.Symbol>();
+	const activeTypeSymbols = new Set<TypeScriptSymbol>();
 	const containsTrustedTransactionType = (typeNode: ts.TypeNode): boolean => {
 		let trusted = false;
 		const visit = (node: ts.Node): void => {
@@ -700,7 +802,7 @@ export function analyzeApprovalWriteMutations(
 					return;
 				}
 			}
-			ts.forEachChild(node, visit);
+			node.forEachChild(visit);
 		};
 		visit(typeNode);
 		return trusted;
@@ -718,7 +820,7 @@ export function analyzeApprovalWriteMutations(
 		if (ts.isTypeLiteralNode(candidate)) {
 			for (const member of candidate.members) {
 				if (
-					ts.isPropertySignature(member) &&
+					ts.isPropertySignatureDeclaration(member) &&
 					member.type &&
 					member.name &&
 					staticName(member.name) === "tx" &&
@@ -742,7 +844,14 @@ export function analyzeApprovalWriteMutations(
 			if (symbol && knownTypes.has(symbol))
 				return knownTypes.get(symbol) ?? null;
 			if (symbol && !activeTypeSymbols.has(symbol)) {
-				const alias = symbol.declarations?.find(ts.isTypeAliasDeclaration);
+				let alias: ts.TypeAliasDeclaration | undefined;
+				for (const declaration of symbol.declarations) {
+					const resolved = declaration.resolve();
+					if (resolved && ts.isTypeAliasDeclaration(resolved)) {
+						alias = resolved;
+						break;
+					}
+				}
 				if (alias) {
 					activeTypeSymbols.add(symbol);
 					try {
@@ -831,7 +940,7 @@ export function analyzeApprovalWriteMutations(
 		if (
 			ts.isImportDeclaration(node) &&
 			node.importClause &&
-			ts.isStringLiteralLike(node.moduleSpecifier)
+			ts.isStringLiteralLikeNode(node.moduleSpecifier)
 		) {
 			const moduleName = node.moduleSpecifier.text;
 			const bindings = node.importClause.namedBindings;
@@ -844,13 +953,16 @@ export function analyzeApprovalWriteMutations(
 				} else if (moduleName === "pg") addRoot(bindings.name, "pg_namespace");
 				else if (isDatabaseModule(moduleName, fileName)) {
 					addRoot(bindings.name, "database_namespace");
-				} else if (isSchemaModule(moduleName, fileName)) {
+				} else if (isApprovalWriteSchemaModuleSpecifier(moduleName, fileName)) {
 					addRoot(bindings.name, "schema_namespace");
 				}
 			} else if (bindings && ts.isNamedImports(bindings)) {
 				for (const element of bindings.elements) {
 					const importedName = (element.propertyName ?? element.name).text;
-					const table = isSchemaModule(moduleName, fileName)
+					const table = isApprovalWriteSchemaModuleSpecifier(
+						moduleName,
+						fileName,
+					)
 						? TABLE_EXPORTS[importedName]
 						: undefined;
 					if (moduleName === "effect" && importedName === "Effect") {
@@ -920,10 +1032,13 @@ export function analyzeApprovalWriteMutations(
 				isConditionalWrite(node, sourceFile),
 			);
 		}
-		if ((ts.isVariableDeclaration(node) || ts.isParameter(node)) && node.type) {
+		if (
+			(ts.isVariableDeclaration(node) || ts.isParameterDeclaration(node)) &&
+			node.type
+		) {
 			typedDeclarations.push({ name: node.name, type: node.type });
 		}
-		if (ts.isParameter(node) && node.initializer) {
+		if (ts.isParameterDeclaration(node) && node.initializer) {
 			addBinding(
 				node.name,
 				node.initializer,
@@ -1011,7 +1126,7 @@ export function analyzeApprovalWriteMutations(
 		}
 		if (
 			(ts.isForInStatement(node) || ts.isForOfStatement(node)) &&
-			!ts.isVariableDeclarationList(node.initializer)
+			ts.isExpression(node.initializer)
 		) {
 			addAssignment(
 				node.initializer,
@@ -1021,7 +1136,7 @@ export function analyzeApprovalWriteMutations(
 				true,
 			);
 		}
-		ts.forEachChild(node, index);
+		node.forEachChild(index);
 	};
 	index(sourceFile);
 	const addTypedBinding = (
@@ -1034,6 +1149,7 @@ export function analyzeApprovalWriteMutations(
 		}
 		if (!ts.isObjectBindingPattern(name) || !provenance) return;
 		for (const element of name.elements) {
+			if (!element.name) continue;
 			const propertyName = staticName(element.propertyName ?? element.name);
 			if (propertyName === null) continue;
 			addTypedBinding(element.name, applyProperty(provenance, propertyName));
@@ -1061,14 +1177,14 @@ export function analyzeApprovalWriteMutations(
 		) {
 			addRoot(node.name, "update_rows_helper");
 		}
-		ts.forEachChild(node, helperIndex);
+		node.forEachChild(helperIndex);
 	};
 	helperIndex(sourceFile);
 	for (const symbolWrites of writes.values()) {
 		symbolWrites.sort((left, right) => left.position - right.position);
 	}
 	const writesByScope = new Map<
-		ts.Symbol,
+		TypeScriptSymbol,
 		Map<ts.SignatureDeclaration | null, SymbolWrite[]>
 	>();
 	for (const [symbol, symbolWrites] of writes) {
@@ -1095,9 +1211,9 @@ export function analyzeApprovalWriteMutations(
 		return low;
 	};
 
-	const active = new Map<ts.Symbol, Set<number>>();
+	const active = new Map<TypeScriptSymbol, Set<number>>();
 	const resolveSymbol = (
-		symbol: ts.Symbol,
+		symbol: TypeScriptSymbol,
 		usePosition: number,
 		depth: number,
 		useScope: ts.SignatureDeclaration | null,
@@ -1196,7 +1312,7 @@ export function analyzeApprovalWriteMutations(
 		propertyPath: readonly string[],
 		usePosition: number,
 		depth: number,
-		activeSymbols?: Set<ts.Symbol>,
+		activeSymbols?: Set<TypeScriptSymbol>,
 	) => Set<ts.Expression>;
 	const staticObjectPath = (
 		expression: ts.Expression,
@@ -1211,10 +1327,7 @@ export function analyzeApprovalWriteMutations(
 		usePosition: number,
 		depth = 0,
 	): Set<Provenance> => {
-		if (
-			ts.isAsExpression(expression) ||
-			ts.isTypeAssertionExpression(expression)
-		) {
+		if (ts.isAsExpression(expression) || ts.isTypeAssertion(expression)) {
 			const asserted = typeProvenance(expression.type);
 			return asserted
 				? new Set([asserted])
@@ -1293,7 +1406,8 @@ export function analyzeApprovalWriteMutations(
 				return new Set(["approval_db_service"]);
 			}
 			const moduleName =
-				candidate.arguments[0] && ts.isStringLiteralLike(candidate.arguments[0])
+				candidate.arguments[0] &&
+				ts.isStringLiteralLikeNode(candidate.arguments[0])
 					? candidate.arguments[0].text
 					: null;
 			const isDynamicImport =
@@ -1310,7 +1424,7 @@ export function analyzeApprovalWriteMutations(
 				if (moduleName === "pg") return new Set(["pg_namespace"]);
 				if (isDatabaseModule(moduleName, fileName))
 					return new Set(["database_namespace"]);
-				if (isSchemaModule(moduleName, fileName))
+				if (isApprovalWriteSchemaModuleSpecifier(moduleName, fileName))
 					return new Set(["schema_namespace"]);
 			}
 			if (
@@ -1365,9 +1479,11 @@ export function analyzeApprovalWriteMutations(
 			}
 			if (resolved.size > 0) return resolved;
 			const symbol = checker.getSymbolAtLocation(candidate);
-			for (const declaration of symbol?.declarations ?? []) {
+			for (const declarationHandle of symbol?.declarations ?? []) {
+				const declaration = declarationHandle.resolve();
+				if (!declaration) continue;
 				if (
-					(ts.isPropertySignature(declaration) ||
+					(ts.isPropertySignatureDeclaration(declaration) ||
 						ts.isPropertyDeclaration(declaration)) &&
 					declaration.type
 				) {
@@ -1402,14 +1518,18 @@ export function analyzeApprovalWriteMutations(
 				const property = candidate.properties[index];
 				if (!property) continue;
 				if (ts.isSpreadAssignment(property)) return new Set();
-				if (
-					(ts.isPropertyAssignment(property) ||
-						ts.isShorthandPropertyAssignment(property)) &&
-					staticName(property.name) === propertyPath[0]
+				let value: ts.Expression;
+				if (ts.isPropertyAssignment(property)) {
+					value = property.initializer;
+				} else if (
+					ts.isShorthandPropertyAssignment(property) &&
+					ts.isIdentifier(property.name)
 				) {
-					const value = ts.isPropertyAssignment(property)
-						? property.initializer
-						: property.name;
+					value = property.name;
+				} else {
+					continue;
+				}
+				if (staticName(property.name) === propertyPath[0]) {
 					return objectPropertyExpressions(
 						value,
 						propertyPath.slice(1),
@@ -1507,7 +1627,7 @@ export function analyzeApprovalWriteMutations(
 	const resolveLocalFunctions = (
 		expression: ts.Expression,
 		usePosition: number,
-		activeSymbols = new Set<ts.Symbol>(),
+		activeSymbols = new Set<TypeScriptSymbol>(),
 	): Set<ts.FunctionLikeDeclaration> => {
 		const candidate = unwrap(expression);
 		if (!ts.isIdentifier(candidate)) return new Set();
@@ -1518,7 +1638,9 @@ export function analyzeApprovalWriteMutations(
 		activeSymbols.add(symbol);
 		try {
 			const result = new Set<ts.FunctionLikeDeclaration>();
-			for (const declaration of symbol.declarations ?? []) {
+			for (const declarationHandle of symbol.declarations) {
+				const declaration = declarationHandle.resolve();
+				if (!declaration) continue;
 				if (
 					ts.isVariableDeclaration(declaration) &&
 					declaration.initializer &&
@@ -1609,7 +1731,7 @@ export function analyzeApprovalWriteMutations(
 			declaration;
 			declaration = enclosingFunction(declaration)
 		) {
-			if (declaration.name) {
+			if ("name" in declaration && declaration.name) {
 				const name = staticName(declaration.name);
 				if (name !== null) return name;
 			}
@@ -1704,7 +1826,7 @@ export function analyzeApprovalWriteMutations(
 			const partialSql = (
 				value: ts.Expression,
 				depth = 0,
-				seenSymbols = new Set<ts.Symbol>(),
+				seenSymbols = new Set<TypeScriptSymbol>(),
 			): string => {
 				if (depth > MAX_PROVENANCE_DEPTH) {
 					throw new ApprovalWriteBoundaryAnalysisLimitError(
@@ -1734,7 +1856,7 @@ export function analyzeApprovalWriteMutations(
 				}
 				if (ts.isIdentifier(candidate)) {
 					const symbol = checker.getSymbolAtLocation(candidate);
-					const declaration = symbol?.valueDeclaration;
+					const declaration = symbol?.valueDeclaration?.resolve();
 					if (
 						symbol &&
 						!seenSymbols.has(symbol) &&
@@ -1771,9 +1893,16 @@ export function analyzeApprovalWriteMutations(
 		}
 	};
 	const templateSourcePositions = (
-		literal: ts.TemplateLiteralLikeNode,
+		literal: ts.TemplateLiteralLikeNode | ts.NoSubstitutionTemplateLiteral,
 	): number[] => {
-		const rawText = literal.rawText ?? literal.text;
+		const rawText =
+			literal.rawText ??
+			(() => {
+				const sourceText = literal.getText(sourceFile);
+				return ts.isTemplateHead(literal) || ts.isTemplateMiddle(literal)
+					? sourceText.slice(1, -2)
+					: sourceText.slice(1, -1);
+			})();
 		const sourceStart = literal.getStart(sourceFile) + 1;
 		const positions: number[] = [];
 		let rawIndex = 0;
@@ -1951,7 +2080,7 @@ export function analyzeApprovalWriteMutations(
 		expression: ts.Expression,
 		usePosition: number,
 		depth = 0,
-		activeSymbols = new Set<ts.Symbol>(),
+		activeSymbols = new Set<TypeScriptSymbol>(),
 	): SourcePayloadAnalysis => {
 		if (depth > MAX_PROVENANCE_DEPTH) {
 			throw new ApprovalWriteBoundaryAnalysisLimitError(
@@ -2131,23 +2260,26 @@ export function analyzeApprovalWriteMutations(
 			}
 			if (
 				ts.isPropertyAssignment(property) ||
-				ts.isShorthandPropertyAssignment(property)
+				(ts.isShorthandPropertyAssignment(property) &&
+					ts.isIdentifier(property.name))
 			) {
 				const name = staticName(property.name);
 				if (name === null) {
 					unresolved = true;
 					continue;
 				}
-				properties.set(
-					name,
-					ts.isPropertyAssignment(property)
-						? property.initializer
-						: property.name,
-				);
+				const value: ts.Expression = ts.isPropertyAssignment(property)
+					? property.initializer
+					: (property.name as ts.Identifier);
+				properties.set(name, value);
 				if (unresolved) resolvedAfterUncertainty.add(name);
 				continue;
 			}
-			if (ts.isMethodDeclaration(property) || ts.isAccessor(property)) continue;
+			if (
+				ts.isMethodDeclaration(property) ||
+				ts.isAccessorDeclaration(property)
+			)
+				continue;
 			unresolved = true;
 		}
 		return { properties, resolvedAfterUncertainty, unresolved };
@@ -2230,7 +2362,7 @@ export function analyzeApprovalWriteMutations(
 					protectedColumn &&
 					column === "type" &&
 					value &&
-					ts.isStringLiteralLike(value) &&
+					ts.isStringLiteralLikeNode(value) &&
 					value.text === "correction"
 				) {
 					correctionType = true;
@@ -2258,7 +2390,7 @@ export function analyzeApprovalWriteMutations(
 					replacement = true;
 				}
 			}
-			ts.forEachChild(predicate, inspectPredicate);
+			predicate.forEachChild(inspectPredicate);
 		};
 		inspectPredicate(node.arguments[0]);
 		if (!correctionType || !inactive || !nullSuccessor || !replacement) return;
@@ -2367,7 +2499,7 @@ export function analyzeApprovalWriteMutations(
 				const correction =
 					typeValue !== null &&
 					typeValue !== undefined &&
-					ts.isStringLiteralLike(unwrap(typeValue)) &&
+					ts.isStringLiteralLikeNode(unwrap(typeValue)) &&
 					unwrap(typeValue).getText(sourceFile).replaceAll(/["']/g, "") ===
 						"correction";
 				if (
@@ -2503,7 +2635,7 @@ export function analyzeApprovalWriteMutations(
 		) {
 			inspectTemplate(node, node.template);
 		}
-		ts.forEachChild(node, inspect);
+		node.forEachChild(inspect);
 	};
 	try {
 		propagateLocalFunctionProvenance();
@@ -2528,4 +2660,97 @@ export function analyzeApprovalWriteMutations(
 			compareAscii(left.table, right.table) ||
 			compareAscii(left.operation, right.operation),
 	);
+}
+
+export function analyzeApprovalWriteMutations(
+	source: string,
+	fileName: string,
+): ApprovalWriteMutationLocation[] {
+	return withNativeSource(source, fileName, (context) =>
+		analyzeApprovalWriteMutationsInContext(context, fileName),
+	);
+}
+
+export function analyzeApprovalWriteMutationSources(
+	sources: readonly ApprovalWriteMutationSource[],
+): ApprovalWriteMutationSourceResult[] {
+	const uniqueSourceInputs = new Map<string, ApprovalWriteMutationSource>();
+	for (const source of sources) {
+		if (!uniqueSourceInputs.has(source.fileName)) {
+			uniqueSourceInputs.set(source.fileName, source);
+		}
+	}
+	const entryFileName = uniqueSourceInputs.keys().next().value;
+	if (entryFileName === undefined) return [];
+	const virtualSources = new Map(
+		[...uniqueSourceInputs].map(([fileName, input]) => [
+			fileName,
+			input.source,
+		]),
+	);
+
+	try {
+		return withNativeProgram(
+			virtualSources,
+			entryFileName,
+			({ checker, program }) => {
+				const results: ApprovalWriteMutationSourceResult[] = [];
+				const diagnosticsByFileName = new Map<string, Diagnostic[]>();
+				for (const diagnostic of program.getSyntacticDiagnostics()) {
+					if (!diagnostic.fileName) continue;
+					const diagnostics =
+						diagnosticsByFileName.get(diagnostic.fileName) ?? [];
+					diagnostics.push(diagnostic);
+					diagnosticsByFileName.set(diagnostic.fileName, diagnostics);
+				}
+				for (const [fileName, input] of uniqueSourceInputs) {
+					const sourceFile = program.getSourceFile(fileName);
+					if (!sourceFile) {
+						results.push({
+							error: `Native source could not be retrieved: ${fileName}`,
+							fileName,
+							ok: false,
+						});
+						continue;
+					}
+					try {
+						const diagnostics =
+							diagnosticsByFileName.get(sourceFile.fileName) ?? [];
+						if (input.syntaxOnly) {
+							assertNoSyntacticDiagnostics(
+								{ program, sourceFile },
+								fileName,
+								diagnostics,
+							);
+							results.push({ fileName, mutations: [], ok: true });
+							continue;
+						}
+						results.push({
+							fileName,
+							mutations: analyzeApprovalWriteMutationsInContext(
+								{ checker, program, sourceFile },
+								fileName,
+								diagnostics,
+							),
+							ok: true,
+						});
+					} catch (error) {
+						results.push({
+							error: error instanceof Error ? error.message : String(error),
+							fileName,
+							ok: false,
+						});
+					}
+				}
+				return results;
+			},
+		);
+	} catch (error) {
+		const detail = error instanceof Error ? error.message : String(error);
+		return [...uniqueSourceInputs.keys()].map((fileName) => ({
+			error: detail,
+			fileName,
+			ok: false,
+		}));
+	}
 }

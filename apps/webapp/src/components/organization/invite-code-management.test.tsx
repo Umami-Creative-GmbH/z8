@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import ts from "typescript";
-import { describe, expect, it } from "vitest";
+import * as ts from "typescript/unstable/ast";
+import { describe, expect, it, vi } from "vitest";
+import * as nativeSourceAnalysis from "@/lib/typescript/native-source-analysis";
 
 function readOrganizationComponent(fileName: string) {
 	return readFileSync(
@@ -10,37 +11,49 @@ function readOrganizationComponent(fileName: string) {
 	);
 }
 
-function getOversizedComponents(fileName: string) {
-	const source = readOrganizationComponent(fileName);
-	const sourceFile = ts.createSourceFile(
-		`${fileName}.tsx`,
-		source,
-		ts.ScriptTarget.Latest,
-		true,
-		ts.ScriptKind.TSX,
+function getOversizedComponents(sources: ReadonlyMap<string, string>) {
+	const entryFileName = sources.keys().next().value;
+	if (!entryFileName) throw new Error("No organization components to analyze");
+
+	return nativeSourceAnalysis.withNativeProgram(
+		sources,
+		entryFileName,
+		({ program }) => {
+			const oversizedByFile = new Map<string, string[]>();
+
+			for (const fileName of sources.keys()) {
+				const normalizedPath = `/${fileName.replaceAll("\\", "/")}`;
+				const sourceFile = program.getSourceFile(normalizedPath);
+				if (!sourceFile) {
+					throw new Error(`Native source file not found: ${normalizedPath}`);
+				}
+				const oversized: string[] = [];
+
+				function visit(node: ts.Node) {
+					if (
+						ts.isFunctionDeclaration(node) &&
+						node.name &&
+						/^[A-Z]/.test(node.name.text) &&
+						node.body
+					) {
+						const start = sourceFile.getLineAndCharacterOfPosition(
+							node.body.getStart(),
+						).line;
+						const end = sourceFile.getLineAndCharacterOfPosition(
+							node.body.getEnd(),
+						).line;
+						if (end - start + 1 > 300) oversized.push(node.name.text);
+					}
+					node.forEachChild(visit);
+				}
+
+				visit(sourceFile);
+				oversizedByFile.set(fileName, oversized);
+			}
+
+			return oversizedByFile;
+		},
 	);
-	const oversized: string[] = [];
-
-	function visit(node: ts.Node) {
-		if (
-			ts.isFunctionDeclaration(node) &&
-			node.name &&
-			/^[A-Z]/.test(node.name.text) &&
-			node.body
-		) {
-			const start = sourceFile.getLineAndCharacterOfPosition(
-				node.body.getStart(),
-			).line;
-			const end = sourceFile.getLineAndCharacterOfPosition(
-				node.body.getEnd(),
-			).line;
-			if (end - start + 1 > 300) oversized.push(node.name.text);
-		}
-		ts.forEachChild(node, visit);
-	}
-
-	visit(sourceFile);
-	return oversized;
 }
 
 describe("InviteCodeManagement responsive UX", () => {
@@ -62,16 +75,46 @@ describe("InviteCodeManagement responsive UX", () => {
 			],
 			"teams-tab": ["TeamsView", "TeamDialogStack"],
 		};
+		const sources = new Map(
+			Object.keys(expectedExtractions).map((fileName) => [
+				`${fileName}.tsx`,
+				readOrganizationComponent(fileName),
+			]),
+		);
+		const withNativeProgram = vi.spyOn(
+			nativeSourceAnalysis,
+			"withNativeProgram",
+		);
+		const withNativeSource = vi.spyOn(nativeSourceAnalysis, "withNativeSource");
+		let oversizedByFile: Map<string, string[]> | undefined;
+		let nativeProgramCallCount = 0;
+		let nativeSourceCallCount = 0;
+
+		try {
+			oversizedByFile = getOversizedComponents(sources);
+		} finally {
+			nativeProgramCallCount = withNativeProgram.mock.calls.length;
+			nativeSourceCallCount = withNativeSource.mock.calls.length;
+			try {
+				withNativeProgram.mockRestore();
+			} finally {
+				withNativeSource.mockRestore();
+			}
+		}
 
 		for (const [fileName, extractions] of Object.entries(expectedExtractions)) {
-			const source = readOrganizationComponent(fileName);
+			const source = sources.get(`${fileName}.tsx`);
+			if (!source)
+				throw new Error(`Organization source not found: ${fileName}`);
 			for (const extraction of extractions) {
 				expect(source, `${fileName} should define ${extraction}`).toContain(
 					`function ${extraction}`,
 				);
 			}
-			expect(getOversizedComponents(fileName)).toEqual([]);
+			expect(oversizedByFile.get(`${fileName}.tsx`)).toEqual([]);
 		}
+		expect(nativeProgramCallCount).toBe(1);
+		expect(nativeSourceCallCount).toBe(0);
 	});
 
 	it("keeps the table for desktop and renders mobile invite cards", () => {

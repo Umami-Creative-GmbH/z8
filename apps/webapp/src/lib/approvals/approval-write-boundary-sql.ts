@@ -1,4 +1,8 @@
-import ts from "typescript";
+import * as ts from "typescript/unstable/ast";
+import type {
+	Checker,
+	Symbol as TypeScriptSymbol,
+} from "typescript/unstable/sync";
 
 export type ApprovalWriteOperation = "insert" | "update" | "delete";
 
@@ -1400,12 +1404,12 @@ export function findProtectedApprovalSqlMutations(
 
 export interface ConstantApprovalSqlContext {
 	budget?: ApprovalConstantEvaluationBudget;
-	checker: ts.TypeChecker;
+	checker: Checker;
 	usePosition: number;
 }
 
 export interface ApprovalConstantEvaluationBudget {
-	memo: Map<ts.Symbol, string | null>;
+	memo: Map<TypeScriptSymbol, string | null>;
 	work: number;
 }
 
@@ -1419,13 +1423,13 @@ export function createApprovalConstantEvaluationBudget(): ApprovalConstantEvalua
 
 const writeSymbolIndexCache = new WeakMap<
 	ts.SourceFile,
-	WeakMap<ts.TypeChecker, Set<ts.Symbol>>
+	WeakMap<Checker, Set<TypeScriptSymbol>>
 >();
 
 function collectAssignmentTarget(
 	target: ts.Node,
-	writeSymbols: Set<ts.Symbol>,
-	checker: ts.TypeChecker,
+	writeSymbols: Set<TypeScriptSymbol>,
+	checker: Checker,
 ): void {
 	if (ts.isIdentifier(target)) {
 		const symbol = checker.getSymbolAtLocation(target);
@@ -1470,8 +1474,8 @@ function collectAssignmentTarget(
 
 function writeSymbolsFor(
 	sourceFile: ts.SourceFile,
-	checker: ts.TypeChecker,
-): Set<ts.Symbol> {
+	checker: Checker,
+): Set<TypeScriptSymbol> {
 	let byChecker = writeSymbolIndexCache.get(sourceFile);
 	if (!byChecker) {
 		byChecker = new WeakMap();
@@ -1479,7 +1483,7 @@ function writeSymbolsFor(
 	}
 	const existing = byChecker.get(checker);
 	if (existing) return existing;
-	const writeSymbols = new Set<ts.Symbol>();
+	const writeSymbols = new Set<TypeScriptSymbol>();
 	byChecker.set(checker, writeSymbols);
 	const visit = (node: ts.Node): void => {
 		if (
@@ -1502,7 +1506,7 @@ function writeSymbolsFor(
 		) {
 			collectAssignmentTarget(node.initializer, writeSymbols, checker);
 		}
-		ts.forEachChild(node, visit);
+		node.forEachChild(visit);
 	};
 	visit(sourceFile);
 	return writeSymbols;
@@ -1513,7 +1517,7 @@ export function evaluateConstantApprovalSql(
 	context: ConstantApprovalSqlContext,
 ): string | null {
 	const budget = context.budget ?? createApprovalConstantEvaluationBudget();
-	const activeSymbols = new Set<ts.Symbol>();
+	const activeSymbols = new Set<TypeScriptSymbol>();
 	const checkLength = (length: number): void => {
 		if (length > MAX_CONSTANT_EVALUATION_OUTPUT) {
 			throw new ApprovalWriteBoundaryAnalysisLimitError(
@@ -1547,7 +1551,7 @@ export function evaluateConstantApprovalSql(
 		if (
 			ts.isParenthesizedExpression(candidate) ||
 			ts.isAsExpression(candidate) ||
-			ts.isTypeAssertionExpression(candidate) ||
+			ts.isTypeAssertion(candidate) ||
 			ts.isNonNullExpression(candidate) ||
 			ts.isSatisfiesExpression(candidate)
 		) {
@@ -1579,7 +1583,9 @@ export function evaluateConstantApprovalSql(
 			const symbol = context.checker.getSymbolAtLocation(candidate);
 			if (!symbol) return null;
 			if (budget.memo.has(symbol)) return budget.memo.get(symbol) ?? null;
-			const declarations = symbol.declarations;
+			const declarations = symbol.declarations
+				.map((declaration) => declaration.resolve())
+				.filter((declaration) => declaration !== undefined);
 			if (
 				declarations?.length !== 1 ||
 				!ts.isVariableDeclaration(declarations[0])
