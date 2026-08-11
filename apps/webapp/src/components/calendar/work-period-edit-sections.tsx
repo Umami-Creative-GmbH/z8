@@ -238,7 +238,6 @@ export function ProjectEditSection({
 						onValueChange={onProjectChange}
 						disabled={isSaving}
 						showLabel={false}
-						autoSelectLast={false}
 					/>
 					<div className="flex gap-2">
 						<Button

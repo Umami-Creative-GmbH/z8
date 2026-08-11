@@ -36,16 +36,24 @@ import {
 import {
 	type ColumnDef,
 	type ColumnFiltersState,
+	type ColumnVisibilityState,
+	columnFilteringFeature,
+	columnVisibilityFeature,
+	createFilteredRowModel,
+	createPaginatedRowModel,
+	createSortedRowModel,
+	filterFn_includesString,
 	flexRender,
-	getCoreRowModel,
-	getFacetedRowModel,
-	getFacetedUniqueValues,
-	getFilteredRowModel,
-	getPaginationRowModel,
-	getSortedRowModel,
 	type Row,
+	rowPaginationFeature,
+	rowSelectionFeature,
+	rowSortingFeature,
 	type SortingState,
-	type VisibilityState,
+	sortFn_alphanumeric,
+	sortFn_basic,
+	sortFn_text,
+	tableFeatures,
+	useTable,
 } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
@@ -57,10 +65,16 @@ import { z } from "zod";
 const Area = dynamic(() => import("recharts").then((mod) => mod.Area), {
 	ssr: false,
 });
-const AreaChart = dynamic(() => import("recharts").then((mod) => mod.AreaChart), { ssr: false });
-const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.CartesianGrid), {
-	ssr: false,
-});
+const AreaChart = dynamic(
+	() => import("recharts").then((mod) => mod.AreaChart),
+	{ ssr: false },
+);
+const CartesianGrid = dynamic(
+	() => import("recharts").then((mod) => mod.CartesianGrid),
+	{
+		ssr: false,
+	},
+);
 const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), {
 	ssr: false,
 });
@@ -111,7 +125,6 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCompilerSafeReactTable } from "@/components/use-compiler-safe-react-table";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const schema = z.object({
@@ -122,6 +135,27 @@ const schema = z.object({
 	target: z.string(),
 	limit: z.string(),
 	reviewer: z.string(),
+});
+
+type DataTableRow = z.infer<typeof schema>;
+
+const dataTableFeatures = tableFeatures({
+	columnFilteringFeature,
+	columnVisibilityFeature,
+	rowPaginationFeature,
+	rowSelectionFeature,
+	rowSortingFeature,
+	filteredRowModel: createFilteredRowModel(),
+	paginatedRowModel: createPaginatedRowModel(),
+	sortedRowModel: createSortedRowModel(),
+	filterFns: {
+		includesString: filterFn_includesString,
+	},
+	sortFns: {
+		alphanumeric: sortFn_alphanumeric,
+		text: sortFn_text,
+		basic: sortFn_basic,
+	},
 });
 
 // Create a separate component for the drag handle
@@ -144,7 +178,7 @@ function DragHandle({ id }: { id: number }) {
 	);
 }
 
-const columns: ColumnDef<z.infer<typeof schema>>[] = [
+const columns: ColumnDef<typeof dataTableFeatures, DataTableRow>[] = [
 	{
 		id: "drag",
 		header: () => null,
@@ -157,8 +191,11 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 				<Checkbox
 					aria-label="Select all"
 					checked={
-						table.getIsAllPageRowsSelected() ||
-						(table.getIsSomePageRowsSelected() && "indeterminate")
+						table.getIsAllPageRowsSelected()
+							? true
+							: table.getIsSomePageRowsSelected()
+								? "indeterminate"
+								: false
 					}
 					onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
 				/>
@@ -282,7 +319,9 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 						</SelectTrigger>
 						<SelectContent align="end">
 							<SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
-							<SelectItem value="Jamik Tashpulatov">Jamik Tashpulatov</SelectItem>
+							<SelectItem value="Jamik Tashpulatov">
+								Jamik Tashpulatov
+							</SelectItem>
 						</SelectContent>
 					</Select>
 				</>
@@ -315,7 +354,11 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 	},
 ];
 
-function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
+function DraggableRow({
+	row,
+}: {
+	row: Row<typeof dataTableFeatures, DataTableRow>;
+}) {
 	const { transform, transition, setNodeRef, isDragging } = useSortable({
 		id: row.original.id,
 	});
@@ -340,11 +383,14 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
 	);
 }
 
-export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[] }) {
+export function DataTable({ data: initialData }: { data: DataTableRow[] }) {
 	const [data, setData] = React.useState(() => initialData);
 	const [rowSelection, setRowSelection] = React.useState({});
-	const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-	const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+	const [columnVisibility, setColumnVisibility] =
+		React.useState<ColumnVisibilityState>({});
+	const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+		[],
+	);
 	const [sorting, setSorting] = React.useState<SortingState>([]);
 	const [pagination, setPagination] = React.useState({
 		pageIndex: 0,
@@ -359,7 +405,8 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 
 	const dataIds: UniqueIdentifier[] = data?.map(({ id }) => id) || [];
 
-	const table = useCompilerSafeReactTable({
+	const table = useTable({
+		features: dataTableFeatures,
 		data,
 		columns,
 		state: {
@@ -376,12 +423,6 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 		onColumnFiltersChange: setColumnFilters,
 		onColumnVisibilityChange: setColumnVisibility,
 		onPaginationChange: setPagination,
-		getCoreRowModel: getCoreRowModel(),
-		getFilteredRowModel: getFilteredRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
-		getSortedRowModel: getSortedRowModel(),
-		getFacetedRowModel: getFacetedRowModel(),
-		getFacetedUniqueValues: getFacetedUniqueValues(),
 	});
 
 	function handleDragEnd(event: DragEndEvent) {
@@ -396,13 +437,20 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 	}
 
 	return (
-		<Tabs className="w-full flex-col justify-start gap-6" defaultValue="outline">
+		<Tabs
+			className="w-full flex-col justify-start gap-6"
+			defaultValue="outline"
+		>
 			<div className="flex items-center justify-between px-4 lg:px-6">
 				<Label className="sr-only" htmlFor="view-selector">
 					View
 				</Label>
 				<Select defaultValue="outline">
-					<SelectTrigger className="flex @4xl/main:hidden w-fit" id="view-selector" size="sm">
+					<SelectTrigger
+						className="flex @4xl/main:hidden w-fit"
+						id="view-selector"
+						size="sm"
+					>
 						<SelectValue placeholder="Select a view" />
 					</SelectTrigger>
 					<SelectContent>
@@ -440,7 +488,9 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 												checked={column.getIsVisible()}
 												className="capitalize"
 												key={column.id}
-												onCheckedChange={(value) => column.toggleVisibility(!!value)}
+												onCheckedChange={(value) =>
+													column.toggleVisibility(!!value)
+												}
 											>
 												{column.id}
 											</DropdownMenuCheckboxItem>,
@@ -475,7 +525,10 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 											<TableHead colSpan={header.colSpan} key={header.id}>
 												{header.isPlaceholder
 													? null
-													: flexRender(header.column.columnDef.header, header.getContext())}
+													: flexRender(
+															header.column.columnDef.header,
+															header.getContext(),
+														)}
 											</TableHead>
 										))}
 									</TableRow>
@@ -483,14 +536,20 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 							</TableHeader>
 							<TableBody className="**:data-[slot=table-cell]:first:w-8">
 								{table.getRowModel().rows?.length ? (
-									<SortableContext items={dataIds} strategy={verticalListSortingStrategy}>
+									<SortableContext
+										items={dataIds}
+										strategy={verticalListSortingStrategy}
+									>
 										{table.getRowModel().rows.map((row) => (
 											<DraggableRow key={row.id} row={row} />
 										))}
 									</SortableContext>
 								) : (
 									<TableRow>
-										<TableCell className="h-24 text-center" colSpan={columns.length}>
+										<TableCell
+											className="h-24 text-center"
+											colSpan={columns.length}
+										>
 											No results.
 										</TableCell>
 									</TableRow>
@@ -513,10 +572,10 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 								onValueChange={(value) => {
 									table.setPageSize(Number(value));
 								}}
-								value={`${table.getState().pagination.pageSize}`}
+								value={`${table.state.pagination.pageSize}`}
 							>
 								<SelectTrigger className="w-20" id="rows-per-page" size="sm">
-									<SelectValue placeholder={table.getState().pagination.pageSize} />
+									<SelectValue placeholder={table.state.pagination.pageSize} />
 								</SelectTrigger>
 								<SelectContent side="top">
 									{[10, 20, 30, 40, 50].map((pageSize) => (
@@ -528,7 +587,8 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 							</Select>
 						</div>
 						<div className="flex w-fit items-center justify-center font-medium text-sm">
-							Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+							Page {table.state.pagination.pageIndex + 1} of{" "}
+							{table.getPageCount()}
 						</div>
 						<div className="ml-auto flex items-center gap-2 lg:ml-0">
 							<Button
@@ -574,13 +634,19 @@ export function DataTable({ data: initialData }: { data: z.infer<typeof schema>[
 					</div>
 				</div>
 			</TabsContent>
-			<TabsContent className="flex flex-col px-4 lg:px-6" value="past-performance">
+			<TabsContent
+				className="flex flex-col px-4 lg:px-6"
+				value="past-performance"
+			>
 				<div className="aspect-video w-full flex-1 rounded-lg border border-dashed" />
 			</TabsContent>
 			<TabsContent className="flex flex-col px-4 lg:px-6" value="key-personnel">
 				<div className="aspect-video w-full flex-1 rounded-lg border border-dashed" />
 			</TabsContent>
-			<TabsContent className="flex flex-col px-4 lg:px-6" value="focus-documents">
+			<TabsContent
+				className="flex flex-col px-4 lg:px-6"
+				value="focus-documents"
+			>
 				<div className="aspect-video w-full flex-1 rounded-lg border border-dashed" />
 			</TabsContent>
 		</Tabs>
@@ -634,7 +700,10 @@ function ChartSection({
 						tickLine={false}
 						tickMargin={8}
 					/>
-					<ChartTooltip content={<ChartTooltipContent indicator="dot" />} cursor={false} />
+					<ChartTooltip
+						content={<ChartTooltipContent indicator="dot" />}
+						cursor={false}
+					/>
 					<Area
 						dataKey="mobile"
 						fill="var(--color-mobile)"
@@ -665,12 +734,15 @@ function ChartSection({
 	);
 }
 
-function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
+function TableCellViewer({ item }: { item: DataTableRow }) {
 	const isMobile = useIsMobile();
 	const { t } = useTranslate();
 
 	const translations = {
-		showingVisitors: t("table.showing-visitors", "Showing total visitors for the last 6 months"),
+		showingVisitors: t(
+			"table.showing-visitors",
+			"Showing total visitors for the last 6 months",
+		),
 		trendingUp: t("table.trending-up", "Trending up by 5.2% this month"),
 		description: t(
 			"table.description",
@@ -688,12 +760,24 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 		submit: t("generic.submit", "Submit"),
 		done: t("generic.done", "Done"),
 		typeOptions: {
-			tableOfContents: t("table.type-options.table-of-contents", "Table of Contents"),
-			executiveSummary: t("table.type-options.executive-summary", "Executive Summary"),
-			technicalApproach: t("table.type-options.technical-approach", "Technical Approach"),
+			tableOfContents: t(
+				"table.type-options.table-of-contents",
+				"Table of Contents",
+			),
+			executiveSummary: t(
+				"table.type-options.executive-summary",
+				"Executive Summary",
+			),
+			technicalApproach: t(
+				"table.type-options.technical-approach",
+				"Technical Approach",
+			),
 			design: t("table.type-options.design", "Design"),
 			capabilities: t("table.type-options.capabilities", "Capabilities"),
-			focusDocuments: t("table.type-options.focus-documents", "Focus Documents"),
+			focusDocuments: t(
+				"table.type-options.focus-documents",
+				"Focus Documents",
+			),
 			narrative: t("table.type-options.narrative", "Narrative"),
 			coverPage: t("table.type-options.cover-page", "Cover Page"),
 		},
@@ -745,15 +829,21 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 										<SelectItem value="Technical Approach">
 											{translations.typeOptions.technicalApproach}
 										</SelectItem>
-										<SelectItem value="Design">{translations.typeOptions.design}</SelectItem>
+										<SelectItem value="Design">
+											{translations.typeOptions.design}
+										</SelectItem>
 										<SelectItem value="Capabilities">
 											{translations.typeOptions.capabilities}
 										</SelectItem>
 										<SelectItem value="Focus Documents">
 											{translations.typeOptions.focusDocuments}
 										</SelectItem>
-										<SelectItem value="Narrative">{translations.typeOptions.narrative}</SelectItem>
-										<SelectItem value="Cover Page">{translations.typeOptions.coverPage}</SelectItem>
+										<SelectItem value="Narrative">
+											{translations.typeOptions.narrative}
+										</SelectItem>
+										<SelectItem value="Cover Page">
+											{translations.typeOptions.coverPage}
+										</SelectItem>
 									</SelectContent>
 								</Select>
 							</div>
@@ -764,7 +854,9 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 										<SelectValue placeholder={translations.selectStatus} />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="Done">{translations.statusOptions.done}</SelectItem>
+										<SelectItem value="Done">
+											{translations.statusOptions.done}
+										</SelectItem>
 										<SelectItem value="In Progress">
 											{translations.statusOptions.inProgress}
 										</SelectItem>
@@ -793,7 +885,9 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
-									<SelectItem value="Jamik Tashpulatov">Jamik Tashpulatov</SelectItem>
+									<SelectItem value="Jamik Tashpulatov">
+										Jamik Tashpulatov
+									</SelectItem>
 									<SelectItem value="Emily Whalen">Emily Whalen</SelectItem>
 								</SelectContent>
 							</Select>

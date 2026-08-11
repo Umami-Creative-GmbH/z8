@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import type { TFnType } from "@tolgee/react";
 import type { WorkPolicyWithDetails } from "@/app/[locale]/(app)/settings/work-policies/actions";
+import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { WorkPolicyActionMenu } from "./work-policy-action-menu";
 import { WorkPolicyBreakRulesCell } from "./work-policy-break-rules-cell";
 import { WorkPolicyFeaturesCell } from "./work-policy-features-cell";
@@ -25,7 +26,7 @@ export function getWorkPolicyTableColumns({
 	onDelete: (policy: WorkPolicyWithDetails) => void;
 	isDuplicatePending: boolean;
 	isSetDefaultPending: boolean;
-}): ColumnDef<WorkPolicyWithDetails>[] {
+}): ColumnDef<DataTableFeatures, WorkPolicyWithDetails>[] {
 	return [
 		{
 			accessorKey: "name",

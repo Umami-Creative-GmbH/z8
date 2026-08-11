@@ -13,12 +13,18 @@ import {
 } from "@tabler/icons-react";
 import {
 	type ColumnDef,
+	columnVisibilityFeature,
+	createPaginatedRowModel,
+	createSortedRowModel,
 	flexRender,
-	getCoreRowModel,
-	getFilteredRowModel,
-	getPaginationRowModel,
-	getSortedRowModel,
+	rowPaginationFeature,
+	rowSortingFeature,
 	type SortingState,
+	sortFn_alphanumeric,
+	sortFn_basic,
+	sortFn_text,
+	tableFeatures,
+	useTable,
 } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -36,7 +42,6 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useCompilerSafeReactTable } from "@/components/use-compiler-safe-react-table";
 import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { formatSignedWorkBalance } from "@/lib/work-balance/format";
@@ -48,6 +53,19 @@ type ManagedEmployeeWithPresence = ManagedEmployee & {
 	lastActivityAt: string | null;
 	lastActivityUtcOffsetMinutes: number | null;
 };
+
+const teamTableFeatures = tableFeatures({
+	columnVisibilityFeature,
+	rowPaginationFeature,
+	rowSortingFeature,
+	paginatedRowModel: createPaginatedRowModel(),
+	sortedRowModel: createSortedRowModel(),
+	sortFns: {
+		alphanumeric: sortFn_alphanumeric,
+		text: sortFn_text,
+		basic: sortFn_basic,
+	},
+});
 
 interface TeamMembersListProps {
 	employees: ManagedEmployee[];
@@ -391,7 +409,10 @@ function TeamMembersTable({
 }: TeamMemberPresentationProps) {
 	const { t } = useTranslate();
 	const [sorting, setSorting] = useState<SortingState>([]);
-	const columns: ColumnDef<ManagedEmployeeWithPresence>[] = [
+	const columns: ColumnDef<
+		typeof teamTableFeatures,
+		ManagedEmployeeWithPresence
+	>[] = [
 		{
 			accessorKey: "user.name",
 			header: t("team.table.employee", "Employee"),
@@ -527,16 +548,13 @@ function TeamMembersTable({
 			),
 		},
 	];
-	const table = useCompilerSafeReactTable({
+	const table = useTable({
+		features: teamTableFeatures,
 		data: employees,
 		columns,
-		getCoreRowModel: getCoreRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
-		getSortedRowModel: getSortedRowModel(),
-		getFilteredRowModel: getFilteredRowModel(),
 		onSortingChange: setSorting,
 		state: { sorting },
-		initialState: { pagination: { pageSize: 10 } },
+		initialState: { pagination: { pageIndex: 0, pageSize: 10 } },
 	});
 
 	return (
@@ -589,12 +607,12 @@ function TeamMembersTable({
 					<p className="text-sm text-muted-foreground">
 						{t("team.pagination.showing", "Showing {from} to {to} of {total}", {
 							from:
-								table.getState().pagination.pageIndex *
-									table.getState().pagination.pageSize +
+								table.state.pagination.pageIndex *
+									table.state.pagination.pageSize +
 								1,
 							to: Math.min(
-								(table.getState().pagination.pageIndex + 1) *
-									table.getState().pagination.pageSize,
+								(table.state.pagination.pageIndex + 1) *
+									table.state.pagination.pageSize,
 								employees.length,
 							),
 							total: employees.length,

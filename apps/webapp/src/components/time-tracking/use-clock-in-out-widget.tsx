@@ -9,6 +9,7 @@ import { useUserTimezone } from "@/components/providers/user-preferences-provide
 import { useComplianceStatus } from "@/hooks/use-compliance-status";
 import { type TimeClockState, useElapsedTimer, useTimeClock } from "@/lib/query";
 import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 import {
 	normalizeWorkLocationType,
 	type WorkLocationType,
@@ -249,7 +250,11 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 
 		const browserTimezone = getBrowserTimezone();
 		if (browserTimezone && browserTimezone !== savedTimezone) {
-			setTimezoneMismatch({ browserTimezone, savedTimezone, action: "clock_in" });
+			setTimezoneMismatch({
+				browserTimezone,
+				savedTimezone,
+				action: "clock_in",
+			});
 			return;
 		}
 
@@ -259,7 +264,11 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 	const handleClockOut = async () => {
 		const browserTimezone = getBrowserTimezone();
 		if (browserTimezone && browserTimezone !== savedTimezone) {
-			setTimezoneMismatch({ browserTimezone, savedTimezone, action: "clock_out" });
+			setTimezoneMismatch({
+				browserTimezone,
+				savedTimezone,
+				action: "clock_out",
+			});
 			return;
 		}
 
@@ -281,17 +290,13 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 		isTimezoneContinuationPendingRef.current = true;
 		setIsTimezoneContinuationPending(true);
 
-		try {
+		await runWithCleanup(async () => {
 			await submitTimezoneMismatch(timezoneMismatch);
 			setTimezoneMismatch(null);
-		} catch (error) {
+		}, () => {
 			isTimezoneContinuationPendingRef.current = false;
 			setIsTimezoneContinuationPending(false);
-			throw error;
-		}
-
-		isTimezoneContinuationPendingRef.current = false;
-		setIsTimezoneContinuationPending(false);
+		});
 	}
 
 	async function handleTimezoneMismatchUpdateAndContinue() {
@@ -299,12 +304,11 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 		isTimezoneContinuationPendingRef.current = true;
 		setIsTimezoneContinuationPending(true);
 
+		await runWithCleanup(async () => {
 		try {
 			const result = await updateTimezone(timezoneMismatch.browserTimezone);
 			if (!result?.success) {
 				toast.error(result?.error || "Failed to update timezone");
-				isTimezoneContinuationPendingRef.current = false;
-				setIsTimezoneContinuationPending(false);
 				return;
 			}
 
@@ -312,13 +316,11 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 			setTimezoneMismatch(null);
 		} catch {
 			toast.error("An error occurred while updating timezone");
+		}
+		}, () => {
 			isTimezoneContinuationPendingRef.current = false;
 			setIsTimezoneContinuationPending(false);
-			return;
-		}
-
-		isTimezoneContinuationPendingRef.current = false;
-		setIsTimezoneContinuationPending(false);
+		});
 	}
 
 	const handleSaveNotes = async () => {

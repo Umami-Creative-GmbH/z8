@@ -7,6 +7,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { cancelAbsenceRequest } from "@/app/[locale]/(app)/absences/actions";
 import { DataTable, DataTableToolbar } from "@/components/data-table-server";
+import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -105,7 +106,7 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 	})();
 
 	// Column definitions
-	const columns: ColumnDef<AbsenceWithCategory>[] = [
+	const columns: ColumnDef<DataTableFeatures, AbsenceWithCategory>[] = [
 		{
 			accessorKey: "dateRange",
 			header: t("absences.table.headers.dateRange", "Date Range"),

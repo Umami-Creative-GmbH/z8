@@ -57,13 +57,13 @@ export const TolgeeNextProvider = ({ language, staticData, children }: Props) =>
 
 	useEffect(() => {
 		// this ensures server components refresh, after translation change
-		const { unsubscribe } = tolgee.on("permanentChange", () => {
+		const subscription = tolgee.on("permanentChange", () => {
 			if (isAddingStaticData.current) {
 				return;
 			}
 			refresh();
 		});
-		return () => unsubscribe();
+		return () => subscription.unsubscribe();
 	}, [refresh, tolgee]);
 
 	return (

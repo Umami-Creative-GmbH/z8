@@ -16,8 +16,15 @@ import type {
 	ProtectedWriteTable,
 	TargetedApprovalSourceTable,
 } from "./approval-write-boundary-sql";
-import { TARGETED_APPROVAL_SOURCE_TABLES } from "./approval-write-boundary-sql";
-import { analyzeApprovalWriteMutations } from "./approval-write-boundary-typescript";
+import {
+	PROTECTED_APPROVAL_TABLES,
+	TARGETED_APPROVAL_SOURCE_TABLES,
+} from "./approval-write-boundary-sql";
+import {
+	analyzeApprovalWriteMutationSources,
+	isApprovalWriteSchemaModuleSpecifier,
+	isApprovalWriteTrustedProvenanceModuleSpecifier,
+} from "./approval-write-boundary-typescript";
 
 type ApprovalWriteOwners = Readonly<
 	Record<
@@ -805,6 +812,28 @@ const TEST_SOURCE = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
 const MAX_PRODUCTION_FILES = 4_096;
 const MAX_SOURCE_BYTES = 2 * 1024 * 1024;
 const MAX_TOTAL_SOURCE_BYTES = 32 * 1024 * 1024;
+const APPROVAL_TABLE_PREFILTER =
+	/approval_(?:assignment|chain|command|delivery|event|inbox|migration|outbox|projection|request|requester|rollout|stage|workflow)/i;
+const APPROVAL_TABLE_SYMBOL_PREFILTER =
+	/approval(?:Chain|Inbox|Outbox|Request|Requester|Stage|Workflow)/;
+const COMPOSED_APPROVAL_TABLE_PREFILTER =
+	/approval_?["'`+\s]+(?:assignment|chain|command|delivery|event|inbox|migration|outbox|projection|request|rollout|stage|workflow)/i;
+const SOURCE_TABLE_PREFILTER = /time_entry|work_period|time_record/i;
+const SOURCE_TABLE_SYMBOL_PREFILTER = /timeEntry|workPeriod|timeRecord/;
+const RAW_SQL_SURFACE_PREFILTER =
+	/\.(?:execute|query)\s*\(|\[\s*["'`](?:execute|query|raw)["'`]\s*\]|\.raw\b|\b(?:execute|query|raw)\s*\(/i;
+const TAGGED_TEMPLATE_SURFACE_PREFILTER = /(?:\b[A-Za-z_$][\w$]*|\]|\))\s*`/;
+const DRIZZLE_WRITE_PREFILTER =
+	/\.(?:delete|insert|update)\b|\[\s*["'`](?:delete|insert|update)["'`]\s*\]/i;
+const TRUSTED_MUTATION_VOCABULARY_PREFILTER =
+	/\b(?:delete|execute|insert|query|raw|sql|update)\b/i;
+const IDENTIFIER_UNICODE_ESCAPE = /\\u(?:[0-9A-Fa-f]{4}|\{[0-9A-Fa-f]{1,6}\})/;
+const INCOMPLETE_SOURCE_PREFILTER = /(?:[([{=,:?+*/-]|=>)\s*$/;
+const RAW_SQL_OPERATIONS = ["insert", "update", "delete"] as const;
+const PROTECTED_SQL_TABLES = [
+	...PROTECTED_APPROVAL_TABLES,
+	...TARGETED_APPROVAL_SOURCE_TABLES,
+] as const;
 
 interface SourceCandidate {
 	dev: number;
@@ -818,6 +847,279 @@ function compareAscii(left: string, right: string): number {
 
 function normalizePath(path: string): string {
 	return path.replaceAll("\\", "/");
+}
+
+interface LiteralExtraction {
+	fragments: string[];
+	uncertain: boolean;
+}
+
+function extractLiteralFragments(source: string): LiteralExtraction {
+	const fragments: string[] = [];
+	let index = 0;
+	let uncertain = false;
+
+	const readEscape = (): string | null => {
+		index += 1;
+		if (index >= source.length) return null;
+		const escaped = source[index];
+		index += 1;
+		if (escaped === "\n") return "";
+		if (escaped === "\r") {
+			if (source[index] === "\n") index += 1;
+			return "";
+		}
+		if (escaped && /[^A-Za-z0-9]/.test(escaped)) return escaped;
+		if (escaped === "b") return "\b";
+		if (escaped === "f") return "\f";
+		if (escaped === "n") return "\n";
+		if (escaped === "r") return "\r";
+		if (escaped === "t") return "\t";
+		if (escaped === "v") return "\v";
+		if (escaped === "0" && !/[0-9]/.test(source[index] ?? "")) return "\0";
+		if (escaped === "x") {
+			const digits = source.slice(index, index + 2);
+			if (!/^[0-9A-Fa-f]{2}$/.test(digits)) return null;
+			index += 2;
+			return String.fromCodePoint(Number.parseInt(digits, 16));
+		}
+		if (escaped === "u") {
+			if (source[index] === "{") {
+				const close = source.indexOf("}", index + 1);
+				if (close === -1) return null;
+				const digits = source.slice(index + 1, close);
+				if (!/^[0-9A-Fa-f]{1,6}$/.test(digits)) return null;
+				const codePoint = Number.parseInt(digits, 16);
+				if (codePoint > 0x10ffff) return null;
+				index = close + 1;
+				return String.fromCodePoint(codePoint);
+			}
+			const digits = source.slice(index, index + 4);
+			if (!/^[0-9A-Fa-f]{4}$/.test(digits)) return null;
+			index += 4;
+			return String.fromCharCode(Number.parseInt(digits, 16));
+		}
+		return null;
+	};
+
+	const readQuoted = (quote: "'" | '"'): boolean => {
+		index += 1;
+		let text = "";
+		while (index < source.length) {
+			const character = source[index];
+			if (character === quote) {
+				index += 1;
+				fragments.push(text);
+				return true;
+			}
+			if (character === "\\") {
+				const decoded = readEscape();
+				if (decoded === null) {
+					uncertain = true;
+					continue;
+				}
+				text += decoded;
+				continue;
+			}
+			if (character === "\n" || character === "\r") return false;
+			text += character;
+			index += 1;
+		}
+		return false;
+	};
+
+	let scanCode: (templateExpression?: boolean) => boolean;
+	const readTemplate = (): boolean => {
+		index += 1;
+		let text = "";
+		while (index < source.length) {
+			const character = source[index];
+			if (character === "`") {
+				index += 1;
+				fragments.push(text);
+				return true;
+			}
+			if (character === "\\") {
+				const decoded = readEscape();
+				if (decoded === null) {
+					uncertain = true;
+					continue;
+				}
+				text += decoded;
+				continue;
+			}
+			if (character === "$" && source[index + 1] === "{") {
+				fragments.push(text);
+				text = "";
+				index += 2;
+				if (!scanCode(true)) return false;
+				continue;
+			}
+			text += character;
+			index += 1;
+		}
+		return false;
+	};
+
+	scanCode = (templateExpression = false): boolean => {
+		let braceDepth = 0;
+		while (index < source.length) {
+			const character = source[index];
+			if (templateExpression && character === "}" && braceDepth === 0) {
+				index += 1;
+				return true;
+			}
+			if (character === "'") {
+				if (!readQuoted("'")) return false;
+				continue;
+			}
+			if (character === '"') {
+				if (!readQuoted('"')) return false;
+				continue;
+			}
+			if (character === "`") {
+				if (!readTemplate()) return false;
+				continue;
+			}
+			if (character === "/" && source[index + 1] === "/") {
+				index += 2;
+				while (index < source.length && !/[\r\n]/.test(source[index] ?? "")) {
+					index += 1;
+				}
+				continue;
+			}
+			if (character === "/" && source[index + 1] === "*") {
+				const close = source.indexOf("*/", index + 2);
+				if (close === -1) return false;
+				index = close + 2;
+				continue;
+			}
+			if (character === "/") {
+				uncertain = true;
+				index += 1;
+				continue;
+			}
+			if (templateExpression && character === "{") braceDepth += 1;
+			else if (templateExpression && character === "}") braceDepth -= 1;
+			index += 1;
+		}
+		return !templateExpression;
+	};
+
+	if (!scanCode()) uncertain = true;
+	return { fragments, uncertain };
+}
+
+function fragmentsCanCompose(
+	target: string,
+	fragments: readonly string[],
+): boolean {
+	const normalizedTarget = target.toLowerCase();
+	const pieces = new Set<string>();
+	for (const value of fragments) {
+		const fragment = value.toLowerCase().trim();
+		if (!fragment) continue;
+		if (fragment.includes(normalizedTarget)) return true;
+		for (let start = 0; start < fragment.length; start += 1) {
+			for (let end = start + 1; end <= fragment.length; end += 1) {
+				if (start !== 0 && end !== fragment.length) continue;
+				const piece = fragment.slice(start, end);
+				if (normalizedTarget.includes(piece)) pieces.add(piece);
+			}
+		}
+	}
+	const reachable = new Set([0]);
+	for (let position = 0; position < normalizedTarget.length; position += 1) {
+		if (!reachable.has(position)) continue;
+		for (const piece of pieces) {
+			if (normalizedTarget.startsWith(piece, position)) {
+				reachable.add(position + piece.length);
+			}
+		}
+	}
+	return reachable.has(normalizedTarget.length);
+}
+
+function hasComposableProtectedSql(
+	source: string,
+	hasProtectedTableSymbol: boolean,
+	extraction = extractLiteralFragments(source),
+): boolean {
+	if (extraction.uncertain) return true;
+	const { fragments } = extraction;
+	const hasOperation = RAW_SQL_OPERATIONS.some((operation) =>
+		fragmentsCanCompose(operation, fragments),
+	);
+	const hasTable =
+		hasProtectedTableSymbol ||
+		PROTECTED_SQL_TABLES.some((table) => fragmentsCanCompose(table, fragments));
+	return hasOperation && hasTable;
+}
+
+function hasAnalysisCandidate(source: string, fileName: string): boolean {
+	const extraction = extractLiteralFragments(source);
+	const hasTrustedModule = extraction.fragments.some((moduleName) =>
+		isApprovalWriteTrustedProvenanceModuleSpecifier(moduleName, fileName),
+	);
+	const hasSchemaModule = extraction.fragments.some((moduleName) =>
+		isApprovalWriteSchemaModuleSpecifier(moduleName, fileName),
+	);
+	if (hasTrustedModule && IDENTIFIER_UNICODE_ESCAPE.test(source)) return true;
+	const hasRawSqlSurface =
+		hasTrustedModule &&
+		(RAW_SQL_SURFACE_PREFILTER.test(source) ||
+			TAGGED_TEMPLATE_SURFACE_PREFILTER.test(source));
+	const hasProtectedTableText =
+		APPROVAL_TABLE_PREFILTER.test(source) ||
+		COMPOSED_APPROVAL_TABLE_PREFILTER.test(source) ||
+		SOURCE_TABLE_PREFILTER.test(source);
+	const hasProtectedTableSymbol =
+		hasSchemaModule &&
+		(APPROVAL_TABLE_SYMBOL_PREFILTER.test(source) ||
+			SOURCE_TABLE_SYMBOL_PREFILTER.test(source));
+	const hasBroadTrustedMutationSurface =
+		hasTrustedModule &&
+		TRUSTED_MUTATION_VOCABULARY_PREFILTER.test(source) &&
+		(hasProtectedTableSymbol ||
+			hasComposableProtectedSql(source, hasProtectedTableSymbol, extraction));
+	return (
+		hasBroadTrustedMutationSurface ||
+		(hasProtectedTableSymbol && DRIZZLE_WRITE_PREFILTER.test(source)) ||
+		((hasProtectedTableText || hasProtectedTableSymbol) &&
+			INCOMPLETE_SOURCE_PREFILTER.test(source)) ||
+		(hasRawSqlSurface &&
+			hasComposableProtectedSql(source, hasProtectedTableSymbol, extraction))
+	);
+}
+
+function hasMutationCandidate(source: string, fileName: string): boolean {
+	const extraction = extractLiteralFragments(source);
+	const hasTrustedModule = extraction.fragments.some((moduleName) =>
+		isApprovalWriteTrustedProvenanceModuleSpecifier(moduleName, fileName),
+	);
+	const hasSchemaModule = extraction.fragments.some((moduleName) =>
+		isApprovalWriteSchemaModuleSpecifier(moduleName, fileName),
+	);
+	if (hasTrustedModule && IDENTIFIER_UNICODE_ESCAPE.test(source)) return true;
+	const hasProtectedTableSymbol =
+		hasSchemaModule &&
+		(APPROVAL_TABLE_SYMBOL_PREFILTER.test(source) ||
+			SOURCE_TABLE_SYMBOL_PREFILTER.test(source));
+	const hasRawSqlSurface =
+		hasTrustedModule &&
+		(RAW_SQL_SURFACE_PREFILTER.test(source) ||
+			TAGGED_TEMPLATE_SURFACE_PREFILTER.test(source));
+	const hasBroadTrustedMutationSurface =
+		hasTrustedModule &&
+		TRUSTED_MUTATION_VOCABULARY_PREFILTER.test(source) &&
+		(hasProtectedTableSymbol ||
+			hasComposableProtectedSql(source, hasProtectedTableSymbol, extraction));
+	return (
+		hasBroadTrustedMutationSurface ||
+		(hasProtectedTableSymbol && DRIZZLE_WRITE_PREFILTER.test(source)) ||
+		(hasRawSqlSurface &&
+			hasComposableProtectedSql(source, hasProtectedTableSymbol, extraction))
+	);
 }
 
 function isContainedPath(workspaceRoot: string, candidate: string): boolean {
@@ -1064,7 +1366,12 @@ function scanApprovalWrites(
 		);
 	}
 
-	const sources: Array<{ fileName: string; path: string; source: string }> = [];
+	const sources: Array<{
+		fileName: string;
+		path: string;
+		source: string;
+		syntaxOnly: boolean;
+	}> = [];
 	let totalSourceBytes = 0;
 	let totalSourceBytesExceeded = false;
 	for (const candidate of [...files.values()].sort((left, right) =>
@@ -1103,17 +1410,33 @@ function scanApprovalWrites(
 			);
 			break;
 		}
+		if (!hasAnalysisCandidate(result.source, candidate.fileName)) continue;
 		sources.push({
 			fileName: candidate.fileName,
 			path,
 			source: result.source,
+			syntaxOnly: !hasMutationCandidate(result.source, candidate.fileName),
 		});
 	}
 
-	for (const { fileName, path, source } of sources) {
-		if (fileCountExceeded || totalSourceBytesExceeded) break;
-		try {
-			for (const mutation of analyzeApprovalWriteMutations(source, fileName)) {
+	if (!fileCountExceeded && !totalSourceBytesExceeded) {
+		const pathsByFileName = new Map(
+			sources.map(({ fileName, path }) => [fileName, path]),
+		);
+		for (const result of analyzeApprovalWriteMutationSources(sources)) {
+			const path = pathsByFileName.get(result.fileName);
+			if (!path) continue;
+			if (!result.ok) {
+				findings.push(
+					makeError(
+						path,
+						"analysis",
+						safeErrorDetail(result.error, resolvedWorkspaceRoot),
+					),
+				);
+				continue;
+			}
+			for (const mutation of result.mutations) {
 				if (includeAllowed || !isAllowed(path, mutation)) {
 					findings.push({
 						column: mutation.column,
@@ -1133,14 +1456,6 @@ function scanApprovalWrites(
 					});
 				}
 			}
-		} catch (error) {
-			findings.push(
-				makeError(
-					path,
-					"analysis",
-					safeErrorDetail(error, resolvedWorkspaceRoot),
-				),
-			);
 		}
 	}
 

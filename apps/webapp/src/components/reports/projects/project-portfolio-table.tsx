@@ -5,6 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { DataTable, DataTableToolbar } from "@/components/data-table-server";
+import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -98,7 +99,7 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 	})();
 
 	// Column definitions
-	const columns: ColumnDef<ProjectSummary>[] = [
+	const columns: ColumnDef<DataTableFeatures, ProjectSummary>[] = [
 		{
 			accessorKey: "name",
 			header: t("reports.projects.table.project", "Project"),

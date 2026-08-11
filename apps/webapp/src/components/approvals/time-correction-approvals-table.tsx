@@ -21,6 +21,7 @@ import {
 	DataTableSkeleton,
 	DataTableToolbar,
 } from "@/components/data-table-server";
+import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -343,7 +344,7 @@ function buildTimeCorrectionColumns({
 	handleReject: (approval: ApprovalWithTimeCorrection) => void;
 	isMutating: boolean;
 	t: Translate;
-}): ColumnDef<ApprovalWithTimeCorrection>[] {
+}): ColumnDef<DataTableFeatures, ApprovalWithTimeCorrection>[] {
 	return [
 		{
 			accessorKey: "requester",

@@ -21,6 +21,7 @@ import {
 	updateMemberRole,
 } from "@/app/[locale]/(app)/settings/organizations/actions";
 import { DataTable, DataTableToolbar } from "@/components/data-table-server";
+import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -411,7 +412,7 @@ function useMembersTableController({
 	})();
 
 	// Invitation columns
-	const invitationColumns: ColumnDef<InvitationWithInviter>[] = [
+	const invitationColumns: ColumnDef<DataTableFeatures, InvitationWithInviter>[] = [
 		{
 			accessorKey: "email",
 			header: t("organization.members.email", "Email"),
@@ -537,7 +538,7 @@ function useMembersTableController({
 	];
 
 	// Member columns
-	const memberColumns: ColumnDef<MemberWithUserAndEmployee>[] = [
+	const memberColumns: ColumnDef<DataTableFeatures, MemberWithUserAndEmployee>[] = [
 		{
 			accessorKey: "user",
 			header: t("organization.members.member", "Member"),
@@ -738,7 +739,7 @@ function MembersView({
 }: {
 	members: MemberWithUserAndEmployee[];
 	filteredMembers: MemberWithUserAndEmployee[];
-	memberColumns: ColumnDef<MemberWithUserAndEmployee>[];
+	memberColumns: ColumnDef<DataTableFeatures, MemberWithUserAndEmployee>[];
 	memberSearch: string;
 	onMemberSearchChange: (search: string) => void;
 	onRefresh?: () => void;
@@ -816,7 +817,7 @@ function InvitationsView({
 }: {
 	invitations: InvitationWithInviter[];
 	filteredInvitations: InvitationWithInviter[];
-	invitationColumns: ColumnDef<InvitationWithInviter>[];
+	invitationColumns: ColumnDef<DataTableFeatures, InvitationWithInviter>[];
 	invitationSearch: string;
 	onInvitationSearchChange: (search: string) => void;
 	t: ReturnType<typeof useTranslate>["t"];

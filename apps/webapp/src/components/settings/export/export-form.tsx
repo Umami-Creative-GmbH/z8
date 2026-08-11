@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { EXPORT_CATEGORIES, type ExportCategory } from "@/lib/export/types";
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useRouter } from "@/navigation";
 
 interface ExportFormProps {
@@ -52,31 +53,30 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 		}
 
 		setIsSubmitting(true);
-		const result = await startExportAction({
-			organizationId,
-			categories: Array.from(selectedCategories),
-		}).catch((error: unknown) => {
-			toast.error(t("settings.dataExport.form.unexpectedError", "An unexpected error occurred"));
-			console.error("Export error:", error);
-			return null;
-		});
+		await runWithCleanup(async () => {
+			const result = await startExportAction({
+				organizationId,
+				categories: Array.from(selectedCategories),
+			}).catch((error: unknown) => {
+				toast.error(t("settings.dataExport.form.unexpectedError", "An unexpected error occurred"));
+				console.error("Export error:", error);
+				return null;
+			});
 
-		if (!result) {
-			setIsSubmitting(false);
-			return;
-		}
+			if (!result) {
+				return;
+			}
 
-		if (result.success) {
-			toast.success(t("settings.dataExport.form.submitSuccess", "Export started successfully"));
-			// Switch to history tab
-			router.refresh();
-		} else {
-			toast.error(
-				result.error || t("settings.dataExport.form.submitError", "Failed to start export"),
-			);
-		}
-
-		setIsSubmitting(false);
+			if (result.success) {
+				toast.success(t("settings.dataExport.form.submitSuccess", "Export started successfully"));
+				// Switch to history tab
+				router.refresh();
+			} else {
+				toast.error(
+					result.error || t("settings.dataExport.form.submitError", "Failed to start export"),
+				);
+			}
+		}, () => setIsSubmitting(false));
 	};
 
 	return (

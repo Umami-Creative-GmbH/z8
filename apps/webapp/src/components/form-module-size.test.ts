@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import ts from "typescript";
-import { describe, expect, it } from "vitest";
+import * as ts from "typescript/unstable/ast";
+import { afterAll, describe, expect, it, vi } from "vitest";
+import * as nativeSourceAnalysis from "@/lib/typescript/native-source-analysis";
 
 const MAX_AST_LINES = 300;
 
@@ -27,41 +28,67 @@ const targets = [
 	["webhooks/webhook-form-fields.tsx", "WebhookEventFields"],
 ] as const;
 
-function functionAstLines(filePath: string, functionName: string) {
-	const sourceText = readFileSync(filePath, "utf8");
-	const sourceFile = ts.createSourceFile(
-		filePath,
-		sourceText,
-		ts.ScriptTarget.Latest,
-		true,
-		ts.ScriptKind.TSX,
-	);
-	let match: ts.Node | undefined;
+const withNativeSource = vi.spyOn(nativeSourceAnalysis, "withNativeSource");
+const lineCountsByFile = new Map<string, Map<string, number>>();
 
-	function visit(node: ts.Node) {
-		if (ts.isFunctionDeclaration(node) && node.name?.text === functionName) {
-			match = node;
-		}
-		ts.forEachChild(node, visit);
+function functionAstLines(filePath: string, functionName: string) {
+	let counts = lineCountsByFile.get(filePath);
+	if (!counts) {
+		const sourceText = readFileSync(filePath, "utf8");
+		counts = nativeSourceAnalysis.withNativeSource(
+			sourceText,
+			filePath,
+			({ sourceFile }) => {
+				const fileCounts = new Map<string, number>();
+
+				function visit(node: ts.Node) {
+					if (ts.isFunctionDeclaration(node) && node.name) {
+						const start = sourceFile.getLineAndCharacterOfPosition(
+							node.getStart(sourceFile),
+						);
+						const end = sourceFile.getLineAndCharacterOfPosition(node.getEnd());
+						fileCounts.set(node.name.text, end.line - start.line + 1);
+					}
+					node.forEachChild(visit);
+				}
+
+				visit(sourceFile);
+				return fileCounts;
+			},
+		);
+		lineCountsByFile.set(filePath, counts);
 	}
 
-	visit(sourceFile);
-	if (!match) throw new Error(`${functionName} not found in ${filePath}`);
-
-	const start = sourceFile.getLineAndCharacterOfPosition(
-		match.getStart(sourceFile),
-	);
-	const end = sourceFile.getLineAndCharacterOfPosition(match.getEnd());
-	return end.line - start.line + 1;
+	const lines = counts.get(functionName);
+	if (lines === undefined)
+		throw new Error(`${functionName} not found in ${filePath}`);
+	return lines;
 }
 
+afterAll(() => {
+	let nativeSourceCallCount = 0;
+	try {
+		nativeSourceCallCount = withNativeSource.mock.calls.length;
+	} finally {
+		try {
+			withNativeSource.mockRestore();
+		} finally {
+			lineCountsByFile.clear();
+		}
+	}
+	expect(nativeSourceCallCount).toBe(
+		new Set(targets.map(([relativePath]) => relativePath)).size,
+	);
+});
+
 describe("large form module boundaries", () => {
-	it.each(
-		targets,
-	)("keeps %s#%s within 300 AST lines", (relativePath, functionName) => {
-		const filePath = join(process.cwd(), "src/components", relativePath);
-		expect(functionAstLines(filePath, functionName)).toBeLessThanOrEqual(
-			MAX_AST_LINES,
-		);
-	});
+	it.each(targets)(
+		"keeps %s#%s within 300 AST lines",
+		(relativePath, functionName) => {
+			const filePath = join(process.cwd(), "src/components", relativePath);
+			expect(functionAstLines(filePath, functionName)).toBeLessThanOrEqual(
+				MAX_AST_LINES,
+			);
+		},
+	);
 });

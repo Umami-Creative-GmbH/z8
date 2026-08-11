@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ProjectDetailedReport, ProjectPortfolioData } from "@/lib/reports/project-types";
 import type { ReportDateRange } from "@/lib/reports/types";
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { ProjectBudgetProgress } from "./project-budget-progress";
 import { ProjectBudgetUtilizationSummary } from "./project-budget-utilization-summary";
 import { ProjectFilters } from "./project-filters";
@@ -36,6 +37,7 @@ export function ProjectReportsContainer() {
 		setError(null);
 		dateRangeRef.current = range;
 
+		await runWithCleanup(async () => {
 		try {
 			const result = await getProjectsOverview(
 				new Date(range.startDate),
@@ -51,7 +53,6 @@ export function ProjectReportsContainer() {
 				toast.error(t("reports.projects.toast.failedGenerate", "Failed to generate report"), {
 					description: result.error,
 				});
-				setIsLoading(false);
 				return;
 			}
 			setPortfolioData(result.data);
@@ -66,8 +67,7 @@ export function ProjectReportsContainer() {
 			setError(errorMessage);
 			toast.error(t("reports.projects.toast.failedGenerate", "Failed to generate report"));
 		}
-
-		setIsLoading(false);
+		}, () => setIsLoading(false));
 	};
 
 	const handleSelectProject = async (projectId: string) => {
@@ -79,6 +79,7 @@ export function ProjectReportsContainer() {
 		setIsLoading(true);
 		setError(null);
 
+		await runWithCleanup(async () => {
 		try {
 			const result = await getProjectDetailedReport(
 				projectId,
@@ -97,7 +98,6 @@ export function ProjectReportsContainer() {
 						description: result.error,
 					},
 				);
-				setIsLoading(false);
 				return;
 			}
 			setDetailedReport(result.data);
@@ -117,8 +117,7 @@ export function ProjectReportsContainer() {
 				t("reports.projects.toast.failedProjectReport", "Failed to generate project report"),
 			);
 		}
-
-		setIsLoading(false);
+		}, () => setIsLoading(false));
 	};
 
 	return (

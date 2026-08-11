@@ -3,6 +3,7 @@
 import { useEffect, useEffectEvent, useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { ApiError, fetchApi } from "@/lib/fetch";
+import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useRouter } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 
@@ -60,6 +61,7 @@ export function useOrganization(): OrganizationContext {
 		}
 
 		let shouldFinish = true;
+		await runWithCleanup(async () => {
 		try {
 			setIsLoading(true);
 			setError(null);
@@ -88,9 +90,11 @@ export function useOrganization(): OrganizationContext {
 			setEmployeeContext(null);
 			resetSettings();
 		}
-		if (shouldFinish) {
-			setIsLoading(false);
-		}
+		}, () => {
+			if (shouldFinish) {
+				setIsLoading(false);
+			}
+		});
 	};
 
 	const fetchEmployeeContextForEffect = useEffectEvent(async () => {

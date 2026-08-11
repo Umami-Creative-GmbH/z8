@@ -3,7 +3,6 @@
 import { IconBriefcase, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -12,10 +11,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { type AssignedProject, useAssignedProjects } from "@/lib/query/use-assigned-projects";
+import {
+	type AssignedProject,
+	useAssignedProjects,
+} from "@/lib/query/use-assigned-projects";
 import { cn } from "@/lib/utils";
-
-const LAST_PROJECT_KEY = "z8-last-project-id";
+import { writeLastProjectId } from "./selection-preferences";
 
 interface ProjectSelectorProps {
 	/**
@@ -34,58 +35,45 @@ interface ProjectSelectorProps {
 	 * Whether to show the label
 	 */
 	showLabel?: boolean;
-	/**
-	 * Whether to auto-select the last used project
-	 */
-	autoSelectLast?: boolean;
+}
+
+interface ProjectSelectorViewProps extends ProjectSelectorProps {
+	projects: AssignedProject[];
+	isLoading: boolean;
+	isError: boolean;
 }
 
 /**
  * Project selector component for time tracking
  * Shows bookable projects the employee is assigned to
  */
-export function ProjectSelector({
+export function ProjectSelector({ ...props }: ProjectSelectorProps) {
+	const query = useAssignedProjects();
+
+	return <ProjectSelectorView {...props} {...query} />;
+}
+
+export function ProjectSelectorView({
 	value,
 	onValueChange,
 	disabled = false,
 	showLabel = true,
-	autoSelectLast = true,
-}: ProjectSelectorProps) {
+	projects,
+	isLoading,
+	isError,
+}: ProjectSelectorViewProps) {
 	const { t } = useTranslate();
-	const { projects, isLoading, isError } = useAssignedProjects();
-	const hasAutoSelectedRef = useRef(false);
-	const lastProjectIdRef = useRef<string | null>(
-		typeof window === "undefined" ? null : localStorage.getItem(LAST_PROJECT_KEY),
-	);
 
 	// Build a Map for O(1) project lookups (js-index-maps)
 	const projectsMap = new Map(projects.map((p) => [p.id, p]));
 
-	// Auto-select last used project on initial load
-	useEffect(() => {
-		if (
-			autoSelectLast &&
-			!hasAutoSelectedRef.current &&
-			projects.length > 0 &&
-			value === undefined
-		) {
-			const lastProjectId = lastProjectIdRef.current;
-			if (lastProjectId && projects.some((project) => project.id === lastProjectId)) {
-				onValueChange(lastProjectId);
-			}
-			hasAutoSelectedRef.current = true;
-		}
-	}, [autoSelectLast, projects, value, onValueChange]);
-
 	// Save selected project to localStorage and update cache
 	const handleValueChange = (newValue: string) => {
 		if (newValue === "none") {
-			localStorage.removeItem(LAST_PROJECT_KEY);
-			lastProjectIdRef.current = null;
+			writeLastProjectId(undefined);
 			onValueChange(undefined);
 		} else {
-			localStorage.setItem(LAST_PROJECT_KEY, newValue);
-			lastProjectIdRef.current = newValue;
+			writeLastProjectId(newValue);
 			onValueChange(newValue);
 		}
 	};

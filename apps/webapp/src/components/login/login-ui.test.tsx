@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 class ResizeObserver {
@@ -18,7 +18,9 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 vi.mock("@/navigation", () => ({
-	Link: ({ children, href }: { children: React.ReactNode; href: string }) => <a href={href}>{children}</a>,
+	Link: ({ children, href }: { children: React.ReactNode; href: string }) => (
+		<a href={href}>{children}</a>
+	),
 }));
 
 import { LoginAlternativeAuth } from "./alternative-auth";
@@ -62,6 +64,7 @@ describe("login UI sections", () => {
 	});
 
 	it("disables two-factor verification until all six digits are entered", () => {
+		vi.useFakeTimers();
 		const props = {
 			trustDevice: false,
 			isLoading: false,
@@ -69,16 +72,24 @@ describe("login UI sections", () => {
 			onTrustDeviceChange: vi.fn(),
 			onVerify: vi.fn(),
 		};
-		const { rerender } = render(
-			<TwoFactorForm
-				otpValue="12345"
-				{...props}
-			/>,
-		);
+		try {
+			const { rerender, unmount } = render(
+				<TwoFactorForm otpValue="12345" {...props} />,
+			);
 
-		expect(screen.getByRole("button", { name: "Verify and Login" })).toHaveProperty("disabled", true);
-		rerender(<TwoFactorForm otpValue="123456" {...props} />);
-		expect(screen.getByRole("button", { name: "Verify and Login" })).toHaveProperty("disabled", false);
+			expect(
+				screen.getByRole("button", { name: "Verify and Login" }),
+			).toHaveProperty("disabled", true);
+			rerender(<TwoFactorForm otpValue="123456" {...props} />);
+			expect(
+				screen.getByRole("button", { name: "Verify and Login" }),
+			).toHaveProperty("disabled", false);
+			unmount();
+			act(() => vi.runOnlyPendingTimers());
+			expect(vi.getTimerCount()).toBe(0);
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it("disables email login until Turnstile has a token", () => {
@@ -98,6 +109,9 @@ describe("login UI sections", () => {
 			</LoginActions>,
 		);
 
-		expect(screen.getByRole("button", { name: "Login" })).toHaveProperty("disabled", true);
+		expect(screen.getByRole("button", { name: "Login" })).toHaveProperty(
+			"disabled",
+			true,
+		);
 	});
 });
