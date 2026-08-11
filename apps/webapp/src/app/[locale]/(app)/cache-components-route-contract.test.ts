@@ -7,6 +7,7 @@ const APP_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
 const REVIEWED_RETAINED_CONNECTION_FILES = [
 	"src/app/[locale]/(admin)/platform-admin/diagnostics/page.tsx",
+	"src/app/[locale]/(admin)/platform-admin/worker-queue/page.tsx",
 	"src/app/[locale]/(app)/absences/page.tsx",
 	"src/app/[locale]/(app)/organization/page.tsx",
 	"src/app/[locale]/(app)/payroll/page.tsx",
@@ -30,6 +31,16 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		reason:
 			"Diagnostics Effect runtime performs synchronous current-time work and must execute per request outside prerendered shell.",
 		operation: "const [t, snapshot] = await Promise.all([",
+	},
+	{
+		file: "src/app/[locale]/(admin)/platform-admin/worker-queue/page.tsx",
+		contentComponent: "WorkerQueueContent",
+		fallbackComponent: "WorkerQueueLoading",
+		reasonCategory: "effect-current-time",
+		reason:
+			"Worker diagnostics and queue Effect operations perform synchronous current-time work and must execute per request outside the prerendered shell.",
+		authorizationOperation: "await requirePlatformAdmin();",
+		operation: "const statsResult = await getWorkerQueueStats();",
 	},
 	{
 		file: "src/app/[locale]/(auth)/layout.tsx",
@@ -1233,7 +1244,7 @@ describe("loading frame alignment", () => {
 describe("App Router connection escape hatches", () => {
 	it("keeps the pending inventory empty and the retained inventory exact", () => {
 		expect(PENDING_CONNECTION_FILES).toHaveLength(0);
-		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(11);
+		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(12);
 	});
 
 	it("matches the reviewed and pending page/layout inventory exactly", () => {
@@ -1275,6 +1286,14 @@ describe("App Router connection escape hatches", () => {
 			).toBe(true);
 			expect(hasImportedConnectionCall(source), boundary.file).toBe(true);
 			expect(contentBody, boundary.file).toContain(reasonAndOperation);
+			if ("authorizationOperation" in boundary) {
+				expect(contentBody, boundary.file).toContain(
+					boundary.authorizationOperation,
+				);
+				expect(
+					contentBody?.indexOf(boundary.authorizationOperation),
+				).toBeLessThan(contentBody?.indexOf(reasonAndOperation) ?? -1);
+			}
 			expect(
 				hasDefaultExportFocusedSuspenseBoundary(source, boundary),
 				boundary.file,

@@ -10,6 +10,7 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { DateTime } from "luxon";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -30,6 +31,7 @@ import {
 } from "@/components/ui/table";
 import { CRON_JOBS } from "@/lib/cron/registry";
 import { CRON_SCHEDULE_PRESETS } from "@/lib/cron/schedules";
+import { requirePlatformAdmin } from "@/lib/effect/services/platform-admin.service";
 import { getTranslate } from "@/tolgee/server";
 import { getWorkerQueueStats, type WorkerQueueStats } from "./actions";
 import { RecentExecutions } from "./recent-executions";
@@ -765,11 +767,11 @@ async function WorkerQueueContent({
 }: {
 	params: Promise<{ locale: string }>;
 }) {
-	const [{ locale }, t, statsResult] = await Promise.all([
-		params,
-		getTranslate(),
-		getWorkerQueueStats(),
-	]);
+	await requirePlatformAdmin();
+	const [{ locale }, t] = await Promise.all([params, getTranslate()]);
+	// Worker diagnostics and queue Effect operations perform synchronous current-time work and must execute per request outside the prerendered shell.
+	await connection();
+	const statsResult = await getWorkerQueueStats();
 
 	if (!statsResult.success) {
 		return (
