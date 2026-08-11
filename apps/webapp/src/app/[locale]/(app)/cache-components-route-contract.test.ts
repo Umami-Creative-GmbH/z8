@@ -12,6 +12,7 @@ const REVIEWED_RETAINED_CONNECTION_FILES = [
 	"src/app/[locale]/(app)/absences/page.tsx",
 	"src/app/[locale]/(app)/organization/page.tsx",
 	"src/app/[locale]/(app)/payroll/page.tsx",
+	"src/app/[locale]/(app)/settings/payroll-access/page.tsx",
 	"src/app/[locale]/(app)/settings/payroll-readiness/page.tsx",
 	"src/app/[locale]/(app)/settings/vacation/employees/page.tsx",
 	"src/app/[locale]/(app)/settings/wellness/page.tsx",
@@ -116,6 +117,15 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		reason:
 			"The wellness Effect program requires synchronous current-time execution per request.",
 		operation: "const [, settingsResult, t] = await Promise.all([",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/payroll-access/page.tsx",
+		contentComponent: "PayrollAccessSettingsPageContent",
+		fallbackComponent: "PayrollAccessSettingsPageLoading",
+		reasonCategory: "effect-current-time",
+		reason: "Current payroll access grant evaluation must execute per request.",
+		authorizationOperation: "requireOrgAdminSettingsAccess(),",
+		operation: "const result = await getPayrollAccessAdminDataAction();",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/payroll-readiness/page.tsx",
@@ -1257,7 +1267,7 @@ describe("loading frame alignment", () => {
 describe("App Router connection escape hatches", () => {
 	it("keeps the pending inventory empty and the retained inventory exact", () => {
 		expect(PENDING_CONNECTION_FILES).toHaveLength(0);
-		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(13);
+		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(14);
 	});
 
 	it("matches the reviewed and pending page/layout inventory exactly", () => {

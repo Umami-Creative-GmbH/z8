@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { PayrollAccessForm } from "@/components/settings/payroll-access/payroll-access-form";
 import {
@@ -13,11 +14,13 @@ import { getTranslate } from "@/tolgee/server";
 import { getPayrollAccessAdminDataAction } from "./actions";
 
 async function PayrollAccessSettingsPageContent() {
-	const [t, , result] = await Promise.all([
+	const [t] = await Promise.all([
 		getTranslate(),
 		requireOrgAdminSettingsAccess(),
-		getPayrollAccessAdminDataAction(),
 	]);
+	// Current payroll access grant evaluation must execute per request.
+	await connection();
+	const result = await getPayrollAccessAdminDataAction();
 
 	if (!result.success) {
 		return (
