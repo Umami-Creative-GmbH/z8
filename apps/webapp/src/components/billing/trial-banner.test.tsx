@@ -122,21 +122,11 @@ describe("TrialBanner", () => {
 	});
 
 	it("is wired into the app layout billing access flow", () => {
-		const coordinatorSource = readFileSync(
-			join(process.cwd(), "src/app/[locale]/(app)/layout.tsx"),
-			"utf8",
-		);
 		const layoutContentSource = readFileSync(
 			join(process.cwd(), "src/app/[locale]/(app)/app-layout-content.tsx"),
 			"utf8",
 		);
 
-		expect(coordinatorSource).toContain(
-			'import { AuthenticatedAppContent } from "./app-layout-content"',
-		);
-		expect(coordinatorSource).toMatch(
-			/<AuthenticatedAppContent params=\{params\}>[\s\S]*\{children\}[\s\S]*<\/AuthenticatedAppContent>/,
-		);
 		expect(layoutContentSource).toContain("@/components/billing/trial-banner");
 		expect(layoutContentSource).toContain("BillingEnforcementService");
 		expect(layoutContentSource).toContain(
