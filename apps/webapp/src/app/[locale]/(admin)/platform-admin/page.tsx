@@ -12,6 +12,7 @@ import {
 	IconUserX,
 } from "@tabler/icons-react";
 import { count, eq, inArray, isNull } from "drizzle-orm";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { PlatformAnalyticsPreviewCharts } from "@/components/platform-admin/platform-analytics-charts";
 import {
@@ -267,6 +268,8 @@ function DashboardStatSkeleton() {
 }
 
 async function DashboardAnalyticsPreview() {
+	// The current analytics preview range and live platform analytics must be resolved per request.
+	await connection();
 	const params = parsePlatformAnalyticsParams({ range: "30d", bucket: "week" });
 	const data = await getPlatformAnalyticsData(params, undefined, {
 		includeBilling: false,

@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 const APP_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
 const REVIEWED_RETAINED_CONNECTION_FILES = [
+	"src/app/[locale]/(admin)/platform-admin/page.tsx",
 	"src/app/[locale]/(admin)/platform-admin/diagnostics/page.tsx",
 	"src/app/[locale]/(admin)/platform-admin/worker-queue/page.tsx",
 	"src/app/[locale]/(app)/absences/page.tsx",
@@ -23,6 +24,18 @@ const REVIEWED_RETAINED_CONNECTION_FILES = [
 const PENDING_CONNECTION_FILES = [] as const;
 
 const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
+	{
+		file: "src/app/[locale]/(admin)/platform-admin/page.tsx",
+		contentComponent: "DashboardAnalyticsPreview",
+		fallbackComponent: "DashboardAnalyticsPreviewLoading",
+		coordinatorComponent: "AdminDashboardContent",
+		coordinatorFallbackComponent: "AdminDashboardLoading",
+		reasonCategory: "current-period",
+		reason:
+			"The current analytics preview range and live platform analytics must be resolved per request.",
+		operation:
+			'const params = parsePlatformAnalyticsParams({ range: "30d", bucket: "week" });',
+	},
 	{
 		file: "src/app/[locale]/(admin)/platform-admin/diagnostics/page.tsx",
 		contentComponent: "PlatformDiagnosticsPageContent",
@@ -1244,7 +1257,7 @@ describe("loading frame alignment", () => {
 describe("App Router connection escape hatches", () => {
 	it("keeps the pending inventory empty and the retained inventory exact", () => {
 		expect(PENDING_CONNECTION_FILES).toHaveLength(0);
-		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(12);
+		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(13);
 	});
 
 	it("matches the reviewed and pending page/layout inventory exactly", () => {
@@ -1294,10 +1307,30 @@ describe("App Router connection escape hatches", () => {
 					contentBody?.indexOf(boundary.authorizationOperation),
 				).toBeLessThan(contentBody?.indexOf(reasonAndOperation) ?? -1);
 			}
-			expect(
-				hasDefaultExportFocusedSuspenseBoundary(source, boundary),
-				boundary.file,
-			).toBe(true);
+			if ("coordinatorComponent" in boundary) {
+				const coordinatorBody = findNamedFunctionBody(
+					source,
+					boundary.coordinatorComponent,
+				);
+				expect(
+					hasDefaultExportFocusedSuspenseBoundary(source, {
+						fallbackComponent: boundary.coordinatorFallbackComponent,
+						contentComponent: boundary.coordinatorComponent,
+					}),
+					boundary.file,
+				).toBe(true);
+				expect(
+					coordinatorBody
+						? hasFocusedSuspenseBoundary(coordinatorBody, boundary)
+						: false,
+					boundary.file,
+				).toBe(true);
+			} else {
+				expect(
+					hasDefaultExportFocusedSuspenseBoundary(source, boundary),
+					boundary.file,
+				).toBe(true);
+			}
 		},
 	);
 });
