@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { AuthContentLoading } from "@/components/shells/auth-content-loading";
 import { SignupForm } from "@/components/signup-form";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 
@@ -17,8 +18,13 @@ interface PageProps {
 }
 
 async function SignUpPageContent({ searchParams }: PageProps) {
-	const { callbackUrl, inviteCode, invitedEmail, invitationId, organizationName } =
-		await searchParams;
+	const {
+		callbackUrl,
+		inviteCode,
+		invitedEmail,
+		invitationId,
+		organizationName,
+	} = await searchParams;
 	return (
 		<SignupForm
 			callbackUrl={callbackUrl}
@@ -32,7 +38,7 @@ async function SignUpPageContent({ searchParams }: PageProps) {
 
 export default function Page(props: PageProps) {
 	return (
-		<Suspense fallback={null}>
+		<Suspense fallback={<AuthContentLoading />}>
 			<SignUpPageContent {...props} />
 		</Suspense>
 	);

@@ -295,6 +295,18 @@
     "imprint": "Künye",
     "trust-center": "Güven Merkezi"
   },
+  "loading": {
+    "application": "Uygulama yükleniyor",
+    "authentication": "Kimlik doğrulama yükleniyor",
+    "calendar": "Takvim yükleniyor",
+    "chart": "Grafik yükleniyor",
+    "licenses": "Lisanslar yükleniyor",
+    "platformAnalytics": "Platform analizleri yükleniyor",
+    "settings": "Ayarlar yükleniyor",
+    "setup": "Kurulum yükleniyor",
+    "teamAbsences": "Ekip devamsızlıkları yükleniyor",
+    "workerQueue": "İş kuyruğu yükleniyor"
+  },
   "nav": {
     "absences": "İzinler",
     "analytics": "Analizler",
@@ -527,6 +539,9 @@
     "invalid-password": "Geçersiz şifre",
     "last-name-required": "Soyad gerekli",
     "password-required": "Şifre gerekli"
+  },
+  "worksCouncil": {
+    "loadingLabel": "İş konseyi portalı yükleniyor"
   },
   "workBalance": {
     "label": "Tüm zamanların bakiyesi",

@@ -295,6 +295,18 @@
     "imprint": "Impressum",
     "trust-center": "Trust Center"
   },
+  "loading": {
+    "application": "Awändig wird glade",
+    "authentication": "Amäldig wird glade",
+    "calendar": "Kaländer wird glade",
+    "chart": "Diagramm wird glade",
+    "licenses": "Lizänze wärde glade",
+    "platformAnalytics": "Plattform-Analyse wird glade",
+    "settings": "Istellige wärde glade",
+    "setup": "Iirichtig wird glade",
+    "teamAbsences": "Team-Abweseheite wärde glade",
+    "workerQueue": "Uuftragswarteschlange wird glade"
+  },
   "nav": {
     "absences": "Abweseheite",
     "analytics": "Analytik",
@@ -527,6 +539,9 @@
     "invalid-password": "Ungültigs Passwort",
     "last-name-required": "Nachname isch erforderlich",
     "password-required": "Passwort isch erforderlich"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Betriebsratsportal wird glade"
   },
   "workBalance": {
     "label": "Gsamtbilanz",

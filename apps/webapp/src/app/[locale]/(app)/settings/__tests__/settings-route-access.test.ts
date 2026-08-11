@@ -632,14 +632,20 @@ describe("org-admin settings route access", () => {
 	});
 
 	it("derives team detail capabilities from scoped team data instead of employee-only checks", () => {
-		const source = stripComments(
+		const pageSource = stripComments(
 			readFileSync(join(SETTINGS_ROOT, "teams/[teamId]/page.tsx"), "utf8"),
 		);
+		const clientSource = stripComments(
+			readFileSync(
+				join(SETTINGS_ROOT, "teams/[teamId]/team-detail-page-client.tsx"),
+				"utf8",
+			),
+		);
 
-		expect(source.includes("getCurrentEmployee(")).toBe(false);
-		expect(source.includes("team?.canManageSettings")).toBe(true);
-		expect(source.includes("team?.canManageMembers")).toBe(true);
-		expect(source.includes('currentEmployee?.role === "admin"')).toBe(false);
+		expect(pageSource.includes("getCurrentEmployee(")).toBe(false);
+		expect(clientSource.includes("team?.canManageSettings")).toBe(true);
+		expect(clientSource.includes("team?.canManageMembers")).toBe(true);
+		expect(clientSource.includes('currentEmployee?.role === "admin"')).toBe(false);
 	});
 
 	it.each(

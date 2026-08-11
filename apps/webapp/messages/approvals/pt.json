@@ -28,6 +28,7 @@
     "inboxErrorDescription": "Falha ao buscar aprovações",
     "inboxErrorTitle": "Não foi possível carregar a caixa de entrada de aprovações",
     "loadError": "Falha ao carregar aprovações",
+    "loadingInbox": "A carregar a caixa de entrada de aprovações",
     "noAbsenceApprovals": "Nenhuma solicitação de ausência pendente para revisar.",
     "noRequests": "Nenhuma solicitação pendente",
     "noRequestsDescription": "Novas solicitações de aprovação aparecerão aqui quando precisarem da análise do gerente.",

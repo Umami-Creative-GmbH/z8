@@ -8,7 +8,9 @@ import { selectRandomAuthBackgroundImage } from "@/components/auth-background-im
 import { FontSizeToggle } from "@/components/font-size-toggle";
 import { InfoFooter } from "@/components/info-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { AuthContentLoading } from "@/components/shells/auth-content-loading";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
 import { DomainAuthProvider } from "@/lib/auth/domain-auth-context";
 import {
@@ -20,21 +22,69 @@ import {
 import { getCustomDomainFromHeaders } from "@/lib/domain/request-domain";
 import { getCookieConsentScript } from "@/lib/platform-settings";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
-import { parseCookieConsentScript, selectAuthCookieConsentScript } from "./cookie-consent-script";
+import {
+	parseCookieConsentScript,
+	selectAuthCookieConsentScript,
+} from "./cookie-consent-script";
 
 export async function generateStaticParams() {
 	return ALL_LANGUAGES.map((locale) => ({ locale }));
 }
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default function AuthLayout({
+	children,
+}: {
+	children: React.ReactNode;
+}) {
 	return (
-		<Suspense fallback={null}>
+		<Suspense fallback={<AuthLayoutLoading />}>
 			<AuthLayoutContent>{children}</AuthLayoutContent>
 		</Suspense>
 	);
 }
 
-export async function AuthLayoutContent({ children }: { children: React.ReactNode }) {
+function AuthLayoutLoading() {
+	return (
+		<div
+			className="relative min-h-svh overflow-x-hidden bg-background"
+			data-testid="auth-layout-loading"
+		>
+			<section className="flex min-h-svh flex-col px-4 pt-4 pb-0 sm:px-8 sm:pt-6 lg:px-10">
+				<div
+					aria-hidden="true"
+					className="flex h-9 items-center justify-end gap-2"
+					data-testid="auth-controls-loading"
+				>
+					<Skeleton className="size-9 rounded-md" />
+					<Skeleton className="size-9 rounded-md" />
+					<Skeleton className="h-9 w-24 rounded-md" />
+				</div>
+
+				<main className="flex flex-1 items-center justify-center py-8 sm:py-10">
+					<div className="w-full max-w-3xl">
+						<AuthContentLoading />
+					</div>
+				</main>
+
+				<div
+					aria-hidden="true"
+					className="flex min-h-10 items-center justify-center gap-3 pt-2 pb-2"
+					data-testid="auth-footer-loading"
+				>
+					<Skeleton className="h-3 w-20" />
+					<Skeleton className="h-3 w-16" />
+					<Skeleton className="h-3 w-24" />
+				</div>
+			</section>
+		</div>
+	);
+}
+
+export async function AuthLayoutContent({
+	children,
+}: {
+	children: React.ReactNode;
+}) {
 	await connection(); // Mark as fully dynamic for cacheComponents mode
 
 	// Derive custom domains from the trusted request Host header.
@@ -90,12 +140,15 @@ export async function AuthLayoutContent({ children }: { children: React.ReactNod
 	}
 
 	// Fetch cookie consent script for auth pages
-	const platformCookieConsentScript = customDomain ? null : await getCookieConsentScript();
+	const platformCookieConsentScript = customDomain
+		? null
+		: await getCookieConsentScript();
 	const cookieConsentScript = selectAuthCookieConsentScript(
 		platformDomainContext ? null : domainContext,
 		platformCookieConsentScript,
 	);
-	const parsedCookieConsentScript = parseCookieConsentScript(cookieConsentScript);
+	const parsedCookieConsentScript =
+		parseCookieConsentScript(cookieConsentScript);
 	const { content: cookieConsentScriptContent, ...cookieConsentScriptProps } =
 		parsedCookieConsentScript ?? {};
 	const backgroundImage = selectRandomAuthBackgroundImage();

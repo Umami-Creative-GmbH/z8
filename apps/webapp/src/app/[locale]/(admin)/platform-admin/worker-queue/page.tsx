@@ -12,6 +12,7 @@ import {
 import { DateTime } from "luxon";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { LocalizedLoadingLabel } from "@/components/shells/localized-loading-label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -732,7 +733,15 @@ function WorkerQueueLoading() {
 	const reliabilitySkeletonKeys = ["success-rate", "failed-runs", "stale-jobs", "avg-duration"];
 
 	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+		<div
+			aria-busy="true"
+			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
+			role="status"
+		>
+			<LocalizedLoadingLabel
+				translationKey="common:loading.workerQueue"
+				fallback="Loading worker queue"
+			/>
 			<div className="space-y-2">
 				<Skeleton className="h-8 w-48" />
 				<Skeleton className="h-4 w-96" />
@@ -816,12 +825,20 @@ function WorkerQueueLoading() {
 	);
 }
 
-export default async function WorkerQueuePage({ params }: { params: Promise<{ locale: string }> }) {
-	const { locale } = await params;
+type WorkerQueuePageProps = {
+	params: Promise<{ locale: string }>;
+};
 
+export default function WorkerQueuePage(props: WorkerQueuePageProps) {
 	return (
 		<Suspense fallback={<WorkerQueueLoading />}>
-			<WorkerQueueContent locale={locale} />
+			<WorkerQueueRouteContent {...props} />
 		</Suspense>
 	);
+}
+
+async function WorkerQueueRouteContent({ params }: WorkerQueuePageProps) {
+	const { locale } = await params;
+
+	return <WorkerQueueContent locale={locale} />;
 }

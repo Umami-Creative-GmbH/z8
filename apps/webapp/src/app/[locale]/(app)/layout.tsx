@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import type { ReactNode } from "react";
+import { type ReactNode, Suspense } from "react";
 import { TrialBanner } from "@/components/billing/trial-banner";
 import { PushPermissionProvider } from "@/components/notifications/push-permission-provider";
 import { OrganizationDeletionBanner } from "@/components/organization/organization-deletion-banner";
@@ -10,12 +10,12 @@ import { PostHogProvider } from "@/components/posthog-provider";
 import { OrganizationSettingsProvider } from "@/components/providers/organization-settings-provider";
 import { UserPreferencesProvider } from "@/components/providers/user-preferences-provider";
 import { ServerAppSidebar } from "@/components/server-app-sidebar";
+import { AppFrameLoading } from "@/components/shells/app-frame-loading";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
-import { subscription } from "@/db/schema";
-import { userSettings } from "@/db/schema";
+import { subscription, userSettings } from "@/db/schema";
 import { env } from "@/env";
 import { auth } from "@/lib/auth";
 import { getUserLocaleRaw } from "@/lib/bot-platform/i18n";
@@ -48,7 +48,15 @@ interface AppLayoutProps {
 	params: Promise<{ locale: string }>;
 }
 
-export default async function AppLayout({ children, params }: AppLayoutProps) {
+export default function AppLayout(props: AppLayoutProps) {
+	return (
+		<Suspense fallback={<AppFrameLoading />}>
+			<AuthenticatedAppLayout {...props} />
+		</Suspense>
+	);
+}
+
+async function AuthenticatedAppLayout({ children, params }: AppLayoutProps) {
 	const [{ locale }, headersList] = await Promise.all([params, headers()]);
 
 	// Centralized auth check - protects all routes in the (app) group
@@ -65,18 +73,24 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 
 	const activeOrganizationId = session.session?.activeOrganizationId;
 	// Sync DB locale preference on load (null = user hasn't set preference, respect browser/cookie)
-	const [dbLocale, weekStartDay, timeFormat, timezone, analyticsSettings, organizationSettings] =
-		await Promise.all([
-			getUserLocaleRaw(session.user.id),
-			getUserWeekStartDay(session.user.id),
-			getUserTimeFormat(session.user.id),
-			getUserTimezone(session.user.id),
-			db.query.userSettings.findFirst({
-				where: eq(userSettings.userId, session.user.id),
-				columns: { helpImproveProduct: true },
-			}),
-			getOrganizationSettings(activeOrganizationId, session.user.id),
-		]);
+	const [
+		dbLocale,
+		weekStartDay,
+		timeFormat,
+		timezone,
+		analyticsSettings,
+		organizationSettings,
+	] = await Promise.all([
+		getUserLocaleRaw(session.user.id),
+		getUserWeekStartDay(session.user.id),
+		getUserTimeFormat(session.user.id),
+		getUserTimezone(session.user.id),
+		db.query.userSettings.findFirst({
+			where: eq(userSettings.userId, session.user.id),
+			columns: { helpImproveProduct: true },
+		}),
+		getOrganizationSettings(activeOrganizationId, session.user.id),
+	]);
 	if (dbLocale && dbLocale !== locale) {
 		// User has a saved locale preference that differs from current URL — redirect
 		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
@@ -126,13 +140,16 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 	}
 
 	const trialDaysRemaining =
-		typeof billingAccess.daysRemaining === "number" && billingAccess.daysRemaining > 0
+		typeof billingAccess.daysRemaining === "number" &&
+		billingAccess.daysRemaining > 0
 			? billingAccess.daysRemaining
 			: null;
 	const membershipRole = membershipRecord?.role;
-	const canManageBilling = membershipRole === "owner" || membershipRole === "admin";
+	const canManageBilling =
+		membershipRole === "owner" || membershipRole === "admin";
 	const hasPreparedTrialSubscription =
-		subscriptionRow?.status === "trialing" && Boolean(subscriptionRow?.stripeSubscriptionId);
+		subscriptionRow?.status === "trialing" &&
+		Boolean(subscriptionRow?.stripeSubscriptionId);
 	const showTrialBanner =
 		billingAccess.state === "trialing" &&
 		trialDaysRemaining !== null &&
@@ -173,7 +190,9 @@ export default async function AppLayout({ children, params }: AppLayoutProps) {
 									/>
 								) : null}
 								<OrganizationDeletionBanner />
-								<div className="flex flex-1 flex-col min-h-0 overflow-y-auto">{children}</div>
+								<div className="flex flex-1 flex-col min-h-0 overflow-y-auto">
+									{children}
+								</div>
 							</SidebarInset>
 						</SidebarProvider>
 					</OrganizationSettingsProvider>

@@ -117,7 +117,12 @@ describe("TrialBanner", () => {
 		expect(layoutSource).toContain('import { and, eq } from "drizzle-orm"');
 		expect(layoutSource).toContain('import { db } from "@/db"');
 		expect(layoutSource).toContain('import { member } from "@/db/auth-schema"');
-		expect(layoutSource).toContain('import { subscription } from "@/db/schema"');
+		const schemaImports = Array.from(
+			layoutSource.matchAll(/import\s*\{([^}]*)\}\s*from\s*"@\/db\/schema"/g),
+			(match) => match[1],
+		).join(",");
+		expect(schemaImports).toMatch(/\bsubscription\b/);
+		expect(schemaImports).toMatch(/\buserSettings\b/);
 		expect(layoutSource).toContain("member.userId");
 		expect(layoutSource).toContain("member.organizationId");
 		expect(layoutSource).toContain('membershipRole === "owner" || membershipRole === "admin"');

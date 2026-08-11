@@ -295,6 +295,18 @@
     "imprint": "Mentions légales",
     "trust-center": "Centre de confiance"
   },
+  "loading": {
+    "application": "Chargement de l’application",
+    "authentication": "Chargement de l’authentification",
+    "calendar": "Chargement du calendrier",
+    "chart": "Chargement du graphique",
+    "licenses": "Chargement des licences",
+    "platformAnalytics": "Chargement des analyses de la plateforme",
+    "settings": "Chargement des paramètres",
+    "setup": "Chargement de la configuration",
+    "teamAbsences": "Chargement des absences de l’équipe",
+    "workerQueue": "Chargement de la file d’attente des tâches"
+  },
   "nav": {
     "absences": "Absences",
     "analytics": "Analytique",
@@ -527,6 +539,9 @@
     "invalid-password": "Mot de passe invalide",
     "last-name-required": "Le nom de famille est requis",
     "password-required": "Le mot de passe est requis"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Chargement du portail du comité d’entreprise"
   },
   "workBalance": {
     "label": "Solde total",

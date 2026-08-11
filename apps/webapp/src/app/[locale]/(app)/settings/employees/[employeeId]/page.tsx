@@ -1,14 +1,24 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { getEmployee } from "../actions";
 import { getCurrentApprovedMembership } from "../current-approved-membership";
 import { EmployeeDetailPageClient } from "./employee-detail-page-client";
 
-export default async function EmployeeDetailPage({
-	params,
-}: {
+interface EmployeeDetailPageProps {
 	params: Promise<{ employeeId: string }>;
-}) {
+}
+
+export default function EmployeeDetailPage(props: EmployeeDetailPageProps) {
+	return (
+		<Suspense fallback={<SettingsContentLoading />}>
+			<EmployeeDetailPageContent {...props} />
+		</Suspense>
+	);
+}
+
+async function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
 	const [settingsRouteContext, { employeeId }] = await Promise.all([
 		getCurrentSettingsRouteContext(),
 		params,

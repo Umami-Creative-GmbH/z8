@@ -295,6 +295,18 @@
     "imprint": "Impressum",
     "trust-center": "Trust Center"
   },
+  "loading": {
+    "application": "Anwendung wird geladen",
+    "authentication": "Authentifizierung wird geladen",
+    "calendar": "Kalender wird geladen",
+    "chart": "Diagramm wird geladen",
+    "licenses": "Lizenzen werden geladen",
+    "platformAnalytics": "Plattformanalyse wird geladen",
+    "settings": "Einstellungen werden geladen",
+    "setup": "Einrichtung wird geladen",
+    "teamAbsences": "Team-Abwesenheiten werden geladen",
+    "workerQueue": "Auftragswarteschlange wird geladen"
+  },
   "nav": {
     "absences": "Abwesenheiten",
     "analytics": "Analysen",
@@ -527,6 +539,9 @@
     "invalid-password": "Ungültiges Passwort",
     "last-name-required": "Nachname ist erforderlich",
     "password-required": "Passwort ist erforderlich"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Betriebsratsportal wird geladen"
   },
   "workBalance": {
     "label": "Gesamtbilanz",

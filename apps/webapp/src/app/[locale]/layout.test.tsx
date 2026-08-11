@@ -1,6 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { readFileSync } from "node:fs";
+import { Suspense } from "react";
 import { renderToReadableStream } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import LocaleLayout from "./layout";
@@ -61,7 +62,10 @@ vi.mock("next-intl", () => ({
 		locale: string;
 		messages: Record<string, string>;
 	}) => (
-		<div data-next-intl-locale={locale} data-next-intl-messages={JSON.stringify(messages)}>
+		<div
+			data-next-intl-locale={locale}
+			data-next-intl-messages={JSON.stringify(messages)}
+		>
 			{children}
 		</div>
 	),
@@ -80,7 +84,9 @@ vi.mock("@/components/bprogress/bprogress", () => ({
 }));
 
 vi.mock("@/components/deployment-refresh", () => ({
-	DeploymentRefreshChecker: () => <div data-testid="deployment-refresh-checker" />,
+	DeploymentRefreshChecker: () => (
+		<div data-testid="deployment-refresh-checker" />
+	),
 }));
 
 vi.mock("@/components/offline", () => ({
@@ -89,19 +95,27 @@ vi.mock("@/components/offline", () => ({
 }));
 
 vi.mock("@/components/posthog-provider", () => ({
-	PostHogProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+	PostHogProvider: ({ children }: { children: React.ReactNode }) => (
+		<>{children}</>
+	),
 }));
 
 vi.mock("@/components/theme-provider", () => ({
-	ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+	ThemeProvider: ({ children }: { children: React.ReactNode }) => (
+		<>{children}</>
+	),
 }));
 
 vi.mock("@/components/ui/tooltip", () => ({
-	TooltipProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+	TooltipProvider: ({ children }: { children: React.ReactNode }) => (
+		<>{children}</>
+	),
 }));
 
 vi.mock("@/lib/query", () => ({
-	QueryProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+	QueryProvider: ({ children }: { children: React.ReactNode }) => (
+		<>{children}</>
+	),
 }));
 
 vi.mock("@/db", () => ({
@@ -144,7 +158,10 @@ vi.mock("@/tolgee/client", () => ({
 		language: string;
 		staticData: Record<string, unknown>;
 	}) => (
-		<div data-tolgee-language={language} data-tolgee-static-data={JSON.stringify(staticData)}>
+		<div
+			data-tolgee-language={language}
+			data-tolgee-static-data={JSON.stringify(staticData)}
+		>
 			{children}
 		</div>
 	),
@@ -198,24 +215,54 @@ describe("LocaleLayout", () => {
 	});
 
 	it("renders next-intl through a client boundary without inheriting request config", () => {
-		const providerSource = readFileSync("src/app/[locale]/translation-providers.tsx", "utf8");
+		const providerSource = readFileSync(
+			"src/app/[locale]/translation-providers.tsx",
+			"utf8",
+		);
 		const layoutSource = readFileSync("src/app/[locale]/layout.tsx", "utf8");
 
 		expect(providerSource).toMatch(/^"use client";/);
-		expect(providerSource).toContain('import { NextIntlClientProvider } from "next-intl";');
+		expect(providerSource).toContain(
+			'import { NextIntlClientProvider } from "next-intl";',
+		);
 		expect(layoutSource).not.toContain('from "next-intl"');
 	});
 
-	it("isolates route content when the translation fallback is rendered", () => {
+	it("shows the app frame while primary route content is pending in the translation fallback", () => {
 		const source = readFileSync("src/app/[locale]/layout.tsx", "utf8");
 
 		expect(source).toMatch(
-			/<TranslationProviders locale=\{locale\} records=\{\{\}\}>\s*<Suspense fallback=\{null\}>\s*<ApplicationContent>\{children\}<\/ApplicationContent>\s*<\/Suspense>\s*<\/TranslationProviders>/,
+			/<TranslationProviders locale=\{locale\} records=\{\{\}\}>\s*<ApplicationContent>\s*<NeutralAppFrameLoading \/>\s*<\/ApplicationContent>\s*<\/TranslationProviders>/,
 		);
 	});
 
 	it("renders the translation-context fallback while route translations are pending", async () => {
 		let resolveHeaders: (headers: Headers) => void = () => {};
+		let resolveRoute: () => void = () => {};
+		let routeResolved = false;
+		const pendingRoute = new Promise<void>((resolve) => {
+			resolveRoute = () => {
+				routeResolved = true;
+				resolve();
+			};
+		});
+		function PendingRoute() {
+			if (!routeResolved) {
+				throw pendingRoute;
+			}
+			return <main data-testid="application-child">Auth content</main>;
+		}
+		function RouteWithLocalFallback() {
+			return (
+				<Suspense
+					fallback={
+						<p data-testid="route-local-fallback">Loading route details</p>
+					}
+				>
+					<PendingRoute />
+				</Suspense>
+			);
+		}
 		mockState.headers.mockImplementation(
 			() =>
 				new Promise<Headers>((resolve) => {
@@ -225,34 +272,65 @@ describe("LocaleLayout", () => {
 
 		try {
 			const layout = await LocaleLayout({
-				children: <main data-testid="application-child">Auth content</main>,
+				children: <RouteWithLocalFallback />,
 				params: Promise.resolve({ locale: "en" }),
 			});
 			const stream = await renderToReadableStream(layout);
 			const reader = stream.getReader();
 			const { value } = await reader.read();
 			resolveHeaders(new Headers({ "x-pathname": "/en/sign-in" }));
+			resolveRoute();
 			while (!(await reader.read()).done) {
 				// Consume the resolved translation branch so the stream ends without an abort.
 			}
 			const container = document.createElement("div");
 			container.innerHTML = new TextDecoder().decode(value);
 
-			const tolgeeProvider = container.querySelector('[data-tolgee-language="en"]');
-			const intlProvider = tolgeeProvider?.querySelector('[data-next-intl-locale="en"]');
+			const tolgeeProvider = container.querySelector(
+				'[data-tolgee-language="en"]',
+			);
+			const intlProvider = tolgeeProvider?.querySelector(
+				'[data-next-intl-locale="en"]',
+			);
 
 			expect(tolgeeProvider).not.toBeNull();
-			expect(tolgeeProvider?.getAttribute("data-tolgee-static-data")).toBe("{}");
-			expect(intlProvider).not.toBeNull();
-			expect(intlProvider?.getAttribute("data-next-intl-messages")).toBe('{"locale":"en"}');
-			expect(intlProvider?.querySelector('[data-testid="application-shell"]')).not.toBeNull();
-			expect(intlProvider?.querySelector('[data-testid="application-child"]')?.textContent).toBe(
-				"Auth content",
+			expect(tolgeeProvider?.getAttribute("data-tolgee-static-data")).toBe(
+				"{}",
 			);
+			expect(intlProvider).not.toBeNull();
+			expect(intlProvider?.getAttribute("data-next-intl-messages")).toBe(
+				'{"locale":"en"}',
+			);
+			const loading = intlProvider?.querySelector('[role="status"]');
+			expect(loading?.getAttribute("aria-busy")).toBe("true");
+			expect(loading?.textContent).toBe("");
+			expect(
+				loading?.querySelector('[data-testid="app-sidebar-loading"]'),
+			).not.toBeNull();
+			expect(container.textContent).not.toContain("Loading application");
+			expect(container.textContent).not.toContain("Loading route details");
+			expect(
+				container.querySelector('[data-testid="route-local-fallback"]'),
+			).toBeNull();
+			expect(
+				container.querySelector('[data-testid="application-child"]'),
+			).toBeNull();
 		} finally {
 			mockState.headers.mockImplementation(
 				async () => new Headers({ "x-pathname": "/en/sign-in" }),
 			);
 		}
+	});
+
+	it("renders route children after translations resolve", async () => {
+		const layout = await LocaleLayout({
+			children: <main data-testid="application-child">Auth content</main>,
+			params: Promise.resolve({ locale: "en" }),
+		});
+		const stream = await renderToReadableStream(layout);
+		const html = await new Response(stream).text();
+
+		expect(html).toContain('data-testid="application-child"');
+		expect(html).toContain("Auth content");
 	});
 });

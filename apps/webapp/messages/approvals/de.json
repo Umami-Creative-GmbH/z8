@@ -28,6 +28,7 @@
     "inboxErrorDescription": "Abruf der Genehmigungen fehlgeschlagen",
     "inboxErrorTitle": "Genehmigungseingang konnte nicht geladen werden",
     "loadError": "Laden der Genehmigungen fehlgeschlagen",
+    "loadingInbox": "Genehmigungseingang wird geladen",
     "noAbsenceApprovals": "Keine ausstehenden Abwesenheitsanträge zur Überprüfung.",
     "noRequests": "Keine ausstehenden Anträge",
     "noRequestsDescription": "Neue Genehmigungsanfragen erscheinen hier, sobald sie vom Manager geprüft werden müssen.",

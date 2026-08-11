@@ -4,6 +4,7 @@ import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { AuthFormWrapper } from "@/components/auth-form-wrapper";
+import { AuthContentLoading } from "@/components/shells/auth-content-loading";
 import { Button } from "@/components/ui/button";
 import { sanitizeCallbackUrl, withCallbackUrl } from "@/lib/auth/callback-url";
 import { authClient, useSession } from "@/lib/auth-client";
@@ -35,39 +36,46 @@ function VerifyEmailPendingContent() {
 		}
 
 		setIsResending(true);
-		await runWithCleanup(async () => {
-			const result = await authClient
-				.sendVerificationEmail({
-					email,
-					callbackURL: "/verify-email",
-				})
-				.catch((error) => ({
-					error: {
-						message:
-							error instanceof Error
-								? error.message
-								: t("common.error-occurred", "An error occurred"),
-					},
-				}));
-
-			if (result.error) {
-				setResendMessage(
-					result.error.message ||
-						t("auth.resend-verification-failed", "Failed to resend verification email"),
-				);
-			} else {
-				setResendMessage(
-					t(
-						"auth.verification-email-resent",
-						"Verification email has been resent! Please check your inbox.",
-					),
-				);
-			}
-		}, () => setIsResending(false));
+		await runWithCleanup(
+			async () => {
+				const result = await authClient
+					.sendVerificationEmail({
+						email,
+						callbackURL: "/verify-email",
+					})
+					.catch((error) => ({
+						error: {
+							message:
+								error instanceof Error
+									? error.message
+									: t("common.error-occurred", "An error occurred"),
+						},
+					}));
+				if (result.error) {
+					setResendMessage(
+						result.error.message ||
+							t(
+								"auth.resend-verification-failed",
+								"Failed to resend verification email",
+							),
+					);
+				} else {
+					setResendMessage(
+						t(
+							"auth.verification-email-resent",
+							"Verification email has been resent! Please check your inbox.",
+						),
+					);
+				}
+			},
+			() => setIsResending(false),
+		);
 	};
 
 	return (
-		<AuthFormWrapper title={t("auth.verify-email-title", "Verify Your Email Address")}>
+		<AuthFormWrapper
+			title={t("auth.verify-email-title", "Verify Your Email Address")}
+		>
 			<div className="text-center">
 				<div className="mb-4 text-6xl">📧</div>
 				<p className="mb-6 text-muted-foreground">
@@ -78,7 +86,9 @@ function VerifyEmailPendingContent() {
 				</p>
 
 				<div className="mb-6 rounded-lg bg-muted p-4 text-sm">
-					<p className="font-medium">{t("auth.check-inbox-title", "Check your inbox")}</p>
+					<p className="font-medium">
+						{t("auth.check-inbox-title", "Check your inbox")}
+					</p>
 					<p className="text-muted-foreground">
 						{t(
 							"auth.check-inbox-message",
@@ -131,7 +141,7 @@ function VerifyEmailPendingContent() {
 
 export default function VerifyEmailPendingPage() {
 	return (
-		<Suspense fallback={null}>
+		<Suspense fallback={<AuthContentLoading />}>
 			<VerifyEmailPendingContent />
 		</Suspense>
 	);

@@ -1,16 +1,31 @@
 /* @vitest-environment jsdom */
 
-import { render } from "@testing-library/react";
-import { type ReactNode, useState } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import { type ReactElement, type ReactNode, useState } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { type ChartConfig, ChartContainer, ChartTooltipContent } from "./chart";
+
+const chartTestState = vi.hoisted(() => ({
+	pending: new Promise<never>(() => undefined),
+	suspendResponsiveContainer: false,
+}));
+
+afterEach(() => {
+	chartTestState.suspendResponsiveContainer = false;
+});
 
 vi.mock("recharts", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("recharts")>();
 
 	return {
 		...actual,
-		ResponsiveContainer: ({ children }: { children: ReactNode }) => children,
+		ResponsiveContainer: ({ children }: { children: ReactNode }) => {
+			if (chartTestState.suspendResponsiveContainer) {
+				throw chartTestState.pending;
+			}
+
+			return children;
+		},
 	};
 });
 
@@ -20,8 +35,64 @@ function StatefulTooltipValue({ name }: { name: string }) {
 	return <span data-tooltip-name={name}>{initialName}</span>;
 }
 
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (key: string, fallback: string) => {
+			const translations: Record<string, string> = {
+				"common:loading.chart": "Diagramm wird geladen",
+				"common:loading.settings": "Einstellungen werden geladen",
+			};
+			return translations[key] ?? fallback;
+		},
+	}),
+}));
+
+async function renderChart(element: ReactElement) {
+	let result: ReturnType<typeof render> | undefined;
+
+	await act(async () => {
+		result = render(element);
+		await import("recharts");
+	});
+
+	if (!result) {
+		throw new Error("Chart render did not complete");
+	}
+
+	return result;
+}
+
 describe("ChartContainer", () => {
-	it("preserves safe chart config keys for existing CSS variable consumers", () => {
+	it("preserves chart geometry with a generic fallback while the chart payload loads", async () => {
+		chartTestState.suspendResponsiveContainer = true;
+		const config: ChartConfig = {
+			revenue: {
+				label: "Sensitive revenue",
+				color: "#2563eb",
+			},
+		};
+
+		const { container } = await renderChart(
+			<ChartContainer className="h-[300px]" config={config}>
+				<div>Sensitive chart data</div>
+			</ChartContainer>,
+		);
+
+		const chart = container.querySelector('[data-slot="chart"]');
+		const fallback = screen.getByRole("status", {
+			name: "Diagramm wird geladen",
+		});
+
+		expect(chart?.className).toContain("aspect-video");
+		expect(chart?.className).toContain("h-[300px]");
+		expect(fallback.className).toContain("h-full");
+		expect(fallback.className).toContain("w-full");
+		expect(screen.queryByRole("status", { name: "Loading chart" })).toBeNull();
+		expect(screen.queryByText("Sensitive revenue")).toBeNull();
+		expect(screen.queryByText("Sensitive chart data")).toBeNull();
+	});
+
+	it("preserves safe chart config keys for existing CSS variable consumers", async () => {
 		const config: ChartConfig = {
 			hours: {
 				label: "Hours",
@@ -29,16 +100,18 @@ describe("ChartContainer", () => {
 			},
 		};
 
-		const { container } = render(
+		const { container } = await renderChart(
 			<ChartContainer config={config}>
 				<div />
 			</ChartContainer>,
 		);
 
-		expect(container.querySelector("style")?.textContent).toContain("--color-hours: #2563eb;");
+		expect(container.querySelector("style")?.textContent).toContain(
+			"--color-hours: #2563eb;",
+		);
 	});
 
-	it("preserves safe app CSS variable colors", () => {
+	it("preserves safe app CSS variable colors", async () => {
 		const config: ChartConfig = {
 			hours: {
 				label: "Hours",
@@ -54,7 +127,7 @@ describe("ChartContainer", () => {
 			},
 		};
 
-		const { container } = render(
+		const { container } = await renderChart(
 			<ChartContainer config={config}>
 				<div />
 			</ChartContainer>,
@@ -62,11 +135,15 @@ describe("ChartContainer", () => {
 
 		const style = container.querySelector("style");
 		expect(style?.textContent).toContain("--color-hours: hsl(var(--chart-1));");
-		expect(style?.textContent).toContain("--color-primary: hsl(var(--primary));");
-		expect(style?.textContent).toContain("--color-destructive: rgba(var(--destructive));");
+		expect(style?.textContent).toContain(
+			"--color-primary: hsl(var(--primary));",
+		);
+		expect(style?.textContent).toContain(
+			"--color-destructive: rgba(var(--destructive));",
+		);
 	});
 
-	it("does not interpolate chart config keys into raw CSS identifiers", () => {
+	it("does not interpolate chart config keys into raw CSS identifiers", async () => {
 		const maliciousKey = `employee</style><script>alert("xss")</script>`;
 		const config: ChartConfig = {
 			[maliciousKey]: {
@@ -75,7 +152,7 @@ describe("ChartContainer", () => {
 			},
 		};
 
-		const { container } = render(
+		const { container } = await renderChart(
 			<ChartContainer config={config}>
 				<div />
 			</ChartContainer>,
@@ -87,7 +164,7 @@ describe("ChartContainer", () => {
 		expect(container.querySelector("script")).toBeNull();
 	});
 
-	it("skips chart config colors that are unsafe for CSS interpolation", () => {
+	it("skips chart config colors that are unsafe for CSS interpolation", async () => {
 		const config: ChartConfig = {
 			hours: {
 				label: "Hours",
@@ -95,7 +172,7 @@ describe("ChartContainer", () => {
 			},
 		};
 
-		const { container } = render(
+		const { container } = await renderChart(
 			<ChartContainer config={config}>
 				<div />
 			</ChartContainer>,
@@ -107,7 +184,7 @@ describe("ChartContainer", () => {
 		expect(container.querySelector("script")).toBeNull();
 	});
 
-	it("does not interpolate chart ids into raw CSS selectors", () => {
+	it("does not interpolate chart ids into raw CSS selectors", async () => {
 		const maliciousId = `team] { color:red; }</style><script>alert("xss")</script>`;
 		const config: ChartConfig = {
 			hours: {
@@ -116,7 +193,7 @@ describe("ChartContainer", () => {
 			},
 		};
 
-		const { container } = render(
+		const { container } = await renderChart(
 			<ChartContainer config={config} id={maliciousId}>
 				<div />
 			</ChartContainer>,
@@ -168,18 +245,24 @@ describe("ChartContainer", () => {
 			</ChartContainer>
 		);
 
-		const { container, rerender } = render(
+		const { container, rerender } = await renderChart(
 			renderTooltip([hoursPayload, costPayload]),
 		);
 
-		await vi.waitFor(() => {
+		await waitFor(() => {
 			expect(container.querySelectorAll("[data-tooltip-name]")).toHaveLength(2);
 		});
 
-		rerender(renderTooltip([costPayload, hoursPayload]));
+		await act(async () => {
+			rerender(renderTooltip([costPayload, hoursPayload]));
+		});
 
-		for (const item of container.querySelectorAll("[data-tooltip-name]")) {
-			expect(item.textContent).toBe(item.getAttribute("data-tooltip-name"));
-		}
+		await waitFor(() => {
+			const items = container.querySelectorAll("[data-tooltip-name]");
+			expect(items).toHaveLength(2);
+			for (const item of items) {
+				expect(item.textContent).toBe(item.getAttribute("data-tooltip-name"));
+			}
+		});
 	});
 });

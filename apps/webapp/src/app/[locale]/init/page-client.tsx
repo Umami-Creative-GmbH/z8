@@ -4,9 +4,17 @@ import { IconBuilding, IconCheck, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useEffectEvent, useState } from "react";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
-import { getLastOrganization, saveLastOrganization } from "@/lib/org-persistence";
+import {
+	getLastOrganization,
+	saveLastOrganization,
+} from "@/lib/org-persistence";
 
 type Organization = {
 	id: string;
@@ -14,6 +22,31 @@ type Organization = {
 };
 
 type Status = "checking" | "selecting" | "activating" | "redirecting";
+
+function InitPageLoading() {
+	const { t } = useTranslate();
+	const loadingLabel = t("setup:init.checking", "Checking session...");
+
+	return (
+		<div
+			className="flex min-h-screen items-center justify-center bg-background"
+			data-testid="init-page-loading"
+		>
+			<output
+				aria-busy="true"
+				aria-label={loadingLabel}
+				aria-live="polite"
+				className="flex flex-col items-center gap-4 text-sm text-muted-foreground"
+			>
+				<IconLoader2
+					className="size-8 animate-spin text-primary motion-reduce:animate-none"
+					aria-hidden="true"
+				/>
+				<span>{loadingLabel}</span>
+			</output>
+		</div>
+	);
+}
 
 /**
  * Transit page that ensures the user has an active organization before
@@ -66,11 +99,13 @@ function InitPageContent() {
 
 	const initializeSession = useEffectEvent(async () => {
 		// Check current session state
-		const response = await fetch("/api/session/organization-status").catch((error) => {
-			console.error("Failed to initialize session:", error);
-			window.location.assign(redirectUrl);
-			return null;
-		});
+		const response = await fetch("/api/session/organization-status").catch(
+			(error) => {
+				console.error("Failed to initialize session:", error);
+				window.location.assign(redirectUrl);
+				return null;
+			},
+		);
 		if (!response) {
 			return;
 		}
@@ -172,7 +207,9 @@ function InitPageContent() {
 								role="button"
 								tabIndex={isActivating ? -1 : 0}
 								className={`cursor-pointer transition-all hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-									selectedOrg === org.id ? "border-primary ring-2 ring-primary/20" : ""
+									selectedOrg === org.id
+										? "border-primary ring-2 ring-primary/20"
+										: ""
 								} ${isActivating ? "pointer-events-none opacity-50" : ""}`}
 								onClick={() => handleSelectOrganization(org.id)}
 								onKeyDown={(e) => {
@@ -194,7 +231,10 @@ function InitPageContent() {
 											</CardDescription>
 										</div>
 										{selectedOrg === org.id && (
-											<IconCheck className="size-5 text-primary" aria-hidden="true" />
+											<IconCheck
+												className="size-5 text-primary"
+												aria-hidden="true"
+											/>
 										)}
 									</div>
 								</CardHeader>
@@ -220,11 +260,17 @@ function InitPageContent() {
 	return (
 		<div className="flex min-h-screen items-center justify-center bg-background">
 			<output className="flex flex-col items-center gap-4" aria-live="polite">
-				<IconLoader2 className="size-8 animate-spin text-primary" aria-hidden="true" />
+				<IconLoader2
+					className="size-8 animate-spin text-primary"
+					aria-hidden="true"
+				/>
 				<p className="text-sm text-muted-foreground">
-					{status === "checking" && t("setup:init.checking", "Checking session...")}
-					{status === "activating" && t("setup:init.activating", "Setting up your workspace...")}
-					{status === "redirecting" && t("setup:init.redirecting", "Redirecting...")}
+					{status === "checking" &&
+						t("setup:init.checking", "Checking session...")}
+					{status === "activating" &&
+						t("setup:init.activating", "Setting up your workspace...")}
+					{status === "redirecting" &&
+						t("setup:init.redirecting", "Redirecting...")}
 				</p>
 			</output>
 		</div>
@@ -233,7 +279,7 @@ function InitPageContent() {
 
 export default function InitPage() {
 	return (
-		<Suspense fallback={null}>
+		<Suspense fallback={<InitPageLoading />}>
 			<InitPageContent />
 		</Suspense>
 	);

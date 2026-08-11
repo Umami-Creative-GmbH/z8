@@ -295,6 +295,18 @@
     "imprint": "Imprint",
     "trust-center": "Trust Center"
   },
+  "loading": {
+    "application": "Loading application",
+    "authentication": "Loading authentication",
+    "calendar": "Loading calendar",
+    "chart": "Loading chart",
+    "licenses": "Loading licenses",
+    "platformAnalytics": "Loading platform analytics",
+    "settings": "Loading settings",
+    "setup": "Loading setup",
+    "teamAbsences": "Loading team absences table",
+    "workerQueue": "Loading worker queue"
+  },
   "nav": {
     "absences": "Absences",
     "analytics": "Analytics",
@@ -527,6 +539,9 @@
     "invalid-password": "Invalid password",
     "last-name-required": "Last Name is required",
     "password-required": "Password is required"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Loading works council"
   },
   "workBalance": {
     "label": "All-time balance",

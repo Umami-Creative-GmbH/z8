@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { PlatformAnalyticsCharts } from "@/components/platform-admin/platform-analytics-charts";
+import { LocalizedLoadingLabel } from "@/components/shells/localized-loading-label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { parsePlatformAnalyticsParams } from "@/lib/platform-analytics/range";
@@ -17,53 +18,99 @@ export default async function PlatformAnalyticsPage({
 }: {
 	searchParams?: Promise<PlatformAnalyticsSearchParams>;
 }) {
-	const [t, params] = await Promise.all([getTranslate(), searchParams]);
-	const parsedParams = parsePlatformAnalyticsParams(params ?? {});
+	const t = await getTranslate();
+	const sectionTitle = t(
+		"admin:admin.analytics.sectionTitle",
+		"Analytics Trends",
+	);
+	const sectionDescription = t(
+		"admin:admin.analytics.sectionDescription",
+		"Updated from current platform data for the selected range and bucket.",
+	);
 
 	return (
-		<div className="space-y-8">
-			<div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-				<div className="space-y-1">
-					<h1 className="text-2xl font-semibold tracking-tight">
-						{t("admin:admin.analytics.title", "Platform Analytics")}
-					</h1>
-					<p className="max-w-2xl text-muted-foreground">
-						{t(
-							"admin:admin.analytics.description",
-							"Monitor platform growth, engagement, operational activity, and billing trends.",
-						)}
-					</p>
-				</div>
-
-				<Suspense fallback={<PlatformAnalyticsControlsLoading />}>
-					<PlatformAnalyticsControls range={parsedParams.range} bucket={parsedParams.bucket} />
-				</Suspense>
+		<div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+			<div className="space-y-1">
+				<h1 className="text-2xl font-semibold tracking-tight">
+					{t("admin:admin.analytics.title", "Platform Analytics")}
+				</h1>
+				<p className="max-w-2xl text-muted-foreground">
+					{t(
+						"admin:admin.analytics.description",
+						"Monitor platform growth, engagement, operational activity, and billing trends.",
+					)}
+				</p>
 			</div>
 
-			<section className="space-y-4" aria-labelledby="platform-analytics-heading">
-				<div className="space-y-1">
-					<h2
-						id="platform-analytics-heading"
-						className="text-sm font-medium uppercase tracking-wider text-muted-foreground"
-					>
-						{t("admin:admin.analytics.sectionTitle", "Analytics Trends")}
-					</h2>
-					<p className="text-sm text-muted-foreground">
-						{t(
-							"admin:admin.analytics.sectionDescription",
-							"Updated from current platform data for the selected range and bucket.",
-						)}
-					</p>
-				</div>
-
-				<Suspense
-					key={`${parsedParams.range}-${parsedParams.bucket}`}
-					fallback={<PlatformAnalyticsLoading />}
-				>
-					<PlatformAnalyticsDataSection parsedParams={parsedParams} />
-				</Suspense>
-			</section>
+			<Suspense
+				fallback={
+					<PlatformAnalyticsRouteLoading
+						sectionTitle={sectionTitle}
+						sectionDescription={sectionDescription}
+					/>
+				}
+			>
+				<PlatformAnalyticsRouteContent
+					searchParams={searchParams}
+					sectionTitle={sectionTitle}
+					sectionDescription={sectionDescription}
+				/>
+			</Suspense>
 		</div>
+	);
+}
+
+async function PlatformAnalyticsRouteContent({
+	searchParams,
+	sectionTitle,
+	sectionDescription,
+}: {
+	searchParams?: Promise<PlatformAnalyticsSearchParams>;
+	sectionTitle: string;
+	sectionDescription: string;
+}) {
+	const parsedParams = parsePlatformAnalyticsParams((await searchParams) ?? {});
+
+	return (
+		<>
+			<PlatformAnalyticsControls
+				range={parsedParams.range}
+				bucket={parsedParams.bucket}
+			/>
+			<PlatformAnalyticsSection
+				parsedParams={parsedParams}
+				sectionTitle={sectionTitle}
+				sectionDescription={sectionDescription}
+			/>
+		</>
+	);
+}
+
+function PlatformAnalyticsSection({
+	parsedParams,
+	sectionTitle,
+	sectionDescription,
+}: {
+	parsedParams: ParsedPlatformAnalyticsParams;
+	sectionTitle: string;
+	sectionDescription: string;
+}) {
+	return (
+		<section
+			className="mt-4 space-y-4 lg:col-span-2"
+			aria-labelledby="platform-analytics-heading"
+		>
+			<PlatformAnalyticsSectionHeading
+				sectionTitle={sectionTitle}
+				sectionDescription={sectionDescription}
+			/>
+			<Suspense
+				key={`${parsedParams.range}-${parsedParams.bucket}`}
+				fallback={<PlatformAnalyticsLoading />}
+			>
+				<PlatformAnalyticsDataSection parsedParams={parsedParams} />
+			</Suspense>
+		</section>
 	);
 }
 
@@ -115,7 +162,10 @@ function PlatformAnalyticsLoading() {
 
 function PlatformAnalyticsControlsLoading() {
 	return (
-		<div className="flex flex-col gap-3 sm:flex-row sm:items-center" aria-hidden="true">
+		<div
+			className="flex flex-col gap-3 sm:flex-row sm:items-center"
+			aria-hidden="true"
+		>
 			<div className="grid gap-1.5">
 				<Skeleton className="h-3 w-16" />
 				<Skeleton className="h-10 w-full sm:w-[180px]" />
@@ -124,6 +174,55 @@ function PlatformAnalyticsControlsLoading() {
 				<Skeleton className="h-3 w-16" />
 				<Skeleton className="h-10 w-full sm:w-[160px]" />
 			</div>
+		</div>
+	);
+}
+
+function PlatformAnalyticsRouteLoading({
+	sectionTitle,
+	sectionDescription,
+}: {
+	sectionTitle: string;
+	sectionDescription: string;
+}) {
+	return (
+		<>
+			<PlatformAnalyticsControlsLoading />
+			<section
+				className="mt-4 space-y-4 lg:col-span-2"
+				aria-busy="true"
+				role="status"
+			>
+				<LocalizedLoadingLabel
+					translationKey="common:loading.platformAnalytics"
+					fallback="Loading platform analytics"
+				/>
+				<PlatformAnalyticsSectionHeading
+					sectionTitle={sectionTitle}
+					sectionDescription={sectionDescription}
+				/>
+				<PlatformAnalyticsLoading />
+			</section>
+		</>
+	);
+}
+
+function PlatformAnalyticsSectionHeading({
+	sectionTitle,
+	sectionDescription,
+}: {
+	sectionTitle: string;
+	sectionDescription: string;
+}) {
+	return (
+		<div className="space-y-1">
+			<h2
+				id="platform-analytics-heading"
+				className="text-sm font-medium uppercase tracking-wider text-muted-foreground"
+			>
+				{sectionTitle}
+			</h2>
+			<p className="text-sm text-muted-foreground">{sectionDescription}</p>
 		</div>
 	);
 }

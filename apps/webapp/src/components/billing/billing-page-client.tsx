@@ -3,17 +3,26 @@
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { BillingPricingCards } from "./pricing-cards";
+import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 import { BillingAlerts } from "./billing-page/billing-alerts";
 import { BillingFaq } from "./billing-page/billing-faq";
 import { SubscriptionSummary } from "./billing-page/subscription-summary";
 import type { BillingPageClientProps } from "./billing-page/types";
 import { useBillingActions } from "./billing-page/use-billing-actions";
+import { BillingPricingCards } from "./pricing-cards";
 
-function BillingPageClientContent({ subscription, accessResult }: BillingPageClientProps) {
+function BillingPageClientContent({
+	subscription,
+	accessResult,
+}: BillingPageClientProps) {
 	const { t } = useTranslate();
 	const searchParams = useSearchParams();
-	const { isCheckoutLoading, isPortalLoading, openBillingPortal, startCheckout } = useBillingActions();
+	const {
+		isCheckoutLoading,
+		isPortalLoading,
+		openBillingPortal,
+		startCheckout,
+	} = useBillingActions();
 	const success = searchParams.get("success");
 	const canceled = searchParams.get("canceled");
 	const canManageBilling = Boolean(
@@ -30,9 +39,14 @@ function BillingPageClientContent({ subscription, accessResult }: BillingPageCli
 			/>
 
 			<div>
-				<h1 className="text-3xl font-bold">{t("billing.title", "Billing & Subscription")}</h1>
+				<h1 className="text-3xl font-bold">
+					{t("billing.title", "Billing & Subscription")}
+				</h1>
 				<p className="text-muted-foreground mt-1">
-					{t("billing.description", "Manage your subscription and billing details")}
+					{t(
+						"billing.description",
+						"Manage your subscription and billing details",
+					)}
 				</p>
 			</div>
 
@@ -86,7 +100,7 @@ function BillingPageClientContent({ subscription, accessResult }: BillingPageCli
 
 export function BillingPageClient(props: BillingPageClientProps) {
 	return (
-		<Suspense fallback={null}>
+		<Suspense fallback={<SettingsContentLoading />}>
 			<BillingPageClientContent {...props} />
 		</Suspense>
 	);

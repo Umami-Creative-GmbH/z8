@@ -28,6 +28,7 @@
     "inboxErrorDescription": "Error al obtener las aprobaciones",
     "inboxErrorTitle": "No se pudo cargar la bandeja de entrada de aprobaciones",
     "loadError": "Error al cargar las aprobaciones",
+    "loadingInbox": "Cargando la bandeja de aprobaciones",
     "noAbsenceApprovals": "No hay solicitudes de ausencia pendientes por revisar.",
     "noRequests": "No hay solicitudes pendientes",
     "noRequestsDescription": "Las nuevas solicitudes de aprobación aparecerán aquí cuando necesiten la revisión de un gerente.",

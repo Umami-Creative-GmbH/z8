@@ -1,4 +1,11 @@
+/* @vitest-environment jsdom */
+
+import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
 
 const mockState = vi.hoisted(() => ({
 	getCurrentApprovedMembership: vi.fn(),
@@ -23,6 +30,10 @@ vi.mock("./employee-detail-page-client", () => ({
 
 const { default: EmployeeDetailPage } = await import("./page");
 
+function getContentElement(page: ReturnType<typeof EmployeeDetailPage>) {
+	return page.props.children;
+}
+
 describe("EmployeeDetailPage actor membership", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -39,18 +50,32 @@ describe("EmployeeDetailPage actor membership", () => {
 		});
 	});
 
+	it("renders the settings fallback while params remain unresolved", () => {
+		const page = EmployeeDetailPage({
+			params: new Promise<never>(() => {}),
+		});
+
+		expect(page).not.toBeInstanceOf(Promise);
+		render(page);
+
+		expect(screen.getByLabelText("Loading settings")).toBeTruthy();
+		expect(mockState.getEmployee).not.toHaveBeenCalled();
+	});
+
 	it("passes the approved membership role to detail controls", async () => {
 		mockState.getCurrentApprovedMembership.mockResolvedValue({ role: "owner" });
 
-		const page = await EmployeeDetailPage({
+		const page = EmployeeDetailPage({
 			params: Promise.resolve({ employeeId: "employee-1" }),
 		});
+		const contentElement = getContentElement(page);
+		const detailPage = await contentElement.type(contentElement.props);
 
 		expect(mockState.getCurrentApprovedMembership).toHaveBeenCalledWith({
 			userId: "user-1",
 			organizationId: "org-1",
 		});
-		expect(page.props).toMatchObject({
+		expect(detailPage.props).toMatchObject({
 			currentUserId: "user-1",
 			currentMemberRole: "owner",
 		});
@@ -59,11 +84,14 @@ describe("EmployeeDetailPage actor membership", () => {
 	it("denies detail access when no approved membership exists", async () => {
 		mockState.getCurrentApprovedMembership.mockResolvedValue(null);
 
-		await expect(
-			EmployeeDetailPage({
-				params: Promise.resolve({ employeeId: "employee-1" }),
-			}),
-		).rejects.toThrow("redirect:/settings");
+		const page = EmployeeDetailPage({
+			params: Promise.resolve({ employeeId: "employee-1" }),
+		});
+		const contentElement = getContentElement(page);
+
+		await expect(contentElement.type(contentElement.props)).rejects.toThrow(
+			"redirect:/settings",
+		);
 		expect(mockState.getEmployee).not.toHaveBeenCalled();
 	});
 });

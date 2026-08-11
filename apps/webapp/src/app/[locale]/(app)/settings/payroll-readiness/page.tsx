@@ -1,6 +1,9 @@
 import { DateTime } from "luxon";
 import { connection } from "next/server";
+import { Suspense } from "react";
 import { PayrollReadinessDashboard } from "@/components/settings/payroll-readiness/payroll-readiness-dashboard";
+import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
+import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getPayrollReadiness } from "@/lib/payroll-readiness/get-payroll-readiness";
 import { getTranslate } from "@/tolgee/server";
@@ -15,11 +18,57 @@ type PayrollReadinessSearchParams = {
 	end?: string;
 };
 
-export default async function PayrollReadinessPage({
-	searchParams,
-}: {
+type PayrollReadinessPageProps = {
 	searchParams?: Promise<PayrollReadinessSearchParams>;
-}) {
+};
+
+export default function PayrollReadinessPage(props: PayrollReadinessPageProps) {
+	return (
+		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+			<Suspense fallback={<PayrollReadinessHeaderLoading />}>
+				<PayrollReadinessHeader />
+			</Suspense>
+			<Suspense fallback={<SettingsContentLoading />}>
+				<PayrollReadinessContent {...props} />
+			</Suspense>
+		</div>
+	);
+}
+
+function PayrollReadinessHeaderLoading() {
+	return (
+		<div
+			aria-busy="true"
+			className="space-y-2"
+			data-testid="payroll-readiness-header-loading"
+		>
+			<Skeleton aria-hidden="true" className="h-8 w-56 max-w-full" />
+			<Skeleton aria-hidden="true" className="h-4 w-96 max-w-full" />
+		</div>
+	);
+}
+
+async function PayrollReadinessHeader() {
+	const t = await getTranslate();
+
+	return (
+		<div className="space-y-1">
+			<h1 className="text-2xl font-semibold">
+				{t("settings.payrollReadiness.title", "Payroll Readiness")}
+			</h1>
+			<p className="text-muted-foreground">
+				{t(
+					"settings.payrollReadiness.description",
+					"Check whether a payroll period is ready before exporting time, absence, and payroll data.",
+				)}
+			</p>
+		</div>
+	);
+}
+
+async function PayrollReadinessContent({
+	searchParams,
+}: PayrollReadinessPageProps) {
 	await connection();
 	const [{ organizationId }, t, resolvedSearchParams] = await Promise.all([
 		requireOrgAdminSettingsAccess(),
@@ -29,22 +78,7 @@ export default async function PayrollReadinessPage({
 	const period = getPayrollReadinessPeriod(resolvedSearchParams);
 	const data = await getPayrollReadiness({ organizationId, period });
 
-	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold">
-					{t("settings.payrollReadiness.title", "Payroll Readiness")}
-				</h1>
-				<p className="text-muted-foreground">
-					{t(
-						"settings.payrollReadiness.description",
-						"Check whether a payroll period is ready before exporting time, absence, and payroll data.",
-					)}
-				</p>
-			</div>
-			<PayrollReadinessDashboard t={t} data={data} />
-		</div>
-	);
+	return <PayrollReadinessDashboard t={t} data={data} />;
 }
 
 function getPayrollReadinessPeriod(searchParams: PayrollReadinessSearchParams) {

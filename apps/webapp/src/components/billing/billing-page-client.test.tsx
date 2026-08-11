@@ -36,16 +36,35 @@ function CheckoutActionHarness() {
 	const { isCheckoutLoading, startCheckout } = useBillingActions();
 
 	return (
-		<button disabled={isCheckoutLoading} onClick={() => startCheckout("month")} type="button">
+		<button
+			disabled={isCheckoutLoading}
+			onClick={() => startCheckout("month")}
+			type="button"
+		>
 			{isCheckoutLoading ? "Starting checkout" : "Upgrade monthly"}
 		</button>
 	);
 }
 
 describe("BillingPageClient", () => {
+	it("uses a visible settings fallback while URL state resolves", () => {
+		const source = readFileSync(
+			"src/components/billing/billing-page-client.tsx",
+			"utf8",
+		);
+
+		expect(source).toContain(
+			"<Suspense fallback={<SettingsContentLoading />}>",
+		);
+		expect(source).not.toContain("<Suspense fallback={null}>");
+	});
+
 	it("keeps checkout actionable after a failed request", async () => {
 		const user = userEvent.setup();
-		vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new Error("Network error")));
+		vi.stubGlobal(
+			"fetch",
+			vi.fn().mockRejectedValueOnce(new Error("Network error")),
+		);
 
 		render(<CheckoutActionHarness />);
 		await user.click(screen.getByRole("button", { name: "Upgrade monthly" }));
@@ -53,7 +72,9 @@ describe("BillingPageClient", () => {
 		await waitFor(() => {
 			expect(toastError).toHaveBeenCalledWith("Failed to start checkout");
 		});
-		expect(screen.getByRole("button", { name: "Upgrade monthly" })).toHaveProperty("disabled", false);
+		expect(
+			screen.getByRole("button", { name: "Upgrade monthly" }),
+		).toHaveProperty("disabled", false);
 
 		vi.unstubAllGlobals();
 	});
@@ -121,7 +142,9 @@ describe("BillingPageClient", () => {
 			),
 		).toBeTruthy();
 		expect(screen.queryByText(/No credit card required to start\./)).toBeNull();
-		expect(screen.getByRole("button", { name: "Upgrade Monthly" })).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Upgrade Monthly" }),
+		).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Upgrade Yearly" })).toBeTruthy();
 	});
 
@@ -150,7 +173,9 @@ describe("BillingPageClient", () => {
 		expect(screen.queryByText("Manage Billing")).toBeNull();
 		expect(screen.getByText("Monthly")).toBeTruthy();
 		expect(screen.getByText("Yearly")).toBeTruthy();
-		expect(screen.getByRole("button", { name: "Upgrade Monthly" })).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: "Upgrade Monthly" }),
+		).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Upgrade Yearly" })).toBeTruthy();
 	});
 
@@ -182,7 +207,10 @@ describe("BillingPageClient", () => {
 
 	it("uses localized checkout keys and fallbacks", () => {
 		const source = readFileSync(
-			join(process.cwd(), "src/components/billing/billing-page/billing-alerts.tsx"),
+			join(
+				process.cwd(),
+				"src/components/billing/billing-page/billing-alerts.tsx",
+			),
 			"utf8",
 		);
 
@@ -195,14 +223,21 @@ describe("BillingPageClient", () => {
 
 		for (const locale of locales) {
 			const billingMessages = JSON.parse(
-				readFileSync(join(process.cwd(), `messages/billing/${locale}.json`), "utf8"),
+				readFileSync(
+					join(process.cwd(), `messages/billing/${locale}.json`),
+					"utf8",
+				),
 			);
 			expect(billingMessages.billing.chooseUpgradePlanDescription).toBeTruthy();
 			expect(billingMessages.billing.upgradeMonthly).toBeTruthy();
 			expect(billingMessages.billing.upgradeYearly).toBeTruthy();
 			expect(billingMessages.billing.checkout.trialContinuesTitle).toBeTruthy();
-			expect(billingMessages.billing.checkout.trialContinuesDescription).toBeTruthy();
-			expect(existsSync(join(process.cwd(), `messages/${locale}.json`))).toBe(false);
+			expect(
+				billingMessages.billing.checkout.trialContinuesDescription,
+			).toBeTruthy();
+			expect(existsSync(join(process.cwd(), `messages/${locale}.json`))).toBe(
+				false,
+			);
 		}
 	});
 });

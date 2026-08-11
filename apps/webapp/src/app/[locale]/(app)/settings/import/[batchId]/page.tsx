@@ -1,17 +1,30 @@
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
+import { Suspense } from "react";
 import { ImportReviewPage } from "@/components/settings/import/import-review-page";
+import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 import { db } from "@/db";
 import { importBatch } from "@/db/schema";
-import { getImportReviewSummary, listImportReviewRows } from "@/lib/import-review/repository";
+import {
+	getImportReviewSummary,
+	listImportReviewRows,
+} from "@/lib/import-review/repository";
 import { requireImportAdmin } from "../review-actions";
 
 interface ImportReviewRouteProps {
 	params: Promise<{ batchId: string }>;
 }
 
-export default async function ImportReviewRoute({ params }: ImportReviewRouteProps) {
+export default function ImportReviewRoute(props: ImportReviewRouteProps) {
+	return (
+		<Suspense fallback={<SettingsContentLoading />}>
+			<ImportReviewRouteContent {...props} />
+		</Suspense>
+	);
+}
+
+async function ImportReviewRouteContent({ params }: ImportReviewRouteProps) {
 	const [, { batchId }] = await Promise.all([connection(), params]);
 	const batch = await db.query.importBatch.findFirst({
 		where: eq(importBatch.id, batchId),
@@ -21,7 +34,10 @@ export default async function ImportReviewRoute({ params }: ImportReviewRoutePro
 	await requireImportAdmin(batch.organizationId);
 
 	const [summary, rows] = await Promise.all([
-		getImportReviewSummary({ batchId: batch.id, organizationId: batch.organizationId }),
+		getImportReviewSummary({
+			batchId: batch.id,
+			organizationId: batch.organizationId,
+		}),
 		listImportReviewRows({
 			batchId: batch.id,
 			organizationId: batch.organizationId,
