@@ -6,6 +6,7 @@ import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import { updateTimezone } from "@/app/[locale]/(app)/settings/profile/actions";
 import { createManualTimeEntry } from "@/app/[locale]/(app)/time-tracking/actions";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
@@ -85,11 +86,13 @@ function getDefaultValues(
 		"defaultDate" | "defaultClockInTime" | "defaultClockOutTime"
 	>,
 ): FormValues {
-	const today = DateTime.now().setZone(employeeTimezone).toISODate() || "";
+	const now = Temporal.Now.zonedDateTimeISO(employeeTimezone);
 	return {
-		date: defaults.defaultDate ?? today,
+		date: defaults.defaultDate ?? now.toPlainDate().toString(),
 		clockInTime: defaults.defaultClockInTime ?? "09:00",
-		clockOutTime: defaults.defaultClockOutTime ?? "17:00",
+		clockOutTime:
+			defaults.defaultClockOutTime ??
+			`${String(now.hour).padStart(2, "0")}:${String(now.minute).padStart(2, "0")}`,
 		reason: "",
 		projectId: undefined,
 		workCategoryId: undefined,
