@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TimeCorrectionApprovalsTable } from "./time-correction-approvals-table";
@@ -62,7 +62,20 @@ vi.mock("@/env", () => ({
 
 vi.mock("@tolgee/react", () => ({
 	useTolgee: () => ({ getLanguage: () => "en" }),
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+	useTranslate: () => ({
+		t: (key: string, fallback: string) =>
+			key === "timeTracking.workLocationOffice"
+				? "Büro"
+				: key === "timeTracking.workLocationHome"
+					? "Zuhause"
+					: key === "timeTracking.noCategory"
+						? "Keine Kategorie (100 %)"
+						: key === "approvals:approvals.original"
+							? "Ursprünglich"
+							: key === "approvals:approvals.requested"
+								? "Angefordert"
+					: fallback,
+	}),
 }));
 
 vi.mock("@/components/providers/user-preferences-provider", () => ({
@@ -213,6 +226,60 @@ describe("TimeCorrectionApprovalsTable stable decision target", () => {
 		expect(
 			await screen.findByText("Forgot to clock out after the customer visit"),
 		).not.toBeNull();
+	});
+
+	it("renders translated metadata-only changes without empty timestamp placeholders", async () => {
+		queryMocks.getPendingApprovals.mockResolvedValue({
+			absenceApprovals: [],
+			timeCorrectionApprovals: [
+				{
+					...approval,
+					workPeriod: {
+						...approval.workPeriod,
+						clockInCorrectionEntry: null,
+						clockOutCorrectionEntry: null,
+						metadataChanges: {
+							workLocation: { original: "office", requested: "home" },
+							workCategory: {
+								original: {
+									state: "named",
+									id: "category-1",
+									name: "Training",
+								},
+								requested: { state: "none" },
+							},
+						},
+					},
+				},
+			],
+		});
+		renderTable();
+		expect(
+			await screen.findByRole("columnheader", { name: "Ursprünglich" }),
+		).not.toBeNull();
+		expect(
+			screen.getByRole("columnheader", { name: "Angefordert" }),
+		).not.toBeNull();
+		expect(screen.queryByRole("columnheader", { name: "Original Times" })).toBeNull();
+		expect(screen.queryByRole("columnheader", { name: "Corrected Times" })).toBeNull();
+
+		const employeeRow = screen.getByRole("row", { name: /Ada Lovelace/ });
+		const cells = within(employeeRow).getAllByRole("cell");
+		const originalCell = cells[2];
+		const requestedCell = cells[3];
+		if (!originalCell || !requestedCell) throw new Error("Expected comparison columns");
+
+		expect(within(originalCell).getByText("Work location")).not.toBeNull();
+		expect(within(originalCell).getByText("Büro")).not.toBeNull();
+		expect(within(originalCell).getByText("Work category")).not.toBeNull();
+		expect(within(originalCell).getByText("Training")).not.toBeNull();
+		expect(within(originalCell).getAllByText(/Ursprünglich/)).toHaveLength(2);
+		expect(within(requestedCell).getByText("Work location")).not.toBeNull();
+		expect(within(requestedCell).getByText("Zuhause")).not.toBeNull();
+		expect(within(requestedCell).getByText("Work category")).not.toBeNull();
+		expect(within(requestedCell).getByText("Keine Kategorie (100 %)")).not.toBeNull();
+		expect(within(requestedCell).getAllByText(/Angefordert/)).toHaveLength(2);
+		expect(screen.queryByText("—")).toBeNull();
 	});
 
 	it("restores an optimistically removed request when canonical dispatch fails", async () => {

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-	IconArrowRight,
 	IconCheck,
 	IconLoader2,
 	IconRefresh,
@@ -26,6 +25,7 @@ import { useTimeFormat } from "@/components/providers/user-preferences-provider"
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
+import type { WorkCategoryReviewValue } from "@/lib/approvals/server/time-correction-review-metadata";
 import { queryKeys } from "@/lib/query";
 import { dispatchApprovalDecision } from "@/lib/query/use-approval-inbox";
 import { ApprovalActionDialog } from "./approval-action-dialog";
@@ -35,6 +35,27 @@ import {
 } from "./time-correction-approval-format";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
+
+function workLocationLabel(value: string, t: Translate) {
+	const labels: Record<string, [string, string]> = {
+		office: ["timeTracking.workLocationOffice", "Office"],
+		home: ["timeTracking.workLocationHome", "Home"],
+		remote: ["timeTracking.workLocationRemote", "Remote"],
+		other: ["timeTracking.workLocationOther", "Other"],
+	};
+	const label = labels[value];
+	return label ? t(label[0], label[1]) : value;
+}
+
+function workCategoryLabel(value: WorkCategoryReviewValue, t: Translate) {
+	if (value.state === "named") return value.name;
+	return value.state === "none"
+		? t("timeTracking.noCategory", "No category (100%)")
+		: t(
+				"approvals:approvals.workCategoryUnavailable",
+				"Unknown category (unavailable)",
+			);
+}
 
 export function TimeCorrectionApprovalsTable() {
 	const { t } = useTranslate();
@@ -383,82 +404,161 @@ function buildTimeCorrectionColumns({
 		},
 		{
 			accessorKey: "originalTimes",
-			header: t("approvals:approvals.originalTimes", "Original Times"),
+			header: t("approvals:approvals.original", "Original"),
 			cell: ({ row }) => {
-				const originalClockIn = formatCorrectionAuditEndpoint(
-					row.original.workPeriod.clockInEntry.timestamp,
-					row.original.workPeriod.clockInEntry.utcOffsetMinutes,
-					row.original.displayContext!,
-				);
-				const originalClockOut = row.original.workPeriod.clockOutEntry
-					? formatCorrectionAuditEndpoint(
-							row.original.workPeriod.clockOutEntry.timestamp,
-							row.original.workPeriod.clockOutEntry.utcOffsetMinutes,
-							row.original.displayContext!,
-						)
-					: "—";
-				return (
-					<div className="flex items-center gap-2 font-mono text-sm">
-						<span>{originalClockIn}</span>
-						<IconArrowRight className="size-3 text-muted-foreground" />
-						<span>{originalClockOut}</span>
-					</div>
-				);
+				const values = [
+					...(row.original.workPeriod.clockInCorrectionEntry
+						? [
+								{
+									label: t("approvals:approvals.clockIn", "Clock in"),
+									value: formatCorrectionAuditEndpoint(
+										row.original.workPeriod.clockInEntry.timestamp,
+										row.original.workPeriod.clockInEntry.utcOffsetMinutes,
+										row.original.displayContext!,
+									),
+								},
+							]
+						: []),
+					...(row.original.workPeriod.clockOutCorrectionEntry &&
+					row.original.workPeriod.clockOutEntry
+						? [
+								{
+									label: t("approvals:approvals.clockOut", "Clock out"),
+									value: formatCorrectionAuditEndpoint(
+										row.original.workPeriod.clockOutEntry.timestamp,
+										row.original.workPeriod.clockOutEntry.utcOffsetMinutes,
+										row.original.displayContext!,
+									),
+								},
+							]
+						: []),
+					...(row.original.workPeriod.metadataChanges?.workLocation
+						? [
+								{
+									label: t("approvals:approvals.workLocation", "Work location"),
+									value: workLocationLabel(
+										row.original.workPeriod.metadataChanges.workLocation
+											.original,
+										t,
+									),
+								},
+							]
+						: []),
+					...(row.original.workPeriod.metadataChanges?.workCategory
+						? [
+								{
+									label: t("approvals:approvals.workCategory", "Work category"),
+									value: workCategoryLabel(
+										row.original.workPeriod.metadataChanges.workCategory
+											.original,
+										t,
+									),
+								},
+							]
+						: []),
+				];
+				return values.length > 0 ? (
+					<dl className="grid gap-1 text-sm">
+						{values.map((value) => (
+							<div key={value.label} className="grid gap-0.5">
+								<dt className="text-xs text-muted-foreground">{value.label}</dt>
+								<dd>
+									<span className="sr-only">
+										{t("approvals:approvals.original", "Original")}:{" "}
+									</span>
+									<span className="font-mono">{value.value}</span>
+								</dd>
+							</div>
+						))}
+					</dl>
+				) : null;
 			},
 		},
 		{
 			accessorKey: "correctedTimes",
-			header: t("approvals:approvals.correctedTimes", "Corrected Times"),
+			header: t("approvals:approvals.requested", "Requested"),
 			cell: ({ row }) => {
-				const originalClockIn = formatCorrectionAuditEndpoint(
-					row.original.workPeriod.clockInEntry.timestamp,
-					row.original.workPeriod.clockInEntry.utcOffsetMinutes,
-					row.original.displayContext!,
-				);
-				const originalClockOut = row.original.workPeriod.clockOutEntry
-					? formatCorrectionAuditEndpoint(
-							row.original.workPeriod.clockOutEntry.timestamp,
-							row.original.workPeriod.clockOutEntry.utcOffsetMinutes,
-							row.original.displayContext!,
-						)
-					: "—";
-				const correctedClockIn = row.original.workPeriod.clockInCorrectionEntry
-					? formatCorrectionAuditEndpoint(
-							row.original.workPeriod.clockInCorrectionEntry.timestamp,
-							row.original.workPeriod.clockInCorrectionEntry.utcOffsetMinutes,
-							row.original.displayContext!,
-						)
-					: "—";
-				const correctedClockOut = row.original.workPeriod
-					.clockOutCorrectionEntry
-					? formatCorrectionAuditEndpoint(
-							row.original.workPeriod.clockOutCorrectionEntry.timestamp,
-							row.original.workPeriod.clockOutCorrectionEntry.utcOffsetMinutes,
-							row.original.displayContext!,
-						)
-					: "—";
-				const hasChanges =
-					originalClockIn !== correctedClockIn ||
-					originalClockOut !== correctedClockOut;
+				const values = [
+					...(row.original.workPeriod.clockInCorrectionEntry
+						? [
+								{
+									label: t("approvals:approvals.clockIn", "Clock in"),
+									value: formatCorrectionAuditEndpoint(
+										row.original.workPeriod.clockInCorrectionEntry.timestamp,
+										row.original.workPeriod.clockInCorrectionEntry
+											.utcOffsetMinutes,
+										row.original.displayContext!,
+									),
+								},
+							]
+						: []),
+					...(row.original.workPeriod.clockOutCorrectionEntry
+						? [
+								{
+									label: t("approvals:approvals.clockOut", "Clock out"),
+									value: formatCorrectionAuditEndpoint(
+										row.original.workPeriod.clockOutCorrectionEntry.timestamp,
+										row.original.workPeriod.clockOutCorrectionEntry
+											.utcOffsetMinutes,
+										row.original.displayContext!,
+									),
+								},
+							]
+						: []),
+					...(row.original.workPeriod.metadataChanges?.workLocation
+						? [
+								{
+									label: t("approvals:approvals.workLocation", "Work location"),
+									value: workLocationLabel(
+										row.original.workPeriod.metadataChanges.workLocation
+											.requested,
+										t,
+									),
+								},
+							]
+						: []),
+					...(row.original.workPeriod.metadataChanges?.workCategory
+						? [
+								{
+									label: t("approvals:approvals.workCategory", "Work category"),
+									value: workCategoryLabel(
+										row.original.workPeriod.metadataChanges.workCategory
+											.requested,
+										t,
+									),
+								},
+							]
+						: []),
+				];
+				const metadataChanges = row.original.workPeriod.metadataChanges;
+				const hasChanges = values.length > 0 || Boolean(metadataChanges);
 
-				return (
-					<div className="flex items-center gap-2">
-						<div className="flex items-center gap-2 font-mono text-sm">
-							<span className={hasChanges ? "text-orange-600 font-medium" : ""}>
-								{correctedClockIn}
-							</span>
-							<IconArrowRight className="size-3 text-muted-foreground" />
-							<span className={hasChanges ? "text-orange-600 font-medium" : ""}>
-								{correctedClockOut}
-							</span>
-						</div>
+				return hasChanges ? (
+					<div className="flex items-start gap-2">
+						<dl className="grid gap-2 text-sm">
+							{values.map((value) => (
+								<div key={value.label} className="grid gap-0.5">
+									<dt className="text-xs text-muted-foreground">
+										{value.label}
+									</dt>
+									<dd>
+										<span className="sr-only">
+											{t("approvals:approvals.requested", "Requested")}:{" "}
+										</span>
+										<span className="font-mono font-medium text-foreground">
+											{value.value}
+										</span>
+									</dd>
+								</div>
+							))}
+						</dl>
 						{hasChanges && (
 							<Badge variant="outline" className="text-xs">
 								{t("approvals:approvals.changed", "Changed")}
 							</Badge>
 						)}
 					</div>
-				);
+				) : null;
 			},
 		},
 		{

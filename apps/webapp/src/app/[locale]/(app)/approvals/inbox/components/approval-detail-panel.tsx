@@ -17,7 +17,12 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
-import type { ApprovalInboxDetailSection, ApprovalInboxItem } from "@/lib/approvals/inbox/types";
+import type {
+	ApprovalInboxDetailChangeValue,
+	ApprovalInboxDetailSection,
+	ApprovalInboxItem,
+	ApprovalInboxLocalizedText,
+} from "@/lib/approvals/inbox/types";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import {
 	useApprovalDetail,
@@ -41,6 +46,36 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 	);
 }
 
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+function localizedText(t: Translate, value: string | ApprovalInboxLocalizedText) {
+	return typeof value === "string" ? value : t(value.key, value.fallback);
+}
+
+function workLocationText(t: Translate, value: string) {
+	const labels: Record<string, [string, string]> = {
+		office: ["timeTracking.workLocationOffice", "Office"],
+		home: ["timeTracking.workLocationHome", "Home"],
+		remote: ["timeTracking.workLocationRemote", "Remote"],
+		other: ["timeTracking.workLocationOther", "Other"],
+	};
+	const label = labels[value];
+	return label ? t(label[0], label[1]) : value;
+}
+
+function changeValueText(t: Translate, value: ApprovalInboxDetailChangeValue) {
+	if (value.kind === "work_location") {
+		return workLocationText(t, value.value);
+	}
+	if (value.value.state === "named") return value.value.name;
+	return value.value.state === "none"
+		? t("timeTracking.noCategory", "No category (100%)")
+		: t(
+				"approvals:approvals.workCategoryUnavailable",
+				"Unknown category (unavailable)",
+			);
+}
+
 function renderDetailSection(
 	t: ReturnType<typeof useTranslate>["t"],
 	section: ApprovalInboxDetailSection,
@@ -48,27 +83,48 @@ function renderDetailSection(
 	switch (section.type) {
 		case "key_value":
 			return (
-				<section key={section.title}>
-					<SectionTitle>{section.title}</SectionTitle>
-					<div className="space-y-3 rounded-xl border bg-card/60 p-4 shadow-sm">
+				<section key={localizedText(t, section.title)}>
+					<SectionTitle>{localizedText(t, section.title)}</SectionTitle>
+					<dl className="space-y-3 rounded-xl border bg-card/60 p-4 shadow-sm">
 						{section.rows.map((row) => (
 							<div
-								key={`${row.label}-${row.value}`}
+								key={localizedText(t, row.label)}
 								className="grid grid-cols-[minmax(0,1fr)_minmax(8rem,max-content)] items-start gap-4"
 							>
-								<span className="text-sm text-muted-foreground">{row.label}</span>
-								<span
+								<dt className="text-sm text-muted-foreground">
+									{localizedText(t, row.label)}
+								</dt>
+								<dd
 									className={cn(
 										"min-w-0 text-right text-sm font-semibold text-foreground",
 										row.tone === "warning" && "text-amber-600 dark:text-amber-400",
 										row.tone === "danger" && "text-destructive",
 									)}
 								>
-									{row.value}
-								</span>
+									{typeof row.value === "string" ? (
+										row.value
+									) : !("kind" in row.value) ? (
+										localizedText(t, row.value)
+									) : (
+										<span className="grid gap-1">
+											<span>
+												<span className="sr-only">
+													{t("approvals:approvals.original", "Original")}: {" "}
+												</span>
+												{changeValueText(t, row.value.original)}
+											</span>
+											<span>
+												<span className="sr-only">
+													{t("approvals:approvals.requested", "Requested")}: {" "}
+												</span>
+												{changeValueText(t, row.value.requested)}
+											</span>
+										</span>
+									)}
+								</dd>
 							</div>
 						))}
-					</div>
+					</dl>
 				</section>
 			);
 		case "text":
