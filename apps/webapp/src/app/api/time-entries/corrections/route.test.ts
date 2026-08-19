@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AuthorizationError, ConflictError } from "@/lib/effect/errors";
+import {
+	AuthorizationError,
+	ConflictError,
+	ValidationError,
+} from "@/lib/effect/errors";
 
 const routeSource = readFileSync(
 	new URL("./route.ts", import.meta.url),
@@ -33,6 +37,7 @@ const mockState = vi.hoisted(() => {
 		limit,
 		loggerError: vi.fn(),
 		markEmployeeWorkBalanceDirty: vi.fn(),
+		validateTimeEntryRange: vi.fn(),
 		resolveCorrectionApprovalManager: vi.fn(),
 		submitCorrection: vi.fn(),
 		timeEntryFindFirst: vi.fn(),
@@ -149,6 +154,10 @@ vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty: mockState.markEmployeeWorkBalanceDirty,
 }));
 
+vi.mock("@/lib/time-tracking/validation", () => ({
+	validateTimeEntryRange: mockState.validateTimeEntryRange,
+}));
+
 vi.mock("@/lib/time-tracking/clocking-service", () => ({
 	ClockingAccessError: class ClockingAccessError extends Error {},
 	clockingService: { requireActor: mockState.requireActor },
@@ -192,7 +201,11 @@ function createPostRequest(
 	if (key !== null) requestHeaders.set("Idempotency-Key", key);
 	return {
 		headers: requestHeaders,
-		json: vi.fn().mockResolvedValue(body),
+		json: vi.fn().mockResolvedValue({
+			workLocationType: "office",
+			workCategoryId: null,
+			...body,
+		}),
 	} as never;
 }
 
@@ -201,11 +214,13 @@ function mockPostTarget({
 	entryTimestamp,
 	entryTimezone = "Europe/Berlin",
 	entryUtcOffsetMinutes,
-	periodEnd = "2026-12-31T20:00:00.000Z",
-	periodStart = "2026-01-01T06:00:00.000Z",
+	periodEnd = "2026-07-01T20:00:00.000Z",
+	periodStart = "2026-07-01T06:00:00.000Z",
 	targetEmployeeId = "employee-1",
 	targetEntryId = "entry-clock-in",
 	targetUserId = "user-1",
+	workCategoryId = null,
+	workLocationType = "office",
 }: {
 	currentEmployeeId?: string;
 	entryTimestamp?: string;
@@ -216,6 +231,8 @@ function mockPostTarget({
 	targetEmployeeId?: string;
 	targetEntryId?: string;
 	targetUserId?: string;
+	workCategoryId?: string | null;
+	workLocationType?: string | null;
 } = {}) {
 	const endpointTimestamp =
 		entryTimestamp ??
@@ -261,6 +278,8 @@ function mockPostTarget({
 				clockOutId: "entry-clock-out",
 				startTime: new Date(periodStart),
 				endTime: new Date(periodEnd),
+				workCategoryId,
+				workLocationType,
 			},
 		]);
 }
@@ -388,6 +407,7 @@ describe("POST /api/time-entries/corrections", () => {
 		mockState.dispatchCommittedSubmission.mockResolvedValue(undefined);
 		mockState.getUserTimezone.mockResolvedValue("Europe/Berlin");
 		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
+		mockState.validateTimeEntryRange.mockResolvedValue({ isValid: true });
 		mockState.resolveCorrectionApprovalManager.mockResolvedValue({
 			ok: true,
 			managerId: "employee-manager",
@@ -475,6 +495,29 @@ describe("POST /api/time-entries/corrections", () => {
 		expect(mockState.submitCorrection).not.toHaveBeenCalled();
 	});
 
+	it.each([
+		["missing work location", { workLocationType: undefined }],
+		["invalid work location", { workLocationType: "field" }],
+		["missing work category", { workCategoryId: undefined }],
+		["invalid work category", { workCategoryId: "not-a-uuid" }],
+	] as const)(
+		"rejects %s metadata before repository work",
+		async (_label, override) => {
+			const response = await POST(
+				createPostRequest({
+					replacesEntryId: "entry-clock-in",
+					timestamp: "2026-07-01T08:15:00Z",
+					notes: "Correct clock-in",
+					...override,
+				}),
+			);
+
+			expect(response.status).toBe(400);
+			expect(mockState.select).not.toHaveBeenCalled();
+			expect(mockState.submitCorrection).not.toHaveBeenCalled();
+		},
+	);
+
 	it("allocates a fresh submission identity per request when Idempotency-Key is absent", async () => {
 		mockPostTarget();
 		mockPostTarget();
@@ -543,20 +586,23 @@ describe("POST /api/time-entries/corrections", () => {
 	it.each([
 		["seasonal mismatch", "2026-01-15T08:15:00+02:00"],
 		["DST gap mismatch", "2026-03-29T02:30:00+01:00"],
-	])("rejects %s between timestamp offset and selected timezone", async (_label, timestamp) => {
-		mockPostTarget();
-		const response = await POST(
-			createPostRequest({
-				replacesEntryId: "entry-clock-in",
-				timestamp,
-				timezone: "Europe/Berlin",
-				notes: "Mismatched evidence",
-			}),
-		);
+	])(
+		"rejects %s between timestamp offset and selected timezone",
+		async (_label, timestamp) => {
+			mockPostTarget();
+			const response = await POST(
+				createPostRequest({
+					replacesEntryId: "entry-clock-in",
+					timestamp,
+					timezone: "Europe/Berlin",
+					notes: "Mismatched evidence",
+				}),
+			);
 
-		expect(response.status).toBe(400);
-		expect(mockState.submitCorrection).not.toHaveBeenCalled();
-	});
+			expect(response.status).toBe(400);
+			expect(mockState.submitCorrection).not.toHaveBeenCalled();
+		},
+	);
 
 	it("uses the corrected endpoint's stored IANA evidence for the dirty date", async () => {
 		mockPostTarget({
@@ -684,36 +730,60 @@ describe("POST /api/time-entries/corrections", () => {
 	});
 
 	it.each([
-		["UTC", "2026-07-01T08:15:00Z", "UTC", 0],
-		["Berlin summer", "2026-07-01T08:15:00+02:00", "Europe/Berlin", 120],
-		["Berlin winter", "2026-01-15T08:15:00+01:00", "Europe/Berlin", 60],
-	])("derives %s timezone capture from the correction instant", async (_label, timestamp, timezone, expectedOffset) => {
-		mockPostTarget();
+		[
+			"UTC",
+			"2026-07-01T08:15:00Z",
+			"UTC",
+			0,
+			"2026-07-01T06:00:00.000Z",
+			"2026-07-01T20:00:00.000Z",
+		],
+		[
+			"Berlin summer",
+			"2026-07-01T08:15:00+02:00",
+			"Europe/Berlin",
+			120,
+			"2026-07-01T06:00:00.000Z",
+			"2026-07-01T20:00:00.000Z",
+		],
+		[
+			"Berlin winter",
+			"2026-01-15T08:15:00+01:00",
+			"Europe/Berlin",
+			60,
+			"2026-01-15T06:00:00.000Z",
+			"2026-01-15T20:00:00.000Z",
+		],
+	])(
+		"derives %s timezone capture from the correction instant",
+		async (_label, timestamp, timezone, expectedOffset, periodStart, periodEnd) => {
+			mockPostTarget({ periodStart, periodEnd });
 
-		const response = await POST(
-			createPostRequest({
-				replacesEntryId: "entry-clock-in",
-				timestamp,
-				timezone,
-				notes: "Correct clock-in",
-			}),
-		);
+			const response = await POST(
+				createPostRequest({
+					replacesEntryId: "entry-clock-in",
+					timestamp,
+					timezone,
+					notes: "Correct clock-in",
+				}),
+			);
 
-		expect(response.status).toBe(201);
-		expect(mockState.submitCorrection).toHaveBeenCalledWith(
-			expect.objectContaining({
-				endpoints: [
-					expect.objectContaining({
-						timezoneCapture: {
-							timezone,
-							timezoneSource: "browser",
-							utcOffsetMinutes: expectedOffset,
-						},
-					}),
-				],
-			}),
-		);
-	});
+			expect(response.status).toBe(201);
+			expect(mockState.submitCorrection).toHaveBeenCalledWith(
+				expect.objectContaining({
+					endpoints: [
+						expect.objectContaining({
+							timezoneCapture: {
+								timezone,
+								timezoneSource: "browser",
+								utcOffsetMinutes: expectedOffset,
+							},
+						}),
+					],
+				}),
+			);
+		},
+	);
 
 	it.each([
 		[
@@ -730,23 +800,26 @@ describe("POST /api/time-entries/corrections", () => {
 			"2026-07-01T08:00:00.000Z",
 			"2026-07-01T16:00:00.000Z",
 		],
-	])("rejects a corrected %s", async (_label, targetEntryId, timestamp, periodStart, periodEnd) => {
-		mockPostTarget({ targetEntryId, periodStart, periodEnd });
+	])(
+		"rejects a corrected %s",
+		async (_label, targetEntryId, timestamp, periodStart, periodEnd) => {
+			mockPostTarget({ targetEntryId, periodStart, periodEnd });
 
-		const response = await POST(
-			createPostRequest({
-				replacesEntryId: targetEntryId,
-				timestamp,
-				notes: "Invalid endpoint range",
-			}),
-		);
+			const response = await POST(
+				createPostRequest({
+					replacesEntryId: targetEntryId,
+					timestamp,
+					notes: "Invalid endpoint range",
+				}),
+			);
 
-		expect(response.status).toBe(400);
-		expect(await response.json()).toEqual({
-			error: "Clock out time must be after clock in time",
-		});
-		expect(mockState.canApproveFor).not.toHaveBeenCalled();
-	});
+			expect(response.status).toBe(400);
+			expect(await response.json()).toEqual({
+				error: "Clock out time must be after clock in time",
+			});
+			expect(mockState.canApproveFor).not.toHaveBeenCalled();
+		},
+	);
 
 	it("creates a self clock-in correction as inactive with a linked pending approval", async () => {
 		mockState.limit
@@ -1088,6 +1161,7 @@ describe("POST /api/time-entries/corrections", () => {
 				timestamp: "2026-07-01T10:15:00+02:00",
 				timezone: "UTC",
 				notes: "Manager correction",
+				workLocationType: "home",
 			}),
 		);
 
@@ -1102,6 +1176,8 @@ describe("POST /api/time-entries/corrections", () => {
 				employeeId: "employee-target",
 				organizationId: "org-1",
 				workPeriodId: "period-1",
+				workLocationType: "home",
+				workCategoryId: null,
 				timezone: "Europe/Berlin",
 				timezoneSource: "manager_target_user_setting",
 				utcOffsetMinutes: 120,
@@ -1115,52 +1191,312 @@ describe("POST /api/time-entries/corrections", () => {
 		).not.toHaveBeenCalled();
 	});
 
+	it("accepts a manager metadata-only correction without creating an endpoint row", async () => {
+		mockPostTarget({
+			currentEmployeeId: "employee-manager",
+			periodEnd: "2026-01-01T20:00:00.000Z",
+			periodStart: "2026-01-01T06:00:00.000Z",
+			targetEmployeeId: "employee-target",
+			targetUserId: "target-user",
+		});
+		mockState.canApproveFor.mockResolvedValueOnce(true);
+		mockState.createCorrectionEntry.mockReturnValueOnce(Effect.succeed(null));
+
+		const response = await POST(
+			createPostRequest({
+				replacesEntryId: "entry-clock-in",
+				timestamp: "2026-01-01T07:00:00+01:00",
+				notes: "Worked from home",
+				workLocationType: "home",
+			}),
+		);
+
+		expect(response.status).toBe(201);
+		expect(await response.json()).toMatchObject({
+			entry: null,
+			message: "Correction applied successfully.",
+		});
+		expect(mockState.createCorrectionEntry).toHaveBeenCalledWith(
+			expect.objectContaining({
+				timestamp: new Date("2026-01-01T06:00:00.000Z"),
+				workLocationType: "home",
+				workCategoryId: null,
+			}),
+		);
+	});
+
+	it("passes manager category removal to the atomic correction boundary", async () => {
+		const categoryId = "31000000-0000-4000-8000-000000000910";
+		mockPostTarget({
+			currentEmployeeId: "employee-manager",
+			periodEnd: "2026-01-01T20:00:00.000Z",
+			periodStart: "2026-01-01T06:00:00.000Z",
+			targetEmployeeId: "employee-target",
+			targetUserId: "target-user",
+			workCategoryId: categoryId,
+		});
+		mockState.canApproveFor.mockResolvedValueOnce(true);
+
+		const response = await POST(
+			createPostRequest({
+				replacesEntryId: "entry-clock-in",
+				timestamp: "2026-01-01T07:00:00+01:00",
+				notes: "Remove category",
+				workCategoryId: null,
+			}),
+		);
+
+		expect(response.status).toBe(201);
+		expect(mockState.createCorrectionEntry).toHaveBeenCalledWith(
+			expect.objectContaining({
+				expectedWorkCategoryId: categoryId,
+				workCategoryId: null,
+			}),
+		);
+	});
+
+	it("returns 400 for an unchanged manager correction", async () => {
+		mockPostTarget({
+			currentEmployeeId: "employee-manager",
+			periodEnd: "2026-01-01T20:00:00.000Z",
+			periodStart: "2026-01-01T06:00:00.000Z",
+			targetEmployeeId: "employee-target",
+			targetUserId: "target-user",
+		});
+		mockState.canApproveFor.mockResolvedValueOnce(true);
+		mockState.createCorrectionEntry.mockReturnValueOnce(
+			Effect.fail(
+				new ValidationError({
+					message: "At least one correction value must change",
+					field: "correction",
+				}),
+			),
+		);
+
+		const response = await POST(
+			createPostRequest({
+				replacesEntryId: "entry-clock-in",
+				timestamp: "2026-01-01T07:00:00+01:00",
+				notes: "No changes",
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({
+			error: "At least one correction value must change",
+		});
+	});
+
+	it("rejects a year-0001 range before submission or holiday fan-out", async () => {
+		mockPostTarget({
+			periodStart: "2026-01-01T06:00:00.000Z",
+			periodEnd: "2026-01-01T14:00:00.000Z",
+		});
+		const response = await POST(
+			createPostRequest({
+				replacesEntryId: "entry-clock-in",
+				timestamp: "0001-01-01T00:00:00Z",
+				timezone: "UTC",
+				notes: "Adversarial range",
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({
+			error: "Work period cannot exceed 24 hours",
+		});
+		expect(mockState.submitCorrection).not.toHaveBeenCalled();
+		expect(mockState.createCorrectionEntry).not.toHaveBeenCalled();
+		expect(mockState.validateTimeEntryRange).not.toHaveBeenCalled();
+	});
+
+	it("validates self-service corrections in the employee authoritative timezone", async () => {
+		mockPostTarget();
+
+		const response = await POST(
+			createPostRequest({
+				replacesEntryId: "entry-clock-in",
+				timestamp: "2026-07-01T08:15:00+02:00",
+				timezone: "Europe/Berlin",
+				notes: "Correct clock-in",
+			}),
+		);
+
+		expect(response.status).toBe(201);
+		const input = mockState.submitCorrection.mock.calls[0]?.[0];
+		expect(input.validateTimeRange).toEqual(expect.any(Function));
+		await input.validateTimeRange();
+		expect(mockState.validateTimeEntryRange).toHaveBeenCalledWith(
+			"org-1",
+			new Date("2026-07-01T06:15:00.000Z"),
+			new Date("2026-07-01T20:00:00.000Z"),
+			"Europe/Berlin",
+		);
+	});
+
+	it("validates manager corrections in the target employee timezone inside the immediate boundary", async () => {
+		mockPostTarget({
+			currentEmployeeId: "employee-manager",
+			targetEmployeeId: "employee-target",
+			targetUserId: "target-user",
+		});
+		mockState.canApproveFor.mockResolvedValueOnce(true);
+		mockState.getUserTimezone.mockResolvedValueOnce("America/Los_Angeles");
+
+		const response = await POST(
+			createPostRequest({
+				replacesEntryId: "entry-clock-in",
+				timestamp: "2026-07-01T00:15:00-07:00",
+				timezone: "Europe/Berlin",
+				notes: "Manager correction",
+			}),
+		);
+
+		expect(response.status).toBe(201);
+		const input = mockState.createCorrectionEntry.mock.calls[0]?.[0];
+		expect(input.validateTimeRange).toEqual(expect.any(Function));
+		await input.validateTimeRange();
+		expect(mockState.validateTimeEntryRange).toHaveBeenCalledWith(
+			"org-1",
+			new Date("2026-07-01T07:15:00.000Z"),
+			new Date("2026-07-01T20:00:00.000Z"),
+			"America/Los_Angeles",
+		);
+	});
+
+	it("returns 400 when a self-service correction is blocked by a holiday", async () => {
+		mockPostTarget();
+		mockState.validateTimeEntryRange.mockResolvedValueOnce({
+			isValid: false,
+			error: "errors.holiday.blocksTimeEntry",
+			holidayName: "Founders Day",
+		});
+		mockState.submitCorrection.mockImplementationOnce(async (input) => {
+			const validation = await input.validateTimeRange();
+			if (!validation.isValid) {
+				throw new ValidationError({
+					message: validation.error,
+					field: "timestamp",
+					value: validation.holidayName,
+				});
+			}
+			throw new Error("Expected holiday validation to fail");
+		});
+
+		const response = await POST(
+			createPostRequest({
+				replacesEntryId: "entry-clock-in",
+				timestamp: "2026-07-01T08:15:00+02:00",
+				notes: "Holiday correction",
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({
+			error: "errors.holiday.blocksTimeEntry",
+		});
+	});
+
+	it("returns 400 when a manager correction is blocked by the target employee holiday", async () => {
+		mockPostTarget({
+			currentEmployeeId: "employee-manager",
+			targetEmployeeId: "employee-target",
+			targetUserId: "target-user",
+		});
+		mockState.canApproveFor.mockResolvedValueOnce(true);
+		mockState.getUserTimezone.mockResolvedValueOnce("America/Los_Angeles");
+		mockState.validateTimeEntryRange.mockResolvedValueOnce({
+			isValid: false,
+			error: "errors.holiday.blocksTimeEntry",
+			holidayName: "Founders Day",
+		});
+		mockState.createCorrectionEntry.mockImplementationOnce((input) =>
+			Effect.tryPromise({
+				try: async () => {
+					const validation = await input.validateTimeRange();
+					if (!validation.isValid) {
+						throw new ValidationError({
+							message: validation.error,
+							field: "timestamp",
+							value: validation.holidayName,
+						});
+					}
+					throw new Error("Expected holiday validation to fail");
+				},
+				catch: (error) => error as ValidationError,
+			}),
+		);
+
+		const response = await POST(
+			createPostRequest({
+				replacesEntryId: "entry-clock-in",
+				timestamp: "2026-07-01T00:15:00-07:00",
+				timezone: "Europe/Berlin",
+				notes: "Manager holiday correction",
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({
+			error: "errors.holiday.blocksTimeEntry",
+		});
+		expect(mockState.validateTimeEntryRange).toHaveBeenCalledWith(
+			"org-1",
+			new Date("2026-07-01T07:15:00.000Z"),
+			new Date("2026-07-01T20:00:00.000Z"),
+			"America/Los_Angeles",
+		);
+	});
+
 	it.each([
 		[
 			"an earlier corrected clock-in",
 			"entry-clock-in",
 			"2026-07-01T10:15:00+02:00",
+			"2026-07-01T12:00:00.000Z",
 			"2026-07-02T08:00:00.000Z",
-			"2026-07-02T17:00:00.000Z",
 			"2026-07-01",
 		],
 		[
 			"a clock-out-only correction",
 			"entry-clock-out",
 			"2026-07-03T19:30:00+02:00",
-			"2026-07-02T08:00:00.000Z",
-			"2026-07-02T17:00:00.000Z",
-			"2026-07-02",
+			"2026-07-02T20:00:00.000Z",
+			"2026-07-03T17:00:00.000Z",
+			"2026-07-03",
 		],
-	])("marks the target employee work balance dirty after applying %s", async (_label, targetEntryId, timestamp, periodStart, periodEnd, dirtyFromDate) => {
-		mockPostTarget({
-			currentEmployeeId: "employee-manager",
-			periodEnd,
-			periodStart,
-			targetEmployeeId: "employee-target",
-			targetEntryId,
-			targetUserId: "target-user",
-		});
-		mockState.canApproveFor.mockResolvedValueOnce(true);
+	])(
+		"marks the target employee work balance dirty after applying %s",
+		async (_label, targetEntryId, timestamp, periodStart, periodEnd, dirtyFromDate) => {
+			mockPostTarget({
+				currentEmployeeId: "employee-manager",
+				periodEnd,
+				periodStart,
+				targetEmployeeId: "employee-target",
+				targetEntryId,
+				targetUserId: "target-user",
+			});
+			mockState.canApproveFor.mockResolvedValueOnce(true);
 
-		const response = await POST(
-			createPostRequest({
-				replacesEntryId: targetEntryId,
-				timestamp,
-				notes: "Manager correction",
-			}),
-		);
+			const response = await POST(
+				createPostRequest({
+					replacesEntryId: targetEntryId,
+					timestamp,
+					notes: "Manager correction",
+				}),
+			);
 
-		expect(response.status).toBe(201);
-		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
-			dirtyFromDate,
-			employeeId: "employee-target",
-			organizationId: "org-1",
-		});
-		expect(mockState.runPromise.mock.invocationCallOrder[0]).toBeLessThan(
-			mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0] ?? 0,
-		);
-	});
+			expect(response.status).toBe(201);
+			expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
+				dirtyFromDate,
+				employeeId: "employee-target",
+				organizationId: "org-1",
+			});
+			expect(mockState.runPromise.mock.invocationCallOrder[0]).toBeLessThan(
+				mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0] ?? 0,
+			);
+		},
+	);
 
 	it("keeps a successful direct correction response when work balance invalidation fails", async () => {
 		mockPostTarget({

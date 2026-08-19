@@ -15,6 +15,7 @@ import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { auth } from "@/lib/auth";
 import { canApproveFor, getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import { compareInstants } from "@/lib/datetime/temporal-core";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -40,6 +41,8 @@ import {
 	isValidIanaTimezone,
 	resolveFallbackTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
+import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
+import { isWorkLocationType } from "@/lib/time-tracking/work-location";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 
 const UUID =
@@ -136,7 +139,14 @@ export async function POST(request: NextRequest) {
 		});
 
 		const body = await request.json();
-		const { replacesEntryId, timestamp, notes, timezone } = body;
+		const {
+			replacesEntryId,
+			timestamp,
+			notes,
+			timezone,
+			workLocationType,
+			workCategoryId,
+		} = body;
 
 		// Validate required fields
 		if (
@@ -179,6 +189,21 @@ export async function POST(request: NextRequest) {
 		if (typeof notes !== "string" || notes.trim().length === 0) {
 			return NextResponse.json(
 				{ error: "notes is required for corrections" },
+				{ status: 400 },
+			);
+		}
+		if (!isWorkLocationType(workLocationType)) {
+			return NextResponse.json(
+				{ error: "workLocationType is required and must be valid" },
+				{ status: 400 },
+			);
+		}
+		if (
+			workCategoryId !== null &&
+			(typeof workCategoryId !== "string" || !UUID.test(workCategoryId))
+		) {
+			return NextResponse.json(
+				{ error: "workCategoryId must be a valid UUID or null" },
 				{ status: 400 },
 			);
 		}
@@ -291,9 +316,14 @@ export async function POST(request: NextRequest) {
 						: null
 					: parsedCorrection.instant,
 			);
-		} catch {
+		} catch (error) {
 			return NextResponse.json(
-				{ error: "Clock out time must be after clock in time" },
+				{
+					error:
+						error instanceof Error
+							? error.message
+							: "Invalid work period range",
+				},
 				{ status: 400 },
 			);
 		}
@@ -355,6 +385,8 @@ export async function POST(request: NextRequest) {
 				expectedEndTime: selectedWorkPeriod.endTime,
 				action: "edit",
 				reason: notes,
+				workLocationType,
+				workCategoryId: workCategoryId?.toLowerCase() ?? null,
 				endpoints: [
 					{
 						endpointType: correctsClockIn ? "clock_in" : "clock_out",
@@ -363,6 +395,17 @@ export async function POST(request: NextRequest) {
 						timezoneCapture,
 					},
 				],
+				validateTimeRange: () =>
+					validateTimeEntryRange(
+						activeOrgId,
+						correctsClockIn
+							? trustedCorrectionTimestamp
+							: selectedWorkPeriod.startTime,
+						correctsClockIn
+							? (selectedWorkPeriod.endTime ?? trustedCorrectionTimestamp)
+							: trustedCorrectionTimestamp,
+						targetTimezone,
+					),
 			});
 			if (approvalResult.postCommit.authority === "legacy") {
 				try {
@@ -426,6 +469,11 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
+		const endpointChanged =
+			compareInstants(
+				trustedEvidence.instant,
+				instantFromTimeCorrectionBoundary(entryToCorrect.timestamp),
+			) !== 0;
 		const effect = Effect.gen(function* (_) {
 			const timeEntryService = yield* _(TimeEntryService);
 			return yield* _(
@@ -440,6 +488,25 @@ export async function POST(request: NextRequest) {
 					ipAddress,
 					deviceInfo,
 					...timezoneCapture,
+					workLocationType,
+					workCategoryId: workCategoryId?.toLowerCase() ?? null,
+					expectedClockInId: selectedWorkPeriod.clockInId,
+					expectedClockOutId: selectedWorkPeriod.clockOutId,
+					expectedStartTime: selectedWorkPeriod.startTime,
+					expectedEndTime: selectedWorkPeriod.endTime,
+					expectedWorkLocationType: selectedWorkPeriod.workLocationType,
+					expectedWorkCategoryId: selectedWorkPeriod.workCategoryId,
+					validateTimeRange: () =>
+						validateTimeEntryRange(
+							activeOrgId,
+							correctsClockIn
+								? trustedCorrectionTimestamp
+								: selectedWorkPeriod.startTime,
+							correctsClockIn
+								? (selectedWorkPeriod.endTime ?? trustedCorrectionTimestamp)
+								: trustedCorrectionTimestamp,
+							targetTimezone,
+						),
 				}),
 			);
 		});
@@ -464,11 +531,13 @@ export async function POST(request: NextRequest) {
 			},
 			trustedEvidence,
 		]);
-		await markWorkBalanceDirtyAfterDirectCorrectionBestEffort({
-			dirtyFromDate: dirtyFromDate ?? undefined,
-			employeeId: entryToCorrect.employeeId,
-			organizationId: activeOrgId,
-		});
+		if (endpointChanged) {
+			await markWorkBalanceDirtyAfterDirectCorrectionBestEffort({
+				dirtyFromDate: dirtyFromDate ?? undefined,
+				employeeId: entryToCorrect.employeeId,
+				organizationId: activeOrgId,
+			});
+		}
 
 		return NextResponse.json(
 			{

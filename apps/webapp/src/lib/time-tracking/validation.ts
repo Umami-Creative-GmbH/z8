@@ -1,6 +1,8 @@
 import "server-only";
 
+import { Temporal } from "temporal-polyfill";
 import { isHolidayBlockingTimeEntry } from "@/lib/calendar/holiday-service";
+import { validateTimeCorrectionRange } from "@/lib/time-tracking/time-correction-temporal";
 
 export interface TimeEntryValidationResult {
 	isValid: boolean;
@@ -55,21 +57,44 @@ export async function validateTimeEntryRange(
 	endDate: Date,
 	employeeTimezone: string = "UTC",
 ): Promise<TimeEntryValidationResult> {
-	// Check each day in the range
-	const dates: Date[] = [];
-	const currentDate = new Date(startDate);
-	const end = new Date(endDate);
-
-	while (currentDate <= end) {
-		dates.push(new Date(currentDate));
-		currentDate.setDate(currentDate.getDate() + 1);
+	const startInstant = Temporal.Instant.fromEpochMilliseconds(
+		startDate.getTime(),
+	);
+	const endInstant = Temporal.Instant.fromEpochMilliseconds(endDate.getTime());
+	if (Temporal.Instant.compare(startInstant, endInstant) > 0)
+		return { isValid: true };
+	if (Temporal.Instant.compare(startInstant, endInstant) < 0) {
+		try {
+			validateTimeCorrectionRange(startInstant, endInstant);
+		} catch (error) {
+			return {
+				isValid: false,
+				error:
+					error instanceof Error ? error.message : "Invalid work period range",
+			};
+		}
 	}
 
-	const results = await Promise.all(
-		dates.map((date) => validateTimeEntry(organizationId, date, employeeTimezone)),
-	);
-	const invalidResult = results.find((result) => !result.isValid);
-	if (invalidResult) return invalidResult;
+	const endLocalDate = endInstant
+		.toZonedDateTimeISO(employeeTimezone)
+		.toPlainDate();
+	let currentLocalDate = startInstant
+		.toZonedDateTimeISO(employeeTimezone)
+		.toPlainDate();
+	let date = startDate;
+	while (true) {
+		const result = await validateTimeEntry(
+			organizationId,
+			date,
+			employeeTimezone,
+		);
+		if (!result.isValid) return result;
+		if (Temporal.PlainDate.compare(currentLocalDate, endLocalDate) >= 0) break;
+		currentLocalDate = currentLocalDate.add({ days: 1 });
+		date = new Date(
+			currentLocalDate.toZonedDateTime(employeeTimezone).epochMilliseconds,
+		);
+	}
 
 	return {
 		isValid: true,

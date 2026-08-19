@@ -16,6 +16,15 @@ const modularSource = readFileSync(
 	),
 	"utf8",
 );
+const categoryAuthorizationSource = readFileSync(
+	fileURLToPath(
+		new URL(
+			"../../../../../lib/approvals/server/time-correction-category-authorization.ts",
+			import.meta.url,
+		),
+	),
+	"utf8",
+);
 const modularMutationsSource = readFileSync(
 	fileURLToPath(new URL("./mutations.ts", import.meta.url)),
 	"utf8",
@@ -104,14 +113,38 @@ describe("time correction request safety", () => {
 	it("validates a durable cycle token and derives routing only from locked trusted state", () => {
 		const submissionBody = functionBody(modularSource, "submissionEffect");
 		const transactionBody = functionBody(modularSource, "submitCorrection");
+		const outerLockBody = functionBody(
+			modularSource,
+			"lockTimeCorrectionSubmissionActorAndPeriodInTransaction",
+		);
+		const teamEvidenceBody = functionBody(
+			categoryAuthorizationSource,
+			"lockTrustedTimeCorrectionEmployeeTeamId",
+		);
+		const metadataStart = modularSource.indexOf(
+			"async function validateCorrectionWorkMetadata",
+		);
+		const metadataEnd = modularSource.indexOf(
+			"function validateSubmissionId",
+			metadataStart,
+		);
+		const metadataBody = modularSource.slice(metadataStart, metadataEnd);
 
 		expect(submissionBody).toContain("validateSubmissionId(data.submissionId)");
 		expect(submissionBody.indexOf("validateSubmissionId")).toBeLessThan(
 			submissionBody.indexOf("submitCorrection({"),
 		);
-		expect(transactionBody).toContain("teamMembership");
-		expect(transactionBody).toContain("lockedEmployee.teamId");
-		expect(transactionBody).not.toContain("input.teamId");
+		expect(transactionBody).toContain(
+			"lockTimeCorrectionSubmissionActorAndPeriodInTransaction",
+		);
+		expect(outerLockBody).toContain(
+			"lockTrustedTimeCorrectionEmployeeTeamId",
+		);
+		expect(outerLockBody).toContain("lockedEmployee.teamId");
+		expect(outerLockBody).not.toContain("input.teamId");
+		expect(teamEvidenceBody).toContain("teamMembership.organizationId");
+		expect(teamEvidenceBody).toContain("team.organizationId");
+		expect(metadataBody).not.toContain("input.employee.teamId");
 		expect(transactionBody).toContain("defaultApproverId:");
 		expect(transactionBody).not.toContain("if (!managerDecision.ok)");
 		expect(transactionBody).toContain("overtimeRisk: null");
@@ -147,6 +180,51 @@ describe("time correction request safety", () => {
 		expect(deletionBody).toContain(
 			'submissionEffect({ ...data, reason: data.reason.trim() }, "delete")',
 		);
+	});
+
+	it("preserves unexpected submission failures for server-side diagnostics", () => {
+		const body = functionBody(modularSource, "submissionFailure");
+
+		expect(body).toContain("new DatabaseError({");
+		expect(body).toContain('operation: "submit_time_correction"');
+		expect(body).toContain("cause: error");
+		expect(body).toContain("logger.error(");
+		expect(body).toContain("{ err: error }");
+	});
+
+	it("validates and persists correction metadata inside transaction boundaries", () => {
+		const directBody = functionBody(modularSource, "editSameDayTimeEntry");
+		const submissionBody = functionBody(modularSource, "submitCorrection");
+
+		expect(directBody).toContain("validateCorrectionWorkMetadata");
+		expect(directBody).toContain("timeRecordWork");
+		expect(directBody).toContain("canonicalRecordId");
+		expect(submissionBody).toContain("validateCorrectionWorkMetadata");
+		expect(submissionBody).toContain("input.workLocationType");
+		expect(submissionBody).toContain("input.workCategoryId");
+	});
+
+	it("locks category authorization evidence in deterministic PostgreSQL order", () => {
+		const body = functionBody(
+			categoryAuthorizationSource,
+			"authorizeTimeCorrectionCategoryChange",
+		);
+		const categoryLock = body.indexOf(".from(workCategory)");
+		const assignmentLock = body.indexOf(".from(workCategorySetAssignment)");
+		const setLock = body.indexOf(".from(workCategorySet)");
+		const junctionLock = body.indexOf(".from(workCategorySetCategory)");
+
+		expect(categoryLock).toBeGreaterThanOrEqual(0);
+		expect(assignmentLock).toBeGreaterThan(categoryLock);
+		expect(setLock).toBeGreaterThan(assignmentLock);
+		expect(junctionLock).toBeGreaterThan(setLock);
+		expect(body.match(/\.for\("update"\)/g)).toHaveLength(4);
+		expect(body).toContain("workCategory.organizationId");
+		expect(body).toContain("workCategorySetAssignment.organizationId");
+		expect(body).toContain("workCategorySet.organizationId");
+		expect(body).toContain("compareInstants");
+		expect(body).not.toContain("leftJoin");
+		expect(body).not.toContain("rightJoin");
 	});
 
 	it("keeps the monolithic correction effect as the only modular delegate implementation", () => {
@@ -207,7 +285,10 @@ describe("time correction request safety", () => {
 	});
 
 	it("scopes and locks the modular work period to the authenticated employee and organization", () => {
-		const body = functionBody(modularSource, "submitCorrection");
+		const body = functionBody(
+			modularSource,
+			"lockTimeCorrectionSubmissionActorAndPeriodInTransaction",
+		);
 
 		expect(body).toContain("eq(workPeriod.id, input.workPeriodId)");
 		expect(body).toContain("eq(workPeriod.employeeId, input.employeeId)");
@@ -218,10 +299,13 @@ describe("time correction request safety", () => {
 	});
 
 	it("requires exactly one locked active target employee before locking the work period", () => {
-		const body = functionBody(modularSource, "submitCorrection");
-		const employeeLock = body.indexOf("const lockedEmployees = await tx");
+		const body = functionBody(
+			modularSource,
+			"lockTimeCorrectionSubmissionActorAndPeriodInTransaction",
+		);
+		const employeeLock = body.indexOf("const lockedEmployees = await input.tx");
 		const exactEmployeeCheck = body.indexOf("lockedEmployees.length !== 1");
-		const periodLock = body.indexOf("const [lockedPeriod] = await tx");
+		const periodLock = body.indexOf("const [lockedPeriod] = await input.tx");
 
 		expect(employeeLock).toBeGreaterThanOrEqual(0);
 		expect(body).toContain("eq(employee.isActive, true)");
@@ -240,17 +324,20 @@ describe("time correction request safety", () => {
 	it("rejects direct same-day edits that change endpoint local dates", () => {
 		const body = functionBody(modularSource, "editSameDayTimeEntry");
 
-		expect(body).toContain("originalClockInDate");
-		expect(body).toContain("originalClockOutDate");
-		expect(body).toContain("data.newClockInDate !== originalClockInDate");
-		expect(body).toContain("data.newClockOutDate !== originalClockOutDate");
+		expect(body).toContain("getInstantLocalMinuteFields");
+		expect(body).toContain("data.newClockInDate !== originalClockIn.date");
+		expect(body).toContain("data.newClockOutDate !== originalClockOut.date");
 		expect(body).toContain("Date changes require manager approval");
 	});
 
-	it("leaves the final same-day work period mutation to the scoped locked service", () => {
+	it("updates same-day metadata only after locking the scoped work period", () => {
 		const body = functionBody(modularSource, "editSameDayTimeEntry");
 
-		expect(body).not.toContain(".update(workPeriod)");
+		expect(body).toContain(".update(workPeriod)");
+		expect(body).toContain("eq(workPeriod.employeeId, currentEmployee.id)");
+		expect(body).toContain(
+			"eq(workPeriod.organizationId, currentEmployee.organizationId)",
+		);
 		expect(body).toContain("canonicalTimeEntryClient.createCorrectionEntry");
 	});
 
@@ -266,7 +353,10 @@ describe("time correction request safety", () => {
 	});
 
 	it("excludes deleted work periods from correction approval requests", () => {
-		const body = functionBody(modularSource, "submitCorrection");
+		const body = functionBody(
+			modularSource,
+			"lockTimeCorrectionSubmissionActorAndPeriodInTransaction",
+		);
 
 		expect(body).toContain("isNull(workPeriod.deletedAt)");
 	});
@@ -278,11 +368,14 @@ describe("time correction request safety", () => {
 		["modular notes", modularMutationsSource, "updateWorkPeriodNotes"],
 		["modular split", modularMutationsSource, "splitWorkPeriod"],
 		["modular project", modularMutationsSource, "updateWorkPeriodProject"],
-	])("excludes deleted work periods from %s calendar mutations", (_name, source, functionName) => {
-		const body = functionBody(source, functionName);
+	])(
+		"excludes deleted work periods from %s calendar mutations",
+		(_name, source, functionName) => {
+			const body = functionBody(source, functionName);
 
-		expect(body).toContain("isNull(workPeriod.deletedAt)");
-	});
+			expect(body).toContain("isNull(workPeriod.deletedAt)");
+		},
+	);
 
 	it("creates deterministic inactive rows before invoking the shared boundary in the repository transaction", () => {
 		const transactionBody = functionBody(modularSource, "submitCorrection");
@@ -330,11 +423,10 @@ describe("time correction request safety", () => {
 	it("rejects direct clock-in-only edits after the existing clock-out", () => {
 		const body = functionBody(modularSource, "editSameDayTimeEntry");
 
-		expect(body).toMatch(
-			/const effectiveClockOut\s*=\s*correctedClockOutDate \?\?\s*selectedWorkPeriod\.endTime/,
-		);
+		expect(body).toContain("const effectiveClockIn = clockInChanged");
+		expect(body).toContain("const effectiveClockOut = clockOutChanged");
 		expect(body).toContain(
-			"if (effectiveClockOut && effectiveClockOut <= correctedClockInDate)",
+			"if (effectiveClockOut && effectiveClockOut <= effectiveClockIn)",
 		);
 		expect(body).toContain("Clock out time must be after clock in time");
 	});
