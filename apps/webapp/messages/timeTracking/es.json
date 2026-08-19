@@ -24,13 +24,16 @@
     "correction": {
       "clockIn": "Entrada",
       "clockInDate": "Fecha de entrada",
+      "clockInTime": "Hora de entrada",
       "clockOut": "Salida",
       "clockOutDate": "Fecha de salida",
+      "clockOutTime": "Hora de salida",
       "editDescription": "Realizar cambios en tu registro de tiempo de hoy.",
       "editEntry": "Editar entrada de tiempo",
       "editTitle": "Editar entrada de tiempo",
       "errors": {
         "invalidTimeRange": "La hora de salida debe ser posterior a la hora de entrada",
+        "noChanges": "Debe cambiar al menos un valor de la corrección",
         "submitFailed": "Error al enviar la corrección",
         "updateFailed": "Error al actualizar la entrada de tiempo"
       },
@@ -46,6 +49,7 @@
       "submitRequest": "Enviar solicitud",
       "submitting": "Enviando...",
       "success": {
+        "applied": "Corrección aplicada correctamente",
         "submitted": "Solicitud de corrección enviada para aprobación del gerente",
         "updated": "Entrada de tiempo actualizada exitosamente"
       },
@@ -141,7 +145,12 @@
     },
     "unknownCategory": "Categoría desconocida",
     "unknownProject": "Proyecto desconocido",
-    "workCategory": "Categoría de trabajo"
+    "workCategory": "Categoría de trabajo",
+    "workLocation": "Lugar de trabajo",
+    "workLocationHome": "Casa",
+    "workLocationOffice": "Oficina",
+    "workLocationOther": "Otro",
+    "workLocationRemote": "Remoto"
   },
   "wellness": {
     "water": {

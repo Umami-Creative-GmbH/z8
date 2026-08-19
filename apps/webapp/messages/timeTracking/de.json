@@ -24,13 +24,16 @@
     "correction": {
       "clockIn": "Einstempeln",
       "clockInDate": "Datum Arbeitsbeginn",
+      "clockInTime": "Uhrzeit Arbeitsbeginn",
       "clockOut": "Ausstempeln",
       "clockOutDate": "Datum Arbeitsende",
+      "clockOutTime": "Uhrzeit Arbeitsende",
       "editDescription": "Änderungen an Ihrem Zeiteintrag für heute vornehmen.",
       "editEntry": "Zeiteintrag bearbeiten",
       "editTitle": "Zeiteintrag bearbeiten",
       "errors": {
         "invalidTimeRange": "Ausstempelzeit muss nach der Einstempelzeit liegen",
+        "noChanges": "Mindestens ein Korrekturwert muss geändert werden",
         "submitFailed": "Fehler beim Senden der Korrektur",
         "updateFailed": "Fehler beim Aktualisieren des Zeiteintrags"
       },
@@ -46,6 +49,7 @@
       "submitRequest": "Anfrage senden",
       "submitting": "Sende...",
       "success": {
+        "applied": "Korrektur erfolgreich angewendet",
         "submitted": "Korrekturanfrage zur Genehmigung durch Manager gesendet",
         "updated": "Zeiteintrag erfolgreich aktualisiert"
       },
@@ -141,7 +145,12 @@
     },
     "unknownCategory": "Unbekannte Kategorie",
     "unknownProject": "Unbekanntes Projekt",
-    "workCategory": "Arbeitskategorie"
+    "workCategory": "Arbeitskategorie",
+    "workLocation": "Arbeitsort",
+    "workLocationHome": "Homeoffice",
+    "workLocationOffice": "Büro",
+    "workLocationOther": "Sonstiges",
+    "workLocationRemote": "Mobil"
   },
   "wellness": {
     "water": {

@@ -24,13 +24,16 @@
     "correction": {
       "clockIn": "Entrata",
       "clockInDate": "Data di entrata",
+      "clockInTime": "Ora di entrata",
       "clockOut": "Uscita",
       "clockOutDate": "Data di uscita",
+      "clockOutTime": "Ora di uscita",
       "editDescription": "Modifica la tua voce oraria per oggi.",
       "editEntry": "Modifica voce oraria",
       "editTitle": "Modifica voce oraria",
       "errors": {
         "invalidTimeRange": "L'ora di uscita deve essere successiva all'ora di entrata",
+        "noChanges": "È necessario modificare almeno un valore della correzione",
         "submitFailed": "Invio correzione non riuscito",
         "updateFailed": "Aggiornamento voce oraria non riuscito"
       },
@@ -46,6 +49,7 @@
       "submitRequest": "Invia richiesta",
       "submitting": "Invio...",
       "success": {
+        "applied": "Correzione applicata con successo",
         "submitted": "Richiesta di correzione inviata per approvazione del manager",
         "updated": "Voce oraria aggiornata con successo"
       },
@@ -141,7 +145,12 @@
     },
     "unknownCategory": "Categoria sconosciuta",
     "unknownProject": "Progetto sconosciuto",
-    "workCategory": "Categoria lavorativa"
+    "workCategory": "Categoria lavorativa",
+    "workLocation": "Luogo di lavoro",
+    "workLocationHome": "Casa",
+    "workLocationOffice": "Ufficio",
+    "workLocationOther": "Altro",
+    "workLocationRemote": "Da remoto"
   },
   "wellness": {
     "water": {

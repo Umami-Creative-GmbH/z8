@@ -104,6 +104,7 @@ export function TimeEntriesTable({
 		renderEditAction: (period, isSameDay) => (
 			<TimeCorrectionDialog
 				workPeriod={period}
+				employeeId={employeeId}
 				isSameDay={isSameDay}
 				employeeTimezone={employeeTimezone}
 			/>
