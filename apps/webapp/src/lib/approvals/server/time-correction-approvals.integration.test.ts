@@ -42,12 +42,17 @@ import {
 	lockTimeCorrectionSubmissionSourceInTransaction,
 } from "./time-correction-approvals";
 import { cancelPendingTimeCorrection } from "./time-correction-cancellation";
+import { lockTimeCorrectionSubmissionActorAndPeriodInTransaction } from "./time-correction-submission";
 import type { ApprovalDbService } from "./types";
 
 configurePostgresUtcTypes();
 
 const productionSource = readFileSync(
 	join(process.cwd(), "src/lib/approvals/server/time-correction-approvals.ts"),
+	"utf8",
+);
+const submissionSource = readFileSync(
+	join(process.cwd(), "src/lib/approvals/server/time-correction-submission.ts"),
 	"utf8",
 );
 const migrationSource = readFileSync(
@@ -109,7 +114,7 @@ describe("time correction PostgreSQL non-live contracts", () => {
 		);
 	});
 
-	it("locks employee rows in sorted order before period, endpoints, predecessors, and canonical record", () => {
+	it("locks employee rows in sorted order before period, endpoints, predecessors, canonical record, and canonical work metadata", () => {
 		const body = functionSource(
 			"finalizeTimeCorrectionTerminalDetailedInTransaction",
 		);
@@ -118,6 +123,7 @@ describe("time correction PostgreSQL non-live contracts", () => {
 		const endpointLock = body.indexOf(".from(timeEntry)");
 		const predecessorLock = body.indexOf("lockCurrentEndpointPredecessors");
 		const canonicalLock = body.indexOf(".from(timeRecord)");
+		const canonicalWorkLock = body.indexOf(".from(timeRecordWork)");
 
 		expect(body.slice(employeeLock, periodLock)).toContain(
 			".orderBy(asc(employee.id))",
@@ -130,13 +136,17 @@ describe("time correction PostgreSQL non-live contracts", () => {
 		expect(body.slice(endpointLock, predecessorLock)).toContain(
 			'.for("update")',
 		);
-		expect(body.slice(canonicalLock)).toContain('.for("update")');
+		expect(body.slice(canonicalLock, canonicalWorkLock)).toContain(
+			'.for("update")',
+		);
+		expect(body.slice(canonicalWorkLock)).toContain('.for("update")');
 		expect([
 			employeeLock,
 			periodLock,
 			endpointLock,
 			predecessorLock,
 			canonicalLock,
+			canonicalWorkLock,
 		]).toEqual(
 			[
 				...[
@@ -145,8 +155,36 @@ describe("time correction PostgreSQL non-live contracts", () => {
 					endpointLock,
 					predecessorLock,
 					canonicalLock,
+					canonicalWorkLock,
 				],
 			].sort((left, right) => left - right),
+		);
+	});
+
+	it("revalidates a changed category inside finalization before endpoint or metadata writes", () => {
+		const body = functionSource(
+			"finalizeTimeCorrectionTerminalDetailedInTransaction",
+		);
+		const authorization = body.indexOf(
+			"authorizeTimeCorrectionCategoryChange",
+		);
+		const endpointWrite = body.indexOf(".update(timeEntry)");
+		const metadataWrite = body.indexOf(".update(workPeriod)");
+
+		expect(authorization).toBeGreaterThanOrEqual(0);
+		expect(authorization).toBeLessThan(endpointWrite);
+		expect(authorization).toBeLessThan(metadataWrite);
+	});
+
+	it("reuses the production outer submission lock sequence in the deadlock race", () => {
+		expect(submissionSource).toContain(
+			"export async function lockTimeCorrectionSubmissionActorAndPeriodInTransaction",
+		);
+		expect(submissionSource).toMatch(
+			/submitCorrection[\s\S]*lockTimeCorrectionSubmissionActorAndPeriodInTransaction/,
+		);
+		expect(integrationSource).toMatch(
+			/manager-before-requester UUID decision[\s\S]*lockTimeCorrectionSubmissionActorAndPeriodInTransaction/,
 		);
 	});
 
@@ -162,6 +200,11 @@ describe("time correction PostgreSQL non-live contracts", () => {
 			"eq(workPeriod.clockInId, period.clockInId)",
 			"eq(workPeriod.approvalWorkflowId, expectedApprovalWorkflowId)",
 			"eq(timeRecord.startAt, canonical.startAt)",
+			"eq(timeRecordWork.recordId, canonicalWork.recordId)",
+			"eq(timeRecordWork.organizationId, input.organizationId)",
+			'eq(timeRecordWork.recordKind, "work")',
+			"timeRecordWork.workLocationType",
+			"timeRecordWork.workCategoryId",
 		]) {
 			expect(finalizer).toContain(predicate);
 		}
@@ -173,6 +216,9 @@ describe("time correction PostgreSQL non-live contracts", () => {
 			finalizer.match(/requireSingleMutation\(/g)?.length ?? 0;
 		expect(returningCount).toBeGreaterThanOrEqual(4);
 		expect(affectedRowCheckCount).toBe(returningCount);
+		expect(finalizer).toContain(
+			"updatedCanonicalWork[0]?.recordId !== canonicalWork.recordId",
+		);
 		expect(binding).toContain("source.approvalWorkflowId === null");
 		expect(binding).toContain(
 			"eq(workPeriod.approvalWorkflowId, source.approvalWorkflowId)",
@@ -207,6 +253,10 @@ describe("time correction PostgreSQL non-live contracts", () => {
 			"concurrent distinct correction cycles leave exactly one pending winner",
 			"terminal cycle followed by next cycle retains both workflow histories",
 			"immediate manager finalization versus pending creation commits one source winner",
+			"metadata-only approval updates legacy and canonical work metadata",
+			"metadata-only rejection leaves legacy and canonical work metadata unchanged",
+			"metadata-only cancellation leaves legacy and canonical work metadata unchanged",
+			"stale time_record_work CAS rolls the full transaction back",
 			"stale %s CAS rolls the full transaction back",
 			"injected %s failure restores every durable Task 13 snapshot",
 			"duplicate terminal finalization applies source effects once and rejects the duplicate",
@@ -915,8 +965,19 @@ describeIntegration(
 			defaultApproverId: string,
 			submissionKey: string,
 		) {
-			return runtime().repository.withTransaction((context) =>
-				executeTimeCorrectionSubmissionInTransaction({
+			return runtime().repository.withTransaction(async (context) => {
+				await lockTimeCorrectionSubmissionActorAndPeriodInTransaction({
+					tx: context.dbService.db as unknown as typeof database,
+					organizationId: ids.organization,
+					employeeId: ids.requester,
+					userId: ids.requesterUser,
+					workPeriodId: ids.period,
+					expectedClockInId: ids.originalIn,
+					expectedClockOutId: ids.originalOut,
+					expectedStartTime: originalStart,
+					expectedEndTime: originalEnd,
+				});
+				return executeTimeCorrectionSubmissionInTransaction({
 					dbService: context.dbService as unknown as ApprovalDbService,
 					context,
 					organizationId: ids.organization,
@@ -933,8 +994,105 @@ describeIntegration(
 						clockInCorrectionId: ids.correction,
 					},
 					nowInstant: () => now,
+				});
+			});
+		}
+
+		async function submitMetadataOnlyCorrection(submissionKey: string) {
+			return runtime().repository.withTransaction((context) =>
+				executeTimeCorrectionSubmissionInTransaction({
+					dbService: context.dbService as unknown as ApprovalDbService,
+					context,
+					organizationId: ids.organization,
+					requesterEmployeeId: ids.requester,
+					teamId: null,
+					workPeriodId: ids.period,
+					defaultApproverId: ids.manager,
+					reason: null,
+					overtimeRisk: null,
+					submissionKey,
+					submissionId: "b5000000-0000-4000-8000-000000000002",
+					correction: {
+						action: "edit",
+						workLocationType: "home",
+						workCategoryId: null,
+					},
+					nowInstant: () => now,
 				}),
 			);
+		}
+
+		async function metadataOnlyDecisionCommand(
+			submissionKey: string,
+			action: "approve" | "reject",
+		) {
+			const workflowId = deriveApprovalWorkflowId({
+				organizationId: ids.organization,
+				workflowType: "time_correction",
+				sourceType: "time_entry",
+				sourceId: ids.period,
+				allocationKey: submissionKey,
+			});
+			const snapshot = await runtime().repository.withTransaction((context) =>
+				context.repository.loadSnapshot({
+					organizationId: ids.organization,
+					workflowId,
+				}),
+			);
+			const stage = snapshot.stages.find(
+				(candidate) => candidate.status === "pending",
+			);
+			const assignment = stage?.assignments.find(
+				(candidate) =>
+					candidate.status === "pending" &&
+					candidate.approverEmployeeId === ids.manager,
+			);
+			if (!stage || !assignment) {
+				throw new Error("Metadata-only correction has no eligible assignment");
+			}
+			return {
+				organizationId: ids.organization,
+				workflowId,
+				expectedVersion: snapshot.version,
+				idempotencyKey: `${submissionKey}:manager-${action}`,
+				principal: { kind: "employee" as const, userId: ids.managerUser },
+				command:
+					action === "approve"
+						? {
+								type: "approve" as const,
+								stageId: stage.id,
+								assignmentId: assignment.id,
+							}
+						: {
+								type: "reject" as const,
+								stageId: stage.id,
+								assignmentId: assignment.id,
+								reason: "Keep original metadata",
+							},
+			};
+		}
+
+		async function readWorkMetadata() {
+			const result = await pool.query<{
+				period_location: string | null;
+				period_category: string | null;
+				canonical_location: string | null;
+				canonical_category: string | null;
+			}>(
+				`select period.work_location_type as period_location,
+					period.work_category_id as period_category,
+					canonical.work_location_type as canonical_location,
+					canonical.work_category_id as canonical_category
+				 from work_period period
+				 join time_record_work canonical
+					on canonical.record_id = period.canonical_record_id
+					and canonical.organization_id = period.organization_id
+					and canonical.record_kind = 'work'
+				 where period.id = $1 and period.organization_id = $2`,
+				[ids.period, ids.organization],
+			);
+			expect(result.rows).toHaveLength(1);
+			return result.rows[0];
 		}
 
 		async function submitAndApproveCorrectionAsManager(submissionKey: string) {
@@ -1209,16 +1367,17 @@ describeIntegration(
 					],
 				},
 				{
-					text: `insert into time_record_work (record_id, organization_id, record_kind)
-					 values ($1, $2, 'work')`,
+					text: `insert into time_record_work (
+					record_id, organization_id, record_kind, work_location_type
+				 ) values ($1, $2, 'work', 'office')`,
 					values: [ids.canonical, ids.organization],
 				},
 				{
 					text: `insert into work_period (
 				id, employee_id, organization_id, clock_in_id, clock_out_id,
 				canonical_record_id, start_time, end_time, duration_minutes,
-				is_active, approval_status, pending_changes, updated_at
-			 ) values ($1, $2, $3, $4, $5, $6, $7, $8, 480, false, 'approved', null, $9)`,
+				is_active, approval_status, pending_changes, work_location_type, updated_at
+			 ) values ($1, $2, $3, $4, $5, $6, $7, $8, 480, false, 'approved', null, 'office', $9)`,
 					values: [
 						ids.period,
 						ids.requester,
@@ -1256,6 +1415,7 @@ describeIntegration(
 				"time_entry",
 				"work_period",
 				"time_record",
+				"time_record_work",
 			] as const;
 			return Object.fromEntries(
 				await Promise.all(
@@ -1263,7 +1423,7 @@ describeIntegration(
 						table,
 						(
 							await pool.query<{ row: unknown }>(
-								`select to_jsonb(row) as row from ${table} row where organization_id = $1 order by id`,
+								`select to_jsonb(row) as row from ${table} row where organization_id = $1 order by ${table === "time_record_work" ? "record_id" : "id"}`,
 								[ids.organization],
 							)
 						).rows.map(({ row }) => row),
@@ -1500,7 +1660,11 @@ describeIntegration(
 					begin
 						if current_setting('task13.failpoint', true) in (
 							TG_TABLE_NAME,
-							concat(TG_TABLE_NAME, ':', NEW.id::text)
+							concat(
+								TG_TABLE_NAME,
+								':',
+								coalesce(to_jsonb(NEW)->>'id', to_jsonb(NEW)->>'record_id')
+							)
 						) then
 							return null;
 						end if;
@@ -1527,10 +1691,142 @@ describeIntegration(
 					text: `create trigger task13_time_record_cas before update on time_record
 					for each row execute function task13_fail_time_correction_cas()`,
 				},
+				{
+					text: "drop trigger if exists task13_time_record_work_cas on time_record_work",
+				},
+				{
+					text: `create trigger task13_time_record_work_cas before update on time_record_work
+					for each row execute function task13_fail_time_correction_cas()`,
+				},
 			]);
 		});
 
 		beforeEach(seedTask13);
+
+		it("persists and replays repository-backed current metadata-only evidence", async () => {
+			const submissionKey = "task3-current-metadata-only";
+			const first = await submitMetadataOnlyCorrection(submissionKey);
+			const replay = await submitMetadataOnlyCorrection(submissionKey);
+			const workflowId = deriveApprovalWorkflowId({
+				organizationId: ids.organization,
+				workflowType: "time_correction",
+				sourceType: "time_entry",
+				sourceId: ids.period,
+				allocationKey: submissionKey,
+			});
+			const snapshot = await runtime().repository.withTransaction((context) =>
+				context.repository.loadSnapshot({
+					organizationId: ids.organization,
+					workflowId,
+				}),
+			);
+			const compatibility = await pool.query<{ metadata: unknown }>(
+				`select metadata from approval_request
+				 where organization_id = $1 and entity_type = 'time_entry' and entity_id = $2`,
+				[ids.organization, ids.period],
+			);
+
+			expect(first).toMatchObject({
+				disposition: "executed",
+				kind: "default_created",
+			});
+			expect(replay).toMatchObject({
+				disposition: "replayed",
+				kind: "default_created",
+			});
+			expect(snapshot.contextSnapshot).toMatchObject({
+				timeCorrection: {
+					action: "edit",
+					workLocationType: "home",
+					workCategoryId: null,
+				},
+			});
+			expect(snapshot.displaySnapshot).toMatchObject({
+				displayPayload: {
+					workMetadata: {
+						original: {
+							workLocationType: "office",
+							workCategoryId: null,
+						},
+						requested: {
+							workLocationType: "home",
+							workCategoryId: null,
+						},
+					},
+				},
+			});
+			expect(compatibility.rows).toHaveLength(1);
+			expect(compatibility.rows[0]?.metadata).toMatchObject({
+				timeCorrection: {
+					action: "edit",
+					workLocationType: "home",
+					workCategoryId: null,
+				},
+			});
+		});
+
+		it("metadata-only approval updates legacy and canonical work metadata", async () => {
+			const submissionKey = "task4-metadata-approval";
+			await submitMetadataOnlyCorrection(submissionKey);
+			const command = await metadataOnlyDecisionCommand(
+				submissionKey,
+				"approve",
+			);
+
+			const result = await runtime().transitionEngine.execute(command);
+
+			expect(result.snapshot.status).toBe("approved");
+			expect(await readWorkMetadata()).toEqual({
+				period_location: "home",
+				period_category: null,
+				canonical_location: "home",
+				canonical_category: null,
+			});
+		});
+
+		it("metadata-only rejection leaves legacy and canonical work metadata unchanged", async () => {
+			const submissionKey = "task4-metadata-rejection";
+			await submitMetadataOnlyCorrection(submissionKey);
+			const command = await metadataOnlyDecisionCommand(
+				submissionKey,
+				"reject",
+			);
+
+			const result = await runtime().transitionEngine.execute(command);
+
+			expect(result.snapshot.status).toBe("rejected");
+			expect(await readWorkMetadata()).toEqual({
+				period_location: "office",
+				period_category: null,
+				canonical_location: "office",
+				canonical_category: null,
+			});
+		});
+
+		it("metadata-only cancellation leaves legacy and canonical work metadata unchanged", async () => {
+			await submitMetadataOnlyCorrection("task4-metadata-cancellation");
+
+			const result = await cancelPendingTimeCorrection({
+				organizationId: ids.organization,
+				requesterEmployeeId: ids.requester,
+				requesterUserId: ids.requesterUser,
+				workPeriodId: ids.period,
+			});
+
+			expect(result).toEqual({ replayed: false });
+			await expect(
+				pool.query<{ status: string }>(
+					"select status from approval_workflow where organization_id = $1 and source_id = $2",
+					[ids.organization, ids.period],
+				),
+			).resolves.toMatchObject({ rows: [{ status: "cancelled" }] });
+			expect(await readWorkMetadata()).toEqual({
+				period_location: "office",
+				period_category: null,
+				canonical_location: "office",
+				canonical_category: null,
+			});
+		});
 
 		afterAll(async () => {
 			await cleanupTask13();
@@ -1542,167 +1838,175 @@ describeIntegration(
 				{
 					text: "drop trigger if exists task13_time_record_cas on time_record",
 				},
+				{
+					text: "drop trigger if exists task13_time_record_work_cas on time_record_work",
+				},
 				{ text: "drop function if exists task13_fail_time_correction_cas()" },
 			]);
 			await pool.end();
 		});
 
-		it.each([
-			"approval",
-			"cancellation",
-		] as const)("requester cancellation versus approval commits one winner with source parity: %s wins", async (winner) => {
-			const cycle = await createCycle(`task13-parity-${winner}`);
-			const before = await durableSnapshot();
-			const counters: Task13EffectCounters = {
-				finalizer: 0,
-				cancellation: 0,
-				externalEffect: 0,
-			};
-			const result = await forceApprovalCancellationWinner(
-				winner,
-				cycle,
-				counters,
-			);
-			expect(result.winnerResult.status).toBe("fulfilled");
-			expectTypedTask13Conflict(result.loserResult);
-			expect(result.evidence.map(({ waitEventType }) => waitEventType)).toEqual(
-				["Lock", "Lock", "Lock", "Lock"],
-			);
-
-			const after = await durableSnapshot();
-			const beforeEntries = before.time_entry as Array<Record<string, unknown>>;
-			const afterEntries = after.time_entry as Array<Record<string, unknown>>;
-			const beforePeriod = (
-				before.work_period as Array<Record<string, unknown>>
-			)[0];
-			const afterPeriod = (
-				after.work_period as Array<Record<string, unknown>>
-			)[0];
-			const beforeCanonical = (
-				before.time_record as Array<Record<string, unknown>>
-			)[0];
-			const afterCanonical = (
-				after.time_record as Array<Record<string, unknown>>
-			)[0];
-			const workflow = (
-				after.approval_workflow as Array<Record<string, unknown>>
-			)[0];
-			const events = after.approval_workflow_event as Array<
-				Record<string, unknown>
-			>;
-			const legacy = after.approval_request as Array<Record<string, unknown>>;
-			const requesterProjection = after.approval_requester_projection as Array<
-				Record<string, unknown>
-			>;
-			const inboxProjection = after.approval_inbox_projection as Array<
-				Record<string, unknown>
-			>;
-			const outbox = after.approval_outbox as Array<Record<string, unknown>>;
-
-			if (winner === "approval") {
-				expect(counters).toEqual({
-					finalizer: 1,
-					cancellation: 0,
-					externalEffect: 1,
-				});
-				expect(
-					afterEntries.find(({ id }) => id === ids.correction),
-				).toMatchObject({ is_superseded: false, superseded_by_id: null });
-				expect(
-					afterEntries.find(({ id }) => id === ids.originalIn),
-				).toMatchObject({
-					is_superseded: true,
-					superseded_by_id: ids.correction,
-				});
-				expect(afterPeriod).toMatchObject({
-					clock_in_id: ids.correction,
-					start_time: correctedStartJson,
-					duration_minutes: 465,
-					approval_status: "approved",
-					approval_workflow_id: cycle.input.snapshot.id,
-				});
-				expect(afterCanonical).toMatchObject({
-					start_at: correctedStartJson,
-					duration_minutes: 465,
-					approval_state: "approved",
-				});
-				expect(workflow).toMatchObject({ status: "approved", version: 2 });
-				expect(events.map(({ event_type }) => event_type)).toContain(
-					"workflow.approved",
-				);
-				expect(legacy).toHaveLength(1);
-				expect(legacy[0]).toMatchObject({ status: "approved" });
-				expect(requesterProjection[0]).toMatchObject({ status: "approved" });
-				expect(inboxProjection).toEqual([]);
-				expect(outbox.length).toBeGreaterThan(0);
-			} else {
-				expect(counters).toEqual({
+		it.each(["approval", "cancellation"] as const)(
+			"requester cancellation versus approval commits one winner with source parity: %s wins",
+			async (winner) => {
+				const cycle = await createCycle(`task13-parity-${winner}`);
+				const before = await durableSnapshot();
+				const counters: Task13EffectCounters = {
 					finalizer: 0,
 					cancellation: 0,
 					externalEffect: 0,
-				});
-				expect(
-					beforeEntries.filter(({ type }) => type === "correction"),
-				).toHaveLength(1);
-				expect(
-					afterEntries.filter(({ type }) => type === "correction"),
-				).toHaveLength(0);
-				expect(
-					afterEntries.filter(({ type }) => type !== "correction"),
-				).toEqual(beforeEntries.filter(({ type }) => type !== "correction"));
-				expect(afterPeriod).toEqual(beforePeriod);
-				expect(afterCanonical).toEqual(beforeCanonical);
-				expect(workflow).toMatchObject({ status: "cancelled", version: 2 });
-				expect(events.map(({ event_type }) => event_type)).toContain(
-					"workflow.cancelled",
+				};
+				const result = await forceApprovalCancellationWinner(
+					winner,
+					cycle,
+					counters,
 				);
-				expect(legacy.filter(({ status }) => status === "pending")).toEqual([]);
-				expect(requesterProjection[0]).toMatchObject({ status: "cancelled" });
-				expect(inboxProjection).toEqual([]);
-				expect(outbox.length).toBeGreaterThan(0);
-			}
-		}, 30_000);
+				expect(result.winnerResult.status).toBe("fulfilled");
+				expectTypedTask13Conflict(result.loserResult);
+				expect(
+					result.evidence.map(({ waitEventType }) => waitEventType),
+				).toEqual(["Lock", "Lock", "Lock", "Lock"]);
 
-		it.each([
-			"approval",
-			"cancellation",
-		] as const)("concurrent cancellation and approval obey employee-period-endpoint-predecessor-canonical lock order without deadlock: %s wins", async (winner) => {
-			const cycle = await createCycle(`task13-lock-order-${winner}`);
-			const counters: Task13EffectCounters = {
-				finalizer: 0,
-				cancellation: 0,
-				externalEffect: 0,
-			};
-			const result = await forceApprovalCancellationWinner(
-				winner,
-				cycle,
-				counters,
-			);
-			expect(
-				result.evidence.map(({ blockedRelation }) => blockedRelation),
-			).toEqual(["employee", "work_period", "time_entry", "time_record"]);
-			expect(result.evidence.map(({ waitEvent }) => waitEvent)).toEqual([
-				"transactionid",
-				"transactionid",
-				"transactionid",
-				"transactionid",
-			]);
-			if (winner === "approval") {
-				expect(result.evidence[0]?.query.toLowerCase()).toContain("order by");
-			}
-			expect(result.competitorEvidence).toMatchObject({
-				blockedRelation: "employee",
-				waitEventType: "Lock",
-				waitEvent: "transactionid",
-			});
-			expect(result.winnerResult.status).toBe("fulfilled");
-			expectTypedTask13Conflict(result.loserResult);
-			expect([result.winnerResult, result.loserResult]).not.toContainEqual(
-				expect.objectContaining({
-					reason: expect.objectContaining({ code: "40P01" }),
-				}),
-			);
-		}, 30_000);
+				const after = await durableSnapshot();
+				const beforeEntries = before.time_entry as Array<
+					Record<string, unknown>
+				>;
+				const afterEntries = after.time_entry as Array<Record<string, unknown>>;
+				const beforePeriod = (
+					before.work_period as Array<Record<string, unknown>>
+				)[0];
+				const afterPeriod = (
+					after.work_period as Array<Record<string, unknown>>
+				)[0];
+				const beforeCanonical = (
+					before.time_record as Array<Record<string, unknown>>
+				)[0];
+				const afterCanonical = (
+					after.time_record as Array<Record<string, unknown>>
+				)[0];
+				const workflow = (
+					after.approval_workflow as Array<Record<string, unknown>>
+				)[0];
+				const events = after.approval_workflow_event as Array<
+					Record<string, unknown>
+				>;
+				const legacy = after.approval_request as Array<Record<string, unknown>>;
+				const requesterProjection =
+					after.approval_requester_projection as Array<Record<string, unknown>>;
+				const inboxProjection = after.approval_inbox_projection as Array<
+					Record<string, unknown>
+				>;
+				const outbox = after.approval_outbox as Array<Record<string, unknown>>;
+
+				if (winner === "approval") {
+					expect(counters).toEqual({
+						finalizer: 1,
+						cancellation: 0,
+						externalEffect: 1,
+					});
+					expect(
+						afterEntries.find(({ id }) => id === ids.correction),
+					).toMatchObject({ is_superseded: false, superseded_by_id: null });
+					expect(
+						afterEntries.find(({ id }) => id === ids.originalIn),
+					).toMatchObject({
+						is_superseded: true,
+						superseded_by_id: ids.correction,
+					});
+					expect(afterPeriod).toMatchObject({
+						clock_in_id: ids.correction,
+						start_time: correctedStartJson,
+						duration_minutes: 465,
+						approval_status: "approved",
+						approval_workflow_id: cycle.input.snapshot.id,
+					});
+					expect(afterCanonical).toMatchObject({
+						start_at: correctedStartJson,
+						duration_minutes: 465,
+						approval_state: "approved",
+					});
+					expect(workflow).toMatchObject({ status: "approved", version: 2 });
+					expect(events.map(({ event_type }) => event_type)).toContain(
+						"workflow.approved",
+					);
+					expect(legacy).toHaveLength(1);
+					expect(legacy[0]).toMatchObject({ status: "approved" });
+					expect(requesterProjection[0]).toMatchObject({ status: "approved" });
+					expect(inboxProjection).toEqual([]);
+					expect(outbox.length).toBeGreaterThan(0);
+				} else {
+					expect(counters).toEqual({
+						finalizer: 0,
+						cancellation: 0,
+						externalEffect: 0,
+					});
+					expect(
+						beforeEntries.filter(({ type }) => type === "correction"),
+					).toHaveLength(1);
+					expect(
+						afterEntries.filter(({ type }) => type === "correction"),
+					).toHaveLength(0);
+					expect(
+						afterEntries.filter(({ type }) => type !== "correction"),
+					).toEqual(beforeEntries.filter(({ type }) => type !== "correction"));
+					expect(afterPeriod).toEqual(beforePeriod);
+					expect(afterCanonical).toEqual(beforeCanonical);
+					expect(workflow).toMatchObject({ status: "cancelled", version: 2 });
+					expect(events.map(({ event_type }) => event_type)).toContain(
+						"workflow.cancelled",
+					);
+					expect(legacy.filter(({ status }) => status === "pending")).toEqual(
+						[],
+					);
+					expect(requesterProjection[0]).toMatchObject({ status: "cancelled" });
+					expect(inboxProjection).toEqual([]);
+					expect(outbox.length).toBeGreaterThan(0);
+				}
+			},
+			30_000,
+		);
+
+		it.each(["approval", "cancellation"] as const)(
+			"concurrent cancellation and approval obey employee-period-endpoint-predecessor-canonical lock order without deadlock: %s wins",
+			async (winner) => {
+				const cycle = await createCycle(`task13-lock-order-${winner}`);
+				const counters: Task13EffectCounters = {
+					finalizer: 0,
+					cancellation: 0,
+					externalEffect: 0,
+				};
+				const result = await forceApprovalCancellationWinner(
+					winner,
+					cycle,
+					counters,
+				);
+				expect(
+					result.evidence.map(({ blockedRelation }) => blockedRelation),
+				).toEqual(["employee", "work_period", "time_entry", "time_record"]);
+				expect(result.evidence.map(({ waitEvent }) => waitEvent)).toEqual([
+					"transactionid",
+					"transactionid",
+					"transactionid",
+					"transactionid",
+				]);
+				if (winner === "approval") {
+					expect(result.evidence[0]?.query.toLowerCase()).toContain("order by");
+				}
+				expect(result.competitorEvidence).toMatchObject({
+					blockedRelation: "employee",
+					waitEventType: "Lock",
+					waitEvent: "transactionid",
+				});
+				expect(result.winnerResult.status).toBe("fulfilled");
+				expectTypedTask13Conflict(result.loserResult);
+				expect([result.winnerResult, result.loserResult]).not.toContainEqual(
+					expect.objectContaining({
+						reason: expect.objectContaining({ code: "40P01" }),
+					}),
+				);
+			},
+			30_000,
+		);
 
 		it("manager-before-requester UUID decision versus requester auto-completion avoids lock inversion", async () => {
 			expect(ids.manager < ids.requester).toBe(true);
@@ -1834,102 +2138,139 @@ describeIntegration(
 			]);
 		});
 
-		it.each([
-			"manager",
-			"creation",
-		] as const)("immediate manager finalization versus pending creation commits one source winner: %s wins", async (winner) => {
-			const before = await durableSnapshot();
-			const { winnerResult, loserResult } = await forceSubmissionWinner(winner);
-			if (winnerResult.status !== "fulfilled") {
-				throw winnerResult.reason;
-			}
-			expectTypedTask13Conflict(loserResult);
-			const result = winnerResult.value as { kind?: unknown };
-			const after = await durableSnapshot();
-			const entries = after.time_entry as Array<Record<string, unknown>>;
-			const period = (after.work_period as Array<Record<string, unknown>>)[0];
-			const canonical = (
-				after.time_record as Array<Record<string, unknown>>
-			)[0];
-			const workflows = after.approval_workflow as Array<
-				Record<string, unknown>
-			>;
-			if (winner === "manager") {
-				expect(result.kind).toBe("manager_completed");
-				expect(workflows.map(({ status }) => status)).toEqual(["approved"]);
-				expect(workflows.filter(({ status }) => status === "pending")).toEqual(
-					[],
-				);
-				expect(entries.find(({ id }) => id === ids.correction)).toMatchObject({
-					is_superseded: false,
-				});
-				expect(entries.find(({ id }) => id === ids.originalIn)).toMatchObject({
-					is_superseded: true,
-					superseded_by_id: ids.correction,
-				});
-				expect(period).toMatchObject({
-					clock_in_id: ids.correction,
-					start_time: correctedStartJson,
-					duration_minutes: 465,
-				});
-				expect(canonical).toMatchObject({
-					start_at: correctedStartJson,
-					duration_minutes: 465,
-				});
-				expect(after.approval_stage_assignment).toEqual([
-					expect.objectContaining({
-						status: "approved",
-						approver_employee_id: ids.manager,
-						resolved_by_actor_kind: "employee",
-						resolved_by_actor_id: ids.manager,
-					}),
-				]);
-			} else {
-				expect(result.kind).toBe("default_created");
-				expect(workflows.map(({ status }) => status)).toEqual(["pending"]);
-				expect(entries.find(({ id }) => id === ids.correction)).toMatchObject({
-					is_superseded: true,
-					superseded_by_id: null,
-				});
-				expect(entries.find(({ id }) => id === ids.originalIn)).toMatchObject({
-					is_superseded: false,
-					superseded_by_id: null,
-				});
-				const beforePeriod = (
-					before.work_period as Array<Record<string, unknown>>
+		it.each(["manager", "creation"] as const)(
+			"immediate manager finalization versus pending creation commits one source winner: %s wins",
+			async (winner) => {
+				const before = await durableSnapshot();
+				const { winnerResult, loserResult } =
+					await forceSubmissionWinner(winner);
+				if (winnerResult.status !== "fulfilled") {
+					throw winnerResult.reason;
+				}
+				expectTypedTask13Conflict(loserResult);
+				const result = winnerResult.value as { kind?: unknown };
+				const after = await durableSnapshot();
+				const entries = after.time_entry as Array<Record<string, unknown>>;
+				const period = (after.work_period as Array<Record<string, unknown>>)[0];
+				const canonical = (
+					after.time_record as Array<Record<string, unknown>>
 				)[0];
-				const {
-					approval_workflow_id: _beforeLink,
-					updated_at: _beforeUpdatedAt,
-					...beforeSource
-				} = beforePeriod ?? {};
-				const {
-					approval_workflow_id: pendingLink,
-					updated_at: _afterUpdatedAt,
-					...afterSource
-				} = period ?? {};
-				expect(afterSource).toEqual(beforeSource);
-				expect(pendingLink).toBe(workflows[0]?.id);
-				expect(canonical).toEqual(
-					(before.time_record as Array<Record<string, unknown>>)[0],
-				);
-			}
-		}, 30_000);
+				const workflows = after.approval_workflow as Array<
+					Record<string, unknown>
+				>;
+				if (winner === "manager") {
+					expect(result.kind).toBe("manager_completed");
+					expect(workflows.map(({ status }) => status)).toEqual(["approved"]);
+					expect(
+						workflows.filter(({ status }) => status === "pending"),
+					).toEqual([]);
+					expect(entries.find(({ id }) => id === ids.correction)).toMatchObject(
+						{
+							is_superseded: false,
+						},
+					);
+					expect(entries.find(({ id }) => id === ids.originalIn)).toMatchObject(
+						{
+							is_superseded: true,
+							superseded_by_id: ids.correction,
+						},
+					);
+					expect(period).toMatchObject({
+						clock_in_id: ids.correction,
+						start_time: correctedStartJson,
+						duration_minutes: 465,
+					});
+					expect(canonical).toMatchObject({
+						start_at: correctedStartJson,
+						duration_minutes: 465,
+					});
+					expect(after.approval_stage_assignment).toEqual([
+						expect.objectContaining({
+							status: "approved",
+							approver_employee_id: ids.manager,
+							resolved_by_actor_kind: "employee",
+							resolved_by_actor_id: ids.manager,
+						}),
+					]);
+				} else {
+					expect(result.kind).toBe("default_created");
+					expect(workflows.map(({ status }) => status)).toEqual(["pending"]);
+					expect(entries.find(({ id }) => id === ids.correction)).toMatchObject(
+						{
+							is_superseded: true,
+							superseded_by_id: null,
+						},
+					);
+					expect(entries.find(({ id }) => id === ids.originalIn)).toMatchObject(
+						{
+							is_superseded: false,
+							superseded_by_id: null,
+						},
+					);
+					const beforePeriod = (
+						before.work_period as Array<Record<string, unknown>>
+					)[0];
+					const {
+						approval_workflow_id: _beforeLink,
+						updated_at: _beforeUpdatedAt,
+						...beforeSource
+					} = beforePeriod ?? {};
+					const {
+						approval_workflow_id: pendingLink,
+						updated_at: _afterUpdatedAt,
+						...afterSource
+					} = period ?? {};
+					expect(afterSource).toEqual(beforeSource);
+					expect(pendingLink).toBe(workflows[0]?.id);
+					expect(canonical).toEqual(
+						(before.time_record as Array<Record<string, unknown>>)[0],
+					);
+				}
+			},
+			30_000,
+		);
 
 		it.each([
 			["correction activation", `time_entry:${ids.correction}`],
 			["original supersede", `time_entry:${ids.originalIn}`],
 			["period update", "work_period"],
 			["canonical update", "time_record"],
-		] as const)("stale %s CAS rolls the full transaction back", async (_scenario, failpoint) => {
-			const cycle = await createCycle(`task13-cas-${failpoint}`);
+		] as const)(
+			"stale %s CAS rolls the full transaction back",
+			async (_scenario, failpoint) => {
+				const cycle = await createCycle(`task13-cas-${failpoint}`);
+				const before = await durableSnapshot();
+				await expect(
+					runtime().repository.withTransaction(async (context) => {
+						await context.dbService.db.execute(
+							sql`select set_config('task13.failpoint', ${failpoint}, true)`,
+						);
+						await finalize(context, cycle.input);
+					}),
+				).rejects.toThrow("Time correction source changed during finalization");
+				expect(await durableSnapshot()).toEqual(before);
+			},
+		);
+
+		it("stale time_record_work CAS rolls the full transaction back", async () => {
+			const submissionKey = "task13-cas-time-record-work";
+			await submitMetadataOnlyCorrection(submissionKey);
+			const command = await metadataOnlyDecisionCommand(
+				submissionKey,
+				"approve",
+			);
 			const before = await durableSnapshot();
+			const productionRuntime = runtime();
+
 			await expect(
-				runtime().repository.withTransaction(async (context) => {
+				productionRuntime.repository.withTransaction(async (context) => {
 					await context.dbService.db.execute(
-						sql`select set_config('task13.failpoint', ${failpoint}, true)`,
+						sql`select set_config('task13.failpoint', 'time_record_work', true)`,
 					);
-					await finalize(context, cycle.input);
+					await productionRuntime.transitionEngine.executeInTransaction(
+						context,
+						command,
+					);
 				}),
 			).rejects.toThrow("Time correction source changed during finalization");
 			expect(await durableSnapshot()).toEqual(before);

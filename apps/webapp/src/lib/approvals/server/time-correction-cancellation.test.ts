@@ -202,6 +202,8 @@ function legacyState(status: "pending" | "cancelled") {
 				isActive: true,
 				approvalStatus: "approved",
 				pendingChanges: null,
+				workLocationType: "office",
+				workCategoryId: null,
 				deletedAt: null,
 				canonicalRecordId: "10000000-0000-4000-8000-000000000008",
 				approvalWorkflowId: null,
@@ -215,6 +217,13 @@ function legacyState(status: "pending" | "cancelled") {
 				endAt: null,
 				durationMinutes: null,
 				approvalState: "approved",
+			},
+			canonicalWork: {
+				recordId: "10000000-0000-4000-8000-000000000008",
+				organizationId: ids.organization,
+				recordKind: "work",
+				workLocationType: "office",
+				workCategoryId: null,
 			},
 			currentEndpoints: {
 				clockIn: {
@@ -820,6 +829,76 @@ describe("cancelPendingTimeCorrection", () => {
 			).toHaveBeenCalledOnce();
 		}
 	});
+
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"cancels a strict pending metadata-only request without correction-row deletion in %s mode",
+		async (mode) => {
+			const harness = createLegacyHarness(mode);
+			const correction = {
+				action: "edit",
+				workLocationType: "remote",
+				workCategoryId: null,
+			};
+			const metadataOnlyState = (status: "pending" | "cancelled") => {
+				const captured = legacyState(status);
+				return {
+					...captured,
+					approvalRequest: captured.approvalRequest
+						? {
+								...captured.approvalRequest,
+								metadata: {
+									timeCorrection: correction,
+									submission: {
+										key: "time-correction-cycle:v2:submission-1",
+										submissionId: "10000000-0000-4000-8000-000000000099",
+										resultKind: "default_created",
+										originalStatus: "pending",
+									},
+								},
+							}
+						: null,
+					sourceSnapshot: {
+						...captured.sourceSnapshot,
+						approvalWorkflowId: mode === "legacy" ? null : ids.workflow,
+						timeCorrection: correction,
+						correctionEndpoints: [],
+						workPeriod: {
+							...captured.sourceSnapshot.workPeriod,
+							approvalWorkflowId: mode === "legacy" ? null : ids.workflow,
+							workLocationType: "office",
+							workCategoryId: null,
+						},
+					},
+				};
+			};
+			state.captureLegacy.mockReset();
+			state.captureLegacy
+				.mockResolvedValueOnce(metadataOnlyState("pending"))
+				.mockResolvedValueOnce(metadataOnlyState("cancelled"));
+
+			await expect(
+				cancelPendingTimeCorrection({
+					organizationId: ids.organization,
+					requesterEmployeeId: ids.employee,
+					requesterUserId: "user-requester",
+					workPeriodId: ids.workPeriod,
+				}),
+			).resolves.toEqual({ replayed: false });
+
+			expect(state.deleteCancelledCorrections).toHaveBeenCalledOnce();
+			expect(state.deleteCancelledCorrections).toHaveBeenCalledWith(
+				expect.objectContaining({
+					correction,
+					expectedSource: expect.objectContaining({
+						workLocationType: "office",
+						workCategoryId: null,
+						pendingCorrections: { clockIn: null, clockOut: null },
+					}),
+				}),
+			);
+			expect(harness.deleteFrom).not.toHaveBeenCalled();
+		},
+	);
 
 	it("retains a pure-legacy direct cancellation as requester-owned durable metadata", async () => {
 		const harness = createLegacyHarness("legacy");

@@ -4482,13 +4482,19 @@ db.delete(approvalOutbox);`,
 					table: "time_entry",
 				},
 				{
-					columns: [
-						"clock_in_id",
-						"clock_out_id",
-						"duration_minutes",
-						"end_time",
-						"start_time",
-					],
+					columns: ["clock_in_id", "duration_minutes", "start_time"],
+					functionName: "applyCorrectionWritesInTransaction",
+					operation: "update",
+					table: "work_period",
+				},
+				{
+					columns: ["clock_out_id", "duration_minutes", "end_time"],
+					functionName: "applyCorrectionWritesInTransaction",
+					operation: "update",
+					table: "work_period",
+				},
+				{
+					columns: ["duration_minutes"],
 					functionName: "applyCorrectionWritesInTransaction",
 					operation: "update",
 					table: "work_period",
@@ -4990,7 +4996,7 @@ export function wrongCompletedPeriodOwner() {
 }`,
 				[correctionPath]: `import { db, workPeriod } from "@/db";
 export function applyCorrectionWritesInTransaction() {
-  return db.update(workPeriod).set({ clockInId, clockOutId, startTime, endTime, durationMinutes });
+  return db.update(workPeriod).set({ clockInId, startTime, durationMinutes });
 }
 export function dynamicCorrectionOwner(patch: object) {
   return db.update(workPeriod).set(patch);

@@ -82,6 +82,48 @@ function canonicalEvidence(value: unknown): string {
 	return JSON.stringify(value);
 }
 
+function observedDisplaySnapshot(input: ObservedLegacyTransition): JsonObject {
+	const currentDisplay =
+		input.after.displaySnapshot ?? input.after.sourceSnapshot;
+	if (
+		input.expectedVersion === null &&
+		input.source.workflowType === "time_correction" &&
+		Object.hasOwn(currentDisplay, "workMetadata")
+	) {
+		const workMetadata = currentDisplay.workMetadata;
+		const workPeriod = input.before.sourceSnapshot.workPeriod;
+		if (
+			!record(workMetadata) ||
+			!record(workPeriod) ||
+			!Object.hasOwn(workPeriod, "workLocationType") ||
+			!Object.hasOwn(workPeriod, "workCategoryId")
+		) {
+			return fail("invalid_evidence");
+		}
+		return normalizeStableData({
+			...currentDisplay,
+			workMetadata: {
+				...workMetadata,
+				original: {
+					workLocationType: workPeriod.workLocationType,
+					workCategoryId: workPeriod.workCategoryId,
+				},
+			},
+		}) as JsonObject;
+	}
+	if (
+		input.expectedVersion !== null &&
+		input.before.displaySnapshot &&
+		Object.hasOwn(input.before.displaySnapshot, "workMetadata")
+	) {
+		return normalizeStableData({
+			...currentDisplay,
+			workMetadata: input.before.displaySnapshot.workMetadata,
+		}) as JsonObject;
+	}
+	return normalizeStableData(currentDisplay) as JsonObject;
+}
+
 function assignmentActorFromEventActor(
 	actor: ObservedLegacyTransition["actor"],
 ): ApprovalAssignmentActorIdentity | null {
@@ -788,12 +830,8 @@ function buildChainPlan(
 	const contextSnapshot = normalizeStableData(
 		input.after.sourceSnapshot,
 	) as JsonObject;
-	const displaySnapshot = normalizeStableData(
-		input.after.displaySnapshot ?? input.after.sourceSnapshot,
-	) as JsonObject;
-	const displayPayload = normalizeStableData(
-		input.after.displaySnapshot ?? input.after.sourceSnapshot,
-	) as JsonObject;
+	const displaySnapshot = observedDisplaySnapshot(input);
+	const displayPayload = normalizeStableData(displaySnapshot) as JsonObject;
 	const snapshot: ApprovalWorkflowSnapshot = {
 		id: workflowId,
 		organizationId: input.organizationId,
@@ -1211,12 +1249,8 @@ function buildPlan(
 	const contextSnapshot = normalizeStableData(
 		input.after.sourceSnapshot,
 	) as JsonObject;
-	const displaySnapshot = normalizeStableData(
-		input.after.displaySnapshot ?? input.after.sourceSnapshot,
-	) as JsonObject;
-	const displayPayload = normalizeStableData(
-		input.after.displaySnapshot ?? input.after.sourceSnapshot,
-	) as JsonObject;
+	const displaySnapshot = observedDisplaySnapshot(input);
+	const displayPayload = normalizeStableData(displaySnapshot) as JsonObject;
 	const snapshot: ApprovalWorkflowSnapshot = {
 		id: workflowId,
 		organizationId: input.organizationId,

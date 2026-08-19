@@ -73,6 +73,7 @@ import {
 	resolveFallbackTimezoneCapture,
 	type TimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
+import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
 
 const demoLogger = createLogger("demo-data");
 
@@ -1337,10 +1338,16 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 						correctionInstant.toZonedDateTimeISO(lockedOriginal.timezone)
 							.offsetNanoseconds / 60_000_000_000,
 				};
+				const workLocationType = normalizeWorkLocationType(
+					lockedPeriod.workLocationType,
+				);
+				const workCategoryId = lockedPeriod.workCategoryId ?? null;
 				const businessSubmissionKey = deriveTimeCorrectionSubmissionKey({
 					organizationId: options.organizationId,
 					workPeriodId: lockedPeriod.id,
 					action: "edit",
+					workLocationType,
+					workCategoryId,
 					clockIn: {
 						originalEntryId: lockedOriginal.id,
 						instant: correctionInstant,
@@ -1350,7 +1357,7 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 					submissionKey: `demo-submission:${businessSubmissionKey}`,
 					endpointType: "clock_in",
 				});
-				const submissionKey = `time-correction-cycle:v1:${submissionId}:${businessSubmissionKey}`;
+				const submissionKey = `time-correction-cycle:v2:${submissionId}:${businessSubmissionKey}`;
 				const correctionId = deriveTimeCorrectionRowId({
 					submissionKey,
 					endpointType: "clock_in",
@@ -1467,7 +1474,12 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 					overtimeRisk: null,
 					submissionKey,
 					submissionId,
-					correction: { action: "edit", clockInCorrectionId: correctionId },
+					correction: {
+						action: "edit",
+						clockInCorrectionId: correctionId,
+						workLocationType,
+						workCategoryId,
+					},
 				});
 				if (result.kind === "auto_completed") {
 					throw new DemoCorrectionAutoCompletedError();

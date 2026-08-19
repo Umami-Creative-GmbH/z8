@@ -8,8 +8,15 @@ import {
 	approvalChainStageInstance,
 	approvalRequest,
 	employee,
+	team,
+	teamMembership,
 	timeEntry,
 	timeRecord,
+	timeRecordWork,
+	workCategory,
+	workCategorySet,
+	workCategorySetAssignment,
+	workCategorySetCategory,
 	workPeriod,
 } from "@/db/schema";
 
@@ -54,6 +61,7 @@ vi.mock("@/lib/work-balance/service", () => ({
 import { db as globalDb } from "@/db";
 import { createTimeCorrectionApprovalAdapter } from "@/lib/approvals/domain-adapters/time-correction.adapter";
 import type { TimeCorrectionWorkflowPayload } from "@/lib/approvals/domain-adapters/time-correction-contract";
+import { normalizeTimeCorrectionOriginalWorkMetadata } from "@/lib/approvals/domain-adapters/time-correction-contract";
 import { captureTimeCorrectionLegacyApprovalState } from "@/lib/approvals/domain-adapters/time-correction-legacy-state";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
@@ -424,6 +432,8 @@ describe("time correction transaction boundaries", () => {
 			isActive: true,
 			approvalStatus: "approved",
 			pendingChanges: null,
+			workLocationType: "office",
+			workCategoryId: "71000000-0000-4000-8000-000000000802",
 			deletedAt: null,
 		};
 		const canonicalRecord = {
@@ -435,6 +445,13 @@ describe("time correction transaction boundaries", () => {
 			endAt: null,
 			durationMinutes: null,
 			approvalState: "approved",
+		};
+		const canonicalWork = {
+			recordId: ids.canonical,
+			organizationId: "org-1",
+			recordKind: "work",
+			workLocationType: "office",
+			workCategoryId: "71000000-0000-4000-8000-000000000802",
 		};
 		const authority = {
 			mode: input.mode,
@@ -469,6 +486,10 @@ describe("time correction transaction boundaries", () => {
 		let sourceWorkflowId: string | null = null;
 		let nextBindingWorkflowLoaded = false;
 		let correctionRead = true;
+		let submittedCorrection: TimeCorrectionWorkflowPayload["timeCorrection"] = {
+			action: "edit",
+			clockInCorrectionId: ids.correction,
+		};
 		let decisionReads = false;
 		let decisionApprovalRequestId: string | null = null;
 		let employeeRead = 0;
@@ -494,6 +515,7 @@ describe("time correction transaction boundaries", () => {
 					originalRow,
 					correctionRow,
 					canonicalRecord,
+					canonicalWork,
 					terminalFinalizations,
 					effects: {
 						dirty: markEmployeeWorkBalanceDirty.mock.calls,
@@ -703,6 +725,14 @@ describe("time correction transaction boundaries", () => {
 								assignmentId: representative.id,
 							},
 							timeCorrection: result.snapshot.contextSnapshot.timeCorrection,
+							...(result.snapshot.contextSnapshot
+								.timeCorrectionOriginalWorkMetadata
+								? {
+										timeCorrectionOriginalWorkMetadata:
+											result.snapshot.contextSnapshot
+												.timeCorrectionOriginalWorkMetadata,
+									}
+								: {}),
 							submission: result.snapshot.contextSnapshot.submission,
 						},
 					});
@@ -931,9 +961,13 @@ describe("time correction transaction boundaries", () => {
 							if (table === workPeriod)
 								return [{ ...sourceRow, approvalWorkflowId: sourceWorkflowId }];
 							if (table === timeRecord) return [canonicalRecord];
-							return [correctionRow, originalRow].sort((left, right) =>
-								left.id.localeCompare(right.id),
-							);
+							if (table === timeRecordWork) return [canonicalWork];
+							return [
+								...(submittedCorrection.clockInCorrectionId
+									? [correctionRow]
+									: []),
+								originalRow,
+							].sort((left, right) => left.id.localeCompare(right.id));
 						});
 						return {
 							for: finish,
@@ -956,7 +990,11 @@ describe("time correction transaction boundaries", () => {
 								Object.assign(canonicalRecord, values);
 								return [{ id: ids.canonical }];
 							}
-							if (table === workPeriod && "clockInId" in values) {
+							if (table === timeRecordWork) {
+								Object.assign(canonicalWork, values);
+								return [{ recordId: ids.canonical }];
+							}
+							if (table === workPeriod && "updatedAt" in values) {
 								terminalFinalizations += 1;
 								Object.assign(sourceRow, values);
 								fail("finalizer", {
@@ -1053,6 +1091,7 @@ describe("time correction transaction boundaries", () => {
 				const priorOriginal = structuredClone(originalRow);
 				const priorCorrection = structuredClone(correctionRow);
 				const priorCanonical = structuredClone(canonicalRecord);
+				const priorCanonicalWork = structuredClone(canonicalWork);
 				const priorProjectionCount = projections.length;
 				const priorOutboxCount = outbox.length;
 				const priorLegacyCount = legacyWrites.length;
@@ -1090,6 +1129,7 @@ describe("time correction transaction boundaries", () => {
 					restoreRecord(originalRow, priorOriginal);
 					restoreRecord(correctionRow, priorCorrection);
 					restoreRecord(canonicalRecord, priorCanonical);
+					restoreRecord(canonicalWork, priorCanonicalWork);
 					projections.splice(priorProjectionCount);
 					outbox.splice(priorOutboxCount);
 					legacyWrites.splice(priorLegacyCount);
@@ -1123,9 +1163,14 @@ describe("time correction transaction boundaries", () => {
 				submissionKey?: string;
 				submissionId?: string;
 				defaultApproverId?: string | null;
+				correction?: TimeCorrectionWorkflowPayload["timeCorrection"];
 			} = {},
 		) => {
 			decisionReads = false;
+			submittedCorrection = overrides.correction ?? {
+				action: "edit",
+				clockInCorrectionId: ids.correction,
+			};
 			return executeTimeCorrectionSubmissionInTransaction({
 				dbService: { db } as never,
 				context,
@@ -1143,7 +1188,7 @@ describe("time correction transaction boundaries", () => {
 				...(overrides.submissionId
 					? { submissionId: overrides.submissionId }
 					: {}),
-				correction: { action: "edit", clockInCorrectionId: ids.correction },
+				correction: submittedCorrection,
 			});
 		};
 
@@ -1159,6 +1204,8 @@ describe("time correction transaction boundaries", () => {
 			compatibilityStages,
 			legacyWrites,
 			canonicalEvents,
+			sourceRow,
+			canonicalWork,
 			durableSnapshot,
 			failureEvidence: () => failureEvidence,
 			injectFailure(point: RollbackFailurePoint | null) {
@@ -1209,6 +1256,7 @@ describe("time correction transaction boundaries", () => {
 				const priorOriginal = structuredClone(originalRow);
 				const priorCorrection = structuredClone(correctionRow);
 				const priorCanonical = structuredClone(canonicalRecord);
+				const priorCanonicalWork = structuredClone(canonicalWork);
 				const priorFinalizations = terminalFinalizations;
 				const priorProjectionCount = projections.length;
 				const priorOutboxCount = outbox.length;
@@ -1245,6 +1293,7 @@ describe("time correction transaction boundaries", () => {
 					restoreRecord(originalRow, priorOriginal);
 					restoreRecord(correctionRow, priorCorrection);
 					restoreRecord(canonicalRecord, priorCanonical);
+					restoreRecord(canonicalWork, priorCanonicalWork);
 					terminalFinalizations = priorFinalizations;
 					projections.splice(priorProjectionCount);
 					outbox.splice(priorOutboxCount);
@@ -1373,6 +1422,8 @@ describe("time correction transaction boundaries", () => {
 			isActive: false,
 			approvalStatus: "approved",
 			pendingChanges: null,
+			workLocationType: "office",
+			workCategoryId: "71000000-0000-4000-8000-000000000902",
 			deletedAt: null,
 			canonicalRecordId: ids.canonical,
 			approvalWorkflowId: null as string | null,
@@ -1386,6 +1437,13 @@ describe("time correction transaction boundaries", () => {
 			endAt: originalOut.timestamp,
 			durationMinutes: 540,
 			approvalState: "approved",
+		};
+		const canonicalWork = {
+			recordId: ids.canonical,
+			organizationId: "org-1",
+			recordKind: "work",
+			workLocationType: "office",
+			workCategoryId: "71000000-0000-4000-8000-000000000902",
 		};
 		const requests: Array<Record<string, unknown>> = [];
 		const chains: Array<Record<string, unknown>> = [];
@@ -1428,6 +1486,7 @@ describe("time correction transaction boundaries", () => {
 					originalOut,
 					correctionRow,
 					canonicalRecord,
+					canonicalWork,
 					terminalFinalizations,
 					effects: {
 						dirty: markEmployeeWorkBalanceDirty.mock.calls,
@@ -1469,16 +1528,27 @@ describe("time correction transaction boundaries", () => {
 			const pending = request?.status === "pending";
 			const approverId =
 				typeof request?.approverId === "string" ? request.approverId : null;
+			const requestCorrection = (
+				request?.metadata as
+					| { timeCorrection?: Record<string, unknown> }
+					| undefined
+			)?.timeCorrection;
+			const hasCorrectionEndpoint = Boolean(
+				requestCorrection?.clockInCorrectionId ||
+					requestCorrection?.clockOutCorrectionId,
+			);
 			const value = {
 				source: sourceRow,
 				canonicalRecord,
+				canonicalWork,
 				currentEndpoints: { clockIn: currentClockIn, clockOut: originalOut },
 				currentEndpointPredecessors: applied ? [originalIn] : [],
 				approvalRequests: request ? [request] : [],
 				chains,
 				chainRows,
-				correctionEntries: request ? [correctionRow] : [],
-				originalEntries: request ? [originalIn] : [],
+				correctionEntries:
+					request && hasCorrectionEndpoint ? [correctionRow] : [],
+				originalEntries: request && hasCorrectionEndpoint ? [originalIn] : [],
 				identityEvidence: {
 					employees: [
 						...new Set([ids.requester, ...(approverId ? [approverId] : [])]),
@@ -1731,9 +1801,52 @@ describe("time correction transaction boundaries", () => {
 							}
 							if (table === workPeriod) return [sourceRow];
 							if (table === timeRecord) return [canonicalRecord];
-							return [correctionRow, originalIn, originalOut].sort(
-								(left, right) => left.id.localeCompare(right.id),
-							);
+							if (table === timeRecordWork) return [canonicalWork];
+							if (table === teamMembership || table === team) return [];
+							if (table === workCategory)
+								return [
+									{
+										id: "71000000-0000-4000-8000-000000000903",
+										organizationId: "org-1",
+										isActive: true,
+									},
+								];
+							if (table === workCategorySetAssignment)
+								return [
+									{
+										id: "71000000-0000-4000-8000-000000000904",
+										organizationId: "org-1",
+										assignmentType: "organization",
+										employeeId: null,
+										teamId: null,
+										setId: "71000000-0000-4000-8000-000000000905",
+										isActive: true,
+										effectiveFrom: null,
+										effectiveUntil: null,
+									},
+								];
+							if (table === workCategorySet)
+								return [
+									{
+										id: "71000000-0000-4000-8000-000000000905",
+										organizationId: "org-1",
+										isActive: true,
+									},
+								];
+							if (table === workCategorySetCategory)
+								return [{ id: "71000000-0000-4000-8000-000000000906" }];
+							const requestCorrection = (
+								requests.at(-1)?.metadata as
+									| { timeCorrection?: Record<string, unknown> }
+									| undefined
+							)?.timeCorrection;
+							return [
+								...(requestCorrection?.clockInCorrectionId
+									? [correctionRow]
+									: []),
+								originalIn,
+								originalOut,
+							].sort((left, right) => left.id.localeCompare(right.id));
 						});
 						return {
 							for: finish,
@@ -1777,6 +1890,10 @@ describe("time correction transaction boundaries", () => {
 								Object.assign(canonicalRecord, values);
 								return [{ id: ids.canonical }];
 							}
+							if (table === timeRecordWork) {
+								Object.assign(canonicalWork, values);
+								return [{ recordId: ids.canonical }];
+							}
 							if (table === approvalChainStageInstance) {
 								const selected = values.approvalRequestId
 									? chainRows.find((row) => row.status === "waiting")
@@ -1802,7 +1919,7 @@ describe("time correction transaction boundaries", () => {
 								});
 								return [{ id: chain.id }];
 							}
-							if (table === workPeriod && "clockInId" in values) {
+							if (table === workPeriod && "updatedAt" in values) {
 								terminalFinalizations += 1;
 								Object.assign(sourceRow, values);
 								fail("finalizer", {
@@ -1851,6 +1968,7 @@ describe("time correction transaction boundaries", () => {
 			const priorOriginalOut = structuredClone(originalOut);
 			const priorCorrection = structuredClone(correctionRow);
 			const priorCanonical = structuredClone(canonicalRecord);
+			const priorCanonicalWork = structuredClone(canonicalWork);
 			const priorOrderCount = order.length;
 			const priorProjectionCount = projections.length;
 			const priorOutboxCount = outbox.length;
@@ -1869,6 +1987,7 @@ describe("time correction transaction boundaries", () => {
 				restoreRecord(originalOut, priorOriginalOut);
 				restoreRecord(correctionRow, priorCorrection);
 				restoreRecord(canonicalRecord, priorCanonical);
+				restoreRecord(canonicalWork, priorCanonicalWork);
 				order.splice(priorOrderCount);
 				projections.splice(priorProjectionCount);
 				outbox.splice(priorOutboxCount);
@@ -1903,6 +2022,10 @@ describe("time correction transaction boundaries", () => {
 			},
 			setMembershipRows(rows: Record<string, unknown>[]) {
 				membershipRows = rows;
+			},
+			driftWorkMetadata(workLocationType: "office" | "home" | "remote") {
+				sourceRow.workLocationType = workLocationType;
+				canonicalWork.workLocationType = workLocationType;
 			},
 			configureSequentialChain() {
 				const chainId = "91000000-0000-4000-8000-000000000901";
@@ -1984,6 +2107,18 @@ describe("time correction transaction boundaries", () => {
 								(service, _entityId, approver, approval) =>
 									Effect.tryPromise({
 										try: async () => {
+											const correction = (
+												approval.metadata as TimeCorrectionWorkflowPayload
+											).timeCorrection;
+											const originalWorkMetadata = Object.hasOwn(
+												correction,
+												"workLocationType",
+											)
+												? normalizeTimeCorrectionOriginalWorkMetadata(
+														(approval.metadata as Record<string, unknown>)
+															.timeCorrectionOriginalWorkMetadata,
+													)
+												: undefined;
 											const finalized =
 												await finalizeTimeCorrectionTerminalInTransaction({
 													dbService: service,
@@ -1994,10 +2129,8 @@ describe("time correction transaction boundaries", () => {
 													expectedRequesterEmployeeId: ids.requester,
 													actorEmployeeId: approver.id,
 													actorUserId: approver.userId,
-													correction: {
-														action: "edit",
-														clockInCorrectionId: ids.correction,
-													},
+													correction,
+													expectedOriginalWorkMetadata: originalWorkMetadata,
 													legacyApprovalRequestId: approval.id,
 													transition:
 														action === "approve"
@@ -2030,6 +2163,10 @@ describe("time correction transaction boundaries", () => {
 			execute: (
 				submissionKey = `${mode}-submission-1`,
 				submissionId?: string,
+				correction: TimeCorrectionWorkflowPayload["timeCorrection"] = {
+					action: "edit",
+					clockInCorrectionId: ids.correction,
+				},
 			) => {
 				decisionMode = false;
 				captureRead = 0;
@@ -2046,10 +2183,7 @@ describe("time correction transaction boundaries", () => {
 					overtimeRisk: null,
 					submissionKey,
 					...(submissionId ? { submissionId } : {}),
-					correction: {
-						action: "edit",
-						clockInCorrectionId: ids.correction,
-					},
+					correction,
 					nowInstant: () => parseInstant(now.toISOString()),
 					captureLegacyState: captureTimeCorrectionLegacyApprovalState,
 				});
@@ -2057,90 +2191,89 @@ describe("time correction transaction boundaries", () => {
 		};
 	}
 
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("starts a %s submission with strict routing and detached private context", async (mode) => {
-		const ids = {
-			period: "21000000-0000-4000-8000-000000000101",
-			requester: "31000000-0000-4000-8000-000000000101",
-			approver: "31000000-0000-4000-8000-000000000102",
-			correction: "61000000-0000-4000-8000-000000000101",
-		};
-		const authority = {
-			mode,
-			behavior: {
-				serveFrom: "canonical" as const,
-				writeLegacy: mode === "canonical",
-				writeCanonical: true,
-				decideCanonical: true,
-				mirror:
-					mode === "canonical"
-						? ("canonical_to_legacy" as const)
-						: ("none" as const),
-			},
-		};
-		let sourceWorkflowId: string | null = null;
-		let persistedSnapshot: ApprovalWorkflowSnapshot | null = null;
-		const execute = vi.fn().mockResolvedValue({ rows: [{ policies: [] }] });
-		const findMany = vi.fn(async () => {
-			if (mode !== "canonical" || !persistedSnapshot) return [];
-			const stage = persistedSnapshot.stages[0];
-			return [
-				{
-					id: "71000000-0000-4000-8000-000000000101",
-					status: "pending",
-					metadata: {
-						workflow: { id: persistedSnapshot.id, organizationId: "org-1" },
-						stage: { id: stage.id, sequence: stage.sequence },
+	it.each(["canonical", "complete"] as const)(
+		"starts a %s submission with strict routing and detached private context",
+		async (mode) => {
+			const ids = {
+				period: "21000000-0000-4000-8000-000000000101",
+				requester: "31000000-0000-4000-8000-000000000101",
+				approver: "31000000-0000-4000-8000-000000000102",
+				correction: "61000000-0000-4000-8000-000000000101",
+			};
+			const authority = {
+				mode,
+				behavior: {
+					serveFrom: "canonical" as const,
+					writeLegacy: mode === "canonical",
+					writeCanonical: true,
+					decideCanonical: true,
+					mirror:
+						mode === "canonical"
+							? ("canonical_to_legacy" as const)
+							: ("none" as const),
+				},
+			};
+			let sourceWorkflowId: string | null = null;
+			let persistedSnapshot: ApprovalWorkflowSnapshot | null = null;
+			const execute = vi.fn().mockResolvedValue({ rows: [{ policies: [] }] });
+			const findMany = vi.fn(async () => {
+				if (mode !== "canonical" || !persistedSnapshot) return [];
+				const stage = persistedSnapshot.stages[0];
+				return [
+					{
+						id: "71000000-0000-4000-8000-000000000101",
+						status: "pending",
+						metadata: {
+							workflow: { id: persistedSnapshot.id, organizationId: "org-1" },
+							stage: { id: stage.id, sequence: stage.sequence },
+						},
+					},
+				];
+			});
+			const db = {
+				execute,
+				query: {
+					approvalRequest: { findMany },
+					approvalWorkflow: {
+						findFirst: vi.fn(async () =>
+							persistedSnapshot
+								? {
+										...persistedSnapshot,
+										submittedAt: new Date(
+											persistedSnapshot.submittedAt.toString(),
+										),
+										completedAt: null,
+										cancelledAt: null,
+									}
+								: null,
+						),
 					},
 				},
-			];
-		});
-		const db = {
-			execute,
-			query: {
-				approvalRequest: { findMany },
-				approvalWorkflow: {
-					findFirst: vi.fn(async () =>
-						persistedSnapshot
-							? {
-									...persistedSnapshot,
-									submittedAt: new Date(
-										persistedSnapshot.submittedAt.toString(),
-									),
-									completedAt: null,
-									cancelledAt: null,
-								}
-							: null,
-					),
-				},
-			},
-			select: vi.fn(() => ({
-				from: vi.fn((table: unknown) => ({
-					where: vi.fn(() => ({
-						for: vi.fn().mockImplementation(async () =>
-							table === employee
-								? [
-										{
-											id: ids.requester,
-											organizationId: "org-1",
-											userId: "user-requester",
-											isActive: true,
-										},
-									]
-								: [
-										{
-											id: ids.period,
-											organizationId: "org-1",
-											employeeId: ids.requester,
-											approvalWorkflowId: sourceWorkflowId,
-										},
-									],
-						),
+				select: vi.fn(() => ({
+					from: vi.fn((table: unknown) => ({
+						where: vi.fn(() => ({
+							for: vi.fn().mockImplementation(async () =>
+								table === employee
+									? [
+											{
+												id: ids.requester,
+												organizationId: "org-1",
+												userId: "user-requester",
+												isActive: true,
+											},
+										]
+									: [
+											{
+												id: ids.period,
+												organizationId: "org-1",
+												employeeId: ids.requester,
+												approvalWorkflowId: sourceWorkflowId,
+											},
+										],
+							),
+						})),
 					})),
 				})),
-			})),
 			update: vi.fn(() => ({
 				set: vi.fn((values: { approvalWorkflowId: string }) => ({
 					where: vi.fn(() => ({
@@ -2159,55 +2292,57 @@ describe("time correction transaction boundaries", () => {
 				})),
 			})),
 		};
-		const acquire = vi.fn().mockResolvedValue(authority);
-		const resolve = vi.fn(
-			async ({ organizationId, workflow, stage, routingContext }) => {
-				expect(Object.keys(routingContext).sort()).toEqual(
-					[
-						"absenceCategoryId",
-						"employeeGroupIds",
-						"locationId",
-						"organizationId",
-						"overtimeRisk",
-						"requesterEmployeeId",
-						"source",
-						"teamIds",
-						"travelExpenseAmount",
-						"workflowType",
-					].sort(),
-				);
-				return {
-					organizationId,
-					workflowId: workflow.id,
-					stageId: stage.id,
-					activationMode: "human",
-					assignments: [{ approverEmployeeId: ids.approver, metadata: {} }],
-				};
-			},
-		);
-		const mirrorCanonicalToLegacy = vi.fn().mockResolvedValue(undefined);
-		const context = {
-			dbService: { db },
-			writeGate: { acquire },
-			repository: {
-				findInitialWorkflow: vi.fn().mockResolvedValue({ kind: "none" }),
-				createInitialWorkflow: vi.fn(async ({ snapshot }) => {
-					persistedSnapshot = snapshot;
-					return { kind: "created", snapshot };
-				}),
-			},
-			activationResolver: { resolve },
-			projectionWriter: { write: vi.fn() },
-			outboxWriter: {
-				write: vi.fn().mockResolvedValue({ kind: "inserted", id: "outbox-1" }),
-			},
-			compatibilityWriter: {
-				withWriteGate() {
-					return this;
+			const acquire = vi.fn().mockResolvedValue(authority);
+			const resolve = vi.fn(
+				async ({ organizationId, workflow, stage, routingContext }) => {
+					expect(Object.keys(routingContext).sort()).toEqual(
+						[
+							"absenceCategoryId",
+							"employeeGroupIds",
+							"locationId",
+							"organizationId",
+							"overtimeRisk",
+							"requesterEmployeeId",
+							"source",
+							"teamIds",
+							"travelExpenseAmount",
+							"workflowType",
+						].sort(),
+					);
+					return {
+						organizationId,
+						workflowId: workflow.id,
+						stageId: stage.id,
+						activationMode: "human",
+						assignments: [{ approverEmployeeId: ids.approver, metadata: {} }],
+					};
 				},
-				mirrorCanonicalToLegacy,
-			},
-		} as never;
+			);
+			const mirrorCanonicalToLegacy = vi.fn().mockResolvedValue(undefined);
+			const context = {
+				dbService: { db },
+				writeGate: { acquire },
+				repository: {
+					findInitialWorkflow: vi.fn().mockResolvedValue({ kind: "none" }),
+					createInitialWorkflow: vi.fn(async ({ snapshot }) => {
+						persistedSnapshot = snapshot;
+						return { kind: "created", snapshot };
+					}),
+				},
+				activationResolver: { resolve },
+				projectionWriter: { write: vi.fn() },
+				outboxWriter: {
+					write: vi
+						.fn()
+						.mockResolvedValue({ kind: "inserted", id: "outbox-1" }),
+				},
+				compatibilityWriter: {
+					withWriteGate() {
+						return this;
+					},
+					mirrorCanonicalToLegacy,
+				},
+			} as never;
 
 		const result = await executeTimeCorrectionSubmissionInTransaction({
 			dbService: { db } as never,
@@ -2266,24 +2401,283 @@ describe("time correction transaction boundaries", () => {
 		);
 	});
 
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("runs one actual requester auto-finalizer for %s submission", async (mode) => {
-		const fixture = canonicalSubmissionHarness({ mode, autoApprove: true });
+	it.each(["canonical", "complete"] as const)(
+		"persists and displays the exact current metadata payload in %s mode",
+		async (mode) => {
+			const fixture = canonicalSubmissionHarness({ mode });
+			const correction = {
+				action: "edit" as const,
+				workLocationType: "home" as const,
+				workCategoryId: null,
+			};
 
-		const result = await fixture.execute();
+			await fixture.execute({ correction });
+			const snapshot = requiredValue([...fixture.snapshots.values()][0]);
 
-		expect(result).toMatchObject({
-			kind: "auto_completed",
-			reason: "requester_is_approver",
-			postCommit: { authority: "canonical", terminal: null },
-		});
-		expect(fixture.acquire).toHaveBeenCalledOnce();
-		expect(fixture.snapshots).toHaveLength(1);
-		expect(fixture.legacyWrites).toHaveLength(mode === "canonical" ? 1 : 0);
-		expect(fixture.terminalFinalizations()).toBe(1);
+			expect(snapshot.contextSnapshot.timeCorrection).toEqual(correction);
+			expect(
+				snapshot.contextSnapshot.timeCorrectionOriginalWorkMetadata,
+			).toEqual({
+				workLocationType: "office",
+				workCategoryId: "71000000-0000-4000-8000-000000000802",
+			});
+			expect(snapshot.displaySnapshot).toMatchObject({
+				displayPayload: {
+					workMetadata: {
+						original: {
+							workLocationType: "office",
+							workCategoryId: "71000000-0000-4000-8000-000000000802",
+						},
+						requested: {
+							workLocationType: "home",
+							workCategoryId: null,
+						},
+					},
+				},
+			});
+			if (mode === "canonical") {
+				expect(fixture.compatibilityRows[0]?.metadata).toMatchObject({
+					timeCorrection: correction,
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: "71000000-0000-4000-8000-000000000802",
+					},
+				});
+			}
+		},
+	);
+
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"persists exact private original work metadata in %s approval evidence",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode);
+			const correction = {
+				action: "edit" as const,
+				workLocationType: "home" as const,
+				workCategoryId: null,
+			};
+
+			await fixture.execute(
+				`${mode}-private-work-metadata`,
+				undefined,
+				correction,
+			);
+
+			expect(fixture.requests[0]?.metadata).toMatchObject({
+				timeCorrection: correction,
+				timeCorrectionOriginalWorkMetadata: {
+					workLocationType: "office",
+					workCategoryId: "71000000-0000-4000-8000-000000000902",
+				},
+			});
+		},
+	);
+
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"rejects parity-preserving stale metadata after %s submission",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode);
+			await fixture.execute(`${mode}-stale-work-metadata`, undefined, {
+				action: "edit",
+				workLocationType: "home",
+				workCategoryId: null,
+			});
+			fixture.driftWorkMetadata("remote");
+			const stale = fixture.durableSnapshot();
+
+			await expect(fixture.decide("approve")).rejects.toThrow(
+				"Time correction source changed during finalization",
+			);
+			expect(fixture.durableSnapshot()).toEqual(stale);
+		},
+	);
+
+	it("replays unchanged current metadata through legacy authority", async () => {
+		const fixture = observedSubmissionHarness("legacy");
+		const correction = {
+			action: "edit" as const,
+			workLocationType: "home" as const,
+			workCategoryId: null,
+		};
+		const first = await fixture.execute(
+			"legacy-current-metadata-replay",
+			undefined,
+			correction,
+		);
+		const durable = fixture.durableSnapshot();
+
+		const replay = await fixture.execute(
+			"legacy-current-metadata-replay",
+			undefined,
+			correction,
+		);
+
+		expect(first.disposition).toBe("executed");
+		expect(replay.disposition).toBe("replayed");
+		expect(fixture.durableSnapshot()).toEqual(durable);
 	});
+
+	it("rejects legacy replay when both work metadata rows drift together", async () => {
+		const fixture = observedSubmissionHarness("legacy");
+		const correction = {
+			action: "edit" as const,
+			workLocationType: "home" as const,
+			workCategoryId: null,
+		};
+		await fixture.execute(
+			"legacy-current-metadata-drift",
+			undefined,
+			correction,
+		);
+		fixture.driftWorkMetadata("remote");
+		const drifted = fixture.durableSnapshot();
+
+		await expect(
+			fixture.execute(
+				"legacy-current-metadata-drift",
+				undefined,
+				correction,
+			),
+		).rejects.toMatchObject({
+			conflictType: "pending_time_correction_approval",
+		});
+		expect(fixture.durableSnapshot()).toEqual(drifted);
+	});
+
+	it.each(["canonical", "complete"] as const)(
+		"rejects parity-preserving stale metadata after %s submission",
+		async (mode) => {
+			const fixture = canonicalSubmissionHarness({ mode });
+			await fixture.execute({
+				correction: {
+					action: "edit",
+					workLocationType: "home",
+					workCategoryId: null,
+				},
+			});
+			fixture.sourceRow.workLocationType = "remote";
+			fixture.canonicalWork.workLocationType = "remote";
+			const stale = fixture.durableSnapshot();
+			const pending = requiredValue([...fixture.snapshots.values()][0]);
+			const target = requiredValue(pending.stages[0]?.assignments[0]);
+
+			await expect(fixture.decide(target.id)).rejects.toThrow();
+			expect(fixture.durableSnapshot()).toEqual(stale);
+		},
+	);
+
+	it.each(["canonical", "complete"] as const)(
+		"auto-completes a zero-entry metadata-only edit once and rejects its stale %s replay",
+		async (mode) => {
+			const fixture = canonicalSubmissionHarness({ mode, autoApprove: true });
+			const correction = {
+				action: "edit" as const,
+				workLocationType: "remote" as const,
+				workCategoryId: null,
+			};
+
+			const first = await fixture.execute({ correction });
+			const writesAfterFirst = fixture.durableSnapshot();
+			await expect(fixture.execute({ correction })).rejects.toMatchObject({
+				conflictType: "pending_time_correction_approval",
+			});
+
+			expect(first).toMatchObject({
+				disposition: "executed",
+				kind: "auto_completed",
+			});
+			expect(fixture.terminalFinalizations()).toBe(1);
+			expect(fixture.sourceRow).toMatchObject({
+				workLocationType: "remote",
+				workCategoryId: null,
+			});
+			expect(fixture.canonicalWork).toMatchObject({
+				workLocationType: "remote",
+				workCategoryId: null,
+			});
+			expect(fixture.durableSnapshot()).toEqual(writesAfterFirst);
+		},
+	);
+
+	it.each(["canonical", "complete"] as const)(
+		"conflicts when %s replay metadata changes",
+		async (mode) => {
+			const fixture = canonicalSubmissionHarness({ mode });
+			await fixture.execute({
+				correction: {
+					action: "edit",
+					workLocationType: "home",
+					workCategoryId: null,
+				},
+			});
+
+			await expect(
+				fixture.execute({
+					correction: {
+						action: "edit",
+						workLocationType: "remote",
+						workCategoryId: null,
+					},
+				}),
+			).rejects.toMatchObject({
+				conflictType: "pending_time_correction_approval",
+			});
+		},
+	);
+
+	it("replays unchanged current metadata through canonical authority", async () => {
+		const fixture = canonicalSubmissionHarness({ mode: "canonical" });
+		const correction = {
+			action: "edit" as const,
+			workLocationType: "home" as const,
+			workCategoryId: null,
+		};
+		const first = await fixture.execute({ correction });
+		const durable = fixture.durableSnapshot();
+
+		const replay = await fixture.execute({ correction });
+
+		expect(first.disposition).toBe("executed");
+		expect(replay.disposition).toBe("replayed");
+		expect(fixture.durableSnapshot()).toEqual(durable);
+	});
+
+	it("rejects canonical replay when both work metadata rows drift together", async () => {
+		const fixture = canonicalSubmissionHarness({ mode: "canonical" });
+		const correction = {
+			action: "edit" as const,
+			workLocationType: "home" as const,
+			workCategoryId: null,
+		};
+		await fixture.execute({ correction });
+		fixture.sourceRow.workLocationType = "remote";
+		fixture.canonicalWork.workLocationType = "remote";
+		const drifted = fixture.durableSnapshot();
+
+		await expect(fixture.execute({ correction })).rejects.toMatchObject({
+			conflictType: "pending_time_correction_approval",
+		});
+		expect(fixture.durableSnapshot()).toEqual(drifted);
+	});
+
+	it.each(["canonical", "complete"] as const)(
+		"runs one actual requester auto-finalizer for %s submission",
+		async (mode) => {
+			const fixture = canonicalSubmissionHarness({ mode, autoApprove: true });
+
+			const result = await fixture.execute();
+
+			expect(result).toMatchObject({
+				kind: "auto_completed",
+				reason: "requester_is_approver",
+				postCommit: { authority: "canonical", terminal: null },
+			});
+			expect(fixture.acquire).toHaveBeenCalledOnce();
+			expect(fixture.snapshots).toHaveLength(1);
+			expect(fixture.legacyWrites).toHaveLength(mode === "canonical" ? 1 : 0);
+			expect(fixture.terminalFinalizations()).toBe(1);
+		},
+	);
 
 	it("uses an actual two-stage policy without a default manager and returns the current stage target", async () => {
 		const fixture = canonicalSubmissionHarness({
@@ -2332,58 +2726,58 @@ describe("time correction transaction boundaries", () => {
 		expect(fixture.legacyWrites).toEqual([]);
 	});
 
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("executes a terminal %s approval through the actual command stack", async (mode) => {
-		const fixture = canonicalSubmissionHarness({ mode });
-		await fixture.execute();
-		const before = requiredValue([...fixture.snapshots.values()][0]);
-		const assignment = requiredValue(before.stages[0]?.assignments[0]);
+	it.each(["canonical", "complete"] as const)(
+		"executes a terminal %s approval through the actual command stack",
+		async (mode) => {
+			const fixture = canonicalSubmissionHarness({ mode });
+			await fixture.execute();
+			const before = requiredValue([...fixture.snapshots.values()][0]);
+			const assignment = requiredValue(before.stages[0]?.assignments[0]);
 
-		const decision = await fixture.decide(assignment.id);
-		const after = requiredValue(fixture.snapshots.get(before.id));
+			const decision = await fixture.decide(assignment.id);
+			const after = requiredValue(fixture.snapshots.get(before.id));
 
-		expect(decision).toMatchObject({
-			kind: "time_correction",
-			commandResult: { snapshot: { id: before.id, status: "approved" } },
-			postCommit: { authority: "canonical", terminal: null },
-		});
-		expect(after.status).toBe("approved");
-		expect(after.version).toBe(before.version + 1);
-		expect(fixture.terminalFinalizations()).toBe(1);
-		expect(fixture.repository.claimCommand).toHaveBeenCalledOnce();
-		expect(fixture.repository.completeCommand).toHaveBeenCalledOnce();
-	});
+			expect(decision).toMatchObject({
+				kind: "time_correction",
+				commandResult: { snapshot: { id: before.id, status: "approved" } },
+				postCommit: { authority: "canonical", terminal: null },
+			});
+			expect(after.status).toBe("approved");
+			expect(after.version).toBe(before.version + 1);
+			expect(fixture.terminalFinalizations()).toBe(1);
+			expect(fixture.repository.claimCommand).toHaveBeenCalledOnce();
+			expect(fixture.repository.completeCommand).toHaveBeenCalledOnce();
+		},
+	);
 
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("executes a terminal %s rejection through the actual command stack", async (mode) => {
-		const fixture = canonicalSubmissionHarness({ mode });
-		await fixture.execute();
-		const before = requiredValue([...fixture.snapshots.values()][0]);
-		const assignment = requiredValue(before.stages[0]?.assignments[0]);
+	it.each(["canonical", "complete"] as const)(
+		"executes a terminal %s rejection through the actual command stack",
+		async (mode) => {
+			const fixture = canonicalSubmissionHarness({ mode });
+			await fixture.execute();
+			const before = requiredValue([...fixture.snapshots.values()][0]);
+			const assignment = requiredValue(before.stages[0]?.assignments[0]);
 
-		const decision = await fixture.decide(
-			assignment.id,
-			"reject",
-			"Correction is not supported by the evidence",
-		);
-		const after = requiredValue(fixture.snapshots.get(before.id));
+			const decision = await fixture.decide(
+				assignment.id,
+				"reject",
+				"Correction is not supported by the evidence",
+			);
+			const after = requiredValue(fixture.snapshots.get(before.id));
 
-		expect(decision.commandResult).toMatchObject({
-			snapshot: {
-				id: before.id,
+			expect(decision.commandResult).toMatchObject({
+				snapshot: {
+					id: before.id,
+					status: "rejected",
+					decisionReason: "Correction is not supported by the evidence",
+				},
+			});
+			expect(after.stages[0]?.assignments[0]).toMatchObject({
 				status: "rejected",
-				decisionReason: "Correction is not supported by the evidence",
-			},
-		});
-		expect(after.stages[0]?.assignments[0]).toMatchObject({
-			status: "rejected",
-		});
-		expect(fixture.repository.completeCommand).toHaveBeenCalledOnce();
-	});
+			});
+			expect(fixture.repository.completeCommand).toHaveBeenCalledOnce();
+		},
+	);
 
 	it.each([
 		"canonical",
@@ -2627,244 +3021,245 @@ describe("time correction transaction boundaries", () => {
 		expect(fixture.repository.completeCommand).toHaveBeenCalledOnce();
 	});
 
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("replays a %s receipt through the trusted production wrapper without effects", async (mode) => {
-		const fixture = canonicalSubmissionHarness({ mode });
-		await fixture.execute();
-		const pending = requiredValue([...fixture.snapshots.values()][0]);
-		const assignment = requiredValue(pending.stages[0]?.assignments[0]);
-		const executed = await fixture.decide(assignment.id);
-		const result = requiredValue(executed.commandResult);
-		const snapshot = result.snapshot;
-		const stage = requiredValue(snapshot.stages[0]);
-		const stableTarget =
-			mode === "canonical"
-				? requiredValue(stage.legacyApprovalRequestId ?? undefined)
-				: assignment.id;
-		let actorFingerprint = "";
-		let commandFingerprint = "";
-		const transactionCommitted = vi.fn();
-		const rootRow = {
-			id: snapshot.id,
-			organization_id: snapshot.organizationId,
-			workflow_type: snapshot.workflowType,
-			source_type: snapshot.sourceType,
-			source_id: snapshot.sourceId,
-			requester_employee_id: snapshot.requesterEmployeeId,
-			status: snapshot.status,
-			current_stage_order: snapshot.currentStageOrder,
-			version: snapshot.version,
-			policy_snapshot: snapshot.policySnapshot,
-			context_snapshot: snapshot.contextSnapshot,
-			display_snapshot: snapshot.displaySnapshot,
-			submitted_at: new Date(snapshot.submittedAt.toString()),
-			completed_at: snapshot.completedAt
-				? new Date(snapshot.completedAt.toString())
-				: null,
-			cancelled_at: snapshot.cancelledAt
-				? new Date(snapshot.cancelledAt.toString())
-				: null,
-			decision_reason: snapshot.decisionReason,
-		};
-		const stageRows = snapshot.stages.map((item) => ({
-			id: item.id,
-			organization_id: item.organizationId,
-			workflow_id: item.workflowId,
-			stage_order: item.sequence,
-			label: item.label,
-			resolver_snapshot: item.resolverSnapshot,
-			activation_mode: item.activationMode,
-			status: item.status,
-			activated_at: item.activatedAt
-				? new Date(item.activatedAt.toString())
-				: null,
-			decided_at: item.decidedAt ? new Date(item.decidedAt.toString()) : null,
-			decision_reason: item.decisionReason,
-			legacy_approval_request_id: item.legacyApprovalRequestId,
-		}));
-		const assignmentRows = snapshot.stages.flatMap((item) =>
-			item.assignments.map((child) => ({
-				id: child.id,
-				organization_id: child.organizationId,
-				workflow_id: child.workflowId,
-				stage_id: child.stageId,
-				assignment_sequence: child.sequence,
-				approver_employee_id: child.approverEmployeeId,
-				status: child.status,
-				assigned_at: new Date(child.assignedAt.toString()),
-				resolved_at: child.resolvedAt
-					? new Date(child.resolvedAt.toString())
+	it.each(["canonical", "complete"] as const)(
+		"replays a %s receipt through the trusted production wrapper without effects",
+		async (mode) => {
+			const fixture = canonicalSubmissionHarness({ mode });
+			await fixture.execute();
+			const pending = requiredValue([...fixture.snapshots.values()][0]);
+			const assignment = requiredValue(pending.stages[0]?.assignments[0]);
+			const executed = await fixture.decide(assignment.id);
+			const result = requiredValue(executed.commandResult);
+			const snapshot = result.snapshot;
+			const stage = requiredValue(snapshot.stages[0]);
+			const stableTarget =
+				mode === "canonical"
+					? requiredValue(stage.legacyApprovalRequestId ?? undefined)
+					: assignment.id;
+			let actorFingerprint = "";
+			let commandFingerprint = "";
+			const transactionCommitted = vi.fn();
+			const rootRow = {
+				id: snapshot.id,
+				organization_id: snapshot.organizationId,
+				workflow_type: snapshot.workflowType,
+				source_type: snapshot.sourceType,
+				source_id: snapshot.sourceId,
+				requester_employee_id: snapshot.requesterEmployeeId,
+				status: snapshot.status,
+				current_stage_order: snapshot.currentStageOrder,
+				version: snapshot.version,
+				policy_snapshot: snapshot.policySnapshot,
+				context_snapshot: snapshot.contextSnapshot,
+				display_snapshot: snapshot.displaySnapshot,
+				submitted_at: new Date(snapshot.submittedAt.toString()),
+				completed_at: snapshot.completedAt
+					? new Date(snapshot.completedAt.toString())
 					: null,
-				resolved_by_actor_kind: child.resolvedBy?.kind ?? null,
-				resolved_by_actor_id:
-					child.resolvedBy?.kind === "employee"
-						? child.resolvedBy.employeeId
-						: child.resolvedBy?.kind === "system"
-							? child.resolvedBy.systemId
-							: null,
-				reassigned_by_employee_id: child.reassignedByEmployeeId,
-				reassigned_from_assignment_id: child.reassignedFromAssignmentId,
-				reassignment_metadata: child.reassignmentMetadata,
-			})),
-		);
-		const db = {
-			execute: vi.fn(async (statement: SQL) => {
-				const compiled = new PgDialect().sqlToQuery(statement);
-				if (/approval_workflow_rollout/i.test(compiled.sql)) {
-					return { rows: [{ lifecycle_mode: mode }] };
-				}
-				if (/insert into approval_workflow_command/i.test(compiled.sql)) {
-					actorFingerprint = String(compiled.params[3]);
-					commandFingerprint = String(compiled.params[4]);
+				cancelled_at: snapshot.cancelledAt
+					? new Date(snapshot.cancelledAt.toString())
+					: null,
+				decision_reason: snapshot.decisionReason,
+			};
+			const stageRows = snapshot.stages.map((item) => ({
+				id: item.id,
+				organization_id: item.organizationId,
+				workflow_id: item.workflowId,
+				stage_order: item.sequence,
+				label: item.label,
+				resolver_snapshot: item.resolverSnapshot,
+				activation_mode: item.activationMode,
+				status: item.status,
+				activated_at: item.activatedAt
+					? new Date(item.activatedAt.toString())
+					: null,
+				decided_at: item.decidedAt ? new Date(item.decidedAt.toString()) : null,
+				decision_reason: item.decisionReason,
+				legacy_approval_request_id: item.legacyApprovalRequestId,
+			}));
+			const assignmentRows = snapshot.stages.flatMap((item) =>
+				item.assignments.map((child) => ({
+					id: child.id,
+					organization_id: child.organizationId,
+					workflow_id: child.workflowId,
+					stage_id: child.stageId,
+					assignment_sequence: child.sequence,
+					approver_employee_id: child.approverEmployeeId,
+					status: child.status,
+					assigned_at: new Date(child.assignedAt.toString()),
+					resolved_at: child.resolvedAt
+						? new Date(child.resolvedAt.toString())
+						: null,
+					resolved_by_actor_kind: child.resolvedBy?.kind ?? null,
+					resolved_by_actor_id:
+						child.resolvedBy?.kind === "employee"
+							? child.resolvedBy.employeeId
+							: child.resolvedBy?.kind === "system"
+								? child.resolvedBy.systemId
+								: null,
+					reassigned_by_employee_id: child.reassignedByEmployeeId,
+					reassigned_from_assignment_id: child.reassignedFromAssignmentId,
+					reassignment_metadata: child.reassignmentMetadata,
+				})),
+			);
+			const db = {
+				execute: vi.fn(async (statement: SQL) => {
+					const compiled = new PgDialect().sqlToQuery(statement);
+					if (/approval_workflow_rollout/i.test(compiled.sql)) {
+						return { rows: [{ lifecycle_mode: mode }] };
+					}
+					if (/insert into approval_workflow_command/i.test(compiled.sql)) {
+						actorFingerprint = String(compiled.params[3]);
+						commandFingerprint = String(compiled.params[4]);
+						return { rows: [] };
+					}
+					if (/from approval_workflow_command/i.test(compiled.sql)) {
+						return {
+							rows: [
+								{
+									actor_fingerprint: actorFingerprint,
+									command_fingerprint: commandFingerprint,
+									state: "completed",
+									result: encodeApprovalCommandResult(result),
+								},
+							],
+						};
+					}
+					if (/from approval_workflow_stage/i.test(compiled.sql)) {
+						return { rows: stageRows };
+					}
+					if (/from approval_stage_assignment/i.test(compiled.sql)) {
+						return { rows: assignmentRows };
+					}
+					if (/from approval_workflow\b/i.test(compiled.sql)) {
+						return { rows: [rootRow] };
+					}
+					if (/from employee/i.test(compiled.sql)) {
+						return {
+							rows: [
+								{
+									id: fixture.ids.manager,
+									organization_id: "org-1",
+									user_id: "user-manager",
+								},
+							],
+						};
+					}
+					if (/from member/i.test(compiled.sql)) {
+						return {
+							rows: [
+								{
+									organization_id: "org-1",
+									user_id: "user-manager",
+									status: "approved",
+								},
+							],
+						};
+					}
 					return { rows: [] };
-				}
-				if (/from approval_workflow_command/i.test(compiled.sql)) {
-					return {
-						rows: [
-							{
-								actor_fingerprint: actorFingerprint,
-								command_fingerprint: commandFingerprint,
-								state: "completed",
-								result: encodeApprovalCommandResult(result),
-							},
-						],
-					};
-				}
-				if (/from approval_workflow_stage/i.test(compiled.sql)) {
-					return { rows: stageRows };
-				}
-				if (/from approval_stage_assignment/i.test(compiled.sql)) {
-					return { rows: assignmentRows };
-				}
-				if (/from approval_workflow\b/i.test(compiled.sql)) {
-					return { rows: [rootRow] };
-				}
-				if (/from employee/i.test(compiled.sql)) {
-					return {
-						rows: [
+				}),
+				query: {
+					employee: {
+						findMany: vi.fn().mockResolvedValue([
 							{
 								id: fixture.ids.manager,
-								organization_id: "org-1",
-								user_id: "user-manager",
+								organizationId: "org-1",
+								userId: "user-manager",
+								isActive: true,
+								user: { id: "user-manager" },
 							},
-						],
-					};
-				}
-				if (/from member/i.test(compiled.sql)) {
-					return {
-						rows: [
+						]),
+					},
+					member: {
+						findMany: vi.fn().mockResolvedValue([
 							{
-								organization_id: "org-1",
-								user_id: "user-manager",
+								organizationId: "org-1",
+								userId: "user-manager",
 								status: "approved",
 							},
-						],
-					};
-				}
-				return { rows: [] };
-			}),
-			query: {
-				employee: {
-					findMany: vi.fn().mockResolvedValue([
-						{
-							id: fixture.ids.manager,
-							organizationId: "org-1",
-							userId: "user-manager",
-							isActive: true,
-							user: { id: "user-manager" },
-						},
-					]),
-				},
-				member: {
-					findMany: vi.fn().mockResolvedValue([
-						{
-							organizationId: "org-1",
-							userId: "user-manager",
-							status: "approved",
-						},
-					]),
-				},
-				approvalRequest: {
-					findFirst: vi.fn().mockResolvedValue(
-						mode === "canonical"
-							? {
-									id: stableTarget,
-									organizationId: "org-1",
-									entityType: "time_entry",
-									entityId: fixture.ids.period,
-									requestedBy: fixture.ids.requester,
-									approverId: assignment.approverEmployeeId,
-									status: "approved",
-									metadata: {
-										workflow: {
-											id: snapshot.id,
-											organizationId: snapshot.organizationId,
+						]),
+					},
+					approvalRequest: {
+						findFirst: vi.fn().mockResolvedValue(
+							mode === "canonical"
+								? {
+										id: stableTarget,
+										organizationId: "org-1",
+										entityType: "time_entry",
+										entityId: fixture.ids.period,
+										requestedBy: fixture.ids.requester,
+										approverId: assignment.approverEmployeeId,
+										status: "approved",
+										metadata: {
+											workflow: {
+												id: snapshot.id,
+												organizationId: snapshot.organizationId,
+											},
+											stage: {
+												id: stage.id,
+												sequence: stage.sequence,
+												assignmentId: assignment.id,
+											},
+											timeCorrection: snapshot.contextSnapshot.timeCorrection,
+											submission: snapshot.contextSnapshot.submission,
 										},
-										stage: {
-											id: stage.id,
-											sequence: stage.sequence,
-											assignmentId: assignment.id,
-										},
-										timeCorrection: snapshot.contextSnapshot.timeCorrection,
-										submission: snapshot.contextSnapshot.submission,
-									},
-									reason: null,
-								}
-							: null,
-					),
+										reason: null,
+									}
+								: null,
+						),
+					},
+					approvalStageAssignment: {
+						findFirst: vi.fn().mockResolvedValue({
+							id: assignment.id,
+							workflowId: snapshot.id,
+							stageId: stage.id,
+						}),
+					},
+					approvalWorkflowStage: {
+						findFirst: vi
+							.fn()
+							.mockResolvedValue({ id: stage.id, workflowId: snapshot.id }),
+					},
+					approvalWorkflow: {
+						findFirst: vi.fn().mockResolvedValue({
+							id: snapshot.id,
+							organizationId: snapshot.organizationId,
+							workflowType: snapshot.workflowType,
+							sourceType: snapshot.sourceType,
+							sourceId: snapshot.sourceId,
+							requesterEmployeeId: snapshot.requesterEmployeeId,
+							status: snapshot.status,
+							contextSnapshot: snapshot.contextSnapshot,
+						}),
+					},
+					workPeriod: {
+						findFirst: vi.fn().mockResolvedValue({
+							id: fixture.ids.period,
+							organizationId: "org-1",
+							employeeId: fixture.ids.requester,
+							pendingChanges: null,
+							clockInId: fixture.ids.correction,
+							clockOutId: null,
+							approvalWorkflowId: snapshot.id,
+						}),
+					},
+					timeEntry: {
+						findMany: vi
+							.fn()
+							.mockResolvedValue([{ id: fixture.ids.correction }]),
+					},
 				},
-				approvalStageAssignment: {
-					findFirst: vi.fn().mockResolvedValue({
-						id: assignment.id,
-						workflowId: snapshot.id,
-						stageId: stage.id,
-					}),
+				transaction: async <T>(
+					operation: (transactionDb: unknown) => Promise<T>,
+				) => {
+					const value = await operation(db);
+					transactionCommitted();
+					return value;
 				},
-				approvalWorkflowStage: {
-					findFirst: vi
-						.fn()
-						.mockResolvedValue({ id: stage.id, workflowId: snapshot.id }),
-				},
-				approvalWorkflow: {
-					findFirst: vi.fn().mockResolvedValue({
-						id: snapshot.id,
-						organizationId: snapshot.organizationId,
-						workflowType: snapshot.workflowType,
-						sourceType: snapshot.sourceType,
-						sourceId: snapshot.sourceId,
-						requesterEmployeeId: snapshot.requesterEmployeeId,
-						status: snapshot.status,
-						contextSnapshot: snapshot.contextSnapshot,
-					}),
-				},
-				workPeriod: {
-					findFirst: vi.fn().mockResolvedValue({
-						id: fixture.ids.period,
-						organizationId: "org-1",
-						employeeId: fixture.ids.requester,
-						pendingChanges: null,
-						clockInId: fixture.ids.correction,
-						clockOutId: null,
-						approvalWorkflowId: snapshot.id,
-					}),
-				},
-				timeEntry: {
-					findMany: vi.fn().mockResolvedValue([{ id: fixture.ids.correction }]),
-				},
-			},
-			transaction: async <T>(
-				operation: (transactionDb: unknown) => Promise<T>,
-			) => {
-				const value = await operation(db);
-				transactionCommitted();
-				return value;
-			},
-		};
-		markEmployeeWorkBalanceDirty.mockClear();
-		onTimeCorrectionApproved.mockClear();
-		onTimeCorrectionRejected.mockClear();
+			};
+			markEmployeeWorkBalanceDirty.mockClear();
+			onTimeCorrectionApproved.mockClear();
+			onTimeCorrectionRejected.mockClear();
 
 		await Effect.runPromise(
 			decideTimeCorrectionWithStableTargetEffect(
@@ -2990,34 +3385,34 @@ describe("time correction transaction boundaries", () => {
 		expect(fixture.terminalFinalizations()).toBe(1);
 	});
 
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("replays the exact %s pending workflow without duplicate durable writes", async (mode) => {
-		const fixture = canonicalSubmissionHarness({ mode });
-		const first = await fixture.execute();
-		const durable = {
-			creates: vi.mocked(fixture.repository.createInitialWorkflow).mock.calls
-				.length,
-			projections: fixture.projections.length,
-			outbox: fixture.outbox.length,
-			legacy: fixture.legacyWrites.length,
-		};
+	it.each(["canonical", "complete"] as const)(
+		"replays the exact %s pending workflow without duplicate durable writes",
+		async (mode) => {
+			const fixture = canonicalSubmissionHarness({ mode });
+			const first = await fixture.execute();
+			const durable = {
+				creates: vi.mocked(fixture.repository.createInitialWorkflow).mock.calls
+					.length,
+				projections: fixture.projections.length,
+				outbox: fixture.outbox.length,
+				legacy: fixture.legacyWrites.length,
+			};
 
-		const replay = await fixture.execute();
+			const replay = await fixture.execute();
 
-		expect(first.disposition).toBe("executed");
-		expect(replay.disposition).toBe("replayed");
-		expect(replay.approvalRequestId).toBe(first.approvalRequestId);
-		expect({
-			creates: vi.mocked(fixture.repository.createInitialWorkflow).mock.calls
-				.length,
-			projections: fixture.projections.length,
-			outbox: fixture.outbox.length,
-			legacy: fixture.legacyWrites.length,
-		}).toEqual(durable);
-		expect(fixture.acquire).toHaveBeenCalledTimes(2);
-	});
+			expect(first.disposition).toBe("executed");
+			expect(replay.disposition).toBe("replayed");
+			expect(replay.approvalRequestId).toBe(first.approvalRequestId);
+			expect({
+				creates: vi.mocked(fixture.repository.createInitialWorkflow).mock.calls
+					.length,
+				projections: fixture.projections.length,
+				outbox: fixture.outbox.length,
+				legacy: fixture.legacyWrites.length,
+			}).toEqual(durable);
+			expect(fixture.acquire).toHaveBeenCalledTimes(2);
+		},
+	);
 
 	it("rejects a different canonical payload while another cycle is pending", async () => {
 		const fixture = canonicalSubmissionHarness({ mode: "canonical" });
@@ -3163,117 +3558,118 @@ describe("time correction transaction boundaries", () => {
 		["compatibility", "legacyWriteCount"],
 		["projection", "projectionCount"],
 		["outbox", "outboxCount"],
-	] as const)("restores the full canonical decision state after %s failure with changed evidence", async (point, evidenceKey) => {
-		const fixture = canonicalSubmissionHarness({ mode: "canonical" });
-		await fixture.execute();
-		const pending = requiredValue([...fixture.snapshots.values()][0]);
-		const target = requiredValue(pending.stages[0]?.assignments[0]);
-		const before = fixture.durableSnapshot();
-		fixture.injectFailure(point);
+	] as const)(
+		"restores the full canonical decision state after %s failure with changed evidence",
+		async (point, evidenceKey) => {
+			const fixture = canonicalSubmissionHarness({ mode: "canonical" });
+			await fixture.execute();
+			const pending = requiredValue([...fixture.snapshots.values()][0]);
+			const target = requiredValue(pending.stages[0]?.assignments[0]);
+			const before = fixture.durableSnapshot();
+			fixture.injectFailure(point);
 
-		await expect(fixture.decide(target.id)).rejects.toThrow(
-			`injected:${point}`,
-		);
+			await expect(fixture.decide(target.id)).rejects.toThrow(
+				`injected:${point}`,
+			);
 
-		const evidence = requiredValue(fixture.failureEvidence() ?? undefined);
-		expect(evidence[evidenceKey]).toBeTruthy();
-		expect(evidence.state).not.toEqual(before);
-		expect(fixture.durableSnapshot()).toEqual(before);
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
-		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
-		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
-	});
+			const evidence = requiredValue(fixture.failureEvidence() ?? undefined);
+			expect(evidence[evidenceKey]).toBeTruthy();
+			expect(evidence.state).not.toEqual(before);
+			expect(fixture.durableSnapshot()).toEqual(before);
+			expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+			expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
+			expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
+		},
+	);
 
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("commits the expected full %s submission and decision state control", async (mode) => {
-		const fixture = canonicalSubmissionHarness({ mode });
-		const empty = fixture.durableSnapshot();
-		await fixture.transaction(() => fixture.execute());
-		const submitted = fixture.durableSnapshot();
-		expect(submitted).not.toEqual(empty);
-		expect(fixture.snapshots.size).toBe(1);
-		expect(fixture.canonicalEvents.length).toBeGreaterThan(0);
-		expect(fixture.projections.length).toBeGreaterThan(0);
-		expect(fixture.outbox.length).toBeGreaterThan(0);
-		const pending = requiredValue([...fixture.snapshots.values()][0]);
-		const target = requiredValue(pending.stages[0]?.assignments[0]);
+	it.each(["canonical", "complete"] as const)(
+		"commits the expected full %s submission and decision state control",
+		async (mode) => {
+			const fixture = canonicalSubmissionHarness({ mode });
+			const empty = fixture.durableSnapshot();
+			await fixture.transaction(() => fixture.execute());
+			const submitted = fixture.durableSnapshot();
+			expect(submitted).not.toEqual(empty);
+			expect(fixture.snapshots.size).toBe(1);
+			expect(fixture.canonicalEvents.length).toBeGreaterThan(0);
+			expect(fixture.projections.length).toBeGreaterThan(0);
+			expect(fixture.outbox.length).toBeGreaterThan(0);
+			const pending = requiredValue([...fixture.snapshots.values()][0]);
+			const target = requiredValue(pending.stages[0]?.assignments[0]);
 
-		await fixture.decide(target.id);
+			await fixture.decide(target.id);
 
-		expect(fixture.durableSnapshot()).not.toEqual(submitted);
-		expect(requiredValue(fixture.snapshots.get(pending.id)).status).toBe(
-			"approved",
-		);
-		expect(fixture.terminalFinalizations()).toBe(1);
-	});
+			expect(fixture.durableSnapshot()).not.toEqual(submitted);
+			expect(requiredValue(fixture.snapshots.get(pending.id)).status).toBe(
+				"approved",
+			);
+			expect(fixture.terminalFinalizations()).toBe(1);
+		},
+	);
 
-	it.each([
-		"legacy",
-		"shadow",
-		"ready",
-	] as const)("replays the original pending %s submission after actual terminal rejection without writes", async (mode) => {
-		const fixture = observedSubmissionHarness(mode);
-		const key = `${mode}-rejected-replay`;
-		const submitted = await fixture.transaction(() => fixture.execute(key));
-		await fixture.decide("reject", "Rejected by manager");
-		const beforeReplay = fixture.durableSnapshot();
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"replays the original pending %s submission after actual terminal rejection without writes",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode);
+			const key = `${mode}-rejected-replay`;
+			const submitted = await fixture.transaction(() => fixture.execute(key));
+			await fixture.decide("reject", "Rejected by manager");
+			const beforeReplay = fixture.durableSnapshot();
 
-		const replay = await fixture.transaction(() => fixture.execute(key));
+			const replay = await fixture.transaction(() => fixture.execute(key));
 
-		expect(replay).toMatchObject({
-			kind: submitted.kind,
-			approvalRequestId: submitted.approvalRequestId,
-			postCommit: { terminal: null },
-		});
-		expect(fixture.durableSnapshot()).toEqual(beforeReplay);
-	});
+			expect(replay).toMatchObject({
+				kind: submitted.kind,
+				approvalRequestId: submitted.approvalRequestId,
+				postCommit: { terminal: null },
+			});
+			expect(fixture.durableSnapshot()).toEqual(beforeReplay);
+		},
+	);
 
-	it.each([
-		"legacy",
-		"shadow",
-		"ready",
-	] as const)("rejects a changed business submission bound to the same %s cycle token", async (mode) => {
-		const fixture = observedSubmissionHarness(mode);
-		const submissionId = "41000000-0000-4000-8000-000000000099";
-		await fixture.transaction(() =>
-			fixture.execute(`${mode}-business-evidence-1`, submissionId),
-		);
-		const beforeConflict = fixture.durableSnapshot();
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"rejects a changed business submission bound to the same %s cycle token",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode);
+			const submissionId = "41000000-0000-4000-8000-000000000099";
+			await fixture.transaction(() =>
+				fixture.execute(`${mode}-business-evidence-1`, submissionId),
+			);
+			const beforeConflict = fixture.durableSnapshot();
 
-		await expect(
-			fixture.transaction(() =>
-				fixture.execute(`${mode}-business-evidence-2`, submissionId),
-			),
-		).rejects.toBeInstanceOf(ConflictError);
-		expect(fixture.durableSnapshot()).toEqual(beforeConflict);
-	});
+			await expect(
+				fixture.transaction(() =>
+					fixture.execute(`${mode}-business-evidence-2`, submissionId),
+				),
+			).rejects.toBeInstanceOf(ConflictError);
+			expect(fixture.durableSnapshot()).toEqual(beforeConflict);
+		},
+	);
 
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("rejects a changed business submission bound to the same %s cycle token", async (mode) => {
-		const fixture = canonicalSubmissionHarness({ mode });
-		const submissionId = "41000000-0000-4000-8000-000000000099";
-		await fixture.transaction(() =>
-			fixture.execute({
-				submissionKey: `${mode}-business-evidence-1`,
-				submissionId,
-			}),
-		);
-		const beforeConflict = fixture.durableSnapshot();
-
-		await expect(
-			fixture.transaction(() =>
+	it.each(["canonical", "complete"] as const)(
+		"rejects a changed business submission bound to the same %s cycle token",
+		async (mode) => {
+			const fixture = canonicalSubmissionHarness({ mode });
+			const submissionId = "41000000-0000-4000-8000-000000000099";
+			await fixture.transaction(() =>
 				fixture.execute({
-					submissionKey: `${mode}-business-evidence-2`,
+					submissionKey: `${mode}-business-evidence-1`,
 					submissionId,
 				}),
-			),
-		).rejects.toBeInstanceOf(ConflictError);
-		expect(fixture.durableSnapshot()).toEqual(beforeConflict);
-	});
+			);
+			const beforeConflict = fixture.durableSnapshot();
+
+			await expect(
+				fixture.transaction(() =>
+					fixture.execute({
+						submissionKey: `${mode}-business-evidence-2`,
+						submissionId,
+					}),
+				),
+			).rejects.toBeInstanceOf(ConflictError);
+			expect(fixture.durableSnapshot()).toEqual(beforeConflict);
+		},
+	);
 
 	it.each([
 		"canonical",
@@ -3340,55 +3736,51 @@ describe("time correction transaction boundaries", () => {
 		expect(fixture.requests).toHaveLength(2);
 	});
 
-	it.each([
-		"legacy",
-		"shadow",
-		"ready",
-	] as const)("replays %s chain semantics from a strict cancelled submission tombstone", async (mode) => {
-		const fixture = observedSubmissionHarness(mode);
-		const submissionKey = `${mode}-cancelled-chain-submission`;
-		const first = await fixture.execute(submissionKey);
-		const request = requiredValue(fixture.requests[0]);
-		const chainId = "91000000-0000-4000-8000-000000000909";
-		const cancelledAt = new Date("2026-07-20T12:00:00.000Z");
-		request.status = "rejected";
-		request.rejectionReason = null;
-		request.approvedAt = cancelledAt;
-		request.metadata = {
-			...(request.metadata as Record<string, unknown>),
-			submission: {
-				...((request.metadata as Record<string, unknown>).submission as Record<
-					string,
-					unknown
-				>),
-				resultKind: "chain_created",
-			},
-			cancellation: {
-				kind: "requester",
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"replays %s chain semantics from a strict cancelled submission tombstone",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode);
+			const submissionKey = `${mode}-cancelled-chain-submission`;
+			const first = await fixture.execute(submissionKey);
+			const request = requiredValue(fixture.requests[0]);
+			const chainId = "91000000-0000-4000-8000-000000000909";
+			const cancelledAt = new Date("2026-07-20T12:00:00.000Z");
+			request.status = "rejected";
+			request.rejectionReason = null;
+			request.approvedAt = cancelledAt;
+			request.metadata = {
+				...(request.metadata as Record<string, unknown>),
+				submission: {
+					...((request.metadata as Record<string, unknown>)
+						.submission as Record<string, unknown>),
+					resultKind: "chain_created",
+				},
+				cancellation: {
+					kind: "requester",
+					organizationId: "org-1",
+					requesterEmployeeId: fixture.ids.requester,
+					requesterUserId: "user-requester",
+					workPeriodId: fixture.ids.period,
+					chainInstanceId: chainId,
+					cancelledAt: cancelledAt.toISOString(),
+				},
+			};
+			fixture.chains.push({
+				id: chainId,
 				organizationId: "org-1",
+				entityType: "time_entry",
+				entityId: fixture.ids.period,
 				requesterEmployeeId: fixture.ids.requester,
-				requesterUserId: "user-requester",
-				workPeriodId: fixture.ids.period,
+				status: "cancelled",
+				createdAt: cancelledAt,
+			});
+			fixture.chainRows.push({
+				id: "92000000-0000-4000-8000-000000000909",
+				organizationId: "org-1",
 				chainInstanceId: chainId,
-				cancelledAt: cancelledAt.toISOString(),
-			},
-		};
-		fixture.chains.push({
-			id: chainId,
-			organizationId: "org-1",
-			entityType: "time_entry",
-			entityId: fixture.ids.period,
-			requesterEmployeeId: fixture.ids.requester,
-			status: "cancelled",
-			createdAt: cancelledAt,
-		});
-		fixture.chainRows.push({
-			id: "92000000-0000-4000-8000-000000000909",
-			organizationId: "org-1",
-			chainInstanceId: chainId,
-			status: "cancelled",
-			approvalRequestId: null,
-		});
+				status: "cancelled",
+				approvalRequestId: null,
+			});
 
 		const replay = await fixture.execute(submissionKey);
 
@@ -3428,67 +3820,65 @@ describe("time correction transaction boundaries", () => {
 		expect(fixture.snapshots.size).toBe(2);
 	});
 
-	it.each([
-		"legacy",
-		"shadow",
-		"ready",
-	] as const)("keeps original pending semantics when replaying a manager-approved %s submission", async (mode) => {
-		const fixture = observedSubmissionHarness(mode);
-		const key = `${mode}-manager-approved-replay`;
-		const submitted = await fixture.transaction(() => fixture.execute(key));
-		await fixture.decide("approve");
-		const beforeReplay = fixture.durableSnapshot();
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"keeps original pending semantics when replaying a manager-approved %s submission",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode);
+			const key = `${mode}-manager-approved-replay`;
+			const submitted = await fixture.transaction(() => fixture.execute(key));
+			await fixture.decide("approve");
+			const beforeReplay = fixture.durableSnapshot();
 
-		const replay = await fixture.transaction(() => fixture.execute(key));
+			const replay = await fixture.transaction(() => fixture.execute(key));
 
-		expect(replay.kind).toBe(submitted.kind);
-		expect(replay).not.toHaveProperty("autoCompletion");
-		expect(fixture.durableSnapshot()).toEqual(beforeReplay);
-	});
+			expect(replay.kind).toBe(submitted.kind);
+			expect(replay).not.toHaveProperty("autoCompletion");
+			expect(fixture.durableSnapshot()).toEqual(beforeReplay);
+		},
+	);
 
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("keeps original pending semantics when replaying a manager-approved %s submission", async (mode) => {
-		const fixture = canonicalSubmissionHarness({ mode });
-		const key = `${mode}-manager-approved-replay`;
-		const submitted = await fixture.transaction(() =>
-			fixture.execute({ submissionKey: key }),
-		);
-		const pending = requiredValue([...fixture.snapshots.values()][0]);
-		const target = requiredValue(pending.stages[0]?.assignments[0]);
-		await fixture.decide(target.id);
-		const beforeReplay = fixture.durableSnapshot();
+	it.each(["canonical", "complete"] as const)(
+		"keeps original pending semantics when replaying a manager-approved %s submission",
+		async (mode) => {
+			const fixture = canonicalSubmissionHarness({ mode });
+			const key = `${mode}-manager-approved-replay`;
+			const submitted = await fixture.transaction(() =>
+				fixture.execute({ submissionKey: key }),
+			);
+			const pending = requiredValue([...fixture.snapshots.values()][0]);
+			const target = requiredValue(pending.stages[0]?.assignments[0]);
+			await fixture.decide(target.id);
+			const beforeReplay = fixture.durableSnapshot();
 
-		const replay = await fixture.transaction(() =>
-			fixture.execute({ submissionKey: key }),
-		);
+			const replay = await fixture.transaction(() =>
+				fixture.execute({ submissionKey: key }),
+			);
 
-		expect(replay.kind).toBe(submitted.kind);
-		expect(replay).not.toHaveProperty("autoCompletion");
-		expect(fixture.durableSnapshot()).toEqual(beforeReplay);
-	});
+			expect(replay.kind).toBe(submitted.kind);
+			expect(replay).not.toHaveProperty("autoCompletion");
+			expect(fixture.durableSnapshot()).toEqual(beforeReplay);
+		},
+	);
 
-	it.each([
-		"legacy",
-		"shadow",
-		"ready",
-	] as const)("keeps requester auto-completed semantics on exact %s replay", async (mode) => {
-		const fixture = observedSubmissionHarness(mode, true);
-		const key = `${mode}-auto-replay`;
-		const submitted = await fixture.transaction(() => fixture.execute(key));
-		const beforeReplay = fixture.durableSnapshot();
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"keeps requester auto-completed semantics on exact %s replay",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode, true);
+			const key = `${mode}-auto-replay`;
+			const submitted = await fixture.transaction(() => fixture.execute(key));
+			const beforeReplay = fixture.durableSnapshot();
 
-		const replay = await fixture.transaction(() => fixture.execute(key));
+			const replay = await fixture.transaction(() => fixture.execute(key));
 
-		expect(submitted.kind).toBe("auto_completed");
-		expect(replay).toMatchObject({
-			kind: "auto_completed",
-			reason: "requester_is_approver",
-			postCommit: { terminal: null },
-		});
-		expect(fixture.durableSnapshot()).toEqual(beforeReplay);
-	});
+			expect(submitted.kind).toBe("auto_completed");
+			expect(replay).toMatchObject({
+				kind: "auto_completed",
+				reason: "requester_is_approver",
+				postCommit: { terminal: null },
+			});
+			expect(fixture.durableSnapshot()).toEqual(beforeReplay);
+		},
+	);
 
 	it.each([
 		"canonical",
@@ -3663,52 +4053,52 @@ describe("time correction transaction boundaries", () => {
 				] as const
 			).map((shape) => ({ mode, shape })),
 		),
-	)("fails closed on historical $mode key-only replay with $shape autoApproval", async ({
-		mode,
-		shape,
-	}) => {
-		const fixture = observedSubmissionHarness(mode);
-		const key = `${mode}-historical-${shape}`;
-		await fixture.transaction(() => fixture.execute(key));
-		const request = requiredValue(fixture.requests[0]);
-		request.metadata = {
-			...(request.metadata as Record<string, unknown>),
-			submission: { key },
-			autoApproval: malformedHistoricalAutoApproval(shape),
-		};
-		const before = {
-			requests: fixture.requests.length,
-			workflows: fixture.workflows.size,
-			events: fixture.observedEvents.length,
-			projections: fixture.projections.length,
-			outbox: fixture.outbox.length,
-			finalizers: fixture.terminalFinalizations(),
-			dirty: markEmployeeWorkBalanceDirty.mock.calls.length,
-			approved: onTimeCorrectionApproved.mock.calls.length,
-			rejected: onTimeCorrectionRejected.mock.calls.length,
-		};
+	)(
+		"fails closed on historical $mode key-only replay with $shape autoApproval",
+		async ({ mode, shape }) => {
+			const fixture = observedSubmissionHarness(mode);
+			const key = `${mode}-historical-${shape}`;
+			await fixture.transaction(() => fixture.execute(key));
+			const request = requiredValue(fixture.requests[0]);
+			request.metadata = {
+				...(request.metadata as Record<string, unknown>),
+				submission: { key },
+				autoApproval: malformedHistoricalAutoApproval(shape),
+			};
+			const before = {
+				requests: fixture.requests.length,
+				workflows: fixture.workflows.size,
+				events: fixture.observedEvents.length,
+				projections: fixture.projections.length,
+				outbox: fixture.outbox.length,
+				finalizers: fixture.terminalFinalizations(),
+				dirty: markEmployeeWorkBalanceDirty.mock.calls.length,
+				approved: onTimeCorrectionApproved.mock.calls.length,
+				rejected: onTimeCorrectionRejected.mock.calls.length,
+			};
 
-		await expect(fixture.execute(key)).rejects.toBeInstanceOf(ConflictError);
+			await expect(fixture.execute(key)).rejects.toBeInstanceOf(ConflictError);
 
-		expect({
-			requests: fixture.requests.length,
-			workflows: fixture.workflows.size,
-			events: fixture.observedEvents.length,
-			projections: fixture.projections.length,
-			outbox: fixture.outbox.length,
-			finalizers: fixture.terminalFinalizations(),
-			dirty: markEmployeeWorkBalanceDirty.mock.calls.length,
-			approved: onTimeCorrectionApproved.mock.calls.length,
-			rejected: onTimeCorrectionRejected.mock.calls.length,
-		}).toEqual(before);
-		if (shape === "accessor") {
-			const descriptor = Object.getOwnPropertyDescriptor(
-				(request.metadata as Record<string, unknown>).autoApproval as object,
-				"reason",
-			);
-			expect(descriptor?.get).not.toHaveBeenCalled();
-		}
-	});
+			expect({
+				requests: fixture.requests.length,
+				workflows: fixture.workflows.size,
+				events: fixture.observedEvents.length,
+				projections: fixture.projections.length,
+				outbox: fixture.outbox.length,
+				finalizers: fixture.terminalFinalizations(),
+				dirty: markEmployeeWorkBalanceDirty.mock.calls.length,
+				approved: onTimeCorrectionApproved.mock.calls.length,
+				rejected: onTimeCorrectionRejected.mock.calls.length,
+			}).toEqual(before);
+			if (shape === "accessor") {
+				const descriptor = Object.getOwnPropertyDescriptor(
+					(request.metadata as Record<string, unknown>).autoApproval as object,
+					"reason",
+				);
+				expect(descriptor?.get).not.toHaveBeenCalled();
+			}
+		},
+	);
 
 	it.each(
 		(["canonical", "complete"] as const).flatMap((mode) =>
@@ -3723,159 +4113,157 @@ describe("time correction transaction boundaries", () => {
 				] as const
 			).map((shape) => ({ mode, shape })),
 		),
-	)("fails closed on historical $mode key-only replay with $shape autoApproval", async ({
-		mode,
-		shape,
-	}) => {
-		const fixture = canonicalSubmissionHarness({ mode });
-		const key = `${mode}-historical-${shape}`;
-		await fixture.transaction(() => fixture.execute({ submissionKey: key }));
-		const snapshot = requiredValue([...fixture.snapshots.values()][0]);
-		const autoApproval = malformedHistoricalAutoApproval(shape);
-		fixture.setSnapshot({
-			...snapshot,
-			contextSnapshot: {
-				...snapshot.contextSnapshot,
+	)(
+		"fails closed on historical $mode key-only replay with $shape autoApproval",
+		async ({ mode, shape }) => {
+			const fixture = canonicalSubmissionHarness({ mode });
+			const key = `${mode}-historical-${shape}`;
+			await fixture.transaction(() => fixture.execute({ submissionKey: key }));
+			const snapshot = requiredValue([...fixture.snapshots.values()][0]);
+			const autoApproval = malformedHistoricalAutoApproval(shape);
+			fixture.setSnapshot({
+				...snapshot,
+				contextSnapshot: {
+					...snapshot.contextSnapshot,
+					submission: { key },
+					autoApproval,
+				},
+			});
+			const before = {
+				workflows: fixture.snapshots.size,
+				events: fixture.canonicalEvents.length,
+				projections: fixture.projections.length,
+				outbox: fixture.outbox.length,
+				legacy: fixture.legacyWrites.length,
+				finalizers: fixture.terminalFinalizations(),
+				dirty: markEmployeeWorkBalanceDirty.mock.calls.length,
+				approved: onTimeCorrectionApproved.mock.calls.length,
+				rejected: onTimeCorrectionRejected.mock.calls.length,
+			};
+
+			await expect(
+				fixture.execute({ submissionKey: key }),
+			).rejects.toBeInstanceOf(ConflictError);
+
+			expect({
+				workflows: fixture.snapshots.size,
+				events: fixture.canonicalEvents.length,
+				projections: fixture.projections.length,
+				outbox: fixture.outbox.length,
+				legacy: fixture.legacyWrites.length,
+				finalizers: fixture.terminalFinalizations(),
+				dirty: markEmployeeWorkBalanceDirty.mock.calls.length,
+				approved: onTimeCorrectionApproved.mock.calls.length,
+				rejected: onTimeCorrectionRejected.mock.calls.length,
+			}).toEqual(before);
+			if (shape === "accessor") {
+				const descriptor = Object.getOwnPropertyDescriptor(
+					autoApproval as object,
+					"reason",
+				);
+				expect(descriptor?.get).not.toHaveBeenCalled();
+			}
+		},
+	);
+
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"rejects historical %s key-only pending evidence when autoApproval is absent",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode);
+			const key = `${mode}-historical-absent`;
+			const submitted = await fixture.transaction(() => fixture.execute(key));
+			const request = requiredValue(fixture.requests[0]);
+			request.metadata = {
+				...(request.metadata as Record<string, unknown>),
 				submission: { key },
-				autoApproval,
-			},
-		});
-		const before = {
-			workflows: fixture.snapshots.size,
-			events: fixture.canonicalEvents.length,
-			projections: fixture.projections.length,
-			outbox: fixture.outbox.length,
-			legacy: fixture.legacyWrites.length,
-			finalizers: fixture.terminalFinalizations(),
-			dirty: markEmployeeWorkBalanceDirty.mock.calls.length,
-			approved: onTimeCorrectionApproved.mock.calls.length,
-			rejected: onTimeCorrectionRejected.mock.calls.length,
-		};
+			};
+			delete (request.metadata as Record<string, unknown>).autoApproval;
 
-		await expect(
-			fixture.execute({ submissionKey: key }),
-		).rejects.toBeInstanceOf(ConflictError);
+			await expect(fixture.execute(key)).rejects.toBeInstanceOf(ConflictError);
+			expect(submitted.approvalRequestId).toBe(request.id);
+		},
+	);
 
-		expect({
-			workflows: fixture.snapshots.size,
-			events: fixture.canonicalEvents.length,
-			projections: fixture.projections.length,
-			outbox: fixture.outbox.length,
-			legacy: fixture.legacyWrites.length,
-			finalizers: fixture.terminalFinalizations(),
-			dirty: markEmployeeWorkBalanceDirty.mock.calls.length,
-			approved: onTimeCorrectionApproved.mock.calls.length,
-			rejected: onTimeCorrectionRejected.mock.calls.length,
-		}).toEqual(before);
-		if (shape === "accessor") {
-			const descriptor = Object.getOwnPropertyDescriptor(
-				autoApproval as object,
-				"reason",
-			);
-			expect(descriptor?.get).not.toHaveBeenCalled();
-		}
-	});
+	it.each(["canonical", "complete"] as const)(
+		"rejects historical %s key-only pending evidence when autoApproval is absent",
+		async (mode) => {
+			const fixture = canonicalSubmissionHarness({ mode });
+			const key = `${mode}-historical-absent`;
+			const submitted = await fixture.execute({ submissionKey: key });
+			const snapshot = requiredValue([...fixture.snapshots.values()][0]);
+			fixture.setSnapshot({
+				...snapshot,
+				contextSnapshot: {
+					...snapshot.contextSnapshot,
+					submission: { key },
+				},
+			});
 
-	it.each([
-		"legacy",
-		"shadow",
-		"ready",
-	] as const)("rejects historical %s key-only pending evidence when autoApproval is absent", async (mode) => {
-		const fixture = observedSubmissionHarness(mode);
-		const key = `${mode}-historical-absent`;
-		const submitted = await fixture.transaction(() => fixture.execute(key));
-		const request = requiredValue(fixture.requests[0]);
-		request.metadata = {
-			...(request.metadata as Record<string, unknown>),
-			submission: { key },
-		};
-		delete (request.metadata as Record<string, unknown>).autoApproval;
+			await expect(
+				fixture.execute({ submissionKey: key }),
+			).rejects.toBeInstanceOf(ConflictError);
+			expect(submitted.approvalRequestId).toBeTruthy();
+		},
+	);
 
-		await expect(fixture.execute(key)).rejects.toBeInstanceOf(ConflictError);
-		expect(submitted.approvalRequestId).toBe(request.id);
-	});
-
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("rejects historical %s key-only pending evidence when autoApproval is absent", async (mode) => {
-		const fixture = canonicalSubmissionHarness({ mode });
-		const key = `${mode}-historical-absent`;
-		const submitted = await fixture.execute({ submissionKey: key });
-		const snapshot = requiredValue([...fixture.snapshots.values()][0]);
-		fixture.setSnapshot({
-			...snapshot,
-			contextSnapshot: {
-				...snapshot.contextSnapshot,
-				submission: { key },
-			},
-		});
-
-		await expect(
-			fixture.execute({ submissionKey: key }),
-		).rejects.toBeInstanceOf(ConflictError);
-		expect(submitted.approvalRequestId).toBeTruthy();
-	});
-
-	it.each([
-		"legacy",
-		"shadow",
-		"ready",
-	] as const)("rejects partial historical requester auto-approval evidence in %s mode", async (mode) => {
-		const fixture = observedSubmissionHarness(mode, true);
-		const key = `${mode}-historical-auto`;
-		await fixture.transaction(() => fixture.execute(key));
-		const request = requiredValue(fixture.requests[0]);
-		request.metadata = {
-			...(request.metadata as Record<string, unknown>),
-			submission: { key },
-			autoApproval: { reason: "requester_is_approver" },
-		};
-
-		await expect(fixture.execute(key)).rejects.toBeInstanceOf(ConflictError);
-	});
-
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("rejects partial historical requester auto-approval evidence in %s mode", async (mode) => {
-		const fixture = canonicalSubmissionHarness({ mode, autoApprove: true });
-		const key = `${mode}-historical-auto`;
-		await fixture.execute({ submissionKey: key });
-		const snapshot = requiredValue([...fixture.snapshots.values()][0]);
-		fixture.setSnapshot({
-			...snapshot,
-			contextSnapshot: {
-				...snapshot.contextSnapshot,
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"rejects partial historical requester auto-approval evidence in %s mode",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode, true);
+			const key = `${mode}-historical-auto`;
+			await fixture.transaction(() => fixture.execute(key));
+			const request = requiredValue(fixture.requests[0]);
+			request.metadata = {
+				...(request.metadata as Record<string, unknown>),
 				submission: { key },
 				autoApproval: { reason: "requester_is_approver" },
-			},
-		});
+			};
 
-		await expect(
-			fixture.execute({ submissionKey: key }),
-		).rejects.toBeInstanceOf(ConflictError);
-	});
+			await expect(fixture.execute(key)).rejects.toBeInstanceOf(ConflictError);
+		},
+	);
 
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("infers markerless %s replay only from the exact deterministic workflow binding", async (mode) => {
-		const fixture = canonicalSubmissionHarness({ mode });
-		const key = `${mode}-markerless-exact-binding`;
-		const submitted = await fixture.execute({ submissionKey: key });
-		const snapshot = requiredValue([...fixture.snapshots.values()][0]);
-		const { submission: _submission, ...contextSnapshot } =
-			snapshot.contextSnapshot;
-		fixture.setSnapshot({ ...snapshot, contextSnapshot });
+	it.each(["canonical", "complete"] as const)(
+		"rejects partial historical requester auto-approval evidence in %s mode",
+		async (mode) => {
+			const fixture = canonicalSubmissionHarness({ mode, autoApprove: true });
+			const key = `${mode}-historical-auto`;
+			await fixture.execute({ submissionKey: key });
+			const snapshot = requiredValue([...fixture.snapshots.values()][0]);
+			fixture.setSnapshot({
+				...snapshot,
+				contextSnapshot: {
+					...snapshot.contextSnapshot,
+					submission: { key },
+					autoApproval: { reason: "requester_is_approver" },
+				},
+			});
 
-		const replay = await fixture.execute({ submissionKey: key });
+			await expect(
+				fixture.execute({ submissionKey: key }),
+			).rejects.toBeInstanceOf(ConflictError);
+		},
+	);
 
-		expect(replay).toMatchObject({
-			kind: submitted.kind,
-			approvalRequestId: submitted.approvalRequestId,
-		});
-	});
+	it.each(["canonical", "complete"] as const)(
+		"infers markerless %s replay only from the exact deterministic workflow binding",
+		async (mode) => {
+			const fixture = canonicalSubmissionHarness({ mode });
+			const key = `${mode}-markerless-exact-binding`;
+			const submitted = await fixture.execute({ submissionKey: key });
+			const snapshot = requiredValue([...fixture.snapshots.values()][0]);
+			const { submission: _submission, ...contextSnapshot } =
+				snapshot.contextSnapshot;
+			fixture.setSnapshot({ ...snapshot, contextSnapshot });
+
+			const replay = await fixture.execute({ submissionKey: key });
+
+			expect(replay).toMatchObject({
+				kind: submitted.kind,
+				approvalRequestId: submitted.approvalRequestId,
+			});
+		},
+	);
 
 	it.each(
 		(["canonical", "complete"] as const).flatMap((mode) =>
@@ -3943,131 +4331,131 @@ describe("time correction transaction boundaries", () => {
 		await expect(fixture.decide(target.id)).rejects.toBe(internal);
 	});
 
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("returns the original submission target through advanced and terminal %s replay", async (mode) => {
-		const fixture = canonicalSubmissionHarness({
-			mode,
-			policies: [canonicalPolicy(2)],
-		});
-		const submitted = await fixture.execute({ defaultApproverId: null });
-		const first = requiredValue([...fixture.snapshots.values()][0]);
-		const firstStage = requiredValue(first.stages[0]);
-		const stageTwo = {
-			...first,
-			version: first.version + 1,
-			currentStageOrder: 2,
-			stages: first.stages.map((stage) =>
-				stage.sequence === 1
-					? {
-							...stage,
-							status: "approved" as const,
-							decidedAt: parseInstant("2026-07-20T11:00:00Z"),
-							assignments: stage.assignments.map((assignment) => ({
-								...assignment,
+	it.each(["canonical", "complete"] as const)(
+		"returns the original submission target through advanced and terminal %s replay",
+		async (mode) => {
+			const fixture = canonicalSubmissionHarness({
+				mode,
+				policies: [canonicalPolicy(2)],
+			});
+			const submitted = await fixture.execute({ defaultApproverId: null });
+			const first = requiredValue([...fixture.snapshots.values()][0]);
+			const firstStage = requiredValue(first.stages[0]);
+			const stageTwo = {
+				...first,
+				version: first.version + 1,
+				currentStageOrder: 2,
+				stages: first.stages.map((stage) =>
+					stage.sequence === 1
+						? {
+								...stage,
 								status: "approved" as const,
-								resolvedAt: parseInstant("2026-07-20T11:00:00Z"),
-							})),
-						}
-					: {
-							...stage,
-							status: "pending" as const,
-							activatedAt: parseInstant("2026-07-20T11:00:00Z"),
-							assignments: firstStage.assignments.map((assignment) => ({
-								...assignment,
-								id: `${assignment.id.slice(0, -1)}9`,
+								decidedAt: parseInstant("2026-07-20T11:00:00Z"),
+								assignments: stage.assignments.map((assignment) => ({
+									...assignment,
+									status: "approved" as const,
+									resolvedAt: parseInstant("2026-07-20T11:00:00Z"),
+								})),
+							}
+						: {
+								...stage,
 								status: "pending" as const,
-								resolvedAt: null,
-							})),
-						},
-			),
-		} satisfies ApprovalWorkflowSnapshot;
-		fixture.setSnapshot(stageTwo);
-		fixture.setCompatibilityStage(stageTwo, 1);
-		const activeReplay = await fixture.execute({ defaultApproverId: null });
-		expect(activeReplay).toMatchObject({
-			kind: submitted.kind,
-			approvalRequestId: submitted.approvalRequestId,
-		});
+								activatedAt: parseInstant("2026-07-20T11:00:00Z"),
+								assignments: firstStage.assignments.map((assignment) => ({
+									...assignment,
+									id: `${assignment.id.slice(0, -1)}9`,
+									status: "pending" as const,
+									resolvedAt: null,
+								})),
+							},
+				),
+			} satisfies ApprovalWorkflowSnapshot;
+			fixture.setSnapshot(stageTwo);
+			fixture.setCompatibilityStage(stageTwo, 1);
+			const activeReplay = await fixture.execute({ defaultApproverId: null });
+			expect(activeReplay).toMatchObject({
+				kind: submitted.kind,
+				approvalRequestId: submitted.approvalRequestId,
+			});
 
-		const terminal = {
-			...stageTwo,
-			status: "approved" as const,
-			currentStageOrder: null,
-			completedAt: parseInstant("2026-07-20T12:00:00Z"),
-			stages: stageTwo.stages.map((stage) => ({
-				...stage,
+			const terminal = {
+				...stageTwo,
 				status: "approved" as const,
-				decidedAt: parseInstant("2026-07-20T12:00:00Z"),
-				assignments: stage.assignments.map((assignment) => ({
-					...assignment,
+				currentStageOrder: null,
+				completedAt: parseInstant("2026-07-20T12:00:00Z"),
+				stages: stageTwo.stages.map((stage) => ({
+					...stage,
 					status: "approved" as const,
+					decidedAt: parseInstant("2026-07-20T12:00:00Z"),
+					assignments: stage.assignments.map((assignment) => ({
+						...assignment,
+						status: "approved" as const,
 					resolvedAt: parseInstant("2026-07-20T12:00:00Z"),
 				})),
 			})),
-		} satisfies ApprovalWorkflowSnapshot;
-		fixture.setSnapshot(terminal);
+			} satisfies ApprovalWorkflowSnapshot;
+			fixture.setSnapshot(terminal);
 
-		const terminalReplay = await fixture.execute({ defaultApproverId: null });
-		expect(terminalReplay).toMatchObject({
-			kind: submitted.kind,
-			approvalRequestId: submitted.approvalRequestId,
-		});
-	});
+			const terminalReplay = await fixture.execute({ defaultApproverId: null });
+			expect(terminalReplay).toMatchObject({
+				kind: submitted.kind,
+				approvalRequestId: submitted.approvalRequestId,
+			});
+		},
+	);
 
-	it.each([
-		"shadow",
-		"ready",
-	] as const)("runs actual capture, planner, projection, outbox, and binding for %s submission", async (mode) => {
-		const fixture = observedSubmissionHarness(mode);
+	it.each(["shadow", "ready"] as const)(
+		"runs actual capture, planner, projection, outbox, and binding for %s submission",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode);
 
-		const result = await fixture.execute();
+			const result = await fixture.execute();
 
-		expect(result).toMatchObject({
-			kind: "default_created",
-			approvalRequestId: fixture.ids.request,
-			postCommit: {
-				authority: "legacy",
-				submittedToEmployeeId: fixture.ids.manager,
-			},
-		});
-		expect(fixture.acquire).toHaveBeenCalledOnce();
-		expect(fixture.requests).toHaveLength(1);
-		expect(fixture.workflows).toHaveLength(1);
-		expect(fixture.projections).toHaveLength(1);
-		expect(fixture.outbox.length).toBeGreaterThan(0);
-		expect(fixture.order).toEqual([
-			"capture-before",
-			"mutate",
-			"capture-after",
-			"observe",
-			"projection",
-			...fixture.outbox.map(() => "outbox"),
-			"bind",
-		]);
-	});
+			expect(result).toMatchObject({
+				kind: "default_created",
+				approvalRequestId: fixture.ids.request,
+				postCommit: {
+					authority: "legacy",
+					submittedToEmployeeId: fixture.ids.manager,
+				},
+			});
+			expect(fixture.acquire).toHaveBeenCalledOnce();
+			expect(fixture.requests).toHaveLength(1);
+			expect(fixture.workflows).toHaveLength(1);
+			expect(fixture.projections).toHaveLength(1);
+			expect(fixture.outbox.length).toBeGreaterThan(0);
+			expect(fixture.order).toEqual([
+				"capture-before",
+				"mutate",
+				"capture-after",
+				"observe",
+				"projection",
+				...fixture.outbox.map(() => "outbox"),
+				"bind",
+			]);
+		},
+	);
 
-	it.each([
-		"shadow",
-		"ready",
-	] as const)("replays the exact %s legacy cycle and rejects a different pending key", async (mode) => {
-		const fixture = observedSubmissionHarness(mode);
-		const first = await fixture.execute();
-		const durableOrder = [...fixture.order];
+	it.each(["shadow", "ready"] as const)(
+		"replays the exact %s legacy cycle and rejects a different pending key",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode);
+			const first = await fixture.execute();
+			const durableOrder = [...fixture.order];
 
-		const replay = await fixture.execute();
-		expect(first.disposition).toBe("executed");
-		expect(replay.disposition).toBe("replayed");
-		expect(replay.approvalRequestId).toBe(first.approvalRequestId);
-		expect(fixture.order).toEqual(durableOrder);
+			const replay = await fixture.execute();
+			expect(first.disposition).toBe("executed");
+			expect(replay.disposition).toBe("replayed");
+			expect(replay.approvalRequestId).toBe(first.approvalRequestId);
+			expect(fixture.order).toEqual(durableOrder);
 
-		await expect(fixture.execute(`${mode}-submission-2`)).rejects.toThrow(
-			/time correction approval.*pending/i,
-		);
-		expect(fixture.requests).toHaveLength(1);
-		expect(fixture.workflows).toHaveLength(1);
-	});
+			await expect(fixture.execute(`${mode}-submission-2`)).rejects.toThrow(
+				/time correction approval.*pending/i,
+			);
+			expect(fixture.requests).toHaveLength(1);
+			expect(fixture.workflows).toHaveLength(1);
+		},
+	);
 
 	it.each([
 		"shadow",
@@ -4101,54 +4489,55 @@ describe("time correction transaction boundaries", () => {
 				] as const
 			).map(([point, evidenceKey]) => ({ mode, point, evidenceKey })),
 		),
-	)("restores full $mode submission state after $point with nonempty failure evidence", async ({
-		mode,
-		point,
-		evidenceKey,
-	}) => {
-		const fixture = observedSubmissionHarness(mode);
-		const before = fixture.durableSnapshot();
-		fixture.injectFailure(point);
+	)(
+		"restores full $mode submission state after $point with nonempty failure evidence",
+		async ({ mode, point, evidenceKey }) => {
+			const fixture = observedSubmissionHarness(mode);
+			const before = fixture.durableSnapshot();
+			fixture.injectFailure(point);
 
-		await expect(fixture.transaction(() => fixture.execute())).rejects.toThrow(
-			point === "capture_after"
-				? /legacy approval state capture failed/i
-				: `injected:${point}`,
-		);
+			await expect(
+				fixture.transaction(() => fixture.execute()),
+			).rejects.toThrow(
+				point === "capture_after"
+					? /legacy approval state capture failed/i
+					: `injected:${point}`,
+			);
 
-		const evidence = requiredValue(fixture.failureEvidence() ?? undefined);
-		expect(evidence[evidenceKey]).toBeTruthy();
-		expect(evidence.state).not.toEqual(before);
-		expect(fixture.durableSnapshot()).toEqual(before);
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
-		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
-		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
-	});
+			const evidence = requiredValue(fixture.failureEvidence() ?? undefined);
+			expect(evidence[evidenceKey]).toBeTruthy();
+			expect(evidence.state).not.toEqual(before);
+			expect(fixture.durableSnapshot()).toEqual(before);
+			expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+			expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
+			expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
+		},
+	);
 
-	it.each([
-		"shadow",
-		"ready",
-	] as const)("restores full %s auto-terminal submission state after finalizer mutation", async (mode) => {
-		const fixture = observedSubmissionHarness(mode, true);
-		const before = fixture.durableSnapshot();
-		fixture.injectFailure("finalizer");
+	it.each(["shadow", "ready"] as const)(
+		"restores full %s auto-terminal submission state after finalizer mutation",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode, true);
+			const before = fixture.durableSnapshot();
+			fixture.injectFailure("finalizer");
 
-		await expect(fixture.transaction(() => fixture.execute())).rejects.toThrow(
-			"injected:finalizer",
-		);
+			await expect(
+				fixture.transaction(() => fixture.execute()),
+			).rejects.toThrow("injected:finalizer");
 
-		const evidence = requiredValue(fixture.failureEvidence() ?? undefined);
-		expect(evidence).toMatchObject({
-			terminalFinalizations: 1,
-			originalSuperseded: true,
-			correctionSuperseded: false,
-		});
-		expect(evidence.state).not.toEqual(before);
-		expect(fixture.durableSnapshot()).toEqual(before);
-		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
-		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
-		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
-	});
+			const evidence = requiredValue(fixture.failureEvidence() ?? undefined);
+			expect(evidence).toMatchObject({
+				terminalFinalizations: 1,
+				originalSuperseded: true,
+				correctionSuperseded: false,
+			});
+			expect(evidence.state).not.toEqual(before);
+			expect(fixture.durableSnapshot()).toEqual(before);
+			expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+			expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
+			expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
+		},
+	);
 
 	it.each(
 		(["shadow", "ready"] as const).flatMap((mode) =>
@@ -4302,33 +4691,40 @@ describe("time correction transaction boundaries", () => {
 		const decision = await fixture.decide(action, reason);
 		const request = requiredValue(fixture.requests.at(-1));
 
-		expect(request.status).toBe(action === "approve" ? "approved" : "rejected");
-		expect(decision).toMatchObject({
-			kind: "time_correction",
-			postCommit: {
-				authority: "legacy",
-				terminal: {
-					kind: action === "approve" ? "approved" : "rejected",
-					requesterEmployeeId: fixture.ids.requester,
-				},
-			},
-		});
-		if (mode === "legacy") {
-			expect(fixture.workflows).toHaveLength(0);
-			expect(fixture.order.filter((entry) => entry === "observe")).toHaveLength(
-				0,
-			);
-		} else {
-			expect(fixture.order.filter((entry) => entry === "observe")).toHaveLength(
-				observationsBefore + 1,
-			);
-			expect([...fixture.workflows.values()][0]?.status).toBe(
+			expect(request.status).toBe(
 				action === "approve" ? "approved" : "rejected",
 			);
-			expect(fixture.order.filter((entry) => entry === "bind")).toHaveLength(1);
-		}
-		expect(fixture.terminalFinalizations()).toBe(action === "approve" ? 1 : 0);
-	});
+			expect(decision).toMatchObject({
+				kind: "time_correction",
+				postCommit: {
+					authority: "legacy",
+					terminal: {
+						kind: action === "approve" ? "approved" : "rejected",
+						requesterEmployeeId: fixture.ids.requester,
+					},
+				},
+			});
+			if (mode === "legacy") {
+				expect(fixture.workflows).toHaveLength(0);
+				expect(
+					fixture.order.filter((entry) => entry === "observe"),
+				).toHaveLength(0);
+			} else {
+				expect(
+					fixture.order.filter((entry) => entry === "observe"),
+				).toHaveLength(observationsBefore + 1);
+				expect([...fixture.workflows.values()][0]?.status).toBe(
+					action === "approve" ? "approved" : "rejected",
+				);
+				expect(fixture.order.filter((entry) => entry === "bind")).toHaveLength(
+					1,
+				);
+			}
+			expect(fixture.terminalFinalizations()).toBe(
+				action === "approve" ? 1 : 0,
+			);
+		},
+	);
 
 	it.each([
 		"legacy",
@@ -4347,47 +4743,45 @@ describe("time correction transaction boundaries", () => {
 		expect(fixture.terminalFinalizations()).toBe(0);
 	});
 
-	it.each([
-		"legacy",
-		"shadow",
-		"ready",
-	] as const)("rejects a changed transactional actor before %s decision mutation", async (mode) => {
-		const fixture = observedSubmissionHarness(mode);
-		await fixture.execute();
-		fixture.setDecisionActorRows([
-			{
-				id: "31000000-0000-4000-8000-000000000999",
-				organizationId: "org-1",
-				userId: "user-manager",
-				isActive: true,
-				user: { id: "user-manager" },
-			},
-		]);
-		const before = structuredClone(fixture.requests);
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"rejects a changed transactional actor before %s decision mutation",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode);
+			await fixture.execute();
+			fixture.setDecisionActorRows([
+				{
+					id: "31000000-0000-4000-8000-000000000999",
+					organizationId: "org-1",
+					userId: "user-manager",
+					isActive: true,
+					user: { id: "user-manager" },
+				},
+			]);
+			const before = structuredClone(fixture.requests);
 
-		await expect(fixture.decide("approve")).rejects.toMatchObject({
-			_tag: "NotFoundError",
-		});
-		expect(fixture.requests).toEqual(before);
-		expect(fixture.terminalFinalizations()).toBe(0);
-	});
+			await expect(fixture.decide("approve")).rejects.toMatchObject({
+				_tag: "NotFoundError",
+			});
+			expect(fixture.requests).toEqual(before);
+			expect(fixture.terminalFinalizations()).toBe(0);
+		},
+	);
 
-	it.each([
-		"legacy",
-		"shadow",
-		"ready",
-	] as const)("rejects a stale selected request before %s decision mutation", async (mode) => {
-		const fixture = observedSubmissionHarness(mode);
-		await fixture.execute();
-		const request = requiredValue(fixture.requests.at(-1));
-		request.status = "approved";
-		request.approvedAt = new Date("2026-07-20T11:00:00.000Z");
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"rejects a stale selected request before %s decision mutation",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode);
+			await fixture.execute();
+			const request = requiredValue(fixture.requests.at(-1));
+			request.status = "approved";
+			request.approvedAt = new Date("2026-07-20T11:00:00.000Z");
 
-		await expect(fixture.decide("approve")).rejects.toMatchObject({
-			conflictType: "approval_status",
-		});
-		expect(fixture.terminalFinalizations()).toBe(0);
-	});
+			await expect(fixture.decide("approve")).rejects.toMatchObject({
+				conflictType: "approval_status",
+			});
+			expect(fixture.terminalFinalizations()).toBe(0);
+		},
+	);
 
 	it("runs actual sequential legacy request-chain mutation and finalizes only the terminal stage", async () => {
 		const fixture = observedSubmissionHarness("legacy");
@@ -4428,6 +4822,159 @@ describe("time correction transaction boundaries", () => {
 		]);
 		expect(fixture.terminalFinalizations()).toBe(1);
 	});
+
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"persists strict current correction metadata through the %s boundary",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode);
+			await fixture.execute(undefined, undefined, {
+				action: "edit",
+				clockInCorrectionId: fixture.ids.correction,
+				workLocationType: "home",
+				workCategoryId: null,
+			});
+
+			expect(fixture.requests.at(-1)?.metadata).toMatchObject({
+				timeCorrection: {
+					action: "edit",
+					clockInCorrectionId: fixture.ids.correction,
+					workLocationType: "home",
+					workCategoryId: null,
+				},
+			});
+		},
+	);
+
+	it.each(["shadow", "ready"] as const)(
+		"preserves initial work metadata display evidence after %s approval",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode);
+			const correction = {
+				action: "edit" as const,
+				workLocationType: "home" as const,
+				workCategoryId: "71000000-0000-4000-8000-000000000903",
+			};
+			await fixture.execute(undefined, undefined, correction);
+			const pending = [...fixture.workflows.values()][0];
+
+			expect(pending?.displaySnapshot).toMatchObject({
+				status: "pending",
+				workMetadata: {
+					original: {
+						workLocationType: "office",
+						workCategoryId: "71000000-0000-4000-8000-000000000902",
+					},
+					requested: {
+						workLocationType: "home",
+						workCategoryId: correction.workCategoryId,
+					},
+				},
+			});
+
+			await fixture.decide("approve");
+			const terminal = [...fixture.workflows.values()][0];
+			const terminalProjection = fixture.projections.at(-1) as {
+				status?: string;
+				displayPayload?: unknown;
+			};
+
+			expect(terminal?.status).toBe("approved");
+			expect(terminal?.displaySnapshot).toEqual({
+				...pending?.displaySnapshot,
+				status: "approved",
+			});
+			expect(terminalProjection).toMatchObject({
+				status: "approved",
+				displayPayload: terminal?.displaySnapshot,
+			});
+		},
+	);
+
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"creates and replays a strict metadata-only edit through the %s boundary",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode);
+			const correction = {
+				action: "edit",
+				workLocationType: "remote" as const,
+				workCategoryId: null,
+			};
+			const first = await fixture.execute(undefined, undefined, correction);
+			const replay = await fixture.execute(undefined, undefined, correction);
+
+			expect(first.disposition).toBe("executed");
+			expect(replay.disposition).toBe("replayed");
+			expect(fixture.requests).toHaveLength(1);
+			expect(fixture.requests.at(-1)?.metadata).toMatchObject({
+				timeCorrection: correction,
+			});
+			await expect(
+				fixture.execute(undefined, undefined, {
+					...correction,
+					workLocationType: "home",
+				}),
+			).rejects.toMatchObject({
+				conflictType: "pending_time_correction_approval",
+			});
+		},
+	);
+
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"auto-completes metadata-only edits once and rejects their stale %s replay",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode, true);
+			const correction = {
+				action: "edit" as const,
+				workLocationType: "remote" as const,
+				workCategoryId: null,
+			};
+
+			const first = await fixture.execute(undefined, undefined, correction);
+			await expect(
+				fixture.execute(undefined, undefined, correction),
+			).rejects.toMatchObject({
+				conflictType: "pending_time_correction_approval",
+			});
+
+			expect(first).toMatchObject({
+				disposition: "executed",
+				kind: "auto_completed",
+			});
+			expect(fixture.requests).toHaveLength(1);
+			expect(fixture.terminalFinalizations()).toBe(1);
+		},
+	);
+
+	it.each(["shadow", "ready"] as const)(
+		"keeps verified original work metadata in the initial terminal display in %s mode",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode, true);
+			const correction = {
+				action: "edit" as const,
+				workLocationType: "home" as const,
+				workCategoryId: "71000000-0000-4000-8000-000000000903",
+			};
+
+			const result = await fixture.execute(undefined, undefined, correction);
+			const terminal = [...fixture.workflows.values()][0];
+
+			expect(result.kind).toBe("auto_completed");
+			expect(fixture.terminalFinalizations()).toBe(1);
+			expect(terminal?.displaySnapshot).toMatchObject({
+				status: "approved",
+				workMetadata: {
+					original: {
+						workLocationType: "office",
+						workCategoryId: "71000000-0000-4000-8000-000000000902",
+					},
+					requested: {
+						workLocationType: "home",
+						workCategoryId: correction.workCategoryId,
+					},
+				},
+			});
+		},
+	);
 
 	it("creates a legacy-authoritative submission through the real policy resolver", async () => {
 		const { dbService, inserts } = createPolicyResolutionDbService([]);
@@ -5164,6 +5711,13 @@ describe("deleteCancelledTimeCorrectionsInTransaction", () => {
 		durationMinutes: 480,
 		approvalState: "approved",
 	};
+	const cancellationCanonicalWork = {
+		recordId: cancellationIds.canonical,
+		organizationId: "org-1",
+		recordKind: "work",
+		workLocationType: "office",
+		workCategoryId: null,
+	};
 	function cancellationEntryEvidence(
 		entry: typeof originalIn,
 		logicalRole: "clock_in" | "clock_out",
@@ -5187,6 +5741,8 @@ describe("deleteCancelledTimeCorrectionsInTransaction", () => {
 		employeeId: cancellationIds.employee,
 		approvalWorkflowId: cancellationIds.workflow,
 		canonicalRecordId: cancellationIds.canonical,
+		workLocationType: "office" as const,
+		workCategoryId: null,
 		clockInId: cancellationIds.originalIn,
 		clockOutId: cancellationIds.originalOut,
 		startTime: parseInstant("2026-07-19T06:00:00Z"),
@@ -5204,6 +5760,7 @@ describe("deleteCancelledTimeCorrectionsInTransaction", () => {
 			durationMinutes: 480,
 			approvalState: "approved" as const,
 		},
+		canonicalWork: cancellationCanonicalWork,
 		currentEndpoints: {
 			clockIn: cancellationEntryEvidence(originalIn, "clock_in"),
 			clockOut: cancellationEntryEvidence(originalOut, "clock_out"),
@@ -5228,6 +5785,7 @@ describe("deleteCancelledTimeCorrectionsInTransaction", () => {
 			employee?: Record<string, unknown>;
 			period?: Record<string, unknown>;
 			canonical?: Record<string, unknown>;
+			canonicalWork?: Record<string, unknown>;
 			entries?: Array<Record<string, unknown>>;
 			historicalEntries?: Array<Record<string, unknown>>;
 			deleteRows?: Array<Record<string, unknown>>;
@@ -5252,9 +5810,12 @@ describe("deleteCancelledTimeCorrectionsInTransaction", () => {
 			isActive: false,
 			approvalStatus: "approved",
 			pendingChanges: null,
+			workLocationType: "office",
+			workCategoryId: null,
 			deletedAt: null,
 		};
 		const canonical = options.canonical ?? cancellationCanonical;
+		const canonicalWork = options.canonicalWork ?? cancellationCanonicalWork;
 		const entries = options.entries ?? [
 			originalIn,
 			originalOut,
@@ -5281,6 +5842,7 @@ describe("deleteCancelledTimeCorrectionsInTransaction", () => {
 							if (table === employee) return [lockedEmployee];
 							if (table === workPeriod) return [period];
 							if (table === timeRecord) return [canonical];
+							if (table === timeRecordWork) return [canonicalWork];
 							const rows =
 								timeEntryLockCount === 0
 									? entries
@@ -5338,6 +5900,7 @@ describe("deleteCancelledTimeCorrectionsInTransaction", () => {
 			workPeriod,
 			timeEntry,
 			timeRecord,
+			timeRecordWork,
 		]);
 		expect(fixture.deletes.map((item) => item.table)).toEqual([timeEntry]);
 		const deletion = new PgDialect().sqlToQuery(
@@ -5366,6 +5929,112 @@ describe("deleteCancelledTimeCorrectionsInTransaction", () => {
 		expect(fixture.update).not.toHaveBeenCalled();
 		expect(fixture.transaction).not.toHaveBeenCalled();
 	});
+
+	it("verifies unchanged metadata and skips deletion for metadata-only cancellation", async () => {
+		const period = {
+			id: cancellationIds.period,
+			organizationId: "org-1",
+			employeeId: cancellationIds.employee,
+			clockInId: cancellationIds.originalIn,
+			clockOutId: cancellationIds.originalOut,
+			canonicalRecordId: cancellationIds.canonical,
+			approvalWorkflowId: cancellationIds.workflow,
+			startTime: originalIn.timestamp,
+			endTime: originalOut.timestamp,
+			durationMinutes: 480,
+			isActive: false,
+			approvalStatus: "approved",
+			pendingChanges: null,
+			workLocationType: "office",
+			workCategoryId: null,
+			deletedAt: null,
+		};
+		const canonicalWork = { ...cancellationCanonicalWork };
+		const fixture = cancellationDb({
+			period,
+			canonicalWork,
+			entries: [originalIn, originalOut],
+		});
+
+		await deleteCancelledTimeCorrectionsInTransaction(
+			cancellationInput(
+				fixture.dbService,
+				{
+					action: "edit",
+					workLocationType: "remote",
+					workCategoryId: null,
+				},
+				{
+					...cancellationExpectedSource,
+					pendingCorrections: { clockIn: null, clockOut: null },
+				},
+			),
+		);
+
+		expect(fixture.deletes).toEqual([]);
+		expect(period).toMatchObject({
+			workLocationType: "office",
+			workCategoryId: null,
+		});
+		expect(canonicalWork).toMatchObject({
+			workLocationType: "office",
+			workCategoryId: null,
+		});
+	});
+
+	it.each(["work period", "canonical work"] as const)(
+		"fails metadata-only cancellation when %s metadata diverges",
+		async (target) => {
+			const fixture = cancellationDb({
+				...(target === "work period"
+					? {
+							period: {
+								id: cancellationIds.period,
+								organizationId: "org-1",
+								employeeId: cancellationIds.employee,
+								clockInId: cancellationIds.originalIn,
+								clockOutId: cancellationIds.originalOut,
+								canonicalRecordId: cancellationIds.canonical,
+								approvalWorkflowId: cancellationIds.workflow,
+								startTime: originalIn.timestamp,
+								endTime: originalOut.timestamp,
+								durationMinutes: 480,
+								isActive: false,
+								approvalStatus: "approved",
+								pendingChanges: null,
+								workLocationType: "home",
+								workCategoryId: null,
+								deletedAt: null,
+							},
+						}
+					: {
+							canonicalWork: {
+								...cancellationCanonicalWork,
+								workLocationType: "home",
+							},
+						}),
+				entries: [originalIn, originalOut],
+			});
+
+			await expect(
+				deleteCancelledTimeCorrectionsInTransaction(
+					cancellationInput(
+						fixture.dbService,
+						{
+							action: "edit",
+							workLocationType: "remote",
+							workCategoryId: null,
+						},
+						{
+							...cancellationExpectedSource,
+							pendingCorrections: { clockIn: null, clockOut: null },
+						},
+					),
+				),
+			).rejects.toThrow(/source/i);
+			expect(fixture.deletes).toEqual([]);
+		},
+	);
 
 	it("rejects a current endpoint evidence race in a repeated correction cycle", async () => {
 		const priorIn = {
@@ -5403,6 +6072,8 @@ describe("deleteCancelledTimeCorrectionsInTransaction", () => {
 				isActive: false,
 				approvalStatus: "approved",
 				pendingChanges: null,
+				workLocationType: "office",
+				workCategoryId: null,
 				deletedAt: null,
 			},
 			entries: [
@@ -5812,6 +6483,8 @@ describe("deleteCancelledTimeCorrectionsInTransaction", () => {
 				isActive: false,
 				approvalStatus: "approved",
 				pendingChanges: null,
+				workLocationType: "office",
+				workCategoryId: null,
 				deletedAt: null,
 			},
 			entries: [priorIn, priorOut, pendingIn, pendingOut],
@@ -6594,6 +7267,8 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		isActive: false,
 		approvalStatus: "approved",
 		pendingChanges: null,
+		workLocationType: "office",
+		workCategoryId: "71000000-0000-4000-8000-000000000802",
 		deletedAt: null,
 	};
 	const canonicalRecord = {
@@ -6606,11 +7281,63 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		durationMinutes: 480,
 		approvalState: "approved",
 	};
+	const canonicalWorkRecord = {
+		recordId: ids.canonical,
+		organizationId: "org-1",
+		recordKind: "work",
+		workLocationType: "office",
+		workCategoryId: "71000000-0000-4000-8000-000000000802",
+	};
 	const terminalCorrection = {
 		action: "edit" as const,
 		clockInCorrectionId: ids.correctionIn,
 		clockOutCorrectionId: ids.correctionOut,
 	};
+	function terminalExpectedSource(metadataOnly = false) {
+		const evidence = (
+			entry: typeof originalIn,
+			logicalRole: "clock_in" | "clock_out",
+		) => ({
+			...entry,
+			logicalRole,
+			timestamp: parseInstant(entry.timestamp.toISOString()),
+		});
+		return {
+			employeeId: "emp-requester",
+			approvalWorkflowId: ids.workflow,
+			canonicalRecordId: ids.canonical,
+			workLocationType: "office" as const,
+			workCategoryId: terminalPeriod.workCategoryId,
+			clockInId: ids.originalIn,
+			clockOutId: ids.originalOut,
+			startTime: parseInstant(originalIn.timestamp.toISOString()),
+			endTime: parseInstant(originalOut.timestamp.toISOString()),
+			durationMinutes: 480,
+			isActive: false,
+			approvalStatus: "approved" as const,
+			pendingChanges: null,
+			canonicalRecord: {
+				id: ids.canonical,
+				employeeId: "emp-requester",
+				recordKind: "work" as const,
+				startAt: parseInstant(originalIn.timestamp.toISOString()),
+				endAt: parseInstant(originalOut.timestamp.toISOString()),
+				durationMinutes: 480,
+				approvalState: "approved" as const,
+			},
+			canonicalWork: { ...canonicalWorkRecord, recordKind: "work" as const },
+			currentEndpoints: {
+				clockIn: evidence(originalIn, "clock_in"),
+				clockOut: evidence(originalOut as typeof originalIn, "clock_out"),
+			},
+			pendingCorrections: metadataOnly
+				? { clockIn: null, clockOut: null }
+				: {
+						clockIn: evidence(correctionIn as typeof originalIn, "clock_in"),
+						clockOut: evidence(correctionOut as typeof originalIn, "clock_out"),
+					},
+		};
+	}
 	const legacyRequest = {
 		id: ids.approval,
 		organizationId: "org-1",
@@ -6672,9 +7399,18 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 			entries?: Record<string, unknown>[];
 			historicalEntries?: Record<string, unknown>[];
 			canonical?: Record<string, unknown> | null;
+			canonicalWork?: Record<string, unknown> | null;
 			legacyRequest?: Record<string, unknown> | null;
 			workflow?: Record<string, unknown> | null;
-			mutationRows?: Array<Array<{ id: string }>>;
+			mutationRows?: Array<Array<{ id?: string; recordId?: string }>>;
+			categoryAuthorization?: {
+				memberships?: Record<string, unknown>[];
+				teams?: Record<string, unknown>[];
+				categories?: Record<string, unknown>[];
+				assignments?: Record<string, unknown>[];
+				sets?: Record<string, unknown>[];
+				setCategories?: Record<string, unknown>[];
+			};
 		} = {},
 	) {
 		const lockedTables: unknown[] = [];
@@ -6695,6 +7431,10 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		];
 		const canonical =
 			options.canonical === undefined ? canonicalRecord : options.canonical;
+		const canonicalWork =
+			options.canonicalWork === undefined
+				? canonicalWorkRecord
+				: options.canonicalWork;
 		const approvalRequestFindFirst = vi
 			.fn()
 			.mockResolvedValue(
@@ -6714,6 +7454,7 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 			[{ id: ids.originalOut }],
 			[{ id: ids.period }],
 			[{ id: ids.canonical }],
+			[{ recordId: ids.canonical }],
 		];
 		const mutationRows = [...(options.mutationRows ?? defaultMutationRows)];
 		let timeEntryLockCount = 0;
@@ -6731,10 +7472,23 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 						organizationId: "org-1",
 						userId: "user-requester",
 						isActive: true,
+						teamId: "71000000-0000-4000-8000-000000000803",
 					},
 				];
+			if (table === teamMembership)
+				return options.categoryAuthorization?.memberships ?? [];
+			if (table === team) return options.categoryAuthorization?.teams ?? [];
+			if (table === workCategory)
+				return options.categoryAuthorization?.categories ?? [];
+			if (table === workCategorySetAssignment)
+				return options.categoryAuthorization?.assignments ?? [];
+			if (table === workCategorySet)
+				return options.categoryAuthorization?.sets ?? [];
+			if (table === workCategorySetCategory)
+				return options.categoryAuthorization?.setCategories ?? [];
 			if (table === workPeriod) return periodRow ? [periodRow] : [];
 			if (table === timeRecord) return canonical ? [canonical] : [];
+			if (table === timeRecordWork) return canonicalWork ? [canonicalWork] : [];
 			if (table === timeEntry) {
 				const rows =
 					timeEntryLockCount === 0
@@ -6784,6 +7538,7 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 							return {
 								for: finish,
 								orderBy: vi.fn(() => ({ for: finish })),
+								limit: vi.fn(() => ({ for: finish })),
 							};
 						}),
 					};
@@ -6820,6 +7575,14 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 						metadata: {
 							...canonicalCompatibilityMetadata,
 							timeCorrection: correction,
+							...(Object.hasOwn(correction, "workLocationType")
+								? {
+										timeCorrectionOriginalWorkMetadata: {
+											workLocationType: terminalPeriod.workLocationType,
+											workCategoryId: terminalPeriod.workCategoryId,
+										},
+									}
+								: {}),
 						},
 					});
 				}
@@ -6827,7 +7590,17 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 					approvalWorkflowFindFirst.mockResolvedValue({
 						...canonicalWorkflow,
 						status,
-						contextSnapshot: { timeCorrection: correction },
+						contextSnapshot: {
+							timeCorrection: correction,
+							...(Object.hasOwn(correction, "workLocationType")
+								? {
+										timeCorrectionOriginalWorkMetadata: {
+											workLocationType: terminalPeriod.workLocationType,
+											workCategoryId: terminalPeriod.workCategoryId,
+										},
+									}
+								: {}),
+						},
 					});
 				}
 			},
@@ -7009,6 +7782,17 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 			actorEmployeeId: "emp-manager",
 			actorUserId: "user-manager",
 			correction: terminalCorrection,
+			...(Object.hasOwn(
+				overrides.correction ?? terminalCorrection,
+				"workLocationType",
+			)
+				? {
+						expectedOriginalWorkMetadata: {
+							workLocationType: "office" as const,
+							workCategoryId: terminalPeriod.workCategoryId,
+						},
+					}
+				: {}),
 			legacyApprovalRequestId: ids.approval,
 			transition: { kind: "approve" as const, reason: null },
 			finalizedAt: parseInstant("2026-07-20T09:00:00Z"),
@@ -7057,6 +7841,96 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 			),
 		).rejects.toThrow(/changed|finaliz/i);
 		expect(mutations).toEqual([]);
+	});
+
+	it("approves a category change with current organization entitlement", async () => {
+		const proposedCategoryId = "71000000-0000-4000-8000-000000000804";
+		const setId = "71000000-0000-4000-8000-000000000805";
+		const correction = {
+			action: "edit" as const,
+			workLocationType: "office" as const,
+			workCategoryId: proposedCategoryId,
+		};
+		const { dbService, mutations } = createFinalizerDb({
+			entries: [originalIn, originalOut],
+			legacyRequest: null,
+			workflow: {
+				...canonicalWorkflow,
+				contextSnapshot: {
+					timeCorrection: correction,
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: terminalPeriod.workCategoryId,
+					},
+				},
+			},
+			mutationRows: [[{ id: ids.period }], [{ recordId: ids.canonical }]],
+			categoryAuthorization: {
+				categories: [
+					{ id: proposedCategoryId, organizationId: "org-1", isActive: true },
+				],
+				assignments: [
+					{
+						id: "71000000-0000-4000-8000-000000000806",
+						organizationId: "org-1",
+						assignmentType: "organization",
+						employeeId: null,
+						teamId: null,
+						setId,
+						isActive: true,
+						effectiveFrom: null,
+						effectiveUntil: null,
+					},
+				],
+				sets: [{ id: setId, organizationId: "org-1", isActive: true }],
+				setCategories: [
+					{ id: "71000000-0000-4000-8000-000000000807" },
+				],
+			},
+		});
+
+		await expect(
+			finalizeTimeCorrectionTerminalInTransaction(
+				approveInput(dbService, { legacyApprovalRequestId: null, correction }),
+			),
+		).resolves.toMatchObject({ transition: "approved" });
+		expect(mutations).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					table: workPeriod,
+					values: expect.objectContaining({ workCategoryId: proposedCategoryId }),
+				}),
+			]),
+		);
+	});
+
+	it("does not revalidate an unchanged historical category", async () => {
+		const correction = {
+			action: "edit" as const,
+			workLocationType: "home" as const,
+			workCategoryId: terminalPeriod.workCategoryId,
+		};
+		const { dbService, lockedTables } = createFinalizerDb({
+			entries: [originalIn, originalOut],
+			legacyRequest: null,
+			workflow: {
+				...canonicalWorkflow,
+				contextSnapshot: {
+					timeCorrection: correction,
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: terminalPeriod.workCategoryId,
+					},
+				},
+			},
+			mutationRows: [[{ id: ids.period }], [{ recordId: ids.canonical }]],
+		});
+
+		await finalizeTimeCorrectionTerminalInTransaction(
+			approveInput(dbService, { legacyApprovalRequestId: null, correction }),
+		);
+		expect(lockedTables).not.toContain(workCategory);
+		expect(lockedTables).not.toContain(workCategorySetAssignment);
 	});
 
 	it.each([
@@ -7203,6 +8077,381 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		expect(mutations).toHaveLength(6);
 	});
 
+	it("atomically applies metadata-only approval to legacy and canonical work metadata", async () => {
+		const correction = {
+			action: "edit" as const,
+			workLocationType: "remote" as const,
+			workCategoryId: null,
+		};
+		const { dbService, lockedTables, lockWhereClauses, mutations } =
+			createFinalizerDb({
+				entries: [originalIn, originalOut],
+				legacyRequest: null,
+				workflow: {
+					...canonicalWorkflow,
+					contextSnapshot: {
+						timeCorrection: correction,
+						timeCorrectionOriginalWorkMetadata: {
+							workLocationType: "office",
+							workCategoryId: terminalPeriod.workCategoryId,
+						},
+					},
+				},
+				mutationRows: [[{ id: ids.period }], [{ recordId: ids.canonical }]],
+			});
+
+		await finalizeTimeCorrectionTerminalInTransaction(
+			approveInput(dbService, {
+				legacyApprovalRequestId: null,
+				correction,
+			}),
+		);
+
+		expect(mutations.filter(({ table }) => table === timeEntry)).toEqual([]);
+		expect(mutations).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					table: workPeriod,
+					values: expect.objectContaining({
+						workLocationType: "remote",
+						workCategoryId: null,
+					}),
+				}),
+				expect.objectContaining({
+					table: timeRecordWork,
+					values: {
+						workLocationType: "remote",
+						workCategoryId: null,
+					},
+				}),
+			]),
+		);
+		expect(lockedTables).toEqual([
+			employee,
+			workPeriod,
+			timeEntry,
+			timeRecord,
+			timeRecordWork,
+		]);
+		expect(collectSqlColumnNames(lockWhereClauses[4])).toEqual(
+			expect.arrayContaining(["record_id", "organization_id", "record_kind"]),
+		);
+		const canonicalWorkMutation = mutations.find(
+			({ table }) => table === timeRecordWork,
+		);
+		expect(collectSqlColumnNames(canonicalWorkMutation?.where)).toEqual(
+			expect.arrayContaining([
+				"record_id",
+				"organization_id",
+				"record_kind",
+				"work_location_type",
+				"work_category_id",
+			]),
+		);
+	});
+
+	it.each([
+		["category disabled", { categoryActive: false }],
+		["category moved to another organization", { categoryOrganizationId: "org-2" }],
+		["category removed from the assigned set", { includeSetCategory: false }],
+		["category assignment inactive", { assignmentActive: false }],
+		[
+			"category assignment expired",
+			{ effectiveUntil: new Date("2020-01-01T00:00:00.000Z") },
+		],
+		["employee team changed", { includeMembership: false, assignmentType: "team" }],
+	] as const)("fails a category-changing approval closed when %s", async (_label, revocation) => {
+		const revoked = revocation as {
+			categoryActive?: boolean;
+			categoryOrganizationId?: string;
+			includeSetCategory?: boolean;
+			assignmentActive?: boolean;
+			effectiveUntil?: Date;
+			includeMembership?: boolean;
+			assignmentType?: "organization" | "team";
+		};
+		const correction = {
+			action: "edit" as const,
+			workLocationType: "office" as const,
+			workCategoryId: "71000000-0000-4000-8000-000000000804",
+		};
+		const teamId = "71000000-0000-4000-8000-000000000803";
+		const setId = "71000000-0000-4000-8000-000000000805";
+		const { dbService, mutations } = createFinalizerDb({
+			entries: [originalIn, originalOut],
+			legacyRequest: null,
+			workflow: {
+				...canonicalWorkflow,
+				contextSnapshot: {
+					timeCorrection: correction,
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: terminalPeriod.workCategoryId,
+					},
+				},
+			},
+			categoryAuthorization: {
+				memberships: revoked.includeMembership === false ? [] : [
+					{
+						employeeId: "emp-requester",
+						organizationId: "org-1",
+						teamId,
+					},
+				],
+				teams: [
+					{
+						id: teamId,
+						organizationId: "org-1",
+					},
+				],
+				categories: [
+					{
+						id: correction.workCategoryId,
+						organizationId: revoked.categoryOrganizationId ?? "org-1",
+						isActive: revoked.categoryActive ?? true,
+					},
+				],
+				assignments: [
+					{
+						id: "71000000-0000-4000-8000-000000000806",
+						organizationId: "org-1",
+						assignmentType: revoked.assignmentType ?? "organization",
+						employeeId: null,
+						teamId: revoked.assignmentType === "team" ? teamId : null,
+						setId,
+						isActive: revoked.assignmentActive ?? true,
+						effectiveFrom: null,
+						effectiveUntil: revoked.effectiveUntil ?? null,
+					},
+				],
+				sets: [{ id: setId, organizationId: "org-1", isActive: true }],
+				setCategories:
+					revoked.includeSetCategory === false
+						? []
+						: [{ id: "71000000-0000-4000-8000-000000000807" }],
+			},
+		});
+
+		await expect(
+			finalizeTimeCorrectionTerminalInTransaction(
+				approveInput(dbService, {
+					legacyApprovalRequestId: null,
+					correction,
+				}),
+			),
+		).rejects.toThrow(/category|finaliz|changed/i);
+		expect(mutations).toEqual([]);
+	});
+
+	it.each([
+		["zero", []],
+		["multiple", [{ recordId: ids.canonical }, { recordId: ids.canonical }]],
+	] as const)(
+		"fails metadata-only approval when canonical work CAS returns %s rows",
+		async (_label, canonicalWorkRows) => {
+			const correction = {
+				action: "edit" as const,
+				workLocationType: "remote" as const,
+				workCategoryId: null,
+			};
+			const { dbService } = createFinalizerDb({
+				entries: [originalIn, originalOut],
+				legacyRequest: null,
+				workflow: {
+					...canonicalWorkflow,
+					contextSnapshot: {
+						timeCorrection: correction,
+						timeCorrectionOriginalWorkMetadata: {
+							workLocationType: "office",
+							workCategoryId: terminalPeriod.workCategoryId,
+						},
+					},
+				},
+				mutationRows: [[{ id: ids.period }], [...canonicalWorkRows]],
+			});
+
+			await expect(
+				finalizeTimeCorrectionTerminalInTransaction(
+					approveInput(dbService, {
+						legacyApprovalRequestId: null,
+						correction,
+					}),
+				),
+			).rejects.toThrow("Time correction source changed during finalization");
+		},
+	);
+
+	it("fails metadata-only approval before writes when canonical work metadata diverges", async () => {
+		const correction = {
+			action: "edit" as const,
+			workLocationType: "remote" as const,
+			workCategoryId: null,
+		};
+		const { dbService, mutations } = createFinalizerDb({
+			entries: [originalIn, originalOut],
+			canonicalWork: {
+				...canonicalWorkRecord,
+				workLocationType: "home",
+			},
+			legacyRequest: null,
+			workflow: {
+				...canonicalWorkflow,
+				contextSnapshot: {
+					timeCorrection: correction,
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: terminalPeriod.workCategoryId,
+					},
+				},
+			},
+		});
+
+		await expect(
+			finalizeTimeCorrectionTerminalInTransaction(
+				approveInput(dbService, {
+					legacyApprovalRequestId: null,
+					correction,
+				}),
+			),
+		).rejects.toThrow("Time correction source changed during finalization");
+		expect(mutations).toEqual([]);
+	});
+
+	it("fails metadata-only approval when both metadata rows drift from immutable source evidence", async () => {
+		const correction = {
+			action: "edit" as const,
+			workLocationType: "remote" as const,
+			workCategoryId: null,
+		};
+		const { dbService, mutations } = createFinalizerDb({
+			period: { ...terminalPeriod, workLocationType: "home" },
+			entries: [originalIn, originalOut],
+			canonicalWork: { ...canonicalWorkRecord, workLocationType: "home" },
+			legacyRequest: null,
+			workflow: {
+				...canonicalWorkflow,
+				contextSnapshot: {
+					timeCorrection: correction,
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: terminalPeriod.workCategoryId,
+					},
+				},
+			},
+		});
+
+		await expect(
+			finalizeTimeCorrectionTerminalInTransaction(
+				approveInput(dbService, {
+					legacyApprovalRequestId: null,
+					correction,
+					expectedSource: terminalExpectedSource(true),
+				}),
+			),
+		).rejects.toThrow("Time correction source changed during finalization");
+		expect(mutations).toEqual([]);
+	});
+
+	it("reports immutable endpoint drift as a finalization conflict", async () => {
+		const expectedSource = terminalExpectedSource();
+		expectedSource.currentEndpoints.clockIn.timestamp = parseInstant(
+			"2026-07-18T22:31:00Z",
+		);
+		const { dbService, mutations } = createFinalizerDb({ legacyRequest: null });
+
+		await expect(
+			finalizeTimeCorrectionTerminalInTransaction(
+				approveInput(dbService, {
+					legacyApprovalRequestId: null,
+					expectedSource,
+				}),
+			),
+		).rejects.toThrow("Time correction source changed during finalization");
+		expect(mutations).toEqual([]);
+	});
+
+	it("leaves both metadata rows unchanged on rejection", async () => {
+		const correction = {
+			action: "edit" as const,
+			workLocationType: "remote" as const,
+			workCategoryId: null,
+		};
+		const { dbService, mutations } = createFinalizerDb({
+			entries: [originalIn, originalOut],
+			legacyRequest: null,
+			workflow: {
+				...canonicalWorkflow,
+				status: "rejected",
+				contextSnapshot: {
+					timeCorrection: correction,
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: terminalPeriod.workCategoryId,
+					},
+				},
+			},
+		});
+
+		await finalizeTimeCorrectionTerminalInTransaction(
+			approveInput(dbService, {
+				legacyApprovalRequestId: null,
+				correction,
+				transition: { kind: "reject", reason: "No change" },
+			}),
+		);
+
+		expect(mutations).toEqual([]);
+		expect(terminalPeriod.workLocationType).toBe("office");
+		expect(canonicalWorkRecord.workLocationType).toBe("office");
+	});
+
+	it.each([
+		["changed location", { workLocationType: "home", workCategoryId: null }],
+		[
+			"changed category",
+			{
+				workLocationType: "office",
+				workCategoryId: "10000000-0000-4000-8000-000000000099",
+			},
+		],
+		["legacy/current mismatch", null],
+	] as const)(
+		"rejects canonical correction equality with %s",
+		async (_label, metadata) => {
+			const expectedCorrection = {
+				...terminalCorrection,
+				workLocationType: "office" as const,
+				workCategoryId: null,
+			};
+			const observedCorrection = metadata
+				? { ...terminalCorrection, ...metadata }
+				: terminalCorrection;
+			const { dbService, mutations } = createFinalizerDb({
+				legacyRequest: null,
+				workflow: {
+					...canonicalWorkflow,
+					contextSnapshot: {
+						timeCorrection: observedCorrection,
+						timeCorrectionOriginalWorkMetadata: {
+							workLocationType: "office",
+							workCategoryId: terminalPeriod.workCategoryId,
+						},
+					},
+				},
+			});
+
+			await expect(
+				finalizeTimeCorrectionTerminalInTransaction(
+					approveInput(dbService, {
+						legacyApprovalRequestId: null,
+						correction: expectedCorrection,
+					}),
+				),
+			).rejects.toThrow("Time correction source changed during finalization");
+			expect(mutations).toEqual([]);
+		},
+	);
+
 	it.each([
 		["missing", { source: { id: ids.period } }],
 		[
@@ -7218,74 +8467,83 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 				},
 			},
 		],
-	] as const)("rejects canonical context with %s time correction evidence", async (_label, contextSnapshot) => {
-		const { dbService, mutations } = createFinalizerDb({
-			legacyRequest: null,
-			workflow: { ...canonicalWorkflow, contextSnapshot },
-		});
+	] as const)(
+		"rejects canonical context with %s time correction evidence",
+		async (_label, contextSnapshot) => {
+			const { dbService, mutations } = createFinalizerDb({
+				legacyRequest: null,
+				workflow: { ...canonicalWorkflow, contextSnapshot },
+			});
 
-		await expect(
-			finalizeTimeCorrectionTerminalInTransaction(
-				approveInput(dbService, { legacyApprovalRequestId: null }),
-			),
-		).rejects.toThrow("Time correction source changed during finalization");
-		expect(mutations).toEqual([]);
-	});
+			await expect(
+				finalizeTimeCorrectionTerminalInTransaction(
+					approveInput(dbService, { legacyApprovalRequestId: null }),
+				),
+			).rejects.toThrow("Time correction source changed during finalization");
+			expect(mutations).toEqual([]);
+		},
+	);
 
-	it.each([
-		"inherited",
-		"accessor",
-	] as const)("rejects canonical context with an %s time correction member", async (shape) => {
-		const contextSnapshot =
-			shape === "inherited"
-				? Object.assign(Object.create({ timeCorrection: terminalCorrection }), {
-						source: { id: ids.period },
-					})
-				: Object.defineProperty(
-						{ source: { id: ids.period } },
-						"timeCorrection",
-						{
-							enumerable: true,
-							get: () => terminalCorrection,
-						},
-					);
-		const { dbService, mutations } = createFinalizerDb({
-			legacyRequest: null,
-			workflow: { ...canonicalWorkflow, contextSnapshot },
-		});
+	it.each(["inherited", "accessor"] as const)(
+		"rejects canonical context with an %s time correction member",
+		async (shape) => {
+			const contextSnapshot =
+				shape === "inherited"
+					? Object.assign(
+							Object.create({ timeCorrection: terminalCorrection }),
+							{
+								source: { id: ids.period },
+							},
+						)
+					: Object.defineProperty(
+							{ source: { id: ids.period } },
+							"timeCorrection",
+							{
+								enumerable: true,
+								get: () => terminalCorrection,
+							},
+						);
+			const { dbService, mutations } = createFinalizerDb({
+				legacyRequest: null,
+				workflow: { ...canonicalWorkflow, contextSnapshot },
+			});
 
-		await expect(
-			finalizeTimeCorrectionTerminalInTransaction(
-				approveInput(dbService, { legacyApprovalRequestId: null }),
-			),
-		).rejects.toThrow("Time correction source changed during finalization");
-		expect(mutations).toEqual([]);
-	});
+			await expect(
+				finalizeTimeCorrectionTerminalInTransaction(
+					approveInput(dbService, { legacyApprovalRequestId: null }),
+				),
+			).rejects.toThrow("Time correction source changed during finalization");
+			expect(mutations).toEqual([]);
+		},
+	);
 
 	it.each([
 		["approve", "approved", { kind: "approve", reason: null }],
 		["reject", "rejected", { kind: "reject", reason: "Incorrect time" }],
-	] as const)("accepts a pending compatibility request during canonical %s finalization", async (_label, status, transition) => {
-		const { dbService } = createFinalizerDb({
-			legacyRequest: {
-				...legacyRequest,
-				status: "pending",
-				approvedAt: null,
-				rejectionReason: null,
-				metadata: canonicalCompatibilityMetadata,
-			},
-			workflow: { ...canonicalWorkflow, status },
-		});
+	] as const)(
+		"accepts a pending compatibility request during canonical %s finalization",
+		async (_label, status, transition) => {
+			const { dbService } = createFinalizerDb({
+				legacyRequest: {
+					...legacyRequest,
+					status: "pending",
+					approvedAt: null,
+					rejectionReason: null,
+					metadata: canonicalCompatibilityMetadata,
+				},
+				workflow: { ...canonicalWorkflow, status },
+			});
 
-		await expect(
-			finalizeTimeCorrectionTerminalInTransaction(
-				approveInput(dbService, { transition }),
-			),
-		).resolves.toMatchObject({
-			transition: status,
-			requesterEmployeeId: "emp-requester",
-		});
-	});
+			await expect(
+				finalizeTimeCorrectionTerminalInTransaction(
+					approveInput(dbService, { transition }),
+				),
+			).resolves.toMatchObject({
+				transition: status,
+				requesterEmployeeId: "emp-requester",
+			});
+		},
+	);
 
 	it.each([
 		["pending", "pending", null],
@@ -7356,55 +8614,156 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 				timeCorrection: { ...terminalCorrection, unexpected: true },
 			},
 		],
-	] as const)("rejects canonical compatibility metadata with %s", async (_label, metadata) => {
-		const { dbService, mutations } = createFinalizerDb({
-			legacyRequest: { ...legacyRequest, metadata },
-		});
+	] as const)(
+		"rejects canonical compatibility metadata with %s",
+		async (_label, metadata) => {
+			const { dbService, mutations } = createFinalizerDb({
+				legacyRequest: { ...legacyRequest, metadata },
+			});
 
-		await expect(
-			finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService)),
-		).rejects.toThrow("Time correction source changed during finalization");
-		expect(mutations).toEqual([]);
-	});
+			await expect(
+				finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService)),
+			).rejects.toThrow("Time correction source changed during finalization");
+			expect(mutations).toEqual([]);
+		},
+	);
 
-	it.each([
-		"inherited",
-		"accessor",
-	] as const)("rejects canonical compatibility metadata with an %s workflow binding", async (shape) => {
-		const metadata =
-			shape === "inherited"
-				? Object.assign(
-						Object.create({
-							workflow: canonicalCompatibilityMetadata.workflow,
-						}),
-						{
-							stage: canonicalCompatibilityMetadata.stage,
-							timeCorrection: terminalCorrection,
-						},
-					)
-				: Object.defineProperty(
-						{
-							stage: canonicalCompatibilityMetadata.stage,
-							timeCorrection: terminalCorrection,
-						},
-						"workflow",
-						{
-							enumerable: true,
-							get: () => canonicalCompatibilityMetadata.workflow,
-						},
-					);
-		const { dbService, mutations } = createFinalizerDb({
-			legacyRequest: { ...legacyRequest, metadata },
-		});
+	it.each(["inherited", "accessor"] as const)(
+		"rejects canonical compatibility metadata with an %s workflow binding",
+		async (shape) => {
+			const metadata =
+				shape === "inherited"
+					? Object.assign(
+							Object.create({
+								workflow: canonicalCompatibilityMetadata.workflow,
+							}),
+							{
+								stage: canonicalCompatibilityMetadata.stage,
+								timeCorrection: terminalCorrection,
+							},
+						)
+					: Object.defineProperty(
+							{
+								stage: canonicalCompatibilityMetadata.stage,
+								timeCorrection: terminalCorrection,
+							},
+							"workflow",
+							{
+								enumerable: true,
+								get: () => canonicalCompatibilityMetadata.workflow,
+							},
+						);
+			const { dbService, mutations } = createFinalizerDb({
+				legacyRequest: { ...legacyRequest, metadata },
+			});
 
-		await expect(
-			finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService)),
-		).rejects.toThrow("Time correction source changed during finalization");
-		expect(mutations).toEqual([]);
-	});
+			await expect(
+				finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService)),
+			).rejects.toThrow("Time correction source changed during finalization");
+			expect(mutations).toEqual([]);
+		},
+	);
 
 	it("preserves legacy-authoritative normalized metadata without workflow or stage bindings", async () => {
 		const { dbService } = legacyOnlyDb(legacyRequest);
+
+		await expect(
+			finalizeTimeCorrectionTerminalInTransaction(
+				approveInput(dbService, {
+					expectedApprovalWorkflowId: null,
+					expectedApprovalWorkflowVersion: null,
+				}),
+			),
+		).resolves.toMatchObject({ transition: "approved" });
+	});
+
+	it("rejects a pure-legacy metadata change when the canonical work record is missing", async () => {
+		const correction = {
+			action: "edit" as const,
+			workLocationType: "remote" as const,
+			workCategoryId: null,
+		};
+		const { dbService, mutations } = createFinalizerDb({
+			period: {
+				...terminalPeriod,
+				approvalWorkflowId: null,
+				canonicalRecordId: null,
+			},
+			entries: [originalIn, originalOut],
+			canonical: null,
+			canonicalWork: null,
+			legacyRequest: {
+				...legacyRequest,
+				metadata: {
+					timeCorrection: correction,
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: terminalPeriod.workCategoryId,
+					},
+				},
+			},
+			workflow: null,
+		});
+
+		await expect(
+			finalizeTimeCorrectionTerminalInTransaction(
+				approveInput(dbService, {
+					expectedApprovalWorkflowId: null,
+					expectedApprovalWorkflowVersion: null,
+					correction,
+				}),
+			),
+		).rejects.toThrow("Time correction source changed during finalization");
+		expect(mutations).toEqual([]);
+	});
+
+	it("rejects a pure-legacy metadata change when canonical work metadata diverges", async () => {
+		const correction = {
+			action: "edit" as const,
+			workLocationType: "remote" as const,
+			workCategoryId: null,
+		};
+		const { dbService, mutations } = createFinalizerDb({
+			period: { ...terminalPeriod, approvalWorkflowId: null },
+			entries: [originalIn, originalOut],
+			canonicalWork: { ...canonicalWorkRecord, workLocationType: "home" },
+			legacyRequest: {
+				...legacyRequest,
+				metadata: {
+					timeCorrection: correction,
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: terminalPeriod.workCategoryId,
+					},
+				},
+			},
+			workflow: null,
+		});
+
+		await expect(
+			finalizeTimeCorrectionTerminalInTransaction(
+				approveInput(dbService, {
+					expectedApprovalWorkflowId: null,
+					expectedApprovalWorkflowVersion: null,
+					correction,
+				}),
+			),
+		).rejects.toThrow("Time correction source changed during finalization");
+		expect(mutations).toEqual([]);
+	});
+
+	it("accepts a pure-legacy v1 timestamp correction without a canonical record", async () => {
+		const { dbService } = createFinalizerDb({
+			period: {
+				...terminalPeriod,
+				approvalWorkflowId: null,
+				canonicalRecordId: null,
+			},
+			canonical: null,
+			canonicalWork: null,
+			legacyRequest,
+			workflow: null,
+		});
 
 		await expect(
 			finalizeTimeCorrectionTerminalInTransaction(

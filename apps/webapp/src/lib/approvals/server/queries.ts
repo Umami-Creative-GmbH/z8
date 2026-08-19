@@ -5,10 +5,17 @@ import {
 	absenceEntry,
 	approvalRequest,
 	timeEntry,
+	workCategory,
 	workPeriod,
 } from "@/db/schema";
 import type { SickDetail } from "@/lib/absences/types";
 import { classifyTimeApprovalRequest } from "@/lib/approvals/time-request-kind";
+import {
+	categoryIdsFromTimeCorrectionMetadata,
+	categoryNamesForOrganization,
+	parseTimeCorrectionReviewMetadata,
+	timeCorrectionMetadataChanges,
+} from "./time-correction-review-metadata";
 import type { ApprovalWithAbsence, ApprovalWithTimeCorrection } from "./types";
 
 interface PendingRequestRecord {
@@ -69,13 +76,6 @@ interface CorrectionEntryForReview {
 	utcOffsetMinutes: number;
 }
 
-type TimeCorrectionApprovalMetadata = {
-	timeCorrection?: {
-		clockInCorrectionId?: string;
-		clockOutCorrectionId?: string;
-	};
-};
-
 function splitPendingApprovalIds(pendingRequests: PendingRequestRecord[]) {
 	const absenceIds: string[] = [];
 	const timeCorrectionIds: string[] = [];
@@ -93,8 +93,20 @@ function splitPendingApprovalIds(pendingRequests: PendingRequestRecord[]) {
 }
 
 function correctionMetadataFromRequest(request: { metadata?: unknown }) {
-	return (request.metadata as TimeCorrectionApprovalMetadata | null)
-		?.timeCorrection;
+	const metadata = parseTimeCorrectionReviewMetadata(request.metadata);
+	return metadata.kind === "valid_current" || metadata.kind === "valid_legacy"
+		? metadata.requested
+		: undefined;
+}
+
+function metadataChangesFromRequest(
+	request: PendingRequestRecord,
+	categoryNamesById: Map<string, string>,
+) {
+	return timeCorrectionMetadataChanges(
+		parseTimeCorrectionReviewMetadata(request.metadata),
+		categoryNamesById,
+	);
 }
 
 function isOrphanedTimeCorrectionApproval(
@@ -102,6 +114,7 @@ function isOrphanedTimeCorrectionApproval(
 	period: WorkPeriodLookupRecord,
 ): boolean {
 	const metadata = correctionMetadataFromRequest(request);
+	const workMetadata = parseTimeCorrectionReviewMetadata(request.metadata);
 	const correctionEntries = period.correctionReviewEntries ?? [];
 	const correctionById = new Map(
 		correctionEntries.map((entry) => [entry.id, entry]),
@@ -119,12 +132,12 @@ function isOrphanedTimeCorrectionApproval(
 		: [];
 	const clockInCorrection = metadata?.clockInCorrectionId
 		? correctionById.get(metadata.clockInCorrectionId)
-		: clockInCandidates.length === 1
+		: workMetadata.kind === "legacy_absent" && clockInCandidates.length === 1
 			? clockInCandidates[0]
 			: undefined;
 	const clockOutCorrection = metadata?.clockOutCorrectionId
 		? correctionById.get(metadata.clockOutCorrectionId)
-		: clockOutCandidates.length === 1
+		: workMetadata.kind === "legacy_absent" && clockOutCandidates.length === 1
 			? clockOutCandidates[0]
 			: undefined;
 	const matchingClockInCorrection =
@@ -138,23 +151,27 @@ function isOrphanedTimeCorrectionApproval(
 	const hasMetadataCorrectionIds = Boolean(
 		metadata?.clockInCorrectionId || metadata?.clockOutCorrectionId,
 	);
+	if (workMetadata.kind === "malformed") return true;
 
 	return hasMetadataCorrectionIds
 		? Boolean(metadata?.clockInCorrectionId && !matchingClockInCorrection) ||
 				Boolean(metadata?.clockOutCorrectionId && !matchingClockOutCorrection)
-		: !matchingClockInCorrection ||
-				clockInCandidates.length > 1 ||
-				clockOutCandidates.length > 1;
+		: workMetadata.kind === "legacy_absent" &&
+				(!matchingClockInCorrection ||
+					clockInCandidates.length > 1 ||
+					clockOutCandidates.length > 1);
 }
 
 export function buildPendingApprovalResult({
 	pendingRequests,
 	absencesById,
 	periodsById,
+	categoryNamesById = new Map<string, string>(),
 }: {
 	pendingRequests: PendingRequestRecord[];
 	absencesById: Map<string, AbsenceLookupRecord>;
 	periodsById: Map<string, WorkPeriodLookupRecord>;
+	categoryNamesById?: Map<string, string>;
 }): {
 	absenceApprovals: ApprovalWithAbsence[];
 	timeCorrectionApprovals: ApprovalWithTimeCorrection[];
@@ -207,6 +224,10 @@ export function buildPendingApprovalResult({
 			continue;
 		}
 
+		const metadataChanges = metadataChangesFromRequest(
+			request,
+			categoryNamesById,
+		);
 		timeCorrectionApprovals.push({
 			...request,
 			reason: request.reason ?? null,
@@ -225,6 +246,7 @@ export function buildPendingApprovalResult({
 				clockOutCorrectionEntry: period.clockOut
 					? findCorrectionEntry(request, period, period.clockOut.id)
 					: null,
+				...(metadataChanges ? { metadataChanges } : {}),
 			},
 		});
 	}
@@ -318,16 +340,33 @@ export async function getPendingApprovals(): Promise<{
 				Boolean(id),
 			),
 	);
-	const correctionEntries =
+	const categoryIds = categoryIdsFromTimeCorrectionMetadata(pendingRequests);
+	const [correctionEntriesResult, categories] = await Promise.all([
 		originalEntryIds.length > 0
-			? ((await db.query.timeEntry.findMany({
+			? db.query.timeEntry.findMany({
 					where: and(
 						eq(timeEntry.organizationId, currentEmployee.organizationId),
 						eq(timeEntry.type, "correction"),
 						inArray(timeEntry.replacesEntryId, originalEntryIds),
 					),
-				})) as CorrectionEntryForReview[])
-			: [];
+				})
+			: Promise.resolve([]),
+		categoryIds.length > 0
+			? db.query.workCategory.findMany({
+					where: and(
+						eq(workCategory.organizationId, currentEmployee.organizationId),
+						inArray(workCategory.id, categoryIds),
+					),
+					columns: { id: true, organizationId: true, name: true },
+				})
+			: Promise.resolve([]),
+	]);
+	const correctionEntries =
+		correctionEntriesResult as CorrectionEntryForReview[];
+	const categoryNamesById = categoryNamesForOrganization(
+		categories,
+		currentEmployee.organizationId,
+	);
 	const correctionEntriesByReplacedId = new Map<
 		string,
 		CorrectionEntryForReview[]
@@ -352,6 +391,7 @@ export async function getPendingApprovals(): Promise<{
 		pendingRequests,
 		absencesById,
 		periodsById,
+		categoryNamesById,
 	});
 }
 

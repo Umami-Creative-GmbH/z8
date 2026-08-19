@@ -174,11 +174,23 @@ describe("getApprovalInboxDetailFromRequest", () => {
 
 		expect(result.sections).toContainEqual({
 			type: "key_value",
-			title: "Requested Correction",
+			title: {
+				key: "approvals:approvals.requestedCorrection",
+				fallback: "Requested Correction",
+			},
 			rows: [
-				{ label: "Action", value: "Edit" },
-				{ label: "Clock in", value: "08:00 -> 08:15" },
-				{ label: "Clock out", value: "16:00 -> 16:30" },
+				{
+					label: { key: "approvals:approvals.action", fallback: "Action" },
+					value: { key: "approvals:approvals.edit", fallback: "Edit" },
+				},
+				{
+					label: { key: "approvals:approvals.clockIn", fallback: "Clock in" },
+					value: "08:00 -> 08:15",
+				},
+				{
+					label: { key: "approvals:approvals.clockOut", fallback: "Clock out" },
+					value: "16:00 -> 16:30",
+				},
 			],
 		});
 		expect(result.sections).toContainEqual({
@@ -193,6 +205,142 @@ describe("getApprovalInboxDetailFromRequest", () => {
 				},
 			],
 		});
+	});
+
+	it("renders only changed work metadata for a metadata-only correction", async () => {
+		const timeCorrectionRequest = {
+			...request,
+			entityType: "time_entry",
+			entityId: "period-1",
+		};
+		const detail = createDetail({
+			approvalType: "time_entry",
+			entityId: "period-1",
+			typeName: "Time Correction",
+		});
+		detail.entity = {
+			pendingCorrection: {
+				action: "edit",
+				clockIn: null,
+				clockOut: null,
+				metadataChanges: {
+					workLocation: { original: "office", requested: "home" },
+					workCategory: {
+						original: {
+							state: "named",
+							id: "category-1",
+							name: "Training",
+						},
+						requested: { state: "none" },
+					},
+				},
+				isOrphaned: false,
+			},
+		};
+
+		const result = await getApprovalInboxDetailFromRequest({
+			request: timeCorrectionRequest,
+			handler: createHandler(detail, "time_entry"),
+		});
+
+		expect(result.sections).toContainEqual({
+			type: "key_value",
+			title: {
+				key: "approvals:approvals.requestedCorrection",
+				fallback: "Requested Correction",
+			},
+			rows: [
+				{
+					label: { key: "approvals:approvals.action", fallback: "Action" },
+					value: { key: "approvals:approvals.edit", fallback: "Edit" },
+				},
+				{
+					label: {
+						key: "approvals:approvals.workLocation",
+						fallback: "Work location",
+					},
+					value: {
+						kind: "change",
+						original: { kind: "work_location", value: "office" },
+						requested: { kind: "work_location", value: "home" },
+					},
+				},
+				{
+					label: {
+						key: "approvals:approvals.workCategory",
+						fallback: "Work category",
+					},
+					value: {
+						kind: "change",
+						original: {
+							kind: "work_category",
+							value: {
+								state: "named",
+								id: "category-1",
+								name: "Training",
+							},
+						},
+						requested: {
+							kind: "work_category",
+							value: { state: "none" },
+						},
+					},
+				},
+			],
+		});
+		expect(JSON.stringify(result.sections)).not.toContain("Clock in");
+		expect(JSON.stringify(result.sections)).not.toContain("missing");
+	});
+
+	it("omits unchanged metadata rows from mixed correction details", async () => {
+		const timeCorrectionRequest = {
+			...request,
+			entityType: "time_entry",
+			entityId: "period-1",
+		};
+		const detail = createDetail({
+			approvalType: "time_entry",
+			entityId: "period-1",
+			typeName: "Time Correction",
+		});
+		detail.entity = {
+			pendingCorrection: {
+				action: "edit",
+				clockIn: {
+					original: new Date("2026-05-31T08:00:00.000Z"),
+					requested: new Date("2026-05-31T08:15:00.000Z"),
+				},
+				clockOut: null,
+				metadataChanges: {},
+				isOrphaned: false,
+			},
+		};
+
+		const result = await getApprovalInboxDetailFromRequest({
+			request: timeCorrectionRequest,
+			handler: createHandler(detail, "time_entry"),
+		});
+
+		const correctionSection = result.sections.find(
+			(section) =>
+				section.type === "key_value" &&
+				typeof section.title !== "string" &&
+				section.title.key === "approvals:approvals.requestedCorrection",
+		);
+		expect(correctionSection).toMatchObject({
+			rows: [
+				{
+					label: { key: "approvals:approvals.action", fallback: "Action" },
+					value: { key: "approvals:approvals.edit", fallback: "Edit" },
+				},
+				{
+					label: { key: "approvals:approvals.clockIn", fallback: "Clock in" },
+					value: "08:00 -> 08:15",
+				},
+			],
+		});
+		expect(JSON.stringify(correctionSection)).not.toContain("Work location");
+		expect(JSON.stringify(correctionSection)).not.toContain("Work category");
 	});
 
 	it("warns when a pending time correction approval has missing correction entries", async () => {

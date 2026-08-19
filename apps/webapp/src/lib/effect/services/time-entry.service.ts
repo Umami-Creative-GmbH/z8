@@ -19,8 +19,13 @@ import {
 	employeeManagers,
 	timeEntry,
 	timeRecord,
+	timeRecordWork,
 	workPeriod,
 } from "@/db/schema";
+import {
+	authorizeTimeCorrectionCategoryChange,
+	lockTrustedTimeCorrectionEmployeeTeamId,
+} from "@/lib/approvals/server/time-correction-category-authorization";
 import { compareInstants } from "@/lib/datetime/temporal-core";
 import {
 	type ChainValidationResult,
@@ -29,8 +34,15 @@ import {
 	validateChainDetailed,
 	verifyHash,
 } from "@/lib/time-tracking/blockchain";
-import { instantFromTimeCorrectionBoundary } from "@/lib/time-tracking/time-correction-temporal";
+import {
+	instantFromTimeCorrectionBoundary,
+	validateTimeCorrectionRange,
+} from "@/lib/time-tracking/time-correction-temporal";
 import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
+import {
+	isWorkLocationType,
+	type WorkLocationType,
+} from "@/lib/time-tracking/work-location";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -74,6 +86,19 @@ export interface CreateCorrectionInput {
 	timezoneSource: TimeEntryTimezoneSource;
 	workPeriodId: string;
 	transaction?: TransactionClient;
+	workLocationType?: WorkLocationType;
+	workCategoryId?: string | null;
+	expectedClockInId?: string;
+	expectedClockOutId?: string | null;
+	expectedStartTime?: Date;
+	expectedEndTime?: Date | null;
+	expectedWorkLocationType?: string | null;
+	expectedWorkCategoryId?: string | null;
+	validateTimeRange?: () => Promise<{
+		isValid: boolean;
+		error?: string;
+		holidayName?: string;
+	}>;
 }
 
 export interface GetTimeEntriesInput {
@@ -98,7 +123,7 @@ export class TimeEntryService extends Context.Tag("TimeEntryService")<
 		readonly createCorrectionEntry: (
 			input: CreateCorrectionInput,
 		) => Effect.Effect<
-			TimeEntry,
+			TimeEntry | null,
 			| NotFoundError
 			| ValidationError
 			| ConflictError
@@ -247,6 +272,7 @@ export const TimeEntryServiceLive = Layer.effect(
 											organizationId: employee.organizationId,
 											isActive: employee.isActive,
 											role: employee.role,
+											teamId: employee.teamId,
 										})
 										.from(employee)
 										.where(
@@ -339,6 +365,15 @@ export const TimeEntryServiceLive = Layer.effect(
 											});
 										}
 									}
+									const lockedTeamId =
+										input.workLocationType === undefined
+											? null
+											: await lockTrustedTimeCorrectionEmployeeTeamId({
+													tx,
+													employeeId: input.employeeId,
+													employeeTeamId: targetEmployees[0]?.teamId ?? null,
+													organizationId: input.organizationId,
+												});
 									const [period] = await tx
 										.select()
 										.from(workPeriod)
@@ -358,6 +393,41 @@ export const TimeEntryServiceLive = Layer.effect(
 											entityId: workPeriodId,
 										});
 									}
+									if (
+										(input.expectedClockInId !== undefined &&
+											period.clockInId !== input.expectedClockInId) ||
+										(input.expectedClockOutId !== undefined &&
+											period.clockOutId !== input.expectedClockOutId) ||
+										(input.expectedStartTime !== undefined &&
+											compareInstants(
+												instantFromTimeCorrectionBoundary(period.startTime),
+												instantFromTimeCorrectionBoundary(
+													input.expectedStartTime,
+												),
+											) !== 0) ||
+										(input.expectedEndTime !== undefined &&
+											((period.endTime === null) !==
+												(input.expectedEndTime === null) ||
+												(period.endTime !== null &&
+													input.expectedEndTime !== null &&
+													compareInstants(
+														instantFromTimeCorrectionBoundary(period.endTime),
+														instantFromTimeCorrectionBoundary(
+															input.expectedEndTime,
+														),
+													) !== 0))) ||
+										(input.expectedWorkLocationType !== undefined &&
+											period.workLocationType !==
+												input.expectedWorkLocationType) ||
+										(input.expectedWorkCategoryId !== undefined &&
+											period.workCategoryId !== input.expectedWorkCategoryId)
+									) {
+										throw new ConflictError({
+											message:
+												"Work period changed while applying the correction",
+											conflictType: "time_correction_work_period_stale",
+										});
+									}
 									const correctsClockIn =
 										period.clockInId === input.replacesEntryId;
 									const correctsClockOut =
@@ -369,19 +439,70 @@ export const TimeEntryServiceLive = Layer.effect(
 											conflictType: "time_correction_work_period_stale",
 										});
 									}
-									const [entryToReplace] = await tx
-										.select()
-										.from(timeEntry)
-										.where(
-											and(
-												eq(timeEntry.id, input.replacesEntryId),
-												eq(timeEntry.employeeId, input.employeeId),
-												eq(timeEntry.organizationId, input.organizationId),
-												eq(timeEntry.isSuperseded, false),
-											),
-										)
-										.for("update");
-									if (!entryToReplace) {
+									const currentTimestamp = correctsClockIn
+										? period.startTime
+										: period.endTime;
+									const endpointChanged =
+										currentTimestamp !== null &&
+										compareInstants(
+											instantFromTimeCorrectionBoundary(currentTimestamp),
+											instantFromTimeCorrectionBoundary(input.timestamp),
+										) !== 0;
+									const metadataSupplied = input.workLocationType !== undefined;
+									if (
+										metadataSupplied &&
+										!isWorkLocationType(input.workLocationType)
+									) {
+										throw new ValidationError({
+											message: "Invalid work location type",
+											field: "workLocationType",
+										});
+									}
+									const proposedMetadata = metadataSupplied
+										? {
+												workLocationType:
+													input.workLocationType as WorkLocationType,
+												workCategoryId: input.workCategoryId ?? null,
+											}
+										: null;
+									const metadataChanged = Boolean(
+										proposedMetadata &&
+											(proposedMetadata.workLocationType !==
+												(period.workLocationType ?? "office") ||
+												proposedMetadata.workCategoryId !==
+													period.workCategoryId),
+									);
+									if (!endpointChanged && !metadataChanged) {
+										throw new ValidationError({
+											message: "At least one correction value must change",
+											field: "correction",
+										});
+									}
+									if (proposedMetadata) {
+										await authorizeTimeCorrectionCategoryChange({
+											tx,
+											employeeId: input.employeeId,
+											teamId: lockedTeamId,
+											organizationId: input.organizationId,
+											proposedWorkCategoryId: proposedMetadata.workCategoryId,
+											currentWorkCategoryId: period.workCategoryId,
+										});
+									}
+									const [entryToReplace] = endpointChanged
+										? await tx
+												.select()
+												.from(timeEntry)
+												.where(
+													and(
+														eq(timeEntry.id, input.replacesEntryId),
+														eq(timeEntry.employeeId, input.employeeId),
+														eq(timeEntry.organizationId, input.organizationId),
+														eq(timeEntry.isSuperseded, false),
+													),
+												)
+												.for("update")
+										: [null];
+									if (endpointChanged && !entryToReplace) {
 										throw new ConflictError({
 											message:
 												"Time entry was already corrected by another process",
@@ -420,116 +541,323 @@ export const TimeEntryServiceLive = Layer.effect(
 											conflictType: "pending_time_correction_approval",
 										});
 									}
-									const [previousEntry] = await tx
-										.select()
-										.from(timeEntry)
-										.where(
-											and(
-												eq(timeEntry.employeeId, input.employeeId),
-												eq(timeEntry.organizationId, input.organizationId),
-											),
-										)
-										.orderBy(desc(timeEntry.createdAt))
-										.limit(1);
-									const hash = calculateHash({
-										employeeId: input.employeeId,
-										type: "correction",
-										timestamp: input.timestamp.toISOString(),
-										previousHash: previousEntry?.hash ?? null,
-									});
-									const [newEntry] = await tx
-										.insert(timeEntry)
-										.values({
-											employeeId: input.employeeId,
-											organizationId: input.organizationId,
-											type: "correction",
-											timestamp: input.timestamp,
-											hash,
-											previousHash: previousEntry?.hash ?? null,
-											previousEntryId: previousEntry?.id ?? null,
-											replacesEntryId: input.replacesEntryId,
-											notes: input.notes,
-											ipAddress: input.ipAddress,
-											deviceInfo: input.deviceInfo,
-											createdBy: input.createdBy,
-											utcOffsetMinutes: input.utcOffsetMinutes,
-											timezone: input.timezone,
-											timezoneSource: input.timezoneSource,
-											...(input.isSuperseded === undefined
-												? {}
-												: { isSuperseded: input.isSuperseded }),
-										})
-										.returning();
-
-									if (!input.isSuperseded) {
-										const supersededEntries = await tx
-											.update(timeEntry)
-											.set({
-												isSuperseded: true,
-												supersededById: newEntry.id,
-											})
-											.where(
-												and(
-													eq(timeEntry.id, input.replacesEntryId),
-													eq(timeEntry.employeeId, input.employeeId),
-													eq(timeEntry.organizationId, input.organizationId),
-													eq(timeEntry.isSuperseded, false),
-												),
-											)
-											.returning({ id: timeEntry.id });
-
-										if (supersededEntries.length === 0) {
-											throw new ConflictError({
-												message:
-													"Time entry was already corrected by another process",
-												conflictType: "time_entry_already_corrected",
-											});
-										}
-
-										const startTime = correctsClockIn
+									const startTime =
+										correctsClockIn && endpointChanged
 											? input.timestamp
 											: period.startTime;
-										const endTime = correctsClockOut
+									const endTime =
+										correctsClockOut && endpointChanged
 											? input.timestamp
 											: period.endTime;
-										const start = instantFromTimeCorrectionBoundary(startTime);
-										const end = endTime
-											? instantFromTimeCorrectionBoundary(endTime)
-											: null;
-										if (end && compareInstants(end, start) <= 0) {
+									const start = instantFromTimeCorrectionBoundary(startTime);
+									const end = endTime
+										? instantFromTimeCorrectionBoundary(endTime)
+										: null;
+									if (end && compareInstants(end, start) <= 0) {
+										throw new ValidationError({
+											message: "Clock out time must be after clock in time",
+											field: "workPeriodId",
+											value: input.workPeriodId,
+										});
+									}
+									try {
+										validateTimeCorrectionRange(start, end);
+									} catch (error) {
+										throw new ValidationError({
+											message:
+												error instanceof Error
+													? error.message
+													: "Invalid work period range",
+											field: "workPeriodId",
+											value: input.workPeriodId,
+										});
+									}
+									if (input.validateTimeRange) {
+										const validation = await input.validateTimeRange();
+										if (!validation.isValid) {
 											throw new ValidationError({
-												message: "Clock out time must be after clock in time",
-												field: "workPeriodId",
-												value: input.workPeriodId,
+												message:
+													validation.error ??
+													"Cannot create time correction for this period",
+												field: "timestamp",
+												value: validation.holidayName,
 											});
 										}
-										const durationMinutes = end
-											? Math.floor(start.until(end).total("minutes"))
-											: null;
-										const endpointCondition = correctsClockIn
-											? eq(workPeriod.clockInId, input.replacesEntryId)
-											: eq(workPeriod.clockOutId, input.replacesEntryId);
-										const updatedPeriods = await tx
-											.update(workPeriod)
-											.set({
-												...(correctsClockIn
-													? { clockInId: newEntry.id, startTime }
-													: { clockOutId: newEntry.id, endTime }),
-												durationMinutes,
-												updatedAt: new Date(),
-											})
+									}
+									const durationMinutes = end
+										? Math.floor(start.until(end).total("minutes"))
+										: null;
+									let canonicalRecord: typeof timeRecord.$inferSelect | null =
+										null;
+									if (metadataSupplied) {
+										if (!period.canonicalRecordId) {
+											throw new Error("Canonical work record is missing");
+										}
+										const canonicalRecords = await tx
+											.select()
+											.from(timeRecord)
 											.where(
 												and(
-													eq(workPeriod.id, workPeriodId),
-													eq(workPeriod.employeeId, input.employeeId),
-													eq(workPeriod.organizationId, input.organizationId),
-													isNull(workPeriod.deletedAt),
-													endpointCondition,
+													eq(timeRecord.id, period.canonicalRecordId),
+													eq(timeRecord.employeeId, input.employeeId),
+													eq(timeRecord.organizationId, input.organizationId),
+													eq(timeRecord.recordKind, "work"),
 												),
 											)
-											.returning({ id: workPeriod.id });
+											.for("update");
+										const canonicalWorkRows = await tx
+											.select()
+											.from(timeRecordWork)
+											.where(
+												and(
+													eq(timeRecordWork.recordId, period.canonicalRecordId),
+													eq(
+														timeRecordWork.organizationId,
+														input.organizationId,
+													),
+													eq(timeRecordWork.recordKind, "work"),
+												),
+											)
+											.for("update");
+										canonicalRecord = canonicalRecords[0] ?? null;
+										const canonicalWork = canonicalWorkRows[0];
+										if (
+											canonicalRecords.length !== 1 ||
+											canonicalWorkRows.length !== 1 ||
+											!canonicalRecord ||
+											!canonicalWork ||
+											compareInstants(
+												instantFromTimeCorrectionBoundary(
+													canonicalRecord.startAt,
+												),
+												instantFromTimeCorrectionBoundary(period.startTime),
+											) !== 0 ||
+											(canonicalRecord.endAt === null) !==
+												(period.endTime === null) ||
+											(canonicalRecord.endAt !== null &&
+												period.endTime !== null &&
+												compareInstants(
+													instantFromTimeCorrectionBoundary(
+														canonicalRecord.endAt,
+													),
+													instantFromTimeCorrectionBoundary(period.endTime),
+												) !== 0) ||
+											canonicalWork.workLocationType !==
+												period.workLocationType ||
+											canonicalWork.workCategoryId !== period.workCategoryId
+										) {
+											throw new ConflictError({
+												message:
+													"Canonical work record diverges from work period",
+												conflictType: "time_correction_work_metadata_diverged",
+											});
+										}
+									}
+									let newEntry: TimeEntry | null = null;
+									if (endpointChanged) {
+										const [previousEntry] = await tx
+											.select()
+											.from(timeEntry)
+											.where(
+												and(
+													eq(timeEntry.employeeId, input.employeeId),
+													eq(timeEntry.organizationId, input.organizationId),
+												),
+											)
+											.orderBy(desc(timeEntry.createdAt))
+											.limit(1);
+										const hash = calculateHash({
+											employeeId: input.employeeId,
+											type: "correction",
+											timestamp: input.timestamp.toISOString(),
+											previousHash: previousEntry?.hash ?? null,
+										});
+										[newEntry] = await tx
+											.insert(timeEntry)
+											.values({
+												employeeId: input.employeeId,
+												organizationId: input.organizationId,
+												type: "correction",
+												timestamp: input.timestamp,
+												hash,
+												previousHash: previousEntry?.hash ?? null,
+												previousEntryId: previousEntry?.id ?? null,
+												replacesEntryId: input.replacesEntryId,
+												notes: input.notes,
+												ipAddress: input.ipAddress,
+												deviceInfo: input.deviceInfo,
+												createdBy: input.createdBy,
+												utcOffsetMinutes: input.utcOffsetMinutes,
+												timezone: input.timezone,
+												timezoneSource: input.timezoneSource,
+												...(input.isSuperseded === undefined
+													? {}
+													: { isSuperseded: input.isSuperseded }),
+											})
+											.returning();
+									}
 
-										if (updatedPeriods.length === 0) {
+									if (!input.isSuperseded) {
+										if (endpointChanged && !newEntry) {
+											throw new Error("Correction entry insert failed");
+										}
+										if (newEntry) {
+											const supersededEntries = await tx
+												.update(timeEntry)
+												.set({
+													isSuperseded: true,
+													supersededById: newEntry.id,
+												})
+												.where(
+													and(
+														eq(timeEntry.id, input.replacesEntryId),
+														eq(timeEntry.employeeId, input.employeeId),
+														eq(timeEntry.organizationId, input.organizationId),
+														eq(timeEntry.isSuperseded, false),
+													),
+												)
+												.returning({ id: timeEntry.id });
+
+											if (supersededEntries.length === 0) {
+												throw new ConflictError({
+													message:
+														"Time entry was already corrected by another process",
+													conflictType: "time_entry_already_corrected",
+												});
+											}
+										}
+										let updatedPeriods: Array<{ id: string }>;
+										if (newEntry && correctsClockIn) {
+											updatedPeriods =
+												metadataChanged && proposedMetadata
+													? await tx
+															.update(workPeriod)
+															.set({
+																clockInId: newEntry.id,
+																startTime,
+																durationMinutes,
+																workLocationType:
+																	proposedMetadata.workLocationType,
+																workCategoryId: proposedMetadata.workCategoryId,
+																updatedAt: new Date(),
+															})
+															.where(
+																and(
+																	eq(workPeriod.id, workPeriodId),
+																	eq(workPeriod.employeeId, input.employeeId),
+																	eq(
+																		workPeriod.organizationId,
+																		input.organizationId,
+																	),
+																	isNull(workPeriod.deletedAt),
+																	eq(
+																		workPeriod.clockInId,
+																		input.replacesEntryId,
+																	),
+																),
+															)
+															.returning({ id: workPeriod.id })
+													: await tx
+															.update(workPeriod)
+															.set({
+																clockInId: newEntry.id,
+																startTime,
+																durationMinutes,
+																updatedAt: new Date(),
+															})
+															.where(
+																and(
+																	eq(workPeriod.id, workPeriodId),
+																	eq(workPeriod.employeeId, input.employeeId),
+																	eq(
+																		workPeriod.organizationId,
+																		input.organizationId,
+																	),
+																	isNull(workPeriod.deletedAt),
+																	eq(
+																		workPeriod.clockInId,
+																		input.replacesEntryId,
+																	),
+																),
+															)
+															.returning({ id: workPeriod.id });
+										} else if (newEntry && correctsClockOut) {
+											updatedPeriods =
+												metadataChanged && proposedMetadata
+													? await tx
+															.update(workPeriod)
+															.set({
+																clockOutId: newEntry.id,
+																endTime,
+																durationMinutes,
+																workLocationType:
+																	proposedMetadata.workLocationType,
+																workCategoryId: proposedMetadata.workCategoryId,
+																updatedAt: new Date(),
+															})
+															.where(
+																and(
+																	eq(workPeriod.id, workPeriodId),
+																	eq(workPeriod.employeeId, input.employeeId),
+																	eq(
+																		workPeriod.organizationId,
+																		input.organizationId,
+																	),
+																	isNull(workPeriod.deletedAt),
+																	eq(
+																		workPeriod.clockOutId,
+																		input.replacesEntryId,
+																	),
+																),
+															)
+															.returning({ id: workPeriod.id })
+													: await tx
+															.update(workPeriod)
+															.set({
+																clockOutId: newEntry.id,
+																endTime,
+																durationMinutes,
+																updatedAt: new Date(),
+															})
+															.where(
+																and(
+																	eq(workPeriod.id, workPeriodId),
+																	eq(workPeriod.employeeId, input.employeeId),
+																	eq(
+																		workPeriod.organizationId,
+																		input.organizationId,
+																	),
+																	isNull(workPeriod.deletedAt),
+																	eq(
+																		workPeriod.clockOutId,
+																		input.replacesEntryId,
+																	),
+																),
+															)
+															.returning({ id: workPeriod.id });
+										} else if (metadataChanged && proposedMetadata) {
+											updatedPeriods = await tx
+												.update(workPeriod)
+												.set({
+													durationMinutes,
+													workLocationType: proposedMetadata.workLocationType,
+													workCategoryId: proposedMetadata.workCategoryId,
+													updatedAt: new Date(),
+												})
+												.where(
+													and(
+														eq(workPeriod.id, workPeriodId),
+														eq(workPeriod.employeeId, input.employeeId),
+														eq(workPeriod.organizationId, input.organizationId),
+														isNull(workPeriod.deletedAt),
+													),
+												)
+												.returning({ id: workPeriod.id });
+										} else {
+											throw new Error("Correction update payload is missing");
+										}
+
+										if (updatedPeriods.length !== 1) {
 											throw new ConflictError({
 												message:
 													"Work period changed while applying the correction",
@@ -538,8 +866,8 @@ export const TimeEntryServiceLive = Layer.effect(
 											});
 										}
 
-										if (period.canonicalRecordId) {
-											await tx
+										if (period.canonicalRecordId && endpointChanged) {
+											const canonicalUpdate = tx
 												.update(timeRecord)
 												.set({
 													startAt: startTime,
@@ -555,6 +883,47 @@ export const TimeEntryServiceLive = Layer.effect(
 														eq(timeRecord.recordKind, "work"),
 													),
 												);
+											if (metadataSupplied) {
+												const updatedCanonicalRecords =
+													await canonicalUpdate.returning({
+														id: timeRecord.id,
+													});
+												if (updatedCanonicalRecords.length !== 1) {
+													throw new Error(
+														"Canonical work record update failed",
+													);
+												}
+											} else {
+												await canonicalUpdate;
+											}
+										}
+										if (
+											metadataChanged &&
+											proposedMetadata &&
+											period.canonicalRecordId
+										) {
+											const updatedCanonicalWork = await tx
+												.update(timeRecordWork)
+												.set(proposedMetadata)
+												.where(
+													and(
+														eq(
+															timeRecordWork.recordId,
+															period.canonicalRecordId,
+														),
+														eq(
+															timeRecordWork.organizationId,
+															input.organizationId,
+														),
+														eq(timeRecordWork.recordKind, "work"),
+													),
+												)
+												.returning({ recordId: timeRecordWork.recordId });
+											if (updatedCanonicalWork.length !== 1) {
+												throw new Error(
+													"Canonical work metadata update failed",
+												);
+											}
 										}
 									}
 

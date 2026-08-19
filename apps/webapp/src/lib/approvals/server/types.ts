@@ -3,6 +3,7 @@ import type { db } from "@/db";
 import type { SickDetail } from "@/lib/absences/types";
 import type { DisplayContext } from "@/lib/datetime/temporal-format";
 import type { AnyAppError } from "@/lib/effect/errors";
+import type { TimeCorrectionMetadataChanges } from "./time-correction-review-metadata";
 
 export type ApprovalDatabase =
 	| typeof db
@@ -74,6 +75,7 @@ export interface ApprovalWithTimeCorrection {
 			timestamp: Date;
 			utcOffsetMinutes: number;
 		} | null;
+		metadataChanges?: TimeCorrectionMetadataChanges;
 	};
 }
 

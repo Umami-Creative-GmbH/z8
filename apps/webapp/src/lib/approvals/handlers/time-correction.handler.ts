@@ -14,6 +14,7 @@ import {
 	approvalRequest,
 	employee,
 	timeEntry,
+	workCategory,
 	workPeriod,
 } from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
@@ -27,6 +28,14 @@ import type {
 	ApprovalTimelineEvent,
 	ApprovalTypeHandler,
 } from "../domain/types";
+import {
+	categoryIdsFromTimeCorrectionMetadata,
+	categoryNamesForOrganization,
+	parseTimeCorrectionReviewMetadata,
+	type TimeCorrectionMetadataChanges,
+	type TimeCorrectionReviewMetadata,
+	timeCorrectionMetadataChanges,
+} from "../server/time-correction-review-metadata";
 import type { ApprovalDbService, CurrentApprover } from "../server/types";
 import {
 	classifyTimeApprovalRequest,
@@ -92,6 +101,7 @@ interface WorkPeriodWithRelations {
 	timeRequestActionable?: boolean;
 	timeRequestHasOrdinaryEvidence?: boolean;
 	correctionReviewEntries?: CorrectionEntryForReview[];
+	categoryNamesById?: Map<string, string>;
 	employee: {
 		id: string;
 		userId: string;
@@ -119,8 +129,9 @@ type TimeCorrectionAction = "edit" | "delete";
 
 interface PendingTimeCorrectionReview {
 	action: TimeCorrectionAction;
-	clockIn: { original: Date; requested: Date | null };
+	clockIn: { original: Date; requested: Date | null } | null;
 	clockOut: { original: Date | null; requested: Date | null } | null;
+	metadataChanges?: TimeCorrectionMetadataChanges;
 	isOrphaned: boolean;
 }
 
@@ -128,14 +139,6 @@ interface PublicApprovalStage {
 	name: string;
 	order: number;
 }
-
-type TimeCorrectionApprovalMetadata = {
-	timeCorrection?: {
-		action?: TimeCorrectionAction;
-		clockInCorrectionId?: string;
-		clockOutCorrectionId?: string;
-	};
-};
 
 function hasValidApprovalEndpoints(
 	period: WorkPeriodWithRelations,
@@ -232,8 +235,10 @@ function formatCapturedEndpoint(
 }
 
 function correctionMetadataFromRequest(request: { metadata?: unknown }) {
-	return (request.metadata as TimeCorrectionApprovalMetadata | null)
-		?.timeCorrection;
+	const metadata = parseTimeCorrectionReviewMetadata(request.metadata);
+	return metadata.kind === "valid_current" || metadata.kind === "valid_legacy"
+		? metadata.requested
+		: undefined;
 }
 
 const UNCLASSIFIED_TIME_APPROVAL_WARNING =
@@ -333,6 +338,7 @@ export function buildTimeApprovalReview(
 		publicStage?: PublicApprovalStage;
 	},
 	correctionEntries: CorrectionEntryForReview[],
+	categoryNamesById = period.categoryNamesById,
 ) {
 	const verifiedCorrections = activeRelationalCorrectionCandidates(
 		period,
@@ -352,13 +358,16 @@ export function buildTimeApprovalReview(
 			verifiedRelationalCorrectionIdsByEndpoint.clockOut.push(entry.id);
 		}
 	}
-	const kind = classifyTimeApprovalRequest({
+	const classifiedKind = classifyTimeApprovalRequest({
 		metadata: request.metadata,
 		reason: request.reason,
 		pendingChanges: period.pendingChanges,
 		verifiedRelationalCorrectionIds,
 		verifiedRelationalCorrectionIdsByEndpoint,
 	});
+	const reviewMetadata = parseTimeCorrectionReviewMetadata(request.metadata);
+	const kind =
+		reviewMetadata.kind === "malformed" ? "unclassified" : classifiedKind;
 	const hasOrdinaryEvidence =
 		kind !== "time_correction" &&
 		hasAttemptedOrdinaryTimeApprovalEvidence({
@@ -366,7 +375,6 @@ export function buildTimeApprovalReview(
 			reason: request.reason,
 			pendingChanges: period.pendingChanges,
 		});
-
 	return {
 		kind,
 		hasOrdinaryEvidence,
@@ -374,12 +382,15 @@ export function buildTimeApprovalReview(
 		warning:
 			kind === "unclassified" ? UNCLASSIFIED_TIME_APPROVAL_WARNING : null,
 		display: displayMetadataForKind(period, kind, request.publicStage),
-		...(kind === "time_correction"
+		...(kind === "time_correction" ||
+		reviewMetadata.kind === "malformed"
 			? {
 					pendingCorrection: buildPendingCorrectionReview(
 						period,
 						request,
 						correctionEntries,
+						categoryNamesById,
+						reviewMetadata,
 					),
 				}
 			: {}),
@@ -424,6 +435,10 @@ export function buildPendingCorrectionReview(
 	period: WorkPeriodWithRelations,
 	request: { metadata?: unknown },
 	correctionEntries: CorrectionEntryForReview[],
+	categoryNamesById = new Map<string, string>(),
+	workMetadata: TimeCorrectionReviewMetadata = parseTimeCorrectionReviewMetadata(
+		request.metadata,
+	),
 ): PendingTimeCorrectionReview {
 	const metadata = correctionMetadataFromRequest(request);
 	const correctionById = new Map(
@@ -442,12 +457,12 @@ export function buildPendingCorrectionReview(
 		: [];
 	const clockInCorrection = metadata?.clockInCorrectionId
 		? correctionById.get(metadata.clockInCorrectionId)
-		: clockInCandidates.length === 1
+		: workMetadata.kind === "legacy_absent" && clockInCandidates.length === 1
 			? clockInCandidates[0]
 			: undefined;
 	const clockOutCorrection = metadata?.clockOutCorrectionId
 		? correctionById.get(metadata.clockOutCorrectionId)
-		: clockOutCandidates.length === 1
+		: workMetadata.kind === "legacy_absent" && clockOutCandidates.length === 1
 			? clockOutCandidates[0]
 			: undefined;
 	const matchingClockInCorrection =
@@ -465,25 +480,48 @@ export function buildPendingCorrectionReview(
 		Boolean(metadata?.clockInCorrectionId && !matchingClockInCorrection) ||
 		Boolean(metadata?.clockOutCorrectionId && !matchingClockOutCorrection);
 	const isLegacyOrphaned =
+		workMetadata.kind === "legacy_absent" &&
 		!hasMetadataCorrectionIds &&
 		(!matchingClockInCorrection ||
 			clockInCandidates.length > 1 ||
 			clockOutCandidates.length > 1);
 
+	const metadataChanges = timeCorrectionMetadataChanges(
+		workMetadata,
+		categoryNamesById,
+	);
+
 	return {
 		action: metadata?.action ?? "edit",
-		clockIn: {
-			original: period.clockIn.timestamp,
-			requested: matchingClockInCorrection?.timestamp ?? null,
-		},
+		clockIn:
+			matchingClockInCorrection || metadata?.clockInCorrectionId
+				? {
+						original: period.clockIn.timestamp,
+						requested: matchingClockInCorrection?.timestamp ?? null,
+					}
+				: workMetadata.kind === "legacy_absent"
+					? {
+							original: period.clockIn.timestamp,
+							requested: null,
+						}
+					: null,
 		clockOut:
-			period.clockOut || metadata?.clockOutCorrectionId
+			matchingClockOutCorrection || metadata?.clockOutCorrectionId
 				? {
 						original: period.clockOut?.timestamp ?? null,
 						requested: matchingClockOutCorrection?.timestamp ?? null,
 					}
-				: null,
-		isOrphaned: isMetadataOrphaned || isLegacyOrphaned,
+				: workMetadata.kind === "legacy_absent" && period.clockOut
+					? {
+							original: period.clockOut.timestamp,
+							requested: null,
+						}
+					: null,
+		...(metadataChanges ? { metadataChanges } : {}),
+		isOrphaned:
+			workMetadata.kind === "malformed" ||
+			isMetadataOrphaned ||
+			isLegacyOrphaned,
 	};
 }
 
@@ -551,27 +589,59 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 								typedPeriods.map((period) => period.employee.organizationId),
 							),
 						];
-						const correctionEntries =
-							originalEntryIds.length > 0
-								? yield* _(
-										dbService.query(
-											"batchGetTimeCorrectionReviewEntries",
-											async () => {
-												return await dbService.db.query.timeEntry.findMany({
-													where: and(
-														eq(timeEntry.type, "correction"),
-														inArray(timeEntry.employeeId, employeeIds),
-														inArray(timeEntry.organizationId, organizationIds),
-														inArray(
-															timeEntry.replacesEntryId,
-															originalEntryIds,
+						const categoryIds = categoryIdsFromTimeCorrectionMetadata(requests);
+						const [correctionEntries, categories] = yield* _(
+							Effect.all(
+								[
+									originalEntryIds.length > 0
+										? dbService.query(
+												"batchGetTimeCorrectionReviewEntries",
+												async () => {
+													return await dbService.db.query.timeEntry.findMany({
+														where: and(
+															eq(timeEntry.type, "correction"),
+															inArray(timeEntry.employeeId, employeeIds),
+															inArray(
+																timeEntry.organizationId,
+																organizationIds,
+															),
+															inArray(
+																timeEntry.replacesEntryId,
+																originalEntryIds,
+															),
 														),
-													),
-												});
-											},
-										),
-									)
-								: [];
+													});
+												},
+											)
+										: Effect.succeed([]),
+									categoryIds.length > 0
+										? dbService.query(
+												"batchGetTimeCorrectionReviewCategories",
+												async () =>
+													await dbService.db.query.workCategory.findMany({
+														where: and(
+															eq(
+																workCategory.organizationId,
+																params.organizationId,
+															),
+															inArray(workCategory.id, categoryIds),
+														),
+														columns: {
+															id: true,
+															organizationId: true,
+															name: true,
+														},
+													}),
+											)
+										: Effect.succeed([]),
+								],
+								{ concurrency: "unbounded" },
+							),
+						);
+						const categoryNamesById = categoryNamesForOrganization(
+							categories,
+							params.organizationId,
+						);
 
 						const correctionEntriesByReplacedId = new Map<
 							string,
@@ -587,6 +657,7 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 
 						const map = new Map<string, WorkPeriodWithRelations>();
 						for (const period of typedPeriods) {
+							period.categoryNamesById = categoryNamesById;
 							period.correctionReviewEntries = [
 								...(correctionEntriesByReplacedId.get(period.clockIn.id) ?? []),
 								...(period.clockOut?.id
@@ -855,43 +926,72 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 					period.clockIn.id,
 					period.clockOut?.id,
 				].filter((id): id is string => Boolean(id));
-				const correctionEntries =
+				const correctionEntriesEffect =
 					initialKind === "manual_time_submission" ||
 					initialKind === "policy_clock_out"
-						? []
-						: yield* _(
-								dbService.query(
-									"getPendingCorrectionEntriesForReview",
-									async () => {
-										if (
-											correctionIds.length === 0 &&
-											replacesEntryIds.length === 0
-										) {
-											return [];
-										}
+						? Effect.succeed([])
+						: dbService.query(
+								"getPendingCorrectionEntriesForReview",
+								async () => {
+									if (
+										correctionIds.length === 0 &&
+										replacesEntryIds.length === 0
+									) {
+										return [];
+									}
 
-										return await dbService.db.query.timeEntry.findMany({
-											where: and(
-												eq(timeEntry.type, "correction"),
-												eq(timeEntry.employeeId, period.employee.id),
-												eq(
-													timeEntry.organizationId,
-													period.employee.organizationId,
-												),
-												correctionIds.length > 0
-													? inArray(timeEntry.id, correctionIds)
-													: and(
-															inArray(
-																timeEntry.replacesEntryId,
-																replacesEntryIds,
-															),
-															eq(timeEntry.isSuperseded, false),
-														),
+									return await dbService.db.query.timeEntry.findMany({
+										where: and(
+											eq(timeEntry.type, "correction"),
+											eq(timeEntry.employeeId, period.employee.id),
+											eq(
+												timeEntry.organizationId,
+												period.employee.organizationId,
 											),
-										});
-									},
-								),
+											correctionIds.length > 0
+												? inArray(timeEntry.id, correctionIds)
+												: and(
+														inArray(
+															timeEntry.replacesEntryId,
+															replacesEntryIds,
+														),
+														eq(timeEntry.isSuperseded, false),
+													),
+										),
+									});
+								},
 							);
+				const categoryIds = categoryIdsFromTimeCorrectionMetadata([request]);
+				const categoriesEffect =
+					categoryIds.length > 0
+						? dbService.query(
+								"getTimeCorrectionReviewCategories",
+								async () =>
+									await dbService.db.query.workCategory.findMany({
+										where: and(
+											eq(
+												workCategory.organizationId,
+												period.employee.organizationId,
+											),
+											inArray(workCategory.id, categoryIds),
+										),
+										columns: {
+											id: true,
+											organizationId: true,
+											name: true,
+										},
+									}),
+							)
+						: Effect.succeed([]);
+				const [correctionEntries, categories] = yield* _(
+					Effect.all([correctionEntriesEffect, categoriesEffect], {
+						concurrency: "unbounded",
+					}),
+				);
+				const categoryNamesById = categoryNamesForOrganization(
+					categories,
+					period.employee.organizationId,
+				);
 				const review = buildTimeApprovalReview(
 					period,
 					{
@@ -899,6 +999,7 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 						publicStage: publicStage(request, chainStage ?? undefined),
 					},
 					correctionEntries as CorrectionEntryForReview[],
+					categoryNamesById,
 				);
 				const periodWithReview = {
 					...period,

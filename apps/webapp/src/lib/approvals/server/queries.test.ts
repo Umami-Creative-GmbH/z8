@@ -9,6 +9,7 @@ import type {
 	BulkDecisionSuccess,
 } from "@/lib/approvals/domain/types";
 import { buildPendingApprovalResult } from "@/lib/approvals/server/queries";
+import { categoryNamesForOrganization } from "@/lib/approvals/server/time-correction-review-metadata";
 
 vi.mock("@/env", () => ({
 	env: {
@@ -175,6 +176,7 @@ describe("buildPendingApprovalResult", () => {
 	});
 
 	it("includes the request reason in time approval DTOs", () => {
+		const correctionId = "30000000-0000-4000-8000-000000000003";
 		const result = buildPendingApprovalResult({
 			pendingRequests: [
 				{
@@ -185,7 +187,10 @@ describe("buildPendingApprovalResult", () => {
 					reason: "Forgot to clock out after the customer visit",
 					createdAt: new Date("2026-05-22T18:28:29.000Z"),
 					metadata: {
-						timeCorrection: { clockInCorrectionId: "clock-in-correction" },
+						timeCorrection: {
+							action: "edit",
+							clockInCorrectionId: correctionId,
+						},
 					},
 					requester: {
 						user: {
@@ -213,7 +218,7 @@ describe("buildPendingApprovalResult", () => {
 						clockOut: null,
 						correctionReviewEntries: [
 							{
-								id: "clock-in-correction",
+								id: correctionId,
 								timestamp: new Date("2026-05-22T14:15:00.000Z"),
 								replacesEntryId: "clock-in-original",
 								utcOffsetMinutes: 120,
@@ -227,6 +232,174 @@ describe("buildPendingApprovalResult", () => {
 		expect(result.timeCorrectionApprovals[0]?.reason).toBe(
 			"Forgot to clock out after the customer visit",
 		);
+	});
+
+	it("includes resolved metadata-only changes without requiring correction rows", () => {
+		const oldCategoryId = "30000000-0000-4000-8000-000000000001";
+		const result = buildPendingApprovalResult({
+			pendingRequests: [
+				{
+					id: "approval-1",
+					entityId: "period-1",
+					entityType: "time_entry",
+					status: "pending",
+					createdAt: new Date("2026-05-22T18:28:29.000Z"),
+					metadata: {
+						timeCorrection: {
+							action: "edit",
+							workLocationType: "home",
+							workCategoryId: null,
+						},
+						timeCorrectionOriginalWorkMetadata: {
+							workLocationType: "office",
+							workCategoryId: oldCategoryId,
+						},
+					},
+					requester: {
+						user: {
+							id: "user-1",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
+							image: null,
+						},
+					},
+				},
+			],
+			absencesById: new Map(),
+			periodsById: new Map([
+				[
+					"period-1",
+					{
+						id: "period-1",
+						startTime: new Date("2026-05-22T14:00:00.000Z"),
+						endTime: new Date("2026-05-22T18:00:00.000Z"),
+						workLocationType: "office",
+						workCategoryId: oldCategoryId,
+						clockIn: {
+							id: "clock-in-original",
+							timestamp: new Date("2026-05-22T14:00:00.000Z"),
+							utcOffsetMinutes: 120,
+						},
+						clockOut: {
+							id: "clock-out-original",
+							timestamp: new Date("2026-05-22T18:00:00.000Z"),
+							utcOffsetMinutes: 120,
+						},
+						correctionReviewEntries: [],
+					},
+				],
+			]),
+			categoryNamesById: new Map([[oldCategoryId, "Training"]]),
+		});
+
+		expect(result.timeCorrectionApprovals).toHaveLength(1);
+		expect(result.timeCorrectionApprovals[0]?.workPeriod).toMatchObject({
+			clockInCorrectionEntry: null,
+			clockOutCorrectionEntry: null,
+			metadataChanges: {
+				workLocation: { original: "office", requested: "home" },
+				workCategory: {
+					original: {
+						state: "named",
+						id: oldCategoryId,
+						name: "Training",
+					},
+					requested: { state: "none" },
+				},
+			},
+		});
+	});
+
+	it.each([
+		["string root", "malformed"],
+		[
+			"original snapshot without a correction marker",
+			{
+				timeCorrectionOriginalWorkMetadata: {
+					workLocationType: "office",
+					workCategoryId: null,
+				},
+			},
+		],
+		[
+			"action merge",
+			{
+				timeCorrection: {
+					action: "merge",
+					clockInCorrectionId: "30000000-0000-4000-8000-000000000002",
+				},
+			},
+		],
+		["endpoint-free legacy marker", { timeCorrection: { action: "edit" } }],
+	] as const)("omits explicit malformed %s despite a matching correction candidate", (_label, metadata) => {
+		const correctionId = "30000000-0000-4000-8000-000000000002";
+		const result = buildPendingApprovalResult({
+			pendingRequests: [
+				{
+					id: "approval-malformed",
+					entityId: "period-1",
+					entityType: "time_entry",
+					status: "pending",
+					createdAt: new Date("2026-05-22T18:28:29.000Z"),
+					metadata,
+					requester: {
+						user: {
+							id: "user-1",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
+							image: null,
+						},
+					},
+				},
+			],
+			absencesById: new Map(),
+			periodsById: new Map([
+				[
+					"period-1",
+					{
+						id: "period-1",
+						startTime: new Date("2026-05-22T14:00:00.000Z"),
+						endTime: null,
+						clockIn: {
+							id: "clock-in-original",
+							timestamp: new Date("2026-05-22T14:00:00.000Z"),
+							utcOffsetMinutes: 120,
+						},
+						clockOut: null,
+						correctionReviewEntries: [
+							{
+								id: correctionId,
+								timestamp: new Date("2026-05-22T14:15:00.000Z"),
+								replacesEntryId: "clock-in-original",
+								utcOffsetMinutes: 120,
+							},
+						],
+					},
+				],
+			]),
+		});
+
+		expect(result.timeCorrectionApprovals).toEqual([]);
+	});
+
+	it("scopes category lookup queries to the current organization", () => {
+		const source = readFileSync("src/lib/approvals/server/queries.ts", "utf8");
+
+		expect(source).toContain(
+			"eq(workCategory.organizationId, currentEmployee.organizationId)",
+		);
+	});
+
+	it("excludes foreign category rows from the organization lookup map", () => {
+		const categoryId = "30000000-0000-4000-8000-000000000001";
+		const names = categoryNamesForOrganization(
+			[
+				{ id: categoryId, organizationId: "org-foreign", name: "Foreign Secret" },
+			],
+			"org-1",
+		);
+
+		expect(names.has(categoryId)).toBe(false);
 	});
 
 	it.each([

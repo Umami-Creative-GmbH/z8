@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { employee, timeEntry, timeRecord, workPeriod } from "@/db/schema";
+import {
+	employee,
+	timeEntry,
+	timeRecord,
+	timeRecordWork,
+	workPeriod,
+} from "@/db/schema";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { ApprovalWorkflowSnapshot } from "../workflow/ports";
 import {
@@ -117,6 +123,8 @@ function createFixture() {
 			isActive: false,
 			approvalStatus: "approved",
 			pendingChanges: null,
+			workLocationType: null,
+			workCategoryId: null,
 			deletedAt: null,
 		},
 		requester: {
@@ -148,6 +156,13 @@ function createFixture() {
 			endAt: originalOut.timestamp,
 			durationMinutes: 480,
 			approvalState: "approved",
+		},
+		canonicalWork: {
+			recordId: ids.canonical,
+			organizationId,
+			recordKind: "work",
+			workLocationType: null,
+			workCategoryId: null,
 		},
 		entries: [originalIn, originalOut, correctionIn, correctionOut],
 		historicalEntries: [] as (typeof originalIn)[],
@@ -198,6 +213,8 @@ function createFixture() {
 					}
 					if (table === workPeriod) return Promise.resolve([value.period]);
 					if (table === timeRecord) return Promise.resolve([value.canonical]);
+					if (table === timeRecordWork)
+						return Promise.resolve([value.canonicalWork]);
 					if (table === timeEntry) {
 						const rows =
 							timeEntryQueryCount === 0
@@ -469,6 +486,13 @@ describe("time correction approval adapter", () => {
 				durationMinutes: 480,
 				approvalState: "approved",
 			},
+			canonicalWork: {
+				recordId: ids.canonical,
+				organizationId,
+				recordKind: "work",
+				workLocationType: null,
+				workCategoryId: null,
+			},
 			currentEndpoints: {
 				clockIn: {
 					id: ids.originalIn,
@@ -531,8 +555,8 @@ describe("time correction approval adapter", () => {
 			},
 		});
 		expect(Object.isFrozen(source)).toBe(true);
-		expect(fixture.whereInputs).toHaveLength(8);
-		expect(fixture.db.select).toHaveBeenCalledTimes(4);
+		expect(fixture.whereInputs).toHaveLength(9);
+		expect(fixture.db.select).toHaveBeenCalledTimes(5);
 		for (const where of fixture.whereInputs) {
 			expect(collectBoundValues(where)).toContain(organizationId);
 		}
@@ -781,6 +805,16 @@ describe("time correction approval adapter", () => {
 				(value.canonical.recordKind = "absence"),
 		],
 		[
+			"foreign canonical work metadata",
+			(value: ReturnType<typeof createFixture>["value"]) =>
+				(value.canonicalWork.organizationId = "org-2"),
+		],
+		[
+			"divergent canonical work metadata",
+			(value: ReturnType<typeof createFixture>["value"]) =>
+				(value.canonicalWork.workLocationType = "home"),
+		],
+		[
 			"active correction",
 			(value: ReturnType<typeof createFixture>["value"]) =>
 				(required(value.entries[2]).isSuperseded = false),
@@ -866,6 +900,53 @@ describe("time correction approval adapter", () => {
 		).rejects.toMatchObject({ name: "TimeCorrectionApprovalAdapterError" });
 	});
 
+	it.each([
+		["changed location", { workLocationType: "home", workCategoryId: null }],
+		[
+			"changed category",
+			{
+				workLocationType: "office",
+				workCategoryId: "80000000-0000-4000-8000-000000000099",
+			},
+		],
+		["legacy/current mismatch", null],
+	] as const)(
+		"rejects immutable correction context with %s",
+		async (_label, metadata) => {
+			const currentCorrection = {
+				...correction,
+				workLocationType: "office" as const,
+				workCategoryId: null,
+			};
+			const { adapter, source } = await loadSource(createFixture(), {
+				contextSnapshot: {
+					timeCorrection: currentCorrection,
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: null,
+					},
+				},
+			});
+			const mismatchedCorrection = metadata
+				? { ...correction, ...metadata }
+				: correction;
+
+			await expect(
+				adapter.produceRoutingContext(
+					context(source, {
+						contextSnapshot: {
+							timeCorrection: mismatchedCorrection,
+							timeCorrectionOriginalWorkMetadata: {
+								workLocationType: "office",
+								workCategoryId: null,
+							},
+						},
+					}),
+				),
+			).rejects.toMatchObject({ name: "TimeCorrectionApprovalAdapterError" });
+		},
+	);
+
 	it("allows intermediate decisions without source mutation", async () => {
 		const {
 			adapter,
@@ -909,32 +990,43 @@ describe("time correction approval adapter", () => {
 
 		const result = await adapter.finalizeTerminal(input);
 
-		expect(finalizeTimeCorrectionTerminal).toHaveBeenCalledOnce();
-		expect(finalizeTimeCorrectionTerminal).toHaveBeenCalledWith({
-			dbService,
-			organizationId,
-			workPeriodId: ids.period,
-			expectedApprovalWorkflowId: ids.workflow,
-			expectedApprovalWorkflowVersion: 5,
-			expectedRequesterEmployeeId: ids.employee,
-			actorEmployeeId,
-			actorUserId: "user-manager",
-			correction,
-			legacyApprovalRequestId: null,
-			transition:
-				transition.kind === "approve"
-					? { kind: "approve", reason: "verified" }
-					: { kind: "reject", reason: "invalid" },
-			finalizedAt,
-			allowMetadataLessLegacyFallback: false,
-		});
-		expect(result).toMatchObject({
-			organizationId,
-			workflowId: ids.workflow,
-			transitionKind: transition.kind,
-			terminalStatus: transition.to,
-		});
-	});
+			expect(finalizeTimeCorrectionTerminal).toHaveBeenCalledOnce();
+			expect(finalizeTimeCorrectionTerminal).toHaveBeenCalledWith({
+				dbService,
+				organizationId,
+				workPeriodId: ids.period,
+				expectedApprovalWorkflowId: ids.workflow,
+				expectedApprovalWorkflowVersion: 5,
+				expectedRequesterEmployeeId: ids.employee,
+				expectedSource: {
+					employeeId: ids.employee,
+					approvalWorkflowId: ids.workflow,
+					canonicalRecordId: ids.canonical,
+					...source.workPeriod,
+					canonicalRecord: source.canonicalRecord,
+					canonicalWork: source.canonicalWork,
+					currentEndpoints: source.currentEndpoints,
+					pendingCorrections: source.pendingCorrections,
+				},
+				actorEmployeeId,
+				actorUserId: "user-manager",
+				correction,
+				legacyApprovalRequestId: null,
+				transition:
+					transition.kind === "approve"
+						? { kind: "approve", reason: "verified" }
+						: { kind: "reject", reason: "invalid" },
+				finalizedAt,
+				allowMetadataLessLegacyFallback: false,
+			});
+			expect(result).toMatchObject({
+				organizationId,
+				workflowId: ids.workflow,
+				transitionKind: transition.kind,
+				terminalStatus: transition.to,
+			});
+		},
+	);
 
 	it("deletes only requester-cancelled pending corrections through its dependency", async () => {
 		const {
@@ -985,6 +1077,8 @@ describe("time correction approval adapter", () => {
 				isActive: false,
 				approvalStatus: "approved",
 				pendingChanges: null,
+				workLocationType: null,
+				workCategoryId: null,
 				canonicalRecord: {
 					id: ids.canonical,
 					employeeId: ids.employee,
@@ -994,6 +1088,7 @@ describe("time correction approval adapter", () => {
 					durationMinutes: 480,
 					approvalState: "approved",
 				},
+				canonicalWork: source.canonicalWork,
 				currentEndpoints: source.currentEndpoints,
 				pendingCorrections: source.pendingCorrections,
 			},

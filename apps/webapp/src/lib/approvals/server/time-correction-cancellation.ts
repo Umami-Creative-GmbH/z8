@@ -776,6 +776,7 @@ function cancellationSourceFromCapture(input: {
 	const snapshot = input.state.sourceSnapshot;
 	const period = cancellationRecord(snapshot.workPeriod);
 	const canonical = cancellationRecord(snapshot.canonicalRecord);
+	const canonicalWork = cancellationRecord(snapshot.canonicalWork);
 	const currentEndpoints = cancellationRecord(snapshot.currentEndpoints);
 	if (
 		cancellationString(snapshot.id) !== input.input.workPeriodId ||
@@ -793,7 +794,14 @@ function cancellationSourceFromCapture(input: {
 		period.pendingChanges !== null ||
 		period.deletedAt !== null ||
 		period.approvalStatus !== "approved" ||
-		canonical.approvalState !== "approved"
+		canonical.approvalState !== "approved" ||
+		cancellationString(canonicalWork.recordId) !==
+			cancellationString(period.canonicalRecordId) ||
+		cancellationString(canonicalWork.organizationId) !==
+			input.input.organizationId ||
+		canonicalWork.recordKind !== "work" ||
+		canonicalWork.workLocationType !== period.workLocationType ||
+		canonicalWork.workCategoryId !== period.workCategoryId
 	) {
 		throw new Error("Time correction cancellation is unavailable");
 	}
@@ -852,6 +860,13 @@ function cancellationSourceFromCapture(input: {
 		employeeId: cancellationString(period.employeeId),
 		approvalWorkflowId: input.expectedApprovalWorkflowId,
 		canonicalRecordId: cancellationString(period.canonicalRecordId),
+		workLocationType:
+			period.workLocationType === null
+				? null
+				: (cancellationString(
+						period.workLocationType,
+					) as CancelledTimeCorrectionSourceEvidence["workLocationType"]),
+		workCategoryId: cancellationNullableString(period.workCategoryId),
 		clockInId: cancellationString(period.clockInId),
 		clockOutId,
 		startTime: cancellationInstant(period.startTime),
@@ -873,6 +888,18 @@ function cancellationSourceFromCapture(input: {
 			endAt: cancellationNullableInstant(canonical.endAt),
 			durationMinutes: cancellationNullableInteger(canonical.durationMinutes),
 			approvalState: "approved",
+		},
+		canonicalWork: {
+			recordId: cancellationString(canonicalWork.recordId),
+			organizationId: cancellationString(canonicalWork.organizationId),
+			recordKind: "work",
+			workLocationType:
+				canonicalWork.workLocationType === null
+					? null
+					: (cancellationString(
+							canonicalWork.workLocationType,
+						) as CancelledTimeCorrectionSourceEvidence["workLocationType"]),
+			workCategoryId: cancellationNullableString(canonicalWork.workCategoryId),
 		},
 		currentEndpoints: { clockIn, clockOut },
 		pendingCorrections,
@@ -960,7 +987,8 @@ function exactPendingLegacyEvidence(
 		correction.clockOutCorrectionId,
 	].filter((id): id is string => Boolean(id));
 	if (
-		correctionIds.length === 0 ||
+		(correctionIds.length === 0 &&
+			!Object.hasOwn(correction, "workLocationType")) ||
 		new Set(correctionIds).size !== correctionIds.length
 	) {
 		throw new Error("Time correction cancellation is unavailable");

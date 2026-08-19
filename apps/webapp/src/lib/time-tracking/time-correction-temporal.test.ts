@@ -323,6 +323,33 @@ describe("validateTimeCorrectionRange", () => {
 		).not.toThrow();
 	});
 
+	it("accepts an exact 24-hour work period", () => {
+		expect(() =>
+			validateTimeCorrectionRange(
+				parseInstant("2026-03-28T08:00:00Z"),
+				parseInstant("2026-03-29T08:00:00Z"),
+			),
+		).not.toThrow();
+	});
+
+	it("rejects a work period longer than 24 elapsed hours", () => {
+		expect(() =>
+			validateTimeCorrectionRange(
+				parseInstant("0001-01-01T00:00:00Z"),
+				parseInstant("2026-01-01T00:00:00Z"),
+			),
+		).toThrow("Work period cannot exceed 24 hours");
+	});
+
+	it("rejects one nanosecond beyond the exact cap", () => {
+		expect(() =>
+			validateTimeCorrectionRange(
+				parseInstant("2026-01-01T00:00:00Z"),
+				parseInstant("2026-01-02T00:00:00.000000001Z"),
+			),
+		).toThrow("Work period cannot exceed 24 hours");
+	});
+
 	it("rejects equal or reversed endpoints with the API-compatible message", () => {
 		expect(() =>
 			validateTimeCorrectionRange(

@@ -11,6 +11,10 @@ import {
 	isValidIanaTimezone,
 	type TimeEntryTimezoneSource,
 } from "@/lib/time-tracking/timezone-capture";
+import {
+	isWorkLocationType,
+	type WorkLocationType,
+} from "@/lib/time-tracking/work-location";
 import type { ApprovalDbService } from "../server/types";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
 import type {
@@ -22,7 +26,10 @@ import type {
 } from "../workflow/ports";
 import { normalizeStableData } from "../workflow/stable-data";
 import {
+	type CurrentTimeCorrectionWorkflowContract,
+	normalizeTimeCorrectionOriginalWorkMetadata,
 	normalizeTimeCorrectionWorkflowPayload,
+	type TimeCorrectionOriginalWorkMetadata,
 	type TimeCorrectionWorkflowPayload,
 } from "./time-correction-contract";
 
@@ -104,6 +111,8 @@ interface WorkPeriodSnapshot {
 	deletedAt: Instant | null;
 	canonicalRecordId: string;
 	approvalWorkflowId: string | null;
+	workLocationType: WorkLocationType | null;
+	workCategoryId: string | null;
 }
 
 interface CanonicalRecordSnapshot {
@@ -115,6 +124,14 @@ interface CanonicalRecordSnapshot {
 	endAt: Instant | null;
 	durationMinutes: number | null;
 	approvalState: RequestStatus | "draft";
+}
+
+interface CanonicalWorkSnapshot {
+	recordId: string;
+	organizationId: string;
+	recordKind: string;
+	workLocationType: WorkLocationType | null;
+	workCategoryId: string | null;
 }
 
 const TIMEZONE_SOURCES = new Set<TimeEntryTimezoneSource>([
@@ -206,6 +223,26 @@ function normalizeTimeCorrectionMetadata(
 	return normalizeTimeCorrectionWorkflowPayload({
 		timeCorrection: descriptor.value,
 	});
+}
+
+function originalWorkMetadataFromApprovalMetadata(
+	value: unknown,
+	correction: TimeCorrectionWorkflowPayload["timeCorrection"],
+): TimeCorrectionOriginalWorkMetadata | null {
+	const metadata = record(value);
+	const descriptor = Object.getOwnPropertyDescriptor(
+		metadata,
+		"timeCorrectionOriginalWorkMetadata",
+	);
+	if (!descriptor) {
+		return Object.hasOwn(correction, "workLocationType") ? fail() : null;
+	}
+	if (!descriptor.enumerable || !("value" in descriptor)) return fail();
+	try {
+		return normalizeTimeCorrectionOriginalWorkMetadata(descriptor.value);
+	} catch {
+		return fail();
+	}
 }
 
 function requesterCancellationMetadata(input: {
@@ -300,6 +337,12 @@ function string(value: unknown): string {
 
 function nullableString(value: unknown): string | null {
 	return value === null ? null : string(value);
+}
+
+function nullableWorkLocationType(value: unknown): WorkLocationType | null {
+	if (value === null) return null;
+	if (typeof value !== "string" || !isWorkLocationType(value)) return fail();
+	return value;
 }
 
 function boolean(value: unknown): boolean {
@@ -477,6 +520,8 @@ function decodeWorkPeriod(value: unknown): WorkPeriodSnapshot {
 		deletedAt: nullableInstant(raw.deletedAt),
 		canonicalRecordId: string(raw.canonicalRecordId),
 		approvalWorkflowId: nullableString(raw.approvalWorkflowId),
+		workLocationType: nullableWorkLocationType(raw.workLocationType),
+		workCategoryId: nullableString(raw.workCategoryId),
 	};
 }
 
@@ -500,6 +545,17 @@ function decodeCanonicalRecord(value: unknown): CanonicalRecordSnapshot {
 		endAt: nullableInstant(raw.endAt),
 		durationMinutes: nullableInteger(raw.durationMinutes),
 		approvalState,
+	};
+}
+
+function decodeCanonicalWork(value: unknown): CanonicalWorkSnapshot {
+	const raw = record(value);
+	return {
+		recordId: string(raw.recordId),
+		organizationId: string(raw.organizationId),
+		recordKind: string(raw.recordKind),
+		workLocationType: nullableWorkLocationType(raw.workLocationType),
+		workCategoryId: nullableString(raw.workCategoryId),
 	};
 }
 
@@ -708,6 +764,8 @@ function decodeCapture(
 	const source = decodeWorkPeriod(envelope.source);
 	if (envelope.canonicalRecord === null) fail();
 	const canonical = decodeCanonicalRecord(envelope.canonicalRecord);
+	if (envelope.canonicalWork === null) fail();
+	const canonicalWork = decodeCanonicalWork(envelope.canonicalWork);
 	const current = record(envelope.currentEndpoints);
 	const currentClockIn = decodeEntry(current.clockIn);
 	const currentClockOut =
@@ -771,7 +829,12 @@ function decodeCapture(
 		canonical.approvalState !== source.approvalStatus ||
 		!sameInstant(canonical.startAt, source.startTime) ||
 		!sameInstant(canonical.endAt, source.endTime) ||
-		canonical.durationMinutes !== source.durationMinutes
+		canonical.durationMinutes !== source.durationMinutes ||
+		canonicalWork.recordId !== source.canonicalRecordId ||
+		canonicalWork.organizationId !== input.organizationId ||
+		canonicalWork.recordKind !== "work" ||
+		canonicalWork.workLocationType !== source.workLocationType ||
+		canonicalWork.workCategoryId !== source.workCategoryId
 	) {
 		fail();
 	}
@@ -839,6 +902,21 @@ function decodeCapture(
 		return normalizeTimeCorrectionMetadata(raw.metadata);
 	});
 	const requestPayload = requestPayloads[0] ?? null;
+	const requestOriginalWorkMetadata = rawRequests.map((value, index) =>
+		originalWorkMetadataFromApprovalMetadata(
+			record(value).metadata,
+			(requestPayloads[index] ?? fail()).timeCorrection,
+		),
+	);
+	const originalWorkMetadata = requestOriginalWorkMetadata[0] ?? null;
+	if (
+		requestOriginalWorkMetadata.some(
+			(candidate) =>
+				JSON.stringify(candidate) !== JSON.stringify(originalWorkMetadata),
+		)
+	) {
+		fail();
+	}
 	if (
 		requestPayload &&
 		requestPayloads.some(
@@ -1262,11 +1340,15 @@ function decodeCapture(
 			startAt: instantToCanonicalString(canonical.startAt),
 			endAt: serializeInstant(canonical.endAt),
 		},
+		canonicalWork,
 		currentEndpoints: {
 			clockIn: serializeEntry(currentClockIn),
 			clockOut: currentClockOut ? serializeEntry(currentClockOut) : null,
 		},
 		...(payload ? { timeCorrection: payload.timeCorrection } : {}),
+		...(originalWorkMetadata
+			? { timeCorrectionOriginalWorkMetadata: originalWorkMetadata }
+			: {}),
 		correctionEndpoints,
 	};
 	const displaySnapshot = {
@@ -1285,6 +1367,26 @@ function decodeCapture(
 				endpoint.endpointType === "clock_in" ? "Clock in" : "Clock out",
 			),
 		},
+		...(payload && Object.hasOwn(payload.timeCorrection, "workLocationType")
+			? {
+					workMetadata: {
+						original:
+							originalWorkMetadata ??
+							({
+								workLocationType: source.workLocationType,
+								workCategoryId: source.workCategoryId,
+							} as const),
+						requested: {
+							workLocationType: (
+								payload.timeCorrection as CurrentTimeCorrectionWorkflowContract
+							).workLocationType,
+							workCategoryId: (
+								payload.timeCorrection as CurrentTimeCorrectionWorkflowContract
+							).workCategoryId,
+						},
+					},
+				}
+			: {}),
 	};
 
 	return normalizeStableData({
@@ -1349,7 +1451,9 @@ export async function captureTimeCorrectionLegacyApprovalState(
 					period.pending_changes as "pendingChanges",
 					period.deleted_at as "deletedAt",
 					period.canonical_record_id as "canonicalRecordId",
-					period.approval_workflow_id as "approvalWorkflowId"
+					period.approval_workflow_id as "approvalWorkflowId",
+					period.work_location_type as "workLocationType",
+					period.work_category_id as "workCategoryId"
 				from work_period period
 				cross join capture_input capture
 				join employee
@@ -1377,6 +1481,16 @@ export async function captureTimeCorrectionLegacyApprovalState(
 					and record.organization_id = capture.organization_id
 					and record.employee_id = period."employeeId"
 					and record.record_kind = 'work'
+			),
+			canonical_work_rows as (
+				select
+					work.record_id as "recordId",
+					work.organization_id as "organizationId",
+					work.record_kind as "recordKind",
+					work.work_location_type as "workLocationType",
+					work.work_category_id as "workCategoryId"
+				from canonical_rows record
+				cross join capture_input capture
 				join time_record_work work
 					on work.record_id = record.id
 					and work.organization_id = capture.organization_id
@@ -1673,6 +1787,7 @@ export async function captureTimeCorrectionLegacyApprovalState(
 			select
 				(select row_to_json(source) from source_rows source limit 1) as source,
 				(select row_to_json(record) from canonical_rows record limit 1) as "canonicalRecord",
+				(select row_to_json(work) from canonical_work_rows work limit 1) as "canonicalWork",
 				json_build_object(
 					'clockIn', (select row_to_json(endpoint) from current_endpoint_rows endpoint where endpoint.endpoint_type = 'clock_in' limit 1),
 					'clockOut', (select row_to_json(endpoint) from current_endpoint_rows endpoint where endpoint.endpoint_type = 'clock_out' limit 1)

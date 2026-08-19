@@ -12,6 +12,7 @@ import {
 	employee,
 	timeEntry,
 	timeRecord,
+	timeRecordWork,
 	workPeriod,
 } from "@/db/schema";
 import { getAbility } from "@/lib/auth-helpers";
@@ -52,11 +53,15 @@ import {
 	validateTimeCorrectionTimezoneEvidence,
 } from "@/lib/time-tracking/time-correction-temporal";
 import type { TimeEntryTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
+import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import type { ApprovalActionOptions } from "../domain/types";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import {
+	type CurrentTimeCorrectionWorkflowContract,
+	normalizeTimeCorrectionOriginalWorkMetadata,
 	normalizeTimeCorrectionWorkflowPayload,
+	type TimeCorrectionOriginalWorkMetadata,
 	type TimeCorrectionWorkflowPayload,
 } from "../domain-adapters/time-correction-contract";
 import {
@@ -90,6 +95,10 @@ import {
 	ApprovalTransitionEngineError,
 } from "../workflow/transition-engine";
 import { processApprovalWithCurrentEmployee } from "./shared";
+import {
+	authorizeTimeCorrectionCategoryChange,
+	lockTrustedTimeCorrectionEmployeeTeamId,
+} from "./time-correction-category-authorization";
 import type {
 	ApprovalDbService,
 	CurrentApprover,
@@ -201,9 +210,12 @@ type TimeCorrectionAction = "edit" | "delete";
 type TimeCorrectionApprovalMetadata = {
 	timeCorrection?: {
 		action?: TimeCorrectionAction;
+		workLocationType?: CurrentTimeCorrectionWorkflowContract["workLocationType"];
+		workCategoryId?: string | null;
 		clockInCorrectionId?: string;
 		clockOutCorrectionId?: string;
 	};
+	timeCorrectionOriginalWorkMetadata?: TimeCorrectionOriginalWorkMetadata;
 };
 
 type TimeCorrectionSubmissionResultKind =
@@ -465,6 +477,8 @@ export interface FinalizeTimeCorrectionTerminalInput {
 	expectedApprovalWorkflowId: string | null;
 	expectedApprovalWorkflowVersion: number | null;
 	expectedRequesterEmployeeId: string;
+	expectedSource?: CancelledTimeCorrectionSourceEvidence;
+	expectedOriginalWorkMetadata?: TimeCorrectionOriginalWorkMetadata;
 	actorEmployeeId: string;
 	actorUserId: string;
 	correction: TimeCorrectionWorkflowPayload["timeCorrection"];
@@ -474,6 +488,42 @@ export interface FinalizeTimeCorrectionTerminalInput {
 		| { kind: "reject"; reason: string };
 	finalizedAt: Instant;
 	allowMetadataLessLegacyFallback: boolean;
+}
+
+function originalWorkMetadataFromEvidence(
+	value: unknown,
+	required: boolean,
+): TimeCorrectionOriginalWorkMetadata | undefined {
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
+		if (!required) return undefined;
+		throw timeCorrectionFinalizationConflict();
+	}
+	const descriptor = Object.getOwnPropertyDescriptor(
+		value,
+		"timeCorrectionOriginalWorkMetadata",
+	);
+	if (!descriptor) {
+		if (!required) return undefined;
+		throw timeCorrectionFinalizationConflict();
+	}
+	if (!descriptor.enumerable || !("value" in descriptor)) {
+		throw timeCorrectionFinalizationConflict();
+	}
+	try {
+		return normalizeTimeCorrectionOriginalWorkMetadata(descriptor.value);
+	} catch {
+		throw timeCorrectionFinalizationConflict();
+	}
+}
+
+function sameOriginalWorkMetadata(
+	left: TimeCorrectionOriginalWorkMetadata | undefined,
+	right: TimeCorrectionOriginalWorkMetadata | undefined,
+): boolean {
+	return (
+		left?.workLocationType === right?.workLocationType &&
+		left?.workCategoryId === right?.workCategoryId
+	);
 }
 
 export interface TimeCorrectionTerminalResult {
@@ -734,6 +784,10 @@ export interface CancelledTimeCorrectionSourceEvidence {
 	employeeId: string;
 	approvalWorkflowId: string | null;
 	canonicalRecordId: string;
+	workLocationType:
+		| CurrentTimeCorrectionWorkflowContract["workLocationType"]
+		| null;
+	workCategoryId: string | null;
 	clockInId: string;
 	clockOutId: string | null;
 	startTime: Instant;
@@ -750,6 +804,15 @@ export interface CancelledTimeCorrectionSourceEvidence {
 		endAt: Instant | null;
 		durationMinutes: number | null;
 		approvalState: "approved";
+	};
+	canonicalWork: {
+		recordId: string;
+		organizationId: string;
+		recordKind: "work";
+		workLocationType:
+			| CurrentTimeCorrectionWorkflowContract["workLocationType"]
+			| null;
+		workCategoryId: string | null;
 	};
 	currentEndpoints: {
 		clockIn: CancelledTimeCorrectionEntryEvidence;
@@ -858,6 +921,8 @@ export async function deleteCancelledTimeCorrectionsInTransaction(input: {
 			isActive: workPeriod.isActive,
 			approvalStatus: workPeriod.approvalStatus,
 			pendingChanges: workPeriod.pendingChanges,
+			workLocationType: workPeriod.workLocationType,
+			workCategoryId: workPeriod.workCategoryId,
 			deletedAt: workPeriod.deletedAt,
 		})
 		.from(workPeriod)
@@ -892,6 +957,8 @@ export async function deleteCancelledTimeCorrectionsInTransaction(input: {
 		expected.approvalStatus !== "approved" ||
 		period.pendingChanges !== null ||
 		expected.pendingChanges !== null ||
+		period.workLocationType !== expected.workLocationType ||
+		period.workCategoryId !== expected.workCategoryId ||
 		period.deletedAt !== null ||
 		(correction.clockOutCorrectionId !== undefined && !period.clockOutId)
 	) {
@@ -1082,6 +1149,41 @@ export async function deleteCancelledTimeCorrectionsInTransaction(input: {
 	) {
 		throw new Error("Time correction cancellation source is invalid");
 	}
+	const canonicalWorkRows = (await input.dbService.db
+		.select({
+			recordId: timeRecordWork.recordId,
+			organizationId: timeRecordWork.organizationId,
+			recordKind: timeRecordWork.recordKind,
+			workLocationType: timeRecordWork.workLocationType,
+			workCategoryId: timeRecordWork.workCategoryId,
+		})
+		.from(timeRecordWork)
+		.where(
+			and(
+				eq(timeRecordWork.recordId, expected.canonicalRecordId),
+				eq(timeRecordWork.organizationId, input.organizationId),
+				eq(timeRecordWork.recordKind, "work"),
+			),
+		)
+		.for("update")) as LockedCanonicalWorkMetadata[];
+	const canonicalWork = canonicalWorkRows[0];
+	const expectedCanonicalWork = expected.canonicalWork;
+	if (
+		canonicalWorkRows.length !== 1 ||
+		!canonicalWork ||
+		canonicalWork.recordId !== expected.canonicalRecordId ||
+		canonicalWork.recordId !== expectedCanonicalWork.recordId ||
+		canonicalWork.organizationId !== input.organizationId ||
+		canonicalWork.organizationId !== expectedCanonicalWork.organizationId ||
+		canonicalWork.recordKind !== "work" ||
+		expectedCanonicalWork.recordKind !== "work" ||
+		canonicalWork.workLocationType !== expected.workLocationType ||
+		canonicalWork.workLocationType !== expectedCanonicalWork.workLocationType ||
+		canonicalWork.workCategoryId !== expected.workCategoryId ||
+		canonicalWork.workCategoryId !== expectedCanonicalWork.workCategoryId
+	) {
+		throw new Error("Time correction cancellation source is invalid");
+	}
 	for (const expected of correctionEntries) {
 		const pending = entriesById.get(expected.id);
 		if (
@@ -1145,6 +1247,10 @@ interface LockedTimeCorrectionPeriod {
 	isActive: boolean;
 	approvalStatus: "pending" | "approved" | "rejected";
 	pendingChanges: unknown;
+	workLocationType:
+		| CurrentTimeCorrectionWorkflowContract["workLocationType"]
+		| null;
+	workCategoryId: string | null;
 	deletedAt: Date | null;
 }
 
@@ -1171,6 +1277,16 @@ interface LockedCanonicalWorkRecord {
 	endAt: Date | null;
 	durationMinutes: number | null;
 	approvalState: "draft" | "pending" | "approved" | "rejected";
+}
+
+interface LockedCanonicalWorkMetadata {
+	recordId: string;
+	organizationId: string;
+	recordKind: string;
+	workLocationType:
+		| CurrentTimeCorrectionWorkflowContract["workLocationType"]
+		| null;
+	workCategoryId: string | null;
 }
 
 interface PersistedLegacyTimeCorrectionApproval {
@@ -1262,10 +1378,19 @@ function sameCorrectionPayload(
 		const actual = normalizeTimeCorrectionWorkflowPayload({
 			timeCorrection: correction.value,
 		}).timeCorrection;
+		const actualIsCurrent = Object.hasOwn(actual, "workLocationType");
+		const expectedIsCurrent = Object.hasOwn(expected, "workLocationType");
 		return (
 			actual.action === expected.action &&
 			actual.clockInCorrectionId === expected.clockInCorrectionId &&
-			actual.clockOutCorrectionId === expected.clockOutCorrectionId
+			actual.clockOutCorrectionId === expected.clockOutCorrectionId &&
+			actualIsCurrent === expectedIsCurrent &&
+			(!actualIsCurrent ||
+				((actual as CurrentTimeCorrectionWorkflowContract).workLocationType ===
+					(expected as CurrentTimeCorrectionWorkflowContract)
+						.workLocationType &&
+					(actual as CurrentTimeCorrectionWorkflowContract).workCategoryId ===
+						(expected as CurrentTimeCorrectionWorkflowContract).workCategoryId))
 		);
 	} catch {
 		return false;
@@ -1349,6 +1474,7 @@ async function validatePersistedTimeCorrectionEvidence(input: {
 	expectedApprovalWorkflowVersion: number | null;
 	legacyApprovalRequestId: string | null;
 	correction: TimeCorrectionWorkflowPayload["timeCorrection"];
+	expectedOriginalWorkMetadata?: TimeCorrectionOriginalWorkMetadata;
 	transition: FinalizeTimeCorrectionTerminalInput["transition"];
 	allowMetadataLessLegacyFallback: boolean;
 	allowObservedLegacyMetadata: boolean;
@@ -1424,6 +1550,18 @@ async function validatePersistedTimeCorrectionEvidence(input: {
 		if (!metadataLessHistoricalRejection && !validMetadata) {
 			throw timeCorrectionFinalizationConflict();
 		}
+		const persistedOriginal = originalWorkMetadataFromEvidence(
+			request.metadata,
+			input.expectedOriginalWorkMetadata !== undefined,
+		);
+		if (
+			!sameOriginalWorkMetadata(
+				persistedOriginal,
+				input.expectedOriginalWorkMetadata,
+			)
+		) {
+			throw timeCorrectionFinalizationConflict();
+		}
 	}
 
 	if (
@@ -1466,6 +1604,18 @@ async function validatePersistedTimeCorrectionEvidence(input: {
 			) ||
 			(legacyRequester !== null &&
 				legacyRequester !== workflow.requesterEmployeeId)
+		) {
+			throw timeCorrectionFinalizationConflict();
+		}
+		const persistedOriginal = originalWorkMetadataFromEvidence(
+			workflow.contextSnapshot,
+			input.expectedOriginalWorkMetadata !== undefined,
+		);
+		if (
+			!sameOriginalWorkMetadata(
+				persistedOriginal,
+				input.expectedOriginalWorkMetadata,
+			)
 		) {
 			throw timeCorrectionFinalizationConflict();
 		}
@@ -1667,6 +1817,19 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	const correction = normalizeTimeCorrectionWorkflowPayload({
 		timeCorrection: input.correction,
 	}).timeCorrection;
+	const currentCorrection = Object.hasOwn(correction, "workLocationType")
+		? (correction as CurrentTimeCorrectionWorkflowContract)
+		: null;
+	const expectedOriginalWorkMetadata = currentCorrection
+		? input.expectedOriginalWorkMetadata
+			? normalizeTimeCorrectionOriginalWorkMetadata(
+					input.expectedOriginalWorkMetadata,
+				)
+			: undefined
+		: undefined;
+	if (currentCorrection && !expectedOriginalWorkMetadata) {
+		throw timeCorrectionFinalizationConflict();
+	}
 	const employeeIds = [
 		...new Set([input.expectedRequesterEmployeeId, input.actorEmployeeId]),
 	].sort();
@@ -1676,6 +1839,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			organizationId: employee.organizationId,
 			userId: employee.userId,
 			isActive: employee.isActive,
+			teamId: employee.teamId,
 		})
 		.from(employee)
 		.where(
@@ -1713,6 +1877,8 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			isActive: workPeriod.isActive,
 			approvalStatus: workPeriod.approvalStatus,
 			pendingChanges: workPeriod.pendingChanges,
+			workLocationType: workPeriod.workLocationType,
+			workCategoryId: workPeriod.workCategoryId,
 			deletedAt: workPeriod.deletedAt,
 		})
 		.from(workPeriod)
@@ -1725,11 +1891,35 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		.for("update");
 	if (periodRows.length !== 1) throw timeCorrectionFinalizationConflict();
 	const period = periodRows[0] as LockedTimeCorrectionPeriod;
+	const expectedSource = input.expectedSource;
 	if (
 		period.id !== input.workPeriodId ||
 		period.organizationId !== input.organizationId ||
 		period.deletedAt !== null ||
-		period.approvalStatus !== "approved"
+		period.approvalStatus !== "approved" ||
+		(expectedSource !== undefined &&
+			(expectedSource.employeeId !== period.employeeId ||
+				expectedSource.approvalWorkflowId !== period.approvalWorkflowId ||
+				expectedSource.canonicalRecordId !== period.canonicalRecordId ||
+				expectedSource.clockInId !== period.clockInId ||
+				expectedSource.clockOutId !== period.clockOutId ||
+				!sameExpectedInstant(period.startTime, expectedSource.startTime) ||
+				!sameExpectedInstant(period.endTime, expectedSource.endTime) ||
+				expectedSource.durationMinutes !== period.durationMinutes ||
+				expectedSource.isActive !== period.isActive ||
+				expectedSource.approvalStatus !== period.approvalStatus ||
+				expectedSource.pendingChanges !== period.pendingChanges ||
+				expectedSource.workLocationType !== period.workLocationType ||
+				expectedSource.workCategoryId !== period.workCategoryId))
+	) {
+		throw timeCorrectionFinalizationConflict();
+	}
+	if (
+		expectedOriginalWorkMetadata &&
+		(normalizeWorkLocationType(period.workLocationType) !==
+			expectedOriginalWorkMetadata.workLocationType ||
+			period.workCategoryId !== expectedOriginalWorkMetadata.workCategoryId ||
+			!period.canonicalRecordId)
 	) {
 		throw timeCorrectionFinalizationConflict();
 	}
@@ -1783,6 +1973,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		expectedApprovalWorkflowVersion,
 		legacyApprovalRequestId: input.legacyApprovalRequestId,
 		correction,
+		expectedOriginalWorkMetadata,
 		transition: input.transition,
 		allowMetadataLessLegacyFallback: input.allowMetadataLessLegacyFallback,
 		allowObservedLegacyMetadata,
@@ -1908,6 +2099,44 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				},
 			)
 		: null;
+	if (expectedSource) {
+		try {
+			assertCancellationEntryEvidence(
+				currentClockInCandidate,
+				expectedSource.currentEndpoints.clockIn,
+				"clock_in",
+			);
+			if (period.clockOutId) {
+				assertCancellationEntryEvidence(
+					currentClockOutCandidate,
+					expectedSource.currentEndpoints.clockOut,
+					"clock_out",
+				);
+			} else if (expectedSource.currentEndpoints.clockOut !== null) {
+				throw timeCorrectionFinalizationConflict();
+			}
+			if (clockInCorrection) {
+				assertCancellationEntryEvidence(
+					clockInCorrection,
+					expectedSource.pendingCorrections.clockIn,
+					"clock_in",
+				);
+			} else if (expectedSource.pendingCorrections.clockIn !== null) {
+				throw timeCorrectionFinalizationConflict();
+			}
+			if (clockOutCorrection) {
+				assertCancellationEntryEvidence(
+					clockOutCorrection,
+					expectedSource.pendingCorrections.clockOut,
+					"clock_out",
+				);
+			} else if (expectedSource.pendingCorrections.clockOut !== null) {
+				throw timeCorrectionFinalizationConflict();
+			}
+		} catch {
+			throw timeCorrectionFinalizationConflict();
+		}
+	}
 
 	const employees = (await input.dbService.db.query.employee.findMany({
 		where: and(
@@ -1936,6 +2165,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	}
 
 	let canonical: LockedCanonicalWorkRecord | null = null;
+	let canonicalWork: LockedCanonicalWorkMetadata | null = null;
 	if (period.canonicalRecordId) {
 		const canonicalRows = (await input.dbService.db
 			.select({
@@ -1973,8 +2203,96 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		) {
 			throw timeCorrectionFinalizationConflict();
 		}
+		if (Object.hasOwn(correction, "workLocationType") || expectedSource) {
+			const canonicalWorkRows = (await input.dbService.db
+				.select({
+					recordId: timeRecordWork.recordId,
+					organizationId: timeRecordWork.organizationId,
+					recordKind: timeRecordWork.recordKind,
+					workLocationType: timeRecordWork.workLocationType,
+					workCategoryId: timeRecordWork.workCategoryId,
+				})
+				.from(timeRecordWork)
+				.where(
+					and(
+						eq(timeRecordWork.recordId, period.canonicalRecordId),
+						eq(timeRecordWork.organizationId, input.organizationId),
+						eq(timeRecordWork.recordKind, "work"),
+					),
+				)
+				.for("update")) as LockedCanonicalWorkMetadata[];
+			canonicalWork = canonicalWorkRows[0] ?? null;
+			if (
+				canonicalWorkRows.length !== 1 ||
+				!canonicalWork ||
+				canonicalWork.recordId !== period.canonicalRecordId ||
+				canonicalWork.organizationId !== input.organizationId ||
+				canonicalWork.recordKind !== "work" ||
+				canonicalWork.workLocationType !== period.workLocationType ||
+				canonicalWork.workCategoryId !== period.workCategoryId ||
+				(expectedOriginalWorkMetadata !== undefined &&
+					(normalizeWorkLocationType(canonicalWork.workLocationType) !==
+						expectedOriginalWorkMetadata.workLocationType ||
+						canonicalWork.workCategoryId !==
+							expectedOriginalWorkMetadata.workCategoryId)) ||
+				(expectedSource !== undefined &&
+					(expectedSource.canonicalRecord.id !== canonical.id ||
+						expectedSource.canonicalRecord.employeeId !==
+							canonical.employeeId ||
+						expectedSource.canonicalRecord.recordKind !==
+							canonical.recordKind ||
+						!sameExpectedInstant(
+							canonical.startAt,
+							expectedSource.canonicalRecord.startAt,
+						) ||
+						!sameExpectedInstant(
+							canonical.endAt,
+							expectedSource.canonicalRecord.endAt,
+						) ||
+						expectedSource.canonicalRecord.durationMinutes !==
+							canonical.durationMinutes ||
+						expectedSource.canonicalRecord.approvalState !==
+							canonical.approvalState ||
+						expectedSource.canonicalWork.recordId !== canonicalWork.recordId ||
+						expectedSource.canonicalWork.organizationId !==
+							canonicalWork.organizationId ||
+						expectedSource.canonicalWork.recordKind !==
+							canonicalWork.recordKind ||
+						expectedSource.canonicalWork.workLocationType !==
+							canonicalWork.workLocationType ||
+						expectedSource.canonicalWork.workCategoryId !==
+							canonicalWork.workCategoryId))
+			) {
+				throw timeCorrectionFinalizationConflict();
+			}
+		}
 	} else if (expectedApprovalWorkflowId !== null) {
 		throw timeCorrectionFinalizationConflict();
+	}
+	if (
+		input.transition.kind === "approve" &&
+		currentCorrection &&
+		currentCorrection.workCategoryId !== null &&
+		currentCorrection.workCategoryId !== period.workCategoryId
+	) {
+		const requesterEmployee = lockedEmployees.find(
+			(candidate) => candidate.id === period.employeeId,
+		);
+		if (!requesterEmployee) throw timeCorrectionFinalizationConflict();
+		const teamId = await lockTrustedTimeCorrectionEmployeeTeamId({
+			tx: input.dbService.db,
+			employeeId: period.employeeId,
+			employeeTeamId: requesterEmployee.teamId,
+			organizationId: input.organizationId,
+		});
+		await authorizeTimeCorrectionCategoryChange({
+			tx: input.dbService.db,
+			employeeId: period.employeeId,
+			teamId,
+			organizationId: input.organizationId,
+			proposedWorkCategoryId: currentCorrection.workCategoryId,
+			currentWorkCategoryId: period.workCategoryId,
+		});
 	}
 
 	const originalEntries = [originalClockIn, originalClockOut].filter(
@@ -2166,16 +2484,29 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	);
 
 	const finalizedAt = instantToTimeCorrectionDate(input.finalizedAt);
+	const hasEndpointCorrection = correctionEntries.length > 0;
 	const updatedPeriods = await input.dbService.db
 		.update(workPeriod)
 		.set({
-			clockInId: correctedPeriod.clockIn.id,
-			clockOutId: correctedPeriod.clockOut?.id ?? null,
-			startTime: instantToTimeCorrectionDate(correctedPeriod.clockIn.instant),
-			endTime: correctedPeriod.clockOut
-				? instantToTimeCorrectionDate(correctedPeriod.clockOut.instant)
-				: null,
-			durationMinutes: correctedPeriod.durationMinutes,
+			...(hasEndpointCorrection
+				? {
+						clockInId: correctedPeriod.clockIn.id,
+						clockOutId: correctedPeriod.clockOut?.id ?? null,
+						startTime: instantToTimeCorrectionDate(
+							correctedPeriod.clockIn.instant,
+						),
+						endTime: correctedPeriod.clockOut
+							? instantToTimeCorrectionDate(correctedPeriod.clockOut.instant)
+							: null,
+						durationMinutes: correctedPeriod.durationMinutes,
+					}
+				: {}),
+			...(currentCorrection
+				? {
+						workLocationType: currentCorrection.workLocationType,
+						workCategoryId: currentCorrection.workCategoryId,
+					}
+				: {}),
 			updatedAt: finalizedAt,
 			...(correctedPeriod.isDeletion
 				? {
@@ -2203,6 +2534,16 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 					? [isNull(workPeriod.durationMinutes)]
 					: [eq(workPeriod.durationMinutes, period.durationMinutes)]),
 				eq(workPeriod.approvalStatus, period.approvalStatus),
+				...(currentCorrection
+					? [
+							period.workLocationType === null
+								? isNull(workPeriod.workLocationType)
+								: eq(workPeriod.workLocationType, period.workLocationType),
+							period.workCategoryId === null
+								? isNull(workPeriod.workCategoryId)
+								: eq(workPeriod.workCategoryId, period.workCategoryId),
+						]
+					: []),
 				...(expectedApprovalWorkflowId
 					? [eq(workPeriod.approvalWorkflowId, expectedApprovalWorkflowId)]
 					: [isNull(workPeriod.approvalWorkflowId)]),
@@ -2212,7 +2553,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		.returning({ id: workPeriod.id });
 	requireSingleMutation(updatedPeriods, period.id);
 
-	if (canonical) {
+	if (canonical && hasEndpointCorrection) {
 		const updatedCanonical = await input.dbService.db
 			.update(timeRecord)
 			.set({
@@ -2242,6 +2583,41 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			)
 			.returning({ id: timeRecord.id });
 		requireSingleMutation(updatedCanonical, canonical.id);
+	}
+	if (canonicalWork && currentCorrection) {
+		const updatedCanonicalWork = await input.dbService.db
+			.update(timeRecordWork)
+			.set({
+				workLocationType: currentCorrection.workLocationType,
+				workCategoryId: currentCorrection.workCategoryId,
+			})
+			.where(
+				and(
+					eq(timeRecordWork.recordId, canonicalWork.recordId),
+					eq(timeRecordWork.organizationId, input.organizationId),
+					eq(timeRecordWork.recordKind, "work"),
+					...(canonicalWork.workLocationType === null
+						? [isNull(timeRecordWork.workLocationType)]
+						: [
+								eq(
+									timeRecordWork.workLocationType,
+									canonicalWork.workLocationType,
+								),
+							]),
+					...(canonicalWork.workCategoryId === null
+						? [isNull(timeRecordWork.workCategoryId)]
+						: [
+								eq(timeRecordWork.workCategoryId, canonicalWork.workCategoryId),
+							]),
+				),
+			)
+			.returning({ recordId: timeRecordWork.recordId });
+		if (
+			updatedCanonicalWork.length !== 1 ||
+			updatedCanonicalWork[0]?.recordId !== canonicalWork.recordId
+		) {
+			throw timeCorrectionFinalizationConflict();
+		}
 	}
 
 	return {
@@ -2356,6 +2732,35 @@ function correctionEntryIdsFromApproval(approval: PendingApprovalRequest) {
 	return metadata?.timeCorrection;
 }
 
+function normalizeApprovalCorrectionMetadata(
+	metadata: NonNullable<TimeCorrectionApprovalMetadata["timeCorrection"]>,
+): TimeCorrectionWorkflowPayload["timeCorrection"] {
+	try {
+		return normalizeTimeCorrectionWorkflowPayload({
+			timeCorrection: metadata,
+		}).timeCorrection;
+	} catch (error) {
+		if (
+			Object.hasOwn(metadata, "action") ||
+			Object.hasOwn(metadata, "workLocationType") ||
+			Object.hasOwn(metadata, "workCategoryId")
+		) {
+			throw error;
+		}
+		return normalizeTimeCorrectionWorkflowPayload({
+			timeCorrection: {
+				action: "edit",
+				...(metadata.clockInCorrectionId
+					? { clockInCorrectionId: metadata.clockInCorrectionId }
+					: {}),
+				...(metadata.clockOutCorrectionId
+					? { clockOutCorrectionId: metadata.clockOutCorrectionId }
+					: {}),
+			},
+		}).timeCorrection;
+	}
+}
+
 export function calculateCorrectedDurationMinutes(
 	startTime: Date,
 	endTime: Date,
@@ -2393,7 +2798,7 @@ export interface TimeCorrectionPostCommitEffects {
 	terminal:
 		| {
 				kind: "approved";
-				dirtyFromDate: string;
+				dirtyFromDate?: string | undefined;
 				requesterEmployeeId: string;
 		  }
 		| { kind: "rejected"; requesterEmployeeId: string }
@@ -2430,6 +2835,10 @@ export async function lockTimeCorrectionSubmissionSourceInTransaction(input: {
 	organizationId: string;
 	employeeId: string;
 	approvalWorkflowId: string | null;
+	workLocationType:
+		| CurrentTimeCorrectionWorkflowContract["workLocationType"]
+		| null;
+	workCategoryId: string | null;
 	requesterUserId: string;
 }> {
 	const employeeRows = await input.dbService.db
@@ -2471,6 +2880,8 @@ export async function lockTimeCorrectionSubmissionSourceInTransaction(input: {
 			organizationId: workPeriod.organizationId,
 			employeeId: workPeriod.employeeId,
 			approvalWorkflowId: workPeriod.approvalWorkflowId,
+			workLocationType: workPeriod.workLocationType,
+			workCategoryId: workPeriod.workCategoryId,
 		})
 		.from(workPeriod)
 		.where(
@@ -2610,15 +3021,12 @@ function legacySubmissionPostCommit(
 	}
 	const dirtyFromDate =
 		result.autoCompletion.workBalanceDirtyMark?.dirtyFromDate;
-	if (!dirtyFromDate) {
-		throw new Error("Approved time correction is missing dirty-date evidence");
-	}
 	return {
 		authority: "legacy",
 		submittedToEmployeeId: null,
 		terminal: {
 			kind: "approved",
-			dirtyFromDate,
+			...(dirtyFromDate ? { dirtyFromDate } : {}),
 			requesterEmployeeId: input.requesterEmployeeId,
 		},
 	};
@@ -2733,6 +3141,13 @@ async function loadCanonicalAutoCompletionReplay(input: {
 		input.correction.clockInCorrectionId,
 		input.correction.clockOutCorrectionId,
 	].filter((id): id is string => Boolean(id));
+	if (correctionIds.length === 0) {
+		return {
+			period,
+			originalNotificationTime: period.startTime,
+			correctedNotificationTime: period.startTime,
+		};
+	}
 	const corrections = (await input.dbService.db.query.timeEntry.findMany({
 		where: and(
 			eq(timeEntry.organizationId, input.organizationId),
@@ -2833,6 +3248,14 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 		requesterEmployeeId: input.requesterEmployeeId,
 		workPeriodId: input.workPeriodId,
 	});
+	const originalWorkMetadata = Object.hasOwn(correction, "workLocationType")
+		? normalizeTimeCorrectionOriginalWorkMetadata({
+				workLocationType: normalizeWorkLocationType(
+					lockedSource.workLocationType,
+				),
+				workCategoryId: lockedSource.workCategoryId,
+			})
+		: undefined;
 	const authority = await input.context.writeGate.acquire({
 		organizationId: input.organizationId,
 		workflowType: "time_correction",
@@ -2895,6 +3318,18 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 		const replay = replayCandidates[0];
 		if (replay) {
 			if (!sameCorrectionPayload(replay.metadata, correction)) {
+				throw pendingTimeCorrectionConflict(input.workPeriodId);
+			}
+			const persistedOriginalWorkMetadata = originalWorkMetadataFromEvidence(
+				replay.metadata,
+				originalWorkMetadata !== undefined,
+			);
+			if (
+				!sameOriginalWorkMetadata(
+					persistedOriginalWorkMetadata,
+					originalWorkMetadata,
+				)
+			) {
 				throw pendingTimeCorrectionConflict(input.workPeriodId);
 			}
 			const stage =
@@ -3042,6 +3477,19 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 							clockInCorrectionId: correction.clockInCorrectionId,
 							clockOutCorrectionId: correction.clockOutCorrectionId,
 						},
+						...(Object.hasOwn(correction, "workLocationType")
+							? {
+									workMetadata: {
+										workLocationType: (
+											correction as CurrentTimeCorrectionWorkflowContract
+										).workLocationType,
+										workCategoryId: (
+											correction as CurrentTimeCorrectionWorkflowContract
+										).workCategoryId,
+									},
+								}
+							: {}),
+						originalWorkMetadata,
 						transactionBehavior: "existing",
 						submissionKey: input.submissionKey,
 						submissionId: input.submissionId,
@@ -3092,7 +3540,13 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 		overtimeRisk: input.overtimeRisk,
 		employeeGroupIds: [],
 	};
-	const contextSnapshot = { ...routingContext, timeCorrection: correction };
+	const contextSnapshot = {
+		...routingContext,
+		timeCorrection: correction,
+		...(originalWorkMetadata
+			? { timeCorrectionOriginalWorkMetadata: originalWorkMetadata }
+			: {}),
+	};
 	if (input.submissionId) {
 		const cycleWorkflow =
 			await input.dbService.db.query.approvalWorkflow.findFirst({
@@ -3144,6 +3598,18 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 			replaySnapshot.sourceId !== sourceIdentity.sourceId ||
 			replaySnapshot.requesterEmployeeId !== input.requesterEmployeeId ||
 			!sameCorrectionPayload(replaySnapshot.contextSnapshot, correction)
+		) {
+			throw pendingTimeCorrectionConflict(input.workPeriodId);
+		}
+		const persistedOriginalWorkMetadata = originalWorkMetadataFromEvidence(
+			replaySnapshot.contextSnapshot,
+			originalWorkMetadata !== undefined,
+		);
+		if (
+			!sameOriginalWorkMetadata(
+				persistedOriginalWorkMetadata,
+				originalWorkMetadata,
+			)
 		) {
 			throw pendingTimeCorrectionConflict(input.workPeriodId);
 		}
@@ -3285,6 +3751,24 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 					...(correction.clockInCorrectionId ? ["Clock in"] : []),
 					...(correction.clockOutCorrectionId ? ["Clock out"] : []),
 				],
+				...(Object.hasOwn(correction, "workLocationType")
+					? {
+							workMetadata: {
+								original: {
+									workLocationType: lockedSource.workLocationType,
+									workCategoryId: lockedSource.workCategoryId,
+								},
+								requested: {
+									workLocationType: (
+										correction as CurrentTimeCorrectionWorkflowContract
+									).workLocationType,
+									workCategoryId: (
+										correction as CurrentTimeCorrectionWorkflowContract
+									).workCategoryId,
+								},
+							},
+						}
+					: {}),
 			},
 			searchText: `time correction ${correction.action}`,
 		},
@@ -3383,24 +3867,30 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 			requesterEmployeeId: input.requesterEmployeeId,
 			requesterUserId: lockedSource.requesterUserId,
 		});
-		const finalized = await finalizeTimeCorrectionTerminalDetailedInTransaction(
-			{
-				dbService: input.dbService,
-				organizationId: input.organizationId,
-				workPeriodId: input.workPeriodId,
-				expectedApprovalWorkflowId: started.snapshot.id,
-				expectedApprovalWorkflowVersion: started.snapshot.version,
-				expectedRequesterEmployeeId: input.requesterEmployeeId,
-				actorEmployeeId: requester.employeeId,
-				actorUserId: requester.userId,
-				correction,
-				legacyApprovalRequestId:
-					started.snapshot.status === "pending" ? compatibilityId : null,
-				transition: { kind: "approve", reason: input.reason },
-				finalizedAt: started.snapshot.completedAt ?? systemClock.nowInstant(),
-				allowMetadataLessLegacyFallback: false,
-			},
-		);
+		await finalizeTimeCorrectionTerminalDetailedInTransaction({
+			dbService: input.dbService,
+			organizationId: input.organizationId,
+			workPeriodId: input.workPeriodId,
+			expectedApprovalWorkflowId: started.snapshot.id,
+			expectedApprovalWorkflowVersion: started.snapshot.version,
+			expectedRequesterEmployeeId: input.requesterEmployeeId,
+			actorEmployeeId: requester.employeeId,
+			actorUserId: requester.userId,
+			correction,
+			expectedOriginalWorkMetadata: originalWorkMetadata,
+			legacyApprovalRequestId:
+				started.snapshot.status === "pending" ? compatibilityId : null,
+			transition: { kind: "approve", reason: input.reason },
+			finalizedAt: started.snapshot.completedAt ?? systemClock.nowInstant(),
+			allowMetadataLessLegacyFallback: false,
+		});
+		const autoCompletion = await loadCanonicalAutoCompletionReplay({
+			dbService: input.dbService,
+			organizationId: input.organizationId,
+			requesterEmployeeId: input.requesterEmployeeId,
+			workPeriodId: input.workPeriodId,
+			correction,
+		});
 		return {
 			disposition: "executed",
 			kind: "auto_completed",
@@ -3408,18 +3898,7 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 				started.snapshot.stages.length > 1 ? started.snapshot.id : null,
 			approvalRequestId: approvalId,
 			reason: "requester_is_approver",
-			autoCompletion: {
-				period: finalized.period,
-				originalNotificationTime: finalized.originalNotificationTime,
-				correctedNotificationTime: finalized.correctedNotificationTime,
-				workBalanceDirtyMark: finalized.dirtyFromDate
-					? {
-							employeeId: finalized.requesterEmployeeId,
-							organizationId: input.organizationId,
-							dirtyFromDate: finalized.dirtyFromDate,
-						}
-					: undefined,
-			},
+			autoCompletion,
 			postCommit: {
 				authority: "canonical",
 				submittedToEmployeeId: null,
@@ -3479,11 +3958,13 @@ async function dispatchTimeCorrectionDecisionPostCommit(input: {
 		correction,
 	});
 	if (effects.terminal.kind === "approved") {
-		await markEmployeeWorkBalanceDirtyIfNeeded({
-			employeeId: effects.terminal.requesterEmployeeId,
-			organizationId: input.actor.organizationId,
-			dirtyFromDate: effects.terminal.dirtyFromDate,
-		});
+		if (effects.terminal.dirtyFromDate) {
+			await markEmployeeWorkBalanceDirtyIfNeeded({
+				employeeId: effects.terminal.requesterEmployeeId,
+				organizationId: input.actor.organizationId,
+				dirtyFromDate: effects.terminal.dirtyFromDate,
+			});
+		}
 		notifyApprovedCorrection(
 			result.period,
 			request.entityId,
@@ -4346,6 +4827,11 @@ export function createTimeCorrectionApprovalWorkflow(
 			clockInCorrectionId?: string;
 			clockOutCorrectionId?: string;
 		};
+		workMetadata?: Pick<
+			CurrentTimeCorrectionWorkflowContract,
+			"workLocationType" | "workCategoryId"
+		>;
+		originalWorkMetadata?: TimeCorrectionOriginalWorkMetadata;
 	},
 ): Effect.Effect<TimeCorrectionApprovalWorkflowResult, AnyAppError, never> {
 	const correctionAction = input.correctionAction ?? "edit";
@@ -4381,7 +4867,8 @@ export function createTimeCorrectionApprovalWorkflow(
 	if (
 		correctionEntryIds &&
 		!correctionEntryIds.clockInCorrectionId &&
-		!correctionEntryIds.clockOutCorrectionId
+		!correctionEntryIds.clockOutCorrectionId &&
+		!input.workMetadata
 	) {
 		return Effect.fail(
 			new ValidationError({
@@ -4405,25 +4892,30 @@ export function createTimeCorrectionApprovalWorkflow(
 		);
 	}
 
-	const metadata: Record<string, unknown> | undefined = input.correctionEntryIds
-		? {
-				timeCorrection: {
-					action: correctionAction,
-					...(input.correctionEntryIds.clockInCorrectionId
+	const metadata: Record<string, unknown> | undefined =
+		correctionEntryIds || input.workMetadata
+			? {
+					timeCorrection: {
+						action: correctionAction,
+						...(input.workMetadata ?? {}),
+						...(correctionEntryIds?.clockInCorrectionId
+							? {
+									clockInCorrectionId: correctionEntryIds.clockInCorrectionId,
+								}
+							: {}),
+						...(correctionEntryIds?.clockOutCorrectionId
+							? {
+									clockOutCorrectionId: correctionEntryIds.clockOutCorrectionId,
+								}
+							: {}),
+					},
+					...(input.originalWorkMetadata
 						? {
-								clockInCorrectionId:
-									input.correctionEntryIds.clockInCorrectionId,
+								timeCorrectionOriginalWorkMetadata: input.originalWorkMetadata,
 							}
 						: {}),
-					...(input.correctionEntryIds.clockOutCorrectionId
-						? {
-								clockOutCorrectionId:
-									input.correctionEntryIds.clockOutCorrectionId,
-							}
-						: {}),
-				},
-			}
-		: undefined;
+				}
+			: undefined;
 
 	const createApproval = ensureNoPendingTimeCorrectionApproval(
 		dbService,
@@ -4773,17 +5265,11 @@ function persistApprovedTimeCorrection(
 					field: "timeCorrection",
 				});
 			}
-			const correction = normalizeTimeCorrectionWorkflowPayload({
-				timeCorrection: {
-					action: metadata.action ?? "edit",
-					...(metadata.clockInCorrectionId
-						? { clockInCorrectionId: metadata.clockInCorrectionId }
-						: {}),
-					...(metadata.clockOutCorrectionId
-						? { clockOutCorrectionId: metadata.clockOutCorrectionId }
-						: {}),
-				},
-			}).timeCorrection;
+			const correction = normalizeApprovalCorrectionMetadata(metadata);
+			const expectedOriginalWorkMetadata = originalWorkMetadataFromEvidence(
+				approval.metadata,
+				Object.hasOwn(correction, "workLocationType"),
+			);
 			const result = await finalizeTimeCorrectionTerminalDetailedInTransaction({
 				dbService,
 				organizationId: approval.organizationId,
@@ -4794,6 +5280,7 @@ function persistApprovedTimeCorrection(
 				actorEmployeeId: currentEmployee.id,
 				actorUserId: currentEmployee.userId,
 				correction,
+				expectedOriginalWorkMetadata,
 				legacyApprovalRequestId: approval.id,
 				transition: { kind: "approve", reason: approval.reason ?? null },
 				finalizedAt: systemClock.nowInstant(),
@@ -4801,13 +5288,13 @@ function persistApprovedTimeCorrection(
 			});
 			return {
 				period: result.period,
-				workBalanceDirtyMark: {
-					employeeId: result.requesterEmployeeId,
-					organizationId: approval.organizationId,
-					...(result.dirtyFromDate
-						? { dirtyFromDate: result.dirtyFromDate }
-						: {}),
-				},
+				workBalanceDirtyMark: result.dirtyFromDate
+					? {
+							employeeId: result.requesterEmployeeId,
+							organizationId: approval.organizationId,
+							dirtyFromDate: result.dirtyFromDate,
+						}
+					: undefined,
 				originalNotificationTime: result.originalNotificationTime,
 				correctedNotificationTime: result.correctedNotificationTime,
 			};
@@ -4900,17 +5387,7 @@ function persistRejectedTimeCorrection(
 		}
 		let correction: TimeCorrectionWorkflowPayload["timeCorrection"];
 		if (correctionEntryIds) {
-			correction = normalizeTimeCorrectionWorkflowPayload({
-				timeCorrection: {
-					action: correctionEntryIds.action ?? "edit",
-					...(correctionEntryIds.clockInCorrectionId
-						? { clockInCorrectionId: correctionEntryIds.clockInCorrectionId }
-						: {}),
-					...(correctionEntryIds.clockOutCorrectionId
-						? { clockOutCorrectionId: correctionEntryIds.clockOutCorrectionId }
-						: {}),
-				},
-			}).timeCorrection;
+			correction = normalizeApprovalCorrectionMetadata(correctionEntryIds);
 		} else {
 			const period = yield* _(
 				loadWorkPeriod(dbService, entityId, approval.organizationId),
@@ -4944,6 +5421,10 @@ function persistRejectedTimeCorrection(
 				},
 			}).timeCorrection;
 		}
+		const expectedOriginalWorkMetadata = originalWorkMetadataFromEvidence(
+			approval.metadata,
+			Object.hasOwn(correction, "workLocationType"),
+		);
 		const result = yield* _(
 			Effect.tryPromise({
 				try: () =>
@@ -4957,6 +5438,7 @@ function persistRejectedTimeCorrection(
 						actorEmployeeId: currentEmployee.id,
 						actorUserId: currentEmployee.userId,
 						correction,
+						expectedOriginalWorkMetadata,
 						legacyApprovalRequestId: approval.id,
 						transition: { kind: "reject", reason },
 						finalizedAt: systemClock.nowInstant(),

@@ -63,6 +63,14 @@ function asTimeCorrectionResult(
 	result.snapshot.contextSnapshot = {
 		privateRouting: { policyId: "policy-1", stage: 1 },
 		timeCorrection: correction,
+		...(Object.hasOwn(correction, "workLocationType")
+			? {
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: null,
+					},
+				}
+			: {}),
 	};
 	result.snapshot.displaySnapshot = { kind: "time_correction" };
 	result.projection.workflowType = "time_correction";
@@ -2600,6 +2608,45 @@ describe("transaction-bound legacy approval row writer", () => {
 			"clockOutCorrectionId",
 		);
 	});
+
+	it.each([
+		[
+			"current metadata-only",
+			{
+				action: "edit" as const,
+				workLocationType: "remote" as const,
+				workCategoryId: null,
+			},
+		],
+		[
+			"current metadata and endpoint",
+			{
+				action: "edit" as const,
+				workLocationType: "home" as const,
+				workCategoryId: "46000000-0000-4000-8000-000000000001",
+				clockInCorrectionId,
+			},
+		],
+	] as const)(
+		"preserves exact strict %s payload parity",
+		async (_label, correction) => {
+			const result = asTimeCorrectionResult(
+				canonicalLegacyResult("pending"),
+				correction,
+			);
+			const harness = rowWriterHarness(result);
+
+			await harness.writer.writeLegacyRows({
+				organizationId: "org-1",
+				result,
+				legacyIds: harness.mappings,
+			});
+
+			expect(insertedRequestMetadata(harness.calls).timeCorrection).toEqual(
+				correction,
+			);
+		},
+	);
 
 	it.each([
 		["missing", {}],

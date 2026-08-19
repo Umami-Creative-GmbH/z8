@@ -9,7 +9,9 @@ import {
 } from "@/db/schema";
 import { instantToDB } from "@/lib/datetime/drizzle-adapter";
 import {
+	normalizeTimeCorrectionOriginalWorkMetadata,
 	normalizeTimeCorrectionWorkflowPayload,
+	type TimeCorrectionOriginalWorkMetadata,
 	type TimeCorrectionWorkflowPayload,
 } from "../domain-adapters/time-correction-contract";
 import {
@@ -607,6 +609,26 @@ function timeCorrectionCompatibilityPayload(
 	}
 }
 
+function timeCorrectionOriginalWorkMetadata(
+	snapshot: ApprovalCommandResult["snapshot"],
+	correction: TimeCorrectionWorkflowPayload["timeCorrection"] | null,
+): TimeCorrectionOriginalWorkMetadata | null {
+	if (!correction || !Object.hasOwn(correction, "workLocationType"))
+		return null;
+	const descriptor = Object.getOwnPropertyDescriptor(
+		snapshot.contextSnapshot,
+		"timeCorrectionOriginalWorkMetadata",
+	);
+	if (!descriptor?.enumerable || !("value" in descriptor)) {
+		throw new Error("Legacy time correction compatibility metadata is invalid");
+	}
+	try {
+		return normalizeTimeCorrectionOriginalWorkMetadata(descriptor.value);
+	} catch {
+		throw new Error("Legacy time correction compatibility metadata is invalid");
+	}
+}
+
 function timeCorrectionSubmissionEvidence(
 	snapshot: ApprovalCommandResult["snapshot"],
 ): Record<string, string> | null {
@@ -698,6 +720,10 @@ function legacyRequestMetadata(
 	ordinaryPayload: Readonly<OrdinaryWorkPeriodWorkflowPayload> | null,
 ): Record<string, unknown> {
 	const submission = timeCorrectionSubmissionEvidence(snapshot);
+	const originalWorkMetadata = timeCorrectionOriginalWorkMetadata(
+		snapshot,
+		correction,
+	);
 	return {
 		workflow: {
 			id: snapshot.id,
@@ -711,6 +737,9 @@ function legacyRequestMetadata(
 				: {}),
 		},
 		...(correction ? { timeCorrection: correction } : {}),
+		...(originalWorkMetadata
+			? { timeCorrectionOriginalWorkMetadata: originalWorkMetadata }
+			: {}),
 		...(ordinaryPayload ?? {}),
 		...(submission ? { submission } : {}),
 	};

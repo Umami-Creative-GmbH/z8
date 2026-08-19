@@ -1,3 +1,5 @@
+import { isWorkLocationType } from "@/lib/time-tracking/work-location";
+
 export type TimeApprovalKind =
 	| "time_correction"
 	| "manual_time_submission"
@@ -29,16 +31,16 @@ const UUID =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function object(value: unknown): JsonObject | null {
-	if (
-		value === null ||
-		typeof value !== "object" ||
-		Array.isArray(value) ||
-		(Object.getPrototypeOf(value) !== Object.prototype &&
-			Object.getPrototypeOf(value) !== null)
-	) {
+	try {
+		if (value === null || typeof value !== "object" || Array.isArray(value)) {
+			return null;
+		}
+		const prototype = Object.getPrototypeOf(value);
+		if (prototype !== Object.prototype && prototype !== null) return null;
+		return value as JsonObject;
+	} catch {
 		return null;
 	}
-	return value as JsonObject;
 }
 
 function metadataObject(value: unknown): Parsed<JsonObject> {
@@ -48,32 +50,39 @@ function metadataObject(value: unknown): Parsed<JsonObject> {
 }
 
 function ownDataProperty(value: JsonObject, key: string): Parsed<unknown> {
-	const descriptor = Object.getOwnPropertyDescriptor(value, key);
-	if (!descriptor)
-		return key in value ? { state: "invalid" } : { state: "absent" };
-	return descriptor.enumerable && "value" in descriptor
-		? { state: "valid", value: descriptor.value }
-		: { state: "invalid" };
+	try {
+		const descriptor = Object.getOwnPropertyDescriptor(value, key);
+		if (!descriptor)
+			return key in value ? { state: "invalid" } : { state: "absent" };
+		return descriptor.enumerable && "value" in descriptor
+			? { state: "valid", value: descriptor.value }
+			: { state: "invalid" };
+	} catch {
+		return { state: "invalid" };
+	}
 }
 
 function exactDataObject(
 	value: unknown,
 	allowedKeys: readonly string[],
 ): JsonObject | null {
-	const parsed = object(value);
-	if (!parsed) return null;
-	const keys = Reflect.ownKeys(parsed);
-	const allowedKeySet = new Set(allowedKeys);
-	if (
-		keys.some((key) => {
-			if (typeof key !== "string" || !allowedKeySet.has(key)) return true;
-			const descriptor = Object.getOwnPropertyDescriptor(parsed, key);
-			return !descriptor?.enumerable || !("value" in descriptor);
-		})
-	) {
+	try {
+		const parsed = object(value);
+		if (!parsed) return null;
+		const descriptors = Object.getOwnPropertyDescriptors(parsed);
+		const keys = Reflect.ownKeys(descriptors);
+		const allowedKeySet = new Set(allowedKeys);
+		const snapshot: JsonObject = {};
+		for (const key of keys) {
+			if (typeof key !== "string" || !allowedKeySet.has(key)) return null;
+			const descriptor = descriptors[key];
+			if (!descriptor?.enumerable || !("value" in descriptor)) return null;
+			snapshot[key] = descriptor.value;
+		}
+		return snapshot;
+	} catch {
 		return null;
 	}
-	return parsed;
 }
 
 type OrdinaryKind = "manual_time_submission" | "policy_clock_out";
@@ -101,10 +110,27 @@ function timeCorrectionMarker(metadata: JsonObject | null): Parsed<{
 	if (property.state !== "valid") return property;
 	const marker = exactDataObject(property.value, [
 		"action",
+		"workLocationType",
+		"workCategoryId",
 		"clockInCorrectionId",
 		"clockOutCorrectionId",
 	]);
-	if (!marker || (marker.action !== "edit" && marker.action !== "delete")) {
+	const hasWorkLocation = marker && Object.hasOwn(marker, "workLocationType");
+	const hasWorkCategory = marker && Object.hasOwn(marker, "workCategoryId");
+	const hasWorkMetadata = hasWorkLocation && hasWorkCategory;
+	if (
+		!marker ||
+		!Object.hasOwn(marker, "action") ||
+		hasWorkLocation !== hasWorkCategory ||
+		(marker.action !== "edit" && marker.action !== "delete") ||
+		(hasWorkMetadata &&
+			(typeof marker.workLocationType !== "string" ||
+				!isWorkLocationType(marker.workLocationType))) ||
+		(hasWorkMetadata &&
+			marker.workCategoryId !== null &&
+			(typeof marker.workCategoryId !== "string" ||
+				!UUID.test(marker.workCategoryId)))
+	) {
 		return { state: "invalid" };
 	}
 	const ids = ["clockInCorrectionId", "clockOutCorrectionId"].flatMap((key) => {
@@ -118,6 +144,7 @@ function timeCorrectionMarker(metadata: JsonObject | null): Parsed<{
 	});
 	if (
 		ids.includes(null) ||
+		(!hasWorkMetadata && ids.length === 0) ||
 		(marker.action === "delete" && ids.length !== 2) ||
 		(ids.length === 2 && ids[0] === ids[1])
 	) {

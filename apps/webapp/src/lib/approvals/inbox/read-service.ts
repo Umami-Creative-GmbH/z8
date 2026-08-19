@@ -10,6 +10,7 @@ import type {
 	UnifiedApprovalItem,
 } from "@/lib/approvals/domain/types";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import type { TimeCorrectionMetadataChanges } from "../server/time-correction-review-metadata";
 import { ApprovalInboxBadRequestError } from "./current-actor";
 import {
 	countOrdinaryCanonicalApprovals,
@@ -526,8 +527,9 @@ function getTimeRequestWarning(entity: unknown): string | null {
 
 interface TimeCorrectionReviewDetail {
 	action: "edit" | "delete";
-	clockIn: { original: Date; requested: Date | null };
+	clockIn: { original: Date; requested: Date | null } | null;
 	clockOut: { original: Date | null; requested: Date | null } | null;
+	metadataChanges?: TimeCorrectionMetadataChanges;
 	isOrphaned: boolean;
 }
 
@@ -563,24 +565,33 @@ function buildTimeCorrectionDetailSections(
 	}
 
 	const correction = detail.entity.pendingCorrection;
-	const rows = [
+	const rows: Extract<
+		ApprovalInboxDetailSection,
+		{ type: "key_value" }
+	>["rows"] = [
 		{
-			label: "Action",
-			value: correction.action === "delete" ? "Delete" : "Edit",
+			label: { key: "approvals:approvals.action", fallback: "Action" },
+			value:
+				correction.action === "delete"
+					? { key: "approvals:approvals.delete", fallback: "Delete" }
+					: { key: "approvals:approvals.edit", fallback: "Edit" },
 		},
-		{
-			label: "Clock in",
+	];
+
+	if (correction.clockIn) {
+		rows.push({
+			label: { key: "approvals:approvals.clockIn", fallback: "Clock in" },
 			value: formatCorrectionChange(
 				correction.clockIn.original,
 				correction.clockIn.requested,
 			),
 			...(correction.clockIn.requested ? {} : { tone: "danger" as const }),
-		},
-	];
+		});
+	}
 
 	if (correction.clockOut) {
 		rows.push({
-			label: "Clock out",
+			label: { key: "approvals:approvals.clockOut", fallback: "Clock out" },
 			value: formatCorrectionChange(
 				correction.clockOut.original,
 				correction.clockOut.requested,
@@ -589,8 +600,55 @@ function buildTimeCorrectionDetailSections(
 		});
 	}
 
+	if (correction.metadataChanges?.workLocation) {
+		rows.push({
+			label: {
+				key: "approvals:approvals.workLocation",
+				fallback: "Work location",
+			},
+			value: {
+				kind: "change",
+				original: {
+					kind: "work_location",
+					value: correction.metadataChanges.workLocation.original,
+				},
+				requested: {
+					kind: "work_location",
+					value: correction.metadataChanges.workLocation.requested,
+				},
+			},
+		});
+	}
+
+	if (correction.metadataChanges?.workCategory) {
+		rows.push({
+			label: {
+				key: "approvals:approvals.workCategory",
+				fallback: "Work category",
+			},
+			value: {
+				kind: "change",
+				original: {
+					kind: "work_category",
+					value: correction.metadataChanges.workCategory.original,
+				},
+				requested: {
+					kind: "work_category",
+					value: correction.metadataChanges.workCategory.requested,
+				},
+			},
+		});
+	}
+
 	const sections: ApprovalInboxDetailSection[] = [
-		{ type: "key_value", title: "Requested Correction", rows },
+		{
+			type: "key_value",
+			title: {
+				key: "approvals:approvals.requestedCorrection",
+				fallback: "Requested Correction",
+			},
+			rows,
+		},
 	];
 
 	if (correction.isOrphaned) {

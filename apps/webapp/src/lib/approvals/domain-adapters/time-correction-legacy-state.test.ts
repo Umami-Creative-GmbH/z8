@@ -64,6 +64,8 @@ function source(overrides: JsonRecord = {}) {
 		deletedAt: null,
 		canonicalRecordId,
 		approvalWorkflowId: null,
+		workLocationType: "office",
+		workCategoryId: "30000000-0000-4000-8000-000000000002",
 		...overrides,
 	};
 }
@@ -78,6 +80,17 @@ function canonicalRecord(overrides: JsonRecord = {}) {
 		endAt: new Date("2026-07-20T16:00:00.000Z"),
 		durationMinutes: 600,
 		approvalState: "approved",
+		...overrides,
+	};
+}
+
+function canonicalWork(overrides: JsonRecord = {}) {
+	return {
+		recordId: canonicalRecordId,
+		organizationId,
+		recordKind: "work",
+		workLocationType: "office",
+		workCategoryId: "30000000-0000-4000-8000-000000000002",
 		...overrides,
 	};
 }
@@ -240,6 +253,7 @@ function envelope(overrides: JsonRecord = {}) {
 	const value = {
 		source: source(),
 		canonicalRecord: canonicalRecord(),
+		canonicalWork: canonicalWork(),
 		currentEndpoints: currentEndpoints(),
 		currentEndpointPredecessors: [],
 		approvalRequests: [request()],
@@ -607,6 +621,67 @@ describe("captureTimeCorrectionLegacyApprovalState", () => {
 		expect(state.approvalRequest?.metadata).toEqual({
 			timeCorrection: { action: "edit", clockInCorrectionId },
 		});
+		expect(state.displaySnapshot).not.toHaveProperty("workMetadata");
+	});
+
+	it("captures and plans untranslated current work metadata display evidence", async () => {
+		const workCategoryId = "30000000-0000-4000-8000-000000000003";
+		const currentCorrection = {
+			action: "edit" as const,
+			workLocationType: "home" as const,
+			workCategoryId,
+		};
+		const beforeValue = envelope({
+			approvalRequests: [],
+			correctionEntries: [],
+			originalEntries: [],
+		});
+		beforeValue.identityEvidence = {
+			employees: [{ id: employeeId, organizationId }],
+		};
+		const before = await capture(beforeValue);
+		const after = await capture(
+			envelope({
+				approvalRequests: [
+					request({
+						timeCorrection: currentCorrection,
+						timeCorrectionOriginalWorkMetadata: {
+							workLocationType: "office",
+							workCategoryId: "30000000-0000-4000-8000-000000000002",
+						},
+					}),
+				],
+				correctionEntries: [],
+				originalEntries: [],
+			}),
+		);
+
+		expect(after.state.displaySnapshot).toMatchObject({
+			workMetadata: {
+				original: {
+					workLocationType: "office",
+					workCategoryId: "30000000-0000-4000-8000-000000000002",
+				},
+				requested: {
+					workLocationType: "home",
+					workCategoryId,
+				},
+			},
+		});
+
+		const planner = createLegacyApprovalObservationPlanner({
+			clock: { nowInstant: () => capturedAt },
+		});
+		const plan = await planner.plan({
+			organizationId,
+			source: after.state.source,
+			before: before.state,
+			after: after.state,
+			actor: { kind: "legacy_unknown", employeeId: null, userId: null },
+			idempotencyKey: "current-metadata-display-observation",
+			expectedVersion: null,
+		});
+		expect(plan.snapshot.displaySnapshot).toEqual(after.state.displaySnapshot);
 	});
 
 	it("captures a scoped source with no request without discovering unrelated inactive rows", async () => {
@@ -1913,6 +1988,13 @@ describe("captureTimeCorrectionLegacyApprovalState", () => {
 						{ id: employeeId, organizationId: "org-2" },
 						{ id: approverId, organizationId },
 					],
+					canonicalWork: {
+						recordId: canonicalRecordId,
+						organizationId,
+						recordKind: "work",
+						workLocationType: "office",
+						workCategoryId: "30000000-0000-4000-8000-000000000002",
+					},
 				},
 			},
 		],
@@ -1922,6 +2004,24 @@ describe("captureTimeCorrectionLegacyApprovalState", () => {
 			message: "Time correction legacy approval state capture failed",
 		});
 	});
+
+	it.each([
+		["foreign organization", { organizationId: "org-2" }],
+		["different location", { workLocationType: "home" }],
+		[
+			"different category",
+			{ workCategoryId: "30000000-0000-4000-8000-000000000099" },
+		],
+	] as const)(
+		"rejects canonical work metadata with %s",
+		async (_label, patch) => {
+			await expect(
+				capture(envelope({ canonicalWork: canonicalWork(patch) })),
+			).rejects.toMatchObject({
+				name: "TimeCorrectionLegacyStateCaptureError",
+			});
+		},
+	);
 
 	it.each([
 		["invalid timestamp", { timestamp: new Date(Number.NaN) }],
