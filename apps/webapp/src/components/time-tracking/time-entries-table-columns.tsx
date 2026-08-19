@@ -7,6 +7,7 @@ import type { WorkPeriodAutoAdjustmentReason } from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatCapturedOffsetInstant } from "@/lib/datetime/temporal-format";
 import { isSameDayInTimezone } from "@/lib/time-tracking/time-utils";
+import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import type { TimeFormat } from "@/lib/user-preferences/time-format";
 import { DurationCell } from "./time-entries-table-duration-cell";
 
@@ -24,6 +25,8 @@ export interface WorkPeriodData {
 	durationMinutes: number | null;
 	approvalStatus: "pending" | "approved" | "rejected";
 	approvalRequestId: string | null;
+	workLocationType: WorkLocationType | "field" | null;
+	workCategoryId: string | null;
 	clockIn: TimeEntry;
 	clockOut: TimeEntry | undefined;
 	surchargeMinutes?: number | null;

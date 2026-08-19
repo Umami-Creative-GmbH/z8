@@ -5,7 +5,11 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { TimeEntriesTable } from "./time-entries-table";
 
-const mocks = vi.hoisted(() => ({ approveWorkPeriod: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+	approveWorkPeriod: vi.fn(),
+	dynamicCallCount: 0,
+	timeCorrectionProps: vi.fn(),
+}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -16,7 +20,10 @@ vi.mock("@tolgee/react", () => ({
 vi.mock("next/dynamic", () => ({
 	default: (loader: () => Promise<unknown>) => {
 		void loader;
-		return function DynamicMock() {
+		const isTimeCorrectionDialog = mocks.dynamicCallCount === 0;
+		mocks.dynamicCallCount += 1;
+		return function DynamicMock(props: unknown) {
+			if (isTimeCorrectionDialog) mocks.timeCorrectionProps(props);
 			return <button type="button">Add manual entry</button>;
 		};
 	},
@@ -61,7 +68,14 @@ vi.mock("@/components/data-table-server", () => ({
 vi.mock("@/components/time-tracking/time-entries-table-columns", () => ({
 	getTimeEntriesColumns: (options: {
 		renderAdminAction?: (row: unknown) => ReactNode;
-	}) => [{ cell: options.renderAdminAction }],
+		renderEditAction?: (row: unknown, isSameDay: boolean) => ReactNode;
+	}) => [
+		{
+			cell: (row: unknown) =>
+				options.renderAdminAction?.(row) ??
+				options.renderEditAction?.(row, false),
+		},
+	],
 }));
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/mutations", () => ({
@@ -130,6 +144,52 @@ describe("TimeEntriesTable", () => {
 			expect(mocks.approveWorkPeriod).toHaveBeenCalledWith({
 				workPeriodId: "period-1",
 				approvalRequestId: "assignment-1",
+			}),
+		);
+	});
+
+	it("passes the employee and complete period metadata to the correction dialog", () => {
+		const period = {
+			id: "period-1",
+			approvalRequestId: null,
+			startTime: new Date("2026-07-23T08:00:00Z"),
+			endTime: new Date("2026-07-23T16:00:00Z"),
+			durationMinutes: 480,
+			approvalStatus: "approved" as const,
+			workLocationType: "remote" as const,
+			workCategoryId: "category-1",
+			clockIn: {
+				id: "in-1",
+				isSuperseded: false,
+				notes: null,
+				utcOffsetMinutes: 120,
+			},
+			clockOut: {
+				id: "out-1",
+				isSuperseded: false,
+				notes: null,
+				utcOffsetMinutes: 120,
+			},
+		};
+
+		render(
+			<TimeEntriesTable
+				workPeriods={[period]}
+				hasManager
+				canApproveTimeEntries={false}
+				employeeTimezone="Europe/Berlin"
+				timeFormat="24h"
+				employeeId="employee-1"
+			/>,
+		);
+
+		expect(mocks.timeCorrectionProps).toHaveBeenCalledWith(
+			expect.objectContaining({
+				employeeId: "employee-1",
+				workPeriod: expect.objectContaining({
+					workLocationType: "remote",
+					workCategoryId: "category-1",
+				}),
 			}),
 		);
 	});

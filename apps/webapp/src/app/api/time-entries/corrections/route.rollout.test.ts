@@ -59,6 +59,7 @@ const state = vi.hoisted(() => ({
 	canApproveFor: vi.fn(),
 	manager: vi.fn(),
 	markDirty: vi.fn(),
+	validateRange: vi.fn(),
 }));
 
 function authority(mode: RolloutMode) {
@@ -100,6 +101,8 @@ const period = {
 	clockOutId: ids.clockOut,
 	startTime: new Date("2026-07-01T06:00:00.000Z"),
 	endTime: new Date("2026-07-01T14:00:00.000Z"),
+	workLocationType: "office",
+	workCategoryId: null,
 	deletedAt: null,
 	approvalWorkflowId: null as string | null,
 };
@@ -328,6 +331,9 @@ vi.mock("@/lib/time-tracking/clocking-service", () => ({
 vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty: state.markDirty,
 }));
+vi.mock("@/lib/time-tracking/validation", () => ({
+	validateTimeEntryRange: state.validateRange,
+}));
 vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	getPrimaryEligibleManagerIdForRequester: state.manager,
 }));
@@ -379,6 +385,12 @@ vi.mock("@/lib/approvals/domain-adapters/legacy-write-coordinator", () => ({
 					timeCorrection: {
 						action: "edit",
 						clockInCorrectionId: [...state.corrections.keys()][0],
+						workLocationType: "office",
+						workCategoryId: null,
+					},
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: null,
 					},
 					submission: {
 						key: input.idempotencyKey,
@@ -508,6 +520,8 @@ function request(input: { key?: string | null; originalId?: string } = {}) {
 			timestamp: "2026-07-01T08:15:00+02:00",
 			timezone: "Europe/Berlin",
 			notes: "Correct clock-in",
+			workLocationType: "office",
+			workCategoryId: null,
 		})),
 	} as never;
 }
@@ -545,6 +559,7 @@ describe("POST time correction rollout integration", () => {
 		});
 		state.canApproveFor.mockResolvedValue(false);
 		state.manager.mockResolvedValue(ids.manager);
+		state.validateRange.mockResolvedValue({ isValid: true });
 		state.dispatch.mockImplementation(async (input) => {
 			const effects = input.result.postCommit;
 			if (effects.terminal || effects.submittedToEmployeeId)
@@ -608,24 +623,27 @@ describe("POST time correction rollout integration", () => {
 				compatibility: 0,
 			},
 		],
-	] as const)("runs the actual submission boundary in %s mode", async (mode, expected) => {
-		state.mode = mode;
+	] as const)(
+		"runs the actual submission boundary in %s mode",
+		async (mode, expected) => {
+			state.mode = mode;
 
-		const response = await POST(request());
+			const response = await POST(request());
 
-		expect(response.status).toBe(201);
-		expect(await response.json()).toMatchObject({
-			approvalId: expect.any(String),
-			message: "Correction submitted. Awaiting manager approval.",
-		});
-		expect(state.executeCalls).toBe(1);
-		expect(state.legacyRequests).toHaveLength(expected.legacy);
-		expect(state.workflows).toHaveLength(expected.workflows);
-		expect(state.projections).toHaveLength(expected.projection);
-		expect(state.outbox).toHaveLength(expected.outbox);
-		expect(state.bindings).toHaveLength(expected.bind);
-		expect(state.compatibility).toHaveLength(expected.compatibility);
-	});
+			expect(response.status).toBe(201);
+			expect(await response.json()).toMatchObject({
+				approvalId: expect.any(String),
+				message: "Correction submitted. Awaiting manager approval.",
+			});
+			expect(state.executeCalls).toBe(1);
+			expect(state.legacyRequests).toHaveLength(expected.legacy);
+			expect(state.workflows).toHaveLength(expected.workflows);
+			expect(state.projections).toHaveLength(expected.projection);
+			expect(state.outbox).toHaveLength(expected.outbox);
+			expect(state.bindings).toHaveLength(expected.bind);
+			expect(state.compatibility).toHaveLength(expected.compatibility);
+		},
+	);
 
 	it("allocates a new headerless identity for an identical submission after cancellation", async () => {
 		state.mode = "legacy";

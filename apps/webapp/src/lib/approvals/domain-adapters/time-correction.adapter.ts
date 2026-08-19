@@ -6,6 +6,7 @@ import {
 	teamMembership,
 	timeEntry,
 	timeRecord,
+	timeRecordWork,
 	workPeriod,
 } from "@/db/schema";
 import {
@@ -17,6 +18,7 @@ import {
 	instantFromTimeCorrectionBoundary,
 	validateTimeCorrectionTimezoneEvidence,
 } from "@/lib/time-tracking/time-correction-temporal";
+import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
 import type {
 	CancelledTimeCorrectionSourceEvidence,
 	FinalizeTimeCorrectionTerminalInput,
@@ -31,8 +33,11 @@ import type {
 } from "../workflow/ports";
 import { normalizeStableData } from "../workflow/stable-data";
 import {
+	type CurrentTimeCorrectionWorkflowContract,
+	normalizeTimeCorrectionOriginalWorkMetadata,
 	normalizeTimeCorrectionWorkflowPayload,
 	type TimeCorrectionEndpointEvidence,
+	type TimeCorrectionOriginalWorkMetadata,
 	type TimeCorrectionWorkflowPayload,
 } from "./time-correction-contract";
 import type {
@@ -60,6 +65,7 @@ export interface TimeCorrectionApprovalSource {
 	approvalWorkflowId: string;
 	canonicalRecordId: string;
 	correction: TimeCorrectionWorkflowPayload["timeCorrection"];
+	originalWorkMetadata?: TimeCorrectionOriginalWorkMetadata;
 	clockIn: TimeCorrectionEndpointEvidence | null;
 	clockOut: TimeCorrectionEndpointEvidence | null;
 	requesterName: string;
@@ -76,6 +82,10 @@ export interface TimeCorrectionApprovalSource {
 		isActive: boolean;
 		approvalStatus: "approved";
 		pendingChanges: null;
+		workLocationType:
+			| CurrentTimeCorrectionWorkflowContract["workLocationType"]
+			| null;
+		workCategoryId: string | null;
 	};
 	canonicalRecord: {
 		id: string;
@@ -86,6 +96,7 @@ export interface TimeCorrectionApprovalSource {
 		durationMinutes: number | null;
 		approvalState: "approved";
 	};
+	canonicalWork: CancelledTimeCorrectionSourceEvidence["canonicalWork"];
 	currentEndpoints: CancelledTimeCorrectionSourceEvidence["currentEndpoints"];
 	pendingCorrections: CancelledTimeCorrectionSourceEvidence["pendingCorrections"];
 }
@@ -157,14 +168,51 @@ function correctionFromContext(
 	}
 }
 
+function originalWorkMetadataFromContext(
+	contextSnapshot: JsonObject,
+	correction: TimeCorrectionWorkflowPayload["timeCorrection"],
+): TimeCorrectionOriginalWorkMetadata | undefined {
+	const descriptor = Object.getOwnPropertyDescriptor(
+		contextSnapshot,
+		"timeCorrectionOriginalWorkMetadata",
+	);
+	if (!descriptor) {
+		return Object.hasOwn(correction, "workLocationType") ? fail() : undefined;
+	}
+	if (!descriptor.enumerable || !("value" in descriptor)) return fail();
+	try {
+		return normalizeTimeCorrectionOriginalWorkMetadata(descriptor.value);
+	} catch {
+		return fail();
+	}
+}
+
+function sameOriginalWorkMetadata(
+	left: TimeCorrectionOriginalWorkMetadata | undefined,
+	right: TimeCorrectionOriginalWorkMetadata | undefined,
+): boolean {
+	return (
+		left?.workLocationType === right?.workLocationType &&
+		left?.workCategoryId === right?.workCategoryId
+	);
+}
+
 function sameCorrection(
 	left: TimeCorrectionWorkflowPayload["timeCorrection"],
 	right: TimeCorrectionWorkflowPayload["timeCorrection"],
 ): boolean {
+	const leftIsCurrent = Object.hasOwn(left, "workLocationType");
+	const rightIsCurrent = Object.hasOwn(right, "workLocationType");
 	return (
 		left.action === right.action &&
 		left.clockInCorrectionId === right.clockInCorrectionId &&
-		left.clockOutCorrectionId === right.clockOutCorrectionId
+		left.clockOutCorrectionId === right.clockOutCorrectionId &&
+		leftIsCurrent === rightIsCurrent &&
+		(!leftIsCurrent ||
+			((left as CurrentTimeCorrectionWorkflowContract).workLocationType ===
+				(right as CurrentTimeCorrectionWorkflowContract).workLocationType &&
+				(left as CurrentTimeCorrectionWorkflowContract).workCategoryId ===
+					(right as CurrentTimeCorrectionWorkflowContract).workCategoryId))
 	);
 }
 
@@ -355,12 +403,20 @@ function validateContext(
 	const expectedCorrection = correctionFromContext(
 		input.workflow.contextSnapshot,
 	);
+	const expectedOriginalWorkMetadata = originalWorkMetadataFromContext(
+		input.workflow.contextSnapshot,
+		expectedCorrection,
+	);
 	if (
 		input.source.id !== input.sourceIdentity.sourceId ||
 		input.source.organizationId !== input.organizationId ||
 		input.source.approvalWorkflowId !== input.workflow.id ||
 		input.source.employeeId !== input.workflow.requesterEmployeeId ||
-		!sameCorrection(input.source.correction, expectedCorrection)
+		!sameCorrection(input.source.correction, expectedCorrection) ||
+		!sameOriginalWorkMetadata(
+			input.source.originalWorkMetadata,
+			expectedOriginalWorkMetadata,
+		)
 	) {
 		fail();
 	}
@@ -453,6 +509,10 @@ export function createTimeCorrectionApprovalAdapter(
 			const requesterEmployeeId = input.workflow.requesterEmployeeId;
 			if (!requesterEmployeeId) return fail();
 			const correction = correctionFromContext(input.workflow.contextSnapshot);
+			const originalWorkMetadata = originalWorkMetadataFromContext(
+				input.workflow.contextSnapshot,
+				correction,
+			);
 			const db = (input.dbService as unknown as ServerApprovalDbService).db;
 			const employeeIds = [
 				requesterEmployeeId,
@@ -590,8 +650,28 @@ export function createTimeCorrectionApprovalAdapter(
 						eq(timeRecord.recordKind, "work"),
 					),
 				)
+				.orderBy(asc(timeRecord.id))
 				.for("update");
 			const canonical = canonicalRows[0];
+			const canonicalWorkRows = await db
+				.select({
+					recordId: timeRecordWork.recordId,
+					organizationId: timeRecordWork.organizationId,
+					recordKind: timeRecordWork.recordKind,
+					workLocationType: timeRecordWork.workLocationType,
+					workCategoryId: timeRecordWork.workCategoryId,
+				})
+				.from(timeRecordWork)
+				.where(
+					and(
+						eq(timeRecordWork.recordId, period.canonicalRecordId),
+						eq(timeRecordWork.organizationId, input.organizationId),
+						eq(timeRecordWork.recordKind, "work"),
+					),
+				)
+				.orderBy(asc(timeRecordWork.recordId))
+				.for("update");
+			const canonicalWork = canonicalWorkRows[0];
 			const requester = await db.query.employee.findFirst({
 				where: and(
 					eq(employee.id, requesterEmployeeId),
@@ -649,6 +729,21 @@ export function createTimeCorrectionApprovalAdapter(
 				!sameInstant(canonical.startAt, period.startTime) ||
 				!sameInstant(canonical.endAt, period.endTime) ||
 				canonical.durationMinutes !== period.durationMinutes ||
+				canonicalWorkRows.length !== 1 ||
+				!canonicalWork ||
+				canonicalWork.recordId !== period.canonicalRecordId ||
+				canonicalWork.organizationId !== input.organizationId ||
+				canonicalWork.recordKind !== "work" ||
+				canonicalWork.workLocationType !== (period.workLocationType ?? null) ||
+				canonicalWork.workCategoryId !== (period.workCategoryId ?? null) ||
+				(originalWorkMetadata !== undefined &&
+					(normalizeWorkLocationType(period.workLocationType) !==
+						originalWorkMetadata.workLocationType ||
+						period.workCategoryId !== originalWorkMetadata.workCategoryId ||
+						normalizeWorkLocationType(canonicalWork.workLocationType) !==
+							originalWorkMetadata.workLocationType ||
+						canonicalWork.workCategoryId !==
+							originalWorkMetadata.workCategoryId)) ||
 				entries.length !== entryIds.length
 			) {
 				return fail();
@@ -742,6 +837,7 @@ export function createTimeCorrectionApprovalAdapter(
 				approvalWorkflowId: period.approvalWorkflowId,
 				canonicalRecordId: period.canonicalRecordId,
 				correction,
+				...(originalWorkMetadata ? { originalWorkMetadata } : {}),
 				clockIn,
 				clockOut,
 				requesterName: requester.user.name,
@@ -760,6 +856,8 @@ export function createTimeCorrectionApprovalAdapter(
 					isActive: period.isActive,
 					approvalStatus: "approved",
 					pendingChanges: null,
+					workLocationType: period.workLocationType ?? null,
+					workCategoryId: period.workCategoryId ?? null,
 				},
 				canonicalRecord: {
 					id: canonical.id,
@@ -771,6 +869,13 @@ export function createTimeCorrectionApprovalAdapter(
 						: null,
 					durationMinutes: canonical.durationMinutes,
 					approvalState: "approved",
+				},
+				canonicalWork: {
+					recordId: canonicalWork.recordId,
+					organizationId: canonicalWork.organizationId,
+					recordKind: "work",
+					workLocationType: canonicalWork.workLocationType,
+					workCategoryId: canonicalWork.workCategoryId,
 				},
 				currentEndpoints: {
 					clockIn: cancellationEntryEvidence(originalIn, "clock_in"),
@@ -874,6 +979,7 @@ export function createTimeCorrectionApprovalAdapter(
 						canonicalRecordId: input.source.canonicalRecordId,
 						...input.source.workPeriod,
 						canonicalRecord: input.source.canonicalRecord,
+						canonicalWork: input.source.canonicalWork,
 						currentEndpoints: input.source.currentEndpoints,
 						pendingCorrections: input.source.pendingCorrections,
 					},
@@ -895,8 +1001,19 @@ export function createTimeCorrectionApprovalAdapter(
 				expectedApprovalWorkflowId: input.workflow.id,
 				expectedApprovalWorkflowVersion: input.workflow.version,
 				expectedRequesterEmployeeId: input.source.employeeId,
+				expectedSource: {
+					employeeId: input.source.employeeId,
+					approvalWorkflowId: input.source.approvalWorkflowId,
+					canonicalRecordId: input.source.canonicalRecordId,
+					...input.source.workPeriod,
+					canonicalRecord: input.source.canonicalRecord,
+					canonicalWork: input.source.canonicalWork,
+					currentEndpoints: input.source.currentEndpoints,
+					pendingCorrections: input.source.pendingCorrections,
+				},
 				...actor,
 				correction: input.source.correction,
+				expectedOriginalWorkMetadata: input.source.originalWorkMetadata,
 				legacyApprovalRequestId: null,
 				transition,
 				finalizedAt: input.finalizedAt,

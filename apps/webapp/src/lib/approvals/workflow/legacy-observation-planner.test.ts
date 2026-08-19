@@ -210,6 +210,40 @@ describe("legacy approval observation planner", () => {
 		expect(nextCycle.snapshot.id).not.toBe(pending.snapshot.id);
 	});
 
+	it("preserves initial work metadata display evidence when a direct request becomes terminal", async () => {
+		const planner = createLegacyApprovalObservationPlanner({
+			clock: { nowInstant: () => capturedAt },
+		});
+		const before = directState("pending");
+		before.displaySnapshot = {
+			status: "pending",
+			workMetadata: {
+				original: { workLocationType: "office", workCategoryId: "category-1" },
+				requested: { workLocationType: "home", workCategoryId: "category-2" },
+			},
+		};
+		const after = directState("approved");
+		after.displaySnapshot = {
+			status: "approved",
+			workMetadata: {
+				original: { workLocationType: "home", workCategoryId: "category-2" },
+				requested: { workLocationType: "home", workCategoryId: "category-2" },
+			},
+		};
+
+		const plan = await planner.plan(transition(before, after, 1));
+
+		expect(plan.snapshot.status).toBe("approved");
+		expect(plan.snapshot.displaySnapshot).toEqual({
+			status: "approved",
+			workMetadata: before.displaySnapshot.workMetadata,
+		});
+		expect(plan.projection).toMatchObject({
+			status: "approved",
+			displayPayload: plan.snapshot.displaySnapshot,
+		});
+	});
+
 	it("uses the chain root as cycle identity across pending and terminal evidence", async () => {
 		const planner = createLegacyApprovalObservationPlanner({
 			clock: { nowInstant: () => capturedAt },

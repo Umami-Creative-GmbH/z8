@@ -2,7 +2,10 @@
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ApprovalInboxItem } from "@/lib/approvals/inbox/types";
+import type {
+	ApprovalInboxDetailSection,
+	ApprovalInboxItem,
+} from "@/lib/approvals/inbox/types";
 import { ApprovalDetailPanel } from "./approval-detail-panel";
 import { normalizeTravelExpenseDetailEntity } from "./approval-detail-utils";
 
@@ -11,6 +14,18 @@ vi.mock("@tolgee/react", () => ({
 		t: (key: string, fallback: string, params?: Record<string, string>) =>
 			key === "approvals:approvals.timelineActor"
 				? `${params?.at} durch ${params?.actorName}`
+				: key === "approvals:approvals.requestedCorrection"
+					? "Beantragte Korrektur"
+					: key === "approvals:approvals.workCategory"
+						? "Arbeitskategorie"
+						: key === "approvals:approvals.original"
+							? "Ursprünglich"
+							: key === "approvals:approvals.requested"
+								? "Angefordert"
+								: key === "timeTracking.noCategory"
+									? "Keine Kategorie (100 %)"
+									: key === "approvals:approvals.workCategoryUnavailable"
+										? "Kategorie nicht verfügbar"
 				: fallback,
 	}),
 }));
@@ -43,32 +58,14 @@ const mockState = vi.hoisted(() => ({
 	rejectIsPending: false,
 	approveMutateAsync: vi.fn(),
 	rejectMutateAsync: vi.fn(),
+	sections: [] as ApprovalInboxDetailSection[],
 }));
 
 vi.mock("@/lib/query/use-approval-inbox", () => ({
 	useApprovalDetail: () => ({
 		data: {
 			item: approvalItem,
-			sections: [
-				{
-					type: "key_value",
-					title: "Request",
-					rows: [{ label: "Type", value: "Absence Request" }],
-				},
-				{ type: "callout", title: "Risk", body: "No conflicts detected.", tone: "info" },
-				{
-					type: "timeline",
-					title: "Timeline",
-					events: [
-						{
-							id: "event-1",
-							label: "Request created",
-							at: "May 1, 2026",
-							actorName: "Ada Lovelace",
-						},
-					],
-				},
-			],
+			sections: mockState.sections,
 			actions: mockState.actions,
 		},
 	}),
@@ -157,6 +154,26 @@ describe("ApprovalDetailPanel", () => {
 		mockState.rejectMutateAsync.mockReset();
 		mockState.approveMutateAsync.mockResolvedValue({ success: true });
 		mockState.rejectMutateAsync.mockResolvedValue({ success: true });
+		mockState.sections = [
+			{
+				type: "key_value",
+				title: "Request",
+				rows: [{ label: "Type", value: "Absence Request" }],
+			},
+			{ type: "callout", title: "Risk", body: "No conflicts detected.", tone: "info" },
+			{
+				type: "timeline",
+				title: "Timeline",
+				events: [
+					{
+						id: "event-1",
+						label: "Request created",
+						at: "May 1, 2026",
+						actorName: "Ada Lovelace",
+					},
+				],
+			},
+		];
 	});
 
 	it("shows generic approval detail sections", async () => {
@@ -185,6 +202,53 @@ describe("ApprovalDetailPanel", () => {
 		);
 
 		expect(await screen.findByText("May 1, 2026 durch Ada Lovelace")).toBeTruthy();
+	});
+
+	it("translates semantic correction values and exposes original/requested descriptions", async () => {
+		mockState.sections = [
+			{
+				type: "key_value",
+				title: {
+					key: "approvals:approvals.requestedCorrection",
+					fallback: "Requested Correction",
+				},
+				rows: [
+					{
+						label: {
+							key: "approvals:approvals.workCategory",
+							fallback: "Work category",
+						},
+						value: {
+							kind: "change",
+							original: {
+								kind: "work_category",
+								value: { state: "unavailable", id: "category-deleted" },
+							},
+							requested: {
+								kind: "work_category",
+								value: { state: "none" },
+							},
+						},
+					},
+				],
+			},
+		];
+
+		render(
+			<ApprovalDetailPanel
+				approval={approvalItem}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		expect(await screen.findByText("Beantragte Korrektur")).toBeTruthy();
+		expect(screen.getByText("Arbeitskategorie")).toBeTruthy();
+		expect(screen.getByText(/Ursprünglich/)).toBeTruthy();
+		expect(screen.getByText("Kategorie nicht verfügbar")).toBeTruthy();
+		expect(screen.getByText(/Angefordert/)).toBeTruthy();
+		expect(screen.getByText("Keine Kategorie (100 %)")).toBeTruthy();
 	});
 
 	it("keeps the header badge clear of the close button and pads the detail content", async () => {

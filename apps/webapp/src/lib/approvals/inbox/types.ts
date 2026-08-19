@@ -1,3 +1,6 @@
+import type { WorkLocationType } from "@/lib/time-tracking/work-location";
+import type { WorkCategoryReviewValue } from "../server/time-correction-review-metadata";
+
 export const SUPPORTED_APPROVAL_INBOX_TYPES = [
 	"absence_entry",
 	"time_entry",
@@ -66,13 +69,28 @@ export interface ApprovalInboxItem {
 	capabilities: ApprovalInboxCapabilities;
 }
 
+export interface ApprovalInboxLocalizedText {
+	key: string;
+	fallback: string;
+}
+
+export type ApprovalInboxDetailChangeValue =
+	| { kind: "work_location"; value: WorkLocationType }
+	| { kind: "work_category"; value: WorkCategoryReviewValue };
+
+export interface ApprovalInboxDetailChange {
+	kind: "change";
+	original: ApprovalInboxDetailChangeValue;
+	requested: ApprovalInboxDetailChangeValue;
+}
+
 export type ApprovalInboxDetailSection =
 	| {
 			type: "key_value";
-			title: string;
+			title: string | ApprovalInboxLocalizedText;
 			rows: Array<{
-				label: string;
-				value: string;
+				label: string | ApprovalInboxLocalizedText;
+				value: string | ApprovalInboxLocalizedText | ApprovalInboxDetailChange;
 				tone?: "default" | "warning" | "danger";
 			}>;
 	  }

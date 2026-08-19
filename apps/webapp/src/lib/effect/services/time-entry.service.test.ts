@@ -4,8 +4,10 @@ import { member } from "@/db/auth-schema";
 import {
 	employee,
 	employeeManagers,
+	teamMembership,
 	timeEntry,
 	timeRecord,
+	timeRecordWork,
 	workPeriod,
 } from "@/db/schema";
 import {
@@ -13,6 +15,7 @@ import {
 	ConflictError,
 	DatabaseError,
 	NotFoundError,
+	ValidationError,
 } from "../errors";
 import { DatabaseService } from "./database.service";
 import {
@@ -216,6 +219,19 @@ function createDirectCorrectionHarness(
 		periodAvailableAfterCas?: boolean;
 		pendingCanonical?: boolean;
 		pendingLegacy?: boolean;
+		restMetadata?: {
+			workLocationType: "home" | "office";
+			workCategoryId: string | null;
+		};
+		canonicalWorkDiverged?: boolean;
+		canonicalMetadataUpdateFails?: boolean;
+		currentWorkCategoryId?: string | null;
+		correctionTimestamp?: Date;
+		validationResult?: {
+			isValid: boolean;
+			error?: string;
+			holidayName?: string;
+		};
 		targetEmployeeId?: string;
 		targetEmployeeRows?: Array<{
 			id: string;
@@ -259,9 +275,10 @@ function createDirectCorrectionHarness(
 	const originalEntryId =
 		endpoint === "clockIn" ? "entry-clock-in" : "entry-clock-out";
 	const correctionTimestamp =
-		endpoint === "clockIn"
+		options.correctionTimestamp ??
+		(endpoint === "clockIn"
 			? new Date("2026-07-01T08:15:00.000Z")
-			: new Date("2026-07-01T17:30:00.000Z");
+			: new Date("2026-07-01T17:30:00.000Z"));
 	const initialState = {
 		original: {
 			id: originalEntryId,
@@ -283,6 +300,8 @@ function createDirectCorrectionHarness(
 			isActive: false,
 			deletedAt: null,
 			canonicalRecordId: "record-1",
+			workLocationType: "office",
+			workCategoryId: options.currentWorkCategoryId ?? null,
 		},
 		canonicalRecord: {
 			id: "record-1",
@@ -293,6 +312,13 @@ function createDirectCorrectionHarness(
 			endAt: new Date("2026-07-01T17:00:00.000Z"),
 			durationMinutes: 540,
 			updatedBy: null as string | null,
+		},
+		canonicalWork: {
+			recordId: "record-1",
+			organizationId: "org-1",
+			recordKind: "work",
+			workLocationType: options.canonicalWorkDiverged ? "home" : "office",
+			workCategoryId: options.currentWorkCategoryId ?? null,
 		},
 		pendingLegacy: options.pendingLegacy ?? false,
 		pendingCanonical: options.pendingCanonical ?? false,
@@ -319,6 +345,7 @@ function createDirectCorrectionHarness(
 	const lockManagerAssignment = vi.fn();
 	const lockOriginal = vi.fn();
 	const transactionInsert = vi.fn();
+	const workPeriodSetCalls: Array<Record<string, unknown>> = [];
 	const observedLocks: string[] = [];
 	const employeeLockBatches: string[][] = [];
 	const rowLockTails = new Map<string, Promise<void>>();
@@ -377,6 +404,9 @@ function createDirectCorrectionHarness(
 					await lock(`manager:${targetEmployeeId}:${actorEmployeeId}`);
 					return managerAssigned ? [{ id: "manager-assignment-1" }] : [];
 				}
+				if (table === teamMembership) return [];
+				if (table === timeRecord) return [staged.canonicalRecord];
+				if (table === timeRecordWork) return [staged.canonicalWork];
 				expect(table).toBe(timeEntry);
 				lockOriginal(mode);
 				await lock(`time-entry:org-1:${staged.original.id}`);
@@ -432,32 +462,48 @@ function createDirectCorrectionHarness(
 					})),
 				})),
 				update: vi.fn((table) => ({
-					set: vi.fn((values: Record<string, unknown>) => ({
-						where: vi.fn(() => {
-							if (table === timeEntry) {
-								return {
-									returning: vi.fn(async () => {
-										if (staged.original.isSuperseded) return [];
-										Object.assign(staged.original, values);
-										return [{ id: staged.original.id }];
-									}),
-								};
-							}
-							if (table === workPeriod) {
-								return {
-									returning: vi.fn(async () => {
-										Object.assign(staged.period, values);
-										return [{ id: staged.period.id }];
-									}),
-								};
-							}
-							if (table === timeRecord) {
-								Object.assign(staged.canonicalRecord, values);
-								return Promise.resolve();
-							}
-							throw new Error("Unexpected update table");
-						}),
-					})),
+					set: vi.fn((values: Record<string, unknown>) => {
+						if (table === workPeriod) workPeriodSetCalls.push(values);
+						return {
+							where: vi.fn(() => {
+								if (table === timeEntry) {
+									return {
+										returning: vi.fn(async () => {
+											if (staged.original.isSuperseded) return [];
+											Object.assign(staged.original, values);
+											return [{ id: staged.original.id }];
+										}),
+									};
+								}
+								if (table === workPeriod) {
+									return {
+										returning: vi.fn(async () => {
+											Object.assign(staged.period, values);
+											return [{ id: staged.period.id }];
+										}),
+									};
+								}
+								if (table === timeRecord) {
+									Object.assign(staged.canonicalRecord, values);
+									return {
+										returning: vi.fn(async () => {
+											return [{ id: staged.canonicalRecord.id }];
+										}),
+									};
+								}
+								if (table === timeRecordWork) {
+									return {
+										returning: vi.fn(async () => {
+											if (options.canonicalMetadataUpdateFails) return [];
+											Object.assign(staged.canonicalWork, values);
+											return [{ recordId: staged.canonicalWork.recordId }];
+										}),
+									};
+								}
+								throw new Error("Unexpected update table");
+							}),
+						};
+					}),
 				})),
 			};
 
@@ -495,12 +541,27 @@ function createDirectCorrectionHarness(
 				}),
 		}),
 	);
+	const validationResult = options.validationResult;
 	const input: CreateCorrectionInput = {
 		...correctionInput,
 		employeeId: targetEmployeeId,
 		replacesEntryId: originalEntryId,
 		timestamp: correctionTimestamp,
 		workPeriodId: "period-1",
+		...(options.restMetadata
+			? {
+					...options.restMetadata,
+					expectedClockInId: initialState.period.clockInId,
+					expectedClockOutId: initialState.period.clockOutId,
+					expectedStartTime: initialState.period.startTime,
+					expectedEndTime: initialState.period.endTime,
+					expectedWorkLocationType: initialState.period.workLocationType,
+					expectedWorkCategoryId: initialState.period.workCategoryId,
+					...(validationResult
+						? { validateTimeRange: async () => validationResult }
+						: {}),
+				}
+			: {}),
 	};
 	const effect = Effect.gen(function* (_) {
 		const service = yield* _(TimeEntryService);
@@ -552,6 +613,7 @@ function createDirectCorrectionHarness(
 		releaseApproval: () => releaseApproval(),
 		transaction,
 		transactionInsert,
+		workPeriodSetCalls,
 	};
 }
 
@@ -644,34 +706,177 @@ describe("TimeEntryService correction safety", () => {
 				durationMinutes: 570,
 			},
 		],
-	])("atomically applies a direct %s correction to the original, period, and canonical record", async (_label, endpoint, expected) => {
-		const harness = createDirectCorrectionHarness(endpoint);
+	])(
+		"atomically applies a direct %s correction to the original, period, and canonical record",
+		async (_label, endpoint, expected) => {
+			const harness = createDirectCorrectionHarness(endpoint);
+
+			await harness.run();
+
+			const state = harness.getState();
+			expect(harness.transaction).toHaveBeenCalledOnce();
+			expect(harness.lockPeriod).toHaveBeenCalledWith("update");
+			expect(harness.lockPeriod.mock.invocationCallOrder[0]).toBeLessThan(
+				harness.transactionInsert.mock.invocationCallOrder[0] ?? 0,
+			);
+			expect(state.original).toMatchObject({
+				isSuperseded: true,
+				supersededById: "entry-correction",
+			});
+			expect(state.period).toMatchObject({ ...expected, isActive: false });
+			expect(state.canonicalRecord).toMatchObject({
+				startAt: expected.startTime,
+				endAt: expected.endTime,
+				durationMinutes: expected.durationMinutes,
+				updatedBy: "user-1",
+			});
+			expect(state.corrections).toEqual([
+				{
+					id: "entry-correction",
+					timestamp: expected[endpoint === "clockIn" ? "startTime" : "endTime"],
+				},
+			]);
+			expect(harness.workPeriodSetCalls).toHaveLength(1);
+			expect(Object.keys(harness.workPeriodSetCalls[0] ?? {}).sort()).toEqual(
+				(endpoint === "clockIn"
+					? ["clockInId", "durationMinutes", "startTime", "updatedAt"]
+					: ["clockOutId", "durationMinutes", "endTime", "updatedAt"]
+				).sort(),
+			);
+		},
+	);
+
+	it("atomically applies a REST metadata-only correction to legacy and canonical work rows", async () => {
+		const harness = createDirectCorrectionHarness("clockIn", {
+			correctionTimestamp: new Date("2026-07-01T08:00:00.000Z"),
+			restMetadata: { workLocationType: "home", workCategoryId: null },
+		});
+
+		await expect(harness.run()).resolves.toBeNull();
+
+		expect(harness.transactionInsert).not.toHaveBeenCalled();
+		expect(Object.keys(harness.workPeriodSetCalls[0] ?? {}).sort()).toEqual(
+			[
+				"durationMinutes",
+				"updatedAt",
+				"workCategoryId",
+				"workLocationType",
+			].sort(),
+		);
+		expect(harness.getState()).toMatchObject({
+			period: { workLocationType: "home", workCategoryId: null },
+			canonicalWork: { workLocationType: "home", workCategoryId: null },
+			original: { isSuperseded: false, supersededById: null },
+		});
+	});
+
+	it("atomically applies mixed REST endpoint and metadata changes", async () => {
+		const harness = createDirectCorrectionHarness("clockIn", {
+			restMetadata: { workLocationType: "home", workCategoryId: null },
+		});
+
+		await harness.run();
+		expect(Object.keys(harness.workPeriodSetCalls[0] ?? {}).sort()).toEqual(
+			[
+				"clockInId",
+				"durationMinutes",
+				"startTime",
+				"updatedAt",
+				"workCategoryId",
+				"workLocationType",
+			].sort(),
+		);
+
+		expect(harness.getState()).toMatchObject({
+			period: {
+				startTime: new Date("2026-07-01T08:15:00.000Z"),
+				workLocationType: "home",
+				workCategoryId: null,
+			},
+			canonicalRecord: {
+				startAt: new Date("2026-07-01T08:15:00.000Z"),
+			},
+			canonicalWork: { workLocationType: "home", workCategoryId: null },
+		});
+	});
+
+	it("allows REST category removal without requiring current category access", async () => {
+		const categoryId = "31000000-0000-4000-8000-000000000910";
+		const harness = createDirectCorrectionHarness("clockIn", {
+			correctionTimestamp: new Date("2026-07-01T08:00:00.000Z"),
+			currentWorkCategoryId: categoryId,
+			restMetadata: { workLocationType: "office", workCategoryId: null },
+		});
 
 		await harness.run();
 
-		const state = harness.getState();
-		expect(harness.transaction).toHaveBeenCalledOnce();
-		expect(harness.lockPeriod).toHaveBeenCalledWith("update");
-		expect(harness.lockPeriod.mock.invocationCallOrder[0]).toBeLessThan(
-			harness.transactionInsert.mock.invocationCallOrder[0] ?? 0,
+		expect(harness.getState()).toMatchObject({
+			period: { workCategoryId: null },
+			canonicalWork: { workCategoryId: null },
+		});
+	});
+
+	it("rejects an unchanged REST correction", async () => {
+		const harness = createDirectCorrectionHarness("clockIn", {
+			correctionTimestamp: new Date("2026-07-01T08:00:00.000Z"),
+			restMetadata: { workLocationType: "office", workCategoryId: null },
+		});
+		const exit = await harness.runExit();
+
+		expect(Exit.isFailure(exit)).toBe(true);
+		if (Exit.isSuccess(exit)) throw new Error("Expected correction to fail");
+		expect(Option.getOrThrow(Cause.failureOption(exit.cause))).toBeInstanceOf(
+			ValidationError,
 		);
-		expect(state.original).toMatchObject({
-			isSuperseded: true,
-			supersededById: "entry-correction",
+		expect(harness.getState()).toEqual(harness.initialState);
+	});
+
+	it("rolls back REST endpoint and metadata writes when canonical metadata update fails", async () => {
+		const harness = createDirectCorrectionHarness("clockIn", {
+			canonicalMetadataUpdateFails: true,
+			restMetadata: { workLocationType: "home", workCategoryId: null },
 		});
-		expect(state.period).toMatchObject({ ...expected, isActive: false });
-		expect(state.canonicalRecord).toMatchObject({
-			startAt: expected.startTime,
-			endAt: expected.endTime,
-			durationMinutes: expected.durationMinutes,
-			updatedBy: "user-1",
-		});
-		expect(state.corrections).toEqual([
-			{
-				id: "entry-correction",
-				timestamp: expected[endpoint === "clockIn" ? "startTime" : "endTime"],
+
+		const exit = await harness.runExit();
+
+		expect(Exit.isFailure(exit)).toBe(true);
+		expect(harness.getState()).toEqual(harness.initialState);
+	});
+
+	it("rolls back REST endpoint and metadata writes when range validation fails", async () => {
+		const harness = createDirectCorrectionHarness("clockIn", {
+			restMetadata: { workLocationType: "home", workCategoryId: null },
+			validationResult: {
+				isValid: false,
+				error: "errors.holiday.blocksTimeEntry",
+				holidayName: "Founders Day",
 			},
-		]);
+		});
+
+		const exit = await harness.runExit();
+
+		expect(Exit.isFailure(exit)).toBe(true);
+		if (Exit.isSuccess(exit)) throw new Error("Expected correction to fail");
+		expect(Option.getOrThrow(Cause.failureOption(exit.cause))).toMatchObject({
+			message: "errors.holiday.blocksTimeEntry",
+			value: "Founders Day",
+		});
+		expect(harness.getState()).toEqual(harness.initialState);
+	});
+
+	it("rejects REST writes when canonical work metadata diverges", async () => {
+		const harness = createDirectCorrectionHarness("clockIn", {
+			canonicalWorkDiverged: true,
+			restMetadata: { workLocationType: "home", workCategoryId: null },
+		});
+		const exit = await harness.runExit();
+
+		expect(Exit.isFailure(exit)).toBe(true);
+		if (Exit.isSuccess(exit)) throw new Error("Expected correction to fail");
+		expect(Option.getOrThrow(Cause.failureOption(exit.cause))).toMatchObject({
+			conflictType: "time_correction_work_metadata_diverged",
+		});
+		expect(harness.getState()).toEqual(harness.initialState);
 	});
 
 	it("rejects a direct correction when organization membership is revoked before the period lock", async () => {
@@ -713,19 +918,22 @@ describe("TimeEntryService correction safety", () => {
 				{ id: "employee-1", organizationId: "org-1", isActive: true },
 			],
 		],
-	] as const)("fails closed when the locked target employee is %s", async (_label, targetEmployeeRows) => {
-		const harness = createDirectCorrectionHarness("clockIn", {
-			targetEmployeeRows: [...targetEmployeeRows],
-		});
-		const exit = await harness.runExit();
+	] as const)(
+		"fails closed when the locked target employee is %s",
+		async (_label, targetEmployeeRows) => {
+			const harness = createDirectCorrectionHarness("clockIn", {
+				targetEmployeeRows: [...targetEmployeeRows],
+			});
+			const exit = await harness.runExit();
 
-		expect(Exit.isFailure(exit)).toBe(true);
-		if (Exit.isSuccess(exit)) throw new Error("Expected correction to fail");
-		const error = Option.getOrThrow(Cause.failureOption(exit.cause));
-		expect(error).toBeInstanceOf(NotFoundError);
-		expect(harness.transactionInsert).not.toHaveBeenCalled();
-		expect(harness.getState()).toEqual(harness.initialState);
-	});
+			expect(Exit.isFailure(exit)).toBe(true);
+			if (Exit.isSuccess(exit)) throw new Error("Expected correction to fail");
+			const error = Option.getOrThrow(Cause.failureOption(exit.cause));
+			expect(error).toBeInstanceOf(NotFoundError);
+			expect(harness.transactionInsert).not.toHaveBeenCalled();
+			expect(harness.getState()).toEqual(harness.initialState);
+		},
+	);
 
 	it("locks the exact target employee before the exact work period", async () => {
 		const harness = createDirectCorrectionHarness("clockIn");
@@ -825,52 +1033,55 @@ describe("TimeEntryService correction safety", () => {
 	it.each([
 		["legacy", { pendingLegacy: true }],
 		["canonical", { pendingCanonical: true }],
-	] as const)("rejects a direct correction while a %s correction is pending", async (_kind, options) => {
-		const harness = createDirectCorrectionHarness("clockIn", options);
-		const exit = await harness.runExit();
+	] as const)(
+		"rejects a direct correction while a %s correction is pending",
+		async (_kind, options) => {
+			const harness = createDirectCorrectionHarness("clockIn", options);
+			const exit = await harness.runExit();
 
-		expect(Exit.isFailure(exit)).toBe(true);
-		if (Exit.isSuccess(exit)) throw new Error("Expected correction to fail");
-		const error = Option.getOrThrow(Cause.failureOption(exit.cause));
-		expect(error).toBeInstanceOf(ConflictError);
-		expect(error).toMatchObject({
-			conflictType: "pending_time_correction_approval",
-		});
-		expect(harness.transactionInsert).not.toHaveBeenCalled();
-		expect(harness.getState()).toEqual(harness.initialState);
-	});
+			expect(Exit.isFailure(exit)).toBe(true);
+			if (Exit.isSuccess(exit)) throw new Error("Expected correction to fail");
+			const error = Option.getOrThrow(Cause.failureOption(exit.cause));
+			expect(error).toBeInstanceOf(ConflictError);
+			expect(error).toMatchObject({
+				conflictType: "pending_time_correction_approval",
+			});
+			expect(harness.transactionInsert).not.toHaveBeenCalled();
+			expect(harness.getState()).toEqual(harness.initialState);
+		},
+	);
 
-	it.each([
-		"manager REST",
-		"same-day",
-	])("models exactly one winner in the in-memory keyed row-lock contract when approval creation races a %s correction", async () => {
-		const harness = createDirectCorrectionHarness("clockIn");
-		const approval = harness.runApproval();
-		await harness.approvalLocked;
-		const immediate = harness.runExit();
-		harness.releaseApproval();
+	it.each(["manager REST", "same-day"])(
+		"models exactly one winner in the in-memory keyed row-lock contract when approval creation races a %s correction",
+		async () => {
+			const harness = createDirectCorrectionHarness("clockIn");
+			const approval = harness.runApproval();
+			await harness.approvalLocked;
+			const immediate = harness.runExit();
+			harness.releaseApproval();
 
-		await expect(approval).resolves.toEqual({ approvalId: "approval-1" });
-		const exit = await immediate;
-		expect(Exit.isFailure(exit)).toBe(true);
-		if (Exit.isSuccess(exit))
-			throw new Error("Expected correction to lose the race");
-		const error = Option.getOrThrow(Cause.failureOption(exit.cause));
-		expect(error).toMatchObject({
-			conflictType: "pending_time_correction_approval",
-		});
-		expect(harness.getState()).toMatchObject({
-			pendingLegacy: true,
-			corrections: [],
-			original: { isSuperseded: false, supersededById: null },
-		});
-		expect(harness.observedLocks).toEqual(
-			expect.arrayContaining([
-				"employee:org-1:employee-1",
-				"work-period:org-1:period-1",
-			]),
-		);
-	});
+			await expect(approval).resolves.toEqual({ approvalId: "approval-1" });
+			const exit = await immediate;
+			expect(Exit.isFailure(exit)).toBe(true);
+			if (Exit.isSuccess(exit))
+				throw new Error("Expected correction to lose the race");
+			const error = Option.getOrThrow(Cause.failureOption(exit.cause));
+			expect(error).toMatchObject({
+				conflictType: "pending_time_correction_approval",
+			});
+			expect(harness.getState()).toMatchObject({
+				pendingLegacy: true,
+				corrections: [],
+				original: { isSuperseded: false, supersededById: null },
+			});
+			expect(harness.observedLocks).toEqual(
+				expect.arrayContaining([
+					"employee:org-1:employee-1",
+					"work-period:org-1:period-1",
+				]),
+			);
+		},
+	);
 
 	it("does not serialize whole transactions when the in-memory row-lock contract is disabled", async () => {
 		const harness = createDirectCorrectionHarness("clockIn", {

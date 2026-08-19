@@ -1,6 +1,7 @@
 import type { timeEntry } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
+import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 
 export interface CorrectionRequest {
 	workPeriodId: string;
@@ -10,6 +11,8 @@ export interface CorrectionRequest {
 	newClockOutDate?: string;
 	newClockOutTime?: string;
 	reason: string;
+	workLocationType: WorkLocationType;
+	workCategoryId: string | null;
 }
 
 export interface SameDayEditRequest {
@@ -19,6 +22,8 @@ export interface SameDayEditRequest {
 	newClockOutDate?: string;
 	newClockOutTime?: string;
 	reason?: string;
+	workLocationType: WorkLocationType;
+	workCategoryId: string | null;
 }
 
 export interface TimeEntryDeletionRequest {

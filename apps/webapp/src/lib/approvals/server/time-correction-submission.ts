@@ -1,8 +1,7 @@
 import "server-only";
 
-import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
 import {
 	getCurrentEmployee,
 	getCurrentSession,
@@ -22,14 +21,16 @@ import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import {
 	approvalRequest,
+	approvalWorkflow,
 	employee,
-	team,
-	teamMembership,
 	timeEntry,
+	timeRecord,
+	timeRecordWork,
 	workPeriod,
 } from "@/db/schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import {
+	deriveLegacyTimeCorrectionSubmissionKey,
 	deriveTimeCorrectionSubmissionKey,
 	type TimeCorrectionEndpointEvidence,
 } from "@/lib/approvals/domain-adapters/time-correction-contract";
@@ -43,17 +44,26 @@ import {
 	runAutoCompletedTimeCorrectionMaintenance,
 	type TimeCorrectionPostCommitEffects,
 } from "@/lib/approvals/server/time-correction-approvals";
+import {
+	authorizeTimeCorrectionCategoryChange,
+	lockTrustedTimeCorrectionEmployeeTeamId,
+} from "@/lib/approvals/server/time-correction-category-authorization";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
-import { deriveTimeCorrectionRowId } from "@/lib/approvals/workflow/identity";
+import {
+	deriveApprovalWorkflowId,
+	deriveTimeCorrectionRowId,
+} from "@/lib/approvals/workflow/identity";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import {
 	isBillingMutationAllowed,
 	requireBillingForMutation,
 } from "@/lib/billing/guard";
 import { compareInstants, systemClock } from "@/lib/datetime/temporal-core";
+import { getInstantLocalMinuteFields } from "@/lib/datetime/temporal-format";
 import {
 	ConflictError,
+	DatabaseError,
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
@@ -73,6 +83,7 @@ import { calculateHash } from "@/lib/time-tracking/blockchain";
 import {
 	dirtyFromDateForTimeCorrection,
 	instantFromTimeCorrectionBoundary,
+	validateTimeCorrectionRange,
 	validateTimeCorrectionTimezoneEvidence,
 } from "@/lib/time-tracking/time-correction-temporal";
 import {
@@ -81,6 +92,11 @@ import {
 	type TimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
+import {
+	isWorkLocationType,
+	normalizeWorkLocationType,
+	type WorkLocationType,
+} from "@/lib/time-tracking/work-location";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 
 type CorrectionTimesResult =
@@ -176,6 +192,19 @@ function buildCorrectionTimes(params: {
 	}
 
 	return { correctedClockInDate, correctedClockOutDate } as const;
+}
+
+function hasSubmittedEndpointMinuteChanged(params: {
+	original: Date;
+	date: string;
+	time: string;
+	timezone: string;
+}): boolean {
+	const original = getInstantLocalMinuteFields(
+		instantFromTimeCorrectionBoundary(params.original),
+		params.timezone,
+	);
+	return original.date !== params.date || original.time !== params.time;
 }
 
 export async function editSameDayTimeEntry(
@@ -277,17 +306,17 @@ export async function editSameDayTimeEntry(
 		}>;
 	}
 
-	const originalClockInDate =
-		DateTime.fromJSDate(selectedWorkPeriod.startTime, { zone: "utc" })
-			.setZone(timezone)
-			.toISODate() ?? "";
-	const originalClockOutDate =
-		DateTime.fromJSDate(selectedWorkPeriod.endTime, { zone: "utc" })
-			.setZone(timezone)
-			.toISODate() ?? "";
+	const originalClockIn = getInstantLocalMinuteFields(
+		instantFromTimeCorrectionBoundary(selectedWorkPeriod.startTime),
+		timezone,
+	);
+	const originalClockOut = getInstantLocalMinuteFields(
+		instantFromTimeCorrectionBoundary(selectedWorkPeriod.endTime),
+		timezone,
+	);
 	if (
-		data.newClockInDate !== originalClockInDate ||
-		(data.newClockOutDate && data.newClockOutDate !== originalClockOutDate)
+		data.newClockInDate !== originalClockIn.date ||
+		(data.newClockOutDate && data.newClockOutDate !== originalClockOut.date)
 	) {
 		return { success: false, error: "Date changes require manager approval" };
 	}
@@ -305,18 +334,51 @@ export async function editSameDayTimeEntry(
 	}
 
 	const { correctedClockInDate, correctedClockOutDate } = correctionTimes;
+	const clockInChanged = hasSubmittedEndpointMinuteChanged({
+		original: selectedWorkPeriod.startTime,
+		date: data.newClockInDate,
+		time: data.newClockInTime,
+		timezone,
+	});
+	const clockOutChanged = Boolean(
+		correctedClockOutDate &&
+			selectedWorkPeriod.endTime &&
+			data.newClockOutDate &&
+			data.newClockOutTime &&
+			hasSubmittedEndpointMinuteChanged({
+				original: selectedWorkPeriod.endTime,
+				date: data.newClockOutDate,
+				time: data.newClockOutTime,
+				timezone,
+			}),
+	);
+	const metadataChanged =
+		data.workLocationType !==
+			normalizeWorkLocationType(selectedWorkPeriod.workLocationType) ||
+		data.workCategoryId !== selectedWorkPeriod.workCategoryId;
+	if (!clockInChanged && !clockOutChanged && !metadataChanged) {
+		return {
+			success: false,
+			error: "At least one correction value must change",
+		};
+	}
 	const now = new Date();
 
-	if (correctedClockInDate > now) {
+	if (clockInChanged && correctedClockInDate > now) {
 		return { success: false, error: "Clock in time cannot be in the future" };
 	}
 
-	if (correctedClockOutDate && correctedClockOutDate > now) {
+	if (clockOutChanged && correctedClockOutDate && correctedClockOutDate > now) {
 		return { success: false, error: "Clock out time cannot be in the future" };
 	}
 
-	const effectiveClockOut = correctedClockOutDate ?? selectedWorkPeriod.endTime;
-	if (effectiveClockOut && effectiveClockOut <= correctedClockInDate) {
+	const effectiveClockIn = clockInChanged
+		? correctedClockInDate
+		: selectedWorkPeriod.startTime;
+	const effectiveClockOut = clockOutChanged
+		? correctedClockOutDate
+		: selectedWorkPeriod.endTime;
+	if (effectiveClockOut && effectiveClockOut <= effectiveClockIn) {
 		return {
 			success: false,
 			error: "Clock out time must be after clock in time",
@@ -325,8 +387,9 @@ export async function editSameDayTimeEntry(
 
 	const validation = await validateTimeEntryRange(
 		currentEmployee.organizationId,
-		correctedClockInDate,
-		effectiveClockOut || correctedClockInDate,
+		effectiveClockIn,
+		effectiveClockOut || effectiveClockIn,
+		timezone,
 	);
 
 	if (!validation.isValid) {
@@ -349,15 +412,15 @@ export async function editSameDayTimeEntry(
 
 	try {
 		const notes = data.reason || "Same-day edit";
-		const clockInTimezoneCapture = resolveFallbackTimezoneCapture({
-			timestamp: correctedClockInDate,
-			timezone,
-			timezoneSource: "user_setting",
-		});
+		const clockInTimezoneCapture = clockInChanged
+			? resolveFallbackTimezoneCapture({
+					timestamp: correctedClockInDate,
+					timezone,
+					timezoneSource: "user_setting",
+				})
+			: null;
 		const correctsClockOut = Boolean(
-			data.newClockOutTime &&
-				selectedWorkPeriod.clockOutId &&
-				correctedClockOutDate,
+			clockOutChanged && selectedWorkPeriod.clockOutId && correctedClockOutDate,
 		);
 		const clockOutTimezoneCapture = correctsClockOut
 			? resolveFallbackTimezoneCapture({
@@ -367,18 +430,20 @@ export async function editSameDayTimeEntry(
 				})
 			: null;
 		const affectedOriginalIds = [
-			selectedWorkPeriod.clockInId,
+			...(clockInChanged ? [selectedWorkPeriod.clockInId] : []),
 			...(correctsClockOut && selectedWorkPeriod.clockOutId
 				? [selectedWorkPeriod.clockOutId]
 				: []),
 		];
-		const originalEntries = await db.query.timeEntry.findMany({
-			where: and(
-				eq(timeEntry.employeeId, currentEmployee.id),
-				eq(timeEntry.organizationId, currentEmployee.organizationId),
-				inArray(timeEntry.id, affectedOriginalIds),
-			),
-		});
+		const originalEntries = affectedOriginalIds.length
+			? await db.query.timeEntry.findMany({
+					where: and(
+						eq(timeEntry.employeeId, currentEmployee.id),
+						eq(timeEntry.organizationId, currentEmployee.organizationId),
+						inArray(timeEntry.id, affectedOriginalIds),
+					),
+				})
+			: [];
 		if (
 			originalEntries.length !== affectedOriginalIds.length ||
 			new Set(originalEntries.map(({ id }) => id)).size !==
@@ -405,24 +470,161 @@ export async function editSameDayTimeEntry(
 		});
 		const { clockInCorrectionId, clockOutCorrectionId } = await db.transaction(
 			async (tx) => {
-				const clockInCorrection =
-					await canonicalTimeEntryClient.createCorrectionEntry(
-						{
-							employeeId: currentEmployee.id,
-							organizationId: currentEmployee.organizationId,
-							workPeriodId: selectedWorkPeriod.id,
-							timestamp: correctedClockInDate,
-							createdBy: session.user.id,
-							...clockInTimezoneCapture,
-							replacesEntryId: selectedWorkPeriod.clockInId,
-							notes,
-						},
-						tx,
-					);
+				const lockedEmployees = await tx
+					.select()
+					.from(employee)
+					.where(
+						and(
+							eq(employee.id, currentEmployee.id),
+							eq(employee.userId, session.user.id),
+							eq(employee.organizationId, currentEmployee.organizationId),
+							eq(employee.isActive, true),
+						),
+					)
+					.orderBy(asc(employee.id))
+					.limit(2)
+					.for("update");
+				const lockedEmployee = lockedEmployees[0];
+				if (lockedEmployees.length !== 1 || !lockedEmployee) {
+					throw new ConflictError({
+						message: "Employee changed while editing",
+						conflictType: "time_correction_employee_stale",
+					});
+				}
+				const lockedTeamId = await lockTrustedTimeCorrectionEmployeeTeamId({
+					tx,
+					employeeId: lockedEmployee.id,
+					employeeTeamId: lockedEmployee.teamId,
+					organizationId: currentEmployee.organizationId,
+				});
+				const lockedPeriods = await tx
+					.select()
+					.from(workPeriod)
+					.where(
+						and(
+							eq(workPeriod.id, selectedWorkPeriod.id),
+							eq(workPeriod.employeeId, currentEmployee.id),
+							eq(workPeriod.organizationId, currentEmployee.organizationId),
+							isNull(workPeriod.deletedAt),
+						),
+					)
+					.limit(2)
+					.for("update");
+				const lockedPeriod = lockedPeriods[0];
+				if (
+					lockedPeriods.length !== 1 ||
+					!lockedPeriod ||
+					lockedPeriod.clockInId !== selectedWorkPeriod.clockInId ||
+					lockedPeriod.clockOutId !== selectedWorkPeriod.clockOutId ||
+					lockedPeriod.startTime.getTime() !==
+						selectedWorkPeriod.startTime.getTime() ||
+					lockedPeriod.endTime?.getTime() !==
+						selectedWorkPeriod.endTime?.getTime() ||
+					lockedPeriod.workLocationType !==
+						selectedWorkPeriod.workLocationType ||
+					lockedPeriod.workCategoryId !== selectedWorkPeriod.workCategoryId
+				) {
+					throw new ConflictError({
+						message: "Work period changed while editing",
+						conflictType: "time_correction_work_period_stale",
+					});
+				}
+				const proposedMetadata = await validateCorrectionWorkMetadata({
+					tx,
+					employeeId: lockedEmployee.id,
+					teamId: lockedTeamId,
+					organizationId: currentEmployee.organizationId,
+					workLocationType: data.workLocationType,
+					workCategoryId: data.workCategoryId,
+					currentWorkCategoryId: lockedPeriod.workCategoryId,
+				});
+				const lockedMetadataChanged =
+					proposedMetadata.workLocationType !==
+						normalizeWorkLocationType(lockedPeriod.workLocationType) ||
+					proposedMetadata.workCategoryId !== lockedPeriod.workCategoryId;
+				if (!clockInChanged && !clockOutChanged && !lockedMetadataChanged) {
+					throw new ValidationError({
+						message: "At least one correction value must change",
+						field: "correction",
+					});
+				}
+				if (lockedMetadataChanged) {
+					if (!lockedPeriod.canonicalRecordId) {
+						throw new Error("Canonical work record is missing");
+					}
+					const canonicalRecords = await tx
+						.select()
+						.from(timeRecord)
+						.where(
+							and(
+								eq(timeRecord.id, lockedPeriod.canonicalRecordId),
+								eq(timeRecord.organizationId, currentEmployee.organizationId),
+								eq(timeRecord.employeeId, currentEmployee.id),
+								eq(timeRecord.recordKind, "work"),
+							),
+						)
+						.limit(2)
+						.for("update");
+					const canonicalWorkRows = await tx
+						.select()
+						.from(timeRecordWork)
+						.where(
+							and(
+								eq(timeRecordWork.recordId, lockedPeriod.canonicalRecordId),
+								eq(
+									timeRecordWork.organizationId,
+									currentEmployee.organizationId,
+								),
+								eq(timeRecordWork.recordKind, "work"),
+							),
+						)
+						.limit(2)
+						.for("update");
+					if (canonicalRecords.length !== 1 || canonicalWorkRows.length !== 1) {
+						throw new Error("Canonical work record invariant failed");
+					}
+					const canonicalWorkRow = canonicalWorkRows[0];
+					if (
+						!canonicalWorkRow ||
+						canonicalWorkRow.workLocationType !==
+							lockedPeriod.workLocationType ||
+						canonicalWorkRow.workCategoryId !== lockedPeriod.workCategoryId
+					) {
+						throw new ConflictError({
+							message: "Canonical work metadata diverges from work period",
+							conflictType: "time_correction_work_metadata_diverged",
+						});
+					}
+				}
+
+				let clockInCorrectionId: string | undefined;
+				if (clockInChanged) {
+					if (!clockInTimezoneCapture) {
+						throw new Error("Clock-in timezone evidence is required");
+					}
+					const clockInCorrection =
+						await canonicalTimeEntryClient.createCorrectionEntry(
+							{
+								employeeId: currentEmployee.id,
+								organizationId: currentEmployee.organizationId,
+								workPeriodId: selectedWorkPeriod.id,
+								timestamp: correctedClockInDate,
+								createdBy: session.user.id,
+								...clockInTimezoneCapture,
+								replacesEntryId: selectedWorkPeriod.clockInId,
+								notes,
+							},
+							tx,
+						);
+					if (!clockInCorrection) {
+						throw new Error("Clock-in correction entry was not created");
+					}
+					clockInCorrectionId = clockInCorrection.id;
+				}
 
 				let clockOutCorrectionId: string | undefined;
 				if (
-					data.newClockOutTime &&
+					correctsClockOut &&
 					selectedWorkPeriod.clockOutId &&
 					correctedClockOutDate
 				) {
@@ -443,54 +645,100 @@ export async function editSameDayTimeEntry(
 							},
 							tx,
 						);
+					if (!clockOutCorrection) {
+						throw new Error("Clock-out correction entry was not created");
+					}
 					clockOutCorrectionId = clockOutCorrection.id;
-				} else if (data.reason && selectedWorkPeriod.clockOutId) {
-					await tx
-						.update(timeEntry)
-						.set({ notes: data.reason })
+				}
+
+				if (lockedMetadataChanged) {
+					const canonicalRecordId = lockedPeriod.canonicalRecordId;
+					if (!canonicalRecordId) {
+						throw new Error("Canonical work record is missing");
+					}
+					const metadata = {
+						workLocationType: proposedMetadata.workLocationType,
+						workCategoryId: proposedMetadata.workCategoryId,
+					};
+					const updatedPeriods = await tx
+						.update(workPeriod)
+						.set(metadata)
 						.where(
 							and(
-								eq(timeEntry.id, selectedWorkPeriod.clockOutId),
-								eq(timeEntry.employeeId, currentEmployee.id),
-								eq(timeEntry.organizationId, currentEmployee.organizationId),
+								eq(workPeriod.id, lockedPeriod.id),
+								eq(workPeriod.employeeId, currentEmployee.id),
+								eq(workPeriod.organizationId, currentEmployee.organizationId),
+								isNull(workPeriod.deletedAt),
 							),
-						);
+						)
+						.returning({ id: workPeriod.id });
+					if (updatedPeriods.length !== 1) {
+						throw new Error("Work period metadata update failed");
+					}
+					const updatedCanonicalRows = await tx
+						.update(timeRecordWork)
+						.set(metadata)
+						.where(
+							and(
+								eq(timeRecordWork.recordId, canonicalRecordId),
+								eq(
+									timeRecordWork.organizationId,
+									currentEmployee.organizationId,
+								),
+								eq(timeRecordWork.recordKind, "work"),
+							),
+						)
+						.returning({ recordId: timeRecordWork.recordId });
+					if (updatedCanonicalRows.length !== 1) {
+						throw new Error("Canonical work metadata update failed");
+					}
 				}
 
 				return {
-					clockInCorrectionId: clockInCorrection.id,
+					clockInCorrectionId,
 					clockOutCorrectionId,
 				};
 			},
 		);
 
-		const dirtyFromDate = dirtyFromDateForTimeCorrection([
-			...originalEndpointEvidence,
-			{
-				instant: instantFromTimeCorrectionBoundary(correctedClockInDate),
-				...clockInTimezoneCapture,
-			},
-			...(correctedClockOutDate && clockOutTimezoneCapture
-				? [
-						{
-							instant: instantFromTimeCorrectionBoundary(correctedClockOutDate),
-							...clockOutTimezoneCapture,
-						},
-					]
-				: []),
-		]);
-		await markWorkBalanceDirtyAfterSameDayEditBestEffort(
-			{
-				employeeId: currentEmployee.id,
-				organizationId: currentEmployee.organizationId,
-				dirtyFromDate: dirtyFromDate ?? undefined,
-			},
-			{
-				employeeId: currentEmployee.id,
-				organizationId: currentEmployee.organizationId,
-				workPeriodId: selectedWorkPeriod.id,
-			},
-		);
+		const dirtyFromDate = affectedOriginalIds.length
+			? dirtyFromDateForTimeCorrection([
+					...originalEndpointEvidence,
+					...(clockInChanged && clockInTimezoneCapture
+						? [
+								{
+									instant:
+										instantFromTimeCorrectionBoundary(correctedClockInDate),
+									...clockInTimezoneCapture,
+								},
+							]
+						: []),
+					...(correctedClockOutDate && clockOutTimezoneCapture
+						? [
+								{
+									instant: instantFromTimeCorrectionBoundary(
+										correctedClockOutDate,
+									),
+									...clockOutTimezoneCapture,
+								},
+							]
+						: []),
+				])
+			: null;
+		if (affectedOriginalIds.length) {
+			await markWorkBalanceDirtyAfterSameDayEditBestEffort(
+				{
+					employeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+					dirtyFromDate: dirtyFromDate ?? undefined,
+				},
+				{
+					employeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+					workPeriodId: selectedWorkPeriod.id,
+				},
+			);
+		}
 
 		logger.info(
 			{
@@ -504,6 +752,9 @@ export async function editSameDayTimeEntry(
 
 		return { success: true, data: { workPeriodId: selectedWorkPeriod.id } };
 	} catch (error) {
+		if (error instanceof ValidationError) {
+			return { success: false, error: error.message };
+		}
 		logger.error({ error }, "Failed to edit same-day time entry");
 		return {
 			success: false,
@@ -533,6 +784,70 @@ type SubmissionEndpoint = {
 
 const UUID =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function normalizeCorrectionWorkMetadataInput(input: {
+	workLocationType: unknown;
+	workCategoryId: unknown;
+}): {
+	workLocationType: WorkLocationType;
+	workCategoryId: string | null;
+} {
+	if (
+		typeof input.workLocationType !== "string" ||
+		!isWorkLocationType(input.workLocationType)
+	) {
+		throw new ValidationError({
+			message: "Invalid work location type",
+			field: "workLocationType",
+		});
+	}
+	if (input.workCategoryId === null) {
+		return { workLocationType: input.workLocationType, workCategoryId: null };
+	}
+	if (
+		typeof input.workCategoryId !== "string" ||
+		!UUID.test(input.workCategoryId)
+	) {
+		throw new ValidationError({
+			message: "Work category must be a valid UUID",
+			field: "workCategoryId",
+		});
+	}
+	return {
+		workLocationType: input.workLocationType,
+		workCategoryId: input.workCategoryId.toLowerCase(),
+	};
+}
+
+async function validateCorrectionWorkMetadata(input: {
+	tx: Pick<typeof db, "select">;
+	employeeId: string;
+	teamId: string | null;
+	organizationId: string;
+	workLocationType: unknown;
+	workCategoryId: unknown;
+	currentWorkCategoryId: string | null;
+}): Promise<{
+	workLocationType: WorkLocationType;
+	workCategoryId: string | null;
+}> {
+	const proposed = normalizeCorrectionWorkMetadataInput(input);
+	if (
+		proposed.workCategoryId === null ||
+		proposed.workCategoryId === input.currentWorkCategoryId
+	) {
+		return proposed;
+	}
+	await authorizeTimeCorrectionCategoryChange({
+		tx: input.tx,
+		employeeId: input.employeeId,
+		teamId: input.teamId,
+		organizationId: input.organizationId,
+		proposedWorkCategoryId: proposed.workCategoryId,
+		currentWorkCategoryId: input.currentWorkCategoryId,
+	});
+	return proposed;
+}
 
 function validateSubmissionId(value: unknown): string {
 	if (typeof value !== "string" || !UUID.test(value)) {
@@ -597,6 +912,51 @@ function endpointEvidence(
 		instant,
 		...endpoint.timezoneCapture,
 	};
+}
+
+async function findPersistedCorrectionSubmissionKey(input: {
+	tx: typeof db;
+	organizationId: string;
+	workPeriodId: string;
+	candidates: string[];
+}): Promise<string | null> {
+	for (const candidate of input.candidates) {
+		const workflowId = deriveApprovalWorkflowId({
+			organizationId: input.organizationId,
+			workflowType: "time_correction",
+			sourceType: "time_entry",
+			sourceId: input.workPeriodId,
+			allocationKey: candidate,
+		});
+		const workflow = await input.tx.query.approvalWorkflow.findFirst({
+			where: and(
+				eq(approvalWorkflow.id, workflowId),
+				eq(approvalWorkflow.organizationId, input.organizationId),
+				eq(approvalWorkflow.workflowType, "time_correction"),
+				eq(approvalWorkflow.sourceType, "time_entry"),
+				eq(approvalWorkflow.sourceId, input.workPeriodId),
+			),
+			columns: { id: true },
+		});
+		const requests = await input.tx.query.approvalRequest.findMany({
+			where: and(
+				eq(approvalRequest.organizationId, input.organizationId),
+				eq(approvalRequest.entityType, "time_entry"),
+				eq(approvalRequest.entityId, input.workPeriodId),
+				sql`${approvalRequest.metadata} -> 'submission' ->> 'key' = ${candidate}`,
+			),
+			columns: { id: true },
+			limit: 2,
+		});
+		if (workflow || requests.length === 1) return candidate;
+		if (requests.length > 1) {
+			throw new ConflictError({
+				message: "Time correction request conflicts with existing data",
+				conflictType: "time_correction_identity",
+			});
+		}
+	}
+	return null;
 }
 
 async function insertOrVerifyCorrection(input: {
@@ -667,6 +1027,105 @@ async function insertOrVerifyCorrection(input: {
 	return { entry: created, inserted: true as const };
 }
 
+export async function lockTimeCorrectionSubmissionActorAndPeriodInTransaction(input: {
+	tx: typeof db;
+	organizationId: string;
+	employeeId: string;
+	userId: string;
+	workPeriodId: string;
+	expectedClockInId: string;
+	expectedClockOutId: string | null;
+	expectedStartTime: Date;
+	expectedEndTime: Date | null;
+}) {
+	// Global employee lock order is ascending employee ID before work-period locks.
+	const lockedEmployees = await input.tx
+		.select()
+		.from(employee)
+		.where(
+			and(
+				eq(employee.id, input.employeeId),
+				eq(employee.userId, input.userId),
+				eq(employee.organizationId, input.organizationId),
+				eq(employee.isActive, true),
+			),
+		)
+		.orderBy(asc(employee.id))
+		.for("update");
+	const lockedEmployee = lockedEmployees[0];
+	if (lockedEmployees.length !== 1 || !lockedEmployee) {
+		throw new ConflictError({
+			message: "Employee changed while requesting the correction",
+			conflictType: "time_correction_employee_stale",
+		});
+	}
+	const lockedMembers = await input.tx
+		.select()
+		.from(member)
+		.where(
+			and(
+				eq(member.userId, input.userId),
+				eq(member.organizationId, input.organizationId),
+			),
+		)
+		.orderBy(asc(member.id))
+		.limit(2)
+		.for("update");
+	const lockedMember = lockedMembers[0];
+	if (
+		lockedMembers.length !== 1 ||
+		!lockedMember ||
+		lockedMember.userId !== input.userId ||
+		lockedMember.organizationId !== input.organizationId ||
+		lockedMember.status !== "approved"
+	) {
+		throw new ConflictError({
+			message: "Time correction actor changed before submission",
+			conflictType: "time_correction_actor_stale",
+		});
+	}
+	const lockedTeamId = await lockTrustedTimeCorrectionEmployeeTeamId({
+		tx: input.tx,
+		employeeId: lockedEmployee.id,
+		employeeTeamId: lockedEmployee.teamId,
+		organizationId: input.organizationId,
+	});
+	const [lockedPeriod] = await input.tx
+		.select()
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.id, input.workPeriodId),
+				eq(workPeriod.employeeId, input.employeeId),
+				eq(workPeriod.organizationId, input.organizationId),
+				isNull(workPeriod.deletedAt),
+			),
+		)
+		.for("update");
+	if (
+		!lockedPeriod ||
+		lockedPeriod.clockInId !== input.expectedClockInId ||
+		lockedPeriod.clockOutId !== input.expectedClockOutId ||
+		compareInstants(
+			instantFromTimeCorrectionBoundary(lockedPeriod.startTime),
+			instantFromTimeCorrectionBoundary(input.expectedStartTime),
+		) !== 0 ||
+		(lockedPeriod.endTime === null) !== (input.expectedEndTime === null) ||
+		(lockedPeriod.endTime !== null &&
+			input.expectedEndTime !== null &&
+			compareInstants(
+				instantFromTimeCorrectionBoundary(lockedPeriod.endTime),
+				instantFromTimeCorrectionBoundary(input.expectedEndTime),
+			) !== 0)
+	) {
+		throw new ConflictError({
+			message: "Work period changed while requesting the correction",
+			conflictType: "time_correction_work_period_stale",
+		});
+	}
+	return { lockedEmployee, lockedTeamId, lockedPeriod };
+}
+
 export async function submitCorrection(input: {
 	dbService: ApprovalDbService;
 	organizationId: string;
@@ -681,6 +1140,13 @@ export async function submitCorrection(input: {
 	action: "edit" | "delete";
 	reason: string;
 	endpoints: SubmissionEndpoint[];
+	workLocationType: WorkLocationType;
+	workCategoryId: string | null;
+	validateTimeRange?: () => Promise<{
+		isValid: boolean;
+		error?: string;
+		holidayName?: string;
+	}>;
 }) {
 	const session = await getCurrentSession();
 	if (
@@ -697,124 +1163,34 @@ export async function submitCorrection(input: {
 	const requestMetadata = await getRequestMetadata();
 	return await runtime.repository.withTransaction(async (context) => {
 		const tx = context.dbService.db as unknown as typeof db;
-		// Global employee lock order is ascending employee ID before work-period locks.
-		const lockedEmployees = await tx
-			.select()
-			.from(employee)
-			.where(
-				and(
-					eq(employee.id, input.employeeId),
-					eq(employee.userId, input.userId),
-					eq(employee.organizationId, input.organizationId),
-					eq(employee.isActive, true),
-				),
-			)
-			.orderBy(asc(employee.id))
-			.for("update");
-		if (lockedEmployees.length !== 1) {
-			throw new ConflictError({
-				message: "Employee changed while requesting the correction",
-				conflictType: "time_correction_employee_stale",
+		const { lockedEmployee, lockedTeamId, lockedPeriod } =
+			await lockTimeCorrectionSubmissionActorAndPeriodInTransaction({
+				tx,
+				organizationId: input.organizationId,
+				employeeId: input.employeeId,
+				userId: input.userId,
+				workPeriodId: input.workPeriodId,
+				expectedClockInId: input.expectedClockInId,
+				expectedClockOutId: input.expectedClockOutId,
+				expectedStartTime: input.expectedStartTime,
+				expectedEndTime: input.expectedEndTime,
 			});
-		}
-		const lockedEmployee = lockedEmployees[0];
-		if (!lockedEmployee) {
-			throw new ConflictError({
-				message: "Employee changed while requesting the correction",
-				conflictType: "time_correction_employee_stale",
-			});
-		}
-		const lockedMembers = await tx
-			.select()
-			.from(member)
-			.where(
-				and(
-					eq(member.userId, input.userId),
-					eq(member.organizationId, input.organizationId),
-				),
-			)
-			.orderBy(asc(member.id))
-			.limit(2)
-			.for("update");
-		const lockedMember = lockedMembers[0];
+		const proposedMetadata = normalizeCorrectionWorkMetadataInput({
+			workLocationType: input.workLocationType,
+			workCategoryId: input.workCategoryId,
+		});
+		const metadataChanged =
+			proposedMetadata.workLocationType !==
+				normalizeWorkLocationType(lockedPeriod.workLocationType) ||
+			proposedMetadata.workCategoryId !== lockedPeriod.workCategoryId;
 		if (
-			lockedMembers.length !== 1 ||
-			!lockedMember ||
-			lockedMember.userId !== input.userId ||
-			lockedMember.organizationId !== input.organizationId ||
-			lockedMember.status !== "approved"
+			input.action === "edit" &&
+			input.endpoints.length === 0 &&
+			!metadataChanged
 		) {
-			throw new ConflictError({
-				message: "Time correction actor changed before submission",
-				conflictType: "time_correction_actor_stale",
-			});
-		}
-		const lockedMemberships = await tx
-			.select()
-			.from(teamMembership)
-			.where(
-				and(
-					eq(teamMembership.employeeId, input.employeeId),
-					eq(teamMembership.organizationId, input.organizationId),
-				),
-			)
-			.for("update");
-		const membershipTeamIds = lockedMemberships.map(
-			(membership) => membership.teamId,
-		);
-		const lockedTeams = membershipTeamIds.length
-			? await tx
-					.select()
-					.from(team)
-					.where(
-						and(
-							eq(team.organizationId, input.organizationId),
-							inArray(team.id, membershipTeamIds),
-						),
-					)
-					.for("update")
-			: [];
-		const lockedTeamId =
-			lockedEmployee.teamId &&
-			lockedMemberships.some(
-				(membership) => membership.teamId === lockedEmployee.teamId,
-			) &&
-			lockedTeams.some(
-				(currentTeam) => currentTeam.id === lockedEmployee.teamId,
-			)
-				? lockedEmployee.teamId
-				: null;
-		const [lockedPeriod] = await tx
-			.select()
-			.from(workPeriod)
-			.where(
-				and(
-					eq(workPeriod.id, input.workPeriodId),
-					eq(workPeriod.employeeId, input.employeeId),
-					eq(workPeriod.organizationId, input.organizationId),
-					isNull(workPeriod.deletedAt),
-				),
-			)
-			.for("update");
-		if (
-			!lockedPeriod ||
-			lockedPeriod.clockInId !== input.expectedClockInId ||
-			lockedPeriod.clockOutId !== input.expectedClockOutId ||
-			compareInstants(
-				instantFromTimeCorrectionBoundary(lockedPeriod.startTime),
-				instantFromTimeCorrectionBoundary(input.expectedStartTime),
-			) !== 0 ||
-			(lockedPeriod.endTime === null) !== (input.expectedEndTime === null) ||
-			(lockedPeriod.endTime !== null &&
-				input.expectedEndTime !== null &&
-				compareInstants(
-					instantFromTimeCorrectionBoundary(lockedPeriod.endTime),
-					instantFromTimeCorrectionBoundary(input.expectedEndTime),
-				) !== 0)
-		) {
-			throw new ConflictError({
-				message: "Work period changed while requesting the correction",
-				conflictType: "time_correction_work_period_stale",
+			throw new ValidationError({
+				message: "At least one correction value must change",
+				field: "correction",
 			});
 		}
 		if (
@@ -830,17 +1206,19 @@ export async function submitCorrection(input: {
 		const originalIds = input.endpoints.map(
 			(endpoint) => endpoint.originalEntryId,
 		);
-		const originals = await tx
-			.select()
-			.from(timeEntry)
-			.where(
-				and(
-					eq(timeEntry.organizationId, input.organizationId),
-					eq(timeEntry.employeeId, input.employeeId),
-					inArray(timeEntry.id, originalIds),
-				),
-			)
-			.for("update");
+		const originals = originalIds.length
+			? await tx
+					.select()
+					.from(timeEntry)
+					.where(
+						and(
+							eq(timeEntry.organizationId, input.organizationId),
+							eq(timeEntry.employeeId, input.employeeId),
+							inArray(timeEntry.id, originalIds),
+						),
+					)
+					.for("update")
+			: [];
 		if (
 			originals.length !== originalIds.length ||
 			originals.some((entry) => entry.isSuperseded) ||
@@ -885,9 +1263,37 @@ export async function submitCorrection(input: {
 			organizationId: input.organizationId,
 			workPeriodId: input.workPeriodId,
 			action: input.action,
+			workLocationType: proposedMetadata.workLocationType,
+			workCategoryId: proposedMetadata.workCategoryId,
 			...identity,
 		});
-		const submissionKey = `time-correction-cycle:v1:${input.submissionId}:${businessSubmissionKey}`;
+		const v2SubmissionKey = `time-correction-cycle:v2:${input.submissionId}:${businessSubmissionKey}`;
+		const sourceMetadataUnchanged =
+			proposedMetadata.workLocationType ===
+				normalizeWorkLocationType(lockedPeriod.workLocationType) &&
+			proposedMetadata.workCategoryId === lockedPeriod.workCategoryId;
+		const v1SubmissionKey =
+			input.endpoints.length > 0 && sourceMetadataUnchanged
+				? `time-correction-cycle:v1:${input.submissionId}:${deriveLegacyTimeCorrectionSubmissionKey(
+						{
+							organizationId: input.organizationId,
+							workPeriodId: input.workPeriodId,
+							action: input.action,
+							...identity,
+						},
+					)}`
+				: null;
+		const persistedSubmissionKey = await findPersistedCorrectionSubmissionKey({
+			tx,
+			organizationId: input.organizationId,
+			workPeriodId: input.workPeriodId,
+			candidates: [
+				v2SubmissionKey,
+				...(v1SubmissionKey ? [v1SubmissionKey] : []),
+			],
+		});
+		const submissionKey = persistedSubmissionKey ?? v2SubmissionKey;
+		const legacyReplay = submissionKey === v1SubmissionKey;
 		let previousEntry =
 			(await tx.query.timeEntry.findFirst({
 				where: and(
@@ -932,6 +1338,12 @@ export async function submitCorrection(input: {
 		);
 		const correction = {
 			action: input.action,
+			...(!legacyReplay
+				? {
+						workLocationType: proposedMetadata.workLocationType,
+						workCategoryId: proposedMetadata.workCategoryId,
+					}
+				: {}),
 			...(evidence.find((item) => item.endpointType === "clock_in")
 				? {
 						clockInCorrectionId: evidence.find(
@@ -961,6 +1373,28 @@ export async function submitCorrection(input: {
 			submissionId: input.submissionId,
 			correction,
 		})) as Omit<ApprovalResult, "correctionEntryIds">;
+		if (result.disposition !== "replayed") {
+			await validateCorrectionWorkMetadata({
+				tx,
+				employeeId: lockedEmployee.id,
+				teamId: lockedTeamId,
+				organizationId: input.organizationId,
+				workLocationType: proposedMetadata.workLocationType,
+				workCategoryId: proposedMetadata.workCategoryId,
+				currentWorkCategoryId: lockedPeriod.workCategoryId,
+			});
+		}
+		if (result.disposition !== "replayed" && input.validateTimeRange) {
+			const validation = await input.validateTimeRange();
+			if (!validation.isValid) {
+				throw new ValidationError({
+					message:
+						validation.error ?? "Cannot create time correction for this period",
+					field: "timestamp",
+					value: validation.holidayName,
+				});
+			}
+		}
 		if (result.disposition === "replayed") {
 			await mapSequentially([...newlyInserted].reverse(), async (inserted) => {
 				const deleted = await tx
@@ -1161,9 +1595,11 @@ function submissionFailure(error: unknown) {
 	) {
 		return error;
 	}
-	return new ValidationError({
+	logger.error({ err: error }, "Time correction submission transaction failed");
+	return new DatabaseError({
 		message: "Failed to submit time correction. Please try again.",
-		field: "submission",
+		operation: "submit_time_correction",
+		cause: error,
 	});
 }
 
@@ -1252,9 +1688,30 @@ function submissionEffect(
 					),
 				);
 			}
-			correctedClockIn = times.correctedClockInDate;
-			correctedClockOut =
-				times.correctedClockOutDate ?? period.endTime ?? undefined;
+			const clockInChanged = hasSubmittedEndpointMinuteChanged({
+				original: period.startTime,
+				date: edit.newClockInDate,
+				time: edit.newClockInTime,
+				timezone,
+			});
+			const clockOutChanged = Boolean(
+				times.correctedClockOutDate &&
+					period.endTime &&
+					edit.newClockOutDate &&
+					edit.newClockOutTime &&
+					hasSubmittedEndpointMinuteChanged({
+						original: period.endTime,
+						date: edit.newClockOutDate,
+						time: edit.newClockOutTime,
+						timezone,
+					}),
+			);
+			correctedClockIn = clockInChanged
+				? times.correctedClockInDate
+				: period.startTime;
+			correctedClockOut = clockOutChanged
+				? times.correctedClockOutDate
+				: (period.endTime ?? undefined);
 			const now = systemClock.nowInstant();
 			if (
 				compareInstants(
@@ -1292,12 +1749,27 @@ function submissionEffect(
 					),
 				);
 			}
-			if (
-				compareInstants(
+			try {
+				validateTimeCorrectionRange(
 					instantFromTimeCorrectionBoundary(correctedClockIn),
-					instantFromTimeCorrectionBoundary(period.startTime),
-				) !== 0
-			) {
+					correctedClockOut
+						? instantFromTimeCorrectionBoundary(correctedClockOut)
+						: null,
+				);
+			} catch (error) {
+				return yield* _(
+					Effect.fail(
+						new ValidationError({
+							message:
+								error instanceof Error
+									? error.message
+									: "Invalid work period range",
+							field: "timestamp",
+						}),
+					),
+				);
+			}
+			if (clockInChanged) {
 				endpoints.push({
 					endpointType: "clock_in",
 					originalEntryId: period.clockInId,
@@ -1313,10 +1785,7 @@ function submissionEffect(
 				times.correctedClockOutDate &&
 				period.clockOutId &&
 				period.endTime &&
-				compareInstants(
-					instantFromTimeCorrectionBoundary(times.correctedClockOutDate),
-					instantFromTimeCorrectionBoundary(period.endTime),
-				) !== 0
+				clockOutChanged
 			) {
 				endpoints.push({
 					endpointType: "clock_out",
@@ -1328,38 +1797,6 @@ function submissionEffect(
 						timezoneSource: "user_setting",
 					}),
 				});
-			}
-			if (endpoints.length === 0) {
-				return yield* _(
-					Effect.fail(
-						new ValidationError({
-							message: "At least one time must change",
-							field: "timestamp",
-						}),
-					),
-				);
-			}
-			const validation = yield* _(
-				Effect.promise(() =>
-					validateTimeEntryRange(
-						organizationId,
-						correctedClockIn,
-						correctedClockOut ?? correctedClockIn,
-					),
-				),
-			);
-			if (!validation.isValid) {
-				return yield* _(
-					Effect.fail(
-						new ValidationError({
-							message:
-								validation.error ??
-								"Cannot create time correction for this period",
-							field: "timestamp",
-							value: validation.holidayName,
-						}),
-					),
-				);
 			}
 		} else {
 			if (!period.endTime || !period.clockOutId) {
@@ -1444,6 +1881,21 @@ function submissionEffect(
 						action,
 						reason: data.reason,
 						endpoints,
+						workLocationType:
+							action === "edit"
+								? (data as CorrectionRequest).workLocationType
+								: normalizeWorkLocationType(period.workLocationType),
+						workCategoryId:
+							action === "edit"
+								? (data as CorrectionRequest).workCategoryId
+								: period.workCategoryId,
+						validateTimeRange: () =>
+							validateTimeEntryRange(
+								organizationId,
+								correctedClockIn,
+								correctedClockOut ?? correctedClockIn,
+								timezone,
+							),
 					}),
 				catch: submissionFailure,
 			}),

@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { deriveTimeCorrectionRowId } from "../workflow/identity";
 import {
+	deriveLegacyTimeCorrectionSubmissionKey,
 	deriveTimeCorrectionSubmissionKey,
+	normalizeTimeCorrectionOriginalWorkMetadata,
 	normalizeTimeCorrectionWorkflowPayload,
 	type TimeCorrectionSubmissionIdentityInput,
 } from "./time-correction-contract";
@@ -12,15 +14,52 @@ const clockOutCorrectionId = "10000000-0000-4000-8000-000000000012";
 const clockInOriginalId = "20000000-0000-4000-8000-000000000011";
 const clockOutOriginalId = "20000000-0000-4000-8000-000000000012";
 const workPeriodId = "30000000-0000-4000-8000-000000000001";
+const workCategoryId = "40000000-0000-4000-8000-000000000001";
 const clockInInstant = parseInstant("2026-07-20T06:00:00+02:00");
 const clockOutInstant = parseInstant("2026-07-20T15:00:00-04:00");
 
 describe("time correction workflow contract", () => {
+	it("normalizes detached immutable original work metadata", () => {
+		const input = {
+			workLocationType: "office",
+			workCategoryId: ` ${workCategoryId.toUpperCase()} `,
+		};
+
+		const normalized = normalizeTimeCorrectionOriginalWorkMetadata(input);
+
+		expect(normalized).toEqual({
+			workLocationType: "office",
+			workCategoryId,
+		});
+		expect(Object.isFrozen(normalized)).toBe(true);
+		expect(normalized).not.toBe(input);
+	});
+
+	it.each([
+		["missing location", { workCategoryId: null }],
+		["missing category", { workLocationType: "office" }],
+		[
+			"extra key",
+			{ workLocationType: "office", workCategoryId: null, display: true },
+		],
+		["invalid location", { workLocationType: "field", workCategoryId: null }],
+		[
+			"invalid category",
+			{ workLocationType: "office", workCategoryId: "category-1" },
+		],
+	] as const)("rejects %s original work metadata evidence", (_label, input) => {
+		expect(() =>
+			normalizeTimeCorrectionOriginalWorkMetadata(input),
+		).toThrowError("Time correction original work metadata is invalid");
+	});
+
 	it("normalizes a detached immutable edit payload in canonical endpoint order", () => {
 		const input = {
 			timeCorrection: {
 				clockOutCorrectionId,
 				action: "edit",
+				workCategoryId: ` ${workCategoryId.toUpperCase()} `,
+				workLocationType: "home",
 				clockInCorrectionId,
 			},
 		};
@@ -30,12 +69,16 @@ describe("time correction workflow contract", () => {
 		expect(normalized).toEqual({
 			timeCorrection: {
 				action: "edit",
+				workLocationType: "home",
+				workCategoryId,
 				clockInCorrectionId,
 				clockOutCorrectionId,
 			},
 		});
 		expect(Object.keys(normalized.timeCorrection)).toEqual([
 			"action",
+			"workLocationType",
+			"workCategoryId",
 			"clockInCorrectionId",
 			"clockOutCorrectionId",
 		]);
@@ -55,7 +98,12 @@ describe("time correction workflow contract", () => {
 			clockInCorrectionId: 0,
 		};
 		const correction = new Proxy(
-			{ action: "edit", clockInCorrectionId },
+			{
+				action: "edit",
+				workLocationType: "remote",
+				workCategoryId: null,
+				clockInCorrectionId,
+			},
 			{
 				get(target, property, receiver) {
 					if (property === "action") {
@@ -75,13 +123,70 @@ describe("time correction workflow contract", () => {
 		});
 
 		expect(normalized).toEqual({
-			timeCorrection: { action: "edit", clockInCorrectionId },
+			timeCorrection: {
+				action: "edit",
+				workLocationType: "remote",
+				workCategoryId: null,
+				clockInCorrectionId,
+			},
 		});
 		expect(reads.action).toBeLessThanOrEqual(1);
 		expect(reads.clockInCorrectionId).toBeLessThanOrEqual(1);
 	});
 
+	it("accepts a metadata-only edit payload", () => {
+		expect(
+			normalizeTimeCorrectionWorkflowPayload({
+				timeCorrection: {
+					action: "edit",
+					workLocationType: "other",
+					workCategoryId: null,
+				},
+			}),
+		).toEqual({
+			timeCorrection: {
+				action: "edit",
+				workLocationType: "other",
+				workCategoryId: null,
+			},
+		});
+	});
+
+	it("accepts a historical payload without inventing work metadata", () => {
+		const normalized = normalizeTimeCorrectionWorkflowPayload({
+			timeCorrection: {
+				action: "edit",
+				clockInCorrectionId,
+			},
+		});
+
+		expect(normalized).toEqual({
+			timeCorrection: { action: "edit", clockInCorrectionId },
+		});
+		expect("workLocationType" in normalized.timeCorrection).toBe(false);
+		expect("workCategoryId" in normalized.timeCorrection).toBe(false);
+	});
+
 	it("requires both distinct correction IDs for delete", () => {
+		expect(
+			normalizeTimeCorrectionWorkflowPayload({
+				timeCorrection: {
+					action: "delete",
+					workLocationType: "office",
+					workCategoryId,
+					clockInCorrectionId,
+					clockOutCorrectionId,
+				},
+			}),
+		).toEqual({
+			timeCorrection: {
+				action: "delete",
+				workLocationType: "office",
+				workCategoryId,
+				clockInCorrectionId,
+				clockOutCorrectionId,
+			},
+		});
 		expect(
 			normalizeTimeCorrectionWorkflowPayload({
 				timeCorrection: {
@@ -102,18 +207,24 @@ describe("time correction workflow contract", () => {
 			{
 				timeCorrection: {
 					action: "delete",
+					workLocationType: "office",
+					workCategoryId,
 					clockInCorrectionId,
 				},
 			},
 			{
 				timeCorrection: {
 					action: "delete",
+					workLocationType: "office",
+					workCategoryId,
 					clockOutCorrectionId,
 				},
 			},
 			{
 				timeCorrection: {
 					action: "delete",
+					workLocationType: "office",
+					workCategoryId,
 					clockInCorrectionId,
 					clockOutCorrectionId: clockInCorrectionId,
 				},
@@ -128,28 +239,62 @@ describe("time correction workflow contract", () => {
 	it.each([
 		["an empty payload", {}],
 		["an empty correction", { timeCorrection: {} }],
-		["an edit without endpoints", { timeCorrection: { action: "edit" } }],
 		[
-			"an invalid action",
-			{ timeCorrection: { action: "replace", clockInCorrectionId } },
+			"a missing work location",
+			{ timeCorrection: { action: "edit", workCategoryId: null } },
 		],
 		[
-			"a blank ID",
-			{ timeCorrection: { action: "edit", clockInCorrectionId: "  " } },
+			"a missing work category",
+			{ timeCorrection: { action: "edit", workLocationType: "office" } },
 		],
 		[
-			"a malformed UUID",
-			{ timeCorrection: { action: "edit", clockInCorrectionId: "entry-1" } },
+			"an invalid work location",
+			{
+				timeCorrection: {
+					action: "edit",
+					workLocationType: "field",
+					workCategoryId: null,
+				},
+			},
 		],
 		[
-			"a malformed nested type",
-			{ timeCorrection: { action: "edit", clockInCorrectionId: 42 } },
+			"a malformed work category",
+			{
+				timeCorrection: {
+					action: "edit",
+					workLocationType: "office",
+					workCategoryId: "category-1",
+				},
+			},
 		],
+		...(
+			[
+				["an invalid action", "replace", clockInCorrectionId],
+				["a blank ID", "edit", "  "],
+				["a malformed UUID", "edit", "entry-1"],
+				["a malformed nested type", "edit", 42],
+			] as const
+		).map(([name, action, correctionId]) => [
+			name,
+			{
+				timeCorrection: {
+					action,
+					workLocationType: "office",
+					workCategoryId: null,
+					clockInCorrectionId: correctionId,
+				},
+			},
+		]),
 		["a malformed root type", []],
 		[
 			"an unknown root key",
 			{
-				timeCorrection: { action: "edit", clockInCorrectionId },
+				timeCorrection: {
+					action: "edit",
+					workLocationType: "office",
+					workCategoryId: null,
+					clockInCorrectionId,
+				},
 				privateNote: "do not accept",
 			},
 		],
@@ -158,6 +303,8 @@ describe("time correction workflow contract", () => {
 			{
 				timeCorrection: {
 					action: "edit",
+					workLocationType: "office",
+					workCategoryId: null,
 					clockInCorrectionId,
 					note: "do not accept",
 				},
@@ -179,7 +326,12 @@ describe("time correction workflow contract", () => {
 
 	it("rejects non-JSON object shapes without invoking accessors", () => {
 		const hidden = {
-			timeCorrection: { action: "edit", clockInCorrectionId },
+			timeCorrection: {
+				action: "edit",
+				workLocationType: "office",
+				workCategoryId: null,
+				clockInCorrectionId,
+			},
 		};
 		Object.defineProperty(hidden, "privateNote", {
 			enumerable: false,
@@ -190,7 +342,12 @@ describe("time correction workflow contract", () => {
 			enumerable: true,
 			get() {
 				accesses += 1;
-				return { action: "edit", clockInCorrectionId };
+				return {
+					action: "edit",
+					workLocationType: "office",
+					workCategoryId: null,
+					clockInCorrectionId,
+				};
 			},
 		});
 
@@ -232,6 +389,8 @@ describe("time correction workflow contract", () => {
 			organizationId: " org-1 ",
 			workPeriodId: ` ${workPeriodId} `,
 			action: "edit" as const,
+			workLocationType: "home" as const,
+			workCategoryId: ` ${workCategoryId.toUpperCase()} `,
 			clockIn: {
 				instant: clockInInstant,
 				originalEntryId: ` ${clockInOriginalId} `,
@@ -245,12 +404,15 @@ describe("time correction workflow contract", () => {
 		const key = deriveTimeCorrectionSubmissionKey(input);
 
 		expect(key).toBe(
-			"time-correction-submission:v1:4d54201a3a6ad7fb6a85276e534dca3c0b179a3b365a63b38230b364335d013b",
+			"time-correction-submission:v2:1ddeb30dd95f2c6cd28a8cda9cf95fd29e9f75d19b6a548edfaad8b60396ef5c",
 		);
+		expect(key).toMatch(/^time-correction-submission:v2:/);
 		expect(
 			deriveTimeCorrectionSubmissionKey({
 				clockOut: { ...input.clockOut },
 				action: input.action,
+				workLocationType: input.workLocationType,
+				workCategoryId,
 				workPeriodId,
 				clockIn: { ...input.clockIn, originalEntryId: clockInOriginalId },
 				organizationId: "org-1",
@@ -264,6 +426,11 @@ describe("time correction workflow contract", () => {
 				workPeriodId: "30000000-0000-4000-8000-000000000002",
 			}),
 			deriveTimeCorrectionSubmissionKey({ ...input, action: "delete" }),
+			deriveTimeCorrectionSubmissionKey({
+				...input,
+				workLocationType: "remote",
+			}),
+			deriveTimeCorrectionSubmissionKey({ ...input, workCategoryId: null }),
 			deriveTimeCorrectionSubmissionKey({
 				...input,
 				clockIn: {
@@ -282,17 +449,74 @@ describe("time correction workflow contract", () => {
 		expect(new Set([key, ...variants])).toHaveLength(variants.length + 1);
 	});
 
+	it("accepts metadata-only edit identity but rejects delete without endpoints", () => {
+		const identity: TimeCorrectionSubmissionIdentityInput = {
+			organizationId: "org-1",
+			workPeriodId,
+			action: "edit",
+			workLocationType: "office",
+			workCategoryId: null,
+		};
+
+		expect(deriveTimeCorrectionSubmissionKey(identity)).toMatch(
+			/^time-correction-submission:v2:[0-9a-f]{64}$/,
+		);
+		expect(() =>
+			deriveTimeCorrectionSubmissionKey({ ...identity, action: "delete" }),
+		).toThrowError("Time correction contract is invalid");
+	});
+
+	it("derives the persisted v1 endpoint identity without current metadata", () => {
+		expect(
+			deriveLegacyTimeCorrectionSubmissionKey({
+				organizationId: "org-1",
+				workPeriodId,
+				action: "edit",
+				clockIn: {
+					originalEntryId: clockInOriginalId,
+					instant: clockInInstant,
+				},
+			}),
+		).toBe(
+			"time-correction-submission:v1:5732f9cd6da184450723ea1eeadb464f71aab18e5defb768b0e809a56b64bcf9",
+		);
+	});
+
+	it("rejects delete identity with identical endpoint IDs", () => {
+		expect(() =>
+			deriveTimeCorrectionSubmissionKey({
+				organizationId: "org-1",
+				workPeriodId,
+				action: "delete",
+				workLocationType: "office",
+				workCategoryId: null,
+				clockIn: {
+					originalEntryId: clockInOriginalId,
+					instant: clockInInstant,
+				},
+				clockOut: {
+					originalEntryId: clockInOriginalId,
+					instant: clockOutInstant,
+				},
+			}),
+		).toThrowError("Time correction contract is invalid");
+	});
+
 	it("keeps random correction row IDs out of submission identity", () => {
 		const identity: TimeCorrectionSubmissionIdentityInput = {
 			organizationId: "org-1",
 			workPeriodId,
 			action: "edit",
+			workLocationType: "office",
+			workCategoryId: null,
 			clockIn: { originalEntryId: clockInOriginalId, instant: clockInInstant },
 		};
 		const firstSubmission = {
 			payload: normalizeTimeCorrectionWorkflowPayload({
 				timeCorrection: {
 					action: "edit",
+					workLocationType: "office",
+					workCategoryId: null,
 					clockInCorrectionId,
 				},
 			}),
@@ -302,6 +526,8 @@ describe("time correction workflow contract", () => {
 			payload: normalizeTimeCorrectionWorkflowPayload({
 				timeCorrection: {
 					action: "edit",
+					workLocationType: "office",
+					workCategoryId: null,
 					clockInCorrectionId: "10000000-0000-4000-8000-000000000099",
 				},
 			}),
@@ -314,42 +540,43 @@ describe("time correction workflow contract", () => {
 		);
 	});
 
-	it.each([
-		"top-level",
-		"endpoint",
-	] as const)("wraps hostile %s identity getters without exposing evidence", (boundary) => {
-		const secret = `private-${boundary}-correction-evidence`;
-		const endpoint = {
-			originalEntryId: clockInOriginalId,
-			instant: clockInInstant,
-		};
-		const input = {
-			organizationId: "org-1",
-			workPeriodId,
-			action: "edit" as const,
-			clockIn:
-				boundary === "endpoint"
-					? new Proxy(endpoint, {
+	it.each(["top-level", "endpoint"] as const)(
+		"wraps hostile %s identity getters without exposing evidence",
+		(boundary) => {
+			const secret = `private-${boundary}-correction-evidence`;
+			const endpoint = {
+				originalEntryId: clockInOriginalId,
+				instant: clockInInstant,
+			};
+			const input = {
+				organizationId: "org-1",
+				workPeriodId,
+				action: "edit" as const,
+				workLocationType: "office" as const,
+				workCategoryId: null,
+				clockIn:
+					boundary === "endpoint"
+						? new Proxy(endpoint, {
+								get(target, property, receiver) {
+									if (property === "originalEntryId") {
+										throw new Error(secret);
+									}
+									return Reflect.get(target, property, receiver);
+								},
+							})
+						: endpoint,
+			};
+			const hostile =
+				boundary === "top-level"
+					? new Proxy(input, {
 							get(target, property, receiver) {
-								if (property === "originalEntryId") {
+								if (property === "organizationId") {
 									throw new Error(secret);
 								}
 								return Reflect.get(target, property, receiver);
 							},
 						})
-					: endpoint,
-		};
-		const hostile =
-			boundary === "top-level"
-				? new Proxy(input, {
-						get(target, property, receiver) {
-							if (property === "organizationId") {
-								throw new Error(secret);
-							}
-							return Reflect.get(target, property, receiver);
-						},
-					})
-				: input;
+					: input;
 
 		try {
 			deriveTimeCorrectionSubmissionKey(hostile);
@@ -378,6 +605,8 @@ describe("time correction workflow contract", () => {
 			organizationId: "org-1",
 			workPeriodId,
 			action: "edit",
+			workLocationType: "office",
+			workCategoryId: null,
 			clockIn: {
 				originalEntryId: clockInOriginalId,
 				instant: hostileInstant,
@@ -389,6 +618,8 @@ describe("time correction workflow contract", () => {
 				organizationId: "org-1",
 				workPeriodId,
 				action: "edit",
+				workLocationType: "office",
+				workCategoryId: null,
 				clockIn: {
 					originalEntryId: clockInOriginalId,
 					instant: parseInstant("2026-07-20T04:00:00Z"),
@@ -410,6 +641,8 @@ describe("time correction workflow contract", () => {
 			organizationId: "org-1",
 			workPeriodId,
 			action: "edit" as const,
+			workLocationType: "office" as const,
+			workCategoryId: null,
 			clockIn: { originalEntryId: clockInOriginalId, instant: first },
 		};
 
@@ -427,20 +660,19 @@ describe("time correction workflow contract", () => {
 				organizationId: " ",
 				workPeriodId,
 				action: "edit",
+				workLocationType: "office",
+				workCategoryId: null,
 				clockIn: {
 					originalEntryId: clockInOriginalId,
 					instant: clockInInstant,
 				},
-			},
-			{
-				organizationId: "org-1",
-				workPeriodId,
-				action: "edit",
 			},
 			{
 				organizationId: "org-1",
 				workPeriodId,
 				action: "delete",
+				workLocationType: "office",
+				workCategoryId: null,
 				clockIn: {
 					originalEntryId: clockInOriginalId,
 					instant: clockInInstant,
@@ -450,10 +682,26 @@ describe("time correction workflow contract", () => {
 				organizationId: "org-1",
 				workPeriodId,
 				action: "edit",
+				workLocationType: "office",
+				workCategoryId: null,
 				clockIn: {
 					originalEntryId: "secret-invalid-id",
 					instant: "not-an-instant",
 				},
+			},
+			{
+				organizationId: "org-1",
+				workPeriodId,
+				action: "edit",
+				workLocationType: "field",
+				workCategoryId: null,
+			},
+			{
+				organizationId: "org-1",
+				workPeriodId,
+				action: "edit",
+				workLocationType: "office",
+				workCategoryId: "secret-invalid-id",
 			},
 		] as const) {
 			try {
@@ -474,6 +722,8 @@ describe("time correction workflow contract", () => {
 			organizationId: "org-1",
 			workPeriodId,
 			action: "edit",
+			workLocationType: "home",
+			workCategoryId,
 			clockIn: { originalEntryId: clockInOriginalId, instant: clockInInstant },
 			clockOut: {
 				originalEntryId: clockOutOriginalId,
@@ -489,8 +739,8 @@ describe("time correction workflow contract", () => {
 			submissionKey,
 		});
 
-		expect(clockInId).toBe("c250cb5b-3fee-50f4-b3a9-cb6c19d46fa3");
-		expect(clockOutId).toBe("32224f7a-5e56-5573-8b9d-a0d5064142c1");
+		expect(clockInId).toBe("7f5f7db6-2eab-5a1d-b2e4-540bd895c031");
+		expect(clockOutId).toBe("387563d9-ce0f-5893-bda9-e21da43f70e8");
 		expect(clockOutId).not.toBe(clockInId);
 		expect(
 			deriveTimeCorrectionRowId({

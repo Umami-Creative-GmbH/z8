@@ -1,5 +1,11 @@
 import { DateTime } from "luxon";
-import { formatTimeInZone } from "@/lib/time-tracking/timezone-utils";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { getInstantLocalMinuteFields } from "@/lib/datetime/temporal-format";
+import {
+	isWorkLocationType,
+	normalizeWorkLocationType,
+	type WorkLocationType,
+} from "@/lib/time-tracking/work-location";
 
 export interface TimeCorrectionFormValues {
 	clockInDate: string;
@@ -7,6 +13,8 @@ export interface TimeCorrectionFormValues {
 	clockOutDate: string;
 	clockOutTime: string;
 	reason: string;
+	workLocationType: WorkLocationType;
+	workCategoryId: string | null;
 }
 
 export interface TimeCorrectionWorkPeriod {
@@ -14,23 +22,63 @@ export interface TimeCorrectionWorkPeriod {
 	startTime: Date;
 	endTime: Date | null;
 	clockOut?: { notes: string | null } | null;
+	workLocationType: WorkLocationType | "field" | null;
+	workCategoryId: string | null;
+}
+
+export function getTimeCorrectionEndpointValues(
+	date: Date,
+	employeeTimezone: string,
+): { date: string; time: string } {
+	return getInstantLocalMinuteFields(instantFromDate(date), employeeTimezone);
 }
 
 export function formatDateInZone(date: Date, timezone: string): string {
-	return DateTime.fromJSDate(date, { zone: "utc" }).setZone(timezone).toISODate() ?? "";
+	return getTimeCorrectionEndpointValues(date, timezone).date;
 }
 
 export function getTimeCorrectionDefaultValues(
 	workPeriod: TimeCorrectionWorkPeriod,
 	employeeTimezone: string,
 ): TimeCorrectionFormValues {
+	const clockIn = getTimeCorrectionEndpointValues(
+		workPeriod.startTime,
+		employeeTimezone,
+	);
+	const clockOut = workPeriod.endTime
+		? getTimeCorrectionEndpointValues(workPeriod.endTime, employeeTimezone)
+		: null;
 	return {
-		clockInDate: formatDateInZone(workPeriod.startTime, employeeTimezone),
-		clockInTime: formatTimeInZone(workPeriod.startTime, employeeTimezone),
-		clockOutDate: workPeriod.endTime ? formatDateInZone(workPeriod.endTime, employeeTimezone) : "",
-		clockOutTime: workPeriod.endTime ? formatTimeInZone(workPeriod.endTime, employeeTimezone) : "",
+		clockInDate: clockIn.date,
+		clockInTime: clockIn.time,
+		clockOutDate: clockOut?.date ?? "",
+		clockOutTime: clockOut?.time ?? "",
 		reason: workPeriod.clockOut?.notes || "",
+		workLocationType: isWorkLocationType(workPeriod.workLocationType)
+			? workPeriod.workLocationType
+			: normalizeWorkLocationType(workPeriod.workLocationType),
+		workCategoryId: workPeriod.workCategoryId,
 	};
+}
+
+export function hasTimeCorrectionChanges(params: {
+	workPeriod: TimeCorrectionWorkPeriod;
+	employeeTimezone: string;
+	values: TimeCorrectionFormValues;
+}): boolean {
+	const currentValues = getTimeCorrectionDefaultValues(
+		params.workPeriod,
+		params.employeeTimezone,
+	);
+
+	return (
+		params.values.clockInDate !== currentValues.clockInDate ||
+		params.values.clockInTime !== currentValues.clockInTime ||
+		params.values.clockOutDate !== currentValues.clockOutDate ||
+		params.values.clockOutTime !== currentValues.clockOutTime ||
+		params.values.workLocationType !== currentValues.workLocationType ||
+		params.values.workCategoryId !== currentValues.workCategoryId
+	);
 }
 
 export function isDirectSameDayEdit(params: {
@@ -53,7 +101,8 @@ export function isDirectSameDayEdit(params: {
 
 	return (
 		params.values.clockInDate === originalClockInDate &&
-		(!params.workPeriod.endTime || params.values.clockOutDate === originalClockOutDate)
+		(!params.workPeriod.endTime ||
+			params.values.clockOutDate === originalClockOutDate)
 	);
 }
 

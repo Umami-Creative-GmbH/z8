@@ -2,6 +2,7 @@
 
 import { IconLoader2, IconTag } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useId } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
@@ -39,6 +40,8 @@ interface WorkCategorySelectorProps {
 	 * Whether to show the label
 	 */
 	showLabel?: boolean;
+	/** Whether changes update the last-used category preference */
+	persistPreference?: boolean;
 }
 
 interface WorkCategorySelectorViewProps extends WorkCategorySelectorProps {
@@ -62,11 +65,13 @@ export function WorkCategorySelectorView({
 	onValueChange,
 	disabled = false,
 	showLabel = true,
+	persistPreference = true,
 	categories,
 	isLoading,
 	isError,
 }: WorkCategorySelectorViewProps) {
 	const { t } = useTranslate();
+	const triggerId = useId();
 
 	// Build a Map for O(1) category lookups
 	const categoriesMap = new Map(categories.map((c) => [c.id, c]));
@@ -74,10 +79,10 @@ export function WorkCategorySelectorView({
 	// Save selected category to localStorage and update cache
 	const handleValueChange = (newValue: string) => {
 		if (newValue === "none") {
-			writeLastWorkCategoryId(undefined);
+			if (persistPreference) writeLastWorkCategoryId(undefined);
 			onValueChange(undefined);
 		} else {
-			writeLastWorkCategoryId(newValue);
+			if (persistPreference) writeLastWorkCategoryId(newValue);
 			onValueChange(newValue);
 		}
 	};
@@ -112,17 +117,26 @@ export function WorkCategorySelectorView({
 	return (
 		<div className="grid gap-2">
 			{showLabel && (
-				<Label className="text-sm text-foreground">
+				<Label htmlFor={triggerId} className="text-sm text-foreground">
 					{t("timeTracking.workCategory", "Work Category")}
 				</Label>
 			)}
-			<Select value={value ?? "none"} onValueChange={handleValueChange} disabled={disabled}>
-				<SelectTrigger className="w-full">
-					<SelectValue placeholder={t("timeTracking.selectCategory", "Select a category")}>
+			<Select
+				value={value ?? "none"}
+				onValueChange={handleValueChange}
+				disabled={disabled}
+			>
+				<SelectTrigger id={triggerId} className="w-full">
+					<SelectValue
+						placeholder={t("timeTracking.selectCategory", "Select a category")}
+					>
 						{value ? (
 							<CategoryOption
 								category={categoriesMap.get(value)}
-								unknownLabel={t("timeTracking.unknownCategory", "Unknown category")}
+								unknownLabel={t(
+									"timeTracking.unknownCategory",
+									"Unknown category",
+								)}
 							/>
 						) : (
 							<span className="text-muted-foreground">
@@ -142,7 +156,10 @@ export function WorkCategorySelectorView({
 						<SelectItem key={category.id} value={category.id}>
 							<CategoryOption
 								category={category}
-								unknownLabel={t("timeTracking.unknownCategory", "Unknown category")}
+								unknownLabel={t(
+									"timeTracking.unknownCategory",
+									"Unknown category",
+								)}
 							/>
 						</SelectItem>
 					))}
@@ -168,7 +185,10 @@ function CategoryOption({
 	return (
 		<div className="flex items-center gap-2">
 			{category.color ? (
-				<div className="size-3 rounded-full" style={{ backgroundColor: category.color }} />
+				<div
+					className="size-3 rounded-full"
+					style={{ backgroundColor: category.color }}
+				/>
 			) : (
 				<IconTag className="size-3 text-muted-foreground" />
 			)}

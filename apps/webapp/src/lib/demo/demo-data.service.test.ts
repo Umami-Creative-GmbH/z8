@@ -617,6 +617,8 @@ describe("generateDemoPendingTimeCorrectionApprovals", () => {
 				approvalStatus: "approved",
 				pendingChanges: null,
 				deletedAt: null,
+				workLocationType: "office",
+				workCategoryId: null,
 			},
 		];
 		mocks.originalTimeEntries = [
@@ -746,16 +748,42 @@ describe("generateDemoPendingTimeCorrectionApprovals", () => {
 				workPeriodId: "10000000-0000-4000-8000-000000000001",
 				defaultApproverId: "20000000-0000-4000-8000-000000000002",
 				submissionId: expect.stringMatching(/^[0-9a-f-]{36}$/),
-				submissionKey: expect.stringContaining("time-correction-cycle:v1:"),
+				submissionKey: expect.stringContaining("time-correction-cycle:v2:"),
 				correction: {
 					action: "edit",
 					clockInCorrectionId: mocks.insertedTimeEntries[0]?.id,
+					workLocationType: "office",
+					workCategoryId: null,
 				},
 			}),
 		);
 		expect(mocks.insertedApprovals).toHaveLength(0);
 		expect(mocks.insertedNotifications).toHaveLength(
 			mode === "legacy" || mode === "shadow" || mode === "ready" ? 1 : 0,
+		);
+	});
+
+	it("normalizes historical undefined work metadata at the v2 boundary", async () => {
+		const { generateDemoPendingTimeCorrectionApprovals } = await import(
+			"./demo-data.service"
+		);
+		seedCorrectionEvidence();
+		mocks.lockedWorkPeriod = {
+			...mocks.lockedWorkPeriod,
+			workLocationType: undefined,
+			workCategoryId: undefined,
+		};
+
+		await generateDemoPendingTimeCorrectionApprovals(options);
+
+		expect(mocks.executeSubmission).toHaveBeenCalledWith(
+			expect.objectContaining({
+				submissionKey: expect.stringMatching(/^time-correction-cycle:v2:/),
+				correction: expect.objectContaining({
+					workLocationType: "office",
+					workCategoryId: null,
+				}),
+			}),
 		);
 	});
 

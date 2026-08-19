@@ -1,3 +1,4 @@
+import { Temporal } from "temporal-polyfill";
 import { instantFromDB, instantToDB } from "@/lib/datetime/drizzle-adapter";
 import {
 	compareInstants,
@@ -11,6 +12,7 @@ import { parseIanaTimeZone } from "@/lib/timezone/validation";
 
 const RFC3339_WITH_EXPLICIT_OFFSET =
 	/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+const MAX_WORK_PERIOD_DURATION = Temporal.Duration.from({ hours: 24 });
 
 export interface TimeCorrectionTemporalEndpoint {
 	readonly id: string;
@@ -110,6 +112,15 @@ export function validateTimeCorrectionRange(
 ): void {
 	if (clockOut && compareInstants(clockIn, clockOut) >= 0) {
 		throw new RangeError("Clock out time must be after clock in time");
+	}
+	if (
+		clockOut &&
+		Temporal.Duration.compare(
+			clockIn.until(clockOut),
+			MAX_WORK_PERIOD_DURATION,
+		) > 0
+	) {
+		throw new RangeError("Work period cannot exceed 24 hours");
 	}
 }
 

@@ -16,6 +16,8 @@ const workPeriod: WorkPeriodData = {
 	durationMinutes: 145,
 	approvalStatus: "approved",
 	approvalRequestId: null,
+	workLocationType: "remote",
+	workCategoryId: "category-1",
 	clockIn: {
 		id: "clock-in-1",
 		isSuperseded: false,
@@ -104,5 +106,30 @@ describe("getTimeEntriesColumns", () => {
 		);
 
 		expect(screen.getByText("03/05/2026")).toBeTruthy();
+	});
+
+	it("passes complete period metadata to the edit renderer", () => {
+		const renderEditAction = vi.fn();
+		const columns = getTimeEntriesColumns({
+			t,
+			locale: "en-US",
+			employeeTimezone: "Europe/Berlin",
+			timeFormat: "24h",
+			hasManager: true,
+			renderEditAction,
+		});
+		const actions = columns.find((column) => column.id === "actions");
+
+		if (typeof actions?.cell === "function") {
+			actions.cell({ row: { original: workPeriod } } as never);
+		}
+
+		expect(renderEditAction).toHaveBeenCalledWith(
+			expect.objectContaining({
+				workLocationType: "remote",
+				workCategoryId: "category-1",
+			}),
+			expect.any(Boolean),
+		);
 	});
 });

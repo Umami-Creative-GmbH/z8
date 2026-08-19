@@ -23,6 +23,11 @@ export interface DisplayContext {
 	timeFormat: "12h" | "24h";
 }
 
+export interface LocalMinuteFields {
+	date: string;
+	time: string;
+}
+
 // temporal-spec 1.0.0 declares this runtime export as a namespace without its constructor value.
 const TemporalDateTimeFormat = (
 	TemporalPolyfill as unknown as {
@@ -81,6 +86,17 @@ export function formatInstant(
 	};
 
 	return new TemporalDateTimeFormat(context.locale, options).format(instant);
+}
+
+export function getInstantLocalMinuteFields(
+	instant: Instant,
+	timezone: string,
+): LocalMinuteFields {
+	const local = instant.toZonedDateTimeISO(parseTimeZone(timezone));
+	return {
+		date: local.toPlainDate().toString(),
+		time: `${String(local.hour).padStart(2, "0")}:${String(local.minute).padStart(2, "0")}`,
+	};
 }
 
 export function formatPlainDate(

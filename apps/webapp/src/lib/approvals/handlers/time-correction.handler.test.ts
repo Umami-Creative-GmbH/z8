@@ -168,6 +168,264 @@ describe("buildPendingCorrectionReview", () => {
 			isOrphaned: false,
 		});
 	});
+
+	it("keeps a current metadata-only request reviewable without endpoint rows", () => {
+		const review = buildPendingCorrectionReview(
+			{
+				...period,
+				workLocationType: "office",
+				workCategoryId: "30000000-0000-4000-8000-000000000001",
+			},
+			{
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						workLocationType: "home",
+						workCategoryId: null,
+					},
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: "30000000-0000-4000-8000-000000000001",
+					},
+				},
+			},
+			[],
+			new Map([
+				["30000000-0000-4000-8000-000000000001", "Training"],
+			]),
+		);
+
+		expect(review).toEqual({
+			action: "edit",
+			clockIn: null,
+			clockOut: null,
+			metadataChanges: {
+				workLocation: { original: "office", requested: "home" },
+				workCategory: {
+					original: {
+						state: "named",
+						id: "30000000-0000-4000-8000-000000000001",
+						name: "Training",
+					},
+					requested: { state: "none" },
+				},
+			},
+			isOrphaned: false,
+		});
+	});
+
+	it("omits unchanged work metadata and labels unavailable historical categories", () => {
+		const unchanged = buildPendingCorrectionReview(
+			{
+				...period,
+				workLocationType: "office",
+				workCategoryId: null,
+			},
+			{
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						workLocationType: "office",
+						workCategoryId: null,
+					},
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: null,
+					},
+				},
+			},
+			[],
+			new Map(),
+		);
+		const unavailable = buildPendingCorrectionReview(
+			{
+				...period,
+				workLocationType: "office",
+				workCategoryId: "30000000-0000-4000-8000-000000000099",
+			},
+			{
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						workLocationType: "office",
+						workCategoryId: null,
+					},
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: "30000000-0000-4000-8000-000000000099",
+					},
+				},
+			},
+			[],
+			new Map(),
+		);
+
+		expect(unchanged.metadataChanges).toBeUndefined();
+		expect(unavailable.metadataChanges?.workCategory).toEqual({
+			original: {
+				state: "unavailable",
+				id: "30000000-0000-4000-8000-000000000099",
+			},
+			requested: { state: "none" },
+		});
+	});
+
+	it("fails closed when current metadata has malformed original work evidence", () => {
+		const review = buildPendingCorrectionReview(
+			period,
+			{
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						workLocationType: "home",
+						workCategoryId: null,
+					},
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: "not-a-category-id",
+					},
+				},
+			},
+			[],
+		);
+
+		expect(review).toMatchObject({ isOrphaned: true });
+		expect(review.metadataChanges).toBeUndefined();
+	});
+
+	it("fails closed for malformed current metadata even with a matching correction row", () => {
+		const correction = {
+			id: "10000000-0000-4000-8000-000000000001",
+			timestamp: new Date("2026-05-22T14:15:00.000Z"),
+			replacesEntryId: "clock-in-original",
+			isSuperseded: false,
+		};
+		const review = buildPendingCorrectionReview(
+			period,
+			{
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						clockInCorrectionId: correction.id,
+						workLocationType: "home",
+					},
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: null,
+					},
+				},
+			},
+			[correction],
+		);
+
+		expect(review).toMatchObject({ isOrphaned: true });
+		expect(review.metadataChanges).toBeUndefined();
+	});
+
+	it("keeps malformed current metadata orphaned through handler classification", () => {
+		const correction = {
+			id: "10000000-0000-4000-8000-000000000001",
+			timestamp: new Date("2026-05-22T14:15:00.000Z"),
+			replacesEntryId: "clock-in-original",
+			isSuperseded: false,
+		};
+		const review = buildTimeApprovalReview(
+			period,
+			{
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						clockInCorrectionId: correction.id,
+						workLocationType: "home",
+					},
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: null,
+					},
+				},
+			},
+			[correction],
+		);
+
+		expect(review).toMatchObject({
+			kind: "unclassified",
+			isActionable: false,
+			pendingCorrection: { isOrphaned: true },
+		});
+	});
+
+	it.each([
+		["string root", "malformed"],
+		[
+			"original snapshot without a correction marker",
+			{
+				timeCorrectionOriginalWorkMetadata: {
+					workLocationType: "office",
+					workCategoryId: null,
+				},
+			},
+		],
+		[
+			"action merge",
+			{
+				timeCorrection: {
+					action: "merge",
+					clockInCorrectionId: "10000000-0000-4000-8000-000000000001",
+				},
+			},
+		],
+		["endpoint-free legacy marker", { timeCorrection: { action: "edit" } }],
+	] as const)("fails closed for explicit malformed %s with a matching relational candidate", (_label, metadata) => {
+		const correction = {
+			id: "10000000-0000-4000-8000-000000000001",
+			timestamp: new Date("2026-05-22T14:15:00.000Z"),
+			replacesEntryId: "clock-in-original",
+			isSuperseded: false,
+		};
+		const review = buildTimeApprovalReview(period, { metadata }, [correction]);
+
+		expect(review).toMatchObject({
+			kind: "unclassified",
+			isActionable: false,
+			pendingCorrection: { isOrphaned: true },
+		});
+	});
+
+	it("combines endpoint and changed work metadata in one review DTO", () => {
+		const correction = {
+			id: "10000000-0000-4000-8000-000000000001",
+			timestamp: new Date("2026-05-22T14:15:00.000Z"),
+			replacesEntryId: "clock-in-original",
+			isSuperseded: false,
+		};
+		const review = buildPendingCorrectionReview(
+			period,
+			{
+				metadata: {
+					timeCorrection: {
+						action: "edit",
+						clockInCorrectionId: correction.id,
+						workLocationType: "home",
+						workCategoryId: null,
+					},
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: null,
+					},
+				},
+			},
+			[correction],
+		);
+
+		expect(review).toMatchObject({
+			clockIn: { requested: correction.timestamp },
+			clockOut: null,
+			metadataChanges: {
+				workLocation: { original: "office", requested: "home" },
+			},
+			isOrphaned: false,
+		});
+	});
 });
 
 describe("shared time-entry approval presentation", () => {
@@ -265,7 +523,12 @@ describe("shared time-entry approval presentation", () => {
 	});
 
 	it.each([
-		["missing kind", { timeRequest: {} }, "Manual time entry: private reason"],
+		[
+			"missing kind",
+			{ timeRequest: {} },
+			"Manual time entry: private reason",
+			false,
+		],
 		[
 			"extra marker field",
 			{
@@ -275,6 +538,7 @@ describe("shared time-entry approval presentation", () => {
 				},
 			},
 			"Manual time entry: private reason",
+			false,
 		],
 		[
 			"foreign kind with correction evidence",
@@ -283,8 +547,9 @@ describe("shared time-entry approval presentation", () => {
 				timeCorrection: { clockInCorrectionId: "clock-in-correction" },
 			},
 			null,
+			true,
 		],
-	] as const)("fails closed for %s metadata instead of using weaker evidence", (_label, metadata, reason) => {
+	] as const)("fails closed for %s metadata instead of using weaker evidence", (_label, metadata, reason, hasMalformedCorrection) => {
 		const review = buildTimeApprovalReview(period, { metadata, reason }, [
 			{
 				id: "clock-in-correction",
@@ -298,7 +563,16 @@ describe("shared time-entry approval presentation", () => {
 			kind: "unclassified",
 			isActionable: false,
 		});
-		expect(review.pendingCorrection).toBeUndefined();
+		expect(review.pendingCorrection).toEqual(
+			hasMalformedCorrection
+				? {
+						action: "edit",
+						clockIn: null,
+						clockOut: null,
+						isOrphaned: true,
+					}
+				: undefined,
+		);
 	});
 
 	it.each([
@@ -308,10 +582,12 @@ describe("shared time-entry approval presentation", () => {
 				timeCorrection: { clockInCorrectionId: "clock-in-correction" },
 			},
 			reason: null,
+			hasMalformedCorrection: true,
 		},
 		{
 			metadata: { timeRequest: { kind: "manual_time_submission" } },
 			reason: "Clock-out requires approval (0-day policy)",
+			hasMalformedCorrection: false,
 		},
 	] as const)("keeps ambiguous or contradictory ordinary evidence unclassified", (request) => {
 		const review = buildTimeApprovalReview(period, request, []);
@@ -320,7 +596,9 @@ describe("shared time-entry approval presentation", () => {
 			kind: "unclassified",
 			isActionable: false,
 		});
-		expect(review.pendingCorrection).toBeUndefined();
+		expect(review.pendingCorrection?.isOrphaned).toBe(
+			request.hasMalformedCorrection ? true : undefined,
+		);
 	});
 
 	it.each([
@@ -487,6 +765,15 @@ describe("shared time-entry approval presentation", () => {
 			"eq(workPeriod.organizationId, params.organizationId)",
 		);
 	});
+
+	it("scopes category-name resolution to the requested organization", () => {
+		expect(source).toMatch(
+			/eq\(\s*workCategory\.organizationId,\s*params\.organizationId,?\s*\)/,
+		);
+		expect(source).toMatch(
+			/eq\(\s*workCategory\.organizationId,\s*period\.employee\.organizationId,?\s*\)/,
+		);
+	});
 });
 
 describe("resolved time approval timeline labels", () => {
@@ -603,6 +890,7 @@ function createSupersededHistoryDbService() {
 	const approvalChainStageFindFirst = vi.fn().mockResolvedValue(null);
 	const workPeriodFindMany = vi.fn().mockResolvedValue([period]);
 	const timeEntryFindMany = vi.fn().mockResolvedValue([supersededCorrection]);
+	const workCategoryFindMany = vi.fn().mockResolvedValue([]);
 	const dbService = {
 		db: {
 			query: {
@@ -636,6 +924,7 @@ function createSupersededHistoryDbService() {
 					findMany: timeEntryFindMany,
 					findFirst: vi.fn().mockResolvedValue(supersededCorrection),
 				},
+				workCategory: { findMany: workCategoryFindMany },
 			},
 		},
 		query: <T>(name: string, fn: () => Promise<T>) => {
@@ -653,6 +942,7 @@ function createSupersededHistoryDbService() {
 		queryNames,
 		request,
 		timeEntryFindMany,
+		workCategoryFindMany,
 		workPeriodFindMany,
 	};
 }
@@ -1087,6 +1377,44 @@ describe("superseded correction history regression", () => {
 			timeRequestActionable: false,
 		});
 		expect(detail.entity.pendingCorrection).toBeUndefined();
+	});
+
+	it("does not resolve a category name returned from another organization", async () => {
+		const fixture = createSupersededHistoryDbService();
+		const categoryId = "30000000-0000-4000-8000-000000000001";
+		fixture.request.reason = null;
+		fixture.request.metadata = {
+			timeCorrection: {
+				action: "edit",
+				workLocationType: "office",
+				workCategoryId: null,
+			},
+			timeCorrectionOriginalWorkMetadata: {
+				workLocationType: "office",
+				workCategoryId: categoryId,
+			},
+		};
+		fixture.workCategoryFindMany.mockResolvedValue([
+			{ id: categoryId, organizationId: "org-foreign", name: "Foreign Secret" },
+		]);
+
+		const detail = await Effect.runPromise(
+			TimeCorrectionHandler.getDetail("period-1", "org-1", {
+				approvalId: "approval-1",
+			}).pipe(Effect.provideService(DatabaseService, fixture.dbService)),
+		);
+
+		expect(fixture.workCategoryFindMany).toHaveBeenCalledOnce();
+		expect(detail.entity.pendingCorrection).toMatchObject({
+			metadataChanges: {
+				workCategory: {
+					original: { state: "unavailable", id: categoryId },
+					requested: { state: "none" },
+				},
+		},
+		isOrphaned: false,
+		});
+		expect(JSON.stringify(detail)).not.toContain("Foreign Secret");
 	});
 
 	it("defers subtype classification to the stable transaction boundary", async () => {

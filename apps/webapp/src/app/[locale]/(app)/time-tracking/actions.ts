@@ -804,12 +804,14 @@ export async function createTimeEntry(
 			timezone,
 			timezoneSource,
 		};
-		return transaction
+		const correction = await (transaction
 			? canonicalTimeEntryClient.createCorrectionEntry(
 					correctionInput,
 					transaction,
 				)
-			: canonicalTimeEntryClient.createCorrectionEntry(correctionInput);
+			: canonicalTimeEntryClient.createCorrectionEntry(correctionInput));
+		if (!correction) throw new Error("Correction entry was not created");
+		return correction;
 	}
 
 	const entryInput = {

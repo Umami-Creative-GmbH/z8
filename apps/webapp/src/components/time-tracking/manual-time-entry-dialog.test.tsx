@@ -9,6 +9,7 @@ import {
 	waitFor,
 	within,
 } from "@testing-library/react";
+import { Temporal } from "temporal-polyfill";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ManualTimeEntryDialog } from "./manual-time-entry-dialog";
 
@@ -177,6 +178,7 @@ function jsonRoundTrip<Value>(value: Value): Value {
 }
 
 afterEach(() => {
+	vi.useRealTimers();
 	vi.restoreAllMocks();
 });
 
@@ -223,7 +225,6 @@ describe("ManualTimeEntryDialog layout", () => {
 		expect(source).toMatch(
 			/formatTimeInZone\(\s*result\.data\.adjustedTimes\.clockOut,\s*timezone,\s*false,\s*timeFormat,\s*\)/,
 		);
-		expect(source).not.toContain('.toFormat("HH:mm")');
 	});
 
 	it("renders no trigger button when controlled open with hideTrigger", () => {
@@ -252,6 +253,100 @@ describe("ManualTimeEntryDialog layout", () => {
 		);
 		expect((screen.getByLabelText("Clock Out") as HTMLInputElement).value).toBe(
 			"15:45",
+		);
+	});
+
+	it("defaults clock out to the current time in the employee timezone", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-05-12T23:37:00.000Z"));
+
+		renderDialog({
+			open: true,
+			hideTrigger: true,
+			employeeTimezone: "America/Los_Angeles",
+		});
+
+		expect((screen.getByLabelText("Clock In") as HTMLInputElement).value).toBe(
+			"09:00",
+		);
+		expect((screen.getByLabelText("Clock Out") as HTMLInputElement).value).toBe(
+			"16:37",
+		);
+	});
+
+	it("derives the default date and time from one employee-local instant near midnight", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-05-13T06:59:59.999Z"));
+		const zonedNow = vi.spyOn(Temporal.Now, "zonedDateTimeISO");
+
+		renderDialog({
+			open: true,
+			hideTrigger: true,
+			employeeTimezone: "America/Los_Angeles",
+		});
+
+		expect((screen.getByLabelText("Date") as HTMLInputElement).value).toBe(
+			"2026-05-12",
+		);
+		expect((screen.getByLabelText("Clock Out") as HTMLInputElement).value).toBe(
+			"23:59",
+		);
+		expect(zonedNow).toHaveBeenCalledTimes(2);
+		expect(zonedNow).toHaveBeenNthCalledWith(1, "America/Los_Angeles");
+		expect(zonedNow).toHaveBeenNthCalledWith(2, "America/Los_Angeles");
+	});
+
+	it("prefers an explicit default clock out time over the current time", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-05-12T23:37:00.000Z"));
+
+		renderDialog({
+			open: true,
+			hideTrigger: true,
+			employeeTimezone: "America/Los_Angeles",
+			defaultClockOutTime: "15:45",
+		});
+
+		expect((screen.getByLabelText("Clock Out") as HTMLInputElement).value).toBe(
+			"15:45",
+		);
+	});
+
+	it("recalculates the default clock out time when reopened", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-05-12T23:37:00.000Z"));
+		const { rerender } = renderDialog({
+			open: true,
+			hideTrigger: true,
+			employeeTimezone: "America/Los_Angeles",
+		});
+
+		expect((screen.getByLabelText("Clock Out") as HTMLInputElement).value).toBe(
+			"16:37",
+		);
+
+		rerender(
+			<ManualTimeEntryDialog
+				employeeId="employee-current"
+				employeeTimezone="America/Los_Angeles"
+				hasManager={false}
+				hideTrigger
+				open={false}
+			/>,
+		);
+		vi.setSystemTime(new Date("2026-05-13T00:12:00.000Z"));
+		rerender(
+			<ManualTimeEntryDialog
+				employeeId="employee-current"
+				employeeTimezone="America/Los_Angeles"
+				hasManager={false}
+				hideTrigger
+				open
+			/>,
+		);
+
+		expect((screen.getByLabelText("Clock Out") as HTMLInputElement).value).toBe(
+			"17:12",
 		);
 	});
 

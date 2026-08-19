@@ -5,12 +5,18 @@ describe("classifyTimeApprovalRequest", () => {
 	const clockInCorrectionId = "10000000-0000-4000-8000-000000000001";
 	const clockOutCorrectionId = "10000000-0000-4000-8000-000000000002";
 	const foreignCorrectionId = "10000000-0000-4000-8000-000000000003";
+	const workCategoryId = "20000000-0000-4000-8000-000000000001";
+	const editCorrectionMarker = {
+		action: "edit",
+		workLocationType: "office",
+		workCategoryId: null,
+	} as const;
 
 	it("leaves correction and ordinary metadata conflicts unclassified", () => {
 		expect(
 			classifyTimeApprovalRequest({
 				metadata: {
-					timeCorrection: { action: "edit" },
+					timeCorrection: editCorrectionMarker,
 					timeRequest: { kind: "manual_time_submission" },
 				},
 				reason: "Manual time entry: missed punch",
@@ -54,17 +60,98 @@ describe("classifyTimeApprovalRequest", () => {
 	it("retains correction classification when no ordinary evidence conflicts", () => {
 		expect(
 			classifyTimeApprovalRequest({
-				metadata: { timeCorrection: { action: "edit" } },
+				metadata: {
+					timeCorrection: {
+						...editCorrectionMarker,
+						workLocationType: "home",
+						workCategoryId,
+					},
+				},
 			}),
 		).toBe("time_correction");
 	});
+
+	it("classifies historical correction metadata without work metadata", () => {
+		expect(
+			classifyTimeApprovalRequest({
+				metadata: {
+					timeCorrection: { action: "edit", clockInCorrectionId },
+				},
+				verifiedRelationalCorrectionIds: [clockInCorrectionId],
+				verifiedRelationalCorrectionIdsByEndpoint: {
+					clockIn: [clockInCorrectionId],
+					clockOut: [],
+				},
+			}),
+		).toBe("time_correction");
+	});
+
+	it("classifies descriptor snapshots without reading proxy fields", () => {
+		let reads = 0;
+		const marker = new Proxy(editCorrectionMarker, {
+			get() {
+				reads += 1;
+				throw new Error("hostile marker read");
+			},
+		});
+
+		expect(
+			classifyTimeApprovalRequest({ metadata: { timeCorrection: marker } }),
+		).toBe("time_correction");
+		expect(reads).toBe(0);
+
+		let accessorReads = 0;
+		const accessorMarker = Object.defineProperty(
+			{
+				workLocationType: "office",
+				workCategoryId: null,
+			},
+			"action",
+			{
+				enumerable: true,
+				get() {
+					accessorReads += 1;
+					throw new Error("hostile marker accessor");
+				},
+			},
+		);
+		expect(
+			classifyTimeApprovalRequest({
+				metadata: { timeCorrection: accessorMarker },
+			}),
+		).toBe("unclassified");
+		expect(accessorReads).toBe(0);
+	});
+
+	it.each(["getPrototypeOf", "getOwnPropertyDescriptor"] as const)(
+		"fails closed when outer metadata %s throws",
+		(trap) => {
+			const metadata = new Proxy(
+				{ timeCorrection: editCorrectionMarker },
+				trap === "getPrototypeOf"
+					? {
+							getPrototypeOf() {
+								throw new Error("hostile metadata prototype");
+							},
+						}
+					: {
+							getOwnPropertyDescriptor() {
+								throw new Error("hostile metadata descriptor");
+							},
+						},
+			);
+
+			expect(() => classifyTimeApprovalRequest({ metadata })).not.toThrow();
+			expect(classifyTimeApprovalRequest({ metadata })).toBe("unclassified");
+		},
+	);
 
 	it("classifies explicit correction IDs only with exact verified relational evidence", () => {
 		expect(
 			classifyTimeApprovalRequest({
 				metadata: {
 					timeCorrection: {
-						action: "edit",
+						...editCorrectionMarker,
 						clockInCorrectionId,
 						clockOutCorrectionId,
 					},
@@ -79,6 +166,41 @@ describe("classifyTimeApprovalRequest", () => {
 				},
 			}),
 		).toBe("time_correction");
+	});
+
+	it("classifies delete correction metadata only with both endpoint IDs", () => {
+		const evidence = {
+			verifiedRelationalCorrectionIds: [
+				clockInCorrectionId,
+				clockOutCorrectionId,
+			],
+			verifiedRelationalCorrectionIdsByEndpoint: {
+				clockIn: [clockInCorrectionId],
+				clockOut: [clockOutCorrectionId],
+			},
+		};
+		for (const timeCorrection of [
+			{
+				...editCorrectionMarker,
+				action: "delete" as const,
+				clockInCorrectionId,
+				clockOutCorrectionId,
+			},
+			{
+				action: "delete" as const,
+				clockInCorrectionId,
+				clockOutCorrectionId,
+			},
+		]) {
+			expect(
+				classifyTimeApprovalRequest({
+					metadata: {
+						timeCorrection,
+					},
+					...evidence,
+				}),
+			).toBe("time_correction");
+		}
 	});
 
 	it.each([
@@ -107,7 +229,7 @@ describe("classifyTimeApprovalRequest", () => {
 			classifyTimeApprovalRequest({
 				metadata: {
 					timeCorrection: {
-						action: "edit",
+						...editCorrectionMarker,
 						clockInCorrectionId,
 						clockOutCorrectionId,
 					},
@@ -134,7 +256,7 @@ describe("classifyTimeApprovalRequest", () => {
 			classifyTimeApprovalRequest({
 				metadata: {
 					timeCorrection: {
-						action: "edit",
+							...editCorrectionMarker,
 						clockInCorrectionId,
 						clockOutCorrectionId,
 					},
@@ -147,12 +269,59 @@ describe("classifyTimeApprovalRequest", () => {
 	it.each([
 		["non-object metadata", "malformed"],
 		["missing correction action", { timeCorrection: {} }],
-		["unknown correction action", { timeCorrection: { action: "merge" } }],
-		["delete without endpoint IDs", { timeCorrection: { action: "delete" } }],
+		[
+			"historical edit without endpoint IDs",
+			{ timeCorrection: { action: "edit" } },
+		],
+		[
+			"unknown correction action",
+			{
+				timeCorrection: {
+					...editCorrectionMarker,
+					action: "merge",
+				},
+			},
+		],
+		[
+			"missing work location",
+			{ timeCorrection: { action: "edit", workCategoryId: null } },
+		],
+		[
+			"missing work category",
+			{ timeCorrection: { action: "edit", workLocationType: "office" } },
+		],
+		[
+			"invalid work location",
+			{
+				timeCorrection: {
+					...editCorrectionMarker,
+					workLocationType: "field",
+				},
+			},
+		],
+		[
+			"invalid work category",
+			{
+				timeCorrection: {
+					...editCorrectionMarker,
+					workCategoryId: "category-1",
+				},
+			},
+		],
+		[
+			"delete without endpoint IDs",
+			{
+				timeCorrection: {
+					...editCorrectionMarker,
+					action: "delete",
+				},
+			},
+		],
 		[
 			"delete with one endpoint ID",
 			{
 				timeCorrection: {
+					...editCorrectionMarker,
 					action: "delete",
 					clockInCorrectionId,
 				},
@@ -160,7 +329,12 @@ describe("classifyTimeApprovalRequest", () => {
 		],
 		[
 			"extra correction field",
-			{ timeCorrection: { action: "edit", diagnostics: "private" } },
+			{
+				timeCorrection: {
+					...editCorrectionMarker,
+					diagnostics: "private",
+				},
+			},
 		],
 	] as const)("does not fall back from %s", (_label, metadata) => {
 		expect(
@@ -192,7 +366,7 @@ describe("classifyTimeApprovalRequest", () => {
 	] as const)("retains correction precedence over legacy-only $name", (legacy) => {
 		expect(
 			classifyTimeApprovalRequest({
-				metadata: { timeCorrection: { action: "edit" } },
+					metadata: { timeCorrection: editCorrectionMarker },
 				reason: "reason" in legacy ? legacy.reason : undefined,
 				pendingChanges:
 					"pendingChanges" in legacy ? legacy.pendingChanges : undefined,
@@ -206,7 +380,7 @@ describe("classifyTimeApprovalRequest", () => {
 			input: {
 				metadata: {
 					timeRequest: { kind: "manual_time_submission" },
-					timeCorrection: { action: "edit" },
+					timeCorrection: editCorrectionMarker,
 				},
 			},
 		},
