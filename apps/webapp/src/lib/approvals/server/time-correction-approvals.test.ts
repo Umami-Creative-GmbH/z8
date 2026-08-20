@@ -29,14 +29,14 @@ const {
 	markEmployeeWorkBalanceDirty,
 	onTimeCorrectionApproved,
 	onTimeCorrectionRejected,
+	loggerWarn,
+	testEnv,
 } = vi.hoisted(() => ({
 	markEmployeeWorkBalanceDirty: vi.fn().mockResolvedValue(undefined),
 	onTimeCorrectionApproved: vi.fn(),
 	onTimeCorrectionRejected: vi.fn(),
-}));
-
-vi.mock("@/env", () => ({
-	env: {
+	loggerWarn: vi.fn(),
+	testEnv: {
 		BETTER_AUTH_SECRET: "test-secret",
 		S3_PUBLIC_BUCKET: "test-bucket",
 		S3_PUBLIC_ACCESS_KEY_ID: "test-access-key",
@@ -45,8 +45,21 @@ vi.mock("@/env", () => ({
 		S3_PUBLIC_URL: "https://example.com",
 		S3_PUBLIC_REGION: "us-east-1",
 		S3_PUBLIC_FORCE_PATH_STYLE: "true",
-		NODE_ENV: "test",
+		NODE_ENV: "test" as string,
 	},
+}));
+
+vi.mock("@/env", () => ({
+	env: testEnv,
+}));
+
+vi.mock("@/lib/logger", () => ({
+	createLogger: vi.fn(() => ({
+		debug: vi.fn(),
+		info: vi.fn(),
+		warn: loggerWarn,
+		error: vi.fn(),
+	})),
 }));
 
 vi.mock("@/lib/notifications/triggers", () => ({
@@ -123,6 +136,8 @@ beforeEach(() => {
 	markEmployeeWorkBalanceDirty.mockClear();
 	onTimeCorrectionApproved.mockClear();
 	onTimeCorrectionRejected.mockClear();
+	loggerWarn.mockClear();
+	testEnv.NODE_ENV = "test";
 });
 
 function requiredValue<T>(value: T | undefined): T {
@@ -8257,6 +8272,7 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 	});
 
 	it("rejects a completed period whose canonical record is missing", async () => {
+		testEnv.NODE_ENV = "production";
 		const correction = {
 			action: "edit" as const,
 			clockInCorrectionId: ids.correctionIn,
@@ -8292,6 +8308,26 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 			message: "Time correction source changed during finalization",
 			details: { reason: "missing_canonical_record" },
 		});
+		expect(loggerWarn).toHaveBeenCalledExactlyOnceWith(
+			{
+				reason: "missing_canonical_record",
+				transitionKind: "approve",
+				workflowMode: "canonical",
+				correctionContract: "current",
+				periodShape: {
+					isActive: false,
+					hasClockOut: true,
+					hasEndTime: true,
+					hasDuration: true,
+					hasCanonicalRecord: false,
+				},
+				correctionEndpoints: {
+					hasClockIn: true,
+					hasClockOut: false,
+				},
+			},
+			"Time correction finalization conflict",
+		);
 		expect(mutations).toEqual([]);
 	});
 
