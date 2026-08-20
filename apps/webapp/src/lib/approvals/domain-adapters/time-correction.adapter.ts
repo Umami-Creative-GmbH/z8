@@ -57,13 +57,13 @@ const TIMEZONE_SOURCES = new Set([
 
 type OvertimeRisk = "none" | "warning" | "violation";
 
-export interface TimeCorrectionApprovalSource {
+interface TimeCorrectionApprovalSourceShape {
 	id: string;
 	organizationId: string;
 	employeeId: string;
 	requesterUserId: string;
 	approvalWorkflowId: string;
-	canonicalRecordId: string;
+	canonicalRecordId: string | null;
 	correction: TimeCorrectionWorkflowPayload["timeCorrection"];
 	originalWorkMetadata?: TimeCorrectionOriginalWorkMetadata;
 	clockIn: TimeCorrectionEndpointEvidence | null;
@@ -95,11 +95,32 @@ export interface TimeCorrectionApprovalSource {
 		endAt: Instant | null;
 		durationMinutes: number | null;
 		approvalState: "approved";
-	};
-	canonicalWork: CancelledTimeCorrectionSourceEvidence["canonicalWork"];
+	} | null;
+	canonicalWork: CancelledTimeCorrectionSourceEvidence["canonicalWork"] | null;
 	currentEndpoints: CancelledTimeCorrectionSourceEvidence["currentEndpoints"];
 	pendingCorrections: CancelledTimeCorrectionSourceEvidence["pendingCorrections"];
 }
+
+export type TimeCorrectionApprovalSource = Omit<
+	TimeCorrectionApprovalSourceShape,
+	"canonicalRecordId" | "canonicalRecord" | "canonicalWork"
+> &
+	(
+		| {
+				canonicalRecordId: string;
+				canonicalRecord: NonNullable<
+					TimeCorrectionApprovalSourceShape["canonicalRecord"]
+				>;
+				canonicalWork: NonNullable<
+					TimeCorrectionApprovalSourceShape["canonicalWork"]
+				>;
+		  }
+		| {
+				canonicalRecordId: null;
+				canonicalRecord: null;
+				canonicalWork: null;
+		  }
+	);
 
 export interface DeleteCancelledTimeCorrectionInput {
 	dbService: ApprovalDbService;
@@ -558,6 +579,12 @@ export function createTimeCorrectionApprovalAdapter(
 				)
 				.for("update");
 			const period = periodRows[0];
+			const isUnmaterializedActivePeriod =
+				period?.isActive === true &&
+				period.clockOutId === null &&
+				period.endTime === null &&
+				period.durationMinutes === null &&
+				period.canonicalRecordId === null;
 			if (
 				periodRows.length !== 1 ||
 				!period ||
@@ -565,7 +592,7 @@ export function createTimeCorrectionApprovalAdapter(
 				period.organizationId !== input.organizationId ||
 				period.employeeId !== requesterEmployeeId ||
 				period.approvalWorkflowId !== input.workflow.id ||
-				!period.canonicalRecordId ||
+				(!period.canonicalRecordId && !isUnmaterializedActivePeriod) ||
 				period.approvalStatus !== "approved" ||
 				period.pendingChanges !== null ||
 				period.deletedAt !== null ||
@@ -639,38 +666,42 @@ export function createTimeCorrectionApprovalAdapter(
 				predecessorRows.map((entry) => [entry.id, entry]),
 			);
 			if (predecessorsById.size !== predecessorIds.length) return fail();
-			const canonicalRows = await db
-				.select()
-				.from(timeRecord)
-				.where(
-					and(
-						eq(timeRecord.id, period.canonicalRecordId),
-						eq(timeRecord.organizationId, input.organizationId),
-						eq(timeRecord.employeeId, requesterEmployeeId),
-						eq(timeRecord.recordKind, "work"),
-					),
-				)
-				.orderBy(asc(timeRecord.id))
-				.for("update");
+			const canonicalRows = period.canonicalRecordId
+				? await db
+						.select()
+						.from(timeRecord)
+						.where(
+							and(
+								eq(timeRecord.id, period.canonicalRecordId),
+								eq(timeRecord.organizationId, input.organizationId),
+								eq(timeRecord.employeeId, requesterEmployeeId),
+								eq(timeRecord.recordKind, "work"),
+							),
+						)
+						.orderBy(asc(timeRecord.id))
+						.for("update")
+				: [];
 			const canonical = canonicalRows[0];
-			const canonicalWorkRows = await db
-				.select({
-					recordId: timeRecordWork.recordId,
-					organizationId: timeRecordWork.organizationId,
-					recordKind: timeRecordWork.recordKind,
-					workLocationType: timeRecordWork.workLocationType,
-					workCategoryId: timeRecordWork.workCategoryId,
-				})
-				.from(timeRecordWork)
-				.where(
-					and(
-						eq(timeRecordWork.recordId, period.canonicalRecordId),
-						eq(timeRecordWork.organizationId, input.organizationId),
-						eq(timeRecordWork.recordKind, "work"),
-					),
-				)
-				.orderBy(asc(timeRecordWork.recordId))
-				.for("update");
+			const canonicalWorkRows = period.canonicalRecordId
+				? await db
+						.select({
+							recordId: timeRecordWork.recordId,
+							organizationId: timeRecordWork.organizationId,
+							recordKind: timeRecordWork.recordKind,
+							workLocationType: timeRecordWork.workLocationType,
+							workCategoryId: timeRecordWork.workCategoryId,
+						})
+						.from(timeRecordWork)
+						.where(
+							and(
+								eq(timeRecordWork.recordId, period.canonicalRecordId),
+								eq(timeRecordWork.organizationId, input.organizationId),
+								eq(timeRecordWork.recordKind, "work"),
+							),
+						)
+						.orderBy(asc(timeRecordWork.recordId))
+						.for("update")
+				: [];
 			const canonicalWork = canonicalWorkRows[0];
 			const requester = await db.query.employee.findFirst({
 				where: and(
@@ -719,31 +750,35 @@ export function createTimeCorrectionApprovalAdapter(
 				membership.organizationId !== input.organizationId ||
 				membership.userId !== requester.userId ||
 				membership.status !== "approved" ||
-				canonicalRows.length !== 1 ||
-				!canonical ||
-				canonical.id !== period.canonicalRecordId ||
-				canonical.organizationId !== input.organizationId ||
-				canonical.employeeId !== requesterEmployeeId ||
-				canonical.recordKind !== "work" ||
-				canonical.approvalState !== period.approvalStatus ||
-				!sameInstant(canonical.startAt, period.startTime) ||
-				!sameInstant(canonical.endAt, period.endTime) ||
-				canonical.durationMinutes !== period.durationMinutes ||
-				canonicalWorkRows.length !== 1 ||
-				!canonicalWork ||
-				canonicalWork.recordId !== period.canonicalRecordId ||
-				canonicalWork.organizationId !== input.organizationId ||
-				canonicalWork.recordKind !== "work" ||
-				canonicalWork.workLocationType !== (period.workLocationType ?? null) ||
-				canonicalWork.workCategoryId !== (period.workCategoryId ?? null) ||
+				(period.canonicalRecordId !== null &&
+					(canonicalRows.length !== 1 ||
+						!canonical ||
+						canonical.id !== period.canonicalRecordId ||
+						canonical.organizationId !== input.organizationId ||
+						canonical.employeeId !== requesterEmployeeId ||
+						canonical.recordKind !== "work" ||
+						canonical.approvalState !== period.approvalStatus ||
+						!sameInstant(canonical.startAt, period.startTime) ||
+						!sameInstant(canonical.endAt, period.endTime) ||
+						canonical.durationMinutes !== period.durationMinutes ||
+						canonicalWorkRows.length !== 1 ||
+						!canonicalWork ||
+						canonicalWork.recordId !== period.canonicalRecordId ||
+						canonicalWork.organizationId !== input.organizationId ||
+						canonicalWork.recordKind !== "work" ||
+						canonicalWork.workLocationType !==
+							(period.workLocationType ?? null) ||
+						canonicalWork.workCategoryId !==
+							(period.workCategoryId ?? null))) ||
 				(originalWorkMetadata !== undefined &&
 					(normalizeWorkLocationType(period.workLocationType) !==
 						originalWorkMetadata.workLocationType ||
 						period.workCategoryId !== originalWorkMetadata.workCategoryId ||
-						normalizeWorkLocationType(canonicalWork.workLocationType) !==
-							originalWorkMetadata.workLocationType ||
-						canonicalWork.workCategoryId !==
-							originalWorkMetadata.workCategoryId)) ||
+						(canonicalWork !== undefined &&
+							(normalizeWorkLocationType(canonicalWork.workLocationType) !==
+								originalWorkMetadata.workLocationType ||
+								canonicalWork.workCategoryId !==
+									originalWorkMetadata.workCategoryId)))) ||
 				entries.length !== entryIds.length
 			) {
 				return fail();
@@ -859,24 +894,28 @@ export function createTimeCorrectionApprovalAdapter(
 					workLocationType: period.workLocationType ?? null,
 					workCategoryId: period.workCategoryId ?? null,
 				},
-				canonicalRecord: {
-					id: canonical.id,
-					employeeId: canonical.employeeId,
-					recordKind: "work",
-					startAt: instantFromTimeCorrectionBoundary(canonical.startAt),
-					endAt: canonical.endAt
-						? instantFromTimeCorrectionBoundary(canonical.endAt)
-						: null,
-					durationMinutes: canonical.durationMinutes,
-					approvalState: "approved",
-				},
-				canonicalWork: {
-					recordId: canonicalWork.recordId,
-					organizationId: canonicalWork.organizationId,
-					recordKind: "work",
-					workLocationType: canonicalWork.workLocationType,
-					workCategoryId: canonicalWork.workCategoryId,
-				},
+				canonicalRecord: canonical
+					? {
+							id: canonical.id,
+							employeeId: canonical.employeeId,
+							recordKind: "work",
+							startAt: instantFromTimeCorrectionBoundary(canonical.startAt),
+							endAt: canonical.endAt
+								? instantFromTimeCorrectionBoundary(canonical.endAt)
+								: null,
+							durationMinutes: canonical.durationMinutes,
+							approvalState: "approved",
+						}
+					: null,
+				canonicalWork: canonicalWork
+					? {
+							recordId: canonicalWork.recordId,
+							organizationId: canonicalWork.organizationId,
+							recordKind: "work",
+							workLocationType: canonicalWork.workLocationType,
+							workCategoryId: canonicalWork.workCategoryId,
+						}
+					: null,
 				currentEndpoints: {
 					clockIn: cancellationEntryEvidence(originalIn, "clock_in"),
 					clockOut: originalOut
@@ -969,6 +1008,13 @@ export function createTimeCorrectionApprovalAdapter(
 		async finalizeTerminal(input) {
 			await this.preflightTerminal(input);
 			if (input.transition.kind === "cancel_pending") {
+				if (
+					!input.source.canonicalRecordId ||
+					!input.source.canonicalRecord ||
+					!input.source.canonicalWork
+				) {
+					return fail("Time correction cancellation source is invalid");
+				}
 				await dependencies.deleteCancelledCorrections({
 					dbService: input.dbService,
 					organizationId: input.organizationId,
@@ -994,6 +1040,26 @@ export function createTimeCorrectionApprovalAdapter(
 					: input.transition.kind === "reject"
 						? { kind: "reject" as const, reason: input.transition.reason }
 						: fail("Unsupported time correction terminal transition");
+			const expectedSource = {
+				employeeId: input.source.employeeId,
+				approvalWorkflowId: input.source.approvalWorkflowId,
+				...input.source.workPeriod,
+				currentEndpoints: input.source.currentEndpoints,
+				pendingCorrections: input.source.pendingCorrections,
+				...(input.source.canonicalRecordId === null
+					? {
+							canonicalRecordId: null,
+							canonicalRecord: null,
+							canonicalWork: null,
+						}
+					: {
+							canonicalRecordId: input.source.canonicalRecordId,
+							canonicalRecord: input.source.canonicalRecord,
+							canonicalWork: input.source.canonicalWork,
+						}),
+			} satisfies NonNullable<
+				FinalizeTimeCorrectionTerminalInput["expectedSource"]
+			>;
 			await dependencies.finalizeTimeCorrectionTerminal({
 				dbService: input.dbService as unknown as ServerApprovalDbService,
 				organizationId: input.organizationId,
@@ -1001,16 +1067,7 @@ export function createTimeCorrectionApprovalAdapter(
 				expectedApprovalWorkflowId: input.workflow.id,
 				expectedApprovalWorkflowVersion: input.workflow.version,
 				expectedRequesterEmployeeId: input.source.employeeId,
-				expectedSource: {
-					employeeId: input.source.employeeId,
-					approvalWorkflowId: input.source.approvalWorkflowId,
-					canonicalRecordId: input.source.canonicalRecordId,
-					...input.source.workPeriod,
-					canonicalRecord: input.source.canonicalRecord,
-					canonicalWork: input.source.canonicalWork,
-					currentEndpoints: input.source.currentEndpoints,
-					pendingCorrections: input.source.pendingCorrections,
-				},
+				expectedSource,
 				...actor,
 				correction: input.source.correction,
 				expectedOriginalWorkMetadata: input.source.originalWorkMetadata,
