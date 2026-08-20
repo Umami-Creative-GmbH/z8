@@ -8313,7 +8313,10 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 					correction,
 				}),
 			),
-		).rejects.toThrow("Time correction source changed during finalization");
+		).rejects.toMatchObject({
+			message: "Time correction source changed during finalization",
+			details: { reason: "canonical_work_source_mismatch" },
+		});
 		expect(mutations).toEqual([]);
 	});
 

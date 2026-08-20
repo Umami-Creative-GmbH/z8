@@ -228,6 +228,18 @@ describe("startApprovalWorkflow", () => {
 		expect(startApprovalWorkflow).toBeTypeOf("function");
 	});
 
+	it("uses the injected submission instant", async () => {
+		const fixture = input();
+		const submittedAt = Temporal.Instant.from("2026-07-20T12:00:00Z");
+
+		const result = await startApprovalWorkflow({
+			...fixture.value,
+			nowInstant: () => submittedAt,
+		});
+
+		expect(result.snapshot.submittedAt).toEqual(submittedAt);
+	});
+
 	it("gives the context finalizer one detached frozen workflow view", async () => {
 		const fixture = input();
 		let returnedContext: Record<string, unknown> | undefined;

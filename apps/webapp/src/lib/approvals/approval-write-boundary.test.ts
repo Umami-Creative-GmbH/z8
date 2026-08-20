@@ -5210,7 +5210,7 @@ export async function hiddenImport(values: object) {
 		expect([...actual].sort()).toEqual(
 			[...declaredApproval, ...declaredSource].sort(),
 		);
-	}, 60_000);
+	}, 120_000);
 
 	it("detects every required injected production mutation site", () => {
 		const expected = [

@@ -15,6 +15,7 @@ import {
 	timeRecordWork,
 	workPeriod,
 } from "@/db/schema";
+import { env } from "@/env";
 import { getAbility } from "@/lib/auth-helpers";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
@@ -496,7 +497,9 @@ function originalWorkMetadataFromEvidence(
 ): TimeCorrectionOriginalWorkMetadata | undefined {
 	if (!value || typeof value !== "object" || Array.isArray(value)) {
 		if (!required) return undefined;
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict(
+			"invalid_original_work_metadata_container",
+		);
 	}
 	const descriptor = Object.getOwnPropertyDescriptor(
 		value,
@@ -504,15 +507,21 @@ function originalWorkMetadataFromEvidence(
 	);
 	if (!descriptor) {
 		if (!required) return undefined;
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict(
+			"missing_original_work_metadata_evidence",
+		);
 	}
 	if (!descriptor.enumerable || !("value" in descriptor)) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict(
+			"invalid_original_work_metadata_property",
+		);
 	}
 	try {
 		return normalizeTimeCorrectionOriginalWorkMetadata(descriptor.value);
 	} catch {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict(
+			"malformed_original_work_metadata",
+		);
 	}
 }
 
@@ -1342,10 +1351,16 @@ const TIME_CORRECTION_TIMEZONE_SOURCES = new Set([
 	"backfill",
 ]);
 
-function timeCorrectionFinalizationConflict(): ConflictError {
+function timeCorrectionFinalizationConflict(
+	reason = "unclassified_finalization_conflict",
+): ConflictError {
+	if (env.NODE_ENV === "production") {
+		logger.warn({ reason }, "Time correction finalization conflict");
+	}
 	return new ConflictError({
 		message: "Time correction source changed during finalization",
 		conflictType: "time_correction_finalization_conflict",
+		details: { reason },
 	});
 }
 
@@ -1354,7 +1369,7 @@ function requireSingleMutation(
 	expectedId: string,
 ): void {
 	if (rows.length !== 1 || rows[0]?.id !== expectedId) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict("mutation_cardinality_mismatch");
 	}
 }
 
@@ -1490,7 +1505,7 @@ async function validatePersistedTimeCorrectionEvidence(input: {
 				input.expectedApprovalWorkflowVersion < 1)) ||
 		(!input.legacyApprovalRequestId && !input.expectedApprovalWorkflowId)
 	) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict("approval_identity_mismatch");
 	}
 
 	let legacyRequester: string | null = null;
@@ -1528,7 +1543,9 @@ async function validatePersistedTimeCorrectionEvidence(input: {
 			request.requestedBy !== input.expectedRequesterEmployeeId ||
 			(!validTerminalLifecycle && !validPendingCompatibilityLifecycle)
 		) {
-			throw timeCorrectionFinalizationConflict();
+			throw timeCorrectionFinalizationConflict(
+				"legacy_approval_lifecycle_mismatch",
+			);
 		}
 		legacyRequester = request.requestedBy;
 		legacyTerminalLifecycle = validTerminalLifecycle;
@@ -1548,7 +1565,9 @@ async function validatePersistedTimeCorrectionEvidence(input: {
 					)
 				: sameCorrectionPayload(request.metadata, input.correction);
 		if (!metadataLessHistoricalRejection && !validMetadata) {
-			throw timeCorrectionFinalizationConflict();
+			throw timeCorrectionFinalizationConflict(
+				"legacy_correction_payload_mismatch",
+			);
 		}
 		const persistedOriginal = originalWorkMetadataFromEvidence(
 			request.metadata,
@@ -1560,7 +1579,9 @@ async function validatePersistedTimeCorrectionEvidence(input: {
 				input.expectedOriginalWorkMetadata,
 			)
 		) {
-			throw timeCorrectionFinalizationConflict();
+			throw timeCorrectionFinalizationConflict(
+				"legacy_original_work_metadata_mismatch",
+			);
 		}
 	}
 
@@ -1605,7 +1626,9 @@ async function validatePersistedTimeCorrectionEvidence(input: {
 			(legacyRequester !== null &&
 				legacyRequester !== workflow.requesterEmployeeId)
 		) {
-			throw timeCorrectionFinalizationConflict();
+			throw timeCorrectionFinalizationConflict(
+				"canonical_workflow_evidence_mismatch",
+			);
 		}
 		const persistedOriginal = originalWorkMetadataFromEvidence(
 			workflow.contextSnapshot,
@@ -1617,7 +1640,9 @@ async function validatePersistedTimeCorrectionEvidence(input: {
 				input.expectedOriginalWorkMetadata,
 			)
 		) {
-			throw timeCorrectionFinalizationConflict();
+			throw timeCorrectionFinalizationConflict(
+				"canonical_original_work_metadata_mismatch",
+			);
 		}
 	}
 }
@@ -1629,7 +1654,7 @@ function temporalEndpoint(
 		!entry.timezone ||
 		!TIME_CORRECTION_TIMEZONE_SOURCES.has(entry.timezoneSource)
 	) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict("invalid_entry_timezone_source");
 	}
 	const endpoint = {
 		id: entry.id,
@@ -1641,7 +1666,7 @@ function temporalEndpoint(
 		validateTimeCorrectionTimezoneEvidence(endpoint);
 		return endpoint;
 	} catch {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict("invalid_entry_timezone_evidence");
 	}
 }
 
@@ -1660,12 +1685,16 @@ function currentEndpointPredecessorId(
 		entry.organizationId !== input.organizationId ||
 		entry.employeeId !== input.employeeId
 	) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict(
+			"current_endpoint_identity_mismatch",
+		);
 	}
 	temporalEndpoint(entry);
 	if (entry.type === input.type) {
 		if (entry.replacesEntryId !== null) {
-			throw timeCorrectionFinalizationConflict();
+			throw timeCorrectionFinalizationConflict(
+				"original_endpoint_has_replacement",
+			);
 		}
 		return null;
 	}
@@ -1674,7 +1703,9 @@ function currentEndpointPredecessorId(
 		!entry.replacesEntryId ||
 		entry.replacesEntryId === entry.id
 	) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict(
+			"current_endpoint_lineage_mismatch",
+		);
 	}
 	return entry.replacesEntryId;
 }
@@ -1700,7 +1731,7 @@ async function lockCurrentEndpointPredecessors(input: {
 		)
 		.filter((id): id is string => id !== null);
 	if (new Set(predecessorIds).size !== predecessorIds.length) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict("duplicate_endpoint_predecessor");
 	}
 	if (predecessorIds.length === 0) return new Map();
 	const predecessors = (await input.dbService.db
@@ -1728,11 +1759,15 @@ async function lockCurrentEndpointPredecessors(input: {
 		.orderBy(asc(timeEntry.id))
 		.for("update")) as LockedTimeCorrectionEntry[];
 	if (predecessors.length !== predecessorIds.length) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict(
+			"endpoint_predecessor_lock_cardinality_mismatch",
+		);
 	}
 	const byId = new Map(predecessors.map((entry) => [entry.id, entry]));
 	if (byId.size !== predecessorIds.length) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict(
+			"duplicate_locked_endpoint_predecessor",
+		);
 	}
 	return byId;
 }
@@ -1749,15 +1784,21 @@ function validateCurrentEndpoint(
 	},
 ): LockedTimeCorrectionEntry {
 	const predecessorId = currentEndpointPredecessorId(entry, input);
-	if (!entry) throw timeCorrectionFinalizationConflict();
+	if (!entry) {
+		throw timeCorrectionFinalizationConflict("missing_current_endpoint");
+	}
 	if (
 		input.requireActive &&
 		(entry.isSuperseded || entry.supersededById !== null)
 	) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict("inactive_current_endpoint");
 	}
 	if (predecessorId === null) {
-		if (predecessor !== undefined) throw timeCorrectionFinalizationConflict();
+		if (predecessor !== undefined) {
+			throw timeCorrectionFinalizationConflict(
+				"unexpected_endpoint_predecessor",
+			);
+		}
 		return entry;
 	}
 	if (
@@ -1775,7 +1816,7 @@ function validateCurrentEndpoint(
 				predecessor.replacesEntryId === predecessor.id ||
 				predecessor.replacesEntryId === entry.id))
 	) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict("endpoint_predecessor_mismatch");
 	}
 	temporalEndpoint(predecessor);
 	return entry;
@@ -1805,7 +1846,9 @@ function validateCorrectionEntry(
 		entry.replacesEntryId !== input.originalId ||
 		entry.supersededById !== null
 	) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict(
+			"correction_entry_identity_mismatch",
+		);
 	}
 	temporalEndpoint(entry);
 	return entry;
@@ -1828,7 +1871,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			: undefined
 		: undefined;
 	if (currentCorrection && !expectedOriginalWorkMetadata) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict("missing_original_work_metadata");
 	}
 	const employeeIds = [
 		...new Set([input.expectedRequesterEmployeeId, input.actorEmployeeId]),
@@ -1860,7 +1903,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				row.isActive !== true,
 		)
 	) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict("employee_lock_identity_mismatch");
 	}
 	const periodRows = await input.dbService.db
 		.select({
@@ -1889,7 +1932,11 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			),
 		)
 		.for("update");
-	if (periodRows.length !== 1) throw timeCorrectionFinalizationConflict();
+	if (periodRows.length !== 1) {
+		throw timeCorrectionFinalizationConflict(
+			"work_period_lock_cardinality_mismatch",
+		);
+	}
 	const period = periodRows[0] as LockedTimeCorrectionPeriod;
 	const expectedSource = input.expectedSource;
 	if (
@@ -1912,7 +1959,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				expectedSource.workLocationType !== period.workLocationType ||
 				expectedSource.workCategoryId !== period.workCategoryId))
 	) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict("work_period_source_mismatch");
 	}
 	if (
 		expectedOriginalWorkMetadata &&
@@ -1921,7 +1968,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			period.workCategoryId !== expectedOriginalWorkMetadata.workCategoryId ||
 			!period.canonicalRecordId)
 	) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict("original_work_metadata_mismatch");
 	}
 	let expectedApprovalWorkflowId = input.expectedApprovalWorkflowId;
 	let expectedApprovalWorkflowVersion = input.expectedApprovalWorkflowVersion;
@@ -1954,14 +2001,14 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			observed.completedAt !== null ||
 			!sameCanonicalCorrectionContext(observed.contextSnapshot, correction)
 		) {
-			throw timeCorrectionFinalizationConflict();
+			throw timeCorrectionFinalizationConflict("observed_workflow_mismatch");
 		}
 		expectedApprovalWorkflowId = observed.id;
 		expectedApprovalWorkflowVersion = observed.version;
 		allowObservedLegacyMetadata = true;
 	}
 	if (period.approvalWorkflowId !== expectedApprovalWorkflowId) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict("workflow_binding_mismatch");
 	}
 	await validatePersistedTimeCorrectionEvidence({
 		dbService: input.dbService,
@@ -1984,13 +2031,15 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		correction.clockOutCorrectionId,
 	].filter((id): id is string => Boolean(id));
 	if (correction.clockOutCorrectionId && !period.clockOutId) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict(
+			"clock_out_correction_without_endpoint",
+		);
 	}
 	const entryIds = [period.clockInId, period.clockOutId, ...correctionIds]
 		.filter((id): id is string => Boolean(id))
 		.sort();
 	if (new Set(entryIds).size !== entryIds.length) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict("duplicate_time_entry_identity");
 	}
 	const lockedEntries = (await input.dbService.db
 		.select({
@@ -2017,11 +2066,14 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		.orderBy(asc(timeEntry.id))
 		.for("update")) as LockedTimeCorrectionEntry[];
 	if (lockedEntries.length !== entryIds.length) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict(
+			"time_entry_lock_cardinality_mismatch",
+		);
 	}
 	const entriesById = new Map(lockedEntries.map((entry) => [entry.id, entry]));
-	if (entriesById.size !== entryIds.length)
-		throw timeCorrectionFinalizationConflict();
+	if (entriesById.size !== entryIds.length) {
+		throw timeCorrectionFinalizationConflict("duplicate_locked_time_entry");
+	}
 	const currentClockInCandidate = entriesById.get(period.clockInId);
 	const currentClockOutCandidate = period.clockOutId
 		? entriesById.get(period.clockOutId)
@@ -2078,7 +2130,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		!sameDatabaseInstant(period.endTime, originalClockOut?.timestamp ?? null) ||
 		period.isActive !== (originalClockOut === null)
 	) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict("endpoint_period_mismatch");
 	}
 	const clockInCorrection = correction.clockInCorrectionId
 		? validateCorrectionEntry(entriesById.get(correction.clockInCorrectionId), {
@@ -2113,7 +2165,9 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 					"clock_out",
 				);
 			} else if (expectedSource.currentEndpoints.clockOut !== null) {
-				throw timeCorrectionFinalizationConflict();
+				throw timeCorrectionFinalizationConflict(
+					"unexpected_expected_clock_out",
+				);
 			}
 			if (clockInCorrection) {
 				assertCancellationEntryEvidence(
@@ -2122,7 +2176,9 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 					"clock_in",
 				);
 			} else if (expectedSource.pendingCorrections.clockIn !== null) {
-				throw timeCorrectionFinalizationConflict();
+				throw timeCorrectionFinalizationConflict(
+					"missing_expected_clock_in_correction",
+				);
 			}
 			if (clockOutCorrection) {
 				assertCancellationEntryEvidence(
@@ -2131,10 +2187,14 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 					"clock_out",
 				);
 			} else if (expectedSource.pendingCorrections.clockOut !== null) {
-				throw timeCorrectionFinalizationConflict();
+				throw timeCorrectionFinalizationConflict(
+					"missing_expected_clock_out_correction",
+				);
 			}
 		} catch {
-			throw timeCorrectionFinalizationConflict();
+			throw timeCorrectionFinalizationConflict(
+				"entry_source_evidence_mismatch",
+			);
 		}
 	}
 
@@ -2161,7 +2221,9 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		actor.userId !== input.actorUserId ||
 		!actor.isActive
 	) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict(
+			"finalizer_actor_identity_mismatch",
+		);
 	}
 
 	let canonical: LockedCanonicalWorkRecord | null = null;
@@ -2201,7 +2263,9 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			!sameDatabaseInstant(canonical.endAt, period.endTime) ||
 			canonical.durationMinutes !== period.durationMinutes
 		) {
-			throw timeCorrectionFinalizationConflict();
+			throw timeCorrectionFinalizationConflict(
+				"canonical_record_source_mismatch",
+			);
 		}
 		if (Object.hasOwn(correction, "workLocationType") || expectedSource) {
 			const canonicalWorkRows = (await input.dbService.db
@@ -2263,11 +2327,13 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 						expectedSource.canonicalWork.workCategoryId !==
 							canonicalWork.workCategoryId))
 			) {
-				throw timeCorrectionFinalizationConflict();
+				throw timeCorrectionFinalizationConflict(
+					"canonical_work_source_mismatch",
+				);
 			}
 		}
 	} else if (expectedApprovalWorkflowId !== null) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict("missing_canonical_record");
 	}
 	if (
 		input.transition.kind === "approve" &&
@@ -2278,7 +2344,9 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		const requesterEmployee = lockedEmployees.find(
 			(candidate) => candidate.id === period.employeeId,
 		);
-		if (!requesterEmployee) throw timeCorrectionFinalizationConflict();
+		if (!requesterEmployee) {
+			throw timeCorrectionFinalizationConflict("missing_category_requester");
+		}
 		const teamId = await lockTrustedTimeCorrectionEmployeeTeamId({
 			tx: input.dbService.db,
 			employeeId: period.employeeId,
@@ -2365,13 +2433,19 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			!input.legacyApprovalRequestId ||
 			!historicalRejectedState
 		) {
-			throw timeCorrectionFinalizationConflict();
+			throw timeCorrectionFinalizationConflict(
+				"rejection_entry_state_mismatch",
+			);
 		}
 		await mapSequentially(correctionEntries, async (correctionEntry) => {
 			const original = correctionEntry.replacesEntryId
 				? originalEntriesById.get(correctionEntry.replacesEntryId)
 				: undefined;
-			if (!original) throw timeCorrectionFinalizationConflict();
+			if (!original) {
+				throw timeCorrectionFinalizationConflict(
+					"rejection_original_entry_missing",
+				);
+			}
 			const reactivated = await input.dbService.db
 				.update(timeEntry)
 				.set({ isSuperseded: false, supersededById: null })
@@ -2415,7 +2489,9 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		};
 	}
 
-	if (!modernState) throw timeCorrectionFinalizationConflict();
+	if (!modernState) {
+		throw timeCorrectionFinalizationConflict("correction_entry_state_mismatch");
+	}
 	const correctedPeriod = calculateTimeCorrectionPeriod({
 		action: correction.action,
 		originalClockIn: temporalEndpoint(originalClockIn),
@@ -2616,7 +2692,9 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			updatedCanonicalWork.length !== 1 ||
 			updatedCanonicalWork[0]?.recordId !== canonicalWork.recordId
 		) {
-			throw timeCorrectionFinalizationConflict();
+			throw timeCorrectionFinalizationConflict(
+				"canonical_work_mutation_cardinality_mismatch",
+			);
 		}
 	}
 
@@ -3136,7 +3214,9 @@ async function loadCanonicalAutoCompletionReplay(input: {
 		),
 		with: { employee: { with: { user: true } } },
 	})) as WorkPeriodRecord | null;
-	if (!period) throw timeCorrectionFinalizationConflict();
+	if (!period) {
+		throw timeCorrectionFinalizationConflict("auto_completion_period_missing");
+	}
 	const correctionIds = [
 		input.correction.clockInCorrectionId,
 		input.correction.clockOutCorrectionId,
@@ -3157,11 +3237,15 @@ async function loadCanonicalAutoCompletionReplay(input: {
 		),
 	})) as LockedTimeCorrectionEntry[];
 	if (corrections.length !== correctionIds.length) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict(
+			"auto_completion_correction_cardinality_mismatch",
+		);
 	}
 	const originalIds = corrections.map((entry) => entry.replacesEntryId);
 	if (originalIds.some((id): id is null => id === null)) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict(
+			"auto_completion_missing_replacement_id",
+		);
 	}
 	const originals = (await input.dbService.db.query.timeEntry.findMany({
 		where: and(
@@ -3171,7 +3255,9 @@ async function loadCanonicalAutoCompletionReplay(input: {
 		),
 	})) as LockedTimeCorrectionEntry[];
 	if (originals.length !== originalIds.length) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict(
+			"auto_completion_original_cardinality_mismatch",
+		);
 	}
 	const clockInCorrection = input.correction.clockInCorrectionId
 		? corrections.find(
@@ -3194,7 +3280,9 @@ async function loadCanonicalAutoCompletionReplay(input: {
 		clockOutCorrection,
 	].filter((entry): entry is LockedTimeCorrectionEntry => Boolean(entry));
 	if (relevant.length !== corrections.length * 2) {
-		throw timeCorrectionFinalizationConflict();
+		throw timeCorrectionFinalizationConflict(
+			"auto_completion_lineage_mismatch",
+		);
 	}
 	const originalNotificationTime =
 		originalFor(clockInCorrection)?.timestamp ??
@@ -3207,7 +3295,11 @@ async function loadCanonicalAutoCompletionReplay(input: {
 	const dirtyFromDate = dirtyFromDateForTimeCorrection(
 		relevant.map(temporalEndpoint),
 	);
-	if (!dirtyFromDate) throw timeCorrectionFinalizationConflict();
+	if (!dirtyFromDate) {
+		throw timeCorrectionFinalizationConflict(
+			"auto_completion_dirty_date_missing",
+		);
+	}
 	return {
 		period,
 		originalNotificationTime,
@@ -3714,6 +3806,7 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 	}
 	const started = await startApprovalWorkflow({
 		context: transactionContext,
+		nowInstant: input.nowInstant,
 		organizationId: input.organizationId,
 		workflowType: "time_correction",
 		sourceIdentity,
@@ -5257,7 +5350,7 @@ function persistApprovedTimeCorrection(
 				}
 			).requestedBy;
 			if (typeof requestedBy !== "string" || requestedBy.length === 0) {
-				throw timeCorrectionFinalizationConflict();
+				throw timeCorrectionFinalizationConflict("approval_requester_missing");
 			}
 			if (!metadata) {
 				throw new ValidationError({
@@ -5383,7 +5476,11 @@ function persistRejectedTimeCorrection(
 			}
 		).requestedBy;
 		if (typeof requestedBy !== "string" || requestedBy.length === 0) {
-			return yield* _(Effect.fail(timeCorrectionFinalizationConflict()));
+			return yield* _(
+				Effect.fail(
+					timeCorrectionFinalizationConflict("approval_requester_missing"),
+				),
+			);
 		}
 		let correction: TimeCorrectionWorkflowPayload["timeCorrection"];
 		if (correctionEntryIds) {
@@ -5407,7 +5504,13 @@ function persistRejectedTimeCorrection(
 				clockInEntries.length > 1 ||
 				clockOutEntries.length > 1
 			) {
-				return yield* _(Effect.fail(timeCorrectionFinalizationConflict()));
+				return yield* _(
+					Effect.fail(
+						timeCorrectionFinalizationConflict(
+							"legacy_rejection_correction_cardinality_mismatch",
+						),
+					),
+				);
 			}
 			correction = normalizeTimeCorrectionWorkflowPayload({
 				timeCorrection: {
