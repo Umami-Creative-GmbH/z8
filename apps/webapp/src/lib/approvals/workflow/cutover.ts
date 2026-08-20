@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import { currentTimestamp } from "@/lib/datetime/drizzle-schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type {
 	ApprovalCutoverBehavior,
@@ -182,6 +183,23 @@ export async function acquireApprovalWriteGate(
 	input: ApprovalRolloutLockInput,
 ): Promise<ApprovalWriteGateResult> {
 	await acquireApprovalWriteLock(dbService, input);
+	await dbService.db.execute(sql`
+		insert into approval_workflow_rollout (
+			organization_id,
+			workflow_type,
+			lifecycle_mode,
+			side_effect_mode,
+			updated_at
+		)
+		values (
+			${input.organizationId},
+			${input.workflowType},
+			${"legacy"},
+			${"legacy"},
+			${currentTimestamp()}
+		)
+		on conflict (organization_id, workflow_type) do nothing
+	`);
 	const mode = await readApprovalRolloutMode(dbService, input);
 	return { mode, behavior: getCutoverBehavior(mode) };
 }

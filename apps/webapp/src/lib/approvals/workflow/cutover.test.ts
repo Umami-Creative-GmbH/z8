@@ -39,15 +39,18 @@ describe("approval workflow cutover", () => {
 		["ready", "legacy", true, true, false, "legacy_to_canonical"],
 		["canonical", "canonical", true, true, true, "canonical_to_legacy"],
 		["complete", "canonical", false, true, true, "none"],
-	] as const)("maps %s behavior exactly", (mode, serveFrom, writeLegacy, writeCanonical, decideCanonical, mirror) => {
-		expect(getCutoverBehavior(mode)).toEqual({
-			serveFrom,
-			writeLegacy,
-			writeCanonical,
-			decideCanonical,
-			mirror,
-		});
-	});
+	] as const)(
+		"maps %s behavior exactly",
+		(mode, serveFrom, writeLegacy, writeCanonical, decideCanonical, mirror) => {
+			expect(getCutoverBehavior(mode)).toEqual({
+				serveFrom,
+				writeLegacy,
+				writeCanonical,
+				decideCanonical,
+				mirror,
+			});
+		},
+	);
 
 	it.each([
 		["legacy", "shadow"],
@@ -108,11 +111,14 @@ describe("approval workflow cutover", () => {
 		["canonical", "ready"],
 		["complete", "canonical"],
 		["complete", "complete"],
-	] as const)("rejects invalid or irreversible %s -> %s transitions", (from, to) => {
-		expect(() => validateCutoverTransition(transition(from, to))).toThrow(
-			/transition/i,
-		);
-	});
+	] as const)(
+		"rejects invalid or irreversible %s -> %s transitions",
+		(from, to) => {
+			expect(() => validateCutoverTransition(transition(from, to))).toThrow(
+				/transition/i,
+			);
+		},
+	);
 
 	it("derives an unambiguous stable scope from organization and workflow type", () => {
 		expect(approvalRolloutLockScope("ab", "absence")).toBe(
@@ -156,10 +162,11 @@ describe("approval workflow cutover", () => {
 		const dialect = new PgDialect();
 		const rendered = calls.map((query) => dialect.sqlToQuery(query));
 		expect(rendered[0]?.sql).toContain("pg_advisory_xact_lock_shared");
-		expect(rendered[1]?.sql).toContain("from approval_workflow_rollout");
-		expect(rendered[2]?.sql).toMatch(/pg_advisory_xact_lock\(/);
-		expect(rendered[2]?.sql).not.toContain("lock_shared");
-		expect(rendered[0]?.params).toEqual(rendered[2]?.params);
+		expect(rendered[1]?.sql).toContain("insert into approval_workflow_rollout");
+		expect(rendered[2]?.sql).toContain("from approval_workflow_rollout");
+		expect(rendered[3]?.sql).toMatch(/pg_advisory_xact_lock\(/);
+		expect(rendered[3]?.sql).not.toContain("lock_shared");
+		expect(rendered[0]?.params).toEqual(rendered[3]?.params);
 		expect(transactionCalls).toBe(0);
 	});
 
@@ -172,6 +179,10 @@ describe("approval workflow cutover", () => {
 					const rendered = new PgDialect().sqlToQuery(query);
 					if (rendered.sql.includes("lock_shared")) {
 						timeline.push("lock");
+						return { rows: [] };
+					}
+					if (rendered.sql.includes("insert into approval_workflow_rollout")) {
+						timeline.push("initialize");
 						return { rows: [] };
 					}
 					timeline.push("mode");
@@ -192,21 +203,68 @@ describe("approval workflow cutover", () => {
 			mode: "canonical",
 			behavior: getCutoverBehavior("canonical"),
 		});
-		expect(timeline).toEqual(["lock", "mode"]);
+		expect(timeline).toEqual(["lock", "initialize", "mode"]);
 		expect(transactionCalls).toBe(0);
 	});
 
-	it("propagates write-gate lock and mode-read failures", async () => {
-		for (const failureAt of ["lock", "mode"] as const) {
+	it("initializes a missing rollout row in legacy mode under the write lock", async () => {
+		const timeline: string[] = [];
+		const service = {
+			db: {
+				execute: async (query: SQL) => {
+					const rendered = new PgDialect().sqlToQuery(query);
+					if (rendered.sql.includes("lock_shared")) {
+						timeline.push("lock");
+						return { rows: [] };
+					}
+					if (rendered.sql.includes("insert into approval_workflow_rollout")) {
+						timeline.push("initialize");
+						expect(rendered.sql).toContain("on conflict");
+						expect(rendered.sql).toContain("updated_at");
+						expect(rendered.params).toEqual([
+							"org-1",
+							"time_correction",
+							"legacy",
+							"legacy",
+							expect.any(Date),
+						]);
+						return { rows: [] };
+					}
+					timeline.push("mode");
+					return { rows: [{ lifecycle_mode: "legacy" }] };
+				},
+			},
+		} as unknown as ApprovalDbService;
+
+		await expect(
+			acquireApprovalWriteGate(service, {
+				organizationId: "org-1",
+				workflowType: "time_correction",
+			}),
+		).resolves.toEqual({
+			mode: "legacy",
+			behavior: getCutoverBehavior("legacy"),
+		});
+		expect(timeline).toEqual(["lock", "initialize", "mode"]);
+	});
+
+	it("propagates write-gate lock, initialization, and mode-read failures", async () => {
+		for (const [failureAt, failureCall] of [
+			["lock", 1],
+			["initialize", 2],
+			["mode", 3],
+		] as const) {
 			let calls = 0;
 			const service = {
 				db: {
 					execute: async () => {
 						calls += 1;
-						if (failureAt === "lock" || calls === 2) {
+						if (calls === failureCall) {
 							throw new Error(`${failureAt} failed`);
 						}
-						return { rows: [] };
+						return calls === 3
+							? { rows: [{ lifecycle_mode: "legacy" }] }
+							: { rows: [] };
 					},
 				},
 			} as ApprovalDbService;
@@ -216,7 +274,7 @@ describe("approval workflow cutover", () => {
 					workflowType: "absence",
 				}),
 			).rejects.toThrow(`${failureAt} failed`);
-			expect(calls).toBe(failureAt === "lock" ? 1 : 2);
+			expect(calls).toBe(failureCall);
 		}
 	});
 });
