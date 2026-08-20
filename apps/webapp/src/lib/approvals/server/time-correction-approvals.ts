@@ -1369,9 +1369,13 @@ const TIME_CORRECTION_TIMEZONE_SOURCES = new Set([
 
 function timeCorrectionFinalizationConflict(
 	reason = "unclassified_finalization_conflict",
+	diagnostics: Record<string, unknown> = {},
 ): ConflictError {
 	if (env.NODE_ENV === "production") {
-		logger.warn({ reason }, "Time correction finalization conflict");
+		logger.warn(
+			{ reason, ...diagnostics },
+			"Time correction finalization conflict",
+		);
 	}
 	return new ConflictError({
 		message: "Time correction source changed during finalization",
@@ -2369,7 +2373,23 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			(currentCorrection || expectedApprovalWorkflowId !== null) &&
 			(input.transition.kind !== "approve" || !isUnmaterializedActivePeriod)
 		) {
-			throw timeCorrectionFinalizationConflict("missing_canonical_record");
+			throw timeCorrectionFinalizationConflict("missing_canonical_record", {
+				transitionKind: input.transition.kind,
+				workflowMode:
+					expectedApprovalWorkflowId === null ? "legacy" : "canonical",
+				correctionContract: currentCorrection ? "current" : "legacy",
+				periodShape: {
+					isActive: period.isActive,
+					hasClockOut: period.clockOutId !== null,
+					hasEndTime: period.endTime !== null,
+					hasDuration: period.durationMinutes !== null,
+					hasCanonicalRecord: period.canonicalRecordId !== null,
+				},
+				correctionEndpoints: {
+					hasClockIn: correction.clockInCorrectionId !== undefined,
+					hasClockOut: correction.clockOutCorrectionId !== undefined,
+				},
+			});
 		}
 	}
 	if (
