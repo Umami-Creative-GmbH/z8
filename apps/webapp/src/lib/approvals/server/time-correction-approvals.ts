@@ -3806,6 +3806,7 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 	}
 	const started = await startApprovalWorkflow({
 		context: transactionContext,
+		nowInstant: input.nowInstant,
 		organizationId: input.organizationId,
 		workflowType: "time_correction",
 		sourceIdentity,

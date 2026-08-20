@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import type {
 	ApprovalDisplayProjection,
@@ -70,6 +71,7 @@ export interface ApprovalSourceWorkflowLinkEvidence {
 
 export interface StartApprovalWorkflowInput {
 	context: ApprovalWorkflowTransactionContext;
+	nowInstant?: () => Instant;
 	organizationId: string;
 	workflowType: ApprovalWorkflowType;
 	sourceIdentity: ApprovalSourceIdentity;
@@ -855,7 +857,7 @@ export async function startApprovalWorkflow(
 		sourceId: input.sourceIdentity.sourceId,
 		allocationKey: input.submissionKey,
 	});
-	const now = systemClock.nowInstant();
+	const now = (input.nowInstant ?? (() => systemClock.nowInstant()))();
 	let snapshot: ApprovalWorkflowSnapshot = {
 		id: workflowId,
 		organizationId: input.organizationId,
