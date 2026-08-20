@@ -8150,6 +8150,151 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		);
 	});
 
+	it("applies a clock-in correction before an active period has a canonical record", async () => {
+		const correction = {
+			action: "edit" as const,
+			clockInCorrectionId: ids.correctionIn,
+			workLocationType: "office" as const,
+			workCategoryId: terminalPeriod.workCategoryId,
+		};
+		const { dbService, mutations } = createFinalizerDb({
+			period: {
+				...terminalPeriod,
+				clockOutId: null,
+				canonicalRecordId: null,
+				endTime: null,
+				durationMinutes: null,
+				isActive: true,
+			},
+			entries: [originalIn, correctionIn],
+			canonical: null,
+			canonicalWork: null,
+			legacyRequest: null,
+			workflow: {
+				...canonicalWorkflow,
+				contextSnapshot: {
+					timeCorrection: correction,
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: terminalPeriod.workCategoryId,
+					},
+				},
+			},
+			mutationRows: [
+				[{ id: ids.correctionIn }],
+				[{ id: ids.originalIn }],
+				[{ id: ids.period }],
+			],
+		});
+
+		const result = await finalizeTimeCorrectionTerminalInTransaction(
+			approveInput(dbService, {
+				legacyApprovalRequestId: null,
+				correction,
+			}),
+		);
+
+		expect(result.transition).toBe("approved");
+		expect(mutations.map(({ table }) => table)).toEqual([
+			timeEntry,
+			timeEntry,
+			workPeriod,
+		]);
+		expect(mutations.at(-1)?.values).toMatchObject({
+			clockInId: ids.correctionIn,
+			clockOutId: null,
+			endTime: null,
+			durationMinutes: null,
+		});
+	});
+
+	it("does not extend the missing-canonical exception to rejection", async () => {
+		const correction = {
+			action: "edit" as const,
+			clockInCorrectionId: ids.correctionIn,
+			workLocationType: "office" as const,
+			workCategoryId: terminalPeriod.workCategoryId,
+		};
+		const { dbService, mutations } = createFinalizerDb({
+			period: {
+				...terminalPeriod,
+				clockOutId: null,
+				canonicalRecordId: null,
+				endTime: null,
+				durationMinutes: null,
+				isActive: true,
+			},
+			entries: [originalIn, correctionIn],
+			canonical: null,
+			canonicalWork: null,
+			legacyRequest: null,
+			workflow: {
+				...canonicalWorkflow,
+				status: "rejected",
+				contextSnapshot: {
+					timeCorrection: correction,
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: terminalPeriod.workCategoryId,
+					},
+				},
+			},
+		});
+
+		await expect(
+			finalizeTimeCorrectionTerminalInTransaction(
+				approveInput(dbService, {
+					legacyApprovalRequestId: null,
+					correction,
+					transition: { kind: "reject", reason: "invalid" },
+				}),
+			),
+		).rejects.toMatchObject({
+			message: "Time correction source changed during finalization",
+			details: { reason: "missing_canonical_record" },
+		});
+		expect(mutations).toEqual([]);
+	});
+
+	it("rejects a completed period whose canonical record is missing", async () => {
+		const correction = {
+			action: "edit" as const,
+			clockInCorrectionId: ids.correctionIn,
+			workLocationType: "office" as const,
+			workCategoryId: terminalPeriod.workCategoryId,
+		};
+		const { dbService, mutations } = createFinalizerDb({
+			period: { ...terminalPeriod, canonicalRecordId: null },
+			entries: [originalIn, originalOut, correctionIn],
+			canonical: null,
+			canonicalWork: null,
+			legacyRequest: null,
+			workflow: {
+				...canonicalWorkflow,
+				contextSnapshot: {
+					timeCorrection: correction,
+					timeCorrectionOriginalWorkMetadata: {
+						workLocationType: "office",
+						workCategoryId: terminalPeriod.workCategoryId,
+					},
+				},
+			},
+		});
+
+		await expect(
+			finalizeTimeCorrectionTerminalInTransaction(
+				approveInput(dbService, {
+					legacyApprovalRequestId: null,
+					correction,
+				}),
+			),
+		).rejects.toMatchObject({
+			message: "Time correction source changed during finalization",
+			details: { reason: "missing_canonical_record" },
+		});
+		expect(mutations).toEqual([]);
+	});
+
 	it.each([
 		["category disabled", { categoryActive: false }],
 		["category moved to another organization", { categoryOrganizationId: "org-2" }],

@@ -478,7 +478,7 @@ export interface FinalizeTimeCorrectionTerminalInput {
 	expectedApprovalWorkflowId: string | null;
 	expectedApprovalWorkflowVersion: number | null;
 	expectedRequesterEmployeeId: string;
-	expectedSource?: CancelledTimeCorrectionSourceEvidence;
+	expectedSource?: TimeCorrectionTerminalSourceEvidence;
 	expectedOriginalWorkMetadata?: TimeCorrectionOriginalWorkMetadata;
 	actorEmployeeId: string;
 	actorUserId: string;
@@ -832,6 +832,22 @@ export interface CancelledTimeCorrectionSourceEvidence {
 		clockOut: CancelledTimeCorrectionEntryEvidence | null;
 	};
 }
+
+export type TimeCorrectionTerminalSourceEvidence = Omit<
+	CancelledTimeCorrectionSourceEvidence,
+	"canonicalRecordId" | "canonicalRecord" | "canonicalWork"
+> &
+	(
+		| Pick<
+				CancelledTimeCorrectionSourceEvidence,
+				"canonicalRecordId" | "canonicalRecord" | "canonicalWork"
+		  >
+		| {
+				canonicalRecordId: null;
+				canonicalRecord: null;
+				canonicalWork: null;
+		  }
+	);
 
 function sameExpectedInstant(
 	actual: Date | null,
@@ -1965,8 +1981,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		expectedOriginalWorkMetadata &&
 		(normalizeWorkLocationType(period.workLocationType) !==
 			expectedOriginalWorkMetadata.workLocationType ||
-			period.workCategoryId !== expectedOriginalWorkMetadata.workCategoryId ||
-			!period.canonicalRecordId)
+			period.workCategoryId !== expectedOriginalWorkMetadata.workCategoryId)
 	) {
 		throw timeCorrectionFinalizationConflict("original_work_metadata_mismatch");
 	}
@@ -2010,6 +2025,12 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	if (period.approvalWorkflowId !== expectedApprovalWorkflowId) {
 		throw timeCorrectionFinalizationConflict("workflow_binding_mismatch");
 	}
+	const isUnmaterializedActivePeriod =
+		period.isActive &&
+		period.clockOutId === null &&
+		period.endTime === null &&
+		period.durationMinutes === null &&
+		period.canonicalRecordId === null;
 	await validatePersistedTimeCorrectionEvidence({
 		dbService: input.dbService,
 		organizationId: input.organizationId,
@@ -2300,7 +2321,9 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 						canonicalWork.workCategoryId !==
 							expectedOriginalWorkMetadata.workCategoryId)) ||
 				(expectedSource !== undefined &&
-					(expectedSource.canonicalRecord.id !== canonical.id ||
+					(!expectedSource.canonicalRecord ||
+						!expectedSource.canonicalWork ||
+						expectedSource.canonicalRecord.id !== canonical.id ||
 						expectedSource.canonicalRecord.employeeId !==
 							canonical.employeeId ||
 						expectedSource.canonicalRecord.recordKind !==
@@ -2332,8 +2355,22 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				);
 			}
 		}
-	} else if (expectedApprovalWorkflowId !== null) {
-		throw timeCorrectionFinalizationConflict("missing_canonical_record");
+	} else {
+		if (
+			expectedSource &&
+			(expectedSource.canonicalRecord !== null ||
+				expectedSource.canonicalWork !== null)
+		) {
+			throw timeCorrectionFinalizationConflict(
+				"canonical_record_source_mismatch",
+			);
+		}
+		if (
+			(currentCorrection || expectedApprovalWorkflowId !== null) &&
+			(input.transition.kind !== "approve" || !isUnmaterializedActivePeriod)
+		) {
+			throw timeCorrectionFinalizationConflict("missing_canonical_record");
+		}
 	}
 	if (
 		input.transition.kind === "approve" &&

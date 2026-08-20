@@ -562,6 +562,86 @@ describe("time correction approval adapter", () => {
 		}
 	});
 
+	it("loads and approves an active correction before canonical materialization", async () => {
+		const fixture = createFixture();
+		const activeCorrection = {
+			action: "edit" as const,
+			clockInCorrectionId: ids.correctionIn,
+			workLocationType: "office" as const,
+			workCategoryId: null,
+		};
+		Object.assign(fixture.value.period, {
+			clockOutId: null,
+			canonicalRecordId: null,
+			endTime: null,
+			durationMinutes: null,
+			isActive: true,
+			workLocationType: "office",
+		});
+		fixture.value.canonical = null as never;
+		fixture.value.canonicalWork = null as never;
+		fixture.value.entries = [
+			required(fixture.value.entries[0]),
+			required(fixture.value.entries[2]),
+		];
+		const activeContext = {
+			timeCorrection: activeCorrection,
+			timeCorrectionOriginalWorkMetadata: {
+				workLocationType: "office" as const,
+				workCategoryId: null,
+			},
+		};
+
+		const { adapter, source, finalizeTimeCorrectionTerminal } = await loadSource(
+			fixture,
+			{
+				contextSnapshot: activeContext,
+			},
+		);
+		const dbService = { db: {} } as never;
+
+		await adapter.finalizeTerminal({
+			...context(source, {
+				status: "approved",
+				version: 5,
+				completedAt: finalizedAt,
+				contextSnapshot: activeContext,
+			}),
+			dbService,
+			finalizationCause: "command",
+			transition: {
+				kind: "approve",
+				from: "pending",
+				to: "approved",
+				reason: "verified",
+			},
+			finalizedAt,
+		});
+
+		expect(source).toMatchObject({
+			canonicalRecordId: null,
+			canonicalRecord: null,
+			canonicalWork: null,
+			workPeriod: {
+				clockOutId: null,
+				endTime: null,
+				durationMinutes: null,
+				isActive: true,
+			},
+		});
+		expect(finalizeTimeCorrectionTerminal).toHaveBeenCalledWith(
+			expect.objectContaining({
+				correction: activeCorrection,
+				expectedSource: expect.objectContaining({
+					canonicalRecordId: null,
+					canonicalRecord: null,
+					canonicalWork: null,
+				}),
+				transition: { kind: "approve", reason: "verified" },
+			}),
+		);
+	});
+
 	it("requires an exact approved organization membership independently of the employee", async () => {
 		const { fixture, source } = await loadSource();
 
