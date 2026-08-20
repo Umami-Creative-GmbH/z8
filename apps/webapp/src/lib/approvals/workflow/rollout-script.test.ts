@@ -81,19 +81,20 @@ describe("approval workflow rollout CLI", () => {
 		expect(result.stderr).toBe("");
 	}, 15_000);
 
-	it.each([
-		[[]],
-		[["unknown"]],
-	] as const)("fails closed on a missing or unknown command before reading database env: %j", (args) => {
-		const result = cli(args);
-		expectChildCompleted(result);
-		expect(result.status).not.toBe(0);
-		expect(result.stderr).toMatch(/unknown approval rollout command/i);
-		expect(result.stderr).not.toMatch(
-			/temporal-polyfill|package_path_not_exported/i,
-		);
-		expect(result.stderr).not.toMatch(/missing required environment/i);
-	}, 15_000);
+	it.each([[[]], [["unknown"]]] as const)(
+		"fails closed on a missing or unknown command before reading database env: %j",
+		(args) => {
+			const result = cli(args);
+			expectChildCompleted(result);
+			expect(result.status).not.toBe(0);
+			expect(result.stderr).toMatch(/unknown approval rollout command/i);
+			expect(result.stderr).not.toMatch(
+				/temporal-polyfill|package_path_not_exported/i,
+			);
+			expect(result.stderr).not.toMatch(/missing required environment/i);
+		},
+		15_000,
+	);
 
 	it("reaches main and checks environment after parsing a valid command", () => {
 		const result = cli(["bootstrap"]);
@@ -192,37 +193,40 @@ describe("approval workflow rollout CLI", () => {
 	it.each([
 		["close success", false],
 		["close failure", true],
-	] as const)("preserves an undefined command rejection through %s", async (_name, closeFails) => {
-		const runCli = rolloutScript.runApprovalWorkflowRolloutCli;
-		const notRejected = Symbol("not rejected");
-		let rejection: unknown = notRejected;
-		await runCli(
-			["bootstrap"],
-			{
-				POSTGRES_HOST: "disposable",
-				POSTGRES_PORT: "5432",
-				POSTGRES_DB: "disposable",
-				POSTGRES_USER: "disposable",
-				POSTGRES_PASSWORD: "disposable",
-			},
-			async () => ({
-				db: { transaction: async () => Promise.reject(undefined) },
-				pool: {
-					end: async () => {
-						if (closeFails) throw new Error("close failed");
-					},
+	] as const)(
+		"preserves an undefined command rejection through %s",
+		async (_name, closeFails) => {
+			const runCli = rolloutScript.runApprovalWorkflowRolloutCli;
+			const notRejected = Symbol("not rejected");
+			let rejection: unknown = notRejected;
+			await runCli(
+				["bootstrap"],
+				{
+					POSTGRES_HOST: "disposable",
+					POSTGRES_PORT: "5432",
+					POSTGRES_DB: "disposable",
+					POSTGRES_USER: "disposable",
+					POSTGRES_PASSWORD: "disposable",
 				},
-			}),
-		).then(
-			() => undefined,
-			(error: unknown) => {
-				rejection = error;
-			},
-		);
+				async () => ({
+					db: { transaction: async () => Promise.reject(undefined) },
+					pool: {
+						end: async () => {
+							if (closeFails) throw new Error("close failed");
+						},
+					},
+				}),
+			).then(
+				() => undefined,
+				(error: unknown) => {
+					rejection = error;
+				},
+			);
 
-		expect(rejection).not.toBe(notRejected);
-		expect(rejection).toBeUndefined();
-	});
+			expect(rejection).not.toBe(notRejected);
+			expect(rejection).toBeUndefined();
+		},
+	);
 
 	it("rejects with the close error when the command succeeds", async () => {
 		await expect(
@@ -299,6 +303,7 @@ describe("approval workflow rollout CLI", () => {
 		await executeApprovalWorkflowRollout({ kind: "bootstrap" }, database);
 		const rendered = new PgDialect().sqlToQuery(calls[0] as SQL);
 		expect(rendered.sql).toContain("insert into approval_workflow_rollout");
+		expect(rendered.sql).toContain("updated_at");
 		expect(rendered.sql).toContain("cross join");
 		expect(rendered.sql.match(/::approval_workflow_type/g)).toHaveLength(7);
 		expect(rendered.sql).toContain(
@@ -313,6 +318,7 @@ describe("approval workflow rollout CLI", () => {
 				"travel_expense",
 				"shift_request",
 				"compliance_exception",
+				expect.any(Date),
 			]),
 		);
 	});

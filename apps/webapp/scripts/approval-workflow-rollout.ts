@@ -80,11 +80,12 @@ function bootstrapSql(): SQL {
 	const workflowRows = APPROVAL_WORKFLOW_TYPES.map(
 		(workflowType) => sql`(${workflowType}::approval_workflow_type)`,
 	);
+	const updatedAt = currentTimestamp();
 	return sql`
 		insert into approval_workflow_rollout (
-			organization_id, workflow_type, lifecycle_mode, side_effect_mode
+			organization_id, workflow_type, lifecycle_mode, side_effect_mode, updated_at
 		)
-		select organization.id, workflow_type.value, ${"legacy"}, ${"legacy"}
+		select organization.id, workflow_type.value, ${"legacy"}, ${"legacy"}, ${updatedAt}
 		from organization
 		cross join (values ${sql.join(workflowRows, sql`, `)}) as workflow_type(value)
 		on conflict (organization_id, workflow_type) do nothing
