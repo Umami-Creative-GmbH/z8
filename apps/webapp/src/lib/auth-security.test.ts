@@ -38,8 +38,8 @@ describe("Better Auth 1.7 core configuration", () => {
 	it("removes the incompatible SCIM plugin", () => {
 		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
 
-		expect(source).not.toContain('from "@better-auth/scim"');
-		expect(source).not.toMatch(/\bscim\s*\(\s*\{/);
+		expect(source).not.toContain("@better-auth/scim");
+		expect(source).not.toMatch(/\bscim\s*\(/);
 	});
 
 	it("enables joins in advanced database without trusting proxy headers", () => {

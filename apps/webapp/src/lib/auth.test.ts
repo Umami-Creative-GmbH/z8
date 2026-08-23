@@ -305,9 +305,10 @@ describe("makeEmailLookupCaseInsensitiveAdapter", () => {
 	});
 
 	it("preserves the rest of the adapter surface", () => {
-		type Adapter = Parameters<
-			typeof makeEmailLookupCaseInsensitiveAdapter
-		>[0];
+		type AdapterFactory = ReturnType<
+			typeof import("@better-auth/drizzle-adapter").drizzleAdapter
+		>;
+		type Adapter = ReturnType<AdapterFactory>;
 		const preservedMethods = [
 			"findMany",
 			"count",
@@ -320,6 +321,9 @@ describe("makeEmailLookupCaseInsensitiveAdapter", () => {
 		const count = vi.fn();
 		const updateMany = vi.fn();
 		const deleteMany = vi.fn();
+		const consumeOne = vi.fn<Adapter["consumeOne"]>(async () => null);
+		const incrementOne = vi.fn<Adapter["incrementOne"]>(async () => null);
+		const transaction = vi.fn<Adapter["transaction"]>();
 		const adapter = {
 			create,
 			findOne,
@@ -327,12 +331,18 @@ describe("makeEmailLookupCaseInsensitiveAdapter", () => {
 			count,
 			updateMany,
 			deleteMany,
-		} as any;
+			consumeOne,
+			incrementOne,
+			transaction,
+		} as unknown as Adapter;
 		const wrapped = makeEmailLookupCaseInsensitiveAdapter(adapter);
 
 		expect(wrapped.create).toBe(adapter.create);
 		for (const method of preservedMethods) {
 			expect(wrapped[method]).toBe(adapter[method]);
 		}
+		expect(wrapped.consumeOne).toBe(consumeOne);
+		expect(wrapped.incrementOne).toBe(incrementOne);
+		expect(wrapped.transaction).toBe(transaction);
 	});
 });
