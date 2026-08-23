@@ -41,6 +41,12 @@ function setup() {
 	};
 	const events: string[] = [];
 	const storage = {
+		increment: vi.fn(async (_key: string, _ttl: number) => 4),
+		getAndDelete: vi.fn(async (key: string) => {
+			const value = state.cache.get(key) ?? null;
+			state.cache.delete(key);
+			return value;
+		}),
 		get: vi.fn(async (key: string) => state.cache.get(key) ?? null),
 		set: vi.fn(async (key: string, value: string) => {
 			events.push("secondary-set");
@@ -118,6 +124,44 @@ function setup() {
 }
 
 describe("guarded Better Auth secondary storage", () => {
+	it("delegates atomic operations with exact arguments and results", async () => {
+		const harness = setup();
+		const sessionValue = serializedSession("org-1", null);
+		harness.state.cache.set("session-token", sessionValue);
+
+		await expect(
+			harness.adapter.increment("rate-limit:user-1", 60),
+		).resolves.toBe(4);
+		await expect(harness.adapter.getAndDelete("session-token")).resolves.toBe(
+			sessionValue,
+		);
+
+		expect(harness.storage.increment).toHaveBeenCalledWith(
+			"rate-limit:user-1",
+			60,
+		);
+		expect(harness.storage.getAndDelete).toHaveBeenCalledWith("session-token");
+		expect(harness.sessionFindFirst).not.toHaveBeenCalled();
+		expect(harness.memberFindFirst).not.toHaveBeenCalled();
+		expect(harness.employeeFindFirst).not.toHaveBeenCalled();
+		expect(harness.storage.deleteOrThrow).not.toHaveBeenCalled();
+	});
+
+	it("delegates atomic operation errors unchanged", async () => {
+		const harness = setup();
+		const incrementError = new Error("increment failed");
+		const getAndDeleteError = new Error("get and delete failed");
+		harness.storage.increment.mockRejectedValueOnce(incrementError);
+		harness.storage.getAndDelete.mockRejectedValueOnce(getAndDeleteError);
+
+		await expect(
+			harness.adapter.increment("rate-limit:user-1", 60),
+		).rejects.toBe(incrementError);
+		await expect(harness.adapter.getAndDelete("session-token")).rejects.toBe(
+			getAndDeleteError,
+		);
+	});
+
 	it("preserves Better Auth invitation acceptance set-before-database ordering", async () => {
 		const harness = setup();
 

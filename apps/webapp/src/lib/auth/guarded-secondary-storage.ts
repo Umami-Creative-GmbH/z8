@@ -7,6 +7,8 @@ import { hasOrganizationRole } from "./organization-role";
 type AuthSecondaryStorageDb = Pick<typeof db, "delete" | "query">;
 
 type SecondaryStorage = {
+	increment: (key: string, ttl: number) => Promise<number>;
+	getAndDelete: (key: string) => Promise<string | null>;
 	get: (key: string) => Promise<string | null>;
 	set: (key: string, value: string, ttl?: number) => Promise<void>;
 	delete: (key: string) => Promise<void>;
@@ -95,6 +97,8 @@ export function createGuardedAuthSecondaryStorage(
 	dbClient: AuthSecondaryStorageDb = db,
 ): SecondaryStorage {
 	return {
+		increment: storage.increment,
+		getAndDelete: storage.getAndDelete,
 		get: async (key) => {
 			const value = await storage.get(key);
 			if (value === null) return null;
