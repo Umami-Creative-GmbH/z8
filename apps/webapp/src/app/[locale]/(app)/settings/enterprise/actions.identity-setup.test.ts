@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/cache", () => ({
 	revalidatePath: vi.fn(),
@@ -19,8 +19,6 @@ vi.mock("@/db/schema", () => ({
 	enterpriseIdentitySetup: {},
 	organizationDomain: {},
 	roleTemplate: {},
-	scimProviderConfig: {},
-	scimProvisioningLog: {},
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -58,9 +56,14 @@ vi.mock("@/lib/vault", () => ({
 }));
 
 const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "actions.ts"), "utf8");
-const { buildEnterpriseIdentityScimTokenResponse } = await import(
-	"@/lib/enterprise-identity/scim-token-response"
-);
+const {
+	generateEnterpriseIdentityScimTokenAction,
+	refreshEnterpriseIdentityScimStatusAction,
+} = await import("./actions");
+const { canManageCurrentOrganizationSettings, requireUser } = await import("@/lib/auth-helpers");
+
+const SCIM_UNAVAILABLE_MESSAGE =
+	"SCIM provisioning is temporarily unavailable during the Better Auth 1.7 migration";
 
 function getFunctionSource(functionName: string) {
 	const match = source.match(
@@ -84,6 +87,15 @@ describe("enterprise identity setup action contracts", () => {
 		"activateEnterpriseIdentitySetupAction",
 	];
 
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.mocked(requireUser).mockResolvedValue({
+			session: { activeOrganizationId: "org-1" },
+			user: { id: "user-1" },
+		} as never);
+		vi.mocked(canManageCurrentOrganizationSettings).mockResolvedValue(true);
+	});
+
 	it("exports the setup wizard server actions", () => {
 		for (const actionName of expectedExports) {
 			expect(source).toContain(`export async function ${actionName}`);
@@ -101,11 +113,12 @@ describe("enterprise identity setup action contracts", () => {
 		expect(source).toContain("organizationId");
 	});
 
-	it("uses Better Auth SSO and SCIM APIs", () => {
+	it("uses Better Auth SSO APIs without referencing removed SCIM APIs", () => {
 		expect(source).toContain("registerSSOProvider");
-		expect(source).toContain("generateSCIMToken");
-		expect(source).toContain("listSCIMProviderConnections");
 		expect(source).toContain("listSSOProviders");
+		expect(source).not.toContain("listSCIMProviderConnections");
+		expect(source).not.toContain("generateSCIMToken");
+		expect(source).not.toContain("deleteSCIMProviderConnection");
 	});
 
 	it("maps Better Auth identity errors before returning them", () => {
@@ -122,49 +135,47 @@ describe("enterprise identity setup action contracts", () => {
 		expect(source).not.toMatch(/pendingEnforcement\s*=\s*{[\s\S]*?defaultRoleTemplateId:/);
 	});
 
-	it("builds a safe SCIM token generation response without setup state", () => {
-		expect(
-			buildEnterpriseIdentityScimTokenResponse({ scimToken: "scim-secret" }, "provider-1"),
-		).toEqual({
-			providerId: "provider-1",
-			scimToken: "scim-secret",
-			baseUrl: "/api/auth/scim/v2",
-		});
+	it("scaffolds setup responses with no SCIM connection", () => {
+		const setupResponseSource = source.slice(
+			source.indexOf("async function getSetupResponse"),
+			source.indexOf("async function getOrganizationSSOProviders"),
+		);
+
+		expect(setupResponseSource).toContain("scimConnection: null");
+		expect(setupResponseSource).not.toContain("listSCIMProviderConnections");
+		expect(setupResponseSource).not.toContain("getEnterpriseIdentityScimConnection");
 	});
 
 	it("does not export synchronous runtime helpers from the server action module", () => {
 		expect(source).not.toContain("export function ");
 	});
 
-	it("generates SCIM token before persisting enabled setup state", () => {
+	it("authorizes then fails closed when generating a SCIM token", async () => {
 		const actionSource = getFunctionSource("generateEnterpriseIdentityScimTokenAction");
-		const generateIndex = actionSource.indexOf("generateSCIMToken");
-		const configWriteIndex = actionSource.indexOf("insert(scimProviderConfig)");
-		const setupWriteIndex = actionSource.indexOf("updateEnterpriseIdentitySetupRecord");
 
-		expect(configWriteIndex).toBeGreaterThan(-1);
-		expect(setupWriteIndex).toBeGreaterThan(-1);
-		expect(generateIndex).toBeLessThan(configWriteIndex);
-		expect(generateIndex).toBeLessThan(setupWriteIndex);
-		expect(actionSource.slice(generateIndex)).not.toContain("getSetupResponse");
+		await expect(
+			generateEnterpriseIdentityScimTokenAction({ providerId: "provider-1" }),
+		).rejects.toThrow(SCIM_UNAVAILABLE_MESSAGE);
+		expect(requireUser).toHaveBeenCalledOnce();
+		expect(canManageCurrentOrganizationSettings).toHaveBeenCalledOnce();
+		expect(actionSource.indexOf("requireEnterpriseOrgAdmin()")).toBeLessThan(
+			actionSource.indexOf("void input"),
+		);
+		expect(actionSource).toContain("throw new Error(SCIM_UNAVAILABLE_MESSAGE)");
+		expect(actionSource).not.toMatch(/\b(?:db\.|auth\.api|updateEnterpriseIdentitySetupRecord|getOrCreateEnterpriseIdentitySetupRecord|revalidatePath)\b/);
 	});
 
-	it("does not persist generated SCIM token text in setup state", () => {
-		const actionSource = getFunctionSource("generateEnterpriseIdentityScimTokenAction");
-		const setupWriteIndex = actionSource.indexOf("updateEnterpriseIdentitySetupRecord");
-		const generateIndex = actionSource.indexOf("generateSCIMToken");
-
-		expect(setupWriteIndex).toBeGreaterThan(-1);
-		expect(generateIndex).toBeLessThan(setupWriteIndex);
-		expect(actionSource.slice(setupWriteIndex)).not.toContain("scimToken");
-	});
-
-	it("filters SCIM token generation audit rows out of provisioning status", () => {
+	it("authorizes then fails closed when refreshing SCIM status", async () => {
 		const actionSource = getFunctionSource("refreshEnterpriseIdentityScimStatusAction");
 
-		expect(actionSource).toContain("isScimTokenGenerationLog");
-		expect(actionSource).toContain('metadata.idpProvider === "scim"');
-		expect(actionSource).toContain('metadata.scimDisplayName?.startsWith("SCIM Provider ")');
+		await expect(refreshEnterpriseIdentityScimStatusAction()).rejects.toThrow(
+			SCIM_UNAVAILABLE_MESSAGE,
+		);
+		expect(requireUser).toHaveBeenCalledOnce();
+		expect(canManageCurrentOrganizationSettings).toHaveBeenCalledOnce();
+		expect(actionSource).toContain("requireEnterpriseOrgAdmin()");
+		expect(actionSource).toContain("throw new Error(SCIM_UNAVAILABLE_MESSAGE)");
+		expect(actionSource).not.toMatch(/\b(?:db\.|auth\.api|updateEnterpriseIdentitySetupRecord|getOrCreateEnterpriseIdentitySetupRecord|revalidatePath)\b/);
 	});
 
 	it("refreshes domain verification from org-scoped Better Auth providers", () => {
