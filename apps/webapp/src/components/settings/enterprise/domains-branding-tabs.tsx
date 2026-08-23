@@ -90,7 +90,7 @@ export function DomainsAndBrandingTabs({
 							<p className="text-muted-foreground text-sm">
 								{t(
 									"settings.enterprise.domains.guidedSetup.description",
-									"Configure SSO, SCIM, access policy, and activation checks in one guarded flow.",
+									"Configure SSO and access policy with guarded activation while SCIM provisioning is temporarily unavailable.",
 								)}
 							</p>
 						</div>
