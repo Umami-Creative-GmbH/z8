@@ -25,7 +25,6 @@
     "@better-auth/api-key": "1.7.1",
     "@better-auth/drizzle-adapter": "1.7.1",
     "@better-auth/passkey": "1.7.1",
-    "@better-auth/scim": "1.7.1",
     "@better-auth/sso": "1.7.1",
     "@bprogress/core": "^1.3.4",
     "@casl/ability": "^7.0.1",

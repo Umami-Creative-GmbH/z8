@@ -305,11 +305,34 @@ describe("makeEmailLookupCaseInsensitiveAdapter", () => {
 	});
 
 	it("preserves the rest of the adapter surface", () => {
+		type Adapter = Parameters<
+			typeof makeEmailLookupCaseInsensitiveAdapter
+		>[0];
+		const preservedMethods = [
+			"findMany",
+			"count",
+			"updateMany",
+			"deleteMany",
+		] as const satisfies readonly (keyof Adapter)[];
 		const findOne = vi.fn(async () => null);
 		const create = vi.fn();
-		const adapter = { create, findOne } as any;
+		const findMany = vi.fn();
+		const count = vi.fn();
+		const updateMany = vi.fn();
+		const deleteMany = vi.fn();
+		const adapter = {
+			create,
+			findOne,
+			findMany,
+			count,
+			updateMany,
+			deleteMany,
+		} as any;
 		const wrapped = makeEmailLookupCaseInsensitiveAdapter(adapter);
 
 		expect(wrapped.create).toBe(adapter.create);
+		for (const method of preservedMethods) {
+			expect(wrapped[method]).toBe(adapter[method]);
+		}
 	});
 });

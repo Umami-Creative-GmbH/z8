@@ -5,20 +5,20 @@ import { currentTimestamp } from "./timestamp";
 import { organization, user } from "../auth-schema";
 
 // ============================================
-// SCIM EXTENDED CONFIGURATION
+// LEGACY SCIM PROVIDER DATA
 //
-// Better Auth provides the core SCIM 2.0 protocol via @better-auth/scim plugin.
-// This table extends it with organization-specific provisioning settings.
-//
-// Better Auth's scimProvider table handles:
-// - providerId, scimToken, organizationId
-//
-// This table handles:
-// - Auto-activation settings
-// - Deprovision action (soft delete vs suspend)
-// - Default role template assignment
-// - Audit logging settings
+// Retained as application-owned, read-only legacy data pending the dedicated
+// Better Auth 1.7 SCIM cutover.
 // ============================================
+
+export const legacyScimProvider = pgTable("scim_provider", {
+	id: text("id").primaryKey(),
+	providerId: text("provider_id").notNull().unique(),
+	scimToken: text("scim_token").notNull().unique(),
+	organizationId: text("organization_id"),
+});
+
+// SCIM EXTENDED CONFIGURATION
 
 export const scimProviderConfig = pgTable(
 	"scim_provider_config",
