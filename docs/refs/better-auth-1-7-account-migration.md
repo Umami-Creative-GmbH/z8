@@ -94,7 +94,7 @@ FROM pg_indexes
 WHERE schemaname = current_schema()
   AND tablename = 'account'
   AND indexdef ILIKE 'CREATE UNIQUE INDEX%'
-  AND indexdef ~* '\\(issuer, account_id\\)';
+  AND indexdef ILIKE '%(issuer, account_id)%';
 ```
 
 Abort the deployment if any invalid issuer or duplicate is returned, or if the unique index is absent. Do not repair identities by matching email.
