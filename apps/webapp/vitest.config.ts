@@ -7,6 +7,7 @@ export default defineConfig({
 		environment: "node",
 		env: {
 			BETTER_AUTH_SECRET: "test-secret-value-with-at-least-32-characters",
+			SCIM_CREDENTIAL_HASH_SECRET: "test-scim-credential-hash-secret-value",
 			SKIP_ENV_VALIDATION: "true",
 		},
 		include: ["src/**/*.test.{ts,tsx}"],

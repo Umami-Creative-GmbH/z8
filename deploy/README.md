@@ -113,7 +113,7 @@ pnpm dev:webapp
 cp deploy/.env.template .env
 
 # 2. Edit .env with your secrets
-#    POSTGRES_PASSWORD, BETTER_AUTH_SECRET are required
+#    POSTGRES_PASSWORD, BETTER_AUTH_SECRET, and SCIM_CREDENTIAL_HASH_SECRET are required
 
 # 3. Build all images
 docker compose -f docker-compose.prod.yml build
@@ -167,7 +167,8 @@ kubectl create secret generic z8-secrets \
   --namespace=z8 \
   --from-literal=postgres-user=z8 \
   --from-literal=postgres-password=<your-password> \
-  --from-literal=auth-secret=$(openssl rand -base64 32)
+  --from-literal=auth-secret=$(openssl rand -base64 32) \
+  --from-literal=scim-credential-hash-secret=$(openssl rand -base64 32)
 
 # 3. Update configmap with your domain
 vim configmap.yaml
@@ -253,6 +254,7 @@ See `deploy/.env.template` for the full list. Key variables:
 | `POSTGRES_SSL_ROOT_CERT_PATH` | No | Path to a mounted CA certificate file for managed Postgres TLS |
 | `POSTGRES_SSL_CA_CERT` | No | Inline CA certificate content when mounting a file is not practical |
 | `BETTER_AUTH_SECRET` | Yes | Session encryption key |
+| `SCIM_CREDENTIAL_HASH_SECRET` | Yes | Independent SCIM credential hashing secret (minimum 32 characters; do not reuse Better Auth secrets) |
 | `NEXT_PUBLIC_APP_URL` | Yes | Public URL of the application |
 | `REDIS_HOST` | No | Redis-compatible cache host (default: localhost) |
 | `REDIS_PORT` | No | Redis-compatible cache port (default: 6379) |
@@ -262,6 +264,8 @@ See `deploy/.env.template` for the full list. Key variables:
 | `WORKER_CONCURRENCY` | No | Worker parallel jobs (default: 5) |
 | `ENABLE_CRON_JOBS` | No | Enable repeatable cron (default: true) |
 | `TELEMETRY_ENABLED` | No | Enable daily telemetry reporting (`true` or `false`, default: `true`); `false` disables telemetry before identity/key generation or network access |
+
+`BETTER_AUTH_SECRET` and `SCIM_CREDENTIAL_HASH_SECRET` are both required by the webapp and worker. Configure them as independent values of at least 32 characters; never derive or fall back from one to the other.
 
 For managed PostgreSQL providers that document `sslmode=verify-full sslrootcert=/path/to/provider-ca.pem`, keep the individual Z8 variables and configure:
 

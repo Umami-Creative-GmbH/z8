@@ -11,7 +11,7 @@
     },
     "test": {
       "cache": false,
-      "env": ["BETTER_AUTH_SECRET", "BETTER_AUTH_SECRETS"]
+      "env": ["BETTER_AUTH_SECRET", "BETTER_AUTH_SECRETS", "SCIM_CREDENTIAL_HASH_SECRET"]
     },
     "test:watch": {
       "cache": false,
