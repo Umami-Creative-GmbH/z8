@@ -19,6 +19,12 @@ import {
 
 const logger = createLogger("RoleTemplate");
 
+function asError(error: unknown) {
+	return error instanceof Error
+		? error
+		: new Error("Role template operation failed");
+}
+
 // ============================================
 // Types
 // ============================================
@@ -304,24 +310,40 @@ export const RoleTemplateServiceLive = Layer.succeed(
 
 		createIdpMapping: (input: CreateIdpMappingInput) =>
 			Effect.gen(function* () {
-				const [created] = yield* Effect.tryPromise(() =>
-					requestSCIMProjectionReplayAfter(
-						{ organizationId: input.organizationId, source: input.idpType },
-						() =>
-							db
-								.insert(roleTemplateMapping)
-								.values({
-									organizationId: input.organizationId,
-									idpType: input.idpType,
-									idpGroupId: input.idpGroupId,
-									idpGroupName: input.idpGroupName,
-									roleTemplateId: input.roleTemplateId,
-									priority: input.priority ?? 0,
-									createdBy: input.createdBy,
-								})
-								.returning(),
-					),
-				);
+				const [created] = yield* Effect.tryPromise({
+					try: () =>
+						requestSCIMProjectionReplayAfter(
+							{ organizationId: input.organizationId, source: input.idpType },
+							() =>
+								db
+									.insert(roleTemplateMapping)
+									.values({
+										organizationId: input.organizationId,
+										idpType: input.idpType,
+										idpGroupId: input.idpGroupId,
+										idpGroupName: input.idpGroupName,
+										roleTemplateId: input.roleTemplateId,
+										priority: input.priority ?? 0,
+										createdBy: input.createdBy,
+									})
+									.returning(),
+							async ([snapshot]) => {
+								if (!snapshot) return;
+								await db
+									.delete(roleTemplateMapping)
+									.where(
+										and(
+											eq(roleTemplateMapping.id, snapshot.id),
+											eq(
+												roleTemplateMapping.organizationId,
+												input.organizationId,
+											),
+										),
+									);
+							},
+						),
+					catch: asError,
+				});
 
 				logger.info(
 					{
@@ -346,12 +368,18 @@ export const RoleTemplateServiceLive = Layer.succeed(
 				);
 				const persist = () => db.delete(roleTemplateMapping).where(where);
 				if (mapping?.idpType === "scim") {
-					yield* Effect.tryPromise(() =>
-						requestSCIMProjectionReplayAfter(
-							{ organizationId, source: "scim" },
-							persist,
-						),
-					);
+					yield* Effect.tryPromise({
+						try: () =>
+							requestSCIMProjectionReplayAfter(
+								{ organizationId, source: "scim" },
+								async () => {
+									await persist();
+									return mapping;
+								},
+								(snapshot) => db.insert(roleTemplateMapping).values(snapshot),
+							),
+						catch: asError,
+					});
 				} else {
 					yield* Effect.tryPromise(persist);
 				}
@@ -580,12 +608,19 @@ export const RoleTemplateServiceLive = Layer.succeed(
 				const persist = () =>
 					db.delete(userRoleTemplateAssignment).where(where);
 				if (assignment?.assignmentSource === "manual") {
-					yield* Effect.tryPromise(() =>
-						requestSCIMProjectionReplayAfter(
-							{ organizationId, source: "manual" },
-							persist,
-						),
-					);
+					yield* Effect.tryPromise({
+						try: () =>
+							requestSCIMProjectionReplayAfter(
+								{ organizationId, source: "manual" },
+								async () => {
+									await persist();
+									return assignment;
+								},
+								(snapshot) =>
+									db.insert(userRoleTemplateAssignment).values(snapshot),
+							),
+						catch: asError,
+					});
 				} else {
 					yield* Effect.tryPromise(persist);
 				}

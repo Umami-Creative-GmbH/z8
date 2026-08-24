@@ -303,6 +303,9 @@ describe("reconcileSCIMRoleProjection", () => {
 						userId,
 						roleTemplateId: "template_old",
 						sourceGroupId: "old_group",
+						appliedRoleTemplateId: "template_old",
+						appliedDefaultTeamId: "team_old",
+						appliedDefaultTeamMembershipOwned: true,
 					},
 				],
 				[SCIM_MODELS.roleAssignment]: [
@@ -350,7 +353,7 @@ describe("reconcileSCIMRoleProjection", () => {
 		expect(target.rows(SCIM_MODELS.teamMembership)).toHaveLength(0);
 	});
 
-	it("removes stale SCIM default-team effects using the assignment when desired state is absent", async () => {
+	it("does not infer default-team ownership from a SCIM assignment", async () => {
 		const target = createTransactionFixture(
 			baseRows({
 				[SCIM_MODELS.roleTemplate]: [
@@ -395,7 +398,189 @@ describe("reconcileSCIMRoleProjection", () => {
 
 		await reconcileSCIMRoleProjection(projected([]), context(target));
 
-		expect(target.rows(SCIM_MODELS.teamMembership)).toHaveLength(0);
+		expect(target.rows(SCIM_MODELS.teamMembership)).toHaveLength(1);
+	});
+
+	it("tracks desired state through an override then replaces only the last SCIM-owned team", async () => {
+		const target = createTransactionFixture(
+			baseRows({
+				[SCIM_MODELS.roleMapping]: [
+					{
+						id: "mapping_a",
+						organizationId,
+						idpType: "scim",
+						idpGroupId: "group_a",
+						roleTemplateId: "template_a",
+						priority: 1,
+					},
+					{
+						id: "mapping_b",
+						organizationId,
+						idpType: "scim",
+						idpGroupId: "group_b",
+						roleTemplateId: "template_b",
+						priority: 1,
+					},
+				],
+				[SCIM_MODELS.roleTemplate]: [
+					{
+						id: "template_default",
+						organizationId,
+						isGlobal: false,
+						isActive: true,
+						employeeRole: "employee",
+						teamPermissions: {},
+						defaultTeamId: null,
+					},
+					{
+						id: "template_a",
+						organizationId,
+						isGlobal: false,
+						isActive: true,
+						employeeRole: "manager",
+						teamPermissions: {},
+						defaultTeamId: "team_a",
+					},
+					{
+						id: "template_b",
+						organizationId,
+						isGlobal: false,
+						isActive: true,
+						employeeRole: "admin",
+						teamPermissions: {},
+						defaultTeamId: "team_b",
+					},
+				],
+			}),
+		);
+		const sourceA = group("group_a", "Group A");
+		const sourceB = group("group_b", "Group B");
+
+		await reconcileSCIMRoleProjection(
+			projected([{ source: sourceA, role: "template_a" }]),
+			context(target),
+		);
+		const assignment = target.rows(SCIM_MODELS.roleAssignment)[0];
+		if (!assignment) throw new Error("Expected the SCIM assignment");
+		Object.assign(assignment, {
+			roleTemplateId: "template_manual",
+			assignmentSource: "manual",
+		});
+		await reconcileSCIMRoleProjection(
+			projected([{ source: sourceB, role: "template_b" }]),
+			context(target),
+		);
+
+		expect(target.rows(SCIM_MODELS.projectionState)[0]).toMatchObject({
+			roleTemplateId: "template_b",
+			appliedRoleTemplateId: "template_a",
+			appliedDefaultTeamId: "team_a",
+			appliedDefaultTeamMembershipOwned: true,
+		});
+		expect(target.rows(SCIM_MODELS.teamMembership)).toMatchObject([
+			{ teamId: "team_a" },
+		]);
+
+		target.rows(SCIM_MODELS.roleAssignment).splice(0, 1);
+		await reconcileSCIMRoleProjection(
+			projected([{ source: sourceB, role: "template_b" }]),
+			context(target),
+		);
+
+		expect(target.rows(SCIM_MODELS.teamMembership)).toMatchObject([
+			{ teamId: "team_b" },
+		]);
+		expect(target.rows(SCIM_MODELS.projectionState)[0]).toMatchObject({
+			roleTemplateId: "template_b",
+			appliedRoleTemplateId: "template_b",
+			appliedDefaultTeamId: "team_b",
+			appliedDefaultTeamMembershipOwned: true,
+		});
+	});
+
+	it("never deletes a preexisting manual default-team membership", async () => {
+		const target = createTransactionFixture(
+			baseRows({
+				[SCIM_MODELS.roleMapping]: [
+					{
+						id: "mapping_a",
+						organizationId,
+						idpType: "scim",
+						idpGroupId: "group_a",
+						roleTemplateId: "template_a",
+						priority: 1,
+					},
+					{
+						id: "mapping_b",
+						organizationId,
+						idpType: "scim",
+						idpGroupId: "group_b",
+						roleTemplateId: "template_b",
+						priority: 1,
+					},
+				],
+				[SCIM_MODELS.roleTemplate]: [
+					{
+						id: "template_default",
+						organizationId,
+						isGlobal: false,
+						isActive: true,
+						employeeRole: "employee",
+						teamPermissions: {},
+						defaultTeamId: null,
+					},
+					{
+						id: "template_a",
+						organizationId,
+						isGlobal: false,
+						isActive: true,
+						employeeRole: "manager",
+						teamPermissions: {},
+						defaultTeamId: "team_a",
+					},
+					{
+						id: "template_b",
+						organizationId,
+						isGlobal: false,
+						isActive: true,
+						employeeRole: "admin",
+						teamPermissions: {},
+						defaultTeamId: "team_b",
+					},
+				],
+				[SCIM_MODELS.teamMembership]: [
+					{
+						id: "manual_membership",
+						organizationId,
+						employeeId: "employee_1",
+						teamId: "team_a",
+						createdBy: "admin_opaque",
+					},
+				],
+			}),
+		);
+		const sourceA = group("group_a", "Group A");
+		const sourceB = group("group_b", "Group B");
+
+		await reconcileSCIMRoleProjection(
+			projected([{ source: sourceA, role: "template_a" }]),
+			context(target),
+		);
+		expect(target.rows(SCIM_MODELS.projectionState)[0]).toMatchObject({
+			appliedDefaultTeamId: "team_a",
+			appliedDefaultTeamMembershipOwned: false,
+		});
+		await reconcileSCIMRoleProjection(
+			projected([{ source: sourceB, role: "template_b" }]),
+			context(target),
+		);
+
+		expect(target.rows(SCIM_MODELS.teamMembership)).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ id: "manual_membership", teamId: "team_a" }),
+				expect.objectContaining({ teamId: "team_b" }),
+			]),
+		);
 	});
 
 	it.each(["manual", "invite_code", "sso"] as const)(

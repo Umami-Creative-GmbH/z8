@@ -103,8 +103,6 @@ export async function reconcileSCIMRoleProjection(
 		organizationId,
 		input.userId,
 	);
-	const previousRoleTemplateId =
-		previousProjection?.roleTemplateId ?? assignment?.roleTemplateId;
 	await store.putProjectionState({
 		organizationId,
 		userId: input.userId,
@@ -114,9 +112,6 @@ export async function reconcileSCIMRoleProjection(
 	if (assignment && assignment.assignmentSource !== "scim") return;
 	const employee = await store.getEmployee(organizationId, input.userId);
 	if (!employee) throw new Error("SCIM employee is unavailable");
-	const previousTemplate = previousRoleTemplateId
-		? await store.getRoleTemplate(previousRoleTemplateId)
-		: null;
 	await store.setEmployeeRole(
 		organizationId,
 		employee.id,
@@ -127,10 +122,12 @@ export async function reconcileSCIMRoleProjection(
 		employeeId: employee.id,
 		permissions: desiredTemplate.teamPermissions ?? {},
 	});
-	await store.replaceDefaultTeam({
+	const defaultTeamMembershipOwned = await store.replaceDefaultTeam({
 		organizationId,
 		employeeId: employee.id,
-		previousTeamId: previousTemplate?.defaultTeamId ?? null,
+		previousTeamId: previousProjection?.appliedDefaultTeamId ?? null,
+		previousTeamMembershipOwned:
+			previousProjection?.appliedDefaultTeamMembershipOwned === true,
 		defaultTeamId: desiredTemplate.defaultTeamId,
 	});
 	await store.putRoleAssignment({
@@ -139,7 +136,14 @@ export async function reconcileSCIMRoleProjection(
 		roleTemplateId: desiredTemplate.id,
 		idpGroupId: winner?.mapping.idpGroupId ?? null,
 	});
-	if (assignment?.roleTemplateId !== desiredTemplate.id) {
+	await store.putAppliedProjectionState({
+		organizationId,
+		userId: input.userId,
+		appliedRoleTemplateId: desiredTemplate.id,
+		appliedDefaultTeamId: desiredTemplate.defaultTeamId,
+		appliedDefaultTeamMembershipOwned: defaultTeamMembershipOwned,
+	});
+	if (previousProjection?.appliedRoleTemplateId !== desiredTemplate.id) {
 		await store.createProvisioningAudit({
 			organizationId,
 			connectionId: config.connectionId,

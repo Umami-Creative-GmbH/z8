@@ -12,6 +12,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { organization, user } from "../auth-schema";
 import { roleTemplate } from "./identity";
+import { team } from "./organization";
 import { currentTimestamp } from "./timestamp";
 
 export const scimConnectionStateEnum = pgEnum("scim_connection_state", [
@@ -121,6 +122,18 @@ export const scimRoleProjectionState = pgTable(
 			.notNull()
 			.references(() => roleTemplate.id),
 		sourceGroupId: text("source_group_id"),
+		appliedRoleTemplateId: uuid("applied_role_template_id").references(
+			() => roleTemplate.id,
+		),
+		appliedDefaultTeamId: uuid("applied_default_team_id").references(
+			() => team.id,
+			{ onDelete: "set null" },
+		),
+		appliedDefaultTeamMembershipOwned: boolean(
+			"applied_default_team_membership_owned",
+		)
+			.default(false)
+			.notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.defaultNow()

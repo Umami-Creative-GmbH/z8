@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { user } from "../../auth-schema";
 import { roleTemplate, userLifecycleEvent } from "../identity";
+import { team } from "../organization";
 import * as scimSchema from "../scim";
 import {
 	scimConnectionStateEnum,
@@ -153,9 +154,29 @@ describe("managed SCIM application schema", () => {
 			"organization_id",
 			"user_id",
 		]);
-		expect(columnNames(scimRoleProjectionState)).toContain("source_group_id");
+		expect(columnNames(scimRoleProjectionState)).toEqual(
+			expect.arrayContaining([
+				"source_group_id",
+				"applied_role_template_id",
+				"applied_default_team_id",
+				"applied_default_team_membership_owned",
+			]),
+		);
+		expectNotNullColumns(scimRoleProjectionState, [
+			"applied_default_team_membership_owned",
+		]);
 		expect(
 			hasForeignKey(scimRoleProjectionState, "role_template_id", roleTemplate),
+		).toBe(true);
+		expect(
+			hasForeignKey(
+				scimRoleProjectionState,
+				"applied_role_template_id",
+				roleTemplate,
+			),
+		).toBe(true);
+		expect(
+			hasForeignKey(scimRoleProjectionState, "applied_default_team_id", team),
 		).toBe(true);
 	});
 

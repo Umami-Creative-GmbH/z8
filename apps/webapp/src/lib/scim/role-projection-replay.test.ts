@@ -19,6 +19,9 @@ describe("SCIM projection replay boundary", () => {
 				order.push("persist");
 				return "created";
 			},
+			async () => {
+				order.push("compensate");
+			},
 		);
 
 		expect(result).toBe("created");
@@ -48,17 +51,46 @@ describe("SCIM projection replay boundary", () => {
 			async () => {
 				order.push("delete-assignment");
 			},
+			async () => {
+				order.push("restore-assignment");
+			},
 		);
 
 		expect(order).toEqual(["delete-assignment", "replay:org_target"]);
 	});
 
 	it("fails closed when replay-required persistence has no registered integration", async () => {
+		const persist = vi.fn();
 		await expect(
 			requestSCIMProjectionReplayAfter(
 				{ organizationId: "org_target", source: "scim" },
-				async () => undefined,
+				persist,
+				vi.fn(),
 			),
 		).rejects.toThrow("SCIM projection replay is not configured");
+		expect(persist).not.toHaveBeenCalled();
+	});
+
+	it("compensates a rejected replay and preserves the original policy", async () => {
+		let policy = "before";
+		const replayError = new Error("replay rejected");
+		configureSCIMProjectionReplay(async () => async () => {
+			throw replayError;
+		});
+
+		await expect(
+			requestSCIMProjectionReplayAfter(
+				{ organizationId: "org_target", source: "manual" },
+				async () => {
+					const snapshot = policy;
+					policy = "deleted";
+					return snapshot;
+				},
+				async (snapshot) => {
+					policy = snapshot;
+				},
+			),
+		).rejects.toBe(replayError);
+		expect(policy).toBe("before");
 	});
 });

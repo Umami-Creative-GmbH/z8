@@ -112,6 +112,9 @@ export interface SCIMProjectionStateRecord {
 	userId: string;
 	roleTemplateId: string;
 	sourceGroupId: string | null;
+	appliedRoleTemplateId: string | null;
+	appliedDefaultTeamId: string | null;
+	appliedDefaultTeamMembershipOwned: boolean;
 }
 
 export interface SCIMTransactionStore {
@@ -211,6 +214,13 @@ export interface SCIMTransactionStore {
 		roleTemplateId: string;
 		sourceGroupId: string | null;
 	}): Promise<void>;
+	putAppliedProjectionState(input: {
+		organizationId: string;
+		userId: string;
+		appliedRoleTemplateId: string;
+		appliedDefaultTeamId: string | null;
+		appliedDefaultTeamMembershipOwned: boolean;
+	}): Promise<void>;
 	replaceOrgTeamPermissions(input: {
 		organizationId: string;
 		employeeId: string;
@@ -220,8 +230,9 @@ export interface SCIMTransactionStore {
 		organizationId: string;
 		employeeId: string;
 		previousTeamId: string | null;
+		previousTeamMembershipOwned: boolean;
 		defaultTeamId: string | null;
-	}): Promise<void>;
+	}): Promise<boolean>;
 }
 
 type SCIMReadDatabase = SCIMIdentityResolutionContext["database"];
@@ -483,7 +494,27 @@ export function createSCIMTransactionStore(
 			await createUUIDRecord(database, SCIM_MODELS.projectionState, {
 				organizationId,
 				userId,
+				appliedRoleTemplateId: null,
+				appliedDefaultTeamId: null,
+				appliedDefaultTeamMembershipOwned: false,
 				...data,
+			});
+		},
+		putAppliedProjectionState: async ({
+			organizationId,
+			userId,
+			appliedRoleTemplateId,
+			appliedDefaultTeamId,
+			appliedDefaultTeamMembershipOwned,
+		}) => {
+			await database.update({
+				model: SCIM_MODELS.projectionState,
+				where: organizationUserWhere(organizationId, userId),
+				update: {
+					appliedRoleTemplateId,
+					appliedDefaultTeamId,
+					appliedDefaultTeamMembershipOwned,
+				},
 			});
 		},
 		replaceOrgTeamPermissions: async ({
@@ -524,9 +555,14 @@ export function createSCIMTransactionStore(
 			organizationId,
 			employeeId,
 			previousTeamId,
+			previousTeamMembershipOwned,
 			defaultTeamId,
 		}) => {
-			if (previousTeamId && previousTeamId !== defaultTeamId) {
+			if (
+				previousTeamMembershipOwned &&
+				previousTeamId &&
+				previousTeamId !== defaultTeamId
+			) {
 				await database.delete({
 					model: SCIM_MODELS.teamMembership,
 					where: [
@@ -536,20 +572,24 @@ export function createSCIMTransactionStore(
 					],
 				});
 			}
-			if (!defaultTeamId) return;
+			if (!defaultTeamId) return false;
 			const where = [
 				{ field: "organizationId", value: organizationId },
 				{ field: "employeeId", value: employeeId },
 				{ field: "teamId", value: defaultTeamId },
 			];
-			if (await database.findOne({ model: SCIM_MODELS.teamMembership, where }))
-				return;
+			if (
+				await database.findOne({ model: SCIM_MODELS.teamMembership, where })
+			) {
+				return previousTeamMembershipOwned && previousTeamId === defaultTeamId;
+			}
 			await createUUIDRecord(database, SCIM_MODELS.teamMembership, {
 				organizationId,
 				employeeId,
 				teamId: defaultTeamId,
 				createdBy: null,
 			});
+			return true;
 		},
 	};
 }

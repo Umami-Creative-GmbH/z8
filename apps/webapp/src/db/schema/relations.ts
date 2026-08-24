@@ -719,6 +719,9 @@ export const teamRelations = relations(team, ({ one, many }) => ({
 	// Change policies
 	changePolicyAssignments: many(changePolicyAssignment),
 	payrollAccessTeams: many(payrollAccessTeam),
+	appliedScimRoleProjectionStates: many(scimRoleProjectionState, {
+		relationName: "scimAppliedDefaultTeam",
+	}),
 }));
 
 export const teamMembershipRelations = relations(teamMembership, ({ one }) => ({
@@ -2893,9 +2896,20 @@ export const scimRoleProjectionStateRelations = relations(scimRoleProjectionStat
 		fields: [scimRoleProjectionState.userId],
 		references: [user.id],
 	}),
-	roleTemplate: one(roleTemplate, {
+	desiredRoleTemplate: one(roleTemplate, {
 		fields: [scimRoleProjectionState.roleTemplateId],
 		references: [roleTemplate.id],
+		relationName: "scimDesiredRoleTemplate",
+	}),
+	appliedRoleTemplate: one(roleTemplate, {
+		fields: [scimRoleProjectionState.appliedRoleTemplateId],
+		references: [roleTemplate.id],
+		relationName: "scimAppliedRoleTemplate",
+	}),
+	appliedDefaultTeam: one(team, {
+		fields: [scimRoleProjectionState.appliedDefaultTeamId],
+		references: [team.id],
+		relationName: "scimAppliedDefaultTeam",
 	}),
 }));
 
@@ -2937,7 +2951,12 @@ export const roleTemplateRelations = relations(roleTemplate, ({ one, many }) => 
 	mappings: many(roleTemplateMapping),
 	assignments: many(userRoleTemplateAssignment),
 	scimProviderConfigs: many(scimProviderConfig),
-	scimRoleProjectionStates: many(scimRoleProjectionState),
+	desiredScimRoleProjectionStates: many(scimRoleProjectionState, {
+		relationName: "scimDesiredRoleTemplate",
+	}),
+	appliedScimRoleProjectionStates: many(scimRoleProjectionState, {
+		relationName: "scimAppliedRoleTemplate",
+	}),
 }));
 
 export const roleTemplateMappingRelations = relations(roleTemplateMapping, ({ one }) => ({

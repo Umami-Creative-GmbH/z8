@@ -12,12 +12,25 @@ export function configureSCIMProjectionReplay(
 export async function requestSCIMProjectionReplayAfter<T>(
 	input: { organizationId: string; source: "manual" | "scim" | "sso" },
 	persist: () => Promise<T>,
+	compensate?: (snapshot: T) => Promise<unknown>,
 ): Promise<T> {
-	const result = await persist();
-	if (input.source === "sso") return result;
-	if (!replayLoader)
+	if (input.source === "sso") return persist();
+	if (!replayLoader || !compensate)
 		throw new Error("SCIM projection replay is not configured");
 	const replay = await replayLoader();
-	await replay(input.organizationId);
+	const result = await persist();
+	try {
+		await replay(input.organizationId);
+	} catch (replayError) {
+		try {
+			await compensate(result);
+		} catch (compensationError) {
+			throw new AggregateError(
+				[replayError, compensationError],
+				"SCIM projection replay and policy compensation failed",
+			);
+		}
+		throw replayError;
+	}
 	return result;
 }
