@@ -3,7 +3,8 @@
 	"compilerOptions": {
 		"allowJs": false,
 		"incremental": false,
-		"noEmit": true
+		"noEmit": true,
+		"types": ["node"]
 	},
 	"include": ["scripts/smoke-bullmq-v6.ts"],
 	"exclude": []
