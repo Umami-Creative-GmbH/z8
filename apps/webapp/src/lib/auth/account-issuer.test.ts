@@ -12,9 +12,12 @@ describe("getAccountIssuer", () => {
 		expect(getAccountIssuer(providerId)).toBe(issuer);
 	});
 
-	it("rejects an unknown provider", () => {
-		expect(() => getAccountIssuer("tenant-oidc")).toThrow(
-			"Unknown account provider: tenant-oidc",
-		);
-	});
+	it.each(["tenant-oidc", "toString", "constructor"])(
+		"rejects unknown provider %s",
+		(providerId) => {
+			expect(() => getAccountIssuer(providerId)).toThrow(
+				`Unknown account provider: ${providerId}`,
+			);
+		},
+	);
 });
