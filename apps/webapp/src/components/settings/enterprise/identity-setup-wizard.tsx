@@ -3,15 +3,13 @@
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	activateEnterpriseIdentitySetupAction,
 	type EnterpriseIdentitySetupResponse,
-	generateEnterpriseIdentityScimTokenAction,
 	recordEnterpriseIdentitySsoTestAction,
 	refreshEnterpriseIdentityDomainStatusAction,
-	refreshEnterpriseIdentityScimStatusAction,
 	registerEnterpriseIdentitySSOProviderAction,
 	updateEnterpriseIdentityAccessPolicyAction,
 	updateEnterpriseIdentityProviderAction,
@@ -144,7 +142,7 @@ function getStepCopy(
 				label: t("settings.enterprise.identity.step.scim", "SCIM Provisioning"),
 				description: t(
 					"settings.enterprise.identity.step.scim.description",
-					"Issue provisioning token",
+					"SCIM provisioning is temporarily unavailable during the Better Auth 1.7 cutover.",
 				),
 			};
 		case "accessPolicy":
@@ -179,7 +177,7 @@ function WizardCard({
 }: {
 	title: string;
 	description: string;
-	children: ReactNode;
+	children?: ReactNode;
 }) {
 	return (
 		<Card className="min-w-0 border-border/80 shadow-xs">
@@ -187,7 +185,9 @@ function WizardCard({
 				<CardTitle>{title}</CardTitle>
 				<CardDescription>{description}</CardDescription>
 			</CardHeader>
-			<CardContent className="min-w-0 space-y-4">{children}</CardContent>
+			{children ? (
+				<CardContent className="min-w-0 space-y-4">{children}</CardContent>
+			) : null}
 		</Card>
 	);
 }
@@ -337,7 +337,6 @@ function useIdentitySetupController({
 }: IdentitySetupWizardProps) {
 	const { t } = useTranslate();
 	const [setup, setSetup] = useState(initialSetup.state);
-	const [scimToken, setScimToken] = useState<string | null>(null);
 	const [defaultRoleTemplateId, setDefaultRoleTemplateId] = useState(
 		initialSetup.defaultRoleTemplateId ?? "none",
 	);
@@ -356,8 +355,6 @@ function useIdentitySetupController({
 		t("settings.enterprise.identity.domain.notSelected", "Not selected");
 	const providerId = setup.provider?.providerId ?? "";
 	const protocol = setup.provider?.protocol ?? preset.defaultProtocol;
-	const scimActivityObserved =
-		setup.scim.verified && !!setup.scim.lastCheckedAt;
 
 	const providerForm = useForm({
 		defaultValues: {
@@ -508,86 +505,6 @@ function useIdentitySetupController({
 		});
 	};
 
-	const generateScimToken = () => {
-		startTransition(async () => {
-			if (!providerId) {
-				toast.error(
-					t(
-						"settings.enterprise.identity.scim.error.saveProviderFirst",
-						"Save provider before generating a SCIM token",
-					),
-				);
-				return;
-			}
-
-			try {
-				const result = await generateEnterpriseIdentityScimTokenAction({
-					providerId,
-					defaultRoleTemplateId:
-						defaultRoleTemplateId === "none" ? null : defaultRoleTemplateId,
-				});
-				setScimToken(result.scimToken ?? null);
-				setSetup((current) => ({
-					...current,
-					currentStep: "accessPolicy",
-					scim: {
-						...current.scim,
-						enabled: true,
-						providerId,
-						error: null,
-					},
-				}));
-				toast.success(
-					t(
-						"settings.enterprise.identity.toast.scimTokenGenerated",
-						"SCIM token generated",
-					),
-				);
-			} catch (error) {
-				toast.error(
-					error instanceof Error
-						? error.message
-						: t(
-								"settings.enterprise.identity.toast.scimTokenFailed",
-								"Failed to generate SCIM token",
-							),
-				);
-			}
-		});
-	};
-
-	const refreshScimStatus = () => {
-		startTransition(async () => {
-			try {
-				const result = await refreshEnterpriseIdentityScimStatusAction();
-				setSetup((current) => ({
-					...current,
-					scim: {
-						...current.scim,
-						verified: result.verified,
-						lastCheckedAt: result.checkedAt,
-						error: result.error,
-					},
-				}));
-				toast.success(
-					t(
-						"settings.enterprise.identity.toast.scimStatusRefreshed",
-						"SCIM status refreshed",
-					),
-				);
-			} catch (error) {
-				toast.error(
-					error instanceof Error
-						? error.message
-						: t(
-								"settings.enterprise.identity.toast.scimStatusFailed",
-								"Failed to refresh SCIM status",
-							),
-				);
-			}
-		});
-	};
-
 	const refreshDomainStatus = () => {
 		startTransition(async () => {
 			try {
@@ -684,7 +601,6 @@ function useIdentitySetupController({
 		activateSetup,
 		defaultRoleTemplateId,
 		domain,
-		generateScimToken,
 		initialSetup,
 		isPending,
 		organizationId,
@@ -696,10 +612,7 @@ function useIdentitySetupController({
 		readiness,
 		recordSsoTest,
 		refreshDomainStatus,
-		refreshScimStatus,
 		saveAccessPolicy,
-		scimActivityObserved,
-		scimToken,
 		setDefaultRoleTemplateId,
 		setTestEmail,
 		setTestError,
@@ -741,7 +654,7 @@ function IdentitySetupView({
 						<p className="mt-1 text-muted-foreground text-sm">
 							{t(
 								"settings.enterprise.identity.hero.description",
-								"Configure SSO, SCIM, and enforcement for organization {organizationId} with guarded activation.",
+								"Configure SSO and enforcement for organization {organizationId} with guarded activation.",
 								{ organizationId },
 							)}
 						</p>
@@ -1029,6 +942,16 @@ function DomainStep({ controller }: { controller: IdentitySetupController }) {
 
 function SsoStep({ controller }: { controller: IdentitySetupController }) {
 	const { isPending, presetId, protocol, providerId, ssoForm, t } = controller;
+	const [browserOrigin, setBrowserOrigin] = useState("");
+
+	useEffect(() => {
+		setBrowserOrigin(window.location.origin);
+	}, []);
+
+	const samlAcsPath = providerId
+		? `/api/auth/sso/saml2/sp/acs/${encodeURIComponent(providerId)}`
+		: "/api/auth/sso/saml2/sp/acs/:providerId";
+	const samlAcsUrl = browserOrigin ? `${browserOrigin}${samlAcsPath}` : samlAcsPath;
 
 	return (
 		<WizardCard
@@ -1125,6 +1048,19 @@ function SsoStep({ controller }: { controller: IdentitySetupController }) {
 									value={field.state.value}
 									onChange={(event) => field.handleChange(event.target.value)}
 								/>
+								<p className="text-muted-foreground text-sm">
+									{browserOrigin
+										? t(
+												"settings.enterprise.identity.sso.saml.acsUrl",
+												"Configure your IdP with this assertion consumer service (ACS) URL: {path}",
+												{ path: samlAcsUrl },
+											)
+										: t(
+												"settings.enterprise.identity.sso.saml.acsPath",
+												"Browser-relative ACS path: {path}",
+												{ path: samlAcsUrl },
+											)}
+								</p>
 							</div>
 						)}
 					</ssoForm.Field>
@@ -1234,106 +1170,19 @@ function SsoTestStep({ controller }: { controller: IdentitySetupController }) {
 }
 
 function ScimStep({ controller }: { controller: IdentitySetupController }) {
-	const {
-		generateScimToken,
-		isPending,
-		providerId,
-		refreshScimStatus,
-		scimActivityObserved,
-		scimToken,
-		setup,
-		t,
-	} = controller;
+	const { t } = controller;
 
 	return (
 		<WizardCard
-			title={t("settings.enterprise.identity.scim.title", "SCIM Provisioning")}
-			description={t(
-				"settings.enterprise.identity.scim.cardDescription",
-				"Generate the provisioning token and monitor connection health.",
+			title={t(
+				"settings.enterprise.identity.scim.unavailable",
+				"SCIM provisioning is temporarily unavailable",
 			)}
-		>
-			<p className="text-muted-foreground text-sm">
-				{t(
-					"settings.enterprise.identity.scim.description",
-					"SCIM verification updates after your identity provider sends a test user or group change.",
-				)}
-			</p>
-			<div className="grid min-w-0 gap-3 rounded-lg border bg-muted/30 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
-				<div className="min-w-0">
-					<p className="text-muted-foreground text-sm">
-						{t("settings.enterprise.identity.scim.baseUrl", "Base URL")}
-					</p>
-					<code className="block truncate rounded bg-background px-2 py-1 text-sm">
-						/api/auth/scim/v2
-					</code>
-				</div>
-				<Button
-					type="button"
-					onClick={generateScimToken}
-					disabled={isPending || !providerId}
-				>
-					{t(
-						"settings.enterprise.identity.scim.action.generateToken",
-						"Generate token",
-					)}
-				</Button>
-			</div>
-
-			{scimToken ? (
-				<div className="min-w-0 rounded-lg border border-primary/30 bg-primary/5 p-4">
-					<p className="font-medium text-sm">
-						{t(
-							"settings.enterprise.identity.scim.tokenShownOnce",
-							"This token is shown once",
-						)}
-					</p>
-					<div className="mt-2 flex min-w-0 flex-col gap-2 sm:flex-row">
-						<code className="min-w-0 flex-1 truncate rounded bg-background p-2 text-sm">
-							{scimToken}
-						</code>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => navigator.clipboard.writeText(scimToken)}
-						>
-							{t(
-								"settings.enterprise.identity.scim.action.copyToken",
-								"Copy token",
-							)}
-						</Button>
-					</div>
-				</div>
-			) : null}
-
-			<div className="flex flex-wrap items-center gap-2">
-				<Button
-					type="button"
-					variant="outline"
-					onClick={refreshScimStatus}
-					disabled={isPending}
-				>
-					{t(
-						"settings.enterprise.identity.scim.action.refreshStatus",
-						"Refresh status",
-					)}
-				</Button>
-				<Badge variant={scimActivityObserved ? "default" : "outline"}>
-					{scimActivityObserved
-						? t(
-								"settings.enterprise.identity.scim.status.observed",
-								"Provisioning activity observed",
-							)
-						: t(
-								"settings.enterprise.identity.scim.status.none",
-								"No provisioning activity yet",
-							)}
-				</Badge>
-				{setup.scim.error ? (
-					<span className="text-destructive text-sm">{setup.scim.error}</span>
-				) : null}
-			</div>
-		</WizardCard>
+			description={t(
+				"settings.enterprise.identity.scim.unavailableDescription",
+				"Existing provisioning data is preserved while the Better Auth 1.7 SCIM cutover is prepared.",
+			)}
+		/>
 	);
 }
 

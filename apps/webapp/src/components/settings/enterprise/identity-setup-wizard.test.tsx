@@ -1,4 +1,5 @@
 /* @vitest-environment jsdom */
+/* @vitest-environment-options {"url": "https://example.test/"} */
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -318,6 +319,11 @@ describe("IdentitySetupWizard behavior", () => {
 		expect(screen.getByText("SSO-Test ist vor Aktivierung erforderlich")).toBeTruthy();
 		expect(screen.queryByText("provider is required before activation")).toBeNull();
 		expect(screen.queryByText("ssoTest is required before activation")).toBeNull();
+		expect(
+			screen.getByText(
+				"Configure SSO and enforcement for organization org_123 with guarded activation.",
+			),
+		).toBeTruthy();
 	});
 
 	it("saves provider setup with the expected payload", async () => {
@@ -360,6 +366,29 @@ describe("IdentitySetupWizard behavior", () => {
 		});
 	});
 
+	it("shows the mounted browser origin in the encoded SAML ACS URL", async () => {
+		renderWizard(
+			configuredSetup({
+				provider: {
+					preset: "generic",
+					protocol: "saml",
+					providerId: "acme/okta",
+				},
+			}),
+		);
+
+		await waitFor(() => {
+			const acsInstruction = screen.getByText(/assertion consumer service \(ACS\) URL/);
+			expect(acsInstruction.textContent).toContain(
+				"https://example.test/api/auth/sso/saml2/sp/acs/acme%2Fokta",
+			);
+			expect(acsInstruction.textContent).not.toContain(
+				"URL: /api/auth/sso/saml2/sp/acs/acme%2Fokta",
+			);
+		});
+		expect(screen.queryByText("/api/auth/sso/callback")).toBeNull();
+	});
+
 	it("records a passed live SSO test", async () => {
 		renderWizard(configuredSetup());
 
@@ -389,26 +418,10 @@ describe("IdentitySetupWizard behavior", () => {
 		expect(screen.getByText("Verifiziert")).toBeTruthy();
 	});
 
-	it("shows the SCIM token only after token generation returns it", async () => {
-		renderWizard(configuredSetup());
-
-		expect(screen.queryByText("scim_token_returned_once")).toBeNull();
-		fireEvent.click(screen.getByRole("button", { name: "Token generieren" }));
-
-		await waitFor(() => {
-			expect(generateEnterpriseIdentityScimTokenActionMock).toHaveBeenCalledWith({
-				providerId: "acme-okta",
-				defaultRoleTemplateId: "role-template-1",
-			});
-		});
-
-		expect(screen.getByText("Dieses Token wird einmal angezeigt")).toBeTruthy();
-		expect(screen.getByText("scim_token_returned_once")).toBeTruthy();
-	});
-
-	it("keeps SCIM status pending until provisioning activity is observed", async () => {
+	it("keeps the SCIM step compatible while provisioning controls are unavailable", () => {
 		renderWizard(
 			configuredSetup({
+				currentStep: "scim",
 				scim: {
 					enabled: true,
 					providerId: "acme-okta",
@@ -420,21 +433,27 @@ describe("IdentitySetupWizard behavior", () => {
 		);
 
 		expect(
+			screen.getByText("SCIM provisioning is temporarily unavailable"),
+		).toBeTruthy();
+		expect(
 			screen.getByText(
-				"SCIM-Verifizierung wird aktualisiert, nachdem Ihr Identitätsanbieter einen Testbenutzer oder eine Gruppenänderung sendet.",
+				"SCIM provisioning is temporarily unavailable during the Better Auth 1.7 cutover.",
 			),
 		).toBeTruthy();
-		expect(screen.getByText("Noch keine Provisionierungsaktivität")).toBeTruthy();
-		expect(screen.queryByText("Provisionierungsaktivität erkannt")).toBeNull();
-
-		fireEvent.click(screen.getByRole("button", { name: "Status aktualisieren" }));
-
-		await waitFor(() => {
-			expect(refreshEnterpriseIdentityScimStatusActionMock).toHaveBeenCalled();
-		});
-
-		expect(screen.getByText("Provisionierungsaktivität erkannt")).toBeTruthy();
-		expect(screen.queryByText("Noch keine Provisionierungsaktivität")).toBeNull();
+		expect(
+			screen.getByText(
+				"Existing provisioning data is preserved while the Better Auth 1.7 SCIM cutover is prepared.",
+			),
+		).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Generate token" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Token generieren" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Refresh status" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Status aktualisieren" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Copy token" })).toBeNull();
+		expect(screen.queryByText("/api/auth/scim/v2")).toBeNull();
+		expect(screen.queryByText("scim_token_returned_once")).toBeNull();
+		expect(generateEnterpriseIdentityScimTokenActionMock).not.toHaveBeenCalled();
+		expect(refreshEnterpriseIdentityScimStatusActionMock).not.toHaveBeenCalled();
 	});
 
 	it("saves access policy with top-level defaultRoleTemplateId", async () => {
@@ -513,5 +532,15 @@ describe("DomainsAndBrandingTabs behavior", () => {
 		expect(screen.getByRole("link", { name: "Geführte Einrichtung" }).getAttribute("href")).toBe(
 			"/settings/enterprise/identity-setup",
 		);
+		expect(
+			screen.getByText(
+				"Configure SSO and access policy with guarded activation while SCIM provisioning is temporarily unavailable.",
+			),
+		).toBeTruthy();
+		expect(
+			screen.queryByText(
+				"Configure SSO, SCIM, access policy, and activation checks in one guarded flow.",
+			),
+		).toBeNull();
 	});
 });

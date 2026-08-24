@@ -28,8 +28,13 @@ const queueFailedJobRetentionCount = Number(env.QUEUE_FAILED_JOB_RETENTION_COUNT
 const queueFailedJobRetentionSeconds = Number(env.QUEUE_FAILED_JOB_RETENTION_SECONDS);
 
 // Connection configuration for Redis-compatible backend
+const redisConnectionOptions = createRedisConnectionOptions(env);
 const connection: ConnectionOptions = {
-	...createRedisConnectionOptions(env),
+	host: redisConnectionOptions.host,
+	port: redisConnectionOptions.port,
+	username: redisConnectionOptions.username,
+	password: redisConnectionOptions.password,
+	tls: redisConnectionOptions.tls,
 	maxRetriesPerRequest: null, // Required for BullMQ
 };
 

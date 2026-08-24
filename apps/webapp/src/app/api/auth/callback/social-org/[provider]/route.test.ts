@@ -16,6 +16,12 @@ const mockState = vi.hoisted(() => {
 		exchangeCode: vi.fn(),
 		getUserInfo: vi.fn(),
 		parseAppleFormPost: vi.fn(),
+		getAccountIssuer: vi.fn(),
+		accountFindFirst: vi.fn(),
+		userFindFirst: vi.fn(),
+		insert: vi.fn(),
+		update: vi.fn(),
+		insertedAccounts: [] as Record<string, unknown>[],
 	};
 });
 
@@ -44,13 +50,17 @@ vi.mock("@/lib/social-oauth", () => ({
 	parseAppleFormPost: mockState.parseAppleFormPost,
 }));
 
+vi.mock("@/lib/auth/account-issuer", () => ({
+	getAccountIssuer: mockState.getAccountIssuer,
+}));
+
 vi.mock("@/db", () => ({
 	db: {
-		insert: vi.fn(),
-		update: vi.fn(),
+		insert: mockState.insert,
+		update: mockState.update,
 		query: {
-			account: { findFirst: vi.fn() },
-			user: { findFirst: vi.fn() },
+			account: { findFirst: mockState.accountFindFirst },
+			user: { findFirst: mockState.userFindFirst },
 		},
 	},
 }));
@@ -59,6 +69,7 @@ vi.mock("@/db/auth-schema", () => ({
 	session: {},
 	account: {
 		providerId: "providerId",
+		issuer: "issuer",
 		accountId: "accountId",
 		id: "id",
 		userId: "userId",
@@ -69,7 +80,13 @@ vi.mock("@/db/auth-schema", () => ({
 	},
 }));
 
-const { GET } = await import("./route");
+vi.mock("drizzle-orm", () => ({
+	and: (...conditions: unknown[]) => conditions,
+	eq: (column: string, value: string) => ({ column, value }),
+	sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
+}));
+
+const { GET, findOrCreateUserWithAccount } = await import("./route");
 
 function createRequest(url: string): NextRequest {
 	return {
@@ -79,12 +96,22 @@ function createRequest(url: string): NextRequest {
 	} as unknown as NextRequest;
 }
 
-describe("social oauth callback state validation", () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-		mockState.cookieStore.get.mockReturnValue({ value: JSON.stringify({ some: "state" }) });
-	});
+beforeEach(() => {
+	vi.clearAllMocks();
+	mockState.insertedAccounts.length = 0;
+	mockState.getAccountIssuer.mockReturnValue("local:oauth:github");
+	mockState.insert.mockImplementation(() => ({
+		values: vi.fn(async (values) => {
+			if ("accountId" in values) mockState.insertedAccounts.push(values);
+		}),
+	}));
+	mockState.update.mockImplementation(() => ({
+		set: vi.fn(() => ({ where: vi.fn(async () => undefined) })),
+	}));
+	mockState.cookieStore.get.mockReturnValue({ value: JSON.stringify({ some: "state" }) });
+});
 
+describe("social oauth callback state validation", () => {
 	it("rejects callback when state param cannot be decoded", async () => {
 		const request = createRequest(
 			"https://app.example.com/api/auth/callback/social-org/google?code=test-code&state=%25",
@@ -110,5 +137,78 @@ describe("social oauth callback state validation", () => {
 		expect(response.status).toBe(307);
 		expect(response.headers.get("location")).toContain("/sign-in?error=invalid_state");
 		expect(mockState.verifyOAuthState).not.toHaveBeenCalled();
+	});
+});
+
+describe("findOrCreateUserWithAccount", () => {
+	const params = {
+		provider: "github" as const,
+		providerUserId: "github-subject-7",
+		email: " Person@Example.com ",
+		emailVerified: true,
+		name: "Person",
+		image: null,
+		accessToken: "access-token",
+	};
+
+	it("uses the issuer and subject to find an existing account", async () => {
+		mockState.accountFindFirst.mockResolvedValue({ id: "account-row", userId: "user-1" });
+
+		await expect(findOrCreateUserWithAccount(params)).resolves.toEqual({
+			userId: "user-1",
+			isNewUser: false,
+		});
+
+		expect(mockState.getAccountIssuer).toHaveBeenCalledTimes(1);
+		expect(mockState.accountFindFirst).toHaveBeenCalledWith({
+			where: [
+				{ column: "issuer", value: "local:oauth:github" },
+				{ column: "accountId", value: "github-subject-7" },
+			],
+		});
+	});
+
+	it("writes the issuer when linking an account to an existing user", async () => {
+		mockState.accountFindFirst.mockResolvedValue(undefined);
+		mockState.userFindFirst.mockResolvedValue({ id: "user-1" });
+
+		await findOrCreateUserWithAccount(params);
+
+		expect(mockState.insertedAccounts).toContainEqual(
+			expect.objectContaining({
+				issuer: "local:oauth:github",
+				providerId: "github",
+				accountId: "github-subject-7",
+			}),
+		);
+	});
+
+	it("writes the issuer when creating a user and account", async () => {
+		mockState.accountFindFirst.mockResolvedValue(undefined);
+		mockState.userFindFirst.mockResolvedValue(undefined);
+
+		await findOrCreateUserWithAccount(params);
+
+		expect(mockState.insertedAccounts).toContainEqual(
+			expect.objectContaining({
+				issuer: "local:oauth:github",
+				providerId: "github",
+				accountId: "github-subject-7",
+			}),
+		);
+	});
+
+	it("rejects an unknown provider before database mutations", async () => {
+		mockState.getAccountIssuer.mockImplementation(() => {
+			throw new Error("Unknown account provider: tenant-oidc");
+		});
+
+		await expect(
+			findOrCreateUserWithAccount({ ...params, provider: "tenant-oidc" as never }),
+		).rejects.toThrow("Unknown account provider: tenant-oidc");
+
+		expect(mockState.accountFindFirst).not.toHaveBeenCalled();
+		expect(mockState.userFindFirst).not.toHaveBeenCalled();
+		expect(mockState.insert).not.toHaveBeenCalled();
 	});
 });

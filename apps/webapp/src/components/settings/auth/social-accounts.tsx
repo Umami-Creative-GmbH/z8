@@ -38,8 +38,7 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 	const queryClient = useQueryClient();
 	const [unlinkDialogOpen, setUnlinkDialogOpen] = useState(false);
 	const accountToUnlinkRef = useRef<{
-		providerId: string;
-		accountId: string;
+		accountRowId: string;
 	} | null>(null);
 	const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
 
@@ -63,8 +62,8 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 
 	// Mutation for unlinking an account
 	const unlinkMutation = useMutation({
-		mutationFn: async ({ providerId, accountId }: { providerId: string; accountId: string }) => {
-			const result = await authClient.unlinkAccount({ providerId, accountId });
+		mutationFn: async ({ accountRowId }: { accountRowId: string }) => {
+			const result = await authClient.unlinkAccount({ accountId: accountRowId });
 			if (result.error) {
 				throw new Error(
 					getAuthErrorMessage(
@@ -127,8 +126,8 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 		unlinkMutation.mutate(accountToUnlinkRef.current);
 	};
 
-	const confirmUnlink = (providerId: string, accountId: string) => {
-		accountToUnlinkRef.current = { providerId, accountId };
+	const confirmUnlink = (accountRowId: string) => {
+		accountToUnlinkRef.current = { accountRowId };
 		setUnlinkDialogOpen(true);
 	};
 
@@ -197,9 +196,7 @@ export function SocialAccounts({ enabledProviderIds }: SocialAccountsProps) {
 												<Button
 													variant="outline"
 													size="sm"
-													onClick={() =>
-														confirmUnlink(connectedAccount.providerId, connectedAccount.id)
-													}
+													onClick={() => confirmUnlink(connectedAccount.id)}
 													disabled={isPending}
 												>
 													{t("settings.socialAccounts.disconnect", "Disconnect")}

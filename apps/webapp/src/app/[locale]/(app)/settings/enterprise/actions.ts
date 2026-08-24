@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
@@ -11,8 +11,6 @@ import {
 	roleTemplate,
 	type SocialOAuthProvider,
 	type SocialOAuthProviderConfig,
-	scimProviderConfig,
-	scimProvisioningLog,
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { canManageCurrentOrganizationSettings, requireUser } from "@/lib/auth-helpers";
@@ -32,7 +30,6 @@ import type {
 	EnterpriseIdentityProtocol,
 	EnterpriseIdentityProviderPresetId,
 } from "@/lib/enterprise-identity/provider-presets";
-import { buildEnterpriseIdentityScimTokenResponse } from "@/lib/enterprise-identity/scim-token-response";
 import {
 	createDefaultEnterpriseIdentitySetupState,
 	type EnterpriseIdentitySetupState,
@@ -67,6 +64,8 @@ async function requireEnterpriseOrgAdmin() {
 }
 
 const IDENTITY_SETUP_PATH = "/settings/enterprise/identity-setup";
+const SCIM_UNAVAILABLE_MESSAGE =
+	"SCIM provisioning is temporarily unavailable during the Better Auth 1.7 migration";
 
 type EnterpriseIdentitySetupRecord = typeof enterpriseIdentitySetup.$inferSelect;
 
@@ -217,7 +216,7 @@ async function getSetupResponse(
 	organizationId: string,
 	userId: string,
 ): Promise<EnterpriseIdentitySetupResponse> {
-	const [setupRecord, templates, scimConnection] = await Promise.all([
+	const [setupRecord, templates] = await Promise.all([
 		getOrCreateEnterpriseIdentitySetupRecord(organizationId, userId),
 		db
 			.select({
@@ -235,42 +234,13 @@ async function getSetupResponse(
 					or(eq(roleTemplate.organizationId, organizationId), eq(roleTemplate.isGlobal, true)),
 				),
 			),
-		getEnterpriseIdentityScimConnection(organizationId),
 	]);
 
 	return {
 		state: normalizeEnterpriseIdentitySetupRecord(setupRecord),
 		defaultRoleTemplateId: setupRecord.defaultRoleTemplateId,
 		roleTemplates: templates,
-		scimConnection,
-	};
-}
-
-async function getEnterpriseIdentityScimConnection(
-	organizationId: string,
-): Promise<EnterpriseIdentitySetupScimConnectionResponse | null> {
-	const rawResult = await (auth.api as any).listSCIMProviderConnections({
-		headers: await headers(),
-	});
-	const connections: Array<{
-		providerId?: string;
-		organizationId?: string | null;
-		createdAt?: Date | string | null;
-		updatedAt?: Date | string | null;
-	}> = Array.isArray(rawResult)
-		? rawResult
-		: Array.isArray(rawResult?.connections)
-			? rawResult.connections
-			: [];
-	const connection = connections.find((entry) => entry.organizationId === organizationId);
-
-	if (!connection?.providerId) return null;
-
-	return {
-		providerId: connection.providerId,
-		organizationId: connection.organizationId ?? null,
-		createdAt: toIsoFromDate(connection.createdAt),
-		updatedAt: toIsoFromDate(connection.updatedAt),
+		scimConnection: null,
 	};
 }
 
@@ -452,7 +422,7 @@ export async function registerEnterpriseIdentitySSOProviderAction(
 					issuer,
 					domain,
 					organizationId,
-					samlConfig: { metadata },
+					samlConfig: { idpMetadata: { metadata } },
 				},
 				headers: await headers(),
 			});
@@ -523,114 +493,23 @@ export async function refreshEnterpriseIdentityDomainStatusAction() {
 
 export async function generateEnterpriseIdentityScimTokenAction(
 	input: EnterpriseIdentityScimTokenInput,
-) {
-	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
-	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(
-		organizationId,
-		authContext.user.id,
-	);
-	const providerId = input.providerId.trim();
-	if (!providerId) throw new Error("Provider ID is required");
-
-	const defaultRoleTemplateId = await assertRoleTemplateAllowed(
-		organizationId,
-		input.defaultRoleTemplateId,
-	);
-
-	let tokenResult: { token?: string; scimToken?: string };
-	try {
-		tokenResult = await (auth.api as any).generateSCIMToken({
-			body: { providerId, organizationId },
-			headers: await headers(),
-		});
-	} catch (error) {
-		throw new Error(mapBetterAuthIdentityError(error));
-	}
-
-	try {
-		await db
-			.insert(scimProviderConfig)
-			.values({
-				organizationId,
-				providerId,
-				defaultRoleTemplateId,
-				createdBy: authContext.user.id,
-				updatedBy: authContext.user.id,
-			})
-			.onConflictDoUpdate({
-				target: scimProviderConfig.organizationId,
-				set: {
-					providerId,
-					defaultRoleTemplateId,
-					updatedBy: authContext.user.id,
-				},
-			});
-
-		const now = DateTime.utc().toISO();
-		await updateEnterpriseIdentitySetupRecord(organizationId, {
-			currentStep: "accessPolicy",
-			scim: {
-				...setupRecord.scim,
-				enabled: true,
-				providerId,
-				verified: false,
-				lastCheckedAt: now,
-				error: null,
-			},
-			defaultRoleTemplateId,
-			updatedBy: authContext.user.id,
-		});
-	} catch (error) {
-		await (auth.api as any)
-			.deleteSCIMProviderConnection({
-				body: { providerId, organizationId },
-				headers: await headers(),
-			})
-			.catch(() => undefined);
-		throw error;
-	}
-
-	revalidatePath(IDENTITY_SETUP_PATH);
-	return buildEnterpriseIdentityScimTokenResponse(tokenResult, providerId);
+): Promise<{
+	providerId: string;
+	scimToken: string | undefined;
+	baseUrl: "/api/auth/scim/v2";
+}> {
+	await requireEnterpriseOrgAdmin();
+	void input;
+	throw new Error(SCIM_UNAVAILABLE_MESSAGE);
 }
 
-export async function refreshEnterpriseIdentityScimStatusAction() {
-	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
-	const setupRecord = await getOrCreateEnterpriseIdentitySetupRecord(
-		organizationId,
-		authContext.user.id,
-	);
-	const isScimTokenGenerationLog = (log: typeof scimProvisioningLog.$inferSelect) => {
-		const metadata = log.metadata;
-		return (
-			metadata != null &&
-			metadata.idpProvider === "scim" &&
-			metadata.scimDisplayName?.startsWith("SCIM Provider ") === true
-		);
-	};
-	const latestLogs = await db.query.scimProvisioningLog.findMany({
-		where: eq(scimProvisioningLog.organizationId, organizationId),
-		orderBy: desc(scimProvisioningLog.createdAt),
-		limit: 25,
-	});
-	const latestLog = latestLogs.find((log) => !isScimTokenGenerationLog(log));
-	const checkedAt = DateTime.utc().toISO();
-	const verified = latestLog ? latestLog.eventType !== "error" : setupRecord.scim.verified;
-	const error =
-		latestLog?.eventType === "error" ? (latestLog.metadata?.errorMessage ?? "SCIM error") : null;
-
-	await updateEnterpriseIdentitySetupRecord(organizationId, {
-		scim: {
-			...setupRecord.scim,
-			verified,
-			lastCheckedAt: checkedAt,
-			error,
-		},
-		updatedBy: authContext.user.id,
-	});
-
-	revalidatePath(IDENTITY_SETUP_PATH);
-	return { checkedAt, verified, error };
+export async function refreshEnterpriseIdentityScimStatusAction(): Promise<{
+	checkedAt: string;
+	verified: boolean;
+	error: string | null;
+}> {
+	await requireEnterpriseOrgAdmin();
+	throw new Error(SCIM_UNAVAILABLE_MESSAGE);
 }
 
 export async function updateEnterpriseIdentityAccessPolicyAction(
