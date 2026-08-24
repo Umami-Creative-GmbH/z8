@@ -1,6 +1,10 @@
 import type { RedisOptions } from "ioredis";
 
 type RedisTlsOptions = NonNullable<RedisOptions["tls"]>;
+type RedisConnectionOptions = Pick<
+	RedisOptions,
+	"host" | "port" | "username" | "password" | "tls"
+>;
 
 type RedisConnectionEnv = {
 	REDIS_HOST?: string;
@@ -22,7 +26,7 @@ export function createRedisTlsOptions(
 	return { ca: caCert };
 }
 
-export function createRedisConnectionOptions(env: RedisConnectionEnv): RedisOptions {
+export function createRedisConnectionOptions(env: RedisConnectionEnv): RedisConnectionOptions {
 	return {
 		host: env.REDIS_HOST || "localhost",
 		port: Number(env.REDIS_PORT || 6379),
