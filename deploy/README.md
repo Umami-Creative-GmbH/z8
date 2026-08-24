@@ -157,6 +157,9 @@ pnpm docker:build:all
 
 ### Deploy with Kustomize
 
+Generate the Better Auth and SCIM credential hashing secrets independently. Both values must
+contain at least 32 characters and must not be reused.
+
 ```bash
 # 1. Update image references in kustomization.yaml
 cd deploy/k8s
@@ -167,8 +170,8 @@ kubectl create secret generic z8-secrets \
   --namespace=z8 \
   --from-literal=postgres-user=z8 \
   --from-literal=postgres-password=<your-password> \
-  --from-literal=auth-secret=$(openssl rand -base64 32) \
-  --from-literal=scim-credential-hash-secret=$(openssl rand -base64 32)
+  --from-literal=auth-secret="$(openssl rand -base64 32)" \
+  --from-literal=scim-credential-hash-secret="$(openssl rand -base64 32)"
 
 # 3. Update configmap with your domain
 vim configmap.yaml

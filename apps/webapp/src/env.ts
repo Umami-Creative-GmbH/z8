@@ -444,6 +444,33 @@ const parsedEnv = createEnv({
 	},
 	createFinalSchema: (shape) =>
 		z.object(shape).superRefine((env, ctx) => {
+			const matchesRotatedAuthSecret = env.BETTER_AUTH_SECRETS?.split(",").some(
+				(entry) => {
+					const [versionRaw, ...valueParts] = entry.trim().split(":");
+					const version = Number(versionRaw);
+					const value = valueParts.join(":").trim();
+
+					return (
+						Number.isInteger(version) &&
+						version > 0 &&
+						value.length >= 32 &&
+						value === env.SCIM_CREDENTIAL_HASH_SECRET
+					);
+				},
+			);
+
+			if (
+				env.SCIM_CREDENTIAL_HASH_SECRET &&
+				(env.SCIM_CREDENTIAL_HASH_SECRET === env.BETTER_AUTH_SECRET ||
+					matchesRotatedAuthSecret)
+			) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["SCIM_CREDENTIAL_HASH_SECRET"],
+					message: "must be independent from all Better Auth secrets",
+				});
+			}
+
 			if (env.SECRET_STORE_PROVIDER === "scaleway") {
 				const missingScalewayEnvVars = [
 					"SCALEWAY_ACCESS_KEY",
