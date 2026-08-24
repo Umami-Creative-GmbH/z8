@@ -435,6 +435,13 @@
       "when": 1787590288956,
       "tag": "0061_better_auth_account_issuers",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1787615023230,
+      "tag": "0062_better_auth_scim_storage",
+      "breakpoints": true
     }
   ]
 }
