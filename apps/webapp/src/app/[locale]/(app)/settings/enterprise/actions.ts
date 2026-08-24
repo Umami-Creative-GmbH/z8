@@ -422,7 +422,7 @@ export async function registerEnterpriseIdentitySSOProviderAction(
 					issuer,
 					domain,
 					organizationId,
-					samlConfig: { metadata },
+					samlConfig: { idpMetadata: { metadata } },
 				},
 				headers: await headers(),
 			});

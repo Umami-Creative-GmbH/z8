@@ -365,6 +365,23 @@ describe("IdentitySetupWizard behavior", () => {
 		});
 	});
 
+	it("shows the encoded SAML ACS path for the configured provider", () => {
+		renderWizard(
+			configuredSetup({
+				provider: {
+					preset: "generic",
+					protocol: "saml",
+					providerId: "acme/okta",
+				},
+			}),
+		);
+
+		expect(screen.getByText(/assertion consumer service \(ACS\) URL/).textContent).toContain(
+			"/api/auth/sso/saml2/sp/acs/acme%2Fokta",
+		);
+		expect(screen.queryByText("/api/auth/sso/callback")).toBeNull();
+	});
+
 	it("records a passed live SSO test", async () => {
 		renderWizard(configuredSetup());
 

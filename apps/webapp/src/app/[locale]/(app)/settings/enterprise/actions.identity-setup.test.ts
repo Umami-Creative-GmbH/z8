@@ -3,6 +3,12 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const { authApiMock, findSetupMock, updateSetupMock } = vi.hoisted(() => ({
+	authApiMock: { registerSSOProvider: vi.fn() },
+	findSetupMock: vi.fn(),
+	updateSetupMock: vi.fn(),
+}));
+
 vi.mock("next/cache", () => ({
 	revalidatePath: vi.fn(),
 }));
@@ -12,7 +18,17 @@ vi.mock("next/headers", () => ({
 }));
 
 vi.mock("@/db", () => ({
-	db: {},
+	db: {
+		query: {
+			enterpriseIdentitySetup: { findFirst: findSetupMock },
+		},
+		select: vi.fn(() => ({
+			from: vi.fn(() => ({ where: vi.fn().mockResolvedValue([]) })),
+		})),
+		update: vi.fn(() => ({
+			set: vi.fn(() => ({ where: vi.fn(() => ({ returning: updateSetupMock })) })),
+		})),
+	},
 }));
 
 vi.mock("@/db/schema", () => ({
@@ -22,7 +38,7 @@ vi.mock("@/db/schema", () => ({
 }));
 
 vi.mock("@/lib/auth", () => ({
-	auth: { api: {} },
+	auth: { api: authApiMock },
 }));
 
 vi.mock("@/lib/auth-helpers", () => ({
@@ -58,6 +74,7 @@ vi.mock("@/lib/vault", () => ({
 const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "actions.ts"), "utf8");
 const {
 	generateEnterpriseIdentityScimTokenAction,
+	registerEnterpriseIdentitySSOProviderAction,
 	refreshEnterpriseIdentityScimStatusAction,
 } = await import("./actions");
 const { canManageCurrentOrganizationSettings, requireUser } = await import("@/lib/auth-helpers");
@@ -89,6 +106,22 @@ describe("enterprise identity setup action contracts", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		findSetupMock.mockResolvedValue({
+			organizationId: "org-1",
+			preset: "generic",
+			protocol: "saml",
+			providerId: "acme-okta",
+			domain: "example.com",
+			domainVerified: false,
+			currentStep: "sso",
+			ssoTest: null,
+			scim: null,
+			enforcement: null,
+			activatedAt: null,
+			defaultRoleTemplateId: null,
+		});
+		updateSetupMock.mockResolvedValue([{}]);
+		authApiMock.registerSSOProvider.mockResolvedValue({});
 		vi.mocked(requireUser).mockResolvedValue({
 			session: { activeOrganizationId: "org-1" },
 			user: { id: "user-1" },
@@ -232,5 +265,43 @@ describe("enterprise identity setup action contracts", () => {
 		expect(ssoSource.indexOf(validationCall)).toBeLessThan(
 			ssoSource.indexOf("registerSSOProvider"),
 		);
+	});
+
+	it("registers SAML metadata in Better Auth 1.7's IdP metadata envelope", async () => {
+		await registerEnterpriseIdentitySSOProviderAction({
+			protocol: "saml",
+			providerId: "acme-okta",
+			issuer: "https://sp.example.com",
+			domain: "example.com",
+			metadata: "<EntityDescriptor />",
+		});
+
+		expect(authApiMock.registerSSOProvider).toHaveBeenCalledWith({
+			body: {
+				providerId: "acme-okta",
+				issuer: "https://sp.example.com",
+				domain: "example.com",
+				organizationId: "org-1",
+				samlConfig: { idpMetadata: { metadata: "<EntityDescriptor />" } },
+			},
+			headers: undefined,
+		});
+		expect(authApiMock.registerSSOProvider.mock.calls[0][0].body.samlConfig).not.toEqual({
+			metadata: "<EntityDescriptor />",
+		});
+	});
+
+	it("rejects blank SAML metadata before calling Better Auth", async () => {
+		await expect(
+			registerEnterpriseIdentitySSOProviderAction({
+				protocol: "saml",
+				providerId: "acme-okta",
+				issuer: "https://sp.example.com",
+				domain: "example.com",
+				metadata: "   ",
+			}),
+		).rejects.toThrow("SAML metadata is required");
+
+		expect(authApiMock.registerSSOProvider).not.toHaveBeenCalled();
 	});
 });

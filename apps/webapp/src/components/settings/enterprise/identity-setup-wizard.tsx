@@ -942,6 +942,9 @@ function DomainStep({ controller }: { controller: IdentitySetupController }) {
 
 function SsoStep({ controller }: { controller: IdentitySetupController }) {
 	const { isPending, presetId, protocol, providerId, ssoForm, t } = controller;
+	const samlAcsPath = providerId
+		? `/api/auth/sso/saml2/sp/acs/${encodeURIComponent(providerId)}`
+		: "/api/auth/sso/saml2/sp/acs/:providerId";
 
 	return (
 		<WizardCard
@@ -1038,6 +1041,13 @@ function SsoStep({ controller }: { controller: IdentitySetupController }) {
 									value={field.state.value}
 									onChange={(event) => field.handleChange(event.target.value)}
 								/>
+								<p className="text-muted-foreground text-sm">
+									{t(
+										"settings.enterprise.identity.sso.saml.acsPath",
+										"Configure your IdP with this assertion consumer service (ACS) URL: {path}",
+										{ path: samlAcsPath },
+									)}
+								</p>
 							</div>
 						)}
 					</ssoForm.Field>
