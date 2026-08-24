@@ -10,6 +10,8 @@ import {
 	scimConnectionStateEnum,
 	scimDeprovisionActionEnum,
 	scimOutboxStatusEnum,
+	scimProjectionRecovery,
+	scimProjectionRecoveryStatusEnum,
 	scimProviderConfig,
 	scimProvisioningLog,
 	scimRoleProjectionState,
@@ -226,6 +228,39 @@ describe("managed SCIM application schema", () => {
 			scimSeatSyncOutbox.userId,
 		]);
 		expect(userForeignKey?.onDelete).toBe("set null");
+	});
+
+	it("defines organization-unique durable projection recovery leases", () => {
+		expect(scimProjectionRecoveryStatusEnum.enumValues).toEqual([
+			"pending",
+			"processing",
+			"completed",
+		]);
+		expectNotNullColumns(scimProjectionRecovery, [
+			"organization_id",
+			"status",
+			"available_at",
+			"attempt_count",
+			"created_at",
+			"updated_at",
+		]);
+		expect(indexColumns(scimProjectionRecovery, true)).toContainEqual([
+			"organization_id",
+		]);
+		expect(indexColumns(scimProjectionRecovery, false)).toContainEqual([
+			"status",
+			"available_at",
+		]);
+		expect(columnNames(scimProjectionRecovery)).toContain("last_error_code");
+		expect(columnNames(scimProjectionRecovery)).not.toContain("last_error");
+		const organizationForeignKey = getTableConfig(
+			scimProjectionRecovery,
+		).foreignKeys.find((foreignKey) =>
+			foreignKey
+				.reference()
+				.columns.includes(scimProjectionRecovery.organizationId),
+		);
+		expect(organizationForeignKey?.onDelete).toBe("cascade");
 	});
 
 	it("keeps provisioning audit metadata opaque and credential-free", () => {

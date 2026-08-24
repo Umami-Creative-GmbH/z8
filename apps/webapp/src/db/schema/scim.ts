@@ -9,6 +9,7 @@ import {
 	timestamp,
 	uniqueIndex,
 	uuid,
+	varchar,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "../auth-schema";
 import { roleTemplate } from "./identity";
@@ -154,6 +155,11 @@ export const scimOutboxStatusEnum = pgEnum("scim_outbox_status", [
 	"completed",
 ]);
 
+export const scimProjectionRecoveryStatusEnum = pgEnum(
+	"scim_projection_recovery_status",
+	["pending", "processing", "completed"],
+);
+
 export const scimSeatSyncOutbox = pgTable(
 	"scim_billing_seat_sync_outbox",
 	{
@@ -186,6 +192,43 @@ export const scimSeatSyncOutbox = pgTable(
 			table.dedupeKey,
 		),
 		index("scimSeatSyncOutbox_status_availableAt_idx").on(
+			table.status,
+			table.availableAt,
+		),
+	],
+);
+
+export const scimProjectionRecovery = pgTable(
+	"scim_projection_recovery",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		status: scimProjectionRecoveryStatusEnum("status")
+			.notNull()
+			.default("pending"),
+		availableAt: timestamp("available_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		attemptCount: integer("attempt_count").notNull().default(0),
+		claimToken: uuid("claim_token"),
+		claimedAt: timestamp("claimed_at", { withTimezone: true }),
+		lastErrorCode: varchar("last_error_code", { length: 64 }),
+		completedAt: timestamp("completed_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow()
+			.$onUpdate(() => new Date()),
+	},
+	(table) => [
+		uniqueIndex("scimProjectionRecovery_organizationId_unique_idx").on(
+			table.organizationId,
+		),
+		index("scimProjectionRecovery_status_availableAt_idx").on(
 			table.status,
 			table.availableAt,
 		),

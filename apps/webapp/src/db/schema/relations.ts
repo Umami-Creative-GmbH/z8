@@ -96,6 +96,7 @@ import { project, projectAssignment, projectManager, projectNotificationState } 
 // SCIM provisioning
 import {
 	scimProviderConfig,
+	scimProjectionRecovery,
 	scimProvisioningLog,
 	scimRoleProjectionState,
 	scimSeatSyncOutbox,
@@ -297,6 +298,7 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	scimProviderConfig: one(scimProviderConfig),
 	scimUserLifecycleStates: many(scimUserLifecycleState),
 	scimRoleProjectionStates: many(scimRoleProjectionState),
+	scimProjectionRecovery: one(scimProjectionRecovery),
 	scimSeatSyncOutboxMessages: many(scimSeatSyncOutbox),
 	scimProvisioningLogs: many(scimProvisioningLog),
 }));
@@ -2921,6 +2923,13 @@ export const scimSeatSyncOutboxRelations = relations(scimSeatSyncOutbox, ({ one 
 	user: one(user, {
 		fields: [scimSeatSyncOutbox.userId],
 		references: [user.id],
+	}),
+}));
+
+export const scimProjectionRecoveryRelations = relations(scimProjectionRecovery, ({ one }) => ({
+	organization: one(organization, {
+		fields: [scimProjectionRecovery.organizationId],
+		references: [organization.id],
 	}),
 }));
 

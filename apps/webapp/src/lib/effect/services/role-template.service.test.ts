@@ -10,6 +10,17 @@ const mocks = vi.hoisted(() => {
 	const deleteFrom = vi.fn(() => ({ where: deleteWhere }));
 	const mappingFindFirst = vi.fn();
 	const assignmentFindFirst = vi.fn();
+	const recoveryStore = {
+		begin: vi.fn(async (organizationId: string) => ({
+			id: "recovery_opaque",
+			organizationId,
+			claimToken: "claim_opaque",
+			attemptCount: 1,
+		})),
+		claimDue: vi.fn(async () => null),
+		complete: vi.fn(async () => undefined),
+		defer: vi.fn(async () => undefined),
+	};
 	return {
 		returning,
 		values,
@@ -18,6 +29,7 @@ const mocks = vi.hoisted(() => {
 		deleteFrom,
 		mappingFindFirst,
 		assignmentFindFirst,
+		recoveryStore,
 	};
 });
 
@@ -33,6 +45,9 @@ vi.mock("@/db", () => ({
 }));
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn() }),
+}));
+vi.mock("@/lib/scim/projection-recovery", () => ({
+	createSCIMProjectionRecoveryStore: () => mocks.recoveryStore,
 }));
 
 import {
@@ -127,9 +142,8 @@ describe("RoleTemplateService SCIM replay", () => {
 				roleTemplateId: "template_opaque",
 			},
 		]);
-		configureSCIMProjectionReplay(async () => async () => {
-			throw replayError;
-		});
+		const replay = vi.fn().mockRejectedValueOnce(replayError);
+		configureSCIMProjectionReplay(async () => replay);
 
 		await expect(
 			runService((service) =>
@@ -209,9 +223,8 @@ describe("RoleTemplateService SCIM replay", () => {
 			createdAt: new Date("2026-08-25T00:00:00Z"),
 		};
 		mocks.mappingFindFirst.mockResolvedValue(snapshot);
-		configureSCIMProjectionReplay(async () => async () => {
-			throw replayError;
-		});
+		const replay = vi.fn().mockRejectedValueOnce(replayError);
+		configureSCIMProjectionReplay(async () => replay);
 
 		await expect(
 			runService((service) =>
@@ -252,9 +265,8 @@ describe("RoleTemplateService SCIM replay", () => {
 			assignedAt: new Date("2026-08-25T00:00:00Z"),
 		};
 		mocks.assignmentFindFirst.mockResolvedValue(snapshot);
-		configureSCIMProjectionReplay(async () => async () => {
-			throw replayError;
-		});
+		const replay = vi.fn().mockRejectedValueOnce(replayError);
+		configureSCIMProjectionReplay(async () => replay);
 
 		await expect(
 			runService((service) =>

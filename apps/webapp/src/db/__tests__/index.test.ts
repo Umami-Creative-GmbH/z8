@@ -16,6 +16,9 @@ import {
 	scimConnectionStateEnum,
 	scimDeprovisionActionEnum,
 	scimOutboxStatusEnum,
+	scimProjectionRecovery,
+	scimProjectionRecoveryRelations,
+	scimProjectionRecoveryStatusEnum,
 	scimProviderConfig,
 	scimRoleProjectionState,
 	scimSeatSyncOutbox,
@@ -64,6 +67,8 @@ describe("db barrel exports", () => {
 			scimUserLifecycleState,
 			scimRoleProjectionState,
 			scimSeatSyncOutbox,
+			scimProjectionRecovery,
+			scimProjectionRecoveryRelations,
 		]) {
 			expect(table).toBeDefined();
 		}
@@ -73,6 +78,11 @@ describe("db barrel exports", () => {
 			"suspend",
 		]);
 		expect(scimOutboxStatusEnum.enumValues).toEqual([
+			"pending",
+			"processing",
+			"completed",
+		]);
+		expect(scimProjectionRecoveryStatusEnum.enumValues).toEqual([
 			"pending",
 			"processing",
 			"completed",

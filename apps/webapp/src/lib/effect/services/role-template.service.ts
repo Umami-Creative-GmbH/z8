@@ -11,6 +11,7 @@ import {
 	userRoleTemplateAssignment,
 } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
+import { createSCIMProjectionRecoveryStore } from "@/lib/scim/projection-recovery";
 import { requestSCIMProjectionReplayAfter } from "@/lib/scim/role-projection-replay";
 import {
 	findRoleTemplateMappingForGroup,
@@ -18,6 +19,7 @@ import {
 } from "./cached-queries";
 
 const logger = createLogger("RoleTemplate");
+const projectionRecoveryStore = createSCIMProjectionRecoveryStore(db);
 
 function asError(error: unknown) {
 	return error instanceof Error
@@ -341,6 +343,7 @@ export const RoleTemplateServiceLive = Layer.succeed(
 										),
 									);
 							},
+							projectionRecoveryStore,
 						),
 					catch: asError,
 				});
@@ -377,6 +380,7 @@ export const RoleTemplateServiceLive = Layer.succeed(
 									return mapping;
 								},
 								(snapshot) => db.insert(roleTemplateMapping).values(snapshot),
+								projectionRecoveryStore,
 							),
 						catch: asError,
 					});
@@ -618,6 +622,7 @@ export const RoleTemplateServiceLive = Layer.succeed(
 								},
 								(snapshot) =>
 									db.insert(userRoleTemplateAssignment).values(snapshot),
+								projectionRecoveryStore,
 							),
 						catch: asError,
 					});
