@@ -14,6 +14,7 @@ import {
 	approvalWorkflowRollout,
 	approvalWorkflowStage,
 	scimConnectionStateEnum,
+	scimDeprovisionActionEnum,
 	scimOutboxStatusEnum,
 	scimProviderConfig,
 	scimRoleProjectionState,
@@ -67,6 +68,10 @@ describe("db barrel exports", () => {
 			expect(table).toBeDefined();
 		}
 		expect(scimConnectionStateEnum.enumValues).toContain("decommissioned");
+		expect(scimDeprovisionActionEnum.enumValues).toEqual([
+			"soft_delete",
+			"suspend",
+		]);
 		expect(scimOutboxStatusEnum.enumValues).toEqual([
 			"pending",
 			"processing",

@@ -21,6 +21,11 @@ export const scimConnectionStateEnum = pgEnum("scim_connection_state", [
 	"decommissioned",
 ]);
 
+export const scimDeprovisionActionEnum = pgEnum("scim_deprovision_action", [
+	"soft_delete",
+	"suspend",
+]);
+
 export const scimProviderConfig = pgTable(
 	"scim_provider_config",
 	{
@@ -32,8 +37,7 @@ export const scimProviderConfig = pgTable(
 		connectionId: text("connection_id"),
 		state: scimConnectionStateEnum("state").default("creating").notNull(),
 		autoActivateUsers: boolean("auto_activate_users").default(false).notNull(),
-		deprovisionAction: text("deprovision_action")
-			.$type<"soft_delete" | "suspend">()
+		deprovisionAction: scimDeprovisionActionEnum("deprovision_action")
 			.default("suspend")
 			.notNull(),
 		defaultRoleTemplateId: uuid("default_role_template_id")
@@ -145,9 +149,9 @@ export const scimSeatSyncOutbox = pgTable(
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
 		connectionId: text("connection_id").notNull(),
-		userId: text("user_id")
-			.notNull()
-			.references(() => user.id, { onDelete: "cascade" }),
+		userId: text("user_id").references(() => user.id, {
+			onDelete: "set null",
+		}),
 		membershipRevision: integer("membership_revision").notNull(),
 		dedupeKey: text("dedupe_key").notNull(),
 		status: scimOutboxStatusEnum("status").default("pending").notNull(),
@@ -226,6 +230,10 @@ export const scimProvisioningLog = pgTable(
 	},
 	(table) => [
 		index("scimProvisioningLog_organizationId_idx").on(table.organizationId),
+		index("scimProvisioningLog_organizationId_createdAt_idx").on(
+			table.organizationId,
+			table.createdAt,
+		),
 		index("scimProvisioningLog_connectionId_idx").on(table.connectionId),
 		index("scimProvisioningLog_eventType_idx").on(table.eventType),
 		index("scimProvisioningLog_userId_idx").on(table.userId),

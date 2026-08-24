@@ -1,10 +1,13 @@
-import { getTableConfig, type PgTable } from "drizzle-orm/pg-core";
+import type { SQL } from "drizzle-orm";
+import { getTableConfig, PgDialect, type PgTable } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 
+import { user } from "../../auth-schema";
 import { roleTemplate, userLifecycleEvent } from "../identity";
 import * as scimSchema from "../scim";
 import {
 	scimConnectionStateEnum,
+	scimDeprovisionActionEnum,
 	scimOutboxStatusEnum,
 	scimProviderConfig,
 	scimProvisioningLog,
@@ -46,6 +49,14 @@ function hasForeignKey(
 	});
 }
 
+function normalizedSql(value: SQL): string {
+	return new PgDialect()
+		.sqlToQuery(value)
+		.sql.replaceAll('"', "")
+		.replace(/\s+/g, " ")
+		.trim();
+}
+
 describe("managed SCIM application schema", () => {
 	it("stores one organization-owned connection policy without provider credentials", () => {
 		expect(scimConnectionStateEnum.enumValues).toEqual([
@@ -53,6 +64,14 @@ describe("managed SCIM application schema", () => {
 			"active",
 			"decommissioning",
 			"decommissioned",
+		]);
+		expect(scimDeprovisionActionEnum.enumValues).toEqual([
+			"soft_delete",
+			"suspend",
+		]);
+		expect(scimProviderConfig.deprovisionAction.enumValues).toEqual([
+			"soft_delete",
+			"suspend",
 		]);
 		expectNotNullColumns(scimProviderConfig, [
 			"organization_id",
@@ -152,7 +171,6 @@ describe("managed SCIM application schema", () => {
 		expectNotNullColumns(scimSeatSyncOutbox, [
 			"organization_id",
 			"connection_id",
-			"user_id",
 			"membership_revision",
 			"dedupe_key",
 			"status",
@@ -179,6 +197,14 @@ describe("managed SCIM application schema", () => {
 		);
 		expect(scimSeatSyncOutbox.claimToken.dataType).toBe("string");
 		expect(scimSeatSyncOutbox.claimToken.columnType).toBe("PgUUID");
+		expect(scimSeatSyncOutbox.userId.notNull).toBe(false);
+		const userForeignKey = getTableConfig(scimSeatSyncOutbox).foreignKeys.find(
+			(foreignKey) => foreignKey.reference().foreignColumns.includes(user.id),
+		);
+		expect(userForeignKey?.reference().columns).toEqual([
+			scimSeatSyncOutbox.userId,
+		]);
+		expect(userForeignKey?.onDelete).toBe("set null");
 	});
 
 	it("keeps provisioning audit metadata opaque and credential-free", () => {
@@ -195,6 +221,10 @@ describe("managed SCIM application schema", () => {
 		type Metadata = typeof scimProvisioningLog.$inferInsert.metadata;
 		const safeMetadata: Metadata = { errorCode: "invalid_user" };
 		expect(safeMetadata).toEqual({ errorCode: "invalid_user" });
+		expect(indexColumns(scimProvisioningLog, false)).toContainEqual([
+			"organization_id",
+			"created_at",
+		]);
 	});
 
 	it("allows system lifecycle events without a user actor", () => {
@@ -202,5 +232,14 @@ describe("managed SCIM application schema", () => {
 		expect(userLifecycleEvent.actorType.notNull).toBe(true);
 		expect(userLifecycleEvent.actorType.default).toBe("user");
 		expect(userLifecycleEvent.createdBy.notNull).toBe(false);
+		const actorCheck = getTableConfig(userLifecycleEvent).checks.find(
+			(check) => check.name === "user_lifecycle_event_actor_check",
+		);
+		expect(actorCheck).toBeDefined();
+		const actorCheckSql = normalizedSql(actorCheck?.value as SQL);
+		expect(actorCheckSql).toContain("actor_type = 'user'");
+		expect(actorCheckSql).toContain("created_by IS NOT NULL");
+		expect(actorCheckSql).toContain("actor_type = 'system'");
+		expect(actorCheckSql).toContain("created_by IS NULL");
 	});
 });

@@ -251,6 +251,7 @@ export {
 	secretStoreProviderEnum,
 	// Managed SCIM application state
 	scimConnectionStateEnum,
+	scimDeprovisionActionEnum,
 	scimOutboxStatusEnum,
 	scimProviderConfig,
 	scimProviderConfigRelations,

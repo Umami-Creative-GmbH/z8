@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	index,
 	integer,
 	jsonb,
@@ -300,5 +302,9 @@ export const userLifecycleEvent = pgTable(
 		index("userLifecycleEvent_eventType_idx").on(table.eventType),
 		index("userLifecycleEvent_approvalStatus_idx").on(table.approvalStatus),
 		index("userLifecycleEvent_createdAt_idx").on(table.createdAt),
+		check(
+			"user_lifecycle_event_actor_check",
+			sql`(${table.actorType} = 'user' AND ${table.createdBy} IS NOT NULL) OR (${table.actorType} = 'system' AND ${table.createdBy} IS NULL)`,
+		),
 	],
 );
