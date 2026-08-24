@@ -1,0 +1,155 @@
+import type {
+	SCIMProjectedUserState,
+	SCIMTransactionContext,
+} from "@better-auth/scim";
+import {
+	createSCIMTransactionStore,
+	type SCIMEmployeeRecord,
+	type SCIMMemberRecord,
+} from "./transaction-store";
+
+function isBillable(
+	member: SCIMMemberRecord | null,
+	employee: SCIMEmployeeRecord | null,
+) {
+	return member?.status === "approved" && employee?.isActive === true;
+}
+
+export async function reconcileSCIMLifecycle(
+	input: SCIMProjectedUserState,
+	context: SCIMTransactionContext,
+): Promise<void> {
+	const organizationId = input.provisioningDomainId;
+	const store = createSCIMTransactionStore(context.database);
+	const config = await store.getActiveProviderConfig(organizationId);
+	if (!config) throw new Error("SCIM connection is not active");
+	const source = input.sources.find(
+		(candidate) =>
+			candidate.provisioningDomainId === organizationId &&
+			candidate.connectionId === config.connectionId,
+	);
+	if (!source) throw new Error("SCIM connection is not active");
+
+	let member = await store.getMember(organizationId, input.userId);
+	let employee = await store.getEmployee(organizationId, input.userId);
+	const lifecycle = await store.getLifecycleState(organizationId, input.userId);
+	const beforeBillable = isBillable(member, employee);
+	const priorMemberStatus = member?.status ?? null;
+	const priorEmployeeIsActive = employee?.isActive ?? null;
+	let event: "created" | "deactivated" | "reactivated" | null = null;
+
+	if (input.active && (!member || !employee)) {
+		const creatingMembership = !member;
+		if (!member) {
+			member = await store.createMember(
+				organizationId,
+				input.userId,
+				config.autoActivateUsers ? "approved" : "pending",
+			);
+		}
+		if (!employee) {
+			employee = await store.createEmployee(
+				organizationId,
+				input.userId,
+				creatingMembership && config.autoActivateUsers,
+			);
+		}
+		event = "created";
+	}
+
+	const ownsPriorDeactivation =
+		lifecycle?.deactivationOwned === true &&
+		lifecycle.connectionId === config.connectionId;
+	if (!input.active && member && employee && !ownsPriorDeactivation) {
+		if (
+			config.deprovisionAction === "suspend" &&
+			member.status !== "suspended"
+		) {
+			member =
+				(await store.setMemberStatus(
+					organizationId,
+					input.userId,
+					"suspended",
+				)) ?? member;
+		}
+		if (employee.isActive) {
+			employee =
+				(await store.setEmployeeActive(organizationId, input.userId, false)) ??
+				employee;
+		}
+		event = "deactivated";
+	}
+
+	if (input.active && ownsPriorDeactivation && member && employee) {
+		if (member.status !== lifecycle.priorMemberStatus) {
+			member =
+				(await store.setMemberStatus(
+					organizationId,
+					input.userId,
+					lifecycle.priorMemberStatus,
+				)) ?? member;
+		}
+		if (
+			lifecycle.priorEmployeeIsActive !== null &&
+			employee.isActive !== lifecycle.priorEmployeeIsActive
+		) {
+			employee =
+				(await store.setEmployeeActive(
+					organizationId,
+					input.userId,
+					lifecycle.priorEmployeeIsActive,
+				)) ?? employee;
+		}
+		event = "reactivated";
+	}
+
+	const afterBillable = isBillable(member, employee);
+	const membershipChanged = beforeBillable !== afterBillable;
+	const membershipRevision =
+		(lifecycle?.membershipRevision ?? 0) + (membershipChanged ? 1 : 0);
+	const deactivating = event === "deactivated";
+	await store.putLifecycleState(organizationId, input.userId, {
+		connectionId: config.connectionId,
+		membershipRevision,
+		scimActive: input.active,
+		priorMemberStatus: deactivating
+			? (lifecycle?.priorMemberStatus ?? priorMemberStatus)
+			: event === "reactivated"
+				? null
+				: (lifecycle?.priorMemberStatus ?? null),
+		priorEmployeeIsActive: deactivating
+			? (lifecycle?.priorEmployeeIsActive ?? priorEmployeeIsActive)
+			: event === "reactivated"
+				? null
+				: (lifecycle?.priorEmployeeIsActive ?? null),
+		deactivationOwned:
+			deactivating || (ownsPriorDeactivation && event !== "reactivated"),
+	});
+
+	if (membershipChanged) {
+		await store.createSeatOutboxIfAbsent({
+			organizationId,
+			connectionId: config.connectionId,
+			userId: input.userId,
+			membershipRevision,
+		});
+	}
+	if (!event || !employee) return;
+	await store.createLifecycleAudit({
+		organizationId,
+		userId: input.userId,
+		employeeId: employee.id,
+		eventType: event === "deactivated" ? "leave" : "join",
+	});
+	await store.createProvisioningAudit({
+		organizationId,
+		connectionId: config.connectionId,
+		userId: input.userId,
+		eventType:
+			event === "created"
+				? "user_created"
+				: event === "deactivated"
+					? "user_deactivated"
+					: "user_reactivated",
+	});
+}

@@ -11,7 +11,11 @@ import {
 	userRoleTemplateAssignment,
 } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
-import { findRoleTemplateMappingForGroup, getRoleTemplateById } from "./cached-queries";
+import { requestSCIMProjectionReplayAfter } from "@/lib/scim/role-projection-replay";
+import {
+	findRoleTemplateMappingForGroup,
+	getRoleTemplateById,
+} from "./cached-queries";
 
 const logger = createLogger("RoleTemplate");
 
@@ -110,7 +114,10 @@ export interface RoleTemplateService {
 	/**
 	 * List only global templates
 	 */
-	readonly listGlobalTemplates: () => Effect.Effect<(typeof roleTemplate.$inferSelect)[], Error>;
+	readonly listGlobalTemplates: () => Effect.Effect<
+		(typeof roleTemplate.$inferSelect)[],
+		Error
+	>;
 
 	/**
 	 * Create an IdP group to role template mapping
@@ -122,7 +129,10 @@ export interface RoleTemplateService {
 	/**
 	 * Delete an IdP mapping
 	 */
-	readonly deleteIdpMapping: (id: string) => Effect.Effect<void, Error>;
+	readonly deleteIdpMapping: (
+		id: string,
+		organizationId: string,
+	) => Effect.Effect<void, Error>;
 
 	/**
 	 * List IdP mappings for an organization
@@ -158,7 +168,10 @@ export interface RoleTemplateService {
 	readonly getUserTemplateAssignment: (params: {
 		userId: string;
 		organizationId: string;
-	}) => Effect.Effect<typeof userRoleTemplateAssignment.$inferSelect | undefined, Error>;
+	}) => Effect.Effect<
+		typeof userRoleTemplateAssignment.$inferSelect | undefined,
+		Error
+	>;
 
 	/**
 	 * Remove a user's role template assignment
@@ -169,8 +182,9 @@ export interface RoleTemplateService {
 	}) => Effect.Effect<void, Error>;
 }
 
-export const RoleTemplateService =
-	Context.GenericTag<RoleTemplateService>("@z8/RoleTemplateService");
+export const RoleTemplateService = Context.GenericTag<RoleTemplateService>(
+	"@z8/RoleTemplateService",
+);
 
 export const RoleTemplateServiceLive = Layer.succeed(
 	RoleTemplateService,
@@ -215,18 +229,30 @@ export const RoleTemplateServiceLive = Layer.succeed(
 				const updateData: Partial<typeof roleTemplate.$inferInsert> = {};
 
 				if (input.name !== undefined) updateData.name = input.name;
-				if (input.description !== undefined) updateData.description = input.description;
+				if (input.description !== undefined)
+					updateData.description = input.description;
 				if (input.isActive !== undefined) updateData.isActive = input.isActive;
-				if (input.employeeRole !== undefined) updateData.employeeRole = input.employeeRole;
-				if (input.defaultTeamId !== undefined) updateData.defaultTeamId = input.defaultTeamId;
-				if (input.teamPermissions !== undefined) updateData.teamPermissions = input.teamPermissions;
-				if (input.canUseWebapp !== undefined) updateData.canUseWebapp = input.canUseWebapp;
-				if (input.canUseDesktop !== undefined) updateData.canUseDesktop = input.canUseDesktop;
-				if (input.canUseMobile !== undefined) updateData.canUseMobile = input.canUseMobile;
-				if (input.accessPolicyId !== undefined) updateData.accessPolicyId = input.accessPolicyId;
+				if (input.employeeRole !== undefined)
+					updateData.employeeRole = input.employeeRole;
+				if (input.defaultTeamId !== undefined)
+					updateData.defaultTeamId = input.defaultTeamId;
+				if (input.teamPermissions !== undefined)
+					updateData.teamPermissions = input.teamPermissions;
+				if (input.canUseWebapp !== undefined)
+					updateData.canUseWebapp = input.canUseWebapp;
+				if (input.canUseDesktop !== undefined)
+					updateData.canUseDesktop = input.canUseDesktop;
+				if (input.canUseMobile !== undefined)
+					updateData.canUseMobile = input.canUseMobile;
+				if (input.accessPolicyId !== undefined)
+					updateData.accessPolicyId = input.accessPolicyId;
 
 				const [updated] = yield* Effect.tryPromise(() =>
-					db.update(roleTemplate).set(updateData).where(eq(roleTemplate.id, input.id)).returning(),
+					db
+						.update(roleTemplate)
+						.set(updateData)
+						.where(eq(roleTemplate.id, input.id))
+						.returning(),
 				);
 
 				logger.info({ templateId: input.id }, "Role template updated");
@@ -237,7 +263,10 @@ export const RoleTemplateServiceLive = Layer.succeed(
 		deleteTemplate: (id: string) =>
 			Effect.gen(function* () {
 				yield* Effect.tryPromise(() =>
-					db.update(roleTemplate).set({ isActive: false }).where(eq(roleTemplate.id, id)),
+					db
+						.update(roleTemplate)
+						.set({ isActive: false })
+						.where(eq(roleTemplate.id, id)),
 				);
 
 				logger.info({ templateId: id }, "Role template deactivated");
@@ -266,25 +295,32 @@ export const RoleTemplateServiceLive = Layer.succeed(
 		listGlobalTemplates: () =>
 			Effect.tryPromise(() =>
 				db.query.roleTemplate.findMany({
-					where: and(isNull(roleTemplate.organizationId), eq(roleTemplate.isActive, true)),
+					where: and(
+						isNull(roleTemplate.organizationId),
+						eq(roleTemplate.isActive, true),
+					),
 				}),
 			),
 
 		createIdpMapping: (input: CreateIdpMappingInput) =>
 			Effect.gen(function* () {
 				const [created] = yield* Effect.tryPromise(() =>
-					db
-						.insert(roleTemplateMapping)
-						.values({
-							organizationId: input.organizationId,
-							idpType: input.idpType,
-							idpGroupId: input.idpGroupId,
-							idpGroupName: input.idpGroupName,
-							roleTemplateId: input.roleTemplateId,
-							priority: input.priority ?? 0,
-							createdBy: input.createdBy,
-						})
-						.returning(),
+					requestSCIMProjectionReplayAfter(
+						{ organizationId: input.organizationId, source: input.idpType },
+						() =>
+							db
+								.insert(roleTemplateMapping)
+								.values({
+									organizationId: input.organizationId,
+									idpType: input.idpType,
+									idpGroupId: input.idpGroupId,
+									idpGroupName: input.idpGroupName,
+									roleTemplateId: input.roleTemplateId,
+									priority: input.priority ?? 0,
+									createdBy: input.createdBy,
+								})
+								.returning(),
+					),
 				);
 
 				logger.info(
@@ -299,11 +335,26 @@ export const RoleTemplateServiceLive = Layer.succeed(
 				return created;
 			}),
 
-		deleteIdpMapping: (id: string) =>
+		deleteIdpMapping: (id: string, organizationId: string) =>
 			Effect.gen(function* () {
-				yield* Effect.tryPromise(() =>
-					db.delete(roleTemplateMapping).where(eq(roleTemplateMapping.id, id)),
+				const where = and(
+					eq(roleTemplateMapping.id, id),
+					eq(roleTemplateMapping.organizationId, organizationId),
 				);
+				const mapping = yield* Effect.tryPromise(() =>
+					db.query.roleTemplateMapping.findFirst({ where }),
+				);
+				const persist = () => db.delete(roleTemplateMapping).where(where);
+				if (mapping?.idpType === "scim") {
+					yield* Effect.tryPromise(() =>
+						requestSCIMProjectionReplayAfter(
+							{ organizationId, source: "scim" },
+							persist,
+						),
+					);
+				} else {
+					yield* Effect.tryPromise(persist);
+				}
 
 				logger.info({ mappingId: id }, "IdP mapping deleted");
 			}),
@@ -339,32 +390,39 @@ export const RoleTemplateServiceLive = Layer.succeed(
 			Effect.gen(function* () {
 				// Parallelize all independent lookups for better performance
 				// @see async-parallel rule - 3x improvement
-				const [template, employeeRecord, currentAssignment] = yield* Effect.all([
-					// Get the template (cached per request)
-					Effect.tryPromise(() => getRoleTemplateById(roleTemplateId)),
-					// Get the employee record
-					Effect.tryPromise(() =>
-						db.query.employee.findFirst({
-							where: and(eq(employee.userId, userId), eq(employee.organizationId, organizationId)),
-						}),
-					),
-					// Get current assignment to detect role change
-					Effect.tryPromise(() =>
-						db.query.userRoleTemplateAssignment.findFirst({
-							where: and(
-								eq(userRoleTemplateAssignment.userId, userId),
-								eq(userRoleTemplateAssignment.organizationId, organizationId),
-							),
-						}),
-					),
-				]);
+				const [template, employeeRecord, currentAssignment] = yield* Effect.all(
+					[
+						// Get the template (cached per request)
+						Effect.tryPromise(() => getRoleTemplateById(roleTemplateId)),
+						// Get the employee record
+						Effect.tryPromise(() =>
+							db.query.employee.findFirst({
+								where: and(
+									eq(employee.userId, userId),
+									eq(employee.organizationId, organizationId),
+								),
+							}),
+						),
+						// Get current assignment to detect role change
+						Effect.tryPromise(() =>
+							db.query.userRoleTemplateAssignment.findFirst({
+								where: and(
+									eq(userRoleTemplateAssignment.userId, userId),
+									eq(userRoleTemplateAssignment.organizationId, organizationId),
+								),
+							}),
+						),
+					],
+				);
 
 				if (!template) {
 					throw new Error(`Role template ${roleTemplateId} not found`);
 				}
 
 				if (!employeeRecord) {
-					throw new Error(`Employee record not found for user ${userId} in org ${organizationId}`);
+					throw new Error(
+						`Employee record not found for user ${userId} in org ${organizationId}`,
+					);
 				}
 
 				// Parallelize independent updates for better performance
@@ -416,9 +474,12 @@ export const RoleTemplateServiceLive = Layer.succeed(
 								.update(teamPermissions)
 								.set({
 									canCreateTeams: permissions.canCreateTeams ?? false,
-									canManageTeamMembers: permissions.canManageTeamMembers ?? false,
-									canManageTeamSettings: permissions.canManageTeamSettings ?? false,
-									canApproveTeamRequests: permissions.canApproveTeamRequests ?? false,
+									canManageTeamMembers:
+										permissions.canManageTeamMembers ?? false,
+									canManageTeamSettings:
+										permissions.canManageTeamSettings ?? false,
+									canApproveTeamRequests:
+										permissions.canApproveTeamRequests ?? false,
 								})
 								.where(eq(teamPermissions.id, existingPermission.id)),
 						);
@@ -430,8 +491,10 @@ export const RoleTemplateServiceLive = Layer.succeed(
 								teamId: null,
 								canCreateTeams: permissions.canCreateTeams ?? false,
 								canManageTeamMembers: permissions.canManageTeamMembers ?? false,
-								canManageTeamSettings: permissions.canManageTeamSettings ?? false,
-								canApproveTeamRequests: permissions.canApproveTeamRequests ?? false,
+								canManageTeamSettings:
+									permissions.canManageTeamSettings ?? false,
+								canApproveTeamRequests:
+									permissions.canApproveTeamRequests ?? false,
 								grantedBy: employeeRecord.id,
 							}),
 						);
@@ -466,7 +529,10 @@ export const RoleTemplateServiceLive = Layer.succeed(
 				);
 
 				// Log lifecycle event if this is a role change
-				if (currentAssignment && currentAssignment.roleTemplateId !== roleTemplateId) {
+				if (
+					currentAssignment &&
+					currentAssignment.roleTemplateId !== roleTemplateId
+				) {
 					yield* Effect.tryPromise(() =>
 						db.insert(userLifecycleEvent).values({
 							userId,
@@ -504,18 +570,30 @@ export const RoleTemplateServiceLive = Layer.succeed(
 
 		removeUserTemplateAssignment: ({ userId, organizationId }) =>
 			Effect.gen(function* () {
-				yield* Effect.tryPromise(() =>
-					db
-						.delete(userRoleTemplateAssignment)
-						.where(
-							and(
-								eq(userRoleTemplateAssignment.userId, userId),
-								eq(userRoleTemplateAssignment.organizationId, organizationId),
-							),
-						),
+				const where = and(
+					eq(userRoleTemplateAssignment.userId, userId),
+					eq(userRoleTemplateAssignment.organizationId, organizationId),
 				);
+				const assignment = yield* Effect.tryPromise(() =>
+					db.query.userRoleTemplateAssignment.findFirst({ where }),
+				);
+				const persist = () =>
+					db.delete(userRoleTemplateAssignment).where(where);
+				if (assignment?.assignmentSource === "manual") {
+					yield* Effect.tryPromise(() =>
+						requestSCIMProjectionReplayAfter(
+							{ organizationId, source: "manual" },
+							persist,
+						),
+					);
+				} else {
+					yield* Effect.tryPromise(persist);
+				}
 
-				logger.info({ userId, organizationId }, "Role template assignment removed");
+				logger.info(
+					{ userId, organizationId },
+					"Role template assignment removed",
+				);
 			}),
 	}),
 );
