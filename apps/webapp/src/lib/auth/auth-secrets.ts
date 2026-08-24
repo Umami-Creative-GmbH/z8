@@ -1,6 +1,7 @@
 import { env as appEnv } from "@/env";
 
-export const BUILD_TIME_AUTH_SECRET = "build-time-auth-secret-for-prerender-only-2026";
+export const BUILD_TIME_AUTH_SECRET =
+	"build-time-auth-secret-for-prerender-only-2026";
 
 type ResolvedAuthSecrets = {
 	secrets: Array<{ version: number; value: string }>;
@@ -14,8 +15,21 @@ type ResolveAuthSecretsOptions = {
 	isBuildTime?: boolean;
 };
 
+type SCIMCredentialHashSecretEnvironment = {
+	SCIM_CREDENTIAL_HASH_SECRET: string;
+};
+
+export function getSCIMCredentialHashSecret(
+	env: SCIMCredentialHashSecretEnvironment = appEnv,
+): string {
+	return env.SCIM_CREDENTIAL_HASH_SECRET;
+}
+
 export function isBuildTimeAuthFallbackAllowed(env = appEnv): boolean {
-	return env.NEXT_PHASE === "phase-production-build" || env.npm_lifecycle_event === "build";
+	return (
+		env.NEXT_PHASE === "phase-production-build" ||
+		env.npm_lifecycle_event === "build"
+	);
 }
 
 export function resolveAuthSecrets({
@@ -23,7 +37,8 @@ export function resolveAuthSecrets({
 	rotatedSecrets,
 	isBuildTime = isBuildTimeAuthFallbackAllowed(),
 }: ResolveAuthSecretsOptions): ResolvedAuthSecrets {
-	const fallbackSecret = primarySecret ?? (isBuildTime ? BUILD_TIME_AUTH_SECRET : "");
+	const fallbackSecret =
+		primarySecret ?? (isBuildTime ? BUILD_TIME_AUTH_SECRET : "");
 	const fallback = [{ version: 1, value: fallbackSecret }];
 	const usedBuildTimeFallback = !primarySecret && isBuildTime;
 
@@ -52,7 +67,9 @@ export function resolveAuthSecrets({
 
 			return { version, value };
 		})
-		.filter((value): value is { version: number; value: string } => value !== null);
+		.filter(
+			(value): value is { version: number; value: string } => value !== null,
+		);
 
 	if (parsed.length === 0) {
 		return {

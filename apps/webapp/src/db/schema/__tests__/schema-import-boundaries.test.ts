@@ -16,4 +16,30 @@ describe("schema import boundaries", () => {
 
 		expect(runtimeAdapterImports).toEqual([]);
 	});
+
+	it("keeps Better Auth SCIM models in the generated auth schema", () => {
+		const generatedAuthSchema = readFileSync(
+			`${schemaDirectory}/../auth-schema.ts`,
+			"utf8",
+		);
+		const expectedModels = [
+			"scimManagedConnection",
+			"scimManagedCredential",
+			"scimManagedConnectionEvent",
+			"scimConnectionBinding",
+			"scimIdentityTombstone",
+			"scimSubject",
+			"scimUser",
+			"scimProjectionGrant",
+			"scimGroup",
+			"scimGroupMember",
+		];
+
+		for (const model of expectedModels) {
+			expect(generatedAuthSchema).toContain(`export const ${model} = pgTable(`);
+		}
+		expect(generatedAuthSchema).not.toContain("scimProviderConfig");
+		expect(generatedAuthSchema).not.toContain("scimRoleMapping");
+		expect(generatedAuthSchema).not.toContain("scimRoleTemplate");
+	});
 });

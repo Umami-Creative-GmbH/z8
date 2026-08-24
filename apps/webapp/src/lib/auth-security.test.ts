@@ -35,11 +35,18 @@ describe("SSO trusted origins", () => {
 });
 
 describe("Better Auth 1.7 core configuration", () => {
-	it("removes the incompatible SCIM plugin", () => {
+	it("registers managed SCIM with native Drizzle transactions and the dedicated secret", () => {
 		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
 
-		expect(source).not.toContain("@better-auth/scim");
-		expect(source).not.toMatch(/\bscim\s*\(/);
+		expect(source).toContain(
+			"createZ8SCIMPlugin(getSCIMCredentialHashSecret())",
+		);
+		expect(source).toMatch(
+			/drizzleAdapter\(db,\s*\{\s*provider:\s*"pg",\s*schema,\s*transaction:\s*true,?\s*\}\)/,
+		);
+		expect(source).toContain(
+			"configureSCIMProjectionReplay(createSCIMProjectionReplayLoader(auth.api))",
+		);
 	});
 
 	it("enables joins in advanced database without trusting proxy headers", () => {
