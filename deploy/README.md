@@ -11,7 +11,7 @@ deploy/
 ├── k8s/                        # Kubernetes manifests
 │   ├── namespace.yaml
 │   ├── configmap.yaml
-│   ├── secret.yaml
+│   ├── secret.yaml             # Reference template; excluded from Kustomize
 │   ├── webapp.yaml             # Next.js webapp deployment
 │   ├── worker.yaml             # BullMQ worker deployment
 │   ├── migration.yaml          # Database migration job
@@ -160,12 +160,19 @@ pnpm docker:build:all
 Generate the Better Auth and SCIM credential hashing secrets independently. Both values must
 contain at least 32 characters and must not be reused.
 
+`deploy/k8s/secret.yaml` is a key reference template only and is intentionally excluded from
+`kustomization.yaml`. Provision `z8-secrets` separately before applying Kustomize. This prevents
+placeholder values from replacing live authentication secrets during `kubectl apply -k`.
+
 ```bash
 # 1. Update image references in kustomization.yaml
 cd deploy/k8s
 vim kustomization.yaml  # Change your-registry.com to your actual registry
 
-# 2. Update secrets (DO NOT commit real secrets!)
+# 2. Create the namespace before provisioning its secret
+kubectl apply -f namespace.yaml
+
+# 3. Provision secrets separately (DO NOT commit real secrets!)
 kubectl create secret generic z8-secrets \
   --namespace=z8 \
   --from-literal=postgres-user=z8 \
@@ -173,13 +180,13 @@ kubectl create secret generic z8-secrets \
   --from-literal=auth-secret="$(openssl rand -base64 32)" \
   --from-literal=scim-credential-hash-secret="$(openssl rand -base64 32)"
 
-# 3. Update configmap with your domain
+# 4. Update configmap with your domain
 vim configmap.yaml
 
-# 4. Deploy
+# 5. Deploy application resources (this does not modify z8-secrets)
 kubectl apply -k .
 
-# 5. Check status
+# 6. Check status
 kubectl get pods -n z8
 kubectl logs -n z8 -l app.kubernetes.io/component=webapp
 ```
