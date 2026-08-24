@@ -10,8 +10,13 @@ declare const env: {
 	REDIS_CA_CERT?: string;
 };
 
+const redisConnectionOptions = createRedisConnectionOptions(env);
 const connection: ConnectionOptions = {
-	...createRedisConnectionOptions(env),
+	host: redisConnectionOptions.host,
+	port: redisConnectionOptions.port,
+	username: redisConnectionOptions.username,
+	password: redisConnectionOptions.password,
+	tls: redisConnectionOptions.tls,
 	maxRetriesPerRequest: null,
 };
 
