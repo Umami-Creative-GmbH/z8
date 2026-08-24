@@ -94,7 +94,13 @@ import {
 } from "./payroll-export";
 import { project, projectAssignment, projectManager, projectNotificationState } from "./project";
 // SCIM provisioning
-import { scimProviderConfig, scimProvisioningLog } from "./scim";
+import {
+	scimProviderConfig,
+	scimProvisioningLog,
+	scimRoleProjectionState,
+	scimSeatSyncOutbox,
+	scimUserLifecycleState,
+} from "./scim";
 import { shift, shiftRecurrence, shiftRequest, shiftTemplate } from "./shift";
 // Skills & qualifications
 import {
@@ -287,6 +293,12 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	worksCouncilSettings: many(worksCouncilSettings),
 	worksCouncilAccessAudits: many(worksCouncilAccessAudit),
 	worksCouncilReviewExports: many(worksCouncilReviewExport),
+	// Managed SCIM state
+	scimProviderConfig: one(scimProviderConfig),
+	scimUserLifecycleStates: many(scimUserLifecycleState),
+	scimRoleProjectionStates: many(scimRoleProjectionState),
+	scimSeatSyncOutboxMessages: many(scimSeatSyncOutbox),
+	scimProvisioningLogs: many(scimProvisioningLog),
 }));
 
 export const worksCouncilSettingsRelations = relations(worksCouncilSettings, ({ one }) => ({
@@ -2861,6 +2873,43 @@ export const scimProvisioningLogRelations = relations(scimProvisioningLog, ({ on
 	}),
 }));
 
+export const scimUserLifecycleStateRelations = relations(scimUserLifecycleState, ({ one }) => ({
+	organization: one(organization, {
+		fields: [scimUserLifecycleState.organizationId],
+		references: [organization.id],
+	}),
+	user: one(user, {
+		fields: [scimUserLifecycleState.userId],
+		references: [user.id],
+	}),
+}));
+
+export const scimRoleProjectionStateRelations = relations(scimRoleProjectionState, ({ one }) => ({
+	organization: one(organization, {
+		fields: [scimRoleProjectionState.organizationId],
+		references: [organization.id],
+	}),
+	user: one(user, {
+		fields: [scimRoleProjectionState.userId],
+		references: [user.id],
+	}),
+	roleTemplate: one(roleTemplate, {
+		fields: [scimRoleProjectionState.roleTemplateId],
+		references: [roleTemplate.id],
+	}),
+}));
+
+export const scimSeatSyncOutboxRelations = relations(scimSeatSyncOutbox, ({ one }) => ({
+	organization: one(organization, {
+		fields: [scimSeatSyncOutbox.organizationId],
+		references: [organization.id],
+	}),
+	user: one(user, {
+		fields: [scimSeatSyncOutbox.userId],
+		references: [user.id],
+	}),
+}));
+
 // ============================================
 // IDENTITY MANAGEMENT RELATIONS
 // ============================================
@@ -2887,6 +2936,8 @@ export const roleTemplateRelations = relations(roleTemplate, ({ one, many }) => 
 	}),
 	mappings: many(roleTemplateMapping),
 	assignments: many(userRoleTemplateAssignment),
+	scimProviderConfigs: many(scimProviderConfig),
+	scimRoleProjectionStates: many(scimRoleProjectionState),
 }));
 
 export const roleTemplateMappingRelations = relations(roleTemplateMapping, ({ one }) => ({

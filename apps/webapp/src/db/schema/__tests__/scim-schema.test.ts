@@ -1,0 +1,206 @@
+import { getTableConfig, type PgTable } from "drizzle-orm/pg-core";
+import { describe, expect, it } from "vitest";
+
+import { roleTemplate, userLifecycleEvent } from "../identity";
+import * as scimSchema from "../scim";
+import {
+	scimConnectionStateEnum,
+	scimOutboxStatusEnum,
+	scimProviderConfig,
+	scimProvisioningLog,
+	scimRoleProjectionState,
+	scimSeatSyncOutbox,
+	scimUserLifecycleState,
+} from "../scim";
+
+function columnNames(table: PgTable): string[] {
+	return getTableConfig(table).columns.map((column) => column.name);
+}
+
+function expectNotNullColumns(table: PgTable, names: string[]): void {
+	const columns = getTableConfig(table).columns;
+	for (const name of names) {
+		expect(columns.find((column) => column.name === name)?.notNull, name).toBe(
+			true,
+		);
+	}
+}
+
+function indexColumns(table: PgTable, unique: boolean): string[][] {
+	return getTableConfig(table)
+		.indexes.filter((index) => index.config.unique === unique)
+		.map((index) => index.config.columns.map((column) => column.name));
+}
+
+function hasForeignKey(
+	table: PgTable,
+	columnName: string,
+	foreignTable: PgTable,
+): boolean {
+	return getTableConfig(table).foreignKeys.some((foreignKey) => {
+		const reference = foreignKey.reference();
+		return (
+			reference.columns.map((column) => column.name).join(",") === columnName &&
+			reference.foreignColumns.every((column) => column.table === foreignTable)
+		);
+	});
+}
+
+describe("managed SCIM application schema", () => {
+	it("stores one organization-owned connection policy without provider credentials", () => {
+		expect(scimConnectionStateEnum.enumValues).toEqual([
+			"creating",
+			"active",
+			"decommissioning",
+			"decommissioned",
+		]);
+		expectNotNullColumns(scimProviderConfig, [
+			"organization_id",
+			"creation_request_id",
+			"state",
+			"auto_activate_users",
+			"deprovision_action",
+			"default_role_template_id",
+			"decommission_attempt_count",
+			"created_at",
+			"created_by",
+			"updated_at",
+		]);
+		expect(indexColumns(scimProviderConfig, true)).toEqual(
+			expect.arrayContaining([
+				["organization_id"],
+				["creation_request_id"],
+				["connection_id"],
+			]),
+		);
+		expect(indexColumns(scimProviderConfig, false)).toContainEqual([
+			"organization_id",
+			"connection_id",
+		]);
+		expect(
+			hasForeignKey(
+				scimProviderConfig,
+				"default_role_template_id",
+				roleTemplate,
+			),
+		).toBe(true);
+		expect(columnNames(scimProviderConfig)).toEqual(
+			expect.arrayContaining([
+				"decommission_retry_at",
+				"decommission_last_error",
+				"decommission_started_at",
+				"decommission_completed_at",
+			]),
+		);
+		expect(columnNames(scimProviderConfig)).not.toEqual(
+			expect.arrayContaining(["provider_id", "scim_token", "token"]),
+		);
+		expect("legacyScimProvider" in scimSchema).toBe(false);
+	});
+
+	it("stores reversible organization-local user lifecycle state", () => {
+		expectNotNullColumns(scimUserLifecycleState, [
+			"organization_id",
+			"connection_id",
+			"user_id",
+			"membership_revision",
+			"scim_active",
+			"deactivation_owned",
+			"created_at",
+			"updated_at",
+		]);
+		expect(indexColumns(scimUserLifecycleState, true)).toContainEqual([
+			"organization_id",
+			"user_id",
+		]);
+		expect(columnNames(scimUserLifecycleState)).toEqual(
+			expect.arrayContaining([
+				"prior_member_status",
+				"prior_employee_is_active",
+			]),
+		);
+		expect(columnNames(scimUserLifecycleState)).not.toContain("external_id");
+	});
+
+	it("stores desired SCIM role projection separately from effective assignments", () => {
+		expectNotNullColumns(scimRoleProjectionState, [
+			"organization_id",
+			"user_id",
+			"role_template_id",
+			"created_at",
+			"updated_at",
+		]);
+		expect(indexColumns(scimRoleProjectionState, true)).toContainEqual([
+			"organization_id",
+			"user_id",
+		]);
+		expect(columnNames(scimRoleProjectionState)).toContain("source_group_id");
+		expect(
+			hasForeignKey(scimRoleProjectionState, "role_template_id", roleTemplate),
+		).toBe(true);
+	});
+
+	it("defines a durable organization-scoped seat sync outbox", () => {
+		expect(getTableConfig(scimSeatSyncOutbox).name).toBe(
+			"scim_billing_seat_sync_outbox",
+		);
+		expect(scimOutboxStatusEnum.enumValues).toEqual([
+			"pending",
+			"processing",
+			"completed",
+		]);
+		expectNotNullColumns(scimSeatSyncOutbox, [
+			"organization_id",
+			"connection_id",
+			"user_id",
+			"membership_revision",
+			"dedupe_key",
+			"status",
+			"available_at",
+			"attempt_count",
+			"created_at",
+			"updated_at",
+		]);
+		expect(indexColumns(scimSeatSyncOutbox, true)).toContainEqual([
+			"organization_id",
+			"dedupe_key",
+		]);
+		expect(indexColumns(scimSeatSyncOutbox, false)).toContainEqual([
+			"status",
+			"available_at",
+		]);
+		expect(columnNames(scimSeatSyncOutbox)).toEqual(
+			expect.arrayContaining([
+				"claimed_at",
+				"claim_token",
+				"last_error",
+				"processed_at",
+			]),
+		);
+		expect(scimSeatSyncOutbox.claimToken.dataType).toBe("string");
+		expect(scimSeatSyncOutbox.claimToken.columnType).toBe("PgUUID");
+	});
+
+	it("keeps provisioning audit metadata opaque and credential-free", () => {
+		expect(columnNames(scimProvisioningLog)).toEqual(
+			expect.arrayContaining([
+				"connection_id",
+				"scim_resource_id",
+				"request_id",
+			]),
+		);
+		expect(columnNames(scimProvisioningLog)).not.toEqual(
+			expect.arrayContaining(["token", "scim_token", "request_payload"]),
+		);
+		type Metadata = typeof scimProvisioningLog.$inferInsert.metadata;
+		const safeMetadata: Metadata = { errorCode: "invalid_user" };
+		expect(safeMetadata).toEqual({ errorCode: "invalid_user" });
+	});
+
+	it("allows system lifecycle events without a user actor", () => {
+		expect(userLifecycleEvent.actorType.enumValues).toEqual(["user", "system"]);
+		expect(userLifecycleEvent.actorType.notNull).toBe(true);
+		expect(userLifecycleEvent.actorType.default).toBe("user");
+		expect(userLifecycleEvent.createdBy.notNull).toBe(false);
+	});
+});

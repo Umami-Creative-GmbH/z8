@@ -52,30 +52,17 @@ describe("Better Auth 1.7 core configuration", () => {
 		expect(source).not.toContain("trustedProxyHeaders");
 	});
 
-	it("retains the legacy SCIM provider physical table as application-owned schema", () => {
+	it("does not retain SCIM provider credentials in application-owned schema", () => {
 		const source = readFileSync(
 			join(process.cwd(), "src/db/schema/scim.ts"),
 			"utf8",
 		);
-		const tableSource = source.slice(
-			source.indexOf("export const legacyScimProvider"),
-			source.indexOf("export const scimProviderConfig"),
-		);
 
-		expect(tableSource).toContain('pgTable("scim_provider"');
-		expect(tableSource).toContain('id: text("id").primaryKey()');
-		expect(tableSource).toContain(
-			'providerId: text("provider_id").notNull().unique()',
-		);
-		expect(tableSource).toContain(
-			'scimToken: text("scim_token").notNull().unique()',
-		);
-		expect(tableSource).toContain('organizationId: text("organization_id")');
-		expect(tableSource).not.toContain(
-			'organizationId: text("organization_id").notNull()',
-		);
-		expect(
-			tableSource.match(/\b(?:id|providerId|scimToken|organizationId):/g),
-		).toHaveLength(4);
+		expect(source).not.toContain("legacyScimProvider");
+		expect(source).not.toContain('pgTable("scim_provider"');
+		expect(source).not.toContain("providerId");
+		expect(source).not.toContain("scimToken");
+		expect(source).not.toContain("tokenGenerated");
+		expect(source).not.toContain("requestPayload");
 	});
 });

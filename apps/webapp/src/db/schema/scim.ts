@@ -1,24 +1,25 @@
-import { boolean, index, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+	boolean,
+	index,
+	integer,
+	jsonb,
+	pgEnum,
+	pgTable,
+	text,
+	timestamp,
+	uniqueIndex,
+	uuid,
+} from "drizzle-orm/pg-core";
+import { organization, user } from "../auth-schema";
+import { roleTemplate } from "./identity";
 import { currentTimestamp } from "./timestamp";
 
-// Import auth tables for FK references
-import { organization, user } from "../auth-schema";
-
-// ============================================
-// LEGACY SCIM PROVIDER DATA
-//
-// Retained as application-owned, read-only legacy data pending the dedicated
-// Better Auth 1.7 SCIM cutover.
-// ============================================
-
-export const legacyScimProvider = pgTable("scim_provider", {
-	id: text("id").primaryKey(),
-	providerId: text("provider_id").notNull().unique(),
-	scimToken: text("scim_token").notNull().unique(),
-	organizationId: text("organization_id"),
-});
-
-// SCIM EXTENDED CONFIGURATION
+export const scimConnectionStateEnum = pgEnum("scim_connection_state", [
+	"creating",
+	"active",
+	"decommissioning",
+	"decommissioned",
+]);
 
 export const scimProviderConfig = pgTable(
 	"scim_provider_config",
@@ -26,31 +27,25 @@ export const scimProviderConfig = pgTable(
 		id: uuid("id").defaultRandom().primaryKey(),
 		organizationId: text("organization_id")
 			.notNull()
-			.references(() => organization.id, { onDelete: "cascade" })
-			.unique(),
-
-		// Reference to Better Auth's scimProvider.providerId
-		// This links our extended config to the Better Auth provider
-		providerId: text("provider_id").notNull(),
-
-		// Provisioning settings
-		// When true, SCIM-provisioned users are auto-activated (no approval required)
-		// When false, users go through the existing PendingMemberService workflow
+			.references(() => organization.id, { onDelete: "cascade" }),
+		creationRequestId: text("creation_request_id").notNull(),
+		connectionId: text("connection_id"),
+		state: scimConnectionStateEnum("state").default("creating").notNull(),
 		autoActivateUsers: boolean("auto_activate_users").default(false).notNull(),
-
-		// When a user is deactivated via SCIM DELETE or active=false:
-		// - "soft_delete": Set employee.isActive=false (preserves data for compliance)
-		// - "suspend": Set member.status="suspended" (can be reactivated via SCIM)
 		deprovisionAction: text("deprovision_action")
 			.$type<"soft_delete" | "suspend">()
 			.default("suspend")
 			.notNull(),
-
-		// Default role template to apply to SCIM-provisioned users
-		// If no IdP group mapping matches, this template is applied
-		defaultRoleTemplateId: uuid("default_role_template_id"),
-
-		// Audit
+		defaultRoleTemplateId: uuid("default_role_template_id")
+			.notNull()
+			.references(() => roleTemplate.id),
+		decommissionRetryAt: timestamp("decommission_retry_at"),
+		decommissionAttemptCount: integer("decommission_attempt_count")
+			.default(0)
+			.notNull(),
+		decommissionLastError: text("decommission_last_error"),
+		decommissionStartedAt: timestamp("decommission_started_at"),
+		decommissionCompletedAt: timestamp("decommission_completed_at"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		createdBy: text("created_by")
 			.notNull()
@@ -62,31 +57,141 @@ export const scimProviderConfig = pgTable(
 		updatedBy: text("updated_by").references(() => user.id),
 	},
 	(table) => [
-		index("scimProviderConfig_organizationId_idx").on(table.organizationId),
-		index("scimProviderConfig_providerId_idx").on(table.providerId),
+		uniqueIndex("scimProviderConfig_organizationId_unique_idx").on(
+			table.organizationId,
+		),
+		uniqueIndex("scimProviderConfig_creationRequestId_unique_idx").on(
+			table.creationRequestId,
+		),
+		uniqueIndex("scimProviderConfig_connectionId_unique_idx").on(
+			table.connectionId,
+		),
+		index("scimProviderConfig_organizationId_connectionId_idx").on(
+			table.organizationId,
+			table.connectionId,
+		),
 	],
 );
 
-// ============================================
-// SCIM PROVISIONING LOG
-// Audit trail for SCIM provisioning events
-// Complements Better Auth's SCIM operations with lifecycle tracking
-// ============================================
+export const scimUserLifecycleState = pgTable(
+	"scim_user_lifecycle_state",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		connectionId: text("connection_id").notNull(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		membershipRevision: integer("membership_revision").notNull(),
+		scimActive: boolean("scim_active").notNull(),
+		priorMemberStatus: text("prior_member_status"),
+		priorEmployeeIsActive: boolean("prior_employee_is_active"),
+		deactivationOwned: boolean("deactivation_owned").default(false).notNull(),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		uniqueIndex("scimUserLifecycleState_organizationId_userId_unique_idx").on(
+			table.organizationId,
+			table.userId,
+		),
+	],
+);
 
-export const scimProvisioningEventTypeEnum = pgEnum("scim_provisioning_event_type", [
-	"user_created", // New user provisioned via SCIM
-	"user_updated", // User attributes updated via SCIM
-	"user_deactivated", // User deactivated (active=false)
-	"user_reactivated", // User reactivated (active=true)
-	"user_deleted", // User deleted via SCIM
-	"group_created", // Group/team created via SCIM
-	"group_updated", // Group/team updated via SCIM
-	"group_deleted", // Group/team deleted via SCIM
-	"group_member_added", // User added to group
-	"group_member_removed", // User removed from group
-	"role_template_applied", // Role template was applied to user
-	"error", // Provisioning error occurred
+export const scimRoleProjectionState = pgTable(
+	"scim_role_projection_state",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		roleTemplateId: uuid("role_template_id")
+			.notNull()
+			.references(() => roleTemplate.id),
+		sourceGroupId: text("source_group_id"),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		uniqueIndex("scimRoleProjectionState_organizationId_userId_unique_idx").on(
+			table.organizationId,
+			table.userId,
+		),
+	],
+);
+
+export const scimOutboxStatusEnum = pgEnum("scim_outbox_status", [
+	"pending",
+	"processing",
+	"completed",
 ]);
+
+export const scimSeatSyncOutbox = pgTable(
+	"scim_billing_seat_sync_outbox",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		connectionId: text("connection_id").notNull(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		membershipRevision: integer("membership_revision").notNull(),
+		dedupeKey: text("dedupe_key").notNull(),
+		status: scimOutboxStatusEnum("status").default("pending").notNull(),
+		availableAt: timestamp("available_at").defaultNow().notNull(),
+		claimedAt: timestamp("claimed_at"),
+		claimToken: uuid("claim_token"),
+		attemptCount: integer("attempt_count").default(0).notNull(),
+		lastError: text("last_error"),
+		processedAt: timestamp("processed_at"),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+	},
+	(table) => [
+		uniqueIndex("scimSeatSyncOutbox_organizationId_dedupeKey_unique_idx").on(
+			table.organizationId,
+			table.dedupeKey,
+		),
+		index("scimSeatSyncOutbox_status_availableAt_idx").on(
+			table.status,
+			table.availableAt,
+		),
+	],
+);
+
+export const scimProvisioningEventTypeEnum = pgEnum(
+	"scim_provisioning_event_type",
+	[
+		"user_created",
+		"user_updated",
+		"user_deactivated",
+		"user_reactivated",
+		"user_deleted",
+		"group_created",
+		"group_updated",
+		"group_deleted",
+		"group_member_added",
+		"group_member_removed",
+		"role_template_applied",
+		"error",
+	],
+);
 
 export const scimProvisioningLog = pgTable(
 	"scim_provisioning_log",
@@ -95,51 +200,33 @@ export const scimProvisioningLog = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-
-		// Event type
+		connectionId: text("connection_id"),
 		eventType: scimProvisioningEventTypeEnum("event_type").notNull(),
-
-		// Affected resources
 		userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
-		// For group events: the team ID
 		teamId: uuid("team_id"),
-		// SCIM external ID (from IdP)
 		externalId: text("external_id"),
-
-		// Event metadata
+		scimResourceId: text("scim_resource_id"),
+		requestId: text("request_id"),
 		metadata: jsonb("metadata").$type<{
-			// SCIM request details
 			scimUserName?: string;
 			scimDisplayName?: string;
 			scimExternalId?: string;
 			scimGroupId?: string;
-
-			// Role template info (if applied)
 			roleTemplateId?: string;
 			roleTemplateName?: string;
-
-			// Provisioning decision
 			autoActivated?: boolean;
 			deprovisionAction?: "soft_delete" | "suspend";
-
-			// Error details (if error event)
 			errorCode?: string;
 			errorMessage?: string;
-
-			// IdP info
 			idpProvider?: string;
-			tokenGenerated?: boolean;
 		}>(),
-
-		// Request context
 		ipAddress: text("ip_address"),
 		userAgent: text("user_agent"),
-
-		// Timing
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
 	(table) => [
 		index("scimProvisioningLog_organizationId_idx").on(table.organizationId),
+		index("scimProvisioningLog_connectionId_idx").on(table.connectionId),
 		index("scimProvisioningLog_eventType_idx").on(table.eventType),
 		index("scimProvisioningLog_userId_idx").on(table.userId),
 		index("scimProvisioningLog_createdAt_idx").on(table.createdAt),

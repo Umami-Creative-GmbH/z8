@@ -30,6 +30,11 @@ export const lifecycleSourceEnum = pgEnum("lifecycle_source", [
 	"invite_code",
 ]);
 
+export const lifecycleActorTypeEnum = pgEnum("lifecycle_actor_type", [
+	"user",
+	"system",
+]);
+
 export const idpTypeEnum = pgEnum("idp_type", ["sso", "scim"]);
 
 // ============================================
@@ -286,9 +291,8 @@ export const userLifecycleEvent = pgTable(
 
 		// Audit
 		createdAt: timestamp("created_at").defaultNow().notNull(),
-		createdBy: text("created_by")
-			.notNull()
-			.references(() => user.id),
+		actorType: lifecycleActorTypeEnum("actor_type").default("user").notNull(),
+		createdBy: text("created_by").references(() => user.id),
 	},
 	(table) => [
 		index("userLifecycleEvent_organizationId_idx").on(table.organizationId),
