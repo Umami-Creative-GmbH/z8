@@ -7,6 +7,7 @@ import * as authSchema from "@/db/auth-schema";
 import type { SocialOAuthProvider } from "@/db/schema";
 import { env } from "@/env";
 import { getBaseUrlFromHost } from "@/lib/app-url";
+import { getAccountIssuer } from "@/lib/auth/account-issuer";
 import { createLogger } from "@/lib/logger";
 import {
 	exchangeCode,
@@ -101,7 +102,7 @@ async function createSession(
 /**
  * Find or create a user and link their OAuth account
  */
-async function findOrCreateUserWithAccount(params: {
+export async function findOrCreateUserWithAccount(params: {
 	provider: SocialOAuthProvider;
 	providerUserId: string;
 	email: string;
@@ -125,12 +126,13 @@ async function findOrCreateUserWithAccount(params: {
 		idToken,
 		expiresIn,
 	} = params;
+	const issuer = getAccountIssuer(provider);
 	const normalizedEmail = email.trim().toLowerCase();
 
 	// Check if account already exists
 	const existingAccount = await db.query.account.findFirst({
 		where: and(
-			eq(authSchema.account.providerId, provider),
+			eq(authSchema.account.issuer, issuer),
 			eq(authSchema.account.accountId, providerUserId),
 		),
 	});
@@ -162,6 +164,7 @@ async function findOrCreateUserWithAccount(params: {
 			id: generateId(32),
 			accountId: providerUserId,
 			providerId: provider,
+			issuer,
 			userId: existingUser.id,
 			accessToken,
 			refreshToken,
@@ -193,6 +196,7 @@ async function findOrCreateUserWithAccount(params: {
 		id: generateId(32),
 		accountId: providerUserId,
 		providerId: provider,
+		issuer,
 		userId,
 		accessToken,
 		refreshToken,
