@@ -297,6 +297,42 @@ describe("Better Auth SCIM storage migration", () => {
 		expect(migration).not.toContain('DROP TABLE "scim_provider" CASCADE');
 	});
 
+	it("refuses enabled or ambiguous legacy enterprise SCIM setup before destructive statements", () => {
+		const setupGuardPosition = position("DO $enabled_legacy_scim_setup_guard$");
+		const storageGuardPosition = position("DO $scim_legacy_storage_guard$");
+		const firstDestructivePosition = position(
+			'ALTER TABLE "scim_provider" DISABLE ROW LEVEL SECURITY',
+		);
+		const guard = migration.slice(setupGuardPosition, storageGuardPosition);
+
+		expect(setupGuardPosition).toBeLessThan(storageGuardPosition);
+		expect(setupGuardPosition).toBeLessThan(firstDestructivePosition);
+		expect(guard).toContain(
+			"to_regclass('public.enterprise_identity_setup') IS NOT NULL",
+		);
+		expect(guard).toContain('FROM public."enterprise_identity_setup" AS setup');
+		expect(guard).toContain(
+			`setup."scim" IS NULL OR setup."scim" = 'null'::jsonb`,
+		);
+		expect(guard).toContain(`NOT (setup."scim" ? 'enabled')`);
+		expect(guard).toContain(
+			`jsonb_typeof(setup."scim" -> 'enabled') = 'boolean'`,
+		);
+		expect(guard).toContain(
+			`jsonb_typeof(setup."scim" -> 'enabled') = 'string'`,
+		);
+		expect(guard).toContain(
+			`jsonb_typeof(setup."scim" -> 'enabled') = 'number'`,
+		);
+		expect(guard).toContain("ELSE true");
+		expect(guard).toContain(
+			"Legacy enterprise identity setup still claims SCIM is enabled",
+		);
+		expect(guard).toContain(
+			"Disable the legacy SCIM setup explicitly, then retry",
+		);
+	});
+
 	it("orders types, tables, keys, indexes, and guarded legacy removal safely", () => {
 		const firstEnum = position('CREATE TYPE "public"."scim_connection_state"');
 		const firstManagedTable = position(

@@ -225,6 +225,33 @@ CREATE TABLE "scim_user_lifecycle_state" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+DO $enabled_legacy_scim_setup_guard$
+BEGIN
+	IF to_regclass('public.enterprise_identity_setup') IS NOT NULL THEN
+		IF EXISTS (
+			SELECT 1
+			FROM public."enterprise_identity_setup" AS setup
+			WHERE CASE
+				WHEN setup."scim" IS NULL OR setup."scim" = 'null'::jsonb THEN false
+				WHEN jsonb_typeof(setup."scim") = 'boolean' THEN (setup."scim" #>> '{}')::boolean
+				WHEN jsonb_typeof(setup."scim") <> 'object' THEN true
+				WHEN NOT (setup."scim" ? 'enabled') THEN false
+				WHEN setup."scim" -> 'enabled' = 'null'::jsonb THEN false
+				WHEN jsonb_typeof(setup."scim" -> 'enabled') = 'boolean' THEN (setup."scim" ->> 'enabled')::boolean
+				WHEN jsonb_typeof(setup."scim" -> 'enabled') = 'string' THEN
+					lower(btrim(setup."scim" ->> 'enabled')) NOT IN ('false', 'f', '0', 'no', 'n', 'off', 'disabled')
+				WHEN jsonb_typeof(setup."scim" -> 'enabled') = 'number' THEN (setup."scim" ->> 'enabled')::numeric <> 0
+				ELSE true
+			END
+		) THEN
+			RAISE EXCEPTION USING
+				ERRCODE = 'P0001',
+				MESSAGE = 'Legacy enterprise identity setup still claims SCIM is enabled. Disable the legacy SCIM setup explicitly, then retry.';
+		END IF;
+	END IF;
+END
+$enabled_legacy_scim_setup_guard$;
+--> statement-breakpoint
 DO $scim_legacy_storage_guard$
 BEGIN
 	IF to_regclass('public.scim_provider') IS NOT NULL THEN
