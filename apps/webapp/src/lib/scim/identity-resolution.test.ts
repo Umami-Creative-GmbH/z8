@@ -30,10 +30,11 @@ async function expectSafeConflict(promise: Promise<unknown>) {
 	expect(error).toBeInstanceOf(APIError);
 	expect(error).toMatchObject({
 		status: "CONFLICT",
-		body: {
-			code: "SCIM_IDENTITY_CONFLICT",
-			message: "The SCIM identity cannot be linked",
-		},
+	});
+	expect(error.body).toEqual({
+		schemas: ["urn:ietf:params:scim:api:messages:2.0:Error"],
+		status: "409",
+		detail: "The SCIM identity cannot be linked",
 	});
 	expect(JSON.stringify(error)).not.toContain("user@example.com");
 	expect(JSON.stringify(error)).not.toContain("organization_foreign");
@@ -140,6 +141,7 @@ describe("resolveSCIMIdentity", () => {
 
 		expect(findOne).toHaveBeenNthCalledWith(1, {
 			model: "user",
+			select: ["id", "emailVerified"],
 			where: [
 				{
 					field: "email",
@@ -150,6 +152,7 @@ describe("resolveSCIMIdentity", () => {
 		});
 		expect(findOne).toHaveBeenNthCalledWith(2, {
 			model: "member",
+			select: ["id"],
 			where: [
 				{ field: "userId", value: "user_1" },
 				{ field: "organizationId", value: TARGET_ORGANIZATION_ID },

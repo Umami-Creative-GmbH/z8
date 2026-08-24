@@ -7,8 +7,9 @@ import { APIError } from "better-auth/api";
 import { createSCIMReadStore } from "./transaction-store";
 
 const SCIM_IDENTITY_CONFLICT = {
-	code: "SCIM_IDENTITY_CONFLICT",
-	message: "The SCIM identity cannot be linked",
+	schemas: ["urn:ietf:params:scim:api:messages:2.0:Error"],
+	status: "409",
+	detail: "The SCIM identity cannot be linked",
 } as const;
 
 export async function resolveSCIMIdentity(

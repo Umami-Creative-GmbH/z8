@@ -29,11 +29,13 @@ export function createSCIMReadStore(database: SCIMReadDatabase): SCIMReadStore {
 		findUserByEmail: (email) =>
 			database.findOne<SCIMReadUser>({
 				model: SCIM_READ_MODEL.user,
+				select: ["id", "emailVerified"],
 				where: [{ field: "email", value: email, mode: "insensitive" }],
 			}),
 		findOrganizationMember: (userId, organizationId) =>
 			database.findOne<SCIMReadMember>({
 				model: SCIM_READ_MODEL.member,
+				select: ["id"],
 				where: [
 					{ field: "userId", value: userId },
 					{ field: "organizationId", value: organizationId },
