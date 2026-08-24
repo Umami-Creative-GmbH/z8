@@ -24,6 +24,10 @@ describe("parseTotpEnrollmentResponse", () => {
 			{ method: "totp", totpURI: "otpauth://totp/Z8", backupCodes: "backup-one" },
 		],
 		[
+			"a response with no backup codes",
+			{ method: "totp", totpURI: "otpauth://totp/Z8", backupCodes: [] },
+		],
+		[
 			"a response with an empty backup code",
 			{ method: "totp", totpURI: "otpauth://totp/Z8", backupCodes: [""] },
 		],

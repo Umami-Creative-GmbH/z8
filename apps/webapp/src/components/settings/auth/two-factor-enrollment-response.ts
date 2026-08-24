@@ -16,6 +16,7 @@ export function parseTotpEnrollmentResponse(response: unknown): TotpEnrollmentRe
 		typeof totpURI !== "string" ||
 		totpURI.length === 0 ||
 		!Array.isArray(backupCodes) ||
+		backupCodes.length === 0 ||
 		!backupCodes.every(
 			(code): code is string => typeof code === "string" && code.length > 0,
 		)
