@@ -1,8 +1,5 @@
 import { Temporal } from "temporal-polyfill";
-import type {
-	SCIMProjectionRecoveryClaim,
-	SCIMProjectionRecoveryStore,
-} from "./projection-recovery";
+import type { SCIMProjectionRecoveryStore } from "./projection-recovery";
 
 export type SCIMProjectionReplayer = (organizationId: string) => Promise<void>;
 export type SCIMProjectionReplayLoader = () => Promise<SCIMProjectionReplayer>;
@@ -25,7 +22,21 @@ export async function requestSCIMProjectionReplayAfter<T>(
 	if (!replayLoader || !compensate || !recoveryStore)
 		throw new Error("SCIM projection replay is not configured");
 	const replay = await replayLoader();
-	const result = await persist();
+	const claim = await recoveryStore.begin(input.organizationId);
+	let result: T;
+	try {
+		result = await persist();
+	} catch (mutationError) {
+		try {
+			await recoveryStore.complete(claim, Temporal.Now.instant());
+		} catch (recoveryPersistenceError) {
+			throw new AggregateError(
+				[mutationError, recoveryPersistenceError],
+				"SCIM policy mutation and recovery completion failed",
+			);
+		}
+		throw mutationError;
+	}
 	try {
 		await replay(input.organizationId);
 	} catch (replayError) {
@@ -37,16 +48,6 @@ export async function requestSCIMProjectionReplayAfter<T>(
 				"SCIM projection replay and policy compensation failed",
 			);
 		}
-		let claim: SCIMProjectionRecoveryClaim;
-		try {
-			claim = await recoveryStore.begin(input.organizationId);
-		} catch (recoveryPersistenceError) {
-			throw new AggregateError(
-				[replayError, recoveryPersistenceError],
-				"SCIM projection replay failed and recovery could not be persisted",
-			);
-		}
-
 		try {
 			await replay(input.organizationId);
 			await recoveryStore.complete(claim, Temporal.Now.instant());
@@ -66,5 +67,6 @@ export async function requestSCIMProjectionReplayAfter<T>(
 		}
 		throw replayError;
 	}
+	await recoveryStore.complete(claim, Temporal.Now.instant());
 	return result;
 }

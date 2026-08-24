@@ -1,8 +1,10 @@
+import { Temporal } from "temporal-polyfill";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type {
 	SCIMProjectionRecoveryClaim,
 	SCIMProjectionRecoveryStore,
 } from "./projection-recovery";
+import { retryDueSCIMProjectionRecovery } from "./projection-recovery";
 import {
 	configureSCIMProjectionReplay,
 	requestSCIMProjectionReplayAfter,
@@ -32,11 +34,52 @@ function recoveryStore(events: string[] = []): SCIMProjectionRecoveryStore {
 	};
 }
 
+function crashRecoveryStore() {
+	let status: "idle" | "processing" | "completed" = "idle";
+	const claim: SCIMProjectionRecoveryClaim = {
+		id: "recovery_opaque",
+		organizationId: "org_target",
+		claimToken: "claim_opaque",
+		attemptCount: 1,
+	};
+	const store: SCIMProjectionRecoveryStore = {
+		begin: async () => {
+			status = "processing";
+			return claim;
+		},
+		claimDue: async (organizationId, now) => {
+			if (
+				status !== "processing" ||
+				organizationId !== claim.organizationId ||
+				!now ||
+				Temporal.Instant.compare(
+					now,
+					Temporal.Instant.from("2026-08-25T00:05:00Z"),
+				) < 0
+			)
+				return null;
+			return claim;
+		},
+		complete: async () => {
+			status = "completed";
+		},
+		defer: async () => undefined,
+	};
+	return { store, status: () => status };
+}
+
+function waitForever(): Promise<never> {
+	return new Promise(() => undefined);
+}
+
 describe("SCIM projection replay boundary", () => {
 	it("requests SCIM mapping replay only after persistence", async () => {
 		const order: string[] = [];
-		configureSCIMProjectionReplay(async () => (organizationId) => {
-			order.push(`replay:${organizationId}`);
+		configureSCIMProjectionReplay(async () => {
+			order.push("preflight");
+			return async (organizationId) => {
+				order.push(`replay:${organizationId}`);
+			};
 		});
 
 		const result = await requestSCIMProjectionReplayAfter(
@@ -52,7 +95,13 @@ describe("SCIM projection replay boundary", () => {
 		);
 
 		expect(result).toBe("created");
-		expect(order).toEqual(["persist", "replay:org_target"]);
+		expect(order).toEqual([
+			"preflight",
+			"begin:org_target",
+			"persist",
+			"replay:org_target",
+			"complete",
+		]);
 	});
 
 	it("does not replay SSO mappings", async () => {
@@ -84,7 +133,12 @@ describe("SCIM projection replay boundary", () => {
 			recoveryStore(order),
 		);
 
-		expect(order).toEqual(["delete-assignment", "replay:org_target"]);
+		expect(order).toEqual([
+			"begin:org_target",
+			"delete-assignment",
+			"replay:org_target",
+			"complete",
+		]);
 	});
 
 	it("fails closed when replay-required persistence has no registered integration", async () => {
@@ -112,6 +166,27 @@ describe("SCIM projection replay boundary", () => {
 			),
 		).rejects.toThrow("SCIM projection replay is not configured");
 		expect(persist).not.toHaveBeenCalled();
+	});
+
+	it("completes the intent when mutation fails before changing policy", async () => {
+		const events: string[] = [];
+		const mutationError = new Error("mutation rejected");
+		const replay = vi.fn();
+		configureSCIMProjectionReplay(async () => replay);
+
+		await expect(
+			requestSCIMProjectionReplayAfter(
+				{ organizationId: "org_target", source: "manual" },
+				async () => {
+					events.push("persist");
+					throw mutationError;
+				},
+				vi.fn(),
+				recoveryStore(events),
+			),
+		).rejects.toBe(mutationError);
+		expect(events).toEqual(["begin:org_target", "persist", "complete"]);
+		expect(replay).not.toHaveBeenCalled();
 	});
 
 	it("compensates a rejected replay and preserves the original policy", async () => {
@@ -168,8 +243,8 @@ describe("SCIM projection replay boundary", () => {
 			),
 		).rejects.toThrow("partial replay");
 		expect(events).toEqual([
-			"restore",
 			"begin:org_target",
+			"restore",
 			"replay:before",
 			"complete",
 		]);
@@ -193,6 +268,82 @@ describe("SCIM projection replay boundary", () => {
 
 		expect(error).toBeInstanceOf(AggregateError);
 		expect((error as AggregateError).errors).toHaveLength(2);
-		expect(events).toEqual(["restore", "begin:org_target", "defer"]);
+		expect(events).toEqual(["begin:org_target", "restore", "defer"]);
+	});
+
+	it("leaves a due intent when the process terminates before mutation", async () => {
+		const recovery = crashRecoveryStore();
+		let mutationStarted: (() => void) | undefined;
+		const mutationEntered = new Promise<void>((resolve) => {
+			mutationStarted = resolve;
+		});
+		const initialReplay = vi.fn();
+		configureSCIMProjectionReplay(async () => initialReplay);
+
+		void requestSCIMProjectionReplayAfter(
+			{ organizationId: "org_target", source: "manual" },
+			async () => {
+				mutationStarted?.();
+				return waitForever();
+			},
+			vi.fn(),
+			recovery.store,
+		);
+		await mutationEntered;
+
+		expect(recovery.status()).toBe("processing");
+		expect(initialReplay).not.toHaveBeenCalled();
+		const replayCommittedPolicy = vi.fn().mockResolvedValue(undefined);
+		await expect(
+			retryDueSCIMProjectionRecovery({
+				organizationId: "org_target",
+				store: recovery.store,
+				replay: replayCommittedPolicy,
+				now: Temporal.Instant.from("2026-08-25T00:05:01Z"),
+			}),
+		).resolves.toBe(true);
+		expect(replayCommittedPolicy).toHaveBeenCalledWith("org_target");
+		expect(recovery.status()).toBe("completed");
+	});
+
+	it("retries a due intent after termination during the initial replay", async () => {
+		const recovery = crashRecoveryStore();
+		let replayStarted: (() => void) | undefined;
+		const replayEntered = new Promise<void>((resolve) => {
+			replayStarted = resolve;
+		});
+		let policy = "before";
+		let projectedPolicy = "before";
+		configureSCIMProjectionReplay(async () => async () => {
+			projectedPolicy = "partial";
+			replayStarted?.();
+			return waitForever();
+		});
+
+		void requestSCIMProjectionReplayAfter(
+			{ organizationId: "org_target", source: "scim" },
+			async () => {
+				policy = "changed";
+				return "before";
+			},
+			async (snapshot) => {
+				policy = snapshot;
+			},
+			recovery.store,
+		);
+		await replayEntered;
+
+		expect(recovery.status()).toBe("processing");
+		expect(projectedPolicy).toBe("partial");
+		await retryDueSCIMProjectionRecovery({
+			organizationId: "org_target",
+			store: recovery.store,
+			replay: async () => {
+				projectedPolicy = policy;
+			},
+			now: Temporal.Instant.from("2026-08-25T00:05:01Z"),
+		});
+		expect(projectedPolicy).toBe("changed");
+		expect(recovery.status()).toBe("completed");
 	});
 });
