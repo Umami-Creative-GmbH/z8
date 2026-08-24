@@ -16,6 +16,9 @@ describe("createZ8SCIMPlugin", () => {
 		expect(plugin.options).toMatchObject({
 			connections: [],
 			managedConnections: { credentialHashSecret },
+			compatibility: {
+				microsoftEntra: { acceptLegacyGroupSchema: true },
+			},
 		});
 		expect(plugin.options.identity).toEqual({
 			resolveUser: resolveSCIMIdentity,

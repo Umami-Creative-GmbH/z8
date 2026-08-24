@@ -10,6 +10,9 @@ export function createZ8SCIMPlugin(credentialHashSecret: string) {
 	return scim({
 		connections: [],
 		managedConnections: { credentialHashSecret },
+		compatibility: {
+			microsoftEntra: { acceptLegacyGroupSchema: true },
+		},
 		identity: {
 			resolveUser: resolveSCIMIdentity,
 			reconcileUser: reconcileSCIMLifecycle,
