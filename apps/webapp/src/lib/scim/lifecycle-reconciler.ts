@@ -60,46 +60,81 @@ export async function reconcileSCIMLifecycle(
 	const ownsPriorDeactivation =
 		lifecycle?.deactivationOwned === true &&
 		lifecycle.connectionId === config.connectionId;
+	let memberDeactivationOwned = ownsPriorDeactivation
+		? lifecycle.memberDeactivationOwned
+		: false;
+	let employeeDeactivationOwned = ownsPriorDeactivation
+		? lifecycle.employeeDeactivationOwned
+		: false;
 	if (!input.active && member && employee && !ownsPriorDeactivation) {
 		if (
 			config.deprovisionAction === "suspend" &&
 			member.status !== "suspended"
 		) {
+			const updatedMember = await store.setMemberStatus(
+				organizationId,
+				input.userId,
+				"suspended",
+				member.status,
+			);
+			memberDeactivationOwned = updatedMember !== null;
 			member =
-				(await store.setMemberStatus(
-					organizationId,
-					input.userId,
-					"suspended",
-				)) ?? member;
+				updatedMember ??
+				(await store.getMember(organizationId, input.userId)) ??
+				member;
 		}
 		if (employee.isActive) {
+			const updatedEmployee = await store.setEmployeeActive(
+				organizationId,
+				input.userId,
+				false,
+				true,
+			);
+			employeeDeactivationOwned = updatedEmployee !== null;
 			employee =
-				(await store.setEmployeeActive(organizationId, input.userId, false)) ??
+				updatedEmployee ??
+				(await store.getEmployee(organizationId, input.userId)) ??
 				employee;
 		}
 		event = "deactivated";
 	}
 
 	if (input.active && ownsPriorDeactivation && member && employee) {
-		if (member.status !== lifecycle.priorMemberStatus) {
+		if (
+			memberDeactivationOwned &&
+			member.status === "suspended" &&
+			member.status !== lifecycle.priorMemberStatus
+		) {
+			const updatedMember = await store.setMemberStatus(
+				organizationId,
+				input.userId,
+				lifecycle.priorMemberStatus,
+				"suspended",
+			);
 			member =
-				(await store.setMemberStatus(
-					organizationId,
-					input.userId,
-					lifecycle.priorMemberStatus,
-				)) ?? member;
+				updatedMember ??
+				(await store.getMember(organizationId, input.userId)) ??
+				member;
 		}
 		if (
+			employeeDeactivationOwned &&
+			employee.isActive === false &&
 			lifecycle.priorEmployeeIsActive !== null &&
 			employee.isActive !== lifecycle.priorEmployeeIsActive
 		) {
+			const updatedEmployee = await store.setEmployeeActive(
+				organizationId,
+				input.userId,
+				lifecycle.priorEmployeeIsActive,
+				false,
+			);
 			employee =
-				(await store.setEmployeeActive(
-					organizationId,
-					input.userId,
-					lifecycle.priorEmployeeIsActive,
-				)) ?? employee;
+				updatedEmployee ??
+				(await store.getEmployee(organizationId, input.userId)) ??
+				employee;
 		}
+		memberDeactivationOwned = false;
+		employeeDeactivationOwned = false;
 		event = "reactivated";
 	}
 
@@ -124,6 +159,16 @@ export async function reconcileSCIMLifecycle(
 				: (lifecycle?.priorEmployeeIsActive ?? null),
 		deactivationOwned:
 			deactivating || (ownsPriorDeactivation && event !== "reactivated"),
+		memberDeactivationOwned: deactivating
+			? memberDeactivationOwned
+			: event === "reactivated"
+				? false
+				: (lifecycle?.memberDeactivationOwned ?? false),
+		employeeDeactivationOwned: deactivating
+			? employeeDeactivationOwned
+			: event === "reactivated"
+				? false
+				: (lifecycle?.employeeDeactivationOwned ?? false),
 	});
 
 	if (membershipChanged) {

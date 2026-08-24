@@ -312,6 +312,25 @@ export const RoleTemplateServiceLive = Layer.succeed(
 
 		createIdpMapping: (input: CreateIdpMappingInput) =>
 			Effect.gen(function* () {
+				const eligibleTemplate = yield* Effect.tryPromise(() =>
+					db.query.roleTemplate.findFirst({
+						where: and(
+							eq(roleTemplate.id, input.roleTemplateId),
+							eq(roleTemplate.isActive, true),
+							or(
+								eq(roleTemplate.organizationId, input.organizationId),
+								and(
+									isNull(roleTemplate.organizationId),
+									eq(roleTemplate.isGlobal, true),
+								),
+							),
+						),
+						columns: { id: true },
+					}),
+				);
+				if (!eligibleTemplate)
+					throw new Error("Role template is not available");
+
 				const [created] = yield* Effect.tryPromise({
 					try: () =>
 						requestSCIMProjectionReplayAfter(

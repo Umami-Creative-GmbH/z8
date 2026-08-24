@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => {
 	const deleteFrom = vi.fn(() => ({ where: deleteWhere }));
 	const mappingFindFirst = vi.fn();
 	const assignmentFindFirst = vi.fn();
+	const roleTemplateFindFirst = vi.fn();
 	const recoveryStore = {
 		begin: vi.fn(async (organizationId: string) => ({
 			id: "recovery_opaque",
@@ -29,6 +30,7 @@ const mocks = vi.hoisted(() => {
 		deleteFrom,
 		mappingFindFirst,
 		assignmentFindFirst,
+		roleTemplateFindFirst,
 		recoveryStore,
 	};
 });
@@ -38,6 +40,7 @@ vi.mock("@/db", () => ({
 		insert: mocks.insert,
 		delete: mocks.deleteFrom,
 		query: {
+			roleTemplate: { findFirst: mocks.roleTemplateFindFirst },
 			roleTemplateMapping: { findFirst: mocks.mappingFindFirst },
 			userRoleTemplateAssignment: { findFirst: mocks.assignmentFindFirst },
 		},
@@ -89,10 +92,71 @@ function runService<A>(
 beforeEach(() => {
 	vi.clearAllMocks();
 	mocks.deleteWhere.mockResolvedValue(undefined);
+	mocks.roleTemplateFindFirst.mockResolvedValue({ id: "template_opaque" });
 });
 afterEach(() => configureSCIMProjectionReplay(null));
 
 describe("RoleTemplateService SCIM replay", () => {
+	it.each(["foreign", "inactive"] as const)(
+		"rejects a %s role template before mapping persistence",
+		async () => {
+			mocks.roleTemplateFindFirst.mockResolvedValue(null);
+			configureSCIMProjectionReplay(async () => vi.fn());
+
+			await expect(
+				runService((service) =>
+					service.createIdpMapping({
+						organizationId: "org_target",
+						idpType: "scim",
+						idpGroupId: "group_opaque",
+						roleTemplateId: "template_opaque",
+						createdBy: "user_opaque",
+					}),
+				),
+			).rejects.toThrow("Role template is not available");
+			expect(mocks.insert).not.toHaveBeenCalled();
+			const where = mocks.roleTemplateFindFirst.mock.calls[0]?.[0].where;
+			expect(collectColumnNames(where)).toEqual(
+				expect.arrayContaining([
+					"id",
+					"organization_id",
+					"is_global",
+					"is_active",
+				]),
+			);
+			expect(collectValues(where).flat()).toEqual(
+				expect.arrayContaining(["template_opaque", "org_target", true]),
+			);
+		},
+	);
+
+	it.each([
+		["organization", { organizationId: "org_target", isGlobal: false }],
+		["global", { organizationId: null, isGlobal: true }],
+	] as const)("accepts an active %s role template", async (_case, template) => {
+		mocks.roleTemplateFindFirst.mockResolvedValue({
+			id: "template_opaque",
+			isActive: true,
+			...template,
+		});
+		mocks.returning.mockResolvedValue([{ id: "mapping_1", idpType: "sso" }]);
+
+		await expect(
+			runService((service) =>
+				service.createIdpMapping({
+					organizationId: "org_target",
+					idpType: "sso",
+					idpGroupId: "group_opaque",
+					roleTemplateId: "template_opaque",
+					createdBy: "user_opaque",
+				}),
+			),
+		).resolves.toMatchObject({ id: "mapping_1" });
+		expect(mocks.values).toHaveBeenCalledWith(
+			expect.objectContaining({ roleTemplateId: "template_opaque" }),
+		);
+	});
+
 	it("requests replay after a SCIM mapping is created", async () => {
 		const order: string[] = [];
 		mocks.returning.mockImplementation(async () => {

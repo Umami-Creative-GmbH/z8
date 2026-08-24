@@ -113,6 +113,7 @@ describe("createSCIMProjectionRecoveryStore", () => {
 	it("qualifies claims and claim state transitions by organization", async () => {
 		const wheres: unknown[] = [];
 		const sets: Record<string, unknown>[] = [];
+		let dueLimit: number | undefined;
 		const row = {
 			id: "recovery_opaque",
 			organizationId: "org_target",
@@ -120,6 +121,18 @@ describe("createSCIMProjectionRecoveryStore", () => {
 			attemptCount: 2,
 		};
 		const database = {
+			select: vi.fn(() => ({
+				from: () => ({
+					where: () => ({
+						orderBy: () => ({
+							limit: (limit: number) => {
+								dueLimit = limit;
+								return {};
+							},
+						}),
+					}),
+				}),
+			})),
 			update: vi.fn(() => ({
 				set: (set: Record<string, unknown>) => {
 					sets.push(set);
@@ -140,6 +153,7 @@ describe("createSCIMProjectionRecoveryStore", () => {
 
 		const claim = await store.claimDue("org_target", now);
 		expect(claim).toEqual(row);
+		expect(dueLimit).toBe(1);
 		await store.complete(row, now);
 		await store.defer(row, now);
 
@@ -171,7 +185,6 @@ describe("createSCIMProjectionRecoveryStore", () => {
 
 	it("persists organization-qualified recovery before returning its lease", async () => {
 		let values: Record<string, unknown> | undefined;
-		let conflict: Record<string, unknown> | undefined;
 		const row = {
 			id: "recovery_opaque",
 			organizationId: "org_target",
@@ -182,12 +195,7 @@ describe("createSCIMProjectionRecoveryStore", () => {
 			insert: vi.fn(() => ({
 				values: (input: Record<string, unknown>) => {
 					values = input;
-					return {
-						onConflictDoUpdate: (input: Record<string, unknown>) => {
-							conflict = input;
-							return { returning: async () => [row] };
-						},
-					};
+					return { returning: async () => [row] };
 				},
 			})),
 		};
@@ -200,7 +208,32 @@ describe("createSCIMProjectionRecoveryStore", () => {
 
 		expect(values?.organizationId).toBe("org_target");
 		expect(values?.status).toBe("processing");
-		expect(collectColumnNames(conflict?.target)).toContain("organization_id");
-		expect((conflict?.set as Record<string, unknown>)?.attemptCount).toBe(1);
+		expect(database.insert).toHaveBeenCalledTimes(1);
 	});
+
+	it.each(["complete", "defer"] as const)(
+		"rejects %s when the exact intent lease is no longer owned",
+		async (transition) => {
+			const database = {
+				update: vi.fn(() => ({
+					set: () => ({
+						where: () => ({ returning: async () => [] }),
+					}),
+				})),
+			};
+			const store = createSCIMProjectionRecoveryStore(database as never);
+			const claim = {
+				id: "intent_a",
+				organizationId: "org_target",
+				claimToken: "claim_a",
+				attemptCount: 1,
+			};
+
+			await expect(
+				transition === "complete"
+					? store.complete(claim)
+					: store.defer(claim, Temporal.Instant.from("2026-08-25T00:00:00Z")),
+			).rejects.toThrow("SCIM projection recovery lease is no longer owned");
+		},
+	);
 });

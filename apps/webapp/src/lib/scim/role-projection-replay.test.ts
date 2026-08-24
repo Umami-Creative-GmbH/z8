@@ -68,6 +68,49 @@ function crashRecoveryStore() {
 	return { store, status: () => status };
 }
 
+function concurrentRecoveryStore() {
+	const intents: Array<SCIMProjectionRecoveryClaim & { status: string }> = [];
+	const store: SCIMProjectionRecoveryStore = {
+		begin: async (organizationId) => {
+			const number = intents.length + 1;
+			const intent = {
+				id: `intent_${number}`,
+				organizationId,
+				claimToken: `claim_${number}`,
+				attemptCount: 1,
+				status: "processing",
+			};
+			intents.push(intent);
+			return intent;
+		},
+		claimDue: async (organizationId) => {
+			const intent = intents.find(
+				(candidate) =>
+					candidate.organizationId === organizationId &&
+					candidate.status === "processing",
+			);
+			if (!intent) return null;
+			intent.claimToken = `retry_${intent.id}`;
+			intent.attemptCount += 1;
+			return { ...intent };
+		},
+		complete: async (claim) => {
+			const intent = intents.find(
+				(candidate) =>
+					candidate.id === claim.id &&
+					candidate.organizationId === claim.organizationId &&
+					candidate.claimToken === claim.claimToken &&
+					candidate.status === "processing",
+			);
+			if (!intent)
+				throw new Error("SCIM projection recovery lease is no longer owned");
+			intent.status = "completed";
+		},
+		defer: async () => undefined,
+	};
+	return { intents, store };
+}
+
 function waitForever(): Promise<never> {
 	return new Promise(() => undefined);
 }
@@ -346,4 +389,51 @@ describe("SCIM projection replay boundary", () => {
 		expect(projectedPolicy).toBe("changed");
 		expect(recovery.status()).toBe("completed");
 	});
+
+	it.each(["failure", "success"] as const)(
+		"keeps crashed intent A due when mutation B ends in %s",
+		async (outcome) => {
+			const recovery = concurrentRecoveryStore();
+			await recovery.store.begin("org_target");
+			let policy = "before";
+			let projectedPolicy = "stale";
+			configureSCIMProjectionReplay(async () => async () => {
+				projectedPolicy = policy;
+			});
+
+			const mutationB = requestSCIMProjectionReplayAfter(
+				{ organizationId: "org_target", source: "manual" },
+				async () => {
+					if (outcome === "failure") throw new Error("mutation B rejected");
+					policy = "changed-by-b";
+					return "before";
+				},
+				async (snapshot) => {
+					policy = snapshot;
+				},
+				recovery.store,
+			);
+			if (outcome === "failure") {
+				await expect(mutationB).rejects.toThrow("mutation B rejected");
+			} else {
+				await expect(mutationB).resolves.toBe("before");
+			}
+
+			expect(recovery.intents).toMatchObject([
+				{ id: "intent_1", status: "processing" },
+				{ id: "intent_2", status: "completed" },
+			]);
+			await retryDueSCIMProjectionRecovery({
+				organizationId: "org_target",
+				store: recovery.store,
+				replay: async () => {
+					projectedPolicy = policy;
+				},
+			});
+			expect(projectedPolicy).toBe(
+				outcome === "failure" ? "before" : "changed-by-b",
+			);
+			expect(recovery.intents[0]?.status).toBe("completed");
+		},
+	);
 });

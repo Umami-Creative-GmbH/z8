@@ -95,6 +95,12 @@ export const scimUserLifecycleState = pgTable(
 		priorMemberStatus: text("prior_member_status"),
 		priorEmployeeIsActive: boolean("prior_employee_is_active"),
 		deactivationOwned: boolean("deactivation_owned").default(false).notNull(),
+		memberDeactivationOwned: boolean("member_deactivation_owned")
+			.default(false)
+			.notNull(),
+		employeeDeactivationOwned: boolean("employee_deactivation_owned")
+			.default(false)
+			.notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.defaultNow()
@@ -225,10 +231,8 @@ export const scimProjectionRecovery = pgTable(
 			.$onUpdate(() => new Date()),
 	},
 	(table) => [
-		uniqueIndex("scimProjectionRecovery_organizationId_unique_idx").on(
+		index("scimProjectionRecovery_organizationId_status_availableAt_idx").on(
 			table.organizationId,
-		),
-		index("scimProjectionRecovery_status_availableAt_idx").on(
 			table.status,
 			table.availableAt,
 		),

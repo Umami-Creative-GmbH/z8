@@ -194,6 +194,83 @@ describe("reconcileSCIMLifecycle", () => {
 				membershipRevision: 2,
 			});
 			expect(target.rows(SCIM_MODELS.seatOutbox)).toHaveLength(2);
+			const restorationUpdates = target.operations.update.mock.calls.map(
+				([query]) => query,
+			);
+			if (deprovisionAction === "suspend") {
+				const memberRestore = restorationUpdates.find(
+					(query) =>
+						query.model === SCIM_MODELS.member &&
+						(query.update as { status?: unknown }).status === "approved",
+				);
+				expect(memberRestore?.where).toEqual(
+					expect.arrayContaining([{ field: "status", value: "suspended" }]),
+				);
+			}
+			const employeeRestore = restorationUpdates.find(
+				(query) =>
+					query.model === SCIM_MODELS.employee &&
+					(query.update as { isActive?: unknown }).isActive === true,
+			);
+			expect(employeeRestore?.where).toEqual(
+				expect.arrayContaining([{ field: "isActive", value: false }]),
+			);
+		},
+	);
+
+	it.each([
+		["suspend", "member", "pending"],
+		["suspend", "employee", true],
+		["soft_delete", "member", "pending"],
+		["soft_delete", "employee", true],
+	] as const)(
+		"preserves administrator changes for %s %s reactivation",
+		async (deprovisionAction, changedField, administratorValue) => {
+			const target = fixture({
+				deprovisionAction,
+				member: {
+					id: "member_existing",
+					organizationId,
+					userId,
+					role: "member",
+					status: "approved",
+				},
+				employee: {
+					id: "employee_existing",
+					organizationId,
+					userId,
+					role: "employee",
+					isActive: true,
+				},
+			});
+			await reconcile(false, target);
+			const lifecycle = target.rows(SCIM_MODELS.lifecycleState)[0];
+			expect(lifecycle).toMatchObject({
+				memberDeactivationOwned: deprovisionAction === "suspend",
+				employeeDeactivationOwned: true,
+			});
+
+			if (changedField === "member") {
+				(target.rows(SCIM_MODELS.member)[0] as { status: string }).status =
+					administratorValue as string;
+			} else {
+				(
+					target.rows(SCIM_MODELS.employee)[0] as { isActive: boolean }
+				).isActive = administratorValue as boolean;
+			}
+			await reconcile(true, target);
+
+			expect(target.rows(SCIM_MODELS.member)[0]).toMatchObject({
+				status: changedField === "member" ? "pending" : "approved",
+			});
+			expect(target.rows(SCIM_MODELS.employee)[0]).toMatchObject({
+				isActive: true,
+			});
+			expect(target.rows(SCIM_MODELS.lifecycleState)[0]).toMatchObject({
+				deactivationOwned: false,
+				memberDeactivationOwned: false,
+				employeeDeactivationOwned: false,
+			});
 		},
 	);
 

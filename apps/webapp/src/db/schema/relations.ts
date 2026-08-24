@@ -298,7 +298,7 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	scimProviderConfig: one(scimProviderConfig),
 	scimUserLifecycleStates: many(scimUserLifecycleState),
 	scimRoleProjectionStates: many(scimRoleProjectionState),
-	scimProjectionRecovery: one(scimProjectionRecovery),
+	scimProjectionRecoveries: many(scimProjectionRecovery),
 	scimSeatSyncOutboxMessages: many(scimSeatSyncOutbox),
 	scimProvisioningLogs: many(scimProvisioningLog),
 }));

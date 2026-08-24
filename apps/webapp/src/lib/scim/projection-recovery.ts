@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, lte, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, lte, or, sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db } from "@/db";
 import { scimProjectionRecovery } from "@/db/schema/scim";
@@ -34,7 +34,12 @@ export interface SCIMProjectionRecoveryStore {
 	): Promise<void>;
 }
 
-type RecoveryDb = Pick<typeof db, "insert" | "update">;
+type RecoveryDb = Pick<typeof db, "insert" | "select" | "update">;
+
+function assertLeaseUpdated(rows: Array<{ id: string }>): void {
+	if (rows.length !== 1)
+		throw new Error("SCIM projection recovery lease is no longer owned");
+}
 
 function toClaim(
 	row: typeof scimProjectionRecovery.$inferSelect,
@@ -68,19 +73,6 @@ export function createSCIMProjectionRecoveryStore(
 					lastErrorCode: null,
 					completedAt: null,
 				})
-				.onConflictDoUpdate({
-					target: scimProjectionRecovery.organizationId,
-					set: {
-						status: "processing",
-						availableAt: new Date(leaseUntil.epochMilliseconds),
-						attemptCount: 1,
-						claimToken,
-						claimedAt: new Date(now.epochMilliseconds),
-						lastErrorCode: null,
-						completedAt: null,
-						updatedAt: new Date(now.epochMilliseconds),
-					},
-				})
 				.returning();
 			if (!row) throw new Error("Failed to persist SCIM projection recovery");
 			return toClaim(row);
@@ -88,6 +80,26 @@ export function createSCIMProjectionRecoveryStore(
 
 		async claimDue(organizationId, now = Temporal.Now.instant()) {
 			const claimToken = randomUUID();
+			const dueAt = new Date(now.epochMilliseconds);
+			const dueIntent = database
+				.select({ id: scimProjectionRecovery.id })
+				.from(scimProjectionRecovery)
+				.where(
+					and(
+						eq(scimProjectionRecovery.organizationId, organizationId),
+						lte(scimProjectionRecovery.availableAt, dueAt),
+						or(
+							eq(scimProjectionRecovery.status, "pending"),
+							eq(scimProjectionRecovery.status, "processing"),
+						),
+					),
+				)
+				.orderBy(
+					asc(scimProjectionRecovery.availableAt),
+					asc(scimProjectionRecovery.createdAt),
+					asc(scimProjectionRecovery.id),
+				)
+				.limit(1);
 			const [row] = await database
 				.update(scimProjectionRecovery)
 				.set({
@@ -102,10 +114,8 @@ export function createSCIMProjectionRecoveryStore(
 				.where(
 					and(
 						eq(scimProjectionRecovery.organizationId, organizationId),
-						lte(
-							scimProjectionRecovery.availableAt,
-							new Date(now.epochMilliseconds),
-						),
+						inArray(scimProjectionRecovery.id, dueIntent),
+						lte(scimProjectionRecovery.availableAt, dueAt),
 						or(
 							eq(scimProjectionRecovery.status, "pending"),
 							eq(scimProjectionRecovery.status, "processing"),
@@ -117,7 +127,7 @@ export function createSCIMProjectionRecoveryStore(
 		},
 
 		async complete(claim, now = Temporal.Now.instant()) {
-			await database
+			const rows = await database
 				.update(scimProjectionRecovery)
 				.set({
 					status: "completed",
@@ -133,7 +143,9 @@ export function createSCIMProjectionRecoveryStore(
 						eq(scimProjectionRecovery.status, "processing"),
 						eq(scimProjectionRecovery.claimToken, claim.claimToken),
 					),
-				);
+				)
+				.returning({ id: scimProjectionRecovery.id });
+			assertLeaseUpdated(rows);
 		},
 
 		async defer(claim, now) {
@@ -141,7 +153,7 @@ export function createSCIMProjectionRecoveryStore(
 				30 * 2 ** Math.max(claim.attemptCount - 1, 0),
 				MAX_BACKOFF_SECONDS,
 			);
-			await database
+			const rows = await database
 				.update(scimProjectionRecovery)
 				.set({
 					status: "pending",
@@ -160,7 +172,9 @@ export function createSCIMProjectionRecoveryStore(
 						eq(scimProjectionRecovery.status, "processing"),
 						eq(scimProjectionRecovery.claimToken, claim.claimToken),
 					),
-				);
+				)
+				.returning({ id: scimProjectionRecovery.id });
+			assertLeaseUpdated(rows);
 		},
 	};
 }

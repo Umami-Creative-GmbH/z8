@@ -128,6 +128,8 @@ describe("managed SCIM application schema", () => {
 			"membership_revision",
 			"scim_active",
 			"deactivation_owned",
+			"member_deactivation_owned",
+			"employee_deactivation_owned",
 			"created_at",
 			"updated_at",
 		]);
@@ -230,7 +232,7 @@ describe("managed SCIM application schema", () => {
 		expect(userForeignKey?.onDelete).toBe("set null");
 	});
 
-	it("defines organization-unique durable projection recovery leases", () => {
+	it("defines independent organization-scoped projection recovery leases", () => {
 		expect(scimProjectionRecoveryStatusEnum.enumValues).toEqual([
 			"pending",
 			"processing",
@@ -244,10 +246,11 @@ describe("managed SCIM application schema", () => {
 			"created_at",
 			"updated_at",
 		]);
-		expect(indexColumns(scimProjectionRecovery, true)).toContainEqual([
+		expect(indexColumns(scimProjectionRecovery, true)).not.toContainEqual([
 			"organization_id",
 		]);
 		expect(indexColumns(scimProjectionRecovery, false)).toContainEqual([
+			"organization_id",
 			"status",
 			"available_at",
 		]);

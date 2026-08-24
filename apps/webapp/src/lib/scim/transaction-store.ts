@@ -71,6 +71,8 @@ export interface SCIMLifecycleStateRecord {
 	priorMemberStatus: string | null;
 	priorEmployeeIsActive: boolean | null;
 	deactivationOwned: boolean;
+	memberDeactivationOwned: boolean;
+	employeeDeactivationOwned: boolean;
 }
 
 export interface SCIMRoleMappingRecord {
@@ -135,6 +137,7 @@ export interface SCIMTransactionStore {
 		organizationId: string,
 		userId: string,
 		status: string | null,
+		expectedStatus?: string | null,
 	): Promise<SCIMMemberRecord | null>;
 	getEmployee(
 		organizationId: string,
@@ -149,6 +152,7 @@ export interface SCIMTransactionStore {
 		organizationId: string,
 		userId: string,
 		isActive: boolean,
+		expectedIsActive?: boolean,
 	): Promise<SCIMEmployeeRecord | null>;
 	setEmployeeRole(
 		organizationId: string,
@@ -305,10 +309,15 @@ export function createSCIMTransactionStore(
 					createdAt: new Date(),
 				},
 			}),
-		setMemberStatus: (organizationId, userId, status) =>
+		setMemberStatus: (organizationId, userId, status, expectedStatus) =>
 			database.update({
 				model: SCIM_MODELS.member,
-				where: organizationUserWhere(organizationId, userId),
+				where: [
+					...organizationUserWhere(organizationId, userId),
+					...(expectedStatus === undefined
+						? []
+						: [{ field: "status", value: expectedStatus }]),
+				],
 				update: { status },
 			}),
 		getEmployee: (organizationId, userId) =>
@@ -323,10 +332,15 @@ export function createSCIMTransactionStore(
 				role: "employee",
 				isActive,
 			}),
-		setEmployeeActive: (organizationId, userId, isActive) =>
+		setEmployeeActive: (organizationId, userId, isActive, expectedIsActive) =>
 			database.update({
 				model: SCIM_MODELS.employee,
-				where: organizationUserWhere(organizationId, userId),
+				where: [
+					...organizationUserWhere(organizationId, userId),
+					...(expectedIsActive === undefined
+						? []
+						: [{ field: "isActive", value: expectedIsActive }]),
+				],
 				update: { isActive },
 			}),
 		setEmployeeRole: (organizationId, employeeId, role) =>
