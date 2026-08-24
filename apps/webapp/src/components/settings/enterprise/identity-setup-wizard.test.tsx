@@ -1,4 +1,5 @@
 /* @vitest-environment jsdom */
+/* @vitest-environment-options {"url": "https://example.test/"} */
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -365,7 +366,7 @@ describe("IdentitySetupWizard behavior", () => {
 		});
 	});
 
-	it("shows the encoded SAML ACS path for the configured provider", () => {
+	it("shows the mounted browser origin in the encoded SAML ACS URL", async () => {
 		renderWizard(
 			configuredSetup({
 				provider: {
@@ -376,9 +377,15 @@ describe("IdentitySetupWizard behavior", () => {
 			}),
 		);
 
-		expect(screen.getByText(/assertion consumer service \(ACS\) URL/).textContent).toContain(
-			"/api/auth/sso/saml2/sp/acs/acme%2Fokta",
-		);
+		await waitFor(() => {
+			const acsInstruction = screen.getByText(/assertion consumer service \(ACS\) URL/);
+			expect(acsInstruction.textContent).toContain(
+				"https://example.test/api/auth/sso/saml2/sp/acs/acme%2Fokta",
+			);
+			expect(acsInstruction.textContent).not.toContain(
+				"URL: /api/auth/sso/saml2/sp/acs/acme%2Fokta",
+			);
+		});
 		expect(screen.queryByText("/api/auth/sso/callback")).toBeNull();
 	});
 

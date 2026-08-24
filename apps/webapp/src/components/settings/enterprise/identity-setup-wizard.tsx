@@ -3,7 +3,7 @@
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	activateEnterpriseIdentitySetupAction,
@@ -942,9 +942,16 @@ function DomainStep({ controller }: { controller: IdentitySetupController }) {
 
 function SsoStep({ controller }: { controller: IdentitySetupController }) {
 	const { isPending, presetId, protocol, providerId, ssoForm, t } = controller;
+	const [browserOrigin, setBrowserOrigin] = useState("");
+
+	useEffect(() => {
+		setBrowserOrigin(window.location.origin);
+	}, []);
+
 	const samlAcsPath = providerId
 		? `/api/auth/sso/saml2/sp/acs/${encodeURIComponent(providerId)}`
 		: "/api/auth/sso/saml2/sp/acs/:providerId";
+	const samlAcsUrl = browserOrigin ? `${browserOrigin}${samlAcsPath}` : samlAcsPath;
 
 	return (
 		<WizardCard
@@ -1042,11 +1049,17 @@ function SsoStep({ controller }: { controller: IdentitySetupController }) {
 									onChange={(event) => field.handleChange(event.target.value)}
 								/>
 								<p className="text-muted-foreground text-sm">
-									{t(
-										"settings.enterprise.identity.sso.saml.acsPath",
-										"Configure your IdP with this assertion consumer service (ACS) URL: {path}",
-										{ path: samlAcsPath },
-									)}
+									{browserOrigin
+										? t(
+												"settings.enterprise.identity.sso.saml.acsUrl",
+												"Configure your IdP with this assertion consumer service (ACS) URL: {path}",
+												{ path: samlAcsUrl },
+											)
+										: t(
+												"settings.enterprise.identity.sso.saml.acsPath",
+												"Browser-relative ACS path: {path}",
+												{ path: samlAcsUrl },
+											)}
 								</p>
 							</div>
 						)}
