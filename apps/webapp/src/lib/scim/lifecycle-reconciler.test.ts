@@ -152,6 +152,74 @@ describe("reconcileSCIMLifecycle", () => {
 		}
 	});
 
+	it.each([
+		{
+			autoActivate: true,
+			deprovisionAction: "suspend",
+			inactiveMemberStatus: "suspended",
+			baselineMemberStatus: "approved",
+			baselineEmployeeActive: true,
+		},
+		{
+			autoActivate: true,
+			deprovisionAction: "soft_delete",
+			inactiveMemberStatus: "approved",
+			baselineMemberStatus: "approved",
+			baselineEmployeeActive: true,
+		},
+		{
+			autoActivate: false,
+			deprovisionAction: "suspend",
+			inactiveMemberStatus: "suspended",
+			baselineMemberStatus: "pending",
+			baselineEmployeeActive: false,
+		},
+		{
+			autoActivate: false,
+			deprovisionAction: "soft_delete",
+			inactiveMemberStatus: "pending",
+			baselineMemberStatus: "pending",
+			baselineEmployeeActive: false,
+		},
+	] as const)(
+		"creates an initially inactive $deprovisionAction user from the autoActivate=$autoActivate baseline",
+		async ({
+			autoActivate,
+			deprovisionAction,
+			inactiveMemberStatus,
+			baselineMemberStatus,
+			baselineEmployeeActive,
+		}) => {
+			const target = fixture({ autoActivate, deprovisionAction });
+
+			await reconcile(false, target);
+			await reconcile(false, target);
+
+			expect(target.rows(SCIM_MODELS.member)).toMatchObject([
+				{ status: inactiveMemberStatus },
+			]);
+			expect(target.rows(SCIM_MODELS.employee)).toMatchObject([
+				{ isActive: false },
+			]);
+			expect(target.rows(SCIM_MODELS.member)).toHaveLength(1);
+			expect(target.rows(SCIM_MODELS.employee)).toHaveLength(1);
+			expect(target.rows(SCIM_MODELS.lifecycleState)[0]).toMatchObject({
+				priorMemberStatus: baselineMemberStatus,
+				priorEmployeeIsActive: baselineEmployeeActive,
+				deactivationOwned: true,
+			});
+
+			await reconcile(true, target);
+
+			expect(target.rows(SCIM_MODELS.member)[0]).toMatchObject({
+				status: baselineMemberStatus,
+			});
+			expect(target.rows(SCIM_MODELS.employee)[0]).toMatchObject({
+				isActive: baselineEmployeeActive,
+			});
+		},
+	);
+
 	it("never elevates an existing pending member", async () => {
 		const target = fixture({
 			autoActivate: true,

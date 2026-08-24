@@ -13,19 +13,22 @@ const organizationId = "org_target";
 const userId = "user_opaque";
 const connectionId = "connection_opaque";
 
-function projectedState(active: boolean): SCIMProjectedUserState {
+function projectedState(
+	active: boolean,
+	sources: SCIMProjectedUserState["sources"] = [
+		{
+			id: "source_opaque",
+			connectionId,
+			provisioningDomainId: organizationId,
+			active,
+		},
+	],
+): SCIMProjectedUserState {
 	return {
 		provisioningDomainId: organizationId,
 		userId,
 		active,
-		sources: [
-			{
-				id: "source_opaque",
-				connectionId,
-				provisioningDomainId: organizationId,
-				active,
-			},
-		],
+		sources,
 		grants: [],
 	};
 }
@@ -141,6 +144,126 @@ describe("createZ8SCIMPlugin", () => {
 		expect(target.rows(SCIM_MODELS.member)[0]?.status).toBe("suspended");
 		expect(target.rows(SCIM_MODELS.employee)[0]?.isActive).toBe(false);
 		expect(target.rows(SCIM_MODELS.projectionState)).toHaveLength(1);
+	});
+
+	it("creates an initially inactive user before applying lifecycle and projection state", async () => {
+		const target = createTransactionFixture(applicationRows());
+		const reconcileUser = createZ8SCIMPlugin("s".repeat(32)).options.projection
+			?.reconcileUser;
+
+		await reconcileUser?.(projectedState(false), { database: target.database });
+
+		expect(target.rows(SCIM_MODELS.member)[0]).toMatchObject({
+			status: "suspended",
+		});
+		expect(target.rows(SCIM_MODELS.employee)[0]).toMatchObject({
+			isActive: false,
+			role: "employee",
+		});
+		expect(target.rows(SCIM_MODELS.projectionState)).toHaveLength(1);
+	});
+
+	it("reconciles final-source deletion through the current connection", async () => {
+		const target = createTransactionFixture(applicationRows());
+		const reconcileUser = createZ8SCIMPlugin("s".repeat(32)).options.projection
+			?.reconcileUser;
+		await reconcileUser?.(projectedState(true), { database: target.database });
+
+		await reconcileUser?.(projectedState(false, []), {
+			database: target.database,
+		});
+
+		expect(target.rows(SCIM_MODELS.member)[0]?.status).toBe("suspended");
+		expect(target.rows(SCIM_MODELS.employee)[0]?.isActive).toBe(false);
+		expect(target.rows(SCIM_MODELS.projectionState)[0]).toMatchObject({
+			roleTemplateId: "template_default",
+			sourceGroupId: null,
+		});
+	});
+
+	it("retains lifecycle trust when a replacement connection handles an old final source", async () => {
+		const target = createTransactionFixture(applicationRows());
+		const reconcileUser = createZ8SCIMPlugin("s".repeat(32)).options.projection
+			?.reconcileUser;
+		await reconcileUser?.(projectedState(true), { database: target.database });
+		const replacementConnectionId = "connection_replacement";
+		Object.assign(target.rows(SCIM_MODELS.providerConfig)[0] ?? {}, {
+			connectionId: replacementConnectionId,
+		});
+
+		await reconcileUser?.(projectedState(false, []), {
+			database: target.database,
+		});
+
+		expect(target.rows(SCIM_MODELS.lifecycleState)[0]).toMatchObject({
+			connectionId: replacementConnectionId,
+			scimActive: false,
+		});
+		expect(target.rows(SCIM_MODELS.projectionState)[0]).toMatchObject({
+			roleTemplateId: "template_default",
+			sourceGroupId: null,
+		});
+	});
+
+	it("rejects terminal-shaped state without prior lifecycle trust", async () => {
+		const target = createTransactionFixture(applicationRows());
+		const reconcileUser = createZ8SCIMPlugin("s".repeat(32)).options.projection
+			?.reconcileUser;
+
+		await expect(
+			reconcileUser?.(projectedState(false, []), {
+				database: target.database,
+			}),
+		).rejects.toThrow("SCIM connection is not active");
+		expect(target.rows(SCIM_MODELS.member)).toHaveLength(0);
+	});
+
+	it("rejects active zero-source and foreign nonempty source states", async () => {
+		const target = createTransactionFixture(applicationRows());
+		const reconcileUser = createZ8SCIMPlugin("s".repeat(32)).options.projection
+			?.reconcileUser;
+		await reconcileUser?.(projectedState(true), { database: target.database });
+
+		await expect(
+			reconcileUser?.(projectedState(true, []), {
+				database: target.database,
+			}),
+		).rejects.toThrow("SCIM connection is not active");
+		await expect(
+			reconcileUser?.(
+				projectedState(false, [
+					{
+						id: "source_current",
+						connectionId,
+						provisioningDomainId: organizationId,
+						active: false,
+					},
+					{
+						id: "source_foreign",
+						connectionId: "connection_foreign",
+						provisioningDomainId: "org_foreign",
+						active: false,
+					},
+				]),
+				{ database: target.database },
+			),
+		).rejects.toThrow("SCIM connection is not active");
+
+		const terminalWithGrant = projectedState(false, []);
+		terminalWithGrant.grants = [
+			{
+				source: {
+					type: "group",
+					id: "group_foreign",
+					externalId: "group_foreign",
+					displayName: "Foreign",
+				},
+				role: "template_default",
+			},
+		];
+		await expect(
+			reconcileUser?.(terminalWithGrant, { database: target.database }),
+		).rejects.toThrow("SCIM connection is not active");
 	});
 
 	it("installs Group support and trusted managed server endpoints", () => {

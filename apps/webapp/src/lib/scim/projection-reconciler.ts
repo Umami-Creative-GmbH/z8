@@ -3,6 +3,7 @@ import type {
 	SCIMRoleProjection,
 	SCIMTransactionContext,
 } from "@better-auth/scim";
+import { resolveSCIMReconciliationContext } from "./reconciliation-context";
 import {
 	createSCIMTransactionStore,
 	type SCIMProviderConfigRecord,
@@ -64,14 +65,7 @@ export async function reconcileSCIMRoleProjection(
 ): Promise<void> {
 	const organizationId = input.provisioningDomainId;
 	const store = createSCIMTransactionStore(context.database);
-	const config = await store.getActiveProviderConfig(organizationId);
-	if (!config) throw new Error("SCIM connection is not active");
-	const source = input.sources.find(
-		(candidate) =>
-			candidate.provisioningDomainId === organizationId &&
-			candidate.connectionId === config.connectionId,
-	);
-	if (!source) throw new Error("SCIM connection is not active");
+	const { config } = await resolveSCIMReconciliationContext(input, store);
 	const candidates = [];
 	for (const grant of input.grants) {
 		const externalId = grant.source.externalId;

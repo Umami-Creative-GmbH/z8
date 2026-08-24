@@ -2,6 +2,7 @@ import type {
 	SCIMProjectedUserState,
 	SCIMTransactionContext,
 } from "@better-auth/scim";
+import { resolveSCIMReconciliationContext } from "./reconciliation-context";
 import {
 	createSCIMTransactionStore,
 	type SCIMEmployeeRecord,
@@ -21,24 +22,19 @@ export async function reconcileSCIMLifecycle(
 ): Promise<void> {
 	const organizationId = input.provisioningDomainId;
 	const store = createSCIMTransactionStore(context.database);
-	const config = await store.getActiveProviderConfig(organizationId);
-	if (!config) throw new Error("SCIM connection is not active");
-	const source = input.sources.find(
-		(candidate) =>
-			candidate.provisioningDomainId === organizationId &&
-			candidate.connectionId === config.connectionId,
+	const { config, lifecycle } = await resolveSCIMReconciliationContext(
+		input,
+		store,
 	);
-	if (!source) throw new Error("SCIM connection is not active");
 
 	let member = await store.getMember(organizationId, input.userId);
 	let employee = await store.getEmployee(organizationId, input.userId);
-	const lifecycle = await store.getLifecycleState(organizationId, input.userId);
 	const beforeBillable = isBillable(member, employee);
-	const priorMemberStatus = member?.status ?? null;
-	const priorEmployeeIsActive = employee?.isActive ?? null;
+	let priorMemberStatus = member?.status ?? null;
+	let priorEmployeeIsActive = employee?.isActive ?? null;
 	let event: "created" | "deactivated" | "reactivated" | null = null;
 
-	if (input.active && (!member || !employee)) {
+	if (!member || !employee) {
 		const creatingMembership = !member;
 		if (!member) {
 			member = await store.createMember(
@@ -54,6 +50,8 @@ export async function reconcileSCIMLifecycle(
 				creatingMembership && config.autoActivateUsers,
 			);
 		}
+		priorMemberStatus = member.status;
+		priorEmployeeIsActive = employee.isActive;
 		event = "created";
 	}
 
