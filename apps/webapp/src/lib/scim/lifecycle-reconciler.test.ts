@@ -11,7 +11,10 @@ const organizationId = "org_target";
 const userId = "user_opaque";
 const connectionId = "connection_opaque";
 
-function projected(active: boolean): SCIMProjectedUserState {
+function projected(
+	active: boolean,
+	projectedConnectionId = connectionId,
+): SCIMProjectedUserState {
 	return {
 		provisioningDomainId: organizationId,
 		userId,
@@ -20,7 +23,7 @@ function projected(active: boolean): SCIMProjectedUserState {
 		sources: [
 			{
 				id: "source_opaque",
-				connectionId,
+				connectionId: projectedConnectionId,
 				provisioningDomainId: organizationId,
 				active,
 			},
@@ -53,14 +56,47 @@ function fixture(
 	});
 }
 
-async function reconcile(active: boolean, target = fixture()) {
-	await reconcileSCIMLifecycle(projected(active), {
+async function reconcile(
+	active: boolean,
+	target = fixture(),
+	projectedConnectionId = connectionId,
+) {
+	await reconcileSCIMLifecycle(projected(active, projectedConnectionId), {
 		database: target.database,
 	} as SCIMTransactionContext);
 	return target;
 }
 
 describe("reconcileSCIMLifecycle", () => {
+	const replacementConnectionId = "connection_replacement";
+
+	async function deactivateThenReplace(
+		deprovisionAction: "suspend" | "soft_delete",
+	) {
+		const target = fixture({
+			deprovisionAction,
+			member: {
+				id: "member_existing",
+				organizationId,
+				userId,
+				role: "member",
+				status: "approved",
+			},
+			employee: {
+				id: "employee_existing",
+				organizationId,
+				userId,
+				role: "employee",
+				isActive: true,
+			},
+		});
+		await reconcile(false, target);
+		(
+			target.rows(SCIM_MODELS.providerConfig)[0] as { connectionId: string }
+		).connectionId = replacementConnectionId;
+		return target;
+	}
+
 	it("creates pending inactive membership without a billable revision", async () => {
 		const target = await reconcile(true);
 
@@ -217,6 +253,88 @@ describe("reconcileSCIMLifecycle", () => {
 			);
 		},
 	);
+
+	it("restores an old suspended lifecycle through the active replacement connection", async () => {
+		const target = await deactivateThenReplace("suspend");
+
+		await reconcile(true, target, replacementConnectionId);
+
+		expect(target.rows(SCIM_MODELS.member)[0]).toMatchObject({
+			status: "approved",
+		});
+		expect(target.rows(SCIM_MODELS.employee)[0]).toMatchObject({
+			isActive: true,
+		});
+		expect(target.rows(SCIM_MODELS.lifecycleState)[0]).toMatchObject({
+			connectionId: replacementConnectionId,
+			deactivationOwned: false,
+			memberDeactivationOwned: false,
+			employeeDeactivationOwned: false,
+		});
+	});
+
+	it("restores an old soft-deleted lifecycle through the active replacement connection", async () => {
+		const target = await deactivateThenReplace("soft_delete");
+
+		await reconcile(true, target, replacementConnectionId);
+
+		expect(target.rows(SCIM_MODELS.member)[0]).toMatchObject({
+			status: "approved",
+		});
+		expect(target.rows(SCIM_MODELS.employee)[0]).toMatchObject({
+			isActive: true,
+		});
+		expect(target.rows(SCIM_MODELS.lifecycleState)[0]).toMatchObject({
+			connectionId: replacementConnectionId,
+			deactivationOwned: false,
+			memberDeactivationOwned: false,
+			employeeDeactivationOwned: false,
+		});
+	});
+
+	it("transfers inactive lifecycle ownership to the replacement connection", async () => {
+		const target = await deactivateThenReplace("suspend");
+
+		await reconcile(false, target, replacementConnectionId);
+
+		expect(target.rows(SCIM_MODELS.member)[0]).toMatchObject({
+			status: "suspended",
+		});
+		expect(target.rows(SCIM_MODELS.employee)[0]).toMatchObject({
+			isActive: false,
+		});
+		expect(target.rows(SCIM_MODELS.lifecycleState)[0]).toMatchObject({
+			connectionId: replacementConnectionId,
+			priorMemberStatus: "approved",
+			priorEmployeeIsActive: true,
+			deactivationOwned: true,
+			memberDeactivationOwned: true,
+			employeeDeactivationOwned: true,
+		});
+	});
+
+	it("preserves administrator changes made during old connection deactivation", async () => {
+		const target = await deactivateThenReplace("suspend");
+		(target.rows(SCIM_MODELS.member)[0] as { status: string }).status =
+			"pending";
+		(target.rows(SCIM_MODELS.employee)[0] as { isActive: boolean }).isActive =
+			true;
+
+		await reconcile(true, target, replacementConnectionId);
+
+		expect(target.rows(SCIM_MODELS.member)[0]).toMatchObject({
+			status: "pending",
+		});
+		expect(target.rows(SCIM_MODELS.employee)[0]).toMatchObject({
+			isActive: true,
+		});
+		expect(target.rows(SCIM_MODELS.lifecycleState)[0]).toMatchObject({
+			connectionId: replacementConnectionId,
+			deactivationOwned: false,
+			memberDeactivationOwned: false,
+			employeeDeactivationOwned: false,
+		});
+	});
 
 	it.each([
 		["suspend", "member", "pending"],

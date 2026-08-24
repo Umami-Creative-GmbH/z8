@@ -57,9 +57,7 @@ export async function reconcileSCIMLifecycle(
 		event = "created";
 	}
 
-	const ownsPriorDeactivation =
-		lifecycle?.deactivationOwned === true &&
-		lifecycle.connectionId === config.connectionId;
+	const ownsPriorDeactivation = lifecycle?.deactivationOwned === true;
 	let memberDeactivationOwned = ownsPriorDeactivation
 		? lifecycle.memberDeactivationOwned
 		: false;
