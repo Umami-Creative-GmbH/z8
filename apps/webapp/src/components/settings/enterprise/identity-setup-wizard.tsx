@@ -142,7 +142,7 @@ function getStepCopy(
 				label: t("settings.enterprise.identity.step.scim", "SCIM Provisioning"),
 				description: t(
 					"settings.enterprise.identity.step.scim.description",
-					"Issue provisioning token",
+					"SCIM provisioning is temporarily unavailable during the Better Auth 1.7 cutover.",
 				),
 			};
 		case "accessPolicy":

@@ -413,6 +413,11 @@ describe("IdentitySetupWizard behavior", () => {
 		).toBeTruthy();
 		expect(
 			screen.getByText(
+				"SCIM provisioning is temporarily unavailable during the Better Auth 1.7 cutover.",
+			),
+		).toBeTruthy();
+		expect(
+			screen.getByText(
 				"Existing provisioning data is preserved while the Better Auth 1.7 SCIM cutover is prepared.",
 			),
 		).toBeTruthy();
