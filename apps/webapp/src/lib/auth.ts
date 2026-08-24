@@ -36,6 +36,7 @@ import { createZ8SCIMPlugin } from "@/lib/scim/auth-configuration";
 import { createSCIMProjectionReplayLoader } from "@/lib/scim/projection-replay-api";
 import { configureSCIMProjectionReplay } from "@/lib/scim/role-projection-replay";
 import { getOrganizationBaseUrl } from "./app-url";
+import { authDatabaseSchema } from "./auth-database-schema";
 import { getDomainConfig } from "./domain/domain-service";
 import {
 	classifyDomainHost,
@@ -459,7 +460,7 @@ export const auth = betterAuth({
 	database: makeEmailLookupCaseInsensitiveAdapter(
 		drizzleAdapter(db, {
 			provider: "pg",
-			schema,
+			schema: authDatabaseSchema,
 			transaction: true,
 		}),
 	),
