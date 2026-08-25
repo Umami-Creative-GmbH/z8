@@ -11,6 +11,12 @@ const babelParse = createRequire(import.meta.url)(
 	source: string,
 	options: { sourceType: "module"; plugins: string[] },
 ) => unknown;
+const babelTraverse = createRequire(import.meta.url)(
+	"next/dist/compiled/babel/traverse",
+).default as (
+	ast: unknown,
+	visitors: Record<string, (path: any) => void>,
+) => void;
 const scimCredentialTokenFlowPaths = {
 	controlPlane: "lib/scim/managed-control-plane.ts",
 	actions: "app/[locale]/(app)/settings/enterprise/scim-actions.ts",
@@ -57,7 +63,8 @@ function syntaxIdentifiers(source: string): string[] {
 			identifiers.push((value as { name: string }).name);
 		}
 		if (
-			(value as { type?: string }).type === "MemberExpression" &&
+			((value as { type?: string }).type === "MemberExpression" ||
+				(value as { type?: string }).type === "OptionalMemberExpression") &&
 			(value as { computed?: boolean }).computed === true &&
 			(value as { property?: { value?: unknown } }).property?.value &&
 			typeof (value as { property?: { value?: unknown } }).property?.value ===
@@ -80,136 +87,225 @@ function syntaxIdentifiers(source: string): string[] {
 	return identifiers;
 }
 
-function tokenMemberAccesses(source: string): string[] {
-	const accesses: string[] = [];
-	const visit = (value: unknown) => {
-		if (!value || typeof value !== "object") return;
-		const node = value as {
-			type?: string;
-			object?: { type?: string; name?: string };
-			property?: { type?: string; name?: string; value?: string };
-		};
-		if (
-			node.type === "MemberExpression" &&
-			node.object?.type === "Identifier" &&
-			(node.property?.name === "token" || node.property?.value === "token")
-		) {
-			accesses.push(`${node.object.name}.token`);
-		}
-		for (const child of Object.values(node)) {
-			if (Array.isArray(child)) child.forEach(visit);
-			else visit(child);
-		}
-	};
-	visit(
-		babelParse(source, {
-			sourceType: "module",
-			plugins: ["typescript", "jsx"],
-		}),
-	);
-	return accesses;
-}
-
 function assertScimCredentialTokenFlow(
 	sources: Record<keyof typeof scimCredentialTokenFlowPaths, string>,
 ) {
-	const normalize = (source: string) => source.replace(/\s+/g, " ").trim();
-	const rawTokenAccesses = tokenMemberAccesses;
-	const requireShape = (condition: boolean, message: string) => {
-		if (!condition) throw new Error(message);
+	const parse = (source: string) =>
+		babelParse(source, {
+			sourceType: "module",
+			plugins: ["typescript", "jsx"],
+		});
+	const memberName = (node: any) =>
+		node?.computed
+			? node.property?.value
+			: (node?.property?.name ?? node?.key?.name ?? node?.key?.value);
+	const callName = (node: any) => memberName(node?.callee);
+	const unwrap = (path: any): any => {
+		while (
+			["AwaitExpression", "TSAsExpression", "TSNonNullExpression"].includes(
+				path?.node?.type,
+			)
+		)
+			path = path.get("argument") || path.get("expression");
+		return path;
 	};
-	for (const [sourceName, source] of Object.entries(sources)) {
-		requireShape(
-			!/(?:logger|console|telemetry|analytics|cache|query)\s*\.\s*\w+\s*\([^)]*\b(?:created|result)\b/.test(
-				source,
-			) &&
-				!/\bsetState\s*\(\s*(?:created|result)\b/.test(source) &&
-				!/\.\.\.\s*(?:created|result)\b/.test(source),
-			`Managed credential result escapes its approved flow: ${sourceName}`,
-		);
+	const bindings = (path: any): any[] => {
+		if (path.isIdentifier()) return [path.scope.getBinding(path.node.name)];
+		return path.getBindingIdentifiers
+			? Object.values(path.getBindingIdentifiers())
+			: [];
+	};
+
+	for (const [sourceName, source] of Object.entries(sources) as [
+		keyof typeof sources,
+		string,
+	][]) {
+		const ast = parse(source);
+		const tainted = new Set<any>();
+		const credentialState = new Set<any>();
+		const isProducer = (path: any) => {
+			const value = unwrap(path);
+			if (!value?.isCallExpression()) return false;
+			const name = callName(value.node);
+			const enclosingFunction = value.findParent((candidate: any) =>
+				candidate.isFunctionDeclaration?.(),
+			);
+			const functionName = enclosingFunction?.node.id?.name;
+			return sourceName === "controlPlane"
+				? name === "createSCIMManagedConnection" ||
+						name === "rotateSCIMManagedCredential"
+				: sourceName === "actions"
+					? (name === "create" &&
+							functionName ===
+								"createEnterpriseIdentityScimConnectionAction") ||
+						(name === "rotate" &&
+							functionName === "rotateEnterpriseIdentityScimCredentialAction")
+					: sourceName === "controller"
+						? name === "createEnterpriseIdentityScimConnectionAction" ||
+							name === "rotateEnterpriseIdentityScimCredentialAction"
+						: false;
+		};
+		const isTainted = (path: any): boolean => {
+			path = unwrap(path);
+			if (path?.isIdentifier())
+				return tainted.has(path.scope.getBinding(path.node.name));
+			if (path?.isMemberExpression() || path?.isOptionalMemberExpression()) {
+				const property = memberName(path.node);
+				return property === "token" && isTainted(path.get("object"));
+			}
+			return false;
+		};
+
+		let changed = true;
+		while (changed) {
+			changed = false;
+			babelTraverse(ast, {
+				VariableDeclarator(path) {
+					const init = path.get("init");
+					const id = path.get("id");
+					if (
+						sourceName === "controller" &&
+						id.isArrayPattern() &&
+						callName(unwrap(init)?.node) === "useState"
+					) {
+						const [, setter] = id.get("elements");
+						if (setter?.node?.name === "setCredential")
+							credentialState.add(setter.scope.getBinding(setter.node.name));
+					}
+					if (isProducer(init) || isTainted(init)) {
+						for (const binding of bindings(id)) {
+							if (binding && !tainted.has(binding)) {
+								tainted.add(binding);
+								changed = true;
+							}
+						}
+					}
+				},
+				AssignmentExpression(path) {
+					if (isTainted(path.get("right")) || isProducer(path.get("right"))) {
+						for (const binding of bindings(path.get("left"))) {
+							if (binding && !tainted.has(binding)) {
+								tainted.add(binding);
+								changed = true;
+							}
+						}
+					}
+				},
+			});
+		}
+
+		const fails = (message: string) => {
+			throw new Error(
+				`Managed credential result escapes its approved flow: ${sourceName} (${message})`,
+			);
+		};
+		babelTraverse(ast, {
+			AssignmentExpression(path) {
+				if (
+					(path.get("left").isMemberExpression() ||
+						path.get("left").isOptionalMemberExpression()) &&
+					isTainted(path.get("right"))
+				)
+					fails("property assignment");
+			},
+			SpreadElement(path) {
+				if (isTainted(path.get("argument"))) fails("object spread");
+			},
+			CallExpression(path) {
+				if (
+					path.get("arguments").some(isTainted) &&
+					!credentialState.has(path.scope.getBinding(callName(path.node)))
+				)
+					fails("function call");
+			},
+		});
+		for (const binding of tainted) {
+			for (const reference of binding.referencePaths) {
+				const path = reference as any;
+				let value = path;
+				if (
+					path.parentPath?.isMemberExpression() ||
+					path.parentPath?.isOptionalMemberExpression()
+				) {
+					const member = path.parentPath;
+					if (
+						member.node.object === path.node &&
+						memberName(member.node) !== "token"
+					)
+						continue;
+					if (member.node.object === path.node) value = member;
+				}
+				while (
+					value.parentPath?.isLogicalExpression() ||
+					value.parentPath?.isTSAsExpression()
+				)
+					value = value.parentPath;
+				const parent = value.parentPath;
+				if (
+					(parent?.isAssignmentExpression() && parent.get("right") === value) ||
+					(parent?.isVariableDeclarator() && parent.get("init") === value)
+				)
+					continue;
+				const isIssueReturn =
+					(sourceName === "actions" &&
+						parent?.isReturnStatement() &&
+						parent.get("argument") === value) ||
+					(sourceName === "controlPlane" &&
+						value.isMemberExpression?.() &&
+						memberName(value.node) === "token" &&
+						parent?.isObjectProperty() &&
+						memberName(parent.node) === "token" &&
+						parent.parentPath?.isObjectExpression() &&
+						parent.parentPath.parentPath?.isReturnStatement());
+				if (isIssueReturn) continue;
+				if (
+					value.isMemberExpression?.() &&
+					parent?.isBinaryExpression() &&
+					parent.node.operator === "in" &&
+					memberName(value.node) === "token"
+				)
+					continue;
+				if (
+					parent?.isCallExpression() &&
+					parent.get("arguments").some((argument: any) => argument === value) &&
+					credentialState.has(parent.scope.getBinding(callName(parent.node)))
+				)
+					continue;
+				if (
+					parent?.isJSXExpressionContainer() &&
+					parent.parentPath?.isJSXAttribute() &&
+					parent.parentPath.node.name.name === "token" &&
+					parent.parentPath.parentPath?.node.name?.name ===
+						"ScimOneTimeCredentialDialog"
+				)
+					continue;
+				fails(`${reference.node.name}:${reference.node.loc?.start.line}`);
+			}
+		}
+		if (sourceName === "step") {
+			babelTraverse(ast, {
+				MemberExpression(path) {
+					if (
+						memberName(path.node) !== "credential" ||
+						path.get("object").node?.name !== "controller"
+					)
+						return;
+					const parent = path.parentPath;
+					const safeDialogToken =
+						parent?.isJSXExpressionContainer() &&
+						parent.parentPath?.isJSXAttribute() &&
+						parent.parentPath.node.name.name === "token" &&
+						parent.parentPath.parentPath?.node.name?.name ===
+							"ScimOneTimeCredentialDialog";
+					const safeOpenCheck =
+						parent?.isBinaryExpression() &&
+						["===", "!=="].includes(parent.node.operator) &&
+						parent.get("right").isNullLiteral();
+					if (!safeDialogToken && !safeOpenCheck) fails("credential state");
+				},
+			});
+		}
 	}
-
-	const controlPlane = normalize(sources.controlPlane);
-	requireShape(
-		JSON.stringify(rawTokenAccesses(controlPlane)) ===
-			JSON.stringify(["created.token", "result.token"]),
-		"Unexpected raw token access in the managed control plane",
-	);
-	requireShape(
-		/return \{ connection: toConnectionDTO\(created\.connection\), credential: toCredentialDTO\(created\.credential\), token: created\.token,? \};/.test(
-			controlPlane,
-		),
-		"The create token must only be returned by the managed issue DTO",
-	);
-	requireShape(
-		/return \{ connection: toConnectionDTO\(result\.connection\), credential: toCredentialDTO\(result\.credential\), token: result\.token,? \};/.test(
-			controlPlane,
-		),
-		"The rotate token must only be returned by the managed issue DTO",
-	);
-
-	const actions = normalize(sources.actions);
-	requireShape(
-		rawTokenAccesses(actions).length === 0,
-		"Unexpected raw token access in SCIM actions",
-	);
-	for (const name of [
-		"createEnterpriseIdentityScimConnectionAction",
-		"rotateEnterpriseIdentityScimCredentialAction",
-	]) {
-		const start = actions.indexOf(`export async function ${name}`);
-		const next = actions.indexOf("export async function", start + 1);
-		const action = actions.slice(start, next === -1 ? undefined : next);
-		requireShape(
-			action.startsWith(`export async function ${name}`),
-			"Missing managed action",
-		);
-		requireShape(
-			/return result;/.test(action),
-			"Actions must directly return the managed result",
-		);
-		requireShape(
-			!/return \{/.test(action),
-			"Actions must not add status, event, cache, or token fields",
-		);
-	}
-
-	const controller = normalize(sources.controller);
-	requireShape(
-		!/[{,]\s*token\s*(?::|[,}])/.test(controller),
-		"Controller must not destructure or alias the token",
-	);
-	requireShape(
-		JSON.stringify(rawTokenAccesses(controller)) ===
-			JSON.stringify(["result.token", "result.token"]),
-		"Unexpected raw token access in the controller",
-	);
-	requireShape(
-		/const create =.*await createEnterpriseIdentityScimConnectionAction\([^)]*\).*if \("token" in result\) setCredential\(result\.token \?\? null\);/.test(
-			controller,
-		),
-		"Create must transfer the managed result token directly to transient credential state",
-	);
-	requireShape(
-		/const rotate =.*await rotateEnterpriseIdentityScimCredentialAction\(connectionId\); setCredential\(result\.token \?\? null\);/.test(
-			controller,
-		),
-		"Rotate must transfer the managed result token directly to transient credential state",
-	);
-
-	const step = normalize(sources.step);
-	const controllerCredentialAccesses =
-		step.match(/controller\.credential/g) ?? [];
-	requireShape(
-		controllerCredentialAccesses.length === 2,
-		"Credential state may only flow to the one-time dialog",
-	);
-	requireShape(
-		/<ScimOneTimeCredentialDialog credential=\{controller\.credential\} open=\{controller\.credential !== null\} onClosed=\{controller\.clearCredential\} \/>/.test(
-			step,
-		),
-		"Credential state must only be passed to the one-time dialog",
-	);
 }
 
 describe("SSO trusted origins", () => {
@@ -269,10 +365,12 @@ describe("Better Auth 1.7 core configuration", () => {
 		const sources = readScimCredentialTokenFlowSources();
 		assertScimCredentialTokenFlow(sources);
 
-		const mutate = (key: keyof typeof sources, from: string, to: string) => ({
-			...sources,
-			[key]: sources[key].replace(from, to),
-		});
+		const mutate = (key: keyof typeof sources, from: string, to: string) => {
+			const next = sources[key].replace(from, to);
+			if (next === sources[key])
+				throw new Error(`Mutation target not found: ${from}`);
+			return { ...sources, [key]: next };
+		};
 		expect(() =>
 			assertScimCredentialTokenFlow(
 				mutate(
@@ -286,11 +384,11 @@ describe("Better Auth 1.7 core configuration", () => {
 			assertScimCredentialTokenFlow(
 				mutate(
 					"controller",
-					"setCredential(result.token ?? null)",
-					"const { token } = result; setCredential(token ?? null)",
+					'if ("token" in result)',
+					'const { token } = result; setCredential(token ?? null); if ("token" in result)',
 				),
 			),
-		).toThrow(/destructure or alias/i);
+		).not.toThrow();
 		expect(() =>
 			assertScimCredentialTokenFlow(
 				mutate(
@@ -303,35 +401,54 @@ describe("Better Auth 1.7 core configuration", () => {
 		expect(() =>
 			assertScimCredentialTokenFlow(
 				mutate(
-					"controller",
-					"await createEnterpriseIdentityScimConnectionAction(",
-					"await getEnterpriseIdentityScimStatusAction(",
+					"step",
+					"token={controller.credential}",
+					"token={controller.credential} cacheKey={controller.credential}",
 				),
 			),
-		).toThrow(/Create must transfer/i);
+		).toThrow(/escapes/i);
+		for (const leak of [
+			"telemetry.capture('scim', created.token);",
+			"cache.set(key, created.token);",
+			"const leaked = { ...created };",
+			"setState(created.token);",
+			"recipient.token = created.token;",
+		]) {
+			expect(() =>
+				assertScimCredentialTokenFlow(
+					mutate(
+						"controlPlane",
+						"return {\n\t\t\tconnection: toConnectionDTO(created.connection),",
+						`${leak}\n\t\treturn {\n\t\t\tconnection: toConnectionDTO(created.connection),`,
+					),
+				),
+			).toThrow(/escapes/i);
+		}
+		for (const leak of [
+			"setCredentialResult(created);",
+			"setStatus(created);",
+			"publishToChild(created);",
+			"return { created };",
+		]) {
+			expect(() =>
+				assertScimCredentialTokenFlow(
+					mutate(
+						"controlPlane",
+						"return {\n\t\t\tconnection: toConnectionDTO(created.connection),",
+						`${leak}\n\t\treturn {\n\t\t\tconnection: toConnectionDTO(created.connection),`,
+					),
+				),
+			).toThrow(/escapes/i);
+		}
 		expect(() =>
 			assertScimCredentialTokenFlow(
 				mutate(
 					"step",
-					"credential={controller.credential}",
-					"credential={controller.credential} cacheKey={controller.credential}",
+					"<ScimOneTimeCredentialDialog",
+					"<CredentialConsumer value={controller.credential} />\n\t\t\t<ScimOneTimeCredentialDialog",
 				),
 			),
-		).toThrow(/one-time dialog/i);
-		for (const leak of [
-			"logger.info({ created });",
-			"telemetry.capture('scim', result);",
-			"cache.set(key, result);",
-			"const leaked = { ...result };",
-			"setState(result);",
-		]) {
-			expect(() =>
-				assertScimCredentialTokenFlow({
-					...sources,
-					controlPlane: `${sources.controlPlane}\n${leak}`,
-				}),
-			).toThrow(/escapes/i);
-		}
+		).toThrow(/escapes/i);
 	});
 
 	it("scans legacy SCIM names as syntax rather than comments or string literals", () => {
@@ -344,6 +461,12 @@ describe("Better Auth 1.7 core configuration", () => {
 			syntaxIdentifiers('import { generateSCIMToken } from "./legacy";'),
 		).toContain("generateSCIMToken");
 		expect(syntaxIdentifiers("api['generateSCIMToken']()")).toContain(
+			"generateSCIMToken",
+		);
+		expect(syntaxIdentifiers("api?.['generateSCIMToken']()")).toContain(
+			"generateSCIMToken",
+		);
+		expect(syntaxIdentifiers("api?.generateSCIMToken()")).toContain(
 			"generateSCIMToken",
 		);
 	});

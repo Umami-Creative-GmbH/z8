@@ -299,7 +299,7 @@ export function ScimStep({
 				</p>
 			) : null}
 			<ScimOneTimeCredentialDialog
-				credential={controller.credential}
+				token={controller.credential}
 				open={controller.credential !== null}
 				onClosed={controller.clearCredential}
 			/>
