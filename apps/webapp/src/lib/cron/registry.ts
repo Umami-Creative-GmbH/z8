@@ -13,6 +13,7 @@
 
 import type { JobsOptions } from "bullmq";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
+import type { SCIMMaintenanceResult } from "@/lib/jobs/scim-maintenance";
 
 // ============================================
 // TYPES
@@ -226,7 +227,9 @@ export const CRON_JOBS = {
 		schedule: "0 0 * * *", // Daily at midnight
 		description: "Vacation automation (carryover, expiry, accrual)",
 		processor: async () => {
-			const { runVacationAutomation } = await import("@/lib/jobs/carryover-automation");
+			const { runVacationAutomation } = await import(
+				"@/lib/jobs/carryover-automation"
+			);
 			return runVacationAutomation();
 		},
 		defaultJobOptions: { attempts: 2, priority: 5 },
@@ -236,7 +239,9 @@ export const CRON_JOBS = {
 		schedule: "*/5 * * * *", // Every 5 minutes
 		description: "Process pending data exports",
 		processor: async () => {
-			const { runExportProcessor } = await import("@/lib/jobs/export-processor");
+			const { runExportProcessor } = await import(
+				"@/lib/jobs/export-processor"
+			);
 			return runExportProcessor();
 		},
 		defaultJobOptions: { attempts: 3, priority: 3 },
@@ -246,7 +251,9 @@ export const CRON_JOBS = {
 		schedule: "0 1 * * *", // Daily at 1 AM
 		description: "Delete soft-deleted organizations older than 5 days",
 		processor: async () => {
-			const { runOrganizationCleanup } = await import("@/lib/jobs/organization-cleanup");
+			const { runOrganizationCleanup } = await import(
+				"@/lib/jobs/organization-cleanup"
+			);
 			return runOrganizationCleanup();
 		},
 		defaultJobOptions: { attempts: 2, priority: 8 },
@@ -264,11 +271,26 @@ export const CRON_JOBS = {
 		defaultJobOptions: { attempts: 2, priority: 8 },
 	},
 
+	"cron:scim-maintenance": {
+		schedule: "* * * * *", // Every minute
+		description: "Process durable SCIM seat sync and projection recovery work",
+		processor: async (): Promise<SCIMMaintenanceResult> => {
+			const { runSCIMMaintenance } = await import(
+				"@/lib/jobs/scim-maintenance"
+			);
+			return runSCIMMaintenance();
+		},
+		defaultJobOptions: { attempts: 1, priority: 8 },
+	},
+
 	"cron:execution-cleanup": {
 		schedule: "30 2 * * *", // Daily at 2:30 AM
-		description: "Delete cron execution records past the configured retention period",
+		description:
+			"Delete cron execution records past the configured retention period",
 		processor: async (): Promise<ExecutionCleanupResult> => {
-			const { runExecutionCleanup } = await import("@/lib/jobs/execution-cleanup");
+			const { runExecutionCleanup } = await import(
+				"@/lib/jobs/execution-cleanup"
+			);
 			return runExecutionCleanup();
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
@@ -281,7 +303,9 @@ export const CRON_JOBS = {
 			const { runBreakEnforcementCheck } = await import(
 				"@/lib/effect/services/break-enforcement.service"
 			);
-			const params = manualParams as { organizationId?: string; date?: string } | undefined;
+			const params = manualParams as
+				| { organizationId?: string; date?: string }
+				| undefined;
 			return runBreakEnforcementCheck(
 				params
 					? {
@@ -358,7 +382,9 @@ export const CRON_JOBS = {
 		schedule: "*/15 * * * *", // Every 15 minutes (checks configured digest times)
 		description: "Send Teams daily digest cards to managers",
 		processor: async (): Promise<TeamsDailyDigestResult> => {
-			const { runDailyDigestJob } = await import("@/lib/teams/jobs/daily-digest");
+			const { runDailyDigestJob } = await import(
+				"@/lib/teams/jobs/daily-digest"
+			);
 			return runDailyDigestJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 5 },
@@ -368,7 +394,9 @@ export const CRON_JOBS = {
 		schedule: "*/30 * * * *", // Every 30 minutes
 		description: "Check and escalate stale approval requests via Teams",
 		processor: async (): Promise<TeamsEscalationResult> => {
-			const { runEscalationCheckerJob } = await import("@/lib/teams/jobs/escalation-checker");
+			const { runEscalationCheckerJob } = await import(
+				"@/lib/teams/jobs/escalation-checker"
+			);
 			return runEscalationCheckerJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 6 },
@@ -378,7 +406,9 @@ export const CRON_JOBS = {
 		schedule: "*/15 * * * *", // Every 15 minutes (checks configured digest times)
 		description: "Send Telegram daily digest messages to managers",
 		processor: async (): Promise<TelegramDailyDigestResult> => {
-			const { runTelegramDailyDigestJob } = await import("@/lib/telegram/jobs/daily-digest");
+			const { runTelegramDailyDigestJob } = await import(
+				"@/lib/telegram/jobs/daily-digest"
+			);
 			return runTelegramDailyDigestJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 5 },
@@ -400,7 +430,9 @@ export const CRON_JOBS = {
 		schedule: "*/15 * * * *", // Every 15 minutes (checks configured digest times)
 		description: "Send Discord daily digest messages to managers",
 		processor: async (): Promise<DiscordDailyDigestResult> => {
-			const { runDiscordDailyDigestJob } = await import("@/lib/discord/jobs/daily-digest");
+			const { runDiscordDailyDigestJob } = await import(
+				"@/lib/discord/jobs/daily-digest"
+			);
 			return runDiscordDailyDigestJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 5 },
@@ -422,7 +454,9 @@ export const CRON_JOBS = {
 		schedule: "*/15 * * * *", // Every 15 minutes (checks configured digest times)
 		description: "Send Slack daily digest messages to managers",
 		processor: async (): Promise<SlackDailyDigestResult> => {
-			const { runSlackDailyDigestJob } = await import("@/lib/slack/jobs/daily-digest");
+			const { runSlackDailyDigestJob } = await import(
+				"@/lib/slack/jobs/daily-digest"
+			);
 			return runSlackDailyDigestJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 5 },
@@ -432,7 +466,9 @@ export const CRON_JOBS = {
 		schedule: "*/30 * * * *", // Every 30 minutes
 		description: "Check and escalate stale approval requests via Slack",
 		processor: async (): Promise<SlackEscalationResult> => {
-			const { runSlackEscalationCheckerJob } = await import("@/lib/slack/jobs/escalation-checker");
+			const { runSlackEscalationCheckerJob } = await import(
+				"@/lib/slack/jobs/escalation-checker"
+			);
 			return runSlackEscalationCheckerJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 6 },
@@ -476,7 +512,9 @@ export type CronJobResult<T extends CronJobName> = Awaited<
 /**
  * Get a cron job definition by name
  */
-export function getCronJobDefinition<T extends CronJobName>(name: T): (typeof CRON_JOBS)[T] {
+export function getCronJobDefinition<T extends CronJobName>(
+	name: T,
+): (typeof CRON_JOBS)[T] {
 	return CRON_JOBS[name];
 }
 
@@ -497,7 +535,10 @@ export function isCronJobName(name: string): name is CronJobName {
 /**
  * Get schedule info for all jobs (useful for worker setup)
  */
-export function getCronSchedules(): Record<CronJobName, { pattern: string; description: string }> {
+export function getCronSchedules(): Record<
+	CronJobName,
+	{ pattern: string; description: string }
+> {
 	return Object.fromEntries(
 		Object.entries(CRON_JOBS).map(([name, def]) => [
 			name,

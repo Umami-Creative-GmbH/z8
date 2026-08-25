@@ -26,6 +26,7 @@ describe("cron schedule presets", () => {
 
 	it("marks operationally high-risk jobs", () => {
 		expect(isHighRiskCronJob("cron:billing-seat-reconciliation")).toBe(true);
+		expect(isHighRiskCronJob("cron:scim-maintenance")).toBe(true);
 		expect(isHighRiskCronJob("cron:execution-cleanup")).toBe(true);
 		expect(isHighRiskCronJob("cron:export")).toBe(false);
 	});
