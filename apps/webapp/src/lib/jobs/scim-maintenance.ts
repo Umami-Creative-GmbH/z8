@@ -99,8 +99,20 @@ export async function runSCIMMaintenance(
 	input: Partial<SCIMMaintenanceDependencies> = {},
 ): Promise<SCIMMaintenanceResult> {
 	const dependencies = { ...getDefaultDependencies(), ...input };
-	const outbox = await dependencies.runOutbox();
-	const organizationIds = await dependencies.listDueRecoveryOrganizations();
+	let outbox: SCIMSeatSyncOutboxResult | null = null;
+	let outboxError: unknown = null;
+	try {
+		outbox = await dependencies.runOutbox();
+	} catch (error) {
+		outboxError = error;
+	}
+	let organizationIds: string[] = [];
+	let recoveryScanError: unknown = null;
+	try {
+		organizationIds = (await dependencies.listDueRecoveryOrganizations()) ?? [];
+	} catch (error) {
+		recoveryScanError = error;
+	}
 	let recovered = 0;
 	let failed = 0;
 
@@ -128,6 +140,9 @@ export async function runSCIMMaintenance(
 			decommissionFailed++;
 		}
 	}
+	if (outboxError) throw outboxError;
+	if (recoveryScanError) throw recoveryScanError;
+	if (!outbox) throw new Error("SCIM maintenance outbox result is missing");
 
 	return {
 		outbox,

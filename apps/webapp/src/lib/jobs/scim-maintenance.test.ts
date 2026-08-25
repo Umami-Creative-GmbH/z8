@@ -76,6 +76,25 @@ describe("runSCIMMaintenance", () => {
 		).rejects.toThrow(scanFailure);
 	});
 
+	it("runs due decommissions even when seat or recovery work fails, then reports the seat failure", async () => {
+		const scanFailure = new Error("database unavailable");
+		const runDecommissions = vi
+			.fn()
+			.mockResolvedValueOnce("completed")
+			.mockResolvedValueOnce("skipped");
+		await expect(
+			runSCIMMaintenance({
+				runOutbox: vi.fn().mockRejectedValue(scanFailure),
+				listDueRecoveryOrganizations: vi
+					.fn()
+					.mockRejectedValue(new Error("recovery scan failed")),
+				retryProjectionRecovery: vi.fn(),
+				runDecommissions,
+			}),
+		).rejects.toThrow(scanFailure);
+		expect(runDecommissions).toHaveBeenCalledTimes(2);
+	});
+
 	it("runs due decommissions after recovery work and isolates each failure", async () => {
 		const runDecommissions = vi
 			.fn()
@@ -109,15 +128,13 @@ describe("runSCIMMaintenance", () => {
 			.mockResolvedValueOnce("completed")
 			.mockResolvedValueOnce("skipped");
 		const dependencies = {
-			runOutbox: vi
-				.fn()
-				.mockResolvedValue({
-					claimed: 0,
-					completed: 0,
-					deferred: 0,
-					exhausted: 0,
-					persistenceFailures: 0,
-				}),
+			runOutbox: vi.fn().mockResolvedValue({
+				claimed: 0,
+				completed: 0,
+				deferred: 0,
+				exhausted: 0,
+				persistenceFailures: 0,
+			}),
 			listDueRecoveryOrganizations: vi.fn().mockResolvedValue([]),
 			retryProjectionRecovery: vi.fn(),
 			runDecommissions,

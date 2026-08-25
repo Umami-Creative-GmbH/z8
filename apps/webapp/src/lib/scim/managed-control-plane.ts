@@ -5,6 +5,7 @@ import type {
 	SCIMManagedCredential,
 } from "@better-auth/scim";
 import type { db } from "@/db";
+import type { auth as z8Auth } from "@/lib/auth";
 import { scimProviderConfig } from "@/db/schema/scim";
 import { getSCIMCredentialExpiresAt, SCIM_SCOPES } from "./constants";
 
@@ -44,54 +45,16 @@ export interface SCIMManagedControlPlaneStore {
 	}): Promise<SCIMProviderConfigRecord | null>;
 }
 
-export interface SCIMManagedAuthApi {
-	createSCIMManagedConnection(input: {
-		body: {
-			creationRequestId: string;
-			provisioningDomainId: string;
-			actorId: string;
-			scopes: readonly (typeof SCIM_SCOPES)[number][];
-			expiresAt: Date;
-		};
-	}): Promise<{
-		connection: SCIMManagedConnection;
-		credential: SCIMManagedCredential;
-		token: string;
-	}>;
-	listSCIMManagedConnections(input: {
-		body: { provisioningDomainId: string };
-	}): Promise<{ connections: SCIMManagedConnection[] }>;
-	getSCIMManagedConnection(input: {
-		body: { connectionId: string; provisioningDomainId: string };
-	}): Promise<{
-		connection: SCIMManagedConnection;
-		credentials: SCIMManagedCredential[];
-	}>;
-	rotateSCIMManagedCredential(input: {
-		body: {
-			connectionId: string;
-			provisioningDomainId: string;
-			actorId: string;
-			scopes: readonly (typeof SCIM_SCOPES)[number][];
-			expiresAt: Date;
-		};
-	}): Promise<{
-		connection: SCIMManagedConnection;
-		credential: SCIMManagedCredential;
-		token: string;
-	}>;
-	revokeSCIMManagedCredential(input: {
-		body: {
-			connectionId: string;
-			provisioningDomainId: string;
-			credentialId: string;
-			actorId: string;
-		};
-	}): Promise<unknown>;
-	listSCIMManagedConnectionEvents(input: {
-		body: { connectionId: string; provisioningDomainId: string };
-	}): Promise<{ events: SCIMManagedConnectionEvent[] }>;
-}
+export type SCIMManagedAuthApi = Pick<
+	typeof z8Auth.api,
+	| "createSCIMManagedConnection"
+	| "listSCIMManagedConnections"
+	| "getSCIMManagedConnection"
+	| "rotateSCIMManagedCredential"
+	| "revokeSCIMManagedCredential"
+	| "listSCIMManagedConnectionEvents"
+	| "decommissionSCIMManagedConnection"
+>;
 
 export type SCIMManagedConnectionDTO = Omit<
 	SCIMManagedConnection,
@@ -167,6 +130,12 @@ export function createSCIMManagedControlPlane(input: {
 			reservation.config.state === "decommissioning"
 		) {
 			throw new Error("SCIM connection already exists for this organization");
+		}
+		if (!reservation.created && !reservation.config.connectionId) {
+			return {
+				status: "creating" as const,
+				creationRequestId: reservation.config.creationRequestId,
+			};
 		}
 		let created: {
 			connection: SCIMManagedConnection;

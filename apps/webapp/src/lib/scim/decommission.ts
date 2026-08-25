@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
+import type { SCIMManagedAuthApi } from "./managed-control-plane";
 
 const LEASE_SECONDS = 5 * 60;
 const MAX_RETRY_SECONDS = 60 * 60;
@@ -21,20 +22,10 @@ export interface SCIMDecommissionStore {
 	): Promise<void>;
 }
 
-interface SCIMDecommissionAuthApi {
-	decommissionSCIMManagedConnection(input: {
-		body: {
-			connectionId: string;
-			provisioningDomainId: string;
-			actorId: string;
-		};
-	}): Promise<{
-		decommission: {
-			status: "complete" | "reconciling";
-			retryAfter: Date | null;
-		};
-	}>;
-}
+type SCIMDecommissionAuthApi = Pick<
+	SCIMManagedAuthApi,
+	"decommissionSCIMManagedConnection"
+>;
 
 function retryAtAfter(now: Date, seconds: number): Date {
 	return new Date(
@@ -79,7 +70,7 @@ export async function runDueSCIMDecommission(input: {
 	}
 }
 
-interface SCIMDecommissionDatabase {
+export interface SCIMDecommissionDatabase {
 	execute(
 		query: ReturnType<typeof sql>,
 	): Promise<{ rows: Record<string, unknown>[] }>;
@@ -116,7 +107,10 @@ export function createSCIMDecommissionStore(
 				organizationId: String(row.organizationId),
 				connectionId: String(row.connectionId),
 				actorId: String(row.actorId),
-				retryAt: new Date(String(row.retryAt)),
+				retryAt:
+					row.retryAt instanceof Date
+						? row.retryAt
+						: new Date(String(row.retryAt)),
 			};
 		},
 		async complete(claim, now = new Date()) {
@@ -140,7 +134,7 @@ export function createSCIMDecommissionStore(
 	};
 }
 
-export async function beginSCIMDecommission(input: {
+async function beginSCIMDecommission(input: {
 	database: SCIMDecommissionDatabase;
 	organizationId: string;
 	connectionId: string;
@@ -154,4 +148,23 @@ export async function beginSCIMDecommission(input: {
 		RETURNING id
 	`);
 	return result.rows.length === 1;
+}
+
+/** The Task10-facing trusted entrypoint. It durably fences the connection first. */
+export async function decommissionSCIMConnection(input: {
+	database: SCIMDecommissionDatabase;
+	store: SCIMDecommissionStore;
+	auth: { api: SCIMDecommissionAuthApi };
+	organizationId: string;
+	connectionId: string;
+	actorId: string;
+	now?: Date;
+}): Promise<"skipped" | "completed" | "deferred"> {
+	const started = await beginSCIMDecommission(input);
+	if (!started) return "skipped";
+	return runDueSCIMDecommission({
+		store: input.store,
+		auth: input.auth,
+		now: input.now,
+	});
 }

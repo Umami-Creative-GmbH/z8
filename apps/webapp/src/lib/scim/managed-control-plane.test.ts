@@ -232,6 +232,41 @@ describe("SCIM managed control plane", () => {
 		expect(auth.api.createSCIMManagedConnection).not.toHaveBeenCalled();
 	});
 
+	it("returns creation-in-progress to concurrent creators without a second external create", async () => {
+		const store = createStore();
+		const auth = createAuth();
+		auth.api.listSCIMManagedConnections.mockResolvedValue({ connections: [] });
+		const first = createSCIMManagedControlPlane({ auth, store });
+		const second = createSCIMManagedControlPlane({ auth, store });
+		store.reserve.mockResolvedValueOnce({
+			config: (await store.findByOrganizationId("org-1"))!,
+			created: true,
+		});
+		store.reserve.mockResolvedValueOnce({
+			config: (await store.findByOrganizationId("org-1"))!,
+			created: false,
+		});
+
+		const input = {
+			organizationId: "org-1",
+			actorId: "actor-1",
+			creationRequestId: "request-1234567890",
+			autoActivateUsers: false,
+			deprovisionAction: "suspend" as const,
+			defaultRoleTemplateId: "role-1",
+		};
+		const [created, pending] = await Promise.all([
+			first.create(input),
+			second.create(input),
+		]);
+		expect(auth.api.createSCIMManagedConnection).toHaveBeenCalledTimes(1);
+		expect(created).toHaveProperty("token", "secret-token");
+		expect(pending).toEqual({
+			status: "creating",
+			creationRequestId: "request-1234567890",
+		});
+	});
+
 	it("keeps raw tokens out of status, list, and event DTOs", async () => {
 		const auth = createAuth();
 		auth.api.listSCIMManagedConnectionEvents.mockResolvedValue({

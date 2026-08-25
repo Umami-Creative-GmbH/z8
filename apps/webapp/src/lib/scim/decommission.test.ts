@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-	beginSCIMDecommission,
 	createSCIMDecommissionStore,
+	decommissionSCIMConnection,
 	runDueSCIMDecommission,
 	type SCIMDecommissionStore,
 } from "./decommission";
@@ -87,20 +87,47 @@ describe("SCIM decommission", () => {
 		expect(decommissionSCIMManagedConnection).not.toHaveBeenCalled();
 	});
 
-	it("only transitions the matching active row to decommissioning before external work", async () => {
-		const execute = vi
-			.fn()
-			.mockResolvedValueOnce({ rows: [{ id: "config-1" }] });
+	it("persists decommissioning before the intended public decommission entrypoint calls Better Auth", async () => {
+		const order: string[] = [];
+		const database = {
+			execute: vi.fn().mockImplementation(async () => {
+				order.push("persist");
+				return { rows: [{ id: "config-1" }] };
+			}),
+		};
+		const store: SCIMDecommissionStore = {
+			claimDue: vi.fn().mockImplementation(async () => {
+				order.push("claim");
+				return claim;
+			}),
+			complete: vi.fn(),
+			defer: vi.fn(),
+		};
+		const auth = {
+			api: {
+				decommissionSCIMManagedConnection: vi
+					.fn()
+					.mockImplementation(async () => {
+						order.push("api");
+						return {
+							decommission: { status: "complete" as const, retryAfter: null },
+						};
+					}),
+			},
+		};
+
 		await expect(
-			beginSCIMDecommission({
-				database: { execute },
+			decommissionSCIMConnection({
+				database,
+				store,
+				auth,
 				organizationId: "org-1",
 				connectionId: "connection-1",
 				actorId: "actor-1",
 				now,
 			}),
-		).resolves.toBe(true);
-		expect(execute).toHaveBeenCalledTimes(1);
+		).resolves.toBe("completed");
+		expect(order).toEqual(["persist", "claim", "api"]);
 	});
 
 	it("rejects completion or retry persistence after a competing lease wins", async () => {
@@ -112,5 +139,24 @@ describe("SCIM decommission", () => {
 		await expect(store.defer(claim, now, null)).rejects.toThrow(
 			"lease is no longer owned",
 		);
+	});
+
+	it("preserves millisecond-precise Date lease values returned by the database adapter", async () => {
+		const retryAt = new Date("2026-08-25T00:00:00.123Z");
+		const execute = vi.fn().mockResolvedValue({
+			rows: [
+				{
+					organizationId: "org-1",
+					connectionId: "connection-1",
+					actorId: "actor-1",
+					retryAt,
+				},
+			],
+		});
+		const claimed = await createSCIMDecommissionStore({ execute }).claimDue(
+			now,
+		);
+		expect(claimed?.retryAt).toBe(retryAt);
+		expect(claimed?.retryAt.getMilliseconds()).toBe(123);
 	});
 });
