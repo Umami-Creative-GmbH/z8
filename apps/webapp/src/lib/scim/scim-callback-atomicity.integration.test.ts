@@ -41,6 +41,7 @@ if (integrationConfiguration.status === "unavailable") {
 const runId = randomUUID();
 const seededOrganizationIds: string[] = [];
 const seededUserIds: string[] = [];
+const projectionFaultConstraintName = `scim_callback_projection_fault_${runId.replaceAll("-", "")}`;
 
 interface SeededGraph {
 	organizationId: string;
@@ -52,6 +53,7 @@ interface SeededGraph {
 
 describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 	const pool = new Pool({ connectionString: databaseUrl, max: 8 });
+	let projectionFaultInstalled = false;
 	const database = drizzle({ client: pool, schema: authDatabaseSchema });
 	const auth = betterAuth({
 		baseURL: "http://localhost:3000",
@@ -83,6 +85,11 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 
 	afterAll(async () => {
 		try {
+			if (projectionFaultInstalled) {
+				await pool.query(
+					`alter table scim_role_projection_state drop constraint if exists "${projectionFaultConstraintName}"`,
+				);
+			}
 			for (const organizationId of seededOrganizationIds) {
 				await pool.query("delete from organization where id = $1", [
 					organizationId,
@@ -200,6 +207,33 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 		}
 	}
 
+	async function installFinalProjectionFault(organizationId: string) {
+		const quoted = await pool.query<{ organization_id: string }>(
+			"select quote_literal($1) as organization_id",
+			[organizationId],
+		);
+		const quotedOrganizationId = quoted.rows[0]?.organization_id;
+		if (!quotedOrganizationId) {
+			throw new Error("Failed to quote SCIM callback test organization ID");
+		}
+		await pool.query(
+			`alter table scim_role_projection_state
+			 add constraint "${projectionFaultConstraintName}"
+			 check (
+				organization_id <> ${quotedOrganizationId}
+				or applied_role_template_id is null
+			 ) not valid`,
+		);
+		projectionFaultInstalled = true;
+	}
+
+	async function removeFinalProjectionFault() {
+		await pool.query(
+			`alter table scim_role_projection_state drop constraint if exists "${projectionFaultConstraintName}"`,
+		);
+		projectionFaultInstalled = false;
+	}
+
 	async function counts(graph: SeededGraph) {
 		const result = await pool.query<{ entity: string; count: number }>(
 			`select 'member' entity, count(*)::int count from member
@@ -212,6 +246,14 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 				where organization_id = $1 and user_id = $2
 			union all select 'assignment', count(*)::int from user_role_template_assignment
 				where organization_id = $1 and user_id = $2
+			union all select 'team_permission', count(*)::int from team_permissions permissions
+				join employee on employee.id = permissions.employee_id
+					and employee.organization_id = permissions.organization_id
+				where permissions.organization_id = $1 and employee.user_id = $2
+			union all select 'team_membership', count(*)::int from team_membership membership
+				join employee on employee.id = membership.employee_id
+					and employee.organization_id = membership.organization_id
+				where membership.organization_id = $1 and employee.user_id = $2
 			union all select 'lifecycle_audit', count(*)::int from user_lifecycle_event
 				where organization_id = $1 and user_id = $2
 			union all select 'provisioning_audit', count(*)::int from scim_provisioning_log
@@ -225,12 +267,29 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 		);
 	}
 
-	it("rolls back lifecycle writes when projection fails after them", async () => {
-		const graph = await seedGraph({ templateActive: false });
-
-		await expect(replay(graph.organizationId)).rejects.toThrow(
-			"SCIM projection reconciliation failed",
+	it("rolls back every effect when final applied-projection persistence fails", async () => {
+		const graph = await seedGraph({ templateActive: true });
+		await installFinalProjectionFault(graph.organizationId);
+		let failure: unknown;
+		try {
+			await replay(graph.organizationId);
+		} catch (error) {
+			failure = error;
+		} finally {
+			await removeFinalProjectionFault();
+		}
+		expect(failure).toMatchObject({
+			message: "SCIM projection reconciliation failed",
+			cause: {
+				code: "23514",
+				constraint: projectionFaultConstraintName,
+			},
+		});
+		const remainingFault = await pool.query<{ count: number }>(
+			"select count(*)::int as count from pg_constraint where conname = $1",
+			[projectionFaultConstraintName],
 		);
+		expect(remainingFault.rows).toEqual([{ count: 0 }]);
 
 		expect(await counts(graph)).toEqual({
 			member: 0,
@@ -238,6 +297,8 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 			lifecycle: 0,
 			projection: 0,
 			assignment: 0,
+			team_permission: 0,
+			team_membership: 0,
 			lifecycle_audit: 0,
 			provisioning_audit: 0,
 			outbox: 0,
@@ -263,6 +324,8 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 			lifecycle: 1,
 			projection: 1,
 			assignment: 1,
+			team_permission: 1,
+			team_membership: 1,
 			lifecycle_audit: 1,
 			provisioning_audit: 2,
 			outbox: 1,
@@ -314,6 +377,8 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 		).resolves.toHaveLength(2);
 
 		expect(await counts(graph)).toMatchObject({
+			team_permission: 1,
+			team_membership: 1,
 			lifecycle_audit: 1,
 			provisioning_audit: 2,
 			outbox: 1,
