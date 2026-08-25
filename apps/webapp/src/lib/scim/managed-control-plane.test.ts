@@ -172,4 +172,98 @@ describe("SCIM managed control plane", () => {
 			});
 		}
 	});
+
+	it("adopts an interrupted creation by rotating then revoking the lost credential", async () => {
+		const auth = createAuth();
+		const store = createStore();
+		const controlPlane = createSCIMManagedControlPlane({ auth, store });
+
+		const result = await controlPlane.create({
+			organizationId: "org-1",
+			actorId: "actor-1",
+			creationRequestId: "request-1234567890",
+			autoActivateUsers: false,
+			deprovisionAction: "suspend",
+			defaultRoleTemplateId: "role-1",
+		});
+
+		expect(auth.api.createSCIMManagedConnection).not.toHaveBeenCalled();
+		expect(auth.api.rotateSCIMManagedCredential).toHaveBeenCalledWith({
+			body: expect.objectContaining({
+				connectionId: "connection-1",
+				provisioningDomainId: "org-1",
+				actorId: "actor-1",
+			}),
+		});
+		expect(auth.api.revokeSCIMManagedCredential).toHaveBeenCalledWith({
+			body: {
+				connectionId: "connection-1",
+				provisioningDomainId: "org-1",
+				credentialId: "credential-1",
+				actorId: "actor-1",
+			},
+		});
+		expect(result.token).toBe("rotated-secret-token");
+	});
+
+	it("does not create a second active connection when a concurrent reservation is active", async () => {
+		const store = createStore();
+		store.reserve.mockResolvedValueOnce({
+			config: {
+				...(await store.findByOrganizationId("org-1"))!,
+				state: "active",
+				connectionId: "connection-1",
+			},
+			created: false,
+		});
+		const auth = createAuth();
+		const controlPlane = createSCIMManagedControlPlane({ auth, store });
+
+		await expect(
+			controlPlane.create({
+				organizationId: "org-1",
+				actorId: "actor-1",
+				creationRequestId: "request-1234567890",
+				autoActivateUsers: false,
+				deprovisionAction: "suspend",
+				defaultRoleTemplateId: "role-1",
+			}),
+		).rejects.toThrow("already exists");
+		expect(auth.api.createSCIMManagedConnection).not.toHaveBeenCalled();
+	});
+
+	it("keeps raw tokens out of status, list, and event DTOs", async () => {
+		const auth = createAuth();
+		auth.api.listSCIMManagedConnectionEvents.mockResolvedValue({
+			events: [
+				{
+					sequence: 1,
+					type: "credential.issued",
+					actorId: "actor-1",
+					credentialId: "credential-1",
+					createdAt: expiresAt,
+				},
+			],
+		});
+		const controlPlane = createSCIMManagedControlPlane({
+			auth,
+			store: createStore(),
+		});
+
+		const [connections, status, events] = await Promise.all([
+			controlPlane.list("org-1"),
+			controlPlane.get({
+				organizationId: "org-1",
+				connectionId: "connection-1",
+			}),
+			controlPlane.listEvents({
+				organizationId: "org-1",
+				connectionId: "connection-1",
+			}),
+		]);
+		expect(JSON.stringify({ connections, status, events })).not.toContain(
+			"secret-token",
+		);
+		expect(events[0]?.createdAt).toBe("2027-01-01T00:00:00.000Z");
+	});
 });

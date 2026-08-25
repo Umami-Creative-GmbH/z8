@@ -309,10 +309,6 @@ export function createSCIMManagedControlPlaneStore(
 ): SCIMManagedControlPlaneStore {
 	return {
 		async reserve(input) {
-			const existing = await database.query.scimProviderConfig.findFirst({
-				where: eq(scimProviderConfig.organizationId, input.organizationId),
-			});
-			if (existing) return { config: existing, created: false };
 			const [config] = await database
 				.insert(scimProviderConfig)
 				.values({
@@ -321,10 +317,15 @@ export function createSCIMManagedControlPlaneStore(
 					state: "creating",
 					updatedBy: null,
 				})
+				.onConflictDoNothing({ target: scimProviderConfig.organizationId })
 				.returning();
-			if (!config)
+			if (config) return { config, created: true };
+			const existing = await database.query.scimProviderConfig.findFirst({
+				where: eq(scimProviderConfig.organizationId, input.organizationId),
+			});
+			if (!existing)
 				throw new Error("Failed to reserve SCIM provider configuration");
-			return { config, created: true };
+			return { config: existing, created: false };
 		},
 		async findByOrganizationId(organizationId) {
 			return (

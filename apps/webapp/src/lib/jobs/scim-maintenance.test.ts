@@ -85,21 +85,53 @@ describe("runSCIMMaintenance", () => {
 
 		await expect(
 			runSCIMMaintenance({
-				runOutbox: vi
-					.fn()
-					.mockResolvedValue({
-						claimed: 0,
-						completed: 0,
-						deferred: 0,
-						exhausted: 0,
-						persistenceFailures: 0,
-					}),
+				runOutbox: vi.fn().mockResolvedValue({
+					claimed: 0,
+					completed: 0,
+					deferred: 0,
+					exhausted: 0,
+					persistenceFailures: 0,
+				}),
 				listDueRecoveryOrganizations: vi.fn().mockResolvedValue([]),
 				retryProjectionRecovery: vi.fn(),
 				runDecommissions,
 			}),
 		).resolves.toMatchObject({
 			decommission: { attempted: 2, completed: 1, deferred: 0, failed: 1 },
+		});
+	});
+
+	it("resumes a deferred decommission on the next cron run without changing seat degradation", async () => {
+		const runDecommissions = vi
+			.fn()
+			.mockResolvedValueOnce("deferred")
+			.mockResolvedValueOnce("skipped")
+			.mockResolvedValueOnce("completed")
+			.mockResolvedValueOnce("skipped");
+		const dependencies = {
+			runOutbox: vi
+				.fn()
+				.mockResolvedValue({
+					claimed: 0,
+					completed: 0,
+					deferred: 0,
+					exhausted: 0,
+					persistenceFailures: 0,
+				}),
+			listDueRecoveryOrganizations: vi.fn().mockResolvedValue([]),
+			retryProjectionRecovery: vi.fn(),
+			runDecommissions,
+		};
+
+		await expect(runSCIMMaintenance(dependencies)).resolves.toMatchObject({
+			decommission: { attempted: 1, deferred: 1, completed: 0, failed: 0 },
+			exhausted: 0,
+			persistenceFailures: 0,
+		});
+		await expect(runSCIMMaintenance(dependencies)).resolves.toMatchObject({
+			decommission: { attempted: 1, deferred: 0, completed: 1, failed: 0 },
+			exhausted: 0,
+			persistenceFailures: 0,
 		});
 	});
 });
