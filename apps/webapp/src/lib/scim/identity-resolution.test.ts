@@ -8,19 +8,29 @@ import { resolveSCIMIdentity } from "./identity-resolution";
 
 const TARGET_ORGANIZATION_ID = "organization_target";
 
-function resolutionInput(primaryEmail: string): SCIMIdentityResolutionInput {
+function resolutionInput(
+	externalId: string | undefined,
+	primaryEmail = "user@example.com",
+): SCIMIdentityResolutionInput {
 	return {
 		connectionId: "connection_1",
 		provisioningDomainId: TARGET_ORGANIZATION_ID,
-		resource: { primaryEmail } as SCIMIdentityResolutionInput["resource"],
+		resource: {
+			primaryEmail,
+			...(externalId === undefined ? {} : { externalId }),
+		} as SCIMIdentityResolutionInput["resource"],
 	};
 }
 
 function resolutionContext(
 	findOne: ReturnType<typeof vi.fn>,
+	findMany: ReturnType<typeof vi.fn>,
 ): SCIMIdentityResolutionContext {
 	return {
-		database: { findOne } as SCIMIdentityResolutionContext["database"],
+		database: {
+			findOne,
+			findMany,
+		} as SCIMIdentityResolutionContext["database"],
 	};
 }
 
@@ -28,45 +38,30 @@ async function expectSafeConflict(promise: Promise<unknown>) {
 	const error = await promise.catch((caught: unknown) => caught);
 
 	expect(error).toBeInstanceOf(APIError);
-	expect(error).toMatchObject({
-		status: "CONFLICT",
-	});
+	expect(error).toMatchObject({ status: "CONFLICT" });
 	expect(error.body).toEqual({
 		schemas: ["urn:ietf:params:scim:api:messages:2.0:Error"],
 		status: "409",
 		detail: "The SCIM identity cannot be linked",
 	});
 	expect(JSON.stringify(error)).not.toContain("user@example.com");
+	expect(JSON.stringify(error)).not.toContain("subject_foreign");
 	expect(JSON.stringify(error)).not.toContain("organization_foreign");
 }
 
 describe("resolveSCIMIdentity", () => {
-	it("creates an identity when no user has the primary email", async () => {
-		const findOne = vi.fn().mockResolvedValue(null);
-
-		await expect(
-			resolveSCIMIdentity(
-				resolutionInput("new@example.com"),
-				resolutionContext(findOne),
-			),
-		).resolves.toEqual({ action: "create" });
-		expect(findOne).toHaveBeenCalledTimes(1);
-	});
-
-	it("links a verified user who is a member of the exact target organization", async () => {
+	it("links the user with the exact externalId on an active persisted provider in the target organization", async () => {
 		const findOne = vi
 			.fn()
-			.mockResolvedValueOnce({ id: "user_1", emailVerified: true })
-			.mockResolvedValueOnce({
-				id: "member_1",
-				userId: "user_1",
-				organizationId: TARGET_ORGANIZATION_ID,
-			});
+			.mockResolvedValueOnce({ providerId: "provider_target" })
+			.mockResolvedValueOnce({ providerId: "provider_target" })
+			.mockResolvedValueOnce({ id: "member_1" });
+		const findMany = vi.fn().mockResolvedValueOnce([{ userId: "user_1" }]);
 
 		await expect(
 			resolveSCIMIdentity(
-				resolutionInput("user@example.com"),
-				resolutionContext(findOne),
+				resolutionInput("subject_target"),
+				resolutionContext(findOne, findMany),
 			),
 		).resolves.toEqual({
 			action: "link",
@@ -75,82 +70,125 @@ describe("resolveSCIMIdentity", () => {
 		});
 	});
 
-	it("rejects an unverified user without probing organization membership", async () => {
+	it("rejects an unbound externalId instead of creating a user from the SCIM email", async () => {
 		const findOne = vi
 			.fn()
-			.mockResolvedValue({ id: "user_1", emailVerified: false });
+			.mockResolvedValueOnce({ providerId: "provider_target" })
+			.mockResolvedValueOnce({ providerId: "provider_target" });
+		const findMany = vi.fn().mockResolvedValueOnce([]);
 
 		await expectSafeConflict(
 			resolveSCIMIdentity(
-				resolutionInput("user@example.com"),
-				resolutionContext(findOne),
+				resolutionInput("subject_unbound", "existing@example.com"),
+				resolutionContext(findOne, findMany),
 			),
 		);
-		expect(findOne).toHaveBeenCalledTimes(1);
+		expect(findOne).toHaveBeenCalledTimes(2);
 	});
 
-	it("rejects an absent target-organization membership", async () => {
-		const findOne = vi
-			.fn()
-			.mockResolvedValueOnce({ id: "user_1", emailVerified: true })
-			.mockResolvedValueOnce(null);
+	it("rejects a missing externalId without using the SCIM email as an identity", async () => {
+		const findOne = vi.fn();
+		const findMany = vi.fn();
 
 		await expectSafeConflict(
 			resolveSCIMIdentity(
-				resolutionInput("user@example.com"),
-				resolutionContext(findOne),
+				resolutionInput(undefined),
+				resolutionContext(findOne, findMany),
 			),
 		);
+		expect(findOne).not.toHaveBeenCalled();
+		expect(findMany).not.toHaveBeenCalled();
 	});
 
-	it("rejects a user whose membership belongs to another organization", async () => {
-		const foreignMember = {
-			id: "member_foreign",
-			userId: "user_1",
-			organizationId: "organization_foreign",
-		};
-		const findOne = vi.fn(async (query: { model: string }) => {
-			if (query.model === "user") {
-				return { id: "user_1", emailVerified: true };
-			}
+	it("rejects an exact subject bound only to a provider in another organization", async () => {
+		const findOne = vi.fn().mockResolvedValue(null);
+		const findMany = vi.fn();
 
-			// The foreign row exists, but an exact target-org lookup cannot return it.
-			return foreignMember.organizationId === TARGET_ORGANIZATION_ID
-				? foreignMember
-				: null;
+		await expectSafeConflict(
+			resolveSCIMIdentity(
+				resolutionInput("subject_foreign"),
+				resolutionContext(findOne, findMany),
+			),
+		);
+		expect(findOne).toHaveBeenCalledExactlyOnceWith({
+			model: "enterpriseIdentitySetup",
+			select: ["providerId"],
+			where: [{ field: "organizationId", value: TARGET_ORGANIZATION_ID }],
 		});
+	});
+
+	it("rejects ambiguous provider subject bindings", async () => {
+		const findOne = vi
+			.fn()
+			.mockResolvedValueOnce({ providerId: "provider_target" })
+			.mockResolvedValueOnce({ providerId: "provider_target" });
+		const findMany = vi
+			.fn()
+			.mockResolvedValueOnce([{ userId: "user_1" }, { userId: "user_2" }]);
 
 		await expectSafeConflict(
 			resolveSCIMIdentity(
-				resolutionInput("user@example.com"),
-				resolutionContext(findOne),
+				resolutionInput("subject_ambiguous"),
+				resolutionContext(findOne, findMany),
+			),
+		);
+		expect(findOne).toHaveBeenCalledTimes(2);
+	});
+
+	it("rejects a duplicate persisted binding even when it names the same user", async () => {
+		const findOne = vi
+			.fn()
+			.mockResolvedValueOnce({ providerId: "provider_target" })
+			.mockResolvedValueOnce({ providerId: "provider_target" })
+			.mockResolvedValueOnce({ id: "member_1" });
+		const findMany = vi
+			.fn()
+			.mockResolvedValueOnce([{ userId: "user_1" }, { userId: "user_1" }]);
+
+		await expectSafeConflict(
+			resolveSCIMIdentity(
+				resolutionInput("subject_duplicate"),
+				resolutionContext(findOne, findMany),
 			),
 		);
 	});
 
-	it("normalizes the email and queries only exact target membership fields", async () => {
+	it("queries only active target-organization providers and exact validated subjects", async () => {
 		const findOne = vi
 			.fn()
-			.mockResolvedValueOnce({ id: "user_1", emailVerified: true })
+			.mockResolvedValueOnce({ providerId: "provider_target" })
+			.mockResolvedValueOnce({ providerId: "provider_target" })
 			.mockResolvedValueOnce({ id: "member_1" });
+		const findMany = vi.fn().mockResolvedValueOnce([{ userId: "user_1" }]);
 
 		await resolveSCIMIdentity(
-			resolutionInput("  User@Example.COM  "),
-			resolutionContext(findOne),
+			resolutionInput("subject_target", "untrusted@example.com"),
+			resolutionContext(findOne, findMany),
 		);
 
 		expect(findOne).toHaveBeenNthCalledWith(1, {
-			model: "user",
-			select: ["id", "emailVerified"],
-			where: [
-				{
-					field: "email",
-					value: "user@example.com",
-					mode: "insensitive",
-				},
-			],
+			model: "enterpriseIdentitySetup",
+			select: ["providerId"],
+			where: [{ field: "organizationId", value: TARGET_ORGANIZATION_ID }],
 		});
 		expect(findOne).toHaveBeenNthCalledWith(2, {
+			model: "ssoProvider",
+			select: ["providerId"],
+			where: [
+				{ field: "providerId", value: "provider_target" },
+				{ field: "organizationId", value: TARGET_ORGANIZATION_ID },
+				{ field: "domainVerified", value: true },
+			],
+		});
+		expect(findMany).toHaveBeenNthCalledWith(1, {
+			model: "account",
+			select: ["userId"],
+			where: [
+				{ field: "providerId", value: "provider_target" },
+				{ field: "accountId", value: "subject_target" },
+			],
+		});
+		expect(findOne).toHaveBeenCalledWith({
 			model: "member",
 			select: ["id"],
 			where: [
@@ -158,5 +196,8 @@ describe("resolveSCIMIdentity", () => {
 				{ field: "organizationId", value: TARGET_ORGANIZATION_ID },
 			],
 		});
+		expect(JSON.stringify(findMany.mock.calls)).not.toContain(
+			"untrusted@example.com",
+		);
 	});
 });

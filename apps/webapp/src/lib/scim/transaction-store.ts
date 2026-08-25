@@ -4,6 +4,9 @@ import type { DBTransactionAdapter } from "better-auth";
 export const SCIM_MODELS = {
 	user: "user",
 	member: "member",
+	account: "account",
+	ssoProvider: "ssoProvider",
+	enterpriseIdentitySetup: "enterpriseIdentitySetup",
 	employee: "employee",
 	providerConfig: "scimProviderConfig",
 	lifecycleState: "scimUserLifecycleState",
@@ -18,17 +21,27 @@ export const SCIM_MODELS = {
 	teamMembership: "teamMembership",
 } as const;
 
-export interface SCIMReadUser {
-	id: string;
-	emailVerified: boolean;
-}
-
 export interface SCIMReadMember {
 	id: string;
 }
 
+interface SCIMReadIdentitySetup {
+	providerId: string | null;
+}
+
+interface SCIMReadSSOProvider {
+	providerId: string;
+}
+
+interface SCIMReadAccount {
+	userId: string;
+}
+
 export interface SCIMReadStore {
-	findUserByEmail(email: string): Promise<SCIMReadUser | null>;
+	findUserIdsByProviderSubject(
+		organizationId: string,
+		externalId: string,
+	): Promise<string[]>;
 	findOrganizationMember(
 		userId: string,
 		organizationId: string,
@@ -243,12 +256,35 @@ type SCIMReadDatabase = SCIMIdentityResolutionContext["database"];
 
 export function createSCIMReadStore(database: SCIMReadDatabase): SCIMReadStore {
 	return {
-		findUserByEmail: (email) =>
-			database.findOne<SCIMReadUser>({
-				model: SCIM_MODELS.user,
-				select: ["id", "emailVerified"],
-				where: [{ field: "email", value: email, mode: "insensitive" }],
-			}),
+		findUserIdsByProviderSubject: async (organizationId, externalId) => {
+			const setup = await database.findOne<SCIMReadIdentitySetup>({
+				model: SCIM_MODELS.enterpriseIdentitySetup,
+				select: ["providerId"],
+				where: [{ field: "organizationId", value: organizationId }],
+			});
+			if (!setup?.providerId) return [];
+
+			const provider = await database.findOne<SCIMReadSSOProvider>({
+				model: SCIM_MODELS.ssoProvider,
+				select: ["providerId"],
+				where: [
+					{ field: "providerId", value: setup.providerId },
+					{ field: "organizationId", value: organizationId },
+					{ field: "domainVerified", value: true },
+				],
+			});
+			if (!provider) return [];
+
+			const accounts = await database.findMany<SCIMReadAccount>({
+				model: SCIM_MODELS.account,
+				select: ["userId"],
+				where: [
+					{ field: "providerId", value: provider.providerId },
+					{ field: "accountId", value: externalId },
+				],
+			});
+			return accounts.map((account) => account.userId);
+		},
 		findOrganizationMember: (userId, organizationId) =>
 			database.findOne<SCIMReadMember>({
 				model: SCIM_MODELS.member,

@@ -16,21 +16,24 @@ export async function resolveSCIMIdentity(
 	input: SCIMIdentityResolutionInput,
 	context: SCIMIdentityResolutionContext,
 ): Promise<SCIMIdentityResolution> {
-	const store = createSCIMReadStore(context.database);
-	const email = input.resource.primaryEmail.trim().toLowerCase();
-	const user = await store.findUserByEmail(email);
-
-	if (!user) {
-		return { action: "create" };
+	const externalId = input.resource.externalId;
+	if (!externalId?.trim()) {
+		throw new APIError("CONFLICT", SCIM_IDENTITY_CONFLICT);
 	}
 
-	if (user.emailVerified) {
+	const store = createSCIMReadStore(context.database);
+	const userIds = await store.findUserIdsByProviderSubject(
+		input.provisioningDomainId,
+		externalId,
+	);
+	if (userIds.length === 1) {
+		const userId = userIds[0];
 		const member = await store.findOrganizationMember(
-			user.id,
+			userId,
 			input.provisioningDomainId,
 		);
 		if (member) {
-			return { action: "link", userId: user.id, profile: "preserve" };
+			return { action: "link", userId, profile: "preserve" };
 		}
 	}
 
