@@ -12,6 +12,7 @@ const claim = {
 	connectionId: "connection-1",
 	actorId: "actor-1",
 	retryAt: now,
+	attemptCount: 1,
 };
 
 describe("SCIM decommission", () => {

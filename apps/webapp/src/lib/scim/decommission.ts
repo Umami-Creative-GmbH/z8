@@ -10,6 +10,7 @@ export interface SCIMDecommissionClaim {
 	connectionId: string;
 	actorId: string;
 	retryAt: Date;
+	attemptCount: number;
 }
 
 export interface SCIMDecommissionStore {
@@ -66,9 +67,13 @@ export async function runDueSCIMDecommission(input: {
 		await input.store.complete(claim, now);
 		return "completed";
 	} catch {
+		const retrySeconds = Math.min(
+			30 * 2 ** Math.max(claim.attemptCount - 1, 0),
+			MAX_RETRY_SECONDS,
+		);
 		await input.store.defer(
 			claim,
-			retryAtAfter(now, 30),
+			retryAtAfter(now, retrySeconds),
 			"SCIM decommission failed",
 		);
 		return "deferred";
@@ -104,7 +109,7 @@ export function createSCIMDecommissionStore(
 				UPDATE scim_provider_config AS config SET decommission_retry_at = ${leaseUntil}, decommission_attempt_count = config.decommission_attempt_count + 1
 				FROM due WHERE config.organization_id = due.organization_id AND config.connection_id = due.connection_id
 					AND config.state = 'decommissioning' AND config.decommission_retry_at <= ${now}
-				RETURNING config.organization_id AS "organizationId", config.connection_id AS "connectionId", due.actor_id AS "actorId", config.decommission_retry_at AS "retryAt"
+				RETURNING config.organization_id AS "organizationId", config.connection_id AS "connectionId", due.actor_id AS "actorId", config.decommission_retry_at AS "retryAt", config.decommission_attempt_count AS "attemptCount"
 			`);
 			const row = result.rows[0];
 			if (!row) return null;
@@ -112,6 +117,7 @@ export function createSCIMDecommissionStore(
 				organizationId: String(row.organizationId),
 				connectionId: String(row.connectionId),
 				actorId: String(row.actorId),
+				attemptCount: Number(row.attemptCount),
 				retryAt:
 					row.retryAt instanceof Date
 						? row.retryAt
@@ -124,7 +130,7 @@ export function createSCIMDecommissionStore(
 				UPDATE scim_provider_config SET decommission_retry_at = ${leaseUntil}, decommission_attempt_count = decommission_attempt_count + 1
 				WHERE organization_id = ${organizationId} AND connection_id = ${connectionId}
 					AND state = 'decommissioning' AND decommission_retry_at <= ${now}
-				RETURNING organization_id AS "organizationId", connection_id AS "connectionId", COALESCE(updated_by_user_id, created_by_user_id) AS "actorId", decommission_retry_at AS "retryAt"
+				RETURNING organization_id AS "organizationId", connection_id AS "connectionId", COALESCE(updated_by_user_id, created_by_user_id) AS "actorId", decommission_retry_at AS "retryAt", decommission_attempt_count AS "attemptCount"
 			`);
 			const row = result.rows[0];
 			if (!row) return null;
@@ -132,6 +138,7 @@ export function createSCIMDecommissionStore(
 				organizationId: String(row.organizationId),
 				connectionId: String(row.connectionId),
 				actorId: String(row.actorId),
+				attemptCount: Number(row.attemptCount),
 				retryAt:
 					row.retryAt instanceof Date
 						? row.retryAt

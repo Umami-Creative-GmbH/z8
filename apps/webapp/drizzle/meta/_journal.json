@@ -442,6 +442,13 @@
       "when": 1787615023230,
       "tag": "0062_better_auth_scim_storage",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1787643062254,
+      "tag": "0063_scim_creation_recovery",
+      "breakpoints": true
     }
   ]
 }

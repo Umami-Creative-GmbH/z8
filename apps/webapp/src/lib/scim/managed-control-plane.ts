@@ -9,7 +9,12 @@ import type { auth as z8Auth } from "@/lib/auth";
 import { scimProviderConfig } from "@/db/schema/scim";
 import { getSCIMCredentialExpiresAt, SCIM_SCOPES } from "./constants";
 
-type ConfigState = "creating" | "active" | "decommissioning" | "decommissioned";
+type ConfigState =
+	| "creating"
+	| "creation_failed"
+	| "active"
+	| "decommissioning"
+	| "decommissioned";
 const CREATION_RECOVERY_AFTER_MS = 5 * 60 * 1000;
 
 export interface SCIMProviderConfigRecord {
@@ -24,6 +29,10 @@ export interface SCIMProviderConfigRecord {
 	createdBy: string;
 	updatedBy: string | null;
 	createdAt: Date;
+	creationRecoveryClaimToken: string | null;
+	creationRecoveryClaimExpiresAt: Date | null;
+	creationAttemptCount: number;
+	creationLastError: string | null;
 }
 
 export interface SCIMManagedControlPlaneStore {
@@ -45,6 +54,10 @@ export interface SCIMManagedControlPlaneStore {
 		connectionId: string;
 		actorId: string;
 	}): Promise<SCIMProviderConfigRecord | null>;
+	failCreation(input: {
+		organizationId: string;
+		creationRequestId: string;
+	}): Promise<void>;
 }
 
 export type SCIMManagedAuthApi = Pick<
@@ -189,8 +202,12 @@ export function createSCIMManagedControlPlane(input: {
 			}
 			created = rotated;
 		} else if (!reservation.created) {
+			await input.store.failCreation({
+				organizationId: request.organizationId,
+				creationRequestId: reservation.config.creationRequestId,
+			});
 			return {
-				status: "creating" as const,
+				status: "creation_failed" as const,
 				creationRequestId: reservation.config.creationRequestId,
 			};
 		} else {
@@ -310,6 +327,30 @@ export function createSCIMManagedControlPlaneStore(
 			});
 			if (!existing)
 				throw new Error("Failed to reserve SCIM provider configuration");
+			if (
+				existing.state === "creation_failed" &&
+				existing.creationRequestId !== input.creationRequestId
+			) {
+				const [retried] = await database
+					.update(scimProviderConfig)
+					.set({
+						creationRequestId: input.creationRequestId,
+						state: "creating",
+						creationAttemptCount: 0,
+						creationLastError: null,
+						creationRecoveryClaimToken: null,
+						creationRecoveryClaimExpiresAt: null,
+						updatedBy: input.createdBy,
+					})
+					.where(
+						and(
+							eq(scimProviderConfig.organizationId, input.organizationId),
+							eq(scimProviderConfig.state, "creation_failed"),
+						),
+					)
+					.returning();
+				if (retried) return { config: retried, created: true };
+			}
 			return { config: existing, created: false };
 		},
 		async findByOrganizationId(organizationId) {
@@ -336,6 +377,21 @@ export function createSCIMManagedControlPlaneStore(
 				)
 				.returning();
 			return config ?? null;
+		},
+		async failCreation(input) {
+			await database
+				.update(scimProviderConfig)
+				.set({
+					state: "creation_failed",
+					creationLastError: "remote_connection_not_found",
+				})
+				.where(
+					and(
+						eq(scimProviderConfig.organizationId, input.organizationId),
+						eq(scimProviderConfig.creationRequestId, input.creationRequestId),
+						eq(scimProviderConfig.state, "creating"),
+					),
+				);
 		},
 	};
 }

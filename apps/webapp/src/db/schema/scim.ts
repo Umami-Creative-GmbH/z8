@@ -18,6 +18,7 @@ import { currentTimestamp } from "./timestamp";
 
 export const scimConnectionStateEnum = pgEnum("scim_connection_state", [
 	"creating",
+	"creation_failed",
 	"active",
 	"decommissioning",
 	"decommissioned",
@@ -38,6 +39,14 @@ export const scimProviderConfig = pgTable(
 		creationRequestId: text("creation_request_id").notNull(),
 		connectionId: text("connection_id"),
 		state: scimConnectionStateEnum("state").default("creating").notNull(),
+		creationRecoveryClaimToken: uuid("creation_recovery_claim_token"),
+		creationRecoveryClaimExpiresAt: timestamp(
+			"creation_recovery_claim_expires_at",
+		),
+		creationAttemptCount: integer("creation_attempt_count")
+			.default(0)
+			.notNull(),
+		creationLastError: text("creation_last_error"),
 		autoActivateUsers: boolean("auto_activate_users").default(false).notNull(),
 		deprovisionAction: scimDeprovisionActionEnum("deprovision_action")
 			.default("suspend")

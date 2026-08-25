@@ -19,6 +19,10 @@ function createStore(): SCIMManagedControlPlaneStore {
 		createdBy: "actor-1",
 		updatedBy: null,
 		createdAt: new Date("2026-08-25T00:00:00.000Z"),
+		creationRecoveryClaimToken: null,
+		creationRecoveryClaimExpiresAt: null,
+		creationAttemptCount: 0,
+		creationLastError: null,
 	};
 
 	return {
@@ -29,6 +33,7 @@ function createStore(): SCIMManagedControlPlaneStore {
 			connectionId: input.connectionId,
 			state: "active" as const,
 		})),
+		failCreation: vi.fn(),
 	};
 }
 
