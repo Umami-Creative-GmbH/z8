@@ -1,19 +1,10 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { ALL_LANGUAGES } from "@/tolgee/shared";
+import extractor from "../../../../../tolgee-extractor.mjs";
 
-const locales = [
-	"en",
-	"de",
-	"es",
-	"fr",
-	"it",
-	"gsw",
-	"el",
-	"pl",
-	"pt",
-	"tr",
-] as const;
+const locales = ALL_LANGUAGES;
 const connectionStatuses = [
 	"active-unverified",
 	"creating",
@@ -106,27 +97,12 @@ describe("managed SCIM i18n contract", () => {
 			...source.matchAll(
 				/settings\.enterprise\.(?:identity\.(?:scim(?:\.[A-Za-z0-9_.-]+)?|step\.scim(?:\.[A-Za-z0-9_.-]+)?)|domains\.guidedSetup\.[A-Za-z0-9_.-]+)/g,
 			),
-		]
-			.map((match) => match[0].replace("settings.enterprise.", ""))
-			.filter(
-				(key) =>
-					key !== "identity.scim.status." &&
-					key !== "identity.scim.credentials.status.",
-			);
-		const dynamicReferences = [
-			...connectionStatuses.map((status) => `identity.scim.status.${status}`),
-			...credentialStatuses.map(
-				(status) => `identity.scim.credentials.status.${status}`,
-			),
-		];
+		].map((match) => match[0].replace("settings.enterprise.", ""));
 		const englishKeys = new Set(flatten(enterpriseCatalog("en")));
 
 		for (const locale of locales) {
 			expect(
-				missingKeys(enterpriseCatalog(locale), [
-					...staticReferences,
-					...dynamicReferences,
-				]),
+				missingKeys(enterpriseCatalog(locale), staticReferences),
 				locale,
 			).toEqual([]);
 		}
@@ -144,6 +120,27 @@ describe("managed SCIM i18n contract", () => {
 			/Generate (?:a )?(?:provisioning )?token|migration unavailable/i,
 		);
 		expect(source).not.toMatch(/SCIM provisioning is temporarily unavailable/i);
+	});
+
+	it("extracts every SCIM status translation from its source", () => {
+		const sources = ["scim-step.tsx", "scim-credential-list.tsx"];
+		const extractedKeys = sources.flatMap((file) =>
+			extractor(readFileSync(sourcePath(file), "utf8"), file).keys.map(
+				({ keyName }: { keyName: string }) => keyName,
+			),
+		);
+
+		expect(extractedKeys).toEqual(
+			expect.arrayContaining([
+				...connectionStatuses.map(
+					(status) => `settings.enterprise.identity.scim.status.${status}`,
+				),
+				...credentialStatuses.map(
+					(status) =>
+						`settings.enterprise.identity.scim.credentials.status.${status}`,
+				),
+			]),
+		);
 	});
 
 	it("rejects a missing non-English rendered key", () => {
