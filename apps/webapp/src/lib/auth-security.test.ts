@@ -1,7 +1,37 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readdirSync, readFileSync } from "node:fs";
+import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import { getSSOTrustedOrigins } from "./auth";
+
+const productionSourceRoot = join(process.cwd(), "src");
+const approvedManagedTokenBoundaries = new Map([
+	[
+		"lib/scim/managed-control-plane.ts",
+		["token: created.token", "token: result.token"],
+	],
+	[
+		"components/settings/enterprise/scim/use-scim-admin-controller.ts",
+		["setCredential(result.token ?? null)"],
+	],
+]);
+
+function productionSourceFiles(directory = productionSourceRoot): string[] {
+	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+		const path = join(directory, entry.name);
+		if (entry.isDirectory()) {
+			return entry.name === "__tests__" ? [] : productionSourceFiles(path);
+		}
+		if (
+			!entry.isFile() ||
+			!/[.]tsx?$/.test(entry.name) ||
+			/[.](test|spec)[.]tsx?$/.test(entry.name) ||
+			path === join(productionSourceRoot, "db/auth-schema.ts")
+		) {
+			return [];
+		}
+		return [path];
+	});
+}
 
 describe("SSO trusted origins", () => {
 	it("does not trust an issuer supplied by the SSO registration request", async () => {
@@ -35,6 +65,48 @@ describe("SSO trusted origins", () => {
 });
 
 describe("Better Auth 1.7 core configuration", () => {
+	it("keeps legacy SCIM APIs, provider helpers, and token models out of production source", () => {
+		const legacyNames = [
+			"generateSCIMToken",
+			"listSCIMProviderConnections",
+			"deleteSCIMProviderConnection",
+			"legacyScimProvider",
+			"getScimProviderConfig",
+			"SCIMProvisioningService",
+			"EnterpriseIdentityScimTokenResponse",
+			"buildEnterpriseIdentityScimTokenResponse",
+			"scimToken",
+		];
+		const violations = productionSourceFiles().flatMap((path) => {
+			const source = readFileSync(path, "utf8");
+			const relativePath = relative(productionSourceRoot, path);
+			return legacyNames
+				.filter((name) => source.includes(name))
+				.map((name) => `${relativePath}:${name}`);
+		});
+
+		expect(violations).toEqual([]);
+		const managedTokenSourceFiles = new Set(
+			productionSourceFiles()
+				.filter((path) =>
+					/\b(?:created|result)\.token\b/.test(readFileSync(path, "utf8")),
+				)
+				.map((path) => relative(productionSourceRoot, path)),
+		);
+		expect([...managedTokenSourceFiles].sort()).toEqual(
+			[...approvedManagedTokenBoundaries.keys()].sort(),
+		);
+		for (const [
+			path,
+			allowedTokenExpressions,
+		] of approvedManagedTokenBoundaries) {
+			const source = readFileSync(join(productionSourceRoot, path), "utf8");
+			for (const expression of allowedTokenExpressions) {
+				expect(source).toContain(expression);
+			}
+		}
+	});
+
 	it("registers managed SCIM with native Drizzle transactions and the dedicated secret", () => {
 		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
 

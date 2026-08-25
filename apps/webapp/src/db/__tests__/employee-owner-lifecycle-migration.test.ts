@@ -238,25 +238,30 @@ describe("employee owner lifecycle migration guards", () => {
 		]);
 	});
 
-	it("models cleanup and SCIM status reactivation as serialized identity transactions", async () => {
+	it("models cleanup and SCIM status reactivation restoring prior SCIM-owned values", async () => {
 		const runRace = async (first: "cleanup" | "scim") => {
 			const lock = new IdentityLockModel();
 			const firstMayCommit = deferred();
-			const state = { approved: false, employeeActive: false };
+			const state = {
+				memberStatus: "suspended",
+				employeeActive: false,
+				priorScimMemberStatus: "pending",
+				priorScimEmployeeActive: false,
+			};
 			const events: string[] = [];
 			const cleanup = () =>
 				lock.run("org-1:person@example.com", async () => {
 					events.push("cleanup-lock");
 					if (first === "cleanup") await firstMayCommit.promise;
-					if (!state.approved) state.employeeActive = false;
+					if (state.memberStatus !== "approved") state.employeeActive = false;
 					events.push("cleanup-commit");
 				});
 			const scim = () =>
 				lock.run("org-1:person@example.com", async () => {
 					events.push("scim-lock");
 					if (first === "scim") await firstMayCommit.promise;
-					state.approved = true;
-					state.employeeActive = true;
+					state.memberStatus = state.priorScimMemberStatus;
+					state.employeeActive = state.priorScimEmployeeActive;
 					events.push("scim-commit");
 				});
 			const firstRun = first === "cleanup" ? cleanup() : scim();
@@ -275,8 +280,10 @@ describe("employee owner lifecycle migration guards", () => {
 			"scim-commit",
 		]);
 		expect(cleanupFirst.state).toEqual({
-			approved: true,
-			employeeActive: true,
+			memberStatus: "pending",
+			employeeActive: false,
+			priorScimMemberStatus: "pending",
+			priorScimEmployeeActive: false,
 		});
 
 		const scimFirst = await runRace("scim");
@@ -286,7 +293,12 @@ describe("employee owner lifecycle migration guards", () => {
 			"cleanup-lock",
 			"cleanup-commit",
 		]);
-		expect(scimFirst.state).toEqual({ approved: true, employeeActive: true });
+		expect(scimFirst.state).toEqual({
+			memberStatus: "pending",
+			employeeActive: false,
+			priorScimMemberStatus: "pending",
+			priorScimEmployeeActive: false,
+		});
 	});
 
 	it("fails safely on historical duplicate identities before creating the unique index", () => {
