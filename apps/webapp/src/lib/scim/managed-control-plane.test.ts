@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
 	createSCIMManagedControlPlane,
+	SCIMCreationRecoveryConflictError,
 	type SCIMManagedControlPlaneStore,
 } from "./managed-control-plane";
 
@@ -33,7 +34,8 @@ function createStore(): SCIMManagedControlPlaneStore {
 			connectionId: input.connectionId,
 			state: "active" as const,
 		})),
-		failCreation: vi.fn(),
+		failCreation: vi.fn().mockResolvedValue(true),
+		claimRecovery: vi.fn().mockResolvedValue(true),
 	};
 }
 
@@ -287,6 +289,127 @@ describe("SCIM managed control plane", () => {
 			status: "creating",
 			creationRequestId: "request-1234567890",
 		});
+	});
+
+	it("allows only the recovery claimant to adopt a stale creation", async () => {
+		const store = createStore() as SCIMManagedControlPlaneStore & {
+			claimRecovery: ReturnType<typeof vi.fn>;
+		};
+		store.reserve.mockResolvedValue({
+			config: (await store.findByOrganizationId("org-1"))!,
+			created: false,
+		});
+		store.claimRecovery = vi
+			.fn()
+			.mockResolvedValueOnce(true)
+			.mockResolvedValueOnce(false);
+		const auth = createAuth();
+		const input = {
+			organizationId: "org-1",
+			actorId: "actor-1",
+			creationRequestId: "request-1234567890",
+			autoActivateUsers: false,
+			deprovisionAction: "suspend" as const,
+			defaultRoleTemplateId: "role-1",
+		};
+
+		const [owner, observer] = await Promise.all([
+			createSCIMManagedControlPlane({
+				auth,
+				store,
+				now: () => new Date("2026-08-25T00:10:00.000Z"),
+			}).create(input),
+			createSCIMManagedControlPlane({
+				auth,
+				store,
+				now: () => new Date("2026-08-25T00:10:00.000Z"),
+			}).create(input),
+		]);
+
+		expect(store.claimRecovery).toHaveBeenCalledTimes(2);
+		expect(auth.api.rotateSCIMManagedCredential).toHaveBeenCalledTimes(1);
+		expect(auth.api.revokeSCIMManagedCredential).toHaveBeenCalledTimes(1);
+		expect(owner).toHaveProperty("token", "rotated-secret-token");
+		expect(observer).toEqual({
+			status: "creating",
+			creationRequestId: "request-1234567890",
+		});
+	});
+
+	it("treats a stale recovery completion that loses its lease as a conflict", async () => {
+		const store = createStore();
+		store.reserve.mockResolvedValue({
+			config: (await store.findByOrganizationId("org-1"))!,
+			created: false,
+		});
+		store.activate.mockResolvedValue(null);
+		const auth = createAuth();
+
+		await expect(
+			createSCIMManagedControlPlane({
+				auth,
+				store,
+				now: () => new Date("2026-08-25T00:10:00.000Z"),
+			}).create({
+				organizationId: "org-1",
+				actorId: "actor-1",
+				creationRequestId: "request-1234567890",
+				autoActivateUsers: false,
+				deprovisionAction: "suspend",
+				defaultRoleTemplateId: "role-1",
+			}),
+		).rejects.toBeInstanceOf(SCIMCreationRecoveryConflictError);
+		expect(store.activate).toHaveBeenCalledWith(
+			expect.objectContaining({ claimToken: expect.any(String) }),
+		);
+	});
+
+	it("releases an absent recovered request so a later explicit create uses a fresh request", async () => {
+		const store = createStore();
+		const staleConfig = (await store.findByOrganizationId("org-1"))!;
+		store.reserve
+			.mockResolvedValueOnce({ config: staleConfig, created: false })
+			.mockResolvedValueOnce({
+				config: {
+					...staleConfig,
+					creationRequestId: "request-0987654321",
+				},
+				created: true,
+			});
+		const auth = createAuth();
+		auth.api.listSCIMManagedConnections.mockResolvedValue({ connections: [] });
+		const controlPlane = createSCIMManagedControlPlane({
+			auth,
+			store,
+			now: () => new Date("2026-08-25T00:10:00.000Z"),
+		});
+
+		await expect(
+			controlPlane.create({
+				organizationId: "org-1",
+				actorId: "actor-1",
+				creationRequestId: "request-1234567890",
+				autoActivateUsers: false,
+				deprovisionAction: "suspend",
+				defaultRoleTemplateId: "role-1",
+			}),
+		).resolves.toEqual({
+			status: "creation_failed",
+			creationRequestId: "request-1234567890",
+		});
+		await controlPlane.create({
+			organizationId: "org-1",
+			actorId: "actor-1",
+			creationRequestId: "request-0987654321",
+			autoActivateUsers: false,
+			deprovisionAction: "suspend",
+			defaultRoleTemplateId: "role-1",
+		});
+
+		expect(store.failCreation).toHaveBeenCalledWith(
+			expect.objectContaining({ claimToken: expect.any(String) }),
+		);
+		expect(auth.api.createSCIMManagedConnection).toHaveBeenCalledTimes(1);
 	});
 
 	it("keeps raw tokens out of status, list, and event DTOs", async () => {

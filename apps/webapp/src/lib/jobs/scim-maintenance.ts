@@ -30,6 +30,12 @@ export interface SCIMMaintenanceResult {
 		deferred: number;
 		failed: number;
 	};
+	failures: {
+		outbox: number;
+		recoveryScan: number;
+		projectionRecovery: number;
+		decommission: number;
+	};
 }
 
 export class SCIMMaintenanceDegradedError extends Error {
@@ -140,14 +146,16 @@ export async function runSCIMMaintenance(
 			decommissionFailed++;
 		}
 	}
-	if (outboxError) throw outboxError;
-	if (recoveryScanError) throw recoveryScanError;
-	if (!outbox) throw new Error("SCIM maintenance outbox result is missing");
-
-	return {
-		outbox,
-		exhausted: outbox.exhausted,
-		persistenceFailures: outbox.persistenceFailures,
+	const result: SCIMMaintenanceResult = {
+		outbox: outbox ?? {
+			claimed: 0,
+			completed: 0,
+			deferred: 0,
+			exhausted: 0,
+			persistenceFailures: 0,
+		},
+		exhausted: outbox?.exhausted ?? 0,
+		persistenceFailures: outbox?.persistenceFailures ?? 0,
 		projectionRecovery: {
 			attempted: organizationIds.length,
 			recovered,
@@ -159,5 +167,20 @@ export async function runSCIMMaintenance(
 			deferred: decommissionDeferred,
 			failed: decommissionFailed,
 		},
+		failures: {
+			outbox: outboxError ? 1 : 0,
+			recoveryScan: recoveryScanError ? 1 : 0,
+			projectionRecovery: failed,
+			decommission: decommissionFailed,
+		},
 	};
+	if (
+		outboxError ||
+		recoveryScanError ||
+		decommissionFailed > 0 ||
+		result.exhausted > 0 ||
+		result.persistenceFailures > 0
+	)
+		throw new SCIMMaintenanceDegradedError(result);
+	return result;
 }

@@ -1,4 +1,5 @@
-import { and, eq } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
+import { and, eq, isNull, lte, or, sql } from "drizzle-orm";
 import type {
 	SCIMManagedConnection,
 	SCIMManagedConnectionEvent,
@@ -53,11 +54,27 @@ export interface SCIMManagedControlPlaneStore {
 		creationRequestId: string;
 		connectionId: string;
 		actorId: string;
+		claimToken?: string;
 	}): Promise<SCIMProviderConfigRecord | null>;
 	failCreation(input: {
 		organizationId: string;
 		creationRequestId: string;
-	}): Promise<void>;
+		claimToken: string;
+	}): Promise<boolean>;
+	claimRecovery(input: {
+		organizationId: string;
+		creationRequestId: string;
+		claimToken: string;
+		now: Date;
+		expiresAt: Date;
+	}): Promise<boolean>;
+}
+
+export class SCIMCreationRecoveryConflictError extends Error {
+	constructor() {
+		super("SCIM creation recovery lease is no longer owned");
+		this.name = "SCIMCreationRecoveryConflictError";
+	}
 }
 
 export type SCIMManagedAuthApi = Pick<
@@ -146,15 +163,31 @@ export function createSCIMManagedControlPlane(input: {
 		) {
 			throw new Error("SCIM connection already exists for this organization");
 		}
+		const now = input.now?.() ?? new Date();
 		const isRecovery =
 			!reservation.created &&
-			(input.now?.().getTime() ?? Date.now()) -
-				reservation.config.createdAt.getTime() >=
+			now.getTime() - reservation.config.createdAt.getTime() >=
 				CREATION_RECOVERY_AFTER_MS;
 		if (
 			!reservation.created &&
 			!reservation.config.connectionId &&
 			!isRecovery
+		) {
+			return {
+				status: "creating" as const,
+				creationRequestId: reservation.config.creationRequestId,
+			};
+		}
+		const claimToken = isRecovery ? randomUUID() : undefined;
+		if (
+			claimToken &&
+			!(await input.store.claimRecovery({
+				organizationId: request.organizationId,
+				creationRequestId: reservation.config.creationRequestId,
+				claimToken,
+				now,
+				expiresAt: new Date(now.getTime() + CREATION_RECOVERY_AFTER_MS),
+			}))
 		) {
 			return {
 				status: "creating" as const,
@@ -202,10 +235,12 @@ export function createSCIMManagedControlPlane(input: {
 			}
 			created = rotated;
 		} else if (!reservation.created) {
-			await input.store.failCreation({
+			const failed = await input.store.failCreation({
 				organizationId: request.organizationId,
 				creationRequestId: reservation.config.creationRequestId,
+				claimToken: claimToken!,
 			});
+			if (!failed) throw new SCIMCreationRecoveryConflictError();
 			return {
 				status: "creation_failed" as const,
 				creationRequestId: reservation.config.creationRequestId,
@@ -221,12 +256,14 @@ export function createSCIMManagedControlPlane(input: {
 				},
 			});
 		}
-		await input.store.activate({
+		const activated = await input.store.activate({
 			organizationId: request.organizationId,
 			creationRequestId: reservation.config.creationRequestId,
 			connectionId: created.connection.connectionId,
 			actorId: request.actorId,
+			claimToken,
 		});
+		if (!activated) throw new SCIMCreationRecoveryConflictError();
 		return {
 			connection: toConnectionDTO(created.connection),
 			credential: toCredentialDTO(created.credential),
@@ -367,31 +404,71 @@ export function createSCIMManagedControlPlaneStore(
 					connectionId: input.connectionId,
 					state: "active",
 					updatedBy: input.actorId,
+					creationRecoveryClaimToken: null,
+					creationRecoveryClaimExpiresAt: null,
 				})
 				.where(
 					and(
 						eq(scimProviderConfig.organizationId, input.organizationId),
 						eq(scimProviderConfig.creationRequestId, input.creationRequestId),
 						eq(scimProviderConfig.state, "creating"),
+						...(input.claimToken
+							? [
+								eq(
+									scimProviderConfig.creationRecoveryClaimToken,
+									input.claimToken,
+								),
+							]
+							: []),
 					),
 				)
 				.returning();
 			return config ?? null;
 		},
 		async failCreation(input) {
-			await database
+			const [config] = await database
 				.update(scimProviderConfig)
 				.set({
 					state: "creation_failed",
 					creationLastError: "remote_connection_not_found",
+					creationRecoveryClaimToken: null,
+					creationRecoveryClaimExpiresAt: null,
 				})
 				.where(
 					and(
 						eq(scimProviderConfig.organizationId, input.organizationId),
 						eq(scimProviderConfig.creationRequestId, input.creationRequestId),
 						eq(scimProviderConfig.state, "creating"),
+						eq(
+							scimProviderConfig.creationRecoveryClaimToken,
+							input.claimToken,
+						),
 					),
-				);
+				)
+				.returning();
+			return Boolean(config);
+		},
+		async claimRecovery(input) {
+			const [config] = await database
+				.update(scimProviderConfig)
+				.set({
+					creationRecoveryClaimToken: input.claimToken,
+					creationRecoveryClaimExpiresAt: input.expiresAt,
+					creationAttemptCount: sql`${scimProviderConfig.creationAttemptCount} + 1`,
+				})
+				.where(
+					and(
+						eq(scimProviderConfig.organizationId, input.organizationId),
+						eq(scimProviderConfig.creationRequestId, input.creationRequestId),
+						eq(scimProviderConfig.state, "creating"),
+						or(
+							isNull(scimProviderConfig.creationRecoveryClaimToken),
+							lte(scimProviderConfig.creationRecoveryClaimExpiresAt, input.now),
+						),
+					),
+				)
+				.returning({ id: scimProviderConfig.id });
+			return Boolean(config);
 		},
 	};
 }

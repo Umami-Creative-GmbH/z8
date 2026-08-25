@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { runSCIMMaintenance } from "./scim-maintenance";
+import {
+	runSCIMMaintenance,
+	SCIMMaintenanceDegradedError,
+} from "./scim-maintenance";
 
 describe("runSCIMMaintenance", () => {
 	it("runs strict outbox reconciliation and isolates projection recovery failures", async () => {
@@ -37,12 +40,18 @@ describe("runSCIMMaintenance", () => {
 			persistenceFailures: 0,
 			projectionRecovery: { attempted: 2, recovered: 1, failed: 1 },
 			decommission: { attempted: 0, completed: 0, deferred: 0, failed: 0 },
+			failures: {
+				outbox: 0,
+				recoveryScan: 0,
+				projectionRecovery: 1,
+				decommission: 0,
+			},
 		});
 		expect(retryProjectionRecovery).toHaveBeenCalledWith("org-one");
 		expect(retryProjectionRecovery).toHaveBeenCalledWith("org-two");
 	});
 
-	it("returns terminal and persistence failure outcomes from outbox processing", async () => {
+	it("throws a degraded result for terminal and persistence outbox failures", async () => {
 		await expect(
 			runSCIMMaintenance({
 				runOutbox: vi.fn().mockResolvedValue({
@@ -56,10 +65,13 @@ describe("runSCIMMaintenance", () => {
 				retryProjectionRecovery: vi.fn(),
 				runDecommissions: vi.fn().mockResolvedValue("skipped"),
 			}),
-		).resolves.toMatchObject({
-			outbox: { exhausted: 1, persistenceFailures: 1 },
-			exhausted: 1,
-			persistenceFailures: 1,
+		).rejects.toMatchObject({
+			name: "SCIMMaintenanceDegradedError",
+			result: {
+				outbox: { exhausted: 1, persistenceFailures: 1 },
+				exhausted: 1,
+				persistenceFailures: 1,
+			},
 		});
 	});
 
@@ -73,7 +85,10 @@ describe("runSCIMMaintenance", () => {
 				retryProjectionRecovery: vi.fn(),
 				runDecommissions: vi.fn().mockResolvedValue("skipped"),
 			}),
-		).rejects.toThrow(scanFailure);
+		).rejects.toMatchObject({
+			name: "SCIMMaintenanceDegradedError",
+			result: { failures: { outbox: 1 } },
+		});
 	});
 
 	it("runs due decommissions even when seat or recovery work fails, then reports the seat failure", async () => {
@@ -91,7 +106,36 @@ describe("runSCIMMaintenance", () => {
 				retryProjectionRecovery: vi.fn(),
 				runDecommissions,
 			}),
-		).rejects.toThrow(scanFailure);
+		).rejects.toBeInstanceOf(SCIMMaintenanceDegradedError);
+		expect(runDecommissions).toHaveBeenCalledTimes(2);
+	});
+
+	it("aggregates terminal phase failures after every maintenance phase runs", async () => {
+		const runOutbox = vi.fn().mockRejectedValue(new Error("seat persistence failed"));
+		const listDueRecoveryOrganizations = vi.fn().mockResolvedValue(["org-1"]);
+		const retryProjectionRecovery = vi
+			.fn()
+			.mockRejectedValue(new Error("recovery persistence failed"));
+		const runDecommissions = vi
+			.fn()
+			.mockRejectedValueOnce(new Error("decommission persistence failed"))
+			.mockResolvedValueOnce("skipped");
+
+		await expect(
+			runSCIMMaintenance({
+				runOutbox,
+				listDueRecoveryOrganizations,
+				retryProjectionRecovery,
+				runDecommissions,
+			}),
+		).rejects.toMatchObject({
+			name: "SCIMMaintenanceDegradedError",
+			result: {
+				projectionRecovery: { attempted: 1, failed: 1 },
+				decommission: { attempted: 1, failed: 1 },
+			},
+		});
+		expect(retryProjectionRecovery).toHaveBeenCalledWith("org-1");
 		expect(runDecommissions).toHaveBeenCalledTimes(2);
 	});
 
@@ -115,8 +159,11 @@ describe("runSCIMMaintenance", () => {
 				retryProjectionRecovery: vi.fn(),
 				runDecommissions,
 			}),
-		).resolves.toMatchObject({
-			decommission: { attempted: 2, completed: 1, deferred: 0, failed: 1 },
+		).rejects.toMatchObject({
+			name: "SCIMMaintenanceDegradedError",
+			result: {
+				decommission: { attempted: 2, completed: 1, deferred: 0, failed: 1 },
+			},
 		});
 	});
 

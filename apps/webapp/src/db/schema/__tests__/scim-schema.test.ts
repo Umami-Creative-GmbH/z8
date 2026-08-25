@@ -64,6 +64,7 @@ describe("managed SCIM application schema", () => {
 	it("stores one organization-owned connection policy without provider credentials", () => {
 		expect(scimConnectionStateEnum.enumValues).toEqual([
 			"creating",
+			"creation_failed",
 			"active",
 			"decommissioning",
 			"decommissioned",
