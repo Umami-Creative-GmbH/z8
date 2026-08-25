@@ -2,7 +2,18 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const locales = ["en", "de", "es", "fr", "it", "gsw", "el", "pl", "pt", "tr"] as const;
+const locales = [
+	"en",
+	"de",
+	"es",
+	"fr",
+	"it",
+	"gsw",
+	"el",
+	"pl",
+	"pt",
+	"tr",
+] as const;
 const connectionStatuses = [
 	"active-unverified",
 	"creating",
@@ -39,8 +50,12 @@ function scimCatalog(locale: (typeof locales)[number]) {
 }
 
 function identityCatalog(locale: (typeof locales)[number]) {
+	return enterpriseCatalog(locale).identity;
+}
+
+function enterpriseCatalog(locale: (typeof locales)[number]) {
 	const catalog = JSON.parse(readFileSync(catalogPath(locale), "utf8"));
-	return catalog.settings.enterprise.identity;
+	return catalog.settings.enterprise;
 }
 
 describe("managed SCIM i18n contract", () => {
@@ -64,35 +79,44 @@ describe("managed SCIM i18n contract", () => {
 			.map((file) => readFileSync(sourcePath(file), "utf8"))
 			.concat(
 				readFileSync(
-					resolve(process.cwd(), "src/components/settings/enterprise/domains-branding-tabs.tsx"),
+					resolve(
+						process.cwd(),
+						"src/components/settings/enterprise/domains-branding-tabs.tsx",
+					),
 					"utf8",
 				),
 			)
 			.concat(
 				readFileSync(
-					resolve(process.cwd(), "src/components/settings/enterprise/identity-setup-wizard.tsx"),
+					resolve(
+						process.cwd(),
+						"src/components/settings/enterprise/identity-setup-wizard.tsx",
+					),
 					"utf8",
 				),
 			)
 			.join("\n");
 		const references = [
 			...source.matchAll(
-				/settings\.enterprise\.identity\.(?:scim(?:\.[A-Za-z0-9_.-]+)?|step\.scim(?:\.[A-Za-z0-9_.-]+)?)/g,
+				/settings\.enterprise\.(?:identity\.(?:scim(?:\.[A-Za-z0-9_.-]+)?|step\.scim(?:\.[A-Za-z0-9_.-]+)?)|domains\.guidedSetup\.[A-Za-z0-9_.-]+)/g,
 			),
 		]
-			.map((match) => match[0].replace("settings.enterprise.identity.", ""))
+			.map((match) => match[0].replace("settings.enterprise.", ""))
 			.filter((key) => !key.endsWith(".status."));
-		const keys = new Set(flatten(identityCatalog("en")));
+		const keys = new Set(flatten(enterpriseCatalog("en")));
 
 		for (const key of references) expect(keys).toContain(key);
 		for (const status of connectionStatuses) {
 			for (const locale of locales) {
-				expect(scimCatalog(locale).status[status], `${locale}:${status}`).toBeTypeOf("string");
+				expect(
+					scimCatalog(locale).status[status],
+					`${locale}:${status}`,
+				).toBeTypeOf("string");
 			}
 		}
-		expect(keys).not.toContain("scim.action.generateToken");
-		expect(keys).not.toContain("scim.action.copyToken");
-		expect(keys).not.toContain("scim.tokenShownOnce");
+		expect(keys).not.toContain("identity.scim.action.generateToken");
+		expect(keys).not.toContain("identity.scim.action.copyToken");
+		expect(keys).not.toContain("identity.scim.tokenShownOnce");
 		for (const locale of locales) {
 			const toastKeys = Object.keys(identityCatalog(locale).toast);
 			expect(toastKeys, locale).not.toContain("scimStatusFailed");
@@ -100,7 +124,9 @@ describe("managed SCIM i18n contract", () => {
 			expect(toastKeys, locale).not.toContain("scimTokenFailed");
 			expect(toastKeys, locale).not.toContain("scimTokenGenerated");
 		}
-		expect(source).not.toMatch(/Generate (?:a )?(?:provisioning )?token|migration unavailable/i);
+		expect(source).not.toMatch(
+			/Generate (?:a )?(?:provisioning )?token|migration unavailable/i,
+		);
 		expect(source).not.toMatch(/SCIM provisioning is temporarily unavailable/i);
 	});
 
@@ -112,7 +138,9 @@ describe("managed SCIM i18n contract", () => {
 			];
 
 			for (const value of values) {
-				expect(value, locale).not.toMatch(/provision(?:ing)? token|token.*provision/i);
+				expect(value, locale).not.toMatch(
+					/provision(?:ing)? token|token.*provision/i,
+				);
 			}
 		}
 	});
