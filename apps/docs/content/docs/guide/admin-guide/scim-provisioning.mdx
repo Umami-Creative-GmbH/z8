@@ -1,54 +1,95 @@
 ---
 title: SCIM Provisioning
-description: SCIM provisioning setup through Enterprise Identity Setup
+description: Provision organization membership from an enterprise identity provider
 icon: UserPlus
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-SCIM provisioning is configured through the **Enterprise Identity Setup** wizard for organization owners and admins and remains organization-scoped.
+SCIM provisioning connects one enterprise identity provider to one Z8 organization. Organization owners and admins configure it in **Settings -> Enterprise -> Enterprise Identity Setup**.
 
 ---
 
-## Current Availability
+## Before You Start
 
-Open the wizard from **Settings → Enterprise → Enterprise Identity Setup** or go directly to `/settings/enterprise/identity-setup` in the web app.
+Configure and test the paired OIDC or SAML single sign-on provider first. Every SCIM User `externalId` **must** equal the validated OIDC `sub` or the signed SAML `NameID` from that paired provider. Z8 does not fall back to email matching.
+
+Choose a mandatory default role template before creating the connection. It defines the initial organization role for provisioned users; a connection cannot be created without an eligible template.
 
 <Callout type="info" title="Organization Scope">
-  SCIM provisioning is organization-scoped. It is meant to automate membership lifecycle changes for one organization at a time and does not imply cross-organization provisioning.
+  A SCIM connection is bound to the current organization. Create and manage separate connections for separate organizations.
 </Callout>
 
 ---
 
-## What The Current Integration Supports
+## Create The Connection
 
-When SCIM is enabled for an organization, the backend supports:
+1. Open **Enterprise Identity Setup** for the organization.
+2. In **SCIM Provisioning**, select the default role template and choose **Create SCIM connection**.
+3. Copy the displayed credential and store it securely in your identity provider. It is displayed once and cannot be recovered later.
+4. Configure the identity provider with this SCIM endpoint:
 
-- Provisioning users into the current organization
-- Updating user profile data from the identity provider
-- Deactivating or reactivating access based on SCIM lifecycle events
-- Applying default role-template behavior where that configuration has been set up
-- Recording provisioning activity in SCIM-specific audit logs
+   ```text
+   /api/auth/scim/v2
+   ```
 
-The current implementation also supports org-scoped provisioning behavior such as auto-activation and deprovision handling.
+The credential expires after one year. Do not put credentials in tickets, documentation, chat, or screenshots.
 
----
-
-## Admin Expectations
-
-- Configure SSO first, then enable optional SCIM provisioning in the same wizard.
-- Copy the SCIM base URL and bearer token when the wizard generates them. The token is shown only once.
-- Use your identity provider's test provisioning action, then return to the wizard to refresh SCIM status and logs.
-- Review the resulting members and employee records in [Employee Management](/docs/guide/admin-guide/employee-management).
-
----
-
-## Operational Notes
-
-- SCIM is an enterprise integration and should be rolled out carefully per organization.
-- Provisioned users may be auto-activated or may require follow-up review depending on the organization's configured behavior.
-- Deprovisioning behavior can suspend access or deactivate the employee record depending on how the integration was configured.
-
-<Callout type="warn" title="Use Accurate Scope During Rollout">
-  Keep SCIM planning focused on the current organization. Separate organizations need separate provisioning decisions and should not share assumptions about access or lifecycle behavior.
+<Callout type="warn" title="One-Time Credential">
+  Confirm that the credential is saved before closing the dialog. Legacy SCIM credentials and provisioning tokens are not supported.
 </Callout>
+
+---
+
+## Verify And Operate
+
+Send authenticated SCIM User or Group traffic from the identity provider, then refresh the connection status. Z8 marks the connection verified only after it observes authenticated provider traffic. Review the recent events list when diagnosing setup or lifecycle changes.
+
+Rotate credentials before expiry or whenever a credential may be exposed. Rotation creates an overlap period so you can update the identity provider before revoking the old credential. Revoke a credential when it must stop provisioning immediately.
+
+---
+
+## Provisioning Behavior
+
+SCIM provisioning supports Users and Groups. For a complete correction after a provider-side change, run a full User and Group reprovisioning cycle from the identity provider.
+
+- A User is provisioned only when its `externalId` matches the paired provider's validated OIDC `sub` or signed SAML `NameID`.
+- A Group's `externalId` is the stable key for its role mapping. Do not change it when renaming the group.
+- Deactivation is organization-local and reversible: it removes access in this organization without deleting the underlying user or affecting another organization.
+- Re-enabling a user through SCIM restores the organization-local lifecycle state when the provider sends the corresponding update.
+
+Review resulting organization members and employee records in [Employee Management](/docs/guide/admin-guide/employee-management).
+
+<Callout type="info" title="Use Stable Group IDs">
+  Configure group mappings with stable provider external IDs, not display names. Display names can change; the external ID preserves the mapping.
+</Callout>
+
+---
+
+## Decommission A Connection
+
+Choose **Decommission** only when the organization will no longer use this SCIM connection. Decommissioning is irreversible: it retires the managed connection and prevents further provisioning. It is not a temporary pause; use credential rotation or revocation for operational changes instead.
+
+If creation or decommissioning is interrupted, use **Refresh creation status** or refresh the connection status to reconcile the recorded lifecycle state before retrying other changes.
+
+---
+
+## Troubleshooting
+
+### The connection is not verified
+
+1. Confirm the identity provider uses `/api/auth/scim/v2` and the current credential.
+2. Send an authenticated SCIM User or Group request.
+3. Refresh the connection status and review recent events.
+
+### A user is rejected or not linked
+
+1. Verify that the SCIM User `externalId` exactly matches the paired OIDC `sub` or signed SAML `NameID`.
+2. Do not substitute an email address for `externalId`.
+3. Confirm the user belongs to the intended organization and retry a complete User and Group reprovisioning cycle.
+
+### A group mapping changed unexpectedly
+
+1. Check that the provider kept the Group `externalId` stable.
+2. Restore the intended stable external ID in the provider mapping.
+3. Run complete User and Group reprovisioning to reconcile the organization.

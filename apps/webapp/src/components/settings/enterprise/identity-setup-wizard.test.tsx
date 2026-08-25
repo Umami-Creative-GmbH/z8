@@ -10,19 +10,15 @@ import { IdentitySetupWizard } from "./identity-setup-wizard";
 
 const {
 	activateEnterpriseIdentitySetupActionMock,
-	generateEnterpriseIdentityScimTokenActionMock,
 	recordEnterpriseIdentitySsoTestActionMock,
 	refreshEnterpriseIdentityDomainStatusActionMock,
-	refreshEnterpriseIdentityScimStatusActionMock,
 	registerEnterpriseIdentitySSOProviderActionMock,
 	updateEnterpriseIdentityAccessPolicyActionMock,
 	updateEnterpriseIdentityProviderActionMock,
 } = vi.hoisted(() => ({
 	activateEnterpriseIdentitySetupActionMock: vi.fn(),
-	generateEnterpriseIdentityScimTokenActionMock: vi.fn(),
 	recordEnterpriseIdentitySsoTestActionMock: vi.fn(),
 	refreshEnterpriseIdentityDomainStatusActionMock: vi.fn(),
-	refreshEnterpriseIdentityScimStatusActionMock: vi.fn(),
 	registerEnterpriseIdentitySSOProviderActionMock: vi.fn(),
 	updateEnterpriseIdentityAccessPolicyActionMock: vi.fn(),
 	updateEnterpriseIdentityProviderActionMock: vi.fn(),
@@ -69,13 +65,6 @@ const germanCopy: Record<string, string> = {
 	"settings.enterprise.identity.review.missingRequirement":
 		"{item} ist vor Aktivierung erforderlich",
 	"settings.enterprise.identity.ssoTest.status.notRun": "Nicht ausgeführt",
-	"settings.enterprise.identity.scim.action.generateToken": "Token generieren",
-	"settings.enterprise.identity.scim.action.refreshStatus": "Status aktualisieren",
-	"settings.enterprise.identity.scim.tokenShownOnce": "Dieses Token wird einmal angezeigt",
-	"settings.enterprise.identity.scim.description":
-		"SCIM-Verifizierung wird aktualisiert, nachdem Ihr Identitätsanbieter einen Testbenutzer oder eine Gruppenänderung sendet.",
-	"settings.enterprise.identity.scim.status.none": "Noch keine Provisionierungsaktivität",
-	"settings.enterprise.identity.scim.status.observed": "Provisionierungsaktivität erkannt",
 	"settings.enterprise.identity.accessPolicy.defaultRoleTemplate": "Standard-Rollenvorlage",
 	"settings.enterprise.identity.accessPolicy.action.save": "Zugriffsrichtlinie speichern",
 	"settings.enterprise.identity.review.action.activate": "Unternehmensidentität aktivieren",
@@ -128,10 +117,8 @@ vi.mock("./sso-provider-management", () => ({
 
 vi.mock("@/app/[locale]/(app)/settings/enterprise/actions", () => ({
 	activateEnterpriseIdentitySetupAction: activateEnterpriseIdentitySetupActionMock,
-	generateEnterpriseIdentityScimTokenAction: generateEnterpriseIdentityScimTokenActionMock,
 	recordEnterpriseIdentitySsoTestAction: recordEnterpriseIdentitySsoTestActionMock,
 	refreshEnterpriseIdentityDomainStatusAction: refreshEnterpriseIdentityDomainStatusActionMock,
-	refreshEnterpriseIdentityScimStatusAction: refreshEnterpriseIdentityScimStatusActionMock,
 	registerEnterpriseIdentitySSOProviderAction: registerEnterpriseIdentitySSOProviderActionMock,
 	updateEnterpriseIdentityAccessPolicyAction: updateEnterpriseIdentityAccessPolicyActionMock,
 	updateEnterpriseIdentityProviderAction: updateEnterpriseIdentityProviderActionMock,
@@ -250,16 +237,6 @@ beforeEach(() => {
 			},
 		}),
 	);
-	generateEnterpriseIdentityScimTokenActionMock.mockResolvedValue({
-		providerId: "acme-okta",
-		scimToken: "scim_token_returned_once",
-		baseUrl: "/api/auth/scim/v2",
-	});
-	refreshEnterpriseIdentityScimStatusActionMock.mockResolvedValue({
-		checkedAt: "2026-01-01T00:00:00.000Z",
-		verified: true,
-		error: null,
-	});
 	refreshEnterpriseIdentityDomainStatusActionMock.mockResolvedValue(
 		configuredSetup({
 			domain: {
@@ -517,13 +494,8 @@ describe("DomainsAndBrandingTabs behavior", () => {
 		);
 		expect(
 			screen.getByText(
-				"Configure SSO and access policy with guarded activation while SCIM provisioning is temporarily unavailable.",
-			),
-		).toBeTruthy();
-		expect(
-			screen.queryByText(
 				"Configure SSO, SCIM, access policy, and activation checks in one guarded flow.",
 			),
-		).toBeNull();
+		).toBeTruthy();
 	});
 });

@@ -359,22 +359,83 @@
         },
         "scim": {
           "action": {
-            "copyToken": "Token kopieren",
-            "generateToken": "Token generieren",
-            "refreshStatus": "Status aktualisieren"
+            "create": "SCIM-Verbindung erstellen",
+            "creating": "SCIM-Verbindung wird erstellt",
+            "decommission": "Stilllegen",
+            "reconcile": "Erstellungsstatus aktualisieren",
+            "refresh": "Status aktualisieren",
+            "rotate": "Anmeldedaten rotieren",
+            "selectRole": "Wählen Sie zuerst eine Standardrollenvorlage"
           },
-          "baseUrl": "Basis-URL",
-          "cardDescription": "Generieren Sie das Bereitstellungs-Token und überwachen Sie den Verbindungsstatus.",
-          "description": "Die SCIM-Verifizierung wird aktualisiert, nachdem Ihr Identitätsanbieter eine Testbenutzer- oder Gruppenänderung gesendet hat.",
-          "error": {
-            "saveProviderFirst": "Speichern Sie den Anbieter, bevor Sie ein SCIM-Token generieren"
+          "credential": {
+            "close": "Schließen",
+            "confirmClose": "Bestätigen Sie vor dem Schließen, dass die Anmeldedaten gespeichert sind.",
+            "copied": "Anmeldedaten in die Zwischenablage kopiert.",
+            "copy": "Anmeldedaten kopieren",
+            "description": "Kopieren und speichern Sie diese Anmeldedaten jetzt. Sie können nicht erneut angezeigt werden.",
+            "label": "Anmeldedaten",
+            "saved": "Ich habe diese Anmeldedaten gespeichert",
+            "title": "SCIM-Anmeldedaten",
+            "warning": "Diese Anmeldedaten werden einmal angezeigt. Speichern Sie sie sicher in Ihrem Identitätsanbieter."
           },
+          "credentials": {
+            "credential": "Anmeldedaten",
+            "empty": "Es wurden keine Anmeldedaten ausgestellt.",
+            "expires": "Läuft ab",
+            "lastUsedAria": "Zuletzt verwendet: {value} UTC",
+            "revoke": "Widerrufen",
+            "status": {
+              "active": "Aktiv",
+              "revoked": "Widerrufen"
+            },
+            "title": "Anmeldedaten",
+            "unused": "Noch nicht verwendet"
+          },
+          "description": "Verbinden Sie Ihren Identitätsanbieter, um den Mitarbeiterzugriff bereitzustellen und zu verwalten.",
+          "dialog": {
+            "cancel": "Abbrechen",
+            "decommission": {
+              "description": "Dadurch wird die SCIM-Bereitstellung dauerhaft stillgelegt und kann nicht rückgängig gemacht werden.",
+              "title": "SCIM stilllegen"
+            },
+            "revoke": {
+              "description": "Dadurch können diese Anmeldedaten Benutzer nicht mehr bereitstellen.",
+              "title": "Anmeldedaten widerrufen"
+            }
+          },
+          "endpoint": "Endpunkt",
+          "events": {
+            "empty": "Es wurden keine Bereitstellungsereignisse aufgezeichnet.",
+            "error": "Ereignisse konnten nicht geladen werden. Aktualisieren Sie den Status und versuchen Sie es erneut.",
+            "title": "Letzte Ereignisse"
+          },
+          "expiry": "Ablauf der Anmeldedaten",
+          "expiry.value": "1 Jahr",
+          "refreshHelp": "Aktualisieren Sie den Status, um sichere Verbindungsmetadaten zu laden.",
           "status": {
-            "none": "Noch keine Bereitstellungsaktivität",
-            "observed": "Bereitstellungsaktivität beobachtet"
+            "active-unverified": "aktiv, nicht verifiziert",
+            "creating": "wird erstellt",
+            "creation_failed": "Erstellung fehlgeschlagen",
+            "decommissioned": "stillgelegt",
+            "decommissioning": "wird stillgelegt",
+            "disconnected": "nicht verbunden",
+            "refreshing": "wird aktualisiert",
+            "revoking": "wird widerrufen",
+            "rotating": "wird rotiert",
+            "verified": "verifiziert"
           },
           "title": "SCIM-Bereitstellung",
-          "tokenShownOnce": "Dieses Token wird nur einmal angezeigt"
+          "toast": {
+            "createError": "SCIM-Verbindung konnte nicht erstellt werden.",
+            "reconcileError": "SCIM-Erstellung konnte nicht abgeglichen werden.",
+            "refreshError": "SCIM-Status konnte nicht aktualisiert werden.",
+            "rotateError": "SCIM-Anmeldedaten konnten nicht rotiert werden.",
+            "updateError": "SCIM-Verbindung konnte nicht aktualisiert werden."
+          },
+          "verification": "Verifizierung",
+          "verification.awaiting": "Wartet auf Verwendung durch den Anbieter",
+          "verification.observed": "Beobachtet",
+          "wizardDescription": "Konfigurieren Sie die verwaltete Benutzerbereitstellung ohne die Enterprise-Aktivierung zu ändern."
         },
         "sso": {
           "action": {

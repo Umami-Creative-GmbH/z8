@@ -359,22 +359,83 @@
         },
         "scim": {
           "action": {
-            "copyToken": "Copiar token",
-            "generateToken": "Generar token",
-            "refreshStatus": "Actualizar estado"
+            "create": "Crear conexión SCIM",
+            "creating": "Creando conexión SCIM",
+            "decommission": "Retirar",
+            "reconcile": "Actualizar estado de creación",
+            "refresh": "Actualizar estado",
+            "rotate": "Rotar credencial",
+            "selectRole": "Seleccione primero una plantilla de rol predeterminada"
           },
-          "baseUrl": "URL base",
-          "cardDescription": "Genere el token de aprovisionamiento y supervise el estado de la conexión.",
-          "description": "La verificación SCIM se actualiza después de que su proveedor de identidad envía un cambio de usuario o grupo de prueba.",
-          "error": {
-            "saveProviderFirst": "Guarde el proveedor antes de generar un token SCIM"
+          "credential": {
+            "close": "Cerrar",
+            "confirmClose": "Confirme que la credencial está guardada antes de cerrar.",
+            "copied": "Credencial copiada al portapapeles.",
+            "copy": "Copiar credencial",
+            "description": "Copie y guarde esta credencial ahora. No se puede volver a mostrar.",
+            "label": "Credencial",
+            "saved": "He guardado esta credencial",
+            "title": "Credencial SCIM",
+            "warning": "Esta credencial se muestra una vez. Guárdela de forma segura en su proveedor de identidad."
           },
+          "credentials": {
+            "credential": "Credencial",
+            "empty": "No se han emitido credenciales.",
+            "expires": "Caduca",
+            "lastUsedAria": "Último uso: {value} UTC",
+            "revoke": "Revocar",
+            "status": {
+              "active": "Activa",
+              "revoked": "Revocada"
+            },
+            "title": "Credenciales",
+            "unused": "Aún no se ha usado"
+          },
+          "description": "Conecte su proveedor de identidad para aprovisionar y administrar el acceso de la plantilla.",
+          "dialog": {
+            "cancel": "Cancelar",
+            "decommission": {
+              "description": "Esto retira permanentemente el aprovisionamiento SCIM y no se puede deshacer.",
+              "title": "Retirar SCIM"
+            },
+            "revoke": {
+              "description": "Esto impide inmediatamente que la credencial aprovisione usuarios.",
+              "title": "Revocar credencial"
+            }
+          },
+          "endpoint": "Extremo",
+          "events": {
+            "empty": "No se han registrado eventos de aprovisionamiento.",
+            "error": "No se pudieron cargar los eventos. Actualice el estado e inténtelo de nuevo.",
+            "title": "Eventos recientes"
+          },
+          "expiry": "Caducidad de la credencial",
+          "expiry.value": "1 año",
+          "refreshHelp": "Actualice el estado para cargar metadatos seguros de la conexión.",
           "status": {
-            "none": "Aún no hay actividad de aprovisionamiento",
-            "observed": "Actividad de aprovisionamiento observada"
+            "active-unverified": "activa sin verificar",
+            "creating": "creando",
+            "creation_failed": "creación fallida",
+            "decommissioned": "retirada",
+            "decommissioning": "retirando",
+            "disconnected": "desconectada",
+            "refreshing": "actualizando",
+            "revoking": "revocando",
+            "rotating": "rotando",
+            "verified": "verificada"
           },
           "title": "Aprovisionamiento SCIM",
-          "tokenShownOnce": "Este token solo se muestra una vez"
+          "toast": {
+            "createError": "No se pudo crear la conexión SCIM.",
+            "reconcileError": "No se pudo reconciliar la creación de SCIM.",
+            "refreshError": "No se pudo actualizar el estado de SCIM.",
+            "rotateError": "No se pudo rotar la credencial SCIM.",
+            "updateError": "No se pudo actualizar la conexión SCIM."
+          },
+          "verification": "Verificación",
+          "verification.awaiting": "Esperando el uso del proveedor",
+          "verification.observed": "Observada",
+          "wizardDescription": "Configure el aprovisionamiento administrado de usuarios sin cambiar la activación empresarial."
         },
         "sso": {
           "action": {

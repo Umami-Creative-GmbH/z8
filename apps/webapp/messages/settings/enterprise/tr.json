@@ -359,22 +359,83 @@
         },
         "scim": {
           "action": {
-            "copyToken": "Belirteci kopyala",
-            "generateToken": "Belirteç oluştur",
-            "refreshStatus": "Durumu yenile"
+            "create": "SCIM bağlantısı oluştur",
+            "creating": "SCIM bağlantısı oluşturuluyor",
+            "decommission": "Hizmetten çıkar",
+            "reconcile": "Oluşturma durumunu yenile",
+            "refresh": "Durumu yenile",
+            "rotate": "Kimlik bilgisini döndür",
+            "selectRole": "Önce varsayılan bir rol şablonu seçin"
           },
-          "baseUrl": "Temel URL",
-          "cardDescription": "Sağlama belirtecini oluşturun ve bağlantı sağlığını izleyin.",
-          "description": "SCIM doğrulama güncellemeleri, kimlik sağlayıcınız bir test kullanıcısı veya grup değişikliği gönderdikten sonra gerçekleşir.",
-          "error": {
-            "saveProviderFirst": "SCIM belirteci oluşturmadan önce sağlayıcıyı kaydedin"
+          "credential": {
+            "close": "Kapat",
+            "confirmClose": "Kapatmadan önce kimlik bilgisinin kaydedildiğini onaylayın.",
+            "copied": "Kimlik bilgisi panoya kopyalandı.",
+            "copy": "Kimlik bilgisini kopyala",
+            "description": "Bu kimlik bilgisini şimdi kopyalayıp saklayın. Yeniden görüntülenemez.",
+            "label": "Kimlik bilgisi",
+            "saved": "Bu kimlik bilgisini kaydettim",
+            "title": "SCIM kimlik bilgisi",
+            "warning": "Bu kimlik bilgisi bir kez gösterilir. Kimlik sağlayıcınızda güvenle saklayın."
           },
+          "credentials": {
+            "credential": "Kimlik bilgisi",
+            "empty": "Hiç kimlik bilgisi verilmedi.",
+            "expires": "Sona erer",
+            "lastUsedAria": "Son kullanım: {value} UTC",
+            "revoke": "İptal et",
+            "status": {
+              "active": "Etkin",
+              "revoked": "İptal edildi"
+            },
+            "title": "Kimlik bilgileri",
+            "unused": "Henüz kullanılmadı"
+          },
+          "description": "İş gücü erişimini sağlamak ve yönetmek için kimlik sağlayıcınızı bağlayın.",
+          "dialog": {
+            "cancel": "İptal",
+            "decommission": {
+              "description": "Bu, SCIM sağlamayı kalıcı olarak hizmetten çıkarır ve geri alınamaz.",
+              "title": "SCIM'i hizmetten çıkar"
+            },
+            "revoke": {
+              "description": "Bu, kimlik bilgisinin kullanıcı sağlamasını hemen engeller.",
+              "title": "Kimlik bilgisini iptal et"
+            }
+          },
+          "endpoint": "Uç nokta",
+          "events": {
+            "empty": "Hiç sağlama olayı kaydedilmedi.",
+            "error": "Olaylar yüklenemedi. Durumu yenileyin ve tekrar deneyin.",
+            "title": "Son olaylar"
+          },
+          "expiry": "Kimlik bilgisi sona erme tarihi",
+          "expiry.value": "1 yıl",
+          "refreshHelp": "Güvenli bağlantı meta verilerini yüklemek için durumu yenileyin.",
           "status": {
-            "none": "Henüz sağlama etkinliği yok",
-            "observed": "Sağlama etkinliği gözlemlendi"
+            "active-unverified": "etkin, doğrulanmamış",
+            "creating": "oluşturuluyor",
+            "creation_failed": "oluşturma başarısız",
+            "decommissioned": "hizmetten çıkarıldı",
+            "decommissioning": "hizmetten çıkarılıyor",
+            "disconnected": "bağlantısı kesildi",
+            "refreshing": "yenileniyor",
+            "revoking": "iptal ediliyor",
+            "rotating": "döndürülüyor",
+            "verified": "doğrulandı"
           },
           "title": "SCIM Sağlama",
-          "tokenShownOnce": "Bu belirteç yalnızca bir kez gösterilir"
+          "toast": {
+            "createError": "SCIM bağlantısı oluşturulamadı.",
+            "reconcileError": "SCIM oluşturma uzlaştırılamadı.",
+            "refreshError": "SCIM durumu yenilenemedi.",
+            "rotateError": "SCIM kimlik bilgisi döndürülemedi.",
+            "updateError": "SCIM bağlantısı güncellenemedi."
+          },
+          "verification": "Doğrulama",
+          "verification.awaiting": "Sağlayıcı kullanımını bekliyor",
+          "verification.observed": "Gözlemlendi",
+          "wizardDescription": "Kurumsal etkinleştirmeyi değiştirmeden yönetilen kullanıcı sağlamayı yapılandırın."
         },
         "sso": {
           "action": {

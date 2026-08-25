@@ -359,22 +359,83 @@
         },
         "scim": {
           "action": {
-            "copyToken": "Copy token",
-            "generateToken": "Generate token",
-            "refreshStatus": "Refresh status"
+            "create": "Create SCIM connection",
+            "creating": "Creating SCIM connection",
+            "decommission": "Decommission",
+            "reconcile": "Refresh creation status",
+            "refresh": "Refresh status",
+            "rotate": "Rotate credential",
+            "selectRole": "Select a default role template first"
           },
-          "baseUrl": "Base URL",
-          "cardDescription": "Generate the provisioning token and monitor connection health.",
-          "description": "SCIM verification updates after your identity provider sends a test user or group change.",
-          "error": {
-            "saveProviderFirst": "Save provider before generating a SCIM token"
+          "credential": {
+            "close": "Close",
+            "confirmClose": "Confirm that the credential is saved before closing.",
+            "copied": "Credential copied to clipboard.",
+            "copy": "Copy credential",
+            "description": "Copy and store this credential now. It cannot be displayed again.",
+            "label": "Credential",
+            "saved": "I have saved this credential",
+            "title": "SCIM Credential",
+            "warning": "This credential is shown once. Store it in your identity provider securely."
           },
+          "credentials": {
+            "credential": "Credential",
+            "empty": "No credentials have been issued.",
+            "expires": "Expires",
+            "lastUsedAria": "Last used: {value} UTC",
+            "revoke": "Revoke",
+            "status": {
+              "active": "Active",
+              "revoked": "Revoked"
+            },
+            "title": "Credentials",
+            "unused": "Not yet used"
+          },
+          "description": "Connect your identity provider to provision and manage workforce access.",
+          "dialog": {
+            "cancel": "Cancel",
+            "decommission": {
+              "description": "This permanently decommissions SCIM provisioning and cannot be undone.",
+              "title": "Decommission SCIM"
+            },
+            "revoke": {
+              "description": "This immediately prevents the credential from provisioning users.",
+              "title": "Revoke credential"
+            }
+          },
+          "endpoint": "Endpoint",
+          "events": {
+            "empty": "No provisioning events have been recorded.",
+            "error": "Events could not be loaded. Refresh status and try again.",
+            "title": "Recent Events"
+          },
+          "expiry": "Credential expiry",
+          "expiry.value": "1 year",
+          "refreshHelp": "Refresh status to load safe connection metadata.",
           "status": {
-            "none": "No provisioning activity yet",
-            "observed": "Provisioning activity observed"
+            "active-unverified": "active unverified",
+            "creating": "creating",
+            "creation_failed": "creation failed",
+            "decommissioned": "decommissioned",
+            "decommissioning": "decommissioning",
+            "disconnected": "disconnected",
+            "refreshing": "refreshing",
+            "revoking": "revoking",
+            "rotating": "rotating",
+            "verified": "verified"
           },
           "title": "SCIM Provisioning",
-          "tokenShownOnce": "This token is shown once"
+          "toast": {
+            "createError": "Unable to create the SCIM connection.",
+            "reconcileError": "Unable to reconcile SCIM creation.",
+            "refreshError": "Unable to refresh SCIM status.",
+            "rotateError": "Unable to rotate the SCIM credential.",
+            "updateError": "Unable to update the SCIM connection."
+          },
+          "verification": "Verification",
+          "verification.awaiting": "Awaiting provider use",
+          "verification.observed": "Observed",
+          "wizardDescription": "Configure managed user provisioning without changing enterprise activation."
         },
         "sso": {
           "action": {
