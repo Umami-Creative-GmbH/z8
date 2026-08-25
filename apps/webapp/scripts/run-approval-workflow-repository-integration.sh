@@ -88,6 +88,7 @@ APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test \
 APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED=1 \
 pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	src/lib/scim/scim-callback-atomicity.integration.test.ts \
+	src/lib/scim/seat-sync-outbox.integration.test.ts \
 	src/lib/approvals/workflow/repository.integration.test.ts \
 	src/lib/approvals/workflow/transition-engine.integration.test.ts \
 	src/lib/approvals/server/time-correction-approvals.integration.test.ts \

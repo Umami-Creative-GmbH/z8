@@ -46,6 +46,9 @@ APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=`);
 		expect(runner).toContain(
 			"src/lib/scim/scim-callback-atomicity.integration.test.ts",
 		);
+		expect(runner).toContain(
+			"src/lib/scim/seat-sync-outbox.integration.test.ts",
+		);
 	});
 
 	it("passes the required database safety environment to the migration verifier", async () => {
