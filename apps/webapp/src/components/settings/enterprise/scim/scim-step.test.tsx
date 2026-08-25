@@ -52,6 +52,14 @@ describe("ScimStep", () => {
 		expect(screen.queryByRole("button", { name: "Rotate credential" })).toBeNull();
 	});
 
+	it("labels an in-flight create as creating rather than rotating", () => {
+		controller.current = { connectionId: null, lifecycle: null, pendingAction: "create", status: null, isPending: true, credential: null, destructive: null, events: [], eventsError: false, create: vi.fn(), refresh: vi.fn(), rotate: vi.fn(), requestRevoke: vi.fn(), requestDecommission: vi.fn(), clearCredential: vi.fn(), cancelDestructive: vi.fn(), confirm: vi.fn() };
+		render(<ScimStep initialSetup={setup()} />);
+		expect(screen.getByText("creating")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Creating SCIM connection" })).toHaveProperty("disabled", true);
+		expect(screen.queryByText("rotating")).toBeNull();
+	});
+
 	it("gates actions while decommission reconciliation is deferred", () => {
 		controller.current = { connectionId: "conn-1", lifecycle: "decommissioning", status: { connection, credentials: [] }, isPending: false, credential: null, destructive: null, events: [], eventsError: false, create: vi.fn(), refresh: vi.fn(), rotate: vi.fn(), requestRevoke: vi.fn(), requestDecommission: vi.fn(), clearCredential: vi.fn(), cancelDestructive: vi.fn(), confirm: vi.fn() };
 		render(<ScimStep initialSetup={setup()} />);
