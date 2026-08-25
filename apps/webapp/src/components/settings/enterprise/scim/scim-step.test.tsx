@@ -24,11 +24,12 @@ describe("ScimStep", () => {
 		["disconnected", null, false],
 		["active unverified", { connection, credentials: [{ lastUsedAt: null }] }, false],
 		["verified", { connection, credentials: [{ lastUsedAt: "2026-01-01T00:00:00Z" }] }, false],
-		["rotating", { connection, credentials: [] }, true],
+		["rotating", { connection, credentials: [] }, true, "rotate"],
 		["decommissioning", { connection: { ...connection, decommissionStartedAt: "2026-01-01T00:00:00Z" }, credentials: [] }, false],
 		["decommissioned", { connection: { ...connection, decommissionedAt: "2026-01-01T00:00:00Z" }, credentials: [] }, false],
-	])("renders the %s connection state", (label, status, pending) => {
-		const { container } = renderState(status, pending);
+	])("renders the %s connection state", (label, status, pending, pendingAction) => {
+		controller.current = { connectionId: status ? "conn-1" : null, status, pendingAction, isPending: pending, credential: null, destructive: null, events: [], eventsError: false, create: vi.fn(), refresh: vi.fn(), rotate: vi.fn(), requestRevoke: vi.fn(), requestDecommission: vi.fn(), clearCredential: vi.fn(), cancelDestructive: vi.fn(), confirm: vi.fn() };
+		const { container } = render(<ScimStep initialSetup={setup()} />);
 		expect(screen.getByText(label)).toBeTruthy();
 		expect(container.querySelector("section")?.className).toContain("min-w-0");
 	});
@@ -57,6 +58,17 @@ describe("ScimStep", () => {
 		render(<ScimStep initialSetup={setup()} />);
 		expect(screen.getByText("creating")).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Creating SCIM connection" })).toHaveProperty("disabled", true);
+		expect(screen.queryByText("rotating")).toBeNull();
+	});
+
+	it.each([
+		["refresh", "refreshing"],
+		["revoke", "revoking"],
+		["decommission", "decommissioning"],
+	])("labels pending %s without showing rotating", (pendingAction, label) => {
+		controller.current = { connectionId: "conn-1", lifecycle: null, pendingAction, status: { connection, credentials: [] }, isPending: true, credential: null, destructive: null, events: [], eventsError: false, create: vi.fn(), refresh: vi.fn(), rotate: vi.fn(), requestRevoke: vi.fn(), requestDecommission: vi.fn(), clearCredential: vi.fn(), cancelDestructive: vi.fn(), confirm: vi.fn() };
+		render(<ScimStep initialSetup={setup()} />);
+		expect(screen.getByText(label)).toBeTruthy();
 		expect(screen.queryByText("rotating")).toBeNull();
 	});
 
