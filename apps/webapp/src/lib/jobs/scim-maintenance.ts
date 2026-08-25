@@ -11,14 +11,25 @@ import {
 	runSCIMSeatSyncOutbox,
 	type SCIMSeatSyncOutboxResult,
 } from "@/lib/scim/seat-sync-outbox";
+import {
+	createSCIMDecommissionStore,
+	runDueSCIMDecommission,
+} from "@/lib/scim/decommission";
 
 const RECOVERY_LIMIT = 50;
+const DECOMMISSION_LIMIT = 50;
 
 export interface SCIMMaintenanceResult {
 	outbox: SCIMSeatSyncOutboxResult;
 	exhausted: number;
 	persistenceFailures: number;
 	projectionRecovery: { attempted: number; recovered: number; failed: number };
+	decommission: {
+		attempted: number;
+		completed: number;
+		deferred: number;
+		failed: number;
+	};
 }
 
 export class SCIMMaintenanceDegradedError extends Error {
@@ -37,6 +48,7 @@ interface SCIMMaintenanceDependencies {
 	runOutbox: () => Promise<SCIMSeatSyncOutboxResult>;
 	listDueRecoveryOrganizations: () => Promise<string[]>;
 	retryProjectionRecovery: (organizationId: string) => Promise<boolean>;
+	runDecommissions: () => Promise<"skipped" | "completed" | "deferred">;
 }
 
 async function listDueRecoveryOrganizations(): Promise<string[]> {
@@ -54,6 +66,7 @@ async function listDueRecoveryOrganizations(): Promise<string[]> {
 function getDefaultDependencies(): SCIMMaintenanceDependencies {
 	const outboxStore = createSCIMSeatSyncOutboxStore(db);
 	const recoveryStore = createSCIMProjectionRecoveryStore(db);
+	const decommissionStore = createSCIMDecommissionStore(db);
 	return {
 		runOutbox: () =>
 			runSCIMSeatSyncOutbox({
@@ -67,6 +80,10 @@ function getDefaultDependencies(): SCIMMaintenanceDependencies {
 				store: recoveryStore,
 				replay: await getRecoveryReplayer(),
 			}),
+		runDecommissions: async () => {
+			const { auth } = await import("@/lib/auth");
+			return runDueSCIMDecommission({ store: decommissionStore, auth });
+		},
 	};
 }
 
@@ -95,6 +112,22 @@ export async function runSCIMMaintenance(
 			failed++;
 		}
 	}
+	let decommissionCompleted = 0;
+	let decommissionDeferred = 0;
+	let decommissionFailed = 0;
+	let decommissionAttempted = 0;
+	for (let index = 0; index < DECOMMISSION_LIMIT; index++) {
+		try {
+			const outcome = await dependencies.runDecommissions();
+			if (outcome === "skipped") break;
+			decommissionAttempted++;
+			if (outcome === "completed") decommissionCompleted++;
+			else decommissionDeferred++;
+		} catch {
+			decommissionAttempted++;
+			decommissionFailed++;
+		}
+	}
 
 	return {
 		outbox,
@@ -104,6 +137,12 @@ export async function runSCIMMaintenance(
 			attempted: organizationIds.length,
 			recovered,
 			failed,
+		},
+		decommission: {
+			attempted: decommissionAttempted,
+			completed: decommissionCompleted,
+			deferred: decommissionDeferred,
+			failed: decommissionFailed,
 		},
 	};
 }

@@ -23,6 +23,7 @@ describe("runSCIMMaintenance", () => {
 				runOutbox,
 				listDueRecoveryOrganizations,
 				retryProjectionRecovery,
+				runDecommissions: vi.fn().mockResolvedValue("skipped"),
 			}),
 		).resolves.toEqual({
 			outbox: {
@@ -35,6 +36,7 @@ describe("runSCIMMaintenance", () => {
 			exhausted: 0,
 			persistenceFailures: 0,
 			projectionRecovery: { attempted: 2, recovered: 1, failed: 1 },
+			decommission: { attempted: 0, completed: 0, deferred: 0, failed: 0 },
 		});
 		expect(retryProjectionRecovery).toHaveBeenCalledWith("org-one");
 		expect(retryProjectionRecovery).toHaveBeenCalledWith("org-two");
@@ -52,6 +54,7 @@ describe("runSCIMMaintenance", () => {
 				}),
 				listDueRecoveryOrganizations: vi.fn().mockResolvedValue([]),
 				retryProjectionRecovery: vi.fn(),
+				runDecommissions: vi.fn().mockResolvedValue("skipped"),
 			}),
 		).resolves.toMatchObject({
 			outbox: { exhausted: 1, persistenceFailures: 1 },
@@ -68,7 +71,35 @@ describe("runSCIMMaintenance", () => {
 				runOutbox: vi.fn().mockRejectedValue(scanFailure),
 				listDueRecoveryOrganizations: vi.fn(),
 				retryProjectionRecovery: vi.fn(),
+				runDecommissions: vi.fn().mockResolvedValue("skipped"),
 			}),
 		).rejects.toThrow(scanFailure);
+	});
+
+	it("runs due decommissions after recovery work and isolates each failure", async () => {
+		const runDecommissions = vi
+			.fn()
+			.mockResolvedValueOnce("completed")
+			.mockRejectedValueOnce(new Error("retry persistence failed"))
+			.mockResolvedValueOnce("skipped");
+
+		await expect(
+			runSCIMMaintenance({
+				runOutbox: vi
+					.fn()
+					.mockResolvedValue({
+						claimed: 0,
+						completed: 0,
+						deferred: 0,
+						exhausted: 0,
+						persistenceFailures: 0,
+					}),
+				listDueRecoveryOrganizations: vi.fn().mockResolvedValue([]),
+				retryProjectionRecovery: vi.fn(),
+				runDecommissions,
+			}),
+		).resolves.toMatchObject({
+			decommission: { attempted: 2, completed: 1, deferred: 0, failed: 1 },
+		});
 	});
 });
