@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
@@ -13,7 +13,10 @@ import {
 	type SocialOAuthProviderConfig,
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { canManageCurrentOrganizationSettings, requireUser } from "@/lib/auth-helpers";
+import {
+	canManageCurrentOrganizationSettings,
+	requireUser,
+} from "@/lib/auth-helpers";
 import type { AuthConfig, OrganizationBranding } from "@/lib/domain";
 import {
 	deleteCustomDomain,
@@ -48,7 +51,7 @@ import {
 } from "@/lib/social-oauth";
 import { deleteOrgSecret, storeOrgSecret } from "@/lib/vault";
 
-async function requireEnterpriseOrgAdmin() {
+export async function requireEnterpriseOrgAdmin() {
 	const authContext = await requireUser();
 	const organizationId = authContext.session.activeOrganizationId;
 
@@ -64,10 +67,9 @@ async function requireEnterpriseOrgAdmin() {
 }
 
 const IDENTITY_SETUP_PATH = "/settings/enterprise/identity-setup";
-const SCIM_UNAVAILABLE_MESSAGE =
-	"SCIM provisioning is temporarily unavailable during the Better Auth 1.7 migration";
 
-type EnterpriseIdentitySetupRecord = typeof enterpriseIdentitySetup.$inferSelect;
+type EnterpriseIdentitySetupRecord =
+	typeof enterpriseIdentitySetup.$inferSelect;
 
 export interface EnterpriseIdentitySetupRoleTemplateResponse {
 	id: string;
@@ -125,11 +127,6 @@ export interface EnterpriseIdentitySsoTestInput {
 	error?: string | null;
 }
 
-export interface EnterpriseIdentityScimTokenInput {
-	providerId: string;
-	defaultRoleTemplateId?: string | null;
-}
-
 export interface EnterpriseIdentityAccessPolicyInput {
 	ssoRequired: boolean;
 	domainRestrictionEnabled: boolean;
@@ -141,7 +138,9 @@ function toIsoFromDate(value: Date | string | null | undefined): string | null {
 	if (!value) return null;
 
 	const dateTime =
-		value instanceof Date ? DateTime.fromJSDate(value, { zone: "utc" }) : DateTime.fromISO(value);
+		value instanceof Date
+			? DateTime.fromJSDate(value, { zone: "utc" })
+			: DateTime.fromISO(value);
 
 	return dateTime.isValid ? dateTime.toUTC().toISO() : null;
 }
@@ -171,13 +170,16 @@ function normalizeEnterpriseIdentitySetupRecord(
 				}
 			: null,
 		ssoTest: record.ssoTest ?? defaults.ssoTest,
-		scim: record.scim ?? defaults.scim,
+		scim:
+			record.scim && "policy" in record.scim && "connection" in record.scim
+				? record.scim
+				: defaults.scim,
 		enforcement: record.enforcement ?? defaults.enforcement,
 		activatedAt: toIsoFromDate(record.activatedAt),
 	};
 }
 
-async function getOrCreateEnterpriseIdentitySetupRecord(
+export async function getOrCreateEnterpriseIdentitySetupRecord(
 	organizationId: string,
 	userId: string,
 ): Promise<EnterpriseIdentitySetupRecord> {
@@ -187,7 +189,9 @@ async function getOrCreateEnterpriseIdentitySetupRecord(
 
 	if (existing) return existing;
 
-	const defaultState = createDefaultEnterpriseIdentitySetupState({ organizationId });
+	const defaultState = createDefaultEnterpriseIdentitySetupState({
+		organizationId,
+	});
 	const [created] = await db
 		.insert(enterpriseIdentitySetup)
 		.values({
@@ -231,7 +235,10 @@ async function getSetupResponse(
 			.where(
 				and(
 					eq(roleTemplate.isActive, true),
-					or(eq(roleTemplate.organizationId, organizationId), eq(roleTemplate.isGlobal, true)),
+					or(
+						eq(roleTemplate.organizationId, organizationId),
+						eq(roleTemplate.isGlobal, true),
+					),
 				),
 			),
 	]);
@@ -244,7 +251,9 @@ async function getSetupResponse(
 	};
 }
 
-async function getOrganizationSSOProviders(organizationId: string): Promise<SSOProviderResponse[]> {
+async function getOrganizationSSOProviders(
+	organizationId: string,
+): Promise<SSOProviderResponse[]> {
 	const rawResult = await (auth.api as any).listSSOProviders({
 		headers: await headers(),
 	});
@@ -256,7 +265,9 @@ async function getOrganizationSSOProviders(organizationId: string): Promise<SSOP
 			: [];
 
 	return providers.flatMap((provider) =>
-		provider.organizationId === organizationId ? [normalizeSSOProvider(provider)] : [],
+		provider.organizationId === organizationId
+			? [normalizeSSOProvider(provider)]
+			: [],
 	);
 }
 
@@ -281,7 +292,10 @@ async function syncEnterpriseIdentityDomainVerification(
 	setupRecord: EnterpriseIdentitySetupRecord,
 	userId: string,
 ) {
-	const provider = await findEnterpriseIdentitySSOProvider(organizationId, setupRecord);
+	const provider = await findEnterpriseIdentitySSOProvider(
+		organizationId,
+		setupRecord,
+	);
 	const domainVerified = provider?.domainVerified === true;
 
 	if (domainVerified && !setupRecord.domainVerified) {
@@ -304,11 +318,27 @@ async function assertRoleTemplateAllowed(
 		where: and(
 			eq(roleTemplate.id, defaultRoleTemplateId),
 			eq(roleTemplate.isActive, true),
-			or(eq(roleTemplate.organizationId, organizationId), eq(roleTemplate.isGlobal, true)),
+			or(
+				eq(roleTemplate.organizationId, organizationId),
+				and(
+					eq(roleTemplate.isGlobal, true),
+					isNull(roleTemplate.organizationId),
+				),
+			),
 		),
 	});
 
-	if (!template) throw new Error("Default role template is not available for this organization");
+	if (
+		!template ||
+		!(
+			template.organizationId === organizationId ||
+			(template.organizationId === null && template.isGlobal === true)
+		)
+	) {
+		throw new Error(
+			"Default role template is not available for this organization",
+		);
+	}
 	return defaultRoleTemplateId;
 }
 
@@ -326,7 +356,10 @@ async function updateEnterpriseIdentitySetupRecord(
 	return updated;
 }
 
-async function requireOrganizationDomain(domainId: string, organizationId: string) {
+async function requireOrganizationDomain(
+	domainId: string,
+	organizationId: string,
+) {
 	const domain = await db.query.organizationDomain.findFirst({
 		where: and(
 			eq(organizationDomain.id, domainId),
@@ -352,11 +385,18 @@ export async function updateEnterpriseIdentityProviderAction(
 	const providerId = input.providerId.trim();
 	const domain = input.domain.trim().toLowerCase();
 
-	if (!providerId || !domain) throw new Error("Provider ID and domain are required");
-	const validationError = validateEnterpriseIdentityProviderInput({ providerId, domain });
+	if (!providerId || !domain)
+		throw new Error("Provider ID and domain are required");
+	const validationError = validateEnterpriseIdentityProviderInput({
+		providerId,
+		domain,
+	});
 	if (validationError) throw new Error(validationError);
 
-	await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+	await getOrCreateEnterpriseIdentitySetupRecord(
+		organizationId,
+		authContext.user.id,
+	);
 
 	await updateEnterpriseIdentitySetupRecord(organizationId, {
 		preset: input.preset,
@@ -382,10 +422,16 @@ export async function registerEnterpriseIdentitySSOProviderAction(
 
 	if (!providerId || !issuer || !domain)
 		throw new Error("Provider ID, issuer, and domain are required");
-	const validationError = validateEnterpriseIdentityProviderInput({ providerId, domain });
+	const validationError = validateEnterpriseIdentityProviderInput({
+		providerId,
+		domain,
+	});
 	if (validationError) throw new Error(validationError);
 
-	await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+	await getOrCreateEnterpriseIdentitySetupRecord(
+		organizationId,
+		authContext.user.id,
+	);
 
 	const secretPath = `sso/${providerId}/client_secret`;
 
@@ -394,7 +440,8 @@ export async function registerEnterpriseIdentitySSOProviderAction(
 			const clientId = input.clientId.trim();
 			const clientSecret = input.clientSecret.trim();
 
-			if (!clientId || !clientSecret) throw new Error("OIDC client ID and secret are required");
+			if (!clientId || !clientSecret)
+				throw new Error("OIDC client ID and secret are required");
 
 			await storeOrgSecret(organizationId, secretPath, clientSecret);
 			await (auth.api as any).registerSSOProvider({
@@ -446,14 +493,20 @@ export async function registerEnterpriseIdentitySSOProviderAction(
 	return getSetupResponse(organizationId, authContext.user.id);
 }
 
-export async function recordEnterpriseIdentitySsoTestAction(input: EnterpriseIdentitySsoTestInput) {
+export async function recordEnterpriseIdentitySsoTestAction(
+	input: EnterpriseIdentitySsoTestInput,
+) {
 	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
-	await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+	await getOrCreateEnterpriseIdentitySetupRecord(
+		organizationId,
+		authContext.user.id,
+	);
 	const now = DateTime.utc().toISO();
 	const providerId = input.providerId.trim();
 	const testEmail = input.testEmail.trim().toLowerCase();
 
-	if (!providerId || !testEmail) throw new Error("Provider ID and test email are required");
+	if (!providerId || !testEmail)
+		throw new Error("Provider ID and test email are required");
 
 	await updateEnterpriseIdentitySetupRecord(organizationId, {
 		currentStep: input.status === "passed" ? "scim" : "ssoTest",
@@ -462,7 +515,8 @@ export async function recordEnterpriseIdentitySsoTestAction(input: EnterpriseIde
 			testEmail,
 			providerId,
 			checkedAt: now,
-			error: input.status === "failed" ? (input.error ?? "SSO test failed") : null,
+			error:
+				input.status === "failed" ? (input.error ?? "SSO test failed") : null,
 		},
 		updatedBy: authContext.user.id,
 	});
@@ -477,7 +531,10 @@ export async function refreshEnterpriseIdentityDomainStatusAction() {
 		organizationId,
 		authContext.user.id,
 	);
-	const provider = await findEnterpriseIdentitySSOProvider(organizationId, setupRecord);
+	const provider = await findEnterpriseIdentitySSOProvider(
+		organizationId,
+		setupRecord,
+	);
 	const domainVerified = provider?.domainVerified === true;
 
 	if (domainVerified !== setupRecord.domainVerified) {
@@ -491,32 +548,14 @@ export async function refreshEnterpriseIdentityDomainStatusAction() {
 	return getSetupResponse(organizationId, authContext.user.id);
 }
 
-export async function generateEnterpriseIdentityScimTokenAction(
-	input: EnterpriseIdentityScimTokenInput,
-): Promise<{
-	providerId: string;
-	scimToken: string | undefined;
-	baseUrl: "/api/auth/scim/v2";
-}> {
-	await requireEnterpriseOrgAdmin();
-	void input;
-	throw new Error(SCIM_UNAVAILABLE_MESSAGE);
-}
-
-export async function refreshEnterpriseIdentityScimStatusAction(): Promise<{
-	checkedAt: string;
-	verified: boolean;
-	error: string | null;
-}> {
-	await requireEnterpriseOrgAdmin();
-	throw new Error(SCIM_UNAVAILABLE_MESSAGE);
-}
-
 export async function updateEnterpriseIdentityAccessPolicyAction(
 	input: EnterpriseIdentityAccessPolicyInput,
 ) {
 	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
-	await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+	await getOrCreateEnterpriseIdentitySetupRecord(
+		organizationId,
+		authContext.user.id,
+	);
 	const defaultRoleTemplateId = await assertRoleTemplateAllowed(
 		organizationId,
 		input.defaultRoleTemplateId,
@@ -552,12 +591,17 @@ export async function activateEnterpriseIdentitySetupAction() {
 	const readiness = getEnterpriseIdentityReadiness(state);
 
 	if (!readiness.canActivate) {
-		throw new Error(`Enterprise identity setup is missing: ${readiness.missing.join(", ")}`);
+		throw new Error(
+			`Enterprise identity setup is missing: ${readiness.missing.join(", ")}`,
+		);
 	}
 
 	if (setupRecord.enforcement.ssoRequired && setupRecord.providerId) {
 		const domains = await listOrganizationDomains(organizationId);
-		const domainRecord = selectVerifiedEnterpriseIdentityDomain(domains, setupRecord.domain);
+		const domainRecord = selectVerifiedEnterpriseIdentityDomain(
+			domains,
+			setupRecord.domain,
+		);
 
 		if (!domainRecord) {
 			throw new Error(
@@ -615,7 +659,10 @@ export async function regenerateVerificationTokenAction(domainId: string) {
 	return token;
 }
 
-export async function updateDomainAuthConfigAction(domainId: string, config: AuthConfig) {
+export async function updateDomainAuthConfigAction(
+	domainId: string,
+	config: AuthConfig,
+) {
 	const { organizationId } = await requireEnterpriseOrgAdmin();
 	await requireOrganizationDomain(domainId, organizationId);
 
@@ -682,7 +729,8 @@ function normalizeSSOProvider(provider: RawSSOProvider): SSOProviderResponse {
 		domainVerificationToken: provider.domainVerificationToken ?? null,
 		organizationId: provider.organizationId ?? null,
 		userId: provider.userId ?? null,
-		createdAt: createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt : null,
+		createdAt:
+			createdAt && !Number.isNaN(createdAt.getTime()) ? createdAt : null,
 		hasOidcConfig: !!provider.oidcConfig,
 		hasSamlConfig: !!provider.samlConfig,
 	};
@@ -710,11 +758,17 @@ export async function registerSSOProviderAction(data: OIDCProviderInput) {
 	const clientSecret = data.clientSecret.trim();
 
 	if (!providerId || !issuer || !domain || !clientId || !clientSecret) {
-		throw new Error("Provider ID, issuer, domain, client ID, and client secret are required");
+		throw new Error(
+			"Provider ID, issuer, domain, client ID, and client secret are required",
+		);
 	}
 
 	// Store clientSecret in Vault for secure storage
-	await storeOrgSecret(organizationId, `sso/${providerId}/client_secret`, clientSecret);
+	await storeOrgSecret(
+		organizationId,
+		`sso/${providerId}/client_secret`,
+		clientSecret,
+	);
 
 	let rawProvider: RawSSOProvider;
 	try {
@@ -732,7 +786,10 @@ export async function registerSSOProviderAction(data: OIDCProviderInput) {
 			headers: await headers(),
 		})) as RawSSOProvider;
 	} catch (error) {
-		await deleteOrgSecret(organizationId, `sso/${providerId}/client_secret`).catch(() => undefined);
+		await deleteOrgSecret(
+			organizationId,
+			`sso/${providerId}/client_secret`,
+		).catch(() => undefined);
 		throw error;
 	}
 
@@ -759,7 +816,10 @@ export async function deleteSSOProviderAction(providerId: string) {
 
 	// Clean up the clientSecret from Vault
 	// Path: secret/data/organizations/{orgId}/sso/{providerId}/client_secret
-	await deleteOrgSecret(organizationId, `sso/${provider.providerId}/client_secret`);
+	await deleteOrgSecret(
+		organizationId,
+		`sso/${provider.providerId}/client_secret`,
+	);
 
 	revalidatePath("/settings/enterprise/sso");
 }
@@ -785,7 +845,9 @@ export async function requestSSODomainVerificationAction(providerId: string) {
 
 	return {
 		domainVerificationToken:
-			typeof result?.domainVerificationToken === "string" ? result.domainVerificationToken : null,
+			typeof result?.domainVerificationToken === "string"
+				? result.domainVerificationToken
+				: null,
 	};
 }
 
@@ -818,7 +880,9 @@ export async function getBrandingAction() {
 	return getOrganizationBranding(organizationId);
 }
 
-export async function updateBrandingAction(branding: Partial<OrganizationBranding>) {
+export async function updateBrandingAction(
+	branding: Partial<OrganizationBranding>,
+) {
 	const { organizationId } = await requireEnterpriseOrgAdmin();
 	await updateOrganizationBranding(organizationId, branding);
 	revalidatePath("/settings/enterprise/branding");
@@ -843,7 +907,9 @@ export interface SocialOAuthConfigResponse {
 	updatedAt: Date;
 }
 
-export async function listSocialOAuthConfigsAction(): Promise<SocialOAuthConfigResponse[]> {
+export async function listSocialOAuthConfigsAction(): Promise<
+	SocialOAuthConfigResponse[]
+> {
 	const { organizationId } = await requireEnterpriseOrgAdmin();
 	const configs = await listOrgSocialOAuthConfigs(organizationId);
 
@@ -951,7 +1017,8 @@ export async function testSocialOAuthConfigAction(configId: string) {
 		revalidatePath("/settings/enterprise/social-oauth");
 		return { success: true };
 	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : "Unknown error";
+		const errorMessage =
+			error instanceof Error ? error.message : "Unknown error";
 		await updateTestStatus(configId, organizationId, false, errorMessage);
 		revalidatePath("/settings/enterprise/social-oauth");
 		return { success: false, error: errorMessage };

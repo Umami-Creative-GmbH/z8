@@ -33,11 +33,16 @@ export interface EnterpriseIdentitySetupState {
 		error: string | null;
 	};
 	scim: {
-		enabled: boolean;
-		providerId: string | null;
-		verified: boolean;
-		lastCheckedAt: string | null;
-		error: string | null;
+		policy: {
+			autoActivateUsers: boolean;
+			deprovisionAction: "soft_delete" | "suspend";
+			defaultRoleTemplateId: string | null;
+		};
+		connection: {
+			connectionId: string;
+			provisioningDomainId: string;
+			createdAt: string;
+		} | null;
 	};
 	enforcement: {
 		ssoRequired: boolean;
@@ -53,7 +58,8 @@ export interface EnterpriseIdentityReadiness {
 }
 
 const PROVIDER_ID_REGEX = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
-const DOMAIN_REGEX = /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+const DOMAIN_REGEX =
+	/^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
 
 export function validateEnterpriseIdentityProviderInput(input: {
 	providerId: string;
@@ -86,11 +92,12 @@ export function createDefaultEnterpriseIdentitySetupState({
 			error: null,
 		},
 		scim: {
-			enabled: false,
-			providerId: null,
-			verified: false,
-			lastCheckedAt: null,
-			error: null,
+			policy: {
+				autoActivateUsers: false,
+				deprovisionAction: "suspend",
+				defaultRoleTemplateId: null,
+			},
+			connection: null,
 		},
 		enforcement: {
 			ssoRequired: false,
@@ -149,7 +156,9 @@ export function mapBetterAuthIdentityError(error: unknown): string {
 	if (error instanceof Error) return error.message;
 
 	const code =
-		typeof error === "object" && error !== null && "code" in error ? String(error.code) : null;
+		typeof error === "object" && error !== null && "code" in error
+			? String(error.code)
+			: null;
 
 	switch (code) {
 		case "discovery_untrusted_origin":

@@ -26,7 +26,9 @@ vi.mock("@/db", () => ({
 			from: vi.fn(() => ({ where: vi.fn().mockResolvedValue([]) })),
 		})),
 		update: vi.fn(() => ({
-			set: vi.fn(() => ({ where: vi.fn(() => ({ returning: updateSetupMock })) })),
+			set: vi.fn(() => ({
+				where: vi.fn(() => ({ returning: updateSetupMock })),
+			})),
 		})),
 	},
 }));
@@ -71,20 +73,22 @@ vi.mock("@/lib/vault", () => ({
 	storeOrgSecret: vi.fn(),
 }));
 
-const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "actions.ts"), "utf8");
-const {
-	generateEnterpriseIdentityScimTokenAction,
-	registerEnterpriseIdentitySSOProviderAction,
-	refreshEnterpriseIdentityScimStatusAction,
-} = await import("./actions");
-const { canManageCurrentOrganizationSettings, requireUser } = await import("@/lib/auth-helpers");
-
-const SCIM_UNAVAILABLE_MESSAGE =
-	"SCIM provisioning is temporarily unavailable during the Better Auth 1.7 migration";
+const source = readFileSync(
+	join(dirname(fileURLToPath(import.meta.url)), "actions.ts"),
+	"utf8",
+);
+const { registerEnterpriseIdentitySSOProviderAction } = await import(
+	"./actions"
+);
+const { canManageCurrentOrganizationSettings, requireUser } = await import(
+	"@/lib/auth-helpers"
+);
 
 function getFunctionSource(functionName: string) {
 	const match = source.match(
-		new RegExp(`export async function ${functionName}\\([\\s\\S]*?\\r?\\n}\\r?\\n`),
+		new RegExp(
+			`export async function ${functionName}\\([\\s\\S]*?\\r?\\n}\\r?\\n`,
+		),
 	);
 
 	if (!match) throw new Error(`Missing ${functionName}`);
@@ -98,8 +102,6 @@ describe("enterprise identity setup action contracts", () => {
 		"registerEnterpriseIdentitySSOProviderAction",
 		"recordEnterpriseIdentitySsoTestAction",
 		"refreshEnterpriseIdentityDomainStatusAction",
-		"generateEnterpriseIdentityScimTokenAction",
-		"refreshEnterpriseIdentityScimStatusAction",
 		"updateEnterpriseIdentityAccessPolicyAction",
 		"activateEnterpriseIdentitySetupAction",
 	];
@@ -165,7 +167,9 @@ describe("enterprise identity setup action contracts", () => {
 
 	it("keeps default role template as a top-level setup column", () => {
 		expect(source).toContain("defaultRoleTemplateId");
-		expect(source).not.toMatch(/pendingEnforcement\s*=\s*{[\s\S]*?defaultRoleTemplateId:/);
+		expect(source).not.toMatch(
+			/pendingEnforcement\s*=\s*{[\s\S]*?defaultRoleTemplateId:/,
+		);
 	});
 
 	it("scaffolds setup responses with no SCIM connection", () => {
@@ -176,43 +180,19 @@ describe("enterprise identity setup action contracts", () => {
 
 		expect(setupResponseSource).toContain("scimConnection: null");
 		expect(setupResponseSource).not.toContain("listSCIMProviderConnections");
-		expect(setupResponseSource).not.toContain("getEnterpriseIdentityScimConnection");
+		expect(setupResponseSource).not.toContain(
+			"getEnterpriseIdentityScimConnection",
+		);
 	});
 
 	it("does not export synchronous runtime helpers from the server action module", () => {
 		expect(source).not.toContain("export function ");
 	});
 
-	it("authorizes then fails closed when generating a SCIM token", async () => {
-		const actionSource = getFunctionSource("generateEnterpriseIdentityScimTokenAction");
-
-		await expect(
-			generateEnterpriseIdentityScimTokenAction({ providerId: "provider-1" }),
-		).rejects.toThrow(SCIM_UNAVAILABLE_MESSAGE);
-		expect(requireUser).toHaveBeenCalledOnce();
-		expect(canManageCurrentOrganizationSettings).toHaveBeenCalledOnce();
-		expect(actionSource.indexOf("requireEnterpriseOrgAdmin()")).toBeLessThan(
-			actionSource.indexOf("void input"),
-		);
-		expect(actionSource).toContain("throw new Error(SCIM_UNAVAILABLE_MESSAGE)");
-		expect(actionSource).not.toMatch(/\b(?:db\.|auth\.api|updateEnterpriseIdentitySetupRecord|getOrCreateEnterpriseIdentitySetupRecord|revalidatePath)\b/);
-	});
-
-	it("authorizes then fails closed when refreshing SCIM status", async () => {
-		const actionSource = getFunctionSource("refreshEnterpriseIdentityScimStatusAction");
-
-		await expect(refreshEnterpriseIdentityScimStatusAction()).rejects.toThrow(
-			SCIM_UNAVAILABLE_MESSAGE,
-		);
-		expect(requireUser).toHaveBeenCalledOnce();
-		expect(canManageCurrentOrganizationSettings).toHaveBeenCalledOnce();
-		expect(actionSource).toContain("requireEnterpriseOrgAdmin()");
-		expect(actionSource).toContain("throw new Error(SCIM_UNAVAILABLE_MESSAGE)");
-		expect(actionSource).not.toMatch(/\b(?:db\.|auth\.api|updateEnterpriseIdentitySetupRecord|getOrCreateEnterpriseIdentitySetupRecord|revalidatePath)\b/);
-	});
-
 	it("refreshes domain verification from org-scoped Better Auth providers", () => {
-		const actionSource = getFunctionSource("refreshEnterpriseIdentityDomainStatusAction");
+		const actionSource = getFunctionSource(
+			"refreshEnterpriseIdentityDomainStatusAction",
+		);
 
 		expect(actionSource).toContain("requireEnterpriseOrgAdmin()");
 		expect(actionSource).toContain("findEnterpriseIdentitySSOProvider");
@@ -221,7 +201,9 @@ describe("enterprise identity setup action contracts", () => {
 	});
 
 	it("syncs domain verification and domain auth config during activation", () => {
-		const actionSource = getFunctionSource("activateEnterpriseIdentitySetupAction");
+		const actionSource = getFunctionSource(
+			"activateEnterpriseIdentitySetupAction",
+		);
 
 		expect(actionSource).toContain("syncEnterpriseIdentityDomainVerification");
 		expect(actionSource).toContain("listOrganizationDomains");
@@ -243,14 +225,20 @@ describe("enterprise identity setup action contracts", () => {
 			const actionSource = getFunctionSource(actionName);
 
 			expect(actionSource).toContain("requireEnterpriseOrgAdmin()");
-			expect(actionSource).toContain("requireOrganizationDomain(domainId, organizationId)");
+			expect(actionSource).toContain(
+				"requireOrganizationDomain(domainId, organizationId)",
+			);
 		}
 	});
 
 	it("validates provider and SSO registration input before side effects", () => {
-		const providerSource = getFunctionSource("updateEnterpriseIdentityProviderAction");
-		const ssoSource = getFunctionSource("registerEnterpriseIdentitySSOProviderAction");
-		const validationCall = "validateEnterpriseIdentityProviderInput({ providerId, domain })";
+		const providerSource = getFunctionSource(
+			"updateEnterpriseIdentityProviderAction",
+		);
+		const ssoSource = getFunctionSource(
+			"registerEnterpriseIdentitySSOProviderAction",
+		);
+		const validationCall = "validateEnterpriseIdentityProviderInput(";
 
 		expect(source).toContain("validateEnterpriseIdentityProviderInput");
 		expect(providerSource).toContain(validationCall);
@@ -261,7 +249,9 @@ describe("enterprise identity setup action contracts", () => {
 		expect(ssoSource.indexOf(validationCall)).toBeLessThan(
 			ssoSource.indexOf("getOrCreateEnterpriseIdentitySetupRecord"),
 		);
-		expect(ssoSource.indexOf(validationCall)).toBeLessThan(ssoSource.indexOf("storeOrgSecret"));
+		expect(ssoSource.indexOf(validationCall)).toBeLessThan(
+			ssoSource.indexOf("storeOrgSecret"),
+		);
 		expect(ssoSource.indexOf(validationCall)).toBeLessThan(
 			ssoSource.indexOf("registerSSOProvider"),
 		);
@@ -286,7 +276,9 @@ describe("enterprise identity setup action contracts", () => {
 			},
 			headers: undefined,
 		});
-		expect(authApiMock.registerSSOProvider.mock.calls[0][0].body.samlConfig).not.toEqual({
+		expect(
+			authApiMock.registerSSOProvider.mock.calls[0][0].body.samlConfig,
+		).not.toEqual({
 			metadata: "<EntityDescriptor />",
 		});
 	});
