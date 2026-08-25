@@ -225,7 +225,6 @@ CREATE TABLE "scim_user_lifecycle_state" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "enterprise_identity_setup" ALTER COLUMN "scim" SET DEFAULT '{"policy":{"autoActivateUsers":false,"deprovisionAction":"suspend","defaultRoleTemplateId":null},"connection":null}'::jsonb;--> statement-breakpoint
 UPDATE "enterprise_identity_setup"
 SET "scim" = '{"policy":{"autoActivateUsers":false,"deprovisionAction":"suspend","defaultRoleTemplateId":null},"connection":null}'::jsonb;--> statement-breakpoint
 DO $scim_legacy_storage_guard$

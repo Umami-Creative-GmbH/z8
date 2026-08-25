@@ -327,12 +327,11 @@ describe("Better Auth SCIM storage migration", () => {
 			'ALTER TABLE "scim_provider" DISABLE ROW LEVEL SECURITY',
 		);
 
-		expect(migration).toContain(setupDefault);
+		expect(migration).not.toContain(setupDefault);
 		expect(migration).toContain(setupNormalization);
 		expect(migration).toContain(`SET "scim" = '${safeScimState}'::jsonb`);
 		expect(migration).not.toContain("enabled_legacy_scim_setup_guard");
 		expect(migration).not.toContain("still claims SCIM is enabled");
-		expect(migration.indexOf(setupDefault)).toBeLessThan(storageGuardPosition);
 		expect(migration.indexOf(setupNormalization)).toBeLessThan(
 			storageGuardPosition,
 		);

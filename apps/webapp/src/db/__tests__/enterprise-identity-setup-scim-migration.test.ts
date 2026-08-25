@@ -8,6 +8,7 @@ const cutoverMigrationUrl = new URL(
 	"0062_better_auth_scim_storage.sql",
 	drizzleUrl,
 );
+const cutoverSnapshotUrl = new URL("meta/0062_snapshot.json", drizzleUrl);
 const snapshotUrl = new URL("meta/0064_snapshot.json", drizzleUrl);
 const journal = JSON.parse(
 	readFileSync(new URL("meta/_journal.json", drizzleUrl), "utf8"),
@@ -16,6 +17,14 @@ const migration = existsSync(migrationUrl)
 	? readFileSync(migrationUrl, "utf8")
 	: "";
 const cutoverMigration = readFileSync(cutoverMigrationUrl, "utf8");
+const cutoverSnapshot = JSON.parse(
+	readFileSync(cutoverSnapshotUrl, "utf8"),
+) as {
+	tables: Record<string, { columns: Record<string, { default?: string }> }>;
+};
+const snapshot = JSON.parse(readFileSync(snapshotUrl, "utf8")) as {
+	tables: Record<string, { columns: Record<string, { default?: string }> }>;
+};
 
 describe("safe enterprise identity SCIM setup migration", () => {
 	it("is a forward migration with generated journal and snapshot metadata", () => {
@@ -75,8 +84,22 @@ describe("safe enterprise identity SCIM setup migration", () => {
 
 		expect(cutoverNormalization).toBeGreaterThan(-1);
 		expect(cutoverNormalization).toBeLessThan(cutoverDrop);
+		expect(cutoverMigration).not.toContain(
+			'ALTER TABLE "enterprise_identity_setup" ALTER COLUMN "scim" SET DEFAULT',
+		);
 		expect(cutoverMigration).toContain(`SET "scim" = '${safeState}'::jsonb`);
+		expect(migration).toContain(
+			'ALTER TABLE "enterprise_identity_setup" ALTER COLUMN "scim" SET DEFAULT',
+		);
 		expect(migration).toContain(`SET "scim" = '${safeState}'::jsonb`);
+		expect(
+			cutoverSnapshot.tables["public.enterprise_identity_setup"]?.columns.scim
+				?.default,
+		).toContain('"enabled":false');
+		expect(
+			snapshot.tables["public.enterprise_identity_setup"]?.columns.scim
+				?.default,
+		).toContain('"connection":null');
 		expect(cutoverMigration).not.toMatch(/scim_token|\btoken\b/i);
 	});
 });
