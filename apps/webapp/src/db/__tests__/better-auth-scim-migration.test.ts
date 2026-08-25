@@ -45,6 +45,12 @@ const applicationTables = [
 	"scim_projection_recovery",
 	"scim_provisioning_log",
 ];
+const createdApplicationTables = [
+	"scim_user_lifecycle_state",
+	"scim_role_projection_state",
+	"scim_billing_seat_sync_outbox",
+	"scim_projection_recovery",
+];
 const managedModelNames = [
 	"scimManagedConnection",
 	"scimManagedCredential",
@@ -245,6 +251,20 @@ describe("Better Auth SCIM storage migration", () => {
 		).toContain("user_lifecycle_event_actor_check");
 	});
 
+	it("creates or alters every expected SCIM table in the migration SQL", () => {
+		for (const table of [...managedTables, ...createdApplicationTables]) {
+			expect(migration, `${table} creation`).toContain(
+				`CREATE TABLE "${table}"`,
+			);
+		}
+		for (const table of ["scim_provider_config", "scim_provisioning_log"]) {
+			expect(migration, `${table} alteration`).toContain(
+				`ALTER TABLE "${table}"`,
+			);
+		}
+		expect(migration).not.toContain('CREATE TABLE "scim_provider"');
+	});
+
 	it("keeps Better Auth's generated SCIM model names", () => {
 		for (const modelName of managedModelNames) {
 			expect(authSchema).toContain(`export const ${modelName} = pgTable(`);
@@ -304,6 +324,18 @@ describe("Better Auth SCIM storage migration", () => {
 			'ALTER TABLE "scim_provider" DISABLE ROW LEVEL SECURITY',
 		);
 		const guard = migration.slice(setupGuardPosition, storageGuardPosition);
+		const decisionBranches = [
+			`WHEN setup."scim" IS NULL OR setup."scim" = 'null'::jsonb THEN false`,
+			`WHEN jsonb_typeof(setup."scim") = 'boolean' THEN (setup."scim" #>> '{}')::boolean`,
+			`WHEN jsonb_typeof(setup."scim") <> 'object' THEN true`,
+			`WHEN NOT (setup."scim" ? 'enabled') THEN false`,
+			`WHEN setup."scim" -> 'enabled' = 'null'::jsonb THEN false`,
+			`WHEN jsonb_typeof(setup."scim" -> 'enabled') = 'boolean' THEN (setup."scim" ->> 'enabled')::boolean`,
+			`WHEN jsonb_typeof(setup."scim" -> 'enabled') = 'string' THEN`,
+			`lower(btrim(setup."scim" ->> 'enabled')) NOT IN ('false', 'f', '0', 'no', 'n', 'off', 'disabled')`,
+			`WHEN jsonb_typeof(setup."scim" -> 'enabled') = 'number' THEN (setup."scim" ->> 'enabled')::numeric <> 0`,
+			"ELSE true",
+		];
 
 		expect(setupGuardPosition).toBeLessThan(storageGuardPosition);
 		expect(setupGuardPosition).toBeLessThan(firstDestructivePosition);
@@ -311,26 +343,36 @@ describe("Better Auth SCIM storage migration", () => {
 			"to_regclass('public.enterprise_identity_setup') IS NOT NULL",
 		);
 		expect(guard).toContain('FROM public."enterprise_identity_setup" AS setup');
-		expect(guard).toContain(
-			`setup."scim" IS NULL OR setup."scim" = 'null'::jsonb`,
-		);
-		expect(guard).toContain(`NOT (setup."scim" ? 'enabled')`);
-		expect(guard).toContain(
-			`jsonb_typeof(setup."scim" -> 'enabled') = 'boolean'`,
-		);
-		expect(guard).toContain(
-			`jsonb_typeof(setup."scim" -> 'enabled') = 'string'`,
-		);
-		expect(guard).toContain(
-			`jsonb_typeof(setup."scim" -> 'enabled') = 'number'`,
-		);
-		expect(guard).toContain("ELSE true");
+		let previousBranchPosition = -1;
+		for (const branch of decisionBranches) {
+			const branchPosition = guard.indexOf(branch);
+			expect(
+				branchPosition,
+				`missing decision branch: ${branch}`,
+			).toBeGreaterThan(previousBranchPosition);
+			previousBranchPosition = branchPosition;
+		}
 		expect(guard).toContain(
 			"Legacy enterprise identity setup still claims SCIM is enabled",
 		);
 		expect(guard).toContain(
 			"Disable the legacy SCIM setup explicitly, then retry",
 		);
+	});
+
+	it("drops the text default before converting the deprovision action enum", () => {
+		const dropDefault =
+			'ALTER TABLE "scim_provider_config" ALTER COLUMN "deprovision_action" DROP DEFAULT;';
+		const alterType =
+			'ALTER TABLE "scim_provider_config" ALTER COLUMN "deprovision_action" SET DATA TYPE "public"."scim_deprovision_action" USING "deprovision_action"::"public"."scim_deprovision_action";';
+		const setDefault =
+			'ALTER TABLE "scim_provider_config" ALTER COLUMN "deprovision_action" SET DEFAULT \'suspend\'::"public"."scim_deprovision_action";';
+		const dropDefaultPosition = position(dropDefault);
+		const alterTypePosition = position(alterType);
+		const setDefaultPosition = position(setDefault);
+
+		expect(dropDefaultPosition).toBeLessThan(alterTypePosition);
+		expect(alterTypePosition).toBeLessThan(setDefaultPosition);
 	});
 
 	it("orders types, tables, keys, indexes, and guarded legacy removal safely", () => {

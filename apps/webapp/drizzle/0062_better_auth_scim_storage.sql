@@ -278,8 +278,9 @@ ALTER TABLE "scim_provider_config" DROP CONSTRAINT "scim_provider_config_organiz
 DROP INDEX "scimProviderConfig_organizationId_idx";--> statement-breakpoint
 DROP INDEX "scimProviderConfig_providerId_idx";--> statement-breakpoint
 ALTER TABLE "user_lifecycle_event" ALTER COLUMN "created_by" DROP NOT NULL;--> statement-breakpoint
-ALTER TABLE "scim_provider_config" ALTER COLUMN "deprovision_action" SET DEFAULT 'suspend'::"public"."scim_deprovision_action";--> statement-breakpoint
+ALTER TABLE "scim_provider_config" ALTER COLUMN "deprovision_action" DROP DEFAULT;--> statement-breakpoint
 ALTER TABLE "scim_provider_config" ALTER COLUMN "deprovision_action" SET DATA TYPE "public"."scim_deprovision_action" USING "deprovision_action"::"public"."scim_deprovision_action";--> statement-breakpoint
+ALTER TABLE "scim_provider_config" ALTER COLUMN "deprovision_action" SET DEFAULT 'suspend'::"public"."scim_deprovision_action";--> statement-breakpoint
 ALTER TABLE "scim_provider_config" ALTER COLUMN "default_role_template_id" SET NOT NULL;--> statement-breakpoint
 ALTER TABLE "user_lifecycle_event" ADD COLUMN "actor_type" "lifecycle_actor_type" DEFAULT 'user' NOT NULL;--> statement-breakpoint
 ALTER TABLE "scim_provider_config" ADD COLUMN "creation_request_id" text NOT NULL;--> statement-breakpoint
