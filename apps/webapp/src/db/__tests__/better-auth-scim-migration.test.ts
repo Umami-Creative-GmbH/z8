@@ -317,47 +317,29 @@ describe("Better Auth SCIM storage migration", () => {
 		expect(migration).not.toContain('DROP TABLE "scim_provider" CASCADE');
 	});
 
-	it("refuses enabled or ambiguous legacy enterprise SCIM setup before destructive statements", () => {
-		const setupGuardPosition = position("DO $enabled_legacy_scim_setup_guard$");
+	it("normalizes legacy enterprise SCIM setup before destructive cutover steps", () => {
+		const safeScimState =
+			'{"policy":{"autoActivateUsers":false,"deprovisionAction":"suspend","defaultRoleTemplateId":null},"connection":null}';
+		const setupDefault = `ALTER TABLE "enterprise_identity_setup" ALTER COLUMN "scim" SET DEFAULT '${safeScimState}'::jsonb;`;
+		const setupNormalization = 'UPDATE "enterprise_identity_setup"';
 		const storageGuardPosition = position("DO $scim_legacy_storage_guard$");
 		const firstDestructivePosition = position(
 			'ALTER TABLE "scim_provider" DISABLE ROW LEVEL SECURITY',
 		);
-		const guard = migration.slice(setupGuardPosition, storageGuardPosition);
-		const decisionBranches = [
-			`WHEN setup."scim" IS NULL OR setup."scim" = 'null'::jsonb THEN false`,
-			`WHEN jsonb_typeof(setup."scim") = 'boolean' THEN (setup."scim" #>> '{}')::boolean`,
-			`WHEN jsonb_typeof(setup."scim") <> 'object' THEN true`,
-			`WHEN NOT (setup."scim" ? 'enabled') THEN false`,
-			`WHEN setup."scim" -> 'enabled' = 'null'::jsonb THEN false`,
-			`WHEN jsonb_typeof(setup."scim" -> 'enabled') = 'boolean' THEN (setup."scim" ->> 'enabled')::boolean`,
-			`WHEN jsonb_typeof(setup."scim" -> 'enabled') = 'string' THEN`,
-			`lower(btrim(setup."scim" ->> 'enabled')) NOT IN ('false', 'f', '0', 'no', 'n', 'off', 'disabled')`,
-			`WHEN jsonb_typeof(setup."scim" -> 'enabled') = 'number' THEN (setup."scim" ->> 'enabled')::numeric <> 0`,
-			"ELSE true",
-		];
 
-		expect(setupGuardPosition).toBeLessThan(storageGuardPosition);
-		expect(setupGuardPosition).toBeLessThan(firstDestructivePosition);
-		expect(guard).toContain(
-			"to_regclass('public.enterprise_identity_setup') IS NOT NULL",
+		expect(migration).toContain(setupDefault);
+		expect(migration).toContain(setupNormalization);
+		expect(migration).toContain(`SET "scim" = '${safeScimState}'::jsonb`);
+		expect(migration).not.toContain("enabled_legacy_scim_setup_guard");
+		expect(migration).not.toContain("still claims SCIM is enabled");
+		expect(migration.indexOf(setupDefault)).toBeLessThan(storageGuardPosition);
+		expect(migration.indexOf(setupNormalization)).toBeLessThan(
+			storageGuardPosition,
 		);
-		expect(guard).toContain('FROM public."enterprise_identity_setup" AS setup');
-		let previousBranchPosition = -1;
-		for (const branch of decisionBranches) {
-			const branchPosition = guard.indexOf(branch);
-			expect(
-				branchPosition,
-				`missing decision branch: ${branch}`,
-			).toBeGreaterThan(previousBranchPosition);
-			previousBranchPosition = branchPosition;
-		}
-		expect(guard).toContain(
-			"Legacy enterprise identity setup still claims SCIM is enabled",
+		expect(migration.indexOf(setupNormalization)).toBeLessThan(
+			firstDestructivePosition,
 		);
-		expect(guard).toContain(
-			"Disable the legacy SCIM setup explicitly, then retry",
-		);
+		expect(migration).not.toMatch(/scim_token|\btoken\b/i);
 	});
 
 	it("drops the text default before converting the deprovision action enum", () => {

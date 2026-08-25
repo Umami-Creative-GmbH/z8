@@ -4,6 +4,10 @@ import { describe, expect, it } from "vitest";
 const drizzleUrl = new URL("../../../drizzle/", import.meta.url);
 const tag = "0064_safe_scim_setup_state";
 const migrationUrl = new URL(`${tag}.sql`, drizzleUrl);
+const cutoverMigrationUrl = new URL(
+	"0062_better_auth_scim_storage.sql",
+	drizzleUrl,
+);
 const snapshotUrl = new URL("meta/0064_snapshot.json", drizzleUrl);
 const journal = JSON.parse(
 	readFileSync(new URL("meta/_journal.json", drizzleUrl), "utf8"),
@@ -11,6 +15,7 @@ const journal = JSON.parse(
 const migration = existsSync(migrationUrl)
 	? readFileSync(migrationUrl, "utf8")
 	: "";
+const cutoverMigration = readFileSync(cutoverMigrationUrl, "utf8");
 
 describe("safe enterprise identity SCIM setup migration", () => {
 	it("is a forward migration with generated journal and snapshot metadata", () => {
@@ -58,5 +63,20 @@ describe("safe enterprise identity SCIM setup migration", () => {
 		expect(migration).not.toMatch(/scim_token|\btoken\b/i);
 		expect(migration).not.toContain("connectionId");
 		expect(migration).toContain('"connection":null');
+	});
+
+	it("keeps 0064 as an idempotent default recovery after the 0062 cutover scrub", () => {
+		const safeState =
+			'{"policy":{"autoActivateUsers":false,"deprovisionAction":"suspend","defaultRoleTemplateId":null},"connection":null}';
+		const cutoverNormalization = cutoverMigration.indexOf(
+			'UPDATE "enterprise_identity_setup"',
+		);
+		const cutoverDrop = cutoverMigration.indexOf('DROP TABLE "scim_provider"');
+
+		expect(cutoverNormalization).toBeGreaterThan(-1);
+		expect(cutoverNormalization).toBeLessThan(cutoverDrop);
+		expect(cutoverMigration).toContain(`SET "scim" = '${safeState}'::jsonb`);
+		expect(migration).toContain(`SET "scim" = '${safeState}'::jsonb`);
+		expect(cutoverMigration).not.toMatch(/scim_token|\btoken\b/i);
 	});
 });
