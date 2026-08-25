@@ -3,6 +3,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ScimDestructiveDialogs } from "./scim-destructive-dialogs";
+vi.mock("@tolgee/react", () => ({ useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }) }));
 
 describe("ScimDestructiveDialogs", () => {
 	it("keeps revoke behind an accessible keyboard-operable confirmation", () => {

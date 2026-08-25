@@ -138,6 +138,11 @@ export async function getEnterpriseIdentityScimStatusAction(input: unknown) {
 	}
 }
 
+export async function reconcileEnterpriseIdentityScimCreationAction() {
+	const { organizationId } = await requireEnterpriseOrgAdmin();
+	return controlPlane.getCreationState(organizationId);
+}
+
 export async function rotateEnterpriseIdentityScimCredentialAction(
 	input: unknown,
 ) {

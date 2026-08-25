@@ -4,15 +4,16 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useScimAdminController } from "./use-scim-admin-controller";
 
-const actions = vi.hoisted(() => ({ create: vi.fn(), get: vi.fn(), events: vi.fn(), rotate: vi.fn(), revoke: vi.fn(), decommission: vi.fn() }));
+const actions = vi.hoisted(() => ({ create: vi.fn(), get: vi.fn(), events: vi.fn(), reconcile: vi.fn(), rotate: vi.fn(), revoke: vi.fn(), decommission: vi.fn() }));
 const toast = vi.hoisted(() => ({ error: vi.fn() }));
 vi.mock("sonner", () => ({ toast }));
 vi.mock("@/app/[locale]/(app)/settings/enterprise/scim-actions", () => ({
-	createEnterpriseIdentityScimConnectionAction: actions.create, getEnterpriseIdentityScimStatusAction: actions.get, listEnterpriseIdentityScimEventsAction: actions.events, rotateEnterpriseIdentityScimCredentialAction: actions.rotate, revokeEnterpriseIdentityScimCredentialAction: actions.revoke, decommissionEnterpriseIdentityScimConnectionAction: actions.decommission,
+ createEnterpriseIdentityScimConnectionAction: actions.create, getEnterpriseIdentityScimStatusAction: actions.get, listEnterpriseIdentityScimEventsAction: actions.events, reconcileEnterpriseIdentityScimCreationAction: actions.reconcile, rotateEnterpriseIdentityScimCredentialAction: actions.rotate, revokeEnterpriseIdentityScimCredentialAction: actions.revoke, decommissionEnterpriseIdentityScimConnectionAction: actions.decommission,
 }));
+vi.mock("@tolgee/react", () => ({ useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }) }));
 
 const safeStatus = { connection: { connectionId: "connection-1", decommissionedAt: null, decommissionStartedAt: null }, credentials: [] };
-const setup = { state: { scim: { connection: { connectionId: "connection-1" }, policy: { defaultRoleTemplateId: "role-1" } } } } as any;
+const setup = { scim: { connection: { connectionId: "connection-1" }, policy: { defaultRoleTemplateId: "role-1" } } } as any;
 
 describe("useScimAdminController", () => {
 	it("creates then refreshes only safe status while retaining the raw token in transient state", async () => {
@@ -54,5 +55,21 @@ describe("useScimAdminController", () => {
 		act(() => result.current.create("role-1"));
 		await waitFor(() => expect(result.current.lifecycle).toBe(lifecycle));
 		expect(result.current.credential).toBeNull();
+	});
+
+	it("reconciles a creating reservation before allowing an explicit retry", async () => {
+		actions.create.mockResolvedValueOnce({ status: "creating", creationRequestId: "safe-request-id" }).mockResolvedValueOnce({ status: "creation_failed", creationRequestId: "safe-request-id" });
+		actions.reconcile.mockResolvedValue({ connectionId: null, status: "creation_failed" });
+		const { result } = renderHook(() => useScimAdminController(setup));
+		act(() => result.current.create("role-1"));
+		await waitFor(() => expect(result.current.lifecycle).toBe("creating"));
+		const createCalls = actions.create.mock.calls.length;
+		act(() => result.current.create("role-1"));
+		expect(actions.create).toHaveBeenCalledTimes(createCalls);
+		act(() => result.current.reconcileCreation());
+		await waitFor(() => expect(result.current.lifecycle).toBe("creation_failed"));
+		act(() => result.current.create("role-1"));
+		await waitFor(() => expect(actions.create).toHaveBeenCalledTimes(createCalls + 1));
+		expect(JSON.stringify(result.current)).not.toContain("raw-token");
 	});
 });

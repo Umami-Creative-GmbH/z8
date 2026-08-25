@@ -1168,7 +1168,7 @@ function SsoTestStep({ controller }: { controller: IdentitySetupController }) {
 }
 
 function ScimStep({ controller }: { controller: IdentitySetupController }) {
-	return <WizardCard title="SCIM Provisioning" description="Configure managed user provisioning without changing enterprise activation."><ManagedScimStep initialSetup={controller.initialSetup} /></WizardCard>;
+	return <WizardCard title={controller.t("settings.enterprise.identity.scim.title", "SCIM Provisioning")} description={controller.t("settings.enterprise.identity.scim.wizardDescription", "Configure managed user provisioning without changing enterprise activation.")}><ManagedScimStep setup={controller.setup} defaultRoleTemplateId={controller.defaultRoleTemplateId === "none" ? null : controller.defaultRoleTemplateId} /></WizardCard>;
 }
 
 function AccessPolicyStep({

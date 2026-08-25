@@ -296,6 +296,12 @@ export function createSCIMManagedControlPlane(input: {
 
 	return {
 		create,
+		async getCreationState(organizationId: string) {
+			const config = await input.store.findByOrganizationId(organizationId);
+			return config
+				? { connectionId: config.connectionId, status: config.state }
+				: { connectionId: null, status: "creation_failed" as const };
+		},
 		async list(organizationId: string) {
 			const result = await input.auth.api.listSCIMManagedConnections({
 				body: { provisioningDomainId: organizationId },
