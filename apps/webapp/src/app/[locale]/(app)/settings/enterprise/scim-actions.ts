@@ -85,6 +85,10 @@ async function assertDefaultRoleTemplate(
 	}
 }
 
+async function persistScimConnection(input: { organizationId: string; actorId: string; policy: { autoActivateUsers: boolean; deprovisionAction: "soft_delete" | "suspend"; defaultRoleTemplateId: string }; connection: { connectionId: string; createdAt: string } }) {
+	await db.update(enterpriseIdentitySetup).set({ scim: { policy: input.policy, connection: { connectionId: input.connection.connectionId, provisioningDomainId: input.organizationId, createdAt: input.connection.createdAt } }, updatedBy: input.actorId }).where(eq(enterpriseIdentitySetup.organizationId, input.organizationId));
+}
+
 export async function createEnterpriseIdentityScimConnectionAction(
 	input: unknown,
 ) {
@@ -106,20 +110,7 @@ export async function createEnterpriseIdentityScimConnectionAction(
 
 	if (result.connection) {
 		assertCurrentOrganizationConnection(result.connection, organizationId);
-		await db
-			.update(enterpriseIdentitySetup)
-			.set({
-				scim: {
-					policy: parsed.data,
-					connection: {
-						connectionId: result.connection.connectionId,
-						provisioningDomainId: organizationId,
-						createdAt: result.connection.createdAt,
-					},
-				},
-				updatedBy: authContext.user.id,
-			})
-			.where(eq(enterpriseIdentitySetup.organizationId, organizationId));
+		await persistScimConnection({ organizationId, actorId: authContext.user.id, policy: parsed.data, connection: result.connection });
 	}
 
 	revalidatePath(IDENTITY_SETUP_PATH);
@@ -145,7 +136,13 @@ export async function reconcileEnterpriseIdentityScimCreationAction(input: unkno
 	await assertDefaultRoleTemplate(organizationId, parsed.data.defaultRoleTemplateId);
 	await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
 	const result = await controlPlane.create({ ...parsed.data, organizationId, actorId: authContext.user.id, creationRequestId: randomUUID() });
-	if ("connection" in result && result.connection) return { connection: result.connection, status: "active" as const };
+	if ("connection" in result && result.connection) {
+		assertCurrentOrganizationConnection(result.connection, organizationId);
+		await persistScimConnection({ organizationId, actorId: authContext.user.id, policy: parsed.data, connection: result.connection });
+		revalidatePath(IDENTITY_SETUP_PATH);
+		return { connection: result.connection, status: "active" as const };
+	}
+	revalidatePath(IDENTITY_SETUP_PATH);
 	return { status: result.status };
 }
 

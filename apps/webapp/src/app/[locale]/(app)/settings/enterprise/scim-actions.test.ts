@@ -7,6 +7,7 @@ const {
 	findTemplateMock,
 	decommissionMock,
 	getOrCreateSetupMock,
+	updateMock,
 } = vi.hoisted(() => ({
 	requireEnterpriseOrgAdminMock: vi.fn(),
 	controlPlaneMock: {
@@ -19,6 +20,7 @@ const {
 		findTemplateMock: vi.fn(),
 		decommissionMock: vi.fn(),
 		getOrCreateSetupMock: vi.fn(),
+		updateMock: vi.fn(() => ({ set: vi.fn(() => ({ where: vi.fn() })) })),
 	}));
 
 vi.mock("./actions", () => ({
@@ -29,7 +31,7 @@ vi.mock("./actions", () => ({
 vi.mock("@/db", () => ({
 	db: {
 		query: { roleTemplate: { findFirst: findTemplateMock } },
-		update: vi.fn(() => ({ set: vi.fn(() => ({ where: vi.fn() })) })),
+		update: updateMock,
 	},
 }));
 
@@ -136,6 +138,7 @@ describe("enterprise identity SCIM actions", () => {
 		});
 		expect(controlPlaneMock.create).toHaveBeenCalledWith(expect.objectContaining({ organizationId: "org-1", actorId: "actor-1" }));
 		expect(JSON.stringify(result)).not.toContain("secret-token");
+		expect(updateMock).toHaveBeenCalled();
 	});
 
 	it("creates an organization-bound connection and exposes its token only in the issue response", async () => {
