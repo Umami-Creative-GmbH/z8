@@ -14,7 +14,7 @@ import {
 } from "@/lib/approvals/workflow/repository-integration-harness";
 import { authDatabaseSchema } from "@/lib/auth-database-schema";
 import { createZ8SCIMPlugin } from "./auth-configuration";
-import { SCIM_SCOPES } from "./constants";
+import { getSCIMCredentialExpiresAt, SCIM_SCOPES } from "./constants";
 import {
 	createSCIMDecommissionStore,
 	decommissionSCIMConnection,
@@ -137,6 +137,7 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 		const mappedTemplateId = randomUUID();
 		const providerId = `scim-protocol-provider-${label}-${runId}`;
 		const now = new Date("2026-08-26T12:00:00.000Z");
+		const credentialExpiresAt = getSCIMCredentialExpiresAt();
 		organizationIds.push(organizationId);
 		await pool.query(
 			`insert into "user" (id, name, email, email_verified, created_at, updated_at)
@@ -181,7 +182,7 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 				provisioningDomainId: organizationId,
 				actorId,
 				scopes,
-				expiresAt: new Date("2027-08-26T12:00:00.000Z"),
+				expiresAt: credentialExpiresAt,
 			},
 		});
 		connectionIds.push(created.connection.connectionId);
@@ -205,6 +206,7 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 			providerId,
 			connectionId: created.connection.connectionId,
 			credentialId: created.credential.credentialId,
+			expiresAt: credentialExpiresAt,
 			token: created.token,
 		};
 	}
@@ -412,13 +414,14 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 
 	it("accepts the rotated credential, preserves its documented overlap, then rejects revoked and expired credentials", async () => {
 		const graph = await setup("credential-lifecycle");
+		const rotatedExpiresAt = getSCIMCredentialExpiresAt();
 		const rotated = await auth.api.rotateSCIMManagedCredential({
 			body: {
 				connectionId: graph.connectionId,
 				provisioningDomainId: graph.organizationId,
 				actorId: graph.actorId,
 				scopes: SCIM_SCOPES,
-				expiresAt: new Date("2027-08-26T12:00:00.000Z"),
+				expiresAt: rotatedExpiresAt,
 			},
 		});
 		expect((await request(rotated.token, "/Users")).status).toBe(200);
@@ -434,16 +437,106 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 		await expectSafeSCIMError(await request(graph.token, "/Users"), 401, [
 			graph.token,
 		]);
+		const storedCredentials = await pool.query<{
+			credential_id: string;
+			status: string;
+			token_digest: string;
+			hash_version: string;
+			serialized_scopes: string;
+			expires_at: Date;
+			revoked_by: string | null;
+		}>(
+			`select credential_id, status, token_digest, hash_version,
+				serialized_scopes, expires_at, revoked_by
+			 from scim_managed_credential credential
+			 join scim_managed_connection connection
+				on connection.id = credential.connection_record_id
+			 where connection.connection_id = $1`,
+			[graph.connectionId],
+		);
+		expect(storedCredentials.rows).toHaveLength(2);
+		expect(storedCredentials.rows).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					credential_id: graph.credentialId,
+					status: "revoked",
+					hash_version: "v1",
+					serialized_scopes: JSON.stringify(SCIM_SCOPES),
+					expires_at: graph.expiresAt,
+					revoked_by: graph.actorId,
+				}),
+				expect.objectContaining({
+					credential_id: rotated.credential.credentialId,
+					status: "active",
+					hash_version: "v1",
+					serialized_scopes: JSON.stringify(SCIM_SCOPES),
+					expires_at: rotatedExpiresAt,
+					revoked_by: null,
+				}),
+			]),
+		);
+		for (const credential of storedCredentials.rows) {
+			expect(credential.token_digest).toMatch(/^[A-Za-z0-9_-]{43}$/);
+			expect(credential.token_digest).not.toBe(graph.token);
+			expect(credential.token_digest).not.toBe(rotated.token);
+		}
+		expect(JSON.stringify(storedCredentials.rows)).not.toContain(graph.token);
+		expect(JSON.stringify(storedCredentials.rows)).not.toContain(rotated.token);
 		const expired = await setup("expired-credential");
 		// @better-auth/scim 1.7.1's assertFutureExpiry rejects past expiries;
 		// retain its API-generated digest and move only the fixture expiry.
+		const expiredAt = new Date(Date.now() - 60_000);
 		await pool.query(
 			`update scim_managed_credential credential
 			 set expires_at = $1
 			 from scim_managed_connection connection
 			 where credential.connection_record_id = connection.id
 				and connection.connection_id = $2`,
-			[new Date("2020-01-01T00:00:00.000Z"), expired.connectionId],
+			[expiredAt, expired.connectionId],
+		);
+		const expiredStored = await pool.query<{
+			status: string;
+			token_digest: string;
+			hash_version: string;
+			serialized_scopes: string;
+			expires_at: Date;
+		}>(
+			`select credential.status, credential.token_digest, credential.hash_version,
+				credential.serialized_scopes, credential.expires_at
+			 from scim_managed_credential credential
+			 join scim_managed_connection connection
+				on connection.id = credential.connection_record_id
+			 where connection.connection_id = $1`,
+			[expired.connectionId],
+		);
+		expect(expiredStored.rows).toEqual([
+			{
+				status: "active",
+				token_digest: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
+				hash_version: "v1",
+				serialized_scopes: JSON.stringify(SCIM_SCOPES),
+				expires_at: expiredAt,
+			},
+		]);
+		expect(expiredStored.rows[0]?.token_digest).not.toBe(expired.token);
+		expect(
+			(
+				await auth.api.getSCIMManagedConnection({
+					body: {
+						connectionId: expired.connectionId,
+						provisioningDomainId: expired.organizationId,
+					},
+				})
+			).credentials,
+		).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					credentialId: expired.credentialId,
+					status: "expired",
+					expiresAt: expiredAt,
+					scopes: SCIM_SCOPES,
+				}),
+			]),
 		);
 		expect(
 			await expectSafeSCIMError(await request(expired.token, "/Users"), 401, [
@@ -688,7 +781,7 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 				provisioningDomainId: orgA.organizationId,
 				actorId: orgA.actorId,
 				scopes: SCIM_SCOPES,
-				expiresAt: new Date("2027-08-26T12:00:00.000Z"),
+				expiresAt: getSCIMCredentialExpiresAt(),
 			},
 		});
 		expect(rotated.token).not.toBe(orgA.token);

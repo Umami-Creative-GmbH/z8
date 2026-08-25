@@ -26,6 +26,7 @@ POSTGRES_DB="$database_name" \\
 POSTGRES_USER=postgres \\
 POSTGRES_PASSWORD="$database_password" \\
 POSTGRES_SSL_MODE=disable \\
+TZ=UTC \\
 PGOPTIONS="-c statement_timeout=15000 -c timezone=UTC" \\
 APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=`);
 		expect(runner).not.toContain("--throw-deprecation");
