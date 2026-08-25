@@ -112,7 +112,7 @@ describe("resolveSCIMIdentity", () => {
 		);
 		expect(findOne).toHaveBeenCalledExactlyOnceWith({
 			model: "enterpriseIdentitySetup",
-			select: ["providerId"],
+			select: ["providerId", "domain"],
 			where: [{ field: "organizationId", value: TARGET_ORGANIZATION_ID }],
 		});
 	});
