@@ -4,6 +4,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
+import { scim } from "@better-auth/scim";
 import { betterAuth } from "better-auth/minimal";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool, type PoolClient } from "pg";
@@ -64,6 +65,31 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 			transaction: true,
 		}),
 		plugins: [createZ8SCIMPlugin("s".repeat(32))],
+	});
+	const externalIdPolicyAuth = betterAuth({
+		baseURL: "http://localhost:3000",
+		secret: "scim-external-id-policy-integration-secret-value",
+		database: drizzleAdapter(database, {
+			provider: "pg",
+			schema: authDatabaseSchema,
+			transaction: true,
+		}),
+		plugins: [
+			scim({
+				connections: [
+					{
+						id: "external-id-policy-connection",
+						provisioningDomainId: "external-id-policy-domain",
+						credentials: [{ id: "external-id-policy-credential", token: "external-id-policy-token" }],
+					},
+				],
+				identity: {
+					resolveUser: async () => ({ action: "create" }),
+					// This opt-in is supplied by the patched installed package.
+					externalIdPolicy: { immutable: true },
+				},
+			}),
+		],
 	});
 
 	beforeAll(async () => {
@@ -285,6 +311,61 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 		);
 		return result.rows;
 	}
+
+	async function scimPolicyRequest(
+		path: string,
+		method: "POST" | "PUT" | "PATCH" | "DELETE",
+		body?: unknown,
+	) {
+		return externalIdPolicyAuth.handler(
+			new Request(`http://localhost:3000${path}`, {
+				method,
+				headers: {
+					authorization: "Bearer external-id-policy-token",
+					...(body === undefined ? {} : { "content-type": "application/scim+json" }),
+				},
+				body: body === undefined ? undefined : JSON.stringify(body),
+			}),
+		);
+	}
+
+	function userResource(externalId: string) {
+		return {
+			schemas: ["urn:ietf:params:scim:schemas:core:2.0:User"],
+			userName: `${externalId}@example.test`,
+			name: { formatted: "External ID Policy" },
+			emails: [{ value: `${externalId}@example.test`, primary: true }],
+			externalId,
+		};
+	}
+
+	it("rejects externalId replacement through installed SCIM PUT and PATCH handlers", async () => {
+		const created = await scimPolicyRequest("/scim/v2/Users", "POST", userResource("subject-original"));
+		expect(created.status).toBe(201);
+		const createdUser = (await created.json()) as { id: string };
+
+		const replaced = await scimPolicyRequest(
+			`/scim/v2/Users/${createdUser.id}`,
+			"PUT",
+			userResource("subject-replaced"),
+		);
+		expect(replaced.status).toBe(409);
+		expect(await replaced.json()).toEqual({
+			schemas: ["urn:ietf:params:scim:api:messages:2.0:Error"],
+			status: "409",
+			detail: "The SCIM identity cannot be linked",
+		});
+
+		const removed = await scimPolicyRequest(
+			`/scim/v2/Users/${createdUser.id}`,
+			"PATCH",
+			{
+				schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+				Operations: [{ op: "remove", path: "externalId" }],
+			},
+		);
+		expect(removed.status).toBe(409);
+	});
 
 	it("rolls back every effect when final applied-projection persistence fails", async () => {
 		const graph = await seedGraph({ templateActive: true });

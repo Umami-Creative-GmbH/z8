@@ -1,0 +1,46 @@
+diff --git a/dist/index.d.mts b/dist/index.d.mts
+index 0ef960361d7ca92eb8d2e2cec10c8ceed486225f..75726dd1132a99759deb7d793b0834ae6fb91e8b 100644
+--- a/dist/index.d.mts
++++ b/dist/index.d.mts
+@@ -263,6 +263,10 @@ interface SCIMIdentity {
+    * based on an unverified email match.
+    */
+   resolveUser?(input: SCIMIdentityResolutionInput, context: SCIMIdentityResolutionContext): SCIMIdentityResolution | Promise<SCIMIdentityResolution>;
++  externalIdPolicy?: {
++    immutable: boolean;
++    resolveTombstoneUser?(input: SCIMIdentityResolutionInput, context: SCIMIdentityResolutionContext): SCIMIdentityResolution | Promise<SCIMIdentityResolution>;
++  };
+   /** Reconciles global enabled or disabled state inside the SCIM transaction. */
+   reconcileUser?(input: SCIMIdentityState, context: SCIMTransactionContext): void | Promise<void>;
+ }
+diff --git a/dist/index.mjs b/dist/index.mjs
+index c26448a6bdd4c5608361b6ea86a6e1b985b0d3ca..a9778fd2d8f02482123020e8a48aec61c5dcab95 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -4080,6 +4080,10 @@ function createSCIMIdentityCoordinator(options) {
+ 				});
+ 				if (tombstone) {
+ 					if (tombstone.provisioningDomainId !== input.provisioningDomainId) throw createSCIMError("CONFLICT", { detail: "The connection provisioningDomainId changed after this User was deleted" });
++					if (options.identity?.externalIdPolicy?.resolveTombstoneUser) {
++						const resolution = await runSCIMApplicationCallback(() => options.identity.externalIdPolicy.resolveTombstoneUser(input, context), "SCIM tombstone identity resolution failed");
++						if (resolution?.action !== "link" || resolution.userId !== tombstone.userId) throw createSCIMError("CONFLICT", { detail: "The SCIM identity cannot be linked" });
++					}
+ 					return {
+ 						resolution: {
+ 							action: "link",
+@@ -6736,6 +6740,7 @@ function replaceSCIMUser(authMiddleware, identity, projection) {
+ 		const attributeProjection = requireUserAttributeProjection(ctx.query ?? {});
+ 		const scimUser = await findSCIMUser(adapter, connection, ctx.params.userId);
+ 		if (!scimUser) throw createSCIMError("NOT_FOUND", { detail: "SCIM User not found" });
++		if (options.identity?.externalIdPolicy?.immutable === true && (scimUser.externalId ?? void 0) !== (ctx.body.externalId ?? void 0)) throw createSCIMError("CONFLICT", { detail: "The SCIM identity cannot be linked" });
+ 		const profile = createCanonicalSCIMUserProfile(ctx.body);
+ 		const userNameKey = createUserNameKey(connection.id, profile.userName.toLowerCase());
+ 		const externalIdKey = createExternalIdKey(connection.id, ctx.body.externalId);
+@@ -6846,6 +6851,7 @@ function patchSCIMUser(authMiddleware, identity, projection) {
+ 			if (!currentSource) throw createSCIMError("NOT_FOUND", { detail: "SCIM User not found" });
+ 			if (currentSource.userId !== sourceBeforeLock.userId) throw createSCIMError("CONFLICT", { detail: "The SCIM User identity changed concurrently" });
+ 			const patch = applySCIMUserPatch(currentSource, ctx.body.Operations);
++			if (options.identity?.externalIdPolicy?.immutable === true && (currentSource.externalId ?? void 0) !== (patch.externalId ?? void 0)) throw createSCIMError("CONFLICT", { detail: "The SCIM identity cannot be linked" });
+ 			if (!scimUserPatchChangesState(currentSource, patch)) {
+ 				await fenceActiveSCIMConnection(trx, connection.id);
+ 				return currentSource;

@@ -27,6 +27,10 @@ export function createZ8SCIMPlugin(credentialHashSecret: string) {
 		},
 		identity: {
 			resolveUser: resolveSCIMIdentity,
+			externalIdPolicy: {
+				immutable: true,
+				resolveTombstoneUser: resolveSCIMIdentity,
+			},
 		},
 		projection: {
 			roles: scimRoleProjection,

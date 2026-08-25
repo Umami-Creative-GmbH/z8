@@ -68,3 +68,6 @@ packageExtensions:
       '@babel/generator': ^7.25.2
       '@babel/traverse': ^7.25.2
       '@babel/types': ^7.25.2
+
+patchedDependencies:
+  '@better-auth/scim@1.7.1': patches/@better-auth__scim@1.7.1.patch

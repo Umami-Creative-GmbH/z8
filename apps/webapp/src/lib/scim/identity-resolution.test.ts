@@ -53,8 +53,8 @@ describe("resolveSCIMIdentity", () => {
 	it("links the user with the exact externalId on an active persisted provider in the target organization", async () => {
 		const findOne = vi
 			.fn()
-			.mockResolvedValueOnce({ providerId: "provider_target" })
-			.mockResolvedValueOnce({ providerId: "provider_target" })
+			.mockResolvedValueOnce({ providerId: "provider_target", domain: "example.com" })
+			.mockResolvedValueOnce({ providerId: "provider_target", domain: "example.com" })
 			.mockResolvedValueOnce({ id: "member_1" });
 		const findMany = vi.fn().mockResolvedValueOnce([{ userId: "user_1" }]);
 
@@ -73,8 +73,8 @@ describe("resolveSCIMIdentity", () => {
 	it("rejects an unbound externalId instead of creating a user from the SCIM email", async () => {
 		const findOne = vi
 			.fn()
-			.mockResolvedValueOnce({ providerId: "provider_target" })
-			.mockResolvedValueOnce({ providerId: "provider_target" });
+			.mockResolvedValueOnce({ providerId: "provider_target", domain: "example.com" })
+			.mockResolvedValueOnce({ providerId: "provider_target", domain: "example.com" });
 		const findMany = vi.fn().mockResolvedValueOnce([]);
 
 		await expectSafeConflict(
@@ -117,11 +117,27 @@ describe("resolveSCIMIdentity", () => {
 		});
 	});
 
+	it("rejects a verified provider whose domain differs from the enterprise setup", async () => {
+		const findOne = vi
+			.fn()
+			.mockResolvedValueOnce({ providerId: "provider_target", domain: "target.example" })
+			.mockResolvedValueOnce({ providerId: "provider_target", domain: "foreign.example" });
+		const findMany = vi.fn();
+
+		await expectSafeConflict(
+			resolveSCIMIdentity(
+				resolutionInput("subject_target"),
+				resolutionContext(findOne, findMany),
+			),
+		);
+		expect(findMany).not.toHaveBeenCalled();
+	});
+
 	it("rejects ambiguous provider subject bindings", async () => {
 		const findOne = vi
 			.fn()
-			.mockResolvedValueOnce({ providerId: "provider_target" })
-			.mockResolvedValueOnce({ providerId: "provider_target" });
+			.mockResolvedValueOnce({ providerId: "provider_target", domain: "example.com" })
+			.mockResolvedValueOnce({ providerId: "provider_target", domain: "example.com" });
 		const findMany = vi
 			.fn()
 			.mockResolvedValueOnce([{ userId: "user_1" }, { userId: "user_2" }]);
@@ -138,8 +154,8 @@ describe("resolveSCIMIdentity", () => {
 	it("rejects a duplicate persisted binding even when it names the same user", async () => {
 		const findOne = vi
 			.fn()
-			.mockResolvedValueOnce({ providerId: "provider_target" })
-			.mockResolvedValueOnce({ providerId: "provider_target" })
+			.mockResolvedValueOnce({ providerId: "provider_target", domain: "example.com" })
+			.mockResolvedValueOnce({ providerId: "provider_target", domain: "example.com" })
 			.mockResolvedValueOnce({ id: "member_1" });
 		const findMany = vi
 			.fn()
@@ -156,8 +172,8 @@ describe("resolveSCIMIdentity", () => {
 	it("queries only active target-organization providers and exact validated subjects", async () => {
 		const findOne = vi
 			.fn()
-			.mockResolvedValueOnce({ providerId: "provider_target" })
-			.mockResolvedValueOnce({ providerId: "provider_target" })
+			.mockResolvedValueOnce({ providerId: "provider_target", domain: "example.com" })
+			.mockResolvedValueOnce({ providerId: "provider_target", domain: "EXAMPLE.COM" })
 			.mockResolvedValueOnce({ id: "member_1" });
 		const findMany = vi.fn().mockResolvedValueOnce([{ userId: "user_1" }]);
 
@@ -168,12 +184,12 @@ describe("resolveSCIMIdentity", () => {
 
 		expect(findOne).toHaveBeenNthCalledWith(1, {
 			model: "enterpriseIdentitySetup",
-			select: ["providerId"],
+			select: ["providerId", "domain"],
 			where: [{ field: "organizationId", value: TARGET_ORGANIZATION_ID }],
 		});
 		expect(findOne).toHaveBeenNthCalledWith(2, {
 			model: "ssoProvider",
-			select: ["providerId"],
+			select: ["providerId", "domain"],
 			where: [
 				{ field: "providerId", value: "provider_target" },
 				{ field: "organizationId", value: TARGET_ORGANIZATION_ID },

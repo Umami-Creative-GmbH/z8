@@ -27,10 +27,12 @@ export interface SCIMReadMember {
 
 interface SCIMReadIdentitySetup {
 	providerId: string | null;
+	domain: string | null;
 }
 
 interface SCIMReadSSOProvider {
 	providerId: string;
+	domain: string;
 }
 
 interface SCIMReadAccount {
@@ -259,21 +261,25 @@ export function createSCIMReadStore(database: SCIMReadDatabase): SCIMReadStore {
 		findUserIdsByProviderSubject: async (organizationId, externalId) => {
 			const setup = await database.findOne<SCIMReadIdentitySetup>({
 				model: SCIM_MODELS.enterpriseIdentitySetup,
-				select: ["providerId"],
+				select: ["providerId", "domain"],
 				where: [{ field: "organizationId", value: organizationId }],
 			});
-			if (!setup?.providerId) return [];
+			if (!setup?.providerId || !setup.domain) return [];
 
 			const provider = await database.findOne<SCIMReadSSOProvider>({
 				model: SCIM_MODELS.ssoProvider,
-				select: ["providerId"],
+				select: ["providerId", "domain"],
 				where: [
 					{ field: "providerId", value: setup.providerId },
 					{ field: "organizationId", value: organizationId },
 					{ field: "domainVerified", value: true },
 				],
 			});
-			if (!provider) return [];
+			if (
+				!provider ||
+				provider.domain.trim().toLowerCase() !== setup.domain.trim().toLowerCase()
+			)
+				return [];
 
 			const accounts = await database.findMany<SCIMReadAccount>({
 				model: SCIM_MODELS.account,
