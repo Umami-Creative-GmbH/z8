@@ -7,9 +7,9 @@ import {
 	buildCatalogNamespaceCountQuery,
 	filterIncidentJournal,
 	normalizeMigrationLedger,
-	parseTestDatabaseConfig,
 	sumCatalogNamespaceCounts,
 } from "../../../scripts/verify-approval-migration-recovery";
+import { parseApprovalWorkflowRepositoryTestDatabaseUrl } from "../../lib/approvals/workflow/repository-integration-harness";
 
 describe("destructive database safety", () => {
 	it.each([
@@ -18,7 +18,7 @@ describe("destructive database safety", () => {
 		"postgresql://postgres:secret@[::1]:5432/approval_workflow_repository_test_local",
 	])("accepts an isolated loopback PostgreSQL URL", (databaseUrl) => {
 		expect(
-			parseTestDatabaseConfig(databaseUrl, "approval-workflow-repository-test"),
+			parseApprovalWorkflowRepositoryTestDatabaseUrl(databaseUrl),
 		).toMatchObject({
 			databaseUrl,
 			databaseName: "approval_workflow_repository_test_local",
@@ -30,7 +30,7 @@ describe("destructive database safety", () => {
 			"postgresql://postgres:do-not-log@example.com/approval_workflow_repository_test_remote";
 		let message = "";
 		try {
-			parseTestDatabaseConfig(databaseUrl, "approval-workflow-repository-test");
+			parseApprovalWorkflowRepositoryTestDatabaseUrl(databaseUrl);
 		} catch (error) {
 			message = error instanceof Error ? error.message : String(error);
 		}
@@ -41,9 +41,8 @@ describe("destructive database safety", () => {
 
 	it("rejects a non-PostgreSQL protocol", () => {
 		expect(() =>
-			parseTestDatabaseConfig(
+			parseApprovalWorkflowRepositoryTestDatabaseUrl(
 				"https://localhost/approval_workflow_repository_test_local",
-				"approval-workflow-repository-test",
 			),
 		).toThrow("PostgreSQL protocol");
 	});
@@ -53,9 +52,8 @@ describe("destructive database safety", () => {
 		"?application_name=approval-migration-verifier",
 	])("rejects database URL query parameters: %s", (search) => {
 		expect(() =>
-			parseTestDatabaseConfig(
+			parseApprovalWorkflowRepositoryTestDatabaseUrl(
 				`postgresql://postgres:secret@127.0.0.1:5432/approval_workflow_repository_test_local${search}`,
-				"approval-workflow-repository-test",
 			),
 		).toThrow("must not include query parameters");
 	});

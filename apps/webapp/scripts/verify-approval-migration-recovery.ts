@@ -6,9 +6,12 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
+import {
+	type ApprovalWorkflowRepositoryTestDatabaseConfig,
+	parseApprovalWorkflowRepositoryTestDatabaseUrl,
+} from "../src/lib/approvals/workflow/repository-integration-harness";
 
 const TEST_SENTINEL = "approval-workflow-repository-test";
-const TEST_DATABASE_PREFIX = "approval_workflow_repository_test_";
 const INCIDENT_LATEST_CREATED_AT = "1785493929039";
 const EXPAND_CREATED_AT = "1785232090757";
 const CYCLE_IDENTITY_CREATED_AT = "1785232118219";
@@ -82,11 +85,6 @@ export interface MigrationLedgerRow {
 	id: string;
 	hash: string;
 	createdAt: string;
-}
-
-export interface TestDatabaseConfig {
-	databaseUrl: string;
-	databaseName: string;
 }
 
 export interface DisposableDatabasePreflight {
@@ -188,48 +186,6 @@ export function sumCatalogNamespaceCounts(
 	}, BigInt(0));
 }
 
-export function parseTestDatabaseConfig(
-	databaseUrl: string,
-	sentinel: string | undefined,
-): TestDatabaseConfig {
-	if (sentinel !== TEST_SENTINEL) {
-		throw new Error(
-			`APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL must equal ${TEST_SENTINEL}`,
-		);
-	}
-
-	let parsed: URL;
-	try {
-		parsed = new URL(databaseUrl);
-	} catch {
-		throw new Error(
-			"APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL must be a valid PostgreSQL URL",
-		);
-	}
-	if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
-		throw new Error(
-			"Approval migration test DB URL must use a PostgreSQL protocol",
-		);
-	}
-	if (parsed.search !== "") {
-		throw new Error(
-			"Approval migration test DB URL must not include query parameters",
-		);
-	}
-	const hostname = parsed.hostname.replace(/^\[|\]$/g, "").toLowerCase();
-	if (!new Set(["127.0.0.1", "localhost", "::1"]).has(hostname)) {
-		throw new Error("Approval migration test DB URL must use a loopback host");
-	}
-
-	const databaseName = decodeURIComponent(parsed.pathname.slice(1));
-	if (!databaseName.startsWith(TEST_DATABASE_PREFIX)) {
-		throw new Error(
-			"Refusing to target a non-isolated approval workflow test DB",
-		);
-	}
-	return { databaseUrl, databaseName };
-}
-
 export function assertDisposableDatabasePreflight(
 	evidence: DisposableDatabasePreflight,
 ): void {
@@ -293,7 +249,7 @@ export function assertApprovalCatalog(catalog: ApprovalCatalog): void {
 	}
 }
 
-function requireTestDatabaseConfig(): TestDatabaseConfig {
+function requireTestDatabaseConfig(): ApprovalWorkflowRepositoryTestDatabaseConfig {
 	const databaseUrl =
 		process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 	if (!databaseUrl) {
@@ -301,10 +257,14 @@ function requireTestDatabaseConfig(): TestDatabaseConfig {
 			"APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL is required",
 		);
 	}
-	return parseTestDatabaseConfig(
-		databaseUrl,
-		process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL,
-	);
+	if (
+		process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL !== TEST_SENTINEL
+	) {
+		throw new Error(
+			`APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL must equal ${TEST_SENTINEL}`,
+		);
+	}
+	return parseApprovalWorkflowRepositoryTestDatabaseUrl(databaseUrl);
 }
 
 async function preflightDisposableDatabase(

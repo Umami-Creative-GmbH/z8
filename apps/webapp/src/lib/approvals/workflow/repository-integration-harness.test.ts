@@ -59,7 +59,8 @@ describe("approval workflow repository integration database guard", () => {
 
 		await expect(
 			verifyApprovalWorkflowRepositoryTestDatabase({
-				databaseUrl: "postgres://ignored",
+				databaseUrl:
+					"postgresql://postgres:test@127.0.0.1:5432/approval_workflow_repository_test_guard",
 				required: false,
 				sentinel: "approval-workflow-repository-test",
 				currentDatabase,
@@ -71,10 +72,49 @@ describe("approval workflow repository integration database guard", () => {
 		expect(currentDatabase).toHaveBeenCalledOnce();
 	});
 
-	it("enables only the explicit sentinel and disposable database naming convention", async () => {
+	it.each([
+		{
+			name: "remote host",
+			databaseUrl:
+				"postgresql://postgres:test@database.example.com:5432/approval_workflow_repository_test_guard",
+			reason: "loopback host",
+		},
+		{
+			name: "non-disposable database name",
+			databaseUrl: "postgresql://postgres:test@127.0.0.1:5432/z8_development",
+			reason: "non-isolated approval workflow test DB",
+		},
+		{
+			name: "non-PostgreSQL protocol",
+			databaseUrl: "https://127.0.0.1/approval_workflow_repository_test_guard",
+			reason: "PostgreSQL protocol",
+		},
+		{
+			name: "query parameters",
+			databaseUrl:
+				"postgresql://postgres:test@127.0.0.1:5432/approval_workflow_repository_test_guard?sslmode=disable",
+			reason: "must not include query parameters",
+		},
+	])("refuses $name before connecting", async ({ databaseUrl, reason }) => {
+		const currentDatabase = vi.fn();
+
 		await expect(
 			verifyApprovalWorkflowRepositoryTestDatabase({
-				databaseUrl: "postgres://ignored",
+				databaseUrl,
+				required: false,
+				sentinel: "approval-workflow-repository-test",
+				currentDatabase,
+			}),
+		).rejects.toThrow(reason);
+		expect(currentDatabase).not.toHaveBeenCalled();
+	});
+
+	it("enables only the explicit sentinel and disposable database naming convention", async () => {
+		const databaseUrl =
+			"postgresql://postgres:test@localhost:5432/approval_workflow_repository_test_a1b2c3d4";
+		await expect(
+			verifyApprovalWorkflowRepositoryTestDatabase({
+				databaseUrl,
 				required: false,
 				sentinel: "approval-workflow-repository-test",
 				currentDatabase: async () =>
@@ -82,7 +122,7 @@ describe("approval workflow repository integration database guard", () => {
 			}),
 		).resolves.toEqual({
 			status: "enabled",
-			databaseUrl: "postgres://ignored",
+			databaseUrl,
 			databaseName: "approval_workflow_repository_test_a1b2c3d4",
 		});
 	});

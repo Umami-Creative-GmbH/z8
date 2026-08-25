@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { betterAuth } from "better-auth/minimal";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { Pool, type PoolClient } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
 	resolveApprovalWorkflowRepositoryTestConfiguration,
@@ -191,20 +191,21 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 		});
 	}
 
-	async function replayAfterSubjectConflict(organizationId: string) {
-		try {
-			return await replay(organizationId);
-		} catch (error) {
-			if (
-				!(error instanceof Error) ||
-				!error.message.includes(
-					"SCIM projection subject changed concurrently; retry the request",
-				)
-			) {
-				throw error;
-			}
-			return replay(organizationId);
+	async function waitForSubjectCASBlockers() {
+		const deadline = Date.now() + 5_000;
+		while (Date.now() < deadline) {
+			const result = await pool.query<{ count: number }>(`
+				select count(*)::int as count
+				from pg_stat_activity
+				where datname = current_database()
+					and pid <> pg_backend_pid()
+					and wait_event_type = 'Lock'
+					and query ilike '%scim_subject%'
+			`);
+			if ((result.rows[0]?.count ?? 0) >= 2) return;
+			await new Promise((resolve) => setTimeout(resolve, 25));
 		}
+		throw new Error("Timed out waiting for both SCIM subject CAS attempts");
 	}
 
 	async function installFinalProjectionFault(organizationId: string) {
@@ -265,6 +266,24 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 		return Object.fromEntries(
 			result.rows.map(({ entity, count }) => [entity, count]),
 		);
+	}
+
+	async function lifecycleMembershipRevision(graph: SeededGraph) {
+		const result = await pool.query<{ membership_revision: number }>(
+			`select membership_revision
+			from scim_user_lifecycle_state
+			where organization_id = $1 and user_id = $2`,
+			[graph.organizationId, graph.userId],
+		);
+		return result.rows;
+	}
+
+	async function subjectRevision(graph: SeededGraph) {
+		const result = await pool.query<{ revision: number }>(
+			"select revision from scim_subject where user_id = $1",
+			[graph.userId],
+		);
+		return result.rows;
 	}
 
 	it("rolls back every effect when final applied-projection persistence fails", async () => {
@@ -366,16 +385,57 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 		]);
 	});
 
-	it("deduplicates concurrent retries without audit or outbox uniqueness failures", async () => {
+	it("subject CAS prevents a downstream outbox check-then-insert race", async () => {
 		const graph = await seedGraph({ templateActive: true });
+		let lockClient: PoolClient | undefined;
+		let lockReleased = false;
+		const attempts: Promise<unknown>[] = [];
+		try {
+			lockClient = await pool.connect();
+			await lockClient.query("begin");
+			await lockClient.query(
+				"select id from scim_subject where user_id = $1 for update",
+				[graph.userId],
+			);
 
-		await expect(
-			Promise.all([
-				replayAfterSubjectConflict(graph.organizationId),
-				replayAfterSubjectConflict(graph.organizationId),
-			]),
-		).resolves.toHaveLength(2);
+			attempts.push(replay(graph.organizationId), replay(graph.organizationId));
+			await waitForSubjectCASBlockers();
+			await lockClient.query("commit");
+			lockReleased = true;
 
+			const results = await Promise.allSettled(attempts);
+			const failures = results.filter(
+				(result): result is PromiseRejectedResult =>
+					result.status === "rejected",
+			);
+			expect(
+				results.filter((result) => result.status === "fulfilled"),
+			).toHaveLength(1);
+			expect(failures).toHaveLength(1);
+			expect(failures[0]?.reason).toMatchObject({
+				message:
+					"The SCIM projection subject changed concurrently; retry the request.",
+			});
+
+			await expect(replay(graph.organizationId)).resolves.toMatchObject({
+				provisioningDomainId: graph.organizationId,
+				reconciledUsers: 1,
+			});
+		} finally {
+			if (lockClient) {
+				try {
+					if (!lockReleased) await lockClient.query("rollback");
+				} finally {
+					lockClient.release();
+				}
+			}
+			await Promise.allSettled(attempts);
+		}
+
+		expect(await lifecycleMembershipRevision(graph)).toEqual([
+			{ membership_revision: 1 },
+		]);
+		expect(await subjectRevision(graph)).toEqual([{ revision: 2 }]);
 		expect(await counts(graph)).toMatchObject({
 			team_permission: 1,
 			team_membership: 1,

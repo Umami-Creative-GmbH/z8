@@ -10,6 +10,11 @@ type DatabaseGuardOptions = {
 	currentDatabase: () => Promise<string>;
 };
 
+export type ApprovalWorkflowRepositoryTestDatabaseConfig = {
+	databaseUrl: string;
+	databaseName: string;
+};
+
 export type ApprovalWorkflowRepositoryTestConfiguration =
 	| {
 			status: "unavailable";
@@ -49,7 +54,43 @@ export function resolveApprovalWorkflowRepositoryTestConfiguration(input: {
 			reason: "disposable PostgreSQL sentinel is missing or invalid",
 		};
 	}
+	parseApprovalWorkflowRepositoryTestDatabaseUrl(input.databaseUrl);
 	return { status: "enabled", databaseUrl: input.databaseUrl };
+}
+
+export function parseApprovalWorkflowRepositoryTestDatabaseUrl(
+	databaseUrl: string,
+): ApprovalWorkflowRepositoryTestDatabaseConfig {
+	let parsed: URL;
+	try {
+		parsed = new URL(databaseUrl);
+	} catch {
+		throw new Error(
+			"Approval workflow test DB URL must be a valid PostgreSQL URL",
+		);
+	}
+	if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
+		throw new Error(
+			"Approval workflow test DB URL must use a PostgreSQL protocol",
+		);
+	}
+	if (parsed.search !== "") {
+		throw new Error(
+			"Approval workflow test DB URL must not include query parameters",
+		);
+	}
+	const hostname = parsed.hostname.replace(/^\[|\]$/g, "").toLowerCase();
+	if (!new Set(["127.0.0.1", "localhost", "::1"]).has(hostname)) {
+		throw new Error("Approval workflow test DB URL must use a loopback host");
+	}
+
+	const databaseName = decodeURIComponent(parsed.pathname.slice(1));
+	if (!approvalWorkflowRepositoryTestDatabaseName.test(databaseName)) {
+		throw new Error(
+			"Refusing to target a non-isolated approval workflow test DB",
+		);
+	}
+	return { databaseUrl, databaseName };
 }
 
 export async function verifyApprovalWorkflowRepositoryTestDatabase({
