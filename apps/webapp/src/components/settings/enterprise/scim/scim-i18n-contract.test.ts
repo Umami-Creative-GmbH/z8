@@ -26,6 +26,7 @@ const connectionStatuses = [
 	"rotating",
 	"verified",
 ] as const;
+const credentialStatuses = ["active", "revoked"] as const;
 const catalogPath = (locale: (typeof locales)[number]) =>
 	resolve(process.cwd(), `messages/settings/enterprise/${locale}.json`);
 const sourcePath = (file: string) =>
@@ -101,28 +102,33 @@ describe("managed SCIM i18n contract", () => {
 				),
 			)
 			.join("\n");
-		const references = [
+		const staticReferences = [
 			...source.matchAll(
 				/settings\.enterprise\.(?:identity\.(?:scim(?:\.[A-Za-z0-9_.-]+)?|step\.scim(?:\.[A-Za-z0-9_.-]+)?)|domains\.guidedSetup\.[A-Za-z0-9_.-]+)/g,
 			),
 		]
 			.map((match) => match[0].replace("settings.enterprise.", ""))
-			.filter((key) => !key.endsWith(".status."));
+			.filter(
+				(key) =>
+					key !== "identity.scim.status." &&
+					key !== "identity.scim.credentials.status.",
+			);
+		const dynamicReferences = [
+			...connectionStatuses.map((status) => `identity.scim.status.${status}`),
+			...credentialStatuses.map(
+				(status) => `identity.scim.credentials.status.${status}`,
+			),
+		];
 		const englishKeys = new Set(flatten(enterpriseCatalog("en")));
 
 		for (const locale of locales) {
 			expect(
-				missingKeys(enterpriseCatalog(locale), references),
+				missingKeys(enterpriseCatalog(locale), [
+					...staticReferences,
+					...dynamicReferences,
+				]),
 				locale,
 			).toEqual([]);
-		}
-		for (const status of connectionStatuses) {
-			for (const locale of locales) {
-				expect(
-					scimCatalog(locale).status[status],
-					`${locale}:${status}`,
-				).toBeTypeOf("string");
-			}
 		}
 		expect(englishKeys).not.toContain("identity.scim.action.generateToken");
 		expect(englishKeys).not.toContain("identity.scim.action.copyToken");
@@ -158,6 +164,32 @@ describe("managed SCIM i18n contract", () => {
 				"domains.guidedSetup.description",
 			]),
 		).toEqual(["domains.guidedSetup.description"]);
+	});
+
+	it("rejects a missing non-English credential status", () => {
+		const germanCatalog = enterpriseCatalog("de");
+		const missingRevokedCredentialStatus = {
+			...germanCatalog,
+			identity: {
+				...germanCatalog.identity,
+				scim: {
+					...germanCatalog.identity.scim,
+					credentials: {
+						...germanCatalog.identity.scim.credentials,
+						status: {
+							...germanCatalog.identity.scim.credentials.status,
+							revoked: undefined,
+						},
+					},
+				},
+			},
+		};
+
+		expect(
+			missingKeys(missingRevokedCredentialStatus, [
+				"identity.scim.credentials.status.revoked",
+			]),
+		).toEqual(["identity.scim.credentials.status.revoked"]);
 	});
 
 	it("does not retain legacy provisioning-token copy in rendered SCIM messages", () => {
