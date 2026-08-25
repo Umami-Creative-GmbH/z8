@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
 	createSCIMManagedControlPlane,
+	createSCIMManagedControlPlaneStore,
 	SCIMCreationRecoveryConflictError,
 	type SCIMManagedControlPlaneStore,
 } from "./managed-control-plane";
@@ -156,10 +157,204 @@ describe("SCIM managed control plane", () => {
 			creationRequestId: "request-1234567890",
 			connectionId: "connection-1",
 			actorId: "actor-1",
+			claimToken: null,
 		});
 		expect(result.token).toBe("secret-token");
 		expect(result.connection.createdAt).toBe("2027-01-01T00:00:00.000Z");
 		expect(result.credential).not.toHaveProperty("token");
+	});
+
+	it("fences a slow original creator after recovery adopts its connection", async () => {
+		const store = createStore();
+		const config = await store.findByOrganizationId("org-1");
+		if (!config) throw new Error("Missing test config");
+		const originalConnectionCreated = Promise.withResolvers<void>();
+		const recoveryCompleted = Promise.withResolvers<void>();
+		const auth = createAuth();
+		const originalCreate = {
+			connection: {
+				creationRequestId: config.creationRequestId,
+				connectionId: "connection-1",
+				provisioningDomainId: config.organizationId,
+				status: "active" as const,
+				createdAt: expiresAt,
+				createdBy: "actor-1",
+				decommissionStartedAt: null,
+				decommissionStartedBy: null,
+				decommissionedAt: null,
+				decommissionedBy: null,
+			},
+			credential: {
+				credentialId: "credential-1",
+				status: "active" as const,
+				scopes: ["scim.users.read"] as const,
+				expiresAt,
+				createdAt: expiresAt,
+				createdBy: "actor-1",
+				lastUsedAt: null,
+				revokedAt: null,
+				revokedBy: null,
+			},
+			token: "original-secret-token",
+		};
+		auth.api.createSCIMManagedConnection.mockImplementation(async () => {
+			originalConnectionCreated.resolve();
+			await recoveryCompleted.promise;
+			return originalCreate;
+		});
+		auth.api.listSCIMManagedConnections
+			.mockResolvedValueOnce({ connections: [] })
+			.mockResolvedValueOnce({ connections: [originalCreate.connection] });
+		store.reserve
+			.mockResolvedValueOnce({ config, created: true })
+			.mockResolvedValueOnce({
+				config: {
+					...config,
+					createdAt: new Date("2026-08-25T00:00:00.000Z"),
+				},
+				created: false,
+			});
+		store.claimRecovery.mockResolvedValue(true);
+		store.activate.mockImplementation(async (input) => {
+			if (input.claimToken) {
+				recoveryCompleted.resolve();
+				return {
+					...config,
+					connectionId: input.connectionId,
+					state: "active" as const,
+				};
+			}
+			return null;
+		});
+
+		const request = {
+			organizationId: "org-1",
+			actorId: "actor-1",
+			creationRequestId: config.creationRequestId,
+			autoActivateUsers: false,
+			deprovisionAction: "suspend" as const,
+			defaultRoleTemplateId: "role-1",
+		};
+		const original = createSCIMManagedControlPlane({
+			auth,
+			store,
+			now: () => new Date("2026-08-25T00:00:01.000Z"),
+		}).create(request);
+		await originalConnectionCreated.promise;
+		const recovered = await createSCIMManagedControlPlane({
+			auth,
+			store,
+			now: () => new Date("2026-08-25T00:10:00.000Z"),
+		}).create(request);
+
+		await expect(original).rejects.toBeInstanceOf(
+			SCIMCreationRecoveryConflictError,
+		);
+		expect(recovered).toHaveProperty("token", "rotated-secret-token");
+		expect(store.activate).toHaveBeenCalledWith(
+			expect.objectContaining({ claimToken: null }),
+		);
+		expect(auth.api.revokeSCIMManagedCredential).toHaveBeenCalledWith({
+			body: expect.objectContaining({ credentialId: "credential-1" }),
+		});
+	});
+
+	it("treats a retried creation as fresh at the recovery boundary", async () => {
+		const store = createStore();
+		const retriedAt = new Date("2026-08-25T00:10:00.000Z");
+		const config = await store.findByOrganizationId("org-1");
+		if (!config) throw new Error("Missing test config");
+		store.reserve.mockResolvedValue({
+			config: {
+				...config,
+				creationRequestId: "request-0987654321",
+				createdAt: retriedAt,
+				creationRecoveryClaimToken: null,
+				creationRecoveryClaimExpiresAt: null,
+			},
+			created: false,
+		});
+		const auth = createAuth();
+		const controlPlane = createSCIMManagedControlPlane({
+			auth,
+			store,
+			now: () => new Date("2026-08-25T00:14:59.999Z"),
+		});
+
+		await expect(
+			controlPlane.create({
+				organizationId: "org-1",
+				actorId: "actor-1",
+				creationRequestId: "request-0987654321",
+				autoActivateUsers: false,
+				deprovisionAction: "suspend",
+				defaultRoleTemplateId: "role-1",
+			}),
+		).resolves.toEqual({
+			status: "creating",
+			creationRequestId: "request-0987654321",
+		});
+		expect(store.claimRecovery).not.toHaveBeenCalled();
+	});
+
+	it("resets the server-owned reservation time when retrying a failed creation", async () => {
+		const config = await createStore().findByOrganizationId("org-1");
+		if (!config) throw new Error("Missing test config");
+		const failedConfig = {
+			...config,
+			state: "creation_failed" as const,
+			creationLastError: "remote_connection_not_found",
+			creationRecoveryClaimToken: "11111111-1111-4111-8111-111111111111",
+			creationRecoveryClaimExpiresAt: new Date("2026-08-25T00:00:00.000Z"),
+		};
+		const retriedConfig = {
+			...failedConfig,
+			creationRequestId: "request-0987654321",
+			state: "creating" as const,
+			createdAt: new Date("2026-08-25T00:10:00.000Z"),
+			creationLastError: null,
+			creationRecoveryClaimToken: null,
+			creationRecoveryClaimExpiresAt: null,
+		};
+		const set = vi.fn(() => ({
+			where: () => ({
+				returning: vi.fn().mockResolvedValueOnce([retriedConfig]),
+			}),
+		}));
+		const database = {
+			insert: () => ({
+				values: () => ({
+					onConflictDoNothing: () => ({
+						returning: vi.fn().mockResolvedValue([]),
+					}),
+				}),
+			}),
+			query: {
+				scimProviderConfig: {
+					findFirst: vi.fn().mockResolvedValue(failedConfig),
+				},
+			},
+			update: () => ({ set }),
+		};
+		const store = createSCIMManagedControlPlaneStore(database as never);
+
+		const result = await store.reserve({
+			organizationId: "org-1",
+			creationRequestId: "request-0987654321",
+			autoActivateUsers: false,
+			deprovisionAction: "suspend",
+			defaultRoleTemplateId: "role-1",
+			createdBy: "actor-1",
+		});
+
+		expect(result).toEqual({ config: retriedConfig, created: true });
+		expect(set).toHaveBeenCalledWith(
+			expect.objectContaining({
+				createdAt: expect.any(Object),
+				creationRecoveryClaimToken: null,
+				creationRecoveryClaimExpiresAt: null,
+			}),
+		);
 	});
 
 	it("qualifies every connection item call with the organization provisioning domain", async () => {

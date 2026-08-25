@@ -1,13 +1,13 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, isNull, lte, or, sql } from "drizzle-orm";
 import type {
 	SCIMManagedConnection,
 	SCIMManagedConnectionEvent,
 	SCIMManagedCredential,
 } from "@better-auth/scim";
+import { and, eq, isNull, lte, or, sql } from "drizzle-orm";
 import type { db } from "@/db";
-import type { auth as z8Auth } from "@/lib/auth";
 import { scimProviderConfig } from "@/db/schema/scim";
+import type { auth as z8Auth } from "@/lib/auth";
 import { getSCIMCredentialExpiresAt, SCIM_SCOPES } from "./constants";
 
 type ConfigState =
@@ -58,7 +58,7 @@ export interface SCIMManagedControlPlaneStore {
 		creationRequestId: string;
 		connectionId: string;
 		actorId: string;
-		claimToken?: string;
+		claimToken: string | null;
 	}): Promise<SCIMProviderConfigRecord | null>;
 	failCreation(input: {
 		organizationId: string;
@@ -247,10 +247,11 @@ export function createSCIMManagedControlPlane(input: {
 			}
 			created = rotated;
 		} else if (!reservation.created) {
+			if (!claimToken) throw new SCIMCreationRecoveryConflictError();
 			const failed = await input.store.failCreation({
 				organizationId: request.organizationId,
 				creationRequestId: reservation.config.creationRequestId,
-				claimToken: claimToken!,
+				claimToken,
 			});
 			if (!failed) throw new SCIMCreationRecoveryConflictError();
 			return {
@@ -273,9 +274,19 @@ export function createSCIMManagedControlPlane(input: {
 			creationRequestId: reservation.config.creationRequestId,
 			connectionId: created.connection.connectionId,
 			actorId: request.actorId,
-			claimToken,
+			claimToken: claimToken ?? null,
 		});
-		if (!activated) throw new SCIMCreationRecoveryConflictError();
+		if (!activated) {
+			await input.auth.api.revokeSCIMManagedCredential({
+				body: {
+					connectionId: created.connection.connectionId,
+					provisioningDomainId: request.organizationId,
+					credentialId: created.credential.credentialId,
+					actorId: request.actorId,
+				},
+			});
+			throw new SCIMCreationRecoveryConflictError();
+		}
 		return {
 			connection: toConnectionDTO(created.connection),
 			credential: toCredentialDTO(created.credential),
@@ -398,6 +409,7 @@ export function createSCIMManagedControlPlaneStore(
 						creationLastError: null,
 						creationRecoveryClaimToken: null,
 						creationRecoveryClaimExpiresAt: null,
+						createdAt: sql`now()`,
 						updatedBy: input.createdBy,
 					})
 					.where(
@@ -440,7 +452,7 @@ export function createSCIMManagedControlPlaneStore(
 										input.claimToken,
 									),
 								]
-							: []),
+							: [isNull(scimProviderConfig.creationRecoveryClaimToken)]),
 					),
 				)
 				.returning();

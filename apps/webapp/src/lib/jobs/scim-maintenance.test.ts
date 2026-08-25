@@ -5,7 +5,7 @@ import {
 } from "./scim-maintenance";
 
 describe("runSCIMMaintenance", () => {
-	it("runs strict outbox reconciliation and isolates projection recovery failures", async () => {
+	it("degrades projection recovery invocation failures after other phases run", async () => {
 		const runOutbox = vi.fn().mockResolvedValue({
 			claimed: 1,
 			completed: 1,
@@ -21,34 +21,28 @@ describe("runSCIMMaintenance", () => {
 			.mockRejectedValueOnce(new Error("replay failed"))
 			.mockResolvedValueOnce(true);
 
+		const runDecommissions = vi
+			.fn()
+			.mockResolvedValueOnce("completed")
+			.mockResolvedValueOnce("skipped");
 		await expect(
 			runSCIMMaintenance({
 				runOutbox,
 				listDueRecoveryOrganizations,
 				retryProjectionRecovery,
-				runDecommissions: vi.fn().mockResolvedValue("skipped"),
+				runDecommissions,
 			}),
-		).resolves.toEqual({
-			outbox: {
-				claimed: 1,
-				completed: 1,
-				deferred: 0,
-				exhausted: 0,
-				persistenceFailures: 0,
-			},
-			exhausted: 0,
-			persistenceFailures: 0,
-			projectionRecovery: { attempted: 2, recovered: 1, failed: 1 },
-			decommission: { attempted: 0, completed: 0, deferred: 0, failed: 0 },
-			failures: {
-				outbox: 0,
-				recoveryScan: 0,
-				projectionRecovery: 1,
-				decommission: 0,
+		).rejects.toMatchObject({
+			name: "SCIMMaintenanceDegradedError",
+			result: {
+				projectionRecovery: { attempted: 2, recovered: 1, failed: 1 },
+				decommission: { attempted: 1, completed: 1, deferred: 0, failed: 0 },
+				failures: { projectionRecovery: 1 },
 			},
 		});
 		expect(retryProjectionRecovery).toHaveBeenCalledWith("org-one");
 		expect(retryProjectionRecovery).toHaveBeenCalledWith("org-two");
+		expect(runDecommissions).toHaveBeenCalledTimes(2);
 	});
 
 	it("throws a degraded result for terminal and persistence outbox failures", async () => {
@@ -111,7 +105,9 @@ describe("runSCIMMaintenance", () => {
 	});
 
 	it("aggregates terminal phase failures after every maintenance phase runs", async () => {
-		const runOutbox = vi.fn().mockRejectedValue(new Error("seat persistence failed"));
+		const runOutbox = vi
+			.fn()
+			.mockRejectedValue(new Error("seat persistence failed"));
 		const listDueRecoveryOrganizations = vi.fn().mockResolvedValue(["org-1"]);
 		const retryProjectionRecovery = vi
 			.fn()

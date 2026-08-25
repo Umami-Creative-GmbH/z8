@@ -3,6 +3,10 @@ import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import { reconcileBillingSeatsForOrganization } from "@/lib/billing/seat-sync-trigger";
 import {
+	createSCIMDecommissionStore,
+	runDueSCIMDecommission,
+} from "@/lib/scim/decommission";
+import {
 	createSCIMProjectionRecoveryStore,
 	retryDueSCIMProjectionRecovery,
 } from "@/lib/scim/projection-recovery";
@@ -11,10 +15,6 @@ import {
 	runSCIMSeatSyncOutbox,
 	type SCIMSeatSyncOutboxResult,
 } from "@/lib/scim/seat-sync-outbox";
-import {
-	createSCIMDecommissionStore,
-	runDueSCIMDecommission,
-} from "@/lib/scim/decommission";
 
 const RECOVERY_LIMIT = 50;
 const DECOMMISSION_LIMIT = 50;
@@ -43,7 +43,7 @@ export class SCIMMaintenanceDegradedError extends Error {
 
 	constructor(result: SCIMMaintenanceResult) {
 		super(
-			`SCIM maintenance degraded: ${result.exhausted} exhausted deliveries, ${result.persistenceFailures} persistence failures`,
+			`SCIM maintenance degraded: ${result.exhausted} exhausted deliveries, ${result.persistenceFailures} persistence failures, ${result.failures.projectionRecovery} projection recovery failures`,
 		);
 		this.name = "SCIMMaintenanceDegradedError";
 		this.result = result;
@@ -177,6 +177,7 @@ export async function runSCIMMaintenance(
 	if (
 		outboxError ||
 		recoveryScanError ||
+		failed > 0 ||
 		decommissionFailed > 0 ||
 		result.exhausted > 0 ||
 		result.persistenceFailures > 0
