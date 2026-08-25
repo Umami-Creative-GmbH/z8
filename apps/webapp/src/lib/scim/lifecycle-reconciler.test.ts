@@ -322,6 +322,50 @@ describe("reconcileSCIMLifecycle", () => {
 		},
 	);
 
+	it("is idempotent for duplicate serialized callbacks for one SCIM subject", async () => {
+		const target = fixture({
+			member: {
+				id: "member_existing",
+				organizationId,
+				userId,
+				role: "member",
+				status: "approved",
+			},
+			employee: {
+				id: "employee_existing",
+				organizationId,
+				userId,
+				role: "employee",
+				isActive: true,
+			},
+		});
+
+		await reconcile(false, target);
+		await reconcile(false, target);
+		await reconcile(true, target);
+		await reconcile(true, target);
+
+		expect(target.rows(SCIM_MODELS.member)).toMatchObject([
+			{ status: "approved" },
+		]);
+		expect(target.rows(SCIM_MODELS.employee)).toMatchObject([
+			{ isActive: true },
+		]);
+		expect(target.rows(SCIM_MODELS.member)).toHaveLength(1);
+		expect(target.rows(SCIM_MODELS.employee)).toHaveLength(1);
+		expect(target.rows(SCIM_MODELS.lifecycleState)).toMatchObject([
+			{
+				priorMemberStatus: null,
+				priorEmployeeIsActive: null,
+				deactivationOwned: false,
+				membershipRevision: 2,
+			},
+		]);
+		expect(target.rows(SCIM_MODELS.seatOutbox)).toHaveLength(2);
+		expect(target.rows(SCIM_MODELS.lifecycleAudit)).toHaveLength(2);
+		expect(target.rows(SCIM_MODELS.provisioningAudit)).toHaveLength(2);
+	});
+
 	it("restores an old suspended lifecycle through the active replacement connection", async () => {
 		const target = await deactivateThenReplace("suspend");
 

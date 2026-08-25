@@ -1,9 +1,16 @@
 import { readdirSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import { getSSOTrustedOrigins } from "./auth";
 
 const productionSourceRoot = join(process.cwd(), "src");
+const babelParse = createRequire(import.meta.url)(
+	"next/dist/compiled/babel/parser",
+).parse as (
+	source: string,
+	options: { sourceType: "module"; plugins: string[] },
+) => unknown;
 const scimCredentialTokenFlowPaths = {
 	controlPlane: "lib/scim/managed-control-plane.ts",
 	actions: "app/[locale]/(app)/settings/enterprise/scim-actions.ts",
@@ -39,14 +46,65 @@ function readScimCredentialTokenFlowSources() {
 	) as Record<keyof typeof scimCredentialTokenFlowPaths, string>;
 }
 
+function syntaxIdentifiers(source: string): string[] {
+	const identifiers: string[] = [];
+	const visit = (value: unknown) => {
+		if (!value || typeof value !== "object") return;
+		if (
+			(value as { type?: string }).type === "Identifier" &&
+			typeof (value as { name?: unknown }).name === "string"
+		) {
+			identifiers.push((value as { name: string }).name);
+		}
+		for (const child of Object.values(value)) {
+			if (Array.isArray(child)) child.forEach(visit);
+			else visit(child);
+		}
+	};
+	visit(
+		babelParse(source, {
+			sourceType: "module",
+			plugins: ["typescript", "jsx"],
+		}),
+	);
+	return identifiers;
+}
+
+function tokenMemberAccesses(source: string): string[] {
+	const accesses: string[] = [];
+	const visit = (value: unknown) => {
+		if (!value || typeof value !== "object") return;
+		const node = value as {
+			type?: string;
+			object?: { type?: string; name?: string };
+			property?: { type?: string; name?: string; value?: string };
+		};
+		if (
+			node.type === "MemberExpression" &&
+			node.object?.type === "Identifier" &&
+			(node.property?.name === "token" || node.property?.value === "token")
+		) {
+			accesses.push(`${node.object.name}.token`);
+		}
+		for (const child of Object.values(node)) {
+			if (Array.isArray(child)) child.forEach(visit);
+			else visit(child);
+		}
+	};
+	visit(
+		babelParse(source, {
+			sourceType: "module",
+			plugins: ["typescript", "jsx"],
+		}),
+	);
+	return accesses;
+}
+
 function assertScimCredentialTokenFlow(
 	sources: Record<keyof typeof scimCredentialTokenFlowPaths, string>,
 ) {
 	const normalize = (source: string) => source.replace(/\s+/g, " ").trim();
-	const rawTokenAccesses = (source: string) =>
-		[
-			...source.matchAll(/\b[$\w]+\s*\.\s*token\b|\[\s*["']token["']\s*\]/g),
-		].map((match) => match[0].replace(/\s+/g, ""));
+	const rawTokenAccesses = tokenMemberAccesses;
 	const requireShape = (condition: boolean, message: string) => {
 		if (!condition) throw new Error(message);
 	};
@@ -181,8 +239,9 @@ describe("Better Auth 1.7 core configuration", () => {
 		const violations = productionSourceFiles().flatMap((path) => {
 			const source = readFileSync(path, "utf8");
 			const relativePath = relative(productionSourceRoot, path);
+			const identifiers = syntaxIdentifiers(source);
 			return legacyNames
-				.filter((name) => source.includes(name))
+				.filter((name) => identifiers.includes(name))
 				.map((name) => `${relativePath}:${name}`);
 		});
 
@@ -239,6 +298,17 @@ describe("Better Auth 1.7 core configuration", () => {
 				),
 			),
 		).toThrow(/one-time dialog/i);
+	});
+
+	it("scans legacy SCIM names as syntax rather than comments or string literals", () => {
+		expect(
+			syntaxIdentifiers(
+				'// generateSCIMToken\nconst note = "legacyScimProvider";',
+			),
+		).not.toContain("generateSCIMToken");
+		expect(
+			syntaxIdentifiers('import { generateSCIMToken } from "./legacy";'),
+		).toContain("generateSCIMToken");
 	});
 
 	it("registers managed SCIM with native Drizzle transactions and the dedicated secret", () => {
