@@ -37,4 +37,10 @@ describe("ScimStep", () => {
 		renderState(null, false, null);
 		expect(screen.getByRole("button", { name: "Select a default role template first" })).toHaveProperty("disabled", true);
 	});
+
+	it("shows safe creation recovery states and audit last-use metadata", () => {
+		controller.current = { connectionId: "conn-1", lifecycle: "creation_failed", status: { connection, credentials: [{ credentialId: "credential-1", status: "active", lastUsedAt: "2026-01-02T03:04:00.000Z", expiresAt: "2027-01-01T00:00:00.000Z" }] }, isPending: false, credential: null, destructive: null, events: [], eventsError: false, create: vi.fn(), refresh: vi.fn(), rotate: vi.fn(), requestRevoke: vi.fn(), requestDecommission: vi.fn(), clearCredential: vi.fn(), cancelDestructive: vi.fn(), confirm: vi.fn() };
+		render(<ScimStep initialSetup={setup()} />);
+		expect(screen.getByText("creation failed")).toBeTruthy();
+	});
 });

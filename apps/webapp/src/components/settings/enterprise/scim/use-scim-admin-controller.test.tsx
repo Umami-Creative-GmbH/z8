@@ -38,6 +38,14 @@ describe("useScimAdminController", () => {
 		act(() => result.current.requestDecommission()); act(() => result.current.cancelDestructive());
 		expect(actions.decommission).not.toHaveBeenCalled();
 		act(() => result.current.requestDecommission()); act(() => result.current.confirm());
-		await waitFor(() => expect(actions.decommission).toHaveBeenCalledWith("connection-1")); await waitFor(() => expect(result.current.status).toBeNull());
+		await waitFor(() => expect(actions.decommission).toHaveBeenCalledWith("connection-1")); await waitFor(() => expect(result.current.lifecycle).toBe("decommissioned"));
+	});
+
+	it.each(["creating", "creation_failed"] as const)("retains the safe %s create result for recovery", async (lifecycle) => {
+		actions.create.mockResolvedValue({ status: lifecycle, creationRequestId: "safe-request-id" });
+		const { result } = renderHook(() => useScimAdminController(setup));
+		act(() => result.current.create("role-1"));
+		await waitFor(() => expect(result.current.lifecycle).toBe(lifecycle));
+		expect(result.current.credential).toBeNull();
 	});
 });
