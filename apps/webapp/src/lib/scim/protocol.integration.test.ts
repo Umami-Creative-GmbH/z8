@@ -34,6 +34,29 @@ const connectionIds: string[] = [];
 
 type SCIMResource = { id: string; externalId?: string; active?: boolean };
 
+async function expectSafeSCIMError(
+	response: Response,
+	status: number,
+	secrets: string[],
+) {
+	expect(response.status).toBe(status);
+	expect(response.headers.get("content-type")).toContain(
+		"application/scim+json",
+	);
+	const error = (await response.json()) as {
+		schemas: string[];
+		status: string;
+		detail?: string;
+	};
+	expect(error.schemas).toEqual([
+		"urn:ietf:params:scim:api:messages:2.0:Error",
+	]);
+	expect(error.status).toBe(String(status));
+	for (const secret of secrets)
+		expect(JSON.stringify(error)).not.toContain(secret);
+	return error;
+}
+
 describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 	const pool = new Pool({ connectionString: databaseUrl, max: 8 });
 	const database = drizzle({ client: pool, schema: authDatabaseSchema });
@@ -254,11 +277,27 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 			"PUT",
 			user("replacement"),
 		);
-		expect(immutable.status).toBe(409);
-		expect(await immutable.json()).toEqual({
+		expect(
+			await expectSafeSCIMError(immutable, 409, [
+				graph.token,
+				graph.organizationId,
+				graph.providerId,
+			]),
+		).toEqual({
 			schemas: ["urn:ietf:params:scim:api:messages:2.0:Error"],
 			status: "409",
 			detail: "The SCIM identity cannot be linked",
+		});
+		const replaced = await request(graph.token, `/Users/${source.id}`, "PUT", {
+			...user("protocol-user"),
+			userName: "unrelated-profile@example.invalid",
+			name: { formatted: "Updated Profile" },
+			emails: [{ value: "unrelated-profile@example.invalid", primary: true }],
+		});
+		expect(replaced.status).toBe(200);
+		expect((await replaced.json()) as SCIMResource).toMatchObject({
+			id: source.id,
+			externalId: "protocol-user",
 		});
 		const group = await request(graph.token, "/Groups", "POST", {
 			schemas: ["urn:ietf:params:scim:schemas:core:2.0:Group"],
@@ -318,10 +357,19 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 		for (const [token, path, expected] of [
 			["invalid", "/Users", 401],
 			[graph.token, "/Unknown", 400],
-		] as const)
-			expect((await request(token, path)).status).toBe(expected);
+		] as const) {
+			await expectSafeSCIMError(await request(token, path), expected, [
+				graph.token,
+				graph.organizationId,
+				graph.providerId,
+			]);
+		}
 		const restricted = await setup("restricted", ["scim.users.read"]);
-		expect((await request(restricted.token, "/Groups")).status).toBe(403);
+		await expectSafeSCIMError(await request(restricted.token, "/Groups"), 403, [
+			restricted.token,
+			restricted.organizationId,
+			restricted.providerId,
+		]);
 	});
 
 	it("projects only bound organization identities, roles, lifecycle state, and managed credentials", async () => {
@@ -471,9 +519,15 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 		});
 		expect((await request(orgA.token, "/Users")).status).toBe(401);
 		const persisted = await pool.query<{ value: string }>(
-			`select coalesce(string_agg(to_jsonb(row)::text, ''), '') as value from (select * from scim_managed_connection where connection_id = $1 union all select * from scim_managed_connection where connection_id = $2) row`,
+			`select coalesce(string_agg(value, ''), '') as value from (
+				select to_jsonb(connection)::text as value from scim_managed_connection connection where connection_id in ($1, $2)
+				union all select to_jsonb(credential)::text as value from scim_managed_credential credential
+				join scim_managed_connection connection on connection.id = credential.connection_record_id
+				where connection.connection_id in ($1, $2)
+			) values`,
 			[orgA.connectionId, orgB.connectionId],
 		);
+		expect(persisted.rows[0]?.value).not.toContain(orgA.token);
 		expect(persisted.rows[0]?.value).not.toContain(rotated.token);
 		const events = await auth.api.listSCIMManagedConnectionEvents({
 			body: {
