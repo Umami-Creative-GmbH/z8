@@ -56,6 +56,16 @@ function syntaxIdentifiers(source: string): string[] {
 		) {
 			identifiers.push((value as { name: string }).name);
 		}
+		if (
+			(value as { type?: string }).type === "MemberExpression" &&
+			(value as { computed?: boolean }).computed === true &&
+			(value as { property?: { value?: unknown } }).property?.value &&
+			typeof (value as { property?: { value?: unknown } }).property?.value ===
+				"string"
+		)
+			identifiers.push(
+				(value as { property: { value: string } }).property.value,
+			);
 		for (const child of Object.values(value)) {
 			if (Array.isArray(child)) child.forEach(visit);
 			else visit(child);
@@ -108,6 +118,16 @@ function assertScimCredentialTokenFlow(
 	const requireShape = (condition: boolean, message: string) => {
 		if (!condition) throw new Error(message);
 	};
+	for (const [sourceName, source] of Object.entries(sources)) {
+		requireShape(
+			!/(?:logger|console|telemetry|analytics|cache|query)\s*\.\s*\w+\s*\([^)]*\b(?:created|result)\b/.test(
+				source,
+			) &&
+				!/\bsetState\s*\(\s*(?:created|result)\b/.test(source) &&
+				!/\.\.\.\s*(?:created|result)\b/.test(source),
+			`Managed credential result escapes its approved flow: ${sourceName}`,
+		);
+	}
 
 	const controlPlane = normalize(sources.controlPlane);
 	requireShape(
@@ -261,7 +281,7 @@ describe("Better Auth 1.7 core configuration", () => {
 					"logger.info({ token: created.token });\n\t\treturn {\n\t\t\tconnection: toConnectionDTO(created.connection),",
 				),
 			),
-		).toThrow(/raw token access/i);
+		).toThrow(/escapes/i);
 		expect(() =>
 			assertScimCredentialTokenFlow(
 				mutate(
@@ -279,7 +299,7 @@ describe("Better Auth 1.7 core configuration", () => {
 					'return { ...result, status: "active" };',
 				),
 			),
-		).toThrow(/managed result/i);
+		).toThrow(/escapes/i);
 		expect(() =>
 			assertScimCredentialTokenFlow(
 				mutate(
@@ -298,6 +318,20 @@ describe("Better Auth 1.7 core configuration", () => {
 				),
 			),
 		).toThrow(/one-time dialog/i);
+		for (const leak of [
+			"logger.info({ created });",
+			"telemetry.capture('scim', result);",
+			"cache.set(key, result);",
+			"const leaked = { ...result };",
+			"setState(result);",
+		]) {
+			expect(() =>
+				assertScimCredentialTokenFlow({
+					...sources,
+					controlPlane: `${sources.controlPlane}\n${leak}`,
+				}),
+			).toThrow(/escapes/i);
+		}
 	});
 
 	it("scans legacy SCIM names as syntax rather than comments or string literals", () => {
@@ -309,6 +343,9 @@ describe("Better Auth 1.7 core configuration", () => {
 		expect(
 			syntaxIdentifiers('import { generateSCIMToken } from "./legacy";'),
 		).toContain("generateSCIMToken");
+		expect(syntaxIdentifiers("api['generateSCIMToken']()")).toContain(
+			"generateSCIMToken",
+		);
 	});
 
 	it("registers managed SCIM with native Drizzle transactions and the dedicated secret", () => {
