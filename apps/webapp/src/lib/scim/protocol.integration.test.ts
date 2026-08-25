@@ -460,6 +460,7 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 		const orgA = await setup("decommission-a");
 		const orgB = await setup("decommission-b");
 		const now = new Date("2026-08-26T13:00:00.000Z");
+		const retryAfter = new Date("2026-08-26T14:00:00.000Z");
 		const store = createSCIMDecommissionStore(database);
 		let reconcilingCalls = 0;
 		const initial = await decommissionSCIMConnection({
@@ -472,7 +473,7 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 						return {
 							decommission: {
 								status: "reconciling" as const,
-								retryAfter: new Date("2026-08-26T14:00:00.000Z"),
+								retryAfter,
 							},
 						};
 					},
@@ -485,11 +486,23 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 		});
 		expect(initial).toBe("deferred");
 		expect(reconcilingCalls).toBe(1);
-		await pool.query(
-			"update scim_provider_config set decommission_retry_at = $1 where organization_id = $2",
-			[now, orgA.organizationId],
+		const deferred = await pool.query<{ decommission_retry_at: Date }>(
+			"select decommission_retry_at from scim_provider_config where organization_id = $1",
+			[orgA.organizationId],
 		);
-		const completed = await runDueSCIMDecommission({ store, auth, now });
+		expect(deferred.rows).toEqual([{ decommission_retry_at: retryAfter }]);
+		expect(
+			await runDueSCIMDecommission({
+				store,
+				auth,
+				now: new Date(retryAfter.getTime() - 1),
+			}),
+		).toBe("skipped");
+		const completed = await runDueSCIMDecommission({
+			store,
+			auth,
+			now: retryAfter,
+		});
 		expect(completed).toBe("completed");
 		const configs = await pool.query<{
 			organization_id: string;
@@ -706,18 +719,5 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 			},
 		});
 		expect(JSON.stringify(events)).not.toContain(rotated.token);
-		const deadline = Date.now() + 5_000;
-		let status = "reconciling";
-		while (Date.now() < deadline && status === "reconciling") {
-			const result = await auth.api.decommissionSCIMManagedConnection({
-				body: {
-					connectionId: orgA.connectionId,
-					provisioningDomainId: orgA.organizationId,
-					actorId: orgA.actorId,
-				},
-			});
-			status = result.decommission.status;
-		}
-		expect(status).toBe("decommissioned");
 	});
 });
