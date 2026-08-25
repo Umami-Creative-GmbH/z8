@@ -33,12 +33,19 @@ describe("useScimAdminController", () => {
 	});
 
 	it("does not mutate on cancelled confirmation and clears status after decommission", async () => {
-		actions.decommission.mockResolvedValue("decommissioned");
+		actions.decommission.mockResolvedValue("completed");
 		const { result } = renderHook(() => useScimAdminController(setup));
 		act(() => result.current.requestDecommission()); act(() => result.current.cancelDestructive());
 		expect(actions.decommission).not.toHaveBeenCalled();
 		act(() => result.current.requestDecommission()); act(() => result.current.confirm());
 		await waitFor(() => expect(actions.decommission).toHaveBeenCalledWith("connection-1")); await waitFor(() => expect(result.current.lifecycle).toBe("decommissioned"));
+	});
+
+	it("maps a deferred decommission result to reconciliation rather than completion", async () => {
+		actions.decommission.mockResolvedValue("deferred");
+		const { result } = renderHook(() => useScimAdminController(setup));
+		act(() => result.current.requestDecommission()); act(() => result.current.confirm());
+		await waitFor(() => expect(result.current.lifecycle).toBe("decommissioning"));
 	});
 
 	it.each(["creating", "creation_failed"] as const)("retains the safe %s create result for recovery", async (lifecycle) => {

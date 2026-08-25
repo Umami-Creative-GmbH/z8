@@ -43,4 +43,20 @@ describe("ScimStep", () => {
 		render(<ScimStep initialSetup={setup()} />);
 		expect(screen.getByText("creation failed")).toBeTruthy();
 	});
+
+	it("gates duplicate initiation and mutations while creation is in progress", () => {
+		controller.current = { connectionId: null, lifecycle: "creating", status: null, isPending: false, credential: null, destructive: null, events: [], eventsError: false, create: vi.fn(), refresh: vi.fn(), rotate: vi.fn(), requestRevoke: vi.fn(), requestDecommission: vi.fn(), clearCredential: vi.fn(), cancelDestructive: vi.fn(), confirm: vi.fn() };
+		render(<ScimStep initialSetup={setup()} />);
+		expect(screen.getByText("creating")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Creating SCIM connection" })).toHaveProperty("disabled", true);
+		expect(screen.queryByRole("button", { name: "Rotate credential" })).toBeNull();
+	});
+
+	it("gates actions while decommission reconciliation is deferred", () => {
+		controller.current = { connectionId: "conn-1", lifecycle: "decommissioning", status: { connection, credentials: [] }, isPending: false, credential: null, destructive: null, events: [], eventsError: false, create: vi.fn(), refresh: vi.fn(), rotate: vi.fn(), requestRevoke: vi.fn(), requestDecommission: vi.fn(), clearCredential: vi.fn(), cancelDestructive: vi.fn(), confirm: vi.fn() };
+		render(<ScimStep initialSetup={setup()} />);
+		expect(screen.getByText("decommissioning")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Rotate credential" })).toHaveProperty("disabled", true);
+		expect(screen.getByRole("button", { name: "Decommission" })).toHaveProperty("disabled", true);
+	});
 });
