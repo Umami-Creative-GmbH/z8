@@ -100,21 +100,44 @@ describe("SCIM managed control plane", () => {
 		auth.api.listSCIMManagedConnections.mockResolvedValueOnce({
 			connections: [],
 		});
-		const controlPlane = createSCIMManagedControlPlane({ auth, store });
-
-		const result = await controlPlane.create({
-			organizationId: "org-1",
-			actorId: "actor-1",
-			creationRequestId: "request-1234567890",
-			autoActivateUsers: false,
-			deprovisionAction: "suspend",
-			defaultRoleTemplateId: "role-1",
+		const controlPlane = createSCIMManagedControlPlane({
+			auth,
+			store,
+			now: () => new Date("2026-08-25T00:00:00.000Z"),
 		});
+
+		const result = await controlPlane.create(
+			Object.assign(
+				{
+					organizationId: "org-1",
+					actorId: "actor-1",
+					creationRequestId: "request-1234567890",
+					autoActivateUsers: false,
+					deprovisionAction: "suspend" as const,
+					defaultRoleTemplateId: "role-1",
+				},
+				{
+					createdAt: new Date("2099-01-01T00:00:00.000Z"),
+					creationRecoveryClaimToken: "nonexpiring-claim",
+					creationRecoveryClaimExpiresAt: new Date("2099-01-01T00:00:00.000Z"),
+					creationAttemptCount: 99,
+					creationLastError: "injected-error",
+				},
+			),
+		);
 
 		expect(store.reserve.mock.invocationCallOrder[0]).toBeLessThan(
 			auth.api.createSCIMManagedConnection.mock.invocationCallOrder[0] ??
 				Infinity,
 		);
+		expect(store.reserve).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			creationRequestId: "request-1234567890",
+			autoActivateUsers: false,
+			deprovisionAction: "suspend",
+			defaultRoleTemplateId: "role-1",
+			createdBy: "actor-1",
+		});
 		expect(auth.api.createSCIMManagedConnection).toHaveBeenCalledWith({
 			body: expect.objectContaining({
 				provisioningDomainId: "org-1",

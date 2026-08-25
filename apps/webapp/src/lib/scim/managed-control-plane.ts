@@ -36,13 +36,17 @@ export interface SCIMProviderConfigRecord {
 	creationLastError: string | null;
 }
 
+export interface SCIMProviderConfigReservationInput {
+	organizationId: string;
+	creationRequestId: string;
+	autoActivateUsers: boolean;
+	deprovisionAction: "soft_delete" | "suspend";
+	defaultRoleTemplateId: string;
+	createdBy: string;
+}
+
 export interface SCIMManagedControlPlaneStore {
-	reserve(
-		input: Omit<
-			SCIMProviderConfigRecord,
-			"id" | "connectionId" | "state" | "updatedBy"
-		>,
-	): Promise<{
+	reserve(input: SCIMProviderConfigReservationInput): Promise<{
 		config: SCIMProviderConfigRecord;
 		created: boolean;
 	}>;
@@ -110,6 +114,15 @@ export type SCIMManagedConnectionEventDTO = Omit<
 	"createdAt"
 > & { createdAt: string };
 
+interface SCIMManagedControlPlaneCreateRequest {
+	organizationId: string;
+	creationRequestId: string;
+	autoActivateUsers: boolean;
+	deprovisionAction: "soft_delete" | "suspend";
+	defaultRoleTemplateId: string;
+	actorId: string;
+}
+
 function toConnectionDTO(
 	connection: SCIMManagedConnection,
 ): SCIMManagedConnectionDTO {
@@ -147,14 +160,13 @@ export function createSCIMManagedControlPlane(input: {
 }) {
 	const expiresAt = () =>
 		getSCIMCredentialExpiresAt(input.now?.() ?? new Date());
-	const create = async (
-		request: Omit<
-			SCIMProviderConfigRecord,
-			"id" | "connectionId" | "state" | "updatedBy" | "createdBy"
-		> & { actorId: string },
-	) => {
+	const create = async (request: SCIMManagedControlPlaneCreateRequest) => {
 		const reservation = await input.store.reserve({
-			...request,
+			organizationId: request.organizationId,
+			creationRequestId: request.creationRequestId,
+			autoActivateUsers: request.autoActivateUsers,
+			deprovisionAction: request.deprovisionAction,
+			defaultRoleTemplateId: request.defaultRoleTemplateId,
 			createdBy: request.actorId,
 		});
 		if (
@@ -351,10 +363,19 @@ export function createSCIMManagedControlPlaneStore(
 			const [config] = await database
 				.insert(scimProviderConfig)
 				.values({
-					...input,
+					organizationId: input.organizationId,
+					creationRequestId: input.creationRequestId,
+					autoActivateUsers: input.autoActivateUsers,
+					deprovisionAction: input.deprovisionAction,
+					defaultRoleTemplateId: input.defaultRoleTemplateId,
+					createdBy: input.createdBy,
 					connectionId: null,
 					state: "creating",
 					updatedBy: null,
+					creationRecoveryClaimToken: null,
+					creationRecoveryClaimExpiresAt: null,
+					creationAttemptCount: 0,
+					creationLastError: null,
 				})
 				.onConflictDoNothing({ target: scimProviderConfig.organizationId })
 				.returning();
@@ -414,11 +435,11 @@ export function createSCIMManagedControlPlaneStore(
 						eq(scimProviderConfig.state, "creating"),
 						...(input.claimToken
 							? [
-								eq(
-									scimProviderConfig.creationRecoveryClaimToken,
-									input.claimToken,
-								),
-							]
+									eq(
+										scimProviderConfig.creationRecoveryClaimToken,
+										input.claimToken,
+									),
+								]
 							: []),
 					),
 				)
@@ -439,10 +460,7 @@ export function createSCIMManagedControlPlaneStore(
 						eq(scimProviderConfig.organizationId, input.organizationId),
 						eq(scimProviderConfig.creationRequestId, input.creationRequestId),
 						eq(scimProviderConfig.state, "creating"),
-						eq(
-							scimProviderConfig.creationRecoveryClaimToken,
-							input.claimToken,
-						),
+						eq(scimProviderConfig.creationRecoveryClaimToken, input.claimToken),
 					),
 				)
 				.returning();
