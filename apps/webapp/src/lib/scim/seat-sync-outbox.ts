@@ -1,12 +1,31 @@
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
+import { createLogger } from "@/lib/logger";
 
 const CLAIM_LIMIT = 50;
 const LEASE_DURATION = Temporal.Duration.from({ minutes: 5 });
 const MAX_RETRY_SECONDS = 60 * 60;
 const MAX_ATTEMPTS = 8;
 const MAX_ERROR_LENGTH = 256;
+const TERMINAL_RETRY_ERROR = "scim_seat_sync_retry_exhausted";
+const logger = createLogger("SCIMSeatSyncOutbox");
+
+export class SCIMSeatSyncOutboxLeaseNotOwnedError extends Error {
+	constructor() {
+		super("SCIM seat sync outbox lease is no longer owned");
+	}
+}
+
+export type SCIMSeatSyncDeferOutcome = "deferred" | "exhausted";
+
+export interface SCIMSeatSyncOutboxResult {
+	claimed: number;
+	completed: number;
+	deferred: number;
+	exhausted: number;
+	persistenceFailures: number;
+}
 
 export interface SCIMSeatSyncClaim {
 	id: string;
@@ -22,7 +41,7 @@ export interface SCIMSeatSyncOutboxStore {
 		claim: SCIMSeatSyncClaim,
 		now: Temporal.Instant,
 		error: string,
-	): Promise<void>;
+	): Promise<SCIMSeatSyncDeferOutcome>;
 }
 
 interface SCIMSeatSyncDatabase {
@@ -32,8 +51,7 @@ interface SCIMSeatSyncDatabase {
 }
 
 function assertLeaseUpdated(rows: Array<{ id: string }>): void {
-	if (rows.length !== 1)
-		throw new Error("SCIM seat sync outbox lease is no longer owned");
+	if (rows.length !== 1) throw new SCIMSeatSyncOutboxLeaseNotOwnedError();
 }
 
 function toClaim(row: {
@@ -128,8 +146,8 @@ export function createSCIMSeatSyncOutboxStore(
 				30 * 2 ** Math.max(claim.attemptCount - 1, 0),
 				MAX_RETRY_SECONDS,
 			);
-			const safeError = safeErrorText(error);
 			const exhausted = claim.attemptCount >= MAX_ATTEMPTS;
+			const safeError = exhausted ? TERMINAL_RETRY_ERROR : safeErrorText(error);
 			const result = await database.execute(sql`
 				UPDATE scim_billing_seat_sync_outbox
 				SET status = ${exhausted ? "completed" : "pending"},
@@ -144,6 +162,7 @@ export function createSCIMSeatSyncOutboxStore(
 				RETURNING id
 			`);
 			assertLeaseUpdated(result.rows as Array<{ id: string }>);
+			return exhausted ? "exhausted" : "deferred";
 		},
 	};
 }
@@ -155,26 +174,67 @@ export async function runSCIMSeatSyncOutbox(input: {
 		options: { strict: true },
 	) => Promise<void>;
 	now?: Temporal.Instant;
-}): Promise<{ claimed: number; completed: number; deferred: number }> {
+}): Promise<SCIMSeatSyncOutboxResult> {
 	const now = input.now ?? Temporal.Now.instant();
 	const claims = await input.store.claimDue(now);
 	let completed = 0;
 	let deferred = 0;
+	let exhausted = 0;
+	let persistenceFailures = 0;
 
 	for (const claim of claims) {
 		try {
 			await input.reconcile(claim.organizationId, { strict: true });
-			await input.store.complete(claim, now);
-			completed++;
+			try {
+				await input.store.complete(claim, now);
+				completed++;
+			} catch (error) {
+				persistenceFailures++;
+				logger.error(
+					{
+						claimId: claim.id,
+						organizationId: claim.organizationId,
+						errorType: error instanceof Error ? error.name : "UnknownError",
+					},
+					"Failed to persist SCIM seat sync completion",
+				);
+			}
 		} catch {
 			try {
-				await input.store.defer(claim, now, "Seat reconciliation failed");
-				deferred++;
-			} catch {
-				// A lease may have expired and been claimed by another worker.
+				const outcome = await input.store.defer(
+					claim,
+					now,
+					"Seat reconciliation failed",
+				);
+				if (outcome === "exhausted") {
+					exhausted++;
+					logger.error(
+						{ claimId: claim.id, organizationId: claim.organizationId },
+						"SCIM seat sync retries exhausted",
+					);
+				} else {
+					deferred++;
+				}
+			} catch (error) {
+				if (error instanceof SCIMSeatSyncOutboxLeaseNotOwnedError) continue;
+				persistenceFailures++;
+				logger.error(
+					{
+						claimId: claim.id,
+						organizationId: claim.organizationId,
+						errorType: error instanceof Error ? error.name : "UnknownError",
+					},
+					"Failed to persist SCIM seat sync retry",
+				);
 			}
 		}
 	}
 
-	return { claimed: claims.length, completed, deferred };
+	return {
+		claimed: claims.length,
+		completed,
+		deferred,
+		exhausted,
+		persistenceFailures,
+	};
 }

@@ -9,17 +9,20 @@ import {
 import {
 	createSCIMSeatSyncOutboxStore,
 	runSCIMSeatSyncOutbox,
+	type SCIMSeatSyncOutboxResult,
 } from "@/lib/scim/seat-sync-outbox";
 
 const RECOVERY_LIMIT = 50;
 
 export interface SCIMMaintenanceResult {
-	outbox: { claimed: number; completed: number; deferred: number };
+	outbox: SCIMSeatSyncOutboxResult;
+	exhausted: number;
+	persistenceFailures: number;
 	projectionRecovery: { attempted: number; recovered: number; failed: number };
 }
 
 interface SCIMMaintenanceDependencies {
-	runOutbox: () => Promise<SCIMMaintenanceResult["outbox"]>;
+	runOutbox: () => Promise<SCIMSeatSyncOutboxResult>;
 	listDueRecoveryOrganizations: () => Promise<string[]>;
 	retryProjectionRecovery: (organizationId: string) => Promise<boolean>;
 }
@@ -83,6 +86,8 @@ export async function runSCIMMaintenance(
 
 	return {
 		outbox,
+		exhausted: outbox.exhausted,
+		persistenceFailures: outbox.persistenceFailures,
 		projectionRecovery: {
 			attempted: organizationIds.length,
 			recovered,

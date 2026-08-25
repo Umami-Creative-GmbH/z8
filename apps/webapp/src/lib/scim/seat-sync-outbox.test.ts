@@ -9,6 +9,12 @@ import {
 	type SCIMSeatSyncOutboxStore,
 } from "./seat-sync-outbox";
 
+const mocks = vi.hoisted(() => ({ loggerError: vi.fn() }));
+
+vi.mock("@/lib/logger", () => ({
+	createLogger: () => ({ error: mocks.loggerError }),
+}));
+
 function compile(query: unknown) {
 	return new PgDialect().sqlToQuery(query as SQL);
 }
@@ -40,6 +46,8 @@ describe("runSCIMSeatSyncOutbox", () => {
 			claimed: 2,
 			completed: 1,
 			deferred: 1,
+			exhausted: 0,
+			persistenceFailures: 0,
 		});
 		expect(reconcile).toHaveBeenNthCalledWith(1, "org-one", { strict: true });
 		expect(reconcile).toHaveBeenNthCalledWith(2, "org-two", { strict: true });
@@ -66,8 +74,62 @@ describe("runSCIMSeatSyncOutbox", () => {
 			claimed: 0,
 			completed: 0,
 			deferred: 0,
+			exhausted: 0,
+			persistenceFailures: 0,
 		});
 		expect(reconcile).not.toHaveBeenCalled();
+	});
+
+	it("records a defer persistence failure and continues independently claimed rows", async () => {
+		const claims = [claim("one", "org-one"), claim("two", "org-two")];
+		const store: SCIMSeatSyncOutboxStore = {
+			claimDue: vi.fn().mockResolvedValue(claims),
+			complete: vi.fn(),
+			defer: vi.fn().mockRejectedValueOnce(new Error("database unavailable")),
+		};
+		const reconcile = vi
+			.fn()
+			.mockRejectedValueOnce(new Error("billing failed"))
+			.mockResolvedValueOnce(undefined);
+
+		await expect(runSCIMSeatSyncOutbox({ store, reconcile })).resolves.toEqual({
+			claimed: 2,
+			completed: 1,
+			deferred: 0,
+			exhausted: 0,
+			persistenceFailures: 1,
+		});
+		expect(reconcile).toHaveBeenCalledWith("org-two", { strict: true });
+		expect(mocks.loggerError).toHaveBeenCalledWith(
+			{ claimId: "one", organizationId: "org-one", errorType: "Error" },
+			"Failed to persist SCIM seat sync retry",
+		);
+	});
+
+	it("reports and logs exhausted SCIM seat sync retries", async () => {
+		const exhaustedClaim = claim("one", "org-one", 8);
+		const store: SCIMSeatSyncOutboxStore = {
+			claimDue: vi.fn().mockResolvedValue([exhaustedClaim]),
+			complete: vi.fn(),
+			defer: vi.fn().mockResolvedValue("exhausted"),
+		};
+
+		await expect(
+			runSCIMSeatSyncOutbox({
+				store,
+				reconcile: vi.fn().mockRejectedValue(new Error("billing failed")),
+			}),
+		).resolves.toEqual({
+			claimed: 1,
+			completed: 0,
+			deferred: 0,
+			exhausted: 1,
+			persistenceFailures: 0,
+		});
+		expect(mocks.loggerError).toHaveBeenCalledWith(
+			{ claimId: "one", organizationId: "org-one" },
+			"SCIM seat sync retries exhausted",
+		);
 	});
 });
 
@@ -131,18 +193,21 @@ describe("createSCIMSeatSyncOutboxStore", () => {
 		expect(query.params).not.toContain(expect.stringContaining("\n"));
 	});
 
-	it("marks exhausted retries completed so they cannot be claimed again", async () => {
+	it("marks exhausted retries as an explicit terminal delivery outcome", async () => {
 		const execute = vi.fn().mockResolvedValue({ rows: [{ id: "row-one" }] });
 		const store = createSCIMSeatSyncOutboxStore({ execute });
 
-		await store.defer(
-			claim("row-one", "org-one", 8),
-			Temporal.Now.instant(),
-			"failed",
-		);
+		await expect(
+			store.defer(
+				claim("row-one", "org-one", 8),
+				Temporal.Now.instant(),
+				"failed",
+			),
+		).resolves.toBe("exhausted");
 
 		const query = compile(execute.mock.calls[0]?.[0]);
 		expect(query.params).toContain("completed");
+		expect(query.params).toContain("scim_seat_sync_retry_exhausted");
 		expect(query.sql).toContain("processed_at");
 	});
 });
