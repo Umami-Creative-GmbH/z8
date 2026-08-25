@@ -160,11 +160,12 @@ function setupResponse(overrides: Partial<EnterpriseIdentitySetupResponse["state
 			error: null,
 		},
 		scim: {
-			enabled: false,
-			providerId: null,
-			verified: false,
-			lastCheckedAt: null,
-			error: null,
+			policy: {
+				autoActivateUsers: false,
+				deprovisionAction: "suspend",
+				defaultRoleTemplateId: "role-template-1",
+			},
+			connection: null,
 		},
 		enforcement: {
 			ssoRequired: false,
@@ -418,42 +419,24 @@ describe("IdentitySetupWizard behavior", () => {
 		expect(screen.getByText("Verifiziert")).toBeTruthy();
 	});
 
-	it("keeps the SCIM step compatible while provisioning controls are unavailable", () => {
+	it("restores SCIM controls with a responsive managed connection layout", () => {
 		renderWizard(
 			configuredSetup({
 				currentStep: "scim",
-				scim: {
-					enabled: true,
-					providerId: "acme-okta",
-					verified: false,
-					lastCheckedAt: null,
-					error: null,
+			scim: {
+				policy: {
+					autoActivateUsers: false,
+					deprovisionAction: "suspend",
+					defaultRoleTemplateId: "role-template-1",
+				},
+				connection: null,
 				},
 			}),
 		);
 
-		expect(
-			screen.getByText("SCIM provisioning is temporarily unavailable"),
-		).toBeTruthy();
-		expect(
-			screen.getByText(
-				"SCIM provisioning is temporarily unavailable during the Better Auth 1.7 cutover.",
-			),
-		).toBeTruthy();
-		expect(
-			screen.getByText(
-				"Existing provisioning data is preserved while the Better Auth 1.7 SCIM cutover is prepared.",
-			),
-		).toBeTruthy();
-		expect(screen.queryByRole("button", { name: "Generate token" })).toBeNull();
-		expect(screen.queryByRole("button", { name: "Token generieren" })).toBeNull();
-		expect(screen.queryByRole("button", { name: "Refresh status" })).toBeNull();
-		expect(screen.queryByRole("button", { name: "Status aktualisieren" })).toBeNull();
-		expect(screen.queryByRole("button", { name: "Copy token" })).toBeNull();
-		expect(screen.queryByText("/api/auth/scim/v2")).toBeNull();
+		expect(screen.getByRole("button", { name: "Create SCIM connection" })).toBeTruthy();
+		expect(screen.getByText("/api/auth/scim/v2")).toBeTruthy();
 		expect(screen.queryByText("scim_token_returned_once")).toBeNull();
-		expect(generateEnterpriseIdentityScimTokenActionMock).not.toHaveBeenCalled();
-		expect(refreshEnterpriseIdentityScimStatusActionMock).not.toHaveBeenCalled();
 	});
 
 	it("saves access policy with top-level defaultRoleTemplateId", async () => {

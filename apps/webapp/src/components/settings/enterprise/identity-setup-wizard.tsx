@@ -44,6 +44,7 @@ import {
 	type EnterpriseIdentitySetupStep,
 	getEnterpriseIdentityReadiness,
 } from "@/lib/enterprise-identity/setup-state";
+import { ScimStep as ManagedScimStep } from "./scim/scim-step";
 
 interface IdentitySetupWizardProps {
 	initialSetup: EnterpriseIdentitySetupResponse;
@@ -140,10 +141,7 @@ function getStepCopy(
 		case "scim":
 			return {
 				label: t("settings.enterprise.identity.step.scim", "SCIM Provisioning"),
-				description: t(
-					"settings.enterprise.identity.step.scim.description",
-					"SCIM provisioning is temporarily unavailable during the Better Auth 1.7 cutover.",
-				),
+				description: t("settings.enterprise.identity.step.scim.description", "Provision access from your identity provider"),
 			};
 		case "accessPolicy":
 			return {
@@ -1170,20 +1168,7 @@ function SsoTestStep({ controller }: { controller: IdentitySetupController }) {
 }
 
 function ScimStep({ controller }: { controller: IdentitySetupController }) {
-	const { t } = controller;
-
-	return (
-		<WizardCard
-			title={t(
-				"settings.enterprise.identity.scim.unavailable",
-				"SCIM provisioning is temporarily unavailable",
-			)}
-			description={t(
-				"settings.enterprise.identity.scim.unavailableDescription",
-				"Existing provisioning data is preserved while the Better Auth 1.7 SCIM cutover is prepared.",
-			)}
-		/>
-	);
+	return <WizardCard title="SCIM Provisioning" description="Configure managed user provisioning without changing enterprise activation."><ManagedScimStep initialSetup={controller.initialSetup} /></WizardCard>;
 }
 
 function AccessPolicyStep({
