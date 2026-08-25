@@ -59,14 +59,14 @@ describe("useScimAdminController", () => {
 
 	it("reconciles a creating reservation before allowing an explicit retry", async () => {
 		actions.create.mockResolvedValueOnce({ status: "creating", creationRequestId: "safe-request-id" }).mockResolvedValueOnce({ status: "creation_failed", creationRequestId: "safe-request-id" });
-		actions.reconcile.mockResolvedValue({ connectionId: null, status: "creation_failed" });
+		actions.reconcile.mockResolvedValue({ status: "creation_failed" });
 		const { result } = renderHook(() => useScimAdminController(setup));
 		act(() => result.current.create("role-1"));
 		await waitFor(() => expect(result.current.lifecycle).toBe("creating"));
 		const createCalls = actions.create.mock.calls.length;
 		act(() => result.current.create("role-1"));
 		expect(actions.create).toHaveBeenCalledTimes(createCalls);
-		act(() => result.current.reconcileCreation());
+		act(() => result.current.reconcileCreation("role-1"));
 		await waitFor(() => expect(result.current.lifecycle).toBe("creation_failed"));
 		act(() => result.current.create("role-1"));
 		await waitFor(() => expect(actions.create).toHaveBeenCalledTimes(createCalls + 1));

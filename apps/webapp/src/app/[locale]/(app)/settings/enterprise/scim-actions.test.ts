@@ -88,6 +88,7 @@ describe("enterprise identity SCIM actions", () => {
 			"decommissionEnterpriseIdentityScimConnectionAction",
 			"getEnterpriseIdentityScimStatusAction",
 			"listEnterpriseIdentityScimEventsAction",
+			"reconcileEnterpriseIdentityScimCreationAction",
 			"revokeEnterpriseIdentityScimCredentialAction",
 			"rotateEnterpriseIdentityScimCredentialAction",
 		]);
@@ -107,6 +108,7 @@ describe("enterprise identity SCIM actions", () => {
 					"credential-1",
 				),
 			() => actions.listEnterpriseIdentityScimEventsAction("connection-1"),
+			() => actions.reconcileEnterpriseIdentityScimCreationAction({}),
 			() =>
 				actions.decommissionEnterpriseIdentityScimConnectionAction(
 					"connection-1",
@@ -126,6 +128,14 @@ describe("enterprise identity SCIM actions", () => {
 		expect(controlPlaneMock.revoke).not.toHaveBeenCalled();
 		expect(controlPlaneMock.listEvents).not.toHaveBeenCalled();
 		expect(decommissionMock).not.toHaveBeenCalled();
+	});
+
+	it("recovers an authorized reservation without returning a credential or token", async () => {
+		const result = await actions.reconcileEnterpriseIdentityScimCreationAction({
+			defaultRoleTemplateId: "11111111-1111-4111-8111-111111111111",
+		});
+		expect(controlPlaneMock.create).toHaveBeenCalledWith(expect.objectContaining({ organizationId: "org-1", actorId: "actor-1" }));
+		expect(JSON.stringify(result)).not.toContain("secret-token");
 	});
 
 	it("creates an organization-bound connection and exposes its token only in the issue response", async () => {

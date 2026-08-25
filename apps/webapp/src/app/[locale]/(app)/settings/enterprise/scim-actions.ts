@@ -138,9 +138,15 @@ export async function getEnterpriseIdentityScimStatusAction(input: unknown) {
 	}
 }
 
-export async function reconcileEnterpriseIdentityScimCreationAction() {
-	const { organizationId } = await requireEnterpriseOrgAdmin();
-	return controlPlane.getCreationState(organizationId);
+export async function reconcileEnterpriseIdentityScimCreationAction(input: unknown) {
+	const { authContext, organizationId } = await requireEnterpriseOrgAdmin();
+	const parsed = createConnectionSchema.safeParse(input);
+	if (!parsed.success) throw new Error("Invalid SCIM connection input");
+	await assertDefaultRoleTemplate(organizationId, parsed.data.defaultRoleTemplateId);
+	await getOrCreateEnterpriseIdentitySetupRecord(organizationId, authContext.user.id);
+	const result = await controlPlane.create({ ...parsed.data, organizationId, actorId: authContext.user.id, creationRequestId: randomUUID() });
+	if ("connection" in result && result.connection) return { connection: result.connection, status: "active" as const };
+	return { status: result.status };
 }
 
 export async function rotateEnterpriseIdentityScimCredentialAction(
