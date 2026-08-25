@@ -45,6 +45,11 @@ function messages(value: unknown): string[] {
 	return Object.values(value).flatMap(messages);
 }
 
+function missingKeys(catalog: unknown, references: string[]) {
+	const keys = new Set(flatten(catalog));
+	return references.filter((key) => !keys.has(key));
+}
+
 function scimCatalog(locale: (typeof locales)[number]) {
 	return identityCatalog(locale).scim;
 }
@@ -103,9 +108,14 @@ describe("managed SCIM i18n contract", () => {
 		]
 			.map((match) => match[0].replace("settings.enterprise.", ""))
 			.filter((key) => !key.endsWith(".status."));
-		const keys = new Set(flatten(enterpriseCatalog("en")));
+		const englishKeys = new Set(flatten(enterpriseCatalog("en")));
 
-		for (const key of references) expect(keys).toContain(key);
+		for (const locale of locales) {
+			expect(
+				missingKeys(enterpriseCatalog(locale), references),
+				locale,
+			).toEqual([]);
+		}
 		for (const status of connectionStatuses) {
 			for (const locale of locales) {
 				expect(
@@ -114,9 +124,9 @@ describe("managed SCIM i18n contract", () => {
 				).toBeTypeOf("string");
 			}
 		}
-		expect(keys).not.toContain("identity.scim.action.generateToken");
-		expect(keys).not.toContain("identity.scim.action.copyToken");
-		expect(keys).not.toContain("identity.scim.tokenShownOnce");
+		expect(englishKeys).not.toContain("identity.scim.action.generateToken");
+		expect(englishKeys).not.toContain("identity.scim.action.copyToken");
+		expect(englishKeys).not.toContain("identity.scim.tokenShownOnce");
 		for (const locale of locales) {
 			const toastKeys = Object.keys(identityCatalog(locale).toast);
 			expect(toastKeys, locale).not.toContain("scimStatusFailed");
@@ -128,6 +138,26 @@ describe("managed SCIM i18n contract", () => {
 			/Generate (?:a )?(?:provisioning )?token|migration unavailable/i,
 		);
 		expect(source).not.toMatch(/SCIM provisioning is temporarily unavailable/i);
+	});
+
+	it("rejects a missing non-English rendered key", () => {
+		const germanCatalog = enterpriseCatalog("de");
+		const missingGuidedSetupDescription = {
+			...germanCatalog,
+			domains: {
+				...germanCatalog.domains,
+				guidedSetup: {
+					...germanCatalog.domains.guidedSetup,
+					description: undefined,
+				},
+			},
+		};
+
+		expect(
+			missingKeys(missingGuidedSetupDescription, [
+				"domains.guidedSetup.description",
+			]),
+		).toEqual(["domains.guidedSetup.description"]);
 	});
 
 	it("does not retain legacy provisioning-token copy in rendered SCIM messages", () => {
