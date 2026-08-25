@@ -275,10 +275,14 @@ export const CRON_JOBS = {
 		schedule: "* * * * *", // Every minute
 		description: "Process durable SCIM seat sync and projection recovery work",
 		processor: async (): Promise<SCIMMaintenanceResult> => {
-			const { runSCIMMaintenance } = await import(
+			const { runSCIMMaintenance, SCIMMaintenanceDegradedError } = await import(
 				"@/lib/jobs/scim-maintenance"
 			);
-			return runSCIMMaintenance();
+			const result = await runSCIMMaintenance();
+			if (result.exhausted > 0 || result.persistenceFailures > 0) {
+				throw new SCIMMaintenanceDegradedError(result);
+			}
+			return result;
 		},
 		defaultJobOptions: { attempts: 1, priority: 8 },
 	},

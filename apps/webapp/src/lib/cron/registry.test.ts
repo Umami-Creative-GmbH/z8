@@ -21,7 +21,15 @@ const {
 		errors: [],
 	})),
 	runSCIMMaintenance: vi.fn(async () => ({
-		outbox: { claimed: 0, completed: 0, deferred: 0 },
+		outbox: {
+			claimed: 0,
+			completed: 0,
+			deferred: 0,
+			exhausted: 0,
+			persistenceFailures: 0,
+		},
+		exhausted: 0,
+		persistenceFailures: 0,
 		projectionRecovery: { attempted: 0, recovered: 0, failed: 0 },
 	})),
 	sendTelemetryReport: vi.fn(),
@@ -31,7 +39,14 @@ vi.mock("@/lib/jobs/billing-seat-reconciliation", () => ({
 	runBillingSeatReconciliation,
 }));
 
-vi.mock("@/lib/jobs/scim-maintenance", () => ({ runSCIMMaintenance }));
+vi.mock("@/lib/jobs/scim-maintenance", () => ({
+	runSCIMMaintenance,
+	SCIMMaintenanceDegradedError: class SCIMMaintenanceDegradedError extends Error {
+		constructor() {
+			super("SCIM maintenance degraded");
+		}
+	},
+}));
 
 vi.mock("@/env", () => ({ env: mockEnv }));
 
@@ -87,6 +102,27 @@ describe("CRON_JOBS SCIM maintenance", () => {
 		});
 
 		expect(runSCIMMaintenance).toHaveBeenCalledOnce();
+	});
+
+	it("rejects terminal SCIM delivery outcomes so worker reliability records a failed run", async () => {
+		runSCIMMaintenance.mockResolvedValueOnce({
+			outbox: {
+				claimed: 1,
+				completed: 0,
+				deferred: 0,
+				exhausted: 1,
+				persistenceFailures: 0,
+			},
+			exhausted: 1,
+			persistenceFailures: 0,
+			projectionRecovery: { attempted: 0, recovered: 0, failed: 0 },
+		});
+
+		await expect(
+			CRON_JOBS["cron:scim-maintenance"].processor({
+				triggeredAt: "2026-08-25T00:00:00.000Z",
+			}),
+		).rejects.toThrow("SCIM maintenance degraded");
 	});
 });
 

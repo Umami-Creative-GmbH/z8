@@ -21,6 +21,18 @@ export interface SCIMMaintenanceResult {
 	projectionRecovery: { attempted: number; recovered: number; failed: number };
 }
 
+export class SCIMMaintenanceDegradedError extends Error {
+	readonly result: SCIMMaintenanceResult;
+
+	constructor(result: SCIMMaintenanceResult) {
+		super(
+			`SCIM maintenance degraded: ${result.exhausted} exhausted deliveries, ${result.persistenceFailures} persistence failures`,
+		);
+		this.name = "SCIMMaintenanceDegradedError";
+		this.result = result;
+	}
+}
+
 interface SCIMMaintenanceDependencies {
 	runOutbox: () => Promise<SCIMSeatSyncOutboxResult>;
 	listDueRecoveryOrganizations: () => Promise<string[]>;
