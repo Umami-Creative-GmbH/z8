@@ -349,7 +349,7 @@ describe("WorkPolicyPresetReviewDialog", () => {
 		await user.click(screen.getByRole("combobox", { name: "Schedule cycle" }));
 		await user.click(screen.getByRole("option", { name: "Monthly" }));
 		await user.click(screen.getByRole("combobox", { name: "Working days" }));
-		await user.click(screen.getByRole("option", { name: "All days" }));
+		await user.click(await screen.findByRole("option", { name: "All days" }));
 		await user.click(screen.getByRole("button", { name: "Create policy" }));
 
 		expect(createWorkPolicyFromPreset).toHaveBeenCalledWith(

@@ -14,7 +14,7 @@ describe("ScimOneTimeCredentialDialog", () => {
 		Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
 		render(
 			<ScimOneTimeCredentialDialog
-				credential="scim_secret_returned_once"
+				token="scim_secret_returned_once"
 				open
 				onClosed={onClosed}
 			/>,
@@ -36,7 +36,7 @@ describe("ScimOneTimeCredentialDialog", () => {
 
 	it("does not dismiss with escape and requires a second close confirmation when not copied", () => {
 		const onClosed = vi.fn();
-		render(<ScimOneTimeCredentialDialog credential="scim_secret_returned_once" open onClosed={onClosed} />);
+		render(<ScimOneTimeCredentialDialog token="scim_secret_returned_once" open onClosed={onClosed} />);
 		fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
 		expect(onClosed).not.toHaveBeenCalled();
 		fireEvent.click(screen.getAllByRole("button", { name: "Close" })[0]);
