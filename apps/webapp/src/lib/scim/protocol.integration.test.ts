@@ -15,6 +15,11 @@ import {
 import { authDatabaseSchema } from "@/lib/auth-database-schema";
 import { createZ8SCIMPlugin } from "./auth-configuration";
 import { SCIM_SCOPES } from "./constants";
+import {
+	createSCIMDecommissionStore,
+	decommissionSCIMConnection,
+	runDueSCIMDecommission,
+} from "./decommission";
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 const sentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
@@ -207,12 +212,13 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 	async function bindUser(
 		graph: Awaited<ReturnType<typeof setup>>,
 		externalId: string,
+		email = `${externalId}@example.test`,
 	) {
 		const userId = `scim-protocol-user-${externalId}-${runId}`;
 		const now = new Date("2026-08-26T12:00:00.000Z");
 		await pool.query(
 			`insert into "user" (id, name, email, email_verified, created_at, updated_at) values ($1, $2, $3, true, $4, $4)`,
-			[userId, externalId, `${externalId}@example.test`, now],
+			[userId, externalId, email, now],
 		);
 		await pool.query(
 			`insert into member (id, organization_id, user_id, role, status, created_at) values ($1, $2, $3, 'member', 'pending', $4)`,
@@ -232,12 +238,16 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 		return userId;
 	}
 
-	function user(externalId: string, active = true) {
+	function user(
+		externalId: string,
+		active = true,
+		email = `${externalId}@example.test`,
+	) {
 		return {
 			schemas: ["urn:ietf:params:scim:schemas:core:2.0:User"],
-			userName: `${externalId}@example.test`,
+			userName: email,
 			name: { formatted: externalId },
-			emails: [{ value: `${externalId}@example.test`, primary: true }],
+			emails: [{ value: email, primary: true }],
 			externalId,
 			active,
 		};
@@ -370,6 +380,166 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 			restricted.organizationId,
 			restricted.providerId,
 		]);
+	});
+
+	it("links a first SCIM user by its provider subject instead of either SCIM or persisted email", async () => {
+		const graph = await setup("external-subject");
+		const targetId = await bindUser(
+			graph,
+			"provider-subject-target",
+			"persisted-target@example.test",
+		);
+		const collisionId = await bindUser(
+			graph,
+			"provider-subject-collision",
+			"scim-collision@example.test",
+		);
+		const created = await request(
+			graph.token,
+			"/Users",
+			"POST",
+			user("provider-subject-target", true, "scim-collision@example.test"),
+		);
+		expect(created.status).toBe(201);
+		const source = (await created.json()) as SCIMResource;
+		const binding = await pool.query<{ user_id: string }>(
+			"select user_id from scim_user where id = $1",
+			[source.id],
+		);
+		expect(binding.rows).toEqual([{ user_id: targetId }]);
+		expect(binding.rows[0]?.user_id).not.toBe(collisionId);
+	});
+
+	it("accepts the rotated credential, preserves its documented overlap, then rejects revoked and expired credentials", async () => {
+		const graph = await setup("credential-lifecycle");
+		const rotated = await auth.api.rotateSCIMManagedCredential({
+			body: {
+				connectionId: graph.connectionId,
+				provisioningDomainId: graph.organizationId,
+				actorId: graph.actorId,
+				scopes: SCIM_SCOPES,
+				expiresAt: new Date("2027-08-26T12:00:00.000Z"),
+			},
+		});
+		expect((await request(rotated.token, "/Users")).status).toBe(200);
+		expect((await request(graph.token, "/Users")).status).toBe(200);
+		await auth.api.revokeSCIMManagedCredential({
+			body: {
+				connectionId: graph.connectionId,
+				provisioningDomainId: graph.organizationId,
+				credentialId: graph.credentialId,
+				actorId: graph.actorId,
+			},
+		});
+		await expectSafeSCIMError(await request(graph.token, "/Users"), 401, [
+			graph.token,
+		]);
+		const expired = await setup("expired-credential");
+		// @better-auth/scim 1.7.1's assertFutureExpiry rejects past expiries;
+		// retain its API-generated digest and move only the fixture expiry.
+		await pool.query(
+			`update scim_managed_credential credential
+			 set expires_at = $1
+			 from scim_managed_connection connection
+			 where credential.connection_record_id = connection.id
+				and connection.connection_id = $2`,
+			[new Date("2020-01-01T00:00:00.000Z"), expired.connectionId],
+		);
+		expect(
+			await expectSafeSCIMError(await request(expired.token, "/Users"), 401, [
+				expired.token,
+			]),
+		).toEqual({
+			schemas: ["urn:ietf:params:scim:api:messages:2.0:Error"],
+			status: "401",
+			detail: "Invalid SCIM bearer token",
+		});
+	});
+
+	it("decommissions only the due configuration through the production durable runner", async () => {
+		const orgA = await setup("decommission-a");
+		const orgB = await setup("decommission-b");
+		const now = new Date("2026-08-26T13:00:00.000Z");
+		const store = createSCIMDecommissionStore(database);
+		let reconcilingCalls = 0;
+		const initial = await decommissionSCIMConnection({
+			database,
+			store,
+			auth: {
+				api: {
+					decommissionSCIMManagedConnection: async () => {
+						reconcilingCalls++;
+						return {
+							decommission: {
+								status: "reconciling" as const,
+								retryAfter: new Date("2026-08-26T14:00:00.000Z"),
+							},
+						};
+					},
+				},
+			},
+			organizationId: orgA.organizationId,
+			connectionId: orgA.connectionId,
+			actorId: orgA.actorId,
+			now,
+		});
+		expect(initial).toBe("deferred");
+		expect(reconcilingCalls).toBe(1);
+		await pool.query(
+			"update scim_provider_config set decommission_retry_at = $1 where organization_id = $2",
+			[now, orgA.organizationId],
+		);
+		const completed = await runDueSCIMDecommission({ store, auth, now });
+		expect(completed).toBe("completed");
+		const configs = await pool.query<{
+			organization_id: string;
+			connection_id: string | null;
+			state: string;
+		}>(
+			`select organization_id, connection_id, state from scim_provider_config
+			 where organization_id in ($1, $2) order by organization_id`,
+			[orgA.organizationId, orgB.organizationId],
+		);
+		expect(configs.rows).toEqual([
+			{
+				organization_id: orgA.organizationId,
+				connection_id: orgA.connectionId,
+				state: "decommissioned",
+			},
+			{
+				organization_id: orgB.organizationId,
+				connection_id: orgB.connectionId,
+				state: "active",
+			},
+		]);
+		const connections = await pool.query<{
+			connection_id: string;
+			status: string;
+			credential_status: string;
+		}>(
+			`select connection.connection_id, connection.status,
+				credential.status as credential_status
+			 from scim_managed_connection connection
+			 join scim_managed_credential credential
+				on credential.connection_record_id = connection.id
+			 where connection.connection_id in ($1, $2)
+			 order by connection.connection_id`,
+			[orgA.connectionId, orgB.connectionId],
+		);
+		expect(connections.rows).toEqual([
+			{
+				connection_id: orgA.connectionId,
+				status: "decommissioned",
+				credential_status: "decommissioned",
+			},
+			{
+				connection_id: orgB.connectionId,
+				status: "active",
+				credential_status: "active",
+			},
+		]);
+		const decommissioned = await request(orgA.token, "/Users");
+		await expectSafeSCIMError(decommissioned, 401, [orgA.token]);
 	});
 
 	it("projects only bound organization identities, roles, lifecycle state, and managed credentials", async () => {

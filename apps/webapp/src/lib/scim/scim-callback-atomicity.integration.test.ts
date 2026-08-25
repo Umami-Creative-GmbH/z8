@@ -375,6 +375,11 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 			},
 		);
 		expect(removed.status).toBe(409);
+		expect(await removed.json()).toEqual({
+			schemas: ["urn:ietf:params:scim:api:messages:2.0:Error"],
+			status: "409",
+			detail: "The SCIM identity cannot be linked",
+		});
 	});
 
 	it("reprovisions a tombstone only when its external subject still validates to the same user", async () => {
