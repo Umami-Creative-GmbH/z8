@@ -14,6 +14,11 @@ export interface SCIMDecommissionClaim {
 
 export interface SCIMDecommissionStore {
 	claimDue(now?: Date): Promise<SCIMDecommissionClaim | null>;
+	claimDueFor?(
+		organizationId: string,
+		connectionId: string,
+		now?: Date,
+	): Promise<SCIMDecommissionClaim | null>;
 	complete(claim: SCIMDecommissionClaim, now?: Date): Promise<void>;
 	defer(
 		claim: SCIMDecommissionClaim,
@@ -113,6 +118,26 @@ export function createSCIMDecommissionStore(
 						: new Date(String(row.retryAt)),
 			};
 		},
+		async claimDueFor(organizationId, connectionId, now = new Date()) {
+			const leaseUntil = retryAtAfter(now, LEASE_SECONDS);
+			const result = await database.execute(sql`
+				UPDATE scim_provider_config SET decommission_retry_at = ${leaseUntil}, decommission_attempt_count = decommission_attempt_count + 1
+				WHERE organization_id = ${organizationId} AND connection_id = ${connectionId}
+					AND state = 'decommissioning' AND decommission_retry_at <= ${now}
+				RETURNING organization_id AS "organizationId", connection_id AS "connectionId", COALESCE(updated_by_user_id, created_by_user_id) AS "actorId", decommission_retry_at AS "retryAt"
+			`);
+			const row = result.rows[0];
+			if (!row) return null;
+			return {
+				organizationId: String(row.organizationId),
+				connectionId: String(row.connectionId),
+				actorId: String(row.actorId),
+				retryAt:
+					row.retryAt instanceof Date
+						? row.retryAt
+						: new Date(String(row.retryAt)),
+			};
+		},
 		async complete(claim, now = new Date()) {
 			const result = await database.execute(sql`
 				UPDATE scim_provider_config SET state = 'decommissioned', decommission_completed_at = ${now}, decommission_retry_at = NULL, decommission_last_error = NULL
@@ -163,7 +188,15 @@ export async function decommissionSCIMConnection(input: {
 	const started = await beginSCIMDecommission(input);
 	if (!started) return "skipped";
 	return runDueSCIMDecommission({
-		store: input.store,
+		store: {
+			...input.store,
+			claimDue: (now) =>
+				input.store.claimDueFor?.(
+					input.organizationId,
+					input.connectionId,
+					now,
+				) ?? Promise.resolve(null),
+		},
 		auth: input.auth,
 		now: input.now,
 	});

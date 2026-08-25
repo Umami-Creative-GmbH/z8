@@ -18,6 +18,7 @@ function createStore(): SCIMManagedControlPlaneStore {
 		defaultRoleTemplateId: "role-1",
 		createdBy: "actor-1",
 		updatedBy: null,
+		createdAt: new Date("2026-08-25T00:00:00.000Z"),
 	};
 
 	return {
@@ -176,7 +177,15 @@ describe("SCIM managed control plane", () => {
 	it("adopts an interrupted creation by rotating then revoking the lost credential", async () => {
 		const auth = createAuth();
 		const store = createStore();
-		const controlPlane = createSCIMManagedControlPlane({ auth, store });
+		store.reserve.mockResolvedValueOnce({
+			config: (await store.findByOrganizationId("org-1"))!,
+			created: false,
+		});
+		const controlPlane = createSCIMManagedControlPlane({
+			auth,
+			store,
+			now: () => new Date("2026-08-25T00:10:00.000Z"),
+		});
 
 		const result = await controlPlane.create({
 			organizationId: "org-1",
@@ -236,8 +245,16 @@ describe("SCIM managed control plane", () => {
 		const store = createStore();
 		const auth = createAuth();
 		auth.api.listSCIMManagedConnections.mockResolvedValue({ connections: [] });
-		const first = createSCIMManagedControlPlane({ auth, store });
-		const second = createSCIMManagedControlPlane({ auth, store });
+		const first = createSCIMManagedControlPlane({
+			auth,
+			store,
+			now: () => new Date("2026-08-25T00:00:01.000Z"),
+		});
+		const second = createSCIMManagedControlPlane({
+			auth,
+			store,
+			now: () => new Date("2026-08-25T00:00:01.000Z"),
+		});
 		store.reserve.mockResolvedValueOnce({
 			config: (await store.findByOrganizationId("org-1"))!,
 			created: true,

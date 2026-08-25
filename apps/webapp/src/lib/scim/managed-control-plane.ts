@@ -10,6 +10,7 @@ import { scimProviderConfig } from "@/db/schema/scim";
 import { getSCIMCredentialExpiresAt, SCIM_SCOPES } from "./constants";
 
 type ConfigState = "creating" | "active" | "decommissioning" | "decommissioned";
+const CREATION_RECOVERY_AFTER_MS = 5 * 60 * 1000;
 
 export interface SCIMProviderConfigRecord {
 	id: string;
@@ -22,6 +23,7 @@ export interface SCIMProviderConfigRecord {
 	defaultRoleTemplateId: string;
 	createdBy: string;
 	updatedBy: string | null;
+	createdAt: Date;
 }
 
 export interface SCIMManagedControlPlaneStore {
@@ -131,7 +133,16 @@ export function createSCIMManagedControlPlane(input: {
 		) {
 			throw new Error("SCIM connection already exists for this organization");
 		}
-		if (!reservation.created && !reservation.config.connectionId) {
+		const isRecovery =
+			!reservation.created &&
+			(input.now?.().getTime() ?? Date.now()) -
+				reservation.config.createdAt.getTime() >=
+				CREATION_RECOVERY_AFTER_MS;
+		if (
+			!reservation.created &&
+			!reservation.config.connectionId &&
+			!isRecovery
+		) {
 			return {
 				status: "creating" as const,
 				creationRequestId: reservation.config.creationRequestId,
@@ -177,6 +188,11 @@ export function createSCIMManagedControlPlane(input: {
 					});
 			}
 			created = rotated;
+		} else if (!reservation.created) {
+			return {
+				status: "creating" as const,
+				creationRequestId: reservation.config.creationRequestId,
+			};
 		} else {
 			created = await input.auth.api.createSCIMManagedConnection({
 				body: {

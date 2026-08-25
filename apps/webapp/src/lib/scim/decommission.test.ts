@@ -100,6 +100,10 @@ describe("SCIM decommission", () => {
 				order.push("claim");
 				return claim;
 			}),
+			claimDueFor: vi.fn().mockImplementation(async () => {
+				order.push("claim");
+				return claim;
+			}),
 			complete: vi.fn(),
 			defer: vi.fn(),
 		};
