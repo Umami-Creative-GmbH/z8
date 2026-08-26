@@ -3,6 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": ["SCIM_CREDENTIAL_HASH_SECRET"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "dev": {

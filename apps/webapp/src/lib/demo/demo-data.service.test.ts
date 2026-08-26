@@ -1233,7 +1233,7 @@ describe("generateDemoPendingTimeCorrectionApprovals", () => {
 
 		expect(mocks.insertedNotifications).toHaveLength(1);
 		expect(mocks.executeSubmission).toHaveBeenCalledTimes(2);
-		expect(
+		await expect(
 			mocks.executeSubmission.mock.results[1]?.value,
 		).resolves.toMatchObject({
 			postCommit: { authority: "legacy", submittedToEmployeeId: null },
