@@ -6,7 +6,7 @@ ALTER TABLE "two_factor" ADD COLUMN "locked_until" timestamp;
 --> statement-breakpoint
 DO $account_issuer_migration$
 DECLARE
-	provider record;
+	sso_provider_row record;
 	provider_config jsonb;
 BEGIN
 	-- Built-in providers must not be shadowed by a mutable SSO configuration.
@@ -19,13 +19,13 @@ BEGIN
 	END IF;
 
 	-- A custom mapping changes the persisted subject and cannot be inferred safely.
-	FOR provider IN
+	FOR sso_provider_row IN
 		SELECT "provider_id", "oidc_config", "saml_config"
 		FROM "sso_provider"
 	LOOP
-		IF provider.oidc_config IS NOT NULL THEN
+		IF sso_provider_row.oidc_config IS NOT NULL THEN
 			BEGIN
-				provider_config := provider.oidc_config::jsonb;
+				provider_config := sso_provider_row.oidc_config::jsonb;
 			EXCEPTION WHEN OTHERS THEN
 				RAISE EXCEPTION 'SSO provider configuration is invalid';
 			END;
@@ -34,9 +34,9 @@ BEGIN
 			END IF;
 		END IF;
 
-		IF provider.saml_config IS NOT NULL THEN
+		IF sso_provider_row.saml_config IS NOT NULL THEN
 			BEGIN
-				provider_config := provider.saml_config::jsonb;
+				provider_config := sso_provider_row.saml_config::jsonb;
 			EXCEPTION WHEN OTHERS THEN
 				RAISE EXCEPTION 'SSO provider configuration is invalid';
 			END;
@@ -45,7 +45,7 @@ BEGIN
 			END IF;
 		END IF;
 
-		IF provider.oidc_config IS NOT NULL AND provider.saml_config IS NOT NULL THEN
+		IF sso_provider_row.oidc_config IS NOT NULL AND sso_provider_row.saml_config IS NOT NULL THEN
 			RAISE EXCEPTION 'SSO provider has ambiguous protocol configuration';
 		END IF;
 	END LOOP;

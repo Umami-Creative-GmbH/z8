@@ -2021,6 +2021,26 @@ describe("drizzle follow-up migrations", () => {
 		expect(snapshot.tables["public.scim_provider"]).toBeDefined();
 	});
 
+	it("keeps the account issuer DO block's loop record distinct from provider table aliases", () => {
+		const migration = readRequiredMigration(
+			migration0061Url,
+			"0061 Better Auth account issuers migration",
+		);
+		const doBlock = migration.match(
+			/DO \$account_issuer_migration\$[\s\S]*?\$account_issuer_migration\$;/,
+		)?.[0];
+		const loopBlock = doBlock?.match(
+			/FOR sso_provider_row IN[\s\S]*?END LOOP;/,
+		)?.[0];
+
+		expect(doBlock).toContain("sso_provider_row record;");
+		expect(loopBlock).toContain("FOR sso_provider_row IN");
+		expect(loopBlock).toContain("sso_provider_row.oidc_config");
+		expect(loopBlock).toContain("sso_provider_row.saml_config");
+		expect(loopBlock).not.toMatch(/\bprovider\s+record\b|\bprovider\./);
+		expect(doBlock).toContain('FROM "sso_provider" AS provider');
+	});
+
 	it("recovers skipped approval workflow migrations without mutating approval rows", () => {
 		const migration = readRequiredMigration(
 			migration0060Url,

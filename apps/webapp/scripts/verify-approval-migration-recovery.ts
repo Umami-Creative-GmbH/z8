@@ -13,6 +13,7 @@ import {
 
 const TEST_SENTINEL = "approval-workflow-repository-test";
 const INCIDENT_LATEST_CREATED_AT = "1785493929039";
+const INCIDENT_LATEST_TAG = "0059_payroll_blocker_dismissal";
 const EXPAND_CREATED_AT = "1785232090757";
 const CYCLE_IDENTITY_CREATED_AT = "1785232118219";
 const RECOVERY_CREATED_AT = "1785493929040";
@@ -102,11 +103,20 @@ export interface CatalogNamespaceReference {
 
 export function filterIncidentJournal(
 	journal: MigrationJournal,
+	latestTag = INCIDENT_LATEST_TAG,
 ): MigrationJournal {
+	const incidentLatestIndex = journal.entries.findIndex(
+		(entry) => entry.tag === latestTag,
+	);
+	if (incidentLatestIndex < 0) {
+		throw new Error(`Missing incident migration ${latestTag}`);
+	}
+
 	return {
 		...journal,
-		entries: journal.entries.filter(
-			(entry) => !JOURNAL_TAGS_TO_SKIP.has(entry.tag),
+		entries: journal.entries.slice(0, incidentLatestIndex + 1).filter(
+			(entry) =>
+				!JOURNAL_TAGS_TO_SKIP.has(entry.tag) || entry.tag === latestTag,
 		),
 	};
 }
@@ -156,6 +166,30 @@ export function assertMigrationLedgerUnchanged(
 	) {
 		throw new Error("Retry changed the Drizzle migration ledger");
 	}
+}
+
+export function formatMigrationVerificationFailure(error: unknown): string {
+	if (!error || typeof error !== "object") return String(error);
+
+	const postgresError = error as {
+		message?: unknown;
+		code?: unknown;
+		detail?: unknown;
+	};
+	const message =
+		typeof postgresError.message === "string"
+			? postgresError.message
+			: String(error);
+	const diagnostics = [
+		typeof postgresError.code === "string"
+			? `PostgreSQL code ${postgresError.code}`
+			: undefined,
+		typeof postgresError.detail === "string"
+			? `detail: ${postgresError.detail}`
+			: undefined,
+	].filter((diagnostic): diagnostic is string => diagnostic !== undefined);
+
+	return diagnostics.length > 0 ? `${message} (${diagnostics.join("; ")})` : message;
 }
 
 export function buildCatalogNamespaceCountQuery(
@@ -377,7 +411,9 @@ async function assertAnchorLedgerState(
 		cycleRows.length !== 0 ||
 		recoveryRows.length !== (recoveryExpected ? 1 : 0)
 	) {
-		throw new Error("Constructed approval migration ledger state is invalid");
+		throw new Error(
+			`Constructed approval migration ledger state is invalid (expand=${expandRows.length}, expandHashMatches=${expandRows[0]?.hash === expandHash}, cycle=${cycleRows.length}, recovery=${recoveryRows.length})`,
+		);
 	}
 }
 
@@ -557,12 +593,16 @@ async function run(): Promise<void> {
 		await assertIncidentState(pool);
 
 		console.log("Migration recovery verification: applying recovery migration");
-		await migrate(database, { migrationsFolder: REAL_MIGRATIONS_FOLDER });
+		await writeFile(
+			journalPath,
+			`${JSON.stringify(filterIncidentJournal(journal, RECOVERY_TAG), null, 2)}\n`,
+		);
+		await migrate(database, { migrationsFolder: incidentMigrationsFolder });
 		await assertRecoveryState(pool);
 
 		console.log("Migration recovery verification: checking retry idempotency");
 		const beforeRetry = await loadMigrationLedger(pool);
-		await migrate(database, { migrationsFolder: REAL_MIGRATIONS_FOLDER });
+		await migrate(database, { migrationsFolder: incidentMigrationsFolder });
 		const afterRetry = await loadMigrationLedger(pool);
 		assertMigrationLedgerUnchanged(beforeRetry, afterRetry);
 		await assertRecoveryState(pool);
@@ -610,7 +650,7 @@ async function run(): Promise<void> {
 			[expandHash, EXPAND_CREATED_AT],
 		);
 		await assertAnchorLedgerState(pool, expandHash, false);
-		await migrate(database, { migrationsFolder: REAL_MIGRATIONS_FOLDER });
+		await migrate(database, { migrationsFolder: incidentMigrationsFolder });
 		await assertAnchorLedgerState(pool, expandHash, true);
 		await assertRecoveryState(pool);
 
@@ -646,7 +686,7 @@ const invokedPath = process.argv[1]
 	: "";
 if (import.meta.url === invokedPath) {
 	run().catch((error: unknown) => {
-		console.error(error instanceof Error ? error.message : String(error));
+		console.error(formatMigrationVerificationFailure(error));
 		process.exitCode = 1;
 	});
 }

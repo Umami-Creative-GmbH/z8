@@ -6,6 +6,7 @@ import {
 	assertMigrationLedgerUnchanged,
 	buildCatalogNamespaceCountQuery,
 	filterIncidentJournal,
+	formatMigrationVerificationFailure,
 	normalizeMigrationLedger,
 	sumCatalogNamespaceCounts,
 } from "../../../scripts/verify-approval-migration-recovery";
@@ -154,7 +155,7 @@ describe("destructive database safety", () => {
 });
 
 describe("filterIncidentJournal", () => {
-	it("removes the skipped approval migrations and recovery while retaining later migrations", () => {
+	it("builds the incident state through 0059 without later migrations", () => {
 		const journal = {
 			version: "7",
 			dialect: "postgresql",
@@ -166,6 +167,8 @@ describe("filterIncidentJournal", () => {
 				{ tag: "0058_employee_clock_activity_index" },
 				{ tag: "0059_payroll_blocker_dismissal" },
 				{ tag: "0060_approval_workflow_recovery" },
+				{ tag: "0061_better_auth_account_issuers" },
+				{ tag: "0062_better_auth_scim_storage" },
 			],
 		};
 
@@ -176,6 +179,36 @@ describe("filterIncidentJournal", () => {
 			"0057_team_permissions_uniqueness",
 			"0058_employee_clock_activity_index",
 			"0059_payroll_blocker_dismissal",
+		]);
+	});
+
+	it("builds the recovery state through 0060 without later migrations", () => {
+		const journal = {
+			version: "7",
+			dialect: "postgresql",
+			entries: [
+				{ tag: "0054_employee_invitation_draft_identity" },
+				{ tag: "0055_approval_workflow_expand" },
+				{ tag: "0056_approval_workflow_cycle_identity" },
+				{ tag: "0057_team_permissions_uniqueness" },
+				{ tag: "0058_employee_clock_activity_index" },
+				{ tag: "0059_payroll_blocker_dismissal" },
+				{ tag: "0060_approval_workflow_recovery" },
+				{ tag: "0061_better_auth_account_issuers" },
+				{ tag: "0062_better_auth_scim_storage" },
+			],
+		};
+
+		expect(
+			filterIncidentJournal(journal, "0060_approval_workflow_recovery").entries.map(
+				(entry) => entry.tag,
+			),
+		).toEqual([
+			"0054_employee_invitation_draft_identity",
+			"0057_team_permissions_uniqueness",
+			"0058_employee_clock_activity_index",
+			"0059_payroll_blocker_dismissal",
+			"0060_approval_workflow_recovery",
 		]);
 	});
 });
@@ -212,6 +245,21 @@ describe("migration ledger retry comparison", () => {
 			);
 		},
 	);
+});
+
+describe("migration recovery failure output", () => {
+	it("retains PostgreSQL code and detail without including unrelated error properties", () => {
+		expect(
+			formatMigrationVerificationFailure({
+				message: 'column reference "provider" is ambiguous',
+				code: "42702",
+				detail: "It could refer to either a PL/pgSQL variable or a table column.",
+				connectionString: "postgresql://postgres:do-not-log@localhost/test",
+			}),
+		).toBe(
+			'column reference "provider" is ambiguous (PostgreSQL code 42702; detail: It could refer to either a PL/pgSQL variable or a table column.)',
+		);
+	});
 });
 
 describe("assertApprovalCatalog", () => {
