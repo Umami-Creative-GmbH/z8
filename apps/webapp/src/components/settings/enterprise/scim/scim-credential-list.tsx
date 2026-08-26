@@ -6,6 +6,34 @@ import type { SCIMManagedCredentialDTO } from "@/lib/scim/managed-control-plane"
 
 type ScimCredentialStatus = SCIMManagedCredentialDTO["status"];
 
+const lastUsedFormatters = new Map<string, Intl.DateTimeFormat>();
+const expiryFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function getLastUsedFormatter(locale: string) {
+	let formatter = lastUsedFormatters.get(locale);
+	if (!formatter) {
+		formatter = Intl.DateTimeFormat(locale, {
+			dateStyle: "medium",
+			timeStyle: "short",
+			timeZone: "UTC",
+		});
+		lastUsedFormatters.set(locale, formatter);
+	}
+	return formatter;
+}
+
+function getExpiryFormatter(locale: string) {
+	let formatter = expiryFormatters.get(locale);
+	if (!formatter) {
+		formatter = Intl.DateTimeFormat(locale, {
+			dateStyle: "medium",
+			timeZone: "UTC",
+		});
+		expiryFormatters.set(locale, formatter);
+	}
+	return formatter;
+}
+
 export function ScimCredentialList({
 	credentials,
 	onRevoke,
@@ -17,12 +45,8 @@ export function ScimCredentialList({
 }) {
 	const { t } = useTranslate();
 	const locale = useTolgee(["language"]).getLanguage() ?? "en";
-	const lastUsed = (value: string) =>
-		new Intl.DateTimeFormat(locale, {
-			dateStyle: "medium",
-			timeStyle: "short",
-			timeZone: "UTC",
-		}).format(new Date(value));
+	const lastUsedFormatter = getLastUsedFormatter(locale);
+	const expiryFormatter = getExpiryFormatter(locale);
 	const credentialStatusLabels = {
 		active: () =>
 			t(
@@ -87,14 +111,18 @@ export function ScimCredentialList({
 										? t(
 												"settings.enterprise.identity.scim.credentials.lastUsedAria",
 												"Last used: {value} UTC",
-												{ value: lastUsed(credential.lastUsedAt) },
+												{
+													value: lastUsedFormatter.format(
+														new Date(credential.lastUsedAt),
+													),
+												},
 											)
 										: undefined
 								}
 							>
 								<IconClock className="mr-1 inline size-3" aria-hidden="true" />
 								{credential.lastUsedAt
-									? lastUsed(credential.lastUsedAt)
+									? lastUsedFormatter.format(new Date(credential.lastUsedAt))
 									: t(
 											"settings.enterprise.identity.scim.credentials.unused",
 											"Not yet used",
@@ -105,10 +133,7 @@ export function ScimCredentialList({
 									"settings.enterprise.identity.scim.credentials.expires",
 									"Expires",
 								)}
-								:{" "}
-								{new Intl.DateTimeFormat(locale, {
-									dateStyle: "medium",
-								}).format(new Date(credential.expiresAt))}
+								: {expiryFormatter.format(new Date(credential.expiresAt))}
 							</span>
 						</p>
 					</div>
