@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import { useTranslate } from "@tolgee/react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import type { EnterpriseIdentitySetupResponse } from "@/app/[locale]/(app)/settings/enterprise/actions";
 import {
 	createEnterpriseIdentityScimConnectionAction,
 	decommissionEnterpriseIdentityScimConnectionAction,
@@ -12,7 +13,6 @@ import {
 	revokeEnterpriseIdentityScimCredentialAction,
 	rotateEnterpriseIdentityScimCredentialAction,
 } from "@/app/[locale]/(app)/settings/enterprise/scim-actions";
-import type { EnterpriseIdentitySetupResponse } from "@/app/[locale]/(app)/settings/enterprise/actions";
 
 type Status = Awaited<ReturnType<typeof getEnterpriseIdentityScimStatusAction>>;
 type Events = Awaited<
@@ -122,7 +122,10 @@ export function useScimAdminController(
 				defaultRoleTemplateId,
 			})
 				.then((result) => {
-					if ("status" in result) setLifecycle(result.status ?? null);
+					if ("status" in result)
+						setLifecycle(
+							result.status === "active" ? null : (result.status ?? null),
+						);
 					if ("token" in result) setCredential(result.token ?? null);
 					if (!("connection" in result) || !result.connection) return;
 					setLifecycle(null);

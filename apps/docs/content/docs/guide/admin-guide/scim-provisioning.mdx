@@ -30,7 +30,7 @@ Choose a mandatory default role template before creating the connection. It defi
 4. Configure the identity provider with this SCIM endpoint:
 
    ```text
-   /api/auth/scim/v2
+   https://your-z8-domain.example/api/auth/scim/v2
    ```
 
 The credential expires after one year. Do not put credentials in tickets, documentation, chat, or screenshots.
@@ -78,7 +78,7 @@ If creation or decommissioning is interrupted, use **Refresh creation status** o
 
 ### The connection is not verified
 
-1. Confirm the identity provider uses `/api/auth/scim/v2` and the current credential.
+1. Confirm the identity provider uses the absolute endpoint shown in Enterprise Identity Setup, such as `https://your-z8-domain.example/api/auth/scim/v2`, and the current credential.
 2. Send an authenticated SCIM User or Group request.
 3. Refresh the connection status and review recent events.
 

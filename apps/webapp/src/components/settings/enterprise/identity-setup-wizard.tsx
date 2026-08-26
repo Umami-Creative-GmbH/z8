@@ -141,7 +141,10 @@ function getStepCopy(
 		case "scim":
 			return {
 				label: t("settings.enterprise.identity.step.scim", "SCIM Provisioning"),
-				description: t("settings.enterprise.identity.step.scim.description", "Provision access from your identity provider"),
+				description: t(
+					"settings.enterprise.identity.step.scim.description",
+					"Provision access from your identity provider",
+				),
 			};
 		case "accessPolicy":
 			return {
@@ -949,7 +952,9 @@ function SsoStep({ controller }: { controller: IdentitySetupController }) {
 	const samlAcsPath = providerId
 		? `/api/auth/sso/saml2/sp/acs/${encodeURIComponent(providerId)}`
 		: "/api/auth/sso/saml2/sp/acs/:providerId";
-	const samlAcsUrl = browserOrigin ? `${browserOrigin}${samlAcsPath}` : samlAcsPath;
+	const samlAcsUrl = browserOrigin
+		? `${browserOrigin}${samlAcsPath}`
+		: samlAcsPath;
 
 	return (
 		<WizardCard
@@ -1168,7 +1173,28 @@ function SsoTestStep({ controller }: { controller: IdentitySetupController }) {
 }
 
 function ScimStep({ controller }: { controller: IdentitySetupController }) {
-	return <WizardCard title={controller.t("settings.enterprise.identity.scim.title", "SCIM Provisioning")} description={controller.t("settings.enterprise.identity.scim.wizardDescription", "Configure managed user provisioning without changing enterprise activation.")}><ManagedScimStep setup={controller.setup} defaultRoleTemplateId={controller.defaultRoleTemplateId === "none" ? null : controller.defaultRoleTemplateId} /></WizardCard>;
+	return (
+		<WizardCard
+			title={controller.t(
+				"settings.enterprise.identity.scim.title",
+				"SCIM Provisioning",
+			)}
+			description={controller.t(
+				"settings.enterprise.identity.scim.wizardDescription",
+				"Configure managed user provisioning without changing enterprise activation.",
+			)}
+		>
+			<ManagedScimStep
+				setup={controller.setup}
+				defaultRoleTemplateId={
+					controller.defaultRoleTemplateId === "none"
+						? null
+						: controller.defaultRoleTemplateId
+				}
+				endpoint={controller.initialSetup.scimEndpoint}
+			/>
+		</WizardCard>
+	);
 }
 
 function AccessPolicyStep({

@@ -32,9 +32,11 @@ type ScimConnectionStatus =
 export function ScimStep({
 	setup,
 	defaultRoleTemplateId,
+	endpoint,
 }: {
 	setup: EnterpriseIdentitySetupResponse["state"];
 	defaultRoleTemplateId: string | null;
+	endpoint: string;
 }) {
 	const { t } = useTranslate();
 	const controller = useScimAdminController(setup);
@@ -134,7 +136,7 @@ export function ScimStep({
 							{t("settings.enterprise.identity.scim.endpoint", "Endpoint")}
 						</dt>
 						<dd translate="no" className="break-all font-mono">
-							/api/auth/scim/v2
+							{endpoint}
 						</dd>
 					</div>
 					<div>

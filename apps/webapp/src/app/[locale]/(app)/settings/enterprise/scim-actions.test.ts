@@ -12,16 +12,17 @@ const {
 	requireEnterpriseOrgAdminMock: vi.fn(),
 	controlPlaneMock: {
 		create: vi.fn(),
+		getCreationState: vi.fn(),
 		get: vi.fn(),
 		rotate: vi.fn(),
 		revoke: vi.fn(),
 		listEvents: vi.fn(),
 	},
-		findTemplateMock: vi.fn(),
-		decommissionMock: vi.fn(),
-		getOrCreateSetupMock: vi.fn(),
-		updateMock: vi.fn(() => ({ set: vi.fn(() => ({ where: vi.fn() })) })),
-	}));
+	findTemplateMock: vi.fn(),
+	decommissionMock: vi.fn(),
+	getOrCreateSetupMock: vi.fn(),
+	updateMock: vi.fn(() => ({ set: vi.fn(() => ({ where: vi.fn() })) })),
+}));
 
 vi.mock("./actions", () => ({
 	requireEnterpriseOrgAdmin: requireEnterpriseOrgAdminMock,
@@ -82,6 +83,10 @@ describe("enterprise identity SCIM actions", () => {
 			},
 			token: "secret-token",
 		});
+		controlPlaneMock.getCreationState.mockResolvedValue({
+			connectionId: null,
+			status: "creation_failed",
+		});
 	});
 
 	it("exports only the managed SCIM administration actions", () => {
@@ -136,9 +141,55 @@ describe("enterprise identity SCIM actions", () => {
 		const result = await actions.reconcileEnterpriseIdentityScimCreationAction({
 			defaultRoleTemplateId: "11111111-1111-4111-8111-111111111111",
 		});
-		expect(controlPlaneMock.create).toHaveBeenCalledWith(expect.objectContaining({ organizationId: "org-1", actorId: "actor-1" }));
+		expect(controlPlaneMock.create).toHaveBeenCalledWith(
+			expect.objectContaining({ organizationId: "org-1", actorId: "actor-1" }),
+		);
 		expect(JSON.stringify(result)).not.toContain("secret-token");
 		expect(updateMock).toHaveBeenCalled();
+	});
+
+	it("adopts an activated connection after setup persistence fails without issuing another token", async () => {
+		const persistenceFailure = new Error("setup persistence unavailable");
+		updateMock.mockImplementationOnce(() => ({
+			set: vi.fn(() => ({
+				where: vi.fn().mockRejectedValue(persistenceFailure),
+			})),
+		}));
+
+		await expect(
+			actions.createEnterpriseIdentityScimConnectionAction({
+				defaultRoleTemplateId: "11111111-1111-4111-8111-111111111111",
+			}),
+		).rejects.toThrow(persistenceFailure);
+
+		controlPlaneMock.getCreationState.mockResolvedValueOnce({
+			connectionId: "connection-1",
+			status: "active",
+		});
+		controlPlaneMock.get.mockResolvedValueOnce({
+			connection: {
+				connectionId: "connection-1",
+				provisioningDomainId: "org-1",
+				createdAt: "2026-08-25T10:00:00.000Z",
+			},
+			credentials: [],
+		});
+
+		const recovered =
+			await actions.reconcileEnterpriseIdentityScimCreationAction({
+				defaultRoleTemplateId: "11111111-1111-4111-8111-111111111111",
+			});
+
+		expect(recovered).toEqual({
+			connection: expect.objectContaining({ connectionId: "connection-1" }),
+			status: "active",
+		});
+		expect(JSON.stringify(recovered)).not.toContain("secret-token");
+		expect(controlPlaneMock.create).toHaveBeenCalledOnce();
+		expect(controlPlaneMock.get).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			connectionId: "connection-1",
+		});
 	});
 
 	it("creates an organization-bound connection and exposes its token only in the issue response", async () => {

@@ -12,6 +12,7 @@ import {
 	type SocialOAuthProvider,
 	type SocialOAuthProviderConfig,
 } from "@/db/schema";
+import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import {
 	canManageCurrentOrganizationSettings,
@@ -92,6 +93,7 @@ export interface EnterpriseIdentitySetupResponse {
 	defaultRoleTemplateId: string | null;
 	roleTemplates: EnterpriseIdentitySetupRoleTemplateResponse[];
 	scimConnection: EnterpriseIdentitySetupScimConnectionResponse | null;
+	scimEndpoint: string;
 }
 
 export interface EnterpriseIdentityProviderInput {
@@ -248,6 +250,7 @@ async function getSetupResponse(
 		defaultRoleTemplateId: setupRecord.defaultRoleTemplateId,
 		roleTemplates: templates,
 		scimConnection: null,
+		scimEndpoint: `${getDefaultAppBaseUrl()}/api/auth/scim/v2`,
 	};
 }
 

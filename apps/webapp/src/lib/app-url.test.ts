@@ -10,7 +10,7 @@ const mockState = vi.hoisted(() => ({
 		},
 	},
 	env: {
-		PLATFORM_DOMAIN: "ui.z8-time.app",
+		PLATFORM_DOMAIN: "ui.z8-time.app" as string | undefined,
 	},
 }));
 
@@ -23,7 +23,9 @@ vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({ warn: vi.fn() }),
 }));
 
-const { getOrganizationBaseUrl } = await import("./app-url");
+const { getDefaultAppBaseUrl, getOrganizationBaseUrl } = await import(
+	"./app-url"
+);
 
 describe("getOrganizationBaseUrl", () => {
 	beforeEach(() => {
@@ -43,15 +45,21 @@ describe("getOrganizationBaseUrl", () => {
 			domainVerified: true,
 		});
 
-		await expect(getOrganizationBaseUrl("org_123")).resolves.toBe("https://login.acme.test");
+		await expect(getOrganizationBaseUrl("org_123")).resolves.toBe(
+			"https://login.acme.test",
+		);
 		expect(mockState.db.query.organization.findFirst).not.toHaveBeenCalled();
 	});
 
 	it("returns canonical slug platform subdomain when no verified custom domain exists", async () => {
 		mockState.domainConfig.mockResolvedValueOnce(null);
-		mockState.db.query.organization.findFirst.mockResolvedValueOnce({ slug: "acme" });
+		mockState.db.query.organization.findFirst.mockResolvedValueOnce({
+			slug: "acme",
+		});
 
-		await expect(getOrganizationBaseUrl("org_123")).resolves.toBe("https://acme.ui.z8-time.app");
+		await expect(getOrganizationBaseUrl("org_123")).resolves.toBe(
+			"https://acme.ui.z8-time.app",
+		);
 	});
 
 	it("returns the default app URL when organization lookup fails", async () => {
@@ -59,6 +67,14 @@ describe("getOrganizationBaseUrl", () => {
 		mockState.domainConfig.mockResolvedValueOnce(null);
 		mockState.db.query.organization.findFirst.mockResolvedValueOnce(null);
 
-		await expect(getOrganizationBaseUrl("org_123")).resolves.toBe("https://ui.z8-time.app");
+		await expect(getOrganizationBaseUrl("org_123")).resolves.toBe(
+			"https://ui.z8-time.app",
+		);
+	});
+
+	it("uses the local development URL when no trusted deployment URL is configured", () => {
+		mockState.env.PLATFORM_DOMAIN = undefined;
+
+		expect(getDefaultAppBaseUrl()).toBe("http://localhost:3000");
 	});
 });
