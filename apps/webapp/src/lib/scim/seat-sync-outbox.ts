@@ -182,7 +182,7 @@ export async function runSCIMSeatSyncOutbox(input: {
 	let exhausted = 0;
 	let persistenceFailures = 0;
 
-	for (const claim of claims) {
+	for await (const claim of claims) {
 		try {
 			await input.reconcile(claim.organizationId, { strict: true });
 			try {

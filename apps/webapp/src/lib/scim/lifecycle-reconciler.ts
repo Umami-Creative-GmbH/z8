@@ -27,10 +27,11 @@ export async function reconcileSCIMLifecycle(
 		store,
 	);
 
-	let [member, employee] = await Promise.all([
+	const currentRecordsPromise = Promise.all([
 		store.getMember(organizationId, input.userId),
 		store.getEmployee(organizationId, input.userId),
 	]);
+	let [member, employee] = await currentRecordsPromise;
 	const beforeBillable = isBillable(member, employee);
 	let priorMemberStatus = member?.status ?? null;
 	let priorEmployeeIsActive = employee?.isActive ?? null;
