@@ -5,6 +5,44 @@ import {
 } from "./scim-maintenance";
 
 describe("runSCIMMaintenance", () => {
+	it("starts independent projection recoveries concurrently", async () => {
+		let resolveFirst = (_value: boolean) => undefined;
+		let resolveSecond = (_value: boolean) => undefined;
+		const first = new Promise<boolean>((resolve) => {
+			resolveFirst = resolve;
+		});
+		const second = new Promise<boolean>((resolve) => {
+			resolveSecond = resolve;
+		});
+		const retryProjectionRecovery = vi
+			.fn()
+			.mockReturnValueOnce(first)
+			.mockReturnValueOnce(second);
+		const maintenance = runSCIMMaintenance({
+			runOutbox: vi.fn().mockResolvedValue({
+				claimed: 0,
+				completed: 0,
+				deferred: 0,
+				exhausted: 0,
+				persistenceFailures: 0,
+			}),
+			listDueRecoveryOrganizations: vi
+				.fn()
+				.mockResolvedValue(["org-one", "org-two"]),
+			retryProjectionRecovery,
+			runDecommissions: vi.fn().mockResolvedValue("skipped"),
+		});
+
+		await vi.waitFor(() =>
+			expect(retryProjectionRecovery).toHaveBeenCalledTimes(2),
+		);
+		resolveFirst(true);
+		resolveSecond(true);
+		await expect(maintenance).resolves.toMatchObject({
+			projectionRecovery: { attempted: 2, recovered: 2, failed: 0 },
+		});
+	});
+
 	it("degrades projection recovery invocation failures after other phases run", async () => {
 		const runOutbox = vi.fn().mockResolvedValue({
 			claimed: 1,

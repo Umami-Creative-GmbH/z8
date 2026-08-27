@@ -119,17 +119,25 @@ export async function runSCIMMaintenance(
 	} catch (error) {
 		recoveryScanError = error;
 	}
-	let recovered = 0;
-	let failed = 0;
-
-	for (const organizationId of organizationIds) {
-		try {
-			if (await dependencies.retryProjectionRecovery(organizationId))
-				recovered++;
-		} catch {
-			failed++;
-		}
-	}
+	const recoveryOutcomes = await Promise.all(
+		organizationIds.map(async (organizationId) => {
+			try {
+				return (await dependencies.retryProjectionRecovery(organizationId))
+					? "recovered"
+					: "skipped";
+			} catch {
+				return "failed";
+			}
+		}),
+	);
+	const { recovered, failed } = recoveryOutcomes.reduce(
+		(counts, outcome) => {
+			if (outcome === "recovered") counts.recovered++;
+			if (outcome === "failed") counts.failed++;
+			return counts;
+		},
+		{ recovered: 0, failed: 0 },
+	);
 	let decommissionCompleted = 0;
 	let decommissionDeferred = 0;
 	let decommissionFailed = 0;
