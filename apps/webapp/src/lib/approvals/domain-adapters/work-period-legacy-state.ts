@@ -570,13 +570,6 @@ function decodeRequest(
 		"autoApproval",
 	);
 	const requesterAutoApproved = autoApprovalDescriptor !== undefined;
-	if (
-		expectedStatus === "approved" &&
-		raw.approverId === raw.requestedBy &&
-		!requesterAutoApproved
-	) {
-		return fail();
-	}
 	if (requesterAutoApproved) {
 		if (expectedStatus !== "approved" || raw.approverId !== raw.requestedBy) {
 			return fail();

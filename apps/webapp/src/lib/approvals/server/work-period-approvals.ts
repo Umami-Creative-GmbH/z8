@@ -1624,12 +1624,19 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 		) {
 			throw fail();
 		}
+		const autoApprovalDescriptor =
+			typeof request.metadata === "object" &&
+			request.metadata !== null &&
+			!Array.isArray(request.metadata)
+				? Object.getOwnPropertyDescriptor(request.metadata, "autoApproval")
+				: undefined;
 		const persistedRequesterAutoCompleted =
 			request.status === "approved" &&
 			request.requestedBy === input.requesterEmployeeId &&
 			request.approverId === input.requesterEmployeeId &&
 			request.approvedAt instanceof Date &&
-			!Number.isNaN(request.approvedAt.getTime());
+			!Number.isNaN(request.approvedAt.getTime()) &&
+			autoApprovalDescriptor !== undefined;
 		const requesterAutoCompleted =
 			evidence.requestMode === "requester_auto_completed";
 		if (requesterAutoCompleted !== persistedRequesterAutoCompleted)
