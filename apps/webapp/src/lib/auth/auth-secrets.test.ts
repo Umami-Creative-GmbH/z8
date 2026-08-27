@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { BUILD_TIME_AUTH_SECRET, resolveAuthSecrets } from "./auth-secrets";
+import {
+	BUILD_TIME_AUTH_SECRET,
+	getSCIMCredentialHashSecret,
+	resolveAuthSecrets,
+} from "./auth-secrets";
 
 describe("resolveAuthSecrets", () => {
 	it("returns the primary auth secret when rotated secrets are absent", () => {
@@ -60,5 +64,15 @@ describe("resolveAuthSecrets", () => {
 			usedBuildTimeFallback: false,
 			hadInvalidRotatedSecrets: false,
 		});
+	});
+});
+
+describe("getSCIMCredentialHashSecret", () => {
+	it("returns the dedicated SCIM credential digest secret", () => {
+		expect(
+			getSCIMCredentialHashSecret({
+				SCIM_CREDENTIAL_HASH_SECRET: "scim-secret-with-at-least-32-characters",
+			}),
+		).toBe("scim-secret-with-at-least-32-characters");
 	});
 });

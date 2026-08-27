@@ -359,22 +359,83 @@
         },
         "scim": {
           "action": {
-            "copyToken": "Copier le jeton",
-            "generateToken": "Générer le jeton",
-            "refreshStatus": "Actualiser le statut"
+            "create": "Créer la connexion SCIM",
+            "creating": "Création de la connexion SCIM",
+            "decommission": "Mettre hors service",
+            "reconcile": "Actualiser l'état de création",
+            "refresh": "Actualiser le statut",
+            "rotate": "Faire pivoter l'identifiant",
+            "selectRole": "Sélectionnez d'abord un modèle de rôle par défaut"
           },
-          "baseUrl": "URL de base",
-          "cardDescription": "Générez le jeton de provisionnement et surveillez l'état de la connexion.",
-          "description": "La vérification SCIM se met à jour après que votre fournisseur d'identité envoie un test d'utilisateur ou une modification de groupe.",
-          "error": {
-            "saveProviderFirst": "Enregistrez le fournisseur avant de générer un jeton SCIM"
+          "credential": {
+            "close": "Fermer",
+            "confirmClose": "Confirmez que l'identifiant est enregistré avant de fermer.",
+            "copied": "Identifiant copié dans le presse-papiers.",
+            "copy": "Copier l'identifiant",
+            "description": "Copiez et stockez cet identifiant maintenant. Il ne peut plus être affiché.",
+            "label": "Identifiant",
+            "saved": "J'ai enregistré cet identifiant",
+            "title": "Identifiant SCIM",
+            "warning": "Cet identifiant est affiché une fois. Stockez-le de manière sécurisée dans votre fournisseur d'identité."
           },
+          "credentials": {
+            "credential": "Identifiant",
+            "empty": "Aucun identifiant n'a été émis.",
+            "expires": "Expire",
+            "lastUsedAria": "Dernière utilisation : {value} UTC",
+            "revoke": "Révoquer",
+            "status": {
+              "active": "Actif",
+              "revoked": "Révoqué"
+            },
+            "title": "Identifiants",
+            "unused": "Pas encore utilisé"
+          },
+          "description": "Connectez votre fournisseur d'identité pour provisionner et gérer l'accès des équipes.",
+          "dialog": {
+            "cancel": "Annuler",
+            "decommission": {
+              "description": "Cela met définitivement le provisionnement SCIM hors service et ne peut pas être annulé.",
+              "title": "Mettre SCIM hors service"
+            },
+            "revoke": {
+              "description": "Cela empêche immédiatement cet identifiant de provisionner des utilisateurs.",
+              "title": "Révoquer l'identifiant"
+            }
+          },
+          "endpoint": "Point de terminaison",
+          "events": {
+            "empty": "Aucun événement de provisionnement n'a été enregistré.",
+            "error": "Les événements n'ont pas pu être chargés. Actualisez le statut et réessayez.",
+            "title": "Événements récents"
+          },
+          "expiry": "Expiration de l'identifiant",
+          "expiry.value": "1 an",
+          "refreshHelp": "Actualisez le statut pour charger les métadonnées de connexion sûres.",
           "status": {
-            "none": "Aucune activité de provisionnement pour le moment",
-            "observed": "Activité de provisionnement observée"
+            "active-unverified": "active non vérifiée",
+            "creating": "création",
+            "creation_failed": "échec de création",
+            "decommissioned": "hors service",
+            "decommissioning": "mise hors service",
+            "disconnected": "déconnectée",
+            "refreshing": "actualisation",
+            "revoking": "révocation",
+            "rotating": "rotation",
+            "verified": "vérifiée"
           },
           "title": "Provisionnement SCIM",
-          "tokenShownOnce": "Ce jeton n'est affiché qu'une seule fois"
+          "toast": {
+            "createError": "Impossible de créer la connexion SCIM.",
+            "reconcileError": "Impossible de réconcilier la création SCIM.",
+            "refreshError": "Impossible d'actualiser le statut SCIM.",
+            "rotateError": "Impossible de faire pivoter l'identifiant SCIM.",
+            "updateError": "Impossible de mettre à jour la connexion SCIM."
+          },
+          "verification": "Vérification",
+          "verification.awaiting": "En attente d'utilisation par le fournisseur",
+          "verification.observed": "Observée",
+          "wizardDescription": "Configurez le provisionnement géré des utilisateurs sans modifier l'activation d'entreprise."
         },
         "sso": {
           "action": {
@@ -437,7 +498,7 @@
           "review": "Réviser et activer",
           "review.description": "Activation de la protection",
           "scim": "Provisionnement SCIM",
-          "scim.description": "Émettre un jeton de provisionnement",
+          "scim.description": "Connectez et gérez votre connexion de provisionnement SCIM",
           "sso": "Configuration SSO",
           "sso.description": "Enregistrer OIDC ou SAML",
           "ssoTest": "Utilisateur de test",
@@ -452,10 +513,6 @@
           "domainStatusRefreshed": "Statut du domaine actualisé",
           "providerSaved": "Fournisseur d'identité enregistré",
           "providerSaveFailed": "Échec de l'enregistrement du fournisseur",
-          "scimStatusFailed": "Échec de l'actualisation du statut SCIM",
-          "scimStatusRefreshed": "Statut SCIM actualisé",
-          "scimTokenFailed": "Échec de la génération du jeton SCIM",
-          "scimTokenGenerated": "Jeton SCIM généré",
           "ssoRegistered": "Fournisseur SSO enregistré",
           "ssoRegisterFailed": "Échec de l'enregistrement du fournisseur SSO",
           "ssoTestFailed": "Test SSO marqué comme échoué",

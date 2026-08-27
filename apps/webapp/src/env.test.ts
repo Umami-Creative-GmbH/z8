@@ -4,6 +4,7 @@ const originalEnv = process.env;
 
 const baseEnv = {
 	BETTER_AUTH_SECRET: "a".repeat(32),
+	SCIM_CREDENTIAL_HASH_SECRET: "s".repeat(32),
 	S3_PUBLIC_BUCKET: "z8-test-bucket",
 	S3_PUBLIC_ACCESS_KEY_ID: "test-access-key",
 	S3_PUBLIC_SECRET_ACCESS_KEY: "test-secret-key",
@@ -107,6 +108,81 @@ describe("env", () => {
 		process.env = originalEnv;
 		vi.unstubAllGlobals();
 		vi.restoreAllMocks();
+	});
+
+	test("requires a SCIM credential hash secret", async () => {
+		vi.spyOn(process, "exit").mockImplementation((code) => {
+			throw new Error(`process.exit:${code}`);
+		});
+
+		await expect(
+			importEnv({ SCIM_CREDENTIAL_HASH_SECRET: undefined }),
+		).rejects.toThrow("process.exit:1");
+	});
+
+	test("rejects a 31-character SCIM credential hash secret", async () => {
+		vi.spyOn(process, "exit").mockImplementation((code) => {
+			throw new Error(`process.exit:${code}`);
+		});
+
+		await expect(
+			importEnv({ SCIM_CREDENTIAL_HASH_SECRET: "s".repeat(31) }),
+		).rejects.toThrow("process.exit:1");
+	});
+
+	test("accepts an exactly 32-character SCIM credential hash secret", async () => {
+		const credentialHashSecret = "s".repeat(32);
+		const { env } = await importEnv({
+			SCIM_CREDENTIAL_HASH_SECRET: credentialHashSecret,
+		});
+
+		expect(env.SCIM_CREDENTIAL_HASH_SECRET).toBe(credentialHashSecret);
+	});
+
+	test("rejects a SCIM credential hash secret equal to BETTER_AUTH_SECRET", async () => {
+		vi.spyOn(process, "exit").mockImplementation((code) => {
+			throw new Error(`process.exit:${code}`);
+		});
+		const sharedSecret = "s".repeat(32);
+
+		await expect(
+			importEnv({
+				BETTER_AUTH_SECRET: sharedSecret,
+				SCIM_CREDENTIAL_HASH_SECRET: sharedSecret,
+			}),
+		).rejects.toThrow("process.exit:1");
+	});
+
+	test(
+		"rejects a SCIM credential hash secret equal to a rotated Better Auth secret",
+		async () => {
+			vi.spyOn(process, "exit").mockImplementation((code) => {
+				throw new Error(`process.exit:${code}`);
+			});
+			const sharedSecret = "s".repeat(32);
+
+			await expect(
+				importEnv({
+					BETTER_AUTH_SECRET: "primary-better-auth-secret-is-distinct",
+					BETTER_AUTH_SECRETS:
+						`1:older-better-auth-secret-is-distinct, 2:${sharedSecret}`,
+					SCIM_CREDENTIAL_HASH_SECRET: sharedSecret,
+				}),
+			).rejects.toThrow("process.exit:1");
+		},
+	);
+
+	test("exposes the SCIM credential hash secret independently from Better Auth secrets", async () => {
+		const credentialHashSecret = "scim-credential-hash-secret-value";
+		const { env } = await importEnv({
+			BETTER_AUTH_SECRET: "better-auth-secret-value-is-distinct",
+			BETTER_AUTH_SECRETS: "rotated-better-auth-secret-is-distinct",
+			SCIM_CREDENTIAL_HASH_SECRET: credentialHashSecret,
+		});
+
+		expect(env.SCIM_CREDENTIAL_HASH_SECRET).toBe(credentialHashSecret);
+		expect(env.SCIM_CREDENTIAL_HASH_SECRET).not.toBe(env.BETTER_AUTH_SECRET);
+		expect(env.SCIM_CREDENTIAL_HASH_SECRET).not.toBe(env.BETTER_AUTH_SECRETS);
 	});
 
 	test("defaults to the vault secret store provider", async () => {

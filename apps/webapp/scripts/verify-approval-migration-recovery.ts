@@ -6,10 +6,14 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
+import {
+	type ApprovalWorkflowRepositoryTestDatabaseConfig,
+	parseApprovalWorkflowRepositoryTestDatabaseUrl,
+} from "../src/lib/approvals/workflow/repository-integration-harness";
 
 const TEST_SENTINEL = "approval-workflow-repository-test";
-const TEST_DATABASE_PREFIX = "approval_workflow_repository_test_";
 const INCIDENT_LATEST_CREATED_AT = "1785493929039";
+const INCIDENT_LATEST_TAG = "0059_payroll_blocker_dismissal";
 const EXPAND_CREATED_AT = "1785232090757";
 const CYCLE_IDENTITY_CREATED_AT = "1785232118219";
 const RECOVERY_CREATED_AT = "1785493929040";
@@ -84,11 +88,6 @@ export interface MigrationLedgerRow {
 	createdAt: string;
 }
 
-export interface TestDatabaseConfig {
-	databaseUrl: string;
-	databaseName: string;
-}
-
 export interface DisposableDatabasePreflight {
 	expectedDatabaseName: string;
 	currentDatabaseName: string;
@@ -104,11 +103,20 @@ export interface CatalogNamespaceReference {
 
 export function filterIncidentJournal(
 	journal: MigrationJournal,
+	latestTag = INCIDENT_LATEST_TAG,
 ): MigrationJournal {
+	const incidentLatestIndex = journal.entries.findIndex(
+		(entry) => entry.tag === latestTag,
+	);
+	if (incidentLatestIndex < 0) {
+		throw new Error(`Missing incident migration ${latestTag}`);
+	}
+
 	return {
 		...journal,
-		entries: journal.entries.filter(
-			(entry) => !JOURNAL_TAGS_TO_SKIP.has(entry.tag),
+		entries: journal.entries.slice(0, incidentLatestIndex + 1).filter(
+			(entry) =>
+				!JOURNAL_TAGS_TO_SKIP.has(entry.tag) || entry.tag === latestTag,
 		),
 	};
 }
@@ -160,6 +168,30 @@ export function assertMigrationLedgerUnchanged(
 	}
 }
 
+export function formatMigrationVerificationFailure(error: unknown): string {
+	if (!error || typeof error !== "object") return String(error);
+
+	const postgresError = error as {
+		message?: unknown;
+		code?: unknown;
+		detail?: unknown;
+	};
+	const message =
+		typeof postgresError.message === "string"
+			? postgresError.message
+			: String(error);
+	const diagnostics = [
+		typeof postgresError.code === "string"
+			? `PostgreSQL code ${postgresError.code}`
+			: undefined,
+		typeof postgresError.detail === "string"
+			? `detail: ${postgresError.detail}`
+			: undefined,
+	].filter((diagnostic): diagnostic is string => diagnostic !== undefined);
+
+	return diagnostics.length > 0 ? `${message} (${diagnostics.join("; ")})` : message;
+}
+
 export function buildCatalogNamespaceCountQuery(
 	reference: CatalogNamespaceReference,
 ): string {
@@ -186,48 +218,6 @@ export function sumCatalogNamespaceCounts(
 		}
 		return total + BigInt(row.count);
 	}, BigInt(0));
-}
-
-export function parseTestDatabaseConfig(
-	databaseUrl: string,
-	sentinel: string | undefined,
-): TestDatabaseConfig {
-	if (sentinel !== TEST_SENTINEL) {
-		throw new Error(
-			`APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL must equal ${TEST_SENTINEL}`,
-		);
-	}
-
-	let parsed: URL;
-	try {
-		parsed = new URL(databaseUrl);
-	} catch {
-		throw new Error(
-			"APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL must be a valid PostgreSQL URL",
-		);
-	}
-	if (parsed.protocol !== "postgres:" && parsed.protocol !== "postgresql:") {
-		throw new Error(
-			"Approval migration test DB URL must use a PostgreSQL protocol",
-		);
-	}
-	if (parsed.search !== "") {
-		throw new Error(
-			"Approval migration test DB URL must not include query parameters",
-		);
-	}
-	const hostname = parsed.hostname.replace(/^\[|\]$/g, "").toLowerCase();
-	if (!new Set(["127.0.0.1", "localhost", "::1"]).has(hostname)) {
-		throw new Error("Approval migration test DB URL must use a loopback host");
-	}
-
-	const databaseName = decodeURIComponent(parsed.pathname.slice(1));
-	if (!databaseName.startsWith(TEST_DATABASE_PREFIX)) {
-		throw new Error(
-			"Refusing to target a non-isolated approval workflow test DB",
-		);
-	}
-	return { databaseUrl, databaseName };
 }
 
 export function assertDisposableDatabasePreflight(
@@ -293,7 +283,7 @@ export function assertApprovalCatalog(catalog: ApprovalCatalog): void {
 	}
 }
 
-function requireTestDatabaseConfig(): TestDatabaseConfig {
+function requireTestDatabaseConfig(): ApprovalWorkflowRepositoryTestDatabaseConfig {
 	const databaseUrl =
 		process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 	if (!databaseUrl) {
@@ -301,10 +291,14 @@ function requireTestDatabaseConfig(): TestDatabaseConfig {
 			"APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL is required",
 		);
 	}
-	return parseTestDatabaseConfig(
-		databaseUrl,
-		process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL,
-	);
+	if (
+		process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL !== TEST_SENTINEL
+	) {
+		throw new Error(
+			`APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL must equal ${TEST_SENTINEL}`,
+		);
+	}
+	return parseApprovalWorkflowRepositoryTestDatabaseUrl(databaseUrl);
 }
 
 async function preflightDisposableDatabase(
@@ -417,7 +411,9 @@ async function assertAnchorLedgerState(
 		cycleRows.length !== 0 ||
 		recoveryRows.length !== (recoveryExpected ? 1 : 0)
 	) {
-		throw new Error("Constructed approval migration ledger state is invalid");
+		throw new Error(
+			`Constructed approval migration ledger state is invalid (expand=${expandRows.length}, expandHashMatches=${expandRows[0]?.hash === expandHash}, cycle=${cycleRows.length}, recovery=${recoveryRows.length})`,
+		);
 	}
 }
 
@@ -597,12 +593,16 @@ async function run(): Promise<void> {
 		await assertIncidentState(pool);
 
 		console.log("Migration recovery verification: applying recovery migration");
-		await migrate(database, { migrationsFolder: REAL_MIGRATIONS_FOLDER });
+		await writeFile(
+			journalPath,
+			`${JSON.stringify(filterIncidentJournal(journal, RECOVERY_TAG), null, 2)}\n`,
+		);
+		await migrate(database, { migrationsFolder: incidentMigrationsFolder });
 		await assertRecoveryState(pool);
 
 		console.log("Migration recovery verification: checking retry idempotency");
 		const beforeRetry = await loadMigrationLedger(pool);
-		await migrate(database, { migrationsFolder: REAL_MIGRATIONS_FOLDER });
+		await migrate(database, { migrationsFolder: incidentMigrationsFolder });
 		const afterRetry = await loadMigrationLedger(pool);
 		assertMigrationLedgerUnchanged(beforeRetry, afterRetry);
 		await assertRecoveryState(pool);
@@ -650,7 +650,7 @@ async function run(): Promise<void> {
 			[expandHash, EXPAND_CREATED_AT],
 		);
 		await assertAnchorLedgerState(pool, expandHash, false);
-		await migrate(database, { migrationsFolder: REAL_MIGRATIONS_FOLDER });
+		await migrate(database, { migrationsFolder: incidentMigrationsFolder });
 		await assertAnchorLedgerState(pool, expandHash, true);
 		await assertRecoveryState(pool);
 
@@ -686,7 +686,7 @@ const invokedPath = process.argv[1]
 	: "";
 if (import.meta.url === invokedPath) {
 	run().catch((error: unknown) => {
-		console.error(error instanceof Error ? error.message : String(error));
+		console.error(formatMigrationVerificationFailure(error));
 		process.exitCode = 1;
 	});
 }

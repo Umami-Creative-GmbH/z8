@@ -14,7 +14,10 @@ import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
 import { env } from "@/env";
-import { resolveAuthSecrets } from "@/lib/auth/auth-secrets";
+import {
+	getSCIMCredentialHashSecret,
+	resolveAuthSecrets,
+} from "@/lib/auth/auth-secrets";
 import {
 	normalizeInvitationEmail,
 	resolveAcceptedInvitationCanCreateOrganizations,
@@ -29,7 +32,14 @@ import {
 } from "@/lib/auth-domain-config";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
+import {
+	createSCIMCallbackModelRegistration,
+	createZ8SCIMPlugin,
+} from "@/lib/scim/auth-configuration";
+import { createSCIMProjectionReplayLoader } from "@/lib/scim/projection-replay-api";
+import { configureSCIMProjectionReplay } from "@/lib/scim/role-projection-replay";
 import { getOrganizationBaseUrl } from "./app-url";
+import { authDatabaseSchema } from "./auth-database-schema";
 import { getDomainConfig } from "./domain/domain-service";
 import {
 	classifyDomainHost,
@@ -453,11 +463,13 @@ export const auth = betterAuth({
 	database: makeEmailLookupCaseInsensitiveAdapter(
 		drizzleAdapter(db, {
 			provider: "pg",
-			schema,
+			schema: authDatabaseSchema,
+			transaction: true,
 		}),
 	),
 	plugins: [
 		bearer(), // Enable Bearer token auth for desktop app
+		createZ8SCIMPlugin(getSCIMCredentialHashSecret()),
 		admin({
 			defaultRole: "user",
 			adminRole: "admin",
@@ -733,11 +745,12 @@ export const auth = betterAuth({
 			},
 			// Provision user when they sign in through SSO
 			provisionUser: async ({ user, provider }) => {
+				const providerOrganizationId = provider.organizationId;
 				// If provider is linked to an organization, check/create employee record
-				if (provider.organizationId) {
+				if (providerOrganizationId) {
 					// Check if org requires SSO approval
 					const org = await db.query.organization.findFirst({
-						where: eq(schema.organization.id, provider.organizationId),
+						where: eq(schema.organization.id, providerOrganizationId),
 					});
 
 					const ssoRequiresApproval =
@@ -748,7 +761,7 @@ export const auth = betterAuth({
 						where: (emp, { eq, and }) =>
 							and(
 								eq(emp.userId, user.id),
-								eq(emp.organizationId, provider.organizationId!),
+								eq(emp.organizationId, providerOrganizationId),
 							),
 					});
 
@@ -756,7 +769,7 @@ export const auth = betterAuth({
 						// Create employee record - isActive depends on approval setting
 						await db.insert(employee).values({
 							userId: user.id,
-							organizationId: provider.organizationId,
+							organizationId: providerOrganizationId,
 							role: "employee",
 							isActive: !ssoRequiresApproval, // inactive if approval required
 						});
@@ -778,5 +791,8 @@ export const auth = betterAuth({
 			enableMetadata: true,
 		}),
 		nextCookies(),
+		createSCIMCallbackModelRegistration(),
 	],
 });
+
+configureSCIMProjectionReplay(createSCIMProjectionReplayLoader(auth.api));

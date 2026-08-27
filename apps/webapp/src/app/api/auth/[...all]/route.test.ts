@@ -3,13 +3,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockState = vi.hoisted(() => ({
 	classifyDomainHost: vi.fn(),
 	resolvePlatformOrganization: vi.fn(),
+	handlers: {
+		GET: vi.fn(() => Response.json({ method: "GET" })),
+		POST: vi.fn(() => Response.json({ method: "POST" })),
+		PUT: vi.fn(() => Response.json({ method: "PUT" })),
+		PATCH: vi.fn(() => Response.json({ method: "PATCH" })),
+		DELETE: vi.fn(() => Response.json({ method: "DELETE" })),
+	},
 }));
 
 vi.mock("better-auth/next-js", () => ({
-	toNextJsHandler: vi.fn(() => ({
-		GET: vi.fn(() => Response.json({ ok: true })),
-		POST: vi.fn(() => Response.json({ ok: true })),
-	})),
+	toNextJsHandler: vi.fn(() => mockState.handlers),
 }));
 
 vi.mock("@/lib/auth", () => ({ auth: {} }));
@@ -19,7 +23,10 @@ vi.mock("@/lib/domain", () => ({
 	resolvePlatformOrganization: mockState.resolvePlatformOrganization,
 }));
 
-const { rejectUnsupportedPlatformHost } = await import("./route");
+const route = await import("./route");
+const { rejectUnsupportedPlatformHost } = route;
+
+const methods = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
 
 describe("rejectUnsupportedPlatformHost", () => {
 	beforeEach(() => {
@@ -66,7 +73,9 @@ describe("rejectUnsupportedPlatformHost", () => {
 		expect(response?.status).toBe(404);
 		await expect(response?.json()).resolves.toEqual({ error: "Not found" });
 		expect(mockState.resolvePlatformOrganization).toHaveBeenCalledOnce();
-		expect(mockState.resolvePlatformOrganization).toHaveBeenCalledWith("missing");
+		expect(mockState.resolvePlatformOrganization).toHaveBeenCalledWith(
+			"missing",
+		);
 	});
 
 	it("allows existing platform organizations", async () => {
@@ -98,4 +107,44 @@ describe("rejectUnsupportedPlatformHost", () => {
 		expect(response).toBeNull();
 		expect(mockState.resolvePlatformOrganization).toHaveBeenCalledOnce();
 	});
+
+	it.each(methods)(
+		"exports %s through the platform host check",
+		async (method) => {
+			const request = new Request("https://ui.z8-time.app/api/auth/session", {
+				method,
+				headers: { host: "ui.z8-time.app" },
+			});
+
+			const response = await route[method](request);
+
+			expect(response.status).toBe(200);
+			await expect(response.json()).resolves.toEqual({ method });
+			expect(mockState.classifyDomainHost).toHaveBeenCalledWith(
+				"ui.z8-time.app",
+			);
+			expect(mockState.handlers[method]).toHaveBeenCalledOnce();
+			expect(mockState.handlers[method]).toHaveBeenCalledWith(request);
+		},
+	);
+
+	it.each(methods)(
+		"rejects unsupported hosts for %s without invoking Better Auth",
+		async (method) => {
+			mockState.resolvePlatformOrganization.mockResolvedValue(null);
+			const request = new Request(
+				"https://missing.ui.z8-time.app/api/auth/session",
+				{
+					method,
+					headers: { host: "missing.ui.z8-time.app" },
+				},
+			);
+
+			const response = await route[method](request);
+
+			expect(response.status).toBe(404);
+			await expect(response.json()).resolves.toEqual({ error: "Not found" });
+			expect(mockState.handlers[method]).not.toHaveBeenCalled();
+		},
+	);
 });

@@ -2,7 +2,10 @@
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { CronSchedulePreset, ScheduledCronJobRow } from "@/lib/cron/schedules";
+import type {
+	CronSchedulePreset,
+	ScheduledCronJobRow,
+} from "@/lib/cron/schedules";
 import { resetCronSchedule, updateCronSchedule } from "./actions";
 import { ScheduleControls } from "./schedule-controls";
 
@@ -54,7 +57,9 @@ const presets: CronSchedulePreset[] = [
 	{ id: "daily-midnight", pattern: "0 0 * * *", label: "Daily at midnight" },
 ];
 
-function buildJob(overrides: Partial<ScheduledCronJobRow> = {}): ScheduledCronJobRow {
+function buildJob(
+	overrides: Partial<ScheduledCronJobRow> = {},
+): ScheduledCronJobRow {
 	return {
 		jobName: "cron:export",
 		name: "cron:export",
@@ -71,7 +76,9 @@ function buildJob(overrides: Partial<ScheduledCronJobRow> = {}): ScheduledCronJo
 }
 
 function renderControls(job: ScheduledCronJobRow = buildJob()) {
-	return render(<ScheduleControls job={job} labels={labels} presets={presets} />);
+	return render(
+		<ScheduleControls job={job} labels={labels} presets={presets} />,
+	);
 }
 
 describe("ScheduleControls", () => {
@@ -96,7 +103,9 @@ describe("ScheduleControls", () => {
 		renderControls();
 
 		fireEvent.click(screen.getByRole("button", { name: labels.edit }));
-		fireEvent.change(screen.getByLabelText(labels.presetLabel), { target: { value: "hourly" } });
+		fireEvent.change(screen.getByLabelText(labels.presetLabel), {
+			target: { value: "hourly" },
+		});
 		fireEvent.click(screen.getByRole("button", { name: labels.save }));
 
 		await waitFor(() => {
@@ -125,7 +134,9 @@ describe("ScheduleControls", () => {
 		expect(screen.getByText(labels.highRiskTitle)).toBeTruthy();
 		expect(screen.getByText(labels.highRiskDescription)).toBeTruthy();
 
-		fireEvent.change(screen.getByLabelText(labels.presetLabel), { target: { value: "hourly" } });
+		fireEvent.change(screen.getByLabelText(labels.presetLabel), {
+			target: { value: "hourly" },
+		});
 		fireEvent.change(screen.getByLabelText(labels.confirmationLabel), {
 			target: { value: labels.confirmationText },
 		});
@@ -140,6 +151,23 @@ describe("ScheduleControls", () => {
 		});
 	});
 
+	it("requires confirmation for SCIM maintenance schedule changes", () => {
+		renderControls(
+			buildJob({
+				jobName: "cron:scim-maintenance",
+				name: "cron:scim-maintenance",
+				presetId: "every-5-minutes",
+			}),
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: labels.edit }));
+		expect(screen.getByText(labels.highRiskTitle)).toBeTruthy();
+		expect(
+			screen.getByRole<HTMLButtonElement>("button", { name: labels.save })
+				.disabled,
+		).toBe(true);
+	});
+
 	it("does not submit a high-risk edit without the exact confirmation", () => {
 		renderControls(
 			buildJob({
@@ -151,9 +179,13 @@ describe("ScheduleControls", () => {
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: labels.edit }));
-		fireEvent.change(screen.getByLabelText(labels.presetLabel), { target: { value: "hourly" } });
+		fireEvent.change(screen.getByLabelText(labels.presetLabel), {
+			target: { value: "hourly" },
+		});
 
-		const saveButton = screen.getByRole<HTMLButtonElement>("button", { name: labels.save });
+		const saveButton = screen.getByRole<HTMLButtonElement>("button", {
+			name: labels.save,
+		});
 		expect(saveButton.disabled).toBe(true);
 
 		fireEvent.click(saveButton);
@@ -172,8 +204,14 @@ describe("ScheduleControls", () => {
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: labels.edit }));
-		fireEvent.change(screen.getByLabelText(labels.presetLabel), { target: { value: "hourly" } });
-		fireEvent.submit(screen.getByLabelText(labels.presetLabel).closest("form") as HTMLFormElement);
+		fireEvent.change(screen.getByLabelText(labels.presetLabel), {
+			target: { value: "hourly" },
+		});
+		fireEvent.submit(
+			screen
+				.getByLabelText(labels.presetLabel)
+				.closest("form") as HTMLFormElement,
+		);
 
 		await waitFor(() => {
 			expect(mocks.toastError).toHaveBeenCalledWith(labels.failed);
@@ -185,13 +223,15 @@ describe("ScheduleControls", () => {
 		renderControls();
 
 		fireEvent.click(screen.getByRole("button", { name: labels.edit }));
-		fireEvent.change(screen.getByLabelText(labels.presetLabel), { target: { value: "hourly" } });
+		fireEvent.change(screen.getByLabelText(labels.presetLabel), {
+			target: { value: "hourly" },
+		});
 		fireEvent.click(screen.getByRole("button", { name: labels.cancel }));
 		fireEvent.click(screen.getByRole("button", { name: labels.edit }));
 
-		expect(screen.getByLabelText<HTMLSelectElement>(labels.presetLabel).value).toBe(
-			"every-5-minutes",
-		);
+		expect(
+			screen.getByLabelText<HTMLSelectElement>(labels.presetLabel).value,
+		).toBe("every-5-minutes");
 	});
 
 	it("preserves open edit form values when job props change before submit", async () => {
@@ -205,14 +245,19 @@ describe("ScheduleControls", () => {
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: labels.edit }));
-		fireEvent.change(screen.getByLabelText(labels.presetLabel), { target: { value: "hourly" } });
+		fireEvent.change(screen.getByLabelText(labels.presetLabel), {
+			target: { value: "hourly" },
+		});
 		fireEvent.change(screen.getByLabelText(labels.confirmationLabel), {
 			target: { value: labels.confirmationText },
 		});
 
 		rerender(
 			<ScheduleControls
-				job={buildJob({ presetId: "every-5-minutes", effectivePattern: "*/5 * * * *" })}
+				job={buildJob({
+					presetId: "every-5-minutes",
+					effectivePattern: "*/5 * * * *",
+				})}
 				labels={labels}
 				presets={presets}
 			/>,
@@ -231,15 +276,20 @@ describe("ScheduleControls", () => {
 	it("disables editing and shows read-only text when the schedule cannot be edited", () => {
 		renderControls(buildJob({ canEdit: false }));
 
-		expect(screen.getByRole<HTMLButtonElement>("button", { name: labels.edit }).disabled).toBe(
-			true,
-		);
+		expect(
+			screen.getByRole<HTMLButtonElement>("button", { name: labels.edit })
+				.disabled,
+		).toBe(true);
 		expect(screen.getByText(labels.readOnly)).toBeTruthy();
 	});
 
 	it("resets an overridden low-risk job", async () => {
 		renderControls(
-			buildJob({ isOverridden: true, presetId: "hourly", effectivePattern: "0 * * * *" }),
+			buildJob({
+				isOverridden: true,
+				presetId: "hourly",
+				effectivePattern: "0 * * * *",
+			}),
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: labels.reset }));

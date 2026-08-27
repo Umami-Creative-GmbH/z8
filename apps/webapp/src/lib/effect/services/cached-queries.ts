@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { cache } from "react";
 import { db } from "@/db";
-import { accessPolicy, roleTemplate, roleTemplateMapping, scimProviderConfig } from "@/db/schema";
+import { accessPolicy, roleTemplate, roleTemplateMapping } from "@/db/schema";
 
 /**
  * Cached queries for request-level deduplication.
@@ -11,20 +11,14 @@ import { accessPolicy, roleTemplate, roleTemplateMapping, scimProviderConfig } f
  */
 
 /**
- * Get SCIM provider config for an organization (cached per request)
- */
-export const getScimProviderConfig = cache(async (organizationId: string) => {
-	return db.query.scimProviderConfig.findFirst({
-		where: eq(scimProviderConfig.organizationId, organizationId),
-	});
-});
-
-/**
  * Get active access policies for an organization (cached per request)
  */
 export const getActiveAccessPolicies = cache(async (organizationId: string) => {
 	return db.query.accessPolicy.findMany({
-		where: and(eq(accessPolicy.organizationId, organizationId), eq(accessPolicy.enabled, true)),
+		where: and(
+			eq(accessPolicy.organizationId, organizationId),
+			eq(accessPolicy.enabled, true),
+		),
 		orderBy: [desc(accessPolicy.priority)],
 	});
 });
@@ -54,7 +48,11 @@ export const getRoleTemplateMappings = cache(async (organizationId: string) => {
  * Find role template mapping for a specific IdP group (cached per request)
  */
 export const findRoleTemplateMappingForGroup = cache(
-	async (organizationId: string, idpType: "sso" | "scim", idpGroupId: string) => {
+	async (
+		organizationId: string,
+		idpType: "sso" | "scim",
+		idpGroupId: string,
+	) => {
 		return db.query.roleTemplateMapping.findFirst({
 			where: and(
 				eq(roleTemplateMapping.organizationId, organizationId),

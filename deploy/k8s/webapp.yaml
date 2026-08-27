@@ -108,6 +108,11 @@ spec:
                 secretKeyRef:
                   name: z8-secrets
                   key: auth-secret
+            - name: SCIM_CREDENTIAL_HASH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: z8-secrets
+                  key: scim-credential-hash-secret
             - name: BETTER_AUTH_URL
               valueFrom:
                 configMapKeyRef:

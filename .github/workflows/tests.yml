@@ -104,10 +104,15 @@ jobs:
           APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test \
           pnpm --filter webapp exec tsx scripts/verify-approval-migration-recovery.ts
 
-          APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/${database_name}" \
-          APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test \
-          APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED=1 \
-          pnpm --filter webapp exec vitest run src/lib/approvals/workflow/repository.integration.test.ts \
+           APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/${database_name}" \
+           APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test \
+           APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED=1 \
+           TZ=UTC \
+           PGOPTIONS="-c statement_timeout=15000 -c timezone=UTC" \
+           pnpm --filter webapp exec vitest run src/lib/scim/scim-callback-atomicity.integration.test.ts \
+            src/lib/scim/seat-sync-outbox.integration.test.ts \
+            src/lib/scim/protocol.integration.test.ts \
+            src/lib/approvals/workflow/repository.integration.test.ts \
             src/lib/approvals/workflow/transition-engine.integration.test.ts \
             src/lib/approvals/server/time-correction-approvals.integration.test.ts \
             src/lib/approvals/server/work-period-approvals.integration.test.ts

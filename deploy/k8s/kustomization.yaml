@@ -9,10 +9,11 @@ namespace: z8
 resources:
   - namespace.yaml
   - configmap.yaml
-  - secret.yaml
   - webapp.yaml
   - worker.yaml
   - migration.yaml
+  # z8-secrets must be provisioned separately. Never add secret.yaml here:
+  # it contains placeholders that must not overwrite deployed secret values.
   # Optional resources (apply separately when needed):
   # - db-seed.yaml
   # - ingress.yaml

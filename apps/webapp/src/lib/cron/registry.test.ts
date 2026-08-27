@@ -6,6 +6,7 @@ const {
 	getOrCreateTelemetryIdentity,
 	mockEnv,
 	runBillingSeatReconciliation,
+	runSCIMMaintenance,
 	sendTelemetryReport,
 } = vi.hoisted(() => ({
 	calculateTelemetryMetrics: vi.fn(),
@@ -19,11 +20,32 @@ const {
 		skipped: 0,
 		errors: [],
 	})),
+	runSCIMMaintenance: vi.fn(async () => ({
+		outbox: {
+			claimed: 0,
+			completed: 0,
+			deferred: 0,
+			exhausted: 0,
+			persistenceFailures: 0,
+		},
+		exhausted: 0,
+		persistenceFailures: 0,
+		projectionRecovery: { attempted: 0, recovered: 0, failed: 0 },
+	})),
 	sendTelemetryReport: vi.fn(),
 }));
 
 vi.mock("@/lib/jobs/billing-seat-reconciliation", () => ({
 	runBillingSeatReconciliation,
+}));
+
+vi.mock("@/lib/jobs/scim-maintenance", () => ({
+	runSCIMMaintenance,
+	SCIMMaintenanceDegradedError: class SCIMMaintenanceDegradedError extends Error {
+		constructor() {
+			super("SCIM maintenance degraded");
+		}
+	},
 }));
 
 vi.mock("@/env", () => ({ env: mockEnv }));
@@ -43,7 +65,8 @@ describe("CRON_JOBS execution cleanup", () => {
 	it("registers the daily execution cleanup cron with tracking metadata", () => {
 		expect(CRON_JOBS["cron:execution-cleanup"]).toMatchObject({
 			schedule: "30 2 * * *",
-			description: "Delete cron execution records past the configured retention period",
+			description:
+				"Delete cron execution records past the configured retention period",
 			defaultJobOptions: { attempts: 2, priority: 9 },
 		});
 	});
@@ -64,6 +87,42 @@ describe("CRON_JOBS billing seat reconciliation", () => {
 		});
 
 		expect(runBillingSeatReconciliation).toHaveBeenCalledOnce();
+	});
+});
+
+describe("CRON_JOBS SCIM maintenance", () => {
+	it("registers durable SCIM maintenance every minute without BullMQ retries", async () => {
+		expect(CRON_JOBS["cron:scim-maintenance"]).toMatchObject({
+			schedule: "* * * * *",
+			defaultJobOptions: { attempts: 1, priority: 8 },
+		});
+
+		await CRON_JOBS["cron:scim-maintenance"].processor({
+			triggeredAt: "2026-08-25T00:00:00.000Z",
+		});
+
+		expect(runSCIMMaintenance).toHaveBeenCalledOnce();
+	});
+
+	it("rejects terminal SCIM delivery outcomes so worker reliability records a failed run", async () => {
+		runSCIMMaintenance.mockResolvedValueOnce({
+			outbox: {
+				claimed: 1,
+				completed: 0,
+				deferred: 0,
+				exhausted: 1,
+				persistenceFailures: 0,
+			},
+			exhausted: 1,
+			persistenceFailures: 0,
+			projectionRecovery: { attempted: 0, recovered: 0, failed: 0 },
+		});
+
+		await expect(
+			CRON_JOBS["cron:scim-maintenance"].processor({
+				triggeredAt: "2026-08-25T00:00:00.000Z",
+			}),
+		).rejects.toThrow("SCIM maintenance degraded");
 	});
 });
 

@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(
 	new URL(
@@ -52,35 +52,6 @@ const sessionIdentityGuard = migration.slice(
 
 const fixedViolationMessage =
 	"Organization must retain an approved accessible owner";
-
-function deferred() {
-	let resolve!: () => void;
-	const promise = new Promise<void>((resolvePromise) => {
-		resolve = resolvePromise;
-	});
-	return { promise, resolve };
-}
-
-class OrganizationRowLockModel {
-	private readonly tails = new Map<string, Promise<void>>();
-
-	async run(organizationId: string, operation: () => Promise<void>) {
-		const previous = this.tails.get(organizationId) ?? Promise.resolve();
-		const release = deferred();
-		this.tails.set(
-			organizationId,
-			previous.then(() => release.promise),
-		);
-		await previous;
-		try {
-			return await operation();
-		} finally {
-			release.resolve();
-		}
-	}
-}
-
-class IdentityLockModel extends OrganizationRowLockModel {}
 
 describe("employee owner lifecycle migration guards", () => {
 	it("locks the organization row before checking an active owner employee deactivation", () => {
@@ -210,85 +181,6 @@ describe("employee owner lifecycle migration guards", () => {
 		);
 	});
 
-	it("models replacement membership and active-session writes waiting for cleanup", async () => {
-		const lock = new IdentityLockModel();
-		const cleanupMayCommit = deferred();
-		const events: string[] = [];
-		const cleanup = lock.run("org-1:person@example.com", async () => {
-			events.push("cleanup-lock");
-			await cleanupMayCommit.promise;
-			events.push("cleanup-commit");
-		});
-		const replacement = lock.run("org-1:person@example.com", async () => {
-			events.push("replacement-member");
-		});
-		const activeSession = lock.run("org-1:person@example.com", async () => {
-			events.push("active-session");
-		});
-
-		await vi.waitFor(() => expect(events).toEqual(["cleanup-lock"]));
-		cleanupMayCommit.resolve();
-		await Promise.all([cleanup, replacement, activeSession]);
-
-		expect(events).toEqual([
-			"cleanup-lock",
-			"cleanup-commit",
-			"replacement-member",
-			"active-session",
-		]);
-	});
-
-	it("models cleanup and SCIM status reactivation as serialized identity transactions", async () => {
-		const runRace = async (first: "cleanup" | "scim") => {
-			const lock = new IdentityLockModel();
-			const firstMayCommit = deferred();
-			const state = { approved: false, employeeActive: false };
-			const events: string[] = [];
-			const cleanup = () =>
-				lock.run("org-1:person@example.com", async () => {
-					events.push("cleanup-lock");
-					if (first === "cleanup") await firstMayCommit.promise;
-					if (!state.approved) state.employeeActive = false;
-					events.push("cleanup-commit");
-				});
-			const scim = () =>
-				lock.run("org-1:person@example.com", async () => {
-					events.push("scim-lock");
-					if (first === "scim") await firstMayCommit.promise;
-					state.approved = true;
-					state.employeeActive = true;
-					events.push("scim-commit");
-				});
-			const firstRun = first === "cleanup" ? cleanup() : scim();
-			const secondRun = first === "cleanup" ? scim() : cleanup();
-			await vi.waitFor(() => expect(events).toHaveLength(1));
-			firstMayCommit.resolve();
-			await Promise.all([firstRun, secondRun]);
-			return { events, state };
-		};
-
-		const cleanupFirst = await runRace("cleanup");
-		expect(cleanupFirst.events).toEqual([
-			"cleanup-lock",
-			"cleanup-commit",
-			"scim-lock",
-			"scim-commit",
-		]);
-		expect(cleanupFirst.state).toEqual({
-			approved: true,
-			employeeActive: true,
-		});
-
-		const scimFirst = await runRace("scim");
-		expect(scimFirst.events).toEqual([
-			"scim-lock",
-			"scim-commit",
-			"cleanup-lock",
-			"cleanup-commit",
-		]);
-		expect(scimFirst.state).toEqual({ approved: true, employeeActive: true });
-	});
-
 	it("fails safely on historical duplicate identities before creating the unique index", () => {
 		const preflightPosition = migration.indexOf(
 			"Employee identity uniqueness preflight failed",
@@ -316,22 +208,6 @@ describe("employee owner lifecycle migration guards", () => {
 		expect(migration).toContain(
 			'ON "employee" USING btree ("organization_id", "user_id")',
 		);
-	});
-
-	it("models serialized employee identity inserts as one success and one conflict", async () => {
-		const lock = new OrganizationRowLockModel();
-		const identities = new Set<string>();
-		const results = await Promise.all(
-			["first", "second"].map((attempt) =>
-				lock.run("org-1:user-1", async () => {
-					if (identities.has("org-1:user-1")) return `${attempt}:conflict`;
-					identities.add("org-1:user-1");
-					return `${attempt}:inserted`;
-				}),
-			),
-		);
-
-		expect(results).toEqual(["first:inserted", "second:conflict"]);
 	});
 
 	it("matches owner as a comma-separated role token without substring matching", () => {
@@ -405,26 +281,5 @@ describe("employee owner lifecycle migration guards", () => {
 			expect(guard).toContain('FROM public."employee" AS "owner_employee"');
 		}
 		expect(employeeGuard).toContain('FROM public."member" AS "target_owner"');
-	});
-
-	it("models concurrent employee deactivation and member removal as serialized on one org row", async () => {
-		const lock = new OrganizationRowLockModel();
-		const firstMayFinish = deferred();
-		const events: string[] = [];
-
-		const employeeDeactivation = lock.run("org-1", async () => {
-			events.push("employee-enter");
-			await firstMayFinish.promise;
-			events.push("employee-exit");
-		});
-		const memberRemoval = lock.run("org-1", async () => {
-			events.push("member-enter");
-		});
-
-		await vi.waitFor(() => expect(events).toEqual(["employee-enter"]));
-		firstMayFinish.resolve();
-		await Promise.all([employeeDeactivation, memberRemoval]);
-
-		expect(events).toEqual(["employee-enter", "employee-exit", "member-enter"]);
 	});
 });

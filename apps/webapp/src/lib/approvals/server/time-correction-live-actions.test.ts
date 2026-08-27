@@ -12,6 +12,7 @@ const state = vi.hoisted(() => ({
 vi.mock("@/env", () => ({
 	env: {
 		BETTER_AUTH_SECRET: "test-secret-value-with-at-least-32-characters",
+		SCIM_CREDENTIAL_HASH_SECRET: "test-scim-credential-hash-secret-value",
 		NODE_ENV: "test",
 		NEXT_PHASE: undefined,
 		CI: "false",

@@ -44,6 +44,7 @@ import {
 	type EnterpriseIdentitySetupStep,
 	getEnterpriseIdentityReadiness,
 } from "@/lib/enterprise-identity/setup-state";
+import { ScimStep as ManagedScimStep } from "./scim/scim-step";
 
 interface IdentitySetupWizardProps {
 	initialSetup: EnterpriseIdentitySetupResponse;
@@ -142,7 +143,7 @@ function getStepCopy(
 				label: t("settings.enterprise.identity.step.scim", "SCIM Provisioning"),
 				description: t(
 					"settings.enterprise.identity.step.scim.description",
-					"SCIM provisioning is temporarily unavailable during the Better Auth 1.7 cutover.",
+					"Provision access from your identity provider",
 				),
 			};
 		case "accessPolicy":
@@ -951,7 +952,9 @@ function SsoStep({ controller }: { controller: IdentitySetupController }) {
 	const samlAcsPath = providerId
 		? `/api/auth/sso/saml2/sp/acs/${encodeURIComponent(providerId)}`
 		: "/api/auth/sso/saml2/sp/acs/:providerId";
-	const samlAcsUrl = browserOrigin ? `${browserOrigin}${samlAcsPath}` : samlAcsPath;
+	const samlAcsUrl = browserOrigin
+		? `${browserOrigin}${samlAcsPath}`
+		: samlAcsPath;
 
 	return (
 		<WizardCard
@@ -1170,19 +1173,27 @@ function SsoTestStep({ controller }: { controller: IdentitySetupController }) {
 }
 
 function ScimStep({ controller }: { controller: IdentitySetupController }) {
-	const { t } = controller;
-
 	return (
 		<WizardCard
-			title={t(
-				"settings.enterprise.identity.scim.unavailable",
-				"SCIM provisioning is temporarily unavailable",
+			title={controller.t(
+				"settings.enterprise.identity.scim.title",
+				"SCIM Provisioning",
 			)}
-			description={t(
-				"settings.enterprise.identity.scim.unavailableDescription",
-				"Existing provisioning data is preserved while the Better Auth 1.7 SCIM cutover is prepared.",
+			description={controller.t(
+				"settings.enterprise.identity.scim.wizardDescription",
+				"Configure managed user provisioning without changing enterprise activation.",
 			)}
-		/>
+		>
+			<ManagedScimStep
+				setup={controller.setup}
+				defaultRoleTemplateId={
+					controller.defaultRoleTemplateId === "none"
+						? null
+						: controller.defaultRoleTemplateId
+				}
+				endpoint={controller.initialSetup.scimEndpoint}
+			/>
+		</WizardCard>
 	);
 }
 

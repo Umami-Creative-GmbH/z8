@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	index,
 	integer,
 	jsonb,
@@ -28,6 +30,11 @@ export const lifecycleSourceEnum = pgEnum("lifecycle_source", [
 	"scim",
 	"sso",
 	"invite_code",
+]);
+
+export const lifecycleActorTypeEnum = pgEnum("lifecycle_actor_type", [
+	"user",
+	"system",
 ]);
 
 export const idpTypeEnum = pgEnum("idp_type", ["sso", "scim"]);
@@ -286,9 +293,8 @@ export const userLifecycleEvent = pgTable(
 
 		// Audit
 		createdAt: timestamp("created_at").defaultNow().notNull(),
-		createdBy: text("created_by")
-			.notNull()
-			.references(() => user.id),
+		actorType: lifecycleActorTypeEnum("actor_type").default("user").notNull(),
+		createdBy: text("created_by").references(() => user.id),
 	},
 	(table) => [
 		index("userLifecycleEvent_organizationId_idx").on(table.organizationId),
@@ -296,5 +302,9 @@ export const userLifecycleEvent = pgTable(
 		index("userLifecycleEvent_eventType_idx").on(table.eventType),
 		index("userLifecycleEvent_approvalStatus_idx").on(table.approvalStatus),
 		index("userLifecycleEvent_createdAt_idx").on(table.createdAt),
+		check(
+			"user_lifecycle_event_actor_check",
+			sql`(${table.actorType} = 'user' AND ${table.createdBy} IS NOT NULL) OR (${table.actorType} = 'system' AND ${table.createdBy} IS NULL)`,
+		),
 	],
 );

@@ -100,6 +100,17 @@ spec:
                   name: z8-secrets
                   key: redis-ca-cert
                   optional: true
+            # Auth (required by maintenance jobs that call auth.api)
+            - name: BETTER_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: z8-secrets
+                  key: auth-secret
+            - name: SCIM_CREDENTIAL_HASH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: z8-secrets
+                  key: scim-credential-hash-secret
             # Worker config
             - name: WORKER_CONCURRENCY
               valueFrom:

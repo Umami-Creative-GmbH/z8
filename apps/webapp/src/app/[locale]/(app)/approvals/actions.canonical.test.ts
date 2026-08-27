@@ -18,6 +18,7 @@ import type {
 vi.mock("@/env", () => ({
 	env: {
 		BETTER_AUTH_SECRET: "test-secret-that-is-long-enough-for-better-auth",
+		SCIM_CREDENTIAL_HASH_SECRET: "test-scim-credential-hash-secret-value",
 		S3_PUBLIC_BUCKET: "test-bucket",
 		S3_PUBLIC_ACCESS_KEY_ID: "test-access-key",
 		S3_PUBLIC_SECRET_ACCESS_KEY: "test-secret-key",

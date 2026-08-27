@@ -37,8 +37,16 @@ export interface ScheduledCronJobRow extends EffectiveCronSchedule {
 export const CRON_SCHEDULE_PRESETS = [
 	{ id: "every-minute", pattern: "* * * * *", label: "Every minute" },
 	{ id: "every-5-minutes", pattern: "*/5 * * * *", label: "Every 5 minutes" },
-	{ id: "every-15-minutes", pattern: "*/15 * * * *", label: "Every 15 minutes" },
-	{ id: "every-30-minutes", pattern: "*/30 * * * *", label: "Every 30 minutes" },
+	{
+		id: "every-15-minutes",
+		pattern: "*/15 * * * *",
+		label: "Every 15 minutes",
+	},
+	{
+		id: "every-30-minutes",
+		pattern: "*/30 * * * *",
+		label: "Every 30 minutes",
+	},
 	{ id: "hourly", pattern: "0 * * * *", label: "Hourly" },
 	{ id: "every-3-hours", pattern: "0 */3 * * *", label: "Every 3 hours" },
 	{ id: "daily-midnight", pattern: "0 0 * * *", label: "Daily at midnight" },
@@ -53,6 +61,7 @@ export const CRON_SCHEDULE_PRESETS = [
 
 const HIGH_RISK_CRON_JOBS = new Set<CronJobName>([
 	"cron:billing-seat-reconciliation",
+	"cron:scim-maintenance",
 	"cron:execution-cleanup",
 	"cron:organization-cleanup",
 	"cron:break-enforcement",
@@ -71,7 +80,9 @@ export function getPresetById(presetId: string): CronSchedulePreset | null {
 }
 
 export function getPresetByPattern(pattern: string): CronSchedulePreset | null {
-	return CRON_SCHEDULE_PRESETS.find((preset) => preset.pattern === pattern) ?? null;
+	return (
+		CRON_SCHEDULE_PRESETS.find((preset) => preset.pattern === pattern) ?? null
+	);
 }
 
 export function isHighRiskCronJob(jobName: CronJobName): boolean {
@@ -83,7 +94,9 @@ export function resolveEffectiveCronSchedules({
 }: {
 	overrides: readonly CronScheduleOverrideLike[];
 }): Record<CronJobName, EffectiveCronSchedule> {
-	const overridesByJobName = new Map(overrides.map((override) => [override.jobName, override]));
+	const overridesByJobName = new Map(
+		overrides.map((override) => [override.jobName, override]),
+	);
 
 	return Object.fromEntries(
 		getAllCronJobNames().map((jobName) => {
@@ -98,8 +111,13 @@ export function resolveEffectiveCronSchedules({
 					jobName,
 					defaultPattern,
 					effectivePattern,
-					presetId: override?.presetId ?? getPresetByPattern(effectivePattern)?.id ?? null,
-					isOverridden: Boolean(override && override.pattern !== defaultPattern),
+					presetId:
+						override?.presetId ??
+						getPresetByPattern(effectivePattern)?.id ??
+						null,
+					isOverridden: Boolean(
+						override && override.pattern !== defaultPattern,
+					),
 					canEdit: defaultPreset !== null,
 				},
 			];
@@ -132,8 +150,9 @@ export function buildScheduledJobRows({
 				(left.pattern ?? "").localeCompare(right.pattern ?? ""),
 			);
 			const selectedScheduler =
-				schedulers.find((scheduler) => scheduler.pattern === schedule.effectivePattern) ??
-				sortedSchedulers[0];
+				schedulers.find(
+					(scheduler) => scheduler.pattern === schedule.effectivePattern,
+				) ?? sortedSchedulers[0];
 			const currentBullMqPattern = selectedScheduler?.pattern ?? null;
 
 			return {
@@ -143,7 +162,9 @@ export function buildScheduledJobRows({
 				currentBullMqPattern,
 				hasScheduleMismatch:
 					schedulers.length === 0 ||
-					schedulers.some((scheduler) => scheduler.pattern !== schedule.effectivePattern),
+					schedulers.some(
+						(scheduler) => scheduler.pattern !== schedule.effectivePattern,
+					),
 			};
 		})
 		.sort((left, right) => left.name.localeCompare(right.name));
