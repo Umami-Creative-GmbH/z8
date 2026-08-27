@@ -32,7 +32,10 @@ import {
 } from "@/lib/auth-domain-config";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
-import { createZ8SCIMPlugin } from "@/lib/scim/auth-configuration";
+import {
+	createSCIMCallbackModelRegistration,
+	createZ8SCIMPlugin,
+} from "@/lib/scim/auth-configuration";
 import { createSCIMProjectionReplayLoader } from "@/lib/scim/projection-replay-api";
 import { configureSCIMProjectionReplay } from "@/lib/scim/role-projection-replay";
 import { getOrganizationBaseUrl } from "./app-url";
@@ -788,6 +791,7 @@ export const auth = betterAuth({
 			enableMetadata: true,
 		}),
 		nextCookies(),
+		createSCIMCallbackModelRegistration(),
 	],
 });
 

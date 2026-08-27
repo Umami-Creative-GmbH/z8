@@ -3,7 +3,10 @@ import type {
 	SCIMProjectedUserState,
 } from "@better-auth/scim";
 import { describe, expect, it } from "vitest";
-import { createZ8SCIMPlugin } from "./auth-configuration";
+import {
+	createSCIMCallbackModelRegistration,
+	createZ8SCIMPlugin,
+} from "./auth-configuration";
 import { resolveSCIMIdentity } from "./identity-resolution";
 import { scimRoleProjection } from "./projection-reconciler";
 import { SCIM_MODELS } from "./transaction-store";
@@ -64,6 +67,59 @@ function applicationRows(
 }
 
 describe("createZ8SCIMPlugin", () => {
+	it("registers only application callback models without overwriting framework schemas", () => {
+		const registration = createSCIMCallbackModelRegistration();
+
+		expect(registration.id).toBe("z8-scim-callback-models");
+		expect(Object.keys(registration.schema).sort()).toEqual(
+			[
+				SCIM_MODELS.enterpriseIdentitySetup,
+				SCIM_MODELS.employee,
+				SCIM_MODELS.providerConfig,
+				SCIM_MODELS.lifecycleState,
+				SCIM_MODELS.projectionState,
+				SCIM_MODELS.seatOutbox,
+				SCIM_MODELS.provisioningAudit,
+				SCIM_MODELS.lifecycleAudit,
+				SCIM_MODELS.roleMapping,
+				SCIM_MODELS.roleTemplate,
+				SCIM_MODELS.roleAssignment,
+				SCIM_MODELS.teamPermission,
+				SCIM_MODELS.teamMembership,
+			].sort(),
+		);
+
+		for (const model of Object.values(registration.schema)) {
+			expect(model.disableMigration).toBe(true);
+		}
+		expect(registration.schema).not.toHaveProperty(SCIM_MODELS.user);
+		expect(registration.schema).not.toHaveProperty(SCIM_MODELS.account);
+		expect(registration.schema).not.toHaveProperty(SCIM_MODELS.member);
+		expect(registration.schema).not.toHaveProperty(SCIM_MODELS.ssoProvider);
+		expect(registration.schema[SCIM_MODELS.employee]?.fields).toMatchObject({
+			organizationId: { type: "string" },
+			userId: { type: "string" },
+			role: { type: "string" },
+			isActive: { type: "boolean" },
+		});
+		expect(
+			Object.keys(
+				registration.schema[SCIM_MODELS.employee]?.fields ?? {},
+			).sort(),
+		).toEqual(["id", "organizationId", "userId", "role", "isActive"].sort());
+		expect(
+			registration.schema[SCIM_MODELS.lifecycleState]?.fields,
+		).toMatchObject({
+			membershipRevision: { type: "number" },
+			scimActive: { type: "boolean" },
+		});
+		expect(registration.schema[SCIM_MODELS.roleTemplate]?.fields).toMatchObject(
+			{
+				teamPermissions: { type: "json" },
+			},
+		);
+	});
+
 	it("registers managed SCIM with the application callbacks", () => {
 		const credentialHashSecret = "s".repeat(32);
 		const plugin = createZ8SCIMPlugin(credentialHashSecret);

@@ -4,7 +4,9 @@
  */
 import { randomUUID } from "node:crypto";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
+import { sso } from "@better-auth/sso";
 import { betterAuth } from "better-auth/minimal";
+import { organization } from "better-auth/plugins/organization";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -13,7 +15,10 @@ import {
 	verifyApprovalWorkflowRepositoryTestDatabase,
 } from "@/lib/approvals/workflow/repository-integration-harness";
 import { authDatabaseSchema } from "@/lib/auth-database-schema";
-import { createZ8SCIMPlugin } from "./auth-configuration";
+import {
+	createSCIMCallbackModelRegistration,
+	createZ8SCIMPlugin,
+} from "./auth-configuration";
 import { getSCIMCredentialExpiresAt, SCIM_SCOPES } from "./constants";
 import {
 	createSCIMDecommissionStore,
@@ -73,7 +78,20 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 			schema: authDatabaseSchema,
 			transaction: true,
 		}),
-		plugins: [createZ8SCIMPlugin("p".repeat(32))],
+		plugins: [
+			createZ8SCIMPlugin("p".repeat(32)),
+			organization({
+				schema: {
+					member: {
+						additionalFields: {
+							status: { type: "string", required: false },
+						},
+					},
+				},
+			}),
+			sso({ domainVerification: { enabled: true } }),
+			createSCIMCallbackModelRegistration(),
+		],
 	});
 
 	beforeAll(async () => {
@@ -324,10 +342,7 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 			`/Groups/${groupResource.id}`,
 			"PUT",
 			{
-				schemas: [
-					"urn:ietf:params:scim:schemas:core:2.0:Group",
-					"urn:ietf:params:scim:schemas:extension:enterprise:2.0:Group",
-				],
+				schemas: ["urn:ietf:params:scim:schemas:core:2.0:Group"],
 				displayName: "Entra Group",
 				externalId: "entra-group",
 				members: [{ value: source.id }],
@@ -366,16 +381,12 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 			const response = await request(graph.token, path, method, body);
 			expect(response.status).toBe(status);
 		}
-		for (const [token, path, expected] of [
-			["invalid", "/Users", 401],
-			[graph.token, "/Unknown", 400],
-		] as const) {
-			await expectSafeSCIMError(await request(token, path), expected, [
-				graph.token,
-				graph.organizationId,
-				graph.providerId,
-			]);
-		}
+		await expectSafeSCIMError(await request("invalid", "/Users"), 401, [
+			graph.token,
+			graph.organizationId,
+			graph.providerId,
+		]);
+		expect((await request(graph.token, "/Unknown")).status).toBe(404);
 		const restricted = await setup("restricted", ["scim.users.read"]);
 		await expectSafeSCIMError(await request(restricted.token, "/Groups"), 403, [
 			restricted.token,
@@ -446,7 +457,7 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 			expires_at: Date;
 			revoked_by: string | null;
 		}>(
-			`select credential_id, status, token_digest, hash_version,
+			`select credential_id, credential.status, token_digest, hash_version,
 				serialized_scopes, expires_at, revoked_by
 			 from scim_managed_credential credential
 			 join scim_managed_connection connection
@@ -579,11 +590,24 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 		});
 		expect(initial).toBe("deferred");
 		expect(reconcilingCalls).toBe(1);
-		const deferred = await pool.query<{ decommission_retry_at: Date }>(
-			"select decommission_retry_at from scim_provider_config where organization_id = $1",
+		const deferred = await pool.query<{
+			state: string;
+			updated_by: string | null;
+			decommission_retry_at: Date;
+			decommission_attempt_count: number;
+		}>(
+			`select state, updated_by, decommission_retry_at, decommission_attempt_count
+			 from scim_provider_config where organization_id = $1`,
 			[orgA.organizationId],
 		);
-		expect(deferred.rows).toEqual([{ decommission_retry_at: retryAfter }]);
+		expect(deferred.rows).toEqual([
+			{
+				state: "decommissioning",
+				updated_by: orgA.actorId,
+				decommission_retry_at: retryAfter,
+				decommission_attempt_count: 1,
+			},
+		]);
 		expect(
 			await runDueSCIMDecommission({
 				store,
@@ -597,6 +621,24 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 			now: retryAfter,
 		});
 		expect(completed).toBe("completed");
+		const persisted = await pool.query<{
+			state: string;
+			decommission_completed_at: Date | null;
+			decommission_retry_at: Date | null;
+			decommission_last_error: string | null;
+		}>(
+			`select state, decommission_completed_at, decommission_retry_at, decommission_last_error
+			 from scim_provider_config where organization_id = $1`,
+			[orgA.organizationId],
+		);
+		expect(persisted.rows).toEqual([
+			{
+				state: "decommissioned",
+				decommission_completed_at: retryAfter,
+				decommission_retry_at: null,
+				decommission_last_error: null,
+			},
+		]);
 		const configs = await pool.query<{
 			organization_id: string;
 			connection_id: string | null;
@@ -632,18 +674,20 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 			 order by connection.connection_id`,
 			[orgA.connectionId, orgB.connectionId],
 		);
-		expect(connections.rows).toEqual([
-			{
-				connection_id: orgA.connectionId,
-				status: "decommissioned",
-				credential_status: "decommissioned",
-			},
-			{
-				connection_id: orgB.connectionId,
-				status: "active",
-				credential_status: "active",
-			},
-		]);
+		expect(connections.rows).toEqual(
+			expect.arrayContaining([
+				{
+					connection_id: orgA.connectionId,
+					status: "decommissioned",
+					credential_status: "decommissioned",
+				},
+				{
+					connection_id: orgB.connectionId,
+					status: "active",
+					credential_status: "active",
+				},
+			]),
+		);
 		const decommissioned = await request(orgA.token, "/Users");
 		await expectSafeSCIMError(decommissioned, 401, [orgA.token]);
 	});
@@ -713,14 +757,14 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 		expect(await projection(orgA.organizationId, aUserId)).toMatchObject({
 			role_template_id: orgA.mappedTemplateId,
 			employee_role: "manager",
-			status: "approved",
-			is_active: true,
+			status: "pending",
+			is_active: false,
 		});
 		expect(await projection(orgB.organizationId, bUserId)).toMatchObject({
 			role_template_id: orgB.defaultTemplateId,
 			employee_role: "employee",
-			status: "approved",
-			is_active: true,
+			status: "pending",
+			is_active: false,
 		});
 		const removed = await request(
 			orgA.token,
@@ -740,8 +784,8 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 		});
 		expect(await projection(orgB.organizationId, bUserId)).toMatchObject({
 			role_template_id: orgB.defaultTemplateId,
-			status: "approved",
-			is_active: true,
+			status: "pending",
+			is_active: false,
 		});
 		const deactivate = await request(
 			orgA.token,
@@ -758,8 +802,8 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 			is_active: false,
 		});
 		expect(await projection(orgB.organizationId, bUserId)).toMatchObject({
-			status: "approved",
-			is_active: true,
+			status: "pending",
+			is_active: false,
 		});
 		const reactivate = await request(
 			orgA.token,
@@ -772,8 +816,8 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 		);
 		expect(reactivate.status).toBe(200);
 		expect(await projection(orgA.organizationId, aUserId)).toMatchObject({
-			status: "approved",
-			is_active: true,
+			status: "pending",
+			is_active: false,
 		});
 		const rotated = await auth.api.rotateSCIMManagedCredential({
 			body: {

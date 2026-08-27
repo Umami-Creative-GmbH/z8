@@ -109,7 +109,7 @@ describeIntegration("SCIM seat sync outbox PostgreSQL leases", () => {
 
 		expect(first).toHaveLength(50);
 		expect(second).toHaveLength(50);
-		expect(new Set([...first, ...second].map((claim) => claim.id))).toHaveSize(
+		expect(new Set([...first, ...second].map((claim) => claim.id)).size).toBe(
 			100,
 		);
 	}, 15_000);

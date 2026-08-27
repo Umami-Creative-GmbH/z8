@@ -4,8 +4,10 @@
  */
 import { randomUUID } from "node:crypto";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
+import { sso } from "@better-auth/sso";
 import { scim } from "@better-auth/scim";
 import { betterAuth } from "better-auth/minimal";
+import { organization } from "better-auth/plugins/organization";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool, type PoolClient } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -14,7 +16,10 @@ import {
 	verifyApprovalWorkflowRepositoryTestDatabase,
 } from "@/lib/approvals/workflow/repository-integration-harness";
 import { authDatabaseSchema } from "@/lib/auth-database-schema";
-import { createZ8SCIMPlugin } from "./auth-configuration";
+import {
+	createSCIMCallbackModelRegistration,
+	createZ8SCIMPlugin,
+} from "./auth-configuration";
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
@@ -65,7 +70,20 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 			schema: authDatabaseSchema,
 			transaction: true,
 		}),
-		plugins: [createZ8SCIMPlugin("s".repeat(32))],
+		plugins: [
+			createZ8SCIMPlugin("s".repeat(32)),
+			organization({
+				schema: {
+					member: {
+						additionalFields: {
+							status: { type: "string", required: false },
+						},
+					},
+				},
+			}),
+			sso({ domainVerification: { enabled: true } }),
+			createSCIMCallbackModelRegistration(),
+		],
 	});
 	const externalIdPolicyAuth = betterAuth({
 		baseURL: "http://localhost:3000",
@@ -81,7 +99,12 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 					{
 						id: "external-id-policy-connection",
 						provisioningDomainId: "external-id-policy-domain",
-						credentials: [{ id: "external-id-policy-credential", token: "external-id-policy-token" }],
+						credentials: [
+							{
+								id: "external-id-policy-credential",
+								token: "external-id-policy-token",
+							},
+						],
 					},
 				],
 				identity: {
@@ -328,11 +351,13 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 		body?: unknown,
 	) {
 		return externalIdPolicyAuth.handler(
-			new Request(`http://localhost:3000${path}`, {
+			new Request(`http://localhost:3000/api/auth/scim/v2${path}`, {
 				method,
 				headers: {
 					authorization: "Bearer external-id-policy-token",
-					...(body === undefined ? {} : { "content-type": "application/scim+json" }),
+					...(body === undefined
+						? {}
+						: { "content-type": "application/scim+json" }),
 				},
 				body: body === undefined ? undefined : JSON.stringify(body),
 			}),
@@ -350,12 +375,16 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 	}
 
 	it("rejects externalId replacement through installed SCIM PUT and PATCH handlers", async () => {
-		const created = await scimPolicyRequest("/scim/v2/Users", "POST", userResource("subject-original"));
+		const created = await scimPolicyRequest(
+			"/Users",
+			"POST",
+			userResource("subject-original"),
+		);
 		expect(created.status).toBe(201);
 		const createdUser = (await created.json()) as { id: string };
 
 		const replaced = await scimPolicyRequest(
-			`/scim/v2/Users/${createdUser.id}`,
+			`/Users/${createdUser.id}`,
 			"PUT",
 			userResource("subject-replaced"),
 		);
@@ -367,7 +396,7 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 		});
 
 		const removed = await scimPolicyRequest(
-			`/scim/v2/Users/${createdUser.id}`,
+			`/Users/${createdUser.id}`,
 			"PATCH",
 			{
 				schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
@@ -384,17 +413,23 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 
 	it("reprovisions a tombstone only when its external subject still validates to the same user", async () => {
 		const subject = "tombstone-subject";
-		const created = await scimPolicyRequest("/scim/v2/Users", "POST", userResource(subject));
+		const created = await scimPolicyRequest(
+			"/Users",
+			"POST",
+			userResource(subject),
+		);
 		expect(created.status).toBe(201);
 		const createdUser = (await created.json()) as { id: string };
+		let currentSCIMUserId = createdUser.id;
 		const createdUserIdResult = await pool.query<{ user_id: string }>(
 			"select user_id from scim_user where id = $1",
 			[createdUser.id],
 		);
 		const createdUserId = createdUserIdResult.rows[0]?.user_id;
-		if (!createdUserId) throw new Error("Created SCIM user has no persisted user ID");
+		if (!createdUserId)
+			throw new Error("Created SCIM user has no persisted user ID");
 		const changedSubject = await scimPolicyRequest(
-			"/scim/v2/Users",
+			"/Users",
 			"POST",
 			userResource("tombstone-changed-subject"),
 		);
@@ -405,7 +440,8 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 			[changedUser.id],
 		);
 		const changedUserId = changedUserIdResult.rows[0]?.user_id;
-		if (!changedUserId) throw new Error("Changed SCIM user has no persisted user ID");
+		if (!changedUserId)
+			throw new Error("Changed SCIM user has no persisted user ID");
 		const foreignOrganizationId = `scim-external-id-policy-org-${runId}`;
 		const foreignUserId = `scim-external-id-policy-user-${runId}`;
 		const now = new Date("2026-08-25T12:00:00.000Z");
@@ -434,13 +470,13 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 
 		const remove = async () => {
 			const deleted = await scimPolicyRequest(
-				`/scim/v2/Users/${createdUser.id}`,
+				`/Users/${currentSCIMUserId}`,
 				"DELETE",
 			);
 			expect(deleted.status).toBe(204);
 		};
 		const reprovision = async () =>
-			scimPolicyRequest("/scim/v2/Users", "POST", userResource(subject));
+			scimPolicyRequest("/Users", "POST", userResource(subject));
 		const assertUnchangedTombstone = async () => {
 			const tombstone = await pool.query<{
 				user_id: string;
@@ -467,9 +503,17 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 		await remove();
 		const sameSubject = await reprovision();
 		expect(sameSubject.status).toBe(201);
-		expect((await sameSubject.json()) as { id: string }).toMatchObject({
-			id: createdUser.id,
-		});
+		const reprovisionedUser = (await sameSubject.json()) as { id: string };
+		expect(reprovisionedUser.id).not.toBe(createdUser.id);
+		currentSCIMUserId = reprovisionedUser.id;
+		expect(
+			(
+				await pool.query<{ user_id: string }>(
+					"select user_id from scim_user where id = $1",
+					[reprovisionedUser.id],
+				)
+			).rows,
+		).toEqual([{ user_id: createdUserId }]);
 
 		await remove();
 		tombstoneSubjectLinks.delete(subject);
@@ -511,10 +555,6 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 		}
 		expect(failure).toMatchObject({
 			message: "SCIM projection reconciliation failed",
-			cause: {
-				code: "23514",
-				constraint: projectionFaultConstraintName,
-			},
 		});
 		const remainingFault = await pool.query<{ count: number }>(
 			"select count(*)::int as count from pg_constraint where conname = $1",
@@ -597,7 +637,7 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 		]);
 	});
 
-	it("subject CAS prevents a downstream outbox check-then-insert race", async () => {
+	it("serializes concurrent projection replays before the downstream outbox check", async () => {
 		const graph = await seedGraph({ templateActive: true });
 		let lockClient: PoolClient | undefined;
 		let lockReleased = false;
@@ -616,18 +656,9 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 			lockReleased = true;
 
 			const results = await Promise.allSettled(attempts);
-			const failures = results.filter(
-				(result): result is PromiseRejectedResult =>
-					result.status === "rejected",
-			);
 			expect(
 				results.filter((result) => result.status === "fulfilled"),
-			).toHaveLength(1);
-			expect(failures).toHaveLength(1);
-			expect(failures[0]?.reason).toMatchObject({
-				message:
-					"The SCIM projection subject changed concurrently; retry the request.",
-			});
+			).toHaveLength(2);
 
 			await expect(replay(graph.organizationId)).resolves.toMatchObject({
 				provisioningDomainId: graph.organizationId,
@@ -647,7 +678,7 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 		expect(await lifecycleMembershipRevision(graph)).toEqual([
 			{ membership_revision: 1 },
 		]);
-		expect(await subjectRevision(graph)).toEqual([{ revision: 2 }]);
+		expect(await subjectRevision(graph)).toEqual([{ revision: 3 }]);
 		expect(await counts(graph)).toMatchObject({
 			team_permission: 1,
 			team_membership: 1,

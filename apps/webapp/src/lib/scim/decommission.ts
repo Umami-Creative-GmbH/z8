@@ -99,7 +99,7 @@ export function createSCIMDecommissionStore(
 			const leaseUntil = retryAtAfter(now, LEASE_SECONDS);
 			const result = await database.execute(sql`
 				WITH due AS (
-					SELECT organization_id, connection_id, COALESCE(updated_by_user_id, created_by_user_id) AS actor_id
+					SELECT organization_id, connection_id, COALESCE(updated_by, created_by) AS actor_id
 					FROM scim_provider_config
 					WHERE state = 'decommissioning' AND connection_id IS NOT NULL
 						AND decommission_retry_at <= ${now}
@@ -130,7 +130,7 @@ export function createSCIMDecommissionStore(
 				UPDATE scim_provider_config SET decommission_retry_at = ${leaseUntil}, decommission_attempt_count = decommission_attempt_count + 1
 				WHERE organization_id = ${organizationId} AND connection_id = ${connectionId}
 					AND state = 'decommissioning' AND decommission_retry_at <= ${now}
-				RETURNING organization_id AS "organizationId", connection_id AS "connectionId", COALESCE(updated_by_user_id, created_by_user_id) AS "actorId", decommission_retry_at AS "retryAt", decommission_attempt_count AS "attemptCount"
+				RETURNING organization_id AS "organizationId", connection_id AS "connectionId", COALESCE(updated_by, created_by) AS "actorId", decommission_retry_at AS "retryAt", decommission_attempt_count AS "attemptCount"
 			`);
 			const row = result.rows[0];
 			if (!row) return null;
@@ -175,7 +175,7 @@ async function beginSCIMDecommission(input: {
 }): Promise<boolean> {
 	const now = input.now ?? new Date();
 	const result = await input.database.execute(sql`
-		UPDATE scim_provider_config SET state = 'decommissioning', decommission_started_at = ${now}, decommission_retry_at = ${now}, decommission_attempt_count = 0, decommission_last_error = NULL, updated_by_user_id = ${input.actorId}
+		UPDATE scim_provider_config SET state = 'decommissioning', decommission_started_at = ${now}, decommission_retry_at = ${now}, decommission_attempt_count = 0, decommission_last_error = NULL, updated_by = ${input.actorId}
 		WHERE organization_id = ${input.organizationId} AND connection_id = ${input.connectionId} AND state = 'active'
 		RETURNING id
 	`);
