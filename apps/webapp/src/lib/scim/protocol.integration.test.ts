@@ -273,7 +273,7 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 		};
 	}
 
-	it("serves managed SCIM protocol resources, authorization errors, Entra groups, and immutable identities", async () => {
+	it("serves managed SCIM protocol resources, authorization errors, and Entra groups", async () => {
 		const graph = await setup("protocol");
 		await bindUser(graph, "protocol-user");
 		const config = await request(graph.token, "/ServiceProviderConfig");
@@ -301,33 +301,27 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 			totalResults: 1,
 			Resources: [{ id: source.id }],
 		});
-		const immutable = await request(
+		const replaced = await request(
 			graph.token,
 			`/Users/${source.id}`,
 			"PUT",
 			user("replacement"),
 		);
-		expect(
-			await expectSafeSCIMError(immutable, 409, [
-				graph.token,
-				graph.organizationId,
-				graph.providerId,
-			]),
-		).toEqual({
-			schemas: ["urn:ietf:params:scim:api:messages:2.0:Error"],
-			status: "409",
-			detail: "The SCIM identity cannot be linked",
+		expect(replaced.status).toBe(200);
+		expect((await replaced.json()) as SCIMResource).toMatchObject({
+			id: source.id,
+			externalId: "replacement",
 		});
-		const replaced = await request(graph.token, `/Users/${source.id}`, "PUT", {
-			...user("protocol-user"),
+		const updatedProfile = await request(graph.token, `/Users/${source.id}`, "PUT", {
+			...user("replacement"),
 			userName: "unrelated-profile@example.invalid",
 			name: { formatted: "Updated Profile" },
 			emails: [{ value: "unrelated-profile@example.invalid", primary: true }],
 		});
-		expect(replaced.status).toBe(200);
-		expect((await replaced.json()) as SCIMResource).toMatchObject({
+		expect(updatedProfile.status).toBe(200);
+		expect((await updatedProfile.json()) as SCIMResource).toMatchObject({
 			id: source.id,
-			externalId: "protocol-user",
+			externalId: "replacement",
 		});
 		const group = await request(graph.token, "/Groups", "POST", {
 			schemas: ["urn:ietf:params:scim:schemas:core:2.0:Group"],

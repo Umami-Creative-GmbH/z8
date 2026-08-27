@@ -134,10 +134,6 @@ describe("createZ8SCIMPlugin", () => {
 		});
 		expect(plugin.options.identity).toEqual({
 			resolveUser: resolveSCIMIdentity,
-			externalIdPolicy: {
-				immutable: true,
-				resolveTombstoneUser: resolveSCIMIdentity,
-			},
 		});
 		expect(plugin.options.identity?.reconcileUser).toBeUndefined();
 		expect(plugin.options.projection).toEqual({

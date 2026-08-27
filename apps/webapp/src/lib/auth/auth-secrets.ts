@@ -2,6 +2,8 @@ import { env as appEnv } from "@/env";
 
 export const BUILD_TIME_AUTH_SECRET =
 	"build-time-auth-secret-for-prerender-only-2026";
+export const BUILD_TIME_SCIM_CREDENTIAL_HASH_SECRET =
+	"build-time-scim-credential-hash-secret-only-2026";
 
 type ResolvedAuthSecrets = {
 	secrets: Array<{ version: number; value: string }>;
@@ -16,13 +18,15 @@ type ResolveAuthSecretsOptions = {
 };
 
 type SCIMCredentialHashSecretEnvironment = {
-	SCIM_CREDENTIAL_HASH_SECRET: string;
+	SCIM_CREDENTIAL_HASH_SECRET?: string;
 };
 
 export function getSCIMCredentialHashSecret(
 	env: SCIMCredentialHashSecretEnvironment = appEnv,
+	isBuildTime = isBuildTimeAuthFallbackAllowed(),
 ): string {
-	return env.SCIM_CREDENTIAL_HASH_SECRET;
+	return env.SCIM_CREDENTIAL_HASH_SECRET ??
+		(isBuildTime ? BUILD_TIME_SCIM_CREDENTIAL_HASH_SECRET : "");
 }
 
 export function isBuildTimeAuthFallbackAllowed(env = appEnv): boolean {

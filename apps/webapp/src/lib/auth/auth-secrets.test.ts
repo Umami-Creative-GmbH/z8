@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	BUILD_TIME_AUTH_SECRET,
+	BUILD_TIME_SCIM_CREDENTIAL_HASH_SECRET,
 	getSCIMCredentialHashSecret,
 	resolveAuthSecrets,
 } from "./auth-secrets";
@@ -74,5 +75,20 @@ describe("getSCIMCredentialHashSecret", () => {
 				SCIM_CREDENTIAL_HASH_SECRET: "scim-secret-with-at-least-32-characters",
 			}),
 		).toBe("scim-secret-with-at-least-32-characters");
+	});
+
+	it("uses an independent 32-character build-only secret when SCIM is unavailable", () => {
+		expect(
+			getSCIMCredentialHashSecret(
+				{ SCIM_CREDENTIAL_HASH_SECRET: undefined },
+				true,
+			),
+		).toBe(BUILD_TIME_SCIM_CREDENTIAL_HASH_SECRET);
+		expect(BUILD_TIME_SCIM_CREDENTIAL_HASH_SECRET).not.toBe(
+			BUILD_TIME_AUTH_SECRET,
+		);
+		expect(BUILD_TIME_SCIM_CREDENTIAL_HASH_SECRET.length).toBeGreaterThanOrEqual(
+			32,
+		);
 	});
 });
