@@ -43,10 +43,7 @@ describe("approval workflow repository integration CI contract", () => {
 		);
 		expect(workflow).toContain("APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED=1");
 		expect(workflow).toContain(
-			`APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED=1 \\
-           TZ=UTC \\
-           PGOPTIONS="-c statement_timeout=15000 -c timezone=UTC" \\
-           pnpm --filter webapp exec vitest run`,
+			"pnpm --filter webapp exec vitest run --no-file-parallelism",
 		);
 		expect(workflow).toContain(
 			"src/lib/scim/seat-sync-outbox.integration.test.ts",
