@@ -8,7 +8,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { CronSchedulePreset, ScheduledCronJobRow } from "@/lib/cron/schedules";
+import type {
+	CronSchedulePreset,
+	ScheduledCronJobRow,
+} from "@/lib/cron/schedules";
 import { resetCronSchedule, updateCronSchedule } from "./actions";
 
 export interface ScheduleControlsLabels {
@@ -31,6 +34,7 @@ export interface ScheduleControlsLabels {
 
 const HIGH_RISK_CRON_JOB_NAMES = new Set<string>([
 	"cron:billing-seat-reconciliation",
+	"cron:scim-maintenance",
 	"cron:execution-cleanup",
 	"cron:organization-cleanup",
 	"cron:break-enforcement",
@@ -82,7 +86,11 @@ function showMutationResultToast({
 	return true;
 }
 
-export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps) {
+export function ScheduleControls({
+	job,
+	labels,
+	presets,
+}: ScheduleControlsProps) {
 	const router = useRouter();
 	const highRisk = job.isHighRisk ?? HIGH_RISK_CRON_JOB_NAMES.has(job.jobName);
 	const [isEditing, setIsEditing] = useState(false);
@@ -150,7 +158,8 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 
 	const resetDisabled = !job.isOverridden || isSubmitting;
 	const resetNeedsConfirmation = highRisk && isResetConfirming;
-	const canSubmitReset = !highRisk || resetConfirmation === labels.confirmationText;
+	const canSubmitReset =
+		!highRisk || resetConfirmation === labels.confirmationText;
 
 	async function handleReset() {
 		if (highRisk && !isResetConfirming) {
@@ -194,7 +203,9 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 				</p>
 			) : null}
 
-			{job.canEdit ? null : <p className="text-muted-foreground text-xs">{labels.readOnly}</p>}
+			{job.canEdit ? null : (
+				<p className="text-muted-foreground text-xs">{labels.readOnly}</p>
+			)}
 
 			<div className="flex flex-wrap items-center gap-2">
 				<Button
@@ -234,7 +245,9 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 					<form.Field name="presetId">
 						{(field) => (
 							<div className="space-y-1.5">
-								<Label htmlFor={`cron-preset-${job.jobName}`}>{labels.presetLabel}</Label>
+								<Label htmlFor={`cron-preset-${job.jobName}`}>
+									{labels.presetLabel}
+								</Label>
 								<select
 									id={`cron-preset-${job.jobName}`}
 									aria-label={labels.presetLabel}
@@ -275,12 +288,17 @@ export function ScheduleControls({ job, labels, presets }: ScheduleControlsProps
 					) : null}
 
 					<div className="flex items-center gap-2">
-						<form.Subscribe<string> selector={(state) => state.values.confirmation}>
+						<form.Subscribe<string>
+							selector={(state) => state.values.confirmation}
+						>
 							{(confirmation: string) => (
 								<Button
 									type="submit"
 									size="sm"
-									disabled={isSubmitting || (highRisk && confirmation !== labels.confirmationText)}
+									disabled={
+										isSubmitting ||
+										(highRisk && confirmation !== labels.confirmationText)
+									}
 								>
 									{labels.save}
 								</Button>

@@ -17,6 +17,23 @@ const shouldDisableRedisDuringBuild =
 	env.npm_lifecycle_event === "build" ||
 	(env.CI === "true" && !hasRedisConfig);
 
+const incrementWithInitialExpiryScript = `
+local existed = redis.call("EXISTS", KEYS[1])
+local value = redis.call("INCR", KEYS[1])
+if existed == 0 then
+  redis.call("EXPIRE", KEYS[1], ARGV[1])
+end
+return value
+`;
+
+const getAndDeleteScript = `
+local value = redis.call("GET", KEYS[1])
+if value then
+  redis.call("DEL", KEYS[1])
+end
+return value
+`;
+
 const noopRedisClient = {
 	status: "end",
 	get: async () => null,
@@ -151,6 +168,38 @@ export async function ensureRedisReady(): Promise<boolean> {
  * Uses Redis for session caching and rate limiting
  */
 export const secondaryStorage = {
+	increment: async (key: string, ttl: number): Promise<number> => {
+		if (shouldDisableRedisDuringBuild) {
+			return 0;
+		}
+
+		try {
+			const result = await redis.eval(
+				incrementWithInitialExpiryScript,
+				1,
+				key,
+				ttl,
+			);
+			const value = Number(result);
+			return Number.isFinite(value) ? value : 0;
+		} catch (error) {
+			logger.error({ error, key }, "Failed to increment in Redis");
+			return 0;
+		}
+	},
+	getAndDelete: async (key: string): Promise<string | null> => {
+		if (shouldDisableRedisDuringBuild) {
+			return null;
+		}
+
+		try {
+			const result = await redis.eval(getAndDeleteScript, 1, key);
+			return typeof result === "string" ? result : null;
+		} catch (error) {
+			logger.error({ error, key }, "Failed to get and delete from Redis");
+			return null;
+		}
+	},
 	get: async (key: string): Promise<string | null> => {
 		if (shouldDisableRedisDuringBuild) {
 			return null;

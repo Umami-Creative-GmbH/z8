@@ -3,6 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": ["SCIM_CREDENTIAL_HASH_SECRET"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "dev": {
@@ -11,7 +12,7 @@
     },
     "test": {
       "cache": false,
-      "env": ["BETTER_AUTH_SECRET", "BETTER_AUTH_SECRETS"]
+      "env": ["BETTER_AUTH_SECRET", "BETTER_AUTH_SECRETS", "SCIM_CREDENTIAL_HASH_SECRET"]
     },
     "test:watch": {
       "cache": false,

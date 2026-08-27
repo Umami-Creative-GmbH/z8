@@ -196,6 +196,7 @@ export const SetupServiceLive = Layer.effect(
 								id: accountId,
 								accountId: userId,
 								providerId: "credential",
+								issuer: "local:credential",
 								userId: userId,
 								password: hashedPassword,
 								createdAt: now,

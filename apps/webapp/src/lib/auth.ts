@@ -1,7 +1,6 @@
 import { apiKey } from "@better-auth/api-key";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { passkey } from "@better-auth/passkey";
-import { scim } from "@better-auth/scim";
 import { sso } from "@better-auth/sso";
 import { betterAuth } from "better-auth/minimal";
 import { nextCookies } from "better-auth/next-js";
@@ -13,9 +12,12 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
-import { employee, scimProvisioningLog, team } from "@/db/schema";
+import { employee, team } from "@/db/schema";
 import { env } from "@/env";
-import { resolveAuthSecrets } from "@/lib/auth/auth-secrets";
+import {
+	getSCIMCredentialHashSecret,
+	resolveAuthSecrets,
+} from "@/lib/auth/auth-secrets";
 import {
 	normalizeInvitationEmail,
 	resolveAcceptedInvitationCanCreateOrganizations,
@@ -30,7 +32,14 @@ import {
 } from "@/lib/auth-domain-config";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
+import {
+	createSCIMCallbackModelRegistration,
+	createZ8SCIMPlugin,
+} from "@/lib/scim/auth-configuration";
+import { createSCIMProjectionReplayLoader } from "@/lib/scim/projection-replay-api";
+import { configureSCIMProjectionReplay } from "@/lib/scim/role-projection-replay";
 import { getOrganizationBaseUrl } from "./app-url";
+import { authDatabaseSchema } from "./auth-database-schema";
 import { getDomainConfig } from "./domain/domain-service";
 import {
 	classifyDomainHost,
@@ -121,22 +130,6 @@ export async function getSSOTrustedOrigins(
 	}
 
 	return [...origins];
-}
-
-function isSCIMAdministrator(
-	member: { role: string } | null,
-): member is { role: string } {
-	if (!member) return false;
-	const roles = member.role.split(",").map((role) => role.trim());
-	return roles.includes("admin") || roles.includes("owner");
-}
-
-export function assertSCIMAdministrator(
-	member: { role: string } | null,
-): asserts member is { role: string } {
-	if (!isSCIMAdministrator(member)) {
-		throw new Error("Only organization admins can generate SCIM tokens");
-	}
 }
 
 /**
@@ -307,12 +300,10 @@ export const auth = betterAuth({
 		return [...new Set(origins)];
 	},
 
-	// Enable experimental database joins for 2-3x faster queries
-	experimental: {
-		joins: true,
-	},
-
 	advanced: {
+		database: {
+			joins: true,
+		},
 		ipAddress: {
 			ipv6Subnet: 64,
 		},
@@ -472,11 +463,13 @@ export const auth = betterAuth({
 	database: makeEmailLookupCaseInsensitiveAdapter(
 		drizzleAdapter(db, {
 			provider: "pg",
-			schema,
+			schema: authDatabaseSchema,
+			transaction: true,
 		}),
 	),
 	plugins: [
 		bearer(), // Enable Bearer token auth for desktop app
+		createZ8SCIMPlugin(getSCIMCredentialHashSecret()),
 		admin({
 			defaultRole: "user",
 			adminRole: "admin",
@@ -752,11 +745,12 @@ export const auth = betterAuth({
 			},
 			// Provision user when they sign in through SSO
 			provisionUser: async ({ user, provider }) => {
+				const providerOrganizationId = provider.organizationId;
 				// If provider is linked to an organization, check/create employee record
-				if (provider.organizationId) {
+				if (providerOrganizationId) {
 					// Check if org requires SSO approval
 					const org = await db.query.organization.findFirst({
-						where: eq(schema.organization.id, provider.organizationId),
+						where: eq(schema.organization.id, providerOrganizationId),
 					});
 
 					const ssoRequiresApproval =
@@ -767,7 +761,7 @@ export const auth = betterAuth({
 						where: (emp, { eq, and }) =>
 							and(
 								eq(emp.userId, user.id),
-								eq(emp.organizationId, provider.organizationId!),
+								eq(emp.organizationId, providerOrganizationId),
 							),
 					});
 
@@ -775,7 +769,7 @@ export const auth = betterAuth({
 						// Create employee record - isActive depends on approval setting
 						await db.insert(employee).values({
 							userId: user.id,
-							organizationId: provider.organizationId,
+							organizationId: providerOrganizationId,
 							role: "employee",
 							isActive: !ssoRequiresApproval, // inactive if approval required
 						});
@@ -796,38 +790,9 @@ export const auth = betterAuth({
 			// Enable metadata storage for additional key info (organizationId, scopes, displayName, createdBy)
 			enableMetadata: true,
 		}),
-		// SCIM 2.0 provisioning for enterprise identity management
-		// Integrates with Azure AD, Okta, Google Workspace, and generic SCIM 2.0 providers
-		// User lifecycle events are handled by the provisioning services
-		scim({
-			// Store SCIM tokens encrypted for security
-			storeSCIMToken: "encrypted",
-			// Runs before Better Auth looks up or rotates an existing connection.
-			canGenerateToken: ({ member }) => isSCIMAdministrator(member),
-			// Token generation hooks for security and audit
-			beforeSCIMTokenGenerated: async ({ user, member }) => {
-				assertSCIMAdministrator(member);
-				logger.info(
-					{ userId: user.id, memberRole: member.role },
-					"SCIM token generation requested",
-				);
-			},
-			afterSCIMTokenGenerated: async ({ user, scimProvider }) => {
-				// Log SCIM provider creation for audit
-				if (scimProvider.organizationId) {
-					await db.insert(scimProvisioningLog).values({
-						organizationId: scimProvider.organizationId,
-						eventType: "user_created", // Using as "provider_created" equivalent
-						userId: user.id,
-						metadata: {
-							idpProvider: "scim",
-							scimDisplayName: `SCIM Provider ${scimProvider.providerId}`,
-							tokenGenerated: true,
-						},
-					});
-				}
-			},
-		}),
 		nextCookies(),
+		createSCIMCallbackModelRegistration(),
 	],
 });
+
+configureSCIMProjectionReplay(createSCIMProjectionReplayLoader(auth.api));

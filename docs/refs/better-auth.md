@@ -23,6 +23,13 @@
 
 Never edit `apps/webapp/src/db/auth-schema.ts` manually.
 
+## Better Auth 1.7
+
+- Keep `better-auth`, every `@better-auth/*` package, and the `auth` CLI on the same patch.
+- The auth CLI requires Node.js 22.12 or newer.
+- Read [Better Auth 1.7 Account Migration](better-auth-1-7-account-migration.md) before applying schema changes.
+- Never run `auth:migrate` or `drizzle-kit push` as a schema-generation check against a shared database.
+
 ## Commands
 
 ```bash

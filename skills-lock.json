@@ -29,25 +29,25 @@
       "source": "vercel-labs/next.js",
       "sourceType": "github",
       "skillPath": "skills/next-cache-components-adoption/SKILL.md",
-      "computedHash": "15dcef9cfce611ba5a9ca467ed0d4eeae8de16fadb91b66df892a5ca63c57829"
+      "computedHash": "b6eddcf230b2a4d12929a234b53a3d91aceebeb3b5ad3588e42eae4f10abe6c5"
     },
     "next-cache-components-optimizer": {
       "source": "vercel-labs/next.js",
       "sourceType": "github",
       "skillPath": "skills/next-cache-components-optimizer/SKILL.md",
-      "computedHash": "aefb01afebac59c0359cfd15214e871d12e5d242867dc486087a4560363ee28c"
+      "computedHash": "58eb0a6ec29604f460861f6a9daf5d9b370f575958144e860f79f97885e69ede"
     },
     "next-dev-loop": {
       "source": "vercel-labs/next.js",
       "sourceType": "github",
       "skillPath": "skills/next-dev-loop/SKILL.md",
-      "computedHash": "d6c10996c5c31b32faa269715852006922fa4357d1151403bb3a49dfa121bcfd"
+      "computedHash": "fcfd05ce87d9edafda2e454f3f998bc45cb96fa2a3b695a4c3c144a9a13e7c39"
     },
     "next-partial-prefetching-adoption": {
       "source": "vercel-labs/next.js",
       "sourceType": "github",
       "skillPath": "skills/next-partial-prefetching-adoption/SKILL.md",
-      "computedHash": "cfed44cfce68b08b2a7edf3d6f07b230a49dfbf180825ca49a5bbf12b27a558a"
+      "computedHash": "7e0e9ea2a13c88fbdfbee1f0c6050377e1c1b7a3587501cc3e267bd74e1abc1d"
     },
     "organization-best-practices": {
       "source": "better-auth/skills",
@@ -59,13 +59,13 @@
       "source": "stripe/ai",
       "sourceType": "github",
       "skillPath": "skills/stripe-best-practices/SKILL.md",
-      "computedHash": "14efa86bd74a8f8f330535fdf2fddd1def5faa27fe75cbb11d623dd17a507d24"
+      "computedHash": "6b71690c78cec9e053f9a842337f85976704c7b1901a895cf795e37f5b03ea17"
     },
     "stripe-projects": {
       "source": "stripe/ai",
       "sourceType": "github",
       "skillPath": "skills/stripe-projects/SKILL.md",
-      "computedHash": "d75347f4e465c0e78032f7cb28b7bcd406cde9a34826b780958b059423fba778"
+      "computedHash": "d5b674901c9eb8b1c21e9d3a22728f9a4e0a8a6e22737ce7c284ff8daa51a765"
     },
     "two-factor-authentication-best-practices": {
       "source": "better-auth/skills",

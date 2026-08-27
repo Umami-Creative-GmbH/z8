@@ -10,7 +10,11 @@
 
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { type CronJobExecution, type CronJobStatus, cronJobExecution } from "@/db/schema/cron-job";
+import {
+	type CronJobExecution,
+	type CronJobStatus,
+	cronJobExecution,
+} from "@/db/schema/cron-job";
 import { createLogger } from "@/lib/logger";
 import type { CronJobName } from "./registry";
 
@@ -47,7 +51,10 @@ export async function createJobExecution(params: {
 		})
 		.returning({ id: cronJobExecution.id });
 
-	logger.debug({ executionId: record.id, jobName: params.jobName }, "Created job execution record");
+	logger.debug(
+		{ executionId: record.id, jobName: params.jobName },
+		"Created job execution record",
+	);
 
 	return record.id;
 }
@@ -62,7 +69,9 @@ export async function getOrCreateSchedulerJobExecution(params: {
 	const lockKey = `cron-job-execution:${params.bullmqJobId}`;
 
 	return db.transaction(async (tx) => {
-		await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
+		await tx.execute(
+			sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`,
+		);
 
 		const existing = await tx.query.cronJobExecution.findFirst({
 			where: eq(cronJobExecution.bullmqJobId, params.bullmqJobId),
@@ -83,7 +92,11 @@ export async function getOrCreateSchedulerJobExecution(params: {
 			.returning({ id: cronJobExecution.id });
 
 		logger.debug(
-			{ executionId: record.id, jobName: params.jobName, bullmqJobId: params.bullmqJobId },
+			{
+				executionId: record.id,
+				jobName: params.jobName,
+				bullmqJobId: params.bullmqJobId,
+			},
 			"Created scheduler job execution record",
 		);
 		return record.id;
@@ -144,10 +157,16 @@ export async function markJobCompleted(
 /**
  * Mark a job as failed with error
  */
-export async function markJobFailed(id: string, error: string, durationMs: number): Promise<void> {
+export async function markJobFailed(
+	id: string,
+	error: string,
+	durationMs: number,
+	result?: unknown,
+): Promise<void> {
 	await updateJobExecution(id, {
 		status: "failed",
 		error,
+		result,
 		completedAt: new Date(),
 		durationMs,
 	});
@@ -160,7 +179,9 @@ export async function markJobFailed(id: string, error: string, durationMs: numbe
 /**
  * Get a job execution by ID
  */
-export async function getJobExecution(id: string): Promise<CronJobExecution | undefined> {
+export async function getJobExecution(
+	id: string,
+): Promise<CronJobExecution | undefined> {
 	const result = await db.query.cronJobExecution.findFirst({
 		where: eq(cronJobExecution.id, id),
 	});
@@ -209,7 +230,9 @@ export async function getLatestExecution(
 /**
  * Get all recent executions across all job types
  */
-export async function getRecentExecutions(limit = 100): Promise<CronJobExecution[]> {
+export async function getRecentExecutions(
+	limit = 100,
+): Promise<CronJobExecution[]> {
 	return db.query.cronJobExecution.findMany({
 		orderBy: [desc(cronJobExecution.startedAt)],
 		limit,
@@ -219,7 +242,9 @@ export async function getRecentExecutions(limit = 100): Promise<CronJobExecution
 /**
  * Get executions since a cutoff date across all job types.
  */
-export async function getExecutionsSince(cutoffDate: Date): Promise<CronJobExecution[]> {
+export async function getExecutionsSince(
+	cutoffDate: Date,
+): Promise<CronJobExecution[]> {
 	return db.query.cronJobExecution.findMany({
 		where: gte(cronJobExecution.startedAt, cutoffDate),
 		orderBy: [desc(cronJobExecution.startedAt)],
@@ -250,7 +275,10 @@ export async function getJobMetrics(
 	cutoffDate.setDate(cutoffDate.getDate() - daysBack);
 
 	const executions = await db.query.cronJobExecution.findMany({
-		where: and(eq(cronJobExecution.jobName, jobName), gte(cronJobExecution.startedAt, cutoffDate)),
+		where: and(
+			eq(cronJobExecution.jobName, jobName),
+			gte(cronJobExecution.startedAt, cutoffDate),
+		),
 		columns: {
 			status: true,
 			durationMs: true,
@@ -261,11 +289,15 @@ export async function getJobMetrics(
 	});
 
 	const totalRuns = executions.length;
-	const successfulRuns = executions.filter((e) => e.status === "completed").length;
+	const successfulRuns = executions.filter(
+		(e) => e.status === "completed",
+	).length;
 	const failedRuns = executions.filter((e) => e.status === "failed").length;
 	const successRate = totalRuns > 0 ? (successfulRuns / totalRuns) * 100 : 0;
 
-	const durations = executions.filter((e) => e.durationMs !== null).map((e) => e.durationMs!);
+	const durations = executions
+		.filter((e) => e.durationMs !== null)
+		.map((e) => e.durationMs!);
 	const avgDurationMs =
 		durations.length > 0
 			? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
@@ -314,7 +346,9 @@ export async function getAllJobMetrics(daysBack = 30): Promise<
 			totalRuns: sql<number>`count(*)::int`,
 			successfulRuns: sql<number>`count(*) filter (where ${cronJobExecution.status} = 'completed')::int`,
 			failedRuns: sql<number>`count(*) filter (where ${cronJobExecution.status} = 'failed')::int`,
-			avgDurationMs: sql<number | null>`avg(${cronJobExecution.durationMs})::int`,
+			avgDurationMs: sql<
+				number | null
+			>`avg(${cronJobExecution.durationMs})::int`,
 		})
 		.from(cronJobExecution)
 		.where(gte(cronJobExecution.startedAt, cutoffDate))
@@ -323,7 +357,9 @@ export async function getAllJobMetrics(daysBack = 30): Promise<
 	return result.map((row) => ({
 		...row,
 		successRate:
-			row.totalRuns > 0 ? Math.round((row.successfulRuns / row.totalRuns) * 10000) / 100 : 0,
+			row.totalRuns > 0
+				? Math.round((row.successfulRuns / row.totalRuns) * 10000) / 100
+				: 0,
 	}));
 }
 

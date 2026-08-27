@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
 	auditPack: vi.fn(),
 	createJobExecution: vi.fn(),
 	cronProcessor: vi.fn(),
+	scimMaintenanceProcessor: vi.fn(),
 	getJobExecutionByBullmqJobId: vi.fn(),
 	getOrCreateSchedulerJobExecution: vi.fn(),
 	loggerError: vi.fn(),
@@ -23,11 +24,15 @@ vi.mock("@/lib/cron", () => ({
 		"cron:telemetry": {
 			processor: mocks.cronProcessor,
 		},
+		"cron:scim-maintenance": {
+			processor: mocks.scimMaintenanceProcessor,
+		},
 	},
 	createJobExecution: mocks.createJobExecution,
 	getJobExecutionByBullmqJobId: mocks.getJobExecutionByBullmqJobId,
 	getOrCreateSchedulerJobExecution: mocks.getOrCreateSchedulerJobExecution,
-	isCronJobName: (type: string) => type === "cron:telemetry",
+	isCronJobName: (type: string) =>
+		type === "cron:telemetry" || type === "cron:scim-maintenance",
 	listCronScheduleOverrides: vi.fn(),
 	markJobCompleted: mocks.markJobCompleted,
 	markJobFailed: mocks.markJobFailed,
@@ -91,13 +96,15 @@ function createCronJob({
 	executionId,
 	attemptsMade = 0,
 	attempts = 3,
+	type = "cron:telemetry",
 }: {
 	executionId?: string;
 	attemptsMade?: number;
 	attempts?: number;
+	type?: "cron:telemetry" | "cron:scim-maintenance";
 }) {
 	const data = {
-		type: "cron:telemetry",
+		type,
 		triggeredAt: "2026-07-10T08:00:00.000Z",
 		...(executionId ? { executionId } : {}),
 	};
@@ -108,9 +115,11 @@ function createCronJob({
 		data,
 		attemptsMade,
 		opts: { attempts },
-		updateData: vi.fn(async (updatedData: typeof data & { executionId: string }) => {
-			Object.assign(data, updatedData);
-		}),
+		updateData: vi.fn(
+			async (updatedData: typeof data & { executionId: string }) => {
+				Object.assign(data, updatedData);
+			},
+		),
 	} as unknown as Job<CronJobData>;
 }
 
@@ -127,10 +136,16 @@ describe("processOneOffJob", () => {
 		const job = {
 			id: "audit-job-1",
 			name: "process-audit-pack",
-			data: { type: "audit-pack", requestId: "request-1", organizationId: "org-1" },
+			data: {
+				type: "audit-pack",
+				requestId: "request-1",
+				organizationId: "org-1",
+			},
 		} as Job<JobData>;
 
-		const error = await processOneOffJob(job).catch((reason: unknown) => reason);
+		const error = await processOneOffJob(job).catch(
+			(reason: unknown) => reason,
+		);
 
 		expect(error).toBeInstanceOf(Error);
 		expect(error).toMatchObject({ message: "audit unavailable" });
@@ -143,7 +158,9 @@ describe("processOneOffJob", () => {
 			data: { type: "unknown" },
 		} as unknown as Job<JobData>;
 
-		await expect(processOneOffJob(job)).rejects.toThrow("Unknown job type: unknown");
+		await expect(processOneOffJob(job)).rejects.toThrow(
+			"Unknown job type: unknown",
+		);
 		expect(mocks.loggerError).toHaveBeenCalledWith(
 			{ error: "Unknown job type: unknown", jobId: "unknown-job-1" },
 			"Job failed",
@@ -170,7 +187,9 @@ describe("processOneOffJob", () => {
 			data: { type: "webhook" },
 		} as unknown as Job<JobData>;
 
-		const error = await processOneOffJob(job).catch((reason: unknown) => reason);
+		const error = await processOneOffJob(job).catch(
+			(reason: unknown) => reason,
+		);
 
 		expect(error).toBeInstanceOf(Error);
 		expect(error).toMatchObject({ message: "webhook unavailable" });
@@ -198,7 +217,9 @@ describe("processOneOffJob", () => {
 	});
 
 	it("propagates calendar sync processor rejections", async () => {
-		mocks.processCalendarSyncJob.mockRejectedValueOnce(new Error("calendar unavailable"));
+		mocks.processCalendarSyncJob.mockRejectedValueOnce(
+			new Error("calendar unavailable"),
+		);
 		const job = {
 			id: "calendar-job-1",
 			name: "calendar-sync",
@@ -220,12 +241,20 @@ describe("processJob cron failure semantics", () => {
 		mocks.createJobExecution.mockResolvedValue("execution-created");
 		mocks.cronProcessor.mockResolvedValue({ collected: true });
 		mocks.getJobExecutionByBullmqJobId.mockResolvedValue(undefined);
-		mocks.getOrCreateSchedulerJobExecution.mockResolvedValue("execution-created");
+		mocks.getOrCreateSchedulerJobExecution.mockResolvedValue(
+			"execution-created",
+		);
 	});
 
 	it("rejects an intermediate attempt without marking the execution failed", async () => {
-		mocks.cronProcessor.mockRejectedValueOnce(new Error("temporary cron failure"));
-		const job = createCronJob({ executionId: "execution-api", attemptsMade: 0, attempts: 3 });
+		mocks.cronProcessor.mockRejectedValueOnce(
+			new Error("temporary cron failure"),
+		);
+		const job = createCronJob({
+			executionId: "execution-api",
+			attemptsMade: 0,
+			attempts: 3,
+		});
 
 		await expect(processJob(job)).rejects.toThrow("temporary cron failure");
 
@@ -234,8 +263,14 @@ describe("processJob cron failure semantics", () => {
 	});
 
 	it("marks the execution failed on the final configured attempt and rejects", async () => {
-		mocks.cronProcessor.mockRejectedValueOnce(new Error("terminal cron failure"));
-		const job = createCronJob({ executionId: "execution-api", attemptsMade: 2, attempts: 3 });
+		mocks.cronProcessor.mockRejectedValueOnce(
+			new Error("terminal cron failure"),
+		);
+		const job = createCronJob({
+			executionId: "execution-api",
+			attemptsMade: 2,
+			attempts: 3,
+		});
 
 		await expect(processJob(job)).rejects.toThrow("terminal cron failure");
 
@@ -246,12 +281,77 @@ describe("processJob cron failure semantics", () => {
 		);
 	});
 
+	it("marks degraded SCIM maintenance failed while retaining its result metrics", async () => {
+		const result = {
+			exhausted: 1,
+			persistenceFailures: 1,
+			outbox: {
+				claimed: 2,
+				completed: 0,
+				deferred: 0,
+				exhausted: 1,
+				persistenceFailures: 1,
+			},
+		};
+		const error = Object.assign(new Error("SCIM maintenance degraded"), {
+			result,
+		});
+		mocks.scimMaintenanceProcessor.mockRejectedValueOnce(error);
+		const job = createCronJob({
+			executionId: "execution-api",
+			attemptsMade: 0,
+			attempts: 1,
+			type: "cron:scim-maintenance",
+		});
+
+		await expect(processJob(job)).rejects.toThrow("SCIM maintenance degraded");
+		expect(mocks.markJobFailed).toHaveBeenCalledWith(
+			"execution-api",
+			"SCIM maintenance degraded",
+			expect.any(Number),
+			result,
+		);
+	});
+
+	it("marks healthy SCIM maintenance completed", async () => {
+		const result = {
+			exhausted: 0,
+			persistenceFailures: 0,
+			outbox: {
+				claimed: 1,
+				completed: 1,
+				deferred: 0,
+				exhausted: 0,
+				persistenceFailures: 0,
+			},
+		};
+		mocks.scimMaintenanceProcessor.mockResolvedValueOnce(result);
+		const job = createCronJob({
+			executionId: "execution-api",
+			type: "cron:scim-maintenance",
+		});
+
+		await expect(processJob(job)).resolves.toMatchObject({
+			success: true,
+			data: result,
+		});
+		expect(mocks.markJobCompleted).toHaveBeenCalledWith(
+			"execution-api",
+			result,
+			expect.any(Number),
+		);
+	});
+
 	it("preserves the processor error when final failure tracking also fails", async () => {
 		const processorError = new Error("terminal cron failure");
 		const trackingError = new Error("database unavailable");
 		mocks.cronProcessor.mockRejectedValueOnce(processorError);
 		mocks.markJobFailed.mockRejectedValueOnce(trackingError);
-		const job = createCronJob({ executionId: "execution-api", attemptsMade: 2, attempts: 3 });
+		const job = createCronJob({
+			executionId: "execution-api",
+			attemptsMade: 2,
+			attempts: 3,
+		});
 
 		await expect(processJob(job)).rejects.toBe(processorError);
 		expect(mocks.loggerError).toHaveBeenCalledWith(
@@ -286,7 +386,9 @@ describe("processJob cron failure semantics", () => {
 
 	it("reuses the database execution after updateData fails before a retry", async () => {
 		const job = createCronJob({ attemptsMade: 0, attempts: 3 });
-		vi.mocked(job.updateData).mockRejectedValueOnce(new Error("Redis write failed"));
+		vi.mocked(job.updateData).mockRejectedValueOnce(
+			new Error("Redis write failed"),
+		);
 
 		await expect(processJob(job)).rejects.toThrow("Redis write failed");
 		await expect(processJob(job)).resolves.toMatchObject({ success: true });
@@ -298,7 +400,11 @@ describe("processJob cron failure semantics", () => {
 	});
 
 	it("uses an API-provided execution ID without creating or persisting another", async () => {
-		const job = createCronJob({ executionId: "execution-api", attemptsMade: 0, attempts: 3 });
+		const job = createCronJob({
+			executionId: "execution-api",
+			attemptsMade: 0,
+			attempts: 3,
+		});
 
 		await processJob(job);
 
@@ -308,7 +414,11 @@ describe("processJob cron failure semantics", () => {
 	});
 
 	it("reuses the persisted scheduler execution ID on retry", async () => {
-		const job = createCronJob({ executionId: "execution-created", attemptsMade: 1, attempts: 3 });
+		const job = createCronJob({
+			executionId: "execution-created",
+			attemptsMade: 1,
+			attempts: 3,
+		});
 
 		await processJob(job);
 
@@ -318,7 +428,11 @@ describe("processJob cron failure semantics", () => {
 	});
 
 	it("marks a successful retry completed using the same execution ID", async () => {
-		const job = createCronJob({ executionId: "execution-created", attemptsMade: 1, attempts: 3 });
+		const job = createCronJob({
+			executionId: "execution-created",
+			attemptsMade: 1,
+			attempts: 3,
+		});
 
 		await expect(processJob(job)).resolves.toMatchObject({ success: true });
 
@@ -332,7 +446,11 @@ describe("processJob cron failure semantics", () => {
 	it("returns success when completion tracking fails after the processor succeeds", async () => {
 		const trackingError = new Error("database unavailable");
 		mocks.markJobCompleted.mockRejectedValueOnce(trackingError);
-		const job = createCronJob({ executionId: "execution-api", attemptsMade: 0, attempts: 3 });
+		const job = createCronJob({
+			executionId: "execution-api",
+			attemptsMade: 0,
+			attempts: 3,
+		});
 
 		await expect(processJob(job)).resolves.toMatchObject({
 			success: true,
@@ -376,11 +494,17 @@ describe("cron event reconciliation", () => {
 			data: { collected: true },
 		});
 
-		expect(mocks.markJobCompleted).toHaveBeenCalledWith("execution-api", { collected: true }, 150);
+		expect(mocks.markJobCompleted).toHaveBeenCalledWith(
+			"execution-api",
+			{ collected: true },
+			150,
+		);
 	});
 
 	it("reconciles completion through the BullMQ job ID when job data was not persisted", async () => {
-		mocks.getJobExecutionByBullmqJobId.mockResolvedValueOnce({ id: "execution-existing" });
+		mocks.getJobExecutionByBullmqJobId.mockResolvedValueOnce({
+			id: "execution-existing",
+		});
 		const job = {
 			id: "cron-job-1",
 			data: { type: "cron:telemetry", triggeredAt: "2026-07-10T08:00:00.000Z" },
@@ -413,7 +537,10 @@ describe("cron event reconciliation", () => {
 		} as unknown as Job<JobData, JobResult>;
 
 		await expect(
-			reconcileCronJobCompletion(job, { success: true, data: { collected: true } }),
+			reconcileCronJobCompletion(job, {
+				success: true,
+				data: { collected: true },
+			}),
 		).resolves.toBeUndefined();
 		expect(mocks.loggerError).toHaveBeenCalledWith(
 			expect.objectContaining({ error: trackingError, jobId: "cron-job-1" }),
@@ -422,7 +549,9 @@ describe("cron event reconciliation", () => {
 	});
 
 	it("reconciles a definitive BullMQ failure through the job ID", async () => {
-		mocks.getJobExecutionByBullmqJobId.mockResolvedValueOnce({ id: "execution-existing" });
+		mocks.getJobExecutionByBullmqJobId.mockResolvedValueOnce({
+			id: "execution-existing",
+		});
 		const job = {
 			id: "cron-job-1",
 			data: { type: "cron:telemetry", triggeredAt: "2026-07-10T08:00:00.000Z" },
@@ -484,7 +613,9 @@ describe("cron event reconciliation", () => {
 			on: vi.fn(),
 		};
 
-		registerCronTrackingListeners(worker as Parameters<typeof registerCronTrackingListeners>[0]);
+		registerCronTrackingListeners(
+			worker as Parameters<typeof registerCronTrackingListeners>[0],
+		);
 
 		expect(worker.on).toHaveBeenCalledWith("completed", expect.any(Function));
 		expect(worker.on).toHaveBeenCalledWith("failed", expect.any(Function));

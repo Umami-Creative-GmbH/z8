@@ -55,6 +55,6 @@ describe("approval inbox contract types", () => {
 			},
 		};
 
-		expect(JSON.parse(JSON.stringify(item))).toEqual(item);
+		expect(structuredClone(item)).toEqual(item);
 	});
 });

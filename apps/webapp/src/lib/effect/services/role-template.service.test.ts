@@ -1,0 +1,345 @@
+import { Effect } from "effect";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { configureSCIMProjectionReplay } from "@/lib/scim/role-projection-replay";
+
+const mocks = vi.hoisted(() => {
+	const returning = vi.fn();
+	const values = vi.fn(() => ({ returning }));
+	const insert = vi.fn(() => ({ values }));
+	const deleteWhere = vi.fn();
+	const deleteFrom = vi.fn(() => ({ where: deleteWhere }));
+	const mappingFindFirst = vi.fn();
+	const assignmentFindFirst = vi.fn();
+	const roleTemplateFindFirst = vi.fn();
+	const recoveryStore = {
+		begin: vi.fn(async (organizationId: string) => ({
+			id: "recovery_opaque",
+			organizationId,
+			claimToken: "claim_opaque",
+			attemptCount: 1,
+		})),
+		claimDue: vi.fn(async () => null),
+		complete: vi.fn(async () => undefined),
+		defer: vi.fn(async () => undefined),
+	};
+	return {
+		returning,
+		values,
+		insert,
+		deleteWhere,
+		deleteFrom,
+		mappingFindFirst,
+		assignmentFindFirst,
+		roleTemplateFindFirst,
+		recoveryStore,
+	};
+});
+
+vi.mock("@/db", () => ({
+	db: {
+		insert: mocks.insert,
+		delete: mocks.deleteFrom,
+		query: {
+			roleTemplate: { findFirst: mocks.roleTemplateFindFirst },
+			roleTemplateMapping: { findFirst: mocks.mappingFindFirst },
+			userRoleTemplateAssignment: { findFirst: mocks.assignmentFindFirst },
+		},
+	},
+}));
+vi.mock("@/lib/logger", () => ({
+	createLogger: () => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn() }),
+}));
+vi.mock("@/lib/scim/projection-recovery", () => ({
+	createSCIMProjectionRecoveryStore: () => mocks.recoveryStore,
+}));
+
+import {
+	RoleTemplateService,
+	RoleTemplateServiceLive,
+} from "./role-template.service";
+
+function collectColumnNames(value: unknown): string[] {
+	if (!value || typeof value !== "object") return [];
+	const node = value as { name?: unknown; queryChunks?: unknown[] };
+	return [
+		...(typeof node.name === "string" ? [node.name] : []),
+		...(node.queryChunks?.flatMap(collectColumnNames) ?? []),
+	];
+}
+
+function collectValues(value: unknown): unknown[] {
+	if (!value || typeof value !== "object") return [];
+	const node = value as { value?: unknown; queryChunks?: unknown[] };
+	return [
+		...(node.value !== undefined ? [node.value] : []),
+		...(node.queryChunks?.flatMap(collectValues) ?? []),
+	];
+}
+
+function runService<A>(
+	use: (
+		service: import("./role-template.service").RoleTemplateService,
+	) => Effect.Effect<A, Error>,
+) {
+	return Effect.runPromise(
+		Effect.gen(function* () {
+			const service = yield* RoleTemplateService;
+			return yield* use(service);
+		}).pipe(Effect.provide(RoleTemplateServiceLive)),
+	);
+}
+
+beforeEach(() => {
+	vi.clearAllMocks();
+	mocks.deleteWhere.mockResolvedValue(undefined);
+	mocks.roleTemplateFindFirst.mockResolvedValue({ id: "template_opaque" });
+});
+afterEach(() => configureSCIMProjectionReplay(null));
+
+describe("RoleTemplateService SCIM replay", () => {
+	it.each(["foreign", "inactive"] as const)(
+		"rejects a %s role template before mapping persistence",
+		async () => {
+			mocks.roleTemplateFindFirst.mockResolvedValue(null);
+			configureSCIMProjectionReplay(async () => vi.fn());
+
+			await expect(
+				runService((service) =>
+					service.createIdpMapping({
+						organizationId: "org_target",
+						idpType: "scim",
+						idpGroupId: "group_opaque",
+						roleTemplateId: "template_opaque",
+						createdBy: "user_opaque",
+					}),
+				),
+			).rejects.toThrow("Role template is not available");
+			expect(mocks.insert).not.toHaveBeenCalled();
+			const where = mocks.roleTemplateFindFirst.mock.calls[0]?.[0].where;
+			expect(collectColumnNames(where)).toEqual(
+				expect.arrayContaining([
+					"id",
+					"organization_id",
+					"is_global",
+					"is_active",
+				]),
+			);
+			expect(collectValues(where).flat()).toEqual(
+				expect.arrayContaining(["template_opaque", "org_target", true]),
+			);
+		},
+	);
+
+	it.each([
+		["organization", { organizationId: "org_target", isGlobal: false }],
+		["global", { organizationId: null, isGlobal: true }],
+	] as const)("accepts an active %s role template", async (_case, template) => {
+		mocks.roleTemplateFindFirst.mockResolvedValue({
+			id: "template_opaque",
+			isActive: true,
+			...template,
+		});
+		mocks.returning.mockResolvedValue([{ id: "mapping_1", idpType: "sso" }]);
+
+		await expect(
+			runService((service) =>
+				service.createIdpMapping({
+					organizationId: "org_target",
+					idpType: "sso",
+					idpGroupId: "group_opaque",
+					roleTemplateId: "template_opaque",
+					createdBy: "user_opaque",
+				}),
+			),
+		).resolves.toMatchObject({ id: "mapping_1" });
+		expect(mocks.values).toHaveBeenCalledWith(
+			expect.objectContaining({ roleTemplateId: "template_opaque" }),
+		);
+	});
+
+	it("requests replay after a SCIM mapping is created", async () => {
+		const order: string[] = [];
+		mocks.returning.mockImplementation(async () => {
+			order.push("persist");
+			return [{ id: "mapping_1", idpType: "scim" }];
+		});
+		configureSCIMProjectionReplay(async () => async (organizationId) => {
+			order.push(`replay:${organizationId}`);
+		});
+
+		await runService((service) =>
+			service.createIdpMapping({
+				organizationId: "org_target",
+				idpType: "scim",
+				idpGroupId: "group_opaque",
+				roleTemplateId: "template_opaque",
+				createdBy: "user_opaque",
+			}),
+		);
+
+		expect(order).toEqual(["persist", "replay:org_target"]);
+	});
+
+	it("checks replay availability before creating a SCIM mapping", async () => {
+		await expect(
+			runService((service) =>
+				service.createIdpMapping({
+					organizationId: "org_target",
+					idpType: "scim",
+					idpGroupId: "group_opaque",
+					roleTemplateId: "template_opaque",
+					createdBy: "user_opaque",
+				}),
+			),
+		).rejects.toThrow("SCIM projection replay is not configured");
+		expect(mocks.returning).not.toHaveBeenCalled();
+	});
+
+	it("undoes a created SCIM mapping when replay rejects", async () => {
+		const replayError = new Error("replay rejected");
+		mocks.returning.mockResolvedValue([
+			{
+				id: "mapping_1",
+				organizationId: "org_target",
+				idpType: "scim",
+				idpGroupId: "group_opaque",
+				roleTemplateId: "template_opaque",
+			},
+		]);
+		const replay = vi.fn().mockRejectedValueOnce(replayError);
+		configureSCIMProjectionReplay(async () => replay);
+
+		await expect(
+			runService((service) =>
+				service.createIdpMapping({
+					organizationId: "org_target",
+					idpType: "scim",
+					idpGroupId: "group_opaque",
+					roleTemplateId: "template_opaque",
+					createdBy: "user_opaque",
+				}),
+			),
+		).rejects.toThrow("replay rejected");
+		const condition = mocks.deleteWhere.mock.calls[0]?.[0];
+		expect(collectColumnNames(condition)).toEqual(
+			expect.arrayContaining(["id", "organization_id"]),
+		);
+		expect(collectValues(condition).flat()).toEqual(
+			expect.arrayContaining(["mapping_1", "org_target"]),
+		);
+	});
+
+	it("scopes mapping deletion to organization and replays SCIM only after delete", async () => {
+		const order: string[] = [];
+		mocks.mappingFindFirst.mockResolvedValue({
+			id: "mapping_1",
+			idpType: "scim",
+		});
+		mocks.deleteWhere.mockImplementation(async () => order.push("delete"));
+		configureSCIMProjectionReplay(async () => async (organizationId) => {
+			order.push(`replay:${organizationId}`);
+		});
+
+		await runService((service) =>
+			service.deleteIdpMapping("mapping_1", "org_target"),
+		);
+
+		expect(order).toEqual(["delete", "replay:org_target"]);
+		for (const condition of [
+			mocks.mappingFindFirst.mock.calls[0]?.[0].where,
+			mocks.deleteWhere.mock.calls[0]?.[0],
+		]) {
+			expect(collectColumnNames(condition)).toEqual(
+				expect.arrayContaining(["id", "organization_id"]),
+			);
+			expect(collectValues(condition).flat()).toEqual(
+				expect.arrayContaining(["mapping_1", "org_target"]),
+			);
+		}
+	});
+
+	it("does not replay an SSO mapping deletion", async () => {
+		const replay = vi.fn();
+		mocks.mappingFindFirst.mockResolvedValue({
+			id: "mapping_1",
+			idpType: "sso",
+		});
+		configureSCIMProjectionReplay(async () => replay);
+
+		await runService((service) =>
+			service.deleteIdpMapping("mapping_1", "org_target"),
+		);
+
+		expect(replay).not.toHaveBeenCalled();
+	});
+
+	it("restores the exact deleted SCIM mapping when replay rejects", async () => {
+		const replayError = new Error("replay rejected");
+		const snapshot = {
+			id: "mapping_1",
+			organizationId: "org_target",
+			idpType: "scim",
+			idpGroupId: "group_opaque",
+			idpGroupName: "Opaque group",
+			roleTemplateId: "template_opaque",
+			priority: 7,
+			createdBy: "user_opaque",
+			createdAt: new Date("2026-08-25T00:00:00Z"),
+		};
+		mocks.mappingFindFirst.mockResolvedValue(snapshot);
+		const replay = vi.fn().mockRejectedValueOnce(replayError);
+		configureSCIMProjectionReplay(async () => replay);
+
+		await expect(
+			runService((service) =>
+				service.deleteIdpMapping("mapping_1", "org_target"),
+			),
+		).rejects.toThrow("replay rejected");
+		expect(mocks.values).toHaveBeenCalledWith(snapshot);
+	});
+
+	it("requests replay after deleting a manual assignment", async () => {
+		const order: string[] = [];
+		mocks.assignmentFindFirst.mockResolvedValue({ assignmentSource: "manual" });
+		mocks.deleteWhere.mockImplementation(async () => order.push("delete"));
+		configureSCIMProjectionReplay(async () => async (organizationId) => {
+			order.push(`replay:${organizationId}`);
+		});
+
+		await runService((service) =>
+			service.removeUserTemplateAssignment({
+				userId: "user_opaque",
+				organizationId: "org_target",
+			}),
+		);
+
+		expect(order).toEqual(["delete", "replay:org_target"]);
+	});
+
+	it("restores the exact manual assignment when replay rejects", async () => {
+		const replayError = new Error("replay rejected");
+		const snapshot = {
+			id: "assignment_1",
+			organizationId: "org_target",
+			userId: "user_opaque",
+			roleTemplateId: "template_manual",
+			assignmentSource: "manual",
+			idpGroupId: null,
+			assignedBy: "admin_opaque",
+			assignedAt: new Date("2026-08-25T00:00:00Z"),
+		};
+		mocks.assignmentFindFirst.mockResolvedValue(snapshot);
+		const replay = vi.fn().mockRejectedValueOnce(replayError);
+		configureSCIMProjectionReplay(async () => replay);
+
+		await expect(
+			runService((service) =>
+				service.removeUserTemplateAssignment({
+					userId: "user_opaque",
+					organizationId: "org_target",
+				}),
+			),
+		).rejects.toThrow("replay rejected");
+		expect(mocks.values).toHaveBeenCalledWith(snapshot);
+	});
+});

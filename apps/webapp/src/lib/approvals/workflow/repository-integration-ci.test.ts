@@ -43,10 +43,17 @@ describe("approval workflow repository integration CI contract", () => {
 		);
 		expect(workflow).toContain("APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED=1");
 		expect(workflow).toContain(
-			`pnpm --filter webapp exec vitest run src/lib/approvals/workflow/repository.integration.test.ts \\
-            src/lib/approvals/workflow/transition-engine.integration.test.ts \\
-            src/lib/approvals/server/time-correction-approvals.integration.test.ts \\
-            src/lib/approvals/server/work-period-approvals.integration.test.ts`,
+			"pnpm --filter webapp exec vitest run --no-file-parallelism",
+		);
+		expect(workflow).toContain(
+			"src/lib/scim/seat-sync-outbox.integration.test.ts",
+		);
+		expect(workflow).toContain(
+			"src/lib/scim/scim-callback-atomicity.integration.test.ts",
+		);
+		expect(workflow).toContain("src/lib/scim/protocol.integration.test.ts");
+		expect(workflow).toMatch(
+			/seat-sync-outbox\.integration\.test\.ts \\\n+\s+src\/lib\/scim\/protocol\.integration\.test\.ts \\\n+\s+src\/lib\/approvals\/workflow\/repository\.integration\.test\.ts \\\n+\s+src\/lib\/approvals\/workflow\/transition-engine\.integration\.test\.ts \\\n+\s+src\/lib\/approvals\/server\/time-correction-approvals\.integration\.test\.ts \\\n+\s+src\/lib\/approvals\/server\/work-period-approvals\.integration\.test\.ts/,
 		);
 	});
 });

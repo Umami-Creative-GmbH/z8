@@ -401,3 +401,14 @@ test("production worker and migration manifests use the trimmed runtime layout",
   assert.match(migrationManifest, /workingDir:\s+\/app\b/);
   assert.doesNotMatch(migrationManifest, /workingDir:\s+\/app\/apps\/webapp\b/);
 });
+
+test("Kustomize never applies placeholder authentication secrets", async () => {
+	const [kustomization, secretTemplate] = await Promise.all([
+		fs.readFile(new URL("../../deploy/k8s/kustomization.yaml", import.meta.url), "utf8"),
+		fs.readFile(new URL("../../deploy/k8s/secret.yaml", import.meta.url), "utf8"),
+	]);
+
+	assert.doesNotMatch(kustomization, /^\s*-\s+secret\.yaml\s*$/m);
+	assert.match(secretTemplate, /^\s+auth-secret:/m);
+	assert.match(secretTemplate, /^\s+scim-credential-hash-secret:/m);
+});

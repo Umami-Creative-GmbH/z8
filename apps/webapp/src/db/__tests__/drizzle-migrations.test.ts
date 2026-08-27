@@ -150,6 +150,14 @@ const migration0060Url = new URL(
 	"../../../drizzle/0060_approval_workflow_recovery.sql",
 	import.meta.url,
 );
+const migration0061Url = new URL(
+	"../../../drizzle/0061_better_auth_account_issuers.sql",
+	import.meta.url,
+);
+const migration0061SnapshotUrl = new URL(
+	"../../../drizzle/meta/0061_snapshot.json",
+	import.meta.url,
+);
 
 function readRequiredMigration(url: URL, label: string): string {
 	const exists = existsSync(url);
@@ -1956,6 +1964,81 @@ describe("drizzle follow-up migrations", () => {
 		expect
 			.soft(existsSync(migration0060Url), `${expectedTag}.sql must exist`)
 			.toBe(true);
+	});
+
+	it("migrates Better Auth accounts to trusted issuer-scoped identities", () => {
+		const expectedTag = "0061_better_auth_account_issuers";
+		const migration = readRequiredMigration(
+			migration0061Url,
+			"0061 Better Auth account issuers migration",
+		);
+		const snapshot = JSON.parse(
+			readRequiredMigration(
+				migration0061SnapshotUrl,
+				"0061 Better Auth account issuers snapshot",
+			),
+		) as MigrationSnapshot;
+		const entry = migrationJournal.entries.find(({ tag }) => tag === expectedTag);
+		const account = snapshot.tables["public.account"];
+
+		expect(entry).toMatchObject({
+			idx: 61,
+			tag: expectedTag,
+			version: "7",
+			breakpoints: true,
+		});
+		expect(migration).toContain('ALTER TABLE "account" ADD COLUMN "issuer" text;');
+		expect(migration).toContain("local:credential");
+		expect(migration).toContain('"account_id" = "user_id"');
+		expect(migration).toContain("SSO provider IDs collide with built-in provider IDs");
+		expect(migration).toContain("accounts use a legacy SSO mapping.id");
+		expect(migration).not.toContain(
+			'WHERE "provider_id" IN (SELECT DISTINCT "provider_id" FROM "account")',
+		);
+		expect(migration).toContain("accounts have missing or invalid SAML metadata");
+		expect(migration).toContain("accounts have no trusted issuer mapping");
+		expect(migration).toContain("duplicate issuer-scoped account identities");
+		expect(migration).toContain(
+			'CREATE UNIQUE INDEX "account_issuer_accountId_uidx" ON "account" USING btree ("issuer","account_id");',
+		);
+		expect(migration).not.toMatch(/\bDROP\b[^;]*\bscim_provider\b/i);
+		expect(migration.indexOf('ALTER TABLE "account" ADD COLUMN "issuer" text;')).toBeLessThan(
+			migration.indexOf('ALTER TABLE "account" ALTER COLUMN "issuer" SET NOT NULL;'),
+		);
+		expect(
+			migration.indexOf("duplicate issuer-scoped account identities"),
+		).toBeLessThan(
+			migration.indexOf('ALTER TABLE "account" ALTER COLUMN "issuer" SET NOT NULL;'),
+		);
+		expect(account?.columns.issuer).toMatchObject({ type: "text", notNull: true });
+		expect(account?.indexes.account_issuer_accountId_uidx).toMatchObject({
+			isUnique: true,
+			columns: [
+				{ expression: "issuer", isExpression: false },
+				{ expression: "account_id", isExpression: false },
+			],
+		});
+		expect(snapshot.tables["public.scim_provider"]).toBeDefined();
+	});
+
+	it("keeps the account issuer DO block's loop record distinct from provider table aliases", () => {
+		const migration = readRequiredMigration(
+			migration0061Url,
+			"0061 Better Auth account issuers migration",
+		);
+		const doBlock = migration.match(
+			/DO \$account_issuer_migration\$[\s\S]*?\$account_issuer_migration\$;/,
+		)?.[0];
+		const loopBlock = doBlock?.match(
+			/FOR sso_provider_row IN[\s\S]*?END LOOP;/,
+		)?.[0];
+
+		expect(doBlock).toContain("sso_provider_row record;");
+		expect(loopBlock).toContain("FOR sso_provider_row IN");
+		expect(loopBlock).toContain("sso_provider_row.oidc_config");
+		expect(loopBlock).toContain("sso_provider_row.saml_config");
+		expect(loopBlock).not.toMatch(/\bprovider\s+record\b|\bprovider\./);
+		expect(doBlock).toContain('FROM "sso_provider" AS provider');
 	});
 
 	it("recovers skipped approval workflow migrations without mutating approval rows", () => {

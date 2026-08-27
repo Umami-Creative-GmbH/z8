@@ -4,11 +4,13 @@ import { cronJobExecution } from "@/db/schema/cron-job";
 const mocks = vi.hoisted(() => ({
 	findFirst: vi.fn(),
 	transaction: vi.fn(),
+	update: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
 	db: {
 		transaction: mocks.transaction,
+		update: mocks.update,
 		query: {
 			cronJobExecution: {
 				findFirst: mocks.findFirst,
@@ -24,9 +26,11 @@ vi.mock("@/lib/logger", () => ({
 	}),
 }));
 
-const { getJobExecutionByBullmqJobId, getOrCreateSchedulerJobExecution } = await import(
-	"./tracking"
-);
+const {
+	getJobExecutionByBullmqJobId,
+	getOrCreateSchedulerJobExecution,
+	markJobFailed,
+} = await import("./tracking");
 
 describe("getJobExecutionByBullmqJobId", () => {
 	beforeEach(() => {
@@ -37,7 +41,9 @@ describe("getJobExecutionByBullmqJobId", () => {
 		const execution = { id: "execution-existing", bullmqJobId: "bull-job-1" };
 		mocks.findFirst.mockResolvedValueOnce(execution);
 
-		await expect(getJobExecutionByBullmqJobId("bull-job-1")).resolves.toBe(execution);
+		await expect(getJobExecutionByBullmqJobId("bull-job-1")).resolves.toBe(
+			execution,
+		);
 		expect(mocks.findFirst).toHaveBeenCalledWith({ where: expect.anything() });
 		expect(mocks.findFirst.mock.calls[0]?.[0].where.queryChunks).toContain(
 			cronJobExecution.bullmqJobId,
@@ -47,7 +53,9 @@ describe("getJobExecutionByBullmqJobId", () => {
 	it("returns undefined when no execution is correlated", async () => {
 		mocks.findFirst.mockResolvedValueOnce(null);
 
-		await expect(getJobExecutionByBullmqJobId("missing-job")).resolves.toBeUndefined();
+		await expect(
+			getJobExecutionByBullmqJobId("missing-job"),
+		).resolves.toBeUndefined();
 	});
 });
 
@@ -150,7 +158,10 @@ describe("getOrCreateSchedulerJobExecution", () => {
 					values: vi.fn((value: { bullmqJobId: string }) => ({
 						returning: vi.fn(async () => {
 							insertCount += 1;
-							execution = { id: `execution-${insertCount}`, bullmqJobId: value.bullmqJobId };
+							execution = {
+								id: `execution-${insertCount}`,
+								bullmqJobId: value.bullmqJobId,
+							};
 							return [{ id: execution.id }];
 						}),
 					})),
@@ -184,5 +195,24 @@ describe("getOrCreateSchedulerJobExecution", () => {
 
 		expect(results).toEqual(["execution-1", "execution-1"]);
 		expect(insertCount).toBe(1);
+	});
+});
+
+describe("markJobFailed", () => {
+	it("persists structured terminal result telemetry with failed status", async () => {
+		const set = vi.fn(() => ({ where: vi.fn() }));
+		mocks.update.mockReturnValue({ set });
+		const result = { exhausted: 1, persistenceFailures: 1 };
+
+		await markJobFailed("execution-1", "SCIM maintenance degraded", 42, result);
+
+		expect(set).toHaveBeenCalledWith(
+			expect.objectContaining({
+				status: "failed",
+				error: "SCIM maintenance degraded",
+				result,
+				durationMs: 42,
+			}),
+		);
 	});
 });

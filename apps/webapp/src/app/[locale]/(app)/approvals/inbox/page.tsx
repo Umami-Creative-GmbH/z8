@@ -641,6 +641,151 @@ function BulkRejectPanel({
 	);
 }
 
+type ApprovalInboxPanelsProps = {
+	dispatch: (action: Parameters<typeof approvalInboxUiReducer>[1]) => void;
+	itemIdsKey: string;
+	refetch: () => void;
+	t: ReturnType<typeof useTranslate>["t"];
+	warnings: ApprovalInboxWarning[];
+	totalCount: number;
+	fastLaneGroups: ApprovalInboxFastLaneGroupView[];
+	filters: ApprovalInboxFilters;
+	selectedCount: number;
+	items: ApprovalInboxItem[];
+	selectedIds: Set<string>;
+	supportedTypes: ApprovalInboxType[];
+	paginationState: ApprovalInboxPaginationState;
+	activityState: ApprovalInboxRequestActivityState;
+	bulkState: ApprovalInboxHeaderBulkState & { rejectPending: boolean };
+	panelState: {
+		detailApproval: ApprovalInboxItem | null;
+		sprintOpen: boolean;
+		bulkRejectOpen: boolean;
+		bulkRejectReason: string;
+	};
+	sprintItems: ApprovalInboxItem[];
+	onBulkApprove: () => void;
+	onFastLaneApprove: (approvalIds: string[]) => Promise<void>;
+	onFastLaneReject: (approvalIds: string[], reason: string) => Promise<void>;
+	onSelectAll: (checked: boolean) => void;
+	onSelectItem: (id: string, checked: boolean) => void;
+	onFetchNextPage: () => void;
+	onBulkReject: () => void;
+};
+
+function ApprovalInboxPanels({
+	dispatch,
+	itemIdsKey,
+	refetch,
+	t,
+	warnings,
+	totalCount,
+	fastLaneGroups,
+	filters,
+	selectedCount,
+	items,
+	selectedIds,
+	supportedTypes,
+	paginationState,
+	activityState,
+	bulkState,
+	panelState,
+	sprintItems,
+	onBulkApprove,
+	onFastLaneApprove,
+	onFastLaneReject,
+	onSelectAll,
+	onSelectItem,
+	onFetchNextPage,
+	onBulkReject,
+}: ApprovalInboxPanelsProps) {
+	return (
+		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+			<ApprovalInboxPageHeader
+				t={t}
+				bulkState={{
+					isActionPending: bulkState.isActionPending,
+					canApproveSelection: bulkState.canApproveSelection,
+					canRejectSelection: bulkState.canRejectSelection,
+					approvePending: bulkState.approvePending,
+				}}
+				refreshState={{ isFetching: activityState.isFetching }}
+				selectedCount={selectedCount}
+				sprintItemCount={sprintItems.length}
+				onBulkApprove={onBulkApprove}
+				onOpenBulkReject={() =>
+					dispatch({ type: "bulkRejectOpenChanged", open: true })
+				}
+				onOpenSprint={() => dispatch({ type: "sprintOpenChanged", open: true })}
+				onRefresh={refetch}
+			/>
+			<ApprovalInboxRequestsCard
+				t={t}
+				warnings={warnings}
+				totalCount={totalCount}
+				fastLaneGroups={fastLaneGroups}
+				activityState={activityState}
+				filters={filters}
+				selectedCount={selectedCount}
+				items={items}
+				selectedIds={selectedIds}
+				supportedTypes={supportedTypes}
+				paginationState={paginationState}
+				onBulkApprove={onFastLaneApprove}
+				onBulkReject={onFastLaneReject}
+				onFiltersChange={(nextFilters) =>
+					dispatch({ type: "filtersChanged", filters: nextFilters, itemIdsKey })
+				}
+				onSelectAll={onSelectAll}
+				onSelectItem={onSelectItem}
+				onRowClick={(approval) =>
+					dispatch({ type: "detailApprovalChanged", approval })
+				}
+				onFetchNextPage={onFetchNextPage}
+			/>
+			<ApprovalDetailPanel
+				approval={panelState.detailApproval}
+				open={!!panelState.detailApproval}
+				onOpenChange={(open) =>
+					!open && dispatch({ type: "detailApprovalChanged", approval: null })
+				}
+				onActioned={() => {
+					refetch();
+					dispatch({ type: "selectionCleared", itemIdsKey });
+				}}
+			/>
+			<ApprovalSprintPanel
+				open={panelState.sprintOpen}
+				items={sprintItems}
+				onOpenChange={(open) => dispatch({ type: "sprintOpenChanged", open })}
+				onActioned={() => {
+					refetch();
+					dispatch({ type: "selectionCleared", itemIdsKey });
+				}}
+				onOpenDetails={(approval) => {
+					const item = items.find((candidate) => candidate.id === approval.id);
+					if (item) dispatch({ type: "detailApprovalChanged", approval: item });
+				}}
+				shortcutsEnabled={panelState.detailApproval === null}
+			/>
+			<BulkRejectPanel
+				t={t}
+				open={panelState.bulkRejectOpen}
+				reason={panelState.bulkRejectReason}
+				isPending={bulkState.rejectPending}
+				canBulkRejectSelection={bulkState.canRejectSelection}
+				onOpenChange={(open) =>
+					dispatch({ type: "bulkRejectOpenChanged", open })
+				}
+				onReasonChange={(reason) =>
+					dispatch({ type: "bulkRejectReasonChanged", reason })
+				}
+				onReject={onBulkReject}
+			/>
+		</div>
+	);
+}
+
 function ApprovalInboxContent() {
 	const { t } = useTranslate();
 	const searchParams = useSearchParams();
@@ -871,27 +1016,10 @@ function ApprovalInboxContent() {
 		bulkActionInFlightRef.current = false;
 	};
 
-	const handleOpenDetail = (approval: ApprovalInboxItem) => {
-		dispatch({ type: "detailApprovalChanged", approval });
-	};
-
-	const handleCloseDetail = () => {
-		dispatch({ type: "detailApprovalChanged", approval: null });
-	};
-
-	const handleApprovalActioned = () => {
-		refetch();
-		dispatch({ type: "selectionCleared", itemIdsKey });
-	};
-
 	const isBulkActionPending =
 		bulkApproveMutation.isPending || bulkRejectMutation.isPending;
 	const canBulkApproveSelection = selectedBulkApproveIds.length > 0;
 	const canBulkRejectSelection = selectedBulkRejectIds.length > 0;
-
-	const handleFiltersChange = (nextFilters: ApprovalInboxFilters) => {
-		dispatch({ type: "filtersChanged", filters: nextFilters, itemIdsKey });
-	};
 
 	if (!hasHydrated || (isLoading && !data)) {
 		return <ApprovalInboxLoadingState />;
@@ -909,80 +1037,43 @@ function ApprovalInboxContent() {
 	}
 
 	return (
-		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
-			<ApprovalInboxPageHeader
-				t={t}
-				bulkState={{
-					isActionPending: isBulkActionPending,
-					canApproveSelection: canBulkApproveSelection,
-					canRejectSelection: canBulkRejectSelection,
-					approvePending: bulkApproveMutation.isPending,
-				}}
-				refreshState={{ isFetching }}
-				selectedCount={selectedIds.size}
-				sprintItemCount={sprintItems.length}
-				onBulkApprove={handleBulkApprove}
-				onOpenBulkReject={() =>
-					dispatch({ type: "bulkRejectOpenChanged", open: true })
-				}
-				onOpenSprint={() => dispatch({ type: "sprintOpenChanged", open: true })}
-				onRefresh={() => refetch()}
-			/>
-			<ApprovalInboxRequestsCard
-				t={t}
-				warnings={warnings}
-				totalCount={totalCount}
-				fastLaneGroups={fastLaneGroups}
-				activityState={{ isBulkActionPending, isFetching }}
-				filters={uiState.filters}
-				selectedCount={selectedIds.size}
-				items={items}
-				selectedIds={selectedIds}
-				supportedTypes={supportedTypes}
-				paginationState={{ hasNextPage: !!hasNextPage, isFetchingNextPage }}
-				onBulkApprove={handleFastLaneApprove}
-				onBulkReject={handleFastLaneReject}
-				onFiltersChange={handleFiltersChange}
-				onSelectAll={handleSelectAll}
-				onSelectItem={handleSelectItem}
-				onRowClick={handleOpenDetail}
-				onFetchNextPage={() => fetchNextPage()}
-			/>
-			<ApprovalDetailPanel
-				approval={uiState.detailApproval}
-				open={!!uiState.detailApproval}
-				onOpenChange={(open) => !open && handleCloseDetail()}
-				onActioned={handleApprovalActioned}
-			/>
-
-			<ApprovalSprintPanel
-				open={uiState.sprintOpen}
-				items={sprintItems}
-				onOpenChange={(open) => dispatch({ type: "sprintOpenChanged", open })}
-				onActioned={handleApprovalActioned}
-				onOpenDetails={(approval) => {
-					const item = items.find((candidate) => candidate.id === approval.id);
-					if (item) {
-						handleOpenDetail(item);
-					}
-				}}
-				shortcutsEnabled={uiState.detailApproval === null}
-			/>
-			<BulkRejectPanel
-				t={t}
-				open={uiState.bulkRejectOpen}
-				reason={uiState.bulkRejectReason}
-				isPending={bulkRejectMutation.isPending}
-				canBulkRejectSelection={canBulkRejectSelection}
-				onOpenChange={(open) =>
-					dispatch({ type: "bulkRejectOpenChanged", open })
-				}
-				onReasonChange={(reason) =>
-					dispatch({ type: "bulkRejectReasonChanged", reason })
-				}
-				onReject={handleBulkReject}
-			/>
-		</div>
+		<ApprovalInboxPanels
+			dispatch={dispatch}
+			itemIdsKey={itemIdsKey}
+			refetch={refetch}
+			t={t}
+			warnings={warnings}
+			totalCount={totalCount}
+			fastLaneGroups={fastLaneGroups}
+			filters={uiState.filters}
+			selectedCount={selectedIds.size}
+			items={items}
+			selectedIds={selectedIds}
+			supportedTypes={supportedTypes}
+			paginationState={{ hasNextPage: !!hasNextPage, isFetchingNextPage }}
+			activityState={{ isBulkActionPending, isFetching }}
+			bulkState={{
+				isActionPending: isBulkActionPending,
+				canApproveSelection: canBulkApproveSelection,
+				canRejectSelection: canBulkRejectSelection,
+				approvePending: bulkApproveMutation.isPending,
+				rejectPending: bulkRejectMutation.isPending,
+			}}
+			panelState={{
+				detailApproval: uiState.detailApproval,
+				sprintOpen: uiState.sprintOpen,
+				bulkRejectOpen: uiState.bulkRejectOpen,
+				bulkRejectReason: uiState.bulkRejectReason,
+			}}
+			sprintItems={sprintItems}
+			onBulkApprove={handleBulkApprove}
+			onFastLaneApprove={handleFastLaneApprove}
+			onFastLaneReject={handleFastLaneReject}
+			onSelectAll={handleSelectAll}
+			onSelectItem={handleSelectItem}
+			onFetchNextPage={() => fetchNextPage()}
+			onBulkReject={handleBulkReject}
+		/>
 	);
 }
 

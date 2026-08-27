@@ -359,22 +359,83 @@
         },
         "scim": {
           "action": {
-            "copyToken": "Token kopiere",
-            "generateToken": "Token generiere",
-            "refreshStatus": "Status aktualisiere"
+            "create": "SCIM-Verbindig erstelle",
+            "creating": "SCIM-Verbindig wird erstellt",
+            "decommission": "Stilllege",
+            "reconcile": "Erstelligsstatus aktualisiere",
+            "refresh": "Status aktualisiere",
+            "rotate": "Zuegangsdaten rotiere",
+            "selectRole": "Wähl zersch e Standard-Rollenvorlag"
           },
-          "baseUrl": "Basis-URL",
-          "cardDescription": "Generier s Provisioning-Token und überwach d Verbindigsstatus.",
-          "description": "D SCIM-Verifizierig aktualisiert sich, sobald din Identitätsaabieter en Test-User oder en Gruppeänderig schickt.",
-          "error": {
-            "saveProviderFirst": "Speicher de Aabieter, bevor du es SCIM-Token generiersch"
+          "credential": {
+            "close": "Schliesse",
+            "confirmClose": "Bestätig vor em Schliessen, dass d Zuegangsdaten gspycheret sind.",
+            "copied": "Zuegangsdaten i d Zwischenablage kopiert.",
+            "copy": "Zuegangsdaten kopiere",
+            "description": "Kopier und speicher die Zuegangsdaten jetzt. Si chönd nöd nomal zeigt werde.",
+            "label": "Zuegangsdaten",
+            "saved": "Ich ha die Zuegangsdaten gspycheret",
+            "title": "SCIM-Zuegangsdaten",
+            "warning": "Die Zuegangsdaten wärded einisch zeigt. Speicher si sicher im Identitätsaabieter."
           },
+          "credentials": {
+            "credential": "Zuegangsdaten",
+            "empty": "Es sind kei Zuegangsdaten usgstellt worde.",
+            "expires": "Lauft ab",
+            "lastUsedAria": "Zletscht verwendet: {value} UTC",
+            "revoke": "Widerruefe",
+            "status": {
+              "active": "Aktiv",
+              "revoked": "Widerruefe"
+            },
+            "title": "Zuegangsdaten",
+            "unused": "No nöd verwendet"
+          },
+          "description": "Verbind din Identitätsaabieter, zum Mitarbeiterzuegriff bereitzstelle und verwalte.",
+          "dialog": {
+            "cancel": "Abbräche",
+            "decommission": {
+              "description": "Das legt SCIM-Provisioning dauerhaft still und cha nöd rückgängig gmacht werde.",
+              "title": "SCIM stilllege"
+            },
+            "revoke": {
+              "description": "Das verhindert sofort, dass d Zuegangsdaten User bereitstelle.",
+              "title": "Zuegangsdaten widerruefe"
+            }
+          },
+          "endpoint": "Endpunkt",
+          "events": {
+            "empty": "Es sind kei Provisioning-Ereignis ufgzeichnet worde.",
+            "error": "Ereignis chönd nöd glade werde. Aktualisier de Status und versuechs nomal.",
+            "title": "Letschti Ereignis"
+          },
+          "expiry": "Ablauf vo de Zuegangsdaten",
+          "expiry.value": "1 Jahr",
+          "refreshHelp": "Aktualisier de Status, zum sichere Verbindigsmetadate z'lade.",
           "status": {
-            "none": "Noch kei Provisioning-Aktivität",
-            "observed": "Provisioning-Aktivität festgstellt"
+            "active-unverified": "aktiv, nöd verifiziert",
+            "creating": "wird erstellt",
+            "creation_failed": "Erstellig fehlgschlage",
+            "decommissioned": "stillgleit",
+            "decommissioning": "wird stillgleit",
+            "disconnected": "nöd verbunde",
+            "refreshing": "wird aktualisiert",
+            "revoking": "wird widerruefe",
+            "rotating": "wird rotiert",
+            "verified": "verifiziert"
           },
           "title": "SCIM-Provisioning",
-          "tokenShownOnce": "Das Token wird nur einisch zeigt"
+          "toast": {
+            "createError": "SCIM-Verbindig het nöd chönne erstellt werde.",
+            "reconcileError": "SCIM-Erstellig het nöd chönne abgliche werde.",
+            "refreshError": "SCIM-Status het nöd chönne aktualisiert werde.",
+            "rotateError": "SCIM-Zuegangsdaten händ nöd chönne rotiert werde.",
+            "updateError": "SCIM-Verbindig het nöd chönne aktualisiert werde."
+          },
+          "verification": "Verifizierig",
+          "verification.awaiting": "Wartet uf d Verwendig dur de Aabieter",
+          "verification.observed": "Beobachtet",
+          "wizardDescription": "Konfigurier verwaltets User-Provisioning, ohni d Enterprise-Aktivierig z'ändere."
         },
         "sso": {
           "action": {
@@ -437,7 +498,7 @@
           "review": "Überprüfe & Aktiviere",
           "review.description": "Aktivierigsschutz",
           "scim": "SCIM-Provisioning",
-          "scim.description": "Provisioning-Token usgäh",
+          "scim.description": "SCIM-Provisioning-Verbindig verbinde und verwalte",
           "sso": "SSO-Konfiguration",
           "sso.description": "OIDC oder SAML registriere",
           "ssoTest": "Test-Benutzer",
@@ -452,10 +513,6 @@
           "domainStatusRefreshed": "Domain-Status aktualisiert",
           "providerSaved": "Identitäts-Provider gspeicheret",
           "providerSaveFailed": "Provider hät nöd chönne gspeicheret werde",
-          "scimStatusFailed": "SCIM-Status hät nöd chönne aktualisiert werde",
-          "scimStatusRefreshed": "SCIM-Status aktualisiert",
-          "scimTokenFailed": "SCIM-Token hät nöd chönne generiert werde",
-          "scimTokenGenerated": "SCIM-Token generiert",
           "ssoRegistered": "SSO-Provider registriert",
           "ssoRegisterFailed": "SSO-Provider hät nöd chönne registriert werde",
           "ssoTestFailed": "SSO-Test als fehlgschlage markiert",

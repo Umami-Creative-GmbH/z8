@@ -11,7 +11,7 @@ deploy/
 ├── k8s/                        # Kubernetes manifests
 │   ├── namespace.yaml
 │   ├── configmap.yaml
-│   ├── secret.yaml
+│   ├── secret.yaml             # Reference template; excluded from Kustomize
 │   ├── webapp.yaml             # Next.js webapp deployment
 │   ├── worker.yaml             # BullMQ worker deployment
 │   ├── migration.yaml          # Database migration job
@@ -113,7 +113,7 @@ pnpm dev:webapp
 cp deploy/.env.template .env
 
 # 2. Edit .env with your secrets
-#    POSTGRES_PASSWORD, BETTER_AUTH_SECRET are required
+#    POSTGRES_PASSWORD, BETTER_AUTH_SECRET, and SCIM_CREDENTIAL_HASH_SECRET are required
 
 # 3. Build all images
 docker compose -f docker-compose.prod.yml build
@@ -157,25 +157,36 @@ pnpm docker:build:all
 
 ### Deploy with Kustomize
 
+Generate the Better Auth and SCIM credential hashing secrets independently. Both values must
+contain at least 32 characters and must not be reused.
+
+`deploy/k8s/secret.yaml` is a key reference template only and is intentionally excluded from
+`kustomization.yaml`. Provision `z8-secrets` separately before applying Kustomize. This prevents
+placeholder values from replacing live authentication secrets during `kubectl apply -k`.
+
 ```bash
 # 1. Update image references in kustomization.yaml
 cd deploy/k8s
 vim kustomization.yaml  # Change your-registry.com to your actual registry
 
-# 2. Update secrets (DO NOT commit real secrets!)
+# 2. Create the namespace before provisioning its secret
+kubectl apply -f namespace.yaml
+
+# 3. Provision secrets separately (DO NOT commit real secrets!)
 kubectl create secret generic z8-secrets \
   --namespace=z8 \
   --from-literal=postgres-user=z8 \
   --from-literal=postgres-password=<your-password> \
-  --from-literal=auth-secret=$(openssl rand -base64 32)
+  --from-literal=auth-secret="$(openssl rand -base64 32)" \
+  --from-literal=scim-credential-hash-secret="$(openssl rand -base64 32)"
 
-# 3. Update configmap with your domain
+# 4. Update configmap with your domain
 vim configmap.yaml
 
-# 4. Deploy
+# 5. Deploy application resources (this does not modify z8-secrets)
 kubectl apply -k .
 
-# 5. Check status
+# 6. Check status
 kubectl get pods -n z8
 kubectl logs -n z8 -l app.kubernetes.io/component=webapp
 ```
@@ -253,6 +264,7 @@ See `deploy/.env.template` for the full list. Key variables:
 | `POSTGRES_SSL_ROOT_CERT_PATH` | No | Path to a mounted CA certificate file for managed Postgres TLS |
 | `POSTGRES_SSL_CA_CERT` | No | Inline CA certificate content when mounting a file is not practical |
 | `BETTER_AUTH_SECRET` | Yes | Session encryption key |
+| `SCIM_CREDENTIAL_HASH_SECRET` | Yes | Independent SCIM credential hashing secret (minimum 32 characters; do not reuse Better Auth secrets) |
 | `NEXT_PUBLIC_APP_URL` | Yes | Public URL of the application |
 | `REDIS_HOST` | No | Redis-compatible cache host (default: localhost) |
 | `REDIS_PORT` | No | Redis-compatible cache port (default: 6379) |
@@ -262,6 +274,8 @@ See `deploy/.env.template` for the full list. Key variables:
 | `WORKER_CONCURRENCY` | No | Worker parallel jobs (default: 5) |
 | `ENABLE_CRON_JOBS` | No | Enable repeatable cron (default: true) |
 | `TELEMETRY_ENABLED` | No | Enable daily telemetry reporting (`true` or `false`, default: `true`); `false` disables telemetry before identity/key generation or network access |
+
+`BETTER_AUTH_SECRET` and `SCIM_CREDENTIAL_HASH_SECRET` are both required by the webapp and worker. Configure them as independent values of at least 32 characters; never derive or fall back from one to the other.
 
 For managed PostgreSQL providers that document `sslmode=verify-full sslrootcert=/path/to/provider-ca.pem`, keep the individual Z8 variables and configure:
 

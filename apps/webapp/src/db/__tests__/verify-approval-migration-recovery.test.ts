@@ -6,10 +6,11 @@ import {
 	assertMigrationLedgerUnchanged,
 	buildCatalogNamespaceCountQuery,
 	filterIncidentJournal,
+	formatMigrationVerificationFailure,
 	normalizeMigrationLedger,
-	parseTestDatabaseConfig,
 	sumCatalogNamespaceCounts,
 } from "../../../scripts/verify-approval-migration-recovery";
+import { parseApprovalWorkflowRepositoryTestDatabaseUrl } from "../../lib/approvals/workflow/repository-integration-harness";
 
 describe("destructive database safety", () => {
 	it.each([
@@ -18,7 +19,7 @@ describe("destructive database safety", () => {
 		"postgresql://postgres:secret@[::1]:5432/approval_workflow_repository_test_local",
 	])("accepts an isolated loopback PostgreSQL URL", (databaseUrl) => {
 		expect(
-			parseTestDatabaseConfig(databaseUrl, "approval-workflow-repository-test"),
+			parseApprovalWorkflowRepositoryTestDatabaseUrl(databaseUrl),
 		).toMatchObject({
 			databaseUrl,
 			databaseName: "approval_workflow_repository_test_local",
@@ -30,7 +31,7 @@ describe("destructive database safety", () => {
 			"postgresql://postgres:do-not-log@example.com/approval_workflow_repository_test_remote";
 		let message = "";
 		try {
-			parseTestDatabaseConfig(databaseUrl, "approval-workflow-repository-test");
+			parseApprovalWorkflowRepositoryTestDatabaseUrl(databaseUrl);
 		} catch (error) {
 			message = error instanceof Error ? error.message : String(error);
 		}
@@ -41,9 +42,8 @@ describe("destructive database safety", () => {
 
 	it("rejects a non-PostgreSQL protocol", () => {
 		expect(() =>
-			parseTestDatabaseConfig(
+			parseApprovalWorkflowRepositoryTestDatabaseUrl(
 				"https://localhost/approval_workflow_repository_test_local",
-				"approval-workflow-repository-test",
 			),
 		).toThrow("PostgreSQL protocol");
 	});
@@ -53,9 +53,8 @@ describe("destructive database safety", () => {
 		"?application_name=approval-migration-verifier",
 	])("rejects database URL query parameters: %s", (search) => {
 		expect(() =>
-			parseTestDatabaseConfig(
+			parseApprovalWorkflowRepositoryTestDatabaseUrl(
 				`postgresql://postgres:secret@127.0.0.1:5432/approval_workflow_repository_test_local${search}`,
-				"approval-workflow-repository-test",
 			),
 		).toThrow("must not include query parameters");
 	});
@@ -156,7 +155,7 @@ describe("destructive database safety", () => {
 });
 
 describe("filterIncidentJournal", () => {
-	it("removes the skipped approval migrations and recovery while retaining later migrations", () => {
+	it("builds the incident state through 0059 without later migrations", () => {
 		const journal = {
 			version: "7",
 			dialect: "postgresql",
@@ -168,6 +167,8 @@ describe("filterIncidentJournal", () => {
 				{ tag: "0058_employee_clock_activity_index" },
 				{ tag: "0059_payroll_blocker_dismissal" },
 				{ tag: "0060_approval_workflow_recovery" },
+				{ tag: "0061_better_auth_account_issuers" },
+				{ tag: "0062_better_auth_scim_storage" },
 			],
 		};
 
@@ -178,6 +179,36 @@ describe("filterIncidentJournal", () => {
 			"0057_team_permissions_uniqueness",
 			"0058_employee_clock_activity_index",
 			"0059_payroll_blocker_dismissal",
+		]);
+	});
+
+	it("builds the recovery state through 0060 without later migrations", () => {
+		const journal = {
+			version: "7",
+			dialect: "postgresql",
+			entries: [
+				{ tag: "0054_employee_invitation_draft_identity" },
+				{ tag: "0055_approval_workflow_expand" },
+				{ tag: "0056_approval_workflow_cycle_identity" },
+				{ tag: "0057_team_permissions_uniqueness" },
+				{ tag: "0058_employee_clock_activity_index" },
+				{ tag: "0059_payroll_blocker_dismissal" },
+				{ tag: "0060_approval_workflow_recovery" },
+				{ tag: "0061_better_auth_account_issuers" },
+				{ tag: "0062_better_auth_scim_storage" },
+			],
+		};
+
+		expect(
+			filterIncidentJournal(journal, "0060_approval_workflow_recovery").entries.map(
+				(entry) => entry.tag,
+			),
+		).toEqual([
+			"0054_employee_invitation_draft_identity",
+			"0057_team_permissions_uniqueness",
+			"0058_employee_clock_activity_index",
+			"0059_payroll_blocker_dismissal",
+			"0060_approval_workflow_recovery",
 		]);
 	});
 });
@@ -214,6 +245,21 @@ describe("migration ledger retry comparison", () => {
 			);
 		},
 	);
+});
+
+describe("migration recovery failure output", () => {
+	it("retains PostgreSQL code and detail without including unrelated error properties", () => {
+		expect(
+			formatMigrationVerificationFailure({
+				message: 'column reference "provider" is ambiguous',
+				code: "42702",
+				detail: "It could refer to either a PL/pgSQL variable or a table column.",
+				connectionString: "postgresql://postgres:do-not-log@localhost/test",
+			}),
+		).toBe(
+			'column reference "provider" is ambiguous (PostgreSQL code 42702; detail: It could refer to either a PL/pgSQL variable or a table column.)',
+		);
+	});
 });
 
 describe("assertApprovalCatalog", () => {

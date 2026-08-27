@@ -94,7 +94,14 @@ import {
 } from "./payroll-export";
 import { project, projectAssignment, projectManager, projectNotificationState } from "./project";
 // SCIM provisioning
-import { scimProviderConfig, scimProvisioningLog } from "./scim";
+import {
+	scimProviderConfig,
+	scimProjectionRecovery,
+	scimProvisioningLog,
+	scimRoleProjectionState,
+	scimSeatSyncOutbox,
+	scimUserLifecycleState,
+} from "./scim";
 import { shift, shiftRecurrence, shiftRequest, shiftTemplate } from "./shift";
 // Skills & qualifications
 import {
@@ -287,6 +294,13 @@ export const organizationRelations = relations(organization, ({ one, many }) => 
 	worksCouncilSettings: many(worksCouncilSettings),
 	worksCouncilAccessAudits: many(worksCouncilAccessAudit),
 	worksCouncilReviewExports: many(worksCouncilReviewExport),
+	// Managed SCIM state
+	scimProviderConfig: one(scimProviderConfig),
+	scimUserLifecycleStates: many(scimUserLifecycleState),
+	scimRoleProjectionStates: many(scimRoleProjectionState),
+	scimProjectionRecoveries: many(scimProjectionRecovery),
+	scimSeatSyncOutboxMessages: many(scimSeatSyncOutbox),
+	scimProvisioningLogs: many(scimProvisioningLog),
 }));
 
 export const worksCouncilSettingsRelations = relations(worksCouncilSettings, ({ one }) => ({
@@ -707,6 +721,9 @@ export const teamRelations = relations(team, ({ one, many }) => ({
 	// Change policies
 	changePolicyAssignments: many(changePolicyAssignment),
 	payrollAccessTeams: many(payrollAccessTeam),
+	appliedScimRoleProjectionStates: many(scimRoleProjectionState, {
+		relationName: "scimAppliedDefaultTeam",
+	}),
 }));
 
 export const teamMembershipRelations = relations(teamMembership, ({ one }) => ({
@@ -2861,6 +2878,61 @@ export const scimProvisioningLogRelations = relations(scimProvisioningLog, ({ on
 	}),
 }));
 
+export const scimUserLifecycleStateRelations = relations(scimUserLifecycleState, ({ one }) => ({
+	organization: one(organization, {
+		fields: [scimUserLifecycleState.organizationId],
+		references: [organization.id],
+	}),
+	user: one(user, {
+		fields: [scimUserLifecycleState.userId],
+		references: [user.id],
+	}),
+}));
+
+export const scimRoleProjectionStateRelations = relations(scimRoleProjectionState, ({ one }) => ({
+	organization: one(organization, {
+		fields: [scimRoleProjectionState.organizationId],
+		references: [organization.id],
+	}),
+	user: one(user, {
+		fields: [scimRoleProjectionState.userId],
+		references: [user.id],
+	}),
+	desiredRoleTemplate: one(roleTemplate, {
+		fields: [scimRoleProjectionState.roleTemplateId],
+		references: [roleTemplate.id],
+		relationName: "scimDesiredRoleTemplate",
+	}),
+	appliedRoleTemplate: one(roleTemplate, {
+		fields: [scimRoleProjectionState.appliedRoleTemplateId],
+		references: [roleTemplate.id],
+		relationName: "scimAppliedRoleTemplate",
+	}),
+	appliedDefaultTeam: one(team, {
+		fields: [scimRoleProjectionState.appliedDefaultTeamId],
+		references: [team.id],
+		relationName: "scimAppliedDefaultTeam",
+	}),
+}));
+
+export const scimSeatSyncOutboxRelations = relations(scimSeatSyncOutbox, ({ one }) => ({
+	organization: one(organization, {
+		fields: [scimSeatSyncOutbox.organizationId],
+		references: [organization.id],
+	}),
+	user: one(user, {
+		fields: [scimSeatSyncOutbox.userId],
+		references: [user.id],
+	}),
+}));
+
+export const scimProjectionRecoveryRelations = relations(scimProjectionRecovery, ({ one }) => ({
+	organization: one(organization, {
+		fields: [scimProjectionRecovery.organizationId],
+		references: [organization.id],
+	}),
+}));
+
 // ============================================
 // IDENTITY MANAGEMENT RELATIONS
 // ============================================
@@ -2887,6 +2959,13 @@ export const roleTemplateRelations = relations(roleTemplate, ({ one, many }) => 
 	}),
 	mappings: many(roleTemplateMapping),
 	assignments: many(userRoleTemplateAssignment),
+	scimProviderConfigs: many(scimProviderConfig),
+	desiredScimRoleProjectionStates: many(scimRoleProjectionState, {
+		relationName: "scimDesiredRoleTemplate",
+	}),
+	appliedScimRoleProjectionStates: many(scimRoleProjectionState, {
+		relationName: "scimAppliedRoleTemplate",
+	}),
 }));
 
 export const roleTemplateMappingRelations = relations(roleTemplateMapping, ({ one }) => ({

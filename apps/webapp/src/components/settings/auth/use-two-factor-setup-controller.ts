@@ -2,6 +2,7 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
+import { parseTotpEnrollmentResponse } from "./two-factor-enrollment-response";
 import { useTwoFactorSetupState } from "./use-two-factor-setup-state";
 
 type TranslateFn = (
@@ -33,6 +34,7 @@ export function useTwoFactorSetupController(initialIsEnabled: boolean, t: Transl
 			try {
 				const result = await authClient.twoFactor.enable({
 					password: state.password,
+					method: "totp",
 				});
 
 				if (result.error) {
@@ -43,8 +45,9 @@ export function useTwoFactorSetupController(initialIsEnabled: boolean, t: Transl
 						),
 					});
 				} else if (result.data) {
-					actions.setTotpUri(result.data.totpURI);
-					actions.setBackupCodes(result.data.backupCodes);
+					const enrollment = parseTotpEnrollmentResponse(result.data);
+					actions.setTotpUri(enrollment.totpURI);
+					actions.setBackupCodes(enrollment.backupCodes);
 					actions.setShowPasswordDialog(false);
 					actions.setSetupDialogOpen(true);
 					actions.setPassword("");

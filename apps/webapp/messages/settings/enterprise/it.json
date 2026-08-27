@@ -359,22 +359,83 @@
         },
         "scim": {
           "action": {
-            "copyToken": "Copia token",
-            "generateToken": "Genera token",
-            "refreshStatus": "Aggiorna stato"
+            "create": "Crea connessione SCIM",
+            "creating": "Creazione connessione SCIM",
+            "decommission": "Dismetti",
+            "reconcile": "Aggiorna stato creazione",
+            "refresh": "Aggiorna stato",
+            "rotate": "Ruota credenziale",
+            "selectRole": "Seleziona prima un modello di ruolo predefinito"
           },
-          "baseUrl": "URL di base",
-          "cardDescription": "Genera il token di provisioning e monitora lo stato della connessione.",
-          "description": "La verifica SCIM si aggiorna dopo che il tuo identity provider invia una modifica a un utente o gruppo di test.",
-          "error": {
-            "saveProviderFirst": "Salva il provider prima di generare un token SCIM"
+          "credential": {
+            "close": "Chiudi",
+            "confirmClose": "Conferma di aver salvato la credenziale prima di chiudere.",
+            "copied": "Credenziale copiata negli appunti.",
+            "copy": "Copia credenziale",
+            "description": "Copia e salva ora questa credenziale. Non può essere mostrata di nuovo.",
+            "label": "Credenziale",
+            "saved": "Ho salvato questa credenziale",
+            "title": "Credenziale SCIM",
+            "warning": "Questa credenziale viene mostrata una volta. Conservala in modo sicuro nel provider di identità."
           },
+          "credentials": {
+            "credential": "Credenziale",
+            "empty": "Non sono state emesse credenziali.",
+            "expires": "Scade",
+            "lastUsedAria": "Ultimo utilizzo: {value} UTC",
+            "revoke": "Revoca",
+            "status": {
+              "active": "Attiva",
+              "revoked": "Revocata"
+            },
+            "title": "Credenziali",
+            "unused": "Non ancora utilizzata"
+          },
+          "description": "Connetti il provider di identità per eseguire il provisioning e gestire l'accesso della forza lavoro.",
+          "dialog": {
+            "cancel": "Annulla",
+            "decommission": {
+              "description": "Questo dismette definitivamente il provisioning SCIM e non può essere annullato.",
+              "title": "Dismetti SCIM"
+            },
+            "revoke": {
+              "description": "Questo impedisce immediatamente alla credenziale di eseguire il provisioning degli utenti.",
+              "title": "Revoca credenziale"
+            }
+          },
+          "endpoint": "Endpoint",
+          "events": {
+            "empty": "Non sono stati registrati eventi di provisioning.",
+            "error": "Impossibile caricare gli eventi. Aggiorna lo stato e riprova.",
+            "title": "Eventi recenti"
+          },
+          "expiry": "Scadenza credenziale",
+          "expiry.value": "1 anno",
+          "refreshHelp": "Aggiorna lo stato per caricare metadati di connessione sicuri.",
           "status": {
-            "none": "Nessuna attività di provisioning ancora",
-            "observed": "Attività di provisioning rilevata"
+            "active-unverified": "attiva non verificata",
+            "creating": "creazione",
+            "creation_failed": "creazione non riuscita",
+            "decommissioned": "dismessa",
+            "decommissioning": "dismissione",
+            "disconnected": "disconnessa",
+            "refreshing": "aggiornamento",
+            "revoking": "revoca",
+            "rotating": "rotazione",
+            "verified": "verificata"
           },
           "title": "Provisioning SCIM",
-          "tokenShownOnce": "Questo token viene mostrato una sola volta"
+          "toast": {
+            "createError": "Impossibile creare la connessione SCIM.",
+            "reconcileError": "Impossibile riconciliare la creazione SCIM.",
+            "refreshError": "Impossibile aggiornare lo stato SCIM.",
+            "rotateError": "Impossibile ruotare la credenziale SCIM.",
+            "updateError": "Impossibile aggiornare la connessione SCIM."
+          },
+          "verification": "Verifica",
+          "verification.awaiting": "In attesa dell'uso del provider",
+          "verification.observed": "Osservata",
+          "wizardDescription": "Configura il provisioning utenti gestito senza modificare l'attivazione aziendale."
         },
         "sso": {
           "action": {
@@ -437,7 +498,7 @@
           "review": "Revisione e attivazione",
           "review.description": "Attivazione protezione",
           "scim": "Provisioning SCIM",
-          "scim.description": "Emetti token di provisioning",
+          "scim.description": "Connetti e gestisci la tua connessione di provisioning SCIM",
           "sso": "Configurazione SSO",
           "sso.description": "Registra OIDC o SAML",
           "ssoTest": "Utente di test",
@@ -452,10 +513,6 @@
           "domainStatusRefreshed": "Stato dominio aggiornato",
           "providerSaved": "Identity provider salvato",
           "providerSaveFailed": "Salvataggio provider non riuscito",
-          "scimStatusFailed": "Aggiornamento stato SCIM non riuscito",
-          "scimStatusRefreshed": "Stato SCIM aggiornato",
-          "scimTokenFailed": "Generazione token SCIM non riuscita",
-          "scimTokenGenerated": "Token SCIM generato",
           "ssoRegistered": "Provider SSO registrato",
           "ssoRegisterFailed": "Registrazione provider SSO non riuscita",
           "ssoTestFailed": "Test SSO contrassegnato come non riuscito",

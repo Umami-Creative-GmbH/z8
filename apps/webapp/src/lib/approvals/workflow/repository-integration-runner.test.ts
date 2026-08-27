@@ -26,6 +26,7 @@ POSTGRES_DB="$database_name" \\
 POSTGRES_USER=postgres \\
 POSTGRES_PASSWORD="$database_password" \\
 POSTGRES_SSL_MODE=disable \\
+TZ=UTC \\
 PGOPTIONS="-c statement_timeout=15000 -c timezone=UTC" \\
 APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=`);
 		expect(runner).not.toContain("--throw-deprecation");
@@ -43,6 +44,13 @@ APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=`);
 		expect(runner).toContain(
 			"src/lib/approvals/server/work-period-approvals.integration.test.ts",
 		);
+		expect(runner).toContain(
+			"src/lib/scim/scim-callback-atomicity.integration.test.ts",
+		);
+		expect(runner).toContain(
+			"src/lib/scim/seat-sync-outbox.integration.test.ts",
+		);
+		expect(runner).toContain("src/lib/scim/protocol.integration.test.ts");
 	});
 
 	it("passes the required database safety environment to the migration verifier", async () => {

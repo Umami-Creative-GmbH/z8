@@ -8,6 +8,7 @@ import { AbsenceApprovalsTable } from "./absence-approvals-table";
 vi.mock("@/env", () => ({
 	env: {
 		BETTER_AUTH_SECRET: "test-secret-value-with-enough-length",
+		SCIM_CREDENTIAL_HASH_SECRET: "test-scim-credential-hash-secret-value",
 		NODE_ENV: "test",
 	},
 }));

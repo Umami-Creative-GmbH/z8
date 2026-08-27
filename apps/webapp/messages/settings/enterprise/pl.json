@@ -359,22 +359,83 @@
         },
         "scim": {
           "action": {
-            "copyToken": "Kopiuj token",
-            "generateToken": "Generuj token",
-            "refreshStatus": "Odśwież status"
+            "create": "Utwórz połączenie SCIM",
+            "creating": "Tworzenie połączenia SCIM",
+            "decommission": "Wycofaj",
+            "reconcile": "Odśwież status tworzenia",
+            "refresh": "Odśwież status",
+            "rotate": "Zmień poświadczenie",
+            "selectRole": "Najpierw wybierz domyślny szablon roli"
           },
-          "baseUrl": "Podstawowy adres URL",
-          "cardDescription": "Wygeneruj token aprowizacji i monitoruj stan połączenia.",
-          "description": "Weryfikacja SCIM aktualizuje się po wysłaniu przez dostawcę tożsamości zmiany użytkownika testowego lub grupy.",
-          "error": {
-            "saveProviderFirst": "Zapisz dostawcę przed wygenerowaniem tokena SCIM"
+          "credential": {
+            "close": "Zamknij",
+            "confirmClose": "Potwierdź zapisanie poświadczenia przed zamknięciem.",
+            "copied": "Poświadczenie skopiowano do schowka.",
+            "copy": "Kopiuj poświadczenie",
+            "description": "Skopiuj i zapisz to poświadczenie teraz. Nie można go wyświetlić ponownie.",
+            "label": "Poświadczenie",
+            "saved": "Zapisałem to poświadczenie",
+            "title": "Poświadczenie SCIM",
+            "warning": "To poświadczenie jest wyświetlane raz. Przechowuj je bezpiecznie u dostawcy tożsamości."
           },
+          "credentials": {
+            "credential": "Poświadczenie",
+            "empty": "Nie wydano żadnych poświadczeń.",
+            "expires": "Wygasa",
+            "lastUsedAria": "Ostatnie użycie: {value} UTC",
+            "revoke": "Unieważnij",
+            "status": {
+              "active": "Aktywne",
+              "revoked": "Unieważnione"
+            },
+            "title": "Poświadczenia",
+            "unused": "Jeszcze nie użyto"
+          },
+          "description": "Połącz dostawcę tożsamości, aby udostępniać i zarządzać dostępem pracowników.",
+          "dialog": {
+            "cancel": "Anuluj",
+            "decommission": {
+              "description": "To trwale wycofuje aprowizację SCIM i nie można tego cofnąć.",
+              "title": "Wycofaj SCIM"
+            },
+            "revoke": {
+              "description": "To natychmiast uniemożliwia poświadczeniu aprowizowanie użytkowników.",
+              "title": "Unieważnij poświadczenie"
+            }
+          },
+          "endpoint": "Punkt końcowy",
+          "events": {
+            "empty": "Nie zarejestrowano zdarzeń aprowizacji.",
+            "error": "Nie można było załadować zdarzeń. Odśwież status i spróbuj ponownie.",
+            "title": "Ostatnie zdarzenia"
+          },
+          "expiry": "Wygaśnięcie poświadczenia",
+          "expiry.value": "1 rok",
+          "refreshHelp": "Odśwież status, aby wczytać bezpieczne metadane połączenia.",
           "status": {
-            "none": "Brak aktywności aprowizacji",
-            "observed": "Zaobserwowano aktywność aprowizacji"
+            "active-unverified": "aktywne, niezweryfikowane",
+            "creating": "tworzenie",
+            "creation_failed": "tworzenie nie powiodło się",
+            "decommissioned": "wycofane",
+            "decommissioning": "wycofywanie",
+            "disconnected": "rozłączone",
+            "refreshing": "odświeżanie",
+            "revoking": "unieważnianie",
+            "rotating": "zmiana",
+            "verified": "zweryfikowane"
           },
           "title": "Aprowizacja SCIM",
-          "tokenShownOnce": "Ten token jest wyświetlany tylko raz"
+          "toast": {
+            "createError": "Nie można było utworzyć połączenia SCIM.",
+            "reconcileError": "Nie można było uzgodnić tworzenia SCIM.",
+            "refreshError": "Nie można było odświeżyć statusu SCIM.",
+            "rotateError": "Nie można było zmienić poświadczenia SCIM.",
+            "updateError": "Nie można było zaktualizować połączenia SCIM."
+          },
+          "verification": "Weryfikacja",
+          "verification.awaiting": "Oczekiwanie na użycie przez dostawcę",
+          "verification.observed": "Zaobserwowano",
+          "wizardDescription": "Skonfiguruj zarządzane aprowizowanie użytkowników bez zmiany aktywacji firmowej."
         },
         "sso": {
           "action": {
@@ -437,7 +498,7 @@
           "review": "Przejrzyj i aktywuj",
           "review.description": "Aktywacja zabezpieczenia",
           "scim": "Aprowizacja SCIM",
-          "scim.description": "Wydaj token aprowizacyjny",
+          "scim.description": "Połącz i zarządzaj połączeniem aprowizacji SCIM",
           "sso": "Konfiguracja SSO",
           "sso.description": "Zarejestruj OIDC lub SAML",
           "ssoTest": "Użytkownik testowy",
@@ -452,10 +513,6 @@
           "domainStatusRefreshed": "Status domeny odświeżony",
           "providerSaved": "Dostawca tożsamości zapisany",
           "providerSaveFailed": "Nie udało się zapisać dostawcy",
-          "scimStatusFailed": "Nie udało się odświeżyć statusu SCIM",
-          "scimStatusRefreshed": "Status SCIM odświeżony",
-          "scimTokenFailed": "Nie udało się wygenerować tokena SCIM",
-          "scimTokenGenerated": "Token SCIM wygenerowany",
           "ssoRegistered": "Dostawca SSO zarejestrowany",
           "ssoRegisterFailed": "Nie udało się zarejestrować dostawcy SSO",
           "ssoTestFailed": "Test SSO oznaczony jako nieudany",
