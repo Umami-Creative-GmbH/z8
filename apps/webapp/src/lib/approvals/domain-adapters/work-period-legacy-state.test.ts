@@ -725,6 +725,51 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 		});
 	});
 
+	it("captures an explicit approval of a legacy self-assigned request", async () => {
+		const approvedAt = new Date("2026-07-20T14:30:00.000Z");
+		const fake = database(
+			envelope({
+				workPeriods: [
+					period({
+						approvalStatus: "approved",
+						approvalWorkflowId: null,
+						pendingChanges: null,
+					}),
+				],
+				canonicalRecords: [canonical({ approvalState: "approved" })],
+				approvalRequests: [
+					request({
+						approverId: employeeId,
+						status: "approved",
+						approvedAt,
+						metadata: {
+							timeRequest: { kind: "manual_time_submission" },
+						},
+					}),
+				],
+				requestStageLinks: [],
+				chains: [],
+				chainRows: [],
+				workflows: [],
+				employees: [{ id: employeeId, organizationId }],
+			}),
+		);
+
+		const state = await captureOrdinaryWorkPeriodLegacyState(
+			input(fake.dbService, { expectedRequestStatus: "approved" }),
+		);
+
+		expect(state.approvalRequest).toMatchObject({
+			status: "approved",
+			requestedBy: employeeId,
+			approverId: employeeId,
+			metadata: {
+				timeRequest: { kind: "manual_time_submission" },
+			},
+		});
+		expect(state.approvalRequest?.metadata).not.toHaveProperty("autoApproval");
+	});
+
 	it("captures an approved decided request while the source and next chain stage remain pending", async () => {
 		const decidedAt = new Date("2026-07-20T14:31:00.000Z");
 		const fake = database(

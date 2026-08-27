@@ -1554,6 +1554,7 @@ function createFinalizerDbService(options?: {
 	requests?: Array<Partial<ApprovalFixture>>;
 	actorOwned?: boolean;
 	actorActive?: boolean;
+	actor?: { id: string; userId: string };
 	cardinality?: {
 		periodUpdate?: number;
 		recordUpdate?: number;
@@ -1610,8 +1611,8 @@ function createFinalizerDbService(options?: {
 					options?.actorOwned === false
 						? null
 						: {
-								id: "manager-1",
-								userId: "manager-user-1",
+								id: options?.actor?.id ?? "manager-1",
+								userId: options?.actor?.userId ?? "manager-user-1",
 								isActive: options?.actorActive ?? true,
 							},
 				),
@@ -2502,18 +2503,46 @@ describe("ordinary work-period approval finalizer", () => {
 		);
 	});
 
-	it("rejects absent autoApproval on an approved requester auto path", async () => {
+	it("accepts an explicit approval of a legacy self-assigned request", async () => {
 		const dbService = createFinalizerDbService({
 			period: { approvalWorkflowId: null },
 			request: {
 				approverId: "employee-1",
 				metadata: { timeRequest: { kind: "manual_time_submission" } },
 			},
+			actor: { id: "employee-1", userId: "employee-user-1" },
 		});
 
 		await expect(
 			finalize(dbService, {
 				expectedApprovalWorkflowId: null,
+				actorEmployeeId: "employee-1",
+				actorUserId: "employee-user-1",
+			}),
+		).resolves.toMatchObject({ action: "approve" });
+	});
+
+	it("rejects absent autoApproval on a claimed requester auto path", async () => {
+		const dbService = createFinalizerDbService({
+			period: { approvalWorkflowId: null },
+			request: {
+				approverId: "employee-1",
+				metadata: { timeRequest: { kind: "manual_time_submission" } },
+			},
+			actor: { id: "employee-1", userId: "employee-user-1" },
+		});
+
+		await expect(
+			finalize(dbService, {
+				expectedApprovalWorkflowId: null,
+				actorEmployeeId: "employee-1",
+				actorUserId: "employee-user-1",
+				evidence: {
+					mode: "legacy",
+					approvalRequestId: "approval-1",
+					requestMode: "requester_auto_completed",
+					expectedStatus: "approved",
+				},
 			}),
 		).rejects.toThrow("Ordinary work-period finalization conflict");
 	});
