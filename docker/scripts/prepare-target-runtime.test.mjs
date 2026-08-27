@@ -28,6 +28,26 @@ test("pnpm settings live in workspace config", async () => {
 	assert.match(workspaceConfig, /^allowBuilds:/m);
 });
 
+test("SCIM uses the upstream Better Auth release without a local patch", async () => {
+	const [workspaceConfig, webappPackageJsonText] = await Promise.all([
+		fs.readFile(new URL("../../pnpm-workspace.yaml", import.meta.url), "utf8"),
+		fs.readFile(new URL("../../apps/webapp/package.json", import.meta.url), "utf8"),
+	]);
+	const webappPackageJson = JSON.parse(webappPackageJsonText);
+
+	assert.doesNotMatch(workspaceConfig, /@better-auth\/scim@.*\.patch/);
+	for (const dependency of [
+		"better-auth",
+		"@better-auth/api-key",
+		"@better-auth/drizzle-adapter",
+		"@better-auth/passkey",
+		"@better-auth/scim",
+		"@better-auth/sso",
+	]) {
+		assert.equal(webappPackageJson.dependencies[dependency], "1.7.2");
+	}
+});
+
 test("Dockerfiles with global pnpm installs put pnpm global bin on PATH", async () => {
 	const dockerfiles = [
 		"Dockerfile.db-seed",

@@ -5,7 +5,6 @@
 import { randomUUID } from "node:crypto";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { sso } from "@better-auth/sso";
-import { scim } from "@better-auth/scim";
 import { betterAuth } from "better-auth/minimal";
 import { organization } from "better-auth/plugins/organization";
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -48,7 +47,6 @@ const runId = randomUUID();
 const seededOrganizationIds: string[] = [];
 const seededUserIds: string[] = [];
 const projectionFaultConstraintName = `scim_callback_projection_fault_${runId.replaceAll("-", "")}`;
-const tombstoneSubjectLinks = new Map<string, string>();
 
 interface SeededGraph {
 	organizationId: string;
@@ -83,45 +81,6 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 			}),
 			sso({ domainVerification: { enabled: true } }),
 			createSCIMCallbackModelRegistration(),
-		],
-	});
-	const externalIdPolicyAuth = betterAuth({
-		baseURL: "http://localhost:3000",
-		secret: "scim-external-id-policy-integration-secret-value",
-		database: drizzleAdapter(database, {
-			provider: "pg",
-			schema: authDatabaseSchema,
-			transaction: true,
-		}),
-		plugins: [
-			scim({
-				connections: [
-					{
-						id: "external-id-policy-connection",
-						provisioningDomainId: "external-id-policy-domain",
-						credentials: [
-							{
-								id: "external-id-policy-credential",
-								token: "external-id-policy-token",
-							},
-						],
-					},
-				],
-				identity: {
-					resolveUser: async () => ({ action: "create" }),
-					// The patched package rejects a tombstone replay unless this verified
-					// subject resolution selects the tombstoned user exactly.
-					externalIdPolicy: {
-						immutable: true,
-						resolveTombstoneUser: async (input) => {
-							const userId = tombstoneSubjectLinks.get(
-								input.resource.externalId ?? "",
-							);
-							return userId ? { action: "link", userId } : { action: "create" };
-						},
-					},
-				},
-			}),
 		],
 	});
 
@@ -344,203 +303,6 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 		);
 		return result.rows;
 	}
-
-	async function scimPolicyRequest(
-		path: string,
-		method: "POST" | "PUT" | "PATCH" | "DELETE",
-		body?: unknown,
-	) {
-		return externalIdPolicyAuth.handler(
-			new Request(`http://localhost:3000/api/auth/scim/v2${path}`, {
-				method,
-				headers: {
-					authorization: "Bearer external-id-policy-token",
-					...(body === undefined
-						? {}
-						: { "content-type": "application/scim+json" }),
-				},
-				body: body === undefined ? undefined : JSON.stringify(body),
-			}),
-		);
-	}
-
-	function userResource(externalId: string) {
-		return {
-			schemas: ["urn:ietf:params:scim:schemas:core:2.0:User"],
-			userName: `${externalId}@example.test`,
-			name: { formatted: "External ID Policy" },
-			emails: [{ value: `${externalId}@example.test`, primary: true }],
-			externalId,
-		};
-	}
-
-	it("rejects externalId replacement through installed SCIM PUT and PATCH handlers", async () => {
-		const created = await scimPolicyRequest(
-			"/Users",
-			"POST",
-			userResource("subject-original"),
-		);
-		expect(created.status).toBe(201);
-		const createdUser = (await created.json()) as { id: string };
-
-		const replaced = await scimPolicyRequest(
-			`/Users/${createdUser.id}`,
-			"PUT",
-			userResource("subject-replaced"),
-		);
-		expect(replaced.status).toBe(409);
-		expect(await replaced.json()).toEqual({
-			schemas: ["urn:ietf:params:scim:api:messages:2.0:Error"],
-			status: "409",
-			detail: "The SCIM identity cannot be linked",
-		});
-
-		const removed = await scimPolicyRequest(
-			`/Users/${createdUser.id}`,
-			"PATCH",
-			{
-				schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
-				Operations: [{ op: "remove", path: "externalId" }],
-			},
-		);
-		expect(removed.status).toBe(409);
-		expect(await removed.json()).toEqual({
-			schemas: ["urn:ietf:params:scim:api:messages:2.0:Error"],
-			status: "409",
-			detail: "The SCIM identity cannot be linked",
-		});
-	});
-
-	it("reprovisions a tombstone only when its external subject still validates to the same user", async () => {
-		const subject = "tombstone-subject";
-		const created = await scimPolicyRequest(
-			"/Users",
-			"POST",
-			userResource(subject),
-		);
-		expect(created.status).toBe(201);
-		const createdUser = (await created.json()) as { id: string };
-		let currentSCIMUserId = createdUser.id;
-		const createdUserIdResult = await pool.query<{ user_id: string }>(
-			"select user_id from scim_user where id = $1",
-			[createdUser.id],
-		);
-		const createdUserId = createdUserIdResult.rows[0]?.user_id;
-		if (!createdUserId)
-			throw new Error("Created SCIM user has no persisted user ID");
-		const changedSubject = await scimPolicyRequest(
-			"/Users",
-			"POST",
-			userResource("tombstone-changed-subject"),
-		);
-		expect(changedSubject.status).toBe(201);
-		const changedUser = (await changedSubject.json()) as { id: string };
-		const changedUserIdResult = await pool.query<{ user_id: string }>(
-			"select user_id from scim_user where id = $1",
-			[changedUser.id],
-		);
-		const changedUserId = changedUserIdResult.rows[0]?.user_id;
-		if (!changedUserId)
-			throw new Error("Changed SCIM user has no persisted user ID");
-		const foreignOrganizationId = `scim-external-id-policy-org-${runId}`;
-		const foreignUserId = `scim-external-id-policy-user-${runId}`;
-		const now = new Date("2026-08-25T12:00:00.000Z");
-		seededOrganizationIds.push(foreignOrganizationId);
-		seededUserIds.push(foreignUserId);
-		await pool.query(
-			`insert into "user" (id, name, email, email_verified, created_at, updated_at)
-			 values ($1, 'Foreign SCIM Subject', $2, true, $3, $3)`,
-			[foreignUserId, `${foreignUserId}@example.test`, now],
-		);
-		await pool.query(
-			`insert into organization (id, name, slug, created_at)
-			 values ($1, 'Foreign SCIM Subject Organization', $2, $3)`,
-			[foreignOrganizationId, foreignOrganizationId, now],
-		);
-		await pool.query(
-			`insert into member (id, organization_id, user_id, role, created_at)
-			 values ($1, $2, $3, 'member', $4)`,
-			[
-				`scim-external-id-policy-member-${runId}`,
-				foreignOrganizationId,
-				foreignUserId,
-				now,
-			],
-		);
-
-		const remove = async () => {
-			const deleted = await scimPolicyRequest(
-				`/Users/${currentSCIMUserId}`,
-				"DELETE",
-			);
-			expect(deleted.status).toBe(204);
-		};
-		const reprovision = async () =>
-			scimPolicyRequest("/Users", "POST", userResource(subject));
-		const assertUnchangedTombstone = async () => {
-			const tombstone = await pool.query<{
-				user_id: string;
-				provisioning_domain_id: string;
-			}>(
-				`select user_id, provisioning_domain_id from scim_identity_tombstone
-				 where user_id = $1`,
-				[createdUserId],
-			);
-			expect(tombstone.rows).toEqual([
-				{
-					user_id: createdUserId,
-					provisioning_domain_id: "external-id-policy-domain",
-				},
-			]);
-			const source = await pool.query<{ count: number }>(
-				"select count(*)::int as count from scim_user where user_id = $1",
-				[createdUserId],
-			);
-			expect(source.rows).toEqual([{ count: 0 }]);
-		};
-
-		tombstoneSubjectLinks.set(subject, createdUserId);
-		await remove();
-		const sameSubject = await reprovision();
-		expect(sameSubject.status).toBe(201);
-		const reprovisionedUser = (await sameSubject.json()) as { id: string };
-		expect(reprovisionedUser.id).not.toBe(createdUser.id);
-		currentSCIMUserId = reprovisionedUser.id;
-		expect(
-			(
-				await pool.query<{ user_id: string }>(
-					"select user_id from scim_user where id = $1",
-					[reprovisionedUser.id],
-				)
-			).rows,
-		).toEqual([{ user_id: createdUserId }]);
-
-		await remove();
-		tombstoneSubjectLinks.delete(subject);
-		const unbound = await reprovision();
-		expect(unbound.status).toBe(409);
-		expect(await unbound.json()).toMatchObject({
-			detail: "The SCIM identity cannot be linked",
-		});
-		await assertUnchangedTombstone();
-
-		tombstoneSubjectLinks.set(subject, changedUserId);
-		const changed = await reprovision();
-		expect(changed.status).toBe(409);
-		expect(await changed.json()).toMatchObject({
-			detail: "The SCIM identity cannot be linked",
-		});
-		await assertUnchangedTombstone();
-
-		tombstoneSubjectLinks.set(subject, foreignUserId);
-		const crossOrganization = await reprovision();
-		expect(crossOrganization.status).toBe(409);
-		expect(await crossOrganization.json()).toMatchObject({
-			detail: "The SCIM identity cannot be linked",
-		});
-		await assertUnchangedTombstone();
-		tombstoneSubjectLinks.delete(subject);
-	});
 
 	it("rolls back every effect when final applied-projection persistence fails", async () => {
 		const graph = await seedGraph({ templateActive: true });
