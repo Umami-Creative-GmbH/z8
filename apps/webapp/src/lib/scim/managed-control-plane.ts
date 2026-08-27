@@ -234,17 +234,22 @@ export function createSCIMManagedControlPlane(input: {
 					expiresAt: expiresAt(),
 				},
 			});
-			for (const credential of prior.credentials) {
-				if (credential.status === "active")
-					await input.auth.api.revokeSCIMManagedCredential({
-						body: {
-							connectionId: adopted.connectionId,
-							provisioningDomainId: request.organizationId,
-							credentialId: credential.credentialId,
-							actorId: request.actorId,
-						},
-					});
-			}
+			await Promise.all(
+				prior.credentials.flatMap((credential) =>
+					credential.status === "active"
+						? [
+								input.auth.api.revokeSCIMManagedCredential({
+									body: {
+										connectionId: adopted.connectionId,
+										provisioningDomainId: request.organizationId,
+										credentialId: credential.credentialId,
+										actorId: request.actorId,
+									},
+								}),
+							]
+						: [],
+				),
+			);
 			created = rotated;
 		} else if (!reservation.created) {
 			if (!claimToken) throw new SCIMCreationRecoveryConflictError();

@@ -108,7 +108,7 @@ describe("getApprovalInboxDetailFromRequest", () => {
 			"key_value",
 			"timeline",
 		]);
-		expect(JSON.parse(JSON.stringify(result))).toEqual(result);
+		expect(structuredClone(result)).toEqual(result);
 	});
 
 	it("provides database services required by registered detail handlers", async () => {

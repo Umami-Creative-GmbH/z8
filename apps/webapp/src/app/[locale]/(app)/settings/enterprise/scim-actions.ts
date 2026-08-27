@@ -22,13 +22,11 @@ import {
 
 const IDENTITY_SETUP_PATH = "/settings/enterprise/identity-setup";
 const connectionIdSchema = z.string().trim().min(1).max(255);
-const createConnectionSchema = z
-	.object({
-		autoActivateUsers: z.boolean().default(false),
-		deprovisionAction: z.enum(["soft_delete", "suspend"]).default("suspend"),
-		defaultRoleTemplateId: z.string().uuid(),
-	})
-	.strict();
+const createConnectionSchema = z.strictObject({
+	autoActivateUsers: z.boolean().default(false),
+	deprovisionAction: z.enum(["soft_delete", "suspend"]).default("suspend"),
+	defaultRoleTemplateId: z.uuid(),
+});
 
 const controlPlane = createSCIMManagedControlPlane({
 	auth,

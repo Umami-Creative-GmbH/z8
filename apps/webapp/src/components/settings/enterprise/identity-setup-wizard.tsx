@@ -3,7 +3,7 @@
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useSyncExternalStore, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	activateEnterpriseIdentitySetupAction,
@@ -68,6 +68,18 @@ const STEPS: StepDefinition[] = [
 const STEP_INDEX = new Map(STEPS.map((step, index) => [step.id, index]));
 const PROVIDER_OPTIONS = Object.values(ENTERPRISE_IDENTITY_PROVIDER_PRESETS);
 const DEFAULT_PRESET = ENTERPRISE_IDENTITY_PROVIDER_PRESETS.generic;
+
+function subscribeBrowserOrigin() {
+	return () => undefined;
+}
+
+function getBrowserOriginSnapshot() {
+	return window.location.origin;
+}
+
+function getServerBrowserOriginSnapshot() {
+	return "";
+}
 
 function stepStatus(
 	step: EnterpriseIdentitySetupStep,
@@ -943,11 +955,11 @@ function DomainStep({ controller }: { controller: IdentitySetupController }) {
 
 function SsoStep({ controller }: { controller: IdentitySetupController }) {
 	const { isPending, presetId, protocol, providerId, ssoForm, t } = controller;
-	const [browserOrigin, setBrowserOrigin] = useState("");
-
-	useEffect(() => {
-		setBrowserOrigin(window.location.origin);
-	}, []);
+	const browserOrigin = useSyncExternalStore(
+		subscribeBrowserOrigin,
+		getBrowserOriginSnapshot,
+		getServerBrowserOriginSnapshot,
+	);
 
 	const samlAcsPath = providerId
 		? `/api/auth/sso/saml2/sp/acs/${encodeURIComponent(providerId)}`
