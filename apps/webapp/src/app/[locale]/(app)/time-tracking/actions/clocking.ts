@@ -30,6 +30,7 @@ import {
 } from "@/lib/approvals/server/work-period-submission";
 import { deriveApprovalWorkflowId } from "@/lib/approvals/workflow/identity";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
+import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import {
 	asAppSubject,
 	defineAbilityFor,
@@ -2031,13 +2032,16 @@ export async function createManualTimeEntry(
 
 	let requiresApproval = false;
 	if (isOwnEntry) {
-		let editCapability: Awaited<ReturnType<typeof getEditCapabilityForPeriod>>;
+		let editCapability: Awaited<ReturnType<typeof getEditCapabilityForPeriod>> | null;
 		try {
-			editCapability = await getEditCapabilityForPeriod({
-				employeeId: targetEmployee.id,
-				workPeriodEndTime: clockOutDate,
-				timezone,
-			});
+			// Organization owners and admins are not limited to employee self-service windows.
+			editCapability = (await isOrgAdminCasl(targetEmployee.organizationId))
+				? null
+				: await getEditCapabilityForPeriod({
+						employeeId: targetEmployee.id,
+						workPeriodEndTime: clockOutDate,
+						timezone,
+					});
 		} catch (error) {
 			logger.error(
 				{ error },
@@ -2046,14 +2050,14 @@ export async function createManualTimeEntry(
 			return { success: false, error: APPROVAL_POLICY_CHECK_ERROR };
 		}
 
-		if (editCapability.type === "forbidden") {
+		if (editCapability?.type === "forbidden") {
 			return {
 				success: false,
 				error: `Entries older than ${editCapability.daysBack} days can only be created by admins or team leads.`,
 			};
 		}
 
-		requiresApproval = editCapability.type === "approval_required";
+		requiresApproval = editCapability?.type === "approval_required";
 	}
 
 	try {

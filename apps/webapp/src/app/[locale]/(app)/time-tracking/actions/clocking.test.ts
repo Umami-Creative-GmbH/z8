@@ -16,6 +16,7 @@ const mockState = vi.hoisted(() => ({
 	createTimeEntry: vi.fn(),
 	checkClockOutNeedsApproval: vi.fn(),
 	getEditCapabilityForPeriod: vi.fn(),
+	isOrgAdminCasl: vi.fn(),
 	createClockOutApprovalRequest: vi.fn(),
 	sendClockOutApprovalNotifications: vi.fn(),
 	sendClockOutApprovedNotification: vi.fn(),
@@ -2266,12 +2267,17 @@ describe("clockOut", () => {
 	});
 });
 
+vi.mock("@/lib/auth-helpers", () => ({
+	isOrgAdminCasl: mockState.isOrgAdminCasl,
+}));
+
 describe("createManualTimeEntry", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.transaction.mockReset();
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-05-04T10:00:00.000Z"));
+		mockState.isOrgAdminCasl.mockReset().mockResolvedValue(false);
 
 		mockState.getCurrentSession.mockResolvedValue({ user: { id: "user-1" } });
 		mockState.getCurrentEmployee.mockResolvedValue({
@@ -2460,6 +2466,69 @@ describe("createManualTimeEntry", () => {
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 		expect(mockState.insertValues).not.toHaveBeenCalled();
 		expect(mockState.createCanonicalWorkRecord).not.toHaveBeenCalled();
+	});
+
+	it("allows an organization owner or admin to create their own entry beyond the approval window", async () => {
+		mockState.isOrgAdminCasl.mockResolvedValue(true);
+		mockState.getEditCapabilityForPeriod.mockResolvedValue({
+			type: "forbidden",
+			reason: "beyond_approval_window",
+			daysBack: 21,
+		});
+		mockState.createTimeEntry
+			.mockResolvedValueOnce({ id: "clock-in-1" })
+			.mockResolvedValueOnce({ id: "clock-out-1" });
+		mockState.createCanonicalWorkRecord.mockResolvedValue({ id: "canonical-1" });
+		mockState.insertValues.mockReturnValue({ returning: mockState.insertReturning });
+		mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
+
+		const result = await createManualTimeEntry({
+			date: "2026-04-01",
+			clockInTime: "08:00",
+			clockOutTime: "09:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toMatchObject({ success: true, data: { requiresApproval: false } });
+		expect(mockState.isOrgAdminCasl).toHaveBeenCalledWith("org-1");
+	});
+
+	it("keeps the age restriction for employees without organization admin privileges", async () => {
+		mockState.getEditCapabilityForPeriod.mockResolvedValue({
+			type: "forbidden",
+			reason: "beyond_approval_window",
+			daysBack: 21,
+		});
+
+		const result = await createManualTimeEntry({
+			date: "2026-04-01",
+			clockInTime: "08:00",
+			clockOutTime: "09:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Entries older than 21 days can only be created by admins or team leads.",
+		});
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+	});
+
+	it("fails closed when organization privilege verification fails", async () => {
+		mockState.isOrgAdminCasl.mockRejectedValueOnce(new Error("authorization unavailable"));
+
+		const result = await createManualTimeEntry({
+			date: "2026-04-01",
+			clockInTime: "08:00",
+			clockOutTime: "09:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Could not verify time approval policy. Please try again.",
+		});
+		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 	});
 
 	it("marks the work balance dirty from the manual clock-in date after creating an approved entry", async () => {
