@@ -245,10 +245,9 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 			[randomUUID(), graph.organizationId, userId, now],
 		);
 		await pool.query(
-			`insert into account (id, issuer, account_id, provider_id, user_id, created_at, updated_at) values ($1, $2, $3, $4, $5, $6, $6)`,
+			`insert into account (id, account_id, provider_id, user_id, created_at, updated_at) values ($1, $2, $3, $4, $5, $5)`,
 			[
 				randomUUID(),
-				graph.providerId,
 				externalId,
 				graph.providerId,
 				userId,

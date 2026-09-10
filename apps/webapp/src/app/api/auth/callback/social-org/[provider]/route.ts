@@ -7,7 +7,6 @@ import * as authSchema from "@/db/auth-schema";
 import type { SocialOAuthProvider } from "@/db/schema";
 import { env } from "@/env";
 import { getBaseUrlFromHost } from "@/lib/app-url";
-import { getAccountIssuer } from "@/lib/auth/account-issuer";
 import { getSafeCallbackPath } from "@/lib/auth/callback-url";
 import { createLogger } from "@/lib/logger";
 import {
@@ -114,13 +113,15 @@ export async function findOrCreateUserWithAccount(params: {
 		idToken,
 		expiresIn,
 	} = params;
-	const issuer = getAccountIssuer(provider);
+	if (!VALID_PROVIDERS.includes(provider)) {
+		throw new Error(`Unknown account provider: ${provider}`);
+	}
 	const normalizedEmail = email.trim().toLowerCase();
 
 	// Check if account already exists
 	const existingAccount = await db.query.account.findFirst({
 		where: and(
-			eq(authSchema.account.issuer, issuer),
+			eq(authSchema.account.providerId, provider),
 			eq(authSchema.account.accountId, providerUserId),
 		),
 	});
@@ -157,7 +158,6 @@ export async function findOrCreateUserWithAccount(params: {
 			id: generateId(32),
 			accountId: providerUserId,
 			providerId: provider,
-			issuer,
 			userId: existingUser.id,
 			accessToken,
 			refreshToken,
@@ -189,7 +189,6 @@ export async function findOrCreateUserWithAccount(params: {
 		id: generateId(32),
 		accountId: providerUserId,
 		providerId: provider,
-		issuer,
 		userId,
 		accessToken,
 		refreshToken,

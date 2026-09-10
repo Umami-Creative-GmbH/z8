@@ -463,6 +463,13 @@
       "when": 1789029078799,
       "tag": "0065_remove_subapp_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1789044079464,
+      "tag": "0066_better_auth_provider_account_keys",
+      "breakpoints": true
     }
   ]
 }
