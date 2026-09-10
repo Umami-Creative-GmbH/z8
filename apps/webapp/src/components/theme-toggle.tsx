@@ -23,7 +23,12 @@ export function ThemeToggle() {
 
 	if (!mounted) {
 		return (
-			<Button variant="outline" size="icon" disabled>
+			<Button
+				variant="outline"
+				size="icon"
+				disabled
+				aria-label={t("common:user.theme-toggle", "Toggle theme")}
+			>
 				<IconSun className="size-4" />
 			</Button>
 		);

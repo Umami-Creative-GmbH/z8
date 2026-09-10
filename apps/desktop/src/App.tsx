@@ -4,9 +4,6 @@ import {
   IconSettings,
   IconWifiOff,
   IconClock,
-  IconSun,
-  IconMoon,
-  IconDeviceDesktop,
 } from "@tabler/icons-react";
 import { Toaster, toast } from "sonner";
 
@@ -15,6 +12,7 @@ import { IdleDialog } from "./components/IdleDialog";
 import { LoginScreen } from "./components/LoginScreen";
 import { OrganizationSelector } from "./components/OrganizationSelector";
 import { Settings } from "./components/Settings";
+import { ThemeToggle } from "./components/ThemeToggle";
 import { WorkLocationSelector } from "./components/WorkLocationSelector";
 
 import { useAuth } from "./hooks/useAuth";
@@ -64,14 +62,6 @@ function AppContent() {
   } = useOrganizations();
 
   const [isProcessingIdle, setIsProcessingIdle] = useState(false);
-
-  const cycleTheme = () => {
-    if (theme === "system") setTheme("light");
-    else if (theme === "light") setTheme("dark");
-    else setTheme("system");
-  };
-
-  const ThemeIcon = theme === "system" ? IconDeviceDesktop : resolvedTheme === "dark" ? IconMoon : IconSun;
 
   const handleClockIn = async () => {
     try {
@@ -170,15 +160,7 @@ function AppContent() {
               <span>Offline</span>
             </div>
           )}
-          <button
-            type="button"
-            onClick={cycleTheme}
-            className="settings-button"
-            title={`Theme: ${theme === "system" ? "System" : theme === "light" ? "Light" : "Dark"}`}
-            aria-label={`Change Theme. Current theme: ${theme === "system" ? "System" : theme === "light" ? "Light" : "Dark"}`}
-          >
-            <ThemeIcon size={18} />
-          </button>
+          <ThemeToggle theme={theme} setTheme={setTheme} resolvedTheme={resolvedTheme} labelPrefix="Change Theme" />
           <button
             type="button"
             onClick={() => setIsSettingsOpen(true)}
