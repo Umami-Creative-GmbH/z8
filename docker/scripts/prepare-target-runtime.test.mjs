@@ -44,7 +44,7 @@ test("SCIM uses the upstream Better Auth release without a local patch", async (
 		"@better-auth/scim",
 		"@better-auth/sso",
 	]) {
-		assert.equal(webappPackageJson.dependencies[dependency], "1.7.2");
+		assert.equal(webappPackageJson.dependencies[dependency], "1.7.3");
 	}
 });
 
@@ -376,7 +376,7 @@ test("copied migration runtime includes pnpm workspace config for frozen install
 		const workspaceConfig = await fs.readFile(new URL("pnpm-workspace.yaml", outputUrl), "utf8");
 		assert.match(workspaceConfig, /^minimumReleaseAgeExclude:/m);
 		assert.match(workspaceConfig, /^overrides:/m);
-		assert.match(workspaceConfig, /"postcss":/);
+		assert.match(workspaceConfig, /"esbuild": "0\.25\.12"/);
 	} finally {
 		await fs.rm(outputUrl, { recursive: true, force: true });
 	}

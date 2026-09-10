@@ -12,7 +12,7 @@ expect.extend({
 });
 
 declare module "vitest" {
-	interface Assertion<T> {
-		toHaveTextContent(expected: string): T;
+	interface Assertion<R extends void | Promise<void> = void, T = unknown> {
+		toHaveTextContent(expected: string): R;
 	}
 }
