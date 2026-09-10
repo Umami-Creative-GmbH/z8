@@ -145,7 +145,7 @@ importers:
     dependencies:
       '@t3-oss/env-nextjs':
         specifier: ^0.13.11
-        version: 0.13.11(zod@4.4.3)
+        version: 0.13.11(zod@4.5.4)
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
@@ -159,8 +159,8 @@ importers:
         specifier: ^8.23.0
         version: 8.23.0
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: ^4.5.4
+        version: 4.5.4
 
 packages:
 
@@ -554,8 +554,8 @@ packages:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
     engines: {node: '>=0.4'}
 
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
+  zod@4.5.4:
+    resolution: {integrity: sha512-sC95tT5iHHH9gtpj6A81kh+NEaRAUFN+qlUPDUbRfOMvNf5QCBqsb3WgvnpVtK5Y+4UfA6KqufotuTvMGiTlsA==}
 
 snapshots:
 
@@ -649,15 +649,15 @@ snapshots:
   '@esbuild/win32-x64@0.25.12':
     optional: true
 
-  '@t3-oss/env-core@0.13.11(zod@4.4.3)':
+  '@t3-oss/env-core@0.13.11(zod@4.5.4)':
     optionalDependencies:
-      zod: 4.4.3
+      zod: 4.5.4
 
-  '@t3-oss/env-nextjs@0.13.11(zod@4.4.3)':
+  '@t3-oss/env-nextjs@0.13.11(zod@4.5.4)':
     dependencies:
-      '@t3-oss/env-core': 0.13.11(zod@4.4.3)
+      '@t3-oss/env-core': 0.13.11(zod@4.5.4)
     optionalDependencies:
-      zod: 4.4.3
+      zod: 4.5.4
 
   buffer-from@1.1.2: {}
 
@@ -774,4 +774,4 @@ snapshots:
 
   xtend@4.0.2: {}
 
-  zod@4.4.3: {}
+  zod@4.5.4: {}
