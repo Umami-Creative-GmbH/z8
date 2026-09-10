@@ -1,6 +1,14 @@
-# Approval Maintenance CLI
+# Approval Maintenance
 
 Server operators can list approvals and permanently remove a broken approval lifecycle using package scripts. Run these from the repository root with the target environment's usual Phase-provided configuration.
+
+## Platform-admin settings
+
+Platform administrators can also use **Platform Admin → Settings → Force delete approval**. Enter the organization ID and approval ID, then select **Force delete**. The card displays the approval and chain IDs removed, or an error if deletion cannot be completed.
+
+The server action checks the authenticated user's platform-admin role and banned status on every request. Organization-admin access alone does not authorize this operation. Deletion and a `force_delete_approval` platform-admin audit entry are committed in the same transaction; an audit-write failure rolls back deletion. The audit entry records the acting admin, organization, requested approval ID, and removed request/workflow/chain IDs.
+
+The UI and CLI share the cleanup implementation in `apps/webapp/src/lib/approvals/maintenance.ts` and use the deletion scope below.
 
 ## Commands
 
