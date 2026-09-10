@@ -1,6 +1,9 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
+// Set the parent process timezone before test workers are started.
+process.env.TZ ||= "UTC";
+
 export default defineConfig({
 	test: {
 		globals: true,

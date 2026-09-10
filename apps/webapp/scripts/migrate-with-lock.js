@@ -11,7 +11,7 @@ function withUtcPostgresOptions(options) {
 		: utcPostgresOption;
 }
 
-process.env.TZ = "UTC";
+process.env.TZ ||= "UTC";
 process.env.PGOPTIONS = withUtcPostgresOptions(process.env.PGOPTIONS);
 
 const sslModes = new Set([

@@ -5,6 +5,9 @@ import { withPostHogConfig } from "@posthog/nextjs-config";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
+// Initialize before Next.js starts build or server workers.
+process.env.TZ ||= "UTC";
+
 const withNextIntl = createNextIntlPlugin();
 const configDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(configDir, "../..");

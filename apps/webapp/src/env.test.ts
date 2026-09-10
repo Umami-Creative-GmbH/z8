@@ -110,6 +110,30 @@ describe("env", () => {
 		vi.restoreAllMocks();
 	});
 
+	describe.each([
+		{ CI: "false", SKIP_ENV_VALIDATION: "false" },
+		{ CI: "false", SKIP_ENV_VALIDATION: "true" },
+		{ CI: "true", SKIP_ENV_VALIDATION: "false" },
+	])("timezone initialization with %o", (validationMode) => {
+		test.each([
+			[undefined, "UTC"],
+			["", "UTC"],
+			["Europe/Berlin", "Europe/Berlin"],
+		])("resolves TZ=%s to %s", async (timezone, expected) => {
+			const { env } = await importEnv({ TZ: timezone }, validationMode);
+
+			expect(env.TZ).toBe(expected);
+			expect(process.env.TZ).toBe(expected);
+		});
+	});
+
+	test("does not initialize the process timezone in the browser", async () => {
+		vi.stubGlobal("window", {});
+		await importEnv({ TZ: undefined });
+
+		expect(process.env.TZ).toBeUndefined();
+	});
+
 	test("requires a SCIM credential hash secret", async () => {
 		vi.spyOn(process, "exit").mockImplementation((code) => {
 			throw new Error(`process.exit:${code}`);

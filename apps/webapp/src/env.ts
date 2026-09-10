@@ -1,6 +1,11 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
+// Set the Node.js default as well as the validated value; browsers keep their own timezone.
+if (typeof window === "undefined") {
+	process.env.TZ ||= "UTC";
+}
+
 const skipEnvValidation =
 	process.env.SKIP_ENV_VALIDATION === "1" ||
 	process.env.SKIP_ENV_VALIDATION === "true" ||
@@ -181,6 +186,7 @@ const parsedEnv = createEnv({
 		SMTP_FROM_NAME: z.string().optional(),
 
 		NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+		TZ: z.string().default("UTC"),
 		NEXT_PHASE: z.string().optional(),
 		npm_lifecycle_event: z.string().optional(),
 		npm_package_version: z.string().optional(),
@@ -384,6 +390,7 @@ const parsedEnv = createEnv({
 		SMTP_FROM_EMAIL: optionalEnv(process.env.SMTP_FROM_EMAIL),
 		SMTP_FROM_NAME: process.env.SMTP_FROM_NAME,
 		NODE_ENV: process.env.NODE_ENV,
+		TZ: optionalEnv(process.env.TZ) ?? "UTC",
 		NEXT_PHASE: process.env.NEXT_PHASE,
 		npm_lifecycle_event: process.env.npm_lifecycle_event,
 		npm_package_version: process.env.npm_package_version,
