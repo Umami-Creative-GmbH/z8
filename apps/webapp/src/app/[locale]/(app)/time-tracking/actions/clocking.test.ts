@@ -2493,27 +2493,6 @@ describe("createManualTimeEntry", () => {
 		expect(mockState.isOrgAdminCasl).toHaveBeenCalledWith("org-1");
 	});
 
-	it("keeps the age restriction for employees without organization admin privileges", async () => {
-		mockState.getEditCapabilityForPeriod.mockResolvedValue({
-			type: "forbidden",
-			reason: "beyond_approval_window",
-			daysBack: 21,
-		});
-
-		const result = await createManualTimeEntry({
-			date: "2026-04-01",
-			clockInTime: "08:00",
-			clockOutTime: "09:00",
-			reason: "Forgot to clock in",
-		});
-
-		expect(result).toEqual({
-			success: false,
-			error: "Entries older than 21 days can only be created by admins or team leads.",
-		});
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
-	});
-
 	it("fails closed when organization privilege verification fails", async () => {
 		mockState.isOrgAdminCasl.mockRejectedValueOnce(new Error("authorization unavailable"));
 
@@ -2867,6 +2846,7 @@ describe("createManualTimeEntry", () => {
 		vi.clearAllMocks();
 		mockState.executeOrdinarySubmission.mockReset();
 		mockState.createManualEntryApprovalRequest.mockReset();
+		mockState.isOrgAdminCasl.mockReset().mockResolvedValue(false);
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-05-04T10:00:00.000Z"));
 
@@ -2968,6 +2948,53 @@ describe("createManualTimeEntry", () => {
 				insert: vi.fn(() => ({
 					values: (...args: unknown[]) => mockState.insertValues(...args),
 				})),
+			}),
+		);
+	});
+
+	it("submits entries beyond the approval window as pending for their manager", async () => {
+		mockState.isOrgAdminCasl.mockResolvedValue(false);
+		mockState.getEditCapabilityForPeriod.mockResolvedValue({
+			type: "forbidden",
+			reason: "beyond_approval_window",
+			daysBack: 33,
+		});
+
+		const result = await createManualTimeEntry({
+			date: "2026-04-01",
+			clockInTime: "08:00",
+			clockOutTime: "09:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toMatchObject({ success: true, data: { requiresApproval: true } });
+		expect(mockState.createCanonicalWorkRecord).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				approvalState: "pending",
+			}),
+			expect.objectContaining({ insert: expect.any(Function) }),
+		);
+		expect(mockState.insertValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				approvalStatus: "pending",
+			}),
+		);
+		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				requesterEmployeeId: "employee-1",
+				kind: "manual_time_submission",
+			}),
+		);
+		expect(mockState.sendManualEntryApprovalNotifications).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				employeeId: "employee-1",
+				managerId: "manager-1",
 			}),
 		);
 	});
