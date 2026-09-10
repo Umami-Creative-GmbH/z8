@@ -78,51 +78,34 @@ export const githubProvider: OAuthProviderImpl = {
 
 		const userData = await userResponse.json();
 
-		// Get user emails (primary email may be hidden)
-		let email = userData.email;
-		let emailVerified = false;
-
-		if (!email) {
-			const emailsResponse = await fetch(GITHUB_EMAILS_URL, {
-				headers: {
-					Authorization: `Bearer ${accessToken}`,
-					Accept: "application/vnd.github+json",
-					"X-GitHub-Api-Version": "2022-11-28",
-				},
-			});
-
-			if (emailsResponse.ok) {
-				const emails = await emailsResponse.json();
-				// Find primary verified email
-				const primaryEmail = emails.find(
-					(e: { primary: boolean; verified: boolean; email: string }) => e.primary && e.verified,
-				);
-				if (primaryEmail) {
-					email = primaryEmail.email;
-					emailVerified = primaryEmail.verified;
-				} else {
-					// Fall back to any verified email
-					const verifiedEmail = emails.find(
-						(e: { verified: boolean; email: string }) => e.verified,
-					);
-					if (verifiedEmail) {
-						email = verifiedEmail.email;
-						emailVerified = verifiedEmail.verified;
-					}
-				}
-			}
+		// The public profile does not include verification status. Always fetch the
+		// authenticated email list before using an address for account linking.
+		const emailsResponse = await fetch(GITHUB_EMAILS_URL, {
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+				Accept: "application/vnd.github+json",
+				"X-GitHub-Api-Version": "2022-11-28",
+			},
+		});
+		if (!emailsResponse.ok) {
+			throw new Error("Unable to retrieve verified email from GitHub");
 		}
 
-		if (!email) {
-			throw new Error(
-				"Unable to retrieve email from GitHub. Please ensure your email is public or verified.",
-			);
+		const emails: { primary: boolean; verified: boolean; email: string }[] =
+			await emailsResponse.json();
+		const verifiedEmails = emails.filter((entry) => entry.verified === true && entry.email);
+		const selectedEmail =
+			verifiedEmails.find((entry) => entry.email === userData.email) ??
+			verifiedEmails.find((entry) => entry.primary) ??
+			verifiedEmails[0];
+		if (!selectedEmail) {
+			throw new Error("Unable to retrieve verified email from GitHub");
 		}
 
 		return {
 			providerUserId: String(userData.id),
-			email,
-			emailVerified,
+			email: selectedEmail.email,
+			emailVerified: true,
 			name: userData.name ?? userData.login ?? null,
 			image: userData.avatar_url ?? null,
 		} as OAuthUserInfo;

@@ -183,6 +183,26 @@ describe("findOrCreateUserWithAccount", () => {
 		);
 	});
 
+	it("rejects linking an unverified provider email without mutating accounts", async () => {
+		mockState.accountFindFirst.mockResolvedValue(undefined);
+		mockState.userFindFirst.mockResolvedValue({ id: "victim-user" });
+
+		await expect(findOrCreateUserWithAccount({ ...params, emailVerified: false })).rejects.toThrow(
+			"Verified email required to link an account",
+		);
+		expect(mockState.insert).not.toHaveBeenCalled();
+		expect(mockState.update).not.toHaveBeenCalled();
+	});
+
+	it("allows an already linked provider subject even if its email is now unverified", async () => {
+		mockState.accountFindFirst.mockResolvedValue({ id: "account-row", userId: "user-1" });
+		await expect(findOrCreateUserWithAccount({ ...params, emailVerified: false })).resolves.toEqual(
+			{ userId: "user-1", isNewUser: false },
+		);
+		expect(mockState.userFindFirst).not.toHaveBeenCalled();
+		expect(mockState.insert).not.toHaveBeenCalled();
+	});
+
 	it("writes the issuer when creating a user and account", async () => {
 		mockState.accountFindFirst.mockResolvedValue(undefined);
 		mockState.userFindFirst.mockResolvedValue(undefined);
@@ -210,5 +230,64 @@ describe("findOrCreateUserWithAccount", () => {
 		expect(mockState.accountFindFirst).not.toHaveBeenCalled();
 		expect(mockState.userFindFirst).not.toHaveBeenCalled();
 		expect(mockState.insert).not.toHaveBeenCalled();
+	});
+});
+
+describe("social oauth callback redirects", () => {
+	function prepareCallback(callbackURL: string) {
+		const state = { callbackURL, organizationId: null, codeVerifier: "verifier" };
+		const stateJson = JSON.stringify(state);
+		mockState.cookieStore.get.mockReturnValue({ value: stateJson });
+		mockState.verifyOAuthState.mockReturnValue(state);
+		mockState.resolveCredentials.mockResolvedValue({ credentials: {}, isOrgSpecific: false });
+		mockState.exchangeCode.mockResolvedValue({ accessToken: "token" });
+		mockState.getUserInfo.mockResolvedValue({
+			providerUserId: "subject",
+			email: "person@example.com",
+			emailVerified: true,
+		});
+		mockState.accountFindFirst.mockResolvedValue({ id: "account-row", userId: "user-1" });
+		return createRequest(
+			`https://app.example.com/api/auth/callback/social-org/google?code=code&state=${Buffer.from(stateJson).toString("base64url")}`,
+		);
+	}
+
+	it.each([
+		"/\\evil.example/",
+		"/\n/evil.example/",
+		"//evil.example/",
+		"/safe/..//evil.example/",
+		"https://evil.example/",
+	])("falls back to the app root for unsafe signed callback %j", async (callbackURL) => {
+		const response = await GET(prepareCallback(callbackURL), {
+			params: Promise.resolve({ provider: "google" }),
+		});
+		expect(response.headers.get("location")).toBe("https://app.example.com/");
+	});
+
+	it("preserves a local callback including query and fragment", async () => {
+		const response = await GET(prepareCallback("/settings?tab=security#sessions"), {
+			params: Promise.resolve({ provider: "google" }),
+		});
+		expect(response.headers.get("location")).toBe(
+			"https://app.example.com/settings?tab=security#sessions",
+		);
+	});
+
+	it("does not create a session when linking an unverified email fails", async () => {
+		const request = prepareCallback("/");
+		mockState.accountFindFirst.mockResolvedValue(undefined);
+		mockState.userFindFirst.mockResolvedValue({ id: "victim-user" });
+		mockState.getUserInfo.mockResolvedValue({
+			providerUserId: "attacker-subject",
+			email: "victim@example.com",
+			emailVerified: false,
+		});
+		const response = await GET(request, { params: Promise.resolve({ provider: "google" }) });
+		expect(response.headers.get("location")).toBe(
+			"https://app.example.com/sign-in?error=oauth_error",
+		);
+		expect(mockState.insert).not.toHaveBeenCalled();
+		expect(mockState.cookieStore.set).not.toHaveBeenCalled();
 	});
 });

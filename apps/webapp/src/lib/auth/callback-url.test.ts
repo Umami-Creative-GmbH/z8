@@ -2,6 +2,14 @@ import { describe, expect, it } from "vitest";
 import { getPostSignInRedirectUrl, sanitizeCallbackUrl } from "./callback-url";
 
 describe("sanitizeCallbackUrl", () => {
+	it.each(["/\\evil.example/", "/\n/evil.example/", "/safe/..//evil.example/"])(
+		"rejects unsafe local callbacks %j throughout the sign-in flow",
+		(callbackUrl) => {
+			expect(sanitizeCallbackUrl(callbackUrl, "/fallback")).toBe("/fallback");
+			expect(getPostSignInRedirectUrl(callbackUrl)).toBe("/init");
+		},
+	);
+
 	it("keeps internal path callback URLs", () => {
 		expect(sanitizeCallbackUrl("/dashboard?tab=hours")).toBe("/dashboard?tab=hours");
 	});

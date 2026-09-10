@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
+import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
 
 /**
  * Session Expired Handler
@@ -17,8 +17,9 @@ import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 export async function GET(request: NextRequest) {
 	const { searchParams } = request.nextUrl;
 
-	// Get locale from query param or detect from path/headers
-	const locale = searchParams.get("locale") || DEFAULT_LANGUAGE;
+	const requestedLocale = searchParams.get("locale");
+	const locale =
+		requestedLocale && ALL_LANGUAGES.includes(requestedLocale) ? requestedLocale : DEFAULT_LANGUAGE;
 	const callbackUrl = searchParams.get("callbackUrl");
 
 	// List of all better-auth cookies to clear
