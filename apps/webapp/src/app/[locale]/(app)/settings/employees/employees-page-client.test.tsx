@@ -15,11 +15,7 @@ const { useEmployeesMock } = vi.hoisted(() => ({
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (
-			_key: string,
-			fallback: string,
-			params?: Record<string, string | number>,
-		) =>
+		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
 			fallback.replace(/\{(\w+)\}/g, (match, key: string) =>
 				params?.[key] === undefined ? match : String(params[key]),
 			),
@@ -32,7 +28,10 @@ vi.mock("@/lib/query", () => ({
 		invitations: { list: () => ["invitations"] },
 		members: { list: () => ["members"] },
 	},
-	useEmployeeClockStatuses: () => ({ getStatus: () => "unknown" }),
+	useEmployeeClockStatuses: () => ({
+		snapshots: {},
+		getStatus: () => "unknown",
+	}),
 }));
 
 vi.mock("@/lib/query/use-employees", () => ({
@@ -44,11 +43,8 @@ vi.mock("./columns", () => ({
 		{
 			id: "employeeName",
 			header: "Employee",
-			cell: ({
-				row,
-			}: {
-				row: { original: Pick<EmployeeDirectoryRow, "user"> };
-			}) => row.original.user.name,
+			cell: ({ row }: { row: { original: Pick<EmployeeDirectoryRow, "user"> } }) =>
+				row.original.user.name,
 		},
 	],
 }));
@@ -70,10 +66,7 @@ vi.mock("@/components/organization/pending-members-card", () => ({
 }));
 
 const source = readFileSync(
-	join(
-		process.cwd(),
-		"src/app/[locale]/(app)/settings/employees/employees-page-client.tsx",
-	),
+	join(process.cwd(), "src/app/[locale]/(app)/settings/employees/employees-page-client.tsx"),
 	"utf8",
 );
 
@@ -140,9 +133,7 @@ describe("EmployeesPageClient people-management tabs", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Next" }));
 
 		expect(screen.getByText("Page 2 of 2")).toBeTruthy();
-		expect(
-			screen.getByRole("button", { name: "Next" }).hasAttribute("disabled"),
-		).toBe(true);
+		expect(screen.getByRole("button", { name: "Next" }).hasAttribute("disabled")).toBe(true);
 	});
 
 	it("keeps the employee directory as a focused child component", () => {
@@ -178,9 +169,7 @@ describe("EmployeesPageClient people-management tabs", () => {
 		expect(source).toContain("updateCachedEmployee(employeeId, { isActive })");
 		expect(source).toContain("membership: null");
 		expect(source).toContain("setQueriesData<PaginatedEmployeeResponse>");
-		expect(source).not.toContain(
-			"employees.filter((row) => row.id !== employeeId)",
-		);
+		expect(source).not.toContain("employees.filter((row) => row.id !== employeeId)");
 	});
 
 	it("uses the native TanStack Table v9 employee feature boundary", () => {

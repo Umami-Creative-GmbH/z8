@@ -128,11 +128,6 @@ export const roleTemplate = pgTable(
 			}>()
 			.default({}),
 
-		// App access permissions
-		canUseWebapp: boolean("can_use_webapp").default(true).notNull(),
-		canUseDesktop: boolean("can_use_desktop").default(true).notNull(),
-		canUseMobile: boolean("can_use_mobile").default(true).notNull(),
-
 		// Associated conditional access policy (optional)
 		accessPolicyId: uuid("access_policy_id"),
 

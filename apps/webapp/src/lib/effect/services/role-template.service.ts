@@ -1,7 +1,6 @@
 import { and, eq, isNull, or } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { db } from "@/db";
-import * as schema from "@/db/auth-schema";
 import {
 	employee,
 	roleTemplate,
@@ -44,9 +43,6 @@ export interface CreateRoleTemplateInput {
 		canManageTeamSettings?: boolean;
 		canApproveTeamRequests?: boolean;
 	};
-	canUseWebapp?: boolean;
-	canUseDesktop?: boolean;
-	canUseMobile?: boolean;
 	accessPolicyId?: string;
 	createdBy?: string;
 }
@@ -64,9 +60,6 @@ export interface UpdateRoleTemplateInput {
 		canManageTeamSettings?: boolean;
 		canApproveTeamRequests?: boolean;
 	};
-	canUseWebapp?: boolean;
-	canUseDesktop?: boolean;
-	canUseMobile?: boolean;
 	accessPolicyId?: string | null;
 }
 
@@ -211,9 +204,6 @@ export const RoleTemplateServiceLive = Layer.succeed(
 							employeeRole: input.employeeRole ?? "employee",
 							defaultTeamId: input.defaultTeamId,
 							teamPermissions: input.teamPermissions ?? {},
-							canUseWebapp: input.canUseWebapp ?? true,
-							canUseDesktop: input.canUseDesktop ?? true,
-							canUseMobile: input.canUseMobile ?? true,
 							accessPolicyId: input.accessPolicyId,
 							createdBy: input.createdBy,
 						})
@@ -246,12 +236,6 @@ export const RoleTemplateServiceLive = Layer.succeed(
 					updateData.defaultTeamId = input.defaultTeamId;
 				if (input.teamPermissions !== undefined)
 					updateData.teamPermissions = input.teamPermissions;
-				if (input.canUseWebapp !== undefined)
-					updateData.canUseWebapp = input.canUseWebapp;
-				if (input.canUseDesktop !== undefined)
-					updateData.canUseDesktop = input.canUseDesktop;
-				if (input.canUseMobile !== undefined)
-					updateData.canUseMobile = input.canUseMobile;
 				if (input.accessPolicyId !== undefined)
 					updateData.accessPolicyId = input.accessPolicyId;
 
@@ -476,28 +460,13 @@ export const RoleTemplateServiceLive = Layer.succeed(
 					);
 				}
 
-				// Parallelize independent updates for better performance
-				// @see async-parallel rule
-				yield* Effect.all([
-					// Update employee role
-					Effect.tryPromise(() =>
-						db
-							.update(employee)
-							.set({ role: template.employeeRole })
-							.where(eq(employee.id, employeeRecord.id)),
-					),
-					// Update user app access permissions
-					Effect.tryPromise(() =>
-						db
-							.update(schema.user)
-							.set({
-								canUseWebapp: template.canUseWebapp,
-								canUseDesktop: template.canUseDesktop,
-								canUseMobile: template.canUseMobile,
-							})
-							.where(eq(schema.user.id, userId)),
-					),
-				]);
+				// Update employee role
+				yield* Effect.tryPromise(() =>
+					db
+						.update(employee)
+						.set({ role: template.employeeRole })
+						.where(eq(employee.id, employeeRecord.id)),
+				);
 
 				// Apply team permissions if specified
 				if (template.teamPermissions) {

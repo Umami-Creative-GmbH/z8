@@ -1,10 +1,4 @@
 {
-  "accessDenied": {
-    "contactAdmin": "Skontaktuj się z administratorem organizacji, aby poprosić o dostęp.",
-    "description": "Twoje konto nie posiada uprawnień dostępu do {{appLabel}}.",
-    "signOut": "Wyloguj",
-    "title": "Ograniczony dostęp"
-  },
   "actions": {
     "cancel": "Anuluj",
     "delete": "Usuń",

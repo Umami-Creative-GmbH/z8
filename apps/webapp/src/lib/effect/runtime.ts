@@ -1,7 +1,6 @@
 import { type Effect, Exit, Layer, ManagedRuntime } from "effect";
 import { createLogger } from "../logger";
 import { AnalyticsService } from "./services/analytics.service";
-import { AppAccessServiceLive } from "./services/app-access.service";
 import { AuthServiceLive } from "./services/auth.service";
 import { ChangePolicyServiceLive } from "./services/change-policy.service";
 import { CoverageServiceLive } from "./services/coverage.service";
@@ -53,9 +52,6 @@ const ChangePolicyLayer = ChangePolicyServiceLive.pipe(Layer.provide(DatabaseSer
 // Layer for WorkPolicyService (depends on DatabaseService)
 const WorkPolicyLayer = WorkPolicyServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
-// Layer for AppAccessService (depends on DatabaseService)
-const AppAccessLayer = AppAccessServiceLive.pipe(Layer.provide(DatabaseServiceLive));
-
 // Layer for PlatformAdminService (no external dependencies - uses auth internally)
 const PlatformAdminLayer = PlatformAdminServiceLive;
 
@@ -86,7 +82,6 @@ export const AppLayer = Layer.mergeAll(
 	ShiftRequestLayer,
 	ChangePolicyLayer,
 	WorkPolicyLayer,
-	AppAccessLayer,
 	PlatformAdminLayer,
 	SetupLayer,
 	SkillLayer,

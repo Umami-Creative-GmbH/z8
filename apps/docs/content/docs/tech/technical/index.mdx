@@ -22,7 +22,7 @@ Technical documentation for developers working on Z8, a Turborepo monorepo with 
   />
   <Card
     title="Authentication"
-    description="Better Auth, secure sessions, invitations, and app access control"
+    description="Better Auth, secure sessions, invitations, and organization-scoped access"
     href="/docs/tech/technical/authentication"
   />
   <Card
@@ -37,7 +37,7 @@ Technical documentation for developers working on Z8, a Turborepo monorepo with 
   />
   <Card
     title="Enterprise Features"
-    description="API keys, webhooks, SCIM, social OAuth, and app access control"
+    description="API keys, webhooks, SCIM, and social OAuth"
     href="/docs/tech/technical/enterprise"
   />
   <Card
@@ -57,9 +57,7 @@ Z8 is built as a **Turborepo monorepo**, managing shared logic and multiple appl
 |-----|------|-------------|
 | **Web** | `apps/webapp` | Next.js 16 application for the main product UI and HTTP APIs. |
 | **Marketing** | `apps/marketing` | Next.js 16 marketing site for public-facing pages. |
-| **Mobile** | `apps/mobile` | Expo mobile app for on-the-go time tracking and employee workflows. |
 | **Desktop** | `apps/desktop` | Tauri desktop app for lightweight workstation workflows. |
-| **Extension** | `apps/extension` | Vite-based browser extension workspace. |
 | **Docs** | `apps/docs` | Next.js 16 + Fumadocs site for technical and product documentation. |
 
 ### Monorepo Structure
@@ -124,7 +122,6 @@ The application uses Effect-driven services and focused domain modules for orche
 <Files>
   <Folder name="apps/webapp/src/lib/effect/services" defaultOpen>
     <File name="analytics.service.ts" />
-    <File name="app-access.service.ts" />
     <File name="auth.service.ts" />
     <File name="authorization.service.ts" />
     <File name="change-policy.service.ts" />

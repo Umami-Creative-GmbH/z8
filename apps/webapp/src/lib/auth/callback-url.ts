@@ -7,8 +7,8 @@ export function sanitizeCallbackUrl(
 		return fallback;
 	}
 
-	if (callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")) {
-		return callbackUrl;
+	if (callbackUrl.startsWith("/")) {
+		return getSafeCallbackPath(callbackUrl) ?? fallback;
 	}
 
 	if (!currentUrl) {
@@ -23,7 +23,11 @@ export function sanitizeCallbackUrl(
 			return fallback;
 		}
 
-		return `${normalizedCallbackUrl.pathname}${normalizedCallbackUrl.search}${normalizedCallbackUrl.hash}`;
+		return (
+			getSafeCallbackPath(
+				`${normalizedCallbackUrl.pathname}${normalizedCallbackUrl.search}${normalizedCallbackUrl.hash}`,
+			) ?? fallback
+		);
 	} catch {
 		return fallback;
 	}
@@ -48,4 +52,31 @@ export function getPostSignInRedirectUrl(callbackUrl: string | null | undefined)
 	}
 
 	return withCallbackUrl("/init", safeCallbackUrl);
+}
+
+// A fixed origin keeps validation independent of request headers and tenant domains.
+const CALLBACK_ORIGIN = "https://callback.invalid";
+
+/** Return a canonical local callback path, or null for an unsafe destination. */
+export function getSafeCallbackPath(value: string): string | null {
+	if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
+		return null;
+	}
+
+	// URL parsing silently strips some controls; reject them before normalization.
+	for (const character of value) {
+		const code = character.charCodeAt(0);
+		if (code <= 0x1f || code === 0x7f) return null;
+	}
+
+	try {
+		const url = new URL(value, CALLBACK_ORIGIN);
+		if (url.origin !== CALLBACK_ORIGIN || url.pathname.startsWith("//")) {
+			return null;
+		}
+
+		return `${url.pathname}${url.search}${url.hash}`;
+	} catch {
+		return null;
+	}
 }

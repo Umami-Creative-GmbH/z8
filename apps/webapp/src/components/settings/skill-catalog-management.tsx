@@ -185,7 +185,13 @@ export function SkillCatalogManagement({
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
-					<Button variant="ghost" size="icon" onClick={() => refetch()} disabled={isFetching}>
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={() => refetch()}
+						disabled={isFetching}
+						aria-label={t("common.refresh", "Refresh")}
+					>
 						<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
 					</Button>
 					{canManageCatalog ? (
@@ -289,6 +295,7 @@ export function SkillCatalogManagement({
 																			size="icon"
 																			className="size-8"
 																			onClick={() => handleEdit(skill)}
+																			aria-label={`${t("common.edit", "Edit")}: ${skill.name}`}
 																		>
 																			<IconEdit className="size-4" />
 																		</Button>
@@ -304,6 +311,7 @@ export function SkillCatalogManagement({
 																			size="icon"
 																			className="size-8"
 																			onClick={() => handleDelete(skill)}
+																			aria-label={`${t("common.delete", "Delete")}: ${skill.name}`}
 																			disabled={deleteMutation.isPending}
 																		>
 																			<IconTrash className="size-4" />

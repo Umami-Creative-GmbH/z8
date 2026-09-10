@@ -11,6 +11,13 @@ export default {
 			"react-doctor/unused-dependency",
 			"react-doctor/unused-dev-dependency",
 		],
+		overrides: [
+			{
+				// Legacy storage is guarded against nonempty rows, then dropped immediately after disabling RLS.
+				files: ["**/drizzle/0062_better_auth_scim_storage.sql"],
+				rules: ["react-doctor/supabase-rls-policy-risk"],
+			},
+		],
 	},
 	serverAuthFunctionNames: [
 		"getAuthContext",

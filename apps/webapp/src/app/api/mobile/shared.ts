@@ -38,10 +38,6 @@ export async function requireMobileSessionContext(request: Request): Promise<Mob
 		throw new MobileApiError(401, "Unauthorized");
 	}
 
-	if (!(session.user.canUseMobile ?? true)) {
-		throw new MobileApiError(403, "Mobile app access denied");
-	}
-
 	const memberships = await db.query.member.findMany({
 		columns: {
 			organizationId: true,

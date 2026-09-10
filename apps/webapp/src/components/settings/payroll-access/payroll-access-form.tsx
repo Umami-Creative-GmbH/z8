@@ -109,7 +109,13 @@ export function PayrollAccessForm({ employees, teams, initialGrants }: PayrollAc
 			/>
 
 			{isEditorOpen ? (
-				<form className="space-y-6" onSubmit={form.handleSubmit}>
+				<form
+					className="space-y-6"
+					onSubmit={(event) => {
+						event.preventDefault();
+						void form.handleSubmit();
+					}}
+				>
 					<Card>
 						<CardHeader>
 							<CardTitle>

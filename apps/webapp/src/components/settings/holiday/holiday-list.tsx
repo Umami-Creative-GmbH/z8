@@ -267,6 +267,7 @@ export function HolidayList({
 									variant="ghost"
 									size="icon"
 									onClick={() => onEditClick(row.original)}
+									aria-label={`${t("common.edit", "Edit")}: ${row.original.name}`}
 									disabled={deleteMutation.isPending}
 								>
 									<IconPencil className="size-4" />
@@ -275,6 +276,7 @@ export function HolidayList({
 									variant="ghost"
 									size="icon"
 									onClick={() => handleDeleteClick(row.original)}
+									aria-label={`${t("common.delete", "Delete")}: ${row.original.name}`}
 									disabled={deleteMutation.isPending}
 								>
 									{deleteMutation.isPending && holidayToDelete?.id === row.original.id ? (
@@ -425,16 +427,23 @@ export function HolidayList({
 							setPageIndex: (updater) =>
 								setPagination((prev) => ({
 									...prev,
-									pageIndex:
-										typeof updater === "function" ? updater(prev.pageIndex) : updater,
+									pageIndex: typeof updater === "function" ? updater(prev.pageIndex) : updater,
 								})),
 							setPageSize: (updater) =>
 								setPagination((prev) => ({
 									pageIndex: 0,
 									pageSize: typeof updater === "function" ? updater(prev.pageSize) : updater,
 								})),
-							getFilteredSelectedRowModel: () => ({ rows: [], flatRows: [], rowsById: {} }),
-							getFilteredRowModel: () => ({ rows: [], flatRows: [], rowsById: {} }),
+							getFilteredSelectedRowModel: () => ({
+								rows: [],
+								flatRows: [],
+								rowsById: {},
+							}),
+							getFilteredRowModel: () => ({
+								rows: [],
+								flatRows: [],
+								rowsById: {},
+							}),
 						} satisfies DataTablePaginationTable<HolidayWithCategory>
 					}
 					totalRows={total}

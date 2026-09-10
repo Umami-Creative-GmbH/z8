@@ -58,6 +58,7 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 						size="icon"
 						className="size-8 text-destructive hover:text-destructive"
 						onClick={onRemove}
+						aria-label={`${t("common.remove", "Remove")}: ${t("settings.timeRegulations.breakRule", "Break Rule")} ${ruleIndex + 1}`}
 					>
 						<IconTrash className="size-4" />
 					</Button>
@@ -273,6 +274,7 @@ export function BreakRuleEditor({ ruleIndex, form, onRemove }: BreakRuleEditorPr
 												size="icon"
 												className="size-8 text-destructive hover:text-destructive shrink-0"
 												onClick={() => optionsField.removeValue(optionIndex)}
+												aria-label={`${t("common.remove", "Remove")}: ${t("settings.timeRegulations.breakOptions", "Break Options")} ${optionIndex + 1}`}
 												disabled={optionsField.state.value.length <= 1}
 											>
 												<IconTrash className="size-4" />

@@ -1,6 +1,30 @@
 # Better Auth 1.7 Account Migration
 
-This runbook covers the production migration to issuer-scoped Better Auth 1.7 account identities. Complete it during an authentication maintenance window. Node.js 22.12 or newer is required for the Better Auth CLI.
+## Better Auth 1.7.3 and Later
+
+Better Auth 1.7.3 reverted account identity to `(providerId, accountId)` and no longer writes `account.issuer`. The issuer-based instructions below are historical and apply only to 1.7.0–1.7.2.
+
+For the current release:
+
+1. Back up the `account` table and pause authentication/account writers during the migration window.
+2. Check for duplicate provider keys using the deployed column names:
+
+   ```sql
+   SELECT provider_id, account_id, COUNT(*)
+   FROM account
+   GROUP BY provider_id, account_id
+   HAVING COUNT(*) > 1;
+   ```
+
+   Resolve duplicates using trusted provider identifiers. If distinct issuers share a provider ID, assign distinct provider IDs and update the corresponding accounts and provider configurations. Never merge users by email.
+3. Apply `0066_better_auth_provider_account_keys` through the normal migration runner. It aborts on duplicate provider keys, then drops the obsolete issuer index before dropping the issuer column. Existing account IDs, provider IDs, user links, and tokens are retained. Historical migration `0061` remains in the chain.
+4. Deploy the matching generated schema and account writers. Verify new sign-up, existing credential/social sign-in, account linking, and SCIM provisioning before restoring traffic.
+
+See the [upstream 1.7 upgrade guide](https://better-auth.com/docs/guides/1-7-upgrade-guide#account-identity-keeps-the-provider-key).
+
+## Historical 1.7.0–1.7.2 Procedure
+
+This historical runbook covers the migration to issuer-scoped account identities. Node.js 22.12 or newer is required for the Better Auth CLI.
 
 ## Before The Window
 

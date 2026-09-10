@@ -828,8 +828,7 @@ function mapDecisionFailure(
 	if (
 		hasAuthorizationMessage ||
 		tag === "AuthorizationError" ||
-		tag === "AuthenticationError" ||
-		tag === "AppAccessDeniedError"
+		tag === "AuthenticationError"
 	) {
 		return {
 			id,

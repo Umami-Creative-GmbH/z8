@@ -56,7 +56,7 @@ Deployment diagnostics are not a deployment gate: operators must still verify ru
 
 Platform admin access does not replace normal organization settings workflows. Day-to-day payroll export, scheduling, member management, enterprise auth, and employee administration remain organization-scoped tasks handled inside that organization's own settings.
 
-If you need to manage invitations, app access, social OAuth, or payroll settings for one customer workspace, use that organization's admin settings rather than `/platform-admin`.
+If you need to manage invitations, social OAuth, or payroll settings for one customer workspace, use that organization's admin settings rather than `/platform-admin`.
 
 SCIM remains organization-scoped: owners and admins configure it through **Enterprise Identity Setup** at `/settings/enterprise/identity-setup`, then verify provisioning after the identity provider pushes a test change. Platform admins should use the [SCIM Provisioning](/docs/guide/admin-guide/scim-provisioning) guidance when coordinating customer rollout rather than configuring SCIM from `/platform-admin`.
 

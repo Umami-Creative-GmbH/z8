@@ -22,7 +22,6 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import { EmployeeAppAccessFields } from "./employee-app-access-fields";
 import { defaultTranslate, type Translate } from "./employee-section-shared";
 import { PronounsEditField } from "./pronouns-edit-field";
 import { TextField } from "./text-field";
@@ -294,10 +293,6 @@ export function EmployeeEditFormCard({
 							)
 						}
 					</form.Subscribe>
-
-					{canEditOrgAdminFields && (
-						<EmployeeAppAccessFields form={form} isUpdating={isUpdating} t={t} />
-					)}
 
 					{canEditManagerFields && (
 						<EmployeeEditFormActions

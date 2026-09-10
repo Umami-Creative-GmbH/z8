@@ -44,6 +44,9 @@ class ExceptionOnlySpanProcessor implements SpanProcessor {
 
 export async function register() {
 	if (process.env.NEXT_RUNTIME === "nodejs") {
+		// Standalone deployments do not execute next.config.ts at runtime.
+		process.env.TZ ||= "UTC";
+
 		const isBuildTime =
 			process.env.NEXT_PHASE === "phase-production-build" ||
 			process.env.npm_lifecycle_event === "build";

@@ -440,25 +440,6 @@ describe("org-admin settings route access", () => {
 		expect(source.includes('redirect("/settings/employees")')).toBe(true);
 	});
 
-	it("wraps employee app access switch fields in a TanStack form item", () => {
-		const source = stripComments(
-			readFileSync(
-				join(
-					SETTINGS_ROOT,
-					"employees/[employeeId]/employee-app-access-fields.tsx",
-				),
-				"utf8",
-			),
-		);
-		const accessSwitchFieldSource = source.slice(
-			source.indexOf("function AccessSwitchField"),
-			source.length,
-		);
-
-		expect(accessSwitchFieldSource).toContain("<TFormItem>");
-		expect(accessSwitchFieldSource).toContain("</TFormItem>");
-	});
-
 	it("uses shared scoped access helpers instead of admin-only checks for employee and skill actions", () => {
 		const employeeMutationsSource = stripComments(
 			readFileSync(

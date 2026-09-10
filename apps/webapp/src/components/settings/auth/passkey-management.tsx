@@ -181,6 +181,7 @@ export function PasskeyManagement() {
 										variant="ghost"
 										size="icon"
 										onClick={() => confirmDelete(passkey.id)}
+										aria-label={`${t("common.delete", "Delete")}: ${passkey.name || t("settings.passkeys.unnamed", "Unnamed Passkey")}`}
 										disabled={isPending}
 									>
 										<IconTrash className="size-4 text-destructive" />

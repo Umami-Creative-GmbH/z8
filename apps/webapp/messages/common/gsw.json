@@ -1,10 +1,4 @@
 {
-  "accessDenied": {
-    "contactAdmin": "Bitte kontaktiere Sie Ihre Organisations-Administrator, um Zuegriff z'becho.",
-    "description": "Ihr Konto hät kei Zuegriffsrächt für {{appLabel}}.",
-    "signOut": "Abmälde",
-    "title": "Zuegriff iigschränkt"
-  },
   "actions": {
     "cancel": "Abbräche",
     "delete": "Lösche",

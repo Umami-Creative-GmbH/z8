@@ -230,16 +230,17 @@ function ClockOutDelegationHarness({
 	return <div ref={containerRef} data-testid="clock-out-delegation-container" />;
 }
 
-function DomLifecycleHarness() {
+function DomLifecycleHarness({ onTimeRangeSelect }: { onTimeRangeSelect?: (range: { start: Date; end: Date }) => void } = {}) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	useScheduleXDomLifecycle({
 		calendarContainerRef: containerRef,
 		events: EMPTY_CALENDAR_EVENTS,
 		clockOutAllowedWorkPeriodIds: EMPTY_CLOCK_OUT_ALLOWED_WORK_PERIOD_IDS,
 		isLoading: false,
-		viewMode: "month",
+		viewMode: onTimeRangeSelect ? "day" : "month",
 		timeZone: "Europe/Berlin",
-		visibleRequirementDates: EMPTY_VISIBLE_REQUIREMENT_DATES,
+		visibleRequirementDates: onTimeRangeSelect ? [DateTime.fromISO("2026-05-18", { zone: "Europe/Berlin" })] : EMPTY_VISIBLE_REQUIREMENT_DATES,
+		onTimeRangeSelect,
 		workHoursData: EMPTY_WORK_HOURS_DATA,
 		isSummaryLoading: false,
 		t: translateFallback,
@@ -247,6 +248,7 @@ function DomLifecycleHarness() {
 
 	return (
 		<div ref={containerRef} data-testid="dom-lifecycle-container">
+			<div className="sx__time-grid-day" data-time-grid-date="2026-05-18" />
 			<div className="sx__event" data-testid="dom-lifecycle-event" />
 			<div className="sx__event-modal is-open" />
 		</div>
@@ -260,6 +262,35 @@ beforeEach(() => {
 });
 
 describe("ScheduleXCalendarWrapper header", () => {
+	it.each([false, true])("previews a snapped drag before release (reverse: %s)", (reverse) => {
+		const onSelect = vi.fn();
+		const { container, unmount } = render(<DomLifecycleHarness onTimeRangeSelect={onSelect} />);
+		const day = container.querySelector<HTMLElement>(".sx__time-grid-day")!;
+		vi.spyOn(day, "getBoundingClientRect").mockReturnValue({ left: 0, right: 100, top: 0, bottom: 1440, height: 1440, width: 100, x: 0, y: 0, toJSON() {} });
+		const pointer = (type: string, y: number) => {
+			const event = new MouseEvent(type, { bubbles: true, button: 0, clientX: 50, clientY: y });
+			Object.defineProperty(event, "pointerType", { value: "mouse" });
+			fireEvent(day, event);
+		};
+		pointer("pointerdown", reverse ? 600 : 480);
+		pointer("pointermove", reverse ? 480 : 600);
+		const preview = day.querySelector<HTMLElement>(".z8-range-selection");
+		expect(preview).not.toBeNull();
+		expect(Number.parseFloat(preview!.style.top)).toBeCloseTo(100 / 3);
+		expect(Number.parseFloat(preview!.style.height)).toBeCloseTo(100 / 12);
+		expect(onSelect).not.toHaveBeenCalled();
+		pointer("pointerup", reverse ? 480 : 600);
+		expect(day.querySelector(".z8-range-selection")).toBeNull();
+		expect(onSelect).toHaveBeenCalledOnce();
+		pointer("pointerdown", 480);
+		pointer("pointermove", 600);
+		pointer("pointercancel", 600);
+		expect(day.querySelector(".z8-range-selection")).toBeNull();
+		pointer("pointerup", 600);
+		expect(onSelect).toHaveBeenCalledOnce();
+		unmount();
+	});
+
 	it("waits for the calendar app before synchronizing the selected date", () => {
 		expect(() =>
 			render(

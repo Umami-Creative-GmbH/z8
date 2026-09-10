@@ -32,7 +32,11 @@ type SurchargeReportAction =
 	| { type: "invalidRange"; message: string }
 	| { type: "requestFailed"; message: string; retainRows: boolean }
 	| { type: "requestStarted"; organizationId: string; shouldClearRows: boolean }
-	| { type: "requestSucceeded"; organizationId: string; rows: SurchargeCalculationWithDetails[] }
+	| {
+			type: "requestSucceeded";
+			organizationId: string;
+			rows: SurchargeCalculationWithDetails[];
+	  }
 	| { type: "setActiveFilters"; filters: FilterValues }
 	| { type: "setExpandedId"; id: string | null };
 
@@ -199,7 +203,10 @@ export function SurchargeReports({ organizationId }: SurchargeReportsProps) {
 					<form
 						data-testid="surcharge-report-filters"
 						className="grid gap-4 md:grid-cols-[repeat(3,minmax(0,1fr))_auto]"
-						onSubmit={form.handleSubmit}
+						onSubmit={(event) => {
+							event.preventDefault();
+							void form.handleSubmit();
+						}}
 					>
 						<form.Field name="startDate">
 							{(field) => (

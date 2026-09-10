@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { IconLogin2, IconSettings as SettingsIcon, IconLoader2, IconClock, IconSun, IconMoon, IconDeviceDesktop } from "@tabler/icons-react";
+import { IconLogin2, IconSettings, IconLoader2, IconClock } from "@tabler/icons-react";
 import { useTheme } from "../hooks/useTheme";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface LoginScreenProps {
   webappUrl: string;
@@ -32,27 +33,11 @@ export function LoginScreen({ webappUrl, onLogin, onOpenSettings }: LoginScreenP
     }
   };
 
-  const cycleTheme = () => {
-    if (theme === "system") setTheme("light");
-    else if (theme === "light") setTheme("dark");
-    else setTheme("system");
-  };
-
-  const ThemeIcon = theme === "system" ? IconDeviceDesktop : resolvedTheme === "dark" ? IconMoon : IconSun;
-
   return (
     <div className="login-screen">
       {/* Top buttons */}
       <div className="login-header-buttons">
-        <button
-          type="button"
-          aria-label={`Change theme. Current theme: ${theme === "system" ? "System" : theme === "light" ? "Light" : "Dark"}`}
-          onClick={cycleTheme}
-          className="settings-button"
-          title={`Theme: ${theme === "system" ? "System" : theme === "light" ? "Light" : "Dark"}`}
-        >
-          <ThemeIcon size={18} />
-        </button>
+        <ThemeToggle theme={theme} setTheme={setTheme} resolvedTheme={resolvedTheme} />
         {webappUrl && (
           <button
             type="button"
@@ -61,7 +46,7 @@ export function LoginScreen({ webappUrl, onLogin, onOpenSettings }: LoginScreenP
             className="settings-button"
             title="IconSettings"
           >
-            <SettingsIcon size={18} />
+            <IconSettings size={18} />
           </button>
         )}
       </div>
@@ -83,7 +68,7 @@ export function LoginScreen({ webappUrl, onLogin, onOpenSettings }: LoginScreenP
               Configure your webapp URL to get started
             </p>
             <button type="button" onClick={onOpenSettings} className="login-button">
-              <SettingsIcon size={20} />
+              <IconSettings size={20} />
               Open IconSettings
             </button>
           </div>

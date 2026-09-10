@@ -192,6 +192,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 						variant="ghost"
 						size="icon"
 						onClick={() => onEditClick(row.original)}
+						aria-label={`${t("common.edit", "Edit")}: ${row.original.name}`}
 						disabled={deleteMutation.isPending}
 					>
 						<IconPencil className="size-4" />
@@ -200,6 +201,7 @@ export function CategoryManager({ organizationId, onAddClick, onEditClick }: Cat
 						variant="ghost"
 						size="icon"
 						onClick={() => handleDeleteClick(row.original)}
+						aria-label={`${t("common.delete", "Delete")}: ${row.original.name}`}
 						disabled={deleteMutation.isPending}
 					>
 						{deleteMutation.isPending && categoryToDelete?.id === row.original.id ? (

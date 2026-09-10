@@ -131,11 +131,6 @@ const updateEmployeeFieldsSchema = z.object({
 	contractType: contractTypeSchema.optional(),
 	hourlyRate: hourlyRateSchema,
 
-	// App access permissions (admin-only)
-	canUseWebapp: z.boolean().optional(),
-	canUseDesktop: z.boolean().optional(),
-	canUseMobile: z.boolean().optional(),
-
 	// Auth user identity fields (admin-only)
 	firstName: authUserNamePartSchema,
 	lastName: authUserNamePartSchema,

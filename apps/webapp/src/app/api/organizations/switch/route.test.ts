@@ -186,7 +186,7 @@ describe("POST /api/organizations/switch bearer access", () => {
 		expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
 	});
 
-	it("allows bearer org switching when the user has any non-web app access even if X-Z8-App-Type is spoofed", async () => {
+	it("allows authorized bearer org switching regardless of the app type header", async () => {
 		mockState.resolvedHeaders = new Headers({
 			authorization: "Bearer session-token",
 			"x-z8-app-type": "mobile",
@@ -214,7 +214,7 @@ describe("POST /api/organizations/switch bearer access", () => {
 		});
 	});
 
-	it("rejects bearer org switching when the user has no non-web client access", async () => {
+	it("allows authorized bearer org switching with legacy disabled client flags", async () => {
 		mockState.resolvedHeaders = new Headers({
 			authorization: "Bearer session-token",
 			"x-z8-app-type": "desktop",
@@ -235,9 +235,11 @@ describe("POST /api/organizations/switch bearer access", () => {
 			),
 		);
 
-		expect(response.status).toBe(403);
-		expect(await response.json()).toEqual({ error: "Access denied" });
-		expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
+		expect(response.status).toBe(200);
+		expect(mockState.setActiveOrganization).toHaveBeenCalledWith({
+			headers: mockState.resolvedHeaders,
+			body: { organizationId: "org-2" },
+		});
 	});
 
 	it("repairs a missing employee profile for an existing organization member", async () => {

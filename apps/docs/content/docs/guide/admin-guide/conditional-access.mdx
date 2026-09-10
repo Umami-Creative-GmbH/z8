@@ -28,7 +28,7 @@ Policies are evaluated in priority order, with higher priority policies taking p
 
 ## Role Templates
 
-Role Templates provide a way to bundle permissions, app access, and conditional access policies into reusable configurations. When users join your organization via SSO or SCIM, they can be automatically assigned the appropriate role template based on their identity provider groups.
+Role Templates provide a way to bundle permissions and conditional access policies into reusable configurations. When users join your organization via SSO or SCIM, they can be automatically assigned the appropriate role template based on their identity provider groups.
 
 ### Understanding Role Templates
 
@@ -36,7 +36,6 @@ A role template includes:
 
 - **Employee Role**: Admin, manager, or employee
 - **Team Permissions**: What team management actions the user can perform
-- **App Access**: Which applications (web, desktop, mobile) the user can access
 - **Access Policy**: Which conditional access policy applies to users with this role
 
 ### Creating a Role Template
@@ -52,12 +51,8 @@ A role template includes:
    - Can manage team members
    - Can manage team settings
    - Can approve team requests
-5. Set app access:
-   - Web application
-   - Desktop application
-   - Mobile application
-6. Optionally link an access policy
-7. Click **Create Template**
+5. Optionally link an access policy
+6. Click **Create Template**
 
 ### Global vs Organization Templates
 

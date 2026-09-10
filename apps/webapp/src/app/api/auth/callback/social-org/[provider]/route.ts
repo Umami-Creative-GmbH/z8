@@ -7,7 +7,7 @@ import * as authSchema from "@/db/auth-schema";
 import type { SocialOAuthProvider } from "@/db/schema";
 import { env } from "@/env";
 import { getBaseUrlFromHost } from "@/lib/app-url";
-import { getAccountIssuer } from "@/lib/auth/account-issuer";
+import { getSafeCallbackPath } from "@/lib/auth/callback-url";
 import { createLogger } from "@/lib/logger";
 import {
 	exchangeCode,
@@ -21,19 +21,6 @@ import {
 const logger = createLogger("SocialOAuth:Callback");
 
 const VALID_PROVIDERS: SocialOAuthProvider[] = ["google", "github", "linkedin", "apple"];
-
-/**
- * Validate callback URL to prevent open redirect attacks
- */
-function isValidCallbackURL(url: string): boolean {
-	// Only allow relative URLs starting with /
-	if (!url.startsWith("/")) return false;
-	// Prevent protocol-relative URLs (//evil.com)
-	if (url.startsWith("//")) return false;
-	// Prevent javascript: or data: URLs
-	if (/^(javascript|data|vbscript):/i.test(url)) return false;
-	return true;
-}
 
 function decodeStateParam(encodedState: string): string | null {
 	if (!encodedState || encodedState.length > 4096) {
@@ -126,13 +113,15 @@ export async function findOrCreateUserWithAccount(params: {
 		idToken,
 		expiresIn,
 	} = params;
-	const issuer = getAccountIssuer(provider);
+	if (!VALID_PROVIDERS.includes(provider)) {
+		throw new Error(`Unknown account provider: ${provider}`);
+	}
 	const normalizedEmail = email.trim().toLowerCase();
 
 	// Check if account already exists
 	const existingAccount = await db.query.account.findFirst({
 		where: and(
-			eq(authSchema.account.issuer, issuer),
+			eq(authSchema.account.providerId, provider),
 			eq(authSchema.account.accountId, providerUserId),
 		),
 	});
@@ -159,12 +148,16 @@ export async function findOrCreateUserWithAccount(params: {
 	});
 
 	if (existingUser) {
+		// Matching an email is not proof of ownership of the existing Z8 account.
+		if (emailVerified !== true) {
+			throw new Error("Verified email required to link an account");
+		}
+
 		// Link new account to existing user
 		await db.insert(authSchema.account).values({
 			id: generateId(32),
 			accountId: providerUserId,
 			providerId: provider,
-			issuer,
 			userId: existingUser.id,
 			accessToken,
 			refreshToken,
@@ -196,7 +189,6 @@ export async function findOrCreateUserWithAccount(params: {
 		id: generateId(32),
 		accountId: providerUserId,
 		providerId: provider,
-		issuer,
 		userId,
 		accessToken,
 		refreshToken,
@@ -372,7 +364,7 @@ async function handleCallback(
 
 		// Redirect to callback URL (validate to prevent open redirect)
 		// If new user, might want to redirect to onboarding
-		const safeCallbackURL = isValidCallbackURL(state.callbackURL) ? state.callbackURL : "/";
+		const safeCallbackURL = getSafeCallbackPath(state.callbackURL) ?? "/";
 		const redirectUrl = isNewUser ? "/onboarding" : safeCallbackURL;
 		return NextResponse.redirect(new URL(redirectUrl, request.url));
 	} catch (error) {

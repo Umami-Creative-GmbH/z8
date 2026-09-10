@@ -2,7 +2,6 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { routing } from "@/i18n/routing";
-import { validateAppAccess } from "@/lib/app-access";
 import { classifyDomainHost, resolvePlatformOrganization } from "@/lib/domain/platform-domain";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 import { applySecurityHeaders } from "@/lib/security";
@@ -54,44 +53,7 @@ export async function proxy(request: NextRequest) {
 	const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?:\/|$)/, "/");
 	const locale = pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
 	const isApiRoute = pathname.startsWith("/api/");
-	const isAuthApiRoute = pathname.startsWith("/api/auth/") && pathname !== "/api/auth/context";
-	const isPublicApiRoute = pathname.startsWith("/api/calendar/ics/");
-	const isAccessDeniedPage = pathWithoutLocale === "/access-denied";
-	const hasSessionCredential =
-		SESSION_COOKIE_NAMES.some((cookieName) => request.cookies.has(cookieName)) ||
-		request.headers.get("authorization")?.toLowerCase().startsWith("bearer ");
-
-	if (hasSessionCredential && !isAuthApiRoute && !isPublicApiRoute && !isAccessDeniedPage) {
-		const { auth } = await import("@/lib/auth");
-		const session = await auth.api.getSession({ headers: request.headers });
-
-		if (session?.user) {
-			const accessCheck = validateAppAccess(
-				session.user,
-				request.headers,
-				isApiRoute ? undefined : "webapp",
-			);
-			if (!accessCheck.allowed) {
-				if (pathname.startsWith("/api/")) {
-					return NextResponse.json(
-						{
-							error: "AppAccessDenied",
-							message: accessCheck.reason,
-							appType: accessCheck.appType,
-						},
-						{ status: 403 },
-					);
-				}
-
-				const deniedUrl = new URL(`/${locale}/access-denied`, request.url);
-				deniedUrl.searchParams.set("app", accessCheck.appType);
-				return NextResponse.redirect(deniedUrl);
-			}
-		}
-	}
-
-	// API routes were previously outside the proxy matcher. After app-access enforcement,
-	// preserve their existing route-handler behavior without applying page middleware.
+	// API handlers perform authentication and authorization without page middleware.
 	if (isApiRoute) {
 		return NextResponse.next();
 	}

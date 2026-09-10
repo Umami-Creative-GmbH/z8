@@ -186,7 +186,8 @@ export function HolidayDialog({
 
 				<form
 					onSubmit={(e) => {
-						void form.handleSubmit(e);
+						e.preventDefault();
+						void form.handleSubmit();
 					}}
 					className="flex min-h-0 flex-1 flex-col"
 				>

@@ -35,7 +35,10 @@ vi.mock("@/components/employee-select", () => ({
 		value: string | null;
 		onChange: (value: string | null) => void;
 		excludeIds?: string[];
-		employees?: Array<{ id: string; user: { name: string | null; email: string } }>;
+		employees?: Array<{
+			id: string;
+			user: { name: string | null; email: string };
+		}>;
 	}) => (
 		<label>
 			{label}
@@ -64,7 +67,10 @@ vi.mock("@/components/employee-select", () => ({
 		label?: string;
 		value: string[];
 		onChange: (value: string[]) => void;
-		employees?: Array<{ id: string; user: { name: string | null; email: string } }>;
+		employees?: Array<{
+			id: string;
+			user: { name: string | null; email: string };
+		}>;
 	}) => (
 		<fieldset>
 			<legend>{label}</legend>
@@ -99,7 +105,10 @@ beforeAll(() => {
 describe("PayrollAccessForm", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		savePayrollAccessActionMock.mockResolvedValue({ success: true, data: { grantId: "grant-id" } });
+		savePayrollAccessActionMock.mockResolvedValue({
+			success: true,
+			data: { grantId: "grant-id" },
+		});
 	});
 
 	it("renders the payroll officer list empty state", () => {
@@ -125,7 +134,9 @@ describe("PayrollAccessForm", () => {
 		render(<PayrollAccessForm employees={[]} teams={[]} initialGrants={[]} />);
 
 		expect(
-			screen.getByRole<HTMLButtonElement>("button", { name: "Add payroll officer" }).disabled,
+			screen.getByRole<HTMLButtonElement>("button", {
+				name: "Add payroll officer",
+			}).disabled,
 		).toBe(true);
 	});
 
@@ -136,7 +147,11 @@ describe("PayrollAccessForm", () => {
 			<PayrollAccessForm
 				employees={[
 					{ id: "employee-a", name: "Ada Lovelace", email: "ada@example.com" },
-					{ id: "employee-b", name: "Grace Hopper", email: "grace@example.com" },
+					{
+						id: "employee-b",
+						name: "Grace Hopper",
+						email: "grace@example.com",
+					},
 				]}
 				teams={[{ id: "team-ops", name: "Ops" }]}
 				initialGrants={[
@@ -195,7 +210,11 @@ describe("PayrollAccessForm", () => {
 			<PayrollAccessForm
 				employees={[
 					{ id: "employee-a", name: "Ada Lovelace", email: "ada@example.com" },
-					{ id: "employee-b", name: "Grace Hopper", email: "grace@example.com" },
+					{
+						id: "employee-b",
+						name: "Grace Hopper",
+						email: "grace@example.com",
+					},
 				]}
 				teams={[{ id: "team-ops", name: "Ops" }]}
 				initialGrants={[]}
@@ -206,7 +225,19 @@ describe("PayrollAccessForm", () => {
 		await user.selectOptions(screen.getByLabelText("Payroll officer"), "employee-a");
 		await user.click(screen.getByRole("switch", { name: "Ops" }));
 		await user.click(screen.getByRole("checkbox", { name: "Grace Hopper" }));
-		await user.click(screen.getByRole("button", { name: "Save payroll officer" }));
+		const submitButton = screen.getByRole("button", {
+			name: "Save payroll officer",
+		});
+		let submitEvent: Event | undefined;
+		submitButton.closest("form")!.addEventListener(
+			"submit",
+			(event) => {
+				submitEvent = event;
+			},
+			{ once: true },
+		);
+		await user.click(submitButton);
+		expect(submitEvent?.defaultPrevented).toBe(true);
 
 		await waitFor(() => expect(savePayrollAccessActionMock).toHaveBeenCalledTimes(1));
 		expect(savePayrollAccessActionMock).toHaveBeenCalledWith({
@@ -247,7 +278,11 @@ describe("PayrollAccessForm", () => {
 			<PayrollAccessForm
 				employees={[
 					{ id: "employee-a", name: "Ada Lovelace", email: "ada@example.com" },
-					{ id: "employee-b", name: "Grace Hopper", email: "grace@example.com" },
+					{
+						id: "employee-b",
+						name: "Grace Hopper",
+						email: "grace@example.com",
+					},
 				]}
 				teams={[{ id: "team-ops", name: "Ops" }]}
 				initialGrants={[

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import * as ts from "typescript/unstable/ast";
-import { afterAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import * as nativeSourceAnalysis from "@/lib/typescript/native-source-analysis";
 
 const MAX_AST_LINES = 300;
@@ -30,6 +30,12 @@ const targets = [
 
 const withNativeSource = vi.spyOn(nativeSourceAnalysis, "withNativeSource");
 const lineCountsByFile = new Map<string, Map<string, number>>();
+let nativeSourceCallCount = 0;
+
+afterEach(() => {
+	nativeSourceCallCount += withNativeSource.mock.calls.length;
+	withNativeSource.mockClear();
+});
 
 function functionAstLines(filePath: string, functionName: string) {
 	let counts = lineCountsByFile.get(filePath);
@@ -66,15 +72,10 @@ function functionAstLines(filePath: string, functionName: string) {
 }
 
 afterAll(() => {
-	let nativeSourceCallCount = 0;
 	try {
-		nativeSourceCallCount = withNativeSource.mock.calls.length;
+		withNativeSource.mockRestore();
 	} finally {
-		try {
-			withNativeSource.mockRestore();
-		} finally {
-			lineCountsByFile.clear();
-		}
+		lineCountsByFile.clear();
 	}
 	expect(nativeSourceCallCount).toBe(
 		new Set(targets.map(([relativePath]) => relativePath)).size,

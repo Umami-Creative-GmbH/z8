@@ -7,18 +7,9 @@ import { useState } from "react";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { isHolidayOnDate } from "@/lib/absences/absence-calendar-adapter";
-import type {
-	AbsenceWithCategory,
-	DayPeriod,
-	Holiday,
-} from "@/lib/absences/types";
+import type { AbsenceWithCategory, DayPeriod, Holiday } from "@/lib/absences/types";
 import { cn } from "@/lib/utils";
 
 interface AbsenceCalendarProps {
@@ -78,8 +69,7 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 			: sundayFirstWeekdays;
 
 	const firstDay = new Date(year, month, 1).getDay();
-	const firstDayOfMonth =
-		weekStartDay === "monday" ? (firstDay + 6) % 7 : firstDay;
+	const firstDayOfMonth = weekStartDay === "monday" ? (firstDay + 6) % 7 : firstDay;
 
 	// Navigate months
 	const previousMonth = () => {
@@ -98,10 +88,20 @@ export function AbsenceCalendar({ absences, holidays }: AbsenceCalendarProps) {
 						{monthNames[month]} {year}
 					</CardTitle>
 					<div className="flex gap-2">
-						<Button variant="outline" size="icon" onClick={previousMonth}>
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={previousMonth}
+							aria-label={t("calendar:calendar.monthSummary.previousMonth", "Previous month")}
+						>
 							<IconChevronLeft className="size-4" />
 						</Button>
-						<Button variant="outline" size="icon" onClick={nextMonth}>
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={nextMonth}
+							aria-label={t("calendar:calendar.monthSummary.nextMonth", "Next month")}
+						>
 							<IconChevronRight className="size-4" />
 						</Button>
 					</div>
@@ -172,15 +172,9 @@ function AbsenceCalendarGrid({
 						(absence.startPeriod === "am" && absence.endPeriod === "pm")
 					) {
 						period = "full_day";
-					} else if (
-						absence.startPeriod === "am" &&
-						absence.endPeriod === "am"
-					) {
+					} else if (absence.startPeriod === "am" && absence.endPeriod === "am") {
 						period = "am";
-					} else if (
-						absence.startPeriod === "pm" &&
-						absence.endPeriod === "pm"
-					) {
+					} else if (absence.startPeriod === "pm" && absence.endPeriod === "pm") {
 						period = "pm";
 					}
 				} else if (isFirstDay) {
@@ -214,11 +208,7 @@ function AbsenceCalendarGrid({
 
 	const days = [];
 	for (let i = 0; i < firstDayOfMonth; i++) {
-		const emptyDateKey = new Date(
-			year,
-			month,
-			i - firstDayOfMonth + 1,
-		).toISOString();
+		const emptyDateKey = new Date(year, month, i - firstDayOfMonth + 1).toISOString();
 		days.push(<div key={emptyDateKey} className="aspect-square" />);
 	}
 
@@ -234,12 +224,7 @@ function AbsenceCalendarGrid({
 		const getBackgroundStyle = () => {
 			if (status?.type !== "absence") return {};
 
-			const opacity =
-				status.status === "approved"
-					? 0.15
-					: status.status === "pending"
-						? 0.1
-						: 0.1;
+			const opacity = status.status === "approved" ? 0.15 : status.status === "pending" ? 0.1 : 0.1;
 			const color =
 				status.status === "approved"
 					? "59, 130, 246" // blue
@@ -339,10 +324,7 @@ function AbsenceCalendarGrid({
 		<TooltipProvider delayDuration={150}>
 			<div className="grid grid-cols-7 gap-2">
 				{weekdays.map((day) => (
-					<div
-						key={day}
-						className="text-center text-sm font-medium text-muted-foreground pb-2"
-					>
+					<div key={day} className="text-center text-sm font-medium text-muted-foreground pb-2">
 						{day}
 					</div>
 				))}
@@ -383,8 +365,7 @@ function AbsenceCalendarLegend({ t }: { t: Translate }) {
 				<div
 					className="size-3 rounded"
 					style={{
-						background:
-							"linear-gradient(to bottom, rgba(59, 130, 246, 0.2) 50%, transparent 50%)",
+						background: "linear-gradient(to bottom, rgba(59, 130, 246, 0.2) 50%, transparent 50%)",
 					}}
 				/>
 				<span className="text-muted-foreground">
@@ -395,8 +376,7 @@ function AbsenceCalendarLegend({ t }: { t: Translate }) {
 				<div
 					className="size-3 rounded"
 					style={{
-						background:
-							"linear-gradient(to top, rgba(59, 130, 246, 0.2) 50%, transparent 50%)",
+						background: "linear-gradient(to top, rgba(59, 130, 246, 0.2) 50%, transparent 50%)",
 					}}
 				/>
 				<span className="text-muted-foreground">

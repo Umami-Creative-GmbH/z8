@@ -109,29 +109,6 @@ const translations = new Map([
 		"settings.employees.detailView.contractHourlyDescription",
 		"Bezahlung nach geleisteten Stunden",
 	],
-	[
-		"settings.employees.detailView.appAccessPermissions",
-		"App-Zugriffsberechtigungen",
-	],
-	[
-		"settings.employees.detailView.appAccessDescription",
-		"Steuern Sie, auf welche Anwendungen dieser Mitarbeiter zugreifen kann",
-	],
-	["settings.employees.detailView.webApplication", "Webanwendung"],
-	[
-		"settings.employees.detailView.webApplicationDescription",
-		"Zugriff auf die browserbasierte Anwendung",
-	],
-	["settings.employees.detailView.desktopApplication", "Desktop-Anwendung"],
-	[
-		"settings.employees.detailView.desktopApplicationDescription",
-		"Zugriff auf die Desktop-App zur Zeiterfassung",
-	],
-	["settings.employees.detailView.mobileApplication", "Mobile Anwendung"],
-	[
-		"settings.employees.detailView.mobileApplicationDescription",
-		"Zugriff auf mobile Apps zur Zeiterfassung",
-	],
 	["settings.employees.detailView.cancel", "Abbrechen"],
 	["settings.employees.detailView.saveChanges", "Änderungen speichern"],
 ]);
@@ -175,9 +152,6 @@ const formValues = {
 	role: "employee",
 	contractType: "fixed",
 	hourlyRate: "",
-	canUseWebapp: true,
-	canUseDesktop: true,
-	canUseMobile: true,
 };
 
 function createForm(overrides: Partial<typeof formValues> = {}) {
@@ -493,7 +467,6 @@ describe("employee detail page sections", () => {
 		expect(screen.getByText("Standardzugriff")).toBeTruthy();
 		expect(screen.getByText("Vertragsart")).toBeTruthy();
 		expect(screen.getByText("Festgehalt")).toBeTruthy();
-		expect(screen.getByText("App-Zugriffsberechtigungen")).toBeTruthy();
 		expect(screen.getByText("Änderungen speichern")).toBeTruthy();
 		expect(screen.queryByText("Edit Employee")).toBeNull();
 		expect(screen.queryByText("System Role")).toBeNull();

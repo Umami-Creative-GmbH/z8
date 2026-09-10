@@ -10,15 +10,7 @@ interface Breadcrumb {
 	href: string;
 }
 
-export function SettingsBreadcrumbs() {
-	const pathname = usePathname();
-	const { t } = useTranslate();
-
-	// Don't show breadcrumbs on the settings index page
-	if (pathname === "/settings") {
-		return null;
-	}
-
+function buildSettingsBreadcrumbs(pathname: string, t: ReturnType<typeof useTranslate>["t"]) {
 	const breadcrumbs: Breadcrumb[] = [
 		{
 			label: t("settings.title", "Settings"),
@@ -95,6 +87,20 @@ export function SettingsBreadcrumbs() {
 			href: currentPath,
 		});
 	}
+
+	return breadcrumbs;
+}
+
+export function SettingsBreadcrumbs() {
+	const pathname = usePathname();
+	const { t } = useTranslate();
+
+	// Don't show breadcrumbs on the settings index page
+	if (pathname === "/settings") {
+		return null;
+	}
+
+	const breadcrumbs = buildSettingsBreadcrumbs(pathname, t);
 
 	return (
 		<nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4 px-6 pt-4">

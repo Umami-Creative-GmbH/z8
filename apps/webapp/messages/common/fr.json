@@ -1,10 +1,4 @@
 {
-  "accessDenied": {
-    "contactAdmin": "Veuillez contacter l'administrateur de votre organisation pour demander l'accès.",
-    "description": "Votre compte n'a pas l'autorisation d'accéder à {{appLabel}}.",
-    "signOut": "Déconnexion",
-    "title": "Accès restreint"
-  },
   "actions": {
     "cancel": "Annuler",
     "delete": "Supprimer",

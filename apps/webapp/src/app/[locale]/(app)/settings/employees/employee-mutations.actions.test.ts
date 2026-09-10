@@ -16,7 +16,6 @@ const mocks = vi.hoisted(() => ({
 	getEmployeeSettingsActorContext: vi.fn(),
 	getTargetEmployee: vi.fn(),
 	getTargetUser: vi.fn(),
-	hasAppAccessChanges: vi.fn(),
 	parseHourlyRate: vi.fn(),
 	requireOrgAdminEmployeeSettingsAccess: vi.fn(),
 	revalidateEmployeesCache: vi.fn(),
@@ -41,7 +40,6 @@ vi.mock("./employee-action-utils", () => ({
 	getEmployeeSettingsActorContext: mocks.getEmployeeSettingsActorContext,
 	getTargetEmployee: mocks.getTargetEmployee,
 	getTargetUser: mocks.getTargetUser,
-	hasAppAccessChanges: mocks.hasAppAccessChanges,
 	parseHourlyRate: mocks.parseHourlyRate,
 	requireOrgAdminEmployeeSettingsAccess:
 		mocks.requireOrgAdminEmployeeSettingsAccess,
@@ -362,7 +360,6 @@ describe("updateEmployeeAction", () => {
 		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
 			Effect.void,
 		);
-		mocks.hasAppAccessChanges.mockReturnValue(false);
 		mocks.validateInput.mockReturnValue(
 			Effect.succeed({
 				position: "Engineer",
@@ -438,7 +435,6 @@ describe("updateEmployeeAction", () => {
 		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
 			Effect.void,
 		);
-		mocks.hasAppAccessChanges.mockReturnValue(false);
 		mocks.validateInput.mockReturnValue(
 			Effect.succeed({
 				position: "Engineer",
@@ -510,7 +506,6 @@ describe("updateEmployeeAction", () => {
 		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
 			Effect.void,
 		);
-		mocks.hasAppAccessChanges.mockReturnValue(false);
 		mocks.validateInput.mockReturnValue(
 			Effect.succeed({
 				position: "Engineer",
@@ -566,7 +561,6 @@ describe("updateEmployeeAction", () => {
 		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
 			Effect.void,
 		);
-		mocks.hasAppAccessChanges.mockReturnValue(false);
 		mocks.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
 		mocks.validateInput.mockReturnValue(
 			Effect.succeed({
@@ -623,7 +617,6 @@ describe("updateEmployeeAction", () => {
 		mocks.ensureSettingsActorCanAccessEmployeeTarget.mockReturnValue(
 			Effect.void,
 		);
-		mocks.hasAppAccessChanges.mockReturnValue(false);
 		mocks.requestEmployeeWorkBalanceFullRebuild.mockResolvedValue(undefined);
 		mocks.validateInput.mockReturnValue(
 			Effect.succeed({

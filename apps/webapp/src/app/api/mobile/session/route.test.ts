@@ -44,7 +44,6 @@ describe("GET /api/mobile/session", () => {
 				id: "user-1",
 				name: "Pat Example",
 				email: "pat@example.com",
-				canUseMobile: true,
 			},
 			session: {
 				activeOrganizationId: "org-1",
@@ -69,7 +68,6 @@ describe("GET /api/mobile/session", () => {
 				id: "user-1",
 				name: "Pat Example",
 				email: "pat@example.com",
-				canUseMobile: true,
 			},
 			session: {
 				activeOrganizationId: "org-1",
@@ -86,7 +84,9 @@ describe("GET /api/mobile/session", () => {
 		);
 
 		expect(response.status).toBe(403);
-		expect(await response.json()).toEqual({ error: "Mobile app access required" });
+		expect(await response.json()).toEqual({
+			error: "Mobile app access required",
+		});
 	});
 
 	it("rejects bearer requests with a mobile user-agent when X-Z8-App-Type is missing", async () => {
@@ -95,7 +95,6 @@ describe("GET /api/mobile/session", () => {
 				id: "user-1",
 				name: "Pat Example",
 				email: "pat@example.com",
-				canUseMobile: true,
 			},
 			session: {
 				activeOrganizationId: "org-1",
@@ -112,74 +111,81 @@ describe("GET /api/mobile/session", () => {
 		);
 
 		expect(response.status).toBe(403);
-		expect(await response.json()).toEqual({ error: "Mobile app access required" });
+		expect(await response.json()).toEqual({
+			error: "Mobile app access required",
+		});
 	});
 
-	it("returns the active organization and org memberships for a mobile bearer session", async () => {
-		mockState.getSession.mockResolvedValue({
-			user: {
-				id: "user-1",
-				name: "Pat Example",
-				email: "pat@example.com",
-				canUseMobile: true,
-			},
-			session: {
+	it.each([undefined, false])(
+		"returns organization context for a mobile bearer session when the legacy flag is %s",
+		async (canUseMobile) => {
+			mockState.getSession.mockResolvedValue({
+				user: {
+					id: "user-1",
+					name: "Pat Example",
+					email: "pat@example.com",
+					canUseMobile,
+				},
+				session: {
+					activeOrganizationId: "org-1",
+				},
+			});
+			mockState.findManyMembers.mockResolvedValue([
+				{ organizationId: "org-1" },
+				{ organizationId: "org-2" },
+			]);
+			mockState.findOrganization.mockResolvedValueOnce({
+				id: "org-1",
+				name: "Org One",
+				slug: "org-one",
+			});
+			mockState.findOrganization.mockResolvedValueOnce({
+				id: "org-2",
+				name: "Org Two",
+				slug: "org-two",
+			});
+			mockState.findEmployee.mockResolvedValueOnce({ id: "emp-1" });
+			mockState.findEmployee.mockResolvedValueOnce(undefined);
+
+			const response = await GET(
+				new Request("https://app.example.com/api/mobile/session", {
+					headers: {
+						Authorization: "Bearer session-token",
+						"X-Z8-App-Type": "mobile",
+					},
+				}),
+			);
+
+			expect(response.status).toBe(200);
+			const payload = await response.json();
+
+			expect(payload).toEqual({
+				user: {
+					id: "user-1",
+					name: "Pat Example",
+					email: "pat@example.com",
+				},
 				activeOrganizationId: "org-1",
-			},
-		});
-		mockState.findManyMembers.mockResolvedValue([
-			{ organizationId: "org-1" },
-			{ organizationId: "org-2" },
-		]);
-		mockState.findOrganization.mockResolvedValueOnce({
-			id: "org-1",
-			name: "Org One",
-			slug: "org-one",
-		});
-		mockState.findOrganization.mockResolvedValueOnce({
-			id: "org-2",
-			name: "Org Two",
-			slug: "org-two",
-		});
-		mockState.findEmployee.mockResolvedValueOnce({ id: "emp-1" });
-		mockState.findEmployee.mockResolvedValueOnce(undefined);
-
-		const response = await GET(
-			new Request("https://app.example.com/api/mobile/session", {
-				headers: {
-					Authorization: "Bearer session-token",
-					"X-Z8-App-Type": "mobile",
-				},
-			}),
-		);
-
-		expect(response.status).toBe(200);
-		const payload = await response.json();
-
-		expect(payload).toEqual({
-			user: {
-				id: "user-1",
-				name: "Pat Example",
-				email: "pat@example.com",
-			},
-			activeOrganizationId: "org-1",
-			organizations: [
-				{
-					id: "org-1",
-					name: "Org One",
-					slug: "org-one",
-					hasEmployeeRecord: true,
-				},
-				{
-					id: "org-2",
-					name: "Org Two",
-					slug: "org-two",
-					hasEmployeeRecord: false,
-				},
-			],
-		});
-		expect(payload.organizations[1]).toEqual(expect.objectContaining({ hasEmployeeRecord: false }));
-	});
+				organizations: [
+					{
+						id: "org-1",
+						name: "Org One",
+						slug: "org-one",
+						hasEmployeeRecord: true,
+					},
+					{
+						id: "org-2",
+						name: "Org Two",
+						slug: "org-two",
+						hasEmployeeRecord: false,
+					},
+				],
+			});
+			expect(payload.organizations[1]).toEqual(
+				expect.objectContaining({ hasEmployeeRecord: false }),
+			);
+		},
+	);
 
 	it("rejects a session whose active organization membership was revoked", async () => {
 		mockState.getSession.mockResolvedValue({
@@ -187,7 +193,6 @@ describe("GET /api/mobile/session", () => {
 				id: "user-1",
 				name: "Pat Example",
 				email: "pat@example.com",
-				canUseMobile: true,
 			},
 			session: { activeOrganizationId: "org-1" },
 		});
@@ -203,6 +208,8 @@ describe("GET /api/mobile/session", () => {
 		);
 
 		expect(response.status).toBe(403);
-		expect(await response.json()).toEqual({ error: "Active organization membership required" });
+		expect(await response.json()).toEqual({
+			error: "Active organization membership required",
+		});
 	});
 });

@@ -2,6 +2,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const Module = require("node:module");
 
+process.env.TZ ||= "UTC";
+
 const srcRoot = path.resolve(__dirname, "..", "src");
 const originalResolveFilename = Module._resolveFilename;
 

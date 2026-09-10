@@ -69,7 +69,6 @@ docs/
 
 # Local apps not shipped in these images
 apps/desktop
-apps/mobile
 
 # Deployment artifacts (not needed in image)
 deploy/.vault-data

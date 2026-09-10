@@ -29,7 +29,6 @@ vi.mock("./employee-action-utils", () => ({
 	getEmployeeSettingsActorContext: mocks.getEmployeeSettingsActorContext,
 	getTargetEmployee: vi.fn(),
 	getTargetUser: vi.fn(),
-	hasAppAccessChanges: vi.fn(() => false),
 	parseHourlyRate: vi.fn(() => null),
 	requireOrgAdminEmployeeSettingsAccess:
 		mocks.requireOrgAdminEmployeeSettingsAccess,

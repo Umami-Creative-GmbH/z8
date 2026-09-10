@@ -19,6 +19,13 @@ interface OrganizationDetailsCardProps {
 	currentMemberRole: "owner" | "admin" | "member";
 }
 
+function getOrganizationDescription(metadata: unknown): string | null {
+	if (typeof metadata !== "object" || metadata === null || !("description" in metadata)) {
+		return null;
+	}
+	return typeof metadata.description === "string" ? metadata.description : null;
+}
+
 export function OrganizationDetailsCard({
 	organization,
 	memberCount,
@@ -41,11 +48,7 @@ export function OrganizationDetailsCard({
 			: organization.logo;
 
 	const canEdit = currentMemberRole === "owner";
-	const metadata = organization.metadata as Record<string, unknown> | null;
-	const metadataDescription =
-		typeof metadata === "object" && metadata !== null && typeof metadata.description === "string"
-			? metadata.description
-			: null;
+	const metadataDescription = getOrganizationDescription(organization.metadata);
 
 	// Image upload hook
 	const {

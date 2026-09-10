@@ -636,18 +636,6 @@ export function parseHourlyRate(value?: string | null) {
 	return value ? Number.parseFloat(value) : null;
 }
 
-export function hasAppAccessChanges(data: {
-	canUseWebapp?: boolean;
-	canUseDesktop?: boolean;
-	canUseMobile?: boolean;
-}) {
-	return (
-		data.canUseWebapp !== undefined ||
-		data.canUseDesktop !== undefined ||
-		data.canUseMobile !== undefined
-	);
-}
-
 export function revalidateEmployeesCache(organizationId: string) {
 	revalidateTag(CACHE_TAGS.EMPLOYEES(organizationId), "max");
 }
