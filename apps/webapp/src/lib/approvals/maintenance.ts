@@ -7,6 +7,16 @@ export interface ApprovalMaintenanceDatabase extends ApprovalTransactionClient {
 	): Promise<T>;
 }
 
+export class ApprovalMaintenanceError extends Error {
+	constructor(
+		readonly code: "APPROVAL_NOT_FOUND" | "APPROVAL_AMBIGUOUS",
+		message: string,
+	) {
+		super(message);
+		this.name = "ApprovalMaintenanceError";
+	}
+}
+
 function rows(result: unknown): Record<string, unknown>[] {
 	if (
 		!result ||
@@ -132,75 +142,91 @@ export async function deleteApproval(
 	organizationId: string,
 	id: string,
 ): Promise<DeletedApprovalRecords> {
-	return database.transaction(async (transaction) => {
-		// Operator-only, short-lived topology lock: do not race submissions or stage linking.
-		// Keep FK checks enabled so an unexpected dependency rolls everything back.
-		await transaction.execute(sql`set local lock_timeout = '10s'`);
-		await transaction.execute(sql`set local statement_timeout = '30s'`);
-		await transaction.execute(sql`
-			lock table approval_request, approval_chain_instance, approval_chain_stage_instance,
-				approval_workflow, approval_workflow_stage in share row exclusive mode
-		`);
+	return database.transaction((transaction) =>
+		deleteApprovalInTransaction(transaction, organizationId, id),
+	);
+}
 
-		const matches = rows(
-			await transaction.execute(sql`
+// The caller owns the transaction so platform-admin audit logging can be atomic
+// with deletion. Authorization is enforced at the CLI/server-action boundary.
+export async function deleteApprovalInTransaction(
+	transaction: ApprovalTransactionClient,
+	organizationId: string,
+	id: string,
+): Promise<DeletedApprovalRecords> {
+	// Privileged maintenance only: do not race submissions or stage linking.
+	// Keep FK checks enabled so an unexpected dependency rolls everything back.
+	await transaction.execute(sql`set local lock_timeout = '10s'`);
+	await transaction.execute(sql`set local statement_timeout = '30s'`);
+	await transaction.execute(sql`
+		lock table approval_request, approval_chain_instance, approval_chain_stage_instance,
+			approval_workflow, approval_workflow_stage in share row exclusive mode
+	`);
+
+	const matches = rows(
+		await transaction.execute(sql`
 			select 'legacy' as storage_type, id from approval_request
 			where organization_id = ${organizationId} and id = ${id}::uuid
 			union all
 			select 'workflow' as storage_type, id from approval_workflow
 			where organization_id = ${organizationId} and id = ${id}::uuid
-			`),
+		`),
+	);
+	if (matches.length === 0) {
+		throw new ApprovalMaintenanceError(
+			"APPROVAL_NOT_FOUND",
+			`Approval ${id} not found in organization ${organizationId}`,
 		);
-		if (matches.length === 0) {
-			throw new Error(`Approval ${id} not found in organization ${organizationId}`);
-		}
-		if (matches.length !== 1) {
-			throw new Error(`Approval ${id} is ambiguous: it exists in both approval stores`);
-		}
-		const kind = matches[0].storage_type;
-		if (kind !== "legacy" && kind !== "workflow") {
-			throw new Error("Unexpected approval storage type");
-		}
+	}
+	if (matches.length !== 1) {
+		throw new ApprovalMaintenanceError(
+			"APPROVAL_AMBIGUOUS",
+			`Approval ${id} is ambiguous: it exists in both approval stores`,
+		);
+	}
+	const kind = matches[0].storage_type;
+	if (kind !== "legacy" && kind !== "workflow") {
+		throw new Error("Unexpected approval storage type");
+	}
 
-		const lifecycle = await resolveLifecycle(transaction, organizationId, kind, id);
-		const idsFor = (type: string) => lifecycle.filter((row) => row.kind === type).map(rowId);
-		const legacyIds = idsFor("legacy");
-		const workflowIds = idsFor("workflow");
-		const chainIds = idsFor("chain");
+	const lifecycle = await resolveLifecycle(transaction, organizationId, kind, id);
+	const idsFor = (type: string) => lifecycle.filter((row) => row.kind === type).map(rowId);
+	const legacyIds = idsFor("legacy");
+	const workflowIds = idsFor("workflow");
+	const chainIds = idsFor("chain");
 
-		await clearWorkflowSourceReferences(transaction, organizationId, workflowIds);
-		if (legacyIds.length > 0) {
-			await transaction.execute(sql`
-				update work_period set deletion_approval_request_id = null
-				where organization_id = ${organizationId}
-					and deletion_approval_request_id = any(${sql.param(legacyIds)}::uuid[])
-			`);
-		}
+	await clearWorkflowSourceReferences(transaction, organizationId, workflowIds);
+	if (legacyIds.length > 0) {
+		await transaction.execute(sql`
+			update work_period set deletion_approval_request_id = null
+			where organization_id = ${organizationId}
+				and deletion_approval_request_id = any(${sql.param(legacyIds)}::uuid[])
+		`);
+	}
 
-		const deletedIds = async (query: SQL) => rows(await transaction.execute(query)).map(rowId);
-		// Chains cascade to their stages, removing the non-cascading legacy request FK.
-		const chains = chainIds.length === 0 ? [] : await deletedIds(sql`
+	const deletedIds = async (query: SQL) => rows(await transaction.execute(query)).map(rowId);
+	// Chains cascade to their stages, removing the non-cascading legacy request FK.
+	const chains = chainIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_chain_instance
 			where organization_id = ${organizationId} and id = any(${sql.param(chainIds)}::uuid[])
 			returning id
 		`);
-		const legacyRequests = legacyIds.length === 0 ? [] : await deletedIds(sql`
+	const legacyRequests = legacyIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_request
 			where organization_id = ${organizationId} and id = any(${sql.param(legacyIds)}::uuid[])
 			returning id
 		`);
-		// Workflow FKs cascade through stages, assignments, events, commands, projections,
-		// outbox/deliveries and migration issues. No decision handlers are invoked.
-		const workflows = workflowIds.length === 0 ? [] : await deletedIds(sql`
+	// Workflow FKs cascade through stages, assignments, events, commands, projections,
+	// outbox/deliveries and migration issues. No decision handlers are invoked.
+	const workflows = workflowIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_workflow
 			where organization_id = ${organizationId} and id = any(${sql.param(workflowIds)}::uuid[])
 			returning id
 		`);
 
-		return {
-			legacyRequests: legacyRequests.sort(),
-			workflows: workflows.sort(),
-			chains: chains.sort(),
-		};
-	});
+	return {
+		legacyRequests: legacyRequests.sort(),
+		workflows: workflows.sort(),
+		chains: chains.sort(),
+	};
 }
