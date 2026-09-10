@@ -11,6 +11,15 @@ interface ProjectBudgetProgressProps {
 	usedHours: number;
 }
 
+const budgetStatusStyles = {
+	over: { background: "bg-red-50 dark:bg-red-950", text: "text-red-700 dark:text-red-300" },
+	near: { background: "bg-amber-50 dark:bg-amber-950", text: "text-amber-700 dark:text-amber-300" },
+	onTrack: {
+		background: "bg-green-50 dark:bg-green-950",
+		text: "text-green-700 dark:text-green-300",
+	},
+};
+
 export function ProjectBudgetProgress({ budgetHours, usedHours }: ProjectBudgetProgressProps) {
 	const { t } = useTranslate();
 
@@ -18,6 +27,8 @@ export function ProjectBudgetProgress({ budgetHours, usedHours }: ProjectBudgetP
 	const remainingHours = budgetHours - usedHours;
 	const isOverBudget = percentUsed > 100;
 	const isNearBudget = percentUsed >= 90 && percentUsed <= 100;
+	const statusStyles =
+		budgetStatusStyles[isOverBudget ? "over" : isNearBudget ? "near" : "onTrack"];
 
 	const getStatusIcon = () => {
 		if (isOverBudget) {
@@ -153,22 +164,11 @@ export function ProjectBudgetProgress({ budgetHours, usedHours }: ProjectBudgetP
 				<div
 					className={cn(
 						"flex items-center justify-center gap-2 p-3 rounded-lg",
-						isOverBudget && "bg-red-50 dark:bg-red-950",
-						isNearBudget && "bg-amber-50 dark:bg-amber-950",
-						!isOverBudget && !isNearBudget && "bg-green-50 dark:bg-green-950",
+						statusStyles.background,
 					)}
 				>
 					{getStatusIcon()}
-					<span
-						className={cn(
-							"font-medium",
-							isOverBudget && "text-red-700 dark:text-red-300",
-							isNearBudget && "text-amber-700 dark:text-amber-300",
-							!isOverBudget && !isNearBudget && "text-green-700 dark:text-green-300",
-						)}
-					>
-						{getStatusText()}
-					</span>
+					<span className={cn("font-medium", statusStyles.text)}>{getStatusText()}</span>
 				</div>
 			</CardContent>
 		</Card>

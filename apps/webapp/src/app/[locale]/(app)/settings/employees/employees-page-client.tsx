@@ -11,7 +11,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { flexRender, type SortingState, useTable } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { InviteCodeManagement } from "@/components/organization/invite-code-management";
 import { InviteMemberDialog } from "@/components/organization/invite-member-dialog";
@@ -22,13 +22,7 @@ import type {
 	MemberWithUserAndEmployee,
 } from "@/components/organization/people-management-types";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -113,10 +107,7 @@ export function EmployeesPageClient(props: {
 					{t("settings.employees.title", "Employees")}
 				</h1>
 				<p className="text-sm text-muted-foreground">
-					{t(
-						"settings.employees.description",
-						"Manage employees, members, and invites",
-					)}
+					{t("settings.employees.description", "Manage employees, members, and invites")}
 				</p>
 			</div>
 
@@ -235,10 +226,7 @@ function EmployeeDirectoryFilters({
 			<div className="relative flex-1">
 				<IconSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 				<Input
-					aria-label={t(
-						"settings.employees.directory.searchLabel",
-						"Search employees",
-					)}
+					aria-label={t("settings.employees.directory.searchLabel", "Search employees")}
 					placeholder={t(
 						"settings.employees.directory.searchPlaceholder",
 						"Search by name, email, or position...",
@@ -251,10 +239,7 @@ function EmployeeDirectoryFilters({
 			<Select value={role} onValueChange={onRoleChange}>
 				<SelectTrigger className="w-full sm:w-[180px]">
 					<SelectValue
-						placeholder={t(
-							"settings.employees.directory.roleFilter",
-							"Filter by role",
-						)}
+						placeholder={t("settings.employees.directory.roleFilter", "Filter by role")}
 					/>
 				</SelectTrigger>
 				<SelectContent>
@@ -275,10 +260,7 @@ function EmployeeDirectoryFilters({
 			<Select value={status} onValueChange={onStatusChange}>
 				<SelectTrigger className="w-full sm:w-[180px]">
 					<SelectValue
-						placeholder={t(
-							"settings.employees.directory.statusFilter",
-							"Filter by status",
-						)}
+						placeholder={t("settings.employees.directory.statusFilter", "Filter by status")}
 					/>
 				</SelectTrigger>
 				<SelectContent>
@@ -332,10 +314,14 @@ function EmployeeDirectoryTab(props: {
 		employees.map((employee) => employee.id),
 		{ polling: true },
 	);
-	const employeesWithPresence = employees.map((employee) => ({
-		...employee,
-		clockStatus: presence.getStatus(employee.id),
-	}));
+	const employeesWithPresence = useMemo(
+		() =>
+			employees.map((employee) => ({
+				...employee,
+				clockStatus: presence.snapshots[employee.id.trim()]?.status ?? "unknown",
+			})),
+		[employees, presence.snapshots],
+	);
 
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [searchInput, setSearchInput] = useState("");
@@ -352,9 +338,7 @@ function EmployeeDirectoryTab(props: {
 					? {
 							...current,
 							employees: current.employees.map((row) =>
-								row.kind === "employee" && row.id === employeeId
-									? { ...row, ...updates }
-									: row,
+								row.kind === "employee" && row.id === employeeId ? { ...row, ...updates } : row,
 							),
 						}
 					: current,
@@ -392,10 +376,7 @@ function EmployeeDirectoryTab(props: {
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">
 				<NoEmployeeError
-					feature={t(
-						"settings.employees.directory.noEmployeeFeature",
-						"manage employees",
-					)}
+					feature={t("settings.employees.directory.noEmployeeFeature", "manage employees")}
 				/>
 			</div>
 		);
@@ -410,24 +391,12 @@ function EmployeeDirectoryTab(props: {
 							{t("settings.employees.title", "Employees")}
 						</h1>
 						<p className="text-sm text-muted-foreground">
-							{t(
-								"settings.employees.description",
-								"Manage employees, members, and invites",
-							)}
+							{t("settings.employees.description", "Manage employees, members, and invites")}
 						</p>
 					</div>
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={refresh}
-						disabled={isFetching}
-					>
-						<IconRefresh
-							className={`size-4 ${isFetching ? "animate-spin" : ""}`}
-						/>
-						<span className="sr-only">
-							{t("settings.employees.directory.refresh", "Refresh")}
-						</span>
+					<Button variant="ghost" size="icon" onClick={refresh} disabled={isFetching}>
+						<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
+						<span className="sr-only">{t("settings.employees.directory.refresh", "Refresh")}</span>
 					</Button>
 				</div>
 			)}
@@ -435,29 +404,16 @@ function EmployeeDirectoryTab(props: {
 			<Card>
 				<CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<div>
-						<CardTitle>
-							{t("settings.employees.directory.title", "Employee Directory")}
-						</CardTitle>
+						<CardTitle>{t("settings.employees.directory.title", "Employee Directory")}</CardTitle>
 						<CardDescription>
-							{t(
-								"settings.employees.directory.countFound",
-								"{count} employee(s) found",
-								{
-									count: total,
-								},
-							)}
+							{t("settings.employees.directory.countFound", "{count} employee(s) found", {
+								count: total,
+							})}
 						</CardDescription>
 					</div>
 					{!props.showHeader && (
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={refresh}
-							disabled={isFetching}
-						>
-							<IconRefresh
-								className={`size-4 ${isFetching ? "animate-spin" : ""}`}
-							/>
+						<Button variant="ghost" size="icon" onClick={refresh} disabled={isFetching}>
+							<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
 							<span className="sr-only">
 								{t("settings.employees.directory.refresh", "Refresh")}
 							</span>
@@ -477,10 +433,7 @@ function EmployeeDirectoryTab(props: {
 					{isLoading ? (
 						<div className="flex items-center justify-center py-8">
 							<p className="text-sm text-muted-foreground">
-								{t(
-									"settings.employees.directory.loading",
-									"Loading employees...",
-								)}
+								{t("settings.employees.directory.loading", "Loading employees...")}
 							</p>
 						</div>
 					) : (
@@ -494,10 +447,7 @@ function EmployeeDirectoryTab(props: {
 													<TableHead key={header.id}>
 														{header.isPlaceholder
 															? null
-															: flexRender(
-																	header.column.columnDef.header,
-																	header.getContext(),
-																)}
+															: flexRender(header.column.columnDef.header, header.getContext())}
 													</TableHead>
 												))}
 											</TableRow>
@@ -509,27 +459,18 @@ function EmployeeDirectoryTab(props: {
 												<TableRow key={row.id}>
 													{row.getVisibleCells().map((cell) => (
 														<TableCell key={cell.id}>
-															{flexRender(
-																cell.column.columnDef.cell,
-																cell.getContext(),
-															)}
+															{flexRender(cell.column.columnDef.cell, cell.getContext())}
 														</TableCell>
 													))}
 												</TableRow>
 											))
 										) : (
 											<TableRow>
-												<TableCell
-													colSpan={columns.length}
-													className="h-24 text-center"
-												>
+												<TableCell colSpan={columns.length} className="h-24 text-center">
 													<div className="flex flex-col items-center justify-center">
 														<IconUser className="mb-2 size-8 text-muted-foreground" />
 														<p className="text-sm text-muted-foreground">
-															{t(
-																"settings.employees.directory.emptyState",
-																"No employees found",
-															)}
+															{t("settings.employees.directory.emptyState", "No employees found")}
 														</p>
 													</div>
 												</TableCell>
@@ -542,14 +483,10 @@ function EmployeeDirectoryTab(props: {
 							{pageCount > 1 && (
 								<div className="mt-4 flex items-center justify-between">
 									<div className="text-sm text-muted-foreground">
-										{t(
-											"settings.employees.directory.pagination.pageOf",
-											"Page {page} of {total}",
-											{
-												page: table.state.pagination.pageIndex + 1,
-												total: table.getPageCount(),
-											},
-										)}
+										{t("settings.employees.directory.pagination.pageOf", "Page {page} of {total}", {
+											page: table.state.pagination.pageIndex + 1,
+											total: table.getPageCount(),
+										})}
 									</div>
 									<div className="flex items-center gap-2">
 										<Button
@@ -559,10 +496,7 @@ function EmployeeDirectoryTab(props: {
 											disabled={!table.getCanPreviousPage() || isFetching}
 										>
 											<IconChevronLeft className="mr-1 size-4" />
-											{t(
-												"settings.employees.directory.pagination.previous",
-												"Previous",
-											)}
+											{t("settings.employees.directory.pagination.previous", "Previous")}
 										</Button>
 										<Button
 											variant="outline"
@@ -570,10 +504,7 @@ function EmployeeDirectoryTab(props: {
 											onClick={() => table.nextPage()}
 											disabled={!table.getCanNextPage() || isFetching}
 										>
-											{t(
-												"settings.employees.directory.pagination.next",
-												"Next",
-											)}
+											{t("settings.employees.directory.pagination.next", "Next")}
 											<IconChevronRight className="ml-1 size-4" />
 										</Button>
 									</div>

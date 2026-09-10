@@ -27,7 +27,7 @@ import {
 	useTable,
 } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { EmployeeActivityText } from "@/components/employee-activity-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -86,17 +86,11 @@ function TimeBalanceBadge({
 	workBalanceLabel: string;
 }) {
 	const balance = employee.timeBalance;
-	const label = balance
-		? formatSignedWorkBalance(balance.balanceMinutes)
-		: noBalanceLabel;
+	const label = balance ? formatSignedWorkBalance(balance.balanceMinutes) : noBalanceLabel;
 	const accessibleLabel = `${workBalanceLabel}: ${label}`;
 	if (!balance) {
 		return (
-			<Badge
-				variant="outline"
-				aria-label={accessibleLabel}
-				title={accessibleLabel}
-			>
+			<Badge variant="outline" aria-label={accessibleLabel} title={accessibleLabel}>
 				{noBalanceLabel}
 			</Badge>
 		);
@@ -129,10 +123,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 	const youLabel = t("team.member.you", "You");
 	const noBalanceLabel = t("team.balance.noBalance", "No balance");
 	const workBalanceLabel = t("workBalance.label", "All-time balance");
-	const primaryManagerLabel = t(
-		"team.primaryManager",
-		"You are the primary manager",
-	);
+	const primaryManagerLabel = t("team.primaryManager", "You are the primary manager");
 	const presence = useEmployeeClockStatuses(
 		employees.map((employee) => employee.id),
 		{ polling: true },
@@ -143,8 +134,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 			...employee,
 			clockStatus: presence.getStatus(employee.id),
 			lastActivityAt: activity?.lastActivityAt ?? null,
-			lastActivityUtcOffsetMinutes:
-				activity?.lastActivityUtcOffsetMinutes ?? null,
+			lastActivityUtcOffsetMinutes: activity?.lastActivityUtcOffsetMinutes ?? null,
 		};
 	});
 
@@ -212,13 +202,9 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 				)
 			) : (
 				<NoTeamMemberResults
-					description={t(
-						"team.noResults.description",
-						'No team members match "{query}"',
-						{
-							query: searchQuery,
-						},
-					)}
+					description={t("team.noResults.description", 'No team members match "{query}"', {
+						query: searchQuery,
+					})}
 					title={t("team.noResults.title", "No results found")}
 					clearLabel={t("team.noResults.action", "Clear search")}
 					onClear={() => setSearchQuery("")}
@@ -287,9 +273,7 @@ function TeamMembersToolbar({
 			<ToggleGroup
 				type="single"
 				value={viewMode}
-				onValueChange={(value) =>
-					value && onViewModeChange(value as "cards" | "table")
-				}
+				onValueChange={(value) => value && onViewModeChange(value as "cards" | "table")}
 				className="hidden sm:flex"
 			>
 				<ToggleGroupItem value="cards" aria-label={cardsLabel}>
@@ -335,9 +319,7 @@ function TeamMemberCards({
 								/>
 								<div className="min-w-0 flex-1">
 									<div className="flex items-center gap-1.5">
-										<h3 className="truncate text-sm font-medium">
-											{employee.user.name}
-										</h3>
+										<h3 className="truncate text-sm font-medium">{employee.user.name}</h3>
 										{employee.isPrimaryManager && (
 											<IconUserCheck
 												className="size-3.5 shrink-0 text-primary"
@@ -346,19 +328,13 @@ function TeamMemberCards({
 										)}
 										<YouBadge show={employee.isCurrentUser} label={youLabel} />
 									</div>
-									<p className="truncate text-xs text-muted-foreground">
-										{employee.user.email}
-									</p>
+									<p className="truncate text-xs text-muted-foreground">{employee.user.email}</p>
 									{employee.position && (
-										<p className="truncate text-xs text-muted-foreground">
-											{employee.position}
-										</p>
+										<p className="truncate text-xs text-muted-foreground">{employee.position}</p>
 									)}
 									<EmployeeActivityText
 										lastActivityAt={employee.lastActivityAt}
-										lastActivityUtcOffsetMinutes={
-											employee.lastActivityUtcOffsetMinutes
-										}
+										lastActivityUtcOffsetMinutes={employee.lastActivityUtcOffsetMinutes}
 									/>
 								</div>
 							</div>
@@ -381,9 +357,7 @@ function TeamMemberCards({
 									)}
 									{employee.role !== "employee" && (
 										<Badge
-											variant={
-												employee.role === "admin" ? "default" : "secondary"
-											}
+											variant={employee.role === "admin" ? "default" : "secondary"}
 											className="text-xs font-normal"
 										>
 											{employee.role}
@@ -409,145 +383,125 @@ function TeamMembersTable({
 }: TeamMemberPresentationProps) {
 	const { t } = useTranslate();
 	const [sorting, setSorting] = useState<SortingState>([]);
-	const columns: ColumnDef<
-		typeof teamTableFeatures,
-		ManagedEmployeeWithPresence
-	>[] = [
-		{
-			accessorKey: "user.name",
-			header: t("team.table.employee", "Employee"),
-			enableSorting: false,
-			cell: ({ row }) => (
-				<Link
-					href={`/settings/employees/${row.original.id}`}
-					className="flex items-center gap-3 hover:underline"
-				>
-					<UserAvatar
-						image={row.original.user.image}
-						seed={row.original.user.id}
-						name={row.original.user.name}
-						clockStatus={row.original.clockStatus ?? "unknown"}
-						size="sm"
-					/>
-					<div>
-						<div className="flex items-center gap-1.5 font-medium">
-							{row.original.user.name}
-							{row.original.isPrimaryManager && (
-								<IconUserCheck
-									className="size-4 text-primary"
-									title={primaryManagerLabel}
-								/>
-							)}
-							<YouBadge show={row.original.isCurrentUser} label={youLabel} />
-						</div>
-						<div className="text-sm text-muted-foreground">
-							{row.original.user.email}
-						</div>
-						<EmployeeActivityText
-							lastActivityAt={row.original.lastActivityAt}
-							lastActivityUtcOffsetMinutes={
-								row.original.lastActivityUtcOffsetMinutes
-							}
+	const columns = useMemo<ColumnDef<typeof teamTableFeatures, ManagedEmployeeWithPresence>[]>(
+		() => [
+			{
+				accessorKey: "user.name",
+				header: t("team.table.employee", "Employee"),
+				enableSorting: false,
+				cell: ({ row }) => (
+					<Link
+						href={`/settings/employees/${row.original.id}`}
+						className="flex items-center gap-3 hover:underline"
+					>
+						<UserAvatar
+							image={row.original.user.image}
+							seed={row.original.user.id}
+							name={row.original.user.name}
+							clockStatus={row.original.clockStatus ?? "unknown"}
+							size="sm"
 						/>
-					</div>
-				</Link>
-			),
-		},
-		{
-			accessorKey: "position",
-			header: t("team.table.position", "Position"),
-			enableSorting: false,
-			cell: ({ row }) => row.original.position || "—",
-		},
-		{
-			accessorKey: "team.name",
-			header: t("team.table.team", "Team"),
-			enableSorting: false,
-			cell: ({ row }) =>
-				row.original.team ? (
-					<Badge variant="secondary">{row.original.team.name}</Badge>
-				) : (
-					"—"
+						<div>
+							<div className="flex items-center gap-1.5 font-medium">
+								{row.original.user.name}
+								{row.original.isPrimaryManager && (
+									<IconUserCheck className="size-4 text-primary" title={primaryManagerLabel} />
+								)}
+								<YouBadge show={row.original.isCurrentUser} label={youLabel} />
+							</div>
+							<div className="text-sm text-muted-foreground">{row.original.user.email}</div>
+							<EmployeeActivityText
+								lastActivityAt={row.original.lastActivityAt}
+								lastActivityUtcOffsetMinutes={row.original.lastActivityUtcOffsetMinutes}
+							/>
+						</div>
+					</Link>
 				),
-		},
-		{
-			id: "timeBalance",
-			header: ({ column }) => {
-				const sorted = column.getIsSorted();
-				const directionLabel =
-					sorted === "asc"
-						? t("team.table.sort.ascending", "ascending")
-						: sorted === "desc"
-							? t("team.table.sort.descending", "descending")
-							: null;
-				const SortIcon =
-					sorted === "asc"
-						? IconArrowUp
-						: sorted === "desc"
-							? IconArrowDown
-							: IconArrowsSort;
-				return (
-					<Button
-						type="button"
-						variant="ghost"
-						size="sm"
-						className="-ml-2 h-8 gap-1 px-2 font-medium hover:bg-transparent"
-						onClick={column.getToggleSortingHandler()}
-						aria-label={
-							directionLabel
-								? `${workBalanceLabel} (${directionLabel})`
-								: workBalanceLabel
+			},
+			{
+				accessorKey: "position",
+				header: t("team.table.position", "Position"),
+				enableSorting: false,
+				cell: ({ row }) => row.original.position || "—",
+			},
+			{
+				accessorKey: "team.name",
+				header: t("team.table.team", "Team"),
+				enableSorting: false,
+				cell: ({ row }) =>
+					row.original.team ? <Badge variant="secondary">{row.original.team.name}</Badge> : "—",
+			},
+			{
+				id: "timeBalance",
+				header: ({ column }) => {
+					const sorted = column.getIsSorted();
+					const directionLabel =
+						sorted === "asc"
+							? t("team.table.sort.ascending", "ascending")
+							: sorted === "desc"
+								? t("team.table.sort.descending", "descending")
+								: null;
+					const SortIcon =
+						sorted === "asc" ? IconArrowUp : sorted === "desc" ? IconArrowDown : IconArrowsSort;
+					return (
+						<Button
+							type="button"
+							variant="ghost"
+							size="sm"
+							className="-ml-2 h-8 gap-1 px-2 font-medium hover:bg-transparent"
+							onClick={column.getToggleSortingHandler()}
+							aria-label={
+								directionLabel ? `${workBalanceLabel} (${directionLabel})` : workBalanceLabel
+							}
+						>
+							<span>{workBalanceLabel}</span>
+							<SortIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+						</Button>
+					);
+				},
+				accessorFn: (row) => row.timeBalance?.balanceMinutes ?? 0,
+				sortDescFirst: false,
+				cell: ({ row }) => (
+					<TimeBalanceBadge
+						employee={row.original}
+						noBalanceLabel={noBalanceLabel}
+						workBalanceLabel={workBalanceLabel}
+					/>
+				),
+			},
+			{
+				accessorKey: "role",
+				header: t("team.table.role", "Role"),
+				enableSorting: false,
+				cell: ({ row }) => (
+					<Badge
+						variant={
+							row.original.role === "admin"
+								? "default"
+								: row.original.role === "manager"
+									? "secondary"
+									: "outline"
 						}
 					>
-						<span>{workBalanceLabel}</span>
-						<SortIcon
-							className="size-4 text-muted-foreground"
-							aria-hidden="true"
-						/>
-					</Button>
-				);
+						{row.original.role}
+					</Badge>
+				),
 			},
-			accessorFn: (row) => row.timeBalance?.balanceMinutes ?? 0,
-			sortDescFirst: false,
-			cell: ({ row }) => (
-				<TimeBalanceBadge
-					employee={row.original}
-					noBalanceLabel={noBalanceLabel}
-					workBalanceLabel={workBalanceLabel}
-				/>
-			),
-		},
-		{
-			accessorKey: "role",
-			header: t("team.table.role", "Role"),
-			enableSorting: false,
-			cell: ({ row }) => (
-				<Badge
-					variant={
-						row.original.role === "admin"
-							? "default"
-							: row.original.role === "manager"
-								? "secondary"
-								: "outline"
-					}
-				>
-					{row.original.role}
-				</Badge>
-			),
-		},
-		{
-			accessorKey: "isActive",
-			header: t("team.table.status", "Status"),
-			enableSorting: false,
-			cell: ({ row }) => (
-				<Badge variant={row.original.isActive ? "default" : "secondary"}>
-					{row.original.isActive
-						? t("team.status.active", "Active")
-						: t("team.status.inactive", "Inactive")}
-				</Badge>
-			),
-		},
-	];
+			{
+				accessorKey: "isActive",
+				header: t("team.table.status", "Status"),
+				enableSorting: false,
+				cell: ({ row }) => (
+					<Badge variant={row.original.isActive ? "default" : "secondary"}>
+						{row.original.isActive
+							? t("team.status.active", "Active")
+							: t("team.status.inactive", "Inactive")}
+					</Badge>
+				),
+			},
+		],
+		[t, primaryManagerLabel, youLabel, workBalanceLabel, noBalanceLabel],
+	);
 	const table = useTable({
 		features: teamTableFeatures,
 		data: employees,
@@ -579,10 +533,7 @@ function TeamMembersTable({
 									>
 										{header.isPlaceholder
 											? null
-											: flexRender(
-													header.column.columnDef.header,
-													header.getContext(),
-												)}
+											: flexRender(header.column.columnDef.header, header.getContext())}
 									</TableHead>
 								))}
 							</TableRow>
@@ -606,13 +557,9 @@ function TeamMembersTable({
 				<div className="flex items-center justify-between">
 					<p className="text-sm text-muted-foreground">
 						{t("team.pagination.showing", "Showing {from} to {to} of {total}", {
-							from:
-								table.state.pagination.pageIndex *
-									table.state.pagination.pageSize +
-								1,
+							from: table.state.pagination.pageIndex * table.state.pagination.pageSize + 1,
 							to: Math.min(
-								(table.state.pagination.pageIndex + 1) *
-									table.state.pagination.pageSize,
+								(table.state.pagination.pageIndex + 1) * table.state.pagination.pageSize,
 								employees.length,
 							),
 							total: employees.length,

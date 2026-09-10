@@ -378,6 +378,7 @@ export function VacationAssignmentManager({
 														size="icon"
 														className="size-8 text-muted-foreground hover:text-destructive"
 														onClick={() => handleDeleteClick(assignment)}
+														aria-label={`${t("common.remove", "Remove")}: ${assignment.team?.name ?? assignment.policy.name}`}
 													>
 														<IconTrash className="size-4" />
 													</Button>
@@ -480,6 +481,7 @@ export function VacationAssignmentManager({
 														size="icon"
 														className="size-8 text-muted-foreground hover:text-destructive"
 														onClick={() => handleDeleteClick(assignment)}
+														aria-label={`${t("common.remove", "Remove")}: ${assignment.employee?.firstName ?? ""} ${assignment.employee?.lastName ?? ""}`}
 													>
 														<IconTrash className="size-4" />
 													</Button>

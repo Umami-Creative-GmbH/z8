@@ -1,10 +1,6 @@
 "use client";
 
-import {
-	IconArrowsUpDown,
-	IconExternalLink,
-	IconSearch,
-} from "@tabler/icons-react";
+import { IconArrowsUpDown, IconExternalLink, IconSearch } from "@tabler/icons-react";
 import {
 	type ColumnDef,
 	type ColumnFiltersState,
@@ -23,7 +19,7 @@ import {
 	useTable,
 } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,18 +53,8 @@ const licenseTableFeatures = tableFeatures({
 	},
 });
 
-function getLicenseBadgeVariant(
-	license: string,
-): "default" | "secondary" | "outline" {
-	const permissive = [
-		"MIT",
-		"ISC",
-		"BSD",
-		"Apache",
-		"0BSD",
-		"Unlicense",
-		"CC0",
-	];
+function getLicenseBadgeVariant(license: string): "default" | "secondary" | "outline" {
+	const permissive = ["MIT", "ISC", "BSD", "Apache", "0BSD", "Unlicense", "CC0"];
 	if (permissive.some((p) => license.toUpperCase().includes(p.toUpperCase()))) {
 		return "secondary";
 	}
@@ -90,91 +76,83 @@ function normalizeRepoUrl(
 
 export function LicenseTable({ licenses }: LicenseTableProps) {
 	const { t } = useTranslate();
-	const searchLabel = t(
-		"settings.licenses.searchPlaceholder",
-		"Search packages or licenses…",
-	);
-	const columns: ColumnDef<typeof licenseTableFeatures, LicenseInfo>[] = [
-		{
-			accessorKey: "name",
-			header: ({ column }) => (
-				<Button
-					className="-ml-3"
-					onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-					variant="ghost"
-				>
-					{t("settings.licenses.package", "Package")}
-					<IconArrowsUpDown aria-hidden="true" className="ml-2 size-4" />
-				</Button>
-			),
-			cell: ({ row }) => (
-				<span className="font-medium">{row.getValue("name")}</span>
-			),
-		},
-		{
-			accessorKey: "license",
-			header: ({ column }) => (
-				<Button
-					className="-ml-3"
-					onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-					variant="ghost"
-				>
-					{t("settings.licenses.license", "License")}
-					<IconArrowsUpDown aria-hidden="true" className="ml-2 size-4" />
-				</Button>
-			),
-			cell: ({ row }) => {
-				const license = row.getValue("license") as string;
-				return (
-					<Badge variant={getLicenseBadgeVariant(license)}>
-						{license || t("settings.licenses.unknown", "Unknown")}
-					</Badge>
-				);
+	const searchLabel = t("settings.licenses.searchPlaceholder", "Search packages or licenses…");
+	const columns = useMemo<ColumnDef<typeof licenseTableFeatures, LicenseInfo>[]>(
+		() => [
+			{
+				accessorKey: "name",
+				header: ({ column }) => (
+					<Button
+						className="-ml-3"
+						onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+						variant="ghost"
+					>
+						{t("settings.licenses.package", "Package")}
+						<IconArrowsUpDown aria-hidden="true" className="ml-2 size-4" />
+					</Button>
+				),
+				cell: ({ row }) => <span className="font-medium">{row.getValue("name")}</span>,
 			},
-		},
-		{
-			id: "links",
-			header: t("settings.licenses.links", "Links"),
-			cell: ({ row }) => {
-				const { repository, homepage } = row.original;
-				const repoUrl = normalizeRepoUrl(repository);
+			{
+				accessorKey: "license",
+				header: ({ column }) => (
+					<Button
+						className="-ml-3"
+						onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+						variant="ghost"
+					>
+						{t("settings.licenses.license", "License")}
+						<IconArrowsUpDown aria-hidden="true" className="ml-2 size-4" />
+					</Button>
+				),
+				cell: ({ row }) => {
+					const license = row.getValue("license") as string;
+					return (
+						<Badge variant={getLicenseBadgeVariant(license)}>
+							{license || t("settings.licenses.unknown", "Unknown")}
+						</Badge>
+					);
+				},
+			},
+			{
+				id: "links",
+				header: t("settings.licenses.links", "Links"),
+				cell: ({ row }) => {
+					const { repository, homepage } = row.original;
+					const repoUrl = normalizeRepoUrl(repository);
 
-				return (
-					<div className="flex gap-2">
-						{repoUrl && (
-							<a
-								className="text-muted-foreground hover:text-foreground"
-								href={repoUrl}
-								rel="noopener noreferrer"
-								target="_blank"
-							>
-								<IconExternalLink aria-hidden="true" className="size-4" />
-								<span className="sr-only">
-									{t("settings.licenses.repository", "Repository")}
-								</span>
-							</a>
-						)}
-						{homepage && homepage !== repoUrl && (
-							<a
-								className="text-muted-foreground hover:text-foreground"
-								href={homepage}
-								rel="noopener noreferrer"
-								target="_blank"
-							>
-								<IconExternalLink aria-hidden="true" className="size-4" />
-								<span className="sr-only">
-									{t("settings.licenses.homepage", "Homepage")}
-								</span>
-							</a>
-						)}
-					</div>
-				);
+					return (
+						<div className="flex gap-2">
+							{repoUrl && (
+								<a
+									className="text-muted-foreground hover:text-foreground"
+									href={repoUrl}
+									rel="noopener noreferrer"
+									target="_blank"
+								>
+									<IconExternalLink aria-hidden="true" className="size-4" />
+									<span className="sr-only">{t("settings.licenses.repository", "Repository")}</span>
+								</a>
+							)}
+							{homepage && homepage !== repoUrl && (
+								<a
+									className="text-muted-foreground hover:text-foreground"
+									href={homepage}
+									rel="noopener noreferrer"
+									target="_blank"
+								>
+									<IconExternalLink aria-hidden="true" className="size-4" />
+									<span className="sr-only">{t("settings.licenses.homepage", "Homepage")}</span>
+								</a>
+							)}
+						</div>
+					);
+				},
 			},
-		},
-	];
-	const [sorting, setSorting] = useState<SortingState>([
-		{ id: "name", desc: false },
-	]);
+		],
+		[t],
+	);
+	const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: false }]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [globalFilter, setGlobalFilter] = useState("");
 
@@ -228,13 +206,9 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 							})}
 						</span>
 						<span>
-							{t(
-								"settings.licenses.licenseTypesCount",
-								"{count} license types",
-								{
-									count: stats.uniqueLicenses,
-								},
-							)}
+							{t("settings.licenses.licenseTypesCount", "{count} license types", {
+								count: stats.uniqueLicenses,
+							})}
 						</span>
 					</div>
 				</div>
@@ -252,10 +226,7 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 									>
 										{header.isPlaceholder
 											? null
-											: flexRender(
-													header.column.columnDef.header,
-													header.getContext(),
-												)}
+											: flexRender(header.column.columnDef.header, header.getContext())}
 									</TableHead>
 								))}
 							</TableRow>
@@ -267,20 +238,14 @@ export function LicenseTable({ licenses }: LicenseTableProps) {
 								<TableRow key={row.id}>
 									{row.getVisibleCells().map((cell) => (
 										<TableCell key={cell.id}>
-											{flexRender(
-												cell.column.columnDef.cell,
-												cell.getContext(),
-											)}
+											{flexRender(cell.column.columnDef.cell, cell.getContext())}
 										</TableCell>
 									))}
 								</TableRow>
 							))
 						) : (
 							<TableRow>
-								<TableCell
-									className="h-24 text-center"
-									colSpan={columns.length}
-								>
+								<TableCell className="h-24 text-center" colSpan={columns.length}>
 									{t("settings.licenses.noPackages", "No packages found.")}
 								</TableCell>
 							</TableRow>

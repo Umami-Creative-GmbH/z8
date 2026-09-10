@@ -1,12 +1,6 @@
 "use client";
 
-import {
-	IconCheck,
-	IconLoader2,
-	IconPlugConnected,
-	IconTrash,
-	IconX,
-} from "@tabler/icons-react";
+import { IconCheck, IconLoader2, IconPlugConnected, IconTrash, IconX } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
@@ -67,9 +61,7 @@ function useStorageSettingsForm({
 		success: boolean;
 		message: string;
 	} | null>(null);
-	const [config, setConfig] = useState<StorageConfigResult | null>(
-		initialConfig ?? null,
-	);
+	const [config, setConfig] = useState<StorageConfigResult | null>(initialConfig ?? null);
 
 	const form = useForm({
 		defaultValues: {
@@ -94,17 +86,10 @@ function useStorageSettingsForm({
 						region: value.region,
 						endpoint: value.endpoint || undefined,
 						...(value.accessKeyId ? { accessKeyId: value.accessKeyId } : {}),
-						...(value.secretAccessKey
-							? { secretAccessKey: value.secretAccessKey }
-							: {}),
+						...(value.secretAccessKey ? { secretAccessKey: value.secretAccessKey } : {}),
 					});
 				} catch {
-					toast.error(
-						t(
-							"settings.dataExport.storage.saveError",
-							"Failed to save configuration",
-						),
-					);
+					toast.error(t("settings.dataExport.storage.saveError", "Failed to save configuration"));
 					return;
 				}
 
@@ -117,31 +102,19 @@ function useStorageSettingsForm({
 					form.setFieldValue("secretAccessKey", "");
 					form.setFieldValue("region", result.data.region);
 					form.setFieldValue("endpoint", result.data.endpoint ?? "");
-					toast.success(
-						t("settings.dataExport.storage.saveSuccess", "Configuration saved"),
-						{
-							description: t(
-								"settings.dataExport.storage.saveSuccessDescription",
-								"Your S3 storage settings have been saved",
-							),
-						},
-					);
+					toast.success(t("settings.dataExport.storage.saveSuccess", "Configuration saved"), {
+						description: t(
+							"settings.dataExport.storage.saveSuccessDescription",
+							"Your S3 storage settings have been saved",
+						),
+					});
 					onConfigChange?.(true);
 				} else {
-					toast.error(
-						t(
-							"settings.dataExport.storage.saveError",
-							"Failed to save configuration",
-						),
-						{
-							description:
-								result.error ??
-								t(
-									"settings.dataExport.storage.unexpectedError",
-									"An unexpected error occurred",
-								),
-						},
-					);
+					toast.error(t("settings.dataExport.storage.saveError", "Failed to save configuration"), {
+						description:
+							result.error ??
+							t("settings.dataExport.storage.unexpectedError", "An unexpected error occurred"),
+					});
 				}
 			});
 		},
@@ -155,11 +128,7 @@ function useStorageSettingsForm({
 			(config || (formValues.accessKeyId && formValues.secretAccessKey)),
 	);
 	const lastVerifiedLabel = config?.lastVerifiedAt
-		? formatInstant(
-				instantFromDate(config.lastVerifiedAt),
-				displayContext,
-				"dateTimeMedium",
-			)
+		? formatInstant(instantFromDate(config.lastVerifiedAt), displayContext, "dateTimeMedium")
 		: null;
 
 	// Load config on mount if not provided
@@ -199,17 +168,13 @@ function useStorageSettingsForm({
 						}
 					: undefined;
 
-			const result = await testStorageConnectionAction(
-				organizationId,
-				testConfig,
-			).catch(() => null);
+			const result = await testStorageConnectionAction(organizationId, testConfig).catch(
+				() => null,
+			);
 			if (!result) {
 				setTestResult({
 					success: false,
-					message: t(
-						"settings.dataExport.storage.testFailed",
-						"Connection test failed",
-					),
+					message: t("settings.dataExport.storage.testFailed", "Connection test failed"),
 				});
 				setIsTesting(false);
 				return;
@@ -219,9 +184,7 @@ function useStorageSettingsForm({
 				setTestResult(result.data);
 				if (result.data.success) {
 					// Refresh config to get updated verification status
-					const configResult = await getStorageConfigAction(
-						organizationId,
-					).catch(() => null);
+					const configResult = await getStorageConfigAction(organizationId).catch(() => null);
 					if (configResult?.success && configResult.data) {
 						setConfig(configResult.data);
 					}
@@ -230,11 +193,7 @@ function useStorageSettingsForm({
 				setTestResult({
 					success: false,
 					message:
-						result.error ??
-						t(
-							"settings.dataExport.storage.testFailed",
-							"Connection test failed",
-						),
+						result.error ?? t("settings.dataExport.storage.testFailed", "Connection test failed"),
 				});
 			}
 
@@ -248,12 +207,7 @@ function useStorageSettingsForm({
 			try {
 				result = await deleteStorageConfigAction(organizationId);
 			} catch {
-				toast.error(
-					t(
-						"settings.dataExport.storage.deleteError",
-						"Failed to delete configuration",
-					),
-				);
+				toast.error(t("settings.dataExport.storage.deleteError", "Failed to delete configuration"));
 				return;
 			}
 
@@ -266,26 +220,15 @@ function useStorageSettingsForm({
 				form.setFieldValue("secretAccessKey", "");
 				form.setFieldValue("region", "us-east-1");
 				form.setFieldValue("endpoint", "");
-				toast.success(
-					t(
-						"settings.dataExport.storage.deleteSuccess",
-						"Configuration deleted",
-					),
-				);
+				toast.success(t("settings.dataExport.storage.deleteSuccess", "Configuration deleted"));
 				onConfigChange?.(false);
 			} else {
 				toast.error(
-					t(
-						"settings.dataExport.storage.deleteError",
-						"Failed to delete configuration",
-					),
+					t("settings.dataExport.storage.deleteError", "Failed to delete configuration"),
 					{
 						description:
 							result.error ??
-							t(
-								"settings.dataExport.storage.unexpectedError",
-								"An unexpected error occurred",
-							),
+							t("settings.dataExport.storage.unexpectedError", "An unexpected error occurred"),
 					},
 				);
 			}
@@ -330,10 +273,7 @@ function StorageSettingsCard({
 				<div className="flex items-center justify-between">
 					<div>
 						<CardTitle className="flex items-center gap-2">
-							{t(
-								"settings.dataExport.storage.title",
-								"S3 Storage Configuration",
-							)}
+							{t("settings.dataExport.storage.title", "S3 Storage Configuration")}
 							{config?.isVerified && (
 								<Badge variant="secondary" className="gap-1">
 									<IconCheck className="size-3" />
@@ -355,6 +295,10 @@ function StorageSettingsCard({
 									variant="ghost"
 									size="icon"
 									className="text-destructive"
+									aria-label={t(
+										"settings.dataExport.storage.deleteDialogTitle",
+										"Delete Configuration",
+									)}
 								>
 									<IconTrash className="size-4" />
 								</Button>
@@ -362,10 +306,7 @@ function StorageSettingsCard({
 							<AlertDialogContent>
 								<AlertDialogHeader>
 									<AlertDialogTitle>
-										{t(
-											"settings.dataExport.storage.deleteDialogTitle",
-											"Delete Configuration",
-										)}
+										{t("settings.dataExport.storage.deleteDialogTitle", "Delete Configuration")}
 									</AlertDialogTitle>
 									<AlertDialogDescription>
 										{t(
@@ -375,9 +316,7 @@ function StorageSettingsCard({
 									</AlertDialogDescription>
 								</AlertDialogHeader>
 								<AlertDialogFooter>
-									<AlertDialogCancel>
-										{t("common.cancel", "Cancel")}
-									</AlertDialogCancel>
+									<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
 									<AlertDialogAction
 										onClick={handleDelete}
 										className="bg-destructive text-destructive-foreground"
@@ -453,10 +392,7 @@ function StorageSettingsCard({
 									</Label>
 									<Input
 										id="region"
-										placeholder={t(
-											"settings.dataExport.storage.regionPlaceholder",
-											"us-east-1",
-										)}
+										placeholder={t("settings.dataExport.storage.regionPlaceholder", "us-east-1")}
 										value={field.state.value}
 										onChange={(e) => {
 											field.handleChange(e.target.value);
@@ -485,10 +421,7 @@ function StorageSettingsCard({
 						{(field) => (
 							<div className="space-y-2">
 								<Label htmlFor="endpoint">
-									{t(
-										"settings.dataExport.storage.endpoint",
-										"Custom Endpoint (Optional)",
-									)}
+									{t("settings.dataExport.storage.endpoint", "Custom Endpoint (Optional)")}
 								</Label>
 								<Input
 									id="endpoint"
@@ -517,17 +450,12 @@ function StorageSettingsCard({
 							{(field) => (
 								<div className="space-y-2">
 									<Label htmlFor="accessKeyId">
-										{t(
-											"settings.dataExport.storage.accessKeyId",
-											"Access Key ID",
-										)}
+										{t("settings.dataExport.storage.accessKeyId", "Access Key ID")}
 									</Label>
 									<Input
 										id="accessKeyId"
 										type="password"
-										placeholder={
-											config ? "••••••••••••" : "Enter your AWS access key ID"
-										}
+										placeholder={config ? "••••••••••••" : "Enter your AWS access key ID"}
 										value={field.state.value}
 										onChange={(e) => {
 											field.handleChange(e.target.value);
@@ -553,19 +481,12 @@ function StorageSettingsCard({
 							{(field) => (
 								<div className="space-y-2">
 									<Label htmlFor="secretAccessKey">
-										{t(
-											"settings.dataExport.storage.secretAccessKey",
-											"Secret Access Key",
-										)}
+										{t("settings.dataExport.storage.secretAccessKey", "Secret Access Key")}
 									</Label>
 									<Input
 										id="secretAccessKey"
 										type="password"
-										placeholder={
-											config
-												? "••••••••••••"
-												: "Enter your AWS secret access key"
-										}
+										placeholder={config ? "••••••••••••" : "Enter your AWS secret access key"}
 										value={field.state.value}
 										onChange={(e) => {
 											field.handleChange(e.target.value);
@@ -588,9 +509,7 @@ function StorageSettingsCard({
 						</form.Field>
 					</div>
 
-					{lastVerifiedLabel && (
-						<LastVerifiedLabel date={lastVerifiedLabel} t={t} />
-					)}
+					{lastVerifiedLabel && <LastVerifiedLabel date={lastVerifiedLabel} t={t} />}
 				</CardContent>
 				<StorageFormActions
 					config={config}
@@ -616,21 +535,11 @@ function StorageTestResult({
 }) {
 	return (
 		<Alert variant={result.success ? "default" : "destructive"}>
-			{result.success ? (
-				<IconCheck className="size-4" />
-			) : (
-				<IconX className="size-4" />
-			)}
+			{result.success ? <IconCheck className="size-4" /> : <IconX className="size-4" />}
 			<AlertTitle>
 				{result.success
-					? t(
-							"settings.dataExport.storage.connectionSuccess",
-							"Connection Successful",
-						)
-					: t(
-							"settings.dataExport.storage.connectionFailed",
-							"Connection Failed",
-						)}
+					? t("settings.dataExport.storage.connectionSuccess", "Connection Successful")
+					: t("settings.dataExport.storage.connectionFailed", "Connection Failed")}
 			</AlertTitle>
 			<AlertDescription>{result.message}</AlertDescription>
 		</Alert>
@@ -689,10 +598,7 @@ function StorageFormActions({
 						{t("settings.dataExport.storage.saving", "Saving...")}
 					</>
 				) : (
-					t(
-						"settings.dataExport.storage.saveConfiguration",
-						"Save Configuration",
-					)
+					t("settings.dataExport.storage.saveConfiguration", "Save Configuration")
 				)}
 			</Button>
 		</CardFooter>
@@ -701,12 +607,7 @@ function StorageFormActions({
 
 function fieldErrorMessage(error: unknown): string | undefined {
 	if (typeof error === "string") return error;
-	if (
-		error &&
-		typeof error === "object" &&
-		"message" in error &&
-		typeof error.message === "string"
-	)
+	if (error && typeof error === "object" && "message" in error && typeof error.message === "string")
 		return error.message;
 	return undefined;
 }

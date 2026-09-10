@@ -10,8 +10,46 @@ import {
 } from "@/components/ui/table";
 
 /**
- * Loading skeleton for settings index page with cards
+ * Shared loading state for single-card settings pages.
  */
+export function SettingsPageSkeleton({
+	variant = "form",
+	label,
+}: {
+	variant?: "form" | "list";
+	label: string;
+}) {
+	const isForm = variant === "form";
+	const hidden = true;
+	return (
+		<div
+			className={
+				isForm ? "flex flex-1 flex-col gap-6 p-4 md:p-6" : "flex flex-1 flex-col gap-4 p-4"
+			}
+			role="status"
+			aria-label={label}
+		>
+			<div className="space-y-2">
+				<Skeleton aria-hidden={hidden} className={isForm ? "h-8 w-48" : "h-8 w-64"} />
+				<Skeleton aria-hidden={hidden} className="h-4 w-96" />
+			</div>
+			<Card>
+				<CardHeader>
+					<Skeleton aria-hidden={hidden} className="h-6 w-48" />
+					<Skeleton aria-hidden={hidden} className={isForm ? "h-4 w-72" : "h-4 w-96"} />
+				</CardHeader>
+				<CardContent>
+					<div className="space-y-4">
+						<Skeleton aria-hidden={hidden} className={isForm ? "h-32 w-full" : "h-24 w-full"} />
+						<Skeleton aria-hidden={hidden} className={isForm ? "h-10 w-32" : "h-24 w-full"} />
+					</div>
+				</CardContent>
+			</Card>
+		</div>
+	);
+}
+
+/** Loading skeleton for the settings index page with cards. */
 export function SettingsIndexSkeleton() {
 	return (
 		<div className="flex-1 p-6">

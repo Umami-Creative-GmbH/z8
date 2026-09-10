@@ -4,8 +4,7 @@ import { AuditConfigForm } from "@/components/settings/audit-export/audit-config
 import { AuditPackGeneratorCard } from "@/components/settings/audit-export/audit-pack-generator-card";
 import { AuditPackagesTable } from "@/components/settings/audit-export/audit-packages-table";
 import { KeyManagement } from "@/components/settings/audit-export/key-management";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
@@ -15,16 +14,12 @@ import { getAuditConfigAction, getAuditPackagesAction } from "./actions";
 
 export const metadata = {
 	title: "Audit Export Settings",
-	description:
-		"Configure GoBD-compliant audit export hardening with cryptographic proofs",
+	description: "Configure GoBD-compliant audit export hardening with cryptographic proofs",
 };
 
 async function AuditExportSettingsContent() {
 	// Parallelize all initial fetches to avoid waterfalls
-	const [t, orgAccess] = await Promise.all([
-		getTranslate(),
-		requireOrgAdminSettingsAccess(),
-	]);
+	const [t, orgAccess] = await Promise.all([getTranslate(), requireOrgAdminSettingsAccess()]);
 	const { organizationId } = orgAccess;
 	const ownedOrganization = await db.query.organization.findFirst({
 		where: eq(organization.id, organizationId),
@@ -70,10 +65,7 @@ async function AuditExportSettingsContent() {
 				</TabsList>
 
 				<TabsContent value="config" className="mt-4 space-y-6">
-					<AuditConfigForm
-						organizationId={organizationId}
-						initialConfig={config}
-					/>
+					<AuditConfigForm organizationId={organizationId} initialConfig={config} />
 				</TabsContent>
 
 				<TabsContent value="packages" className="mt-4 space-y-6">
@@ -81,10 +73,7 @@ async function AuditExportSettingsContent() {
 						organizationId={organizationId}
 						organizationTimezone={organizationTimezone}
 					/>
-					<AuditPackagesTable
-						organizationId={organizationId}
-						packages={packages}
-					/>
+					<AuditPackagesTable organizationId={organizationId} packages={packages} />
 				</TabsContent>
 
 				{config && (
@@ -102,30 +91,7 @@ async function AuditExportSettingsContent() {
 }
 
 function AuditExportSettingsLoading() {
-	return (
-		<div
-			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
-			role="status"
-			aria-label="Loading audit export settings"
-		>
-			<div className="space-y-2">
-				<Skeleton aria-hidden="true" className="h-8 w-48" />
-				<Skeleton aria-hidden="true" className="h-4 w-96" />
-			</div>
-			<Card>
-				<CardHeader>
-					<Skeleton aria-hidden="true" className="h-6 w-48" />
-					<Skeleton aria-hidden="true" className="h-4 w-72" />
-				</CardHeader>
-				<CardContent>
-					<div className="space-y-4">
-						<Skeleton aria-hidden="true" className="h-32 w-full" />
-						<Skeleton aria-hidden="true" className="h-10 w-32" />
-					</div>
-				</CardContent>
-			</Card>
-		</div>
-	);
+	return <SettingsPageSkeleton label="Loading audit export settings" />;
 }
 
 export default function AuditExportSettingsPage() {

@@ -15,7 +15,22 @@ interface ServerAppSidebarProps
 	showWorksCouncilNav?: boolean;
 }
 
-export async function ServerAppSidebar({ showWorksCouncilNav = false, ...props }: ServerAppSidebarProps) {
+function getOrganizationFeatureFlags(
+	organization: Awaited<ReturnType<typeof getUserOrganizations>>[number] | null,
+) {
+	return {
+		shiftsEnabled: organization?.shiftsEnabled ?? false,
+		projectsEnabled: organization?.projectsEnabled ?? false,
+		surchargesEnabled: organization?.surchargesEnabled ?? false,
+		demoDataEnabled: organization?.demoDataEnabled ?? true,
+		worksCouncilEnabled: organization?.worksCouncilEnabled ?? false,
+	};
+}
+
+export async function ServerAppSidebar({
+	showWorksCouncilNav = false,
+	...props
+}: ServerAppSidebarProps) {
 	const [organizations, authContext, settingsAccessTier] = await Promise.all([
 		getUserOrganizations(),
 		getAuthContext(),
@@ -30,19 +45,9 @@ export async function ServerAppSidebar({ showWorksCouncilNav = false, ...props }
 	const canCreateOrganizations = canCreateOrganizationsForDeployment(
 		authContext?.user.canCreateOrganizations || authContext?.user.role === "admin",
 	);
-	const featureFlags = {
-		shiftsEnabled: currentOrganization?.shiftsEnabled ?? false,
-		projectsEnabled: currentOrganization?.projectsEnabled ?? false,
-		surchargesEnabled: currentOrganization?.surchargesEnabled ?? false,
-		demoDataEnabled: currentOrganization?.demoDataEnabled ?? true,
-		worksCouncilEnabled: currentOrganization?.worksCouncilEnabled ?? false,
-	};
+	const featureFlags = getOrganizationFeatureFlags(currentOrganization);
 	let canShowWorksCouncilNav = false;
-	if (
-		showWorksCouncilNav &&
-		currentOrganization?.worksCouncilEnabled &&
-		activeOrganizationId
-	) {
+	if (showWorksCouncilNav && currentOrganization?.worksCouncilEnabled && activeOrganizationId) {
 		const ability = await requireAbility();
 		canShowWorksCouncilNav = canViewWorksCouncilPortal(
 			ability,
@@ -69,7 +74,7 @@ export async function ServerAppSidebar({ showWorksCouncilNav = false, ...props }
 			currentOrganization={currentOrganization}
 			employeeRole={activeEmployee?.role ?? null}
 			navigationCapabilities={{
-				scheduling: currentOrganization?.shiftsEnabled ?? false,
+				scheduling: featureFlags.shiftsEnabled,
 				compliance: settingsAccessTier === "orgAdmin",
 				payroll: Boolean(showPayrollNav),
 				worksCouncil: canShowWorksCouncilNav,

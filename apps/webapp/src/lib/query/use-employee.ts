@@ -86,6 +86,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 	});
 
 	const hasEmployee = !!currentEmployeeQuery.data || accessTier === "orgAdmin";
+	const canLoadEmployee = enabled && hasEmployee;
 
 	// Query for employee details
 	const employeeQuery = useQuery({
@@ -97,11 +98,12 @@ export function useEmployee(options: UseEmployeeOptions) {
 			}
 			return result.data as EmployeeDetail;
 		},
-		enabled: enabled && hasEmployee,
+		enabled: canLoadEmployee,
 		staleTime: 30 * 1000, // 30 seconds
 	});
 	const isDraft = employeeQuery.data?.kind === "invitationDraft";
 	const hasRealEmployeeDetail = employeeQuery.data?.kind === "employee";
+	const canLoadEmployeeDetails = canLoadEmployee && hasRealEmployeeDetail;
 
 	// Query for work schedule
 	const scheduleQuery = useQuery({
@@ -113,7 +115,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 			}
 			return result.data;
 		},
-		enabled: enabled && hasEmployee && hasRealEmployeeDetail,
+		enabled: canLoadEmployeeDetails,
 		staleTime: 60 * 1000, // 1 minute
 	});
 
@@ -133,7 +135,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 			return result.data?.employees ?? [];
 		},
-		enabled: enabled && hasEmployee && accessTier === "orgAdmin" && hasRealEmployeeDetail,
+		enabled: canLoadEmployeeDetails && accessTier === "orgAdmin",
 		staleTime: 60 * 1000, // 1 minute
 	});
 
@@ -147,11 +149,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 			}
 			return result.data;
 		},
-		enabled:
-			enabled &&
-			hasEmployee &&
-			hasRealEmployeeDetail &&
-			employeeQuery.data?.contractType === "hourly",
+		enabled: canLoadEmployeeDetails && employeeQuery.data?.contractType === "hourly",
 		staleTime: 30 * 1000, // 30 seconds
 	});
 
@@ -162,7 +160,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 			if (!result.success) return [];
 			return result.data ?? [];
 		},
-		enabled: enabled && hasEmployee && hasRealEmployeeDetail,
+		enabled: canLoadEmployeeDetails,
 		staleTime: 30 * 1000,
 	});
 
@@ -177,8 +175,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 			return (result.data ?? []).map((policy) => ({ id: policy.id, name: policy.name }));
 		},
-		enabled:
-			enabled && hasEmployee && hasRealEmployeeDetail && !!employeeQuery.data?.organizationId,
+		enabled: canLoadEmployeeDetails && !!employeeQuery.data?.organizationId,
 		staleTime: 60 * 1000,
 	});
 
@@ -314,7 +311,9 @@ export function useEmployee(options: UseEmployeeOptions) {
 		workPolicies: workPoliciesQuery.data ?? [],
 
 		// Loading states
-		isLoading: currentEmployeeQuery.isLoading || employeeQuery.isLoading || scheduleQuery.isLoading,
+		isLoading: [currentEmployeeQuery, employeeQuery, scheduleQuery].some(
+			(query) => query.isLoading,
+		),
 		isFetching: employeeQuery.isFetching,
 		isLoadingRateHistory: rateHistoryQuery.isLoading,
 		isLoadingEmploymentHistory: employmentHistoryQuery.isLoading,

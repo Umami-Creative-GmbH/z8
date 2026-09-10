@@ -1,16 +1,10 @@
 import { IconCalendar } from "@tabler/icons-react";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { VacationManagement } from "@/components/settings/vacation/vacation-management";
 import { VacationPoliciesTable } from "@/components/settings/vacation/vacation-policies-table";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ensureDefaultAbsenceCategoriesForOrganization } from "@/lib/absences/default-absence-categories";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
@@ -21,8 +15,7 @@ async function VacationSettingsContent() {
 		redirect("/settings");
 	}
 
-	const organizationId =
-		settingsRouteContext.authContext.session.activeOrganizationId;
+	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
 		redirect("/settings");
@@ -68,26 +61,7 @@ async function VacationSettingsContent() {
 }
 
 function VacationSettingsLoading() {
-	return (
-		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div className="space-y-2">
-				<Skeleton className="h-8 w-64" />
-				<Skeleton className="h-4 w-96" />
-			</div>
-			<Card>
-				<CardHeader>
-					<Skeleton className="h-6 w-48" />
-					<Skeleton className="h-4 w-96" />
-				</CardHeader>
-				<CardContent>
-					<div className="space-y-4">
-						<Skeleton className="h-24 w-full" />
-						<Skeleton className="h-24 w-full" />
-					</div>
-				</CardContent>
-			</Card>
-		</div>
-	);
+	return <SettingsPageSkeleton variant="list" label="Loading vacation settings" />;
 }
 
 export default function VacationSettingsPage() {

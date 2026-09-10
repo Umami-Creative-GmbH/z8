@@ -215,7 +215,13 @@ export function VacationAssignmentDialog({
 						<Skeleton className="h-10 w-full" />
 					</ActionPanelBody>
 				) : (
-					<form onSubmit={form.handleSubmit} className="flex min-h-0 flex-1 flex-col">
+					<form
+						onSubmit={(event) => {
+							event.preventDefault();
+							void form.handleSubmit();
+						}}
+						className="flex min-h-0 flex-1 flex-col"
+					>
 						<ActionPanelBody className="space-y-4">
 							{/* Policy Selection */}
 							<form.Field name="policyId">

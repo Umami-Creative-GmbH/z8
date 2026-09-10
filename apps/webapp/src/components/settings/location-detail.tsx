@@ -38,13 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query";
 import { Link, useRouter } from "@/navigation";
@@ -59,9 +53,7 @@ interface LocationDetailProps {
 	canManageLocations: boolean;
 }
 
-function getEmployeeName(
-	emp: LocationWithDetails["employees"][number]["employee"],
-) {
+function getEmployeeName(emp: LocationWithDetails["employees"][number]["employee"]) {
 	if (emp.firstName || emp.lastName) {
 		return `${emp.firstName || ""} ${emp.lastName || ""}`.trim();
 	}
@@ -82,9 +74,7 @@ export function LocationDetail({
 	const [deleteLocationOpen, setDeleteLocationOpen] = useState(false);
 	const [addEmployeeOpen, setAddEmployeeOpen] = useState(false);
 	const [addSubareaOpen, setAddSubareaOpen] = useState(false);
-	const [editSubarea, setEditSubarea] = useState<SubareaWithEmployees | null>(
-		null,
-	);
+	const [editSubarea, setEditSubarea] = useState<SubareaWithEmployees | null>(null);
 	const [deleteSubareaId, setDeleteSubareaId] = useState<string | null>(null);
 	const [subareaEmployeeDialog, setSubareaEmployeeDialog] = useState<{
 		open: boolean;
@@ -115,8 +105,7 @@ export function LocationDetail({
 			router.push("/settings/locations");
 		} else {
 			toast.error(
-				result.error ||
-					t("settings.locations.deleteFailed", "Failed to delete location"),
+				result.error || t("settings.locations.deleteFailed", "Failed to delete location"),
 			);
 		}
 		setDeleteLocationOpen(false);
@@ -125,19 +114,13 @@ export function LocationDetail({
 	const handleRemoveEmployee = async (assignmentId: string) => {
 		const result = await removeLocationEmployee(assignmentId);
 		if (result.success) {
-			toast.success(
-				t("settings.locations.employeeRemoved", "Employee removed"),
-			);
+			toast.success(t("settings.locations.employeeRemoved", "Employee removed"));
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.locations.detail(locationId),
 			});
 		} else {
 			toast.error(
-				result.error ||
-					t(
-						"settings.locations.employeeRemoveFailed",
-						"Failed to remove employee",
-					),
+				result.error || t("settings.locations.employeeRemoveFailed", "Failed to remove employee"),
 			);
 		}
 	};
@@ -152,11 +135,7 @@ export function LocationDetail({
 			});
 		} else {
 			toast.error(
-				result.error ||
-					t(
-						"settings.locations.subareaDeleteFailed",
-						"Failed to delete subarea",
-					),
+				result.error || t("settings.locations.subareaDeleteFailed", "Failed to delete subarea"),
 			);
 		}
 		setDeleteSubareaId(null);
@@ -165,19 +144,13 @@ export function LocationDetail({
 	const handleRemoveSubareaEmployee = async (assignmentId: string) => {
 		const result = await removeSubareaEmployee(assignmentId);
 		if (result.success) {
-			toast.success(
-				t("settings.locations.employeeRemoved", "Employee removed"),
-			);
+			toast.success(t("settings.locations.employeeRemoved", "Employee removed"));
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.locations.detail(locationId),
 			});
 		} else {
 			toast.error(
-				result.error ||
-					t(
-						"settings.locations.employeeRemoveFailed",
-						"Failed to remove employee",
-					),
+				result.error || t("settings.locations.employeeRemoveFailed", "Failed to remove employee"),
 			);
 		}
 	};
@@ -379,9 +352,7 @@ function LocationInfoCard({ location }: { location: LocationWithDetails }) {
 						<p className="text-sm font-medium text-muted-foreground">
 							{t("settings.locations.field.cityPostal", "City / Postal Code")}
 						</p>
-						<p>
-							{[location.postalCode, location.city].filter(Boolean).join(" ")}
-						</p>
+						<p>{[location.postalCode, location.city].filter(Boolean).join(" ")}</p>
 					</div>
 				)}
 				{location.country && (
@@ -413,12 +384,7 @@ function LocationDetailHeader({
 	onRefresh: () => void;
 }) {
 	const { t } = useTranslate();
-	const address = [
-		location.street,
-		location.postalCode,
-		location.city,
-		location.country,
-	]
+	const address = [location.street, location.postalCode, location.city, location.country]
 		.filter(Boolean)
 		.join(", ");
 
@@ -426,24 +392,21 @@ function LocationDetailHeader({
 		<div className="flex items-center justify-between">
 			<div className="flex items-center gap-4">
 				<Button asChild variant="ghost" size="icon">
-					<Link href="/settings/locations">
+					<Link
+						href="/settings/locations"
+						aria-label={t("settings.locations.backToList", "Back to Locations")}
+					>
 						<IconArrowLeft className="size-4" />
 					</Link>
 				</Button>
 				<div>
 					<div className="flex items-center gap-2">
-						<h1 className="text-2xl font-semibold tracking-tight">
-							{location.name}
-						</h1>
+						<h1 className="text-2xl font-semibold tracking-tight">{location.name}</h1>
 						<Badge variant={location.isActive ? "default" : "secondary"}>
-							{location.isActive
-								? t("common.active", "Active")
-								: t("common.inactive", "Inactive")}
+							{location.isActive ? t("common.active", "Active") : t("common.inactive", "Inactive")}
 						</Badge>
 					</div>
-					{address && (
-						<p className="text-sm text-muted-foreground">{address}</p>
-					)}
+					{address && <p className="text-sm text-muted-foreground">{address}</p>}
 				</div>
 			</div>
 			<div className="flex items-center gap-2">
@@ -451,11 +414,10 @@ function LocationDetailHeader({
 					variant="ghost"
 					size="icon"
 					onClick={onRefresh}
+					aria-label={t("common.refresh", "Refresh")}
 					disabled={isFetching}
 				>
-					<IconRefresh
-						className={`size-4 ${isFetching ? "animate-spin" : ""}`}
-					/>
+					<IconRefresh className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
 				</Button>
 				{canManageLocations && (
 					<>
@@ -503,10 +465,7 @@ function LocationEmployeesCard({
 					)}
 				</div>
 				<CardDescription>
-					{t(
-						"settings.locations.supervisorsDescription",
-						"Employees assigned to this location",
-					)}
+					{t("settings.locations.supervisorsDescription", "Employees assigned to this location")}
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
@@ -527,9 +486,7 @@ function LocationEmployeesCard({
 									</div>
 									<div>
 										<div className="flex items-center gap-2">
-											<p className="font-medium text-sm">
-												{getEmployeeName(assignment.employee)}
-											</p>
+											<p className="font-medium text-sm">{getEmployeeName(assignment.employee)}</p>
 											{assignment.isPrimary && (
 												<Badge variant="outline" className="text-xs">
 													<IconStar className="mr-1 size-3" />
@@ -547,6 +504,7 @@ function LocationEmployeesCard({
 										variant="ghost"
 										size="icon"
 										onClick={() => onRemove(assignment.id)}
+										aria-label={`${t("common.remove", "Remove")}: ${getEmployeeName(assignment.employee)}`}
 									>
 										<IconTrash className="size-4" />
 									</Button>
@@ -592,10 +550,7 @@ function LocationSubareasCard({
 					)}
 				</div>
 				<CardDescription>
-					{t(
-						"settings.locations.subareasDescription",
-						"Areas within this location",
-					)}
+					{t("settings.locations.subareasDescription", "Areas within this location")}
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
@@ -622,6 +577,7 @@ function LocationSubareasCard({
 												variant="ghost"
 												size="icon"
 												onClick={() => onAddEmployee(subarea.id, subarea.name)}
+												aria-label={`${t("common.add", "Add")}: ${t("settings.locations.supervisors", "Supervisors")} (${subarea.name})`}
 											>
 												<IconPlus className="size-4" />
 											</Button>
@@ -629,6 +585,7 @@ function LocationSubareasCard({
 												variant="ghost"
 												size="icon"
 												onClick={() => onEdit(subarea)}
+												aria-label={`${t("common.edit", "Edit")}: ${subarea.name}`}
 											>
 												<IconEdit className="size-4" />
 											</Button>
@@ -636,6 +593,7 @@ function LocationSubareasCard({
 												variant="ghost"
 												size="icon"
 												onClick={() => onDelete(subarea.id)}
+												aria-label={`${t("common.delete", "Delete")}: ${subarea.name}`}
 											>
 												<IconTrash className="size-4" />
 											</Button>
@@ -651,9 +609,7 @@ function LocationSubareasCard({
 											>
 												<div className="flex items-center gap-2">
 													<span>{getEmployeeName(assignment.employee)}</span>
-													{assignment.isPrimary && (
-														<IconStar className="size-3 text-yellow-500" />
-													)}
+													{assignment.isPrimary && <IconStar className="size-3 text-yellow-500" />}
 												</div>
 												{canManageLocations && (
 													<Button
@@ -661,6 +617,7 @@ function LocationSubareasCard({
 														size="icon"
 														className="size-6"
 														onClick={() => onRemoveEmployee(assignment.id)}
+														aria-label={`${t("common.remove", "Remove")}: ${getEmployeeName(assignment.employee)}`}
 													>
 														<IconTrash className="size-3" />
 													</Button>
@@ -752,9 +709,7 @@ function DeleteConfirmationDialog({
 				</AlertDialogHeader>
 				<AlertDialogFooter>
 					<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-					<AlertDialogAction onClick={onConfirm}>
-						{t("common.delete", "Delete")}
-					</AlertDialogAction>
+					<AlertDialogAction onClick={onConfirm}>{t("common.delete", "Delete")}</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>
 		</AlertDialog>

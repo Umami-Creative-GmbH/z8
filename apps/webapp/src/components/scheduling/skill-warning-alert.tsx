@@ -53,12 +53,13 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 	}
 
 	const hasExpired = validation.expiredSkills.length > 0;
+	const hasBlockingIssues = requiredMissing.length > 0 || hasExpired;
 
 	return (
-		<Alert variant={requiredMissing.length > 0 || hasExpired ? "destructive" : "default"}>
+		<Alert variant={hasBlockingIssues ? "destructive" : "default"}>
 			<IconAlertTriangle className="size-4" aria-hidden="true" />
 			<AlertTitle>
-				{requiredMissing.length > 0 || hasExpired
+				{hasBlockingIssues
 					? t("scheduling:scheduling.skills.requirementsNotMet", "Skill Requirements Not Met")
 					: t("scheduling:scheduling.skills.preferredSkillsMissing", "Preferred Skills Missing")}
 			</AlertTitle>
@@ -130,7 +131,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 					)}
 
 					{/* Warning Message */}
-					{(requiredMissing.length > 0 || hasExpired) && (
+					{hasBlockingIssues && (
 						<p className="text-xs text-muted-foreground mt-2 pt-2 border-t">
 							{t(
 								"scheduling:scheduling.skills.warningMessage",
