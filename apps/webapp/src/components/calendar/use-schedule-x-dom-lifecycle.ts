@@ -383,7 +383,45 @@ export function useScheduleXDomLifecycle({
 		const container = calendarContainerRef.current;
 		if (!container || !onTimeRangeSelect || (viewMode !== "day" && viewMode !== "week")) return;
 
+		const clearPreview = () => {
+			for (const preview of container.querySelectorAll(".z8-range-selection")) {
+				preview.remove();
+			}
+		};
+		const cancelSelection = () => {
+			selectionStartRef.current = null;
+			clearPreview();
+		};
+		const handlePointerMove = (event: PointerEvent) => {
+			const start = selectionStartRef.current;
+			if (!start || !hasExceededPointerDragThreshold(start, event)) return;
+			clearPreview();
+			const end = getPointerDateTime(container, event, visibleRequirementDates, timeZone);
+			if (!end || start.date.getTime() === end.getTime()) return;
+
+			const [first, last] = [start.date, end]
+				.sort((a, b) => a.getTime() - b.getTime())
+				.map((date) => Temporal.Instant.fromEpochMilliseconds(date.getTime()).toZonedDateTimeISO(timeZone));
+			const firstDay = first.toPlainDate().toString();
+			const lastDay = last.toPlainDate().toString();
+			const dayCells = container.querySelectorAll<HTMLElement>(".sx__time-grid-day");
+			dayCells.forEach((cell, index) => {
+				const dateKey = cell.dataset.timeGridDate ?? visibleRequirementDates[index]?.toISODate();
+				if (!dateKey || dateKey < firstDay || dateKey > lastDay) return;
+				const startMinutes = dateKey === firstDay ? first.hour * 60 + first.minute : 0;
+				const endMinutes = dateKey === lastDay ? last.hour * 60 + last.minute : 1440;
+				if (endMinutes <= startMinutes) return;
+				const preview = document.createElement("div");
+				preview.className = "z8-range-selection";
+				preview.setAttribute("aria-hidden", "true");
+				preview.style.top = `${(startMinutes / 1440) * 100}%`;
+				preview.style.height = `${((endMinutes - startMinutes) / 1440) * 100}%`;
+				cell.append(preview);
+			});
+		};
+
 		const handlePointerDown = (event: PointerEvent) => {
+			cancelSelection();
 			const target = event.target instanceof Element ? event.target : null;
 			if (
 				!(target instanceof HTMLElement) ||
@@ -401,7 +439,7 @@ export function useScheduleXDomLifecycle({
 
 		const handlePointerUp = (event: PointerEvent) => {
 			const start = selectionStartRef.current;
-			selectionStartRef.current = null;
+			cancelSelection();
 			if (!start || !hasExceededPointerDragThreshold(start, event)) return;
 
 			const target = event.target instanceof Element ? event.target : null;
@@ -414,12 +452,18 @@ export function useScheduleXDomLifecycle({
 		};
 
 		container.addEventListener("pointerdown", handlePointerDown);
+		window.addEventListener("pointermove", handlePointerMove);
 		window.addEventListener("pointerup", handlePointerUp);
+		window.addEventListener("pointercancel", cancelSelection);
+		window.addEventListener("blur", cancelSelection);
 
 		return () => {
-			selectionStartRef.current = null;
+			cancelSelection();
 			container.removeEventListener("pointerdown", handlePointerDown);
+			window.removeEventListener("pointermove", handlePointerMove);
 			window.removeEventListener("pointerup", handlePointerUp);
+			window.removeEventListener("pointercancel", cancelSelection);
+			window.removeEventListener("blur", cancelSelection);
 		};
 	}, [calendarContainerRef, onTimeRangeSelect, timeZone, viewMode, visibleRequirementDates]);
 }

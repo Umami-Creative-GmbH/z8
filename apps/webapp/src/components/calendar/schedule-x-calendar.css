@@ -72,6 +72,19 @@
 	transform: translateY(-50%);
 }
 
+/* Preview the snapped time range while dragging, above events without intercepting input. */
+.schedule-x-container .z8-range-selection {
+	position: absolute;
+	left: 0;
+	right: 0;
+	z-index: 8;
+	box-sizing: border-box;
+	border: 2px solid var(--sx-color-primary);
+	border-radius: 4px;
+	background: color-mix(in srgb, var(--sx-color-primary) 22%, transparent);
+	pointer-events: none;
+}
+
 /* Pending work period styling - faded/semi-transparent with dashed border */
 .schedule-x-container [data-calendar-id="work_period_pending"] {
 	opacity: 0.6;
