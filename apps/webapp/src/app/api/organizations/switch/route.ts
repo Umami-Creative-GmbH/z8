@@ -59,15 +59,6 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 		}
 
-		const authorization = resolvedHeaders.get("authorization");
-		if (authorization?.toLowerCase().startsWith("bearer ")) {
-			const hasAccess = (session.user.canUseDesktop ?? true) || (session.user.canUseMobile ?? true);
-
-			if (!hasAccess) {
-				return NextResponse.json({ error: "Access denied" }, { status: 403, headers: corsHeaders });
-			}
-		}
-
 		const body = await request.json();
 		const { organizationId } = body;
 

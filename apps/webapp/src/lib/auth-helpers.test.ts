@@ -13,9 +13,6 @@ describe("mapSessionUserToAuthContextUser", () => {
 				firstName: "  Ada ",
 				lastName: " Lovelace  ",
 				canCreateOrganizations: true,
-				canUseWebapp: true,
-				canUseDesktop: false,
-				canUseMobile: true,
 			}),
 		).toMatchObject({
 			id: "user_123",
@@ -24,9 +21,6 @@ describe("mapSessionUserToAuthContextUser", () => {
 			firstName: "Ada",
 			lastName: "Lovelace",
 			canCreateOrganizations: true,
-			canUseWebapp: true,
-			canUseDesktop: false,
-			canUseMobile: true,
 		});
 	});
 
@@ -44,9 +38,6 @@ describe("mapSessionUserToAuthContextUser", () => {
 			firstName: undefined,
 			lastName: undefined,
 			canCreateOrganizations: false,
-			canUseWebapp: true,
-			canUseDesktop: true,
-			canUseMobile: true,
 		});
 	});
 });

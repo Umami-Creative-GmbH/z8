@@ -17,9 +17,6 @@ export interface EmployeeDetailFormValues {
 	role: "admin" | "manager" | "employee" | undefined;
 	contractType: "fixed" | "hourly";
 	hourlyRate: string;
-	canUseWebapp: boolean;
-	canUseDesktop: boolean;
-	canUseMobile: boolean;
 }
 
 export type EmployeeDetailFormApi = ReactFormExtendedApi<
@@ -50,9 +47,6 @@ export const defaultFormValues: EmployeeDetailFormValues = {
 	role: undefined,
 	contractType: "fixed",
 	hourlyRate: "",
-	canUseWebapp: true,
-	canUseDesktop: true,
-	canUseMobile: true,
 };
 
 export const scheduleDayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -110,7 +104,4 @@ export function syncEmployeeForm(form: EmployeeDetailFormApi, employee: Employee
 	form.setFieldValue("role", employee.role || undefined);
 	form.setFieldValue("contractType", employee.contractType || "fixed");
 	form.setFieldValue("hourlyRate", employee.currentHourlyRate || "");
-	form.setFieldValue("canUseWebapp", employee.user?.canUseWebapp ?? true);
-	form.setFieldValue("canUseDesktop", employee.user?.canUseDesktop ?? true);
-	form.setFieldValue("canUseMobile", employee.user?.canUseMobile ?? true);
 }

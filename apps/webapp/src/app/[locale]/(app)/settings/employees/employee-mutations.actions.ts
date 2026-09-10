@@ -21,7 +21,6 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { AppAccessService } from "@/lib/effect/services/app-access.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
 import { createLogger } from "@/lib/logger";
 import {
@@ -47,7 +46,6 @@ import {
 	getEmployeeSettingsActorContext,
 	getTargetEmployee,
 	getTargetUser,
-	hasAppAccessChanges,
 	parseHourlyRate,
 	requireOrgAdminEmployeeSettingsAccess,
 	revalidateEmployeesCache,
@@ -250,9 +248,6 @@ export async function updateEmployeeAction(
 				};
 
 				const {
-					canUseWebapp,
-					canUseDesktop,
-					canUseMobile,
 					firstName,
 					lastName,
 					...employeeUpdateData
@@ -294,51 +289,6 @@ export async function updateEmployeeAction(
 								.where(eq(user.id, targetEmployee.userId));
 						}),
 					);
-				}
-
-				if (hasAppAccessChanges(scopedData)) {
-					const targetUser = yield* _(
-						dbService.query("getTargetUserForAppAccess", async () => {
-							return await dbService.db.query.user.findFirst({
-								where: eq(user.id, targetEmployee.userId),
-								columns: {
-									id: true,
-									name: true,
-									email: true,
-								},
-							});
-						}),
-					);
-
-					if (targetUser) {
-						const appAccessService = yield* _(AppAccessService);
-						yield* _(
-							appAccessService.updatePermissions({
-								userId: targetEmployee.userId,
-								permissions: {
-									canUseWebapp: scopedData.canUseWebapp,
-									canUseDesktop: scopedData.canUseDesktop,
-									canUseMobile: scopedData.canUseMobile,
-								},
-								changedBy: session.user.id,
-								changedByEmail: session.user.email,
-								organizationId: targetEmployee.organizationId,
-								targetUserName: targetUser.name,
-								targetUserEmail: targetUser.email,
-							}),
-						);
-
-						logger.info(
-							{
-								employeeId,
-								userId: targetEmployee.userId,
-								canUseWebapp: scopedData.canUseWebapp,
-								canUseDesktop: scopedData.canUseDesktop,
-								canUseMobile: scopedData.canUseMobile,
-							},
-							"User app access permissions updated",
-						);
-					}
 				}
 
 				const previousStartDate = dateToUtcIsoDate(targetEmployee.startDate);

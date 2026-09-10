@@ -64,7 +64,6 @@ describe("employee settings scope helpers", () => {
 				employeeNumber: "EMP-1",
 				contractType: "hourly",
 				hourlyRate: "24",
-				canUseWebapp: false,
 			}),
 		).toEqual({
 			position: "Supervisor",

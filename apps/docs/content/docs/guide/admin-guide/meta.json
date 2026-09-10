@@ -32,7 +32,6 @@
     "webhooks",
     "social-oauth",
     "conditional-access",
-    "app-access-control",
     "scim-provisioning",
     "teams-integration",
     "slack-integration",

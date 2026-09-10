@@ -163,9 +163,6 @@ function mapDraftRow(row: {
 			canCreateOrganizations: null,
 			invitedVia: null,
 			pendingInviteCode: null,
-			canUseWebapp: true,
-			canUseDesktop: true,
-			canUseMobile: true,
 		},
 	};
 }

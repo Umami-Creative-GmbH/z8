@@ -355,25 +355,6 @@ export const auth = betterAuth({
 				required: false,
 				input: false, // system-managed
 			},
-			// App access permissions - control which applications the user can access
-			canUseWebapp: {
-				type: "boolean",
-				required: false,
-				defaultValue: true,
-				input: false, // admin-managed only
-			},
-			canUseDesktop: {
-				type: "boolean",
-				required: false,
-				defaultValue: true,
-				input: false, // admin-managed only
-			},
-			canUseMobile: {
-				type: "boolean",
-				required: false,
-				defaultValue: true,
-				input: false, // admin-managed only
-			},
 		},
 	},
 

@@ -31,9 +31,6 @@ export const user = pgTable("user", {
   canCreateOrganizations: boolean("can_create_organizations").default(false),
   invitedVia: text("invited_via"),
   pendingInviteCode: text("pending_invite_code"),
-  canUseWebapp: boolean("can_use_webapp").default(true),
-  canUseDesktop: boolean("can_use_desktop").default(true),
-  canUseMobile: boolean("can_use_mobile").default(true),
 });
 
 export const session = pgTable(

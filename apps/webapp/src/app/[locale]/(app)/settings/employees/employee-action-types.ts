@@ -36,11 +36,7 @@ export type EmployeeInvitationDraftWithRelations = typeof employeeInvitationDraf
 	invitation: typeof invitation.$inferSelect;
 	team: typeof team.$inferSelect | null;
 	membership: null;
-	user: typeof user.$inferSelect & {
-		canUseWebapp?: boolean;
-		canUseDesktop?: boolean;
-		canUseMobile?: boolean;
-	};
+	user: typeof user.$inferSelect;
 	isActive: false;
 	invitationStatus: string;
 	realEmployeeId: string | null;

@@ -42,7 +42,6 @@ describe("GET /api/auth/desktop-login", () => {
 		mockState.getSession.mockResolvedValue({
 			user: {
 				id: "user-1",
-				canUseDesktop: true,
 			},
 			session: {
 				token: "session-token",
@@ -76,7 +75,7 @@ describe("GET /api/auth/desktop-login", () => {
 		expect(await response.json()).toEqual({ error: "Missing challenge parameter" });
 	});
 
-	it("preserves access-denied redirects for authenticated users without desktop access", async () => {
+	it("allows authenticated users with a legacy disabled desktop flag", async () => {
 		mockState.getSession.mockResolvedValue({
 			user: {
 				id: "user-2",
@@ -86,6 +85,7 @@ describe("GET /api/auth/desktop-login", () => {
 				token: "session-token",
 			},
 		});
+		mockState.createAppAuthCode.mockResolvedValue({ code: "DESKTOP-CODE" });
 
 		const response = await GET(
 			createRequest(
@@ -94,10 +94,13 @@ describe("GET /api/auth/desktop-login", () => {
 		);
 
 		expect(response.status).toBe(307);
-		expect(mockState.createAppAuthCode).not.toHaveBeenCalled();
-		expect(response.headers.get("location")).toBe(
-			"z8://auth/callback?error=access_denied&error_description=Your+account+does+not+have+access+to+the+desktop+application.+Please+contact+your+administrator.",
-		);
+		expect(mockState.createAppAuthCode).toHaveBeenCalledWith({
+			app: "desktop",
+			sessionToken: "session-token",
+			userId: "user-2",
+			codeChallenge: "CODE-CHALLENGE",
+		});
+		expect(response.headers.get("location")).toBe("z8://auth/callback?code=DESKTOP-CODE");
 	});
 
 	it("rejects non-z8 redirect schemes", async () => {

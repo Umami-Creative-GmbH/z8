@@ -55,18 +55,6 @@ export async function GET(request: NextRequest) {
 	const session = await auth.api.getSession({ headers: await headers() });
 
 	if (session?.user) {
-		// Check if user has desktop app access
-		const canUseDesktop = session.user.canUseDesktop ?? true;
-		if (!canUseDesktop) {
-			// Redirect to desktop app with error
-			safeCallbackUrl.searchParams.set("error", "access_denied");
-			safeCallbackUrl.searchParams.set(
-				"error_description",
-				"Your account does not have access to the desktop application. Please contact your administrator.",
-			);
-			return NextResponse.redirect(safeCallbackUrl.toString());
-		}
-
 		const authCode = await createAppAuthCode({
 			app: "desktop",
 			codeChallenge,

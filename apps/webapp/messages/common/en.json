@@ -1,10 +1,4 @@
 {
-  "accessDenied": {
-    "contactAdmin": "Please contact your organization administrator to request access.",
-    "description": "Your account does not have permission to access the {{appLabel}}.",
-    "signOut": "Sign Out",
-    "title": "Access Restricted"
-  },
   "actions": {
     "cancel": "Cancel",
     "delete": "Delete",

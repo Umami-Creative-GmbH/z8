@@ -15,15 +15,6 @@ function resolveApp(searchParams: URLSearchParams): SupportedApp {
 	return searchParams.get("app") === "desktop" ? "desktop" : "mobile";
 }
 
-function canUseRequestedApp(
-	user: { canUseDesktop?: boolean | null; canUseMobile?: boolean | null },
-	app: SupportedApp,
-): boolean {
-	return app === "desktop"
-		? (user.canUseDesktop ?? true)
-		: (user.canUseMobile ?? true);
-}
-
 export async function GET(request: NextRequest) {
 	const clientIp = getClientIp(request);
 	const rateLimitResult = await checkRateLimit(clientIp, "auth");
@@ -63,11 +54,6 @@ export async function GET(request: NextRequest) {
 		const signInUrl = new URL("/sign-in", request.nextUrl.origin);
 		signInUrl.searchParams.set("callbackUrl", request.nextUrl.toString());
 		return NextResponse.redirect(signInUrl.toString());
-	}
-
-	if (!canUseRequestedApp(session.user, app)) {
-		safeCallbackUrl.searchParams.set("error", "access_denied");
-		return NextResponse.redirect(safeCallbackUrl.toString());
 	}
 
 	const authCode = await createAppAuthCode({

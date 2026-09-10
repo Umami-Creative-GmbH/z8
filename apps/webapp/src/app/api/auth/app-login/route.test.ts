@@ -70,52 +70,66 @@ describe("GET /api/auth/app-login", () => {
 		expect(response.status).toBe(429);
 		expect(mockState.getClientIp).toHaveBeenCalledWith(request);
 		expect(mockState.checkRateLimit).toHaveBeenCalledWith("127.0.0.1", "auth");
-		expect(mockState.createRateLimitResponse).toHaveBeenCalledWith(rateLimitResult, request);
+		expect(mockState.createRateLimitResponse).toHaveBeenCalledWith(
+			rateLimitResult,
+			request,
+		);
 		expect(mockState.getSession).not.toHaveBeenCalled();
 		expect(mockState.createAppAuthCode).not.toHaveBeenCalled();
 	});
 
-	it("redirects authenticated mobile clients with a one-time code instead of a session token", async () => {
-		mockState.getSession.mockResolvedValue({
-			user: {
-				id: "user-1",
-				canUseMobile: true,
-			},
-			session: {
-				token: "session-token",
-			},
-		});
-		mockState.createAppAuthCode.mockResolvedValue({ code: "ONE-TIME-CODE" });
+	it.each([undefined, false])(
+		"redirects authenticated mobile clients with a one-time code when the legacy flag is %s",
+		async (canUseMobile) => {
+			mockState.getSession.mockResolvedValue({
+				user: {
+					id: "user-1",
+					canUseMobile,
+				},
+				session: {
+					token: "session-token",
+				},
+			});
+			mockState.createAppAuthCode.mockResolvedValue({ code: "ONE-TIME-CODE" });
 
-		const response = await GET(
-			createRequest(
-				"https://app.example.com/api/auth/app-login?redirect=z8mobile://auth/callback&challenge=CODE-CHALLENGE",
-			),
-		);
+			const response = await GET(
+				createRequest(
+					"https://app.example.com/api/auth/app-login?redirect=z8mobile://auth/callback&challenge=CODE-CHALLENGE",
+				),
+			);
 
-		expect(response.status).toBe(307);
-		expect(mockState.createAppAuthCode).toHaveBeenCalledWith({
-			app: "mobile",
-			sessionToken: "session-token",
-			userId: "user-1",
-			codeChallenge: "CODE-CHALLENGE",
-		});
-		expect(response.headers.get("location")).toBe("z8mobile://auth/callback?code=ONE-TIME-CODE");
-	});
+			expect(response.status).toBe(307);
+			expect(mockState.createAppAuthCode).toHaveBeenCalledWith({
+				app: "mobile",
+				sessionToken: "session-token",
+				userId: "user-1",
+				codeChallenge: "CODE-CHALLENGE",
+			});
+			expect(response.headers.get("location")).toBe(
+				"z8mobile://auth/callback?code=ONE-TIME-CODE",
+			);
+		},
+	);
 
 	it("requires a code challenge before minting a mobile auth code", async () => {
 		const response = await GET(
-			createRequest("https://app.example.com/api/auth/app-login?redirect=z8mobile://auth/callback"),
+			createRequest(
+				"https://app.example.com/api/auth/app-login?redirect=z8mobile://auth/callback",
+			),
 		);
 
 		expect(response.status).toBe(400);
 		expect(mockState.createAppAuthCode).not.toHaveBeenCalled();
-		expect(await response.json()).toEqual({ error: "Missing challenge parameter" });
+		expect(await response.json()).toEqual({
+			error: "Missing challenge parameter",
+		});
 	});
 
 	it("rejects mobile deep links outside the expected auth callback", async () => {
 		const response = await GET(
-			createRequest("https://app.example.com/api/auth/app-login?redirect=z8mobile://evil/callback"),
+			createRequest(
+				"https://app.example.com/api/auth/app-login?redirect=z8mobile://evil/callback",
+			),
 		);
 
 		expect(response.status).toBe(400);

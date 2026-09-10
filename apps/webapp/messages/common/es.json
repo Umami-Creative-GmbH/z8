@@ -1,10 +1,4 @@
 {
-  "accessDenied": {
-    "contactAdmin": "Póngase en contacto con el administrador de su organización para solicitar acceso.",
-    "description": "Su cuenta no tiene permiso para acceder a {{appLabel}}.",
-    "signOut": "Cerrar sesión",
-    "title": "Acceso restringido"
-  },
   "actions": {
     "cancel": "Cancelar",
     "delete": "Eliminar",

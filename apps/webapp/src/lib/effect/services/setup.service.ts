@@ -186,9 +186,6 @@ export const SetupServiceLive = Layer.effect(
 								createdAt: now,
 								updatedAt: now,
 								canCreateOrganizations: true, // Platform admins can create orgs
-								canUseWebapp: true,
-								canUseDesktop: true,
-								canUseMobile: true,
 							});
 
 							// Create credential account for password login

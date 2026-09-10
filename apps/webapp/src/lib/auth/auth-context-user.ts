@@ -9,9 +9,6 @@ export interface AuthContextUser {
 	image?: string;
 	role?: string;
 	canCreateOrganizations: boolean;
-	canUseWebapp: boolean;
-	canUseDesktop: boolean;
-	canUseMobile: boolean;
 }
 
 export interface SessionAuthUser {
@@ -23,9 +20,6 @@ export interface SessionAuthUser {
 	image?: string | null;
 	role?: string | null;
 	canCreateOrganizations?: boolean | null;
-	canUseWebapp?: boolean | null;
-	canUseDesktop?: boolean | null;
-	canUseMobile?: boolean | null;
 }
 
 export function mapSessionUserToAuthContextUser(sessionUser: SessionAuthUser): AuthContextUser {
@@ -38,8 +32,5 @@ export function mapSessionUserToAuthContextUser(sessionUser: SessionAuthUser): A
 		image: sessionUser.image ?? undefined,
 		role: sessionUser.role ?? undefined,
 		canCreateOrganizations: sessionUser.canCreateOrganizations ?? false,
-		canUseWebapp: sessionUser.canUseWebapp ?? true,
-		canUseDesktop: sessionUser.canUseDesktop ?? true,
-		canUseMobile: sessionUser.canUseMobile ?? true,
 	};
 }

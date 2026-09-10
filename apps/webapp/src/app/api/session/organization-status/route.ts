@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { connection, NextResponse } from "next/server";
 import { env } from "@/env";
 import { auth } from "@/lib/auth";
-import { getUserOrganizations, validateAppAccess } from "@/lib/auth-helpers";
+import { getUserOrganizations } from "@/lib/auth-helpers";
 import { getAuthRequestDiagnostics } from "@/lib/diagnostics";
 import { createLogger } from "@/lib/logger";
 
@@ -30,19 +30,6 @@ export async function GET() {
 				);
 			}
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
-
-		// Validate app access before proceeding
-		const accessCheck = await validateAppAccess(session.user, resolvedHeaders);
-		if (!accessCheck.allowed) {
-			return NextResponse.json(
-				{
-					error: "AppAccessDenied",
-					message: accessCheck.reason,
-					appType: accessCheck.appType,
-				},
-				{ status: 403 },
-			);
 		}
 
 		const activeOrganizationId = session.session?.activeOrganizationId || null;

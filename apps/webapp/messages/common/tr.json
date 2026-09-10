@@ -1,10 +1,4 @@
 {
-  "accessDenied": {
-    "contactAdmin": "Erişim talep etmek için lütfen kuruluş yöneticinizle iletişime geçin.",
-    "description": "Hesabınızın {{appLabel}} uygulamasına erişim izni yok.",
-    "signOut": "Oturumu Kapat",
-    "title": "Erişim Kısıtlandı"
-  },
   "actions": {
     "cancel": "İptal",
     "delete": "Sil",

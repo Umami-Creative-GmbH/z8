@@ -111,15 +111,6 @@ function InitPageContent() {
 		}
 
 		if (!response.ok) {
-			// Check for app access denied error
-			if (response.status === 403) {
-				const errorData = await response.json().catch(() => null);
-				if (errorData?.error === "AppAccessDenied") {
-					// Redirect to access denied page
-					window.location.assign(`/access-denied?app=${errorData.appType}`);
-					return;
-				}
-			}
 			// Not authenticated, redirect to login
 			window.location.assign("/sign-in");
 			return;

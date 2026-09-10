@@ -574,12 +574,6 @@ export async function getVerifiedOrgContext(requestedOrgId: string | null): Prom
 	};
 }
 
-export {
-	type AppAccessValidationResult,
-	requireAppAccess,
-	validateAppAccess,
-} from "@/lib/app-access";
-
 // ============================================
 // CASL AUTHORIZATION
 // ============================================

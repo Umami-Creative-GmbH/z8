@@ -71,9 +71,6 @@ describe("syncEmployeeForm", () => {
 			user: {
 				firstName: "Ada",
 				lastName: "Lovelace",
-				canUseWebapp: true,
-				canUseDesktop: false,
-				canUseMobile: true,
 			},
 		} as EmployeeDetail;
 

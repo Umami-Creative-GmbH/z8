@@ -1,10 +1,4 @@
 {
-  "accessDenied": {
-    "contactAdmin": "Contatta l'amministratore della tua organizzazione per richiedere l'accesso.",
-    "description": "Il tuo account non dispone dell'autorizzazione per accedere a {{appLabel}}.",
-    "signOut": "Disconnetti",
-    "title": "Accesso limitato"
-  },
   "actions": {
     "cancel": "Annulla",
     "delete": "Elimina",
