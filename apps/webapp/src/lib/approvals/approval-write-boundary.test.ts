@@ -4118,6 +4118,11 @@ db.delete(approvalOutbox);`,
 
 	it("exports the complete exact canonical owner map", () => {
 		expect(CANONICAL_WRITE_OWNERS).toEqual({
+			"scripts/approval-maintenance.ts": {
+				approval_chain_instance: ["delete"],
+				approval_request: ["delete"],
+				approval_workflow: ["delete"],
+			},
 			"scripts/approval-workflow-rollout.ts": {
 				approval_workflow_rollout: ["insert", "update"],
 			},
@@ -4192,6 +4197,14 @@ db.delete(approvalOutbox);`,
 			SOURCE_WRITE_EXCEPTIONS: unknown;
 		};
 		expect(boundary.CANONICAL_SOURCE_WRITE_OWNERS).toEqual({
+			"scripts/approval-maintenance.ts": [
+				{
+					columns: ["approval_workflow_id"],
+					functionName: "clearWorkflowSourceReferences",
+					operation: "update",
+					table: "work_period",
+				},
+			],
 			"src/app/[locale]/(app)/time-tracking/actions.canonical.ts": [
 				{
 					columns: [

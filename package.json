@@ -11,6 +11,8 @@
 		"test": "pnpm node --test docker/scripts/prepare-target-runtime.test.mjs && turbo test",
 		"test:temporal-timezone-smoke": "pnpm node scripts/test-temporal-timezone-smoke.mjs",
 		"test:watch": "turbo test:watch",
+		"approvals:list": "pnpm --filter webapp approvals:list",
+		"approvals:delete": "pnpm --filter webapp approvals:delete",
 		"dev:webapp": "turbo dev --filter=webapp",
 		"dev:desktop": "turbo dev --filter=desktop",
 		"build:webapp": "turbo build --filter=webapp",

@@ -16,6 +16,8 @@
     "typecheck": "next typegen && tsc --project tsconfig.typecheck.json --noEmit --incremental false && tsc --project tsconfig.workflow-contracts.json --noEmit --incremental false && tsc --project tsconfig.smoke.json --noEmit --incremental false",
     "generate-licenses": "mkdir -p ./src/data && pnpm dlx license-report --only=prod --output=json --config license-report-config.json > ./src/data/licenses.json",
     "db:seed": "TZ=UTC tsx src/db/seed/do-seed.ts",
+    "approvals:list": "TZ=UTC tsx scripts/approvals.ts list",
+    "approvals:delete": "TZ=UTC tsx scripts/approvals.ts delete",
     "queue:obliterate": "TZ=UTC tsx scripts/obliterate-job-queue.ts"
   },
   "dependencies": {
