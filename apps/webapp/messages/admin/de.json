@@ -318,6 +318,29 @@
       "title": "Übersicht"
     },
     "settings": {
+      "approvalMaintenance": {
+        "title": "Genehmigung zwangsweise löschen",
+        "description": "Eine Genehmigung und ihre verknüpften Genehmigungsdatensätze dauerhaft entfernen. Die zugrunde liegenden Datensätze und deren Status bleiben erhalten.",
+        "organizationId": "Organisations-ID",
+        "organizationHint": "Die Organisation, zu der die Genehmigung gehört.",
+        "approvalId": "Genehmigungs-ID",
+        "approvalHint": "Die UUID eines bisherigen Genehmigungsantrags oder eines kanonischen Workflows.",
+        "delete": "Löschen erzwingen",
+        "deleting": "Wird gelöscht…",
+        "success": "Genehmigung gelöscht. Entfernte Datensätze:",
+        "legacy": "Bisheriger Antrag",
+        "workflow": "Workflow",
+        "chain": "Genehmigungskette",
+        "errors": {
+          "organizationRequired": "Gib eine Organisations-ID ein.",
+          "approvalInvalid": "Gib eine gültige Genehmigungs-UUID ein.",
+          "invalidInput": "Gib eine Organisations-ID und eine gültige Genehmigungs-UUID ein.",
+          "unauthorized": "Zugriff als Plattformadministrator erforderlich.",
+          "notFound": "In dieser Organisation wurde keine Genehmigung mit dieser ID gefunden.",
+          "ambiguous": "Diese ID existiert in beiden Genehmigungstabellen. Es wurde keine Genehmigung gelöscht.",
+          "failed": "Das Löschen konnte nicht abgeschlossen werden. Prüfe die Genehmigungs-ID, bevor du es erneut versuchst."
+        }
+      },
       "actions": {
         "saveChanges": "Änderungen speichern"
       },
