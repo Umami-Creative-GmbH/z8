@@ -14,11 +14,6 @@ import {
 	teamsApprovalCard,
 	timeEntry,
 } from "@/db/schema";
-import {
-	canAttemptBotApprovalDecision,
-	decideBotApproval,
-	loadBotApprovalDecisionTarget,
-} from "@/lib/bot-platform/approval-decision";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
 import { updateMessage } from "./bot-adapter";
@@ -61,6 +56,12 @@ export async function handleApprovalAction(
 		if (!approval) {
 			throw new TeamsError("Approval not found", "APPROVAL_NOT_FOUND");
 		}
+		// Keep Next.js-only decision dependencies out of escalation worker imports.
+		const {
+			canAttemptBotApprovalDecision,
+			decideBotApproval,
+			loadBotApprovalDecisionTarget,
+		} = await import("@/lib/bot-platform/approval-decision");
 		const decisionTarget = await loadBotApprovalDecisionTarget({
 			approvalId,
 			organizationId: tenant.organizationId,

@@ -12,11 +12,6 @@ import {
 	employee,
 	telegramApprovalMessage,
 } from "@/db/schema";
-import {
-	canAttemptBotApprovalDecision,
-	decideBotApproval,
-	loadBotApprovalDecisionTarget,
-} from "@/lib/bot-platform/approval-decision";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
@@ -72,6 +67,12 @@ export async function handleApprovalCallback(
 			logger.warn({ approvalId }, "Approval not found");
 			return;
 		}
+		// Keep Next.js-only decision dependencies out of escalation worker imports.
+		const {
+			canAttemptBotApprovalDecision,
+			decideBotApproval,
+			loadBotApprovalDecisionTarget,
+		} = await import("@/lib/bot-platform/approval-decision");
 		const decisionTarget = await loadBotApprovalDecisionTarget({
 			approvalId,
 			organizationId: bot.organizationId,

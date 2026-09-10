@@ -8,11 +8,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { approvalRequest, employee, slackApprovalMessage } from "@/db/schema";
-import {
-	canAttemptBotApprovalDecision,
-	decideBotApproval,
-	loadBotApprovalDecisionTarget,
-} from "@/lib/bot-platform/approval-decision";
 import { createLogger } from "@/lib/logger";
 import { openConversation, postMessage, updateMessage } from "./api";
 import { getChannelIdForUser } from "./conversation-manager";
@@ -61,6 +56,12 @@ export async function handleApprovalAction(
 			logger.warn({ approvalId }, "Approval not found");
 			return;
 		}
+		// Keep Next.js-only decision dependencies out of escalation worker imports.
+		const {
+			canAttemptBotApprovalDecision,
+			decideBotApproval,
+			loadBotApprovalDecisionTarget,
+		} = await import("@/lib/bot-platform/approval-decision");
 		const decisionTarget = await loadBotApprovalDecisionTarget({
 			approvalId,
 			organizationId: bot.organizationId,

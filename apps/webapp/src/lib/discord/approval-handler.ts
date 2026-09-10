@@ -8,11 +8,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { approvalRequest, discordApprovalMessage, employee } from "@/db/schema";
-import {
-	canAttemptBotApprovalDecision,
-	decideBotApproval,
-	loadBotApprovalDecisionTarget,
-} from "@/lib/bot-platform/approval-decision";
 import { createLogger } from "@/lib/logger";
 import { createInteractionResponse, sendMessage } from "./api";
 import { getChannelIdForUser } from "./conversation-manager";
@@ -75,6 +70,12 @@ export async function handleApprovalButtonClick(
 			);
 			return;
 		}
+		// Keep Next.js-only decision dependencies out of escalation worker imports.
+		const {
+			canAttemptBotApprovalDecision,
+			decideBotApproval,
+			loadBotApprovalDecisionTarget,
+		} = await import("@/lib/bot-platform/approval-decision");
 		const decisionTarget = await loadBotApprovalDecisionTarget({
 			approvalId,
 			organizationId: bot.organizationId,
