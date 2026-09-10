@@ -11,7 +11,7 @@
     "test:approval-workflow-repository:integration": "bash ./scripts/run-approval-workflow-repository-integration.sh",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "auth:generate": "NODE_OPTIONS='--require=./scripts/register-auth-generate-alias.cjs' pnpm dlx auth@1.7.2 generate --config ./src/lib/auth.ts --output ./src/db/auth-schema.ts",
+    "auth:generate": "NODE_OPTIONS='--require=./scripts/register-auth-generate-alias.cjs' pnpm dlx auth@1.7.3 generate --config ./src/lib/auth.ts --output ./src/db/auth-schema.ts",
     "auth:migrate": "pnpm run auth:generate && pnpm drizzle-kit push",
     "typecheck": "next typegen && tsc --project tsconfig.typecheck.json --noEmit --incremental false && tsc --project tsconfig.workflow-contracts.json --noEmit --incremental false && tsc --project tsconfig.smoke.json --noEmit --incremental false",
     "generate-licenses": "mkdir -p ./src/data && pnpm dlx license-report --only=prod --output=json --config license-report-config.json > ./src/data/licenses.json",
