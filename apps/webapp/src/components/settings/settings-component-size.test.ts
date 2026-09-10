@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import * as ts from "typescript/unstable/ast";
-import { afterAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import * as nativeSourceAnalysis from "@/lib/typescript/native-source-analysis";
 
 const TARGETS = [
@@ -43,6 +43,12 @@ const TARGETS = [
 
 const withNativeSource = vi.spyOn(nativeSourceAnalysis, "withNativeSource");
 const lineCountsByPath = new Map<string, Map<string, number>>();
+let nativeSourceCallCount = 0;
+
+afterEach(() => {
+	nativeSourceCallCount += withNativeSource.mock.calls.length;
+	withNativeSource.mockClear();
+});
 
 function componentLineCounts(relativePath: string) {
 	const path = fileURLToPath(new URL(relativePath, import.meta.url));
@@ -76,15 +82,10 @@ function componentLineCounts(relativePath: string) {
 }
 
 afterAll(() => {
-	let nativeSourceCallCount = 0;
 	try {
-		nativeSourceCallCount = withNativeSource.mock.calls.length;
+		withNativeSource.mockRestore();
 	} finally {
-		try {
-			withNativeSource.mockRestore();
-		} finally {
-			lineCountsByPath.clear();
-		}
+		lineCountsByPath.clear();
 	}
 	expect(nativeSourceCallCount).toBe(
 		new Set(TARGETS.map(([relativePath]) => relativePath)).size,

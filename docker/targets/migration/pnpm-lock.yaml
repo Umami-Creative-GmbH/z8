@@ -106,38 +106,9 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@hono/node-server': 1.19.13
-  '@xmldom/xmldom': 0.8.13
-  dompurify: 3.4.0
   esbuild: 0.25.12
-  axios: 1.16.1
-  effect: 3.22.1
-  fast-uri: 3.1.2
-  fast-xml-builder: 1.1.7
-  fast-xml-parser: 5.10.1
-  follow-redirects: 1.16.0
-  brace-expansion@1.1.12: 1.1.13
-  brace-expansion@2.0.2: 2.0.3
-  get-uri>basic-ftp: 5.3.0
-  get-uri: 6.0.5
-  glob@7.2.3>minimatch: 3.1.5
-  hono: 4.12.21
-  kysely: 0.28.17
-  lodash: 4.18.1
-  lodash-es: 4.18.1
-  minimatch@3.1.5>brace-expansion: 1.1.13
-  minimatch@5.1.9>brace-expansion: 2.0.3
   pako: 1.0.11
-  postcss: 8.5.26
-  mermaid: 11.15.0
-  protobufjs: 8.2.0
-  samlify: 2.13.0
-  srvx: 0.11.13
-  tinyglobby: 0.2.16
-  tmp: 0.2.6
-  undici: 8.9.0
   uuid: 14.0.0
-  ws@8.18.3: 8.21.0
 
 importers:
 
@@ -397,7 +368,7 @@ packages:
       expo-sqlite: '>=14.0.0'
       gel: '>=2'
       knex: '*'
-      kysely: 0.28.17
+      kysely: '*'
       mysql2: '>=2'
       pg: '>=8'
       postgres: '>=3'
@@ -474,8 +445,8 @@ packages:
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
 
-  get-tsconfig@4.14.0:
-    resolution: {integrity: sha512-yTb+8DXzDREzgvYmh6s9vHsSVCHeC0G3PI5bEXNBHtmshPnO+S5O7qgLEOn0I5QvMy6kpZN8K1NKGyilLb93wA==}
+  get-tsconfig@4.14.3:
+    resolution: {integrity: sha512-++QEw4DIY7WGoukz+/+A/8dGYPT9l9yIadnmSgZ8Rjr3YVSVDipQSO9CdnJo9ePqFqUUqh+wk9uIaoiAwsiPkA==}
 
   luxon@3.7.2:
     resolution: {integrity: sha512-vtEhXh/gNjI9Yg1u4jX/0YVPMvxzHuGgCm6tC5kZyb08yjGWGnqAjGJvcXbqQR2P3MyMEFnRbpcdFS6PBcLqew==}
@@ -545,8 +516,8 @@ packages:
     resolution: {integrity: sha512-UcjcJOWknrNkF6PLX83qcHM6KHgVKNkV62Y8a5uYDVv9ydGQVwAHMKqHdJje1VTWpljG0WYpCDhrCdAOYH4TWg==}
     engines: {node: '>= 10.x'}
 
-  tsx@4.22.3:
-    resolution: {integrity: sha512-mdoNxBC/cSQObGGVQ5Bpn5i+yv7j68gk3Nfm3wFjcJg3Z0Mix9jzAFfP12prmm5eVGmDKtp0yyArrs0Q+8gZHg==}
+  tsx@4.23.13:
+    resolution: {integrity: sha512-BL5MGkRln6aDYhb0xbQlEAGw743BaZYWdbWtdJOBriYJboKgUUYCadFp2/FpBBZquBC/ezNBn7wMMPx7FDZUDw==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -569,7 +540,7 @@ snapshots:
   '@esbuild-kit/esm-loader@2.6.5':
     dependencies:
       '@esbuild-kit/core-utils': 3.3.2
-      get-tsconfig: 4.14.0
+      get-tsconfig: 4.14.3
 
   '@esbuild/aix-ppc64@0.25.12':
     optional: true
@@ -666,7 +637,7 @@ snapshots:
       '@drizzle-team/brocli': 0.10.2
       '@esbuild-kit/esm-loader': 2.6.5
       esbuild: 0.25.12
-      tsx: 4.22.3
+      tsx: 4.23.13
 
   drizzle-orm@0.45.2(pg@8.23.0):
     optionalDependencies:
@@ -704,7 +675,7 @@ snapshots:
   fsevents@2.3.3:
     optional: true
 
-  get-tsconfig@4.14.0:
+  get-tsconfig@4.14.3:
     dependencies:
       resolve-pkg-maps: 1.0.0
 
@@ -766,7 +737,7 @@ snapshots:
 
   split2@4.2.0: {}
 
-  tsx@4.22.3:
+  tsx@4.23.13:
     dependencies:
       esbuild: 0.25.12
     optionalDependencies:

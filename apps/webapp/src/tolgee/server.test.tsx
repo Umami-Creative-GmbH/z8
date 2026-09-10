@@ -35,11 +35,11 @@ vi.mock("./shared", () => ({
 	TolgeeBase: () => ({ init: mockState.init }),
 }));
 
-await import("./server");
-
-beforeEach(() => {
+beforeEach(async () => {
+	vi.resetModules();
 	mockState.init.mockClear();
 	mockState.loadRouteTranslations.mockClear();
+	await import("./server");
 });
 
 describe("Tolgee server instance", () => {
