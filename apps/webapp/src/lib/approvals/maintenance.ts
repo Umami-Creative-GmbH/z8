@@ -190,10 +190,22 @@ export async function deleteApprovalInTransaction(
 	}
 
 	const lifecycle = await resolveLifecycle(transaction, organizationId, kind, id);
-	const idsFor = (type: string) => lifecycle.filter((row) => row.kind === type).map(rowId);
-	const legacyIds = idsFor("legacy");
-	const workflowIds = idsFor("workflow");
-	const chainIds = idsFor("chain");
+	const legacyIds: string[] = [];
+	const workflowIds: string[] = [];
+	const chainIds: string[] = [];
+	for (const row of lifecycle) {
+		switch (row.kind) {
+			case "legacy":
+				legacyIds.push(rowId(row));
+				break;
+			case "workflow":
+				workflowIds.push(rowId(row));
+				break;
+			case "chain":
+				chainIds.push(rowId(row));
+				break;
+		}
+	}
 
 	await clearWorkflowSourceReferences(transaction, organizationId, workflowIds);
 	if (legacyIds.length > 0) {
