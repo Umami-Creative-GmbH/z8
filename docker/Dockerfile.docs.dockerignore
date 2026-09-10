@@ -68,7 +68,6 @@ docs/
 apps/marketing
 apps/webapp
 apps/desktop
-apps/mobile
 
 # Deployment artifacts (not needed in image)
 deploy/.vault-data
