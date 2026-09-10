@@ -2050,14 +2050,9 @@ export async function createManualTimeEntry(
 			return { success: false, error: APPROVAL_POLICY_CHECK_ERROR };
 		}
 
-		if (editCapability?.type === "forbidden") {
-			return {
-				success: false,
-				error: `Entries older than ${editCapability.daysBack} days can only be created by admins or team leads.`,
-			};
-		}
-
-		requiresApproval = editCapability?.type === "approval_required";
+		// Older manual entries require approval instead of being blocked by age.
+		requiresApproval =
+			editCapability?.type === "approval_required" || editCapability?.type === "forbidden";
 	}
 
 	try {
