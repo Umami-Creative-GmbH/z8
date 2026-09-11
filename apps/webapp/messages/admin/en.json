@@ -318,6 +318,29 @@
       "title": "Overview"
     },
     "settings": {
+      "approvalMaintenance": {
+        "title": "Force delete approval",
+        "description": "Permanently remove an approval and its linked approval records. Source records and their statuses are preserved.",
+        "organizationId": "Organization ID",
+        "organizationHint": "The organization that owns the approval.",
+        "approvalId": "Approval ID",
+        "approvalHint": "A legacy approval request or canonical workflow UUID.",
+        "delete": "Force delete",
+        "deleting": "Deleting…",
+        "success": "Approval deleted. Removed records:",
+        "legacy": "Legacy request",
+        "workflow": "Workflow",
+        "chain": "Approval chain",
+        "errors": {
+          "organizationRequired": "Enter an organization ID.",
+          "approvalInvalid": "Enter a valid approval UUID.",
+          "invalidInput": "Enter an organization ID and a valid approval UUID.",
+          "unauthorized": "Platform admin access required.",
+          "notFound": "Approval not found in this organization.",
+          "ambiguous": "This ID exists in both approval stores. No approval was deleted.",
+          "failed": "Could not complete deletion. Check the approval ID before trying again."
+        }
+      },
       "actions": {
         "saveChanges": "Save Changes"
       },

@@ -5,7 +5,7 @@ import {
 	type ApprovalMaintenanceDatabase,
 	deleteApproval,
 	listApprovals,
-} from "./approval-maintenance";
+} from "@/lib/approvals/maintenance";
 
 const HELP = `Approval maintenance (server operator access and database credentials required)
 

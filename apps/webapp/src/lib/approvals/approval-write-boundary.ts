@@ -60,8 +60,8 @@ type CanonicalApprovalSourceWriteOwners = Readonly<
 >;
 
 export const CANONICAL_WRITE_OWNERS = {
-	// Server-operator CLI only: permanently remove an explicitly selected approval lifecycle.
-	"scripts/approval-maintenance.ts": {
+	// Shared by the operator CLI and authenticated platform-admin maintenance action.
+	"src/lib/approvals/maintenance.ts": {
 		approval_chain_instance: ["delete"],
 		approval_request: ["delete"],
 		approval_workflow: ["delete"],
@@ -136,7 +136,7 @@ export const TEMPORARY_LEGACY_WRITE_EXCEPTIONS = {
 } as const satisfies ApprovalWriteOwners;
 
 export const CANONICAL_SOURCE_WRITE_OWNERS = {
-	"scripts/approval-maintenance.ts": [
+	"src/lib/approvals/maintenance.ts": [
 		{
 			columns: ["approval_workflow_id"],
 			functionName: "clearWorkflowSourceReferences",

@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { getCookieConsentScriptAction, setCookieConsentScriptAction } from "./actions";
+import { ApprovalMaintenanceCard } from "./approval-maintenance-card";
 
 export default function PlatformSettingsPage() {
 	const { t } = useTranslate();
@@ -74,6 +75,7 @@ export default function PlatformSettingsPage() {
 
 			{/* Settings Grid */}
 			<div className="grid gap-6 lg:grid-cols-2">
+				<ApprovalMaintenanceCard />
 				{/* Cookie Consent Script */}
 				<Card className="lg:col-span-2">
 					<CardHeader>

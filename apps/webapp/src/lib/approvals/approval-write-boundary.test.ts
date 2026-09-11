@@ -4118,7 +4118,7 @@ db.delete(approvalOutbox);`,
 
 	it("exports the complete exact canonical owner map", () => {
 		expect(CANONICAL_WRITE_OWNERS).toEqual({
-			"scripts/approval-maintenance.ts": {
+			"src/lib/approvals/maintenance.ts": {
 				approval_chain_instance: ["delete"],
 				approval_request: ["delete"],
 				approval_workflow: ["delete"],
@@ -4197,7 +4197,7 @@ db.delete(approvalOutbox);`,
 			SOURCE_WRITE_EXCEPTIONS: unknown;
 		};
 		expect(boundary.CANONICAL_SOURCE_WRITE_OWNERS).toEqual({
-			"scripts/approval-maintenance.ts": [
+			"src/lib/approvals/maintenance.ts": [
 				{
 					columns: ["approval_workflow_id"],
 					functionName: "clearWorkflowSourceReferences",
