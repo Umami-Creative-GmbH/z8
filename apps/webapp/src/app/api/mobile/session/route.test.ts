@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({ canAccessOrganizationWithSso: async () => true }));
 
 const mockState = vi.hoisted(() => ({
 	getSession: vi.fn(),
@@ -127,6 +128,8 @@ describe("GET /api/mobile/session", () => {
 					canUseMobile,
 				},
 				session: {
+					id: "session-1",
+					userId: "user-1",
 					activeOrganizationId: "org-1",
 				},
 			});

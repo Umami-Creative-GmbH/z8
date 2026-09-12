@@ -7,6 +7,7 @@ import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { env } from "@/env";
 import { auth } from "@/lib/auth";
+import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 import {
 	createAvatarStorageKey,
 	createOrganizationLogoStorageKey,
@@ -69,6 +70,13 @@ export async function POST(request: NextRequest) {
 
 		// For org-logo and branding images, verify user is owner of the organization.
 		if (requiresOrgId && organizationId) {
+			if (
+				!(await canAccessOrganizationWithSso(session.session, organizationId))
+			)
+				return NextResponse.json(
+					{ error: "SSO authentication required", code: "SSO_REQUIRED" },
+					{ status: 403 },
+				);
 			const currentMember = await db.query.member.findFirst({
 				where: and(
 					eq(authSchema.member.userId, session.user.id),

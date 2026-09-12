@@ -17,7 +17,7 @@ import {
 	teamPermissions,
 	workPeriod,
 } from "@/db/schema";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { getAuthContext, verifyOrgMembership } from "@/lib/auth-helpers";
 import {
 	isSettingsAccessMembershipRole,
 	resolveSettingsAccessTier,
@@ -82,6 +82,7 @@ async function getSurchargeSettingsActor(
 	if (!authContext || !scopedOrganizationId) {
 		return null;
 	}
+	if (!(await verifyOrgMembership(scopedOrganizationId))?.isValid) return null;
 
 	const membershipRecord = await db.query.member.findFirst({
 		where: and(

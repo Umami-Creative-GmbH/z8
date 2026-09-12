@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { member, organization, session, user } from "@/db/auth-schema";
 import { organizationSuspension, platformAdminAuditLog } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { isAccountBanned } from "@/lib/auth/account-ban";
 import { addOrganizationDeletionNotificationJob } from "@/lib/queue";
 import { AuthorizationError, ConflictError, DatabaseError, NotFoundError } from "../errors";
 
@@ -183,7 +184,7 @@ export async function requirePlatformAdmin(): Promise<{
 			throw new Error("Not a platform admin");
 		}
 
-		if (sessionData.user.banned) {
+		if (isAccountBanned(sessionData.user)) {
 			throw new Error("Account is banned");
 		}
 
@@ -349,6 +350,11 @@ export const PlatformAdminServiceLive = Layer.effect(
 								banExpires: expiresAt,
 							})
 							.where(eq(user.id, userId));
+
+						// Keep the ban committed even if revocation fails. Store-level
+						// validation denies access immediately; revocation also prevents
+						// old tokens becoming usable again when the ban is later lifted.
+						await (await auth.$context).internalAdapter.deleteUserSessions(userId);
 
 						// Log action
 						await db.insert(platformAdminAuditLog).values({

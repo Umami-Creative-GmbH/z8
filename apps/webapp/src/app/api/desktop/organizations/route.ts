@@ -6,6 +6,7 @@ import { member, organization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
+import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
 	const appUrl = getDefaultAppBaseUrl();
@@ -74,6 +75,10 @@ export async function GET(request: Request) {
 		// Build full org list with employee status
 		const organizationsWithDetails = await Promise.all(
 			memberships.map(async (m) => {
+				const allowed = await canAccessOrganizationWithSso(
+					session.session,
+					m.organizationId,
+				);
 				const [org, emp] = await Promise.all([
 					db.query.organization.findFirst({
 						where: eq(organization.id, m.organizationId),
@@ -84,13 +89,15 @@ export async function GET(request: Request) {
 							logo: true,
 						},
 					}),
-					db.query.employee.findFirst({
-						where: and(
-							eq(employee.userId, session.user.id),
-							eq(employee.organizationId, m.organizationId),
-							eq(employee.isActive, true),
-						),
-					}),
+					allowed
+						? db.query.employee.findFirst({
+								where: and(
+									eq(employee.userId, session.user.id),
+									eq(employee.organizationId, m.organizationId),
+									eq(employee.isActive, true),
+								),
+							})
+						: Promise.resolve(null),
 				]);
 
 				return {
@@ -100,6 +107,7 @@ export async function GET(request: Request) {
 					logo: org?.logo ?? null,
 					memberRole: m.role,
 					hasEmployeeRecord: !!emp,
+					...(!allowed ? { ssoRequired: true } : {}),
 				};
 			}),
 		);

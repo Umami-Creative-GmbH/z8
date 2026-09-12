@@ -9,6 +9,8 @@ import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
 import { getAuthRequestDiagnostics } from "@/lib/diagnostics";
+import { SsoRequiredError } from "@/lib/enterprise-identity/session-sso";
+import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("OrganizationSwitchRoute");
@@ -62,7 +64,7 @@ export async function POST(request: NextRequest) {
 		const body = await request.json();
 		const { organizationId } = body;
 
-		if (!organizationId) {
+		if (typeof organizationId !== "string" || !organizationId) {
 			return NextResponse.json(
 				{ error: "Organization ID is required" },
 				{ status: 400, headers: corsHeaders },
@@ -85,6 +87,15 @@ export async function POST(request: NextRequest) {
 		if (membership?.status !== "approved") {
 			return NextResponse.json(
 				{ error: "You are not a member of this organization" },
+				{ status: 403, headers: corsHeaders },
+			);
+		}
+		if (
+			!(await canAccessOrganizationWithSso(session.session, organizationId))
+		) {
+			const error = new SsoRequiredError();
+			return NextResponse.json(
+				{ error: error.message, code: error.code },
 				{ status: 403, headers: corsHeaders },
 			);
 		}

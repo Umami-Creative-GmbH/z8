@@ -67,6 +67,28 @@ export function getPlatformRootDomain(): string {
 	);
 }
 
+/** Exact main origins configured by the operator, not by request headers. */
+export function getConfiguredMainOrigins(): string[] {
+	const origins = new Set<string>();
+	for (const value of [env.APP_URL, env.BETTER_AUTH_URL, env.NEXT_PUBLIC_APP_URL]) {
+		if (!value) continue;
+		try {
+			const url = new URL(value);
+			if (
+				(url.protocol === "https:" || url.protocol === "http:") &&
+				!url.username &&
+				!url.password &&
+				!url.hostname.includes("*")
+			) {
+				origins.add(url.origin);
+			}
+		} catch {
+			// Invalid deployment URLs must not broaden host or origin trust.
+		}
+	}
+	return [...origins];
+}
+
 export function classifyDomainHost(host: string | null): DomainHostClassification | null {
 	const hostname = normalizeDomainHost(host);
 	if (!hostname) {
@@ -76,7 +98,12 @@ export function classifyDomainHost(host: string | null): DomainHostClassificatio
 	const mainDomain = normalizeDomainHost(env.MAIN_DOMAIN ?? "localhost:3000");
 	const platformRootDomain = getPlatformRootDomain();
 
-	if (hostname === mainDomain || hostname === platformRootDomain || hostname === "localhost") {
+	if (
+		hostname === mainDomain ||
+		hostname === platformRootDomain ||
+		hostname === "localhost" ||
+		getConfiguredMainOrigins().some((origin) => new URL(origin).hostname === hostname)
+	) {
 		return { type: "main", hostname };
 	}
 

@@ -11,6 +11,7 @@ import { headers } from "next/headers";
 import type { NextRequest } from "next/server";
 import { connection, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { verifyOrgMembership } from "@/lib/auth-helpers";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("TelegramLink");
@@ -31,6 +32,8 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
 		}
 
+		if (!(await verifyOrgMembership(organizationId))?.isValid)
+			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		const { generateLinkCode, isTelegramEnabledForOrganization } = await import("@/lib/telegram");
 
 		// Check if Telegram is enabled
@@ -71,6 +74,8 @@ export async function DELETE(request: NextRequest) {
 			return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
 		}
 
+		if (!(await verifyOrgMembership(organizationId))?.isValid)
+			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		const { unlinkTelegramUser } = await import("@/lib/telegram");
 
 		const unlinked = await unlinkTelegramUser(session.user.id, organizationId);

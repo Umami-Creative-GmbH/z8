@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
 	storePendingInvitation: vi.fn(),
 	useTurnstile: vi.fn(),
 	validateInviteCode: vi.fn(),
+	verifyTurnstile: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -72,7 +73,7 @@ vi.mock("@/lib/hooks/use-enabled-providers", () => ({
 }));
 
 vi.mock("@/lib/turnstile/verify", () => ({
-	verifyTurnstileWithServer: vi.fn(),
+	verifyTurnstileWithServer: mocks.verifyTurnstile,
 }));
 
 vi.mock("@/navigation", () => ({
@@ -102,7 +103,9 @@ vi.mock("./auth-form-wrapper", () => ({
 }));
 
 vi.mock("./turnstile-widget", () => ({
-	TurnstileWidget: () => <div>turnstile</div>,
+	TurnstileWidget: ({ onVerify }: { onVerify: (token: string) => void }) => (
+		<button type="button" onClick={() => onVerify("signup-token")}>Complete verification</button>
+	),
 }));
 
 import { SignupForm } from "./signup-form";
@@ -140,6 +143,22 @@ describe("SignupForm", () => {
 		mocks.signUpEmail.mockResolvedValue({ error: null });
 		mocks.storePendingInviteCode.mockResolvedValue(undefined);
 		mocks.useTurnstile.mockReturnValue(null);
+		mocks.verifyTurnstile.mockResolvedValue({ success: true });
+	});
+
+	it("sends the token in the signup request without consuming it in a separate verification", async () => {
+		mocks.useTurnstile.mockReturnValue({ enabled: true, siteKey: "site-key" });
+		render(<SignupForm />);
+		fillValidSignupForm();
+		fireEvent.click(screen.getByRole("button", { name: "Complete verification" }));
+		const form = screen.getByLabelText("Email").closest("form");
+		if (!form) throw new Error("Missing signup form");
+		fireEvent.submit(form);
+		await waitFor(() => expect(mocks.signUpEmail).toHaveBeenCalledOnce());
+		expect(mocks.signUpEmail.mock.calls[0][0]).toMatchObject({
+			fetchOptions: { headers: { "x-captcha-response": "signup-token" } },
+		});
+		expect(mocks.verifyTurnstile).not.toHaveBeenCalled();
 	});
 
 	it("uses the setup password strength UI and validation rules", () => {

@@ -3,8 +3,14 @@ import { Context, Effect, Layer } from "effect";
 import { db } from "@/db";
 import { account, user } from "@/db/auth-schema";
 import { platformAdminAuditLog } from "@/db/schema";
+import { setupBootstrap } from "@/lib/setup/bootstrap.server";
 import { setConfiguredStatus } from "@/lib/setup/config-cache";
-import { ConflictError, DatabaseError, ValidationError } from "../errors";
+import {
+	AuthorizationError,
+	ConflictError,
+	DatabaseError,
+	ValidationError,
+} from "../errors";
 
 // Types
 export interface CreatePlatformAdminInput {
@@ -72,7 +78,11 @@ export class SetupService extends Context.Tag("SetupService")<
 		 */
 		readonly createPlatformAdmin: (
 			input: CreatePlatformAdminInput,
-		) => Effect.Effect<PlatformAdminResult, ValidationError | ConflictError | DatabaseError>;
+			setupToken: string | undefined,
+		) => Effect.Effect<
+			PlatformAdminResult,
+			AuthorizationError | ValidationError | ConflictError | DatabaseError
+		>;
 	}
 >() {}
 
@@ -100,10 +110,21 @@ export const SetupServiceLive = Layer.effect(
 						}),
 				}),
 
-			createPlatformAdmin: (input) =>
+			createPlatformAdmin: (input, setupToken) =>
 				Effect.tryPromise({
 					try: async () => {
-						// Validate input first (before any DB operations)
+						const assertSetupAuthorization = (authorized: boolean) => {
+							if (!authorized) {
+								throw new AuthorizationError({
+									message:
+										"Setup authorization is missing or expired. Open the setup link from the server console.",
+								});
+							}
+						};
+						assertSetupAuthorization(
+							await setupBootstrap.authorize(setupToken),
+						);
+						// Validate input before hashing or opening the write transaction.
 						const nameError = validateName(input.name);
 						if (nameError) {
 							throw new ValidationError({
@@ -146,7 +167,9 @@ export const SetupServiceLive = Layer.effect(
 							// Acquire advisory lock (prevents concurrent setup operations)
 							// Using a fixed lock key for "platform_setup" operation
 							const SETUP_LOCK_KEY = 1234567890; // Fixed key for setup operation
-							await tx.execute(sql`SELECT pg_advisory_xact_lock(${SETUP_LOCK_KEY})`);
+							await tx.execute(
+								sql`SELECT pg_advisory_xact_lock(${SETUP_LOCK_KEY})`,
+							);
 
 							// Check if any platform admin already exists (within transaction)
 							const [existingAdmin] = await tx
@@ -161,6 +184,14 @@ export const SetupServiceLive = Layer.effect(
 									conflictType: "platform_already_configured",
 								});
 							}
+							// The cookie may expire while hashing or waiting for the lock.
+							// Admin existence was checked on tx above. Only recheck Redis here:
+							// a global DB query would need a second pooled connection.
+							assertSetupAuthorization(
+								await setupBootstrap.authorizeWithinSetupTransaction(
+									setupToken,
+								),
+							);
 
 							// Check if email is already in use
 							const [existingUser] = await tx
@@ -214,13 +245,30 @@ export const SetupServiceLive = Layer.effect(
 							return { userId, email: normalizedEmail };
 						});
 
-						// Update the config cache (outside transaction, after commit)
-						setConfiguredStatus(true);
+						// Consume only after commit so a rolled-back transaction remains retryable.
+						// The DB admin check permanently denies leftover Redis credentials if cleanup fails.
+						try {
+							await setupBootstrap.invalidate();
+						} catch {
+							console.warn(
+								"[Setup] Admin created; Redis bootstrap cleanup unavailable. Setup remains disabled by the database admin check.",
+							);
+						}
+						try {
+							setConfiguredStatus(true);
+						} catch {
+							console.warn(
+								"[Setup] Admin created; configuration cache refresh unavailable.",
+							);
+						}
 
 						return result;
 					},
 					catch: (error) => {
 						// Re-throw typed errors as-is
+						if (error instanceof AuthorizationError) {
+							return error;
+						}
 						if (error instanceof ValidationError) {
 							return error;
 						}

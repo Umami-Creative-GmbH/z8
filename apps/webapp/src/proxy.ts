@@ -2,9 +2,17 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { routing } from "@/i18n/routing";
-import { classifyDomainHost, resolvePlatformOrganization } from "@/lib/domain/platform-domain";
-import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
+import {
+	classifyDomainHost,
+	resolvePlatformOrganization,
+} from "@/lib/domain/platform-domain";
+import {
+	checkRateLimit,
+	createRateLimitResponse,
+	getClientIp,
+} from "@/lib/rate-limit";
 import { applySecurityHeaders } from "@/lib/security";
+import { applySetupResponseHeaders } from "@/lib/setup/http";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 
 // Headers used to pass context to pages
@@ -51,27 +59,52 @@ export async function proxy(request: NextRequest) {
 
 	// Extract locale and path without locale for consistent handling
 	const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?:\/|$)/, "/");
-	const locale = pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
+	const locale =
+		pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
 	const isApiRoute = pathname.startsWith("/api/");
 	// API handlers perform authentication and authorization without page middleware.
 	if (isApiRoute) {
 		return NextResponse.next();
 	}
 
-	const isSetupPage = pathWithoutLocale === "/setup" || pathWithoutLocale.startsWith("/setup/");
+	const setupLocale = routing.locales.find(
+		(candidate) =>
+			pathname === `/${candidate}/setup` ||
+			pathname.startsWith(`/${candidate}/setup/`),
+	);
+	const isSetupPage =
+		Boolean(setupLocale) ||
+		pathWithoutLocale === "/setup" ||
+		pathWithoutLocale.startsWith("/setup/");
 	const domainClassification = classifyDomainHost(request.headers.get("host"));
 	if (domainClassification?.type === "unknownPlatform") {
 		const response = new NextResponse("Not found", { status: 404 });
 		applySecurityHeaders(response);
+		if (isSetupPage) applySetupResponseHeaders(response);
 		return response;
 	}
 	if (domainClassification?.type === "platformOrganization") {
-		const platformOrganization = await resolvePlatformOrganization(domainClassification.label);
+		const platformOrganization = await resolvePlatformOrganization(
+			domainClassification.label,
+		);
 		if (!platformOrganization) {
 			const response = new NextResponse("Not found", { status: 404 });
 			applySecurityHeaders(response);
+			if (isSetupPage) applySetupResponseHeaders(response);
 			return response;
 		}
+	}
+	// Exchange in a Route Handler before any HTML/analytics can see a credential URL.
+	// An internal rewrite avoids a second browser request containing the secret.
+	if (isSetupPage && request.nextUrl.searchParams.has("code")) {
+		const authorizeUrl = new URL("/api/setup/authorize", request.url);
+		for (const code of request.nextUrl.searchParams.getAll("code")) {
+			authorizeUrl.searchParams.append("code", code);
+		}
+		authorizeUrl.searchParams.set("locale", setupLocale || locale);
+		const response = NextResponse.rewrite(authorizeUrl);
+		applySetupResponseHeaders(response);
+		return response;
 	}
 
 	// Platform setup check - redirect to /setup if not configured
@@ -88,8 +121,10 @@ export async function proxy(request: NextRequest) {
 		const { isPlatformConfigured } = await import("@/lib/setup/config-cache");
 		const configured = await isPlatformConfigured();
 		if (configured) {
-			const homeUrl = new URL(`/${locale}/`, request.url);
-			return NextResponse.redirect(homeUrl);
+			const homeUrl = new URL(`/${setupLocale || locale}/`, request.url);
+			const response = NextResponse.redirect(homeUrl);
+			applySetupResponseHeaders(response);
+			return response;
 		}
 	}
 
@@ -120,17 +155,23 @@ export async function proxy(request: NextRequest) {
 
 	// If i18n middleware redirected (e.g., for locale prefix), return immediately
 	if (response.status === 307 || response.status === 308) {
+		if (isSetupPage) applySetupResponseHeaders(response);
 		return response;
 	}
 
 	// Check if this is a public route
-	const isPublicRoute = PUBLIC_ROUTES.some(
-		(route) => pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
-	);
+	const isPublicRoute =
+		isSetupPage ||
+		PUBLIC_ROUTES.some(
+			(route) =>
+				pathWithoutLocale === route ||
+				pathWithoutLocale.startsWith(`${route}/`),
+		);
 
 	// Check if this is an auth route (sign-in, sign-up, etc.)
 	const isAuthRoute = AUTH_ROUTES.some(
-		(route) => pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
+		(route) =>
+			pathWithoutLocale === route || pathWithoutLocale.startsWith(`${route}/`),
 	);
 
 	// Check for session cookie presence
@@ -145,7 +186,8 @@ export async function proxy(request: NextRequest) {
 	if (!hasSessionCookie) {
 		// Not authenticated - redirect to sign-in if trying to access protected route
 		if (!isPublicRoute) {
-			const locale = pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
+			const locale =
+				pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
 			const signInUrl = new URL(`/${locale}/sign-in`, request.url);
 			signInUrl.searchParams.set("callbackUrl", pathWithoutLocale);
 			return NextResponse.redirect(signInUrl);
@@ -153,7 +195,8 @@ export async function proxy(request: NextRequest) {
 	} else {
 		// Authenticated - redirect away from auth routes
 		if (isAuthRoute) {
-			const locale = pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
+			const locale =
+				pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
 			const dashboardUrl = new URL(`/${locale}/`, request.url);
 			return NextResponse.redirect(dashboardUrl);
 		}
@@ -164,6 +207,7 @@ export async function proxy(request: NextRequest) {
 
 	// Apply enterprise security headers (HSTS, frame/referrer/content type policies)
 	applySecurityHeaders(response);
+	if (isSetupPage) applySetupResponseHeaders(response);
 
 	// Custom domain detection. Platform organization subdomains are resolved separately
 	// and must not be tagged as customer-owned custom domains.

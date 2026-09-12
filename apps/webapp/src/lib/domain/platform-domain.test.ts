@@ -4,6 +4,9 @@ const mockState = vi.hoisted(() => ({
 	env: {
 		MAIN_DOMAIN: "ui.z8-time.app",
 		PLATFORM_DOMAIN: "ui.z8-time.app",
+		APP_URL: undefined as string | undefined,
+		BETTER_AUTH_URL: undefined as string | undefined,
+		NEXT_PUBLIC_APP_URL: undefined as string | undefined,
 	},
 	db: {
 		query: {
@@ -39,6 +42,9 @@ describe("platform domain host helpers", () => {
 		mockState.getConfiguredProviders.mockReset();
 		mockState.env.MAIN_DOMAIN = "ui.z8-time.app";
 		mockState.env.PLATFORM_DOMAIN = "ui.z8-time.app";
+		mockState.env.APP_URL = undefined;
+		mockState.env.BETTER_AUTH_URL = undefined;
+		mockState.env.NEXT_PUBLIC_APP_URL = undefined;
 		mockState.getConfiguredProviders.mockResolvedValue({
 			google: false,
 			github: false,
@@ -105,6 +111,27 @@ describe("platform domain host helpers", () => {
 			hostname: "login.acme.test",
 		});
 	});
+
+	it.each(["APP_URL", "BETTER_AUTH_URL", "NEXT_PUBLIC_APP_URL"] as const)(
+		"classifies the exact valid %s hostname as main without broadening tenant subdomains",
+		(setting) => {
+			mockState.env[setting] = "https://SELFHOST.example.net:8443/sign-in";
+			expect(classifyDomainHost("selfhost.example.net:8443")).toEqual({
+				type: "main", hostname: "selfhost.example.net",
+			});
+			for (const host of ["team.selfhost.example.net", "selfhost.example.net.attacker.org", "login.acme.test"]) {
+				expect(classifyDomainHost(host)).toEqual({ type: "customDomain", hostname: host });
+			}
+		},
+	);
+
+	it.each(["ftp://selfhost.example.net", "https://user:password@selfhost.example.net", "https://*.example.net", "selfhost.example.net"])(
+		"does not recognize invalid/non-web operator URL %s as a main host",
+		(url) => {
+			mockState.env.APP_URL = url;
+			expect(classifyDomainHost("selfhost.example.net")?.type).toBe("customDomain");
+		},
+	);
 });
 
 describe("platform organization resolution", () => {

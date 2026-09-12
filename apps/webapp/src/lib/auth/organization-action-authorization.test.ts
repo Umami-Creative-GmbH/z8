@@ -4,6 +4,11 @@ import { describe, expect, it, vi } from "vitest";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { requireActiveOrganizationActionActor } from "./organization-action-authorization";
 
+const sso = vi.hoisted(() => ({ allowed: vi.fn(async () => true) }));
+vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({ canAccessOrganizationWithSso: sso.allowed }));
+vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: async () => ({ user: { id: "user-1" }, session: { id: "session-1", userId: "user-1" } }) } } }));
+
 function runAuthorization({
 	employeeRecord,
 	membershipRecord,
@@ -47,6 +52,10 @@ function runAuthorization({
 }
 
 describe("requireActiveOrganizationActionActor", () => {
+	it("denies even an approved owner when the session lacks the target organization's SSO proof", async () => {
+		sso.allowed.mockResolvedValueOnce(false);
+		await expect(runAuthorization({ membershipRecord: { role: "owner", status: "approved" }, employeeRecord: { isActive: true } }).result).rejects.toThrow("Organization action denied");
+	});
 	it.each([
 		["missing approved membership", null, { isActive: true }],
 		[

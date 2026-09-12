@@ -1,12 +1,15 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { headers } from "next/headers";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import { auth } from "@/lib/auth";
 import { AuthorizationError } from "@/lib/effect/errors";
 import {
 	DatabaseService,
 	DatabaseServiceLive,
 } from "@/lib/effect/services/database.service";
+import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 import { hasOrganizationRole } from "./organization-role";
 
 export function requireActiveOrganizationActionActor(input: {
@@ -18,6 +21,31 @@ export function requireActiveOrganizationActionActor(input: {
 	action: string;
 }) {
 	return Effect.gen(function* (_) {
+		const authorizationError = () =>
+			new AuthorizationError({
+				message: input.message,
+				userId: input.userId,
+				resource: input.resource,
+				action: input.action,
+			});
+		const ssoAllowed = yield* _(
+			Effect.tryPromise({
+				try: async () => {
+					const session = await auth.api.getSession({
+						headers: await headers(),
+					});
+					return (
+						session?.user.id === input.userId &&
+						(await canAccessOrganizationWithSso(
+							session.session,
+							input.organizationId,
+						))
+					);
+				},
+				catch: authorizationError,
+			}),
+		);
+		if (!ssoAllowed) return yield* _(Effect.fail(authorizationError()));
 		const dbService = yield* _(DatabaseService);
 		const [membership, employeeRecord] = yield* _(
 			Effect.all([

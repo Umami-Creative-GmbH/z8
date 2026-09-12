@@ -8,7 +8,9 @@ const mockState = vi.hoisted(() => ({
 	getCommand: vi.fn(),
 	putCommand: vi.fn(),
 	deleteCommand: vi.fn(),
+	ssoAllowed: vi.fn(async () => true),
 }));
+vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({ canAccessOrganizationWithSso: mockState.ssoAllowed }));
 
 vi.mock("next/headers", () => ({
 	headers: vi.fn(() => Promise.resolve(new Headers())),
@@ -166,6 +168,14 @@ describe("image upload processing", () => {
 				},
 			},
 		});
+	});
+
+	it("blocks branding uploads for a nonactive SSO org before S3 or organization writes", async () => {
+		mockState.ssoAllowed.mockResolvedValueOnce(false);
+		const response = await POST({ json: async () => ({ tusFileKey: "upload", uploadType: "branding-logo", organizationId: "locked" }) } as never);
+		expect(response.status).toBe(403);
+		expect(mockState.s3Send).not.toHaveBeenCalled();
+		expect(mockState.updateOrganization).not.toHaveBeenCalled();
 	});
 
 	it("keeps the completed TUS object available for duplicate processing callbacks", async () => {

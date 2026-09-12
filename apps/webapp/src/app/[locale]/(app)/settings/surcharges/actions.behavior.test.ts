@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
+	verifyOrgMembership: vi.fn(async () => ({ isValid: true })),
 	settingsActorAccessTier: "manager" as "manager" | "orgAdmin",
 	membershipRole: "member" as "member" | "admin" | "owner",
 	authContext: {
@@ -440,6 +441,7 @@ vi.mock("@/db", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	getAuthContext: vi.fn(async () => mockState.authContext),
+	verifyOrgMembership: mockState.verifyOrgMembership,
 }));
 
 const {
@@ -456,6 +458,11 @@ const {
 } = await import("./actions");
 
 describe("surcharge settings scope behavior", () => {
+	it("rejects a nonactive SSO organization even when the user has an owner membership", async () => {
+		mockState.membershipRole = "owner";
+		mockState.verifyOrgMembership.mockResolvedValueOnce({ isValid: false });
+		expect(await getSurchargeModels("locked")).toMatchObject({ success: false });
+	});
 	beforeEach(() => {
 		mockState.settingsActorAccessTier = "manager";
 		mockState.membershipRole = "member";

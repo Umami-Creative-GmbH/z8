@@ -14,7 +14,6 @@ import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
 import type { SocialProviderId } from "@/lib/social-providers";
-import { verifyTurnstileWithServer } from "@/lib/turnstile/verify";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 import { useRouter } from "@/navigation";
 import { initialLoginState, loginReducer, loginSchema } from "./login-state";
@@ -125,22 +124,12 @@ export function useLoginAuth(turnstileRef: React.RefObject<{ reset: () => void }
 		}
 
 		try {
-			if (turnstileConfig?.enabled && state.turnstileToken) {
-				const verifyResult = await verifyTurnstileWithServer(state.turnstileToken);
-				if (!verifyResult.success) {
-					dispatch({
-						type: "SET_ERROR",
-						error: verifyResult.error || t("auth.turnstile-failed", "Verification failed."),
-					});
-					resetTurnstile();
-					dispatch({ type: "SET_LOADING", loading: false });
-					return;
-				}
-			}
-
 			const signInResult = await authClient.signIn.email(
 				{ email: state.email, password: state.password },
 				{
+					headers: state.turnstileToken
+						? { "x-captcha-response": state.turnstileToken }
+						: undefined,
 					onError: (ctx) => {
 						dispatch({ type: "SET_LOADING", loading: false });
 						if (ctx.error.status === 403) {

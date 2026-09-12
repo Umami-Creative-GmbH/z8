@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { member, organization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 
 export class MobileApiError extends Error {
 	constructor(
@@ -78,7 +79,14 @@ export async function requireMobileEmployee(
 	return employeeRecord as typeof employee.$inferSelect;
 }
 
-export async function getMobileOrganizationSummary(userId: string, organizationId: string) {
+export async function getMobileOrganizationSummary(
+	userId: string,
+	organizationId: string,
+	session: { id: string; userId: string },
+) {
+	const allowed =
+		session.userId === userId &&
+		(await canAccessOrganizationWithSso(session, organizationId));
 	const [organizationRecord, employeeRecord] = await Promise.all([
 		db.query.organization.findFirst({
 			where: eq(organization.id, organizationId),
@@ -88,16 +96,18 @@ export async function getMobileOrganizationSummary(userId: string, organizationI
 				slug: true,
 			},
 		}),
-		db.query.employee.findFirst({
-			where: and(
-				eq(employee.userId, userId),
-				eq(employee.organizationId, organizationId),
-				eq(employee.isActive, true),
-			),
-			columns: {
-				id: true,
-			},
-		}),
+		allowed
+			? db.query.employee.findFirst({
+					where: and(
+						eq(employee.userId, userId),
+						eq(employee.organizationId, organizationId),
+						eq(employee.isActive, true),
+					),
+					columns: {
+						id: true,
+					},
+				})
+			: Promise.resolve(null),
 	]);
 
 	return {
@@ -105,5 +115,6 @@ export async function getMobileOrganizationSummary(userId: string, organizationI
 		name: organizationRecord?.name ?? "Unknown",
 		slug: organizationRecord?.slug ?? "",
 		hasEmployeeRecord: !!employeeRecord,
+		...(!allowed ? { ssoRequired: true } : {}),
 	};
 }

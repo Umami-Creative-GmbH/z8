@@ -18,7 +18,6 @@ import { useDomainAuth, useTurnstile } from "@/lib/auth/domain-auth-context";
 import { authClient } from "@/lib/auth-client";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
 import type { SocialProviderId } from "@/lib/social-providers";
-import { verifyTurnstileWithServer } from "@/lib/turnstile/verify";
 import { useRouter } from "@/navigation";
 import type { TurnstileRef } from "./turnstile-widget";
 
@@ -84,20 +83,6 @@ export function useSignupFormController({
 		onSubmit: async ({ value }) => {
 			setIsLoading(true);
 			try {
-				if (turnstileConfig?.enabled && turnstileToken) {
-					const verifyResult = await verifyTurnstileWithServer(turnstileToken);
-					if (!verifyResult.success) {
-						setError(
-							verifyResult.error ||
-								t("auth.turnstile-failed", "Verification failed."),
-						);
-						setTurnstileToken(null);
-						turnstileRef.current?.reset();
-						stopLoading();
-						return;
-					}
-				}
-
 				const structuredName = toAuthStructuredName({
 					firstName: value.firstName,
 					lastName: value.lastName,
@@ -106,6 +91,13 @@ export function useSignupFormController({
 					email: value.email,
 					password: value.password,
 					...structuredName,
+					...(turnstileToken
+						? {
+								fetchOptions: {
+									headers: { "x-captcha-response": turnstileToken },
+								},
+							}
+						: {}),
 				});
 
 				if (signupResult.error) {

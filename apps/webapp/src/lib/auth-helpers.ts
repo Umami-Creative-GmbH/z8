@@ -27,6 +27,7 @@ import {
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { ManagerService, ManagerServiceLive } from "@/lib/effect/services/manager.service";
 import type { PermissionFlags } from "@/lib/effect/services/permissions.service";
+import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 import {
 	hasSettingsAccessTier,
 	isSettingsAccessMembershipRole,
@@ -72,11 +73,19 @@ export interface UserOrganization {
 export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
 	const session = await auth.api.getSession({ headers: await headers() });
 
-	if (!session?.user) {
+	if (
+		!session?.user ||
+		("ssoRequired" in session && session.ssoRequired === true)
+	) {
 		return null;
 	}
 
 	const activeOrganizationId = session.session?.activeOrganizationId || null;
+	if (
+		activeOrganizationId &&
+		!(await canAccessOrganizationWithSso(session.session, activeOrganizationId))
+	)
+		return null;
 
 	// Fetch employee record for the active organization ONLY
 	// SECURITY: We intentionally do NOT fall back to any employee record
@@ -434,11 +443,14 @@ export async function verifyOrgMembership(
 		return null;
 	}
 
-	if (!requestedOrgId) {
+	if (
+		!requestedOrgId ||
+		!(await canAccessOrganizationWithSso(session.session, requestedOrgId))
+	) {
 		return {
 			isValid: false,
 			userId: session.user.id,
-			organizationId: "",
+			organizationId: requestedOrgId ?? "",
 			employeeId: null,
 			role: null,
 		};
@@ -598,13 +610,21 @@ export async function getVerifiedOrgContext(requestedOrgId: string | null): Prom
 export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 	const session = await auth.api.getSession({ headers: await headers() });
 
-	if (!session?.user) {
+	if (
+		!session?.user ||
+		("ssoRequired" in session && session.ssoRequired === true)
+	) {
 		return null;
 	}
 
 	const userId = session.user.id;
 	const isPlatformAdmin = session.user.role === "admin";
 	const activeOrganizationId = session.session?.activeOrganizationId || null;
+	if (
+		activeOrganizationId &&
+		!(await canAccessOrganizationWithSso(session.session, activeOrganizationId))
+	)
+		return null;
 
 	// Platform admin gets full access
 	if (isPlatformAdmin) {
@@ -783,6 +803,13 @@ export async function getSettingsAccessInputForUser(
 			employeeRole: null,
 		};
 	}
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (
+		session?.user.id !== userId ||
+		!(await canAccessOrganizationWithSso(session.session, activeOrganizationId))
+	) {
+		return { activeOrganizationId, membershipRole: null, employeeRole: null };
+	}
 
 	const [membershipRecord, employeeRecord] = await Promise.all([
 		db
@@ -956,7 +983,10 @@ export async function requireAbility(): Promise<AppAbility> {
  */
 export async function isOrgAdminCasl(organizationId: string): Promise<boolean> {
 	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
+	if (
+		!session?.user ||
+		!(await canAccessOrganizationWithSso(session.session, organizationId))
+	) {
 		return false;
 	}
 
@@ -1026,7 +1056,10 @@ export async function canManageCurrentOrganizationSettings(): Promise<boolean> {
  */
 export async function isOrgOwnerCasl(organizationId: string): Promise<boolean> {
 	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
+	if (
+		!session?.user ||
+		!(await canAccessOrganizationWithSso(session.session, organizationId))
+	) {
 		return false;
 	}
 
