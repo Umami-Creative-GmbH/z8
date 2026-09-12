@@ -524,6 +524,8 @@
       "leaveBlankKeepExisting": "Leer lah, zum s Bestehende z bhalte",
       "provider": "Provider",
       "socialOAuth": {
+        "authentication": "Authentifizierig",
+        "unverified": "Nöd verifiziert",
         "addDescription": "Konfigurier dini eigeti OAuth-App für de Social-Login.",
         "addProviderError": "Provider hät nöd chönne dezuegfüegt werde",
         "addTitle": "Social-OAuth-Provider dezuefüege",

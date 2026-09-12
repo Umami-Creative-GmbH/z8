@@ -43,12 +43,12 @@ import {
 	validateEnterpriseIdentityProviderInput,
 } from "@/lib/enterprise-identity/setup-state";
 import {
+	checkSocialOAuthConfiguration,
 	createSocialOAuthConfig,
 	deleteSocialOAuthConfig,
 	getConfiguredProviders,
 	listOrgSocialOAuthConfigs,
 	updateSocialOAuthConfig,
-	updateTestStatus,
 } from "@/lib/social-oauth";
 import { deleteOrgSecret, storeOrgSecret } from "@/lib/vault";
 
@@ -1010,22 +1010,9 @@ export async function deleteSocialOAuthConfigAction(configId: string) {
 	revalidatePath("/settings/enterprise/social-oauth");
 }
 
-export async function testSocialOAuthConfigAction(configId: string) {
+export async function checkSocialOAuthConfigurationAction(configId: string) {
 	const { organizationId } = await requireEnterpriseOrgAdmin();
-
-	// For now, just validate that the config exists and mark it as tested
-	// A full test would require initiating an OAuth flow, which needs user interaction
-	try {
-		await updateTestStatus(configId, organizationId, true);
-		revalidatePath("/settings/enterprise/social-oauth");
-		return { success: true };
-	} catch (error) {
-		const errorMessage =
-			error instanceof Error ? error.message : "Unknown error";
-		await updateTestStatus(configId, organizationId, false, errorMessage);
-		revalidatePath("/settings/enterprise/social-oauth");
-		return { success: false, error: errorMessage };
-	}
+	return checkSocialOAuthConfiguration(configId, organizationId);
 }
 
 export async function getConfiguredSocialProvidersAction(): Promise<

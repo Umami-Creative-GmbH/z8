@@ -524,6 +524,8 @@
       "leaveBlankKeepExisting": "Laisser vide pour conserver l'existant",
       "provider": "Fournisseur",
       "socialOAuth": {
+        "authentication": "Authentification",
+        "unverified": "Non vérifiée",
         "addDescription": "Configurez votre propre application OAuth pour la connexion sociale.",
         "addProviderError": "Échec de l'ajout du fournisseur",
         "addTitle": "Ajouter un fournisseur OAuth social",

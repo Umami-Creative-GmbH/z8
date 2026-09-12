@@ -25,10 +25,7 @@ export {
 	saveConversation,
 } from "./conversation-manager";
 // Notification triggers
-export {
-	triggerSlackApprovalNotification,
-	triggerSlackApprovalResolutionNotification,
-} from "./notification-trigger";
+export { triggerSlackApprovalNotification } from "./notification-trigger";
 // Signature verification
 export { verifySlackSignature } from "./signature";
 // Types

@@ -524,6 +524,8 @@
       "leaveBlankKeepExisting": "Mevcut olanı korumak için boş bırakın",
       "provider": "Sağlayıcı",
       "socialOAuth": {
+        "authentication": "Kimlik doğrulama",
+        "unverified": "Doğrulanmadı",
         "addDescription": "Sosyal giriş için kendi OAuth uygulamanızı yapılandırın.",
         "addProviderError": "Sağlayıcı eklenemedi",
         "addTitle": "Sosyal OAuth Sağlayıcısı Ekle",

@@ -4,18 +4,15 @@
  * Handles execution of scheduled payroll exports.
  * Delegates to the existing payroll export service.
  */
+import { and, eq } from "drizzle-orm";
+import { db } from "@/db";
+import { employee } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { createExportJob, getPayrollExportConfig, processExportJob } from "@/lib/payroll-export";
 import type { ExecutionResult, PayrollExportReportConfig, ReportConfig } from "../../domain/types";
 import type { ExecuteParams, IReportExecutor } from "./base-executor";
 
 const logger = createLogger("PayrollExportExecutor");
-
-/**
- * System user ID for scheduled exports
- * This should be a valid user ID in the database for audit purposes
- */
-const _SYSTEM_USER_ID = "system";
 
 /**
  * Payroll Export Executor
@@ -30,7 +27,7 @@ export class PayrollExportExecutor implements IReportExecutor {
 	 * Execute a payroll export
 	 */
 	async execute(params: ExecuteParams): Promise<ExecutionResult> {
-		const { organizationId, reportConfig, dateRange, filters, payrollConfigId } = params;
+		const { organizationId, reportConfig, dateRange, filters, createdBy } = params;
 		const config = reportConfig as PayrollExportReportConfig;
 
 		logger.info(
@@ -55,15 +52,21 @@ export class PayrollExportExecutor implements IReportExecutor {
 				};
 			}
 
-			// Get employee ID for the system user
-			// In a real implementation, this would look up a system employee or use the config creator
-			// For now, we'll need to pass this from the schedule's createdBy
-			const requestedById = payrollConfigId || payrollConfig.config.createdBy;
+			const requester = createdBy
+				? await db.query.employee.findFirst({
+						where: and(
+							eq(employee.userId, createdBy),
+							eq(employee.organizationId, organizationId),
+						),
+						columns: { id: true },
+					})
+				: undefined;
 
-			if (!requestedById) {
+			if (!requester) {
 				return {
 					success: false,
-					error: "Unable to determine requester for payroll export",
+					error:
+						"Unable to determine requester for payroll export. The schedule creator may not have an employee record.",
 				};
 			}
 
@@ -71,7 +74,7 @@ export class PayrollExportExecutor implements IReportExecutor {
 			const { jobId, isAsync } = await createExportJob({
 				organizationId,
 				formatId: config.formatId,
-				requestedById,
+				requestedById: requester.id,
 				filters: {
 					dateRange: {
 						start: dateRange.start,

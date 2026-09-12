@@ -524,6 +524,8 @@
       "leaveBlankKeepExisting": "Αφήστε το κενό για να διατηρήσετε το υπάρχον",
       "provider": "Πάροχος",
       "socialOAuth": {
+        "authentication": "Έλεγχος ταυτότητας",
+        "unverified": "Μη επαληθευμένος",
         "addDescription": "Διαμορφώστε τη δική σας εφαρμογή OAuth για κοινωνική σύνδεση.",
         "addProviderError": "Αποτυχία προσθήκης παρόχου",
         "addTitle": "Προσθήκη παρόχου κοινωνικού OAuth",

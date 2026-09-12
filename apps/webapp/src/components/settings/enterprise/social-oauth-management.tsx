@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCheck, IconPencil, IconPlus, IconTrash, IconX } from "@tabler/icons-react";
+import { IconPencil, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -35,9 +35,6 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { SocialOAuthProvider } from "@/db/schema";
-import { useDisplayContext } from "@/hooks/use-display-context";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
-import { formatInstant } from "@/lib/datetime/temporal-format";
 import { SocialOAuthDialog } from "./social-oauth-dialog";
 
 interface SocialOAuthManagementProps {
@@ -57,7 +54,6 @@ export function SocialOAuthManagement({
 	callbackBaseUrl,
 }: SocialOAuthManagementProps) {
 	const { t } = useTranslate();
-	const displayContext = useDisplayContext();
 	const [configs, setConfigs] = useState<SocialOAuthConfigResponse[]>(initialConfigs);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 	const [editConfig, setEditConfig] = useState<SocialOAuthConfigResponse | null>(null);
@@ -114,10 +110,6 @@ export function SocialOAuthManagement({
 		setDeleteDialog({ isOpen: false, config: null });
 	};
 
-	const formatDate = (date: Date | null) => {
-		if (!date) return t("common.never", "Never");
-		return formatInstant(instantFromDate(date), displayContext, "dateTimeMedium");
-	};
 	const callbackUrl = `${callbackBaseUrl.replace(/\/$/, "")}/api/auth/callback/social-org/[provider]`;
 
 	return (
@@ -164,9 +156,11 @@ export function SocialOAuthManagement({
 								<TableRow>
 									<TableHead>{t("settings.enterprise.provider", "Provider")}</TableHead>
 									<TableHead>{t("settings.enterprise.clientId", "Client ID")}</TableHead>
-									<TableHead>{t("common.status", "Status")}</TableHead>
 									<TableHead>
-										{t("settings.enterprise.socialOAuth.lastTested", "Last Tested")}
+										{t(
+											"settings/enterprise:settings.enterprise.socialOAuth.authentication",
+											"Authentication",
+										)}
 									</TableHead>
 									<TableHead>{t("common.active", "Active")}</TableHead>
 									<TableHead className="text-right">{t("common.actions", "Actions")}</TableHead>
@@ -189,24 +183,12 @@ export function SocialOAuthManagement({
 												</code>
 											</TableCell>
 											<TableCell>
-												{config.lastTestSuccess === null ? (
-													<Badge variant="secondary">
-														{t("settings.enterprise.socialOAuth.notTested", "Not Tested")}
-													</Badge>
-												) : config.lastTestSuccess ? (
-													<Badge variant="default" className="bg-green-600">
-														<IconCheck className="mr-1 size-3" />
-														{t("settings.enterprise.socialOAuth.working", "Working")}
-													</Badge>
-												) : (
-													<Badge variant="destructive">
-														<IconX className="mr-1 size-3" />
-														{t("common.error", "Error")}
-													</Badge>
-												)}
-											</TableCell>
-											<TableCell className="text-muted-foreground text-sm">
-												{formatDate(config.lastTestAt)}
+												<Badge variant="secondary">
+													{t(
+														"settings/enterprise:settings.enterprise.socialOAuth.unverified",
+														"Unverified",
+													)}
+												</Badge>
 											</TableCell>
 											<TableCell>
 												<Switch

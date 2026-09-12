@@ -36,10 +36,7 @@ export {
 } from "./conversation-manager";
 
 // Notification triggers
-export {
-	triggerTelegramApprovalNotification,
-	triggerTelegramApprovalResolutionNotification,
-} from "./notification-trigger";
+export { triggerTelegramApprovalNotification } from "./notification-trigger";
 // Types
 export * from "./types";
 // User management

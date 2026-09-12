@@ -7,6 +7,7 @@ const mockState = vi.hoisted(() => ({
 	updateSocialOAuthConfig: vi.fn(),
 	deleteSocialOAuthConfig: vi.fn(),
 	updateTestStatus: vi.fn(),
+	checkSocialOAuthConfiguration: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({
@@ -46,6 +47,7 @@ vi.mock("@/lib/social-oauth", () => ({
 	listOrgSocialOAuthConfigs: vi.fn(),
 	updateSocialOAuthConfig: mockState.updateSocialOAuthConfig,
 	updateTestStatus: mockState.updateTestStatus,
+	checkSocialOAuthConfiguration: mockState.checkSocialOAuthConfiguration,
 }));
 
 vi.mock("@/lib/vault", () => ({
@@ -55,7 +57,7 @@ vi.mock("@/lib/vault", () => ({
 
 const {
 	deleteSocialOAuthConfigAction,
-	testSocialOAuthConfigAction,
+	checkSocialOAuthConfigurationAction,
 	updateSocialOAuthConfigAction,
 } = await import("./actions");
 
@@ -144,30 +146,46 @@ describe("enterprise social oauth actions org forwarding", () => {
 		expect(mockState.deleteSocialOAuthConfig).toHaveBeenCalledWith("cfg-9", "org-1");
 	});
 
-	it("forwards organizationId to updateTestStatus on success", async () => {
-		mockState.updateTestStatus.mockResolvedValue(undefined);
+	it.each([
+		{ success: true, status: "ready" },
+		{ success: false, status: "incomplete", error: "Client secret is missing" },
+	])(
+		"returns scoped readiness ($status) without recording a provider test",
+		async (readiness) => {
+			const check = {
+				...readiness,
+				checkType: "configuration",
+				authenticationVerified: false,
+			};
+			mockState.checkSocialOAuthConfiguration.mockResolvedValue(check);
 
-		const result = await testSocialOAuthConfigAction("cfg-4");
+			expect(await checkSocialOAuthConfigurationAction("cfg-4")).toEqual(check);
+			expect(mockState.checkSocialOAuthConfiguration).toHaveBeenCalledWith(
+				"cfg-4",
+				"org-1",
+			);
+			expect(mockState.updateTestStatus).not.toHaveBeenCalled();
+			expect(mockState.revalidatePath).not.toHaveBeenCalled();
+		},
+	);
 
-		expect(mockState.updateTestStatus).toHaveBeenCalledWith("cfg-4", "org-1", true);
-		expect(result).toEqual({ success: true });
+	it("denies configuration checks before accessing credentials when the actor lacks permission", async () => {
+		mockState.canManageCurrentOrganizationSettings.mockResolvedValue(false);
+
+		await expect(checkSocialOAuthConfigurationAction("cfg-4")).rejects.toThrow(
+			"Unauthorized",
+		);
+		expect(mockState.checkSocialOAuthConfiguration).not.toHaveBeenCalled();
 	});
 
-	it("forwards organizationId to updateTestStatus on failure path", async () => {
-		mockState.updateTestStatus
-			.mockRejectedValueOnce(new Error("primary failure"))
-			.mockResolvedValueOnce(undefined);
+	it("requires an active organization for configuration checks", async () => {
+		mockState.requireUser.mockResolvedValue({
+			session: { activeOrganizationId: null },
+		});
 
-		const result = await testSocialOAuthConfigAction("cfg-5");
-
-		expect(mockState.updateTestStatus).toHaveBeenNthCalledWith(1, "cfg-5", "org-1", true);
-		expect(mockState.updateTestStatus).toHaveBeenNthCalledWith(
-			2,
-			"cfg-5",
-			"org-1",
-			false,
-			"primary failure",
+		await expect(checkSocialOAuthConfigurationAction("cfg-4")).rejects.toThrow(
+			"No organization selected",
 		);
-		expect(result).toEqual({ success: false, error: "primary failure" });
+		expect(mockState.checkSocialOAuthConfiguration).not.toHaveBeenCalled();
 	});
 });

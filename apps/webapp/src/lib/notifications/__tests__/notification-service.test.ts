@@ -213,6 +213,33 @@ vi.mock("@/lib/events", () => ({
 	publishEventAsync: mockPublishEventAsync,
 }));
 
+const botChannels = [
+	{
+		channel: "teams",
+		available: mockIsTeamsAvailable,
+		send: mockSendTeamsNotification,
+	},
+	{
+		channel: "telegram",
+		available: mockIsTelegramAvailable,
+		send: mockSendTelegramNotification,
+	},
+	{
+		channel: "discord",
+		available: mockIsDiscordAvailable,
+		send: mockSendDiscordNotification,
+	},
+	{
+		channel: "slack",
+		available: mockIsSlackAvailable,
+		send: mockSendSlackNotification,
+	},
+] as const;
+const outcomeTypes = [
+	"approval_request_approved",
+	"approval_request_rejected",
+] as const;
+
 describe("Notification Service", () => {
 	beforeEach(() => {
 		// Reset module cache and clear all mocks before each test
@@ -223,6 +250,10 @@ describe("Notification Service", () => {
 		mockReturning.mockImplementation(() => Promise.resolve([]));
 		mockUpdateWhere.mockImplementation(() => ({ returning: mockReturning }));
 		mockDeleteWhere.mockImplementation(() => Promise.resolve({ rowCount: 1 }));
+		for (const { available, send } of botChannels) {
+			available.mockResolvedValue(false);
+			send.mockResolvedValue(undefined);
+		}
 	});
 
 	describe("createNotification", () => {
@@ -300,6 +331,88 @@ describe("Notification Service", () => {
 
 			// sendPushToUser should not be called when preference is disabled
 			expect(mockSendPushToUser).not.toHaveBeenCalled();
+		});
+	});
+
+	describe.each(botChannels)("$channel outcomes", (platform) => {
+		const { channel, available, send } = platform;
+		beforeEach(() => {
+			mockFindMany.mockResolvedValue([]);
+			mockIsPushAvailable.mockReturnValue(false);
+			mockReturning.mockResolvedValue([
+				createMockNotification({ userId: "requester-user" }),
+			]);
+			available.mockResolvedValue(true);
+		});
+
+		describe.each(outcomeTypes)("%s", (type) => {
+			const payload = {
+				userId: "requester-user",
+				organizationId: "org-1",
+				type,
+				title: "Approval decision",
+				message: "Your request has been processed.",
+				entityType: "approval_request",
+				entityId: "approval-1",
+				actionUrl: "/my-requests",
+			};
+
+			test("delivers the outcome once to the correct organization and requester", async () => {
+				const { createNotification } = await import("../notification-service");
+
+				await createNotification(payload);
+
+				expect(available).toHaveBeenCalledWith("org-1");
+				expect(send).toHaveBeenCalledExactlyOnceWith({
+					...payload,
+					metadata: undefined,
+				});
+				for (const other of botChannels) {
+					if (other.channel !== channel) {
+						expect(other.send).not.toHaveBeenCalled();
+					}
+				}
+			});
+
+			test("respects the requester's disabled channel preference", async () => {
+				mockFindMany.mockResolvedValue([
+					createMockPreference({
+						userId: payload.userId,
+						channel,
+						notificationType: type,
+						enabled: false,
+					}),
+				]);
+				const { createNotification } = await import("../notification-service");
+
+				await createNotification(payload);
+
+				expect(available).not.toHaveBeenCalled();
+				expect(send).not.toHaveBeenCalled();
+			});
+
+			test("skips delivery when the organization platform is unavailable", async () => {
+				available.mockResolvedValue(false);
+				const { createNotification } = await import("../notification-service");
+
+				await createNotification(payload);
+
+				expect(send).not.toHaveBeenCalled();
+			});
+
+			test("preserves the notification when provider delivery fails", async () => {
+				const error = new Error("Provider temporarily unavailable");
+				send.mockRejectedValue(error);
+				const { createNotification } = await import("../notification-service");
+
+				const result = await createNotification(payload, { throwOnError: true });
+
+				expect(result?.id).toBe("notif-1");
+				expect(mockLoggerError).toHaveBeenCalledWith(
+					expect.objectContaining({ error, userId: payload.userId, type }),
+					expect.stringContaining("notification"),
+				);
+			});
 		});
 	});
 

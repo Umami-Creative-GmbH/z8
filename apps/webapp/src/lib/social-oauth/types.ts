@@ -126,3 +126,16 @@ export interface TestOAuthResult {
 	success: boolean;
 	error?: string;
 }
+
+/** Local configuration readiness is not evidence of a successful provider login. */
+export type SocialOAuthConfigurationCheckResult = {
+	checkType: "configuration";
+	authenticationVerified: false;
+} & (
+	| { success: true; status: "ready" }
+	| {
+			success: false;
+			status: "not_found" | "inactive" | "incomplete" | "unavailable";
+			error: string;
+	  }
+);
