@@ -37,18 +37,17 @@ export const clockOutCommand: BotCommand = {
 	handler: async (ctx: BotCommandContext): Promise<BotCommandResponse> => {
 		try {
 			// Keep server-only dependencies out of shared bot registry imports.
-			const { ClockingConflictError, clockingService } = await import(
-				"@/lib/time-tracking/clocking-service"
-			);
-			const { validateTimeEntry } = await import(
-				"@/lib/time-tracking/validation"
-			);
-			const {
-				calculateAndPersistSurcharges,
-				checkComplianceAfterClockOut,
-				enforceBreaksAfterClockOut,
-			} = await import("@/app/[locale]/(app)/time-tracking/actions");
-			const t = await getBotTranslate(ctx.locale);
+			const [
+				{ ClockingConflictError, clockingService },
+				{ validateTimeEntry },
+				{ calculateAndPersistSurcharges, checkComplianceAfterClockOut, enforceBreaksAfterClockOut },
+				t,
+			] = await Promise.all([
+				import("@/lib/time-tracking/clocking-service"),
+				import("@/lib/time-tracking/validation"),
+				import("@/app/[locale]/(app)/time-tracking/actions"),
+				getBotTranslate(ctx.locale),
+			]);
 			const temporal = ctx.temporal ?? getCommandTemporalContext(ctx);
 
 			// Look up employee record for org verification

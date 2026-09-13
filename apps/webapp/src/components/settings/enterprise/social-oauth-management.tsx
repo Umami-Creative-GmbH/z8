@@ -111,6 +111,19 @@ export function SocialOAuthManagement({
 	};
 
 	const callbackUrl = `${callbackBaseUrl.replace(/\/$/, "")}/api/auth/callback/social-org/[provider]`;
+	const columns = [
+		{ id: "provider", label: t("settings.enterprise.provider", "Provider") },
+		{ id: "clientId", label: t("settings.enterprise.clientId", "Client ID") },
+		{
+			id: "authentication",
+			label: t(
+				"settings/enterprise:settings.enterprise.socialOAuth.authentication",
+				"Authentication",
+			),
+		},
+		{ id: "active", label: t("common.active", "Active") },
+		{ id: "actions", label: t("common.actions", "Actions"), className: "text-right" },
+	];
 
 	return (
 		<>
@@ -154,16 +167,11 @@ export function SocialOAuthManagement({
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>{t("settings.enterprise.provider", "Provider")}</TableHead>
-									<TableHead>{t("settings.enterprise.clientId", "Client ID")}</TableHead>
-									<TableHead>
-										{t(
-											"settings/enterprise:settings.enterprise.socialOAuth.authentication",
-											"Authentication",
-										)}
-									</TableHead>
-									<TableHead>{t("common.active", "Active")}</TableHead>
-									<TableHead className="text-right">{t("common.actions", "Actions")}</TableHead>
+									{columns.map((column) => (
+										<TableHead key={column.id} className={column.className}>
+											{column.label}
+										</TableHead>
+									))}
 								</TableRow>
 							</TableHeader>
 							<TableBody>

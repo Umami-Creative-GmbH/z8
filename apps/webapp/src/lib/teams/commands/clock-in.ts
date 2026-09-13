@@ -29,13 +29,12 @@ export const clockInCommand: BotCommand = {
 	handler: async (ctx: BotCommandContext): Promise<BotCommandResponse> => {
 		try {
 			// Keep server-only dependencies out of shared bot registry imports.
-			const { ClockingConflictError, clockingService } = await import(
-				"@/lib/time-tracking/clocking-service"
-			);
-			const { validateTimeEntry } = await import(
-				"@/lib/time-tracking/validation"
-			);
-			const t = await getBotTranslate(ctx.locale);
+			const [{ ClockingConflictError, clockingService }, { validateTimeEntry }, t] =
+				await Promise.all([
+					import("@/lib/time-tracking/clocking-service"),
+					import("@/lib/time-tracking/validation"),
+					getBotTranslate(ctx.locale),
+				]);
 			const temporal = ctx.temporal ?? getCommandTemporalContext(ctx);
 
 			// Look up employee record for org verification

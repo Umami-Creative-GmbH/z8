@@ -108,19 +108,22 @@ export function createSsoEnforcementPlugin(
 								? [{ invitationId: query.id }]
 								: []),
 						];
+						const scopeLookups: Promise<string | null | undefined>[] = [];
 						for (const input of inputs) {
 							if (
 								ssoManagementPaths.has(ctx.path) &&
 								typeof input.providerId === "string"
 							) {
-								const provider = await ctx.context.adapter.findOne<{
-									organizationId: string | null;
-								}>({
-									model: "ssoProvider",
-									where: [{ field: "providerId", value: input.providerId }],
-								});
-								if (provider?.organizationId)
-									scopes.add(provider.organizationId);
+								scopeLookups.push(
+									ctx.context.adapter
+										.findOne<{
+											organizationId: string | null;
+										}>({
+											model: "ssoProvider",
+											where: [{ field: "providerId", value: input.providerId }],
+										})
+										.then((provider) => provider?.organizationId),
+								);
 							}
 							if (
 								typeof input.organizationId === "string" &&
@@ -131,11 +134,14 @@ export function createSsoEnforcementPlugin(
 								typeof input.organizationSlug === "string" &&
 								input.organizationSlug
 							) {
-								const org = await ctx.context.adapter.findOne<{ id: string }>({
-									model: "organization",
-									where: [{ field: "slug", value: input.organizationSlug }],
-								});
-								if (org) scopes.add(org.id);
+								scopeLookups.push(
+									ctx.context.adapter
+										.findOne<{ id: string }>({
+											model: "organization",
+											where: [{ field: "slug", value: input.organizationSlug }],
+										})
+										.then((org) => org?.id),
+								);
 							}
 							for (const [field, model] of [
 								["invitationId", "invitation"],
@@ -144,10 +150,13 @@ export function createSsoEnforcementPlugin(
 							] as const) {
 								const id = input[field];
 								if (typeof id !== "string" || !id) continue;
-								const resource = await ctx.context.adapter.findOne<{
-									organizationId: string;
-								}>({ model, where: [{ field: "id", value: id }] });
-								if (resource) scopes.add(resource.organizationId);
+								scopeLookups.push(
+									ctx.context.adapter
+										.findOne<{
+											organizationId: string;
+										}>({ model, where: [{ field: "id", value: id }] })
+										.then((resource) => resource?.organizationId),
+								);
 							}
 						}
 						// list-team-members falls back to activeTeamId rather than the active organization.
@@ -157,24 +166,32 @@ export function createSsoEnforcementPlugin(
 						) {
 							const id = object(session.session).activeTeamId;
 							if (typeof id === "string") {
-								const team = await ctx.context.adapter.findOne<{
-									organizationId: string;
-								}>({ model: "team", where: [{ field: "id", value: id }] });
-								if (team) scopes.add(team.organizationId);
+								scopeLookups.push(
+									ctx.context.adapter
+										.findOne<{
+											organizationId: string;
+										}>({ model: "team", where: [{ field: "id", value: id }] })
+										.then((team) => team?.organizationId),
+								);
 							}
+						}
+						// Resolve every resource's tenant before making the authorization decision.
+						const resolvedScopes = await Promise.all(scopeLookups);
+						for (const organizationId of resolvedScopes) {
+							if (organizationId) scopes.add(organizationId);
 						}
 						if (switching && scopes.size === 0 && typeof activeId === "string")
 							scopes.add(activeId);
-						for (const organizationId of scopes) {
-							if (
-								!(await canAccessOrganizationWithSso(
+						const allowed = await Promise.all(
+							[...scopes].map((organizationId) =>
+								canAccessOrganizationWithSso(
 									store,
 									session.session,
 									organizationId,
-								))
-							)
-								denySso();
-						}
+								),
+							),
+						);
+						if (allowed.includes(false)) denySso();
 					}),
 				},
 			],
