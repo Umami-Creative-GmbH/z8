@@ -19,6 +19,13 @@ pnpm test             # Run tests (vitest)
 pnpm drizzle-kit push # Push schema to database
 ```
 
+## Opening Files and URLs in WSL
+
+In WSL sessions, use `wslview "<path-or-url>"` first to open reports, files, and URLs in Windows.
+For local files, fall back to `explorer.exe "$(wslpath -w /absolute/path/to/file)"` if needed.
+
+`wslview` has successfully opened a report here despite a missing WindowsApps path warning. That warning alone does not establish failure; confirm before launching a second copy.
+
 ## Environment Variables
 
 This is a multi-tenant SaaS application. Configuration follows these rules:
