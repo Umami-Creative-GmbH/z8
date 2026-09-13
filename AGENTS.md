@@ -48,6 +48,13 @@ These references keep this file concise; open them when deeper implementation de
 
 ## Agent skills
 
+### Workflow selection
+
+- Default to the Matt Pocock skill flow for ticket work; use `ask-matt` when unsure which Pocock skill applies.
+- If the user explicitly requests Obra Superpowers or one of its skills (for example, `brainstorming`), follow the Superpowers flow for that task, including ticket work. Explicit user workflow selection overrides the ticket-work default.
+- Keep the two flows separate: use only the selected flow's process skills unless the user explicitly switches workflows. In the Pocock flow, do not invoke any Obra Superpowers skills, including `using-superpowers`, `brainstorming`, `writing-plans`, `test-driven-development`, or `subagent-driven-development`. In the Superpowers flow, do not automatically invoke Pocock process skills.
+- This workflow selection takes precedence over skill-level instructions to automatically load or combine the two flows.
+
 ### Issue tracker
 
 Track issues and specs in GitHub Issues for `Umami-Creative-GmbH/z8`.
