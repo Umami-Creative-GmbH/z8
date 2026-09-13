@@ -114,5 +114,7 @@ These remain obligations; this implementation commit does not satisfy them:
 5. **Translations:** statically extractable keys and English fallbacks are present;
    hosted Tolgee synchronization requires unavailable `TOLGEE_*` credentials.
 
-Keep #267 open for its remaining applicable runtime/activation evidence. Source
-review, mocked authorization tests and broad suite success do not close those gates.
+The implementation ticket may be closed after the requested merge into `dev`.
+Its remaining runtime/activation evidence stays outstanding: ticket closure,
+source review, mocked authorization tests and broad suite success do not close
+those gates.
