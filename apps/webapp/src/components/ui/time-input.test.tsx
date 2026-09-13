@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { StrictMode } from "react";
+import { StrictMode, useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { createMock, destroyMock, instances } = vi.hoisted(() => ({
@@ -45,6 +45,28 @@ vi.mock("timepicker-ui", () => ({
 
 import { UserPreferencesProvider } from "@/components/providers/user-preferences-provider";
 import { TimeInput } from "./time-input";
+
+function ControlledTimeInput({
+	timeFormat = "24h",
+}: {
+	timeFormat?: "12h" | "24h";
+}) {
+	const [value, setValue] = useState("14:30");
+	return (
+		<>
+			<TimeInput
+				aria-label="Start time"
+				timeFormat={timeFormat}
+				value={value}
+				onChange={(event) => setValue(event.target.value)}
+			/>
+			<output aria-label="Submitted time">{value}</output>
+			<button type="button" onClick={() => setValue("09:00")}>
+				Reset time
+			</button>
+		</>
+	);
+}
 
 describe("TimeInput", () => {
 	beforeEach(() => {
@@ -381,7 +403,7 @@ describe("TimeInput", () => {
 		expect(handleChange.mock.calls[0]?.[0].target.value).toBe("12:34");
 	});
 
-	it("does not emit changes for incomplete typed values", () => {
+	it("emits an empty submitted value for incomplete typed text", () => {
 		const handleChange = vi.fn();
 		render(
 			<TimeInput
@@ -396,7 +418,85 @@ describe("TimeInput", () => {
 			target: { value: "14:" },
 		});
 
-		expect(handleChange).not.toHaveBeenCalled();
+		expect(handleChange).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				target: expect.objectContaining({ value: "" }),
+			}),
+		);
+	});
+
+	it.each(["14:", "14:3", "25:30", "14:60"])(
+		"invalidates %s immediately without erasing the controlled draft",
+		(draft) => {
+			vi.useFakeTimers();
+			try {
+				render(<ControlledTimeInput />);
+				act(() => vi.runAllTimers());
+				const input = screen.getByLabelText<HTMLInputElement>("Start time");
+				fireEvent.change(input, { target: { value: draft } });
+				expect(screen.getByLabelText("Submitted time").textContent).toBe("");
+				act(() => vi.runAllTimers());
+				expect(input.value).toBe(draft);
+
+				fireEvent.change(input, { target: { value: "1430" } });
+				expect(screen.getByLabelText("Submitted time").textContent).toBe(
+					"14:30",
+				);
+				expect(input.value).toBe("14:30");
+
+				fireEvent.click(screen.getByRole("button", { name: "Reset time" }));
+				act(() => vi.runAllTimers());
+				expect(input.value).toBe("09:00");
+			} finally {
+				vi.useRealTimers();
+			}
+		},
+	);
+
+	it("preserves PM while a controlled invalid draft is completed", () => {
+		vi.useFakeTimers();
+		try {
+			render(<ControlledTimeInput timeFormat="12h" />);
+			act(() => vi.runAllTimers());
+			const input = screen.getByLabelText<HTMLInputElement>("Start time");
+			fireEvent.change(input, { target: { value: "02:3" } });
+			expect(screen.getByLabelText("Submitted time").textContent).toBe("");
+			act(() => vi.runAllTimers());
+			expect(input.value).toBe("02:3");
+			expect(
+				screen.getByRole("button", { name: "Switch to AM" }).textContent,
+			).toBe("PM");
+			fireEvent.change(input, { target: { value: "02:30" } });
+			expect(screen.getByLabelText("Submitted time").textContent).toBe("14:30");
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("keeps a partial time invalid while toggling its period", () => {
+		render(<ControlledTimeInput timeFormat="12h" />);
+		const input = screen.getByLabelText<HTMLInputElement>("Start time");
+		fireEvent.change(input, { target: { value: "02:" } });
+		fireEvent.click(screen.getByRole("button", { name: "Switch to AM" }));
+		expect(screen.getByLabelText("Submitted time").textContent).toBe("");
+		expect(input.value).toBe("02:");
+		fireEvent.change(input, { target: { value: "02:30" } });
+		expect(screen.getByLabelText("Submitted time").textContent).toBe("02:30");
+	});
+
+	it("replaces an invalid controlled draft when the picker confirms a time", () => {
+		render(<ControlledTimeInput />);
+		const input = screen.getByLabelText<HTMLInputElement>("Start time");
+		fireEvent.change(input, { target: { value: "14:" } });
+		expect(screen.getByLabelText("Submitted time").textContent).toBe("");
+		act(() => {
+			instances[0]?.options.callbacks?.onConfirm?.({
+				hour: "14",
+				minutes: "30",
+			});
+		});
+		expect(input.value).toBe("14:30");
+		expect(screen.getByLabelText("Submitted time").textContent).toBe("14:30");
 	});
 
 	it("emits an empty string when clearing a populated time", () => {

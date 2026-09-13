@@ -75,6 +75,7 @@
       "errors": {
         "createFailed": "Falha ao criar entrada de tempo",
         "futureDate": "Não é possível criar entradas para datas futuras",
+        "invalidTime": "Introduza uma hora completa e válida",
         "invalidTimeRange": "O horário de saída deve ser posterior ao horário de entrada",
         "tooLong": "O período de trabalho não pode exceder 24 horas"
       },

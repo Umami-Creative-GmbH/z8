@@ -75,6 +75,7 @@
       "errors": {
         "createFailed": "Nie udało się utworzyć wpisu czasu",
         "futureDate": "Nie można tworzyć wpisów dla przyszłych dat",
+        "invalidTime": "Wprowadź pełną, prawidłową godzinę",
         "invalidTimeRange": "Czas zakończenia pracy musi być późniejszy niż czas rozpoczęcia",
         "tooLong": "Okres pracy nie może przekraczać 24 godzin"
       },

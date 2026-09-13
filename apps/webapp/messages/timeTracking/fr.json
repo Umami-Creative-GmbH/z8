@@ -75,6 +75,7 @@
       "errors": {
         "createFailed": "Échec de la création de la saisie de temps",
         "futureDate": "Impossible de créer des saisies pour des dates futures",
+        "invalidTime": "Saisissez une heure complète et valide",
         "invalidTimeRange": "L'heure de sortie doit être postérieure à l'heure d'entrée",
         "tooLong": "La période de travail ne peut pas dépasser 24 heures"
       },

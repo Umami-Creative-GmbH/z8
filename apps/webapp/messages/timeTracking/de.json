@@ -75,6 +75,7 @@
       "errors": {
         "createFailed": "Zeiteintrag konnte nicht erstellt werden",
         "futureDate": "Einträge für zukünftige Daten können nicht erstellt werden",
+        "invalidTime": "Gib eine vollständige, gültige Uhrzeit ein",
         "invalidTimeRange": "Die Zeit für das Ausstempeln muss nach der Zeit für das Einstempeln liegen",
         "tooLong": "Die Arbeitsdauer darf 24 Stunden nicht überschreiten"
       },
