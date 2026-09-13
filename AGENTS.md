@@ -6,6 +6,9 @@ Employee time tracking and workforce management SaaS.
 
 - Treat concurrent work as normal. Never revert, overwrite, discard, or clean up changes you did not make unless explicitly asked.
 - Use **pnpm** only.
+- Before starting work on a ticket, claim it in GitHub by assigning it to the current user (`gh issue edit <number> --add-assignee @me`) and commenting that work has started. Verify the assignment so active work and ownership are visible; coordinate with any existing assignee before taking over.
+- `dev` is a staging branch. Before implementing a ticket, create and switch to a dedicated feature branch (for example, `feature/241-bot-approval-attempts`) and commit the ticket's work there.
+- After confirming the ticket's PR is merged into `dev`, switch back to `dev` locally and delete the completed feature branch from both `origin` and the local repository.
 - Keep all tenant data organization-scoped. Always filter by `organizationId` and enforce org-level permissions.
 - Use Temporal for new or migrated date/time business logic with explicit zones. Native `Date` is only for external and database boundaries; Luxon (`DateTime`) is legacy/unmigrated code only.
 - Use `@tanstack/react-form` for forms. Migrate legacy `react-hook-form` when modifying existing forms.
@@ -42,3 +45,20 @@ These references keep this file concise; open them when deeper implementation de
 - [i18n](docs/refs/i18n.md) - Tolgee namespaces and translation workflow.
 - [Date/Time](docs/refs/dates.md) - Temporal, timezone, and date-boundary rules.
 - [Billing & Stripe](docs/refs/billing-stripe.md) - Stripe setup, webhooks, per-seat billing.
+
+## Agent skills
+
+### Issue tracker
+
+Track issues and specs in GitHub Issues for `Umami-Creative-GmbH/z8`.
+Before tracker operations, read `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the five default triage labels.
+Before triaging, read `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Use a multi-context layout rooted at `CONTEXT-MAP.md`.
+Before domain exploration, read `docs/agents/domain.md`.
