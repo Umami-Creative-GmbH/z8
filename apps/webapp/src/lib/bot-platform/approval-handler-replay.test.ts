@@ -3,13 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
 	approvalFindFirst: vi.fn(),
 	employeeFindFirst: vi.fn(),
-	discordMessageFindFirst: vi.fn(),
 	teamsCardFindFirst: vi.fn(),
 	decide: vi.fn(),
 	loadTarget: vi.fn(),
-	resolveDiscordUser: vi.fn(),
 	sendActivity: vi.fn(),
-	interactionResponse: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
@@ -17,7 +14,6 @@ vi.mock("@/db", () => ({
 		query: {
 			approvalRequest: { findFirst: mocks.approvalFindFirst },
 			employee: { findFirst: mocks.employeeFindFirst },
-			discordApprovalMessage: { findFirst: mocks.discordMessageFindFirst },
 			teamsApprovalCard: { findFirst: mocks.teamsCardFindFirst },
 		},
 		update: vi.fn(),
@@ -30,7 +26,6 @@ vi.mock("@/db/schema", () => ({
 		id: "approval.id",
 		organizationId: "approval.organizationId",
 	},
-	discordApprovalMessage: { approvalRequestId: "discord.approvalRequestId" },
 	employee: { id: "employee.id", organizationId: "employee.organizationId" },
 	teamsApprovalCard: { approvalRequestId: "teams.approvalRequestId" },
 	timeEntry: {},
@@ -59,20 +54,6 @@ vi.mock("@/lib/logger", () => ({
 		warn: vi.fn(),
 	}),
 }));
-vi.mock("@/lib/discord/api", () => ({
-	createInteractionResponse: mocks.interactionResponse,
-	sendMessage: vi.fn(),
-}));
-vi.mock("@/lib/discord/conversation-manager", () => ({
-	getChannelIdForUser: vi.fn(),
-}));
-vi.mock("@/lib/discord/formatters", () => ({
-	buildApprovalEmbed: vi.fn(),
-	buildResolvedApprovalEmbed: vi.fn(),
-}));
-vi.mock("@/lib/discord/user-resolver", () => ({
-	resolveDiscordUser: mocks.resolveDiscordUser,
-}));
 vi.mock("@/lib/teams/bot-adapter", () => ({ updateMessage: vi.fn() }));
 vi.mock("@/lib/teams/cards/approval-card", () => ({
 	buildResolvedApprovalCard: vi.fn(),
@@ -97,7 +78,6 @@ describe("bot terminal ordinary replay", () => {
 		vi.clearAllMocks();
 		mocks.approvalFindFirst.mockResolvedValue(terminalApproval);
 		mocks.employeeFindFirst.mockResolvedValue(undefined);
-		mocks.discordMessageFindFirst.mockResolvedValue(undefined);
 		mocks.teamsCardFindFirst.mockResolvedValue(undefined);
 		mocks.decide.mockResolvedValue({
 			id: "approval-1",
@@ -160,59 +140,5 @@ describe("bot terminal ordinary replay", () => {
 			action: "approve",
 			platform: "teams",
 		});
-	});
-
-	it("delegates Discord terminal time-entry targets to the stable owner", async () => {
-		mocks.resolveDiscordUser.mockResolvedValue({
-			status: "found",
-			user: { employeeId: "manager-1", userId: "user-1" },
-		});
-		const { handleApprovalButtonClick } = await import(
-			"@/lib/discord/approval-handler"
-		);
-
-		await handleApprovalButtonClick(
-			{ id: "interaction-1", token: "token" } as never,
-			{ a: "ap", id: "approval-1" },
-			"discord-user-1",
-			{ organizationId: "org-1" } as never,
-		);
-
-		expect(mocks.decide).toHaveBeenCalledWith({
-			approvalId: "approval-1",
-			actorEmployeeId: "manager-1",
-			organizationId: "org-1",
-			action: "approve",
-			platform: "discord",
-		});
-	});
-
-	it("keeps Discord terminal time corrections already processed", async () => {
-		mocks.resolveDiscordUser.mockResolvedValue({
-			status: "found",
-			user: { employeeId: "manager-1", userId: "user-1" },
-		});
-		mocks.loadTarget.mockResolvedValue({
-			status: "approved",
-			workflowKind: "time_correction",
-		});
-		const { handleApprovalButtonClick } = await import(
-			"@/lib/discord/approval-handler"
-		);
-
-		await handleApprovalButtonClick(
-			{ id: "interaction-1", token: "token" } as never,
-			{ a: "ap", id: "approval-1" },
-			"discord-user-1",
-			{ organizationId: "org-1" } as never,
-		);
-
-		expect(mocks.interactionResponse).toHaveBeenCalledWith(
-			"interaction-1",
-			"token",
-			expect.anything(),
-			{ content: "This approval has already been processed.", flags: 64 },
-		);
-		expect(mocks.decide).not.toHaveBeenCalled();
 	});
 });
