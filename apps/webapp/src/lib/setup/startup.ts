@@ -3,8 +3,8 @@ import { env } from "@/env";
 
 export async function initializeSetupOnStartup(): Promise<void> {
 	if (
-		process.env.NEXT_PHASE === "phase-production-build" ||
-		process.env.npm_lifecycle_event === "build"
+		env.NEXT_PHASE === "phase-production-build" ||
+		env.npm_lifecycle_event === "build"
 	)
 		return;
 	const { setupBootstrap, hasPlatformAdmin } = await import(

@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+	env: {
+		APP_URL: "https://z8.example.com",
+		NEXT_PHASE: "",
+		npm_lifecycle_event: "start",
+	},
 	initialize: vi.fn(),
 	invalidate: vi.fn(),
 	configured: vi.fn(),
@@ -12,13 +17,13 @@ vi.mock("./bootstrap.server", () => ({
 	},
 	hasPlatformAdmin: mocks.configured,
 }));
-vi.mock("@/env", () => ({ env: { APP_URL: "https://z8.example.com" } }));
+vi.mock("@/env", () => ({ env: mocks.env }));
 
 describe("setup startup", () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
-		vi.stubEnv("NEXT_PHASE", "");
-		vi.stubEnv("npm_lifecycle_event", "start");
+		mocks.env.NEXT_PHASE = "";
+		mocks.env.npm_lifecycle_event = "start";
 		mocks.configured.mockResolvedValue(false);
 	});
 
@@ -42,8 +47,11 @@ describe("setup startup", () => {
 		log.mockRestore();
 	});
 
-	it("does not touch Redis during production builds", async () => {
-		vi.stubEnv("NEXT_PHASE", "phase-production-build");
+	it.each([
+		["NEXT_PHASE", "phase-production-build"],
+		["npm_lifecycle_event", "build"],
+	] as const)("does not touch Redis when %s marks a build", async (key, value) => {
+		mocks.env[key] = value;
 		const { initializeSetupOnStartup } = await import("./startup");
 		await initializeSetupOnStartup();
 		expect(mocks.initialize).not.toHaveBeenCalled();
