@@ -64,26 +64,7 @@ export async function attemptBotApproval(
 	return { status: "succeeded", approval };
 }
 
-export function canAttemptBotApprovalDecision(input: {
-	status: string;
-	workflowKind:
-		| "time_correction"
-		| "manual_time_submission"
-		| "policy_clock_out"
-		| "unclassified"
-		| null;
-}): boolean {
-	return canAttemptApprovalInboxDecisionTarget(input);
-}
-
-export function loadBotApprovalDecisionTarget(input: {
-	approvalId: string;
-	organizationId: string;
-}) {
-	return loadApprovalInboxDecisionTarget(input);
-}
-
-export async function decideBotApproval({
+async function decideBotApproval({
 	approvalId,
 	actorEmployeeId,
 	organizationId,

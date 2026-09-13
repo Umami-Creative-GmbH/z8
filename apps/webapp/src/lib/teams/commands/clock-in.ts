@@ -15,9 +15,7 @@ import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bo
 import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
 import { createLogger } from "@/lib/logger";
-import { ClockingConflictError, clockingService } from "@/lib/time-tracking/clocking-service";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
-import { validateTimeEntry } from "@/lib/time-tracking/validation";
 import { elapsedHoursAndMinutes, getCommandTemporalContext } from "./command-temporal";
 
 const logger = createLogger("BotCommand:ClockIn");
@@ -30,6 +28,13 @@ export const clockInCommand: BotCommand = {
 	requiresAuth: true,
 	handler: async (ctx: BotCommandContext): Promise<BotCommandResponse> => {
 		try {
+			// Keep server-only dependencies out of shared bot registry imports.
+			const { ClockingConflictError, clockingService } = await import(
+				"@/lib/time-tracking/clocking-service"
+			);
+			const { validateTimeEntry } = await import(
+				"@/lib/time-tracking/validation"
+			);
 			const t = await getBotTranslate(ctx.locale);
 			const temporal = ctx.temporal ?? getCommandTemporalContext(ctx);
 
