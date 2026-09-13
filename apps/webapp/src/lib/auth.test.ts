@@ -240,7 +240,7 @@ describe("organization member removal", () => {
 		expect(beforeRemovalHook).not.toContain("syncBillingSeats");
 		expect(afterRemovalHook).toContain("completeRemovedMemberCleanup");
 		expect(revocationSource).toContain("secondaryStorage.deleteOrThrow(token)");
-		expect(source).not.toContain("cookieCache: {");
+		expect(authModule.auth.options.session?.cookieCache?.enabled).toBe(false);
 	});
 });
 

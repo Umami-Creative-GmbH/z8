@@ -7,6 +7,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
+import { headers } from "next/headers";
 import { member } from "@/db/auth-schema";
 import {
 	customRole,
@@ -16,6 +17,7 @@ import {
 	employeeManagers,
 	teamPermissions,
 } from "@/db/schema";
+import { auth } from "@/lib/auth";
 import {
 	type Action,
 	type AppAbility,
@@ -25,6 +27,7 @@ import {
 	type Subject,
 	type TeamPermissions,
 } from "@/lib/authorization";
+import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 import { AuthorizationError, type DatabaseError } from "../errors";
 import { DatabaseService } from "./database.service";
 import type { PermissionFlags } from "./permissions.service";
@@ -43,7 +46,7 @@ export class AuthorizationService extends Context.Tag("AuthorizationService")<
 			userId: string,
 			activeOrganizationId: string | null,
 			isPlatformAdmin: boolean,
-		) => Effect.Effect<PrincipalContext, DatabaseError>;
+		) => Effect.Effect<PrincipalContext, DatabaseError | AuthorizationError>;
 
 		/**
 		 * Build CASL ability from principal context
@@ -57,7 +60,7 @@ export class AuthorizationService extends Context.Tag("AuthorizationService")<
 			userId: string,
 			activeOrganizationId: string | null,
 			isPlatformAdmin: boolean,
-		) => Effect.Effect<AppAbility, DatabaseError>;
+		) => Effect.Effect<AppAbility, DatabaseError | AuthorizationError>;
 
 		/**
 		 * Check if action is allowed (non-throwing)
@@ -84,6 +87,35 @@ export class AuthorizationService extends Context.Tag("AuthorizationService")<
 // SERVICE IMPLEMENTATION
 // ============================================
 
+function requireSessionSsoAccess(
+	userId: string,
+	organizationId: string | null,
+) {
+	return Effect.tryPromise({
+		try: async () => {
+			const session = await auth.api.getSession({ headers: await headers() });
+			if (
+				!session ||
+				session.user.id !== userId ||
+				("ssoRequired" in session && session.ssoRequired === true) ||
+				(organizationId &&
+					!(await canAccessOrganizationWithSso(
+						session.session,
+						organizationId,
+					)))
+			)
+				throw new Error("SSO authentication required");
+		},
+		catch: () =>
+			new AuthorizationError({
+				message: "SSO authentication required",
+				userId,
+				resource: "organization",
+				action: "access",
+			}),
+	});
+}
+
 export const AuthorizationServiceLive = Layer.effect(
 	AuthorizationService,
 	Effect.gen(function* (_) {
@@ -92,6 +124,7 @@ export const AuthorizationServiceLive = Layer.effect(
 		return AuthorizationService.of({
 			loadPrincipal: (userId, activeOrganizationId, isPlatformAdmin) =>
 				Effect.gen(function* (_) {
+					yield* _(requireSessionSsoAccess(userId, activeOrganizationId));
 					// If platform admin, return minimal context
 					if (isPlatformAdmin) {
 						return {
@@ -281,6 +314,7 @@ export const AuthorizationServiceLive = Layer.effect(
 
 			buildAbility: (userId, activeOrganizationId, isPlatformAdmin) =>
 				Effect.gen(function* (_) {
+					yield* _(requireSessionSsoAccess(userId, activeOrganizationId));
 					// If platform admin, return minimal context
 					if (isPlatformAdmin) {
 						const principal: PrincipalContext = {

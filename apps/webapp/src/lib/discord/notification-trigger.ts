@@ -39,29 +39,3 @@ export async function triggerDiscordApprovalNotification(
 		);
 	}
 }
-
-/**
- * Trigger Discord notification for approval resolution
- */
-export async function triggerDiscordApprovalResolutionNotification(
-	approvalRequestId: string,
-	action: "approved" | "rejected",
-	requesterId: string,
-	organizationId: string,
-): Promise<void> {
-	try {
-		const enabled = await isDiscordEnabledForOrganization(organizationId);
-		if (!enabled) return;
-
-		// TODO: Implement requester notification
-		logger.debug(
-			{ approvalRequestId, action, requesterId },
-			"Approval resolved, Discord notification could be sent to requester",
-		);
-	} catch (error) {
-		logger.error(
-			{ error, approvalRequestId, action, organizationId },
-			"Failed to trigger Discord resolution notification",
-		);
-	}
-}

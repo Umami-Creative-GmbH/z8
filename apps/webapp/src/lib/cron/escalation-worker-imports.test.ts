@@ -12,6 +12,14 @@ vi.mock("server-only", () => {
 vi.mock("@/db", () => ({ db: {} }));
 
 describe("escalation worker imports", () => {
+	// Cold transforms of the command graph compete with the full suite.
+	it("loads shared bot exports without server-only decision dependencies", async () => {
+		await expect(import("@/lib/bot-platform")).resolves.toHaveProperty(
+			"executeCommand",
+			expect.any(Function),
+		);
+	}, 30_000);
+
 	it.each([
 		[
 			"Slack",

@@ -45,6 +45,11 @@ describe("mapSessionUserToAuthContextUser", () => {
 const mockState = vi.hoisted(() => ({
 	selectResults: [] as unknown[][],
 	getSession: vi.fn(),
+	canAccessOrganizationWithSso: vi.fn(async () => true),
+}));
+
+vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
+	canAccessOrganizationWithSso: mockState.canAccessOrganizationWithSso,
 }));
 
 function queryBuilder(result: unknown[]) {
@@ -79,6 +84,41 @@ vi.mock("@/db", () => ({
 
 const { getPrincipalContext, getSettingsAccessInputForUser, isOrgAdminCasl } =
 	await import("./auth-helpers");
+
+describe("SSO-required organization authorization boundaries", () => {
+	beforeEach(() => {
+		mockState.getSession.mockResolvedValue({ user: { id: "user-1", role: "admin" }, session: { id: "session-1", userId: "user-1", activeOrganizationId: "org-1" } });
+		mockState.canAccessOrganizationWithSso.mockResolvedValue(false);
+		mockState.selectResults = [[{ id: "member-1", role: "owner" }], [{ id: "employee-1", role: "admin", isActive: true }]];
+	});
+
+	it("does not expose active org context or platform-admin abilities without SSO proof", async () => {
+		const { getAuthContext } = await import("./auth-helpers");
+		expect(await getAuthContext()).toBeNull();
+		expect(await getPrincipalContext()).toBeNull();
+	});
+
+	it("denies membership and admin/owner checks for a nonactive SSO organization", async () => {
+		const { verifyOrgMembership, getVerifiedOrgContext, isOrgOwnerCasl } = await import("./auth-helpers");
+		expect(await verifyOrgMembership("org-other")).toMatchObject({ isValid: false });
+		expect(await getVerifiedOrgContext("org-other")).toBeNull();
+		expect(await isOrgAdminCasl("org-other")).toBe(false);
+		expect(await isOrgOwnerCasl("org-other")).toBe(false);
+	});
+
+	it("does not derive settings authorization from membership alone", async () => {
+		expect(await getSettingsAccessInputForUser("user-1", "org-other")).toMatchObject({ membershipRole: null, employeeRole: null });
+	});
+
+	it("does not turn a quarantined platform-admin session into unrestricted global abilities", async () => {
+		mockState.getSession.mockResolvedValue({ user: { id: "user-1", role: "admin" }, session: { id: "session-1", userId: "user-1", activeOrganizationId: null }, ssoRequired: true });
+		expect(await getPrincipalContext()).toBeNull();
+	});
+});
+
+beforeEach(() => {
+	mockState.canAccessOrganizationWithSso.mockResolvedValue(true);
+});
 
 describe("getAuthContext", () => {
 	beforeEach(() => {

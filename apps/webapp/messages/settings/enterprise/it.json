@@ -524,6 +524,8 @@
       "leaveBlankKeepExisting": "Lasciare vuoto per mantenere quello esistente",
       "provider": "Provider",
       "socialOAuth": {
+        "authentication": "Autenticazione",
+        "unverified": "Non verificata",
         "addDescription": "Configura la tua app OAuth per il social login.",
         "addProviderError": "Aggiunta provider non riuscita",
         "addTitle": "Aggiungi provider OAuth social",

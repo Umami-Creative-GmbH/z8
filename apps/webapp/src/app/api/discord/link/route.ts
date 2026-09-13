@@ -14,6 +14,7 @@ import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { auth } from "@/lib/auth";
+import { verifyOrgMembership } from "@/lib/auth-helpers";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("DiscordLink");
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
 			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
 			.limit(1);
 
-		if (!membership) {
+		if (!membership || !(await verifyOrgMembership(organizationId))?.isValid) {
 			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 
@@ -92,7 +93,7 @@ export async function DELETE(request: NextRequest) {
 			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
 			.limit(1);
 
-		if (!membership) {
+		if (!membership || !(await verifyOrgMembership(organizationId))?.isValid) {
 			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 

@@ -9,11 +9,6 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import {
-	calculateAndPersistSurcharges,
-	checkComplianceAfterClockOut,
-	enforceBreaksAfterClockOut,
-} from "@/app/[locale]/(app)/time-tracking/actions";
 import { db } from "@/db";
 import { employee, workPeriod } from "@/db/schema";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
@@ -27,9 +22,7 @@ import {
 } from "@/lib/effect/services/change-policy.service";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
-import { ClockingConflictError, clockingService } from "@/lib/time-tracking/clocking-service";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
-import { validateTimeEntry } from "@/lib/time-tracking/validation";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { getCommandTemporalContext } from "./command-temporal";
 
@@ -43,7 +36,18 @@ export const clockOutCommand: BotCommand = {
 	requiresAuth: true,
 	handler: async (ctx: BotCommandContext): Promise<BotCommandResponse> => {
 		try {
-			const t = await getBotTranslate(ctx.locale);
+			// Keep server-only dependencies out of shared bot registry imports.
+			const [
+				{ ClockingConflictError, clockingService },
+				{ validateTimeEntry },
+				{ calculateAndPersistSurcharges, checkComplianceAfterClockOut, enforceBreaksAfterClockOut },
+				t,
+			] = await Promise.all([
+				import("@/lib/time-tracking/clocking-service"),
+				import("@/lib/time-tracking/validation"),
+				import("@/app/[locale]/(app)/time-tracking/actions"),
+				getBotTranslate(ctx.locale),
+			]);
 			const temporal = ctx.temporal ?? getCommandTemporalContext(ctx);
 
 			// Look up employee record for org verification

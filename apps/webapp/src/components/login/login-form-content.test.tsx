@@ -132,7 +132,7 @@ describe("LoginFormContent", () => {
 
 	it("resets Turnstile when server verification fails", async () => {
 		useTurnstileMock.mockReturnValue({ enabled: true, siteKey: "site-key" });
-		verifyTurnstileMock.mockResolvedValue({ success: false, error: "Verification failed." });
+		signInEmailMock.mockResolvedValue({ error: { code: "TURNSTILE_FAILED", status: 400, message: "Verification failed." } });
 
 		render(<LoginFormContent />);
 		fireEvent.click(screen.getByRole("button", { name: "Complete verification" }));
@@ -142,7 +142,12 @@ describe("LoginFormContent", () => {
 		await waitFor(() => {
 			expect(resetTurnstileMock).toHaveBeenCalledOnce();
 		});
-		expect(signInEmailMock).not.toHaveBeenCalled();
+		expect(signInEmailMock).toHaveBeenCalledOnce();
+		expect(signInEmailMock.mock.calls[0][1]).toMatchObject({ headers: { "x-captcha-response": "turnstile-token" } });
+		expect(verifyTurnstileMock).not.toHaveBeenCalled();
+		expect(screen.getByText("Verification failed.")).toBeTruthy();
+		expect(pushMock).not.toHaveBeenCalled();
+		expect((screen.getByRole("button", { name: "Login" }) as HTMLButtonElement).disabled).toBe(true);
 	});
 
 	it("routes incomplete onboarding to its saved step", async () => {

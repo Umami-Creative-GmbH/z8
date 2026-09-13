@@ -13,6 +13,7 @@ import { createCalendarControlsPlugin } from "@schedule-x/calendar-controls";
 
 import { createEventModalPlugin } from "@schedule-x/event-modal";
 import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
+import { IconSum } from "@tabler/icons-react";
 import "@schedule-x/theme-default/dist/index.css";
 
 // Schedule-X CSS customizations must load after the default theme.
@@ -452,6 +453,10 @@ function ScheduleXCalendarBody({
 				ref={calendarContainerRef}
 				className="schedule-x-container flex-1 min-h-0 overflow-hidden"
 			>
+				{/* Reused by the DOM-injected Schedule-X day headers. */}
+				<span hidden aria-hidden="true" data-requirement-sum-icon>
+					<IconSum size={12} aria-hidden="true" focusable="false" />
+				</span>
 				<ScheduleXCalendar calendarApp={calendar} />
 			</div>
 		</div>

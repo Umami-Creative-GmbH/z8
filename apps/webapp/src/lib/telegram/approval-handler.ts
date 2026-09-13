@@ -55,30 +55,24 @@ export async function handleApprovalCallback(
 	}
 
 	try {
-		// Get approval request
-		const approval = await db.query.approvalRequest.findFirst({
-			where: and(
-				eq(approvalRequest.id, approvalId),
-				eq(approvalRequest.organizationId, bot.organizationId),
-			),
+		// Keep Next.js-only decision dependencies out of escalation worker imports.
+		const { attemptBotApproval } = await import(
+			"@/lib/bot-platform/approval-decision"
+		);
+		const result = await attemptBotApproval({
+			approvalId,
+			actorEmployeeId: userResult.user.employeeId,
+			organizationId: bot.organizationId,
+			action,
+			platform: "telegram",
 		});
 
-		if (!approval) {
+		if (result.status === "not_found") {
 			logger.warn({ approvalId }, "Approval not found");
 			return;
 		}
-		// Keep Next.js-only decision dependencies out of escalation worker imports.
-		const {
-			canAttemptBotApprovalDecision,
-			decideBotApproval,
-			loadBotApprovalDecisionTarget,
-		} = await import("@/lib/bot-platform/approval-decision");
-		const decisionTarget = await loadBotApprovalDecisionTarget({
-			approvalId,
-			organizationId: bot.organizationId,
-		});
 
-		if (!canAttemptBotApprovalDecision(decisionTarget)) {
+		if (result.status === "already_processed") {
 			// Update the message to show it's already resolved
 			if (query.message) {
 				const locale = await getUserLocale(userResult.user.userId);
@@ -98,8 +92,7 @@ export async function handleApprovalCallback(
 			return;
 		}
 
-		// Verify user is the approver
-		if (decisionTarget.approverId !== userResult.user.employeeId) {
+		if (result.status === "unauthorized") {
 			logger.warn(
 				{ approvalId, employeeId: userResult.user.employeeId },
 				"Unauthorized approval attempt",
@@ -107,15 +100,8 @@ export async function handleApprovalCallback(
 			return;
 		}
 
+		const { approval } = result;
 		const newStatus = action === "approve" ? "approved" : "rejected";
-
-		await decideBotApproval({
-			approvalId,
-			actorEmployeeId: userResult.user.employeeId,
-			organizationId: bot.organizationId,
-			action,
-			platform: "telegram",
-		});
 
 		logger.info(
 			{

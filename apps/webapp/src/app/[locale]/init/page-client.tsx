@@ -11,6 +11,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { sanitizeCallbackUrl } from "@/lib/auth/callback-url";
+import { activateOrganization as activateWorkspace } from "@/lib/enterprise-identity/organization-activation";
 import {
 	getLastOrganization,
 	saveLastOrganization,
@@ -67,34 +68,35 @@ function InitPageContent() {
 	const [organizations, setOrganizations] = useState<Organization[]>([]);
 	const [selectedOrg, setSelectedOrg] = useState<string | null>(null);
 	const [isActivating, setIsActivating] = useState(false);
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-	const activateOrganization = async (orgId: string) => {
+	const activateOrganization = async (orgId: string, allowSso = true) => {
 		setStatus("activating");
 		setIsActivating(true);
-
-		const switchResponse = await fetch("/api/organizations/switch", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ organizationId: orgId }),
-		}).catch((error) => {
-			console.error("Failed to activate organization:", error);
-			setIsActivating(false);
-			// On error, still try to go to dashboard
-			window.location.assign(redirectUrl);
-			return null;
-		});
-
-		if (!switchResponse) {
-			return;
-		}
-
-		if (switchResponse.ok) {
+		setErrorMessage(null);
+		try {
+			const result = await activateWorkspace(
+				orgId,
+				redirectUrl,
+				fetch,
+				allowSso,
+			);
+			if (result.kind === "sso") {
+				window.location.assign(result.url);
+				return;
+			}
 			saveLastOrganization(orgId);
+			setStatus("redirecting");
+			window.location.assign(redirectUrl);
+		} catch (error) {
+			setErrorMessage(
+				error instanceof Error
+					? error.message
+					: t("organization.switchFailed", "Failed to switch organization"),
+			);
+			setIsActivating(false);
+			setStatus("selecting");
 		}
-
-		// Hard redirect to dashboard to get fresh server state
-		setStatus("redirecting");
-		window.location.assign(redirectUrl);
 	};
 
 	const initializeSession = useEffectEvent(async () => {
@@ -126,6 +128,25 @@ function InitPageContent() {
 		}
 
 		const { hasActiveOrganization, organizations: orgs } = data;
+		setOrganizations(orgs ?? []);
+		if (getSearchParam("ssoError")) {
+			setErrorMessage(
+				t(
+					"organization.ssoFailed",
+					"SSO sign-in did not complete. Select an organization to try again, or choose another workspace.",
+				),
+			);
+			setStatus("selecting");
+			return;
+		}
+		const requestedOrg = getSearchParam("organizationId");
+		if (
+			requestedOrg &&
+			orgs?.some((org: Organization) => org.id === requestedOrg)
+		) {
+			await activateOrganization(requestedOrg, !getSearchParam("ssoAttempt"));
+			return;
+		}
 
 		// If already has an active org, go straight to dashboard
 		if (hasActiveOrganization) {
@@ -192,6 +213,11 @@ function InitPageContent() {
 					</div>
 
 					<div className="space-y-3">
+						{errorMessage && (
+							<p role="alert" className="text-sm text-destructive">
+								{errorMessage}
+							</p>
+						)}
 						{organizations.map((org) => (
 							<Card
 								key={org.id}

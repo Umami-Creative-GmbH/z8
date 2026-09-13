@@ -524,6 +524,8 @@
       "leaveBlankKeepExisting": "Leave blank to keep existing",
       "provider": "Provider",
       "socialOAuth": {
+        "authentication": "Authentication",
+        "unverified": "Unverified",
         "addDescription": "Configure your own OAuth app for social login.",
         "addProviderError": "Failed to add provider",
         "addTitle": "Add Social OAuth Provider",

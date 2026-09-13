@@ -39,29 +39,3 @@ export async function triggerTelegramApprovalNotification(
 		);
 	}
 }
-
-/**
- * Trigger Telegram notification for approval resolution
- */
-export async function triggerTelegramApprovalResolutionNotification(
-	approvalRequestId: string,
-	action: "approved" | "rejected",
-	requesterId: string,
-	organizationId: string,
-): Promise<void> {
-	try {
-		const enabled = await isTelegramEnabledForOrganization(organizationId);
-		if (!enabled) return;
-
-		// TODO: Implement requester notification
-		logger.debug(
-			{ approvalRequestId, action, requesterId },
-			"Approval resolved, Telegram notification could be sent to requester",
-		);
-	} catch (error) {
-		logger.error(
-			{ error, approvalRequestId, action, organizationId },
-			"Failed to trigger Telegram resolution notification",
-		);
-	}
-}

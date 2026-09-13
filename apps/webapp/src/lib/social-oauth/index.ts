@@ -1,5 +1,7 @@
 // Types
 
+export { checkSocialOAuthConfiguration } from "./configuration-check";
+
 // Provider-specific exports
 export { parseAppleFormPost } from "./providers/apple";
 
@@ -37,6 +39,7 @@ export type {
 	OAuthTokens,
 	OAuthUserInfo,
 	OrgSocialOAuthConfig,
+	SocialOAuthConfigurationCheckResult,
 	TestOAuthResult,
 	UpdateSocialOAuthInput,
 } from "./types";

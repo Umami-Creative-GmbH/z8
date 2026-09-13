@@ -19,12 +19,14 @@ export interface TurnstileVerifyResult {
  * @param token - The token from the Turnstile widget
  * @param organizationId - For enterprise domains, the org ID to fetch secret from Vault
  * @param isEnterprise - Whether this is an enterprise domain (uses Vault secrets)
+ * @param expectedHostname - Bind auth verification to the domain displaying the widget
  * @returns Verification result
  */
 export async function verifyTurnstileToken(
 	token: string,
 	organizationId?: string,
 	isEnterprise = false,
+	expectedHostname?: string,
 ): Promise<TurnstileVerifyResult> {
 	try {
 		// Determine which secret key to use
@@ -80,7 +82,13 @@ export async function verifyTurnstileToken(
 
 			const data = (await response.json()) as TurnstileVerifyResponse;
 
-			if (data.success) {
+			if (data.success === true) {
+				if (
+					expectedHostname &&
+					data.hostname?.toLowerCase() !== expectedHostname.toLowerCase()
+				) {
+					return { success: false, error: "Turnstile hostname mismatch" };
+				}
 				return { success: true };
 			}
 

@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
 	initializeStorage: vi.fn(async () => ({ success: true })),
 	runStartupChecks: vi.fn(async () => true),
 	sdkStart: vi.fn(),
+	initializeSetupOnStartup: vi.fn(async () => undefined),
 }));
 
 vi.mock("@opentelemetry/api", () => ({
@@ -41,6 +42,9 @@ vi.mock("@/lib/storage/storage-init", () => ({
 vi.mock("@/lib/health", () => ({
 	runStartupChecks: mocks.runStartupChecks,
 }));
+vi.mock("@/lib/setup/startup", () => ({
+	initializeSetupOnStartup: mocks.initializeSetupOnStartup,
+}));
 
 import { register } from "./instrumentation";
 
@@ -60,5 +64,20 @@ describe("instrumentation registration", () => {
 		expect(mocks.sdkStart).toHaveBeenCalledOnce();
 		expect(mocks.initializeStorage).not.toHaveBeenCalled();
 		expect(mocks.runStartupChecks).not.toHaveBeenCalled();
+		expect(mocks.initializeSetupOnStartup).not.toHaveBeenCalled();
+	});
+
+	it("initializes setup after runtime health checks", async () => {
+		vi.stubEnv("NEXT_RUNTIME", "nodejs");
+		vi.stubEnv("NEXT_PHASE", "");
+		vi.stubEnv("npm_lifecycle_event", "start");
+		vi.stubEnv("NODE_ENV", "test");
+		const on = vi.spyOn(process, "on").mockReturnValue(process);
+		await register();
+		expect(mocks.initializeSetupOnStartup).toHaveBeenCalledOnce();
+		expect(
+			mocks.initializeSetupOnStartup.mock.invocationCallOrder[0],
+		).toBeGreaterThan(mocks.runStartupChecks.mock.invocationCallOrder[0]);
+		on.mockRestore();
 	});
 });

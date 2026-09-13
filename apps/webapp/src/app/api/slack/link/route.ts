@@ -11,6 +11,7 @@ import { headers } from "next/headers";
 import type { NextRequest } from "next/server";
 import { connection, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { verifyOrgMembership } from "@/lib/auth-helpers";
 import { createLogger } from "@/lib/logger";
 import { generateLinkCode, unlinkSlackUser } from "@/lib/slack/user-resolver";
 
@@ -32,6 +33,8 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
 		}
 
+		if (!(await verifyOrgMembership(organizationId))?.isValid)
+			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		const result = await generateLinkCode(session.user.id, organizationId);
 
 		logger.info({ userId: session.user.id, organizationId }, "Slack link code generated");
@@ -62,6 +65,8 @@ export async function DELETE(request: NextRequest) {
 			return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
 		}
 
+		if (!(await verifyOrgMembership(organizationId))?.isValid)
+			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		const unlinked = await unlinkSlackUser(session.user.id, organizationId);
 
 		logger.info({ userId: session.user.id, organizationId, unlinked }, "Slack account unlinked");

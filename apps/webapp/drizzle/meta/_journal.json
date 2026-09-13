@@ -470,6 +470,13 @@
       "when": 1789044079464,
       "tag": "0066_better_auth_provider_account_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1789044079465,
+      "tag": "0067_session_sso_provenance",
+      "breakpoints": true
     }
   ]
 }

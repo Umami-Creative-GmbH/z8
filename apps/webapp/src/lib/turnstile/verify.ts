@@ -1,6 +1,7 @@
 /**
- * Server-side Turnstile token verification utility.
- * Used by auth forms to verify tokens before submission.
+ * Legacy independent Turnstile verification client.
+ * Its result does not authorize authentication. Auth forms must send the token
+ * with the auth request so the auth before hook verifies it exactly once.
  */
 
 export interface TurnstileVerifyResult {
@@ -32,6 +33,7 @@ function isTurnstileVerifyResult(
  *
  * @param token - The Turnstile token to verify
  * @returns Verification result
+ * @deprecated Do not use in auth operation flows; this consumes the single-use token.
  */
 export async function verifyTurnstileWithServer(
 	token: string,

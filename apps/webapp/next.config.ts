@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { withPostHogConfig } from "@posthog/nextjs-config";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { SETUP_REQUEST_PATH } from "./src/lib/setup/telemetry";
 
 // Initialize before Next.js starts build or server workers.
 process.env.TZ ||= "UTC";
@@ -43,14 +44,18 @@ function getBuildHash() {
 
 const buildHash = getBuildHash();
 
-const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com";
+const POSTHOG_HOST =
+	process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com";
 const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY;
 const POSTHOG_PROJECT_ID = process.env.POSTHOG_PROJECT_ID;
 const hasPostHogSourcemapConfig =
-	!!process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN && !!POSTHOG_API_KEY && !!POSTHOG_PROJECT_ID;
+	!!process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN &&
+	!!POSTHOG_API_KEY &&
+	!!POSTHOG_PROJECT_ID;
 
 const nextConfig: NextConfig = {
 	reactStrictMode: true,
+	logging: { incomingRequests: { ignore: [SETUP_REQUEST_PATH] } },
 	async rewrites() {
 		return [
 			{

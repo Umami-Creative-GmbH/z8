@@ -67,6 +67,7 @@ export * from "./scheduled-export";
 // SCIM provisioning
 export * from "./scim";
 export * from "./secret-store";
+export * from "./session-sso-provenance";
 export * from "./shift";
 // Skills & qualifications
 export * from "./skill";

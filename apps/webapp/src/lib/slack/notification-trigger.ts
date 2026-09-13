@@ -39,29 +39,3 @@ export async function triggerSlackApprovalNotification(
 		);
 	}
 }
-
-/**
- * Trigger Slack notification for approval resolution
- */
-export async function triggerSlackApprovalResolutionNotification(
-	approvalRequestId: string,
-	action: "approved" | "rejected",
-	requesterId: string,
-	organizationId: string,
-): Promise<void> {
-	try {
-		const enabled = await isSlackEnabledForOrganization(organizationId);
-		if (!enabled) return;
-
-		// TODO: Implement requester notification
-		logger.debug(
-			{ approvalRequestId, action, requesterId },
-			"Approval resolved, Slack notification could be sent to requester",
-		);
-	} catch (error) {
-		logger.error(
-			{ error, approvalRequestId, action, organizationId },
-			"Failed to trigger Slack resolution notification",
-		);
-	}
-}

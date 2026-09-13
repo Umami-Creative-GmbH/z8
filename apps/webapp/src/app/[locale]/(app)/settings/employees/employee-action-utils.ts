@@ -33,7 +33,7 @@ const employeeNotFoundError = () =>
 export function getEmployeeContext(options?: { organizationId?: string; queryName?: string }) {
 	return Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const session = yield* _(authService.getSession(options?.organizationId));
 		const dbService = yield* _(DatabaseService);
 		const organizationId =
 			options?.organizationId ?? session.session.activeOrganizationId;
@@ -76,7 +76,7 @@ export function getEmployeeSettingsActorContext(options?: {
 }) {
 	return Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const session = yield* _(authService.getSession(options?.organizationId));
 		const dbService = yield* _(DatabaseService);
 		const organizationId = options?.organizationId ?? session.session.activeOrganizationId;
 

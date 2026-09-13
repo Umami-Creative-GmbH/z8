@@ -29,10 +29,7 @@ export {
 	saveConversation,
 } from "./conversation-manager";
 // Notification triggers
-export {
-	triggerDiscordApprovalNotification,
-	triggerDiscordApprovalResolutionNotification,
-} from "./notification-trigger";
+export { triggerDiscordApprovalNotification } from "./notification-trigger";
 // Slash commands
 export { registerDiscordSlashCommands } from "./slash-commands";
 // Types

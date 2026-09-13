@@ -191,8 +191,10 @@ function resolveTeamSettingsActor(
 	sessionUser: { id: string; name: string },
 	organizationId: string,
 	options?: { includeEmployeeUser?: boolean },
-): Effect.Effect<TeamSettingsActor, AnyAppError> {
+): Effect.Effect<TeamSettingsActor, AnyAppError, AuthService> {
 	return Effect.gen(function* (_) {
+		const authService = yield* _(AuthService);
+		yield* _(authService.getSession(organizationId));
 		const membershipRecord = yield* _(
 			dbService.query("getOrganizationMembership", async () => {
 				return await dbService.db.query.member.findFirst({

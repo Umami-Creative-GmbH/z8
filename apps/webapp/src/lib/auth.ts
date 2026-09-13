@@ -14,6 +14,7 @@ import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
 import { env } from "@/env";
+import { accountBanPlugin } from "@/lib/auth/account-ban";
 import {
 	getSCIMCredentialHashSecret,
 	resolveAuthSecrets,
@@ -25,12 +26,18 @@ import {
 import { createGuardedAuthSecondaryStorage } from "@/lib/auth/guarded-secondary-storage";
 import { completeRemovedMemberCleanup } from "@/lib/auth/member-removal-cleanup";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
+import { socialOrgOAuthPlugin } from "@/lib/auth/social-org-oauth";
 import {
 	getAuthAllowedHosts,
 	getOrganizationPlatformOrigins,
 	getStaticTrustedOrigins,
 } from "@/lib/auth-domain-config";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
+import { sessionSsoStore } from "@/lib/enterprise-identity/session-sso-store";
+import {
+	createSsoEnforcementPlugin,
+	recordVerifiedSsoLogin,
+} from "@/lib/enterprise-identity/sso-enforcement-plugin";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import {
 	createSCIMCallbackModelRegistration,
@@ -38,11 +45,13 @@ import {
 } from "@/lib/scim/auth-configuration";
 import { createSCIMProjectionReplayLoader } from "@/lib/scim/projection-replay-api";
 import { configureSCIMProjectionReplay } from "@/lib/scim/role-projection-replay";
+import { turnstileAuthGuard } from "@/lib/turnstile/auth-plugin";
 import { getOrganizationBaseUrl } from "./app-url";
 import { authDatabaseSchema } from "./auth-database-schema";
 import { getDomainConfig } from "./domain/domain-service";
 import {
 	classifyDomainHost,
+	getConfiguredMainOrigins,
 	resolvePlatformOrganization,
 } from "./domain/platform-domain";
 import { sendEmail } from "./email/email-service";
@@ -231,7 +240,7 @@ export const auth = betterAuth({
 	secrets: getAuthSecrets(),
 	baseURL: {
 		allowedHosts: getAuthAllowedHosts(),
-		fallback: env.APP_URL || "https://ui.z8-time.app",
+		fallback: getConfiguredMainOrigins()[0] ?? "https://ui.z8-time.app",
 		protocol: "auto",
 	},
 	//baseURL: env.BETTER_AUTH_URL || "http://localhost:3000",
@@ -414,6 +423,7 @@ export const auth = betterAuth({
 		expiresIn: 60 * 60 * 24 * 30, // 30 days
 		updateAge: 60 * 60 * 24, // Extend session expiry on daily activity (sliding window)
 		storeSessionInDatabase: true, // Keep DB as source of truth for revocation
+		cookieCache: { enabled: false }, // Ban and SSO checks require authoritative server-side reads.
 	},
 	// Use secondary storage for rate limiting as well
 	rateLimit: {
@@ -449,6 +459,9 @@ export const auth = betterAuth({
 		}),
 	),
 	plugins: [
+		turnstileAuthGuard(),
+		accountBanPlugin(),
+		socialOrgOAuthPlugin(),
 		bearer(), // Enable Bearer token auth for desktop app
 		createZ8SCIMPlugin(getSCIMCredentialHashSecret()),
 		admin({
@@ -724,6 +737,8 @@ export const auth = betterAuth({
 					return "member";
 				},
 			},
+			// Capture provenance on every verified SSO login, including existing users.
+			provisionUserOnEveryLogin: true,
 			// Provision user when they sign in through SSO
 			provisionUser: async ({ user, provider }) => {
 				const providerOrganizationId = provider.organizationId;
@@ -756,6 +771,7 @@ export const auth = betterAuth({
 						});
 					}
 				}
+				await recordVerifiedSsoLogin({ user, provider });
 			},
 		}),
 		// API Key plugin for organization-level API access
@@ -771,6 +787,7 @@ export const auth = betterAuth({
 			// Enable metadata storage for additional key info (organizationId, scopes, displayName, createdBy)
 			enableMetadata: true,
 		}),
+		createSsoEnforcementPlugin(sessionSsoStore),
 		nextCookies(),
 		createSCIMCallbackModelRegistration(),
 	],

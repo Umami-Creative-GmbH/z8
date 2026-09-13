@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { isOrganizationFeature } from "./organization-features";
 
 const getSessionMock = vi.fn();
+const canAccessOrganizationWithSsoMock = vi.fn();
 const createInvitationMock = vi.fn();
 const cancelInvitationMock = vi.fn();
 const updateMemberRoleMock = vi.fn();
@@ -98,6 +99,10 @@ vi.mock("@/lib/enterprise-identity/enforcement", () => ({
 	assertEnterpriseIdentityInvitationAllowed: vi.fn(async () => undefined),
 }));
 
+vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
+	canAccessOrganizationWithSso: canAccessOrganizationWithSsoMock,
+}));
+
 vi.mock("@/lib/work-balance/service", () => ({
 	requestOrganizationWorkBalanceFullRebuild:
 		requestOrganizationWorkBalanceFullRebuildMock,
@@ -188,6 +193,7 @@ describe("organization invitation actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		getSessionMock.mockReset();
+		canAccessOrganizationWithSsoMock.mockReset().mockResolvedValue(true);
 		createInvitationMock.mockReset();
 		cancelInvitationMock.mockReset();
 		updateMemberRoleMock.mockReset();
@@ -322,7 +328,27 @@ describe("organization invitation actions", () => {
 		const result = await runInvitationActorAction(action);
 
 		expect(result).toMatchObject({ success: true });
+		expect(canAccessOrganizationWithSsoMock).toHaveBeenCalledWith(
+			expect.objectContaining({ id: "session-id", userId: "user-admin" }),
+			"org-1",
+		);
 	});
+
+	it.each(["send", "resend", "update", "cancel"] as const)(
+		"denies the %s invitation action when SSO access is denied",
+		async (action) => {
+			canAccessOrganizationWithSsoMock.mockResolvedValue(false);
+
+			const result = await runInvitationActorAction(action);
+
+			expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+			expect(createInvitationMock).not.toHaveBeenCalled();
+			expect(cancelInvitationMock).not.toHaveBeenCalled();
+			expect(persistEmployeeInvitationDraftMock).not.toHaveBeenCalled();
+			expect(syncInvitationTargetTeamMock).not.toHaveBeenCalled();
+			expect(updateSetMock).not.toHaveBeenCalled();
+		},
+	);
 
 	it.each([
 		"send",

@@ -71,6 +71,12 @@ export function OrganizationSwitcher({
 
 		if (!response.ok) {
 			const error = await response.json().catch(() => null);
+			if (error?.code === "SSO_REQUIRED") {
+				window.location.assign(
+					`/init?organizationId=${encodeURIComponent(organizationId)}`,
+				);
+				return;
+			}
 			toast.error(error?.error || t("organization.switchFailed", "Failed to switch organization"));
 			setSwitching(false);
 			return;

@@ -11,7 +11,11 @@ export async function GET(request: Request) {
 			await requireMobileSessionContext(request);
 		const organizations = await Promise.all(
 			memberships.map(({ organizationId }) =>
-				getMobileOrganizationSummary(session.user.id, organizationId),
+				getMobileOrganizationSummary(
+					session.user.id,
+					organizationId,
+					session.session,
+				),
 			),
 		);
 

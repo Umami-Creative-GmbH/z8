@@ -32,10 +32,7 @@ export {
 	getStoredConversation,
 	saveConversationReference,
 } from "./conversation-manager";
-export {
-	triggerApprovalNotification,
-	triggerApprovalResolutionNotification,
-} from "./notification-trigger";
+export { triggerApprovalNotification } from "./notification-trigger";
 // Resolution
 export {
 	getAllActiveTenants,

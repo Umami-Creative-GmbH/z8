@@ -11,6 +11,7 @@ const mockState = vi.hoisted(() => {
 		resolvedHeaders: new Headers(),
 		headers: vi.fn(async () => mockState.resolvedHeaders),
 		getSession: vi.fn(),
+		canAccessOrganizationWithSso: vi.fn(async () => true),
 		setActiveOrganization: vi.fn(),
 		ensureEmployeeForOrganizationMember: vi.fn(),
 		select,
@@ -44,6 +45,10 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/auth/organization-member-provisioning", () => ({
 	ensureEmployeeForOrganizationMember: mockState.ensureEmployeeForOrganizationMember,
+}));
+
+vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
+	canAccessOrganizationWithSso: mockState.canAccessOrganizationWithSso,
 }));
 
 vi.mock("@/db", () => ({
@@ -98,10 +103,23 @@ function createRequest(headers: HeadersInit, body: unknown): NextRequest {
 describe("POST /api/organizations/switch bearer access", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.canAccessOrganizationWithSso.mockResolvedValue(true);
 		mockState.resolvedHeaders = new Headers();
+		mockState.limit.mockReset();
 		mockState.limit
 			.mockResolvedValueOnce([{ id: "member-1", role: "member", status: "approved" }])
 			.mockResolvedValueOnce([{ id: "emp-1", isActive: true }]);
+	});
+
+	it("rejects an approved member without matching SSO proof before provisioning or switching", async () => {
+		mockState.getSession.mockResolvedValue({ user: { id: "user-1" }, session: { id: "session-1", userId: "user-1" } });
+		mockState.canAccessOrganizationWithSso.mockResolvedValue(false);
+		const response = await POST(createRequest({}, { organizationId: "org-2" }));
+		expect(response.status).toBe(403);
+		expect(await response.json()).toMatchObject({ code: "SSO_REQUIRED" });
+		expect(mockState.canAccessOrganizationWithSso).toHaveBeenCalledWith({ id: "session-1", userId: "user-1" }, "org-2");
+		expect(mockState.ensureEmployeeForOrganizationMember).not.toHaveBeenCalled();
+		expect(mockState.setActiveOrganization).not.toHaveBeenCalled();
 	});
 
 	it("requires approved organization membership in the membership lookup", async () => {

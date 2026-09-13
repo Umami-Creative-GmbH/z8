@@ -16,6 +16,7 @@ import { db } from "@/db";
 import { calendarConnection, employee } from "@/db/schema";
 import { env } from "@/env";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
+import { getVerifiedOrgContext } from "@/lib/auth-helpers";
 import {
 	getCalendarProvider,
 	isProviderSupported,
@@ -123,6 +124,10 @@ async function handleCalendarOAuthCallback(
 			}
 			return redirectWithError("Invalid state parameter");
 		}
+
+		const actor = await getVerifiedOrgContext(statePayload.organizationId);
+		if (!actor || actor.employeeId !== statePayload.employeeId)
+			return redirectWithError("Organization access denied");
 
 		// Build redirect URI (must match the one used to initiate)
 		const baseUrl = getDefaultAppBaseUrl();
