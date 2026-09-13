@@ -29,6 +29,10 @@ export interface QueuedClockEvent {
 	createdAt: number;
 	/** Organization ID for multi-tenant isolation */
 	organizationId: string;
+	/** Captured account assertion; absent on legacy records, never backfilled. */
+	userId?: string;
+	/** Captured origin assertion; absent on legacy records. */
+	serverOrigin?: string;
 	/** Optional project ID for clock-out */
 	projectId?: string;
 	/** Optional work category ID for clock-out */
@@ -50,12 +54,18 @@ export type SyncResult =
  * Messages sent from the service worker to clients
  */
 export type SWToClientMessage =
-	| { type: "QUEUE_UPDATED"; count: number }
-	| { type: "SYNC_SUCCESS"; eventId: string; serverId: string }
+	| { type: "QUEUE_UPDATED"; count?: number }
+	| {
+			type: "SYNC_SUCCESS";
+			eventId: string;
+			serverId: string;
+			userId?: string;
+			organizationId?: string;
+	  }
 	| { type: "SYNC_CONFLICT"; eventId: string; error: string }
-	| { type: "SYNC_ERROR"; eventId: string; error: string }
+	| { type: "SYNC_ERROR"; eventId?: string; error: string }
 	| { type: "SYNC_STARTED" }
-	| { type: "SYNC_COMPLETED"; successCount: number; failureCount: number }
+	| { type: "SYNC_COMPLETED"; successCount?: number; failureCount?: number }
 	| { type: "SW_UPDATE_AVAILABLE" };
 
 /**
@@ -66,7 +76,13 @@ export type ClientToSWMessage =
 			type: "QUEUE_CLOCK_EVENT";
 			payload: Omit<QueuedClockEvent, "id" | "retryCount" | "createdAt">;
 	  }
-	| { type: "GET_QUEUE_COUNT" }
+	| { type: "GET_QUEUE_COUNT"; context: OfflineRecoveryContext }
+	| { type: "GET_QUEUE_RECORDS"; context: OfflineRecoveryContext }
+	| {
+			type: "ARCHIVE_QUEUE_RECORD";
+			context: OfflineRecoveryContext;
+			eventId: string;
+	  }
 	| { type: "TRIGGER_SYNC" }
 	| { type: "CLEAR_OLD_QUEUE" }
 	| { type: "SKIP_WAITING" }
@@ -77,7 +93,27 @@ export type ClientToSWMessage =
  */
 export interface OfflineQueueStatus {
 	pendingCount: number;
+	reviewCount: number;
+	savedCount: number;
+	/** False until an authenticated durable read establishes the total. */
+	countVerified: boolean;
 	isSyncing: boolean;
 	lastSyncAt: number | null;
 	lastError: string | null;
+}
+
+export interface OfflineRecoveryContext {
+	userId: string;
+	organizationId: string;
+}
+
+/** Legacy values remain uninterpreted, including unsupported fields. */
+export interface OfflineRecoveryRecord extends Record<string, unknown> {
+	id: string;
+	recovery?: {
+		state: string;
+		reason: string;
+		commitment: "unknown" | "committed";
+		original?: Record<string, unknown>;
+	};
 }

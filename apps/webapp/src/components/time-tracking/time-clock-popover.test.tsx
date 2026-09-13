@@ -18,6 +18,7 @@ const useElapsedTimerMock = vi.fn();
 
 let localStorageData: Record<string, string> = {};
 let isClockedInMock = false;
+let captureMode: "local-review" | "server" = "server";
 let activeWorkPeriodMock: { startTime: string } | null = null;
 
 function getPopoverClockButton(name: "Clock In" | "Clock Out"): HTMLElement {
@@ -42,6 +43,7 @@ vi.mock("@/lib/query", () => ({
 		isAddingBreak: false,
 		isUpdatingNotes: false,
 		isMutating: false,
+		captureMode,
 	}),
 }));
 
@@ -115,9 +117,49 @@ describe("TimeClockPopover", () => {
 		});
 		useElapsedTimerMock.mockReturnValue(0);
 		isClockedInMock = false;
+		captureMode = "server";
 		activeWorkPeriodMock = null;
 		clockInMock.mockResolvedValue({ success: true });
 		addBreakMock.mockResolvedValue({ success: true });
+	});
+
+	it("keeps both offline endpoints available without inventing a server period", async () => {
+		captureMode = "local-review";
+		clockInMock.mockResolvedValue({
+			success: true,
+			queued: true,
+			reviewRequired: true,
+		});
+		clockOutMock.mockResolvedValue({
+			success: true,
+			queued: true,
+			reviewRequired: true,
+		});
+		render(<TimeClockPopover />);
+		fireEvent.click(screen.getByRole("button", { name: "Clock In" }));
+		fireEvent.click(screen.getByRole("radio", { name: "Remote" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Save clock-in for review" }),
+		);
+		await waitFor(() =>
+			expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "remote" }),
+		);
+		await waitFor(() =>
+			expect(toastMocks.info).toHaveBeenCalledWith(
+				expect.stringContaining("not confirmed on the server"),
+			),
+		);
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("button", { name: "Save clock-in for review" }),
+			).toBeNull(),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Clock In" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Save clock-out for review" }),
+		);
+		await waitFor(() => expect(clockOutMock).toHaveBeenCalledOnce());
+		expect(toastMocks.success).not.toHaveBeenCalled();
 	});
 
 	it("submits office as the default quick clock-in work location", async () => {
