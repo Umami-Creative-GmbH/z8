@@ -12,6 +12,10 @@ crate-type = ["lib", "cdylib", "staticlib"]
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
+[features]
+# Inactive until #280 ownership/recovery and linked cleanup gates are verified.
+desktop-recovery-evidence = []
+
 [dependencies]
 tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-shell = "2"

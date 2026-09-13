@@ -1,15 +1,8 @@
 use anyhow::Result;
-use chrono::{DateTime, TimeZone, Utc};
-use rusqlite::{params, Connection};
+use chrono::{DateTime, Utc};
+use rusqlite::{params, types::ValueRef, Connection};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
-use std::sync::Arc;
-use std::time::Duration;
-use tauri::{AppHandle, Manager};
-
-use crate::clock::{ClockService, WorkLocationType};
-use crate::state::AppState;
-use crate::tray;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ActionType {
@@ -18,53 +11,123 @@ pub enum ActionType {
     ClockOutWithBreak,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct QueuedAction {
-    pub id: i64,
-    pub action_type: ActionType,
-    pub timestamp: i64,
-    pub payload: Option<String>,
-    pub retry_count: i32,
-    pub created_at: i64,
+/// Preserve SQLite storage classes and bytes, including invalid UTF-8 TEXT.
+/// This evidence is deliberately not exposed by the cross-tenant IPC surface.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(tag = "storageType", content = "value", rename_all = "camelCase")]
+pub enum StoredValue {
+    Null,
+    Integer(i64),
+    Real(f64),
+    Text(Vec<u8>),
+    Blob(Vec<u8>),
 }
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct ClockOutWithBreakPayload {
-    break_start_time: String,
-    work_location_type: String,
-}
-
-fn parse_clock_out_with_break_payload(payload: &str) -> Result<(DateTime<Utc>, WorkLocationType)> {
-    if let Ok(parsed_payload) = serde_json::from_str::<ClockOutWithBreakPayload>(payload) {
-        let break_time = DateTime::parse_from_rfc3339(&parsed_payload.break_start_time)
-            .map(|time| time.with_timezone(&Utc))?;
-        let work_location_type = WorkLocationType::from_str(&parsed_payload.work_location_type)
-            .ok_or_else(|| anyhow::anyhow!("Invalid work location type payload"))?;
-
-        return Ok((break_time, work_location_type));
+impl StoredValue {
+    fn from_sql(value: ValueRef<'_>) -> Self {
+        match value {
+            ValueRef::Null => Self::Null,
+            ValueRef::Integer(value) => Self::Integer(value),
+            ValueRef::Real(value) => Self::Real(value),
+            ValueRef::Text(value) => Self::Text(value.to_vec()),
+            ValueRef::Blob(value) => Self::Blob(value.to_vec()),
+        }
     }
 
-    let break_time = DateTime::parse_from_rfc3339(payload).map(|time| time.with_timezone(&Utc))?;
-    Ok((break_time, WorkLocationType::Office))
+    fn text(&self) -> Option<&str> {
+        match self {
+            Self::Text(bytes) => std::str::from_utf8(bytes).ok(),
+            _ => None,
+        }
+    }
 }
 
-fn queued_timestamp_to_rfc3339(timestamp: i64) -> Result<String> {
-    Utc.timestamp_opt(timestamp, 0)
-        .single()
-        .map(|time| time.to_rfc3339())
-        .ok_or_else(|| anyhow::anyhow!("Invalid queued timestamp: {}", timestamp))
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ReviewReason {
+    MalformedRecord,
+    RetriesExhausted,
+    LegacyContextMissing,
+    BreakMayBePartiallyCommitted,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QueuedAction {
+    /// Existing durable local identity; never a server operation identity.
+    pub id: i64,
+    pub action_type: StoredValue,
+    pub timestamp: StoredValue,
+    pub payload: StoredValue,
+    pub retry_count: StoredValue,
+    pub created_at: StoredValue,
+    pub reasons: Vec<ReviewReason>,
+}
+
+impl QueuedAction {
+    fn classify(&mut self) {
+        self.reasons.push(ReviewReason::LegacyContextMissing);
+        let action = self
+            .action_type
+            .text()
+            .and_then(|value| serde_json::from_str::<ActionType>(value).ok());
+        let valid_payload = match action {
+            Some(ActionType::ClockIn) => self
+                .payload
+                .text()
+                .is_some_and(|value| matches!(value, "office" | "home" | "remote" | "other")),
+            Some(ActionType::ClockOut) => matches!(self.payload, StoredValue::Null),
+            Some(ActionType::ClockOutWithBreak) => {
+                self.reasons
+                    .push(ReviewReason::BreakMayBePartiallyCommitted);
+                self.payload.text().is_some_and(|payload| {
+                    // Recognize bare timestamps without inventing a default location.
+                    DateTime::parse_from_rfc3339(payload).is_ok()
+                        || serde_json::from_str::<serde_json::Value>(payload)
+                            .ok()
+                            .is_some_and(|value| {
+                                value["breakStartTime"]
+                                    .as_str()
+                                    .is_some_and(|time| DateTime::parse_from_rfc3339(time).is_ok())
+                                    && value["workLocationType"].as_str().is_some_and(|location| {
+                                        matches!(location, "office" | "home" | "remote" | "other")
+                                    })
+                            })
+                })
+            }
+            None => false,
+        };
+        let valid_timestamp = matches!(self.timestamp, StoredValue::Integer(value) if DateTime::from_timestamp(value, 0).is_some());
+        let valid_created_at = matches!(self.created_at, StoredValue::Integer(value) if DateTime::from_timestamp(value, 0).is_some());
+        if !valid_payload
+            || !valid_timestamp
+            || !valid_created_at
+            || !matches!(self.retry_count, StoredValue::Integer(value) if value >= 0)
+        {
+            self.reasons.push(ReviewReason::MalformedRecord);
+        }
+        if matches!(self.retry_count, StoredValue::Integer(value) if value >= 5) {
+            self.reasons.push(ReviewReason::RetriesExhausted);
+        }
+    }
 }
 
 pub struct OfflineQueue {
     conn: Connection,
 }
 
+/// Device-storage diagnostics only. No event values or presumed tenant owner.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecoverySummary {
+    pub total: usize,
+    pub malformed: usize,
+    pub exhausted: usize,
+}
+
 impl OfflineQueue {
     pub fn new(app_data_dir: &Path) -> Result<Self> {
-        let db_path = app_data_dir.join("offline_queue.db");
-        let conn = Connection::open(&db_path)?;
-
+        let conn = Connection::open(app_data_dir.join("offline_queue.db"))?;
         conn.execute(
             "CREATE TABLE IF NOT EXISTS queue (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,265 +139,77 @@ impl OfflineQueue {
             )",
             [],
         )?;
-
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_queue_created_at ON queue(created_at)",
             [],
         )?;
-
         Ok(Self { conn })
     }
 
-    pub fn enqueue(&mut self, action_type: ActionType, timestamp: i64, payload: Option<String>) -> Result<i64> {
-        let action_str = serde_json::to_string(&action_type)?;
-        let now = Utc::now().timestamp();
-
-        self.conn.execute(
+    pub fn enqueue(
+        &mut self,
+        action_type: ActionType,
+        timestamp: i64,
+        payload: Option<String>,
+    ) -> Result<i64> {
+        let transaction = self.conn.transaction()?;
+        let changed = transaction.execute(
             "INSERT INTO queue (action_type, timestamp, payload, created_at) VALUES (?, ?, ?, ?)",
-            params![action_str, timestamp, payload, now],
+            params![
+                serde_json::to_string(&action_type)?,
+                timestamp,
+                payload,
+                Utc::now().timestamp()
+            ],
         )?;
-
-        let id = self.conn.last_insert_rowid();
-        log::info!("Enqueued action: {:?} (id: {})", action_type, id);
+        anyhow::ensure!(changed == 1, "Recovery record was not saved");
+        let id = transaction.last_insert_rowid();
+        // Acceptance includes the actual commit, not only a successful INSERT.
+        transaction.commit()?;
         Ok(id)
     }
 
     pub fn get_pending(&self) -> Result<Vec<QueuedAction>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, action_type, timestamp, payload, retry_count, created_at
-             FROM queue
-             ORDER BY created_at ASC",
+             FROM queue ORDER BY created_at ASC, id ASC",
         )?;
-
         let mut rows = stmt.query([])?;
         let mut actions = Vec::new();
-
         while let Some(row) = rows.next()? {
-            let id: i64 = row.get(0)?;
-            let action_str: String = row.get(1)?;
-            let action_type = match serde_json::from_str(&action_str) {
-                Ok(action_type) => action_type,
-                Err(e) => {
-                    log::warn!("Skipping malformed queued action {}: {}", id, e);
-                    continue;
-                }
+            let mut action = QueuedAction {
+                id: row.get(0)?,
+                action_type: StoredValue::from_sql(row.get_ref(1)?),
+                timestamp: StoredValue::from_sql(row.get_ref(2)?),
+                payload: StoredValue::from_sql(row.get_ref(3)?),
+                retry_count: StoredValue::from_sql(row.get_ref(4)?),
+                created_at: StoredValue::from_sql(row.get_ref(5)?),
+                reasons: Vec::new(),
             };
-
-            actions.push(QueuedAction {
-                id,
-                action_type,
-                timestamp: row.get(2)?,
-                payload: row.get(3)?,
-                retry_count: row.get(4)?,
-                created_at: row.get(5)?,
-            });
+            action.classify();
+            actions.push(action);
         }
-
         Ok(actions)
     }
 
-    pub fn mark_completed(&mut self, id: i64) -> Result<()> {
-        self.conn.execute("DELETE FROM queue WHERE id = ?", params![id])?;
-        log::info!("Removed completed action from queue (id: {})", id);
-        Ok(())
-    }
-
-    pub fn increment_retry(&mut self, id: i64) -> Result<()> {
-        self.conn.execute(
-            "UPDATE queue SET retry_count = retry_count + 1 WHERE id = ?",
-            params![id],
-        )?;
-        Ok(())
-    }
-
     pub fn count(&self) -> Result<i64> {
-        let count: i64 = self
+        Ok(self
             .conn
-            .query_row("SELECT COUNT(*) FROM queue", [], |row| row.get(0))?;
-        Ok(count)
-    }
-}
-
-/// Starts the background queue processor
-pub async fn start_queue_processor(app_handle: AppHandle) {
-    log::info!("Starting offline queue processor");
-
-    let clock_service = ClockService::new();
-
-    loop {
-        tokio::time::sleep(Duration::from_secs(30)).await;
-
-        let state = app_handle.state::<Arc<AppState>>();
-        let token = match state.get_session_token() {
-            Some(t) => t,
-            None => continue, // Not logged in
-        };
-
-        let webapp_url = state.get_webapp_url();
-        if webapp_url.is_empty() {
-            continue;
-        }
-
-        // Get pending actions
-        let pending = {
-            let queue = state.offline_queue.lock();
-            match queue.get_pending() {
-                Ok(p) => p,
-                Err(e) => {
-                    log::error!("Failed to get pending queue: {}", e);
-                    continue;
-                }
-            }
-        };
-
-        if pending.is_empty() {
-            continue;
-        }
-
-        log::info!("Processing {} pending offline actions", pending.len());
-
-        for action in pending {
-            // Skip if too many retries
-            if action.retry_count >= 5 {
-                log::warn!(
-                    "Skipping action {} after {} retries",
-                    action.id,
-                    action.retry_count
-                );
-                continue;
-            }
-
-            let result = match action.action_type {
-                ActionType::ClockIn => {
-                    let work_location_type = action
-                        .payload
-                        .as_deref()
-                        .and_then(WorkLocationType::from_str)
-                        .unwrap_or(WorkLocationType::Office);
-                    match queued_timestamp_to_rfc3339(action.timestamp) {
-                        Ok(timestamp) => {
-                            clock_service
-                                .clock_in(
-                                    &webapp_url,
-                                    &token,
-                                    work_location_type,
-                                    Some(&timestamp),
-                                )
-                                .await
-                                .map(|_| ())
-                        }
-                        Err(e) => Err(e),
-                    }
-                }
-                ActionType::ClockOut => {
-                    clock_service.clock_out(&webapp_url, &token).await.map(|_| ())
-                }
-                ActionType::ClockOutWithBreak => {
-                    if let Some(payload) = &action.payload {
-                        match parse_clock_out_with_break_payload(payload) {
-                            Ok((break_time, work_location_type)) => {
-                                match queued_timestamp_to_rfc3339(action.timestamp) {
-                                    Ok(resume_timestamp) => {
-                                        clock_service
-                                            .clock_out_with_break(
-                                                &webapp_url,
-                                                &token,
-                                                break_time,
-                                                work_location_type,
-                                                Some(&resume_timestamp),
-                                            )
-                                            .await
-                                    }
-                                    Err(e) => Err(e),
-                                }
-                            }
-                            Err(e) => Err(e),
-                        }
-                    } else {
-                        Err(anyhow::anyhow!("Missing break time payload"))
-                    }
-                }
-            };
-
-            match result {
-                Ok(_) => {
-                    let mut queue = state.offline_queue.lock();
-                    let _ = queue.mark_completed(action.id);
-                }
-                Err(e) => {
-                    log::error!("Failed to process queued action {}: {}", action.id, e);
-                    let mut queue = state.offline_queue.lock();
-                    let _ = queue.increment_retry(action.id);
-                }
-            }
-        }
-
-        // Update clock status after processing queue
-        if let Ok(status) = clock_service.get_status(&webapp_url, &token).await {
-            state.set_clocked_in(status.is_clocked_in);
-            let _ = tray::update_tray_icon(&app_handle, status.is_clocked_in);
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{parse_clock_out_with_break_payload, queued_timestamp_to_rfc3339, ActionType, OfflineQueue};
-    use crate::clock::WorkLocationType;
-    use rusqlite::params;
-    use std::fs;
-
-    #[test]
-    fn parses_clock_out_with_break_payloads_with_legacy_default() {
-        let legacy = "2026-05-09T10:15:30Z";
-        let (break_time, work_location_type) = parse_clock_out_with_break_payload(legacy).unwrap();
-        assert_eq!(break_time.to_rfc3339(), "2026-05-09T10:15:30+00:00");
-        assert_eq!(work_location_type.as_str(), WorkLocationType::Office.as_str());
-
-        let current = r#"{"breakStartTime":"2026-05-09T10:15:30Z","workLocationType":"remote"}"#;
-        let (break_time, work_location_type) = parse_clock_out_with_break_payload(current).unwrap();
-        assert_eq!(break_time.to_rfc3339(), "2026-05-09T10:15:30+00:00");
-        assert_eq!(work_location_type.as_str(), WorkLocationType::Remote.as_str());
+            .query_row("SELECT COUNT(*) FROM queue", [], |row| row.get(0))?)
     }
 
-    #[test]
-    fn get_pending_skips_malformed_action_type_rows() {
-        let dir = std::env::temp_dir().join(format!(
-            "z8-offline-queue-test-{}",
-            chrono::Utc::now().timestamp_nanos_opt().unwrap()
-        ));
-        fs::create_dir_all(&dir).unwrap();
-        let queue = OfflineQueue::new(&dir).unwrap();
-
-        queue
-            .conn
-            .execute(
-                "INSERT INTO queue (action_type, timestamp, created_at) VALUES (?, ?, ?)",
-                params!["not-json", 1_i64, 1_i64],
-            )
-            .unwrap();
-        queue
-            .conn
-            .execute(
-                "INSERT INTO queue (action_type, timestamp, created_at) VALUES (?, ?, ?)",
-                params![serde_json::to_string(&ActionType::ClockIn).unwrap(), 2_i64, 2_i64],
-            )
-            .unwrap();
-
-        let actions = queue.get_pending().unwrap();
-
-        assert_eq!(actions.len(), 1);
-        assert!(matches!(actions[0].action_type, ActionType::ClockIn));
-        assert_eq!(actions[0].timestamp, 2);
-
-        fs::remove_dir_all(dir).unwrap();
-    }
-
-    #[test]
-    fn converts_queued_timestamp_seconds_to_rfc3339() {
-        assert_eq!(
-            queued_timestamp_to_rfc3339(1_777_593_600).unwrap(),
-            "2026-05-01T00:00:00+00:00"
-        );
+    pub fn recovery_summary(&self) -> Result<RecoverySummary> {
+        let records = self.get_pending()?;
+        Ok(RecoverySummary {
+            total: records.len(),
+            malformed: records
+                .iter()
+                .filter(|record| record.reasons.contains(&ReviewReason::MalformedRecord))
+                .count(),
+            exhausted: records
+                .iter()
+                .filter(|record| record.reasons.contains(&ReviewReason::RetriesExhausted))
+                .count(),
+        })
     }
 }

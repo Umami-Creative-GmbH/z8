@@ -11,6 +11,24 @@ interface ClockButtonProps {
   disabled?: boolean;
 }
 
+function ClockDisplay({ isClockedIn, disabled, startTime }: Pick<ClockButtonProps, "isClockedIn" | "disabled" | "startTime">) {
+  const elapsedSeconds = useElapsedTimer(startTime);
+  if (isClockedIn) {
+    return (
+      <div className="clock-display">
+        <div className="clock-timer">{formatDuration(elapsedSeconds)}</div>
+        <div className="clock-label">Time elapsed</div>
+      </div>
+    );
+  }
+  return (
+    <div className="clock-display">
+      <div className="clock-ready">{disabled ? "Clock actions paused" : "Ready to work"}</div>
+      <div className="clock-label">{disabled ? "Check clock status and recovery details" : "Press the button to start tracking"}</div>
+    </div>
+  );
+}
+
 export function ClockButton({
   isClockedIn,
   startTime,
@@ -19,8 +37,6 @@ export function ClockButton({
   isLoading,
   disabled,
 }: ClockButtonProps) {
-  const elapsedSeconds = useElapsedTimer(startTime);
-
   const handleClick = async () => {
     if (isClockedIn) {
       await onClockOut();
@@ -32,19 +48,7 @@ export function ClockButton({
   return (
     <div className="clock-container">
       {/* Timer display */}
-      <div className="clock-display">
-        {isClockedIn ? (
-          <>
-            <div className="clock-timer">{formatDuration(elapsedSeconds)}</div>
-            <div className="clock-label">Time elapsed</div>
-          </>
-        ) : (
-          <>
-            <div className="clock-ready">Ready to work</div>
-            <div className="clock-label">Press the button to start tracking</div>
-          </>
-        )}
-      </div>
+      <ClockDisplay isClockedIn={isClockedIn} disabled={disabled} startTime={startTime} />
 
       {/* Main clock button */}
       <button
@@ -68,10 +72,12 @@ export function ClockButton({
       {/* Action label */}
       <div className={`clock-action-label ${isClockedIn ? "clock-action-stop" : "clock-action-start"}`}>
         {isLoading
-          ? "Processing..."
+          ? "Processing…"
+          : disabled
+          ? "Clock actions paused"
           : isClockedIn
-          ? "Tap to IconClock Out"
-          : "Tap to IconClock In"}
+          ? "Tap to Clock Out"
+          : "Tap to Clock In"}
       </div>
     </div>
   );

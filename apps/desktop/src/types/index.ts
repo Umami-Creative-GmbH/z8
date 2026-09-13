@@ -21,6 +21,24 @@ export interface ClockStatus {
   } | null;
 }
 
+export type ClockCommandOutcome =
+  | {
+      outcome: "committed";
+      write: {
+        entries: { id: string; employeeId: string; type: string; timestamp: string }[];
+        status: ClockStatus | null;
+        statusRefreshFailed: boolean;
+        contextChanged: boolean;
+      };
+    }
+  | { outcome: "retainedForReview"; recoveryId: number };
+
+export interface RecoverySummary {
+  total: number;
+  malformed: number;
+  exhausted: number;
+}
+
 export interface Settings {
   webappUrl: string;
   alwaysOnTop: boolean;

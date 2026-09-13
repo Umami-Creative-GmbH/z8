@@ -13,6 +13,7 @@ pub struct AppState {
     pub pending_app_auth_verifier: RwLock<Option<String>>,
     pub settings: RwLock<Settings>,
     pub offline_queue: Mutex<OfflineQueue>, // Mutex for SQLite thread safety
+    pub clock_command_lock: tokio::sync::Mutex<()>,
     pub is_clocked_in: RwLock<bool>,
     app_data_dir: PathBuf,
 }
@@ -50,6 +51,7 @@ impl AppState {
             pending_app_auth_verifier: RwLock::new(None),
             settings: RwLock::new(settings),
             offline_queue: Mutex::new(queue),
+            clock_command_lock: tokio::sync::Mutex::new(()),
             is_clocked_in: RwLock::new(false),
             app_data_dir,
         })

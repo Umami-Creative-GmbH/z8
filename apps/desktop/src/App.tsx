@@ -8,6 +8,7 @@ import {
 import { Toaster, toast } from "sonner";
 
 import { ClockButton } from "./components/ClockButton";
+import { ClockRecoveryNotice } from "./components/ClockRecoveryNotice";
 import { IdleDialog } from "./components/IdleDialog";
 import { LoginScreen } from "./components/LoginScreen";
 import { OrganizationSelector } from "./components/OrganizationSelector";
@@ -22,6 +23,47 @@ import { useOrganizations } from "./hooks/useOrganizations";
 import { useSettings } from "./hooks/useSettings";
 import { useTheme } from "./hooks/useTheme";
 import { useWorkLocation } from "./hooks/useWorkLocation";
+import type { ClockCommandOutcome } from "./types";
+
+function showClockOutcome(result: ClockCommandOutcome, successMessage: string) {
+  if (result.outcome === "retainedForReview") {
+    toast.warning("Clock outcome needs review", {
+      description: "The local record was retained. Check your time entries in Z8 before recording replacement work.",
+    });
+  } else if (result.write.contextChanged) {
+    toast.success("Clock action saved in the previous context", {
+      description: "Refresh status for your current account and organization.",
+    });
+  } else if (result.write.statusRefreshFailed) {
+    toast.success(successMessage, {
+      description: "Saved. Current status is unavailable; refresh status before another action.",
+    });
+  } else {
+    toast.success(successMessage);
+  }
+}
+
+async function presentClockAction(action: () => Promise<ClockCommandOutcome>, successMessage: string) {
+  try {
+    showClockOutcome(await action(), successMessage);
+    return true;
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : String(error));
+    return false;
+  }
+}
+
+function ClockStatusBadge({ isCurrent, isClockedIn }: { isCurrent: boolean; isClockedIn: boolean }) {
+  const label = isCurrent
+    ? (isClockedIn ? "Currently Working" : "Not Clocked In")
+    : "Clock status unavailable";
+  return (
+    <div className={`status-badge ${isCurrent && isClockedIn ? "status-active" : "status-inactive"}`}>
+      <div className="status-dot" />
+      <span>{label}</span>
+    </div>
+  );
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,7 +75,7 @@ const queryClient = new QueryClient({
 });
 
 function AppContent() {
-  const { isAuthenticated, login, logout, isLoading: isAuthLoading } = useAuth();
+  const { isAuthenticated, login, logout, sessionVersion, isLoading: isAuthLoading } = useAuth();
   const {
     settings,
     saveSettings,
@@ -41,6 +83,12 @@ function AppContent() {
     isSettingsOpen,
     setIsSettingsOpen,
   } = useSettings();
+  const {
+    organizations,
+    activeOrganizationId,
+    switchOrganization,
+    isSwitching,
+  } = useOrganizations();
   const {
     isClockedIn,
     activeWorkPeriod,
@@ -50,53 +98,45 @@ function AppContent() {
     isClockingIn,
     isClockingOut,
     isError,
-  } = useClock();
+    canClock,
+    isStatusCurrent,
+    needsStatusRefresh,
+    actionError,
+    recovery,
+    recoveryError,
+    refetch,
+  } = useClock({
+    enabled: isAuthenticated,
+    sessionVersion,
+    serverUrl: settings?.webappUrl,
+    organizationId: activeOrganizationId,
+  });
   const { idleEvent, isIdleDialogOpen, dismissIdle } = useIdle();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { workLocationType, setWorkLocationType } = useWorkLocation();
-  const {
-    organizations,
-    activeOrganizationId,
-    switchOrganization,
-    isSwitching,
-  } = useOrganizations();
 
   const [isProcessingIdle, setIsProcessingIdle] = useState(false);
+  const isClockBusy = isClockingIn || isClockingOut;
+  const areControlsBusy = isClockBusy || isSwitching;
 
   const handleClockIn = async () => {
-    try {
-      await clockIn(workLocationType);
-      toast.success("Clocked in successfully");
-    } catch (error) {
-      toast.error("Failed to clock in");
-      console.error(error);
-    }
+    await presentClockAction(() => clockIn(workLocationType), "Clocked in successfully");
   };
 
   const handleClockOut = async () => {
-    try {
-      await clockOut();
-      toast.success("Clocked out successfully");
-    } catch (error) {
-      toast.error("Failed to clock out");
-      console.error(error);
-    }
+    await presentClockAction(clockOut, "Clocked out successfully");
   };
 
   const handleIdleBreak = async () => {
-    if (!idleEvent) return;
+    if (!idleEvent || !canClock || isSwitching) return;
 
     setIsProcessingIdle(true);
     try {
-      await clockOutWithBreak({
+      const handled = await presentClockAction(() => clockOutWithBreak({
         breakStartTime: idleEvent.idleStartTime,
         workLocationType,
-      });
-      toast.success("Break recorded, clocked back in");
-      dismissIdle();
-    } catch (error) {
-      toast.error("Failed to record break");
-      console.error(error);
+      }), "Break recorded, clocked back in");
+      if (handled) dismissIdle();
     } finally {
       setIsProcessingIdle(false);
     }
@@ -149,7 +189,7 @@ function AppContent() {
               organizations={organizations}
               activeOrganizationId={activeOrganizationId}
               onSwitch={switchOrganization}
-              isSwitching={isSwitching}
+              isSwitching={areControlsBusy}
             />
           )}
         </div>
@@ -164,6 +204,7 @@ function AppContent() {
           <button
             type="button"
             onClick={() => setIsSettingsOpen(true)}
+            disabled={isClockBusy}
             className="settings-button"
             title="Settings"
             aria-label="Open Settings"
@@ -179,7 +220,7 @@ function AppContent() {
           <WorkLocationSelector
             value={workLocationType}
             onChange={setWorkLocationType}
-            disabled={isClockingIn || isClockingOut}
+            disabled={areControlsBusy}
           />
         )}
         <ClockButton
@@ -187,21 +228,26 @@ function AppContent() {
           startTime={activeWorkPeriod?.startTime ?? null}
           onClockIn={handleClockIn}
           onClockOut={handleClockOut}
-          isLoading={isClockingIn || isClockingOut}
+          isLoading={isClockBusy}
+          disabled={!canClock || isSwitching}
+        />
+        <ClockRecoveryNotice
+          recovery={recovery}
+          recoveryError={recoveryError}
+          actionError={actionError}
+          needsStatusRefresh={needsStatusRefresh}
+          onRefresh={refetch}
         />
       </main>
 
       {/* Footer status */}
       <footer className="app-footer">
-        <div className={`status-badge ${isClockedIn ? "status-active" : "status-inactive"}`}>
-          <div className="status-dot" />
-          <span>{isClockedIn ? "Currently Working" : "Not Clocked In"}</span>
-        </div>
+        <ClockStatusBadge isCurrent={isStatusCurrent} isClockedIn={isClockedIn} />
       </footer>
 
       {/* Idle Dialog */}
       <IdleDialog
-        isOpen={isIdleDialogOpen}
+        isOpen={isIdleDialogOpen && canClock && !isSwitching}
         idleEvent={idleEvent}
         onBreak={handleIdleBreak}
         onResume={handleIdleResume}
