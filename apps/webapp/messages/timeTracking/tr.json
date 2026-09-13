@@ -75,6 +75,7 @@
       "errors": {
         "createFailed": "Zaman girişi oluşturulamadı",
         "futureDate": "Gelecek tarihler için giriş oluşturulamaz",
+        "invalidTime": "Eksiksiz ve geçerli bir saat girin",
         "invalidTimeRange": "Çıkış saati, giriş saatinden sonra olmalıdır",
         "tooLong": "Çalışma süresi 24 saati aşamaz"
       },

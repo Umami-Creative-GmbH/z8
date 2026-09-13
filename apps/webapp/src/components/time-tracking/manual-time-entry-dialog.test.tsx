@@ -3,12 +3,14 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
+	act,
 	fireEvent,
 	render,
 	screen,
 	waitFor,
 	within,
 } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Temporal } from "temporal-polyfill";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ManualTimeEntryDialog } from "./manual-time-entry-dialog";
@@ -19,12 +21,14 @@ const {
 	refresh,
 	toastInfo,
 	updateTimezone,
+	useTimeFormat,
 } = vi.hoisted(() => ({
 	createManualTimeEntry: vi.fn(),
 	formatTimeInZone: vi.fn(() => "09:00"),
 	refresh: vi.fn(),
 	toastInfo: vi.fn(),
 	updateTimezone: vi.fn(),
+	useTimeFormat: vi.fn(() => "24h"),
 }));
 
 const { getBrowserTimezone } = vi.hoisted(() => ({
@@ -46,7 +50,7 @@ vi.mock("@/navigation", () => ({
 }));
 
 vi.mock("@/components/providers/user-preferences-provider", () => ({
-	useTimeFormat: () => "24h",
+	useTimeFormat,
 }));
 
 vi.mock("@/lib/time-tracking/timezone-utils", () => ({
@@ -76,25 +80,6 @@ vi.mock("@/components/ui/date-picker", () => ({
 			aria-label="Date"
 			name={name}
 			onChange={(event) => onChange(event.target.value)}
-			value={value}
-		/>
-	),
-}));
-
-vi.mock("@/components/ui/time-input", () => ({
-	TimeInput: ({
-		name,
-		onChange,
-		value,
-	}: {
-		name: string;
-		onChange: (event: { target: { value: string } }) => void;
-		value: string;
-	}) => (
-		<input
-			aria-label={name === "clockInTime" ? "Clock In" : "Clock Out"}
-			name={name}
-			onChange={(event) => onChange(event)}
 			value={value}
 		/>
 	),
@@ -191,6 +176,7 @@ describe("ManualTimeEntryDialog layout", () => {
 		getBrowserTimezone.mockReset();
 		getBrowserTimezone.mockReturnValue("America/New_York");
 		refresh.mockReset();
+		useTimeFormat.mockReturnValue("24h");
 	});
 
 	it("keeps the form body naturally sized and preserves footer action spacing", () => {
@@ -344,6 +330,7 @@ describe("ManualTimeEntryDialog layout", () => {
 				open
 			/>,
 		);
+		act(() => vi.runOnlyPendingTimers());
 
 		expect((screen.getByLabelText("Clock Out") as HTMLInputElement).value).toBe(
 			"17:12",
@@ -362,9 +349,6 @@ describe("ManualTimeEntryDialog layout", () => {
 
 	it("submits the target employee id and entered form values", async () => {
 		const submissionId = "10000000-0000-4000-8000-000000000099";
-		const randomUUID = vi
-			.spyOn(crypto, "randomUUID")
-			.mockReturnValue(submissionId);
 		renderDialog({
 			open: true,
 			hideTrigger: true,
@@ -374,6 +358,9 @@ describe("ManualTimeEntryDialog layout", () => {
 			defaultClockInTime: "10:15",
 			defaultClockOutTime: "15:45",
 		});
+		const randomUUID = vi
+			.spyOn(crypto, "randomUUID")
+			.mockReturnValue(submissionId);
 
 		expect(
 			screen
@@ -419,14 +406,111 @@ describe("ManualTimeEntryDialog layout", () => {
 		randomUUID.mockRestore();
 	});
 
+	it.each(["Clock In", "Clock Out"])(
+		"blocks keyboard-truncated %s and submits only after it is completed",
+		async (label) => {
+			const user = userEvent.setup();
+			renderDialog({
+				open: true,
+				hideTrigger: true,
+				targetEmployeeId: "employee-2",
+				defaultDate: "2026-05-12",
+				defaultClockInTime: "10:15",
+				defaultClockOutTime: "15:45",
+			});
+			await user.type(screen.getByLabelText("Reason"), "Correcting my time");
+			const input = screen.getByLabelText<HTMLInputElement>(label);
+			await user.click(input);
+			await user.keyboard("{End}{Backspace}");
+			expect(input.value).toBe(label === "Clock In" ? "10:1" : "15:4");
+			await user.click(screen.getByRole("button", { name: "Create Entry" }));
+			expect(createManualTimeEntry).not.toHaveBeenCalled();
+			const message = await screen.findByText("Enter a complete, valid time");
+			expect(input.getAttribute("aria-invalid")).toBe("true");
+			expect(input.getAttribute("aria-describedby")?.split(" ")).toContain(
+				message.id,
+			);
+
+			await user.click(input);
+			await user.keyboard("{End}5");
+			await user.click(screen.getByRole("button", { name: "Create Entry" }));
+			await waitFor(() => expect(createManualTimeEntry).toHaveBeenCalledOnce());
+			expect(createManualTimeEntry).toHaveBeenCalledWith(
+				expect.objectContaining({
+					clockInTime: "10:15",
+					clockOutTime: "15:45",
+				}),
+			);
+		},
+	);
+
+	it.each(["25:00", "15:60", "15:", ""])(
+		"rejects visible %s even when submitting the form directly",
+		async (draft) => {
+			renderDialog({
+				open: true,
+				hideTrigger: true,
+				targetEmployeeId: "employee-2",
+				defaultDate: "2026-05-12",
+				defaultClockInTime: "10:15",
+				defaultClockOutTime: "15:45",
+			});
+			fireEvent.change(screen.getByLabelText("Reason"), {
+				target: { value: "Correction" },
+			});
+			const input = screen.getByLabelText<HTMLInputElement>("Clock Out");
+			fireEvent.change(input, { target: { value: draft } });
+			if (!input.form)
+				throw new Error("Time input must belong to the manual form");
+			fireEvent.submit(input.form);
+			await screen.findByText("Enter a complete, valid time");
+			expect(createManualTimeEntry).not.toHaveBeenCalled();
+			expect(input.value).toBe(draft);
+		},
+	);
+
+	it.each([
+		{ format: "24h", digits: "1630", display: "16:30" },
+		{ format: "12h", digits: "0430", display: "04:30" },
+	])(
+		"submits completed masked digits with Enter in $format mode",
+		async ({ format, digits, display }) => {
+			useTimeFormat.mockReturnValue(format);
+			const user = userEvent.setup();
+			renderDialog({
+				open: true,
+				hideTrigger: true,
+				targetEmployeeId: "employee-2",
+				defaultDate: "2026-05-12",
+				defaultClockInTime: "10:15",
+				defaultClockOutTime: "15:45",
+			});
+			await user.type(screen.getByLabelText("Reason"), "Correcting my time");
+			const input = screen.getByLabelText<HTMLInputElement>("Clock Out");
+			await user.clear(input);
+			await user.type(input, digits.slice(0, 3));
+			await user.keyboard("{Enter}");
+			expect(createManualTimeEntry).not.toHaveBeenCalled();
+			expect(input.getAttribute("aria-invalid")).toBe("true");
+			await user.type(input, digits.slice(3));
+			expect(input.value).toBe(display);
+			expect(input.getAttribute("aria-invalid")).toBe("false");
+			expect(screen.queryByText("Enter a complete, valid time")).toBeNull();
+			await user.keyboard("{Enter}");
+			await waitFor(() => expect(createManualTimeEntry).toHaveBeenCalledOnce());
+			expect(createManualTimeEntry).toHaveBeenCalledWith(
+				expect.objectContaining({
+					clockInTime: "10:15",
+					clockOutTime: "16:30",
+				}),
+			);
+		},
+	);
+
 	it("scopes submission ids to deliberate manual submissions and preserves one serialized retry id", async () => {
 		const firstSubmissionId = "10000000-0000-4000-8000-000000000099";
 		const secondSubmissionId = "20000000-0000-4000-8000-000000000099";
 		const transportSubmissionIds: string[] = [];
-		const randomUUID = vi
-			.spyOn(crypto, "randomUUID")
-			.mockReturnValueOnce(firstSubmissionId)
-			.mockReturnValueOnce(secondSubmissionId);
 		createManualTimeEntry
 			.mockImplementationOnce(async (request) => {
 				const serializedRetry = jsonRoundTrip(request);
@@ -448,6 +532,10 @@ describe("ManualTimeEntryDialog layout", () => {
 			defaultClockInTime: "10:15",
 			defaultClockOutTime: "15:45",
 		});
+		const randomUUID = vi
+			.spyOn(crypto, "randomUUID")
+			.mockReturnValueOnce(firstSubmissionId)
+			.mockReturnValueOnce(secondSubmissionId);
 		fireEvent.change(screen.getByLabelText("Reason"), {
 			target: { value: "Calendar adjustment" },
 		});
@@ -468,9 +556,6 @@ describe("ManualTimeEntryDialog layout", () => {
 
 	it("shows timezone mismatch before submitting self manual entries and updates before continuing", async () => {
 		const submissionId = "10000000-0000-4000-8000-000000000099";
-		const randomUUID = vi
-			.spyOn(crypto, "randomUUID")
-			.mockReturnValue(submissionId);
 		renderDialog({
 			open: true,
 			hideTrigger: true,
@@ -479,6 +564,9 @@ describe("ManualTimeEntryDialog layout", () => {
 			defaultClockInTime: "10:15",
 			defaultClockOutTime: "15:45",
 		});
+		const randomUUID = vi
+			.spyOn(crypto, "randomUUID")
+			.mockReturnValue(submissionId);
 
 		fireEvent.change(screen.getByLabelText("Reason"), {
 			target: { value: "Calendar adjustment" },

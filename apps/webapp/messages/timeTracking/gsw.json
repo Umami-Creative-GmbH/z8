@@ -75,6 +75,7 @@
       "errors": {
         "createFailed": "Ziitiitrag hät nöd chönne erstellt werde",
         "futureDate": "Iiträg für Zuekunftsdatum chönd nöd erstellt werde",
+        "invalidTime": "Gib e vollständigi, gültigi Uhrziit ii",
         "invalidTimeRange": "Uusstempliziit mues nach de Iistempliziit sii",
         "tooLong": "Arbeitsziit darf nöd meh als 24 Stunde sii"
       },

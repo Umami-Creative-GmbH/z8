@@ -75,6 +75,7 @@
       "errors": {
         "createFailed": "Impossibile creare la voce di tempo",
         "futureDate": "Impossibile creare voci per date future",
+        "invalidTime": "Inserisci un orario completo e valido",
         "invalidTimeRange": "L'orario di uscita deve essere successivo all'orario di ingresso",
         "tooLong": "Il periodo di lavoro non può superare le 24 ore"
       },

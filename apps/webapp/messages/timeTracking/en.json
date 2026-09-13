@@ -75,6 +75,7 @@
       "errors": {
         "createFailed": "Failed to create time entry",
         "futureDate": "Cannot create entries for future dates",
+        "invalidTime": "Enter a complete, valid time",
         "invalidTimeRange": "Clock out time must be after clock in time",
         "tooLong": "Work period cannot exceed 24 hours"
       },
