@@ -45,47 +45,32 @@ export async function handleApprovalAction(
 	tenant: ResolvedTenant,
 ): Promise<void> {
 	try {
-		// Get approval request
-		const approval = await db.query.approvalRequest.findFirst({
-			where: and(
-				eq(approvalRequest.id, approvalId),
-				eq(approvalRequest.organizationId, tenant.organizationId),
-			),
-		});
-
-		if (!approval) {
-			throw new TeamsError("Approval not found", "APPROVAL_NOT_FOUND");
-		}
 		// Keep Next.js-only decision dependencies out of escalation worker imports.
-		const {
-			canAttemptBotApprovalDecision,
-			decideBotApproval,
-			loadBotApprovalDecisionTarget,
-		} = await import("@/lib/bot-platform/approval-decision");
-		const decisionTarget = await loadBotApprovalDecisionTarget({
-			approvalId,
-			organizationId: tenant.organizationId,
-		});
-
-		if (!canAttemptBotApprovalDecision(decisionTarget)) {
-			throw new TeamsError(
-				"Approval already resolved",
-				"APPROVAL_ALREADY_RESOLVED",
-			);
-		}
-
-		// Verify user is the approver
-		if (decisionTarget.approverId !== resolvedUser.employeeId) {
-			throw new TeamsError("Not authorized to approve", "NOT_AUTHORIZED");
-		}
-
-		await decideBotApproval({
+		const { attemptBotApproval } = await import(
+			"@/lib/bot-platform/approval-decision"
+		);
+		const attempt = await attemptBotApproval({
 			approvalId,
 			actorEmployeeId: resolvedUser.employeeId,
 			organizationId: tenant.organizationId,
 			action,
 			platform: "teams",
 		});
+
+		if (attempt.status === "not_found") {
+			throw new TeamsError("Approval not found", "APPROVAL_NOT_FOUND");
+		}
+		if (attempt.status === "already_processed") {
+			throw new TeamsError(
+				"Approval already resolved",
+				"APPROVAL_ALREADY_RESOLVED",
+			);
+		}
+
+		if (attempt.status === "unauthorized") {
+			throw new TeamsError("Not authorized to approve", "NOT_AUTHORIZED");
+		}
+		const approval = attempt.approval;
 
 		logger.info(
 			{
