@@ -105,6 +105,25 @@
 }
 
 /* Daily work requirement summary injected into Schedule-X day headers. */
+.schedule-x-container .z8-requirement-header {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.schedule-x-container .z8-requirement-header-total {
+	display: flex;
+	align-items: center;
+	gap: 0.125rem;
+	color: var(--sx-color-on-surface);
+	font-size: 0.6875rem;
+	font-weight: 500;
+	font-variant-numeric: tabular-nums;
+	line-height: 1.25;
+	white-space: nowrap;
+}
+
 .schedule-x-container .z8-requirement-header-summary {
 	display: inline-flex;
 	align-items: center;

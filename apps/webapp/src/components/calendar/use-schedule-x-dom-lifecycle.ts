@@ -42,7 +42,9 @@ function getEventModalAnchorRect(eventElement: HTMLElement) {
 }
 
 function clearRequirementHeaderContent(container: HTMLDivElement) {
-	for (const node of container.querySelectorAll(".z8-requirement-header-summary")) {
+	for (const node of container.querySelectorAll(
+		".z8-requirement-header, .z8-requirement-header-summary",
+	)) {
 		node.remove();
 	}
 }
@@ -359,7 +361,18 @@ export function useScheduleXDomLifecycle({
 					wrapper.append(delta);
 				}
 
-				headerCell.append(wrapper);
+				const total = document.createElement("div");
+				total.className = "z8-requirement-header-total";
+				// The summary's accessible label already includes the recorded total.
+				total.setAttribute("aria-hidden", "true");
+				const sumIcon = container.querySelector("[data-requirement-sum-icon] svg");
+				if (sumIcon) total.append(sumIcon.cloneNode(true));
+				total.append(content.actualHours);
+
+				const header = document.createElement("div");
+				header.className = "z8-requirement-header";
+				header.append(wrapper, total);
+				headerCell.append(header);
 			}
 
 			if (shouldRetry && attempt < maxAttempts) {
