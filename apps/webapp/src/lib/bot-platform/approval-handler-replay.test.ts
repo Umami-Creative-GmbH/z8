@@ -3,16 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
 	approvalFindFirst: vi.fn(),
 	employeeFindFirst: vi.fn(),
-	slackMessageFindFirst: vi.fn(),
 	discordMessageFindFirst: vi.fn(),
 	teamsCardFindFirst: vi.fn(),
 	decide: vi.fn(),
 	loadTarget: vi.fn(),
-	resolveSlackUser: vi.fn(),
 	resolveDiscordUser: vi.fn(),
 	sendActivity: vi.fn(),
 	interactionResponse: vi.fn(),
-	slackUpdateMessage: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
@@ -20,7 +17,6 @@ vi.mock("@/db", () => ({
 		query: {
 			approvalRequest: { findFirst: mocks.approvalFindFirst },
 			employee: { findFirst: mocks.employeeFindFirst },
-			slackApprovalMessage: { findFirst: mocks.slackMessageFindFirst },
 			discordApprovalMessage: { findFirst: mocks.discordMessageFindFirst },
 			teamsApprovalCard: { findFirst: mocks.teamsCardFindFirst },
 		},
@@ -36,7 +32,6 @@ vi.mock("@/db/schema", () => ({
 	},
 	discordApprovalMessage: { approvalRequestId: "discord.approvalRequestId" },
 	employee: { id: "employee.id", organizationId: "employee.organizationId" },
-	slackApprovalMessage: { approvalRequestId: "slack.approvalRequestId" },
 	teamsApprovalCard: { approvalRequestId: "teams.approvalRequestId" },
 	timeEntry: {},
 }));
@@ -63,21 +58,6 @@ vi.mock("@/lib/logger", () => ({
 		info: vi.fn(),
 		warn: vi.fn(),
 	}),
-}));
-vi.mock("@/lib/slack/api", () => ({
-	openConversation: vi.fn(),
-	postMessage: vi.fn(),
-	updateMessage: mocks.slackUpdateMessage,
-}));
-vi.mock("@/lib/slack/conversation-manager", () => ({
-	getChannelIdForUser: vi.fn(),
-}));
-vi.mock("@/lib/slack/formatters", () => ({
-	buildApprovalBlocks: vi.fn(),
-	buildResolvedApprovalBlocks: vi.fn(),
-}));
-vi.mock("@/lib/slack/user-resolver", () => ({
-	resolveSlackUser: mocks.resolveSlackUser,
 }));
 vi.mock("@/lib/discord/api", () => ({
 	createInteractionResponse: mocks.interactionResponse,
@@ -117,7 +97,6 @@ describe("bot terminal ordinary replay", () => {
 		vi.clearAllMocks();
 		mocks.approvalFindFirst.mockResolvedValue(terminalApproval);
 		mocks.employeeFindFirst.mockResolvedValue(undefined);
-		mocks.slackMessageFindFirst.mockResolvedValue(undefined);
 		mocks.discordMessageFindFirst.mockResolvedValue(undefined);
 		mocks.teamsCardFindFirst.mockResolvedValue(undefined);
 		mocks.decide.mockResolvedValue({
@@ -134,68 +113,6 @@ describe("bot terminal ordinary replay", () => {
 			requesterEmployeeId: "employee-1",
 			status: "approved",
 			workflowKind: "manual_time_submission",
-		});
-	});
-
-	it("keeps Slack terminal time corrections already processed", async () => {
-		mocks.resolveSlackUser.mockResolvedValue({
-			status: "found",
-			user: { employeeId: "manager-1", userId: "user-1" },
-		});
-		mocks.loadTarget.mockResolvedValue({
-			status: "approved",
-			workflowKind: "time_correction",
-		});
-		const { handleApprovalAction } = await import(
-			"@/lib/slack/approval-handler"
-		);
-
-		await handleApprovalAction(
-			{ channel: { id: "channel-1" }, message: { ts: "message-1" } } as never,
-			{ action_id: "approval_approve", value: "approval-1" },
-			"slack-user-1",
-			{
-				organizationId: "org-1",
-				slackTeamId: "team-1",
-				botAccessToken: "token",
-			} as never,
-		);
-
-		expect(mocks.slackUpdateMessage).toHaveBeenCalledWith(
-			"token",
-			expect.objectContaining({
-				text: "This approval has already been processed.",
-			}),
-		);
-		expect(mocks.decide).not.toHaveBeenCalled();
-	});
-
-	it("delegates Slack terminal time-entry targets to the stable owner", async () => {
-		mocks.resolveSlackUser.mockResolvedValue({
-			status: "found",
-			user: { employeeId: "manager-1", userId: "user-1" },
-		});
-		const { handleApprovalAction } = await import(
-			"@/lib/slack/approval-handler"
-		);
-
-		await handleApprovalAction(
-			{} as never,
-			{ action_id: "approval_approve", value: "approval-1" },
-			"slack-user-1",
-			{
-				organizationId: "org-1",
-				slackTeamId: "team-1",
-				botAccessToken: "token",
-			} as never,
-		);
-
-		expect(mocks.decide).toHaveBeenCalledWith({
-			approvalId: "approval-1",
-			actorEmployeeId: "manager-1",
-			organizationId: "org-1",
-			action: "approve",
-			platform: "slack",
 		});
 	});
 

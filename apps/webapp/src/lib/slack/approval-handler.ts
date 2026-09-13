@@ -44,30 +44,24 @@ export async function handleApprovalAction(
 	}
 
 	try {
-		// Get approval request
-		const approval = await db.query.approvalRequest.findFirst({
-			where: and(
-				eq(approvalRequest.id, approvalId),
-				eq(approvalRequest.organizationId, bot.organizationId),
-			),
+		// Keep Next.js-only decision dependencies out of escalation worker imports.
+		const { attemptBotApproval } = await import(
+			"@/lib/bot-platform/approval-decision"
+		);
+		const attempt = await attemptBotApproval({
+			approvalId,
+			actorEmployeeId: userResult.user.employeeId,
+			organizationId: bot.organizationId,
+			action: approvalAction,
+			platform: "slack",
 		});
 
-		if (!approval) {
+		if (attempt.status === "not_found") {
 			logger.warn({ approvalId }, "Approval not found");
 			return;
 		}
-		// Keep Next.js-only decision dependencies out of escalation worker imports.
-		const {
-			canAttemptBotApprovalDecision,
-			decideBotApproval,
-			loadBotApprovalDecisionTarget,
-		} = await import("@/lib/bot-platform/approval-decision");
-		const decisionTarget = await loadBotApprovalDecisionTarget({
-			approvalId,
-			organizationId: bot.organizationId,
-		});
 
-		if (!canAttemptBotApprovalDecision(decisionTarget)) {
+		if (attempt.status === "already_processed") {
 			// Update the message to show it's already resolved
 			if (payload.channel && payload.message) {
 				await updateMessage(bot.botAccessToken, {
@@ -79,8 +73,7 @@ export async function handleApprovalAction(
 			return;
 		}
 
-		// Verify user is the approver
-		if (decisionTarget.approverId !== userResult.user.employeeId) {
+		if (attempt.status === "unauthorized") {
 			logger.warn(
 				{ approvalId, employeeId: userResult.user.employeeId },
 				"Unauthorized approval attempt",
@@ -89,14 +82,6 @@ export async function handleApprovalAction(
 		}
 
 		const newStatus = approvalAction === "approve" ? "approved" : "rejected";
-
-		await decideBotApproval({
-			approvalId,
-			actorEmployeeId: userResult.user.employeeId,
-			organizationId: bot.organizationId,
-			action: approvalAction,
-			platform: "slack",
-		});
 
 		logger.info(
 			{
@@ -119,7 +104,7 @@ export async function handleApprovalAction(
 		const approverName = approverEmployee?.user?.name || "Unknown";
 
 		// Build original card data for resolved message
-		const cardData = await buildApprovalCardData(approval);
+		const cardData = await buildApprovalCardData(attempt.approval);
 
 		// Update the message to show resolved status
 		if (payload.channel && payload.message && cardData) {
