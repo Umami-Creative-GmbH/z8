@@ -1,5 +1,7 @@
 "use client";
 
+import { ClockCaptureControls } from "@/components/offline/offline-capture-actions";
+
 import {
 	IconCheck,
 	IconClock,
@@ -106,6 +108,9 @@ function ClockOutNotesView({
 }
 
 interface ClockControlsViewProps {
+	captureMode: "local-review" | "server";
+	onClockIn: () => Promise<void>;
+	onClockOut: () => Promise<void>;
 	activeStartTime: string | Date | null;
 	elapsedSeconds: number;
 	employeeId: string | null | undefined;
@@ -130,6 +135,9 @@ interface ClockControlsViewProps {
 }
 
 function ClockControlsView({
+	captureMode,
+	onClockIn,
+	onClockOut,
 	activeStartTime,
 	elapsedSeconds,
 	employeeId,
@@ -152,6 +160,7 @@ function ClockControlsView({
 	workCategoriesIsLoading,
 	workLocationType,
 }: ClockControlsViewProps) {
+	const isLocalReview = captureMode === "local-review";
 	return (
 		<>
 			<div className="font-medium">
@@ -170,7 +179,7 @@ function ClockControlsView({
 					</div>
 				</div>
 			)}
-			{isClockedIn && (
+			{(isClockedIn || isLocalReview) && (
 				<ProjectSelectorView
 					value={selectedProjectId}
 					onValueChange={onProjectChange}
@@ -180,7 +189,7 @@ function ClockControlsView({
 					isError={projectsIsError}
 				/>
 			)}
-			{isClockedIn && employeeId && (
+			{(isClockedIn || isLocalReview) && employeeId && (
 				<WorkCategorySelectorView
 					employeeId={employeeId}
 					value={selectedWorkCategoryId}
@@ -191,41 +200,48 @@ function ClockControlsView({
 					isError={workCategoriesIsError}
 				/>
 			)}
-			{!isClockedIn && (
+			{(!isClockedIn || isLocalReview) && (
 				<WorkLocationSelector
 					value={workLocationType}
 					onChange={onWorkLocationChange}
 					t={t}
 				/>
 			)}
-			<div className="flex gap-2">
-				<Button
-					size="default"
-					variant={isClockedIn ? "destructive" : "default"}
-					onClick={onClockAction}
-					disabled={isMutating}
-					className="w-full"
-				>
-					{isMutating ? (
-						<>
-							<IconLoader2 className="size-4 animate-spin" />
-							{isClockingOut
-								? t("timeTracking.clockingOut", "Clocking Out…")
-								: t("timeTracking.clockingIn", "Clocking In…")}
-						</>
-					) : isClockedIn ? (
-						<>
-							<IconClockPause className="size-4" />
-							{t("timeTracking.clockOut", "Clock Out")}
-						</>
-					) : (
-						<>
-							<IconClock className="size-4" />
-							{t("timeTracking.clockIn", "Clock In")}
-						</>
-					)}
-				</Button>
-			</div>
+			<ClockCaptureControls
+				mode={captureMode}
+				onClockIn={onClockIn}
+				onClockOut={onClockOut}
+				disabled={isMutating}
+			>
+				<div className="flex gap-2">
+					<Button
+						size="default"
+						variant={isClockedIn ? "destructive" : "default"}
+						onClick={onClockAction}
+						disabled={isMutating}
+						className="w-full"
+					>
+						{isMutating ? (
+							<>
+								<IconLoader2 className="size-4 animate-spin" />
+								{isClockingOut
+									? t("timeTracking.clockingOut", "Clocking Out…")
+									: t("timeTracking.clockingIn", "Clocking In…")}
+							</>
+						) : isClockedIn ? (
+							<>
+								<IconClockPause className="size-4" />
+								{t("timeTracking.clockOut", "Clock Out")}
+							</>
+						) : (
+							<>
+								<IconClock className="size-4" />
+								{t("timeTracking.clockIn", "Clock In")}
+							</>
+						)}
+					</Button>
+				</div>
+			</ClockCaptureControls>
 		</>
 	);
 }
@@ -258,6 +274,7 @@ export function TimeClockPopover({
 		isAddingBreak,
 		isUpdatingNotes,
 		isMutating,
+		captureMode,
 	} = useTimeClock();
 	const { uiState, dispatch, assignedProjects, availableWorkCategories } =
 		useTimeClockPopoverState({ employeeId, isClockedIn });
@@ -278,7 +295,12 @@ export function TimeClockPopover({
 
 			// Check if this was an offline queued request
 			if ("queued" in result && result.queued) {
-				toast.info(t("timeTracking.clockInQueued", "Clock-in queued for sync"));
+				toast.info(
+					t(
+						"timeTracking.clockInSavedForReview",
+						"Clock-in saved on this device for review; not confirmed on the server",
+					),
+				);
 			} else {
 				toast.success(
 					t("timeTracking.clockInSuccess", "Clocked in successfully"),
@@ -320,7 +342,10 @@ export function TimeClockPopover({
 			// Check if this was an offline queued request
 			if ("queued" in result && result.queued) {
 				toast.info(
-					t("timeTracking.clockOutQueued", "Clock-out queued for sync"),
+					t(
+						"timeTracking.clockOutSavedForReview",
+						"Clock-out saved on this device for review; not confirmed on the server",
+					),
 				);
 				dispatch({ type: "resetClockOutSelections" });
 				setOpen(false);
@@ -456,6 +481,9 @@ export function TimeClockPopover({
 							/>
 						) : (
 							<ClockControlsView
+								captureMode={captureMode}
+								onClockIn={handleClockIn}
+								onClockOut={handleClockOut}
 								activeStartTime={activeWorkPeriod?.startTime ?? null}
 								elapsedSeconds={elapsedSeconds}
 								employeeId={employeeId}

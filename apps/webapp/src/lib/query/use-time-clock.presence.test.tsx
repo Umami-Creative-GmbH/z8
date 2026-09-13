@@ -1,6 +1,10 @@
 /* @vitest-environment jsdom */
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+	onlineManager,
+	QueryClient,
+	QueryClientProvider,
+} from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type React from "react";
 import { renderToString } from "react-dom/server";
@@ -49,6 +53,7 @@ function wrapper(client: QueryClient) {
 }
 
 afterEach(() => {
+	onlineManager.setOnline(true);
 	vi.useRealTimers();
 	vi.restoreAllMocks();
 });
@@ -296,6 +301,39 @@ describe("useTimeClock presence invalidation", () => {
 				browserTimezone: "Europe/Berlin",
 			}),
 		);
+	});
+
+	it("keeps locally retained work distinct from the server clock state", async () => {
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		mocks.useOfflineClock.mockReturnValue({
+			isOnline: false,
+			isOffline: true,
+			pendingCount: 0,
+			isSyncing: false,
+			queueClockEvent: vi
+				.fn()
+				.mockResolvedValue({
+					success: true,
+					eventId: "local-only",
+					reviewRequired: true,
+				}),
+		});
+		const { result } = renderHook(() => useTimeClock(), {
+			wrapper: wrapper(client),
+		});
+		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+		onlineManager.setOnline(false);
+		const outcome = await result.current.clockIn();
+		expect(outcome).toMatchObject({
+			success: true,
+			queued: true,
+			reviewRequired: true,
+		});
+		expect(result.current.isClockedIn).toBe(false);
+		expect(result.current.activeWorkPeriod).toBeNull();
+		expect(mocks.clockIn).not.toHaveBeenCalled();
 	});
 
 	it("uses explicit browser timezone when queuing offline clock-out", async () => {

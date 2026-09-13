@@ -1,267 +1,304 @@
 "use client";
 
-import { useEffect, useEffectEvent, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useSession } from "@/lib/auth-client";
 import type {
 	ClientToSWMessage,
 	OfflineQueueStatus,
+	OfflineRecoveryContext,
+	OfflineRecoveryRecord,
 	QueuedClockEvent,
 	SWToClientMessage,
 } from "@/lib/offline/types";
+import { queryKeys } from "@/lib/query/keys";
 import { useOnlineStatus } from "./use-online-status";
 
-/**
- * Send a message to the service worker and wait for response
- */
 async function sendMessageToSW<T>(message: ClientToSWMessage): Promise<T> {
-	const registration = await navigator.serviceWorker.ready;
-	const controller = registration.active;
-
-	if (!controller) {
-		throw new Error("No active service worker");
-	}
-
+	const controller =
+		navigator.serviceWorker.controller ??
+		(await navigator.serviceWorker.ready).active;
+	if (!controller) throw new Error("No active service worker");
 	return new Promise((resolve, reject) => {
 		const channel = new MessageChannel();
-		let timeoutId: ReturnType<typeof setTimeout>;
-
-		const cleanup = () => {
+		const timeoutId = setTimeout(() => {
+			channel.port1.close();
+			reject(
+				new Error(
+					"Worker acknowledgment unavailable. A save may have completed; review saved records before trying again.",
+				),
+			);
+		}, 10000);
+		channel.port1.onmessage = (event) => {
 			clearTimeout(timeoutId);
 			channel.port1.close();
+			if (event.data.error) reject(new Error(event.data.error));
+			else resolve(event.data);
 		};
-
-		channel.port1.onmessage = (event) => {
-			cleanup();
-			if (event.data.error) {
-				reject(new Error(event.data.error));
-			} else {
-				resolve(event.data);
-			}
-		};
-
-		controller.postMessage(message, [channel.port2]);
-
-		// Timeout after 10 seconds
-		timeoutId = setTimeout(() => {
-			cleanup();
-			reject(new Error("Service worker message timeout"));
-		}, 10000);
+		try {
+			controller.postMessage(message, [channel.port2]);
+		} catch (error) {
+			clearTimeout(timeoutId);
+			channel.port1.close();
+			reject(error);
+		}
 	});
 }
 
-async function ensureServiceWorkerRegistered(): Promise<ServiceWorkerRegistration> {
-	return navigator.serviceWorker.register("/sw.js", { scope: "/" });
-}
+const EMPTY_STATUS: OfflineQueueStatus = {
+	pendingCount: 0,
+	reviewCount: 0,
+	savedCount: 0,
+	countVerified: false,
+	isSyncing: false,
+	lastSyncAt: null,
+	lastError: null,
+};
 
-/**
- * Hook for managing offline clock events
- *
- * Provides:
- * - Queue count for pending events
- * - Online/offline status
- * - Sync status (syncing, error)
- * - Manual sync trigger
- */
+const offlineStatusKey = (contextKey: string) =>
+	["offline-clock-status", contextKey] as const;
+
 export function useOfflineClock() {
 	const isOnline = useOnlineStatus();
-	const [pendingCount, setPendingCount] = useState(0);
-	const [isSyncing, setIsSyncing] = useState(false);
-	const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null);
-	const [lastError, setLastError] = useState<string | null>(null);
+	const queryClient = useQueryClient();
+	const { data: session } = useSession();
+	const userId = session?.user.id;
+	const organizationId = session?.session.activeOrganizationId;
+	const contextKey = JSON.stringify([userId, organizationId]);
 	const [swReady, setSwReady] = useState(false);
+	// One scoped UI snapshot for the banner and every clock caller. IndexedDB
+	// remains the evidence owner; online recovery reads refresh this cache.
+	const { data: status } = useQuery({
+		queryKey: offlineStatusKey(contextKey),
+		queryFn: async () => EMPTY_STATUS,
+		initialData: EMPTY_STATUS,
+		enabled: false,
+	});
+	const context: OfflineRecoveryContext | null =
+		userId && organizationId ? { userId, organizationId } : null;
 
-	// Track if we've shown the "back online" toast
-	const shownBackOnlineToast = useRef(false);
+	function updateStatus(patch: Partial<OfflineQueueStatus>) {
+		queryClient.setQueryData<OfflineQueueStatus>(
+			offlineStatusKey(contextKey),
+			(old) => ({ ...(old ?? EMPTY_STATUS), ...patch }),
+		);
+	}
 
-	// Initialize SW connection and listen for messages
 	useEffect(() => {
-		if (!("serviceWorker" in navigator)) {
-			console.warn("[OfflineClock] Service workers not supported");
-			return;
-		}
-
+		if (!("serviceWorker" in navigator)) return;
 		let mounted = true;
-		void ensureServiceWorkerRegistered().catch((error) => {
-			console.warn("[OfflineClock] Failed to register service worker:", error);
-		});
-
-		// Wait for SW to be ready
-		navigator.serviceWorker.ready.then(async (_registration) => {
-			if (!mounted) return;
-
-			setSwReady(true);
-
-			// Get initial queue count
+		const update = (patch: Partial<OfflineQueueStatus>) => {
+			if (mounted)
+				queryClient.setQueryData<OfflineQueueStatus>(
+					offlineStatusKey(contextKey),
+					(old) => ({ ...(old ?? EMPTY_STATUS), ...patch }),
+				);
+		};
+		const refresh = async () => {
+			if (!isOnline || !userId || !organizationId) return;
 			try {
-				const response = await sendMessageToSW<{ count: number }>({
+				const response = await sendMessageToSW<{
+					count: number;
+					reviewCount: number;
+					savedCount: number;
+				}>({
 					type: "GET_QUEUE_COUNT",
+					context: { userId, organizationId },
 				});
-				if (mounted) {
-					setPendingCount(response.count);
-				}
+				update({
+					pendingCount: response.count,
+					reviewCount: response.reviewCount,
+					savedCount: response.savedCount,
+					countVerified: true,
+				});
 			} catch (error) {
-				console.warn("[OfflineClock] Failed to get initial queue count:", error);
+				update({
+					lastError:
+						error instanceof Error
+							? error.message
+							: "Clock recovery status unavailable",
+				});
 			}
-		});
-
-		// Listen for messages from SW
-		const handleMessage = (event: MessageEvent<SWToClientMessage>) => {
-			if (!mounted) return;
-
-			const { type } = event.data;
-
-			switch (type) {
-				case "QUEUE_UPDATED":
-					setPendingCount(event.data.count);
-					break;
-
-				case "SYNC_STARTED":
-					setIsSyncing(true);
-					setLastError(null);
-					break;
-
-				case "SYNC_COMPLETED":
-					setIsSyncing(false);
-					setLastSyncAt(new Date());
-					if (event.data.successCount > 0) {
-						toast.success(
-							`Synced ${event.data.successCount} clock event${event.data.successCount > 1 ? "s" : ""}`,
-						);
-					}
-					break;
-
-				case "SYNC_SUCCESS":
-					// Individual event synced - no need to toast each one
-					break;
-
-				case "SYNC_CONFLICT":
-					setLastError(event.data.error);
-					toast.error("Clock event conflict", {
-						description: event.data.error,
+		};
+		const connect = async () => {
+			try {
+				await navigator.serviceWorker.register("/sw.js", {
+					scope: "/",
+					updateViaCache: "none",
+				});
+				const version = await sendMessageToSW<{ clockQueueMode?: string }>({
+					type: "GET_VERSION",
+				});
+				const ready = version.clockQueueMode === "preservation-only-v1";
+				if (mounted) setSwReady(ready);
+				if (!ready) {
+					update({
+						lastError:
+							"Update Z8 before saving offline clock records. The current worker does not support recovery preservation.",
 					});
+					return;
+				}
+				await refresh();
+			} catch (error) {
+				update({
+					lastError:
+						error instanceof Error
+							? error.message
+							: "Clock recovery unavailable",
+				});
+			}
+		};
+		const handleMessage = (event: MessageEvent<SWToClientMessage>) => {
+			if (!mounted || event.source !== navigator.serviceWorker.controller)
+				return;
+			switch (event.data.type) {
+				case "QUEUE_UPDATED":
+					void refresh();
 					break;
-
+				case "SYNC_STARTED":
+					update({ isSyncing: true });
+					break;
+				case "SYNC_COMPLETED":
+					update({ isSyncing: false });
+					void refresh();
+					break;
+				case "SYNC_SUCCESS":
+					// Scoped commitment is separate from the subsequent current-state read.
+					if (
+						event.data.userId !== userId ||
+						event.data.organizationId !== organizationId
+					)
+						break;
+					update({ lastSyncAt: Date.now() });
+					void Promise.all([
+						queryClient.invalidateQueries(
+							{ queryKey: queryKeys.timeClock.status() },
+							{ throwOnError: true },
+						),
+						queryClient.invalidateQueries(
+							{ queryKey: queryKeys.timeClock.breakStatus() },
+							{ throwOnError: true },
+						),
+						queryClient.invalidateQueries(
+							{ queryKey: queryKeys.employeeClockStatuses.all },
+							{ throwOnError: true },
+						),
+					]).catch(() =>
+						update({
+							lastError:
+								"Clock event committed. Current clock status could not be refreshed; refresh status before another action.",
+						}),
+					);
+					break;
 				case "SYNC_ERROR":
-					setLastError(event.data.error);
-					// Don't toast every error - might be noisy
-					break;
-
-				case "SW_UPDATE_AVAILABLE":
-					// Handled by SWUpdatePrompt component
+					update({ lastError: event.data.error });
 					break;
 			}
 		};
-
+		void connect();
 		navigator.serviceWorker.addEventListener("message", handleMessage);
-
+		navigator.serviceWorker.addEventListener("controllerchange", connect);
 		return () => {
 			mounted = false;
 			navigator.serviceWorker.removeEventListener("message", handleMessage);
+			navigator.serviceWorker.removeEventListener("controllerchange", connect);
 		};
-	}, []);
+	}, [contextKey, isOnline, organizationId, queryClient, userId]);
 
-	/**
-	 * Queue a clock event for offline sync
-	 */
 	const queueClockEvent = async (
 		event: Omit<QueuedClockEvent, "id" | "retryCount" | "createdAt">,
-	): Promise<{ success: boolean; eventId?: string; error?: string }> => {
-		if (!swReady) {
-			return { success: false, error: "Service worker not ready" };
-		}
-
-		try {
-			const response = await sendMessageToSW<{ success: boolean; eventId?: string }>({
-				type: "QUEUE_CLOCK_EVENT",
-				payload: event,
-			});
-
-			// Note: Caller (useTimeClock) shows the appropriate toast
-			return response;
-		} catch (error) {
-			console.error("[OfflineClock] Failed to queue event:", error);
+	) => {
+		if (!swReady || !context)
 			return {
 				success: false,
-				error: error instanceof Error ? error.message : "Unknown error",
+				error: "Clock recovery is not ready for this account",
 			};
+		try {
+			// Confirm the *controlling* worker before each capture, including upgrades.
+			const version = await sendMessageToSW<{ clockQueueMode?: string }>({
+				type: "GET_VERSION",
+			});
+			if (version.clockQueueMode !== "preservation-only-v1") {
+				const error = "Update Z8 before saving offline clock records";
+				updateStatus({ lastError: error });
+				return { success: false, error };
+			}
+			const response = await sendMessageToSW<{
+				success: boolean;
+				eventId?: string;
+				reviewRequired?: boolean;
+				error?: string;
+			}>({
+				type: "QUEUE_CLOCK_EVENT",
+				payload: {
+					...event,
+					userId: context.userId,
+					serverOrigin: window.location.origin,
+				},
+			});
+			if (response.success)
+				queryClient.setQueryData<OfflineQueueStatus>(
+					offlineStatusKey(contextKey),
+					(old) => ({
+						...(old ?? EMPTY_STATUS),
+						pendingCount: (old?.pendingCount ?? 0) + 1,
+						reviewCount: (old?.reviewCount ?? 0) + 1,
+						savedCount: (old?.savedCount ?? 0) + 1,
+					}),
+				);
+			return response;
+		} catch (error) {
+			const message =
+				error instanceof Error
+					? error.message
+					: "Could not save clock recovery evidence";
+			updateStatus({ lastError: message });
+			return { success: false, error: message };
 		}
 	};
 
-	/**
-	 * Trigger manual sync
-	 */
-	const triggerSync = async (): Promise<void> => {
-		if (!swReady || !isOnline) {
-			return;
-		}
-
+	const triggerSync = async () => {
+		if (!swReady || !isOnline) return;
 		try {
+			updateStatus({ lastError: null });
+			// Classification retries do not submit retained work or reset attempts.
 			await sendMessageToSW({ type: "TRIGGER_SYNC" });
 		} catch (error) {
-			console.error("[OfflineClock] Failed to trigger sync:", error);
-			setLastError(error instanceof Error ? error.message : "Sync failed");
-		}
-	};
-
-	const triggerSyncWhenOnline = useEffectEvent(async () => {
-		await triggerSync();
-	});
-
-	// Show "back online" notification and trigger sync when recovering.
-	useEffect(() => {
-		if (isOnline && pendingCount > 0 && !shownBackOnlineToast.current) {
-			shownBackOnlineToast.current = true;
-			toast.info(
-				`You're back online. Syncing ${pendingCount} pending event${pendingCount > 1 ? "s" : ""}...`,
-			);
-			void triggerSyncWhenOnline();
-		}
-
-		if (!isOnline) {
-			shownBackOnlineToast.current = false;
-		}
-	}, [isOnline, pendingCount]);
-
-	/**
-	 * Clear old queue entries (> 7 days)
-	 */
-	const clearOldQueue = async (): Promise<number> => {
-		if (!swReady) {
-			return 0;
-		}
-
-		try {
-			const response = await sendMessageToSW<{ success: boolean; removedCount: number }>({
-				type: "CLEAR_OLD_QUEUE",
+			updateStatus({
+				isSyncing: false,
+				lastError:
+					error instanceof Error ? error.message : "Recovery refresh failed",
 			});
-			return response.removedCount;
-		} catch (error) {
-			console.error("[OfflineClock] Failed to clear old queue:", error);
-			return 0;
 		}
 	};
 
-	const status: OfflineQueueStatus = {
-		pendingCount,
-		isSyncing,
-		lastSyncAt: lastSyncAt?.getTime() ?? null,
-		lastError,
+	const readRecoveryRecords = async () => {
+		if (!context || !isOnline || !swReady)
+			throw new Error("Connect and sign in to review saved clock records");
+		const response = await sendMessageToSW<{
+			records: OfflineRecoveryRecord[];
+		}>({ type: "GET_QUEUE_RECORDS", context });
+		return response.records;
+	};
+	const archiveRecoveryRecord = async (eventId: string) => {
+		if (!context || !isOnline || !swReady)
+			throw new Error("Connect and sign in to archive saved clock records");
+		const response = await sendMessageToSW<{
+			records: OfflineRecoveryRecord[];
+		}>({ type: "ARCHIVE_QUEUE_RECORD", eventId, context });
+		return response.records;
 	};
 
 	return {
-		// Status
+		...status,
+		status,
+		contextKey,
+		swReady,
 		isOnline,
 		isOffline: !isOnline,
-		pendingCount,
-		isSyncing,
-		lastSyncAt,
-		lastError,
-		status,
-		swReady,
-
-		// Actions
 		queueClockEvent,
 		triggerSync,
-		clearOldQueue,
+		readRecoveryRecords,
+		archiveRecoveryRecord,
 	};
 }

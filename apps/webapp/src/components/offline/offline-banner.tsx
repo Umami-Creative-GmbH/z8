@@ -5,12 +5,19 @@ import { useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
 import { useOfflineClock } from "@/hooks/use-offline-clock";
 import { cn } from "@/lib/utils";
+import { OfflineRecoveryDialog } from "./offline-recovery-dialog";
 
 interface OfflineBannerProps {
 	className?: string;
 }
 
-type BannerState = "hidden" | "offline" | "offline_pending" | "syncing" | "pending" | "error";
+type BannerState =
+	| "hidden"
+	| "offline"
+	| "offline_pending"
+	| "syncing"
+	| "pending"
+	| "error";
 
 /**
  * Banner that shows when the user is offline or has pending sync events
@@ -22,8 +29,19 @@ type BannerState = "hidden" | "offline" | "offline_pending" | "syncing" | "pendi
  */
 export function OfflineBanner({ className }: OfflineBannerProps) {
 	const { t } = useTranslate();
-	const { isOffline, pendingCount, isSyncing, lastError, triggerSync, isOnline } =
-		useOfflineClock();
+	const {
+		isOffline,
+		pendingCount,
+		savedCount,
+		countVerified,
+		isSyncing,
+		lastError,
+		triggerSync,
+		isOnline,
+		readRecoveryRecords,
+		archiveRecoveryRecord,
+		contextKey,
+	} = useOfflineClock();
 
 	// Compute banner state once
 	const state: BannerState = (() => {
@@ -31,7 +49,7 @@ export function OfflineBanner({ className }: OfflineBannerProps) {
 		if (isOffline && pendingCount > 0) return "offline_pending";
 		if (isOffline) return "offline";
 		if (isSyncing) return "syncing";
-		if (pendingCount > 0) return "pending";
+		if (savedCount > 0) return "pending";
 		return "hidden";
 	})();
 
@@ -54,7 +72,10 @@ export function OfflineBanner({ className }: OfflineBannerProps) {
 		offline: <IconCloudOff className="size-5" aria-hidden="true" />,
 		offline_pending: <IconCloudOff className="size-5" aria-hidden="true" />,
 		syncing: (
-			<IconRefresh className="size-5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+			<IconRefresh
+				className="size-5 animate-spin motion-reduce:animate-none"
+				aria-hidden="true"
+			/>
 		),
 		pending: <IconWifi className="size-5" aria-hidden="true" />,
 		error: <IconWifi className="size-5" aria-hidden="true" />,
@@ -66,17 +87,39 @@ export function OfflineBanner({ className }: OfflineBannerProps) {
 			case "offline":
 				return t("common:offline.banner.offline", "You're offline");
 			case "offline_pending":
-				return t("common:offline.banner.offlineWithPending", "Offline - {count} event(s) pending", {
-					count: pendingCount,
-				});
+				if (!countVerified)
+					return t(
+						"common:offline.banner.unverified",
+						"Clock evidence saved on this device. Connect to review all saved records.",
+					);
+				return t(
+					"common:offline.banner.offlineSaved",
+					"Offline — {count} record(s) saved locally for review",
+					{
+						count: pendingCount,
+					},
+				);
 			case "syncing":
-				return t("common:offline.banner.syncing", "Syncing {count} event(s)...", {
-					count: pendingCount,
-				});
+				return t(
+					"common:offline.banner.refreshing",
+					"Checking {count} saved record(s)…",
+					{
+						count: pendingCount,
+					},
+				);
 			case "pending":
-				return t("common:offline.banner.pending", "{count} event(s) pending sync", {
-					count: pendingCount,
-				});
+				if (pendingCount === 0)
+					return t(
+						"common:offline.banner.archived",
+						"Archived clock evidence retained on this device",
+					);
+				return t(
+					"common:offline.banner.reviewRequired",
+					"{count} record(s) saved locally — review required",
+					{
+						count: pendingCount,
+					},
+				);
 			case "error":
 				return lastError;
 			default:
@@ -85,7 +128,7 @@ export function OfflineBanner({ className }: OfflineBannerProps) {
 	};
 
 	// Show retry button when online with pending events or error
-	const showRetryButton = isOnline && (pendingCount > 0 || lastError) && !isSyncing;
+	const showRetryButton = isOnline && Boolean(lastError) && !isSyncing;
 
 	return (
 		<div
@@ -97,12 +140,22 @@ export function OfflineBanner({ className }: OfflineBannerProps) {
 			)}
 			role="alert"
 			aria-live="polite"
+			inert={!isVisible}
 		>
-			<div className="container mx-auto flex items-center justify-between gap-4">
-				<div className="flex items-center gap-2">
+			<div className="container mx-auto flex flex-wrap items-center justify-between gap-4">
+				<div className="flex min-w-0 items-center gap-2">
 					{stateIcons[state]}
-					<span className="text-sm font-medium">{getMessage()}</span>
+					<span className="break-words text-sm font-medium">
+						{getMessage()}
+					</span>
 				</div>
+				{isOnline && (savedCount > 0 || lastError) ? (
+					<OfflineRecoveryDialog
+						key={contextKey}
+						loadRecords={readRecoveryRecords}
+						archiveRecord={archiveRecoveryRecord}
+					/>
+				) : null}
 
 				{showRetryButton && (
 					<Button
@@ -112,7 +165,7 @@ export function OfflineBanner({ className }: OfflineBannerProps) {
 						onClick={() => triggerSync()}
 					>
 						<IconRefresh className="size-4 mr-1" aria-hidden="true" />
-						{t("common:offline.banner.retry", "Retry")}
+						{t("common:offline.banner.refresh", "Refresh status")}
 					</Button>
 				)}
 			</div>

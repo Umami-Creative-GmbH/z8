@@ -85,7 +85,11 @@ self.addEventListener("activate", (event) => {
 			const cacheNames = await caches.keys();
 			await Promise.all(
 				cacheNames.flatMap((name) => {
-					if (!name.startsWith("z8-") || name === PUSH_CACHE || name === APP_SHELL_CACHE) {
+					if (
+						!name.startsWith("z8-") ||
+						name === PUSH_CACHE ||
+						name === APP_SHELL_CACHE
+					) {
 						return [];
 					}
 
@@ -94,7 +98,7 @@ self.addEventListener("activate", (event) => {
 				}),
 			);
 
-			// Clean old entries from offline queue (> 7 days)
+			// Preserve and classify legacy entries; activation never purges by age.
 			try {
 				await self.OfflineQueueDB.cleanOldEntries();
 			} catch (error) {
@@ -125,7 +129,10 @@ self.addEventListener("fetch", (event) => {
 	}
 
 	// Handle clock-in/out API calls
-	if (url.pathname === self.SyncService.TIME_ENTRIES_API && event.request.method === "POST") {
+	if (
+		url.pathname === self.SyncService.TIME_ENTRIES_API &&
+		event.request.method === "POST"
+	) {
 		event.respondWith(handleTimeEntryRequest(event.request));
 		return;
 	}
@@ -160,38 +167,34 @@ async function handleTimeEntryRequest(request) {
 		console.log("[SW] Network failed for time entry, queueing for sync");
 
 		try {
-			// Use the pre-cloned request (original was consumed by fetch attempt)
-			const body = await clonedRequest.json();
-
-			// Queue the event
-			// Note: organizationId is set to "unknown" here but will be resolved
-			// server-side from the user's session when the event is synced
-			await self.OfflineQueueDB.enqueue({
-				type: body.type,
-				timestamp: body.timestamp ? new Date(body.timestamp).getTime() : Date.now(),
-				organizationId: body.organizationId || "unknown",
-				notes: body.notes,
-				location: body.location,
-				projectId: body.projectId,
-				workCategoryId: body.workCategoryId,
-				workLocationType: body.workLocationType,
-				browserTimezone: body.browserTimezone ?? null,
-			});
-
-			// Register background sync
-			if ("sync" in self.registration) {
-				await self.registration.sync.register(SYNC_TAG);
-				console.log("[SW] Registered background sync:", SYNC_TAG);
+			// Preserve exact bytes, including unsupported/malformed evidence. Neither
+			// failure-time nor the current session establishes original event context.
+			const rawBody = await clonedRequest.text();
+			let body;
+			try {
+				body = JSON.parse(rawBody);
+			} catch {
+				body = {};
 			}
-
-			// Notify clients of queue update
-			await self.SyncService.notifyQueueUpdate();
+			const eventId = await self.OfflineQueueDB.enqueue({
+				...(body && typeof body === "object" ? body : {}),
+				interceptedRequest: {
+					rawBody,
+					url: request.url,
+					method: request.method,
+				},
+			});
+			await notifyQueueUpdateSafely();
 
 			// Return a synthetic response indicating queued status
 			return new Response(
 				JSON.stringify({
 					queued: true,
-					message: "Clock event queued for sync when online",
+					eventId,
+					reviewRequired: true,
+					commitment: "unknown",
+					message:
+						"Saved on this device for review. Server commitment is unknown; do not submit replacement work before checking.",
 				}),
 				{
 					status: 202, // Accepted
@@ -202,7 +205,10 @@ async function handleTimeEntryRequest(request) {
 			console.error("[SW] Failed to queue time entry:", queueError);
 			return new Response(
 				JSON.stringify({
-					error: "Failed to queue clock event",
+					error:
+						"Could not save recovery evidence on this device. The server may have received the request; check before retrying.",
+					queued: false,
+					commitment: "unknown",
 				}),
 				{
 					status: 500,
@@ -325,36 +331,38 @@ self.addEventListener("sync", (event) => {
  * Process the offline queue when sync fires
  */
 async function handleClockSync() {
-	console.log("[SW] Processing offline clock queue");
-
-	// Notify clients sync is starting
-	self.SyncService.broadcastMessage({ type: "SYNC_STARTED" });
-
+	await broadcastSafely({ type: "SYNC_STARTED" });
 	try {
 		const result = await self.SyncService.processQueue();
-
-		console.log("[SW] Sync completed:", result);
-
-		// Notify clients of completion
-		self.SyncService.broadcastMessage({
-			type: "SYNC_COMPLETED",
-			successCount: result.successCount,
-			failureCount: result.failureCount,
+		await notifyQueueUpdateSafely();
+		return result;
+	} catch (error) {
+		await broadcastSafely({
+			type: "SYNC_ERROR",
+			error:
+				"Clock recovery storage could not be updated. Records have not been acknowledged.",
 		});
+		// Reject waitUntil so the browser can retry storage failures. Review-held
+		// records are not transient failures and must not enter a background loop.
+		throw error;
+	} finally {
+		await broadcastSafely({ type: "SYNC_COMPLETED" });
+	}
+}
 
-		// Update queue count
+async function broadcastSafely(message) {
+	try {
+		await self.SyncService.broadcastMessage(message);
+	} catch (error) {
+		console.warn("[SW] Client notification unavailable:", error);
+	}
+}
+
+async function notifyQueueUpdateSafely() {
+	try {
 		await self.SyncService.notifyQueueUpdate();
 	} catch (error) {
-		console.error("[SW] Sync failed:", error);
-
-		// Re-register sync if there are still pending events
-		const count = await self.OfflineQueueDB.getCount();
-		if (count > 0 && "sync" in self.registration) {
-			// Re-register with a small delay
-			setTimeout(async () => {
-				await self.registration.sync.register(SYNC_TAG);
-			}, 5000);
-		}
+		console.warn("[SW] Queue saved; status notification unavailable:", error);
 	}
 }
 
@@ -375,6 +383,7 @@ self.addEventListener("message", (event) => {
 			event.ports[0]?.postMessage({
 				version: APP_SHELL_CACHE,
 				pushVersion: PUSH_CACHE,
+				clockQueueMode: "preservation-only-v1",
 			});
 			break;
 
@@ -387,7 +396,12 @@ self.addEventListener("message", (event) => {
 			break;
 
 		case "TRIGGER_SYNC":
-			event.waitUntil(handleTriggerSync());
+			event.waitUntil(handleTriggerSync(event));
+			break;
+
+		case "GET_QUEUE_RECORDS":
+		case "ARCHIVE_QUEUE_RECORD":
+			event.waitUntil(handleRecoveryMessage(event));
 			break;
 
 		case "CLEAR_OLD_QUEUE":
@@ -405,17 +419,14 @@ self.addEventListener("message", (event) => {
 async function handleQueueClockEvent(payload, event) {
 	try {
 		const eventId = await self.OfflineQueueDB.enqueue(payload);
-
-		// Register background sync
-		if ("sync" in self.registration) {
-			await self.registration.sync.register(SYNC_TAG);
-		}
-
-		// Notify all clients
-		await self.SyncService.notifyQueueUpdate();
-
-		// Reply to sender
-		event.ports[0]?.postMessage({ success: true, eventId });
+		// Durable local acceptance precedes best-effort status notification.
+		event.ports[0]?.postMessage({
+			success: true,
+			eventId,
+			reviewRequired: true,
+			commitment: "unknown",
+		});
+		await notifyQueueUpdateSafely();
 	} catch (error) {
 		console.error("[SW] Failed to queue event:", error);
 		event.ports[0]?.postMessage({ success: false, error: error.message });
@@ -427,8 +438,18 @@ async function handleQueueClockEvent(payload, event) {
  */
 async function handleGetQueueCount(event) {
 	try {
-		const count = await self.OfflineQueueDB.getCount();
-		event.ports[0]?.postMessage({ count });
+		const context = await requireRecoveryContext(event.data.context);
+		const records = (await self.OfflineQueueDB.getRecords()).filter((record) =>
+			self.OfflineQueueDB.canInspect(record, context),
+		);
+		const count = records.filter(
+			(record) => record.recovery?.state !== "archived",
+		).length;
+		event.ports[0]?.postMessage({
+			count,
+			reviewCount: count,
+			savedCount: records.length,
+		});
 	} catch (error) {
 		console.error("[SW] Failed to get queue count:", error);
 		event.ports[0]?.postMessage({ count: 0, error: error.message });
@@ -438,14 +459,64 @@ async function handleGetQueueCount(event) {
 /**
  * Handle TRIGGER_SYNC message (manual sync)
  */
-async function handleTriggerSync() {
-	console.log("[SW] Manual sync triggered");
-
-	if ("sync" in self.registration) {
-		await self.registration.sync.register(SYNC_TAG);
-	} else {
-		// Fallback for browsers without Background Sync
+async function handleTriggerSync(event) {
+	// Acknowledge start immediately (processing may exceed the client timeout).
+	// Completion/error are separate notifications and durable status is reread.
+	event.ports[0]?.postMessage({ success: true, accepted: true });
+	try {
 		await handleClockSync();
+	} catch (error) {
+		if ("sync" in self.registration) {
+			try {
+				await self.registration.sync.register(SYNC_TAG);
+			} catch {
+				// The visible error remains; explicit retry works without Background Sync.
+			}
+		}
+	}
+}
+
+async function requireRecoveryContext(expected) {
+	const response = await fetch(
+		new URL("/api/time-entries/offline-context", self.location.origin),
+		{
+			credentials: "include",
+			cache: "no-store",
+			signal: AbortSignal.timeout(8000),
+		},
+	);
+	if (!response.ok)
+		throw new Error(
+			"Sign in with an authorized organization to review saved clock records.",
+		);
+	const context = await response.json();
+	if (
+		!context.userId ||
+		!context.organizationId ||
+		(expected &&
+			(expected.userId !== context.userId ||
+				expected.organizationId !== context.organizationId))
+	) {
+		throw new Error(
+			"Account or organization changed. Restore the captured context to review records.",
+		);
+	}
+	return { ...context, serverOrigin: self.location.origin };
+}
+
+async function handleRecoveryMessage(event) {
+	try {
+		const context = await requireRecoveryContext(event.data.context);
+		if (event.data.type === "ARCHIVE_QUEUE_RECORD") {
+			await self.OfflineQueueDB.archive(event.data.eventId, context);
+			await notifyQueueUpdateSafely();
+		}
+		const records = (await self.OfflineQueueDB.getRecords()).filter((record) =>
+			self.OfflineQueueDB.canInspect(record, context),
+		);
+		event.ports[0]?.postMessage({ success: true, records });
+	} catch (error) {
+		event.ports[0]?.postMessage({ success: false, error: error.message });
 	}
 }
 
@@ -515,17 +586,20 @@ self.addEventListener("push", (event) => {
 // Handle water reminder actions via API
 async function handleWaterReminderAction(actionType) {
 	try {
-		const response = await fetch(new URL("/api/wellness/water-action", self.location.origin).href, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
+		const response = await fetch(
+			new URL("/api/wellness/water-action", self.location.origin).href,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					action: actionType === "log_water" ? "log" : "snooze",
+					amount: 1,
+				}),
+				credentials: "include",
 			},
-			body: JSON.stringify({
-				action: actionType === "log_water" ? "log" : "snooze",
-				amount: 1,
-			}),
-			credentials: "include",
-		});
+		);
 
 		if (response.ok) {
 			const result = await response.json();
@@ -555,7 +629,10 @@ self.addEventListener("notificationclick", (event) => {
 	notification.close();
 
 	// Handle water reminder specific actions
-	if (data.type === "water_reminder" && (action === "log_water" || action === "snooze_water")) {
+	if (
+		data.type === "water_reminder" &&
+		(action === "log_water" || action === "snooze_water")
+	) {
 		event.waitUntil(handleWaterReminderAction(action));
 		return;
 	}
@@ -575,22 +652,24 @@ self.addEventListener("notificationclick", (event) => {
 
 	event.waitUntil(
 		// Try to focus an existing window with this URL, or open a new one
-		clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
-			// Check if there's already a window/tab open with the app
-			for (const client of windowClients) {
-				// If we find an existing window, focus it and navigate
-				if (client.url.startsWith(self.location.origin)) {
-					return client.focus().then((focusedClient) => {
-						// Navigate to the action URL
-						if (focusedClient && "navigate" in focusedClient) {
-							return focusedClient.navigate(urlToOpen);
-						}
-					});
+		clients
+			.matchAll({ type: "window", includeUncontrolled: true })
+			.then((windowClients) => {
+				// Check if there's already a window/tab open with the app
+				for (const client of windowClients) {
+					// If we find an existing window, focus it and navigate
+					if (client.url.startsWith(self.location.origin)) {
+						return client.focus().then((focusedClient) => {
+							// Navigate to the action URL
+							if (focusedClient && "navigate" in focusedClient) {
+								return focusedClient.navigate(urlToOpen);
+							}
+						});
+					}
 				}
-			}
-			// No existing window found, open a new one
-			return clients.openWindow(urlToOpen);
-		}),
+				// No existing window found, open a new one
+				return clients.openWindow(urlToOpen);
+			}),
 	);
 });
 
