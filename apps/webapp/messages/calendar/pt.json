@@ -148,6 +148,7 @@
       "title": "Detalhes do dia"
     },
     "delete": {
+      "applied": "Exclusão de registro de horas aplicada",
       "auditNote": "As entradas de tempo serão marcadas como eliminadas para fins de auditoria.",
       "confirm": "Converter para pausa",
       "description": "Isto eliminará permanentemente este período de trabalho. O intervalo aparecerá como uma pausa no calendário.",

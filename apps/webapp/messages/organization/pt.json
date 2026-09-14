@@ -204,6 +204,7 @@
     "slugLabel": "Slug da organização",
     "slugPlaceholder": "acme-lda",
     "slugTaken": "Este slug já está ocupado. Por favor escolha outro.",
+    "ssoFailed": "O login via SSO não foi concluído. Selecione uma organização para tentar novamente ou escolha outro espaço de trabalho.",
     "switchFailed": "Falha ao mudar de organização",
     "switching": "Alternando organização...",
     "switchTo": "Mudar de organização",

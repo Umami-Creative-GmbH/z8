@@ -148,6 +148,7 @@
       "title": "Day Details"
     },
     "delete": {
+      "applied": "Time entry deletion applied",
       "auditNote": "Time entries will be marked as deleted for audit purposes.",
       "confirm": "Convert to Break",
       "description": "This will permanently delete this work period. The gap will appear as a break in the calendar.",

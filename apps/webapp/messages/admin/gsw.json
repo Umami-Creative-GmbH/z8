@@ -321,6 +321,29 @@
       "actions": {
         "saveChanges": "Änderige spychere"
       },
+      "approvalMaintenance": {
+        "approvalHint": "Eine Legacy-Genehmigungsanfrage oder eine kanonische Workflow-UUID.",
+        "approvalId": "Genehmigungs-ID",
+        "chain": "Genehmigungskette",
+        "delete": "Löschen erzwingen",
+        "deleting": "Wird gelöscht…",
+        "description": "Eine Genehmigung und die damit verknüpften Genehmigungseinträge dauerhaft entfernen. Quelldatensätze und deren Status bleiben erhalten.",
+        "errors": {
+          "ambiguous": "Diese ID existiert in beiden Genehmigungsspeichern. Es wurde keine Genehmigung gelöscht.",
+          "approvalInvalid": "Geben Sie eine gültige Genehmigungs-UUID ein.",
+          "failed": "Löschen konnte nicht abgeschlossen werden. Überprüfen Sie die Genehmigungs-ID, bevor Sie es erneut versuchen.",
+          "invalidInput": "Geben Sie eine Organisations-ID und eine gültige Genehmigungs-UUID ein.",
+          "notFound": "Genehmigung in dieser Organisation nicht gefunden.",
+          "organizationRequired": "Geben Sie eine Organisations-ID ein.",
+          "unauthorized": "Plattform-Administratorzugriff erforderlich."
+        },
+        "legacy": "Legacy-Anfrage",
+        "organizationHint": "Die Organisation, zu der die Genehmigung gehört.",
+        "organizationId": "Organisations-ID",
+        "success": "Genehmigung gelöscht. Entfernte Datensätze:",
+        "title": "Löschen der Genehmigung erzwingen",
+        "workflow": "Workflow"
+      },
       "cookieConsent": {
         "description": "Wird uf Authentifizierigssite für d DSGVO-Konformität igfüegt",
         "helperPrefix": "Leer lah zum deaktiviere. Glade mit",

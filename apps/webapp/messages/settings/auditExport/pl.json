@@ -82,6 +82,7 @@
         "colStatus": "Status",
         "colVersion": "Wersja",
         "copied": "Klucz publiczny skopiowany do schowka",
+        "copyError": "Nie udało się skopiować klucza publicznego",
         "description": "Zarządzaj kluczami podpisywania Ed25519 do uwierzytelniania pakietów audytowych",
         "downloaded": "Klucz publiczny pobrany",
         "exportDescription": "Użyj tego klucza publicznego, aby zewnętrznie zweryfikować podpisy pakietów audytowych",

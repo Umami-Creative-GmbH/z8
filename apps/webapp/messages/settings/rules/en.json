@@ -85,16 +85,13 @@
       "activeStatus": "Active status",
       "addPolicy": "Add Policy",
       "approvalType": {
-        "absenceRequests": "Absence requests",
         "absence": "Absence",
         "complianceException": "Compliance exception",
         "manualTimeSubmission": "Manual time submission",
         "policyClockOut": "Policy clock-out",
         "shiftRequest": "Shift request",
         "timeCorrection": "Time correction",
-        "travelExpense": "Travel expense",
-        "timeEntryChanges": "Time entry changes",
-        "travelExpenses": "Travel expenses"
+        "travelExpense": "Travel expense"
       },
       "approvalTypes": "Approval types",
       "conditionsCount": "Conditions count",
@@ -131,21 +128,6 @@
       "toast": {
         "created": "Approval policy created",
         "saveFailed": "Approval policy could not be saved."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Send the request to the default manager when this stage cannot resolve an approver.",
-          "label": "Default manager"
-        },
-        "fail": {
-          "description": "Reject the request when this stage cannot resolve an approver.",
-          "label": "Fail request"
-        },
-        "label": "Fallback behavior",
-        "organizationAdmin": {
-          "description": "Send the request to an organization admin when this stage cannot resolve an approver.",
-          "label": "Organization admin"
-        }
       },
       "validation": {
         "activePolicyRequiresStage": "Active policies require at least one approval stage.",
@@ -366,6 +348,7 @@
       "deleteAssignmentTitle": "Remove Assignment?",
       "deleteEmployeeAssignmentDescription": "This will remove the override for \"{name}\". They will use their team or organization default.",
       "deleteFailed": "Failed to delete model",
+      "deleteModel": "Delete surcharge model",
       "deleteModelDescription": "This will deactivate the model and all its assignments. This action cannot be undone.",
       "deleteModelTitle": "Delete Surcharge Model?",
       "deleteOrgAssignmentDescription": "This will remove the organization default. Teams and employees without specific assignments will have no surcharge model applied.",
@@ -403,6 +386,10 @@
       "percentageDescription": "Additional time credit",
       "rangeEnd": "Range End",
       "rangeStart": "Range Start",
+      "removeEmployeeAssignment": "Remove employee assignment",
+      "removeOrganizationAssignment": "Remove organization assignment",
+      "removeRule": "Remove surcharge rule",
+      "removeTeamAssignment": "Remove team assignment",
       "reports": {
         "details": {
           "appliedRules": "Applied rules",

@@ -27,11 +27,20 @@
         "enabled": "Clave habilitada",
         "enabledHelp": "Las claves deshabilitadas rechazarán todas las solicitudes de API",
         "expiration": "Caducidad",
+        "invalid": "Revisa los campos no válidos del formulario",
         "name": "Nombre",
         "nameHelp": "Un nombre descriptivo para identificar esta clave",
+        "nameMax": "El nombre debe tener como máximo 100 caracteres",
+        "nameMin": "El nombre debe tener al menos 3 caracteres",
+        "nameMinLength": "El nombre debe tener al menos 3 caracteres",
         "namePlaceholder": "p. ej., API de producción",
         "rateLimit": "Habilitar limitación de tasa",
         "rateLimitMax": "Máximo de solicitudes por minuto",
+        "rateLimitMaxExceeded": "El límite de frecuencia debe ser como máximo de 10.000 solicitudes",
+        "rateLimitMaxInvalid": "Introduce un número entero del 10 al 10.000",
+        "rateLimitMin": "El límite de frecuencia debe ser de al menos 10 solicitudes",
+        "rateLimitRequired": "El límite de frecuencia es obligatorio",
+        "rateLimitWholeNumber": "El límite de frecuencia debe ser un número entero",
         "scopes": "Permisos",
         "scopesRequired": "Seleccione al menos un permiso"
       },
@@ -361,22 +370,22 @@
           "action": {
             "create": "Crear conexión SCIM",
             "creating": "Creando conexión SCIM",
-            "decommission": "Retirar",
+            "decommission": "Dar de baja",
             "reconcile": "Actualizar estado de creación",
             "refresh": "Actualizar estado",
             "rotate": "Rotar credencial",
-            "selectRole": "Seleccione primero una plantilla de rol predeterminada"
+            "selectRole": "Selecciona primero una plantilla de rol predeterminada"
           },
           "credential": {
             "close": "Cerrar",
-            "confirmClose": "Confirme que la credencial está guardada antes de cerrar.",
+            "confirmClose": "Confirma que la credencial esté guardada antes de cerrar.",
             "copied": "Credencial copiada al portapapeles.",
             "copy": "Copiar credencial",
-            "description": "Copie y guarde esta credencial ahora. No se puede volver a mostrar.",
+            "description": "Copia y guarda esta credencial ahora. No se podrá volver a mostrar.",
             "label": "Credencial",
             "saved": "He guardado esta credencial",
             "title": "Credencial SCIM",
-            "warning": "Esta credencial se muestra una vez. Guárdela de forma segura en su proveedor de identidad."
+            "warning": "Esta credencial se muestra solo una vez. Guárdala de forma segura en tu proveedor de identidades."
           },
           "credentials": {
             "credential": "Credencial",
@@ -385,25 +394,25 @@
             "lastUsedAria": "Último uso: {value} UTC",
             "revoke": "Revocar",
             "status": {
-              "active": "Activa",
-              "revoked": "Revocada"
+              "active": "activa",
+              "revoked": "revocada"
             },
             "title": "Credenciales",
-            "unused": "Aún no se ha usado"
+            "unused": "Aún sin usar"
           },
-          "description": "Conecte su proveedor de identidad para aprovisionar y administrar el acceso de la plantilla.",
+          "description": "La verificación SCIM se actualiza después de que su proveedor de identidad envía un cambio de usuario o grupo de prueba.",
           "dialog": {
             "cancel": "Cancelar",
             "decommission": {
-              "description": "Esto retira permanentemente el aprovisionamiento SCIM y no se puede deshacer.",
-              "title": "Retirar SCIM"
+              "description": "Esto da de baja permanentemente el aprovisionamiento SCIM y no se puede deshacer.",
+              "title": "Dar de baja SCIM"
             },
             "revoke": {
               "description": "Esto impide inmediatamente que la credencial aprovisione usuarios.",
               "title": "Revocar credencial"
             }
           },
-          "endpoint": "Extremo",
+          "endpoint": "Punto de conexión",
           "events": {
             "empty": "No se han registrado eventos de aprovisionamiento.",
             "error": "No se pudieron cargar los eventos. Actualice el estado e inténtelo de nuevo.",
@@ -411,31 +420,31 @@
           },
           "expiry": "Caducidad de la credencial",
           "expiry.value": "1 año",
-          "refreshHelp": "Actualice el estado para cargar metadatos seguros de la conexión.",
+          "refreshHelp": "Actualice el estado para cargar los metadatos seguros de la conexión.",
           "status": {
-            "active-unverified": "activa sin verificar",
+            "active-unverified": "activo no verificado",
             "creating": "creando",
             "creation_failed": "creación fallida",
-            "decommissioned": "retirada",
-            "decommissioning": "retirando",
-            "disconnected": "desconectada",
+            "decommissioned": "dado de baja",
+            "decommissioning": "dando de baja",
+            "disconnected": "desconectado",
             "refreshing": "actualizando",
             "revoking": "revocando",
             "rotating": "rotando",
-            "verified": "verificada"
+            "verified": "verificado"
           },
           "title": "Aprovisionamiento SCIM",
           "toast": {
             "createError": "No se pudo crear la conexión SCIM.",
-            "reconcileError": "No se pudo reconciliar la creación de SCIM.",
+            "reconcileError": "No se pudo conciliar la creación de SCIM.",
             "refreshError": "No se pudo actualizar el estado de SCIM.",
-            "rotateError": "No se pudo rotar la credencial SCIM.",
+            "rotateError": "No se pudo rotar la credencial de SCIM.",
             "updateError": "No se pudo actualizar la conexión SCIM."
           },
           "verification": "Verificación",
-          "verification.awaiting": "Esperando el uso del proveedor",
-          "verification.observed": "Observada",
-          "wizardDescription": "Configure el aprovisionamiento administrado de usuarios sin cambiar la activación empresarial."
+          "verification.awaiting": "En espera del uso del proveedor",
+          "verification.observed": "Observado",
+          "wizardDescription": "Configure el aprovisionamiento de usuarios administrados sin cambiar la activación empresarial."
         },
         "sso": {
           "action": {
@@ -459,6 +468,10 @@
               "okta": "https://acme.okta.com…"
             },
             "metadata": "Pegue el XML de metadatos del IdP…"
+          },
+          "saml": {
+            "acsPath": "Ruta de ACS relativa al navegador: {path}",
+            "acsUrl": "Configure su IdP con esta URL de servicio de consumidor de aserciones (ACS): {path}"
           },
           "title": "Configuración de SSO"
         },
@@ -498,7 +511,7 @@
           "review": "Revisar y activar",
           "review.description": "Activación de protección",
           "scim": "Aprovisionamiento SCIM",
-          "scim.description": "Conecte y administre su conexión de aprovisionamiento SCIM",
+          "scim.description": "Emitir token de aprovisionamiento",
           "sso": "Configuración de SSO",
           "sso.description": "Registrar OIDC o SAML",
           "ssoTest": "Usuario de prueba",
@@ -524,8 +537,6 @@
       "leaveBlankKeepExisting": "Dejar en blanco para mantener el existente",
       "provider": "Proveedor",
       "socialOAuth": {
-        "authentication": "Autenticación",
-        "unverified": "Sin verificar",
         "addDescription": "Configure su propia aplicación OAuth para el inicio de sesión social.",
         "addProviderError": "Error al añadir el proveedor",
         "addTitle": "Añadir proveedor OAuth social",
@@ -533,6 +544,7 @@
         "appleKeyIdRequired": "El ID de clave es obligatorio para Apple",
         "appleTeamIdHelp": "Se encuentra en su cuenta de desarrollador de Apple",
         "appleTeamIdRequired": "El ID de equipo es obligatorio para Apple",
+        "authentication": "Autenticación",
         "clientIdPlaceholder": "Su ID de cliente OAuth",
         "clientSecretPlaceholder": "Tu secreto de cliente OAuth",
         "configured": "{provider} OAuth configurado correctamente",
@@ -552,17 +564,15 @@
           "customDomain": "Los usuarios que inicien sesión a través de tu dominio personalizado usarán tu aplicación OAuth"
         },
         "keyId": "ID de clave",
-        "lastTested": "Última prueba",
-        "notTested": "No probado",
         "privateKey": "Clave privada (.p8)",
         "removed": "OAuth de {provider} eliminado",
         "removeDialogDescription": "¿Estás seguro de que quieres eliminar esta configuración de OAuth? Los usuarios volverán a utilizar las credenciales OAuth compartidas (si están disponibles).",
         "removeDialogTitle": "Eliminar proveedor OAuth social",
         "teamId": "ID de equipo",
         "title": "Proveedores de inicio de sesión social",
+        "unverified": "No verificado",
         "updateConfigError": "Error al actualizar la configuración",
-        "updated": "OAuth de {provider} actualizado correctamente",
-        "working": "Funcionando"
+        "updated": "OAuth de {provider} actualizado correctamente"
       },
       "sso": {
         "addDescription": "Configura un proveedor de identidad OIDC para el inicio de sesión único (SSO) empresarial.",

@@ -82,6 +82,7 @@
         "colStatus": "Status",
         "colVersion": "Version",
         "copied": "Öffentliche Schlüssel isch in d Zwüscheablage kopiert worde",
+        "copyError": "Öffentlicher Schlüssel konnte nicht kopiert werden",
         "description": "Ed25519-Signaturschlüssel für d Authentifizierig vo Audit-Paket verwalte",
         "downloaded": "Öffentliche Schlüssel isch abeglade worde",
         "exportDescription": "Nutze Sie de öffentliche Schlüssel, zum d Signatuure vo Audit-Paket extern z verifiziere",

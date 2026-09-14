@@ -27,11 +27,20 @@
         "enabled": "Schlüssel aktiviert",
         "enabledHelp": "Deaktivierti Schlüssel lehned alli API-Aafroge ab",
         "expiration": "Ablaufdatum",
+        "invalid": "Überprüfen Sie die ungültigen Formularfelder",
         "name": "Name",
         "nameHelp": "En beschriibende Name zum dä Schlüssel z'identifiziere",
+        "nameMax": "Name darf maximal 100 Zeichen lang sein",
+        "nameMin": "Name muss mindestens 3 Zeichen lang sein",
+        "nameMinLength": "Name muss mindestens 3 Zeichen lang sein",
         "namePlaceholder": "z. B. Produktion API",
         "rateLimit": "Rate-Limiting aktiviere",
         "rateLimitMax": "Maximali Aafroge pro Minute",
+        "rateLimitMaxExceeded": "Ratenbegrenzung darf maximal 10'000 Anfragen betragen",
+        "rateLimitMaxInvalid": "Geben Sie eine ganze Zahl von 10 bis 10'000 ein",
+        "rateLimitMin": "Ratenbegrenzung muss mindestens 10 Anfragen betragen",
+        "rateLimitRequired": "Ratenbegrenzung ist erforderlich",
+        "rateLimitWholeNumber": "Ratenbegrenzung muss eine ganze Zahl sein",
         "scopes": "Berechtigunge",
         "scopesRequired": "Wähl mindestens eini Berechtigung uus"
       },
@@ -361,81 +370,81 @@
           "action": {
             "create": "SCIM-Verbindig erstelle",
             "creating": "SCIM-Verbindig wird erstellt",
-            "decommission": "Stilllege",
+            "decommission": "Usser Betrieb neh",
             "reconcile": "Erstelligsstatus aktualisiere",
             "refresh": "Status aktualisiere",
-            "rotate": "Zuegangsdaten rotiere",
-            "selectRole": "Wähl zersch e Standard-Rollenvorlag"
+            "rotate": "Zuegangsdate rotiere",
+            "selectRole": "Zersch e Standard-Rolle-Vorlag uswähle"
           },
           "credential": {
-            "close": "Schliesse",
-            "confirmClose": "Bestätig vor em Schliessen, dass d Zuegangsdaten gspycheret sind.",
-            "copied": "Zuegangsdaten i d Zwischenablage kopiert.",
-            "copy": "Zuegangsdaten kopiere",
-            "description": "Kopier und speicher die Zuegangsdaten jetzt. Si chönd nöd nomal zeigt werde.",
-            "label": "Zuegangsdaten",
-            "saved": "Ich ha die Zuegangsdaten gspycheret",
-            "title": "SCIM-Zuegangsdaten",
-            "warning": "Die Zuegangsdaten wärded einisch zeigt. Speicher si sicher im Identitätsaabieter."
+            "close": "Schlüsse",
+            "confirmClose": "Bestätig, dass d Zuegangsdate gspeicheret sind, vor em Schlüsse.",
+            "copied": "Zuegangsdate i d Zwüscheablag kopiert.",
+            "copy": "Zuegangsdate kopiere",
+            "description": "Kopier und spycher die Zuegangsdate jetzt. Si chönd nüme aazeigt werde.",
+            "label": "Zuegangsdate",
+            "saved": "Ich ha die Zuegangsdate gspeicheret",
+            "title": "SCIM-Zuegangsdate",
+            "warning": "Die Zuegangsdate werded nur eimol aazeigt. Spycher si sicher i dim Identity Provider."
           },
           "credentials": {
-            "credential": "Zuegangsdaten",
-            "empty": "Es sind kei Zuegangsdaten usgstellt worde.",
+            "credential": "Zuegangsdate",
+            "empty": "Es sind no kener Zuegangsdate usgstellt worde.",
             "expires": "Lauft ab",
-            "lastUsedAria": "Zletscht verwendet: {value} UTC",
+            "lastUsedAria": "Zletscht bruucht: {value} UTC",
             "revoke": "Widerruefe",
             "status": {
-              "active": "Aktiv",
-              "revoked": "Widerruefe"
+              "active": "aktiv",
+              "revoked": "widergruefe"
             },
-            "title": "Zuegangsdaten",
-            "unused": "No nöd verwendet"
+            "title": "Zuegangsdate",
+            "unused": "No nöd bruucht"
           },
-          "description": "Verbind din Identitätsaabieter, zum Mitarbeiterzuegriff bereitzstelle und verwalte.",
+          "description": "D SCIM-Verifizierig aktualisiert sich, sobald din Identitätsaabieter en Test-User oder en Gruppeänderig schickt.",
           "dialog": {
-            "cancel": "Abbräche",
+            "cancel": "Abbreche",
             "decommission": {
-              "description": "Das legt SCIM-Provisioning dauerhaft still und cha nöd rückgängig gmacht werde.",
-              "title": "SCIM stilllege"
+              "description": "Das nimmt s SCIM-Provisioning duurhaft usser Betrieb und chan nöd rückgängig gmacht werde.",
+              "title": "SCIM dekommissionieren"
             },
             "revoke": {
-              "description": "Das verhindert sofort, dass d Zuegangsdaten User bereitstelle.",
-              "title": "Zuegangsdaten widerruefe"
+              "description": "Dadurch wird sofort verhindert, dass mit den Anmeldedaten Benutzer bereitgestellt werden.",
+              "title": "Anmeldedaten widerrufen"
             }
           },
           "endpoint": "Endpunkt",
           "events": {
-            "empty": "Es sind kei Provisioning-Ereignis ufgzeichnet worde.",
-            "error": "Ereignis chönd nöd glade werde. Aktualisier de Status und versuechs nomal.",
-            "title": "Letschti Ereignis"
+            "empty": "Es wurden keine Bereitstellungsereignisse aufgezeichnet.",
+            "error": "Ereignisse konnten nicht geladen werden. Status aktualisieren und erneut versuchen.",
+            "title": "Kürzliche Ereignisse"
           },
-          "expiry": "Ablauf vo de Zuegangsdaten",
+          "expiry": "Ablauf der Anmeldedaten",
           "expiry.value": "1 Jahr",
-          "refreshHelp": "Aktualisier de Status, zum sichere Verbindigsmetadate z'lade.",
+          "refreshHelp": "Status aktualisieren, um Metadaten der sicheren Verbindung zu laden.",
           "status": {
-            "active-unverified": "aktiv, nöd verifiziert",
+            "active-unverified": "aktiv unbestätigt",
             "creating": "wird erstellt",
-            "creation_failed": "Erstellig fehlgschlage",
-            "decommissioned": "stillgleit",
-            "decommissioning": "wird stillgleit",
-            "disconnected": "nöd verbunde",
+            "creation_failed": "Erstellung fehlgeschlagen",
+            "decommissioned": "dekommissioniert",
+            "decommissioning": "wird dekommissioniert",
+            "disconnected": "getrennt",
             "refreshing": "wird aktualisiert",
-            "revoking": "wird widerruefe",
+            "revoking": "wird widerrufen",
             "rotating": "wird rotiert",
             "verified": "verifiziert"
           },
           "title": "SCIM-Provisioning",
           "toast": {
-            "createError": "SCIM-Verbindig het nöd chönne erstellt werde.",
-            "reconcileError": "SCIM-Erstellig het nöd chönne abgliche werde.",
-            "refreshError": "SCIM-Status het nöd chönne aktualisiert werde.",
-            "rotateError": "SCIM-Zuegangsdaten händ nöd chönne rotiert werde.",
-            "updateError": "SCIM-Verbindig het nöd chönne aktualisiert werde."
+            "createError": "SCIM-Verbindung konnte nicht erstellt werden.",
+            "reconcileError": "SCIM-Erstellung konnte nicht abgeglichen werden.",
+            "refreshError": "SCIM-Status konnte nicht aktualisiert werden.",
+            "rotateError": "SCIM-Anmeldedaten konnten nicht rotiert werden.",
+            "updateError": "SCIM-Verbindung konnte nicht aktualisiert werden."
           },
           "verification": "Verifizierig",
-          "verification.awaiting": "Wartet uf d Verwendig dur de Aabieter",
+          "verification.awaiting": "Wartet uf Provider-Verwendig",
           "verification.observed": "Beobachtet",
-          "wizardDescription": "Konfigurier verwaltets User-Provisioning, ohni d Enterprise-Aktivierig z'ändere."
+          "wizardDescription": "Verwalteti Benutzerbereitstellig konfiguriere, ohni d Enterprise-Aktivierig z ändere."
         },
         "sso": {
           "action": {
@@ -459,6 +468,10 @@
               "okta": "https://acme.okta.com…"
             },
             "metadata": "IdP-Metadate-XML iifüge…"
+          },
+          "saml": {
+            "acsPath": "Browser-relative ACS-Pfad: {path}",
+            "acsUrl": "Konfigurier din IdP mit dere Assertion Consumer Service (ACS) URL: {path}"
           },
           "title": "SSO-Konfiguration"
         },
@@ -498,7 +511,7 @@
           "review": "Überprüfe & Aktiviere",
           "review.description": "Aktivierigsschutz",
           "scim": "SCIM-Provisioning",
-          "scim.description": "SCIM-Provisioning-Verbindig verbinde und verwalte",
+          "scim.description": "Provisioning-Token usgäh",
           "sso": "SSO-Konfiguration",
           "sso.description": "OIDC oder SAML registriere",
           "ssoTest": "Test-Benutzer",
@@ -524,8 +537,6 @@
       "leaveBlankKeepExisting": "Leer lah, zum s Bestehende z bhalte",
       "provider": "Provider",
       "socialOAuth": {
-        "authentication": "Authentifizierig",
-        "unverified": "Nöd verifiziert",
         "addDescription": "Konfigurier dini eigeti OAuth-App für de Social-Login.",
         "addProviderError": "Provider hät nöd chönne dezuegfüegt werde",
         "addTitle": "Social-OAuth-Provider dezuefüege",
@@ -533,6 +544,7 @@
         "appleKeyIdRequired": "Key-ID isch für Apple erforderlich",
         "appleTeamIdHelp": "Findsch i dim Apple-Developer-Account",
         "appleTeamIdRequired": "Team-ID isch für Apple erforderlich",
+        "authentication": "Authentifizierig",
         "clientIdPlaceholder": "Dini OAuth-Client-ID",
         "clientSecretPlaceholder": "Dis OAuth-Client-Secret",
         "configured": "{provider} OAuth erfolgrych konfiguriert",
@@ -552,17 +564,15 @@
           "customDomain": "Benutzer, wo sich über dini benutzerdefinierti Domain amälde, verwänded dini OAuth-App"
         },
         "keyId": "Key-ID",
-        "lastTested": "Zuletzt teschtet",
-        "notTested": "Ned testet",
         "privateKey": "Private Key (.p8)",
         "removed": "{provider} OAuth entfernt",
         "removeDialogDescription": "Sind Sie sicher, dass Sie diese OAuth-Konfiguration entfernen möchten? Benutzer werden auf die geteilten OAuth-Anmeldedaten zurückgreifen (falls verfügbar).",
         "removeDialogTitle": "Social OAuth-Provider entfernen",
         "teamId": "Team-ID",
         "title": "Social-Login-Provider",
+        "unverified": "Nöd verifiziert",
         "updateConfigError": "Konfiguration konnte nicht aktualisiert werden",
-        "updated": "{provider} OAuth erfolgreich aktualisiert",
-        "working": "In Bearbeitung"
+        "updated": "{provider} OAuth erfolgreich aktualisiert"
       },
       "sso": {
         "addDescription": "Konfigurieren Sie einen OIDC-Identitätsanbieter für Enterprise Single Sign-On.",

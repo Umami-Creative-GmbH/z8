@@ -2,9 +2,9 @@
   "myRequests": {
     "actions": {
       "cancel": "Annuler",
-      "cancelConfirmation": "Annuler cette demande d'absence ?",
-      "cancelError": "La demande d'absence n'a pas pu être annulée.",
       "cancelling": "Annulation en cours…",
+      "cancelRequestConfirmation": "Annuler cette demande ?",
+      "cancelRequestError": "Impossible d'annuler la demande.",
       "fix": "Corriger",
       "notAvailable": "Non disponible",
       "view": "Voir"

@@ -8,6 +8,11 @@
     "selectOrganizationDescription": "Wähl us, mit welere Organisation du schaffe wotsch"
   },
   "setup": {
+    "authorization": {
+      "expiry": "De Link chan innerhalb vonere Stund eimol bruucht werde. Schlüss d Iirichtig innerhalb vo zäh Minute noch em Öffne ab. Wenn d Autorisierig ablauft, wart bis die ursprünglichi Stund umme isch und start de Server neu, um en neue Link z generiere.",
+      "instructions": "Öffne de temporäri Iirichtigs-Link, wo i de Server-Konsole aazeigt wird, wenn die Instanz startet.",
+      "title": "Iirichtigs-Autorisierig erforderlich"
+    },
     "button": {
       "create": "Admin-Account erstelle",
       "creating": "Account wird erstellt..."

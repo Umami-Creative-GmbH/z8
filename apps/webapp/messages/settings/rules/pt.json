@@ -85,16 +85,13 @@
       "activeStatus": "Status ativo",
       "addPolicy": "Adicionar política",
       "approvalType": {
-        "absenceRequests": "Solicitações de ausência",
         "absence": "Ausência",
         "complianceException": "Exceção de conformidade",
         "manualTimeSubmission": "Envio manual de horas",
-        "policyClockOut": "Saída de ponto conforme a política",
+        "policyClockOut": "Saída por política",
         "shiftRequest": "Solicitação de turno",
-        "timeCorrection": "Correção de tempo",
-        "travelExpense": "Despesa de viagem",
-        "timeEntryChanges": "Alterações de registro de horas",
-        "travelExpenses": "Despesas de viagem"
+        "timeCorrection": "Correção de horário",
+        "travelExpense": "Despesa de viagem"
       },
       "approvalTypes": "Tipos de aprovação",
       "conditionsCount": "Contagem de condições",
@@ -131,21 +128,6 @@
       "toast": {
         "created": "Política de aprovação criada",
         "saveFailed": "Não foi possível salvar a política de aprovação."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Envie a solicitação ao gerente padrão quando esta etapa não conseguir determinar um aprovador.",
-          "label": "Gerente padrão"
-        },
-        "fail": {
-          "description": "Rejeite a solicitação quando esta etapa não conseguir determinar um aprovador.",
-          "label": "Rejeitar solicitação"
-        },
-        "label": "Comportamento alternativo",
-        "organizationAdmin": {
-          "description": "Envie a solicitação a um administrador da organização quando esta etapa não conseguir determinar um aprovador.",
-          "label": "Administrador da organização"
-        }
       },
       "validation": {
         "activePolicyRequiresStage": "Políticas ativas exigem pelo menos um estágio de aprovação.",
@@ -366,6 +348,7 @@
       "deleteAssignmentTitle": "Remover Atribuição?",
       "deleteEmployeeAssignmentDescription": "Isso removerá a substituição para \"{name}\". Eles usarão o padrão da equipe ou da organização.",
       "deleteFailed": "Falha ao excluir modelo",
+      "deleteModel": "Excluir modelo de sobretaxa",
       "deleteModelDescription": "Isso desativará o modelo e todas as suas atribuições. Esta ação não pode ser desfeita.",
       "deleteModelTitle": "Excluir Modelo de Adicional?",
       "deleteOrgAssignmentDescription": "Isso removerá o padrão da organização. Equipes e funcionários sem atribuições específicas não terão nenhum modelo de adicional aplicado.",
@@ -403,6 +386,10 @@
       "percentageDescription": "Crédito de tempo adicional",
       "rangeEnd": "Fim do intervalo",
       "rangeStart": "Início do intervalo",
+      "removeEmployeeAssignment": "Remover atribuição de funcionário",
+      "removeOrganizationAssignment": "Remover atribuição de organização",
+      "removeRule": "Remover regra de sobretaxa",
+      "removeTeamAssignment": "Remover atribuição de equipe",
       "reports": {
         "details": {
           "appliedRules": "Regras aplicadas",

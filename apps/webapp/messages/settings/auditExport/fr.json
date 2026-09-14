@@ -82,6 +82,7 @@
         "colStatus": "Statut",
         "colVersion": "Version",
         "copied": "Clé publique copiée dans le presse-papiers",
+        "copyError": "Échec de la copie de la clé publique",
         "description": "Gérer les clés de signature Ed25519 pour l'authentification des paquets d'audit",
         "downloaded": "Clé publique téléchargée",
         "exportDescription": "Utilisez cette clé publique pour vérifier les signatures des paquets d'audit en externe",

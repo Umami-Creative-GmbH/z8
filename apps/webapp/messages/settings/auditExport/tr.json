@@ -82,6 +82,7 @@
         "colStatus": "Durum",
         "colVersion": "Sürüm",
         "copied": "Açık anahtar panoya kopyalandı",
+        "copyError": "Genel anahtar kopyalanamadı",
         "description": "Denetim paketi kimlik doğrulaması için Ed25519 imzalama anahtarlarını yönetin",
         "downloaded": "Açık anahtar indirildi",
         "exportDescription": "Denetim paketi imzalarını harici olarak doğrulamak için bu açık anahtarı kullanın",

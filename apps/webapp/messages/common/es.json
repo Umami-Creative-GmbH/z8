@@ -165,7 +165,6 @@
     "moveDown": "Bajar",
     "moveUp": "Mover hacia arriba",
     "name": "Nombre",
-    "never": "Nunca",
     "new": "Nuevo",
     "next": "Siguiente",
     "notApplicable": "N/D",
@@ -290,16 +289,8 @@
     "trust-center": "Centro de confianza"
   },
   "loading": {
-    "application": "Cargando aplicación",
-    "authentication": "Cargando autenticación",
-    "calendar": "Cargando calendario",
     "chart": "Cargando gráfico",
-    "licenses": "Cargando licencias",
-    "platformAnalytics": "Cargando analíticas de la plataforma",
-    "settings": "Cargando ajustes",
-    "setup": "Cargando configuración",
-    "teamAbsences": "Cargando ausencias del equipo",
-    "workerQueue": "Cargando cola de trabajos"
+    "settings": "Cargando configuración"
   },
   "nav": {
     "absences": "Ausencias",
@@ -335,14 +326,6 @@
       "viewAll": "Ver todas las notificaciones"
     },
     "content": {
-      "absenceRequestSubmitted": {
-        "message": "Tu solicitud de {categoryName} para {dateRange} se ha enviado y está pendiente de aprobación.",
-        "title": "Solicitud de ausencia enviada"
-      },
-      "teamMemberRemoved": {
-        "message": "Has sido eliminado del equipo {teamName} por {performedByName}.",
-        "title": "Eliminado del equipo"
-      },
       "passwordChanged": {
         "message": "Tu contraseña se ha cambiado correctamente. Si no has realizado este cambio, contacta con el servicio de asistencia inmediatamente.",
         "title": "Contraseña cambiada"
@@ -432,11 +415,32 @@
   },
   "offline": {
     "banner": {
+      "archived": "Evidencia de fichaje archivada y conservada en este dispositivo",
       "offline": "Estás sin conexión",
-      "offlineWithPending": "Sin conexión - {count} evento(s) pendiente(s)",
-      "pending": "{count} evento(s) pendiente(s) de sincronización",
-      "retry": "Reintentar",
-      "syncing": "Sincronizando {count} evento(s)..."
+      "offlineSaved": "Sin conexión — {count} registro(s) guardado(s) localmente para revisión",
+      "refresh": "Actualizar estado",
+      "refreshing": "Comprobando {count} registro(s) guardado(s)…",
+      "reviewRequired": "{count} registro(s) guardado(s) localmente — se requiere revisión",
+      "unverified": "Evidencia de fichaje guardada en este dispositivo. Conéctese para revisar todos los registros guardados."
+    },
+    "capture": {
+      "description": "Guarde el evento en este dispositivo para su revisión. El estado de fichaje en el servidor no cambiará.",
+      "end": "Guardar fichaje de salida para revisión",
+      "start": "Guardar fichaje de entrada para revisión"
+    },
+    "recovery": {
+      "archive": "Archivar y conservar evidencia",
+      "archived": "Archivado — evidencia conservada",
+      "description": "Estos registros están guardados en este dispositivo. Se desconoce la confirmación del servidor. Consulte las entradas de tiempo existentes con su responsable antes de enviar el trabajo de reemplazo. Al archivar se conserva la evidencia y no se cancela el trabajo en el servidor.",
+      "empty": "No hay registros accesibles. Los registros anteriores sin evidencia de cuenta requieren una revisión a nivel de organización; los registros sin evidencia de organización requieren una recuperación autorizada por separado.",
+      "evidence": "Evidencia original y estado de recuperación",
+      "export": "Exportar evidencia accesible",
+      "exportError": "No se pudieron exportar los registros guardados",
+      "held": "Requiere revisión — no confirmado en el servidor",
+      "loadError": "No se pudieron leer los registros guardados",
+      "loading": "Leyendo registros guardados…",
+      "review": "Revisar registros guardados",
+      "title": "Registros de fichaje guardados"
     }
   },
   "presence": {
@@ -530,12 +534,8 @@
   "validation": {
     "first-name-required": "El nombre es obligatorio",
     "invalid-email": "Dirección de correo electrónico inválida",
-    "invalid-password": "Contraseña inválida",
     "last-name-required": "El apellido es obligatorio",
     "password-required": "La contraseña es obligatoria"
-  },
-  "worksCouncil": {
-    "loadingLabel": "Cargando el portal del comité de empresa"
   },
   "workBalance": {
     "label": "Saldo histórico",

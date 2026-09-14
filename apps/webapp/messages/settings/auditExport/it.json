@@ -82,6 +82,7 @@
         "colStatus": "Stato",
         "colVersion": "Versione",
         "copied": "Chiave pubblica copiata negli appunti",
+        "copyError": "Impossibile copiare la chiave pubblica",
         "description": "Gestisci le chiavi di firma Ed25519 per l'autenticazione del pacchetto di audit",
         "downloaded": "Chiave pubblica scaricata",
         "exportDescription": "Usa questa chiave pubblica per verificare esternamente le firme dei pacchetti di audit",

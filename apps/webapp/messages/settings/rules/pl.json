@@ -85,16 +85,13 @@
       "activeStatus": "Status aktywny",
       "addPolicy": "Dodaj politykę",
       "approvalType": {
-        "absenceRequests": "Wnioski o nieobecność",
         "absence": "Nieobecność",
-        "complianceException": "Wyjątek zgodności",
-        "manualTimeSubmission": "Ręczne przesłanie czasu",
-        "policyClockOut": "Wyjście zgodne z zasadą",
+        "complianceException": "Wyjątek dotyczący zgodności",
+        "manualTimeSubmission": "Ręczne przesyłanie czasu pracy",
+        "policyClockOut": "Wyrejestrowanie zgodnie z zasadami",
         "shiftRequest": "Wniosek o zmianę",
         "timeCorrection": "Korekta czasu",
-        "travelExpense": "Wydatek na podróż",
-        "timeEntryChanges": "Zmiany w ewidencji czasu pracy",
-        "travelExpenses": "Wydatki podróżne"
+        "travelExpense": "Wydatek podróżny"
       },
       "approvalTypes": "Typy zatwierdzeń",
       "conditionsCount": "Liczba warunków",
@@ -131,21 +128,6 @@
       "toast": {
         "created": "Zasada zatwierdzania została utworzona",
         "saveFailed": "Nie udało się zapisać zasady zatwierdzania."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Wyślij wniosek do domyślnego przełożonego, gdy ten etap nie może wskazać osoby zatwierdzającej.",
-          "label": "Domyślny przełożony"
-        },
-        "fail": {
-          "description": "Odrzuć wniosek, gdy ten etap nie może wskazać osoby zatwierdzającej.",
-          "label": "Odrzuć wniosek"
-        },
-        "label": "Zachowanie awaryjne",
-        "organizationAdmin": {
-          "description": "Wyślij wniosek do administratora organizacji, gdy ten etap nie może wskazać osoby zatwierdzającej.",
-          "label": "Administrator organizacji"
-        }
       },
       "validation": {
         "activePolicyRequiresStage": "Aktywne zasady wymagają co najmniej jednego etapu zatwierdzania.",
@@ -366,6 +348,7 @@
       "deleteAssignmentTitle": "Usunąć przypisanie?",
       "deleteEmployeeAssignmentDescription": "To spowoduje usunięcie nadpisania dla „{name}”. Będą oni korzystać z ustawień domyślnych swojego zespołu lub organizacji.",
       "deleteFailed": "Nie udało się usunąć modelu",
+      "deleteModel": "Usuń model dopłat",
       "deleteModelDescription": "To spowoduje dezaktywację modelu i wszystkich jego przypisań. Tej czynności nie można cofnąć.",
       "deleteModelTitle": "Usunąć model dodatków?",
       "deleteOrgAssignmentDescription": "To spowoduje usunięcie ustawienia domyślnego organizacji. Zespoły i pracownicy bez określonych przypisań nie będą mieli zastosowanego żadnego modelu dodatków.",
@@ -403,6 +386,10 @@
       "percentageDescription": "Dodatkowy kredyt czasowy",
       "rangeEnd": "Koniec zakresu",
       "rangeStart": "Początek zakresu",
+      "removeEmployeeAssignment": "Usuń przypisanie pracownika",
+      "removeOrganizationAssignment": "Usuń przypisanie organizacji",
+      "removeRule": "Usuń regułę dopłat",
+      "removeTeamAssignment": "Usuń przypisanie zespołu",
       "reports": {
         "details": {
           "appliedRules": "Zastosowane reguły",

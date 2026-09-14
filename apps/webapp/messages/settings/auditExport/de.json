@@ -82,6 +82,7 @@
         "colStatus": "Status",
         "colVersion": "Version",
         "copied": "Öffentlicher Schlüssel in die Zwischenablage kopiert",
+        "copyError": "Öffentlicher Schlüssel konnte nicht kopiert werden",
         "description": "Ed25519-Signierschlüssel für die Authentifizierung von Audit-Paketen verwalten",
         "downloaded": "Öffentlicher Schlüssel heruntergeladen",
         "exportDescription": "Verwenden Sie diesen öffentlichen Schlüssel, um Audit-Paketsignaturen extern zu überprüfen",

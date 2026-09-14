@@ -148,6 +148,7 @@
       "title": "Dettagli del giorno"
     },
     "delete": {
+      "applied": "Eliminazione della registrazione oraria applicata",
       "auditNote": "Le voci di tempo verranno contrassegnate come eliminate a fini di audit.",
       "confirm": "Converti in pausa",
       "description": "Questo eliminerà definitivamente questo periodo di lavoro. Il vuoto apparirà come una pausa nel calendario.",

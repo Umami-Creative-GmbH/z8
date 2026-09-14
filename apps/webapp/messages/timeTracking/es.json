@@ -12,10 +12,10 @@
     "clockIn": "Entrada",
     "clockingIn": "Marcando entrada...",
     "clockingOut": "Marcando salida...",
-    "clockInQueued": "Entrada en cola para sincronización",
+    "clockInSavedForReview": "Fichaje de entrada guardado en este dispositivo para revisión; no confirmado en el servidor",
     "clockInSuccess": "Entrada marcada exitosamente",
     "clockOut": "Salida",
-    "clockOutQueued": "Salida en cola para sincronización",
+    "clockOutSavedForReview": "Fichaje de salida guardado en este dispositivo para revisión; no confirmado en el servidor",
     "clockOutSuccess": "Salida marcada exitosamente",
     "compliance": {
       "violation": "Violación de cumplimiento",
@@ -24,16 +24,13 @@
     "correction": {
       "clockIn": "Entrada",
       "clockInDate": "Fecha de entrada",
-      "clockInTime": "Hora de entrada",
       "clockOut": "Salida",
       "clockOutDate": "Fecha de salida",
-      "clockOutTime": "Hora de salida",
       "editDescription": "Realizar cambios en tu registro de tiempo de hoy.",
       "editEntry": "Editar entrada de tiempo",
       "editTitle": "Editar entrada de tiempo",
       "errors": {
         "invalidTimeRange": "La hora de salida debe ser posterior a la hora de entrada",
-        "noChanges": "Debe cambiar al menos un valor de la corrección",
         "submitFailed": "Error al enviar la corrección",
         "updateFailed": "Error al actualizar la entrada de tiempo"
       },
@@ -75,7 +72,7 @@
       "errors": {
         "createFailed": "Error al crear la entrada de tiempo",
         "futureDate": "No se pueden crear entradas para fechas futuras",
-        "invalidTime": "Introduce una hora completa y válida",
+        "invalidTime": "Introduzca una hora completa y válida",
         "invalidTimeRange": "La hora de salida debe ser posterior a la hora de entrada",
         "tooLong": "El periodo de trabajo no puede exceder las 24 horas"
       },
@@ -146,12 +143,7 @@
     },
     "unknownCategory": "Categoría desconocida",
     "unknownProject": "Proyecto desconocido",
-    "workCategory": "Categoría de trabajo",
-    "workLocation": "Lugar de trabajo",
-    "workLocationHome": "Casa",
-    "workLocationOffice": "Oficina",
-    "workLocationOther": "Otro",
-    "workLocationRemote": "Remoto"
+    "workCategory": "Categoría de trabajo"
   },
   "wellness": {
     "water": {

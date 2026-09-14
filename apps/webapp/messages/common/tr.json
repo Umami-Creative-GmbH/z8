@@ -165,7 +165,6 @@
     "moveDown": "Aşağı taşı",
     "moveUp": "Yukarı taşı",
     "name": "Ad",
-    "never": "Asla",
     "new": "Yeni",
     "next": "İleri",
     "notApplicable": "N/A",
@@ -290,16 +289,8 @@
     "trust-center": "Güven Merkezi"
   },
   "loading": {
-    "application": "Uygulama yükleniyor",
-    "authentication": "Kimlik doğrulama yükleniyor",
-    "calendar": "Takvim yükleniyor",
     "chart": "Grafik yükleniyor",
-    "licenses": "Lisanslar yükleniyor",
-    "platformAnalytics": "Platform analizleri yükleniyor",
-    "settings": "Ayarlar yükleniyor",
-    "setup": "Kurulum yükleniyor",
-    "teamAbsences": "Ekip devamsızlıkları yükleniyor",
-    "workerQueue": "İş kuyruğu yükleniyor"
+    "settings": "Ayarlar yükleniyor"
   },
   "nav": {
     "absences": "İzinler",
@@ -335,14 +326,6 @@
       "viewAll": "Tüm bildirimleri görüntüle"
     },
     "content": {
-      "absenceRequestSubmitted": {
-        "message": "{dateRange} için {categoryName} talebiniz gönderildi ve onay bekliyor.",
-        "title": "Devamsızlık talebi gönderildi"
-      },
-      "teamMemberRemoved": {
-        "message": "{performedByName} tarafından {teamName} ekibinden çıkarıldınız.",
-        "title": "Ekipten çıkarıldı"
-      },
       "passwordChanged": {
         "message": "Parolanız başarıyla değiştirildi. Bu değişikliği siz yapmadıysanız, lütfen derhal destek ekibiyle iletişime geçin.",
         "title": "Parola değiştirildi"
@@ -432,11 +415,32 @@
   },
   "offline": {
     "banner": {
+      "archived": "Arşivlenen giriş-çıkış kanıtı bu cihazda saklanıyor",
       "offline": "Çevrimdışısınız",
-      "offlineWithPending": "Çevrimdışı - {count} etkinlik bekliyor",
-      "pending": "{count} etkinlik senkronizasyon bekliyor",
-      "retry": "Yeniden dene",
-      "syncing": "{count} etkinlik senkronize ediliyor..."
+      "offlineSaved": "Çevrimdışı — İnceleme için yerel olarak kaydedilmiş {count} kayıt",
+      "refresh": "Durumu yenile",
+      "refreshing": "Kaydedilen {count} kayıt kontrol ediliyor…",
+      "reviewRequired": "Yerel olarak {count} kayıt kaydedildi — inceleme gerekli",
+      "unverified": "Giriş-çıkış kanıtı bu cihaza kaydedildi. Kaydedilen tüm kayıtları incelemek için bağlanın."
+    },
+    "capture": {
+      "description": "Olayı inceleme için bu cihaza kaydedin. Sunucu giriş-çıkış durumu değişmeyecektir.",
+      "end": "Çıkış kaydını inceleme için kaydet",
+      "start": "Giriş kaydını inceleme için kaydet"
+    },
+    "recovery": {
+      "archive": "Arşivle ve kanıtı sakla",
+      "archived": "Arşivlendi — kanıt saklandı",
+      "description": "Bu kayıtlar bu cihaza kaydedildi. Sunucuya işlenip işlenmediği bilinmiyor. Yerine çalışma göndermeden önce mevcut zaman girişlerini yöneticinizle kontrol edin. Arşivleme işlemi kanıtı saklar ve sunucudaki çalışmayı iptal etmez.",
+      "empty": "Erişilebilir kayıt yok. Hesap kanıtı olmayan eski kayıtlar kuruluş düzeyinde inceleme gerektirir; kuruluş kanıtı olmayan kayıtlar ayrı olarak yetkilendirilmiş kurtarma gerektirir.",
+      "evidence": "Orijinal kanıt ve kurtarma durumu",
+      "export": "Erişilebilir kanıtı dışa aktar",
+      "exportError": "Kaydedilen kayıtlar dışa aktarılamadı",
+      "held": "İnceleme gerekiyor — sunucuda onaylanmadı",
+      "loadError": "Kaydedilen kayıtlar okunamadı",
+      "loading": "Kaydedilen kayıtlar okunuyor…",
+      "review": "Kaydedilen kayıtları incele",
+      "title": "Kaydedilen giriş-çıkış kayıtları"
     }
   },
   "presence": {
@@ -530,12 +534,8 @@
   "validation": {
     "first-name-required": "Ad gerekli",
     "invalid-email": "Geçersiz e-posta adresi",
-    "invalid-password": "Geçersiz şifre",
     "last-name-required": "Soyad gerekli",
     "password-required": "Şifre gerekli"
-  },
-  "worksCouncil": {
-    "loadingLabel": "İş konseyi portalı yükleniyor"
   },
   "workBalance": {
     "label": "Tüm zamanların bakiyesi",

@@ -82,6 +82,7 @@
         "colStatus": "Status",
         "colVersion": "Versão",
         "copied": "Chave pública copiada para a área de transferência",
+        "copyError": "Falha ao copiar a chave pública",
         "description": "Gerenciar chaves de assinatura Ed25519 para autenticação de pacotes de auditoria",
         "downloaded": "Chave pública baixada",
         "exportDescription": "Use esta chave pública para verificar assinaturas de pacotes de auditoria externamente",

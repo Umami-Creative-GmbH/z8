@@ -321,6 +321,29 @@
       "actions": {
         "saveChanges": "Değişiklikleri Kaydet"
       },
+      "approvalMaintenance": {
+        "approvalHint": "Eski bir onay talebi veya standart iş akışı UUID'si.",
+        "approvalId": "Onay Kimliği",
+        "chain": "Onay zinciri",
+        "delete": "Zorla sil",
+        "deleting": "Siliniyor…",
+        "description": "Bir onayı ve bağlantılı onay kayıtlarını kalıcı olarak kaldırın. Kaynak kayıtlar ve durumları korunur.",
+        "errors": {
+          "ambiguous": "Bu kimlik her iki onay deposunda da mevcut. Hiçbir onay silinmedi.",
+          "approvalInvalid": "Geçerli bir onay UUID'si girin.",
+          "failed": "Silme işlemi tamamlanamadı. Yeniden denemeden önce onay kimliğini kontrol edin.",
+          "invalidInput": "Bir kuruluş kimliği ve geçerli bir onay UUID'si girin.",
+          "notFound": "Bu kuruluşta onay bulunamadı.",
+          "organizationRequired": "Bir kuruluş kimliği girin.",
+          "unauthorized": "Platform yöneticisi erişimi gerekiyor."
+        },
+        "legacy": "Eski talep",
+        "organizationHint": "Onayın ait olduğu kuruluş.",
+        "organizationId": "Kuruluş Kimliği",
+        "success": "Onay silindi. Kaldırılan kayıtlar:",
+        "title": "Onayı zorla sil",
+        "workflow": "İş akışı"
+      },
       "cookieConsent": {
         "description": "GDPR uyumluluğu için kimlik doğrulama sayfalarına enjekte edilir",
         "helperPrefix": "Devre dışı bırakmak için boş bırakın. Yükleme stratejisi:",

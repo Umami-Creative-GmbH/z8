@@ -85,16 +85,13 @@
       "activeStatus": "Aktiv-Status",
       "addPolicy": "Richtlinie hinzufügen",
       "approvalType": {
-        "absenceRequests": "Abwesenheitsanträge",
         "absence": "Abwesenheit",
         "complianceException": "Compliance-Ausnahme",
-        "manualTimeSubmission": "Manuelle Zeiterfassung",
-        "policyClockOut": "Ausstempeln gemäß Richtlinie",
+        "manualTimeSubmission": "Manuelle Zeiteinreichung",
+        "policyClockOut": "Richtlinien-Ausstempeln",
         "shiftRequest": "Schichtanfrage",
         "timeCorrection": "Zeitkorrektur",
-        "travelExpense": "Reisekosten",
-        "timeEntryChanges": "Änderungen der Zeiterfassung",
-        "travelExpenses": "Reisekosten"
+        "travelExpense": "Reisekosten"
       },
       "approvalTypes": "Genehmigungsarten",
       "conditionsCount": "Anzahl der Bedingungen",
@@ -131,21 +128,6 @@
       "toast": {
         "created": "Genehmigungsrichtlinie erstellt",
         "saveFailed": "Genehmigungsrichtlinie konnte nicht gespeichert werden."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Senden Sie die Anfrage an den Standardvorgesetzten, wenn in dieser Stufe kein Genehmiger ermittelt werden kann.",
-          "label": "Standardvorgesetzter"
-        },
-        "fail": {
-          "description": "Lehnen Sie die Anfrage ab, wenn in dieser Stufe kein Genehmiger ermittelt werden kann.",
-          "label": "Anfrage ablehnen"
-        },
-        "label": "Fallback-Verhalten",
-        "organizationAdmin": {
-          "description": "Senden Sie die Anfrage an einen Organisationsadministrator, wenn in dieser Stufe kein Genehmiger ermittelt werden kann.",
-          "label": "Organisationsadministrator"
-        }
       },
       "validation": {
         "activePolicyRequiresStage": "Aktive Richtlinien erfordern mindestens eine Genehmigungsstufe.",
@@ -366,6 +348,7 @@
       "deleteAssignmentTitle": "Zuweisung entfernen?",
       "deleteEmployeeAssignmentDescription": "Dies entfernt die Überschreibung für \"{name}\". Es wird der Standard für das Team oder die Organisation verwendet.",
       "deleteFailed": "Fehler beim Löschen des Modells",
+      "deleteModel": "Zuschlagsmodell löschen",
       "deleteModelDescription": "Dies deaktiviert das Modell und alle zugehörigen Zuweisungen. Diese Aktion kann nicht rückgängig gemacht werden.",
       "deleteModelTitle": "Zuschlagsmodell löschen?",
       "deleteOrgAssignmentDescription": "Dies entfernt den Standard der Organisation. Teams und Mitarbeiter ohne spezifische Zuweisungen haben dann kein Zuschlagsmodell mehr.",
@@ -403,6 +386,10 @@
       "percentageDescription": "Zusätzliches Zeitguthaben",
       "rangeEnd": "Bereichsende",
       "rangeStart": "Bereichsbeginn",
+      "removeEmployeeAssignment": "Mitarbeiterzuweisung entfernen",
+      "removeOrganizationAssignment": "Organisationszuweisung entfernen",
+      "removeRule": "Zuschlagsregel entfernen",
+      "removeTeamAssignment": "Teamzuweisung entfernen",
       "reports": {
         "details": {
           "appliedRules": "Angewendete Regeln",

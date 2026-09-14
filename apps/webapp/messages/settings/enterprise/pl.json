@@ -27,11 +27,20 @@
         "enabled": "Klucz włączony",
         "enabledHelp": "Wyłączone klucze będą odrzucać wszystkie żądania API",
         "expiration": "Data wygaśnięcia",
+        "invalid": "Sprawdź nieprawidłowe pola formularza",
         "name": "Nazwa",
         "nameHelp": "Opisowa nazwa identyfikująca ten klucz",
+        "nameMax": "Nazwa musi mieć maksymalnie 100 znaków",
+        "nameMin": "Nazwa musi mieć co najmniej 3 znaki",
+        "nameMinLength": "Nazwa musi mieć co najmniej 3 znaki",
         "namePlaceholder": "np. Produkcyjne API",
         "rateLimit": "Włącz limitowanie zapytań",
         "rateLimitMax": "Maksymalna liczba zapytań na minutę",
+        "rateLimitMaxExceeded": "Limit żądań musi wynosić maksymalnie 10 000 żądań",
+        "rateLimitMaxInvalid": "Wprowadź liczbę całkowitą od 10 do 10 000",
+        "rateLimitMin": "Limit żądań musi wynosić co najmniej 10 żądań",
+        "rateLimitRequired": "Limit żądań jest wymagany",
+        "rateLimitWholeNumber": "Limit żądań musi być liczbą całkowitą",
         "scopes": "Uprawnienia",
         "scopesRequired": "Wybierz co najmniej jedno uprawnienie"
       },
@@ -361,81 +370,81 @@
           "action": {
             "create": "Utwórz połączenie SCIM",
             "creating": "Tworzenie połączenia SCIM",
-            "decommission": "Wycofaj",
+            "decommission": "Wycofaj z eksploatacji",
             "reconcile": "Odśwież status tworzenia",
             "refresh": "Odśwież status",
-            "rotate": "Zmień poświadczenie",
+            "rotate": "Zrotuj dane uwierzytelniające",
             "selectRole": "Najpierw wybierz domyślny szablon roli"
           },
           "credential": {
             "close": "Zamknij",
-            "confirmClose": "Potwierdź zapisanie poświadczenia przed zamknięciem.",
-            "copied": "Poświadczenie skopiowano do schowka.",
-            "copy": "Kopiuj poświadczenie",
-            "description": "Skopiuj i zapisz to poświadczenie teraz. Nie można go wyświetlić ponownie.",
-            "label": "Poświadczenie",
-            "saved": "Zapisałem to poświadczenie",
-            "title": "Poświadczenie SCIM",
-            "warning": "To poświadczenie jest wyświetlane raz. Przechowuj je bezpiecznie u dostawcy tożsamości."
+            "confirmClose": "Przed zamknięciem potwierdź, że dane uwierzytelniające zostały zapisane.",
+            "copied": "Skopiowano dane uwierzytelniające do schowka.",
+            "copy": "Skopiuj dane uwierzytelniające",
+            "description": "Skopiuj i zapisz te dane uwierzytelniające teraz. Nie będzie można ich ponownie wyświetlić.",
+            "label": "Dane uwierzytelniające",
+            "saved": "Dane uwierzytelniające zostały zapisane",
+            "title": "Dane uwierzytelniające SCIM",
+            "warning": "Te dane uwierzytelniające są wyświetlane tylko raz. Zapisz je bezpiecznie u swojego dostawcy tożsamości."
           },
           "credentials": {
-            "credential": "Poświadczenie",
-            "empty": "Nie wydano żadnych poświadczeń.",
+            "credential": "Dane uwierzytelniające",
+            "empty": "Nie wygenerowano żadnych danych uwierzytelniających.",
             "expires": "Wygasa",
-            "lastUsedAria": "Ostatnie użycie: {value} UTC",
-            "revoke": "Unieważnij",
+            "lastUsedAria": "Ostatnio użyto: {value} UTC",
+            "revoke": "Odwołaj",
             "status": {
-              "active": "Aktywne",
-              "revoked": "Unieważnione"
+              "active": "aktywne",
+              "revoked": "odwołane"
             },
-            "title": "Poświadczenia",
-            "unused": "Jeszcze nie użyto"
+            "title": "Dane uwierzytelniające",
+            "unused": "Jeszcze nieużywane"
           },
-          "description": "Połącz dostawcę tożsamości, aby udostępniać i zarządzać dostępem pracowników.",
+          "description": "Weryfikacja SCIM aktualizuje się po wysłaniu przez dostawcę tożsamości zmiany użytkownika testowego lub grupy.",
           "dialog": {
             "cancel": "Anuluj",
             "decommission": {
-              "description": "To trwale wycofuje aprowizację SCIM i nie można tego cofnąć.",
+              "description": "Spowoduje to trwałe wycofanie aprowizacji SCIM z eksploatacji i nie można tego cofnąć.",
               "title": "Wycofaj SCIM"
             },
             "revoke": {
-              "description": "To natychmiast uniemożliwia poświadczeniu aprowizowanie użytkowników.",
+              "description": "Spowoduje to natychmiastowe zablokowanie możliwości aprowizacji użytkowników przy użyciu tych danych uwierzytelniających.",
               "title": "Unieważnij poświadczenie"
             }
           },
           "endpoint": "Punkt końcowy",
           "events": {
-            "empty": "Nie zarejestrowano zdarzeń aprowizacji.",
-            "error": "Nie można było załadować zdarzeń. Odśwież status i spróbuj ponownie.",
+            "empty": "Nie zarejestrowano żadnych zdarzeń aprowizacji.",
+            "error": "Nie udało się załadować zdarzeń. Odśwież stan i spróbuj ponownie.",
             "title": "Ostatnie zdarzenia"
           },
           "expiry": "Wygaśnięcie poświadczenia",
           "expiry.value": "1 rok",
-          "refreshHelp": "Odśwież status, aby wczytać bezpieczne metadane połączenia.",
+          "refreshHelp": "Odśwież stan, aby załadować metadane bezpiecznego połączenia.",
           "status": {
-            "active-unverified": "aktywne, niezweryfikowane",
+            "active-unverified": "aktywne niezweryfikowane",
             "creating": "tworzenie",
             "creation_failed": "tworzenie nie powiodło się",
-            "decommissioned": "wycofane",
+            "decommissioned": "wycofano",
             "decommissioning": "wycofywanie",
-            "disconnected": "rozłączone",
+            "disconnected": "rozłączono",
             "refreshing": "odświeżanie",
             "revoking": "unieważnianie",
-            "rotating": "zmiana",
-            "verified": "zweryfikowane"
+            "rotating": "rotowanie",
+            "verified": "zweryfikowano"
           },
           "title": "Aprowizacja SCIM",
           "toast": {
-            "createError": "Nie można było utworzyć połączenia SCIM.",
-            "reconcileError": "Nie można było uzgodnić tworzenia SCIM.",
-            "refreshError": "Nie można było odświeżyć statusu SCIM.",
-            "rotateError": "Nie można było zmienić poświadczenia SCIM.",
-            "updateError": "Nie można było zaktualizować połączenia SCIM."
+            "createError": "Nie można utworzyć połączenia SCIM.",
+            "reconcileError": "Nie można uzgodnić utworzenia SCIM.",
+            "refreshError": "Nie można odświeżyć stanu SCIM.",
+            "rotateError": "Nie można przeprowadzić rotacji poświadczenia SCIM.",
+            "updateError": "Nie można zaktualizować połączenia SCIM."
           },
           "verification": "Weryfikacja",
           "verification.awaiting": "Oczekiwanie na użycie przez dostawcę",
-          "verification.observed": "Zaobserwowano",
-          "wizardDescription": "Skonfiguruj zarządzane aprowizowanie użytkowników bez zmiany aktywacji firmowej."
+          "verification.observed": "Zaobserwowane",
+          "wizardDescription": "Skonfiguruj zarządzane aprowizowanie użytkowników bez zmiany aktywacji przedsiębiorstwa."
         },
         "sso": {
           "action": {
@@ -459,6 +468,10 @@
               "okta": "https://acme.okta.com…"
             },
             "metadata": "Wklej XML metadanych IdP…"
+          },
+          "saml": {
+            "acsPath": "Ścieżka ACS względna dla przeglądarki: {path}",
+            "acsUrl": "Skonfiguruj swojego dostawcę IdP za pomocą tego adresu URL usługi Assertion Consumer Service (ACS): {path}"
           },
           "title": "Konfiguracja SSO"
         },
@@ -498,7 +511,7 @@
           "review": "Przejrzyj i aktywuj",
           "review.description": "Aktywacja zabezpieczenia",
           "scim": "Aprowizacja SCIM",
-          "scim.description": "Połącz i zarządzaj połączeniem aprowizacji SCIM",
+          "scim.description": "Wydaj token aprowizacyjny",
           "sso": "Konfiguracja SSO",
           "sso.description": "Zarejestruj OIDC lub SAML",
           "ssoTest": "Użytkownik testowy",
@@ -524,8 +537,6 @@
       "leaveBlankKeepExisting": "Pozostaw puste, aby zachować istniejące",
       "provider": "Dostawca",
       "socialOAuth": {
-        "authentication": "Uwierzytelnianie",
-        "unverified": "Niezweryfikowane",
         "addDescription": "Skonfiguruj własną aplikację OAuth do logowania społecznościowego.",
         "addProviderError": "Nie udało się dodać dostawcy",
         "addTitle": "Dodaj dostawcę OAuth społecznościowego",
@@ -533,6 +544,7 @@
         "appleKeyIdRequired": "Identyfikator klucza jest wymagany dla Apple",
         "appleTeamIdHelp": "Znaleziono na Twoim koncie Apple Developer",
         "appleTeamIdRequired": "Identyfikator zespołu (Team ID) jest wymagany dla Apple",
+        "authentication": "Uwierzytelnianie",
         "clientIdPlaceholder": "Twój identyfikator klienta OAuth",
         "clientSecretPlaceholder": "Twój klucz tajny klienta OAuth",
         "configured": "OAuth dla {provider} skonfigurowane pomyślnie",
@@ -552,17 +564,15 @@
           "customDomain": "Użytkownicy logujący się przez Twoją domenę niestandardową będą używać Twojej aplikacji OAuth"
         },
         "keyId": "Identyfikator klucza",
-        "lastTested": "Ostatnio testowano",
-        "notTested": "Nietestowane",
         "privateKey": "Klucz prywatny (.p8)",
         "removed": "Usunięto OAuth dla {provider}",
         "removeDialogDescription": "Czy na pewno chcesz usunąć tę konfigurację OAuth? Użytkownicy powrócą do współdzielonych danych uwierzytelniających OAuth (jeśli są dostępne).",
         "removeDialogTitle": "Usuń dostawcę OAuth",
         "teamId": "Identyfikator zespołu (Team ID)",
         "title": "Dostawcy logowania społecznościowego",
+        "unverified": "Niezweryfikowane",
         "updateConfigError": "Nie udało się zaktualizować konfiguracji",
-        "updated": "Pomyślnie zaktualizowano OAuth dla {provider}",
-        "working": "Pracuję"
+        "updated": "Pomyślnie zaktualizowano OAuth dla {provider}"
       },
       "sso": {
         "addDescription": "Skonfiguruj dostawcę tożsamości OIDC dla logowania jednokrotnego (SSO) w przedsiębiorstwie.",

@@ -204,6 +204,7 @@
     "slugLabel": "Organisations-Slug",
     "slugPlaceholder": "acme-gmbh",
     "slugTaken": "Dieser Slug ist bereits vergeben. Bitte wählen Sie einen anderen.",
+    "ssoFailed": "SSO-Anmeldung wurde nicht abgeschlossen. Wählen Sie eine Organisation aus, um es erneut zu versuchen, oder wählen Sie einen anderen Arbeitsbereich.",
     "switchFailed": "Wechsel der Organisation fehlgeschlagen",
     "switching": "Organisation wird gewechselt...",
     "switchTo": "Organisation wechseln",

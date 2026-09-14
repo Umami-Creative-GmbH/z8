@@ -148,6 +148,7 @@
       "title": "Détails du jour"
     },
     "delete": {
+      "applied": "Suppression de la saisie de temps appliquée",
       "auditNote": "Les saisies de temps seront marquées comme supprimées à des fins d'audit.",
       "confirm": "Convertir en pause",
       "description": "Cela supprimera définitivement cette période de travail. L'espace apparaîtra comme une pause dans le calendrier.",
