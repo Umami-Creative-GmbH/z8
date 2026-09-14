@@ -28,10 +28,14 @@ interface TeamsNotificationParams {
 /**
  * Check if Teams is available for an organization
  */
-export async function isTeamsAvailable(organizationId: string): Promise<boolean> {
+export async function isTeamsAvailable(
+	organizationId: string,
+): Promise<boolean> {
 	try {
 		// Dynamically import to avoid circular dependencies
-		const { isTeamsEnabledForOrganization, isBotConfigured } = await import("@/lib/teams");
+		const { isTeamsEnabledForOrganization, isBotConfigured } = await import(
+			"@/lib/teams"
+		);
 
 		// Bot must be configured at the system level
 		if (!isBotConfigured()) {
@@ -52,17 +56,28 @@ export async function isTeamsAvailable(organizationId: string): Promise<boolean>
  * For approval-related notifications, this sends an interactive Adaptive Card.
  * For other notifications, this sends a simple text message.
  */
-export async function sendTeamsNotification(params: TeamsNotificationParams): Promise<void> {
+export async function sendTeamsNotification(
+	params: TeamsNotificationParams,
+): Promise<void> {
 	try {
 		// Dynamically import Teams module to avoid circular dependencies
-		const { getConversationReferenceForUser, sendProactiveMessage, sendApprovalCardToManager } =
-			await import("@/lib/teams");
+		const {
+			getConversationReferenceForUser,
+			sendProactiveMessage,
+			sendApprovalCardToManager,
+		} = await import("@/lib/teams");
 
 		// Handle approval-related notifications specially
-		if (params.type === "approval_request_submitted" && params.entityType === "approval_request") {
+		if (
+			params.type === "approval_request_submitted" &&
+			params.entityType === "approval_request"
+		) {
 			// Get the approval request details
 			const approval = await db.query.approvalRequest.findFirst({
-				where: eq(approvalRequest.id, params.entityId || ""),
+				where: and(
+					eq(approvalRequest.id, params.entityId || ""),
+					eq(approvalRequest.organizationId, params.organizationId),
+				),
 			});
 
 			if (approval) {
@@ -71,15 +86,22 @@ export async function sendTeamsNotification(params: TeamsNotificationParams): Pr
 					where: and(
 						eq(employee.userId, params.userId),
 						eq(employee.organizationId, params.organizationId),
+						eq(employee.isActive, true),
 					),
 				});
 
 				if (emp) {
 					// Send approval card
-					await sendApprovalCardToManager(approval.id, emp.id, params.organizationId);
+					await sendApprovalCardToManager(
+						approval.id,
+						emp.id,
+						params.organizationId,
+					);
 					return;
 				}
 			}
+			// Missing approval/recipient evidence must not fall through to raw details.
+			return;
 		}
 
 		// For other notifications, send a simple message
@@ -107,7 +129,10 @@ export async function sendTeamsNotification(params: TeamsNotificationParams): Pr
 			text,
 		});
 
-		logger.debug({ userId: params.userId, type: params.type }, "Teams notification sent");
+		logger.debug(
+			{ userId: params.userId, type: params.type },
+			"Teams notification sent",
+		);
 	} catch (error) {
 		logger.error({ error, params }, "Failed to send Teams notification");
 		throw error;

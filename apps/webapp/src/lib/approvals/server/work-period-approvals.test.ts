@@ -548,6 +548,7 @@ describe("stable ordinary work-period decisions", () => {
 			approvalRequestId: targetId,
 			workPeriodId: "period-1",
 			actor: currentApprover,
+			historicalOnly: replay,
 			decision: {
 				kind: action,
 				reason: action === "reject" ? "Missing details" : null,
@@ -769,9 +770,11 @@ describe("stable ordinary work-period decisions", () => {
 	});
 
 	it.each([
-		"approve",
-		"reject",
-	] as const)("keeps legacy %s decisions authoritative and returns terminal dispatch work", async (action) => {
+		{ action: "approve", historicalOnly: false },
+		{ action: "reject", historicalOnly: false },
+		{ action: "approve", historicalOnly: true },
+		{ action: "reject", historicalOnly: true },
+	] as const)("legacy $action respects historical-only=$historicalOnly at the operation boundary", async ({ action, historicalOnly }) => {
 		legacyCaptureMocks.load.mockResolvedValue({
 			organizationId: "org-1",
 			source: {
@@ -829,18 +832,26 @@ describe("stable ordinary work-period decisions", () => {
 			},
 		};
 
-		const executed = await executeOrdinaryWorkPeriodDecisionInTransaction({
+		const execution = executeOrdinaryWorkPeriodDecisionInTransaction({
 			dbService,
 			runtime: runtime as never,
 			organizationId: "org-1",
 			approvalRequestId: "approval-1",
 			workPeriodId: "period-1",
 			actor: currentApprover,
+			historicalOnly,
 			decision: {
 				kind: action,
 				reason: action === "reject" ? "Missing details" : null,
 			},
 		});
+		if (historicalOnly) {
+			await expect(execution).rejects.toBeDefined();
+			expect(dbService.updateSets).toEqual([]);
+			expect(runtime.transitionEngine.executeInTransactionWithDisposition).not.toHaveBeenCalled();
+			return;
+		}
+		const executed = await execution;
 
 		expect(executed.result).toMatchObject({
 			kind: "manual_time_submission",

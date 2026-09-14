@@ -541,6 +541,20 @@ function engineRequest(
 	};
 }
 
+it("historical-only access rolls back a new receipt claim without deciding", async () => {
+	const fixture = engineFixture();
+	await expect(fixture.engine.execute({ ...engineRequest(), historicalOnly: true })).rejects.toMatchObject({ code: "forbidden" });
+	expect(fixture.state.sourceFinalized).toBe(false);
+	expect(fixture.state.receiptCompleted).toBe(false);
+	expect(fixture.state.rolledBack).toBe(true);
+});
+
+it("historical-only access preserves an exact committed receipt", async () => {
+	const fixture = engineFixture({ claim: "completed" });
+	await expect(fixture.engine.execute({ ...engineRequest(), historicalOnly: true })).resolves.toBeDefined();
+	expect(fixture.state.sourceFinalized).toBe(false);
+});
+
 function activationSnapshot(
 	activationMode: "human" | "requester_auto_approve" = "human",
 ): ApprovalWorkflowSnapshot {

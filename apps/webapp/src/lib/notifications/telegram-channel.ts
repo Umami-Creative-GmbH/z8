@@ -31,12 +31,17 @@ interface TelegramNotificationParams {
 /**
  * Check if Telegram is available for an organization
  */
-export async function isTelegramAvailable(organizationId: string): Promise<boolean> {
+export async function isTelegramAvailable(
+	organizationId: string,
+): Promise<boolean> {
 	try {
 		const { isTelegramEnabledForOrganization } = await import("@/lib/telegram");
 		return await isTelegramEnabledForOrganization(organizationId);
 	} catch (error) {
-		logger.debug({ error, organizationId }, "Telegram availability check failed");
+		logger.debug(
+			{ error, organizationId },
+			"Telegram availability check failed",
+		);
 		return false;
 	}
 }
@@ -44,7 +49,9 @@ export async function isTelegramAvailable(organizationId: string): Promise<boole
 /**
  * Send a notification via Telegram
  */
-export async function sendTelegramNotification(params: TelegramNotificationParams): Promise<void> {
+export async function sendTelegramNotification(
+	params: TelegramNotificationParams,
+): Promise<void> {
 	try {
 		const {
 			getChatIdForUser,
@@ -69,9 +76,15 @@ export async function sendTelegramNotification(params: TelegramNotificationParam
 		}
 
 		// Handle approval-related notifications specially
-		if (params.type === "approval_request_submitted" && params.entityType === "approval_request") {
+		if (
+			params.type === "approval_request_submitted" &&
+			params.entityType === "approval_request"
+		) {
 			const approval = await db.query.approvalRequest.findFirst({
-				where: eq(approvalRequest.id, params.entityId || ""),
+				where: and(
+					eq(approvalRequest.id, params.entityId || ""),
+					eq(approvalRequest.organizationId, params.organizationId),
+				),
 			});
 
 			if (approval) {
@@ -79,6 +92,7 @@ export async function sendTelegramNotification(params: TelegramNotificationParam
 					where: and(
 						eq(employee.userId, params.userId),
 						eq(employee.organizationId, params.organizationId),
+						eq(employee.isActive, true),
 					),
 				});
 
@@ -92,6 +106,8 @@ export async function sendTelegramNotification(params: TelegramNotificationParam
 					return;
 				}
 			}
+			// Missing approval/recipient evidence must not fall through to raw details.
+			return;
 		}
 
 		// For other notifications, send a simple message
@@ -151,7 +167,10 @@ export async function sendTelegramNotification(params: TelegramNotificationParam
 			parse_mode: "MarkdownV2",
 		});
 
-		logger.debug({ userId: params.userId, type: params.type }, "Telegram notification sent");
+		logger.debug(
+			{ userId: params.userId, type: params.type },
+			"Telegram notification sent",
+		);
 	} catch (error) {
 		logger.error({ error, params }, "Failed to send Telegram notification");
 		throw error;

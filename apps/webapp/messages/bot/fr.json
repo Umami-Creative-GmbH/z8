@@ -1,6 +1,13 @@
 {
   "bot": {
     "approval": {
+      "reviewRequiredTitle": "Examen requis",
+      "reviewRequired": "Cette carte ne permet pas de vérifier les informations initialement soumises. Ouvrez la boîte de réception des approbations dans Z8 pour examiner la demande. Aucune décision n’a été prise depuis cette carte.",
+      "reviewInZ8": "Examiner dans Z8",
+      "historicalTitle": "Décision antérieure",
+      "historicalApproval": "Votre approbation précédemment enregistrée a été vérifiée. Il s’agit d’un résultat antérieur ; aucune nouvelle décision n’a été prise. Consultez la demande dans Z8 pour plus de détails.",
+      "historicalRejection": "Votre refus précédemment enregistré a été vérifié. Il s’agit d’un résultat antérieur ; aucune nouvelle décision n’a été prise. Consultez la demande dans Z8 pour plus de détails.",
+      "unboundCallback": "Cette carte ne permet pas de vérifier les informations initialement examinées. Aucune décision n’a été prise. Examinez la demande dans Z8.",
       "alreadyProcessed": "Cette approbation a déjà été traitée."
     },
     "cmd": {

@@ -1,6 +1,13 @@
 {
   "bot": {
     "approval": {
+      "reviewRequiredTitle": "İnceleme gerekli",
+      "reviewRequired": "Bu kart, inceleme için başlangıçta gönderilen bilgileri doğrulayamıyor. Talebi incelemek için Z8’deki onay gelen kutusunu açın. Bu kart üzerinden hiçbir karar verilmedi.",
+      "reviewInZ8": "Z8’de incele",
+      "historicalTitle": "Önceki karar",
+      "historicalApproval": "Daha önce kaydedilen onayınız doğrulandı. Bu geçmiş bir sonuçtur; yeni bir karar verilmedi. Ayrıntılar için Z8’deki talebi inceleyin.",
+      "historicalRejection": "Daha önce kaydedilen ret kararınız doğrulandı. Bu geçmiş bir sonuçtur; yeni bir karar verilmedi. Ayrıntılar için Z8’deki talebi inceleyin.",
+      "unboundCallback": "Bu kart, başlangıçta incelenen bilgileri doğrulayamıyor. Hiçbir karar verilmedi. Talebi Z8’de inceleyin.",
       "alreadyProcessed": "Bu onay zaten işleme alınmış."
     },
     "cmd": {
