@@ -9,6 +9,7 @@ import {
 import { ValidationError } from "@/lib/effect/errors";
 import { policyClockOutBreakSnapshotFromPendingChanges } from "@/lib/time-tracking/policy-clock-out-break-snapshot";
 import { policyClockOutSurchargeSnapshotFromPendingChanges } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
+import type { WorkTransactionContext } from "@/lib/time-tracking/web-clock-out-transaction";
 import {
 	decodeApprovalDatabaseJsonText,
 	decodeApprovalDatabaseTimestamptz,
@@ -48,6 +49,7 @@ import {
 export interface ExecuteOrdinaryWorkPeriodSubmissionInput {
 	dbService: ApprovalDbService;
 	context: ApprovalWorkflowTransactionContext;
+	coordination?: WorkTransactionContext;
 	organizationId: string;
 	workPeriodId: string;
 	submissionId: string;
@@ -1631,6 +1633,11 @@ async function executeOrdinaryWorkPeriodSubmission(
 }> {
 	const submissionId = canonicalSubmissionId(input.submissionId);
 	if (input.context.dbService.db !== input.dbService.db) fail();
+	if (input.coordination && input.coordination.db !== input.dbService.db) fail();
+	input.coordination?.assertEmployee(
+		input.organizationId,
+		input.requesterEmployeeId,
+	);
 	const authority = await input.context.writeGate.acquire({
 		organizationId: input.organizationId,
 		workflowType: input.kind,
@@ -1797,6 +1804,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 					});
 				const resolved = await Effect.runPromiseExit(
 					resolvePolicyAndCreateApproval(input.dbService, {
+						coordination: input.coordination,
 						context: {
 							organizationId: input.organizationId,
 							approvalType: "time_entry",

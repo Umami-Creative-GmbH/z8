@@ -33,17 +33,34 @@ One attempt then acquires, in order:
    bootstrap/read. Nested approval collaborators receive its fixed result and
    cannot acquire a new approval scope late.
 3. Shared `JSON.stringify(["work-organization-configuration", organizationId])`.
-4. Shared `JSON.stringify(["work-user-configuration-access", userId])`.
-5. Exclusive **existing** employee key: `hashtextextended(employeeId, 0)`.
+4. Sorted shared `JSON.stringify(["work-user-configuration-access", userId])`
+   for the requester and routed approval participants with user accounts.
+5. Sorted exclusive **existing** employee keys: `hashtextextended(employeeId, 0)`.
 6. Sorted, deduplicated auxiliary/source identities, then rows below.
 7. Existing workflow reservation/CAS/compatibility/outbox work.
 
 All advisory locks are transaction-scoped with hash seed zero. This self-service
-path has one organization, one acting/owning user, and one work-owning employee.
-Manager/policy-directory reads remain organization-configuration dependencies;
-they do not mutate another employee's work. Implicit foreign-key identity locks
-from canonical/workflow inserts remain PostgreSQL's responsibility and must be
-included in the outstanding real concurrency checks.
+path has one organization and one work-owning employee. Fresh approval routing
+also inventories possible participants using the existing legacy and canonical
+approver resolvers (default managers and stages of active policies). Their user
+and employee identities participate in sorted protection before any work write.
+This conservatively covers candidate stages before authoritative policy matching;
+it does not decide an approval or grant permission to modify participants' work.
+Committed replay does not perform fresh manager/policy routing.
+
+Both actual legacy creation and canonical stage activation check resolved
+participants and policy/stage identities against the protected context before
+creating FK references. A late new participant or policy/stage aborts and
+restarts the whole transaction, including when the
+existing Effect/approval error boundaries wrap the internal exception.
+
+Approval rollout bootstrap may acquire organization `KEY SHARE` through its FK
+at step 2. The later organization read lock, including the surcharge resolver,
+uses `FOR NO KEY UPDATE`, which is compatible with that FK lock; it must not be
+strengthened to `FOR UPDATE`. This still blocks configuration updates/deletion
+without the bootstrap shared-to-exclusive conflict. Project/category/cost-center
+FK targets and approval participants are routed before workflow inserts. Real
+PostgreSQL verification of these interactions remains mandatory.
 
 Auxiliary/source identities are the existing terminal-break/balance ownership
 key `JSON.stringify([organizationId, employeeId])`, and, for each routed source
@@ -65,18 +82,23 @@ discovery and scoped locking. IDs within each table are ordered ascending:
 3. `member`
 4. `user_settings`
 5. `employee`
-6. `work_policy_assignment`
-7. `work_policy`
-8. `work_policy_regulation`
-9. `work_policy_break_rule`
-10. `surcharge_model_assignment`
-11. `surcharge_model`
-12. `surcharge_rule`
-13. `work_period`
-14. `time_entry`
-15. `time_record`
-16. `time_record_work`
-17. `time_record_allocation`
+6. `approval_policy`
+7. `approval_policy_stage`
+8. `work_policy_assignment`
+9. `work_policy`
+10. `work_policy_regulation`
+11. `work_policy_break_rule`
+12. `surcharge_model_assignment`
+13. `surcharge_model`
+14. `surcharge_rule`
+15. `project`
+16. `work_category`
+17. `cost_center`
+18. `work_period`
+19. `time_entry`
+20. `time_record`
+21. `time_record_work`
+22. `time_record_allocation`
 
 Rows without an organization column are reached through organization-scoped
 parents or the authenticated owning user's scoped employee. Approved membership
@@ -92,8 +114,14 @@ start-time window around the supplied event instant for terminal break gap
 reads; the existing collaborator still determines the actual local day and
 policy. All applicable assignment candidates and their policy/model children
 are acquired before the existing event-time resolvers run. The organization
-row's existing surcharge `FOR UPDATE` behavior is retained, so genuine shared
-configuration can still serialize otherwise independent employees.
+row's surcharge protection uses `FOR NO KEY UPDATE` consistently, so genuine
+shared configuration can still serialize otherwise independent employees.
+
+Keep this conservative inventory aligned with the named owners:
+`policy-clock-out-break-snapshot.ts` (assignment/policy/regulation/rules),
+`policy-clock-out-surcharge-snapshot.ts` (organization/assignment/model/rules),
+`policy-clock-out-terminal-break.ts` (gap periods, endpoints/head, canonical graph),
+and approval `work-period-resource-routing.ts` (legacy/canonical participants).
 
 Bindings and the complete resource set are checked after advisory protection
 and again after acquiring **only previously routed** row IDs. Change throws out
@@ -127,11 +155,52 @@ The user explicitly authorized typechecking/tests and confirmed the real web
 clock-out action as the test seam. Database-free action tests exercise the new
 coordinator, changed-scope rollback/retry, existing replay/collision/approval
 outcomes, actual clocking calculation/capture, transaction identity/lifetime,
-and the real ordinary-submission failure boundary. These use controlled database
-and workflow adapters; they are **not PostgreSQL lock or rollback proof**.
+and ordinary submission. Successful legacy approval closure additionally uses
+the real production approval runtime, repository, write gate, submission and
+chain service through database adapters, including manager and matched-policy
+changes discovered after row acquisition. These are **not PostgreSQL lock or rollback proof**;
+canonical terminal-split runtime evidence is still outstanding.
 
-Local check results will be recorded after final verification and two-axis
-review.
+### Local results (2026-09-15)
+
+- `pnpm --filter webapp typecheck`: passed, including route type generation,
+  application types, workflow contracts, and smoke types. Repeated during work.
+- Final focused Vitest run: **304 passed / 6 files**: action clocking, action
+  delegation, clocking service, surcharge snapshot, approval chain service, and
+  ordinary work-period submission.
+- `pnpm test --env-mode=loose`: Docker tests **29 passed**. Turbo then failed to
+  spawn the webapp/desktop commands with `Exec format error (os error 8)`.
+- Direct fallback `pnpm --filter webapp test`: **11,141 passed, 289 skipped,
+  33 failed** (990 passed files, 14 failed, 6 skipped). One failure was the old
+  source-delegation assertion naming the former transaction owner; that assertion
+  was updated and passed in the final focused run. The other **32 failures** are
+  untouched localization/catalog assertions and the environment-usage assertion
+  for `lib/cron/legacy-escalation-schedulers.ts`. The full suite was not rerun.
+- `pnpm --filter desktop test`: Rust **12 passed / 1 ignored**; JavaScript
+  **2 passed / 1 failed**, the untouched OrganizationSelector backdrop assertion.
+- The failing catalogs, escalation scheduler, desktop component and desktop
+  assertion have no diff from the ticket-start commit. Their repairs are outside
+  this transaction slice.
+- PostgreSQL integration opt-in was empty, and inherited database settings were
+  pointed at an unavailable local port for the suite. No unrelated PostgreSQL
+  database was used. Desktop tests use their own temporary SQLite fixtures.
+
+### Standards review
+
+No confirmed documented-standard violations. One maintenance judgement remains:
+the concrete row inventory must stay aligned with its named snapshot/terminal
+collaborators. The owner pointers above make that obligation explicit; participant
+routing delegates the existing reviewer resolvers rather than redefining them.
+No UI components were changed, so UI accessibility/composition rules do not add
+an interface change to review here.
+
+### Spec review
+
+Four source/interface findings were addressed during review: incompatible
+organization bootstrap/row locking; missing approval participant FK scope;
+missing successful real-runtime composition coverage; and missing matched-policy
+and stage FK scope. Final focused re-review reported no remaining demonstrable
+source correctness blocker. This does not satisfy the runtime evidence gates.
 
 Blocked obligations (ticket remains open; no activation):
 

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { type SQL, sql } from "drizzle-orm";
+import { routeWorkPeriodApprovalParticipants } from "@/lib/approvals/server/work-period-resource-routing";
 import { dateFromInstant } from "@/lib/datetime/temporal-core";
 import type {
 	WebClockOutTransactionInput,
@@ -22,7 +23,11 @@ type Resource = Readonly<{
 }>;
 
 /** Concrete table order for this legacy caller, not a configurable lock framework. */
-function resourceQueries(input: WebClockOutTransactionInput) {
+function resourceQueries(
+	input: WebClockOutTransactionInput,
+	employeeIds = [input.employeeId],
+	userIds = [input.userId],
+) {
 	const org = input.organizationId;
 	const employeeScope = sql`select id from employee where organization_id = ${org} and id = ${input.employeeId}::uuid and user_id = ${input.userId} and is_active = true`;
 	const sourceScope = sql`select id from work_period where organization_id = ${org} and employee_id = ${input.employeeId}::uuid and (clock_out_id = ${input.submissionId}::uuid or id = ${input.workPeriodId ?? null}::uuid)`;
@@ -52,7 +57,10 @@ function resourceQueries(input: WebClockOutTransactionInput) {
 		{ table: "organization", scope: sql`id = ${org}` },
 		{
 			table: "user",
-			scope: sql`id = ${input.userId} and exists (${employeeScope})`,
+			scope: sql`id in (${sql.join(
+				userIds.map((id) => sql`${id}`),
+				sql`, `,
+			)}) and exists (${employeeScope})`,
 		},
 		{
 			table: "member",
@@ -64,10 +72,21 @@ function resourceQueries(input: WebClockOutTransactionInput) {
 		},
 		{
 			table: "employee",
-			scope: sql`organization_id = ${org} and id in (${employeeScope})`,
+			scope: sql`organization_id = ${org} and id in (${sql.join(
+				employeeIds.map((id) => sql`${id}`),
+				sql`, `,
+			)})`,
 		},
 		// Assignment candidates include expired/future rows: their IDs are protected
 		// before the existing event-time snapshot resolver selects effective rows.
+		{
+			table: "approval_policy",
+			scope: sql`organization_id = ${org} and is_active = true and ${input.requiresApproval === true}`,
+		},
+		{
+			table: "approval_policy_stage",
+			scope: sql`organization_id = ${org} and policy_id in (select id from approval_policy where organization_id = ${org} and is_active = true) and ${input.requiresApproval === true}`,
+		},
 		{ table: "work_policy_assignment", scope: assignments },
 		{
 			table: "work_policy",
@@ -89,6 +108,22 @@ function resourceQueries(input: WebClockOutTransactionInput) {
 		{
 			table: "surcharge_rule",
 			scope: sql`model_id in (select id from surcharge_model where organization_id = ${org} and id in (${models}))`,
+		},
+		{
+			table: "project",
+			scope: sql`organization_id = ${org} and (id = ${input.projectId ?? null}::uuid
+				or id in (select project_id from work_period where organization_id = ${org} and id in (${sourceScope}))
+				or id in (select project_id from time_record_allocation where organization_id = ${org} and record_id in (${canonical})))`,
+		},
+		{
+			table: "work_category",
+			scope: sql`organization_id = ${org} and (id = ${input.workCategoryId ?? null}::uuid
+				or id in (select work_category_id from work_period where organization_id = ${org} and id in (${sourceScope}))
+				or id in (select work_category_id from time_record_work where organization_id = ${org} and record_id in (${canonical})))`,
+		},
+		{
+			table: "cost_center",
+			scope: sql`organization_id = ${org} and id in (select cost_center_id from time_record_allocation where organization_id = ${org} and record_id in (${canonical}))`,
 		},
 		{
 			table: "work_period",
@@ -120,7 +155,18 @@ export async function routeWebClockOutResources(
 	db: WorkTransactionClient,
 	input: WebClockOutTransactionInput,
 ): Promise<readonly Resource[]> {
-	const definitions = resourceQueries(input);
+	const participants = input.requiresApproval
+		? await routeWorkPeriodApprovalParticipants({
+				db,
+				organizationId: input.organizationId,
+				requesterEmployeeId: input.employeeId,
+			})
+		: { employeeIds: [input.employeeId], userIds: [input.userId] };
+	const definitions = resourceQueries(
+		input,
+		participants.employeeIds,
+		[...new Set([input.userId, ...participants.userIds])].sort(),
+	);
 	const result = await db.execute(
 		sql`/* web-clock-out:route */ ${sql.join(
 			definitions.map(
@@ -168,10 +214,18 @@ export async function routeWebClockOutResources(
 				tableOrder.indexOf(a.table) - tableOrder.indexOf(b.table) ||
 				(a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
 		);
-	for (const table of ["organization", "user", "member", "employee"]) {
+	for (const table of ["organization", "member"]) {
 		if (resources.filter((row) => row.table === table).length !== 1) {
 			throw new Error("Active organization-scoped clocking access required");
 		}
+	}
+	if (
+		!resources.some(
+			(row) => row.table === "employee" && row.id === input.employeeId,
+		) ||
+		!resources.some((row) => row.table === "user" && row.id === input.userId)
+	) {
+		throw new Error("Active organization-scoped clocking access required");
 	}
 	return resources;
 }
@@ -207,7 +261,11 @@ export async function lockWebClockOutResources(
 			sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`,
 		);
 	}
-	for (const definition of resourceQueries(input)) {
+	for (const definition of resourceQueries(
+		input,
+		resources.filter((row) => row.table === "employee").map((row) => row.id),
+		resources.filter((row) => row.table === "user").map((row) => row.id),
+	)) {
 		const ids = resources
 			.filter((row) => row.table === definition.table)
 			.map((row) => row.id);
@@ -220,6 +278,6 @@ export async function lockWebClockOutResources(
 				ids.map((id) => sql`${id}`),
 				sql`, `,
 			)})
-			order by ${column} for update`);
+			order by ${column} ${definition.table === "organization" ? sql`for no key update` : sql`for update`}`);
 	}
 }

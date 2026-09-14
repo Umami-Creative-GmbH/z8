@@ -17,6 +17,7 @@ import {
 	ConflictError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import type { WorkTransactionContext } from "@/lib/time-tracking/web-clock-out-transaction";
 import { logApprovalPolicyEvent } from "../infrastructure/audit-logger";
 import type { ApprovalDbService } from "../server/types";
 import { resolveApproverFromDirectory } from "./approver-resolution";
@@ -109,6 +110,7 @@ type ChainInstanceRecord = {
 };
 
 export interface ResolvePolicyAndCreateApprovalInput {
+	coordination?: WorkTransactionContext;
 	context: ApprovalPolicyEvaluationContext;
 	defaultApproverId: string | null;
 	transactionBehavior?: "open" | "existing";
@@ -962,6 +964,10 @@ export function resolvePolicyAndCreateApproval(
 				disposition.kind === "auto_approve"
 					? ("auto_completed" as const)
 					: ("default_created" as const);
+			input.coordination?.assertParticipant(
+				input.context.organizationId,
+				defaultApproverId,
+			);
 			const approvalRequestId = yield* _(
 				dbService.query("createDefaultApprovalRequest", () =>
 					insertApprovalRequest(
@@ -1003,6 +1009,11 @@ export function resolvePolicyAndCreateApproval(
 			return { kind: "default_created", approvalRequestId } as const;
 		}
 
+		input.coordination?.assertApprovalPolicy(
+			input.context.organizationId,
+			matchedPolicy.id,
+			matchedPolicy.stages.map(({ id }) => id),
+		);
 		const resolvedStages: Array<{
 			stage: (typeof matchedPolicy.stages)[number];
 			approverEmployeeId: string;
@@ -1033,6 +1044,10 @@ export function resolvePolicyAndCreateApproval(
 				);
 			}
 
+			input.coordination?.assertParticipant(
+				input.context.organizationId,
+				resolved.approverEmployeeId,
+			);
 			resolvedStages.push({
 				stage,
 				approverEmployeeId: resolved.approverEmployeeId,

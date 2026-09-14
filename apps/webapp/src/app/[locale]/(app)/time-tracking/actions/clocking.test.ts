@@ -24,6 +24,7 @@ const mockState = vi.hoisted(() => ({
 	createManualEntryApprovalRequest: vi.fn(),
 	executeOrdinarySubmission: vi.fn(),
 	useRealOrdinarySubmission: false,
+	useRealApprovalRuntime: false,
 	sendManualEntryApprovalNotifications: vi.fn(),
 	sendManualEntryApprovedNotification: vi.fn(),
 	transactionOpen: false,
@@ -175,6 +176,14 @@ vi.mock("@/db/schema", () => ({
 		organizationId: "approvalPolicy.organizationId",
 		priority: "approvalPolicy.priority",
 	},
+	approvalChainInstance: {
+		id: "approvalChainInstance.id",
+		organizationId: "approvalChainInstance.organizationId",
+	},
+	approvalChainStageInstance: {
+		id: "approvalChainStageInstance.id",
+		organizationId: "approvalChainStageInstance.organizationId",
+	},
 	employeeGroupMember: {
 		organizationId: "employeeGroupMember.organizationId",
 		employeeId: "employeeGroupMember.employeeId",
@@ -276,41 +285,52 @@ vi.mock(
 	},
 );
 
-vi.mock("@/lib/approvals/workflow/runtime", () => ({
-	createProductionApprovalWorkflowRuntime: ({
-		db,
-	}: {
-		db: { transaction: typeof mockState.transaction };
-	}) => ({
-		repository: {
-			withTransaction: (operation: (context: unknown) => Promise<unknown>) =>
-				db.transaction((tx: unknown) => {
-					const compatibilityWriter = {
-						withWriteGate: () => compatibilityWriter,
-						mirrorCanonicalToLegacy: vi.fn(),
-					};
-					return operation({
-						dbService: { db: tx },
-						writeGate: {
-							acquire: async (scope: unknown) => (
-								mockState.acquireApprovalGate(scope),
-								{
-									mode: "legacy",
-									behavior: {
-										writeLegacy: true,
-										writeCanonical: false,
-										decideCanonical: false,
-										observation: "none",
-									},
-								}
-							),
-						},
-						compatibilityWriter,
-					});
-				}),
+vi.mock("@/lib/approvals/workflow/runtime", async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import("@/lib/approvals/workflow/runtime")>();
+	return {
+		createProductionApprovalWorkflowRuntime: (
+			input: Parameters<
+				typeof actual.createProductionApprovalWorkflowRuntime
+			>[0],
+		) => {
+			if (mockState.useRealApprovalRuntime)
+				return actual.createProductionApprovalWorkflowRuntime(input);
+			const { db } = input;
+			return {
+				repository: {
+					withTransaction: (
+						operation: (context: unknown) => Promise<unknown>,
+					) =>
+						db.transaction((tx: unknown) => {
+							const compatibilityWriter = {
+								withWriteGate: () => compatibilityWriter,
+								mirrorCanonicalToLegacy: vi.fn(),
+							};
+							return operation({
+								dbService: { db: tx },
+								writeGate: {
+									acquire: async (scope: unknown) => (
+										mockState.acquireApprovalGate(scope),
+										{
+											mode: "legacy",
+											behavior: {
+												writeLegacy: true,
+												writeCanonical: false,
+												decideCanonical: false,
+												observation: "none",
+											},
+										}
+									),
+								},
+								compatibilityWriter,
+							});
+						}),
+				},
+			};
 		},
-	}),
-}));
+	};
+});
 
 vi.mock("../actions.canonical", () => ({
 	canonicalWorkRecordClient: {
@@ -495,6 +515,7 @@ function ordinarySubmissionExecute(
 
 beforeEach(() => {
 	mockState.useRealOrdinarySubmission = false;
+	mockState.useRealApprovalRuntime = false;
 });
 
 function approvalRequestMetadata(
@@ -1259,6 +1280,197 @@ describe("clockOut", () => {
 		expect(mockState.clockingClockOut).toHaveBeenCalledTimes(1);
 	});
 
+	it.each(["default", "manager-change", "policy-change"])(
+		"commits through the real approval runtime and restarts late scope changes (%s)",
+		async (scenario) => {
+			const changeManager = scenario === "manager-change";
+			const changePolicy = scenario === "policy-change";
+			mockState.useRealApprovalRuntime = true;
+			mockState.useRealOrdinarySubmission = true;
+			mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
+			const inserted: Record<string, unknown>[] = [];
+			const statements: { sql: string; params: unknown[] }[] = [];
+			let managerId = "manager-1";
+			let directoryReads = 0;
+			let policyId = "policy-1";
+			let policyReads = 0;
+			mockState.findManagerLinks.mockImplementation(async () => [
+				{ employeeId: "employee-1", managerId, isPrimary: true },
+			]);
+			const original = mockState.transaction.getMockImplementation()!;
+			mockState.transaction.mockImplementation((callback) =>
+				original(
+					async (tx: {
+						execute(query: SQL): Promise<unknown>;
+						query: Record<string, Record<string, ReturnType<typeof vi.fn>>>;
+						insert?: () => {
+							values(values: Record<string, unknown>): {
+								returning(): Promise<{ id: string }[]>;
+							};
+						};
+					}) => {
+						const execute = tx.execute;
+						tx.execute = async (query: SQL) => {
+							const compiled = new PgDialect().sqlToQuery(query);
+							statements.push(compiled);
+							if (compiled.sql.includes("select lifecycle_mode"))
+								return { rows: [{ lifecycle_mode: "legacy" }] };
+							if (compiled.sql.includes("web-clock-out:route"))
+								return {
+									rows: [
+										...clockOutRoutingRows(),
+										...(changePolicy
+											? [
+													{
+														table: "approval_policy",
+														id: policyId,
+														binding: policyId,
+														source: false,
+													},
+													{
+														table: "approval_policy_stage",
+														id: "policy-stage-1",
+														binding: "stage",
+														source: false,
+													},
+												]
+											: []),
+										{
+											table: "employee",
+											id: managerId,
+											binding: "manager",
+											source: false,
+										},
+									],
+								};
+							return execute(query);
+						};
+						tx.query.employee.findMany.mockImplementation(async () => {
+							directoryReads += 1;
+							if (changeManager && directoryReads === 4)
+								managerId = "manager-2";
+							return [
+								{
+									id: "employee-1",
+									userId: "user-1",
+									organizationId: "org-1",
+									isActive: true,
+									role: "employee",
+								},
+								{
+									id: "manager-1",
+									organizationId: "org-1",
+									isActive: true,
+									role: "manager",
+								},
+								{
+									id: "manager-2",
+									organizationId: "org-1",
+									isActive: true,
+									role: "manager",
+								},
+							];
+						});
+						if (changePolicy)
+							tx.query.approvalPolicy.findMany.mockImplementation(async () => {
+								policyReads += 1;
+								if (policyReads === 4) policyId = "policy-2";
+								return [
+									{
+										id: policyId,
+										organizationId: "org-1",
+										name: "Clock-out",
+										isActive: true,
+										priority: 1,
+										conditions: [],
+										stages: [
+											{
+												id: "policy-stage-1",
+												stepOrder: 1,
+												label: "Manager",
+												approverType: "specific_employee",
+												approverEmployeeId: "manager-1",
+												fallbackBehavior: "fail",
+											},
+										],
+									},
+								];
+							});
+						tx.query.approvalRequest.findFirst = vi.fn(async () => ({
+							id: "approval-1",
+							approverId: managerId,
+						}));
+						tx.insert = () => ({
+							values: (values: Record<string, unknown>) => {
+								inserted.push(values);
+								return { returning: async () => [{ id: "approval-1" }] };
+							},
+						});
+						return callback(tx);
+					},
+				),
+			);
+			const service = createClockingService({
+				transaction: async () => {
+					throw new Error("Nested clocking transaction");
+				},
+				storeForCoordinatedTransaction: (context) => ({
+					transaction: context.db,
+					lockEmployee: async () => {
+						throw new Error("Late employee acquisition");
+					},
+					isOrganizationMember: async () => true,
+					getEntryByActionId: async () => null,
+					getActivePeriod: async () => ({
+						id: "period-1",
+						startTime: new Date("2026-05-04T09:00:00Z"),
+					}),
+					getLatestHash: async () => null,
+					insertEntry: async (values) => ({
+						...values,
+						id: defaultSubmissionId,
+					}),
+					insertActivePeriod: async () => {
+						throw new Error("Unexpected opening");
+					},
+					closeActivePeriod: async () => ({ id: "period-1" }),
+				}),
+			});
+			mockState.clockingClockOut.mockImplementation(service.clockOut);
+
+			const result = await clockOut();
+
+			expect(result).toMatchObject({
+				success: true,
+				data: { id: defaultSubmissionId, pendingApproval: true },
+			});
+			expect(mockState.transaction).toHaveBeenCalledTimes(
+				scenario === "default" ? 2 : 3,
+			);
+			expect(inserted).toContainEqual(
+				expect.objectContaining({
+					entityId: "period-1",
+					approverId: managerId,
+					status: "pending",
+				}),
+			);
+			expect(
+				mockState.sendClockOutApprovalNotifications,
+			).toHaveBeenCalledOnce();
+			const managerLock = statements.findIndex(
+				({ sql, params }) =>
+					sql.includes("pg_advisory_xact_lock(") && params[0] === "manager-1",
+			);
+			const rowLock = statements.findIndex(
+				({ sql }) =>
+					sql.includes('from "organization"') &&
+					sql.includes("web-clock-out:lock"),
+			);
+			expect(managerLock).toBeGreaterThan(-1);
+			expect(statements[rowLock].sql).toContain("for no key update");
+		},
+	);
+
 	it("rejects suspended organizations before creating a clock-out entry", async () => {
 		mockState.requireBillingForMutation.mockResolvedValue({
 			canAccess: false,
@@ -1311,7 +1523,7 @@ describe("clockOut", () => {
 				context: expect.anything(),
 			}),
 		);
-		expect(mockState.findManagerLinks).not.toHaveBeenCalled();
+		expect(mockState.findManagerLinks).toHaveBeenCalled();
 		const submission = mockState.executeOrdinarySubmission.mock.calls[0][0];
 		expect(submission.dbService.db).toBe(submission.context.dbService.db);
 		expect(mockState.clockingClockOut.mock.calls[0][0].coordination.db).toBe(

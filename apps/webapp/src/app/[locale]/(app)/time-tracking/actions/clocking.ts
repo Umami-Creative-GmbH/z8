@@ -1110,6 +1110,7 @@ export async function clockOut(
 					await executeOrdinaryWorkPeriodSubmissionInTransaction({
 						dbService: approvalDbServiceForTransaction(context.dbService),
 						context,
+						coordination,
 						organizationId: currentEmployee.organizationId,
 						workPeriodId: period.id,
 						submissionId,
@@ -1241,6 +1242,9 @@ export async function clockOut(
 				submissionId,
 				workPeriodId: activeWorkPeriod.id,
 				endTime: actionInstant,
+				requiresApproval: needsClockOutApproval,
+				projectId,
+				workCategoryId,
 			},
 			createOrdinaryApprovalRuntime,
 			async (coordination) => {
@@ -1326,6 +1330,7 @@ export async function clockOut(
 								return executeOrdinaryWorkPeriodSubmissionInTransaction({
 									dbService: approvalDbServiceForTransaction(context.dbService),
 									context,
+									coordination,
 									organizationId: currentEmployee.organizationId,
 									workPeriodId: activeWorkPeriod.id,
 									submissionId: requireCanonicalSubmissionId(submissionId),
@@ -1365,6 +1370,7 @@ export async function clockOut(
 						context,
 						organizationId: currentEmployee.organizationId,
 						workPeriodId: clockOutResult.period.id,
+						coordination,
 						submissionId: requireCanonicalSubmissionId(submissionId),
 						requesterEmployeeId: currentEmployee.id,
 						requesterUserId: session.user.id,
