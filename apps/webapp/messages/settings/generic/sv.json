@@ -1,0 +1,990 @@
+{
+  "settings": {
+    "avv": {
+      "contractDetails": {
+        "controller": "Kund (Personuppgiftsansvarig)",
+        "descriptionPrefix": "Detta avtal reglerar behandlingen av personuppgifter för din organisations räkning och ",
+        "processor": "Uppdragstagare (Personuppgiftsbiträde)",
+        "title": "Avtalsuppgifter"
+      },
+      "description": "Ladda ner ditt personuppgiftsbiträdesavtal i enlighet med art. 28 GDPR.",
+      "hosting": {
+        "descriptionPrefix": "All data lagras på servrar hos ",
+        "descriptionSuffix": ". Inga ytterligare underbiträden används.",
+        "title": "Hosting & underbiträden"
+      },
+      "title": "Personuppgiftsbiträdesavtal (DPA)"
+    },
+    "billing": {
+      "description": "Hantera din prenumeration, betalningsmetoder och fakturor",
+      "title": "Fakturering & prenumeration"
+    },
+    "compliance": {
+      "description": "Granska och hantera förfrågningar om efterlevnadsundantag från teammedlemmar",
+      "title": "ArbZG-efterlevnad"
+    },
+    "customDomains": {
+      "description": "Konfigurera anpassad domän, varumärkesprofilering och SSO för din organisation",
+      "title": "Domän & varumärkesprofilering"
+    },
+    "customers": {
+      "column": {
+        "contactPerson": "Kontaktperson",
+        "email": "E-post",
+        "name": "Företagsnamn",
+        "phone": "Telefon"
+      },
+      "create": "Lägg till kund",
+      "created": "Kunden har skapats",
+      "createFailed": "Det gick inte att skapa kunden",
+      "deleted": "Kunden har tagits bort",
+      "delete": {
+        "description": "Är du säker på att du vill ta bort \"{name}\"? Projekt som är tilldelade denna kund kommer att fortsätta fungera, men kundreferensen tas bort.",
+        "title": "Ta bort kund"
+      },
+      "deleteFailed": "Det gick inte att ta bort kunden",
+      "description": "Hantera kundkontakter för projekttilldelningar",
+      "dialog": {
+        "create": "Lägg till kund",
+        "createDescription": "Lägg till en ny kund för projekttilldelning",
+        "createTitle": "Lägg till kund",
+        "editDescription": "Uppdatera kunduppgifter",
+        "editTitle": "Redigera kund",
+        "save": "Spara ändringar"
+      },
+      "empty": {
+        "description": "Lägg till din första kund för att tilldela dem till projekt.",
+        "title": "Inga kunder ännu"
+      },
+      "field": {
+        "address": "Adress",
+        "addressPlaceholder": "Gata, stad, postnummer",
+        "contactPerson": "Kontaktperson",
+        "contactPersonPlaceholder": "t.ex. John Smith",
+        "email": "E-post",
+        "name": "Företagsnamn",
+        "namePlaceholder": "Ange företagsnamn",
+        "phone": "Telefon",
+        "project": "Projekt",
+        "projectPlaceholder": "Välj ett projekt",
+        "vatId": "Momsregistreringsnummer",
+        "website": "Webbplats"
+      },
+      "list": {
+        "description": "{count} kunder totalt",
+        "title": "Alla kunder"
+      },
+      "managerNoProjects": "Inga hanterade projekt tillgängliga. Skapa eller hantera ett projekt innan du lägger till kunder.",
+      "projectRequired": "Välj ett projekt först",
+      "title": "Kunder",
+      "updated": "Kunden har uppdaterats",
+      "updateFailed": "Det gick inte att uppdatera kunden"
+    },
+    "dataExport": {
+      "description": "Exportera din organisations data",
+      "form": {
+        "aboutAsync": "Exporter bearbetas asynkront",
+        "aboutEmail": "Du får ett e-postmeddelande när det är klart",
+        "aboutLinkValidity": "Nedladdningslänkar är giltiga i 24 timmar",
+        "aboutOrgDataOnly": "Endast din organisations data inkluderas",
+        "aboutStorageDuration": "Exportfiler sparas i 7 dagar",
+        "aboutTitle": "Om dataexport",
+        "description": "Välj de datakategorier du vill exportera",
+        "selectAll": "Markera alla",
+        "selectAtLeastOne": "Välj minst en kategori",
+        "startExport": "Starta export (${selectedCategories.size})",
+        "startingExport": "Startar export...",
+        "submitError": "Kunde inte starta exporten",
+        "submitSuccess": "Exporten har startats",
+        "title": "Exportera data",
+        "unexpectedError": "Ett oväntat fel uppstod"
+      },
+      "history": {
+        "columnActions": "Åtgärder",
+        "columnCategories": "Kategorier",
+        "columnDate": "Datum",
+        "columnSize": "Storlek",
+        "columnStatus": "Status",
+        "deleteDialogDescription": "Är du säker på att du vill ta bort den här exporten? Denna åtgärd kan inte ångras.",
+        "deleteDialogTitle": "Ta bort export",
+        "deleteError": "Kunde inte ta bort exporten",
+        "deleteSuccess": "Exporten raderades",
+        "description": "Dina tidigare dataexporter",
+        "download": "Ladda ner",
+        "downloadError": "Kunde inte ladda ner",
+        "downloadSuccess": "Nedladdningen har startat",
+        "emptyDescription": "Inga exporter ännu",
+        "emptyHint": "Skapa din första export med formuläret ovan",
+        "moreCategories": "+${exp.categories.length - 3} fler",
+        "statusCompleted": "Slutförd",
+        "statusFailed": "Misslyckades",
+        "statusPending": "Väntar",
+        "statusProcessing": "Bearbetar",
+        "title": "Exporthistorik",
+        "unexpectedError": "Ett oväntat fel uppstod"
+      },
+      "storage": {
+        "accessKeyDescription": "Ditt AWS-åtkomstnyckel-ID",
+        "accessKeyId": "Åtkomstnyckel-ID",
+        "bucketDescription": "Namnet på din S3-bucket",
+        "bucketName": "Bucket-namn",
+        "bucketPlaceholder": "my-export-bucket",
+        "connectionFailed": "Anslutningen misslyckades",
+        "connectionSuccess": "Anslutningen lyckades",
+        "deleteDialogDescription": "Är du säker på att du vill ta bort denna lagringskonfiguration?",
+        "deleteDialogTitle": "Ta bort konfiguration",
+        "deleteError": "Kunde inte ta bort konfigurationen",
+        "deleteSuccess": "Konfigurationen togs bort",
+        "description": "Konfigurera din egen S3-kompatibla lagring för exporter",
+        "endpoint": "Anpassad slutpunkt (valfritt)",
+        "endpointDescription": "För S3-kompatibla tjänster som MinIO",
+        "endpointPlaceholder": "https://s3.example.com",
+        "keepExistingCredentials": "Lämna tomt för att behålla befintliga autentiseringsuppgifter",
+        "lastVerified": "Senast verifierad: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "region": "Region",
+        "regionDescription": "AWS-region där din bucket finns",
+        "regionPlaceholder": "us-east-1",
+        "saveConfiguration": "Spara konfiguration",
+        "saveError": "Det gick inte att spara konfigurationen",
+        "saveSuccess": "Konfigurationen har sparats",
+        "saveSuccessDescription": "Dina inställningar för S3-lagring har sparats",
+        "saving": "Sparar...",
+        "secretAccessKey": "Hemlig åtkomstnyckel",
+        "secretKeyDescription": "Din hemliga AWS-åtkomstnyckel",
+        "testConnection": "Testa anslutning",
+        "testFailed": "Anslutningstestet misslyckades",
+        "testing": "Testar...",
+        "title": "Konfiguration av S3-lagring",
+        "unexpectedError": "Ett oväntat fel inträffade",
+        "verified": "Verifierad"
+      },
+      "storageNotConfigured": {
+        "description": "Konfigurera S3-lagring innan du skapar exporter",
+        "title": "Lagring ej konfigurerad"
+      },
+      "tabs": {
+        "exportHistory": "Exporthistorik",
+        "newExport": "Ny export",
+        "storageSettings": "Lagringsinställningar"
+      },
+      "title": "Dataexport"
+    },
+    "emailConfig": {
+      "description": "Konfigurera en anpassad e-postleverantör för organisationens e-post",
+      "title": "E-postkonfiguration"
+    },
+    "emailTemplates": {
+      "actions": {
+        "reset": "Återställ till systemmall",
+        "save": "Spara",
+        "sendTest": "Skicka test"
+      },
+      "defaultFallback": "Standardreserv",
+      "defaultFallbackDescription": "Om den här mallen använder systemstandarden skickar Z8 systemets text och ämne:",
+      "description": "Anpassa e-postmeddelandena som din organisation skickar",
+      "editBodyBeforeSaving": "Redigera e-postens brödtext innan du sparar en första anpassad mall.",
+      "empty": "Inga e-postmallar är tillgängliga för den här organisationen.",
+      "eyebrow": "Operativ kommunikation",
+      "reset": "E-postmallen har återställts till systemmallen",
+      "resetFailed": "Det gick inte att återställa e-postmallen",
+      "saved": "E-postmallen har sparats",
+      "saveFailed": "Det gick inte att spara e-postmallen",
+      "status": {
+        "customized": "Anpassad",
+        "default": "Standard"
+      },
+      "systemTemplates": "Systemmallar",
+      "testFailed": "Det gick inte att skicka test-e-postmeddelandet",
+      "testSent": "Ett testmeddelande har skickats till ditt konto",
+      "title": "E-postmallar"
+    },
+    "error": {
+      "actions": {
+        "backToSettings": "Tillbaka till inställningar",
+        "tryAgain": "Försök igen"
+      },
+      "description": "Ett fel inträffade när inställningssidan lästes in. Det här kan vara ett tillfälligt problem.",
+      "errorId": "Fel-ID: {{digest}}",
+      "title": "Något gick fel"
+    },
+    "export": {
+      "description": "Exportera organisationsdata för säkerhetskopiering eller migrering",
+      "title": "Dataexport"
+    },
+    "exportOperations": {
+      "activity": {
+        "audit": {
+          "description": "Begäran om granskningsexport har registrerats.",
+          "title": "Granskningsexport"
+        },
+        "payroll": {
+          "description": "Löneexportjobb registrerat.",
+          "title": "Löneexport"
+        },
+        "scheduled": {
+          "description": "Schemalagd exportkörning registrerad.",
+          "title": "Schemalagd export"
+        }
+      },
+      "alerts": {
+        "auditFailed": {
+          "description": "Den senaste begäran om granskningsexport slutfördes inte.",
+          "title": "Granskningsexporten misslyckades"
+        },
+        "blockedSchedule": {
+          "description": "{name} behöver en konfiguration för löneexport innan den kan köras.",
+          "title": "Schemalagd löneexport är blockerad"
+        },
+        "payrollFailed": {
+          "description": "Den senaste löneexporten slutfördes inte.",
+          "title": "Löneexporten misslyckades"
+        },
+        "scheduledFailed": {
+          "description": "{name} slutfördes inte.",
+          "title": "Schemalagd export misslyckades"
+        }
+      },
+      "description": "Övervaka löne-, gransknings- och schemalagd exportaktivitet för din organisation.",
+      "errors": {
+        "alerts": "Vissa varningar kan vara ofullständiga medan exportdata är otillgänglig.",
+        "recentActivity": "Viss aktivitetsdata är för närvarande inte tillgänglig.",
+        "summary": "Antalen baseras på den exportdata som kunde läsas in.",
+        "upcomingRuns": "Data för schemalagd export är tillfälligt otillgänglig."
+      },
+      "title": "Exportåtgärder"
+    },
+    "group": {
+      "account": "Konto",
+      "administration": "Administration",
+      "data": "Data",
+      "enterprise": "Enterprise",
+      "notifications": "Aviseringar",
+      "organization": "Organisation"
+    },
+    "implementationChecklist": {
+      "actions": {
+        "markComplete": "Markera som klar",
+        "markIncomplete": "Markera som ej klar"
+      },
+      "description": "Slutför konfigurationsstegen innan du bjuder in hela teamet så att tidrapportering, godkännanden och löneflöden är redo för daglig användning.",
+      "errors": {
+        "updateItem": "Det gick inte att uppdatera checklistobjektet."
+      },
+      "eyebrow": "Kundimplementering",
+      "progress": {
+        "ariaLabel": "Förlopp för implementeringschecklista",
+        "completedCount": "{{completed}} av {{total}} klara",
+        "label": "Konfigurationsförlopp",
+        "percentComplete": "{{percent}} % slutfört"
+      },
+      "status": {
+        "complete": "Klar",
+        "manuallyComplete": "Slutför manuellt",
+        "needsReview": "Kräver granskning",
+        "notStarted": "Ej påbörjad"
+      },
+      "title": "Implementeringschecklista"
+    },
+    "import": {
+      "description": "Importera data från leverantörer som stöds, till exempel Clockodo och Clockin.",
+      "review": {
+        "commitAccepted": "Verkställ godkända rader",
+        "commitFailed": "Det gick inte att starta verkställandet av importen",
+        "commitQueued": "Köade {count} godkända rader för verkställande",
+        "committing": "Verkställer...",
+        "description": "Granska mellanlagrade importrader, åtgärda blockerande problem och verkställ godkända poster när batchen är klar.",
+        "issueGroups": {
+          "currentMarkers": "Aktuella rader innehåller {blockingRows} blockerande markeringar och {warningRows} varningsmarkeringar.",
+          "description": "Grupperade granskningsområden hjälper till att hålla kvalitetskontroller synliga innan godkända rader verkställs.",
+          "title": "Problemgrupper"
+        },
+        "rows": {
+          "empty": "Det finns inga mellanlagrade rader tillgängliga för denna importbatch.",
+          "entity": "Entitet",
+          "rowId": "Rad-ID",
+          "sourceId": "Käll-ID",
+          "status": "Status",
+          "title": "Rader"
+        },
+        "title": "Importgranskning"
+      },
+      "title": "Importera data"
+    },
+    "licenses": {
+      "footer": "Denna applikation använder programvara med öppen källkod. Tack till alla underhållare och bidragsgivare för dessa paket.",
+      "homepage": "Webbplats",
+      "license": "Licens",
+      "licenseTypesCount": "{count} licenstyper",
+      "links": "Länkar",
+      "noPackages": "Inga paket hittades.",
+      "package": "Paket",
+      "packagesCount": "{count} paket",
+      "repository": "Repository",
+      "searchPlaceholder": "Sök efter paket eller licenser...",
+      "unknown": "Okänd"
+    },
+    "locations": {
+      "address": "Adress",
+      "assignEmployee": "Tilldela medarbetare",
+      "assignEmployeeDescription": "Tilldela en medarbetare som arbetsledare för den här platsen",
+      "assignEmployeeToSubarea": "Tilldela medarbetare till delområde",
+      "assignEmployeeToSubareaDescription": "Tilldela en medarbetare som arbetsledare för {subareaName}",
+      "backToList": "Tillbaka till platser",
+      "create": "Skapa plats",
+      "created": "Plats skapad",
+      "createFailed": "Det gick inte att skapa platsen",
+      "deleted": "Plats borttagen",
+      "deleteDescription": "Är du säker på att du vill ta bort den här platsen? Detta tar även bort alla delområden och medarbetartilldelningar.",
+      "deleteFailed": "Det gick inte att ta bort platsen",
+      "deleteSubareaDescription": "Är du säker på att du vill ta bort det här delområdet? Detta tar även bort alla medarbetartilldelningar.",
+      "deleteSubareaTitle": "Ta bort delområde",
+      "deleteTitle": "Ta bort plats",
+      "description": "Hantera organisationens platser och delområden",
+      "details": "Platsdetaljer",
+      "dialog": {
+        "create": "Skapa plats",
+        "createDescription": "Skapa en ny plats för din organisation",
+        "createTitle": "Skapa plats",
+        "editDescription": "Uppdatera platsdetaljer",
+        "editTitle": "Redigera plats",
+        "save": "Spara ändringar"
+      },
+      "employee": "Medarbetare",
+      "employeeAssigned": "Medarbetare tilldelad",
+      "employeeAssignFailed": "Det gick inte att tilldela medarbetare",
+      "employeeRemoved": "Medarbetare borttagen",
+      "employeeRemoveFailed": "Kunde inte ta bort medarbetare",
+      "field": {
+        "active": "Aktiv",
+        "activeHelp": "Inaktiva platser visas inte i urvalslistor",
+        "city": "Stad",
+        "cityPlaceholder": "t.ex. New York",
+        "cityPostal": "Stad / Postnummer",
+        "country": "Landskod",
+        "countryHelp": "ISO 3166-1 alfa-2-kod",
+        "countryPlaceholder": "t.ex. US, DE",
+        "name": "Namn",
+        "namePlaceholder": "t.ex. Huvudkontor",
+        "postalCode": "Postnummer",
+        "postalCodePlaceholder": "t.ex. 10001",
+        "street": "Gatuadress",
+        "streetPlaceholder": "t.ex. Storgatan 123",
+        "subareaActiveHelp": "Inaktiva delområden visas inte i urvalslistor",
+        "subareaName": "Namn",
+        "subareaNamePlaceholder": "t.ex. Kassa, Lager, Bistro"
+      },
+      "name": "Namn",
+      "noAvailableEmployees": "Alla medarbetare är redan tilldelade denna plats",
+      "noAvailableEmployeesSubarea": "Alla medarbetare är redan tilldelade detta delområde",
+      "noLocations": "Inga platser än",
+      "noLocationsDescription": "Skapa din första plats för att organisera din arbetsyta.",
+      "noSubareas": "Inga delområden än",
+      "noSupervisors": "Inga arbetsledare tilldelade",
+      "notFound": "Platsen hittades inte",
+      "primary": "Primär",
+      "primarySupervisor": "Primär arbetsledare",
+      "primarySupervisorHelp": "Markera som huvudsaklig arbetsledare för denna plats",
+      "primarySupervisorSubareaHelp": "Markera som huvudsaklig arbetsledare för detta delområde",
+      "selectEmployee": "Vänligen välj en medarbetare",
+      "selectEmployeePlaceholder": "Välj en medarbetare",
+      "subareaCreated": "Delområde skapat",
+      "subareaCreateFailed": "Det gick inte att skapa delområde",
+      "subareaDeleted": "Delområde borttaget",
+      "subareaDeleteFailed": "Det gick inte att ta bort delområde",
+      "subareaDialog": {
+        "create": "Lägg till delområde",
+        "createDescription": "Lägg till ett nytt delområde för denna plats",
+        "createTitle": "Lägg till delområde",
+        "editDescription": "Uppdatera information om delområde",
+        "editTitle": "Redigera delområde",
+        "save": "Spara ändringar"
+      },
+      "subareas": "Delområden",
+      "subareasDescription": "Områden inom denna plats",
+      "subareaUpdated": "Delområde uppdaterat",
+      "subareaUpdateFailed": "Det gick inte att uppdatera delområde",
+      "supervisors": "Arbetsledare",
+      "supervisorsDescription": "Medarbetare tilldelade denna plats",
+      "title": "Platser",
+      "updated": "Platsen har uppdaterats",
+      "updateFailed": "Kunde inte uppdatera platsen"
+    },
+    "notifications": {
+      "approvals": "Godkännandeaviseringar",
+      "approvalsDescription": "Skicka godkännandeförfrågningar och uppdateringar om godkännandestatus.",
+      "commands": "Kommandon",
+      "commandsDescription": "Tillåt arbetsplatskommandon som stöds från den här kanalen.",
+      "connectBeforeChanging": "Anslut eller konfigurera denna integration innan du ändrar aviseringsinställningar.",
+      "dailyDigest": "Daglig sammanfattning",
+      "dailyDigestDescription": "Skicka en daglig sammanfattning av frånvaro, scheman och väntande arbete.",
+      "description": "Välj hur och när du vill få aviseringar",
+      "digestTime": "Tid för sammanfattning",
+      "discord": {
+        "description": "Konfigurera Discord-aviseringar för din organisation."
+      },
+      "escalations": "Eskaleringar",
+      "escalationsDescription": "Eskalera obesvarade godkännandeförfrågningar efter den konfigurerade tidsgränsen.",
+      "featureSettings": "Funktionsinställningar",
+      "featureSettingsDescription": "Välj vilka organisationsaviseringar och kommandon som är tillgängliga via den här kanalen.",
+      "hours": "timmar",
+      "manageEnabledFeatures": "Hantera vilka aviseringsfunktioner som är aktiverade för denna integration.",
+      "notConnected": "{channelName} är inte ansluten",
+      "saved": "Aviseringsinställningarna för {channelName} har sparats",
+      "saveFailed": "Kunde inte spara aviseringsinställningar för {channelName}",
+      "saveSettings": "Spara inställningar",
+      "slack": {
+        "description": "Konfigurera Slack-aviseringar för din organisation."
+      },
+      "status": {
+        "active": "Aktiv",
+        "configured": "Konfigurerad",
+        "disabled": "Inaktiverad",
+        "disconnected": "Frånkopplad",
+        "error": "Fel",
+        "notConfigured": "Inte konfigurerad",
+        "pending": "Väntar",
+        "unknown": "Okänd status"
+      },
+      "teams": {
+        "description": "Konfigurera Microsoft Teams-aviseringar för din organisation."
+      },
+      "timeout": "Tidsgräns",
+      "timezone": "Tidszon",
+      "timezonePlaceholder": "Europa/Berlin…",
+      "title": "Aviseringsinställningar"
+    },
+    "organizations": {
+      "description": "Hantera organisationsmedlemmar, inbjudningar och uppgifter",
+      "notFound": {
+        "description": "Organisationen kunde inte hittas eller så har du inte behörighet till den.",
+        "title": "Organisationen hittades inte"
+      },
+      "title": "Organisation"
+    },
+    "organization": {
+      "teams": {
+        "createDialog": {
+          "createSuccess": "Teamet har skapats",
+          "description": "Skapa ett nytt team för att organisera dina anställda",
+          "descriptionLabel": "Beskrivning (valfritt)",
+          "descriptionPlaceholder": "En kort beskrivning av detta team",
+          "fallbackManagerHelp": "Används för godkännanden när en teammedlem saknar en direkt chef.",
+          "fallbackManagerLabel": "Reservchef",
+          "fallbackManagerPlaceholder": "Välj en reservchef",
+          "nameLabel": "Teamnamn",
+          "namePlaceholder": "Teknik, Försäljning, Marknadsföring...",
+          "noFallbackManager": "Ingen reservchef",
+          "submit": "Skapa team",
+          "title": "Skapa team"
+        }
+      }
+    },
+    "passkeys": {
+      "add": "Lägg till lösennyckel",
+      "addedOn": "Lades till {date}",
+      "addError": "Det gick inte att lägga till lösennyckeln",
+      "addSuccess": "Lösennyckeln har lagts till",
+      "defaultName": "Lösennyckel {date}",
+      "deleteDialogDescription": "Denna lösennyckel kommer inte längre att kunna användas för att komma åt ditt konto. Denna åtgärd kan inte ångras.",
+      "deleteDialogTitle": "Ta bort lösennyckel?",
+      "deleteError": "Det gick inte att ta bort lösennyckeln",
+      "deleteSuccess": "Lösennyckeln har tagits bort",
+      "description": "Hantera lösennycklar för lösenordslös autentisering",
+      "empty": "Inga lösennycklar har konfigurerats",
+      "emptyDescription": "Lägg till en lösennyckel för att aktivera lösenordslös autentisering",
+      "loadError": "Det gick inte att läsa in lösennycklar",
+      "title": "Lösennycklar",
+      "unnamed": "Namnlös lösennyckel"
+    },
+    "payrollAccess": {
+      "add": "Lägg till löneadministratör",
+      "addTitle": "Lägg till löneadministratör",
+      "allScope": "Alla team och anställda",
+      "allScopeDescription": "Inkluderar nuvarande och framtida anställda i denna organisation.",
+      "deniedDescription": "Endast behöriga organisationsadministratörer kan hantera löneadministratörer.",
+      "deniedTitle": "Åtkomst till inställningar för löneadministratör krävs",
+      "description": "Aktivera löneadministratörer och tilldela de team eller anställda som de kan inkludera i löneflöden.",
+      "edit": "Redigera",
+      "editorDescription": "Välj en löneadministratör och ange om de har åtkomst till alla eller ett specifikt omfång.",
+      "editTitle": "Redigera löneadministratör",
+      "employees": "Anställda",
+      "noGrants": "Inga löneadministratörer har lagts till ännu.",
+      "noScope": "Inget löneomfång tilldelat",
+      "noTeams": "Inga team tillgängliga",
+      "payrollEmployee": "Löneadministratör",
+      "save": "Spara löneadministratör",
+      "saved": "Inställningarna för löneadministratör sparades",
+      "saveFailed": "Kunde inte spara inställningar för löneadministratör",
+      "scope": "Åtkomstomfång",
+      "scopeSummaryEmployees": "{count} anställda",
+      "scopeSummaryTeams": "{count} team",
+      "scopeSummaryTeamsEmployees": "{teamCount} team, {employeeCount} anställda",
+      "selectEmployees": "Välj anställda",
+      "selectPayrollEmployee": "Välj anställd",
+      "specificScope": "Specifika team eller anställda",
+      "specificScopeDescription": "Begränsa löneåtkomst till valda team och enskilda anställda.",
+      "teams": "Team",
+      "title": "Löneadministratörer"
+    },
+    "profile": {
+      "avatarRemoved": "Profilbilden har tagits bort",
+      "avatarRemoveFailed": "Det gick inte att ta bort profilbilden",
+      "avatarSaveFailed": "Det gick inte att spara profilbilden",
+      "avatarUploaded": "Profilbilden har laddats upp",
+      "avatarUploadFailed": "Det gick inte att ladda upp profilbilden",
+      "birthday": {
+        "hint": "Din födelsedag hjälper oss att fira med dig",
+        "label": "Födelsedag",
+        "placeholder": "Välj din födelsedag"
+      },
+      "changePicture": "Ändra bild",
+      "description": "Hantera dina personuppgifter och inställningar",
+      "email": "E-post",
+      "emailReadonly": "E-postadressen kan inte ändras",
+      "firstName": "Förnamn",
+      "firstNamePlaceholder": "Ada…",
+      "gender": {
+        "female": "Kvinna",
+        "label": "Kön",
+        "male": "Man",
+        "other": "Annat"
+      },
+      "helpImproveProduct": "Hjälp oss att förbättra den här appen",
+      "helpImproveProductDescription": "Dela användningsinsikter så att vi kan göra Z8 mer tillförlitligt och användbart.",
+      "information": "Profilinformation",
+      "informationDescription": "Uppdatera dina personuppgifter och din profilbild",
+      "lastName": "Efternamn",
+      "lastNamePlaceholder": "Lovelace…",
+      "personalInformation": "Personuppgifter",
+      "pronouns": "Pronomen",
+      "pronouns.custom": "Anpassade pronomen",
+      "pronouns.customPlaceholder": "t.ex. xe/xem…",
+      "pronouns.placeholder": "Välj pronomen",
+      "removePicture": "Ta bort bild",
+      "saving": "Sparar…",
+      "title": "Profilinställningar",
+      "updateFailed": "Det gick inte att uppdatera profilen",
+      "updateProfile": "Uppdatera profil",
+      "updateSuccess": "Profilen har uppdaterats",
+      "uploading": "Laddar upp",
+      "uploadProfilePicture": "Ladda upp profilbild"
+    },
+    "projects": {
+      "column": {
+        "budget": "Budget",
+        "customer": "Kund",
+        "deadline": "Deadline",
+        "name": "Namn",
+        "status": "Status",
+        "team": "Team"
+      },
+      "create": "Skapa projekt",
+      "created": "Projektet har skapats",
+      "createFailed": "Kunde inte skapa projektet",
+      "description": "Hantera projekt, budgetar, deadlines och tidstilldelningar",
+      "dialog": {
+        "create": "Skapa projekt",
+        "createDescription": "Skapa ett nytt projekt för tidrapportering",
+        "createTitle": "Skapa projekt",
+        "editDescription": "Uppdatera projektinformation",
+        "editTitle": "Redigera projekt",
+        "save": "Spara ändringar"
+      },
+      "empty": {
+        "description": "Skapa ditt första projekt för att börja rapportera tid på det.",
+        "title": "Inga projekt ännu"
+      },
+      "field": {
+        "budget": "Budget (timmar)",
+        "budgetHelp": "Lämna tomt för obegränsad budget",
+        "budgetPlaceholder": "t.ex. 100",
+        "clearColor": "Rensa färg",
+        "color": "Färg",
+        "colorOption": "Välj färg {color}",
+        "customer": "Kund",
+        "customerPlaceholder": "Välj en kund",
+        "deadline": "Deadline",
+        "description": "Beskrivning",
+        "descriptionPlaceholder": "Valfri projektbeskrivning",
+        "name": "Namn",
+        "namePlaceholder": "Ange projektnamn",
+        "noCustomer": "Ingen kund",
+        "status": "Status"
+      },
+      "list": {
+        "description": "{count} projekt totalt",
+        "title": "Alla projekt"
+      },
+      "title": "Projekt",
+      "updated": "Projektet har uppdaterats",
+      "updateFailed": "Det gick inte att uppdatera projektet"
+    },
+    "security": {
+      "description": "Hantera ditt lösenord, tvåfaktorsautentisering, lösenordsnycklar och aktiva sessioner",
+      "title": "Säkerhetsinställningar",
+      "twoFactor": {
+        "confirmPasswordToEnable": "Bekräfta ditt lösenord för att aktivera tvåfaktorsautentisering",
+        "confirmPasswordToRegenerate": "Bekräfta ditt lösenord för att generera nya reservkoder",
+        "continue": "Fortsätt",
+        "description": "Lägg till ett extra säkerhetslager på ditt konto",
+        "disable": "Inaktivera",
+        "enable": "Aktivera tvåfaktorsautentisering",
+        "enterPasswordTitle": "Ange ditt lösenord",
+        "regenerateBackupCodes": "Generera nya reservkoder",
+        "regenerateCodes": "Generera nya koder",
+        "status": {
+          "disabled": "Inaktiverad",
+          "enabled": "Aktiverad"
+        },
+        "title": "Tvåfaktorsautentisering"
+      }
+    },
+    "sessions": {
+      "browserOnOs": "{browser} på {os}",
+      "current": "Aktuell session",
+      "description": "Hantera dina aktiva sessioner på olika enheter",
+      "devices": {
+        "desktop": "Dator",
+        "mobile": "Mobil",
+        "tablet": "Surfplatta"
+      },
+      "none": "Inga aktiva sessioner",
+      "othersRevoked": "Alla andra sessioner har återkallats",
+      "revoke": "Återkalla",
+      "revokeAllFailed": "Det gick inte att återkalla andra sessioner",
+      "revokeAllOthers": "Återkalla alla andra sessioner",
+      "revoked": "Sessionen har återkallats",
+      "revokeFailed": "Det gick inte att återkalla sessionen",
+      "revoking": "Återkallar…",
+      "securityTip": "Om du ser en session du inte känner igen bör du återkalla den omedelbart och ändra ditt lösenord.",
+      "signedIn": "Inloggad",
+      "title": "Aktiva sessioner",
+      "unknownBrowser": "Okänd webbläsare",
+      "unknownOs": "Okänt operativsystem"
+    },
+    "socialAccounts": {
+      "connect": "Anslut",
+      "connected": "Ansluten",
+      "connectedAs": "Ansluten som {accountId}",
+      "connectFailed": "Det gick inte att ansluta kontot",
+      "connecting": "Ansluter…",
+      "connectProvider": "Anslut ditt {provider}-konto",
+      "description": "Koppla dina sociala konton för enklare inloggning",
+      "disconnect": "Koppla från",
+      "disconnectDescription": "Detta tar bort kopplingen till ditt sociala konto. Du kan återansluta det när som helst.",
+      "disconnectFailed": "Det gick inte att koppla från kontot",
+      "disconnectSuccess": "Kontot har kopplats från",
+      "disconnectTitle": "Koppla från konto?",
+      "loadFailed": "Det gick inte att läsa in anslutna konton",
+      "title": "Sociala konton",
+      "unexpectedError": "Ett oväntat fel uppstod"
+    },
+    "statistics": {
+      "cards": {
+        "activeSessions": "Aktiva sessioner",
+        "activeSessionsDescription": "Aktuella databassessioner",
+        "approvalRequests": "Godkännandeförfrågningar",
+        "approvedAbsences": "Godkänd frånvaro",
+        "employees": "Anställda",
+        "employeesDescription": "{active} aktiva, {inactive} inaktiva",
+        "pendingAbsences": "Väntande frånvaro",
+        "pendingCount": "{count} väntande",
+        "rejectedAbsences": "Avvisad frånvaro",
+        "teams": "Team",
+        "thisMonth": "Denna månad",
+        "timeEntries": "Tidsregistreringar",
+        "totalAbsences": "Total frånvaro",
+        "totalTimeEntries": "Totalt antal tidsregistreringar",
+        "vsLastMonth": "jämfört med förra månaden"
+      },
+      "description": "Visa statistik och mätvärden för din instans",
+      "lastUpdated": "Senast uppdaterad",
+      "loadError": "Det gick inte att läsa in statistik",
+      "managerDescription": "Granska skrivskyddad analys för de team du hanterar.",
+      "sections": {
+        "absenceBreakdown": "Frånvarofördelning",
+        "activityMetrics": "Aktivitetsmätvärden",
+        "coreCounts": "Kärnantal",
+        "managedScope": "Omfattning för hanterade team",
+        "systemHealth": "Systemhälsa"
+      },
+      "title": "Statistik"
+    },
+    "timeFormat": {
+      "description": "Välj hur klockslag visas i hela appen.",
+      "label": "Tidsformat",
+      "options": {
+        "12h": "12-timmars (8:00 AM)",
+        "24h": "24-timmars (08:00)"
+      },
+      "save": "Spara tidsformat",
+      "title": "Tidsformat",
+      "updateError": "Ett fel uppstod när tidsformatet uppdaterades",
+      "updateFailed": "Det gick inte att uppdatera tidsformatet",
+      "updateSuccess": "Tidsformatet har uppdaterats"
+    },
+    "timezone": {
+      "currentTimePrefix": "Aktuell tid i {timezone}:",
+      "description": "Ställ in din tidszon för korrekt visning av datum och tid i hela applikationen",
+      "picker": {
+        "empty": "Ingen tidszon hittades.",
+        "groups": {
+          "africa": "Afrika",
+          "americas": "Amerika",
+          "asia": "Asien",
+          "australiaPacific": "Australien och Stilla havet",
+          "europe": "Europa",
+          "utcOther": "UTC/övrigt"
+        },
+        "labels": {
+          "africaCairo": "Östeuropeisk tid (Kairo)",
+          "africaJohannesburg": "Sydafrikansk tid (Johannesburg)",
+          "africaLagos": "Västafrikansk tid (Lagos)",
+          "africaNairobi": "Östafrikansk tid (Nairobi)",
+          "americaAnchorage": "Alaskatid (Anchorage)",
+          "americaBuenosAires": "Argentinsk tid (Buenos Aires)",
+          "americaChicago": "Centraltid (Chicago)",
+          "americaDenver": "Mountain-tid (Denver)",
+          "americaLosAngeles": "Stillahavstid (Los Angeles)",
+          "americaMexicoCity": "Centraltid (Mexico City)",
+          "americaNewYork": "Östkusttid (New York)",
+          "americaSaoPaulo": "Brasiliatid (São Paulo)",
+          "americaToronto": "Östkusttid (Toronto)",
+          "americaVancouver": "Stillahavstid (Vancouver)",
+          "asiaBangkok": "Indokinatid (Bangkok)",
+          "asiaDubai": "Gulf-standardtid (Dubai)",
+          "asiaHongKong": "Hongkongtid (Hongkong)",
+          "asiaKolkata": "Indisk standardtid (Kolkata)",
+          "asiaSeoul": "Koreansk standardtid (Seoul)",
+          "asiaShanghai": "Kinesisk standardtid (Shanghai)",
+          "asiaSingapore": "Singaporetid (Singapore)",
+          "asiaTokyo": "Japansk standardtid (Tokyo)",
+          "australiaBrisbane": "Östaustralisk tid (Brisbane)",
+          "australiaMelbourne": "Östaustralisk tid (Melbourne)",
+          "australiaPerth": "Västaustralisk tid (Perth)",
+          "australiaSydney": "Östaustralisk tid (Sydney)",
+          "europeAmsterdam": "Centraleuropeisk tid (Amsterdam)",
+          "europeAthens": "Östeuropeisk tid (Aten)",
+          "europeBerlin": "Centraleuropeisk tid (Berlin)",
+          "europeBrussels": "Centraleuropeisk tid (Bryssel)",
+          "europeHelsinki": "Östeuropeisk tid (Helsingfors)",
+          "europeIstanbul": "Turkisk tid (Istanbul)",
+          "europeLondon": "GMT/BST (London)",
+          "europeMadrid": "Centraleuropeisk tid (Madrid)",
+          "europeMoscow": "Moskvatid (Moskva)",
+          "europeParis": "Centraleuropeisk tid (Paris)",
+          "europeRome": "Centraleuropeisk tid (Rom)",
+          "europeStockholm": "Centraleuropeisk tid (Stockholm)",
+          "europeVienna": "Centraleuropeisk tid (Wien)",
+          "europeWarsaw": "Centraleuropeisk tid (Warszawa)",
+          "pacificAuckland": "Nyzeeländsk tid (Auckland)",
+          "pacificHonolulu": "Hawaiitid (Honolulu)",
+          "utc": "Koordinerad universell tid (UTC)"
+        },
+        "search": "IconSearch tidszon…"
+      },
+      "save": "Spara tidszon",
+      "title": "Tidszon",
+      "updateError": "Ett fel uppstod när tidszonen uppdaterades",
+      "updateFailed": "Kunde inte uppdatera tidszonen",
+      "updateSuccess": "Tidszonen har uppdaterats"
+    },
+    "title": "Inställningar",
+    "travelExpenses": {
+      "activeDescription": "När den är aktiverad blir denna policy standard för nya anspråk.",
+      "activeLabel": "Aktiv policy",
+      "addPolicy": "Lägg till policy",
+      "created": "Policy för reseersättning har skapats",
+      "createPolicy": "Skapa policy för reseersättning",
+      "currency": "Valuta",
+      "description": "Konfigurera ersättningsnivåer och giltighetsperioder för milersättning och traktamente.",
+      "dialogDescription": "Ange giltighetsdatum och standardersättningsnivåer för milersättning och traktamente.",
+      "editPolicy": "Redigera policy för reseersättning",
+      "effectiveFrom": "Gäller från",
+      "effectiveFromRequired": "Gäller från är obligatoriskt",
+      "effectiveTo": "Gäller till",
+      "empty": "Inga policyer har konfigurerats än. Skapa din första policy för reseersättning.",
+      "loading": "Laddar policyer…",
+      "mileageRate": "Milersättning / km",
+      "perDiemRate": "Traktamente / dag",
+      "policies": "Policyer",
+      "policiesDescription": "Endast en policy ska vara aktiv åt gången. Den aktiva policyn används för nya anspråk.",
+      "saveFailed": "Kunde inte spara policy för reseersättning",
+      "title": "Policyer för reseersättning",
+      "updated": "Policy för reseersättning har uppdaterats"
+    },
+    "webhooks": {
+      "description": "Konfigurera webhook-slutpunkter för att ta emot händelseaviseringar i realtid",
+      "title": "Webhooks"
+    },
+    "weekStart": {
+      "description": "Välj om kalendrar och veckosammanfattningar ska börja på söndag eller måndag.",
+      "label": "Veckans första dag",
+      "save": "Spara veckostart",
+      "title": "Veckan börjar på",
+      "updateError": "Ett fel uppstod när veckans startdag uppdaterades",
+      "updateFailed": "Det gick inte att uppdatera veckans startdag",
+      "updateSuccess": "Veckans startdag har uppdaterats"
+    },
+    "wellness": {
+      "cardDescShort": "Håll vätskebalansen medan du arbetar",
+      "cardTitle": "Vattenpåminnelser",
+      "dailyGoal": "Dagligt mål",
+      "decreaseDailyGoal": "Minska dagligt mål",
+      "description": "Konfigurera vattenpåminnelser och vätskespårning under dina arbetspass",
+      "glasses": "glas",
+      "increaseDailyGoal": "Öka dagligt mål",
+      "reminderFrequency": "Påminnelsefrekvens",
+      "saved": "Hälsoinställningarna har sparats",
+      "saveError": "Det gick inte att spara hälsoinställningarna",
+      "title": "Hälsoinställningar"
+    },
+    "workBalanceRecalculation": {
+      "requestError": "Det gick inte att köa omräkning av arbetssaldo",
+      "requestSuccess": "Omräkning av arbetssaldo har lagts i kö"
+    },
+    "workerQueue": {
+      "cards": {
+        "active": "Aktiv",
+        "activeDescription": "Bearbetas för närvarande",
+        "completed": "Slutförd",
+        "completedDescription": "Nyligen slutförd",
+        "delayed": "Fördröjd",
+        "delayedDescription": "Schemalagd för senare",
+        "failed": "Misslyckades",
+        "failedDescription": "Misslyckades nyligen",
+        "paused": "Pausad",
+        "queueState": "Kö",
+        "queueStateDescription": "Om arbetare kan ta väntande jobb",
+        "running": "Körs",
+        "unknown": "Okänd",
+        "waiting": "Väntar",
+        "waitingDescription": "Jobb som väntar på att bearbetas"
+      },
+      "common": {
+        "unknown": "Okänd"
+      },
+      "connected": "Ansluten",
+      "description": "Övervaka bearbetning av bakgrundsjobb och körningar av cron-jobb",
+      "disconnected": "Frånkopplad",
+      "lastUpdated": "Senast uppdaterad",
+      "loadError": "Kunde inte läsa in köstatus",
+      "noExecutions": "Inga nyliga körningar hittades",
+      "noScheduledJobs": "Inga schemalagda jobb hittades",
+      "recentExecutions": {
+        "allJobs": "Alla jobb",
+        "error": "Det gick inte att läsa in körningar",
+        "filterLabel": "Filtrera efter jobb",
+        "loading": "Läser in körningar…"
+      },
+      "recentExecutionsDescription": "Senaste 50 jobbkörningarna som spårats i databasen.",
+      "reliability": {
+        "averageDuration": "Genomsnittlig varaktighet",
+        "avgDuration": "Genomsnittlig varaktighet",
+        "avgDurationDescription": "Körningar med varaktighetsdata",
+        "completed": "Slutförd",
+        "durationTrend": "Varaktighetstrend",
+        "durationTrendDescription": "Genomsnittlig körtid för körningar som rapporterade varaktighetsdata.",
+        "failed": "Misslyckad",
+        "failedRuns": "Misslyckade körningar",
+        "failedRunsDescription": "Senaste 30 dagarna",
+        "failing": "Felande",
+        "healthy": "Felfri",
+        "jobHealth": "Jobbhälsa",
+        "jobHealthDescription": "Tillförlitlighet per jobb baserat på nyliga körningar och återkommande scheman.",
+        "noDurationData": "Ingen varaktighetsdata är tillgänglig för denna period.",
+        "noExecutionHistory": "Ingen körningshistorik för cron är tillgänglig för denna period.",
+        "noJobs": "Ingen tillförlitlighetsdata hittades",
+        "runOutcomes": "Körningsresultat",
+        "runOutcomesDescription": "Slutförda och misslyckade cron-körningar under de senaste {days} dagarna.",
+        "stale": "Inaktuell",
+        "staleJobs": "Inaktuella jobb",
+        "staleJobsDescription": "Efter förväntat schema",
+        "successRate": "Lyckandefrekvens",
+        "successRateDescription": "Avslutade cron-körningar",
+        "title": "Tillförlitlighet",
+        "unknown": "Okänd",
+        "warning": "Varning"
+      },
+      "scheduleControls": {
+        "cancel": "Avbryt",
+        "confirmationLabel": "Skriv bekräftelse",
+        "edit": "Redigera",
+        "failed": "Ändring av schemat misslyckades",
+        "highRiskDescription": "Att ändra det här jobbet kan påverka fakturering, rensning, integrationer, efterlevnad eller driftautomatisering.",
+        "highRiskTitle": "Högriskschema",
+        "mismatch": "BullMQ skiljer sig för närvarande från det sparade schemat; worker-start kommer att stämma av det.",
+        "presetLabel": "Förinställning för schema",
+        "readOnly": "Detta standardschema har ännu ingen redigerbar förinställning.",
+        "reset": "Återställ",
+        "resetSaved": "Schemat har återställts",
+        "save": "Spara schema",
+        "saved": "Schemat har sparats",
+        "warningPrefix": "Sparades med varning"
+      },
+      "scheduledJobsDescription": "Återkommande jobb konfigurerade i workern. Dessa körs automatiskt enligt schema.",
+      "schedule": {
+        "overridden": "Åsidosatt"
+      },
+      "sections": {
+        "jobMetrics": "Jobbmätvärden (senaste 30 dagarna)",
+        "queueCounts": "Köstatus",
+        "recentExecutions": "Senaste körningar",
+        "scheduledJobs": "Schemalagda cron-jobb"
+      },
+      "status": {
+        "completed": "Slutförd",
+        "failed": "Misslyckad",
+        "pending": "Väntande",
+        "running": "Körs"
+      },
+      "table": {
+        "actions": "Åtgärder",
+        "avgDuration": "Genomsnittlig varaktighet",
+        "default": "Standard",
+        "duration": "Varaktighet",
+        "error": "Fel",
+        "failed": "Misslyckades",
+        "health": "Hälsa",
+        "jobName": "Jobbnamn",
+        "lastRun": "Senaste körning",
+        "nextRun": "Nästa körning",
+        "schedule": "Schema",
+        "startedAt": "Startade",
+        "status": "Status",
+        "successful": "Lyckades",
+        "successRate": "Lyckandegrad",
+        "totalRuns": "Totalt antal körningar"
+      },
+      "title": "Arbetarkö"
+    },
+    "worksCouncil": {
+      "absence": {
+        "category": "Kategorinamn",
+        "grouped": "Grupperade",
+        "hidden": "Dolda"
+      },
+      "absenceVisibility": "Synlighet för frånvaro",
+      "description": "Konfigurera integritetsskyddad åtkomst för företagsråd och granskningsexporter",
+      "exportEnabled": "Aktivera granskningsexporter",
+      "exportEnabledDescription": "Tillåt behöriga användare i företagsrådet att generera integritetsfiltrerade granskningspaket.",
+      "formDescription": "Konfigurera integritetsskyddad åtkomst för företagsråd och granskningsexporter för denna organisation.",
+      "identity": {
+        "aggregated": "Aggregerad",
+        "named": "Namngiven",
+        "pseudonymized": "Pseudonymiserad"
+      },
+      "identityVisibility": "Identitetssynlighet",
+      "minimumThreshold": "Minsta tröskelvärde för aggregering",
+      "minimumThresholdDescription": "Grupper under denna storlek döljs för att minska risken för återidentifiering.",
+      "save": "Spara inställningar",
+      "saved": "Inställningarna för företagsrådet har sparats",
+      "saveError": "Det gick inte att spara inställningarna för företagsrådet",
+      "title": "Företagsrådsläge",
+      "visibleLocationIds": "Synliga plats-ID:n",
+      "visibleLocationIdsDescription": "Valfria kommaseparerade plats-ID:n. Lämna tomt för att inkludera alla platser.",
+      "visibleTeamIds": "Synliga team-ID:n",
+      "visibleTeamIdsDescription": "Valfria kommaseparerade team-ID:n. Lämna tomt för att inkludera alla team."
+    }
+  }
+}

@@ -1,0 +1,632 @@
+{
+  "settings": {
+    "apiKeys": {
+      "active": "Aktiv",
+      "copyKey": "Kopiera API-nyckel",
+      "copyPrefix": "Kopiera prefix",
+      "create": "Skapa nyckel",
+      "created": "API-nyckeln har skapats",
+      "createDescription": "Skapa en ny API-nyckel för programmatisk åtkomst. Nyckeln visas endast en gång.",
+      "createdOn": "Skapad {date}",
+      "createTitle": "Skapa API-nyckel",
+      "deleted": "API-nyckeln har tagits bort",
+      "deleteDescription": "Är du säker på att du vill ta bort API-nyckeln \"{name}\"? Alla applikationer som använder den här nyckeln förlorar omedelbart åtkomsten. Den här åtgärden kan inte ångras.",
+      "deleteTitle": "Ta bort API-nyckel",
+      "description": "Hantera API-nycklar för programmatisk åtkomst till din organisations data",
+      "disabled": "Inaktiverad",
+      "editCreated": "Skapad {date}",
+      "editDescription": "Uppdatera inställningarna för denna API-nyckel. Obs! Du kan inte visa eller ändra själva nyckeln.",
+      "editTitle": "Redigera API-nyckel",
+      "empty": {
+        "description": "Skapa din första API-nyckel för att aktivera programmatisk åtkomst till din organisation.",
+        "title": "Inga API-nycklar"
+      },
+      "expires": "Går ut",
+      "form": {
+        "create": "Skapa nyckel",
+        "enabled": "Nyckel aktiverad",
+        "enabledHelp": "Inaktiverade nycklar kommer att avvisa alla API-förfrågningar",
+        "expiration": "Utgångsdatum",
+        "invalid": "Granska de ogiltiga formulärfälten",
+        "name": "Namn",
+        "nameHelp": "Ett beskrivande namn för att identifiera denna nyckel",
+        "nameMax": "Namnet får vara högst 100 tecken",
+        "nameMin": "Namnet måste vara minst 3 tecken",
+        "nameMinLength": "Namnet måste vara minst 3 tecken",
+        "namePlaceholder": "t.ex. Produktions-API",
+        "rateLimit": "Aktivera hastighetsbegränsning",
+        "rateLimitMax": "Max antal förfrågningar per minut",
+        "rateLimitMaxExceeded": "Hastighetsgränsen får vara högst 10 000 förfrågningar",
+        "rateLimitMaxInvalid": "Ange ett heltal från 10 till 10 000",
+        "rateLimitMin": "Hastighetsgränsen måste vara minst 10 förfrågningar",
+        "rateLimitRequired": "Hastighetsgräns krävs",
+        "rateLimitWholeNumber": "Hastighetsgränsen måste vara ett heltal",
+        "scopes": "Behörigheter",
+        "scopesRequired": "Välj minst en behörighet"
+      },
+      "keyCopied": "API-nyckel kopierad till urklipp",
+      "lastUsed": "Senast använd",
+      "name": "Namn",
+      "prefix": "Nyckelprefix",
+      "prefixCopied": "Nyckelprefix kopierat",
+      "scopes": "Behörigheter",
+      "security": {
+        "description": "API-nycklar ger full åtkomst till din organisations data inom ramen för sina behörigheter. Förvara dem säkert och dela dem aldrig i publika kodarkiv eller kod på klientsidan.",
+        "title": "Säkerhetsmeddelande"
+      },
+      "showClose": "Stäng",
+      "showCloseAnyway": "Stäng ändå",
+      "showConfirmWarning": "Är du säker? Du har inte kopierat nyckeln än.",
+      "showCopied": "Nyckel kopierad till urklipp",
+      "showDescription": "Din nya API-nyckel \"{name}\" har skapats. Kopiera den nu – du kommer inte att kunna se den igen!",
+      "showDone": "Klar",
+      "showExpires": "Går ut:",
+      "showLabel": "Din API-nyckel",
+      "showName": "Namn:",
+      "showNever": "Aldrig",
+      "showTitle": "API-nyckel skapad",
+      "showWarning": "Detta är enda gången du kommer att se den här nyckeln. Se till att kopiera och spara den på ett säkert sätt.",
+      "showWarningTitle": "Viktigt:",
+      "status": "Status",
+      "title": "API-nycklar",
+      "updated": "API-nyckel uppdaterad",
+      "usage": "{count} av {max} nycklar används"
+    },
+    "branding": {
+      "appName": {
+        "description": "Åsidosätt standardappnamnet som visas på inloggningssidan.",
+        "title": "Appnamn"
+      },
+      "background": {
+        "description": "Ladda upp en anpassad bakgrundsbild för inloggningssidan.",
+        "hint": "Rekommenderas: 1920x1080 px eller större, JPEG eller PNG av hög kvalitet",
+        "preview": "Förhandsgranskning av bakgrund",
+        "remove": "Ta bort bakgrund",
+        "title": "Bakgrundsbild",
+        "upload": "Ladda upp bakgrundsbild"
+      },
+      "backgroundUploadFailed": "Det gick inte att ladda upp bakgrundsbilden",
+      "backgroundUploadSuccess": "Bakgrundsbilden har laddats upp",
+      "colors": {
+        "accent": "Accentfärg (valfritt)",
+        "accentHex": "Hex-värde för accentfärg",
+        "accentHint": "Sekundärfärg för markeringar",
+        "description": "Anpassa primär- och accentfärger för din inloggningssida.",
+        "primary": "Primärfärg",
+        "primaryHex": "Hex-värde för primärfärg",
+        "primaryHint": "Används för knappar, länkar och fokuslägen",
+        "title": "Temafärger"
+      },
+      "logo": {
+        "description": "Ladda upp din organisations logotyp för att visa den på inloggningssidan.",
+        "hint": "Rekommenderas: 200x200 px, PNG eller SVG med transparent bakgrund",
+        "preview": "Förhandsgranskning av logotyp",
+        "remove": "Ta bort logotyp",
+        "title": "Logotyp",
+        "upload": "Ladda upp logotypbild"
+      },
+      "logoUploadFailed": "Det gick inte att ladda upp logotypen",
+      "logoUploadSuccess": "Logotypen har laddats upp",
+      "save": "Spara varumärkesinställningar",
+      "saveFailed": "Kunde inte spara varumärkesinställningar",
+      "saveSuccess": "Varumärkesinställningarna har sparats"
+    },
+    "enterprise": {
+      "addProvider": "Lägg till leverantör",
+      "clientId": "Klient-ID",
+      "clientIdRequired": "Klient-ID krävs",
+      "clientSecret": "Klienthemlighet",
+      "clientSecretRequired": "Klienthemlighet krävs",
+      "configureCallbackUrl": "Konfigurera callback-URL:",
+      "domain": "Domän",
+      "domains": {
+        "add": "Lägg till anpassad domän",
+        "addDescription": "Lägg till en anpassad domän för att aktivera organisationsspecifika inloggningssidor. Du måste verifiera ägarskapet via DNS-poster.",
+        "addDomain": "Lägg till domän",
+        "added": "Domänen har lagts till",
+        "addFailed": "Kunde inte lägga till domän",
+        "adding": "Lägger till…",
+        "authConfigDescription": "Konfigurera vilka autentiseringsmetoder som är tillgängliga för användare som loggar in via {domain}",
+        "authConfigTitle": "Autentiseringskonfiguration",
+        "authConfigUpdated": "Autentiseringskonfigurationen har uppdaterats",
+        "authConfigUpdateFailed": "Kunde inte uppdatera autentiseringskonfigurationen",
+        "authMethod": {
+          "emailPassword": "E-post/Lösenord",
+          "passkey": "Passkey",
+          "social": "Social ({providers})",
+          "sso": "SSO"
+        },
+        "configured": "konfigurerad",
+        "cookieConsentScript": "Skript för cookiesamtycke",
+        "cookieConsentScriptHelp": "Infogas endast på autentiseringssidor för denna anpassade domän. Lämna tomt för att inaktivera.",
+        "cookieConsentStatus": "Cookiesamtycke {status}",
+        "copiedToClipboard": "Kopierat till urklipp",
+        "customDomain": "Anpassad domän",
+        "customDomainDescription": "Konfigurera en anpassad domän för att aktivera en organisationsspecifik inloggningssida med ditt varumärke.",
+        "defaultUrl": {
+          "canonical": "Kanonisk"
+        },
+        "defaultUrls": "Standard-URL:er",
+        "defaultUrlsDescription": "Dessa plattformshanterade URL:er fungerar automatiskt utan anpassad DNS-konfiguration.",
+        "deleteAria": "Ta bort anpassad domän {domain}",
+        "deleted": "Domänen har tagits bort",
+        "deleteDescription": "Är du säker på att du vill ta bort \"{domain}\"? Denna åtgärd kan inte ångras. Användare kommer inte längre att kunna logga in via denna anpassade domän.",
+        "deleteFailed": "Det gick inte att ta bort domänen",
+        "deleteTitle": "Ta bort domän",
+        "description": "Konfigurera din organisations anpassade inloggningsdomän, varumärkesprofilering och SSO-leverantörer.",
+        "dnsPropagation": "DNS-spridning",
+        "dnsPropagationDescription": "DNS-ändringar kan ta upp till 48 timmar att spridas, även om det ofta slutförs inom några minuter. Du kan klicka på \"Verifiera\" när du har lagt till TXT-posten.",
+        "domain": "Domän",
+        "domainHelp": "Ange domänen där användare kommer åt inloggningssidan.",
+        "domainInvalid": "Ange en giltig domän (t.ex. login.example.com)",
+        "domainPageSettings": "Inställningar för domänsida",
+        "domainRequired": "Domän krävs",
+        "editAuthSettingsAria": "Redigera autentiseringsinställningar för {domain}",
+        "emailPassword": "E-post och lösenord",
+        "emailPasswordHelp": "Tillåt användare att logga in med e-post och lösenord",
+        "empty": "Ingen anpassad domän har konfigurerats ännu.",
+        "enabledAuthMethods": "Aktiverade autentiseringsmetoder",
+        "guidedSetup": {
+          "action": "Guidad konfiguration",
+          "description": "Konfigurera SSO, SCIM, åtkomstpolicy och aktiveringskontroller i ett skyddat flöde.",
+          "title": "Guidad konfiguration"
+        },
+        "keepExistingSecretKey": "Lämna tomt för att behålla befintlig hemlig nyckel",
+        "nameHost": "Namn / Värd",
+        "notConfigured": "inte konfigurerad",
+        "passkey": "Lösenordsnyckel",
+        "passkeyHelp": "Tillåt lösenordsfri inloggning med lösenordsnycklar",
+        "regenerateToken": "Generera ny token",
+        "regenerateTokenFailed": "Kunde inte generera ny token",
+        "regenerateTokenSuccess": "Ny verifieringstoken genererad",
+        "regenerating": "Genererar ny…",
+        "saveConfiguration": "Spara konfiguration",
+        "secretKey": "Hemlig nyckel",
+        "secretKeyPlaceholder": "Ange hemlig nyckel",
+        "secretKeyRequired": "Krävs när en webbplatsnyckel anges",
+        "siteKey": "Webbplatsnyckel",
+        "socialProviders": "Sociala leverantörer",
+        "socialProvidersHelp": "Aktivera sociala inloggningsalternativ för denna domän",
+        "sso": "Enkel inloggning (SSO)",
+        "ssoHelp": "Tillåt OIDC-baserad företagsinloggning",
+        "status": {
+          "pending": "Väntar på verifiering",
+          "verified": "Verifierad"
+        },
+        "title": "Anpassad domän & varumärkesprofilering",
+        "tokenExpired": "Token har gått ut",
+        "tokenExpiredDescription": "Verifieringstoken har löpt ut. Generera en ny token.",
+        "tokenExpires": "Token löper ut: {date}",
+        "turnstile": "Cloudflare Turnstile",
+        "turnstileHelp": "Botskydd för autentiseringsformulär. Krävs för företagsdomäner.",
+        "turnstileSiteKeyStatus": "Turnstile-webbplatsnyckel {status}",
+        "txtRecordInstruction": "Lägg till följande TXT-post i din DNS:",
+        "value": "Värde",
+        "verifiedSuccess": "Domänen har verifierats",
+        "verify": "Verifiera",
+        "verifyDomain": "Verifiera domän",
+        "verifyFailed": "Det gick inte att verifiera domänen",
+        "verifying": "Verifierar…",
+        "verifyOwnership": "Verifiera domänägarskap",
+        "verifyOwnershipDescription": "Lägg till en DNS TXT-post för att verifiera ägarskap av {domain}"
+      },
+      "email": {
+        "apiKey": "API-nyckel",
+        "apiKeyHint": "Lämna tomt för att behålla befintlig nyckel. Hämta din API-nyckel från resend.com",
+        "create": "Skapa konfiguration",
+        "delete": "Ta bort konfiguration",
+        "deleteConfirm": "Är du säker på att du vill ta bort denna e-postkonfiguration?",
+        "deleted": "E-postkonfigurationen har tagits bort",
+        "deleteFailed": "Det gick inte att ta bort",
+        "description": "Konfigurera en anpassad e-postleverantör för din organisation. Alla organisationens e-postmeddelanden kommer att använda denna konfiguration istället för systemets standard.",
+        "fromEmail": "Avsändar-e-post",
+        "fromName": "Avsändarnamn",
+        "isActive": "Aktivera denna e-postkonfiguration",
+        "lastTest": "Senaste test",
+        "passwordHint": "Lämna tomt för att behålla befintligt lösenord",
+        "recommended": "Rekommenderas",
+        "resendConfig": "Resend-konfiguration",
+        "save": "Spara ändringar",
+        "saved": "E-postkonfiguration sparad",
+        "saveFailed": "Kunde inte spara",
+        "scalewayConnected": "Scaleway Secret Store är redo",
+        "scalewayConnectedDesc": "Den här organisationen har en verifierad Scaleway Key Manager-nyckel för krypterad lagring av hemligheter.",
+        "scalewayKeyPending": "Scaleway-nyckel har inte genererats ännu",
+        "scalewayKeyPendingDesc": "En Scaleway-organisationsnyckel genereras när du sparar en hemlighet, såsom en Resend API-nyckel eller ett SMTP-lösenord.",
+        "scalewayUnavailable": "Scaleway Secret Store är inte tillgänglig",
+        "scalewayUnavailableDesc": "Den konfigurerade Scaleway-organisationsnyckeln kunde inte verifieras. Hemligheter kan inte lagras säkert förrän detta har åtgärdats.",
+        "secretSet": "Angivet",
+        "sendTest": "IconSend Test",
+        "smtpConfig": "SMTP-konfiguration",
+        "smtpHost": "SMTP-värd",
+        "smtpIpMode": "IP-läge",
+        "smtpIpMode.auto": "Auto",
+        "smtpIpModeHint": "Använd Auto om inte din SMTP-leverantör kräver en specifik IP-familj.",
+        "smtpIpMode.ipv4": "Endast IPv4",
+        "smtpIpMode.ipv6": "Endast IPv6",
+        "smtpPassword": "Lösenord",
+        "smtpPort": "Port",
+        "smtpRequireTls": "Kräv STARTTLS-uppgradering",
+        "smtpSecure": "Använd TLS (port 465)",
+        "smtpServer": "SMTP-server",
+        "smtpUsername": "Användarnamn",
+        "testEmailRequired": "Ange en test-e-postadress",
+        "testFailed": "Kunde inte skicka test-e-post",
+        "testFailure": "Misslyckades",
+        "testSection": "IconSend Test-e-post",
+        "testSent": "Test-e-postmeddelandet har skickats",
+        "testSuccess": "Lyckades",
+        "title": "E-postkonfiguration",
+        "transportType": "E-postleverantör",
+        "vaultConnected": "Vault anslutet",
+        "vaultConnectedDesc": "Hemligheter lagras säkert i HashiCorp Vault.",
+        "vaultSealed": "Vault förseglat",
+        "vaultSealedDesc": "HashiCorp Vault är förseglat. Vänligen bryt förseglingen för att lagra hemligheter.",
+        "vaultUnavailable": "Vault otillgängligt",
+        "vaultUnavailableDesc": "HashiCorp Vault är inte tillgängligt. Hemligheter kan inte lagras säkert."
+      },
+      "enableProviderHelp": "Aktivera eller inaktivera denna leverantör",
+      "identity": {
+        "accessPolicy": {
+          "action": {
+            "save": "Spara åtkomstpolicy"
+          },
+          "defaultRoleTemplate": "Standardrollmall",
+          "description": "Ställ in krav för domän, inbjudningar och SSO efter att pilottestet har godkänts.",
+          "noDefaultTemplate": "Ingen standardmall",
+          "placeholder": {
+            "roleTemplate": "Välj rollmall"
+          },
+          "requireSso": "Kräv SSO",
+          "requireSsoHelp": "Anställda måste använda företagets IdP.",
+          "restrictDomain": "Begränsa till verifierad domän",
+          "restrictDomainHelp": "Blockera konton utanför den valda domänen.",
+          "restrictInvites": "Begränsa inbjudningar",
+          "restrictInvitesHelp": "Tillåt endast inbjudningar som överensstämmer med åtkomstpolicyn.",
+          "title": "Åtkomstpolicy"
+        },
+        "badge": {
+          "now": "Nu",
+          "queued": "I kö",
+          "ready": "Redo"
+        },
+        "domain": {
+          "action": {
+            "checkStatus": "Kontrollera domänstatus"
+          },
+          "description": "Validera klientorganisationens gräns innan SSO tillämpas för anställda.",
+          "help": "DNS-verifiering använder befintliga åtgärder för SSO-domänverifiering. Slutför den verifieringen innan kravet aktiveras.",
+          "notSelected": "Inte vald",
+          "selected": "Vald domän",
+          "status": {
+            "pending": "Väntar",
+            "verified": "Verifierad"
+          },
+          "title": "Domän"
+        },
+        "hero": {
+          "description": "Konfigurera SSO, SCIM och tillämpning för organisation {organizationId} med skyddad aktivering.",
+          "eyebrow": "Företagsidentitet",
+          "title": "Checklista för operativa kommandon"
+        },
+        "provider": {
+          "action": {
+            "save": "Spara leverantör"
+          },
+          "description": "Välj förinställning för identitetsleverantör, protokoll, leverantörs-ID och e-postdomän.",
+          "error": {
+            "domainRequired": "Domän krävs",
+            "providerIdRequired": "Leverantörs-ID krävs"
+          },
+          "label": {
+            "domain": "E-postdomän",
+            "preset": "Förinställning för leverantör",
+            "protocol": "Protokoll",
+            "providerId": "Leverantörs-ID"
+          },
+          "placeholder": {
+            "domain": "t.ex. example.com…",
+            "protocol": "Välj protokoll",
+            "provider": "Välj leverantör",
+            "providerId": "t.ex. acme-okta…"
+          },
+          "preset": {
+            "generic": {
+              "description": "Använd valfri standardkompatibel OIDC- eller SAML 2.0-identitetsleverantör."
+            },
+            "googleWorkspace": {
+              "description": "Använd Google Workspace OIDC för SSO och valfri katalogsynkronisering."
+            },
+            "microsoftEntra": {
+              "description": "Använd Microsoft Entra ID för enterprise-SSO och valfri provisionering."
+            },
+            "okta": {
+              "description": "Använd Okta Workforce Identity för enkel inloggning med SAML eller OIDC."
+            }
+          },
+          "title": "Leverantör"
+        },
+        "rail": {
+          "title": "Beredskapsfält"
+        },
+        "review": {
+          "action": {
+            "activate": "Aktivera företagsidentitet"
+          },
+          "activationSummary": "Aktiveringssammanfattning",
+          "description": "Granska skyddade aktiveringskontroller innan du aktiverar företagsidentitetskontroller.",
+          "lockoutWarning": "Varning för utelåsning av nuvarande administratör",
+          "lockoutWarningHelp": "Bekräfta att ditt nuvarande administratörskonto kan logga in via den konfigurerade leverantören före aktivering. Tillämpning kan blockera reservinloggning med lösenord för den valda domänen.",
+          "missingRequirement": "{item} krävs före aktivering",
+          "prerequisitesComplete": "Förutsättningarna för leverantör, verifierad domän och SSO-test är uppfyllda.",
+          "requirement": {
+            "domain": "Verifierad domän",
+            "provider": "Leverantör",
+            "ssoTest": "SSO-test"
+          },
+          "title": "Granska och aktivera"
+        },
+        "scim": {
+          "action": {
+            "create": "Skapa SCIM-anslutning",
+            "creating": "Skapar SCIM-anslutning",
+            "decommission": "Avveckla",
+            "reconcile": "Uppdatera skapandestatus",
+            "refresh": "Uppdatera status",
+            "rotate": "Rotera autentiseringsuppgift",
+            "selectRole": "Välj en standardrollmall först"
+          },
+          "credential": {
+            "close": "Stäng",
+            "confirmClose": "Bekräfta att autentiseringsuppgiften har sparats innan du stänger.",
+            "copied": "Autentiseringsuppgiften har kopierats till urklipp.",
+            "copy": "Kopiera autentiseringsuppgift",
+            "description": "Kopiera och spara denna autentiseringsuppgift nu. Den kan inte visas igen.",
+            "label": "Autentiseringsuppgift",
+            "saved": "Jag har sparat denna autentiseringsuppgift",
+            "title": "SCIM-autentiseringsuppgift",
+            "warning": "Denna autentiseringsuppgift visas en gång. Spara den säkert hos din identitetsleverantör."
+          },
+          "credentials": {
+            "credential": "Autentiseringsuppgift",
+            "empty": "Inga autentiseringsuppgifter har utfärdats.",
+            "expires": "Går ut",
+            "lastUsedAria": "Senast använd: {value} UTC",
+            "revoke": "Återkalla",
+            "status": {
+              "active": "aktiv",
+              "revoked": "återkallad"
+            },
+            "title": "Autentiseringsuppgifter",
+            "unused": "Har inte använts än"
+          },
+          "description": "SCIM-verifieringen uppdateras efter att din identitetsleverantör skickar en testanvändare eller gruppändring.",
+          "dialog": {
+            "cancel": "Avbryt",
+            "decommission": {
+              "description": "Detta avvecklar SCIM-provisionering permanent och kan inte ångras.",
+              "title": "Avveckla SCIM"
+            },
+            "revoke": {
+              "description": "Detta hindrar omedelbart autentiseringsuppgiften från att provisionera användare.",
+              "title": "Återkalla autentiseringsuppgift"
+            }
+          },
+          "endpoint": "Slutpunkt",
+          "events": {
+            "empty": "Inga provisioneringshändelser har registrerats.",
+            "error": "Det gick inte att läsa in händelser. Uppdatera statusen och försök igen.",
+            "title": "Senaste händelser"
+          },
+          "expiry": "Autentiseringsuppgiftens giltighetstid",
+          "expiry.value": "1 år",
+          "refreshHelp": "Uppdatera status för att läsa in säker anslutningsmetadata.",
+          "status": {
+            "active-unverified": "aktiv overifierad",
+            "creating": "skapar",
+            "creation_failed": "skapande misslyckades",
+            "decommissioned": "avvecklad",
+            "decommissioning": "avvecklar",
+            "disconnected": "frånkopplad",
+            "refreshing": "uppdaterar",
+            "revoking": "återkallar",
+            "rotating": "roterar",
+            "verified": "verifierad"
+          },
+          "title": "SCIM-provisionering",
+          "toast": {
+            "createError": "Det gick inte att skapa SCIM-anslutningen.",
+            "reconcileError": "Det gick inte att stämma av SCIM-skapandet.",
+            "refreshError": "Det gick inte att uppdatera SCIM-statusen.",
+            "rotateError": "Det gick inte att rotera SCIM-autentiseringsuppgiften.",
+            "updateError": "Det gick inte att uppdatera SCIM-anslutningen."
+          },
+          "verification": "Verifiering",
+          "verification.awaiting": "Väntar på leverantörsanvändning",
+          "verification.observed": "Observerad",
+          "wizardDescription": "Konfigurera hanterad användarprovisionering utan att ändra företagsaktiveringen."
+        },
+        "sso": {
+          "action": {
+            "register": "Registrera SSO-leverantör"
+          },
+          "description": "Registrera den externa identitetsleverantören med OIDC-klientuppgifter eller SAML-metadata.",
+          "error": {
+            "saveProviderFirst": "Spara leverantör och domän innan du registrerar SSO"
+          },
+          "label": {
+            "clientId": "Klient-ID",
+            "clientSecret": "Klienthemlighet",
+            "issuer": "Utfärdare",
+            "metadata": "SAML-metadata"
+          },
+          "placeholder": {
+            "issuer": {
+              "generic": "https://idp.example.com…",
+              "googleWorkspace": "https://accounts.google.com…",
+              "microsoftEntra": "https://login.microsoftonline.com/{tenant-id}/v2.0…",
+              "okta": "https://acme.okta.com…"
+            },
+            "metadata": "Klistra in IdP-metadata-XML…"
+          },
+          "saml": {
+            "acsPath": "Webbläsarrelativ ACS-sökväg: {path}",
+            "acsUrl": "Konfigurera din IdP med denna URL för Assertion Consumer Service (ACS): {path}"
+          },
+          "title": "SSO-konfiguration"
+        },
+        "ssoTest": {
+          "action": {
+            "recordFail": "Registrera underkänt",
+            "recordPass": "Registrera godkänt"
+          },
+          "defaultFailure": "Skarpt SSO-test misslyckades",
+          "description": "Registrera resultatet av ett skarpt externt SSO-test innan kravställning.",
+          "error": {
+            "saveProviderFirst": "Spara leverantören innan du registrerar ett test"
+          },
+          "help": "Detta registrerar resultatet från ett skarpt externt SSO-test. Kör inloggningen i IdP först och registrera sedan godkänt eller underkänt här för aktiveringsskyddet.",
+          "label": {
+            "email": "E-postadress för testanvändare",
+            "failureNote": "Anteckning om misslyckande"
+          },
+          "status": {
+            "failed": "Misslyckades",
+            "notRun": "Ej körd",
+            "passed": "Godkänd"
+          },
+          "title": "Testanvändare"
+        },
+        "status": {
+          "activated": "Aktiverad",
+          "draft": "Utkast"
+        },
+        "step": {
+          "accessPolicy": "Åtkomstpolicy",
+          "accessPolicy.description": "Ange tillämpningsregler",
+          "domain": "Domän",
+          "domain.description": "Bekräfta klientorganisationens gräns",
+          "provider": "Leverantör",
+          "provider.description": "Välj identitetskälla",
+          "review": "Granska och aktivera",
+          "review.description": "Säkra aktiveringen",
+          "scim": "SCIM-provisionering",
+          "scim.description": "Utfärda etableringstoken",
+          "sso": "SSO-konfiguration",
+          "sso.description": "Registrera OIDC eller SAML",
+          "ssoTest": "Testanvändare",
+          "ssoTest.description": "Registrera resultat för live-inloggning"
+        },
+        "toast": {
+          "accessPolicyFailed": "Det gick inte att spara åtkomstpolicyn",
+          "accessPolicySaved": "Åtkomstpolicy sparad",
+          "activated": "Konfiguration av företagsidentitet har aktiverats",
+          "activateFailed": "Det gick inte att aktivera konfigurationen",
+          "domainStatusFailed": "Det gick inte att uppdatera domänstatusen",
+          "domainStatusRefreshed": "Domänstatus uppdaterad",
+          "providerSaved": "Identitetsleverantör sparad",
+          "providerSaveFailed": "Det gick inte att spara leverantören",
+          "ssoRegistered": "SSO-leverantör registrerad",
+          "ssoRegisterFailed": "Det gick inte att registrera SSO-leverantör",
+          "ssoTestFailed": "SSO-test markerat som misslyckat",
+          "ssoTestPassed": "SSO-test markerat som godkänt",
+          "ssoTestRecordFailed": "Det gick inte att registrera SSO-test"
+        }
+      },
+      "keepExistingSecretHelp": "Lämna tomt för att behålla den befintliga hemligheten",
+      "leaveBlankKeepExisting": "Lämna tomt för att behålla befintlig",
+      "provider": "Leverantör",
+      "socialOAuth": {
+        "addDescription": "Konfigurera din egen OAuth-app för social inloggning.",
+        "addProviderError": "Det gick inte att lägga till leverantör",
+        "addTitle": "Lägg till social OAuth-leverantör",
+        "appleKeyIdHelp": "Nyckel-ID:t som är kopplat till din privata nyckel",
+        "appleKeyIdRequired": "Nyckel-ID krävs för Apple",
+        "appleTeamIdHelp": "Finns i ditt Apple Developer-konto",
+        "appleTeamIdRequired": "Team-ID krävs för Apple",
+        "authentication": "Autentisering",
+        "clientIdPlaceholder": "Ditt OAuth-klient-ID",
+        "clientSecretPlaceholder": "Din OAuth-klienthemlighet",
+        "configured": "{provider} OAuth har konfigurerats",
+        "createAppAt": "Skapa en OAuth-app på",
+        "deleteError": "Kunde inte ta bort OAuth-konfigurationen",
+        "description": "Konfigurera dina egna OAuth-inloggningsuppgifter för social inloggning. Detta gör att dina användare kan logga in med din organisations OAuth-appar istället för delade inloggningsuppgifter.",
+        "developerConsole": "{provider} Developer Console",
+        "editDescription": "Uppdatera dina OAuth-inloggningsuppgifter.",
+        "editTitle": "Redigera {provider} OAuth",
+        "empty": "Inga anpassade sociala OAuth-leverantörer har konfigurerats.",
+        "emptyDescription": "Lägg till dina egna OAuth-inloggningsuppgifter för att ersätta de delade inloggningsuppgifterna.",
+        "howItWorks": "Hur det fungerar",
+        "instructions": {
+          "addProvider": "Lägg till leverantören här med dina inloggningsuppgifter",
+          "copyCredentials": "Kopiera klient-ID och klienthemlighet",
+          "createApp": "Skapa en OAuth-app i leverantörens utvecklarkonsol",
+          "customDomain": "Användare som loggar in via din anpassade domän kommer att använda din OAuth-app"
+        },
+        "keyId": "Nyckel-ID",
+        "privateKey": "Privat nyckel (.p8)",
+        "removed": "{provider} OAuth har tagits bort",
+        "removeDialogDescription": "Är du säker på att du vill ta bort den här OAuth-konfigurationen? Användare kommer att återgå till de delade OAuth-inloggningsuppgifterna (om tillgängliga).",
+        "removeDialogTitle": "Ta bort social OAuth-leverantör",
+        "teamId": "Team-ID",
+        "title": "Sociala inloggningsleverantörer",
+        "unverified": "Overifierad",
+        "updateConfigError": "Kunde inte uppdatera konfigurationen",
+        "updated": "{provider} OAuth har uppdaterats"
+      },
+      "sso": {
+        "addDescription": "Konfigurera en OIDC-identitetsleverantör för enkel inloggning (SSO) på företagsnivå.",
+        "addError": "Kunde inte lägga till SSO-leverantör",
+        "addSuccess": "SSO-leverantör har lagts till",
+        "addTitle": "Lägg till SSO-leverantör",
+        "clientIdPlaceholder": "Ditt OIDC-klient-ID",
+        "clientSecretPlaceholder": "Din OIDC-klienthemlighet",
+        "deleteDialogDescription": "Är du säker på att du vill ta bort den här SSO-leverantören? Användare kommer inte längre att kunna logga in med denna identitetsleverantör.",
+        "deleteDialogTitle": "Ta bort SSO-leverantör",
+        "deleteError": "Kunde inte ta bort SSO-leverantör",
+        "deleteProviderAria": "Ta bort SSO-leverantör {provider}",
+        "deleteSuccess": "SSO-leverantör har tagits bort",
+        "description": "Lägg till OIDC-identitetsleverantörer för att aktivera SSO för din organisation.",
+        "domainInvalid": "Ange en giltig domän (t.ex. example.com)",
+        "domainRequired": "Domän krävs",
+        "domainVerified": "Domänen har verifierats",
+        "emailDomain": "E-postdomän",
+        "emailDomainHelp": "Användare med denna e-postdomän kommer att kunna använda SSO",
+        "empty": "Inga SSO-leverantörer har konfigurerats ännu.",
+        "emptyDescription": "Lägg till en OIDC-leverantör för att aktivera enkel inloggning (SSO) för företag.",
+        "instructions": {
+          "copyCredentials": "Kopiera utfärdar-URL, klient-ID och klienthemlighet från din IdP",
+          "createApp": "Skapa en OIDC-applikation i din identitetsleverantör (Okta, Azure AD etc.)",
+          "verifyDomain": "Lägg till leverantören här och verifiera e-postdomänen via en DNS TXT-post"
+        },
+        "issuerUrl": "Utfärdar-URL",
+        "issuerUrlHelp": "OIDC-utfärdarens URL från din identitetsleverantör",
+        "issuerUrlRequired": "Utfärdarens URL krävs",
+        "providerId": "Leverantörs-ID",
+        "providerIdHelp": "En unik identifierare för denna leverantör (gemener, inga mellanslag)",
+        "providerIdInvalid": "Leverantörs-ID får endast innehålla gemener, siffror och bindestreck",
+        "providerIdRequired": "Leverantörs-ID krävs",
+        "setupInstructions": "Konfigurationsinstruktioner",
+        "title": "Identitetsleverantörer",
+        "token": "Token",
+        "tokenError": "Kunde inte generera domänverifieringstoken",
+        "tokenGenerated": "Verifieringstoken har genererats",
+        "txtToken": "TXT-token:",
+        "validUrlRequired": "Ange en giltig URL",
+        "verified": "Verifierad",
+        "verify": "Verifiera",
+        "verifyError": "Domänverifieringen misslyckades. Kontrollera din DNS TXT-post och försök igen."
+      },
+      "tab": {
+        "branding": "Varumärkesprofilering",
+        "domains": "Anpassad domän",
+        "social-oauth": "Social inloggning",
+        "sso": "SSO-leverantörer"
+      }
+    },
+    "enterpriseIdentitySetup": {
+      "description": "Vägled SSO, SCIM-provisionering, domänbegränsningar, inbjudningspolicy och standardroller för denna organisation.",
+      "title": "Konfiguration av företagsidentitet"
+    }
+  }
+}

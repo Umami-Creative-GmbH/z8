@@ -1,0 +1,80 @@
+{
+  "travelExpenses": {
+    "actions": {
+      "newClaim": "Nytt utlägg"
+    },
+    "approvals": {
+      "description": "Öppna den samlade inkorgen för godkännanden filtrerad efter reseutlägg.",
+      "openInbox": "Öppna inkorgen",
+      "title": "Granska väntande godkännanden av reseräkningar"
+    },
+    "claimTypes": {
+      "mileage": "Milersättning",
+      "per_diem": "Traktamente",
+      "receipt": "Kvitto"
+    },
+    "decision": {
+      "approve": "Godkänn",
+      "approved": "Reseräkningen har godkänts",
+      "approveDescription": "Lägg till en valfri anteckning till den sökande innan du godkänner.",
+      "approveTitle": "Godkänn reseräkning",
+      "errors": {
+        "approve": "Kunde inte godkänna reseräkningen",
+        "missingClaim": "Reseräkning saknas",
+        "reject": "Kunde inte avvisa reseräkningen",
+        "rejectionReason": "Ange en anledning till avvisningen"
+      },
+      "noteOptional": "Anteckning (valfritt)",
+      "notePlaceholder": "Ser bra ut. Tack för detaljerna.",
+      "reasonPlaceholder": "Kvittouppgifter saknas för det inskickade beloppet",
+      "reasonRequired": "Anledning (obligatoriskt)",
+      "reject": "Avvisa",
+      "rejectDescription": "Ange en tydlig anledning för att hjälpa den sökande att uppdatera och skicka in igen.",
+      "rejected": "Reseräkningen har avvisats",
+      "rejectTitle": "Avvisa reseräkning"
+    },
+    "description": "Skapa och följ dina reseräkningar",
+    "errors": {
+      "loadClaims": "Kunde inte läsa in reseräkningar"
+    },
+    "feature": "hantera reseutlägg",
+    "form": {
+      "amount": "Belopp",
+      "claimType": "Utläggstyp",
+      "created": "Utkast för reseutlägg skapat",
+      "createDraft": "Skapa utkast",
+      "currency": "Valuta",
+      "currencyDescription": "ISO 4217-kod, t.ex. EUR eller USD",
+      "currencyPlaceholder": "EUR",
+      "description": "Skapa ett nytt utkast för dina senaste reseutlägg.",
+      "destinationCity": "Destinationsstad",
+      "destinationCityPlaceholder": "Berlin",
+      "destinationCountry": "Destinationsland",
+      "destinationCountryPlaceholder": "Tyskland",
+      "errors": {
+        "createDraft": "Kunde inte skapa utkast för reseutlägg",
+        "positiveAmount": "Beloppet måste vara ett positivt tal",
+        "tripEndBeforeStart": "Resans slutdatum kan inte vara före resans startdatum",
+        "validTripDates": "Ange ett giltigt start- och slutdatum för resan",
+        "validTripEnd": "Ange ett giltigt slutdatum för resan",
+        "validTripStart": "Ange ett giltigt startdatum för resan"
+      },
+      "notes": "Anteckningar",
+      "notesPlaceholder": "Lägg till valfri information till din godkännare",
+      "receiptAttachmentHint": "Kvittoutlägg kräver minst en bilaga. Uppladdning av bilagor blir tillgänglig efter att utkastet har skapats.",
+      "selectClaimType": "Välj utläggstyp",
+      "title": "Skapa reseutlägg",
+      "tripEnd": "Resans slut",
+      "tripStart": "Resans start"
+    },
+    "list": {
+      "amount": "Belopp",
+      "dateRange": "Datumintervall",
+      "emptyDescription": "Skapa din första reseräkning för att starta godkännandeprocessen.",
+      "emptyTitle": "Inga reseräkningar ännu",
+      "status": "Status",
+      "type": "Typ"
+    },
+    "title": "Reseutlägg"
+  }
+}

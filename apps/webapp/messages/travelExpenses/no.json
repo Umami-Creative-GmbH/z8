@@ -1,0 +1,80 @@
+{
+  "travelExpenses": {
+    "actions": {
+      "newClaim": "Nytt krav"
+    },
+    "approvals": {
+      "description": "Åpne den felles innboksen for godkjenninger filtrert etter reiseutgifter.",
+      "openInbox": "Åpne innboks",
+      "title": "Gå gjennom ventende godkjenninger av reiseutgifter"
+    },
+    "claimTypes": {
+      "mileage": "Kilometergodtgjørelse",
+      "per_diem": "Diett",
+      "receipt": "Kvittering"
+    },
+    "decision": {
+      "approve": "Godkjenn",
+      "approved": "Kravet ble godkjent",
+      "approveDescription": "Legg til et valgfritt notat til innsenderen før du godkjenner.",
+      "approveTitle": "Godkjenn krav",
+      "errors": {
+        "approve": "Kunne ikke godkjenne kravet",
+        "missingClaim": "Reiseutgiftskravet mangler",
+        "reject": "Kunne ikke avvise kravet",
+        "rejectionReason": "Vennligst oppgi en årsak til avvisningen"
+      },
+      "noteOptional": "Notat (valgfritt)",
+      "notePlaceholder": "Ser bra ut. Takk for detaljene.",
+      "reasonPlaceholder": "Mangler kvitteringsdetaljer for det innsendte beløpet",
+      "reasonRequired": "Årsak (påkrevd)",
+      "reject": "Avvis",
+      "rejectDescription": "Oppgi en tydelig årsak for å hjelpe innsenderen med å oppdatere og sende inn på nytt.",
+      "rejected": "Kravet ble avvist",
+      "rejectTitle": "Avvis krav"
+    },
+    "description": "Opprett og følg opp reiseutgiftskravene dine",
+    "errors": {
+      "loadClaims": "Kunne ikke laste inn reiseutgiftskrav"
+    },
+    "feature": "administrere reiseutgifter",
+    "form": {
+      "amount": "Beløp",
+      "claimType": "Kravtype",
+      "created": "Utkast til reiseutgift opprettet",
+      "createDraft": "Opprett utkast",
+      "currency": "Valuta",
+      "currencyDescription": "ISO 4217-kode, f.eks. EUR eller USD",
+      "currencyPlaceholder": "EUR",
+      "description": "Opprett et nytt utkast for dine nylige reiseutgifter.",
+      "destinationCity": "Destinasjonsby",
+      "destinationCityPlaceholder": "Berlin",
+      "destinationCountry": "Destinasjonsland",
+      "destinationCountryPlaceholder": "Tyskland",
+      "errors": {
+        "createDraft": "Kunne ikke opprette utkast til reiseutgift",
+        "positiveAmount": "Beløpet må være et positivt tall",
+        "tripEndBeforeStart": "Sluttdato for reisen kan ikke være før startdato for reisen",
+        "validTripDates": "Vennligst oppgi en gyldig start- og sluttdato for reisen",
+        "validTripEnd": "Vennligst oppgi en gyldig sluttdato for reisen",
+        "validTripStart": "Vennligst oppgi en gyldig startdato for reisen"
+      },
+      "notes": "Notater",
+      "notesPlaceholder": "Legg til valgfri kontekst for godkjenneren",
+      "receiptAttachmentHint": "Krav med kvittering krever minst ett vedlegg. Opplasting av vedlegg vil være tilgjengelig etter at utkastet er opprettet.",
+      "selectClaimType": "Velg kravtype",
+      "title": "Opprett reiseutgiftskrav",
+      "tripEnd": "Reiseslutt",
+      "tripStart": "Reisestart"
+    },
+    "list": {
+      "amount": "Beløp",
+      "dateRange": "Datointervall",
+      "emptyDescription": "Opprett ditt første krav for å starte godkjenningsprosessen.",
+      "emptyTitle": "Ingen reiseregninger ennå",
+      "status": "Status",
+      "type": "Type"
+    },
+    "title": "Reiseutgifter"
+  }
+}

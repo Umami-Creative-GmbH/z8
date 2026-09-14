@@ -1,0 +1,94 @@
+{
+  "bot": {
+    "approval": {
+      "alreadyProcessed": "Det här godkännandet har redan behandlats."
+    },
+    "cmd": {
+      "billingRequired": "Fakturering krävs för att fortsätta använda tidrapportering. Be en organisationsadministratör att uppdatera faktureringen.",
+      "clockedin": {
+        "header": "{active} av {total} teammedlemmar är för närvarande instämplade:",
+        "noneActive": "Ingen av dina {total} teammedlemmar är för närvarande instämplad.",
+        "noTeam": "Du har inga teammedlemmar tilldelade till dig."
+      },
+      "clockin": {
+        "alreadyIn": "Du är redan instämplad sedan {time} ({hours}h {minutes}m).",
+        "cannotNow": "Det går inte att stämpla in just nu.",
+        "noProfile": "Medarbetarprofilen hittades inte.",
+        "success": "Instämplad {time}."
+      },
+      "clockout": {
+        "cannotNow": "Det går inte att stämpla ut just nu.",
+        "noProfile": "Medarbetarprofilen hittades inte.",
+        "notClockedIn": "Du är för närvarande inte instämplad.",
+        "policyCheckFailed": "Kunde inte verifiera policyn för tidsgodkännande. Försök igen.",
+        "success": "Utstämplad {time}. Varaktighet: {hours}h {minutes}m.",
+        "unsupportedApproval": "Tidsändringar som kräver godkännande stöds inte för denna åtgärd ännu"
+      },
+      "compliance": {
+        "error": "Det gick inte att hämta efterlevnadsdata. Försök igen senare.",
+        "noIssues": "Inga efterlevnadsproblem hittades under de senaste {days} dagarna. Ditt team uppfyller alla krav!"
+      },
+      "coverage": {
+        "error": "Det gick inte att hämta bemanningsdata. Försök igen senare.",
+        "noData": "Inga schemalagda bemanningsdata hittades för {date}."
+      },
+      "help": {
+        "footer": "Du kan även ta emot förfrågningar om godkännande och dagliga sammanfattningar direkt i {platform}.",
+        "title": "Z8 Bot-kommandon"
+      },
+      "openshifts": {
+        "error": "Det gick inte att hämta lediga pass. Försök igen senare.",
+        "noShifts": "Inga lediga pass hittades för {period}. Alla pass är för närvarande tilldelade."
+      },
+      "pending": {
+        "footer": "Granska och godkänn i Z8 eller vänta på enskilda godkännandekort.",
+        "header": "{count, plural, one {Du har {count} väntande godkännande:} other {Du har {count} väntande godkännanden:}}",
+        "none": "Du har inga väntande godkännandeförfrågningar. Bra jobbat med att hålla undan!"
+      },
+      "status": {
+        "clockedIn": "Du är instämplad sedan {time} ({hours}h {minutes}m).",
+        "noProfile": "Medarbetarprofilen hittades inte.",
+        "notClockedIn": "Du är för närvarande inte instämplad."
+      },
+      "whosout": {
+        "header": "{outCount} av {total} teammedlemmar är frånvarande idag:",
+        "noneOut": "Alla dina {total} teammedlemmar är tillgängliga idag.",
+        "noTeam": "Du har inga teammedlemmar tilldelade till dig."
+      }
+    },
+    "language": {
+      "changed": "Språket har ändrats till {language}.",
+      "prompt": "Välj ditt språk:"
+    },
+    "static": {
+      "errorApprovalNotFound": "Denna godkännandeförfrågan finns inte längre eller har redan behandlats.",
+      "errorApprovalResolved": "Detta godkännande har redan godkänts eller avvisats.",
+      "errorDefault": "Något gick fel. Försök igen.",
+      "errorEmployeeNotFound": "Du har ingen medarbetarpost i Z8. Kontakta din administratör.",
+      "errorNotAuthorized": "Du är inte behörig att utföra denna åtgärd.",
+      "errorTenantNotConfigured": "Din organisation har inte slutfört konfigurationen av Z8 ännu. Be en administratör att konfigurera integrationen.",
+      "errorUserNotLinked": "Ditt Teams-konto är inte länkat till Z8. Se till att din e-postadress i Teams matchar ditt Z8-konto.",
+      "genericError": "Tyvärr gick något fel. Försök igen eller kontakta supporten.",
+      "linkAlreadyLinked": "Detta Telegram-konto är redan länkat till ett Z8-konto i denna organisation.",
+      "linkExpired": "Denna länkningskod har gått ut. Skapa en ny i dina Z8-inställningar.",
+      "linkInvalid": "Ogiltig länkningskod. Kontrollera koden och försök igen.",
+      "linkSuccess": "Ditt Telegram-konto har länkats till Z8! Skriv /help för att se tillgängliga kommandon.",
+      "linkUsage": "Ange din länkningskod: /link DIN_KOD",
+      "mentionHelp": "Hej! Jag är Z8-boten. Skriv \"help\" för att se tillgängliga kommandon.",
+      "noEmployee": "Ditt konto finns, men du har ingen medarbetarpost i Z8.",
+      "noOrg": "Det gick inte att identifiera din organisation. Kontakta supporten.",
+      "notLinked": "Ditt Telegram-konto är inte länkat till Z8. Gå till Inställningar > Integrationer > Telegram i din Z8-översikt för att generera en länkkod och skicka sedan: /link DIN_KOD",
+      "notLinkedTeams": "Jag kunde inte hitta ditt Z8-konto. Kontrollera att din e-postadress för Teams matchar e-postadressen för ditt Z8-konto.",
+      "noUser": "Det gick inte att identifiera ditt användarkonto.",
+      "setupBody": "Din organisation måste anslutas till Z8. Klicka nedan för att påbörja konfigurationen.",
+      "setupButton": "Slutför konfiguration",
+      "setupNote": "Endast organisationsadministratörer kan slutföra denna konfiguration.",
+      "setupRequired": "Välkommen till Z8! För att ansluta denna Microsoft 365-organisation till ditt Z8-konto måste en administratör slutföra konfigurationen.",
+      "setupTitle": "Z8-konfiguration krävs",
+      "typeHelp": "Skriv /help för att se tillgängliga kommandon.",
+      "unconfigured": "Din organisations Z8-integration håller på att konfigureras. Vänta medan din administratör slutför konfigurationen.",
+      "welcome": "Välkommen till Z8! För att ansluta ditt konto, gå till Inställningar > Integrationer > Telegram i din Z8-översikt och generera en länkkod. Skicka sedan: /link DIN_KOD",
+      "welcomeTeams": "Välkommen till Z8! Skriv \"help\" för att se tillgängliga kommandon."
+    }
+  }
+}

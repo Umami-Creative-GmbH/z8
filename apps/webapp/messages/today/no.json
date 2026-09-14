@@ -1,0 +1,43 @@
+{
+  "today": {
+    "approvals": {
+      "approve": "Godkjenn",
+      "approveLabel": "Godkjenn {title}",
+      "description": "Forespørsler som venter på lederbeslutning.",
+      "empty": "Ingen godkjenninger venter.",
+      "openInbox": "Åpne innboks",
+      "pendingAriaLabel": "Ventende godkjenninger",
+      "reject": "Avvis",
+      "rejectLabel": "Avvis {title}",
+      "title": "Godkjenninger",
+      "toast": {
+        "approved": "Forespørsel godkjent",
+        "approveError": "Kunne ikke godkjenne forespørsel",
+        "rejected": "Forespørsel avvist",
+        "rejectError": "Kunne ikke avvise forespørsel"
+      }
+    },
+    "briefing": {
+      "badge": "I dag",
+      "description": "Gå gjennom elementene som krever handling i dag, og gå deretter direkte til riktig arbeidsflyt.",
+      "needsAction": {
+        "description": "Start her for den mest hastende operative oppfølgingen.",
+        "empty": "Alt i orden. Ingen lederhandling er nødvendig akkurat nå.",
+        "title": "Krever handling"
+      },
+      "sections": {
+        "empty": "Ingen problemer oppdaget."
+      },
+      "severity": {
+        "critical": "Kritisk",
+        "high": "Høy",
+        "info": "Info",
+        "warning": "Advarsel"
+      },
+      "summaryAriaLabel": "Dagens sammendrag",
+      "supportingSectionsAriaLabel": "Støtteseksjoner",
+      "title": "Daglig orientering for leder",
+      "updatedAt": "{date} - Oppdatert {time}"
+    }
+  }
+}

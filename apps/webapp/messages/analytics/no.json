@@ -1,0 +1,202 @@
+{
+  "analytics": {
+    "access": {
+      "noEmployeeFeature": "se analyser",
+      "restrictedDescription": "Analyse er bare tilgjengelig for administratorer og ledere.",
+      "restrictedTitle": "Begrenset tilgang"
+    },
+    "common": {
+      "days": "Dager",
+      "employee": "Ansatt",
+      "employees": "Ansatte",
+      "hours": "Timer",
+      "loadingOrganizationSettings": "Laster inn organisasjonsinnstillinger før forhåndsinnstillinger aktiveres.",
+      "noDataAvailable": "Ingen data tilgjengelig",
+      "noDataForPeriod": "Ingen data tilgjengelig for den valgte perioden",
+      "overtime": "Overtid",
+      "overtimeHours": "Overtidstimer",
+      "team": "Team",
+      "totalHours": "Totale timer",
+      "unavailable": "Utilgjengelig",
+      "undertime": "Undertid",
+      "undertimeHours": "Undertidstimer"
+    },
+    "layout": {
+      "description": "Omfattende innsikt i teamets ytelse, arbeidstimer og fraværsmønstre",
+      "tabs": {
+        "overtimeBurnDown": "Overtidsnedtrapping",
+        "overview": "Oversikt",
+        "teamPerformance": "Teamytelse",
+        "vacationTrends": "Ferietrender",
+        "workHours": "Arbeidstimer"
+      },
+      "title": "Analyse"
+    },
+    "overtimeBurnDown": {
+      "breakdown": "Fordeling",
+      "breakdownDescription": "Detaljer for overtidsnedtrapping på {label}-nivå",
+      "breakdownEmpty": "Ingen fordelingsdata tilgjengelig ennå",
+      "byCostCenter": "Etter kostnadssted",
+      "byManager": "Etter leder",
+      "byTeam": "Etter team",
+      "costCenter": "Kostnadssted",
+      "currentOvertime": "Nåværende overtid",
+      "description": "Følg ukentlig overtidsreduksjon på tvers av team.",
+      "errors": {
+        "loadData": "Kunne ikke laste inn data for overtidsnedtrapping"
+      },
+      "filters": {
+        "allCostCenters": "Alle kostnadssteder",
+        "allManagers": "Alle ledere",
+        "allTeams": "Alle team",
+        "breakdownLabel": "Fordelingsdimensjon",
+        "costCenterLabel": "Kostnadsstedsfilter",
+        "managerLabel": "Lederfilter",
+        "teamLabel": "Teamfilter"
+      },
+      "improvingGroups": "Grupper i forbedring",
+      "improvingGroupsDescription": "Grupper med synkende overtid",
+      "manager": "Leder",
+      "previousOvertime": "Tidligere overtid",
+      "previousPeriodDescription": "Sammenlignet med forrige periode",
+      "selectedRangeDescription": "For valgt datointervall og filtre",
+      "title": "Burn-down for overtid",
+      "trendDirection": "Trendretning",
+      "trendDirectionDescription": "Samlet overtidsutvikling",
+      "trend": {
+        "down": "Ned",
+        "flat": "Flat",
+        "up": "Opp"
+      },
+      "weeklyTrend": {
+        "description": "Ukentlig trend for overtidsreduksjon",
+        "empty": "Ingen trenddata tilgjengelig ennå",
+        "title": "Ukentlig burn-down-trend"
+      },
+      "weekOverWeek": "Uke over uke"
+    },
+    "overview": {
+      "absencePatterns": {
+        "description": "Fraværsfordeling etter kategori",
+        "title": "Fraværsmønstre"
+      },
+      "approvalBottlenecks": {
+        "approvedRate": "{rate}% godkjent",
+        "avgDecision": "{hours} t gj.snittlig beslutningstid",
+        "byManager": "Etter leder",
+        "byTeam": "Etter team",
+        "byType": "Etter type",
+        "description": "Team og forespørselstyper med ventende arbeid eller SLA-advarsler",
+        "empty": "Ingen flaskehalser for godkjenning funnet",
+        "pendingSummary": "{pendingCount} ventende - {slaWarnings} SLA-advarsler",
+        "title": "Flaskehalser for godkjenning",
+        "unavailable": "Kunne ikke laste inn flaskehalser for godkjenning"
+      },
+      "kpis": {
+        "approvalRate": {
+          "description": "Av behandlede forespørsler godkjent",
+          "title": "Godkjenningsrate",
+          "unavailableDescription": "Kunne ikke laste inn godkjenningsanalyse"
+        },
+        "avgWorkHours": {
+          "description": "Per ansatt i valgt periode",
+          "title": "Gj.snittlige arbeidstimer"
+        },
+        "totalAbsenceDays": {
+          "description": "Totalt antall dager i valgt periode",
+          "title": "Totalt antall fraværsdager"
+        },
+        "totalEmployees": {
+          "description": "Aktive ansatte i organisasjonen",
+          "title": "Totalt antall ansatte"
+        }
+      },
+      "loadingLabel": "Laster inn analysedata",
+      "workHoursByTeam": {
+        "description": "Totalt antall arbeidstimer registrert per team",
+        "title": "Arbeidstimer per team"
+      }
+    },
+    "teamPerformance": {
+      "avgPerEmployee": "Gj.snitt per ansatt",
+      "comparison": {
+        "description": "Totalt antall arbeidstimer per team for den valgte perioden",
+        "title": "Teamsammenligning"
+      },
+      "details": {
+        "description": "Fordeling av arbeidstimer etter team og ansatt",
+        "title": "Detaljer om teamytelse"
+      },
+      "employeeCount": "Antall ansatte",
+      "errors": {
+        "loadData": "Kunne ikke laste inn ytelsesdata for team"
+      },
+      "onTrack": "I rute",
+      "variance": {
+        "description": "Timeavvik fra forventet arbeidstid",
+        "empty": "Ingen avviksdata tilgjengelig",
+        "title": "Overtid og undertid"
+      }
+    },
+    "vacationTrends": {
+      "allocated": "Allokert",
+      "balance": {
+        "description": "Tildelte, brukte og gjenstående dager per ansatt",
+        "title": "Feriesaldo"
+      },
+      "daysRemaining": "{count} dager gjenstår",
+      "daysTaken": "{count} dager brukt",
+      "errors": {
+        "loadData": "Kunne ikke laste inn data for ferietrender"
+      },
+      "monthlyUsage": {
+        "description": "Feriedager brukt per måned",
+        "empty": "Ingen data for månedlig bruk tilgjengelig",
+        "title": "Månedlig feriebruk"
+      },
+      "peakMonths": {
+        "description": "Måneder med høyest ferieaktivitet",
+        "empty": "Ingen data for toppmåneder tilgjengelig",
+        "title": "Toppmåneder for ferie"
+      },
+      "remaining": "Gjenstående",
+      "taken": "Brukt",
+      "utilization": {
+        "description": "Samlet bruk av feriedager i hele organisasjonen",
+        "overall": "Samlet utnyttelse",
+        "title": "Ferieutnyttelse"
+      },
+      "utilizationLabel": "Utnyttelse",
+      "utilizationPercent": "Utnyttelse %",
+      "vacationDays": "Feriedager"
+    },
+    "workHours": {
+      "actualHours": "Faktiske timer",
+      "avgHoursPerWeek": "Gj.sn. timer/uke",
+      "daily": {
+        "description": "Faktiske vs. forventede arbeidstimer per dag",
+        "empty": "Ingen data for daglige timer tilgjengelig",
+        "title": "Daglige arbeidstimer"
+      },
+      "distribution": {
+        "description": "Sammenligning av ansattes arbeidstimer (horisontal stolpe)",
+        "empty": "Ingen fordelingsdata tilgjengelig",
+        "title": "Arbeidstidsfordeling"
+      },
+      "employeeComparison": {
+        "description": "Totale timer og avvik fra forventet per ansatt",
+        "title": "Ansattes arbeidstimer"
+      },
+      "errors": {
+        "loadData": "Kunne ikke laste analysedata for arbeidstimer"
+      },
+      "expectedHours": "Forventede timer",
+      "variance": "Avvik",
+      "varianceTrend": {
+        "description": "Timeavvik fra forventet arbeidstid over tid",
+        "empty": "Ingen trenddata tilgjengelig",
+        "title": "Trend for overtid og undertid"
+      }
+    }
+  }
+}

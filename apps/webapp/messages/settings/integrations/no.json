@@ -1,0 +1,249 @@
+{
+  "settings": {
+    "calendar": {
+      "customization": {
+        "description": "Tilpass hvordan fraværshendelser vises i eksterne kalendere.",
+        "descriptionPlaceholder": "Fravær registrert i Z8",
+        "descriptionTemplate": "Hendelsesbeskrivelse (valgfritt)",
+        "title": "Tilpasning av hendelse",
+        "titleHelp": "Tilgjengelige variabler: {categoryName}, {employeeName}, {status}",
+        "titleTemplate": "Mal for hendelsestittel"
+      },
+      "description": "Konfigurer kalenderleverandører, ICS-feeder og synkroniseringsinnstillinger for organisasjonen din",
+      "icsFeeds": {
+        "description": "Tillat brukere å abonnere på fraværskalendere via ICS/iCal-format.",
+        "personal": "Personlige ICS-feeder",
+        "personalDesc": "Ansatte kan opprette skrivebeskyttede kalenderabonnementer for fraværet sitt",
+        "team": "Team-ICS-feeder",
+        "teamDesc": "Teamledere kan opprette delte feeder som viser alt fravær i teamet",
+        "title": "ICS-feeder"
+      },
+      "integrations": {
+        "description": "Tilkoblede ansattkalendere som faller innenfor ditt gjeldende innstillingsomfang.",
+        "empty": "Ingen kalenderintegrasjoner er tilgjengelige i ditt gjeldende omfang ennå.",
+        "needsAttention": "Krever oppmerksomhet",
+        "pushOff": "Push av",
+        "pushOn": "Push på",
+        "title": "Relevante integrasjoner"
+      },
+      "managerDescription": "Se gjennom kalenderintegrasjoner som påvirker teamene, områdene og de administrerte prosjektene dine.",
+      "noProvidersConfigured": "Ingen kalenderleverandører er konfigurert. Kontakt systemadministratoren din for å konfigurere OAuth-påloggingsinformasjon.",
+      "notConfigured": "Ikke konfigurert",
+      "providers": {
+        "description": "Aktiver eller deaktiver kalendersynkronisering for bestemte leverandører. Ansatte kan koble til kontoene sine når dette er aktivert.",
+        "google": "Google Kalender",
+        "googleDesc": "Synkroniser fravær med Google Kalender",
+        "microsoft": "Microsoft 365",
+        "microsoftDesc": "Synkroniser fravær med Outlook-kalender",
+        "title": "Kalendertilbydere"
+      },
+      "readOnlyManagerNotice": "Ledere kan se gjennom dekning av kalendersynkronisering for teamene, områdene og prosjektene sine, men bare organisasjonsadministratorer kan endre disse innstillingene.",
+      "saved": "Kalenderinnstillinger lagret",
+      "saveError": "Kunne ikke lagre kalenderinnstillinger",
+      "syncBehavior": {
+        "autoSync": "Synkroniser automatisk ved godkjenning",
+        "autoSyncDesc": "Synkroniser fravær automatisk til tilkoblede kalendere når de godkjennes",
+        "conflictRequired": "Krev konfliktsjekk",
+        "conflictRequiredDesc": "Krev at ansatte sjekker for kalenderkonflikter før de sender inn fravær",
+        "description": "Konfigurer hvordan kalendersynkronisering fungerer for organisasjonen din.",
+        "title": "Synkroniseringsatferd"
+      },
+      "title": "Kalendersynkronisering"
+    },
+    "clockinImport": {
+      "credentials": {
+        "connect": "Koble til og forhåndsvis",
+        "description": "Angi et Clockin-kunde API-bearer-token. Tokenet brukes kun for denne importøkten.",
+        "title": "Clockin API-token",
+        "token": "Bearer-token"
+      },
+      "mapping": {
+        "description": "Koble Clockin-ansatte til eksisterende Z8-ansatte. Automatiske e-postsamsvar er forhåndsvalgt.",
+        "mapEmployee": "Koble",
+        "noEmail": "Ingen e-post i Clockin",
+        "skipEmployee": "Hopp over denne ansatte",
+        "summary": "Koblede ansatte",
+        "title": "Koble ansatte"
+      },
+      "preview": {
+        "absences": "Fravær",
+        "description": "Se gjennom hvilke Clockin-data som er tilgjengelige før du kobler ansatte og skanner oppføringer.",
+        "employees": "Ansatte",
+        "next": "Koble ansatte",
+        "title": "Clockin-forhåndsvisning",
+        "workdays": "Arbeidsdager"
+      },
+      "review": {
+        "noProductionRecords": "Ingen produksjonsposter er importert ennå.",
+        "openReview": "Åpne gjennomgang",
+        "scanningDescription": "Gjennomgangspulje {reviewBatchId} skannes. Se gjennom og godkjenn poster før overføring.",
+        "startedTitle": "Skanning for importgjennomgang har startet",
+        "starting": "Starter skanning for Clockin-importgjennomgang…",
+        "startSuccess": "Skanning for importgjennomgang har startet. Gjennomgang kreves før postene overføres."
+      },
+      "selection": {
+        "absences": "Fravær",
+        "description": "Velg hvilke Clockin-poster som skal skannes for gjennomgang. Postene må gjennomgås før overføring.",
+        "endDate": "Sluttdato",
+        "startDate": "Startdato",
+        "startReviewScan": "Start gjennomgangsskanning",
+        "title": "Importomfang",
+        "workdays": "Arbeidsdager / arbeidsperioder"
+      }
+    },
+    "clockodoImport": {
+      "complete": {
+        "batch": "Gjennomgangspulje {batchId} skannes.",
+        "description": "Gjennomgang kreves før Clockodo-poster overføres til produksjon.",
+        "openReview": "Åpne gjennomgang",
+        "successTitle": "Skanning for importgjennomgang har startet"
+      },
+      "credentials": {
+        "apiKey": "API-nøkkel",
+        "apiKeyHint": "Du finner API-nøkkelen din i Clockodo-profilen din:",
+        "connect": "Koble til og forhåndsvis",
+        "description": "Skriv inn e-postadresse og API-nøkkel for Clockodo. Du finner API-nøkkelen din i Clockodo under Min profil > API-nøkkel. Påloggingsinformasjonen lagres ikke.",
+        "email": "Clockodo-e-post",
+        "title": "Clockodo-påloggingsinformasjon"
+      },
+      "errors": {
+        "connectionFailed": "Kunne ikke koble til Clockodo",
+        "fetchUsersFailed": "Kunne ikke hente brukerdata",
+        "importFailed": "Gjennomgangsskanning for import mislyktes",
+        "saveMappingsFailed": "Kunne ikke lagre brukertilordninger"
+      },
+      "importing": {
+        "description": "Vennligst ikke lukk denne siden. Gjennomgangsskanningen settes i kø og kan ta litt tid for store datasett.",
+        "patience": "Henter Clockodo-data for gjennomgang…",
+        "title": "Starter gjennomgangsskanning…"
+      },
+      "mapping": {
+        "autoMatched": "Automatisk matchet",
+        "createNew": "Opprett ny",
+        "skip": "Hopp over"
+      },
+      "mappingStatus": {
+        "auto": "Auto",
+        "manual": "Manuell",
+        "new": "Ny",
+        "skip": "Hopp over"
+      },
+      "preview": {
+        "dataType": "Datatype",
+        "description": "Her er et sammendrag av dataene som ble funnet i Clockodo-kontoen din. Eksisterende Z8-data vises for sammenligning.",
+        "inClockodo": "I Clockodo",
+        "inZ8": "Allerede i Z8",
+        "next": "Tilordne brukere",
+        "title": "Forhåndsvisning av data"
+      },
+      "review": {
+        "startedToast": "Gjennomgangsskanning for import er startet. Gjennomgang kreves før oppføringene lagres."
+      },
+      "selection": {
+        "dateRange": "Datointervall for timeregistreringer og fravær",
+        "dateRangeDescription": "Dette påvirker bare timeregistreringer og fravær. Andre data (brukere, team osv.) skannes alltid fullstendig.",
+        "dependencyWarning": "Avhengigheter vil bli skannet automatisk",
+        "description": "Velg hvilke datatyper som skal skannes. Gjennomgang er nødvendig før oppføringene lagres.",
+        "emptyUserScope": "Velg minst én Clockodo-bruker før du starter skanningen.",
+        "incompleteCustomDateRange": "Velg både en start- og sluttdato før du starter skanningen.",
+        "selectDateRange": "Velg datointervall",
+        "startImport": "Start gjennomgangsskanning",
+        "title": "Velg data for gjennomgang"
+      },
+      "step": {
+        "complete": "Gjennomgang startet",
+        "credentials": "Påloggingsinformasjon",
+        "import": "Gjennomgang",
+        "preview": "Forhåndsvisning",
+        "selection": "Utvalg",
+        "userMapping": "Brukertilordning"
+      },
+      "userMapping": {
+        "action": "Handling",
+        "autoMatched": "{count} automatisk matchet",
+        "clockodoUser": "Clockodo-bruker",
+        "continue": "Fortsett",
+        "description": "Tilordne Clockodo-brukere til eksisterende Z8-ansatte eller velg å opprette nye kontoer. Brukere som samsvarer på e-post, blir automatisk tilordnet.",
+        "email": "E-post",
+        "mappedTo": "Tilordnet til",
+        "newEmployees": "{count} nye",
+        "onlyMapped": "Skann bare tilordnede brukere (ikke opprett nye kontoer for utilordnede brukere)",
+        "skippedCount": "{count} hoppet over",
+        "status": "Status",
+        "title": "Tilordne brukere"
+      }
+    },
+    "discord": {
+      "description": "Konfigurer Discord-varsler for organisasjonen din",
+      "title": "Discord"
+    },
+    "slack": {
+      "description": "Konfigurer Slack-varsler for organisasjonen din",
+      "title": "Slack"
+    },
+    "teamsNotifications": {
+      "description": "Konfigurer Microsoft Teams-varsler for organisasjonen din",
+      "title": "Microsoft Teams"
+    },
+    "telegram": {
+      "bot": {
+        "description": "Koble til en Telegram-bot for å aktivere varsler og kommandoer for organisasjonen din.",
+        "title": "Telegram-bot"
+      },
+      "botToken": "Bot-token",
+      "botTokenHelp": "Opprett en bot med @BotFather på Telegram og lim inn tokenet her.",
+      "connect": "Koble til bot",
+      "connected": "Telegram-boten ble koblet til",
+      "connectError": "Kunne ikke koble til Telegram-bot",
+      "description": "Konfigurer Telegram-bot-integrasjon for varsler og kommandoer",
+      "disconnect": "Koble fra",
+      "disconnectConfirm": {
+        "description": "Dette vil deaktivere alle Telegram-varsler og -kommandoer for organisasjonen din. Koblinger til ansattkontoer vil bli bevart.",
+        "title": "Koble fra Telegram-bot?"
+      },
+      "disconnected": "Telegram-bot frakoblet",
+      "disconnectError": "Kunne ikke koble fra Telegram-bot",
+      "features": {
+        "approvals": "Godkjenningsvarsler",
+        "approvalsDesc": "Send godkjenningsforespørsler og tillat godkjenning/avvisning via Telegram",
+        "commands": "Bot-kommandoer",
+        "commandsDesc": "Aktiver /clockedin, /whosout, /pending og andre kommandoer",
+        "description": "Konfigurer hvilke funksjoner som er aktivert for Telegram-boten.",
+        "digest": "Daglig sammendrag",
+        "digestDesc": "Send et daglig sammendrag av fravær og planer",
+        "digestTime": "Tidspunkt",
+        "digestTimezone": "Tidssone",
+        "escalations": "Eskaleringer",
+        "escalationsDesc": "Eskaler ubesvarte godkjenninger til neste leder",
+        "escalationTimeout": "Tidsavbrudd",
+        "hours": "timer",
+        "title": "Funksjoner"
+      },
+      "linked": "Tilkoblet",
+      "linkError": "Kunne ikke generere tilkoblingskode",
+      "linking": {
+        "botLink": "Bot: @{botUsername}",
+        "description": "Koble til Telegram-kontoen din for å motta personlige varsler.",
+        "generateCode": "Generer tilkoblingskode",
+        "instructions": "Send denne kommandoen til boten på Telegram:",
+        "linkedStatus": "Telegram-kontoen din er tilkoblet",
+        "title": "Telegram-konto"
+      },
+      "notConfigured": "Telegram er ikke konfigurert for denne organisasjonen. Kontakt administratoren din.",
+      "saved": "Telegram-innstillinger lagret",
+      "status": {
+        "active": "Aktiv"
+      },
+      "title": "Telegram",
+      "unlink": "Koble fra",
+      "unlinkConfirm": {
+        "description": "Du vil slutte å motta Telegram-varsler. Du kan koble til igjen senere.",
+        "title": "Koble fra Telegram-konto?"
+      },
+      "unlinked": "Telegram-konto frakoblet",
+      "unlinkError": "Kunne ikke koble fra Telegram-konto",
+      "webhookActive": "Webhook registrert",
+      "webhookPending": "Webhook venter"
+    }
+  }
+}

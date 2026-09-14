@@ -1,0 +1,51 @@
+{
+  "init": {
+    "activating": "Konfigurerar din arbetsyta...",
+    "checking": "Kontrollerar session...",
+    "clickToSelect": "Klicka för att välja",
+    "redirecting": "Omdirigerar...",
+    "selectOrganization": "Välj organisation",
+    "selectOrganizationDescription": "Välj vilken organisation du vill arbeta med"
+  },
+  "setup": {
+    "authorization": {
+      "expiry": "Länken kan användas en gång inom en timme. Slutför konfigurationen inom tio minuter efter att du har öppnat den. Om auktoriseringen upphör att gälla, vänta tills den ursprungliga timmen har gått och starta om servern för att generera en ny länk.",
+      "instructions": "Öppna den tillfälliga konfigurationslänken som skrivs ut i serverkonsolen när denna instans startar.",
+      "title": "Konfigurationsauktorisering krävs"
+    },
+    "button": {
+      "create": "Skapa administratörskonto",
+      "creating": "Skapar konto..."
+    },
+    "complete_message": "Ditt administratörskonto för plattformen har skapats.",
+    "complete_title": "Konfigurationen är klar!",
+    "continue_to_sign_in": "Fortsätt till inloggning",
+    "creating_account": "Skapar ditt administratörskonto...",
+    "description": "Konfigurera det första administratörskontot för din plattform. Detta konto kommer att ha fullständig systemåtkomst och är skilt från organisationskonton.",
+    "field": {
+      "confirm_password": "Bekräfta lösenord",
+      "confirm_password_placeholder": "Bekräfta ditt lösenord",
+      "email": "E-postadress",
+      "email_placeholder": "admin@yourcompany.com",
+      "name": "Fullständigt namn",
+      "name_placeholder": "Ange ditt fullständiga namn",
+      "password": "Lösenord",
+      "password_placeholder": "Skapa ett starkt lösenord"
+    },
+    "hide_password": "Dölj lösenord",
+    "layout": {
+      "subtitle": "Konfigurera din plattform för att komma igång",
+      "title": "Initial konfiguration"
+    },
+    "password": {
+      "lowercase": "Liten bokstav",
+      "min_length": "12+ tecken",
+      "number": "Siffra",
+      "uppercase": "Stor bokstav"
+    },
+    "please_wait": "Vänta medan vi förbereder allt",
+    "show_password": "Visa lösenord",
+    "sign_in_with": "Du kan nu logga in med",
+    "title": "Skapa plattformsadministratör"
+  }
+}

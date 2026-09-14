@@ -1,0 +1,246 @@
+{
+  "reports": {
+    "container": {
+      "error": "Feil",
+      "generating": "Genererer rapport...",
+      "noReportYet": "Ingen rapport er generert ennå",
+      "pleaseWait": "Vennligst vent mens vi sammenstiller dataene dine",
+      "selectPeriod": "Velg en periode og klikk på «Generer rapport» for å komme i gang"
+    },
+    "description": "Generer omfattende rapporter over arbeidstimer og fravær med skatterelevante hjemmekontordata",
+    "employeeSelector": {
+      "error": "Kunne ikke laste inn teammedlemmer",
+      "label": "Ansatt",
+      "placeholder": "Velg ansatt..."
+    },
+    "export": {
+      "csv": "Eksporter CSV",
+      "description": "Last ned denne rapporten i ønsket format",
+      "downloaded": "Lastet ned {filename}",
+      "errorDescription": "Det oppsto en feil under eksportering av rapporten",
+      "excel": "Eksporter Excel",
+      "failed": "Eksport mislyktes",
+      "generating": "Genererer...",
+      "pdf": "Eksporter PDF",
+      "success": "Eksporten var vellykket",
+      "title": "Eksporter rapport"
+    },
+    "feature": "generer rapporter",
+    "filter": {
+      "loadingSettings": "Laster inn organisasjonsinnstillinger før forhåndsinnstillinger aktiveres.",
+      "period": "Periode",
+      "selectPeriod": "Velg periode"
+    },
+    "generate": "Generer rapport",
+    "generating": "Genererer rapport…",
+    "period": {
+      "currentMonth": "Denne måneden",
+      "currentYear": "Dette året",
+      "customRange": "Egendefinert periode",
+      "lastMonth": "Forrige måned",
+      "lastYear": "Forrige år",
+      "pickDateRange": "Velg et datointervall",
+      "yearToDate": "Hittil i år"
+    },
+    "preview": {
+      "absencesByCategory": "Fravær etter kategori",
+      "attendancePercentage": "Tilstedeværelsesprosent",
+      "category": "Kategori",
+      "complianceMetrics": "Samsvarsmålinger",
+      "date": "Dato",
+      "dateBreakdown": "Dato-for-dato-oversikt",
+      "days": "Dager",
+      "homeOfficeDescription": "Viktig for tyske skatteformål – viser hjemmekontordager og arbeidede timer",
+      "homeOfficeSummary": "Sammendrag for hjemmekontor (skatterelevant)",
+      "hours": "Timer",
+      "hoursWorked": "Arbeidstimer",
+      "month": "Måned",
+      "noHomeOfficeDays": "Ingen hjemmekontordager registrert i denne perioden.",
+      "overtime": "Overtid",
+      "total": "Totalt",
+      "totalHomeOfficeDays": "Hjemmekontordager totalt",
+      "totalHomeOfficeHours": "Totalt antall timer arbeidet hjemmefra",
+      "undertime": "Undertid",
+      "workHoursByMonth": "Arbeidstimer per måned"
+    },
+    "projects": {
+      "budget": {
+        "exceededBy": "Overskredet budsjett med {hours} timer",
+        "hoursBudget": "{hours} t budsjett",
+        "hoursLogged": "Registrerte timer",
+        "hoursRemaining": "{hours} timer gjenstår av budsjettet",
+        "hoursUsed": "{hours} t brukt",
+        "nearLimit": "Nær budsjettgrensen",
+        "onlyRemaining": "Kun {hours} timer gjenstår",
+        "onTrack": "I rute",
+        "over": "Over",
+        "overBudget": "Over budsjett",
+        "remaining": "Gjenstående",
+        "title": "Budsjettfremdrift",
+        "used": "Brukt"
+      },
+      "cards": {
+        "acrossAllProjects": "På tvers av alle prosjekter",
+        "activeContributors": "Aktive bidragsytere",
+        "activeCount": "{count} aktive",
+        "activeProjects": "Aktive prosjekter",
+        "budgetUsed": "Budsjett brukt",
+        "currentlyInProgress": "Pågår for øyeblikket",
+        "dailyAverage": "Daglig gjennomsnitt",
+        "exceededBudget": "Overskredet budsjett",
+        "hoursOfBudget": "{used} t av {total} t",
+        "hoursPerDay": "Timer per dag",
+        "na": "N/A",
+        "noBudgetSet": "Ingen budsjett satt",
+        "overBudget": "Over budsjett",
+        "overdue": "Forfalt",
+        "pastDeadline": "Etter fristen",
+        "teamMembers": "Teammedlemmer",
+        "totalHours": "Totale timer",
+        "totalProjects": "Totalt antall prosjekter",
+        "workPeriods": "{count} arbeidsperioder"
+      },
+      "chart": {
+        "cumulativeDescription": "Totale timer akkumulert over tid",
+        "cumulativeHours": "Akkumulerte timer",
+        "cumulativeLabel": "Akkumulert",
+        "dailyDescription": "Timer arbeidet per dag i den valgte perioden",
+        "dailyHours": "Daglige timer",
+        "hoursLabel": "Timer",
+        "hoursOverTime": "Timer over tid",
+        "noDataAvailable": "Ingen tidsregistreringsdata tilgjengelig for denne perioden",
+        "noWorkPeriods": "Ingen arbeidsperioder registrert i det valgte datointervallet"
+      },
+      "container": {
+        "error": "Feil",
+        "generating": "Genererer rapport...",
+        "noReportYet": "Ingen rapport generert ennå",
+        "pleaseWait": "Vennligst vent mens vi sammenstiller prosjektdata",
+        "portfolioOverview": "Porteføljeoversikt",
+        "projectDetails": "Prosjektdetaljer",
+        "selectPeriod": "Velg en periode og klikk på «Generer rapport» for å komme i gang"
+      },
+      "filter": {
+        "activeOnly": "Kun aktive",
+        "activePlanned": "Aktive og planlagte",
+        "allStatuses": "Alle statuser",
+        "archived": "Arkivert",
+        "completed": "Fullført",
+        "period": "Periode",
+        "selectStatus": "Velg statusfilter",
+        "status": "Status"
+      },
+      "generate": "Generer rapport",
+      "generating": "Genererer rapport...",
+      "healthAlerts": {
+        "budgetUsed": "{percent}% budsjett brukt",
+        "critical": "Kritisk",
+        "daysLeft": "{days} d igjen",
+        "daysOverdue": "{days} d forsinket",
+        "description": "Risikoer knyttet til budsjett og tidsfrister som krever oppmerksomhet i denne rapportperioden.",
+        "dueToday": "Frist i dag",
+        "empty": "Ingen risikoer knyttet til budsjett eller tidsfrister i denne rapportperioden.",
+        "reason": {
+          "budget70": "Prosjektet har brukt minst 70 % av budsjettet.",
+          "budget90": "Prosjektet har brukt minst 90 % av budsjettet.",
+          "deadline": "Prosjektfristen nærmer seg.",
+          "default": "Prosjektet krever oppmerksomhet.",
+          "dueToday": "Prosjektet har frist i dag.",
+          "overBudget": "Prosjektet har overskredet budsjettet.",
+          "overdue": "Prosjektfristen er utløpt."
+        },
+        "title": "Varsler om prosjekttilstand",
+        "viewDetails": "Vis detaljer",
+        "viewDetailsForProject": "Vis detaljer for {projectName}",
+        "warning": "Advarsel"
+      },
+      "healthSummary": {
+        "atOrAbove70": "På eller over 70 %",
+        "atOrAbove70Description": "Forhøyet budsjettforbruk",
+        "atOrAbove90": "På eller over 90 %",
+        "atOrAbove90Description": "Nær budsjettgrensen",
+        "forecastAtRisk": "Prognose i fare",
+        "forecastAtRiskDescription": "Beregnet å overskride planen",
+        "overBudget": "Over budsjett",
+        "overBudgetDescription": "Budsjett overskredet"
+      },
+      "page": {
+        "accessDenied": "Ingen tilgang",
+        "description": "Analyser prosjekttimer, budsjettbruk og teambidrag",
+        "feature": "se prosjektrapporter",
+        "noPermission": "Du har ikke tillatelse til å se prosjektrapporter.",
+        "title": "Prosjektrapporter"
+      },
+      "status": {
+        "active": "Aktiv",
+        "archived": "Arkivert",
+        "completed": "Fullført",
+        "paused": "Satt på pause",
+        "planned": "Planlagt"
+      },
+      "table": {
+        "budget": "Budsjett",
+        "daysLeft": "{days}d igjen",
+        "daysOverdue": "{days}d på overtid",
+        "deadline": "Frist",
+        "dueToday": "Forfaller i dag",
+        "forecastRisk": "Prognoserisiko",
+        "hours": "Timer",
+        "noProjectsFound": "Ingen prosjekter funnet",
+        "noProjectsMatch": "Ingen prosjekter samsvarer med de valgte filtrene",
+        "portfolioDescription": "Oversikt over alle prosjekter med beregninger for budsjett og tidsregistrering",
+        "portfolioTitle": "Prosjektportefølje",
+        "project": "Prosjekt",
+        "searchPlaceholder": "Søk etter navn, beskrivelse eller status...",
+        "status": "Status",
+        "team": "Team",
+        "viewProject": "Vis prosjektdetaljer"
+      },
+      "team": {
+        "byEmployee": "Per ansatt",
+        "byTeam": "Per team",
+        "description": "Timefordeling på tvers av teammedlemmer og team",
+        "employee": "Ansatt",
+        "hours": "Timer",
+        "hoursLabel": "Timer",
+        "noMembers": "Ingen teammedlemmer har registrert tid på dette prosjektet",
+        "sessions": "Økter",
+        "title": "Teamfordeling"
+      },
+      "title": "Prosjektrapporter",
+      "toast": {
+        "failedGenerate": "Kunne ikke generere rapport",
+        "failedPortfolio": "Kunne ikke generere porteføljerapport",
+        "failedProject": "Kunne ikke generere prosjektrapport",
+        "failedProjectReport": "Kunne ikke generere prosjektrapport",
+        "portfolioGenerated": "Porteføljerapport generert",
+        "projectGenerated": "Rapport generert for {name}",
+        "unexpectedError": "Det oppsto en uventet feil"
+      }
+    },
+    "summary": {
+      "averagePerDay": "Snitt: {hours} t/dag",
+      "homeOfficeDays": "Hjemmekontordager",
+      "hourlyAverage": "{hours} t @ snitt {rate}/t",
+      "otherDays": "Annet: {count} dager",
+      "pending": "{count} venter",
+      "ratePeriods": "{count} satsperioder",
+      "sickDays": "Syk: {count} dager",
+      "taxRelevant": "Skatterelevant",
+      "totalAbsences": "Totalt fravær",
+      "totalEarnings": "Total inntekt",
+      "totalWorkHours": "Totale arbeidstimer",
+      "vacationDays": "Feriedager",
+      "workDays": "{count} arbeidsdager",
+      "workedFromHome": "{hours} t arbeidet hjemmefra"
+    },
+    "title": "Ansattrapporter",
+    "toast": {
+      "failedGenerate": "Kunne ikke generere rapport",
+      "generatedFor": "Genererte rapport for {name}",
+      "reportGenerated": "Rapporten ble generert",
+      "unexpectedError": "Det oppsto en uventet feil",
+      "unknownError": "Det oppsto en ukjent feil"
+    }
+  }
+}

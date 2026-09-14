@@ -1,0 +1,553 @@
+{
+  "settings": {
+    "employeeGroups": {
+      "description": "Gjenbrukbare ansattgrupper for retningslinjer som krever gruppespesifikke godkjenningskjeder.",
+      "empty": "Ingen ansattgrupper er konfigurert ennå. Grupper kan brukes som retningslinjebetingelser når de er opprettet.",
+      "loadFailed": "Kunne ikke laste inn ansattgrupper.",
+      "loading": "Laster inn ansattgrupper…",
+      "members": "Medlemmer",
+      "status": "Status",
+      "status.active": "Aktiv",
+      "status.inactive": "Inaktiv",
+      "title": "Ansattgrupper"
+    },
+    "employees": {
+      "description": "Administrer ansattprofiler, team og tillatelser",
+      "details": "Ansattdetaljer",
+      "detailView": {
+        "loadingEmployeeData": "Laster inn ansattdata",
+        "manageEmployees": "administrere ansatte",
+        "unexpectedError": "Det oppsto en uventet feil",
+        "updateFailed": "Kunne ikke oppdatere ansatt",
+        "updateSuccess": "Ansatt ble oppdatert"
+      },
+      "directory": {
+        "actions": {
+          "viewDetails": "Vis detaljer"
+        },
+        "contract": {
+          "fixed": "Fast",
+          "hourly": "Timebasert"
+        },
+        "countFound": "{count} ansatt(e) funnet",
+        "emptyState": "Ingen ansatte funnet",
+        "loading": "Laster inn ansatte...",
+        "noEmployeeFeature": "administrer ansatte",
+        "pagination": {
+          "next": "Neste",
+          "pageOf": "Side {page} av {total}",
+          "previous": "Forrige"
+        },
+        "refresh": "Oppdater",
+        "roleFilter": "Filtrer etter rolle",
+        "roles": {
+          "admin": "Administrator",
+          "all": "Alle roller",
+          "employee": "Ansatt",
+          "manager": "Leder"
+        },
+        "searchLabel": "Søk etter ansatte",
+        "searchPlaceholder": "Søk etter navn, e-post eller stilling...",
+        "statuses": {
+          "active": "Aktiv",
+          "all": "Alle statuser",
+          "draft": "Utkast",
+          "inactive": "Inaktiv"
+        },
+        "statusFilter": "Filtrer etter status",
+        "table": {
+          "employee": "Ansatt"
+        },
+        "title": "Ansattoversikt"
+      },
+      "draftActions": {
+        "cancel": "Avbryt",
+        "delete": "Slett utkast",
+        "deleteConfirm": "Slett utkast permanent",
+        "deleteDescription": "Dette sletter de klargjorte ansattdataene permanent og kansellerer den ventende invitasjonen. Ingen ansatthistorikk vil bli slettet.",
+        "deleteError": "Kunne ikke slette ansattutkast",
+        "deleteTitle": "Slette ansattutkast?",
+        "deleting": "Sletter utkast...",
+        "resend": "Send invitasjon på nytt",
+        "resendError": "Kunne ikke sende invitasjon på nytt",
+        "resending": "Sender invitasjon på nytt...",
+        "resendSuccess": "Invitasjonen ble sendt på nytt"
+      },
+      "invitations": {
+        "description": "Inviter medlemmer og vurder ventende forespørsler om medlemskap",
+        "title": "Invitasjoner"
+      },
+      "lifecycle": {
+        "actionsLabel": "Ansatthandlinger for ${target.displayName}",
+        "deactivate": "Deaktiver",
+        "deactivateDescription": "Dette suspenderer tilgangen til denne organisasjonen og avslutter aktive økter. Ansatthistorikken beholdes.",
+        "deactivateError": "Kunne ikke deaktivere ansatt",
+        "deactivateSuccess": "Ansatt deaktivert",
+        "deactivateTitle": "Deaktivere ansatt?",
+        "deactivating": "Deaktiverer...",
+        "deactivatingStatus": "Deaktiverer ansatt",
+        "reactivate": "Reaktiver",
+        "reactivateDescription": "Dette gjenoppretter tilgangen til denne organisasjonen ved å bruke den eksisterende ansattoppføringen.",
+        "reactivateError": "Kunne ikke reaktivere ansatt",
+        "reactivateSuccess": "Ansatt reaktivert",
+        "reactivateTitle": "Reaktivere ansatt?",
+        "reactivating": "Reaktiverer...",
+        "reactivatingStatus": "Reaktiverer ansatt",
+        "reinviteRequired": "Denne ansatte har ikke lenger organisasjonsmedlemskap. Send en ny invitasjon for å gjenopprette tilgangen.",
+        "removeAccess": "Fjern tilgang",
+        "removeDescription": "Dette fjerner organisasjonsmedlemskap og avslutter organisasjonsøkter. Timeregistreringer, fravær, saldoer, ansettelseshistorikk og revisjonslogger beholdes.",
+        "removeError": "Kunne ikke fjerne organisasjonstilgang",
+        "removeSuccess": "Organisasjonstilgang fjernet",
+        "removeTitle": "Fjerne organisasjonstilgang?",
+        "removing": "Fjerner tilgang...",
+        "removingStatus": "Fjerner organisasjonstilgang"
+      },
+      "tabs": {
+        "employees": "Ansatte",
+        "invitations": "Invitasjoner",
+        "inviteCodes": "Invitasjonskoder",
+        "members": "Medlemmer"
+      },
+      "title": "Ansatte"
+    },
+    "employmentHistory": {
+      "addChange": "Legg til endring",
+      "addError": "Kunne ikke legge til endring i ansettelseshistorikk",
+      "addSuccess": "Endring i ansettelseshistorikk lagt til",
+      "cancelConfirm": "Vil du avbryte denne ansettelsesendringen? Dette fjerner den planlagte eller utkastede ansettelsesendringen.",
+      "cancelError": "Kunne ikke avbryte endring i ansettelseshistorikk",
+      "cancelSuccess": "Endring i ansettelseshistorikk avbrutt",
+      "confirmError": "Kunne ikke bekrefte endring i ansettelseshistorikk",
+      "confirmSuccess": "Endring i ansettelseshistorikk bekreftet",
+      "contractType": "Kontraktstype",
+      "contractTypes": {
+        "fixed": "fast",
+        "hourly": "timebasert"
+      },
+      "currentConfirmed": "Gjeldende bekreftet",
+      "description": "Bekreftet kontekst og planlagte ansettelsesendringer",
+      "effectiveDate": "Ikrafttredelsesdato",
+      "effectiveDateHelp": "Når denne kontraktskonteksten trer i kraft",
+      "effectiveDateRequired": "Ikrafttredelsesdato er obligatorisk",
+      "hourlyRate": "Timesats",
+      "inheritWorkPolicy": "Arv team-/organisasjonsretningslinje",
+      "nextScheduledConfirmed": "Neste planlagte bekreftede",
+      "noCurrentContext": "Ingen bekreftet kontraktskontekst",
+      "noScheduledChange": "Ingen bekreftet endring planlagt",
+      "probationEnd": "Slutt på prøvetid",
+      "probationStart": "Prøvetidsstart",
+      "reasonNote": "Årsak / notat",
+      "reasonPlaceholder": "Årlig evaluering, rolleendring eller oppdatering av arbeidsmodell…",
+      "reviewState": "Vurderingsstatus",
+      "saveChange": "Lagre endring",
+      "states": {
+        "confirmed": "bekreftet",
+        "draft": "utkast",
+        "pending": "venter"
+      },
+      "title": "Kontrakt og arbeidsmodell",
+      "weeklyHours": "Ukentlige timer",
+      "workModel": "Arbeidsmodell",
+      "workModels": {
+        "flexible": "fleksibel",
+        "hybrid": "hybrid",
+        "onsite": "på stedet",
+        "remote": "fjernarbeid"
+      },
+      "workPolicy": "Arbeidsretningslinje",
+      "workPolicyHelp": "Overstyrer den valgte retningslinjen for denne ansatte i denne kontraktsperioden."
+    },
+    "inviteCodes": {
+      "alreadyHaveAccount": "Har du allerede en konto?",
+      "alreadyMember": "Allerede medlem",
+      "alreadyMemberMessage": "Du er allerede medlem av denne organisasjonen.",
+      "approval": "Godkjenning",
+      "auto": "Auto",
+      "code": "Kode",
+      "codeCopied": "Invitasjonskode kopiert",
+      "codeHelp": "4–20 tegn, kun bokstaver, tall og bindestreker",
+      "codePlaceholder": "TEAM-ABC123",
+      "copyCode": "Kopier kode",
+      "copyUrl": "Kopier invitasjons-URL",
+      "create": "Opprett",
+      "createCode": "Opprett kode",
+      "created": "Invitasjonskode opprettet",
+      "createDescription": "Opprett en ny invitasjonskode slik at brukere kan bli med i organisasjonen din",
+      "deleted": "Invitasjonskode slettet",
+      "deleteDescription": "Er du sikker på at du vil slette invitasjonskoden \"{code}\"? Denne handlingen kan ikke angres.",
+      "deleteTitle": "Slett invitasjonskode",
+      "description": "Opprett delbare koder slik at brukere kan bli med i organisasjonen din",
+      "descriptionPlaceholder": "Valgfri beskrivelse...",
+      "downloadFormat": "Last ned {format}",
+      "editCode": "Rediger invitasjonskode",
+      "editDescription": "Oppdater innstillingene for denne invitasjonskoden",
+      "enterCodeDescription": "Skriv inn en invitasjonskode for å bli med i en organisasjon",
+      "expires": "Utløper",
+      "expiresAt": "Utløpsdato",
+      "expiresAtHelp": "La stå tomt for ingen utløpsdato",
+      "formatPng": "PNG",
+      "formatSvg": "SVG",
+      "generateCode": "Generer ny kode",
+      "generatingQR": "Genererer QR-kode...",
+      "invalidCode": "Ugyldig invitasjonskode",
+      "inviteCode": "Invitasjonskode",
+      "joinedMessage": "Du har blitt med i {organization}.",
+      "joinedSuccessfully": "Vellykket innmelding",
+      "joining": "Blir med...",
+      "joiningOrganization": "Du er i ferd med å bli med i {organization}",
+      "joinOrganization": "Bli med i organisasjon",
+      "joinRequestSent": "Forespørsel om å bli med sendt",
+      "label": "Etikett",
+      "labelPlaceholder": "f.eks. Offentlig rekruttering 2024",
+      "maxUses": "Maksimalt antall bruk",
+      "maxUsesHelp": "La stå tomt for ubegrenset bruk",
+      "needAccount": "Har du ikke en konto?",
+      "noCodes": "Ingen invitasjonskoder ennå. Opprett en for å komme i gang.",
+      "noTargetTeam": "Ingen team",
+      "pendingApproval": "Venter på godkjenning",
+      "pendingApprovalDescription": "Du vil bli varslet når medlemskapet ditt er godkjent.",
+      "pendingApprovalMessage": "Forespørselen din om å bli med i {organization} er sendt inn. En administrator vil gå gjennom forespørselen din.",
+      "qrAlt": "QR-kode for {code}",
+      "qrCode": "QR-kode",
+      "qrDescription": "Skann denne QR-koden for å bli med i organisasjonen",
+      "qrDownloaded": "QR-kode lastet ned",
+      "required": "Påkrevd",
+      "requiresApproval": "Krev administratorgodkjenning",
+      "requiresApprovalHelp": "Når dette er aktivert, vil nye medlemmer settes på vent til en administrator godkjenner dem",
+      "signInToJoin": "Logg inn for å bli med",
+      "status": "Status",
+      "status.active": "Aktiv",
+      "status.paused": "Satt på pause",
+      "targetTeam": "Målteam",
+      "targetTeamHelp": "Nye medlemmer vil bruke dette teamet som standard når de blir med.",
+      "title": "Invitasjonskoder",
+      "unlimited": "Ubegrenset",
+      "updated": "Invitasjonskode oppdatert",
+      "urlCopied": "Invitasjons-URL kopiert til utklippstavlen",
+      "usage": "Bruk",
+      "validatingCode": "Validerer kode...",
+      "validCodeDescription": "Denne invitasjonskoden er gyldig. Klikk på knappen nedenfor for å bli med."
+    },
+    "managerAssignment": {
+      "assignFailed": "Kunne ikke tilordne ledere",
+      "assignSuccess": "Ledere ble tilordnet",
+      "availableManagers": "Tilgjengelige ledere",
+      "description": "Velg én eller flere ledere for denne ansatte. Angi én som primær.",
+      "empty": "Ingen tilgjengelige ledere",
+      "primaryDescription": "Den primære lederen vil være standard for godkjenninger og varsler",
+      "primaryManager": "Primærleder",
+      "save": "Lagre ledere",
+      "title": "Tilordning av ledere",
+      "unexpectedError": "Det oppsto en uventet feil",
+      "validation": {
+        "primary": "Vennligst angi en primærleder",
+        "selectOne": "Vennligst velg minst én leder"
+      }
+    },
+    "pendingMembers": {
+      "approve": "Godkjenn",
+      "approved": "Medlem godkjent",
+      "approveMember": "Godkjenn {name}",
+      "approveSelected": "Godkjenn valgte",
+      "assignTeam": "Tilordne team",
+      "bulkApproved": "{count} medlemmer godkjent",
+      "bulkRejectDescription": "Er du sikker på at du vil avvise {count} valgte medlemmer? De vil bli fjernet fra listen over ventende.",
+      "bulkRejected": "{count} medlemmer avvist",
+      "bulkRejectTitle": "Avvis valgte medlemmer",
+      "description": "Gjennomgå og godkjenn medlemmer som venter på å bli med i organisasjonen din",
+      "email": "E-post",
+      "joinedVia": "Ble med via",
+      "noTeam": "Ingen team",
+      "reject": "Avvis",
+      "rejectDescription": "Er du sikker på at du vil avvise {name}? De vil bli fjernet fra ventelisten og må be om tilgang på nytt.",
+      "rejected": "Medlem avvist",
+      "rejectMember": "Avvis {name}",
+      "rejectSelected": "Avvis valgte",
+      "rejectTitle": "Avvis medlem",
+      "requestedAt": "Forespurt",
+      "selectAll": "Velg alle ventende medlemmer",
+      "selectMember": "Velg {name}",
+      "sso": "SSO",
+      "title": "Ventende medlemmer",
+      "user": "Bruker"
+    },
+    "permissions": {
+      "actions": {
+        "edit": "Rediger"
+      },
+      "adminRequired": "Administratortilgang kreves",
+      "allTeams": "Alle team (hele organisasjonen)",
+      "allTeamsHelp": "Tillatelser gjelder for alle team i organisasjonen",
+      "badge": {
+        "allPermissions": "Alle tillatelser",
+        "permissionCount": "{count} tillatelse(r)"
+      },
+      "description": "Administrer ansattes tillatelser for teamoperasjoner",
+      "editor": {
+        "title": "Rediger tillatelser – {name}"
+      },
+      "employeePermissions": {
+        "description": "Klikk på en ansatt for å redigere tillatelsene",
+        "title": "Ansattetillatelser"
+      },
+      "emptyState": "Ingen ansatte funnet",
+      "noEmployeeFeature": "administrere tillatelser",
+      "noPermissions": "Ingen tillatelser",
+      "permissions": "Tillatelser",
+      "refresh": "Oppdater",
+      "revokeAll": "Tilbakekall alle",
+      "revokeError": "Kunne ikke tilbakekalle tillatelser",
+      "revokeSuccess": "Tillatelser er tilbakekalt",
+      "save": "Lagre tillatelser",
+      "scope": "Tillatelsesomfang",
+      "searchLabel": "Søk etter ansatte",
+      "searchPlaceholder": "Søk etter navn, e-post eller stilling...",
+      "selectedTeamHelp": "Tillatelser gjelder bare for det valgte teamet",
+      "table": {
+        "actions": "Handlinger",
+        "employee": "Ansatt",
+        "permissions": "Tillatelser",
+        "position": "Stilling",
+        "role": "Rolle"
+      },
+      "title": "Teamtillatelser",
+      "toast": {
+        "adminRequired": "Du må være administrator for å administrere tillatelser",
+        "loadEmployeesFailed": "Kunne ikke laste inn ansatte"
+      },
+      "updateError": "Kunne ikke oppdatere tillatelser",
+      "updateSuccess": "Tillatelser ble oppdatert"
+    },
+    "rateHistory": {
+      "changeRate": "Endre sats",
+      "currentRate": "Gjeldende sats: {rate}",
+      "description": "Endringer i timesats over tid",
+      "effectiveFrom": "Gyldig fra",
+      "effectiveFromHelp": "Når den nye satsen trer i kraft",
+      "empty": "Ingen satshistorikk tilgjengelig",
+      "newHourlyRate": "Ny timesats",
+      "reasonOptional": "Årsak (valgfritt)",
+      "reasonPlaceholder": "f.eks. årlig vurdering, forfremmelse osv.",
+      "title": "Satshistorikk",
+      "updateDescription": "Opprett en ny satsføring. Den gjeldende satsen avsluttes automatisk.",
+      "updateError": "Kunne ikke oppdatere sats",
+      "updateRate": "Oppdater sats",
+      "updateSuccess": "Satsen ble oppdatert",
+      "updateTitle": "Oppdater timesats"
+    },
+    "roles": {
+      "actions": {
+        "assign": "Tildel rolle",
+        "create": "Opprett rolle",
+        "deleteNamed": "Slett {name}",
+        "editNamed": "Rediger {name}",
+        "removeNamed": "Fjern {name}",
+        "saveChanges": "Lagre endringer"
+      },
+      "assignPanel": {
+        "description": "Velg en rolle som skal tildeles denne ansatte.",
+        "empty": "Ingen tilgjengelige roller å tildele. Alle roller er allerede tildelt, eller ingen har blitt opprettet.",
+        "permissionCount": "{count} tillatelser",
+        "title": "Tildel egendefinert rolle"
+      },
+      "baseTiers": {
+        "admin": "Admin",
+        "employee": "Ansatt",
+        "manager": "Leder"
+      },
+      "createPanel": {
+        "description": "Definer en ny rolle med spesifikke tillatelser for organisasjonen din.",
+        "title": "Opprett egendefinert rolle"
+      },
+      "deleteDialog": {
+        "assignedWarning": {
+          "one": "Denne rollen er for øyeblikket tildelt {count} ansatt. De vil miste tillatelsene gitt av denne rollen.",
+          "other": "Denne rollen er for øyeblikket tildelt {count} ansatte. De vil miste tillatelsene gitt av denne rollen."
+        },
+        "confirm": "Er du sikker på at du vil slette \"{name}\"?",
+        "title": "Slett rolle"
+      },
+      "description": "Opprett egendefinerte tillatelsesroller for organisasjonen din",
+      "editor": {
+        "baseTier": "Basenivå",
+        "color": "Farge",
+        "description": "Beskrivelse",
+        "descriptionPlaceholder": "Hva denne rollen er til for…",
+        "errors": {
+          "createFailed": "Kunne ikke opprette rolle",
+          "nameRequired": "Rollenavn er påkrevd",
+          "permissionsFailed": "Kunne ikke lagre rolletillatelser",
+          "updateFailed": "Kunne ikke oppdatere rolle"
+        },
+        "inherited": "Arvet",
+        "name": "Navn",
+        "namePlaceholder": "f.eks. Teamleder, HR-sjef…",
+        "permissions": "Tillatelser",
+        "permissionsHelp": "Velg ytterligere tillatelser for denne rollen. Tillatelser arvet fra basisnivået vises som låst.",
+        "selectColor": "Velg farge {color}"
+      },
+      "editPanel": {
+        "description": "Oppdater rolledetaljer og tillatelser.",
+        "title": "Rediger egendefinert rolle"
+      },
+      "employeeCard": {
+        "description": "Ytterligere tillatelsesroller tildelt denne ansatte",
+        "empty": "Ingen egendefinerte roller tildelt.",
+        "permissionCount": {
+          "one": "({count} tillatelse)",
+          "other": "({count} tillatelser)"
+        }
+      },
+      "empty": {
+        "description": "Opprett en for å komme i gang.",
+        "title": "Ingen egendefinerte roller ennå"
+      },
+      "introduction": "Opprett egendefinerte tillatelsesroller som kan tildeles ansatte. Egendefinerte roller legger til tillatelser på toppen av basisnivået.",
+      "table": {
+        "actions": "Handlinger",
+        "assigned": "Tildelt",
+        "assignedCount": {
+          "one": "{count} ansatt",
+          "other": "{count} ansatte"
+        },
+        "baseTier": "Basisnivå",
+        "name": "Navn",
+        "permissionCount": {
+          "one": "{count} tillatelse",
+          "other": "{count} tillatelser"
+        },
+        "permissions": "Tillatelser"
+      },
+      "title": "Egendefinerte roller",
+      "toast": {
+        "assigned": "Rolle tildelt",
+        "created": "Rolle opprettet",
+        "deleted": "Rolle slettet",
+        "removed": "Rolle fjernet",
+        "updated": "Rolle oppdatert"
+      }
+    },
+    "skills": {
+      "addSkill": "Legg til ferdighet",
+      "assign": "Tildel",
+      "assignError": "Kunne ikke tildele ferdighet",
+      "assignSkill": "Tildel ferdighet",
+      "assignSkillDescription": "Legg til en ferdighet eller sertifisering for denne ansatte",
+      "assignSkillHint": "Klikk på «Tildel ferdighet» for å legge til kvalifikasjoner",
+      "catalog": "Ferdighetskatalog",
+      "catalogDescription": "Definer ferdigheter som kan kreves for delområder og skiftmaler",
+      "category": "Kategori",
+      "confirmDelete": "Er du sikker på at du vil slette denne ferdigheten?",
+      "confirmRemove": "Fjerne \"${skillName}\" fra denne ansatte?",
+      "createError": "Kunne ikke opprette ferdighet",
+      "createSkill": "Opprett ferdighet",
+      "createSkillDescription": "Opprett en ny ferdighet som kan tildeles ansatte",
+      "customCategoryName": "Egendefinert kategorinavn",
+      "customCategoryPlaceholder": "f.eks. samsvar",
+      "deleteError": "Kunne ikke slette ferdighet",
+      "description": "Beskrivelse",
+      "descriptionPlaceholder": "Valgfri beskrivelse av ferdigheten eller sertifiseringen",
+      "editSkill": "Rediger ferdighet",
+      "editSkillDescription": "Oppdater ferdighetsdetaljene",
+      "employeeSkills": "Ferdigheter og kvalifikasjoner",
+      "employeeSkillsDescription": "Sertifiseringer og ferdigheter tildelt denne ansatte",
+      "expired": "Utløpt",
+      "expiredOn": "Utløp {{date}}",
+      "expiresOn": "Utløper {{date}}",
+      "expiringSoon": "Utløper snart",
+      "expiry": "Utløpssporing",
+      "expiryDate": "Utløpsdato",
+      "expiryRequired": "Påkrevd",
+      "expiryRequiredHint": "Denne sertifiseringen krever en utløpsdato",
+      "name": "Navn",
+      "namePlaceholder": "f.eks. truckførerbevis",
+      "noAvailableSkills": "Alle ferdigheter er tildelt eller ingen ferdigheter er definert",
+      "noExpiry": "Nei",
+      "noSkills": "Ingen ferdigheter er definert ennå",
+      "noSkillsAssigned": "Ingen ferdigheter tildelt",
+      "noSkillsHint": "Opprett din første ferdighet for å komme i gang",
+      "notes": "Notater",
+      "notesPlaceholder": "f.eks. sertifikatnummer, opplæringsdato …",
+      "removeError": "Kunne ikke fjerne ferdighet",
+      "requiresExpiry": "Krever utløpsdato",
+      "requiresExpiryHint": "Aktiver hvis denne sertifiseringen må fornyes (f.eks. førstehjelp)",
+      "selectCategory": "Velg kategori",
+      "selectSkill": "Velg en ferdighet",
+      "skill": "Ferdighet",
+      "skillAssigned": "Ferdighet tildelt",
+      "skillCreated": "Ferdighet opprettet",
+      "skillDeleted": "Ferdighet slettet",
+      "skillName": "Navn",
+      "skillRemoved": "Ferdighet fjernet",
+      "skillUpdated": "Ferdighet oppdatert",
+      "title": "Ferdigheter og kvalifikasjoner",
+      "updateError": "Kunne ikke oppdatere ferdighet"
+    },
+    "teams": {
+      "description": "Organiser ansatte i team og administrer teamtildelinger",
+      "detail": {
+        "actions": {
+          "cancel": "Avbryt",
+          "edit": "Rediger",
+          "save": "Lagre"
+        },
+        "addMember": {
+          "description": "Velg en ansatt som skal legges til i dette teamet",
+          "selectEmployee": "Velg ansatt",
+          "title": "Legg til teammedlem"
+        },
+        "back": "Tilbake til team",
+        "delete": {
+          "description": "Er du sikker på at du vil slette dette teamet? Denne handlingen kan ikke angres. Teammedlemmer blir ikke slettet.",
+          "title": "Slett team"
+        },
+        "description": "Administrer teaminformasjon og medlemmer",
+        "errors": {
+          "addTeamMember": "Kunne ikke legge til teammedlem",
+          "deleteTeam": "Kunne ikke slette team",
+          "loadTeam": "Kunne ikke laste inn team",
+          "removeTeamMember": "Kunne ikke fjerne teammedlem",
+          "updateTeam": "Kunne ikke oppdatere team"
+        },
+        "info": {
+          "description": "Beskrivelse",
+          "descriptionPlaceholder": "Angi teambeskrivelse",
+          "members": "Medlemmer",
+          "noPrimaryManager": "Ingen primærleder tildelt",
+          "primaryManager": "Primærleder",
+          "teamName": "Teamnavn",
+          "teamNamePlaceholder": "Skriv inn teamnavn",
+          "title": "Teaminformasjon"
+        },
+        "members": {
+          "add": "Legg til medlem",
+          "description": "Ansatte tilordnet dette teamet",
+          "empty": "Ingen medlemmer i dette teamet",
+          "remove": "Fjern teammedlem",
+          "title": "Teammedlemmer"
+        },
+        "removeMember": {
+          "confirm": "Fjern",
+          "description": "Er du sikker på at du vil fjerne denne ansatte fra teamet? De vil fortsatt ha tilgang til organisasjonen.",
+          "title": "Fjern teammedlem"
+        },
+        "selectEmployee": "Velg ansatt",
+        "title": "Teamdetaljer",
+        "toasts": {
+          "teamDeleted": "Teamet ble slettet",
+          "teamMemberAdded": "Teammedlemmet ble lagt til",
+          "teamMemberRemoved": "Teammedlemmet ble fjernet",
+          "teamUpdated": "Teamet ble oppdatert"
+        },
+        "validation": {
+          "invalidInput": "Ugyldig inndata",
+          "selectEmployee": "Vennligst velg en ansatt",
+          "teamNameRequired": "Teamnavn er påkrevd",
+          "teamNameTooLong": "Teamnavnet er for langt"
+        }
+      },
+      "details": "Teamdetaljer",
+      "title": "Team"
+    }
+  }
+}

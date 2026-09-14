@@ -1,0 +1,245 @@
+{
+  "settings": {
+    "demo": {
+      "availableTypes": {
+        "absences": "Frånvaro (semester, sjukfrånvaro)",
+        "changePolicies": "Ändringspolicyer",
+        "description": "Typer av demodata du kan generera",
+        "locations": "Platser och delområden",
+        "shifts": "Skiftmallar och skift",
+        "supported": "Stöds för närvarande:",
+        "teamsProjects": "Team och projekt",
+        "timeEntries": "Tidsregistreringar och arbetsperioder",
+        "title": "Tillgängliga datatyper",
+        "workCategories": "Uppsättningar av arbetskategorier"
+      },
+      "dangerZone": {
+        "clearData": {
+          "absencesDeleted": "{count} frånvaroposter raderades",
+          "button": "Rensa all data",
+          "changePoliciesDeleted": "{count} ändringspolicyer raderades",
+          "dialog": {
+            "confirm": "Rensa all data",
+            "description": "Denna åtgärd kan inte ångras. Alla tidsregistreringar, frånvaro, team, projekt och relaterad data kommer att raderas permanent.",
+            "title": "Rensa all tidsdata?"
+          },
+          "items": {
+            "absences": "Alla frånvaroposter",
+            "changePolicies": "Alla ändringspolicyer",
+            "locations": "Alla platser och delområden",
+            "shifts": "Alla skiftmallar och skift",
+            "teamsProjects": "Alla team och projekt",
+            "timeEntries": "Alla tidsregistreringar och arbetsperioder",
+            "vacationAllowances": "Alla semestersaldon",
+            "workCategories": "Alla arbetskategorier"
+          },
+          "locationsDeleted": "{count} platser raderade",
+          "managerAssignmentsDeleted": "{count} chefstilldelningar raderade",
+          "projectsDeleted": "{count} projekt raderade",
+          "shiftRequestsDeleted": "{count} passförfrågningar raderade",
+          "shiftsDeleted": "{count} arbetspass raderade",
+          "shiftTemplatesDeleted": "{count} passmallar raderade",
+          "subareasDeleted": "{count} delområden raderade",
+          "successTitle": "Data har rensats!",
+          "teamsDeleted": "{count} team raderade",
+          "timeEntriesDeleted": "{count} tidregistreringar raderade",
+          "title": "Rensa tidsdata",
+          "vacationAllowancesReset": "{count} semestersaldon återställda",
+          "willDelete": "Detta raderar permanent:",
+          "workCategoriesDeleted": "{count} arbetskategorier raderade",
+          "workCategorySetsDeleted": "{count} uppsättningar av arbetskategorier raderade",
+          "workPeriodsDeleted": "{count} arbetsperioder raderade"
+        },
+        "clearing": "Rensar...",
+        "deleteNonAdmin": {
+          "absencesDeleted": "{count} frånvaroposter raderade",
+          "adminPreserved": "Administratörskonton kommer att behållas",
+          "button": "Radera icke-administratörer",
+          "dialog": {
+            "confirm": "Radera icke-administratörer",
+            "description": "Denna åtgärd kan inte ångras. Alla anställda som inte är administratörer och deras tillhörande data kommer att raderas permanent.",
+            "title": "Radera icke-administratörer?"
+          },
+          "employeesDeleted": "{count} anställda raderade",
+          "items": {
+            "demoUsers": "Alla demoanvändarkonton",
+            "employees": "Alla anställda som inte är administratörer",
+            "managerAssignments": "Alla chefstilldelningar",
+            "timeEntries": "Deras tidsregistreringar och arbetsperioder"
+          },
+          "membersDeleted": "{count} medlemmar raderades",
+          "successTitle": "Anställda som inte är administratörer har raderats!",
+          "timeEntriesDeleted": "{count} tidsregistreringar raderades",
+          "title": "Radera anställda som inte är administratörer",
+          "usersDeleted": "{count} användare raderades",
+          "willDelete": "Detta kommer att radera permanent:"
+        },
+        "deleting": "Raderar...",
+        "description": "Destruktiva åtgärder som inte kan ångras",
+        "title": "Farozon",
+        "typeDelete": "Skriv RADERA för att bekräfta",
+        "typeDeletePlaceholder": "RADERA"
+      },
+      "description": "Generera exempeldata för testning eller rensa befintlig tidsrelaterad data",
+      "errors": {
+        "generationFailed": "Genereringen misslyckades. Försök igen.",
+        "noOrganization": "Ingen organisation vald"
+      },
+      "form": {
+        "approvalsTesting": {
+          "label": "Test av godkännanden",
+          "pendingAbsences": {
+            "description": "Skapa frånvaroansökningar som väntar på chefs godkännande",
+            "title": "Väntande frånvarogodkännanden"
+          },
+          "pendingTimeCorrections": {
+            "description": "Skapa tidskorrigeringar som väntar på chefs godkännande",
+            "title": "Väntande godkännanden av tidskorrigering"
+          }
+        },
+        "dataTypes": {
+          "absences": {
+            "description": "Semester, sjukfrånvaro och annan frånvaro",
+            "title": "Frånvaro"
+          },
+          "changePolicies": {
+            "description": "Ändringspolicyer för tidsregistrering",
+            "title": "Ändringspolicyer"
+          },
+          "label": "Datatyper",
+          "locations": {
+            "countLabel": "Antal platser:",
+            "description": "Arbetsplatser och underområden",
+            "title": "Platser"
+          },
+          "projects": {
+            "countLabel": "Antal projekt:",
+            "description": "Exempelprojekt för tidsregistrering",
+            "title": "Projekt"
+          },
+          "shiftScheduling": {
+            "description": "Passmallar och schemalagda arbetspass",
+            "requiresLocations": "Kräver att Platser är aktiverat",
+            "title": "Passchemaläggning"
+          },
+          "teams": {
+            "countLabel": "Antal team:",
+            "description": "Skapa team och tilldela medarbetare",
+            "title": "Team"
+          },
+          "timeEntries": {
+            "description": "In- och utstämplingar samt arbetsperioder",
+            "title": "Tidsregistreringar"
+          },
+          "workCategories": {
+            "assignLabel": "Tilldela även till arbetsperioder",
+            "description": "Kategoriuppsättningar för arbetsperioder",
+            "title": "Arbetskategorier"
+          }
+        },
+        "dateRange": {
+          "hint": "Tidsintervall för genererad data",
+          "label": "Datumintervall",
+          "last30": "Senaste 30 dagarna",
+          "last60": "Senaste 60 dagarna",
+          "last90": "Senaste 90 dagarna",
+          "thisYear": "I år"
+        },
+        "employees": {
+          "all": "Alla medarbetare ({count})",
+          "label": "Medarbetare",
+          "selectSpecific": "Välj specifika medarbetare"
+        }
+      },
+      "generateData": {
+        "button": "Generera data",
+        "description": "Skapa realistisk exempeldata för din organisation",
+        "title": "Generera demodata"
+      },
+      "generateEmployees": {
+        "button": "Generera {count} anställda",
+        "countHint": "Maximalt 50 anställda åt gången",
+        "countLabel": "Antal anställda",
+        "description": "Skapa demo-anställdkonton för testning",
+        "employeesCreated": "{count} anställda skapade",
+        "generating": "Genererar...",
+        "includeManagers": "Inkludera chefstilldelningar",
+        "managersCreated": "{count} chefstilldelningar",
+        "managersHint": "Tilldela slumpmässigt chefer till nya anställda",
+        "options": "Alternativ",
+        "successTitle": "Anställda har genererats!",
+        "title": "Generera anställda",
+        "usersCreated": "{count} användare skapade"
+      },
+      "results": {
+        "success": "Demodata har genererats!"
+      },
+      "steps": {
+        "absences": {
+          "description": "Skapar frånvaroposter",
+          "label": "Frånvaro"
+        },
+        "assignCategories": {
+          "description": "Tilldelar arbetskategorier till perioder",
+          "label": "Tilldela kategorier"
+        },
+        "changePolicies": {
+          "description": "Skapar ändringspolicyer",
+          "label": "Ändringspolicyer"
+        },
+        "locations": {
+          "description": "Skapar platser och delområden",
+          "label": "Platser"
+        },
+        "managers": {
+          "description": "Tilldelar chefer till anställda",
+          "label": "Chefstilldelningar"
+        },
+        "pendingAbsenceApprovals": {
+          "description": "Skapar väntande förfrågningar om frånvarogodkännande",
+          "label": "Väntande frånvarogodkännanden"
+        },
+        "pendingTimeCorrectionApprovals": {
+          "description": "Skapar väntande förfrågningar om godkännande av tidskorrigering",
+          "label": "Väntande godkännanden av tidskorrigering"
+        },
+        "projects": {
+          "description": "Skapar exempelprojekt",
+          "label": "Projekt"
+        },
+        "shifts": {
+          "description": "Skapar pass och förfrågningar",
+          "label": "Pass"
+        },
+        "shiftTemplates": {
+          "description": "Skapar passmallar",
+          "label": "Passmallar"
+        },
+        "teams": {
+          "description": "Skapar team och tilldelar medarbetare",
+          "label": "Team"
+        },
+        "timeEntries": {
+          "description": "Skapar tidsregistreringar och arbetsperioder",
+          "label": "Tidsregistreringar"
+        },
+        "workCategories": {
+          "description": "Skapar arbetskategoriuppsättningar och kategorier",
+          "label": "Arbetskategorier"
+        }
+      },
+      "title": "Demodata",
+      "wizard": {
+        "backToConfig": "Tillbaka till konfiguration",
+        "complete": "Klar",
+        "configure": "Konfigurera",
+        "generate": "Generera",
+        "generateMore": "Generera mer data"
+      }
+    },
+    "demoData": {
+      "description": "Generera exempeldata för testning eller rensa all tidsrelaterad data",
+      "title": "Demodata"
+    }
+  }
+}

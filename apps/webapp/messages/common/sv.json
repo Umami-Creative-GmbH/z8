@@ -1,0 +1,546 @@
+{
+  "actions": {
+    "cancel": "Avbryt",
+    "delete": "Ta bort",
+    "refresh": "Uppdatera"
+  },
+  "analytics": {
+    "export": {
+      "export": "Exportera",
+      "exportAsCsv": "Exportera som CSV",
+      "exportAsExcel": "Exportera som Excel",
+      "exportedAsFormat": "Exporterad som {format}",
+      "exportingFormat": "Exporterar {format}…",
+      "failedAsFormat": "Kunde inte exportera som {format}"
+    }
+  },
+  "appSearch": {
+    "commandDescription": "Sök bland sidor, personer, team, inställningar eller åtgärder",
+    "commandPlaceholder": "Sök bland sidor, personer, team, inställningar eller åtgärder…",
+    "commands": {
+      "addManualTimeEntry": {
+        "subtitle": "Registrera timmar för ett tidigare arbetspass eller en korrigering",
+        "title": "Lägg till manuell tidsregistrering"
+      },
+      "createProject": {
+        "subtitle": "Öppna projektinställningar för att definiera ett nytt projekt",
+        "title": "Skapa projekt"
+      },
+      "inviteTeammate": {
+        "subtitle": "Öppna organisationshantering för att lägga till en kollega",
+        "title": "Bjud in teammedlem"
+      },
+      "openApprovalsInbox": {
+        "subtitle": "Granska väntande förfrågningar från anställda",
+        "title": "Öppna inkorg för godkännanden"
+      },
+      "openMyRequests": {
+        "subtitle": "Granska dina inskickade frånvaroanmälningar och utlägg",
+        "title": "Öppna mina förfrågningar"
+      },
+      "openPayrollReadiness": {
+        "subtitle": "Kontrollera om tidsdata är redo för lönehantering",
+        "title": "Öppna löneberedskap"
+      },
+      "openPayroll": {
+        "subtitle": "Granska avgränsad arbetsyta för lön",
+        "title": "Öppna lön"
+      },
+      "openSettings": {
+        "subtitle": "Hantera din profil, säkerhet och organisationsinställningar",
+        "title": "Öppna inställningar"
+      },
+      "requestAbsence": {
+        "subtitle": "Skapa en ansökan om semester, sjukfrånvaro eller ledighet",
+        "title": "Ansök om frånvaro"
+      },
+      "submitTravelExpense": {
+        "subtitle": "Skapa en ersättningsansökan för resekostnader",
+        "title": "Skicka in reseutlägg"
+      }
+    },
+    "empty": "Inga resultat hittades.",
+    "groups": {
+      "actions": "Åtgärder",
+      "pages": "Sidor",
+      "people": "Personer",
+      "settings": "Inställningar",
+      "teams": "Team"
+    },
+    "search": "Sök",
+    "searchOrRunCommand": "Sök eller kör kommando",
+    "teamAbsences": {
+      "description": "Granska frånvarostatistik för anställda och registrera frånvaro"
+    }
+  },
+  "billing": {
+    "suspended": {
+      "adminDescription": "Din provperiod har upphört eller så är din prenumeration inte längre giltig. Uppdatera faktureringsuppgifterna för att fortsätta använda Z8.",
+      "goToBilling": "Gå till fakturering",
+      "memberDescription": "Denna organisation är avstängd. Kontakta en organisationsadministratör för att uppdatera faktureringen.",
+      "title": "Organisation avstängd"
+    },
+    "trialBanner": {
+      "description": "{days} dagar kvar. Lägg till betalningsuppgifter nu; din betalda prenumeration startar efter provperioden.",
+      "dismiss": "Avfärda provperiodsbanderoll",
+      "title": "14 dagars provperiod aktiv",
+      "upgrade": "Uppgradera"
+    }
+  },
+  "colors": {
+    "blue": "Blå",
+    "green": "Grön",
+    "indigo": "Indigo",
+    "orange": "Orange",
+    "pink": "Rosa",
+    "purple": "Lila",
+    "red": "Röd",
+    "teal": "Blågrön"
+  },
+  "common": {
+    "actions": "Åtgärder",
+    "active": "Aktiv",
+    "add": "Lägg till",
+    "adding": "Lägger till...",
+    "all": "Alla",
+    "appName": "Z8",
+    "approve": "Godkänn",
+    "assign": "Tilldela",
+    "back": "Tillbaka",
+    "cancel": "Avbryt",
+    "clear": "Rensa",
+    "clearSearch": "Rensa sökning",
+    "clearSelection": "Rensa",
+    "close": "Stäng",
+    "confirm": "Bekräfta",
+    "continue": "Fortsätt",
+    "copy": "Kopiera",
+    "create": "Skapa",
+    "current": "Aktuell",
+    "days": {
+      "friday": "Fredag",
+      "label": "dagar",
+      "monday": "Måndag",
+      "saturday": "Lördag",
+      "sunday": "Söndag",
+      "thursday": "Torsdag",
+      "tuesday": "Tisdag",
+      "wednesday": "Onsdag"
+    },
+    "delete": "Ta bort",
+    "deleting": "Tar bort...",
+    "description": "Beskrivning",
+    "deselectAll": "Avmarkera alla",
+    "details": "Detaljer",
+    "download": "Ladda ner",
+    "edit": "Redigera",
+    "enabled": "Aktiverad",
+    "error": "Fel",
+    "error-occurred": "Ett fel uppstod",
+    "gender": {
+      "female": "Kvinna",
+      "male": "Man",
+      "other": "Annat"
+    },
+    "goToDashboard": "Gå till instrumentpanelen",
+    "inactive": "Inaktiv",
+    "loading": "Laddar...",
+    "loadMore": "Ladda mer",
+    "months": {
+      "april": "April",
+      "august": "Augusti",
+      "december": "December",
+      "february": "Februari",
+      "january": "Januari",
+      "july": "Juli",
+      "june": "Juni",
+      "march": "Mars",
+      "may": "Maj",
+      "november": "November",
+      "october": "Oktober",
+      "september": "September"
+    },
+    "more": "mer",
+    "moreActions": "Fler åtgärder",
+    "moveDown": "Flytta ned",
+    "moveUp": "Flytta upp",
+    "name": "Namn",
+    "new": "Ny",
+    "next": "Nästa",
+    "notApplicable": "Ej tillämpligt",
+    "not-available": "Inte tillgänglig",
+    "open": "Öppna",
+    "openEnded": "Utan slutdatum",
+    "openMenu": "Öppna menyn",
+    "optional": "valfritt",
+    "or": "Eller",
+    "pending": "Väntande",
+    "present": "Närvarande",
+    "previous": "Föregående",
+    "recovering": "Återställer...",
+    "refresh": "Uppdatera",
+    "refreshing": "Uppdaterar...",
+    "reject": "Avvisa",
+    "rejecting": "Avvisar…",
+    "remove": "Ta bort",
+    "removing": "Tar bort...",
+    "reset": "Återställ",
+    "retry": "Försök igen",
+    "save": "Spara",
+    "saveChanges": "Spara ändringar",
+    "saving": "Sparar...",
+    "selectAll": "Markera alla",
+    "selected": "valda",
+    "select-language": "Välj språk",
+    "set": "uppsättning",
+    "sets": "uppsättningar",
+    "skip": "Hoppa över",
+    "start": "Start",
+    "status": "Status",
+    "submitting": "Skickar…",
+    "sw": {
+      "update": {
+        "description": "En ny version är klar. Ladda om för att uppdatera.",
+        "later": "Senare",
+        "reload": "Ladda om",
+        "title": "Uppdatering tillgänglig"
+      }
+    },
+    "to": "till",
+    "today": "Idag",
+    "unexpectedError": "Ett oväntat fel inträffade",
+    "unknown": "Okänd",
+    "unknownEmployee": "Okänd anställd",
+    "unknownTeam": "Okänt team",
+    "unnamed": "Namnlös",
+    "update": "Uppdatera",
+    "updating": "Uppdaterar...",
+    "uploading": "Laddar upp...",
+    "validate": "Validera",
+    "validationError": "Valideringsfel",
+    "weekdays": {
+      "fr": "Fr",
+      "fri": "Fre",
+      "mo": "Må",
+      "mon": "Mån",
+      "sa": "Lö",
+      "sat": "Lör",
+      "su": "Sö",
+      "sun": "Sön",
+      "th": "To",
+      "thu": "Tor",
+      "tu": "Ti",
+      "tue": "Tis",
+      "we": "On",
+      "wed": "Ons"
+    }
+  },
+  "employeeSelect": {
+    "countSelected": "{count} anställda markerade",
+    "countWithMore": "{count} anställda (+{more} till)",
+    "noEmployeesFound": "Inga anställda hittades",
+    "removeSelected": "Ta bort {name}",
+    "role": "Roll",
+    "searchPlaceholder": "Sök efter namn, e-postadress eller befattning...",
+    "selected": "{count} valda",
+    "selectEmployee": "Välj anställd",
+    "selectEmployees": "Välj anställda",
+    "selectMultipleEmployees": "Välj en eller flera anställda från listan",
+    "selectOneEmployee": "Välj en anställd från listan",
+    "status": "Status",
+    "team": "Team",
+    "totalEmployees": "{count} anställda",
+    "tryDifferentSearch": "Prova att justera din sökning eller dina filter"
+  },
+  "errors": {
+    "failedToLoad": "Det gick inte att läsa in data",
+    "noEmployee": {
+      "contactAdmin": "Kontakta administratör",
+      "createOrg": "Skapa organisation",
+      "description": "Du behöver en medarbetarprofil för att ${feature}. Skapa en organisation eller kontakta din administratör.",
+      "emailBody": "Hej,nnjag behöver få en medarbetarprofil konfigurerad för att få tillgång till plattformens funktioner. Skulle du kunna hjälpa mig med detta?nnTack!",
+      "emailSubject": "Konfiguration av medarbetarprofil krävs",
+      "helpText": "Om du bjöds in till en organisation ber du din administratör att konfigurera din medarbetarprofil.",
+      "title": "Medarbetarprofil krävs"
+    },
+    "noOrganization": {
+      "createOrg": "Skapa organisation",
+      "description": "Du är inte en del av någon organisation ännu. Skapa en för att komma igång eller vänta på en inbjudan.",
+      "title": "Ingen organisation hittades",
+      "waiting": "Väntar du på en inbjudan?",
+      "waitingDesc": "Din administratör skickar en inbjudan via e-post. Kontrollera din inkorg och skräppostmapp."
+    },
+    "unexpected": {
+      "digest": "Referens: {digest}"
+    }
+  },
+  "generic": {
+    "done": "Klar",
+    "submit": "Skicka"
+  },
+  "header": {
+    "clock-in": "Stämpla in",
+    "clock-out": "Stämpla ut"
+  },
+  "info": {
+    "agb": "Allmänna villkor",
+    "back-to-login": "Tillbaka till inloggningen",
+    "imprint": "Impressum",
+    "trust-center": "Förtroendecenter"
+  },
+  "loading": {
+    "chart": "Läser in diagram",
+    "settings": "Läser in inställningar"
+  },
+  "nav": {
+    "absences": "Frånvaro",
+    "analytics": "Analys",
+    "approvals": "Godkännanden",
+    "calendar": "Kalender",
+    "compliance": "Efterlevnad",
+    "dashboard": "Översikt",
+    "feedback": "Feedback",
+    "get-help": "Få hjälp",
+    "my-requests": "Mina förfrågningar",
+    "org-explorer": "Organisationsutforskare",
+    "payroll": "Lön",
+    "platform-admin": "Plattformsadministratör",
+    "reports": "Rapporter",
+    "scheduling": "Schemaläggning",
+    "settings": "Inställningar",
+    "team": "Team",
+    "teamAbsences": "Teamfrånvaro",
+    "team-label": "Team",
+    "time-tracking": "Tidrapportering",
+    "today": "Idag",
+    "travel-expenses": "Reseutlägg",
+    "worksCouncil": "Företagsråd"
+  },
+  "notifications": {
+    "actions": {
+      "deleteAll": "Ta bort alla",
+      "markAllRead": "Markera alla som lästa",
+      "markAsRead": "Markera som läst",
+      "markRead": "Markera som läst",
+      "settings": "Aviseringsinställningar",
+      "viewAll": "Visa alla aviseringar"
+    },
+    "content": {
+      "passwordChanged": {
+        "message": "Ditt lösenord har ändrats. Om du inte har gjort denna ändring, kontakta supporten omedelbart.",
+        "title": "Lösenordet har ändrats"
+      },
+      "shiftAssigned": {
+        "message": "Du har blivit tilldelad ett arbetspass den {shiftDate} från {startTime} till {endTime} av {assignedByName}.",
+        "title": "Arbetspass tilldelat"
+      },
+      "teamMemberAdded": {
+        "message": "Du har lagts till i teamet {teamName} av {performedByName}.",
+        "title": "Tillagd i team"
+      }
+    },
+    "description": "Granska uppdateringar, godkännanden och systemvarningar i en och samma tidslinje.",
+    "empty": {
+      "description": "Du är helt ikapp! Nya aviseringar visas här.",
+      "inboxDescription": "Du är helt ikapp. Nya uppdateringar visas här.",
+      "noMatchesDescription": "Justera sökningen eller läsfiltret för att bredda inkorgsvyn.",
+      "noMatchesTitle": "Inga matchande aviseringar",
+      "title": "Inga aviseringar",
+      "unreadDescription": "Du är helt ikapp. Nya olästa uppdateringar visas här.",
+      "unreadTitle": "Inga olästa aviseringar"
+    },
+    "error": {
+      "title": "Kunde inte läsa in aviseringar"
+    },
+    "filters": {
+      "all": "Alla",
+      "ariaLabel": "Filtrera aviseringar efter lässtatus",
+      "read": "Lästa",
+      "unread": "Olästa"
+    },
+    "preferences": {
+      "disabled": "Avisering inaktiverad",
+      "enabled": "Avisering aktiverad",
+      "permissionModal": {
+        "benefits": {
+          "pendingApprovals": "Få aviseringar om väntande godkännandeförfrågningar",
+          "requestUpdates": "Få aviseringar när dina förfrågningar godkänns eller avvisas",
+          "teamSecurity": "Håll dig informerad om team- och säkerhetsuppdateringar"
+        },
+        "description": "Aktivera push-notiser för att få direktuppdateringar om godkännanden, tidskorrigeringar och viktiga teamändringar – även när du inte använder appen.",
+        "enable": "Aktivera aviseringar",
+        "notNow": "Inte nu",
+        "title": "Håll dig uppdaterad"
+      },
+      "push": {
+        "blockedDescription": "Push-aviseringar är blockerade av din webbläsare. För att aktivera dem behöver du uppdatera dina webbläsarinställningar.",
+        "blockedHelp": "Klicka på låsikonen i webbläsarens adressfält och tillåt aviseringar för den här webbplatsen, och uppdatera sedan sidan.",
+        "blockedTitle": "Push-aviseringar blockerade",
+        "enableButton": "Aktivera push-aviseringar",
+        "enableDescription": "Få aviseringar direkt även när du inte använder appen",
+        "enabledIndicator": "Push-aviseringar är aktiverade",
+        "enabledToast": "Push-aviseringar aktiverade",
+        "enabledToastDescription": "Du kommer nu att få push-aviseringar i webbläsaren",
+        "enableFailedToast": "Kunde inte aktivera push-aviseringar",
+        "enableTitle": "Aktivera push-aviseringar",
+        "errorToast": "Push-aviseringsfel"
+      },
+      "toggleAria": "{channel}-aviseringar för {type}",
+      "updateFailed": "Det gick inte att uppdatera inställningen"
+    },
+    "search": {
+      "ariaLabel": "Sök aviseringar",
+      "placeholder": "Sök aviseringar..."
+    },
+    "selection": {
+      "selectAll": "Markera alla synliga",
+      "selectAllAria": "Markera alla synliga aviseringar",
+      "selectNamedAria": "Markera {title}",
+      "visibleSelected": "{count} synliga markerade"
+    },
+    "timeline": {
+      "earlier": "Tidigare",
+      "today": "Idag",
+      "yesterday": "Igår"
+    },
+    "title": "Aviseringar",
+    "toasts": {
+      "deleted": "Tog bort {count} aviseringar",
+      "deleteFailed": "Kunde inte ta bort aviseringar",
+      "markedRead": "Markerade {count} aviseringar som lästa",
+      "markReadFailed": "Kunde inte markera aviseringar som lästa"
+    },
+    "unreadBadge": "{count} olästa",
+    "unreadCountOverflow": "99+"
+  },
+  "offline": {
+    "banner": {
+      "archived": "Arkiverade stämplingsbevis behålls på denna enhet",
+      "offline": "Du är offline",
+      "offlineSaved": "Offline — {count} post(er) sparade lokalt för granskning",
+      "refresh": "Uppdatera status",
+      "refreshing": "Kontrollerar {count} sparad(e) post(er)…",
+      "reviewRequired": "{count} post(er) sparade lokalt — granskning krävs",
+      "unverified": "Stämplingsbevis har sparats på denna enhet. Anslut för att granska alla sparade poster."
+    },
+    "capture": {
+      "description": "Spara händelsen på denna enhet för granskning. Stämplingsstatusen på servern ändras inte.",
+      "end": "Spara utstämpling för granskning",
+      "start": "Spara instämpling för granskning"
+    },
+    "recovery": {
+      "archive": "Arkivera och behåll bevis",
+      "archived": "Arkiverad — bevis behålls",
+      "description": "Dessa poster är sparade på denna enhet. Serverstatus är okänd. Kontrollera befintliga tidsrapporter med din chef innan du skickar in ersättningsarbete. Arkivering behåller bevisen och avbryter inte arbete på servern.",
+      "empty": "Inga tillgängliga poster. Äldre poster utan kontobevis kräver granskning på organisationsnivå; poster utan organisationsbevis kräver separat auktoriserad återställning.",
+      "evidence": "Ursprungliga bevis och återställningsstatus",
+      "export": "Exportera tillgängliga bevis",
+      "exportError": "Kunde inte exportera sparade poster",
+      "held": "Behöver granskas — inte bekräftad på servern",
+      "loadError": "Kunde inte läsa sparade poster",
+      "loading": "Läser sparade poster…",
+      "review": "Granska sparade poster",
+      "title": "Sparade stämplingsposter"
+    }
+  },
+  "presence": {
+    "activity": {
+      "lastActivity": "senaste aktivitet {date}",
+      "relativeHours": "sedan {hours}h",
+      "relativeHoursMinutes": "sedan {hours}h {minutes}min",
+      "relativeMinutes": "sedan {minutes}min"
+    },
+    "clockedIn": "Instämplad",
+    "clockedOut": "Utstämplad"
+  },
+  "roles": {
+    "admin": "Admin",
+    "employee": "Anställd",
+    "manager": "Chef"
+  },
+  "status": {
+    "active": "Aktiv",
+    "inactive": "Inaktiv"
+  },
+  "table": {
+    "clearFilters": "Rensa filter",
+    "clearSort": "Rensa sortering",
+    "description": "Visar totalt antal besökare under de senaste 6 månaderna. Detta är bara slumpmässig text för att testa layouten. Den sträcker sig över flera rader och bör radbrytas.",
+    "goToFirstPage": "Gå till första sidan",
+    "goToLastPage": "Gå till sista sidan",
+    "goToNextPage": "Gå till nästa sida",
+    "goToPreviousPage": "Gå till föregående sida",
+    "header": "Sidhuvud",
+    "limit": "Gräns",
+    "noResults": "Inga resultat.",
+    "pageOfPages": "Sida {current} av {total}",
+    "reviewer": "Granskare",
+    "rowsPerPage": "Rader per sida",
+    "searchPlaceholder": "Sök...",
+    "selectedOfTotal": "{selected} av {total} rad(er) markerade",
+    "select-reviewer": "Välj en granskare",
+    "select-status": "Välj en status",
+    "select-type": "Välj en typ",
+    "showing-visitors": "Visar totalt antal besökare för de senaste 6 månaderna",
+    "sortAscending": "Stigande",
+    "sortDescending": "Fallande",
+    "status": "Status",
+    "status-options": {
+      "done": "Klar",
+      "in-progress": "Pågår",
+      "not-started": "Ej påbörjad"
+    },
+    "target": "Mål",
+    "totalRows": "{total} rad(er)",
+    "trending-up": "Trendar uppåt med 5,2 % denna månad",
+    "type": "Typ",
+    "type-options": {
+      "capabilities": "Förmågor",
+      "cover-page": "Framsida",
+      "design": "Design",
+      "executive-summary": "Sammanfattning",
+      "focus-documents": "Fokusdokument",
+      "narrative": "Narrativ",
+      "table-of-contents": "Innehållsförteckning",
+      "technical-approach": "Tekniskt tillvägagångssätt"
+    }
+  },
+  "time": {
+    "am": "FM",
+    "hoursAndMinutes": "{hours}h {minutes}m",
+    "hoursOnly": "{hours}h",
+    "pm": "EM"
+  },
+  "userAvatar": {
+    "alt": "Användaravatar"
+  },
+  "user": {
+    "font-size": "Teckenstorlek",
+    "language": "Språk",
+    "logging-out": "Loggar ut...",
+    "log-out": "Logga ut",
+    "log-out-failed": "Kunde inte logga ut. Försök igen.",
+    "profile": "Profil",
+    "security": "Säkerhet",
+    "theme": "Tema",
+    "theme-dark": "Mörkt",
+    "theme-light": "Ljust",
+    "theme-location-required": "Platsbehörighet krävs för tidsbaserat tema.",
+    "theme-system": "System",
+    "theme-time": "Tidsbaserat",
+    "theme-time-info": "Tidsbaserat använder läget {currentMode}. Växlar till {nextMode} kl. {time}.",
+    "theme-toggle": "Växla tema"
+  },
+  "validation": {
+    "first-name-required": "Förnamn är obligatoriskt",
+    "invalid-email": "Ogiltig e-postadress",
+    "last-name-required": "Efternamn är obligatoriskt",
+    "password-required": "Lösenord krävs"
+  },
+  "workBalance": {
+    "label": "Totalsaldo",
+    "notCalculated": "Inte beräknat ännu",
+    "pendingDescription": "Processen kommer att beräkna detta saldo snart.",
+    "updatedEveryThreeHours": "Uppdateras var tredje timme"
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "webhooks": {
+    "copy-failed": "Kunde inte kopiera till urklipp",
+    "create": "Lägg till webhook",
+    "create-failed": "Kunde inte skapa webhook",
+    "delete-confirm": {
+      "description": "Detta tar permanent bort webhook-slutpunkten och all leveranshistorik. Denna åtgärd kan inte ångras.",
+      "title": "Ta bort webhook?"
+    },
+    "deleted": "Webhook borttagen",
+    "delete-failed": "Kunde inte ta bort webhook",
+    "deliveries": "Leveranser",
+    "description": "Konfigurera webhook-slutpunkter för att ta emot aviseringar i realtid när händelser inträffar i din organisation.",
+    "disabled": "Webhook inaktiverad",
+    "empty": {
+      "description": "Skapa din första webhook för att börja ta emot händelseaviseringar.",
+      "title": "Inga webhooks konfigurerade"
+    },
+    "enabled": "Webhook aktiverad",
+    "events": "Händelser",
+    "form": {
+      "events-required": "Minst en händelse måste väljas",
+      "name-required": "Namn krävs",
+      "url-required": "URL krävs"
+    },
+    "last-delivery": "Senaste",
+    "logs": {
+      "attempt": "Försök",
+      "description": "Senaste leveransförsök för webhooks och deras resultat.",
+      "duration": "Varaktighet",
+      "empty": "Inga leveransloggar ännu",
+      "error": "Fel",
+      "event": "Händelse",
+      "failed": "Misslyckades",
+      "http": "HTTP",
+      "loadError": "Det gick inte att läsa in leveransloggar",
+      "payload": "Nyttolast",
+      "pending": "Väntar",
+      "response": "Svar",
+      "retrying": "Försöker igen",
+      "showing": "Visar {{start}}-{{end}} av {{total}}",
+      "status": "Status",
+      "success": "Lyckades",
+      "time": "Tid",
+      "title": "Leveransloggar"
+    },
+    "regenerate-failed": "Kunde inte återskapa hemligheten",
+    "regenerate-secret": "Återskapa hemlighet",
+    "secret-copied": "Hemligheten kopierades till urklipp",
+    "secret-dialog": {
+      "copy-secret": "Kopiera hemlighet till urklipp",
+      "description": "Den här hemligheten används för att verifiera webhook-signaturer. Förvara den säkert.",
+      "done": "Jag har sparat hemligheten",
+      "secret": "Signeringshemlighet",
+      "title": "Webhook-hemlighet",
+      "verification": "Signaturverifiering",
+      "verification-hint": "Verifiera webhook-signaturer med HMAC-SHA256. Signaturen skickas i sidhuvudet X-Z8-Signature.",
+      "warning": "Denna hemlighet visas bara en gång. Se till att spara den nu.",
+      "warning-title": "Viktigt"
+    },
+    "secret-regenerated": "Hemlighet återskapad",
+    "status": {
+      "degraded": "Försämrad",
+      "failing": "Misslyckas",
+      "healthy": "Felfri",
+      "inactive": "Inaktiv"
+    },
+    "success-rate": "Lyckades",
+    "test": "Skicka test",
+    "test-failed": "Det gick inte att skicka test-webhook",
+    "test-sent": "Test-webhook skickad",
+    "title": "Webhooks",
+    "toggle-active": "Växla webhook aktiv",
+    "updated": "Webhook uppdaterad",
+    "update-failed": "Det gick inte att uppdatera webhook",
+    "view-logs": "Visa loggar"
+  }
+}

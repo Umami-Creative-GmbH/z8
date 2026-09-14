@@ -1,0 +1,284 @@
+{
+  "absences": {
+    "addAbsence": "Legg til fravær",
+    "balance": {
+      "carryoverDays": "Du har {count} overførte dager",
+      "carryoverExpiry": "som utløper",
+      "carryoverFrom": "Overført fra {year}",
+      "daysRemaining": "Gjenværende dager",
+      "description": "Dine feriedager for inneværende år",
+      "outOfTotalDays": "av totalt {totalDays} dager",
+      "pending": "Avventer",
+      "title": "Feriesaldo {year}",
+      "used": "Brukt"
+    },
+    "calendar": {
+      "legend": {
+        "approved": "Godkjent",
+        "halfDayAm": "Halv dag (formiddag)",
+        "halfDayPm": "Halv dag (ettermiddag)",
+        "holiday": "Helligdag",
+        "pending": "Avventer",
+        "rejected": "Avvist"
+      },
+      "nextYear": "Neste år",
+      "previousYear": "Forrige år"
+    },
+    "dialog": {
+      "cancelDescription": "Er du sikker på at du vil avbryte denne fraværsforespørselen? Denne handlingen kan ikke angres.",
+      "cancelTitle": "Avbryt fraværsforespørsel",
+      "confirmCancel": "Ja, kanseller forespørsel"
+    },
+    "errors": {
+      "allowanceNotConfigured": "Feriekvote er ikke konfigurert",
+      "allowanceNotConfiguredMessage": "Organisasjonen din har ikke konfigurert feriekvoter for {currentYear} ennå.",
+      "contactAdmin": "Vennligst kontakt administratoren din for å konfigurere ferieregler."
+    },
+    "featureName": "administrer fravær",
+    "form": {
+      "absenceType": "Fraværstype *",
+      "autoApproved": "(Automatisk godkjent)",
+      "balanceAfterRequest": "Saldo etter forespørsel:",
+      "businessDays": "Arbeidsdager:",
+      "daysRemaining": "Gjenværende dager:",
+      "description": "Send inn en forespørsel om fri. Lederen din vil bli varslet for godkjenning.",
+      "duration": "Fraværsvarighet",
+      "duration.fullDay": "Heldag",
+      "duration.partialDay": "Delvis dag",
+      "endDate": "Sluttdato *",
+      "endDateHelper": "La stå tomt for fravær samme dag.",
+      "endTime": "Sluttid",
+      "errors": {
+        "fillRequiredFields": "Vennligst fyll ut alle obligatoriske felt",
+        "insufficientBalance": "Utilstrekkelig feriesaldo",
+        "insufficientBalanceForRequest": "Utilstrekkelig feriesaldo for denne forespørselen",
+        "invalidSelection": "Kontroller valget ditt og prøv igjen"
+      },
+      "notesOptional": "Notater (valgfritt)",
+      "notesPlaceholder": "Legg til eventuell tilleggsinformasjon...",
+      "selectAbsenceType": "Velg fraværstype",
+      "sickDetail": "Sykdomsdetalj *",
+      "sickDetailPlaceholder": "Velg sykdomsdetalj",
+      "startDate": "Startdato *",
+      "startTime": "Starttid",
+      "submitRequest": "Send inn forespørsel",
+      "title": "Be om fravær"
+    },
+    "period": {
+      "am": "AM",
+      "pm": "PM"
+    },
+    "planPreview": {
+      "affectedShift": "berørt vakt",
+      "approval": "Godkjenning",
+      "balance": "Saldo",
+      "balanceUnavailable": "Saldo utilgjengelig",
+      "countsAgainstVacationBalance": "Trekkes fra feriesaldo",
+      "coverage": "Bemanning",
+      "coverageStaffAfterRequest": "{after}/{minimum} ansatte etter forespørsel",
+      "description": "En ikke-blokkerende kontroll av saldo, helligdager, bemanning og godkjenningssignaler før du sender inn.",
+      "doesNotReduceVacationBalance": "Reduserer ikke feriesaldo",
+      "holidays": "Helligdager",
+      "loading": "Kontrollerer saldo, helligdager og bemanning…",
+      "noApprovalWarnings": "Ingen godkjenningsadvarsler",
+      "noCoverageRisk": "Ingen publisert bemanningsrisiko",
+      "noCoverageRulesConfigured": "Ingen bemanningsregler konfigurert for berørte vakter",
+      "noHolidays": "Ingen tildelte helligdager i perioden",
+      "remainingAfter": "Gjenværende etter forespørsel",
+      "requested": "Forespurt",
+      "title": "Smartplanlegger",
+      "unavailable": "Forhåndsvisning av planlegging er utilgjengelig. Du kan fortsatt sende inn forespørselen din."
+    },
+    "requestAbsence": "Be om fravær",
+    "status": {
+      "approved": "Godkjent",
+      "pending": "Til behandling",
+      "rejected": "Avvist"
+    },
+    "subtitle": "Administrer fravær og feriedager",
+    "table": {
+      "cancelAbsence": "Avbryt fravær",
+      "cancelAbsenceTooltip": "Avbryt fravær",
+      "end": "Slutt",
+      "headers": {
+        "actions": "Handlinger",
+        "dateRange": "Datoperiode",
+        "days": "Dager",
+        "notes": "Notater",
+        "status": "Status",
+        "type": "Type"
+      },
+      "noRequests": "Ingen fraværsforespørsler funnet.",
+      "noSearchResults": "Ingen fravær samsvarer med søket ditt.",
+      "searchPlaceholder": "Søk etter type, status eller notater...",
+      "start": "Start",
+      "subtitle": "Nylige og kommende fraværsforespørsler",
+      "title": "Dine fraværsforespørsler"
+    },
+    "title": "Fravær",
+    "toast": {
+      "cancelFailed": "Kunne ikke kansellere fraværsforespørsel",
+      "requestCancelled": "Fraværsforespørsel kansellert",
+      "requestFailed": "Kunne ikke sende inn fraværsforespørsel",
+      "requestSubmitted": "Fraværsforespørsel sendt inn"
+    },
+    "view": {
+      "calendar": "Kalender",
+      "table": "Tabell"
+    }
+  },
+  "calendar": {
+    "clockOutOnBehalf": {
+      "confirm": "Stemple ut",
+      "description": "Dette oppretter en sporbar utstempling på gjeldende servertid. Hvis noe må justeres i etterkant, bruk korrigeringer.",
+      "error": "Kunne ikke stemple ut ansatt",
+      "loading": "Stempler ut...",
+      "success": "Ansatt ble stemplet ut",
+      "title": "Stemple ut ansatt?"
+    },
+    "dayDetails": {
+      "blocksTimeEntry": "Timeføringer blokkert",
+      "category": "Kategori",
+      "duration": "Varighet",
+      "employee": "Ansatt",
+      "noEvents": "Ingen hendelser for denne dagen",
+      "recurring": "Gjentakende helligdag",
+      "selectDate": "Velg en dato for å se detaljer",
+      "status": "Status",
+      "title": "Dagsdetaljer"
+    },
+    "delete": {
+      "applied": "Sletting av timeregistrering utført",
+      "auditNote": "Tidsregistreringer vil bli merket som slettet av revisjonshensyn.",
+      "confirm": "Konverter til pause",
+      "description": "Dette vil slette denne arbeidsperioden permanent. Oppholdet vil vises som en pause i kalenderen.",
+      "failed": "Kunne ikke slette arbeidsperiode",
+      "reasonLabel": "Årsak til sletting",
+      "reasonRequired": "Årsak er påkrevd",
+      "success": "Arbeidsperiode konvertert til pause",
+      "title": "Konverter til pause?"
+    },
+    "details": {
+      "baseWorked": "Basistid arbeidet",
+      "blocksTimeEntry": "Blokkerer tidsregistrering",
+      "category": "Kategori",
+      "credited": "Godskrevet",
+      "dateRange": "Datoperiode",
+      "duration": "Varighet",
+      "employee": "Ansatt",
+      "notes": "Notater",
+      "project": "Prosjekt",
+      "recurring": "Gjentakende årlig",
+      "status": "Status",
+      "surcharge": "Tillegg",
+      "surchargeBreakdown": "Fordeling av tillegg",
+      "time": "Tid",
+      "type": "Type"
+    },
+    "edit": {
+      "deleteEntry": "Slett oppføring",
+      "notesSaved": "Notater lagret",
+      "notesSaveFailed": "Kunne ikke lagre notater",
+      "projectSaved": "Prosjekt oppdatert",
+      "projectSaveFailed": "Kunne ikke oppdatere prosjekt",
+      "split": "Del opp"
+    },
+    "employeeSelector": {
+      "error": "Kunne ikke laste inn teammedlemmer",
+      "label": "Vis kalender",
+      "myCalendar": "Min kalender",
+      "placeholder": "Velg teammedlem..."
+    },
+    "entryType": {
+      "clockIn": "Stemple inn",
+      "clockOut": "Stemple ut",
+      "correction": "Korrigering"
+    },
+    "eventType": {
+      "absence": "Fravær",
+      "holiday": "Helligdag",
+      "timeEntry": "Timeregistrering",
+      "workPeriod": "Arbeidsperiode"
+    },
+    "filter": {
+      "absences": "Fravær",
+      "holidays": "Helligdager",
+      "timeEntries": "Timeregistreringer",
+      "workPeriods": "Arbeidsperioder"
+    },
+    "filters": {
+      "title": "Filtre"
+    },
+    "legend": {
+      "absence": "Fravær",
+      "holiday": "Helligdag",
+      "missingRequiredWork": "Mangler påkrevd arbeid",
+      "requirementMetOrOver": "Krav oppfylt/overskredet",
+      "timeEntry": "Timeregistrering",
+      "title": "Tegnforklaring",
+      "underRequirement": "Under krav",
+      "workPeriod": "Arbeidsperiode",
+      "workPeriodPending": "Venter på godkjenning"
+    },
+    "mobileControls": {
+      "description": "Velg hvilke kalenderoppføringer som er synlige.",
+      "title": "Filtre og tegnforklaring"
+    },
+    "monthSummary": {
+      "calendarWeek": "Uke",
+      "description": "Daglige, ukentlige og månedlige policy-timer",
+      "emptyMonth": "Ingen policy-timer denne måneden",
+      "monthTotal": "Månedstotal",
+      "nextMonth": "Neste måned",
+      "previousMonth": "Forrige måned",
+      "totalDescription": "Registrert tid sammenlignet med retningslinjetimer",
+      "weekSum": "Sum"
+    },
+    "split": {
+      "ambiguousTime": "Velg hvilken forekomst som skal brukes",
+      "chooseOccurrence": "Velg forekomst",
+      "confirm": "Del opp arbeidsperiode",
+      "currentPeriod": "Gjeldende arbeidsperiode",
+      "description": "Del denne arbeidsperioden inn i to separate økter.",
+      "earlierOccurrence": "Tidligere forekomst",
+      "failed": "Kunne ikke dele arbeidsperiode",
+      "firstNotes": "Notater for første periode (valgfritt)",
+      "firstPeriod": "Første periode",
+      "invalidTime": "Deletidspunktet må være mellom start- og sluttid",
+      "laterOccurrence": "Senere forekomst",
+      "nonexistentTime": "Delingstidspunktet finnes ikke på denne datoen",
+      "preview": "Forhåndsvisning",
+      "secondNotes": "Notater for andre periode (valgfritt)",
+      "secondPeriod": "Andre periode",
+      "splitAt": "Del ved",
+      "splitDate": "Delingsdato",
+      "success": "Arbeidsperioden ble delt",
+      "title": "Del arbeidsperiode"
+    },
+    "status": {
+      "approved": "Godkjent",
+      "pending": "Venter",
+      "rejected": "Avvist"
+    },
+    "view": {
+      "day": "Dag",
+      "loading": "Laster inn kalender…",
+      "month": "Måned",
+      "next": "Neste",
+      "previous": "Forrige",
+      "refresh": "Oppdater",
+      "today": "I dag",
+      "week": "Uke",
+      "year": "År"
+    },
+    "workStatus": {
+      "overRequirement": "over kravet",
+      "requiredHoursMissing": "påkrevde timer mangler",
+      "requirementMet": "krav oppfylt",
+      "underRequirement": "under kravet"
+    },
+    "year": {
+      "dayWithWorkStatus": "{date}, {status}"
+    }
+  }
+}

@@ -1,0 +1,246 @@
+{
+  "reports": {
+    "container": {
+      "error": "Fel",
+      "generating": "Genererar rapport...",
+      "noReportYet": "Ingen rapport har genererats ännu",
+      "pleaseWait": "Vänligen vänta medan vi sammanställer dina data",
+      "selectPeriod": "Välj en period och klicka på \"Generera rapport\" för att komma igång"
+    },
+    "description": "Generera omfattande rapporter över arbetstimmar och frånvaro med skatterelaterade uppgifter om hemarbete",
+    "employeeSelector": {
+      "error": "Det gick inte att läsa in teammedlemmar",
+      "label": "Anställd",
+      "placeholder": "Välj anställd..."
+    },
+    "export": {
+      "csv": "Exportera CSV",
+      "description": "Ladda ned denna rapport i önskat format",
+      "downloaded": "Laddade ned {filename}",
+      "errorDescription": "Ett fel uppstod när rapporten exporterades",
+      "excel": "Exportera Excel",
+      "failed": "Exporten misslyckades",
+      "generating": "Genererar...",
+      "pdf": "Exportera PDF",
+      "success": "Exporten lyckades",
+      "title": "Exportera rapport"
+    },
+    "feature": "skapa rapporter",
+    "filter": {
+      "loadingSettings": "Läser in organisationsinställningar innan förinställningar aktiveras.",
+      "period": "Period",
+      "selectPeriod": "Välj period"
+    },
+    "generate": "Generera rapport",
+    "generating": "Genererar rapport…",
+    "period": {
+      "currentMonth": "Denna månad",
+      "currentYear": "Detta år",
+      "customRange": "Anpassat intervall",
+      "lastMonth": "Förra månaden",
+      "lastYear": "Förra året",
+      "pickDateRange": "Välj ett datumintervall",
+      "yearToDate": "Hittills i år"
+    },
+    "preview": {
+      "absencesByCategory": "Frånvaro per kategori",
+      "attendancePercentage": "Närvaroprocent",
+      "category": "Kategori",
+      "complianceMetrics": "Mätvärden för efterlevnad",
+      "date": "Datum",
+      "dateBreakdown": "Uppdelning per datum",
+      "days": "Dagar",
+      "homeOfficeDescription": "Viktigt för tyska skatteändamål – visar hemarbetsdagar och arbetade timmar",
+      "homeOfficeSummary": "Sammanfattning av hemarbete (skatterelaterat)",
+      "hours": "Timmar",
+      "hoursWorked": "Arbetade timmar",
+      "month": "Månad",
+      "noHomeOfficeDays": "Inga hemarbetsdagar har registrerats under denna period.",
+      "overtime": "Övertid",
+      "total": "Totalt",
+      "totalHomeOfficeDays": "Totalt antal hemarbetsdagar",
+      "totalHomeOfficeHours": "Totalt antal arbetade timmar hemifrån",
+      "undertime": "Undertid",
+      "workHoursByMonth": "Arbetstimmar per månad"
+    },
+    "projects": {
+      "budget": {
+        "exceededBy": "Överskred budgeten med {hours} timmar",
+        "hoursBudget": "{hours} h budget",
+        "hoursLogged": "Loggade timmar",
+        "hoursRemaining": "{hours} timmar kvar i budgeten",
+        "hoursUsed": "{hours} h använt",
+        "nearLimit": "Nära budgetgräns",
+        "onlyRemaining": "Endast {hours} timmar kvar",
+        "onTrack": "Enligt plan",
+        "over": "Över",
+        "overBudget": "Över budget",
+        "remaining": "Återstående",
+        "title": "Budgetframsteg",
+        "used": "Använt"
+      },
+      "cards": {
+        "acrossAllProjects": "Över alla projekt",
+        "activeContributors": "Aktiva medarbetare",
+        "activeCount": "{count} aktiva",
+        "activeProjects": "Aktiva projekt",
+        "budgetUsed": "Använd budget",
+        "currentlyInProgress": "Pågår just nu",
+        "dailyAverage": "Dagligt genomsnitt",
+        "exceededBudget": "Överskriden budget",
+        "hoursOfBudget": "{used}h av {total}h",
+        "hoursPerDay": "Timmar per dag",
+        "na": "Ej tillämpligt",
+        "noBudgetSet": "Ingen budget angiven",
+        "overBudget": "Över budget",
+        "overdue": "Försenad",
+        "pastDeadline": "Efter deadline",
+        "teamMembers": "Teammedlemmar",
+        "totalHours": "Totalt antal timmar",
+        "totalProjects": "Totalt antal projekt",
+        "workPeriods": "{count} arbetsperioder"
+      },
+      "chart": {
+        "cumulativeDescription": "Totala timmar ackumulerade över tid",
+        "cumulativeHours": "Kumulativa timmar",
+        "cumulativeLabel": "Kumulativt",
+        "dailyDescription": "Arbetade timmar per dag under den valda perioden",
+        "dailyHours": "Dagliga timmar",
+        "hoursLabel": "Timmar",
+        "hoursOverTime": "Timmar över tid",
+        "noDataAvailable": "Ingen tidsspårningsdata tillgänglig för denna period",
+        "noWorkPeriods": "Inga arbetsperioder registrerade i det valda datumintervallet"
+      },
+      "container": {
+        "error": "Fel",
+        "generating": "Genererar rapport...",
+        "noReportYet": "Ingen rapport genererad ännu",
+        "pleaseWait": "Vänta medan vi sammanställer projektdata",
+        "portfolioOverview": "Portföljöversikt",
+        "projectDetails": "Projektdetaljer",
+        "selectPeriod": "Välj en period och klicka på \"Skapa rapport\" för att komma igång"
+      },
+      "filter": {
+        "activeOnly": "Endast aktiva",
+        "activePlanned": "Aktiva & planerade",
+        "allStatuses": "Alla statusar",
+        "archived": "Arkiverade",
+        "completed": "Slutförda",
+        "period": "Period",
+        "selectStatus": "Välj statusfilter",
+        "status": "Status"
+      },
+      "generate": "Skapa rapport",
+      "generating": "Skapar rapport...",
+      "healthAlerts": {
+        "budgetUsed": "{percent}% av budgeten använd",
+        "critical": "Kritisk",
+        "daysLeft": "{days}d kvar",
+        "daysOverdue": "{days} d försenad",
+        "description": "Budget- och tidsfristrisker som kräver uppmärksamhet under denna rapportperiod.",
+        "dueToday": "Förfaller idag",
+        "empty": "Inga budget- eller tidsfristrisker under denna rapportperiod.",
+        "reason": {
+          "budget70": "Projektet har använt minst 70 % av sin budget.",
+          "budget90": "Projektet har använt minst 90 % av sin budget.",
+          "deadline": "Projektets tidsfrist närmar sig.",
+          "default": "Projektet kräver uppmärksamhet.",
+          "dueToday": "Projektet förfaller idag.",
+          "overBudget": "Projektet har överskridit budgeten.",
+          "overdue": "Projektets tidsfrist har passerat."
+        },
+        "title": "Varningar för projekthälsa",
+        "viewDetails": "Visa detaljer",
+        "viewDetailsForProject": "Visa detaljer för {projectName}",
+        "warning": "Varning"
+      },
+      "healthSummary": {
+        "atOrAbove70": "På eller över 70 %",
+        "atOrAbove70Description": "Förhöjd budgetanvändning",
+        "atOrAbove90": "På eller över 90 %",
+        "atOrAbove90Description": "Nära budgetgränsen",
+        "forecastAtRisk": "Prognos i riskzonen",
+        "forecastAtRiskDescription": "Beräknas överskrida planen",
+        "overBudget": "Över budget",
+        "overBudgetDescription": "Budget överskriden"
+      },
+      "page": {
+        "accessDenied": "Åtkomst nekad",
+        "description": "Analysera projekttimmar, budgetanvändning och teamets bidrag",
+        "feature": "visa projektrapporter",
+        "noPermission": "Du har inte behörighet att visa projektrapporter.",
+        "title": "Projektrapporter"
+      },
+      "status": {
+        "active": "Aktiv",
+        "archived": "Arkiverad",
+        "completed": "Slutförd",
+        "paused": "Pausad",
+        "planned": "Planerad"
+      },
+      "table": {
+        "budget": "Budget",
+        "daysLeft": "{days}d kvar",
+        "daysOverdue": "{days}d försenad",
+        "deadline": "Deadline",
+        "dueToday": "Förfaller idag",
+        "forecastRisk": "Prognosrisk",
+        "hours": "Timmar",
+        "noProjectsFound": "Inga projekt hittades",
+        "noProjectsMatch": "Inga projekt matchar de valda filtren",
+        "portfolioDescription": "Översikt över alla projekt med mätvärden för budget och tidsuppföljning",
+        "portfolioTitle": "Projektportfölj",
+        "project": "Projekt",
+        "searchPlaceholder": "Sök efter namn, beskrivning eller status...",
+        "status": "Status",
+        "team": "Team",
+        "viewProject": "Visa projektdetaljer"
+      },
+      "team": {
+        "byEmployee": "Per anställd",
+        "byTeam": "Per team",
+        "description": "Fördelning av timmar över teammedlemmar och team",
+        "employee": "Anställd",
+        "hours": "Timmar",
+        "hoursLabel": "Timmar",
+        "noMembers": "Inga teammedlemmar har loggat tid på detta projekt",
+        "sessions": "Sessioner",
+        "title": "Teamuppdelning"
+      },
+      "title": "Projektrapporter",
+      "toast": {
+        "failedGenerate": "Kunde inte generera rapport",
+        "failedPortfolio": "Kunde inte generera portföljrapport",
+        "failedProject": "Kunde inte generera projektrapport",
+        "failedProjectReport": "Kunde inte generera projektrapport",
+        "portfolioGenerated": "Portföljrapport har skapats",
+        "projectGenerated": "Rapport har skapats för {name}",
+        "unexpectedError": "Ett oväntat fel uppstod"
+      }
+    },
+    "summary": {
+      "averagePerDay": "Snitt: {hours}h/dag",
+      "homeOfficeDays": "Hemarbetsdagar",
+      "hourlyAverage": "{hours}h @ snitt {rate}/h",
+      "otherDays": "Övrigt: {count} dagar",
+      "pending": "{count} väntande",
+      "ratePeriods": "{count} taxeperioder",
+      "sickDays": "Sjuk: {count} dagar",
+      "taxRelevant": "Skatterelevant",
+      "totalAbsences": "Total frånvaro",
+      "totalEarnings": "Totala inkomster",
+      "totalWorkHours": "Totala arbetstimmar",
+      "vacationDays": "Semesterdagar",
+      "workDays": "{count} arbetsdagar",
+      "workedFromHome": "{hours} h arbetade hemifrån"
+    },
+    "title": "Medarbetarrapporter",
+    "toast": {
+      "failedGenerate": "Det gick inte att generera rapporten",
+      "generatedFor": "Genererade rapport för {name}",
+      "reportGenerated": "Rapporten har genererats",
+      "unexpectedError": "Ett oväntat fel uppstod",
+      "unknownError": "Ett okänt fel uppstod"
+    }
+  }
+}

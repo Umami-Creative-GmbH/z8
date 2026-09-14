@@ -1,0 +1,249 @@
+{
+  "settings": {
+    "calendar": {
+      "customization": {
+        "description": "Anpassa hur frånvarohändelser visas i externa kalendrar.",
+        "descriptionPlaceholder": "Frånvaro registrerad i Z8",
+        "descriptionTemplate": "Händelsebeskrivning (valfritt)",
+        "title": "Händelseanpassning",
+        "titleHelp": "Tillgängliga variabler: {categoryName}, {employeeName}, {status}",
+        "titleTemplate": "Mall för händelsetitel"
+      },
+      "description": "Konfigurera kalenderleverantörer, ICS-flöden och synkroniseringsinställningar för din organisation",
+      "icsFeeds": {
+        "description": "Tillåt användare att prenumerera på frånvarokalendrar via ICS/iCal-format.",
+        "personal": "Personliga ICS-flöden",
+        "personalDesc": "Medarbetare kan skapa skrivskyddade kalenderprenumerationer för sin frånvaro",
+        "team": "ICS-flöden för team",
+        "teamDesc": "Teamledare kan skapa delade flöden som visar hela teamets frånvaro",
+        "title": "ICS-flöden"
+      },
+      "integrations": {
+        "description": "Anslutna medarbetarkalendrar som ingår i ditt nuvarande inställningsomfång.",
+        "empty": "Inga kalenderintegrationer är tillgängliga i ditt nuvarande omfång ännu.",
+        "needsAttention": "Kräver åtgärd",
+        "pushOff": "Push av",
+        "pushOn": "Push på",
+        "title": "Relevanta integrationer"
+      },
+      "managerDescription": "Granska kalenderintegrationer som påverkar dina team, områden och hanterade projekt.",
+      "noProvidersConfigured": "Inga kalenderleverantörer har konfigurerats. Kontakta din systemadministratör för att konfigurera OAuth-uppgifter.",
+      "notConfigured": "Ej konfigurerad",
+      "providers": {
+        "description": "Aktivera eller inaktivera kalendersynkronisering för specifika leverantörer. Medarbetare kan ansluta sina konton när funktionen är aktiverad.",
+        "google": "Google Kalender",
+        "googleDesc": "Synkronisera frånvaro med Google Kalender",
+        "microsoft": "Microsoft 365",
+        "microsoftDesc": "Synkronisera frånvaro med Outlook-kalendern",
+        "title": "Kalenderleverantörer"
+      },
+      "readOnlyManagerNotice": "Chefer kan granska kalendersynkroniseringens täckning för sina team, områden och projekt, men endast organisationsadministratörer kan ändra dessa inställningar.",
+      "saved": "Kalenderinställningarna har sparats",
+      "saveError": "Det gick inte att spara kalenderinställningarna",
+      "syncBehavior": {
+        "autoSync": "Synkronisera automatiskt vid godkännande",
+        "autoSyncDesc": "Synkronisera frånvaro automatiskt till anslutna kalendrar vid godkännande",
+        "conflictRequired": "Kräv konfliktkontroll",
+        "conflictRequiredDesc": "Kräv att anställda kontrollerar kalenderkonflikter innan de skickar in frånvaro",
+        "description": "Konfigurera hur kalendersynkronisering fungerar för din organisation.",
+        "title": "Synkroniseringsbeteende"
+      },
+      "title": "Kalendersynkronisering"
+    },
+    "clockinImport": {
+      "credentials": {
+        "connect": "Anslut och förhandsgranska",
+        "description": "Ange en Clockin API-bearer-token för kunder. Denna token används endast för den här importsessionen.",
+        "title": "Clockin API-token",
+        "token": "Bearer-token"
+      },
+      "mapping": {
+        "description": "Matcha Clockin-anställda med befintliga Z8-anställda. Automatiska e-postmatchningar är förvalda.",
+        "mapEmployee": "Mappa",
+        "noEmail": "Ingen e-postadress i Clockin",
+        "skipEmployee": "Hoppa över den här anställda",
+        "summary": "Mappade anställda",
+        "title": "Mappa anställda"
+      },
+      "preview": {
+        "absences": "Frånvaro",
+        "description": "Granska vilka Clockin-data som finns tillgängliga innan du mappar anställda och söker igenom poster.",
+        "employees": "Anställda",
+        "next": "Mappa anställda",
+        "title": "Clockin-förhandsgranskning",
+        "workdays": "Arbetsdagar"
+      },
+      "review": {
+        "noProductionRecords": "Inga produktionsposter har importerats ännu.",
+        "openReview": "Öppna granskning",
+        "scanningDescription": "Granskningsbatch {reviewBatchId} skannas. Granska och godkänn poster innan de verkställs.",
+        "startedTitle": "Skanning för importgranskning har startat",
+        "starting": "Startar skanning för Clockin-importgranskning…",
+        "startSuccess": "Skanning för importgranskning har startat. Granskning krävs innan poster verkställs."
+      },
+      "selection": {
+        "absences": "Frånvaro",
+        "description": "Välj vilka Clockin-poster som ska skannas för granskning. Poster måste granskas innan de verkställs.",
+        "endDate": "Slutdatum",
+        "startDate": "Startdatum",
+        "startReviewScan": "Starta granskningsskanning",
+        "title": "Importomfång",
+        "workdays": "Arbetsdagar / Arbetsperioder"
+      }
+    },
+    "clockodoImport": {
+      "complete": {
+        "batch": "Granskningsbatch {batchId} skannas.",
+        "description": "Granskning krävs innan Clockodo-poster verkställs till produktion.",
+        "openReview": "Öppna granskning",
+        "successTitle": "Skanning för importgranskning har startat"
+      },
+      "credentials": {
+        "apiKey": "API-nyckel",
+        "apiKeyHint": "Du hittar din API-nyckel i din Clockodo-profil:",
+        "connect": "Anslut & förhandsgranska",
+        "description": "Ange din e-postadress och API-nyckel för Clockodo. Du hittar din API-nyckel i Clockodo under Min profil > API-nyckel. Inloggningsuppgifter sparas inte.",
+        "email": "Clockodo-e-post",
+        "title": "Inloggningsuppgifter för Clockodo"
+      },
+      "errors": {
+        "connectionFailed": "Kunde inte ansluta till Clockodo",
+        "fetchUsersFailed": "Kunde inte hämta användardata",
+        "importFailed": "Skanning för importgranskning misslyckades",
+        "saveMappingsFailed": "Kunde inte spara användarmappningar"
+      },
+      "importing": {
+        "description": "Stäng inte den här sidan. Granskningsskanningen läggs i kö och kan ta en stund för stora datamängder.",
+        "patience": "Hämtar Clockodo-data för granskning…",
+        "title": "Startar granskningsskanning…"
+      },
+      "mapping": {
+        "autoMatched": "Automatiskt matchad",
+        "createNew": "Skapa ny",
+        "skip": "Hoppa över"
+      },
+      "mappingStatus": {
+        "auto": "Auto",
+        "manual": "Manuell",
+        "new": "Ny",
+        "skip": "Hoppa över"
+      },
+      "preview": {
+        "dataType": "Datatyp",
+        "description": "Här är en sammanfattning av datan som hittades på ditt Clockodo-konto. Befintlig Z8-data visas för jämförelse.",
+        "inClockodo": "I Clockodo",
+        "inZ8": "Redan i Z8",
+        "next": "Mappa användare",
+        "title": "Förhandsgranskning av data"
+      },
+      "review": {
+        "startedToast": "Skanning för importgranskning har startat. Granskning krävs innan posterna verkställs."
+      },
+      "selection": {
+        "dateRange": "Datumintervall för tidsregistreringar och frånvaro",
+        "dateRangeDescription": "Detta påverkar endast tidsregistreringar och frånvaro. Övrig data (användare, team osv.) skannas alltid i sin helhet.",
+        "dependencyWarning": "Beroenden skannas automatiskt",
+        "description": "Välj vilka datatyper som ska skannas. Granskning krävs innan poster verkställs.",
+        "emptyUserScope": "Välj minst en Clockodo-användare innan du startar skanningen.",
+        "incompleteCustomDateRange": "Välj både ett start- och slutdatum innan du startar skanningen.",
+        "selectDateRange": "Välj datumintervall",
+        "startImport": "Starta granskningsskanning",
+        "title": "Välj data för granskning"
+      },
+      "step": {
+        "complete": "Granskning startad",
+        "credentials": "Inloggningsuppgifter",
+        "import": "Granskning",
+        "preview": "Förhandsgranskning",
+        "selection": "Val",
+        "userMapping": "Användarkoppling"
+      },
+      "userMapping": {
+        "action": "Åtgärd",
+        "autoMatched": "{count} matchades automatiskt",
+        "clockodoUser": "Clockodo-användare",
+        "continue": "Fortsätt",
+        "description": "Koppla Clockodo-användare till befintliga Z8-anställda eller välj att skapa nya konton. Användare som matchas via e-post kopplas automatiskt.",
+        "email": "E-post",
+        "mappedTo": "Kopplad till",
+        "newEmployees": "{count} nya",
+        "onlyMapped": "Skanna endast kopplade användare (skapa inte nya konton för okopplade användare)",
+        "skippedCount": "{count} överhoppade",
+        "status": "Status",
+        "title": "Koppla användare"
+      }
+    },
+    "discord": {
+      "description": "Konfigurera Discord-aviseringar för din organisation",
+      "title": "Discord"
+    },
+    "slack": {
+      "description": "Konfigurera Slack-aviseringar för din organisation",
+      "title": "Slack"
+    },
+    "teamsNotifications": {
+      "description": "Konfigurera Microsoft Teams-aviseringar för din organisation",
+      "title": "Microsoft Teams"
+    },
+    "telegram": {
+      "bot": {
+        "description": "Anslut en Telegram-bot för att aktivera aviseringar och kommandon för din organisation.",
+        "title": "Telegram-bot"
+      },
+      "botToken": "Bot-token",
+      "botTokenHelp": "Skapa en bot med @BotFather på Telegram och klistra in tokenen här.",
+      "connect": "Anslut bot",
+      "connected": "Telegram-boten har anslutits",
+      "connectError": "Det gick inte att ansluta Telegram-boten",
+      "description": "Konfigurera Telegram-botintegration för aviseringar och kommandon",
+      "disconnect": "Koppla från",
+      "disconnectConfirm": {
+        "description": "Detta inaktiverar alla Telegram-aviseringar och kommandon för din organisation. Kopplingar till medarbetarkonton kommer att bevaras.",
+        "title": "Koppla från Telegram-boten?"
+      },
+      "disconnected": "Telegram-boten har kopplats från",
+      "disconnectError": "Det gick inte att koppla från Telegram-boten",
+      "features": {
+        "approvals": "Godkännandeaviseringar",
+        "approvalsDesc": "Skicka godkännandeförfrågningar och tillåt att godkänna/avvisa via Telegram",
+        "commands": "Bot-kommandon",
+        "commandsDesc": "Aktivera /clockedin, /whosout, /pending och andra kommandon",
+        "description": "Konfigurera vilka funktioner som är aktiverade för Telegram-boten.",
+        "digest": "Daglig sammanfattning",
+        "digestDesc": "Skicka en daglig sammanfattning av frånvaro och scheman",
+        "digestTime": "Tid",
+        "digestTimezone": "Tidszon",
+        "escalations": "Eskaleringar",
+        "escalationsDesc": "Eskalera obesvarade godkännanden till nästa chef",
+        "escalationTimeout": "Tidsgräns",
+        "hours": "timmar",
+        "title": "Funktioner"
+      },
+      "linked": "Länkad",
+      "linkError": "Kunde inte generera länkkod",
+      "linking": {
+        "botLink": "Bot: @{botUsername}",
+        "description": "Länka ditt Telegram-konto för att ta emot personliga aviseringar.",
+        "generateCode": "Generera länkkod",
+        "instructions": "Skicka det här kommandot till boten på Telegram:",
+        "linkedStatus": "Ditt Telegram-konto är länkat",
+        "title": "Telegram-konto"
+      },
+      "notConfigured": "Telegram är inte konfigurerat för den här organisationen. Kontakta din administratör.",
+      "saved": "Telegram-inställningarna har sparats",
+      "status": {
+        "active": "Aktiv"
+      },
+      "title": "Telegram",
+      "unlink": "Ta bort länk",
+      "unlinkConfirm": {
+        "description": "Du kommer att sluta ta emot Telegram-aviseringar. Du kan länka igen senare.",
+        "title": "Ta bort länk till Telegram-konto?"
+      },
+      "unlinked": "Länken till Telegram-kontot har tagits bort",
+      "unlinkError": "Kunde inte ta bort länken till Telegram-kontot",
+      "webhookActive": "Webhook registrerad",
+      "webhookPending": "Webhook väntar"
+    }
+  }
+}

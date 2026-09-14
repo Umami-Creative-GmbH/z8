@@ -1,0 +1,140 @@
+{
+  "compliance": {
+    "commandCenter": {
+      "coverage": {
+        "accessControls": "Tilgangskontroller oppsummerer kun sensitive revisjonslogghendelser som allerede er registrert i dag.",
+        "auditEvidence": "Revisjonsbevis bruker oppdatert revisjonseksportkonfigurasjon, revisjonspakkeforespørsler og nylige verifiseringsresultater.",
+        "workforceCompliance": "Arbeidsstyrkeetterlevelse bruker de siste 7 dagene med brudd på retningslinjer for arbeid og ventende unntaksforespørsler."
+      },
+      "events": {
+        "auditEvidenceFailures": {
+          "description": "Nylige mislykkede jobber: {failedRequests}; nylige ugyldige verifiseringer: {invalidVerifications}",
+          "title": "Feil ved revisjonsbevis oppdaget"
+        },
+        "auditPackFailure": {
+          "description": "Nylige mislykkede jobber: {failedRequests}",
+          "title": "Generering av revisjonspakke mislyktes"
+        },
+        "auditVerificationFailure": {
+          "description": "Nylige ugyldige verifiseringer: {invalidVerifications}",
+          "title": "Revisjonsverifisering mislyktes"
+        },
+        "sensitiveAction": {
+          "description": "{action} på {entityType}",
+          "title": "Sensitiv handling: {action}"
+        },
+        "workforceFindings": {
+          "description": "Hvile: {restPeriodViolations}, Andre retningslinjer: {generalPolicyViolations}, Overtid: {overtimeViolations}",
+          "title": "Nylige funn for personalretningslinjer"
+        }
+      },
+      "facts": {
+        "access": {
+          "latestSensitiveAction": "Siste sensitive handling: {action}",
+          "latestSensitiveActionNone": "Siste sensitive handling: ingen",
+          "noSensitiveEvents": "Ingen sensitive kontrollendringer ble logget de siste 24 timene.",
+          "recentSensitiveEvents": "Nylige sensitive hendelser: {count}"
+        },
+        "audit": {
+          "activeSigningKey": "Aktiv signeringsnøkkel: {fingerprint}",
+          "lastSuccessfulAuditPack": "Siste vellykkede revisjonspakke: {timestamp}",
+          "missingSigningKey": "Signeringsnøkler er ikke konfigurert ennå.",
+          "noSuccessfulAuditPack": "Ingen vellykket revisjonspakke er registrert ennå.",
+          "recentFailedJobs": "Nylige mislykkede revisjonspakkejobber: {count}",
+          "recentInvalidVerifications": "Nylige ugyldige verifiseringsforsøk: {count}"
+        },
+        "unavailable": {
+          "accessControls": "Kunne ikke laste inn tilgangskontrollhendelser.",
+          "auditEvidence": "Kunne ikke laste inn data for revisjonsbevis.",
+          "workforceCompliance": "Kunne ikke laste inn samsvarsdata for arbeidsstyrken."
+        },
+        "workforce": {
+          "generalPolicyViolations": "Andre brudd på retningslinjer: {count}",
+          "overtimeViolations": "Overtidsbrudd: {count}",
+          "pendingExceptions": "Ventende unntak: {count}",
+          "restPeriodViolations": "Brudd på hviletid: {count}"
+        }
+      },
+      "links": {
+        "inspectCompliance": "Inspiser samsvar",
+        "inspectInAuditLog": "Inspiser i revisjonslogg",
+        "openAuditExport": "Åpne revisjonseksport",
+        "openAuditLog": "Åpne revisjonslogg",
+        "openComplianceSettings": "Åpne samsvarsinnstillinger",
+        "reviewAuditExport": "Gjennomgå revisjonseksport"
+      },
+      "sections": {
+        "accessControls": {
+          "headline": {
+            "critical": "Sensitive kontrollendringer må gjennomgås",
+            "healthy": "Ingen sensitive kontrollendringer ble logget nylig",
+            "warning": "Nylige kontrollendringer ble oppdaget"
+          }
+        },
+        "auditEvidence": {
+          "headline": {
+            "critical": "Revisjonsbevis krever oppmerksomhet",
+            "healthy": "Signaler for revisjonsbevis ser sunne ut",
+            "warning": "Revisjonsbevis er bare delvis klart"
+          }
+        },
+        "unavailable": {
+          "headline": "Signalet er midlertidig utilgjengelig"
+        },
+        "workforceCompliance": {
+          "headline": {
+            "critical": "Brudd på personalretningslinjer må gjennomgås",
+            "healthy": "Ingen nylige problemer med personalretningslinjer ble oppdaget",
+            "warning": "Personalsamsvar avviker"
+          }
+        }
+      },
+      "status": {
+        "critical": "kritisk",
+        "healthy": "sunn",
+        "unavailable": "utilgjengelig",
+        "warning": "advarsel"
+      },
+      "summary": {
+        "critical": "Kritiske samsvarsrisikoer krever oppmerksomhet",
+        "healthy": "Ingen aktive problemer oppdaget i overvåkede signaler",
+        "unavailable": "Enkelte samsvarssignaler er utilgjengelige",
+        "warning": "Samsvarssignaler må gjennomgås"
+      }
+    },
+    "exception": {
+      "approved": "Unntak godkjent",
+      "approvedDescription": "Samsvarsunntaket er godkjent.",
+      "approveFailed": "Kunne ikke godkjenne",
+      "plannedDuration": "Planlagt",
+      "plannedDurationHelp": "Estimer hvor mye ekstra tid du forventer å trenge utover grensen.",
+      "reason": "Begrunnelse for unntak",
+      "reasonPlaceholder": "Forklar hvorfor du trenger dette unntaket (f.eks. hastende prosjektfrist, kritisk kundemøte)...",
+      "reasonRequired": "Begrunnelse påkrevd",
+      "reasonRequiredDescription": "Vennligst oppgi en begrunnelse for unntaksforespørselen.",
+      "rejectDescription": "Oppgi en begrunnelse for å avvise denne unntaksforespørselen (valgfritt)",
+      "rejected": "Unntak avslått",
+      "rejectedDescription": "Samsvarsunntaket har blitt avslått.",
+      "rejectFailed": "Kunne ikke avvise",
+      "rejectionPlaceholder": "Oppgi årsak til å avslå dette unntaket...",
+      "rejectionReason": "Årsak til avslag",
+      "rejectTitle": "Avslå unntaksforespørsel",
+      "requestDescription": "Be om forhåndsgodkjenning fra lederen din for å fortsette til tross for samsvarsbegrensninger. Godkjente unntak er gyldige i 24 timer.",
+      "requestedAt": "Forespurt",
+      "requestFailed": "Forespørsel mislyktes",
+      "requestSubmitted": "Unntaksforespørsel sendt inn",
+      "requestSubmittedDescription": "Lederen din blir varslet og kan godkjenne eller avslå forespørselen din.",
+      "requestTitle": "Be om samsvarsunntak",
+      "submit": "Send inn forespørsel",
+      "type": "Unntakstype"
+    },
+    "hasApprovedException": "Du har et godkjent unntak. Du kan fortsette.",
+    "moreAlerts": "mer",
+    "noExceptions": "Ingen ventende unntaksforespørsler",
+    "pendingExceptions": "Ventende unntaksforespørsler",
+    "pendingExceptionsDescription": "Gå gjennom unntaksforespørsler som krever din godkjenning",
+    "requestException": "Be om unntak",
+    "restPeriodMessage": "Du trenger {{time}} mer hvile før du kan stemple inn. Neste tillatte innstempling: {{nextTime}}",
+    "restPeriodRequired": "Hvileperiode påkrevd"
+  }
+}

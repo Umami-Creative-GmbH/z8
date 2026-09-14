@@ -1,0 +1,140 @@
+{
+  "compliance": {
+    "commandCenter": {
+      "coverage": {
+        "accessControls": "Åtkomstkontroller sammanfattar endast känsliga granskningslogghändelser som redan samlas in idag.",
+        "auditEvidence": "Granskningsunderlag använder aktiv konfiguration för granskningsexport, granskningspaketbegäranden och senaste verifieringsresultat.",
+        "workforceCompliance": "Efterlevnad för arbetsstyrkan använder de senaste 7 dagarnas överträdelser av arbetspolicyn och väntande undantagsbegäranden."
+      },
+      "events": {
+        "auditEvidenceFailures": {
+          "description": "Senaste misslyckade jobb: {failedRequests}; senaste ogiltiga verifieringar: {invalidVerifications}",
+          "title": "Fel i granskningsunderlag upptäcktes"
+        },
+        "auditPackFailure": {
+          "description": "Senaste misslyckade jobb: {failedRequests}",
+          "title": "Generering av granskningspaket misslyckades"
+        },
+        "auditVerificationFailure": {
+          "description": "Senaste ogiltiga verifieringar: {invalidVerifications}",
+          "title": "Granskningsverifiering misslyckades"
+        },
+        "sensitiveAction": {
+          "description": "{action} på {entityType}",
+          "title": "Känslig åtgärd: {action}"
+        },
+        "workforceFindings": {
+          "description": "Vila: {restPeriodViolations}, Övrig policy: {generalPolicyViolations}, Övertid: {overtimeViolations}",
+          "title": "Senaste iakttagelser gällande personalpolicy"
+        }
+      },
+      "facts": {
+        "access": {
+          "latestSensitiveAction": "Senaste känsliga åtgärd: {action}",
+          "latestSensitiveActionNone": "Senaste känsliga åtgärd: ingen",
+          "noSensitiveEvents": "Inga känsliga kontrolländringar loggades under de senaste 24 timmarna.",
+          "recentSensitiveEvents": "Senaste känsliga händelser: {count}"
+        },
+        "audit": {
+          "activeSigningKey": "Aktiv signeringsnyckel: {fingerprint}",
+          "lastSuccessfulAuditPack": "Senaste lyckade granskningspaket: {timestamp}",
+          "missingSigningKey": "Signeringsnycklar har inte konfigurerats ännu.",
+          "noSuccessfulAuditPack": "Inget lyckat granskningspaket har registrerats ännu.",
+          "recentFailedJobs": "Senaste misslyckade granskningspaketjobb: {count}",
+          "recentInvalidVerifications": "Senaste ogiltiga verifieringsförsök: {count}"
+        },
+        "unavailable": {
+          "accessControls": "Åtkomstkontrollhändelser kunde inte läsas in.",
+          "auditEvidence": "Granskningsbevisdata kunde inte läsas in.",
+          "workforceCompliance": "Efterlevnadsdata för personal kunde inte läsas in."
+        },
+        "workforce": {
+          "generalPolicyViolations": "Övriga policyöverträdelser: {count}",
+          "overtimeViolations": "Övertidsöverträdelser: {count}",
+          "pendingExceptions": "Väntande undantag: {count}",
+          "restPeriodViolations": "Överträdelser av viloperiod: {count}"
+        }
+      },
+      "links": {
+        "inspectCompliance": "Granska efterlevnad",
+        "inspectInAuditLog": "Granska i granskningsloggen",
+        "openAuditExport": "Öppna granskningsexport",
+        "openAuditLog": "Öppna granskningsloggen",
+        "openComplianceSettings": "Öppna inställningar för efterlevnad",
+        "reviewAuditExport": "Granska granskningsexport"
+      },
+      "sections": {
+        "accessControls": {
+          "headline": {
+            "critical": "Känsliga kontrolländringar behöver granskas",
+            "healthy": "Inga känsliga kontrolländringar har loggats nyligen",
+            "warning": "Nyligen gjorda kontrolländringar upptäcktes"
+          }
+        },
+        "auditEvidence": {
+          "headline": {
+            "critical": "Granskningsbevis kräver uppmärksamhet",
+            "healthy": "Signaler för granskningsbevis ser bra ut",
+            "warning": "Granskningsbevis är endast delvis klart"
+          }
+        },
+        "unavailable": {
+          "headline": "Signalen är tillfälligt otillgänglig"
+        },
+        "workforceCompliance": {
+          "headline": {
+            "critical": "Överträdelser av personalpolicy behöver granskas",
+            "healthy": "Inga nyliga problem med personalpolicy upptäcktes",
+            "warning": "Personalens efterlevnad avviker"
+          }
+        }
+      },
+      "status": {
+        "critical": "kritisk",
+        "healthy": "felfri",
+        "unavailable": "otillgänglig",
+        "warning": "varning"
+      },
+      "summary": {
+        "critical": "Kritiska efterlevnadsrisker kräver uppmärksamhet",
+        "healthy": "Inga aktiva problem upptäcktes i övervakade signaler",
+        "unavailable": "Vissa efterlevnadssignaler är otillgängliga",
+        "warning": "Efterlevnadssignaler behöver granskas"
+      }
+    },
+    "exception": {
+      "approved": "Undantag godkänt",
+      "approvedDescription": "Efterlevnadsundantaget har godkänts.",
+      "approveFailed": "Kunde inte godkänna",
+      "plannedDuration": "Planerat",
+      "plannedDurationHelp": "Uppskatta hur mycket ytterligare tid du förväntar dig att behöva utöver gränsen.",
+      "reason": "Anledning till undantag",
+      "reasonPlaceholder": "Förklara varför du behöver detta undantag (t.ex. brådskande projektdeadline, kritiskt kundmöte)...",
+      "reasonRequired": "Anledning krävs",
+      "reasonRequiredDescription": "Ange en anledning till din begäran om undantag.",
+      "rejectDescription": "Ange en anledning till att avslå denna begäran om undantag (valfritt)",
+      "rejected": "Undantag avslaget",
+      "rejectedDescription": "Efterlevnadsundantaget har avslagits.",
+      "rejectFailed": "Kunde inte avslå",
+      "rejectionPlaceholder": "Ange anledning till att avslå detta undantag...",
+      "rejectionReason": "Anledning till avslag",
+      "rejectTitle": "Avslå begäran om undantag",
+      "requestDescription": "Begär förhandsgodkännande från din chef för att fortsätta trots efterlevnadsbegränsningar. Godkända undantag är giltiga i 24 timmar.",
+      "requestedAt": "Begärd",
+      "requestFailed": "Begäran misslyckades",
+      "requestSubmitted": "Begäran om undantag har skickats",
+      "requestSubmittedDescription": "Din chef kommer att meddelas och kan godkänna eller avslå din begäran.",
+      "requestTitle": "Begär efterlevnadsundantag",
+      "submit": "Skicka begäran",
+      "type": "Typ av undantag"
+    },
+    "hasApprovedException": "Du har ett godkänt undantag. Du kan fortsätta.",
+    "moreAlerts": "mer",
+    "noExceptions": "Inga väntande begäranden om undantag",
+    "pendingExceptions": "Väntande begäranden om undantag",
+    "pendingExceptionsDescription": "Granska begäranden om undantag som kräver ditt godkännande",
+    "requestException": "Begär undantag",
+    "restPeriodMessage": "Du behöver {{time}} mer vila innan du kan stämpla in. Nästa tillåtna instämpling: {{nextTime}}",
+    "restPeriodRequired": "Viloperiod krävs"
+  }
+}

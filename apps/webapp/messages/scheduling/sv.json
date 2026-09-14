@@ -1,0 +1,100 @@
+{
+  "scheduling": {
+    "coverage": {
+      "adequate": "Tillräcklig bemanning",
+      "byLocation": "Efter plats:",
+      "gapCount": "{{count}} personalbrist",
+      "gaps": "luckor",
+      "hideOverlay": "Dölj täckningsöverlägg",
+      "metSlots": "{{count}} tillräcklig",
+      "overSlots": "{{count}} överbemannad",
+      "overstaffed": "Överbemannad",
+      "showOverlay": "Visa överlägg för täckningsmål",
+      "summary": "Täckningssammanfattning:",
+      "toggleLabel": "Täckning",
+      "underSlots": "{{count}} underbemannad",
+      "understaffed": "Underbemannad",
+      "utilization": "{{percent}}% beläggning"
+    },
+    "page": {
+      "employeeDescription": "Se dina pass och ta tillgängliga arbetspass",
+      "managerDescription": "Hantera och planera medarbetares arbetspass",
+      "title": "Arbetsschema"
+    },
+    "scheduler": {
+      "complianceBanner": {
+        "findingsDetected": "{count} avvikelse(r) upptäcktes innan publicering.",
+        "maxHours": "Max timmar: {count}",
+        "overtime": "Övertid: {count}",
+        "restTime": "Vilotid: {count}",
+        "title": "Efterlevnadsvarningar i detta datumintervall"
+      },
+      "loading": "Läser in schema...",
+      "publish": {
+        "failed": "Det gick inte att publicera arbetspassen",
+        "published": "Publicerade {count} arbetspass"
+      },
+      "shiftUpdate": {
+        "failed": "Kunde inte uppdatera passet",
+        "overlapDescription": "Det här passet överlappar med {count} annat/andra pass",
+        "overlapWarning": "Passet sparades med överlappningsvarning",
+        "updated": "Passet har uppdaterats"
+      }
+    },
+    "shiftDialog": {
+      "anyoneCanPickUp": "Vem som helst kan ta passet",
+      "assignTo": "Tilldela till",
+      "confirmDelete": "Bekräfta borttagning",
+      "created": "Passet har skapats",
+      "createDescription": "Fyll i uppgifterna för det nya passet",
+      "createShift": "Skapa pass",
+      "createTitle": "Skapa pass",
+      "date": "Datum",
+      "deleted": "Passet har tagits bort",
+      "deleteFailed": "Kunde inte ta bort passet",
+      "draft": "Utkast",
+      "editDescription": "Uppdatera passuppgifterna nedan",
+      "editTitle": "Redigera pass",
+      "endTime": "Sluttid",
+      "noTemplate": "Ingen mall",
+      "notes": "Anteckningar (valfritt)",
+      "notesPlaceholder": "Särskilda instruktioner eller anteckningar...",
+      "openShift": "Öppet pass",
+      "openShiftHelp": "Lämna som \"Öppet pass\" för att låta anställda ta det",
+      "pickDate": "Välj ett datum",
+      "published": "Publicerat",
+      "savedWithWarnings": "Passet sparades med varningar",
+      "saveFailed": "Kunde inte spara passet",
+      "selectEmployee": "Välj en medarbetare",
+      "selectSubarea": "Välj ett delområde…",
+      "selectTemplate": "Välj en mall",
+      "startTime": "Starttid",
+      "status": "Status:",
+      "subarea": "Delområde",
+      "subareaHelp": "Var det här passet kommer att äga rum",
+      "template": "Mall (valfritt)",
+      "templateHelp": "Om du väljer en mall fylls tiderna i automatiskt",
+      "updated": "Passet har uppdaterats",
+      "updateShift": "Uppdatera pass"
+    },
+    "skills": {
+      "expiredCertifications": "Utgångna certifieringar:",
+      "expiredOn": "(Utgick {{date}})",
+      "missingPreferred": "Saknade önskade kompetenser:",
+      "missingPreferredCount": "{{count}} önskade saknas",
+      "missingRequired": "Saknade obligatoriska kompetenser:",
+      "preferred": "Önskad",
+      "preferredSkillsMissing": "Önskade kompetenser saknas",
+      "requirementsNotMet": "Kompetenskraven uppfylls inte",
+      "unqualified": "Ej kvalificerad",
+      "validating": "Validerar kompetenser…",
+      "validatingDescription": "Kontrollerar anställdas kvalifikationer",
+      "warningMessage": "Du kan fortfarande tilldela detta pass, men det kommer att loggas som en överstyrning."
+    },
+    "templates": {
+      "dragHint": "Dra en mall till kalendern för att skapa ett pass",
+      "empty": "Inga mallar tillgängliga. Skapa mallar i Inställningar för att snabbt lägga till pass.",
+      "title": "Passmallar"
+    }
+  }
+}

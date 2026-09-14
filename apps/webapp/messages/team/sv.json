@@ -1,0 +1,146 @@
+{
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Registrera frånvaro för {name}"
+      },
+      "calendar": {
+        "approved": "Godkänd",
+        "description": "Godkänd och väntande frånvaro för valt team och år.",
+        "error": {
+          "description": "Försök igen om en stund.",
+          "title": "Kunde inte läsa in kalendern"
+        },
+        "legend": {
+          "approved": "Godkänd",
+          "pending": "Väntande"
+        },
+        "pending": "Väntande",
+        "pendingDays": "{count} väntande",
+        "title": "Årskalender",
+        "totalDays": "{count} frånvarande"
+      },
+      "description": "Granska saldon och registrera godkänd frånvaro för ditt team.",
+      "empty": {
+        "description": "Prova att justera filter eller sökning för att hitta teammedlemmar.",
+        "label": "Inga anställda hittades",
+        "title": "Inga anställda hittades"
+      },
+      "error": {
+        "description": "Försök igen om en stund.",
+        "title": "Det gick inte att läsa in frånvaro"
+      },
+      "feature": "hantera teamets frånvaro",
+      "filters": {
+        "allTeams": "Alla team",
+        "searchLabel": "Sök anställda",
+        "searchPlaceholder": "Sök anställda…",
+        "searchSubmit": "Sök",
+        "teamLabel": "Filtrera efter team",
+        "teamPlaceholder": "Team",
+        "yearLabel": "Filtrera efter år",
+        "yearPlaceholder": "År"
+      },
+      "pagination": {
+        "next": "Nästa",
+        "nextLabel": "Nästa sida",
+        "page": "Sida {page} av {pageCount}",
+        "previous": "Föregående",
+        "previousLabel": "Föregående sida",
+        "showing": "Visar {firstItem} till {lastItem} av {total}"
+      },
+      "recordDialog": {
+        "category": "Kategori",
+        "categoryPlaceholder": "Välj en frånvarokategori…",
+        "description": "Registrera en godkänd frånvaro direkt för den valda medarbetaren.",
+        "endDate": "Slutdatum",
+        "endDateHelper": "Lämna tomt för frånvaro samma dag.",
+        "failure": "Det gick inte att registrera frånvaro",
+        "noCategories": "Inga kategorier tillgängliga",
+        "noEmployee": "Välj en medarbetare innan du registrerar en frånvaro",
+        "notes": "Anteckningar",
+        "notesPlaceholder": "Lägg till intern kontext för denna registrering…",
+        "pickEndDate": "Välj slutdatum…",
+        "pickStartDate": "Välj startdatum…",
+        "recording": "Registrerar…",
+        "required": "{label} är obligatoriskt",
+        "sickDetail": "Sjukdetalj",
+        "sickDetailPlaceholder": "Välj sjukdetalj…",
+        "startDate": "Startdatum",
+        "submit": "Registrera frånvaro",
+        "success": "Frånvaro registrerad",
+        "title": "Registrera frånvaro",
+        "titleForEmployee": "Registrera frånvaro för {name}"
+      },
+      "sort": {
+        "ascending": "stigande",
+        "by": "Sortera efter {label}",
+        "byWithDirection": "Sortera efter {label} ({direction})",
+        "descending": "fallande"
+      },
+      "table": {
+        "actions": "Åtgärder",
+        "allowance": "Tilldelning",
+        "employee": "Medarbetare",
+        "left": "Kvar",
+        "pending": "Väntande",
+        "sick": "Sjuk",
+        "teamOrPosition": "Team eller befattning",
+        "used": "Använt"
+      },
+      "title": "Teamfrånvaro"
+    },
+    "balance": {
+      "noBalance": "Inget saldo"
+    },
+    "description": "Visa och hantera medarbetare som du är direkt chef för",
+    "empty": {
+      "action": "Gå till medarbetarinställningar",
+      "description": "Medarbetare som har tilldelats dig som chef visas här. Du kan hantera teamtilldelningar i medarbetarinställningarna.",
+      "title": "Inga teammedlemmar än"
+    },
+    "error": {
+      "description": "Det gick inte att läsa in dina teammedlemmar.",
+      "title": "Något gick fel"
+    },
+    "feature": "visa ditt team",
+    "member": "medlem",
+    "members": "medlemmar",
+    "member.you": "Du",
+    "noResults": {
+      "action": "Rensa sökning",
+      "description": "Inga teammedlemmar matchar \"{query}\"",
+      "title": "Inga resultat hittades"
+    },
+    "pagination": {
+      "next": "Nästa",
+      "previous": "Föregående",
+      "showing": "Visar {from} till {to} av {total}"
+    },
+    "primaryManager": "Du är primär chef",
+    "search": {
+      "ariaLabel": "Sök teammedlemmar",
+      "placeholder": "Sök på namn, e-post, befattning eller team..."
+    },
+    "status": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv"
+    },
+    "table": {
+      "employee": "Anställd",
+      "position": "Befattning",
+      "role": "Roll",
+      "sort": {
+        "ascending": "stigande",
+        "descending": "fallande"
+      },
+      "status": "Status",
+      "team": "Team"
+    },
+    "title": "Ditt team",
+    "view": {
+      "cards": "Kortvy",
+      "table": "Tabellvy"
+    }
+  }
+}
