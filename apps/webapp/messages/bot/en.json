@@ -1,6 +1,13 @@
 {
   "bot": {
     "approval": {
+      "reviewRequiredTitle": "Review required",
+      "reviewRequired": "This card cannot establish the facts originally submitted for review. Open the approval inbox in Z8 to review the request. No decision was made from this card.",
+      "reviewInZ8": "Review in Z8",
+      "historicalTitle": "Historical decision",
+      "historicalApproval": "Your previously recorded approval was verified. This is a historical result; no new decision was made. Review the request in Z8 for further details.",
+      "historicalRejection": "Your previously recorded rejection was verified. This is a historical result; no new decision was made. Review the request in Z8 for further details.",
+      "unboundCallback": "This card cannot establish the facts originally reviewed. No decision was made. Review the request in Z8.",
       "alreadyProcessed": "This approval has already been processed."
     },
     "cmd": {

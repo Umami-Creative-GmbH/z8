@@ -16,7 +16,6 @@
 		"@opentelemetry/api": "^1.9.1",
 		"@slack/web-api": "^8.1.1",
 		"@t3-oss/env-nextjs": "^0.13.11",
-		"@tabler/icons-react": "^3.46.0",
 		"@tolgee/format-icu": "^7.2.0",
 		"@tolgee/react": "^7.2.0",
 		"@tolgee/web": "^7.2.0",

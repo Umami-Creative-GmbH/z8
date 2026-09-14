@@ -1,153 +1,74 @@
-/**
- * Slack Approval Handler
- *
- * Handles approve/reject actions from Block Kit buttons.
- * Sends approval cards to managers via proactive messaging.
- */
-
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { approvalRequest, employee, slackApprovalMessage } from "@/db/schema";
+import { slackApprovalMessage, slackUserMapping } from "@/db/schema";
+import { prepareApprovalPresentation } from "@/lib/approvals/presentation";
+import {
+	approvalAttemptNotice,
+	slackApprovalNotice,
+} from "@/lib/bot-platform/approval-notice";
 import { createLogger } from "@/lib/logger";
 import { openConversation, postMessage, updateMessage } from "./api";
 import { getChannelIdForUser } from "./conversation-manager";
-import { buildApprovalBlocks, buildResolvedApprovalBlocks } from "./formatters";
-import type {
-	ApprovalCardData,
-	ResolvedSlackBot,
-	SlackInteractionPayload,
-} from "./types";
+import type { ResolvedSlackBot, SlackInteractionPayload } from "./types";
 import { resolveSlackUser } from "./user-resolver";
 
 const logger = createLogger("SlackApprovalHandler");
 
-/**
- * Handle approval action from Block Kit button
- */
 export async function handleApprovalAction(
 	payload: SlackInteractionPayload,
 	action: { action_id: string; value?: string },
 	slackUserId: string,
 	bot: ResolvedSlackBot,
 ): Promise<void> {
-	const approvalAction =
-		action.action_id === "approval_approve" ? "approve" : "reject";
-	const approvalId = action.value;
-
-	if (!approvalId) return;
-
-	// Resolve user
-	const userResult = await resolveSlackUser(slackUserId, bot.slackTeamId);
-	if (userResult.status !== "found") {
-		logger.warn({ slackUserId }, "Unlinked user tried to act on approval");
+	if (
+		!action.value ||
+		!["approval_approve", "approval_reject"].includes(action.action_id)
+	)
 		return;
-	}
-
+	const user = await resolveSlackUser(slackUserId, bot.slackTeamId);
+	if (user.status !== "found") return;
 	try {
-		// Keep Next.js-only decision dependencies out of escalation worker imports.
 		const { attemptBotApproval } = await import(
 			"@/lib/bot-platform/approval-decision"
 		);
-		const attempt = await attemptBotApproval({
-			approvalId,
-			actorEmployeeId: userResult.user.employeeId,
+		const result = await attemptBotApproval({
+			approvalId: action.value,
+			actorEmployeeId: user.user.employeeId,
 			organizationId: bot.organizationId,
-			action: approvalAction,
+			action: action.action_id === "approval_approve" ? "approve" : "reject",
 			platform: "slack",
 		});
-
-		if (attempt.status === "not_found") {
-			logger.warn({ approvalId }, "Approval not found");
+		if (result.status !== "review_required" && result.status !== "historical")
 			return;
-		}
-
-		if (attempt.status === "already_processed") {
-			// Update the message to show it's already resolved
-			if (payload.channel && payload.message) {
-				await updateMessage(bot.botAccessToken, {
-					channel: payload.channel.id,
-					ts: payload.message.ts,
-					text: "This approval has already been processed.",
-				});
-			}
-			return;
-		}
-
-		if (attempt.status === "unauthorized") {
-			logger.warn(
-				{ approvalId, employeeId: userResult.user.employeeId },
-				"Unauthorized approval attempt",
-			);
-			return;
-		}
-
-		const newStatus = approvalAction === "approve" ? "approved" : "rejected";
-
-		logger.info(
-			{
-				approvalId,
-				action: approvalAction,
-				approverId: userResult.user.employeeId,
-				organizationId: bot.organizationId,
-			},
-			"Approval action processed via Slack",
-		);
-
-		// Get approver name
-		const approverEmployee = await db.query.employee.findFirst({
+		if (!payload.channel || !payload.message) return;
+		const tracked = await db.query.slackApprovalMessage.findFirst({
 			where: and(
-				eq(employee.id, userResult.user.employeeId),
-				eq(employee.organizationId, bot.organizationId),
+				eq(slackApprovalMessage.organizationId, bot.organizationId),
+				eq(slackApprovalMessage.approvalRequestId, action.value),
+				eq(slackApprovalMessage.recipientUserId, user.user.userId),
+				eq(slackApprovalMessage.channelId, payload.channel.id),
+				eq(slackApprovalMessage.messageTs, payload.message.ts),
 			),
-			with: { user: { columns: { name: true } } },
 		});
-		const approverName = approverEmployee?.user?.name || "Unknown";
-
-		// Build original card data for resolved message
-		const cardData = await buildApprovalCardData(attempt.approval);
-
-		// Update the message to show resolved status
-		if (payload.channel && payload.message && cardData) {
-			const { blocks, text } = buildResolvedApprovalBlocks(cardData, {
-				action: newStatus,
-				approverName,
-				resolvedAt: new Date(),
-			});
-
-			await updateMessage(bot.botAccessToken, {
-				channel: payload.channel.id,
-				ts: payload.message.ts,
-				text,
-				blocks,
-			});
-		}
-
-		// Update approval message record
-		const msgRecord = await db.query.slackApprovalMessage.findFirst({
-			where: eq(slackApprovalMessage.approvalRequestId, approvalId),
+		if (!tracked) return;
+		const notice = await approvalAttemptNotice(result, {
+			userId: user.user.userId,
+			organizationId: bot.organizationId,
 		});
-
-		if (msgRecord) {
-			await db
-				.update(slackApprovalMessage)
-				.set({
-					respondedAt: new Date(),
-					status: newStatus,
-				})
-				.where(eq(slackApprovalMessage.id, msgRecord.id));
-		}
+		if (!notice) return;
+		await updateMessage(bot.botAccessToken, {
+			channel: tracked.channelId,
+			ts: tracked.messageTs,
+			...slackApprovalNotice(notice),
+		});
 	} catch (error) {
 		logger.error(
-			{ error, approvalId, action: approvalAction },
-			"Failed to process approval action",
+			{ error, approvalId: action.value },
+			"Failed to review Slack approval card",
 		);
 	}
 }
 
-/**
- * Send an approval card to a manager via Slack.
- * Called when a new approval request is created.
- */
 export async function sendApprovalMessageToManager(
 	approvalId: string,
 	approverId: string,
@@ -155,145 +76,44 @@ export async function sendApprovalMessageToManager(
 	botAccessToken: string,
 ): Promise<void> {
 	try {
-		// Get approver's user ID
-		const approverEmployee = await db.query.employee.findFirst({
-			where: and(
-				eq(employee.id, approverId),
-				eq(employee.organizationId, organizationId),
-			),
-			columns: { userId: true },
+		const notice = await prepareApprovalPresentation({
+			approvalId,
+			recipientEmployeeId: approverId,
+			organizationId,
 		});
-
-		if (!approverEmployee?.userId) {
-			logger.debug({ approverId }, "Approver has no user ID");
-			return;
-		}
-
-		// Get channel ID for the approver (try stored conversation first, then open DM)
+		if (notice.status === "undisclosable") return;
 		let channelId = await getChannelIdForUser(
-			approverEmployee.userId,
+			notice.recipientUserId,
 			organizationId,
 		);
-
 		if (!channelId) {
-			// Try to look up their Slack user ID and open a DM
-			const { slackUserMapping } = await import("@/db/schema");
 			const mapping = await db.query.slackUserMapping.findFirst({
 				where: and(
-					eq(slackUserMapping.userId, approverEmployee.userId),
+					eq(slackUserMapping.userId, notice.recipientUserId),
 					eq(slackUserMapping.organizationId, organizationId),
 					eq(slackUserMapping.isActive, true),
 				),
 			});
-
-			if (mapping) {
+			if (mapping)
 				channelId = await openConversation(botAccessToken, mapping.slackUserId);
-			}
 		}
-
-		if (!channelId) {
-			logger.debug(
-				{ approverId, organizationId },
-				"No Slack channel for approver",
-			);
-			return;
-		}
-
-		// Get approval details
-		const approval = await db.query.approvalRequest.findFirst({
-			where: and(
-				eq(approvalRequest.id, approvalId),
-				eq(approvalRequest.organizationId, organizationId),
-			),
-		});
-
-		if (!approval) {
-			logger.warn({ approvalId }, "Approval not found when sending message");
-			return;
-		}
-
-		// Build card data
-		const cardData = await buildApprovalCardData(approval);
-		if (!cardData) {
-			logger.warn({ approvalId }, "Could not build card data");
-			return;
-		}
-
-		// Build Block Kit message
-		const { blocks, text } = buildApprovalBlocks(cardData);
-
-		// Send message
-		const sentMessage = await postMessage(botAccessToken, {
+		if (!channelId) return;
+		const sent = await postMessage(botAccessToken, {
 			channel: channelId,
-			text,
-			blocks,
+			...slackApprovalNotice(notice),
 		});
-
-		// Store message record for updates
-		if (sentMessage) {
-			await db.insert(slackApprovalMessage).values({
-				approvalRequestId: approvalId,
-				organizationId,
-				recipientUserId: approverEmployee.userId,
-				channelId,
-				messageTs: sentMessage.ts,
-				status: "sent",
-			});
-
-			logger.info(
-				{ approvalId, approverId, messageTs: sentMessage.ts },
-				"Sent approval message to manager via Slack",
-			);
-		}
+		if (sent)
+			await db
+				.insert(slackApprovalMessage)
+				.values({
+					approvalRequestId: approvalId,
+					organizationId,
+					recipientUserId: notice.recipientUserId,
+					channelId,
+					messageTs: sent.ts,
+					status: "sent",
+				});
 	} catch (error) {
-		logger.error(
-			{ error, approvalId, approverId },
-			"Failed to send approval message",
-		);
+		logger.error({ error, approvalId }, "Failed to send Slack approval notice");
 	}
-}
-
-/**
- * Build ApprovalCardData from approval request (shared logic)
- */
-async function buildApprovalCardData(
-	approval: typeof approvalRequest.$inferSelect,
-): Promise<ApprovalCardData | null> {
-	const requester = await db.query.employee.findFirst({
-		where: and(
-			eq(employee.id, approval.requestedBy),
-			eq(employee.organizationId, approval.organizationId),
-		),
-		with: { user: { columns: { name: true, email: true } } },
-	});
-
-	if (!requester) return null;
-
-	const baseData: ApprovalCardData = {
-		approvalId: approval.id,
-		entityType: approval.entityType as "absence_entry" | "time_entry",
-		requesterName: requester.user?.name || "Unknown",
-		requesterEmail: requester.user?.email,
-		createdAt: approval.createdAt,
-	};
-
-	if (approval.entityType === "absence_entry") {
-		const { absenceEntry } = await import("@/db/schema");
-		const absence = await db.query.absenceEntry.findFirst({
-			where: eq(absenceEntry.id, approval.entityId),
-			with: { category: { columns: { name: true } } },
-		});
-
-		if (absence) {
-			return {
-				...baseData,
-				absenceCategory: absence.category?.name,
-				startDate: absence.startDate,
-				endDate: absence.endDate,
-				reason: absence.notes || undefined,
-			};
-		}
-	}
-
-	return baseData;
 }

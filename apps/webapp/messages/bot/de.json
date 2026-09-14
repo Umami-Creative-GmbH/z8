@@ -1,6 +1,13 @@
 {
   "bot": {
     "approval": {
+      "reviewRequiredTitle": "Prüfung erforderlich",
+      "reviewRequired": "Diese Karte kann die ursprünglich zur Prüfung eingereichten Angaben nicht belegen. Öffnen Sie den Genehmigungseingang in Z8, um den Antrag zu prüfen. Über diese Karte wurde keine Entscheidung getroffen.",
+      "reviewInZ8": "In Z8 prüfen",
+      "historicalTitle": "Frühere Entscheidung",
+      "historicalApproval": "Ihre zuvor erfasste Genehmigung wurde verifiziert. Dies ist ein früheres Ergebnis; es wurde keine neue Entscheidung getroffen. Weitere Einzelheiten finden Sie beim Antrag in Z8.",
+      "historicalRejection": "Ihre zuvor erfasste Ablehnung wurde verifiziert. Dies ist ein früheres Ergebnis; es wurde keine neue Entscheidung getroffen. Weitere Einzelheiten finden Sie beim Antrag in Z8.",
+      "unboundCallback": "Diese Karte kann die ursprünglich geprüften Angaben nicht belegen. Es wurde keine Entscheidung getroffen. Prüfen Sie den Antrag in Z8.",
       "alreadyProcessed": "Diese Genehmigung wurde bereits bearbeitet."
     },
     "cmd": {

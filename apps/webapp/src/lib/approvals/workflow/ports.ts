@@ -99,6 +99,8 @@ export type ApprovalWorkflowPrincipal =
 	  };
 
 export interface ApprovalWorkflowCommandRequest {
+	/** Legacy card access may return an exact receipt, but never execute a new command. */
+	historicalOnly?: boolean;
 	organizationId: string;
 	workflowId: string;
 	expectedVersion: number;

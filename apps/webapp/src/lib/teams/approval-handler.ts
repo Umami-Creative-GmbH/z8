@@ -1,348 +1,103 @@
-/**
- * Teams Approval Handler
- *
- * Handles approve/reject actions from Teams Adaptive Cards.
- */
-
 import type { TurnContext } from "botbuilder";
-import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
+import { teamsApprovalCard } from "@/db/schema";
+import { prepareApprovalPresentation } from "@/lib/approvals/presentation";
 import {
-	absenceEntry,
-	approvalRequest,
-	employee,
-	teamsApprovalCard,
-	timeEntry,
-} from "@/db/schema";
-import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
+	approvalAttemptNotice,
+	teamsApprovalNotice,
+} from "@/lib/bot-platform/approval-notice";
 import { createLogger } from "@/lib/logger";
-import { updateMessage } from "./bot-adapter";
-import { buildResolvedApprovalCard } from "./cards/approval-card";
-import { getStoredConversation } from "./conversation-manager";
-import type {
-	ApprovalCardData,
-	ResolvedTeamsUser,
-	ResolvedTenant,
-} from "./types";
+import type { ResolvedTeamsUser, ResolvedTenant } from "./types";
 import { TeamsError } from "./types";
 
 const logger = createLogger("TeamsApprovalHandler");
 
-/**
- * Handle approval action from Teams card
- *
- * @param context - Bot turn context
- * @param approvalId - Approval request ID
- * @param action - Action type (approve/reject)
- * @param user - Resolved Teams user
- * @param tenant - Resolved tenant
- */
 export async function handleApprovalAction(
 	context: TurnContext,
 	approvalId: string,
 	action: "approve" | "reject",
-	resolvedUser: ResolvedTeamsUser,
+	user: ResolvedTeamsUser,
 	tenant: ResolvedTenant,
 ): Promise<void> {
 	try {
-		// Keep Next.js-only decision dependencies out of escalation worker imports.
 		const { attemptBotApproval } = await import(
 			"@/lib/bot-platform/approval-decision"
 		);
-		const attempt = await attemptBotApproval({
+		const result = await attemptBotApproval({
 			approvalId,
-			actorEmployeeId: resolvedUser.employeeId,
+			actorEmployeeId: user.employeeId,
 			organizationId: tenant.organizationId,
 			action,
 			platform: "teams",
 		});
-
-		if (attempt.status === "not_found") {
-			throw new TeamsError("Approval not found", "APPROVAL_NOT_FOUND");
-		}
-		if (attempt.status === "already_processed") {
-			throw new TeamsError(
-				"Approval already resolved",
-				"APPROVAL_ALREADY_RESOLVED",
+		// Send only the outcome of this authenticated invocation. Do not select
+		// another recipient's activity via an approval-only tracking lookup.
+		if (result.status !== "review_required" && result.status !== "historical") {
+			await context.sendActivity(
+				"This approval is unavailable. Open Z8 to review your inbox.",
 			);
+			return;
 		}
-
-		if (attempt.status === "unauthorized") {
-			throw new TeamsError("Not authorized to approve", "NOT_AUTHORIZED");
-		}
-		const approval = attempt.approval;
-
-		logger.info(
-			{
-				approvalId,
-				action,
-				approverId: resolvedUser.employeeId,
-				organizationId: tenant.organizationId,
-			},
-			"Approval action processed via Teams",
-		);
-
-		// Get approver name
-		const approverEmployee = await db.query.employee.findFirst({
-			where: eq(employee.id, resolvedUser.employeeId),
-			with: {
-				user: {
-					columns: { name: true },
+		const notice = await approvalAttemptNotice(result, {
+			userId: user.userId,
+			organizationId: tenant.organizationId,
+		});
+		if (!notice) return;
+		await context.sendActivity({
+			type: "message",
+			text: notice.title,
+			attachments: [
+				{
+					contentType: "application/vnd.microsoft.card.adaptive",
+					content: teamsApprovalNotice(notice),
 				},
-			},
+			],
 		});
-		const approverName = approverEmployee?.user?.name || "Unknown";
-
-		// Get Teams card record to update it
-		const cardRecord = await db.query.teamsApprovalCard.findFirst({
-			where: eq(teamsApprovalCard.approvalRequestId, approvalId),
-		});
-
-		if (cardRecord?.teamsActivityId) {
-			// Get conversation reference
-			const conversation = await getStoredConversation(
-				resolvedUser.userId,
-				tenant.organizationId,
-			);
-
-			if (conversation) {
-				// Build original card data for resolved card
-				const originalCardData = await buildApprovalCardData(approval);
-
-				if (originalCardData) {
-					// Build resolved card
-					const userLocale = await getUserLocale(resolvedUser.userId);
-					const t = await getBotTranslate(userLocale);
-					const resolvedCard = buildResolvedApprovalCard(
-						originalCardData,
-						{
-							action: action === "approve" ? "approved" : "rejected",
-							approverName,
-							resolvedAt: new Date(),
-						},
-						userLocale,
-						t,
-					);
-
-					// Update the card in Teams
-					try {
-						await updateMessage(
-							conversation.conversationReference,
-							cardRecord.teamsActivityId,
-							{
-								type: "message",
-								text: `Approval ${action}d`,
-								attachments: [
-									{
-										contentType: "application/vnd.microsoft.card.adaptive",
-										content: resolvedCard,
-									},
-								],
-							},
-						);
-					} catch (updateError) {
-						// Log but don't fail - the action already succeeded
-						logger.warn(
-							{ error: updateError, approvalId },
-							"Failed to update Teams card",
-						);
-					}
-				}
-			}
-
-			// Update card record
-			await db
-				.update(teamsApprovalCard)
-				.set({
-					respondedAt: new Date(),
-					status: action === "approve" ? "approved" : "rejected",
-				})
-				.where(eq(teamsApprovalCard.id, cardRecord.id));
-		}
-
-		// Send confirmation message
-		await context.sendActivity(
-			`Request ${action === "approve" ? "approved" : "rejected"} successfully.`,
-		);
 	} catch (error) {
-		logger.error(
-			{ error, approvalId, action },
-			"Failed to process approval action",
-		);
-
-		if (error instanceof TeamsError) {
-			throw error;
-		}
-
-		throw new TeamsError("Failed to process approval", "BOT_ERROR", {
-			originalError: error instanceof Error ? error.message : String(error),
-		});
+		logger.error({ error, approvalId }, "Failed to review Teams approval card");
+		throw new TeamsError("Failed to review approval", "BOT_ERROR");
 	}
 }
 
-/**
- * Build ApprovalCardData from approval request
- */
-async function buildApprovalCardData(
-	approval: typeof approvalRequest.$inferSelect,
-): Promise<ApprovalCardData | null> {
-	// Get requester info
-	const requester = await db.query.employee.findFirst({
-		where: eq(employee.id, approval.requestedBy),
-		with: {
-			user: {
-				columns: { name: true, email: true },
-			},
-		},
-	});
-
-	if (!requester) return null;
-
-	const baseData: ApprovalCardData = {
-		approvalId: approval.id,
-		entityType: approval.entityType as "absence_entry" | "time_entry",
-		requesterName: requester.user?.name || "Unknown",
-		requesterEmail: requester.user?.email,
-		createdAt: approval.createdAt,
-	};
-
-	if (approval.entityType === "absence_entry") {
-		const absence = await db.query.absenceEntry.findFirst({
-			where: eq(absenceEntry.id, approval.entityId),
-			with: {
-				category: {
-					columns: { name: true },
-				},
-			},
-		});
-
-		if (absence) {
-			return {
-				...baseData,
-				absenceCategory: absence.category?.name,
-				startDate: absence.startDate,
-				endDate: absence.endDate,
-				reason: absence.notes || undefined,
-			};
-		}
-	} else if (approval.entityType === "time_entry") {
-		const entry = await db.query.timeEntry.findFirst({
-			where: eq(timeEntry.id, approval.entityId),
-		});
-
-		if (entry) {
-			return {
-				...baseData,
-				originalTime: entry.timestamp?.toISOString(),
-				correctedTime: entry.notes || undefined,
-			};
-		}
-	}
-
-	return baseData;
-}
-
-/**
- * Send approval card to a manager
- *
- * Called when a new approval request is created.
- *
- * @param approvalId - Approval request ID
- * @param approverId - Employee ID of the approver
- * @param organizationId - Organization ID
- */
 export async function sendApprovalCardToManager(
 	approvalId: string,
 	approverId: string,
 	organizationId: string,
 ): Promise<void> {
-	const [
-		{ sendAdaptiveCard },
-		{ getConversationReferenceForUser },
-		{ buildApprovalCardWithInvoke },
-	] = await Promise.all([
-		import("./bot-adapter"),
-		import("./conversation-manager"),
-		import("./cards"),
-	]);
-
 	try {
-		// Get approver's user ID
-		const approverEmployee = await db.query.employee.findFirst({
-			where: and(
-				eq(employee.id, approverId),
-				eq(employee.organizationId, organizationId),
-			),
-			columns: { userId: true },
+		const notice = await prepareApprovalPresentation({
+			approvalId,
+			recipientEmployeeId: approverId,
+			organizationId,
 		});
-
-		if (!approverEmployee?.userId) {
-			logger.debug({ approverId }, "Approver has no user ID");
-			return;
-		}
-
-		// Get conversation reference
-		const conversationRef = await getConversationReferenceForUser(
-			approverEmployee.userId,
+		if (notice.status === "undisclosable") return;
+		const { sendAdaptiveCard } = await import("./bot-adapter");
+		const { getConversationReferenceForUser } = await import(
+			"./conversation-manager"
+		);
+		const conversation = await getConversationReferenceForUser(
+			notice.recipientUserId,
 			organizationId,
 		);
-
-		if (!conversationRef) {
-			logger.debug(
-				{ approverId, organizationId },
-				"No Teams conversation for approver",
-			);
-			return;
-		}
-
-		// Get approval details
-		const approval = await db.query.approvalRequest.findFirst({
-			where: eq(approvalRequest.id, approvalId),
-		});
-
-		if (!approval) {
-			logger.warn({ approvalId }, "Approval not found when sending card");
-			return;
-		}
-
-		// Build card data
-		const cardData = await buildApprovalCardData(approval);
-		if (!cardData) {
-			logger.warn({ approvalId }, "Could not build card data");
-			return;
-		}
-
-		// Build and send card
-		const approverLocale = await getUserLocale(approverEmployee.userId);
-		const t = await getBotTranslate(approverLocale);
-		const card = buildApprovalCardWithInvoke(cardData, approverLocale, t);
+		if (!conversation?.conversation?.id) return;
 		const activityId = await sendAdaptiveCard(
-			conversationRef,
-			card,
-			`New approval request from ${cardData.requesterName}`,
+			conversation,
+			teamsApprovalNotice(notice),
+			notice.title,
 		);
-
-		// Store card record
-		if (activityId) {
-			await db.insert(teamsApprovalCard).values({
-				approvalRequestId: approvalId,
-				organizationId,
-				recipientUserId: approverEmployee.userId,
-				teamsConversationId: conversationRef.conversation?.id || "",
-				teamsActivityId: activityId,
-				teamsMessageId: activityId, // In Bot Framework, activity ID serves as message ID
-				status: "sent",
-			});
-
-			logger.info(
-				{ approvalId, approverId, activityId },
-				"Sent approval card to manager via Teams",
-			);
-		}
+		if (activityId)
+			await db
+				.insert(teamsApprovalCard)
+				.values({
+					approvalRequestId: approvalId,
+					organizationId,
+					recipientUserId: notice.recipientUserId,
+					teamsConversationId: conversation.conversation.id,
+					teamsActivityId: activityId,
+					teamsMessageId: activityId,
+					status: "sent",
+				});
 	} catch (error) {
-		logger.error(
-			{ error, approvalId, approverId },
-			"Failed to send approval card to manager",
-		);
+		logger.error({ error, approvalId }, "Failed to send Teams approval notice");
 	}
 }
