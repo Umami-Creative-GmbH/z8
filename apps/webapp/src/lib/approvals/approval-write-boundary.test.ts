@@ -5174,16 +5174,9 @@ export async function hiddenImport(values: object) {
 		);
 	});
 
-	it("has no unowned protected writes in the current webapp inventory", () => {
-		expect(
-			scanApprovalWriteBoundary({
-				roots: ["src", "scripts"],
-				workspaceRoot: process.cwd(),
-			}),
-		).toEqual([]);
-	}, 120_000);
-
-	it("keeps every declared exact owner and exception backed by a production write", () => {
+	it("matches the production inventory exactly to declared owners and exceptions, with no unowned writes", () => {
+		// Exact set equality catches both unowned writes and stale declarations.
+		// Scan once: a second boundary-only scan repeats the same native analysis.
 		const inventory = scanApprovalWriteInventory({
 			roots: ["src", "scripts"],
 			workspaceRoot: process.cwd(),
