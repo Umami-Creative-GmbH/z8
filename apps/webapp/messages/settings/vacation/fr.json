@@ -45,13 +45,6 @@
       "description": "Gérer les politiques de congés et les attributions pour votre organisation",
       "editPolicy": "Modifier « {name} »",
       "employees": {
-        "actions": {
-          "edit": "Modifier"
-        },
-        "allowancesForYear": "Allocations de congés pour {{year}}",
-        "defaultAllowanceDescription": "Allocation par défaut : {{days}} jours par an",
-        "defaultPolicy": "Par défaut",
-        "description": "Configurer des allocations de congés personnalisées pour chaque employé",
         "detail": {
           "addManualAdjustment": "Ajouter un ajustement manuel",
           "addManualAdjustmentDescription": "Créer une nouvelle entrée d'ajustement pour des circonstances particulières (par ex. jours de bonus, corrections). Chaque ajustement est enregistré dans le journal d'audit.",
@@ -98,25 +91,7 @@
         "edit": {
           "description": "Configurer l'allocation de congés personnalisée pour {{name}}",
           "title": "Modifier l'allocation de congés"
-        },
-        "employeeCount": "{{count}} employés",
-        "emptyDescription": "Ajoutez des employés à votre organisation pour gérer leurs allocations de congés.",
-        "emptyTitle": "Aucun employé trouvé",
-        "noOrgPolicyConfigured": " (Aucune politique d'organisation configurée)",
-        "primaryManager": "Principal",
-        "table": {
-          "actions": "Actions",
-          "adjustments": "Ajustements",
-          "carryover": "Report",
-          "customDays": "Jours personnalisés",
-          "defaultDays": "Jours par défaut",
-          "employee": "Employé",
-          "managers": "Managers",
-          "policy": "Politique",
-          "team": "Équipe",
-          "totalAvailable": "Total disponible"
-        },
-        "title": "Allocations des employés"
+        }
       },
       "expires": "Expire",
       "fallsBackToDefault": "Revient à la valeur par défaut de l'entreprise",

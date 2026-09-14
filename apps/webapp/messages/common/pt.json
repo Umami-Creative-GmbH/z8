@@ -165,7 +165,6 @@
     "moveDown": "Mover para baixo",
     "moveUp": "Mover para cima",
     "name": "Nome",
-    "never": "Nunca",
     "new": "Novo",
     "next": "Seguinte",
     "notApplicable": "N/D",
@@ -290,16 +289,8 @@
     "trust-center": "Central de Confiança"
   },
   "loading": {
-    "application": "A carregar aplicação",
-    "authentication": "A carregar autenticação",
-    "calendar": "A carregar calendário",
-    "chart": "A carregar gráfico",
-    "licenses": "A carregar licenças",
-    "platformAnalytics": "A carregar análises da plataforma",
-    "settings": "A carregar definições",
-    "setup": "A carregar configuração",
-    "teamAbsences": "A carregar ausências da equipa",
-    "workerQueue": "A carregar fila de trabalhos"
+    "chart": "Carregando gráfico",
+    "settings": "Carregando configurações"
   },
   "nav": {
     "absences": "Ausências",
@@ -335,14 +326,6 @@
       "viewAll": "Ver todas as notificações"
     },
     "content": {
-      "absenceRequestSubmitted": {
-        "message": "Sua solicitação de {categoryName} para {dateRange} foi enviada e está aguardando aprovação.",
-        "title": "Solicitação de ausência enviada"
-      },
-      "teamMemberRemoved": {
-        "message": "Você foi removido da equipe {teamName} por {performedByName}.",
-        "title": "Removido da equipe"
-      },
       "passwordChanged": {
         "message": "Sua senha foi alterada com sucesso. Se você não realizou essa alteração, entre em contato com o suporte imediatamente.",
         "title": "Senha alterada"
@@ -432,11 +415,32 @@
   },
   "offline": {
     "banner": {
+      "archived": "Evidência de ponto arquivada retida neste dispositivo",
       "offline": "Você está offline",
-      "offlineWithPending": "Offline - {count} evento(s) pendente(s)",
-      "pending": "{count} evento(s) aguardando sincronização",
-      "retry": "Tentar novamente",
-      "syncing": "Sincronizando {count} evento(s)..."
+      "offlineSaved": "Offline — {count} registro(s) salvo(s) localmente para revisão",
+      "refresh": "Atualizar status",
+      "refreshing": "Verificando {count} registro(s) salvo(s)…",
+      "reviewRequired": "{count} registro(s) salvo(s) localmente — revisão necessária",
+      "unverified": "Evidência de ponto salva neste dispositivo. Conecte-se para revisar todos os registros salvos."
+    },
+    "capture": {
+      "description": "Salve o evento neste dispositivo para revisão. O status do ponto no servidor não será alterado.",
+      "end": "Salvar registro de saída para revisão",
+      "start": "Salvar registro de entrada para revisão"
+    },
+    "recovery": {
+      "archive": "Arquivar e reter evidência",
+      "archived": "Arquivado — evidência retida",
+      "description": "Estes registros estão salvos neste dispositivo. A confirmação no servidor é desconhecida. Verifique os lançamentos de horas existentes com seu gestor antes de enviar trabalho de substituição. O arquivamento mantém a evidência e não cancela o trabalho no servidor.",
+      "empty": "Nenhum registro acessível. Registros mais antigos sem evidência de conta precisam de revisão no nível da organização; registros sem evidência da organização exigem recuperação autorizada separadamente.",
+      "evidence": "Evidência original e status de recuperação",
+      "export": "Exportar evidência acessível",
+      "exportError": "Não foi possível exportar os registros salvos",
+      "held": "Requer revisão — não confirmado no servidor",
+      "loadError": "Não foi possível ler os registros salvos",
+      "loading": "Lendo registros salvos…",
+      "review": "Revisar registros salvos",
+      "title": "Registros de ponto salvos"
     }
   },
   "presence": {
@@ -530,12 +534,8 @@
   "validation": {
     "first-name-required": "O nome é obrigatório",
     "invalid-email": "Email inválido",
-    "invalid-password": "Senha inválida",
     "last-name-required": "O sobrenome é obrigatório",
     "password-required": "A senha é obrigatória"
-  },
-  "worksCouncil": {
-    "loadingLabel": "Carregando o portal do conselho de trabalhadores"
   },
   "workBalance": {
     "label": "Saldo total",

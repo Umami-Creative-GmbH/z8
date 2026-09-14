@@ -204,6 +204,7 @@
     "slugLabel": "Slug organizacji",
     "slugPlaceholder": "acme-inc",
     "slugTaken": "Ten slug jest już zajęty. Proszę wybrać inny.",
+    "ssoFailed": "Logowanie przez SSO nie powiodło się. Wybierz organizację, aby spróbować ponownie, lub wybierz inny obszar roboczy.",
     "switchFailed": "Nie udało się przełączyć organizacji",
     "switching": "Przełączanie organizacji...",
     "switchTo": "Przełącz organizację",

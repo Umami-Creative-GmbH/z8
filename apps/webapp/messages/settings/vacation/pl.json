@@ -45,13 +45,6 @@
       "description": "Zarządzaj politykami urlopowymi i przypisaniami dla swojej organizacji",
       "editPolicy": "Edytuj „{name}”",
       "employees": {
-        "actions": {
-          "edit": "Edytuj"
-        },
-        "allowancesForYear": "Wymiar urlopu na {{year}} rok",
-        "defaultAllowanceDescription": "Domyślny wymiar: {{days}} dni rocznie",
-        "defaultPolicy": "Domyślne",
-        "description": "Skonfiguruj niestandardowe wymiary urlopów dla poszczególnych pracowników",
         "detail": {
           "addManualAdjustment": "Dodaj ręczną korektę",
           "addManualAdjustmentDescription": "Utwórz nowy wpis korekty dla szczególnych okoliczności (np. dni premiowe, poprawki). Każda korekta jest rejestrowana w dzienniku audytu.",
@@ -98,25 +91,7 @@
         "edit": {
           "description": "Skonfiguruj niestandardowy wymiar urlopu dla {{name}}",
           "title": "Edytuj wymiar urlopu"
-        },
-        "employeeCount": "{{count}} pracowników",
-        "emptyDescription": "Dodaj pracowników do swojej organizacji, aby zarządzać ich wymiarami urlopów.",
-        "emptyTitle": "Nie znaleziono pracowników",
-        "noOrgPolicyConfigured": " (Nie skonfigurowano polityki organizacji)",
-        "primaryManager": "Podstawowy",
-        "table": {
-          "actions": "Akcje",
-          "adjustments": "Korekty",
-          "carryover": "Przeniesienie",
-          "customDays": "Dni niestandardowe",
-          "defaultDays": "Dni domyślne",
-          "employee": "Pracownik",
-          "managers": "Menedżerowie",
-          "policy": "Polityka",
-          "team": "Zespół",
-          "totalAvailable": "Łącznie dostępne"
-        },
-        "title": "Przydziały pracowników"
+        }
       },
       "expires": "Wygasa",
       "fallsBackToDefault": "Przywraca domyślne ustawienia firmy",

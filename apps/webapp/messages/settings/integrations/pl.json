@@ -106,17 +106,6 @@
         "email": "Adres e-mail Clockodo",
         "title": "Dane logowania Clockodo"
       },
-      "entity": {
-        "absences": "Nieobecności",
-        "entries": "Wpisy czasu pracy",
-        "holidayQuotas": "Limity urlopowe",
-        "nonBusinessDays": "Dni wolne od pracy",
-        "services": "Usługi / Kategorie pracy",
-        "surcharges": "Dopłaty",
-        "targetHours": "Docelowe godziny pracy / Polityki pracy",
-        "teams": "Zespoły",
-        "users": "Użytkownicy / Pracownicy"
-      },
       "errors": {
         "connectionFailed": "Nie udało się połączyć z Clockodo",
         "fetchUsersFailed": "Nie udało się pobrać danych użytkownika",

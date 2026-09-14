@@ -8,6 +8,11 @@
     "selectOrganizationDescription": "Choose which organization you want to work with"
   },
   "setup": {
+    "authorization": {
+      "expiry": "The link can be used once within one hour. Complete setup within ten minutes of opening it. If authorization expires, wait for the original hour to end and restart the server to generate a new link.",
+      "instructions": "Open the temporary setup link printed in the server console when this instance starts.",
+      "title": "Setup authorization required"
+    },
     "button": {
       "create": "Create Admin Account",
       "creating": "Creating Account..."

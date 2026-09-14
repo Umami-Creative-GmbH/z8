@@ -148,6 +148,7 @@
       "title": "Detalles del día"
     },
     "delete": {
+      "applied": "Eliminación de registro de tiempo aplicada",
       "auditNote": "Las entradas de tiempo se marcarán como eliminadas para fines de auditoría.",
       "confirm": "Convertir en descanso",
       "description": "Esto eliminará permanentemente este período de trabajo. El espacio aparecerá como un descanso en el calendario.",

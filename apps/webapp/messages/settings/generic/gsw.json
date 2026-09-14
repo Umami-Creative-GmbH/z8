@@ -854,7 +854,10 @@
         "failed": "Fehlgschlage",
         "failedDescription": "Chürzlich fehlgschlage",
         "paused": "Pausiert",
-        "pausedDescription": "Pausierti Jobs",
+        "queueState": "Warteschlange",
+        "queueStateDescription": "Ob Worker wartende Aufträge übernehmen können",
+        "running": "Wird ausgeführt",
+        "unknown": "Unbekannt",
         "waiting": "Wartet",
         "waitingDescription": "Jobs, wo uf d'Verarbeitig warted"
       },

@@ -8,6 +8,11 @@
     "selectOrganizationDescription": "Hangi kuruluşla çalışmak istediğinizi seçin"
   },
   "setup": {
+    "authorization": {
+      "expiry": "Bağlantı bir saat içinde bir kez kullanılabilir. Kurulumu bağlantıyı açtıktan sonra on dakika içinde tamamlayın. Yetkilendirmenin süresi dolarsa, orijinal bir saatin bitmesini bekleyin ve yeni bir bağlantı oluşturmak için sunucuyu yeniden başlatın.",
+      "instructions": "Bu örnek başlatıldığında sunucu konsolunda yazdırılan geçici kurulum bağlantısını açın.",
+      "title": "Kurulum yetkilendirmesi gerekli"
+    },
     "button": {
       "create": "Yönetici Hesabı Oluştur",
       "creating": "Hesap oluşturuluyor..."

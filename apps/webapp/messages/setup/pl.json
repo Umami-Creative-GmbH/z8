@@ -8,6 +8,11 @@
     "selectOrganizationDescription": "Wybierz organizację, z którą chcesz pracować"
   },
   "setup": {
+    "authorization": {
+      "expiry": "Linku można użyć tylko raz w ciągu jednej godziny. Ukończ konfigurację w ciągu dziesięciu minut od jego otwarcia. Jeśli autoryzacja wygaśnie, odczekaj do końca pierwotnej godziny i zrestartuj serwer, aby wygenerować nowy link.",
+      "instructions": "Otwórz tymczasowy link konfiguracyjny wyświetlony w konsoli serwera podczas uruchamiania tej instancji.",
+      "title": "Wymagana autoryzacja konfiguracji"
+    },
     "button": {
       "create": "Utwórz konto administratora",
       "creating": "Tworzenie konta..."

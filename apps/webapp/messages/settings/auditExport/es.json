@@ -82,6 +82,7 @@
         "colStatus": "Estado",
         "colVersion": "Versión",
         "copied": "Clave pública copiada al portapapeles",
+        "copyError": "Error al copiar la clave pública",
         "description": "Gestionar claves de firma Ed25519 para la autenticación de paquetes de auditoría",
         "downloaded": "Clave pública descargada",
         "exportDescription": "Utilice esta clave pública para verificar externamente las firmas de los paquetes de auditoría",

@@ -148,6 +148,7 @@
       "title": "Tagesdetails"
     },
     "delete": {
+      "applied": "Löschung des Zeiteintrags angewendet",
       "auditNote": "Zeiteinträge werden für Auditzwecke als gelöscht markiert.",
       "confirm": "In Pause umwandeln",
       "description": "Dies wird diesen Arbeitszeitraum dauerhaft löschen. Die Lücke erscheint als Pause im Kalender.",

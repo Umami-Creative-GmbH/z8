@@ -204,6 +204,7 @@
     "slugLabel": "Organization Slug",
     "slugPlaceholder": "acme-inc",
     "slugTaken": "This slug is already taken. Please choose a different one.",
+    "ssoFailed": "SSO sign-in did not complete. Select an organization to try again, or choose another workspace.",
     "switchFailed": "Failed to switch organization",
     "switching": "Switching organization...",
     "switchTo": "Switch Organization",

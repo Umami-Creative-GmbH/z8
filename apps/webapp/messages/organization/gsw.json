@@ -204,6 +204,7 @@
     "slugLabel": "Organisations-Slug",
     "slugPlaceholder": "acme-inc",
     "slugTaken": "Dieser Slug ist bereits vergeben. Bitte wähle einen anderen.",
+    "ssoFailed": "SSO-Aamäldig isch nöd abgschlosse worde. Wähl en Organisation, zum s nomol z probiere, oder wähl en andere Workspace.",
     "switchFailed": "Wechsel der Organisation fehlgeschlagen",
     "switching": "Organisation wird gewechselt...",
     "switchTo": "Organisation wechseln",

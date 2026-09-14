@@ -27,11 +27,20 @@
         "enabled": "Key Enabled",
         "enabledHelp": "Disabled keys will reject all API requests",
         "expiration": "Expiration",
+        "invalid": "Review the invalid form fields",
         "name": "Name",
         "nameHelp": "A descriptive name to identify this key",
+        "nameMax": "Name must be at most 100 characters",
+        "nameMin": "Name must be at least 3 characters",
+        "nameMinLength": "Name must be at least 3 characters",
         "namePlaceholder": "e.g., Production API",
         "rateLimit": "Enable rate limiting",
         "rateLimitMax": "Max requests per minute",
+        "rateLimitMaxExceeded": "Rate limit must be at most 10,000 requests",
+        "rateLimitMaxInvalid": "Enter a whole number from 10 to 10,000",
+        "rateLimitMin": "Rate limit must be at least 10 requests",
+        "rateLimitRequired": "Rate limit is required",
+        "rateLimitWholeNumber": "Rate limit must be a whole number",
         "scopes": "Permissions",
         "scopesRequired": "Select at least one permission"
       },
@@ -385,13 +394,13 @@
             "lastUsedAria": "Last used: {value} UTC",
             "revoke": "Revoke",
             "status": {
-              "active": "Active",
-              "revoked": "Revoked"
+              "active": "active",
+              "revoked": "revoked"
             },
             "title": "Credentials",
             "unused": "Not yet used"
           },
-          "description": "Connect your identity provider to provision and manage workforce access.",
+          "description": "SCIM verification updates after your identity provider sends a test user or group change.",
           "dialog": {
             "cancel": "Cancel",
             "decommission": {
@@ -460,6 +469,10 @@
             },
             "metadata": "Paste IdP metadata XML…"
           },
+          "saml": {
+            "acsPath": "Browser-relative ACS path: {path}",
+            "acsUrl": "Configure your IdP with this assertion consumer service (ACS) URL: {path}"
+          },
           "title": "SSO Configuration"
         },
         "ssoTest": {
@@ -498,7 +511,7 @@
           "review": "Review & Activate",
           "review.description": "Guard activation",
           "scim": "SCIM Provisioning",
-          "scim.description": "Connect and manage your SCIM provisioning connection",
+          "scim.description": "Issue provisioning token",
           "sso": "SSO Configuration",
           "sso.description": "Register OIDC or SAML",
           "ssoTest": "Test User",
@@ -524,8 +537,6 @@
       "leaveBlankKeepExisting": "Leave blank to keep existing",
       "provider": "Provider",
       "socialOAuth": {
-        "authentication": "Authentication",
-        "unverified": "Unverified",
         "addDescription": "Configure your own OAuth app for social login.",
         "addProviderError": "Failed to add provider",
         "addTitle": "Add Social OAuth Provider",
@@ -533,6 +544,7 @@
         "appleKeyIdRequired": "Key ID is required for Apple",
         "appleTeamIdHelp": "Found in your Apple Developer account",
         "appleTeamIdRequired": "Team ID is required for Apple",
+        "authentication": "Authentication",
         "clientIdPlaceholder": "Your OAuth client ID",
         "clientSecretPlaceholder": "Your OAuth client secret",
         "configured": "{provider} OAuth configured successfully",
@@ -552,17 +564,15 @@
           "customDomain": "Users signing in via your custom domain will use your OAuth app"
         },
         "keyId": "Key ID",
-        "lastTested": "Last Tested",
-        "notTested": "Not Tested",
         "privateKey": "Private Key (.p8)",
         "removed": "{provider} OAuth removed",
         "removeDialogDescription": "Are you sure you want to remove this OAuth configuration? Users will fall back to the shared OAuth credentials (if available).",
         "removeDialogTitle": "Remove Social OAuth Provider",
         "teamId": "Team ID",
         "title": "Social Login Providers",
+        "unverified": "Unverified",
         "updateConfigError": "Failed to update config",
-        "updated": "{provider} OAuth updated successfully",
-        "working": "Working"
+        "updated": "{provider} OAuth updated successfully"
       },
       "sso": {
         "addDescription": "Configure an OIDC identity provider for enterprise single sign-on.",

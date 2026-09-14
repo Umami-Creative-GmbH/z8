@@ -854,7 +854,10 @@
         "failed": "Falhou",
         "failedDescription": "Falhou recentemente",
         "paused": "Pausado",
-        "pausedDescription": "Tarefas pausadas",
+        "queueState": "Fila",
+        "queueStateDescription": "Se os workers podem assumir tarefas em espera",
+        "running": "Em execução",
+        "unknown": "Desconhecido",
         "waiting": "Aguardando",
         "waitingDescription": "Tarefas aguardando para serem processadas"
       },

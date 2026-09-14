@@ -45,13 +45,6 @@
       "description": "Kuruluşunuz için izin politikalarını ve atamalarını yönetin",
       "editPolicy": "\"{name}\" öğesini düzenle",
       "employees": {
-        "actions": {
-          "edit": "Düzenle"
-        },
-        "allowancesForYear": "{{year}} Yılı İzin Hakları",
-        "defaultAllowanceDescription": "Varsayılan izin hakkı: Yıllık {{days}} gün",
-        "defaultPolicy": "Varsayılan",
-        "description": "Bireysel çalışanlar için özel izin haklarını yapılandırın",
         "detail": {
           "addManualAdjustment": "Manuel Düzeltme Ekle",
           "addManualAdjustmentDescription": "Özel durumlar (örneğin, ikramiye günleri, düzeltmeler) için yeni bir düzeltme girişi oluşturun. Her düzeltme denetim günlüğüne kaydedilir.",
@@ -98,25 +91,7 @@
         "edit": {
           "description": "{{name}} için özel izin hakkını yapılandırın",
           "title": "İzin Hakkını Düzenle"
-        },
-        "employeeCount": "{{count}} çalışan",
-        "emptyDescription": "İzin haklarını yönetmek için kuruluşunuza çalışan ekleyin.",
-        "emptyTitle": "Çalışan bulunamadı",
-        "noOrgPolicyConfigured": " (Kuruluş politikası yapılandırılmamış)",
-        "primaryManager": "Birincil",
-        "table": {
-          "actions": "Eylemler",
-          "adjustments": "Düzeltmeler",
-          "carryover": "Devreden",
-          "customDays": "Özel Günler",
-          "defaultDays": "Varsayılan Günler",
-          "employee": "Çalışan",
-          "managers": "Yöneticiler",
-          "policy": "Politika",
-          "team": "Ekip",
-          "totalAvailable": "Toplam Kullanılabilir"
-        },
-        "title": "Çalışan İzin Hakları"
+        }
       },
       "expires": "Sona Erer",
       "fallsBackToDefault": "Şirket varsayılanına döner",

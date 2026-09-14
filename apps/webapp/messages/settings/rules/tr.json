@@ -85,16 +85,13 @@
       "activeStatus": "Aktif durum",
       "addPolicy": "Politika Ekle",
       "approvalType": {
-        "absenceRequests": "İzin talepleri",
         "absence": "Devamsızlık",
         "complianceException": "Uyumluluk istisnası",
-        "manualTimeSubmission": "Manuel süre gönderimi",
-        "policyClockOut": "Politikaya göre çıkış kaydı",
+        "manualTimeSubmission": "Manuel zaman bildirimi",
+        "policyClockOut": "Politika çıkış kaydı",
         "shiftRequest": "Vardiya talebi",
-        "timeCorrection": "Süre düzeltmesi",
-        "travelExpense": "Seyahat gideri",
-        "timeEntryChanges": "Zaman çizelgesi değişiklikleri",
-        "travelExpenses": "Seyahat masrafları"
+        "timeCorrection": "Zaman düzeltmesi",
+        "travelExpense": "Seyahat masrafı"
       },
       "approvalTypes": "Onay türleri",
       "conditionsCount": "Koşul sayısı",
@@ -131,21 +128,6 @@
       "toast": {
         "created": "Onay politikası oluşturuldu",
         "saveFailed": "Onay politikası kaydedilemedi."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Bu aşama bir onaylayanı belirleyemediğinde talebi varsayılan yöneticiye gönderin.",
-          "label": "Varsayılan yönetici"
-        },
-        "fail": {
-          "description": "Bu aşama bir onaylayanı belirleyemediğinde talebi reddedin.",
-          "label": "Talebi reddet"
-        },
-        "label": "Alternatif davranış",
-        "organizationAdmin": {
-          "description": "Bu aşama bir onaylayanı belirleyemediğinde talebi bir kuruluş yöneticisine gönderin.",
-          "label": "Kuruluş yöneticisi"
-        }
       },
       "validation": {
         "activePolicyRequiresStage": "Aktif politikalar en az bir onay aşaması gerektirir.",
@@ -366,6 +348,7 @@
       "deleteAssignmentTitle": "Atama Kaldırılsın mı?",
       "deleteEmployeeAssignmentDescription": "Bu işlem \"{name}\" için yapılan geçersiz kılmayı kaldıracaktır. Bu kişi, ekip veya kuruluş varsayılanını kullanacaktır.",
       "deleteFailed": "Model silinemedi",
+      "deleteModel": "Ek ücret modelini sil",
       "deleteModelDescription": "Bu işlem modeli ve tüm atamalarını devre dışı bırakacaktır. Bu eylem geri alınamaz.",
       "deleteModelTitle": "Ek Ücret Modeli Silinsin mi?",
       "deleteOrgAssignmentDescription": "Bu işlem kuruluş varsayılanını kaldıracaktır. Özel ataması olmayan ekip ve çalışanlara hiçbir ek ücret modeli uygulanmayacaktır.",
@@ -403,6 +386,10 @@
       "percentageDescription": "Ek zaman kredisi",
       "rangeEnd": "Aralık Bitişi",
       "rangeStart": "Aralık Başlangıcı",
+      "removeEmployeeAssignment": "Çalışan atamasını kaldır",
+      "removeOrganizationAssignment": "Organizasyon atamasını kaldır",
+      "removeRule": "Ek ücret kuralını kaldır",
+      "removeTeamAssignment": "Ekip atamasını kaldır",
       "reports": {
         "details": {
           "appliedRules": "Uygulanan kurallar",

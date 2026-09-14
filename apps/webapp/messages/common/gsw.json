@@ -165,7 +165,6 @@
     "moveDown": "Abewärts verschiebe",
     "moveUp": "Ufewärts verschiebe",
     "name": "Name",
-    "never": "Nie",
     "new": "Neu",
     "next": "Wiiter",
     "notApplicable": "n. v.",
@@ -290,16 +289,8 @@
     "trust-center": "Trust Center"
   },
   "loading": {
-    "application": "Awändig wird glade",
-    "authentication": "Amäldig wird glade",
-    "calendar": "Kaländer wird glade",
-    "chart": "Diagramm wird glade",
-    "licenses": "Lizänze wärde glade",
-    "platformAnalytics": "Plattform-Analyse wird glade",
-    "settings": "Istellige wärde glade",
-    "setup": "Iirichtig wird glade",
-    "teamAbsences": "Team-Abweseheite wärde glade",
-    "workerQueue": "Uuftragswarteschlange wird glade"
+    "chart": "Diagramm wird geladen",
+    "settings": "Einstellungen werden geladen"
   },
   "nav": {
     "absences": "Abweseheite",
@@ -335,14 +326,6 @@
       "viewAll": "Alli Benachrichtigunge aaluege"
     },
     "content": {
-      "absenceRequestSubmitted": {
-        "message": "Dii {categoryName}-Aafrag für {dateRange} isch ygreicht worde und wartet uf Freigab.",
-        "title": "Abwäseheitsaafrag ygreicht"
-      },
-      "teamMemberRemoved": {
-        "message": "Du bisch vo {performedByName} us em Team {teamName} entfernt worde.",
-        "title": "Us em Team entfernt"
-      },
       "passwordChanged": {
         "message": "Dis Passwort isch erfolgrych gänderet worde. Falls du die Änderig nid sälber gmacht häsch, bitte mäld di sofort bim Support.",
         "title": "Passwort gänderet"
@@ -432,11 +415,32 @@
   },
   "offline": {
     "banner": {
+      "archived": "Archivierti Stämpfel-Bileeg uf däm Gräat bhalte",
       "offline": "Sie sind offline",
-      "offlineWithPending": "Offline - {count} Ereignis(se) usstahnd",
-      "pending": "{count} Ereignis(se) warte uf d'Synchronisierig",
-      "retry": "Widerhole",
-      "syncing": "Synchronisiere {count} Ereignis(se)..."
+      "offlineSaved": "Offline — {count} Iiträg lokal für d Überprüefig gspeicheret",
+      "refresh": "Status aktualisiere",
+      "refreshing": "{count} gspeichereti Iiträg werded überprüft…",
+      "reviewRequired": "{count} Iiträg lokal gspeicheret — Überprüefig nötig",
+      "unverified": "Stämpfel-Bileeg uf däm Gräat gspeicheret. Verbinde, zum alli gspeicherete Iiträg z überprüefe."
+    },
+    "capture": {
+      "description": "Ereignis uf däm Gräat zur Überprüefig speichere. De Stämpfel-Status uf em Server änderet sich nöd.",
+      "end": "Usstämpfle zur Überprüefig speichere",
+      "start": "Iistämpfle zur Überprüefig speichere"
+    },
+    "recovery": {
+      "archive": "Archiviere und Bileeg bhalte",
+      "archived": "Archiviert — Bileeg bhalte",
+      "description": "Die Iiträg sind uf däm Gräat gspeicheret. Ob s uf em Server übernoo worde isch, isch nöd bekannt. Überprüef bestehendi Ziitiiträg mit dinere vorgsetzte Person, bevor du Ersatzarbete iireichsch. Bim Archiviere bliibt de Bileeg erhalte und d Arbet uf em Server wird nöd abbroche.",
+      "empty": "Kei zuagängliche Iiträg. Älteri Iiträg ohni Konto-Bileeg bruuched e Überprüefig uf Organisations-Ebeni; Iiträg ohni Organisations-Bileeg bruuched e separat autorisierti Wiederherstellig.",
+      "evidence": "Original-Bileeg und Wiederherstelligs-Status",
+      "export": "Zuagänglichi Bileeg exportiere",
+      "exportError": "Gspeichereti Iiträg händ nöd chönne exportiert werde",
+      "held": "Überprüefig nötig — uf em Server nöd bestätigt",
+      "loadError": "Gspeichereti Iiträg händ nöd chönne gläse werde",
+      "loading": "Gspeichereti Iiträg werded gläse…",
+      "review": "Gspeichereti Iiträg überprüefe",
+      "title": "Gspeichereti Stämpfel-Iiträg"
     }
   },
   "presence": {
@@ -530,12 +534,8 @@
   "validation": {
     "first-name-required": "Vorname isch erforderlich",
     "invalid-email": "Ungültigi E-Mail-Adress",
-    "invalid-password": "Ungültigs Passwort",
     "last-name-required": "Nachname isch erforderlich",
     "password-required": "Passwort isch erforderlich"
-  },
-  "worksCouncil": {
-    "loadingLabel": "Betriebsratsportal wird glade"
   },
   "workBalance": {
     "label": "Gsamtbilanz",

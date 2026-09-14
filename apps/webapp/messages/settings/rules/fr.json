@@ -85,16 +85,13 @@
       "activeStatus": "Statut actif",
       "addPolicy": "Ajouter une politique",
       "approvalType": {
-        "absenceRequests": "Demandes d'absence",
         "absence": "Absence",
         "complianceException": "Exception de conformité",
-        "manualTimeSubmission": "Saisie manuelle du temps",
+        "manualTimeSubmission": "Saisie manuelle des heures",
         "policyClockOut": "Pointage de sortie selon la politique",
         "shiftRequest": "Demande de quart",
-        "timeCorrection": "Correction de temps",
-        "travelExpense": "Frais de déplacement",
-        "timeEntryChanges": "Modifications des saisies de temps",
-        "travelExpenses": "Frais de déplacement"
+        "timeCorrection": "Correction du temps",
+        "travelExpense": "Frais de déplacement"
       },
       "approvalTypes": "Types d'approbation",
       "conditionsCount": "Nombre de conditions",
@@ -131,21 +128,6 @@
       "toast": {
         "created": "Politique d'approbation créée",
         "saveFailed": "La politique d'approbation n'a pas pu être enregistrée."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Envoyez la demande au responsable par défaut lorsque cette étape ne peut pas déterminer d'approbateur.",
-          "label": "Responsable par défaut"
-        },
-        "fail": {
-          "description": "Rejetez la demande lorsque cette étape ne peut pas déterminer d'approbateur.",
-          "label": "Rejeter la demande"
-        },
-        "label": "Comportement de secours",
-        "organizationAdmin": {
-          "description": "Envoyez la demande à un administrateur de l'organisation lorsque cette étape ne peut pas déterminer d'approbateur.",
-          "label": "Administrateur de l'organisation"
-        }
       },
       "validation": {
         "activePolicyRequiresStage": "Les politiques actives nécessitent au moins une étape d'approbation.",
@@ -366,6 +348,7 @@
       "deleteAssignmentTitle": "Supprimer l'assignation ?",
       "deleteEmployeeAssignmentDescription": "Ceci supprimera la dérogation pour « {name} ». Ils utiliseront le modèle par défaut de leur équipe ou de l'organisation.",
       "deleteFailed": "Échec de la suppression du modèle",
+      "deleteModel": "Supprimer le modèle de majoration",
       "deleteModelDescription": "Ceci désactivera le modèle et toutes ses assignations. Cette action est irréversible.",
       "deleteModelTitle": "Supprimer le modèle de majoration ?",
       "deleteOrgAssignmentDescription": "Ceci supprimera le modèle par défaut de l'organisation. Les équipes et les employés sans assignation spécifique n'auront aucun modèle de majoration appliqué.",
@@ -403,6 +386,10 @@
       "percentageDescription": "Crédit de temps supplémentaire",
       "rangeEnd": "Fin de la plage",
       "rangeStart": "Début de la plage",
+      "removeEmployeeAssignment": "Retirer l'affectation de l'employé",
+      "removeOrganizationAssignment": "Retirer l'affectation de l'organisation",
+      "removeRule": "Retirer la règle de majoration",
+      "removeTeamAssignment": "Retirer l'affectation de l'équipe",
       "reports": {
         "details": {
           "appliedRules": "Règles appliquées",

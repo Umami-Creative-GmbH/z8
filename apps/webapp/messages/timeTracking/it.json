@@ -12,10 +12,10 @@
     "clockIn": "Entrata",
     "clockingIn": "Timbratura entrata...",
     "clockingOut": "Timbratura uscita...",
-    "clockInQueued": "Ingresso in coda per la sincronizzazione",
+    "clockInSavedForReview": "Timbratura di ingresso salvata su questo dispositivo per la revisione; non confermata sul server",
     "clockInSuccess": "Entrata timbrata con successo",
     "clockOut": "Uscita",
-    "clockOutQueued": "Uscita in coda per la sincronizzazione",
+    "clockOutSavedForReview": "Timbratura di uscita salvata su questo dispositivo per la revisione; non confermata sul server",
     "clockOutSuccess": "Uscita timbrata con successo",
     "compliance": {
       "violation": "Violazione conformità",
@@ -24,16 +24,13 @@
     "correction": {
       "clockIn": "Entrata",
       "clockInDate": "Data di entrata",
-      "clockInTime": "Ora di entrata",
       "clockOut": "Uscita",
       "clockOutDate": "Data di uscita",
-      "clockOutTime": "Ora di uscita",
       "editDescription": "Modifica la tua voce oraria per oggi.",
       "editEntry": "Modifica voce oraria",
       "editTitle": "Modifica voce oraria",
       "errors": {
         "invalidTimeRange": "L'ora di uscita deve essere successiva all'ora di entrata",
-        "noChanges": "È necessario modificare almeno un valore della correzione",
         "submitFailed": "Invio correzione non riuscito",
         "updateFailed": "Aggiornamento voce oraria non riuscito"
       },
@@ -146,12 +143,7 @@
     },
     "unknownCategory": "Categoria sconosciuta",
     "unknownProject": "Progetto sconosciuto",
-    "workCategory": "Categoria lavorativa",
-    "workLocation": "Luogo di lavoro",
-    "workLocationHome": "Casa",
-    "workLocationOffice": "Ufficio",
-    "workLocationOther": "Altro",
-    "workLocationRemote": "Da remoto"
+    "workCategory": "Categoria lavorativa"
   },
   "wellness": {
     "water": {

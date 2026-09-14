@@ -148,6 +148,7 @@
       "title": "Gün Detayları"
     },
     "delete": {
+      "applied": "Zaman girişi silme işlemi uygulandı",
       "auditNote": "Zaman kayıtları denetim amacıyla silinmiş olarak işaretlenecektir.",
       "confirm": "Molaya Dönüştür",
       "description": "Bu işlem çalışma dönemini kalıcı olarak silecektir. Boşluk takvimde mola olarak görünecektir.",

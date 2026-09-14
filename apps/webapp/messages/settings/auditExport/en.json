@@ -82,6 +82,7 @@
         "colStatus": "Status",
         "colVersion": "Version",
         "copied": "Public key copied to clipboard",
+        "copyError": "Failed to copy public key",
         "description": "Manage Ed25519 signing keys for audit package authentication",
         "downloaded": "Public key downloaded",
         "exportDescription": "Use this public key to verify audit package signatures externally",

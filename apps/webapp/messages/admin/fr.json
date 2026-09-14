@@ -321,6 +321,29 @@
       "actions": {
         "saveChanges": "Enregistrer les modifications"
       },
+      "approvalMaintenance": {
+        "approvalHint": "Une demande d'approbation héritée ou un UUID de workflow canonique.",
+        "approvalId": "ID d'approbation",
+        "chain": "Chaîne d'approbation",
+        "delete": "Forcer la suppression",
+        "deleting": "Suppression en cours…",
+        "description": "Supprimer définitivement une approbation et ses enregistrements d'approbation associés. Les enregistrements sources et leurs statuts sont conservés.",
+        "errors": {
+          "ambiguous": "Cet ID existe dans les deux magasins d'approbation. Aucune approbation n'a été supprimée.",
+          "approvalInvalid": "Saisissez un UUID d'approbation valide.",
+          "failed": "Impossible d'effectuer la suppression. Vérifiez l'ID d'approbation avant de réessayer.",
+          "invalidInput": "Saisissez un ID d'organisation et un UUID d'approbation valide.",
+          "notFound": "Approbation introuvable dans cette organisation.",
+          "organizationRequired": "Saisissez un ID d'organisation.",
+          "unauthorized": "Accès administrateur de la plateforme requis."
+        },
+        "legacy": "Demande héritée",
+        "organizationHint": "L'organisation propriétaire de l'approbation.",
+        "organizationId": "ID d'organisation",
+        "success": "Approbation supprimée. Enregistrements supprimés :",
+        "title": "Forcer la suppression de l'approbation",
+        "workflow": "Workflow"
+      },
       "cookieConsent": {
         "description": "Injecté sur les pages d'authentification pour la conformité au RGPD",
         "helperPrefix": "Laisser vide pour désactiver. Chargé avec",

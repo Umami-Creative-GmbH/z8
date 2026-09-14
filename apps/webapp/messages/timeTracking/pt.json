@@ -12,10 +12,10 @@
     "clockIn": "Registrar Entrada",
     "clockingIn": "Registrando entrada...",
     "clockingOut": "Registrando saída...",
-    "clockInQueued": "Entrada na fila para sincronização",
+    "clockInSavedForReview": "Registro de entrada salvo neste dispositivo para revisão; não confirmado no servidor",
     "clockInSuccess": "Entrada registrada com sucesso",
     "clockOut": "Registrar Saída",
-    "clockOutQueued": "Saída na fila para sincronização",
+    "clockOutSavedForReview": "Registro de saída salvo neste dispositivo para revisão; não confirmado no servidor",
     "clockOutSuccess": "Saída registrada com sucesso",
     "compliance": {
       "violation": "Violação de Conformidade",
@@ -24,16 +24,13 @@
     "correction": {
       "clockIn": "Entrada",
       "clockInDate": "Data de entrada",
-      "clockInTime": "Hora de entrada",
       "clockOut": "Saída",
       "clockOutDate": "Data de saída",
-      "clockOutTime": "Hora de saída",
       "editDescription": "Faça alterações no seu registro de tempo para hoje.",
       "editEntry": "Editar registro de tempo",
       "editTitle": "Editar Registro de Tempo",
       "errors": {
         "invalidTimeRange": "O horário de saída deve ser posterior ao horário de entrada",
-        "noChanges": "É necessário alterar pelo menos um valor da correção",
         "submitFailed": "Falha ao enviar correção",
         "updateFailed": "Falha ao atualizar registro de tempo"
       },
@@ -75,7 +72,7 @@
       "errors": {
         "createFailed": "Falha ao criar entrada de tempo",
         "futureDate": "Não é possível criar entradas para datas futuras",
-        "invalidTime": "Introduza uma hora completa e válida",
+        "invalidTime": "Insira um horário completo e válido",
         "invalidTimeRange": "O horário de saída deve ser posterior ao horário de entrada",
         "tooLong": "O período de trabalho não pode exceder 24 horas"
       },
@@ -146,12 +143,7 @@
     },
     "unknownCategory": "Categoria desconhecida",
     "unknownProject": "Projeto desconhecido",
-    "workCategory": "Categoria de Trabalho",
-    "workLocation": "Local de trabalho",
-    "workLocationHome": "Casa",
-    "workLocationOffice": "Escritório",
-    "workLocationOther": "Outro",
-    "workLocationRemote": "Remoto"
+    "workCategory": "Categoria de Trabalho"
   },
   "wellness": {
     "water": {

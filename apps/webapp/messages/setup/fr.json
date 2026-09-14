@@ -8,6 +8,11 @@
     "selectOrganizationDescription": "Choisissez l'organisation avec laquelle vous souhaitez travailler"
   },
   "setup": {
+    "authorization": {
+      "expiry": "Le lien peut être utilisé une seule fois dans un délai d'une heure. Terminez la configuration dans les dix minutes suivant son ouverture. Si l'autorisation expire, attendez la fin de l'heure initiale et redémarrez le serveur pour générer un nouveau lien.",
+      "instructions": "Ouvrez le lien de configuration temporaire affiché dans la console du serveur lors du démarrage de cette instance.",
+      "title": "Autorisation de configuration requise"
+    },
     "button": {
       "create": "Créer un compte administrateur",
       "creating": "Création du compte..."
