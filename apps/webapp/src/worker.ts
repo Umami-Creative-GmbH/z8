@@ -36,6 +36,7 @@ import {
 	markJobFailed,
 	markJobRunning,
 	reconcileCronSchedules,
+	retireLegacyEscalationSchedulers,
 	resolveEffectiveCronSchedules,
 } from "@/lib/cron";
 import { createLogger } from "@/lib/logger";
@@ -375,6 +376,14 @@ export function registerCronTrackingListeners(
  * setupCronJobs runs concurrently across worker instances.
  */
 async function setupCronJobs(queue: Queue): Promise<void> {
+	// Disabling registration is not retirement: remove existing schedulers even
+	// on workers which are configured not to register schedules.
+	for (const { jobName, result } of await retireLegacyEscalationSchedulers(queue)) {
+		if (!result.success) {
+			throw new Error(`Failed to retire ${jobName}: ${result.error}`);
+		}
+		logger.info({ jobName }, "Legacy escalation scheduler retired; queued handlers retained");
+	}
 	const enableCron = env.ENABLE_CRON_JOBS !== "false";
 
 	if (!enableCron) {

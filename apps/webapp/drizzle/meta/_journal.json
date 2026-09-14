@@ -477,6 +477,13 @@
       "when": 1789044079465,
       "tag": "0067_session_sso_provenance",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1789419600000,
+      "tag": "0068_legacy_escalation_fencing",
+      "breakpoints": true
     }
   ]
 }
