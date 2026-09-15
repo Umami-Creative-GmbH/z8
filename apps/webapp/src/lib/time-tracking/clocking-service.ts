@@ -7,6 +7,10 @@ import { employee, timeEntry, workPeriod } from "@/db/schema";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "./blockchain";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
+import type {
+	WorkTransactionClient,
+	WorkTransactionContext,
+} from "./web-clock-out-transaction";
 
 export class ClockingConflictError extends Error {
 	constructor(message: string) {
@@ -51,6 +55,7 @@ type ClockingInput = {
 	notes?: string;
 	location?: string;
 	transaction?: unknown;
+	coordination?: WorkTransactionContext;
 };
 
 type ClockInInput = ClockingInput & {
@@ -128,6 +133,9 @@ type ClockingStore = {
 export type ClockingDependencies = {
 	transaction<T>(callback: (store: ClockingStore) => Promise<T>): Promise<T>;
 	storeForTransaction?: (transaction: unknown) => ClockingStore;
+	storeForCoordinatedTransaction?: (
+		context: WorkTransactionContext,
+	) => ClockingStore;
 	findApprovedMembership?: (
 		userId: string,
 		organizationId: string,
@@ -177,7 +185,17 @@ export function createClockingService(deps: ClockingDependencies) {
 		callback: (store: ClockingStore) => Promise<T>,
 	): Promise<T> {
 		const operation = async (store: ClockingStore) => {
-			await store.lockEmployee(input.employeeId);
+			if (input.coordination) {
+				input.coordination.assertEmployee(
+					input.organizationId,
+					input.employeeId,
+				);
+				if (store.transaction !== input.coordination.db) {
+					throw new Error("Clocking transaction context changed");
+				}
+			} else {
+				await store.lockEmployee(input.employeeId);
+			}
 			if (
 				!(await store.isOrganizationMember(
 					input.employeeId,
@@ -188,6 +206,16 @@ export function createClockingService(deps: ClockingDependencies) {
 			}
 			return callback(store);
 		};
+		if (input.coordination && input.transaction !== undefined) {
+			throw new Error("Clocking accepts only one transaction context");
+		}
+		if (input.coordination) {
+			input.coordination.assertEmployee(input.organizationId, input.employeeId);
+			if (!deps.storeForCoordinatedTransaction) {
+				throw new Error("Coordinated clocking transactions are unavailable");
+			}
+			return operation(deps.storeForCoordinatedTransaction(input.coordination));
+		}
 		if (input.transaction !== undefined) {
 			if (!deps.storeForTransaction) {
 				throw new Error("Caller-owned clocking transactions are unavailable");
@@ -363,7 +391,7 @@ export function createClockingService(deps: ClockingDependencies) {
 
 type ClockingTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-function createDatabaseClockingStore(tx: ClockingTransaction): ClockingStore {
+function createDatabaseClockingStore(tx: WorkTransactionClient): ClockingStore {
 	return {
 		transaction: tx,
 		lockEmployee: async (employeeId) => {
@@ -529,6 +557,8 @@ export const clockingService = createClockingService({
 	},
 	storeForTransaction: (transaction) =>
 		createDatabaseClockingStore(transaction as ClockingTransaction),
+	storeForCoordinatedTransaction: (context) =>
+		createDatabaseClockingStore(context.db),
 	transaction: (callback) =>
 		db.transaction(async (tx) => callback(createDatabaseClockingStore(tx))),
 });

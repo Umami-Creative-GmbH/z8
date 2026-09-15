@@ -66,7 +66,7 @@ describe("clocking service delegation", () => {
 		expect(canonicalIndex).toBeGreaterThan(delegateIndex);
 		expect(body).toContain("beforePeriodClose:");
 		expect(body).toContain("afterPeriodClose:");
-		expect(body).toContain("runtime.repository.withTransaction(");
+		expect(body).toContain("withWebClockOutTransaction(");
 		expect(body).toContain("executeOrdinaryWorkPeriodSubmissionInTransaction(");
 		expect(body).not.toContain("createClockOutApprovalRequest(");
 	});

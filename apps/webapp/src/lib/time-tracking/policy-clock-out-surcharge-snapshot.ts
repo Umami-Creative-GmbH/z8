@@ -452,7 +452,7 @@ export async function resolvePolicyClockOutSurchargeSnapshotInTransaction(input:
 			from organization
 			where organization.id = ${input.organizationId}
 			limit 2
-			for update of organization
+			for no key update of organization
 		`);
 		const organizationRows = rows(organizationResult);
 		if (organizationRows.length !== 1) fail();
