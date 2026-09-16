@@ -175,6 +175,16 @@ class PublishReleaseTests(unittest.TestCase):
                                      ("pull_request", "refs/heads/main", False)]:
             self.assertEqual(self.helper.production_ref(event, ref), expected, (event, ref))
 
+    def test_version_tag_prerelease_and_build_metadata(self):
+        for tag in ("v1.2.3-rc.1", "v1.2.3+build.7", "v1.2.3-rc.1+build.7"):
+            for event in ("push", "workflow_dispatch"):
+                with self.subTest(tag=tag, event=event):
+                    self.assertTrue(self.helper.production_ref(event, f"refs/tags/{tag}"))
+        for tag in ("v1.2.3-", "v1.2.3+", "v1.2.3-rc.1+", "v1.2.3+build.7+extra"):
+            with self.subTest(tag=tag):
+                self.assertFalse(self.helper.production_ref("push", f"refs/tags/{tag}"))
+        self.assertFalse(self.helper.production_ref("pull_request", "refs/tags/v1.2.3-rc.1+build.7"))
+
 
 if __name__ == "__main__":
     unittest.main()

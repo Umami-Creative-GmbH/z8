@@ -14,7 +14,7 @@ GROUPS = {"core": ("webapp", "worker", "migration"), "docs": ("docs",), "marketi
 
 def production_ref(event, ref):
     return event in ("push", "workflow_dispatch") and (
-        ref == "refs/heads/main" or re.fullmatch(r"refs/tags/v\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?", ref) is not None
+        ref == "refs/heads/main" or re.fullmatch(r"refs/tags/v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?", ref) is not None
     )
 
 
