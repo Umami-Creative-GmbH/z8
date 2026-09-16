@@ -1,3 +1,4 @@
+import { verifyReleaseHandoff } from "./verify-release-handoff.mjs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -251,6 +252,8 @@ expect(
 	!workflow.includes("actions/delete-package-versions"),
 	"workflow must not use actions/delete-package-versions for multi-arch GHCR images",
 );
+
+verifyReleaseHandoff(workflow, "docs", "publish-manifest", expect);
 
 if (errors.length > 0) {
 	console.error("Publish docs image workflow contract failed:");
