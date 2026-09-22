@@ -40,6 +40,7 @@ interface CalendarEventDialogsProps {
 	onSplitComplete: () => void;
 	onDeleteComplete: () => void;
 	onNotesUpdated: () => void;
+	onTimesUpdated: () => void;
 }
 
 export function CalendarEventDialogs({
@@ -67,6 +68,7 @@ export function CalendarEventDialogs({
 	onSplitComplete,
 	onDeleteComplete,
 	onNotesUpdated,
+	onTimesUpdated,
 }: CalendarEventDialogsProps) {
 	const selectedWorkPeriod = selectedEvent?.type === "work_period" ? selectedEvent : null;
 
@@ -105,6 +107,7 @@ export function CalendarEventDialogs({
 					open
 					onOpenChange={(open) => !open && onCloseDetails()}
 					onNotesUpdated={onNotesUpdated}
+					onTimesUpdated={onTimesUpdated}
 					onSplitClick={onSplitClick}
 					onDeleteClick={onDeleteClick}
 					displayContext={displayContext}

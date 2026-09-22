@@ -181,7 +181,32 @@
       "notesSaveFailed": "Failed to save notes",
       "projectSaved": "Project updated",
       "projectSaveFailed": "Failed to update project",
-      "split": "Split"
+      "split": "Split",
+      "time": {
+        "approvalHint": "This change will be sent to your manager for approval.",
+        "beyondWindow": "Entries older than {days} days can only be edited by an admin.",
+        "clockIn": "Clock in",
+        "clockInDate": "Clock in date",
+        "clockInTime": "Clock in time",
+        "clockOut": "Clock out",
+        "clockOutDate": "Clock out date",
+        "clockOutTime": "Clock out time",
+        "directHint": "This change applies immediately.",
+        "edit": "Edit time",
+        "invalidRange": "Clock out must be after clock in.",
+        "noChanges": "Change the date or time first.",
+        "noteLabel": "Note (optional)",
+        "notePlaceholder": "Add a note about this change…",
+        "pendingCorrection": "A time change for this entry is already waiting for approval.",
+        "reasonLabel": "Reason",
+        "reasonPlaceholder": "Explain why this correction is needed…",
+        "reasonRequired": "Please add a reason for your manager.",
+        "saved": "Time entry updated",
+        "saveFailed": "Failed to update time entry",
+        "submitForApproval": "Submit for approval",
+        "submitted": "Change submitted for manager approval",
+        "timezoneNote": "Times are in the employee's timezone ({timezone})"
+      }
     },
     "employeeSelector": {
       "error": "Unable to load team members",

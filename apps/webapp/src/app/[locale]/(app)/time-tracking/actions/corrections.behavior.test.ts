@@ -1750,6 +1750,58 @@ describe("time correction submission actions", () => {
 		);
 	});
 
+	it("moves the clock-out first when a direct edit shifts the period past its original end", async () => {
+		configureDirectEdit();
+
+		const result = await modular.editSameDayTimeEntry({
+			workPeriodId: ids.period,
+			newClockInDate: "2026-07-01",
+			newClockInTime: "17:00",
+			newClockOutDate: "2026-07-01",
+			newClockOutTime: "19:00",
+			workLocationType: "office",
+			workCategoryId: null,
+		});
+
+		expect(result).toMatchObject({ success: true });
+		expect(
+			state.createCorrectionEntry.mock.calls.map(([input]) => ({
+				replacesEntryId: input.replacesEntryId,
+				timestamp: input.timestamp,
+			})),
+		).toEqual([
+			{
+				replacesEntryId: ids.clockOut,
+				timestamp: new Date("2026-07-01T19:00:00.000Z"),
+			},
+			{
+				replacesEntryId: ids.clockIn,
+				timestamp: new Date("2026-07-01T17:00:00.000Z"),
+			},
+		]);
+	});
+
+	it("keeps clock-in first when a direct edit overlaps the original period", async () => {
+		configureDirectEdit();
+
+		const result = await modular.editSameDayTimeEntry({
+			workPeriodId: ids.period,
+			newClockInDate: "2026-07-01",
+			newClockInTime: "07:00",
+			newClockOutDate: "2026-07-01",
+			newClockOutTime: "15:00",
+			workLocationType: "office",
+			workCategoryId: null,
+		});
+
+		expect(result).toMatchObject({ success: true });
+		expect(
+			state.createCorrectionEntry.mock.calls.map(
+				([input]) => input.replacesEntryId,
+			),
+		).toEqual([ids.clockIn, ids.clockOut]);
+	});
+
 	it("validates a direct correction near UTC midnight in the employee timezone", async () => {
 		const nearMidnightPeriod = {
 			...period,

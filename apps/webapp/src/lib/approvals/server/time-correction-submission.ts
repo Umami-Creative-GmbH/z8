@@ -598,7 +598,8 @@ export async function editSameDayTimeEntry(
 				}
 
 				let clockInCorrectionId: string | undefined;
-				if (clockInChanged) {
+				const correctClockIn = async () => {
+					if (!clockInChanged) return;
 					if (!clockInTimezoneCapture) {
 						throw new Error("Clock-in timezone evidence is required");
 					}
@@ -620,14 +621,17 @@ export async function editSameDayTimeEntry(
 						throw new Error("Clock-in correction entry was not created");
 					}
 					clockInCorrectionId = clockInCorrection.id;
-				}
+				};
 
 				let clockOutCorrectionId: string | undefined;
-				if (
-					correctsClockOut &&
-					selectedWorkPeriod.clockOutId &&
-					correctedClockOutDate
-				) {
+				const correctClockOut = async () => {
+					if (
+						!correctsClockOut ||
+						!selectedWorkPeriod.clockOutId ||
+						!correctedClockOutDate
+					) {
+						return;
+					}
 					if (!clockOutTimezoneCapture) {
 						throw new Error("Clock-out timezone evidence is required");
 					}
@@ -649,6 +653,22 @@ export async function editSameDayTimeEntry(
 						throw new Error("Clock-out correction entry was not created");
 					}
 					clockOutCorrectionId = clockOutCorrection.id;
+				};
+
+				// Each endpoint correction validates the intermediate range, so when the
+				// period moves past its original end, the clock-out must move first.
+				const moveClockOutFirst = Boolean(
+					clockInChanged &&
+						correctsClockOut &&
+						selectedWorkPeriod.endTime &&
+						correctedClockInDate >= selectedWorkPeriod.endTime,
+				);
+				if (moveClockOutFirst) {
+					await correctClockOut();
+					await correctClockIn();
+				} else {
+					await correctClockIn();
+					await correctClockOut();
 				}
 
 				if (lockedMetadataChanged) {
