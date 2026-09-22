@@ -1,0 +1,109 @@
+{
+  "payroll": {
+    "actions": {
+      "apply": "Tillämpa",
+      "downloadPdf": "Ladda ner PDF",
+      "triggerExport": "Starta export"
+    },
+    "blockers": {
+      "clearFailed": "Kunde inte rensa löneblockering",
+      "clearFalsePositive": "Rensa falskt positiv",
+      "clearingFalsePositive": "Rensar falskt positiv",
+      "dateUnavailable": "Datum inte tillgängligt",
+      "missingClockOut": "Saknad utstämpling",
+      "needReview": "{count} lönehinder behöver granskas",
+      "openApprovals": "Öppna godkännanden",
+      "openCalendar": "Öppna kalender",
+      "pendingAbsence": "Väntande frånvaro",
+      "pendingTimeCorrection": "Väntande tidskorrigering",
+      "refreshAfterClearFailed": "Blockering åtgärdad, men löneunderlaget kunde inte uppdateras",
+      "unknownEmployee": "Okänd anställd"
+    },
+    "description": "Granska lönesummor, beredskap och exporter för den valda perioden.",
+    "employeeTotals": {
+      "absences": "Frånvaro",
+      "blocked": "Blockerad",
+      "contract": "Avtal",
+      "contractFixed": "Fast",
+      "contractHourly": "Timanställd",
+      "description": "Arbetad tid, total frånvaro, avtalstyp och lönestatus.",
+      "employee": "Anställd",
+      "hours": "Timmar",
+      "noAbsences": "Inga",
+      "noEmployeeNumber": "Inget anställningsnummer",
+      "noTeam": "Inget team",
+      "readyForPayroll": "Redo för lönekörning",
+      "status": "Status",
+      "team": "Team",
+      "title": "Totalsummor för anställda"
+    },
+    "errors": {
+      "actionFailed": "Åtgärden för lönearbetsytan misslyckades",
+      "activeOrganizationEmployeeRequired": "Kontext för aktiv organisationsanställd krävs",
+      "authenticationRequired": "Autentisering krävs",
+      "blockerNotDismissible": "Löneblockering kan inte avfärdas",
+      "employeeIdsMustBeArray": "employeeIds måste vara en array",
+      "employeeIdsMustContainOnlyStrings": "employeeIds får endast innehålla strängar",
+      "endDateAfterStart": "Slutdatum måste vara samma som eller efter startdatum",
+      "exportFormatNotConfigured": "Exportformat för lön är inte konfigurerat",
+      "invalidBlockerId": "Ogiltigt ID för löneblockering",
+      "invalidBlockerType": "Ogiltig typ av löneblockering",
+      "mustBeIsoDate": "{field} måste vara ett ISO-datum",
+      "mustBeValidIsoDate": "{field} måste vara ett giltigt ISO-datum",
+      "noAssignedEmployees": "Inga löneanställda är tilldelade ditt behörighetsområde",
+      "noAvailableEmployees": "Inga löneanställda är tillgängliga inom ditt behörighetsområde",
+      "periodLabelRequired": "Etikett för löneperiod krävs",
+      "unknownExportFormat": "Okänt format för löneexport"
+    },
+    "export": {
+      "completed": "Löneexport slutförd",
+      "formatAccessCheck": "Behörighetskontroll för format",
+      "noConfiguredTarget": "Inget konfigurerat mål för löneexport",
+      "queued": "Löneexport har placerats i kö",
+      "selectFormat": "Välj format",
+      "target": "Mål för löneexport"
+    },
+    "filters": {
+      "noMatchingEmployees": "Inga anställda matchar de valda lönefiltren."
+    },
+    "period": {
+      "current": "Aktuell period",
+      "dateRange": "{start} till {end}",
+      "employeesInScope": "{count} anställda inom omfånget",
+      "end": "Slut",
+      "mode": {
+        "custom": "Anpassad",
+        "month": "Månad",
+        "week": "Vecka"
+      },
+      "next": "Nästa period",
+      "previous": "Föregående period",
+      "selected": "Vald period",
+      "start": "Start"
+    },
+    "scope": {
+      "allManaged": "Alla anställda och team som jag hanterar",
+      "apply": "Tillämpa",
+      "cancel": "Avbryt",
+      "currentScope": "Aktuellt omfång",
+      "description": "Avgränsa denna lönearbetsyta efter tilldelade anställda eller team.",
+      "noAssignedEmployees": "Inga tilldelade anställda i detta löneomfång.",
+      "noAssignedTeams": "Inga tilldelade team i detta löneomfång.",
+      "selectedEmployeesCount": "{count} anställda",
+      "selectedSummary": "{summary} valda",
+      "selectedTeamsCount": "{count} team",
+      "specificEmployees": "Specifika anställda",
+      "specificEmployeesDescription": "Välj anställda att inkludera i detta löneomfång.",
+      "specificTeams": "Specifika team",
+      "specificTeamsDescription": "Välj team att inkludera i detta löneomfång.",
+      "title": "Löneomfång"
+    },
+    "summary": {
+      "blockers": "Blockerare",
+      "employees": "Anställda",
+      "ready": "Klar",
+      "workedHours": "Arbetade timmar"
+    },
+    "title": "Lön"
+  }
+}

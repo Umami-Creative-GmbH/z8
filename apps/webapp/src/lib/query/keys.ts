@@ -334,6 +334,9 @@ export const queryKeys = {
 		) => ["calendar", "events", orgId, params] as const,
 		/** Employees visible in the calendar employee selector (current user + managed employees) */
 		employees: (managerId: string) => ["calendar", "employees", managerId] as const,
+		/** Whether and how the current user may edit a work period's times */
+		workPeriodTimeEdit: (workPeriodId: string) =>
+			["calendar", "work-period-time-edit", workPeriodId] as const,
 	},
 
 	// Hydration / Water reminders

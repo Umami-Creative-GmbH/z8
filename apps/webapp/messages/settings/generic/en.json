@@ -454,7 +454,7 @@
       "title": "Notification Settings"
     },
     "organizations": {
-      "description": "Manage organization details and configuration",
+      "description": "Manage organization members, invitations, and details",
       "notFound": {
         "description": "The organization could not be found or you don't have access to it.",
         "title": "Organization Not Found"
@@ -854,7 +854,10 @@
         "failed": "Failed",
         "failedDescription": "Recently failed",
         "paused": "Paused",
-        "pausedDescription": "Paused jobs",
+        "queueState": "Queue",
+        "queueStateDescription": "Whether workers can take waiting jobs",
+        "running": "Running",
+        "unknown": "Unknown",
         "waiting": "Waiting",
         "waitingDescription": "Jobs waiting to be processed"
       },

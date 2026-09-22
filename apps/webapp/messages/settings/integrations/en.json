@@ -106,17 +106,6 @@
         "email": "Clockodo Email",
         "title": "Clockodo Credentials"
       },
-      "entity": {
-        "absences": "Absences",
-        "entries": "Time Entries",
-        "holidayQuotas": "Holiday Quotas",
-        "nonBusinessDays": "Non-Business Days",
-        "services": "Services / Work Categories",
-        "surcharges": "Surcharges",
-        "targetHours": "Target Hours / Work Policies",
-        "teams": "Teams",
-        "users": "Users / Employees"
-      },
       "errors": {
         "connectionFailed": "Failed to connect to Clockodo",
         "fetchUsersFailed": "Failed to fetch user data",

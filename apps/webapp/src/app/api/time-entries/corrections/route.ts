@@ -9,6 +9,7 @@ import { db } from "@/db";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
 import {
 	dispatchCommittedTimeCorrectionSubmission,
+	getForbiddenCorrectionEditMessage,
 	submitCorrection,
 } from "@/lib/approvals/server/time-correction-submission";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
@@ -372,6 +373,23 @@ export async function POST(request: NextRequest) {
 		const deviceInfo = headersList.get("user-agent") || "unknown";
 
 		if (isSelfCorrection && !canApprove) {
+			let forbiddenMessage: string | null;
+			try {
+				forbiddenMessage = await getForbiddenCorrectionEditMessage({
+					employeeId: currentEmployee.id,
+					workPeriodEndTime: selectedWorkPeriod.endTime,
+					timezone: targetTimezone,
+				});
+			} catch (error) {
+				logger.error({ error }, "Failed to check edit capability");
+				return NextResponse.json(
+					{ error: "Failed to verify edit policy. Please try again." },
+					{ status: 500 },
+				);
+			}
+			if (forbiddenMessage) {
+				return NextResponse.json({ error: forbiddenMessage }, { status: 403 });
+			}
 			const approvalResult = await submitCorrection({
 				dbService: createTransactionalApprovalDbService(db),
 				organizationId: activeOrgId,

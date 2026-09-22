@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import { reconcileCronJobSchedule, reconcileCronSchedules } from "./reconciliation";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { reconcileCronJobSchedule, reconcileCronSchedules, retireLegacyEscalationSchedulers } from "./reconciliation";
 
 function queue(overrides?: { upsertRejects?: boolean }) {
 	return {
@@ -13,6 +13,50 @@ function queue(overrides?: { upsertRejects?: boolean }) {
 }
 
 describe("cron schedule reconciliation", () => {
+	afterEach(() => vi.unstubAllEnvs());
+
+	it("explicitly retires legacy schedulers instead of recreating them during reconciliation", async () => {
+		vi.stubEnv("RETIRE_LEGACY_ESCALATION_SCHEDULERS", "true");
+		const fakeQueue = { ...queue(), removeJobScheduler: vi.fn().mockResolvedValue(true) };
+		const result = await reconcileCronSchedules({
+			queue: fakeQueue as never,
+			schedules: {
+				"cron:slack-escalation": { pattern: "*/30 * * * *" },
+				"cron:telegram-escalation": { pattern: "*/30 * * * *" },
+				"cron:discord-escalation": { pattern: "*/30 * * * *" },
+				"cron:teams-escalation": { pattern: "*/30 * * * *" },
+				"cron:export": { pattern: "0 * * * *" },
+			} as never,
+		});
+		expect(fakeQueue.removeJobScheduler.mock.calls).toEqual([
+			["cron-cron:slack-escalation"],
+			["cron-cron:telegram-escalation"],
+			["cron-cron:discord-escalation"],
+			["cron-cron:teams-escalation"],
+		]);
+		expect(fakeQueue.upsertJobScheduler).toHaveBeenCalledTimes(1);
+		expect(result.failed).toEqual([]);
+	});
+
+	it("can retire without registering schedules, accepts already-absent schedulers and surfaces Redis failures", async () => {
+		vi.stubEnv("RETIRE_LEGACY_ESCALATION_SCHEDULERS", "true");
+		const fakeQueue = {
+			...queue(),
+			removeJobScheduler: vi.fn().mockResolvedValue(false)
+				.mockRejectedValueOnce(new Error("Redis unavailable")),
+		};
+		const results = await retireLegacyEscalationSchedulers(fakeQueue as never);
+		expect(results).toEqual([
+			{ jobName: "cron:teams-escalation", result: { success: false, error: "Redis unavailable" } },
+			{ jobName: "cron:telegram-escalation", result: { success: true, retired: true } },
+			{ jobName: "cron:discord-escalation", result: { success: true, retired: true } },
+			{ jobName: "cron:slack-escalation", result: { success: true, retired: true } },
+		]);
+		expect(fakeQueue.upsertJobScheduler).not.toHaveBeenCalled();
+		// Retrying recovers partial retirement without deleting queued jobs.
+		expect((await retireLegacyEscalationSchedulers(fakeQueue as never)).every(({ result }) => result.success)).toBe(true);
+	});
+
 	it("upserts the effective schedule for one job", async () => {
 		const fakeQueue = queue();
 

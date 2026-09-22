@@ -148,6 +148,7 @@
       "title": "Tagesdetails"
     },
     "delete": {
+      "applied": "Löschung des Zeiteintrags angewendet",
       "auditNote": "Ziititräg wärded für Audit-Zwäck als glöscht markiert.",
       "confirm": "In Pause umwandle",
       "description": "Das löscht die Arbeitsziit permanent. D Lücke wird im Kaländer als Pause aazeigt.",

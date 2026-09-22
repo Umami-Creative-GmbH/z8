@@ -16,6 +16,7 @@ import {
 	employeeManagers,
 } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
+import { getLegacyEscalationSuppression, type LegacyEscalationSuppression } from "@/lib/approvals/escalation/legacy-execution";
 import { sendApprovalMessageToManager } from "../approval-handler";
 import { getAllActiveBotConfigs } from "../bot-config";
 
@@ -26,6 +27,7 @@ export interface DiscordEscalationResult {
 	botsProcessed: number;
 	approvalsEscalated: number;
 	errors: string[];
+	suppressedOrganizations: LegacyEscalationSuppression[];
 }
 
 /**
@@ -33,6 +35,7 @@ export interface DiscordEscalationResult {
  */
 export async function runDiscordEscalationCheckerJob(): Promise<DiscordEscalationResult> {
 	const errors: string[] = [];
+	const suppressedOrganizations: LegacyEscalationSuppression[] = [];
 	let approvalsEscalated = 0;
 
 	try {
@@ -44,6 +47,11 @@ export async function runDiscordEscalationCheckerJob(): Promise<DiscordEscalatio
 		const botResults = await Promise.all(
 			escalationEnabledBots.map(async (bot) => {
 				try {
+					const suppression = await getLegacyEscalationSuppression(bot.organizationId);
+					if (suppression) {
+						suppressedOrganizations.push(suppression);
+						return { escalated: 0, error: undefined };
+					}
 					return { escalated: await processBotEscalations(bot), error: undefined };
 				} catch (error) {
 					const errorMsg = `Failed to process escalations for org ${bot.organizationId}: ${error instanceof Error ? error.message : String(error)}`;
@@ -69,6 +77,7 @@ export async function runDiscordEscalationCheckerJob(): Promise<DiscordEscalatio
 			botsProcessed: escalationEnabledBots.length,
 			approvalsEscalated,
 			errors,
+			suppressedOrganizations,
 		};
 	} catch (error) {
 		logger.error({ error }, "Discord escalation checker failed");

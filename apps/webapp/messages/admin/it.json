@@ -321,6 +321,29 @@
       "actions": {
         "saveChanges": "Salva modifiche"
       },
+      "approvalMaintenance": {
+        "approvalHint": "Una richiesta di approvazione legacy o l'UUID di un flusso di lavoro canonico.",
+        "approvalId": "ID approvazione",
+        "chain": "Catena di approvazione",
+        "delete": "Forza eliminazione",
+        "deleting": "Eliminazione in corso…",
+        "description": "Rimuovi definitivamente un'approvazione e i record di approvazione collegati. I record di origine e i relativi stati vengono conservati.",
+        "errors": {
+          "ambiguous": "Questo ID esiste in entrambi gli archivi di approvazione. Nessuna approvazione è stata eliminata.",
+          "approvalInvalid": "Inserisci un UUID di approvazione valido.",
+          "failed": "Impossibile completare l'eliminazione. Controlla l'ID approvazione prima di riprovare.",
+          "invalidInput": "Inserisci un ID organizzazione e un UUID di approvazione valido.",
+          "notFound": "Approvazione non trovata in questa organizzazione.",
+          "organizationRequired": "Inserisci un ID organizzazione.",
+          "unauthorized": "È richiesto l'accesso come amministratore della piattaforma."
+        },
+        "legacy": "Richiesta legacy",
+        "organizationHint": "L'organizzazione a cui appartiene l'approvazione.",
+        "organizationId": "ID organizzazione",
+        "success": "Approvazione eliminata. Record rimossi:",
+        "title": "Forza eliminazione approvazione",
+        "workflow": "Flusso di lavoro"
+      },
       "cookieConsent": {
         "description": "Iniettato nelle pagine di autenticazione per la conformità al GDPR",
         "helperPrefix": "Lascia vuoto per disabilitare. Caricato con",

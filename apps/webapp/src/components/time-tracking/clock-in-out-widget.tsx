@@ -5,6 +5,7 @@ import {
 	RestPeriodBlocker,
 } from "@/components/compliance/compliance-alert-banner";
 import { ExceptionRequestDialog } from "@/components/compliance/exception-request-dialog";
+import { ClockCaptureControls } from "@/components/offline/offline-capture-actions";
 import {
 	ActiveSessionSummary,
 	ClockActionButton,
@@ -16,7 +17,13 @@ import { QuickBreakPopover } from "@/components/time-tracking/quick-break-popove
 import { SessionReminderPanel } from "@/components/time-tracking/session-reminder-panel";
 import { TimezoneMismatchDialog } from "@/components/time-tracking/timezone-mismatch-dialog";
 import { useClockInOutWidget } from "@/components/time-tracking/use-clock-in-out-widget";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import type { TimeFormat } from "@/lib/user-preferences/time-format";
 
 interface ActiveWorkPeriodData {
@@ -31,7 +38,41 @@ interface Props {
 	timeFormat: TimeFormat;
 }
 
-export function ClockInOutWidget({ activeWorkPeriod, employeeName, timeFormat }: Props) {
+function ClockComplianceNotices({
+	widget,
+}: {
+	widget: ReturnType<typeof useClockInOutWidget>;
+}) {
+	if (widget.isClockedIn) {
+		return widget.alerts.length > 0 ? (
+			<ComplianceAlertBanner
+				alerts={widget.alerts}
+				onRequestException={widget.handleRequestException}
+				compact
+			/>
+		) : null;
+	}
+	if (widget.canClockIn || !widget.minutesUntilAllowed) return null;
+	if (widget.restPeriodEnforcement === "block" && widget.nextAllowedClockIn) {
+		return (
+			<RestPeriodBlocker
+				minutesUntilAllowed={widget.minutesUntilAllowed}
+				nextAllowedClockIn={widget.nextAllowedClockIn}
+				onRequestException={() => widget.handleRequestException("rest_period")}
+				hasApprovedExceptions={widget.approvedExceptions.length > 0}
+			/>
+		);
+	}
+	return widget.restPeriodEnforcement === "warn" ? (
+		<RestPeriodWarnBanner t={widget.t} />
+	) : null;
+}
+
+export function ClockInOutWidget({
+	activeWorkPeriod,
+	employeeName,
+	timeFormat,
+}: Props) {
 	const widget = useClockInOutWidget(activeWorkPeriod);
 
 	return (
@@ -40,7 +81,10 @@ export function ClockInOutWidget({ activeWorkPeriod, employeeName, timeFormat }:
 				<CardTitle>{widget.t("timeTracking.title", "Time Tracking")}</CardTitle>
 				<CardDescription>
 					{widget.isClockedIn
-						? widget.t("timeTracking.currentlyClockedIn", "You're currently clocked in")
+						? widget.t(
+								"timeTracking.currentlyClockedIn",
+								"You're currently clocked in",
+							)
 						: widget.t("timeTracking.welcomeBack", "Welcome back, {name}", {
 								name: employeeName,
 							})}
@@ -56,40 +100,15 @@ export function ClockInOutWidget({ activeWorkPeriod, employeeName, timeFormat }:
 					/>
 				) : null}
 
-				{widget.isClockedIn && widget.alerts.length > 0 ? (
-					<ComplianceAlertBanner
-						alerts={widget.alerts}
-						onRequestException={widget.handleRequestException}
-						compact
-					/>
-				) : null}
-
-				{!widget.isClockedIn &&
-				!widget.canClockIn &&
-				widget.restPeriodEnforcement === "block" &&
-				widget.minutesUntilAllowed &&
-				widget.nextAllowedClockIn ? (
-					<RestPeriodBlocker
-						minutesUntilAllowed={widget.minutesUntilAllowed}
-						nextAllowedClockIn={widget.nextAllowedClockIn}
-						onRequestException={() => widget.handleRequestException("rest_period")}
-						hasApprovedExceptions={widget.approvedExceptions.length > 0}
-					/>
-				) : null}
-
-				{!widget.isClockedIn &&
-				!widget.canClockIn &&
-				widget.restPeriodEnforcement === "warn" &&
-				widget.minutesUntilAllowed ? (
-					<RestPeriodWarnBanner t={widget.t} />
-				) : null}
+				<ClockComplianceNotices widget={widget} />
 
 				<SessionReminderPanel
 					isClockedIn={widget.isClockedIn}
 					sessionStartTime={widget.activeWorkPeriod?.startTime ?? null}
 				/>
 
-				{!widget.isClockedIn && !widget.uiState.showNotesInput ? (
+				{(widget.captureMode === "local-review" || !widget.isClockedIn) &&
+				!widget.uiState.showNotesInput ? (
 					<WorkLocationSelector
 						value={widget.uiState.workLocationType}
 						onChange={widget.setWorkLocationType}
@@ -97,37 +116,50 @@ export function ClockInOutWidget({ activeWorkPeriod, employeeName, timeFormat }:
 					/>
 				) : null}
 
-				{!widget.uiState.showNotesInput ? (
-					<div className="flex gap-2">
-						<div className={widget.isClockedIn ? "min-w-0 basis-2/3" : "w-full"}>
-							<ClockActionButton
-								isClockedIn={widget.isClockedIn}
-								isMutating={widget.isMutating}
-								isClockingOut={widget.isClockingOut}
-								onClick={widget.isClockedIn ? widget.handleClockOut : widget.handleClockIn}
-								t={widget.t}
-							/>
+				<ClockCaptureControls
+					mode={widget.captureMode}
+					onClockIn={widget.handleClockIn}
+					onClockOut={widget.handleClockOut}
+					disabled={widget.isMutating}
+				>
+					{!widget.uiState.showNotesInput ? (
+						<div className="flex gap-2">
+							<div
+								className={widget.isClockedIn ? "min-w-0 basis-2/3" : "w-full"}
+							>
+								<ClockActionButton
+									isClockedIn={widget.isClockedIn}
+									isMutating={widget.isMutating}
+									isClockingOut={widget.isClockingOut}
+									onClick={
+										widget.isClockedIn
+											? widget.handleClockOut
+											: widget.handleClockIn
+									}
+									t={widget.t}
+								/>
+							</div>
+							{widget.isClockedIn ? (
+								<QuickBreakPopover
+									onAddBreak={widget.handleAddBreak}
+									isAddingBreak={widget.isAddingBreak}
+									isDisabled={widget.isMutating}
+									t={widget.t}
+									buttonClassName="min-w-0 basis-1/3 px-3"
+								/>
+							) : null}
 						</div>
-						{widget.isClockedIn ? (
-							<QuickBreakPopover
-								onAddBreak={widget.handleAddBreak}
-								isAddingBreak={widget.isAddingBreak}
-								isDisabled={widget.isMutating}
-								t={widget.t}
-								buttonClassName="min-w-0 basis-1/3 px-3"
-							/>
-						) : null}
-					</div>
-				) : (
-					<PostClockOutNotesForm
-						notes={widget.uiState.notesText}
-						onChange={widget.setNotesText}
-						onSave={widget.handleSaveNotes}
-						onSkip={widget.handleDismissNotes}
-						isSaving={widget.isUpdatingNotes}
-						t={widget.t}
-					/>
-				)}
+					) : (
+						<PostClockOutNotesForm
+							notes={widget.uiState.notesText}
+							onChange={widget.setNotesText}
+							onSave={widget.handleSaveNotes}
+							onSkip={widget.handleDismissNotes}
+							isSaving={widget.isUpdatingNotes}
+							t={widget.t}
+						/>
+					)}
+				</ClockCaptureControls>
 			</CardContent>
 
 			<ExceptionRequestDialog

@@ -204,6 +204,7 @@
     "slugLabel": "Slug de l'organisation",
     "slugPlaceholder": "acme-sarl",
     "slugTaken": "Ce slug est déjà pris. Veuillez en choisir un autre.",
+    "ssoFailed": "La connexion SSO n'a pas abouti. Sélectionnez une organisation pour réessayer ou choisissez un autre espace de travail.",
     "switchFailed": "Échec du changement d'organisation",
     "switching": "Changement d'organisation...",
     "switchTo": "Changer d'organisation",

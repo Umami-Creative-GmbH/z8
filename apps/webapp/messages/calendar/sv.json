@@ -1,0 +1,284 @@
+{
+  "absences": {
+    "addAbsence": "Lägg till frånvaro",
+    "balance": {
+      "carryoverDays": "Du har {count} överförda dagar",
+      "carryoverExpiry": "som förfaller den",
+      "carryoverFrom": "Överfört från {year}",
+      "daysRemaining": "Återstående dagar",
+      "description": "Dina semesterdagar för innevarande år",
+      "outOfTotalDays": "av totalt {totalDays} dagar",
+      "pending": "Väntande",
+      "title": "Semestersaldo {year}",
+      "used": "Använda"
+    },
+    "calendar": {
+      "legend": {
+        "approved": "Godkänd",
+        "halfDayAm": "Halvdag (FM)",
+        "halfDayPm": "Halvdag (EM)",
+        "holiday": "Helgdag",
+        "pending": "Väntande",
+        "rejected": "Avvisad"
+      },
+      "nextYear": "Nästa år",
+      "previousYear": "Föregående år"
+    },
+    "dialog": {
+      "cancelDescription": "Är du säker på att du vill avbryta denna frånvaroansökan? Denna åtgärd kan inte ångras.",
+      "cancelTitle": "Avbryt frånvaroansökan",
+      "confirmCancel": "Ja, avbryt förfrågan"
+    },
+    "errors": {
+      "allowanceNotConfigured": "Semesterkvot inte konfigurerad",
+      "allowanceNotConfiguredMessage": "Din organisation har inte ställt in semesterkvoter för {currentYear} än.",
+      "contactAdmin": "Kontakta din administratör för att konfigurera semesterpolicyer."
+    },
+    "featureName": "hantera frånvaro",
+    "form": {
+      "absenceType": "Frånvarotyp *",
+      "autoApproved": "(Automatiskt godkänd)",
+      "balanceAfterRequest": "Saldo efter förfrågan:",
+      "businessDays": "Arbetsdagar:",
+      "daysRemaining": "Återstående dagar:",
+      "description": "Skicka in en ledighetsansökan. Din chef kommer att meddelas för godkännande.",
+      "duration": "Frånvarolängd",
+      "duration.fullDay": "Heldag",
+      "duration.partialDay": "Del av dag",
+      "endDate": "Slutdatum *",
+      "endDateHelper": "Lämna tomt för frånvaro samma dag.",
+      "endTime": "Sluttid",
+      "errors": {
+        "fillRequiredFields": "Vänligen fyll i alla obligatoriska fält",
+        "insufficientBalance": "Otillräckligt semestersaldo",
+        "insufficientBalanceForRequest": "Otillräckligt semestersaldo för denna förfrågan",
+        "invalidSelection": "Kontrollera ditt val och försök igen"
+      },
+      "notesOptional": "Anteckningar (valfritt)",
+      "notesPlaceholder": "Lägg till ytterligare information...",
+      "selectAbsenceType": "Välj frånvarotyp",
+      "sickDetail": "Sjukdetalj *",
+      "sickDetailPlaceholder": "Välj sjukdetalj",
+      "startDate": "Startdatum *",
+      "startTime": "Starttid",
+      "submitRequest": "Skicka förfrågan",
+      "title": "Ansök om frånvaro"
+    },
+    "period": {
+      "am": "FM",
+      "pm": "EM"
+    },
+    "planPreview": {
+      "affectedShift": "påverkat arbetspass",
+      "approval": "Godkännande",
+      "balance": "Saldo",
+      "balanceUnavailable": "Saldo ej tillgängligt",
+      "countsAgainstVacationBalance": "Dras från semestersaldot",
+      "coverage": "Bemanning",
+      "coverageStaffAfterRequest": "{after}/{minimum} personal efter förfrågan",
+      "description": "En icke-blockerande kontroll av saldo, helgdagar, bemanning och godkännandesignaler innan du skickar in.",
+      "doesNotReduceVacationBalance": "Minskar inte semestersaldot",
+      "holidays": "Helgdagar",
+      "loading": "Kontrollerar saldo, helgdagar och bemanning…",
+      "noApprovalWarnings": "Inga godkännandevarningar",
+      "noCoverageRisk": "Ingen publicerad bemanningsrisk",
+      "noCoverageRulesConfigured": "Inga bemanningsregler har konfigurerats för påverkade arbetspass",
+      "noHolidays": "Inga tilldelade helgdagar inom intervallet",
+      "remainingAfter": "Kvar efter ansökan",
+      "requested": "Ansökt",
+      "title": "Smart planerare",
+      "unavailable": "Förhandsgranskning av planering är inte tillgänglig. Du kan fortfarande skicka in din ansökan."
+    },
+    "requestAbsence": "Ansök om frånvaro",
+    "status": {
+      "approved": "Godkänd",
+      "pending": "Väntande",
+      "rejected": "Avvisad"
+    },
+    "subtitle": "Hantera din ledighet och dina semesterdagar",
+    "table": {
+      "cancelAbsence": "Avbryt frånvaro",
+      "cancelAbsenceTooltip": "Avbryt frånvaro",
+      "end": "Slut",
+      "headers": {
+        "actions": "Åtgärder",
+        "dateRange": "Datumintervall",
+        "days": "Dagar",
+        "notes": "Anteckningar",
+        "status": "Status",
+        "type": "Typ"
+      },
+      "noRequests": "Inga frånvaroansökningar hittades.",
+      "noSearchResults": "Ingen frånvaro matchar din sökning.",
+      "searchPlaceholder": "Sök efter typ, status eller anteckningar...",
+      "start": "Start",
+      "subtitle": "Senaste och kommande frånvaroansökningar",
+      "title": "Dina frånvaroansökningar"
+    },
+    "title": "Frånvaro",
+    "toast": {
+      "cancelFailed": "Kunde inte avbryta frånvaroansökan",
+      "requestCancelled": "Frånvaroansökan avbruten",
+      "requestFailed": "Kunde inte skicka frånvaroansökan",
+      "requestSubmitted": "Frånvaroansökan har skickats"
+    },
+    "view": {
+      "calendar": "Kalender",
+      "table": "Tabell"
+    }
+  },
+  "calendar": {
+    "clockOutOnBehalf": {
+      "confirm": "Stämpla ut",
+      "description": "Detta skapar en spårbar utstämplingspost vid aktuell servertid. Om något behöver justeras i efterhand, använd korrigeringar.",
+      "error": "Kunde inte stämpla ut medarbetaren",
+      "loading": "Stämplar ut...",
+      "success": "Medarbetaren har stämplats ut",
+      "title": "Stämpla ut medarbetaren?"
+    },
+    "dayDetails": {
+      "blocksTimeEntry": "Tidsregistreringar blockerade",
+      "category": "Kategori",
+      "duration": "Varaktighet",
+      "employee": "Anställd",
+      "noEvents": "Inga händelser för denna dag",
+      "recurring": "Återkommande helgdag",
+      "selectDate": "Välj ett datum för att visa detaljer",
+      "status": "Status",
+      "title": "Dagsdetaljer"
+    },
+    "delete": {
+      "applied": "Borttagning av tidsregistrering tillämpad",
+      "auditNote": "Tidsregistreringar kommer att markeras som borttagna i revisionssyfte.",
+      "confirm": "Konvertera till rast",
+      "description": "Detta kommer att ta bort denna arbetsperiod permanent. Luckan kommer att visas som en rast i kalendern.",
+      "failed": "Det gick inte att ta bort arbetsperioden",
+      "reasonLabel": "Anledning till borttagning",
+      "reasonRequired": "Anledning krävs",
+      "success": "Arbetsperiod konverterad till rast",
+      "title": "Konvertera till rast?"
+    },
+    "details": {
+      "baseWorked": "Arbetad bastid",
+      "blocksTimeEntry": "Blockerar tidsregistrering",
+      "category": "Kategori",
+      "credited": "Tillgodoräknad",
+      "dateRange": "Datumintervall",
+      "duration": "Varaktighet",
+      "employee": "Anställd",
+      "notes": "Anteckningar",
+      "project": "Projekt",
+      "recurring": "Återkommer årligen",
+      "status": "Status",
+      "surcharge": "Tillägg",
+      "surchargeBreakdown": "Uppdelning av tillägg",
+      "time": "Tid",
+      "type": "Typ"
+    },
+    "edit": {
+      "deleteEntry": "Ta bort post",
+      "notesSaved": "Anteckningar sparade",
+      "notesSaveFailed": "Kunde inte spara anteckningar",
+      "projectSaved": "Projekt uppdaterat",
+      "projectSaveFailed": "Kunde inte uppdatera projekt",
+      "split": "Dela"
+    },
+    "employeeSelector": {
+      "error": "Kunde inte läsa in teammedlemmar",
+      "label": "Visa kalender",
+      "myCalendar": "Min kalender",
+      "placeholder": "Välj teammedlem..."
+    },
+    "entryType": {
+      "clockIn": "Stämpla in",
+      "clockOut": "Stämpla ut",
+      "correction": "Korrigering"
+    },
+    "eventType": {
+      "absence": "Frånvaro",
+      "holiday": "Helgdag",
+      "timeEntry": "Tidspost",
+      "workPeriod": "Arbetsperiod"
+    },
+    "filter": {
+      "absences": "Frånvaro",
+      "holidays": "Helgdagar",
+      "timeEntries": "Tidsposter",
+      "workPeriods": "Arbetsperioder"
+    },
+    "filters": {
+      "title": "Filter"
+    },
+    "legend": {
+      "absence": "Frånvaro",
+      "holiday": "Helgdag",
+      "missingRequiredWork": "Obligatoriskt arbete saknas",
+      "requirementMetOrOver": "Krav uppfyllt/överskridet",
+      "timeEntry": "Tidspost",
+      "title": "Teckenförklaring",
+      "underRequirement": "Under kravet",
+      "workPeriod": "Arbetsperiod",
+      "workPeriodPending": "Väntar på godkännande"
+    },
+    "mobileControls": {
+      "description": "Välj vilka kalenderposter som ska visas.",
+      "title": "Filter & teckenförklaring"
+    },
+    "monthSummary": {
+      "calendarWeek": "V",
+      "description": "Dagliga, veckovisa och månatliga policytimmar",
+      "emptyMonth": "Inga policytimmar denna månad",
+      "monthTotal": "Månadstotalt",
+      "nextMonth": "Nästa månad",
+      "previousMonth": "Föregående månad",
+      "totalDescription": "Registrerad tid jämfört med policytimmar",
+      "weekSum": "Summa"
+    },
+    "split": {
+      "ambiguousTime": "Välj vilken förekomst som ska användas",
+      "chooseOccurrence": "Välj förekomst",
+      "confirm": "Dela arbetsperiod",
+      "currentPeriod": "Aktuell arbetsperiod",
+      "description": "Dela upp denna arbetsperiod i två separata pass.",
+      "earlierOccurrence": "Tidigare förekomst",
+      "failed": "Det gick inte att dela arbetsperioden",
+      "firstNotes": "Anteckningar för första perioden (valfritt)",
+      "firstPeriod": "Första perioden",
+      "invalidTime": "Delningstiden måste vara mellan start- och sluttid",
+      "laterOccurrence": "Senare förekomst",
+      "nonexistentTime": "Delad tid finns inte på detta datum",
+      "preview": "Förhandsgranska",
+      "secondNotes": "Anteckningar för andra perioden (valfritt)",
+      "secondPeriod": "Andra perioden",
+      "splitAt": "Dela vid",
+      "splitDate": "Dela datum",
+      "success": "Arbetsperioden har delats",
+      "title": "Dela arbetsperiod"
+    },
+    "status": {
+      "approved": "Godkänd",
+      "pending": "Väntande",
+      "rejected": "Avvisad"
+    },
+    "view": {
+      "day": "Dag",
+      "loading": "Laddar kalender…",
+      "month": "Månad",
+      "next": "Nästa",
+      "previous": "Föregående",
+      "refresh": "Uppdatera",
+      "today": "Idag",
+      "week": "Vecka",
+      "year": "År"
+    },
+    "workStatus": {
+      "overRequirement": "över kravet",
+      "requiredHoursMissing": "obligatoriska timmar saknas",
+      "requirementMet": "kravet uppfyllt",
+      "underRequirement": "under kravet"
+    },
+    "year": {
+      "dayWithWorkStatus": "{date}, {status}"
+    }
+  }
+}

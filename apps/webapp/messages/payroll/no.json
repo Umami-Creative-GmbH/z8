@@ -1,0 +1,109 @@
+{
+  "payroll": {
+    "actions": {
+      "apply": "Bruk",
+      "downloadPdf": "Last ned PDF",
+      "triggerExport": "Start eksport"
+    },
+    "blockers": {
+      "clearFailed": "Kunne ikke fjerne lønnsblokkering",
+      "clearFalsePositive": "Fjern falsk positiv",
+      "clearingFalsePositive": "Fjerner falsk positiv",
+      "dateUnavailable": "Dato utilgjengelig",
+      "missingClockOut": "Manglende utstempling",
+      "needReview": "{count} lønnsblokkeringer må gjennomgås",
+      "openApprovals": "Åpne godkjenninger",
+      "openCalendar": "Åpne kalender",
+      "pendingAbsence": "Ventende fravær",
+      "pendingTimeCorrection": "Ventende tidskorrigering",
+      "refreshAfterClearFailed": "Blokkering fjernet, men lønn kunne ikke oppdateres",
+      "unknownEmployee": "Ukjent ansatt"
+    },
+    "description": "Gå gjennom lønnstotaler, status og eksporter for den valgte perioden.",
+    "employeeTotals": {
+      "absences": "Fravær",
+      "blocked": "Blokkert",
+      "contract": "Kontrakt",
+      "contractFixed": "Fast",
+      "contractHourly": "Timebasert",
+      "description": "Arbeidet tid, totalt fravær, kontraktstype og lønnsstatus.",
+      "employee": "Ansatt",
+      "hours": "Timer",
+      "noAbsences": "Ingen",
+      "noEmployeeNumber": "Ingen ansattnummer",
+      "noTeam": "Ingen team",
+      "readyForPayroll": "Klar for lønn",
+      "status": "Status",
+      "team": "Team",
+      "title": "Totaler for ansatt"
+    },
+    "errors": {
+      "actionFailed": "Handling i lønnsarbeidsområde mislyktes",
+      "activeOrganizationEmployeeRequired": "Aktiv ansattkontekst for organisasjon er påkrevd",
+      "authenticationRequired": "Autentisering påkrevd",
+      "blockerNotDismissible": "Lønnsblokkering kan ikke avvises",
+      "employeeIdsMustBeArray": "employeeIds må være en matrise",
+      "employeeIdsMustContainOnlyStrings": "employeeIds må bare inneholde strenger",
+      "endDateAfterStart": "Sluttdato må være på eller etter startdato",
+      "exportFormatNotConfigured": "Eksportformat for lønn er ikke konfigurert",
+      "invalidBlockerId": "Ugyldig ID for lønnsblokkering",
+      "invalidBlockerType": "Ugyldig type lønnsblokkering",
+      "mustBeIsoDate": "{field} må være en ISO-dato",
+      "mustBeValidIsoDate": "{field} må være en gyldig ISO-dato",
+      "noAssignedEmployees": "Ingen lønnsansatte er tilordnet tilgangsområdet ditt",
+      "noAvailableEmployees": "Ingen lønnsansatte er tilgjengelige i ditt tilgangsområde",
+      "periodLabelRequired": "Etikett for lønnsperiode er påkrevd",
+      "unknownExportFormat": "Ukjent format for lønnseksport"
+    },
+    "export": {
+      "completed": "Lønnseksport fullført",
+      "formatAccessCheck": "Tilgangskontroll for format",
+      "noConfiguredTarget": "Ingen konfigurert mål for lønnseksport",
+      "queued": "Lønnseksport lagt i kø",
+      "selectFormat": "Velg format",
+      "target": "Mål for lønnseksport"
+    },
+    "filters": {
+      "noMatchingEmployees": "Ingen ansatte samsvarer med de valgte lønnsfiltrene."
+    },
+    "period": {
+      "current": "Gjeldende periode",
+      "dateRange": "{start} til {end}",
+      "employeesInScope": "{count} ansatte i omfanget",
+      "end": "Slutt",
+      "mode": {
+        "custom": "Egendefinert",
+        "month": "Måned",
+        "week": "Uke"
+      },
+      "next": "Neste periode",
+      "previous": "Forrige periode",
+      "selected": "Valgt periode",
+      "start": "Start"
+    },
+    "scope": {
+      "allManaged": "Alle ansatte og team jeg leder",
+      "apply": "Bruk",
+      "cancel": "Avbryt",
+      "currentScope": "Gjeldende omfang",
+      "description": "Avgrens dette arbeidsområdet for lønn etter tildelte ansatte eller team.",
+      "noAssignedEmployees": "Ingen tildelte ansatte i dette lønnsomfanget.",
+      "noAssignedTeams": "Ingen tildelte team i dette lønnsomfanget.",
+      "selectedEmployeesCount": "{count} ansatte",
+      "selectedSummary": "{summary} valgt",
+      "selectedTeamsCount": "{count} team",
+      "specificEmployees": "Spesifikke ansatte",
+      "specificEmployeesDescription": "Velg ansatte som skal inkluderes i dette lønnsomfanget.",
+      "specificTeams": "Spesifikke team",
+      "specificTeamsDescription": "Velg team som skal inkluderes i dette lønnsomfanget.",
+      "title": "Lønnsomfang"
+    },
+    "summary": {
+      "blockers": "Blokkeringer",
+      "employees": "Ansatte",
+      "ready": "Klar",
+      "workedHours": "Arbeidstimer"
+    },
+    "title": "Lønn"
+  }
+}

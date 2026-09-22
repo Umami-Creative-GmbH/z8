@@ -125,6 +125,12 @@ function reconcileCronSchedule(jobName: CronJobName, pattern: string) {
 			if (!result.success) {
 				return { immediateReconciled: false, warning: result.error };
 			}
+			if (result.retired) {
+				return {
+					immediateReconciled: true,
+					warning: "This legacy escalation scheduler is retired. Queued and manual jobs still use organization execution gates.",
+				};
+			}
 
 			return { immediateReconciled: true, warning: null };
 		} catch (error) {

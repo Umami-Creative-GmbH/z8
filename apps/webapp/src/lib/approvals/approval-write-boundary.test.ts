@@ -4539,6 +4539,41 @@ db.delete(approvalOutbox);`,
 					table: "time_record",
 				},
 			],
+			"src/lib/time-tracking/admin-work-period-time-edit.ts": [
+				{
+					columns: ["replaces_entry_id", "type"],
+					functionName: "applyAdminWorkPeriodTimeEdit",
+					operation: "insert",
+					semantic: "correction",
+					table: "time_entry",
+				},
+				{
+					columns: ["is_superseded", "superseded_by_id"],
+					functionName: "applyAdminWorkPeriodTimeEdit",
+					operation: "update",
+					semantic: "correction_lifecycle",
+					table: "time_entry",
+				},
+				{
+					columns: ["duration_minutes", "end_at", "start_at"],
+					functionName: "applyAdminWorkPeriodTimeEdit",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
+				{
+					columns: [
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"start_time",
+					],
+					functionName: "applyAdminWorkPeriodTimeEdit",
+					operation: "update",
+					table: "work_period",
+				},
+			],
 		});
 		expect(boundary.SOURCE_WRITE_EXCEPTIONS).toEqual({
 			"src/app/[locale]/(app)/absences/actions.canonical.ts": [
@@ -5174,16 +5209,9 @@ export async function hiddenImport(values: object) {
 		);
 	});
 
-	it("has no unowned protected writes in the current webapp inventory", () => {
-		expect(
-			scanApprovalWriteBoundary({
-				roots: ["src", "scripts"],
-				workspaceRoot: process.cwd(),
-			}),
-		).toEqual([]);
-	}, 120_000);
-
-	it("keeps every declared exact owner and exception backed by a production write", () => {
+	it("matches the production inventory exactly to declared owners and exceptions, with no unowned writes", () => {
+		// Exact set equality catches both unowned writes and stale declarations.
+		// Scan once: a second boundary-only scan repeats the same native analysis.
 		const inventory = scanApprovalWriteInventory({
 			roots: ["src", "scripts"],
 			workspaceRoot: process.cwd(),

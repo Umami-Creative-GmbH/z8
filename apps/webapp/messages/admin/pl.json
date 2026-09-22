@@ -321,6 +321,29 @@
       "actions": {
         "saveChanges": "Zapisz zmiany"
       },
+      "approvalMaintenance": {
+        "approvalHint": "Starszy wniosek o zatwierdzenie lub kanoniczny identyfikator UUID przepływu pracy.",
+        "approvalId": "Identyfikator zatwierdzenia",
+        "chain": "Ścieżka zatwierdzania",
+        "delete": "Wymuś usunięcie",
+        "deleting": "Usuwanie…",
+        "description": "Trwale usuń zatwierdzenie i powiązane z nim rekordy zatwierdzeń. Rekordy źródłowe i ich statusy zostaną zachowane.",
+        "errors": {
+          "ambiguous": "Ten identyfikator istnieje w obu magazynach zatwierdzeń. Nie usunięto żadnego zatwierdzenia.",
+          "approvalInvalid": "Wprowadź prawidłowy identyfikator UUID zatwierdzenia.",
+          "failed": "Nie udało się ukończyć usuwania. Sprawdź identyfikator zatwierdzenia przed ponowną próbą.",
+          "invalidInput": "Wprowadź identyfikator organizacji i prawidłowy identyfikator UUID zatwierdzenia.",
+          "notFound": "Nie znaleziono zatwierdzenia w tej organizacji.",
+          "organizationRequired": "Wprowadź identyfikator organizacji.",
+          "unauthorized": "Wymagany dostęp administratora platformy."
+        },
+        "legacy": "Starszy wniosek",
+        "organizationHint": "Organizacja, do której należy zatwierdzenie.",
+        "organizationId": "Identyfikator organizacji",
+        "success": "Usunięto zatwierdzenie. Usunięte rekordy:",
+        "title": "Wymuś usunięcie zatwierdzenia",
+        "workflow": "Przepływ pracy"
+      },
       "cookieConsent": {
         "description": "Wstrzykiwany na stronach uwierzytelniania w celu zapewnienia zgodności z RODO",
         "helperPrefix": "Pozostaw puste, aby wyłączyć. Ładowany za pomocą",

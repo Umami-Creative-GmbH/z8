@@ -204,6 +204,7 @@
     "slugLabel": "Organizasyon Slug'ı",
     "slugPlaceholder": "acme-inc",
     "slugTaken": "Bu slug zaten alınmış. Lütfen farklı bir tane seçin.",
+    "ssoFailed": "SSO ile oturum açma tamamlanamadı. Tekrar denemek için bir kuruluş seçin veya başka bir çalışma alanı seçin.",
     "switchFailed": "Organizasyon değiştirilemedi",
     "switching": "Organizasyon değiştiriliyor...",
     "switchTo": "Organizasyon Değiştir",

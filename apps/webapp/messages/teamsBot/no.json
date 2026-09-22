@@ -1,0 +1,107 @@
+{
+  "approval": {
+    "absenceRequest": "Fraværsforespørsel",
+    "actions": {
+      "approve": "Godkjenn",
+      "approving": "Godkjenner...",
+      "reject": "Avvis",
+      "rejecting": "Avviser...",
+      "viewInZ8": "Vis i Z8"
+    },
+    "durationDays": "{count, plural, one {# dag} other {# dager}}",
+    "facts": {
+      "approvedBy": "Godkjent av",
+      "corrected": "Korrigert",
+      "dates": "Datoer",
+      "duration": "Varighet",
+      "email": "E-post",
+      "from": "Fra",
+      "original": "Opprinnelig",
+      "reason": "Årsak",
+      "rejectedBy": "Avvist av",
+      "resolved": "Løst",
+      "status": "Status",
+      "submitted": "Sendt inn",
+      "type": "Type"
+    },
+    "status": {
+      "approved": "GODKJENT",
+      "rejected": "AVVIST"
+    },
+    "timeCorrectionRequest": "Forespørsel om tidskorrigering"
+  },
+  "commands": {
+    "compliance": {
+      "critical": "Kritisk",
+      "exceptionSummary": "{type} - {reason}",
+      "exceptionUsedDetails": "{details} (unntak brukt)",
+      "lastDays": "Siste {days} dager",
+      "legend": "\uD83D\uDD34 Brudd  \uD83D\uDFE0 Kritisk  \uD83D\uDFE1 Advarsel  \uD83D\uDCDD Ventende forespørsel",
+      "moreRequestsMarkdown": "_+{count} flere forespørsler_",
+      "moreViolationsMarkdown": "_+{count} flere brudd_",
+      "pending": "Ventende",
+      "pendingExceptions": "Ventende unntaksforespørsler",
+      "recentViolations": "Nylige brudd",
+      "reviewExceptions": "Gjennomgå unntak",
+      "textCriticalAlerts": "**Kritiske varsler:** {count}",
+      "textMore": "  +{count} flere",
+      "textPendingExceptions": "**Ventende unntak:** {count}",
+      "textPendingRequestItem": "\uD83D\uDCDD {employeeName} - {type}",
+      "textPendingRequests": "**Ventende forespørsler:**",
+      "textRecentViolations": "**Nylige brudd:**",
+      "textTitle": "**⚠️ Samsvarssammendrag – Siste {days} dager**",
+      "textViolationItem": "{icon} {employeeName} - {details}",
+      "textViolations": "**Brudd:** {count}",
+      "titleWithIcon": "⚠️ Samsvarssammendrag",
+      "viewDashboard": "Vis samsvarspanel",
+      "violations": "Brudd"
+    },
+    "coverage": {
+      "clockedIn": "Stemplet inn",
+      "moreLocationsMarkdown": "_+{count} flere lokasjoner..._",
+      "scheduled": "Planlagt",
+      "titleWithIcon": "\uD83D\uDCCA Dekningsrapport",
+      "variance": "Avvik",
+      "viewFullSchedule": "Se fullstendig tidsplan"
+    },
+    "help": {
+      "availableCommands": "Hjelp"
+    }
+  },
+  "common": {
+    "more": "+{count} flere",
+    "moreBullet": "• +{count} flere"
+  },
+  "digest": {
+    "currentlyClockedIn": "Innstemplet for øyeblikket",
+    "everyoneAvailable": "Alle er tilgjengelige i dag",
+    "noOneClockedIn": "Ingen har stemplet inn ennå",
+    "noPendingApprovals": "Ingen ventende godkjenninger",
+    "openDashboard": "Åpne Z8-dashbord",
+    "openShifts": "Ledige vakter",
+    "pendingApprovals": "Ventende godkjenninger",
+    "pendingExceptionRequests": "{count, plural, one {# ventende unntaksforespørsel avventer gjennomgang} other {# ventende unntaksforespørsler avventer gjennomgang}}",
+    "returns": "Tilbake {date}",
+    "since": "Siden {time}",
+    "textClockedInEmployee": "• {name} - siden {clockedInAt} ({duration})",
+    "textCompliance": "**⚠️ Samsvar:**",
+    "textCoverageGaps": "**\uD83D\uDD34 Dekningshull:**",
+    "textCurrentlyClockedIn": "**Stemplet inn for øyeblikket:**",
+    "textEmployeeOut": "• {name} - {category} (tilbake {returnDate})",
+    "textOpenShifts": "**\uD83D\uDCCB Ledige vakter:**",
+    "textPendingApprovalsCount": "**Ventende godkjenninger:** {count}",
+    "textPendingApprovalsNone": "**Ventende godkjenninger:** Ingen",
+    "textTitle": "**Daglig sammendrag - {date}**",
+    "textWhosOut": "**Hvem er borte:**",
+    "title": "Daglig oppsummering",
+    "todayTomorrow": "I dag: {today} | I morgen: {tomorrow}",
+    "viewApprovals": "Vis godkjenninger",
+    "whosOutToday": "Hvem er borte i dag"
+  },
+  "exceptionTypes": {
+    "overtime_daily": "Daglig overtid",
+    "overtime_monthly": "Månedlig overtid",
+    "overtime_weekly": "Ukentlig overtid",
+    "rest_period": "Hvileperiode"
+  }
+}

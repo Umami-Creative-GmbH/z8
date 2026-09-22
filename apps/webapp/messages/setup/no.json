@@ -1,0 +1,51 @@
+{
+  "init": {
+    "activating": "Klargjør arbeidsområdet ditt...",
+    "checking": "Sjekker økt...",
+    "clickToSelect": "Klikk for å velge",
+    "redirecting": "Videresender...",
+    "selectOrganization": "Velg organisasjon",
+    "selectOrganizationDescription": "Velg hvilken organisasjon du vil jobbe med"
+  },
+  "setup": {
+    "authorization": {
+      "expiry": "Lenken kan brukes én gang innen én time. Fullfør oppsettet innen ti minutter etter at du har åpnet den. Hvis autorisasjonen utløper, venter du til den opprinnelige timen er omme og starter serveren på nytt for å generere en ny lenke.",
+      "instructions": "Åpne den midlertidige oppsettslenken som vises i serverkonsollen når denne forekomsten starter.",
+      "title": "Autorisasjon kreves for oppsett"
+    },
+    "button": {
+      "create": "Opprett administratorkonto",
+      "creating": "Oppretter konto..."
+    },
+    "complete_message": "Plattform-administratorkontoen din er opprettet.",
+    "complete_title": "Oppsett fullført!",
+    "continue_to_sign_in": "Fortsett til innlogging",
+    "creating_account": "Oppretter administratorkontoen din...",
+    "description": "Konfigurer den første administratorkontoen for plattformen din. Denne kontoen vil ha full systemtilgang og er atskilt fra organisasjonskontoer.",
+    "field": {
+      "confirm_password": "Bekreft passord",
+      "confirm_password_placeholder": "Bekreft passordet ditt",
+      "email": "E-postadresse",
+      "email_placeholder": "admin@yourcompany.com",
+      "name": "Fullt navn",
+      "name_placeholder": "Oppgi ditt fulle navn",
+      "password": "Passord",
+      "password_placeholder": "Opprett et sterkt passord"
+    },
+    "hide_password": "Skjul passord",
+    "layout": {
+      "subtitle": "Konfigurer plattformen din for å komme i gang",
+      "title": "Førstegangsoppsett"
+    },
+    "password": {
+      "lowercase": "Liten bokstav",
+      "min_length": "12+ tegn",
+      "number": "Tall",
+      "uppercase": "Stor bokstav"
+    },
+    "please_wait": "Vennligst vent mens vi gjør alt klart",
+    "show_password": "Vis passord",
+    "sign_in_with": "Du kan nå logge inn med",
+    "title": "Opprett plattformadministrator"
+  }
+}

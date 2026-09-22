@@ -10,6 +10,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { approvalRequest, employee, employeeManagers, teamsEscalation } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
+import { getLegacyEscalationSuppression, type LegacyEscalationSuppression } from "@/lib/approvals/escalation/legacy-execution";
 import { sendApprovalCardToManager } from "../approval-handler";
 import { getAllActiveTenants } from "../tenant-resolver";
 import type { EscalationResult } from "../types";
@@ -21,6 +22,7 @@ export interface EscalationCheckerResult {
 	tenantsProcessed: number;
 	approvalsEscalated: number;
 	errors: string[];
+	suppressedOrganizations: LegacyEscalationSuppression[];
 }
 
 /**
@@ -32,6 +34,7 @@ export interface EscalationCheckerResult {
 export async function runEscalationCheckerJob(): Promise<EscalationCheckerResult> {
 	const startedAt = new Date();
 	const errors: string[] = [];
+	const suppressedOrganizations: LegacyEscalationSuppression[] = [];
 	let approvalsEscalated = 0;
 
 	try {
@@ -47,6 +50,11 @@ export async function runEscalationCheckerJob(): Promise<EscalationCheckerResult
 		const tenantResults = await Promise.all(
 			escalationEnabledTenants.map(async (tenant) => {
 				try {
+					const suppression = await getLegacyEscalationSuppression(tenant.organizationId);
+					if (suppression) {
+						suppressedOrganizations.push(suppression);
+						return { escalated: 0, error: undefined };
+					}
 					return { escalated: await processTenantEscalations(tenant), error: undefined };
 				} catch (error) {
 					const errorMsg = `Failed to process escalations for tenant ${tenant.tenantId}: ${error instanceof Error ? error.message : String(error)}`;
@@ -73,6 +81,7 @@ export async function runEscalationCheckerJob(): Promise<EscalationCheckerResult
 			tenantsProcessed: escalationEnabledTenants.length,
 			approvalsEscalated,
 			errors,
+			suppressedOrganizations,
 		};
 	} catch (error) {
 		logger.error({ error }, "Escalation checker job failed");

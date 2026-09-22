@@ -45,13 +45,6 @@
       "description": "Verwalten Sie Urlaubsrichtlinien und Zuweisungen für Ihr Unternehmen",
       "editPolicy": "\"{name}\" bearbeiten",
       "employees": {
-        "actions": {
-          "edit": "Bearbeiten"
-        },
-        "allowancesForYear": "Urlaubsansprüche für {{year}}",
-        "defaultAllowanceDescription": "Standardanspruch: {{days}} Tage pro Jahr",
-        "defaultPolicy": "Standard",
-        "description": "Konfigurieren Sie individuelle Urlaubsansprüche für einzelne Mitarbeiter",
         "detail": {
           "addManualAdjustment": "Manuelle Anpassung hinzufügen",
           "addManualAdjustmentDescription": "Erstellen Sie einen neuen Anpassungseintrag für besondere Umstände (z. B. Bonustage, Korrekturen). Jede Anpassung wird im Audit-Log protokolliert.",
@@ -98,25 +91,7 @@
         "edit": {
           "description": "Individuellen Urlaubsanspruch für {{name}} konfigurieren",
           "title": "Urlaubsanspruch bearbeiten"
-        },
-        "employeeCount": "{{count}} Mitarbeiter",
-        "emptyDescription": "Fügen Sie Ihrer Organisation Mitarbeiter hinzu, um deren Urlaubsansprüche zu verwalten.",
-        "emptyTitle": "Keine Mitarbeiter gefunden",
-        "noOrgPolicyConfigured": " (Keine Organisationsrichtlinie konfiguriert)",
-        "primaryManager": "Primär",
-        "table": {
-          "actions": "Aktionen",
-          "adjustments": "Anpassungen",
-          "carryover": "Übertrag",
-          "customDays": "Benutzerdefinierte Tage",
-          "defaultDays": "Standardtage",
-          "employee": "Mitarbeiter",
-          "managers": "Manager",
-          "policy": "Richtlinie",
-          "team": "Team",
-          "totalAvailable": "Gesamt verfügbar"
-        },
-        "title": "Mitarbeiteransprüche"
+        }
       },
       "expires": "Läuft ab",
       "fallsBackToDefault": "Greift auf Unternehmensstandard zurück",

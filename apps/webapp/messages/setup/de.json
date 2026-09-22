@@ -8,6 +8,11 @@
     "selectOrganizationDescription": "Wählen Sie die Organisation aus, mit der Sie arbeiten möchten"
   },
   "setup": {
+    "authorization": {
+      "expiry": "Der Link kann innerhalb einer Stunde einmalig verwendet werden. Schließen Sie die Einrichtung innerhalb von zehn Minuten nach dem Öffnen ab. Wenn die Autorisierung abläuft, warten Sie, bis die ursprüngliche Stunde verstrichen ist, und starten Sie den Server neu, um einen neuen Link zu generieren.",
+      "instructions": "Öffnen Sie den temporären Einrichtungslink, der beim Start dieser Instanz in der Serverkonsole ausgegeben wird.",
+      "title": "Einrichtungsautorisierung erforderlich"
+    },
     "button": {
       "create": "Administratorkonto erstellen",
       "creating": "Konto wird erstellt..."

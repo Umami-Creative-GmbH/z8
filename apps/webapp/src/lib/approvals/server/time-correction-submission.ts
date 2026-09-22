@@ -207,6 +207,34 @@ function hasSubmittedEndpointMinuteChanged(params: {
 	return original.date !== params.date || original.time !== params.time;
 }
 
+function editPolicyForbiddenMessage(daysBack: number) {
+	return `Entries older than ${daysBack} days can only be edited by admins or team leads.`;
+}
+
+/**
+ * Enforces the employee change policy for self-submitted edit corrections.
+ * Returns the rejection message when the period is beyond both the
+ * self-service and approval windows, otherwise null. A running period has no
+ * end yet, so it is always within the current day's window.
+ */
+export async function getForbiddenCorrectionEditMessage(input: {
+	employeeId: string;
+	workPeriodEndTime: Date | null;
+	timezone: string;
+}): Promise<string | null> {
+	if (!input.workPeriodEndTime) {
+		return null;
+	}
+	const capability = await getEditCapabilityForPeriod({
+		employeeId: input.employeeId,
+		workPeriodEndTime: input.workPeriodEndTime,
+		timezone: input.timezone,
+	});
+	return capability.type === "forbidden"
+		? editPolicyForbiddenMessage(capability.daysBack)
+		: null;
+}
+
 export async function editSameDayTimeEntry(
 	data: SameDayEditRequest,
 ): Promise<
@@ -290,7 +318,7 @@ export async function editSameDayTimeEntry(
 	if (editCapability.type === "forbidden") {
 		return {
 			success: false,
-			error: `Entries older than ${editCapability.daysBack} days can only be edited by admins or team leads.`,
+			error: editPolicyForbiddenMessage(editCapability.daysBack),
 		};
 	}
 
@@ -598,7 +626,8 @@ export async function editSameDayTimeEntry(
 				}
 
 				let clockInCorrectionId: string | undefined;
-				if (clockInChanged) {
+				const correctClockIn = async () => {
+					if (!clockInChanged) return;
 					if (!clockInTimezoneCapture) {
 						throw new Error("Clock-in timezone evidence is required");
 					}
@@ -620,14 +649,17 @@ export async function editSameDayTimeEntry(
 						throw new Error("Clock-in correction entry was not created");
 					}
 					clockInCorrectionId = clockInCorrection.id;
-				}
+				};
 
 				let clockOutCorrectionId: string | undefined;
-				if (
-					correctsClockOut &&
-					selectedWorkPeriod.clockOutId &&
-					correctedClockOutDate
-				) {
+				const correctClockOut = async () => {
+					if (
+						!correctsClockOut ||
+						!selectedWorkPeriod.clockOutId ||
+						!correctedClockOutDate
+					) {
+						return;
+					}
 					if (!clockOutTimezoneCapture) {
 						throw new Error("Clock-out timezone evidence is required");
 					}
@@ -649,6 +681,22 @@ export async function editSameDayTimeEntry(
 						throw new Error("Clock-out correction entry was not created");
 					}
 					clockOutCorrectionId = clockOutCorrection.id;
+				};
+
+				// Each endpoint correction validates the intermediate range, so when the
+				// period moves past its original end, the clock-out must move first.
+				const moveClockOutFirst = Boolean(
+					clockInChanged &&
+						correctsClockOut &&
+						selectedWorkPeriod.endTime &&
+						correctedClockInDate >= selectedWorkPeriod.endTime,
+				);
+				if (moveClockOutFirst) {
+					await correctClockOut();
+					await correctClockIn();
+				} else {
+					await correctClockIn();
+					await correctClockOut();
 				}
 
 				if (lockedMetadataChanged) {
@@ -1679,6 +1727,34 @@ function submissionEffect(
 		let correctedClockOut = period.endTime ?? undefined;
 		const endpoints: SubmissionEndpoint[] = [];
 		if (action === "edit") {
+			const forbiddenMessage = yield* _(
+				Effect.tryPromise({
+					try: () =>
+						getForbiddenCorrectionEditMessage({
+							employeeId: currentEmployee.id,
+							workPeriodEndTime: period.endTime,
+							timezone,
+						}),
+					catch: (cause) => {
+						logger.error({ error: cause }, "Failed to check edit capability");
+						return new DatabaseError({
+							message: "Failed to verify edit policy. Please try again.",
+							operation: "get_edit_capability",
+							cause,
+						});
+					},
+				}),
+			);
+			if (forbiddenMessage) {
+				return yield* _(
+					Effect.fail(
+						new ValidationError({
+							message: forbiddenMessage,
+							field: "workPeriodId",
+						}),
+					),
+				);
+			}
 			const edit = data as CorrectionRequest;
 			const times = buildCorrectionTimes({ ...edit, timezone });
 			if ("error" in times) {

@@ -1,0 +1,157 @@
+{
+  "timeTracking": {
+    "addNotePrompt": "Legg til et notat om arbeidet ditt (valgfritt)",
+    "autoAdjusted": {
+      "toast": {
+        "description": "En pause på {breakMinutes} minutter ble lagt til for å overholde tidsbestemmelsene.",
+        "title": "Pause lagt til automatisk for samsvar"
+      }
+    },
+    "budget": "Budsjett",
+    "clockedOutSuccess": "Du har stemplet ut!",
+    "clockIn": "Stemple inn",
+    "clockingIn": "Stempler inn…",
+    "clockingOut": "Stempler ut…",
+    "clockInSavedForReview": "Innstempling lagret på denne enheten for gjennomgang; ikke bekreftet på serveren",
+    "clockInSuccess": "Stemplet inn",
+    "clockOut": "Stemple ut",
+    "clockOutSavedForReview": "Utstempling lagret på denne enheten for gjennomgang; ikke bekreftet på serveren",
+    "clockOutSuccess": "Stemplet ut",
+    "compliance": {
+      "violation": "Regelverksbrudd",
+      "warning": "Samsvarsvarsel"
+    },
+    "correction": {
+      "clockIn": "Stemple inn",
+      "clockInDate": "Stemple inn-dato",
+      "clockOut": "Stemple ut",
+      "clockOutDate": "Stemple ut-dato",
+      "editDescription": "Gjør endringer i timeregistreringen din for i dag.",
+      "editEntry": "Rediger timeregistrering",
+      "editTitle": "Rediger timeregistrering",
+      "errors": {
+        "invalidTimeRange": "Tidspunkt for utstempling må være etter innstempling",
+        "submitFailed": "Kunne ikke sende inn korreksjon",
+        "updateFailed": "Kunne ikke oppdatere timeregistrering"
+      },
+      "noteLabel": "Notat (valgfritt)",
+      "notePlaceholder": "Legg til et notat om denne endringen…",
+      "reasonLabel": "Årsak til korrigering",
+      "reasonPlaceholder": "Forklar hvorfor denne korrigeringen er nødvendig…",
+      "requestCorrection": "Be om tidskorrigering",
+      "requestDescription": "Send inn en korrigeringsforespørsel for denne tidsregistreringen. Lederen din må godkjenne den.",
+      "requestTitle": "Be om tidskorrigering",
+      "saveChanges": "Lagre endringer",
+      "saving": "Lagrer…",
+      "submitRequest": "Send inn forespørsel",
+      "submitting": "Sender inn…",
+      "success": {
+        "applied": "Korrigering ble utført",
+        "submitted": "Korrigeringsforespørsel sendt inn til godkjenning av leder",
+        "updated": "Tidsregistreringen ble oppdatert"
+      },
+      "timezoneNote": "Klokkeslett vises i din lokale tidssone ({timezone})"
+    },
+    "currentlyClockedIn": "Du er for øyeblikket stemplet inn",
+    "deadline": "Frist",
+    "errors": {
+      "clockInFailed": "Kunne ikke stemple inn",
+      "clockOutFailed": "Kunne ikke stemple ut",
+      "holidayBlocked": "Kan ikke stemple ut på {holidayName}",
+      "holidayBlockedDesc": "Denne dagen er markert som en helligdag, og tidsregistreringer er ikke tillatt",
+      "notesSaveFailed": "Kunne ikke lagre notater",
+      "restPeriodBlocked": "Hvileperioden er ikke fullført",
+      "restPeriodBlockedDesc": "Du må fullføre den påkrevde hvileperioden før du stempler inn. Be om et unntak ved behov."
+    },
+    "manualEntry": {
+      "addButton": "Legg til manuell registrering",
+      "clockInLabel": "Stemple inn",
+      "clockOutLabel": "Stemple ut",
+      "dateLabel": "Dato",
+      "description": "Opprett en timeregistrering for en tidligere dato. Godkjenning kan være påkrevd basert på organisasjonens retningslinjer for endring.",
+      "errors": {
+        "createFailed": "Kunne ikke opprette timeregistrering",
+        "futureDate": "Kan ikke opprette registreringer for fremtidige datoer",
+        "invalidTime": "Angi et fullstendig, gyldig klokkeslett",
+        "invalidTimeRange": "Tidspunkt for utstempling må være etter innstempling",
+        "tooLong": "Arbeidsperioden kan ikke overstige 24 timer"
+      },
+      "reasonLabel": "Årsak",
+      "reasonPlaceholder": "Beskriv hva du jobbet med…",
+      "submit": "Opprett registrering",
+      "submitting": "Oppretter…",
+      "success": {
+        "adjusted": "Tidene ble justert til {clockIn} - {clockOut} for å unngå overlapp",
+        "created": "Timeregistrering opprettet",
+        "pendingApproval": "Timeregistrering sendt til godkjenning hos leder"
+      },
+      "title": "Legg til manuell timeregistrering",
+      "titleForEmployee": "Legg til manuell timeregistrering for {employee}"
+    },
+    "noCategory": "Ingen kategori (100%)",
+    "noProject": "Ingen prosjekt",
+    "notesPlaceholder": "Hva jobbet du med?",
+    "notesSaved": "Notater lagret",
+    "project": "Prosjekt",
+    "readyToClockIn": "Klar til å begynne å jobbe?",
+    "selectCategory": "Velg en kategori",
+    "selectProject": "Velg et prosjekt",
+    "sessionReminders": {
+      "breakOpen": "{remaining} min pause gjenstår",
+      "breakRequired": "Pause påkrevd nå",
+      "breakRequiredMessage": "Ta en pause før du fortsetter økten.",
+      "breakSoon": "Pause snart",
+      "dismissBreak": "Avvis pausepåminnelse",
+      "dismissHydration": "Avvis væskepåminnelse",
+      "hydration": "Væskeinntak",
+      "hydrationProgress": "{intake}/{goal} glass i dag",
+      "logOneGlass": "+1 glass",
+      "logTwoGlasses": "+2",
+      "minutesUntilBreak": "{minutes} min til pause",
+      "snoozeToday": "Slumre i dag",
+      "subtitle": "I løpet av dette skiftet",
+      "title": "Øktpåminnelser"
+    },
+    "startedAt": "Startet",
+    "summary": {
+      "baseWorked": "Grunntid arbeidet",
+      "surcharge": "Tillegg",
+      "thisMonth": "Denne måneden",
+      "thisWeek": "Denne uken",
+      "today": "I dag"
+    },
+    "table": {
+      "approved": "Timeføring godkjent",
+      "approveEntry": "Godkjenn oppføring",
+      "approveFailed": "Kunne ikke godkjenne oppføring",
+      "approving": "Godkjenner...",
+      "emptyState": "Ingen timeregistreringer funnet for denne uken.",
+      "rowActions": "Handlinger for timeføring",
+      "title": "Timeregistreringer",
+      "viewCalendar": "Vis kalender"
+    },
+    "timeline": {
+      "dayPicker": "Dagvelger for tidslinje",
+      "emptyDescription": "Det er ingen skift, fravær eller tidsregistreringer for den valgte dagen ennå.",
+      "emptyTitle": "Ingen aktivitet registrert for denne dagen.",
+      "nextDay": "Neste dag",
+      "previousDay": "Forrige dag",
+      "title": "Tidslinje for arbeidsdag",
+      "today": "I dag",
+      "unavailableDescription": "Stempling fungerer fortsatt. Prøv å oppdatere denne visningen senere.",
+      "unavailableTitle": "Tidslinje utilgjengelig"
+    },
+    "unknownCategory": "Ukjent kategori",
+    "unknownProject": "Ukjent prosjekt",
+    "workCategory": "Arbeidskategori"
+  },
+  "wellness": {
+    "water": {
+      "goalMet": "Dagsmålet er nådd! Fortsett det gode arbeidet!",
+      "logError": "Kunne ikke registrere vanninntak",
+      "logged": "Vann registrert! {progress}% av dagsmålet",
+      "snoozed": "Vannpåminnelser er utsatt for i dag",
+      "snoozeError": "Kunne ikke utsette påminnelser"
+    }
+  }
+}

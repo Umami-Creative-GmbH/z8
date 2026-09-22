@@ -204,6 +204,7 @@
     "slugLabel": "Slug de la organización",
     "slugPlaceholder": "acme-sa",
     "slugTaken": "Este slug ya está en uso. Por favor elija uno diferente.",
+    "ssoFailed": "No se completó el inicio de sesión con SSO. Seleccione una organización para intentarlo de nuevo o elija otro espacio de trabajo.",
     "switchFailed": "Error al cambiar de organización",
     "switching": "Cambiando de organización...",
     "switchTo": "Cambiar de organización",

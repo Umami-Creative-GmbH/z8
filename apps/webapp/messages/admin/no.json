@@ -1,0 +1,451 @@
+{
+  "admin": {
+    "analytics": {
+      "billing": {
+        "estimatedNotice": "Historiske lisenser og MRR er estimert. Nøyaktig rekonstruksjon krever fremtidige øyeblikksbilder eller en fakturajournal."
+      },
+      "charts": {
+        "commercial": {
+          "description": "Signaler for lisenser og repeterende inntekter for faktureringsstatus.",
+          "summary": "Kommersielt sammendrag: {seats} lisenser og {mrr} estimert MRR.",
+          "title": "Kommersielt"
+        },
+        "engagement": {
+          "description": "Plattformbruk målt i aktive brukere og økter.",
+          "summary": "Engasjementsammendrag: {activeUsers} aktive brukere og {sessions} økter.",
+          "title": "Engasjement"
+        },
+        "growth": {
+          "description": "Nye brukere og organisasjoner som kommer til plattformen.",
+          "summary": "Vekstsammendrag: {signups} registreringer og {organizations} organisasjoner.",
+          "title": "Vekst"
+        },
+        "operations": {
+          "description": "Tidsregistreringsvolum generert av leietakeraktivitet.",
+          "summary": "Driftssammendrag: {timeRecords} tidsregistreringer.",
+          "title": "Drift"
+        }
+      },
+      "controls": {
+        "bucket": {
+          "ariaLabel": "Analysegruppe",
+          "label": "Gruppe"
+        },
+        "range": {
+          "ariaLabel": "Analyseperiode",
+          "label": "Periode"
+        }
+      },
+      "description": "Overvåk plattformvekst, engasjement, driftsaktivitet og faktureringstrender.",
+      "emptyState": {
+        "noData": "Ingen data for denne perioden"
+      },
+      "kpis": {
+        "activeUsers": {
+          "description": "Brukere som er aktive i den valgte perioden",
+          "title": "Aktive brukere"
+        },
+        "mrr": {
+          "description": "Estimert månedlig gjentakende inntekt",
+          "title": "Estimert MRR"
+        },
+        "organizations": {
+          "description": "Aktive arbeidsområder på plattformen",
+          "title": "Organisasjoner"
+        },
+        "seats": {
+          "description": "Nåværende betalte plasser eller prøveplasser",
+          "title": "Lisensierte plasser"
+        },
+        "sessions": {
+          "description": "Autentiserte økter",
+          "title": "Økter"
+        },
+        "signups": {
+          "description": "Nye plattformkontoer",
+          "title": "Registreringer"
+        },
+        "timeRecords": {
+          "description": "Innsendte driftsoppføringer",
+          "title": "Timeregistreringer"
+        }
+      },
+      "preview": {
+        "description": "Plattformvekst og engasjement i det valgte tidsrommet.",
+        "title": "Analysetrender",
+        "viewFull": "Se fullstendig analyse"
+      },
+      "sectionDescription": "Oppdatert fra gjeldende plattformdata for valgt periode og intervall.",
+      "sectionTitle": "Analysetrender",
+      "title": "Plattformanalyse",
+      "values": {
+        "notAvailable": "Ikke tilgjengelig"
+      }
+    },
+    "billing": {
+      "description": "Overvåk abonnementer, inntekter og betalingsstatus",
+      "intervals": {
+        "month": "Månedlig",
+        "year": "Årlig"
+      },
+      "metrics": {
+        "activeSubscriptions": "Aktive abonnementer",
+        "activeSubscriptionsDescription": "{trialingCount} i prøveperiode, {activeCount} betalte",
+        "conversionRate": "Konverteringsrate",
+        "conversionRateDescription": "Fra prøveperiode til betalt",
+        "licensedSeats": "Lisensierte plasser",
+        "licensedSeatsDescription": "På tvers av alle abonnementer",
+        "mrr": "MRR",
+        "mrrDescription": "Månedlige faste inntekter",
+        "pastDue": "Forfalt",
+        "pastDueDescription": "Betalingsproblemer",
+        "trialing": "Prøveperiode",
+        "trialingDescription": "I prøveperiode"
+      },
+      "sections": {
+        "recentSubscriptions": "Nylige abonnementer",
+        "revenueMetrics": "Inntektsmålinger"
+      },
+      "status": {
+        "active": "Aktiv",
+        "canceled": "Kansellert",
+        "pastDue": "Forfalt",
+        "trialing": "Prøveperiode"
+      },
+      "table": {
+        "actions": "Handlinger",
+        "billing": "Fakturering",
+        "created": "Opprettet",
+        "demoUsers": "Demobrukere",
+        "licensedSeats": "Lisensierte plasser",
+        "noSubscriptions": "Ingen abonnementer ennå",
+        "organization": "Organisasjon",
+        "periodEnd": "Periodeslutt",
+        "status": "Status",
+        "usedSeats": "Brukte plasser"
+      },
+      "title": "Faktureringsdashbord"
+    },
+    "diagnostics": {
+      "actions": {
+        "refresh": "Oppdater diagnostikk"
+      },
+      "clientDescription": "Sikker plattformkonfigurasjon og tjenestetilstand på appnivå. Sist oppdatert {date}.",
+      "description": "Sikker plattformkonfigurasjon og helsesjekker kun for appdistribusjon.",
+      "emailTest": {
+        "actions": {
+          "send": "Send test-e-post"
+        },
+        "description": "Send en diagnostikk-e-post via systemets e-posttransport.",
+        "messageId": "Meldings-ID: {messageId}",
+        "recipient": "Mottakers e-postadresse",
+        "smtpOverride": {
+          "description": "La stå tomt for å bruke den konfigurerte e-posttransporten for systemet. Hvis feltet fylles ut, bruker testen kun disse SMTP-innstillingene.",
+          "fromEmail": "Fra-e-post",
+          "fromName": "Fra-navn",
+          "host": "SMTP-vert",
+          "ipMode": "IP-modus",
+          "ipMode.auto": "Auto",
+          "ipMode.ipv4": "Kun IPv4",
+          "ipMode.ipv6": "Kun IPv6",
+          "password": "SMTP-passord",
+          "port": "SMTP-port",
+          "requireTls": "Krev STARTTLS",
+          "secure": "Bruk TLS",
+          "title": "Midlertidig SMTP-overstyring",
+          "username": "SMTP-brukernavn"
+        },
+        "success": "Test-e-post sendt til {recipient}.",
+        "title": "Test av e-postlevering"
+      },
+      "keyManager": {
+        "actions": {
+          "test": "Test kryptering"
+        },
+        "ciphertextPreview": "Forhåndsvisning av chiffertekst",
+        "description": "Kjør en ende-til-ende-test for kryptering/dekryptering av plattformnøkkel.",
+        "input": "Inndata",
+        "keyStatus": "Nøkkelstatus",
+        "keyStatus.created": "Opprettet ny plattformnøkkel",
+        "keyStatus.reused": "Gjenbrukte eksisterende plattformnøkkel",
+        "output": "Utdata",
+        "platformKeyId": "Plattformnøkkel-ID",
+        "result": {
+          "match": "Inndata og utdata samsvarer",
+          "mismatch": "Inndata og utdata er forskjellige"
+        },
+        "status": {
+          "pending": "Krypteringstesten kjører."
+        },
+        "title": "Scaleway Key Manager-kryptering"
+      },
+      "recommendedActions": {
+        "description": "Løs disse punktene for å gjenopprette diagnostikken til en god tilstand.",
+        "title": "Anbefalte handlinger"
+      },
+      "sections": {
+        "configuration": {
+          "description": "Sikre tilstander for distribusjonskonfigurasjon. Hemmelige verdier vises aldri.",
+          "title": "Plattformkonfigurasjon"
+        },
+        "health": {
+          "description": "App-spesifikke sjekker for infrastrukturavhengigheter som brukes av webappen.",
+          "title": "Tjenestestatus"
+        }
+      },
+      "statusAnnouncement": "Diagnosestatus {status}. Sist oppdatert {date}.",
+      "status": {
+        "disabled": "Deaktivert",
+        "error": "Feil",
+        "healthy": "Frisk",
+        "warning": "Advarsel"
+      },
+      "title": "Distribusjonsdiagnostikk"
+    },
+    "layout": {
+      "exitAdmin": "Avslutt admin",
+      "menuTitle": "Adminmeny",
+      "nav": {
+        "analytics": "Analyse",
+        "billing": "Fakturering",
+        "diagnostics": "Distribusjonsdiagnostikk",
+        "organizations": "Organisasjoner",
+        "overview": "Oversikt",
+        "settings": "Innstillinger",
+        "systemEmailTemplates": "System-e-postmaler",
+        "users": "Brukere",
+        "workerQueue": "Arbeiderkø"
+      },
+      "openMenu": "Åpne adminmeny",
+      "subtitle": "Plattformadministrasjon",
+      "title": "Administratorkonsoll"
+    },
+    "organizations": {
+      "actions": {
+        "delete": "Slett organisasjon",
+        "reactivate": "Reaktiver organisasjon",
+        "suspend": "Suspender organisasjon"
+      },
+      "badges": {
+        "deleted": "Slettet",
+        "suspended": "Suspendert"
+      },
+      "deleteDialog": {
+        "confirmButton": "Slett organisasjon",
+        "confirmLabel": "Skriv «{name}» for å bekrefte",
+        "confirmPlaceholder": "Organisasjonsnavn",
+        "description": "Denne handlingen vil slette «{name}» og alle tilknyttede data. Dette kan ikke angres.",
+        "immediateDelete": "Slett umiddelbart (hopp over 5-dagers utsettelsesperiode)",
+        "skipNotification": "Hopp over slettevarsel til organisasjonens medlemmer",
+        "title": "Slett organisasjon"
+      },
+      "description": "Se og administrer alle organisasjoner på plattformen",
+      "filters": {
+        "all": "Alle",
+        "deleted": "Slettet",
+        "suspended": "Suspendert"
+      },
+      "pagination": {
+        "showing": "Viser {from} til {to} av {total} organisasjoner"
+      },
+      "searchPlaceholder": "Søk etter navn eller slug…",
+      "suspendDialog": {
+        "confirmButton": "Suspender organisasjon",
+        "description": "Suspender «{name}» og sett den i skrivebeskyttet modus. Medlemmer vil kunne se data, men ikke opprette eller redigere noe.",
+        "reason": "Årsak",
+        "reasonPlaceholder": "Angi årsaken til å suspendere denne organisasjonen…",
+        "title": "Suspender organisasjon"
+      },
+      "table": {
+        "created": "Opprettet",
+        "employees": "Ansatte",
+        "loadErrorTitle": "Kunne ikke laste inn organisasjoner",
+        "members": "Medlemmer",
+        "noOrganizationsFound": "Ingen organisasjoner funnet",
+        "organization": "Organisasjon"
+      },
+      "title": "Organisasjonsadministrasjon",
+      "toasts": {
+        "deletedGracePeriod": "Organisasjonen \"{name}\" er planlagt slettet om 5 dager",
+        "deletedImmediate": "Organisasjonen \"{name}\" er planlagt slettet umiddelbart",
+        "suspended": "Organisasjonen \"{name}\" er suspendert",
+        "unsuspended": "Suspenderingen av organisasjonen \"{name}\" er opphevet"
+      }
+    },
+    "overview": {
+      "analytics": {
+        "title": "Analysetrender"
+      },
+      "description": "Plattformstatistikk og hurtighandlinger",
+      "metrics": {
+        "bannedUsers": "Utestengte brukere",
+        "bannedUsersDescription": "Utestengt fra tilgang",
+        "licensedSeats": "Lisensierte plasser",
+        "licensedSeatsDescription": "På tvers av alle abonnementer",
+        "mrr": "MRR",
+        "mrrDescription": "Månedlig gjentakende inntekt (€)",
+        "organizations": "Organisasjoner",
+        "organizationsDescription": "Aktive arbeidsområder",
+        "suspended": "Suspendert",
+        "suspendedDescription": "Skrivebeskyttede organisasjoner",
+        "title": "Plattformstatistikk",
+        "totalUsers": "Totalt antall brukere",
+        "totalUsersDescription": "Registrerte plattformkontoer"
+      },
+      "quickActions": {
+        "billing": {
+          "description": "Inntektsstatistikk og abonnementsstatus",
+          "title": "Fakturering og abonnementer"
+        },
+        "diagnostics": {
+          "description": "Se gjennom sikker konfigurasjon og apphelsesjekker",
+          "title": "Distribusjonsdiagnostikk"
+        },
+        "organizations": {
+          "description": "Suspender, slett eller se gjennom organisasjoner",
+          "title": "Organisasjonsadministrasjon"
+        },
+        "systemEmailTemplates": {
+          "description": "Rediger plattformeid fakturerings- og system-e-posttekst",
+          "title": "System-e-postmaler"
+        },
+        "title": "Hurtighandlinger",
+        "users": {
+          "description": "Utesteng/opphev utestenging av brukere, administrer økter, se aktivitet",
+          "title": "Brukeradministrasjon"
+        }
+      },
+      "title": "Oversikt"
+    },
+    "settings": {
+      "actions": {
+        "saveChanges": "Lagre endringer"
+      },
+      "approvalMaintenance": {
+        "approvalHint": "En foreldet godkjenningsforespørsel eller kanonisk arbeidsflyt-UUID.",
+        "approvalId": "Godkjennings-ID",
+        "chain": "Godkjenningskjede",
+        "delete": "Tving sletting",
+        "deleting": "Sletter…",
+        "description": "Fjern en godkjenning og tilknyttede godkjenningsposter permanent. Kildeposter og deres statuser bevares.",
+        "errors": {
+          "ambiguous": "Denne ID-en finnes i begge godkjenningslagre. Ingen godkjenning ble slettet.",
+          "approvalInvalid": "Angi en gyldig godkjennings-UUID.",
+          "failed": "Kunne ikke fullføre slettingen. Kontroller godkjennings-ID-en før du prøver igjen.",
+          "invalidInput": "Angi en organisasjons-ID og en gyldig godkjennings-UUID.",
+          "notFound": "Godkjenningen ble ikke funnet i denne organisasjonen.",
+          "organizationRequired": "Angi en organisasjons-ID.",
+          "unauthorized": "Krever plattformadministrator-tilgang."
+        },
+        "legacy": "Foreldet forespørsel",
+        "organizationHint": "Organisasjonen som eier godkjenningen.",
+        "organizationId": "Organisasjons-ID",
+        "success": "Godkjenning slettet. Fjernede poster:",
+        "title": "Tving sletting av godkjenning",
+        "workflow": "Arbeidsflyt"
+      },
+      "cookieConsent": {
+        "description": "Settes inn på autentiseringssider for GDPR-samsvar",
+        "helperPrefix": "La stå tomt for å deaktivere. Lastes med",
+        "helperSuffix": "strategi.",
+        "scriptContent": "Skriptinnhold",
+        "scriptPlaceholder": "<!-- Eksempel: CookieBot -->\n<script id=\"Cookiebot\" src=\"https://consent.cookiebot.com/uc.js\" data-cbid=\"YOUR-ID\" type=\"text/javascript\" async></script>\n\n<!-- Eller tilpasset skript -->\n<script>\n  // Din logikk for informasjonskapselsamtykke her\n</script>",
+        "title": "Skript for samtykke til informasjonskapsler"
+      },
+      "description": "Global plattformkonfigurasjon for alle organisasjoner",
+      "title": "Plattforminnstillinger",
+      "toasts": {
+        "cookieConsentSaved": "Skript for samtykke til informasjonskapsler ble lagret",
+        "saveFailed": "Kunne ikke lagre"
+      },
+      "turnstile": {
+        "deploymentNote": "Konfigurert via miljøvariabler ved utrulling. Enterprise-organisasjoner kan overstyre i domeneinnstillinger.",
+        "description": "Bot-beskyttelse for autentiseringsskjemaer",
+        "secretKey": "Hemmelig nøkkel",
+        "siteKey": "Nettstedsnøkkel",
+        "title": "Cloudflare Turnstile"
+      }
+    },
+    "systemEmailTemplates": {
+      "actions": {
+        "reset": "Tilbakestill til systemmal",
+        "save": "Lagre",
+        "sendTest": "Send test"
+      },
+      "defaultFallback": "Standardreserve",
+      "defaultFallbackDescription": "Hvis denne malen bruker systemstandarden, sender Z8 plattformens tekst og emne:",
+      "description": "Administrer plattformeide fakturerings- og system-e-poster. Disse malene sendes kun med systemets e-posttransport og er ikke knyttet til en organisasjon.",
+      "editBodyBeforeSaving": "Rediger e-postteksten før du lagrer en første tilpasset mal.",
+      "empty": "Ingen maler for system-e-post på plattformen er tilgjengelige.",
+      "eyebrow": "Systemtransport",
+      "reset": "System-e-postmal tilbakestilt til standard",
+      "resetDialog": {
+        "confirm": "Tilbakestill plattformens systemmal",
+        "description": "Dette sletter den globale plattformoverstyringen for denne system-e-postmalen og gjenoppretter det innebygde emnet og brødteksten. Faktiske faktura- og system-e-poster vil bruke standard plattformtekst etter tilbakestilling.",
+        "title": "Tilbakestille plattformens systemmal?"
+      },
+      "resetFailed": "Kunne ikke tilbakestille system-e-postmal",
+      "saved": "System-e-postmal lagret",
+      "saveFailed": "Kunne ikke lagre system-e-postmal",
+      "status": {
+        "customized": "Tilpasset",
+        "default": "Standard"
+      },
+      "systemTemplates": "Systemmaler",
+      "testFailed": "Kunne ikke sende test-e-post",
+      "testSent": "Test-e-post sendt til kontoen din",
+      "title": "System-e-postmaler",
+      "transportNotice": "Bruk dette området for global tekst til faktura- og system-e-poster. Organisasjonens innstillinger for e-posttransport ignoreres for disse meldingene; tester og faktiske utsendinger bruker plattformens systemtransport."
+    },
+    "users": {
+      "badges": {
+        "admin": "Admin",
+        "banExpiresUntil": "Til {date}",
+        "banned": "Utestengt",
+        "user": "Bruker"
+      },
+      "banDialog": {
+        "confirmButton": "Utesteng bruker",
+        "description": "Utesteng {email} fra å få tilgang til plattformen.",
+        "expiry": "Utløpsdato (valgfritt)",
+        "permanentBanHint": "La stå tomt for permanent utestengelse",
+        "reason": "Årsak",
+        "reasonPlaceholder": "Angi årsaken til utestengelse av denne brukeren…",
+        "title": "Utesteng bruker"
+      },
+      "description": "Se og administrer alle brukere på plattformen",
+      "filters": {
+        "allUsers": "Alle brukere",
+        "banned": "Utestengt"
+      },
+      "pagination": {
+        "showing": "Viser {from} til {to} av {total} brukere"
+      },
+      "searchLabel": "Søk etter brukere på e-post",
+      "searchPlaceholder": "Søk etter navn eller e-post…",
+      "sessionsDialog": {
+        "description": "Aktive økter for {email}",
+        "noSessions": "Ingen aktive økter",
+        "revokeAll": "Tilbakekall alle økter",
+        "title": "Brukerøkter",
+        "unknownDevice": "Ukjent enhet",
+        "unknownIp": "Ukjent IP"
+      },
+      "table": {
+        "created": "Opprettet",
+        "noOrganizations": "Ingen organisasjoner",
+        "noUsersFound": "Ingen brukere funnet",
+        "organizations": "Organisasjoner",
+        "role": "Rolle",
+        "user": "Bruker"
+      },
+      "title": "Brukeradministrasjon",
+      "toasts": {
+        "banned": "Bruker {email} har blitt utestengt",
+        "sessionRevoked": "Økt tilbakekalt",
+        "sessionsRevoked": "Tilbakekalte {count} økter",
+        "unbanned": "Bruker {email} er ikke lenger utestengt"
+      }
+    }
+  }
+}

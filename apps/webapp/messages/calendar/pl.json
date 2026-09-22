@@ -148,6 +148,7 @@
       "title": "Szczegóły dnia"
     },
     "delete": {
+      "applied": "Zastosowano usunięcie wpisu czasu pracy",
       "auditNote": "Wpisy czasu zostaną oznaczone jako usunięte do celów audytu.",
       "confirm": "Konwertuj na przerwę",
       "description": "To działanie trwale usunie ten okres pracy. Luka pojawi się w kalendarzu jako przerwa.",

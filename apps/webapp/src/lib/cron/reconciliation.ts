@@ -1,20 +1,21 @@
 import type { Queue } from "bullmq";
 import type { JobData, JobResult } from "@/lib/queue";
 import { CRON_JOBS, type CronJobName } from "./registry";
+import { isLegacyEscalationSchedulerRetired, LEGACY_ESCALATION_JOB_NAMES } from "./legacy-escalation-schedulers";
 
 type SchedulerCronJobData = {
 	type: CronJobName;
 	triggeredAt: string;
 };
 
-type CronQueue = Pick<Queue<JobData | SchedulerCronJobData, JobResult>, "upsertJobScheduler">;
+type CronQueue = Pick<Queue<JobData | SchedulerCronJobData, JobResult>, "upsertJobScheduler" | "removeJobScheduler">;
 
 export interface CronScheduleInput {
 	pattern: string;
 }
 
 export type CronReconciliationResult =
-	| { success: true }
+	| { success: true; retired?: true }
 	| { success: false; error: string };
 
 export async function reconcileCronJobSchedule({
@@ -27,6 +28,12 @@ export async function reconcileCronJobSchedule({
 	pattern: string;
 }): Promise<CronReconciliationResult> {
 	try {
+		if (isLegacyEscalationSchedulerRetired(jobName)) {
+			// False means already absent. Removal is idempotent, and deliberately
+			// does not drain active jobs or remove the retained consumer handler.
+			await queue.removeJobScheduler(`cron-${jobName}`);
+			return { success: true, retired: true };
+		}
 		await queue.upsertJobScheduler(
 			`cron-${jobName}`,
 			{ pattern },
@@ -54,6 +61,17 @@ export async function reconcileCronJobSchedule({
 			error: error instanceof Error ? error.message : String(error),
 		};
 	}
+}
+
+/** Also run when scheduler registration is disabled. Redis failures stay visible. */
+export async function retireLegacyEscalationSchedulers(queue: CronQueue) {
+	const results = await Promise.all(
+		LEGACY_ESCALATION_JOB_NAMES.filter(isLegacyEscalationSchedulerRetired).map(async (jobName) => ({
+			jobName,
+			result: await reconcileCronJobSchedule({ queue, jobName, pattern: CRON_JOBS[jobName].schedule }),
+		})),
+	);
+	return results;
 }
 
 export async function reconcileCronSchedules({

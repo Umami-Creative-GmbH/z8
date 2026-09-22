@@ -165,7 +165,6 @@
     "moveDown": "Move down",
     "moveUp": "Move up",
     "name": "Name",
-    "never": "Never",
     "new": "New",
     "next": "Next",
     "notApplicable": "N/A",
@@ -290,16 +289,8 @@
     "trust-center": "Trust Center"
   },
   "loading": {
-    "application": "Loading application",
-    "authentication": "Loading authentication",
-    "calendar": "Loading calendar",
     "chart": "Loading chart",
-    "licenses": "Loading licenses",
-    "platformAnalytics": "Loading platform analytics",
-    "settings": "Loading settings",
-    "setup": "Loading setup",
-    "teamAbsences": "Loading team absences table",
-    "workerQueue": "Loading worker queue"
+    "settings": "Loading settings"
   },
   "nav": {
     "absences": "Absences",
@@ -335,14 +326,6 @@
       "viewAll": "View all notifications"
     },
     "content": {
-      "absenceRequestSubmitted": {
-        "message": "Your {categoryName} request for {dateRange} has been submitted and is pending approval.",
-        "title": "Absence request submitted"
-      },
-      "teamMemberRemoved": {
-        "message": "You have been removed from the {teamName} team by {performedByName}.",
-        "title": "Removed from team"
-      },
       "passwordChanged": {
         "message": "Your password was successfully changed. If you didn't make this change, please contact support immediately.",
         "title": "Password changed"
@@ -432,11 +415,32 @@
   },
   "offline": {
     "banner": {
+      "archived": "Archived clock evidence retained on this device",
       "offline": "You're offline",
-      "offlineWithPending": "Offline - {count} event(s) pending",
-      "pending": "{count} event(s) pending sync",
-      "retry": "Retry",
-      "syncing": "Syncing {count} event(s)..."
+      "offlineSaved": "Offline — {count} record(s) saved locally for review",
+      "refresh": "Refresh status",
+      "refreshing": "Checking {count} saved record(s)…",
+      "reviewRequired": "{count} record(s) saved locally — review required",
+      "unverified": "Clock evidence saved on this device. Connect to review all saved records."
+    },
+    "capture": {
+      "description": "Save the event on this device for review. Server clock status will not change.",
+      "end": "Save clock-out for review",
+      "start": "Save clock-in for review"
+    },
+    "recovery": {
+      "archive": "Archive and retain evidence",
+      "archived": "Archived — evidence retained",
+      "description": "These records are saved on this device. Server commitment is unknown. Check existing time entries with your manager before submitting replacement work. Archiving keeps the evidence and does not cancel work on the server.",
+      "empty": "No accessible records. Older records without account evidence need organization-level review; records without organization evidence require separately authorized recovery.",
+      "evidence": "Original evidence and recovery status",
+      "export": "Export accessible evidence",
+      "exportError": "Could not export saved records",
+      "held": "Needs review — not confirmed on server",
+      "loadError": "Could not read saved records",
+      "loading": "Reading saved records…",
+      "review": "Review saved records",
+      "title": "Saved clock records"
     }
   },
   "presence": {
@@ -530,12 +534,8 @@
   "validation": {
     "first-name-required": "First Name is required",
     "invalid-email": "Invalid email address",
-    "invalid-password": "Invalid password",
     "last-name-required": "Last Name is required",
     "password-required": "Password is required"
-  },
-  "worksCouncil": {
-    "loadingLabel": "Loading works council"
   },
   "workBalance": {
     "label": "All-time balance",

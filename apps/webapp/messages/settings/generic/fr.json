@@ -854,7 +854,10 @@
         "failed": "Échoué",
         "failedDescription": "Récemment échoué",
         "paused": "En pause",
-        "pausedDescription": "Tâches en pause",
+        "queueState": "File d'attente",
+        "queueStateDescription": "Détermine si les workers peuvent prendre en charge les tâches en attente",
+        "running": "En cours d'exécution",
+        "unknown": "Inconnu",
         "waiting": "En attente",
         "waitingDescription": "Tâches en attente de traitement"
       },

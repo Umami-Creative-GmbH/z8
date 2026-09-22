@@ -1,0 +1,451 @@
+{
+  "admin": {
+    "analytics": {
+      "billing": {
+        "estimatedNotice": "Historiska platser och MRR är uppskattade. Exakt rekonstruktion kräver framtida ögonblicksbilder eller en faktureringsreskontra."
+      },
+      "charts": {
+        "commercial": {
+          "description": "Signaler för platser och återkommande intäkter för faktureringshälsa.",
+          "summary": "Kommersiell sammanfattning: {seats} platser och {mrr} uppskattad MRR.",
+          "title": "Kommersiellt"
+        },
+        "engagement": {
+          "description": "Plattformsanvändning genom aktiva användare och sessioner.",
+          "summary": "Engagemangssammanfattning: {activeUsers} aktiva användare och {sessions} sessioner.",
+          "title": "Engagemang"
+        },
+        "growth": {
+          "description": "Nya användare och organisationer som ansluter till plattformen.",
+          "summary": "Tillväxtsammanfattning: {signups} registreringar och {organizations} organisationer.",
+          "title": "Tillväxt"
+        },
+        "operations": {
+          "description": "Tidrapporteringsvolym som genereras av klientaktivitet.",
+          "summary": "Driftsammanfattning: {timeRecords} tidsposter.",
+          "title": "Drift"
+        }
+      },
+      "controls": {
+        "bucket": {
+          "ariaLabel": "Analysgruppering",
+          "label": "Gruppering"
+        },
+        "range": {
+          "ariaLabel": "Analysintervall",
+          "label": "Intervall"
+        }
+      },
+      "description": "Övervaka plattformstillväxt, engagemang, operativ aktivitet och faktureringstrender.",
+      "emptyState": {
+        "noData": "Inga data för detta intervall"
+      },
+      "kpis": {
+        "activeUsers": {
+          "description": "Aktiva användare under det valda intervallet",
+          "title": "Aktiva användare"
+        },
+        "mrr": {
+          "description": "Uppskattning av månatliga återkommande intäkter",
+          "title": "Uppskattad MRR"
+        },
+        "organizations": {
+          "description": "Aktiva arbetsytor på plattformen",
+          "title": "Organisationer"
+        },
+        "seats": {
+          "description": "Aktuella betalda platser eller provplatser",
+          "title": "Licensierade platser"
+        },
+        "sessions": {
+          "description": "Autentiserade sessioner",
+          "title": "Sessioner"
+        },
+        "signups": {
+          "description": "Nya plattformskonton",
+          "title": "Registreringar"
+        },
+        "timeRecords": {
+          "description": "Inskickade driftposter",
+          "title": "Tidsposter"
+        }
+      },
+      "preview": {
+        "description": "Plattformstillväxt och engagemang under det valda intervallet.",
+        "title": "Analystrender",
+        "viewFull": "Visa fullständig analys"
+      },
+      "sectionDescription": "Uppdaterad från aktuell plattformsdata för det valda intervallet och grupperingen.",
+      "sectionTitle": "Analystrender",
+      "title": "Plattformsanalys",
+      "values": {
+        "notAvailable": "Inte tillgängligt"
+      }
+    },
+    "billing": {
+      "description": "Övervaka prenumerationer, intäkter och betalningsstatus",
+      "intervals": {
+        "month": "Månadsvis",
+        "year": "Årsvis"
+      },
+      "metrics": {
+        "activeSubscriptions": "Aktiva prenumerationer",
+        "activeSubscriptionsDescription": "{trialingCount} med provperiod, {activeCount} betalda",
+        "conversionRate": "Konverteringsgrad",
+        "conversionRateDescription": "Provperioder till betalda",
+        "licensedSeats": "Licensierade platser",
+        "licensedSeatsDescription": "Över alla prenumerationer",
+        "mrr": "MRR",
+        "mrrDescription": "Månatliga återkommande intäkter",
+        "pastDue": "Förfallen",
+        "pastDueDescription": "Betalningsproblem",
+        "trialing": "Provperiod",
+        "trialingDescription": "I provperiod"
+      },
+      "sections": {
+        "recentSubscriptions": "Senaste prenumerationer",
+        "revenueMetrics": "Intäktsmått"
+      },
+      "status": {
+        "active": "Aktiv",
+        "canceled": "Avbruten",
+        "pastDue": "Förfallen",
+        "trialing": "Provperiod"
+      },
+      "table": {
+        "actions": "Åtgärder",
+        "billing": "Fakturering",
+        "created": "Skapad",
+        "demoUsers": "Demoanvändare",
+        "licensedSeats": "Licensierade platser",
+        "noSubscriptions": "Inga prenumerationer ännu",
+        "organization": "Organisation",
+        "periodEnd": "Periodslut",
+        "status": "Status",
+        "usedSeats": "Använda platser"
+      },
+      "title": "Faktureringsöversikt"
+    },
+    "diagnostics": {
+      "actions": {
+        "refresh": "Uppdatera diagnostik"
+      },
+      "clientDescription": "Säker plattformskonfiguration och tjänstehälsa på appnivå. Senast uppdaterad {date}.",
+      "description": "Säker plattformskonfiguration och hälsokontroller för endast app-distributioner.",
+      "emailTest": {
+        "actions": {
+          "send": "Skicka test-e-post"
+        },
+        "description": "Skicka ett diagnostiskt e-postmeddelande via systemets e-posttransport.",
+        "messageId": "Meddelande-ID: {messageId}",
+        "recipient": "Mottagarens e-postadress",
+        "smtpOverride": {
+          "description": "Lämna tomt för att använda systemets konfigurerade e-posttransport. Om fältet fylls i använder testet endast dessa SMTP-inställningar.",
+          "fromEmail": "Avsändar-e-post",
+          "fromName": "Avsändarnamn",
+          "host": "SMTP-värd",
+          "ipMode": "IP-läge",
+          "ipMode.auto": "Auto",
+          "ipMode.ipv4": "Endast IPv4",
+          "ipMode.ipv6": "Endast IPv6",
+          "password": "SMTP-lösenord",
+          "port": "SMTP-port",
+          "requireTls": "Kräv STARTTLS",
+          "secure": "Använd TLS",
+          "title": "Tillfällig SMTP-åsidosättning",
+          "username": "SMTP-användarnamn"
+        },
+        "success": "Test-e-post har skickats till {recipient}.",
+        "title": "Test av e-postleverans"
+      },
+      "keyManager": {
+        "actions": {
+          "test": "Testa kryptering"
+        },
+        "ciphertextPreview": "Förhandsgranskning av chiffertext",
+        "description": "Kör ett end-to-end-test för kryptering/dekryptering med plattformsnyckel.",
+        "input": "Indata",
+        "keyStatus": "Nyckelstatus",
+        "keyStatus.created": "Skapade ny plattformsnyckel",
+        "keyStatus.reused": "Återanvände befintlig plattformsnyckel",
+        "output": "Utdata",
+        "platformKeyId": "Plattformsnyckel-ID",
+        "result": {
+          "match": "Indata och utdata matchar",
+          "mismatch": "Indata och utdata skiljer sig åt"
+        },
+        "status": {
+          "pending": "Krypteringstest körs."
+        },
+        "title": "Scaleway Key Manager-kryptering"
+      },
+      "recommendedActions": {
+        "description": "Åtgärda dessa punkter för att återställa diagnostiken till ett felfritt tillstånd.",
+        "title": "Rekommenderade åtgärder"
+      },
+      "sections": {
+        "configuration": {
+          "description": "Säkra konfigurationstillstånd för distribution. Hemliga värden visas aldrig.",
+          "title": "Plattformskonfiguration"
+        },
+        "health": {
+          "description": "App-specifika kontroller för infrastrukturberoenden som används av webbappen.",
+          "title": "Tjänstestatus"
+        }
+      },
+      "statusAnnouncement": "Diagnostikstatus {status}. Senast uppdaterad {date}.",
+      "status": {
+        "disabled": "Inaktiverad",
+        "error": "Fel",
+        "healthy": "Felfri",
+        "warning": "Varning"
+      },
+      "title": "Distributionsdiagnostik"
+    },
+    "layout": {
+      "exitAdmin": "Avsluta admin",
+      "menuTitle": "Adminmeny",
+      "nav": {
+        "analytics": "Analys",
+        "billing": "Fakturering",
+        "diagnostics": "Distributionsdiagnostik",
+        "organizations": "Organisationer",
+        "overview": "Översikt",
+        "settings": "Inställningar",
+        "systemEmailTemplates": "System-e-postmallar",
+        "users": "Användare",
+        "workerQueue": "Arbetarkö"
+      },
+      "openMenu": "Öppna adminmeny",
+      "subtitle": "Plattformshantering",
+      "title": "Administratörskonsol"
+    },
+    "organizations": {
+      "actions": {
+        "delete": "Ta bort organisation",
+        "reactivate": "Återaktivera organisation",
+        "suspend": "Suspendera organisation"
+      },
+      "badges": {
+        "deleted": "Borttagen",
+        "suspended": "Avstängd"
+      },
+      "deleteDialog": {
+        "confirmButton": "Ta bort organisation",
+        "confirmLabel": "Skriv \"{name}\" för att bekräfta",
+        "confirmPlaceholder": "Organisationsnamn",
+        "description": "Denna åtgärd kommer att ta bort \"{name}\" och all tillhörande data. Detta kan inte ångras.",
+        "immediateDelete": "Ta bort omedelbart (hoppa över 5 dagars respitperiod)",
+        "skipNotification": "Hoppa över borttagningsavisering till organisationsmedlemmar",
+        "title": "Ta bort organisation"
+      },
+      "description": "Visa och hantera alla organisationer på plattformen",
+      "filters": {
+        "all": "Alla",
+        "deleted": "Borttagen",
+        "suspended": "Avstängd"
+      },
+      "pagination": {
+        "showing": "Visar {from} till {to} av {total} organisationer"
+      },
+      "searchPlaceholder": "Sök efter namn eller slug…",
+      "suspendDialog": {
+        "confirmButton": "Stäng av organisation",
+        "description": "Stäng av \"{name}\" och försätt den i skrivskyddat läge. Medlemmar kommer att kunna visa data men inte skapa eller redigera något.",
+        "reason": "Anledning",
+        "reasonPlaceholder": "Ange anledningen till att stänga av denna organisation…",
+        "title": "Stäng av organisation"
+      },
+      "table": {
+        "created": "Skapad",
+        "employees": "Anställda",
+        "loadErrorTitle": "Kunde inte läsa in organisationer",
+        "members": "Medlemmar",
+        "noOrganizationsFound": "Inga organisationer hittades",
+        "organization": "Organisation"
+      },
+      "title": "Organisationshantering",
+      "toasts": {
+        "deletedGracePeriod": "Organisationen \"{name}\" har schemalagts för radering om 5 dagar",
+        "deletedImmediate": "Organisationen \"{name}\" har schemalagts för omedelbar radering",
+        "suspended": "Organisationen \"{name}\" har stängts av",
+        "unsuspended": "Organisationen \"{name}\" har återaktiverats"
+      }
+    },
+    "overview": {
+      "analytics": {
+        "title": "Analystrender"
+      },
+      "description": "Plattformsmätvärden och snabbåtgärder",
+      "metrics": {
+        "bannedUsers": "Blockerade användare",
+        "bannedUsersDescription": "Nekad åtkomst",
+        "licensedSeats": "Licensierade platser",
+        "licensedSeatsDescription": "Över alla prenumerationer",
+        "mrr": "MRR",
+        "mrrDescription": "Månatliga återkommande intäkter (€)",
+        "organizations": "Organisationer",
+        "organizationsDescription": "Aktiva arbetsytor",
+        "suspended": "Avstängda",
+        "suspendedDescription": "Skrivskyddade organisationer",
+        "title": "Plattformsmätvärden",
+        "totalUsers": "Totalt antal användare",
+        "totalUsersDescription": "Registrerade plattformskonton"
+      },
+      "quickActions": {
+        "billing": {
+          "description": "Intäktsmätvärden och prenumerationsstatus",
+          "title": "Fakturering & prenumerationer"
+        },
+        "diagnostics": {
+          "description": "Granska säker konfiguration och apphälsokontroller",
+          "title": "Distributionsdiagnostik"
+        },
+        "organizations": {
+          "description": "Stäng av, radera eller granska organisationer",
+          "title": "Organisationshantering"
+        },
+        "systemEmailTemplates": {
+          "description": "Redigera plattformsägda texter för fakturerings- och system-e-post",
+          "title": "System-e-postmallar"
+        },
+        "title": "Snabbåtgärder",
+        "users": {
+          "description": "Blockera/avblockera användare, hantera sessioner, visa aktivitet",
+          "title": "Användarhantering"
+        }
+      },
+      "title": "Översikt"
+    },
+    "settings": {
+      "actions": {
+        "saveChanges": "Spara ändringar"
+      },
+      "approvalMaintenance": {
+        "approvalHint": "En äldre godkännandebegäran eller ett kanoniskt arbetsflödes-UUID.",
+        "approvalId": "Godkännande-ID",
+        "chain": "Godkännandekedja",
+        "delete": "Tvinga borttagning",
+        "deleting": "Tar bort…",
+        "description": "Ta bort ett godkännande och dess länkade godkännandeposter permanent. Källposter och deras statusar bevaras.",
+        "errors": {
+          "ambiguous": "Detta ID finns i båda godkännandelagren. Inget godkännande togs bort.",
+          "approvalInvalid": "Ange ett giltigt godkännande-UUID.",
+          "failed": "Det gick inte att slutföra borttagningen. Kontrollera godkännande-ID:t innan du försöker igen.",
+          "invalidInput": "Ange ett organisations-ID och ett giltigt godkännande-UUID.",
+          "notFound": "Godkännandet hittades inte i denna organisation.",
+          "organizationRequired": "Ange ett organisations-ID.",
+          "unauthorized": "Plattformsadministratörsbehörighet krävs."
+        },
+        "legacy": "Äldre begäran",
+        "organizationHint": "Organisationen som äger godkännandet.",
+        "organizationId": "Organisations-ID",
+        "success": "Godkännande borttaget. Borttagna poster:",
+        "title": "Tvinga borttagning av godkännande",
+        "workflow": "Arbetsflöde"
+      },
+      "cookieConsent": {
+        "description": "Injiceras på autentiseringssidor för GDPR-efterlevnad",
+        "helperPrefix": "Lämna tomt för att inaktivera. Läses in med",
+        "helperSuffix": "-strategi.",
+        "scriptContent": "Skriptinnehåll",
+        "scriptPlaceholder": "<!-- Exempel: CookieBot -->\n<script id=\"Cookiebot\" src=\"https://consent.cookiebot.com/uc.js\" data-cbid=\"YOUR-ID\" type=\"text/javascript\" async></script>\n\n<!-- Eller anpassat skript -->\n<script>\n  // Din logik för samtycke till cookies här\n</script>",
+        "title": "Skript för samtycke till cookies"
+      },
+      "description": "Global plattformskonfiguration för alla organisationer",
+      "title": "Plattformsinställningar",
+      "toasts": {
+        "cookieConsentSaved": "Skriptet för samtycke till cookies har sparats",
+        "saveFailed": "Kunde inte spara"
+      },
+      "turnstile": {
+        "deploymentNote": "Konfigureras via miljövariabler vid driftsättning. Enterprise-organisationer kan åsidosätta detta i domäninställningarna.",
+        "description": "Botskydd för autentiseringsformulär",
+        "secretKey": "Hemlig nyckel",
+        "siteKey": "Webbplatsnyckel",
+        "title": "Cloudflare Turnstile"
+      }
+    },
+    "systemEmailTemplates": {
+      "actions": {
+        "reset": "Återställ till systemmall",
+        "save": "Spara",
+        "sendTest": "Skicka test"
+      },
+      "defaultFallback": "Standardreserv",
+      "defaultFallbackDescription": "Om den här mallen använder systemstandarden skickar Z8 plattformens text och ämnesrad:",
+      "description": "Hantera plattformsägda fakturerings- och system-e-postmeddelanden. Dessa mallar skickas endast med systemets e-posttransport och är inte kopplade till en organisation.",
+      "editBodyBeforeSaving": "Redigera e-postens brödtext innan du sparar en första anpassad mall.",
+      "empty": "Inga system-e-postmallar för plattformen är tillgängliga.",
+      "eyebrow": "Systemtransport",
+      "reset": "Systemets e-postmall har återställts till standard",
+      "resetDialog": {
+        "confirm": "Återställ plattformens systemmall",
+        "description": "Detta tar bort den globala plattformsöverstyrningen för denna system-e-postmall och återställer det inbyggda ämnet och brödtexten. Skarp fakturering och system-e-post kommer att använda plattformens standardtext efter återställningen.",
+        "title": "Vill du återställa plattformens systemmall?"
+      },
+      "resetFailed": "Det gick inte att återställa systemets e-postmall",
+      "saved": "Systemets e-postmall har sparats",
+      "saveFailed": "Det gick inte att spara systemets e-postmall",
+      "status": {
+        "customized": "Anpassad",
+        "default": "Standard"
+      },
+      "systemTemplates": "Systemmallar",
+      "testFailed": "Det gick inte att skicka test-e-postmeddelandet",
+      "testSent": "Test-e-postmeddelande har skickats till ditt konto",
+      "title": "System-e-postmallar",
+      "transportNotice": "Använd det här området för global text till fakturerings- och system-e-post. Organisationens inställningar för e-posttransport ignoreras för dessa meddelanden; tester och skarpa utskick använder plattformens systemtransport."
+    },
+    "users": {
+      "badges": {
+        "admin": "Admin",
+        "banExpiresUntil": "Fram till {date}",
+        "banned": "Avstängd",
+        "user": "Användare"
+      },
+      "banDialog": {
+        "confirmButton": "Stäng av användare",
+        "description": "Stäng av {email} från att få åtkomst till plattformen.",
+        "expiry": "Utgångsdatum (valfritt)",
+        "permanentBanHint": "Lämna tomt för permanent avstängning",
+        "reason": "Anledning",
+        "reasonPlaceholder": "Ange anledningen till att denna användare stängs av…",
+        "title": "Stäng av användare"
+      },
+      "description": "Visa och hantera alla användare på plattformen",
+      "filters": {
+        "allUsers": "Alla användare",
+        "banned": "Avstängda"
+      },
+      "pagination": {
+        "showing": "Visar {from} till {to} av {total} användare"
+      },
+      "searchLabel": "Sök användare efter e-post",
+      "searchPlaceholder": "Sök efter namn eller e-post…",
+      "sessionsDialog": {
+        "description": "Aktiva sessioner för {email}",
+        "noSessions": "Inga aktiva sessioner",
+        "revokeAll": "Återkalla alla sessioner",
+        "title": "Användarsessioner",
+        "unknownDevice": "Okänd enhet",
+        "unknownIp": "Okänd IP"
+      },
+      "table": {
+        "created": "Skapad",
+        "noOrganizations": "Inga organisationer",
+        "noUsersFound": "Inga användare hittades",
+        "organizations": "Organisationer",
+        "role": "Roll",
+        "user": "Användare"
+      },
+      "title": "Användarhantering",
+      "toasts": {
+        "banned": "Användaren {email} har blockerats",
+        "sessionRevoked": "Session återkallad",
+        "sessionsRevoked": "Återkallade {count} sessioner",
+        "unbanned": "Användaren {email} har avblockerats"
+      }
+    }
+  }
+}

@@ -58,6 +58,7 @@ export function useAuth() {
   return {
     isAuthenticated: sessionQuery.data?.isAuthenticated ?? false,
     isLoading: sessionQuery.isLoading,
+    sessionVersion: sessionQuery.dataUpdatedAt,
     login,
     logout,
   };

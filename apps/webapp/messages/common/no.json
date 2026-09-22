@@ -1,0 +1,546 @@
+{
+  "actions": {
+    "cancel": "Avbryt",
+    "delete": "Slett",
+    "refresh": "Oppdater"
+  },
+  "analytics": {
+    "export": {
+      "export": "Eksporter",
+      "exportAsCsv": "Eksporter som CSV",
+      "exportAsExcel": "Eksporter som Excel",
+      "exportedAsFormat": "Eksportert som {format}",
+      "exportingFormat": "Eksporterer {format}…",
+      "failedAsFormat": "Kunne ikke eksportere som {format}"
+    }
+  },
+  "appSearch": {
+    "commandDescription": "Søk etter sider, personer, team, innstillinger eller handlinger",
+    "commandPlaceholder": "Søk etter sider, personer, team, innstillinger eller handlinger…",
+    "commands": {
+      "addManualTimeEntry": {
+        "subtitle": "Registrer timer for et tidligere skift eller en korrigering",
+        "title": "Legg til manuell timeregistrering"
+      },
+      "createProject": {
+        "subtitle": "Åpne prosjektinnstillinger for å definere et nytt prosjekt",
+        "title": "Opprett prosjekt"
+      },
+      "inviteTeammate": {
+        "subtitle": "Åpne organisasjonsadministrasjon for å legge til en kollega",
+        "title": "Inviter teammedlem"
+      },
+      "openApprovalsInbox": {
+        "subtitle": "Gå gjennom ventende forespørsler fra ansatte",
+        "title": "Åpne innboks for godkjenninger"
+      },
+      "openMyRequests": {
+        "subtitle": "Gå gjennom dine innsendte fravær og utgifter",
+        "title": "Åpne mine forespørsler"
+      },
+      "openPayrollReadiness": {
+        "subtitle": "Sjekk om timedata er klare for lønn",
+        "title": "Åpne lønnsklargjøring"
+      },
+      "openPayroll": {
+        "subtitle": "Gjennomgå avgrenset lønnsarbeidsområde",
+        "title": "Åpne lønn"
+      },
+      "openSettings": {
+        "subtitle": "Administrer innstillinger for profil, sikkerhet og organisasjon",
+        "title": "Åpne innstillinger"
+      },
+      "requestAbsence": {
+        "subtitle": "Opprett en forespørsel om ferie, sykefravær eller permisjon",
+        "title": "Be om fravær"
+      },
+      "submitTravelExpense": {
+        "subtitle": "Opprett en refusjonsforespørsel for reiseutgifter",
+        "title": "Send inn reiseutgift"
+      }
+    },
+    "empty": "Ingen resultater funnet.",
+    "groups": {
+      "actions": "Handlinger",
+      "pages": "Sider",
+      "people": "Personer",
+      "settings": "Innstillinger",
+      "teams": "Team"
+    },
+    "search": "Søk",
+    "searchOrRunCommand": "Søk eller kjør kommando",
+    "teamAbsences": {
+      "description": "Gjennomgå fraværsstatistikk for ansatte og registrer fravær"
+    }
+  },
+  "billing": {
+    "suspended": {
+      "adminDescription": "Prøveperioden din er utløpt eller abonnementet er ikke lenger gyldig. Oppdater faktureringsinformasjon for å fortsette å bruke Z8.",
+      "goToBilling": "Gå til fakturering",
+      "memberDescription": "Denne organisasjonen er suspendert. Kontakt en organisasjonsadministrator for å oppdatere fakturering.",
+      "title": "Organisasjon suspendert"
+    },
+    "trialBanner": {
+      "description": "{days} dager gjenstår. Legg til betalingsopplysninger nå; det betalte abonnementet starter etter prøveperioden.",
+      "dismiss": "Lukk prøveperiodebanner",
+      "title": "14-dagers prøveperiode aktiv",
+      "upgrade": "Oppgrader"
+    }
+  },
+  "colors": {
+    "blue": "Blå",
+    "green": "Grønn",
+    "indigo": "Indigo",
+    "orange": "Oransje",
+    "pink": "Rosa",
+    "purple": "Lilla",
+    "red": "Rød",
+    "teal": "Blågrønn"
+  },
+  "common": {
+    "actions": "Handlinger",
+    "active": "Aktiv",
+    "add": "Legg til",
+    "adding": "Legger til...",
+    "all": "Alle",
+    "appName": "Z8",
+    "approve": "Godkjenn",
+    "assign": "Tildel",
+    "back": "Tilbake",
+    "cancel": "Avbryt",
+    "clear": "Tøm",
+    "clearSearch": "Tøm søk",
+    "clearSelection": "Tøm",
+    "close": "Lukk",
+    "confirm": "Bekreft",
+    "continue": "Fortsett",
+    "copy": "Kopier",
+    "create": "Opprett",
+    "current": "Gjeldende",
+    "days": {
+      "friday": "Fredag",
+      "label": "dager",
+      "monday": "Mandag",
+      "saturday": "Lørdag",
+      "sunday": "Søndag",
+      "thursday": "Torsdag",
+      "tuesday": "Tirsdag",
+      "wednesday": "Onsdag"
+    },
+    "delete": "Slett",
+    "deleting": "Sletter...",
+    "description": "Beskrivelse",
+    "deselectAll": "Fjern all merking",
+    "details": "Detaljer",
+    "download": "Last ned",
+    "edit": "Rediger",
+    "enabled": "Aktivert",
+    "error": "Feil",
+    "error-occurred": "Det oppsto en feil",
+    "gender": {
+      "female": "Kvinne",
+      "male": "Mann",
+      "other": "Annet"
+    },
+    "goToDashboard": "Gå til dashbord",
+    "inactive": "Inaktiv",
+    "loading": "Laster...",
+    "loadMore": "Last inn mer",
+    "months": {
+      "april": "April",
+      "august": "August",
+      "december": "Desember",
+      "february": "Februar",
+      "january": "Januar",
+      "july": "Juli",
+      "june": "Juni",
+      "march": "Mars",
+      "may": "Mai",
+      "november": "November",
+      "october": "Oktober",
+      "september": "September"
+    },
+    "more": "mer",
+    "moreActions": "Flere handlinger",
+    "moveDown": "Flytt ned",
+    "moveUp": "Flytt opp",
+    "name": "Navn",
+    "new": "Ny",
+    "next": "Neste",
+    "notApplicable": "N/A",
+    "not-available": "Ikke tilgjengelig",
+    "open": "Åpne",
+    "openEnded": "Uten sluttdato",
+    "openMenu": "Åpne meny",
+    "optional": "valgfritt",
+    "or": "Eller",
+    "pending": "Ventende",
+    "present": "Tilstede",
+    "previous": "Forrige",
+    "recovering": "Gjenoppretter...",
+    "refresh": "Oppdater",
+    "refreshing": "Oppdaterer...",
+    "reject": "Avvis",
+    "rejecting": "Avviser…",
+    "remove": "Fjern",
+    "removing": "Fjerner...",
+    "reset": "Tilbakestill",
+    "retry": "Prøv på nytt",
+    "save": "Lagre",
+    "saveChanges": "Lagre endringer",
+    "saving": "Lagrer...",
+    "selectAll": "Velg alle",
+    "selected": "valgt",
+    "select-language": "Velg språk",
+    "set": "sett",
+    "sets": "sett",
+    "skip": "Hopp over",
+    "start": "Start",
+    "status": "Status",
+    "submitting": "Sender inn…",
+    "sw": {
+      "update": {
+        "description": "En ny versjon er klar. Last inn på nytt for å oppdatere.",
+        "later": "Senere",
+        "reload": "Last inn på nytt",
+        "title": "Oppdatering tilgjengelig"
+      }
+    },
+    "to": "til",
+    "today": "I dag",
+    "unexpectedError": "Det oppsto en uventet feil",
+    "unknown": "Ukjent",
+    "unknownEmployee": "Ukjent ansatt",
+    "unknownTeam": "Ukjent team",
+    "unnamed": "Uten navn",
+    "update": "Oppdater",
+    "updating": "Oppdaterer...",
+    "uploading": "Laster opp...",
+    "validate": "Valider",
+    "validationError": "Valideringsfeil",
+    "weekdays": {
+      "fr": "Fr",
+      "fri": "Fre",
+      "mo": "Ma",
+      "mon": "Man",
+      "sa": "Lø",
+      "sat": "Lør",
+      "su": "Sø",
+      "sun": "Søn",
+      "th": "To",
+      "thu": "Tor",
+      "tu": "Ti",
+      "tue": "Tir",
+      "we": "On",
+      "wed": "Ons"
+    }
+  },
+  "employeeSelect": {
+    "countSelected": "{count} ansatte valgt",
+    "countWithMore": "{count} ansatte (+{more} flere)",
+    "noEmployeesFound": "Ingen ansatte funnet",
+    "removeSelected": "Fjern {name}",
+    "role": "Rolle",
+    "searchPlaceholder": "Søk etter navn, e-post eller stilling...",
+    "selected": "{count} valgt",
+    "selectEmployee": "Velg ansatt",
+    "selectEmployees": "Velg ansatte",
+    "selectMultipleEmployees": "Velg én eller flere ansatte fra listen",
+    "selectOneEmployee": "Velg en ansatt fra listen",
+    "status": "Status",
+    "team": "Team",
+    "totalEmployees": "{count} ansatte",
+    "tryDifferentSearch": "Prøv å justere søket eller filtrene"
+  },
+  "errors": {
+    "failedToLoad": "Kunne ikke laste inn data",
+    "noEmployee": {
+      "contactAdmin": "Kontakt administrator",
+      "createOrg": "Opprett organisasjon",
+      "description": "Du trenger en ansattprofil for å ${feature}. Vennligst opprett en organisasjon eller kontakt administratoren din.",
+      "emailBody": "Hei,nnJeg trenger en ansattprofil konfigurert for å få tilgang til plattformfunksjonene. Kan du hjelpe meg med dette?nnTakk!",
+      "emailSubject": "Oppsett av ansattprofil kreves",
+      "helpText": "Hvis du ble invitert til en organisasjon, kan du be administratoren din om å opprette ansattprofilen din.",
+      "title": "Ansattprofil kreves"
+    },
+    "noOrganization": {
+      "createOrg": "Opprett organisasjon",
+      "description": "Du er ikke med i noen organisasjon ennå. Opprett en for å komme i gang, eller vent på en invitasjon.",
+      "title": "Ingen organisasjon funnet",
+      "waiting": "Venter du på en invitasjon?",
+      "waitingDesc": "Administratoren din vil sende deg en invitasjon på e-post. Sjekk innboksen og søppelposten din."
+    },
+    "unexpected": {
+      "digest": "Referanse: {digest}"
+    }
+  },
+  "generic": {
+    "done": "Ferdig",
+    "submit": "Send inn"
+  },
+  "header": {
+    "clock-in": "Stemple inn",
+    "clock-out": "Stemple ut"
+  },
+  "info": {
+    "agb": "Vilkår og betingelser",
+    "back-to-login": "Tilbake til innlogging",
+    "imprint": "Impressum",
+    "trust-center": "Tillitssenter"
+  },
+  "loading": {
+    "chart": "Laster inn diagram",
+    "settings": "Laster inn innstillinger"
+  },
+  "nav": {
+    "absences": "Fravær",
+    "analytics": "Analyse",
+    "approvals": "Godkjenninger",
+    "calendar": "Kalender",
+    "compliance": "Samsvar",
+    "dashboard": "Dashbord",
+    "feedback": "Tilbakemelding",
+    "get-help": "Få hjelp",
+    "my-requests": "Mine forespørsler",
+    "org-explorer": "Organisasjonsutforsker",
+    "payroll": "Lønn",
+    "platform-admin": "Plattformadministrator",
+    "reports": "Rapporter",
+    "scheduling": "Planlegging",
+    "settings": "Innstillinger",
+    "team": "Team",
+    "teamAbsences": "Teamfravær",
+    "team-label": "Team",
+    "time-tracking": "Tidsregistrering",
+    "today": "I dag",
+    "travel-expenses": "Reiseutgifter",
+    "worksCouncil": "Bedriftsutvalg"
+  },
+  "notifications": {
+    "actions": {
+      "deleteAll": "Slett alle",
+      "markAllRead": "Marker alle som lest",
+      "markAsRead": "Marker som lest",
+      "markRead": "Marker som lest",
+      "settings": "Varslingsinnstillinger",
+      "viewAll": "Vis alle varsler"
+    },
+    "content": {
+      "passwordChanged": {
+        "message": "Passordet ditt ble endret. Hvis du ikke har gjort denne endringen, må du kontakte brukerstøtte umiddelbart.",
+        "title": "Passord endret"
+      },
+      "shiftAssigned": {
+        "message": "Du har blitt tildelt en vakt den {shiftDate} fra {startTime} til {endTime} av {assignedByName}.",
+        "title": "Vakt tildelt"
+      },
+      "teamMemberAdded": {
+        "message": "Du har blitt lagt til i teamet {teamName} av {performedByName}.",
+        "title": "Lagt til i team"
+      }
+    },
+    "description": "Gjennomgå oppdateringer, godkjenninger og systemvarsler på én tidslinje.",
+    "empty": {
+      "description": "Du er helt oppdatert! Nye varsler vises her.",
+      "inboxDescription": "Du er helt oppdatert. Nye oppdateringer vises her.",
+      "noMatchesDescription": "Juster søket eller lesefilteret for å utvide denne innboksvisningen.",
+      "noMatchesTitle": "Ingen matchende varsler",
+      "title": "Ingen varsler",
+      "unreadDescription": "Du er helt oppdatert. Nye uleste oppdateringer vises her.",
+      "unreadTitle": "Ingen uleste varsler"
+    },
+    "error": {
+      "title": "Kunne ikke laste inn varsler"
+    },
+    "filters": {
+      "all": "Alle",
+      "ariaLabel": "Filtrer varsler etter lesestatus",
+      "read": "Lest",
+      "unread": "Ulest"
+    },
+    "preferences": {
+      "disabled": "Varsling deaktivert",
+      "enabled": "Varsling aktivert",
+      "permissionModal": {
+        "benefits": {
+          "pendingApprovals": "Motta varsler om ventende godkjenningsforespørsler",
+          "requestUpdates": "Få beskjed når forespørslene dine blir godkjent eller avvist",
+          "teamSecurity": "Hold deg oppdatert om team- og sikkerhetsoppdateringer"
+        },
+        "description": "Aktiver push-varsler for å motta umiddelbare oppdateringer om godkjenninger, tidskorrigeringer og viktige teamendringer – selv når du ikke bruker appen.",
+        "enable": "Aktiver varsler",
+        "notNow": "Ikke nå",
+        "title": "Hold deg oppdatert"
+      },
+      "push": {
+        "blockedDescription": "Push-varsler er blokkert av nettleseren din. For å aktivere dem må du oppdatere nettleserinnstillingene dine.",
+        "blockedHelp": "Klikk på låsikonet i nettleserens adresselinje og tillat varsler for dette nettstedet, og last deretter inn siden på nytt.",
+        "blockedTitle": "Push-varsler blokkert",
+        "enableButton": "Aktiver push-varsler",
+        "enableDescription": "Få varsler umiddelbart, selv når du ikke bruker appen",
+        "enabledIndicator": "Push-varsler er aktivert",
+        "enabledToast": "Push-varsler aktivert",
+        "enabledToastDescription": "Du vil nå motta push-varsler i nettleseren",
+        "enableFailedToast": "Kunne ikke aktivere push-varsler",
+        "enableTitle": "Aktiver push-varsler",
+        "errorToast": "Feil med push-varsling"
+      },
+      "toggleAria": "{channel}-varsler for {type}",
+      "updateFailed": "Kunne ikke oppdatere innstilling"
+    },
+    "search": {
+      "ariaLabel": "Søk i varsler",
+      "placeholder": "Søk i varsler..."
+    },
+    "selection": {
+      "selectAll": "Velg alle synlige",
+      "selectAllAria": "Velg alle synlige varsler",
+      "selectNamedAria": "Velg {title}",
+      "visibleSelected": "{count} synlige valgt"
+    },
+    "timeline": {
+      "earlier": "Tidligere",
+      "today": "I dag",
+      "yesterday": "I går"
+    },
+    "title": "Varsler",
+    "toasts": {
+      "deleted": "Slettet {count} varsler",
+      "deleteFailed": "Kunne ikke slette varsler",
+      "markedRead": "Markerte {count} varsler som lest",
+      "markReadFailed": "Kunne ikke markere varsler som lest"
+    },
+    "unreadBadge": "{count} uleste",
+    "unreadCountOverflow": "99+"
+  },
+  "offline": {
+    "banner": {
+      "archived": "Arkivert stemplingsbevis beholdt på denne enheten",
+      "offline": "Du er frakoblet",
+      "offlineSaved": "Frakoblet — {count} oppføring(er) lagret lokalt til gjennomgang",
+      "refresh": "Oppdater status",
+      "refreshing": "Kontrollerer {count} lagrede oppføring(er)…",
+      "reviewRequired": "{count} oppføring(er) lagret lokalt — gjennomgang kreves",
+      "unverified": "Stemplingsbevis lagret på denne enheten. Koble til for å se gjennom alle lagrede oppføringer."
+    },
+    "capture": {
+      "description": "Lagre hendelsen på denne enheten for gjennomgang. Stemplingsstatus på serveren vil ikke endres.",
+      "end": "Lagre utstempling til gjennomgang",
+      "start": "Lagre innstempling til gjennomgang"
+    },
+    "recovery": {
+      "archive": "Arkiver og behold bevis",
+      "archived": "Arkivert — bevis beholdt",
+      "description": "Disse oppføringene er lagret på denne enheten. Status på serveren er ukjent. Sjekk eksisterende timeføringer med lederen din før du sender inn erstatningsarbeid. Arkivering beholder bevisene og kansellerer ikke arbeid på serveren.",
+      "empty": "Ingen tilgjengelige oppføringer. Eldre oppføringer uten kontobevis krever gjennomgang på organisasjonsnivå; oppføringer uten organisasjonsbevis krever separat autorisert gjenoppretting.",
+      "evidence": "Opprinnelig bevis og gjenopprettingsstatus",
+      "export": "Eksporter tilgjengelig bevis",
+      "exportError": "Kunne ikke eksportere lagrede oppføringer",
+      "held": "Må gjennomgås — ikke bekreftet på server",
+      "loadError": "Kunne ikke lese lagrede oppføringer",
+      "loading": "Leser lagrede oppføringer…",
+      "review": "Se gjennom lagrede oppføringer",
+      "title": "Lagrede stemplingsoppføringer"
+    }
+  },
+  "presence": {
+    "activity": {
+      "lastActivity": "siste aktivitet {date}",
+      "relativeHours": "siden {hours}t",
+      "relativeHoursMinutes": "siden {hours}t {minutes}min",
+      "relativeMinutes": "siden {minutes}min"
+    },
+    "clockedIn": "Stemplet inn",
+    "clockedOut": "Stemplet ut"
+  },
+  "roles": {
+    "admin": "Admin",
+    "employee": "Ansatt",
+    "manager": "Leder"
+  },
+  "status": {
+    "active": "Aktiv",
+    "inactive": "Inaktiv"
+  },
+  "table": {
+    "clearFilters": "Nullstill filtre",
+    "clearSort": "Fjern sortering",
+    "description": "Viser totalt antall besøkende for de siste 6 månedene. Dette er bare en tilfeldig tekst for å teste oppsettet. Den strekker seg over flere linjer og skal brytes.",
+    "goToFirstPage": "Gå til første side",
+    "goToLastPage": "Gå til siste side",
+    "goToNextPage": "Gå til neste side",
+    "goToPreviousPage": "Gå til forrige side",
+    "header": "Topptekst",
+    "limit": "Grense",
+    "noResults": "Ingen resultater.",
+    "pageOfPages": "Side {current} av {total}",
+    "reviewer": "Gjennomgåer",
+    "rowsPerPage": "Rader per side",
+    "searchPlaceholder": "Søk...",
+    "selectedOfTotal": "{selected} av {total} rad(er) valgt",
+    "select-reviewer": "Velg en gjennomgåer",
+    "select-status": "Velg en status",
+    "select-type": "Velg en type",
+    "showing-visitors": "Viser totalt antall besøkende for de siste 6 månedene",
+    "sortAscending": "Stigende",
+    "sortDescending": "Synkende",
+    "status": "Status",
+    "status-options": {
+      "done": "Ferdig",
+      "in-progress": "Pågår",
+      "not-started": "Ikke startet"
+    },
+    "target": "Mål",
+    "totalRows": "{total} rad(er)",
+    "trending-up": "Trender opp med 5,2 % denne måneden",
+    "type": "Type",
+    "type-options": {
+      "capabilities": "Kapasiteter",
+      "cover-page": "Forside",
+      "design": "Design",
+      "executive-summary": "Sammendrag",
+      "focus-documents": "Fokusdokumenter",
+      "narrative": "Narrativ",
+      "table-of-contents": "Innholdsfortegnelse",
+      "technical-approach": "Teknisk tilnærming"
+    }
+  },
+  "time": {
+    "am": "AM",
+    "hoursAndMinutes": "{hours}t {minutes}m",
+    "hoursOnly": "{hours}t",
+    "pm": "PM"
+  },
+  "userAvatar": {
+    "alt": "Brukeravatar"
+  },
+  "user": {
+    "font-size": "Skriftstørrelse",
+    "language": "Språk",
+    "logging-out": "Logger ut...",
+    "log-out": "Logg ut",
+    "log-out-failed": "Kunne ikke logge ut. Vennligst prøv igjen.",
+    "profile": "Profil",
+    "security": "Sikkerhet",
+    "theme": "Tema",
+    "theme-dark": "Mørk",
+    "theme-light": "Lys",
+    "theme-location-required": "Posisjonstilgang er påkrevd for tidsbasert tema.",
+    "theme-system": "System",
+    "theme-time": "Tidsbasert",
+    "theme-time-info": "Tidsbasert bruker {currentMode}-modus. Bytter til {nextMode} kl. {time}.",
+    "theme-toggle": "Veksle tema"
+  },
+  "validation": {
+    "first-name-required": "Fornavn er påkrevd",
+    "invalid-email": "Ugyldig e-postadresse",
+    "last-name-required": "Etternavn er påkrevd",
+    "password-required": "Passord er påkrevd"
+  },
+  "workBalance": {
+    "label": "Totalsaldo",
+    "notCalculated": "Ikke beregnet ennå",
+    "pendingDescription": "Systemet vil beregne denne saldoen snart.",
+    "updatedEveryThreeHours": "Oppdateres hver 3. time"
+  }
+}

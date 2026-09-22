@@ -12,7 +12,7 @@
       "title": "Employee Groups"
     },
     "employees": {
-      "description": "Manage employees, members, and invites",
+      "description": "Manage employee profiles, teams, and permissions",
       "details": "Employee Details",
       "detailView": {
         "loadingEmployeeData": "Loading employee data",
@@ -78,7 +78,7 @@
         "title": "Invitations"
       },
       "lifecycle": {
-        "actionsLabel": "Employee actions for {name}",
+        "actionsLabel": "Employee actions for ${target.displayName}",
         "deactivate": "Deactivate",
         "deactivateDescription": "This suspends access to this organization and ends sessions currently using it. Employee history is retained.",
         "deactivateError": "Failed to deactivate employee",
@@ -86,8 +86,6 @@
         "deactivateTitle": "Deactivate employee?",
         "deactivating": "Deactivating...",
         "deactivatingStatus": "Deactivating employee",
-        "finalOwnerDeactivateGuidance": "Assign and activate another approved owner before deactivating this employee.",
-        "finalOwnerRemoveGuidance": "Assign and activate another approved owner before removing this employee's access.",
         "reactivate": "Reactivate",
         "reactivateDescription": "This restores access to this organization using the existing employee record.",
         "reactivateError": "Failed to reactivate employee",

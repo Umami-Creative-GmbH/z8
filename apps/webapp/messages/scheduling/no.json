@@ -1,0 +1,100 @@
+{
+  "scheduling": {
+    "coverage": {
+      "adequate": "Tilstrekkelig bemanning",
+      "byLocation": "Etter lokasjon:",
+      "gapCount": "{{count}} bemanningsmangel",
+      "gaps": "hull",
+      "hideOverlay": "Skjul dekningsoverlegg",
+      "metSlots": "{{count}} tilstrekkelig",
+      "overSlots": "{{count}} overbemannet",
+      "overstaffed": "Overbemannet",
+      "showOverlay": "Vis overlegg for dekningsmål",
+      "summary": "Dekningsoversikt:",
+      "toggleLabel": "Dekning",
+      "underSlots": "{{count}} underbemannet",
+      "understaffed": "Underbemannet",
+      "utilization": "{{percent}} % utnyttelse"
+    },
+    "page": {
+      "employeeDescription": "Se vaktene dine og ta ledige vakter",
+      "managerDescription": "Administrer og planlegg ansattes vakter",
+      "title": "Vaktplan"
+    },
+    "scheduler": {
+      "complianceBanner": {
+        "findingsDetected": "{count} funn oppdaget før publisering.",
+        "maxHours": "Maks timer: {count}",
+        "overtime": "Overtid: {count}",
+        "restTime": "Hviletid: {count}",
+        "title": "Samsvarsadvarsler i dette datointervallet"
+      },
+      "loading": "Laster vaktplan...",
+      "publish": {
+        "failed": "Kunne ikke publisere vakter",
+        "published": "Publiserte {count} vakt(er)"
+      },
+      "shiftUpdate": {
+        "failed": "Kunne ikke oppdatere vakt",
+        "overlapDescription": "Denne vakten overlapper med {count} annen/andre vakt(er)",
+        "overlapWarning": "Vakt lagret med overlappsvarsel",
+        "updated": "Vakt oppdatert"
+      }
+    },
+    "shiftDialog": {
+      "anyoneCanPickUp": "Hvem som helst kan ta den",
+      "assignTo": "Tildel til",
+      "confirmDelete": "Bekreft sletting",
+      "created": "Vakt opprettet",
+      "createDescription": "Fyll ut detaljene for den nye vakten",
+      "createShift": "Opprett vakt",
+      "createTitle": "Opprett vakt",
+      "date": "Dato",
+      "deleted": "Vakt slettet",
+      "deleteFailed": "Kunne ikke slette vakt",
+      "draft": "Utkast",
+      "editDescription": "Oppdater vaktdetaljene nedenfor",
+      "editTitle": "Rediger vakt",
+      "endTime": "Sluttid",
+      "noTemplate": "Ingen mal",
+      "notes": "Notater (valgfritt)",
+      "notesPlaceholder": "Eventuelle spesielle instruksjoner eller notater...",
+      "openShift": "Åpen vakt",
+      "openShiftHelp": "La stå som \"Åpen vakt\" for å la ansatte ta den",
+      "pickDate": "Velg en dato",
+      "published": "Publisert",
+      "savedWithWarnings": "Vakt lagret med advarsler",
+      "saveFailed": "Kunne ikke lagre vakt",
+      "selectEmployee": "Velg en ansatt",
+      "selectSubarea": "Velg et delområde…",
+      "selectTemplate": "Velg en mal",
+      "startTime": "Starttid",
+      "status": "Status:",
+      "subarea": "Delområde",
+      "subareaHelp": "Hvor denne vakten vil finne sted",
+      "template": "Mal (valgfritt)",
+      "templateHelp": "Hvis du velger en mal, fylles tidene ut automatisk",
+      "updated": "Vakt oppdatert",
+      "updateShift": "Oppdater vakt"
+    },
+    "skills": {
+      "expiredCertifications": "Utløpte sertifiseringer:",
+      "expiredOn": "(Utløpt {{date}})",
+      "missingPreferred": "Mangler foretrukne ferdigheter:",
+      "missingPreferredCount": "{{count}} foretrukne mangler",
+      "missingRequired": "Mangler påkrevde ferdigheter:",
+      "preferred": "Foretrukket",
+      "preferredSkillsMissing": "Foretrukne ferdigheter mangler",
+      "requirementsNotMet": "Ferdighetskrav ikke oppfylt",
+      "unqualified": "Ikke kvalifisert",
+      "validating": "Validerer ferdigheter…",
+      "validatingDescription": "Sjekker ansattes kvalifikasjoner",
+      "warningMessage": "Du kan fortsatt tildele denne vakten, men det vil bli loggført som en overstyring."
+    },
+    "templates": {
+      "dragHint": "Dra en mal til kalenderen for å opprette en vakt",
+      "empty": "Ingen maler tilgjengelig. Opprett maler i Innstillinger for å legge til vakter raskt.",
+      "title": "Vaktmaler"
+    }
+  }
+}

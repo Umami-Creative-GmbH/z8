@@ -503,6 +503,7 @@ vi.mock(
 		return {
 			...actual,
 			dispatchCommittedTimeCorrectionSubmission: state.dispatch,
+			getForbiddenCorrectionEditMessage: async () => null,
 		};
 	},
 );

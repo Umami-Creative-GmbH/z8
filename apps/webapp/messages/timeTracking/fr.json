@@ -12,10 +12,10 @@
     "clockIn": "Pointer l'entrée",
     "clockingIn": "Pointage de l'entrée...",
     "clockingOut": "Pointage de la sortie...",
-    "clockInQueued": "Pointage d'entrée mis en attente pour synchronisation",
+    "clockInSavedForReview": "Pointage d'entrée enregistré sur cet appareil pour vérification ; non confirmé sur le serveur",
     "clockInSuccess": "Entrée pointée avec succès",
     "clockOut": "Pointer la sortie",
-    "clockOutQueued": "Pointage de sortie mis en attente pour synchronisation",
+    "clockOutSavedForReview": "Pointage de sortie enregistré sur cet appareil pour vérification ; non confirmé sur le serveur",
     "clockOutSuccess": "Sortie pointée avec succès",
     "compliance": {
       "violation": "Violation de conformité",
@@ -24,16 +24,13 @@
     "correction": {
       "clockIn": "Entrée",
       "clockInDate": "Date d'arrivée",
-      "clockInTime": "Heure d'arrivée",
       "clockOut": "Sortie",
       "clockOutDate": "Date de départ",
-      "clockOutTime": "Heure de départ",
       "editDescription": "Apporter des modifications à votre entrée de temps pour aujourd'hui.",
       "editEntry": "Modifier l'entrée de temps",
       "editTitle": "Modifier l'entrée de temps",
       "errors": {
         "invalidTimeRange": "L'heure de sortie doit être postérieure à l'heure d'entrée",
-        "noChanges": "Au moins une valeur de correction doit être modifiée",
         "submitFailed": "Échec de l'envoi de la correction",
         "updateFailed": "Échec de la mise à jour de l'entrée de temps"
       },
@@ -75,6 +72,7 @@
       "errors": {
         "createFailed": "Échec de la création de la saisie de temps",
         "futureDate": "Impossible de créer des saisies pour des dates futures",
+        "invalidTime": "Saisissez une heure complète et valide",
         "invalidTimeRange": "L'heure de sortie doit être postérieure à l'heure d'entrée",
         "tooLong": "La période de travail ne peut pas dépasser 24 heures"
       },
@@ -145,12 +143,7 @@
     },
     "unknownCategory": "Catégorie inconnue",
     "unknownProject": "Projet inconnu",
-    "workCategory": "Catégorie de travail",
-    "workLocation": "Lieu de travail",
-    "workLocationHome": "Domicile",
-    "workLocationOffice": "Bureau",
-    "workLocationOther": "Autre",
-    "workLocationRemote": "À distance"
+    "workCategory": "Catégorie de travail"
   },
   "wellness": {
     "water": {

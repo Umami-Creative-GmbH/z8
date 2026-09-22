@@ -1,0 +1,99 @@
+{
+  "myRequests": {
+    "actions": {
+      "cancel": "Avbryt",
+      "cancelling": "Avbryter…",
+      "cancelRequestConfirmation": "Avbryte denne forespørselen?",
+      "cancelRequestError": "Forespørselen kunne ikke avbrytes.",
+      "fix": "Rett opp",
+      "notAvailable": "Ikke tilgjengelig",
+      "view": "Vis"
+    },
+    "all": {
+      "description": "Gå gjennom forespørsler for fravær, tidskorrigeringer og utgifter.",
+      "title": "Alle forespørsler"
+    },
+    "card": {
+      "decision": "Beslutning",
+      "submitted": "Sendt inn"
+    },
+    "empty": {
+      "filtered": {
+        "description": "Forespørsler vil vises her når de sendes inn eller lastes inn.",
+        "title": "Ingen forespørsler samsvarer med filtrene dine"
+      },
+      "none": {
+        "description": "Forespørsler vil vises her når de sendes inn eller lastes inn.",
+        "title": "Ingen forespørsler ennå"
+      }
+    },
+    "featureName": "se dine forespørsler",
+    "filters": {
+      "allStatuses": "Alle statuser",
+      "allTypes": "Alle typer",
+      "approvedRequests": "Godkjente forespørsler",
+      "cancelledRequests": "Kansellerte forespørsler",
+      "description": "Filtrer hver forespørselsseksjon etter tekst, status eller forespørselstype.",
+      "pendingRequests": "Ventende forespørsler",
+      "rejectedRequests": "Avviste forespørsler",
+      "search": "Søk",
+      "searchPlaceholder": "Søk etter tittel…",
+      "status": "Status",
+      "title": "Finn forespørsler",
+      "type": "Type"
+    },
+    "inReview": {
+      "description": "Forespørsler som venter på godkjenning eller behandling.",
+      "title": "Under vurdering"
+    },
+    "needsAttention": {
+      "description": "Avviste forespørsler som kan kreve en korrigering før de sendes inn på nytt.",
+      "title": "Krever oppmerksomhet"
+    },
+    "reasonLabel": "Årsak",
+    "recentlyDecided": {
+      "description": "Godkjente og avviste beslutninger fra de siste 30 dagene.",
+      "title": "Nylig avgjort"
+    },
+    "requests": {
+      "absence": {
+        "title": "Fraværsforespørsel"
+      },
+      "timeCorrection": {
+        "subtitle": "Korrigering av en tidsregistrering",
+        "title": "Forespørsel om tidskorrigering"
+      },
+      "travelExpense": {
+        "title": "Reiseregning"
+      }
+    },
+    "sourceError": {
+      "absence": "Kunne ikke laste inn fraværsforespørsler.",
+      "timeCorrection": "Kunne ikke laste inn forespørsler om tidskorrigering.",
+      "title": "Kunne ikke laste inn enkelte forespørsler.",
+      "travelExpense": "Kunne ikke laste inn reiseutgiftsforespørsler."
+    },
+    "sourceTypes": {
+      "absence": "Fravær",
+      "timeCorrection": "Tid",
+      "travelExpense": "Utgift"
+    },
+    "status": {
+      "approved": "Godkjent",
+      "cancelled": "Kansellert",
+      "inReview": "Til vurdering",
+      "pending": "Ventende",
+      "rejected": "Avvist"
+    },
+    "subtitle": "Spor ventende forespørsler, nødvendige rettelser og nylige beslutninger på ett sted.",
+    "summary": {
+      "ariaLabel": "Forespørselssammendrag",
+      "pending": "Ventende",
+      "recentDecisions": "Nylige beslutninger",
+      "requiredFixes": "Nødvendige rettelser",
+      "totalLoaded": "Totalt lastet"
+    },
+    "title": "Mine forespørsler",
+    "unavailableTitle": "Forespørsler utilgjengelig"
+  }
+}

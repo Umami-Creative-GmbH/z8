@@ -1,0 +1,202 @@
+{
+  "analytics": {
+    "access": {
+      "noEmployeeFeature": "visa analys",
+      "restrictedDescription": "Analys är endast tillgänglig för administratörer och chefer.",
+      "restrictedTitle": "Begränsad åtkomst"
+    },
+    "common": {
+      "days": "Dagar",
+      "employee": "Anställd",
+      "employees": "Anställda",
+      "hours": "Timmar",
+      "loadingOrganizationSettings": "Läser in organisationsinställningar innan förinställningar aktiveras.",
+      "noDataAvailable": "Inga data tillgängliga",
+      "noDataForPeriod": "Inga data tillgängliga för den valda perioden",
+      "overtime": "Övertid",
+      "overtimeHours": "Övertidstimmar",
+      "team": "Team",
+      "totalHours": "Totalt antal timmar",
+      "unavailable": "Ej tillgänglig",
+      "undertime": "Undertid",
+      "undertimeHours": "Undertidstimmar"
+    },
+    "layout": {
+      "description": "Omfattande insikter om teamprestationer, arbetstimmar och frånvaromönster",
+      "tabs": {
+        "overtimeBurnDown": "Övertidsavveckling",
+        "overview": "Översikt",
+        "teamPerformance": "Teamresultat",
+        "vacationTrends": "Semestertrender",
+        "workHours": "Arbetstid"
+      },
+      "title": "Analys"
+    },
+    "overtimeBurnDown": {
+      "breakdown": "Uppdelning",
+      "breakdownDescription": "Detaljer för övertidsavveckling på {label}-nivå",
+      "breakdownEmpty": "Ingen uppdelningsdata tillgänglig ännu",
+      "byCostCenter": "Per kostnadsställe",
+      "byManager": "Per chef",
+      "byTeam": "Per team",
+      "costCenter": "Kostnadsställe",
+      "currentOvertime": "Aktuell övertid",
+      "description": "Följ veckovis övertidsminskning över team.",
+      "errors": {
+        "loadData": "Kunde inte läsa in data för övertidsavveckling"
+      },
+      "filters": {
+        "allCostCenters": "Alla kostnadsställen",
+        "allManagers": "Alla chefer",
+        "allTeams": "Alla team",
+        "breakdownLabel": "Uppdelningsdimension",
+        "costCenterLabel": "Kostnadsställesfilter",
+        "managerLabel": "Chefsfilter",
+        "teamLabel": "Teamfilter"
+      },
+      "improvingGroups": "Grupper som förbättras",
+      "improvingGroupsDescription": "Grupper med minskande övertid",
+      "manager": "Chef",
+      "previousOvertime": "Tidigare övertid",
+      "previousPeriodDescription": "Jämfört med föregående period",
+      "selectedRangeDescription": "För valt datumintervall och filter",
+      "title": "Övertidsavverkning",
+      "trendDirection": "Trendriktning",
+      "trendDirectionDescription": "Övergripande övertidsutveckling",
+      "trend": {
+        "down": "Ner",
+        "flat": "Oförändrad",
+        "up": "Upp"
+      },
+      "weeklyTrend": {
+        "description": "Veckovis trend för övertidsminskning",
+        "empty": "Ingen trenddata tillgänglig ännu",
+        "title": "Veckovis avverkningstrend"
+      },
+      "weekOverWeek": "Vecka för vecka"
+    },
+    "overview": {
+      "absencePatterns": {
+        "description": "Frånvarofördelning per kategori",
+        "title": "Frånvaromönster"
+      },
+      "approvalBottlenecks": {
+        "approvedRate": "{rate} % godkänt",
+        "avgDecision": "{hours} tim genomsnittlig beslutstid",
+        "byManager": "Per chef",
+        "byTeam": "Per team",
+        "byType": "Per typ",
+        "description": "Team och förfrågningstyper med väntande arbete eller SLA-varningar",
+        "empty": "Inga godkännandeflaskhalsar hittades",
+        "pendingSummary": "{pendingCount} väntande – {slaWarnings} SLA-varningar",
+        "title": "Flaskhalsar för godkännande",
+        "unavailable": "Flaskhalsar för godkännande kunde inte läsas in"
+      },
+      "kpis": {
+        "approvalRate": {
+          "description": "Av beslutade förfrågningar godkända",
+          "title": "Godkännandegrad",
+          "unavailableDescription": "Godkännandeanalys kunde inte läsas in"
+        },
+        "avgWorkHours": {
+          "description": "Per anställd under vald period",
+          "title": "Genomsnittliga arbetstimmar"
+        },
+        "totalAbsenceDays": {
+          "description": "Totalt antal dagar under vald period",
+          "title": "Totalt antal frånvarodagar"
+        },
+        "totalEmployees": {
+          "description": "Aktiva anställda i organisationen",
+          "title": "Totalt antal anställda"
+        }
+      },
+      "loadingLabel": "Läser in analysdata",
+      "workHoursByTeam": {
+        "description": "Totalt antal loggade arbetstimmar per team",
+        "title": "Arbetstimmar per team"
+      }
+    },
+    "teamPerformance": {
+      "avgPerEmployee": "Genomsnitt per anställd",
+      "comparison": {
+        "description": "Totalt antal arbetstimmar per team för den valda perioden",
+        "title": "Teamjämförelse"
+      },
+      "details": {
+        "description": "Uppdelning av arbetstimmar per team och anställd",
+        "title": "Detaljer om teamprestanda"
+      },
+      "employeeCount": "Antal anställda",
+      "errors": {
+        "loadData": "Kunde inte läsa in teamprestandadata"
+      },
+      "onTrack": "Enligt plan",
+      "variance": {
+        "description": "Tidsavvikelse från förväntade arbetstimmar",
+        "empty": "Ingen avvikelsedata tillgänglig",
+        "title": "Övertid och undertid"
+      }
+    },
+    "vacationTrends": {
+      "allocated": "Allokerad",
+      "balance": {
+        "description": "Tilldelade, uttagna och återstående dagar per anställd",
+        "title": "Semestersaldo"
+      },
+      "daysRemaining": "{count} dagar kvar",
+      "daysTaken": "{count} dagar uttagna",
+      "errors": {
+        "loadData": "Det gick inte att läsa in data om semestertrender"
+      },
+      "monthlyUsage": {
+        "description": "Uttagna semesterdagar per månad",
+        "empty": "Inga månatliga användningsdata tillgängliga",
+        "title": "Månatlig semesteranvändning"
+      },
+      "peakMonths": {
+        "description": "Månader med högst semesteraktivitet",
+        "empty": "Inga data om toppmånader tillgängliga",
+        "title": "Toppmånader för semester"
+      },
+      "remaining": "Återstående",
+      "taken": "Uttagna",
+      "utilization": {
+        "description": "Övergripande användning av semesterdagar i hela organisationen",
+        "overall": "Övergripande nyttjandegrad",
+        "title": "Semesternyttjande"
+      },
+      "utilizationLabel": "Nyttjandegrad",
+      "utilizationPercent": "Nyttjandegrad %",
+      "vacationDays": "Semesterdagar"
+    },
+    "workHours": {
+      "actualHours": "Faktiska timmar",
+      "avgHoursPerWeek": "Genomsnittstimmar/vecka",
+      "daily": {
+        "description": "Faktiska kontra förväntade arbetstimmar per dag",
+        "empty": "Inga data om dagliga timmar tillgängliga",
+        "title": "Dagliga arbetstimmar"
+      },
+      "distribution": {
+        "description": "Jämförelse av anställdas arbetstimmar (liggande stapel)",
+        "empty": "Ingen fördelningsdata tillgänglig",
+        "title": "Arbetstidsfördelning"
+      },
+      "employeeComparison": {
+        "description": "Totala timmar och avvikelse från förväntat per anställd",
+        "title": "Anställdas arbetstimmar"
+      },
+      "errors": {
+        "loadData": "Kunde inte läsa in analysdata för arbetstimmar"
+      },
+      "expectedHours": "Förväntade timmar",
+      "variance": "Avvikelse",
+      "varianceTrend": {
+        "description": "Timmars avvikelse från förväntad arbetstid över tid",
+        "empty": "Ingen trenddata tillgänglig",
+        "title": "Trend för övertid och undertid"
+      }
+    }
+  }
+}

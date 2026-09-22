@@ -6,6 +6,8 @@
 		"dev": "vite",
 		"build": "tsc && vite build",
 		"preview": "vite preview",
+		"test:clock": "cargo test --manifest-path src-tauri/tests/clock-core/Cargo.toml",
+		"test": "pnpm test:clock && node --test scripts/*.test.mjs",
 		"tauri": "tauri"
 	},
 	"dependencies": {

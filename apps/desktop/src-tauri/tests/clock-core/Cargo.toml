@@ -1,0 +1,24 @@
+[package]
+name = "z8-desktop-clock-tests"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[features]
+desktop-recovery-evidence = []
+
+# Compile the real storage/HTTP modules without the native windowing libraries.
+[lib]
+path = "lib.rs"
+
+[dependencies]
+anyhow = "1"
+chrono = { version = "0.4", features = ["serde"] }
+log = "0.4"
+parking_lot = "0.12"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+tempfile = "3"

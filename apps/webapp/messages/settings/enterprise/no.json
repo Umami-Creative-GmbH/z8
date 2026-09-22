@@ -1,0 +1,632 @@
+{
+  "settings": {
+    "apiKeys": {
+      "active": "Aktiv",
+      "copyKey": "Kopier API-nøkkel",
+      "copyPrefix": "Kopier prefiks",
+      "create": "Opprett nøkkel",
+      "created": "API-nøkkel ble opprettet",
+      "createDescription": "Opprett en ny API-nøkkel for programmatisk tilgang. Nøkkelen vises bare én gang.",
+      "createdOn": "Opprettet {date}",
+      "createTitle": "Opprett API-nøkkel",
+      "deleted": "API-nøkkel slettet",
+      "deleteDescription": "Er du sikker på at du vil slette API-nøkkelen \"{name}\"? Alle applikasjoner som bruker denne nøkkelen, mister tilgangen umiddelbart. Denne handlingen kan ikke angres.",
+      "deleteTitle": "Slett API-nøkkel",
+      "description": "Administrer API-nøkler for programmatisk tilgang til organisasjonens data",
+      "disabled": "Deaktivert",
+      "editCreated": "Opprettet {date}",
+      "editDescription": "Oppdater innstillingene for denne API-nøkkelen. Merk: Du kan ikke vise eller endre selve nøkkelen.",
+      "editTitle": "Rediger API-nøkkel",
+      "empty": {
+        "description": "Opprett din første API-nøkkel for å aktivere programmatisk tilgang til organisasjonen din.",
+        "title": "Ingen API-nøkler"
+      },
+      "expires": "Utløper",
+      "form": {
+        "create": "Opprett nøkkel",
+        "enabled": "Nøkkel aktivert",
+        "enabledHelp": "Deaktiverte nøkler vil avvise alle API-forespørsler",
+        "expiration": "Utløp",
+        "invalid": "Gå gjennom de ugyldige skjemafeltene",
+        "name": "Navn",
+        "nameHelp": "Et beskrivende navn for å identifisere denne nøkkelen",
+        "nameMax": "Navnet kan ha maksimalt 100 tegn",
+        "nameMin": "Navnet må bestå av minst 3 tegn",
+        "nameMinLength": "Navnet må bestå av minst 3 tegn",
+        "namePlaceholder": "f.eks. Produksjons-API",
+        "rateLimit": "Aktiver hastighetsbegrensning",
+        "rateLimitMax": "Maks antall forespørsler per minutt",
+        "rateLimitMaxExceeded": "Hastighetsgrensen må være maksimalt 10 000 forespørsler",
+        "rateLimitMaxInvalid": "Angi et heltall fra 10 til 10 000",
+        "rateLimitMin": "Hastighetsgrensen må være minst 10 forespørsler",
+        "rateLimitRequired": "Hastighetsgrense er påkrevd",
+        "rateLimitWholeNumber": "Hastighetsgrensen må være et heltall",
+        "scopes": "Tillatelser",
+        "scopesRequired": "Velg minst én tillatelse"
+      },
+      "keyCopied": "API-nøkkel kopiert til utklippstavlen",
+      "lastUsed": "Sist brukt",
+      "name": "Navn",
+      "prefix": "Nøkkelprefiks",
+      "prefixCopied": "Nøkkelprefiks kopiert",
+      "scopes": "Tillatelser",
+      "security": {
+        "description": "API-nøkler gir full tilgang til organisasjonsdataene dine innenfor tillatelsesomfanget sitt. Hold dem sikre og del dem aldri i offentlige kodelagre eller klientsidekode.",
+        "title": "Sikkerhetsvarsel"
+      },
+      "showClose": "Lukk",
+      "showCloseAnyway": "Lukk likevel",
+      "showConfirmWarning": "Er du sikker? Du har ikke kopiert nøkkelen ennå.",
+      "showCopied": "Nøkkel kopiert til utklippstavlen",
+      "showDescription": "Din nye API-nøkkel \"{name}\" er opprettet. Kopier den nå – du vil ikke kunne se den igjen!",
+      "showDone": "Ferdig",
+      "showExpires": "Utløper:",
+      "showLabel": "Din API-nøkkel",
+      "showName": "Navn:",
+      "showNever": "Aldri",
+      "showTitle": "API-nøkkel opprettet",
+      "showWarning": "Dette er den eneste gangen du vil se denne nøkkelen. Sørg for å kopiere og lagre den på et sikkert sted.",
+      "showWarningTitle": "Viktig:",
+      "status": "Status",
+      "title": "API-nøkler",
+      "updated": "API-nøkkel oppdatert",
+      "usage": "{count} av {max} nøkler brukt"
+    },
+    "branding": {
+      "appName": {
+        "description": "Overstyr standard appnavn som vises på innloggingssiden.",
+        "title": "Appnavn"
+      },
+      "background": {
+        "description": "Last opp et tilpasset bakgrunnsbilde for innloggingssiden.",
+        "hint": "Anbefalt: 1920x1080 px eller større, høykvalitets JPEG eller PNG",
+        "preview": "Forhåndsvisning av bakgrunn",
+        "remove": "Fjern bakgrunn",
+        "title": "Bakgrunnsbilde",
+        "upload": "Last opp bakgrunnsbilde"
+      },
+      "backgroundUploadFailed": "Kunne ikke laste opp bakgrunnsbilde",
+      "backgroundUploadSuccess": "Bakgrunnsbilde ble lastet opp",
+      "colors": {
+        "accent": "Aksentfarge (valgfritt)",
+        "accentHex": "Hex-verdi for aksentfarge",
+        "accentHint": "Sekundærfarge for fremhevinger",
+        "description": "Tilpass primær- og aksentfargene for innloggingssiden din.",
+        "primary": "Primærfarge",
+        "primaryHex": "Hex-verdi for primærfarge",
+        "primaryHint": "Brukes for knapper, lenker og fokustilstander",
+        "title": "Temafarger"
+      },
+      "logo": {
+        "description": "Last opp organisasjonens logo for å vise den på innloggingssiden.",
+        "hint": "Anbefalt: 200x200 px, PNG eller SVG med gjennomsiktig bakgrunn",
+        "preview": "Forhåndsvisning av logo",
+        "remove": "Fjern logo",
+        "title": "Logo",
+        "upload": "Last opp logobilde"
+      },
+      "logoUploadFailed": "Kunne ikke laste opp logo",
+      "logoUploadSuccess": "Logoen er lastet opp",
+      "save": "Lagre merkevareinnstillinger",
+      "saveFailed": "Kunne ikke lagre merkevareinnstillinger",
+      "saveSuccess": "Merkevareinnstillinger lagret"
+    },
+    "enterprise": {
+      "addProvider": "Legg til leverandør",
+      "clientId": "Klient-ID",
+      "clientIdRequired": "Klient-ID er påkrevd",
+      "clientSecret": "Klienthemmelighet",
+      "clientSecretRequired": "Klienthemmelighet er påkrevd",
+      "configureCallbackUrl": "Konfigurer callback-URL:",
+      "domain": "Domene",
+      "domains": {
+        "add": "Legg til tilpasset domene",
+        "addDescription": "Legg til et tilpasset domene for å aktivere organisasjonsspesifikke innloggingssider. Du må bekrefte eierskap via DNS-oppføringer.",
+        "addDomain": "Legg til domene",
+        "added": "Domenet ble lagt til",
+        "addFailed": "Kunne ikke legge til domene",
+        "adding": "Legger til…",
+        "authConfigDescription": "Konfigurer hvilke autentiseringsmetoder som er tilgjengelige for brukere som logger inn via {domain}",
+        "authConfigTitle": "Autentiseringskonfigurasjon",
+        "authConfigUpdated": "Autentiseringskonfigurasjon oppdatert",
+        "authConfigUpdateFailed": "Kunne ikke oppdatere autentiseringskonfigurasjonen",
+        "authMethod": {
+          "emailPassword": "E-post/passord",
+          "passkey": "Passnøkkel",
+          "social": "Sosial ({providers})",
+          "sso": "SSO"
+        },
+        "configured": "konfigurert",
+        "cookieConsentScript": "Skript for informasjonskapselsamtykke",
+        "cookieConsentScriptHelp": "Injiseres kun på autentiseringssider for dette egendefinerte domenet. La stå tomt for å deaktivere.",
+        "cookieConsentStatus": "Informasjonskapselsamtykke {status}",
+        "copiedToClipboard": "Kopiert til utklippstavlen",
+        "customDomain": "Egendefinert domene",
+        "customDomainDescription": "Konfigurer et egendefinert domene for å aktivere en organisasjonsspesifikk påloggingsside med din merkevarebygging.",
+        "defaultUrl": {
+          "canonical": "Kanonisk"
+        },
+        "defaultUrls": "Standard-URL-er",
+        "defaultUrlsDescription": "Disse plattformadministrerte URL-ene fungerer automatisk uten tilpasset DNS-oppsett.",
+        "deleteAria": "Slett egendefinert domene {domain}",
+        "deleted": "Domene slettet",
+        "deleteDescription": "Er du sikker på at du vil slette «{domain}»? Denne handlingen kan ikke angres. Brukere vil ikke lenger kunne logge på via dette egendefinerte domenet.",
+        "deleteFailed": "Kunne ikke slette domene",
+        "deleteTitle": "Slett domene",
+        "description": "Konfigurer organisasjonens egendefinerte påloggingsdomene, merkevarebygging og SSO-leverandører.",
+        "dnsPropagation": "DNS-propagering",
+        "dnsPropagationDescription": "DNS-endringer kan ta opptil 48 timer å spre seg, selv om de ofte fullføres innen få minutter. Du kan klikke på «Verifiser» når du har lagt til TXT-oppføringen.",
+        "domain": "Domene",
+        "domainHelp": "Angi domenet der brukere vil få tilgang til påloggingssiden.",
+        "domainInvalid": "Vennligst oppgi et gyldig domene (f.eks. login.example.com)",
+        "domainPageSettings": "Innstillinger for domeneside",
+        "domainRequired": "Domene er påkrevd",
+        "editAuthSettingsAria": "Rediger autentiseringsinnstillinger for {domain}",
+        "emailPassword": "E-post og passord",
+        "emailPasswordHelp": "Tillat brukere å logge på med e-post og passord",
+        "empty": "Ingen egendefinerte domener er konfigurert ennå.",
+        "enabledAuthMethods": "Aktiverte autentiseringsmetoder",
+        "guidedSetup": {
+          "action": "Veiledet oppsett",
+          "description": "Konfigurer SSO, SCIM, tilgangspolicy og aktiveringskontroller i én beskyttet flyt.",
+          "title": "Veiledet oppsett"
+        },
+        "keepExistingSecretKey": "La stå tomt for å beholde eksisterende hemmelig nøkkel",
+        "nameHost": "Navn / Vert",
+        "notConfigured": "ikke konfigurert",
+        "passkey": "Passnøkkel",
+        "passkeyHelp": "Tillat passordløs pålogging med passnøkler",
+        "regenerateToken": "Generer token på nytt",
+        "regenerateTokenFailed": "Kunne ikke generere token på nytt",
+        "regenerateTokenSuccess": "Nytt verifiseringstoken generert",
+        "regenerating": "Genererer på nytt…",
+        "saveConfiguration": "Lagre konfigurasjon",
+        "secretKey": "Hemmelig nøkkel",
+        "secretKeyPlaceholder": "Angi hemmelig nøkkel",
+        "secretKeyRequired": "Påkrevd når du angir en nettstedsnøkkel",
+        "siteKey": "Nettstedsnøkkel",
+        "socialProviders": "Sosiale tilbydere",
+        "socialProvidersHelp": "Aktiver alternativer for sosial pålogging for dette domenet",
+        "sso": "Single Sign-On (SSO)",
+        "ssoHelp": "Tillat OIDC-basert bedriftspålogging",
+        "status": {
+          "pending": "Venter på verifisering",
+          "verified": "Verifisert"
+        },
+        "title": "Tilpasset domene og merkevarebygging",
+        "tokenExpired": "Token utløpt",
+        "tokenExpiredDescription": "Bekreftelsestokenet er utløpt. Vennligst generer et nytt token.",
+        "tokenExpires": "Token utløper: {date}",
+        "turnstile": "Cloudflare Turnstile",
+        "turnstileHelp": "Robotbeskyttelse for autentiseringsskjemaer. Påkrevd for enterprise-domener.",
+        "turnstileSiteKeyStatus": "Turnstile-nettstedsnøkkel {status}",
+        "txtRecordInstruction": "Legg til følgende TXT-oppføring i din DNS:",
+        "value": "Verdi",
+        "verifiedSuccess": "Domenet er bekreftet",
+        "verify": "Bekreft",
+        "verifyDomain": "Bekreft domene",
+        "verifyFailed": "Kunne ikke bekrefte domenet",
+        "verifying": "Bekrefter…",
+        "verifyOwnership": "Bekreft domeneeierskap",
+        "verifyOwnershipDescription": "Legg til en DNS TXT-oppføring for å bekrefte eierskap til {domain}"
+      },
+      "email": {
+        "apiKey": "API-nøkkel",
+        "apiKeyHint": "La stå tomt for å beholde eksisterende nøkkel. Hent API-nøkkelen din fra resend.com",
+        "create": "Opprett konfigurasjon",
+        "delete": "Slett konfigurasjon",
+        "deleteConfirm": "Er du sikker på at du vil slette denne e-postkonfigurasjonen?",
+        "deleted": "E-postkonfigurasjon slettet",
+        "deleteFailed": "Kunne ikke slette",
+        "description": "Konfigurer en tilpasset e-postleverandør for organisasjonen din. All e-post fra organisasjonen vil bruke denne konfigurasjonen i stedet for systemstandarden.",
+        "fromEmail": "Fra-e-post",
+        "fromName": "Fra-navn",
+        "isActive": "Aktiver denne e-postkonfigurasjonen",
+        "lastTest": "Siste test",
+        "passwordHint": "La stå tomt for å beholde eksisterende passord",
+        "recommended": "Anbefalt",
+        "resendConfig": "Resend-konfigurasjon",
+        "save": "Lagre endringer",
+        "saved": "E-postkonfigurasjon lagret",
+        "saveFailed": "Kunne ikke lagre",
+        "scalewayConnected": "Scaleway Secret Store klar",
+        "scalewayConnectedDesc": "Denne organisasjonen har en verifisert Scaleway Key Manager-nøkkel for kryptert hemmelighetslagring.",
+        "scalewayKeyPending": "Scaleway-nøkkel ikke generert ennå",
+        "scalewayKeyPendingDesc": "En Scaleway-organisasjonsnøkkel vil bli generert når du lagrer en hemmelighet, som en Resend API-nøkkel eller et SMTP-passord.",
+        "scalewayUnavailable": "Scaleway Secret Store utilgjengelig",
+        "scalewayUnavailableDesc": "Den konfigurerte Scaleway-organisasjonsnøkkelen kunne ikke verifiseres. Hemmeligheter kan ikke lagres sikkert før dette er løst.",
+        "secretSet": "Angitt",
+        "sendTest": "Send test",
+        "smtpConfig": "SMTP-konfigurasjon",
+        "smtpHost": "SMTP-vert",
+        "smtpIpMode": "IP-modus",
+        "smtpIpMode.auto": "Automatisk",
+        "smtpIpModeHint": "Bruk Automatisk med mindre SMTP-leverandøren din krever en bestemt IP-familie.",
+        "smtpIpMode.ipv4": "Kun IPv4",
+        "smtpIpMode.ipv6": "Kun IPv6",
+        "smtpPassword": "Passord",
+        "smtpPort": "Port",
+        "smtpRequireTls": "Krev STARTTLS-oppgradering",
+        "smtpSecure": "Bruk TLS (port 465)",
+        "smtpServer": "SMTP-server",
+        "smtpUsername": "Brukernavn",
+        "testEmailRequired": "Vennligst oppgi en test-e-postadresse",
+        "testFailed": "Kunne ikke sende test-e-post",
+        "testFailure": "Mislyktes",
+        "testSection": "Send test-e-post",
+        "testSent": "Test-e-post sendt",
+        "testSuccess": "Vellykket",
+        "title": "E-postkonfigurasjon",
+        "transportType": "E-postleverandør",
+        "vaultConnected": "Vault tilkoblet",
+        "vaultConnectedDesc": "Hemmeligheter lagres sikkert i HashiCorp Vault.",
+        "vaultSealed": "Vault forseglet",
+        "vaultSealedDesc": "HashiCorp Vault er forseglet. Vennligst opphev forseglingen for å lagre hemmeligheter.",
+        "vaultUnavailable": "Vault utilgjengelig",
+        "vaultUnavailableDesc": "HashiCorp Vault er ikke tilgjengelig. Hemmeligheter kan ikke lagres sikkert."
+      },
+      "enableProviderHelp": "Aktiver eller deaktiver denne leverandøren",
+      "identity": {
+        "accessPolicy": {
+          "action": {
+            "save": "Lagre tilgangspolicy"
+          },
+          "defaultRoleTemplate": "Standard rollemal",
+          "description": "Angi håndheving av domene, invitasjoner og SSO etter at pilottesten er bestått.",
+          "noDefaultTemplate": "Ingen standardmal",
+          "placeholder": {
+            "roleTemplate": "Velg rollemal"
+          },
+          "requireSso": "Krev SSO",
+          "requireSsoHelp": "Ansatte må bruke bedriftens IdP.",
+          "restrictDomain": "Begrens til bekreftet domene",
+          "restrictDomainHelp": "Blokker kontoer utenfor det valgte domenet.",
+          "restrictInvites": "Begrens invitasjoner",
+          "restrictInvitesHelp": "Tillat kun invitasjoner i samsvar med tilgangspolicyen.",
+          "title": "Tilgangspolicy"
+        },
+        "badge": {
+          "now": "Nå",
+          "queued": "I kø",
+          "ready": "Klar"
+        },
+        "domain": {
+          "action": {
+            "checkStatus": "Sjekk domenestatus"
+          },
+          "description": "Valider leietakergrensen før du håndhever SSO for ansatte.",
+          "help": "DNS-verifisering bruker de eksisterende handlingene for SSO-domeneverifisering. Fullfør denne verifiseringen før du aktiverer håndheving.",
+          "notSelected": "Ikke valgt",
+          "selected": "Valgt domene",
+          "status": {
+            "pending": "Venter",
+            "verified": "Verifisert"
+          },
+          "title": "Domene"
+        },
+        "hero": {
+          "description": "Konfigurer SSO, SCIM og håndheving for organisasjon {organizationId} med beskyttet aktivering.",
+          "eyebrow": "Enterprise-identitet",
+          "title": "Sjekkliste for operasjonelle kommandoer"
+        },
+        "provider": {
+          "action": {
+            "save": "Lagre leverandør"
+          },
+          "description": "Velg forhåndsinnstilling for identitetsleverandør, protokoll, leverandør-ID og e-postdomene.",
+          "error": {
+            "domainRequired": "Domene er påkrevd",
+            "providerIdRequired": "Leverandør-ID er påkrevd"
+          },
+          "label": {
+            "domain": "E-postdomene",
+            "preset": "Forhåndsinnstilling for leverandør",
+            "protocol": "Protokoll",
+            "providerId": "Leverandør-ID"
+          },
+          "placeholder": {
+            "domain": "f.eks. example.com…",
+            "protocol": "Velg protokoll",
+            "provider": "Velg leverandør",
+            "providerId": "f.eks. acme-okta…"
+          },
+          "preset": {
+            "generic": {
+              "description": "Bruk en standardkompatibel OIDC- eller SAML 2.0-identitetsleverandør."
+            },
+            "googleWorkspace": {
+              "description": "Bruk Google Workspace OIDC for SSO og valgfri katalogsynkronisering."
+            },
+            "microsoftEntra": {
+              "description": "Bruk Microsoft Entra ID for enterprise-SSO og valgfri klargjøring."
+            },
+            "okta": {
+              "description": "Bruk Okta Workforce Identity for SAML- eller OIDC-enkel pålogging."
+            }
+          },
+          "title": "Leverandør"
+        },
+        "rail": {
+          "title": "Klargjøringspanel"
+        },
+        "review": {
+          "action": {
+            "activate": "Aktiver virksomhetsidentitet"
+          },
+          "activationSummary": "Aktiveringssammendrag",
+          "description": "Gå gjennom kontrollerte aktiveringssjekker før du aktiverer styring av virksomhetsidentitet.",
+          "lockoutWarning": "Advarsel om utestenging av gjeldende administrator",
+          "lockoutWarningHelp": "Bekreft at den gjeldende administratorkontoen din kan logge på via den konfigurerte leverandøren før aktivering. Håndheving kan blokkere reserveløsning med passord for det valgte domenet.",
+          "missingRequirement": "{item} er påkrevd før aktivering",
+          "prerequisitesComplete": "Forutsetninger for leverandør, bekreftet domene og SSO-test er fullført.",
+          "requirement": {
+            "domain": "Bekreftet domene",
+            "provider": "Leverandør",
+            "ssoTest": "SSO-test"
+          },
+          "title": "Gå gjennom og aktiver"
+        },
+        "scim": {
+          "action": {
+            "create": "Opprett SCIM-tilkobling",
+            "creating": "Oppretter SCIM-tilkobling",
+            "decommission": "Avvikle",
+            "reconcile": "Oppdater opprettelsesstatus",
+            "refresh": "Oppdater status",
+            "rotate": "Roter legitimasjon",
+            "selectRole": "Velg en standard rollemal først"
+          },
+          "credential": {
+            "close": "Lukk",
+            "confirmClose": "Bekreft at legitimasjonen er lagret før du lukker.",
+            "copied": "Legitimasjon kopiert til utklippstavlen.",
+            "copy": "Kopier legitimasjon",
+            "description": "Kopier og lagre denne legitimasjonen nå. Den kan ikke vises igjen.",
+            "label": "Legitimasjon",
+            "saved": "Jeg har lagret denne legitimasjonen",
+            "title": "SCIM-legitimasjon",
+            "warning": "Denne legitimasjonen vises én gang. Lagre den trygt i identitetsleverandøren din."
+          },
+          "credentials": {
+            "credential": "Legitimasjon",
+            "empty": "Ingen legitimasjoner er utstedt.",
+            "expires": "Utløper",
+            "lastUsedAria": "Sist brukt: {value} UTC",
+            "revoke": "Tilbakekall",
+            "status": {
+              "active": "aktiv",
+              "revoked": "tilbakekalt"
+            },
+            "title": "Legitimasjoner",
+            "unused": "Ikke brukt ennå"
+          },
+          "description": "SCIM-verifisering oppdateres etter at identitetsleverandøren din sender en testbruker eller gruppeendring.",
+          "dialog": {
+            "cancel": "Avbryt",
+            "decommission": {
+              "description": "Dette avvikler SCIM-provisjonering permanent og kan ikke angres.",
+              "title": "Avvikle SCIM"
+            },
+            "revoke": {
+              "description": "Dette hindrer umiddelbart legitimasjonen i å provisjonere brukere.",
+              "title": "Tilbakekall legitimasjon"
+            }
+          },
+          "endpoint": "Endepunkt",
+          "events": {
+            "empty": "Ingen provisjoneringshendelser er registrert.",
+            "error": "Kunne ikke laste inn hendelser. Oppdater status og prøv på nytt.",
+            "title": "Nylige hendelser"
+          },
+          "expiry": "Utløp for legitimasjon",
+          "expiry.value": "1 år",
+          "refreshHelp": "Oppdater status for å laste inn sikre tilkoblingsmetadata.",
+          "status": {
+            "active-unverified": "aktiv ubekreftet",
+            "creating": "oppretter",
+            "creation_failed": "oppretting mislyktes",
+            "decommissioned": "avviklet",
+            "decommissioning": "avvikler",
+            "disconnected": "frakoblet",
+            "refreshing": "oppdaterer",
+            "revoking": "tilbakekaller",
+            "rotating": "roterer",
+            "verified": "bekreftet"
+          },
+          "title": "SCIM-klargjøring",
+          "toast": {
+            "createError": "Kunne ikke opprette SCIM-tilkoblingen.",
+            "reconcileError": "Kunne ikke avstemme SCIM-opprettelse.",
+            "refreshError": "Kunne ikke oppdatere SCIM-status.",
+            "rotateError": "Kunne ikke rotere SCIM-legitimasjonen.",
+            "updateError": "Kunne ikke oppdatere SCIM-tilkoblingen."
+          },
+          "verification": "Verifisering",
+          "verification.awaiting": "Venter på leverandørbruk",
+          "verification.observed": "Observert",
+          "wizardDescription": "Konfigurer administrert brukerprovisjonering uten å endre bedriftsaktiveringen."
+        },
+        "sso": {
+          "action": {
+            "register": "Registrer SSO-leverandør"
+          },
+          "description": "Registrer den eksterne IdP-en ved hjelp av OIDC-klientlegitimasjon eller SAML-metadata.",
+          "error": {
+            "saveProviderFirst": "Lagre leverandør og domene før du registrerer SSO"
+          },
+          "label": {
+            "clientId": "Klient-ID",
+            "clientSecret": "Klienthemmelighet",
+            "issuer": "Utsteder",
+            "metadata": "SAML-metadata"
+          },
+          "placeholder": {
+            "issuer": {
+              "generic": "https://idp.example.com…",
+              "googleWorkspace": "https://accounts.google.com…",
+              "microsoftEntra": "https://login.microsoftonline.com/{tenant-id}/v2.0…",
+              "okta": "https://acme.okta.com…"
+            },
+            "metadata": "Lim inn IdP-metadata-XML…"
+          },
+          "saml": {
+            "acsPath": "Nettleserrelatert ACS-bane: {path}",
+            "acsUrl": "Konfigurer din IdP med denne ACS-URL-en (Assertion Consumer Service): {path}"
+          },
+          "title": "SSO-konfigurasjon"
+        },
+        "ssoTest": {
+          "action": {
+            "recordFail": "Registrer mislykket",
+            "recordPass": "Registrer bestått"
+          },
+          "defaultFailure": "Live SSO-test mislyktes",
+          "description": "Registrer resultatet av en ekstern live-SSO-test før håndheving.",
+          "error": {
+            "saveProviderFirst": "Lagre leverandør før du registrerer en test"
+          },
+          "help": "Dette registrerer resultatet fra en ekstern live-SSO-test. Kjør innloggingen i IdP-en først, og registrer deretter bestått eller mislykket her for aktiveringssperren.",
+          "label": {
+            "email": "E-postadresse for testbruker",
+            "failureNote": "Feilnotat"
+          },
+          "status": {
+            "failed": "Mislyktes",
+            "notRun": "Ikke kjørt",
+            "passed": "Bestått"
+          },
+          "title": "Testbruker"
+        },
+        "status": {
+          "activated": "Aktivert",
+          "draft": "Utkast"
+        },
+        "step": {
+          "accessPolicy": "Tilgangspolicy",
+          "accessPolicy.description": "Angi håndhevingsregler",
+          "domain": "Domene",
+          "domain.description": "Bekreft leietakergrense",
+          "provider": "Leverandør",
+          "provider.description": "Velg identitetskilde",
+          "review": "Se gjennom og aktiver",
+          "review.description": "Sikre aktivering",
+          "scim": "SCIM-provisjonering",
+          "scim.description": "Utsted klargjøringstoken",
+          "sso": "SSO-konfigurasjon",
+          "sso.description": "Registrer OIDC eller SAML",
+          "ssoTest": "Testbruker",
+          "ssoTest.description": "Registrer resultat for direkte pålogging"
+        },
+        "toast": {
+          "accessPolicyFailed": "Kunne ikke lagre tilgangsretningslinje",
+          "accessPolicySaved": "Tilgangsretningslinje lagret",
+          "activated": "Enterprise-identitetsoppsett aktivert",
+          "activateFailed": "Kunne ikke aktivere oppsett",
+          "domainStatusFailed": "Kunne ikke oppdatere domenestatus",
+          "domainStatusRefreshed": "Domenestatus oppdatert",
+          "providerSaved": "Identitetstilbyder lagret",
+          "providerSaveFailed": "Kunne ikke lagre tilbyder",
+          "ssoRegistered": "SSO-tilbyder registrert",
+          "ssoRegisterFailed": "Kunne ikke registrere SSO-tilbyder",
+          "ssoTestFailed": "SSO-test merket som mislykket",
+          "ssoTestPassed": "SSO-test merket som bestått",
+          "ssoTestRecordFailed": "Kunne ikke registrere SSO-test"
+        }
+      },
+      "keepExistingSecretHelp": "La stå tomt for å beholde den eksisterende hemmeligheten",
+      "leaveBlankKeepExisting": "La stå tomt for å beholde eksisterende",
+      "provider": "Tilbyder",
+      "socialOAuth": {
+        "addDescription": "Konfigurer din egen OAuth-app for sosial pålogging.",
+        "addProviderError": "Kunne ikke legge til tilbyder",
+        "addTitle": "Legg til sosial OAuth-tilbyder",
+        "appleKeyIdHelp": "Nøkkel-ID-en som er knyttet til den private nøkkelen din",
+        "appleKeyIdRequired": "Nøkkel-ID er påkrevd for Apple",
+        "appleTeamIdHelp": "Finnes i Apple Developer-kontoen din",
+        "appleTeamIdRequired": "Team-ID er påkrevd for Apple",
+        "authentication": "Autentisering",
+        "clientIdPlaceholder": "Din OAuth-klient-ID",
+        "clientSecretPlaceholder": "Din OAuth-klienthemmelighet",
+        "configured": "{provider}-OAuth er konfigurert",
+        "createAppAt": "Opprett en OAuth-app hos",
+        "deleteError": "Kunne ikke slette OAuth-konfigurasjonen",
+        "description": "Konfigurer dine egne OAuth-påloggingsopplysninger for sosial pålogging. Dette lar brukerne dine logge på med organisasjonens OAuth-apper i stedet for delte påloggingsopplysninger.",
+        "developerConsole": "{provider} Developer Console",
+        "editDescription": "Oppdater OAuth-påloggingsopplysningene dine.",
+        "editTitle": "Rediger {provider}-OAuth",
+        "empty": "Ingen tilpassede sosiale OAuth-leverandører er konfigurert.",
+        "emptyDescription": "Legg til dine egne OAuth-påloggingsopplysninger for å erstatte de delte påloggingsopplysningene.",
+        "howItWorks": "Slik fungerer det",
+        "instructions": {
+          "addProvider": "Legg til leverandøren her med påloggingsopplysningene dine",
+          "copyCredentials": "Kopier klient-ID og klienthemmelighet",
+          "createApp": "Opprett en OAuth-app i leverandørens utviklerkonsoll",
+          "customDomain": "Brukere som logger på via ditt tilpassede domene vil bruke din OAuth-app"
+        },
+        "keyId": "Nøkkel-ID",
+        "privateKey": "Privat nøkkel (.p8)",
+        "removed": "{provider}-OAuth fjernet",
+        "removeDialogDescription": "Er du sikker på at du vil fjerne denne OAuth-konfigurasjonen? Brukere vil falle tilbake til de delte OAuth-påloggingsopplysningene (hvis tilgjengelig).",
+        "removeDialogTitle": "Fjern sosial OAuth-leverandør",
+        "teamId": "Team-ID",
+        "title": "Sosiale påloggingstilbydere",
+        "unverified": "Uverifisert",
+        "updateConfigError": "Kunne ikke oppdatere konfigurasjonen",
+        "updated": "{provider} OAuth ble oppdatert"
+      },
+      "sso": {
+        "addDescription": "Konfigurer en OIDC-identitetstilbyder for enkel pålogging (SSO) for bedrifter.",
+        "addError": "Kunne ikke legge til SSO-tilbyder",
+        "addSuccess": "SSO-tilbyder ble lagt til",
+        "addTitle": "Legg til SSO-tilbyder",
+        "clientIdPlaceholder": "Din OIDC-klient-ID",
+        "clientSecretPlaceholder": "Din OIDC-klienthemmelighet",
+        "deleteDialogDescription": "Er du sikker på at du vil slette denne SSO-tilbyderen? Brukere vil ikke lenger kunne logge på med denne identitetstilbyderen.",
+        "deleteDialogTitle": "Slett SSO-tilbyder",
+        "deleteError": "Kunne ikke slette SSO-tilbyder",
+        "deleteProviderAria": "Slett SSO-leverandør {provider}",
+        "deleteSuccess": "SSO-tilbyder slettet",
+        "description": "Legg til OIDC-identitetstilbydere for å aktivere SSO for organisasjonen din.",
+        "domainInvalid": "Vennligst oppgi et gyldig domene (f.eks. example.com)",
+        "domainRequired": "Domene er påkrevd",
+        "domainVerified": "Domene verifisert",
+        "emailDomain": "E-postdomene",
+        "emailDomainHelp": "Brukere med dette e-postdomenet vil kunne bruke SSO",
+        "empty": "Ingen SSO-tilbydere er konfigurert ennå.",
+        "emptyDescription": "Legg til en OIDC-tilbyder for å aktivere enkel pålogging for bedrifter.",
+        "instructions": {
+          "copyCredentials": "Kopier utsteder-URL, klient-ID og klienthemmelighet fra din IdP",
+          "createApp": "Opprett en OIDC-applikasjon i din identitetstilbyder (Okta, Azure AD osv.)",
+          "verifyDomain": "Legg til tilbyderen her og verifiser e-postdomenet via DNS TXT-oppføring"
+        },
+        "issuerUrl": "Utsteder-URL",
+        "issuerUrlHelp": "OIDC-utsteder-URL-en fra identitetsleverandøren din",
+        "issuerUrlRequired": "Utsteder-URL er påkrevd",
+        "providerId": "Leverandør-ID",
+        "providerIdHelp": "En unik identifikator for denne leverandøren (små bokstaver, ingen mellomrom)",
+        "providerIdInvalid": "Leverandør-ID kan bare inneholde små bokstaver, tall og bindestreker",
+        "providerIdRequired": "Leverandør-ID er påkrevd",
+        "setupInstructions": "Oppsettinstruksjoner",
+        "title": "Identitetsleverandører",
+        "token": "Token",
+        "tokenError": "Kunne ikke generere token for domenebekreftelse",
+        "tokenGenerated": "Bekreftelsestoken generert",
+        "txtToken": "TXT-token:",
+        "validUrlRequired": "Vennligst oppgi en gyldig URL",
+        "verified": "Bekreftet",
+        "verify": "Bekreft",
+        "verifyError": "Domenebekreftelse mislyktes. Sjekk DNS TXT-oppføringen din og prøv igjen."
+      },
+      "tab": {
+        "branding": "Profilering",
+        "domains": "Egendefinert domene",
+        "social-oauth": "Sosial pålogging",
+        "sso": "SSO-leverandører"
+      }
+    },
+    "enterpriseIdentitySetup": {
+      "description": "Administrer SSO, SCIM-klargjøring, domenebegrensninger, invitasjonsretningslinjer og standardroller for denne organisasjonen.",
+      "title": "Oppsett av virksomhetsidentitet"
+    }
+  }
+}

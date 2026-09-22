@@ -381,6 +381,12 @@ function CalendarViewContent({
 		refetch();
 	};
 
+	// The selected event holds the old times, so close the panel after a time edit
+	const handleTimesUpdated = () => {
+		setSelectedEvent(null);
+		refetch();
+	};
+
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4 overflow-hidden min-h-0">
 			{/* Error message */}
@@ -417,6 +423,7 @@ function CalendarViewContent({
 				onSplitComplete={handleSplitComplete}
 				onDeleteComplete={handleDeleteComplete}
 				onNotesUpdated={refetch}
+				onTimesUpdated={handleTimesUpdated}
 			/>
 
 			<CalendarMainContent

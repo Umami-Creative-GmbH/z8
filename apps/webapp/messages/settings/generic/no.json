@@ -1,0 +1,990 @@
+{
+  "settings": {
+    "avv": {
+      "contractDetails": {
+        "controller": "Kunde (behandlingsansvarlig)",
+        "descriptionPrefix": "Denne avtalen regulerer behandlingen av personopplysninger på vegne av din organisasjon og ",
+        "processor": "Oppdragstaker (databehandler)",
+        "title": "Kontraktsdetaljer"
+      },
+      "description": "Last ned din databehandleravtale i henhold til art. 28 i GDPR.",
+      "hosting": {
+        "descriptionPrefix": "Alle data driftes på servere hos ",
+        "descriptionSuffix": ". Ingen ytterligere underdatabehandlere benyttes.",
+        "title": "Hosting og underdatabehandlere"
+      },
+      "title": "Databehandleravtale (DPA)"
+    },
+    "billing": {
+      "description": "Administrer abonnement, betalingsmåter og fakturaer",
+      "title": "Fakturering og abonnement"
+    },
+    "compliance": {
+      "description": "Gjennomgå og administrer forespørsler om samsvarsunntak fra teammedlemmer",
+      "title": "ArbZG-samsvar"
+    },
+    "customDomains": {
+      "description": "Konfigurer egendefinert domene, merkevarebygging og SSO for organisasjonen din",
+      "title": "Domene og merkevarebygging"
+    },
+    "customers": {
+      "column": {
+        "contactPerson": "Kontaktperson",
+        "email": "E-post",
+        "name": "Firmanavn",
+        "phone": "Telefon"
+      },
+      "create": "Legg til kunde",
+      "created": "Kunde opprettet",
+      "createFailed": "Kunne ikke opprette kunde",
+      "deleted": "Kunde slettet",
+      "delete": {
+        "description": "Er du sikker på at du vil slette \"{name}\"? Prosjekter tilknyttet denne kunden vil fortsette å fungere, men kundereferansen vil bli fjernet.",
+        "title": "Slett kunde"
+      },
+      "deleteFailed": "Kunne ikke slette kunde",
+      "description": "Administrer kundekontakter for prosjekttilordninger",
+      "dialog": {
+        "create": "Legg til kunde",
+        "createDescription": "Legg til en ny kunde for prosjekttilordninger",
+        "createTitle": "Legg til kunde",
+        "editDescription": "Oppdater kundeopplysninger",
+        "editTitle": "Rediger kunde",
+        "save": "Lagre endringer"
+      },
+      "empty": {
+        "description": "Legg til din første kunde for å tilordne dem til prosjekter.",
+        "title": "Ingen kunder ennå"
+      },
+      "field": {
+        "address": "Adresse",
+        "addressPlaceholder": "Gate, poststed, postnummer",
+        "contactPerson": "Kontaktperson",
+        "contactPersonPlaceholder": "f.eks. John Smith",
+        "email": "E-post",
+        "name": "Firmanavn",
+        "namePlaceholder": "Angi firmanavn",
+        "phone": "Telefon",
+        "project": "Prosjekt",
+        "projectPlaceholder": "Velg et prosjekt",
+        "vatId": "MVA-nummer",
+        "website": "Nettsted"
+      },
+      "list": {
+        "description": "{count} kunder totalt",
+        "title": "Alle kunder"
+      },
+      "managerNoProjects": "Ingen administrerte prosjekter tilgjengelig. Opprett eller administrer et prosjekt før du legger til kunder.",
+      "projectRequired": "Velg et prosjekt først",
+      "title": "Kunder",
+      "updated": "Kunde oppdatert",
+      "updateFailed": "Kunne ikke oppdatere kunde"
+    },
+    "dataExport": {
+      "description": "Eksporter organisasjonens data",
+      "form": {
+        "aboutAsync": "Eksporter behandles asynkront",
+        "aboutEmail": "Du vil motta en e-post når den er klar",
+        "aboutLinkValidity": "Nedlastingslenker er gyldige i 24 timer",
+        "aboutOrgDataOnly": "Bare dataene til organisasjonen din er inkludert",
+        "aboutStorageDuration": "Eksportfiler lagres i 7 dager",
+        "aboutTitle": "Om dataeksport",
+        "description": "Velg datakategoriene du vil eksportere",
+        "selectAll": "Velg alle",
+        "selectAtLeastOne": "Vennligst velg minst én kategori",
+        "startExport": "Start eksport (${selectedCategories.size})",
+        "startingExport": "Starter eksport...",
+        "submitError": "Kunne ikke starte eksport",
+        "submitSuccess": "Eksporten er startet",
+        "title": "Eksporter data",
+        "unexpectedError": "Det oppsto en uventet feil"
+      },
+      "history": {
+        "columnActions": "Handlinger",
+        "columnCategories": "Kategorier",
+        "columnDate": "Dato",
+        "columnSize": "Størrelse",
+        "columnStatus": "Status",
+        "deleteDialogDescription": "Er du sikker på at du vil slette denne eksporten? Denne handlingen kan ikke angres.",
+        "deleteDialogTitle": "Slett eksport",
+        "deleteError": "Kunne ikke slette eksport",
+        "deleteSuccess": "Eksport slettet",
+        "description": "Dine tidligere dataeksporter",
+        "download": "Last ned",
+        "downloadError": "Kunne ikke laste ned",
+        "downloadSuccess": "Nedlasting startet",
+        "emptyDescription": "Ingen eksporter ennå",
+        "emptyHint": "Opprett din første eksport ved å bruke skjemaet ovenfor",
+        "moreCategories": "+${exp.categories.length - 3} flere",
+        "statusCompleted": "Fullført",
+        "statusFailed": "Mislyktes",
+        "statusPending": "Venter",
+        "statusProcessing": "Behandler",
+        "title": "Eksporthistorikk",
+        "unexpectedError": "En uventet feil oppsto"
+      },
+      "storage": {
+        "accessKeyDescription": "Din AWS-tilgangsnøkkel-ID",
+        "accessKeyId": "Tilgangsnøkkel-ID",
+        "bucketDescription": "Navnet på S3-bøtten din",
+        "bucketName": "Bøttenavn",
+        "bucketPlaceholder": "my-export-bucket",
+        "connectionFailed": "Tilkobling mislyktes",
+        "connectionSuccess": "Tilkobling vellykket",
+        "deleteDialogDescription": "Er du sikker på at du vil slette denne lagringskonfigurasjonen?",
+        "deleteDialogTitle": "Slett konfigurasjon",
+        "deleteError": "Kunne ikke slette konfigurasjon",
+        "deleteSuccess": "Konfigurasjon slettet",
+        "description": "Konfigurer din egen S3-kompatible lagring for eksporter",
+        "endpoint": "Egendefinert endepunkt (valgfritt)",
+        "endpointDescription": "For S3-kompatible tjenester som MinIO",
+        "endpointPlaceholder": "https://s3.example.com",
+        "keepExistingCredentials": "La stå tomt for å beholde eksisterende påloggingsinformasjon",
+        "lastVerified": "Sist verifisert: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "region": "Region",
+        "regionDescription": "AWS-region der din bucket er plassert",
+        "regionPlaceholder": "us-east-1",
+        "saveConfiguration": "Lagre konfigurasjon",
+        "saveError": "Kunne ikke lagre konfigurasjonen",
+        "saveSuccess": "Konfigurasjon lagret",
+        "saveSuccessDescription": "Dine S3-lagringsinnstillinger har blitt lagret",
+        "saving": "Lagrer...",
+        "secretAccessKey": "Hemmelig tilgangsnøkkel",
+        "secretKeyDescription": "Din hemmelige AWS-tilgangsnøkkel",
+        "testConnection": "Test tilkobling",
+        "testFailed": "Tilkoblingstesten mislyktes",
+        "testing": "Tester...",
+        "title": "S3-lagringskonfigurasjon",
+        "unexpectedError": "En uventet feil oppstod",
+        "verified": "Verifisert"
+      },
+      "storageNotConfigured": {
+        "description": "Konfigurer S3-lagring før du oppretter eksporter",
+        "title": "Lagring ikke konfigurert"
+      },
+      "tabs": {
+        "exportHistory": "Eksporthistorikk",
+        "newExport": "Ny eksport",
+        "storageSettings": "Lagringsinnstillinger"
+      },
+      "title": "Dataeksport"
+    },
+    "emailConfig": {
+      "description": "Konfigurer en egendefinert e-postleverandør for organisasjonens e-poster",
+      "title": "E-postkonfigurasjon"
+    },
+    "emailTemplates": {
+      "actions": {
+        "reset": "Tilbakestill til systemmal",
+        "save": "Lagre",
+        "sendTest": "Send test"
+      },
+      "defaultFallback": "Standard reserve",
+      "defaultFallbackDescription": "Hvis denne malen bruker systemstandarden, sender Z8 systemets tekst og emne:",
+      "description": "Tilpass e-postene organisasjonen din sender",
+      "editBodyBeforeSaving": "Rediger e-postteksten før du lagrer en første tilpasset mal.",
+      "empty": "Ingen e-postmaler er tilgjengelige for denne organisasjonen.",
+      "eyebrow": "Driftskommunikasjon",
+      "reset": "E-postmal tilbakestilt til systemmal",
+      "resetFailed": "Kunne ikke tilbakestille e-postmal",
+      "saved": "E-postmal lagret",
+      "saveFailed": "Kunne ikke lagre e-postmal",
+      "status": {
+        "customized": "Tilpasset",
+        "default": "Standard"
+      },
+      "systemTemplates": "Systemmaler",
+      "testFailed": "Kunne ikke sende test-e-post",
+      "testSent": "Test-e-post sendt til kontoen din",
+      "title": "E-postmaler"
+    },
+    "error": {
+      "actions": {
+        "backToSettings": "Tilbake til innstillinger",
+        "tryAgain": "Prøv igjen"
+      },
+      "description": "Det oppsto en feil under lasting av innstillingssiden. Dette kan være et midlertidig problem.",
+      "errorId": "Feil-ID: {{digest}}",
+      "title": "Noe gikk galt"
+    },
+    "export": {
+      "description": "Eksporter organisasjonsdata for sikkerhetskopiering eller migrering",
+      "title": "Dataeksport"
+    },
+    "exportOperations": {
+      "activity": {
+        "audit": {
+          "description": "Forespørsel om revisjonseksport registrert.",
+          "title": "Revisjonseksport"
+        },
+        "payroll": {
+          "description": "Lønnseksportjobb registrert.",
+          "title": "Lønnseksport"
+        },
+        "scheduled": {
+          "description": "Planlagt eksportkjøring registrert.",
+          "title": "Planlagt eksport"
+        }
+      },
+      "alerts": {
+        "auditFailed": {
+          "description": "Den siste forespørselen om revisjonseksport ble ikke fullført.",
+          "title": "Revisjonseksport mislyktes"
+        },
+        "blockedSchedule": {
+          "description": "{name} trenger en konfigurasjon for lønnseksport før den kan kjøres.",
+          "title": "Planlagt lønnseksport er blokkert"
+        },
+        "payrollFailed": {
+          "description": "Den siste lønnseksporten ble ikke fullført.",
+          "title": "Lønnseksport mislyktes"
+        },
+        "scheduledFailed": {
+          "description": "{name} ble ikke fullført.",
+          "title": "Planlagt eksport mislyktes"
+        }
+      },
+      "description": "Overvåk lønns-, revisjons- og planlagt eksportaktivitet for organisasjonen din.",
+      "errors": {
+        "alerts": "Enkelte varsler kan være ufullstendige mens eksportdata er utilgjengelige.",
+        "recentActivity": "Enkelte aktivitetsdata er midlertidig utilgjengelige.",
+        "summary": "Antall er basert på eksportdataene som kunne lastes inn.",
+        "upcomingRuns": "Data for planlagt eksport er midlertidig utilgjengelig."
+      },
+      "title": "Eksportoperasjoner"
+    },
+    "group": {
+      "account": "Konto",
+      "administration": "Administrasjon",
+      "data": "Data",
+      "enterprise": "Enterprise",
+      "notifications": "Varsler",
+      "organization": "Organisasjon"
+    },
+    "implementationChecklist": {
+      "actions": {
+        "markComplete": "Merk som fullført",
+        "markIncomplete": "Merk som ikke fullført"
+      },
+      "description": "Fullfør konfigureringstrinnene før du inviterer hele teamet, slik at tidsregistrering, godkjenninger og lønnsarbeidsflyter er klare til daglig bruk.",
+      "errors": {
+        "updateItem": "Kunne ikke oppdatere sjekklistepunkt."
+      },
+      "eyebrow": "Kundeimplementering",
+      "progress": {
+        "ariaLabel": "Fremdrift for implementeringssjekkliste",
+        "completedCount": "{{completed}} av {{total}} fullført",
+        "label": "Fremdrift for oppsett",
+        "percentComplete": "{{percent}}% fullført"
+      },
+      "status": {
+        "complete": "Fullført",
+        "manuallyComplete": "Fullfør manuelt",
+        "needsReview": "Må gjennomgås",
+        "notStarted": "Ikke startet"
+      },
+      "title": "Implementeringssjekkliste"
+    },
+    "import": {
+      "description": "Importer data fra støttede leverandører som Clockodo og Clockin.",
+      "review": {
+        "commitAccepted": "Bekreft godtatte rader",
+        "commitFailed": "Kunne ikke starte importbekreftelse",
+        "commitQueued": "Satte {count} godtatte rader i kø for bekreftelse",
+        "committing": "Fullfører...",
+        "description": "Gå gjennom klargjorte importrader, løs blokkerende problemer, og overfør godkjente poster når bunken er klar.",
+        "issueGroups": {
+          "currentMarkers": "Gjeldende rader inneholder {blockingRows} blokkerende markører og {warningRows} advarselsmarkører.",
+          "description": "Grupperte gjennomgangsområder bidrar til å holde kvalitetskontroller synlige før godkjente rader overføres.",
+          "title": "Problemgrupper"
+        },
+        "rows": {
+          "empty": "Ingen klargjorte rader er tilgjengelige for denne importbunken.",
+          "entity": "Entitet",
+          "rowId": "Rad-ID",
+          "sourceId": "Kilde-ID",
+          "status": "Status",
+          "title": "Rader"
+        },
+        "title": "Importgjennomgang"
+      },
+      "title": "Importer data"
+    },
+    "licenses": {
+      "footer": "Denne applikasjonen bruker programvare med åpen kildekode. Takk til alle vedlikeholdere og bidragsytere av disse pakkene.",
+      "homepage": "Hjemmeside",
+      "license": "Lisens",
+      "licenseTypesCount": "{count} lisenstyper",
+      "links": "Lenker",
+      "noPackages": "Ingen pakker funnet.",
+      "package": "Pakke",
+      "packagesCount": "{count} pakker",
+      "repository": "Kodelager",
+      "searchPlaceholder": "Søk etter pakker eller lisenser...",
+      "unknown": "Ukjent"
+    },
+    "locations": {
+      "address": "Adresse",
+      "assignEmployee": "Tildel ansatt",
+      "assignEmployeeDescription": "Tildel en ansatt som veileder for denne lokasjonen",
+      "assignEmployeeToSubarea": "Tildel ansatt til delområde",
+      "assignEmployeeToSubareaDescription": "Tildel en ansatt som veileder for {subareaName}",
+      "backToList": "Tilbake til lokasjoner",
+      "create": "Opprett lokasjon",
+      "created": "Lokasjon opprettet",
+      "createFailed": "Kunne ikke opprette lokasjon",
+      "deleted": "Lokasjon slettet",
+      "deleteDescription": "Er du sikker på at du vil slette denne lokasjonen? Dette vil også slette alle delområder og ansatttildelinger.",
+      "deleteFailed": "Kunne ikke slette lokasjon",
+      "deleteSubareaDescription": "Er du sikker på at du vil slette dette delområdet? Dette vil også fjerne alle ansatttildelinger.",
+      "deleteSubareaTitle": "Slett delområde",
+      "deleteTitle": "Slett lokasjon",
+      "description": "Administrer organisasjonens lokasjoner og delområder",
+      "details": "Lokasjonsdetaljer",
+      "dialog": {
+        "create": "Opprett lokasjon",
+        "createDescription": "Opprett en ny lokasjon for organisasjonen din",
+        "createTitle": "Opprett lokasjon",
+        "editDescription": "Oppdater lokasjonsdetaljer",
+        "editTitle": "Rediger lokasjon",
+        "save": "Lagre endringer"
+      },
+      "employee": "Ansatt",
+      "employeeAssigned": "Ansatt tildelt",
+      "employeeAssignFailed": "Kunne ikke tildele ansatt",
+      "employeeRemoved": "Ansatt fjernet",
+      "employeeRemoveFailed": "Kunne ikke fjerne ansatt",
+      "field": {
+        "active": "Aktiv",
+        "activeHelp": "Inaktive lokasjoner vil ikke vises i valglister",
+        "city": "By",
+        "cityPlaceholder": "f.eks. New York",
+        "cityPostal": "By / postnummer",
+        "country": "Landskode",
+        "countryHelp": "ISO 3166-1 alfa-2-kode",
+        "countryPlaceholder": "f.eks. US, DE",
+        "name": "Navn",
+        "namePlaceholder": "f.eks. Hovedkontor",
+        "postalCode": "Postnummer",
+        "postalCodePlaceholder": "f.eks. 10001",
+        "street": "Gateadresse",
+        "streetPlaceholder": "f.eks. 123 Main St",
+        "subareaActiveHelp": "Inaktive delområder vil ikke vises i valglister",
+        "subareaName": "Navn",
+        "subareaNamePlaceholder": "f.eks. Kasse, Lager, Bistro"
+      },
+      "name": "Navn",
+      "noAvailableEmployees": "Alle ansatte er allerede tilordnet denne lokasjonen",
+      "noAvailableEmployeesSubarea": "Alle ansatte er allerede tilordnet dette delområdet",
+      "noLocations": "Ingen lokasjoner ennå",
+      "noLocationsDescription": "Opprett din første lokasjon for å organisere arbeidsområdet ditt.",
+      "noSubareas": "Ingen delområder ennå",
+      "noSupervisors": "Ingen ledere tilordnet",
+      "notFound": "Fant ikke lokasjonen",
+      "primary": "Primær",
+      "primarySupervisor": "Hovedleder",
+      "primarySupervisorHelp": "Marker som hovedleder for denne lokasjonen",
+      "primarySupervisorSubareaHelp": "Marker som hovedleder for dette delområdet",
+      "selectEmployee": "Vennligst velg en ansatt",
+      "selectEmployeePlaceholder": "Velg en ansatt",
+      "subareaCreated": "Delområde opprettet",
+      "subareaCreateFailed": "Kunne ikke opprette delområde",
+      "subareaDeleted": "Delområde slettet",
+      "subareaDeleteFailed": "Kunne ikke slette delområde",
+      "subareaDialog": {
+        "create": "Legg til delområde",
+        "createDescription": "Legg til et nytt delområde på denne lokasjonen",
+        "createTitle": "Legg til delområde",
+        "editDescription": "Oppdater detaljer for delområde",
+        "editTitle": "Rediger delområde",
+        "save": "Lagre endringer"
+      },
+      "subareas": "Delområder",
+      "subareasDescription": "Områder innenfor denne lokasjonen",
+      "subareaUpdated": "Delområde oppdatert",
+      "subareaUpdateFailed": "Kunne ikke oppdatere delområde",
+      "supervisors": "Ledere",
+      "supervisorsDescription": "Ansatte tilordnet denne lokasjonen",
+      "title": "Lokasjoner",
+      "updated": "Plassering oppdatert",
+      "updateFailed": "Kunne ikke oppdatere plassering"
+    },
+    "notifications": {
+      "approvals": "Godkjenningsvarsler",
+      "approvalsDescription": "Send godkjenningsforespørsler og oppdateringer om godkjenningsstatus.",
+      "commands": "Kommandoer",
+      "commandsDescription": "Tillat støttede arbeidsplasskommandoer fra denne kanalen.",
+      "connectBeforeChanging": "Koble til eller konfigurer denne integrasjonen før du endrer varslingsinnstillinger.",
+      "dailyDigest": "Daglig sammendrag",
+      "dailyDigestDescription": "Send et daglig sammendrag av fravær, tidsplaner og ventende arbeid.",
+      "description": "Velg hvordan og når du vil bli varslet",
+      "digestTime": "Tidspunkt for sammendrag",
+      "discord": {
+        "description": "Konfigurer Discord-varsler for organisasjonen din."
+      },
+      "escalations": "Eskaleringer",
+      "escalationsDescription": "Eskaler ubesvarte godkjenningsforespørsler etter det konfigurerte tidsavbruddet.",
+      "featureSettings": "Funksjonsinnstillinger",
+      "featureSettingsDescription": "Velg hvilke organisasjonsvarsler og -kommandoer som er tilgjengelige gjennom denne kanalen.",
+      "hours": "timer",
+      "manageEnabledFeatures": "Administrer hvilke varslingsfunksjoner som er aktivert for denne integrasjonen.",
+      "notConnected": "{channelName} er ikke tilkoblet",
+      "saved": "Varslingsinnstillinger for {channelName} er lagret",
+      "saveFailed": "Kunne ikke lagre varslingsinnstillinger for {channelName}",
+      "saveSettings": "Lagre innstillinger",
+      "slack": {
+        "description": "Konfigurer Slack-varsler for organisasjonen din."
+      },
+      "status": {
+        "active": "Aktiv",
+        "configured": "Konfigurert",
+        "disabled": "Deaktivert",
+        "disconnected": "Frakoblet",
+        "error": "Feil",
+        "notConfigured": "Ikke konfigurert",
+        "pending": "Venter",
+        "unknown": "Ukjent status"
+      },
+      "teams": {
+        "description": "Konfigurer Microsoft Teams-varsler for organisasjonen din."
+      },
+      "timeout": "Tidsavbrudd",
+      "timezone": "Tidssone",
+      "timezonePlaceholder": "Europe/Berlin…",
+      "title": "Varslingsinnstillinger"
+    },
+    "organizations": {
+      "description": "Administrer organisasjonsmedlemmer, invitasjoner og detaljer",
+      "notFound": {
+        "description": "Organisasjonen ble ikke funnet, eller du har ikke tilgang til den.",
+        "title": "Organisasjon ikke funnet"
+      },
+      "title": "Organisasjon"
+    },
+    "organization": {
+      "teams": {
+        "createDialog": {
+          "createSuccess": "Teamet ble opprettet",
+          "description": "Opprett et nytt team for å organisere de ansatte",
+          "descriptionLabel": "Beskrivelse (valgfritt)",
+          "descriptionPlaceholder": "En kort beskrivelse av dette teamet",
+          "fallbackManagerHelp": "Brukes til godkjenninger når et teammedlem ikke har en direkte leder.",
+          "fallbackManagerLabel": "Reserveleder",
+          "fallbackManagerPlaceholder": "Velg en reserveleder",
+          "nameLabel": "Teamnavn",
+          "namePlaceholder": "Utvikling, salg, markedsføring...",
+          "noFallbackManager": "Ingen reserveleder",
+          "submit": "Opprett team",
+          "title": "Opprett team"
+        }
+      }
+    },
+    "passkeys": {
+      "add": "Legg til passnøkkel",
+      "addedOn": "Lagt til {date}",
+      "addError": "Kunne ikke legge til passnøkkel",
+      "addSuccess": "Passnøkkelen ble lagt til",
+      "defaultName": "Passnøkkel {date}",
+      "deleteDialogDescription": "Denne passnøkkelen vil ikke lenger ha tilgang til kontoen din. Denne handlingen kan ikke angres.",
+      "deleteDialogTitle": "Slette passnøkkel?",
+      "deleteError": "Kunne ikke slette passnøkkel",
+      "deleteSuccess": "Passnøkkelen ble slettet",
+      "description": "Administrer passnøkler for passordløs autentisering",
+      "empty": "Ingen passnøkler konfigurert",
+      "emptyDescription": "Legg til en passnøkkel for å aktivere passordløs autentisering",
+      "loadError": "Kunne ikke laste inn passnøkler",
+      "title": "Passnøkler",
+      "unnamed": "Passnøkkel uten navn"
+    },
+    "payrollAccess": {
+      "add": "Legg til lønnsansvarlig",
+      "addTitle": "Legg til lønnsansvarlig",
+      "allScope": "Alle team og ansatte",
+      "allScopeDescription": "Inkluderer nåværende og fremtidige ansatte i denne organisasjonen.",
+      "deniedDescription": "Bare autoriserte organisasjonsadministratorer kan administrere lønnsansvarlige.",
+      "deniedTitle": "Tilgang til innstillinger for lønnsansvarlig kreves",
+      "description": "Aktiver lønnsansvarlige og tilordne teamene eller de ansatte de kan inkludere i lønnsarbeidsflyter.",
+      "edit": "Rediger",
+      "editorDescription": "Velg en lønnsansvarlig og angi om vedkommende skal ha tilgang til alle eller et bestemt omfang.",
+      "editTitle": "Rediger lønnsansvarlig",
+      "employees": "Ansatte",
+      "noGrants": "Ingen lønnsansvarlige er lagt til ennå.",
+      "noScope": "Ingen lønnsomfang tilordnet",
+      "noTeams": "Ingen team tilgjengelig",
+      "payrollEmployee": "Lønnsansvarlig",
+      "save": "Lagre lønnsansvarlig",
+      "saved": "Innstillinger for lønnsansvarlig er lagret",
+      "saveFailed": "Kunne ikke lagre innstillinger for lønnsansvarlig",
+      "scope": "Tilgangsomfang",
+      "scopeSummaryEmployees": "{count} ansatte",
+      "scopeSummaryTeams": "{count} team",
+      "scopeSummaryTeamsEmployees": "{teamCount} team, {employeeCount} ansatte",
+      "selectEmployees": "Velg ansatte",
+      "selectPayrollEmployee": "Velg ansatt",
+      "specificScope": "Spesifikke team eller ansatte",
+      "specificScopeDescription": "Begrens lønnstilgang til valgte team og individuelle ansatte.",
+      "teams": "Team",
+      "title": "Lønnsansvarlige"
+    },
+    "profile": {
+      "avatarRemoved": "Profilbildet ble fjernet",
+      "avatarRemoveFailed": "Kunne ikke fjerne profilbilde",
+      "avatarSaveFailed": "Kunne ikke lagre profilbilde",
+      "avatarUploaded": "Profilbildet ble lastet opp",
+      "avatarUploadFailed": "Kunne ikke laste opp profilbilde",
+      "birthday": {
+        "hint": "Fødselsdagen din hjelper oss med å feire sammen med deg",
+        "label": "Fødselsdag",
+        "placeholder": "Velg fødselsdag"
+      },
+      "changePicture": "Endre bilde",
+      "description": "Administrer dine personlige opplysninger og preferanser",
+      "email": "E-post",
+      "emailReadonly": "E-post kan ikke endres",
+      "firstName": "Fornavn",
+      "firstNamePlaceholder": "Ada…",
+      "gender": {
+        "female": "Kvinne",
+        "label": "Kjønn",
+        "male": "Mann",
+        "other": "Annet"
+      },
+      "helpImproveProduct": "Hjelp oss med å forbedre denne appen",
+      "helpImproveProductDescription": "Del bruksinnsikt slik at vi kan gjøre Z8 mer pålitelig og nyttig.",
+      "information": "Profilinformasjon",
+      "informationDescription": "Oppdater dine personlige opplysninger og profilbilde",
+      "lastName": "Etternavn",
+      "lastNamePlaceholder": "Lovelace…",
+      "personalInformation": "Personlig informasjon",
+      "pronouns": "Pronomen",
+      "pronouns.custom": "Egendefinerte pronomen",
+      "pronouns.customPlaceholder": "f.eks. xe/xem…",
+      "pronouns.placeholder": "Velg pronomen",
+      "removePicture": "Fjern bilde",
+      "saving": "Lagrer…",
+      "title": "Profilinnstillinger",
+      "updateFailed": "Kunne ikke oppdatere profilen",
+      "updateProfile": "Oppdater profil",
+      "updateSuccess": "Profilen ble oppdatert",
+      "uploading": "Laster opp",
+      "uploadProfilePicture": "Last opp profilbilde"
+    },
+    "projects": {
+      "column": {
+        "budget": "Budsjett",
+        "customer": "Kunde",
+        "deadline": "Frist",
+        "name": "Navn",
+        "status": "Status",
+        "team": "Team"
+      },
+      "create": "Opprett prosjekt",
+      "created": "Prosjekt opprettet",
+      "createFailed": "Kunne ikke opprette prosjekt",
+      "description": "Administrer prosjekter, budsjetter, frister og tidsfordelinger",
+      "dialog": {
+        "create": "Opprett prosjekt",
+        "createDescription": "Opprett et nytt prosjekt for tidsregistrering",
+        "createTitle": "Opprett prosjekt",
+        "editDescription": "Oppdater prosjektdetaljer",
+        "editTitle": "Rediger prosjekt",
+        "save": "Lagre endringer"
+      },
+      "empty": {
+        "description": "Opprett ditt første prosjekt for å begynne å registrere tid på det.",
+        "title": "Ingen prosjekter ennå"
+      },
+      "field": {
+        "budget": "Budsjett (timer)",
+        "budgetHelp": "La stå tomt for ubegrenset budsjett",
+        "budgetPlaceholder": "f.eks. 100",
+        "clearColor": "Fjern farge",
+        "color": "Farge",
+        "colorOption": "Velg farge {color}",
+        "customer": "Kunde",
+        "customerPlaceholder": "Velg en kunde",
+        "deadline": "Frist",
+        "description": "Beskrivelse",
+        "descriptionPlaceholder": "Valgfri prosjektbeskrivelse",
+        "name": "Navn",
+        "namePlaceholder": "Skriv inn prosjektnavn",
+        "noCustomer": "Ingen kunde",
+        "status": "Status"
+      },
+      "list": {
+        "description": "{count} prosjekter totalt",
+        "title": "Alle prosjekter"
+      },
+      "title": "Prosjekter",
+      "updated": "Prosjekt oppdatert",
+      "updateFailed": "Kunne ikke oppdatere prosjektet"
+    },
+    "security": {
+      "description": "Administrer passord, totrinnsbekreftelse, passnøkler og aktive økter",
+      "title": "Sikkerhetsinnstillinger",
+      "twoFactor": {
+        "confirmPasswordToEnable": "Bekreft passordet ditt for å aktivere totrinnsbekreftelse",
+        "confirmPasswordToRegenerate": "Bekreft passordet ditt for å generere nye reservekoder",
+        "continue": "Fortsett",
+        "description": "Legg til et ekstra lag med sikkerhet på kontoen din",
+        "disable": "Deaktiver",
+        "enable": "Aktiver totrinnsbekreftelse",
+        "enterPasswordTitle": "Skriv inn passordet ditt",
+        "regenerateBackupCodes": "Generer nye reservekoder",
+        "regenerateCodes": "Generer nye koder",
+        "status": {
+          "disabled": "Deaktivert",
+          "enabled": "Aktivert"
+        },
+        "title": "Tofaktorautentisering"
+      }
+    },
+    "sessions": {
+      "browserOnOs": "{browser} på {os}",
+      "current": "Nåværende økt",
+      "description": "Administrer de aktive øktene dine på tvers av ulike enheter",
+      "devices": {
+        "desktop": "Datamaskin",
+        "mobile": "Mobil",
+        "tablet": "Nettbrett"
+      },
+      "none": "Ingen aktive økter",
+      "othersRevoked": "Alle andre økter ble tilbakekalt",
+      "revoke": "Tilbakekall",
+      "revokeAllFailed": "Kunne ikke tilbakekalle andre økter",
+      "revokeAllOthers": "Tilbakekall alle andre økter",
+      "revoked": "Økten ble tilbakekalt",
+      "revokeFailed": "Kunne ikke tilbakekalle økten",
+      "revoking": "Tilbakekaller…",
+      "securityTip": "Hvis du ser en økt du ikke gjenkjenner, må du tilbakekalle den umiddelbart og endre passordet ditt.",
+      "signedIn": "Logget inn",
+      "title": "Aktive økter",
+      "unknownBrowser": "Ukjent nettleser",
+      "unknownOs": "Ukjent operativsystem"
+    },
+    "socialAccounts": {
+      "connect": "Koble til",
+      "connected": "Tilkoblet",
+      "connectedAs": "Tilkoblet som {accountId}",
+      "connectFailed": "Kunne ikke koble til konto",
+      "connecting": "Kobler til…",
+      "connectProvider": "Koble til {provider}-kontoen din",
+      "description": "Koble til sosiale kontoer for enklere innlogging",
+      "disconnect": "Koble fra",
+      "disconnectDescription": "Dette vil fjerne koblingen til den sosiale kontoen din. Du kan koble den til igjen når som helst.",
+      "disconnectFailed": "Kunne ikke koble fra konto",
+      "disconnectSuccess": "Kontoen ble koblet fra",
+      "disconnectTitle": "Koble fra konto?",
+      "loadFailed": "Kunne ikke laste inn tilkoblede kontoer",
+      "title": "Sosiale kontoer",
+      "unexpectedError": "Det oppsto en uventet feil"
+    },
+    "statistics": {
+      "cards": {
+        "activeSessions": "Aktive økter",
+        "activeSessionsDescription": "Gjeldende databaseøkter",
+        "approvalRequests": "Godkjenningsforespørsler",
+        "approvedAbsences": "Godkjent fravær",
+        "employees": "Ansatte",
+        "employeesDescription": "{active} aktive, {inactive} inaktive",
+        "pendingAbsences": "Ventende fravær",
+        "pendingCount": "{count} ventende",
+        "rejectedAbsences": "Avvist fravær",
+        "teams": "Team",
+        "thisMonth": "Denne måneden",
+        "timeEntries": "Timeregistreringer",
+        "totalAbsences": "Totalt fravær",
+        "totalTimeEntries": "Totale timeregistreringer",
+        "vsLastMonth": "mot forrige måned"
+      },
+      "description": "Se statistikk og måleverdier for instansen din",
+      "lastUpdated": "Sist oppdatert",
+      "loadError": "Kunne ikke laste inn statistikk",
+      "managerDescription": "Gå gjennom skrivebeskyttet analyse for teamene du administrerer.",
+      "sections": {
+        "absenceBreakdown": "Fraværsfordeling",
+        "activityMetrics": "Aktivitetsmålinger",
+        "coreCounts": "Kjernetall",
+        "managedScope": "Omfang for administrerte team",
+        "systemHealth": "Systemhelse"
+      },
+      "title": "Statistikk"
+    },
+    "timeFormat": {
+      "description": "Velg hvordan klokkeslett vises i hele appen.",
+      "label": "Tidsformat",
+      "options": {
+        "12h": "12-timers (8:00 AM)",
+        "24h": "24-timers (08:00)"
+      },
+      "save": "Lagre tidsformat",
+      "title": "Tidsformat",
+      "updateError": "Det oppsto en feil under oppdatering av tidsformat",
+      "updateFailed": "Kunne ikke oppdatere tidsformat",
+      "updateSuccess": "Tidsformatet er oppdatert"
+    },
+    "timezone": {
+      "currentTimePrefix": "Nåværende tid i {timezone}:",
+      "description": "Angi tidssonen din for nøyaktig visning av dato og klokkeslett i hele applikasjonen",
+      "picker": {
+        "empty": "Ingen tidssone funnet.",
+        "groups": {
+          "africa": "Afrika",
+          "americas": "Amerika",
+          "asia": "Asia",
+          "australiaPacific": "Australia og Stillehavet",
+          "europe": "Europa",
+          "utcOther": "UTC/annet"
+        },
+        "labels": {
+          "africaCairo": "Østeuropeisk tid (Kairo)",
+          "africaJohannesburg": "Sørafrikansk tid (Johannesburg)",
+          "africaLagos": "Vestafrikansk tid (Lagos)",
+          "africaNairobi": "Østafrikansk tid (Nairobi)",
+          "americaAnchorage": "Alaska-tid (Anchorage)",
+          "americaBuenosAires": "Argentinsk tid (Buenos Aires)",
+          "americaChicago": "Sentraltid (Chicago)",
+          "americaDenver": "Fjelltid (Denver)",
+          "americaLosAngeles": "Stillehavstid (Los Angeles)",
+          "americaMexicoCity": "Sentraltid (Mexico by)",
+          "americaNewYork": "Østlig tid (New York)",
+          "americaSaoPaulo": "Brasilia-tid (São Paulo)",
+          "americaToronto": "Østlig tid (Toronto)",
+          "americaVancouver": "Stillehavstid (Vancouver)",
+          "asiaBangkok": "Indokinesisk tid (Bangkok)",
+          "asiaDubai": "Gulfstandardtid (Dubai)",
+          "asiaHongKong": "Hongkong-tid (Hongkong)",
+          "asiaKolkata": "Indisk standardtid (Kolkata)",
+          "asiaSeoul": "Koreansk standardtid (Seoul)",
+          "asiaShanghai": "Kinesisk standardtid (Shanghai)",
+          "asiaSingapore": "Singapore-tid (Singapore)",
+          "asiaTokyo": "Japansk standardtid (Tokyo)",
+          "australiaBrisbane": "Østaustralsk tid (Brisbane)",
+          "australiaMelbourne": "Østaustralsk tid (Melbourne)",
+          "australiaPerth": "Vestaustralsk tid (Perth)",
+          "australiaSydney": "Østaustralsk tid (Sydney)",
+          "europeAmsterdam": "Sentraleuropeisk tid (Amsterdam)",
+          "europeAthens": "Østeuropeisk tid (Athen)",
+          "europeBerlin": "Sentraleuropeisk tid (Berlin)",
+          "europeBrussels": "Sentraleuropeisk tid (Brussel)",
+          "europeHelsinki": "Østeuropeisk tid (Helsinki)",
+          "europeIstanbul": "Tyrkisk tid (Istanbul)",
+          "europeLondon": "GMT/BST (London)",
+          "europeMadrid": "Sentraleuropeisk tid (Madrid)",
+          "europeMoscow": "Moskvatid (Moskva)",
+          "europeParis": "Sentraleuropeisk tid (Paris)",
+          "europeRome": "Sentraleuropeisk tid (Roma)",
+          "europeStockholm": "Sentraleuropeisk tid (Stockholm)",
+          "europeVienna": "Sentraleuropeisk tid (Wien)",
+          "europeWarsaw": "Sentraleuropeisk tid (Warszawa)",
+          "pacificAuckland": "Newzealandsk tid (Auckland)",
+          "pacificHonolulu": "Hawaii-tid (Honolulu)",
+          "utc": "Koordinert universaltid (UTC)"
+        },
+        "search": "IconSearch tidssone…"
+      },
+      "save": "Lagre tidssone",
+      "title": "Tidssone",
+      "updateError": "Det oppsto en feil under oppdatering av tidssone",
+      "updateFailed": "Kunne ikke oppdatere tidssone",
+      "updateSuccess": "Tidssone oppdatert"
+    },
+    "title": "Innstillinger",
+    "travelExpenses": {
+      "activeDescription": "Når aktivert, blir denne retningslinjen aktiv standard for nye krav.",
+      "activeLabel": "Aktiv retningslinje",
+      "addPolicy": "Legg til retningslinje",
+      "created": "Retningslinje for reiseutgifter opprettet",
+      "createPolicy": "Opprett retningslinje for reiseutgifter",
+      "currency": "Valuta",
+      "description": "Konfigurer refusjonssatser og gyldighetsperioder for kilometergodtgjørelse og diettkrav.",
+      "dialogDescription": "Angi gyldighetsdatoer og standard refusjonssatser for kilometergodtgjørelse og diettkrav.",
+      "editPolicy": "Rediger retningslinje for reiseutgifter",
+      "effectiveFrom": "Gyldig fra",
+      "effectiveFromRequired": "Gyldig fra er påkrevd",
+      "effectiveTo": "Gyldig til",
+      "empty": "Ingen retningslinjer er konfigurert ennå. Opprett din første retningslinje for reiseutgifter.",
+      "loading": "Laster inn retningslinjer…",
+      "mileageRate": "Kilometergodtgjørelse / km",
+      "perDiemRate": "Diett / dag",
+      "policies": "Retningslinjer",
+      "policiesDescription": "Bare én retningslinje kan være aktiv om gangen. Aktiv retningslinje brukes for nye krav.",
+      "saveFailed": "Kunne ikke lagre retningslinje for reiseutgifter",
+      "title": "Retningslinjer for reiseutgifter",
+      "updated": "Retningslinje for reiseutgifter oppdatert"
+    },
+    "webhooks": {
+      "description": "Konfigurer webhook-endepunkter for å motta hendelsesvarsler i sanntid",
+      "title": "Webhooks"
+    },
+    "weekStart": {
+      "description": "Velg om kalendere og ukesammendrag skal starte på søndag eller mandag.",
+      "label": "Første dag i uken",
+      "save": "Lagre ukestart",
+      "title": "Uken starter på",
+      "updateError": "Det oppsto en feil under oppdatering av ukestartdag",
+      "updateFailed": "Kunne ikke oppdatere ukestartdag",
+      "updateSuccess": "Ukestartdag ble oppdatert"
+    },
+    "wellness": {
+      "cardDescShort": "Hold deg hydrert mens du jobber",
+      "cardTitle": "Vannpåminnelser",
+      "dailyGoal": "Daglig mål",
+      "decreaseDailyGoal": "Reduser daglig mål",
+      "description": "Konfigurer vannpåminnelser og væskesporing under arbeidsøktene dine",
+      "glasses": "glass",
+      "increaseDailyGoal": "Øk daglig mål",
+      "reminderFrequency": "Påminnelsesfrekvens",
+      "saved": "Velværeinnstillinger lagret",
+      "saveError": "Kunne ikke lagre velværeinnstillinger",
+      "title": "Velværeinnstillinger"
+    },
+    "workBalanceRecalculation": {
+      "requestError": "Kunne ikke sette omberegning av arbeidssaldo i kø",
+      "requestSuccess": "Omberegning av arbeidssaldo er lagt i kø"
+    },
+    "workerQueue": {
+      "cards": {
+        "active": "Aktiv",
+        "activeDescription": "Behandles nå",
+        "completed": "Fullført",
+        "completedDescription": "Nylig fullført",
+        "delayed": "Forsinket",
+        "delayedDescription": "Planlagt for senere",
+        "failed": "Mislyktes",
+        "failedDescription": "Nylig feilet",
+        "paused": "Pauset",
+        "queueState": "Kø",
+        "queueStateDescription": "Om arbeidere kan ta ventende jobber",
+        "running": "Kjører",
+        "unknown": "Ukjent",
+        "waiting": "Venter",
+        "waitingDescription": "Jobber som venter på behandling"
+      },
+      "common": {
+        "unknown": "Ukjent"
+      },
+      "connected": "Tilkoblet",
+      "description": "Overvåk behandling av bakgrunnsjobber og kjøring av cron-jobber",
+      "disconnected": "Frakoblet",
+      "lastUpdated": "Sist oppdatert",
+      "loadError": "Kunne ikke laste køstatus",
+      "noExecutions": "Ingen nylige kjøringer funnet",
+      "noScheduledJobs": "Ingen planlagte jobber funnet",
+      "recentExecutions": {
+        "allJobs": "Alle jobber",
+        "error": "Kunne ikke laste inn kjøringer",
+        "filterLabel": "Filtrer etter jobb",
+        "loading": "Laster inn kjøringer…"
+      },
+      "recentExecutionsDescription": "Siste 50 jobbkjøringer sporet i databasen.",
+      "reliability": {
+        "averageDuration": "Gjennomsnittlig varighet",
+        "avgDuration": "Gj.sn. varighet",
+        "avgDurationDescription": "Kjøringer med varighetsdata",
+        "completed": "Fullført",
+        "durationTrend": "Varighetstrend",
+        "durationTrendDescription": "Gjennomsnittlig kjøretid for kjøringer som rapporterte varighetsdata.",
+        "failed": "Mislyktes",
+        "failedRuns": "Mislykkede kjøringer",
+        "failedRunsDescription": "Siste 30 dager",
+        "failing": "Feiler",
+        "healthy": "Frisk",
+        "jobHealth": "Jobbhelse",
+        "jobHealthDescription": "Pålitelighet per jobb basert på nylige kjøringer og repeterbare tidsplaner.",
+        "noDurationData": "Ingen varighetsdata er tilgjengelig for denne perioden.",
+        "noExecutionHistory": "Ingen cron-kjøringshistorikk er tilgjengelig for denne perioden.",
+        "noJobs": "Ingen pålitelighetsdata funnet",
+        "runOutcomes": "Kjøringsresultater",
+        "runOutcomesDescription": "Fullførte og mislykkede cron-kjøringer de siste {days} dagene.",
+        "stale": "Foreldet",
+        "staleJobs": "Foreldede jobber",
+        "staleJobsDescription": "Passert forventet tidsplan",
+        "successRate": "Suksessrate",
+        "successRateDescription": "Terminale cron-kjøringer",
+        "title": "Pålitelighet",
+        "unknown": "Ukjent",
+        "warning": "Advarsel"
+      },
+      "scheduleControls": {
+        "cancel": "Avbryt",
+        "confirmationLabel": "Skriv inn bekreftelse",
+        "edit": "Rediger",
+        "failed": "Endring av tidsplan mislyktes",
+        "highRiskDescription": "Endring av denne jobben kan påvirke fakturering, opprydding, integrasjoner, samsvar eller driftsautomatisering.",
+        "highRiskTitle": "Høyrisiko-tidsplan",
+        "mismatch": "BullMQ avviker for øyeblikket fra den lagrede tidsplanen; arbeideroppstart vil synkronisere dette.",
+        "presetLabel": "Forhåndsinnstilling for tidsplan",
+        "readOnly": "Denne standardtidsplanen har ingen redigerbar forhåndsinnstilling ennå.",
+        "reset": "Tilbakestill",
+        "resetSaved": "Tidsplan tilbakestilt",
+        "save": "Lagre tidsplan",
+        "saved": "Tidsplan lagret",
+        "warningPrefix": "Lagret med advarsel"
+      },
+      "scheduledJobsDescription": "Gjentakende jobber konfigurert i workeren. Disse kjører automatisk etter tidsplan.",
+      "schedule": {
+        "overridden": "Overstyrt"
+      },
+      "sections": {
+        "jobMetrics": "Jobbmålinger (siste 30 dager)",
+        "queueCounts": "Køstatus",
+        "recentExecutions": "Nylige kjøringer",
+        "scheduledJobs": "Planlagte cron-jobber"
+      },
+      "status": {
+        "completed": "Fullført",
+        "failed": "Mislyktes",
+        "pending": "Venter",
+        "running": "Kjører"
+      },
+      "table": {
+        "actions": "Handlinger",
+        "avgDuration": "Gjennomsnittlig varighet",
+        "default": "Standard",
+        "duration": "Varighet",
+        "error": "Feil",
+        "failed": "Mislyktes",
+        "health": "Helse",
+        "jobName": "Jobbnavn",
+        "lastRun": "Sist kjørt",
+        "nextRun": "Neste kjøring",
+        "schedule": "Tidsplan",
+        "startedAt": "Startet",
+        "status": "Status",
+        "successful": "Vellykket",
+        "successRate": "Suksessrate",
+        "totalRuns": "Totalt antall kjøringer"
+      },
+      "title": "Arbeiderkø"
+    },
+    "worksCouncil": {
+      "absence": {
+        "category": "Kategorinavn",
+        "grouped": "Gruppert",
+        "hidden": "Skjult"
+      },
+      "absenceVisibility": "Synlighet for fravær",
+      "description": "Konfigurer personvernsikker tilgang for bedriftsutvalg og gjennomgangseksporter",
+      "exportEnabled": "Aktiver gjennomgangseksporter",
+      "exportEnabledDescription": "Tillat autoriserte brukere i bedriftsutvalget å generere personvernfiltrerte gjennomgangspakker.",
+      "formDescription": "Konfigurer personvernsikker tilgang for bedriftsutvalg og gjennomgangseksporter for denne organisasjonen.",
+      "identity": {
+        "aggregated": "Aggregert",
+        "named": "Navngitt",
+        "pseudonymized": "Pseudonymisert"
+      },
+      "identityVisibility": "Identitetssynlighet",
+      "minimumThreshold": "Minimumsterskel for aggregering",
+      "minimumThresholdDescription": "Grupper under denne størrelsen skjules for å redusere risikoen for re-identifisering.",
+      "save": "Lagre innstillinger",
+      "saved": "Innstillinger for driftsråd er lagret",
+      "saveError": "Kunne ikke lagre innstillinger for driftsråd",
+      "title": "Driftsrådsmodus",
+      "visibleLocationIds": "Synlige steds-ID-er",
+      "visibleLocationIdsDescription": "Valgfrie kommaseparerte steds-ID-er. La stå tomt for å inkludere alle steder.",
+      "visibleTeamIds": "Synlige team-ID-er",
+      "visibleTeamIdsDescription": "Valgfrie kommaseparerte team-ID-er. La stå tomt for å inkludere alle team."
+    }
+  }
+}

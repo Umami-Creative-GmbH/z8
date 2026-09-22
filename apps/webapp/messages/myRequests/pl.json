@@ -2,9 +2,9 @@
   "myRequests": {
     "actions": {
       "cancel": "Anuluj",
-      "cancelConfirmation": "Anulować ten wniosek o nieobecność?",
-      "cancelError": "Nie udało się anulować wniosku o nieobecność.",
       "cancelling": "Anulowanie…",
+      "cancelRequestConfirmation": "Anulować ten wniosek?",
+      "cancelRequestError": "Nie udało się anulować wniosku.",
       "fix": "Popraw",
       "notAvailable": "Niedostępne",
       "view": "Wyświetl"

@@ -1,0 +1,78 @@
+{
+  "webhooks": {
+    "copy-failed": "Kunne ikke kopiere til utklippstavlen",
+    "create": "Legg til webhook",
+    "create-failed": "Kunne ikke opprette webhook",
+    "delete-confirm": {
+      "description": "Dette vil slette webhook-endepunktet og all leveringshistorikk permanent. Denne handlingen kan ikke angres.",
+      "title": "Slette webhook?"
+    },
+    "deleted": "Webhook slettet",
+    "delete-failed": "Kunne ikke slette webhook",
+    "deliveries": "Leveringer",
+    "description": "Konfigurer webhook-endepunkter for å motta sanntidsvarsler når hendelser oppstår i organisasjonen din.",
+    "disabled": "Webhook deaktivert",
+    "empty": {
+      "description": "Opprett din første webhook for å begynne å motta hendelsesvarsler.",
+      "title": "Ingen webhooks konfigurert"
+    },
+    "enabled": "Webhook aktivert",
+    "events": "Hendelser",
+    "form": {
+      "events-required": "Minst én hendelse må være valgt",
+      "name-required": "Navn er påkrevd",
+      "url-required": "URL er påkrevd"
+    },
+    "last-delivery": "Siste",
+    "logs": {
+      "attempt": "Forsøk",
+      "description": "Nylige leveringsforsøk for webhook og resultatene deres.",
+      "duration": "Varighet",
+      "empty": "Ingen leveringslogger ennå",
+      "error": "Feil",
+      "event": "Hendelse",
+      "failed": "Mislyktes",
+      "http": "HTTP",
+      "loadError": "Kunne ikke laste inn leveringslogger",
+      "payload": "Nyttelast",
+      "pending": "Venter",
+      "response": "Respons",
+      "retrying": "Prøver på nytt",
+      "showing": "Viser {{start}}-{{end}} av {{total}}",
+      "status": "Status",
+      "success": "Vellykket",
+      "time": "Tidspunkt",
+      "title": "Leveringslogger"
+    },
+    "regenerate-failed": "Kunne ikke generere hemmelighet på nytt",
+    "regenerate-secret": "Generer hemmelighet på nytt",
+    "secret-copied": "Hemmelighet kopiert til utklippstavlen",
+    "secret-dialog": {
+      "copy-secret": "Kopier hemmelighet til utklippstavlen",
+      "description": "Denne hemmeligheten brukes til å verifisere webhook-signaturer. Oppbevar den sikkert.",
+      "done": "Jeg har lagret hemmeligheten",
+      "secret": "Signeringshemmelighet",
+      "title": "Webhook-hemmelighet",
+      "verification": "Signaturverifisering",
+      "verification-hint": "Verifiser webhook-signaturer med HMAC-SHA256. Signaturen sendes i X-Z8-Signature-headeren.",
+      "warning": "Denne hemmeligheten vises bare én gang. Sørg for å lagre den nå.",
+      "warning-title": "Viktig"
+    },
+    "secret-regenerated": "Hemmelighet regenerert",
+    "status": {
+      "degraded": "Redusert",
+      "failing": "Feiler",
+      "healthy": "Frisk",
+      "inactive": "Inaktiv"
+    },
+    "success-rate": "Vellykket",
+    "test": "Send test",
+    "test-failed": "Kunne ikke sende test-webhook",
+    "test-sent": "Test-webhook sendt",
+    "title": "Webhooks",
+    "toggle-active": "Aktiver/deaktiver webhook",
+    "updated": "Webhook oppdatert",
+    "update-failed": "Kunne ikke oppdatere webhook",
+    "view-logs": "Vis logger"
+  }
+}

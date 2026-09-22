@@ -7,7 +7,11 @@ import { toast } from "sonner";
 import { updateTimezone } from "@/app/[locale]/(app)/settings/profile/actions";
 import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import { useComplianceStatus } from "@/hooks/use-compliance-status";
-import { type TimeClockState, useElapsedTimer, useTimeClock } from "@/lib/query";
+import {
+	type TimeClockState,
+	useElapsedTimer,
+	useTimeClock,
+} from "@/lib/query";
 import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import {
@@ -50,7 +54,9 @@ function getInitialWorkLocationType(): WorkLocationType {
 		return "office";
 	}
 
-	return normalizeWorkLocationType(localStorage.getItem("z8-work-location-type"));
+	return normalizeWorkLocationType(
+		localStorage.getItem("z8-work-location-type"),
+	);
 }
 
 function createInitialWidgetState(): ClockInOutWidgetState {
@@ -98,7 +104,9 @@ function clockInOutWidgetReducer(
 	}
 }
 
-export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | null) {
+export function useClockInOutWidget(
+	initialWorkPeriod: ActiveWorkPeriodData | null,
+) {
 	const { t } = useTranslate();
 	const savedTimezone = useUserTimezone();
 	const [uiState, dispatch] = useReducer(
@@ -106,8 +114,10 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 		undefined,
 		createInitialWidgetState,
 	);
-	const [timezoneMismatch, setTimezoneMismatch] = useState<PendingTimezoneMismatch>(null);
-	const [isTimezoneContinuationPending, setIsTimezoneContinuationPending] = useState(false);
+	const [timezoneMismatch, setTimezoneMismatch] =
+		useState<PendingTimezoneMismatch>(null);
+	const [isTimezoneContinuationPending, setIsTimezoneContinuationPending] =
+		useState(false);
 	const isTimezoneContinuationPendingRef = useRef(false);
 
 	const initialData: TimeClockState = {
@@ -120,7 +130,9 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 	};
 
 	const timeClock = useTimeClock({ initialData });
-	const elapsedSeconds = useElapsedTimer(timeClock.activeWorkPeriod?.startTime ?? null);
+	const elapsedSeconds = useElapsedTimer(
+		timeClock.activeWorkPeriod?.startTime ?? null,
+	);
 	const handleAddBreak = useQuickBreakHandler(timeClock.addBreak, t);
 
 	useEffect(() => {
@@ -145,20 +157,33 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 		});
 		if (result.success) {
 			if ("queued" in result && result.queued) {
-				toast.info(t("timeTracking.clockInQueued", "Clock-in queued for sync"));
+				toast.info(
+					t(
+						"timeTracking.clockInSavedForReview",
+						"Clock-in saved on this device for review; not confirmed on the server",
+					),
+				);
 				return;
 			}
 
-			toast.success(t("timeTracking.clockInSuccess", "Clocked in successfully"));
+			toast.success(
+				t("timeTracking.clockInSuccess", "Clocked in successfully"),
+			);
 			return;
 		}
 
-		const holidayName = "holidayName" in result ? result.holidayName : undefined;
+		const holidayName =
+			"holidayName" in result ? result.holidayName : undefined;
 		const errorMessage = holidayName
-			? t("timeTracking.errors.holidayBlocked", "Cannot clock in on {holidayName}", {
-					holidayName,
-				})
-			: result.error || t("timeTracking.errors.clockInFailed", "Failed to clock in");
+			? t(
+					"timeTracking.errors.holidayBlocked",
+					"Cannot clock in on {holidayName}",
+					{
+						holidayName,
+					},
+				)
+			: result.error ||
+				t("timeTracking.errors.clockInFailed", "Failed to clock in");
 
 		toast.error(errorMessage, {
 			description: holidayName
@@ -174,30 +199,46 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 		const result = await timeClock.clockOut({ browserTimezone });
 		if (result.success) {
 			if ("queued" in result && result.queued) {
-				toast.info(t("timeTracking.clockOutQueued", "Clock-out queued for sync"));
+				toast.info(
+					t(
+						"timeTracking.clockOutSavedForReview",
+						"Clock-out saved on this device for review; not confirmed on the server",
+					),
+				);
 				return;
 			}
 
-			toast.success(t("timeTracking.clockOutSuccess", "Clocked out successfully"));
+			toast.success(
+				t("timeTracking.clockOutSuccess", "Clocked out successfully"),
+			);
 			if ("data" in result && result.data) {
 				for (const warning of result.data.complianceWarnings ?? []) {
 					if (warning.severity === "violation") {
-						toast.warning(t("timeTracking.compliance.violation", "Compliance Violation"), {
-							description: warning.message,
-							duration: 8000,
-							icon: <IconAlertTriangle className="size-5 text-orange-500" />,
-						});
+						toast.warning(
+							t("timeTracking.compliance.violation", "Compliance Violation"),
+							{
+								description: warning.message,
+								duration: 8000,
+								icon: <IconAlertTriangle className="size-5 text-orange-500" />,
+							},
+						);
 					} else {
-						toast.info(t("timeTracking.compliance.warning", "Compliance Notice"), {
-							description: warning.message,
-							duration: 6000,
-						});
+						toast.info(
+							t("timeTracking.compliance.warning", "Compliance Notice"),
+							{
+								description: warning.message,
+								duration: 6000,
+							},
+						);
 					}
 				}
 
 				if (result.data.breakAdjustment) {
 					toast.info(
-						t("timeTracking.autoAdjusted.toast.title", "Break auto-added for compliance"),
+						t(
+							"timeTracking.autoAdjusted.toast.title",
+							"Break auto-added for compliance",
+						),
 						{
 							description: t(
 								"timeTracking.autoAdjusted.toast.description",
@@ -217,12 +258,18 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 			return;
 		}
 
-		const holidayName = "holidayName" in result ? result.holidayName : undefined;
+		const holidayName =
+			"holidayName" in result ? result.holidayName : undefined;
 		const errorMessage = holidayName
-			? t("timeTracking.errors.holidayBlocked", "Cannot clock out on {holidayName}", {
-					holidayName,
-				})
-			: result.error || t("timeTracking.errors.clockOutFailed", "Failed to clock out");
+			? t(
+					"timeTracking.errors.holidayBlocked",
+					"Cannot clock out on {holidayName}",
+					{
+						holidayName,
+					},
+				)
+			: result.error ||
+				t("timeTracking.errors.clockOutFailed", "Failed to clock out");
 
 		toast.error(errorMessage, {
 			description: holidayName
@@ -235,15 +282,26 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 	}
 
 	const handleClockIn = async () => {
-		if (compliance.restPeriodEnforcement === "block" && !compliance.canClockIn) {
+		// Capturing review evidence does not execute a policy-admitted clock-in.
+		if (timeClock.isOffline) return submitClockIn(getBrowserTimezone());
+		if (
+			compliance.restPeriodEnforcement === "block" &&
+			!compliance.canClockIn
+		) {
 			const exceptionResult = await compliance.checkException("rest_period");
 			if (!exceptionResult.hasException) {
-				toast.error(t("timeTracking.errors.restPeriodBlocked", "Rest period not complete"), {
-					description: t(
-						"timeTracking.errors.restPeriodBlockedDesc",
-						"You must complete the required rest period before clocking in. Request an exception if needed.",
+				toast.error(
+					t(
+						"timeTracking.errors.restPeriodBlocked",
+						"Rest period not complete",
 					),
-				});
+					{
+						description: t(
+							"timeTracking.errors.restPeriodBlockedDesc",
+							"You must complete the required rest period before clocking in. Request an exception if needed.",
+						),
+					},
+				);
 				return;
 			}
 		}
@@ -275,7 +333,9 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 		await submitClockOut(browserTimezone);
 	};
 
-	async function submitTimezoneMismatch(mismatch: NonNullable<PendingTimezoneMismatch>) {
+	async function submitTimezoneMismatch(
+		mismatch: NonNullable<PendingTimezoneMismatch>,
+	) {
 		const { action, browserTimezone } = mismatch;
 		if (action === "clock_in") {
 			await submitClockIn(browserTimezone);
@@ -290,13 +350,16 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 		isTimezoneContinuationPendingRef.current = true;
 		setIsTimezoneContinuationPending(true);
 
-		await runWithCleanup(async () => {
-			await submitTimezoneMismatch(timezoneMismatch);
-			setTimezoneMismatch(null);
-		}, () => {
-			isTimezoneContinuationPendingRef.current = false;
-			setIsTimezoneContinuationPending(false);
-		});
+		await runWithCleanup(
+			async () => {
+				await submitTimezoneMismatch(timezoneMismatch);
+				setTimezoneMismatch(null);
+			},
+			() => {
+				isTimezoneContinuationPendingRef.current = false;
+				setIsTimezoneContinuationPending(false);
+			},
+		);
 	}
 
 	async function handleTimezoneMismatchUpdateAndContinue() {
@@ -304,23 +367,26 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 		isTimezoneContinuationPendingRef.current = true;
 		setIsTimezoneContinuationPending(true);
 
-		await runWithCleanup(async () => {
-		try {
-			const result = await updateTimezone(timezoneMismatch.browserTimezone);
-			if (!result?.success) {
-				toast.error(result?.error || "Failed to update timezone");
-				return;
-			}
+		await runWithCleanup(
+			async () => {
+				try {
+					const result = await updateTimezone(timezoneMismatch.browserTimezone);
+					if (!result?.success) {
+						toast.error(result?.error || "Failed to update timezone");
+						return;
+					}
 
-			await submitTimezoneMismatch(timezoneMismatch);
-			setTimezoneMismatch(null);
-		} catch {
-			toast.error("An error occurred while updating timezone");
-		}
-		}, () => {
-			isTimezoneContinuationPendingRef.current = false;
-			setIsTimezoneContinuationPending(false);
-		});
+					await submitTimezoneMismatch(timezoneMismatch);
+					setTimezoneMismatch(null);
+				} catch {
+					toast.error("An error occurred while updating timezone");
+				}
+			},
+			() => {
+				isTimezoneContinuationPendingRef.current = false;
+				setIsTimezoneContinuationPending(false);
+			},
+		);
 	}
 
 	const handleSaveNotes = async () => {
@@ -338,7 +404,10 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 		if (result.success) {
 			toast.success(t("timeTracking.notesSaved", "Notes saved"));
 		} else {
-			toast.error(result.error || t("timeTracking.errors.notesSaveFailed", "Failed to save notes"));
+			toast.error(
+				result.error ||
+					t("timeTracking.errors.notesSaveFailed", "Failed to save notes"),
+			);
 		}
 
 		dispatch({ type: "closeNotesInput" });
@@ -364,6 +433,7 @@ export function useClockInOutWidget(initialWorkPeriod: ActiveWorkPeriodData | nu
 		setWorkLocationType: (value: WorkLocationType) =>
 			dispatch({ type: "setWorkLocationType", value }),
 		setNotesText: (value: string) => dispatch({ type: "setNotesText", value }),
-		setExceptionDialogOpen: (value: boolean) => dispatch({ type: "setExceptionDialogOpen", value }),
+		setExceptionDialogOpen: (value: boolean) =>
+			dispatch({ type: "setExceptionDialogOpen", value }),
 	};
 }

@@ -85,16 +85,13 @@
       "activeStatus": "Aktive Status",
       "addPolicy": "Richtlinie hinzufüege",
       "approvalType": {
-        "absenceRequests": "Abweseheitsaaträg",
-        "absence": "Abweseheit",
-        "complianceException": "Compliance-Uusnahm",
-        "manualTimeSubmission": "Manuelli Ziiterfassig",
-        "policyClockOut": "Uusstemple gemäss Richtlinie",
-        "shiftRequest": "Schichtaafrag",
-        "timeCorrection": "Ziitkorrektur",
-        "travelExpense": "Reisespese",
-        "timeEntryChanges": "Änderige a de Ziiterfassig",
-        "travelExpenses": "Spese"
+        "absence": "Abwesenheit",
+        "complianceException": "Compliance-Ausnahme",
+        "manualTimeSubmission": "Manuelle Zeiteinreichung",
+        "policyClockOut": "Richtlinien-Ausstempeln",
+        "shiftRequest": "Schichtanfrage",
+        "timeCorrection": "Zeitkorrektur",
+        "travelExpense": "Reisespesen"
       },
       "approvalTypes": "Freigabetype",
       "conditionsCount": "Aazahl Bedingige",
@@ -131,21 +128,6 @@
       "toast": {
         "created": "Freigaberichtlinie erstellt",
         "saveFailed": "Freigaberichtlinie hät nöd chönne gspeicheret werde."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Schick de Aatrag a de Standard-Vorgesetzte, wenn i dere Stufe kei Freigabeberechtigti Person ermittelt werde cha.",
-          "label": "Standard-Vorgesetzte"
-        },
-        "fail": {
-          "description": "Wiis de Aatrag ab, wenn i dere Stufe kei Freigabeberechtigti Person ermittelt werde cha.",
-          "label": "Aatrag abwiise"
-        },
-        "label": "Ersatzverhalte",
-        "organizationAdmin": {
-          "description": "Schick de Aatrag an en Organisations-Admin, wenn i dere Stufe kei Freigabeberechtigti Person ermittelt werde cha.",
-          "label": "Organisations-Admin"
-        }
       },
       "validation": {
         "activePolicyRequiresStage": "Aktivi Richtlinie bruched mindestens eini Freigabestufe.",
@@ -366,6 +348,7 @@
       "deleteAssignmentTitle": "Zuweisung entfernen?",
       "deleteEmployeeAssignmentDescription": "Dies entfernt die Überschreibung für \"{name}\". Die Person verwendet dann den Standard ihres Teams oder der Organisation.",
       "deleteFailed": "Modell konnte nicht gelöscht werden",
+      "deleteModel": "Zuschlagsmodell löschen",
       "deleteModelDescription": "Dies deaktiviert das Modell und alle seine Zuweisungen. Diese Aktion kann nicht rückgängig gemacht werden.",
       "deleteModelTitle": "Zuschlagsmodell löschen?",
       "deleteOrgAssignmentDescription": "Dies entfernt den Organisationsstandard. Teams und Mitarbeitende ohne spezifische Zuweisung haben dann kein Zuschlagsmodell.",
@@ -403,6 +386,10 @@
       "percentageDescription": "Zusätzliches Zeitguthaben",
       "rangeEnd": "Bereichsende",
       "rangeStart": "Bereichsbeginn",
+      "removeEmployeeAssignment": "Mitarbeiterzuordnung entfernen",
+      "removeOrganizationAssignment": "Organisationszuordnung entfernen",
+      "removeRule": "Zuschlagsregel entfernen",
+      "removeTeamAssignment": "Teamzuordnung entfernen",
       "reports": {
         "details": {
           "appliedRules": "Aagwendeti Regle",

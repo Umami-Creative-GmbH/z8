@@ -85,16 +85,13 @@
       "activeStatus": "Stato attivo",
       "addPolicy": "Aggiungi policy",
       "approvalType": {
-        "absenceRequests": "Richieste di assenza",
         "absence": "Assenza",
         "complianceException": "Eccezione di conformità",
-        "manualTimeSubmission": "Inserimento manuale delle ore",
-        "policyClockOut": "Uscita con timbratura secondo la policy",
+        "manualTimeSubmission": "Invio manuale dell'orario",
+        "policyClockOut": "Timbratura di uscita da policy",
         "shiftRequest": "Richiesta di turno",
         "timeCorrection": "Correzione orario",
-        "travelExpense": "Spesa di viaggio",
-        "timeEntryChanges": "Modifiche alle registrazioni orarie",
-        "travelExpenses": "Spese di viaggio"
+        "travelExpense": "Spesa di viaggio"
       },
       "approvalTypes": "Tipi di approvazione",
       "conditionsCount": "Conteggio condizioni",
@@ -131,21 +128,6 @@
       "toast": {
         "created": "Politica di approvazione creata",
         "saveFailed": "Impossibile salvare la politica di approvazione."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Invia la richiesta al responsabile predefinito quando questa fase non riesce a individuare un approvatore.",
-          "label": "Responsabile predefinito"
-        },
-        "fail": {
-          "description": "Rifiuta la richiesta quando questa fase non riesce a individuare un approvatore.",
-          "label": "Rifiuta richiesta"
-        },
-        "label": "Comportamento alternativo",
-        "organizationAdmin": {
-          "description": "Invia la richiesta a un amministratore dell'organizzazione quando questa fase non riesce a individuare un approvatore.",
-          "label": "Amministratore dell'organizzazione"
-        }
       },
       "validation": {
         "activePolicyRequiresStage": "Le politiche attive richiedono almeno una fase di approvazione.",
@@ -366,6 +348,7 @@
       "deleteAssignmentTitle": "Rimuovere l'assegnazione?",
       "deleteEmployeeAssignmentDescription": "Questo rimuoverà la sovrascrittura per \"{name}\". Utilizzeranno il valore predefinito del team o dell'organizzazione.",
       "deleteFailed": "Impossibile eliminare il modello",
+      "deleteModel": "Elimina modello di maggiorazione",
       "deleteModelDescription": "Questo disattiverà il modello e tutte le sue assegnazioni. Questa azione non può essere annullata.",
       "deleteModelTitle": "Eliminare il modello di maggiorazione?",
       "deleteOrgAssignmentDescription": "Questo rimuoverà il valore predefinito dell'organizzazione. I team e i dipendenti senza assegnazioni specifiche non avranno alcun modello di maggiorazione applicato.",
@@ -403,6 +386,10 @@
       "percentageDescription": "Credito orario aggiuntivo",
       "rangeEnd": "Fine intervallo",
       "rangeStart": "Inizio intervallo",
+      "removeEmployeeAssignment": "Rimuovi assegnazione dipendente",
+      "removeOrganizationAssignment": "Rimuovi assegnazione organizzazione",
+      "removeRule": "Rimuovi regola di maggiorazione",
+      "removeTeamAssignment": "Rimuovi assegnazione team",
       "reports": {
         "details": {
           "appliedRules": "Regole applicate",

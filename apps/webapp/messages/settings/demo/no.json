@@ -1,0 +1,245 @@
+{
+  "settings": {
+    "demo": {
+      "availableTypes": {
+        "absences": "Fravær (ferie, sykefravær)",
+        "changePolicies": "Endringspolicyer",
+        "description": "Typer demodata du kan generere",
+        "locations": "Lokasjoner og delområder",
+        "shifts": "Skiftmaler og skift",
+        "supported": "Støttes for øyeblikket:",
+        "teamsProjects": "Team og prosjekter",
+        "timeEntries": "Timeregistreringer og arbeidsperioder",
+        "title": "Tilgjengelige datatyper",
+        "workCategories": "Arbeidskategorisett"
+      },
+      "dangerZone": {
+        "clearData": {
+          "absencesDeleted": "{count} fravær slettet",
+          "button": "Tøm alle data",
+          "changePoliciesDeleted": "{count} endringspolicyer slettet",
+          "dialog": {
+            "confirm": "Tøm alle data",
+            "description": "Denne handlingen kan ikke angres. Alle timeregistreringer, fravær, team, prosjekter og relaterte data vil bli slettet permanent.",
+            "title": "Tømme alle tidsdata?"
+          },
+          "items": {
+            "absences": "Alle fraværsregistreringer",
+            "changePolicies": "Alle endringspolicyer",
+            "locations": "Alle lokasjoner og delområder",
+            "shifts": "Alle skiftmaler og skift",
+            "teamsProjects": "Alle team og prosjekter",
+            "timeEntries": "Alle timeregistreringer og arbeidsperioder",
+            "vacationAllowances": "Alle feriekvoter",
+            "workCategories": "Alle arbeidskategorier"
+          },
+          "locationsDeleted": "{count} lokasjoner slettet",
+          "managerAssignmentsDeleted": "{count} ledertilordninger slettet",
+          "projectsDeleted": "{count} prosjekter slettet",
+          "shiftRequestsDeleted": "{count} vaktforespørsler slettet",
+          "shiftsDeleted": "{count} vakter slettet",
+          "shiftTemplatesDeleted": "{count} vaktmaler slettet",
+          "subareasDeleted": "{count} delområder slettet",
+          "successTitle": "Dataene ble tømt!",
+          "teamsDeleted": "{count} team slettet",
+          "timeEntriesDeleted": "{count} timeføringer slettet",
+          "title": "Tøm tidsdata",
+          "vacationAllowancesReset": "{count} feriekvoter tilbakestilt",
+          "willDelete": "Dette vil slette permanent:",
+          "workCategoriesDeleted": "{count} arbeidskategorier slettet",
+          "workCategorySetsDeleted": "{count} arbeidskategorisett slettet",
+          "workPeriodsDeleted": "{count} arbeidsperioder slettet"
+        },
+        "clearing": "Tømmer...",
+        "deleteNonAdmin": {
+          "absencesDeleted": "{count} fravær slettet",
+          "adminPreserved": "Administratorkontoer vil bli beholdt",
+          "button": "Slett ikke-admin-ansatte",
+          "dialog": {
+            "confirm": "Slett ikke-admin-ansatte",
+            "description": "Denne handlingen kan ikke angres. Alle ansatte som ikke er administratorer, og deres tilknyttede data vil bli slettet permanent.",
+            "title": "Slette ikke-admin-ansatte?"
+          },
+          "employeesDeleted": "{count} ansatte slettet",
+          "items": {
+            "demoUsers": "Alle demobrukerkontoer",
+            "employees": "Alle ansatte som ikke er administratorer",
+            "managerAssignments": "Alle ledertilordninger",
+            "timeEntries": "Deres timeregistreringer og arbeidsperioder"
+          },
+          "membersDeleted": "{count} medlemmer slettet",
+          "successTitle": "Ansatte som ikke er administratorer ble slettet!",
+          "timeEntriesDeleted": "{count} timeregistreringer slettet",
+          "title": "Slett ansatte som ikke er administratorer",
+          "usersDeleted": "{count} brukere slettet",
+          "willDelete": "Dette vil slette permanent:"
+        },
+        "deleting": "Sletter...",
+        "description": "Destruktive handlinger som ikke kan angres",
+        "title": "Faresone",
+        "typeDelete": "Skriv SLETT for å bekrefte",
+        "typeDeletePlaceholder": "SLETT"
+      },
+      "description": "Generer eksempeldata for testing eller slett eksisterende tidsrelaterte data",
+      "errors": {
+        "generationFailed": "Generering mislyktes. Prøv igjen.",
+        "noOrganization": "Ingen organisasjon valgt"
+      },
+      "form": {
+        "approvalsTesting": {
+          "label": "Testing av godkjenninger",
+          "pendingAbsences": {
+            "description": "Opprett fraværsforespørsler som venter på ledergodkjenning",
+            "title": "Ventende fraværsgodkjenninger"
+          },
+          "pendingTimeCorrections": {
+            "description": "Opprett tidskorrigeringer som venter på ledergodkjenning",
+            "title": "Ventende godkjenninger av tidskorrigering"
+          }
+        },
+        "dataTypes": {
+          "absences": {
+            "description": "Ferie, sykefravær og annet fravær",
+            "title": "Fravær"
+          },
+          "changePolicies": {
+            "description": "Retningslinjer for endring av timeregistreringer",
+            "title": "Endringsretningslinjer"
+          },
+          "label": "Datatyper",
+          "locations": {
+            "countLabel": "Antall lokasjoner:",
+            "description": "Arbeidslokasjoner og delområder",
+            "title": "Lokasjoner"
+          },
+          "projects": {
+            "countLabel": "Antall prosjekter:",
+            "description": "Eksempelprosjekter for timeregistrering",
+            "title": "Prosjekter"
+          },
+          "shiftScheduling": {
+            "description": "Vaktmaler og planlagte vakter",
+            "requiresLocations": "Krever at lokasjoner er aktivert",
+            "title": "Vaktplanlegging"
+          },
+          "teams": {
+            "countLabel": "Antall team:",
+            "description": "Opprett team og tildel ansatte",
+            "title": "Team"
+          },
+          "timeEntries": {
+            "description": "Inn-/utstemplinger og arbeidsperioder",
+            "title": "Timeregistreringer"
+          },
+          "workCategories": {
+            "assignLabel": "Tildel også til arbeidsperioder",
+            "description": "Kategorisett for arbeidsperioder",
+            "title": "Arbeidskategorier"
+          }
+        },
+        "dateRange": {
+          "hint": "Tidsrom for genererte data",
+          "label": "Datointervall",
+          "last30": "Siste 30 dager",
+          "last60": "Siste 60 dager",
+          "last90": "Siste 90 dager",
+          "thisYear": "I år"
+        },
+        "employees": {
+          "all": "Alle ansatte ({count})",
+          "label": "Ansatte",
+          "selectSpecific": "Velg spesifikke ansatte"
+        }
+      },
+      "generateData": {
+        "button": "Generer data",
+        "description": "Opprett realistiske eksempeldata for organisasjonen din",
+        "title": "Generer demodata"
+      },
+      "generateEmployees": {
+        "button": "Generer {count} ansatte",
+        "countHint": "Maksimalt 50 ansatte om gangen",
+        "countLabel": "Antall ansatte",
+        "description": "Opprett demo-ansattkontoer for testing",
+        "employeesCreated": "{count} ansatte opprettet",
+        "generating": "Genererer...",
+        "includeManagers": "Inkluder ledertildelinger",
+        "managersCreated": "{count} ledertildelinger",
+        "managersHint": "Tildel ledere tilfeldig til nye ansatte",
+        "options": "Alternativer",
+        "successTitle": "Ansatte ble generert!",
+        "title": "Generer ansatte",
+        "usersCreated": "{count} brukere opprettet"
+      },
+      "results": {
+        "success": "Demodata ble generert!"
+      },
+      "steps": {
+        "absences": {
+          "description": "Oppretter fraværsregistreringer",
+          "label": "Fravær"
+        },
+        "assignCategories": {
+          "description": "Tildeler arbeidskategorier til perioder",
+          "label": "Tildel kategorier"
+        },
+        "changePolicies": {
+          "description": "Oppretter endringsretningslinjer",
+          "label": "Endringsretningslinjer"
+        },
+        "locations": {
+          "description": "Oppretter lokasjoner og delområder",
+          "label": "Lokasjoner"
+        },
+        "managers": {
+          "description": "Tildeler ledere til ansatte",
+          "label": "Ledertildelinger"
+        },
+        "pendingAbsenceApprovals": {
+          "description": "Oppretter ventende fraværsforespørsler",
+          "label": "Ventende fraværsgodkjenninger"
+        },
+        "pendingTimeCorrectionApprovals": {
+          "description": "Oppretter ventende godkjenningsforespørsler for tidskorrigering",
+          "label": "Ventende godkjenninger av tidskorrigering"
+        },
+        "projects": {
+          "description": "Oppretter eksempelprosjekter",
+          "label": "Prosjekter"
+        },
+        "shifts": {
+          "description": "Oppretter skift og forespørsler",
+          "label": "Skift"
+        },
+        "shiftTemplates": {
+          "description": "Oppretter skiftmaler",
+          "label": "Skiftmaler"
+        },
+        "teams": {
+          "description": "Oppretter team og tilordner ansatte",
+          "label": "Team"
+        },
+        "timeEntries": {
+          "description": "Oppretter timeregistreringer og arbeidsperioder",
+          "label": "Timeregistreringer"
+        },
+        "workCategories": {
+          "description": "Oppretter arbeidskategorisett og kategorier",
+          "label": "Arbeidskategorier"
+        }
+      },
+      "title": "Demodata",
+      "wizard": {
+        "backToConfig": "Tilbake til konfigurasjon",
+        "complete": "Fullført",
+        "configure": "Konfigurer",
+        "generate": "Generer",
+        "generateMore": "Generer mer data"
+      }
+    },
+    "demoData": {
+      "description": "Generer eksempeldata for testing eller slett alle tidsrelaterte data",
+      "title": "Demodata"
+    }
+  }
+}

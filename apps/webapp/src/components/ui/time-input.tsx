@@ -180,6 +180,7 @@ function TimeInput({
 	const modalRootId = `time-input-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 	const contextTimeFormat = useTimeFormat();
 	const pickerFormat = normalizeTimeFormat(timeFormat ?? contextTimeFormat);
+	const previousPickerFormatRef = useRef(pickerFormat);
 	const [displayValue, setDisplayValue] = useState(() =>
 		formatTimeForMaskedInput(value ?? defaultValue, pickerFormat),
 	);
@@ -209,16 +210,24 @@ function TimeInput({
 	};
 
 	useEffect(() => {
+		const formatChanged = previousPickerFormatRef.current !== pickerFormat;
+		previousPickerFormatRef.current = pickerFormat;
 		if (value === undefined) {
 			return;
 		}
 
+		// A parent echo acknowledges the canonical value, not a replacement draft.
+		// In particular, an invalid draft emits "" but must retain its text and period.
+		if (!formatChanged && value === lastEmittedValueRef.current) {
+			return;
+		}
+
+		lastEmittedValueRef.current = null;
 		const nextDisplayValue = formatTimeForMaskedInput(value, pickerFormat);
 		const nextPeriod = getPeriodFromTime(value);
 		const timeout = window.setTimeout(() => {
 			setDisplayValue(nextDisplayValue);
 			setPeriod(nextPeriod);
-			lastEmittedValueRef.current = null;
 		}, 0);
 
 		return () => window.clearTimeout(timeout);
@@ -270,15 +279,8 @@ function TimeInput({
 	function handleMaskedValueChange(nextRawDisplayValue: string) {
 		const nextDisplayValue = formatTypedTimeInput(nextRawDisplayValue);
 		setDisplayValue(nextDisplayValue);
-		if (nextDisplayValue === "") {
-			emitChange("");
-			return;
-		}
-
 		const nextValue = parseMaskedTime(nextDisplayValue, pickerFormat, period);
-		if (nextValue) {
-			emitChange(nextValue);
-		}
+		emitChange(nextValue ?? "");
 	}
 
 	function handlePeriodToggle() {

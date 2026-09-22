@@ -165,7 +165,6 @@
     "moveDown": "Déplacer vers le bas",
     "moveUp": "Monter",
     "name": "Nom",
-    "never": "Jamais",
     "new": "Nouveau",
     "next": "Suivant",
     "notApplicable": "N/A",
@@ -290,16 +289,8 @@
     "trust-center": "Centre de confiance"
   },
   "loading": {
-    "application": "Chargement de l’application",
-    "authentication": "Chargement de l’authentification",
-    "calendar": "Chargement du calendrier",
     "chart": "Chargement du graphique",
-    "licenses": "Chargement des licences",
-    "platformAnalytics": "Chargement des analyses de la plateforme",
-    "settings": "Chargement des paramètres",
-    "setup": "Chargement de la configuration",
-    "teamAbsences": "Chargement des absences de l’équipe",
-    "workerQueue": "Chargement de la file d’attente des tâches"
+    "settings": "Chargement des paramètres"
   },
   "nav": {
     "absences": "Absences",
@@ -335,14 +326,6 @@
       "viewAll": "Voir toutes les notifications"
     },
     "content": {
-      "absenceRequestSubmitted": {
-        "message": "Votre demande {categoryName} pour {dateRange} a été envoyée et est en attente d'approbation.",
-        "title": "Demande d'absence envoyée"
-      },
-      "teamMemberRemoved": {
-        "message": "Vous avez été retiré de l'équipe {teamName} par {performedByName}.",
-        "title": "Retiré de l'équipe"
-      },
       "passwordChanged": {
         "message": "Votre mot de passe a été modifié avec succès. Si vous n'êtes pas à l'origine de ce changement, veuillez contacter immédiatement le support.",
         "title": "Mot de passe modifié"
@@ -432,11 +415,32 @@
   },
   "offline": {
     "banner": {
+      "archived": "Preuve de pointage archivée conservée sur cet appareil",
       "offline": "Vous êtes hors ligne",
-      "offlineWithPending": "Hors ligne - {count} événement(s) en attente",
-      "pending": "{count} événement(s) en attente de synchronisation",
-      "retry": "Réessayer",
-      "syncing": "Synchronisation de {count} événement(s)..."
+      "offlineSaved": "Hors ligne — {count} enregistrement(s) sauvegardé(s) localement pour examen",
+      "refresh": "Actualiser le statut",
+      "refreshing": "Vérification de {count} enregistrement(s) sauvegardé(s)…",
+      "reviewRequired": "{count} enregistrement(s) sauvegardé(s) localement — examen requis",
+      "unverified": "Preuve de pointage enregistrée sur cet appareil. Connectez-vous pour examiner tous les enregistrements sauvegardés."
+    },
+    "capture": {
+      "description": "Enregistrer l'événement sur cet appareil pour examen. Le statut de pointage sur le serveur ne changera pas.",
+      "end": "Enregistrer le pointage de sortie pour examen",
+      "start": "Enregistrer le pointage d'entrée pour examen"
+    },
+    "recovery": {
+      "archive": "Archiver et conserver la preuve",
+      "archived": "Archivé — preuve conservée",
+      "description": "Ces enregistrements sont sauvegardés sur cet appareil. La validation par le serveur est inconnue. Vérifiez les saisies de temps existantes avec votre responsable avant de soumettre un travail de remplacement. L'archivage conserve la preuve et n'annule pas le travail sur le serveur.",
+      "empty": "Aucun enregistrement accessible. Les anciens enregistrements sans preuve de compte nécessitent un examen au niveau de l'organisation ; les enregistrements sans preuve d'organisation nécessitent une récupération autorisée séparément.",
+      "evidence": "Preuve d'origine et statut de récupération",
+      "export": "Exporter les preuves accessibles",
+      "exportError": "Impossible d'exporter les enregistrements sauvegardés",
+      "held": "Examen requis — non confirmé sur le serveur",
+      "loadError": "Impossible de lire les enregistrements sauvegardés",
+      "loading": "Lecture des enregistrements sauvegardés…",
+      "review": "Examiner les enregistrements sauvegardés",
+      "title": "Enregistrements de pointage sauvegardés"
     }
   },
   "presence": {
@@ -530,12 +534,8 @@
   "validation": {
     "first-name-required": "Le prénom est requis",
     "invalid-email": "Adresse e-mail invalide",
-    "invalid-password": "Mot de passe invalide",
     "last-name-required": "Le nom de famille est requis",
     "password-required": "Le mot de passe est requis"
-  },
-  "worksCouncil": {
-    "loadingLabel": "Chargement du portail du comité d’entreprise"
   },
   "workBalance": {
     "label": "Solde total",

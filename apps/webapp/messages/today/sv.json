@@ -1,0 +1,43 @@
+{
+  "today": {
+    "approvals": {
+      "approve": "Godkänn",
+      "approveLabel": "Godkänn {title}",
+      "description": "Förfrågningar som väntar på ett chefsbeslut.",
+      "empty": "Inga godkännanden väntar.",
+      "openInbox": "Öppna inkorgen",
+      "pendingAriaLabel": "Väntande godkännanden",
+      "reject": "Avvisa",
+      "rejectLabel": "Avvisa {title}",
+      "title": "Godkännanden",
+      "toast": {
+        "approved": "Förfrågan godkänd",
+        "approveError": "Kunde inte godkänna förfrågan",
+        "rejected": "Förfrågan avvisad",
+        "rejectError": "Kunde inte avvisa förfrågan"
+      }
+    },
+    "briefing": {
+      "badge": "Idag",
+      "description": "Granska de ärenden som kräver åtgärd idag och gå sedan direkt vidare till rätt arbetsflöde.",
+      "needsAction": {
+        "description": "Börja här för den mest brådskande operativa uppföljningen.",
+        "empty": "Allt är klart. Ingen chefsåtgärd behövs just nu.",
+        "title": "Kräver åtgärd"
+      },
+      "sections": {
+        "empty": "Inga problem upptäcktes."
+      },
+      "severity": {
+        "critical": "Kritisk",
+        "high": "Hög",
+        "info": "Info",
+        "warning": "Varning"
+      },
+      "summaryAriaLabel": "Dagens sammanfattning",
+      "supportingSectionsAriaLabel": "Stödjande avsnitt",
+      "title": "Chefens dagliga genomgång",
+      "updatedAt": "{date} - Uppdaterad {time}"
+    }
+  }
+}

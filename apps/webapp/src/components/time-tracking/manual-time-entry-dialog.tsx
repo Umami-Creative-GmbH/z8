@@ -222,6 +222,14 @@ function ManualEntryFormContent({
 	targetEmployeeName?: string;
 	timezoneAbbr: string;
 }) {
+	const validateTime = ({ value }: { value: string }) =>
+		/^([01]\d|2[0-3]):[0-5]\d$/.test(value)
+			? undefined
+			: t(
+					"timeTracking.manualEntry.errors.invalidTime",
+					"Enter a complete, valid time",
+				);
+
 	return (
 		<ActionPanelContent size="compact">
 			<ActionPanelHeader>
@@ -282,7 +290,10 @@ function ManualEntryFormContent({
 					</form.Field>
 
 					<div className="grid grid-cols-2 gap-4">
-						<form.Field name="clockInTime">
+						<form.Field
+							name="clockInTime"
+							validators={{ onChange: validateTime, onSubmit: validateTime }}
+						>
 							{(field) => (
 								<TFormItem>
 									<TFormLabel hasError={fieldHasError(field)}>
@@ -304,7 +315,10 @@ function ManualEntryFormContent({
 								</TFormItem>
 							)}
 						</form.Field>
-						<form.Field name="clockOutTime">
+						<form.Field
+							name="clockOutTime"
+							validators={{ onChange: validateTime, onSubmit: validateTime }}
+						>
 							{(field) => (
 								<TFormItem>
 									<TFormLabel hasError={fieldHasError(field)}>

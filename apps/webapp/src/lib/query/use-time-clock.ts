@@ -113,6 +113,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 
 	// Clock in mutation with offline support
 	const clockInMutation = useMutation({
+		networkMode: "always", // Local IndexedDB capture must run while TanStack is offline.
 		mutationFn: async (params?: {
 			workLocationType?: WorkLocationType;
 			browserTimezone?: string | null;
@@ -126,32 +127,15 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				const browserTimezone = resolveBrowserTimezone(params);
 				const result = await queueClockEvent({
 					type: "clock_in",
-					timestamp: Date.now(),
+					timestamp: systemClock.nowInstant().epochMilliseconds,
 					organizationId: activeOrganizationId,
 					workLocationType: params?.workLocationType,
 					browserTimezone,
 				});
 
 				if (result.success) {
-					// Optimistically update the UI immediately
-					queryClient.setQueryData(
-						queryKeys.timeClock.status(),
-						(old: TimeClockState | undefined) => {
-							if (!old) return old;
-							return {
-								...old,
-								isClockedIn: true,
-								activeWorkPeriod: {
-									id: `pending-${Date.now()}`,
-									startTime: new Date(),
-								},
-							};
-						},
-					);
-
-					// Return success without data (queued case)
-					// The toast in the hook will notify the user
-					return { success: true as const, queued: true };
+					// Local retention is not an active server work period.
+					return { success: true as const, queued: true, reviewRequired: true };
 				}
 				return {
 					success: false as const,
@@ -184,6 +168,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 
 	// Clock out mutation with offline support
 	const clockOutMutation = useMutation({
+		networkMode: "always",
 		mutationFn: async (params?: {
 			projectId?: string;
 			workCategoryId?: string;
@@ -199,7 +184,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				const browserTimezone = resolveBrowserTimezone(params);
 				const result = await queueClockEvent({
 					type: "clock_out",
-					timestamp: Date.now(),
+					timestamp: systemClock.nowInstant().epochMilliseconds,
 					organizationId: activeOrganizationId,
 					projectId: params?.projectId,
 					workCategoryId: params?.workCategoryId,
@@ -207,21 +192,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				});
 
 				if (result.success) {
-					// Optimistically update the UI immediately
-					queryClient.setQueryData(
-						queryKeys.timeClock.status(),
-						(old: TimeClockState | undefined) => {
-							if (!old) return old;
-							return {
-								...old,
-								isClockedIn: false,
-								activeWorkPeriod: null,
-							};
-						},
-					);
-
-					// Return success without data (queued case)
-					return { success: true as const, queued: true };
+					return { success: true as const, queued: true, reviewRequired: true };
 				}
 				return {
 					success: false as const,
@@ -316,6 +287,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		// Offline state
 		isOnline,
 		isOffline,
+		captureMode: isOffline ? ("local-review" as const) : ("server" as const),
 		pendingCount,
 		isSyncing,
 

@@ -321,6 +321,29 @@
       "actions": {
         "saveChanges": "Guardar cambios"
       },
+      "approvalMaintenance": {
+        "approvalHint": "Una solicitud de aprobación heredada o el UUID de un flujo de trabajo canónico.",
+        "approvalId": "ID de aprobación",
+        "chain": "Cadena de aprobación",
+        "delete": "Forzar eliminación",
+        "deleting": "Eliminando…",
+        "description": "Elimine de forma permanente una aprobación y sus registros vinculados. Los registros de origen y sus estados se conservan.",
+        "errors": {
+          "ambiguous": "Este ID existe en ambos almacenes de aprobaciones. No se eliminó ninguna aprobación.",
+          "approvalInvalid": "Introduzca un UUID de aprobación válido.",
+          "failed": "No se pudo completar la eliminación. Compruebe el ID de aprobación antes de volver a intentarlo.",
+          "invalidInput": "Introduzca un ID de organización y un UUID de aprobación válido.",
+          "notFound": "Aprobación no encontrada en esta organización.",
+          "organizationRequired": "Introduzca un ID de organización.",
+          "unauthorized": "Se requiere acceso de administrador de la plataforma."
+        },
+        "legacy": "Solicitud heredada",
+        "organizationHint": "La organización propietaria de la aprobación.",
+        "organizationId": "ID de la organización",
+        "success": "Aprobación eliminada. Registros eliminados:",
+        "title": "Forzar eliminación de la aprobación",
+        "workflow": "Flujo de trabajo"
+      },
       "cookieConsent": {
         "description": "Insertado en las páginas de autenticación para el cumplimiento del RGPD",
         "helperPrefix": "Dejar vacío para desactivar. Cargado con",

@@ -1,0 +1,88 @@
+{
+  "billing": {
+    "access": {
+      "canceled": "Abonnementet ditt er kansellert. Abonner på nytt for å få tilgang igjen.",
+      "paymentFailed": "Den siste betalingen din mislyktes. Vennligst oppdater betalingsmåten din.",
+      "required": "Et abonnement er nødvendig for å bruke denne applikasjonen.",
+      "trialExpired": "Prøveperioden din er utløpt. Abonner for å fortsette å bruke appen."
+    },
+    "activeSeats": "Aktive plasser",
+    "alerts": {
+      "canceledDescription": "Betalingen ble avbrutt. Du kan prøve igjen når du er klar.",
+      "subscriptionRequired": "Abonnement påkrevd",
+      "successDescription": "Abonnementet ditt er aktivert. Takk for at du abonnerer!",
+      "successTitle": "Vellykket!"
+    },
+    "bestValue": "Beste verdi",
+    "billedMonthly": "faktureres månedlig",
+    "cancelsOn": "Kanselleres {date}",
+    "checkoutCreateFailed": "Kunne ikke opprette betalingsøkt",
+    "checkoutStartFailed": "Kunne ikke starte betalingen",
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout samler inn betalingsopplysninger nå. Det betalte abonnementet ditt starter først etter at prøveperioden utløper.",
+      "trialContinuesTitle": "Prøveperioden din fortsetter etter oppgradering"
+    },
+    "choosePlan": "Velg din plan",
+    "choosePlanDescription": "Start med en 14-dagers gratis prøveperiode. Ingen kredittkort kreves for å starte.",
+    "chooseUpgradePlanDescription": "Velg en faktureringsfrekvens nå. Det betalte abonnementet ditt starter først etter den gjenværende prøveperioden.",
+    "currentPlan": "Nåværende abonnement",
+    "days": "{count} dager",
+    "description": "Administrer abonnementet og fakturadetaljene dine",
+    "faq": {
+      "afterTrial": {
+        "answer": "Etter at prøveperioden på 14 dager utløper, blir du belastet for abonnementsplanen du valgte. Du kan si opp når som helst før prøveperioden avsluttes for å unngå kostnader.",
+        "question": "Hva skjer etter prøveperioden?"
+      },
+      "perSeat": {
+        "answer": "Du faktureres basert på antall aktive medlemmer i organisasjonen din. Når du legger til eller fjerner medlemmer, justeres abonnementet ditt automatisk.",
+        "question": "Hvordan fungerer fakturering per bruker?"
+      },
+      "switch": {
+        "answer": "Ja! Du kan bytte abonnement når som helst via fakturaportalen. Endringer trer i kraft ved neste faktureringssyklus.",
+        "question": "Kan jeg bytte mellom månedlig og årlig?"
+      },
+      "title": "Ofte stilte spørsmål"
+    },
+    "features": {
+      "allFeatures": "Alle funksjoner inkludert",
+      "cancelAnytime": "Si opp når som helst",
+      "yearlyDiscount": "25 % rabatt sammenlignet med månedlig"
+    },
+    "interval": {
+      "monthlyBilling": "Månedlig fakturering",
+      "yearlyBilling": "Årlig fakturering"
+    },
+    "manageBilling": "Administrer fakturering",
+    "monthlyCost": "Månedlig kostnad",
+    "nextBilling": "Neste fakturering",
+    "opening": "Åpner...",
+    "perSeatMonth": "/bruker/måned",
+    "plans": {
+      "monthly": {
+        "description": "Fleksibel måned-til-måned-fakturering",
+        "title": "Månedlig"
+      },
+      "yearly": {
+        "description": "Spar 25 % med årlig fakturering",
+        "title": "Årlig"
+      }
+    },
+    "portalOpenFailed": "Kunne ikke åpne fakturaportalen",
+    "priceSeatMonth": "€{price}/sete/mnd.",
+    "priceSeatMonthYearly": "€{price}/sete/mnd. (fakturert årlig)",
+    "seatBilledAnnually": "€{price}/sete fakturert årlig",
+    "starting": "Starter...",
+    "startTrial": "Start gratis prøveperiode",
+    "status": {
+      "canceled": "Kansellert",
+      "pastDue": "Forfalt",
+      "trial": "Prøveperiode"
+    },
+    "title": "Fakturering og abonnement",
+    "trialEnds": "Prøveperioden utløper",
+    "upgradeMonthly": "Oppgrader månedlig",
+    "upgradeYearly": "Oppgrader årlig",
+    "vatNotice": "Prisene som vises er nettopriser ekskl. mva. Mva. legges til der det er aktuelt.",
+    "yearTotal": "€{amount}/år totalt"
+  }
+}

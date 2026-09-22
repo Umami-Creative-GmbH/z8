@@ -1,0 +1,99 @@
+{
+  "myRequests": {
+    "actions": {
+      "cancel": "Avbryt",
+      "cancelling": "Avbryter…",
+      "cancelRequestConfirmation": "Avbryt denna begäran?",
+      "cancelRequestError": "Begäran kunde inte avbrytas.",
+      "fix": "Åtgärda",
+      "notAvailable": "Ej tillgänglig",
+      "view": "Visa"
+    },
+    "all": {
+      "description": "Granska förfrågningar för frånvaro, tidskorrigeringar och utlägg.",
+      "title": "Alla förfrågningar"
+    },
+    "card": {
+      "decision": "Beslut",
+      "submitted": "Inskickad"
+    },
+    "empty": {
+      "filtered": {
+        "description": "Förfrågningar visas här när de skickas in eller läses in.",
+        "title": "Inga förfrågningar matchar dina filter"
+      },
+      "none": {
+        "description": "Förfrågningar visas här när de skickas in eller läses in.",
+        "title": "Inga förfrågningar ännu"
+      }
+    },
+    "featureName": "visa dina förfrågningar",
+    "filters": {
+      "allStatuses": "Alla statusar",
+      "allTypes": "Alla typer",
+      "approvedRequests": "Godkända förfrågningar",
+      "cancelledRequests": "Avbrutna förfrågningar",
+      "description": "Filtrera varje sektion för förfrågningar efter text, status eller typ av förfrågan.",
+      "pendingRequests": "Väntande förfrågningar",
+      "rejectedRequests": "Avvisade förfrågningar",
+      "search": "Sök",
+      "searchPlaceholder": "Sök efter titel…",
+      "status": "Status",
+      "title": "Hitta förfrågningar",
+      "type": "Typ"
+    },
+    "inReview": {
+      "description": "Förfrågningar som väntar på godkännande eller hantering.",
+      "title": "Under granskning"
+    },
+    "needsAttention": {
+      "description": "Avvisade förfrågningar som kan kräva en korrigering innan de skickas in igen.",
+      "title": "Kräver åtgärd"
+    },
+    "reasonLabel": "Anledning",
+    "recentlyDecided": {
+      "description": "Godkända och avvisade beslut från de senaste 30 dagarna.",
+      "title": "Nyligen beslutade"
+    },
+    "requests": {
+      "absence": {
+        "title": "Frånvaroansökan"
+      },
+      "timeCorrection": {
+        "subtitle": "Korrigering för en tidsregistrering",
+        "title": "Begäran om tidskorrigering"
+      },
+      "travelExpense": {
+        "title": "Reseräkning"
+      }
+    },
+    "sourceError": {
+      "absence": "Frånvaroansökningar kunde inte läsas in.",
+      "timeCorrection": "Begäranden om tidskorrigering kunde inte läsas in.",
+      "title": "Vissa ansökningar kunde inte läsas in.",
+      "travelExpense": "Reseräkningar kunde inte läsas in."
+    },
+    "sourceTypes": {
+      "absence": "Frånvaro",
+      "timeCorrection": "Tid",
+      "travelExpense": "Utlägg"
+    },
+    "status": {
+      "approved": "Godkänd",
+      "cancelled": "Avbruten",
+      "inReview": "Granskas",
+      "pending": "Väntande",
+      "rejected": "Avvisad"
+    },
+    "subtitle": "Håll koll på väntande ansökningar, nödvändiga korrigeringar och nyligen fattade beslut på ett och samma ställe.",
+    "summary": {
+      "ariaLabel": "Sammanfattning av ansökningar",
+      "pending": "Väntande",
+      "recentDecisions": "Senaste besluten",
+      "requiredFixes": "Nödvändiga korrigeringar",
+      "totalLoaded": "Totalt inlästa"
+    },
+    "title": "Mina förfrågningar",
+    "unavailableTitle": "Förfrågningar är inte tillgängliga"
+  }
+}

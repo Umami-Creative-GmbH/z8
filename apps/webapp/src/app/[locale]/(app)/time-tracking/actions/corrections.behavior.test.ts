@@ -588,6 +588,136 @@ describe("time correction submission actions", () => {
 		expect(state.events).toEqual(["transaction", "boundary"]);
 	});
 
+	it.each([
+		["modular", modular.requestTimeCorrectionEffect],
+		["monolithic", monolithic.requestTimeCorrectionEffect],
+	] as const)("rejects a correction beyond the change policy approval window from the %s path", async (_name, action) => {
+		configure({ kind: "default_created" });
+		state.editCapability.mockResolvedValue({
+			type: "forbidden",
+			reason: "beyond_approval_window",
+			daysBack: 45,
+		});
+
+		const result = await action({
+			workPeriodId: ids.period,
+			submissionId,
+			newClockInDate: "2026-07-01",
+			newClockInTime: "09:00",
+			reason: "Missed punch",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error:
+				"Entries older than 45 days can only be edited by admins or team leads.",
+			code: "ValidationError",
+		});
+		expect(state.editCapability).toHaveBeenCalledWith({
+			employeeId: ids.employee,
+			workPeriodEndTime: period.endTime,
+			timezone: "UTC",
+		});
+		expect(state.withTransaction).not.toHaveBeenCalled();
+		expect(state.executeSubmission).not.toHaveBeenCalled();
+		expect(state.txInsertValues).not.toHaveBeenCalled();
+		expect(state.events).toEqual([]);
+	});
+
+	it.each([
+		["approval_required", { type: "approval_required", reason: "within_approval_window" }],
+		["direct", { type: "direct", reason: "within_self_service" }],
+	] as const)("still submits a correction when the change policy is %s", async (_label, capability) => {
+		configure({ kind: "default_created" });
+		state.editCapability.mockResolvedValue(capability);
+
+		const result = await modular.requestTimeCorrectionEffect({
+			workPeriodId: ids.period,
+			submissionId,
+			newClockInDate: "2026-07-01",
+			newClockInTime: "09:00",
+			reason: "Missed punch",
+		});
+
+		expect(result).toEqual({
+			success: true,
+			data: { approvalId: "approval-1", status: "pending" },
+		});
+		expect(state.editCapability).toHaveBeenCalledOnce();
+		expect(state.withTransaction).toHaveBeenCalledOnce();
+		expect(state.executeSubmission).toHaveBeenCalledOnce();
+	});
+
+	it("fails closed without a transaction when the change policy cannot be resolved", async () => {
+		configure({ kind: "default_created" });
+		state.editCapability.mockRejectedValue(new Error("policy lookup failed"));
+
+		const result = await modular.requestTimeCorrectionEffect({
+			workPeriodId: ids.period,
+			submissionId,
+			newClockInDate: "2026-07-01",
+			newClockInTime: "09:00",
+			reason: "Missed punch",
+		});
+
+		expect(result).toMatchObject({
+			success: false,
+			error: "Failed to verify edit policy. Please try again.",
+		});
+		expect(state.withTransaction).not.toHaveBeenCalled();
+		expect(state.executeSubmission).not.toHaveBeenCalled();
+	});
+
+	it("skips the change policy age check for a running work period", async () => {
+		configure({ kind: "default_created" });
+		const runningPeriod = { ...period, clockOutId: null, endTime: null };
+		state.selectLimit.mockResolvedValue([runningPeriod]);
+		state.editCapability.mockResolvedValue({
+			type: "forbidden",
+			reason: "beyond_approval_window",
+			daysBack: 45,
+		});
+
+		await modular.requestTimeCorrectionEffect({
+			workPeriodId: ids.period,
+			submissionId,
+			newClockInDate: "2026-07-01",
+			newClockInTime: "09:00",
+			reason: "Missed punch",
+		});
+
+		expect(state.editCapability).not.toHaveBeenCalled();
+		expect(state.withTransaction).toHaveBeenCalledOnce();
+	});
+
+	it("does not apply the edit change policy to deletion requests", async () => {
+		configure({ kind: "default_created" });
+		state.editCapability.mockResolvedValue({
+			type: "forbidden",
+			reason: "beyond_approval_window",
+			daysBack: 45,
+		});
+		state.txSelectForUpdate
+			.mockReset()
+			.mockResolvedValueOnce([employee])
+			.mockResolvedValueOnce([approvedMember])
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([period])
+			.mockResolvedValueOnce(originals);
+
+		const result = await modular.requestTimeEntryDeletion({
+			workPeriodId: ids.period,
+			submissionId,
+			reason: "Duplicate entry",
+		});
+
+		expect(result).toEqual({
+			success: true,
+			data: { approvalId: "approval-1", status: "pending" },
+		});
+		expect(state.editCapability).not.toHaveBeenCalled();
+	});
+
 	it("rejects an active SCIM employee whose organization membership is suspended", async () => {
 		configure({ kind: "default_created" });
 		state.txSelectForUpdate
@@ -1748,6 +1878,58 @@ describe("time correction submission actions", () => {
 			}),
 			expect.anything(),
 		);
+	});
+
+	it("moves the clock-out first when a direct edit shifts the period past its original end", async () => {
+		configureDirectEdit();
+
+		const result = await modular.editSameDayTimeEntry({
+			workPeriodId: ids.period,
+			newClockInDate: "2026-07-01",
+			newClockInTime: "17:00",
+			newClockOutDate: "2026-07-01",
+			newClockOutTime: "19:00",
+			workLocationType: "office",
+			workCategoryId: null,
+		});
+
+		expect(result).toMatchObject({ success: true });
+		expect(
+			state.createCorrectionEntry.mock.calls.map(([input]) => ({
+				replacesEntryId: input.replacesEntryId,
+				timestamp: input.timestamp,
+			})),
+		).toEqual([
+			{
+				replacesEntryId: ids.clockOut,
+				timestamp: new Date("2026-07-01T19:00:00.000Z"),
+			},
+			{
+				replacesEntryId: ids.clockIn,
+				timestamp: new Date("2026-07-01T17:00:00.000Z"),
+			},
+		]);
+	});
+
+	it("keeps clock-in first when a direct edit overlaps the original period", async () => {
+		configureDirectEdit();
+
+		const result = await modular.editSameDayTimeEntry({
+			workPeriodId: ids.period,
+			newClockInDate: "2026-07-01",
+			newClockInTime: "07:00",
+			newClockOutDate: "2026-07-01",
+			newClockOutTime: "15:00",
+			workLocationType: "office",
+			workCategoryId: null,
+		});
+
+		expect(result).toMatchObject({ success: true });
+		expect(
+			state.createCorrectionEntry.mock.calls.map(
+				([input]) => input.replacesEntryId,
+			),
+		).toEqual([ids.clockIn, ids.clockOut]);
 	});
 
 	it("validates a direct correction near UTC midnight in the employee timezone", async () => {

@@ -1,0 +1,553 @@
+{
+  "settings": {
+    "employeeGroups": {
+      "description": "Återanvändbara medarbetargrupper för policyer som kräver gruppspecifika godkännandekedjor.",
+      "empty": "Inga medarbetargrupper har konfigurerats ännu. Grupper kan användas som policyvillkor när de har skapats.",
+      "loadFailed": "Det gick inte att läsa in medarbetargrupper.",
+      "loading": "Läser in medarbetargrupper…",
+      "members": "Medlemmar",
+      "status": "Status",
+      "status.active": "Aktiv",
+      "status.inactive": "Inaktiv",
+      "title": "Medarbetargrupper"
+    },
+    "employees": {
+      "description": "Hantera medarbetarprofiler, team och behörigheter",
+      "details": "Information om anställd",
+      "detailView": {
+        "loadingEmployeeData": "Läser in medarbetardata",
+        "manageEmployees": "hantera medarbetare",
+        "unexpectedError": "Ett oväntat fel uppstod",
+        "updateFailed": "Det gick inte att uppdatera anställd",
+        "updateSuccess": "Anställd uppdaterades"
+      },
+      "directory": {
+        "actions": {
+          "viewDetails": "Visa detaljer"
+        },
+        "contract": {
+          "fixed": "Fast",
+          "hourly": "Timvis"
+        },
+        "countFound": "{count} anställd(a) hittades",
+        "emptyState": "Inga anställda hittades",
+        "loading": "Läser in anställda...",
+        "noEmployeeFeature": "hantera anställda",
+        "pagination": {
+          "next": "Nästa",
+          "pageOf": "Sida {page} av {total}",
+          "previous": "Föregående"
+        },
+        "refresh": "Uppdatera",
+        "roleFilter": "Filtrera efter roll",
+        "roles": {
+          "admin": "Administratör",
+          "all": "Alla roller",
+          "employee": "Anställd",
+          "manager": "Chef"
+        },
+        "searchLabel": "Sök anställda",
+        "searchPlaceholder": "Sök efter namn, e-post eller befattning...",
+        "statuses": {
+          "active": "Aktiv",
+          "all": "Alla statusar",
+          "draft": "Utkast",
+          "inactive": "Inaktiv"
+        },
+        "statusFilter": "Filtrera efter status",
+        "table": {
+          "employee": "Anställd"
+        },
+        "title": "Personalkatalog"
+      },
+      "draftActions": {
+        "cancel": "Avbryt",
+        "delete": "Ta bort utkast",
+        "deleteConfirm": "Ta bort utkast permanent",
+        "deleteDescription": "Detta raderar förberedda medarbetaruppgifter permanent och avbryter den väntande inbjudan. Ingen medarbetarhistorik kommer att raderas.",
+        "deleteError": "Kunde inte ta bort medarbetarutkast",
+        "deleteTitle": "Vill du ta bort medarbetarutkastet?",
+        "deleting": "Tar bort utkast...",
+        "resend": "Skicka inbjudan igen",
+        "resendError": "Kunde inte skicka inbjudan igen",
+        "resending": "Skickar inbjudan igen...",
+        "resendSuccess": "Inbjudan har skickats igen"
+      },
+      "invitations": {
+        "description": "Bjud in medlemmar och granska väntande förfrågningar om att gå med",
+        "title": "Inbjudningar"
+      },
+      "lifecycle": {
+        "actionsLabel": "Medarbetaråtgärder för ${target.displayName}",
+        "deactivate": "Inaktivera",
+        "deactivateDescription": "Detta stänger av åtkomsten till denna organisation och avslutar sessioner som för närvarande använder den. Medarbetarhistorik behålls.",
+        "deactivateError": "Kunde inte inaktivera medarbetare",
+        "deactivateSuccess": "Medarbetaren har inaktiverats",
+        "deactivateTitle": "Inaktivera medarbetare?",
+        "deactivating": "Inaktiverar...",
+        "deactivatingStatus": "Inaktiverar medarbetare",
+        "reactivate": "Återaktivera",
+        "reactivateDescription": "Detta återställer åtkomsten till denna organisation med hjälp av befintliga medarbetaruppgifter.",
+        "reactivateError": "Kunde inte återaktivera medarbetare",
+        "reactivateSuccess": "Medarbetare återaktiverad",
+        "reactivateTitle": "Återaktivera medarbetare?",
+        "reactivating": "Återaktiverar...",
+        "reactivatingStatus": "Återaktiverar medarbetare",
+        "reinviteRequired": "Denna medarbetare har inte längre något organisationsmedlemskap. Skicka en ny inbjudan för att återställa åtkomsten.",
+        "removeAccess": "Ta bort åtkomst",
+        "removeDescription": "Detta tar bort organisationsmedlemskapet och avslutar organisationssessioner. Tidsregistreringar, frånvaro, saldon, anställningshistorik och granskningar behålls.",
+        "removeError": "Det gick inte att ta bort organisationsåtkomst",
+        "removeSuccess": "Organisationsåtkomst har tagits bort",
+        "removeTitle": "Ta bort organisationsåtkomst?",
+        "removing": "Tar bort åtkomst...",
+        "removingStatus": "Tar bort organisationsåtkomst"
+      },
+      "tabs": {
+        "employees": "Medarbetare",
+        "invitations": "Inbjudningar",
+        "inviteCodes": "Inbjudningskoder",
+        "members": "Medlemmar"
+      },
+      "title": "Anställda"
+    },
+    "employmentHistory": {
+      "addChange": "Lägg till ändring",
+      "addError": "Det gick inte att lägga till ändring i anställningshistorik",
+      "addSuccess": "Ändring i anställningshistorik lades till",
+      "cancelConfirm": "Vill du avbryta denna anställningsändring? Detta tar bort den schemalagda ändringen eller utkastet.",
+      "cancelError": "Det gick inte att avbryta ändring i anställningshistorik",
+      "cancelSuccess": "Ändring i anställningshistorik avbröts",
+      "confirmError": "Det gick inte att bekräfta ändring i anställningshistorik",
+      "confirmSuccess": "Ändring i anställningshistorik bekräftades",
+      "contractType": "Avtalstyp",
+      "contractTypes": {
+        "fixed": "fast",
+        "hourly": "timvis"
+      },
+      "currentConfirmed": "Nuvarande bekräftad",
+      "description": "Bekräftad kontext och schemalagda anställningsändringar",
+      "effectiveDate": "Ikraftträdandedatum",
+      "effectiveDateHelp": "När denna avtalskontext träder i kraft",
+      "effectiveDateRequired": "Ikraftträdandedatum är obligatoriskt",
+      "hourlyRate": "Timlön",
+      "inheritWorkPolicy": "Ärv team-/organisationspolicy",
+      "nextScheduledConfirmed": "Nästa schemalagda bekräftade",
+      "noCurrentContext": "Ingen bekräftad avtalskontext",
+      "noScheduledChange": "Ingen bekräftad ändring schemalagd",
+      "probationEnd": "Provanställningens slut",
+      "probationStart": "Start för provanställning",
+      "reasonNote": "Anledning / Anteckning",
+      "reasonPlaceholder": "Årlig utvärdering, rollbyte eller uppdatering av arbetsmodell…",
+      "reviewState": "Granskningsstatus",
+      "saveChange": "Spara ändring",
+      "states": {
+        "confirmed": "bekräftad",
+        "draft": "utkast",
+        "pending": "väntande"
+      },
+      "title": "Avtal och arbetsmodell",
+      "weeklyHours": "Veckoarbetstid",
+      "workModel": "Arbetsmodell",
+      "workModels": {
+        "flexible": "flexibel",
+        "hybrid": "hybrid",
+        "onsite": "på plats",
+        "remote": "på distans"
+      },
+      "workPolicy": "Arbetspolicy",
+      "workPolicyHelp": "Åsidosätter den valda policyn för denna medarbetare under denna avtalsperiod."
+    },
+    "inviteCodes": {
+      "alreadyHaveAccount": "Har du redan ett konto?",
+      "alreadyMember": "Redan medlem",
+      "alreadyMemberMessage": "Du är redan medlem i denna organisation.",
+      "approval": "Godkännande",
+      "auto": "Auto",
+      "code": "Kod",
+      "codeCopied": "Inbjudningskod kopierad",
+      "codeHelp": "4–20 tecken, endast bokstäver, siffror och bindestreck",
+      "codePlaceholder": "TEAM-ABC123",
+      "copyCode": "Kopiera kod",
+      "copyUrl": "Kopiera inbjudnings-URL",
+      "create": "Skapa",
+      "createCode": "Skapa kod",
+      "created": "Inbjudningskod skapad",
+      "createDescription": "Skapa en ny inbjudningskod så att användare kan gå med i din organisation",
+      "deleted": "Inbjudningskod borttagen",
+      "deleteDescription": "Är du säker på att du vill ta bort inbjudningskoden \"{code}\"? Denna åtgärd kan inte ångras.",
+      "deleteTitle": "Ta bort inbjudningskod",
+      "description": "Skapa delbara koder så att användare kan gå med i din organisation",
+      "descriptionPlaceholder": "Valfri beskrivning...",
+      "downloadFormat": "Ladda ner {format}",
+      "editCode": "Redigera inbjudningskod",
+      "editDescription": "Uppdatera inställningarna för denna inbjudningskod",
+      "enterCodeDescription": "Ange en inbjudningskod för att gå med i en organisation",
+      "expires": "Går ut",
+      "expiresAt": "Utgångsdatum",
+      "expiresAtHelp": "Lämna tomt för inget utgångsdatum",
+      "formatPng": "PNG",
+      "formatSvg": "SVG",
+      "generateCode": "Generera ny kod",
+      "generatingQR": "Genererar QR-kod...",
+      "invalidCode": "Ogiltig inbjudningskod",
+      "inviteCode": "Inbjudningskod",
+      "joinedMessage": "Du har gått med i {organization}.",
+      "joinedSuccessfully": "Gick med",
+      "joining": "Går med...",
+      "joiningOrganization": "Du håller på att gå med i {organization}",
+      "joinOrganization": "Gå med i organisation",
+      "joinRequestSent": "Förfrågan om att gå med skickad",
+      "label": "Etikett",
+      "labelPlaceholder": "t.ex. Offentlig rekrytering 2024",
+      "maxUses": "Maximalt antal användningar",
+      "maxUsesHelp": "Lämna tomt för obegränsat antal användningar",
+      "needAccount": "Har du inget konto?",
+      "noCodes": "Inga inbjudningskoder ännu. Skapa en för att komma igång.",
+      "noTargetTeam": "Inget team",
+      "pendingApproval": "Väntar på godkännande",
+      "pendingApprovalDescription": "Du kommer att meddelas när ditt medlemskap har godkänts.",
+      "pendingApprovalMessage": "Din förfrågan om att gå med i {organization} har skickats. En administratör kommer att granska din förfrågan.",
+      "qrAlt": "QR-kod för {code}",
+      "qrCode": "QR-kod",
+      "qrDescription": "Skanna denna QR-kod för att gå med i organisationen",
+      "qrDownloaded": "QR-kod nedladdad",
+      "required": "Obligatorisk",
+      "requiresApproval": "Kräv administratörsgodkännande",
+      "requiresApprovalHelp": "När detta är aktiverat kommer nya medlemmar att vara väntande tills en administratör godkänner dem",
+      "signInToJoin": "Logga in för att gå med",
+      "status": "Status",
+      "status.active": "Aktiv",
+      "status.paused": "Pausad",
+      "targetTeam": "Målteam",
+      "targetTeamHelp": "Nya medlemmar kommer att använda detta team som standard när de går med.",
+      "title": "Inbjudningskoder",
+      "unlimited": "Obegränsat",
+      "updated": "Inbjudningskoden har uppdaterats",
+      "urlCopied": "Inbjudnings-URL kopierad till urklipp",
+      "usage": "Användning",
+      "validatingCode": "Validerar kod...",
+      "validCodeDescription": "Den här inbjudningskoden är giltig. Klicka på knappen nedan för att gå med."
+    },
+    "managerAssignment": {
+      "assignFailed": "Det gick inte att tilldela chefer",
+      "assignSuccess": "Chefer har tilldelats",
+      "availableManagers": "Tillgängliga chefer",
+      "description": "Välj en eller flera chefer för den här medarbetaren. Ange en som primär.",
+      "empty": "Inga tillgängliga chefer",
+      "primaryDescription": "Den primära chefen kommer att vara standard för godkännanden och aviseringar",
+      "primaryManager": "Primär chef",
+      "save": "Spara chefer",
+      "title": "Chefstilldelning",
+      "unexpectedError": "Ett oväntat fel inträffade",
+      "validation": {
+        "primary": "Ange en primär chef",
+        "selectOne": "Välj minst en chef"
+      }
+    },
+    "pendingMembers": {
+      "approve": "Godkänn",
+      "approved": "Medlem godkänd",
+      "approveMember": "Godkänn {name}",
+      "approveSelected": "Godkänn markerade",
+      "assignTeam": "Tilldela team",
+      "bulkApproved": "{count} medlemmar godkända",
+      "bulkRejectDescription": "Är du säker på att du vill avvisa {count} markerade medlemmar? De kommer att tas bort från listan över väntande.",
+      "bulkRejected": "{count} medlemmar har avvisats",
+      "bulkRejectTitle": "Avvisa markerade medlemmar",
+      "description": "Granska och godkänn medlemmar som väntar på att gå med i din organisation",
+      "email": "E-post",
+      "joinedVia": "Gick med via",
+      "noTeam": "Inget team",
+      "reject": "Avvisa",
+      "rejectDescription": "Är du säker på att du vill avvisa {name}? Personen tas bort från väntelistan och måste begära åtkomst igen.",
+      "rejected": "Medlem avvisad",
+      "rejectMember": "Avvisa {name}",
+      "rejectSelected": "Avvisa markerade",
+      "rejectTitle": "Avvisa medlem",
+      "requestedAt": "Begärd",
+      "selectAll": "Markera alla väntande medlemmar",
+      "selectMember": "Välj {name}",
+      "sso": "SSO",
+      "title": "Väntande medlemmar",
+      "user": "Användare"
+    },
+    "permissions": {
+      "actions": {
+        "edit": "Redigera"
+      },
+      "adminRequired": "Adminbehörighet krävs",
+      "allTeams": "Alla team (organisationsövergripande)",
+      "allTeamsHelp": "Behörigheter gäller för alla team i organisationen",
+      "badge": {
+        "allPermissions": "Alla behörigheter",
+        "permissionCount": "{count} behörighet(er)"
+      },
+      "description": "Hantera medarbetares behörigheter för teamåtgärder",
+      "editor": {
+        "title": "Redigera behörigheter – {name}"
+      },
+      "employeePermissions": {
+        "description": "Klicka på en anställd för att redigera dennes behörigheter",
+        "title": "Medarbetarbehörigheter"
+      },
+      "emptyState": "Inga anställda hittades",
+      "noEmployeeFeature": "hantera behörigheter",
+      "noPermissions": "Inga behörigheter",
+      "permissions": "Behörigheter",
+      "refresh": "Uppdatera",
+      "revokeAll": "Återkalla alla",
+      "revokeError": "Det gick inte att återkalla behörigheter",
+      "revokeSuccess": "Behörigheter har återkallats",
+      "save": "Spara behörigheter",
+      "scope": "Behörighetsomfång",
+      "searchLabel": "Sök anställda",
+      "searchPlaceholder": "Sök efter namn, e-postadress eller befattning...",
+      "selectedTeamHelp": "Behörigheter gäller endast för det valda teamet",
+      "table": {
+        "actions": "Åtgärder",
+        "employee": "Anställd",
+        "permissions": "Behörigheter",
+        "position": "Befattning",
+        "role": "Roll"
+      },
+      "title": "Teambehörigheter",
+      "toast": {
+        "adminRequired": "Du måste vara administratör för att hantera behörigheter",
+        "loadEmployeesFailed": "Det gick inte att läsa in anställda"
+      },
+      "updateError": "Det gick inte att uppdatera behörigheter",
+      "updateSuccess": "Behörigheterna har uppdaterats"
+    },
+    "rateHistory": {
+      "changeRate": "Ändra taxa",
+      "currentRate": "Aktuell taxa: {rate}",
+      "description": "Ändringar av timtaxa över tid",
+      "effectiveFrom": "Gäller från",
+      "effectiveFromHelp": "När den nya taxan börjar gälla",
+      "empty": "Ingen taxehistorik tillgänglig",
+      "newHourlyRate": "Ny timtaxa",
+      "reasonOptional": "Anledning (valfritt)",
+      "reasonPlaceholder": "t.ex. årlig översyn, befordran osv.",
+      "title": "Taxehistorik",
+      "updateDescription": "Skapa en ny taxepost. Den aktuella taxan avslutas automatiskt.",
+      "updateError": "Kunde inte uppdatera taxan",
+      "updateRate": "Uppdatera taxa",
+      "updateSuccess": "Taxan har uppdaterats",
+      "updateTitle": "Uppdatera timtaxa"
+    },
+    "roles": {
+      "actions": {
+        "assign": "Tilldela roll",
+        "create": "Skapa roll",
+        "deleteNamed": "Radera {name}",
+        "editNamed": "Redigera {name}",
+        "removeNamed": "Ta bort {name}",
+        "saveChanges": "Spara ändringar"
+      },
+      "assignPanel": {
+        "description": "Välj en roll att tilldela denna medarbetare.",
+        "empty": "Inga tillgängliga roller att tilldela. Alla roller är redan tilldelade eller så har inga skapats.",
+        "permissionCount": "{count} behörigheter",
+        "title": "Tilldela anpassad roll"
+      },
+      "baseTiers": {
+        "admin": "Administratör",
+        "employee": "Anställd",
+        "manager": "Chef"
+      },
+      "createPanel": {
+        "description": "Definiera en ny roll med specifika behörigheter för din organisation.",
+        "title": "Skapa anpassad roll"
+      },
+      "deleteDialog": {
+        "assignedWarning": {
+          "one": "Denna roll är för närvarande tilldelad {count} anställd. De kommer att förlora behörigheterna som ges av denna roll.",
+          "other": "Denna roll är för närvarande tilldelad {count} anställda. De kommer att förlora behörigheterna som ges av denna roll."
+        },
+        "confirm": "Är du säker på att du vill ta bort \"{name}\"?",
+        "title": "Ta bort roll"
+      },
+      "description": "Skapa anpassade behörighetsroller för din organisation",
+      "editor": {
+        "baseTier": "Basnivå",
+        "color": "Färg",
+        "description": "Beskrivning",
+        "descriptionPlaceholder": "Vad denna roll är till för…",
+        "errors": {
+          "createFailed": "Kunde inte skapa rollen",
+          "nameRequired": "Rollnamn krävs",
+          "permissionsFailed": "Kunde inte spara rollbehörigheter",
+          "updateFailed": "Kunde inte uppdatera rollen"
+        },
+        "inherited": "Ärvd",
+        "name": "Namn",
+        "namePlaceholder": "t.ex. Teamledare, HR-chef…",
+        "permissions": "Behörigheter",
+        "permissionsHelp": "Välj ytterligare behörigheter för denna roll. Behörigheter som ärvs från basnivån visas som låsta.",
+        "selectColor": "Välj färg {color}"
+      },
+      "editPanel": {
+        "description": "Uppdatera rollinformation och behörigheter.",
+        "title": "Redigera anpassad roll"
+      },
+      "employeeCard": {
+        "description": "Ytterligare behörighetsroller tilldelade denna medarbetare",
+        "empty": "Inga anpassade roller tilldelade.",
+        "permissionCount": {
+          "one": "({count} behörighet)",
+          "other": "({count} behörigheter)"
+        }
+      },
+      "empty": {
+        "description": "Skapa en för att komma igång.",
+        "title": "Inga anpassade roller ännu"
+      },
+      "introduction": "Skapa anpassade behörighetsroller som kan tilldelas medarbetare. Anpassade roller lägger till behörigheter utöver basnivån.",
+      "table": {
+        "actions": "Åtgärder",
+        "assigned": "Tilldelad",
+        "assignedCount": {
+          "one": "{count} anställd",
+          "other": "{count} anställda"
+        },
+        "baseTier": "Basnivå",
+        "name": "Namn",
+        "permissionCount": {
+          "one": "{count} behörighet",
+          "other": "{count} behörigheter"
+        },
+        "permissions": "Behörigheter"
+      },
+      "title": "Anpassade roller",
+      "toast": {
+        "assigned": "Roll tilldelad",
+        "created": "Roll skapad",
+        "deleted": "Roll raderad",
+        "removed": "Roll borttagen",
+        "updated": "Roll uppdaterad"
+      }
+    },
+    "skills": {
+      "addSkill": "Lägg till kompetens",
+      "assign": "Tilldela",
+      "assignError": "Det gick inte att tilldela kompetensen",
+      "assignSkill": "Tilldela kompetens",
+      "assignSkillDescription": "Lägg till en kompetens eller certifiering för den här medarbetaren",
+      "assignSkillHint": "Klicka på \"Tilldela kompetens\" för att lägga till kvalifikationer",
+      "catalog": "Kompetenskatalog",
+      "catalogDescription": "Definiera kompetenser som kan krävas för delområden och passmallar",
+      "category": "Kategori",
+      "confirmDelete": "Är du säker på att du vill ta bort den här kompetensen?",
+      "confirmRemove": "Ta bort \"${skillName}\" från den här medarbetaren?",
+      "createError": "Det gick inte att skapa kompetensen",
+      "createSkill": "Skapa kompetens",
+      "createSkillDescription": "Skapa en ny kompetens som kan tilldelas medarbetare",
+      "customCategoryName": "Anpassat kategorinamn",
+      "customCategoryPlaceholder": "t.ex. Efterlevnad",
+      "deleteError": "Det gick inte att ta bort kompetensen",
+      "description": "Beskrivning",
+      "descriptionPlaceholder": "Valfri beskrivning av kompetensen eller certifieringen",
+      "editSkill": "Redigera kompetens",
+      "editSkillDescription": "Uppdatera kompetensuppgifterna",
+      "employeeSkills": "Kompetenser & kvalifikationer",
+      "employeeSkillsDescription": "Certifieringar och kompetenser tilldelade den här medarbetaren",
+      "expired": "Utgången",
+      "expiredOn": "Gick ut {{date}}",
+      "expiresOn": "Går ut {{date}}",
+      "expiringSoon": "Löper ut snart",
+      "expiry": "Spårning av utgångsdatum",
+      "expiryDate": "Utgångsdatum",
+      "expiryRequired": "Obligatoriskt",
+      "expiryRequiredHint": "Denna certifiering kräver ett utgångsdatum",
+      "name": "Namn",
+      "namePlaceholder": "t.ex. truckkort",
+      "noAvailableSkills": "Alla kompetenser har tilldelats eller så har inga kompetenser definierats",
+      "noExpiry": "Nej",
+      "noSkills": "Inga kompetenser har definierats ännu",
+      "noSkillsAssigned": "Inga kompetenser tilldelade",
+      "noSkillsHint": "Skapa din första kompetens för att komma igång",
+      "notes": "Anteckningar",
+      "notesPlaceholder": "t.ex. certifikatnummer, utbildningsdatum…",
+      "removeError": "Kunde inte ta bort kompetensen",
+      "requiresExpiry": "Kräver utgångsdatum",
+      "requiresExpiryHint": "Aktivera om denna certifiering behöver förnyas (t.ex. Första hjälpen)",
+      "selectCategory": "Välj kategori",
+      "selectSkill": "Välj en kompetens",
+      "skill": "Kompetens",
+      "skillAssigned": "Kompetens tilldelad",
+      "skillCreated": "Kompetens skapad",
+      "skillDeleted": "Kompetens raderad",
+      "skillName": "Namn",
+      "skillRemoved": "Kompetens borttagen",
+      "skillUpdated": "Färdigheten har uppdaterats",
+      "title": "Färdigheter och kvalifikationer",
+      "updateError": "Det gick inte att uppdatera färdigheten"
+    },
+    "teams": {
+      "description": "Organisera anställda i team och hantera teamtilldelningar",
+      "detail": {
+        "actions": {
+          "cancel": "Avbryt",
+          "edit": "Redigera",
+          "save": "Spara"
+        },
+        "addMember": {
+          "description": "Välj en medarbetare att lägga till i detta team",
+          "selectEmployee": "Välj medarbetare",
+          "title": "Lägg till teammedlem"
+        },
+        "back": "Tillbaka till team",
+        "delete": {
+          "description": "Är du säker på att du vill ta bort det här teamet? Denna åtgärd kan inte ångras. Teammedlemmar kommer inte att tas bort.",
+          "title": "Ta bort team"
+        },
+        "description": "Hantera teaminformation och medlemmar",
+        "errors": {
+          "addTeamMember": "Det gick inte att lägga till teammedlemmen",
+          "deleteTeam": "Det gick inte att ta bort teamet",
+          "loadTeam": "Det gick inte att läsa in teamet",
+          "removeTeamMember": "Det gick inte att ta bort teammedlemmen",
+          "updateTeam": "Det gick inte att uppdatera teamet"
+        },
+        "info": {
+          "description": "Beskrivning",
+          "descriptionPlaceholder": "Ange teambeskrivning",
+          "members": "Medlemmar",
+          "noPrimaryManager": "Ingen primär chef tilldelad",
+          "primaryManager": "Primär chef",
+          "teamName": "Teamnamn",
+          "teamNamePlaceholder": "Ange teamnamn",
+          "title": "Teaminformation"
+        },
+        "members": {
+          "add": "Lägg till medlem",
+          "description": "Medarbetare som tilldelats detta team",
+          "empty": "Inga medlemmar i detta team",
+          "remove": "Ta bort teammedlem",
+          "title": "Teammedlemmar"
+        },
+        "removeMember": {
+          "confirm": "Ta bort",
+          "description": "Är du säker på att du vill ta bort den här medarbetaren från teamet? De kommer fortfarande att ha åtkomst till organisationen.",
+          "title": "Ta bort teammedlem"
+        },
+        "selectEmployee": "Välj medarbetare",
+        "title": "Teamdetaljer",
+        "toasts": {
+          "teamDeleted": "Teamet har tagits bort",
+          "teamMemberAdded": "Teammedlem har lagts till",
+          "teamMemberRemoved": "Teammedlem har tagits bort",
+          "teamUpdated": "Teamet har uppdaterats"
+        },
+        "validation": {
+          "invalidInput": "Ogiltig inmatning",
+          "selectEmployee": "Vänligen välj en medarbetare",
+          "teamNameRequired": "Teamnamn krävs",
+          "teamNameTooLong": "Teamnamnet är för långt"
+        }
+      },
+      "details": "Teamdetaljer",
+      "title": "Team"
+    }
+  }
+}

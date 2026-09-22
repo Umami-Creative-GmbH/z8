@@ -1,0 +1,157 @@
+{
+  "timeTracking": {
+    "addNotePrompt": "Lägg till en anteckning om ditt arbete (valfritt)",
+    "autoAdjusted": {
+      "toast": {
+        "description": "En paus på {breakMinutes} minuter lades till för att följa tidsreglerna.",
+        "title": "Paus lades till automatiskt för att följa regler"
+      }
+    },
+    "budget": "Budget",
+    "clockedOutSuccess": "Du har stämplat ut!",
+    "clockIn": "Stämpla in",
+    "clockingIn": "Stämplar in…",
+    "clockingOut": "Stämplar ut…",
+    "clockInSavedForReview": "Instämpling sparad på denna enhet för granskning; ej bekräftad på servern",
+    "clockInSuccess": "Instämpling lyckades",
+    "clockOut": "Stämpla ut",
+    "clockOutSavedForReview": "Utstämpling sparad på denna enhet för granskning; ej bekräftad på servern",
+    "clockOutSuccess": "Utstämpling lyckades",
+    "compliance": {
+      "violation": "Regelöverträdelse",
+      "warning": "Regelefterlevnadsmeddelande"
+    },
+    "correction": {
+      "clockIn": "Stämpla in",
+      "clockInDate": "Instämplingsdatum",
+      "clockOut": "Stämpla ut",
+      "clockOutDate": "Utstämplingsdatum",
+      "editDescription": "Gör ändringar i din tidsregistrering för idag.",
+      "editEntry": "Redigera tidsregistrering",
+      "editTitle": "Redigera tidsregistrering",
+      "errors": {
+        "invalidTimeRange": "Utstämplingstiden måste vara efter instämplingstiden",
+        "submitFailed": "Kunde inte skicka korrigering",
+        "updateFailed": "Kunde inte uppdatera tidsregistrering"
+      },
+      "noteLabel": "Anteckning (valfritt)",
+      "notePlaceholder": "Lägg till en anteckning om denna ändring…",
+      "reasonLabel": "Orsak till korrigering",
+      "reasonPlaceholder": "Förklara varför denna korrigering behövs…",
+      "requestCorrection": "Begär tidskorrigering",
+      "requestDescription": "Skicka in en korrigeringsbegäran för denna tidsregistrering. Din chef måste godkänna den.",
+      "requestTitle": "Begär tidskorrigering",
+      "saveChanges": "Spara ändringar",
+      "saving": "Sparar…",
+      "submitRequest": "Skicka begäran",
+      "submitting": "Skickar…",
+      "success": {
+        "applied": "Korrigeringen har tillämpats",
+        "submitted": "Korrigeringsbegäran har skickats för chefens godkännande",
+        "updated": "Tidsregistreringen har uppdaterats"
+      },
+      "timezoneNote": "Tider visas i din lokala tidszon ({timezone})"
+    },
+    "currentlyClockedIn": "Du är för närvarande instämplad",
+    "deadline": "Deadline",
+    "errors": {
+      "clockInFailed": "Det gick inte att stämpla in",
+      "clockOutFailed": "Det gick inte att stämpla ut",
+      "holidayBlocked": "Det går inte att stämpla ut på {holidayName}",
+      "holidayBlockedDesc": "Denna dag är markerad som en helgdag och tidsregistreringar är inte tillåtna",
+      "notesSaveFailed": "Det gick inte att spara anteckningar",
+      "restPeriodBlocked": "Viloperioden är inte slutförd",
+      "restPeriodBlockedDesc": "Du måste slutföra den obligatoriska viloperioden innan du stämplar in. Begär ett undantag vid behov."
+    },
+    "manualEntry": {
+      "addButton": "Lägg till manuell registrering",
+      "clockInLabel": "Stämpla in",
+      "clockOutLabel": "Stämpla ut",
+      "dateLabel": "Datum",
+      "description": "Skapa en tidsregistrering för ett tidigare datum. Godkännande kan krävas baserat på din organisations ändringspolicy.",
+      "errors": {
+        "createFailed": "Det gick inte att skapa tidsregistreringen",
+        "futureDate": "Det går inte att skapa registreringar för framtida datum",
+        "invalidTime": "Ange en fullständig, giltig tid",
+        "invalidTimeRange": "Utstämplingstiden måste vara efter instämplingstiden",
+        "tooLong": "Arbetsperioden får inte överstiga 24 timmar"
+      },
+      "reasonLabel": "Anledning",
+      "reasonPlaceholder": "Beskriv vad du har arbetat med…",
+      "submit": "Skapa registrering",
+      "submitting": "Skapar…",
+      "success": {
+        "adjusted": "Tider justerades till {clockIn} - {clockOut} för att undvika överlappning",
+        "created": "Tidsregistreringen har skapats",
+        "pendingApproval": "Tidsregistreringen har skickats in för godkännande av chef"
+      },
+      "title": "Lägg till manuell tidsregistrering",
+      "titleForEmployee": "Lägg till manuell tidsregistrering för {employee}"
+    },
+    "noCategory": "Ingen kategori (100 %)",
+    "noProject": "Inget projekt",
+    "notesPlaceholder": "Vad har du arbetat med?",
+    "notesSaved": "Anteckningar sparade",
+    "project": "Projekt",
+    "readyToClockIn": "Redo att börja arbeta?",
+    "selectCategory": "Välj en kategori",
+    "selectProject": "Välj ett projekt",
+    "sessionReminders": {
+      "breakOpen": "{remaining} min paus återstår",
+      "breakRequired": "Paus krävs nu",
+      "breakRequiredMessage": "Ta en paus innan du fortsätter din session.",
+      "breakSoon": "Paus snart",
+      "dismissBreak": "Avfärda pauspåminnelse",
+      "dismissHydration": "Avfärda vätskepåminnelse",
+      "hydration": "Vätskeintag",
+      "hydrationProgress": "{intake}/{goal} glas idag",
+      "logOneGlass": "+1 glas",
+      "logTwoGlasses": "+2",
+      "minutesUntilBreak": "{minutes} min till paus",
+      "snoozeToday": "Slumra idag",
+      "subtitle": "Under detta arbetspass",
+      "title": "Sessionspåminnelser"
+    },
+    "startedAt": "Startade kl.",
+    "summary": {
+      "baseWorked": "Arbetad grundtid",
+      "surcharge": "Tillägg",
+      "thisMonth": "Denna månad",
+      "thisWeek": "Denna vecka",
+      "today": "Idag"
+    },
+    "table": {
+      "approved": "Tidsregistrering godkänd",
+      "approveEntry": "Godkänn registrering",
+      "approveFailed": "Det gick inte att godkänna registreringen",
+      "approving": "Godkänner...",
+      "emptyState": "Inga tidsregistreringar hittades för den här veckan.",
+      "rowActions": "Åtgärder för tidsregistrering",
+      "title": "Tidsregistreringar",
+      "viewCalendar": "Visa kalender"
+    },
+    "timeline": {
+      "dayPicker": "Dagväljare för tidslinje",
+      "emptyDescription": "Det finns inga arbetspass, frånvarotillfällen eller tidsregistreringar för den valda dagen ännu.",
+      "emptyTitle": "Ingen aktivitet registrerad för denna dag.",
+      "nextDay": "Nästa dag",
+      "previousDay": "Föregående dag",
+      "title": "Tidslinje för arbetsdag",
+      "today": "Idag",
+      "unavailableDescription": "Tidsstämpling fungerar fortfarande. Prova att uppdatera den här vyn senare.",
+      "unavailableTitle": "Tidslinjen är inte tillgänglig"
+    },
+    "unknownCategory": "Okänd kategori",
+    "unknownProject": "Okänt projekt",
+    "workCategory": "Arbetskategori"
+  },
+  "wellness": {
+    "water": {
+      "goalMet": "Dagsmålet har nåtts! Bra jobbat!",
+      "logError": "Kunde inte logga vattenintag",
+      "logged": "Vatten loggat! {progress}% av dagsmålet",
+      "snoozed": "Vattenpåminnelser snoozade för idag",
+      "snoozeError": "Kunde inte snooza påminnelser"
+    }
+  }
+}

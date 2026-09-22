@@ -1,0 +1,146 @@
+{
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Registrer fravær for {name}"
+      },
+      "calendar": {
+        "approved": "Godkjent",
+        "description": "Godkjent og ventende fravær for det valgte teamet og året.",
+        "error": {
+          "description": "Vennligst prøv igjen om et øyeblikk.",
+          "title": "Kunne ikke laste inn kalender"
+        },
+        "legend": {
+          "approved": "Godkjent",
+          "pending": "Ventende"
+        },
+        "pending": "Ventende",
+        "pendingDays": "{count} ventende",
+        "title": "Årskalender",
+        "totalDays": "{count} fraværende"
+      },
+      "description": "Se over kvoter og registrer godkjent fravær for teamet ditt.",
+      "empty": {
+        "description": "Prøv å justere filtre eller søk for å finne teammedlemmer.",
+        "label": "Ingen ansatte funnet",
+        "title": "Ingen ansatte funnet"
+      },
+      "error": {
+        "description": "Vennligst prøv igjen om et øyeblikk.",
+        "title": "Kunne ikke laste inn fravær"
+      },
+      "feature": "administrer teamfravær",
+      "filters": {
+        "allTeams": "Alle team",
+        "searchLabel": "Søk etter ansatte",
+        "searchPlaceholder": "Søk etter ansatte…",
+        "searchSubmit": "Søk",
+        "teamLabel": "Filtrer etter team",
+        "teamPlaceholder": "Team",
+        "yearLabel": "Filtrer etter år",
+        "yearPlaceholder": "År"
+      },
+      "pagination": {
+        "next": "Neste",
+        "nextLabel": "Neste side",
+        "page": "Side {page} av {pageCount}",
+        "previous": "Forrige",
+        "previousLabel": "Forrige side",
+        "showing": "Viser {firstItem} til {lastItem} av {total}"
+      },
+      "recordDialog": {
+        "category": "Kategori",
+        "categoryPlaceholder": "Velg en fraværskategori…",
+        "description": "Registrer et godkjent fravær direkte for den valgte ansatte.",
+        "endDate": "Sluttdato",
+        "endDateHelper": "La stå tomt for fravær samme dag.",
+        "failure": "Kunne ikke registrere fravær",
+        "noCategories": "Ingen tilgjengelige kategorier",
+        "noEmployee": "Velg en ansatt før du registrerer et fravær",
+        "notes": "Notater",
+        "notesPlaceholder": "Legg til intern kontekst for denne registreringen…",
+        "pickEndDate": "Velg sluttdato…",
+        "pickStartDate": "Velg startdato…",
+        "recording": "Registrerer…",
+        "required": "{label} er påkrevd",
+        "sickDetail": "Sykdomsdetalj",
+        "sickDetailPlaceholder": "Velg sykdomsdetalj…",
+        "startDate": "Startdato",
+        "submit": "Registrer fravær",
+        "success": "Fravær registrert",
+        "title": "Registrer fravær",
+        "titleForEmployee": "Registrer fravær for {name}"
+      },
+      "sort": {
+        "ascending": "stigende",
+        "by": "Sorter etter {label}",
+        "byWithDirection": "Sorter etter {label} ({direction})",
+        "descending": "synkende"
+      },
+      "table": {
+        "actions": "Handlinger",
+        "allowance": "Kvote",
+        "employee": "Ansatt",
+        "left": "Gjenstående",
+        "pending": "Ventende",
+        "sick": "Syk",
+        "teamOrPosition": "Team eller stilling",
+        "used": "Brukt"
+      },
+      "title": "Teamfravær"
+    },
+    "balance": {
+      "noBalance": "Ingen saldo"
+    },
+    "description": "Se og administrer ansatte du leder direkte",
+    "empty": {
+      "action": "Gå til ansattinnstillinger",
+      "description": "Ansatte som har deg som leder, vil vises her. Du kan administrere teamtilknytninger i ansattinnstillingene.",
+      "title": "Ingen teammedlemmer ennå"
+    },
+    "error": {
+      "description": "Kunne ikke laste inn teammedlemmene dine.",
+      "title": "Noe gikk galt"
+    },
+    "feature": "se teamet ditt",
+    "member": "medlem",
+    "members": "medlemmer",
+    "member.you": "Du",
+    "noResults": {
+      "action": "Tøm søk",
+      "description": "Ingen teammedlemmer samsvarer med «{query}»",
+      "title": "Ingen resultater funnet"
+    },
+    "pagination": {
+      "next": "Neste",
+      "previous": "Forrige",
+      "showing": "Viser {from} til {to} av {total}"
+    },
+    "primaryManager": "Du er primærleder",
+    "search": {
+      "ariaLabel": "Søk etter teammedlemmer",
+      "placeholder": "Søk etter navn, e-post, stilling eller team..."
+    },
+    "status": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv"
+    },
+    "table": {
+      "employee": "Ansatt",
+      "position": "Stilling",
+      "role": "Rolle",
+      "sort": {
+        "ascending": "stigende",
+        "descending": "synkende"
+      },
+      "status": "Status",
+      "team": "Team"
+    },
+    "title": "Ditt team",
+    "view": {
+      "cards": "Kortvisning",
+      "table": "Tabellvisning"
+    }
+  }
+}

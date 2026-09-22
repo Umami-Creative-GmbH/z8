@@ -1,11 +1,11 @@
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 
 use crate::auth;
 use crate::clock::{ClockService, ClockStatus, WorkLocationType};
-use crate::offline::ActionType;
+use crate::clock_command::{self, ClockCommand, ClockCommandError, ClockCommandOutcome};
+use crate::offline::RecoverySummary;
 use crate::settings::Settings;
 use crate::startup;
 use crate::state::AppState;
@@ -31,6 +31,7 @@ pub struct SessionResponse {
 #[tauri::command]
 pub async fn get_clock_status(app_handle: AppHandle) -> Result<ClockStatus, String> {
     let state = app_handle.state::<Arc<AppState>>();
+    let _guard = state.clock_command_lock.lock().await;
 
     let token = state
         .get_session_token()
@@ -47,6 +48,10 @@ pub async fn get_clock_status(app_handle: AppHandle) -> Result<ClockStatus, Stri
         .await
         .map_err(|e| e.to_string())?;
 
+    if state.get_session_token().as_deref() != Some(&token) || state.get_webapp_url() != webapp_url {
+        return Err("Clock context changed. Refresh status for the current account.".into());
+    }
+
     // Update local state
     state.set_clocked_in(status.is_clocked_in);
 
@@ -61,122 +66,16 @@ pub async fn get_clock_status(app_handle: AppHandle) -> Result<ClockStatus, Stri
 pub async fn clock_in(
     app_handle: AppHandle,
     work_location_type: String,
-) -> Result<ClockStatus, String> {
-    let state = app_handle.state::<Arc<AppState>>();
-
-    let token = match state.get_session_token() {
-        Some(t) => t,
-        None => return Err("Not authenticated".to_string()),
-    };
-
-    let webapp_url = state.get_webapp_url();
-    if webapp_url.is_empty() {
-        return Err("Webapp URL not configured".to_string());
-    }
-
+) -> Result<ClockCommandOutcome, ClockCommandError> {
     let work_location_type = WorkLocationType::from_str(&work_location_type)
-        .ok_or("Invalid work location type".to_string())?;
-
-    let clock_service = ClockService::new();
-
-    // Try to clock in
-    match clock_service
-        .clock_in(&webapp_url, &token, work_location_type, None)
-        .await
-    {
-        Ok(_entry) => {
-            // Fetch updated status
-            let status = clock_service
-                .get_status(&webapp_url, &token)
-                .await
-                .map_err(|e| e.to_string())?;
-
-            state.set_clocked_in(status.is_clocked_in);
-            let _ = tray::update_tray_icon(&app_handle, status.is_clocked_in);
-
-            Ok(status)
-        }
-        Err(e) => {
-            // Check if it's a network error - queue for later
-            if e.to_string().contains("connection")
-                || e.to_string().contains("timeout")
-                || e.to_string().contains("network")
-            {
-                let mut queue = state.offline_queue.lock();
-                let _ = queue.enqueue(
-                    ActionType::ClockIn,
-                    Utc::now().timestamp(),
-                    Some(work_location_type.as_str().to_string()),
-                );
-
-                // Optimistically update local state
-                state.set_clocked_in(true);
-                let _ = tray::update_tray_icon(&app_handle, true);
-
-                Ok(ClockStatus {
-                    has_employee: true,
-                    employee_id: None,
-                    is_clocked_in: true,
-                    active_work_period: None,
-                })
-            } else {
-                Err(e.to_string())
-            }
-        }
-    }
+        .ok_or_else(|| ClockCommandError::pre_send("Invalid work location type"))?;
+    run_clock_command(app_handle, ClockCommand::ClockIn(work_location_type)).await
 }
 
 /// Clocks out the user
 #[tauri::command]
-pub async fn clock_out(app_handle: AppHandle) -> Result<ClockStatus, String> {
-    let state = app_handle.state::<Arc<AppState>>();
-
-    let token = match state.get_session_token() {
-        Some(t) => t,
-        None => return Err("Not authenticated".to_string()),
-    };
-
-    let webapp_url = state.get_webapp_url();
-    if webapp_url.is_empty() {
-        return Err("Webapp URL not configured".to_string());
-    }
-
-    let clock_service = ClockService::new();
-
-    match clock_service.clock_out(&webapp_url, &token).await {
-        Ok(_entry) => {
-            let status = clock_service
-                .get_status(&webapp_url, &token)
-                .await
-                .map_err(|e| e.to_string())?;
-
-            state.set_clocked_in(status.is_clocked_in);
-            let _ = tray::update_tray_icon(&app_handle, status.is_clocked_in);
-
-            Ok(status)
-        }
-        Err(e) => {
-            if e.to_string().contains("connection")
-                || e.to_string().contains("timeout")
-                || e.to_string().contains("network")
-            {
-                let mut queue = state.offline_queue.lock();
-                let _ = queue.enqueue(ActionType::ClockOut, Utc::now().timestamp(), None);
-
-                state.set_clocked_in(false);
-                let _ = tray::update_tray_icon(&app_handle, false);
-
-                Ok(ClockStatus {
-                    has_employee: true,
-                    employee_id: None,
-                    is_clocked_in: false,
-                    active_work_period: None,
-                })
-            } else {
-                Err(e.to_string())
-            }
-        }
-    }
+pub async fn clock_out(app_handle: AppHandle) -> Result<ClockCommandOutcome, ClockCommandError> {
+    run_clock_command(app_handle, ClockCommand::ClockOut).await
 }
 
 /// Clocks out at a specific time (for break handling) then immediately clocks back in
@@ -185,73 +84,59 @@ pub async fn clock_out_with_break(
     app_handle: AppHandle,
     break_start_time: String,
     work_location_type: String,
-) -> Result<ClockStatus, String> {
+) -> Result<ClockCommandOutcome, ClockCommandError> {
+    let work_location_type = WorkLocationType::from_str(&work_location_type)
+        .ok_or_else(|| ClockCommandError::pre_send("Invalid work location type"))?;
+    run_clock_command(
+        app_handle,
+        ClockCommand::Break {
+            start: break_start_time,
+            location: work_location_type,
+        },
+    )
+    .await
+}
+
+async fn run_clock_command(
+    app_handle: AppHandle,
+    command: ClockCommand,
+) -> Result<ClockCommandOutcome, ClockCommandError> {
     let state = app_handle.state::<Arc<AppState>>();
-
-    let token = match state.get_session_token() {
-        Some(t) => t,
-        None => return Err("Not authenticated".to_string()),
-    };
-
+    let _guard = state.clock_command_lock.try_lock().map_err(|_| {
+        ClockCommandError::pre_send(
+            "Another clock request is in progress. Refresh status before trying again.",
+        )
+    })?;
+    let token = state
+        .get_session_token()
+        .ok_or_else(|| ClockCommandError::pre_send("Not authenticated"))?;
     let webapp_url = state.get_webapp_url();
     if webapp_url.is_empty() {
-        return Err("Webapp URL not configured".to_string());
+        return Err(ClockCommandError::pre_send("Webapp URL not configured"));
     }
-
-    let break_time: DateTime<Utc> = DateTime::parse_from_rfc3339(&break_start_time)
-        .map_err(|e| format!("Invalid break time: {}", e))?
-        .with_timezone(&Utc);
-
-    let work_location_type = WorkLocationType::from_str(&work_location_type)
-        .ok_or("Invalid work location type".to_string())?;
-
-    let clock_service = ClockService::new();
-
-    match clock_service
-        .clock_out_with_break(&webapp_url, &token, break_time, work_location_type, None)
-        .await
+    let mut outcome = clock_command::execute(
+        &ClockService::new(),
+        &state.offline_queue,
+        &webapp_url,
+        &token,
+        command,
+    )
+    .await?;
+    // Do not publish an old context's current-state result into a new session.
+    if state.get_session_token().as_deref() == Some(&token) && state.get_webapp_url() == webapp_url
     {
-        Ok(_) => {
-            let status = clock_service
-                .get_status(&webapp_url, &token)
-                .await
-                .map_err(|e| e.to_string())?;
-
-            state.set_clocked_in(status.is_clocked_in);
-            let _ = tray::update_tray_icon(&app_handle, status.is_clocked_in);
-
-            Ok(status)
-        }
-        Err(e) => {
-            if e.to_string().contains("connection")
-                || e.to_string().contains("timeout")
-                || e.to_string().contains("network")
-            {
-                let mut queue = state.offline_queue.lock();
-                let _ = queue.enqueue(
-                    ActionType::ClockOutWithBreak,
-                    Utc::now().timestamp(),
-                    Some(
-                        serde_json::json!({
-                            "breakStartTime": break_start_time,
-                            "workLocationType": work_location_type.as_str(),
-                        })
-                        .to_string(),
-                    ),
-                );
-
-                // Remain clocked in since we'll clock back in after break
-                Ok(ClockStatus {
-                    has_employee: true,
-                    employee_id: None,
-                    is_clocked_in: true,
-                    active_work_period: None,
-                })
-            } else {
-                Err(e.to_string())
+        if let ClockCommandOutcome::Committed { write } = &outcome {
+            if let Some(status) = &write.status {
+                state.set_clocked_in(status.is_clocked_in);
+                let _ = tray::update_tray_icon(&app_handle, status.is_clocked_in);
             }
         }
+    } else if let ClockCommandOutcome::Committed { write } = &mut outcome {
+        write.entries.clear();
+        write.status = None;
+        write.context_changed = true;
     }
+    Ok(outcome)
 }
 
 /// Initiates the OAuth login flow
@@ -348,7 +233,9 @@ pub fn save_settings(
 #[tauri::command]
 pub fn set_always_on_top(app_handle: AppHandle, enabled: bool) -> Result<(), String> {
     if let Some(window) = app_handle.get_webview_window("main") {
-        window.set_always_on_top(enabled).map_err(|e| e.to_string())?;
+        window
+            .set_always_on_top(enabled)
+            .map_err(|e| e.to_string())?;
     }
     Ok(())
 }
@@ -373,4 +260,16 @@ pub fn get_pending_queue_count(app_handle: AppHandle) -> Result<i64, String> {
     let state = app_handle.state::<Arc<AppState>>();
     let queue = state.offline_queue.lock();
     queue.count().map_err(|e| e.to_string())
+}
+
+/// Only redacted device diagnostics are available until legacy ownership can
+/// be established by the authorized recovery protocol. A login is not binding.
+#[tauri::command]
+pub fn get_queue_recovery_summary(app_handle: AppHandle) -> Result<RecoverySummary, String> {
+    let state = app_handle.state::<Arc<AppState>>();
+    state.get_session_token().ok_or("Not authenticated")?;
+    let queue = state.offline_queue.lock();
+    queue
+        .recovery_summary()
+        .map_err(|_| "Cannot read local recovery storage. Clock actions are paused.".into())
 }

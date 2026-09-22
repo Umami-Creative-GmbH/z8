@@ -2,9 +2,9 @@
   "myRequests": {
     "actions": {
       "cancel": "Ακύρωση",
-      "cancelConfirmation": "Ακύρωση αυτού του αιτήματος απουσίας;",
-      "cancelError": "Το αίτημα απουσίας δεν μπόρεσε να ακυρωθεί.",
       "cancelling": "Ακύρωση...",
+      "cancelRequestConfirmation": "Ακύρωση αυτού του αιτήματος;",
+      "cancelRequestError": "Δεν ήταν δυνατή η ακύρωση του αιτήματος.",
       "fix": "Διόρθωση",
       "notAvailable": "Μη διαθέσιμο",
       "view": "Προβολή"

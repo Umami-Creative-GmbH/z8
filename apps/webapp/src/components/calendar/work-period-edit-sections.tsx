@@ -23,7 +23,6 @@ import {
 } from "@/lib/datetime/temporal-format";
 import {
 	formatDuration,
-	formatEventTimeRange,
 	type WorkPeriodDialogMetadata,
 } from "./work-period-dialog-utils";
 
@@ -375,32 +374,18 @@ export function NotesEditSection({
 }
 
 export function WorkPeriodSummaryBlock({
-	event,
 	metadata,
 	t,
-	displayContext,
 }: {
-	event: CalendarEvent;
 	metadata: WorkPeriodDialogMetadata;
 	t: TFnType;
-	displayContext: DisplayContext;
 }) {
 	return (
-		<>
-			<div>
-				<span className="text-sm text-muted-foreground">
-					{t("calendar.details.employee", "Employee")}
-				</span>
-				<p className="font-medium">{metadata.employeeName}</p>
-			</div>
-			<div>
-				<span className="text-sm text-muted-foreground">
-					{t("calendar.details.time", "Time")}
-				</span>
-				<p className="font-medium">
-					{formatEventTimeRange(event, displayContext)}
-				</p>
-			</div>
-		</>
+		<div>
+			<span className="text-sm text-muted-foreground">
+				{t("calendar.details.employee", "Employee")}
+			</span>
+			<p className="font-medium">{metadata.employeeName}</p>
+		</div>
 	);
 }

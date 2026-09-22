@@ -1,5 +1,6 @@
 mod auth;
 mod clock;
+mod clock_command;
 mod commands;
 mod idle;
 mod offline;
@@ -86,11 +87,8 @@ pub fn run() {
                 idle::start_idle_monitor(app_handle);
             });
 
-            // Start offline queue processor
-            let app_handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                offline::start_queue_processor(app_handle).await;
-            });
+            // Legacy queue records lack ownership and replay evidence. Keep them
+            // for review; never submit them using whichever session is current.
 
             log::info!("z8 Timer setup complete");
             Ok(())
@@ -108,6 +106,7 @@ pub fn run() {
             commands::set_always_on_top,
             commands::set_auto_startup,
             commands::get_pending_queue_count,
+            commands::get_queue_recovery_summary,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -40,6 +40,7 @@ interface CalendarEventDialogsProps {
 	onSplitComplete: () => void;
 	onDeleteComplete: () => void;
 	onNotesUpdated: () => void;
+	onTimesUpdated: () => void;
 }
 
 export function CalendarEventDialogs({
@@ -67,6 +68,7 @@ export function CalendarEventDialogs({
 	onSplitComplete,
 	onDeleteComplete,
 	onNotesUpdated,
+	onTimesUpdated,
 }: CalendarEventDialogsProps) {
 	const selectedWorkPeriod = selectedEvent?.type === "work_period" ? selectedEvent : null;
 
@@ -99,35 +101,92 @@ export function CalendarEventDialogs({
 			{selectedEvent && selectedEvent.type !== "work_period" ? (
 				<EventDetailsPanel event={selectedEvent} onClose={onCloseDetails} />
 			) : null}
-			{selectedWorkPeriod && !showSplitDialog && !showDeleteDialog ? (
-				<WorkPeriodEditDialog
+			{selectedWorkPeriod ? (
+				<WorkPeriodDialogs
 					event={selectedWorkPeriod}
-					open
-					onOpenChange={(open) => !open && onCloseDetails()}
-					onNotesUpdated={onNotesUpdated}
+					showSplitDialog={showSplitDialog}
+					showDeleteDialog={showDeleteDialog}
+					displayContext={displayContext}
+					onCloseDetails={onCloseDetails}
 					onSplitClick={onSplitClick}
 					onDeleteClick={onDeleteClick}
-					displayContext={displayContext}
-				/>
-			) : null}
-			{selectedWorkPeriod && showSplitDialog ? (
-				<SplitWorkPeriodDialog
-					event={selectedWorkPeriod}
-					open={showSplitDialog}
-					displayContext={displayContext}
-					onOpenChange={onSplitDialogOpenChange}
+					onSplitDialogOpenChange={onSplitDialogOpenChange}
+					onDeleteDialogOpenChange={onDeleteDialogOpenChange}
 					onSplitComplete={onSplitComplete}
-				/>
-			) : null}
-			{selectedWorkPeriod && showDeleteDialog ? (
-				<DeleteWorkPeriodDialog
-					event={selectedWorkPeriod}
-					open={showDeleteDialog}
-					displayContext={displayContext}
-					onOpenChange={onDeleteDialogOpenChange}
 					onDeleteComplete={onDeleteComplete}
+					onNotesUpdated={onNotesUpdated}
+					onTimesUpdated={onTimesUpdated}
 				/>
 			) : null}
 		</>
+	);
+}
+
+type WorkPeriodDialogsProps = Pick<
+	CalendarEventDialogsProps,
+	| "showSplitDialog"
+	| "showDeleteDialog"
+	| "displayContext"
+	| "onCloseDetails"
+	| "onSplitClick"
+	| "onDeleteClick"
+	| "onSplitDialogOpenChange"
+	| "onDeleteDialogOpenChange"
+	| "onSplitComplete"
+	| "onDeleteComplete"
+	| "onNotesUpdated"
+	| "onTimesUpdated"
+> & { event: CalendarEvent };
+
+function WorkPeriodDialogs({
+	event,
+	showSplitDialog,
+	showDeleteDialog,
+	displayContext,
+	onCloseDetails,
+	onSplitClick,
+	onDeleteClick,
+	onSplitDialogOpenChange,
+	onDeleteDialogOpenChange,
+	onSplitComplete,
+	onDeleteComplete,
+	onNotesUpdated,
+	onTimesUpdated,
+}: WorkPeriodDialogsProps) {
+	if (showSplitDialog) {
+		return (
+			<SplitWorkPeriodDialog
+				event={event}
+				open
+				displayContext={displayContext}
+				onOpenChange={onSplitDialogOpenChange}
+				onSplitComplete={onSplitComplete}
+			/>
+		);
+	}
+
+	if (showDeleteDialog) {
+		return (
+			<DeleteWorkPeriodDialog
+				event={event}
+				open
+				displayContext={displayContext}
+				onOpenChange={onDeleteDialogOpenChange}
+				onDeleteComplete={onDeleteComplete}
+			/>
+		);
+	}
+
+	return (
+		<WorkPeriodEditDialog
+			event={event}
+			open
+			onOpenChange={(open) => !open && onCloseDetails()}
+			onNotesUpdated={onNotesUpdated}
+			onTimesUpdated={onTimesUpdated}
+			onSplitClick={onSplitClick}
+			onDeleteClick={onDeleteClick}
+			displayContext={displayContext}
+		/>
 	);
 }

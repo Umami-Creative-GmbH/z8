@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+	boolean,
 	foreignKey,
 	index,
 	integer,
@@ -516,6 +517,16 @@ export const approvalOutboxDelivery = pgTable(
 		}),
 	],
 );
+
+// Organization-wide escalation ownership is independent of per-kind workflow
+// authority. Absence of a control row retains legacy behavior during rollout.
+export const approvalEscalationControl = pgTable("approval_escalation_control", {
+	organizationId: text("organization_id")
+		.primaryKey()
+		.references(() => organization.id, { onDelete: "cascade" }),
+	owner: text("owner").$type<"legacy" | "escalation">().default("legacy").notNull(),
+	automationPaused: boolean("automation_paused").default(false).notNull(),
+});
 
 export const approvalWorkflowRollout = pgTable(
 	"approval_workflow_rollout",

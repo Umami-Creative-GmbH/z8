@@ -1,0 +1,107 @@
+{
+  "approval": {
+    "absenceRequest": "Frånvaroansökan",
+    "actions": {
+      "approve": "Godkänn",
+      "approving": "Godkänner...",
+      "reject": "Avslå",
+      "rejecting": "Avslår...",
+      "viewInZ8": "Visa i Z8"
+    },
+    "durationDays": "{count, plural, one {# dag} other {# dagar}}",
+    "facts": {
+      "approvedBy": "Godkänd av",
+      "corrected": "Korrigerad",
+      "dates": "Datum",
+      "duration": "Varaktighet",
+      "email": "E-post",
+      "from": "Från",
+      "original": "Ursprunglig",
+      "reason": "Anledning",
+      "rejectedBy": "Avslagen av",
+      "resolved": "Löst",
+      "status": "Status",
+      "submitted": "Skickades",
+      "type": "Typ"
+    },
+    "status": {
+      "approved": "GODKÄND",
+      "rejected": "AVSLAGEN"
+    },
+    "timeCorrectionRequest": "Begäran om tidskorrigering"
+  },
+  "commands": {
+    "compliance": {
+      "critical": "Kritisk",
+      "exceptionSummary": "{type} - {reason}",
+      "exceptionUsedDetails": "{details} (undantag använt)",
+      "lastDays": "Senaste {days} dagarna",
+      "legend": "\uD83D\uDD34 Överträdelse  \uD83D\uDFE0 Kritisk  \uD83D\uDFE1 Varning  \uD83D\uDCDD Väntande förfrågan",
+      "moreRequestsMarkdown": "_+{count} fler förfrågningar_",
+      "moreViolationsMarkdown": "_+{count} fler överträdelser_",
+      "pending": "Väntande",
+      "pendingExceptions": "Väntande förfrågningar om undantag",
+      "recentViolations": "Senaste överträdelserna",
+      "reviewExceptions": "Granska undantag",
+      "textCriticalAlerts": "**Kritiska varningar:** {count}",
+      "textMore": "  +{count} till",
+      "textPendingExceptions": "**Väntande undantag:** {count}",
+      "textPendingRequestItem": "\uD83D\uDCDD {employeeName} - {type}",
+      "textPendingRequests": "**Väntande förfrågningar:**",
+      "textRecentViolations": "**Senaste överträdelserna:**",
+      "textTitle": "**⚠️ Efterlevnadssammanfattning – Senaste {days} dagarna**",
+      "textViolationItem": "{icon} {employeeName} - {details}",
+      "textViolations": "**Överträdelser:** {count}",
+      "titleWithIcon": "⚠️ Efterlevnadssammanfattning",
+      "viewDashboard": "Visa översikt över efterlevnad",
+      "violations": "Överträdelser"
+    },
+    "coverage": {
+      "clockedIn": "Instämplad",
+      "moreLocationsMarkdown": "_+{count} fler platser..._",
+      "scheduled": "Schemalagd",
+      "titleWithIcon": "\uD83D\uDCCA Täckningsrapport",
+      "variance": "Avvikelse",
+      "viewFullSchedule": "Visa hela schemat"
+    },
+    "help": {
+      "availableCommands": "Hjälp"
+    }
+  },
+  "common": {
+    "more": "+{count} fler",
+    "moreBullet": "• +{count} fler"
+  },
+  "digest": {
+    "currentlyClockedIn": "För närvarande instämplade",
+    "everyoneAvailable": "Alla är tillgängliga idag",
+    "noOneClockedIn": "Ingen har stämplat in än",
+    "noPendingApprovals": "Inga väntande godkännanden",
+    "openDashboard": "Öppna Z8-översikten",
+    "openShifts": "Lediga pass",
+    "pendingApprovals": "Väntande godkännanden",
+    "pendingExceptionRequests": "{count, plural, one {# väntande undantagsbegäran som väntar på granskning} other {# väntande undantagsbegäranden som väntar på granskning}}",
+    "returns": "Återkommer {date}",
+    "since": "Sedan {time}",
+    "textClockedInEmployee": "• {name} - sedan {clockedInAt} ({duration})",
+    "textCompliance": "**⚠️ Efterlevnad:**",
+    "textCoverageGaps": "**\uD83D\uDD34 Bemanningsluckor:**",
+    "textCurrentlyClockedIn": "**För närvarande instämplade:**",
+    "textEmployeeOut": "• {name} - {category} (återkommer {returnDate})",
+    "textOpenShifts": "**\uD83D\uDCCB Lediga pass:**",
+    "textPendingApprovalsCount": "**Väntande godkännanden:** {count}",
+    "textPendingApprovalsNone": "**Väntande godkännanden:** Inga",
+    "textTitle": "**Daglig sammanfattning - {date}**",
+    "textWhosOut": "**Frånvarande:**",
+    "title": "Daglig sammanfattning",
+    "todayTomorrow": "Idag: {today} | Imorgon: {tomorrow}",
+    "viewApprovals": "Visa godkännanden",
+    "whosOutToday": "Vilka är borta idag"
+  },
+  "exceptionTypes": {
+    "overtime_daily": "Daglig övertid",
+    "overtime_monthly": "Månatlig övertid",
+    "overtime_weekly": "Veckovis övertid",
+    "rest_period": "Viloperiod"
+  }
+}

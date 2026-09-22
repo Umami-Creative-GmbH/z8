@@ -204,6 +204,7 @@
     "slugLabel": "Slug dell'organizzazione",
     "slugPlaceholder": "acme-spa",
     "slugTaken": "Questo slug è già preso. Scegline un altro.",
+    "ssoFailed": "L'accesso SSO non è stato completato. Seleziona un'organizzazione per riprovare oppure scegli un altro spazio di lavoro.",
     "switchFailed": "Impossibile cambiare organizzazione",
     "switching": "Cambio organizzazione in corso...",
     "switchTo": "Cambia organizzazione",
