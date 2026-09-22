@@ -30,12 +30,14 @@ import {
 	WorkPeriodHeader,
 	WorkPeriodSummaryBlock,
 } from "./work-period-edit-sections";
+import { WorkPeriodTimeSection } from "./work-period-time-edit-section";
 
 interface WorkPeriodEditDialogProps {
 	event: CalendarEvent;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onNotesUpdated?: () => void;
+	onTimesUpdated?: () => void;
 	onSplitClick?: () => void;
 	onDeleteClick?: () => void;
 	displayContext: DisplayContext;
@@ -108,6 +110,7 @@ export function WorkPeriodEditDialog({
 	open,
 	onOpenChange,
 	onNotesUpdated,
+	onTimesUpdated,
 	onSplitClick,
 	onDeleteClick,
 	displayContext,
@@ -171,11 +174,12 @@ export function WorkPeriodEditDialog({
 
 				<ActionPanelBody className="space-y-4">
 					<ApprovalStatusBanner status={approvalStatus} t={t} />
-					<WorkPeriodSummaryBlock
+					<WorkPeriodSummaryBlock metadata={metadata} t={t} />
+					<WorkPeriodTimeSection
 						event={event}
-						metadata={metadata}
-						t={t}
 						displayContext={displayContext}
+						onTimesUpdated={onTimesUpdated}
+						t={t}
 					/>
 					<WorkPeriodDurationSection metadata={metadata} t={t} />
 					<ProjectEditSection

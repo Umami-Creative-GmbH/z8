@@ -181,7 +181,32 @@
       "notesSaveFailed": "Speichern der Notizen fehlgeschlagen",
       "projectSaved": "Projekt aktualisiert",
       "projectSaveFailed": "Aktualisieren des Projekts fehlgeschlagen",
-      "split": "Teilen"
+      "split": "Teilen",
+      "time": {
+        "approvalHint": "Diese Änderung wird Ihrer Führungskraft zur Genehmigung gesendet.",
+        "beyondWindow": "Einträge, die älter als {days} Tage sind, können nur von einem Admin bearbeitet werden.",
+        "clockIn": "Einstempeln",
+        "clockInDate": "Datum Arbeitsbeginn",
+        "clockInTime": "Uhrzeit Arbeitsbeginn",
+        "clockOut": "Ausstempeln",
+        "clockOutDate": "Datum Arbeitsende",
+        "clockOutTime": "Uhrzeit Arbeitsende",
+        "directHint": "Diese Änderung wird sofort übernommen.",
+        "edit": "Zeit bearbeiten",
+        "invalidRange": "Ausstempeln muss nach dem Einstempeln liegen.",
+        "noChanges": "Ändern Sie zuerst Datum oder Uhrzeit.",
+        "noteLabel": "Notiz (optional)",
+        "notePlaceholder": "Notiz zu dieser Änderung hinzufügen…",
+        "pendingCorrection": "Für diesen Eintrag wartet bereits eine Zeitänderung auf Genehmigung.",
+        "reasonLabel": "Begründung",
+        "reasonPlaceholder": "Erklären Sie, warum diese Korrektur nötig ist…",
+        "reasonRequired": "Bitte geben Sie eine Begründung für Ihre Führungskraft an.",
+        "saved": "Zeiteintrag aktualisiert",
+        "saveFailed": "Aktualisieren des Zeiteintrags fehlgeschlagen",
+        "submitForApproval": "Zur Genehmigung einreichen",
+        "submitted": "Änderung zur Genehmigung eingereicht",
+        "timezoneNote": "Zeiten in der Zeitzone des Mitarbeitenden ({timezone})"
+      }
     },
     "employeeSelector": {
       "error": "Teammitglieder konnten nicht geladen werden",
