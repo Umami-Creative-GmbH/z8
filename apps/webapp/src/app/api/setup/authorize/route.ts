@@ -8,8 +8,6 @@ import {
 } from "@/lib/setup/http";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 
-export const runtime = "nodejs";
-
 // Next otherwise implements HEAD by invoking GET, consuming a one-time code.
 export async function HEAD() {
 	const response = new NextResponse(null, {

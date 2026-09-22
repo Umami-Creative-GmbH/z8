@@ -140,10 +140,76 @@ jobs:
           set -- /tmp/digests/arm64/*
           ARM64_DIGEST="sha256:${1##*/}"
 
+          test -n "$TAGS"
           for tag in $TAGS; do
             docker buildx imagetools create \
+              --metadata-file /tmp/manifest-metadata.json \
               --annotation "index:org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
               -t "$tag" \
               "$IMAGE_NAME@$AMD64_DIGEST" \
               "$IMAGE_NAME@$ARM64_DIGEST"
           done
+
+          mkdir -p /tmp/release-digests
+          jq -er '.["containerimage.descriptor"].digest | select(test("^sha256:[0-9a-f]{64}$"))' \
+            /tmp/manifest-metadata.json > /tmp/release-digests/z8-docs.txt
+
+      - name: Upload published manifest digest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-digest-z8-docs
+          path: /tmp/release-digests/z8-docs.txt
+          if-no-files-found: error
+
+  update-production-release:
+    name: Record production docs release
+    needs: publish-manifest
+    if: >-
+      ${{ needs.publish-manifest.result == 'success' &&
+          (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout publishing helper
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: app
+          persist-credentials: false
+
+      - name: Checkout infrastructure
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: Umami-Creative-GmbH/z8-infra
+          ref: main
+          path: infra
+          ssh-key: ${{ secrets.Z8_INFRA_WRITE_KEY }}
+
+      - name: Download published manifests
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: release-digest-*
+          merge-multiple: true
+          path: release-digests
+
+      - name: Verify local rendering tools
+        run: |
+          python3 --version
+          kubectl version --client
+          kubectl kustomize --help >/dev/null
+
+      - name: Update desired production release
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_RUN: ${{ github.run_id }}
+          SOURCE_REF: ${{ github.ref }}
+          SOURCE_EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          git -C infra config user.name "z8-release-bot"
+          git -C infra config user.email "z8-release-bot@users.noreply.github.com"
+          python3 app/scripts/ci/update-infra-release.py \
+            --infra-dir infra --artifacts-dir release-digests --group docs \
+            --source-sha "$SOURCE_SHA" --source-run "$SOURCE_RUN" \
+            --source-ref "$SOURCE_REF" --source-event "$SOURCE_EVENT"

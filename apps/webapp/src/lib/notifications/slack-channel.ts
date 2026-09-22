@@ -28,7 +28,9 @@ interface SlackNotificationParams {
 /**
  * Check if Slack is available for an organization
  */
-export async function isSlackAvailable(organizationId: string): Promise<boolean> {
+export async function isSlackAvailable(
+	organizationId: string,
+): Promise<boolean> {
 	try {
 		const { isSlackEnabledForOrganization } = await import("@/lib/slack");
 		return await isSlackEnabledForOrganization(organizationId);
@@ -41,7 +43,9 @@ export async function isSlackAvailable(organizationId: string): Promise<boolean>
 /**
  * Send a notification via Slack
  */
-export async function sendSlackNotification(params: SlackNotificationParams): Promise<void> {
+export async function sendSlackNotification(
+	params: SlackNotificationParams,
+): Promise<void> {
 	try {
 		const {
 			getChannelIdForUser,
@@ -54,7 +58,10 @@ export async function sendSlackNotification(params: SlackNotificationParams): Pr
 		if (!botConfig) return;
 
 		// Handle approval-related notifications specially
-		if (params.type === "approval_request_submitted" && params.entityType === "approval_request") {
+		if (
+			params.type === "approval_request_submitted" &&
+			params.entityType === "approval_request"
+		) {
 			const approval = await db.query.approvalRequest.findFirst({
 				where: and(
 					eq(approvalRequest.id, params.entityId || ""),
@@ -67,6 +74,7 @@ export async function sendSlackNotification(params: SlackNotificationParams): Pr
 					where: and(
 						eq(employee.userId, params.userId),
 						eq(employee.organizationId, params.organizationId),
+						eq(employee.isActive, true),
 					),
 				});
 
@@ -80,10 +88,15 @@ export async function sendSlackNotification(params: SlackNotificationParams): Pr
 					return;
 				}
 			}
+			// Missing approval/recipient evidence must not fall through to raw details.
+			return;
 		}
 
 		// For other notifications, send a simple message
-		const channelId = await getChannelIdForUser(params.userId, params.organizationId);
+		const channelId = await getChannelIdForUser(
+			params.userId,
+			params.organizationId,
+		);
 		if (!channelId) {
 			logger.debug(
 				{ userId: params.userId, organizationId: params.organizationId },
@@ -102,7 +115,10 @@ export async function sendSlackNotification(params: SlackNotificationParams): Pr
 			text,
 		});
 
-		logger.debug({ userId: params.userId, type: params.type }, "Slack notification sent");
+		logger.debug(
+			{ userId: params.userId, type: params.type },
+			"Slack notification sent",
+		);
 	} catch (error) {
 		logger.error({ error, params }, "Failed to send Slack notification");
 		throw error;

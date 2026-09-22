@@ -360,6 +360,7 @@ async function bindPreCanonicalOrdinaryWorkflow(input: {
 }
 
 export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
+	historicalOnly?: boolean;
 	dbService: ApprovalDbService;
 	runtime: ReturnType<typeof createProductionApprovalWorkflowRuntime>;
 	organizationId: string;
@@ -505,6 +506,12 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 				status: canonicalTarget?.status ?? "pending",
 				metadata: canonicalTarget?.contextSnapshot ?? null,
 			};
+			if (
+				input.historicalOnly &&
+				(requestRow?.approverId ?? assignment?.approverEmployeeId) !== actor.id
+			) {
+				throw new Error(ORDINARY_DECISION_ERROR);
+			}
 			const metadata = requestRow
 				? {
 						...(requestRow.metadata === null
@@ -735,7 +742,11 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 						postCommit: null,
 					};
 				}
-				if (!requestRow || request.status !== "pending") {
+				if (
+					input.historicalOnly ||
+					!requestRow ||
+					request.status !== "pending"
+				) {
 					throw new Error(ORDINARY_DECISION_ERROR);
 				}
 				let expectedObservedVersion = observedWorkflow?.version ?? null;
@@ -956,6 +967,7 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 							workflowId: snapshot.id,
 							expectedVersion: snapshot.version,
 							idempotencyKey: canonicalIdempotencyKey,
+							historicalOnly: input.historicalOnly,
 							principal: { kind: "employee", userId: actor.userId },
 							command: canonicalCommand,
 						},
@@ -1017,6 +1029,7 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 						workflowId: snapshot.id,
 						expectedVersion: snapshot.version,
 						idempotencyKey: `ordinary-decision:${input.organizationId}:${snapshot.id}:${input.approvalRequestId}:${input.decision.kind}:${input.decision.reason ?? ""}`,
+						historicalOnly: input.historicalOnly,
 						principal: { kind: "employee", userId: actor.userId },
 						command:
 							input.decision.kind === "approve"
@@ -2110,6 +2123,7 @@ export function decideOrdinaryWorkPeriodWithStableTargetEffect(
 	dbService: ApprovalDbService,
 	currentEmployee: CurrentApprover,
 	input: {
+		historicalOnly?: boolean;
 		approvalRequestId: string;
 		workPeriodId: string;
 		decision:
@@ -2196,6 +2210,7 @@ export function decideOrdinaryWorkPeriodWithStableTargetEffect(
 			await completeOrdinaryWorkPeriodDecisionAfterCommit({
 				execute: () =>
 					executeOrdinaryWorkPeriodDecisionInTransaction({
+						historicalOnly: input.historicalOnly,
 						dbService,
 						runtime,
 						organizationId: currentEmployee.organizationId,

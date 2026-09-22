@@ -1,6 +1,13 @@
 {
   "bot": {
     "approval": {
+      "reviewRequiredTitle": "Revisão necessária",
+      "reviewRequired": "Este cartão não permite verificar os dados originalmente enviados para revisão. Abra a caixa de aprovações no Z8 para analisar a solicitação. Nenhuma decisão foi tomada por este cartão.",
+      "reviewInZ8": "Revisar no Z8",
+      "historicalTitle": "Decisão anterior",
+      "historicalApproval": "Sua aprovação registrada anteriormente foi verificada. Este é um resultado anterior; nenhuma nova decisão foi tomada. Consulte a solicitação no Z8 para mais detalhes.",
+      "historicalRejection": "Sua rejeição registrada anteriormente foi verificada. Este é um resultado anterior; nenhuma nova decisão foi tomada. Consulte a solicitação no Z8 para mais detalhes.",
+      "unboundCallback": "Este cartão não permite verificar os dados originalmente analisados. Nenhuma decisão foi tomada. Revise a solicitação no Z8.",
       "alreadyProcessed": "Esta aprovação já foi processada."
     },
     "cmd": {

@@ -1,6 +1,13 @@
 {
   "bot": {
     "approval": {
+      "reviewRequiredTitle": "Wymagana weryfikacja",
+      "reviewRequired": "Ta karta nie pozwala zweryfikować danych pierwotnie przesłanych do rozpatrzenia. Otwórz skrzynkę zatwierdzeń w Z8, aby sprawdzić wniosek. Za pomocą tej karty nie podjęto żadnej decyzji.",
+      "reviewInZ8": "Sprawdź w Z8",
+      "historicalTitle": "Wcześniejsza decyzja",
+      "historicalApproval": "Zweryfikowano Twoje wcześniej zapisane zatwierdzenie. Jest to wcześniejszy wynik; nie podjęto nowej decyzji. Szczegóły znajdziesz we wniosku w Z8.",
+      "historicalRejection": "Zweryfikowano Twoje wcześniej zapisane odrzucenie. Jest to wcześniejszy wynik; nie podjęto nowej decyzji. Szczegóły znajdziesz we wniosku w Z8.",
+      "unboundCallback": "Ta karta nie pozwala zweryfikować pierwotnie rozpatrywanych danych. Nie podjęto żadnej decyzji. Sprawdź wniosek w Z8.",
       "alreadyProcessed": "To zatwierdzenie zostało już przetworzone."
     },
     "cmd": {

@@ -494,6 +494,12 @@ export function createApprovalTransitionEngine(
 			if (claim.kind === "fingerprint_mismatch") {
 				throw engineError("idempotency_mismatch");
 			}
+			if (request.historicalOnly) {
+				// The enclosing transaction rolls back any new receipt reservation.
+				throw engineError("forbidden", {
+					field: "historical_receipt_required",
+				});
+			}
 			if (workflow.version !== request.expectedVersion) {
 				throw engineError("version_conflict", {
 					expectedVersion: String(request.expectedVersion),

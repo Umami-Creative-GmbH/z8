@@ -1,6 +1,13 @@
 {
   "bot": {
     "approval": {
+      "reviewRequiredTitle": "Prüefig nötig",
+      "reviewRequired": "Die Charte cha d’ursprünglich zur Prüefig iigreichte Agabe nöd belege. Öffne de Genehmigungs-Iigang in Z8, zum de Aatrag prüefe. Über die Charte isch kei Entscheid troffe worde.",
+      "reviewInZ8": "In Z8 prüefe",
+      "historicalTitle": "Früehere Entscheid",
+      "historicalApproval": "Dini früeher erfassti Genehmigung isch verifiziert worde. Das isch es früehers Resultat; es isch kei neue Entscheid troffe worde. Meh Details findsch bim Aatrag in Z8.",
+      "historicalRejection": "Dini früeher erfassti Ablehnig isch verifiziert worde. Das isch es früehers Resultat; es isch kei neue Entscheid troffe worde. Meh Details findsch bim Aatrag in Z8.",
+      "unboundCallback": "Die Charte cha d’ursprünglich prüefte Agabe nöd belege. Es isch kei Entscheid troffe worde. Prüef de Aatrag in Z8.",
       "alreadyProcessed": "Die Freigab isch bereits bearbeitet worde."
     },
     "cmd": {

@@ -1,6 +1,13 @@
 {
   "bot": {
     "approval": {
+      "reviewRequiredTitle": "Verifica necessaria",
+      "reviewRequired": "Questa scheda non consente di verificare i dati originariamente inviati. Apra la casella delle approvazioni in Z8 per esaminare la richiesta. Non è stata presa alcuna decisione da questa scheda.",
+      "reviewInZ8": "Esamina in Z8",
+      "historicalTitle": "Decisione precedente",
+      "historicalApproval": "La sua approvazione registrata in precedenza è stata verificata. Si tratta di un risultato precedente; non è stata presa alcuna nuova decisione. Consulti la richiesta in Z8 per ulteriori dettagli.",
+      "historicalRejection": "Il suo rifiuto registrato in precedenza è stato verificato. Si tratta di un risultato precedente; non è stata presa alcuna nuova decisione. Consulti la richiesta in Z8 per ulteriori dettagli.",
+      "unboundCallback": "Questa scheda non consente di verificare i dati originariamente esaminati. Non è stata presa alcuna decisione. Esamini la richiesta in Z8.",
       "alreadyProcessed": "Questa approvazione è già stata elaborata."
     },
     "cmd": {

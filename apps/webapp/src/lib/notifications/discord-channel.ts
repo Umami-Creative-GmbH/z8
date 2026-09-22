@@ -28,12 +28,17 @@ interface DiscordNotificationParams {
 /**
  * Check if Discord is available for an organization
  */
-export async function isDiscordAvailable(organizationId: string): Promise<boolean> {
+export async function isDiscordAvailable(
+	organizationId: string,
+): Promise<boolean> {
 	try {
 		const { isDiscordEnabledForOrganization } = await import("@/lib/discord");
 		return await isDiscordEnabledForOrganization(organizationId);
 	} catch (error) {
-		logger.debug({ error, organizationId }, "Discord availability check failed");
+		logger.debug(
+			{ error, organizationId },
+			"Discord availability check failed",
+		);
 		return false;
 	}
 }
@@ -41,7 +46,9 @@ export async function isDiscordAvailable(organizationId: string): Promise<boolea
 /**
  * Send a notification via Discord
  */
-export async function sendDiscordNotification(params: DiscordNotificationParams): Promise<void> {
+export async function sendDiscordNotification(
+	params: DiscordNotificationParams,
+): Promise<void> {
 	try {
 		const {
 			getChannelIdForUser,
@@ -55,7 +62,10 @@ export async function sendDiscordNotification(params: DiscordNotificationParams)
 		if (!botConfig) return;
 
 		// Handle approval-related notifications specially
-		if (params.type === "approval_request_submitted" && params.entityType === "approval_request") {
+		if (
+			params.type === "approval_request_submitted" &&
+			params.entityType === "approval_request"
+		) {
 			const approval = await db.query.approvalRequest.findFirst({
 				where: and(
 					eq(approvalRequest.id, params.entityId || ""),
@@ -68,6 +78,7 @@ export async function sendDiscordNotification(params: DiscordNotificationParams)
 					where: and(
 						eq(employee.userId, params.userId),
 						eq(employee.organizationId, params.organizationId),
+						eq(employee.isActive, true),
 					),
 				});
 
@@ -81,10 +92,15 @@ export async function sendDiscordNotification(params: DiscordNotificationParams)
 					return;
 				}
 			}
+			// Missing approval/recipient evidence must not fall through to raw details.
+			return;
 		}
 
 		// For other notifications, send a simple embed
-		const channelId = await getChannelIdForUser(params.userId, params.organizationId);
+		const channelId = await getChannelIdForUser(
+			params.userId,
+			params.organizationId,
+		);
 		if (!channelId) {
 			logger.debug(
 				{ userId: params.userId, organizationId: params.organizationId },
@@ -93,11 +109,18 @@ export async function sendDiscordNotification(params: DiscordNotificationParams)
 			return;
 		}
 
-		const embeds = buildNotificationEmbed(params.title, params.message, params.actionUrl);
+		const embeds = buildNotificationEmbed(
+			params.title,
+			params.message,
+			params.actionUrl,
+		);
 
 		await sendMessage(botConfig.botToken, channelId, { embeds });
 
-		logger.debug({ userId: params.userId, type: params.type }, "Discord notification sent");
+		logger.debug(
+			{ userId: params.userId, type: params.type },
+			"Discord notification sent",
+		);
 	} catch (error) {
 		logger.error({ error, params }, "Failed to send Discord notification");
 		throw error;
