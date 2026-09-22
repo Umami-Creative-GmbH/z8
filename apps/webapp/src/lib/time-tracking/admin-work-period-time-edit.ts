@@ -328,7 +328,9 @@ export async function applyAdminWorkPeriodTimeEdit(
 					ipAddress: input.ipAddress,
 					deviceInfo: input.deviceInfo,
 					createdBy: input.actorUserId,
-					...endpoint.capture,
+					utcOffsetMinutes: endpoint.capture.utcOffsetMinutes,
+					timezone: endpoint.capture.timezone,
+					timezoneSource: endpoint.capture.timezoneSource,
 				})
 				.returning();
 			if (!correction) {
