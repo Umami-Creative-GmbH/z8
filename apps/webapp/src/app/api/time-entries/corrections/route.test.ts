@@ -31,6 +31,7 @@ const mockState = vi.hoisted(() => {
 		createTimeEntry: vi.fn(),
 		from,
 		getAbility: vi.fn(),
+		getForbiddenCorrectionEditMessage: vi.fn(),
 		getSession: vi.fn(),
 		getUserTimezone: vi.fn(),
 		headers: vi.fn(),
@@ -102,6 +103,8 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/auth", () => ({
 vi.mock("@/lib/approvals/server/time-correction-submission", () => ({
 	dispatchCommittedTimeCorrectionSubmission:
 		mockState.dispatchCommittedSubmission,
+	getForbiddenCorrectionEditMessage:
+		mockState.getForbiddenCorrectionEditMessage,
 	resolveCorrectionApprovalManager: mockState.resolveCorrectionApprovalManager,
 	submitCorrection: mockState.submitCorrection,
 }));
@@ -405,6 +408,7 @@ describe("POST /api/time-entries/corrections", () => {
 		});
 		mockState.canApproveFor.mockResolvedValue(false);
 		mockState.dispatchCommittedSubmission.mockResolvedValue(undefined);
+		mockState.getForbiddenCorrectionEditMessage.mockResolvedValue(null);
 		mockState.getUserTimezone.mockResolvedValue("Europe/Berlin");
 		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
 		mockState.validateTimeEntryRange.mockResolvedValue({ isValid: true });
@@ -933,6 +937,71 @@ describe("POST /api/time-entries/corrections", () => {
 				]),
 			}),
 		);
+	});
+
+	it("rejects a self correction beyond the change policy approval window", async () => {
+		mockPostTarget();
+		mockState.getForbiddenCorrectionEditMessage.mockResolvedValueOnce(
+			"Entries older than 45 days can only be edited by admins or team leads.",
+		);
+
+		const response = await POST(
+			createPostRequest({
+				replacesEntryId: "entry-clock-in",
+				timestamp: "2026-07-01T08:15:00+02:00",
+				timezone: "Europe/Berlin",
+				notes: "Correct clock-in",
+			}),
+		);
+
+		expect(response.status).toBe(403);
+		expect(await response.json()).toEqual({
+			error:
+				"Entries older than 45 days can only be edited by admins or team leads.",
+		});
+		expect(mockState.getForbiddenCorrectionEditMessage).toHaveBeenCalledWith({
+			employeeId: "employee-1",
+			workPeriodEndTime: new Date("2026-07-01T20:00:00.000Z"),
+			timezone: "Europe/Berlin",
+		});
+		expect(mockState.submitCorrection).not.toHaveBeenCalled();
+		expect(mockState.runPromise).not.toHaveBeenCalled();
+	});
+
+	it("fails closed when the self correction change policy cannot be resolved", async () => {
+		mockPostTarget();
+		mockState.getForbiddenCorrectionEditMessage.mockRejectedValueOnce(
+			new Error("policy lookup failed"),
+		);
+
+		const response = await POST(
+			createPostRequest({
+				replacesEntryId: "entry-clock-in",
+				timestamp: "2026-07-01T08:15:00+02:00",
+				timezone: "Europe/Berlin",
+				notes: "Correct clock-in",
+			}),
+		);
+
+		expect(response.status).toBe(500);
+		expect(mockState.submitCorrection).not.toHaveBeenCalled();
+	});
+
+	it("does not apply the employee change policy to approver corrections", async () => {
+		mockPostTarget();
+		mockState.canApproveFor.mockResolvedValue(true);
+
+		const response = await POST(
+			createPostRequest({
+				replacesEntryId: "entry-clock-in",
+				timestamp: "2026-07-01T08:15:00+02:00",
+				timezone: "Europe/Berlin",
+				notes: "Correct clock-in",
+			}),
+		);
+
+		expect(response.status).toBe(201);
+		expect(mockState.getForbiddenCorrectionEditMessage).not.toHaveBeenCalled();
 	});
 
 	it("returns the scoped active correction after auto-completion and dispatches committed effects", async () => {
