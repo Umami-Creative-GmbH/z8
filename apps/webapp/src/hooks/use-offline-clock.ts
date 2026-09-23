@@ -72,6 +72,9 @@ export function useOfflineClock() {
 		queryKey: offlineStatusKey(contextKey),
 		queryFn: async () => EMPTY_STATUS,
 		initialData: EMPTY_STATUS,
+		// Without an explicit timestamp react-query stamps initialData with
+		// Date.now(), which Next.js rejects while prerendering static routes.
+		initialDataUpdatedAt: 0,
 		enabled: false,
 	});
 	const context: OfflineRecoveryContext | null =
