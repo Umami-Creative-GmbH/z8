@@ -22,9 +22,7 @@ concurrency:
 jobs:
   biome:
     name: Biome
-    runs-on:
-      group: umami-self
-      labels: [build, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:

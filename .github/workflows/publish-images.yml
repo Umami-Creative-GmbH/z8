@@ -50,9 +50,7 @@ jobs:
             dockerfile: docker/Dockerfile.webapp
             arch: amd64
             platform: linux/amd64
-            runner:
-              group: umami-self
-              labels: [build, X64]
+            runner: ubuntu-latest
           - repository: z8-webapp
             dockerfile: docker/Dockerfile.webapp
             arch: arm64
@@ -62,9 +60,7 @@ jobs:
             dockerfile: docker/Dockerfile.worker
             arch: amd64
             platform: linux/amd64
-            runner:
-              group: umami-self
-              labels: [build, X64]
+            runner: ubuntu-latest
           - repository: z8-worker
             dockerfile: docker/Dockerfile.worker
             arch: arm64
@@ -74,9 +70,7 @@ jobs:
             dockerfile: docker/Dockerfile.migration
             arch: amd64
             platform: linux/amd64
-            runner:
-              group: umami-self
-              labels: [build, X64]
+            runner: ubuntu-latest
           - repository: z8-migration
             dockerfile: docker/Dockerfile.migration
             arch: arm64
@@ -168,9 +162,7 @@ jobs:
   publish-manifests:
     name: Publish Manifests (${{ matrix.repository }})
     needs: publish-targets
-    runs-on:
-      group: umami-self
-      labels: [build, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
 
     strategy:
@@ -312,9 +304,7 @@ jobs:
     if: >-
       ${{ needs.publish-manifests.result == 'success' &&
           (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) }}
-    runs-on:
-      group: umami-self
-      labels: [build, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read

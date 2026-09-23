@@ -25,9 +25,7 @@ concurrency:
 jobs:
   react-doctor:
     name: React Doctor
-    runs-on:
-      group: umami-self
-      labels: [build, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:

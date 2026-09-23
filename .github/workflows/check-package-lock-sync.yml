@@ -26,9 +26,7 @@ concurrency:
 jobs:
   check-package-lock-sync:
     name: Check Package Lock Sync
-    runs-on:
-      group: umami-self
-      labels: [build, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
