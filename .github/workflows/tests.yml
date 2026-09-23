@@ -27,7 +27,9 @@ concurrency:
 jobs:
   unit-tests:
     name: Unit tests (${{ matrix.shard }}/4)
-    runs-on: ubuntu-latest
+    runs-on:
+      group: umami-self
+      labels: [build, X64]
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -67,7 +69,9 @@ jobs:
 
   integration-tests:
     name: PostgreSQL integration tests
-    runs-on: ubuntu-latest
+    runs-on:
+      group: umami-self
+      labels: [build, X64]
     timeout-minutes: 20
 
     services:
@@ -142,7 +146,9 @@ jobs:
     name: Tests
     if: always()
     needs: [unit-tests, integration-tests]
-    runs-on: ubuntu-latest
+    runs-on:
+      group: umami-self
+      labels: [build, X64]
     timeout-minutes: 1
     steps:
       - name: Check test results
