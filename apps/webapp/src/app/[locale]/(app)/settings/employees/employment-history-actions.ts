@@ -327,6 +327,8 @@ export async function createEmployeeEmploymentHistoryAction(
 								id: randomUUID(),
 								employeeId,
 								organizationId: actor.organizationId,
+								// Period-scoped terms arrive with the rehire workflow (#340 Task 1.5).
+								employmentPeriodId: null,
 								validFrom: validatedData.validFrom,
 								validUntil: null,
 								status: validatedData.status,

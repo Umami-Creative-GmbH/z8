@@ -1,4 +1,4 @@
-import { index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { foreignKey, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { currentTimestamp } from "./timestamp";
 
 import { organization, user } from "../auth-schema";
@@ -8,6 +8,7 @@ import {
 	employmentStatusEnum,
 	workModelEnum,
 } from "./enums";
+import { employeeEmploymentPeriod } from "./employee-lifecycle";
 import { employee } from "./organization";
 import { workPolicy } from "./work-policy";
 
@@ -21,6 +22,8 @@ export const employeeEmploymentHistory = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		/** Employment stint these terms belong to; null only before legacy backfill. */
+		employmentPeriodId: uuid("employment_period_id"),
 		validFrom: timestamp("valid_from").notNull(),
 		validUntil: timestamp("valid_until"),
 		status: employmentStatusEnum("status").default("active").notNull(),
@@ -52,6 +55,16 @@ export const employeeEmploymentHistory = pgTable(
 			table.reviewState,
 		),
 		index("employeeEmploymentHistory_workPolicyId_idx").on(table.workPolicyId),
+		index("employeeEmploymentHistory_period_idx").on(table.organizationId, table.employmentPeriodId),
+		foreignKey({
+			name: "employeeEmploymentHistory_period_fk",
+			columns: [table.employmentPeriodId, table.organizationId, table.employeeId],
+			foreignColumns: [
+				employeeEmploymentPeriod.id,
+				employeeEmploymentPeriod.organizationId,
+				employeeEmploymentPeriod.employeeId,
+			],
+		}),
 	],
 );
 
