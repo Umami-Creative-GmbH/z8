@@ -2,9 +2,10 @@ import { and, eq, inArray, or, type SQL } from "drizzle-orm";
 import { payrollBlockerDismissal } from "@/db/schema";
 import {
 	filterDismissedPayrollBlockers,
+	isDismissiblePayrollBlocker,
 	type PayrollBlockerDismissalKey,
 } from "./blocker-dismissals";
-import type { PayrollBlocker, PayrollBlockerType } from "./types";
+import type { DismissiblePayrollBlockerType, PayrollBlocker } from "./types";
 
 interface PayrollBlockerDismissalQuery {
 	where: SQL | undefined;
@@ -20,8 +21,9 @@ export async function filterDismissedPayrollBlockerCandidates(input: {
 }): Promise<PayrollBlocker[]> {
 	if (input.blockerCandidates.length === 0) return input.blockerCandidates;
 
-	const sourceIdsByType = new Map<PayrollBlockerType, Set<string>>();
+	const sourceIdsByType = new Map<DismissiblePayrollBlockerType, Set<string>>();
 	for (const blocker of input.blockerCandidates) {
+		if (!isDismissiblePayrollBlocker(blocker)) continue;
 		const sourceIds = sourceIdsByType.get(blocker.type) ?? new Set();
 		sourceIds.add(blocker.id);
 		sourceIdsByType.set(blocker.type, sourceIds);

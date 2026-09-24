@@ -5,6 +5,7 @@ import {
 	DatabaseError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import { PayrollWorkAllocationBlockedError } from "@/lib/payroll-export/work-allocation-blocked-error";
 import { CanonicalCutoverNotReadyError } from "@/lib/time-record/migration/cutover-state";
 import { mapPayrollWorkspaceActionError } from "./action-errors";
 
@@ -38,6 +39,22 @@ describe("mapPayrollWorkspaceActionError", () => {
 		});
 		expect(result.details).toEqual({ organizationId: "org-1", reconciliation });
 		expect(result._tag).not.toBe("ValidationError");
+	});
+
+	it("reports blocked work allocation as a conflict without employee details", () => {
+		const result = mapPayrollWorkspaceActionError(
+			new PayrollWorkAllocationBlockedError("org-1", [
+				{ recordId: "record-1", employeeId: "employee-1", reason: "unresolved_interval" },
+			]),
+			t,
+		);
+
+		expect(result).toMatchObject({
+			_tag: "ConflictError",
+			conflictType: "payroll_work_minutes_unresolved",
+			message: "Export blocked: resolve the work minutes that need review first",
+		});
+		expect(result.details).toEqual({ organizationId: "org-1", blockedRecordCount: 1 });
 	});
 
 	it("preserves authentication, authorization, and validation failures", () => {

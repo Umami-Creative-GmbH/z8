@@ -12,6 +12,12 @@ import {
 	timeRecordAbsence,
 	userSettings,
 } from "@/db/schema";
+import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import {
+	allocateProtectedMinutes,
+	employeePayrollWindow,
+} from "@/lib/payroll-allocation/protected-minutes";
+import { buildPayrollQueryEnvelope } from "@/lib/payroll-export/calendar-boundaries";
 import { assertCanonicalCutoverReady } from "@/lib/time-record/migration/cutover-state";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { buildPayrollAbsenceDetails, payrollAbsenceDetailDays } from "./absence-details";
@@ -57,8 +63,11 @@ export function buildPayrollSummaryFromRows(input: {
 	absenceRows: PayrollSummaryAbsenceRow[];
 	blockers: PayrollBlocker[];
 }): PayrollWorkspaceSummary {
-	const summaryPeriod = parsePayrollPeriod(input.period);
-	const workedMinutesByEmployee = calculatePayrollWorkedMinutes(input.workRows, summaryPeriod);
+	const { workedMinutesByEmployee, blockers: workBlockers } = calculatePayrollWorkedMinutes(
+		input.workRows,
+		input.period,
+	);
+	const blockers = [...workBlockers, ...input.blockers];
 	const absenceDetails = buildPayrollAbsenceDetails(input.absenceRows, input.period);
 
 	const absenceDaysByEmployee = new Map<
@@ -76,7 +85,7 @@ export function buildPayrollSummaryFromRows(input: {
 		absenceDaysByEmployee.set(detail.employeeId, employeeAbsences);
 	}
 
-	const employeesWithBlockers = new Set(input.blockers.map((blocker) => blocker.employeeId));
+	const employeesWithBlockers = new Set(blockers.map((blocker) => blocker.employeeId));
 	const employees = input.employees
 		.map((employeeRow) => {
 			const workedHours = roundHours((workedMinutesByEmployee.get(employeeRow.id) ?? 0) / 60);
@@ -103,35 +112,50 @@ export function buildPayrollSummaryFromRows(input: {
 			totalWorkedHours: roundHours(
 				employees.reduce((total, employeeRow) => total + employeeRow.workedHours, 0),
 			),
-			blockerCount: input.blockers.length,
+			blockerCount: blockers.length,
 		},
 		employees,
 		absenceDetails,
-		blockers: input.blockers,
+		blockers,
 	};
 }
 
+/**
+ * Credits completed work to the payroll period with the shared protected-minute rule, using each
+ * employee's local payroll window. Work whose credit cannot be allocated is reported as a blocker
+ * and contributes nothing, so the totals are explicitly incomplete rather than silently wrong.
+ */
 export function calculatePayrollWorkedMinutes(
 	workRows: PayrollSummaryWorkRow[],
-	period: PayrollDateTimePeriod,
-): Map<string, number> {
+	period: Pick<PayrollPeriod, "start" | "end">,
+): { workedMinutesByEmployee: Map<string, number>; blockers: PayrollBlocker[] } {
 	const workedMinutesByEmployee = new Map<string, number>();
+	const blockers: PayrollBlocker[] = [];
 	for (const row of workRows) {
-		const minutes = row.startAt
-			? row.endAt
-				? calculateOverlappingMinutes(row.startAt, row.endAt, period)
-				: 0
-			: (row.durationMinutes ?? 0);
+		const allocation = allocateProtectedMinutes(
+			{ startAt: row.startAt, endAt: row.endAt, storedMinutes: row.durationMinutes },
+			employeePayrollWindow(period.start, period.end, row.timezone),
+		);
 
-		if (minutes <= 0) continue;
+		if (allocation.status === "outside") continue;
+		if (allocation.status === "blocked") {
+			blockers.push({
+				id: row.id,
+				employeeId: row.employeeId,
+				type: "unresolved_work_minutes",
+				label: "Unresolved work minutes",
+				...localizeInstant(row.startAt, row.timezone),
+			});
+			continue;
+		}
 
 		workedMinutesByEmployee.set(
 			row.employeeId,
-			(workedMinutesByEmployee.get(row.employeeId) ?? 0) + minutes,
+			(workedMinutesByEmployee.get(row.employeeId) ?? 0) + allocation.minutes,
 		);
 	}
 
-	return workedMinutesByEmployee;
+	return { workedMinutesByEmployee, blockers };
 }
 
 export function filterPendingTimeApprovalBlockers(input: {
@@ -253,7 +277,12 @@ export async function getPayrollWorkspaceSummary(input: {
 	const allowedEmployeeIds = Array.from(new Set(input.allowedEmployeeIds)).toSorted();
 	const [employeeRows, workRows, absenceRows, blockers] = await Promise.all([
 		getEmployeeRows(input.organizationId, allowedEmployeeIds),
-		getWorkRows(input.organizationId, allowedEmployeeIds, input.period),
+		getWorkRows(
+			input.organizationId,
+			allowedEmployeeIds,
+			summaryInput.period,
+			organizationRow?.timezone ?? null,
+		),
 		getAbsenceRows(input.organizationId, allowedEmployeeIds, input.period),
 		getBlockers(
 			input.organizationId,
@@ -308,17 +337,27 @@ async function getEmployeeRows(
 async function getWorkRows(
 	organizationId: string,
 	allowedEmployeeIds: string[],
-	period: { start: DateTime; end: DateTime },
+	period: PayrollPeriod,
+	organizationTimezone: string | null,
 ): Promise<PayrollSummaryWorkRow[]> {
 	const { db } = await import("@/db");
-	return db
+	// Every employee-local window lies inside this UTC envelope; allocation clips per employee.
+	const queryEnvelope = buildPayrollQueryEnvelope(period.start, period.end);
+	const rows = await db
 		.select({
+			id: timeRecord.id,
 			employeeId: timeRecord.employeeId,
 			durationMinutes: timeRecord.durationMinutes,
 			startAt: timeRecord.startAt,
 			endAt: timeRecord.endAt,
+			userTimezone: userSettings.timezone,
 		})
 		.from(timeRecord)
+		.innerJoin(
+			employee,
+			and(eq(employee.id, timeRecord.employeeId), eq(employee.organizationId, organizationId)),
+		)
+		.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
 		.where(
 			and(
 				eq(timeRecord.organizationId, organizationId),
@@ -326,18 +365,25 @@ async function getWorkRows(
 				eq(timeRecord.approvalState, "approved"),
 				isNotNull(timeRecord.endAt),
 				inArray(timeRecord.employeeId, allowedEmployeeIds),
-				lte(timeRecord.startAt, period.end.toUTC().toJSDate()),
-				gte(timeRecord.endAt, period.start.toUTC().toJSDate()),
+				lte(timeRecord.startAt, queryEnvelope.end.toJSDate()),
+				gte(timeRecord.endAt, queryEnvelope.start.toJSDate()),
 			),
-		)
-		.then((rows) =>
-			rows.map((row) => ({
-				employeeId: row.employeeId,
-				durationMinutes: row.durationMinutes,
-				startAt: DateTime.fromJSDate(row.startAt, { zone: "utc" }),
-				endAt: row.endAt ? DateTime.fromJSDate(row.endAt, { zone: "utc" }) : null,
-			})),
 		);
+
+	return rows.flatMap((row) =>
+		row.endAt
+			? [
+					{
+						id: row.id,
+						employeeId: row.employeeId,
+						timezone: resolveEffectiveTimezone(row.userTimezone, organizationTimezone),
+						startAt: instantFromDate(row.startAt),
+						endAt: instantFromDate(row.endAt),
+						durationMinutes: row.durationMinutes,
+					},
+				]
+			: [],
+	);
 }
 
 async function getAbsenceRows(
@@ -573,8 +619,12 @@ function localizeBlockerInstant(
 	const instantIso = instant.isValid ? instant.toUTC().toISO() : null;
 	if (!(instantIso && timezone)) return { date: null, time: null };
 
+	return localizeInstant(Temporal.Instant.from(instantIso), timezone);
+}
+
+function localizeInstant(instant: Instant, timezone: string): Pick<PayrollBlocker, "date" | "time"> {
 	try {
-		const local = Temporal.Instant.from(instantIso).toZonedDateTimeISO(timezone);
+		const local = instant.toZonedDateTimeISO(timezone);
 		return {
 			date: local.toPlainDate().toString(),
 			time: `${String(local.hour).padStart(2, "0")}:${String(local.minute).padStart(2, "0")}`,
@@ -598,33 +648,6 @@ function formatEmployeeDisplayName(
 	employeeId: string,
 ): string {
 	return userName?.trim() || employeeNumber?.trim() || employeeId;
-}
-
-function parsePayrollPeriod(period: PayrollPeriod): PayrollDateTimePeriod {
-	return {
-		start: parsePayrollPeriodBoundary(period.start, "start"),
-		end: parsePayrollPeriodBoundary(period.end, "end"),
-	};
-}
-
-function parsePayrollPeriodBoundary(value: string, edge: "start" | "end"): DateTime {
-	const parsed = DateTime.fromISO(value, { zone: "utc" });
-	if (value.length === 10) {
-		return edge === "start" ? parsed.startOf("day") : parsed.endOf("day");
-	}
-
-	return parsed.toUTC();
-}
-
-function calculateOverlappingMinutes(
-	startAt: DateTime,
-	endAt: DateTime,
-	period: PayrollDateTimePeriod,
-): number {
-	const overlapStart = DateTime.max(startAt.toUTC(), period.start.toUTC());
-	const overlapEnd = DateTime.min(endAt.toUTC(), period.end.toUTC());
-
-	return Math.max(0, Math.round(overlapEnd.diff(overlapStart, "minutes").minutes));
 }
 
 function intervalsOverlap(

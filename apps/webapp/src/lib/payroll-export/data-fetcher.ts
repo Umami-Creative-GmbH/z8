@@ -16,15 +16,21 @@ import {
 	workCategory,
 } from "@/db";
 import { timeRecord } from "@/db/schema";
+import type { InstantRange } from "@/lib/datetime/temporal-boundaries";
+import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import {
+	allocateProtectedMinutes,
+	employeePayrollWindow,
+} from "@/lib/payroll-allocation/protected-minutes";
 import { assertCanonicalCutoverReady } from "@/lib/time-record/migration/cutover-state";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
-import {
-	buildEmployeePayrollRange,
-	buildPayrollQueryEnvelope,
-	clipPayrollInterval,
-} from "./calendar-boundaries";
+import { buildPayrollQueryEnvelope } from "./calendar-boundaries";
 import type { AbsenceData, PayrollExportFilters, WageTypeMapping, WorkPeriodData } from "./types";
+import {
+	type BlockedPayrollWorkRecord,
+	PayrollWorkAllocationBlockedError,
+} from "./work-allocation-blocked-error";
 
 const logger = createLogger("PayrollExportDataFetcher");
 
@@ -138,46 +144,36 @@ export async function fetchWorkPeriodsForExport(
 
 	logger.info({ count: filteredPeriods.length }, "Fetched work periods for payroll export");
 
-	return filteredPeriods.flatMap((p) => {
-		if (!p.endAt || !p.employee) return [];
-
-		const startTime = DateTime.fromJSDate(p.startAt, { zone: "utc" });
-		const endTime = DateTime.fromJSDate(p.endAt, { zone: "utc" });
-		const timezone = resolveEffectiveTimezone(
-			p.employee.userSettings?.timezone,
-			organizationTimezone,
-		);
-		const employeeRange = buildEmployeePayrollRange(startDate, endDate, timezone);
-		const clippedInterval = clipPayrollInterval(startTime, endTime, employeeRange);
-		if (!clippedInterval) return [];
-
-		return [
-			{
-				id: p.id,
-				employeeId: p.employeeId,
-				employeeNumber: p.employee?.employeeNumber || null,
-				email: p.employee?.user?.email || null,
-				firstName: p.employee?.user?.firstName || null,
-				lastName: p.employee?.user?.lastName || null,
-				startTime: clippedInterval.start,
-				endTime: clippedInterval.end,
-				durationMinutes: clippedInterval.durationMinutes,
-				workCategoryId: p.work?.workCategoryId || null,
-				workCategoryName: p.work?.workCategory?.name || null,
-				workCategoryFactor: p.work?.workCategory?.factor || null,
-				projectId:
-					p.allocations
-						?.slice()
-						.sort((a, b) => b.weightPercent - a.weightPercent)
-						.find((allocation) => allocation.projectId)?.projectId || null,
-				projectName:
-					p.allocations
-						?.slice()
-						.sort((a, b) => b.weightPercent - a.weightPercent)
-						.find((allocation) => allocation.projectId)?.project?.name || null,
-			},
-		];
+	const credited = creditExportWorkPeriods(organizationId, filteredPeriods, {
+		startDate,
+		endDate,
+		organizationTimezone,
 	});
+
+	return credited.map(({ record: p, minutes, overlap }) => ({
+		id: p.id,
+		employeeId: p.employeeId,
+		employeeNumber: p.employee?.employeeNumber || null,
+		email: p.employee?.user?.email || null,
+		firstName: p.employee?.user?.firstName || null,
+		lastName: p.employee?.user?.lastName || null,
+		startTime: dateTimeFromInstant(overlap.start),
+		endTime: dateTimeFromInstant(overlap.endExclusive),
+		durationMinutes: minutes,
+		workCategoryId: p.work?.workCategoryId || null,
+		workCategoryName: p.work?.workCategory?.name || null,
+		workCategoryFactor: p.work?.workCategory?.factor || null,
+		projectId:
+			p.allocations
+				?.slice()
+				.sort((a, b) => b.weightPercent - a.weightPercent)
+				.find((allocation) => allocation.projectId)?.projectId || null,
+		projectName:
+			p.allocations
+				?.slice()
+				.sort((a, b) => b.weightPercent - a.weightPercent)
+				.find((allocation) => allocation.projectId)?.project?.name || null,
+	}));
 }
 
 /**
@@ -481,7 +477,7 @@ export async function countWorkPeriods(
 
 	const result = await db.query.timeRecord.findMany({
 		where: and(...whereConditions),
-		columns: { id: true, employeeId: true, startAt: true, endAt: true },
+		columns: { id: true, employeeId: true, startAt: true, endAt: true, durationMinutes: true },
 		with: {
 			employee: {
 				columns: {
@@ -517,23 +513,79 @@ export async function countWorkPeriods(
 		);
 	}
 
-	filteredRecords = filteredRecords.filter((record) => {
-		if (!record.endAt || !record.employee) return false;
+	return creditExportWorkPeriods(organizationId, filteredRecords, {
+		startDate,
+		endDate,
+		organizationTimezone,
+	}).length;
+}
+
+interface ExportWorkRecord {
+	id: string;
+	employeeId: string;
+	startAt: Date;
+	endAt: Date | null;
+	durationMinutes: number | null;
+	employee: { userSettings?: { timezone: string | null } | null } | null;
+}
+
+/**
+ * Credits export work with the shared protected-minute rule in each employee's local payroll
+ * window. Zero-credit work contributes nothing and produces no export line; any record that cannot
+ * be credited blocks the whole export.
+ */
+function creditExportWorkPeriods<TRecord extends ExportWorkRecord>(
+	organizationId: string,
+	records: TRecord[],
+	range: { startDate: string; endDate: string; organizationTimezone: string },
+): Array<{ record: TRecord; minutes: number; overlap: InstantRange }> {
+	const credited: Array<{ record: TRecord; minutes: number; overlap: InstantRange }> = [];
+	const blocked: BlockedPayrollWorkRecord[] = [];
+
+	for (const record of records) {
+		if (!record.endAt || !record.employee) continue;
+
 		const timezone = resolveEffectiveTimezone(
 			record.employee.userSettings?.timezone,
-			organizationTimezone,
+			range.organizationTimezone,
 		);
-		const employeeRange = buildEmployeePayrollRange(startDate, endDate, timezone);
-		return Boolean(
-			clipPayrollInterval(
-				DateTime.fromJSDate(record.startAt, { zone: "utc" }),
-				DateTime.fromJSDate(record.endAt, { zone: "utc" }),
-				employeeRange,
-			),
+		const allocation = allocateProtectedMinutes(
+			{
+				startAt: instantFromDate(record.startAt),
+				endAt: instantFromDate(record.endAt),
+				storedMinutes: record.durationMinutes,
+			},
+			employeePayrollWindow(range.startDate, range.endDate, timezone),
 		);
-	});
 
-	return filteredRecords.length;
+		if (allocation.status === "blocked") {
+			blocked.push({
+				recordId: record.id,
+				employeeId: record.employeeId,
+				reason: allocation.reason,
+			});
+		} else if (allocation.status === "allocated" && allocation.minutes > 0) {
+			credited.push({
+				record,
+				minutes: allocation.minutes,
+				overlap: allocation.overlap,
+			});
+		}
+	}
+
+	if (blocked.length > 0) {
+		logger.warn(
+			{ organizationId, blockedRecords: blocked },
+			"Payroll export blocked by unresolved work minutes",
+		);
+		throw new PayrollWorkAllocationBlockedError(organizationId, blocked);
+	}
+
+	return credited;
+}
+
+function dateTimeFromInstant(instant: Instant): DateTime {
+	return DateTime.fromMillis(instant.epochMilliseconds, { zone: "utc" });
 }
 
 /**

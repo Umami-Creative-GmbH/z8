@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import { filterDismissedPayrollBlockers } from "./blocker-dismissals";
 import {
@@ -8,6 +9,24 @@ import {
 	filterMissingClockOutBlockers,
 	filterPendingTimeApprovalBlockers,
 } from "./summary";
+import type { PayrollSummaryWorkRow } from "./types";
+
+function workRow(
+	startAt: string,
+	endAt: string,
+	durationMinutes: number | null,
+	overrides: Partial<PayrollSummaryWorkRow> = {},
+): PayrollSummaryWorkRow {
+	return {
+		id: `record-${startAt}`,
+		employeeId: "employee-1",
+		timezone: "UTC",
+		startAt: Temporal.Instant.from(startAt),
+		endAt: Temporal.Instant.from(endAt),
+		durationMinutes,
+		...overrides,
+	};
+}
 
 describe("buildPayrollSummaryFromRows", () => {
 	it("returns total worked hours per employee", () => {
@@ -26,8 +45,8 @@ describe("buildPayrollSummaryFromRows", () => {
 				},
 			],
 			workRows: [
-				{ employeeId: "employee-1", durationMinutes: 120 },
-				{ employeeId: "employee-1", durationMinutes: 45 },
+				workRow("2026-06-10T08:00:00Z", "2026-06-10T10:00:00Z", 120),
+				workRow("2026-06-11T08:00:00Z", "2026-06-11T08:45:00Z", 45),
 			],
 			absenceRows: [],
 			blockers: [],
@@ -342,7 +361,7 @@ describe("buildPayrollSummaryFromRows", () => {
 					contractType: "hourly",
 				},
 			],
-			workRows: [{ employeeId: "employee-1", durationMinutes: 120 }],
+			workRows: [workRow("2026-06-10T08:00:00Z", "2026-06-10T10:00:00Z", 120)],
 			absenceRows: [],
 			blockers: remainingBlockers,
 		});
@@ -366,52 +385,140 @@ describe("buildPayrollSummaryFromRows", () => {
 });
 
 describe("calculatePayrollWorkedMinutes", () => {
-	it("clips work records that start before or end after the payroll period", () => {
-		const period = {
-			start: DateTime.fromISO("2026-06-01T00:00:00Z"),
-			end: DateTime.fromISO("2026-06-30T23:59:59Z"),
-		};
+	const june = { start: "2026-06-01", end: "2026-06-30" };
 
-		expect(
-			calculatePayrollWorkedMinutes(
-				[
-					{
-						employeeId: "employee-1",
-						durationMinutes: 120,
-						startAt: DateTime.fromISO("2026-05-31T23:00:00Z"),
-						endAt: DateTime.fromISO("2026-06-01T01:00:00Z"),
-					},
-					{
-						employeeId: "employee-1",
-						durationMinutes: 120,
-						startAt: DateTime.fromISO("2026-06-30T23:00:00Z"),
-						endAt: DateTime.fromISO("2026-07-01T01:00:00Z"),
-					},
-				],
-				period,
-			).get("employee-1"),
-		).toBe(120);
+	it("allocates stored minutes of work records crossing the payroll period", () => {
+		const { workedMinutesByEmployee, blockers } = calculatePayrollWorkedMinutes(
+			[
+				workRow("2026-05-31T23:00:00Z", "2026-06-01T01:00:00Z", 120),
+				workRow("2026-06-30T23:00:00Z", "2026-07-01T01:00:00Z", 120),
+			],
+			june,
+		);
+
+		expect(workedMinutesByEmployee.get("employee-1")).toBe(120);
+		expect(blockers).toEqual([]);
 	});
 
-	it("excludes open work records from payable worked totals", () => {
-		const period = {
-			start: DateTime.fromISO("2026-06-01T00:00:00Z"),
-			end: DateTime.fromISO("2026-06-30T23:59:59Z"),
-		};
+	it("credits protected stored minutes instead of re-rounded endpoint time", () => {
+		const { workedMinutesByEmployee } = calculatePayrollWorkedMinutes(
+			[workRow("2026-06-10T08:00:00Z", "2026-06-10T09:00:40Z", 60)],
+			june,
+		);
 
-		expect(
-			calculatePayrollWorkedMinutes(
-				[
-					{
-						employeeId: "employee-1",
-						durationMinutes: null,
-						startAt: DateTime.fromISO("2026-06-10T09:00:00Z"),
-						endAt: null,
-					},
-				],
-				period,
-			).get("employee-1"),
-		).toBeUndefined();
+		expect(workedMinutesByEmployee.get("employee-1")).toBe(60);
+	});
+
+	it("includes work on the last local day of the period", () => {
+		const { workedMinutesByEmployee } = calculatePayrollWorkedMinutes(
+			[workRow("2026-06-30T20:00:00Z", "2026-06-30T22:00:00Z", 120)],
+			june,
+		);
+
+		expect(workedMinutesByEmployee.get("employee-1")).toBe(120);
+	});
+
+	it("uses each employee's local payroll window", () => {
+		const { workedMinutesByEmployee } = calculatePayrollWorkedMinutes(
+			[
+				// 2026-06-01T02:00Z is still May 31 in New York.
+				workRow("2026-06-01T02:00:00Z", "2026-06-01T03:00:00Z", 60, {
+					employeeId: "employee-ny",
+					timezone: "America/New_York",
+				}),
+				// 2026-05-31T22:30Z is already June 1 in Berlin.
+				workRow("2026-05-31T22:30:00Z", "2026-05-31T23:30:00Z", 60, {
+					employeeId: "employee-berlin",
+					timezone: "Europe/Berlin",
+				}),
+			],
+			june,
+		);
+
+		expect(workedMinutesByEmployee.get("employee-ny")).toBeUndefined();
+		expect(workedMinutesByEmployee.get("employee-berlin")).toBe(60);
+	});
+
+	it("conserves stored minutes across adjacent payroll periods", () => {
+		const rows = [workRow("2026-06-30T21:07:13Z", "2026-07-01T02:52:51Z", 346)];
+		const juneMinutes = calculatePayrollWorkedMinutes(rows, june).workedMinutesByEmployee;
+		const julyMinutes = calculatePayrollWorkedMinutes(rows, {
+			start: "2026-07-01",
+			end: "2026-07-31",
+		}).workedMinutesByEmployee;
+
+		expect((juneMinutes.get("employee-1") ?? 0) + (julyMinutes.get("employee-1") ?? 0)).toBe(
+			346,
+		);
+	});
+
+	it("reports work with an unlocated break across the boundary as a blocker", () => {
+		const { workedMinutesByEmployee, blockers } = calculatePayrollWorkedMinutes(
+			[
+				workRow("2026-06-30T20:00:00Z", "2026-07-01T04:00:00Z", 450, {
+					id: "record-unlocated",
+					timezone: "Europe/Berlin",
+				}),
+				workRow("2026-06-10T08:00:00Z", "2026-06-10T10:00:00Z", 120),
+			],
+			june,
+		);
+
+		expect(workedMinutesByEmployee.get("employee-1")).toBe(120);
+		expect(blockers).toEqual([
+			{
+				id: "record-unlocated",
+				employeeId: "employee-1",
+				type: "unresolved_work_minutes",
+				label: "Unresolved work minutes",
+				date: "2026-06-30",
+				time: "22:00",
+			},
+		]);
+	});
+
+	it("distinguishes zero-minute work from completed work missing stored minutes", () => {
+		const { workedMinutesByEmployee, blockers } = calculatePayrollWorkedMinutes(
+			[
+				workRow("2026-06-10T08:00:00Z", "2026-06-10T08:00:20Z", 0),
+				workRow("2026-06-11T08:00:00Z", "2026-06-11T09:00:00Z", null, {
+					id: "record-missing",
+				}),
+			],
+			june,
+		);
+
+		expect(workedMinutesByEmployee.get("employee-1")).toBe(0);
+		expect(blockers).toEqual([
+			expect.objectContaining({ id: "record-missing", type: "unresolved_work_minutes" }),
+		]);
+	});
+});
+
+describe("buildPayrollSummaryFromRows work allocation blockers", () => {
+	it("marks the employee as blocked and counts the unresolved work", () => {
+		const summary = buildPayrollSummaryFromRows({
+			organizationName: "Acme GmbH",
+			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
+			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedBy: { id: "payroll-1", name: "Payroll User" },
+			employees: [
+				{
+					id: "employee-1",
+					name: "Ada Lovelace",
+					employeeNumber: "E-1",
+					teamName: "Ops",
+					contractType: "hourly",
+				},
+			],
+			workRows: [workRow("2026-06-30T20:00:00Z", "2026-07-01T04:00:00Z", 450)],
+			absenceRows: [],
+			blockers: [],
+		});
+
+		expect(summary.totals).toMatchObject({ blockerCount: 1, totalWorkedHours: 0 });
+		expect(summary.employees[0]).toMatchObject({ hasBlockers: true, workedHours: 0 });
+		expect(summary.blockers[0]).toMatchObject({ type: "unresolved_work_minutes" });
 	});
 });
 
