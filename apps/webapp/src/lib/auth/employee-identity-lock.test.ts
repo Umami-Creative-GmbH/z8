@@ -6,7 +6,7 @@ import {
 } from "./employee-identity-lock";
 
 describe("acquireEmployeeIdentityLock", () => {
-	it("uses the same parameterized transaction lock for identical organization and email inputs", async () => {
+	it("types both lock parameters as text and uses the same transaction lock for identical inputs", async () => {
 		const execute = vi.fn().mockResolvedValue(undefined);
 		const client = { execute } as Parameters<
 			typeof acquireEmployeeIdentityLock
@@ -25,7 +25,7 @@ describe("acquireEmployeeIdentityLock", () => {
 		expect(first).toEqual(second);
 		expect(normalizedSql).toContain("pg_advisory_xact_lock(");
 		expect(normalizedSql).toContain(
-			"hashtextextended(jsonb_build_array($1, $2)::text, 0)",
+			"hashtextextended(jsonb_build_array($1::text, $2::text)::text, 0)",
 		);
 		expect(first.params).toEqual([input.organizationId, input.normalizedEmail]);
 		expect(first.sql).not.toContain(input.organizationId);

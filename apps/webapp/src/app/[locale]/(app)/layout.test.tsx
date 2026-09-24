@@ -22,4 +22,12 @@ describe("AppLayout", () => {
 		expect(contentSource).toContain("<ServerAppSidebar");
 		expect(contentSource).toContain("{children}");
 	});
+
+	it("defers auth database instrumentation until request time", () => {
+		const contentStart = contentSource.indexOf("export async function AuthenticatedAppContent");
+		const connectionCall = contentSource.indexOf("await connection();", contentStart);
+		expect(contentSource).toContain('import { connection } from "next/server"');
+		expect(connectionCall).toBeGreaterThan(contentStart);
+		expect(connectionCall).toBeLessThan(contentSource.indexOf("auth.api.getSession"));
+	});
 });

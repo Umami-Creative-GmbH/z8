@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { type ReactNode, Suspense } from "react";
 import { TrialBanner } from "@/components/billing/trial-banner";
 import { PushPermissionProvider } from "@/components/notifications/push-permission-provider";
@@ -65,6 +66,8 @@ export async function AuthenticatedAppContent({
 	children,
 	params,
 }: AuthenticatedAppContentProps) {
+	// Auth database instrumentation uses random trace IDs and must run per request.
+	await connection();
 	const [{ locale }, headersList] = await Promise.all([params, headers()]);
 
 	// Centralized auth check - protects all routes in the (app) group
