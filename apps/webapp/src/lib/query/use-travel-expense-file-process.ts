@@ -20,6 +20,16 @@ export interface ProcessTravelExpenseFileResponse {
 	};
 }
 
+class TravelExpenseFileProcessError extends Error {
+	constructor(
+		message: string,
+		readonly status: number,
+	) {
+		super(message);
+		this.name = "TravelExpenseFileProcessError";
+	}
+}
+
 export function useTravelExpenseFileProcessMutation() {
 	const queryClient = useQueryClient();
 
@@ -35,7 +45,10 @@ export function useTravelExpenseFileProcessMutation() {
 
 			if (!response.ok) {
 				const errorData = await response.json().catch(() => ({}));
-				throw new Error(errorData.error || "Failed to process travel expense file");
+				throw new TravelExpenseFileProcessError(
+					errorData.error || "Failed to process travel expense file",
+					response.status,
+				);
 			}
 
 			return response.json();
@@ -46,6 +59,10 @@ export function useTravelExpenseFileProcessMutation() {
 			});
 			queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.list() });
 		},
-		retry: 1,
+		// A rejected upload (for example a claim submitted meanwhile) is final;
+		// retrying would only replace its explanation with a missing-file error.
+		retry: (failureCount, error) =>
+			failureCount < 1 &&
+			!(error instanceof TravelExpenseFileProcessError && error.status < 500),
 	});
 }
