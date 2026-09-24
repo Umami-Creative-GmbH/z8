@@ -64,7 +64,11 @@ describe("departureCutoff", () => {
 
 	it("rejects malformed dates", () => {
 		expect(() =>
-			departureCutoff({ lastWorkingDay: "2026-02-30", timezone: "UTC", now: JANUARY }),
+			departureCutoff({
+				lastWorkingDay: "2026-02-30",
+				timezone: "UTC",
+				now: JANUARY,
+			}),
 		).toThrow();
 	});
 });

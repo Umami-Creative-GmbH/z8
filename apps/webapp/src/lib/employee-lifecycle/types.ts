@@ -2,7 +2,9 @@ import type { db } from "@/db";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { UpsertEmploymentHistory } from "@/lib/validations/employment-history";
 
-export type LifecycleTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type LifecycleTransaction = Parameters<
+	Parameters<typeof db.transaction>[0]
+>[0];
 
 export type DepartureStatus = "pending" | "canceled" | "blocked" | "effective";
 export type DepartureMode = "scheduled" | "immediate";

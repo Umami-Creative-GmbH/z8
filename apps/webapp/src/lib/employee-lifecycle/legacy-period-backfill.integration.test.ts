@@ -55,13 +55,23 @@ describeLifecycleDatabase("legacy employment period backfill", () => {
 		return result.rows;
 	}
 
-	async function insertTerms(employeeId: string, validFrom: Date, reviewState: string) {
+	async function insertTerms(
+		employeeId: string,
+		validFrom: Date,
+		reviewState: string,
+	) {
 		const result = await fixture.pool.query<{ id: string }>(
 			`insert into employee_employment_history
 			 (employee_id, organization_id, valid_from, weekly_contract_minutes, review_state,
 			  created_by, updated_at)
 			 values ($1, $2, $3, 2400, $4, $5, $3) returning id`,
-			[employeeId, fixture.organizationId, validFrom, reviewState, fixture.ownerUserId],
+			[
+				employeeId,
+				fixture.organizationId,
+				validFrom,
+				reviewState,
+				fixture.ownerUserId,
+			],
 		);
 		return result.rows[0]?.id;
 	}
@@ -92,7 +102,10 @@ describeLifecycleDatabase("legacy employment period backfill", () => {
 			`select employment_period_id, valid_from from employee_employment_history where id = $1`,
 			[termsId],
 		);
-		expect(terms.rows[0]).toEqual({ employment_period_id: period?.id, valid_from: MAR });
+		expect(terms.rows[0]).toEqual({
+			employment_period_id: period?.id,
+			valid_from: MAR,
+		});
 	});
 
 	it("falls back to the earliest confirmed terms when no start date exists", async () => {
@@ -104,7 +117,11 @@ describeLifecycleDatabase("legacy employment period backfill", () => {
 		await backfill(target.employeeId);
 
 		expect(await periodsOf(target.employeeId)).toEqual([
-			expect.objectContaining({ status: "open", started_at: MAR, start_provenance: "legacy" }),
+			expect.objectContaining({
+				status: "open",
+				started_at: MAR,
+				start_provenance: "legacy",
+			}),
 		]);
 	});
 
@@ -114,32 +131,55 @@ describeLifecycleDatabase("legacy employment period backfill", () => {
 		await backfill(target.employeeId);
 
 		expect(await periodsOf(target.employeeId)).toEqual([
-			expect.objectContaining({ status: "open", started_at: null, start_provenance: "unknown" }),
+			expect.objectContaining({
+				status: "open",
+				started_at: null,
+				start_provenance: "unknown",
+			}),
 		]);
 	});
 
 	it("closes an inactive employee's period at a trustworthy end date", async () => {
-		const target = await seedLegacyEmployee({ isActive: false, startDate: JAN, endDate: JUN });
+		const target = await seedLegacyEmployee({
+			isActive: false,
+			startDate: JAN,
+			endDate: JUN,
+		});
 
 		await backfill(target.employeeId);
 
 		expect(await periodsOf(target.employeeId)).toEqual([
-			expect.objectContaining({ status: "closed", started_at: JAN, ended_at: JUN }),
+			expect.objectContaining({
+				status: "closed",
+				started_at: JAN,
+				ended_at: JUN,
+			}),
 		]);
 	});
 
 	it("keeps an inactive employee without an end date as legacy unknown", async () => {
-		const target = await seedLegacyEmployee({ isActive: false, startDate: JAN });
+		const target = await seedLegacyEmployee({
+			isActive: false,
+			startDate: JAN,
+		});
 
 		await backfill(target.employeeId);
 
 		expect(await periodsOf(target.employeeId)).toEqual([
-			expect.objectContaining({ status: "legacy_unknown", started_at: JAN, ended_at: null }),
+			expect.objectContaining({
+				status: "legacy_unknown",
+				started_at: JAN,
+				ended_at: null,
+			}),
 		]);
 	});
 
 	it("records a diagnostic instead of a fabricated interval for inverted legacy dates", async () => {
-		const target = await seedLegacyEmployee({ isActive: false, startDate: JUN, endDate: JAN });
+		const target = await seedLegacyEmployee({
+			isActive: false,
+			startDate: JUN,
+			endDate: JAN,
+		});
 
 		await backfill(target.employeeId);
 

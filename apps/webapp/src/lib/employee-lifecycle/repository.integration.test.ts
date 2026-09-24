@@ -81,7 +81,9 @@ describeLifecycleDatabase("employee lifecycle persistence constraints", () => {
 		const requestId = crypto.randomUUID();
 		await insertDeparture({ requestId });
 
-		await expect(insertDeparture({ requestId })).rejects.toMatchObject({ code: "23505" });
+		await expect(insertDeparture({ requestId })).rejects.toMatchObject({
+			code: "23505",
+		});
 	});
 
 	it("allows at most one open employment period per employee", async () => {
@@ -104,7 +106,12 @@ describeLifecycleDatabase("employee lifecycle persistence constraints", () => {
 				`insert into employee_employment_period
 				 (organization_id, employee_id, status, started_at, ended_at, start_provenance)
 				 values ($1, $2, 'closed', $3, $4, 'recorded')`,
-				[fixture.organizationId, target.employeeId, cutoff, new Date("2026-09-14T00:00:00Z")],
+				[
+					fixture.organizationId,
+					target.employeeId,
+					cutoff,
+					new Date("2026-09-14T00:00:00Z"),
+				],
 			),
 		).rejects.toMatchObject({ code: "23514" });
 	});
@@ -120,7 +127,13 @@ describeLifecycleDatabase("employee lifecycle persistence constraints", () => {
 			 (organization_id, employee_id, status, started_at, ended_at, start_provenance)
 			 values ($1, $2, $3, $4::timestamptz, $5::timestamptz,
 			         case when $4::timestamptz is null then 'unknown' else 'recorded' end)`,
-			[fixture.organizationId, input.employeeId, input.status, input.startedAt, input.endedAt ?? null],
+			[
+				fixture.organizationId,
+				input.employeeId,
+				input.status,
+				input.startedAt,
+				input.endedAt ?? null,
+			],
 		);
 	}
 
@@ -134,7 +147,11 @@ describeLifecycleDatabase("employee lifecycle persistence constraints", () => {
 		});
 
 		await expect(
-			insertPeriod({ employeeId: target.employeeId, status: "open", startedAt: "2026-02-01T00:00:00Z" }),
+			insertPeriod({
+				employeeId: target.employeeId,
+				status: "open",
+				startedAt: "2026-02-01T00:00:00Z",
+			}),
 		).rejects.toMatchObject({ code: "23P01" });
 	});
 
@@ -148,20 +165,36 @@ describeLifecycleDatabase("employee lifecycle persistence constraints", () => {
 		});
 
 		await expect(
-			insertPeriod({ employeeId: target.employeeId, status: "open", startedAt: "2026-03-01T00:00:00Z" }),
+			insertPeriod({
+				employeeId: target.employeeId,
+				status: "open",
+				startedAt: "2026-03-01T00:00:00Z",
+			}),
 		).resolves.toMatchObject({ rowCount: 1 });
 	});
 
 	it("does not assert overlap against legacy periods with unknown bounds", async () => {
 		const target = await fixture.seedEmployee({ withPeriod: false });
-		await insertPeriod({ employeeId: target.employeeId, status: "legacy_unknown", startedAt: null });
+		await insertPeriod({
+			employeeId: target.employeeId,
+			status: "legacy_unknown",
+			startedAt: null,
+		});
 
 		await expect(
-			insertPeriod({ employeeId: target.employeeId, status: "open", startedAt: "2026-03-01T00:00:00Z" }),
+			insertPeriod({
+				employeeId: target.employeeId,
+				status: "open",
+				startedAt: "2026-03-01T00:00:00Z",
+			}),
 		).resolves.toMatchObject({ rowCount: 1 });
 	});
 
-	async function insertEvent(organizationId: string, employeeId: string, employmentPeriodId: string) {
+	async function insertEvent(
+		organizationId: string,
+		employeeId: string,
+		employmentPeriodId: string,
+	) {
 		const result = await fixture.pool.query<{ id: string }>(
 			`insert into employee_departure_event
 			 (organization_id, employee_id, employment_period_id, request_id, kind, actor_user_id)
@@ -186,16 +219,24 @@ describeLifecycleDatabase("employee lifecycle persistence constraints", () => {
 			),
 		).rejects.toMatchObject({ code: "55000" });
 		await expect(
-			fixture.pool.query(`delete from employee_departure_event where id = $1`, [eventId]),
+			fixture.pool.query(`delete from employee_departure_event where id = $1`, [
+				eventId,
+			]),
 		).rejects.toMatchObject({ code: "55000" });
 	});
 
 	it("still lets a deleted tenant cascade through its audit events", async () => {
 		const organizationId = await fixture.createOrganization();
 		const target = await fixture.seedEmployee({ organizationId });
-		await insertEvent(organizationId, target.employeeId, target.employmentPeriodId);
+		await insertEvent(
+			organizationId,
+			target.employeeId,
+			target.employmentPeriodId,
+		);
 
-		await fixture.pool.query(`delete from organization where id = $1`, [organizationId]);
+		await fixture.pool.query(`delete from organization where id = $1`, [
+			organizationId,
+		]);
 
 		const remaining = await fixture.pool.query(
 			`select 1 from employee_departure_event where organization_id = $1`,
@@ -211,7 +252,12 @@ describeLifecycleDatabase("employee lifecycle persistence constraints", () => {
 				`insert into employee_departure_task
 				 (organization_id, employee_id, employment_period_id, kind, dedupe_key)
 				 values ($1, $2, $3, 'billing_sync', $4)`,
-				[fixture.organizationId, fixture.employeeId, fixture.employmentPeriodId, dedupeKey],
+				[
+					fixture.organizationId,
+					fixture.employeeId,
+					fixture.employmentPeriodId,
+					dedupeKey,
+				],
 			);
 		await insertTask();
 
