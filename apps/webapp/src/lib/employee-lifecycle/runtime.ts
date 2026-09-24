@@ -3,26 +3,21 @@
  * and the BullMQ worker. Deliberately free of `server-only` (the worker runs
  * in plain Node) and of Next.js request APIs.
  */
-import { and, asc, eq, lte } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect, Layer } from "effect";
 import { db } from "@/db";
 import { type DepartureTaskKind, employeeDeparture } from "@/db/schema/employee-lifecycle";
-import {
-	dateFromInstant,
-	type Instant,
-	instantFromDate,
-	systemClock,
-} from "@/lib/datetime/temporal-core";
-import {
-	BreakEnforcementService,
-	BreakEnforcementServiceLive,
-} from "@/lib/effect/services/break-enforcement.service";
+import { type Instant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	SeatSyncService,
 	SeatSyncServiceLive,
 	StripeServiceLive,
 	SubscriptionServiceLive,
 } from "@/lib/effect/services/billing";
+import {
+	BreakEnforcementService,
+	BreakEnforcementServiceLive,
+} from "@/lib/effect/services/break-enforcement.service";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/surcharge.service";
 import { WorkPolicyServiceLive } from "@/lib/effect/services/work-policy.service";
@@ -32,10 +27,9 @@ import { createDepartureClockOut } from "./clock-out";
 import { createClockPostprocessHandler } from "./clock-postprocess";
 import { createDepartureCommands } from "./commands";
 import type { DepartureTaskHandler } from "./delivery";
+import { findDueDepartures } from "./due-departures";
 import { createSessionRevocationHandler } from "./session-cleanup";
 import type { DepartureIdentity } from "./types";
-
-const DUE_BATCH_LIMIT = 100;
 
 export function createProductionDepartureCommands() {
 	return createDepartureCommands({
@@ -45,30 +39,8 @@ export function createProductionDepartureCommands() {
 	});
 }
 
-/**
- * Global discovery of due departures for infrastructure only; every
- * execution reloads and re-validates its own organization-scoped state.
- * Ordered by cutoff then ID so owner outcomes are deterministic.
- */
-export async function listDueDepartures(now: Instant): Promise<DepartureIdentity[]> {
-	const rows = await db
-		.select({
-			organizationId: employeeDeparture.organizationId,
-			employeeId: employeeDeparture.employeeId,
-			employmentPeriodId: employeeDeparture.employmentPeriodId,
-			departureId: employeeDeparture.id,
-			revision: employeeDeparture.revision,
-		})
-		.from(employeeDeparture)
-		.where(
-			and(
-				eq(employeeDeparture.status, "pending"),
-				lte(employeeDeparture.cutoffAt, dateFromInstant(now)),
-			),
-		)
-		.orderBy(asc(employeeDeparture.cutoffAt), asc(employeeDeparture.id))
-		.limit(DUE_BATCH_LIMIT);
-	return rows;
+export function listDueDepartures(now: Instant): Promise<DepartureIdentity[]> {
+	return findDueDepartures(db, now);
 }
 
 export type EmployeeDepartureJobScheduler = (input: {

@@ -72,6 +72,17 @@ export type LifecycleDatabaseFixture = {
 	createOrganization(): Promise<string>;
 	/** Seeds user, approved member, active employee and an open recorded period. */
 	seedEmployee(input?: SeedEmployeeInput): Promise<SeededEmployee>;
+	/**
+	 * A database bound to one backend that a test may terminate with
+	 * `pg_terminate_backend(backendPid)` to simulate a process crash.
+	 */
+	openCrashableConnection(): Promise<CrashableConnection>;
+	close(): Promise<void>;
+};
+
+export type CrashableConnection = {
+	db: LifecycleTestDatabase;
+	backendPid: number;
 	close(): Promise<void>;
 };
 
@@ -162,6 +173,18 @@ export async function createLifecycleDatabaseFixture(): Promise<LifecycleDatabas
 		ownerEmployeeId: owner.employeeId,
 		createOrganization,
 		seedEmployee,
+		async openCrashableConnection() {
+			const crashable = new Pool({ connectionString: databaseUrl, max: 1, idleTimeoutMillis: 0 });
+			// A terminated backend surfaces as a pool error; the test asserts the crash itself.
+			crashable.on("error", () => {});
+			crashable.on("connect", (client) => client.on("error", () => {}));
+			const result = await crashable.query<{ pid: number }>("select pg_backend_pid() as pid");
+			return {
+				db: drizzle({ client: crashable, schema: combinedSchema }),
+				backendPid: result.rows[0]?.pid ?? 0,
+				close: () => crashable.end(),
+			};
+		},
 		async close() {
 			try {
 				// Deleting a tenant cascades to its lifecycle rows; append-only
