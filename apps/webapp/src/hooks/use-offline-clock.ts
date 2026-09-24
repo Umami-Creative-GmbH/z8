@@ -123,6 +123,12 @@ export function useOfflineClock() {
 				});
 			}
 		};
+		// Worker availability is account recovery status. Signed-out pages (login)
+		// have no evidence to protect, so a failure there must not block the UI.
+		const reportWorkerFailure = (lastError: string) => {
+			if (userId && organizationId) update({ lastError });
+			else console.warn("[OfflineClock]", lastError);
+		};
 		const connect = async () => {
 			try {
 				await navigator.serviceWorker.register("/sw.js", {
@@ -135,20 +141,16 @@ export function useOfflineClock() {
 				const ready = version.clockQueueMode === "preservation-only-v1";
 				if (mounted) setSwReady(ready);
 				if (!ready) {
-					update({
-						lastError:
-							"Update Z8 before saving offline clock records. The current worker does not support recovery preservation.",
-					});
+					reportWorkerFailure(
+						"Update Z8 before saving offline clock records. The current worker does not support recovery preservation.",
+					);
 					return;
 				}
 				await refresh();
 			} catch (error) {
-				update({
-					lastError:
-						error instanceof Error
-							? error.message
-							: "Clock recovery unavailable",
-				});
+				reportWorkerFailure(
+					error instanceof Error ? error.message : "Clock recovery unavailable",
+				);
 			}
 		};
 		const handleMessage = (event: MessageEvent<SWToClientMessage>) => {
