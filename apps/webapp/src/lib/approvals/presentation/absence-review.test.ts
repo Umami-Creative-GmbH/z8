@@ -101,6 +101,7 @@ function evidenced(
 ): AbsenceReviewEvidence {
 	return {
 		status: "evidenced",
+		authority: "canonical",
 		revision: revision(),
 		comparison: { kind: "current", labelChanges: [] },
 		decisions: [],
@@ -238,5 +239,40 @@ describe("buildAbsenceReviewSections", () => {
 		expect(
 			buildAbsenceReviewSections({ status: "not_captured", held: false }),
 		).toEqual({ decisionsBlocked: false, sections: [] });
+	});
+
+	it("keeps legacy evidence historical after cutover instead of binding the new authority to it", () => {
+		const legacy = evidenced({
+			authority: "legacy",
+			comparison: { kind: "material_change", changedFields: ["endDate"] },
+			authorityChange: { held: true },
+		});
+		const held = buildAbsenceReviewSections(legacy);
+
+		expect(held.decisionsBlocked).toBe(true);
+		const text = JSON.stringify(held.sections);
+		expect(text).toContain("Submitted under the previous approval process");
+		// Legacy material-change enforcement no longer applies; the canonical hold does.
+		expect(text).not.toContain("Request changed after submission");
+		expect(held.sections[0]).toMatchObject({ type: "key_value" });
+
+		expect(
+			buildAbsenceReviewSections(
+				evidenced({ authority: "legacy", authorityChange: { held: false } }),
+			).decisionsBlocked,
+		).toBe(false);
+	});
+
+	it("enforces material changes on legacy evidence under legacy authority", () => {
+		const { sections, decisionsBlocked } = buildAbsenceReviewSections(
+			evidenced({
+				authority: "legacy",
+				comparison: { kind: "material_change", changedFields: ["endDate"] },
+			}),
+		);
+		expect(decisionsBlocked).toBe(true);
+		expect(JSON.stringify(sections)).toContain(
+			"Request changed after submission",
+		);
 	});
 });

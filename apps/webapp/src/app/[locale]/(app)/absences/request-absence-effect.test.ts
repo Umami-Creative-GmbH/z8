@@ -1244,6 +1244,62 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 	});
 
 	it.each([
+		"legacy",
+		"shadow",
+		"ready",
+	] as const)("captures legacy evidence in the %s submission transaction after the legacy rows and observation", async (mode) => {
+		const harness = createModeRoutingHarness(mode);
+		const capture = harness.approvalLifecycle.captureLegacyEvidence;
+		capture.mockImplementationOnce(async () => {
+			harness.calls.push("legacy-evidence");
+			return null;
+		});
+
+		await submitModeRoutingHarness(harness);
+
+		expect(capture).toHaveBeenCalledOnce();
+		const [tx, input] = capture.mock.calls[0] ?? [];
+		expect(tx).toBe(harness.context.dbService.db);
+		expect(input).toMatchObject({
+			organizationId: "org-1",
+			absenceId: "absence-1",
+			submissionKey: "absence:absence-1:submission",
+			routing: { kind: "default_created", approvalRequestId: "approval-1" },
+			submitterUserId: "user-1",
+			category: { id: "category-1" },
+		});
+		expect(harness.calls.indexOf("legacy-create")).toBeLessThan(
+			harness.calls.indexOf("legacy-evidence"),
+		);
+		if (mode === "legacy") {
+			expect(input?.observed).toBeNull();
+		} else {
+			expect(harness.calls.indexOf("bind")).toBeLessThan(
+				harness.calls.indexOf("legacy-evidence"),
+			);
+			expect(input?.observed).toMatchObject({ snapshot: { id: "workflow-1" } });
+		}
+		expect(harness.approvalLifecycle.captureCanonicalEvidence).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		"legacy",
+		"shadow",
+	] as const)("rolls back the whole %s submission when legacy evidence capture fails", async (mode) => {
+		const harness = createModeRoutingHarness(mode);
+		harness.approvalLifecycle.captureLegacyEvidence.mockRejectedValueOnce(
+			new Error("legacy evidence capture failed"),
+		);
+
+		await expect(submitModeRoutingHarness(harness)).rejects.toThrow(
+			/legacy evidence capture failed/,
+		);
+		expect(harness.transactionState.committed).toBe(false);
+		expectTransactionalStateEmpty(harness.snapshot());
+		expectPostCommitCallbacksZero();
+	});
+
+	it.each([
 		"shadow",
 		"ready",
 	] as const)("rolls back %s submission when observed workflow binding loses its CAS", async (mode) => {

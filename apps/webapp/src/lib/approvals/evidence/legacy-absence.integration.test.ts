@@ -631,7 +631,9 @@ describeIntegration("legacy absence approval evidence (PostgreSQL)", () => {
 			comparison: { kind: "current", labelChanges: [] },
 		});
 		expect(review?.status === "evidenced" && review.decisions).toHaveLength(1);
-		const sections = buildAbsenceReviewSections(review ?? { status: "not_captured", held: false });
+		const sections = buildAbsenceReviewSections(
+			review ?? { status: "not_captured", held: false },
+		);
 		expect(sections.decisionsBlocked).toBe(false);
 		expect(JSON.stringify(sections.sections)).toContain("Request approved");
 	});
@@ -763,8 +765,9 @@ describeIntegration("legacy absence approval evidence (PostgreSQL)", () => {
 			comparison: { kind: "material_change", changedFields: ["endDate"] },
 		});
 		expect(
-			buildAbsenceReviewSections(review ?? { status: "not_captured", held: false })
-				.decisionsBlocked,
+			buildAbsenceReviewSections(
+				review ?? { status: "not_captured", held: false },
+			).decisionsBlocked,
 		).toBe(true);
 	});
 
@@ -1033,7 +1036,11 @@ describeIntegration("legacy absence approval evidence (PostgreSQL)", () => {
 
 		const decidedRevision = only(await revisions(decidedId));
 		const decidedDecision = only(await decisions(decidedId));
-		const removed = await deleteApproval(db, ids.organization, decidedRequestId);
+		const removed = await deleteApproval(
+			db,
+			ids.organization,
+			decidedRequestId,
+		);
 		expect(removed).toMatchObject({
 			legacyRequests: [decidedRequestId],
 			evidence: {

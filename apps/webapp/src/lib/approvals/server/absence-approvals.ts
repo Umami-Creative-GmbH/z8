@@ -1404,7 +1404,11 @@ export function createLegacyAbsenceDecisionProcessor(input: {
 	reason?: string;
 	options?: ApprovalActionOptions;
 }): ExecuteAbsenceDecisionInput["processLegacy"] {
-	return async (transactionDbService, transactionEmployee, transactionBehavior) =>
+	return async (
+		transactionDbService,
+		transactionEmployee,
+		transactionBehavior,
+	) =>
 		await Effect.runPromise(
 			processApprovalWithCurrentEmployee(
 				transactionDbService,
