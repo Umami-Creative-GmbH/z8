@@ -27,6 +27,13 @@ type JsonObject = Record<string, unknown>;
 export const APPROVAL_EVIDENCE_MODES = ["inactive", "capture"] as const;
 export type ApprovalEvidenceMode = (typeof APPROVAL_EVIDENCE_MODES)[number];
 
+// Which authority committed the evidenced operation. Legacy evidence never
+// references a canonical workflow as its lifecycle: an observed shadow workflow
+// is kept separately so storing an observation cannot promote authority.
+export const APPROVAL_EVIDENCE_AUTHORITIES = ["canonical", "legacy"] as const;
+export type ApprovalEvidenceAuthority =
+	(typeof APPROVAL_EVIDENCE_AUTHORITIES)[number];
+
 // Per organization/kind evidence adoption. No row keeps capture inactive; the
 // authorized adoption writer changes it under the exclusive rollout lock.
 export const approvalEvidenceControl = pgTable(
@@ -52,7 +59,9 @@ export const approvalEvidenceControl = pgTable(
 
 // Immutable request-specific facts captured by the submission owner before
 // lossy normalization. Rows are never updated; the workflow FK removes them only
-// through privileged linked-lifecycle or whole-organization cleanup.
+// through privileged linked-lifecycle or whole-organization cleanup. Legacy
+// rows reference their legacy request/chain by value: ordinary cancellation
+// deletes pending legacy requests and must not delete or be blocked by evidence.
 export const approvalSubmittedRevision = pgTable(
 	"approval_submitted_revision",
 	{
@@ -60,7 +69,14 @@ export const approvalSubmittedRevision = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		workflowId: uuid("workflow_id").notNull(),
+		authority: text("authority")
+			.$type<ApprovalEvidenceAuthority>()
+			.default("canonical")
+			.notNull(),
+		workflowId: uuid("workflow_id"),
+		legacyApprovalRequestId: uuid("legacy_approval_request_id"),
+		legacyChainInstanceId: uuid("legacy_chain_instance_id"),
+		observedWorkflowId: uuid("observed_workflow_id"),
 		workflowType: approvalWorkflowTypeEnum("workflow_type").notNull(),
 		sourceType: text("source_type").notNull(),
 		sourceId: uuid("source_id").notNull(),
@@ -91,15 +107,38 @@ export const approvalSubmittedRevision = pgTable(
 			table.workflowId,
 			table.organizationId,
 		),
+		unique("approvalSubmittedRevision_id_organizationId_authority_idx").on(
+			table.id,
+			table.organizationId,
+			table.authority,
+		),
 		check(
 			"approval_submitted_revision_revision_check",
 			sql`${table.revision} >= 1`,
+		),
+		check(
+			"approval_submitted_revision_authority_check",
+			sql`(${table.authority} = 'canonical' AND ${table.workflowId} IS NOT NULL
+				AND ${table.legacyApprovalRequestId} IS NULL
+				AND ${table.legacyChainInstanceId} IS NULL
+				AND ${table.observedWorkflowId} IS NULL)
+			OR (${table.authority} = 'legacy' AND ${table.workflowId} IS NULL
+				AND ${table.legacyApprovalRequestId} IS NOT NULL)`,
 		),
 		uniqueIndex("approvalSubmittedRevision_org_workflow_revision_idx").on(
 			table.organizationId,
 			table.workflowId,
 			table.revision,
 		),
+		uniqueIndex("approvalSubmittedRevision_org_legacy_cycle_revision_idx")
+			.on(
+				table.organizationId,
+				table.sourceType,
+				table.sourceId,
+				table.requestCycleKey,
+				table.revision,
+			)
+			.where(sql`${table.authority} = 'legacy'`),
 		foreignKey({
 			columns: [table.workflowId, table.organizationId],
 			foreignColumns: [approvalWorkflow.id, approvalWorkflow.organizationId],
@@ -186,7 +225,8 @@ export const approvalReviewBinding = pgTable(
 
 // Immutable outcome of one committed decision operation, written atomically
 // with the authoritative transition and linked to its receipt. Replays read it;
-// they never write another row.
+// they never write another row. For legacy authority the row is also the
+// operation receipt, keyed by the one legacy request it decided.
 export const approvalDecisionEvidence = pgTable(
 	"approval_decision_evidence",
 	{
@@ -194,7 +234,14 @@ export const approvalDecisionEvidence = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		workflowId: uuid("workflow_id").notNull(),
+		authority: text("authority")
+			.$type<ApprovalEvidenceAuthority>()
+			.default("canonical")
+			.notNull(),
+		workflowId: uuid("workflow_id"),
+		legacyApprovalRequestId: uuid("legacy_approval_request_id"),
+		legacyChainStageId: uuid("legacy_chain_stage_id"),
+		observedWorkflowId: uuid("observed_workflow_id"),
 		submittedRevisionId: uuid("submitted_revision_id").notNull(),
 		operationKind: text("operation_kind")
 			.$type<"command" | "submission_activation">()
@@ -235,15 +282,43 @@ export const approvalDecisionEvidence = pgTable(
 			"approval_decision_evidence_assignment_outcome_check",
 			sql`${table.assignmentOutcome} IS NULL OR ${table.assignmentOutcome} IN ('approved', 'rejected')`,
 		),
+		check(
+			"approval_decision_evidence_authority_check",
+			sql`(${table.authority} = 'canonical' AND ${table.workflowId} IS NOT NULL
+				AND ${table.legacyApprovalRequestId} IS NULL
+				AND ${table.legacyChainStageId} IS NULL
+				AND ${table.observedWorkflowId} IS NULL)
+			OR (${table.authority} = 'legacy' AND ${table.workflowId} IS NULL
+				AND ${table.legacyApprovalRequestId} IS NOT NULL
+				AND ${table.stageId} IS NULL AND ${table.assignmentId} IS NULL
+				AND ${table.reviewedBindingId} IS NULL)`,
+		),
 		uniqueIndex("approvalDecisionEvidence_org_workflow_receipt_idx").on(
 			table.organizationId,
 			table.workflowId,
 			table.receiptIdempotencyKey,
 		),
+		uniqueIndex("approvalDecisionEvidence_org_legacy_request_idx")
+			.on(table.organizationId, table.legacyApprovalRequestId)
+			.where(sql`${table.authority} = 'legacy'`),
 		index("approvalDecisionEvidence_org_revision_idx").on(
 			table.organizationId,
 			table.submittedRevisionId,
 		),
+		// Enforced for both authorities (the workflow-scoped FK is MATCH SIMPLE and
+		// skips rows without a workflow); a decision never crosses authorities.
+		foreignKey({
+			columns: [
+				table.submittedRevisionId,
+				table.organizationId,
+				table.authority,
+			],
+			foreignColumns: [
+				approvalSubmittedRevision.id,
+				approvalSubmittedRevision.organizationId,
+				approvalSubmittedRevision.authority,
+			],
+		}).onDelete("cascade"),
 		foreignKey({
 			columns: [table.workflowId, table.organizationId],
 			foreignColumns: [approvalWorkflow.id, approvalWorkflow.organizationId],

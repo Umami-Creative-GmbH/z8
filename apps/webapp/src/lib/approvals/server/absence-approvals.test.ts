@@ -100,6 +100,15 @@ beforeEach(() => {
 	isEligibleManagerForApprovalRequest.mockResolvedValue(false);
 });
 
+/** Legacy evidence capture inactive: no replay, no revision, nothing recorded. */
+function inactiveLegacyEvidence() {
+	return {
+		findReplay: vi.fn(async () => null),
+		prepare: vi.fn(async () => null),
+		record: vi.fn(),
+	};
+}
+
 describe("absence canonical decision errors", () => {
 	it.each([
 		["forbidden", AuthorizationError],
@@ -1800,6 +1809,7 @@ describe("absence decision rollout routing", () => {
 			processLegacy,
 			captureLegacyState,
 			nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
+			legacyEvidence: inactiveLegacyEvidence(),
 		});
 
 		expect(outerTransaction).toHaveBeenCalledOnce();
@@ -2013,6 +2023,7 @@ describe("absence decision rollout routing", () => {
 				processLegacy: vi.fn(),
 				captureLegacyState: vi.fn(),
 				nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
+				legacyEvidence: inactiveLegacyEvidence(),
 			});
 
 		await decide("approval-target-1");
@@ -2122,6 +2133,7 @@ describe("absence decision rollout routing", () => {
 			processLegacy: vi.fn(),
 			captureLegacyState: vi.fn(),
 			nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
+			legacyEvidence: inactiveLegacyEvidence(),
 		});
 
 		expect(transition).toHaveBeenCalledOnce();
@@ -2199,6 +2211,7 @@ describe("absence decision rollout routing", () => {
 				processLegacy,
 				captureLegacyState,
 				nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
+				legacyEvidence: inactiveLegacyEvidence(),
 			}),
 		).rejects.toThrow(/active absence approval actor/i);
 		expect(captureLegacyState).not.toHaveBeenCalled();
@@ -2312,6 +2325,7 @@ describe("absence decision rollout routing", () => {
 				processLegacy,
 				captureLegacyState,
 				nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
+				legacyEvidence: inactiveLegacyEvidence(),
 			}),
 		).rejects.toThrow(
 			failurePoint === "mirror" ? "mirror failed" : "capture after failed",
@@ -2416,6 +2430,7 @@ describe("absence decision rollout routing", () => {
 				processLegacy: vi.fn(),
 				captureLegacyState: vi.fn(),
 				nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
+				legacyEvidence: inactiveLegacyEvidence(),
 			}),
 		).rejects.toThrow("engine rollback");
 		expect(committed.sourceStatus).toBe("pending");
@@ -2502,6 +2517,7 @@ describe("absence decision rollout routing", () => {
 				processLegacy,
 				captureLegacyState: vi.fn(),
 				nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
+				legacyEvidence: inactiveLegacyEvidence(),
 			}),
 		).rejects.toThrow(
 			linkState === "missing_target" ? /decision target/i : /workflow link/i,

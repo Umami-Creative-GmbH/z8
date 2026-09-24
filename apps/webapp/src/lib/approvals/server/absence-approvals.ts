@@ -54,6 +54,13 @@ import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import {
+	findLegacyAbsenceDecisionReplay,
+	type LegacyObservedMirror,
+	prepareLegacyAbsenceDecisionEvidence,
+	recordLegacyAbsenceDecisionEvidence,
+} from "../evidence/legacy-absence";
+import type { LegacyDecisionEvidenceRecord } from "../evidence/store";
+import {
 	ApprovalAuditLogger,
 	createApprovalAuditLogger,
 } from "../infrastructure/audit-logger";
@@ -134,6 +141,19 @@ interface AbsenceDecisionRuntime {
 	transitionEngine: Pick<ApprovalTransitionEngine, "executeInTransaction">;
 }
 
+/** Transaction-bound legacy evidence; defaults to the approval evidence module. */
+export interface LegacyAbsenceDecisionEvidencePort {
+	findReplay: typeof findLegacyAbsenceDecisionReplay;
+	prepare: typeof prepareLegacyAbsenceDecisionEvidence;
+	record: typeof recordLegacyAbsenceDecisionEvidence;
+}
+
+const defaultLegacyDecisionEvidence: LegacyAbsenceDecisionEvidencePort = {
+	findReplay: findLegacyAbsenceDecisionReplay,
+	prepare: prepareLegacyAbsenceDecisionEvidence,
+	record: recordLegacyAbsenceDecisionEvidence,
+};
+
 interface ExecuteAbsenceDecisionInput {
 	runtime: AbsenceDecisionRuntime;
 	organizationId: string;
@@ -158,6 +178,7 @@ interface ExecuteAbsenceDecisionInput {
 		capturedAt: Instant;
 	}): Promise<VerifiedLegacyApprovalState>;
 	nowInstant(): Instant;
+	legacyEvidence?: LegacyAbsenceDecisionEvidencePort;
 }
 
 export function createAbsenceApprovalManagementAuthorization(input: {
@@ -325,7 +346,48 @@ export async function executeAbsenceDecisionInTransaction(
 					expectedVersion = observedWorkflow.version;
 				}
 			}
+			const legacyEvidence =
+				input.legacyEvidence ?? defaultLegacyDecisionEvidence;
+			const evidenceActor = {
+				employeeId: currentEmployee.id,
+				userId: currentEmployee.userId,
+			};
+			// Receipt before fresh checks: an exact committed operation replays
+			// its original evidence and runs no mutation or after-commit effects.
+			const replayed = await legacyEvidence.findReplay(transactionDb, {
+				organizationId: input.organizationId,
+				absenceId: input.absenceId,
+				approvalRequestId: input.approvalRequestId,
+				action: input.action,
+				reason: input.reason,
+				actor: evidenceActor,
+			});
+			if (replayed) {
+				return {
+					mode: gate.mode,
+					actor: currentEmployee,
+					domainResult: undefined,
+					commandResult: undefined,
+					replayed,
+				};
+			}
 			const capturedAt = input.nowInstant();
+			const captureState = () =>
+				input.captureLegacyState({
+					dbService: decisionContext.dbService,
+					organizationId: input.organizationId,
+					absenceId: input.absenceId,
+					capturedAt,
+				});
+			const evidencePlan = await legacyEvidence.prepare(transactionDb, {
+				organizationId: input.organizationId,
+				absenceId: input.absenceId,
+				captureState,
+			});
+			// Unchanged legacy key: it stays the shadow observation key and is
+			// stored verbatim as the legacy receipt key.
+			const idempotencyKey = `absence:${input.absenceId}:${input.action}:${expectedVersion ?? "initial"}:${rejectionReasonFingerprint(input.reason)}`;
+			let observed: LegacyObservedMirror | null = null;
 			const coordinator = createLegacyApprovalWriteCoordinator({
 				writeGate: fixedGate,
 				compatibilityWriter: decisionContext.compatibilityWriter,
@@ -335,23 +397,34 @@ export async function executeAbsenceDecisionInTransaction(
 				workflowType: "absence",
 				sourceIdentity,
 				actor,
-				idempotencyKey: `absence:${input.absenceId}:${input.action}:${expectedVersion ?? "initial"}:${rejectionReasonFingerprint(input.reason)}`,
+				idempotencyKey,
 				expectedVersion,
-				captureState: () =>
-					input.captureLegacyState({
-						dbService: decisionContext.dbService,
-						organizationId: input.organizationId,
-						absenceId: input.absenceId,
-						capturedAt,
-					}),
+				captureState,
 				mutate: () =>
 					input.processLegacy(dbService, currentEmployee, "existing"),
+				afterMirror: async (mirrored) => {
+					observed = mirrored;
+				},
 			});
+			if (evidencePlan) {
+				await legacyEvidence.record(transactionDb, evidencePlan, {
+					organizationId: input.organizationId,
+					absenceId: input.absenceId,
+					action: input.action,
+					reason: input.reason,
+					approvalRequestId: input.approvalRequestId,
+					idempotencyKey,
+					actor: evidenceActor,
+					captureState,
+					observed,
+				});
+			}
 			return {
 				mode: gate.mode,
 				actor: currentEmployee,
 				domainResult,
 				commandResult: undefined,
+				replayed: null,
 			};
 		}
 
@@ -420,6 +493,7 @@ export async function executeAbsenceDecisionInTransaction(
 			actor: currentEmployee,
 			domainResult: undefined,
 			commandResult,
+			replayed: null as LegacyDecisionEvidenceRecord | null,
 		};
 	});
 }

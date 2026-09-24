@@ -175,6 +175,7 @@ function createLegacyApprovalLifecycle(
 		captureLegacyState: vi.fn(),
 		startCanonicalWorkflow: vi.fn(),
 		captureCanonicalEvidence: vi.fn(async () => null),
+		captureLegacyEvidence: vi.fn(async () => null),
 		nowInstant: vi.fn(() => ({ toString: () => "2026-07-19T10:00:00Z" })),
 	};
 }
@@ -757,6 +758,9 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 				calls.push("evidence-capture");
 				return null;
 			}),
+			captureLegacyEvidence: vi.fn(
+				async (_tx: unknown, _input: Record<string, unknown>) => null,
+			),
 			nowInstant: vi.fn(() => parseInstant("2026-07-19T10:00:00Z")),
 		};
 		const create = vi.fn(() => {

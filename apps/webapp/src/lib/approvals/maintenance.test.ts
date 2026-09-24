@@ -99,7 +99,7 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 		});
 		expect(
 			statements.some((statement) =>
-				/approval_(decision_evidence|review_binding|submitted_revision) where/.test(
+				/^delete from approval_(decision_evidence|review_binding|submitted_revision)/.test(
 					statement.sql,
 				),
 			),
