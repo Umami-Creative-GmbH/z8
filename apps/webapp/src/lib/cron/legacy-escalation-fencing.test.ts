@@ -1,5 +1,6 @@
 import { PgDialect } from "drizzle-orm/pg-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { LEGACY_ESCALATION_JOB_NAMES } from "./legacy-escalation-schedulers";
 import { CRON_JOBS } from "./registry";
 
 const mocks = vi.hoisted(() => ({
@@ -26,19 +27,19 @@ vi.mock("@/lib/telegram/approval-handler", () => ({ sendApprovalMessageToManager
 vi.mock("@/lib/discord/approval-handler", () => ({ sendApprovalMessageToManager: mocks.send }));
 vi.mock("@/lib/teams/approval-handler", () => ({ sendApprovalCardToManager: mocks.send }));
 
-const jobs = ["cron:slack-escalation", "cron:telegram-escalation", "cron:discord-escalation", "cron:teams-escalation"] as const;
-
-describe.each(jobs)("%s execution fencing", (jobName) => {
+describe.each(LEGACY_ESCALATION_JOB_NAMES)("%s execution fencing", (jobName) => {
 	beforeEach(() => {
 		vi.resetAllMocks();
 		mocks.configs.mockResolvedValue([
 			{ organizationId: "moved-org", tenantId: "moved", enableEscalations: true },
 			{ organizationId: "paused-org", tenantId: "paused", enableEscalations: true },
+			{ organizationId: "unknown-owner-org", tenantId: "unknown", enableEscalations: true },
 		]);
 		mocks.readControl.mockImplementation(({ where }) => {
 			const { params } = new PgDialect().sqlToQuery(where);
 			if (params[0] === "moved-org") return { owner: "escalation", automationPaused: false };
 			if (params[0] === "paused-org") return { owner: "legacy", automationPaused: true };
+			if (params[0] === "unknown-owner-org") return { owner: "future-owner", automationPaused: false };
 			throw new Error("Unscoped ownership read");
 		});
 	});
@@ -54,9 +55,10 @@ describe.each(jobs)("%s execution fencing", (jobName) => {
 			suppressedOrganizations: [
 				{ organizationId: "moved-org", reason: "ownership_moved" },
 				{ organizationId: "paused-org", reason: "automation_paused" },
+				{ organizationId: "unknown-owner-org", reason: "unrecognized_owner" },
 			],
 		});
-		expect(mocks.readControl).toHaveBeenCalledTimes(2);
+		expect(mocks.readControl).toHaveBeenCalledTimes(3);
 		expect(mocks.select).not.toHaveBeenCalled();
 		expect(mocks.insert).not.toHaveBeenCalled();
 		expect(mocks.update).not.toHaveBeenCalled();
@@ -67,7 +69,7 @@ describe.each(jobs)("%s execution fencing", (jobName) => {
 		mocks.readControl.mockRejectedValue(new Error("ownership database unavailable"));
 		const result = await CRON_JOBS[jobName].processor();
 		expect(result.success).toBe(false);
-		expect(result.errors).toHaveLength(2);
+		expect(result.errors).toHaveLength(3);
 		expect(result.errors.every((error) => error.includes("ownership database unavailable"))).toBe(true);
 		expect(mocks.select).not.toHaveBeenCalled();
 		expect(mocks.insert).not.toHaveBeenCalled();

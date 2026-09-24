@@ -12,6 +12,7 @@
  */
 
 import type { JobsOptions } from "bullmq";
+import type { LegacyEscalationSuppression } from "@/lib/approvals/escalation/legacy-execution";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
 import type { SCIMMaintenanceResult } from "@/lib/jobs/scim-maintenance";
 
@@ -159,6 +160,7 @@ export interface TeamsEscalationResult {
 	tenantsProcessed: number;
 	approvalsEscalated: number;
 	errors: string[];
+	suppressedOrganizations: LegacyEscalationSuppression[];
 }
 
 /** Result from Telegram daily digest job */
@@ -175,6 +177,7 @@ export interface TelegramEscalationResult {
 	botsProcessed: number;
 	approvalsEscalated: number;
 	errors: string[];
+	suppressedOrganizations: LegacyEscalationSuppression[];
 }
 
 /** Result from Discord daily digest job */
@@ -191,6 +194,7 @@ export interface DiscordEscalationResult {
 	botsProcessed: number;
 	approvalsEscalated: number;
 	errors: string[];
+	suppressedOrganizations: LegacyEscalationSuppression[];
 }
 
 /** Result from Slack daily digest job */
@@ -207,6 +211,7 @@ export interface SlackEscalationResult {
 	botsProcessed: number;
 	approvalsEscalated: number;
 	errors: string[];
+	suppressedOrganizations: LegacyEscalationSuppression[];
 }
 
 // ============================================
