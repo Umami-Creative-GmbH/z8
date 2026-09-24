@@ -16,6 +16,7 @@ import type {
 	ShiftWithRelations,
 } from "@/app/[locale]/(app)/scheduling/types";
 import { useTheme } from "@/components/theme-provider";
+import { Button } from "@/components/ui/button";
 import { ShiftDialog } from "../shifts/shift-dialog";
 import {
 	CoverageHeatmapOverlay,
@@ -25,7 +26,7 @@ import { PublishComplianceDialog } from "./publish-compliance-dialog";
 import { PublishFab } from "./publish-fab";
 import { ScheduleComplianceBanner } from "./schedule-compliance-banner";
 import {
-	getWeekDateRange,
+	initialSchedulerView,
 	plainDateTimeToDateKey,
 	plainDateTimeToTimeString,
 } from "./shift-scheduler-utils";
@@ -39,6 +40,10 @@ interface ShiftSchedulerProps {
 	organizationTimezone: string;
 	employeeId: string;
 	isManager: boolean;
+	/** Opens the schedule filtered to this employee (managers only). */
+	focusEmployeeId: string | null;
+	/** Opens the schedule on the week of this calendar date (YYYY-MM-DD). */
+	focusDate: string | null;
 }
 
 export function ShiftScheduler({
@@ -46,10 +51,15 @@ export function ShiftScheduler({
 	organizationTimezone,
 	employeeId: _employeeId,
 	isManager,
+	focusEmployeeId,
+	focusDate,
 }: ShiftSchedulerProps) {
 	const { t } = useTranslate();
 	const { resolvedTheme } = useTheme();
-	const [dateRange, setDateRange] = useState<DateRange>(getWeekDateRange);
+	const [initialView] = useState(() => initialSchedulerView(focusDate));
+	const [dateRange, setDateRange] = useState<DateRange>(initialView.dateRange);
+	const [showAllEmployees, setShowAllEmployees] = useState(false);
+	const employeeFilter = showAllEmployees ? null : focusEmployeeId;
 	const [selectedShift, setSelectedShift] = useState<ShiftWithRelations | null>(null);
 	const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
 	const [newShiftDate, setNewShiftDate] = useState<string | null>(null);
@@ -66,7 +76,13 @@ export function ShiftScheduler({
 		complianceFindingsCount,
 		hasComplianceWarnings,
 		updateShift,
-	} = useShiftSchedulerData({ organizationId, organizationTimezone, dateRange, isManager });
+	} = useShiftSchedulerData({
+		organizationId,
+		organizationTimezone,
+		dateRange,
+		isManager,
+		employeeFilter,
+	});
 	const {
 		pendingAcknowledgment,
 		isComplianceDialogOpen,
@@ -144,6 +160,7 @@ export function ShiftScheduler({
 	// Create calendar
 	const calendar = useCalendarApp({
 		views: [createViewWeek(), createViewMonthGrid()],
+		selectedDate: initialView.selectedDate,
 		events,
 		isDark,
 		calendars: {
@@ -240,6 +257,14 @@ export function ShiftScheduler({
 				<CoverageSummaryBar data={coverageData} visible={showCoverageOverlay} />
 			)}
 
+			{employeeFilter && (
+				<EmployeeFilterNotice
+					employeeId={employeeFilter}
+					shifts={shifts}
+					onShowAll={() => setShowAllEmployees(true)}
+				/>
+			)}
+
 			<div className="flex gap-4 flex-1 min-h-0">
 				{/* Template sidebar for managers */}
 				{isManager && <TemplateSidebar templates={templates} onTemplateDrop={handleTemplateDrop} />}
@@ -281,6 +306,35 @@ export function ShiftScheduler({
 				onConfirm={confirmPublish}
 				isConfirming={isPublishing}
 			/>
+		</div>
+	);
+}
+
+/** Names the employee the schedule is filtered to, with a way back to everyone. */
+function EmployeeFilterNotice({
+	employeeId,
+	shifts,
+	onShowAll,
+}: {
+	employeeId: string;
+	shifts: ShiftWithRelations[];
+	onShowAll: () => void;
+}) {
+	const { t } = useTranslate();
+	const employee = shifts.find((shift) => shift.employeeId === employeeId)?.employee;
+	const name = employee ? `${employee.firstName ?? ""} ${employee.lastName ?? ""}`.trim() : "";
+	return (
+		<div className="flex items-center gap-2 text-sm" role="status">
+			<span>
+				{name
+					? t("scheduling:scheduling.scheduler.focus.employee", "Showing shifts for {name}", {
+							name,
+						})
+					: t("scheduling:scheduling.scheduler.focus.anonymous", "Showing one employee's shifts")}
+			</span>
+			<Button type="button" variant="ghost" size="sm" onClick={onShowAll}>
+				{t("scheduling:scheduling.scheduler.focus.showAll", "Show all shifts")}
+			</Button>
 		</div>
 	);
 }

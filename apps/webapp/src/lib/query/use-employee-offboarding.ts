@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
 	assignDepartureReplacementAction,
@@ -158,14 +158,23 @@ export function useDeparturePreview(options: {
 	organizationId: string;
 	employeeId: string;
 	lastWorkingDay: string | null;
+	replacementEmployeeId: string | null;
 	enabled: boolean;
 }) {
-	const { organizationId, employeeId, lastWorkingDay, enabled } = options;
+	const { organizationId, employeeId, lastWorkingDay, replacementEmployeeId, enabled } = options;
 	return useQuery({
-		queryKey: queryKeys.employees.offboardingPreview(organizationId, employeeId, lastWorkingDay),
-		queryFn: () => unwrap(previewEmployeeDepartureAction({ employeeId, lastWorkingDay })),
+		queryKey: queryKeys.employees.offboardingPreview(
+			organizationId,
+			employeeId,
+			lastWorkingDay,
+			replacementEmployeeId,
+		),
+		queryFn: () =>
+			unwrap(previewEmployeeDepartureAction({ employeeId, lastWorkingDay, replacementEmployeeId })),
 		enabled,
 		staleTime: 0,
 		retry: false,
+		// Keep the replacement list while a changed choice is re-checked.
+		placeholderData: keepPreviousData,
 	});
 }

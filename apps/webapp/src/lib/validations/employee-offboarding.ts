@@ -72,6 +72,7 @@ export const employeeOffboardingViewSchema = z.object({ employeeId: z.uuid() });
 export const previewDepartureSchema = z.object({
 	employeeId: z.uuid(),
 	lastWorkingDay: z.iso.date().nullable(),
+	replacementEmployeeId: z.uuid().nullable().default(null),
 });
 
 export const resolveDepartureReviewSchema = z.object({

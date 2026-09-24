@@ -6,6 +6,7 @@ import {
 	type Instant,
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
+import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { departureCutoff } from "./cutoff";
 import { type DepartureBlockedReason, evaluateDepartureAuthority } from "./owner-invariant";
 import { actorMayResolveDepartureWork } from "./reviews";
@@ -20,7 +21,6 @@ import type {
 
 type QueryDatabase = Pick<typeof rootDatabase, "execute">;
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const MACHINE_REASON = /^[a-z][a-z_]{0,63}$/;
 
 export type DepartureFact = {
@@ -133,10 +133,7 @@ export function publicReviewMetadata(metadata: unknown): {
 			typeof record.reason === "string" && MACHINE_REASON.test(record.reason)
 				? record.reason
 				: null,
-		handoverTaskId:
-			typeof record.handoverTaskId === "string" && UUID.test(record.handoverTaskId)
-				? record.handoverTaskId
-				: null,
+		handoverTaskId: isCanonicalUuid(record.handoverTaskId) ? record.handoverTaskId : null,
 	};
 }
 
@@ -147,9 +144,11 @@ export type EmployeeOffboardingViewResult =
 
 async function resolveViewer(
 	database: QueryDatabase,
-	input: { organizationId: string; employeeId: string; actorUserId: string },
+	input: { organizationId: string; employeeId: string; actorUserId: string; now: Instant },
 ): Promise<"admin" | "manager" | null> {
-	if (await actorMayResolveDepartureWork(database, input.organizationId, input.actorUserId)) {
+	if (
+		await actorMayResolveDepartureWork(database, input.organizationId, input.actorUserId, input.now)
+	) {
 		return "admin";
 	}
 	const manager = await database.execute(sql`
@@ -387,10 +386,19 @@ export async function previewEmployeeDeparture(
 		actorUserId: string;
 		/** Null previews an immediate departure. */
 		lastWorkingDay: string | null;
+		/** The replacement being considered; null previews unassigned duties. */
+		replacementEmployeeId: string | null;
 		now: Instant;
 	},
 ): Promise<EmployeeDeparturePreviewResult> {
-	if (!(await actorMayResolveDepartureWork(database, input.organizationId, input.actorUserId))) {
+	if (
+		!(await actorMayResolveDepartureWork(
+			database,
+			input.organizationId,
+			input.actorUserId,
+			input.now,
+		))
+	) {
 		return { kind: "forbidden" };
 	}
 	const targets = await database.execute<{ user_id: string; timezone: string | null }>(sql`
@@ -425,19 +433,34 @@ export async function previewEmployeeDeparture(
 
 	const facts = await database.execute<{
 		canonical_duties: number;
+		replacement_requested_duties: number;
+		later_stages: number;
 		legacy_duties: number;
 		running_timer: boolean;
 		future_shifts: number;
 		future_absences: number;
 	}>(sql`
+		WITH duties AS (
+			SELECT w.requester_employee_id FROM approval_stage_assignment a
+			JOIN approval_workflow_stage s ON s.id = a.stage_id AND s.organization_id = a.organization_id
+			JOIN approval_workflow w ON w.id = a.workflow_id AND w.organization_id = a.organization_id
+			WHERE a.organization_id = ${input.organizationId}
+				AND a.approver_employee_id = ${input.employeeId}::uuid AND a.status = 'pending'
+				AND w.status = 'pending' AND s.status = 'pending' AND s.activation_mode = 'human'
+				AND s.stage_order = w.current_stage_order
+		)
 		SELECT
-			(SELECT count(*)::int FROM approval_stage_assignment a
-				JOIN approval_workflow_stage s ON s.id = a.stage_id AND s.organization_id = a.organization_id
-				JOIN approval_workflow w ON w.id = a.workflow_id AND w.organization_id = a.organization_id
-				WHERE a.organization_id = ${input.organizationId}
-					AND a.approver_employee_id = ${input.employeeId}::uuid AND a.status = 'pending'
-					AND w.status = 'pending' AND s.status = 'pending' AND s.activation_mode = 'human'
-					AND s.stage_order = w.current_stage_order) AS canonical_duties,
+			(SELECT count(*)::int FROM duties) AS canonical_duties,
+			(SELECT count(*)::int FROM duties
+				WHERE requester_employee_id = ${input.replacementEmployeeId}::uuid) AS replacement_requested_duties,
+			-- Later stages the capture turns into reviews when there is no replacement.
+			(SELECT count(*)::int FROM approval_workflow_stage s
+				JOIN approval_workflow w ON w.id = s.workflow_id AND w.organization_id = s.organization_id
+				WHERE s.organization_id = ${input.organizationId}
+					AND w.status = 'pending' AND s.status = 'waiting'
+					AND s.resolver_snapshot->>'approverType' = 'specific_employee'
+					AND s.resolver_snapshot->>'approverEmployeeId' = ${input.employeeId}
+					AND s.resolver_snapshot->>'fallbackBehavior' = 'fail') AS later_stages,
 			(SELECT count(*)::int FROM approval_request r
 				WHERE r.organization_id = ${input.organizationId}
 					AND r.approver_id = ${input.employeeId}::uuid AND r.status = 'pending'
@@ -473,11 +496,24 @@ export async function previewEmployeeDeparture(
 
 	const canonicalDuties = Number(fact?.canonical_duties ?? 0);
 	const legacyDuties = Number(fact?.legacy_duties ?? 0);
+	// Advisory: the offered set; the handover re-checks each duty's authority.
+	const hasReplacement =
+		input.replacementEmployeeId !== null &&
+		options.rows.some((option) => option.id === input.replacementEmployeeId);
 	const exceptions: DeparturePreviewException[] = [];
 	if (fact?.running_timer) exceptions.push("running_timer");
 	if (Number(fact?.future_shifts ?? 0) > 0) exceptions.push("future_shifts");
 	if (Number(fact?.future_absences ?? 0) > 0) exceptions.push("future_absences");
-	if (canonicalDuties > 0) exceptions.push("unassigned_approval_duties");
+	if (input.replacementEmployeeId !== null && !hasReplacement) {
+		exceptions.push("replacement_ineligible");
+	}
+	if (canonicalDuties > 0 && !hasReplacement) exceptions.push("unassigned_approval_duties");
+	if (hasReplacement && Number(fact?.replacement_requested_duties ?? 0) > 0) {
+		exceptions.push("replacement_requested_duties");
+	}
+	if (!hasReplacement && Number(fact?.later_stages ?? 0) > 0) {
+		exceptions.push("later_stages_without_replacement");
+	}
 	if (legacyDuties > 0) exceptions.push("legacy_approval_duties");
 	if (authority === "owner_authorization_required" || authority === "final_accessible_owner") {
 		exceptions.push(authority);

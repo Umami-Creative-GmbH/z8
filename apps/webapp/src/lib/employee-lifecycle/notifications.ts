@@ -3,6 +3,8 @@ import type { db as rootDatabase } from "@/db";
 import type { DepartureReviewKind } from "@/db/schema/employee-lifecycle";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { CreateNotificationParams, NotificationChannel } from "@/lib/notifications/types";
+import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
+import { memberIsAccessibleOwnerOrAdmin } from "./authority-sql";
 import { formatDepartureCutoff } from "./cutoff-display";
 import { type DepartureTaskHandler, DepartureTaskNeedsResolutionError } from "./delivery";
 
@@ -56,15 +58,8 @@ export async function resolveReviewRecipients(
 		FROM (
 			SELECT m.user_id, 'organization_admin' AS reason, 0 AS priority
 			FROM member m
-			WHERE m.organization_id = ${input.organizationId} AND m.status = 'approved'
-				AND ('owner' = ANY(regexp_split_to_array(COALESCE(m.role, ''), '\\s*,\\s*'))
-					OR 'admin' = ANY(regexp_split_to_array(COALESCE(m.role, ''), '\\s*,\\s*')))
-				AND NOT EXISTS (
-					SELECT 1 FROM employee e
-					WHERE e.organization_id = m.organization_id AND e.user_id = m.user_id
-						AND (e.is_active = false
-							OR employee_departure_denies_access(e.organization_id, e.id, ${at}::timestamptz))
-				)
+			WHERE m.organization_id = ${input.organizationId}
+				AND ${memberIsAccessibleOwnerOrAdmin(sql`${at}::timestamptz`)}
 			UNION ALL
 			SELECT manager.user_id, 'primary_manager' AS reason, 1 AS priority
 			FROM employee_managers link
@@ -220,8 +215,6 @@ async function loadReview(
 	return result.rows[0] ?? null;
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-
 /**
  * Handles `notify_review` tasks in two phases. A planner task (payload
  * `{ reviewId }`) resolves recipients and preferences and queues one
@@ -237,7 +230,7 @@ export function createReviewNotificationHandler(deps: {
 }): DepartureTaskHandler {
 	return async (claim, context) => {
 		const reviewId = claim.payload.reviewId;
-		if (typeof reviewId !== "string" || !UUID.test(reviewId)) {
+		if (!isCanonicalUuid(reviewId)) {
 			throw new DepartureTaskNeedsResolutionError("invalid_notification_payload");
 		}
 		const review = await loadReview(deps.database, claim.organizationId, reviewId);

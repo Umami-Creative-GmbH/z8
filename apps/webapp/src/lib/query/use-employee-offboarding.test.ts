@@ -137,7 +137,7 @@ describe("useEmployeeOffboarding", () => {
 });
 
 describe("useDeparturePreview", () => {
-	it("waits until enabled and keys the preview by the last working day", async () => {
+	it("waits until enabled and keys the preview by the last working day and replacement", async () => {
 		actions.previewEmployeeDepartureAction.mockResolvedValue({
 			success: true,
 			data: { cutoff: "2026-09-30T22:00:00Z", timezone: "Europe/Berlin" },
@@ -149,6 +149,7 @@ describe("useDeparturePreview", () => {
 					organizationId: "org-1",
 					employeeId,
 					lastWorkingDay: "2026-09-30",
+					replacementEmployeeId: null,
 					enabled,
 				}),
 			{ wrapper, initialProps: { enabled: false } },
@@ -161,6 +162,10 @@ describe("useDeparturePreview", () => {
 		expect(actions.previewEmployeeDepartureAction).toHaveBeenCalledWith({
 			employeeId,
 			lastWorkingDay: "2026-09-30",
+			replacementEmployeeId: null,
 		});
+		expect(
+			queryKeys.employees.offboardingPreview("org-1", employeeId, "2026-09-30", "r-1"),
+		).toEqual(["employees", "org-1", "offboarding", employeeId, "preview", "2026-09-30", "r-1"]);
 	});
 });

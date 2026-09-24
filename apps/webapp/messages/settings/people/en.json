@@ -129,7 +129,6 @@
         "chooseReplacement": "Choose a replacement",
         "clockReview": "Needs review: offboarding clock-out",
         "confirmRehire": "Confirm rehire",
-        "contractType": "Contract type",
         "correctTime": "Correct time",
         "currency": "Currency",
         "currencyInvalid": "Enter a three-letter currency code.",
@@ -143,8 +142,11 @@
           "finalOwner": "Assign and activate another approved owner before this employee leaves.",
           "futureAbsences": "Absences after the cutoff remain recorded. Review them in absences.",
           "futureShifts": "Shifts after the cutoff remain assigned. Review them in scheduling.",
+          "laterStages": "Later approval stages are routed only to this employee. Choose a replacement, or assign one on each review.",
           "legacyDuties": "Some approvals cannot be transferred automatically and will be listed for review.",
           "ownerAuthorization": "Only an organization owner can offboard an owner.",
+          "replacementIneligible": "The chosen replacement cannot currently take over approvals. Choose another replacement.",
+          "replacementRequestedDuties": "The replacement requested some of these approvals and cannot decide them. They will be listed for review.",
           "runningTimer": "A running timer will be closed at the cutoff and marked for review.",
           "unassignedDuties": "This employee has open approval duties. Choose a replacement or confirm admins will resolve them."
         },
@@ -161,7 +163,6 @@
           "title": "Kept after the departure"
         },
         "historicalCalendar": "View historical calendar",
-        "hourlyRate": "Hourly rate",
         "hourlyRateRequired": "Hourly contracts need a positive hourly rate.",
         "lastWorkingDay": "Last working day",
         "lastWorkingDayRequired": "Choose the last working day.",
@@ -179,9 +180,7 @@
         "openReviews": "Needs review",
         "previewLoading": "Calculating the cutoff…",
         "primaryManager": "Primary manager",
-        "probationEnd": "Probation end",
         "probationOrder": "Probation end must be after probation start.",
-        "probationStart": "Probation start",
         "reasons": {
           "clockOutFailed": "The running timer could not be closed automatically.",
           "futureAssignments": "Future work policy assignments were deactivated.",
@@ -242,10 +241,7 @@
         "team": "Team",
         "title": "Employment and departure",
         "unknownLegacyDate": "Date not recorded",
-        "weeklyHours": "Weekly hours",
-        "weeklyHoursInvalid": "Enter weekly hours between 0 and 168.",
-        "workModel": "Work model",
-        "workPolicy": "Work policy"
+        "weeklyHoursInvalid": "Enter weekly hours between 0 and 168."
       }
     },
     "employmentHistory": {

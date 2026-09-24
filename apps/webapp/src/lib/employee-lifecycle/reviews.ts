@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { and, eq, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { employeeDepartureEvent, employeeDepartureReview } from "@/db/schema/employee-lifecycle";
+import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { memberIsAccessibleOwnerOrAdmin } from "./authority-sql";
 import { LATE_CLOCK_EVIDENCE_PROVENANCE } from "./late-clock-evidence";
 
 export type OpenDepartureClockRepair = {
@@ -62,25 +64,19 @@ export async function findOpenDepartureClockRepairs(
 /**
  * Accessible organization owners and admins resolve departure follow-up work
  * (reviews, replacement assignment, retries). Evaluated in the caller's
- * transaction, never from client-supplied role claims.
+ * transaction at the caller's instant, never from client-supplied role claims.
  */
 export async function actorMayResolveDepartureWork(
 	tx: Pick<typeof rootDatabase, "execute">,
 	organizationId: string,
 	actorUserId: string,
+	now: Instant,
 ): Promise<boolean> {
 	const authority = await tx.execute<{ allowed: boolean }>(sql`
 		SELECT EXISTS (
 			SELECT 1 FROM member m
 			WHERE m.organization_id = ${organizationId} AND m.user_id = ${actorUserId}
-				AND m.status = 'approved'
-				AND ('owner' = ANY(regexp_split_to_array(COALESCE(m.role, ''), '\s*,\s*'))
-					OR 'admin' = ANY(regexp_split_to_array(COALESCE(m.role, ''), '\s*,\s*')))
-				AND NOT EXISTS (
-					SELECT 1 FROM employee e
-					WHERE e.organization_id = m.organization_id AND e.user_id = m.user_id
-						AND e.is_active = false
-				)
+				AND ${memberIsAccessibleOwnerOrAdmin(sql`${dateFromInstant(now)}::timestamptz`)}
 		) AS allowed
 	`);
 	return authority.rows[0]?.allowed === true;
@@ -120,7 +116,14 @@ export async function resolveDepartureReview(
 	if (!resolution) throw new ResolveDepartureReviewError("resolution_required");
 
 	await database.transaction(async (tx) => {
-		if (!(await actorMayResolveDepartureWork(tx, input.organizationId, input.actorUserId))) {
+		if (
+			!(await actorMayResolveDepartureWork(
+				tx,
+				input.organizationId,
+				input.actorUserId,
+				instantFromDate(input.now),
+			))
+		) {
 			throw new ResolveDepartureReviewError("actor_not_authorized");
 		}
 
@@ -196,7 +199,14 @@ export async function retryDepartureTask(
 	input: { organizationId: string; taskId: string; actorUserId: string; now: Date },
 ): Promise<void> {
 	await database.transaction(async (tx) => {
-		if (!(await actorMayResolveDepartureWork(tx, input.organizationId, input.actorUserId))) {
+		if (
+			!(await actorMayResolveDepartureWork(
+				tx,
+				input.organizationId,
+				input.actorUserId,
+				instantFromDate(input.now),
+			))
+		) {
 			throw new RetryDepartureTaskError("actor_not_authorized");
 		}
 		const retried = await tx.execute(sql`
@@ -210,4 +220,3 @@ export async function retryDepartureTask(
 		if (retried.rows.length !== 1) throw new RetryDepartureTaskError("task_not_retryable");
 	});
 }
-

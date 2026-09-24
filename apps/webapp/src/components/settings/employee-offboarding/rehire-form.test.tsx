@@ -95,7 +95,7 @@ describe("RehireForm", () => {
 		await user.click(screen.getByRole("option", { name: "hourly" }));
 		await user.click(screen.getByRole("button", { name: "Confirm rehire" }));
 
-		expect(await screen.findByText("Work policy is required.")).toBeTruthy();
+		expect(await screen.findByText("Work Policy is required.")).toBeTruthy();
 		expect(screen.getByText("Hourly contracts need a positive hourly rate.")).toBeTruthy();
 		expect(props.rehire).not.toHaveBeenCalled();
 	});
@@ -108,8 +108,8 @@ describe("RehireForm", () => {
 		await user.click(screen.getByRole("option", { name: "Operations" }));
 		await user.click(screen.getByRole("option", { name: "Morgan Manager" }));
 		await user.click(screen.getByRole("option", { name: "Standard week" }));
-		await user.clear(screen.getByRole("textbox", { name: /Weekly hours/ }));
-		await user.type(screen.getByRole("textbox", { name: /Weekly hours/ }), "32,5");
+		await user.clear(screen.getByRole("textbox", { name: /Weekly Hours/ }));
+		await user.type(screen.getByRole("textbox", { name: /Weekly Hours/ }), "32,5");
 		await user.click(screen.getByRole("button", { name: "Confirm rehire" }));
 
 		await waitFor(() => expect(props.onCompleted).toHaveBeenCalled());

@@ -129,7 +129,6 @@
         "chooseReplacement": "Vertretung wählen",
         "clockReview": "Prüfung erforderlich: Ausstempeln beim Offboarding",
         "confirmRehire": "Wiedereinstellung bestätigen",
-        "contractType": "Vertragsart",
         "correctTime": "Zeit korrigieren",
         "currency": "Währung",
         "currencyInvalid": "Gib einen dreistelligen Währungscode ein.",
@@ -143,8 +142,11 @@
           "finalOwner": "Weise zuerst einen weiteren bestätigten Owner zu und aktiviere ihn, bevor diese Person ausscheidet.",
           "futureAbsences": "Abwesenheiten nach dem Austritt bleiben erfasst. Prüfe sie unter Abwesenheiten.",
           "futureShifts": "Schichten nach dem Austritt bleiben zugewiesen. Prüfe sie in der Schichtplanung.",
+          "laterStages": "Spätere Genehmigungsstufen sind nur dieser Person zugewiesen. Wähle eine Vertretung oder weise bei jeder Prüfung eine zu.",
           "legacyDuties": "Einige Genehmigungen können nicht automatisch übertragen werden und werden zur Prüfung aufgelistet.",
           "ownerAuthorization": "Nur ein Owner der Organisation kann einen Owner offboarden.",
+          "replacementIneligible": "Die gewählte Vertretung kann Genehmigungen derzeit nicht übernehmen. Wähle eine andere Vertretung.",
+          "replacementRequestedDuties": "Die Vertretung hat einige dieser Genehmigungen selbst beantragt und kann sie nicht entscheiden. Sie werden zur Prüfung aufgeführt.",
           "runningTimer": "Ein laufender Timer wird zum Austrittszeitpunkt beendet und zur Prüfung markiert.",
           "unassignedDuties": "Diese Person hat offene Genehmigungsaufgaben. Wähle eine Vertretung oder bestätige, dass Admins sie klären."
         },
@@ -161,7 +163,6 @@
           "title": "Nach dem Austritt beibehalten"
         },
         "historicalCalendar": "Historischen Kalender anzeigen",
-        "hourlyRate": "Stundensatz",
         "hourlyRateRequired": "Stundenverträge brauchen einen positiven Stundensatz.",
         "lastWorkingDay": "Letzter Arbeitstag",
         "lastWorkingDayRequired": "Wähle den letzten Arbeitstag.",
@@ -179,9 +180,7 @@
         "openReviews": "Prüfung erforderlich",
         "previewLoading": "Austrittszeitpunkt wird berechnet…",
         "primaryManager": "Primäre Führungskraft",
-        "probationEnd": "Ende der Probezeit",
         "probationOrder": "Das Ende der Probezeit muss nach ihrem Beginn liegen.",
-        "probationStart": "Beginn der Probezeit",
         "reasons": {
           "clockOutFailed": "Der laufende Timer konnte nicht automatisch beendet werden.",
           "futureAssignments": "Zukünftige Arbeitszeitmodell-Zuweisungen wurden deaktiviert.",
@@ -242,10 +241,7 @@
         "team": "Team",
         "title": "Beschäftigung und Austritt",
         "unknownLegacyDate": "Datum nicht erfasst",
-        "weeklyHours": "Wochenstunden",
-        "weeklyHoursInvalid": "Gib Wochenstunden zwischen 0 und 168 ein.",
-        "workModel": "Arbeitsmodell",
-        "workPolicy": "Arbeitszeitmodell"
+        "weeklyHoursInvalid": "Gib Wochenstunden zwischen 0 und 168 ein."
       }
     },
     "employmentHistory": {

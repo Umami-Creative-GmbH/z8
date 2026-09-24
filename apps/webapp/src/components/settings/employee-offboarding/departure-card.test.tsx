@@ -119,7 +119,7 @@ describe("DepartureCard", () => {
 		const kept = screen.getByRole("list", { name: "Kept after the departure" });
 		expect(
 			screen.getByRole("link", { name: "Shifts on or after the cutoff: 2" }).getAttribute("href"),
-		).toBe("/scheduling");
+		).toBe("/scheduling?employeeId=employee-1&date=2026-10-01");
 		expect(
 			screen.getByRole("link", { name: "Absences on or after the cutoff: 1" }).getAttribute("href"),
 		).toBe("/calendar/employee-1?date=2026-10-01");

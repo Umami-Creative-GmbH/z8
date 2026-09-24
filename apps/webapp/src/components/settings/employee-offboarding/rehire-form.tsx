@@ -3,19 +3,20 @@
 import { IconAlertTriangle, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { type ReactNode, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import {
+	ContractTypeOptions,
+	TermDateField,
+	TermDecimalField,
+	TermSelectField,
+	useEmploymentTermLabels,
+	WorkModelOptions,
+} from "@/components/settings/employee-employment-history/term-fields";
 import { Alert } from "@/components/ui/alert";
 import { AlertDescription } from "@/components/ui/alert-description";
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+import { SelectItem } from "@/components/ui/select";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
@@ -60,12 +61,14 @@ function toContractMinutes(hours: string): number {
 }
 
 /**
- * Confirms the terms of a new employment period. Nothing from the previous
- * stint is restored implicitly: role, team, manager, policy and contract are
- * all chosen here, and the server starts the period at its own instant.
+ * Confirms the terms of a new employment period with the same term fields as
+ * the employment history. Nothing from the previous stint is restored
+ * implicitly: role, team, manager, policy and contract are all chosen here,
+ * and the server starts the period at its own instant.
  */
 export function RehireForm(props: RehireFormProps) {
 	const { t } = useTranslate();
+	const terms = useEmploymentTermLabels();
 	const requestIdentity = useRequestIdentity();
 	const errorRef = useRef<HTMLDivElement>(null);
 	const [submitError, setSubmitError] = useState<string | null>(null);
@@ -164,13 +167,7 @@ export function RehireForm(props: RehireFormProps) {
 			<div className="grid gap-4 md:grid-cols-2">
 				<form.Field name="role">
 					{(field) => (
-						<SelectRow
-							label={t("settings.employees.offboarding.role", "Role")}
-							hasError={fieldHasError(field)}
-							value={field.state.value}
-							onChange={(value) => field.handleChange(value as RehireFormValues["role"])}
-							message={<TFormMessage field={field} />}
-						>
+						<TermSelectField label={t("settings.employees.offboarding.role", "Role")} field={field}>
 							<SelectItem value="employee">
 								{t("settings.employees.offboarding.roles.employee", "Employee")}
 							</SelectItem>
@@ -180,18 +177,12 @@ export function RehireForm(props: RehireFormProps) {
 							<SelectItem value="admin">
 								{t("settings.employees.offboarding.roles.admin", "Admin")}
 							</SelectItem>
-						</SelectRow>
+						</TermSelectField>
 					)}
 				</form.Field>
 				<form.Field name="teamId">
 					{(field) => (
-						<SelectRow
-							label={t("settings.employees.offboarding.team", "Team")}
-							hasError={fieldHasError(field)}
-							value={field.state.value}
-							onChange={field.handleChange}
-							message={<TFormMessage field={field} />}
-						>
+						<TermSelectField label={t("settings.employees.offboarding.team", "Team")} field={field}>
 							<SelectItem value={NONE}>
 								{t("settings.employees.offboarding.noTeam", "No team")}
 							</SelectItem>
@@ -200,17 +191,14 @@ export function RehireForm(props: RehireFormProps) {
 									{team.name}
 								</SelectItem>
 							))}
-						</SelectRow>
+						</TermSelectField>
 					)}
 				</form.Field>
 				<form.Field name="primaryManagerId">
 					{(field) => (
-						<SelectRow
+						<TermSelectField
 							label={t("settings.employees.offboarding.primaryManager", "Primary manager")}
-							hasError={fieldHasError(field)}
-							value={field.state.value}
-							onChange={field.handleChange}
-							message={<TFormMessage field={field} />}
+							field={field}
 						>
 							<SelectItem value={NONE}>
 								{t("settings.employees.offboarding.noManager", "No manager")}
@@ -220,33 +208,23 @@ export function RehireForm(props: RehireFormProps) {
 									{manager.name}
 								</SelectItem>
 							))}
-						</SelectRow>
+						</TermSelectField>
 					)}
 				</form.Field>
 				<form.Field
 					name="workPolicyId"
 					validators={{
-						onSubmit: ({ value }) =>
-							value
-								? undefined
-								: required(t("settings.employees.offboarding.workPolicy", "Work policy")),
+						onSubmit: ({ value }) => (value ? undefined : required(terms.workPolicy)),
 					}}
 				>
 					{(field) => (
-						<SelectRow
-							label={t("settings.employees.offboarding.workPolicy", "Work policy")}
-							required
-							hasError={fieldHasError(field)}
-							value={field.state.value}
-							onChange={field.handleChange}
-							message={<TFormMessage field={field} />}
-						>
+						<TermSelectField label={terms.workPolicy} field={field} required>
 							{props.workPolicies.map((policy) => (
 								<SelectItem key={policy.id} value={policy.id}>
 									{policy.name}
 								</SelectItem>
 							))}
-						</SelectRow>
+						</TermSelectField>
 					)}
 				</form.Field>
 				<form.Field
@@ -263,65 +241,20 @@ export function RehireForm(props: RehireFormProps) {
 						},
 					}}
 				>
-					{(field) => (
-						<TFormItem>
-							<TFormLabel hasError={fieldHasError(field)} required>
-								{t("settings.employees.offboarding.weeklyHours", "Weekly hours")}
-							</TFormLabel>
-							<TFormControl hasError={fieldHasError(field)}>
-								<Input
-									name="weeklyHours"
-									inputMode="decimal"
-									value={field.state.value}
-									onChange={(event) => field.handleChange(event.target.value)}
-									onBlur={field.handleBlur}
-									autoComplete="off"
-								/>
-							</TFormControl>
-							<TFormMessage field={field} />
-						</TFormItem>
-					)}
+					{(field) => <TermDecimalField field={field} label={terms.weeklyHours} required />}
 				</form.Field>
 				<form.Field name="contractType">
 					{(field) => (
-						<SelectRow
-							label={t("settings.employees.offboarding.contractType", "Contract type")}
-							hasError={fieldHasError(field)}
-							value={field.state.value}
-							onChange={(value) => field.handleChange(value as RehireFormValues["contractType"])}
-							message={<TFormMessage field={field} />}
-						>
-							<SelectItem value="fixed">
-								{t("settings.employmentHistory.contractTypes.fixed", "fixed")}
-							</SelectItem>
-							<SelectItem value="hourly">
-								{t("settings.employmentHistory.contractTypes.hourly", "hourly")}
-							</SelectItem>
-						</SelectRow>
+						<TermSelectField label={terms.contractType} field={field}>
+							<ContractTypeOptions />
+						</TermSelectField>
 					)}
 				</form.Field>
 				<form.Field name="workModel">
 					{(field) => (
-						<SelectRow
-							label={t("settings.employees.offboarding.workModel", "Work model")}
-							hasError={fieldHasError(field)}
-							value={field.state.value}
-							onChange={(value) => field.handleChange(value as RehireFormValues["workModel"])}
-							message={<TFormMessage field={field} />}
-						>
-							<SelectItem value="onsite">
-								{t("settings.employmentHistory.workModels.onsite", "onsite")}
-							</SelectItem>
-							<SelectItem value="hybrid">
-								{t("settings.employmentHistory.workModels.hybrid", "hybrid")}
-							</SelectItem>
-							<SelectItem value="remote">
-								{t("settings.employmentHistory.workModels.remote", "remote")}
-							</SelectItem>
-							<SelectItem value="flexible">
-								{t("settings.employmentHistory.workModels.flexible", "flexible")}
-							</SelectItem>
-						</SelectRow>
+						<TermSelectField label={terms.workModel} field={field}>
+							<WorkModelOptions />
+						</TermSelectField>
 					)}
 				</form.Field>
 				<form.Subscribe selector={(state) => state.values.contractType}>
@@ -339,24 +272,7 @@ export function RehireForm(props: RehireFormProps) {
 												),
 								}}
 							>
-								{(field) => (
-									<TFormItem>
-										<TFormLabel hasError={fieldHasError(field)} required>
-											{t("settings.employees.offboarding.hourlyRate", "Hourly rate")}
-										</TFormLabel>
-										<TFormControl hasError={fieldHasError(field)}>
-											<Input
-												name="hourlyRate"
-												inputMode="decimal"
-												value={field.state.value}
-												onChange={(event) => field.handleChange(event.target.value)}
-												onBlur={field.handleBlur}
-												autoComplete="off"
-											/>
-										</TFormControl>
-										<TFormMessage field={field} />
-									</TFormItem>
-								)}
+								{(field) => <TermDecimalField field={field} label={terms.hourlyRate} required />}
 							</form.Field>
 						) : null
 					}
@@ -393,22 +309,7 @@ export function RehireForm(props: RehireFormProps) {
 					)}
 				</form.Field>
 				<form.Field name="probationStartsOn">
-					{(field) => (
-						<TFormItem>
-							<TFormLabel hasError={fieldHasError(field)}>
-								{t("settings.employees.offboarding.probationStart", "Probation start")}
-							</TFormLabel>
-							<TFormControl hasError={fieldHasError(field)}>
-								<DatePicker
-									name="probationStartsOn"
-									value={field.state.value}
-									onChange={field.handleChange}
-									onBlur={field.handleBlur}
-								/>
-							</TFormControl>
-							<TFormMessage field={field} />
-						</TFormItem>
-					)}
+					{(field) => <TermDateField field={field} label={terms.probationStart} />}
 				</form.Field>
 				<form.Field
 					name="probationEndsOn"
@@ -424,22 +325,7 @@ export function RehireForm(props: RehireFormProps) {
 						},
 					}}
 				>
-					{(field) => (
-						<TFormItem>
-							<TFormLabel hasError={fieldHasError(field)}>
-								{t("settings.employees.offboarding.probationEnd", "Probation end")}
-							</TFormLabel>
-							<TFormControl hasError={fieldHasError(field)}>
-								<DatePicker
-									name="probationEndsOn"
-									value={field.state.value}
-									onChange={field.handleChange}
-									onBlur={field.handleBlur}
-								/>
-							</TFormControl>
-							<TFormMessage field={field} />
-						</TFormItem>
-					)}
+					{(field) => <TermDateField field={field} label={terms.probationEnd} />}
 				</form.Field>
 			</div>
 
@@ -481,40 +367,5 @@ export function RehireForm(props: RehireFormProps) {
 				</form.Subscribe>
 			</div>
 		</form>
-	);
-}
-
-function SelectRow({
-	label,
-	required,
-	hasError,
-	value,
-	onChange,
-	message,
-	children,
-}: {
-	label: string;
-	required?: boolean;
-	hasError: boolean;
-	value: string;
-	onChange: (value: string) => void;
-	message: ReactNode;
-	children: ReactNode;
-}) {
-	return (
-		<TFormItem>
-			<TFormLabel hasError={hasError} required={required}>
-				{label}
-			</TFormLabel>
-			<Select value={value} onValueChange={onChange}>
-				<TFormControl hasError={hasError}>
-					<SelectTrigger className="w-full">
-						<SelectValue />
-					</SelectTrigger>
-				</TFormControl>
-				<SelectContent>{children}</SelectContent>
-			</Select>
-			{message}
-		</TFormItem>
 	);
 }

@@ -9,6 +9,10 @@ import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import { createDepartureCommands } from "./commands";
 import { getEmployeeOffboardingView, previewEmployeeDeparture } from "./queries";
 import {
+	enableCanonicalAbsences,
+	seedPendingAbsenceWorkflow,
+} from "./testing/approval-workflow.test.fixture";
+import {
 	createLifecycleDatabaseFixture,
 	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
@@ -215,6 +219,36 @@ describeLifecycleDatabase("employee offboarding read models", () => {
 			).resolves.toEqual({ kind: "forbidden" });
 		});
 
+		it("recognizes a listed admin role and denies an admin whose own departure is due", async () => {
+			now = NOW;
+			const employee = await fixture.seedEmployee();
+			const listed = await fixture.seedEmployee();
+			await fixture.pool.query(`update member set role = 'member, admin' where id = $1`, [
+				listed.memberId,
+			]);
+			const departingAdmin = await fixture.seedEmployee({ role: "admin" });
+			await commands().scheduleDeparture(owner(), {
+				employeeId: departingAdmin.employeeId,
+				requestId: randomUUID(),
+				expectedRevision: null,
+				lastWorkingDay: "2026-09-30",
+				replacementEmployeeId: null,
+				acknowledgeUnassignedDuties: true,
+			});
+			// The departure is due but no worker has materialized it yet.
+			now = AFTER_CUTOFF;
+
+			expect((await view(employee, listed.userId)).capabilities.schedule).toBe(true);
+			await expect(
+				getEmployeeOffboardingView(fixture.db, {
+					organizationId: fixture.organizationId,
+					employeeId: employee.employeeId,
+					actorUserId: departingAdmin.userId,
+					now,
+				}),
+			).resolves.toEqual({ kind: "forbidden" });
+		});
+
 		it("never reads an employee through another organization", async () => {
 			const foreignOrganizationId = await fixture.createOrganization();
 			const foreign = await fixture.seedEmployee({ organizationId: foreignOrganizationId });
@@ -251,6 +285,7 @@ describeLifecycleDatabase("employee offboarding read models", () => {
 				employeeId: employee.employeeId,
 				actorUserId: fixture.ownerUserId,
 				lastWorkingDay: "2026-09-30",
+				replacementEmployeeId: null,
 				now,
 			});
 
@@ -273,6 +308,72 @@ describeLifecycleDatabase("employee offboarding read models", () => {
 			expect(await counts()).toBe(before);
 		});
 
+		it("checks approval duties against the chosen replacement", async () => {
+			now = NOW;
+			await enableCanonicalAbsences(fixture, new Date(NOW.epochMilliseconds));
+			const departing = await fixture.seedEmployee({ role: "admin" });
+			const requester = await fixture.seedEmployee();
+			const replacement = await fixture.seedEmployee({ role: "admin" });
+			const plain = await fixture.seedEmployee();
+			const firstApprover = await fixture.seedEmployee({ role: "admin" });
+			const at = new Date(NOW.epochMilliseconds);
+			await seedPendingAbsenceWorkflow(fixture, {
+				requester,
+				approverEmployeeIds: [departing.employeeId],
+				at,
+			});
+			// The replacement asked for this one and can never decide it.
+			await seedPendingAbsenceWorkflow(fixture, {
+				requester: replacement,
+				approverEmployeeIds: [departing.employeeId],
+				at,
+			});
+			// A later stage routed only to the departing person.
+			await seedPendingAbsenceWorkflow(fixture, {
+				requester,
+				approverEmployeeIds: [firstApprover.employeeId],
+				at,
+				secondStageResolver: {
+					approverType: "specific_employee",
+					approverEmployeeId: departing.employeeId,
+					fallbackBehavior: "fail",
+				},
+			});
+			const preview = async (replacementEmployeeId: string | null) => {
+				const result = await previewEmployeeDeparture(fixture.db, {
+					organizationId: fixture.organizationId,
+					employeeId: departing.employeeId,
+					actorUserId: fixture.ownerUserId,
+					lastWorkingDay: "2026-09-30",
+					replacementEmployeeId,
+					now,
+				});
+				if (result.kind !== "ok") throw new Error(`preview ${result.kind}`);
+				return result.preview;
+			};
+
+			const without = await preview(null);
+			expect(without.pendingDutyCount).toBe(2);
+			expect(without.exceptions).toEqual(
+				expect.arrayContaining(["unassigned_approval_duties", "later_stages_without_replacement"]),
+			);
+			expect(without.exceptions).not.toContain("replacement_ineligible");
+
+			const covered = await preview(replacement.employeeId);
+			expect(covered.exceptions).toContain("replacement_requested_duties");
+			expect(covered.exceptions).not.toContain("unassigned_approval_duties");
+			expect(covered.exceptions).not.toContain("later_stages_without_replacement");
+
+			const ineligible = await preview(plain.employeeId);
+			expect(ineligible.exceptions).toEqual(
+				expect.arrayContaining([
+					"replacement_ineligible",
+					"unassigned_approval_duties",
+					"later_stages_without_replacement",
+				]),
+			);
+		});
+
 		it("rejects a past last working day and non-admin actors", async () => {
 			now = NOW;
 			const employee = await fixture.seedEmployee();
@@ -282,6 +383,7 @@ describeLifecycleDatabase("employee offboarding read models", () => {
 					employeeId: employee.employeeId,
 					actorUserId: fixture.ownerUserId,
 					lastWorkingDay: "2026-09-01",
+					replacementEmployeeId: null,
 					now,
 				}),
 			).resolves.toEqual({ kind: "invalid", code: "departure_date_in_past" });
@@ -291,6 +393,7 @@ describeLifecycleDatabase("employee offboarding read models", () => {
 					employeeId: employee.employeeId,
 					actorUserId: employee.userId,
 					lastWorkingDay: "2026-09-30",
+					replacementEmployeeId: null,
 					now,
 				}),
 			).resolves.toEqual({ kind: "forbidden" });

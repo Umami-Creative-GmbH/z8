@@ -1,13 +1,4 @@
-import { DatePicker } from "@/components/ui/date-picker";
-import { Input } from "@/components/ui/input";
-import {
-	TFormControl,
-	TFormDescription,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
-import { fieldHasError } from "@/components/ui/tanstack-form-utils";
+import { TermDateField, TermDecimalField } from "./term-fields";
 import type { EmploymentHistoryFormApi } from "./types";
 
 export function TextField({
@@ -20,29 +11,12 @@ export function TextField({
 	form: EmploymentHistoryFormApi;
 	name: "weeklyHours" | "hourlyRate";
 	label: string;
-	type?: string;
+	type?: "text" | "number";
 	disabled?: boolean;
 }) {
 	return (
 		<form.Field name={name}>
-			{(field) => (
-				<TFormItem>
-					<TFormLabel hasError={fieldHasError(field)}>{label}</TFormLabel>
-					<TFormControl hasError={fieldHasError(field)}>
-						<Input
-							name={name}
-							type={type}
-							inputMode={type === "number" ? "decimal" : undefined}
-							value={field.state.value}
-							onChange={(event) => field.handleChange(event.target.value)}
-							onBlur={field.handleBlur}
-							disabled={disabled}
-							autoComplete="off"
-						/>
-					</TFormControl>
-					<TFormMessage field={field} />
-				</TFormItem>
-			)}
+			{(field) => <TermDecimalField field={field} label={label} type={type} disabled={disabled} />}
 		</form.Field>
 	);
 }
@@ -72,23 +46,13 @@ export function DateField({
 			}}
 		>
 			{(field) => (
-				<TFormItem>
-					<TFormLabel hasError={fieldHasError(field)} required={required}>
-						{label}
-					</TFormLabel>
-					<TFormControl hasError={fieldHasError(field)}>
-						<DatePicker
-							name={name}
-							value={field.state.value}
-							onChange={field.handleChange}
-							onBlur={field.handleBlur}
-							disabled={disabled}
-							required={required}
-						/>
-					</TFormControl>
-					{description && <TFormDescription>{description}</TFormDescription>}
-					<TFormMessage field={field} />
-				</TFormItem>
+				<TermDateField
+					field={field}
+					label={label}
+					disabled={disabled}
+					description={description}
+					required={required}
+				/>
 			)}
 		</form.Field>
 	);

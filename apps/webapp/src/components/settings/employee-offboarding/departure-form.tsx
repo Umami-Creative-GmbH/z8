@@ -228,14 +228,18 @@ export function DepartureForm(props: DepartureFormProps) {
 				selector={(state) => ({
 					mode: state.values.mode,
 					lastWorkingDay: state.values.lastWorkingDay,
+					replacementEmployeeId: state.values.replacementEmployeeId,
 				})}
 			>
-				{({ mode, lastWorkingDay }) => (
+				{({ mode, lastWorkingDay, replacementEmployeeId }) => (
 					<DeparturePreviewFields
 						form={form}
 						organizationId={props.organizationId}
 						employeeId={props.employeeId}
 						lastWorkingDay={mode === "immediate" ? null : lastWorkingDay || null}
+						replacementEmployeeId={
+							replacementEmployeeId === NO_REPLACEMENT ? null : replacementEmployeeId
+						}
 						enabled={mode === "immediate" || Boolean(lastWorkingDay)}
 						locale={locale}
 					/>
@@ -296,6 +300,7 @@ function DeparturePreviewFields({
 	organizationId,
 	employeeId,
 	lastWorkingDay,
+	replacementEmployeeId,
 	enabled,
 	locale,
 }: {
@@ -303,12 +308,19 @@ function DeparturePreviewFields({
 	organizationId: string;
 	employeeId: string;
 	lastWorkingDay: string | null;
+	replacementEmployeeId: string | null;
 	enabled: boolean;
 	locale: string;
 }) {
 	const { t } = useTranslate();
 	const labels = useOffboardingLabels();
-	const preview = useDeparturePreview({ organizationId, employeeId, lastWorkingDay, enabled });
+	const preview = useDeparturePreview({
+		organizationId,
+		employeeId,
+		lastWorkingDay,
+		replacementEmployeeId,
+		enabled,
+	});
 	const data = preview.data;
 	const hasDuties = (data?.pendingDutyCount ?? 0) > 0;
 

@@ -1,23 +1,17 @@
 import { IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import {
-	TFormControl,
-	TFormDescription,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
+import { SelectItem } from "@/components/ui/select";
+import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { DateField, TextField } from "./form-fields";
+import {
+	ContractTypeOptions,
+	TermSelectField,
+	useEmploymentTermLabels,
+	WorkModelOptions,
+} from "./term-fields";
 import type { EmploymentHistoryFormApi, EmploymentHistoryWorkPolicyOption } from "./types";
 
 export function EmploymentHistoryForm({
@@ -32,6 +26,7 @@ export function EmploymentHistoryForm({
 	onCancel: () => void;
 }) {
 	const { t } = useTranslate();
+	const terms = useEmploymentTermLabels();
 	return (
 		<form
 			onSubmit={(event) => {
@@ -60,13 +55,13 @@ export function EmploymentHistoryForm({
 				<TextField
 					form={form}
 					name="weeklyHours"
-					label={t("settings.employmentHistory.weeklyHours", "Weekly Hours")}
+					label={terms.weeklyHours}
 					type="number"
 					disabled={isCreating}
 				/>
 				<form.Field name="reviewState">
 					{(field) => (
-						<SelectField
+						<TermSelectField
 							label={t("settings.employmentHistory.reviewState", "Review State")}
 							field={field}
 							disabled={isCreating}
@@ -80,51 +75,27 @@ export function EmploymentHistoryForm({
 							<SelectItem value="confirmed">
 								{t("settings.employmentHistory.states.confirmed", "confirmed")}
 							</SelectItem>
-						</SelectField>
+						</TermSelectField>
 					)}
 				</form.Field>
 				<form.Field name="workModel">
 					{(field) => (
-						<SelectField
-							label={t("settings.employmentHistory.workModel", "Work Model")}
-							field={field}
-							disabled={isCreating}
-						>
-							<SelectItem value="onsite">
-								{t("settings.employmentHistory.workModels.onsite", "onsite")}
-							</SelectItem>
-							<SelectItem value="hybrid">
-								{t("settings.employmentHistory.workModels.hybrid", "hybrid")}
-							</SelectItem>
-							<SelectItem value="remote">
-								{t("settings.employmentHistory.workModels.remote", "remote")}
-							</SelectItem>
-							<SelectItem value="flexible">
-								{t("settings.employmentHistory.workModels.flexible", "flexible")}
-							</SelectItem>
-						</SelectField>
+						<TermSelectField label={terms.workModel} field={field} disabled={isCreating}>
+							<WorkModelOptions />
+						</TermSelectField>
 					)}
 				</form.Field>
 				<form.Field name="contractType">
 					{(field) => (
-						<SelectField
-							label={t("settings.employmentHistory.contractType", "Contract Type")}
-							field={field}
-							disabled={isCreating}
-						>
-							<SelectItem value="fixed">
-								{t("settings.employmentHistory.contractTypes.fixed", "fixed")}
-							</SelectItem>
-							<SelectItem value="hourly">
-								{t("settings.employmentHistory.contractTypes.hourly", "hourly")}
-							</SelectItem>
-						</SelectField>
+						<TermSelectField label={terms.contractType} field={field} disabled={isCreating}>
+							<ContractTypeOptions />
+						</TermSelectField>
 					)}
 				</form.Field>
 				<form.Field name="workPolicyId">
 					{(field) => (
-						<SelectField
-							label={t("settings.employmentHistory.workPolicy", "Work Policy")}
+						<TermSelectField
+							label={terms.workPolicy}
 							field={field}
 							disabled={isCreating}
 							description={t(
@@ -140,26 +111,26 @@ export function EmploymentHistoryForm({
 									{policy.name}
 								</SelectItem>
 							))}
-						</SelectField>
+						</TermSelectField>
 					)}
 				</form.Field>
 				<TextField
 					form={form}
 					name="hourlyRate"
-					label={t("settings.employmentHistory.hourlyRate", "Hourly Rate")}
+					label={terms.hourlyRate}
 					type="number"
 					disabled={isCreating}
 				/>
 				<DateField
 					form={form}
 					name="probationStartsOn"
-					label={t("settings.employmentHistory.probationStart", "Probation Start")}
+					label={terms.probationStart}
 					disabled={isCreating}
 				/>
 				<DateField
 					form={form}
 					name="probationEndsOn"
-					label={t("settings.employmentHistory.probationEnd", "Probation End")}
+					label={terms.probationEnd}
 					disabled={isCreating}
 				/>
 			</div>
@@ -198,49 +169,5 @@ export function EmploymentHistoryForm({
 				</Button>
 			</div>
 		</form>
-	);
-}
-
-type SelectFieldApi<TValue extends string> = {
-	state: {
-		value: TValue;
-		meta: {
-			errors: unknown[];
-		};
-	};
-	handleChange: (value: TValue) => void;
-};
-
-function SelectField<TValue extends string>({
-	label,
-	field,
-	disabled,
-	description,
-	children,
-}: {
-	label: string;
-	field: SelectFieldApi<TValue>;
-	disabled: boolean;
-	description?: string;
-	children: React.ReactNode;
-}) {
-	return (
-		<TFormItem>
-			<TFormLabel hasError={fieldHasError(field)}>{label}</TFormLabel>
-			<Select
-				value={field.state.value}
-				onValueChange={(value) => field.handleChange(value as TValue)}
-				disabled={disabled}
-			>
-				<TFormControl hasError={fieldHasError(field)}>
-					<SelectTrigger>
-						<SelectValue />
-					</SelectTrigger>
-				</TFormControl>
-				<SelectContent>{children}</SelectContent>
-			</Select>
-			{description && <TFormDescription>{description}</TFormDescription>}
-			<TFormMessage field={field} />
-		</TFormItem>
 	);
 }

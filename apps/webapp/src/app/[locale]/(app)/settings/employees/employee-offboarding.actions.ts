@@ -383,6 +383,7 @@ export async function previewEmployeeDepartureAction(
 				employeeId: data.employeeId,
 				actorUserId: actor.userId,
 				lastWorkingDay: data.lastWorkingDay,
+				replacementEmployeeId: data.replacementEmployeeId,
 			});
 			if (result.kind === "ok") return result.preview;
 			if (result.kind === "invalid") throw new DepartureCommandError(result.code);

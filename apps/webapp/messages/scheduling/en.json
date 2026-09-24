@@ -29,6 +29,11 @@
         "restTime": "Rest time: {count}",
         "title": "Compliance Warnings in This Date Range"
       },
+      "focus": {
+        "anonymous": "Showing one employee's shifts",
+        "employee": "Showing shifts for {name}",
+        "showAll": "Show all shifts"
+      },
       "loading": "Loading schedule...",
       "publish": {
         "failed": "Failed to publish shifts",

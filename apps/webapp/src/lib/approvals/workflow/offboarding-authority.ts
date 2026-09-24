@@ -6,6 +6,7 @@ import {
 	type Instant,
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
+import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { hasApprovalDecisionPath } from "../escalation/candidates";
 import type {
 	ApprovalCommandResult,
@@ -16,8 +17,6 @@ import type {
 import type { ApprovalWorkflowCommand } from "./state-machine";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-const CANONICAL_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /**
  * Persisted intent of one `approval_handover` departure task: the exact
@@ -32,10 +31,6 @@ export interface ApprovalHandoverTaskPayload {
 	replacementEmployeeId: string | null;
 }
 
-function uuid(value: unknown): value is string {
-	return typeof value === "string" && CANONICAL_UUID.test(value);
-}
-
 /** Validates a task payload into the handover intent; progress keys are ignored. */
 export function parseApprovalHandoverTaskPayload(
 	value: unknown,
@@ -43,11 +38,11 @@ export function parseApprovalHandoverTaskPayload(
 	if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
 	const record = value as Record<string, unknown>;
 	if (
-		!uuid(record.workflowId) ||
-		!uuid(record.stageId) ||
-		!uuid(record.assignmentId) ||
-		!uuid(record.fromEmployeeId) ||
-		(record.replacementEmployeeId !== null && !uuid(record.replacementEmployeeId))
+		!isCanonicalUuid(record.workflowId) ||
+		!isCanonicalUuid(record.stageId) ||
+		!isCanonicalUuid(record.assignmentId) ||
+		!isCanonicalUuid(record.fromEmployeeId) ||
+		(record.replacementEmployeeId !== null && !isCanonicalUuid(record.replacementEmployeeId))
 	) {
 		return null;
 	}
@@ -353,7 +348,7 @@ async function loadOffboardingReassignmentFacts(input: {
 	const toEmployeeId = input.command.type === "reassign" ? input.command.toEmployeeId : null;
 	const requesterEmployeeId = input.workflow.requesterEmployeeId;
 	let target: OffboardingReassignmentFacts["target"] = null;
-	if (!input.replay && toEmployeeId && uuid(toEmployeeId) && requesterEmployeeId) {
+	if (!input.replay && toEmployeeId && isCanonicalUuid(toEmployeeId) && requesterEmployeeId) {
 		const [candidate] = rows<{
 			id: string;
 			organization_id: string;

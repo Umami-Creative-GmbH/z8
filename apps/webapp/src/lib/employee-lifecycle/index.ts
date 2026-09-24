@@ -39,6 +39,7 @@ export function getOffboardingQueries() {
 			employeeId: string;
 			actorUserId: string;
 			lastWorkingDay: string | null;
+			replacementEmployeeId: string | null;
 		}) => previewEmployeeDeparture(db, { ...input, now: systemClock.nowInstant() }),
 	};
 }

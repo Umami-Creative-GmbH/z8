@@ -150,6 +150,21 @@ export function useOffboardingLabels() {
 					"settings.employees.offboarding.exceptions.unassignedDuties",
 					"This employee has open approval duties. Choose a replacement or confirm admins will resolve them.",
 				);
+			case "replacement_ineligible":
+				return t(
+					"settings.employees.offboarding.exceptions.replacementIneligible",
+					"The chosen replacement cannot currently take over approvals. Choose another replacement.",
+				);
+			case "replacement_requested_duties":
+				return t(
+					"settings.employees.offboarding.exceptions.replacementRequestedDuties",
+					"The replacement requested some of these approvals and cannot decide them. They will be listed for review.",
+				);
+			case "later_stages_without_replacement":
+				return t(
+					"settings.employees.offboarding.exceptions.laterStages",
+					"Later approval stages are routed only to this employee. Choose a replacement, or assign one on each review.",
+				);
 			case "legacy_approval_duties":
 				return t(
 					"settings.employees.offboarding.exceptions.legacyDuties",

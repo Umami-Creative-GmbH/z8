@@ -196,7 +196,7 @@ function FutureWorkLinks({ view }: { view: EmployeeOffboardingView }) {
 	const links = [
 		futureWork.shifts > 0 && {
 			key: "shifts",
-			href: "/scheduling",
+			href: `/scheduling?employeeId=${view.employeeId}&date=${cutoffDate}`,
 			label: t(
 				"settings.employees.offboarding.futureWork.shifts",
 				"Shifts on or after the cutoff: {count}",

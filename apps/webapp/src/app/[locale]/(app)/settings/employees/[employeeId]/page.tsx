@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { getEmployee } from "../actions";
 import { getCurrentApprovedMembership } from "../current-approved-membership";
 import { EmployeeDetailPageClient } from "./employee-detail-page-client";
@@ -11,8 +12,6 @@ interface EmployeeDetailPageProps {
 	searchParams?: Promise<{ review?: string | string[] }>;
 }
 
-const REVIEW_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-
 export default function EmployeeDetailPage(props: EmployeeDetailPageProps) {
 	return (
 		<Suspense fallback={<SettingsContentLoading />}>
@@ -21,15 +20,19 @@ export default function EmployeeDetailPage(props: EmployeeDetailPageProps) {
 	);
 }
 
-async function EmployeeDetailPageContent({ params, searchParams }: EmployeeDetailPageProps) {
+async function EmployeeDetailPageContent({
+	params,
+	searchParams,
+}: EmployeeDetailPageProps) {
 	const [settingsRouteContext, { employeeId }, query] = await Promise.all([
 		getCurrentSettingsRouteContext(),
 		params,
 		searchParams ?? Promise.resolve({ review: undefined }),
 	]);
 	// A notification links to one persisted review; only its id is passed on.
-	const highlightedReviewId =
-		typeof query.review === "string" && REVIEW_ID.test(query.review) ? query.review : null;
+	const highlightedReviewId = isCanonicalUuid(query.review)
+		? query.review
+		: null;
 
 	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
 		redirect("/settings");

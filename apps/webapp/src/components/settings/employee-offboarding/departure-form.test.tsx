@@ -235,6 +235,36 @@ describe("DepartureForm", () => {
 		);
 	});
 
+	it("checks the preview against the chosen replacement", () => {
+		renderForm({
+			departure: {
+				id: "22222222-2222-4222-8222-222222222222",
+				revision: 1,
+				mode: "scheduled",
+				lastWorkingDay: "2026-09-30",
+				cutoff: "2026-09-30T22:00:00Z",
+				timezone: "Europe/Berlin",
+				replacementEmployeeId: "33333333-3333-4333-8333-333333333333",
+				blockedReason: null,
+			},
+		});
+
+		expect(previewMock).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				lastWorkingDay: "2026-09-30",
+				replacementEmployeeId: "33333333-3333-4333-8333-333333333333",
+			}),
+		);
+	});
+
+	it("previews unassigned duties while no replacement is chosen", () => {
+		renderForm();
+
+		expect(previewMock).toHaveBeenLastCalledWith(
+			expect.objectContaining({ replacementEmployeeId: null }),
+		);
+	});
+
 	it("only offers immediate departure when scheduling is not allowed", () => {
 		renderForm({ canSchedule: false });
 

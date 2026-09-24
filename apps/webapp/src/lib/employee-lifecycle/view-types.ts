@@ -82,6 +82,12 @@ export type DeparturePreviewException =
 	| "future_absences"
 	| "unassigned_approval_duties"
 	| "legacy_approval_duties"
+	/** The chosen replacement is not one of the replacements offered. */
+	| "replacement_ineligible"
+	/** Some duties were requested by the chosen replacement; admins resolve them. */
+	| "replacement_requested_duties"
+	/** Later stages name only this employee and need a replacement. */
+	| "later_stages_without_replacement"
 	| "owner_authorization_required"
 	| "final_accessible_owner";
 

@@ -16,6 +16,7 @@ import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflo
 import { ApprovalStateMachineError } from "@/lib/approvals/workflow/state-machine";
 import { ApprovalTransitionEngineError } from "@/lib/approvals/workflow/transition-engine";
 import { type Clock, dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { type DepartureTaskHandler, DepartureTaskNeedsResolutionError } from "./delivery";
 import { assertReadCommitted } from "./locks";
 import { enqueueReviewNotifications } from "./notifications";
@@ -28,8 +29,6 @@ type LifecycleRootDatabase = Pick<
 	typeof rootDatabase,
 	"transaction" | "execute" | "insert" | "update"
 >;
-
-const CANONICAL_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /** Retries of one delivery attempt after losing the workflow version race. */
 const VERSION_CONFLICT_ATTEMPTS = 3;
@@ -298,9 +297,7 @@ function handoverIdempotencyKey(
 	resolutionRequestId: unknown,
 ): string {
 	const base = `offboarding:${departureId}:${assignmentId}`;
-	return typeof resolutionRequestId === "string" && CANONICAL_UUID.test(resolutionRequestId)
-		? `${base}:${resolutionRequestId}`
-		: base;
+	return isCanonicalUuid(resolutionRequestId) ? `${base}:${resolutionRequestId}` : base;
 }
 
 function isVersionRace(error: unknown): boolean {
@@ -443,7 +440,7 @@ export async function assignDepartureReplacement(
 		.digest("hex");
 	await database.transaction(async (tx) => {
 		await assertReadCommitted(tx);
-		if (!(await actorMayResolveDepartureWork(tx, actor.organizationId, actor.userId))) {
+		if (!(await actorMayResolveDepartureWork(tx, actor.organizationId, actor.userId, now))) {
 			throw new AssignDepartureReplacementError("actor_not_authorized");
 		}
 		const [receipt] = await tx
