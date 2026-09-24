@@ -18,7 +18,8 @@
       "pendingTimeCorrection": "Correzione oraria in sospeso",
       "refreshAfterClearFailed": "Blocco rimosso, ma non è stato possibile aggiornare le buste paga",
       "unknownEmployee": "Dipendente sconosciuto",
-      "unresolvedWorkMinutes": "Minuti di lavoro da verificare"
+      "unresolvedWorkMinutes": "Minuti di lavoro da verificare",
+      "offboardingClockRepair": "La timbratura di uscita per la cessazione va corretta"
     },
     "description": "Revisiona i totali delle buste paga, la preparazione e le esportazioni per il periodo selezionato.",
     "employeeTotals": {
@@ -47,6 +48,7 @@
       "employeeIdsMustContainOnlyStrings": "employeeIds deve contenere solo stringhe",
       "endDateAfterStart": "La data di fine deve essere uguale o successiva alla data di inizio",
       "exportBlockedByUnresolvedWorkMinutes": "Esportazione bloccata: risolvi prima i minuti di lavoro da verificare",
+      "exportBlockedByOffboardingClockRepair": "Esportazione bloccata: correggi prima la timbratura di uscita per la cessazione",
       "exportFormatNotConfigured": "Il formato di esportazione buste paga non è configurato",
       "invalidBlockerId": "ID blocco buste paga non valido",
       "invalidBlockerType": "Tipo di blocco buste paga non valido",

@@ -18,7 +18,8 @@
       "pendingTimeCorrection": "Correção de tempo pendente",
       "refreshAfterClearFailed": "Bloqueio removido, mas a folha de pagamento não pôde ser atualizada",
       "unknownEmployee": "Funcionário desconhecido",
-      "unresolvedWorkMinutes": "Minutos de trabalho precisam de revisão"
+      "unresolvedWorkMinutes": "Minutos de trabalho precisam de revisão",
+      "offboardingClockRepair": "O registo de saída na desvinculação precisa de correção"
     },
     "description": "Revise os totais da folha de pagamento, prontidão e exportações para o período selecionado.",
     "employeeTotals": {
@@ -47,6 +48,7 @@
       "employeeIdsMustContainOnlyStrings": "employeeIds deve conter apenas strings",
       "endDateAfterStart": "A data de término deve ser igual ou posterior à data de início",
       "exportBlockedByUnresolvedWorkMinutes": "Exportação bloqueada: resolva primeiro os minutos de trabalho que precisam de revisão",
+      "exportBlockedByOffboardingClockRepair": "Exportação bloqueada: corrija primeiro o registo de saída na desvinculação",
       "exportFormatNotConfigured": "O formato de exportação da folha de pagamento não está configurado",
       "invalidBlockerId": "ID de bloqueio da folha de pagamento inválido",
       "invalidBlockerType": "Tipo de bloqueio da folha de pagamento inválido",

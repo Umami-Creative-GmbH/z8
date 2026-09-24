@@ -18,7 +18,8 @@
       "pendingTimeCorrection": "Corrección de tiempo pendiente",
       "refreshAfterClearFailed": "Bloqueo eliminado, pero no se pudo actualizar la nómina",
       "unknownEmployee": "Empleado desconocido",
-      "unresolvedWorkMinutes": "Los minutos de trabajo requieren revisión"
+      "unresolvedWorkMinutes": "Los minutos de trabajo requieren revisión",
+      "offboardingClockRepair": "El fichaje de salida por baja necesita corrección"
     },
     "description": "Revisa los totales de nómina, la preparación y las exportaciones para el periodo seleccionado.",
     "employeeTotals": {
@@ -47,6 +48,7 @@
       "employeeIdsMustContainOnlyStrings": "employeeIds solo debe contener cadenas",
       "endDateAfterStart": "La fecha de finalización debe ser igual o posterior a la fecha de inicio",
       "exportBlockedByUnresolvedWorkMinutes": "Exportación bloqueada: primero resuelve los minutos de trabajo que requieren revisión",
+      "exportBlockedByOffboardingClockRepair": "Exportación bloqueada: corrige primero el fichaje de salida por baja",
       "exportFormatNotConfigured": "El formato de exportación de nómina no está configurado",
       "invalidBlockerId": "ID de bloqueo de nómina no válido",
       "invalidBlockerType": "Tipo de bloqueo de nómina no válido",

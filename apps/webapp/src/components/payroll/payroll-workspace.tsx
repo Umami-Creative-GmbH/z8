@@ -1389,6 +1389,19 @@ function PayrollBlockersAlert({
 									: ""
 							}`;
 							break;
+						case "offboarding_clock_repair":
+							// Fixed through the existing time correction flow on the calendar.
+							blockerType = t(
+								"payroll.blockers.offboardingClockRepair",
+								"Offboarding clock-out needs repair",
+							);
+							actionLabel = t("payroll.blockers.openCalendar", "Open calendar");
+							href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
+								formattedDate && blocker.date
+									? `?date=${encodeURIComponent(blocker.date)}`
+									: ""
+							}`;
+							break;
 						case "pending_time_correction":
 							blockerType = t(
 								"payroll.blockers.pendingTimeCorrection",

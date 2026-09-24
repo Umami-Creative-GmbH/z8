@@ -10,6 +10,11 @@ const mockState = vi.hoisted(() => ({
 	payrollWageTypeMappingFindMany: vi.fn(),
 	payrollExportJobFindMany: vi.fn(),
 	travelExpenseClaimFindMany: vi.fn(),
+	findOpenDepartureClockRepairs: vi.fn(),
+}));
+
+vi.mock("@/lib/employee-lifecycle/reviews", () => ({
+	findOpenDepartureClockRepairs: mockState.findOpenDepartureClockRepairs,
 }));
 
 const operatorState = vi.hoisted(() => ({
@@ -133,6 +138,7 @@ function mockReadyQueries() {
 		},
 	]);
 	mockState.travelExpenseClaimFindMany.mockResolvedValue([]);
+	mockState.findOpenDepartureClockRepairs.mockResolvedValue([]);
 }
 
 function getCheck(result: Awaited<ReturnType<typeof getPayrollReadiness>>, id: string) {
@@ -170,6 +176,43 @@ describe("getPayrollReadiness", () => {
 		]) {
 			expect(JSON.stringify(findMany.mock.calls[0]?.[0]?.where)).toContain("org-1");
 		}
+	});
+
+	it("blocks while a departure timer repair is open in the period", async () => {
+		mockState.findOpenDepartureClockRepairs.mockResolvedValue([
+			{
+				reviewId: "review-1",
+				employeeId: "employee-9",
+				workPeriodId: null,
+				affectedStartAt: null,
+				affectedEndAt: new Date("2026-04-14T22:00:00.000Z"),
+			},
+		]);
+
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(result.status).toBe("blocked");
+		expect(getCheck(result, "offboarding-clock-repairs")).toMatchObject({
+			status: "fail",
+			severity: "blocker",
+			required: true,
+			count: 1,
+		});
+		expect(mockState.findOpenDepartureClockRepairs).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ organizationId: "org-1", employeeIds: null }),
+		);
+	});
+
+	it("reports unavailable instead of ready when the repair lookup fails", async () => {
+		mockState.findOpenDepartureClockRepairs.mockRejectedValue(new Error("db down"));
+
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(result.status).toBe("unavailable");
+		expect(getCheck(result, "offboarding-clock-repairs")).toMatchObject({
+			status: "unavailable",
+		});
 	});
 
 	it("blocks for pending approval records", async () => {

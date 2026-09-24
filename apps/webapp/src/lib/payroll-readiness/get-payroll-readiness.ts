@@ -9,6 +9,7 @@ import {
 	timeRecord,
 } from "@/db";
 import { employeeEmploymentHistory, travelExpenseClaim } from "@/db/schema";
+import { findOpenDepartureClockRepairs } from "@/lib/employee-lifecycle/reviews";
 
 export type PayrollReadinessStatus = "ready" | "blocked" | "unavailable";
 export type PayrollReadinessSeverity = "info" | "warning" | "blocker";
@@ -218,6 +219,7 @@ export async function getPayrollReadiness(
 		exportConfigs,
 		latestExportJobs,
 		travelExpenseClaims,
+		clockRepairLookup,
 	] = await Promise.all([
 		db.query.timeRecord.findMany({
 			where: and(
@@ -297,6 +299,16 @@ export async function getPayrollReadiness(
 				},
 			},
 		}),
+		// A failed lookup must surface as unavailable, never as ready.
+		findOpenDepartureClockRepairs(db, {
+			organizationId,
+			employeeIds: null,
+			rangeStart: start.toJSDate(),
+			rangeEndExclusive: end.plus({ milliseconds: 1 }).toJSDate(),
+		}).then(
+			(repairs) => ({ available: true as const, repairs }),
+			() => ({ available: false as const, repairs: [] }),
+		),
 	]);
 
 	const wageMappings =
@@ -336,6 +348,27 @@ export async function getPayrollReadiness(
 			count: pendingTimeRecords.length,
 			actionHref: "/approvals/inbox",
 			affectedEmployees: uniqueAffectedEmployees(pendingTimeRecords),
+		}),
+		buildCheck({
+			id: "offboarding-clock-repairs",
+			group: "time",
+			title: "Offboarding clock-out repairs",
+			titleKey: "settings.payrollReadiness.checks.offboardingClockRepairs.title",
+			description:
+				"A departed employee's running timer could not be closed safely; repair that time before payroll export.",
+			descriptionKey: "settings.payrollReadiness.checks.offboardingClockRepairs.description",
+			status: !clockRepairLookup.available
+				? "unavailable"
+				: clockRepairLookup.repairs.length > 0
+					? "fail"
+					: "pass",
+			severity: "blocker",
+			required: true,
+			count: clockRepairLookup.repairs.length,
+			actionHref: "/payroll",
+			affectedEmployees: Array.from(
+				new Set(clockRepairLookup.repairs.map((repair) => repair.employeeId)),
+			).map((id) => ({ id, employeeNumber: null })),
 		}),
 		buildCheck({
 			id: "stale-active-work",

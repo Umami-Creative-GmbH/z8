@@ -14,6 +14,10 @@ import {
 } from "@/db/schema";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import {
+	findOpenDepartureClockRepairs,
+	type OpenDepartureClockRepair,
+} from "@/lib/employee-lifecycle/reviews";
+import {
 	allocateProtectedMinutes,
 	employeePayrollWindow,
 } from "@/lib/payroll-allocation/protected-minutes";
@@ -222,6 +226,28 @@ export function filterMissingClockOutBlockers(input: {
 				]
 			: [],
 	);
+}
+
+/**
+ * Unresolved departure timer repairs. Localized at the cutoff in the
+ * employee's zone; they block exports and cannot be dismissed.
+ */
+export function buildOffboardingClockRepairBlockers(input: {
+	timezoneByEmployeeId: ReadonlyMap<string, string>;
+	repairs: ReadonlyArray<Pick<OpenDepartureClockRepair, "reviewId" | "employeeId" | "affectedEndAt">>;
+}): PayrollBlocker[] {
+	return input.repairs.map((repair) => {
+		const timezone = input.timezoneByEmployeeId.get(repair.employeeId);
+		return {
+			id: repair.reviewId,
+			employeeId: repair.employeeId,
+			type: "offboarding_clock_repair",
+			label: "Offboarding clock-out needs repair",
+			...(repair.affectedEndAt && timezone
+				? localizeInstant(instantFromDate(repair.affectedEndAt), timezone)
+				: { date: null, time: null }),
+		};
+	});
 }
 
 export function buildPendingAbsenceBlockers(
@@ -448,7 +474,8 @@ async function getBlockers(
 	organizationTimezone: string | null,
 ): Promise<PayrollBlocker[]> {
 	const { db } = await import("@/db");
-	const [missingClockOutRows, pendingAbsenceRows, pendingApprovalRows] = await Promise.all([
+	const [missingClockOutRows, pendingAbsenceRows, pendingApprovalRows, clockRepairs] =
+		await Promise.all([
 		db
 			.select({
 				id: timeRecord.id,
@@ -530,11 +557,17 @@ async function getBlockers(
 					gte(timeRecord.endAt, period.start.toUTC().toJSDate()),
 				),
 			),
+		findOpenDepartureClockRepairs(db, {
+			organizationId,
+			employeeIds: allowedEmployeeIds,
+			rangeStart: period.start.toUTC().toJSDate(),
+			rangeEndExclusive: period.end.toUTC().plus({ milliseconds: 1 }).toJSDate(),
+		}),
 	]);
 
 	const affectedEmployeeIds = Array.from(
 		new Set(
-			[...missingClockOutRows, ...pendingAbsenceRows, ...pendingApprovalRows].map(
+			[...missingClockOutRows, ...pendingAbsenceRows, ...pendingApprovalRows, ...clockRepairs].map(
 				(row) => row.employeeId,
 			),
 		),
@@ -604,12 +637,17 @@ async function getBlockers(
 		...pendingApprovalBlockers,
 	];
 
-	return filterDismissedPayrollBlockerCandidates({
+	const dismissible = await filterDismissedPayrollBlockerCandidates({
 		organizationId,
 		blockerCandidates,
 		findDismissals: (query) =>
 			db.query.payrollBlockerDismissal.findMany(query),
 	});
+	// Added after dismissal filtering: an unresolved departure timer can never be dismissed.
+	return [
+		...dismissible,
+		...buildOffboardingClockRepairBlockers({ timezoneByEmployeeId, repairs: clockRepairs }),
+	];
 }
 
 function localizeBlockerInstant(

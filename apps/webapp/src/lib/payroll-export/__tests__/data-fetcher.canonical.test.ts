@@ -9,6 +9,11 @@ const mockState = vi.hoisted(() => ({
 	organizationFindFirst: vi.fn(),
 	workPeriodFindMany: vi.fn(),
 	absenceEntryFindMany: vi.fn(),
+	findOpenDepartureClockRepairs: vi.fn(),
+}));
+
+vi.mock("@/lib/employee-lifecycle/reviews", () => ({
+	findOpenDepartureClockRepairs: mockState.findOpenDepartureClockRepairs,
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -91,6 +96,33 @@ describe("payroll export canonical data fetching", () => {
 		vi.clearAllMocks();
 		mockAssertCanonicalCutoverReady.mockResolvedValue(undefined);
 		mockState.organizationFindFirst.mockResolvedValue({ timezone: "UTC" });
+		mockState.employeeFindMany.mockResolvedValue([{ id: "emp-1" }]);
+		mockState.findOpenDepartureClockRepairs.mockResolvedValue([]);
+	});
+
+	it("blocks the export while an in-scope departure timer repair is open", async () => {
+		mockState.findOpenDepartureClockRepairs.mockResolvedValue([
+			{
+				reviewId: "review-1",
+				employeeId: "emp-1",
+				workPeriodId: "period-1",
+				affectedStartAt: null,
+				affectedEndAt: new Date("2026-01-14T22:00:00.000Z"),
+			},
+		]);
+
+		await expect(
+			dataFetcher.fetchWorkPeriodsForExport("org-1", {
+				dateRange: {
+					start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
+					end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
+				},
+			}),
+		).rejects.toMatchObject({
+			name: "PayrollOffboardingRepairBlockedError",
+			employeeIds: ["emp-1"],
+		});
+		expect(mockState.timeRecordFindMany).not.toHaveBeenCalled();
 	});
 
 	it("rejects payroll export reads when canonical cutover is incomplete", async () => {

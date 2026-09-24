@@ -18,7 +18,8 @@
       "pendingTimeCorrection": "Pending time correction",
       "refreshAfterClearFailed": "Blocker cleared, but payroll could not be refreshed",
       "unknownEmployee": "Unknown employee",
-      "unresolvedWorkMinutes": "Work minutes need review"
+      "unresolvedWorkMinutes": "Work minutes need review",
+      "offboardingClockRepair": "Offboarding clock-out needs repair"
     },
     "description": "Review payroll totals, readiness, and exports for the selected period.",
     "employeeTotals": {
@@ -47,6 +48,7 @@
       "employeeIdsMustContainOnlyStrings": "employeeIds must contain only strings",
       "endDateAfterStart": "End date must be on or after start date",
       "exportBlockedByUnresolvedWorkMinutes": "Export blocked: resolve the work minutes that need review first",
+      "exportBlockedByOffboardingClockRepair": "Export blocked: repair the offboarding clock-out first",
       "exportFormatNotConfigured": "Payroll export format is not configured",
       "invalidBlockerId": "Invalid payroll blocker ID",
       "invalidBlockerType": "Invalid payroll blocker type",

@@ -4,11 +4,13 @@ import { describe, expect, it } from "vitest";
 import { filterDismissedPayrollBlockers } from "./blocker-dismissals";
 import {
 	buildPayrollSummaryFromRows,
+	buildOffboardingClockRepairBlockers,
 	buildPendingAbsenceBlockers,
 	calculatePayrollWorkedMinutes,
 	filterMissingClockOutBlockers,
 	filterPendingTimeApprovalBlockers,
 } from "./summary";
+import { isDismissiblePayrollBlockerType } from "./blocker-dismissals";
 import type { PayrollSummaryWorkRow } from "./types";
 
 function workRow(
@@ -763,5 +765,32 @@ describe("buildPendingAbsenceBlockers", () => {
 				time: null,
 			},
 		]);
+	});
+});
+
+describe("buildOffboardingClockRepairBlockers", () => {
+	it("blocks the employee at the departure cutoff in their timezone and cannot be dismissed", () => {
+		const blockers = buildOffboardingClockRepairBlockers({
+			timezoneByEmployeeId: new Map([["employee-1", "Europe/Berlin"]]),
+			repairs: [
+				{
+					reviewId: "review-1",
+					employeeId: "employee-1",
+					affectedEndAt: new Date("2026-09-14T22:00:00Z"),
+				},
+			],
+		});
+
+		expect(blockers).toEqual([
+			{
+				id: "review-1",
+				employeeId: "employee-1",
+				type: "offboarding_clock_repair",
+				label: "Offboarding clock-out needs repair",
+				date: "2026-09-15",
+				time: "00:00",
+			},
+		]);
+		expect(isDismissiblePayrollBlockerType("offboarding_clock_repair")).toBe(false);
 	});
 });
