@@ -43,6 +43,12 @@ vi.mock("./page-sections", () => ({
 	),
 }));
 
+vi.mock("@/components/settings/employee-offboarding/employee-offboarding-section", () => ({
+	EmployeeOffboardingSection: ({ employeeId }: { employeeId: string }) => (
+		<section aria-label="Employment and departure">{employeeId}</section>
+	),
+}));
+
 vi.mock("./employee-draft-actions", () => ({
 	EmployeeDraftActions: () => <div>Draft actions</div>,
 }));
@@ -321,6 +327,21 @@ describe("employee detail lifecycle integration", () => {
 
 		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
 		expect(screen.queryByText("Draft actions")).toBeNull();
+	});
+
+	it.each(["orgAdmin", "manager"] as const)("shows the departure section to %s viewers of a real employee", async (accessTier) => {
+		renderDetail({ accessTier });
+
+		expect(
+			await screen.findByRole("region", { name: "Employment and departure" }),
+		).toBeTruthy();
+	});
+
+	it("never offers departure controls on an invitation draft", async () => {
+		renderDetail({ employee: draftEmployee });
+
+		expect(await screen.findByText("Draft actions")).toBeTruthy();
+		expect(screen.queryByRole("region", { name: "Employment and departure" })).toBeNull();
 	});
 
 	it("shows reinvitation guidance when inactive history has no membership", async () => {

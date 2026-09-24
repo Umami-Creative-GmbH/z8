@@ -60,6 +60,14 @@ vi.mock("sonner", () => ({
 	},
 }));
 
+vi.mock("@/navigation", () => ({
+	Link: ({ href, children, ...props }: { href: string; children: ReactNode }) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
+	),
+}));
+
 vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({
 	deactivateEmployee: deactivateEmployeeMock,
 	reactivateEmployee: reactivateEmployeeMock,
@@ -253,6 +261,36 @@ describe("EmployeeLifecycleActions capabilities", () => {
 		expect(
 			await screen.findByRole("menuitem", { name: "Deactivate" }),
 		).toBeTruthy();
+	});
+});
+
+describe("EmployeeLifecycleActions after offboarding release", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it.each([
+		["Deactivate", activeTarget],
+		["Reactivate", { ...activeTarget, isActive: false }],
+	])("links %s to the departure flow on the detail page instead of changing status", async (label, target) => {
+		renderActions({ target, offboardingReleased: true });
+
+		const menu = await openActions();
+		const item = within(menu).getByRole("menuitem", { name: label });
+
+		expect(item.getAttribute("href")).toBe("/settings/employees/employee-2#offboarding");
+		fireEvent.click(item);
+		expect(screen.queryByRole("alertdialog")).toBeNull();
+		expect(deactivateEmployeeMock).not.toHaveBeenCalled();
+		expect(reactivateEmployeeMock).not.toHaveBeenCalled();
+	});
+
+	it("keeps owner-only access removal as its own confirmed action", async () => {
+		renderActions({ offboardingReleased: true });
+
+		const dialog = await openConfirmation("Remove access");
+
+		expect(within(dialog).getByText("Remove organization access?")).toBeTruthy();
 	});
 });
 

@@ -8,7 +8,10 @@ import { EmployeeDetailPageClient } from "./employee-detail-page-client";
 
 interface EmployeeDetailPageProps {
 	params: Promise<{ employeeId: string }>;
+	searchParams?: Promise<{ review?: string | string[] }>;
 }
+
+const REVIEW_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 export default function EmployeeDetailPage(props: EmployeeDetailPageProps) {
 	return (
@@ -18,11 +21,15 @@ export default function EmployeeDetailPage(props: EmployeeDetailPageProps) {
 	);
 }
 
-async function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
-	const [settingsRouteContext, { employeeId }] = await Promise.all([
+async function EmployeeDetailPageContent({ params, searchParams }: EmployeeDetailPageProps) {
+	const [settingsRouteContext, { employeeId }, query] = await Promise.all([
 		getCurrentSettingsRouteContext(),
 		params,
+		searchParams ?? Promise.resolve({ review: undefined }),
 	]);
+	// A notification links to one persisted review; only its id is passed on.
+	const highlightedReviewId =
+		typeof query.review === "string" && REVIEW_ID.test(query.review) ? query.review : null;
 
 	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
 		redirect("/settings");
@@ -54,6 +61,7 @@ async function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
 			accessTier={settingsRouteContext.accessTier}
 			currentUserId={currentUserId}
 			currentMemberRole={currentMember.role}
+			highlightedReviewId={highlightedReviewId}
 		/>
 	);
 }

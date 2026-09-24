@@ -14,8 +14,18 @@ export type EmploymentHistoryWorkPolicyOption = {
 	name: string;
 };
 
+/** The stint a terms row belongs to; unknown legacy starts have no date. */
+export type EmploymentHistoryPeriod = {
+	id: string;
+	status: "open" | "closed" | "legacy_unknown";
+	startedAt: Date | string | null;
+	endedAt: Date | string | null;
+};
+
 export type EmploymentHistoryEntry = {
 	id: string;
+	employmentPeriodId?: string | null;
+	employmentPeriod?: EmploymentHistoryPeriod | null;
 	validFrom: Date | string;
 	validUntil: Date | string | null;
 	status: string;
