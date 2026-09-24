@@ -121,6 +121,14 @@ services:
       valkey:
         condition: service_healthy
 
+  # Mailpit captures local outbound email. Inbox: http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+
   # Optional local Vault. Start it only when testing Vault-backed flows:
   # `docker compose -f docker-compose.dev.yml --profile vault up -d vault`.
   vault:
