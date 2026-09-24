@@ -16,7 +16,7 @@ export type DepartureBlockedReason =
  * initiator_authorization_lost. Returns the blocking reason, or null.
  *
  * The rule lives in the SQL function `employee_departure_blocked_reason`
- * (migration 0070) so access checks evaluate exactly what the executor does.
+ * (migration 0072) so access checks evaluate exactly what the executor does.
  */
 export async function evaluateDepartureAuthority(
 	tx: Pick<LifecycleTransaction, "execute">,

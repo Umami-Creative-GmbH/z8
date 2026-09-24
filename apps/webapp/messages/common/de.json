@@ -129,6 +129,12 @@
     },
     "delete": "Löschen",
     "deleting": "Löschen...",
+    "deployment": {
+      "skew": {
+        "description": "Laden Sie die Seite neu, um fortzufahren. Ihre letzte Aktion wurde nicht gespeichert.",
+        "title": "Z8 wurde aktualisiert"
+      }
+    },
     "description": "Beschreibung",
     "deselectAll": "Alle abwählen",
     "details": "Details",

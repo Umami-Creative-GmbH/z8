@@ -561,6 +561,28 @@ export function createApprovalTransitionEngine(
 					proposedStatus: proposedStatus(preflight),
 				});
 			}
+			const decisionCommand =
+				request.command.type === "approve" || request.command.type === "reject"
+					? request.command
+					: null;
+			if (
+				request.reviewedBindingId !== undefined &&
+				(!decisionCommand || !adapter.preflightDecisionEvidence)
+			) {
+				// A reviewed binding is never silently ignored.
+				throw engineError("forbidden", { field: "reviewed_binding" });
+			}
+			const decisionEvidence = decisionCommand
+				? {
+						...adapterContext,
+						dbService: context.dbService,
+						command: decisionCommand,
+						reviewedBindingId: request.reviewedBindingId ?? null,
+					}
+				: null;
+			if (decisionEvidence && adapter.preflightDecisionEvidence) {
+				await adapter.preflightDecisionEvidence(decisionEvidence);
+			}
 			const policy =
 				request.command.type === "cancel" && workflow.status === "approved"
 					? {
@@ -735,6 +757,18 @@ export function createApprovalTransitionEngine(
 			});
 			assertResultScope(request, result);
 			assertResultMatchesMaterializedBatch(result, resultBaseline);
+			if (decisionEvidence && adapter.recordDecisionEvidence) {
+				await adapter.recordDecisionEvidence({
+					...decisionEvidence,
+					receipt: {
+						idempotencyKey: receipt.idempotencyKey,
+						actorFingerprint: receipt.actorFingerprint,
+						commandFingerprint: receipt.commandFingerprint,
+					},
+					result,
+					finalization,
+				});
+			}
 			if (gate.behavior.mirror === "canonical_to_legacy") {
 				const fixedGate: ApprovalWriteGate = {
 					acquire: async (scope) => {

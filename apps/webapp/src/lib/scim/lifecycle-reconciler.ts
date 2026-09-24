@@ -117,7 +117,7 @@ export async function reconcileSCIMLifecycle(
 		}
 		// Membership is restored here, but ended employment is not: for an
 		// employee offboarded after SCIM deactivation, the database guard from
-		// migration 0071 keeps the projection inactive until an explicit rehire.
+		// migration 0073 keeps the projection inactive until an explicit rehire.
 		if (
 			employeeDeactivationOwned &&
 			employee.isActive === false &&

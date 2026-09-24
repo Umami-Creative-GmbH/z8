@@ -52,6 +52,7 @@ Workflow details:
 - Uses native `amd64` and native `arm64` runners (no QEMU emulation)
 - Builds `webapp`, `worker`, and `migration` directly from `docker/Dockerfile.webapp`, `docker/Dockerfile.worker`, and `docker/Dockerfile.migration`
 - Publishes multi-arch manifests for `z8-webapp`, `z8-worker`, and `z8-migration` from those target-specific digests
+- Passes the `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` repository secret to the webapp build as the `next_server_actions_encryption_key` build secret. Next.js salts server action IDs with it at build time. Keep the value stable across releases: if it changes or is missing, action IDs change every deploy, and tabs opened before the deploy fail their next server action call. Generate it with `openssl rand -base64 32`.
 
 ### Runtime Images
 
@@ -136,6 +137,10 @@ docker compose -f docker-compose.prod.yml --profile seed up db-seed
 ```bash
 # Build from repository root
 docker build -f docker/Dockerfile.webapp -t z8-webapp:latest .
+# Optional: keep server action IDs stable across your own releases
+docker build -f docker/Dockerfile.webapp \
+  --secret id=next_server_actions_encryption_key,env=NEXT_SERVER_ACTIONS_ENCRYPTION_KEY \
+  -t z8-webapp:latest .
 docker build -f docker/Dockerfile.worker -t z8-worker:latest .
 docker build -f docker/Dockerfile.migration -t z8-migration:latest .
 docker build -f docker/Dockerfile.db-seed -t z8-db-seed:latest .

@@ -10,6 +10,9 @@ import type {
 } from "../domain-adapters/types";
 import { createOrdinaryWorkPeriodApprovalAdapter } from "../domain-adapters/work-period.adapter";
 import type { OrdinaryWorkPeriodApprovalSource } from "../domain-adapters/work-period-contract";
+import { buildAbsenceSubmittedFacts } from "../evidence/absence-facts";
+import { ApprovalEvidenceError } from "../evidence/errors";
+import type { AbsenceSubmittedRevisionRecord } from "../evidence/store";
 import { getCutoverBehavior } from "./cutover";
 import type {
 	ApprovalCommandActorResolver,
@@ -1116,6 +1119,326 @@ function engineFixture(
 	};
 }
 
+const evidenceSource = {
+	id: engineIds.source,
+	organizationId: "org-1",
+	employeeId: ids.fromEmployee,
+	requesterUserId: "requester-user-1",
+	categoryId: "40000000-0000-4000-8000-000000000001",
+	canonicalRecordId: "50000000-0000-4000-8000-000000000001",
+	approvalWorkflowId: engineIds.workflow,
+	startDate: "2026-07-20",
+	startPeriod: "full_day",
+	endDate: "2026-07-21",
+	endPeriod: "full_day",
+	status: "pending",
+	notes: null,
+	approvedBy: null,
+	rejectionReason: null,
+	requesterName: "Requester",
+	teamId: null,
+	categoryName: "Vacation",
+	categoryType: "vacation",
+	categoryColor: null,
+	organizationTimezone: "Europe/Berlin",
+} satisfies AbsenceApprovalSource;
+
+function submittedRevision(
+	endDate = evidenceSource.endDate,
+): AbsenceSubmittedRevisionRecord {
+	const normalized = {
+		startDate: evidenceSource.startDate,
+		endDate,
+		durationKind: "full_day" as const,
+		startPeriod: "full_day" as const,
+		endPeriod: "full_day" as const,
+	};
+	return {
+		id: "c0000000-0000-4000-8000-000000000001",
+		organizationId: "org-1",
+		workflowId: engineIds.workflow,
+		sourceId: engineIds.source,
+		requestCycleKey: "absence-submission-key",
+		revision: 1,
+		subjectEmployeeId: ids.fromEmployee,
+		requesterEmployeeId: ids.fromEmployee,
+		submitter: {
+			kind: "employee",
+			employeeId: ids.fromEmployee,
+			userId: "requester-user-1",
+		},
+		materialFingerprint: "absence:v1:test",
+		facts: buildAbsenceSubmittedFacts({
+			organizationId: "org-1",
+			absenceId: engineIds.source,
+			subjectEmployeeId: ids.fromEmployee,
+			requesterEmployeeId: ids.fromEmployee,
+			categoryId: evidenceSource.categoryId,
+			raw: { ...normalized },
+			normalized,
+			entry: {
+				startDate: normalized.startDate,
+				startPeriod: "full_day",
+				endDate,
+				endPeriod: "full_day",
+			},
+			canonicalRecord: {
+				id: evidenceSource.canonicalRecordId,
+				startAt: new Date("2026-07-20T00:00:00.000Z"),
+				endAt: new Date("2026-07-21T23:59:59.999Z"),
+			},
+		}),
+		labels: {
+			subjectName: "Requester",
+			requesterName: "Requester",
+			submitterName: "Requester",
+			categoryName: "Vacation",
+		},
+		provenance: "captured_at_submission",
+		submittedAt: engineSubmittedAt,
+	};
+}
+
+function absenceEvidenceStore(options: {
+	mode?: "inactive" | "capture";
+	revision?: AbsenceSubmittedRevisionRecord | null;
+	recordError?: Error;
+	onRecord?: () => void;
+}) {
+	return {
+		readMode: vi.fn(async () => options.mode ?? "capture"),
+		loadCurrentRevision: vi.fn(async () =>
+			options.revision === undefined ? submittedRevision() : options.revision,
+		),
+		assertBinding: vi.fn(async () => undefined),
+		recordDecision: vi.fn(async (_database: unknown, input: object) => {
+			options.onRecord?.();
+			if (options.recordError) throw options.recordError;
+			return { id: "d0000000-0000-4000-8000-000000000001", ...input } as never;
+		}),
+		loadActorLabel: vi.fn(async () => ({ name: "Morgan Manager" })),
+	};
+}
+
+function evidenceAdapter(evidence: ReturnType<typeof absenceEvidenceStore>) {
+	const finalizeAbsenceTerminal = vi.fn().mockResolvedValue({});
+	return {
+		finalizeAbsenceTerminal,
+		adapter: createAbsenceApprovalAdapter({
+			clock: { nowInstant: () => engineNow },
+			finalizeAbsenceTerminal,
+			deleteCancelledAbsence: vi.fn().mockResolvedValue(undefined),
+			evidence: evidence as never,
+		}),
+	};
+}
+
+describe("canonical absence decision evidence through the transition engine", () => {
+	it("records the committed outcome inside the executed transaction before the receipt completes", async () => {
+		let fixture: ReturnType<typeof engineFixture> | undefined;
+		const stateAtRecord: Array<{ materialized: boolean; receipt: boolean }> =
+			[];
+		const evidence = absenceEvidenceStore({
+			onRecord: () => {
+				if (!fixture) throw new Error("fixture missing");
+				stateAtRecord.push({
+					materialized: fixture.state.materialized,
+					receipt: fixture.state.receiptCompleted,
+				});
+			},
+		});
+		const { adapter } = evidenceAdapter(evidence);
+		fixture = engineFixture({ adapter, source: evidenceSource });
+
+		await fixture.engine.execute(engineRequest());
+
+		expect(stateAtRecord).toEqual([{ materialized: true, receipt: false }]);
+		expect(fixture.state.receiptCompleted).toBe(true);
+		expect(evidence.recordDecision).toHaveBeenCalledOnce();
+		expect(evidence.recordDecision).toHaveBeenCalledWith(
+			fixture.dbService.db,
+			expect.objectContaining({
+				organizationId: "org-1",
+				workflowId: engineIds.workflow,
+				submittedRevisionId: submittedRevision().id,
+				operationKind: "command",
+				receipt: expect.objectContaining({ idempotencyKey: "receipt-key" }),
+				action: "approve",
+				stageId: engineIds.stage,
+				assignmentId: engineIds.assignment,
+				assignmentOutcome: "approved",
+				requestOutcome: "approved",
+				actor: {
+					kind: "employee",
+					employeeId: ids.fromEmployee,
+					userId: ids.toEmployee,
+				},
+				result: { absenceStatus: "approved", terminalTransition: "approve" },
+				labels: { actorName: "Morgan Manager" },
+				reviewedBindingId: null,
+			}),
+		);
+	});
+
+	it("returns an exact committed replay without fresh evidence checks or writes", async () => {
+		const evidence = absenceEvidenceStore({
+			revision: submittedRevision("2026-07-25"),
+		});
+		const { adapter } = evidenceAdapter(evidence);
+		const fixture = engineFixture({
+			adapter,
+			source: evidenceSource,
+			claim: "completed",
+		});
+
+		await expect(fixture.engine.execute(engineRequest())).resolves.toBeDefined();
+
+		expect(evidence.readMode).not.toHaveBeenCalled();
+		expect(evidence.loadCurrentRevision).not.toHaveBeenCalled();
+		expect(evidence.recordDecision).not.toHaveBeenCalled();
+	});
+
+	it("rolls back the transition and receipt when evidence capture fails", async () => {
+		const evidence = absenceEvidenceStore({
+			recordError: new Error("evidence write failed"),
+		});
+		const { adapter } = evidenceAdapter(evidence);
+		const fixture = engineFixture({ adapter, source: evidenceSource });
+
+		await expect(fixture.engine.execute(engineRequest())).rejects.toThrow(
+			"evidence write failed",
+		);
+
+		expect(fixture.state.rolledBack).toBe(true);
+		expect(fixture.state.committed).toBe(false);
+		expect(fixture.state.materialized).toBe(false);
+		expect(fixture.state.receiptCompleted).toBe(false);
+		expect(fixture.state.projectionRows).toEqual([]);
+	});
+
+	it("holds a materially changed request before any transition is applied", async () => {
+		const evidence = absenceEvidenceStore({
+			revision: submittedRevision("2026-07-25"),
+		});
+		const { adapter, finalizeAbsenceTerminal } = evidenceAdapter(evidence);
+		const fixture = engineFixture({ adapter, source: evidenceSource });
+
+		await expect(fixture.engine.execute(engineRequest())).rejects.toMatchObject(
+			{
+				code: "material_change",
+				details: { fields: "endDate" },
+			},
+		);
+
+		expect(fixture.calls).not.toContain("applyMaterializedTransition");
+		expect(finalizeAbsenceTerminal).not.toHaveBeenCalled();
+		expect(evidence.recordDecision).not.toHaveBeenCalled();
+		expect(fixture.state.receiptCompleted).toBe(false);
+	});
+
+	it("keeps a renamed category (label-only change) decidable", async () => {
+		const evidence = absenceEvidenceStore({});
+		const { adapter } = evidenceAdapter(evidence);
+		const fixture = engineFixture({
+			adapter,
+			source: { ...evidenceSource, categoryName: "Annual leave" },
+		});
+
+		await fixture.engine.execute(engineRequest());
+
+		expect(evidence.recordDecision).toHaveBeenCalledOnce();
+	});
+
+	it("holds a request without a submitted revision while capture is active", async () => {
+		const evidence = absenceEvidenceStore({ mode: "capture", revision: null });
+		const { adapter } = evidenceAdapter(evidence);
+		const fixture = engineFixture({ adapter, source: evidenceSource });
+
+		const error = await fixture.engine
+			.execute(engineRequest())
+			.catch((caught: unknown) => caught);
+
+		expect(error).toBeInstanceOf(ApprovalEvidenceError);
+		expect(error).toMatchObject({ code: "evidence_required" });
+		expect(fixture.calls).not.toContain("applyMaterializedTransition");
+	});
+
+	it("keeps existing behavior without evidence while capture is inactive", async () => {
+		const evidence = absenceEvidenceStore({ mode: "inactive", revision: null });
+		const { adapter, finalizeAbsenceTerminal } = evidenceAdapter(evidence);
+		const fixture = engineFixture({ adapter, source: evidenceSource });
+
+		await fixture.engine.execute(engineRequest());
+
+		expect(finalizeAbsenceTerminal).toHaveBeenCalledOnce();
+		expect(evidence.recordDecision).not.toHaveBeenCalled();
+		expect(fixture.state.receiptCompleted).toBe(true);
+	});
+
+	it("validates a supplied reviewed binding against the exact decision target", async () => {
+		const evidence = absenceEvidenceStore({});
+		const { adapter } = evidenceAdapter(evidence);
+		const fixture = engineFixture({ adapter, source: evidenceSource });
+		const bindingId = "e0000000-0000-4000-8000-000000000001";
+
+		await fixture.engine.execute(
+			engineRequest({ reviewedBindingId: bindingId }),
+		);
+
+		expect(evidence.assertBinding).toHaveBeenCalledWith(
+			fixture.dbService.db,
+			bindingId,
+			{
+				organizationId: "org-1",
+				recipientEmployeeId: ids.fromEmployee,
+				workflowId: engineIds.workflow,
+				stageId: engineIds.stage,
+				assignmentId: engineIds.assignment,
+				submittedRevisionId: submittedRevision().id,
+			},
+		);
+		expect(evidence.recordDecision).toHaveBeenCalledWith(
+			fixture.dbService.db,
+			expect.objectContaining({ reviewedBindingId: bindingId }),
+		);
+	});
+
+	it("rejects a mismatched reviewed binding without deciding", async () => {
+		const evidence = absenceEvidenceStore({});
+		evidence.assertBinding.mockRejectedValueOnce(
+			new ApprovalEvidenceError("binding_mismatch"),
+		);
+		const { adapter, finalizeAbsenceTerminal } = evidenceAdapter(evidence);
+		const fixture = engineFixture({ adapter, source: evidenceSource });
+
+		await expect(
+			fixture.engine.execute(
+				engineRequest({
+					reviewedBindingId: "e0000000-0000-4000-8000-000000000002",
+				}),
+			),
+		).rejects.toMatchObject({ code: "binding_mismatch" });
+		expect(finalizeAbsenceTerminal).not.toHaveBeenCalled();
+		expect(fixture.state.receiptCompleted).toBe(false);
+	});
+
+	it("never ignores a reviewed binding for an adapter without evidence support", async () => {
+		const fixture = engineFixture();
+
+		await expect(
+			fixture.engine.execute(
+				engineRequest({
+					reviewedBindingId: "e0000000-0000-4000-8000-000000000003",
+				}),
+			),
+		).rejects.toMatchObject({
+			code: "forbidden",
+			details: { field: "reviewed_binding" },
+		});
+		expect(fixture.state.receiptCompleted).toBe(false);
+	});
+});
+
 describe("approval transition engine atomic orchestration", () => {
 	it("reuses one transaction service for actor, authorization, and source dependencies", async () => {
 		const fixture = engineFixture();
@@ -1159,6 +1482,7 @@ describe("approval transition engine atomic orchestration", () => {
 			clock: { nowInstant: () => engineNow },
 			finalizeAbsenceTerminal,
 			deleteCancelledAbsence: vi.fn().mockResolvedValue(undefined),
+			evidence: absenceEvidenceStore({ mode: "inactive", revision: null }) as never,
 		});
 		const source = {
 			id: engineIds.source,
@@ -2084,6 +2408,7 @@ describe("approval transition engine atomic orchestration", () => {
 			clock: { nowInstant: () => engineNow },
 			finalizeAbsenceTerminal,
 			deleteCancelledAbsence: vi.fn().mockResolvedValue(undefined),
+			evidence: absenceEvidenceStore({ mode: "inactive", revision: null }) as never,
 		});
 		const source = {
 			id: engineIds.source,

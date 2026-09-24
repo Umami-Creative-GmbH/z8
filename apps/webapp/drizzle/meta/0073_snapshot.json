@@ -1,6 +1,6 @@
 {
-  "id": "51513376-d5db-4550-aa08-a5eb0b30244b",
-  "prevId": "072e50f7-38d6-4d70-afa1-d23db3958e9f",
+  "id": "7edafb8c-aa50-483e-86b9-f80c41f2dbbc",
+  "prevId": "bd85f596-a4a5-44f8-aba9-246815f09be6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -4619,6 +4619,1464 @@
       },
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.approval_escalation_attention": {
+      "name": "approval_escalation_attention",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dedupe_key": {
+          "name": "dedupe_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'open'"
+        },
+        "approval_type": {
+          "name": "approval_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approval_request_id": {
+          "name": "approval_request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "workflow_id": {
+          "name": "workflow_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assignment_id": {
+          "name": "assignment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lineage_root_assignment_id": {
+          "name": "lineage_root_assignment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_approver_employee_id": {
+          "name": "current_approver_employee_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "delivery_channel": {
+          "name": "delivery_channel",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "evidence": {
+          "name": "evidence",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "policy_revision": {
+          "name": "policy_revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_raised_at": {
+          "name": "first_raised_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "last_observed_at": {
+          "name": "last_observed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "observation_count": {
+          "name": "observation_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "last_rechecked_at": {
+          "name": "last_rechecked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "admin_alerted_at": {
+          "name": "admin_alerted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "closed_at": {
+          "name": "closed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "closure_note": {
+          "name": "closure_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "disposed_by_user_id": {
+          "name": "disposed_by_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "approvalEscalationAttention_open_dedupe_idx": {
+          "name": "approvalEscalationAttention_open_dedupe_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "dedupe_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "where": "status = 'open'",
+          "concurrently": false
+        },
+        "approvalEscalationAttention_org_status_idx": {
+          "name": "approvalEscalationAttention_org_status_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "last_observed_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "approval_escalation_attention_organization_id_organization_id_fk": {
+          "name": "approval_escalation_attention_organization_id_organization_id_fk",
+          "tableFrom": "approval_escalation_attention",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "tableTo": "organization",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "approval_escalation_attention_disposed_by_user_id_user_id_fk": {
+          "name": "approval_escalation_attention_disposed_by_user_id_user_id_fk",
+          "tableFrom": "approval_escalation_attention",
+          "columnsFrom": [
+            "disposed_by_user_id"
+          ],
+          "tableTo": "user",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "approvalEscalationAttention_approver_fk": {
+          "name": "approvalEscalationAttention_approver_fk",
+          "tableFrom": "approval_escalation_attention",
+          "columnsFrom": [
+            "current_approver_employee_id",
+            "organization_id"
+          ],
+          "tableTo": "employee",
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "approvalEscalationAttention_id_organizationId_idx": {
+          "name": "approvalEscalationAttention_id_organizationId_idx",
+          "columns": [
+            "id",
+            "organization_id"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "approval_escalation_attention_status_check": {
+          "name": "approval_escalation_attention_status_check",
+          "value": "\"approval_escalation_attention\".\"status\" IN ('open', 'resolved', 'disposed')"
+        },
+        "approval_escalation_attention_closure_check": {
+          "name": "approval_escalation_attention_closure_check",
+          "value": "(\"approval_escalation_attention\".\"status\" = 'open') = (\"approval_escalation_attention\".\"closed_at\" IS NULL)"
+        },
+        "approval_escalation_attention_disposal_check": {
+          "name": "approval_escalation_attention_disposal_check",
+          "value": "(\"approval_escalation_attention\".\"status\" = 'disposed') = (\"approval_escalation_attention\".\"disposed_by_user_id\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.approval_escalation_attention_event": {
+      "name": "approval_escalation_attention_event",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "attention_id": {
+          "name": "attention_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_kind": {
+          "name": "actor_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_user_id": {
+          "name": "actor_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "detail": {
+          "name": "detail",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "approvalEscalationAttentionEvent_attention_idx": {
+          "name": "approvalEscalationAttentionEvent_attention_idx",
+          "columns": [
+            {
+              "expression": "attention_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "approval_escalation_attention_event_actor_user_id_user_id_fk": {
+          "name": "approval_escalation_attention_event_actor_user_id_user_id_fk",
+          "tableFrom": "approval_escalation_attention_event",
+          "columnsFrom": [
+            "actor_user_id"
+          ],
+          "tableTo": "user",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "approvalEscalationAttentionEvent_attention_fk": {
+          "name": "approvalEscalationAttentionEvent_attention_fk",
+          "tableFrom": "approval_escalation_attention_event",
+          "columnsFrom": [
+            "attention_id",
+            "organization_id"
+          ],
+          "tableTo": "approval_escalation_attention",
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "approval_escalation_attention_event_actor_check": {
+          "name": "approval_escalation_attention_event_actor_check",
+          "value": "(\"approval_escalation_attention_event\".\"actor_kind\" = 'user') = (\"approval_escalation_attention_event\".\"actor_user_id\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.approval_escalation_policy": {
+      "name": "approval_escalation_policy",
+      "schema": "",
+      "columns": {
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "response_window_hours": {
+          "name": "response_window_hours",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "migrated_at": {
+          "name": "migrated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "migration_provenance": {
+          "name": "migration_provenance",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "conflict_review_status": {
+          "name": "conflict_review_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'none'"
+        },
+        "conflict_reviewed_by_user_id": {
+          "name": "conflict_reviewed_by_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "conflict_reviewed_at": {
+          "name": "conflict_reviewed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by_user_id": {
+          "name": "updated_by_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "approval_escalation_policy_organization_id_organization_id_fk": {
+          "name": "approval_escalation_policy_organization_id_organization_id_fk",
+          "tableFrom": "approval_escalation_policy",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "tableTo": "organization",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "approval_escalation_policy_conflict_reviewed_by_user_id_user_id_fk": {
+          "name": "approval_escalation_policy_conflict_reviewed_by_user_id_user_id_fk",
+          "tableFrom": "approval_escalation_policy",
+          "columnsFrom": [
+            "conflict_reviewed_by_user_id"
+          ],
+          "tableTo": "user",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "approval_escalation_policy_updated_by_user_id_user_id_fk": {
+          "name": "approval_escalation_policy_updated_by_user_id_user_id_fk",
+          "tableFrom": "approval_escalation_policy",
+          "columnsFrom": [
+            "updated_by_user_id"
+          ],
+          "tableTo": "user",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "approval_escalation_policy_window_check": {
+          "name": "approval_escalation_policy_window_check",
+          "value": "\"approval_escalation_policy\".\"response_window_hours\" >= 1"
+        },
+        "approval_escalation_policy_revision_check": {
+          "name": "approval_escalation_policy_revision_check",
+          "value": "\"approval_escalation_policy\".\"revision\" >= 1"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.approval_escalation_policy_revision": {
+      "name": "approval_escalation_policy_revision",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "response_window_hours": {
+          "name": "response_window_hours",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origin": {
+          "name": "origin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "changed_by_user_id": {
+          "name": "changed_by_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "approval_escalation_policy_revision_changed_by_user_id_user_id_fk": {
+          "name": "approval_escalation_policy_revision_changed_by_user_id_user_id_fk",
+          "tableFrom": "approval_escalation_policy_revision",
+          "columnsFrom": [
+            "changed_by_user_id"
+          ],
+          "tableTo": "user",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "approvalEscalationPolicyRevision_policy_fk": {
+          "name": "approvalEscalationPolicyRevision_policy_fk",
+          "tableFrom": "approval_escalation_policy_revision",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "tableTo": "approval_escalation_policy",
+          "columnsTo": [
+            "organization_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "approvalEscalationPolicyRevision_org_revision_idx": {
+          "name": "approvalEscalationPolicyRevision_org_revision_idx",
+          "columns": [
+            "organization_id",
+            "revision"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "approval_escalation_policy_revision_origin_check": {
+          "name": "approval_escalation_policy_revision_origin_check",
+          "value": "\"approval_escalation_policy_revision\".\"origin\" IN ('migration', 'management_edit')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.approval_decision_evidence": {
+      "name": "approval_decision_evidence",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "workflow_id": {
+          "name": "workflow_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "submitted_revision_id": {
+          "name": "submitted_revision_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "operation_kind": {
+          "name": "operation_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "receipt_idempotency_key": {
+          "name": "receipt_idempotency_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "receipt_actor_fingerprint": {
+          "name": "receipt_actor_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "receipt_command_fingerprint": {
+          "name": "receipt_command_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stage_id": {
+          "name": "stage_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assignment_id": {
+          "name": "assignment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assignment_outcome": {
+          "name": "assignment_outcome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "request_outcome": {
+          "name": "request_outcome",
+          "type": "approval_workflow_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_kind": {
+          "name": "actor_kind",
+          "type": "approval_actor_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_employee_id": {
+          "name": "actor_employee_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor_user_id": {
+          "name": "actor_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_ids": {
+          "name": "event_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "result": {
+          "name": "result",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "labels": {
+          "name": "labels",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reviewed_binding_id": {
+          "name": "reviewed_binding_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "schema_version": {
+          "name": "schema_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "approvalDecisionEvidence_org_workflow_receipt_idx": {
+          "name": "approvalDecisionEvidence_org_workflow_receipt_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "workflow_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "receipt_idempotency_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "approvalDecisionEvidence_org_revision_idx": {
+          "name": "approvalDecisionEvidence_org_revision_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "submitted_revision_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "approval_decision_evidence_organization_id_organization_id_fk": {
+          "name": "approval_decision_evidence_organization_id_organization_id_fk",
+          "tableFrom": "approval_decision_evidence",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "tableTo": "organization",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "approval_decision_evidence_actor_user_id_user_id_fk": {
+          "name": "approval_decision_evidence_actor_user_id_user_id_fk",
+          "tableFrom": "approval_decision_evidence",
+          "columnsFrom": [
+            "actor_user_id"
+          ],
+          "tableTo": "user",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "approval_decision_evidence_workflow_id_organization_id_approval_workflow_id_organization_id_fk": {
+          "name": "approval_decision_evidence_workflow_id_organization_id_approval_workflow_id_organization_id_fk",
+          "tableFrom": "approval_decision_evidence",
+          "columnsFrom": [
+            "workflow_id",
+            "organization_id"
+          ],
+          "tableTo": "approval_workflow",
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "approval_decision_evidence_submitted_revision_id_workflow_id_organization_id_approval_submitted_revision_id_workflow_id_organization_id_fk": {
+          "name": "approval_decision_evidence_submitted_revision_id_workflow_id_organization_id_approval_submitted_revision_id_workflow_id_organization_id_fk",
+          "tableFrom": "approval_decision_evidence",
+          "columnsFrom": [
+            "submitted_revision_id",
+            "workflow_id",
+            "organization_id"
+          ],
+          "tableTo": "approval_submitted_revision",
+          "columnsTo": [
+            "id",
+            "workflow_id",
+            "organization_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "approval_decision_evidence_reviewed_binding_id_organization_id_approval_review_binding_id_organization_id_fk": {
+          "name": "approval_decision_evidence_reviewed_binding_id_organization_id_approval_review_binding_id_organization_id_fk",
+          "tableFrom": "approval_decision_evidence",
+          "columnsFrom": [
+            "reviewed_binding_id",
+            "organization_id"
+          ],
+          "tableTo": "approval_review_binding",
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "approval_decision_evidence_actor_employee_id_organization_id_employee_id_organization_id_fk": {
+          "name": "approval_decision_evidence_actor_employee_id_organization_id_employee_id_organization_id_fk",
+          "tableFrom": "approval_decision_evidence",
+          "columnsFrom": [
+            "actor_employee_id",
+            "organization_id"
+          ],
+          "tableTo": "employee",
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "approval_decision_evidence_operation_kind_check": {
+          "name": "approval_decision_evidence_operation_kind_check",
+          "value": "\"approval_decision_evidence\".\"operation_kind\" IN ('command', 'submission_activation')"
+        },
+        "approval_decision_evidence_action_check": {
+          "name": "approval_decision_evidence_action_check",
+          "value": "\"approval_decision_evidence\".\"action\" IN ('approve', 'reject')"
+        },
+        "approval_decision_evidence_assignment_outcome_check": {
+          "name": "approval_decision_evidence_assignment_outcome_check",
+          "value": "\"approval_decision_evidence\".\"assignment_outcome\" IS NULL OR \"approval_decision_evidence\".\"assignment_outcome\" IN ('approved', 'rejected')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.approval_evidence_control": {
+      "name": "approval_evidence_control",
+      "schema": "",
+      "columns": {
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "workflow_type": {
+          "name": "workflow_type",
+          "type": "approval_workflow_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mode": {
+          "name": "mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'inactive'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "approval_evidence_control_organization_id_organization_id_fk": {
+          "name": "approval_evidence_control_organization_id_organization_id_fk",
+          "tableFrom": "approval_evidence_control",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "tableTo": "organization",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "approval_evidence_control_organization_id_workflow_type_pk": {
+          "name": "approval_evidence_control_organization_id_workflow_type_pk",
+          "columns": [
+            "organization_id",
+            "workflow_type"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "approval_evidence_control_mode_check": {
+          "name": "approval_evidence_control_mode_check",
+          "value": "\"approval_evidence_control\".\"mode\" IN ('inactive', 'capture')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.approval_review_binding": {
+      "name": "approval_review_binding",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recipient_employee_id": {
+          "name": "recipient_employee_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "workflow_id": {
+          "name": "workflow_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stage_id": {
+          "name": "stage_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assignment_id": {
+          "name": "assignment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "submitted_revision_id": {
+          "name": "submitted_revision_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "approvalReviewBinding_org_recipient_assignment_revision_idx": {
+          "name": "approvalReviewBinding_org_recipient_assignment_revision_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "recipient_employee_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "assignment_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "submitted_revision_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "approval_review_binding_organization_id_organization_id_fk": {
+          "name": "approval_review_binding_organization_id_organization_id_fk",
+          "tableFrom": "approval_review_binding",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "tableTo": "organization",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "approval_review_binding_workflow_id_stage_id_assignment_id_organization_id_approval_stage_assignment_workflow_id_stage_id_id_organization_id_fk": {
+          "name": "approval_review_binding_workflow_id_stage_id_assignment_id_organization_id_approval_stage_assignment_workflow_id_stage_id_id_organization_id_fk",
+          "tableFrom": "approval_review_binding",
+          "columnsFrom": [
+            "workflow_id",
+            "stage_id",
+            "assignment_id",
+            "organization_id"
+          ],
+          "tableTo": "approval_stage_assignment",
+          "columnsTo": [
+            "workflow_id",
+            "stage_id",
+            "id",
+            "organization_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "approval_review_binding_submitted_revision_id_workflow_id_organization_id_approval_submitted_revision_id_workflow_id_organization_id_fk": {
+          "name": "approval_review_binding_submitted_revision_id_workflow_id_organization_id_approval_submitted_revision_id_workflow_id_organization_id_fk",
+          "tableFrom": "approval_review_binding",
+          "columnsFrom": [
+            "submitted_revision_id",
+            "workflow_id",
+            "organization_id"
+          ],
+          "tableTo": "approval_submitted_revision",
+          "columnsTo": [
+            "id",
+            "workflow_id",
+            "organization_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "approval_review_binding_recipient_employee_id_organization_id_employee_id_organization_id_fk": {
+          "name": "approval_review_binding_recipient_employee_id_organization_id_employee_id_organization_id_fk",
+          "tableFrom": "approval_review_binding",
+          "columnsFrom": [
+            "recipient_employee_id",
+            "organization_id"
+          ],
+          "tableTo": "employee",
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "approvalReviewBinding_id_organizationId_idx": {
+          "name": "approvalReviewBinding_id_organizationId_idx",
+          "columns": [
+            "id",
+            "organization_id"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.approval_submitted_revision": {
+      "name": "approval_submitted_revision",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "workflow_id": {
+          "name": "workflow_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "workflow_type": {
+          "name": "workflow_type",
+          "type": "approval_workflow_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_type": {
+          "name": "source_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "request_cycle_key": {
+          "name": "request_cycle_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subject_employee_id": {
+          "name": "subject_employee_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requester_employee_id": {
+          "name": "requester_employee_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "submitter_actor_kind": {
+          "name": "submitter_actor_kind",
+          "type": "approval_actor_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "submitter_employee_id": {
+          "name": "submitter_employee_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "submitter_user_id": {
+          "name": "submitter_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "schema_version": {
+          "name": "schema_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "material_fingerprint": {
+          "name": "material_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "facts": {
+          "name": "facts",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "labels": {
+          "name": "labels",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provenance": {
+          "name": "provenance",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "submitted_at": {
+          "name": "submitted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "approvalSubmittedRevision_org_workflow_revision_idx": {
+          "name": "approvalSubmittedRevision_org_workflow_revision_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "workflow_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "revision",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "approval_submitted_revision_organization_id_organization_id_fk": {
+          "name": "approval_submitted_revision_organization_id_organization_id_fk",
+          "tableFrom": "approval_submitted_revision",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "tableTo": "organization",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "approval_submitted_revision_submitter_user_id_user_id_fk": {
+          "name": "approval_submitted_revision_submitter_user_id_user_id_fk",
+          "tableFrom": "approval_submitted_revision",
+          "columnsFrom": [
+            "submitter_user_id"
+          ],
+          "tableTo": "user",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "approval_submitted_revision_workflow_id_organization_id_approval_workflow_id_organization_id_fk": {
+          "name": "approval_submitted_revision_workflow_id_organization_id_approval_workflow_id_organization_id_fk",
+          "tableFrom": "approval_submitted_revision",
+          "columnsFrom": [
+            "workflow_id",
+            "organization_id"
+          ],
+          "tableTo": "approval_workflow",
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "approval_submitted_revision_subject_employee_id_organization_id_employee_id_organization_id_fk": {
+          "name": "approval_submitted_revision_subject_employee_id_organization_id_employee_id_organization_id_fk",
+          "tableFrom": "approval_submitted_revision",
+          "columnsFrom": [
+            "subject_employee_id",
+            "organization_id"
+          ],
+          "tableTo": "employee",
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "approval_submitted_revision_requester_employee_id_organization_id_employee_id_organization_id_fk": {
+          "name": "approval_submitted_revision_requester_employee_id_organization_id_employee_id_organization_id_fk",
+          "tableFrom": "approval_submitted_revision",
+          "columnsFrom": [
+            "requester_employee_id",
+            "organization_id"
+          ],
+          "tableTo": "employee",
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "approval_submitted_revision_submitter_employee_id_organization_id_employee_id_organization_id_fk": {
+          "name": "approval_submitted_revision_submitter_employee_id_organization_id_employee_id_organization_id_fk",
+          "tableFrom": "approval_submitted_revision",
+          "columnsFrom": [
+            "submitter_employee_id",
+            "organization_id"
+          ],
+          "tableTo": "employee",
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "approvalSubmittedRevision_id_organizationId_idx": {
+          "name": "approvalSubmittedRevision_id_organizationId_idx",
+          "columns": [
+            "id",
+            "organization_id"
+          ],
+          "nullsNotDistinct": false
+        },
+        "approvalSubmittedRevision_id_workflow_organizationId_idx": {
+          "name": "approvalSubmittedRevision_id_workflow_organizationId_idx",
+          "columns": [
+            "id",
+            "workflow_id",
+            "organization_id"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "approval_submitted_revision_revision_check": {
+          "name": "approval_submitted_revision_revision_check",
+          "value": "\"approval_submitted_revision\".\"revision\" >= 1"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.approval_chain_instance": {
@@ -45025,7 +46483,8 @@
         "compliance_exception_requested",
         "compliance_exception_approved",
         "compliance_exception_rejected",
-        "compliance_exception_expired"
+        "compliance_exception_expired",
+        "approval_escalation_attention"
       ]
     },
     "public.payroll_export_format_type": {

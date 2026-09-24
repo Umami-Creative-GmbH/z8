@@ -147,7 +147,8 @@ CREATE INDEX "employeeDepartureTask_departure_idx" ON "employee_departure_task" 
 CREATE UNIQUE INDEX "employeeEmploymentPeriod_one_open_idx" ON "employee_employment_period" USING btree ("organization_id","employee_id") WHERE status = 'open';--> statement-breakpoint
 CREATE INDEX "employeeEmploymentPeriod_employee_idx" ON "employee_employment_period" USING btree ("organization_id","employee_id");--> statement-breakpoint
 ALTER TABLE "employee_employment_history" ADD CONSTRAINT "employeeEmploymentHistory_period_fk" FOREIGN KEY ("employment_period_id","organization_id","employee_id") REFERENCES "public"."employee_employment_period"("id","organization_id","employee_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "employeeEmploymentHistory_period_idx" ON "employee_employment_history" USING btree ("organization_id","employment_period_id");--> statement-breakpoint
+CREATE INDEX "employeeEmploymentHistory_period_idx" ON "employee_employment_history" USING btree ("organization_id","employment_period_id");
+--> statement-breakpoint
 -- Known employment intervals of one employee must not intersect. Intervals are
 -- half-open, so a new period may start exactly at the previous end. Periods with
 -- unknown legacy bounds are excluded rather than asserted against invented dates.

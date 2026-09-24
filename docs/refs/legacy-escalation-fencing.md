@@ -20,12 +20,12 @@ configuration:
 | `owner = legacy`, `automation_paused = false` | Existing legacy behavior |
 | `owner = escalation` | Suppressed, including while the new owner is paused |
 | `owner = legacy`, `automation_paused = true` | Suppressed |
-| Unknown owner | Suppressed |
+| Unknown owner | Suppressed (`unrecognized_owner`) |
 | Read/schema/database failure | No legacy execution for that organization; job reports failure |
 
 Results expose `suppressedOrganizations` with organization IDs and explicit
-`ownership_moved` / `automation_paused` reasons through existing cron execution
-tracking. Suppression is a successful no-op, distinct from infrastructure failure.
+`ownership_moved` / `automation_paused` / `unrecognized_owner` reasons through
+existing cron execution tracking and the registry result types. Suppression is a successful no-op, distinct from infrastructure failure.
 The existing processed count remains the count of configured bots/tenants visited.
 
 This read only admits fresh legacy work. It does not delete, restore or rewrite
@@ -56,8 +56,11 @@ Only enable it after all affected organizations can safely stop legacy schedulin
   BullMQ schedulers, even when `ENABLE_CRON_JOBS=false`.
 - Every later reconciliation, including platform-admin schedule changes, removes
   rather than upserts those schedulers while the setting remains enabled.
-- An already absent scheduler is successful retirement. Redis errors are reported;
-  repeated reconciliation recovers partial removal. The admin action reports a
+- An already absent scheduler is successful retirement. Redis errors are logged
+  and worker startup continues (unrelated jobs keep running; retained handlers
+  stay gated); repeated reconciliation recovers partial removal.
+- Bulk reconciliation reports retired schedulers in a separate `retired` list and
+  log line, never as `reconciled`. The admin action reports a
   retirement warning instead of claiming that its requested schedule was installed.
 - Set the retirement flag consistently on every worker and webapp process that can
   reconcile schedules. A process with old code or a different setting can recreate
@@ -115,18 +118,46 @@ with a queue boundary fake, including all four names, unrelated scheduling,
 already-absent schedulers and partial Redis failure/retry. Existing worker-import,
 worker-dispatch and admin-action suites supply adjacent regression coverage.
 
-### Session checkpoint — 2026-09-14
+`legacy-escalation-fencing.integration.test.ts` (PostgreSQL) runs in the
+disposable-database runner `pnpm --filter webapp test:approval-workflow-repository:integration`
+and in CI. It drives the real worker `processJob` for queued/manual jobs (execution
+record created first) and scheduler-created jobs (execution created by the
+worker), with real execution tracking, gate reads, approval discovery and legacy
+escalation writes for all four providers. Only provider config loaders and outbound
+messages are replaced. It covers:
 
-Before the user stopped verification, `pnpm --filter webapp typecheck` passed
-(before the final admin-warning addition). The focused command covering the five
-files above passed **67 tests** after that addition. These are local checks only,
-with database/provider/queue boundaries replaced as described above.
+- tenant isolation: only the legacy-owned organization escalates, while moved and
+  paused organizations are suppressed and their approvals stay unchanged;
+- suppression persisted in `cron_job_execution.result`;
+- ownership moved, paused and unrecognized-owner states on successive scheduled
+  runs, with committed escalation rows and assignments preserved, then resumed
+  admission;
+- fail-closed behavior when the control table is unreadable;
+- organization-delete cascade of the control row.
 
-The user subsequently confirmed that PostgreSQL is unavailable for this project
-and requested no further verification. The full suite, final typecheck and
-two-axis code review were not completed. No PostgreSQL/Redis integration,
-migration application, build, repair, deployment or activation was executed.
-Resume verification only with renewed permission and the necessary access.
+`legacy-escalation-schedulers.redis.integration.test.ts` is opt-in with
+`LEGACY_ESCALATION_REDIS_TEST_URL` pointing at a disposable loopback Redis/Valkey.
+It uses real BullMQ to cover:
+
+- removal of exactly the four schedulers and their pending delayed runs;
+- no re-creation on restart-style bulk or single-job reconciliation;
+- already-absent success;
+- a queued old job name that is still consumed after retirement;
+- re-creation by any process with retirement off (the fleet configuration
+  requirement).
+
+### Evidence — 2026-09-24
+
+- Disposable PostgreSQL 16 runner (fresh migration chain including 0068): 8 files
+  and 294 tests passed, including 10 fencing scenarios.
+- Disposable Valkey 9 container: the Redis retirement suite passed (2 tests).
+- Webapp typecheck and focused cron/worker suites passed.
+
+These results come from disposable local infrastructure. They do not show
+deployed-fleet drain, concurrency with in-flight legacy work, production
+migration state, or the exclusive adoption protocol. Activation blockers 1–3 and 6
+remain open, and so do the deployed parts of 4–5 (active-worker races, fleet
+retirement configuration and drain).
 
 Binding contracts: [#271](https://github.com/Umami-Creative-GmbH/z8/issues/271),
 [#255](https://github.com/Umami-Creative-GmbH/z8/issues/255#issuecomment-5653995791),

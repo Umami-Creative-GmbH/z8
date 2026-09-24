@@ -14,6 +14,17 @@ import {
 	type Instant,
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
+import { compareLiveAbsenceWithRevision } from "../evidence/absence-facts";
+import { deriveCommandDecisionOutcome } from "../evidence/decision-outcome";
+import { ApprovalEvidenceError } from "../evidence/errors";
+import {
+	type AbsenceSubmittedRevisionRecord,
+	assertReviewBindingMatches,
+	loadCurrentAbsenceSubmittedRevision,
+	loadEvidenceActorLabel,
+	readApprovalEvidenceMode,
+	recordDecisionEvidence,
+} from "../evidence/store";
 import type { ApprovalDbService as ServerApprovalDbService } from "../server/types";
 import type {
 	ApprovalSourceIdentity,
@@ -23,6 +34,7 @@ import type {
 import { normalizeStableData } from "../workflow/stable-data";
 import { isApprovedCancellationAuthorization } from "./registry";
 import type {
+	ApprovalDecisionEvidenceInput,
 	ApprovalDomainAdapter,
 	ApprovalDomainAdapterContext,
 	ApprovalTerminalAdapterInput,
@@ -83,7 +95,25 @@ export interface AbsenceApprovalAdapterDependencies {
 		},
 	): Promise<unknown>;
 	deleteCancelledAbsence(input: DeleteCancelledAbsenceInput): Promise<void>;
+	/** Transaction-bound evidence store; defaults to the approval evidence module. */
+	evidence?: AbsenceDecisionEvidenceStore;
 }
+
+export interface AbsenceDecisionEvidenceStore {
+	readMode: typeof readApprovalEvidenceMode;
+	loadCurrentRevision: typeof loadCurrentAbsenceSubmittedRevision;
+	assertBinding: typeof assertReviewBindingMatches;
+	recordDecision: typeof recordDecisionEvidence;
+	loadActorLabel: typeof loadEvidenceActorLabel;
+}
+
+const defaultEvidenceStore: AbsenceDecisionEvidenceStore = {
+	readMode: readApprovalEvidenceMode,
+	loadCurrentRevision: loadCurrentAbsenceSubmittedRevision,
+	assertBinding: assertReviewBindingMatches,
+	recordDecision: recordDecisionEvidence,
+	loadActorLabel: loadEvidenceActorLabel,
+};
 
 export class AbsenceApprovalAdapterError extends Error {
 	constructor(message = "Absence approval adapter scope or state is invalid") {
@@ -202,9 +232,45 @@ function terminalEvidence(
 	}) as ApprovalTerminalFinalizationResult;
 }
 
+/**
+ * Loads the reviewed revision for a fresh decision. Once a lifecycle has a
+ * submitted revision it is always enforced, even if capture is later paused;
+ * while capture is active a request without one is held for review.
+ */
+async function loadDecisionRevision(
+	evidence: AbsenceDecisionEvidenceStore,
+	input: ApprovalDecisionEvidenceInput<AbsenceApprovalSource>,
+): Promise<AbsenceSubmittedRevisionRecord | null> {
+	validateContext(input);
+	const db = (input.dbService as unknown as ServerApprovalDbService).db;
+	const mode = await evidence.readMode(db, {
+		organizationId: input.organizationId,
+		workflowType: "absence",
+	});
+	const revision = await evidence.loadCurrentRevision(db, {
+		organizationId: input.organizationId,
+		workflowId: input.workflow.id,
+	});
+	if (!revision) {
+		if (mode === "capture") {
+			throw new ApprovalEvidenceError("evidence_required");
+		}
+		return null;
+	}
+	if (
+		revision.sourceId !== input.source.id ||
+		revision.subjectEmployeeId !== input.source.employeeId ||
+		revision.requesterEmployeeId !== input.workflow.requesterEmployeeId
+	) {
+		throw new ApprovalEvidenceError("invariant", { field: "revision_scope" });
+	}
+	return revision;
+}
+
 export function createAbsenceApprovalAdapter(
 	dependencies: AbsenceApprovalAdapterDependencies,
 ): ApprovalDomainAdapter<AbsenceApprovalSource> {
+	const evidence = dependencies.evidence ?? defaultEvidenceStore;
 	return {
 		workflowType: "absence",
 		sourceType: "absence_entry",
@@ -493,6 +559,93 @@ export function createAbsenceApprovalAdapter(
 					.join(" ")
 					.toLocaleLowerCase("en-US"),
 			}) as { displayPayload: JsonObject; searchText: string };
+		},
+		async preflightDecisionEvidence(input) {
+			const revision = await loadDecisionRevision(evidence, input);
+			if (!revision) {
+				if (input.reviewedBindingId !== null) {
+					throw new ApprovalEvidenceError("binding_mismatch");
+				}
+				return;
+			}
+			const comparison = compareLiveAbsenceWithRevision(
+				revision.facts,
+				revision.labels,
+				{
+					organizationId: input.source.organizationId,
+					absenceId: input.source.id,
+					employeeId: input.source.employeeId,
+					categoryId: input.source.categoryId,
+					startDate: input.source.startDate,
+					startPeriod: input.source.startPeriod,
+					endDate: input.source.endDate,
+					endPeriod: input.source.endPeriod,
+					categoryName: input.source.categoryName,
+				},
+			);
+			if (comparison.kind === "material_change") {
+				throw new ApprovalEvidenceError("material_change", {
+					fields: comparison.changedFields.join(","),
+				});
+			}
+			if (input.reviewedBindingId !== null) {
+				if (input.actor.kind !== "employee") {
+					throw new ApprovalEvidenceError("binding_mismatch");
+				}
+				await evidence.assertBinding(
+					(input.dbService as unknown as ServerApprovalDbService).db,
+					input.reviewedBindingId,
+					{
+						organizationId: input.organizationId,
+						recipientEmployeeId: input.actor.employeeId,
+						workflowId: input.workflow.id,
+						stageId: input.command.stageId,
+						assignmentId: input.command.assignmentId,
+						submittedRevisionId: revision.id,
+					},
+				);
+			}
+		},
+		async recordDecisionEvidence(input) {
+			const revision = await loadDecisionRevision(evidence, input);
+			if (!revision) return;
+			const outcome = deriveCommandDecisionOutcome(input);
+			const db = (input.dbService as unknown as ServerApprovalDbService).db;
+			const actor = await evidence.loadActorLabel(db, {
+				organizationId: input.organizationId,
+				employeeId: outcome.actor.employeeId,
+			});
+			if (!actor) {
+				throw new ApprovalEvidenceError("evidence_incomplete", {
+					field: "actor",
+				});
+			}
+			await evidence.recordDecision(db, {
+				organizationId: input.organizationId,
+				workflowId: input.workflow.id,
+				submittedRevisionId: revision.id,
+				operationKind: "command",
+				receipt: input.receipt,
+				action: input.command.type,
+				stageId: outcome.stageId,
+				assignmentId: outcome.assignmentId,
+				assignmentOutcome: outcome.assignmentOutcome,
+				requestOutcome: outcome.requestOutcome,
+				actor: {
+					kind: "employee",
+					employeeId: outcome.actor.employeeId,
+					userId: outcome.actor.userId,
+				},
+				decidedAt: outcome.decidedAt,
+				eventIds: outcome.eventIds,
+				// Resulting source status only; no deduction or payable quantity.
+				result: {
+					absenceStatus: input.finalization?.terminalStatus ?? "pending",
+					terminalTransition: input.finalization?.transitionKind ?? null,
+				},
+				labels: { actorName: actor.name },
+				reviewedBindingId: input.reviewedBindingId,
+			});
 		},
 	};
 }

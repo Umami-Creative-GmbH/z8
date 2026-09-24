@@ -6,7 +6,7 @@ Server operators can list approvals and permanently remove a broken approval lif
 
 Platform administrators can also use **Platform Admin → Settings → Force delete approval**. Enter the organization ID and approval ID, then select **Force delete**. The card displays the approval and chain IDs removed, or an error if deletion cannot be completed.
 
-The server action checks the authenticated user's platform-admin role and banned status on every request. Organization-admin access alone does not authorize this operation. Deletion and a `force_delete_approval` platform-admin audit entry are committed in the same transaction; an audit-write failure rolls back deletion. The audit entry records the acting admin, organization, requested approval ID, and removed request/workflow/chain IDs.
+The server action checks the authenticated user's platform-admin role and banned status on every request. Organization-admin access alone does not authorize this operation. Deletion and a `force_delete_approval` platform-admin audit entry are committed in the same transaction; an audit-write failure rolls back deletion. The audit entry records the acting admin, organization, requested approval ID, and removed request/workflow/chain and evidence IDs.
 
 The UI and CLI share the cleanup implementation in `apps/webapp/src/lib/approvals/maintenance.ts` and use the deletion scope below.
 
@@ -38,6 +38,7 @@ Deletion bypasses approve/deny logic and works even if the source record is miss
 - The selected approval.
 - Explicitly linked legacy requests, approval chains, and canonical workflows for that approval lifecycle, including multi-stage siblings.
 - Dependent approval stages, assignments, events, commands, projections, outbox/delivery records, migration issues, and legacy integration records through database cascades.
+- Immutable approval evidence linked to the lifecycle's canonical workflows (submitted revisions, decision evidence and review bindings). These are deleted explicitly and their IDs are returned and written to the platform-admin audit entry. See [Approval evidence](approval-evidence.md).
 
 Time records, absences, shifts, expenses, and compliance source records remain. Only their nullable references to deleted approvals are cleared; their business statuses and approval outcomes are not changed. Deletion is cleanup, not approval or rejection, and does not send decision notifications. Already-sent external messages are not retracted.
 

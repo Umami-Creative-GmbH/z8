@@ -129,6 +129,12 @@
     },
     "delete": "Delete",
     "deleting": "Deleting...",
+    "deployment": {
+      "skew": {
+        "description": "Reload the page to continue. Your last action was not saved.",
+        "title": "Z8 was updated"
+      }
+    },
     "description": "Description",
     "deselectAll": "Deselect All",
     "details": "Details",

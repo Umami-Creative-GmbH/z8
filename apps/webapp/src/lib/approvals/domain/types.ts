@@ -248,6 +248,8 @@ export interface ApprovalActionOptions {
 	approvalRequestId?: string;
 	allowAnyApprover?: boolean;
 	allowOrganizationWideApprover?: boolean;
+	/** Opaque reviewed-view handle; a supporting decision owner revalidates it. */
+	reviewedBindingId?: string;
 }
 
 /**

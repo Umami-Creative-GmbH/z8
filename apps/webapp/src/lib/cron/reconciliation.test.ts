@@ -43,7 +43,16 @@ describe("cron schedule reconciliation", () => {
 			["cron-cron:teams-escalation"],
 		]);
 		expect(fakeQueue.upsertJobScheduler).toHaveBeenCalledTimes(1);
-		expect(result.failed).toEqual([]);
+		expect(result).toEqual({
+			reconciled: [{ jobName: "cron:export" }],
+			retired: [
+				{ jobName: "cron:slack-escalation" },
+				{ jobName: "cron:telegram-escalation" },
+				{ jobName: "cron:discord-escalation" },
+				{ jobName: "cron:teams-escalation" },
+			],
+			failed: [],
+		});
 	});
 
 	it("can retire without registering schedules, accepts already-absent schedulers and surfaces Redis failures", async () => {
@@ -118,6 +127,7 @@ describe("cron schedule reconciliation", () => {
 		expect(fakeQueue.upsertJobScheduler).toHaveBeenCalledTimes(2);
 		expect(result).toEqual({
 			reconciled: [{ jobName: "cron:export" }, { jobName: "cron:vacation" }],
+			retired: [],
 			failed: [],
 		});
 	});

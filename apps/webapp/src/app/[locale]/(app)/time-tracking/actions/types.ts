@@ -66,6 +66,31 @@ export interface AssignedProject {
 	totalHoursBooked: number;
 }
 
+/** Error code returned when the actor may not create entries for the target. */
+export const MANUAL_ENTRY_TARGET_NOT_AUTHORIZED = "target_not_authorized";
+
+/** Where a manual-entry target's effective zone came from. */
+export type ManualEntryTargetZoneSource = "employee" | "organization" | "default";
+
+export interface ManualEntryCategoryChoice {
+	id: string;
+	name: string;
+	factor: string;
+	color: string | null;
+}
+
+/** Advisory form context for a creation-authorized manual-entry target. */
+export interface ManualEntryTargetContext {
+	targetEmployeeId: string;
+	/** Display name of the target, empty when none is known. */
+	targetName: string;
+	isOwnEntry: boolean;
+	timezone: string;
+	timezoneSource: ManualEntryTargetZoneSource;
+	projects: AssignedProject[];
+	categories: ManualEntryCategoryChoice[];
+}
+
 export interface ManualTimeEntryInput {
 	submissionId: string;
 	employeeId?: string;

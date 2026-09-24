@@ -17,7 +17,8 @@
       "pendingAbsence": "Pendendi Abweseheit",
       "pendingTimeCorrection": "Hängigi Ziitkorrektur",
       "refreshAfterClearFailed": "Blocker isch ufghobe, aber d Lohnabrächnig het nid chönne aktualisiert wärde",
-      "unknownEmployee": "Unbekannte Mitarbeiter"
+      "unknownEmployee": "Unbekannte Mitarbeiter",
+      "unresolvedWorkMinutes": "Arbetsminute müend prüeft wärde"
     },
     "description": "Prüef d Lohnsumme, d Bereitschaft und d Export für die gwählti Periode.",
     "employeeTotals": {
@@ -45,6 +46,7 @@
       "employeeIdsMustBeArray": "employeeIds mues es Array si",
       "employeeIdsMustContainOnlyStrings": "employeeIds dörfe nume Strings enthaute",
       "endDateAfterStart": "S'Änddatum mues glich oder nach em Startdatum si",
+      "exportBlockedByUnresolvedWorkMinutes": "Export blockiert: Zersch d Arbetsminute kläre, wo prüeft wärde müend",
       "exportFormatNotConfigured": "S'Format für de Lohnabrechnungs-Export isch nid konfiguriert",
       "invalidBlockerId": "Ungültigi Lohnabrächnigs-Blocker-ID",
       "invalidBlockerType": "Ungültige Lohnabrächnigs-Blocker-Typ",

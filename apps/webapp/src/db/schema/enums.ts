@@ -247,6 +247,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"compliance_exception_approved", // Exception approved by manager
 	"compliance_exception_rejected", // Exception rejected by manager
 	"compliance_exception_expired", // Pre-approval expired
+	// Approval escalation administrative attention (admins/owners)
+	"approval_escalation_attention",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [

@@ -11,7 +11,7 @@ type CoverageDatabase = Pick<typeof rootDatabase, "select">;
 /**
  * An effective departure ended this employee's employment and no rehire has
  * opened a new period. Membership or provisioning changes cannot reactivate
- * such an employee (migration 0071 enforces this on the projection).
+ * such an employee (migration 0073 enforces this on the projection).
  */
 export async function hasEndedEmploymentWithoutRehire(
 	database: Pick<typeof rootDatabase, "execute">,
@@ -39,7 +39,7 @@ type CurrentEmploymentPeriod = {
 
 /**
  * The employee's current employment period, or null once a departure ended it.
- * Employees created after migration 0069 are backfilled lazily. For legacy
+ * Employees created after migration 0071 are backfilled lazily. For legacy
  * compatibility, a period the migration could only classify as legacy_unknown
  * (the employee was inactive then) still counts while no departure ended the
  * employment: it is reopened in place, dates untouched, when the employee is

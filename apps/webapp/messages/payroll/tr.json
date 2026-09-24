@@ -17,7 +17,8 @@
       "pendingAbsence": "Bekleyen izin",
       "pendingTimeCorrection": "Bekleyen zaman düzeltmesi",
       "refreshAfterClearFailed": "Engel kaldırıldı ancak bordro yenilenemedi",
-      "unknownEmployee": "Bilinmeyen çalışan"
+      "unknownEmployee": "Bilinmeyen çalışan",
+      "unresolvedWorkMinutes": "Çalışma dakikalarının incelenmesi gerekiyor"
     },
     "description": "Seçilen dönem için bordro toplamlarını, hazırlık durumunu ve dışa aktarımları gözden geçirin.",
     "employeeTotals": {
@@ -45,6 +46,7 @@
       "employeeIdsMustBeArray": "employeeIds bir dizi olmalıdır",
       "employeeIdsMustContainOnlyStrings": "employeeIds yalnızca dizeler içermelidir",
       "endDateAfterStart": "Bitiş tarihi, başlangıç tarihinden sonra veya aynı gün olmalıdır",
+      "exportBlockedByUnresolvedWorkMinutes": "Dışa aktarma engellendi: önce incelenmesi gereken çalışma dakikalarını çözün",
       "exportFormatNotConfigured": "Maaş bordrosu dışa aktarma formatı yapılandırılmamış",
       "invalidBlockerId": "Geçersiz bordro engel kimliği",
       "invalidBlockerType": "Geçersiz bordro engel türü",

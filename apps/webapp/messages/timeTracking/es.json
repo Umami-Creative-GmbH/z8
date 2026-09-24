@@ -72,6 +72,18 @@
       "addButton": "Añadir entrada manual",
       "clockInLabel": "Marcar entrada",
       "clockOutLabel": "Marcar salida",
+      "context": {
+        "choicesCleared": "Un proyecto o una categoría seleccionados ya no están disponibles y se han quitado.",
+        "loadFailed": "No se pudieron cargar la zona horaria y las opciones de esta entrada.",
+        "loading": "Cargando opciones de la entrada…",
+        "notAuthorized": "No puedes crear registros de tiempo para este empleado.",
+        "organizationFallback": "{employee} no tiene zona horaria personal, así que se usa la de la organización.",
+        "retry": "Reintentar",
+        "targetChanged": "El empleado ha cambiado, así que se han borrado el proyecto y la categoría.",
+        "targetTimezone": "Las horas están en la zona horaria de {employee}: {timezone}",
+        "thisEmployee": "este empleado",
+        "utcFallback": "Ni {employee} ni la organización tienen zona horaria definida, así que se usa UTC."
+      },
       "dateLabel": "Fecha",
       "description": "Cree una entrada de tiempo para una fecha pasada. Puede requerir aprobación según la política de cambios de su organización.",
       "errors": {

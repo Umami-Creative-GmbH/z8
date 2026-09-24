@@ -18,7 +18,7 @@ type TimeEntryUpdateDbClient = Pick<typeof db, "update">;
 type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
 	project: Pick<
 		typeof project.$inferSelect,
-		"id" | "name" | "color" | "status" | "budgetHours" | "deadline"
+		"id" | "name" | "color" | "status" | "isActive" | "budgetHours" | "deadline"
 	> | null;
 };
 
@@ -143,6 +143,10 @@ export async function validateProjectAssignment(
 		return { isValid: false, error: "Project not found" };
 	}
 
+	if (!assignedProject.isActive) {
+		return { isValid: false, error: "Cannot book time to an inactive project" };
+	}
+
 	if (
 		!BOOKABLE_PROJECT_STATUSES.includes(
 			assignedProject.status as (typeof BOOKABLE_PROJECT_STATUSES)[number],
@@ -229,7 +233,7 @@ export async function getAssignedProjectsWithHours(
 	for (const assignment of typedAssignments) {
 		const assignedProject = assignment.project;
 		if (
-			assignedProject &&
+			assignedProject?.isActive &&
 			BOOKABLE_PROJECT_STATUSES.includes(
 				assignedProject.status as (typeof BOOKABLE_PROJECT_STATUSES)[number],
 			) &&

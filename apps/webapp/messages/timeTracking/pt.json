@@ -72,6 +72,18 @@
       "addButton": "Adicionar Entrada Manual",
       "clockInLabel": "Registrar Entrada",
       "clockOutLabel": "Registrar Saída",
+      "context": {
+        "choicesCleared": "Um projeto ou categoria selecionado já não está disponível e foi removido.",
+        "loadFailed": "Não foi possível carregar o fuso horário e as opções para este registo.",
+        "loading": "A carregar opções do registo…",
+        "notAuthorized": "Não pode criar registos de tempo para este colaborador.",
+        "organizationFallback": "{employee} não tem fuso horário pessoal, por isso é usado o da organização.",
+        "retry": "Tentar novamente",
+        "targetChanged": "O colaborador mudou, por isso o projeto e a categoria foram limpos.",
+        "targetTimezone": "As horas estão no fuso horário de {employee}: {timezone}",
+        "thisEmployee": "este colaborador",
+        "utcFallback": "Nem {employee} nem a organização definiram um fuso horário, por isso é usado UTC."
+      },
       "dateLabel": "Data",
       "description": "Crie uma entrada de tempo para uma data passada. A aprovação pode ser necessária com base na política de alteração da sua organização.",
       "errors": {

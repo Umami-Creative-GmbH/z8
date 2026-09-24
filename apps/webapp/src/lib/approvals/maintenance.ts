@@ -131,10 +131,17 @@ async function clearWorkflowSourceReferences(
 	`);
 }
 
+export interface DeletedApprovalEvidenceRecords {
+	submittedRevisions: string[];
+	decisionEvidence: string[];
+	reviewBindings: string[];
+}
+
 export interface DeletedApprovalRecords {
 	legacyRequests: string[];
 	workflows: string[];
 	chains: string[];
+	evidence: DeletedApprovalEvidenceRecords;
 }
 
 export async function deleteApproval(
@@ -160,7 +167,8 @@ export async function deleteApprovalInTransaction(
 	await transaction.execute(sql`set local statement_timeout = '30s'`);
 	await transaction.execute(sql`
 		lock table approval_request, approval_chain_instance, approval_chain_stage_instance,
-			approval_workflow, approval_workflow_stage in share row exclusive mode
+			approval_workflow, approval_workflow_stage, approval_submitted_revision,
+			approval_review_binding, approval_decision_evidence in share row exclusive mode
 	`);
 
 	const matches = rows(
@@ -228,6 +236,20 @@ export async function deleteApprovalInTransaction(
 			where organization_id = ${organizationId} and id = any(${sql.param(legacyIds)}::uuid[])
 			returning id
 		`);
+	// Evidence follows only the verified workflow links of this lifecycle. Delete it
+	// explicitly (dependants first) so the audit records its identities; the workflow
+	// FKs also prevent a late capture from recreating purged evidence.
+	const evidenceScope = sql`organization_id = ${organizationId}
+		and workflow_id = any(${sql.param(workflowIds)}::uuid[])`;
+	const decisionEvidence = workflowIds.length === 0 ? [] : await deletedIds(sql`
+			delete from approval_decision_evidence where ${evidenceScope} returning id
+		`);
+	const reviewBindings = workflowIds.length === 0 ? [] : await deletedIds(sql`
+			delete from approval_review_binding where ${evidenceScope} returning id
+		`);
+	const submittedRevisions = workflowIds.length === 0 ? [] : await deletedIds(sql`
+			delete from approval_submitted_revision where ${evidenceScope} returning id
+		`);
 	// Workflow FKs cascade through stages, assignments, events, commands, projections,
 	// outbox/deliveries and migration issues. No decision handlers are invoked.
 	const workflows = workflowIds.length === 0 ? [] : await deletedIds(sql`
@@ -240,5 +262,10 @@ export async function deleteApprovalInTransaction(
 		legacyRequests: legacyRequests.sort(),
 		workflows: workflows.sort(),
 		chains: chains.sort(),
+		evidence: {
+			submittedRevisions: submittedRevisions.sort(),
+			decisionEvidence: decisionEvidence.sort(),
+			reviewBindings: reviewBindings.sort(),
+		},
 	};
 }

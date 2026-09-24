@@ -76,6 +76,30 @@ export function ApprovalMaintenanceCard() {
 					kind: "chain",
 					label: t("admin:admin.settings.approvalMaintenance.chain", "Approval chain"),
 				})),
+				...result.data.evidence.submittedRevisions.map((id) => ({
+					id,
+					kind: "submitted_revision",
+					label: t(
+						"admin:admin.settings.approvalMaintenance.submittedRevision",
+						"Submitted revision",
+					),
+				})),
+				...result.data.evidence.decisionEvidence.map((id) => ({
+					id,
+					kind: "decision_evidence",
+					label: t(
+						"admin:admin.settings.approvalMaintenance.decisionEvidence",
+						"Decision evidence",
+					),
+				})),
+				...result.data.evidence.reviewBindings.map((id) => ({
+					id,
+					kind: "review_binding",
+					label: t(
+						"admin:admin.settings.approvalMaintenance.reviewBinding",
+						"Review binding",
+					),
+				})),
 			]
 		: [];
 

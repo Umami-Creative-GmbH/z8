@@ -51,6 +51,8 @@ export const NOTIFICATION_TYPES = [
 	"compliance_exception_approved",
 	"compliance_exception_rejected",
 	"compliance_exception_expired",
+	// Approval escalation administrative attention
+	"approval_escalation_attention",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

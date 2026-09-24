@@ -17,6 +17,15 @@ It corrects this document's extension/mobile “source absent” finding (the so
 is in repository history), records the desired production release, and applies
 the #267/#268 deliveries. All completion and activation gates remain blocked.
 
+**Controls implemented 2026-09-24** — see [old-consumer controls](#old-consumer-controls-2026-09-24).
+A server-side fence stops known old browser and extension readers from deleting
+rows on direct-route failures. The preserving service worker now replaces a
+pre-preservation worker without waiting for the user. The browser controls are
+verified in real Chromium against the worker of the *desired* production release
+(`66bbc7b5`). The extension fence is verified by route tests and a Chromium
+extension-origin probe, not by the removed extension code. Neither control is
+deployed, and the residual paths listed there still block activation.
+
 The binding contracts are [#263, offline compatibility](https://github.com/Umami-Creative-GmbH/z8/issues/263#issuecomment-5654640636)
 and [#259, adoption handoff](https://github.com/Umami-Creative-GmbH/z8/issues/259#issuecomment-5654750145).
 The broader writer/configuration/worker inventory belongs to
@@ -446,17 +455,138 @@ cohorts; (2) mobile store listings/binaries mapped to source commits;
 (3) desktop installer hashes mapped to source commits; (4) the digest actually
 running on each production and self-hosted origin, and when Argo CD synced it.
 
+## Old-consumer controls 2026-09-24
+
+Baseline: `dev` at `cfd4983c`. The user agreed this scope and authorized tests and
+typecheck. There were no database operations, deployment or activation. The
+controls are source changes only; the desired production release is still
+`66bbc7b5` until the release owner publishes and syncs a later one.
+
+### Direct-route fence for known destructive readers
+
+`apps/webapp/src/app/api/time-entries/legacy-consumer-fence.ts` classifies
+cookie-authenticated `POST /api/time-entries` requests. It rewrites **only failure
+responses**, keeps the original `error` text and adds `hold`. No request that
+succeeds today is refused, and no failure becomes success. Bearer requests
+(desktop) are never classified.
+
+| Class | Request signature | Rewrite | Why this status |
+| --- | --- | --- | --- |
+| `legacy-browser-queue` | `organizationId` present, no `id`, `replay` or `utcOffsetMinutes`. This is the pre-#267 `sync-service.js`, which always sends the queued organization. The route rejects that field, so these requests can never succeed. | Any non-2xx → **401** | The pre-#267 reader deletes on 400/409 and counts every other failure towards the five-retry purge. On 401 it stops the pass, keeps every row and counts nothing (`66bbc7b5:…/sync-service.js`). |
+| `legacy-extension-queue` | An extension-scheme `Origin`, or `id`/`replay` present. X1/X2 send only `{type, timestamp, projectId?}`, so they are recognized **only** by `Origin`. X3 also sends `id` and `replay`. | **400 → 409**; other statuses unchanged | X1–X3 delete on 2xx and 400, and X1 also on 401. All keep the row on 409, and none has an age or retry purge. 401 stays 401 so extension login handling still works. |
+
+Side effects and retirement:
+
+- An old browser tab shows "Session expired. Please log in again." after each
+  fenced pass, because the pre-#267 reader replaces the text of any 401. The row
+  stays at the head of its queue until the preserving worker takes over.
+- Rewritten answers carry only `error` and `hold`; other body fields and headers
+  of the original failure (for example the billing `reason`) are dropped.
+- The fence is unconditional once deployed. It is a preservation control, not
+  stricter admission, because it changes only responses that already fail.
+  Retire or narrow it when the inventory shows no pre-preservation reader remains,
+  or when a new cookie client adopts `id`/`replay`/`organizationId` (for example
+  #282), because such a client would be classified by it.
+
+### Preserving worker replaces a destructive worker
+
+`apps/webapp/public/sw.js` still waits for the user's reload between preserving
+releases. During install it now asks the active worker for `GET_VERSION`. If the
+answer lacks `clockQueueMode: "preservation-only-v1"`, or there is no answer
+within three seconds, it calls `skipWaiting()`. Activation then claims open tabs.
+Pre-#267 pages under the new worker only reach preserving handlers:
+`QUEUE_CLOCK_EVENT` stores for review, `TRIGGER_SYNC` classifies without posting,
+and `CLEAR_OLD_QUEUE` no longer deletes.
+
+### Executed verification
+
+The real-browser suite `apps/webapp/src/lib/__tests__/service-worker-takeover.browser.test.ts`
+runs the worker of the **desired production release**, copied verbatim from
+`66bbc7b5` into `src/lib/__tests__/fixtures/sw-66bbc7b5/`. Whether that worker is
+what each origin actually serves is still unverified (C266-B). It uses real Chromium (Edge 64-bit
+via `Z8_TEST_CHROME_PATH`) service-worker lifecycle, Background Sync and IndexedDB.
+The test server answers with the route's 400 and passes it through the real fence
+functions.
+
+| Case | Result |
+| --- | --- |
+| Baseline: old worker queues through its own page protocol, syncs, gets the route's 400 | Row **deleted**. This reproduces the dossier's statically traced browser path. |
+| Same, with the fence | Server answers 401; row **kept**, `retryCount` 0 |
+| Old worker controls a tab; the preserving release is published; `registration.update()` | New worker takes control without `SKIP_WAITING`; reports `preservation-only-v1`; the row survives |
+| Preserving worker controls a tab; a rebuilt preserving release is published | Update stays **waiting** for the user, as before |
+| A minimal MV3 extension (manifest `1.0.1`) posts an X1/X2-shaped body from its background worker | Chromium sends `Origin: chrome-extension://<id>`; the fence answers 409 |
+
+The extension-origin probe also shows that server request logs would reveal the
+IDs of deployed extensions, which is one way to obtain the C266-E inventory.
+Firefox (`moz-extension://`) and Safari origins were not tested.
+
+Route tests (`route.test.ts`) cover:
+
+- the browser 401 hold;
+- the extension 409 hold for an X1/X2 row replayed by an X3 reader, and for an
+  id-less X1/X2 request recognized by its extension `Origin`;
+- extension sign-in failures staying 401;
+- a successful extension capture passing through unchanged;
+- Bearer requests keeping the plain 400.
+
+The existing six-case #267 Chromium suite still passes. `pnpm --filter webapp
+typecheck` passed.
+
+The full webapp suite (`vitest run`, Edge as the browser) ended with 976 files
+passed, 32 failed and 5 skipped; 11,073 tests passed, 143 failed and 283 skipped.
+None of the failing files imports a changed module. All 32 files also fail in a
+clean `cfd4983c` checkout on the same Windows host, with 144 failed tests there.
+The inspected causes are host problems, such as path normalization in the
+source-analysis helper and the host timezone. Root `pnpm test` stops earlier, in Docker runtime-script
+tests, on Windows paths.
+
+The running dev server serves the main checkout, not this worktree, so it cannot
+show these changes. The fence is not exercised against the live Next route, and
+the X1–X3 extension readers were not executed; they exist only in history.
+
+### Residual destructive paths (still blocking)
+
+The fence needs a server response, and the takeover needs the browser to fetch
+the new script. The following old-consumer deletions reach neither:
+
+1. **Browser age purge.** The old worker deletes rows by 7-day enqueue age on its
+   own activation and on the old page's `CLEAR_OLD_QUEUE`. Neither depends on the
+   server.
+2. **Browser retry purge.** Rows already at `retryCount >= 5` are deleted at the
+   start of the next old pass. Network errors still count retries.
+3. **Browser rows without `organizationId`.** They are not distinguishable from
+   other cookie callers, so they are not classified. A 400/409 still deletes them.
+4. **Window before update.** A dormant profile's first sync after deployment runs
+   the old code before the browser fetches the new script. The fence covers that
+   pass's server answers, but not items 1–3.
+5. **Extension X1 on 401** (expired session) still deletes. Held extension rows
+   block the queue head, and the extension has no recovery UI.
+6. **Unknown deployed builds.** Controls are keyed to last-committed source.
+   Builds that differ from it, and any server/origin not running a fenced release,
+   remain uncovered.
+
+Desktop is unchanged: old binaries do not delete on failure, and #268 removed
+the submit/delete loop. Mobile has no stored rows to fence.
+
+### Blocker deltas (controls)
+
+| ID | Change | Still missing |
+| --- | --- | --- |
+| C266-B | Fence and takeover implemented and verified against the `66bbc7b5` worker | Release owner to publish and sync a release containing #267 and these controls on every origin; residual paths 1–4 evidence or acceptance; deployed digest per origin. **Blocked.** |
+| C266-E | 400 deletion fenced for known cohorts | Extension IDs/channels and deployed cohorts; X1 401 path; hold visibility. **Blocked.** |
+| C266-D, C266-M, C266-X | No change | Unchanged. **Blocked.** |
+
 ## Acceptance and verification status
 
 | #266 acceptance criterion | Status |
 | --- | --- |
 | Actual source/build owners, supported deployed versions, context, queue and transport for every client | **Partial / blocked:** browser/desktop source formats and server adapters traced. Extension and mobile last-committed source traced from history (2026-09-24 refresh). Desired browser release identified. Release owners, deployed versions and extension/mobile distribution unverified. |
-| Effective update/disable of every affected old consumer, including interrupted upgrades | **Blocked:** existing mechanisms and their limitations recorded; no effective deployed mechanism demonstrated. Preserving browser and desktop source exists (#267/#268) but is not in the desired production release, or is not distinguishable by version. |
-| Preservation cannot delete unresolved rows on validation, upgrade errors, age or exhaustion | **Blocked:** destructive paths identified, including extension X1/X2→X3 upgrade and 7-day replay-window 400 deletion. Required proof specified; no preservation release/runtime result claimed. |
-| Evidence and remaining access/ownership blockers by activation scope | **Recorded above:** C266-B/D/E/M/X, delivery slices, owner evidence packet and 2026-09-24 deltas. |
+| Effective update/disable of every affected old consumer, including interrupted upgrades | **Partial / blocked:** browser takeover of a destructive worker implemented and verified in real Chromium against the `66bbc7b5` worker (2026-09-24 controls). Not deployed. Dormant profiles, the pre-update window and extension/desktop/mobile update or disable remain unproven. Preserving browser and desktop source exists (#267/#268) but is not in the desired production release, or is not distinguishable by version. |
+| Preservation cannot delete unresolved rows on validation, upgrade errors, age or exhaustion | **Partial / blocked:** the direct-route fence stops validation/conflict deletion by the old browser reader (verified with the desired-release worker) and by known extension cohorts (route tests and a Chromium extension-origin probe; the removed extension code was not run). Old-browser age and retry purges, rows without `organizationId` and the X1 401 path remain; see residual paths. |
+| Evidence and remaining access/ownership blockers by activation scope | **Recorded above:** C266-B/D/E/M/X, delivery slices, owner evidence packet, 2026-09-24 deltas and control deltas. |
 
-Documentation-only delivery. No application code changed. No TDD seam was
-implemented; typechecking and application test suites do not establish the
+The original 2026-09-13 delivery was documentation-only. No application code
+changed and no TDD seam was implemented; typechecking and application test suites do not establish the
 missing ownership/deployment/storage guarantees. No tests, builds, database
 operations, repairs, continuation, deployment or activation were executed.
 Precommit standards review reported no findings. Spec review identified the
@@ -468,3 +598,8 @@ The 2026-09-24 refresh is also documentation-only. It read repository history, G
 run/release metadata and the `z8-infra` desired-release file. It did not
 modify infrastructure, trigger workflows, run tests or builds, access a database,
 or deploy or activate anything.
+
+The 2026-09-24 controls change application source (route fence, service worker)
+and add tests. Tests and typecheck ran with the user's authorization; see
+[executed verification](#executed-verification). No database, infrastructure,
+deployment or activation operation was performed.

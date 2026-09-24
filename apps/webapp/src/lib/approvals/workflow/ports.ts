@@ -107,6 +107,8 @@ export interface ApprovalWorkflowCommandRequest {
 	idempotencyKey: string;
 	principal: ApprovalWorkflowPrincipal;
 	command: ApprovalWorkflowCommand;
+	/** Opaque reviewed-view handle; validated at transaction time, never authority. */
+	reviewedBindingId?: string;
 }
 
 export interface ApprovalCommandActorResolver {

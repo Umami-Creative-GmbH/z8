@@ -72,6 +72,18 @@
       "addButton": "Manuel Giriş Ekle",
       "clockInLabel": "Giriş Yap",
       "clockOutLabel": "Çıkış Yap",
+      "context": {
+        "choicesCleared": "Seçili bir proje veya kategori artık kullanılamıyor ve kaldırıldı.",
+        "loadFailed": "Bu kayıt için saat dilimi ve seçenekler yüklenemedi.",
+        "loading": "Kayıt seçenekleri yükleniyor…",
+        "notAuthorized": "Bu çalışan için zaman kaydı oluşturamazsınız.",
+        "organizationFallback": "{employee} için kişisel saat dilimi yok, bu yüzden kuruluşun saat dilimi kullanılıyor.",
+        "retry": "Tekrar dene",
+        "targetChanged": "Çalışan değişti, bu yüzden proje ve kategori temizlendi.",
+        "targetTimezone": "Saatler şu kişinin saat dilimindedir: {employee} – {timezone}",
+        "thisEmployee": "bu çalışan",
+        "utcFallback": "Ne {employee} ne de kuruluş için saat dilimi ayarlanmış, bu yüzden UTC kullanılıyor."
+      },
       "dateLabel": "Tarih",
       "description": "Geçmiş bir tarih için zaman girişi oluşturun. Kuruluşunuzun değişiklik politikasına bağlı olarak onay gerekebilir.",
       "errors": {

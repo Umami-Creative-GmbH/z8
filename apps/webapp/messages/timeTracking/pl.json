@@ -72,6 +72,18 @@
       "addButton": "Dodaj wpis ręczny",
       "clockInLabel": "Rozpocznij pracę",
       "clockOutLabel": "Zakończ pracę",
+      "context": {
+        "choicesCleared": "Wybrany projekt lub kategoria nie są już dostępne i zostały usunięte.",
+        "loadFailed": "Nie udało się wczytać strefy czasowej i opcji dla tego wpisu.",
+        "loading": "Wczytywanie opcji wpisu…",
+        "notAuthorized": "Nie możesz tworzyć wpisów czasu dla tego pracownika.",
+        "organizationFallback": "{employee} nie ma własnej strefy czasowej, więc używana jest strefa organizacji.",
+        "retry": "Spróbuj ponownie",
+        "targetChanged": "Zmieniono pracownika, więc projekt i kategoria zostały wyczyszczone.",
+        "targetTimezone": "Godziny są w strefie czasowej: {employee} – {timezone}",
+        "thisEmployee": "tego pracownika",
+        "utcFallback": "Ani {employee}, ani organizacja nie mają ustawionej strefy czasowej, więc używany jest UTC."
+      },
       "dateLabel": "Data",
       "description": "Utwórz wpis czasu dla daty z przeszłości. W zależności od polityki zmian w Twojej organizacji może być wymagane zatwierdzenie.",
       "errors": {
