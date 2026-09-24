@@ -58,6 +58,9 @@ export const timeEntryAppendPosition = pgTable(
 		version: integer("version").notNull(),
 		entryCount: integer("entry_count").notNull(),
 		admission: text("admission").$type<TimeEntryAppendAdmission>().notNull(),
+		// The verified tip admission was granted from; null only for empty history.
+		admittedTipEntryId: uuid("admitted_tip_entry_id").references(() => timeEntry.id),
+		admittedTipHash: text("admitted_tip_hash"),
 		admittedEntryCount: integer("admitted_entry_count").notNull(),
 		admittedOperation: text("admitted_operation").$type<TimeEntryAppendOperation>().notNull(),
 		admittedAt: timestamp("admitted_at", { withTimezone: true }).notNull(),
@@ -78,7 +81,7 @@ export const timeEntryAppendPosition = pgTable(
 		),
 		check(
 			"time_entry_append_position_admission_check",
-			sql`${table.admission} IN ('empty_history', 'verified_lineage')`,
+			sql`(${table.admission} = 'empty_history' AND ${table.admittedTipEntryId} IS NULL AND ${table.admittedTipHash} IS NULL AND ${table.admittedEntryCount} = 0) OR (${table.admission} = 'verified_lineage' AND ${table.admittedTipEntryId} IS NOT NULL AND ${table.admittedTipHash} IS NOT NULL AND ${table.admittedEntryCount} > 0)`,
 		),
 		check(
 			"time_entry_append_position_operation_check",

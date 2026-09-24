@@ -10,6 +10,8 @@ import type { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import type { TimeEntryAppendOperation } from "@/db/schema/time-entry-append";
+import type { AppendScope } from "./append-lineage";
 import { calculateHash } from "./blockchain";
 import {
 	type AppendPredecessor,
@@ -132,8 +134,8 @@ export type ClockingStore = {
 	): Promise<string | null>;
 	/** Evidence-based admission; used only when the outer scope has adopted appends. */
 	admitAppend?(
-		scope: { organizationId: string; employeeId: string },
-		operation: "live_clock_in",
+		scope: AppendScope,
+		operation: TimeEntryAppendOperation,
 	): Promise<TimeEntryAppendAdmissionResult>;
 	insertEntry(entry: Record<string, unknown>): Promise<Entry>;
 	insertActivePeriod(period: Record<string, unknown>): Promise<{ id: string }>;
@@ -175,20 +177,20 @@ export type ClockingDependencies = {
 };
 
 /**
- * Legacy writers pass only the latest-created hash. An admitted append passes its
+ * Legacy writers link only the latest-created hash. An admitted append links its
  * exact predecessor, persisted as both the ID and the hash link.
  */
-function entryValues(
-	input: ClockingInput,
-	type: "clock_in" | "clock_out",
-	previous: string | null | { admitted: AppendPredecessor | null },
-) {
+type EntryLink =
+	| { kind: "legacy"; previousHash: string | null }
+	| { kind: "admitted"; predecessor: AppendPredecessor | null };
+
+function entryValues(input: ClockingInput, type: "clock_in" | "clock_out", link: EntryLink) {
 	const timestamp = dateFromInstant(input.action.instant);
-	const admitted = typeof previous === "object" && previous !== null;
-	const previousHash = admitted ? (previous.admitted?.hash ?? null) : previous;
+	const previousHash =
+		link.kind === "admitted" ? (link.predecessor?.hash ?? null) : link.previousHash;
 	return {
 		...(input.actionId ? { id: input.actionId } : {}),
-		...(admitted ? { previousEntryId: previous.admitted?.id ?? null } : {}),
+		...(link.kind === "admitted" ? { previousEntryId: link.predecessor?.id ?? null } : {}),
 		employeeId: input.employeeId,
 		organizationId: input.organizationId,
 		type,
@@ -309,18 +311,19 @@ export function createClockingService(deps: ClockingDependencies) {
 					if (!store.admitAppend) {
 						throw new Error("Append admission is unavailable");
 					}
-					const admission = await store.admitAppend(
+					const appendAdmission = await store.admitAppend(
 						{ organizationId: input.organizationId, employeeId: input.employeeId },
 						"live_clock_in",
 					);
-					if (admission.kind === "review_required") {
-						throw new TimeEntryAppendReviewRequiredError(admission.requirement);
+					if (appendAdmission.kind === "review_required") {
+						throw new TimeEntryAppendReviewRequiredError(appendAdmission.requirement);
 					}
 					const values = entryValues(input, "clock_in", {
-						admitted: admission.append.predecessor,
+						kind: "admitted",
+						predecessor: appendAdmission.append.predecessor,
 					});
 					entry = await store.insertEntry(values);
-					await admission.append.record({
+					await appendAdmission.append.record({
 						id: entry.id,
 						hash: values.hash,
 						previousEntryId: values.previousEntryId ?? null,
@@ -328,11 +331,10 @@ export function createClockingService(deps: ClockingDependencies) {
 					});
 				} else {
 					entry = await store.insertEntry(
-						entryValues(
-							input,
-							"clock_in",
-							await store.getLatestHash(input.employeeId, input.organizationId),
-						),
+						entryValues(input, "clock_in", {
+							kind: "legacy",
+							previousHash: await store.getLatestHash(input.employeeId, input.organizationId),
+						}),
 					);
 				}
 				const period = await store.insertActivePeriod({
@@ -411,11 +413,10 @@ export function createClockingService(deps: ClockingDependencies) {
 						})
 					: undefined;
 				const entry = await store.insertEntry(
-					entryValues(
-						input,
-						"clock_out",
-						await store.getLatestHash(input.employeeId, input.organizationId),
-					),
+					entryValues(input, "clock_out", {
+						kind: "legacy",
+						previousHash: await store.getLatestHash(input.employeeId, input.organizationId),
+					}),
 				);
 				const period = await store.closeActivePeriod(
 					activePeriod.id,

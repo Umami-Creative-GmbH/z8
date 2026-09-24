@@ -334,12 +334,14 @@ describeIntegration("web clock-in append admission on PostgreSQL", () => {
 			version: number;
 			entry_count: number;
 			admission: string;
+			admitted_tip_entry_id: string | null;
+			admitted_tip_hash: string | null;
 			admitted_entry_count: number;
 			admitted_operation: string;
 			last_operation: string;
 		}>(
-			`select tip_entry_id, tip_hash, version, entry_count, admission, admitted_entry_count,
-			        admitted_operation, last_operation
+			`select tip_entry_id, tip_hash, version, entry_count, admission, admitted_tip_entry_id,
+			        admitted_tip_hash, admitted_entry_count, admitted_operation, last_operation
 			 from time_entry_append_position where organization_id = $1 and employee_id = $2`,
 			[ids.organization, employeeId],
 		);
@@ -520,6 +522,8 @@ describeIntegration("web clock-in append admission on PostgreSQL", () => {
 			version: 1,
 			entry_count: 1,
 			admission: "empty_history",
+			admitted_tip_entry_id: null,
+			admitted_tip_hash: null,
 			admitted_entry_count: 0,
 			admitted_operation: "live_clock_in",
 			last_operation: "live_clock_in",
@@ -584,6 +588,8 @@ describeIntegration("web clock-in append admission on PostgreSQL", () => {
 			version: 1,
 			entry_count: 7,
 			admission: "verified_lineage",
+			admitted_tip_entry_id: e6.id,
+			admitted_tip_hash: e6.hash,
 			admitted_entry_count: 6,
 		});
 	});
@@ -764,7 +770,109 @@ describeIntegration("web clock-in append admission on PostgreSQL", () => {
 		await expect(clockInAs()).resolves.toEqual(reviewResult);
 		expect(only(reviewReasons()).reasons).toEqual([
 			{ kind: "position_tip_changed", tipEntryId: tip.id },
+			{ kind: "unverified_hash", entryId: tip.id },
 		]);
+	});
+
+	it("detects an offsetting insert and removal that leave the entry count unchanged", async () => {
+		await activateAppendAdmission();
+		const e1 = seedEntry(null, "clock_in", "2026-07-20T08:00:00Z", "2026-07-20T08:00:00Z");
+		const e2 = seedEntry(e1, "clock_out", "2026-07-20T16:00:00Z", "2026-07-20T16:00:00Z");
+		await insertEntries([e1, e2]);
+		await expect(clockInAs()).resolves.toMatchObject({ success: true });
+		const tip = only((await entries()).filter((entry) => entry.id !== e1.id && entry.id !== e2.id));
+		await closePeriodOutsideAppend();
+		// A non-participating writer appends after the tip while another removes e1.
+		await insertEntries([
+			{
+				...seedEntry(null, "clock_out", "2026-07-22T12:00:00Z", "2026-07-22T12:00:00Z"),
+				previousHash: tip.hash,
+				hash: calculateHash({
+					employeeId: ids.requester,
+					type: "clock_out",
+					timestamp: "2026-07-22T12:00:00.000Z",
+					previousHash: tip.hash,
+				}),
+			},
+		]);
+		await admin.query("delete from time_entry where id = $1", [e1.id]);
+
+		await expect(clockInAs()).resolves.toEqual(reviewResult);
+		expect(
+			only(reviewReasons())
+				.reasons.map((reason) => reason.kind)
+				.sort(),
+		).toEqual(["predecessor_outside_scope", "unexpected_history_change"]);
+	});
+
+	it("fails closed when two unlocked admissions race to establish a position", async () => {
+		// Coordinated callers serialize on the employee key; this proves the position
+		// itself refuses a second establishment even without that key.
+		await activateAppendAdmission();
+		const { db } = await import("@/db");
+		const { timeEntry } = await import("@/db/schema");
+		const { admitTimeEntryAppend, TimeEntryAppendPositionChangedError } = await import(
+			"@/lib/time-tracking/time-entry-append"
+		);
+		const timestamp = new Date("2026-07-22T08:00:00.000Z");
+		const hash = calculateHash({
+			employeeId: ids.requester,
+			type: "clock_in",
+			timestamp: timestamp.toISOString(),
+			previousHash: null,
+		});
+		type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+		const admit = async (tx: Tx, entryId: string) => {
+			const result = await admitTimeEntryAppend(
+				tx,
+				{ organizationId: ids.organization, employeeId: ids.requester },
+				"live_clock_in",
+			);
+			if (result.kind !== "admitted") throw new Error("Expected admission");
+			return async () => {
+				await tx.insert(timeEntry).values({
+					id: entryId,
+					employeeId: ids.requester,
+					organizationId: ids.organization,
+					type: "clock_in",
+					timestamp,
+					utcOffsetMinutes: 0,
+					timezone: "UTC",
+					timezoneSource: "user_setting",
+					hash,
+					previousHash: null,
+					createdBy: ids.requesterUser,
+				});
+				await result.append.record({
+					id: entryId,
+					hash,
+					previousEntryId: null,
+					previousHash: null,
+				});
+			};
+		};
+		const [first, second] = [randomUUID(), randomUUID()];
+		let secondAdmitted!: () => void;
+		let firstCommitted!: () => void;
+		const secondReady = new Promise<void>((resolve) => {
+			secondAdmitted = resolve;
+		});
+		const firstDone = new Promise<void>((resolve) => {
+			firstCommitted = resolve;
+		});
+		const late = db.transaction(async (tx) => {
+			const finish = await admit(tx, second);
+			secondAdmitted();
+			await firstDone;
+			await finish();
+		});
+		await secondReady;
+		await db.transaction(async (tx) => (await admit(tx, first))());
+		firstCommitted();
+
+		await expect(late).rejects.toBeInstanceOf(TimeEntryAppendPositionChangedError);
+		expect((await entries()).map((entry) => entry.id)).toEqual([first]);
+		expect(await position()).toMatchObject({ tip_entry_id: first, version: 1 });
 	});
 
 	it("keeps committed tip evidence from being removed under its position", async () => {

@@ -61,18 +61,20 @@ Admission (`admitTimeEntryAppend`):
 | No position, no scoped entries, but scoped work exists | Review: `history_without_entries` |
 | No position, one verified lineage | Append to its exact tip, admission `verified_lineage` |
 | No position, anything else | Review with the classifier's issues |
-| Position whose tip exists in scope with the recorded, reproducible hash, and whose entry count matches | Append to the recorded tip |
-| Position whose tip is missing or changed, or whose entry count differs | Review: `position_tip_missing`, `position_tip_changed`, `unexpected_history_change` |
+| Position, and history is still one verified lineage whose recorded tip keeps its hash, has no successor, and whose entry count matches | Append to the recorded tip |
+| Position, anything else | Review: `position_tip_missing`, `position_tip_changed`, `unexpected_history_change`, plus any classifier issues |
 
 Duplicate hashes are not a failure by themselves. The standard hash commits
 `previousHash`, so equal hashes always sit on separate branches or components. That
 structure, not the duplicate, is what blocks admission.
 
-With a position, the tip and the exact entry count serve as evidence instead of
-re-reading the whole history on every clock-in. Any insert or physical removal by a
-writer outside the collaborator changes the count and holds fresh appends. Mutation
-of hashed fields on non-tip rows is left to participating writers (#262 §6). It is
-not re-verified on each append.
+The full scoped history is re-classified on every admission, including when a
+position exists. An insert that bypassed the collaborator adds a tip successor or
+changes the count. A removal leaves a hole or changes the count. Offsetting
+insert/remove pairs and hashed-field changes on any row therefore still hold fresh
+appends. The cost is one narrow read of the employee's entries per clock-in
+(O(history)). If that proves too slow, it needs a stronger incremental evidence
+design, not a weaker check.
 
 A review requirement is scoped to one employee in one organization. Other employees
 remain writable. The action logs the requirement (`appendReviewRequirement`, with
@@ -83,16 +85,21 @@ reasons and IDs) for operators. The user only gets
 
 The fresh entry stores both `previousEntryId` and `previousHash`. The position then
 advances in the same transaction: an insert with `version = 1`, or an update guarded
-by `version = expected`. It records the tip ID/hash, `entry_count`,
-admission provenance (`admission`, `admitted_entry_count`, `admitted_operation`,
-`admitted_at`) and `last_operation`. A failed CAS aborts the operation. Any later
+by `version = expected`. It records the tip ID/hash, `entry_count`, and admission
+provenance: `admission`, the admission anchor (`admitted_tip_entry_id`/`admitted_tip_hash`,
+null only for empty history), `admitted_entry_count`, `admitted_operation` and
+`admitted_at`. It also records `last_operation`. A check constraint ties the anchor to the
+admission kind. The anchor references `time_entry`, so it cannot be removed either. A failed CAS aborts the operation. Any later
 failure, such as the period insert, rolls back the entry and the position together.
 `TimeEntryAppend.record` advances from each entry to the next for multi-entry
 operations.
 
 Committed replay (`getEntryByActionId`) still runs before admission. It returns the
 existing entry, with no write and no tip change. Hash serialization and capture
-fields are unchanged.
+fields are unchanged. The web action itself sends no clock-in action ID yet; it gets
+a replay identity with durable browser commands (#279). Replay is therefore verified
+through the real coordinator and clocking service with an action ID, not through
+the web action.
 
 ## Linked lifecycle and cleanup
 
@@ -119,7 +126,7 @@ database. It drives the real `clockIn` action and, as the competing legacy write
 real `clockOut` action. Only the session, request headers, billing provisioning,
 notifications and Next cache are replaced.
 
-Verified (22 tests):
+Verified (24 tests):
 
 - Legacy with no control row or an inactive one: latest-created hash, null predecessor
   ID, no position.
@@ -130,7 +137,8 @@ Verified (22 tests):
   first clock-ins give exactly one root, one position and "already clocked in".
 - Verified lineage with a hash-only link, a retained superseded row, tied creation
   times and a backdated pair created earliest appends to the true tip, not the
-  latest-created row. Admission is `verified_lineage` with `admitted_entry_count = 6`.
+  latest-created row. Admission is `verified_lineage` with anchor `e6` and
+  `admitted_entry_count = 6`.
 - Review with no writes for forks, islands, a hole, an ID/hash contradiction, an
   unestablished provider hash format, and work without scoped entries. Each returns
   the employee-scoped reasons.
@@ -138,7 +146,12 @@ Verified (22 tests):
   employee key is held.
 - After adoption, a legacy clock-out makes the next clock-in hold with
   `unexpected_history_change` (1→2). A changed tip hash holds with
-  `position_tip_changed`. Deleting the tip entry fails (`23503`).
+  `position_tip_changed` and `unverified_hash`. An offsetting insert after the tip plus
+  removal of an older entry, with the count unchanged, still holds. Deleting the tip
+  entry fails (`23503`).
+- Without the employee key, two admissions that both saw empty history race to
+  establish the position. The later one fails with `TimeEntryAppendPositionChangedError`
+  and rolls back its entry.
 - Two admitted clock-ins advance explicitly: explicit links, version 2, count 2.
 - Replaying a committed action ID through the real coordinator and service writes
   nothing and leaves the position unchanged.
@@ -146,8 +159,15 @@ Verified (22 tests):
   position, with and without an existing position.
 - Organization time-data cleanup and employee deletion remove positions.
 
-A mutation run that forced legacy admission failed 15 of these tests, so the suite
-detects the admitted behavior.
+A mutation run that forced legacy admission failed 15 of the first 22 tests, so the
+suite detects the admitted behavior. Full runner
+(`bash apps/webapp/scripts/run-approval-workflow-repository-integration.sh`, fresh
+container, full migration chain): **30 files / 511 tests passed**. The container's
+ownership label was verified and the container removed.
+
+Not proven on PostgreSQL: a real admitted duplicate-hash case. The standard hash
+commits `previousHash`, so rows with equal hashes always sit on separate branches or
+components. The classifier covers disambiguation by explicit IDs in unit tests only.
 
 ### Database-free
 

@@ -23,13 +23,13 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useElapsedTimer, useTimeClock } from "@/lib/query";
 import type { AssignedProject } from "@/lib/query/use-assigned-projects";
-import { APPEND_REVIEW_REQUIRED_CODE } from "@/lib/time-tracking/time-clock-client";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import {
 	getTimeFormatDateTimeOptions,
 	type TimeFormat,
 } from "@/lib/user-preferences/time-format";
+import { showAppendReviewRequiredToast } from "./append-review-toast";
 import { WorkLocationSelector } from "./clock-in-out-widget-parts";
 import { ProjectSelectorView } from "./project-selector";
 import { QuickBreakPopover } from "./quick-break-popover";
@@ -308,20 +308,7 @@ export function TimeClockPopover({
 				);
 			}
 			setOpen(false);
-		} else if ("code" in result && result.code === APPEND_REVIEW_REQUIRED_CODE) {
-			toast.error(
-				t(
-					"timeTracking.errors.appendReviewRequired",
-					"Clock-in needs a review of your time history",
-				),
-				{
-					description: t(
-						"timeTracking.errors.appendReviewRequiredDesc",
-						"Your earlier time entries could not be verified, so a new clock-in was not saved. Please contact your administrator.",
-					),
-				},
-			);
-		} else {
+		} else if (!showAppendReviewRequiredToast(result, t)) {
 			const holidayName =
 				"holidayName" in result ? result.holidayName : undefined;
 			const errorMessage = holidayName

@@ -1,5 +1,5 @@
 {
-  "id": "1e59a4d8-ae56-4979-8207-0432831693de",
+  "id": "e6d62858-b5ce-49ce-aabd-c8a24ff6fa91",
   "prevId": "813ef16b-c28b-4bff-90c7-cc5c54ceb3af",
   "version": "7",
   "dialect": "postgresql",
@@ -38769,6 +38769,18 @@
           "primaryKey": false,
           "notNull": true
         },
+        "admitted_tip_entry_id": {
+          "name": "admitted_tip_entry_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "admitted_tip_hash": {
+          "name": "admitted_tip_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "admitted_entry_count": {
           "name": "admitted_entry_count",
           "type": "integer",
@@ -38828,6 +38840,19 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
+        "time_entry_append_position_admitted_tip_entry_id_time_entry_id_fk": {
+          "name": "time_entry_append_position_admitted_tip_entry_id_time_entry_id_fk",
+          "tableFrom": "time_entry_append_position",
+          "tableTo": "time_entry",
+          "columnsFrom": [
+            "admitted_tip_entry_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "time_entry_append_position_employee_fk": {
           "name": "time_entry_append_position_employee_fk",
           "tableFrom": "time_entry_append_position",
@@ -38866,7 +38891,7 @@
         },
         "time_entry_append_position_admission_check": {
           "name": "time_entry_append_position_admission_check",
-          "value": "\"time_entry_append_position\".\"admission\" IN ('empty_history', 'verified_lineage')"
+          "value": "(\"time_entry_append_position\".\"admission\" = 'empty_history' AND \"time_entry_append_position\".\"admitted_tip_entry_id\" IS NULL AND \"time_entry_append_position\".\"admitted_tip_hash\" IS NULL AND \"time_entry_append_position\".\"admitted_entry_count\" = 0) OR (\"time_entry_append_position\".\"admission\" = 'verified_lineage' AND \"time_entry_append_position\".\"admitted_tip_entry_id\" IS NOT NULL AND \"time_entry_append_position\".\"admitted_tip_hash\" IS NOT NULL AND \"time_entry_append_position\".\"admitted_entry_count\" > 0)"
         },
         "time_entry_append_position_operation_check": {
           "name": "time_entry_append_position_operation_check",

@@ -98,7 +98,12 @@ export async function deleteNonAdminEmployeesData(
 		// The append position references its tip entry; remove it with the history.
 		await db
 			.delete(timeEntryAppendPosition)
-			.where(inArray(timeEntryAppendPosition.employeeId, employeeIds));
+			.where(
+				and(
+					eq(timeEntryAppendPosition.organizationId, organizationId),
+					inArray(timeEntryAppendPosition.employeeId, employeeIds),
+				),
+			);
 		await db.delete(timeEntry).where(inArray(timeEntry.employeeId, employeeIds));
 		result.timeEntriesDeleted = timeEntriesToDelete.length;
 	}
