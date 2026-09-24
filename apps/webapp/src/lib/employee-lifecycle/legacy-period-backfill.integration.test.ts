@@ -8,7 +8,7 @@ import {
 	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeedEmployeeInput,
-} from "./testing/database";
+} from "./testing/database.test.fixture";
 
 const JAN = new Date("2025-01-06T00:00:00Z");
 const MAR = new Date("2025-03-01T00:00:00Z");

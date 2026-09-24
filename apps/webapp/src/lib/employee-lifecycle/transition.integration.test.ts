@@ -10,7 +10,7 @@ import {
 	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
-} from "./testing/database";
+} from "./testing/database.test.fixture";
 import { executeDepartureInTransaction } from "./transition";
 import type { DepartureClockOutPort, DepartureClockOutResult, DepartureIdentity } from "./types";
 

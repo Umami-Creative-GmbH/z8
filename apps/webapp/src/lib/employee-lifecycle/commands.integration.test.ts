@@ -10,7 +10,7 @@ import {
 	createLifecycleDatabaseFixture,
 	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
-} from "./testing/database";
+} from "./testing/database.test.fixture";
 import type { DepartureClockOutPort, LifecycleActor } from "./types";
 
 const MONDAY = parseInstant("2026-09-14T08:00:00Z");

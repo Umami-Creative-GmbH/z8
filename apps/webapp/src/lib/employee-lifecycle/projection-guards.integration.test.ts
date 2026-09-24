@@ -11,7 +11,7 @@ import {
 	createLifecycleDatabaseFixture,
 	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
-} from "./testing/database";
+} from "./testing/database.test.fixture";
 import type { DepartureClockOutPort, LifecycleActor } from "./types";
 
 const clockOut: DepartureClockOutPort = {

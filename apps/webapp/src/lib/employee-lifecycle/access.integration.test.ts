@@ -14,7 +14,7 @@ import {
 	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
-} from "./testing/database";
+} from "./testing/database.test.fixture";
 
 const CUTOFF = "2026-09-15T00:00:00Z";
 const BEFORE = parseInstant("2026-09-14T23:59:00Z");

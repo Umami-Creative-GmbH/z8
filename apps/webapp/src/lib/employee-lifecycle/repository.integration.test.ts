@@ -7,7 +7,7 @@ import {
 	createLifecycleDatabaseFixture,
 	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
-} from "./testing/database";
+} from "./testing/database.test.fixture";
 
 const cutoff = new Date("2026-09-15T00:00:00Z");
 
