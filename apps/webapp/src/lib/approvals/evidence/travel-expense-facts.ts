@@ -5,13 +5,11 @@ import {
 	instantToCanonicalString,
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
+import { TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER } from "@/lib/travel-expenses/attachment-validation";
 import { canonicalJson } from "./absence-facts";
 import { ApprovalEvidenceError } from "./errors";
 
 export const TRAVEL_EXPENSE_EVIDENCE_SCHEMA_VERSION = 1;
-
-/** The only storage a frozen receipt may live in: organization-scoped private objects. */
-export const TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER = "s3-private";
 
 type TravelExpenseClaimType = "receipt" | "mileage" | "per_diem";
 

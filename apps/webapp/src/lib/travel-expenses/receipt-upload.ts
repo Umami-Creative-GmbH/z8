@@ -7,6 +7,7 @@ import {
 	travelExpenseReceiptUpload,
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER } from "./attachment-validation";
 
 /**
  * Receipt upload coordination (#295). A private receipt object is staged
@@ -19,18 +20,17 @@ import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/tempo
 
 type Database = typeof appDb;
 
-export const TRAVEL_EXPENSE_RECEIPT_PROVIDER = "s3-private";
-
 /** Uploads still pending after this long are treated as abandoned. */
 export const ABANDONED_RECEIPT_UPLOAD_AFTER_MS = 60 * 60 * 1000;
 /** Cleanup lease that keeps two workers from deleting the same object. */
 const CLEANUP_LEASE_MS = 10 * 60 * 1000;
+const MAX_CLEANUP_RETRY_DELAY_MS = 12 * 60 * 60 * 1000;
 const CLEANUP_RETRY_DELAYS_MS = [
 	60 * 1000,
 	5 * 60 * 1000,
 	30 * 60 * 1000,
 	2 * 60 * 60 * 1000,
-	12 * 60 * 60 * 1000,
+	MAX_CLEANUP_RETRY_DELAY_MS,
 ];
 
 /** Write-once object key: the attachment ID is never reused. */
@@ -162,7 +162,7 @@ export async function finalizeTravelExpenseReceiptUpload(
 				id: input.attachmentId,
 				organizationId: input.organizationId,
 				claimId: input.claimId,
-				storageProvider: TRAVEL_EXPENSE_RECEIPT_PROVIDER,
+				storageProvider: TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER,
 				storageBucket: input.stored.bucket,
 				storageKey: input.storageKey,
 				storageVersionId: input.stored.versionId,
@@ -187,39 +187,54 @@ export async function finalizeTravelExpenseReceiptUpload(
 	});
 }
 
-/** Records that a staged object could not be attached. Idempotent. */
+/**
+ * Records that a staged object could not be attached. Idempotent. The row is
+ * recreated when cleanup already swept it as abandoned before this upload
+ * stored its object, so a slow upload can never leave an unrecorded object; a
+ * row another worker holds keeps its lease and only learns the object version.
+ */
 export async function markTravelExpenseReceiptUploadFailed(
 	database: Database,
-	input: {
-		attachmentId: string;
-		organizationId: string;
+	input: StagedReceiptUpload & {
 		stored: StoredReceiptObject | null;
 		reason: TravelExpenseReceiptCleanupReason;
 	},
 	now: Instant = systemClock.nowInstant(),
 ): Promise<void> {
 	const at = dateFromInstant(now);
+	const table = travelExpenseReceiptUpload;
+	const wasPending = sql`${table.status} = 'pending'`;
 	await database
-		.update(travelExpenseReceiptUpload)
-		.set({
+		.insert(table)
+		.values({
+			id: input.attachmentId,
+			organizationId: input.organizationId,
+			claimId: input.claimId,
+			uploadedBy: input.uploadedBy,
+			storageKey: input.storageKey,
+			storageBucket: input.stored?.bucket ?? null,
+			storageVersionId: input.stored?.versionId ?? null,
 			status: "cleanup_required",
 			reason: input.reason,
-			...(input.stored
-				? {
-						storageBucket: input.stored.bucket,
-						storageVersionId: input.stored.versionId,
-					}
-				: {}),
 			nextAttemptAt: at,
+			createdAt: at,
 			updatedAt: at,
 		})
-		.where(
-			and(
-				eq(travelExpenseReceiptUpload.id, input.attachmentId),
-				eq(travelExpenseReceiptUpload.organizationId, input.organizationId),
-				eq(travelExpenseReceiptUpload.status, "pending"),
+		.onConflictDoUpdate({
+			target: table.id,
+			set: {
+				status: "cleanup_required",
+				reason: sql`case when ${wasPending} then excluded.reason else ${table.reason} end`,
+				storageBucket: sql`coalesce(excluded.storage_bucket, ${table.storageBucket})`,
+				storageVersionId: sql`coalesce(excluded.storage_version_id, ${table.storageVersionId})`,
+				nextAttemptAt: sql`case when ${wasPending} then excluded.next_attempt_at else ${table.nextAttemptAt} end`,
+				updatedAt: at,
+			},
+			where: and(
+				eq(table.organizationId, input.organizationId),
+				eq(table.storageKey, input.storageKey),
 			),
-		);
+		});
 }
 
 export type DeleteReceiptObject = (input: {
@@ -292,6 +307,18 @@ async function claimCleanupWork(
 	});
 }
 
+/** Only the worker whose lease is current, for the object version it deleted, may settle a row. */
+function heldLease(row: CleanupRow) {
+	return and(
+		eq(travelExpenseReceiptUpload.id, row.id),
+		eq(travelExpenseReceiptUpload.status, "cleanup_required"),
+		row.nextAttemptAt
+			? eq(travelExpenseReceiptUpload.nextAttemptAt, row.nextAttemptAt)
+			: sql`${travelExpenseReceiptUpload.nextAttemptAt} is null`,
+		sql`${travelExpenseReceiptUpload.storageVersionId} is not distinct from ${row.storageVersionId}`,
+	);
+}
+
 async function cleanupOne(
 	database: Database,
 	row: CleanupRow,
@@ -318,9 +345,7 @@ async function cleanupOne(
 			});
 		} catch (error) {
 			const attempts = row.attempts + 1;
-			const delay =
-				CLEANUP_RETRY_DELAYS_MS[Math.min(attempts, CLEANUP_RETRY_DELAYS_MS.length) - 1] ??
-				CLEANUP_RETRY_DELAYS_MS[CLEANUP_RETRY_DELAYS_MS.length - 1];
+			const delay = CLEANUP_RETRY_DELAYS_MS[attempts - 1] ?? MAX_CLEANUP_RETRY_DELAY_MS;
 			await database
 				.update(travelExpenseReceiptUpload)
 				.set({
@@ -330,18 +355,12 @@ async function cleanupOne(
 					nextAttemptAt: dateFromInstant(now.add({ milliseconds: delay })),
 					updatedAt: dateFromInstant(now),
 				})
-				.where(eq(travelExpenseReceiptUpload.id, row.id));
+				.where(heldLease(row));
 			return "failed";
 		}
 	}
-	await database
-		.delete(travelExpenseReceiptUpload)
-		.where(
-			and(
-				eq(travelExpenseReceiptUpload.id, row.id),
-				eq(travelExpenseReceiptUpload.status, "cleanup_required"),
-			),
-		);
+	// A version learned meanwhile keeps the row, so the exact version is deleted later.
+	await database.delete(travelExpenseReceiptUpload).where(heldLease(row));
 	return attached.length === 0 ? "deleted" : "released";
 }
 

@@ -141,9 +141,11 @@ const { createTravelExpenseDraft, submitTravelExpenseClaim, approveTravelExpense
 	await import("@/app/[locale]/(app)/travel-expenses/actions");
 const { POST: processUpload } = await import("@/app/api/upload/travel-expense/process/route");
 const { db } = await import("@/db");
-const { runTravelExpenseReceiptCleanup, stageTravelExpenseReceiptUpload } = await import(
-	"./receipt-upload"
-);
+const {
+	markTravelExpenseReceiptUploadFailed,
+	runTravelExpenseReceiptCleanup,
+	stageTravelExpenseReceiptUpload,
+} = await import("./receipt-upload");
 const { deleteApproval, listApprovals } = await import("@/lib/approvals/maintenance");
 const { loadLegacyTravelExpenseSubmittedRevision } = await import("@/lib/approvals/evidence/store");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
@@ -719,7 +721,7 @@ describeIntegration("expense submission evidence (PostgreSQL)", () => {
 		expect(await claimState(legacyReceipt)).toMatchObject({ status: "draft", requests: 0 });
 	});
 
-	it("requires receipts and ignores foreign-organization attachment rows", async () => {
+	it("requires receipts and refuses foreign-organization attachment rows", async () => {
 		await seed();
 		const missing = await createDraft();
 		expect(await submit(missing)).toEqual({
@@ -729,21 +731,26 @@ describeIntegration("expense submission evidence (PostgreSQL)", () => {
 		expect((await claimState(missing)).status).toBe("draft");
 
 		const claimId = await createDraft();
-		const own = await upload(claimId);
-		await admin.query(
+		expect((await upload(claimId)).status).toBe(200);
+		const { rows: foreign } = await admin.query<{ id: string }>(
 			`insert into travel_expense_attachment
 			 (claim_id, organization_id, storage_provider, storage_bucket, storage_key, file_name,
 			  mime_type, size_bytes, checksum_sha256, uploaded_by)
 			 values ($1, $2, 's3-private', 't295-private', 'travel-expenses/foreign/receipt.pdf',
-			  'foreign.pdf', 'application/pdf', 10, $3, $4)`,
+			  'foreign.pdf', 'application/pdf', 10, $3, $4) returning id`,
 			[claimId, ids.otherOrganization, "c".repeat(64), ids.otherEmployee],
 		);
 
+		// A foreign row linked to the claim is a contradiction: never silently dropped.
+		expect(await submit(claimId)).toEqual({
+			success: false,
+			error: "Failed to submit travel expense claim",
+		});
+		expect(await claimState(claimId)).toMatchObject({ status: "draft", requests: 0, revisions: 0 });
+
+		await admin.query("delete from travel_expense_attachment where id = $1", [only(foreign).id]);
 		expect((await submit(claimId)).success).toBe(true);
-		const manifest = (await revisionRow(claimId)).facts.receipts.manifest as Array<{
-			attachmentId: string;
-		}>;
-		expect(manifest.map((item) => item.attachmentId)).toEqual([own.body.attachment.id]);
+		expect((await revisionRow(claimId)).facts.receipts.manifest).toHaveLength(1);
 
 		// A mileage claim needs no receipt; its manifest is honestly empty.
 		const mileage = await createDraft({ type: "mileage", amount: "30.00" });
@@ -892,5 +899,49 @@ describeIntegration("expense submission evidence (PostgreSQL)", () => {
 		const remaining = await stagedUploads();
 		expect(remaining.map((row) => row.id)).toEqual([fresh.attachmentId]);
 		expect(only(remaining).status).toBe("pending");
+	});
+
+	it("re-records an upload that stores its object after cleanup swept it as abandoned", async () => {
+		await seed();
+		const claimId = await createDraft();
+		const now = systemClock.nowInstant();
+		const slow = {
+			attachmentId: "e2952000-0000-4000-8000-000000000004",
+			organizationId: ids.organization,
+			claimId,
+			uploadedBy: ids.requester,
+			storageKey: `travel-expenses/${ids.organization}/${claimId}/slow.pdf`,
+		};
+		await stageTravelExpenseReceiptUpload(db, slow, now.subtract({ hours: 2 }));
+		// The sweep finds nothing stored yet and settles the row.
+		const swept = await runTravelExpenseReceiptCleanup(db, {
+			now,
+			deleteObject: async () => undefined,
+		});
+		expect(swept).toMatchObject({ claimed: 1, deleted: 1 });
+		expect(await stagedUploads()).toEqual([]);
+
+		// The slow upload then stores its object and fails to finalize.
+		harness.privateObjects.set(slow.storageKey, { bytes: PDF_BYTES, versionId: "v-slow" });
+		await markTravelExpenseReceiptUploadFailed(db, {
+			...slow,
+			stored: { bucket: "t295-private", versionId: "v-slow" },
+			reason: "finalization_failed",
+		});
+		expect(only(await stagedUploads())).toMatchObject({
+			status: "cleanup_required",
+			reason: "finalization_failed",
+			storage_version_id: "v-slow",
+		});
+
+		const recovered = await runTravelExpenseReceiptCleanup(db, {
+			deleteObject: async (input) => {
+				expect(input.versionId).toBe("v-slow");
+				harness.privateObjects.delete(input.key);
+			},
+		});
+		expect(recovered).toMatchObject({ claimed: 1, deleted: 1 });
+		expect(harness.privateObjects.has(slow.storageKey)).toBe(false);
+		expect(await stagedUploads()).toEqual([]);
 	});
 });

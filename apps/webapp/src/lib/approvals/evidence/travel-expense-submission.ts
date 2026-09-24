@@ -47,7 +47,7 @@ export interface TravelExpenseSubmissionEvidenceInput {
 	routing: ResolvePolicyAndCreateApprovalResult;
 }
 
-/** Persisted claim and receipt rows, scoped to one organization. */
+/** The organization-scoped claim and every receipt row linked to it. */
 export async function loadTravelExpenseFactsInput(
 	database: ApprovalDatabase,
 	scope: { organizationId: string; claimId: string },
@@ -63,15 +63,12 @@ export async function loadTravelExpenseFactsInput(
 				),
 			)
 			.limit(2),
+		// Every row linked to the claim, so a foreign-organization row is verified
+		// (and refused) rather than silently left out of the manifest.
 		database
 			.select()
 			.from(travelExpenseAttachment)
-			.where(
-				and(
-					eq(travelExpenseAttachment.claimId, scope.claimId),
-					eq(travelExpenseAttachment.organizationId, scope.organizationId),
-				),
-			),
+			.where(eq(travelExpenseAttachment.claimId, scope.claimId)),
 	]);
 	const claim = claims[0];
 	if (claims.length !== 1 || !claim) return null;

@@ -196,8 +196,7 @@ export async function POST(request: NextRequest) {
 			});
 		} catch (error) {
 			await markTravelExpenseReceiptUploadFailed(db, {
-				attachmentId: staged.attachmentId,
-				organizationId: staged.organizationId,
+				...staged,
 				stored,
 				reason: "finalization_failed",
 			}).catch((markError) =>

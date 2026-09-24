@@ -422,25 +422,48 @@ employee/organization cascade still leaves its stored receipt objects
    without capture; drain them before relying on manifests.
 4. The web UI does not expose receipt upload or claim submission yet (only the
    server action and route exist), so the 409 message is not browser-verified.
-5. Object storage was an in-memory stand-in in the runtime suite. Real S3
-   version IDs, versioned deletes and the bucket-mismatch refusal are
-   unverified.
-6. Whole-organization cleanup ordering (#306), then a limited pilot (#328).
+5. **Storage immutability is not enforced by the provider.** On a bucket
+   without versioning `versionId` is null and the only protection is the
+   write-once key convention: `PutObject` is not conditional, and decision-time
+   comparison re-reads database rows, not objects. The checksum is computed over
+   the bytes sent, not confirmed by the provider (`ChecksumSHA256` is not sent).
+   Before activation, require bucket versioning (or conditional writes) for
+   receipt storage. Object storage was an in-memory stand-in in the runtime
+   suite; real version IDs, versioned deletes and the bucket-mismatch refusal
+   are unverified.
+6. **Abandoned objects on versioned buckets.** A process that dies after storing
+   but before finalizing leaves no recorded version, so cleanup deletes by key,
+   which on a versioned bucket only adds a delete marker. (A slow upload whose
+   row was already swept re-records itself with its version; that path is
+   covered.)
+7. **Held claims have no durable attention.** A materially changed claim is
+   refused for both approve and reject and there is no expense cancellation
+   path, so it stays `submitted` until authorized cleanup (`deleteApproval`)
+   or a separately agreed repair. No administrative-attention record is raised.
+8. Whole-organization cleanup ordering (#306), then a limited pilot (#328).
+
+**Not gated by capture.** These ship active on deploy, as bounded corrections:
+logical-date columns on new drafts, upload staging with checksum/version,
+the claim-lock coordination with its 409 for late uploads, the in-transaction
+receipt check, and the cleanup cron (it only touches staging rows this code
+creates). Only revision capture and the decision-time material-change check
+(which needs a revision) depend on `approval_evidence_control`.
 
 ### Verification (#295)
 
 PostgreSQL 16 (`lib/travel-expenses/expense-submission.integration.test.ts`,
 part of `test:approval-workflow-repository:integration`), driving the real
 `createTravelExpenseDraft`, upload route, `submitTravelExpenseClaim`,
-`approveTravelExpenseClaim`, cleanup worker and maintenance, 12/12 passing:
+`approveTravelExpenseClaim`, cleanup worker and maintenance, 13/13 passing:
 capture inactive versus active; full revision contents and the checksum over the
 stored bytes; organization-scoped loading and the update trigger; a late upload
 rejected with its object deleted; a failed immediate cleanup recovered by the
 worker after backoff; upload/submission races in **both arrival orders** behind
 a held claim lock; an injected revision insert failure rolling back the
-submission; historical date and checksum gaps held; missing receipts,
-foreign-organization attachment rows and an empty mileage manifest; a
-receipt-set change holding approval until reverted; self-approval activation
-evidence; privileged cleanup of one lifecycle; abandoned staging cleanup that
-never deletes an attached object. Unit seams: `travel-expense-facts.test.ts`,
+submission; historical date and checksum gaps held; missing receipts, a
+foreign-organization attachment row refusing submission, and an empty mileage
+manifest; a receipt-set change holding approval until reverted; self-approval
+activation evidence; privileged cleanup of one lifecycle; abandoned staging
+cleanup that never deletes an attached object; a slow upload re-recorded with
+its version after its row was swept. Unit seams: `travel-expense-facts.test.ts`,
 the upload route and submission action tests.

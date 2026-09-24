@@ -363,8 +363,7 @@ describe("travel expense upload processing", () => {
 		expect(response.status).toBe(500);
 		const [, staged] = mockState.stage.mock.calls[0] ?? [];
 		expect(mockState.markFailed).toHaveBeenCalledWith(expect.anything(), {
-			attachmentId: staged.attachmentId,
-			organizationId: "org_1",
+			...staged,
 			stored: null,
 			reason: "finalization_failed",
 		});
