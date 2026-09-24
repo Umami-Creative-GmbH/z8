@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { calculateHash } from "./blockchain";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type {
@@ -550,7 +551,7 @@ export const clockingService = createClockingService({
 				where: and(
 					eq(employee.userId, userId),
 					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
+					employeeHasOrganizationAccess(),
 				),
 			})) ?? null
 		);
