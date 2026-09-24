@@ -10,11 +10,12 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { queryKeys } from "@/lib/query/keys";
 
+const signedInSession = {
+	user: { id: "user-1" },
+	session: { activeOrganizationId: "org-1" },
+};
 const mocks = vi.hoisted(() => ({
-	session: {
-		user: { id: "user-1" },
-		session: { activeOrganizationId: "org-1" },
-	},
+	session: null as typeof signedInSession | null,
 }));
 vi.mock("@/lib/auth-client", () => ({
 	useSession: () => ({ data: mocks.session }),
@@ -34,7 +35,7 @@ describe("offline clock caller outcomes", () => {
 		mode = "preservation-only-v1";
 		saveError = undefined;
 		messages.length = 0;
-		mocks.session.session.activeOrganizationId = "org-1";
+		mocks.session = structuredClone(signedInSession);
 		vi.stubGlobal("MessageChannel", MessageChannel);
 		controller = {
 			postMessage: vi.fn((message, ports) => {
@@ -108,6 +109,33 @@ describe("offline clock caller outcomes", () => {
 		expect(result.current.pendingCount).toBe(2);
 		await waitFor(() =>
 			expect(result.current.lastError).toBe("Quota exceeded"),
+		);
+	});
+
+	it("does not report worker registration failure without an account recovery context", async () => {
+		mocks.session = null;
+		vi.spyOn(console, "warn").mockImplementation(() => {});
+		const register = vi
+			.fn()
+			.mockRejectedValue(new TypeError("Failed to register a ServiceWorker"));
+		Object.assign(serviceWorker, { register });
+		const { result } = renderHook(() => useOfflineClock(), { wrapper });
+		await waitFor(() => expect(register).toHaveBeenCalled());
+		await act(async () => {});
+		expect(result.current.lastError).toBeNull();
+	});
+
+	it("reports worker registration failure to a signed-in account", async () => {
+		Object.assign(serviceWorker, {
+			register: vi
+				.fn()
+				.mockRejectedValue(new TypeError("Failed to register a ServiceWorker")),
+		});
+		const { result } = renderHook(() => useOfflineClock(), { wrapper });
+		await waitFor(() =>
+			expect(result.current.lastError).toBe(
+				"Failed to register a ServiceWorker",
+			),
 		);
 	});
 
