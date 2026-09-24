@@ -95,4 +95,5 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	src/lib/approvals/server/time-correction-approvals.integration.test.ts \
 	src/lib/approvals/server/work-period-approvals.integration.test.ts \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.web-clock-out.integration.test.ts" \
-	src/lib/cron/legacy-escalation-fencing.integration.test.ts
+	src/lib/cron/legacy-escalation-fencing.integration.test.ts \
+	src/lib/approvals/evidence/legacy-absence.integration.test.ts

@@ -1397,6 +1397,44 @@ export async function rejectAbsenceEffect(
 	);
 }
 
+/** The legacy-authoritative absence decision, run inside the caller's transaction. */
+export function createLegacyAbsenceDecisionProcessor(input: {
+	absenceId: string;
+	action: "approve" | "reject";
+	reason?: string;
+	options?: ApprovalActionOptions;
+}): ExecuteAbsenceDecisionInput["processLegacy"] {
+	return async (transactionDbService, transactionEmployee, transactionBehavior) =>
+		await Effect.runPromise(
+			processApprovalWithCurrentEmployee(
+				transactionDbService,
+				transactionEmployee,
+				"absence_entry",
+				input.absenceId,
+				input.action,
+				input.reason,
+				input.action === "approve"
+					? persistApprovedAbsence
+					: (service, entityId, approver) =>
+							persistRejectedAbsence(
+								service,
+								entityId,
+								approver,
+								input.reason ?? "",
+							),
+				undefined,
+				{ ...input.options, transactional: true },
+				undefined,
+				transactionBehavior,
+			).pipe(
+				Effect.provideService(
+					ApprovalAuditLogger,
+					createApprovalAuditLogger(transactionDbService),
+				),
+			) as Effect.Effect<unknown, AnyAppError, never>,
+		);
+}
+
 function authenticatedAbsenceDecisionEffect(
 	absenceId: string,
 	action: "approve" | "reject",
@@ -1503,39 +1541,12 @@ function authenticatedAbsenceDecisionEffect(
 						query: dbService.query,
 						captureLegacyState: captureAbsenceLegacyApprovalState,
 						nowInstant: () => systemClock.nowInstant(),
-						processLegacy: async (
-							transactionDbService,
-							transactionEmployee,
-							transactionBehavior,
-						) =>
-							await Effect.runPromise(
-								processApprovalWithCurrentEmployee(
-									transactionDbService,
-									transactionEmployee,
-									"absence_entry",
-									absenceId,
-									action,
-									reason,
-									action === "approve"
-										? persistApprovedAbsence
-										: (service, entityId, approver) =>
-												persistRejectedAbsence(
-													service,
-													entityId,
-													approver,
-													reason ?? "",
-												),
-									undefined,
-									{ ...options, transactional: true },
-									undefined,
-									transactionBehavior,
-								).pipe(
-									Effect.provideService(
-										ApprovalAuditLogger,
-										createApprovalAuditLogger(transactionDbService),
-									),
-								) as Effect.Effect<unknown, AnyAppError, never>,
-							),
+						processLegacy: createLegacyAbsenceDecisionProcessor({
+							absenceId,
+							action,
+							reason,
+							options,
+						}),
 					}),
 				catch: translateAbsenceDecisionError,
 			}),

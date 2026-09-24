@@ -1,7 +1,11 @@
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { absenceEntry } from "@/db/schema";
-import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import {
+	type Instant,
+	instantFromDate,
+	parseInstant,
+} from "@/lib/datetime/temporal-core";
 import type { ApprovalDatabase } from "../server/types";
 import type {
 	ApprovalWorkflowStatus,
@@ -373,7 +377,9 @@ export async function captureLegacyAbsenceSubmissionEvidence(
 
 	if (input.routing.kind === "auto_completed") {
 		// Routing approved the request during submission (requester is approver).
-		const decidedAt = sourceField<Instant | null>(state, "approvedAt");
+		const approvedAt = sourceField<unknown>(state, "approvedAt");
+		const decidedAt =
+			typeof approvedAt === "string" ? parseInstant(approvedAt) : null;
 		if (!decidedAt) {
 			throw new ApprovalEvidenceError("evidence_incomplete", {
 				field: "activation_outcome",
