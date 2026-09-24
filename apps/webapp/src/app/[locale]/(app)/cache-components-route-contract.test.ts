@@ -216,6 +216,11 @@ const SHELL_WORK_QUEUE = [
 		contentComponent: "ApprovalPoliciesSettingsContent",
 	},
 	{
+		file: "src/app/[locale]/(app)/settings/approval-escalation/page.tsx",
+		fallbackComponent: "ApprovalEscalationSettingsLoading",
+		contentComponent: "ApprovalEscalationSettingsContent",
+	},
+	{
 		file: "src/app/[locale]/(app)/settings/permissions/page.tsx",
 		fallbackComponent: "PermissionsPageLoading",
 		contentComponent: "PermissionsPageContent",
@@ -1297,7 +1302,7 @@ describe("low-risk route streaming boundaries", () => {
 	it("registers every shell work queue route exactly once", () => {
 		const workQueueFiles = SHELL_WORK_QUEUE.map(({ file }) => file);
 
-		expect(workQueueFiles).toHaveLength(64);
+		expect(workQueueFiles).toHaveLength(65);
 		expect(new Set(workQueueFiles).size).toBe(workQueueFiles.length);
 	});
 

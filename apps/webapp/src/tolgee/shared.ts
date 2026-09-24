@@ -81,6 +81,7 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/scheduling": ["common", "scheduling", "compliance"],
 	"/settings/billing": ["common", "settings/generic", "billing"],
 	"/settings": ["common", "settings/generic"],
+	"/settings/approval-escalation": ["common", "settings/generic", "settings/rules"],
 	"/settings/approval-policies": ["common", "settings/generic", "settings/rules"],
 	"/settings/audit-export": ["common", "settings/generic", "settings/auditExport"],
 	"/settings/audit-log": ["common", "settings/generic", "settings/auditExport"],
