@@ -83,6 +83,37 @@ through `LD_LIBRARY_PATH`. The suite is explicitly skipped without the executabl
 an ordinary skipped run is not client-storage evidence. No new package dependency
 was added: the harness uses the existing `puppeteer-core` dependency.
 
+## Authenticated application run (2026-09-24)
+
+Local Next dev server from `feature/267-runtime-evidence` (Phase Development
+environment, local PostgreSQL/Redis), driven in the owner's signed-in Edge session
+as an organization owner. Offline state was simulated in the page by overriding
+`navigator.onLine` and dispatching `offline`/`online` events; the service worker,
+IndexedDB, clock UI and server were real. Only browser-local records were created;
+no server time entries were written.
+
+| Scenario | Observed |
+| --- | --- |
+| Context route, signed out | `401 {"error":"Unauthorized"}`, `Cache-Control: no-store`. |
+| Context route, signed in | `200`, actor/organization from the real session, membership and employee lookups; `canReviewLegacy: true` for the owner; `no-store`. |
+| Worker | Active and controlling at `/`; `GET_VERSION` reports `preservation-only-v1`; scoped `GET_QUEUE_COUNT` returned 0 before capture. |
+| Offline clock-in capture (main widget) | Both endpoint buttons and location selectors shown; stored as `review_required`, `commitment: "unknown"`, original evidence with actor, organization, origin and browser timezone; no active period invented. |
+| Offline clock-out capture (main widget) | **Defect found and fixed:** with a device/saved timezone mismatch the capture opened the timezone dialog, whose continuation could later run as a server clock-out once online. Offline clock-out now captures directly like clock-in. Re-verified: stored as `review_required` with no dialog. |
+| Reload | Saved records survived a full page reload and remained `review_required`. |
+| Return online | No time-entry request was sent; banner showed review required with the verified count. |
+| Review dialog and archive | Evidence displayed; archiving set `archived` + `archivedAt`, kept original evidence and unknown commitment; banner count decreased. |
+| Signed-out page with worker registration failure | **Defect found and fixed:** raw registration errors appeared in the global banner on the login page; they are now reported only with an account recovery context. |
+
+Open findings from this run:
+
+- The fixed offline banner (`z-50`, top) covers the app header, including the
+  header clock popover trigger, while offline or while records await review.
+  The main Time Tracking widget remains usable. Layout fix not yet made.
+- Not exercised: a non-manager account (legacy-record scope), revoked
+  membership/session/organization races, export download, worker stop/restart
+  while records are pending, and real network loss (only `navigator.onLine` was
+  simulated).
+
 ## Unresolved completion/activation evidence
 
 These remain obligations; this implementation commit does not satisfy them:
@@ -92,9 +123,8 @@ These remain obligations; this implementation commit does not satisfy them:
    Chromium transport fixture substitutes the context endpoint. Actual revoked
    membership/session/organization races and authenticated Next.js UI navigation
    require available application environment, restored database access and login.
-   Phase-provided credentials are unavailable to agents. The Next dev/browser
-   verification loop therefore remains blocked; isolated Chromium checks are not
-   a substitute for authenticated application evidence.
+   The 2026-09-24 authenticated run above covers the owner path; non-manager
+   scope and revocation races remain unverified.
 2. **Deployed old-consumer control:** inventory affected browser versions, worker
    registrations/imported scripts and stored queues. Prove effective update/disable
    of destructive consumers, including interrupted upgrades and old-tab coexistence.
