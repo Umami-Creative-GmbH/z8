@@ -114,6 +114,7 @@ export function createDepartureClockOut(): DepartureClockOutPort {
 					durationMinutes: closed.durationMinutes,
 					periodStartedAt: closed.activePeriod.startTime.toISOString(),
 					timezone: capture.timezone,
+					createdBy: input.actorUserId,
 					surchargeSnapshot,
 				},
 			};

@@ -1,9 +1,7 @@
 import "server-only";
 
-import { db } from "@/db";
-import { systemClock } from "@/lib/datetime/temporal-core";
-import { createDepartureClockOut } from "./clock-out";
-import { createDepartureCommands } from "./commands";
+import type { createDepartureCommands } from "./commands";
+import { createProductionDepartureCommands } from "./runtime";
 
 export { employeeHasOrganizationAccess, resolveEmployeeOrganizationAccess } from "./access";
 export { DepartureCommandError, type DepartureCommandErrorCode } from "./commands";
@@ -14,9 +12,5 @@ export { assertEmployeeOffboardingReleased, EMPLOYEE_OFFBOARDING_RELEASE_READY }
  * clock-out. Server actions check the release gate before reaching this.
  */
 export function getDepartureCommands(): ReturnType<typeof createDepartureCommands> {
-	return createDepartureCommands({
-		db,
-		clock: systemClock,
-		clockOut: createDepartureClockOut(),
-	});
+	return createProductionDepartureCommands();
 }

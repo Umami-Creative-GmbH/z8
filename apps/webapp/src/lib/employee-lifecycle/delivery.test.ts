@@ -26,6 +26,7 @@ function fakeOutbox(claims: DepartureTaskClaim[]) {
 		claimDue: vi.fn().mockResolvedValue(claims),
 		complete: vi.fn().mockResolvedValue(undefined),
 		defer: vi.fn().mockResolvedValue("deferred"),
+		recordProgress: vi.fn().mockResolvedValue(undefined),
 	} satisfies DepartureTaskOutbox;
 }
 

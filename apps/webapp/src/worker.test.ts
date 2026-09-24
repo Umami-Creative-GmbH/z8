@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
 	auditPack: vi.fn(),
 	createJobExecution: vi.fn(),
 	cronProcessor: vi.fn(),
+	processEmployeeDepartureJob: vi.fn(),
 	scimMaintenanceProcessor: vi.fn(),
 	getJobExecutionByBullmqJobId: vi.fn(),
 	getOrCreateSchedulerJobExecution: vi.fn(),
@@ -47,6 +48,10 @@ vi.mock("@/lib/audit-pack/application/audit-pack-processor", () => ({
 
 vi.mock("@/lib/webhooks/webhook-worker", () => ({
 	processWebhookJob: mocks.processWebhookJob,
+}));
+
+vi.mock("@/lib/jobs/employee-departures", () => ({
+	processEmployeeDepartureJob: mocks.processEmployeeDepartureJob,
 }));
 
 vi.mock("@/lib/calendar-sync/jobs", () => ({
@@ -129,6 +134,28 @@ describe("processOneOffJob", () => {
 		mocks.auditPack.mockResolvedValue(undefined);
 		mocks.processCalendarSyncJob.mockResolvedValue({ success: true });
 		mocks.processWebhookJob.mockResolvedValue({ success: true });
+	});
+
+	it("executes a delayed employee departure from the identity it carries", async () => {
+		mocks.processEmployeeDepartureJob.mockResolvedValueOnce({ status: "obsolete" });
+		const identity = {
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			employmentPeriodId: "period-1",
+			departureId: "departure-1",
+			revision: 2,
+		};
+		const job = {
+			id: "employee-departure-departure-1-2",
+			name: "execute-employee-departure",
+			data: { type: "employee-departure", ...identity },
+		} as Job<JobData>;
+
+		await expect(processOneOffJob(job)).resolves.toEqual({
+			success: true,
+			message: "Employee departure obsolete",
+		});
+		expect(mocks.processEmployeeDepartureJob).toHaveBeenCalledWith(identity);
 	});
 
 	it("normalizes and rejects audit pack processor failures", async () => {

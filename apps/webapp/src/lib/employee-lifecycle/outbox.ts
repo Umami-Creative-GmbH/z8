@@ -104,6 +104,22 @@ export function createDepartureTaskOutbox(database: OutboxDatabase) {
 			if (result.rows.length !== 1) throw new DepartureTaskLeaseNotOwnedError();
 		},
 
+		async recordProgress(
+			claim: DepartureTaskClaim,
+			now: Instant,
+			patch: Record<string, unknown>,
+		): Promise<void> {
+			const result = await database.execute(sql`
+				UPDATE employee_departure_task
+				SET payload = payload || ${JSON.stringify(patch)}::jsonb, updated_at = ${dateFromInstant(now)}
+				WHERE organization_id = ${claim.organizationId} AND id = ${claim.id}
+					AND status = 'processing' AND claim_token = ${claim.claimToken}::uuid
+				RETURNING id
+			`);
+			if (result.rows.length !== 1) throw new DepartureTaskLeaseNotOwnedError();
+			Object.assign(claim.payload, patch);
+		},
+
 		/** Unsupported or unsafe work fails immediately instead of retrying. */
 		async defer(
 			claim: DepartureTaskClaim,

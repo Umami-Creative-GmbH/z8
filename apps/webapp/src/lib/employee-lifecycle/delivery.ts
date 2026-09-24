@@ -5,7 +5,15 @@ import type { DepartureTaskClaim, DepartureTaskOutbox } from "./outbox";
 
 const logger = createLogger("EmployeeDepartureDelivery");
 
-export type DepartureTaskHandler = (claim: DepartureTaskClaim) => Promise<void>;
+export type DepartureTaskContext = {
+	/** Persists completed steps on the still-owned task so a retry can resume. */
+	recordProgress(patch: Record<string, unknown>): Promise<void>;
+};
+
+export type DepartureTaskHandler = (
+	claim: DepartureTaskClaim,
+	context: DepartureTaskContext,
+) => Promise<void>;
 
 /** Kinds whose payload carries private data that is cleared once delivered. */
 const PRIVATE_PAYLOAD_KINDS = new Set<DepartureTaskKind>(["session_revocation"]);
@@ -47,7 +55,9 @@ export async function runDepartureTaskDelivery(input: {
 				continue;
 			}
 			try {
-				await handler(claim);
+				await handler(claim, {
+					recordProgress: (patch) => input.outbox.recordProgress(claim, input.now, patch),
+				});
 			} catch (error) {
 				const outcome = await input.outbox.defer(claim, input.now, error, { terminal: false });
 				result[outcome === "failed" ? "failed" : "deferred"] += 1;
