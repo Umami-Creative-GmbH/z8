@@ -345,7 +345,8 @@
         "workflow": "Workflow",
         "submittedRevision": "Eingereichte Revision",
         "decisionEvidence": "Entscheidungsnachweis",
-        "reviewBinding": "Prüfbindung"
+        "reviewBinding": "Prüfbindung",
+        "escalationTransfer": "Eskalationsübertragung"
       },
       "cookieConsent": {
         "description": "Zur DSGVO-Konformität auf Authentifizierungsseiten eingefügt",

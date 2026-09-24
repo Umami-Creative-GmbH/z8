@@ -52,6 +52,11 @@ import type { ApprovalActionOptions } from "../domain/types";
 import { captureAbsenceLegacyApprovalState } from "../domain-adapters/absence-legacy-state";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
+import {
+	ApprovalAssignmentReassignedError,
+	lineageContainsEscalation,
+	selectCanonicalDecisionTarget,
+} from "../escalation/decision-authority";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import {
 	findLegacyAbsenceDecisionReplay,
@@ -100,6 +105,14 @@ const EVIDENCE_REVIEW_MESSAGES = {
 } as const;
 
 export function translateAbsenceDecisionError(error: unknown): unknown {
+	if (error instanceof ApprovalAssignmentReassignedError) {
+		return new ConflictError({
+			message:
+				"This approval was reassigned to another approver. Open the approvals inbox to see its current state.",
+			conflictType: "approval_reassigned",
+			details: { code: error.code },
+		});
+	}
 	if (error instanceof ApprovalEvidenceError) {
 		// Integrity contradictions stay infrastructure-visible errors.
 		if (error.code === "invariant") return error;
@@ -210,6 +223,9 @@ export function createAbsenceApprovalManagementAuthorization(input: {
 		);
 		const stage = stages[0];
 		if (stages.length !== 1 || !stage?.legacyApprovalRequestId) return false;
+		// Eligible-manager status never bypasses an escalation replacement:
+		// only the current assignee or explicit management may decide (#255 §4).
+		if (lineageContainsEscalation(stage, command.assignmentId)) return false;
 		return await isEligibleManagerForApprovalRequest({
 			db: authorizationInput.dbService.db as never,
 			approvalRequestId: stage.legacyApprovalRequestId,
@@ -447,19 +463,11 @@ export async function executeAbsenceDecisionInTransaction(
 		) {
 			throw new Error("Absence approval workflow link is mismatched");
 		}
-		const targets = workflow.stages.flatMap((stage) =>
-			stage.assignments.flatMap((assignment) =>
-				stage.legacyApprovalRequestId === input.approvalRequestId ||
-				assignment.id === input.approvalRequestId
-					? [{ stage, assignment }]
-					: [],
-			),
-		);
-		const target = targets[0];
-		if (targets.length !== 1 || !target) {
-			throw new Error("Canonical absence decision target is not unique");
-		}
-		const { stage, assignment } = target;
+		const { stage, assignment } = selectCanonicalDecisionTarget({
+			workflow,
+			approvalRequestId: input.approvalRequestId,
+			actorEmployeeId: currentEmployee.id,
+		});
 		const command =
 			input.action === "approve"
 				? {

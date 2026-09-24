@@ -22,6 +22,9 @@ function fakeTransaction(options: {
 				options.workflowIds.map((id) => ({ kind: "workflow", id }))
 			);
 		}
+		if (text.startsWith("delete from approval_escalation_transfer")) {
+			return [{ id: "transfer-2" }, { id: "transfer-1" }];
+		}
 		if (text.startsWith("delete from approval_decision_evidence")) {
 			return text.includes("authority = 'legacy'")
 				? [{ id: "legacy-decision-1" }]
@@ -74,18 +77,20 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 			decisionEvidence: ["decision-1", "decision-2"],
 			reviewBindings: ["binding-1"],
 		});
+		expect(result.escalationTransfers).toEqual(["transfer-1", "transfer-2"]);
 		const deletes = statements
 			.map((statement) => statement.sql)
 			.filter((text) => text.startsWith("delete from"))
 			.map((text) => text.split(" ")[2]);
 		expect(deletes).toEqual([
+			"approval_escalation_transfer",
 			"approval_decision_evidence",
 			"approval_review_binding",
 			"approval_submitted_revision",
 			"approval_workflow",
 		]);
 		for (const statement of statements.filter((candidate) =>
-			/^delete from approval_(decision_evidence|review_binding|submitted_revision)/.test(
+			/^delete from approval_(escalation_transfer|decision_evidence|review_binding|submitted_revision)/.test(
 				candidate.sql,
 			),
 		)) {
@@ -112,9 +117,10 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 			decisionEvidence: [],
 			reviewBindings: [],
 		});
+		expect(result.escalationTransfers).toEqual([]);
 		expect(
 			statements.some((statement) =>
-				/^delete from approval_(decision_evidence|review_binding|submitted_revision)/.test(
+				/^delete from approval_(escalation_transfer|decision_evidence|review_binding|submitted_revision)/.test(
 					statement.sql,
 				),
 			),

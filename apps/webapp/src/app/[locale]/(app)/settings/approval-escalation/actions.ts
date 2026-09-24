@@ -1,7 +1,10 @@
 "use server";
 
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { db } from "@/db";
+import { employee } from "@/db/schema";
 import {
 	dispatchEscalationAttentionAlerts,
 	disposeEscalationAttention,
@@ -19,7 +22,16 @@ import {
 	markEscalationPolicyConflictsReviewed,
 	updateEscalationPolicy,
 } from "@/lib/approvals/escalation/policy-store";
+import {
+	type EscalationCandidateListOutcome,
+	escalateAssignmentByManager,
+	type HumanEscalationActor,
+	type HumanEscalationOutcome,
+	listHumanEscalationCandidates,
+	MAX_ESCALATION_REASON_LENGTH,
+} from "@/lib/approvals/escalation/transfer";
 import { getAbility, getAuthContext } from "@/lib/auth-helpers";
+import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("ApprovalEscalationSettingsActions");
@@ -193,6 +205,137 @@ export async function disposeApprovalEscalationAttention(
 			return { success: false, error: "Attention item not found." };
 		case "invalid_note":
 			return { success: false, error: "A disposition note is required." };
+	}
+}
+
+/**
+ * The management actor as an active employee of the organization. Explicit
+ * `manage Approval` is checked first; the employee record only attributes
+ * the transfer and must resolve uniquely.
+ */
+async function requireEscalationManagementActor(): Promise<HumanEscalationActor | null> {
+	const manager = await requireEscalationManager();
+	if (!manager) return null;
+	const actors = await db
+		.select({ id: employee.id })
+		.from(employee)
+		.where(
+			and(
+				eq(employee.organizationId, manager.organizationId),
+				eq(employee.userId, manager.userId),
+				employeeHasOrganizationAccess(),
+			),
+		)
+		.limit(2);
+	const actor = actors[0];
+	if (actors.length !== 1 || !actor) return null;
+	return {
+		organizationId: manager.organizationId,
+		userId: manager.userId,
+		employeeId: actor.id,
+		canManageApprovals: true,
+	};
+}
+
+function humanEscalationError(
+	outcome: Exclude<HumanEscalationOutcome, { kind: "transferred" }>,
+): string {
+	switch (outcome.kind) {
+		case "forbidden":
+			return "You do not have permission to manage approval escalation.";
+		case "not_owner":
+			return "Channel automation still owns escalation for this organization.";
+		case "not_found":
+			return "Approval assignment not found.";
+		case "not_pending":
+			return "This assignment is no longer pending. Reload to see its current state.";
+		case "unsupported":
+			return "This approval cannot be transferred here yet: its replacement would have no working inbox path.";
+		case "recipient_not_eligible":
+			return "The selected manager is not an eligible backup for this request.";
+		case "no_eligible_backup":
+			return "No eligible backup manager is available for this request.";
+		case "idempotency_mismatch":
+			return "This transfer was already submitted with different details. Reload and try again.";
+		case "conflict":
+			return "The approval changed while transferring. Reload to see its current state.";
+	}
+}
+
+const assignmentSchema = z.object({ assignmentId: z.string().uuid() });
+
+export async function listApprovalEscalationCandidates(
+	input: z.input<typeof assignmentSchema>,
+): Promise<
+	ActionResult<Extract<EscalationCandidateListOutcome, { kind: "ok" }>>
+> {
+	const actor = await requireEscalationManagementActor();
+	if (!actor) return FORBIDDEN;
+	const parsed = assignmentSchema.safeParse(input);
+	if (!parsed.success) {
+		return { success: false, error: "Invalid approval assignment." };
+	}
+	try {
+		const outcome = await listHumanEscalationCandidates({
+			actor,
+			assignmentId: parsed.data.assignmentId,
+		});
+		return outcome.kind === "ok"
+			? { success: true, data: outcome }
+			: { success: false, error: humanEscalationError(outcome) };
+	} catch (error) {
+		logger.error(
+			{ error, organizationId: actor.organizationId },
+			"Failed to load escalation candidates",
+		);
+		return {
+			success: false,
+			error: "Eligible managers could not be loaded.",
+		};
+	}
+}
+
+const transferSchema = z.object({
+	assignmentId: z.string().uuid(),
+	recipientEmployeeId: z.string().uuid(),
+	idempotencyKey: z.string().uuid(),
+	reason: z.string().trim().max(MAX_ESCALATION_REASON_LENGTH).optional(),
+});
+
+export async function transferApprovalEscalationAssignment(
+	input: z.input<typeof transferSchema>,
+): Promise<ActionResult<{ replayed: boolean }>> {
+	const actor = await requireEscalationManagementActor();
+	if (!actor) return FORBIDDEN;
+	const parsed = transferSchema.safeParse(input);
+	if (!parsed.success) {
+		return {
+			success: false,
+			error: parsed.error.issues[0]?.message ?? "Invalid transfer.",
+		};
+	}
+	try {
+		const outcome = await escalateAssignmentByManager({
+			actor,
+			assignmentId: parsed.data.assignmentId,
+			idempotencyKey: parsed.data.idempotencyKey,
+			recipientEmployeeId: parsed.data.recipientEmployeeId,
+			reason: parsed.data.reason,
+		});
+		if (outcome.kind !== "transferred") {
+			return { success: false, error: humanEscalationError(outcome) };
+		}
+		revalidatePath(ESCALATION_MANAGEMENT_PATH);
+		return {
+			success: true,
+			data: { replayed: outcome.disposition === "replayed" },
+		};
+	} catch (error) {
+		logger.error(
+			{ error, organizationId: actor.organizationId },
+			"Approval escalation transfer failed",
+		);
+		return { success: false, error: "The approval could not be transferred." };
 	}
 }
 

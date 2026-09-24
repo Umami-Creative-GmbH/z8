@@ -117,7 +117,10 @@ describe("approval transition engine contracts", () => {
 			| { kind: "employee"; userId: string }
 			| {
 					kind: "system";
-					systemId: "approval-expiry" | "approval-activation";
+					systemId:
+						| "approval-expiry"
+						| "approval-activation"
+						| "approval-escalation";
 			  }
 		>();
 		expectTypeOf<ApprovalWorkflowCommandRequest>().not.toHaveProperty(
@@ -2032,6 +2035,110 @@ describe("approval transition engine atomic orchestration", () => {
 			),
 		).resolves.toBeDefined();
 		expect(fixture.calls).not.toContain("preflightCommand");
+		expect(fixture.receipt()).toMatchObject({
+			actorFingerprint: 'v1:["system"]',
+		});
+	});
+
+	it("lets the scheduled escalation principal replace one assignment under a distinct receipt fingerprint", async () => {
+		const fixture = engineFixture({
+			authorization: "system",
+			actor: { kind: "system", employeeId: null, userId: null },
+		});
+		await expect(
+			fixture.engine.execute(
+				engineRequest({
+					principal: { kind: "system", systemId: "approval-escalation" },
+					idempotencyKey: "escalation:auto:v1:key",
+					command: {
+						type: "escalate",
+						stageId: engineIds.stage,
+						fromEmployeeId: ids.fromEmployee,
+						toEmployeeId: ids.otherEmployee,
+					},
+				}),
+			),
+		).resolves.toBeDefined();
+		expect(fixture.receipt()).toMatchObject({
+			idempotencyKey: "escalation:auto:v1:key",
+			actorFingerprint: 'v2:["system","approval-escalation",1]',
+		});
+		expect(fixture.calls).not.toContain("preflightCommand");
+		expect(fixture.calls).not.toContain("finalizeTerminal");
+		const assignments = fixture.appliedPlans[0]?.resultingSnapshot.stages[0]
+			?.assignments;
+		expect(assignments).toEqual([
+			expect.objectContaining({
+				id: engineIds.assignment,
+				approverEmployeeId: ids.fromEmployee,
+				status: "cancelled",
+			}),
+			expect.objectContaining({
+				approverEmployeeId: ids.otherEmployee,
+				status: "pending",
+				reassignedFromAssignmentId: engineIds.assignment,
+				reassignedByEmployeeId: null,
+				reassignmentMetadata: { kind: "escalation" },
+			}),
+		]);
+		expect(fixture.appliedPlans[0]?.resultingSnapshot.status).toBe("pending");
+	});
+
+	it.each([
+		{
+			type: "approve" as const,
+			stageId: engineIds.stage,
+			assignmentId: engineIds.assignment,
+		},
+		{
+			type: "reject" as const,
+			stageId: engineIds.stage,
+			assignmentId: engineIds.assignment,
+			reason: "forged",
+		},
+		{ type: "cancel" as const, reason: "forged" },
+		{ type: "expire" as const, reason: "forged" },
+		{
+			type: "reassign" as const,
+			stageId: engineIds.stage,
+			fromEmployeeId: ids.fromEmployee,
+			toEmployeeId: ids.otherEmployee,
+		},
+	])("forbids the scheduled escalation principal from $type", async (command) => {
+		const fixture = engineFixture({
+			authorization: "system",
+			actor: { kind: "system", employeeId: null, userId: null },
+		});
+		await expect(
+			fixture.engine.execute(
+				engineRequest({
+					principal: { kind: "system", systemId: "approval-escalation" },
+					command,
+				}),
+			),
+		).rejects.toMatchObject({ code: "forbidden" });
+		expect(fixture.calls).not.toContain("loadSource");
+		expect(fixture.state).toMatchObject({ committed: false, rolledBack: true });
+	});
+
+	it("forbids the scheduled escalation principal from using a forged management grant", async () => {
+		const fixture = engineFixture({
+			authorization: "manage_approval",
+			actor: { kind: "system", employeeId: null, userId: null },
+		});
+		await expect(
+			fixture.engine.execute(
+				engineRequest({
+					principal: { kind: "system", systemId: "approval-escalation" },
+					command: {
+						type: "escalate",
+						stageId: engineIds.stage,
+						fromEmployeeId: ids.fromEmployee,
+						toEmployeeId: ids.otherEmployee,
+					},
+				}),
+			),
+		).rejects.toMatchObject({ code: "forbidden" });
 	});
 
 	it.each([

@@ -122,6 +122,10 @@ export async function runApprovalMaintenanceCli(
 					storage_type: "review_binding",
 					id,
 				})),
+				...result.escalationTransfers.map((id) => ({
+					storage_type: "escalation_transfer",
+					id,
+				})),
 			]);
 		}
 	} catch (error) {

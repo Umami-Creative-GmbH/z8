@@ -526,6 +526,11 @@ export const approvalEscalationControl = pgTable("approval_escalation_control", 
 		.references(() => organization.id, { onDelete: "cascade" }),
 	owner: text("owner").$type<"legacy" | "escalation">().default("legacy").notNull(),
 	automationPaused: boolean("automation_paused").default(false).notNull(),
+	// Recorded by the exclusive ownership switch. Assignments whose actionable
+	// instant cannot be proven start a full response window here (#251 §5.2).
+	escalationOwnedSince: timestamp("escalation_owned_since", {
+		withTimezone: true,
+	}),
 });
 
 export const approvalWorkflowRollout = pgTable(

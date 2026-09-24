@@ -165,6 +165,8 @@ export interface DeletedApprovalRecords {
 	workflows: string[];
 	chains: string[];
 	evidence: DeletedApprovalEvidenceRecords;
+	/** Escalation transfer journal entries; their delivery events cascade. */
+	escalationTransfers: string[];
 }
 
 export async function deleteApproval(
@@ -191,7 +193,8 @@ export async function deleteApprovalInTransaction(
 	await transaction.execute(sql`
 		lock table approval_request, approval_chain_instance, approval_chain_stage_instance,
 			approval_workflow, approval_workflow_stage, approval_submitted_revision,
-			approval_review_binding, approval_decision_evidence in share row exclusive mode
+			approval_review_binding, approval_decision_evidence, approval_escalation_transfer
+			in share row exclusive mode
 	`);
 
 	const matches = rows(
@@ -272,6 +275,11 @@ export async function deleteApprovalInTransaction(
 	// FKs also prevent a late capture from recreating purged evidence.
 	const evidenceScope = sql`organization_id = ${organizationId}
 		and workflow_id = any(${sql.param(workflowIds)}::uuid[])`;
+	// Escalation journals follow the same verified workflow links; their FKs to the
+	// workflow, its assignments and events likewise prevent late recreation.
+	const escalationTransfers = workflowIds.length === 0 ? [] : await deletedIds(sql`
+			delete from approval_escalation_transfer where ${evidenceScope} returning id
+		`);
 	const decisionEvidence: string[] = workflowIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_decision_evidence where ${evidenceScope} returning id
 		`);
@@ -316,5 +324,6 @@ export async function deleteApprovalInTransaction(
 			decisionEvidence: decisionEvidence.sort(),
 			reviewBindings: reviewBindings.sort(),
 		},
+		escalationTransfers: escalationTransfers.sort(),
 	};
 }

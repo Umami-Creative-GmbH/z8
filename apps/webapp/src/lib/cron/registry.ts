@@ -13,6 +13,7 @@
 
 import type { JobsOptions } from "bullmq";
 import type { LegacyEscalationSuppression } from "@/lib/approvals/escalation/legacy-execution";
+import type { ApprovalEscalationJobResult } from "@/lib/approvals/escalation/scheduled-job";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
 import type { SCIMMaintenanceResult } from "@/lib/jobs/scim-maintenance";
 
@@ -469,6 +470,19 @@ export const CRON_JOBS = {
 			return runSlackDailyDigestJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 5 },
+	},
+
+	"cron:approval-escalation": {
+		schedule: "*/5 * * * *", // Every 5 minutes
+		description:
+			"Transfer overdue approval assignments for organizations whose escalation ownership moved to the shared module",
+		processor: async (): Promise<ApprovalEscalationJobResult> => {
+			const { runApprovalEscalationJob } = await import(
+				"@/lib/approvals/escalation/scheduled-job"
+			);
+			return runApprovalEscalationJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 6 },
 	},
 
 	"cron:slack-escalation": {

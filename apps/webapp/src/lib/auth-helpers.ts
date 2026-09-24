@@ -7,8 +7,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/db";
 import { user as authUser, invitation, member, organization } from "@/db/auth-schema";
-import { employee, employeeManagers, teamPermissions, userSettings } from "@/db/schema";
-import { customRole, customRolePermission, employeeCustomRole } from "@/db/schema/custom-role";
+import { employee, userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import {
 	type AuthContextUser,
@@ -16,17 +15,13 @@ import {
 } from "@/lib/auth/auth-context-user";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import {
-	type Action,
 	type AppAbility,
-	type CustomRoleInfo,
 	defineAbilityFor,
 	type PrincipalContext,
-	type Subject,
-	type TeamPermissions,
 } from "@/lib/authorization";
+import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { ManagerService, ManagerServiceLive } from "@/lib/effect/services/manager.service";
-import type { PermissionFlags } from "@/lib/effect/services/permissions.service";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 import {
@@ -655,142 +650,10 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 		};
 	}
 
-	const [[memberRecord], [employeeRecord]] = await Promise.all([
-		// Load organization membership
-		db
-			.select()
-			.from(member)
-			.where(
-				and(
-					eq(member.userId, userId),
-					eq(member.organizationId, activeOrganizationId),
-					eq(member.status, "approved"),
-				),
-			)
-			.limit(1),
-		// Load employee record
-		db
-			.select()
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, userId),
-					eq(employee.organizationId, activeOrganizationId),
-					employeeHasOrganizationAccess(),
-				),
-			)
-			.limit(1),
-	]);
-
-	const authorizedEmployeeRecord = memberRecord ? employeeRecord : null;
-
-	// Load permissions if employee exists
-	const permissions: TeamPermissions = {
-		orgWide: null,
-		byTeamId: new Map(),
-	};
-
-	if (authorizedEmployeeRecord) {
-		const permRecords = await db
-			.select()
-			.from(teamPermissions)
-			.where(eq(teamPermissions.employeeId, authorizedEmployeeRecord.id));
-
-		for (const perm of permRecords) {
-			const flags: PermissionFlags = {
-				canCreateTeams: perm.canCreateTeams,
-				canManageTeamMembers: perm.canManageTeamMembers,
-				canManageTeamSettings: perm.canManageTeamSettings,
-				canApproveTeamRequests: perm.canApproveTeamRequests,
-			};
-
-			if (perm.teamId === null) {
-				// Org-wide permissions
-				permissions.orgWide = flags;
-			} else {
-				// Team-specific permissions
-				permissions.byTeamId.set(perm.teamId, flags);
-			}
-		}
-	}
-
-	let customRoles: CustomRoleInfo[] = [];
-	if (authorizedEmployeeRecord) {
-		const customRoleRows = await db
-			.select({
-				roleId: customRole.id,
-				roleName: customRole.name,
-				baseTier: customRole.baseTier,
-				action: customRolePermission.action,
-				subject: customRolePermission.subject,
-			})
-			.from(employeeCustomRole)
-			.innerJoin(customRole, eq(employeeCustomRole.customRoleId, customRole.id))
-			.innerJoin(customRolePermission, eq(customRolePermission.customRoleId, customRole.id))
-			.where(
-				and(
-					eq(employeeCustomRole.employeeId, authorizedEmployeeRecord.id),
-					eq(customRole.organizationId, activeOrganizationId),
-					eq(customRole.isActive, true),
-				),
-			);
-
-		const roles = new Map<string, CustomRoleInfo>();
-		for (const row of customRoleRows) {
-			const role = roles.get(row.roleId) ?? {
-				roleId: row.roleId,
-				roleName: row.roleName,
-				baseTier: row.baseTier,
-				permissions: [],
-			};
-
-			role.permissions.push({
-				action: row.action as Action,
-				subject: row.subject as Subject,
-			});
-			roles.set(row.roleId, role);
-		}
-		customRoles = Array.from(roles.values());
-	}
-
-	// Load managed employee IDs
-	let managedEmployeeIds: string[] = [];
-
-	if (
-		authorizedEmployeeRecord &&
-		(authorizedEmployeeRecord.role === "manager" || authorizedEmployeeRecord.role === "admin")
-	) {
-		const managedRecords = await db
-			.select({ employeeId: employeeManagers.employeeId })
-			.from(employeeManagers)
-			.where(eq(employeeManagers.managerId, authorizedEmployeeRecord.id));
-
-		managedEmployeeIds = managedRecords.map((r) => r.employeeId);
-	}
-
-	return {
+	return loadOrganizationPrincipalContext(db, {
 		userId,
-		isPlatformAdmin: false,
-		activeOrganizationId,
-		orgMembership: memberRecord
-			? {
-					organizationId: memberRecord.organizationId,
-					role: memberRecord.role as "owner" | "admin" | "member",
-					status: "active",
-				}
-			: null,
-		employee: authorizedEmployeeRecord
-			? {
-					id: authorizedEmployeeRecord.id,
-					organizationId: authorizedEmployeeRecord.organizationId,
-					role: authorizedEmployeeRecord.role,
-					teamId: authorizedEmployeeRecord.teamId,
-				}
-			: null,
-		permissions,
-		managedEmployeeIds,
-		customRoles,
-	};
+		organizationId: activeOrganizationId,
+	});
 }
 
 export async function getSettingsAccessInputForUser(

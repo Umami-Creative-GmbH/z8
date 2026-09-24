@@ -8,11 +8,15 @@ import {
 	getApprovalEscalationOverview,
 	recheckApprovalEscalationAttention,
 	reviewApprovalEscalationPolicyConflicts,
+	transferApprovalEscalationAssignment,
 	updateApprovalEscalationPolicy,
 } from "@/app/[locale]/(app)/settings/approval-escalation/actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EscalationAttentionCard } from "./escalation-attention-section";
+import {
+	EscalationAttentionCard,
+	type EscalationTransferRequest,
+} from "./escalation-attention-section";
 import {
 	EscalationChannelsCard,
 	EscalationMigrationCard,
@@ -68,6 +72,9 @@ export function ApprovalEscalationManagement({
 	const disposeMutation = useMutation({
 		mutationFn: disposeApprovalEscalationAttention,
 	});
+	const transferMutation = useMutation({
+		mutationFn: transferApprovalEscalationAssignment,
+	});
 	const recheckMutation = useMutation({
 		mutationFn: recheckApprovalEscalationAttention,
 		onSuccess: async (result) => {
@@ -113,6 +120,27 @@ export function ApprovalEscalationManagement({
 						"settings.approvalEscalation.toast.unchanged",
 						"No changes to save",
 					),
+		);
+		await invalidate();
+		return true;
+	}
+
+	async function handleTransfer(
+		request: EscalationTransferRequest,
+	): Promise<boolean> {
+		const result = await transferMutation
+			.mutateAsync(request)
+			.catch(() => ({ success: false as const, error: requestFailed() }));
+		if (!result.success) {
+			toast.error(result.error);
+			await invalidate();
+			return false;
+		}
+		toast.success(
+			t(
+				"settings.approvalEscalation.toast.transferred",
+				"Approval assignment transferred",
+			),
 		);
 		await invalidate();
 		return true;
@@ -173,8 +201,10 @@ export function ApprovalEscalationManagement({
 						closedAttention={overview.closedAttention}
 						isRechecking={recheckMutation.isPending}
 						isDisposing={disposeMutation.isPending}
+						isTransferring={transferMutation.isPending}
 						onRecheck={() => recheckMutation.mutate()}
 						onDispose={handleDispose}
+						onTransfer={handleTransfer}
 					/>
 					<EscalationPolicyCard
 						key={overview.policy.revision}

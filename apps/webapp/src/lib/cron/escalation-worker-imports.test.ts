@@ -41,6 +41,11 @@ describe("escalation worker imports", () => {
 			() => import("@/lib/teams/jobs/escalation-checker"),
 			"runEscalationCheckerJob",
 		],
+		[
+			"shared approval escalation",
+			() => import("@/lib/approvals/escalation/scheduled-job"),
+			"runApprovalEscalationJob",
+		],
 	] as const)(
 		"loads the %s processor in a plain Node worker",
 		async (_platform, load, exportName) => {

@@ -524,7 +524,14 @@
       "idx": 74,
       "version": "7",
       "when": 1790697600000,
-      "tag": "0074_legacy_approval_evidence",
+      "tag": "0074_escalation_transfer_journal",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1790784000000,
+      "tag": "0075_legacy_approval_evidence",
       "breakpoints": true
     }
   ]
