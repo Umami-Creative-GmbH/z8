@@ -106,9 +106,13 @@ no server time entries were written.
 
 Open findings from this run:
 
-- The fixed offline banner (`z-50`, top) covers the app header, including the
-  header clock popover trigger, while offline or while records await review.
-  The main Time Tracking widget remains usable. Layout fix not yet made.
+- **Fixed:** the global fixed offline banner (`z-50`, top) covered the app header,
+  including the header clock popover trigger, while offline or while records
+  awaited review. The banner now renders in flow inside the app shell below the
+  header (like the trial and deletion banners) and renders nothing when hidden.
+  Re-verified: offline, the header trigger receives the click and opens both
+  capture actions. Signed-out routes no longer mount the banner or register the
+  worker through it.
 - Not exercised: a non-manager account (legacy-record scope), revoked
   membership/session/organization races, export download, worker stop/restart
   while records are pending, and real network loss (only `navigator.onLine` was

@@ -25,6 +25,10 @@ vi.mock("next/headers", () => ({
 	headers: mockState.headers,
 }));
 
+vi.mock("next/server", () => ({
+	connection: vi.fn(async () => undefined),
+}));
+
 vi.mock("next/navigation", () => ({
 	redirect: mockState.redirect,
 }));
@@ -44,6 +48,10 @@ vi.mock("effect", () => ({
 
 vi.mock("@/components/billing/trial-banner", () => ({
 	TrialBanner: () => null,
+}));
+
+vi.mock("@/components/offline", () => ({
+	OfflineBanner: () => <div data-testid="offline-banner" />,
 }));
 
 vi.mock("@/components/notifications/push-permission-provider", () => ({
@@ -282,5 +290,20 @@ describe("authenticated app layout gates", () => {
 		expect(mockState.redirect).not.toHaveBeenCalled();
 		expect(mockState.protectedChildRender).toHaveBeenCalledTimes(1);
 		expect(html).toContain("Protected child content");
+	});
+
+	it("places the offline banner in flow below the header, not over it", async () => {
+		mockState.getSession.mockResolvedValue({
+			session: { activeOrganizationId: "organization-1" },
+			user: { id: "user-1" },
+		});
+
+		const { html } = await serverRender("/en/time-tracking");
+
+		const header = html.indexOf("<header");
+		const banner = html.indexOf('data-testid="offline-banner"');
+		expect(header).toBeGreaterThan(-1);
+		expect(banner).toBeGreaterThan(header);
+		expect(html.indexOf("Protected child content")).toBeGreaterThan(banner);
 	});
 });

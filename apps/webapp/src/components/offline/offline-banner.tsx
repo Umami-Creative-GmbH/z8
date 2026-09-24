@@ -53,8 +53,6 @@ export function OfflineBanner({ className }: OfflineBannerProps) {
 		return "hidden";
 	})();
 
-	const isVisible = state !== "hidden";
-
 	// Style mapping based on state
 	const stateStyles: Record<BannerState, string> = {
 		hidden: "",
@@ -130,19 +128,15 @@ export function OfflineBanner({ className }: OfflineBannerProps) {
 	// Show retry button when online with pending events or error
 	const showRetryButton = isOnline && Boolean(lastError) && !isSyncing;
 
+	if (state === "hidden") return null;
+
 	return (
 		<div
-			className={cn(
-				"fixed top-0 left-0 right-0 z-50 px-4 py-2 transition-transform duration-300 ease-out motion-reduce:transition-none",
-				isVisible ? "translate-y-0" : "-translate-y-full",
-				stateStyles[state],
-				className,
-			)}
+			className={cn("shrink-0 px-4 py-2 lg:px-6", stateStyles[state], className)}
 			role="alert"
 			aria-live="polite"
-			inert={!isVisible}
 		>
-			<div className="container mx-auto flex flex-wrap items-center justify-between gap-4">
+			<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
 				<div className="flex min-w-0 items-center gap-2">
 					{stateIcons[state]}
 					<span className="break-words text-sm font-medium">
