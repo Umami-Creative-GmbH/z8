@@ -159,12 +159,10 @@ export function ApprovalEscalationManagement({
 			) : !overview ? (
 				<Alert variant="destructive">
 					<AlertDescription>
-						{data && !data.success
-							? data.error
-							: t(
-									"settings.approvalEscalation.loadFailed",
-									"Escalation settings could not be loaded.",
-								)}
+						{t(
+							"settings.approvalEscalation.loadFailed",
+							"Escalation settings could not be loaded.",
+						)}
 					</AlertDescription>
 				</Alert>
 			) : (

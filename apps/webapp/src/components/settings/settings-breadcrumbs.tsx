@@ -63,6 +63,8 @@ function buildSettingsBreadcrumbs(pathname: string, t: ReturnType<typeof useTran
 			label = t("settings.statistics.title", "Statistics");
 		} else if (segment === "surcharges") {
 			label = t("settings.surcharges.title", "Surcharges");
+		} else if (segment === "approval-escalation") {
+			label = t("settings.approvalEscalation.title", "Approval Escalation");
 		} else if (segment === "history") {
 			label = t("settings.vacation.history.title", "History");
 		} else if (segment === "new") {
