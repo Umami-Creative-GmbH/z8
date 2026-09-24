@@ -6,13 +6,14 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import { createDepartureCommands } from "./commands";
+import { isDateKeyEmployed } from "./employment-coverage";
 import { loadEmploymentCoverage, resolveTermsEmploymentPeriod } from "./employment-periods";
 import {
 	createLifecycleDatabaseFixture,
 	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 } from "./testing/database";
-import type { DepartureClockOutPort, LifecycleActor } from "./types";
+import type { DepartureClockOutPort, LifecycleActor, RehireEmployee } from "./types";
 
 const clockOut: DepartureClockOutPort = {
 	async close() {
@@ -239,5 +240,208 @@ describeLifecycleDatabase("employment periods", () => {
 		expect(coverage).toHaveLength(1);
 		expect(coverage?.[0]?.startedAt).toBeNull();
 		expect(coverage?.[0]?.endedAt?.toString()).toBe("2026-09-14T09:30:00Z");
+	});
+
+	async function rehireInput(input: {
+		employeeId: string;
+		previousEmploymentPeriodId: string;
+		workPolicyId: string;
+		overrides?: Partial<RehireEmployee>;
+	}): Promise<RehireEmployee> {
+		return {
+			employeeId: input.employeeId,
+			requestId: randomUUID(),
+			previousEmploymentPeriodId: input.previousEmploymentPeriodId,
+			role: "employee",
+			teamId: null,
+			primaryManagerId: fixture.ownerEmployeeId,
+			workPolicyId: input.workPolicyId,
+			weeklyContractMinutes: 1200,
+			contractType: "fixed",
+			workModel: "hybrid",
+			hourlyRate: null,
+			currency: "EUR",
+			probationStartsOn: null,
+			probationEndsOn: null,
+			changeReason: "Returning part-time",
+			...input.overrides,
+		};
+	}
+
+	it("rehires into exactly one new period without touching the old one or the gap", async () => {
+		const target = await fixture.seedEmployee();
+		await insertTerms({
+			employeeId: target.employeeId,
+			employmentPeriodId: target.employmentPeriodId,
+			from: "2026-01-01",
+			until: null,
+		});
+		const policyId = await createWorkPolicy();
+		await offboardNowAt(target.employeeId, "2026-09-14T09:30:00Z");
+		now = parseInstant("2026-11-02T08:00:00Z");
+
+		const result = await commands().rehireEmployee(
+			owner(),
+			await rehireInput({
+				employeeId: target.employeeId,
+				previousEmploymentPeriodId: target.employmentPeriodId,
+				workPolicyId: policyId,
+			}),
+		);
+
+		const rehiredAt = new Date("2026-11-02T08:00:00Z");
+		expect(
+			await row(
+				`select status, started_at, start_provenance from employee_employment_period where id = $1`,
+				[result.employmentPeriodId],
+			),
+		).toEqual({ status: "open", started_at: rehiredAt, start_provenance: "recorded" });
+		expect(
+			await row(`select status, ended_at from employee_employment_period where id = $1`, [
+				target.employmentPeriodId,
+			]),
+		).toEqual({ status: "closed", ended_at: new Date("2026-09-14T09:30:00Z") });
+		expect(
+			await row(
+				`select count(*)::int as count from employee_employment_period where employee_id = $1`,
+				[target.employeeId],
+			),
+		).toEqual({ count: 2 });
+		expect(
+			await row(
+				`select valid_from, valid_until, review_state, weekly_contract_minutes, work_policy_id
+				 from employee_employment_history where employment_period_id = $1`,
+				[result.employmentPeriodId],
+			),
+		).toEqual({
+			valid_from: rehiredAt,
+			valid_until: null,
+			review_state: "confirmed",
+			weekly_contract_minutes: 1200,
+			work_policy_id: policyId,
+		});
+		expect(
+			await row(
+				`select effective_from, effective_until from work_policy_assignment
+				 where employee_id = $1 and is_active = true and policy_id = $2`,
+				[target.employeeId, policyId],
+			),
+		).toEqual({ effective_from: rehiredAt, effective_until: null });
+		expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
+			is_active: true,
+		});
+		expect(
+			await row(`select manager_id, is_primary from employee_managers where employee_id = $1`, [
+				target.employeeId,
+			]),
+		).toEqual({ manager_id: fixture.ownerEmployeeId, is_primary: true });
+		expect(
+			await row(
+				`select kind, departure_id from employee_departure_task
+				 where employment_period_id = $1 and kind = 'billing_sync'`,
+				[result.employmentPeriodId],
+			),
+		).toEqual({ kind: "billing_sync", departure_id: null });
+
+		const coverage = await coverageOf(target.employeeId);
+		const employedOn = (dateKey: string) => isDateKeyEmployed(coverage ?? [], dateKey, "UTC");
+		expect([employedOn("2026-09-14"), employedOn("2026-10-10"), employedOn("2026-11-02")]).toEqual([
+			true,
+			false,
+			true,
+		]);
+	});
+
+	it("replays a repeated rehire request and refuses a second rehire", async () => {
+		const target = await fixture.seedEmployee();
+		const policyId = await createWorkPolicy();
+		await offboardNowAt(target.employeeId, "2026-09-14T09:30:00Z");
+		now = parseInstant("2026-11-02T08:00:00Z");
+		const input = await rehireInput({
+			employeeId: target.employeeId,
+			previousEmploymentPeriodId: target.employmentPeriodId,
+			workPolicyId: policyId,
+		});
+
+		const first = await commands().rehireEmployee(owner(), input);
+		const replay = await commands().rehireEmployee(owner(), input);
+
+		expect(replay).toEqual(first);
+		await expect(
+			commands().rehireEmployee(owner(), { ...input, requestId: randomUUID() }),
+		).rejects.toMatchObject({ code: "employee_already_employed" });
+	});
+
+	it("rejects a rehire against a stale previous period", async () => {
+		const target = await fixture.seedEmployee();
+		const policyId = await createWorkPolicy();
+		await offboardNowAt(target.employeeId, "2026-09-14T09:30:00Z");
+		now = parseInstant("2026-11-02T08:00:00Z");
+
+		await expect(
+			commands().rehireEmployee(
+				owner(),
+				await rehireInput({
+					employeeId: target.employeeId,
+					previousEmploymentPeriodId: randomUUID(),
+					workPolicyId: policyId,
+				}),
+			),
+		).rejects.toMatchObject({ code: "rehire_conflict" });
+	});
+
+	it("requires approved membership before restoring access", async () => {
+		const target = await fixture.seedEmployee();
+		const policyId = await createWorkPolicy();
+		await offboardNowAt(target.employeeId, "2026-09-14T09:30:00Z");
+		await fixture.pool.query(`delete from member where id = $1`, [target.memberId]);
+		now = parseInstant("2026-11-02T08:00:00Z");
+
+		await expect(
+			commands().rehireEmployee(
+				owner(),
+				await rehireInput({
+					employeeId: target.employeeId,
+					previousEmploymentPeriodId: target.employmentPeriodId,
+					workPolicyId: policyId,
+				}),
+			),
+		).rejects.toMatchObject({ code: "membership_required" });
+		expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
+			is_active: false,
+		});
+	});
+
+	it("rejects organization-foreign team, manager and work policy choices", async () => {
+		const target = await fixture.seedEmployee();
+		const policyId = await createWorkPolicy();
+		await offboardNowAt(target.employeeId, "2026-09-14T09:30:00Z");
+		now = parseInstant("2026-11-02T08:00:00Z");
+		const foreignOrganizationId = await fixture.createOrganization();
+		const foreignManager = await fixture.seedEmployee({ organizationId: foreignOrganizationId });
+		const base = {
+			employeeId: target.employeeId,
+			previousEmploymentPeriodId: target.employmentPeriodId,
+			workPolicyId: policyId,
+		};
+
+		await expect(
+			commands().rehireEmployee(
+				owner(),
+				await rehireInput({ ...base, overrides: { primaryManagerId: foreignManager.employeeId } }),
+			),
+		).rejects.toMatchObject({ code: "rehire_terms_invalid" });
+		await expect(
+			commands().rehireEmployee(
+				owner(),
+				await rehireInput({ ...base, workPolicyId: randomUUID() }),
+			),
+		).rejects.toMatchObject({ code: "rehire_terms_invalid" });
+		await expect(
+			commands().rehireEmployee(
+				owner(),
+				await rehireInput({ ...base, overrides: { teamId: randomUUID() } }),
+			),
+		).rejects.toMatchObject({ code: "rehire_terms_invalid" });
 	});
 });

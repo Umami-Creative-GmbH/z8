@@ -1,15 +1,25 @@
 import { createHash } from "node:crypto";
-import { and, eq, inArray, lte, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, lte, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { organization } from "@/db/auth-schema";
-import { employee } from "@/db/schema";
+import {
+	employee,
+	employeeEmploymentHistory,
+	employeeManagers,
+	workPolicyAssignment,
+} from "@/db/schema";
 import {
 	employeeDeparture,
 	employeeDepartureEvent,
 	employeeDepartureTask,
 	employeeEmploymentPeriod,
 } from "@/db/schema/employee-lifecycle";
-import { type Clock, dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+import {
+	type Clock,
+	dateFromInstant,
+	type Instant,
+	parsePlainDate,
+} from "@/lib/datetime/temporal-core";
 import { departureCutoff } from "./cutoff";
 import { assertReadCommitted, lockLifecycleEmployee, lockLifecycleOrganization } from "./locks";
 import { type DepartureBlockedReason, evaluateDepartureAuthority } from "./owner-invariant";
@@ -22,6 +32,7 @@ import type {
 	LifecycleActor,
 	LifecycleTransaction,
 	OffboardNow,
+	RehireEmployee,
 	ScheduleDeparture,
 } from "./types";
 
@@ -38,7 +49,11 @@ export type DepartureCommandErrorCode =
 	| "invalid_timezone"
 	| "replacement_invalid"
 	| "replacement_required"
-	| "request_conflict";
+	| "request_conflict"
+	| "membership_required"
+	| "employee_already_employed"
+	| "rehire_conflict"
+	| "rehire_terms_invalid";
 
 export class DepartureCommandError extends Error {
 	constructor(readonly code: DepartureCommandErrorCode) {
@@ -73,6 +88,10 @@ export function createDepartureCommands(deps: DepartureCommandDependencies) {
 			return offboardNow(deps, actor, input);
 		},
 		executeDeparture: (identity: DepartureIdentity) => executeDeparture(deps, identity),
+		rehireEmployee: async (actor: LifecycleActor, input: RehireEmployee) => {
+			await materializeDueDeparture(deps, actor.organizationId, input.employeeId);
+			return rehireEmployee(deps, actor, input);
+		},
 	};
 }
 
@@ -502,6 +521,240 @@ async function assertReplacementChoice(
 		LIMIT 1
 	`);
 	if (duties.rows.length > 0) throw new DepartureCommandError("replacement_required");
+}
+
+type RehireResult = { employmentPeriodId: string };
+
+/**
+ * Starts a new employment period at one server instant on the existing
+ * profile. Every term, the role, team, manager and work policy come from the
+ * confirmed input; nothing from the previous stint is restored implicitly.
+ * Approved membership is required before access returns, and billing
+ * recomputes the current seat count rather than applying an increment.
+ */
+async function rehireEmployee(
+	deps: DepartureCommandDependencies,
+	actor: LifecycleActor,
+	input: RehireEmployee,
+): Promise<RehireResult> {
+	const fingerprint = requestFingerprint(actor, "rehire_employee", input);
+	return deps.db.transaction(async (tx) => {
+		const now = deps.clock.nowInstant();
+		const nowDate = dateFromInstant(now);
+		const target = await beginCommand(tx, actor, input.employeeId);
+		const replay = await readReceipt<RehireResult>(tx, actor, input.requestId, fingerprint);
+		if (replay) return replay;
+
+		await assertActorMayDepart(tx, actor, target);
+		const membership = await tx.execute(sql`
+			SELECT 1 FROM member
+			WHERE organization_id = ${actor.organizationId} AND user_id = ${target.userId}
+				AND status = 'approved'
+		`);
+		if (membership.rows.length === 0) throw new DepartureCommandError("membership_required");
+
+		const periods = await tx
+			.select({
+				id: employeeEmploymentPeriod.id,
+				status: employeeEmploymentPeriod.status,
+				endedAt: employeeEmploymentPeriod.endedAt,
+			})
+			.from(employeeEmploymentPeriod)
+			.where(
+				and(
+					eq(employeeEmploymentPeriod.organizationId, actor.organizationId),
+					eq(employeeEmploymentPeriod.employeeId, target.id),
+				),
+			);
+		if (periods.some((period) => period.status === "open")) {
+			throw new DepartureCommandError("employee_already_employed");
+		}
+		// The confirmed previous stint must be the one an effective departure ended.
+		const [previous] = await tx
+			.select({ endedAt: employeeEmploymentPeriod.endedAt })
+			.from(employeeEmploymentPeriod)
+			.innerJoin(
+				employeeDeparture,
+				and(
+					eq(employeeDeparture.organizationId, employeeEmploymentPeriod.organizationId),
+					eq(employeeDeparture.employmentPeriodId, employeeEmploymentPeriod.id),
+					eq(employeeDeparture.status, "effective"),
+				),
+			)
+			.where(
+				and(
+					eq(employeeEmploymentPeriod.organizationId, actor.organizationId),
+					eq(employeeEmploymentPeriod.employeeId, target.id),
+					eq(employeeEmploymentPeriod.id, input.previousEmploymentPeriodId),
+					eq(employeeEmploymentPeriod.status, "closed"),
+				),
+			)
+			.orderBy(desc(employeeDeparture.effectiveAt))
+			.limit(1);
+		const latestEnd = periods
+			.map((period) => period.endedAt?.getTime() ?? Number.NEGATIVE_INFINITY)
+			.reduce((latest, end) => Math.max(latest, end), Number.NEGATIVE_INFINITY);
+		if (!previous?.endedAt || previous.endedAt.getTime() !== latestEnd) {
+			throw new DepartureCommandError("rehire_conflict");
+		}
+		if (previous.endedAt.getTime() > nowDate.getTime()) {
+			throw new DepartureCommandError("rehire_conflict");
+		}
+
+		await assertRehireTermsBelongToOrganization(tx, actor.organizationId, target.id, input);
+		const timezone = await organizationTimezone(tx, actor.organizationId);
+
+		const [period] = await tx
+			.insert(employeeEmploymentPeriod)
+			.values({
+				organizationId: actor.organizationId,
+				employeeId: target.id,
+				status: "open",
+				startedAt: nowDate,
+				startProvenance: "recorded",
+				createdAt: nowDate,
+				createdBy: actor.userId,
+			})
+			.returning({ id: employeeEmploymentPeriod.id });
+		if (!period) throw new Error("employment_period_not_created");
+
+		await tx.insert(employeeEmploymentHistory).values({
+			employeeId: target.id,
+			organizationId: actor.organizationId,
+			employmentPeriodId: period.id,
+			validFrom: nowDate,
+			validUntil: null,
+			status: "active",
+			contractType: input.contractType,
+			weeklyContractMinutes: input.weeklyContractMinutes,
+			probationStartsOn: localDateStart(input.probationStartsOn, timezone),
+			probationEndsOn: localDateStart(input.probationEndsOn, timezone),
+			workModel: input.workModel,
+			workPolicyId: input.workPolicyId,
+			hourlyRate: input.hourlyRate ?? null,
+			currency: input.currency,
+			changeReason: input.changeReason,
+			reviewState: "confirmed",
+			createdBy: actor.userId,
+			createdAt: nowDate,
+			updatedBy: actor.userId,
+			updatedAt: nowDate,
+		});
+		await tx.insert(workPolicyAssignment).values({
+			policyId: input.workPolicyId,
+			organizationId: actor.organizationId,
+			assignmentType: "employee",
+			employeeId: target.id,
+			priority: 2,
+			effectiveFrom: nowDate,
+			effectiveUntil: null,
+			isActive: true,
+			createdBy: actor.userId,
+			createdAt: nowDate,
+			updatedAt: nowDate,
+		});
+
+		await tx.delete(employeeManagers).where(eq(employeeManagers.employeeId, target.id));
+		if (input.primaryManagerId) {
+			await tx.insert(employeeManagers).values({
+				employeeId: target.id,
+				managerId: input.primaryManagerId,
+				isPrimary: true,
+				assignedBy: actor.userId,
+				assignedAt: nowDate,
+				createdAt: nowDate,
+			});
+		}
+		await tx
+			.update(employee)
+			.set({
+				isActive: true,
+				role: input.role,
+				teamId: input.teamId,
+				contractType: input.contractType,
+				currentHourlyRate: input.hourlyRate ?? null,
+				endDate: null,
+				updatedAt: nowDate,
+			})
+			.where(and(eq(employee.organizationId, actor.organizationId), eq(employee.id, target.id)));
+
+		await tx
+			.insert(employeeDepartureTask)
+			.values({
+				organizationId: actor.organizationId,
+				employeeId: target.id,
+				employmentPeriodId: period.id,
+				departureId: null,
+				kind: "billing_sync",
+				dedupeKey: `billing:rehire:${period.id}`,
+			})
+			.onConflictDoNothing();
+
+		const result = { employmentPeriodId: period.id };
+		await writeReceipt(tx, {
+			actor,
+			employeeId: target.id,
+			employmentPeriodId: period.id,
+			departureId: null,
+			revision: null,
+			requestId: input.requestId,
+			fingerprint,
+			kind: "employee_rehired",
+			occurredAt: nowDate,
+			result,
+			metadata: { previousEmploymentPeriodId: input.previousEmploymentPeriodId },
+		});
+		return result;
+	});
+}
+
+/** Team, manager and work policy must all belong to the same organization. */
+async function assertRehireTermsBelongToOrganization(
+	tx: LifecycleTransaction,
+	organizationId: string,
+	employeeId: string,
+	input: RehireEmployee,
+) {
+	if (input.contractType === "hourly" && !input.hourlyRate) {
+		throw new DepartureCommandError("rehire_terms_invalid");
+	}
+	const facts = await tx.execute<{
+		policy_ok: boolean;
+		team_ok: boolean;
+		manager_ok: boolean;
+	}>(sql`
+		SELECT
+			EXISTS (
+				SELECT 1 FROM work_policy
+				WHERE id = ${input.workPolicyId}::uuid AND organization_id = ${organizationId}
+			) AS policy_ok,
+			(${input.teamId}::uuid IS NULL OR EXISTS (
+				SELECT 1 FROM team WHERE id = ${input.teamId}::uuid AND organization_id = ${organizationId}
+			)) AS team_ok,
+			(${input.primaryManagerId}::uuid IS NULL OR EXISTS (
+				SELECT 1 FROM employee
+				WHERE id = ${input.primaryManagerId}::uuid AND organization_id = ${organizationId}
+					AND is_active = true AND id <> ${employeeId}
+			)) AS manager_ok
+	`);
+	const checks = facts.rows[0];
+	if (!checks?.policy_ok || !checks.team_ok || !checks.manager_ok) {
+		throw new DepartureCommandError("rehire_terms_invalid");
+	}
+}
+
+async function organizationTimezone(tx: LifecycleTransaction, organizationId: string) {
+	const [org] = await tx
+		.select({ timezone: organization.timezone })
+		.from(organization)
+		.where(eq(organization.id, organizationId));
+	return org?.timezone ?? "UTC";
+}
+
+/** ISO calendar date interpreted at its start of day in the organization zone. */
+function localDateStart(value: string | null, timezone: string): Date | null {
+	if (!value) return null;
+	return dateFromInstant(parsePlainDate(value).toZonedDateTime(timezone).toInstant());
 }
 
 type CommandTarget = { id: string; userId: string };
