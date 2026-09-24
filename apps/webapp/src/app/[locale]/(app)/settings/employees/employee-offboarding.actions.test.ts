@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { toServerActionResult } from "@/lib/effect/result";
 
 const mocks = vi.hoisted(() => ({
+	gate: { released: false },
 	getEmployeeSettingsActorContext: vi.fn(),
 	getDepartureCommands: vi.fn(),
 	getOffboardingQueries: vi.fn(),
@@ -25,10 +26,17 @@ vi.mock("@/lib/employee-lifecycle", async () => {
 	};
 });
 
+vi.mock("@/lib/employee-lifecycle/release", () => ({
+	get EMPLOYEE_OFFBOARDING_RELEASE_READY() {
+		return mocks.gate.released;
+	},
+}));
+
 vi.mock("./employee-action-utils", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./employee-action-utils")>()),
 	getEmployeeSettingsActorContext: mocks.getEmployeeSettingsActorContext,
 	runTracedEmployeeAction: mocks.runTracedEmployeeAction,
+	revalidateEmployeesCache: vi.fn(),
 }));
 
 import { ResolveDepartureReviewError } from "@/lib/employee-lifecycle/reviews";
@@ -57,6 +65,7 @@ function actorContext(accessTier: "orgAdmin" | "manager" = "orgAdmin") {
 describe("employee offboarding actions before release", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mocks.gate.released = false;
 		mocks.runTracedEmployeeAction.mockImplementation((options) =>
 			Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() })).then(toServerActionResult),
 		);
@@ -83,6 +92,7 @@ describe("employee offboarding actions before release", () => {
 describe("employee offboarding follow-up actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mocks.gate.released = false;
 		mocks.runTracedEmployeeAction.mockImplementation((options) =>
 			Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() })).then(toServerActionResult),
 		);
@@ -186,6 +196,91 @@ describe("employee offboarding follow-up actions", () => {
 
 		expect(result).toMatchObject({ success: false });
 		expect(mocks.getOffboardingFollowUp).not.toHaveBeenCalled();
+	});
+});
+
+describe("employee offboarding actions after release", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mocks.gate.released = true;
+		mocks.runTracedEmployeeAction.mockImplementation((options) =>
+			Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() })).then(toServerActionResult),
+		);
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(actorContext());
+	});
+
+	it("schedules through the commands as the organization-scoped actor", async () => {
+		const scheduleDeparture = vi.fn().mockResolvedValue({ departureId: uuid, revision: 1 });
+		mocks.getDepartureCommands.mockReturnValue({ scheduleDeparture });
+		const input = {
+			employeeId: uuid,
+			requestId: uuid,
+			expectedRevision: null,
+			lastWorkingDay: "2026-09-30",
+			replacementEmployeeId: null,
+			acknowledgeUnassignedDuties: true,
+		};
+
+		const result = await scheduleEmployeeDepartureAction({ ...input, cutoff: "ignored" });
+
+		expect(result).toEqual({ success: true, data: { departureId: uuid, revision: 1 } });
+		expect(scheduleDeparture).toHaveBeenCalledWith(
+			{ userId: "user-1", organizationId: "org-1" },
+			input,
+		);
+	});
+
+	it("maps command refusals to the server's guidance", async () => {
+		const { DepartureCommandError } = await import("@/lib/employee-lifecycle/commands");
+		mocks.getDepartureCommands.mockReturnValue({
+			offboardNow: vi.fn().mockRejectedValue(new DepartureCommandError("final_accessible_owner")),
+		});
+
+		const result = await offboardEmployeeNowAction({
+			employeeId: uuid,
+			requestId: uuid,
+			replacementEmployeeId: null,
+			acknowledgeUnassignedDuties: true,
+		});
+
+		expect(result).toMatchObject({
+			success: false,
+			error: "Assign and activate another approved owner before this employee leaves.",
+		});
+	});
+
+	it("still requires organization admin settings access", async () => {
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(actorContext("manager"));
+
+		const result = await rehireEmployeeAction({});
+
+		expect(result).toMatchObject({ success: false });
+		expect(mocks.getDepartureCommands).not.toHaveBeenCalled();
+	});
+
+	it("offers the server's departure capabilities in the view", async () => {
+		mocks.getOffboardingQueries.mockReturnValue({
+			view: vi.fn().mockResolvedValue({
+				kind: "ok",
+				view: {
+					state: "active",
+					capabilities: {
+						schedule: true,
+						cancel: false,
+						offboardNow: true,
+						rehire: false,
+						resolve: false,
+					},
+				},
+			}),
+		});
+
+		const result = await getEmployeeOffboardingViewAction({ employeeId: uuid });
+
+		expect(result).toMatchObject({
+			success: true,
+			data: { capabilities: { schedule: true, offboardNow: true } },
+		});
 	});
 });
 

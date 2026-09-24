@@ -121,6 +121,8 @@ function renderActions(
 			currentMemberRole="owner"
 			onOptimisticStatusChange={onOptimisticStatusChangeMock}
 			onRemoved={onRemovedMock}
+			// The confirmed status flow remains the path while the gate is closed.
+			offboardingReleased={false}
 			{...overrides}
 		/>,
 	);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef } from "react";
+import { useState } from "react";
 import {
 	assignDepartureReplacementAction,
 	cancelEmployeeDepartureAction,
@@ -50,9 +50,8 @@ export function createRequestIdentity(generate: () => string = () => crypto.rand
 }
 
 export function useRequestIdentity() {
-	const identity = useRef<ReturnType<typeof createRequestIdentity> | null>(null);
-	if (!identity.current) identity.current = createRequestIdentity();
-	return identity.current;
+	const [identity] = useState(() => createRequestIdentity());
+	return identity;
 }
 
 async function unwrap<T>(promise: Promise<ServerActionResult<T>>): Promise<T> {

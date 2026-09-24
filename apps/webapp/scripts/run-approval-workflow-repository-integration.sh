@@ -112,6 +112,7 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	src/lib/employee-lifecycle/approval-handover.integration.test.ts \
 	src/lib/employee-lifecycle/notifications.integration.test.ts \
 	src/lib/employee-lifecycle/queries.integration.test.ts \
+	src/lib/employee-lifecycle/acceptance.integration.test.ts \
 	src/lib/effect/services/billing/billable-seat-count.integration.test.ts \
 	src/lib/effect/services/billing/seat-sync-ordering.integration.test.ts \
 	src/lib/approvals/evidence/legacy-absence.integration.test.ts

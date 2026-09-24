@@ -22,6 +22,19 @@ import { useOffboardingLabels } from "./labels";
 
 type Review = EmployeeOffboardingView["reviews"][number];
 
+/** Keeps the pending flag accurate even when the action throws. */
+async function trackPending<T>(
+	setPending: (pending: boolean) => void,
+	action: () => Promise<T>,
+): Promise<T> {
+	setPending(true);
+	try {
+		return await action();
+	} finally {
+		setPending(false);
+	}
+}
+
 export type FollowUpListProps = {
 	employeeId: string;
 	departureId: string;
@@ -130,10 +143,10 @@ function ReviewItem({ review, ...props }: FollowUpListProps & { review: Review }
 	const reason = review.reason ? labels.reason(review.reason) : null;
 
 	async function resolve() {
-		setPending(true);
 		setError(null);
-		const result = await props.resolveReview({ reviewId: review.id, resolution: note });
-		setPending(false);
+		const result = await trackPending(setPending, () =>
+			props.resolveReview({ reviewId: review.id, resolution: note }),
+		);
 		if (!result.success) setError(result.error ?? null);
 		else setNote("");
 	}
@@ -217,18 +230,15 @@ function ReplacementAssignment(props: {
 	const [pending, setPending] = useState(false);
 
 	async function assign() {
-		setPending(true);
 		setError(null);
 		const intent = {
 			departureId: props.departureId,
 			handoverTaskId: props.handoverTaskId,
 			replacementEmployeeId: replacementId,
 		};
-		const result = await props.assignReplacement({
-			...intent,
-			requestId: requestIdentity.forPayload(intent),
-		});
-		setPending(false);
+		const result = await trackPending(setPending, () =>
+			props.assignReplacement({ ...intent, requestId: requestIdentity.forPayload(intent) }),
+		);
 		if (result.success) requestIdentity.complete();
 		else setError(result.error ?? null);
 	}
@@ -286,10 +296,8 @@ function FailedTaskItem(props: {
 	const [error, setError] = useState<string | null>(null);
 
 	async function retry() {
-		setPending(true);
 		setError(null);
-		const result = await props.retryTask({ taskId: props.taskId });
-		setPending(false);
+		const result = await trackPending(setPending, () => props.retryTask({ taskId: props.taskId }));
 		if (!result.success) setError(result.error ?? null);
 	}
 
