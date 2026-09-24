@@ -122,7 +122,7 @@ evidence-backed cards belongs to #290–#294.
 
 ## Activation
 
-Migration `0069_approval_evidence.sql` adds the four tables and the update trigger.
+Migration `0070_approval_evidence.sql` adds the four tables and the update trigger.
 It inserts no control rows: capture is **inactive for every organization**.
 Apply it before deploying this code: canonical absence submission, decision and
 inbox detail read `approval_evidence_control` and fail if the table is missing

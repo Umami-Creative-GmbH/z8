@@ -488,8 +488,15 @@
     {
       "idx": 69,
       "version": "7",
-      "when": 1790208000000,
-      "tag": "0069_approval_evidence",
+      "when": 1790265600000,
+      "tag": "0069_escalation_policy_attention",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1790352000000,
+      "tag": "0070_approval_evidence",
       "breakpoints": true
     }
   ]
