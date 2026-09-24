@@ -17,7 +17,8 @@
       "pendingAbsence": "Ausencia pendiente",
       "pendingTimeCorrection": "Corrección de tiempo pendiente",
       "refreshAfterClearFailed": "Bloqueo eliminado, pero no se pudo actualizar la nómina",
-      "unknownEmployee": "Empleado desconocido"
+      "unknownEmployee": "Empleado desconocido",
+      "unresolvedWorkMinutes": "Los minutos de trabajo requieren revisión"
     },
     "description": "Revisa los totales de nómina, la preparación y las exportaciones para el periodo seleccionado.",
     "employeeTotals": {
@@ -45,6 +46,7 @@
       "employeeIdsMustBeArray": "employeeIds debe ser una matriz",
       "employeeIdsMustContainOnlyStrings": "employeeIds solo debe contener cadenas",
       "endDateAfterStart": "La fecha de finalización debe ser igual o posterior a la fecha de inicio",
+      "exportBlockedByUnresolvedWorkMinutes": "Exportación bloqueada: primero resuelve los minutos de trabajo que requieren revisión",
       "exportFormatNotConfigured": "El formato de exportación de nómina no está configurado",
       "invalidBlockerId": "ID de bloqueo de nómina no válido",
       "invalidBlockerType": "Tipo de bloqueo de nómina no válido",

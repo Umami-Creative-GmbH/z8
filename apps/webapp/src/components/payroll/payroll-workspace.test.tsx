@@ -433,6 +433,37 @@ describe("PayrollWorkspace", () => {
 		).toBeTruthy();
 	});
 
+	it("links unresolved work minutes to the calendar without offering a false-positive clear", () => {
+		render(
+			<PayrollWorkspace
+				initialSummary={buildSummary({
+					blockers: [
+						{
+							id: "record-1",
+							employeeId: "employee-1",
+							type: "unresolved_work_minutes",
+							label: "Unresolved work minutes",
+							date: "2026-06-30",
+							time: "22:00",
+						},
+					],
+				})}
+				exportFormats={[{ id: "datev_lohn", label: "DATEV" }]}
+			/>,
+		);
+		expandPayrollBlockers();
+
+		const row = document.querySelector(blockerSelector("unresolved_work_minutes", "record-1"));
+		expect(row).toBeTruthy();
+		expect(within(row as HTMLElement).getByText("Work minutes need review")).toBeTruthy();
+		expect(
+			within(row as HTMLElement)
+				.getByRole("link", { name: /Open calendar/ })
+				.getAttribute("href"),
+		).toBe("/calendar/employee-1?date=2026-06-30");
+		expect(within(row as HTMLElement).queryByRole("button")).toBeNull();
+	});
+
 	it("sends only the clicked blocker and current period and filter request", async () => {
 		render(
 			<PayrollWorkspace

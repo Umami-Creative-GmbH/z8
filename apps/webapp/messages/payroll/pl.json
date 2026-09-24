@@ -17,7 +17,8 @@
       "pendingAbsence": "Oczekująca nieobecność",
       "pendingTimeCorrection": "Oczekująca korekta czasu",
       "refreshAfterClearFailed": "Blokada usunięta, ale nie można było odświeżyć listy płac",
-      "unknownEmployee": "Nieznany pracownik"
+      "unknownEmployee": "Nieznany pracownik",
+      "unresolvedWorkMinutes": "Minuty pracy wymagają sprawdzenia"
     },
     "description": "Sprawdź sumy płac, gotowość i eksporty dla wybranego okresu.",
     "employeeTotals": {
@@ -45,6 +46,7 @@
       "employeeIdsMustBeArray": "employeeIds musi być tablicą",
       "employeeIdsMustContainOnlyStrings": "employeeIds musi zawierać tylko ciągi znaków",
       "endDateAfterStart": "Data końcowa musi być późniejsza lub równa dacie początkowej",
+      "exportBlockedByUnresolvedWorkMinutes": "Eksport zablokowany: najpierw wyjaśnij minuty pracy wymagające sprawdzenia",
       "exportFormatNotConfigured": "Format eksportu płac nie jest skonfigurowany",
       "invalidBlockerId": "Nieprawidłowy identyfikator blokady listy płac",
       "invalidBlockerType": "Nieprawidłowy typ blokady listy płac",

@@ -6,6 +6,7 @@ import {
 	DatabaseError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import { PayrollWorkAllocationBlockedError } from "@/lib/payroll-export/work-allocation-blocked-error";
 import { CanonicalCutoverNotReadyError } from "@/lib/time-record/migration/cutover-state";
 
 export type PayrollErrorTranslator = (key: string, fallback: string) => string;
@@ -28,6 +29,21 @@ export function mapPayrollWorkspaceActionError(
 			details: {
 				organizationId: error.organizationId,
 				reconciliation: error.reconciliation,
+			},
+		});
+	}
+
+	if (error instanceof PayrollWorkAllocationBlockedError) {
+		// Record-level reasons stay in server logs; the workspace lists the scoped blockers.
+		return new ConflictError({
+			message: t(
+				"payroll.errors.exportBlockedByUnresolvedWorkMinutes",
+				"Export blocked: resolve the work minutes that need review first",
+			),
+			conflictType: "payroll_work_minutes_unresolved",
+			details: {
+				organizationId: error.organizationId,
+				blockedRecordCount: error.blockedRecords.length,
 			},
 		});
 	}

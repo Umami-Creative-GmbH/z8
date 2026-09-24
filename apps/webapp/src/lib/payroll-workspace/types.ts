@@ -1,4 +1,4 @@
-import type { DateTime } from "luxon";
+import type { Instant } from "@/lib/datetime/temporal-core";
 
 export type PayrollDayPeriod = "full_day" | "am" | "pm";
 
@@ -21,10 +21,13 @@ export interface PayrollSummaryEmployeeSource {
 }
 
 export interface PayrollSummaryWorkRow {
+	id: string;
 	employeeId: string;
+	/** Effective employee timezone that defines the employee-local payroll window. */
+	timezone: string;
+	startAt: Instant;
+	endAt: Instant;
 	durationMinutes: number | null;
-	startAt?: DateTime;
-	endAt?: DateTime | null;
 }
 
 export interface PayrollSummaryAbsenceRangeRow {
@@ -49,10 +52,16 @@ export interface PayrollAbsenceDetail {
 	period: PayrollAbsenceDetailPeriod;
 }
 
-export type PayrollBlockerType =
+export type DismissiblePayrollBlockerType =
 	| "missing_clock_out"
 	| "pending_absence"
 	| "pending_time_correction";
+
+/**
+ * `unresolved_work_minutes` marks completed work whose payroll credit cannot be allocated to the
+ * period. It blocks exports, so it cannot be cleared as a false positive.
+ */
+export type PayrollBlockerType = DismissiblePayrollBlockerType | "unresolved_work_minutes";
 
 export interface PayrollBlocker {
 	id: string;
