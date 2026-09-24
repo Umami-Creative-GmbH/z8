@@ -59,6 +59,33 @@ export async function findOpenDepartureClockRepairs(
 		);
 }
 
+/**
+ * Accessible organization owners and admins resolve departure follow-up work
+ * (reviews, replacement assignment, retries). Evaluated in the caller's
+ * transaction, never from client-supplied role claims.
+ */
+export async function actorMayResolveDepartureWork(
+	tx: Pick<typeof rootDatabase, "execute">,
+	organizationId: string,
+	actorUserId: string,
+): Promise<boolean> {
+	const authority = await tx.execute<{ allowed: boolean }>(sql`
+		SELECT EXISTS (
+			SELECT 1 FROM member m
+			WHERE m.organization_id = ${organizationId} AND m.user_id = ${actorUserId}
+				AND m.status = 'approved'
+				AND ('owner' = ANY(regexp_split_to_array(COALESCE(m.role, ''), '\s*,\s*'))
+					OR 'admin' = ANY(regexp_split_to_array(COALESCE(m.role, ''), '\s*,\s*')))
+				AND NOT EXISTS (
+					SELECT 1 FROM employee e
+					WHERE e.organization_id = m.organization_id AND e.user_id = m.user_id
+						AND e.is_active = false
+				)
+		) AS allowed
+	`);
+	return authority.rows[0]?.allowed === true;
+}
+
 export type ResolveDepartureReviewErrorCode =
 	| "review_not_found"
 	| "review_already_resolved"
@@ -93,21 +120,7 @@ export async function resolveDepartureReview(
 	if (!resolution) throw new ResolveDepartureReviewError("resolution_required");
 
 	await database.transaction(async (tx) => {
-		const authority = await tx.execute<{ allowed: boolean }>(sql`
-			SELECT EXISTS (
-				SELECT 1 FROM member m
-				WHERE m.organization_id = ${input.organizationId} AND m.user_id = ${input.actorUserId}
-					AND m.status = 'approved'
-					AND ('owner' = ANY(regexp_split_to_array(COALESCE(m.role, ''), '\s*,\s*'))
-						OR 'admin' = ANY(regexp_split_to_array(COALESCE(m.role, ''), '\s*,\s*')))
-					AND NOT EXISTS (
-						SELECT 1 FROM employee e
-						WHERE e.organization_id = m.organization_id AND e.user_id = m.user_id
-							AND e.is_active = false
-					)
-			) AS allowed
-		`);
-		if (authority.rows[0]?.allowed !== true) {
+		if (!(await actorMayResolveDepartureWork(tx, input.organizationId, input.actorUserId))) {
 			throw new ResolveDepartureReviewError("actor_not_authorized");
 		}
 

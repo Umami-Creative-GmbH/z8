@@ -13,18 +13,20 @@ import {
 	createApprovalAuditLogger,
 } from "@/lib/approvals/infrastructure/audit-logger";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
-import { finalizeAbsenceTerminalInTransaction } from "@/lib/approvals/server/absence-approvals";
 import { processApprovalWithCurrentEmployee } from "@/lib/approvals/server/shared";
 import {
 	persistTravelExpenseDecision,
 	preflightTravelExpenseDecision,
 } from "@/lib/approvals/server/travel-expense-approvals";
 import type { ApprovalDbService, CurrentApprover } from "@/lib/approvals/server/types";
-import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
-import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import { resolveEmployeeOrganizationAccess } from "./access";
 import { createDepartureCommands } from "./commands";
+import {
+	absenceApprovalRuntime,
+	enableCanonicalAbsences,
+	seedPendingAbsenceWorkflow,
+} from "./testing/approval-workflow.test.fixture";
 import {
 	createLifecycleDatabaseFixture,
 	describeLifecycleDatabase,
@@ -62,12 +64,7 @@ describeLifecycleDatabase("submitted requests after departure", () => {
 				new Date(SUBMITTED_AT.epochMilliseconds),
 			],
 		);
-		await fixture.pool.query(
-			`insert into approval_workflow_rollout
-			 (organization_id, workflow_type, lifecycle_mode, side_effect_mode, created_at, updated_at)
-			 values ($1, 'absence', 'complete', 'canonical', $2, $2)`,
-			[fixture.organizationId, new Date(SUBMITTED_AT.epochMilliseconds)],
-		);
+		await enableCanonicalAbsences(fixture, new Date(SUBMITTED_AT.epochMilliseconds));
 	});
 
 	afterAll(async () => {
@@ -75,42 +72,7 @@ describeLifecycleDatabase("submitted requests after departure", () => {
 	});
 
 	function runtime() {
-		const clock = { nowInstant: () => now };
-		return createProductionApprovalWorkflowRuntime({
-			db: fixture.db as unknown as ApprovalWorkflowDatabase,
-			adapters: {
-				absence: {
-					clock,
-					finalizeAbsenceTerminal: (input) =>
-						finalizeAbsenceTerminalInTransaction({
-							...input,
-							dbService: {
-								db: input.dbService.db as ApprovalDbService["db"],
-								query: (_name, operation) => Effect.promise(operation),
-							},
-						}),
-					deleteCancelledAbsence: async () => {
-						throw new Error("cancellation is outside this suite");
-					},
-				},
-				timeCorrection: {
-					clock,
-					finalizeTimeCorrectionTerminal: async () => {
-						throw new Error("time correction is outside this suite");
-					},
-					deleteCancelledCorrections: async () => {
-						throw new Error("time correction is outside this suite");
-					},
-				},
-				ordinaryWorkPeriod: {
-					finalizeTerminal: async () => {
-						throw new Error("ordinary work periods are outside this suite");
-					},
-				},
-			},
-			canManageApproval: async () => false,
-			clock,
-		});
+		return absenceApprovalRuntime(fixture, { nowInstant: () => now });
 	}
 
 	async function depart(employee: SeededEmployee) {
@@ -131,83 +93,21 @@ describeLifecycleDatabase("submitted requests after departure", () => {
 		expect(result.status).toBe("effective");
 	}
 
-	/**
-	 * A submitted absence with a canonical record whose first stage is pending
-	 * with the requester's manager and whose second stage activates later.
-	 */
+	/** First stage pending with the requester's manager, second stage waiting. */
 	async function seedTwoStageAbsence() {
-		const ids = {
-			category: randomUUID(),
-			record: randomUUID(),
-			absence: randomUUID(),
-			workflow: randomUUID(),
-			firstStage: randomUUID(),
-			secondStage: randomUUID(),
-			assignment: randomUUID(),
-		};
-		const at = new Date(SUBMITTED_AT.epochMilliseconds);
-		const org = fixture.organizationId;
-		await fixture.pool.query(
-			`insert into absence_category (id, organization_id, type, name, requires_work_time,
-				requires_approval, counts_against_vacation, is_active, created_at, updated_at)
-			 values ($1, $2, 'vacation', 'Vacation', false, true, true, true, $3, $3)`,
-			[ids.category, org, at],
-		);
-		await fixture.pool.query(
-			`insert into time_record (id, organization_id, employee_id, record_kind, start_at, end_at,
-				approval_state, origin, created_at, created_by, updated_at)
-			 values ($1, $2, $3, 'absence', '2026-10-05T00:00:00Z', '2026-10-06T00:00:00Z',
-				'pending', 'manual', $4, $5, $4)`,
-			[ids.record, org, requester.employeeId, at, requester.userId],
-		);
-		await fixture.pool.query(
-			`insert into time_record_absence (record_id, organization_id, record_kind, absence_category_id)
-			 values ($1, $2, 'absence', $3)`,
-			[ids.record, org, ids.category],
-		);
-		await fixture.pool.query(
-			`insert into absence_entry (id, employee_id, category_id, start_date, end_date, status,
-				organization_id, canonical_record_id, created_at, updated_at)
-			 values ($1, $2, $3, '2026-10-05', '2026-10-05', 'pending', $4, $5, $6, $6)`,
-			[ids.absence, requester.employeeId, ids.category, org, ids.record, at],
-		);
-		await fixture.pool.query(
-			`insert into approval_workflow (id, organization_id, workflow_type, source_type, source_id,
-				requester_employee_id, status, current_stage_order, version, policy_snapshot,
-				context_snapshot, display_snapshot, submitted_at, created_at, updated_at)
-			 values ($1, $2, 'absence', 'absence_entry', $3, $4, 'pending', 1, 1, '{}', '{}', '{}', $5, $5, $5)`,
-			[ids.workflow, org, ids.absence, requester.employeeId, at],
-		);
-		await fixture.pool.query(
-			`update absence_entry set approval_workflow_id = $1 where organization_id = $2 and id = $3`,
-			[ids.workflow, org, ids.absence],
-		);
-		await fixture.pool.query(
-			`insert into approval_workflow_stage (id, organization_id, workflow_id, stage_order, label,
-				resolver_snapshot, activation_mode, status, activated_at, created_at, updated_at)
-			 values ($1, $2, $3, 1, 'Manager', $4, 'human', 'pending', $5, $5, $5),
-				($6, $2, $3, 2, 'Second review', $7, 'human', 'waiting', null, $5, $5)`,
-			[
-				ids.firstStage,
-				org,
-				ids.workflow,
-				JSON.stringify({ approverType: "direct_manager", fallbackBehavior: "fail" }),
-				at,
-				ids.secondStage,
-				JSON.stringify({
-					approverType: "specific_employee",
-					approverEmployeeId: secondApprover.employeeId,
-					fallbackBehavior: "fail",
-				}),
-			],
-		);
-		await fixture.pool.query(
-			`insert into approval_stage_assignment (id, organization_id, workflow_id, stage_id,
-				assignment_sequence, approver_employee_id, status, assigned_at, created_at, updated_at)
-			 values ($1, $2, $3, $4, 1, $5, 'pending', $6, $6, $6)`,
-			[ids.assignment, org, ids.workflow, ids.firstStage, firstApprover.employeeId, at],
-		);
-		return ids;
+		const seeded = await seedPendingAbsenceWorkflow(fixture, {
+			requester,
+			approverEmployeeIds: [firstApprover.employeeId],
+			at: new Date(SUBMITTED_AT.epochMilliseconds),
+			secondStageResolver: {
+				approverType: "specific_employee",
+				approverEmployeeId: secondApprover.employeeId,
+				fallbackBehavior: "fail",
+			},
+		});
+		const [assignment] = seeded.assignments;
+		if (!assignment || !seeded.secondStage) throw new Error("absence not seeded");
+		return { ...seeded, assignment, secondStage: seeded.secondStage };
 	}
 
 	async function seedSubmittedExpense() {

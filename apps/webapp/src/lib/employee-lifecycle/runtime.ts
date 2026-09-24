@@ -7,6 +7,7 @@ import { and, eq } from "drizzle-orm";
 import { Effect, Layer } from "effect";
 import { db } from "@/db";
 import { type DepartureTaskKind, employeeDeparture } from "@/db/schema/employee-lifecycle";
+import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
 import { type Instant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	SeatSyncService,
@@ -23,6 +24,7 @@ import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/su
 import { WorkPolicyServiceLive } from "@/lib/effect/services/work-policy.service";
 import { secondaryStorage } from "@/lib/redis";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import { createApprovalHandoverHandler, createApprovalHandoverRuntime } from "./approval-handover";
 import { createDepartureClockOut } from "./clock-out";
 import { createClockPostprocessHandler } from "./clock-postprocess";
 import { createDepartureCommands } from "./commands";
@@ -77,6 +79,11 @@ export function createProductionDepartureTaskHandlers(options: {
 		session_revocation: createSessionRevocationHandler((token) =>
 			secondaryStorage.deleteOrThrow(token),
 		),
+		approval_handover: createApprovalHandoverHandler({
+			database: db,
+			clock: systemClock,
+			runtime: createApprovalHandoverRuntime(db as unknown as ApprovalWorkflowDatabase, systemClock),
+		}),
 		// The open clock_repair review is the durable record; nothing is safe to
 		// retry automatically against that period.
 		clock_repair: async () => {},

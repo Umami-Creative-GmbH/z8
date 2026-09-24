@@ -17,6 +17,7 @@ interface Directory {
 	managerLinks: EligibleManagerLink[];
 	teamMemberships: EligibleTeamMembership[];
 	teams: EligibleTeam[];
+	departureReplacements?: Array<{ employeeId: string; replacementEmployeeId: string }>;
 }
 
 function context(): ApprovalRoutingContext {
@@ -620,6 +621,47 @@ describe("resolveApprovalStageReviewers", () => {
 			"no_eligible_reviewer",
 			"No eligible reviewer.",
 		);
+	});
+
+	it("routes an explicit stage for a departed approver to the captured replacement", () => {
+		const departedDirectory = directory({
+			employees: directory().employees.map((employee) =>
+				employee.id === "manager-a" ? { ...employee, isActive: false } : employee,
+			),
+			departureReplacements: [{ employeeId: "manager-a", replacementEmployeeId: "manager-b" }],
+		});
+		expect(
+			resolveApprovalStageReviewers({
+				context: context(),
+				stage: stage({ approverType: "specific_employee", approverEmployeeId: "manager-a" }),
+				directory: departedDirectory,
+			}),
+		).toEqual({ activationMode: "human", approverEmployeeIds: ["manager-b"] });
+	});
+
+	it("fails visibly instead of auto-approving when a departed approver has no usable replacement", () => {
+		for (const replacements of [
+			[],
+			[{ employeeId: "manager-a", replacementEmployeeId: "inactive" }],
+			// A replacement who is the requester would auto-approve their own request.
+			[{ employeeId: "manager-a", replacementEmployeeId: "requester" }],
+		]) {
+			expectActivationError(
+				() =>
+					resolveApprovalStageReviewers({
+						context: context(),
+						stage: stage({ approverType: "specific_employee", approverEmployeeId: "manager-a" }),
+						directory: directory({
+							employees: directory().employees.map((employee) =>
+								employee.id === "manager-a" ? { ...employee, isActive: false } : employee,
+							),
+							departureReplacements: replacements,
+						}),
+					}),
+				"no_eligible_reviewer",
+				"No eligible reviewer.",
+			);
+		}
 	});
 
 	it("uses organization_admin fallback when the requester is absent from the directory", () => {

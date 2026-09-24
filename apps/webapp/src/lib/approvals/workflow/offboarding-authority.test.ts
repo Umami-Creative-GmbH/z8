@@ -101,7 +101,9 @@ function principal(
 	};
 }
 
-function payload(overrides: Partial<ApprovalHandoverTaskPayload> = {}): ApprovalHandoverTaskPayload {
+function payload(
+	overrides: Partial<ApprovalHandoverTaskPayload> = {},
+): ApprovalHandoverTaskPayload {
 	return {
 		workflowId: ids.workflow,
 		stageId: ids.stage,
@@ -112,7 +114,9 @@ function payload(overrides: Partial<ApprovalHandoverTaskPayload> = {}): Approval
 	};
 }
 
-function facts(overrides: Partial<OffboardingReassignmentFacts> = {}): OffboardingReassignmentFacts {
+function facts(
+	overrides: Partial<OffboardingReassignmentFacts> = {},
+): OffboardingReassignmentFacts {
 	return {
 		now,
 		organizationId: ids.organization,
@@ -225,26 +229,70 @@ describe("evaluateOffboardingReassignment", () => {
 	});
 
 	it.each([
-		["organization", { departure: { ...facts().departure!, organizationId: ids.foreign } }, "departure_mismatch"],
+		[
+			"organization",
+			{ departure: { ...facts().departure!, organizationId: ids.foreign } },
+			"departure_mismatch",
+		],
 		["missing departure", { departure: null }, "departure_mismatch"],
-		["pending departure", { departure: { ...facts().departure!, status: "pending" as const } }, "departure_not_effective"],
-		["departed employee", { departure: { ...facts().departure!, employeeId: ids.other } }, "departure_mismatch"],
-		["employment period", { principal: principal({ employmentPeriodId: ids.other }) }, "departure_mismatch"],
+		[
+			"pending departure",
+			{ departure: { ...facts().departure!, status: "pending" as const } },
+			"departure_not_effective",
+		],
+		[
+			"departed employee",
+			{ departure: { ...facts().departure!, employeeId: ids.other } },
+			"departure_mismatch",
+		],
+		[
+			"employment period",
+			{ principal: principal({ employmentPeriodId: ids.other }) },
+			"departure_mismatch",
+		],
 		["departure id", { principal: principal({ departureId: ids.other }) }, "departure_mismatch"],
 		["task id", { principal: principal({ handoverTaskId: ids.other }) }, "task_mismatch"],
 		["missing task", { task: null }, "task_mismatch"],
-		["task organization", { task: { ...facts().task!, organizationId: ids.foreign } }, "task_mismatch"],
+		[
+			"task organization",
+			{ task: { ...facts().task!, organizationId: ids.foreign } },
+			"task_mismatch",
+		],
 		["task departure", { task: { ...facts().task!, departureId: ids.other } }, "task_mismatch"],
 		["task period", { task: { ...facts().task!, employmentPeriodId: ids.other } }, "task_mismatch"],
 		["task kind", { task: { ...facts().task!, kind: "billing_sync" as const } }, "task_mismatch"],
 		["forged claim", { principal: principal({ claimToken: ids.other }) }, "lease_not_owned"],
-		["released task", { task: { ...facts().task!, status: "pending" as const, claimToken: null } }, "lease_not_owned"],
+		[
+			"released task",
+			{ task: { ...facts().task!, status: "pending" as const, claimToken: null } },
+			"lease_not_owned",
+		],
 		["stale lease", { now: parseInstant("2026-09-15T00:06:00Z") }, "lease_not_owned"],
-		["assignment in principal", { principal: principal({ assignmentId: ids.sibling }) }, "task_mismatch"],
-		["task workflow", { task: { ...facts().task!, payload: payload({ workflowId: ids.other }) } }, "task_mismatch"],
-		["task stage", { task: { ...facts().task!, payload: payload({ stageId: ids.other }) } }, "task_mismatch"],
-		["task target", { task: { ...facts().task!, payload: payload({ replacementEmployeeId: ids.other }) } }, "target_mismatch"],
-		["unset target", { task: { ...facts().task!, payload: payload({ replacementEmployeeId: null }) } }, "target_mismatch"],
+		[
+			"assignment in principal",
+			{ principal: principal({ assignmentId: ids.sibling }) },
+			"task_mismatch",
+		],
+		[
+			"task workflow",
+			{ task: { ...facts().task!, payload: payload({ workflowId: ids.other }) } },
+			"task_mismatch",
+		],
+		[
+			"task stage",
+			{ task: { ...facts().task!, payload: payload({ stageId: ids.other }) } },
+			"task_mismatch",
+		],
+		[
+			"task target",
+			{ task: { ...facts().task!, payload: payload({ replacementEmployeeId: ids.other }) } },
+			"target_mismatch",
+		],
+		[
+			"unset target",
+			{ task: { ...facts().task!, payload: payload({ replacementEmployeeId: null }) } },
+			"target_mismatch",
+		],
 		["rehired employee", { rehired: true }, "employee_rehired"],
 	] as const)("rejects a swapped %s", (_label, override, reason) => {
 		expect(denial(facts(override as Partial<OffboardingReassignmentFacts>))).toBe(reason);
@@ -316,13 +364,13 @@ describe("evaluateOffboardingReassignment", () => {
 		expect(denial(facts({ workflow: moved }))).toBe("source_not_pending");
 	});
 
-	it("rejects a duty assigned after the departure cutoff", () => {
+	it("transfers a captured duty assigned between cutoff and materialization", () => {
 		const late = workflow();
 		late.stages[0]!.assignments[0] = {
 			...late.stages[0]!.assignments[0]!,
-			assignedAt: parseInstant("2026-09-15T00:00:01Z"),
+			assignedAt: parseInstant("2026-09-15T00:00:30Z"),
 		};
-		expect(denial(facts({ workflow: late }))).toBe("source_after_cutoff");
+		expect(denial(facts({ workflow: late }))).toBe("authorized");
 	});
 
 	it("rejects self approval, an already pending target and an ineligible target", () => {

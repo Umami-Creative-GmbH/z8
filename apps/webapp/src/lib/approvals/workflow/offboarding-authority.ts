@@ -110,7 +110,6 @@ export type OffboardingReassignmentDenial =
 	| "target_mismatch"
 	| "employee_rehired"
 	| "source_not_pending"
-	| "source_after_cutoff"
 	| "target_is_requester"
 	| "target_already_pending"
 	| "target_ineligible"
@@ -128,8 +127,10 @@ function denied(reason: OffboardingReassignmentDenial): OffboardingReassignmentE
  * Decides whether the offboarding principal may execute this command. Every
  * supplied identifier must match persisted evidence: an effective departure,
  * the handover task it owns under a live lease, and the exact pending
- * assignment the task captured. A fresh execution also requires a currently
- * eligible target; a receipt replay instead proves the recorded transfer.
+ * assignment the task captured when the departure became effective (the
+ * capture, not an assignment timestamp, is the identity evidence). A fresh
+ * execution also requires a currently eligible target; a receipt replay
+ * instead proves the recorded transfer.
  */
 export function evaluateOffboardingReassignment(
 	facts: OffboardingReassignmentFacts,
@@ -173,7 +174,10 @@ export function evaluateOffboardingReassignment(
 	) {
 		return denied("lease_not_owned");
 	}
-	if (intent.replacementEmployeeId === null || intent.replacementEmployeeId !== command.toEmployeeId) {
+	if (
+		intent.replacementEmployeeId === null ||
+		intent.replacementEmployeeId !== command.toEmployeeId
+	) {
 		return denied("target_mismatch");
 	}
 
@@ -198,9 +202,6 @@ export function evaluateOffboardingReassignment(
 		source.approverEmployeeId !== command.fromEmployeeId
 	) {
 		return denied("source_not_pending");
-	}
-	if (compareInstants(source.assignedAt, departure.cutoffAt) > 0) {
-		return denied("source_after_cutoff");
 	}
 	if (command.toEmployeeId === workflow.requesterEmployeeId) return denied("target_is_requester");
 	if (

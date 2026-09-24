@@ -269,7 +269,13 @@ describe("createDatabaseStageActivationResolver", () => {
 
 		expect(fake.calls).toHaveLength(1);
 		const rendered = new PgDialect().sqlToQuery(fake.calls[0]);
-		expect(rendered.params).toEqual(["org-1", "org-1", "org-1", "org-1"]);
+		expect(rendered.params).toEqual([
+			"org-1",
+			"org-1",
+			"org-1",
+			"org-1",
+			"org-1",
+		]);
 		expect(rendered.sql).toMatch(
 			/from employee[\s\S]*employee\.organization_id\s*=\s*\$1/,
 		);
@@ -283,6 +289,42 @@ describe("createDatabaseStageActivationResolver", () => {
 		expect(rendered.sql).toMatch(
 			/from team[\s\S]*team\.organization_id\s*=\s*\$4/,
 		);
+		// A due departure ends activity even before it is materialized.
+		expect(rendered.sql).toMatch(/employee_departure_denies_access\(/);
+		expect(rendered.sql).toMatch(
+			/from employee_departure departure[\s\S]*departure\.organization_id\s*=\s*\$5[\s\S]*status = 'effective'/,
+		);
+	});
+
+	it("honors a captured departure replacement for an explicit stage approver", async () => {
+		const rows = directoryRows.map((group) => [...group]);
+		rows[0] = rows[0].map((row) =>
+			(row as { id: string }).id === managerAId ? { ...(row as object), isActive: false } : row,
+		);
+		const fake = database([
+			{
+				...directoryEnvelope(rows),
+				departureReplacements: [{ employeeId: managerAId, replacementEmployeeId: managerBId }],
+			},
+		]);
+
+		await expect(
+			createDatabaseStageActivationResolver().resolve(
+				activationInput({
+					dbService: fake.dbService,
+					stageSnapshot: stage({
+						resolverSnapshot: {
+							approverType: "specific_employee",
+							approverEmployeeId: managerAId,
+							fallbackBehavior: "fail",
+						},
+					}),
+				}),
+			),
+		).resolves.toMatchObject({
+			activationMode: "human",
+			assignments: [{ approverEmployeeId: managerBId, metadata: {} }],
+		});
 	});
 
 	it("resolves a departed requester's managers only for a persisted workflow", async () => {

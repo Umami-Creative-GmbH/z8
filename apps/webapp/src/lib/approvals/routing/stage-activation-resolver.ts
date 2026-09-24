@@ -122,6 +122,7 @@ function decodeDirectoryEnvelope(value: unknown): {
 	managerLinks: unknown[];
 	teamMemberships: unknown[];
 	teams: unknown[];
+	departureReplacements: unknown[];
 } {
 	if (
 		!isRecord(value) ||
@@ -131,7 +132,9 @@ function decodeDirectoryEnvelope(value: unknown): {
 		!Array.isArray(value.rows[0].employees) ||
 		!Array.isArray(value.rows[0].managerLinks) ||
 		!Array.isArray(value.rows[0].teamMemberships) ||
-		!Array.isArray(value.rows[0].teams)
+		!Array.isArray(value.rows[0].teams) ||
+		(value.rows[0].departureReplacements !== undefined &&
+			!Array.isArray(value.rows[0].departureReplacements))
 	) {
 		return invalid("Malformed approval directory query result.");
 	}
@@ -140,6 +143,7 @@ function decodeDirectoryEnvelope(value: unknown): {
 		managerLinks: value.rows[0].managerLinks,
 		teamMemberships: value.rows[0].teamMemberships,
 		teams: value.rows[0].teams,
+		departureReplacements: (value.rows[0].departureReplacements ?? []) as unknown[],
 	};
 }
 
@@ -214,6 +218,24 @@ function decodeTeams(rows: unknown[]): EligibleTeam[] {
 	});
 }
 
+function decodeDepartureReplacements(
+	rows: unknown[],
+): Array<{ employeeId: string; replacementEmployeeId: string }> {
+	return rows.map((row) => {
+		if (
+			!isRecord(row) ||
+			!nonEmptyString(row.employeeId) ||
+			!nonEmptyString(row.replacementEmployeeId)
+		) {
+			return invalid("Malformed departure replacement directory row.");
+		}
+		return {
+			employeeId: row.employeeId,
+			replacementEmployeeId: row.replacementEmployeeId,
+		};
+	});
+}
+
 export function createDatabaseStageActivationResolver(): StageActivationResolver {
 	return {
 		async resolve(input) {
@@ -227,7 +249,10 @@ export function createDatabaseStageActivationResolver(): StageActivationResolver
 							json_build_object(
 								'id', employee.id,
 								'organizationId', employee.organization_id,
-								'isActive', employee.is_active,
+								-- A due departure ends activity before it is materialized.
+								'isActive', employee.is_active AND NOT employee_departure_denies_access(
+									employee.organization_id, employee.id, now()
+								),
 								'role', employee.role
 							)
 							order by employee.id
@@ -270,7 +295,25 @@ export function createDatabaseStageActivationResolver(): StageActivationResolver
 						)
 						from team
 						where team.organization_id = ${organizationId}
-					), '[]'::json) as teams
+					), '[]'::json) as teams,
+					coalesce((
+						select json_agg(
+							json_build_object(
+								'employeeId', latest.employee_id,
+								'replacementEmployeeId', latest.replacement_employee_id
+							)
+							order by latest.employee_id
+						)
+						from (
+							select distinct on (departure.employee_id)
+								departure.employee_id, departure.replacement_employee_id
+							from employee_departure departure
+							where departure.organization_id = ${organizationId}
+								and departure.status = 'effective'
+								and departure.replacement_employee_id is not null
+							order by departure.employee_id, departure.effective_at desc
+						) latest
+					), '[]'::json) as "departureReplacements"
 			`);
 			const directory = decodeDirectoryEnvelope(directoryResult);
 
@@ -283,6 +326,9 @@ export function createDatabaseStageActivationResolver(): StageActivationResolver
 					managerLinks: decodeManagerLinks(directory.managerLinks),
 					teamMemberships: decodeTeamMemberships(directory.teamMemberships),
 					teams: decodeTeams(directory.teams),
+					departureReplacements: decodeDepartureReplacements(
+						directory.departureReplacements,
+					),
 				},
 			});
 
