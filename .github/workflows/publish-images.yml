@@ -106,6 +106,8 @@ jobs:
             NEXT_DEPLOYMENT_ID=${{ github.sha }}
             BUILD_HASH=${{ github.sha }}
             NEXT_PUBLIC_BUILD_HASH=${{ github.sha }}
+          secrets: |
+            next_server_actions_encryption_key=${{ secrets.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY }}
           cache-from: type=gha,scope=${{ matrix.repository }}-${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=${{ matrix.repository }}-${{ matrix.arch }}
 

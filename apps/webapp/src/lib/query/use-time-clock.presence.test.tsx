@@ -22,8 +22,6 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
-	clockIn: mocks.clockIn,
-	clockOut: mocks.clockOut,
 	addBreakToActiveSession: mocks.addBreakToActiveSession,
 	getTimeClockStatus: mocks.getTimeClockStatus,
 	updateTimeEntryNotes: mocks.updateTimeEntryNotes,
@@ -44,6 +42,35 @@ vi.mock("@/lib/time-tracking/timezone-capture", () => ({
 import { queryKeys } from "./keys";
 import { useElapsedTimer, useTimeClock } from "./use-time-clock";
 
+type TimeClockRouteBody = {
+	action: "clock_in" | "clock_out";
+	workLocationType?: string;
+	projectId?: string;
+	workCategoryId?: string;
+	browserTimezone?: string | null;
+	submissionId?: string;
+};
+
+// Fake of the stable /api/time-clock route contract, recording calls in the
+// clockIn/clockOut mocks with the clocking service argument shapes.
+function stubTimeClockRoute() {
+	const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
+		const body = JSON.parse(String(init.body)) as TimeClockRouteBody;
+		const result =
+			body.action === "clock_in"
+				? await mocks.clockIn(body.workLocationType, {
+						browserTimezone: body.browserTimezone,
+					})
+				: await mocks.clockOut(body.projectId, body.workCategoryId, {
+						browserTimezone: body.browserTimezone,
+						submissionId: body.submissionId,
+					});
+		return Response.json(result);
+	});
+	vi.stubGlobal("fetch", fetchMock);
+	return fetchMock;
+}
+
 function wrapper(client: QueryClient) {
 	return function TestWrapper({ children }: { children: React.ReactNode }) {
 		return (
@@ -53,6 +80,7 @@ function wrapper(client: QueryClient) {
 }
 
 afterEach(() => {
+	vi.unstubAllGlobals();
 	onlineManager.setOnline(true);
 	vi.useRealTimers();
 	vi.restoreAllMocks();
@@ -102,6 +130,79 @@ describe("useTimeClock presence invalidation", () => {
 			error: null,
 		});
 		mocks.getBrowserTimezone.mockReturnValue("Europe/Berlin");
+		stubTimeClockRoute();
+	});
+
+	it("sends clock actions to the deployment-stable time clock route", async () => {
+		const fetchMock = stubTimeClockRoute();
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		mocks.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+
+		const { result } = renderHook(() => useTimeClock(), {
+			wrapper: wrapper(client),
+		});
+		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+		const outcome = await result.current.clockIn({
+			workLocationType: "remote",
+			browserTimezone: "Europe/Berlin",
+		});
+
+		expect(outcome).toEqual({ success: true, data: { id: "entry-1" } });
+		expect(fetchMock).toHaveBeenCalledWith("/api/time-clock", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({
+				action: "clock_in",
+				workLocationType: "remote",
+				browserTimezone: "Europe/Berlin",
+			}),
+		});
+	});
+
+	it("returns clocking failures from the route as action results", async () => {
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () =>
+				Response.json(
+					{ success: false, error: "Already clocked out" },
+					{ status: 422 },
+				),
+			),
+		);
+
+		const { result } = renderHook(() => useTimeClock(), {
+			wrapper: wrapper(client),
+		});
+		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+
+		await expect(result.current.clockOut()).resolves.toEqual({
+			success: false,
+			error: "Already clocked out",
+		});
+	});
+
+	it("rejects non-action responses so the mutation can retry the same submission", async () => {
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => new Response("<html>Bad gateway</html>", { status: 502 })),
+		);
+
+		const { result } = renderHook(() => useTimeClock(), {
+			wrapper: wrapper(client),
+		});
+		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+
+		await expect(result.current.clockOut()).rejects.toThrow(
+			"Time clock request failed (502)",
+		);
 	});
 
 	it("invalidates employee clock statuses after clock in", async () => {
