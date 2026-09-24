@@ -134,8 +134,21 @@ Authorized scope: typecheck and unit tests only; no database access.
   247 source files (including untouched ones) and hits symlink `EPERM`.
   The new modules write only to the new escalation tables and `audit_log`,
   which are outside the protected write inventory.
-- Not executed: migration application, PostgreSQL behavior, browser check,
-  build, real notification delivery.
+- Later that day, with authorization: `0069` applied alone (8 statements, one
+  transaction) to the local Development database, then a browser check on the
+  dev server as an organization owner (German locale):
+  - Migration with no connected channels → disabled, 24 h, revision 1 with
+    migration provenance.
+  - Invalid window rejected client-side; enable + 12 h + reason saved as
+    revision 2 with history and `approval_escalation.policy_updated` audit row.
+  - A seeded test incident (no real approval) deduplicated on a second raise via
+    the partial unique index (`observation_count = 2`, same id); it rendered with
+    reason, approver fallback, policy revision and history.
+  - Close without a note was rejected; close with a note set `disposed`, events
+    `raised → disposed`, and wrote `approval_escalation.attention_disposed`.
+    CHECK constraints accepted every transition.
+- Still not executed: **Recheck** (it dispatches real admin alerts), phone-width
+  layout, build, concurrent races, cascade deletion.
 
 Binding contracts: [#297](https://github.com/Umami-Creative-GmbH/z8/issues/297),
 [#251](https://github.com/Umami-Creative-GmbH/z8/issues/251#issuecomment-5653026359),
