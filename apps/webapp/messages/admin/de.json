@@ -342,7 +342,10 @@
         "organizationId": "Organisations-ID",
         "success": "Genehmigung gelöscht. Entfernte Datensätze:",
         "title": "Genehmigung zwangsweise löschen",
-        "workflow": "Workflow"
+        "workflow": "Workflow",
+        "submittedRevision": "Eingereichte Revision",
+        "decisionEvidence": "Entscheidungsnachweis",
+        "reviewBinding": "Prüfbindung"
       },
       "cookieConsent": {
         "description": "Zur DSGVO-Konformität auf Authentifizierungsseiten eingefügt",

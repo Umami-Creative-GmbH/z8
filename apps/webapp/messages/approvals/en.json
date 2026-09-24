@@ -78,7 +78,23 @@
     "unifiedInboxBannerTitle": "Try the new Unified Inbox",
     "workCategory": "Work category",
     "workCategoryUnavailable": "Unknown category (unavailable)",
-    "workLocation": "Work location"
+    "workLocation": "Work location",
+    "evidence": {
+      "unavailable": "Unavailable",
+      "fullDay": "Full day",
+      "morning": "Morning",
+      "afternoon": "Afternoon",
+      "coverage": "Coverage",
+      "fullDays": "Full days",
+      "startsWith": "Starts with",
+      "endsWith": "Ends with",
+      "requestedTimes": "Requested times (local, zone not recorded)",
+      "requestedBy": "Requested by",
+      "submittedBy": "Submitted by",
+      "category": "Category",
+      "currentCategoryName": "Current category name",
+      "submittedTitle": "Submitted request"
+    }
   },
   "fastLanes": {
     "approve": "Approve",

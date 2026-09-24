@@ -31,6 +31,8 @@ import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { captureAbsenceLegacyApprovalState } from "@/lib/approvals/domain-adapters/absence-legacy-state";
 import { createLegacyApprovalWriteCoordinator } from "@/lib/approvals/domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
+import type { AbsenceRawCoverageInput } from "@/lib/approvals/evidence/absence-facts";
+import { captureCanonicalAbsenceSubmissionEvidence } from "@/lib/approvals/evidence/absence-submission";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import {
 	type AbsenceApprovalWorkflowResult,
@@ -105,6 +107,8 @@ interface AbsenceSubmissionApprovalLifecycle {
 	captureLegacyState: typeof captureAbsenceLegacyApprovalState;
 	startCanonicalWorkflow: typeof startApprovalWorkflow;
 	finalizeCanonicalAutoCompletion: typeof finalizeAbsenceTerminalInTransaction;
+	/** Defaults to the evidence module's transaction-bound capture. */
+	captureCanonicalEvidence?: typeof captureCanonicalAbsenceSubmissionEvidence;
 	nowInstant(): Instant;
 }
 
@@ -176,6 +180,7 @@ function createDefaultAbsenceSubmissionApprovalLifecycle(
 		captureLegacyState: captureAbsenceLegacyApprovalState,
 		startCanonicalWorkflow: startApprovalWorkflow,
 		finalizeCanonicalAutoCompletion: finalizeAbsenceTerminalInTransaction,
+		captureCanonicalEvidence: captureCanonicalAbsenceSubmissionEvidence,
 		nowInstant: () => systemClock.nowInstant(),
 	};
 }
@@ -335,6 +340,8 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 	dbService: typeof DatabaseService.Service;
 	currentEmployee: RequestAbsenceEmployeeContext;
 	data: NormalizedAbsenceDurationInput & Pick<AbsenceRequest, "sickDetail">;
+	/** Raw coverage as submitted, retained as evidence before lossy encodings. */
+	submittedInput?: AbsenceRawCoverageInput;
 	category: {
 		name: string;
 		countsAgainstVacation: boolean;
@@ -678,6 +685,30 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 										approvalLifecycle.nowInstant(),
 								})) as ApprovedAbsenceResult;
 						}
+						await (
+							approvalLifecycle.captureCanonicalEvidence ??
+							captureCanonicalAbsenceSubmissionEvidence
+						)(tx, {
+							organizationId: currentEmployee.organizationId,
+							absenceId: newAbsence.id,
+							submissionKey,
+							start: startResult,
+							subjectEmployeeId: currentEmployee.id,
+							requesterEmployeeId: currentEmployee.id,
+							submitterUserId: createdBy,
+							category: {
+								id: data.categoryId,
+								name: category.name,
+							},
+							raw: params.submittedInput,
+							normalized: data,
+							entry: entryDuration,
+							canonicalRecord: {
+								id: canonicalRecord.id,
+								startAt: canonicalValues.timeRecord.startAt,
+								endAt: canonicalValues.timeRecord.endAt,
+							},
+						});
 						if (gate.mode === "canonical") {
 							await approvalContext.compatibilityWriter.mirrorCanonicalToLegacy(
 								{
@@ -1149,6 +1180,7 @@ function requestAbsenceWithResolverEffect(
 						data: requestData,
 						category,
 						createdBy: userId,
+						submittedInput: data,
 						hasManagerApprovalWorkflow: category.requiresApproval,
 						approvalWorkflow: category.requiresApproval
 							? {

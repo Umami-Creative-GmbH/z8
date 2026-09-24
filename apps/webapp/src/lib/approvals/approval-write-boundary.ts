@@ -63,8 +63,17 @@ export const CANONICAL_WRITE_OWNERS = {
 	// Shared by the operator CLI and authenticated platform-admin maintenance action.
 	"src/lib/approvals/maintenance.ts": {
 		approval_chain_instance: ["delete"],
+		approval_decision_evidence: ["delete"],
 		approval_request: ["delete"],
+		approval_review_binding: ["delete"],
+		approval_submitted_revision: ["delete"],
 		approval_workflow: ["delete"],
+	},
+	// Immutable evidence: submission/decision owners call these inserts only.
+	"src/lib/approvals/evidence/store.ts": {
+		approval_decision_evidence: ["insert"],
+		approval_review_binding: ["insert"],
+		approval_submitted_revision: ["insert"],
 	},
 	"scripts/approval-workflow-rollout.ts": {
 		approval_workflow_rollout: ["insert", "update"],

@@ -16,6 +16,7 @@ import type {
 	StageActivationResolver,
 	TransactionalWorkflowRepository,
 } from "../workflow/ports";
+import type { ApprovalWorkflowCommand } from "../workflow/state-machine";
 import type {
 	ApprovalDomainAdapterRegistry,
 	ApprovedCancellationAuthorization,
@@ -106,6 +107,25 @@ export interface ApprovalPostCommitEventDescription {
 	payload: JsonObject;
 }
 
+/** A fresh (non-replayed) decision command, inside its authoritative transaction. */
+export type ApprovalDecisionEvidenceInput<TSource> =
+	ApprovalDomainAdapterContext<TSource> & {
+		dbService: ApprovalDbService;
+		command: Extract<ApprovalWorkflowCommand, { type: "approve" | "reject" }>;
+		reviewedBindingId: string | null;
+	};
+
+export type ApprovalDecisionEvidenceRecordInput<TSource> =
+	ApprovalDecisionEvidenceInput<TSource> & {
+		receipt: {
+			idempotencyKey: string;
+			actorFingerprint: string;
+			commandFingerprint: string;
+		};
+		result: ApprovalCommandResult;
+		finalization: ApprovalTerminalFinalizationResult | null;
+	};
+
 export interface ApprovalDomainAdapter<TSource> {
 	readonly workflowType: ApprovalWorkflowType;
 	readonly sourceType: string;
@@ -141,6 +161,21 @@ export interface ApprovalDomainAdapter<TSource> {
 	projectDisplay(
 		input: ApprovalDomainAdapterContext<TSource>,
 	): Promise<ApprovalDisplayProjection>;
+	/**
+	 * Optional fresh evidence checks (submitted revision, material change,
+	 * reviewed binding). Runs only after the receipt claim found no committed
+	 * replay, so it can never invalidate an exact historical retry.
+	 */
+	preflightDecisionEvidence?(
+		input: ApprovalDecisionEvidenceInput<TSource>,
+	): Promise<void>;
+	/**
+	 * Optional immutable decision evidence written in the same transaction as
+	 * the transition and receipt. A failure rolls the whole decision back.
+	 */
+	recordDecisionEvidence?(
+		input: ApprovalDecisionEvidenceRecordInput<TSource>,
+	): Promise<void>;
 }
 
 export interface ApprovalWorkflowTransactionContext<

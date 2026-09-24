@@ -21,6 +21,10 @@ export const PROTECTED_APPROVAL_TABLES = [
 	"approval_outbox_delivery",
 	"approval_workflow_rollout",
 	"approval_workflow_migration_issue",
+	"approval_evidence_control",
+	"approval_submitted_revision",
+	"approval_review_binding",
+	"approval_decision_evidence",
 ] as const;
 
 export type ProtectedApprovalTable = (typeof PROTECTED_APPROVAL_TABLES)[number];

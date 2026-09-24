@@ -52,6 +52,10 @@ describe("approval write boundary raw SQL analyzer", () => {
 			"approval_outbox_delivery",
 			"approval_workflow_rollout",
 			"approval_workflow_migration_issue",
+			"approval_evidence_control",
+			"approval_submitted_revision",
+			"approval_review_binding",
+			"approval_decision_evidence",
 		]);
 	});
 	it.each([
@@ -4120,8 +4124,16 @@ db.delete(approvalOutbox);`,
 		expect(CANONICAL_WRITE_OWNERS).toEqual({
 			"src/lib/approvals/maintenance.ts": {
 				approval_chain_instance: ["delete"],
+				approval_decision_evidence: ["delete"],
 				approval_request: ["delete"],
+				approval_review_binding: ["delete"],
+				approval_submitted_revision: ["delete"],
 				approval_workflow: ["delete"],
+			},
+			"src/lib/approvals/evidence/store.ts": {
+				approval_decision_evidence: ["insert"],
+				approval_review_binding: ["insert"],
+				approval_submitted_revision: ["insert"],
 			},
 			"scripts/approval-workflow-rollout.ts": {
 				approval_workflow_rollout: ["insert", "update"],
