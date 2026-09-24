@@ -9,13 +9,13 @@ import {
 	createDatabaseClockingStore,
 } from "@/lib/time-tracking/clocking-core";
 import { createDepartureClockOut } from "./clock-out";
-import { executeDepartureInTransaction } from "./transition";
 import {
 	createLifecycleDatabaseFixture,
 	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "./testing/database.test.fixture";
+import { executeDepartureInTransaction } from "./transition";
 
 const CUTOFF = "2026-09-14T22:00:00Z";
 const EXECUTED_LATE = parseInstant("2026-09-14T22:17:00Z");
