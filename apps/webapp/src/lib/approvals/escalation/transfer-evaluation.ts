@@ -5,6 +5,7 @@ import type {
 	ApprovalEscalationTransferInitiator,
 } from "@/db/schema";
 import { compareInstants, type Instant } from "@/lib/datetime/temporal-core";
+import { readLegacyEscalationLineage } from "../workflow/legacy-escalation-lineage";
 import type {
 	ApprovalAssignmentSnapshot,
 	ApprovalStageSnapshot,
@@ -30,7 +31,10 @@ export type CanonicalAssignmentEvidence =
 			/** Root first, source last. */
 			lineageAssignmentIds: string[];
 			actionableAt: Instant;
-			actionableEvidence: ApprovalEscalationActionableEvidence;
+			actionableEvidence: Extract<
+				ApprovalEscalationActionableEvidence,
+				"assignment_assigned_at" | "rollout_fallback"
+			>;
 			/** A proven automatic transfer already used this lineage's allowance. */
 			automaticTransferConsumed: boolean;
 	  }
@@ -160,7 +164,10 @@ export function classifyCanonicalAssignmentEvidence(input: {
 	const nativeAssignment =
 		input.source.reassignedFromAssignmentId !== null || !isObservedLegacyStage(input.stage);
 	let actionableAt: Instant;
-	let actionableEvidence: ApprovalEscalationActionableEvidence;
+	let actionableEvidence: Extract<
+		ApprovalEscalationActionableEvidence,
+		"assignment_assigned_at" | "rollout_fallback"
+	>;
 	if (nativeAssignment) {
 		actionableAt = input.source.assignedAt;
 		actionableEvidence = "assignment_assigned_at";
@@ -184,6 +191,130 @@ export function classifyCanonicalAssignmentEvidence(input: {
 		actionableEvidence,
 		automaticTransferConsumed,
 	};
+}
+
+/** A committed legacy journal transfer of one `approval_request`. */
+export interface LegacyJournalTransferFact {
+	/** Position of the replaced holder in the request's lineage (0 = original). */
+	sourceSequence: number;
+	sourceApproverEmployeeId: string;
+	replacementApproverEmployeeId: string;
+	transferredAt: Instant;
+	initiator: ApprovalEscalationTransferInitiator;
+}
+
+export type LegacyAssignmentEvidence =
+	| {
+			kind: "established";
+			/** Lineage position of the current holder; the next transfer's source. */
+			sourceSequence: number;
+			actionableAt: Instant;
+			actionableEvidence: Extract<
+				ApprovalEscalationActionableEvidence,
+				"legacy_request_created_at" | "legacy_transfer_at"
+			>;
+			automaticTransferConsumed: boolean;
+	  }
+	| {
+			kind: "ambiguous";
+			cause:
+				| "teams_escalation_attempt"
+				| "malformed_lineage"
+				| "journal_representation_mismatch"
+				| "compatibility_approver_mismatch";
+			evidence: JsonObject;
+	  };
+
+/**
+ * Classifies the escalation evidence of one pending legacy-authoritative
+ * `approval_request` (#299). The legacy request has no assignment rows: its
+ * lineage is the journal of committed legacy transfers, which must agree with
+ * the lineage the request itself carries. A Teams channel checker mutated
+ * approvers without that evidence, so any Teams attempt is held for review.
+ * Missing or contradictory evidence is never read as an unused allowance.
+ */
+export function classifyLegacyAssignmentEvidence(input: {
+	request: {
+		id: string;
+		approverId: string;
+		createdAt: Instant;
+		metadata: JsonObject | null;
+	};
+	transfers: readonly LegacyJournalTransferFact[];
+	teamsEscalationAttempted: boolean;
+}): LegacyAssignmentEvidence {
+	const { request } = input;
+	if (input.teamsEscalationAttempted) {
+		return {
+			kind: "ambiguous",
+			cause: "teams_escalation_attempt",
+			evidence: { approvalRequestId: request.id },
+		};
+	}
+	const lineage = readLegacyEscalationLineage(request.metadata);
+	if (lineage.kind === "malformed") {
+		return {
+			kind: "ambiguous",
+			cause: "malformed_lineage",
+			evidence: { approvalRequestId: request.id },
+		};
+	}
+	const represented = lineage.kind === "lineage" ? lineage.transfers : [];
+	const journaled = input.transfers.toSorted(
+		(left, right) => left.sourceSequence - right.sourceSequence,
+	);
+	const agrees =
+		represented.length === journaled.length &&
+		journaled.every((transfer, index) => {
+			const entry = represented[index];
+			return (
+				entry !== undefined &&
+				transfer.sourceSequence === entry.sequence &&
+				transfer.sourceApproverEmployeeId === entry.fromApproverEmployeeId &&
+				transfer.replacementApproverEmployeeId === entry.toApproverEmployeeId &&
+				transfer.initiator === entry.initiator
+			);
+		});
+	if (!agrees) {
+		return {
+			kind: "ambiguous",
+			cause: "journal_representation_mismatch",
+			evidence: {
+				approvalRequestId: request.id,
+				journaledTransfers: journaled.length,
+				representedTransfers: represented.length,
+			},
+		};
+	}
+	const last = journaled.at(-1);
+	if (last && last.replacementApproverEmployeeId !== request.approverId) {
+		return {
+			kind: "ambiguous",
+			cause: "compatibility_approver_mismatch",
+			evidence: {
+				approvalRequestId: request.id,
+				compatibilityApproverEmployeeId: request.approverId,
+				journaledApproverEmployeeId: last.replacementApproverEmployeeId,
+			},
+		};
+	}
+	return last
+		? {
+				kind: "established",
+				sourceSequence: journaled.length,
+				actionableAt: last.transferredAt,
+				actionableEvidence: "legacy_transfer_at",
+				automaticTransferConsumed: journaled.some(
+					(transfer) => transfer.initiator === "scheduled",
+				),
+			}
+		: {
+				kind: "established",
+				sourceSequence: 0,
+				actionableAt: request.createdAt,
+				actionableEvidence: "legacy_request_created_at",
+				automaticTransferConsumed: false,
+			};
 }
 
 export interface EscalationCandidateFact {
@@ -259,7 +390,7 @@ export type AutomaticEscalationDecision =
  * committed attention outcomes; a missing backup never broadens authority.
  */
 export function decideAutomaticEscalation(input: {
-	evidence: CanonicalAssignmentEvidence;
+	evidence: CanonicalAssignmentEvidence | LegacyAssignmentEvidence;
 	policy: EscalationPolicySnapshot;
 	now: Instant;
 	/** Why the replacement could not reach an inbox/decision path, if so. */
@@ -326,6 +457,26 @@ export function automaticEscalationOperationKey(input: {
 		input.stageId,
 		input.lineageRootAssignmentId,
 		input.sourceAssignmentId,
+	].join(":");
+}
+
+/**
+ * Stable automatic identity of a legacy transfer: the request plus the
+ * replaced holder's lineage position and identity (#255 §3).
+ */
+export function legacyAutomaticEscalationOperationKey(input: {
+	approvalRequestId: string;
+	sourceSequence: number;
+	sourceApproverEmployeeId: string;
+}): string {
+	return [
+		"escalation",
+		"auto",
+		"legacy",
+		"v1",
+		input.approvalRequestId,
+		String(input.sourceSequence),
+		input.sourceApproverEmployeeId,
 	].join(":");
 }
 

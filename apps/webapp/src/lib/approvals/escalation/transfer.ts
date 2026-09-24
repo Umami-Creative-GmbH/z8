@@ -81,10 +81,14 @@ export const MAX_ESCALATION_REASON_LENGTH = 500;
 export interface EscalationTransferView {
 	transferId: string;
 	initiator: EscalationTransferRow["initiator"];
-	workflowId: string;
-	stageId: string;
-	sourceAssignmentId: string;
-	replacementAssignmentId: string;
+	authorityMode: EscalationTransferRow["authorityMode"];
+	/** Canonical transfers name the workflow assignment they replaced. */
+	workflowId: string | null;
+	stageId: string | null;
+	sourceAssignmentId: string | null;
+	replacementAssignmentId: string | null;
+	/** Legacy transfers name the approval request they moved. */
+	legacyApprovalRequestId: string | null;
 	formerApproverEmployeeId: string;
 	replacementApproverEmployeeId: string;
 	transferredAt: string;
@@ -94,10 +98,12 @@ function toTransferView(row: EscalationTransferRow): EscalationTransferView {
 	return {
 		transferId: row.id,
 		initiator: row.initiator,
+		authorityMode: row.authorityMode,
 		workflowId: row.workflowId,
 		stageId: row.stageId,
 		sourceAssignmentId: row.sourceAssignmentId,
 		replacementAssignmentId: row.replacementAssignmentId,
+		legacyApprovalRequestId: row.legacyApprovalRequestId,
 		formerApproverEmployeeId: row.sourceApproverEmployeeId,
 		replacementApproverEmployeeId: row.replacementApproverEmployeeId,
 		transferredAt: row.transferredAt.toISOString(),
@@ -459,11 +465,13 @@ async function commitCanonicalTransfer(input: CommitTransferInput): Promise<Comm
 		},
 		event: {
 			schemaVersion: 1,
+			authorityMode: "canonical",
 			workflowType: snapshot.workflowType,
 			workflowId: snapshot.id,
 			sourceType: snapshot.sourceType,
 			sourceId: snapshot.sourceId,
 			legacyApprovalRequestId: stage.legacyApprovalRequestId,
+			legacySourceSequence: null,
 			stageId: stage.id,
 			sourceAssignmentId: source.id,
 			replacementAssignmentId,
