@@ -181,6 +181,7 @@ function buildTargetContext(
 ): ManualEntryTargetContext {
 	return {
 		targetEmployeeId: targetEmployeeId ?? "employee-current",
+		targetName: "",
 		isOwnEntry: !targetEmployeeId,
 		timezone: "UTC",
 		timezoneSource: "employee",
@@ -1041,6 +1042,22 @@ describe("ManualTimeEntryDialog target context", () => {
 			);
 		});
 		expect(screen.queryByText(/Your device timezone is/)).toBeNull();
+	});
+
+	it("names the target from the context when the caller does not know it", () => {
+		renderDialog(
+			{ open: true, hideTrigger: true, targetEmployeeId: "employee-2" },
+			{ targetName: "Bertha Sipes", timezone: "Europe/Berlin" },
+		);
+
+		expect(
+			screen.getByText("Add Manual Time Entry for Bertha Sipes"),
+		).toBeTruthy();
+		expect(
+			screen.getByText(
+				"Times are in Bertha Sipes's timezone: Europe/Berlin (Europe/Berlin)",
+			),
+		).toBeTruthy();
 	});
 
 	it("offers the target's own choices without touching the actor's saved preferences", () => {

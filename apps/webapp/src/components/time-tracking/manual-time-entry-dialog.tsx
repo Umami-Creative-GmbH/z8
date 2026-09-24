@@ -697,6 +697,11 @@ export function ManualTimeEntryDialog({
 			? timezoneOverride.value
 			: contextTimezone;
 	const defaultsTimezone = effectiveTimezone ?? employeeTimezone;
+	// Callers may not know the target's name (e.g. a calendar opened by URL).
+	const resolvedTargetName =
+		targetEmployeeName ||
+		(context && !context.isOwnEntry ? context.targetName : "") ||
+		undefined;
 
 	async function submitManualEntry(
 		value: FormValues,
@@ -911,7 +916,7 @@ export function ManualTimeEntryDialog({
 					revalidationMessage={revalidation.message}
 					t={t}
 					targetEmployeeId={targetEmployeeId}
-					targetEmployeeName={targetEmployeeName}
+					targetEmployeeName={resolvedTargetName}
 				/>
 			</ActionPanel>
 			{pendingMismatch && effectiveTimezone ? (

@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
 	findEmployee: vi.fn(),
 	findUserSettings: vi.fn(),
 	findOrganization: vi.fn(),
+	findUser: vi.fn(),
 	getPrincipalContext: vi.fn(),
 	getAvailableCategoriesForEmployee: vi.fn(),
 	getAssignedProjectsWithHours: vi.fn(),
@@ -15,6 +16,7 @@ vi.mock("@/db", () => ({
 			employee: { findFirst: mocks.findEmployee },
 			userSettings: { findFirst: mocks.findUserSettings },
 			organization: { findFirst: mocks.findOrganization },
+			user: { findFirst: mocks.findUser },
 		},
 	},
 }));
@@ -86,6 +88,12 @@ describe("getManualEntryTargetContextForEmployee", () => {
 		vi.clearAllMocks();
 		mocks.findUserSettings.mockResolvedValue({ timezone: "Europe/Berlin" });
 		mocks.findOrganization.mockResolvedValue({ timezone: "America/New_York" });
+		mocks.findUser.mockResolvedValue({
+			firstName: "Bertha",
+			lastName: "Sipes",
+			name: "Bertha Sipes",
+			email: "bertha@example.com",
+		});
 		mocks.getAssignedProjectsWithHours.mockResolvedValue({
 			projectsById: new Map([
 				[
@@ -140,6 +148,7 @@ describe("getManualEntryTargetContextForEmployee", () => {
 			success: true,
 			data: {
 				targetEmployeeId: "manager-1",
+				targetName: "Bertha Sipes",
 				isOwnEntry: true,
 				timezone: "Europe/Berlin",
 				timezoneSource: "employee",

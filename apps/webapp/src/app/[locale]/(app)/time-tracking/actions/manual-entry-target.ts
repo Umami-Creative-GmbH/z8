@@ -2,8 +2,9 @@ import "server-only";
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { organization } from "@/db/auth-schema";
+import { organization, user } from "@/db/auth-schema";
 import { employee, userSettings } from "@/db/schema";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { getPrincipalContext } from "@/lib/auth-helpers";
 import { asAppSubject, defineAbilityFor } from "@/lib/authorization";
 import { getAvailableCategoriesForEmployee } from "@/lib/query/work-category.queries";
@@ -186,16 +187,21 @@ export async function getManualEntryTargetContextForEmployee(params: {
 	}
 
 	const { targetEmployee, isOwnEntry } = target;
-	const [zone, projects, categories] = await Promise.all([
+	const [zone, projects, categories, targetUser] = await Promise.all([
 		resolveManualEntryTargetZone(targetEmployee),
 		listManualEntryProjectChoices(targetEmployee),
 		listManualEntryCategoryChoices(targetEmployee),
+		db.query.user.findFirst({
+			where: eq(user.id, targetEmployee.userId),
+			columns: { firstName: true, lastName: true, name: true, email: true },
+		}),
 	]);
 
 	return {
 		success: true,
 		data: {
 			targetEmployeeId: targetEmployee.id,
+			targetName: targetUser ? buildAuthUserDisplayName(targetUser) : "",
 			isOwnEntry,
 			timezone: zone.timezone,
 			timezoneSource: zone.source,

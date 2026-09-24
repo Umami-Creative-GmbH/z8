@@ -82,6 +82,8 @@ export interface ManualEntryCategoryChoice {
 /** Advisory form context for a creation-authorized manual-entry target. */
 export interface ManualEntryTargetContext {
 	targetEmployeeId: string;
+	/** Display name of the target, empty when none is known. */
+	targetName: string;
 	isOwnEntry: boolean;
 	timezone: string;
 	timezoneSource: ManualEntryTargetZoneSource;

@@ -77,12 +77,12 @@
         "loadFailed": "Zeitzone und Auswahlmöglichkeiten für diesen Eintrag konnten nicht geladen werden.",
         "loading": "Eintragsoptionen werden geladen…",
         "notAuthorized": "Du kannst für diese Person keine Zeiteinträge erstellen.",
-        "organizationFallback": "{employee} hat keine eigene Zeitzone, daher wird die Zeitzone der Organisation verwendet.",
+        "organizationFallback": "Für {employee} ist keine eigene Zeitzone hinterlegt, daher wird die Zeitzone der Organisation verwendet.",
         "retry": "Erneut versuchen",
         "targetChanged": "Die Person wurde gewechselt, daher wurden Projekt und Kategorie zurückgesetzt.",
-        "targetTimezone": "Zeiten sind in der Zeitzone von {employee}: {timezone}",
+        "targetTimezone": "Zeiten sind in der Zeitzone für {employee}: {timezone}",
         "thisEmployee": "diese Person",
-        "utcFallback": "Weder {employee} noch die Organisation hat eine Zeitzone festgelegt, daher wird UTC verwendet."
+        "utcFallback": "Weder für {employee} noch für die Organisation ist eine Zeitzone festgelegt, daher wird UTC verwendet."
       },
       "dateLabel": "Datum",
       "description": "Erstellen Sie einen Zeiteintrag für ein vergangenes Datum. Je nach Änderungsrichtlinie Ihrer Organisation kann eine Genehmigung erforderlich sein.",
