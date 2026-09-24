@@ -79,22 +79,24 @@ describe("runBillingSeatReconciliation", () => {
 		mockState.syncSeatsForOrganization.mockResolvedValue(1);
 	});
 
-	it("skips all billing work when billing is disabled", async () => {
+	it("still reconciles local seat counts when billing is disabled", async () => {
+		mockState.findMany.mockResolvedValue([{ organizationId: "org-local" }]);
+
 		const result = await runBillingSeatReconciliation();
 
+		// Stripe delivery is skipped inside the seat sync when billing is disabled.
+		expect(mockState.syncSeatsForOrganization).toHaveBeenCalledWith("org-local");
 		expect(result).toEqual({
 			success: true,
 			billingEnabled: false,
-			processed: 0,
-			synced: 0,
-			skipped: 1,
+			processed: 1,
+			synced: 1,
+			skipped: 0,
 			errors: [],
 		});
-		expect(mockState.findMany).not.toHaveBeenCalled();
-		expect(mockState.syncSeatsForOrganization).not.toHaveBeenCalled();
 	});
 
-	it("syncs each Stripe-backed subscription and records per-organization failures", async () => {
+	it("syncs every subscribed organization and records per-organization failures", async () => {
 		mockState.env.BILLING_ENABLED = "true";
 		mockState.findMany.mockResolvedValue([
 			{ organizationId: "org-success" },
@@ -106,10 +108,7 @@ describe("runBillingSeatReconciliation", () => {
 
 		const result = await runBillingSeatReconciliation();
 
-		expect(mockState.findMany).toHaveBeenCalledWith({
-			where: { type: "isNotNull", column: mockState.stripeSubscriptionIdColumn },
-			columns: { organizationId: true },
-		});
+		expect(mockState.findMany).toHaveBeenCalledWith({ columns: { organizationId: true } });
 		expect(mockState.syncSeatsForOrganization).toHaveBeenCalledTimes(2);
 		expect(mockState.syncSeatsForOrganization).toHaveBeenNthCalledWith(1, "org-success");
 		expect(mockState.syncSeatsForOrganization).toHaveBeenNthCalledWith(2, "org-failure");
