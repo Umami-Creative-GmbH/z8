@@ -133,6 +133,10 @@ vi.mock("@/lib/bot-platform/i18n", () => ({
 	getBotTranslate: async () => (_key: string, fallback: string) => fallback,
 }));
 vi.mock("@/lib/logger", () => ({ createLogger: () => state.logger }));
+vi.mock("@/lib/app-url", () => ({
+	getOrganizationBaseUrl: async (organizationId: string) =>
+		`https://${organizationId}.z8.test`,
+}));
 vi.mock("@/lib/slack/user-resolver", () => ({
 	resolveSlackUser: state.resolve,
 }));
@@ -415,7 +419,9 @@ describe.each(platformCases)(
 			expect(state.sends[platform]).toHaveBeenCalledOnce();
 			const output = JSON.stringify(state.sends[platform].mock.calls);
 			expect(output).toContain("Review required");
-			expect(output).toContain("/approvals/inbox");
+			// Exact item on the organization's origin, never the generic inbox.
+			expect(output).toContain("https://org.z8.test/approvals/review/org/compatibility/approval");
+			expect(output).not.toContain("/approvals/inbox");
 			expect(output).not.toMatch(
 				/SECRET|private@example|correctedTime|Time Correction|callback_data|approval_approve|Action.Submit|Action.Http/,
 			);
@@ -458,6 +464,7 @@ describe.each(platformCases)(
 				expect(state.replies[platform]).toHaveBeenCalledOnce();
 				const output = JSON.stringify(state.replies[platform].mock.calls);
 				expect(output).toContain("No decision was made");
+				expect(output).toContain("https://org.z8.test/approvals/review/org/compatibility/approval");
 				expect(output).not.toMatch(/SECRET|successfully|resolvedAt/);
 				expect(state.history).toHaveBeenCalledWith(
 					expect.anything(),
@@ -553,6 +560,7 @@ describe.each(platformCases)(
 				const output = JSON.stringify(state.replies[platform].mock.calls);
 				expect(output).toContain("previously recorded");
 				expect(output).toContain("no new decision was made");
+				expect(output).toContain("https://org.z8.test/approvals/review/org/compatibility/approval");
 				expect(output).not.toMatch(/SECRET|2026|Request approved|successfully/);
 				expect(state.track).not.toHaveBeenCalled();
 			},

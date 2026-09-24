@@ -94,6 +94,15 @@
       "category": "Category",
       "currentCategoryName": "Current category name",
       "submittedTitle": "Submitted request"
+    },
+    "review": {
+      "title": "Approval review",
+      "showDetails": "Show details",
+      "switchOrganizationTitle": "Switch organization to review",
+      "switchOrganizationBody": "This approval belongs to {organization}. Switch to that organization to review it; your access is checked again after switching.",
+      "switchOrganizationAction": "Switch to {organization}",
+      "unavailableTitle": "This approval is not available",
+      "unavailableBody": "You cannot review this approval here. It may have been decided, reassigned, withdrawn or removed, or your access may have changed. A link alone never grants access. Your approval inbox shows everything currently waiting for you."
     }
   },
   "fastLanes": {

@@ -49,10 +49,11 @@ export async function handleApprovalButtonClick(
 		// approval-only tracking row or another recipient's message.
 		const notice =
 			result.status === "review_required" || result.status === "historical"
-				? await approvalAttemptNotice(result, {
-						userId: user.user.userId,
-						organizationId: bot.organizationId,
-					})
+				? await approvalAttemptNotice(
+						result,
+						{ userId: user.user.userId, organizationId: bot.organizationId },
+						{ kind: "compatibility", approvalRequestId: data.id },
+					)
 				: null;
 		const content = notice
 			? discordApprovalNotice(notice)

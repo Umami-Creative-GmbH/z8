@@ -8,10 +8,10 @@ import {
 	approvalWorkflowStage,
 	employee,
 } from "@/db/schema";
-import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
+import { approvalReviewUrl } from "./review-navigation";
 
 const logger = createLogger("ApprovalPresentation");
 
@@ -128,8 +128,12 @@ export async function prepareApprovalPresentation(input: {
 			"This card cannot establish the facts originally submitted for review. Open the approval inbox in Z8 to review the request. No decision was made from this card.",
 		),
 		reviewLabel: t("bot.approval.reviewInZ8", "Review in Z8"),
-		// Existing authenticated inbox only; this is not an exact-item deep link.
-		reviewUrl: `${getDefaultAppBaseUrl()}/approvals/inbox`,
+		// Exact item; possession of the link is not authority. Arrival rechecks
+		// membership and current entitlement before loading any facts.
+		reviewUrl: await approvalReviewUrl({
+			organizationId: input.organizationId,
+			reference: { kind: "compatibility", approvalRequestId: request.id },
+		}),
 	};
 }
 
