@@ -1,18 +1,23 @@
 "use client";
 
-import { IconLoader2, IconPlus } from "@tabler/icons-react";
+import { IconAlertCircle, IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import { updateTimezone } from "@/app/[locale]/(app)/settings/profile/actions";
 import { createManualTimeEntry } from "@/app/[locale]/(app)/time-tracking/actions";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
-import { ProjectSelector } from "@/components/time-tracking/project-selector";
+import { ProjectSelectorView } from "@/components/time-tracking/project-selector";
 import { TimezoneMismatchDialog } from "@/components/time-tracking/timezone-mismatch-dialog";
-import { WorkCategorySelector } from "@/components/time-tracking/work-category-selector";
+import {
+	type ManualEntryTargetContext,
+	ManualEntryTargetContextError,
+	useManualEntryTargetContext,
+} from "@/components/time-tracking/use-manual-entry-target-context";
+import { WorkCategorySelectorView } from "@/components/time-tracking/work-category-selector";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -24,6 +29,7 @@ import {
 	ActionPanelTitle,
 	ActionPanelTrigger,
 } from "@/components/ui/action-panel";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
@@ -35,6 +41,7 @@ import {
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
+import { queryKeys } from "@/lib/query/keys";
 import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import {
 	formatTimeInZone,
@@ -80,13 +87,13 @@ type SubmitManualEntry = (
 ) => Promise<boolean>;
 
 function getDefaultValues(
-	employeeTimezone: string,
+	timezone: string,
 	defaults: Pick<
 		Props,
 		"defaultDate" | "defaultClockInTime" | "defaultClockOutTime"
 	>,
 ): FormValues {
-	const now = Temporal.Now.zonedDateTimeISO(employeeTimezone);
+	const now = Temporal.Now.zonedDateTimeISO(timezone);
 	return {
 		date: defaults.defaultDate ?? now.toPlainDate().toString(),
 		clockInTime: defaults.defaultClockInTime ?? "09:00",
@@ -99,9 +106,22 @@ function getDefaultValues(
 	};
 }
 
+function isFutureDate(date: string, timezone: string): boolean {
+	try {
+		return (
+			Temporal.PlainDate.compare(
+				Temporal.PlainDate.from(date),
+				Temporal.Now.plainDateISO(timezone),
+			) > 0
+		);
+	} catch {
+		return false;
+	}
+}
+
 function useManualEntryForm({
 	defaults,
-	employeeTimezone,
+	effectiveTimezone,
 	setPendingMismatch,
 	submitManualEntry,
 	t,
@@ -112,7 +132,8 @@ function useManualEntryForm({
 		Props,
 		"defaultDate" | "defaultClockInTime" | "defaultClockOutTime"
 	>;
-	employeeTimezone: string;
+	/** The authoritative target zone, or null until the target context has loaded. */
+	effectiveTimezone: string | null;
 	setPendingMismatch: (value: PendingMismatch) => void;
 	submitManualEntry: SubmitManualEntry;
 	t: Translate;
@@ -120,9 +141,11 @@ function useManualEntryForm({
 	isTimezoneContinuationPendingRef: React.RefObject<boolean>;
 }) {
 	return useForm({
-		defaultValues: getDefaultValues(employeeTimezone, defaults),
+		defaultValues: getDefaultValues(effectiveTimezone ?? "UTC", defaults),
 		onSubmit: async ({ value }) => {
-			if (isTimezoneContinuationPendingRef.current) return;
+			if (isTimezoneContinuationPendingRef.current || !effectiveTimezone) {
+				return;
+			}
 
 			const [inHours, inMinutes] = value.clockInTime.split(":").map(Number);
 			const [outHours, outMinutes] = value.clockOutTime.split(":").map(Number);
@@ -139,11 +162,7 @@ function useManualEntryForm({
 				return;
 			}
 
-			const selectedDate = DateTime.fromISO(value.date, {
-				zone: employeeTimezone,
-			});
-			const now = DateTime.now().setZone(employeeTimezone);
-			if (selectedDate.startOf("day") > now.startOf("day")) {
+			if (isFutureDate(value.date, effectiveTimezone)) {
 				toast.error(
 					t(
 						"timeTracking.manualEntry.errors.futureDate",
@@ -168,7 +187,7 @@ function useManualEntryForm({
 			if (
 				!targetEmployeeId &&
 				browserTimezone &&
-				browserTimezone !== employeeTimezone
+				browserTimezone !== effectiveTimezone
 			) {
 				setPendingMismatch({ value, browserTimezone, submissionId });
 				return;
@@ -176,8 +195,8 @@ function useManualEntryForm({
 
 			await submitManualEntry(
 				value,
-				employeeTimezone,
-				!targetEmployeeId && browserTimezone === employeeTimezone
+				effectiveTimezone,
+				!targetEmployeeId && browserTimezone === effectiveTimezone
 					? browserTimezone
 					: null,
 				submissionId,
@@ -203,24 +222,143 @@ async function runTimezoneContinuation(
 	}
 }
 
+function TargetContextStatus({
+	context,
+	effectiveTimezone,
+	error,
+	isLoading,
+	onRetry,
+	t,
+	targetEmployeeName,
+}: {
+	context: ManualEntryTargetContext | null;
+	effectiveTimezone: string | null;
+	error: Error | null;
+	isLoading: boolean;
+	onRetry: () => void;
+	t: Translate;
+	targetEmployeeName?: string;
+}) {
+	if (error) {
+		const notAuthorized =
+			error instanceof ManualEntryTargetContextError && error.notAuthorized;
+		return (
+			<Alert variant="destructive">
+				<IconAlertCircle aria-hidden="true" />
+				<AlertDescription>
+					<p>
+						{notAuthorized
+							? t(
+									"timeTracking.manualEntry.context.notAuthorized",
+									"You can't create time entries for this employee.",
+								)
+							: t(
+									"timeTracking.manualEntry.context.loadFailed",
+									"Couldn't load the timezone and choices for this entry.",
+								)}
+					</p>
+					{notAuthorized ? null : (
+						<Button
+							type="button"
+							variant="link"
+							className="h-auto p-0"
+							onClick={onRetry}
+						>
+							{t("timeTracking.manualEntry.context.retry", "Try again")}
+						</Button>
+					)}
+				</AlertDescription>
+			</Alert>
+		);
+	}
+
+	if (isLoading || !context || !effectiveTimezone) {
+		return (
+			<p
+				role="status"
+				className="flex items-center gap-2 text-xs text-muted-foreground"
+			>
+				<IconLoader2 className="size-3.5 animate-spin" aria-hidden="true" />
+				{t(
+					"timeTracking.manualEntry.context.loading",
+					"Loading entry options…",
+				)}
+			</p>
+		);
+	}
+
+	const timezoneLabel = getTimezoneAbbreviation(effectiveTimezone);
+	if (context.isOwnEntry) {
+		return (
+			<p role="status" className="text-xs text-muted-foreground">
+				{t(
+					"timeTracking.correction.timezoneNote",
+					"Times are in your local timezone ({timezone})",
+					{ timezone: timezoneLabel },
+				)}
+			</p>
+		);
+	}
+
+	const employee =
+		targetEmployeeName ??
+		t("timeTracking.manualEntry.context.thisEmployee", "this employee");
+	const timezone = `${effectiveTimezone} (${timezoneLabel})`;
+	return (
+		<div role="status" className="grid gap-0.5 text-xs text-muted-foreground">
+			<p>
+				{t(
+					"timeTracking.manualEntry.context.targetTimezone",
+					"Times are in {employee}'s timezone: {timezone}",
+					{ employee, timezone },
+				)}
+			</p>
+			{context.timezoneSource === "organization" ? (
+				<p>
+					{t(
+						"timeTracking.manualEntry.context.organizationFallback",
+						"{employee} has no personal timezone, so the organization's timezone is used.",
+						{ employee },
+					)}
+				</p>
+			) : null}
+			{context.timezoneSource === "default" ? (
+				<p>
+					{t(
+						"timeTracking.manualEntry.context.utcFallback",
+						"Neither {employee} nor the organization has a timezone set, so UTC is used.",
+						{ employee },
+					)}
+				</p>
+			) : null}
+		</div>
+	);
+}
+
 function ManualEntryFormContent({
-	employeeId,
-	employeeTimezone,
+	context,
+	contextError,
+	effectiveTimezone,
 	form,
+	isContextLoading,
 	isTimezoneContinuationPending,
+	onRetryContext,
+	revalidationMessage,
 	t,
 	targetEmployeeId,
 	targetEmployeeName,
-	timezoneAbbr,
 }: {
-	employeeId: string;
-	employeeTimezone: string;
+	context: ManualEntryTargetContext | null;
+	contextError: Error | null;
+	effectiveTimezone: string | null;
 	form: ManualEntryFormApi;
+	isContextLoading: boolean;
 	isTimezoneContinuationPending: boolean;
+	onRetryContext: () => void;
+	revalidationMessage: string;
 	t: Translate;
 	targetEmployeeId?: string;
 	targetEmployeeName?: string;
-	timezoneAbbr: string;
 }) {
 	const validateTime = ({ value }: { value: string }) =>
 		/^([01]\d|2[0-3]):[0-5]\d$/.test(value)
@@ -229,6 +367,9 @@ function ManualEntryFormContent({
 					"timeTracking.manualEntry.errors.invalidTime",
 					"Enter a complete, valid time",
 				);
+	const isContextReady = Boolean(context && effectiveTimezone && !contextError);
+	const isOwnEntry = context?.isOwnEntry ?? !targetEmployeeId;
+	const selectorsLoading = isContextLoading || (!context && !contextError);
 
 	return (
 		<ActionPanelContent size="compact">
@@ -257,13 +398,15 @@ function ManualEntryFormContent({
 				className="flex min-h-0 flex-col"
 			>
 				<ActionPanelBody className="grid gap-4">
-					<p className="text-xs text-muted-foreground">
-						{t(
-							"timeTracking.correction.timezoneNote",
-							"Times are in your local timezone ({timezone})",
-							{ timezone: timezoneAbbr },
-						)}
-					</p>
+					<TargetContextStatus
+						context={context}
+						effectiveTimezone={effectiveTimezone}
+						error={contextError}
+						isLoading={isContextLoading}
+						onRetry={onRetryContext}
+						t={t}
+						targetEmployeeName={targetEmployeeName}
+					/>
 
 					<form.Field name="date">
 						{(field) => (
@@ -278,8 +421,11 @@ function ManualEntryFormContent({
 										onChange={field.handleChange}
 										onBlur={field.handleBlur}
 										max={
-											DateTime.now().setZone(employeeTimezone).toISODate() ||
-											undefined
+											effectiveTimezone
+												? Temporal.Now.plainDateISO(
+														effectiveTimezone,
+													).toString()
+												: undefined
 										}
 										required
 									/>
@@ -369,21 +515,38 @@ function ManualEntryFormContent({
 
 					<form.Field name="projectId">
 						{(field) => (
-							<ProjectSelector
+							<ProjectSelectorView
 								value={field.state.value}
 								onValueChange={field.handleChange}
+								projects={context?.projects ?? []}
+								isLoading={selectorsLoading}
+								isError={Boolean(contextError)}
+								persistPreference={isOwnEntry}
 							/>
 						)}
 					</form.Field>
 					<form.Field name="workCategoryId">
 						{(field) => (
-							<WorkCategorySelector
-								employeeId={targetEmployeeId ?? employeeId}
+							<WorkCategorySelectorView
+								employeeId={context?.targetEmployeeId ?? targetEmployeeId ?? ""}
 								value={field.state.value}
 								onValueChange={field.handleChange}
+								categories={context?.categories ?? []}
+								isLoading={selectorsLoading}
+								isError={Boolean(contextError)}
+								persistPreference={isOwnEntry}
 							/>
 						)}
 					</form.Field>
+					{/* Kept mounted so screen readers announce changes to it. */}
+					<p
+						role="status"
+						className={
+							revalidationMessage ? "text-xs text-muted-foreground" : "sr-only"
+						}
+					>
+						{revalidationMessage}
+					</p>
 				</ActionPanelBody>
 
 				<ActionPanelFooter className="gap-2">
@@ -400,7 +563,11 @@ function ManualEntryFormContent({
 						{(isSubmitting: boolean) => (
 							<Button
 								type="submit"
-								disabled={isSubmitting || isTimezoneContinuationPending}
+								disabled={
+									isSubmitting ||
+									isTimezoneContinuationPending ||
+									!isContextReady
+								}
 							>
 								{isSubmitting ? (
 									<>
@@ -419,8 +586,77 @@ function ManualEntryFormContent({
 	);
 }
 
+/**
+ * Drop draft selections the current target cannot use. Changing the target
+ * clears project/category choices and any pending timezone confirmation;
+ * a refreshed context for the same target only drops choices that are no
+ * longer eligible.
+ */
+function useTargetDraftRevalidation({
+	context,
+	form,
+	open,
+	setPendingMismatch,
+	t,
+	targetEmployeeId,
+}: {
+	context: ManualEntryTargetContext | null;
+	form: ManualEntryFormApi;
+	open: boolean;
+	setPendingMismatch: (value: PendingMismatch | null) => void;
+	t: Translate;
+	targetEmployeeId?: string;
+}) {
+	const [message, setMessage] = useState("");
+	const targetKey = targetEmployeeId ?? null;
+	const previousTargetKeyRef = useRef(targetKey);
+
+	useEffect(() => {
+		if (previousTargetKeyRef.current === targetKey) return;
+		previousTargetKeyRef.current = targetKey;
+
+		const { projectId, workCategoryId } = form.state.values;
+		form.setFieldValue("projectId", undefined);
+		form.setFieldValue("workCategoryId", undefined);
+		setPendingMismatch(null);
+		setMessage(
+			open && (projectId || workCategoryId)
+				? t(
+						"timeTracking.manualEntry.context.targetChanged",
+						"The employee changed, so the project and category were cleared.",
+					)
+				: "",
+		);
+	}, [form, open, setPendingMismatch, t, targetKey]);
+
+	useEffect(() => {
+		if (!context) return;
+
+		const { projectId, workCategoryId } = form.state.values;
+		const projectIneligible =
+			projectId !== undefined &&
+			!context.projects.some((project) => project.id === projectId);
+		const categoryIneligible =
+			workCategoryId !== undefined &&
+			!context.categories.some((category) => category.id === workCategoryId);
+
+		if (projectIneligible) form.setFieldValue("projectId", undefined);
+		if (categoryIneligible) form.setFieldValue("workCategoryId", undefined);
+		if (projectIneligible || categoryIneligible) {
+			setMessage(
+				t(
+					"timeTracking.manualEntry.context.choicesCleared",
+					"A selected project or category is no longer available and was cleared.",
+				),
+			);
+		}
+	}, [context, form, t]);
+
+	return { message, clearMessage: () => setMessage("") };
+}
+
 export function ManualTimeEntryDialog({
-	employeeId,
+	employeeId: _employeeId,
 	employeeTimezone,
 	hasManager: _hasManager,
 	onSuccess,
@@ -434,6 +670,7 @@ export function ManualTimeEntryDialog({
 	hideTrigger = false,
 }: Props) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const [internalOpen, setInternalOpen] = useState(false);
 	const [pendingMismatch, setPendingMismatch] =
 		useState<PendingMismatch | null>(null);
@@ -447,12 +684,19 @@ export function ManualTimeEntryDialog({
 	const wasOpenRef = useRef(false);
 	const router = useRouter();
 	const timeFormat = useTimeFormat();
-	const effectiveEmployeeTimezone =
-		timezoneOverride?.source === employeeTimezone
-			? timezoneOverride.value
-			: employeeTimezone;
-	const timezoneAbbr = getTimezoneAbbreviation(effectiveEmployeeTimezone);
 	const open = controlledOpen ?? internalOpen;
+	const targetContext = useManualEntryTargetContext(targetEmployeeId, open);
+	const context = targetContext.context;
+	const contextTimezone = context?.timezone ?? null;
+	// Self entries may continue in the browser zone after updating the saved one;
+	// on-behalf entries always use the target's zone.
+	const effectiveTimezone =
+		contextTimezone &&
+		context?.isOwnEntry &&
+		timezoneOverride?.source === contextTimezone
+			? timezoneOverride.value
+			: contextTimezone;
+	const defaultsTimezone = effectiveTimezone ?? employeeTimezone;
 
 	async function submitManualEntry(
 		value: FormValues,
@@ -525,18 +769,29 @@ export function ManualTimeEntryDialog({
 						"Failed to create time entry",
 					),
 			);
+			// The server rejected the draft; refresh the advisory context so the
+			// form reflects the target's current zone and eligible choices.
+			void targetContext.refetch();
 			return false;
 		}
 	}
 
 	const form = useManualEntryForm({
 		defaults: { defaultDate, defaultClockInTime, defaultClockOutTime },
-		employeeTimezone: effectiveEmployeeTimezone,
+		effectiveTimezone,
 		setPendingMismatch,
 		submitManualEntry,
 		t,
 		targetEmployeeId,
 		isTimezoneContinuationPendingRef,
+	});
+	const revalidation = useTargetDraftRevalidation({
+		context,
+		form,
+		open,
+		setPendingMismatch,
+		t,
+		targetEmployeeId,
 	});
 
 	async function handleUpdateTimezoneAndSubmit() {
@@ -554,11 +809,16 @@ export function ManualTimeEntryDialog({
 					}
 
 					const { value, browserTimezone, submissionId } = pendingMismatch;
-					setTimezoneOverride({
-						source: employeeTimezone,
-						value: browserTimezone,
-					});
+					if (contextTimezone) {
+						setTimezoneOverride({
+							source: contextTimezone,
+							value: browserTimezone,
+						});
+					}
 					setPendingMismatch(null);
+					void queryClient.invalidateQueries({
+						queryKey: queryKeys.manualEntry.all,
+					});
 					await submitManualEntry(
 						value,
 						browserTimezone,
@@ -594,12 +854,13 @@ export function ManualTimeEntryDialog({
 	const handleOpenChange = (isOpen: boolean) => {
 		if (isOpen) {
 			form.reset(
-				getDefaultValues(effectiveEmployeeTimezone, {
+				getDefaultValues(defaultsTimezone, {
 					defaultDate,
 					defaultClockInTime,
 					defaultClockOutTime,
 				}),
 			);
+			revalidation.clearMessage();
 		}
 		if (controlledOpen === undefined) {
 			setInternalOpen(isOpen);
@@ -610,12 +871,13 @@ export function ManualTimeEntryDialog({
 	useEffect(() => {
 		if (open && !wasOpenRef.current) {
 			form.reset(
-				getDefaultValues(effectiveEmployeeTimezone, {
+				getDefaultValues(defaultsTimezone, {
 					defaultDate,
 					defaultClockInTime,
 					defaultClockOutTime,
 				}),
 			);
+			revalidation.clearMessage();
 		}
 		wasOpenRef.current = open;
 	});
@@ -639,20 +901,23 @@ export function ManualTimeEntryDialog({
 					</ActionPanelTrigger>
 				)}
 				<ManualEntryFormContent
-					employeeId={employeeId}
-					employeeTimezone={effectiveEmployeeTimezone}
+					context={context}
+					contextError={targetContext.error}
+					effectiveTimezone={effectiveTimezone}
 					form={form}
+					isContextLoading={targetContext.isLoading}
 					isTimezoneContinuationPending={isTimezoneContinuationPending}
+					onRetryContext={() => void targetContext.refetch()}
+					revalidationMessage={revalidation.message}
 					t={t}
 					targetEmployeeId={targetEmployeeId}
 					targetEmployeeName={targetEmployeeName}
-					timezoneAbbr={timezoneAbbr}
 				/>
 			</ActionPanel>
-			{pendingMismatch ? (
+			{pendingMismatch && effectiveTimezone ? (
 				<TimezoneMismatchDialog
 					open
-					savedTimezone={effectiveEmployeeTimezone}
+					savedTimezone={effectiveTimezone}
 					browserTimezone={pendingMismatch.browserTimezone}
 					isPending={isTimezoneContinuationPending}
 					onUpdateAndContinue={handleUpdateTimezoneAndSubmit}

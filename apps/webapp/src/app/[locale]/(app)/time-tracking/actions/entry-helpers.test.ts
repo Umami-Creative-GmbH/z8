@@ -3,13 +3,32 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
 	calculateHash: vi.fn(() => "entry-hash"),
 	getRequestMetadata: vi.fn(async () => ({ ipAddress: "127.0.0.1", userAgent: "test-agent" })),
+	findProject: vi.fn(),
+	findAssignment: vi.fn(),
+	findAssignments: vi.fn(),
+	hoursRows: vi.fn(async () => [] as { projectId: string; totalMinutes: number }[]),
 }));
 
-vi.mock("@/db", () => ({ db: {} }));
+vi.mock("@/db", () => ({
+	db: {
+		query: {
+			project: { findFirst: mocks.findProject },
+			projectAssignment: {
+				findFirst: mocks.findAssignment,
+				findMany: mocks.findAssignments,
+			},
+		},
+		select: () => ({
+			from: () => ({ where: () => ({ groupBy: mocks.hoursRows }) }),
+		}),
+	},
+}));
 vi.mock("@/lib/time-tracking/blockchain", () => ({ calculateHash: mocks.calculateHash }));
 vi.mock("./auth", () => ({ getRequestMetadata: mocks.getRequestMetadata }));
 
-const { createTimeEntry } = await import("./entry-helpers");
+const { createTimeEntry, getAssignedProjectsWithHours, validateProjectAssignment } = await import(
+	"./entry-helpers"
+);
 
 describe("createTimeEntry", () => {
 	beforeEach(() => {
@@ -106,5 +125,56 @@ describe("createTimeEntry", () => {
 				{ select: vi.fn(), insert: vi.fn() } as never,
 			),
 		).rejects.toThrow("same employee and organization");
+	});
+});
+
+describe("project booking eligibility", () => {
+	const activeProject = {
+		id: "project-active",
+		name: "Active",
+		color: null,
+		status: "active",
+		isActive: true,
+		budgetHours: null,
+		deadline: null,
+	};
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mocks.findAssignment.mockResolvedValue({ id: "assignment-1" });
+	});
+
+	it("rejects a bookable-status project that has been deactivated", async () => {
+		mocks.findProject.mockResolvedValue({ ...activeProject, isActive: false });
+
+		await expect(
+			validateProjectAssignment("project-active", "employee-1", "team-1", "org-1"),
+		).resolves.toEqual({
+			isValid: false,
+			error: "Cannot book time to an inactive project",
+		});
+		expect(mocks.findAssignment).not.toHaveBeenCalled();
+	});
+
+	it("accepts an active, bookable project assigned to the employee", async () => {
+		mocks.findProject.mockResolvedValue(activeProject);
+
+		await expect(
+			validateProjectAssignment("project-active", "employee-1", "team-1", "org-1"),
+		).resolves.toEqual({ isValid: true });
+	});
+
+	it("offers only active projects in a bookable status", async () => {
+		mocks.findAssignments
+			.mockResolvedValueOnce([
+				{ project: activeProject },
+				{ project: { ...activeProject, id: "project-inactive", isActive: false } },
+				{ project: { ...activeProject, id: "project-done", status: "completed" } },
+			])
+			.mockResolvedValueOnce([]);
+
+		const { projectsById } = await getAssignedProjectsWithHours("employee-1", "org-1", "team-1");
+
+		expect(Array.from(projectsById.keys())).toEqual(["project-active"]);
 	});
 });

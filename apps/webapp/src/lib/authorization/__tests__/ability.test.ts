@@ -1220,3 +1220,67 @@ describe("Object Subject Conditions", () => {
 		expect(ability.can("manage", asAppSubject("Approval", otherOrgApproval))).toBe(false);
 	});
 });
+
+describe("On-behalf time entry creation", () => {
+	const colleagueEntry = { employeeId: EMPLOYEE_2, organizationId: ORG_1, teamId: TEAM_1 };
+	const foreignEntry = { employeeId: "emp-foreign", organizationId: ORG_2, teamId: TEAM_1 };
+
+	function principalWith(
+		employeeRole: "admin" | "manager" | "employee",
+		orgRole: "owner" | "admin" | "member",
+		managedEmployeeIds: string[] = [],
+	) {
+		return createPrincipal({
+			orgMembership: { organizationId: ORG_1, role: orgRole, status: "active" },
+			employee: { id: EMPLOYEE_1, organizationId: ORG_1, role: employeeRole, teamId: TEAM_1 },
+			managedEmployeeIds,
+		});
+	}
+
+	it.each(["owner", "admin"] as const)(
+		"lets an organization %s with an ordinary employee role create for colleagues in the organization only",
+		(orgRole) => {
+			const ability = defineAbilityFor(principalWith("employee", orgRole));
+
+			expect(ability.can("create", asAppSubject("TimeEntry", colleagueEntry))).toBe(true);
+			expect(ability.can("create", asAppSubject("TimeEntry", foreignEntry))).toBe(false);
+			// Creation only: reading or changing colleagues' entries stays role-governed.
+			expect(ability.can("read", asAppSubject("TimeEntry", colleagueEntry))).toBe(false);
+			expect(ability.can("update", asAppSubject("TimeEntry", colleagueEntry))).toBe(false);
+		},
+	);
+
+	it("lets an organization owner who is also a manager create beyond direct reports in the organization", () => {
+		const ability = defineAbilityFor(principalWith("manager", "owner"));
+
+		expect(ability.can("create", asAppSubject("TimeEntry", colleagueEntry))).toBe(true);
+		expect(ability.can("create", asAppSubject("TimeEntry", foreignEntry))).toBe(false);
+	});
+
+	it("limits managers to authorized direct reports", () => {
+		const withReport = defineAbilityFor(principalWith("manager", "member", [EMPLOYEE_2]));
+		const withoutReport = defineAbilityFor(principalWith("manager", "member"));
+
+		expect(withReport.can("create", asAppSubject("TimeEntry", colleagueEntry))).toBe(true);
+		expect(withoutReport.can("create", asAppSubject("TimeEntry", colleagueEntry))).toBe(false);
+	});
+
+	it("does not let ordinary members create for colleagues, even with read-only custom grants", () => {
+		const ability = defineAbilityFor({
+			...principalWith("employee", "member"),
+			customRoles: [
+				{
+					roleId: "role-1",
+					roleName: "Viewer",
+					baseTier: "employee",
+					permissions: [
+						{ action: "read", subject: "Employee" },
+						{ action: "read", subject: "TimeEntry" },
+					],
+				},
+			],
+		});
+
+		expect(ability.can("create", asAppSubject("TimeEntry", colleagueEntry))).toBe(false);
+	});
+});

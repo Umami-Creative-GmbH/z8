@@ -67,6 +67,18 @@
       "addButton": "Lägg till manuell registrering",
       "clockInLabel": "Stämpla in",
       "clockOutLabel": "Stämpla ut",
+      "context": {
+        "choicesCleared": "Ett valt projekt eller en vald kategori är inte längre tillgänglig och togs bort.",
+        "loadFailed": "Det gick inte att läsa in tidszonen och valen för den här posten.",
+        "loading": "Läser in alternativ för posten…",
+        "notAuthorized": "Du kan inte skapa tidsposter för den här medarbetaren.",
+        "organizationFallback": "{employee} har ingen egen tidszon, så organisationens tidszon används.",
+        "retry": "Försök igen",
+        "targetChanged": "Medarbetaren ändrades, så projekt och kategori rensades.",
+        "targetTimezone": "Tiderna är i tidszonen för {employee}: {timezone}",
+        "thisEmployee": "den här medarbetaren",
+        "utcFallback": "Varken {employee} eller organisationen har angett en tidszon, så UTC används."
+      },
       "dateLabel": "Datum",
       "description": "Skapa en tidsregistrering för ett tidigare datum. Godkännande kan krävas baserat på din organisations ändringspolicy.",
       "errors": {

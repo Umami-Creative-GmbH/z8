@@ -11,8 +11,12 @@ import {
 	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { Temporal } from "temporal-polyfill";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ManualEntryTargetContext } from "@/app/[locale]/(app)/time-tracking/actions/types";
+import { queryKeys } from "@/lib/query/keys";
 import { ManualTimeEntryDialog } from "./manual-time-entry-dialog";
 
 const {
@@ -33,6 +37,11 @@ const {
 
 const { getBrowserTimezone } = vi.hoisted(() => ({
 	getBrowserTimezone: vi.fn(),
+}));
+
+const targetContextState = vi.hoisted(() => ({
+	current: null as ManualEntryTargetContext | null,
+	getManualEntryTargetContext: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -86,46 +95,77 @@ vi.mock("@/components/ui/date-picker", () => ({
 }));
 
 vi.mock("@/components/time-tracking/project-selector", () => ({
-	ProjectSelector: ({
+	ProjectSelectorView: ({
+		isError,
 		onValueChange,
+		persistPreference,
+		projects,
 		value,
 	}: {
-		onValueChange: (value: string) => void;
+		isError: boolean;
+		onValueChange: (value: string | undefined) => void;
+		persistPreference?: boolean;
+		projects: { id: string; name: string }[];
 		value?: string;
-	}) => (
-		<select
-			aria-label="Project"
-			onChange={(event) => onValueChange(event.target.value)}
-			value={value ?? ""}
-		>
-			<option value="">No project</option>
-			<option value="project-1">Project 1</option>
-		</select>
-	),
+	}) =>
+		isError ? null : (
+			<select
+				aria-label="Project"
+				data-persist-preference={String(persistPreference)}
+				onChange={(event) => onValueChange(event.target.value || undefined)}
+				value={value ?? ""}
+			>
+				<option value="">No project</option>
+				{projects.map((project) => (
+					<option key={project.id} value={project.id}>
+						{project.name}
+					</option>
+				))}
+			</select>
+		),
 }));
 
 vi.mock("@/components/time-tracking/work-category-selector", () => ({
-	WorkCategorySelector: ({
+	WorkCategorySelectorView: ({
+		categories,
 		employeeId,
+		isError,
 		onValueChange,
+		persistPreference,
 		value,
 	}: {
+		categories: { id: string; name: string }[];
 		employeeId: string;
-		onValueChange: (value: string) => void;
+		isError: boolean;
+		onValueChange: (value: string | undefined) => void;
+		persistPreference?: boolean;
 		value?: string;
-	}) => (
-		<div data-employee-id={employeeId} data-testid="work-category-selector">
-			<select
-				aria-label="Work category"
-				onChange={(event) => onValueChange(event.target.value)}
-				value={value ?? ""}
-			>
-				<option value="">No category</option>
-				<option value="category-1">Category 1</option>
-			</select>
-		</div>
-	),
+	}) =>
+		isError ? null : (
+			<div data-employee-id={employeeId} data-testid="work-category-selector">
+				<select
+					aria-label="Work category"
+					data-persist-preference={String(persistPreference)}
+					onChange={(event) => onValueChange(event.target.value || undefined)}
+					value={value ?? ""}
+				>
+					<option value="">No category</option>
+					{categories.map((category) => (
+						<option key={category.id} value={category.id}>
+							{category.name}
+						</option>
+					))}
+				</select>
+			</div>
+		),
 }));
+
+vi.mock(
+	"@/app/[locale]/(app)/time-tracking/actions/manual-entry-context",
+	() => ({
+		getManualEntryTargetContext: targetContextState.getManualEntryTargetContext,
+	}),
+);
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
 	createManualTimeEntry,
@@ -135,17 +175,74 @@ vi.mock("@/app/[locale]/(app)/settings/profile/actions", () => ({
 	updateTimezone,
 }));
 
+function buildTargetContext(
+	targetEmployeeId: string | undefined,
+	overrides: Partial<ManualEntryTargetContext> = {},
+): ManualEntryTargetContext {
+	return {
+		targetEmployeeId: targetEmployeeId ?? "employee-current",
+		isOwnEntry: !targetEmployeeId,
+		timezone: "UTC",
+		timezoneSource: "employee",
+		projects: [
+			{
+				id: "project-1",
+				name: "Project 1",
+				color: null,
+				status: "active",
+				budgetHours: null,
+				deadline: null,
+				totalHoursBooked: 0,
+			},
+		],
+		categories: [
+			{ id: "category-1", name: "Category 1", factor: "1.00", color: null },
+		],
+		...overrides,
+	};
+}
+
+/**
+ * Renders the dialog with the target context already loaded, as the server
+ * would return it for the target. The context zone follows `employeeTimezone`
+ * unless overridden.
+ */
 function renderDialog(
 	props: Partial<Parameters<typeof ManualTimeEntryDialog>[0]> = {},
+	contextOverrides: Partial<ManualEntryTargetContext> | null = {},
 ) {
-	return render(
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	targetContextState.current =
+		contextOverrides === null
+			? null
+			: buildTargetContext(props.targetEmployeeId, {
+					timezone: props.employeeTimezone ?? "UTC",
+					...contextOverrides,
+				});
+	if (targetContextState.current) {
+		queryClient.setQueryData(
+			queryKeys.manualEntry.targetContext(props.targetEmployeeId ?? null),
+			targetContextState.current,
+		);
+	}
+	const view = render(
 		<ManualTimeEntryDialog
 			employeeId="employee-current"
 			employeeTimezone="UTC"
 			hasManager={false}
 			{...props}
 		/>,
+		{
+			wrapper: ({ children }: { children: ReactNode }) => (
+				<QueryClientProvider client={queryClient}>
+					{children}
+				</QueryClientProvider>
+			),
+		},
 	);
+	return { ...view, queryClient };
 }
 
 function deferredResult<T>() {
@@ -177,6 +274,13 @@ describe("ManualTimeEntryDialog layout", () => {
 		getBrowserTimezone.mockReturnValue("America/New_York");
 		refresh.mockReset();
 		useTimeFormat.mockReturnValue("24h");
+		targetContextState.getManualEntryTargetContext.mockReset();
+		targetContextState.getManualEntryTargetContext.mockImplementation(
+			async () =>
+				targetContextState.current
+					? { success: true, data: targetContextState.current }
+					: { success: false, error: "Failed to load entry options" },
+		);
 	});
 
 	it("keeps the form body naturally sized and preserves footer action spacing", () => {
@@ -871,5 +975,289 @@ describe("ManualTimeEntryDialog layout", () => {
 				}),
 			);
 		});
+	});
+});
+
+describe("ManualTimeEntryDialog target context", () => {
+	beforeEach(() => {
+		createManualTimeEntry.mockReset();
+		createManualTimeEntry.mockResolvedValue({ success: true, data: {} });
+		getBrowserTimezone.mockReset();
+		getBrowserTimezone.mockReturnValue("Asia/Tokyo");
+		refresh.mockReset();
+		useTimeFormat.mockReturnValue("24h");
+		targetContextState.getManualEntryTargetContext.mockReset();
+		targetContextState.getManualEntryTargetContext.mockImplementation(
+			async () =>
+				targetContextState.current
+					? { success: true, data: targetContextState.current }
+					: { success: false, error: "Failed to load entry options" },
+		);
+	});
+
+	it("shows the target's effective zone and its organization fallback, not the actor's browser zone", async () => {
+		renderDialog(
+			{
+				open: true,
+				hideTrigger: true,
+				employeeTimezone: "UTC",
+				targetEmployeeId: "employee-2",
+				targetEmployeeName: "Jane Doe",
+				defaultDate: "2026-05-12",
+				defaultClockInTime: "10:15",
+				defaultClockOutTime: "15:45",
+			},
+			{ timezone: "America/New_York", timezoneSource: "organization" },
+		);
+
+		expect(
+			screen.getByText(
+				"Times are in Jane Doe's timezone: America/New_York (America/New_York)",
+			),
+		).toBeTruthy();
+		expect(
+			screen.getByText(
+				"Jane Doe has no personal timezone, so the organization's timezone is used.",
+			),
+		).toBeTruthy();
+		expect(targetContextState.getManualEntryTargetContext).toHaveBeenCalledWith(
+			{
+				targetEmployeeId: "employee-2",
+			},
+		);
+
+		fireEvent.change(screen.getByLabelText("Reason"), {
+			target: { value: "Entered for Jane" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+
+		await waitFor(() => {
+			expect(createManualTimeEntry).toHaveBeenCalledWith(
+				expect.objectContaining({
+					employeeId: "employee-2",
+					timezone: "America/New_York",
+					browserTimezone: null,
+				}),
+			);
+		});
+		expect(screen.queryByText(/Your device timezone is/)).toBeNull();
+	});
+
+	it("offers the target's own choices without touching the actor's saved preferences", () => {
+		renderDialog(
+			{ open: true, hideTrigger: true, targetEmployeeId: "employee-2" },
+			{
+				projects: [
+					{
+						id: "project-target",
+						name: "Target Project",
+						color: null,
+						status: "active",
+						budgetHours: null,
+						deadline: null,
+						totalHoursBooked: 0,
+					},
+				],
+				categories: [
+					{
+						id: "category-target",
+						name: "Target Category",
+						factor: "1.50",
+						color: null,
+					},
+				],
+			},
+		);
+
+		const project = screen.getByLabelText("Project");
+		const category = screen.getByLabelText("Work category");
+		expect(
+			within(project).getByRole("option", { name: "Target Project" }),
+		).toBeTruthy();
+		expect(
+			within(project).queryByRole("option", { name: "Project 1" }),
+		).toBeNull();
+		expect(
+			within(category).getByRole("option", { name: "Target Category" }),
+		).toBeTruthy();
+		expect(project.getAttribute("data-persist-preference")).toBe("false");
+		expect(category.getAttribute("data-persist-preference")).toBe("false");
+	});
+
+	it("keeps preference persistence for self entries", () => {
+		renderDialog({ open: true, hideTrigger: true });
+
+		expect(
+			screen.getByLabelText("Project").getAttribute("data-persist-preference"),
+		).toBe("true");
+	});
+
+	it("blocks creation and explains when the actor may not create for the target", async () => {
+		targetContextState.getManualEntryTargetContext.mockResolvedValue({
+			success: false,
+			error: "Not authorized to create time entries for this employee",
+			code: "target_not_authorized",
+		});
+		renderDialog(
+			{ open: true, hideTrigger: true, targetEmployeeId: "employee-foreign" },
+			null,
+		);
+
+		expect(
+			await screen.findByText(
+				"You can't create time entries for this employee.",
+			),
+		).toBeTruthy();
+		expect(screen.getByRole("alert")).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+		expect(
+			screen
+				.getByRole("button", { name: "Create Entry" })
+				.hasAttribute("disabled"),
+		).toBe(true);
+		expect(screen.queryByLabelText("Project")).toBeNull();
+
+		fireEvent.submit(
+			screen
+				.getByRole("button", { name: "Create Entry" })
+				.closest("form") as HTMLFormElement,
+		);
+		await act(async () => {});
+		expect(createManualTimeEntry).not.toHaveBeenCalled();
+	});
+
+	it("offers a retry when the context fails to load for other reasons", async () => {
+		renderDialog(
+			{ open: true, hideTrigger: true, targetEmployeeId: "employee-2" },
+			null,
+		);
+
+		expect(
+			await screen.findByText(
+				"Couldn't load the timezone and choices for this entry.",
+			),
+		).toBeTruthy();
+		targetContextState.current = buildTargetContext("employee-2", {
+			timezone: "Europe/Berlin",
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+
+		expect(
+			await screen.findByText(
+				"Times are in this employee's timezone: Europe/Berlin (Europe/Berlin)",
+			),
+		).toBeTruthy();
+		expect(
+			screen
+				.getByRole("button", { name: "Create Entry" })
+				.hasAttribute("disabled"),
+		).toBe(false);
+	});
+
+	it("clears draft choices and announces it when the target changes", async () => {
+		const { queryClient, rerender } = renderDialog({
+			open: true,
+			hideTrigger: true,
+			targetEmployeeId: "employee-2",
+		});
+		fireEvent.change(screen.getByLabelText("Project"), {
+			target: { value: "project-1" },
+		});
+		fireEvent.change(screen.getByLabelText("Work category"), {
+			target: { value: "category-1" },
+		});
+		expect((screen.getByLabelText("Project") as HTMLSelectElement).value).toBe(
+			"project-1",
+		);
+
+		targetContextState.current = buildTargetContext("employee-3");
+		queryClient.setQueryData(
+			queryKeys.manualEntry.targetContext("employee-3"),
+			targetContextState.current,
+		);
+		rerender(
+			<ManualTimeEntryDialog
+				employeeId="employee-current"
+				employeeTimezone="UTC"
+				hasManager={false}
+				hideTrigger
+				open
+				targetEmployeeId="employee-3"
+			/>,
+		);
+
+		expect(
+			await screen.findByText(
+				"The employee changed, so the project and category were cleared.",
+			),
+		).toBeTruthy();
+		expect((screen.getByLabelText("Project") as HTMLSelectElement).value).toBe(
+			"",
+		);
+		expect(
+			(screen.getByLabelText("Work category") as HTMLSelectElement).value,
+		).toBe("");
+		expect(
+			screen
+				.getByTestId("work-category-selector")
+				.getAttribute("data-employee-id"),
+		).toBe("employee-3");
+	});
+
+	it("drops a selection that is no longer eligible when the context refreshes", async () => {
+		const { queryClient } = renderDialog({
+			open: true,
+			hideTrigger: true,
+			targetEmployeeId: "employee-2",
+		});
+		fireEvent.change(screen.getByLabelText("Project"), {
+			target: { value: "project-1" },
+		});
+
+		// The project stops being eligible on the server; the refreshed context drops it.
+		targetContextState.current = buildTargetContext("employee-2", {
+			projects: [],
+		});
+		await act(async () => {
+			await queryClient.invalidateQueries({
+				queryKey: queryKeys.manualEntry.all,
+			});
+		});
+
+		expect(
+			await screen.findByText(
+				"A selected project or category is no longer available and was cleared.",
+			),
+		).toBeTruthy();
+		expect((screen.getByLabelText("Project") as HTMLSelectElement).value).toBe(
+			"",
+		);
+	});
+
+	it("refreshes the target context after the server rejects a submission", async () => {
+		createManualTimeEntry.mockResolvedValue({
+			success: false,
+			error: "Cannot assign to this project",
+		});
+		renderDialog({
+			open: true,
+			hideTrigger: true,
+			targetEmployeeId: "employee-2",
+			defaultDate: "2026-05-12",
+		});
+		const callsBeforeSubmit =
+			targetContextState.getManualEntryTargetContext.mock.calls.length;
+
+		fireEvent.change(screen.getByLabelText("Reason"), {
+			target: { value: "Entered for a report" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+
+		await waitFor(() => expect(createManualTimeEntry).toHaveBeenCalledOnce());
+		await waitFor(() =>
+			expect(
+				targetContextState.getManualEntryTargetContext.mock.calls.length,
+			).toBeGreaterThan(callsBeforeSubmit),
+		);
 	});
 });

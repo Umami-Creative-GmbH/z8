@@ -72,6 +72,18 @@
       "addButton": "Aggiungi voce manuale",
       "clockInLabel": "Timbra ingresso",
       "clockOutLabel": "Timbra uscita",
+      "context": {
+        "choicesCleared": "Un progetto o una categoria selezionati non sono più disponibili e sono stati rimossi.",
+        "loadFailed": "Impossibile caricare il fuso orario e le opzioni per questa voce.",
+        "loading": "Caricamento delle opzioni della voce…",
+        "notAuthorized": "Non puoi creare registrazioni orarie per questo dipendente.",
+        "organizationFallback": "{employee} non ha un fuso orario personale, quindi viene usato quello dell'organizzazione.",
+        "retry": "Riprova",
+        "targetChanged": "Il dipendente è cambiato, quindi progetto e categoria sono stati azzerati.",
+        "targetTimezone": "Gli orari sono nel fuso orario di {employee}: {timezone}",
+        "thisEmployee": "questo dipendente",
+        "utcFallback": "Né {employee} né l'organizzazione hanno impostato un fuso orario, quindi viene usato UTC."
+      },
       "dateLabel": "Data",
       "description": "Crea una voce di tempo per una data passata. Potrebbe essere richiesta l'approvazione in base alla policy della tua organizzazione.",
       "errors": {

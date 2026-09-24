@@ -72,6 +72,18 @@
       "addButton": "Manuelle Iitrag erfasse",
       "clockInLabel": "Iistemple",
       "clockOutLabel": "Uusstemple",
+      "context": {
+        "choicesCleared": "Es usgwählts Projekt oder e Kategorie isch nümm verfüegbar und isch entfernt worde.",
+        "loadFailed": "Zytzone und Uswahl für dä Iitrag händ nöd chöne glade werde.",
+        "loading": "Iitragsoptione werded glade…",
+        "notAuthorized": "Du chasch für die Person kei Zytiiträg erstelle.",
+        "organizationFallback": "{employee} hät kei eigeti Zytzone, drum wird d Zytzone vo de Organisation verwendet.",
+        "retry": "Nomal probiere",
+        "targetChanged": "D Person isch gwächslet worde, drum sind Projekt und Kategorie zruggsetzt worde.",
+        "targetTimezone": "Ziite sind i de Zytzone vo {employee}: {timezone}",
+        "thisEmployee": "die Person",
+        "utcFallback": "Weder {employee} no d Organisation hät e Zytzone festgleit, drum wird UTC verwendet."
+      },
       "dateLabel": "Datum",
       "description": "Erfass en Ziitiitrag für es vergangnigs Datum. Je nach Richtlinie vo dinere Organisation isch e Gnehmigung nötig.",
       "errors": {

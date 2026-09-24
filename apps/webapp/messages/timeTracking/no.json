@@ -67,6 +67,18 @@
       "addButton": "Legg til manuell registrering",
       "clockInLabel": "Stemple inn",
       "clockOutLabel": "Stemple ut",
+      "context": {
+        "choicesCleared": "Et valgt prosjekt eller en valgt kategori er ikke lenger tilgjengelig og ble fjernet.",
+        "loadFailed": "Kunne ikke laste tidssonen og valgene for denne registreringen.",
+        "loading": "Laster registreringsvalg…",
+        "notAuthorized": "Du kan ikke opprette tidsregistreringer for denne ansatte.",
+        "organizationFallback": "{employee} har ingen personlig tidssone, så organisasjonens tidssone brukes.",
+        "retry": "Prøv igjen",
+        "targetChanged": "Den ansatte ble endret, så prosjekt og kategori ble tilbakestilt.",
+        "targetTimezone": "Tidene er i tidssonen til {employee}: {timezone}",
+        "thisEmployee": "denne ansatte",
+        "utcFallback": "Verken {employee} eller organisasjonen har angitt en tidssone, så UTC brukes."
+      },
       "dateLabel": "Dato",
       "description": "Opprett en timeregistrering for en tidligere dato. Godkjenning kan være påkrevd basert på organisasjonens retningslinjer for endring.",
       "errors": {

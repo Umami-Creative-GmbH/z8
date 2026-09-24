@@ -324,10 +324,11 @@ export async function getWorkCategorySetAssignments(
  */
 export async function getEffectiveWorkCategorySetForEmployee(
 	employeeId: string,
+	organizationId: string,
 ): Promise<ResolvedWorkCategorySet> {
 	// Get employee with their team info
 	const employeeRecord = await db.query.employee.findFirst({
-		where: eq(employee.id, employeeId),
+		where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
 		columns: {
 			id: true,
 			organizationId: true,
@@ -351,6 +352,7 @@ export async function getEffectiveWorkCategorySetForEmployee(
 	// 1. Check for employee-specific assignment (priority 2)
 	const employeeAssignment = await db.query.workCategorySetAssignment.findFirst({
 		where: and(
+			eq(workCategorySetAssignment.organizationId, organizationId),
 			eq(workCategorySetAssignment.employeeId, employeeId),
 			eq(workCategorySetAssignment.assignmentType, "employee"),
 			eq(workCategorySetAssignment.isActive, true),
@@ -362,6 +364,7 @@ export async function getEffectiveWorkCategorySetForEmployee(
 
 	if (
 		employeeAssignment?.set?.isActive &&
+		employeeAssignment.set.organizationId === organizationId &&
 		isEffective(employeeAssignment.effectiveFrom, employeeAssignment.effectiveUntil)
 	) {
 		return {
@@ -375,6 +378,7 @@ export async function getEffectiveWorkCategorySetForEmployee(
 	if (employeeRecord.teamId) {
 		const teamAssignment = await db.query.workCategorySetAssignment.findFirst({
 			where: and(
+				eq(workCategorySetAssignment.organizationId, organizationId),
 				eq(workCategorySetAssignment.teamId, employeeRecord.teamId),
 				eq(workCategorySetAssignment.assignmentType, "team"),
 				eq(workCategorySetAssignment.isActive, true),
@@ -386,6 +390,7 @@ export async function getEffectiveWorkCategorySetForEmployee(
 
 		if (
 			teamAssignment?.set?.isActive &&
+			teamAssignment.set.organizationId === organizationId &&
 			isEffective(teamAssignment.effectiveFrom, teamAssignment.effectiveUntil)
 		) {
 			return {
@@ -410,6 +415,7 @@ export async function getEffectiveWorkCategorySetForEmployee(
 
 	if (
 		orgAssignment?.set?.isActive &&
+		orgAssignment.set.organizationId === organizationId &&
 		isEffective(orgAssignment.effectiveFrom, orgAssignment.effectiveUntil)
 	) {
 		return {
@@ -427,14 +433,16 @@ export async function getEffectiveWorkCategorySetForEmployee(
  */
 export async function getAvailableCategoriesForEmployee(
 	employeeId: string,
+	organizationId: string,
 ): Promise<SetCategoryRecord[]> {
-	const { set } = await getEffectiveWorkCategorySetForEmployee(employeeId);
+	const { set } = await getEffectiveWorkCategorySetForEmployee(employeeId, organizationId);
 
 	if (!set) {
 		return [];
 	}
 
-	return getCategoriesInSet(set.id);
+	const categories = await getCategoriesInSet(set.id);
+	return categories.filter((category) => category.organizationId === organizationId);
 }
 
 /**
@@ -443,7 +451,8 @@ export async function getAvailableCategoriesForEmployee(
 export async function employeeHasAccessToCategory(
 	employeeId: string,
 	categoryId: string,
+	organizationId: string,
 ): Promise<boolean> {
-	const availableCategories = await getAvailableCategoriesForEmployee(employeeId);
+	const availableCategories = await getAvailableCategoriesForEmployee(employeeId, organizationId);
 	return availableCategories.some((c) => c.id === categoryId);
 }

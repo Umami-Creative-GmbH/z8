@@ -72,6 +72,18 @@
       "addButton": "Add Manual Entry",
       "clockInLabel": "Clock In",
       "clockOutLabel": "Clock Out",
+      "context": {
+        "choicesCleared": "A selected project or category is no longer available and was cleared.",
+        "loadFailed": "Couldn't load the timezone and choices for this entry.",
+        "loading": "Loading entry options…",
+        "notAuthorized": "You can't create time entries for this employee.",
+        "organizationFallback": "{employee} has no personal timezone, so the organization's timezone is used.",
+        "retry": "Try again",
+        "targetChanged": "The employee changed, so the project and category were cleared.",
+        "targetTimezone": "Times are in {employee}'s timezone: {timezone}",
+        "thisEmployee": "this employee",
+        "utcFallback": "Neither {employee} nor the organization has a timezone set, so UTC is used."
+      },
       "dateLabel": "Date",
       "description": "Create a time entry for a past date. Approval may be required based on your organization's change policy.",
       "errors": {

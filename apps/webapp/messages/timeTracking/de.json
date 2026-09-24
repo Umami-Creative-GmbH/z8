@@ -72,6 +72,18 @@
       "addButton": "Manuellen Eintrag hinzufügen",
       "clockInLabel": "Einstempeln",
       "clockOutLabel": "Ausstempeln",
+      "context": {
+        "choicesCleared": "Ein ausgewähltes Projekt oder eine Kategorie ist nicht mehr verfügbar und wurde entfernt.",
+        "loadFailed": "Zeitzone und Auswahlmöglichkeiten für diesen Eintrag konnten nicht geladen werden.",
+        "loading": "Eintragsoptionen werden geladen…",
+        "notAuthorized": "Du kannst für diese Person keine Zeiteinträge erstellen.",
+        "organizationFallback": "{employee} hat keine eigene Zeitzone, daher wird die Zeitzone der Organisation verwendet.",
+        "retry": "Erneut versuchen",
+        "targetChanged": "Die Person wurde gewechselt, daher wurden Projekt und Kategorie zurückgesetzt.",
+        "targetTimezone": "Zeiten sind in der Zeitzone von {employee}: {timezone}",
+        "thisEmployee": "diese Person",
+        "utcFallback": "Weder {employee} noch die Organisation hat eine Zeitzone festgelegt, daher wird UTC verwendet."
+      },
       "dateLabel": "Datum",
       "description": "Erstellen Sie einen Zeiteintrag für ein vergangenes Datum. Je nach Änderungsrichtlinie Ihrer Organisation kann eine Genehmigung erforderlich sein.",
       "errors": {
