@@ -52,6 +52,9 @@ describe("approval workflow repository integration CI contract", () => {
 			"src/lib/scim/scim-callback-atomicity.integration.test.ts",
 		);
 		expect(workflow).toContain("src/lib/scim/protocol.integration.test.ts");
+		expect(workflow).toContain(
+			"src/lib/cron/legacy-escalation-fencing.integration.test.ts",
+		);
 		expect(workflow).toMatch(
 			/seat-sync-outbox\.integration\.test\.ts \\\n+\s+src\/lib\/scim\/protocol\.integration\.test\.ts \\\n+\s+src\/lib\/approvals\/workflow\/repository\.integration\.test\.ts \\\n+\s+src\/lib\/approvals\/workflow\/transition-engine\.integration\.test\.ts \\\n+\s+src\/lib\/approvals\/server\/time-correction-approvals\.integration\.test\.ts \\\n+\s+src\/lib\/approvals\/server\/work-period-approvals\.integration\.test\.ts \\\n+\s+"src\/app\/\[locale\]\/\(app\)\/time-tracking\/actions\/clocking\.web-clock-out\.integration\.test\.ts"/,
 		);
