@@ -105,7 +105,7 @@ export async function loadEscalationCandidateFacts(
  * under the existing authorization model: an active approved member whose
  * current abilities admit the inbox and this requester's approvals.
  */
-async function hasApprovalDecisionPath(
+export async function hasApprovalDecisionPath(
 	executor: EscalationCandidateExecutor,
 	input: {
 		organizationId: string;
