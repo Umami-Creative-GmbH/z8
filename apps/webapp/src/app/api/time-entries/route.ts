@@ -35,6 +35,10 @@ import {
 	resolveTimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
 import { isWorkLocationType } from "@/lib/time-tracking/work-location";
+import {
+	classifyLegacyClockConsumer,
+	fenceLegacyClockConsumerResponse,
+} from "./legacy-consumer-fence";
 
 class TimeEntryConflictError extends Error {
 	constructor(message: string) {
@@ -197,10 +201,23 @@ export async function POST(request: NextRequest) {
 	// Opt out of caching - must be awaited immediately, not stored as promise
 	await connection();
 
+	let resolvedHeaders: Headers;
+	let body: any;
 	try {
 		// Await headers and body in parallel
-		const [resolvedHeaders, body] = await Promise.all([headers(), request.json()]);
+		[resolvedHeaders, body] = await Promise.all([headers(), request.json()]);
+	} catch {
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+	}
 
+	return fenceLegacyClockConsumerResponse(
+		classifyLegacyClockConsumer(resolvedHeaders, body),
+		await createClockEntry(resolvedHeaders, body),
+	);
+}
+
+async function createClockEntry(resolvedHeaders: Headers, body: any) {
+	try {
 		// With Bearer plugin, getSession handles both cookie and Bearer token auth
 		const session = await auth.api.getSession({ headers: resolvedHeaders });
 

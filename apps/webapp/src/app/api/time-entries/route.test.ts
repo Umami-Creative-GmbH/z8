@@ -466,6 +466,8 @@ describe("POST /api/time-entries", () => {
 	});
 
 	it("rejects client-supplied organization ids instead of switching the active organization", async () => {
+		mockState.headers.mockResolvedValue(new Headers({ authorization: "Bearer desktop-token" }));
+
 		const response = await POST(
 			new Request("https://z8.test/api/time-entries", {
 				body: JSON.stringify({
@@ -480,6 +482,113 @@ describe("POST /api/time-entries", () => {
 		expect(response.status).toBe(400);
 		expect(await response.json()).toEqual({ error: "organizationId is server-derived" });
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+	});
+
+	describe("old queue consumer preservation fence", () => {
+		it("answers the pre-preservation browser queue reader with a retaining 401 instead of a deleting 400", async () => {
+			// Shape sent by the pre-#267 service-worker sync-service: cookie session,
+			// organizationId from the queued row, no action id/offset/replay.
+			const response = await POST(
+				new Request("https://z8.test/api/time-entries", {
+					body: JSON.stringify({
+						type: "clock_in",
+						timestamp: "2026-05-04T09:00:00.000Z",
+						organizationId: "unknown",
+						browserTimezone: "Europe/Berlin",
+					}),
+					method: "POST",
+				}) as never,
+			);
+
+			expect(response.status).toBe(401);
+			expect(await response.json()).toEqual({
+				error: "organizationId is server-derived",
+				hold: "legacy-browser-queue",
+			});
+			expect(mockState.clockingClockIn).not.toHaveBeenCalled();
+		});
+
+		it("answers an extension queue replay with a retaining 409 instead of a deleting 400", async () => {
+			// X1/X2 extension row (UUID id, no zone/offset) replayed by an X3 reader.
+			const response = await POST(
+				new Request("https://z8.test/api/time-entries", {
+					body: JSON.stringify({
+						id: "6f1c2a4e-8b3d-4c5e-9f70-1a2b3c4d5e6f",
+						type: "clock_in",
+						timestamp: "2026-05-04T09:00:00.000Z",
+						replay: true,
+					}),
+					method: "POST",
+				}) as never,
+			);
+
+			expect(response.status).toBe(409);
+			expect(await response.json()).toEqual({
+				error: "Clock timezone evidence is incomplete",
+				hold: "legacy-extension-queue",
+			});
+			expect(mockState.clockingClockIn).not.toHaveBeenCalled();
+		});
+
+		it("recognizes X1/X2 extension replays, which send no id, by their extension origin", async () => {
+			mockState.headers.mockResolvedValue(
+				new Headers({ origin: "chrome-extension://fafcecodjdcbfflmbkfhjgafobbddedc" }),
+			);
+			mockState.getSession.mockResolvedValue({
+				session: { activeOrganizationId: null },
+				user: { id: "user-1" },
+			});
+
+			const response = await POST(
+				new Request("https://z8.test/api/time-entries", {
+					body: JSON.stringify({ type: "clock_in", timestamp: "2026-05-04T09:00:00.000Z" }),
+					method: "POST",
+				}) as never,
+			);
+
+			expect(response.status).toBe(409);
+			expect(await response.json()).toEqual({
+				error: "No active organization",
+				hold: "legacy-extension-queue",
+			});
+		});
+
+		it("leaves extension sign-in failures as 401 so the extension can prompt for login", async () => {
+			mockState.getSession.mockResolvedValue(null);
+
+			const response = await POST(
+				new Request("https://z8.test/api/time-entries", {
+					body: JSON.stringify({
+						id: "6f1c2a4e-8b3d-4c5e-9f70-1a2b3c4d5e6f",
+						type: "clock_in",
+						timestamp: "2026-05-04T09:00:00.000Z",
+						replay: true,
+					}),
+					method: "POST",
+				}) as never,
+			);
+
+			expect(response.status).toBe(401);
+			expect(await response.json()).toEqual({ error: "Unauthorized" });
+		});
+
+		it("passes successful extension captures through unchanged", async () => {
+			const response = await POST(
+				new Request("https://z8.test/api/time-entries", {
+					body: JSON.stringify({
+						id: "6f1c2a4e-8b3d-4c5e-9f70-1a2b3c4d5e6f",
+						type: "clock_in",
+						timestamp: new Date().toISOString(),
+						browserTimezone: "Europe/Berlin",
+						utcOffsetMinutes: 120,
+					}),
+					method: "POST",
+				}) as never,
+			);
+
+			expect(response.status).toBe(201);
+			expect(await response.json()).toEqual({ entry: { id: "entry-1" } });
+		});
 	});
 
 	it("rejects client-supplied employee ids instead of allowing on-behalf clocking", async () => {
