@@ -78,7 +78,7 @@
         "title": "Inviti"
       },
       "lifecycle": {
-        "actionsLabel": "Azioni dipendente per ${target.displayName}",
+        "actionsLabel": "Azioni dipendente per {name}",
         "deactivate": "Disattiva",
         "deactivateDescription": "Questa operazione sospende l'accesso a questa organizzazione e termina le sessioni attualmente in uso. La cronologia del dipendente viene conservata.",
         "deactivateError": "Impossibile disattivare il dipendente",
@@ -86,6 +86,8 @@
         "deactivateTitle": "Disattivare il dipendente?",
         "deactivating": "Disattivazione in corso...",
         "deactivatingStatus": "Disattivazione dipendente",
+        "finalOwnerDeactivateGuidance": "Assegna e attiva prima un altro proprietario approvato prima di disattivare questo dipendente.",
+        "finalOwnerRemoveGuidance": "Assegna e attiva prima un altro proprietario approvato prima di rimuovere l'accesso di questo dipendente.",
         "reactivate": "Riattiva",
         "reactivateDescription": "Questa operazione ripristina l'accesso a questa organizzazione utilizzando il record del dipendente esistente.",
         "reactivateError": "Impossibile riattivare il dipendente",

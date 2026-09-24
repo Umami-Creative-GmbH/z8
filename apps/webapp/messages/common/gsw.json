@@ -165,6 +165,7 @@
     "moveDown": "Abewärts verschiebe",
     "moveUp": "Ufewärts verschiebe",
     "name": "Name",
+    "never": "Nie",
     "new": "Neu",
     "next": "Wiiter",
     "notApplicable": "n. v.",
@@ -289,8 +290,16 @@
     "trust-center": "Trust Center"
   },
   "loading": {
-    "chart": "Diagramm wird geladen",
-    "settings": "Einstellungen werden geladen"
+    "application": "Awändig wird glade",
+    "authentication": "Amäldig wird glade",
+    "calendar": "Kaländer wird glade",
+    "chart": "Diagramm wird glade",
+    "licenses": "Lizänze wärde glade",
+    "platformAnalytics": "Plattform-Analyse wird glade",
+    "settings": "Istellige wärde glade",
+    "setup": "Iirichtig wird glade",
+    "teamAbsences": "Team-Abweseheite wärde glade",
+    "workerQueue": "Uuftragswarteschlange wird glade"
   },
   "nav": {
     "absences": "Abweseheite",
@@ -326,6 +335,14 @@
       "viewAll": "Alli Benachrichtigunge aaluege"
     },
     "content": {
+      "absenceRequestSubmitted": {
+        "message": "Dii {categoryName}-Aafrag für {dateRange} isch ygreicht worde und wartet uf Freigab.",
+        "title": "Abwäseheitsaafrag ygreicht"
+      },
+      "teamMemberRemoved": {
+        "message": "Du bisch vo {performedByName} us em Team {teamName} entfernt worde.",
+        "title": "Us em Team entfernt"
+      },
       "passwordChanged": {
         "message": "Dis Passwort isch erfolgrych gänderet worde. Falls du die Änderig nid sälber gmacht häsch, bitte mäld di sofort bim Support.",
         "title": "Passwort gänderet"
@@ -417,6 +434,10 @@
     "banner": {
       "archived": "Archivierti Stämpfel-Bileeg uf däm Gräat bhalte",
       "offline": "Sie sind offline",
+      "offlineWithPending": "Offline - {count} Ereignis(se) usstahnd",
+      "pending": "{count} Ereignis(se) warte uf d'Synchronisierig",
+      "retry": "Widerhole",
+      "syncing": "Synchronisiere {count} Ereignis(se)...",
       "offlineSaved": "Offline — {count} Iiträg lokal für d Überprüefig gspeicheret",
       "refresh": "Status aktualisiere",
       "refreshing": "{count} gspeichereti Iiträg werded überprüft…",
@@ -534,8 +555,12 @@
   "validation": {
     "first-name-required": "Vorname isch erforderlich",
     "invalid-email": "Ungültigi E-Mail-Adress",
+    "invalid-password": "Ungültigs Passwort",
     "last-name-required": "Nachname isch erforderlich",
     "password-required": "Passwort isch erforderlich"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Betriebsratsportal wird glade"
   },
   "workBalance": {
     "label": "Gsamtbilanz",

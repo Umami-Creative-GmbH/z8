@@ -370,7 +370,7 @@
           "action": {
             "create": "SCIM bağlantısı oluştur",
             "creating": "SCIM bağlantısı oluşturuluyor",
-            "decommission": "Devreden Çıkar",
+            "decommission": "Hizmetten çıkar",
             "reconcile": "Oluşturma durumunu yenile",
             "refresh": "Durumu yenile",
             "rotate": "Kimlik bilgisini döndür",
@@ -381,53 +381,53 @@
             "confirmClose": "Kapatmadan önce kimlik bilgisinin kaydedildiğini onaylayın.",
             "copied": "Kimlik bilgisi panoya kopyalandı.",
             "copy": "Kimlik bilgisini kopyala",
-            "description": "Bu kimlik bilgisini şimdi kopyalayın ve saklayın. Tekrar görüntülenemez.",
-            "label": "Kimlik Bilgisi",
+            "description": "Bu kimlik bilgisini şimdi kopyalayıp saklayın. Yeniden görüntülenemez.",
+            "label": "Kimlik bilgisi",
             "saved": "Bu kimlik bilgisini kaydettim",
-            "title": "SCIM Kimlik Bilgisi",
-            "warning": "Bu kimlik bilgisi yalnızca bir kez gösterilir. Kimlik sağlayıcınızda güvenli bir şekilde saklayın."
+            "title": "SCIM kimlik bilgisi",
+            "warning": "Bu kimlik bilgisi bir kez gösterilir. Kimlik sağlayıcınızda güvenle saklayın."
           },
           "credentials": {
-            "credential": "Kimlik Bilgisi",
-            "empty": "Hiçbir kimlik bilgisi düzenlenmedi.",
-            "expires": "Bitiş Tarihi",
+            "credential": "Kimlik bilgisi",
+            "empty": "Hiç kimlik bilgisi verilmedi.",
+            "expires": "Sona erer",
             "lastUsedAria": "Son kullanım: {value} UTC",
-            "revoke": "İptal Et",
+            "revoke": "İptal et",
             "status": {
-              "active": "etkin",
-              "revoked": "iptal edildi"
+              "active": "Etkin",
+              "revoked": "İptal edildi"
             },
-            "title": "Kimlik Bilgileri",
+            "title": "Kimlik bilgileri",
             "unused": "Henüz kullanılmadı"
           },
-          "description": "SCIM doğrulama güncellemeleri, kimlik sağlayıcınız bir test kullanıcısı veya grup değişikliği gönderdikten sonra gerçekleşir.",
+          "description": "İş gücü erişimini sağlamak ve yönetmek için kimlik sağlayıcınızı bağlayın.",
           "dialog": {
             "cancel": "İptal",
             "decommission": {
-              "description": "Bu işlem SCIM sağlamasını kalıcı olarak devreden çıkarır ve geri alınamaz.",
-              "title": "SCIM'i Hizmetten Çıkar"
+              "description": "Bu, SCIM sağlamayı kalıcı olarak hizmetten çıkarır ve geri alınamaz.",
+              "title": "SCIM'i hizmetten çıkar"
             },
             "revoke": {
-              "description": "Bu işlem, kimlik bilgisinin kullanıcı sağlamasını anında engeller.",
+              "description": "Bu, kimlik bilgisinin kullanıcı sağlamasını hemen engeller.",
               "title": "Kimlik bilgisini iptal et"
             }
           },
-          "endpoint": "Uç Nokta",
+          "endpoint": "Uç nokta",
           "events": {
-            "empty": "Hiçbir sağlama olayı kaydedilmedi.",
+            "empty": "Hiç sağlama olayı kaydedilmedi.",
             "error": "Olaylar yüklenemedi. Durumu yenileyin ve tekrar deneyin.",
-            "title": "Son Olaylar"
+            "title": "Son olaylar"
           },
-          "expiry": "Kimlik bilgisi geçerlilik süresi",
+          "expiry": "Kimlik bilgisi sona erme tarihi",
           "expiry.value": "1 yıl",
           "refreshHelp": "Güvenli bağlantı meta verilerini yüklemek için durumu yenileyin.",
           "status": {
-            "active-unverified": "etkin doğrulanmamış",
+            "active-unverified": "etkin, doğrulanmamış",
             "creating": "oluşturuluyor",
-            "creation_failed": "oluşturma başarısız oldu",
+            "creation_failed": "oluşturma başarısız",
             "decommissioned": "hizmetten çıkarıldı",
             "decommissioning": "hizmetten çıkarılıyor",
-            "disconnected": "bağlantı kesildi",
+            "disconnected": "bağlantısı kesildi",
             "refreshing": "yenileniyor",
             "revoking": "iptal ediliyor",
             "rotating": "döndürülüyor",
@@ -436,13 +436,13 @@
           "title": "SCIM Sağlama",
           "toast": {
             "createError": "SCIM bağlantısı oluşturulamadı.",
-            "reconcileError": "SCIM oluşturma işlemi uzlaştırılamadı.",
+            "reconcileError": "SCIM oluşturma uzlaştırılamadı.",
             "refreshError": "SCIM durumu yenilenemedi.",
             "rotateError": "SCIM kimlik bilgisi döndürülemedi.",
             "updateError": "SCIM bağlantısı güncellenemedi."
           },
           "verification": "Doğrulama",
-          "verification.awaiting": "Sağlayıcı kullanımı bekleniyor",
+          "verification.awaiting": "Sağlayıcı kullanımını bekliyor",
           "verification.observed": "Gözlemlendi",
           "wizardDescription": "Kurumsal etkinleştirmeyi değiştirmeden yönetilen kullanıcı sağlamayı yapılandırın."
         },
@@ -511,7 +511,7 @@
           "review": "Gözden Geçir ve Etkinleştir",
           "review.description": "Korumayı etkinleştir",
           "scim": "SCIM Sağlama",
-          "scim.description": "Sorun sağlama belirteci",
+          "scim.description": "SCIM sağlama bağlantınızı bağlayın ve yönetin",
           "sso": "SSO Yapılandırması",
           "sso.description": "OIDC veya SAML Kaydet",
           "ssoTest": "Test Kullanıcısı",
@@ -544,7 +544,7 @@
         "appleKeyIdRequired": "Apple için Anahtar Kimliği gereklidir",
         "appleTeamIdHelp": "Apple Geliştirici hesabınızda bulunur",
         "appleTeamIdRequired": "Apple için Takım Kimliği gereklidir",
-        "authentication": "Kimlik Doğrulama",
+        "authentication": "Kimlik doğrulama",
         "clientIdPlaceholder": "OAuth istemci kimliğiniz",
         "clientSecretPlaceholder": "OAuth istemci gizli anahtarınız",
         "configured": "{provider} OAuth başarıyla yapılandırıldı",
@@ -564,15 +564,18 @@
           "customDomain": "Özel etki alanınız üzerinden oturum açan kullanıcılar OAuth uygulamanızı kullanacaktır"
         },
         "keyId": "Anahtar Kimliği",
+        "lastTested": "Son Test Edilme",
+        "notTested": "Test Edilmedi",
         "privateKey": "Özel Anahtar (.p8)",
         "removed": "{provider} OAuth kaldırıldı",
         "removeDialogDescription": "Bu OAuth yapılandırmasını kaldırmak istediğinizden emin misiniz? Kullanıcılar (varsa) paylaşılan OAuth kimlik bilgilerine geri dönecektir.",
         "removeDialogTitle": "Sosyal OAuth Sağlayıcısını Kaldır",
         "teamId": "Ekip Kimliği",
         "title": "Sosyal Giriş Sağlayıcıları",
-        "unverified": "Doğrulanmamış",
+        "unverified": "Doğrulanmadı",
         "updateConfigError": "Yapılandırma güncellenemedi",
-        "updated": "{provider} OAuth başarıyla güncellendi"
+        "updated": "{provider} OAuth başarıyla güncellendi",
+        "working": "Çalışıyor"
       },
       "sso": {
         "addDescription": "Kurumsal çoklu oturum açma (SSO) için bir OIDC kimlik sağlayıcısı yapılandırın.",

@@ -12,9 +12,11 @@
     "clockIn": "Clock In",
     "clockingIn": "Clocking In…",
     "clockingOut": "Clocking Out…",
+    "clockInQueued": "Clock-in queued for sync",
     "clockInSavedForReview": "Clock-in saved on this device for review; not confirmed on the server",
     "clockInSuccess": "Clocked in successfully",
     "clockOut": "Clock Out",
+    "clockOutQueued": "Clock-out queued for sync",
     "clockOutSavedForReview": "Clock-out saved on this device for review; not confirmed on the server",
     "clockOutSuccess": "Clocked out successfully",
     "compliance": {
@@ -24,13 +26,16 @@
     "correction": {
       "clockIn": "Clock In",
       "clockInDate": "Clock In Date",
+      "clockInTime": "Clock In Time",
       "clockOut": "Clock Out",
       "clockOutDate": "Clock Out Date",
+      "clockOutTime": "Clock Out Time",
       "editDescription": "Make changes to your time entry for today.",
       "editEntry": "Edit time entry",
       "editTitle": "Edit Time Entry",
       "errors": {
         "invalidTimeRange": "Clock out time must be after clock in time",
+        "noChanges": "At least one correction value must change",
         "submitFailed": "Failed to submit correction",
         "updateFailed": "Failed to update time entry"
       },
@@ -143,7 +148,12 @@
     },
     "unknownCategory": "Unknown category",
     "unknownProject": "Unknown project",
-    "workCategory": "Work Category"
+    "workCategory": "Work Category",
+    "workLocation": "Work location",
+    "workLocationHome": "Home",
+    "workLocationOffice": "Office",
+    "workLocationOther": "Other",
+    "workLocationRemote": "Remote"
   },
   "wellness": {
     "water": {

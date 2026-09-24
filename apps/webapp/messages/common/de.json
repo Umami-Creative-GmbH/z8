@@ -165,6 +165,7 @@
     "moveDown": "Nach unten verschieben",
     "moveUp": "Nach oben verschieben",
     "name": "Name",
+    "never": "Nie",
     "new": "Neu",
     "next": "Weiter",
     "notApplicable": "n. v.",
@@ -289,8 +290,16 @@
     "trust-center": "Trust Center"
   },
   "loading": {
+    "application": "Anwendung wird geladen",
+    "authentication": "Authentifizierung wird geladen",
+    "calendar": "Kalender wird geladen",
     "chart": "Diagramm wird geladen",
-    "settings": "Einstellungen werden geladen"
+    "licenses": "Lizenzen werden geladen",
+    "platformAnalytics": "Plattformanalyse wird geladen",
+    "settings": "Einstellungen werden geladen",
+    "setup": "Einrichtung wird geladen",
+    "teamAbsences": "Team-Abwesenheiten werden geladen",
+    "workerQueue": "Auftragswarteschlange wird geladen"
   },
   "nav": {
     "absences": "Abwesenheiten",
@@ -326,16 +335,24 @@
       "viewAll": "Alle Benachrichtigungen anzeigen"
     },
     "content": {
+      "absenceRequestSubmitted": {
+        "message": "Ihre Anfrage für {categoryName} für {dateRange} wurde eingereicht und wartet auf Genehmigung.",
+        "title": "Abwesenheitsanfrage eingereicht"
+      },
+      "teamMemberRemoved": {
+        "message": "Sie wurden von {performedByName} aus dem Team {teamName} entfernt.",
+        "title": "Aus dem Team entfernt"
+      },
       "passwordChanged": {
-        "message": "Ihr Passwort wurde erfolgreich geändert. Falls Sie diese Änderung nicht vorgenommen haben, kontaktieren Sie bitte umgehend den Support.",
+        "message": "Ihr Passwort wurde erfolgreich geändert. Wenn Sie diese Änderung nicht vorgenommen haben, wenden Sie sich bitte sofort an den Support.",
         "title": "Passwort geändert"
       },
       "shiftAssigned": {
-        "message": "Ihnen wurde von {assignedByName} eine Schicht am {shiftDate} von {startTime} bis {endTime} zugewiesen.",
+        "message": "Ihnen wurde eine Schicht am {shiftDate} von {startTime} bis {endTime} von {assignedByName} zugewiesen.",
         "title": "Schicht zugewiesen"
       },
       "teamMemberAdded": {
-        "message": "Du wurdest von {performedByName} zum Team {teamName} hinzugefügt.",
+        "message": "Sie wurden von {performedByName} zum Team {teamName} hinzugefügt.",
         "title": "Zum Team hinzugefügt"
       }
     },
@@ -417,6 +434,10 @@
     "banner": {
       "archived": "Archivierte Stempelnachweise auf diesem Gerät aufbewahrt",
       "offline": "Sie sind offline",
+      "offlineWithPending": "Offline - {count} Ereignis(se) ausstehend",
+      "pending": "{count} Ereignis(se) warten auf Synchronisierung",
+      "retry": "Wiederholen",
+      "syncing": "Synchronisiere {count} Ereignis(se)...",
       "offlineSaved": "Offline – {count} Datensatz/Datensätze lokal zur Überprüfung gespeichert",
       "refresh": "Status aktualisieren",
       "refreshing": "{count} gespeicherte(r) Datensatz/Datensätze wird/werden überprüft…",
@@ -534,8 +555,12 @@
   "validation": {
     "first-name-required": "Vorname ist erforderlich",
     "invalid-email": "Ungültige E-Mail-Adresse",
+    "invalid-password": "Ungültiges Passwort",
     "last-name-required": "Nachname ist erforderlich",
     "password-required": "Passwort ist erforderlich"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Betriebsratsportal wird geladen"
   },
   "workBalance": {
     "label": "Gesamtbilanz",

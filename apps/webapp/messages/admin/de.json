@@ -322,26 +322,26 @@
         "saveChanges": "Änderungen speichern"
       },
       "approvalMaintenance": {
-        "approvalHint": "Eine Legacy-Genehmigungsanforderung oder die kanonische Workflow-UUID.",
+        "approvalHint": "Die UUID eines bisherigen Genehmigungsantrags oder eines kanonischen Workflows.",
         "approvalId": "Genehmigungs-ID",
         "chain": "Genehmigungskette",
         "delete": "Löschen erzwingen",
         "deleting": "Wird gelöscht…",
-        "description": "Eine Genehmigung und die damit verknüpften Genehmigungsdatensätze dauerhaft entfernen. Quelldatensätze und deren Status bleiben erhalten.",
+        "description": "Eine Genehmigung und ihre verknüpften Genehmigungsdatensätze dauerhaft entfernen. Die zugrunde liegenden Datensätze und deren Status bleiben erhalten.",
         "errors": {
-          "ambiguous": "Diese ID ist in beiden Genehmigungsspeichern vorhanden. Es wurde keine Genehmigung gelöscht.",
-          "approvalInvalid": "Geben Sie eine gültige Genehmigungs-UUID ein.",
-          "failed": "Löschen konnte nicht abgeschlossen werden. Überprüfen Sie die Genehmigungs-ID, bevor Sie es erneut versuchen.",
-          "invalidInput": "Geben Sie eine Organisations-ID und eine gültige Genehmigungs-UUID ein.",
-          "notFound": "Genehmigung in dieser Organisation nicht gefunden.",
-          "organizationRequired": "Geben Sie eine Organisations-ID ein.",
-          "unauthorized": "Plattform-Administratorzugriff erforderlich."
+          "ambiguous": "Diese ID existiert in beiden Genehmigungstabellen. Es wurde keine Genehmigung gelöscht.",
+          "approvalInvalid": "Gib eine gültige Genehmigungs-UUID ein.",
+          "failed": "Das Löschen konnte nicht abgeschlossen werden. Prüfe die Genehmigungs-ID, bevor du es erneut versuchst.",
+          "invalidInput": "Gib eine Organisations-ID und eine gültige Genehmigungs-UUID ein.",
+          "notFound": "In dieser Organisation wurde keine Genehmigung mit dieser ID gefunden.",
+          "organizationRequired": "Gib eine Organisations-ID ein.",
+          "unauthorized": "Zugriff als Plattformadministrator erforderlich."
         },
-        "legacy": "Legacy-Anforderung",
+        "legacy": "Bisheriger Antrag",
         "organizationHint": "Die Organisation, zu der die Genehmigung gehört.",
         "organizationId": "Organisations-ID",
         "success": "Genehmigung gelöscht. Entfernte Datensätze:",
-        "title": "Löschen der Genehmigung erzwingen",
+        "title": "Genehmigung zwangsweise löschen",
         "workflow": "Workflow"
       },
       "cookieConsent": {

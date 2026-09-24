@@ -854,6 +854,7 @@
         "failed": "Fallido",
         "failedDescription": "Fallido recientemente",
         "paused": "Pausado",
+        "pausedDescription": "Trabajos pausados",
         "queueState": "Cola",
         "queueStateDescription": "Si los trabajadores pueden aceptar tareas en espera",
         "running": "En ejecución",

@@ -854,6 +854,7 @@
         "failed": "Başarısız",
         "failedDescription": "Yakın zamanda başarısız oldu",
         "paused": "Duraklatıldı",
+        "pausedDescription": "Duraklatılmış işler",
         "queueState": "Kuyruk",
         "queueStateDescription": "Çalışanların bekleyen işleri alıp alamayacağı",
         "running": "Çalışıyor",

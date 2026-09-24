@@ -2,6 +2,8 @@
   "myRequests": {
     "actions": {
       "cancel": "Cancel",
+      "cancelConfirmation": "Cancel this absence request?",
+      "cancelError": "Absence request could not be cancelled.",
       "cancelling": "Cancelling…",
       "cancelRequestConfirmation": "Cancel this request?",
       "cancelRequestError": "Request could not be cancelled.",

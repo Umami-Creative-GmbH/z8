@@ -2,6 +2,8 @@
   "myRequests": {
     "actions": {
       "cancel": "İptal",
+      "cancelConfirmation": "Bu izin talebini iptal et?",
+      "cancelError": "İzin talebi iptal edilemedi.",
       "cancelling": "İptal ediliyor...",
       "cancelRequestConfirmation": "Bu talep iptal edilsin mi?",
       "cancelRequestError": "Talep iptal edilemedi.",

@@ -854,6 +854,7 @@
         "failed": "Απέτυχε",
         "failedDescription": "Πρόσφατες αποτυχίες",
         "paused": "Σε παύση",
+        "pausedDescription": "Εργασίες σε παύση",
         "queueState": "Ουρά",
         "queueStateDescription": "Εάν οι εργαζόμενοι μπορούν να αναλάβουν εργασίες σε αναμονή",
         "running": "Σε εκτέλεση",

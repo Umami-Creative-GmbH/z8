@@ -370,42 +370,42 @@
           "action": {
             "create": "Criar conexão SCIM",
             "creating": "Criando conexão SCIM",
-            "decommission": "Descomissionar",
+            "decommission": "Desativar",
             "reconcile": "Atualizar status de criação",
             "refresh": "Atualizar status",
-            "rotate": "Rotacionar credencial",
+            "rotate": "Alternar credencial",
             "selectRole": "Selecione primeiro um modelo de função padrão"
           },
           "credential": {
             "close": "Fechar",
-            "confirmClose": "Confirme se a credencial foi salva antes de fechar.",
+            "confirmClose": "Confirme que a credencial está salva antes de fechar.",
             "copied": "Credencial copiada para a área de transferência.",
             "copy": "Copiar credencial",
-            "description": "Copie e armazene esta credencial agora. Ela não poderá ser exibida novamente.",
+            "description": "Copie e armazene esta credencial agora. Ela não pode ser exibida novamente.",
             "label": "Credencial",
-            "saved": "Eu salvei esta credencial",
+            "saved": "Salvei esta credencial",
             "title": "Credencial SCIM",
-            "warning": "Esta credencial é exibida apenas uma vez. Armazene-a com segurança no seu provedor de identidade."
+            "warning": "Esta credencial é exibida uma vez. Armazene-a com segurança no seu provedor de identidade."
           },
           "credentials": {
             "credential": "Credencial",
             "empty": "Nenhuma credencial foi emitida.",
-            "expires": "Expira em",
+            "expires": "Expira",
             "lastUsedAria": "Último uso: {value} UTC",
             "revoke": "Revogar",
             "status": {
-              "active": "ativo",
-              "revoked": "revogado"
+              "active": "Ativa",
+              "revoked": "Revogada"
             },
             "title": "Credenciais",
-            "unused": "Ainda não utilizado"
+            "unused": "Ainda não usada"
           },
-          "description": "A verificação SCIM é atualizada após o seu provedor de identidade enviar um teste de usuário ou alteração de grupo.",
+          "description": "Conecte seu provedor de identidade para provisionar e gerenciar o acesso da força de trabalho.",
           "dialog": {
             "cancel": "Cancelar",
             "decommission": {
-              "description": "Isso descomissiona permanentemente o provisionamento SCIM e não pode ser desfeito.",
-              "title": "Descomissionar SCIM"
+              "description": "Isso desativa permanentemente o provisionamento SCIM e não pode ser desfeito.",
+              "title": "Desativar SCIM"
             },
             "revoke": {
               "description": "Isso impede imediatamente que a credencial provisione usuários.",
@@ -416,35 +416,35 @@
           "events": {
             "empty": "Nenhum evento de provisionamento foi registrado.",
             "error": "Não foi possível carregar os eventos. Atualize o status e tente novamente.",
-            "title": "Eventos Recentes"
+            "title": "Eventos recentes"
           },
           "expiry": "Expiração da credencial",
           "expiry.value": "1 ano",
-          "refreshHelp": "Atualize o status para carregar os metadados de conexão segura.",
+          "refreshHelp": "Atualize o status para carregar metadados seguros da conexão.",
           "status": {
-            "active-unverified": "ativo não verificado",
+            "active-unverified": "ativa não verificada",
             "creating": "criando",
             "creation_failed": "falha na criação",
-            "decommissioned": "descomissionado",
-            "decommissioning": "descomissionando",
-            "disconnected": "desconectado",
+            "decommissioned": "desativada",
+            "decommissioning": "desativando",
+            "disconnected": "desconectada",
             "refreshing": "atualizando",
             "revoking": "revogando",
-            "rotating": "rotacionando",
-            "verified": "verificado"
+            "rotating": "alternando",
+            "verified": "verificada"
           },
           "title": "Provisionamento SCIM",
           "toast": {
             "createError": "Não foi possível criar a conexão SCIM.",
-            "reconcileError": "Não foi possível reconciliar a criação do SCIM.",
-            "refreshError": "Não foi possível atualizar o status do SCIM.",
-            "rotateError": "Não foi possível rotacionar a credencial SCIM.",
+            "reconcileError": "Não foi possível reconciliar a criação SCIM.",
+            "refreshError": "Não foi possível atualizar o status SCIM.",
+            "rotateError": "Não foi possível alternar a credencial SCIM.",
             "updateError": "Não foi possível atualizar a conexão SCIM."
           },
           "verification": "Verificação",
-          "verification.awaiting": "Aguardando uso do provedor",
-          "verification.observed": "Observado",
-          "wizardDescription": "Configure o provisionamento de usuários gerenciados sem alterar a ativação corporativa."
+          "verification.awaiting": "Aguardando uso pelo provedor",
+          "verification.observed": "Observada",
+          "wizardDescription": "Configure o provisionamento gerenciado de usuários sem alterar a ativação corporativa."
         },
         "sso": {
           "action": {
@@ -511,7 +511,7 @@
           "review": "Revisar e ativar",
           "review.description": "Ativação do Guard",
           "scim": "Provisionamento SCIM",
-          "scim.description": "Emitir token de provisionamento",
+          "scim.description": "Conecte e gerencie sua conexão de provisionamento SCIM",
           "sso": "Configuração de SSO",
           "sso.description": "Registrar OIDC ou SAML",
           "ssoTest": "Usuário de teste",
@@ -564,15 +564,18 @@
           "customDomain": "Os utilizadores que iniciam sessão através do seu domínio personalizado utilizarão a sua aplicação OAuth"
         },
         "keyId": "ID da Chave",
+        "lastTested": "Último teste",
+        "notTested": "Não testado",
         "privateKey": "Chave Privada (.p8)",
         "removed": "OAuth do {provider} removido",
         "removeDialogDescription": "Tem a certeza de que pretende remover esta configuração OAuth? Os utilizadores voltarão a utilizar as credenciais OAuth partilhadas (se disponíveis).",
         "removeDialogTitle": "Remover Fornecedor OAuth Social",
         "teamId": "ID da Equipa",
         "title": "Fornecedores de Início de Sessão Social",
-        "unverified": "Não verificado",
+        "unverified": "Não verificada",
         "updateConfigError": "Falha ao atualizar a configuração",
-        "updated": "OAuth do {provider} atualizado com sucesso"
+        "updated": "OAuth do {provider} atualizado com sucesso",
+        "working": "A funcionar"
       },
       "sso": {
         "addDescription": "Configure um fornecedor de identidade OIDC para início de sessão único (SSO) empresarial.",

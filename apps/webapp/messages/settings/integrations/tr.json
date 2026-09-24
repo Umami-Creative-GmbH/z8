@@ -106,6 +106,17 @@
         "email": "Clockodo E-postası",
         "title": "Clockodo Kimlik Bilgileri"
       },
+      "entity": {
+        "absences": "İzinler",
+        "entries": "Zaman Kayıtları",
+        "holidayQuotas": "İzin Kotaları",
+        "nonBusinessDays": "İş Dışı Günler",
+        "services": "Hizmetler / Çalışma Kategorileri",
+        "surcharges": "Ek Ücretler",
+        "targetHours": "Hedef Saatler / Çalışma Politikaları",
+        "teams": "Ekipler",
+        "users": "Kullanıcılar / Çalışanlar"
+      },
       "errors": {
         "connectionFailed": "Clockodo'ya bağlanılamadı",
         "fetchUsersFailed": "Kullanıcı verileri alınamadı",
