@@ -12,6 +12,11 @@ client repositories and release-owner evidence. Keep #266 open. None of the
 client scopes below has verified deployed coverage or an effective preservation
 control established by this investigation.
 
+**Refreshed 2026-09-24** — see [the evidence refresh](#evidence-refresh-2026-09-24).
+It corrects this document's extension/mobile “source absent” finding (the source
+is in repository history), records the desired production release, and applies
+the #267/#268 deliveries. All completion and activation gates remain blocked.
+
 The binding contracts are [#263, offline compatibility](https://github.com/Umami-Creative-GmbH/z8/issues/263#issuecomment-5654640636)
 and [#259, adoption handoff](https://github.com/Umami-Creative-GmbH/z8/issues/259#issuecomment-5654750145).
 The broader writer/configuration/worker inventory belongs to
@@ -67,8 +72,8 @@ system was inspected. No production prevalence or historical incident is inferre
 | --- | --- | --- |
 | Browser page + PWA/service worker, per server origin/profile | `apps/webapp/src/lib/query/use-time-clock.ts`; `src/hooks/use-offline-clock.ts`; `public/sw.js` and `public/lib/{offline-queue-db,sync-service}.js`. `.github/workflows/publish-images.yml:49–58,97–109,155–160,260–285` builds amd64/arm64 webapp images, passes commit build arguments, records digest artifacts and publishes tags. `docker/Dockerfile.webapp:66–75,93–100` builds Next and copies public worker files into the image. | Source and build recipe located in this repository. Named release/operator owner, actual image digest per origin, deployed page/worker combinations and supported versions **unknown**. A workflow definition is not a successful build or rollout record. |
 | Desktop, per installation/server destination | `apps/desktop/package.json:1–9` declares `0.1.0`, Vite/TypeScript build and Tauri CLI. `src-tauri/Cargo.toml:1–5` and `tauri.conf.json:3–10,38–59` declare `0.1.0`, identifier `com.z8.timer`, frontend build and Windows MSI/NSIS targets. | Source and local build recipe located. Named builder/signer/distributor, release pipeline, installed binary hashes/platforms, update authority and supported versions **unknown**. The manifest version is not a deployed-version census. |
-| Extension, per extension ID/store or unpacked channel/profile/server | No application source or build artifacts in this checkout. Webapp routes are server evidence only. #263 records an earlier artifact-only inspection at another baseline. | Repository, source/build owner, extension IDs, signing/publishing identity, store/unpacked versions and support policy **unknown**. Earlier compiled artifacts cannot prove source ownership or current application coverage. |
-| Mobile, per app ID/platform/distribution channel/server | No mobile application source/build manifest in this checkout. `apps/webapp/src/app/api/mobile/time-clock/route.ts` and `apps/webapp/src/app/api/mobile/shared.ts` describe only the server adapter. Historical Expo plans are not implementation evidence; the Tauri mobile entry-point attribute is not a verified mobile product build. | Repository, source/build owner, app IDs, signing/distribution owner, installed/native/OTA versions and support policy **unknown**. Server-route coverage cannot satisfy application coverage. |
+| Extension, per extension ID/store or unpacked channel/profile/server | No application source or build artifacts in this checkout. *Corrected 2026-09-24: source is in history until `4722f938`; see refresh.* Webapp routes are server evidence only. #263 records an earlier artifact-only inspection at another baseline. | Repository, source/build owner, extension IDs, signing/publishing identity, store/unpacked versions and support policy **unknown**. Earlier compiled artifacts cannot prove source ownership or current application coverage. |
+| Mobile, per app ID/platform/distribution channel/server | No mobile application source/build manifest in this checkout. *Corrected 2026-09-24: source is in history until `4722f938`; see refresh.* `apps/webapp/src/app/api/mobile/time-clock/route.ts` and `apps/webapp/src/app/api/mobile/shared.ts` describe only the server adapter. Historical Expo plans are not implementation evidence; the Tauri mobile entry-point attribute is not a verified mobile product build. | Repository, source/build owner, app IDs, signing/distribution owner, installed/native/OTA versions and support policy **unknown**. Server-route coverage cannot satisfy application coverage. |
 
 ## Caller, stored evidence and transport register
 
@@ -300,14 +305,155 @@ inactive. If investigation demonstrates the agreed preservation contract cannot
 be met, raise a focused decision as required by #259 rather than silently
 weakening retention, replay or ownership requirements.
 
+## Evidence refresh 2026-09-24
+
+Refresh baseline: `dev` at `5767fcbc`. The scope is read-only repository history,
+GitHub metadata and one read of the infrastructure repository's desired-release
+file. No tests, builds, database operations, repairs, deployment or activation.
+Historical citations use the `4722f938^:` prefix, meaning the tree just before
+the removal commit. Last-committed source shows what was committed. It does not
+show which build was released or installed.
+
+### Correction: extension and mobile source exists in history
+
+`4722f938` (2026-09-10, “chore: remove mobile and browser extension apps”)
+deleted `apps/extension` and `apps/mobile`. The original inventory above and the
+#265 dossier (`265-activation-dossier.md` inspection step 4) inspected
+checkouts made after that commit. Their “no tracked source” statements are true
+of the checkout, but the application source for both clients remains in history.
+
+Removing the code from the workspace does not remove installed consumers or their
+server surfaces. At the refresh baseline, `/api/extension/projects` and
+`/api/mobile/*` still exist. User docs still describe the extension
+(`apps/docs/content/docs/guide/user-guide/browser-extension.mdx`) and the mobile
+app (`apps/docs/content/docs/guide/user-guide/time-tracking.mdx:41–64`). Repository
+workflow history (`git log --all -G… -- .github/workflows`) contains no job that
+builds or publishes the extension, mobile or desktop clients. The only match was
+`export` matching `expo`. Release pipelines for these clients are external or
+manual and remain **unknown**.
+
+### Extension: last-committed source
+
+| Aspect | Source evidence (`4722f938^:apps/extension/…`) |
+| --- | --- |
+| Identity and build | MV3 “Z8 Time Tracker”, `manifest.json:2–4` version `1.0.1`; `package.json:3` says `1.0.0`. The manifest has no `key` or `update_url`, so the extension ID and update channel cannot be derived from source. `vite.config.ts:28–50` builds `dist/` with popup, options and a background module worker. |
+| Version vs format | `manifest.json` has stayed `1.0.1` since creation (`fc0565b9`, 2026-02-01) through removal while queue and transport semantics changed (cohorts below). **The manifest version cannot identify a stored format or reader behaviour.** |
+| Server binding | `webappUrl` lives in `chrome.storage.sync` (`src/lib/storage.ts:32–77`), which syncs across the user's signed-in browser profiles. Default is `http://localhost:3000`. Host permissions cover localhost and `*.z8-time.app`; `Options.tsx:45–64` requests any other HTTPS origin at runtime. Changing it redirects every queued row to the new server. |
+| Queue storage | `chrome.storage.local` key `actionQueue` holds a JSON array (`storage.ts:79–110`). Each add or remove is a whole-array get-then-set without a lock. Popup enqueue (`src/popup/hooks/useClock.ts:120–136`) and background removal (`src/background/background.ts:121`) run in different contexts, so a lost update can drop a row. This is statically traced, not reproduced. Related keys: `optimisticState`, `lastAction`. |
+| Row format | Latest: `{id (crypto.randomUUID), type, timestamp (UTC ISO ms), browserTimezone (IANA, "UTC" fallback), utcOffsetMinutes, projectId?, createdAt}` (`src/lib/clock-action.ts:12–54`, `storage.ts:7–10`). There is no account, organization, employee or server binding. |
+| Capture | Rows are queued only when `navigator.onLine` is false (`useClock.ts:178–230`). An online request that fails surfaces as an error and is not queued. |
+| Transport | `background.ts:99–112`: `POST {webappUrl}/api/time-entries` with **current cookies**, body = row minus `createdAt` plus `replay: true` and `projectId`. No `organizationId` is sent, so the browser's organization-assertion 400 path does not apply. The alarm runs every minute (`:163–170`), plus on startup and on popup `PROCESS_QUEUE`. |
+| Deletion | `background.ts:119–122` removes on any 2xx **or 400**. 401, other statuses and network errors `break`, which retains the row and blocks later rows. There is no local age or exhaustion purge. `src/lib/api.ts:95–111` `processQueuedAction` would remove on any non-network error but has no caller. `storage.clearQueue` also has no caller. |
+| Update/disable | No in-source updater, remote config or kill switch. Store installations update at the browser's discretion; unpacked installations never auto-update. |
+
+Source-history cohorts, bounded by commits, not releases:
+
+| Cohort | Commits | Stored row | Reader deletes on |
+| --- | --- | --- | --- |
+| X1 | `fc0565b9` (2026-02-01) → before `252d5082` (2026-05-09) | `{id, type, projectId?, timestamp, createdAt}` | 2xx, 400, **401** |
+| X2 | `252d5082` → before `0ed4c360`/`05a75061` (2026-07-10/11) | same as X1 | 2xx, 400 |
+| X3 | `0ed4c360`/`05a75061` → `4722f938^` | adds `browserTimezone`, `utcOffsetMinutes`; replay sends `replay: true` | 2xx, 400 |
+
+Composed destructive paths against the **current** direct route
+(`apps/webapp/src/app/api/time-entries/route.ts`), statically traced:
+
+```text
+X1/X2 row (UUID id, no zone/offset) read by an X3 reader after upgrade
+  -> body {id, type, timestamp, replay: true}
+  -> UUID id makes hasCapturedEvidence true; zone/offset missing
+  -> 400 "Clock timezone evidence is incomplete" (route.ts:296–313)
+  -> extension removes the row
+
+X3 row replayed more than 7 days after its timestamp (offline, dormant or 401-blocked)
+  -> 400 "Clock instant is outside the allowed capture window" (route.ts:318–326)
+  -> extension removes the row: server validation acts as age deletion
+
+Any row after a server/organization change, or with changed work state
+  -> 400 for project scope, category, "No active organization" or
+     "No active work period found" (route.ts:244–247, 345–394, 421–422)
+  -> extension removes the row
+```
+
+403 (`route.ts:252–256`, `414–416`), 404 and 409 (`:417–419`) retain the row for
+this source's reader, but leave it blocking the queue head. That observation is
+not a preservation control: the deployed readers are unknown and may be X1/X2,
+and #263/#259 do not accept server denial as a fence.
+
+### Mobile: last-committed source
+
+| Aspect | Source evidence (`4722f938^:apps/mobile/…`) |
+| --- | --- |
+| Identity and build | Expo “Z8 Mobile”, slug `z8-mobile`, version `1.0.0`, iOS `bundleIdentifier` and Android `package` `com.z8.mobile` (`app.json:3–5,15–25`). `package.json:11` build is `expo export`. There is no `eas.json` and no `expo-updates` dependency, so the source shows no OTA channel. Native build/signing/distribution is **unknown**. |
+| Server binding | `EXPO_PUBLIC_WEBAPP_URL` is fixed at build time (`src/lib/config.ts:3–11`). A binary is bound to one server; the user cannot change it at runtime. |
+| Account/session | Bearer token in SecureStore key `z8.mobile.session-token` (`src/lib/auth/session-store.ts:3–15`). Requests send `X-Z8-App-Type: mobile` (`src/lib/api/client.ts:34–49`). The organization comes from the server session. |
+| Queue | **None.** Clock actions POST directly to `/api/mobile/time-clock` (`src/features/home/use-home-query.ts:61–76`). `offline-queue-contract.test.ts:6–11` (added `05a75061`) asserts that no queue, AsyncStorage, enqueue or replay code exists. Repository history shows no durable mobile clock queue. TanStack mutations are not retried by default (`src/lib/query/query-client.ts`). |
+| Command identity | Clock-in has no operation ID. Clock-out generates a new `submissionId` on each press (`src/features/home/clock-action.ts:31–48`). After a lost response, a user retry is a new command, so in-flight uncertainty remains. There are no stored rows to preserve. |
+
+For last-committed mobile source, the stored-row preservation matrix is
+**not applicable**; only in-flight/lost-response uncertainty applies (#275/#283).
+Whether distributed binaries match this source is **unknown**. An older or
+externally built binary with a queue cannot be ruled out without the C266-M packet.
+
+### Browser: desired production release predates preservation
+
+`ab54db28` (2026-09-16) made `publish-images.yml` record each production core
+image digest in `Umami-Creative-GmbH/z8-infra`. Argo CD sync stays manual
+(`scripts/ci/update-infra-release.py:1–2,60`), so this is **desired** state, not
+proof of what runs on any origin. The read-only record at
+`scaleway-kapsule/k8s/overlays/production/release/kustomization.yaml` shows:
+
+- The core source is `66bbc7b5` (run `34777842252`, 2026-09-13, success), with
+  `z8-webapp@sha256:11082b0e…b033b`. `66bbc7b5` does **not** contain #267
+  (`bf7fdbda`) or #268 (`95bba9ad`). The desired production browser page and
+  worker are therefore still the destructive pre-#267 reader.
+- The `main` core publish that includes #267 (`20faabc1`, run `35790360811`,
+  2026-09-22) failed while prerendering `/[locale]/platform-admin/analytics`
+  (`Date.now()` in a Client Component). The release-record job was skipped.
+  `ca0d16a4` on `dev` addresses that prerender failure; it has not yet reached `main`.
+
+The post-#267 worker answers `GET_VERSION` with
+`clockQueueMode: "preservation-only-v1"` (`apps/webapp/public/sw.js:382–386`).
+New callers refuse capture without it (`apps/webapp/src/hooks/use-offline-clock.ts:135–140,224`).
+Pre-#267 workers do not report it. A new page can therefore **detect** a
+destructive controlling worker, but only for pages that load the new code. It is
+not a census of dormant profiles, waiting workers or tabs that are never reloaded,
+and it does not disable an old worker's background processing.
+
+### Desktop: versions do not distinguish readers
+
+#268 removed the destructive submit/delete loop but kept the same
+`offline_queue.db`/`queue` table (`docs/desktop-clock-preservation-268.md:20–23,72–74,118–122`).
+`apps/desktop/src-tauri/tauri.conf.json:4` and `apps/desktop/package.json:3` are
+still `0.1.0`, the same as the destructive baseline. **A manifest version cannot
+tell a preserving binary from a destructive one.** Build hash or signature
+evidence is required. #268 adds no updater; Cargo gains only the default-off
+`desktop-recovery-evidence` feature. A reinstalled or rolled-back older binary
+would read and delete the preserved table.
+
+### Blocker deltas
+
+| ID | Change from this refresh | Still missing |
+| --- | --- | --- |
+| C266-B | Desired production release identified; it predates #267. The `preservation-only-v1` marker exists for detection. | Deployed digest per origin, named web release/operator owner, publish and sync of a preserving release, and proof that old workers and dormant profiles cannot process rows. **Blocked.** |
+| C266-D | Source-preserving reader exists (#268); versions are indistinguishable. | Builder/signer/distributor, binary hash inventory, update/stop mechanism, and rollback protection against older binaries. **Blocked.** |
+| C266-E | Source, stored format, three reader cohorts and composed 400 deletion paths traced from history. | Extension IDs, store/unpacked channels, publisher owner, deployed cohort per installation, and any control that stops X1–X3 readers before rows age out or hit 400. **Blocked.** |
+| C266-M | Source traced; no durable queue in any committed version; server fixed per build. | App IDs as distributed, signed binaries and their source commits, confirmation that no distributed build has a queue, and store/native update control. **Blocked**, but the stored-row obligations narrow to in-flight uncertainty if confirmed. |
+| C266-X | No change. | Unchanged. **Blocked.** |
+
+Evidence request to the release/operator owner, in addition to the packet above:
+(1) the extension ID(s), channels and publish history mapped to the X1–X3
+cohorts; (2) mobile store listings/binaries mapped to source commits;
+(3) desktop installer hashes mapped to source commits; (4) the digest actually
+running on each production and self-hosted origin, and when Argo CD synced it.
+
 ## Acceptance and verification status
 
 | #266 acceptance criterion | Status |
 | --- | --- |
-| Actual source/build owners, supported deployed versions, context, queue and transport for every client | **Partial / blocked:** browser/desktop source formats and server adapters traced; release owners/deployed support unverified, extension/mobile application source absent. |
-| Effective update/disable of every affected old consumer, including interrupted upgrades | **Blocked:** existing mechanisms and their limitations recorded; no effective deployed mechanism demonstrated. |
-| Preservation cannot delete unresolved rows on validation, upgrade errors, age or exhaustion | **Blocked:** destructive paths identified and required proof specified; no preservation release/runtime result claimed. |
-| Evidence and remaining access/ownership blockers by activation scope | **Recorded above:** C266-B/D/E/M/X, with delivery slices and the owner evidence packet. |
+| Actual source/build owners, supported deployed versions, context, queue and transport for every client | **Partial / blocked:** browser/desktop source formats and server adapters traced. Extension and mobile last-committed source traced from history (2026-09-24 refresh). Desired browser release identified. Release owners, deployed versions and extension/mobile distribution unverified. |
+| Effective update/disable of every affected old consumer, including interrupted upgrades | **Blocked:** existing mechanisms and their limitations recorded; no effective deployed mechanism demonstrated. Preserving browser and desktop source exists (#267/#268) but is not in the desired production release, or is not distinguishable by version. |
+| Preservation cannot delete unresolved rows on validation, upgrade errors, age or exhaustion | **Blocked:** destructive paths identified, including extension X1/X2→X3 upgrade and 7-day replay-window 400 deletion. Required proof specified; no preservation release/runtime result claimed. |
+| Evidence and remaining access/ownership blockers by activation scope | **Recorded above:** C266-B/D/E/M/X, delivery slices, owner evidence packet and 2026-09-24 deltas. |
 
 Documentation-only delivery. No application code changed. No TDD seam was
 implemented; typechecking and application test suites do not establish the
@@ -317,3 +463,8 @@ Precommit standards review reported no findings. Spec review identified the
 omitted desktop Quit control and ambiguous source citation roots; both were
 corrected, including the remaining mobile citation found on recheck.
 `git diff --cached --check` passed. Required runtime acceptance remains outstanding.
+
+The 2026-09-24 refresh is also documentation-only. It read repository history, GitHub
+run/release metadata and the `z8-infra` desired-release file. It did not
+modify infrastructure, trigger workflows, run tests or builds, access a database,
+or deploy or activate anything.
