@@ -854,6 +854,7 @@
         "failed": "Non riuscito",
         "failedDescription": "Non riuscito di recente",
         "paused": "In pausa",
+        "pausedDescription": "Lavori in pausa",
         "queueState": "Coda",
         "queueStateDescription": "Indica se i worker possono prendere in carico le attività in attesa",
         "running": "In esecuzione",

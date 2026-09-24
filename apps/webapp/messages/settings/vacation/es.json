@@ -45,6 +45,13 @@
       "description": "Gestionar políticas de vacaciones y asignaciones para su organización",
       "editPolicy": "Editar \"{name}\"",
       "employees": {
+        "actions": {
+          "edit": "Editar"
+        },
+        "allowancesForYear": "Asignaciones de vacaciones para {{year}}",
+        "defaultAllowanceDescription": "Asignación predeterminada: {{days}} días por año",
+        "defaultPolicy": "Predeterminado",
+        "description": "Configurar asignaciones de vacaciones personalizadas para empleados individuales",
         "detail": {
           "addManualAdjustment": "Añadir ajuste manual",
           "addManualAdjustmentDescription": "Crear una nueva entrada de ajuste para circunstancias especiales (p. ej., días de bonificación, correcciones). Cada ajuste se registra en el registro de auditoría.",
@@ -91,7 +98,25 @@
         "edit": {
           "description": "Configurar asignación de vacaciones personalizada para {{name}}",
           "title": "Editar asignación de vacaciones"
-        }
+        },
+        "employeeCount": "{{count}} empleados",
+        "emptyDescription": "Añada empleados a su organización para gestionar sus asignaciones de vacaciones.",
+        "emptyTitle": "No se encontraron empleados",
+        "noOrgPolicyConfigured": " (No hay política de organización configurada)",
+        "primaryManager": "Principal",
+        "table": {
+          "actions": "Acciones",
+          "adjustments": "Ajustes",
+          "carryover": "Acumulación",
+          "customDays": "Días personalizados",
+          "defaultDays": "Días predeterminados",
+          "employee": "Empleado",
+          "managers": "Gerentes",
+          "policy": "Política",
+          "team": "Equipo",
+          "totalAvailable": "Total disponible"
+        },
+        "title": "Asignaciones de empleados"
       },
       "expires": "Expira",
       "fallsBackToDefault": "Vuelve al valor predeterminado de la empresa",

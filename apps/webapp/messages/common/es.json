@@ -165,6 +165,7 @@
     "moveDown": "Bajar",
     "moveUp": "Mover hacia arriba",
     "name": "Nombre",
+    "never": "Nunca",
     "new": "Nuevo",
     "next": "Siguiente",
     "notApplicable": "N/D",
@@ -289,8 +290,16 @@
     "trust-center": "Centro de confianza"
   },
   "loading": {
+    "application": "Cargando aplicación",
+    "authentication": "Cargando autenticación",
+    "calendar": "Cargando calendario",
     "chart": "Cargando gráfico",
-    "settings": "Cargando configuración"
+    "licenses": "Cargando licencias",
+    "platformAnalytics": "Cargando analíticas de la plataforma",
+    "settings": "Cargando ajustes",
+    "setup": "Cargando configuración",
+    "teamAbsences": "Cargando ausencias del equipo",
+    "workerQueue": "Cargando cola de trabajos"
   },
   "nav": {
     "absences": "Ausencias",
@@ -326,6 +335,14 @@
       "viewAll": "Ver todas las notificaciones"
     },
     "content": {
+      "absenceRequestSubmitted": {
+        "message": "Tu solicitud de {categoryName} para {dateRange} se ha enviado y está pendiente de aprobación.",
+        "title": "Solicitud de ausencia enviada"
+      },
+      "teamMemberRemoved": {
+        "message": "Has sido eliminado del equipo {teamName} por {performedByName}.",
+        "title": "Eliminado del equipo"
+      },
       "passwordChanged": {
         "message": "Tu contraseña se ha cambiado correctamente. Si no has realizado este cambio, contacta con el servicio de asistencia inmediatamente.",
         "title": "Contraseña cambiada"
@@ -417,6 +434,10 @@
     "banner": {
       "archived": "Evidencia de fichaje archivada y conservada en este dispositivo",
       "offline": "Estás sin conexión",
+      "offlineWithPending": "Sin conexión - {count} evento(s) pendiente(s)",
+      "pending": "{count} evento(s) pendiente(s) de sincronización",
+      "retry": "Reintentar",
+      "syncing": "Sincronizando {count} evento(s)...",
       "offlineSaved": "Sin conexión — {count} registro(s) guardado(s) localmente para revisión",
       "refresh": "Actualizar estado",
       "refreshing": "Comprobando {count} registro(s) guardado(s)…",
@@ -534,8 +555,12 @@
   "validation": {
     "first-name-required": "El nombre es obligatorio",
     "invalid-email": "Dirección de correo electrónico inválida",
+    "invalid-password": "Contraseña inválida",
     "last-name-required": "El apellido es obligatorio",
     "password-required": "La contraseña es obligatoria"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Cargando el portal del comité de empresa"
   },
   "workBalance": {
     "label": "Saldo histórico",

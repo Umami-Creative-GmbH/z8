@@ -78,7 +78,7 @@
         "title": "Einladungen"
       },
       "lifecycle": {
-        "actionsLabel": "Mitarbeiteraktionen für ${target.displayName}",
+        "actionsLabel": "Mitarbeiteraktionen für {name}",
         "deactivate": "Deaktivieren",
         "deactivateDescription": "Dies sperrt den Zugriff auf diese Organisation und beendet laufende Sitzungen. Der Mitarbeiterverlauf bleibt erhalten.",
         "deactivateError": "Mitarbeiter konnte nicht deaktiviert werden",
@@ -86,6 +86,8 @@
         "deactivateTitle": "Mitarbeiter deaktivieren?",
         "deactivating": "Wird deaktiviert...",
         "deactivatingStatus": "Mitarbeiter wird deaktiviert",
+        "finalOwnerDeactivateGuidance": "Weisen Sie zuerst einen anderen bestätigten Eigentümer zu und aktivieren Sie ihn, bevor Sie diesen Mitarbeiter deaktivieren.",
+        "finalOwnerRemoveGuidance": "Weisen Sie zuerst einen anderen bestätigten Eigentümer zu und aktivieren Sie ihn, bevor Sie diesem Mitarbeiter den Zugriff entziehen.",
         "reactivate": "Reaktivieren",
         "reactivateDescription": "Dies stellt den Zugriff auf diese Organisation unter Verwendung des bestehenden Mitarbeiterdatensatzes wieder her.",
         "reactivateError": "Mitarbeiter konnte nicht reaktiviert werden",

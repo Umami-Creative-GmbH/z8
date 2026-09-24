@@ -2,6 +2,8 @@
   "myRequests": {
     "actions": {
       "cancel": "Annulla",
+      "cancelConfirmation": "Annullare questa richiesta di assenza?",
+      "cancelError": "Impossibile annullare la richiesta di assenza.",
       "cancelling": "Annullamento in corso…",
       "cancelRequestConfirmation": "Annullare questa richiesta?",
       "cancelRequestError": "Impossibile annullare la richiesta.",

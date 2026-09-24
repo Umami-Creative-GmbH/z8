@@ -542,5 +542,8 @@
     "notCalculated": "Ikke beregnet ennå",
     "pendingDescription": "Systemet vil beregne denne saldoen snart.",
     "updatedEveryThreeHours": "Oppdateres hver 3. time"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Laster inn bedriftsutvalg"
   }
 }

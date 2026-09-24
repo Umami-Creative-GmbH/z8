@@ -45,6 +45,13 @@
       "description": "Manage vacation policies and assignments for your organization",
       "editPolicy": "Edit \"{name}\"",
       "employees": {
+        "actions": {
+          "edit": "Edit"
+        },
+        "allowancesForYear": "Vacation Allowances for {{year}}",
+        "defaultAllowanceDescription": "Default allowance: {{days}} days per year",
+        "defaultPolicy": "Default",
+        "description": "Configure custom vacation allowances for individual employees",
         "detail": {
           "addManualAdjustment": "Add Manual Adjustment",
           "addManualAdjustmentDescription": "Create a new adjustment entry for special circumstances (e.g., bonus days, corrections). Each adjustment is recorded in the audit log.",
@@ -91,7 +98,25 @@
         "edit": {
           "description": "Configure custom vacation allowance for {{name}}",
           "title": "Edit Vacation Allowance"
-        }
+        },
+        "employeeCount": "{{count}} employees",
+        "emptyDescription": "Add employees to your organization to manage their vacation allowances.",
+        "emptyTitle": "No employees found",
+        "noOrgPolicyConfigured": " (No org policy configured)",
+        "primaryManager": "Primary",
+        "table": {
+          "actions": "Actions",
+          "adjustments": "Adjustments",
+          "carryover": "Carryover",
+          "customDays": "Custom Days",
+          "defaultDays": "Default Days",
+          "employee": "Employee",
+          "managers": "Managers",
+          "policy": "Policy",
+          "team": "Team",
+          "totalAvailable": "Total Available"
+        },
+        "title": "Employee Allowances"
       },
       "expires": "Expires",
       "fallsBackToDefault": "Falls back to company default",

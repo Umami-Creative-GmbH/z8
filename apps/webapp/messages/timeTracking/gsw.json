@@ -12,9 +12,11 @@
     "clockIn": "Iistämple",
     "clockingIn": "Am Iistämple…",
     "clockingOut": "Am Usstämple…",
+    "clockInQueued": "Iistemplig für Synchronisierig vorgemerkt",
     "clockInSavedForReview": "Iistämple uf dem Grät zur Überprüefig gspeicheret; nöd uf em Server bestätigt",
     "clockInSuccess": "Erfolgriich iigstämplet",
     "clockOut": "Usstämple",
+    "clockOutQueued": "Uusstemplig für Synchronisierig vorgemerkt",
     "clockOutSavedForReview": "Usstämple uf dem Grät zur Überprüefig gspeicheret; nöd uf em Server bestätigt",
     "clockOutSuccess": "Erfolgriich usgstämplet",
     "compliance": {
@@ -24,13 +26,16 @@
     "correction": {
       "clockIn": "Iistämple",
       "clockInDate": "Datum vom Iistämpfle",
+      "clockInTime": "Ziit vom Iistämpfle",
       "clockOut": "Usstämple",
       "clockOutDate": "Datum vom Uusstämpfle",
+      "clockOutTime": "Ziit vom Uusstämpfle",
       "editDescription": "Änderige a dim Ziiteintrag für hüt vorneh.",
       "editEntry": "Ziiteintrag bearbeite",
       "editTitle": "Ziiteintrag bearbeite",
       "errors": {
         "invalidTimeRange": "D'Usstämplizit muess nach de Iistämplizit sii",
+        "noChanges": "Mindeschtens en Korrekturwert muess gänderet werde",
         "submitFailed": "Korrektur het nöd chönne übermittle wärde",
         "updateFailed": "Ziiteintrag het nöd chönne aktualisiert wärde"
       },
@@ -46,7 +51,7 @@
       "submitRequest": "Aatrag iireiche",
       "submitting": "Am Iireiche…",
       "success": {
-        "applied": "Korrektur erfolgreich angewendet",
+        "applied": "Korrektur erfolgriich aagwendet",
         "submitted": "Korrektur-Aatrag zur Genehmigung dur de Manager iigreicht",
         "updated": "Ziiteintrag erfolgriich aktualisiert"
       },
@@ -72,7 +77,7 @@
       "errors": {
         "createFailed": "Ziitiitrag hät nöd chönne erstellt werde",
         "futureDate": "Iiträg für Zuekunftsdatum chönd nöd erstellt werde",
-        "invalidTime": "Gib e vollständigi, gültigi Ziit ii",
+        "invalidTime": "Gib e vollständigi, gültigi Uhrziit ii",
         "invalidTimeRange": "Uusstempliziit mues nach de Iistempliziit sii",
         "tooLong": "Arbeitsziit darf nöd meh als 24 Stunde sii"
       },
@@ -143,7 +148,12 @@
     },
     "unknownCategory": "Unbekannti Kategorie",
     "unknownProject": "Unbekannts Projekt",
-    "workCategory": "Arbetskategorie"
+    "workCategory": "Arbetskategorie",
+    "workLocation": "Arbetsort",
+    "workLocationHome": "Dihei",
+    "workLocationOffice": "Büro",
+    "workLocationOther": "Anders",
+    "workLocationRemote": "Mobil"
   },
   "wellness": {
     "water": {

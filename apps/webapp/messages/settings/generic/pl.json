@@ -854,6 +854,7 @@
         "failed": "Nieudane",
         "failedDescription": "Ostatnio nieudane",
         "paused": "Wstrzymane",
+        "pausedDescription": "Wstrzymane zadania",
         "queueState": "Kolejka",
         "queueStateDescription": "Czy procesy robocze mogą pobierać oczekujące zadania",
         "running": "Uruchomione",
