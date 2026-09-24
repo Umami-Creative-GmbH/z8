@@ -24,12 +24,13 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { departureCutoffDate } from "@/lib/employee-lifecycle/cutoff-display";
+import type { EmployeeOffboardingView } from "@/lib/employee-lifecycle/view-types";
 import { useEmployeeOffboarding, useRequestIdentity } from "@/lib/query/use-employee-offboarding";
 import { DepartureCard } from "./departure-card";
 import { DepartureForm } from "./departure-form";
 import { FollowUpList } from "./follow-up-list";
-import { zonedDate } from "./format";
-import { type RehireOption, RehireForm } from "./rehire-form";
+import { RehireForm, type RehireOption } from "./rehire-form";
 
 type Panel = { kind: "departure"; mode: "scheduled" | "immediate" } | { kind: "rehire" } | null;
 
@@ -114,7 +115,7 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 			reviews={view.reviews}
 			failedTasks={view.failedTasks}
 			canResolve={view.capabilities.resolve}
-			timeCorrectionHref={`/calendar/${targetEmployeeId}?date=${zonedDate(
+			timeCorrectionHref={`/calendar/${targetEmployeeId}?date=${departureCutoffDate(
 				view.departure.cutoff,
 				view.departure.timezone,
 			)}`}
@@ -161,36 +162,16 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 						</ActionPanelDescription>
 					</ActionPanelHeader>
 					<ActionPanelBody>
-						{panel?.kind === "departure" && (
-							<DepartureForm
-								key={`${targetEmployeeId}:${panel.mode}:${view.departure?.revision ?? 0}`}
+						{panel && (
+							<PanelForm
+								panel={panel}
+								view={view}
+								offboarding={offboarding}
 								organizationId={props.organizationId}
-								employeeId={targetEmployeeId}
-								departure={view.state === "scheduled" ? view.departure : null}
-								initialMode={panel.mode}
-								canSchedule={view.capabilities.schedule}
-								canOffboardNow={view.capabilities.offboardNow}
-								scheduleDeparture={offboarding.scheduleDeparture}
-								offboardNow={offboarding.offboardNow}
-								onCompleted={() =>
-									completed(t("settings.employees.offboarding.saved", "Departure saved"))
-								}
-								onCancel={closePanel}
-							/>
-						)}
-						{panel?.kind === "rehire" && view.previousEmploymentPeriodId && (
-							<RehireForm
-								key={targetEmployeeId}
-								employeeId={targetEmployeeId}
-								previousEmploymentPeriodId={view.previousEmploymentPeriodId}
-								membershipApproved={view.membershipApproved}
 								teams={teamsQuery.data ?? []}
 								managers={props.managers}
 								workPolicies={props.workPolicies}
-								rehire={offboarding.rehire}
-								onCompleted={() =>
-									completed(t("settings.employees.offboarding.rehired", "Employee rehired"))
-								}
+								onCompleted={completed}
 								onCancel={closePanel}
 							/>
 						)}
@@ -225,5 +206,77 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 				</AlertDialogContent>
 			</AlertDialog>
 		</>
+	);
+}
+
+type PanelFormProps = {
+	panel: NonNullable<Panel>;
+	view: EmployeeOffboardingView;
+	offboarding: ReturnType<typeof useEmployeeOffboarding>;
+	organizationId: string;
+	teams: RehireOption[];
+	managers: RehireOption[];
+	workPolicies: RehireOption[];
+	onCompleted: (message: string) => void;
+	onCancel: () => void;
+};
+
+/**
+ * The open panel's form. The view is refreshed after every command, so a
+ * cutoff that passed while the panel was open withdraws the form instead of
+ * offering a command the server no longer allows.
+ */
+function PanelForm({ panel, view, offboarding, ...props }: PanelFormProps) {
+	const { t } = useTranslate();
+	const targetEmployeeId = view.employeeId;
+	const offered =
+		panel.kind === "departure"
+			? view.capabilities.schedule || view.capabilities.offboardNow
+			: view.capabilities.rehire && view.previousEmploymentPeriodId !== null;
+	if (!offered) {
+		return (
+			<p className="text-sm" role="status">
+				{t(
+					"settings.employees.offboarding.stateChanged",
+					"The employment status changed while this form was open. Review the current status before continuing.",
+				)}
+			</p>
+		);
+	}
+	if (panel.kind === "departure") {
+		return (
+			<DepartureForm
+				key={`${targetEmployeeId}:${panel.mode}:${view.departure?.revision ?? 0}`}
+				organizationId={props.organizationId}
+				employeeId={targetEmployeeId}
+				departure={view.state === "scheduled" ? view.departure : null}
+				initialMode={panel.mode}
+				canSchedule={view.capabilities.schedule}
+				canOffboardNow={view.capabilities.offboardNow}
+				scheduleDeparture={offboarding.scheduleDeparture}
+				offboardNow={offboarding.offboardNow}
+				onCompleted={() =>
+					props.onCompleted(t("settings.employees.offboarding.saved", "Departure saved"))
+				}
+				onCancel={props.onCancel}
+			/>
+		);
+	}
+	if (!view.previousEmploymentPeriodId) return null;
+	return (
+		<RehireForm
+			key={targetEmployeeId}
+			employeeId={targetEmployeeId}
+			previousEmploymentPeriodId={view.previousEmploymentPeriodId}
+			membershipApproved={view.membershipApproved}
+			teams={props.teams}
+			managers={props.managers}
+			workPolicies={props.workPolicies}
+			rehire={offboarding.rehire}
+			onCompleted={() =>
+				props.onCompleted(t("settings.employees.offboarding.rehired", "Employee rehired"))
+			}
+			onCancel={props.onCancel}
+		/>
 	);
 }

@@ -6,7 +6,9 @@
  */
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { db as rootDatabase } from "@/db";
 import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
+import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import { countBillableSeats } from "@/lib/effect/services/billing/billable-seat-count";
 import {
@@ -611,10 +613,19 @@ describeLifecycleDatabase("employee offboarding acceptance", () => {
 				acknowledgeUnassignedDuties: true,
 			});
 
-			// What membership acceptance or SCIM provisioning does: flip the projection.
-			await fixture.pool.query(`update employee set is_active = true where id = $1`, [
-				target.employeeId,
-			]);
+			// Accepting membership again runs the production provisioning path, which
+			// reactivates inactive employees; the database guard keeps this one inactive.
+			const provisioned = await ensureEmployeeForOrganizationMember(
+				fixture.db as typeof rootDatabase,
+				{
+					mode: "membershipAccepted",
+					userId: target.userId,
+					organizationId,
+					memberRole: "member",
+				},
+			);
+
+			expect(provisioned).toMatchObject({ id: target.employeeId, isActive: false });
 
 			expect(
 				await one(`select is_active from employee where id = $1`, [target.employeeId]),

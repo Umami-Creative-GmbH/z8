@@ -107,6 +107,31 @@ describe("DepartureCard", () => {
 		expect(handlers.onCancelDeparture).toHaveBeenCalled();
 	});
 
+	it("links work kept after the cutoff to the pages that manage it", () => {
+		renderCard(
+			view({
+				state: "offboarded",
+				departure,
+				futureWork: { shifts: 2, absences: 1, employmentTerms: 0 },
+			}),
+		);
+
+		const kept = screen.getByRole("list", { name: "Kept after the departure" });
+		expect(
+			screen.getByRole("link", { name: "Shifts on or after the cutoff: 2" }).getAttribute("href"),
+		).toBe("/scheduling");
+		expect(
+			screen.getByRole("link", { name: "Absences on or after the cutoff: 1" }).getAttribute("href"),
+		).toBe("/calendar/employee-1?date=2026-10-01");
+		expect(kept.textContent).not.toContain("Employment terms");
+	});
+
+	it("shows no future-work list when nothing is dated after the cutoff", () => {
+		renderCard(view({ state: "offboarded", departure }));
+
+		expect(screen.queryByRole("list", { name: "Kept after the departure" })).toBeNull();
+	});
+
 	it("explains a departure blocked by the final owner without offering to depart", () => {
 		renderCard(
 			view({

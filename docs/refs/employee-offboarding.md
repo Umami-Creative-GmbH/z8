@@ -91,7 +91,11 @@ lineage; the initiating admin stays in the departure's own audit trail.
 - A retry after a rehire does nothing (`employee_rehired`), and never touches
   duties created in the new employment.
 - A later stage routed explicitly to the departed person activates for the
-  departure's replacement; without one it fails visibly (it never auto-approves).
+  departure's replacement. Without one, a stage whose fallback is *fail* cannot
+  activate (it never auto-approves), so approving the stage before it fails;
+  such stages are captured at the cutoff as *Approval duties need a replacement*
+  reviews naming the workflow and stage. Replacements assigned later on a
+  handover task apply to that task only, not to later stages.
 - Submitted claims *of* the departed employee (absences, time corrections, work
   periods, expenses) stay decidable by their current approvers.
 
@@ -137,6 +141,12 @@ updated even when Stripe is disabled.
 departure and rehire commands (and the preview) are accepted and whether the
 maintenance job runs. Review resolution, replacement assignment and retries stay
 available regardless.
+
+**Status: closed.** Activation waits for the browser verification required by
+#341 task 3.7: apply migrations 0071–0077 to the target database, flip the gate,
+and click through schedule, edit, cancel, offboard now, the follow-up list
+(resolve, retry, assign replacement), the directory links and rehire, in both
+English and German.
 
 - **Disabling new commands does not undo effective departures.** Access and seat
   decisions for existing departures are enforced by the database regardless of

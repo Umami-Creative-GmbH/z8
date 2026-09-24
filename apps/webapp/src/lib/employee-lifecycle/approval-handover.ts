@@ -36,7 +36,9 @@ const VERSION_CONFLICT_ATTEMPTS = 3;
  * pending canonical workflow. Each task names the exact assignment, so a
  * retry can never touch a duty created later (for example after a rehire).
  * Pending legacy-only approval requests cannot be transferred canonically and
- * become review work instead. Nothing is fetched into application memory.
+ * become review work instead, as do later stages routed explicitly to the
+ * departed person when the departure has no replacement. Nothing is fetched
+ * into application memory.
  */
 export async function captureApprovalHandoverDuties(
 	tx: LifecycleTransaction,
@@ -65,6 +67,32 @@ export async function captureApprovalHandoverDuties(
 			AND s.stage_order = w.current_stage_order
 		ON CONFLICT DO NOTHING
 	`);
+	if (replacementEmployeeId === null) {
+		// A waiting stage holds no assignment yet, so there is nothing to transfer.
+		// Stage activation routes a stage naming the departed person to the
+		// departure's replacement. Without one, a stage whose fallback is `fail`
+		// cannot activate (other fallbacks route to managers or admins), which
+		// blocks approval of the stage before it, so it is surfaced now.
+		await tx.execute(sql`
+			INSERT INTO employee_departure_review
+				(organization_id, employee_id, employment_period_id, departure_id, kind, subject_id, metadata)
+			SELECT s.organization_id, ${identity.employeeId}::uuid, ${identity.employmentPeriodId}::uuid,
+				${identity.departureId}::uuid, 'approval_handover', s.id,
+				jsonb_build_object(
+					'reason', 'future_stage_without_replacement', 'source', 'approval_workflow_stage',
+					'workflowId', s.workflow_id, 'stageId', s.id
+				)
+			FROM approval_workflow_stage s
+			JOIN approval_workflow w
+				ON w.id = s.workflow_id AND w.organization_id = s.organization_id
+			WHERE s.organization_id = ${identity.organizationId}
+				AND w.status = 'pending' AND s.status = 'waiting'
+				AND s.resolver_snapshot->>'approverType' = 'specific_employee'
+				AND s.resolver_snapshot->>'approverEmployeeId' = ${identity.employeeId}
+				AND s.resolver_snapshot->>'fallbackBehavior' = 'fail'
+			ON CONFLICT DO NOTHING
+		`);
+	}
 	await tx.execute(sql`
 		INSERT INTO employee_departure_review
 			(organization_id, employee_id, employment_period_id, departure_id, kind, subject_id, metadata)

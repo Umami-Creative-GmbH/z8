@@ -1,13 +1,14 @@
 /**
  * Server-side release gate for the employee offboarding and rehire workflow.
  *
- * Opened by #341 once all three delivery slices (#340, #339, #341) met the
- * acceptance criteria of spec #338. Setting it back to false rejects new
- * departure/rehire commands and pauses the maintenance job; effective
- * departures that already exist are still enforced regardless of this gate.
- * See docs/refs/employee-offboarding.md before changing it.
+ * All three delivery slices (#340, #339, #341) are implemented, but the gate
+ * stays false until the browser verification required by #341 task 3.7 has
+ * run against a database with migrations 0071–0077 applied. While false, new
+ * departure/rehire commands are rejected and the maintenance job pauses;
+ * effective departures that already exist are still enforced regardless.
+ * See docs/refs/employee-offboarding.md ("Release gate") before changing it.
  */
-export const EMPLOYEE_OFFBOARDING_RELEASE_READY: boolean = true;
+export const EMPLOYEE_OFFBOARDING_RELEASE_READY: boolean = false;
 
 export function assertEmployeeOffboardingReleased(): void {
 	if (!EMPLOYEE_OFFBOARDING_RELEASE_READY) {

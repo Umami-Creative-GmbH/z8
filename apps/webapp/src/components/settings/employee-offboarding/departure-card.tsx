@@ -6,9 +6,12 @@ import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	departureCutoffDate,
+	formatDepartureCutoff,
+} from "@/lib/employee-lifecycle/cutoff-display";
 import type { EmployeeOffboardingView } from "@/lib/employee-lifecycle/view-types";
 import { Link } from "@/navigation";
-import { formatDepartureCutoff } from "./format";
 import { useOffboardingLabels } from "./labels";
 
 export type DepartureCardProps = {
@@ -62,6 +65,7 @@ export function DepartureCard(props: DepartureCardProps) {
 				)}
 
 				<FollowUpSummary followUp={followUp} />
+				<FutureWorkLinks view={view} />
 
 				<div className="flex flex-wrap gap-2">
 					{capabilities.schedule && (
@@ -177,5 +181,67 @@ function FollowUpSummary({ followUp }: { followUp: EmployeeOffboardingView["foll
 		<p className="text-sm" role="status">
 			{parts.join(" · ")}
 		</p>
+	);
+}
+
+/**
+ * Work dated on or after the cutoff is kept, never deleted; each kind links to
+ * the page that already manages it.
+ */
+function FutureWorkLinks({ view }: { view: EmployeeOffboardingView }) {
+	const { t } = useTranslate();
+	const { departure, futureWork } = view;
+	if (!departure) return null;
+	const cutoffDate = departureCutoffDate(departure.cutoff, departure.timezone);
+	const links = [
+		futureWork.shifts > 0 && {
+			key: "shifts",
+			href: "/scheduling",
+			label: t(
+				"settings.employees.offboarding.futureWork.shifts",
+				"Shifts on or after the cutoff: {count}",
+				{ count: futureWork.shifts },
+			),
+		},
+		futureWork.absences > 0 && {
+			key: "absences",
+			href: `/calendar/${view.employeeId}?date=${cutoffDate}`,
+			label: t(
+				"settings.employees.offboarding.futureWork.absences",
+				"Absences on or after the cutoff: {count}",
+				{ count: futureWork.absences },
+			),
+		},
+		futureWork.employmentTerms > 0 && {
+			key: "terms",
+			href: "#employment-history",
+			label: t(
+				"settings.employees.offboarding.futureWork.employmentTerms",
+				"Employment terms starting after the cutoff: {count}",
+				{ count: futureWork.employmentTerms },
+			),
+		},
+	].filter((link): link is { key: string; href: string; label: string } => Boolean(link));
+	if (links.length === 0) return null;
+	const title = t("settings.employees.offboarding.futureWork.title", "Kept after the departure");
+	return (
+		<div className="space-y-1 text-sm">
+			<p className="font-medium">{title}</p>
+			<ul aria-label={title} className="space-y-1">
+				{links.map((link) => (
+					<li key={link.key}>
+						{link.href.startsWith("#") ? (
+							<a className="underline underline-offset-4" href={link.href}>
+								{link.label}
+							</a>
+						) : (
+							<Link className="underline underline-offset-4" href={link.href}>
+								{link.label}
+							</Link>
+						)}
+					</li>
+				))}
+			</ul>
+		</div>
 	);
 }

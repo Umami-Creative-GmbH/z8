@@ -154,6 +154,12 @@
         "followUpPending": "Follow-up work pending",
         "followUpReviews": "{count} to review",
         "formLabel": "Employee departure",
+        "futureWork": {
+          "absences": "Absences on or after the cutoff: {count}",
+          "employmentTerms": "Employment terms starting after the cutoff: {count}",
+          "shifts": "Shifts on or after the cutoff: {count}",
+          "title": "Kept after the departure"
+        },
         "historicalCalendar": "View historical calendar",
         "hourlyRate": "Hourly rate",
         "hourlyRateRequired": "Hourly contracts need a positive hourly rate.",
@@ -179,6 +185,7 @@
         "reasons": {
           "clockOutFailed": "The running timer could not be closed automatically.",
           "futureAssignments": "Future work policy assignments were deactivated.",
+          "futureStage": "A later approval stage is routed only to this person and there is no replacement. Approving the stage before it fails until the approval is decided another way.",
           "futureTerms": "Confirmed terms start after the departure.",
           "legacyAuthority": "This approval cannot be transferred automatically. Reassign it in approvals.",
           "noReplacement": "No replacement was chosen.",
@@ -215,6 +222,7 @@
         "saving": "Saving…",
         "schedule": "Schedule departure",
         "scheduledDescription": "Access and paid-seat usage end at {cutoff} ({timezone}).",
+        "stateChanged": "The employment status changed while this form was open. Review the current status before continuing.",
         "states": {
           "active": "Employed",
           "blocked": "Departure blocked",

@@ -119,6 +119,76 @@ describe("EmployeeOffboardingSection", () => {
 		}));
 	});
 
+	it("stops offering the open form once the cutoff passes and the view refreshes", async () => {
+		const user = userEvent.setup();
+		const scheduled: EmployeeOffboardingView = {
+			...activeView(employeeA),
+			state: "scheduled",
+			departure: {
+				id: "22222222-2222-4222-8222-222222222222",
+				revision: 1,
+				mode: "scheduled",
+				lastWorkingDay: "2026-09-30",
+				cutoff: "2026-09-30T22:00:00Z",
+				timezone: "Europe/Berlin",
+				replacementEmployeeId: null,
+				blockedReason: null,
+			},
+			capabilities: {
+				schedule: true,
+				cancel: true,
+				offboardNow: true,
+				rehire: false,
+				resolve: false,
+			},
+		};
+		const offboarded: EmployeeOffboardingView = {
+			...scheduled,
+			state: "offboarded",
+			capabilities: {
+				schedule: false,
+				cancel: false,
+				offboardNow: false,
+				rehire: true,
+				resolve: false,
+			},
+		};
+		let current = scheduled;
+		hook.useEmployeeOffboarding.mockImplementation(() => ({
+			view: current,
+			isLoading: false,
+			isMutating: false,
+			scheduleDeparture: hook.scheduleDeparture,
+			offboardNow: vi.fn(),
+			cancelDeparture: vi.fn(),
+			rehire: vi.fn(),
+			resolveReview: vi.fn(),
+			retryTask: vi.fn(),
+			assignReplacement: vi.fn(),
+		}));
+		// The cutoff passed while the form was open: the server refuses the edit.
+		hook.scheduleDeparture.mockImplementation(async () => {
+			current = offboarded;
+			return {
+				success: false,
+				error: "This departure has already taken effect. Rehire the employee to restore access.",
+			};
+		});
+		const { rerender } = render(section(employeeA));
+
+		await user.click(screen.getByRole("button", { name: "Edit departure" }));
+		await user.click(await screen.findByRole("button", { name: "Save departure" }));
+		await waitFor(() => expect(hook.scheduleDeparture).toHaveBeenCalledTimes(1));
+		// The settled command refreshes the view.
+		rerender(section(employeeA));
+
+		expect(screen.queryByRole("button", { name: "Save departure" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Offboard now" })).toBeNull();
+		expect(screen.getByText(/The employment status changed while this form was open/)).toBeTruthy();
+		expect(screen.getByTestId("departure-state").textContent).toBe("Departure effective");
+		expect(hook.scheduleDeparture).toHaveBeenCalledTimes(1);
+	});
+
 	it("never submits an open form for a previous employee after navigating to another", async () => {
 		const user = userEvent.setup();
 		const { rerender } = render(section(employeeA));

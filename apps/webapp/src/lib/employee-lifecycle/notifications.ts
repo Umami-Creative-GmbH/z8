@@ -3,6 +3,7 @@ import type { db as rootDatabase } from "@/db";
 import type { DepartureReviewKind } from "@/db/schema/employee-lifecycle";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { CreateNotificationParams, NotificationChannel } from "@/lib/notifications/types";
+import { formatDepartureCutoff } from "./cutoff-display";
 import { type DepartureTaskHandler, DepartureTaskNeedsResolutionError } from "./delivery";
 
 export const OFFBOARDING_REVIEW_NOTIFICATION_TYPE = "employee_offboarding_review" as const;
@@ -116,12 +117,28 @@ export function planReviewNotificationDeliveries(
 	return plan;
 }
 
-const REVIEW_LABELS: Record<DepartureReviewKind, string> = {
-	clock_out: "Needs review: offboarding clock-out",
-	clock_repair: "Timer repair required",
-	approval_handover: "Approval duties need a replacement",
-	future_work: "Future work needs review",
-	employment_terms: "Future employment terms need review",
+// Keys are spelled out so the Tolgee extractor can see every one of them.
+const REVIEW_MESSAGES: Record<DepartureReviewKind, { label: string; key: string }> = {
+	clock_out: {
+		label: "Needs review: offboarding clock-out",
+		key: "common:notifications.content.employeeOffboardingReview.clock_out",
+	},
+	clock_repair: {
+		label: "Timer repair required",
+		key: "common:notifications.content.employeeOffboardingReview.clock_repair",
+	},
+	approval_handover: {
+		label: "Approval duties need a replacement",
+		key: "common:notifications.content.employeeOffboardingReview.approval_handover",
+	},
+	future_work: {
+		label: "Future work needs review",
+		key: "common:notifications.content.employeeOffboardingReview.future_work",
+	},
+	employment_terms: {
+		label: "Future employment terms need review",
+		key: "common:notifications.content.employeeOffboardingReview.employment_terms",
+	},
 };
 
 /**
@@ -138,12 +155,8 @@ export function buildReviewNotification(input: {
 	timezone: string;
 	locale: string;
 }): CreateNotificationParams {
-	const cutoff = new Intl.DateTimeFormat(input.locale, {
-		dateStyle: "medium",
-		timeStyle: "short",
-		timeZone: input.timezone,
-	}).format(new Date(input.cutoff.epochMilliseconds));
-	const reviewLabel = REVIEW_LABELS[input.review.kind];
+	const cutoff = formatDepartureCutoff(input.cutoff, input.timezone, input.locale);
+	const { label: reviewLabel, key: messageKey } = REVIEW_MESSAGES[input.review.kind];
 	const message = `${input.employeeName}: ${reviewLabel} (departure effective ${cutoff}, ${input.timezone}).`;
 	return {
 		userId: input.recipientUserId,
@@ -160,7 +173,7 @@ export function buildReviewNotification(input: {
 			i18n: {
 				titleKey: "common:notifications.content.employeeOffboardingReview.title",
 				titleDefault: OFFBOARDING_REVIEW_TITLE,
-				messageKey: `common:notifications.content.employeeOffboardingReview.${input.review.kind}`,
+				messageKey,
 				messageDefault: `{employeeName}: ${reviewLabel} (departure effective {cutoff}, {timezone}).`,
 				params: { employeeName: input.employeeName, cutoff, timezone: input.timezone },
 			},

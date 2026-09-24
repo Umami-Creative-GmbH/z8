@@ -32,13 +32,13 @@ import {
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { formatDepartureCutoff } from "@/lib/employee-lifecycle/cutoff-display";
 import type { EmployeeOffboardingView } from "@/lib/employee-lifecycle/view-types";
 import { useDeparturePreview, useRequestIdentity } from "@/lib/query/use-employee-offboarding";
 import type {
 	OffboardNowInput,
 	ScheduleDepartureInput,
 } from "@/lib/validations/employee-offboarding";
-import { formatDepartureCutoff } from "./format";
 import { useOffboardingLabels } from "./labels";
 
 const NO_REPLACEMENT = "__none__";

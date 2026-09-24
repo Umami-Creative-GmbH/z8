@@ -481,6 +481,49 @@ describeLifecycleDatabase("approval handover", () => {
 				assignments: [{ approverEmployeeId: replacement.employeeId, status: "pending" }],
 			});
 		});
+
+		it("records a later stage for the departed approver as review work without a replacement", async () => {
+			const departing = await fixture.seedEmployee({ role: "admin" });
+			const firstApprover = await fixture.seedEmployee({ role: "admin" });
+			const laterStage = {
+				approverType: "specific_employee",
+				approverEmployeeId: departing.employeeId,
+				fallbackBehavior: "fail",
+			} as const;
+			await seedPendingAbsenceWorkflow(fixture, {
+				requester,
+				approverEmployeeIds: [firstApprover.employeeId],
+				at: new Date(now.epochMilliseconds),
+				secondStageResolver: laterStage,
+			});
+			now = SCHEDULED_AT;
+			const coveredDeparture = await offboard(departing, replacement.employeeId);
+			// With a replacement, stage activation resolves the later stage; nothing to review.
+			expect(await handoverReviews(coveredDeparture)).toEqual([]);
+
+			const uncoveredApprover = await fixture.seedEmployee({ role: "admin" });
+			const uncovered = await seedPendingAbsenceWorkflow(fixture, {
+				requester,
+				approverEmployeeIds: [firstApprover.employeeId],
+				at: new Date(now.epochMilliseconds),
+				secondStageResolver: { ...laterStage, approverEmployeeId: uncoveredApprover.employeeId },
+			});
+			const departureId = await offboard(uncoveredApprover, null);
+
+			expect(await handoverTasks(departureId)).toEqual([]);
+			expect(await handoverReviews(departureId)).toEqual([
+				expect.objectContaining({
+					subject_id: uncovered.secondStage,
+					status: "open",
+					metadata: expect.objectContaining({
+						reason: "future_stage_without_replacement",
+						source: "approval_workflow_stage",
+						workflowId: uncovered.workflow,
+						stageId: uncovered.secondStage,
+					}),
+				}),
+			]);
+		});
 	});
 
 	describe("review and resolution", () => {
