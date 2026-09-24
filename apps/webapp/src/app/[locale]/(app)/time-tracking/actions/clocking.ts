@@ -7,8 +7,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import {
 	approvalRequest,
-	employee,
-	employeeManagers,
+	type employee,
 	type timeEntry,
 	timeRecord,
 	timeRecordAllocation,
@@ -32,11 +31,6 @@ import { deriveApprovalWorkflowId } from "@/lib/approvals/workflow/identity";
 import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
-import {
-	asAppSubject,
-	defineAbilityFor,
-	type PrincipalContext,
-} from "@/lib/authorization";
 import {
 	isBillingMutationAllowed,
 	requireBillingForMutation,
@@ -99,6 +93,10 @@ import {
 	validateProjectAssignment,
 } from "./entry-helpers";
 import {
+	resolveManualEntryTarget,
+	resolveManualEntryTargetZone,
+} from "./manual-entry-target";
+import {
 	checkClockOutNeedsApproval,
 	getEditCapabilityForPeriod,
 } from "./policy-helpers";
@@ -131,8 +129,6 @@ type WorkBalanceDirtyInput = Parameters<typeof markEmployeeWorkBalanceDirty>[0];
 
 const APPROVAL_POLICY_CHECK_ERROR =
 	"Could not verify time approval policy. Please try again.";
-const MANUAL_ENTRY_TARGET_AUTH_ERROR =
-	"Not authorized to create time entries for this employee";
 const CANONICAL_UUID =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
@@ -851,82 +847,6 @@ export type ClockActionContext = BrowserTimezoneContext & {
 	deviceInfo?: "web" | "mobile";
 };
 
-async function resolveManualTimeEntryTarget(params: {
-	currentEmployee: typeof employee.$inferSelect;
-	requestedEmployeeId?: string;
-	sessionUser: { id: string; role?: string | null };
-}): Promise<
-	| {
-			success: true;
-			targetEmployee: typeof employee.$inferSelect;
-			isOwnEntry: boolean;
-	  }
-	| { success: false; error: string }
-> {
-	const { currentEmployee, requestedEmployeeId, sessionUser } = params;
-	if (!requestedEmployeeId || requestedEmployeeId === currentEmployee.id) {
-		return { success: true, targetEmployee: currentEmployee, isOwnEntry: true };
-	}
-
-	const requesterRole = currentEmployee.role;
-	const canTargetOtherEmployees =
-		requesterRole === "admin" ||
-		requesterRole === "manager" ||
-		sessionUser.role === "admin";
-	if (!canTargetOtherEmployees) {
-		return { success: false, error: MANUAL_ENTRY_TARGET_AUTH_ERROR };
-	}
-
-	const targetEmployee = await db.query.employee.findFirst({
-		where: and(
-			eq(employee.id, requestedEmployeeId),
-			eq(employee.organizationId, currentEmployee.organizationId),
-			eq(employee.isActive, true),
-		),
-	});
-	if (!targetEmployee) {
-		return { success: false, error: MANUAL_ENTRY_TARGET_AUTH_ERROR };
-	}
-
-	const managedRecords = await db.query.employeeManagers.findMany({
-		where: and(
-			eq(employeeManagers.managerId, currentEmployee.id),
-			eq(employeeManagers.employeeId, targetEmployee.id),
-		),
-		columns: { employeeId: true },
-	});
-	const principal: PrincipalContext = {
-		userId: sessionUser.id,
-		isPlatformAdmin: sessionUser.role === "admin",
-		activeOrganizationId: currentEmployee.organizationId,
-		orgMembership: null,
-		employee: {
-			id: currentEmployee.id,
-			organizationId: currentEmployee.organizationId,
-			role: currentEmployee.role,
-			teamId: currentEmployee.teamId,
-		},
-		permissions: { orgWide: null, byTeamId: new Map() },
-		managedEmployeeIds: managedRecords.map((record) => record.employeeId),
-		customRoles: [],
-	};
-
-	const ability = defineAbilityFor(principal);
-	const canCreateForTarget = ability.can(
-		"read",
-		asAppSubject("Employee", {
-			id: targetEmployee.id,
-			employeeId: targetEmployee.id,
-			organizationId: targetEmployee.organizationId,
-			teamId: targetEmployee.teamId,
-		}),
-	);
-
-	return canCreateForTarget
-		? { success: true, targetEmployee, isOwnEntry: false }
-		: { success: false, error: MANUAL_ENTRY_TARGET_AUTH_ERROR };
-}
-
 async function markWorkBalanceDirtyAfterClockOutBestEffort(
 	input: WorkBalanceDirtyInput,
 	context: Record<string, unknown>,
@@ -970,7 +890,11 @@ async function validateWorkCategoryAssignment(
 	if (!category) {
 		return { isValid: false, error: "Work category not found" };
 	}
-	return (await employeeHasAccessToCategory(employeeId, workCategoryId))
+	return (await employeeHasAccessToCategory(
+		employeeId,
+		workCategoryId,
+		organizationId,
+	))
 		? { isValid: true }
 		: { isValid: false, error: "Cannot assign to this work category" };
 }
@@ -1922,13 +1846,9 @@ export async function createManualTimeEntry(
 			error: "Failed to create time entry. Please try again.",
 		};
 	}
-	const targetResolution = await resolveManualTimeEntryTarget({
+	const targetResolution = await resolveManualEntryTarget({
 		currentEmployee,
 		requestedEmployeeId: data.employeeId,
-		sessionUser: {
-			id: session.user.id,
-			role: (session.user as { role?: string | null }).role,
-		},
 	});
 	if (!targetResolution.success) {
 		return targetResolution;
@@ -1981,12 +1901,14 @@ export async function createManualTimeEntry(
 		return { success: false, error: "Invalid timezone" };
 	}
 
-	const savedTimezone = isOwnEntry
-		? await getUserTimezone(session.user.id)
-		: await getUserTimezone(targetEmployee.userId ?? session.user.id);
+	// On-behalf entries always use the target's zone, never the actor's browser.
+	const { timezone: targetTimezone } = await resolveManualEntryTargetZone({
+		userId: isOwnEntry ? session.user.id : targetEmployee.userId,
+		organizationId: targetEmployee.organizationId,
+	});
 	const timezone = isOwnEntry
-		? (data.timezone ?? savedTimezone)
-		: savedTimezone;
+		? (data.timezone ?? targetTimezone)
+		: targetTimezone;
 	const matchingBrowserTimezone =
 		isOwnEntry &&
 		data.browserTimezone === timezone &&

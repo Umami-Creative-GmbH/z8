@@ -404,6 +404,7 @@ async function createClockEntry(resolvedHeaders: Headers, body: any) {
 			const hasCategoryAccess = await employeeHasAccessToCategory(
 				currentEmployee.id,
 				workCategoryId,
+				requestedOrgId,
 			);
 			if (!hasCategoryAccess) {
 				return NextResponse.json({ error: "Cannot assign to this work category" }, { status: 400 });

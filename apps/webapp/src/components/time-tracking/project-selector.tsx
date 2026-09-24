@@ -3,6 +3,7 @@
 import { IconBriefcase, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
+import { useId } from "react";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -35,6 +36,8 @@ interface ProjectSelectorProps {
 	 * Whether to show the label
 	 */
 	showLabel?: boolean;
+	/** Whether changes update the last-used project preference */
+	persistPreference?: boolean;
 }
 
 interface ProjectSelectorViewProps extends ProjectSelectorProps {
@@ -58,11 +61,13 @@ export function ProjectSelectorView({
 	onValueChange,
 	disabled = false,
 	showLabel = true,
+	persistPreference = true,
 	projects,
 	isLoading,
 	isError,
 }: ProjectSelectorViewProps) {
 	const { t } = useTranslate();
+	const triggerId = useId();
 
 	// Build a Map for O(1) project lookups (js-index-maps)
 	const projectsMap = new Map(projects.map((p) => [p.id, p]));
@@ -70,10 +75,10 @@ export function ProjectSelectorView({
 	// Save selected project to localStorage and update cache
 	const handleValueChange = (newValue: string) => {
 		if (newValue === "none") {
-			writeLastProjectId(undefined);
+			if (persistPreference) writeLastProjectId(undefined);
 			onValueChange(undefined);
 		} else {
-			writeLastProjectId(newValue);
+			if (persistPreference) writeLastProjectId(newValue);
 			onValueChange(newValue);
 		}
 	};
@@ -110,12 +115,12 @@ export function ProjectSelectorView({
 	return (
 		<div className="grid gap-2">
 			{showLabel && (
-				<Label className="text-sm text-muted-foreground">
+				<Label htmlFor={triggerId} className="text-sm text-muted-foreground">
 					{t("timeTracking.project", "Project")}
 				</Label>
 			)}
 			<Select value={value ?? "none"} onValueChange={handleValueChange} disabled={disabled}>
-				<SelectTrigger className="w-full">
+				<SelectTrigger id={triggerId} className="w-full">
 					<SelectValue placeholder={t("timeTracking.selectProject", "Select a project")}>
 						{value ? (
 							<ProjectOption

@@ -8,6 +8,9 @@ const mockState = vi.hoisted(() => ({
 	getCurrentSession: vi.fn(),
 	getCurrentEmployee: vi.fn(),
 	getUserTimezone: vi.fn(),
+	findUserSettings: vi.fn(),
+	findOrganization: vi.fn(),
+	getPrincipalContext: vi.fn(),
 	getActiveWorkPeriod: vi.fn(),
 	validateTimeEntry: vi.fn(),
 	validateTimeEntryRange: vi.fn(),
@@ -121,6 +124,8 @@ vi.mock("@/db", () => ({
 			timeRecordWork: { findMany: mockState.findCanonicalWork },
 			timeRecordAllocation: { findMany: mockState.findCanonicalAllocations },
 			workCategory: { findFirst: mockState.findWorkCategory },
+			userSettings: { findFirst: mockState.findUserSettings },
+			organization: { findFirst: mockState.findOrganization },
 		},
 		insert: vi.fn(() => ({
 			values: (...args: unknown[]) => mockState.insertValues(...args),
@@ -199,7 +204,20 @@ vi.mock("@/db/schema", () => ({
 	team: {
 		organizationId: "team.organizationId",
 	},
+	userSettings: {
+		userId: "userSettings.userId",
+	},
 }));
+
+// Saved user timezones come from the getUserTimezone mock, keyed by the user id
+// in the userSettings lookup, so tests configure one source of saved zones.
+mockState.findUserSettings.mockImplementation(
+	async ({ where }: { where: SQL }) => {
+		const { params } = new PgDialect().sqlToQuery(where);
+		return { timezone: await mockState.getUserTimezone(params.at(-1)) };
+	},
+);
+mockState.findOrganization.mockResolvedValue({ timezone: null });
 
 vi.mock("@/lib/time-tracking/validation", () => ({
 	validateTimeEntry: mockState.validateTimeEntry,
@@ -2309,6 +2327,7 @@ describe("clockOut", () => {
 		expect(mockState.employeeHasAccessToCategory).toHaveBeenCalledWith(
 			"employee-1",
 			"category-1",
+			"org-1",
 		);
 		expect(mockState.clockingClockOut).not.toHaveBeenCalled();
 		expect(mockState.createCanonicalWorkRecord).not.toHaveBeenCalled();
@@ -2638,8 +2657,43 @@ describe("clockOut", () => {
 });
 
 vi.mock("@/lib/auth-helpers", () => ({
+	getPrincipalContext: mockState.getPrincipalContext,
 	isOrgAdminCasl: mockState.isOrgAdminCasl,
 }));
+
+function principalFor(
+	actor: {
+		id: string;
+		userId: string;
+		organizationId: string;
+		teamId: string | null;
+		role: "admin" | "manager" | "employee";
+	},
+	options: {
+		orgRole?: "owner" | "admin" | "member";
+		managedEmployeeIds?: string[];
+	} = {},
+) {
+	return {
+		userId: actor.userId,
+		isPlatformAdmin: false,
+		activeOrganizationId: actor.organizationId,
+		orgMembership: {
+			organizationId: actor.organizationId,
+			role: options.orgRole ?? "member",
+			status: "active" as const,
+		},
+		employee: {
+			id: actor.id,
+			organizationId: actor.organizationId,
+			role: actor.role,
+			teamId: actor.teamId,
+		},
+		permissions: { orgWide: null, byTeamId: new Map() },
+		managedEmployeeIds: options.managedEmployeeIds ?? [],
+		customRoles: [],
+	};
+}
 
 describe("createManualTimeEntry", () => {
 	beforeEach(() => {
@@ -3072,6 +3126,18 @@ describe("createManualTimeEntry", () => {
 			role: "employee",
 		});
 		mockState.findManagerLinks.mockResolvedValue([{ employeeId: "staff-1" }]);
+		mockState.getPrincipalContext.mockResolvedValue(
+			principalFor(
+				{
+					id: "manager-1",
+					userId: "manager-user",
+					organizationId: "org-1",
+					teamId: "team-1",
+					role: "manager",
+				},
+				{ managedEmployeeIds: ["staff-1"] },
+			),
+		);
 		mockState.getUserTimezone.mockImplementation(async (userId: string) =>
 			userId === "staff-user" ? "Europe/Berlin" : "UTC",
 		);
@@ -3167,6 +3233,23 @@ describe("createManualTimeEntry", () => {
 			},
 		]);
 		mockState.findManagerLinks.mockResolvedValue([]);
+		mockState.findEmployee.mockResolvedValue({
+			id: "employee-2",
+			userId: "other-user",
+			organizationId: "org-1",
+			teamId: "team-1",
+			isActive: true,
+			role: "employee",
+		});
+		mockState.getPrincipalContext.mockResolvedValue(
+			principalFor({
+				id: "employee-1",
+				userId: "employee-user",
+				organizationId: "org-1",
+				teamId: "team-1",
+				role: "employee",
+			}),
+		);
 
 		const result = await createManualTimeEntry({
 			employeeId: "employee-2",
@@ -3185,6 +3268,214 @@ describe("createManualTimeEntry", () => {
 		expect(mockState.getEditCapabilityForPeriod).not.toHaveBeenCalled();
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 		expect(mockState.insertValues).not.toHaveBeenCalled();
+	});
+
+	describe("on-behalf target authorization", () => {
+		const staff = {
+			id: "staff-1",
+			userId: "staff-user",
+			organizationId: "org-1",
+			teamId: "team-1",
+			isActive: true,
+			role: "employee" as const,
+		};
+
+		function arrangeActor(actor: {
+			id: string;
+			userId: string;
+			role: "admin" | "manager" | "employee";
+		}) {
+			const currentEmployee = {
+				...actor,
+				organizationId: "org-1",
+				teamId: "team-1",
+				managerId: null,
+			};
+			mockState.getCurrentSession.mockResolvedValue({
+				user: { id: actor.userId },
+			});
+			mockState.getCurrentEmployee.mockResolvedValue(currentEmployee);
+			mockState.findEmployees.mockResolvedValue([
+				{ ...currentEmployee, isActive: true },
+				staff,
+			]);
+			return currentEmployee;
+		}
+
+		function arrangeSuccessfulWrite() {
+			mockState.createCanonicalWorkRecord.mockResolvedValue({
+				id: "canonical-1",
+			});
+			mockState.createTimeEntry
+				.mockResolvedValueOnce({ id: "clock-in-1" })
+				.mockResolvedValueOnce({ id: "clock-out-1" });
+			mockState.insertValues.mockReturnValueOnce({
+				returning: mockState.insertReturning,
+			});
+			mockState.insertReturning.mockResolvedValueOnce([{ id: "period-1" }]);
+			mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
+		}
+
+		it("lets an organization owner with an ordinary employee role create for an active colleague", async () => {
+			const owner = arrangeActor({
+				id: "owner-1",
+				userId: "owner-user",
+				role: "employee",
+			});
+			mockState.getPrincipalContext.mockResolvedValue(
+				principalFor(owner, { orgRole: "owner" }),
+			);
+			mockState.findEmployee.mockResolvedValue(staff);
+			mockState.getUserTimezone.mockImplementation(async (userId: string) =>
+				userId === "staff-user" ? "Europe/Berlin" : "UTC",
+			);
+			arrangeSuccessfulWrite();
+
+			const result = await createManualTimeEntry({
+				employeeId: "staff-1",
+				date: "2026-05-04",
+				clockInTime: "08:00",
+				clockOutTime: "09:00",
+				timezone: "Europe/Berlin",
+				reason: "Entered by the owner",
+			});
+
+			expect(result.success).toBe(true);
+			expect(mockState.getEditCapabilityForPeriod).not.toHaveBeenCalled();
+			expect(mockState.createTimeEntry).toHaveBeenNthCalledWith(
+				1,
+				expect.objectContaining({
+					employeeId: "staff-1",
+					organizationId: "org-1",
+					timezoneSource: "manager_target_user_setting",
+				}),
+				expect.anything(),
+			);
+		});
+
+		it("rejects a manager creating for a teammate who is not a direct report", async () => {
+			const manager = arrangeActor({
+				id: "manager-1",
+				userId: "manager-user",
+				role: "manager",
+			});
+			// Same team, readable roster, but no direct-report link.
+			mockState.getPrincipalContext.mockResolvedValue(
+				principalFor(manager, { managedEmployeeIds: [] }),
+			);
+			mockState.findEmployee.mockResolvedValue(staff);
+
+			const result = await createManualTimeEntry({
+				employeeId: "staff-1",
+				date: "2026-05-04",
+				clockInTime: "08:00",
+				clockOutTime: "09:00",
+				timezone: "UTC",
+				reason: "Not my report",
+			});
+
+			expect(result).toEqual({
+				success: false,
+				error: "Not authorized to create time entries for this employee",
+			});
+			expect(mockState.validateTimeEntryRange).not.toHaveBeenCalled();
+			expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		});
+
+		it("rejects targets that are inactive or outside the active organization", async () => {
+			const admin = arrangeActor({
+				id: "admin-1",
+				userId: "admin-user",
+				role: "employee",
+			});
+			mockState.getPrincipalContext.mockResolvedValue(
+				principalFor(admin, { orgRole: "admin" }),
+			);
+			// The target lookup is scoped to the active organization and active employees.
+			mockState.findEmployee.mockResolvedValue(undefined);
+
+			const result = await createManualTimeEntry({
+				employeeId: "foreign-employee",
+				date: "2026-05-04",
+				clockInTime: "08:00",
+				clockOutTime: "09:00",
+				timezone: "UTC",
+				reason: "Foreign target",
+			});
+
+			expect(result).toEqual({
+				success: false,
+				error: "Not authorized to create time entries for this employee",
+			});
+			expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		});
+
+		it("rejects on-behalf entries when the principal is for another organization", async () => {
+			const manager = arrangeActor({
+				id: "manager-1",
+				userId: "manager-user",
+				role: "manager",
+			});
+			mockState.getPrincipalContext.mockResolvedValue({
+				...principalFor(manager, { managedEmployeeIds: ["staff-1"] }),
+				activeOrganizationId: "org-2",
+			});
+			mockState.findEmployee.mockResolvedValue(staff);
+
+			const result = await createManualTimeEntry({
+				employeeId: "staff-1",
+				date: "2026-05-04",
+				clockInTime: "08:00",
+				clockOutTime: "09:00",
+				timezone: "UTC",
+				reason: "Switched organization",
+			});
+
+			expect(result.success).toBe(false);
+			expect(mockState.findEmployee).not.toHaveBeenCalled();
+			expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		});
+
+		it("interprets on-behalf entries in the organization timezone when the target has none", async () => {
+			const manager = arrangeActor({
+				id: "manager-1",
+				userId: "manager-user",
+				role: "manager",
+			});
+			mockState.getPrincipalContext.mockResolvedValue(
+				principalFor(manager, { managedEmployeeIds: ["staff-1"] }),
+			);
+			mockState.findEmployee.mockResolvedValue(staff);
+			mockState.findUserSettings.mockResolvedValueOnce(undefined);
+			mockState.findOrganization.mockResolvedValueOnce({
+				timezone: "America/New_York",
+			});
+			arrangeSuccessfulWrite();
+
+			// The submitted and browser zones belong to the manager and are ignored.
+			const result = await createManualTimeEntry({
+				employeeId: "staff-1",
+				date: "2026-05-03",
+				clockInTime: "08:00",
+				clockOutTime: "09:00",
+				timezone: "Europe/Berlin",
+				browserTimezone: "Europe/Berlin",
+				reason: "Forgot to clock in",
+			});
+
+			expect(result.success).toBe(true);
+			expect(mockState.createTimeEntry).toHaveBeenNthCalledWith(
+				1,
+				expect.objectContaining({
+					employeeId: "staff-1",
+					timestamp: new Date("2026-05-03T12:00:00.000Z"),
+					timezone: "America/New_York",
+					timezoneSource: "manager_target_user_setting",
+					utcOffsetMinutes: -240,
+				}),
+				expect.anything(),
+			);
+		});
 	});
 
 	it("keeps manual entry creation successful when dirty marking fails", async () => {
