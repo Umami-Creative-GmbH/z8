@@ -31,6 +31,7 @@ import {
 	MAX_ESCALATION_REASON_LENGTH,
 } from "@/lib/approvals/escalation/transfer";
 import { getAbility, getAuthContext } from "@/lib/auth-helpers";
+import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("ApprovalEscalationSettingsActions");
@@ -222,7 +223,7 @@ async function requireEscalationManagementActor(): Promise<HumanEscalationActor 
 			and(
 				eq(employee.organizationId, manager.organizationId),
 				eq(employee.userId, manager.userId),
-				eq(employee.isActive, true),
+				employeeHasOrganizationAccess(),
 			),
 		)
 		.limit(2);

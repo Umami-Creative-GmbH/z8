@@ -503,7 +503,28 @@
       "idx": 71,
       "version": "7",
       "when": 1790438400000,
-      "tag": "0071_escalation_transfer_journal",
+      "tag": "0071_employee_offboarding_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1790524800000,
+      "tag": "0072_employee_departure_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1790611200000,
+      "tag": "0073_employee_employment_reactivation_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1790697600000,
+      "tag": "0074_escalation_transfer_journal",
       "breakpoints": true
     }
   ]

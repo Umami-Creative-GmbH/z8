@@ -4,6 +4,7 @@ import { member } from "@/db/auth-schema";
 import { employee, employeeManagers, teamPermissions } from "@/db/schema";
 import { customRole, customRolePermission, employeeCustomRole } from "@/db/schema/custom-role";
 import type { PermissionFlags } from "@/lib/effect/services/permissions.service";
+import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import type { Action, CustomRoleInfo, PrincipalContext, Subject, TeamPermissions } from "./types";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -39,7 +40,7 @@ export async function loadOrganizationPrincipalContext(
 				and(
 					eq(employee.userId, userId),
 					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
+					employeeHasOrganizationAccess(),
 				),
 			)
 			.limit(1),

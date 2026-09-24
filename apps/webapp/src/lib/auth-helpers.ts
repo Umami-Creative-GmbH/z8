@@ -22,6 +22,7 @@ import {
 import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { ManagerService, ManagerServiceLive } from "@/lib/effect/services/manager.service";
+import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 import {
 	hasSettingsAccessTier,
@@ -108,7 +109,7 @@ export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
 					and(
 						eq(employee.userId, session.user.id),
 						eq(employee.organizationId, activeOrganizationId),
-						eq(employee.isActive, true),
+						employeeHasOrganizationAccess(),
 					),
 				)
 				.limit(1),
@@ -249,7 +250,7 @@ export async function getUserOrganizations(): Promise<UserOrganization[]> {
 			and(
 				eq(employee.userId, session.user.id),
 				inArray(employee.organizationId, orgIds),
-				eq(employee.isActive, true),
+				employeeHasOrganizationAccess(),
 			),
 		);
 
@@ -488,7 +489,7 @@ export async function verifyOrgMembership(
 			and(
 				eq(employee.userId, session.user.id),
 				eq(employee.organizationId, requestedOrgId),
-				eq(employee.isActive, true),
+				employeeHasOrganizationAccess(),
 			),
 		)
 		.limit(1);
@@ -688,7 +689,7 @@ export async function getSettingsAccessInputForUser(
 			.limit(1)
 			.then((records) => records[0] ?? null),
 		db
-			.select({ role: employee.role, isActive: employee.isActive })
+			.select({ role: employee.role, isActive: employeeHasOrganizationAccess() })
 			.from(employee)
 			.where(
 				and(
@@ -868,7 +869,7 @@ export async function isOrgAdminCasl(organizationId: string): Promise<boolean> {
 				)
 				.limit(1),
 			db
-				.select({ isActive: employee.isActive })
+				.select({ isActive: employeeHasOrganizationAccess() })
 				.from(employee)
 				.where(
 					and(

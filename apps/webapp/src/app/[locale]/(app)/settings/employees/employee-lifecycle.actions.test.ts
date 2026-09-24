@@ -87,6 +87,7 @@ type LifecycleState = {
 	}>;
 	revocationError?: Error;
 	transactionError?: unknown;
+	employmentEnded?: boolean;
 };
 
 function compilePredicate(table: unknown, predicate: unknown) {
@@ -146,6 +147,7 @@ function setup(state: LifecycleState = {}) {
 				employee: { findFirst: findEmployee },
 				member: { findFirst: findMember },
 			},
+			execute: vi.fn().mockResolvedValue({ rows: [{ ended: state.employmentEnded ?? false }] }),
 			select,
 			update,
 		});
@@ -631,6 +633,24 @@ describe("employee lifecycle actions", () => {
 				"This employee is no longer an approved organization member. Re-invite them before reactivating.",
 		});
 		expect(update).not.toHaveBeenCalled();
+	});
+
+	it("directs an offboarded employee to rehire instead of reactivating the projection", async () => {
+		const { update } = setup({
+			target: { id: employeeId, userId: targetUserId, organizationId, isActive: false },
+			employmentEnded: true,
+		});
+
+		const result = await reactivateEmployeeAction(employeeId);
+
+		expect(result).toEqual({
+			success: false,
+			code: "ValidationError",
+			error:
+				"This employee has left the organization. Rehire them to start a new employment period.",
+		});
+		expect(update).not.toHaveBeenCalled();
+		expect(mocks.logAudit).not.toHaveBeenCalled();
 	});
 
 	it("reactivates the same employee row without session revocation and audits only the real change", async () => {

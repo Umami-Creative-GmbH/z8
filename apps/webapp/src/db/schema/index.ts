@@ -37,6 +37,8 @@ export * from "./daily-digest-delivery";
 export * from "./discord-integration";
 export * from "./email-template";
 export * from "./employee-invitation-draft";
+// Employee offboarding and rehire (employment periods, departures)
+export * from "./employee-lifecycle";
 export * from "./employment-history";
 export * from "./enterprise";
 export * from "./enterprise-identity-setup";

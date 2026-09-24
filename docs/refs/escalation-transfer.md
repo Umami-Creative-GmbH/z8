@@ -115,7 +115,7 @@ then employee id. Missing candidates never broaden authority.
 
 ## Journal and delivery event
 
-`0071_escalation_transfer_journal.sql`:
+`0074_escalation_transfer_journal.sql`:
 
 - `approval_escalation_control.escalation_owned_since` — recorded by the
   exclusive ownership switch (not written by this slice).
@@ -205,7 +205,7 @@ not part of this lifecycle and are not deleted.
 
 ## Verification checkpoint — 2026-09-24
 
-Authorized scope: typecheck, unit tests, and applying `0071` alone to the local
+Authorized scope: typecheck, unit tests, and applying the transfer migration (then `0071`, now `0074`) alone to the local
 Development database with constraint checks. No app run, browser check, build
 or deployment.
 
@@ -221,7 +221,7 @@ or deployment.
   Windows checkout (CRLF substring checks, `spawnSync pnpm ENOENT`, date-dependent
   fixtures, and the write-boundary analyzer, whose 232 entries are all "Native
   source could not be retrieved").
-- `0071` applied alone to local Development (12 statements, one transaction; the
+- The migration (numbered `0071` at the time, renumbered `0074` after merging `dev`) applied alone to local Development (12 statements, one transaction; the
   database had `0069` but not `0070`, and has no Drizzle migration journal).
   Against real PostgreSQL, in a rolled-back transaction with synthetic workflow
   rows: a valid scheduled and a valid human transfer insert; duplicate operation
