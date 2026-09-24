@@ -66,7 +66,32 @@ export const rehireEmployeeSchema = z
 		{ message: "Probation end must be after probation start", path: ["probationEndsOn"] },
 	);
 
+export const employeeOffboardingViewSchema = z.object({ employeeId: z.uuid() });
+
+/** Advisory preview; a null last working day previews an immediate departure. */
+export const previewDepartureSchema = z.object({
+	employeeId: z.uuid(),
+	lastWorkingDay: z.iso.date().nullable(),
+});
+
+export const resolveDepartureReviewSchema = z.object({
+	reviewId: z.uuid(),
+	resolution: z.string().trim().min(1).max(1000),
+});
+
+export const retryDepartureTaskSchema = z.object({ taskId: z.uuid() });
+
+export const assignDepartureReplacementSchema = z.object({
+	departureId: z.uuid(),
+	handoverTaskId: z.uuid(),
+	replacementEmployeeId: z.uuid(),
+	requestId: z.uuid(),
+});
+
 export type ScheduleDepartureInput = z.infer<typeof scheduleDepartureSchema>;
 export type CancelDepartureInput = z.infer<typeof cancelDepartureSchema>;
 export type OffboardNowInput = z.infer<typeof offboardNowSchema>;
 export type RehireEmployeeInput = z.infer<typeof rehireEmployeeSchema>;
+export type PreviewDepartureInput = z.infer<typeof previewDepartureSchema>;
+export type ResolveDepartureReviewInput = z.infer<typeof resolveDepartureReviewSchema>;
+export type AssignDepartureReplacementInput = z.infer<typeof assignDepartureReplacementSchema>;

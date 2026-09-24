@@ -176,3 +176,38 @@ export async function resolveDepartureReview(
 		});
 	});
 }
+
+export class RetryDepartureTaskError extends Error {
+	constructor(readonly code: "actor_not_authorized" | "task_not_retryable") {
+		super(code);
+		this.name = "RetryDepartureTaskError";
+	}
+}
+
+/**
+ * Scoped manual retry of one failed follow-up task: it is queued again with a
+ * fresh attempt budget. Only failed work can be retried, so a retry can never
+ * race a worker that currently owns the task, and nothing outside this
+ * organization's task is touched. An ambiguous delivery marker is cleared,
+ * because retrying is the admin's explicit decision to send again.
+ */
+export async function retryDepartureTask(
+	database: Pick<typeof rootDatabase, "transaction">,
+	input: { organizationId: string; taskId: string; actorUserId: string; now: Date },
+): Promise<void> {
+	await database.transaction(async (tx) => {
+		if (!(await actorMayResolveDepartureWork(tx, input.organizationId, input.actorUserId))) {
+			throw new RetryDepartureTaskError("actor_not_authorized");
+		}
+		const retried = await tx.execute(sql`
+			UPDATE employee_departure_task
+			SET status = 'pending', claim_token = NULL, attempt_count = 0, last_error = NULL,
+				available_at = ${input.now}, updated_at = ${input.now}, payload = payload - 'attemptedAt'
+			WHERE organization_id = ${input.organizationId} AND id = ${input.taskId}::uuid
+				AND status = 'failed'
+			RETURNING id
+		`);
+		if (retried.rows.length !== 1) throw new RetryDepartureTaskError("task_not_retryable");
+	});
+}
+

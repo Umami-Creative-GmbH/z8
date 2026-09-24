@@ -16,6 +16,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { captureApprovalHandoverDuties } from "./approval-handover";
+import { enqueueReviewNotifications } from "./notifications";
 import { assertReadCommitted, lockLifecycleScope } from "./locks";
 import { evaluateDepartureAuthority } from "./owner-invariant";
 import type {
@@ -140,6 +141,7 @@ export async function executeDepartureInTransaction(
 	await persistFollowUpIntent(tx, identity, target.userId);
 	// Under the lifecycle locks, so every duty held at this instant is captured.
 	await captureApprovalHandoverDuties(tx, identity, departure.replacementEmployeeId);
+	await enqueueReviewNotifications(tx, identity);
 
 	await recordSystemEvent(tx, identity, "departure_effective", nowDate, {
 		cutoff: cutoffDate.toISOString(),

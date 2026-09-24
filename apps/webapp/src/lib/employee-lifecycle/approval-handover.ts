@@ -15,6 +15,7 @@ import { ApprovalTransitionEngineError } from "@/lib/approvals/workflow/transiti
 import { type Clock, dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { type DepartureTaskHandler, DepartureTaskNeedsResolutionError } from "./delivery";
 import { assertReadCommitted } from "./locks";
+import { enqueueReviewNotifications } from "./notifications";
 import { DepartureTaskLeaseNotOwnedError } from "./outbox";
 import { actorMayResolveDepartureWork } from "./reviews";
 import type { DepartureIdentity, LifecycleActor, LifecycleTransaction } from "./types";
@@ -326,6 +327,7 @@ async function raiseHandoverReview(
 				resolution: null,
 			},
 		});
+	await enqueueReviewNotifications(database, scope);
 }
 
 async function resolveHandoverReview(

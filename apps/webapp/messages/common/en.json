@@ -360,6 +360,14 @@
       "teamMemberAdded": {
         "message": "You have been added to the {teamName} team by {performedByName}.",
         "title": "Added to team"
+      },
+      "employeeOffboardingReview": {
+        "title": "Employee offboarding needs review",
+        "clock_out": "{employeeName}: Needs review: offboarding clock-out (departure effective {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Timer repair required (departure effective {cutoff}, {timezone}).",
+        "approval_handover": "{employeeName}: Approval duties need a replacement (departure effective {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Future work needs review (departure effective {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Future employment terms need review (departure effective {cutoff}, {timezone})."
       }
     },
     "description": "Review updates, approvals, and system alerts in one timeline.",

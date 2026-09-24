@@ -11,17 +11,32 @@ import {
 } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import {
+	AssignDepartureReplacementError,
+	type AssignDepartureReplacementErrorCode,
 	DepartureCommandError,
 	type DepartureCommandErrorCode,
 	getDepartureCommands,
+	getOffboardingFollowUp,
+	getOffboardingQueries,
+	ResolveDepartureReviewError,
+	RetryDepartureTaskError,
 } from "@/lib/employee-lifecycle";
 import { EMPLOYEE_OFFBOARDING_RELEASE_READY } from "@/lib/employee-lifecycle/release";
 import type { ExecuteDepartureResult, LifecycleActor } from "@/lib/employee-lifecycle/types";
+import type {
+	EmployeeDeparturePreview,
+	EmployeeOffboardingView,
+} from "@/lib/employee-lifecycle/view-types";
 import { createLogger } from "@/lib/logger";
 import {
+	assignDepartureReplacementSchema,
 	cancelDepartureSchema,
+	employeeOffboardingViewSchema,
 	offboardNowSchema,
+	previewDepartureSchema,
 	rehireEmployeeSchema,
+	resolveDepartureReviewSchema,
+	retryDepartureTaskSchema,
 	scheduleDepartureSchema,
 } from "@/lib/validations/employee-offboarding";
 import {
@@ -194,5 +209,216 @@ export async function rehireEmployeeAction(
 		input,
 		schema: rehireEmployeeSchema,
 		run: (commands, actor, data) => commands.rehireEmployee(actor, data),
+	});
+}
+
+const followUpMessages = {
+	actor_not_authorized: "Only organization owners and admins can resolve offboarding follow-up.",
+	review_not_found: "This review no longer exists.",
+	review_already_resolved: "This review was already resolved.",
+	resolution_required: "Describe how the review was resolved.",
+	repair_incomplete:
+		"The timer is still running. Correct it through time corrections before resolving this review.",
+	task_not_retryable: "Only failed follow-up work can be retried.",
+	task_not_found: "This handover no longer exists.",
+	task_in_progress: "This handover is being processed. Try again in a moment.",
+	task_already_completed: "This handover is already complete.",
+	replacement_invalid: "Choose an active colleague in this organization as the replacement.",
+	request_conflict: "This request was already used for different details. Please try again.",
+} satisfies Record<
+	| ResolveDepartureReviewError["code"]
+	| RetryDepartureTaskError["code"]
+	| AssignDepartureReplacementErrorCode,
+	string
+>;
+
+function toFollowUpError(error: unknown, actor: LifecycleActor, action: string): AnyAppError {
+	if (
+		error instanceof ResolveDepartureReviewError ||
+		error instanceof RetryDepartureTaskError ||
+		error instanceof AssignDepartureReplacementError
+	) {
+		const message = followUpMessages[error.code];
+		if (error.code === "actor_not_authorized") {
+			return new AuthorizationError({
+				message,
+				userId: actor.userId,
+				resource: "employee",
+				action,
+			});
+		}
+		return new ValidationError({ message, field: error.code });
+	}
+	return new DatabaseError({
+		message: "Offboarding follow-up could not be saved. Please try again.",
+		operation: action,
+		cause: error,
+	});
+}
+
+/**
+ * Follow-up of existing departures stays resolvable regardless of the release
+ * gate. Authority is re-checked by each command inside its transaction.
+ */
+function runFollowUpCommand<TInput, TResult>(options: {
+	name: string;
+	input: unknown;
+	schema: ZodType<TInput>;
+	run: (actor: LifecycleActor, input: TInput) => Promise<TResult>;
+}): Promise<ServerActionResult<TResult>> {
+	return runTracedEmployeeAction({
+		name: options.name,
+		logError: (error) => {
+			logger.error({ error }, `Failed to ${options.name}`);
+		},
+		execute: () =>
+			Effect.gen(function* (_) {
+				const actorContext = yield* _(
+					getEmployeeSettingsActorContext({ queryName: `${options.name}:actor` }),
+				);
+				yield* _(
+					requireOrgAdminEmployeeSettingsAccess(actorContext, {
+						message: followUpMessages.actor_not_authorized,
+						resource: "employee",
+						action: options.name,
+					}),
+				);
+				const input = yield* _(validateInput(options.schema, options.input));
+				const actor = {
+					userId: actorContext.session.user.id,
+					organizationId: actorContext.organizationId,
+				};
+				const result = yield* _(
+					Effect.tryPromise({
+						try: () => options.run(actor, input),
+						catch: (error) => toFollowUpError(error, actor, options.name),
+					}),
+				);
+				revalidateEmployeesCache(actor.organizationId);
+				return result;
+			}),
+	});
+}
+
+/**
+ * The lifecycle view for the employee detail page. Managers of the employee
+ * get a read-only view; commands are only offered once the release gate opens.
+ */
+export async function getEmployeeOffboardingViewAction(
+	input: unknown,
+): Promise<ServerActionResult<EmployeeOffboardingView>> {
+	return runTracedEmployeeAction({
+		name: "getEmployeeOffboardingView",
+		logError: (error) => {
+			logger.error({ error }, "Failed to load employee offboarding view");
+		},
+		execute: () =>
+			Effect.gen(function* (_) {
+				const actorContext = yield* _(
+					getEmployeeSettingsActorContext({ queryName: "getEmployeeOffboardingView:actor" }),
+				);
+				const { employeeId } = yield* _(validateInput(employeeOffboardingViewSchema, input));
+				const result = yield* _(
+					Effect.tryPromise({
+						try: () =>
+							getOffboardingQueries().view({
+								organizationId: actorContext.organizationId,
+								employeeId,
+								actorUserId: actorContext.session.user.id,
+							}),
+						catch: (cause) =>
+							new DatabaseError({
+								message: "Employee offboarding could not be loaded.",
+								operation: "getEmployeeOffboardingView",
+								cause,
+							}),
+					}),
+				);
+				if (result.kind === "not_found") {
+					return yield* _(
+						Effect.fail(
+							new NotFoundError({ message: "Employee not found.", entityType: "employee" }),
+						),
+					);
+				}
+				if (result.kind === "forbidden") {
+					return yield* _(
+						Effect.fail(
+							new AuthorizationError({
+								message: "You cannot view this employee's offboarding.",
+								userId: actorContext.session.user.id,
+								resource: "employee",
+								action: "getEmployeeOffboardingView",
+							}),
+						),
+					);
+				}
+				if (EMPLOYEE_OFFBOARDING_RELEASE_READY) return result.view;
+				return {
+					...result.view,
+					capabilities: {
+						...result.view.capabilities,
+						schedule: false,
+						cancel: false,
+						offboardNow: false,
+						rehire: false,
+					},
+				};
+			}),
+	});
+}
+
+/** Advisory, side-effect free; the command recomputes the cutoff on submit. */
+export async function previewEmployeeDepartureAction(
+	input: unknown,
+): Promise<ServerActionResult<EmployeeDeparturePreview>> {
+	return runDepartureCommand({
+		name: "previewEmployeeDeparture",
+		input,
+		schema: previewDepartureSchema,
+		run: async (_commands, actor, data) => {
+			const result = await getOffboardingQueries().preview({
+				organizationId: actor.organizationId,
+				employeeId: data.employeeId,
+				actorUserId: actor.userId,
+				lastWorkingDay: data.lastWorkingDay,
+			});
+			if (result.kind === "ok") return result.preview;
+			if (result.kind === "invalid") throw new DepartureCommandError(result.code);
+			throw new DepartureCommandError(
+				result.kind === "not_found" ? "employee_not_found" : "actor_not_authorized",
+			);
+		},
+	});
+}
+
+export async function resolveDepartureReviewAction(
+	input: unknown,
+): Promise<ServerActionResult<void>> {
+	return runFollowUpCommand({
+		name: "resolveDepartureReview",
+		input,
+		schema: resolveDepartureReviewSchema,
+		run: (actor, data) => getOffboardingFollowUp().resolveReview(actor, data),
+	});
+}
+
+export async function retryDepartureTaskAction(input: unknown): Promise<ServerActionResult<void>> {
+	return runFollowUpCommand({
+		name: "retryDepartureTask",
+		input,
+		schema: retryDepartureTaskSchema,
+		run: (actor, data) => getOffboardingFollowUp().retryTask(actor, data),
+	});
+}
+
+export async function assignDepartureReplacementAction(
+	input: unknown,
+): Promise<ServerActionResult<void>> {
+	return runFollowUpCommand({
+		name: "assignDepartureReplacement",
+		input,
+		schema: assignDepartureReplacementSchema,
+		run: (actor, data) => getOffboardingFollowUp().assignReplacement(actor, data),
 	});
 }

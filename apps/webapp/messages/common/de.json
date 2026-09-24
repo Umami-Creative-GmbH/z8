@@ -360,6 +360,14 @@
       "teamMemberAdded": {
         "message": "Sie wurden von {performedByName} zum Team {teamName} hinzugefügt.",
         "title": "Zum Team hinzugefügt"
+      },
+      "employeeOffboardingReview": {
+        "title": "Offboarding benötigt eine Prüfung",
+        "clock_out": "{employeeName}: Prüfung erforderlich: Ausstempeln beim Offboarding (Austritt wirksam {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Zeiterfassung muss korrigiert werden (Austritt wirksam {cutoff}, {timezone}).",
+        "approval_handover": "{employeeName}: Genehmigungsaufgaben brauchen eine Vertretung (Austritt wirksam {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Zukünftige Arbeit muss geprüft werden (Austritt wirksam {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Zukünftige Vertragsbedingungen müssen geprüft werden (Austritt wirksam {cutoff}, {timezone})."
       }
     },
     "description": "Überprüfen Sie Updates, Genehmigungen und Systemmeldungen in einer Zeitleiste.",

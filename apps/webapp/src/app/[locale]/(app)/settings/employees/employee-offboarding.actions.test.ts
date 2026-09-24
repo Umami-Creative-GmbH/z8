@@ -5,12 +5,25 @@ import { toServerActionResult } from "@/lib/effect/result";
 const mocks = vi.hoisted(() => ({
 	getEmployeeSettingsActorContext: vi.fn(),
 	getDepartureCommands: vi.fn(),
+	getOffboardingQueries: vi.fn(),
+	getOffboardingFollowUp: vi.fn(),
 	runTracedEmployeeAction: vi.fn(),
 }));
 
-vi.mock("@/lib/employee-lifecycle", () => ({
-	getDepartureCommands: mocks.getDepartureCommands,
-}));
+vi.mock("@/lib/employee-lifecycle", async () => {
+	const reviews = await import("@/lib/employee-lifecycle/reviews");
+	const handover = await import("@/lib/employee-lifecycle/approval-handover");
+	const commands = await import("@/lib/employee-lifecycle/commands");
+	return {
+		getDepartureCommands: mocks.getDepartureCommands,
+		getOffboardingQueries: mocks.getOffboardingQueries,
+		getOffboardingFollowUp: mocks.getOffboardingFollowUp,
+		DepartureCommandError: commands.DepartureCommandError,
+		ResolveDepartureReviewError: reviews.ResolveDepartureReviewError,
+		RetryDepartureTaskError: reviews.RetryDepartureTaskError,
+		AssignDepartureReplacementError: handover.AssignDepartureReplacementError,
+	};
+});
 
 vi.mock("./employee-action-utils", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./employee-action-utils")>()),
@@ -18,12 +31,28 @@ vi.mock("./employee-action-utils", async (importOriginal) => ({
 	runTracedEmployeeAction: mocks.runTracedEmployeeAction,
 }));
 
+import { ResolveDepartureReviewError } from "@/lib/employee-lifecycle/reviews";
 import {
+	assignDepartureReplacementAction,
 	cancelEmployeeDepartureAction,
+	getEmployeeOffboardingViewAction,
 	offboardEmployeeNowAction,
+	previewEmployeeDepartureAction,
 	rehireEmployeeAction,
+	resolveDepartureReviewAction,
+	retryDepartureTaskAction,
 	scheduleEmployeeDepartureAction,
 } from "./employee-offboarding.actions";
+
+const uuid = "11111111-1111-4111-8111-111111111111";
+
+function actorContext(accessTier: "orgAdmin" | "manager" = "orgAdmin") {
+	return Effect.succeed({
+		accessTier,
+		organizationId: "org-1",
+		session: { user: { id: "user-1" } },
+	});
+}
 
 describe("employee offboarding actions before release", () => {
 	beforeEach(() => {
@@ -38,6 +67,7 @@ describe("employee offboarding actions before release", () => {
 		["cancel", () => cancelEmployeeDepartureAction({})],
 		["offboard now", () => offboardEmployeeNowAction({})],
 		["rehire", () => rehireEmployeeAction({})],
+		["preview", () => previewEmployeeDepartureAction({})],
 	])("rejects %s without touching actor context or commands", async (_label, run) => {
 		const result = await run();
 
@@ -49,3 +79,113 @@ describe("employee offboarding actions before release", () => {
 		expect(mocks.getDepartureCommands).not.toHaveBeenCalled();
 	});
 });
+
+describe("employee offboarding follow-up actions", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mocks.runTracedEmployeeAction.mockImplementation((options) =>
+			Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() })).then(toServerActionResult),
+		);
+	});
+
+	it("never offers departure commands in the view before release", async () => {
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(actorContext());
+		mocks.getOffboardingQueries.mockReturnValue({
+			view: vi.fn().mockResolvedValue({
+				kind: "ok",
+				view: {
+					state: "offboarded",
+					capabilities: {
+						schedule: true,
+						cancel: true,
+						offboardNow: true,
+						rehire: true,
+						resolve: true,
+					},
+				},
+			}),
+		});
+
+		const result = await getEmployeeOffboardingViewAction({ employeeId: uuid });
+
+		expect(result).toMatchObject({
+			success: true,
+			data: {
+				capabilities: {
+					schedule: false,
+					cancel: false,
+					offboardNow: false,
+					rehire: false,
+					resolve: true,
+				},
+			},
+		});
+	});
+
+	it("scopes the view to the actor's organization and maps a foreign employee to not found", async () => {
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(actorContext("manager"));
+		const view = vi.fn().mockResolvedValue({ kind: "not_found" });
+		mocks.getOffboardingQueries.mockReturnValue({ view });
+
+		const result = await getEmployeeOffboardingViewAction({ employeeId: uuid });
+
+		expect(view).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: uuid,
+			actorUserId: "user-1",
+		});
+		expect(result).toMatchObject({ success: false, error: "Employee not found." });
+	});
+
+	it("keeps review resolution available before release and surfaces server guidance", async () => {
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(actorContext());
+		const resolveReview = vi
+			.fn()
+			.mockRejectedValue(new ResolveDepartureReviewError("repair_incomplete"));
+		mocks.getOffboardingFollowUp.mockReturnValue({ resolveReview });
+
+		const result = await resolveDepartureReviewAction({ reviewId: uuid, resolution: "Checked" });
+
+		expect(resolveReview).toHaveBeenCalledWith(
+			{ userId: "user-1", organizationId: "org-1" },
+			{ reviewId: uuid, resolution: "Checked" },
+		);
+		expect(result).toMatchObject({
+			success: false,
+			error:
+				"The timer is still running. Correct it through time corrections before resolving this review.",
+		});
+	});
+
+	it.each([
+		["retry", () => retryDepartureTaskAction({ taskId: uuid })],
+		[
+			"replacement",
+			() =>
+				assignDepartureReplacementAction({
+					departureId: uuid,
+					handoverTaskId: uuid,
+					replacementEmployeeId: uuid,
+					requestId: uuid,
+				}),
+		],
+		["resolution", () => resolveDepartureReviewAction({ reviewId: uuid, resolution: "Ok" })],
+	])("requires organization admin settings access for %s", async (_label, run) => {
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(actorContext("manager"));
+
+		const result = await run();
+
+		expect(result).toMatchObject({ success: false });
+		expect(mocks.getOffboardingFollowUp).not.toHaveBeenCalled();
+	});
+
+	it("rejects malformed follow-up input before reaching the command", async () => {
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(actorContext());
+
+		const result = await retryDepartureTaskAction({ taskId: "not-a-task" });
+
+		expect(result).toMatchObject({ success: false });
+		expect(mocks.getOffboardingFollowUp).not.toHaveBeenCalled();
+	});
+});
+
