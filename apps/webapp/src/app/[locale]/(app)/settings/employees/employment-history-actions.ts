@@ -11,7 +11,15 @@ import {
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { adjustConfirmedTimeline, type TimelineUpdate } from "@/lib/employment-history/timeline";
+import {
+	EmploymentPeriodError,
+	resolveTermsEmploymentPeriod,
+} from "@/lib/employee-lifecycle/employment-periods";
+import type { LifecycleTransaction } from "@/lib/employee-lifecycle/types";
+import {
+	adjustConfirmedTimeline,
+	type TimelineUpdate,
+} from "@/lib/employment-history/timeline";
 import { createLogger } from "@/lib/logger";
 import {
 	type UpsertEmploymentHistory,
@@ -35,18 +43,34 @@ type EmploymentHistoryEffectiveRow = Pick<
 	"reviewState" | "validFrom" | "validUntil"
 >;
 
-type EmploymentHistoryReviewRow = Pick<EmployeeEmploymentHistory, "reviewState">;
+type EmploymentHistoryReviewRow = Pick<
+	EmployeeEmploymentHistory,
+	"reviewState"
+>;
 
-type EmploymentHistoryCancelableRow = Pick<EmployeeEmploymentHistory, "reviewState" | "validFrom">;
+type EmploymentHistoryCancelableRow = Pick<
+	EmployeeEmploymentHistory,
+	"reviewState" | "validFrom"
+>;
 
 type EmploymentHistoryAssignmentRow = Pick<
 	EmployeeEmploymentHistory,
-	"employeeId" | "organizationId" | "workPolicyId" | "validFrom" | "validUntil" | "reviewState"
+	| "employeeId"
+	| "organizationId"
+	| "workPolicyId"
+	| "validFrom"
+	| "validUntil"
+	| "reviewState"
 >;
 
 type EmploymentHistoryAssignmentWindowRow = Pick<
 	EmployeeEmploymentHistory,
-	"id" | "employeeId" | "organizationId" | "workPolicyId" | "validFrom" | "validUntil"
+	| "id"
+	| "employeeId"
+	| "organizationId"
+	| "workPolicyId"
+	| "validFrom"
+	| "validUntil"
 >;
 
 type EmploymentHistoryCancellationRestorationRow = Pick<
@@ -70,12 +94,16 @@ export function shouldUpdateCurrentEmployeeFields(
 
 	const current = DateTime.fromJSDate(now).toUTC();
 	const validFrom = DateTime.fromJSDate(row.validFrom).toUTC();
-	const validUntil = row.validUntil ? DateTime.fromJSDate(row.validUntil).toUTC() : null;
+	const validUntil = row.validUntil
+		? DateTime.fromJSDate(row.validUntil).toUTC()
+		: null;
 
 	return validFrom <= current && (!validUntil || validUntil > current);
 }
 
-export function shouldConfirmEmploymentHistoryRow(row: EmploymentHistoryReviewRow) {
+export function shouldConfirmEmploymentHistoryRow(
+	row: EmploymentHistoryReviewRow,
+) {
 	return row.reviewState === "draft" || row.reviewState === "pending";
 }
 
@@ -87,10 +115,15 @@ export function canCancelEmploymentHistoryRow(
 		return true;
 	}
 
-	return DateTime.fromJSDate(row.validFrom).toUTC() > DateTime.fromJSDate(now).toUTC();
+	return (
+		DateTime.fromJSDate(row.validFrom).toUTC() >
+		DateTime.fromJSDate(now).toUTC()
+	);
 }
 
-export function buildEmploymentAssignmentSyncPlan(row: EmploymentHistoryAssignmentRow) {
+export function buildEmploymentAssignmentSyncPlan(
+	row: EmploymentHistoryAssignmentRow,
+) {
 	if (row.reviewState !== "confirmed" || !row.workPolicyId) {
 		return null;
 	}
@@ -155,7 +188,9 @@ export function buildEmploymentCancellationRestorationPlan({
 		return null;
 	}
 
-	const next = confirmed.find((row) => row.validFrom.getTime() > canceled.validFrom.getTime());
+	const next = confirmed.find(
+		(row) => row.validFrom.getTime() > canceled.validFrom.getTime(),
+	);
 	const validUntil = next ? next.validFrom : null;
 
 	return {
@@ -175,12 +210,38 @@ export function buildEmploymentCancellationRestorationPlan({
 	};
 }
 
+/**
+ * Terms belong to the employee's open employment period. An ended period is
+ * never reopened by terms; only an explicit rehire starts a new one.
+ */
+async function requireTermsEmploymentPeriod(
+	tx: LifecycleTransaction,
+	input: { organizationId: string; employeeId: string; validFrom: Date },
+) {
+	try {
+		return await resolveTermsEmploymentPeriod(tx, input);
+	} catch (error) {
+		if (error instanceof EmploymentPeriodError) {
+			throw new ValidationError({
+				message:
+					error.code === "employment_period_closed"
+						? "This employee's employment has ended. Rehire them before adding employment terms."
+						: "Employment terms cannot start before the current employment period.",
+				field: "validFrom",
+			});
+		}
+		throw error;
+	}
+}
+
 async function markContractWorkBalanceDirty(input: {
 	employeeId: string;
 	organizationId: string;
 	fromDate: Date;
 }) {
-	const dirtyFromDate = DateTime.fromJSDate(input.fromDate, { zone: "utc" }).toISODate();
+	const dirtyFromDate = DateTime.fromJSDate(input.fromDate, {
+		zone: "utc",
+	}).toISODate();
 	if (!dirtyFromDate) return;
 
 	try {
@@ -218,7 +279,8 @@ export async function listEmployeeEmploymentHistoryAction(
 
 				yield* _(
 					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-						message: "You do not have access to this employee's employment history",
+						message:
+							"You do not have access to this employee's employment history",
 						resource: "employment_history",
 						action: "read",
 					}),
@@ -229,7 +291,10 @@ export async function listEmployeeEmploymentHistoryAction(
 						return await dbService.db.query.employeeEmploymentHistory.findMany({
 							where: and(
 								eq(employeeEmploymentHistory.employeeId, employeeId),
-								eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+								eq(
+									employeeEmploymentHistory.organizationId,
+									actor.organizationId,
+								),
 							),
 							orderBy: [desc(employeeEmploymentHistory.validFrom)],
 						});
@@ -254,7 +319,10 @@ export async function createEmployeeEmploymentHistoryAction(
 			"employee.id": employeeId,
 		},
 		logError: (error) => {
-			logger.error({ error, employeeId }, "Failed to create employment history");
+			logger.error(
+				{ error, employeeId },
+				"Failed to create employment history",
+			);
 		},
 		execute: () =>
 			Effect.gen(function* (_) {
@@ -269,12 +337,15 @@ export async function createEmployeeEmploymentHistoryAction(
 					}),
 				);
 
-				const validatedData = yield* _(validateInput(upsertEmploymentHistorySchema, data));
+				const validatedData = yield* _(
+					validateInput(upsertEmploymentHistorySchema, data),
+				);
 				const targetEmployee = yield* _(getTargetEmployee(employeeId));
 
 				yield* _(
 					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-						message: "You do not have access to this employee's employment history",
+						message:
+							"You do not have access to this employee's employment history",
 						resource: "employment_history",
 						action: "create",
 					}),
@@ -316,19 +387,35 @@ export async function createEmployeeEmploymentHistoryAction(
 								for update
 							`);
 
-							const existing = await tx.query.employeeEmploymentHistory.findMany({
-								where: and(
-									eq(employeeEmploymentHistory.employeeId, employeeId),
-									eq(employeeEmploymentHistory.organizationId, actor.organizationId),
-								),
-							});
+							const employmentPeriodId = await requireTermsEmploymentPeriod(
+								tx,
+								{
+									organizationId: actor.organizationId,
+									employeeId,
+									validFrom: validatedData.validFrom,
+								},
+							);
+							// The timeline never joins terms across employment periods.
+							const existing =
+								await tx.query.employeeEmploymentHistory.findMany({
+									where: and(
+										eq(employeeEmploymentHistory.employeeId, employeeId),
+										eq(
+											employeeEmploymentHistory.organizationId,
+											actor.organizationId,
+										),
+										eq(
+											employeeEmploymentHistory.employmentPeriodId,
+											employmentPeriodId,
+										),
+									),
+								});
 							const now = currentTimestamp();
 							const nextRow: EmployeeEmploymentHistory = {
 								id: randomUUID(),
 								employeeId,
 								organizationId: actor.organizationId,
-								// Period-scoped terms arrive with the rehire workflow (#340 Task 1.5).
-								employmentPeriodId: null,
+								employmentPeriodId,
 								validFrom: validatedData.validFrom,
 								validUntil: null,
 								status: validatedData.status,
@@ -347,7 +434,10 @@ export async function createEmployeeEmploymentHistoryAction(
 								updatedBy: session.user.id,
 								updatedAt: now,
 							};
-							const adjusted = adjustConfirmedTimeline({ existing, next: nextRow });
+							const adjusted = adjustConfirmedTimeline({
+								existing,
+								next: nextRow,
+							});
 							await Promise.all(
 								adjusted.updates.map((update) =>
 									tx
@@ -361,7 +451,10 @@ export async function createEmployeeEmploymentHistoryAction(
 											and(
 												eq(employeeEmploymentHistory.id, update.id),
 												eq(employeeEmploymentHistory.employeeId, employeeId),
-												eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+												eq(
+													employeeEmploymentHistory.organizationId,
+													actor.organizationId,
+												),
 											),
 										),
 								),
@@ -429,7 +522,10 @@ export async function confirmEmployeeEmploymentHistoryAction(
 			"employment_history.id": historyId,
 		},
 		logError: (error) => {
-			logger.error({ error, employeeId, historyId }, "Failed to confirm employment history");
+			logger.error(
+				{ error, employeeId, historyId },
+				"Failed to confirm employment history",
+			);
 		},
 		execute: () =>
 			Effect.gen(function* (_) {
@@ -448,7 +544,8 @@ export async function confirmEmployeeEmploymentHistoryAction(
 
 				yield* _(
 					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-						message: "You do not have access to this employee's employment history",
+						message:
+							"You do not have access to this employee's employment history",
 						resource: "employment_history",
 						action: "confirm",
 					}),
@@ -465,13 +562,19 @@ export async function confirmEmployeeEmploymentHistoryAction(
 								for update
 							`);
 
-							const existing = await tx.query.employeeEmploymentHistory.findMany({
-								where: and(
-									eq(employeeEmploymentHistory.employeeId, employeeId),
-									eq(employeeEmploymentHistory.organizationId, actor.organizationId),
-								),
-							});
-							const targetHistory = existing.find((row) => row.id === historyId);
+							const existing =
+								await tx.query.employeeEmploymentHistory.findMany({
+									where: and(
+										eq(employeeEmploymentHistory.employeeId, employeeId),
+										eq(
+											employeeEmploymentHistory.organizationId,
+											actor.organizationId,
+										),
+									),
+								});
+							const targetHistory = existing.find(
+								(row) => row.id === historyId,
+							);
 
 							if (!targetHistory) {
 								throw new NotFoundError({
@@ -488,10 +591,35 @@ export async function confirmEmployeeEmploymentHistoryAction(
 								});
 							}
 
+							const employmentPeriodId = await requireTermsEmploymentPeriod(
+								tx,
+								{
+									organizationId: actor.organizationId,
+									employeeId,
+									validFrom: targetHistory.validFrom,
+								},
+							);
+							if (
+								targetHistory.employmentPeriodId &&
+								targetHistory.employmentPeriodId !== employmentPeriodId
+							) {
+								throw new ValidationError({
+									message:
+										"These terms belong to an ended employment period and can no longer be confirmed.",
+									field: "reviewState",
+								});
+							}
+
 							const now = currentTimestamp();
 							const adjusted = adjustConfirmedTimeline({
-								existing,
-								next: { ...targetHistory, reviewState: "confirmed" as const },
+								existing: existing.filter(
+									(row) => row.employmentPeriodId === employmentPeriodId,
+								),
+								next: {
+									...targetHistory,
+									employmentPeriodId,
+									reviewState: "confirmed" as const,
+								},
 							});
 							await Promise.all(
 								adjusted.updates.map((update) =>
@@ -506,7 +634,10 @@ export async function confirmEmployeeEmploymentHistoryAction(
 											and(
 												eq(employeeEmploymentHistory.id, update.id),
 												eq(employeeEmploymentHistory.employeeId, employeeId),
-												eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+												eq(
+													employeeEmploymentHistory.organizationId,
+													actor.organizationId,
+												),
 											),
 										),
 								),
@@ -515,6 +646,7 @@ export async function confirmEmployeeEmploymentHistoryAction(
 							const [updated] = await tx
 								.update(employeeEmploymentHistory)
 								.set({
+									employmentPeriodId,
 									validUntil: adjusted.next.validUntil,
 									reviewState: "confirmed",
 									updatedBy: session.user.id,
@@ -524,7 +656,10 @@ export async function confirmEmployeeEmploymentHistoryAction(
 									and(
 										eq(employeeEmploymentHistory.id, historyId),
 										eq(employeeEmploymentHistory.employeeId, employeeId),
-										eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+										eq(
+											employeeEmploymentHistory.organizationId,
+											actor.organizationId,
+										),
 									),
 								)
 								.returning();
@@ -584,7 +719,10 @@ export async function cancelEmployeeEmploymentHistoryAction(
 			"employment_history.id": historyId,
 		},
 		logError: (error) => {
-			logger.error({ error, employeeId, historyId }, "Failed to cancel employment history");
+			logger.error(
+				{ error, employeeId, historyId },
+				"Failed to cancel employment history",
+			);
 		},
 		execute: () =>
 			Effect.gen(function* (_) {
@@ -603,7 +741,8 @@ export async function cancelEmployeeEmploymentHistoryAction(
 
 				yield* _(
 					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-						message: "You do not have access to this employee's employment history",
+						message:
+							"You do not have access to this employee's employment history",
 						resource: "employment_history",
 						action: "cancel",
 					}),
@@ -620,13 +759,19 @@ export async function cancelEmployeeEmploymentHistoryAction(
 								for update
 							`);
 
-							const existing = await tx.query.employeeEmploymentHistory.findMany({
-								where: and(
-									eq(employeeEmploymentHistory.employeeId, employeeId),
-									eq(employeeEmploymentHistory.organizationId, actor.organizationId),
-								),
-							});
-							const targetHistory = existing.find((row) => row.id === historyId);
+							const existing =
+								await tx.query.employeeEmploymentHistory.findMany({
+									where: and(
+										eq(employeeEmploymentHistory.employeeId, employeeId),
+										eq(
+											employeeEmploymentHistory.organizationId,
+											actor.organizationId,
+										),
+									),
+								});
+							const targetHistory = existing.find(
+								(row) => row.id === historyId,
+							);
 
 							if (!targetHistory) {
 								throw new NotFoundError({
@@ -644,10 +789,27 @@ export async function cancelEmployeeEmploymentHistoryAction(
 							}
 
 							const now = currentTimestamp();
-							const restorationPlan = buildEmploymentCancellationRestorationPlan({
-								canceled: targetHistory,
-								existing,
-							});
+							// Restoration only extends terms inside the same open period; after
+							// a departure the previous terms already end at the cutoff.
+							const periodIsOpen = targetHistory.employmentPeriodId
+								? (
+										await tx.execute<{ open: boolean }>(sql`
+											select status = 'open' as open from employee_employment_period
+											where id = ${targetHistory.employmentPeriodId}
+												and organization_id = ${actor.organizationId}
+										`)
+									).rows[0]?.open === true
+								: true;
+							const restorationPlan = periodIsOpen
+								? buildEmploymentCancellationRestorationPlan({
+										canceled: targetHistory,
+										existing: existing.filter(
+											(row) =>
+												row.employmentPeriodId ===
+												targetHistory.employmentPeriodId,
+										),
+									})
+								: null;
 
 							await tx
 								.delete(employeeEmploymentHistory)
@@ -655,7 +817,10 @@ export async function cancelEmployeeEmploymentHistoryAction(
 									and(
 										eq(employeeEmploymentHistory.id, historyId),
 										eq(employeeEmploymentHistory.employeeId, employeeId),
-										eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+										eq(
+											employeeEmploymentHistory.organizationId,
+											actor.organizationId,
+										),
 									),
 								);
 
@@ -669,9 +834,15 @@ export async function cancelEmployeeEmploymentHistoryAction(
 									})
 									.where(
 										and(
-											eq(employeeEmploymentHistory.id, restorationPlan.historyUpdate.id),
+											eq(
+												employeeEmploymentHistory.id,
+												restorationPlan.historyUpdate.id,
+											),
 											eq(employeeEmploymentHistory.employeeId, employeeId),
-											eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+											eq(
+												employeeEmploymentHistory.organizationId,
+												actor.organizationId,
+											),
 										),
 									);
 							}

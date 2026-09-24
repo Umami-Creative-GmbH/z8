@@ -97,4 +97,5 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	src/lib/employee-lifecycle/repository.integration.test.ts \
 	src/lib/employee-lifecycle/legacy-period-backfill.integration.test.ts \
 	src/lib/employee-lifecycle/transition.integration.test.ts \
-	src/lib/employee-lifecycle/commands.integration.test.ts
+	src/lib/employee-lifecycle/commands.integration.test.ts \
+	src/lib/employee-lifecycle/employment-periods.integration.test.ts

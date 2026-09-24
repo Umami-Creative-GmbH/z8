@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, sql } from "drizzle-orm";
 import { session } from "@/db/auth-schema";
-import { employee, workPeriod } from "@/db/schema";
+import { employee, employeeEmploymentHistory, workPeriod } from "@/db/schema";
 import {
 	employeeDeparture,
 	employeeDepartureEvent,
@@ -128,6 +128,7 @@ export async function executeDepartureInTransaction(
 			AND review_state = 'confirmed' AND valid_from < ${cutoffDate}
 			AND (valid_until IS NULL OR valid_until > ${cutoffDate})
 	`);
+	await closeEmploymentWindows(tx, identity, cutoffDate, nowDate);
 	await tx.execute(sql`
 		UPDATE employee SET is_active = false, updated_at = ${nowDate}
 		WHERE organization_id = ${identity.organizationId} AND id = ${identity.employeeId}
@@ -179,6 +180,90 @@ async function recordSystemEvent(
 		occurredAt,
 		metadata,
 	});
+}
+
+/**
+ * Ends the employee's own policy assignment at the cutoff and never lets an
+ * assignment span the employment gap: future assignments are deactivated, not
+ * deleted. Future confirmed terms keep their dates but fall outside the closed
+ * period; each becomes an admin review item instead of silently applying.
+ */
+async function closeEmploymentWindows(
+	tx: LifecycleTransaction,
+	identity: DepartureIdentity,
+	cutoff: Date,
+	now: Date,
+) {
+	const scope = {
+		organizationId: identity.organizationId,
+		employeeId: identity.employeeId,
+		employmentPeriodId: identity.employmentPeriodId,
+		departureId: identity.departureId,
+	};
+	await tx.execute(sql`
+		UPDATE work_policy_assignment
+		SET effective_until = ${cutoff}, updated_at = ${now}
+		WHERE organization_id = ${identity.organizationId} AND assignment_type = 'employee'
+			AND employee_id = ${identity.employeeId} AND is_active = true
+			AND (effective_from IS NULL OR effective_from < ${cutoff})
+			AND (effective_until IS NULL OR effective_until > ${cutoff})
+	`);
+	const deactivated = await tx.execute<{ id: string }>(sql`
+		UPDATE work_policy_assignment
+		SET is_active = false, updated_at = ${now}
+		WHERE organization_id = ${identity.organizationId} AND assignment_type = 'employee'
+			AND employee_id = ${identity.employeeId} AND is_active = true
+			AND effective_from >= ${cutoff}
+		RETURNING id
+	`);
+
+	const futureTerms = await tx
+		.select({
+			id: employeeEmploymentHistory.id,
+			validFrom: employeeEmploymentHistory.validFrom,
+		})
+		.from(employeeEmploymentHistory)
+		.where(
+			and(
+				eq(employeeEmploymentHistory.organizationId, identity.organizationId),
+				eq(employeeEmploymentHistory.employeeId, identity.employeeId),
+				eq(
+					employeeEmploymentHistory.employmentPeriodId,
+					identity.employmentPeriodId,
+				),
+				eq(employeeEmploymentHistory.reviewState, "confirmed"),
+				gte(employeeEmploymentHistory.validFrom, cutoff),
+			),
+		);
+	const reviews: (typeof employeeDepartureReview.$inferInsert)[] =
+		futureTerms.map((terms) => ({
+			...scope,
+			kind: "employment_terms",
+			subjectId: terms.id,
+			metadata: {
+				reason: "future_terms_after_departure",
+				validFrom: terms.validFrom.toISOString(),
+			},
+		}));
+	if (deactivated.rows.length > 0) {
+		reviews.push({
+			...scope,
+			kind: "employment_terms",
+			subjectId: null,
+			metadata: {
+				reason: "future_assignments_deactivated",
+				workPolicyAssignmentIds: deactivated.rows.map(
+					(assignment) => assignment.id,
+				),
+			},
+		});
+	}
+	if (reviews.length > 0) {
+		await tx
+			.insert(employeeDepartureReview)
+			.values(reviews)
+			.onConflictDoNothing();
+	}
 }
 
 /**
