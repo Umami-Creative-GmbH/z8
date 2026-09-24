@@ -50,6 +50,9 @@ APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=`);
 			"src/lib/scim/seat-sync-outbox.integration.test.ts",
 		);
 		expect(runner).toContain("src/lib/scim/protocol.integration.test.ts");
+		expect(runner).toContain(
+			'"src/app/[locale]/(app)/time-tracking/actions/clocking.web-clock-out.integration.test.ts"',
+		);
 	});
 
 	it("passes the required database safety environment to the migration verifier", async () => {

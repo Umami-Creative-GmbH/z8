@@ -93,4 +93,5 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	src/lib/approvals/workflow/repository.integration.test.ts \
 	src/lib/approvals/workflow/transition-engine.integration.test.ts \
 	src/lib/approvals/server/time-correction-approvals.integration.test.ts \
-	src/lib/approvals/server/work-period-approvals.integration.test.ts
+	src/lib/approvals/server/work-period-approvals.integration.test.ts \
+	"src/app/[locale]/(app)/time-tracking/actions/clocking.web-clock-out.integration.test.ts"
