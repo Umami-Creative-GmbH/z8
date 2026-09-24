@@ -27,6 +27,7 @@ import {
 	type Subject,
 	type TeamPermissions,
 } from "@/lib/authorization";
+import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 import { AuthorizationError, type DatabaseError } from "../errors";
 import { DatabaseService } from "./database.service";
@@ -172,7 +173,7 @@ export const AuthorizationServiceLive = Layer.effect(
 								where: and(
 									eq(employee.userId, userId),
 									eq(employee.organizationId, activeOrganizationId),
-									eq(employee.isActive, true),
+									employeeHasOrganizationAccess(),
 								),
 							});
 						}),
@@ -364,7 +365,7 @@ export const AuthorizationServiceLive = Layer.effect(
 								where: and(
 									eq(employee.userId, userId),
 									eq(employee.organizationId, activeOrganizationId),
-									eq(employee.isActive, true),
+									employeeHasOrganizationAccess(),
 								),
 							});
 						}),

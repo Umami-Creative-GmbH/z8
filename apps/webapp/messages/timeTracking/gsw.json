@@ -12,9 +12,11 @@
     "clockIn": "Iistämple",
     "clockingIn": "Am Iistämple…",
     "clockingOut": "Am Usstämple…",
+    "clockInQueued": "Iistemplig für Synchronisierig vorgemerkt",
     "clockInSavedForReview": "Iistämple uf dem Grät zur Überprüefig gspeicheret; nöd uf em Server bestätigt",
     "clockInSuccess": "Erfolgriich iigstämplet",
     "clockOut": "Usstämple",
+    "clockOutQueued": "Uusstemplig für Synchronisierig vorgemerkt",
     "clockOutSavedForReview": "Usstämple uf dem Grät zur Überprüefig gspeicheret; nöd uf em Server bestätigt",
     "clockOutSuccess": "Erfolgriich usgstämplet",
     "compliance": {
@@ -24,13 +26,16 @@
     "correction": {
       "clockIn": "Iistämple",
       "clockInDate": "Datum vom Iistämpfle",
+      "clockInTime": "Ziit vom Iistämpfle",
       "clockOut": "Usstämple",
       "clockOutDate": "Datum vom Uusstämpfle",
+      "clockOutTime": "Ziit vom Uusstämpfle",
       "editDescription": "Änderige a dim Ziiteintrag für hüt vorneh.",
       "editEntry": "Ziiteintrag bearbeite",
       "editTitle": "Ziiteintrag bearbeite",
       "errors": {
         "invalidTimeRange": "D'Usstämplizit muess nach de Iistämplizit sii",
+        "noChanges": "Mindeschtens en Korrekturwert muess gänderet werde",
         "submitFailed": "Korrektur het nöd chönne übermittle wärde",
         "updateFailed": "Ziiteintrag het nöd chönne aktualisiert wärde"
       },
@@ -46,7 +51,7 @@
       "submitRequest": "Aatrag iireiche",
       "submitting": "Am Iireiche…",
       "success": {
-        "applied": "Korrektur erfolgreich angewendet",
+        "applied": "Korrektur erfolgriich aagwendet",
         "submitted": "Korrektur-Aatrag zur Genehmigung dur de Manager iigreicht",
         "updated": "Ziiteintrag erfolgriich aktualisiert"
       },
@@ -67,12 +72,24 @@
       "addButton": "Manuelle Iitrag erfasse",
       "clockInLabel": "Iistemple",
       "clockOutLabel": "Uusstemple",
+      "context": {
+        "choicesCleared": "Es usgwählts Projekt oder e Kategorie isch nümm verfüegbar und isch entfernt worde.",
+        "loadFailed": "Zytzone und Uswahl für dä Iitrag händ nöd chöne glade werde.",
+        "loading": "Iitragsoptione werded glade…",
+        "notAuthorized": "Du chasch für die Person kei Zytiiträg erstelle.",
+        "organizationFallback": "Für {employee} isch kei eigeti Zytzone hinterleit, drum wird d Zytzone vo de Organisation verwendet.",
+        "retry": "Nomal probiere",
+        "targetChanged": "D Person isch gwächslet worde, drum sind Projekt und Kategorie zruggsetzt worde.",
+        "targetTimezone": "Ziite sind i de Zytzone für {employee}: {timezone}",
+        "thisEmployee": "die Person",
+        "utcFallback": "Weder für {employee} no für d Organisation isch e Zytzone festgleit, drum wird UTC verwendet."
+      },
       "dateLabel": "Datum",
       "description": "Erfass en Ziitiitrag für es vergangnigs Datum. Je nach Richtlinie vo dinere Organisation isch e Gnehmigung nötig.",
       "errors": {
         "createFailed": "Ziitiitrag hät nöd chönne erstellt werde",
         "futureDate": "Iiträg für Zuekunftsdatum chönd nöd erstellt werde",
-        "invalidTime": "Gib e vollständigi, gültigi Ziit ii",
+        "invalidTime": "Gib e vollständigi, gültigi Uhrziit ii",
         "invalidTimeRange": "Uusstempliziit mues nach de Iistempliziit sii",
         "tooLong": "Arbeitsziit darf nöd meh als 24 Stunde sii"
       },
@@ -143,7 +160,12 @@
     },
     "unknownCategory": "Unbekannti Kategorie",
     "unknownProject": "Unbekannts Projekt",
-    "workCategory": "Arbetskategorie"
+    "workCategory": "Arbetskategorie",
+    "workLocation": "Arbetsort",
+    "workLocationHome": "Dihei",
+    "workLocationOffice": "Büro",
+    "workLocationOther": "Anders",
+    "workLocationRemote": "Mobil"
   },
   "wellness": {
     "water": {

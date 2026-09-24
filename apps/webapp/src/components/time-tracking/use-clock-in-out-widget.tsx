@@ -320,6 +320,8 @@ export function useClockInOutWidget(
 	};
 
 	const handleClockOut = async () => {
+		// A deferred mismatch dialog could resume as a server clock-out once online.
+		if (timeClock.isOffline) return submitClockOut(getBrowserTimezone());
 		const browserTimezone = getBrowserTimezone();
 		if (browserTimezone && browserTimezone !== savedTimezone) {
 			setTimezoneMismatch({

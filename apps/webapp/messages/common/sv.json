@@ -542,5 +542,8 @@
     "notCalculated": "Inte beräknat ännu",
     "pendingDescription": "Processen kommer att beräkna detta saldo snart.",
     "updatedEveryThreeHours": "Uppdateras var tredje timme"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Läser in företagsråd"
   }
 }

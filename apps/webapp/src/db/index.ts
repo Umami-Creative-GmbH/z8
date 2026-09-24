@@ -1,5 +1,6 @@
 import { trace } from "@opentelemetry/api";
 import { drizzle } from "drizzle-orm/node-postgres";
+import { io } from "next/cache";
 import { Pool } from "pg";
 import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
@@ -55,6 +56,9 @@ function createInstrumentedPool(basePool: Pool): Pool {
 			// Intercept query method to add tracing
 			if (prop === "query") {
 				return async (...args: unknown[]) => {
+					// Tracing and the pg driver generate random IDs before their first async I/O.
+					// Defer that work during prerendering while allowing cached reads and workers.
+					await io();
 					const tracer = trace.getTracer("database");
 					return tracer.startActiveSpan(
 						"db.query",

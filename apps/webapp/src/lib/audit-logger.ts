@@ -63,6 +63,12 @@ export enum AuditAction {
 	TRAVEL_EXPENSE_DRAFT_CREATED = "travel_expense.draft_created",
 	TRAVEL_EXPENSE_SUBMITTED = "travel_expense.submitted",
 
+	// Approval Escalation Management
+	APPROVAL_ESCALATION_POLICY_UPDATED = "approval_escalation.policy_updated",
+	APPROVAL_ESCALATION_CONFLICTS_REVIEWED = "approval_escalation.conflicts_reviewed",
+	APPROVAL_ESCALATION_ATTENTION_DISPOSED = "approval_escalation.attention_disposed",
+	APPROVAL_ESCALATION_TRANSFERRED = "approval_escalation.transferred",
+
 	// Vacation Operations
 	VACATION_CARRYOVER_APPLIED = "vacation.carryover_applied",
 	VACATION_CARRYOVER_EXPIRED = "vacation.carryover_expired",

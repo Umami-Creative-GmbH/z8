@@ -110,6 +110,22 @@ export async function runApprovalMaintenanceCli(
 				...result.legacyRequests.map((id) => ({ storage_type: "legacy", id })),
 				...result.workflows.map((id) => ({ storage_type: "workflow", id })),
 				...result.chains.map((id) => ({ storage_type: "chain", id })),
+				...result.evidence.submittedRevisions.map((id) => ({
+					storage_type: "submitted_revision",
+					id,
+				})),
+				...result.evidence.decisionEvidence.map((id) => ({
+					storage_type: "decision_evidence",
+					id,
+				})),
+				...result.evidence.reviewBindings.map((id) => ({
+					storage_type: "review_binding",
+					id,
+				})),
+				...result.escalationTransfers.map((id) => ({
+					storage_type: "escalation_transfer",
+					id,
+				})),
 			]);
 		}
 	} catch (error) {

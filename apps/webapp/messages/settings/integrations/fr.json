@@ -106,6 +106,17 @@
         "email": "E-mail Clockodo",
         "title": "Identifiants Clockodo"
       },
+      "entity": {
+        "absences": "Absences",
+        "entries": "Saisies de temps",
+        "holidayQuotas": "Quotas de congés",
+        "nonBusinessDays": "Jours non ouvrés",
+        "services": "Services / Catégories de travail",
+        "surcharges": "Surcharges",
+        "targetHours": "Heures cibles / Politiques de travail",
+        "teams": "Équipes",
+        "users": "Utilisateurs / Employés"
+      },
       "errors": {
         "connectionFailed": "Échec de la connexion à Clockodo",
         "fetchUsersFailed": "Échec de la récupération des données utilisateur",

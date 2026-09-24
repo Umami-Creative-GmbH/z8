@@ -8,6 +8,8 @@ export * from "./absence";
 export * from "./access-policy";
 export * from "./app-auth";
 export * from "./approval";
+export * from "./approval-escalation";
+export * from "./approval-evidence";
 export * from "./approval-policy";
 export * from "./approval-workflow";
 export * from "./audit";
@@ -16,6 +18,7 @@ export * from "./audit-export";
 export * from "./audit-pack";
 // Billing & subscriptions (Stripe integration)
 export * from "./billing";
+export * from "./billing-seat-delivery";
 // Calendar sync
 export * from "./calendar-sync";
 export * from "./change-policy";
@@ -35,6 +38,8 @@ export * from "./daily-digest-delivery";
 export * from "./discord-integration";
 export * from "./email-template";
 export * from "./employee-invitation-draft";
+// Employee offboarding and rehire (employment periods, departures)
+export * from "./employee-lifecycle";
 export * from "./employment-history";
 export * from "./enterprise";
 export * from "./enterprise-identity-setup";

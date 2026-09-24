@@ -52,6 +52,7 @@ export class StripeService extends Context.Tag("StripeService")<
 		readonly updateSubscription: (
 			subscriptionId: string,
 			params: Stripe.SubscriptionUpdateParams,
+			options?: { idempotencyKey?: string },
 		) => Effect.Effect<Stripe.Subscription, StripeError>;
 
 		readonly cancelSubscription: (
@@ -216,13 +217,17 @@ export const StripeServiceLive = Layer.effect(
 						}),
 				}),
 
-			updateSubscription: (subscriptionId, params) =>
+			updateSubscription: (subscriptionId, params, options) =>
 				Effect.tryPromise({
 					try: async () => {
 						if (!stripe) {
 							throw new Error("Stripe not configured");
 						}
-						return await stripe.subscriptions.update(subscriptionId, params);
+						return await stripe.subscriptions.update(
+							subscriptionId,
+							params,
+							options?.idempotencyKey ? { idempotencyKey: options.idempotencyKey } : undefined,
+						);
 					},
 					catch: (error) =>
 						new StripeError({

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { NoOrganizationError } from "@/components/errors/no-organization-error";
 import { SectionCards, SectionCardsSkeleton } from "@/components/section-cards";
@@ -11,6 +12,8 @@ import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 
 async function DashboardPageContent() {
 	// Fetch onboarding status and organizations in parallel to eliminate waterfall
+	// Dashboard auth and domain database lookups must execute per request.
+	await connection();
 	const [onboardingStatus, organizations, pendingInvitationId] =
 		await Promise.all([
 			getOnboardingStatus(),

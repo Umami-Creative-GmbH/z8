@@ -158,8 +158,8 @@ outcomes, actual clocking calculation/capture, transaction identity/lifetime,
 and ordinary submission. Successful legacy approval closure additionally uses
 the real production approval runtime, repository, write gate, submission and
 chain service through database adapters, including manager and matched-policy
-changes discovered after row acquisition. These are **not PostgreSQL lock or rollback proof**;
-canonical terminal-split runtime evidence is still outstanding.
+changes discovered after row acquisition. Those database-free runs are **not PostgreSQL
+lock or rollback proof**; the PostgreSQL evidence below was added on 2026-09-24.
 
 ### Local results (2026-09-15)
 
@@ -185,6 +185,85 @@ canonical terminal-split runtime evidence is still outstanding.
   pointed at an unavailable local port for the suite. No unrelated PostgreSQL
   database was used. Desktop tests use their own temporary SQLite fixtures.
 
+### PostgreSQL runtime evidence (2026-09-24)
+
+Suite: `apps/webapp/src/app/[locale]/(app)/time-tracking/actions/clocking.web-clock-out.integration.test.ts`,
+registered in `scripts/run-approval-workflow-repository-integration.sh` and the CI
+`integration-tests` job. It runs only against the gated, label-owned disposable
+PostgreSQL 16 database (sentinel plus `approval_workflow_repository_test_*` name check),
+never the dev or any unrelated database. Without that configuration it skips.
+
+The real `clockIn` and `clockOut` server actions run end to end: session/membership
+lookup, committed-replay lookup, preflight, the coordinator, clocking service, snapshot
+resolvers, canonical record writer, approval runtime/repository/write gate/submission
+and post-commit maintenance. Only these boundaries are replaced: the Better Auth
+session, request headers, external billing provisioning, notification delivery and Next
+cache revalidation. Lock order is observed from a second session through `pg_locks`,
+`pg_blocking_pids` and `FOR ... NOWAIT` probes. Restarts are counted from the shared
+adoption-lock statement that starts each attempt.
+
+Verified (20 tests; 3 consecutive local runs green, plus the full runner below):
+
+- Legacy admission closes the period with an approved canonical record and no approval
+  rows. Replaying the same submission returns the same clock-out entry in one
+  transaction and writes nothing. Its only insert is the idempotent rollout bootstrap.
+- Order while the fresh closure waits for the employee key: adoption, `policy_clock_out`
+  write gate, organization configuration and requester access are held shared. The
+  employee key is the pending exclusive request. The ownership key and the
+  organization/employee rows are not yet held.
+- Order while it waits on the routed `work_period` row: the employee key, ownership key
+  and both ordinary-source keys are held exclusive. The organization row is held
+  `FOR NO KEY UPDATE` and the employee row is locked. The later-ranked `time_entry` row
+  is still free.
+- Competing clock-outs for one employee, in both arrival orders: one wins, the other gets
+  "You are not currently clocked in", with one clock-out, one canonical record and an
+  unforked hash chain. A concurrent duplicate submission returns one committed result.
+- A distinct employee is not serialized behind a held employee key once the rollout row
+  exists.
+- A restart happens, not a late earlier-ranked acquisition, when any of these change
+  while the fresh closure waits: a new work-policy assignment (configuration), a
+  routed-row binding changed by a raw row writer holding `FOR UPDATE` (detected after
+  row acquisition), a new primary manager (participant, legacy and canonical), or a
+  newly active approval policy/stage (canonical). The retried attempt locks the new
+  rows, and in both modes the approval goes to the newly discovered manager.
+- Three changed-scope attempts exhaust the retries. The action returns the generic
+  failure with the database unchanged.
+- Membership revoked while waiting fails closed with no writes.
+- With approval forced and no manager, the error is returned and the closed period,
+  entry and canonical record roll back.
+- A pending approval in legacy and canonical modes replays without duplicate rows,
+  notifications or outbox entries. Legacy notifies after commit; canonical writes the
+  pending stage assignment and outbox rows instead.
+- Requester auto-completion with a 360/30 break rule, in legacy and canonical modes,
+  splits the terminal period inside the same transaction. It leaves at least 30 break
+  minutes, ends at the requested instant, marks all periods approved and keeps an
+  unforked hash chain.
+
+Full runner (`bash apps/webapp/scripts/run-approval-workflow-repository-integration.sh`,
+fresh container, full migration chain): **8 files / 304 tests passed**, including all 20
+tests of this suite. The container's ownership label was verified and the container
+removed.
+
+Runtime findings:
+
+1. **First rollout bootstrap serializes same-organization writers.** The write gate's
+   `insert into approval_workflow_rollout ... on conflict do nothing` makes any other
+   same-organization clock-out (including other employees) wait while the first
+   transaction's inserted row is uncommitted. It lasts only until that transaction ends
+   and only happens before the organization's first `policy_clock_out` write. Among
+   coordinated writers it cannot deadlock, because the bootstrap happens at step 2,
+   before any employee key. A writer that holds an employee key or later-ranked rows and
+   then first-bootstraps this rollout row would deadlock with it; PostgreSQL would abort
+   one side. Pre-create rollout rows before any activation or pilot. The suite pins the
+   current behavior.
+2. **The approval branch is dormant in production.** `ChangePolicyServiceLive.checkClockOutNeedsApproval`
+   returns `false` unconditionally, so real web clock-outs never take the approval
+   path. The suite asserts this and forces only that decision for the approval
+   scenarios.
+3. Pre-existing and unrelated: pg reports a deprecation for concurrent relational
+   queries on one transaction client (drizzle `query` builder). Not caused by this
+   slice.
+
 ### Standards review
 
 No confirmed documented-standard violations. One maintenance judgement remains:
@@ -204,11 +283,12 @@ source correctness blocker. This does not satisfy the runtime evidence gates.
 
 Blocked obligations (ticket remains open; no activation):
 
-- No Z8 PostgreSQL instance is available. The unrelated project's database must
-  not be used. Execute real SQL/row-lock/foreign-key/cutover races and failure
-  injection, both arrival orders, empty state, scope changes during locking,
-  distinct employees, and approval auto-completion/terminal splitting once a
-  specifically authorized Z8 test database is available.
+- PostgreSQL coverage not yet exercised: the `shadow`, `ready` and `complete` lifecycle
+  modes; rollout cutover racing a clock-out; foreign-key failure injection; and
+  same-organization distinct employees contending on the `FOR NO KEY UPDATE`
+  organization row during the row phase. That contention is documented and expected.
+- Pre-create `policy_clock_out` rollout rows before any activation, so the first-bootstrap
+  serialization above cannot meet a writer that holds later-ranked resources.
 - Prove every competing work/configuration/access/billing writer participates
   in the actual original transaction or is effectively disabled/drained.
   Shared guards do not protect against legacy writers that ignore them.

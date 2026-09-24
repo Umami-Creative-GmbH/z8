@@ -18,6 +18,7 @@
     "clockIn": "Einstempeln",
     "clockOut": "Ausstempeln",
     "confirmReject": "Ablehnung bestätigen",
+    "correctedTimes": "Korrigierte Zeiten",
     "date": "Datum",
     "dates": "Daten",
     "days": "Tage",
@@ -37,8 +38,9 @@
     "notes": "Notizen",
     "noTimeCorrectionApprovals": "Keine ausstehenden Zeitkorrekturanfragen zur Überprüfung.",
     "offFrom": "frei ab",
-    "openDetailsFor": "Details öffnen für ${item.summary.title}",
+    "openDetailsFor": "Details öffnen für {title}",
     "openInbox": "Posteingang öffnen",
+    "originalTimes": "Ursprüngliche Zeiten",
     "original": "Original",
     "pendingRequests": "Ausstehende Anfragen",
     "pendingRequestsDescription": "Wählen Sie Anfragen zur Sammelgenehmigung aus oder klicken Sie auf eine Zeile für Details",
@@ -76,7 +78,23 @@
     "unifiedInboxBannerTitle": "Probieren Sie den neuen einheitlichen Posteingang aus",
     "workCategory": "Arbeitskategorie",
     "workCategoryUnavailable": "Unbekannte Kategorie (nicht verfügbar)",
-    "workLocation": "Arbeitsort"
+    "workLocation": "Arbeitsort",
+    "evidence": {
+      "unavailable": "Nicht verfügbar",
+      "fullDay": "Ganzer Tag",
+      "morning": "Vormittag",
+      "afternoon": "Nachmittag",
+      "coverage": "Umfang",
+      "fullDays": "Ganze Tage",
+      "startsWith": "Beginnt mit",
+      "endsWith": "Endet mit",
+      "requestedTimes": "Beantragte Zeiten (lokal, Zeitzone nicht erfasst)",
+      "requestedBy": "Beantragt von",
+      "submittedBy": "Eingereicht von",
+      "category": "Kategorie",
+      "currentCategoryName": "Aktueller Kategoriename",
+      "submittedTitle": "Eingereichter Antrag"
+    }
   },
   "fastLanes": {
     "approve": "Genehmigen",

@@ -1,11 +1,11 @@
-import { and, count, eq, notLike } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { member, user } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import { DatabaseError, NotFoundError } from "../../errors";
+import { countBillableSeats } from "./billable-seat-count";
 
 export interface SubscriptionInfo {
 	id: string;
@@ -116,20 +116,8 @@ function mapToSubscriptionInfo(sub: typeof subscription.$inferSelect): Subscript
 	};
 }
 
-async function countBillableOrganizationMembers(organizationId: string): Promise<number> {
-	const [memberCountResult] = await db
-		.select({ count: count() })
-		.from(member)
-		.innerJoin(user, eq(user.id, member.userId))
-		.where(
-			and(
-				eq(member.organizationId, organizationId),
-				eq(member.status, "approved"),
-				notLike(user.email, "%@demo.invalid"),
-			),
-		);
-
-	return memberCountResult?.count ?? 0;
+function countBillableOrganizationMembers(organizationId: string): Promise<number> {
+	return countBillableSeats(db, organizationId);
 }
 
 export const SubscriptionServiceLive = Layer.succeed(

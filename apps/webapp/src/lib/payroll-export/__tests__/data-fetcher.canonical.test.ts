@@ -9,11 +9,17 @@ const mockState = vi.hoisted(() => ({
 	organizationFindFirst: vi.fn(),
 	workPeriodFindMany: vi.fn(),
 	absenceEntryFindMany: vi.fn(),
+	findOpenDepartureClockRepairs: vi.fn(),
+}));
+
+vi.mock("@/lib/employee-lifecycle/reviews", () => ({
+	findOpenDepartureClockRepairs: mockState.findOpenDepartureClockRepairs,
 }));
 
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({
 		info: vi.fn(),
+		warn: vi.fn(),
 	}),
 }));
 
@@ -83,12 +89,40 @@ vi.mock("@/db/schema", () => ({
 }));
 
 const dataFetcher = await import("../data-fetcher");
+const { PayrollWorkAllocationBlockedError } = await import("../work-allocation-blocked-error");
 
 describe("payroll export canonical data fetching", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockAssertCanonicalCutoverReady.mockResolvedValue(undefined);
 		mockState.organizationFindFirst.mockResolvedValue({ timezone: "UTC" });
+		mockState.employeeFindMany.mockResolvedValue([{ id: "emp-1" }]);
+		mockState.findOpenDepartureClockRepairs.mockResolvedValue([]);
+	});
+
+	it("blocks the export while an in-scope departure timer repair is open", async () => {
+		mockState.findOpenDepartureClockRepairs.mockResolvedValue([
+			{
+				reviewId: "review-1",
+				employeeId: "emp-1",
+				workPeriodId: "period-1",
+				affectedStartAt: null,
+				affectedEndAt: new Date("2026-01-14T22:00:00.000Z"),
+			},
+		]);
+
+		await expect(
+			dataFetcher.fetchWorkPeriodsForExport("org-1", {
+				dateRange: {
+					start: DateTime.fromISO("2026-01-01T00:00:00.000Z"),
+					end: DateTime.fromISO("2026-01-31T23:59:59.999Z"),
+				},
+			}),
+		).rejects.toMatchObject({
+			name: "PayrollOffboardingRepairBlockedError",
+			employeeIds: ["emp-1"],
+		});
+		expect(mockState.timeRecordFindMany).not.toHaveBeenCalled();
 	});
 
 	it("rejects payroll export reads when canonical cutover is incomplete", async () => {
@@ -222,6 +256,7 @@ describe("payroll export canonical data fetching", () => {
 				employeeId: "emp-ny",
 				startAt: new Date("2026-05-01T02:00:00.000Z"),
 				endAt: new Date("2026-05-01T03:00:00.000Z"),
+				durationMinutes: 60,
 				employee: {
 					employeeNumber: "NY-1",
 					teamId: null,
@@ -236,6 +271,7 @@ describe("payroll export canonical data fetching", () => {
 				employeeId: "emp-ny",
 				startAt: new Date("2026-05-31T22:00:00.000Z"),
 				endAt: new Date("2026-06-01T02:00:00.000Z"),
+				durationMinutes: 240,
 				employee: {
 					employeeNumber: "NY-1",
 					teamId: null,
@@ -250,6 +286,7 @@ describe("payroll export canonical data fetching", () => {
 				employeeId: "emp-berlin",
 				startAt: new Date("2026-04-30T22:30:00.000Z"),
 				endAt: new Date("2026-04-30T23:30:00.000Z"),
+				durationMinutes: 60,
 				employee: {
 					employeeNumber: "BER-1",
 					teamId: null,
@@ -264,6 +301,7 @@ describe("payroll export canonical data fetching", () => {
 				employeeId: "emp-utc",
 				startAt: new Date("2026-04-30T23:00:00.000Z"),
 				endAt: new Date("2026-05-01T00:00:00.000Z"),
+				durationMinutes: 60,
 				employee: {
 					employeeNumber: "UTC-1",
 					teamId: null,
@@ -278,6 +316,7 @@ describe("payroll export canonical data fetching", () => {
 				employeeId: "emp-utc",
 				startAt: new Date("2026-05-01T00:00:00.000Z"),
 				endAt: new Date("2026-05-01T00:00:20.000Z"),
+				durationMinutes: 0,
 				employee: {
 					employeeNumber: "UTC-1",
 					teamId: null,
@@ -310,6 +349,143 @@ describe("payroll export canonical data fetching", () => {
 		});
 
 		await expect(dataFetcher.countWorkPeriods("org-1", filters)).resolves.toBe(2);
+	});
+
+	it("exports protected stored minutes for a fully included segment", async () => {
+		mockState.timeRecordFindMany.mockResolvedValue([
+			{
+				id: "record-protected",
+				employeeId: "emp-1",
+				startAt: new Date("2026-01-10T08:00:00.000Z"),
+				endAt: new Date("2026-01-10T09:00:40.000Z"),
+				durationMinutes: 60,
+				employee: { employeeNumber: "E-001", teamId: null, user: null },
+				work: null,
+				allocations: [],
+			},
+		]);
+
+		const results = await dataFetcher.fetchWorkPeriodsForExport("org-1", {
+			dateRange: {
+				start: DateTime.fromISO("2026-01-01", { zone: "utc" }),
+				end: DateTime.fromISO("2026-01-31", { zone: "utc" }),
+			},
+		});
+
+		expect(results[0]).toMatchObject({ id: "record-protected", durationMinutes: 60 });
+	});
+
+	it("conserves stored minutes across adjacent export windows", async () => {
+		const crossingRecord = {
+			id: "record-crossing",
+			employeeId: "emp-1",
+			startAt: new Date("2026-01-31T21:07:13.000Z"),
+			endAt: new Date("2026-02-01T02:52:51.000Z"),
+			durationMinutes: 346,
+			employee: {
+				employeeNumber: "E-001",
+				teamId: null,
+				user: null,
+				userSettings: { timezone: "Europe/Berlin" },
+			},
+			work: null,
+			allocations: [],
+		};
+		mockState.timeRecordFindMany.mockResolvedValue([crossingRecord]);
+
+		const [february] = await dataFetcher.fetchWorkPeriodsForExport("org-1", {
+			dateRange: {
+				start: DateTime.fromISO("2026-02-01", { zone: "utc" }),
+				end: DateTime.fromISO("2026-02-28", { zone: "utc" }),
+			},
+		});
+		const [january] = await dataFetcher.fetchWorkPeriodsForExport("org-1", {
+			dateRange: {
+				start: DateTime.fromISO("2026-01-01", { zone: "utc" }),
+				end: DateTime.fromISO("2026-01-31", { zone: "utc" }),
+			},
+		});
+
+		// Berlin month boundary is 2026-01-31T23:00Z.
+		expect(january).toMatchObject({
+			startTime: DateTime.fromISO("2026-01-31T21:07:13.000Z", { zone: "utc" }),
+			endTime: DateTime.fromISO("2026-01-31T23:00:00.000Z", { zone: "utc" }),
+		});
+		expect(february?.startTime).toEqual(DateTime.fromISO("2026-01-31T23:00:00.000Z", { zone: "utc" }));
+		expect((january?.durationMinutes ?? 0) + (february?.durationMinutes ?? 0)).toBe(346);
+	});
+
+	it("blocks the whole export when in-scope work has an unlocated break across the boundary", async () => {
+		mockState.timeRecordFindMany.mockResolvedValue([
+			{
+				id: "record-ok",
+				employeeId: "emp-1",
+				startAt: new Date("2026-01-10T08:00:00.000Z"),
+				endAt: new Date("2026-01-10T16:00:00.000Z"),
+				durationMinutes: 480,
+				employee: { employeeNumber: "E-001", teamId: null, user: null },
+				work: null,
+				allocations: [],
+			},
+			{
+				id: "record-unlocated-break",
+				employeeId: "emp-2",
+				startAt: new Date("2026-01-31T20:00:00.000Z"),
+				endAt: new Date("2026-02-01T04:00:00.000Z"),
+				durationMinutes: 450,
+				employee: { employeeNumber: "E-002", teamId: null, user: null },
+				work: null,
+				allocations: [],
+			},
+		]);
+		const filters = {
+			dateRange: {
+				start: DateTime.fromISO("2026-01-01", { zone: "utc" }),
+				end: DateTime.fromISO("2026-01-31", { zone: "utc" }),
+			},
+		};
+
+		const exportAttempt = dataFetcher.fetchWorkPeriodsForExport("org-1", filters);
+		await expect(exportAttempt).rejects.toBeInstanceOf(PayrollWorkAllocationBlockedError);
+		await expect(exportAttempt).rejects.toMatchObject({
+			organizationId: "org-1",
+			blockedRecords: [
+				{
+					recordId: "record-unlocated-break",
+					employeeId: "emp-2",
+					reason: "unresolved_interval",
+				},
+			],
+		});
+		await expect(dataFetcher.countWorkPeriods("org-1", filters)).rejects.toBeInstanceOf(
+			PayrollWorkAllocationBlockedError,
+		);
+	});
+
+	it("blocks completed work without stored minutes instead of exporting zero", async () => {
+		mockState.timeRecordFindMany.mockResolvedValue([
+			{
+				id: "record-missing-minutes",
+				employeeId: "emp-1",
+				startAt: new Date("2026-01-10T08:00:00.000Z"),
+				endAt: new Date("2026-01-10T16:00:00.000Z"),
+				durationMinutes: null,
+				employee: { employeeNumber: "E-001", teamId: null, user: null },
+				work: null,
+				allocations: [],
+			},
+		]);
+
+		await expect(
+			dataFetcher.fetchWorkPeriodsForExport("org-1", {
+				dateRange: {
+					start: DateTime.fromISO("2026-01-01", { zone: "utc" }),
+					end: DateTime.fromISO("2026-01-31", { zone: "utc" }),
+				},
+			}),
+		).rejects.toMatchObject({
+			blockedRecords: [expect.objectContaining({ reason: "missing_stored_minutes" })],
+		});
 	});
 
 	it("returns no work export rows for an explicit empty employee scope", async () => {
@@ -426,6 +602,7 @@ describe("payroll export canonical data fetching", () => {
 				employeeId: "emp-1",
 				startAt: new Date("2026-01-10T08:00:00.000Z"),
 				endAt: new Date("2026-01-10T16:00:00.000Z"),
+				durationMinutes: 480,
 				employee: { teamId: "team-1", userSettings: { timezone: "UTC" } },
 				allocations: [{ projectId: "project-1" }],
 			},
@@ -434,6 +611,7 @@ describe("payroll export canonical data fetching", () => {
 				employeeId: "emp-2",
 				startAt: new Date("2026-01-10T08:00:00.000Z"),
 				endAt: new Date("2026-01-10T16:00:00.000Z"),
+				durationMinutes: 480,
 				employee: { teamId: "team-2", userSettings: { timezone: "UTC" } },
 				allocations: [{ projectId: "project-2" }],
 			},

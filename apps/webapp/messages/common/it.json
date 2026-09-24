@@ -165,6 +165,7 @@
     "moveDown": "Sposta giù",
     "moveUp": "Sposta su",
     "name": "Nome",
+    "never": "Mai",
     "new": "Nuovo",
     "next": "Avanti",
     "notApplicable": "N/D",
@@ -289,8 +290,16 @@
     "trust-center": "Centro di fiducia"
   },
   "loading": {
-    "chart": "Caricamento grafico",
-    "settings": "Caricamento impostazioni"
+    "application": "Caricamento dell’applicazione",
+    "authentication": "Caricamento dell’autenticazione",
+    "calendar": "Caricamento del calendario",
+    "chart": "Caricamento del grafico",
+    "licenses": "Caricamento delle licenze",
+    "platformAnalytics": "Caricamento delle analisi della piattaforma",
+    "settings": "Caricamento delle impostazioni",
+    "setup": "Caricamento della configurazione",
+    "teamAbsences": "Caricamento delle assenze del team",
+    "workerQueue": "Caricamento della coda di lavoro"
   },
   "nav": {
     "absences": "Assenze",
@@ -326,6 +335,14 @@
       "viewAll": "Visualizza tutte le notifiche"
     },
     "content": {
+      "absenceRequestSubmitted": {
+        "message": "La tua richiesta {categoryName} per {dateRange} è stata inviata ed è in attesa di approvazione.",
+        "title": "Richiesta di assenza inviata"
+      },
+      "teamMemberRemoved": {
+        "message": "Sei stato rimosso dal team {teamName} da {performedByName}.",
+        "title": "Rimosso dal team"
+      },
       "passwordChanged": {
         "message": "La tua password è stata modificata correttamente. Se non hai effettuato questa modifica, contatta immediatamente l'assistenza.",
         "title": "Password modificata"
@@ -417,6 +434,10 @@
     "banner": {
       "archived": "Prove di timbratura archiviate conservate su questo dispositivo",
       "offline": "Sei offline",
+      "offlineWithPending": "Offline - {count} evento/i in sospeso",
+      "pending": "{count} evento/i in attesa di sincronizzazione",
+      "retry": "Riprova",
+      "syncing": "Sincronizzazione di {count} evento/i in corso...",
       "offlineSaved": "Offline — {count} record salvati localmente per la revisione",
       "refresh": "Aggiorna stato",
       "refreshing": "Controllo di {count} record salvati…",
@@ -534,8 +555,12 @@
   "validation": {
     "first-name-required": "Il nome è obbligatorio",
     "invalid-email": "Indirizzo email non valido",
+    "invalid-password": "Password non valida",
     "last-name-required": "Il cognome è obbligatorio",
     "password-required": "La password è obbligatoria"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Caricamento del portale del consiglio di fabbrica"
   },
   "workBalance": {
     "label": "Saldo totale",

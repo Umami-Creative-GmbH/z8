@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { reconcileCronJobSchedule, reconcileCronSchedules, retireLegacyEscalationSchedulers } from "./reconciliation";
 
+const mockEnv = vi.hoisted(() => ({
+	RETIRE_LEGACY_ESCALATION_SCHEDULERS: undefined as "true" | "false" | undefined,
+}));
+
+vi.mock("@/env", () => ({ env: mockEnv }));
+
 function queue(overrides?: { upsertRejects?: boolean }) {
 	return {
 		upsertJobScheduler: vi.fn(() => {
@@ -13,10 +19,12 @@ function queue(overrides?: { upsertRejects?: boolean }) {
 }
 
 describe("cron schedule reconciliation", () => {
-	afterEach(() => vi.unstubAllEnvs());
+	afterEach(() => {
+		mockEnv.RETIRE_LEGACY_ESCALATION_SCHEDULERS = undefined;
+	});
 
 	it("explicitly retires legacy schedulers instead of recreating them during reconciliation", async () => {
-		vi.stubEnv("RETIRE_LEGACY_ESCALATION_SCHEDULERS", "true");
+		mockEnv.RETIRE_LEGACY_ESCALATION_SCHEDULERS = "true";
 		const fakeQueue = { ...queue(), removeJobScheduler: vi.fn().mockResolvedValue(true) };
 		const result = await reconcileCronSchedules({
 			queue: fakeQueue as never,
@@ -35,11 +43,20 @@ describe("cron schedule reconciliation", () => {
 			["cron-cron:teams-escalation"],
 		]);
 		expect(fakeQueue.upsertJobScheduler).toHaveBeenCalledTimes(1);
-		expect(result.failed).toEqual([]);
+		expect(result).toEqual({
+			reconciled: [{ jobName: "cron:export" }],
+			retired: [
+				{ jobName: "cron:slack-escalation" },
+				{ jobName: "cron:telegram-escalation" },
+				{ jobName: "cron:discord-escalation" },
+				{ jobName: "cron:teams-escalation" },
+			],
+			failed: [],
+		});
 	});
 
 	it("can retire without registering schedules, accepts already-absent schedulers and surfaces Redis failures", async () => {
-		vi.stubEnv("RETIRE_LEGACY_ESCALATION_SCHEDULERS", "true");
+		mockEnv.RETIRE_LEGACY_ESCALATION_SCHEDULERS = "true";
 		const fakeQueue = {
 			...queue(),
 			removeJobScheduler: vi.fn().mockResolvedValue(false)
@@ -110,6 +127,7 @@ describe("cron schedule reconciliation", () => {
 		expect(fakeQueue.upsertJobScheduler).toHaveBeenCalledTimes(2);
 		expect(result).toEqual({
 			reconciled: [{ jobName: "cron:export" }, { jobName: "cron:vacation" }],
+			retired: [],
 			failed: [],
 		});
 	});

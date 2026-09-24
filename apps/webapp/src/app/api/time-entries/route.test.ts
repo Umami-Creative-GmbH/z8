@@ -9,6 +9,7 @@ const mockState = vi.hoisted(() => {
 		}
 	}
 	class ClockingConflictError extends Error {}
+	class ClockingAccessError extends Error {}
 
 	const limit = vi.fn();
 	const where = vi.fn(() => ({ limit }));
@@ -32,7 +33,9 @@ const mockState = vi.hoisted(() => {
 
 	return {
 		UnsupportedAuthorizationConditionError,
+		ClockingAccessError,
 		ClockingConflictError,
+		preserveLateClockEvidence: vi.fn(),
 		accessibleByDrizzle: vi.fn(),
 		asAppSubject: vi.fn((subject, data) => ({ ...data, __caslSubjectType__: subject })),
 		connection: vi.fn(),
@@ -171,13 +174,17 @@ vi.mock("@/lib/effect/services/time-entry.service", () => ({
 }));
 
 vi.mock("@/lib/time-tracking/clocking-service", () => ({
-	ClockingAccessError: class ClockingAccessError extends Error {},
+	ClockingAccessError: mockState.ClockingAccessError,
 	ClockingConflictError: mockState.ClockingConflictError,
 	clockingService: {
 		clockIn: mockState.clockingClockIn,
 		clockOut: mockState.clockingClockOut,
 		requireActor: mockState.requireActor,
 	},
+}));
+
+vi.mock("@/lib/employee-lifecycle/late-clock-evidence", () => ({
+	preserveLateClockEvidence: mockState.preserveLateClockEvidence,
 }));
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/entry-helpers", () => ({
@@ -466,6 +473,8 @@ describe("POST /api/time-entries", () => {
 	});
 
 	it("rejects client-supplied organization ids instead of switching the active organization", async () => {
+		mockState.headers.mockResolvedValue(new Headers({ authorization: "Bearer desktop-token" }));
+
 		const response = await POST(
 			new Request("https://z8.test/api/time-entries", {
 				body: JSON.stringify({
@@ -480,6 +489,182 @@ describe("POST /api/time-entries", () => {
 		expect(response.status).toBe(400);
 		expect(await response.json()).toEqual({ error: "organizationId is server-derived" });
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+	});
+
+	describe("old queue consumer preservation fence", () => {
+		it("answers the pre-preservation browser queue reader with a retaining 401 instead of a deleting 400", async () => {
+			// Shape sent by the pre-#267 service-worker sync-service: cookie session,
+			// organizationId from the queued row, no action id/offset/replay.
+			const response = await POST(
+				new Request("https://z8.test/api/time-entries", {
+					body: JSON.stringify({
+						type: "clock_in",
+						timestamp: "2026-05-04T09:00:00.000Z",
+						organizationId: "unknown",
+						browserTimezone: "Europe/Berlin",
+					}),
+					method: "POST",
+				}) as never,
+			);
+
+			expect(response.status).toBe(401);
+			expect(await response.json()).toEqual({
+				error: "organizationId is server-derived",
+				hold: "legacy-browser-queue",
+			});
+			expect(mockState.clockingClockIn).not.toHaveBeenCalled();
+		});
+
+		it("answers an extension queue replay with a retaining 409 instead of a deleting 400", async () => {
+			// X1/X2 extension row (UUID id, no zone/offset) replayed by an X3 reader.
+			const response = await POST(
+				new Request("https://z8.test/api/time-entries", {
+					body: JSON.stringify({
+						id: "6f1c2a4e-8b3d-4c5e-9f70-1a2b3c4d5e6f",
+						type: "clock_in",
+						timestamp: "2026-05-04T09:00:00.000Z",
+						replay: true,
+					}),
+					method: "POST",
+				}) as never,
+			);
+
+			expect(response.status).toBe(409);
+			expect(await response.json()).toEqual({
+				error: "Clock timezone evidence is incomplete",
+				hold: "legacy-extension-queue",
+			});
+			expect(mockState.clockingClockIn).not.toHaveBeenCalled();
+		});
+
+		it("recognizes X1/X2 extension replays, which send no id, by their extension origin", async () => {
+			mockState.headers.mockResolvedValue(
+				new Headers({ origin: "chrome-extension://fafcecodjdcbfflmbkfhjgafobbddedc" }),
+			);
+			mockState.getSession.mockResolvedValue({
+				session: { activeOrganizationId: null },
+				user: { id: "user-1" },
+			});
+
+			const response = await POST(
+				new Request("https://z8.test/api/time-entries", {
+					body: JSON.stringify({ type: "clock_in", timestamp: "2026-05-04T09:00:00.000Z" }),
+					method: "POST",
+				}) as never,
+			);
+
+			expect(response.status).toBe(409);
+			expect(await response.json()).toEqual({
+				error: "No active organization",
+				hold: "legacy-extension-queue",
+			});
+		});
+
+		it("leaves extension sign-in failures as 401 so the extension can prompt for login", async () => {
+			mockState.getSession.mockResolvedValue(null);
+
+			const response = await POST(
+				new Request("https://z8.test/api/time-entries", {
+					body: JSON.stringify({
+						id: "6f1c2a4e-8b3d-4c5e-9f70-1a2b3c4d5e6f",
+						type: "clock_in",
+						timestamp: "2026-05-04T09:00:00.000Z",
+						replay: true,
+					}),
+					method: "POST",
+				}) as never,
+			);
+
+			expect(response.status).toBe(401);
+			expect(await response.json()).toEqual({ error: "Unauthorized" });
+		});
+
+		it("preserves a refused pre-cutoff extension replay for review and still refuses it", async () => {
+			const capturedAt = new Date(Date.now() - 60 * 60_000).toISOString();
+			mockState.requireActor.mockRejectedValue(new mockState.ClockingAccessError("Employee gone"));
+			mockState.getUtcOffsetMinutesForZone.mockReturnValue(120);
+			mockState.preserveLateClockEvidence.mockResolvedValue({ kind: "preserved", reviewId: "r-1" });
+
+			const response = await POST(
+				new Request("https://z8.test/api/time-entries", {
+					body: JSON.stringify({
+						id: "6f1c2a4e-8b3d-4c5e-9f70-1a2b3c4d5e6f",
+						type: "clock_out",
+						timestamp: capturedAt,
+						browserTimezone: "Europe/Berlin",
+						utcOffsetMinutes: 120,
+						replay: true,
+					}),
+					method: "POST",
+				}) as never,
+			);
+
+			expect(response.status).toBe(403);
+			expect(mockState.preserveLateClockEvidence).toHaveBeenCalledWith(
+				expect.anything(),
+				expect.objectContaining({
+					organizationId: "org-1",
+					userId: "user-1",
+					actionId: "6f1c2a4e-8b3d-4c5e-9f70-1a2b3c4d5e6f",
+					type: "clock_out",
+					utcOffsetMinutes: 120,
+					timezone: "Europe/Berlin",
+				}),
+			);
+			expect(
+				mockState.preserveLateClockEvidence.mock.calls[0]?.[1].instant.epochMilliseconds,
+			).toBe(Date.parse(capturedAt));
+			expect(mockState.clockingClockOut).not.toHaveBeenCalled();
+		});
+
+		it("does not preserve refused live clicks or evidence that fails replay validation", async () => {
+			mockState.requireActor.mockRejectedValue(new mockState.ClockingAccessError("Employee gone"));
+			mockState.getUtcOffsetMinutesForZone.mockReturnValue(60);
+			const send = (body: Record<string, unknown>) =>
+				POST(
+					new Request("https://z8.test/api/time-entries", {
+						body: JSON.stringify({
+							id: "6f1c2a4e-8b3d-4c5e-9f70-1a2b3c4d5e6f",
+							type: "clock_out",
+							timestamp: new Date(Date.now() - 60_000).toISOString(),
+							browserTimezone: "Europe/Berlin",
+							...body,
+						}),
+						method: "POST",
+					}) as never,
+				);
+
+			expect((await send({ utcOffsetMinutes: 60 })).status).toBe(403);
+			expect((await send({ utcOffsetMinutes: 120, replay: true })).status).toBe(403);
+			expect(
+				(
+					await send({
+						utcOffsetMinutes: 60,
+						replay: true,
+						timestamp: new Date(Date.now() - 8 * 24 * 60 * 60_000).toISOString(),
+					})
+				).status,
+			).toBe(403);
+			expect(mockState.preserveLateClockEvidence).not.toHaveBeenCalled();
+		});
+
+		it("passes successful extension captures through unchanged", async () => {
+			const response = await POST(
+				new Request("https://z8.test/api/time-entries", {
+					body: JSON.stringify({
+						id: "6f1c2a4e-8b3d-4c5e-9f70-1a2b3c4d5e6f",
+						type: "clock_in",
+						timestamp: new Date().toISOString(),
+						browserTimezone: "Europe/Berlin",
+						utcOffsetMinutes: 120,
+					}),
+					method: "POST",
+				}) as never,
+			);
+
+			expect(response.status).toBe(201);
+			expect(await response.json()).toEqual({ entry: { id: "entry-1" } });
+		});
 	});
 
 	it("rejects client-supplied employee ids instead of allowing on-behalf clocking", async () => {
@@ -720,7 +905,11 @@ describe("POST /api/time-entries", () => {
 
 		expect(response.status).toBe(400);
 		expect(await response.json()).toEqual({ error: "Cannot assign to this work category" });
-		expect(mockState.employeeHasAccessToCategory).toHaveBeenCalledWith("employee-1", "category-1");
+		expect(mockState.employeeHasAccessToCategory).toHaveBeenCalledWith(
+			"employee-1",
+			"category-1",
+			"org-1",
+		);
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 	});
 

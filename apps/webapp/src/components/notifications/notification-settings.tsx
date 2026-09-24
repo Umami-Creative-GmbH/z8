@@ -60,6 +60,7 @@ const NOTIFICATION_CATEGORIES = [
 			"approval_request_submitted",
 			"approval_request_approved",
 			"approval_request_rejected",
+			"approval_escalation_attention",
 		] as NotificationType[],
 	},
 	{
@@ -195,6 +196,8 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 	compliance_exception_approved: "Exception approved",
 	compliance_exception_rejected: "Exception rejected",
 	compliance_exception_expired: "Exception expired",
+	// Approval escalation
+	approval_escalation_attention: "Escalation needs attention",
 };
 
 // Channel icons and labels

@@ -12,9 +12,11 @@
     "clockIn": "Rozpocznij pracę",
     "clockingIn": "Rozpoczynanie pracy…",
     "clockingOut": "Kończenie pracy…",
+    "clockInQueued": "Rozpoczęcie pracy w kolejce do synchronizacji",
     "clockInSavedForReview": "Rozpoczęcie pracy zapisane na tym urządzeniu do weryfikacji; niepotwierdzone na serwerze",
     "clockInSuccess": "Pomyślnie rozpoczęto pracę",
     "clockOut": "Zakończ pracę",
+    "clockOutQueued": "Zakończenie pracy w kolejce do synchronizacji",
     "clockOutSavedForReview": "Zakończenie pracy zapisane na tym urządzeniu do weryfikacji; niepotwierdzone na serwerze",
     "clockOutSuccess": "Pomyślnie zakończono pracę",
     "compliance": {
@@ -24,13 +26,16 @@
     "correction": {
       "clockIn": "Rozpocznij pracę",
       "clockInDate": "Data rozpoczęcia pracy",
+      "clockInTime": "Godzina rozpoczęcia pracy",
       "clockOut": "Zakończ pracę",
       "clockOutDate": "Data zakończenia pracy",
+      "clockOutTime": "Godzina zakończenia pracy",
       "editDescription": "Wprowadź zmiany w dzisiejszym wpisie czasu.",
       "editEntry": "Edytuj wpis czasu",
       "editTitle": "Edytuj wpis czasu",
       "errors": {
         "invalidTimeRange": "Godzina zakończenia pracy musi być późniejsza niż godzina rozpoczęcia",
+        "noChanges": "Należy zmienić co najmniej jedną wartość korekty",
         "submitFailed": "Nie udało się przesłać korekty",
         "updateFailed": "Nie udało się zaktualizować wpisu czasu"
       },
@@ -46,7 +51,7 @@
       "submitRequest": "Prześlij prośbę",
       "submitting": "Przesyłanie…",
       "success": {
-        "applied": "Pomyślnie zastosowano korektę",
+        "applied": "Korekta została pomyślnie zastosowana",
         "submitted": "Prośba o korektę została przesłana do zatwierdzenia przez przełożonego",
         "updated": "Wpis czasu został pomyślnie zaktualizowany"
       },
@@ -67,6 +72,18 @@
       "addButton": "Dodaj wpis ręczny",
       "clockInLabel": "Rozpocznij pracę",
       "clockOutLabel": "Zakończ pracę",
+      "context": {
+        "choicesCleared": "Wybrany projekt lub kategoria nie są już dostępne i zostały usunięte.",
+        "loadFailed": "Nie udało się wczytać strefy czasowej i opcji dla tego wpisu.",
+        "loading": "Wczytywanie opcji wpisu…",
+        "notAuthorized": "Nie możesz tworzyć wpisów czasu dla tego pracownika.",
+        "organizationFallback": "{employee} nie ma własnej strefy czasowej, więc używana jest strefa organizacji.",
+        "retry": "Spróbuj ponownie",
+        "targetChanged": "Zmieniono pracownika, więc projekt i kategoria zostały wyczyszczone.",
+        "targetTimezone": "Godziny są w strefie czasowej: {employee} – {timezone}",
+        "thisEmployee": "tego pracownika",
+        "utcFallback": "Ani {employee}, ani organizacja nie mają ustawionej strefy czasowej, więc używany jest UTC."
+      },
       "dateLabel": "Data",
       "description": "Utwórz wpis czasu dla daty z przeszłości. W zależności od polityki zmian w Twojej organizacji może być wymagane zatwierdzenie.",
       "errors": {
@@ -143,7 +160,12 @@
     },
     "unknownCategory": "Nieznana kategoria",
     "unknownProject": "Nieznany projekt",
-    "workCategory": "Kategoria pracy"
+    "workCategory": "Kategoria pracy",
+    "workLocation": "Miejsce pracy",
+    "workLocationHome": "Dom",
+    "workLocationOffice": "Biuro",
+    "workLocationOther": "Inne",
+    "workLocationRemote": "Zdalnie"
   },
   "wellness": {
     "water": {

@@ -12,9 +12,11 @@
     "clockIn": "Einstempeln",
     "clockingIn": "Stemple ein...",
     "clockingOut": "Stemple aus...",
+    "clockInQueued": "Einstempeln für Synchronisierung in Warteschlange",
     "clockInSavedForReview": "Einstempeln zur Überprüfung auf diesem Gerät gespeichert; auf dem Server nicht bestätigt",
     "clockInSuccess": "Erfolgreich eingestempelt",
     "clockOut": "Ausstempeln",
+    "clockOutQueued": "Ausstempeln für Synchronisierung in Warteschlange",
     "clockOutSavedForReview": "Ausstempeln zur Überprüfung auf diesem Gerät gespeichert; auf dem Server nicht bestätigt",
     "clockOutSuccess": "Erfolgreich ausgestempelt",
     "compliance": {
@@ -24,13 +26,16 @@
     "correction": {
       "clockIn": "Einstempeln",
       "clockInDate": "Datum Arbeitsbeginn",
+      "clockInTime": "Uhrzeit Arbeitsbeginn",
       "clockOut": "Ausstempeln",
       "clockOutDate": "Datum Arbeitsende",
+      "clockOutTime": "Uhrzeit Arbeitsende",
       "editDescription": "Änderungen an Ihrem Zeiteintrag für heute vornehmen.",
       "editEntry": "Zeiteintrag bearbeiten",
       "editTitle": "Zeiteintrag bearbeiten",
       "errors": {
         "invalidTimeRange": "Ausstempelzeit muss nach der Einstempelzeit liegen",
+        "noChanges": "Mindestens ein Korrekturwert muss geändert werden",
         "submitFailed": "Fehler beim Senden der Korrektur",
         "updateFailed": "Fehler beim Aktualisieren des Zeiteintrags"
       },
@@ -67,12 +72,24 @@
       "addButton": "Manuellen Eintrag hinzufügen",
       "clockInLabel": "Einstempeln",
       "clockOutLabel": "Ausstempeln",
+      "context": {
+        "choicesCleared": "Ein ausgewähltes Projekt oder eine Kategorie ist nicht mehr verfügbar und wurde entfernt.",
+        "loadFailed": "Zeitzone und Auswahlmöglichkeiten für diesen Eintrag konnten nicht geladen werden.",
+        "loading": "Eintragsoptionen werden geladen…",
+        "notAuthorized": "Du kannst für diese Person keine Zeiteinträge erstellen.",
+        "organizationFallback": "Für {employee} ist keine eigene Zeitzone hinterlegt, daher wird die Zeitzone der Organisation verwendet.",
+        "retry": "Erneut versuchen",
+        "targetChanged": "Die Person wurde gewechselt, daher wurden Projekt und Kategorie zurückgesetzt.",
+        "targetTimezone": "Zeiten sind in der Zeitzone für {employee}: {timezone}",
+        "thisEmployee": "diese Person",
+        "utcFallback": "Weder für {employee} noch für die Organisation ist eine Zeitzone festgelegt, daher wird UTC verwendet."
+      },
       "dateLabel": "Datum",
       "description": "Erstellen Sie einen Zeiteintrag für ein vergangenes Datum. Je nach Änderungsrichtlinie Ihrer Organisation kann eine Genehmigung erforderlich sein.",
       "errors": {
         "createFailed": "Zeiteintrag konnte nicht erstellt werden",
         "futureDate": "Einträge für zukünftige Daten können nicht erstellt werden",
-        "invalidTime": "Geben Sie eine vollständige, gültige Uhrzeit ein",
+        "invalidTime": "Gib eine vollständige, gültige Uhrzeit ein",
         "invalidTimeRange": "Die Zeit für das Ausstempeln muss nach der Zeit für das Einstempeln liegen",
         "tooLong": "Die Arbeitsdauer darf 24 Stunden nicht überschreiten"
       },
@@ -143,7 +160,12 @@
     },
     "unknownCategory": "Unbekannte Kategorie",
     "unknownProject": "Unbekanntes Projekt",
-    "workCategory": "Arbeitskategorie"
+    "workCategory": "Arbeitskategorie",
+    "workLocation": "Arbeitsort",
+    "workLocationHome": "Homeoffice",
+    "workLocationOffice": "Büro",
+    "workLocationOther": "Sonstiges",
+    "workLocationRemote": "Mobil"
   },
   "wellness": {
     "water": {

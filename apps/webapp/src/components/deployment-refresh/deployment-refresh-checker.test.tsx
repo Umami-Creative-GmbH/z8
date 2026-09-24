@@ -165,7 +165,7 @@ afterEach(() => {
 });
 
 describe("shouldCheckDeploymentVersion", () => {
-	it("returns true for a visible page at exactly the six-hour cooldown", () => {
+	it("returns true for a visible page at exactly the cooldown", () => {
 		expect(
 			shouldCheckDeploymentVersion({
 				checkCooldownMs: CHECK_COOLDOWN_MS,
@@ -222,6 +222,16 @@ describe("DeploymentRefreshChecker", () => {
 		});
 
 		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it("checks for a new deployment when the page returns five minutes later", async () => {
+		const fetchMock = mockFetchResponse({ buildHash: "client-a" });
+		render(<DeploymentRefreshChecker clientBuildHash="client-a" />);
+		vi.setSystemTime(1_000 + 5 * 60 * 1000);
+
+		await dispatchVisibilityChange();
+
+		expect(fetchMock).toHaveBeenCalledTimes(1);
 	});
 
 	it("does not fetch for a visibility event while hidden", async () => {

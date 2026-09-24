@@ -77,6 +77,147 @@
       },
       "updateCategory": "Update Category"
     },
+    "approvalEscalation": {
+      "attention": {
+        "alertedAt": "Admins alerted {date}",
+        "approvalType": "Approval",
+        "attempts": "Attempts",
+        "channel": "Channel",
+        "currentApprover": "Current assignment",
+        "description": "Unresolved escalation conditions stay here until they are resolved or an approval manager closes them. Alerts to admins do not close them.",
+        "details": "Evidence, attempts and history",
+        "dispose": "Close…",
+        "disposed": "Closed by manager",
+        "empty": "Nothing needs attention.",
+        "evidence": "Evidence",
+        "firstRaised": "First raised",
+        "history": "History",
+        "lastObserved": "Last observed",
+        "lastObservedValue": "{date} ({count}×)",
+        "noAttempts": "No related attempts recorded.",
+        "openApproval": "Open approvals",
+        "policyRevision": "Policy revision",
+        "recentlyClosed": "Recently closed ({count})",
+        "recheck": "Recheck",
+        "resolved": "Resolved",
+        "title": "Needs attention",
+        "transfer": "Transfer…",
+        "unknownApprover": "Not recorded"
+      },
+      "channels": {
+        "delivers": "Delivers escalations",
+        "description": "Each channel's escalation toggle decides whether it delivers escalation messages. Channel timeouts are not deadlines once the organization policy owns escalation.",
+        "differs": "Differs from {hours} h policy",
+        "inactive": "Inactive",
+        "legacyTimeout": "Channel timeout",
+        "none": "No messaging channels are connected.",
+        "title": "Channel delivery preferences"
+      },
+      "conflict": {
+        "differingTimeouts": "Channels used different timeouts; the shortest one became the response window.",
+        "disabledActiveSource": "Some active channels had escalations turned off. They still do not deliver escalation messages.",
+        "inactiveSourceEnabled": "Some inactive channels had escalations turned on. They did not count toward the policy.",
+        "invalidTimeout": "A channel had an invalid timeout and was not used for the response window."
+      },
+      "description": "Review the organization escalation policy, how it was migrated from channel settings, and conditions that need an approval manager.",
+      "dispose": {
+        "confirm": "Close item",
+        "description": "Closing records your decision in the audit log. It does not reassign the approval or allow another automatic escalation.",
+        "noteLabel": "Disposition note",
+        "noteRequired": "Enter a disposition note.",
+        "title": "Close attention item"
+      },
+      "event": {
+        "alerted": "Admins alerted",
+        "disposed": "Disposed",
+        "raised": "Raised",
+        "resolved": "Resolved"
+      },
+      "hoursValue": "{hours} h",
+      "loadFailed": "Escalation settings could not be loaded.",
+      "migration": {
+        "channel": "Channel",
+        "conflictsTitle": "Conflicting settings",
+        "disabledOutcome": "Disabled because no active channel escalated approvals.",
+        "enabledOutcome": "Enabled because at least one active channel escalated approvals. The shortest active timeout became the response window.",
+        "escalations": "Escalations",
+        "markReviewed": "Mark as reviewed",
+        "migratedAt": "Migrated {date}.",
+        "noSources": "No messaging channels were connected when the policy was migrated.",
+        "reviewed": "Reviewed",
+        "reviewedBy": "Reviewed by {name} on {date}",
+        "status": "Status",
+        "timeout": "Timeout",
+        "title": "Settings migration",
+        "used": "Used",
+        "usedNo": "Not used",
+        "usedYes": "Used"
+      },
+      "navDescription": "Organization escalation policy and approvals that need attention",
+      "off": "Off",
+      "on": "On",
+      "ownership": {
+        "legacyDescription": "This organization policy is prepared for the switch to shared escalation. Until then, each connected channel keeps using its own escalation settings.",
+        "legacyTitle": "Channel automation still owns escalation",
+        "pausedDescription": "No new automatic transfers happen. Existing assignments and delivery recovery are unchanged.",
+        "pausedTitle": "Automatic escalation is paused"
+      },
+      "policy": {
+        "description": "One response window applies to every approval kind and channel. Channels only deliver messages.",
+        "disabled": "Disabled",
+        "enabled": "Enabled",
+        "enabledDescription": "Replace an overdue approver with an eligible backup manager of the requester.",
+        "enabledLabel": "Escalate overdue approvals",
+        "hours": "hours",
+        "reasonLabel": "Reason for change (optional)",
+        "revision": "Revision {revision}",
+        "save": "Save policy",
+        "title": "Organization policy",
+        "windowDescription": "Measured in elapsed hours from when the current assignment became actionable. Changing it moves pending deadlines without restarting their clocks.",
+        "windowInvalid": "Enter a whole number of hours between 1 and 720.",
+        "windowLabel": "Response window"
+      },
+      "reason": {
+        "ambiguousHistory": "Ambiguous escalation history",
+        "deliveryExhausted": "Delivery retries exhausted",
+        "deliveryUnavailable": "No delivery destination available",
+        "noEligibleBackup": "No eligible backup approver",
+        "replacementOverdue": "Replacement approver is overdue",
+        "unsupportedRoute": "Unsupported decision path"
+      },
+      "revisions": {
+        "changedBy": "Changed by",
+        "migration": "Settings migration",
+        "policy": "Policy",
+        "revision": "Revision",
+        "title": "Policy history",
+        "when": "When"
+      },
+      "title": "Approval Escalation",
+      "toast": {
+        "disposed": "Attention item closed",
+        "rechecked": "Checked {checked} items, {resolved} resolved",
+        "requestFailed": "The request failed. Try again.",
+        "reviewed": "Conflicts marked as reviewed",
+        "saved": "Escalation policy saved",
+        "transferred": "Approval assignment transferred",
+        "unchanged": "No changes to save"
+      },
+      "transfer": {
+        "confirm": "Transfer",
+        "currentApprover": "Currently assigned to {name}.",
+        "description": "The current approver loses this assignment and the selected backup manager can decide it from their approvals inbox. The approval stays pending, other assignments are unchanged, and the transfer is recorded in the audit log.",
+        "loadFailed": "Eligible managers could not be loaded.",
+        "loading": "Loading eligible managers…",
+        "noCandidates": "No eligible backup manager is available. Only active managers of the requester with approvals inbox access can take over.",
+        "primary": "Primary manager",
+        "reasonLabel": "Reason (optional)",
+        "recipientLabel": "Transfer to",
+        "recipientRequired": "Choose a backup manager.",
+        "recommended": "Next in order",
+        "title": "Transfer approval assignment"
+      }
+    },
     "approvalPolicies": {
       "activeDescription": "Eligible requests can match this policy.",
       "activeLabel": "Active policy",
@@ -85,13 +226,16 @@
       "activeStatus": "Active status",
       "addPolicy": "Add Policy",
       "approvalType": {
+        "absenceRequests": "Absence requests",
         "absence": "Absence",
         "complianceException": "Compliance exception",
         "manualTimeSubmission": "Manual time submission",
         "policyClockOut": "Policy clock-out",
         "shiftRequest": "Shift request",
         "timeCorrection": "Time correction",
-        "travelExpense": "Travel expense"
+        "travelExpense": "Travel expense",
+        "timeEntryChanges": "Time entry changes",
+        "travelExpenses": "Travel expenses"
       },
       "approvalTypes": "Approval types",
       "conditionsCount": "Conditions count",
@@ -128,6 +272,21 @@
       "toast": {
         "created": "Approval policy created",
         "saveFailed": "Approval policy could not be saved."
+      },
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Send the request to the default manager when this stage cannot resolve an approver.",
+          "label": "Default manager"
+        },
+        "fail": {
+          "description": "Reject the request when this stage cannot resolve an approver.",
+          "label": "Fail request"
+        },
+        "label": "Fallback behavior",
+        "organizationAdmin": {
+          "description": "Send the request to an organization admin when this stage cannot resolve an approver.",
+          "label": "Organization admin"
+        }
       },
       "validation": {
         "activePolicyRequiresStage": "Active policies require at least one approval stage.",

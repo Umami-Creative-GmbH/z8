@@ -77,6 +77,147 @@
       },
       "updateCategory": "Kategorie aktualisieren"
     },
+    "approvalEscalation": {
+      "attention": {
+        "alertedAt": "Admins benachrichtigt am {date}",
+        "approvalType": "Genehmigung",
+        "attempts": "Versuche",
+        "channel": "Kanal",
+        "currentApprover": "Aktuelle Zuweisung",
+        "description": "Ungelöste Eskalationsfälle bleiben hier, bis sie gelöst sind oder eine Genehmigungsverwaltung sie schließt. Benachrichtigungen an Admins schließen sie nicht.",
+        "details": "Nachweise, Versuche und Verlauf",
+        "dispose": "Schließen…",
+        "disposed": "Von Verwaltung geschlossen",
+        "empty": "Nichts erfordert Aufmerksamkeit.",
+        "evidence": "Nachweise",
+        "firstRaised": "Erstmals gemeldet",
+        "history": "Verlauf",
+        "lastObserved": "Zuletzt festgestellt",
+        "lastObservedValue": "{date} ({count}×)",
+        "noAttempts": "Keine zugehörigen Versuche erfasst.",
+        "openApproval": "Genehmigungen öffnen",
+        "policyRevision": "Richtlinienversion",
+        "recentlyClosed": "Kürzlich geschlossen ({count})",
+        "recheck": "Erneut prüfen",
+        "resolved": "Gelöst",
+        "title": "Erfordert Aufmerksamkeit",
+        "transfer": "Übertragen…",
+        "unknownApprover": "Nicht erfasst"
+      },
+      "channels": {
+        "delivers": "Stellt Eskalationen zu",
+        "description": "Der Eskalationsschalter jedes Kanals legt fest, ob er Eskalationsnachrichten zustellt. Kanal-Zeitlimits sind keine Fristen mehr, sobald die Organisationsrichtlinie die Eskalation übernimmt.",
+        "differs": "Weicht von {hours} h Richtlinie ab",
+        "inactive": "Inaktiv",
+        "legacyTimeout": "Kanal-Zeitlimit",
+        "none": "Keine Messaging-Kanäle verbunden.",
+        "title": "Zustellung je Kanal"
+      },
+      "conflict": {
+        "differingTimeouts": "Kanäle hatten unterschiedliche Zeitlimits; das kürzeste wurde zum Antwortfenster.",
+        "disabledActiveSource": "Einige aktive Kanäle hatten Eskalationen deaktiviert. Sie stellen weiterhin keine Eskalationsnachrichten zu.",
+        "inactiveSourceEnabled": "Einige inaktive Kanäle hatten Eskalationen aktiviert. Sie wurden für die Richtlinie nicht berücksichtigt.",
+        "invalidTimeout": "Ein Kanal hatte ein ungültiges Zeitlimit und wurde für das Antwortfenster nicht verwendet."
+      },
+      "description": "Prüfen Sie die Eskalationsrichtlinie der Organisation, wie sie aus den Kanaleinstellungen übernommen wurde, und Fälle, die eine Genehmigungsverwaltung erfordern.",
+      "dispose": {
+        "confirm": "Fall schließen",
+        "description": "Das Schließen wird im Audit-Log festgehalten. Es weist die Genehmigung nicht neu zu und erlaubt keine weitere automatische Eskalation.",
+        "noteLabel": "Begründung",
+        "noteRequired": "Bitte eine Begründung eingeben.",
+        "title": "Fall schließen"
+      },
+      "event": {
+        "alerted": "Admins benachrichtigt",
+        "disposed": "Geschlossen",
+        "raised": "Gemeldet",
+        "resolved": "Gelöst"
+      },
+      "hoursValue": "{hours} h",
+      "loadFailed": "Eskalationseinstellungen konnten nicht geladen werden.",
+      "migration": {
+        "channel": "Kanal",
+        "conflictsTitle": "Widersprüchliche Einstellungen",
+        "disabledOutcome": "Deaktiviert, weil kein aktiver Kanal Genehmigungen eskaliert hat.",
+        "enabledOutcome": "Aktiviert, weil mindestens ein aktiver Kanal Genehmigungen eskaliert hat. Das kürzeste aktive Zeitlimit wurde zum Antwortfenster.",
+        "escalations": "Eskalationen",
+        "markReviewed": "Als geprüft markieren",
+        "migratedAt": "Übernommen am {date}.",
+        "noSources": "Bei der Übernahme waren keine Messaging-Kanäle verbunden.",
+        "reviewed": "Geprüft",
+        "reviewedBy": "Geprüft von {name} am {date}",
+        "status": "Status",
+        "timeout": "Zeitlimit",
+        "title": "Übernahme der Einstellungen",
+        "used": "Verwendet",
+        "usedNo": "Nicht verwendet",
+        "usedYes": "Verwendet"
+      },
+      "navDescription": "Eskalationsrichtlinie der Organisation und Genehmigungen, die Aufmerksamkeit erfordern",
+      "off": "Aus",
+      "on": "An",
+      "ownership": {
+        "legacyDescription": "Diese Organisationsrichtlinie ist für den Wechsel zur gemeinsamen Eskalation vorbereitet. Bis dahin verwendet jeder verbundene Kanal weiter seine eigenen Eskalationseinstellungen.",
+        "legacyTitle": "Die Kanal-Automatisierung steuert noch die Eskalation",
+        "pausedDescription": "Es finden keine neuen automatischen Übertragungen statt. Bestehende Zuweisungen und die Zustellungswiederherstellung bleiben unverändert.",
+        "pausedTitle": "Automatische Eskalation ist pausiert"
+      },
+      "policy": {
+        "description": "Ein Antwortfenster gilt für alle Genehmigungsarten und Kanäle. Kanäle stellen nur Nachrichten zu.",
+        "disabled": "Deaktiviert",
+        "enabled": "Aktiviert",
+        "enabledDescription": "Ersetzt eine überfällige genehmigende Person durch eine berechtigte Vertretung aus den Vorgesetzten der antragstellenden Person.",
+        "enabledLabel": "Überfällige Genehmigungen eskalieren",
+        "hours": "Stunden",
+        "reasonLabel": "Grund der Änderung (optional)",
+        "revision": "Version {revision}",
+        "save": "Richtlinie speichern",
+        "title": "Organisationsrichtlinie",
+        "windowDescription": "Gemessen in verstrichenen Stunden ab dem Zeitpunkt, an dem die aktuelle Zuweisung bearbeitbar wurde. Eine Änderung verschiebt offene Fristen, ohne deren Uhr neu zu starten.",
+        "windowInvalid": "Bitte eine ganze Stundenzahl zwischen 1 und 720 eingeben.",
+        "windowLabel": "Antwortfenster"
+      },
+      "reason": {
+        "ambiguousHistory": "Unklarer Eskalationsverlauf",
+        "deliveryExhausted": "Zustellversuche ausgeschöpft",
+        "deliveryUnavailable": "Kein Zustellziel verfügbar",
+        "noEligibleBackup": "Keine berechtigte Vertretung",
+        "replacementOverdue": "Vertretung ist überfällig",
+        "unsupportedRoute": "Nicht unterstützter Entscheidungsweg"
+      },
+      "revisions": {
+        "changedBy": "Geändert von",
+        "migration": "Übernahme der Einstellungen",
+        "policy": "Richtlinie",
+        "revision": "Version",
+        "title": "Richtlinienverlauf",
+        "when": "Wann"
+      },
+      "title": "Genehmigungseskalation",
+      "toast": {
+        "disposed": "Fall geschlossen",
+        "rechecked": "{checked} Fälle geprüft, {resolved} gelöst",
+        "requestFailed": "Die Anfrage ist fehlgeschlagen. Bitte erneut versuchen.",
+        "reviewed": "Konflikte als geprüft markiert",
+        "saved": "Eskalationsrichtlinie gespeichert",
+        "transferred": "Genehmigungszuständigkeit übertragen",
+        "unchanged": "Keine Änderungen zu speichern"
+      },
+      "transfer": {
+        "confirm": "Übertragen",
+        "currentApprover": "Derzeit zugewiesen an {name}.",
+        "description": "Die aktuell zuständige Person verliert diese Zuständigkeit, und die ausgewählte Vertretung kann den Antrag in ihrem Genehmigungseingang entscheiden. Die Genehmigung bleibt offen, andere Zuständigkeiten bleiben unverändert, und die Übertragung wird im Audit-Log festgehalten.",
+        "loadFailed": "Berechtigte Führungskräfte konnten nicht geladen werden.",
+        "loading": "Berechtigte Führungskräfte werden geladen…",
+        "noCandidates": "Keine berechtigte Vertretung verfügbar. Nur aktive Führungskräfte der antragstellenden Person mit Zugriff auf den Genehmigungseingang können übernehmen.",
+        "primary": "Primäre Führungskraft",
+        "reasonLabel": "Begründung (optional)",
+        "recipientLabel": "Übertragen an",
+        "recipientRequired": "Bitte eine Vertretung auswählen.",
+        "recommended": "Nächste in der Reihenfolge",
+        "title": "Genehmigungszuständigkeit übertragen"
+      }
+    },
     "approvalPolicies": {
       "activeDescription": "Geeignete Anträge können dieser Richtlinie entsprechen.",
       "activeLabel": "Aktive Richtlinie",
@@ -85,13 +226,16 @@
       "activeStatus": "Aktiv-Status",
       "addPolicy": "Richtlinie hinzufügen",
       "approvalType": {
+        "absenceRequests": "Abwesenheitsanträge",
         "absence": "Abwesenheit",
         "complianceException": "Compliance-Ausnahme",
-        "manualTimeSubmission": "Manuelle Zeiteinreichung",
-        "policyClockOut": "Richtlinien-Ausstempeln",
+        "manualTimeSubmission": "Manuelle Zeiterfassung",
+        "policyClockOut": "Ausstempeln gemäß Richtlinie",
         "shiftRequest": "Schichtanfrage",
         "timeCorrection": "Zeitkorrektur",
-        "travelExpense": "Reisekosten"
+        "travelExpense": "Reisekosten",
+        "timeEntryChanges": "Änderungen der Zeiterfassung",
+        "travelExpenses": "Reisekosten"
       },
       "approvalTypes": "Genehmigungsarten",
       "conditionsCount": "Anzahl der Bedingungen",
@@ -128,6 +272,21 @@
       "toast": {
         "created": "Genehmigungsrichtlinie erstellt",
         "saveFailed": "Genehmigungsrichtlinie konnte nicht gespeichert werden."
+      },
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Senden Sie die Anfrage an den Standardvorgesetzten, wenn in dieser Stufe kein Genehmiger ermittelt werden kann.",
+          "label": "Standardvorgesetzter"
+        },
+        "fail": {
+          "description": "Lehnen Sie die Anfrage ab, wenn in dieser Stufe kein Genehmiger ermittelt werden kann.",
+          "label": "Anfrage ablehnen"
+        },
+        "label": "Fallback-Verhalten",
+        "organizationAdmin": {
+          "description": "Senden Sie die Anfrage an einen Organisationsadministrator, wenn in dieser Stufe kein Genehmiger ermittelt werden kann.",
+          "label": "Organisationsadministrator"
+        }
       },
       "validation": {
         "activePolicyRequiresStage": "Aktive Richtlinien erfordern mindestens eine Genehmigungsstufe.",

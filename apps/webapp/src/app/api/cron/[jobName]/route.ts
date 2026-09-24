@@ -16,6 +16,7 @@
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { env } from "@/env";
+import { isValidCronAuthorization } from "@/lib/cron/auth";
 import { CRON_JOBS, type CronJobName, isCronJobName } from "@/lib/cron/registry";
 import { createJobExecution, getJobExecution, updateJobExecution } from "@/lib/cron/tracking";
 import { createLogger } from "@/lib/logger";
@@ -35,13 +36,7 @@ async function verifyCronAuth(): Promise<boolean> {
 
 	// Check for Bearer token in Authorization header
 	const headersList = await headers();
-	const authHeader = headersList.get("authorization");
-
-	if (authHeader === `Bearer ${CRON_SECRET}`) {
-		return true;
-	}
-
-	return false;
+	return isValidCronAuthorization(headersList.get("authorization"), CRON_SECRET);
 }
 
 /**

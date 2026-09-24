@@ -98,6 +98,7 @@ const NESTED_NAMESPACE_PREFIXES = [
 	["settings.surcharges.", "settings/rules"],
 	["settings.workCategories.", "settings/rules"],
 	["settings.changePolicies.", "settings/rules"],
+	["settings.approvalEscalation.", "settings/rules"],
 	["settings.approvalPolicies.", "settings/rules"],
 	["settings.absenceCategories.", "settings/rules"],
 	["settings.coverageRules.", "settings/rules"],

@@ -15,6 +15,7 @@ const REVIEWED_RETAINED_CONNECTION_FILES = [
 	"src/app/[locale]/(admin)/platform-admin/worker-queue/page.tsx",
 	"src/app/[locale]/(app)/absences/page.tsx",
 	"src/app/[locale]/(app)/organization/page.tsx",
+	"src/app/[locale]/(app)/page.tsx",
 	"src/app/[locale]/(app)/payroll/page.tsx",
 	"src/app/[locale]/(app)/settings/payroll-access/page.tsx",
 	"src/app/[locale]/(app)/settings/payroll-readiness/page.tsx",
@@ -29,6 +30,14 @@ const REVIEWED_RETAINED_CONNECTION_FILES = [
 const PENDING_CONNECTION_FILES = [] as const;
 
 const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
+	{
+		file: "src/app/[locale]/(app)/page.tsx",
+		contentComponent: "DashboardPageContent",
+		fallbackComponent: "DashboardPageLoading",
+		reasonCategory: "trusted-request-auth",
+		reason: "Dashboard auth and domain database lookups must execute per request.",
+		operation: "const [onboardingStatus, organizations, pendingInvitationId] =",
+	},
 	{
 		file: "src/app/[locale]/(admin)/platform-admin/page.tsx",
 		contentComponent: "DashboardAnalyticsPreview",
@@ -205,6 +214,11 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/settings/approval-policies/page.tsx",
 		fallbackComponent: "ApprovalPoliciesSettingsLoading",
 		contentComponent: "ApprovalPoliciesSettingsContent",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/approval-escalation/page.tsx",
+		fallbackComponent: "ApprovalEscalationSettingsLoading",
+		contentComponent: "ApprovalEscalationSettingsContent",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/permissions/page.tsx",
@@ -1226,7 +1240,7 @@ describe("loading frame alignment", () => {
 describe("App Router connection escape hatches", () => {
 	it("keeps the pending inventory empty and the retained inventory exact", () => {
 		expect(PENDING_CONNECTION_FILES).toHaveLength(0);
-		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(15);
+		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(16);
 	});
 
 	it("matches the reviewed and pending page/layout inventory exactly", () => {
@@ -1251,7 +1265,7 @@ describe("App Router connection escape hatches", () => {
 	it.each(REVIEWED_RETAINED_CONNECTION_BOUNDARIES)(
 		"keeps an approved reachable request boundary in $file",
 		(boundary) => {
-			const source = readFileSync(appPath(boundary.file), "utf8");
+			const source = readFileSync(appPath(boundary.file), "utf8").replace(/\r\n/g, "\n");
 			const contentBody = findNamedFunctionBody(source, boundary.contentComponent);
 			const reasonAndOperation = `// ${boundary.reason}\n\tawait connection();\n\t${boundary.operation}`;
 
@@ -1288,7 +1302,7 @@ describe("low-risk route streaming boundaries", () => {
 	it("registers every shell work queue route exactly once", () => {
 		const workQueueFiles = SHELL_WORK_QUEUE.map(({ file }) => file);
 
-		expect(workQueueFiles).toHaveLength(64);
+		expect(workQueueFiles).toHaveLength(65);
 		expect(new Set(workQueueFiles).size).toBe(workQueueFiles.length);
 	});
 

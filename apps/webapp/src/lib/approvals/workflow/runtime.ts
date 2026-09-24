@@ -17,6 +17,7 @@ import {
 } from "../domain-adapters/work-period.adapter";
 import { createLegacyApprovalRowWriter } from "./compatibility-writer";
 import { createLegacyApprovalObservationPlanner } from "./legacy-observation-planner";
+import { APPROVAL_ESCALATION_SYSTEM_ID } from "./ports";
 import type {
 	ApprovalCommandActorResolver,
 	ApprovalMaterializedTransitionPlan,
@@ -94,7 +95,8 @@ export function createDatabaseApprovalCommandActorResolver(): ApprovalCommandAct
 			if (input.principal.kind === "system") {
 				if (
 					input.principal.systemId !== "approval-expiry" &&
-					input.principal.systemId !== "approval-activation"
+					input.principal.systemId !== "approval-activation" &&
+					input.principal.systemId !== APPROVAL_ESCALATION_SYSTEM_ID
 				) {
 					return runtimeFailure("unknown system actor");
 				}

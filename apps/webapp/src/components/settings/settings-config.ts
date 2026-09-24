@@ -324,6 +324,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "administration",
 	},
 	{
+		id: "approval-escalation",
+		titleKey: "settings.approvalEscalation.title",
+		titleDefault: "Approval Escalation",
+		descriptionKey: "settings.approvalEscalation.navDescription",
+		descriptionDefault: "Organization escalation policy and approvals that need attention",
+		href: "/settings/approval-escalation",
+		icon: "git-branch",
+		minimumTier: "orgAdmin",
+		group: "administration",
+	},
+	{
 		id: "work-policies",
 		titleKey: "settings.workPolicies.title",
 		titleDefault: "Work Policies",

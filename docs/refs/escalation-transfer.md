@@ -1,0 +1,244 @@
+# Canonical absence escalation transfer — #298 / T34
+
+## What this slice adds
+
+Scheduled or management-authorized human escalation replaces **one** overdue
+canonical absence assignment with an eligible backup manager of the requester,
+journals the transfer atomically with the workflow transition, revokes the
+former assignment on the web decision path, and lets the replacement find and
+decide the approval in the web inbox. Nothing is active until an organization's
+escalation ownership is switched (see [Activation blockers](#activation-blockers)).
+
+Module: `apps/webapp/src/lib/approvals/escalation/`
+
+| File | Responsibility |
+| --- | --- |
+| `transfer-evaluation.ts` | Pure: lineage/allowance/actionable-instant classification, candidate order, due decision, operation identity |
+| `candidates.ts` | Requester-manager eligibility plus an actual inbox/decision path per candidate |
+| `transfer-store.ts` | Journal reads and the atomic journal + delivery-event insert |
+| `transfer.ts` | `processDueEscalations`, `escalateAssignmentByManager`, `listHumanEscalationCandidates` |
+| `decision-authority.ts` | Decision target selection and revocation after escalation |
+| `scheduled-job.ts` | `cron:approval-escalation` entry point (scope and limits only) |
+
+Supporting changes outside the module:
+
+- `workflow/ports.ts`, `runtime.ts`, `transition-engine.ts`, `state-machine.ts`:
+  the narrow `approval-escalation` system principal.
+- `server/absence-approvals.ts`: decision target selection and eligible-manager
+  fallback revocation.
+- `lib/authorization/principal-loader.ts`: the organization principal loader,
+  extracted unchanged from `getPrincipalContext` so candidates can be checked
+  against the existing CASL model inside a transaction and in workers.
+- `maintenance.ts`: privileged linked-lifecycle cleanup of transfer journals.
+- `/settings/approval-escalation`: a **Transfer…** action on open attention
+  items for canonical absence assignments.
+
+## Authority and principal
+
+- `ApprovalWorkflowPrincipal` gains `{ kind: "system", systemId: "approval-escalation" }`.
+  It resolves to the ordinary system actor (no fabricated human) and the engine
+  admits it **only** for `escalate` with the `system` grant. Approve, reject,
+  cancel, expire, reassign and forged management grants are forbidden.
+- Its receipts use `v2:["system","approval-escalation",1]`. Every existing
+  receipt keeps its `v1` fingerprint; nothing historical is rewritten.
+- Human escalation requires explicit `manage Approval` for the active
+  organization and a caller-supplied idempotency key. The workflow runtime used
+  for it grants `manage_approval` only for `escalate` by that same employee;
+  there is no eligible-manager fallback.
+- The existing `escalate` transition does the replacement: it cancels only the
+  source assignment, preserves siblings, creates the replacement with
+  `reassignmentMetadata.kind = "escalation"`, mirrors the compatibility
+  representative (`approval_request.approver_id`, chain-stage approver) and
+  completes the receipt. The approval stays pending.
+
+## Due processing
+
+`processDueEscalations({ organizationId, limit })` (default 100, max 500):
+
+1. Fresh ownership read: `approval_escalation_control.owner = 'escalation'` and
+   not paused, else it returns without touching anything. The policy row must
+   exist and be enabled.
+2. Discovers pending assignments of the active human stage of pending absence
+   workflows whose `assigned_at` is at least one window old (the actionable
+   instant is never earlier than `assigned_at`, so nothing due is skipped),
+   oldest first.
+3. Each assignment commits in its **own transaction**, which re-reads ownership
+   `FOR SHARE`, acquires the absence write gate, reloads the snapshot and
+   revalidates that the source is still a pending assignment of the active
+   human stage. Legacy-authoritative modes are skipped (#299).
+4. An exact committed operation (journal row for the operation key) replays
+   before any fresh check.
+5. Decision (all holds commit an attention incident and return normally):
+
+| Condition | Outcome |
+| --- | --- |
+| Lineage/journal/compatibility contradiction, unproven actionable instant | hold `ambiguous_history` |
+| Policy disabled or before the exact deadline | not due |
+| Lineage already used its automatic transfer | hold `replacement_overdue` |
+| No replacement inbox path (sibling pending assignments, or no canonical-to-legacy mirror) | hold `unsupported_route` |
+| No eligible candidate | hold `no_eligible_backup` |
+| Otherwise | transfer to the first ordered candidate |
+
+A lost race against a decision or another transfer (`version_conflict`,
+reassignment conflict) is counted as `raced`, not a failure.
+
+### Evidence rules
+
+- **Actionable instant**: native canonical assignments use `assigned_at`.
+  Stages reconstructed from legacy rows (`resolverSnapshot.kind` of
+  `legacy_direct`/`legacy_chain`) never trust their reconstructed timestamp;
+  they use `approval_escalation_control.escalation_owned_since` (the recorded
+  rollout fallback, a full window from the switch). Without it the assignment
+  is held. Replacements created by the engine always carry native timestamps.
+- **Deadline**: `actionableAt + current policy window` in absolute hours
+  (`evaluateEscalationDeadline`); due exactly at the deadline. Policy edits move
+  deadlines without restarting clocks; the transfer records the evaluated
+  deadline and revision.
+- **Lineage allowance**: walks `reassigned_from_assignment_id` to the root. Only
+  a journaled `scheduled` transfer consumes the allowance; human transfers and
+  human reassignments do not, and a later human reassignment never resets it.
+  An `escalation` replacement without a journal row (for example an older
+  channel mutation) is ambiguous, never an unused allowance.
+- **Compatibility conflict**: a pending `approval_request` whose approver differs
+  from the authoritative assignment is ambiguous history.
+
+### Candidates
+
+Eligible requester managers from `resolveEligibleManagers` (direct managers,
+else team primary managers; active, `manager`/`admin`), excluding the
+requester, the current approver and pending sibling assignees. Each must have an
+actual decision path: an approved member and active employee whose CASL ability
+(`defineAbilityFor` over the loaded principal) admits the approvals inbox and
+`approve`/`manage` on this requester's `Approval`. Bot linkage is not
+considered. Order: primary manager, longest `employee_managers.assigned_at`,
+then employee id. Missing candidates never broaden authority.
+
+## Journal and delivery event
+
+`0074_escalation_transfer_journal.sql`:
+
+- `approval_escalation_control.escalation_owned_since` — recorded by the
+  exclusive ownership switch (not written by this slice).
+- `approval_escalation_transfer` — one immutable row per committed transfer
+  (`BEFORE UPDATE` trigger rejects updates). Unique per organization and
+  operation key, and per source assignment. Links the workflow, source and
+  replacement assignments, the `assignment.escalated` workflow event (the
+  canonical audit record) and the receipt identity/fingerprints. Scheduled rows
+  must carry actionable instant, evidence kind, deadline, policy revision and
+  lineage root; human rows carry none of the deadline facts and may lack a root
+  when the lineage is unknown. Actor: the named system capability, or the human
+  user + employee (never a fabricated user).
+- `approval_escalation_transfer_event` — the immutable delivery event
+  (`assignment_transferred`) committed with the transfer for replacement
+  delivery (#300). Only `expansion_status`/`expanded_at` may change.
+
+Operation identity: `escalation:auto:v1:{workflow}:{stage}:{lineageRoot}:{source}`
+for automatic transfers (never wall-clock time or the chosen replacement) and
+`escalation:human:v1:{userId}:{idempotencyKey}` for human ones. The operation
+key is also the workflow receipt's idempotency key. A reused human key with a
+different request (recipient, assignment or reason) is an idempotency mismatch.
+
+Human transfers also write an `audit_log` row
+(`approval_escalation.transferred`). A successful transfer resolves open
+`no_eligible_backup`, `unsupported_route` and `replacement_overdue` incidents for
+the source assignment.
+
+## Revocation on the decision path
+
+`executeAbsenceDecisionInTransaction` now resolves its target with
+`selectCanonicalDecisionTarget`:
+
+- Single-assignment stages resolve exactly as before, so historical receipts
+  keep their command fingerprints.
+- A legacy request id never targets cancelled history: the actor's own pending
+  assignment, else the single pending assignment, else (closed stage, exact
+  retry) the single deciding assignment.
+- A former assignee replaced by escalation gets `ApprovalAssignmentReassignedError`
+  → `ConflictError` `approval_reassigned` ("This approval was reassigned…"), which
+  the inbox shows as a stale item. No management override is invoked silently.
+
+`createAbsenceApprovalManagementAuthorization` no longer lets eligible-manager
+fallback decide an assignment whose lineage contains an escalation; explicit
+organization `manage Approval` remains a separate, audited path. Bot cards stay
+review-only for absences, and after the mirror retargets the representative a
+former assignee's bot action is `unauthorized`. Old-card retirement and
+replacement delivery are #300.
+
+## Scheduling
+
+`cron:approval-escalation` runs every 5 minutes and calls
+`processDueEscalations` for each organization whose control row has
+`owner = 'escalation'`. With no such organization it only reads the control
+table. Legacy channel checkers keep their execution-time suppression (#271).
+
+## Cleanup
+
+`deleteApprovalInTransaction` locks `approval_escalation_transfer` with the
+other approval stores, deletes the journal rows of the verified workflow links
+explicitly (delivery events cascade) and reports them as `escalationTransfers`
+(CLI, platform-admin card and its audit metadata). Whole-organization deletion
+cascades from `organization`. Journal FKs to the workflow, its assignments and
+its event prevent late recreation after a purge. Attention incidents (#297) are
+not part of this lifecycle and are not deleted.
+
+## Activation blockers
+
+- **No ownership writer.** Nothing sets `owner = 'escalation'` or
+  `escalation_owned_since`; the exclusive, drained cutover (#255 §7, #271) and
+  policy preparation for every activated organization are separate authorized
+  work. Until then this module never transfers.
+- **Scope:** canonical absences in `canonical` mode with one pending assignment
+  per stage. Legacy absences (#299), other kinds (#326), `complete` mode (the
+  absence inbox has no canonical discovery) and parallel assignments are held
+  or skipped, not transferred.
+- **Delivery:** no replacement notification or old-card retirement yet (#300);
+  the replacement finds the approval in the web inbox.
+- **Starvation:** persistent holds are re-examined each run and count towards
+  the batch limit. Organizations with more held assignments than the limit need
+  a larger limit or a follow-up cursor.
+- **Runtime evidence not produced:** the processors against a running database,
+  lock behavior with the ownership switch, transfer-versus-decision races across
+  real transactions, the replacement's inbox → approve/reject through the
+  running app, and cleanup through the maintenance path on real rows. Only the
+  migration's constraints and triggers were checked against PostgreSQL (see
+  below); pure and mocked unit tests do not prove the other runtime guarantees.
+
+## Verification checkpoint — 2026-09-24
+
+Authorized scope: typecheck, unit tests, and applying the transfer migration (then `0071`, now `0074`) alone to the local
+Development database with constraint checks. No app run, browser check, build
+or deployment.
+
+- `pnpm run typecheck` passes (app, workflow contracts and smoke projects).
+- New and touched suites pass (562 tests): lineage/allowance/actionable-instant
+  classification, candidate order and exclusions, exact deadline, holds, operation
+  identity; decision target selection and revocation; the engine admitting the
+  `approval-escalation` principal only for `escalate` with a `v2` receipt while
+  expiry keeps `v1`; eligible-manager fallback denied on an escalated lineage
+  with explicit management kept; cleanup reporting; the job loading in a plain
+  Node worker.
+- Wider approvals/settings/db suites: the only failures are environmental on this
+  Windows checkout (CRLF substring checks, `spawnSync pnpm ENOENT`, date-dependent
+  fixtures, and the write-boundary analyzer, whose 232 entries are all "Native
+  source could not be retrieved").
+- The migration (numbered `0071` at the time, renumbered `0074` after merging `dev`) applied alone to local Development (12 statements, one transaction; the
+  database had `0069` but not `0070`, and has no Drizzle migration journal).
+  Against real PostgreSQL, in a rolled-back transaction with synthetic workflow
+  rows: a valid scheduled and a valid human transfer insert; duplicate operation
+  key and second transfer of one source are rejected by their unique indexes;
+  scheduled-without-deadline, user-attributed scheduled, human-with-deadline and
+  same-approver rows fail their CHECKs; a foreign replacement assignment fails its
+  FK; journal updates, delivery-payload updates and expansion reversal are
+  rejected by the triggers; expansion without a timestamp fails its CHECK; a
+  duplicate delivery event is rejected; deleting the workflow cascades the journal
+  and its event.
+- Not executed: the processors and human action against a running database,
+  transfer-versus-decision races, the replacement's inbox → approve/reject in the
+  app, lock-order interplay with the ownership switch, and cleanup through
+  `deleteApprovalInTransaction` on real rows.
+
+Binding contracts: [#298](https://github.com/Umami-Creative-GmbH/z8/issues/298),
+[#251](https://github.com/Umami-Creative-GmbH/z8/issues/251#issuecomment-5653026359),
+[#255](https://github.com/Umami-Creative-GmbH/z8/issues/255#issuecomment-5653995791),
+[#259](https://github.com/Umami-Creative-GmbH/z8/issues/259#issuecomment-5654750145)
+and [parent #264](https://github.com/Umami-Creative-GmbH/z8/issues/264).

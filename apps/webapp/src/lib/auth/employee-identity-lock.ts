@@ -37,9 +37,10 @@ export async function acquireEmployeeIdentityLock(
 	dbClient: EmployeeIdentityLockClient,
 	input: { organizationId: string; normalizedEmail: string },
 ) {
+	// jsonb_build_array cannot infer the types of bound parameters.
 	await dbClient.execute(sql`
 		select pg_advisory_xact_lock(
-			hashtextextended(jsonb_build_array(${input.organizationId}, ${input.normalizedEmail})::text, 0)
+			hashtextextended(jsonb_build_array(${input.organizationId}::text, ${input.normalizedEmail}::text)::text, 0)
 		)
 	`);
 }

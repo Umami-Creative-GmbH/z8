@@ -21,6 +21,9 @@ const PUSH_CACHE = "z8-push-v1";
 /** Cache name for app shell */
 const APP_SHELL_CACHE = "z8-app-shell-v1";
 
+/** Reported to callers; readers without it may delete queued clock records */
+const CLOCK_QUEUE_MODE = "preservation-only-v1";
+
 /** Background sync tag */
 const SYNC_TAG = "clock-sync";
 
@@ -66,10 +69,34 @@ self.addEventListener("install", (event) => {
 			);
 
 			// DO NOT skip waiting by default - prompt user to refresh
-			// self.skipWaiting() will be called via message when user accepts update
+			// self.skipWaiting() will be called via message when user accepts update.
+			// Exception: replace a pre-preservation worker at once, because it deletes
+			// queued clock records while it stays active (#266).
+			if (hadActiveWorkerOnInstall && !(await activeWorkerPreservesClockQueue())) {
+				console.log("[SW] Replacing pre-preservation clock queue reader");
+				await self.skipWaiting();
+			}
 		})(),
 	);
 });
+
+/**
+ * Ask the active worker for its clock queue mode. Old workers answer GET_VERSION
+ * without one; no answer is treated as not preserving.
+ */
+function activeWorkerPreservesClockQueue() {
+	const active = self.registration?.active;
+	if (!active) return Promise.resolve(false);
+	return new Promise((resolve) => {
+		const channel = new MessageChannel();
+		const timer = setTimeout(() => resolve(false), 3000);
+		channel.port1.onmessage = (event) => {
+			clearTimeout(timer);
+			resolve(event.data?.clockQueueMode === CLOCK_QUEUE_MODE);
+		};
+		active.postMessage({ type: "GET_VERSION" }, [channel.port2]);
+	});
+}
 
 // =============================================================================
 // ACTIVATE EVENT
@@ -383,7 +410,7 @@ self.addEventListener("message", (event) => {
 			event.ports[0]?.postMessage({
 				version: APP_SHELL_CACHE,
 				pushVersion: PUSH_CACHE,
-				clockQueueMode: "preservation-only-v1",
+				clockQueueMode: CLOCK_QUEUE_MODE,
 			});
 			break;
 

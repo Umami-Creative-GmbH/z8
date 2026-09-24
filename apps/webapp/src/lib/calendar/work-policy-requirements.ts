@@ -11,6 +11,8 @@ import {
 	workPolicy,
 } from "@/db/schema";
 import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { clipRequirementsToEmployment } from "@/lib/employee-lifecycle/employment-coverage";
+import { loadEmploymentCoverage } from "@/lib/employee-lifecycle/employment-periods";
 import {
 	type EffectiveWorkPolicy,
 	WorkPolicyService,
@@ -581,8 +583,23 @@ export async function getDailyWorkRequirementsForEmployee(params: {
 				),
 			);
 
-			const absenceAdjustedRequirements = applyApprovedAbsencesToDailyRequirements(
+			// Days outside employment (after a departure, or between stints) require nothing.
+			const employmentCoverage = yield* _(
+				database.query("getEmploymentCoverageForRequirements", () =>
+					loadEmploymentCoverage(database.db, {
+						organizationId: params.organizationId,
+						employeeId: params.employeeId,
+					}),
+				),
+			);
+			const employedRequirements = clipRequirementsToEmployment(
 				requirements,
+				employmentCoverage,
+				params.timezone,
+			);
+
+			const absenceAdjustedRequirements = applyApprovedAbsencesToDailyRequirements(
+				employedRequirements,
 				approvedAbsences,
 			);
 			const assignedHolidays = yield* _(

@@ -165,6 +165,7 @@
     "moveDown": "Przesuń w dół",
     "moveUp": "Przesuń w górę",
     "name": "Nazwa",
+    "never": "Nigdy",
     "new": "Nowy",
     "next": "Dalej",
     "notApplicable": "N/D",
@@ -289,8 +290,16 @@
     "trust-center": "Centrum zaufania"
   },
   "loading": {
-    "chart": "Wczytywanie wykresu",
-    "settings": "Wczytywanie ustawień"
+    "application": "Ładowanie aplikacji",
+    "authentication": "Ładowanie uwierzytelniania",
+    "calendar": "Ładowanie kalendarza",
+    "chart": "Ładowanie wykresu",
+    "licenses": "Ładowanie licencji",
+    "platformAnalytics": "Ładowanie analityki platformy",
+    "settings": "Ładowanie ustawień",
+    "setup": "Ładowanie konfiguracji",
+    "teamAbsences": "Ładowanie nieobecności zespołu",
+    "workerQueue": "Ładowanie kolejki zadań"
   },
   "nav": {
     "absences": "Nieobecności",
@@ -326,6 +335,14 @@
       "viewAll": "Wyświetl wszystkie powiadomienia"
     },
     "content": {
+      "absenceRequestSubmitted": {
+        "message": "Twój wniosek {categoryName} na {dateRange} został wysłany i oczekuje na zatwierdzenie.",
+        "title": "Wniosek o nieobecność wysłany"
+      },
+      "teamMemberRemoved": {
+        "message": "Zostałeś usunięty z zespołu {teamName} przez {performedByName}.",
+        "title": "Usunięto z zespołu"
+      },
       "passwordChanged": {
         "message": "Twoje hasło zostało pomyślnie zmienione. Jeśli nie dokonałeś tej zmiany, skontaktuj się natychmiast z działem wsparcia.",
         "title": "Hasło zmienione"
@@ -417,6 +434,10 @@
     "banner": {
       "archived": "Zarchiwizowane dowody rejestracji czasu zachowane na tym urządzeniu",
       "offline": "Jesteś offline",
+      "offlineWithPending": "Offline - {count} zdarzenie(-a) oczekujące",
+      "pending": "{count} zdarzenie(-a) oczekujące na synchronizację",
+      "retry": "Ponów próbę",
+      "syncing": "Synchronizowanie {count} zdarzenia(-e)...",
       "offlineSaved": "Offline — {count} wpis(ów) zapisano lokalnie do weryfikacji",
       "refresh": "Odśwież status",
       "refreshing": "Sprawdzanie {count} zapisanych wpisów…",
@@ -534,8 +555,12 @@
   "validation": {
     "first-name-required": "Imię jest wymagane",
     "invalid-email": "Nieprawidłowy adres e-mail",
+    "invalid-password": "Nieprawidłowe hasło",
     "last-name-required": "Nazwisko jest wymagane",
     "password-required": "Hasło jest wymagane"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Ładowanie portalu rady zakładowej"
   },
   "workBalance": {
     "label": "Bilans całkowity",

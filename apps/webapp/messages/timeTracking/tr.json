@@ -12,9 +12,11 @@
     "clockIn": "İşe Giriş",
     "clockingIn": "İşe giriş yapılıyor…",
     "clockingOut": "İşten çıkış yapılıyor…",
+    "clockInQueued": "Giriş saati senkronizasyon için kuyruğa alındı",
     "clockInSavedForReview": "Giriş kaydı incelenmek üzere bu cihaza kaydedildi; sunucuda onaylanmadı",
     "clockInSuccess": "İşe giriş başarıyla yapıldı",
     "clockOut": "İşten Çıkış",
+    "clockOutQueued": "Çıkış saati senkronizasyon için kuyruğa alındı",
     "clockOutSavedForReview": "Çıkış kaydı incelenmek üzere bu cihaza kaydedildi; sunucuda onaylanmadı",
     "clockOutSuccess": "İşten çıkış başarıyla yapıldı",
     "compliance": {
@@ -24,13 +26,16 @@
     "correction": {
       "clockIn": "İşe Giriş",
       "clockInDate": "Giriş Tarihi",
+      "clockInTime": "Giriş Saati",
       "clockOut": "İşten Çıkış",
       "clockOutDate": "Çıkış Tarihi",
+      "clockOutTime": "Çıkış Saati",
       "editDescription": "Bugünkü zaman kaydınızda değişiklik yapın.",
       "editEntry": "Zaman kaydını düzenle",
       "editTitle": "Zaman Kaydını Düzenle",
       "errors": {
         "invalidTimeRange": "İşten çıkış saati, işe giriş saatinden sonra olmalıdır",
+        "noChanges": "En az bir düzeltme değeri değiştirilmelidir",
         "submitFailed": "Düzeltme gönderilemedi",
         "updateFailed": "Zaman kaydı güncellenemedi"
       },
@@ -67,6 +72,18 @@
       "addButton": "Manuel Giriş Ekle",
       "clockInLabel": "Giriş Yap",
       "clockOutLabel": "Çıkış Yap",
+      "context": {
+        "choicesCleared": "Seçili bir proje veya kategori artık kullanılamıyor ve kaldırıldı.",
+        "loadFailed": "Bu kayıt için saat dilimi ve seçenekler yüklenemedi.",
+        "loading": "Kayıt seçenekleri yükleniyor…",
+        "notAuthorized": "Bu çalışan için zaman kaydı oluşturamazsınız.",
+        "organizationFallback": "{employee} için kişisel saat dilimi yok, bu yüzden kuruluşun saat dilimi kullanılıyor.",
+        "retry": "Tekrar dene",
+        "targetChanged": "Çalışan değişti, bu yüzden proje ve kategori temizlendi.",
+        "targetTimezone": "Saatler şu kişinin saat dilimindedir: {employee} – {timezone}",
+        "thisEmployee": "bu çalışan",
+        "utcFallback": "Ne {employee} ne de kuruluş için saat dilimi ayarlanmış, bu yüzden UTC kullanılıyor."
+      },
       "dateLabel": "Tarih",
       "description": "Geçmiş bir tarih için zaman girişi oluşturun. Kuruluşunuzun değişiklik politikasına bağlı olarak onay gerekebilir.",
       "errors": {
@@ -143,7 +160,12 @@
     },
     "unknownCategory": "Bilinmeyen kategori",
     "unknownProject": "Bilinmeyen proje",
-    "workCategory": "Çalışma Kategorisi"
+    "workCategory": "Çalışma Kategorisi",
+    "workLocation": "Çalışma yeri",
+    "workLocationHome": "Ev",
+    "workLocationOffice": "Ofis",
+    "workLocationOther": "Diğer",
+    "workLocationRemote": "Uzaktan"
   },
   "wellness": {
     "water": {

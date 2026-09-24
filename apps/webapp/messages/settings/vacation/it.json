@@ -45,6 +45,13 @@
       "description": "Gestisci le policy ferie e le assegnazioni per la tua organizzazione",
       "editPolicy": "Modifica \"{name}\"",
       "employees": {
+        "actions": {
+          "edit": "Modifica"
+        },
+        "allowancesForYear": "Permessi ferie per il {{year}}",
+        "defaultAllowanceDescription": "Permesso predefinito: {{days}} giorni all'anno",
+        "defaultPolicy": "Predefinito",
+        "description": "Configura permessi ferie personalizzati per i singoli dipendenti",
         "detail": {
           "addManualAdjustment": "Aggiungi rettifica manuale",
           "addManualAdjustmentDescription": "Crea una nuova voce di rettifica per circostanze speciali (ad es. giorni bonus, correzioni). Ogni rettifica viene registrata nel registro di controllo.",
@@ -91,7 +98,25 @@
         "edit": {
           "description": "Configura indennità ferie personalizzata per {{name}}",
           "title": "Modifica indennità ferie"
-        }
+        },
+        "employeeCount": "{{count}} dipendenti",
+        "emptyDescription": "Aggiungi dipendenti alla tua organizzazione per gestire le loro indennità ferie.",
+        "emptyTitle": "Nessun dipendente trovato",
+        "noOrgPolicyConfigured": " (Nessuna policy aziendale configurata)",
+        "primaryManager": "Principale",
+        "table": {
+          "actions": "Azioni",
+          "adjustments": "Modifiche",
+          "carryover": "Riporto",
+          "customDays": "Giorni personalizzati",
+          "defaultDays": "Giorni predefiniti",
+          "employee": "Dipendente",
+          "managers": "Manager",
+          "policy": "Policy",
+          "team": "Team",
+          "totalAvailable": "Totale disponibile"
+        },
+        "title": "Indennità dipendenti"
       },
       "expires": "Scade",
       "fallsBackToDefault": "Ripristina il valore predefinito aziendale",

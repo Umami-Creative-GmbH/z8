@@ -12,9 +12,11 @@
     "clockIn": "Registrar Entrada",
     "clockingIn": "Registrando entrada...",
     "clockingOut": "Registrando saída...",
+    "clockInQueued": "Entrada na fila para sincronização",
     "clockInSavedForReview": "Registro de entrada salvo neste dispositivo para revisão; não confirmado no servidor",
     "clockInSuccess": "Entrada registrada com sucesso",
     "clockOut": "Registrar Saída",
+    "clockOutQueued": "Saída na fila para sincronização",
     "clockOutSavedForReview": "Registro de saída salvo neste dispositivo para revisão; não confirmado no servidor",
     "clockOutSuccess": "Saída registrada com sucesso",
     "compliance": {
@@ -24,13 +26,16 @@
     "correction": {
       "clockIn": "Entrada",
       "clockInDate": "Data de entrada",
+      "clockInTime": "Hora de entrada",
       "clockOut": "Saída",
       "clockOutDate": "Data de saída",
+      "clockOutTime": "Hora de saída",
       "editDescription": "Faça alterações no seu registro de tempo para hoje.",
       "editEntry": "Editar registro de tempo",
       "editTitle": "Editar Registro de Tempo",
       "errors": {
         "invalidTimeRange": "O horário de saída deve ser posterior ao horário de entrada",
+        "noChanges": "É necessário alterar pelo menos um valor da correção",
         "submitFailed": "Falha ao enviar correção",
         "updateFailed": "Falha ao atualizar registro de tempo"
       },
@@ -67,12 +72,24 @@
       "addButton": "Adicionar Entrada Manual",
       "clockInLabel": "Registrar Entrada",
       "clockOutLabel": "Registrar Saída",
+      "context": {
+        "choicesCleared": "Um projeto ou categoria selecionado já não está disponível e foi removido.",
+        "loadFailed": "Não foi possível carregar o fuso horário e as opções para este registo.",
+        "loading": "A carregar opções do registo…",
+        "notAuthorized": "Não pode criar registos de tempo para este colaborador.",
+        "organizationFallback": "{employee} não tem fuso horário pessoal, por isso é usado o da organização.",
+        "retry": "Tentar novamente",
+        "targetChanged": "O colaborador mudou, por isso o projeto e a categoria foram limpos.",
+        "targetTimezone": "As horas estão no fuso horário de {employee}: {timezone}",
+        "thisEmployee": "este colaborador",
+        "utcFallback": "Nem {employee} nem a organização definiram um fuso horário, por isso é usado UTC."
+      },
       "dateLabel": "Data",
       "description": "Crie uma entrada de tempo para uma data passada. A aprovação pode ser necessária com base na política de alteração da sua organização.",
       "errors": {
         "createFailed": "Falha ao criar entrada de tempo",
         "futureDate": "Não é possível criar entradas para datas futuras",
-        "invalidTime": "Insira um horário completo e válido",
+        "invalidTime": "Introduza uma hora completa e válida",
         "invalidTimeRange": "O horário de saída deve ser posterior ao horário de entrada",
         "tooLong": "O período de trabalho não pode exceder 24 horas"
       },
@@ -143,7 +160,12 @@
     },
     "unknownCategory": "Categoria desconhecida",
     "unknownProject": "Projeto desconhecido",
-    "workCategory": "Categoria de Trabalho"
+    "workCategory": "Categoria de Trabalho",
+    "workLocation": "Local de trabalho",
+    "workLocationHome": "Casa",
+    "workLocationOffice": "Escritório",
+    "workLocationOther": "Outro",
+    "workLocationRemote": "Remoto"
   },
   "wellness": {
     "water": {

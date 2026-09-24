@@ -174,6 +174,8 @@ function createLegacyApprovalLifecycle(
 			),
 		captureLegacyState: vi.fn(),
 		startCanonicalWorkflow: vi.fn(),
+		captureCanonicalEvidence: vi.fn(async () => null),
+		captureLegacyEvidence: vi.fn(async () => null),
 		nowInstant: vi.fn(() => ({ toString: () => "2026-07-19T10:00:00Z" })),
 	};
 }
@@ -752,6 +754,13 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 					},
 				};
 			}),
+			captureCanonicalEvidence: vi.fn(async () => {
+				calls.push("evidence-capture");
+				return null;
+			}),
+			captureLegacyEvidence: vi.fn(
+				async (_tx: unknown, _input: Record<string, unknown>) => null,
+			),
 			nowInstant: vi.fn(() => parseInstant("2026-07-19T10:00:00Z")),
 		};
 		const create = vi.fn(() => {
@@ -901,12 +910,21 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 				"gate",
 				"start",
 				"bind",
+				"evidence-capture",
 				"canonical-mirror",
 			],
 		],
 		[
 			"complete",
-			["transaction", "source", "canonical", "gate", "start", "bind"],
+			[
+				"transaction",
+				"source",
+				"canonical",
+				"gate",
+				"start",
+				"bind",
+				"evidence-capture",
+			],
 		],
 	] as const)("routes %s submissions in one approval-owned transaction", async (mode, expected) => {
 		const harness = createModeRoutingHarness(mode);
@@ -1226,6 +1244,62 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 	});
 
 	it.each([
+		"legacy",
+		"shadow",
+		"ready",
+	] as const)("captures legacy evidence in the %s submission transaction after the legacy rows and observation", async (mode) => {
+		const harness = createModeRoutingHarness(mode);
+		const capture = harness.approvalLifecycle.captureLegacyEvidence;
+		capture.mockImplementationOnce(async () => {
+			harness.calls.push("legacy-evidence");
+			return null;
+		});
+
+		await submitModeRoutingHarness(harness);
+
+		expect(capture).toHaveBeenCalledOnce();
+		const [tx, input] = capture.mock.calls[0] ?? [];
+		expect(tx).toBe(harness.context.dbService.db);
+		expect(input).toMatchObject({
+			organizationId: "org-1",
+			absenceId: "absence-1",
+			submissionKey: "absence:absence-1:submission",
+			routing: { kind: "default_created", approvalRequestId: "approval-1" },
+			submitterUserId: "user-1",
+			category: { id: "category-1" },
+		});
+		expect(harness.calls.indexOf("legacy-create")).toBeLessThan(
+			harness.calls.indexOf("legacy-evidence"),
+		);
+		if (mode === "legacy") {
+			expect(input?.observed).toBeNull();
+		} else {
+			expect(harness.calls.indexOf("bind")).toBeLessThan(
+				harness.calls.indexOf("legacy-evidence"),
+			);
+			expect(input?.observed).toMatchObject({ snapshot: { id: "workflow-1" } });
+		}
+		expect(harness.approvalLifecycle.captureCanonicalEvidence).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		"legacy",
+		"shadow",
+	] as const)("rolls back the whole %s submission when legacy evidence capture fails", async (mode) => {
+		const harness = createModeRoutingHarness(mode);
+		harness.approvalLifecycle.captureLegacyEvidence.mockRejectedValueOnce(
+			new Error("legacy evidence capture failed"),
+		);
+
+		await expect(submitModeRoutingHarness(harness)).rejects.toThrow(
+			/legacy evidence capture failed/,
+		);
+		expect(harness.transactionState.committed).toBe(false);
+		expectTransactionalStateEmpty(harness.snapshot());
+		expectPostCommitCallbacksZero();
+	});
+
+	it.each([
 		"shadow",
 		"ready",
 	] as const)("rolls back %s submission when observed workflow binding loses its CAS", async (mode) => {
@@ -1524,6 +1598,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 			"start",
 			"bind",
 			"auto-finalizer",
+			"evidence-capture",
 			"canonical-mirror",
 		]);
 		expect(
@@ -1663,6 +1738,109 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 			callerMocks.runAutoCompletedAbsenceMaintenance,
 		).not.toHaveBeenCalled();
 		expect(addCalendarSyncJobMock).not.toHaveBeenCalled();
+		expectPostCommitCallbacksZero();
+	});
+
+	it("captures canonical submission evidence from the raw request in the submission transaction", async () => {
+		const harness = createModeRoutingHarness("canonical");
+		const rawRequest = {
+			categoryId: "category-1",
+			startDate: "2026-05-11",
+			endDate: "2026-05-11",
+			durationKind: "partial_day" as const,
+			startTime: "09:00",
+			endTime: "12:30",
+		};
+
+		await Effect.runPromise(
+			createRequestedAbsenceRecordsInTransaction({
+				dbService: harness.dbService as never,
+				currentEmployee: {
+					id: "employee-1",
+					organizationId: "org-1",
+					teamId: "team-1",
+				},
+				data: {
+					categoryId: "category-1",
+					startDate: "2026-05-11",
+					startPeriod: "am",
+					endDate: "2026-05-11",
+					endPeriod: "am",
+					durationKind: "partial_day",
+					startTime: "09:00",
+					endTime: "12:30",
+					sickDetail: null,
+				},
+				submittedInput: rawRequest,
+				category: {
+					name: "Vacation",
+					countsAgainstVacation: true,
+					requiresApproval: true,
+					type: "vacation",
+				},
+				createdBy: "user-1",
+				hasManagerApprovalWorkflow: true,
+				approvalWorkflow: {
+					categoryId: "category-1",
+					approverId: "manager-1",
+					create: harness.create,
+				},
+				approvalLifecycle: harness.approvalLifecycle as never,
+			}),
+		);
+
+		expect(harness.transactionState.committed).toBe(true);
+		expect(
+			harness.approvalLifecycle.captureCanonicalEvidence,
+		).toHaveBeenCalledOnce();
+		expect(
+			harness.approvalLifecycle.captureCanonicalEvidence,
+		).toHaveBeenCalledWith(
+			harness.context.dbService.db,
+			expect.objectContaining({
+				organizationId: "org-1",
+				absenceId: "absence-1",
+				submissionKey: "absence:absence-1:submission",
+				start: expect.objectContaining({ kind: "created" }),
+				subjectEmployeeId: "employee-1",
+				requesterEmployeeId: "employee-1",
+				submitterUserId: "user-1",
+				category: { id: "category-1", name: "Vacation" },
+				raw: rawRequest,
+				// The lossy compatibility entry shape is recorded alongside, not instead.
+				entry: {
+					startDate: "2026-05-11",
+					startPeriod: "am",
+					endDate: "2026-05-11",
+					endPeriod: "am",
+				},
+				canonicalRecord: expect.objectContaining({ id: "canonical-1" }),
+			}),
+		);
+		expect(harness.calls.indexOf("evidence-capture")).toBeLessThan(
+			harness.calls.indexOf("canonical-mirror"),
+		);
+	});
+
+	it("does not commit when canonical submission evidence capture fails", async () => {
+		const harness = createModeRoutingHarness("canonical");
+		harness.approvalLifecycle.captureCanonicalEvidence.mockImplementationOnce(
+			async () => {
+				throw new Error("evidence capture failed");
+			},
+		);
+
+		await expect(submitModeRoutingHarness(harness)).rejects.toThrow(
+			"evidence capture failed",
+		);
+		expect(harness.transactionState.committed).toBe(false);
+		expectTransactionalStateEmpty(harness.snapshot());
+		expect(
+			harness.context.compatibilityWriter.mirrorCanonicalToLegacy,
+		).not.toHaveBeenCalled();
+		expect(
+			callerMocks.runAutoCompletedAbsenceMaintenance,
+		).not.toHaveBeenCalled();
 		expectPostCommitCallbacksZero();
 	});
 

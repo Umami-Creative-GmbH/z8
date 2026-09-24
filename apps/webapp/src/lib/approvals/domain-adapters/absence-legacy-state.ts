@@ -1,6 +1,10 @@
 import { sql } from "drizzle-orm";
 import { instantFromDB } from "@/lib/datetime/drizzle-adapter";
-import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import {
+	type Instant,
+	instantToCanonicalString,
+	parseInstant,
+} from "@/lib/datetime/temporal-core";
 import type {
 	ApprovalDbService,
 	JsonObject,
@@ -71,6 +75,11 @@ function nullableInstant(value: unknown): Instant | null {
 	} catch {
 		return fail("malformed_evidence");
 	}
+}
+
+function nullableInstantText(value: unknown): string | null {
+	const instant = nullableInstant(value);
+	return instant === null ? null : instantToCanonicalString(instant);
 }
 
 function requiredInstant(value: unknown): Instant {
@@ -275,7 +284,9 @@ export async function captureAbsenceLegacyApprovalState(
 		status: requestStatus(source.status),
 		rejectionReason: nullableString(source.rejectionReason),
 		approvedBy: nullableString(source.approvedBy),
-		approvedAt: nullableInstant(source.approvedAt),
+		// Canonical UTC text: the observed source snapshot must be plain JSON, and
+		// the shadow mirror rejects an Instant here once an absence is approved.
+		approvedAt: nullableInstantText(source.approvedAt),
 		canonicalRecordId: nullableString(source.canonicalRecordId),
 		approvalWorkflowId: nullableString(source.approvalWorkflowId),
 	};

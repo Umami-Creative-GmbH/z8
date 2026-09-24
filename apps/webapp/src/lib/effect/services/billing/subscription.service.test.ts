@@ -1,7 +1,6 @@
 import { Effect } from "effect";
 import { Settings } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { member, user } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import { SubscriptionService, SubscriptionServiceLive } from "./subscription.service";
@@ -21,7 +20,9 @@ const {
 	andMock,
 	eqMock,
 	notLikeMock,
+	countBillableSeats,
 } = vi.hoisted(() => ({
+	countBillableSeats: vi.fn(),
 	findFirst: vi.fn(),
 	insertValues: vi.fn(),
 	onConflictDoNothing: vi.fn(),
@@ -54,6 +55,9 @@ vi.mock("@/db", () => ({
 		select,
 	},
 }));
+
+// Seat semantics are covered by billable-seat-count.integration.test.ts.
+vi.mock("./billable-seat-count", () => ({ countBillableSeats }));
 
 vi.mock("drizzle-orm", async (importOriginal) => ({
 	...(await importOriginal<typeof import("drizzle-orm")>()),
@@ -96,6 +100,7 @@ describe("SubscriptionService", () => {
 		selectFrom.mockReturnValue({ innerJoin: selectInnerJoin, where: selectWhere });
 		selectInnerJoin.mockReturnValue({ where: selectWhere });
 		selectWhere.mockResolvedValue([{ count: 3 }]);
+		countBillableSeats.mockResolvedValue(3);
 		(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "false";
 	});
 
@@ -143,7 +148,7 @@ describe("SubscriptionService", () => {
 			status: "trialing",
 			currentSeats: 0,
 		});
-		selectWhere.mockResolvedValueOnce([{ count: 3 }]);
+		countBillableSeats.mockResolvedValueOnce(3);
 
 		const result = await Effect.runPromise(
 			Effect.gen(function* () {
@@ -157,20 +162,7 @@ describe("SubscriptionService", () => {
 			organizationId: "org_123",
 			currentSeats: 3,
 		});
-		expect(selectFrom).toHaveBeenCalledWith(member);
-		expect(selectInnerJoin).toHaveBeenCalledWith(user, {
-			type: "eq",
-			column: user.id,
-			value: member.userId,
-		});
-		expect(selectWhere).toHaveBeenCalledWith({
-			type: "and",
-			conditions: [
-				{ type: "eq", column: member.organizationId, value: "org_123" },
-				{ type: "eq", column: member.status, value: "approved" },
-				{ type: "notLike", column: user.email, value: "%@demo.invalid" },
-			],
-		});
+		expect(countBillableSeats).toHaveBeenCalledWith(expect.anything(), "org_123");
 	});
 
 	it("creates a local trial without a Stripe customer using current organization seats", async () => {
@@ -209,7 +201,7 @@ describe("SubscriptionService", () => {
 			trialEnd,
 			currentSeats: 3,
 		});
-		expect(selectFrom).toHaveBeenCalledWith(member);
+		expect(countBillableSeats).toHaveBeenCalledWith(expect.anything(), "org_123");
 		expect(onConflictDoNothing).toHaveBeenCalledWith({
 			target: subscription.organizationId,
 		});

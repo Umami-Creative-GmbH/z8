@@ -12,9 +12,11 @@
     "clockIn": "Pointer l'entrée",
     "clockingIn": "Pointage de l'entrée...",
     "clockingOut": "Pointage de la sortie...",
+    "clockInQueued": "Pointage d'entrée mis en attente pour synchronisation",
     "clockInSavedForReview": "Pointage d'entrée enregistré sur cet appareil pour vérification ; non confirmé sur le serveur",
     "clockInSuccess": "Entrée pointée avec succès",
     "clockOut": "Pointer la sortie",
+    "clockOutQueued": "Pointage de sortie mis en attente pour synchronisation",
     "clockOutSavedForReview": "Pointage de sortie enregistré sur cet appareil pour vérification ; non confirmé sur le serveur",
     "clockOutSuccess": "Sortie pointée avec succès",
     "compliance": {
@@ -24,13 +26,16 @@
     "correction": {
       "clockIn": "Entrée",
       "clockInDate": "Date d'arrivée",
+      "clockInTime": "Heure d'arrivée",
       "clockOut": "Sortie",
       "clockOutDate": "Date de départ",
+      "clockOutTime": "Heure de départ",
       "editDescription": "Apporter des modifications à votre entrée de temps pour aujourd'hui.",
       "editEntry": "Modifier l'entrée de temps",
       "editTitle": "Modifier l'entrée de temps",
       "errors": {
         "invalidTimeRange": "L'heure de sortie doit être postérieure à l'heure d'entrée",
+        "noChanges": "Au moins une valeur de correction doit être modifiée",
         "submitFailed": "Échec de l'envoi de la correction",
         "updateFailed": "Échec de la mise à jour de l'entrée de temps"
       },
@@ -67,6 +72,18 @@
       "addButton": "Ajouter une saisie manuelle",
       "clockInLabel": "Pointer l'entrée",
       "clockOutLabel": "Pointer la sortie",
+      "context": {
+        "choicesCleared": "Un projet ou une catégorie sélectionné(e) n'est plus disponible et a été retiré(e).",
+        "loadFailed": "Impossible de charger le fuseau horaire et les choix pour cette saisie.",
+        "loading": "Chargement des options de saisie…",
+        "notAuthorized": "Vous ne pouvez pas créer de saisies de temps pour cet employé.",
+        "organizationFallback": "{employee} n'a pas de fuseau horaire personnel ; le fuseau horaire de l'organisation est utilisé.",
+        "retry": "Réessayer",
+        "targetChanged": "L'employé a changé ; le projet et la catégorie ont été réinitialisés.",
+        "targetTimezone": "Les heures sont dans le fuseau horaire de {employee} : {timezone}",
+        "thisEmployee": "cet employé",
+        "utcFallback": "Ni {employee} ni l'organisation n'ont défini de fuseau horaire ; UTC est utilisé."
+      },
       "dateLabel": "Date",
       "description": "Créez une saisie de temps pour une date passée. Une approbation peut être requise selon la politique de changement de votre organisation.",
       "errors": {
@@ -143,7 +160,12 @@
     },
     "unknownCategory": "Catégorie inconnue",
     "unknownProject": "Projet inconnu",
-    "workCategory": "Catégorie de travail"
+    "workCategory": "Catégorie de travail",
+    "workLocation": "Lieu de travail",
+    "workLocationHome": "Domicile",
+    "workLocationOffice": "Bureau",
+    "workLocationOther": "Autre",
+    "workLocationRemote": "À distance"
   },
   "wellness": {
     "water": {

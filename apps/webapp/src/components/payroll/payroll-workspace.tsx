@@ -63,6 +63,10 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import {
+	type DismissiblePayrollBlocker,
+	isDismissiblePayrollBlocker,
+} from "@/lib/payroll-workspace/blocker-dismissals";
+import {
 	type PayrollBlockerIdentity,
 	payrollBlockerIdentity,
 } from "@/lib/payroll-workspace/blocker-identity";
@@ -216,7 +220,7 @@ async function clearPayrollBlockerAndRefresh({
 	refreshLatestSummary,
 	t,
 }: {
-	blocker: PayrollWorkspaceSummary["blockers"][number];
+	blocker: DismissiblePayrollBlocker;
 	clickRequest: PayrollPeriodRequest;
 	isMountedRef: React.RefObject<boolean>;
 	onFinished: (blockerKey: PayrollBlockerIdentity) => void;
@@ -305,7 +309,7 @@ function usePayrollBlockerClearing({
 	const [focusRequest, setFocusRequest] = useState<BlockerFocusRequest | null>(null);
 
 	function clearPayrollBlocker(
-		blocker: PayrollWorkspaceSummary["blockers"][number],
+		blocker: DismissiblePayrollBlocker,
 		activatedControl: HTMLButtonElement,
 	) {
 		if (!isMountedRef.current) return;
@@ -1270,7 +1274,7 @@ function PayrollBlockersAlert({
 	fallbackFocusRef: React.RefObject<HTMLDivElement | null>;
 	focusRequest: BlockerFocusRequest | null;
 	onClearBlocker: (
-		blocker: PayrollWorkspaceSummary["blockers"][number],
+		blocker: DismissiblePayrollBlocker,
 		activatedControl: HTMLButtonElement,
 	) => void;
 	t: PayrollTranslate;
@@ -1370,9 +1374,26 @@ function PayrollBlockersAlert({
 
 					switch (blocker.type) {
 						case "missing_clock_out":
+						case "unresolved_work_minutes":
+							blockerType =
+								blocker.type === "missing_clock_out"
+									? t("payroll.blockers.missingClockOut", "Missing clock-out")
+									: t(
+											"payroll.blockers.unresolvedWorkMinutes",
+											"Work minutes need review",
+										);
+							actionLabel = t("payroll.blockers.openCalendar", "Open calendar");
+							href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
+								formattedDate && blocker.date
+									? `?date=${encodeURIComponent(blocker.date)}`
+									: ""
+							}`;
+							break;
+						case "offboarding_clock_repair":
+							// Fixed through the existing time correction flow on the calendar.
 							blockerType = t(
-								"payroll.blockers.missingClockOut",
-								"Missing clock-out",
+								"payroll.blockers.offboardingClockRepair",
+								"Offboarding clock-out needs repair",
 							);
 							actionLabel = t("payroll.blockers.openCalendar", "Open calendar");
 							href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
@@ -1429,7 +1450,11 @@ function PayrollBlockersAlert({
 									</span>
 								)}
 							</div>
-							<div className="grid gap-1 sm:grid-cols-2 lg:flex lg:items-center lg:justify-end">
+							<div
+								className={`grid gap-1 lg:flex lg:items-center lg:justify-end ${
+									isDismissiblePayrollBlocker(blocker) ? "sm:grid-cols-2" : ""
+								}`}
+							>
 								<Button
 									asChild
 									className="w-full lg:w-auto"
@@ -1444,9 +1469,29 @@ function PayrollBlockersAlert({
 										{actionLabel}
 									</Link>
 								</Button>
-								<Button
-									aria-label={`${
-										isClearing
+								{isDismissiblePayrollBlocker(blocker) ? (
+									<Button
+										aria-label={`${
+											isClearing
+												? t(
+														"payroll.blockers.clearingFalsePositive",
+														"Clearing false positive",
+													)
+												: t(
+														"payroll.blockers.clearFalsePositive",
+														"Clear false positive",
+													)
+										}: ${employeeName}, ${blockerType}, ${metadata}`}
+										aria-busy={isClearing}
+										className="w-full lg:w-auto"
+										disabled={isClearing}
+										onClick={(event) => onClearBlocker(blocker, event.currentTarget)}
+										ref={(node) => setBlockerControlRef(blockerKey, "clear", node)}
+										size="sm"
+										type="button"
+										variant="ghost"
+									>
+										{isClearing
 											? t(
 													"payroll.blockers.clearingFalsePositive",
 													"Clearing false positive",
@@ -1454,27 +1499,9 @@ function PayrollBlockersAlert({
 											: t(
 													"payroll.blockers.clearFalsePositive",
 													"Clear false positive",
-												)
-									}: ${employeeName}, ${blockerType}, ${metadata}`}
-									aria-busy={isClearing}
-									className="w-full lg:w-auto"
-									disabled={isClearing}
-									onClick={(event) => onClearBlocker(blocker, event.currentTarget)}
-									ref={(node) => setBlockerControlRef(blockerKey, "clear", node)}
-									size="sm"
-									type="button"
-									variant="ghost"
-								>
-									{isClearing
-										? t(
-												"payroll.blockers.clearingFalsePositive",
-												"Clearing false positive",
-											)
-										: t(
-												"payroll.blockers.clearFalsePositive",
-												"Clear false positive",
-											)}
-								</Button>
+												)}
+									</Button>
+								) : null}
 							</div>
 						</li>
 					);

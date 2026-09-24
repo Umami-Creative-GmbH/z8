@@ -66,6 +66,7 @@ vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	isEligibleManagerForApprovalRequest,
 }));
 
+import { ApprovalEvidenceError } from "@/lib/approvals/evidence/errors";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
 import {
@@ -99,6 +100,15 @@ beforeEach(() => {
 	isEligibleManagerForApprovalRequest.mockResolvedValue(false);
 });
 
+/** Legacy evidence capture inactive: no replay, no revision, nothing recorded. */
+function inactiveLegacyEvidence() {
+	return {
+		findReplay: vi.fn(async () => null),
+		prepare: vi.fn(async () => null),
+		record: vi.fn(),
+	};
+}
+
 describe("absence canonical decision errors", () => {
 	it.each([
 		["forbidden", AuthorizationError],
@@ -121,6 +131,29 @@ describe("absence canonical decision errors", () => {
 		const engineError = new ApprovalTransitionEngineError(code);
 
 		expect(translateAbsenceDecisionError(engineError)).toBe(engineError);
+	});
+
+	it.each([
+		"evidence_required",
+		"evidence_incomplete",
+		"material_change",
+		"binding_mismatch",
+	] as const)("reports the %s evidence hold as a review conflict", (code) => {
+		const translated = translateAbsenceDecisionError(
+			new ApprovalEvidenceError(code),
+		);
+
+		expect(translated).toBeInstanceOf(ConflictError);
+		expect(translated).toMatchObject({
+			conflictType: "approval_evidence",
+			details: { code },
+		});
+	});
+
+	it("keeps evidence integrity contradictions internal", () => {
+		const error = new ApprovalEvidenceError("invariant");
+
+		expect(translateAbsenceDecisionError(error)).toBe(error);
 	});
 });
 
@@ -1776,6 +1809,7 @@ describe("absence decision rollout routing", () => {
 			processLegacy,
 			captureLegacyState,
 			nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
+			legacyEvidence: inactiveLegacyEvidence(),
 		});
 
 		expect(outerTransaction).toHaveBeenCalledOnce();
@@ -1989,6 +2023,7 @@ describe("absence decision rollout routing", () => {
 				processLegacy: vi.fn(),
 				captureLegacyState: vi.fn(),
 				nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
+				legacyEvidence: inactiveLegacyEvidence(),
 			});
 
 		await decide("approval-target-1");
@@ -2098,6 +2133,7 @@ describe("absence decision rollout routing", () => {
 			processLegacy: vi.fn(),
 			captureLegacyState: vi.fn(),
 			nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
+			legacyEvidence: inactiveLegacyEvidence(),
 		});
 
 		expect(transition).toHaveBeenCalledOnce();
@@ -2175,6 +2211,7 @@ describe("absence decision rollout routing", () => {
 				processLegacy,
 				captureLegacyState,
 				nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
+				legacyEvidence: inactiveLegacyEvidence(),
 			}),
 		).rejects.toThrow(/active absence approval actor/i);
 		expect(captureLegacyState).not.toHaveBeenCalled();
@@ -2288,6 +2325,7 @@ describe("absence decision rollout routing", () => {
 				processLegacy,
 				captureLegacyState,
 				nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
+				legacyEvidence: inactiveLegacyEvidence(),
 			}),
 		).rejects.toThrow(
 			failurePoint === "mirror" ? "mirror failed" : "capture after failed",
@@ -2392,6 +2430,7 @@ describe("absence decision rollout routing", () => {
 				processLegacy: vi.fn(),
 				captureLegacyState: vi.fn(),
 				nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
+				legacyEvidence: inactiveLegacyEvidence(),
 			}),
 		).rejects.toThrow("engine rollback");
 		expect(committed.sourceStatus).toBe("pending");
@@ -2478,12 +2517,238 @@ describe("absence decision rollout routing", () => {
 				processLegacy,
 				captureLegacyState: vi.fn(),
 				nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
+				legacyEvidence: inactiveLegacyEvidence(),
 			}),
 		).rejects.toThrow(
 			linkState === "missing_target" ? /decision target/i : /workflow link/i,
 		);
 		expect(transition).not.toHaveBeenCalled();
 		expect(processLegacy).not.toHaveBeenCalled();
+	});
+});
+
+describe("legacy absence decision evidence routing", () => {
+	function legacyDecisionContext(mode: "legacy" | "shadow") {
+		const events: string[] = [];
+		const mirrored = {
+			snapshot: { id: "workflow-1" },
+			events: [{ id: "event-1" }],
+		};
+		const context = {
+			dbService: {
+				db: {
+					query: {
+						employee: {
+							findMany: vi.fn().mockResolvedValue([
+								{
+									id: "emp-manager",
+									userId: "user-manager",
+									organizationId: "org-1",
+									isActive: true,
+									user: { id: "user-manager" },
+								},
+							]),
+						},
+						absenceEntry: {
+							findFirst: vi.fn().mockResolvedValue({
+								id: "absence-1",
+								organizationId: "org-1",
+								approvalWorkflowId: null,
+							}),
+						},
+						approvalWorkflow: {
+							findFirst: vi
+								.fn()
+								.mockResolvedValue(
+									mode === "shadow" ? { id: "workflow-1", version: 4 } : null,
+								),
+						},
+					},
+				},
+			},
+			writeGate: {
+				acquire: vi.fn().mockResolvedValue({
+					mode,
+					behavior: {
+						serveFrom: "legacy",
+						writeLegacy: true,
+						writeCanonical: mode === "shadow",
+						decideCanonical: false,
+						mirror: mode === "shadow" ? "legacy_to_canonical" : "none",
+					},
+				}),
+			},
+			compatibilityWriter: {
+				withWriteGate() {
+					return this;
+				},
+				mirrorLegacyToCanonical: vi.fn(async () => {
+					events.push("mirror");
+					return mirrored;
+				}),
+			},
+		};
+		let committed = { sourceStatus: "pending" };
+		let active = structuredClone(committed);
+		const withTransaction = async (
+			operation: (value: typeof context) => Promise<unknown>,
+		) => {
+			active = structuredClone(committed);
+			try {
+				const result = await operation(context);
+				committed = structuredClone(active);
+				return result;
+			} finally {
+				active = structuredClone(committed);
+			}
+		};
+		const plan = { revision: { id: "revision-1" }, before: {} };
+		const legacyEvidence = {
+			findReplay: vi.fn(async () => {
+				events.push("replay-lookup");
+				return null;
+			}),
+			prepare: vi.fn(async () => {
+				events.push("prepare");
+				return plan;
+			}),
+			record: vi.fn(async () => {
+				events.push("record");
+			}),
+		};
+		const input = {
+			runtime: {
+				repository: { withTransaction },
+				transitionEngine: { executeInTransaction: vi.fn() },
+			},
+			organizationId: "org-1",
+			actorEmployeeId: "emp-manager",
+			actorUserId: "user-manager",
+			absenceId: "absence-1",
+			approvalRequestId: "approval-1",
+			action: "reject" as const,
+			reason: "Private medical detail",
+			processLegacy: vi.fn(async () => {
+				events.push("legacy-decision");
+				active.sourceStatus = "rejected";
+				return { absence: { id: "absence-1" } };
+			}),
+			captureLegacyState: vi.fn(async () => {
+				events.push("capture");
+				return {
+					organizationId: "org-1",
+					source: {
+						organizationId: "org-1",
+						workflowType: "absence",
+						sourceType: "absence_entry",
+						sourceId: "absence-1",
+					},
+				};
+			}),
+			nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
+			legacyEvidence,
+		};
+		return {
+			committed: () => committed,
+			events,
+			input,
+			legacyEvidence,
+			mirrored,
+			plan,
+		};
+	}
+
+	it("checks the receipt, then fresh evidence, then commits the mutation, observation and evidence", async () => {
+		const harness = legacyDecisionContext("shadow");
+
+		const result = await executeAbsenceDecisionInTransaction(
+			harness.input as never,
+		);
+
+		expect(harness.events).toEqual([
+			"replay-lookup",
+			"prepare",
+			"capture",
+			"legacy-decision",
+			"capture",
+			"mirror",
+			"record",
+		]);
+		expect(harness.legacyEvidence.findReplay).toHaveBeenCalledWith(
+			expect.anything(),
+			{
+				organizationId: "org-1",
+				absenceId: "absence-1",
+				approvalRequestId: "approval-1",
+				action: "reject",
+				reason: "Private medical detail",
+				actor: { employeeId: "emp-manager", userId: "user-manager" },
+			},
+		);
+		const [, plan, recorded] = harness.legacyEvidence.record.mock.calls[0] ?? [];
+		expect(plan).toBe(harness.plan);
+		expect(recorded).toMatchObject({
+			approvalRequestId: "approval-1",
+			observed: harness.mirrored,
+			actor: { employeeId: "emp-manager", userId: "user-manager" },
+		});
+		// The unchanged legacy key, also used for the shadow observation.
+		expect(recorded.idempotencyKey).toMatch(
+			/^absence:absence-1:reject:4:[0-9a-f]{64}$/,
+		);
+		expect(recorded.idempotencyKey).not.toContain("Private");
+		expect(result).toMatchObject({ mode: "shadow", replayed: null });
+		expect(harness.committed()).toEqual({ sourceStatus: "rejected" });
+	});
+
+	it("replays an exact committed operation without mutating, observing or recording", async () => {
+		const harness = legacyDecisionContext("legacy");
+		const evidence = { id: "decision-1", operationKind: "command" };
+		harness.legacyEvidence.findReplay.mockResolvedValueOnce(evidence as never);
+
+		const result = await executeAbsenceDecisionInTransaction(
+			harness.input as never,
+		);
+
+		expect(result).toMatchObject({
+			mode: "legacy",
+			domainResult: undefined,
+			replayed: evidence,
+		});
+		expect(harness.input.processLegacy).not.toHaveBeenCalled();
+		expect(harness.legacyEvidence.prepare).not.toHaveBeenCalled();
+		expect(harness.legacyEvidence.record).not.toHaveBeenCalled();
+		expect(harness.committed()).toEqual({ sourceStatus: "pending" });
+	});
+
+	it.each([
+		"prepare",
+		"record",
+	] as const)("rolls the legacy decision back when evidence %s fails", async (failurePoint) => {
+		const harness = legacyDecisionContext("legacy");
+		harness.legacyEvidence[failurePoint].mockRejectedValueOnce(
+			new ApprovalEvidenceError(
+				failurePoint === "prepare" ? "material_change" : "evidence_incomplete",
+			),
+		);
+
+		await expect(
+			executeAbsenceDecisionInTransaction(harness.input as never),
+		).rejects.toBeInstanceOf(ApprovalEvidenceError);
+		expect(harness.committed()).toEqual({ sourceStatus: "pending" });
+		expect(harness.input.processLegacy).toHaveBeenCalledTimes(
+			failurePoint === "prepare" ? 0 : 1,
+		);
+	});
+
+	it("skips evidence recording when the lifecycle has no revision and capture is inactive", async () => {
+		const harness = legacyDecisionContext("legacy");
+		harness.legacyEvidence.prepare.mockResolvedValueOnce(null as never);
+
+		await executeAbsenceDecisionInTransaction(harness.input as never);
+
+		expect(harness.legacyEvidence.record).not.toHaveBeenCalled();
+		expect(harness.committed()).toEqual({ sourceStatus: "rejected" });
 	});
 });
 
@@ -2563,5 +2828,65 @@ describe("canonical absence fallback-manager authorization", () => {
 				command,
 			} as never),
 		).resolves.toBe(false);
+	});
+
+	const escalatedWorkflow = {
+		...workflow,
+		stages: [
+			{
+				...workflow.stages[0],
+				assignments: [
+					{
+						id: "assignment-1",
+						status: "cancelled",
+						reassignedFromAssignmentId: null,
+						reassignmentMetadata: null,
+					},
+					{
+						id: "assignment-2",
+						status: "pending",
+						reassignedFromAssignmentId: "assignment-1",
+						reassignmentMetadata: { kind: "escalation" },
+					},
+				],
+			},
+		],
+	};
+	const replacementCommand = { ...command, assignmentId: "assignment-2" };
+
+	it("never lets eligible-manager status bypass an escalation replacement", async () => {
+		isEligibleManagerForApprovalRequest.mockResolvedValue(true);
+		const authorize = createAbsenceApprovalManagementAuthorization({
+			currentEmployee: actor,
+			canManageOrganizationApproval: async () => false,
+		});
+
+		await expect(
+			authorize({
+				dbService: { db: { query: {} } },
+				organizationId: "org-1",
+				actorEmployeeId: "manager-2",
+				workflow: escalatedWorkflow,
+				command: replacementCommand,
+			} as never),
+		).resolves.toBe(false);
+		expect(isEligibleManagerForApprovalRequest).not.toHaveBeenCalled();
+	});
+
+	it("keeps explicit organization approval management distinct", async () => {
+		const authorize = createAbsenceApprovalManagementAuthorization({
+			currentEmployee: actor,
+			canManageOrganizationApproval: async () => true,
+		});
+
+		await expect(
+			authorize({
+				dbService: { db: { query: {} } },
+				organizationId: "org-1",
+				actorEmployeeId: "manager-2",
+				workflow: escalatedWorkflow,
+				command: replacementCommand,
+			} as never),
+		).resolves.toBe(true);
 	});
 });

@@ -1,7 +1,21 @@
-import type { PayrollBlocker, PayrollBlockerType } from "./types";
+import type { DismissiblePayrollBlockerType, PayrollBlocker, PayrollBlockerType } from "./types";
+
+export type DismissiblePayrollBlocker = PayrollBlocker & { type: DismissiblePayrollBlockerType };
+
+export function isDismissiblePayrollBlockerType(
+	blockerType: PayrollBlockerType,
+): blockerType is DismissiblePayrollBlockerType {
+	return blockerType !== "unresolved_work_minutes" && blockerType !== "offboarding_clock_repair";
+}
+
+export function isDismissiblePayrollBlocker(
+	blocker: PayrollBlocker,
+): blocker is DismissiblePayrollBlocker {
+	return isDismissiblePayrollBlockerType(blocker.type);
+}
 
 export interface PayrollBlockerDismissalKey {
-	blockerType: PayrollBlockerType;
+	blockerType: DismissiblePayrollBlockerType;
 	sourceId: string;
 }
 
@@ -11,7 +25,7 @@ export function filterDismissedPayrollBlockers(
 ): PayrollBlocker[] {
 	if (dismissals.length === 0) return blockers;
 
-	const dismissedSourceIdsByType = new Map<PayrollBlockerType, Set<string>>();
+	const dismissedSourceIdsByType = new Map<DismissiblePayrollBlockerType, Set<string>>();
 	for (const dismissal of dismissals) {
 		const sourceIds =
 			dismissedSourceIdsByType.get(dismissal.blockerType) ?? new Set();
@@ -20,6 +34,10 @@ export function filterDismissedPayrollBlockers(
 	}
 
 	return blockers.filter(
-		(blocker) => !dismissedSourceIdsByType.get(blocker.type)?.has(blocker.id),
+		(blocker) =>
+			!(
+				isDismissiblePayrollBlocker(blocker) &&
+				dismissedSourceIdsByType.get(blocker.type)?.has(blocker.id)
+			),
 	);
 }

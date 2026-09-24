@@ -302,6 +302,17 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can("read", "TimeEntry", selfCondition);
 			can(["read", "create"], "Absence", selfCondition);
 		}
+
+		// Organization owners/admins may create time entries on behalf of anyone in
+		// their organization, whatever their employee role. This grants creation
+		// only; read/update/delete stay governed by the employee-role rules above.
+		const orgRole = principal.orgMembership?.role;
+		if (
+			(orgRole === "owner" || orgRole === "admin") &&
+			principal.orgMembership?.organizationId === principal.activeOrganizationId
+		) {
+			can("create", "TimeEntry", orgCondition);
+		}
 	}
 
 	return build();

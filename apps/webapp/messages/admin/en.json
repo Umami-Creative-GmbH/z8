@@ -342,7 +342,11 @@
         "organizationId": "Organization ID",
         "success": "Approval deleted. Removed records:",
         "title": "Force delete approval",
-        "workflow": "Workflow"
+        "workflow": "Workflow",
+        "submittedRevision": "Submitted revision",
+        "decisionEvidence": "Decision evidence",
+        "reviewBinding": "Review binding",
+        "escalationTransfer": "Escalation transfer"
       },
       "cookieConsent": {
         "description": "Injected on authentication pages for GDPR compliance",

@@ -17,7 +17,9 @@
       "pendingAbsence": "Absence en attente",
       "pendingTimeCorrection": "Correction de temps en attente",
       "refreshAfterClearFailed": "Blocage levé, mais la paie n'a pas pu être actualisée",
-      "unknownEmployee": "Employé inconnu"
+      "unknownEmployee": "Employé inconnu",
+      "unresolvedWorkMinutes": "Minutes de travail à vérifier",
+      "offboardingClockRepair": "Le pointage de sortie lié au départ doit être corrigé"
     },
     "description": "Vérifiez les totaux de paie, l'état de préparation et les exportations pour la période sélectionnée.",
     "employeeTotals": {
@@ -45,6 +47,8 @@
       "employeeIdsMustBeArray": "employeeIds doit être un tableau",
       "employeeIdsMustContainOnlyStrings": "employeeIds ne doit contenir que des chaînes de caractères",
       "endDateAfterStart": "La date de fin doit être postérieure ou égale à la date de début",
+      "exportBlockedByUnresolvedWorkMinutes": "Export bloqué : résolvez d'abord les minutes de travail à vérifier",
+      "exportBlockedByOffboardingClockRepair": "Export bloqué : corrigez d'abord le pointage de sortie lié au départ",
       "exportFormatNotConfigured": "Le format d'exportation de la paie n'est pas configuré",
       "invalidBlockerId": "ID de blocage de paie invalide",
       "invalidBlockerType": "Type de blocage de paie invalide",

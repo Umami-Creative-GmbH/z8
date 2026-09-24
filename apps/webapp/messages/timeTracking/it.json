@@ -12,9 +12,11 @@
     "clockIn": "Entrata",
     "clockingIn": "Timbratura entrata...",
     "clockingOut": "Timbratura uscita...",
+    "clockInQueued": "Ingresso in coda per la sincronizzazione",
     "clockInSavedForReview": "Timbratura di ingresso salvata su questo dispositivo per la revisione; non confermata sul server",
     "clockInSuccess": "Entrata timbrata con successo",
     "clockOut": "Uscita",
+    "clockOutQueued": "Uscita in coda per la sincronizzazione",
     "clockOutSavedForReview": "Timbratura di uscita salvata su questo dispositivo per la revisione; non confermata sul server",
     "clockOutSuccess": "Uscita timbrata con successo",
     "compliance": {
@@ -24,13 +26,16 @@
     "correction": {
       "clockIn": "Entrata",
       "clockInDate": "Data di entrata",
+      "clockInTime": "Ora di entrata",
       "clockOut": "Uscita",
       "clockOutDate": "Data di uscita",
+      "clockOutTime": "Ora di uscita",
       "editDescription": "Modifica la tua voce oraria per oggi.",
       "editEntry": "Modifica voce oraria",
       "editTitle": "Modifica voce oraria",
       "errors": {
         "invalidTimeRange": "L'ora di uscita deve essere successiva all'ora di entrata",
+        "noChanges": "È necessario modificare almeno un valore della correzione",
         "submitFailed": "Invio correzione non riuscito",
         "updateFailed": "Aggiornamento voce oraria non riuscito"
       },
@@ -67,6 +72,18 @@
       "addButton": "Aggiungi voce manuale",
       "clockInLabel": "Timbra ingresso",
       "clockOutLabel": "Timbra uscita",
+      "context": {
+        "choicesCleared": "Un progetto o una categoria selezionati non sono più disponibili e sono stati rimossi.",
+        "loadFailed": "Impossibile caricare il fuso orario e le opzioni per questa voce.",
+        "loading": "Caricamento delle opzioni della voce…",
+        "notAuthorized": "Non puoi creare registrazioni orarie per questo dipendente.",
+        "organizationFallback": "{employee} non ha un fuso orario personale, quindi viene usato quello dell'organizzazione.",
+        "retry": "Riprova",
+        "targetChanged": "Il dipendente è cambiato, quindi progetto e categoria sono stati azzerati.",
+        "targetTimezone": "Gli orari sono nel fuso orario di {employee}: {timezone}",
+        "thisEmployee": "questo dipendente",
+        "utcFallback": "Né {employee} né l'organizzazione hanno impostato un fuso orario, quindi viene usato UTC."
+      },
       "dateLabel": "Data",
       "description": "Crea una voce di tempo per una data passata. Potrebbe essere richiesta l'approvazione in base alla policy della tua organizzazione.",
       "errors": {
@@ -143,7 +160,12 @@
     },
     "unknownCategory": "Categoria sconosciuta",
     "unknownProject": "Progetto sconosciuto",
-    "workCategory": "Categoria lavorativa"
+    "workCategory": "Categoria lavorativa",
+    "workLocation": "Luogo di lavoro",
+    "workLocationHome": "Casa",
+    "workLocationOffice": "Ufficio",
+    "workLocationOther": "Altro",
+    "workLocationRemote": "Da remoto"
   },
   "wellness": {
     "water": {

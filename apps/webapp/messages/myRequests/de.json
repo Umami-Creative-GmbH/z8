@@ -2,6 +2,8 @@
   "myRequests": {
     "actions": {
       "cancel": "Abbrechen",
+      "cancelConfirmation": "Diesen Abwesenheitsantrag abbrechen?",
+      "cancelError": "Abwesenheitsantrag konnte nicht abgebrochen werden.",
       "cancelling": "Wird abgebrochen…",
       "cancelRequestConfirmation": "Diese Anfrage abbrechen?",
       "cancelRequestError": "Anfrage konnte nicht abgebrochen werden.",

@@ -9,9 +9,12 @@ import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { env } from "@/env";
 import { auth } from "@/lib/auth";
+import { isValidCronAuthorization } from "@/lib/cron/auth";
 import { getJobExecution } from "@/lib/cron/tracking";
+import { createLogger } from "@/lib/logger";
 import { getJobStatus } from "@/lib/queue";
 
+const logger = createLogger("cron-status-api");
 const CRON_SECRET = env.CRON_SECRET;
 
 /**
@@ -21,11 +24,8 @@ async function verifyAccess(): Promise<boolean> {
 	const headersList = await headers();
 
 	// Check for Bearer token
-	if (CRON_SECRET) {
-		const authHeader = headersList.get("authorization");
-		if (authHeader === `Bearer ${CRON_SECRET}`) {
-			return true;
-		}
+	if (isValidCronAuthorization(headersList.get("authorization"), CRON_SECRET)) {
+		return true;
 	}
 
 	// Fall back to session-based auth for admin users
@@ -86,7 +86,7 @@ export async function GET(
 				: null,
 		});
 	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : "Unknown error";
-		return NextResponse.json({ error: errorMessage }, { status: 500 });
+		logger.error({ error, executionId }, "Failed to fetch cron execution status");
+		return NextResponse.json({ error: "Failed to fetch execution status" }, { status: 500 });
 	}
 }

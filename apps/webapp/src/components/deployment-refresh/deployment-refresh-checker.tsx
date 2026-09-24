@@ -9,7 +9,8 @@ import {
 	shouldPromptForBuildHash,
 } from "./deployment-refresh-checker-utils";
 
-export const CHECK_COOLDOWN_MS = 6 * 60 * 60 * 1000;
+// Short enough to warn before a stale tab calls into a replaced deployment.
+export const CHECK_COOLDOWN_MS = 5 * 60 * 1000;
 
 const APP_VERSION_QUERY_KEY = ["app-version"] as const;
 

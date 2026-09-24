@@ -139,6 +139,13 @@ export const queryKeys = {
 		breakStatus: () => ["time-clock", "break-status"] as const,
 	},
 
+	// Manual time entry form context (target zone and eligible choices)
+	manualEntry: {
+		all: ["manual-entry"] as const,
+		targetContext: (targetEmployeeId: string | null) =>
+			["manual-entry", "target-context", targetEmployeeId ?? "self"] as const,
+	},
+
 	// Canonical time records
 	timeRecords: {
 		all: ["time-records"] as const,
