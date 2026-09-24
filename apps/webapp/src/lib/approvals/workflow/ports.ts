@@ -3,6 +3,7 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ApprovedCancellationAuthorization } from "../domain-adapters/registry";
 import type { ApprovalTerminalFinalizationResult } from "../domain-adapters/types";
 import type { OrdinaryWorkPeriodApprovalSource } from "../domain-adapters/work-period-contract";
+import type { RequesterEligibilityMode } from "../policies/manager-eligibility";
 import type { ApprovalProjectionWriteInput } from "../projection/contracts";
 import type { ApprovalWorkflowCommand } from "./state-machine";
 import type {
@@ -663,6 +664,12 @@ export interface StageActivationInput {
 	stage: ApprovalStageSnapshot;
 	actor: ApprovalEventActorIdentity;
 	routingContext: JsonObject;
+	/**
+	 * Set by the transition engine for stages of a persisted workflow, whose
+	 * requester may have departed since submission. Defaults to
+	 * `new_submission`.
+	 */
+	requesterMode?: RequesterEligibilityMode;
 }
 
 export interface ResolvedStage {

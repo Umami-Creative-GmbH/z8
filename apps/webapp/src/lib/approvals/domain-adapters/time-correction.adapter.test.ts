@@ -135,6 +135,7 @@ function createFixture() {
 			isActive: true,
 			user: { id: requesterUserId, name: "Avery Requester" },
 		},
+		actor: { id: actorEmployeeId, organizationId, isActive: true },
 		membership: {
 			id: "member-1",
 			organizationId,
@@ -199,15 +200,7 @@ function createFixture() {
 						return Promise.resolve(
 							[
 								value.requester,
-								...(actorEmployeeId === value.requester.id
-									? []
-									: [
-											{
-												id: actorEmployeeId,
-												organizationId,
-												isActive: true,
-											},
-										]),
+								...(actorEmployeeId === value.requester.id ? [] : [value.actor]),
 							].sort((left, right) => left.id.localeCompare(right.id)),
 						);
 					}
@@ -562,6 +555,15 @@ describe("time correction approval adapter", () => {
 		}
 	});
 
+	it("loads a departed requester's submitted correction for an active approver", async () => {
+		const fixture = createFixture();
+		fixture.value.requester.isActive = false;
+
+		const { source } = await loadSource(fixture);
+
+		expect(source.employeeId).toBe(ids.employee);
+	});
+
 	it("loads and approves an active correction before canonical materialization", async () => {
 		const fixture = createFixture();
 		const activeCorrection = {
@@ -855,9 +857,9 @@ describe("time correction approval adapter", () => {
 				(value.period.deletedAt = new Date()),
 		],
 		[
-			"inactive requester",
+			"inactive actor",
 			(value: ReturnType<typeof createFixture>["value"]) =>
-				(value.requester.isActive = false),
+				(value.actor.isActive = false),
 		],
 		[
 			"foreign requester",

@@ -277,6 +277,7 @@ export function createDatabaseStageActivationResolver(): StageActivationResolver
 			const resolution = resolveApprovalStageReviewers({
 				context,
 				stage,
+				requesterMode: input.requesterMode ?? "new_submission",
 				directory: {
 					employees: decodeEmployees(directory.employees),
 					managerLinks: decodeManagerLinks(directory.managerLinks),

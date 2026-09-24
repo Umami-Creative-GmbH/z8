@@ -140,12 +140,14 @@ function activationInput({
 	routing = routingContext(),
 	workflowSnapshot = workflow(),
 	stageSnapshot = stage(),
+	requesterMode,
 }: {
 	dbService?: ApprovalDbService;
 	organizationId?: string;
 	routing?: JsonObject;
 	workflowSnapshot?: ApprovalWorkflowSnapshot;
 	stageSnapshot?: ApprovalStageSnapshot;
+	requesterMode?: StageActivationInput["requesterMode"];
 } = {}): StageActivationInput {
 	return {
 		dbService,
@@ -154,6 +156,7 @@ function activationInput({
 		stage: stageSnapshot,
 		actor: { kind: "system", employeeId: null, userId: null },
 		routingContext: routing,
+		...(requesterMode ? { requesterMode } : {}),
 	};
 }
 
@@ -280,6 +283,33 @@ describe("createDatabaseStageActivationResolver", () => {
 		expect(rendered.sql).toMatch(
 			/from team[\s\S]*team\.organization_id\s*=\s*\$4/,
 		);
+	});
+
+	it("resolves a departed requester's managers only for a persisted workflow", async () => {
+		const rows = directoryRows.map((group) => [...group]);
+		rows[0] = rows[0].map((row) =>
+			(row as { id: string }).id === requesterId ? { ...(row as object), isActive: false } : row,
+		);
+
+		await expect(
+			createDatabaseStageActivationResolver().resolve(
+				activationInput({
+					dbService: database([directoryEnvelope(rows)]).dbService,
+					requesterMode: "existing_workflow",
+				}),
+			),
+		).resolves.toMatchObject({
+			activationMode: "human",
+			assignments: [
+				{ approverEmployeeId: managerAId, metadata: {} },
+				{ approverEmployeeId: managerBId, metadata: {} },
+			],
+		});
+		await expect(
+			createDatabaseStageActivationResolver().resolve(
+				activationInput({ dbService: database([directoryEnvelope(rows)]).dbService }),
+			),
+		).rejects.toMatchObject({ code: "no_eligible_reviewer" });
 	});
 
 	it("maps requester auto approval to no assignments", async () => {

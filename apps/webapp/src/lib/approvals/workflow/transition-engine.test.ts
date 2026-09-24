@@ -2354,6 +2354,8 @@ describe("approval transition engine atomic orchestration", () => {
 				stage: expect.objectContaining({ id: engineIds.nextStage }),
 				actor: { kind: "system", employeeId: null, userId: null },
 				routingContext: {},
+				// A persisted workflow keeps its historical requester resolvable.
+				requesterMode: "existing_workflow",
 			}),
 		);
 		expect((activationInput as StageActivationInput).dbService).toBe(

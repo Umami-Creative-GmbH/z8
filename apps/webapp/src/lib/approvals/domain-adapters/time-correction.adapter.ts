@@ -550,19 +550,22 @@ export function createTimeCorrectionApprovalAdapter(
 				.where(
 					and(
 						eq(employee.organizationId, input.organizationId),
-						eq(employee.isActive, true),
 						inArray(employee.id, expectedEmployeeIds),
 					),
 				)
 				.orderBy(asc(employee.id))
 				.for("update");
+			// The persisted workflow's requester may have departed since
+			// submission; only an employee actor must still be active.
+			const actorEmployeeId =
+				input.actor.kind === "employee" ? input.actor.employeeId : null;
 			if (
 				lockedEmployees.length !== expectedEmployeeIds.length ||
 				lockedEmployees.some(
 					(row, index) =>
 						row.id !== expectedEmployeeIds[index] ||
 						row.organizationId !== input.organizationId ||
-						row.isActive !== true,
+						(row.id === actorEmployeeId && row.isActive !== true),
 				)
 			) {
 				return fail();
@@ -707,7 +710,6 @@ export function createTimeCorrectionApprovalAdapter(
 				where: and(
 					eq(employee.id, requesterEmployeeId),
 					eq(employee.organizationId, input.organizationId),
-					eq(employee.isActive, true),
 				),
 				with: { user: true },
 			});
@@ -715,7 +717,6 @@ export function createTimeCorrectionApprovalAdapter(
 				!requester ||
 				requester.id !== requesterEmployeeId ||
 				requester.organizationId !== input.organizationId ||
-				requester.isActive !== true ||
 				!requester.userId ||
 				requester.user?.id !== requester.userId ||
 				!requester.user.name

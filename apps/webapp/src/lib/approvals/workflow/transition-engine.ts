@@ -720,6 +720,7 @@ export function createApprovalTransitionEngine(
 					stage,
 					actor: activationActor,
 					routingContext,
+					requesterMode: "existing_workflow",
 				});
 				if (
 					resolved.organizationId !== request.organizationId ||

@@ -3,6 +3,8 @@ import {
 	type EligibleManagerLink,
 	type EligibleTeam,
 	type EligibleTeamMembership,
+	type RequesterEligibilityMode,
+	requesterMayBeResolved,
 	resolveDirectEligibleManagers,
 	resolveEligibleManagers,
 	resolvePrimaryEligibleManager,
@@ -93,10 +95,13 @@ export function resolveApprovalStageReviewers({
 	context,
 	stage,
 	directory,
+	requesterMode = "new_submission",
 }: {
 	context: ApprovalRoutingContext;
 	stage: ApprovalStageResolverSnapshot;
 	directory: ApprovalStageReviewerDirectory;
+	/** `existing_workflow` only for a stage of an already persisted workflow. */
+	requesterMode?: RequesterEligibilityMode;
 }): ApprovalStageReviewerResolution {
 	if (
 		stage.approverType !== "direct_manager" &&
@@ -132,21 +137,25 @@ export function resolveApprovalStageReviewers({
 		);
 	}
 
-	const requesterIsActive = Boolean(
-		activeEmployeeInOrganization(
-			directory.employees,
-			context.organizationId,
-			context.requesterEmployeeId,
-		),
+	const requester = directory.employees.find(
+		(employee) =>
+			employee.id === context.requesterEmployeeId &&
+			employee.organizationId === context.organizationId,
 	);
+	const requesterResolvable = requesterMayBeResolved({
+		requesterExistsInOrganization: requester !== undefined,
+		requesterIsActive: requester?.isActive === true,
+		mode: requesterMode,
+	});
 
 	const managerInput = {
 		...directory,
 		organizationId: context.organizationId,
 		requesterEmployeeId: context.requesterEmployeeId,
+		requesterMode,
 	};
 
-	const primaryCandidateIds = requesterIsActive
+	const primaryCandidateIds = requesterResolvable
 		? (() => {
 				switch (stage.approverType) {
 					case "direct_manager": {
@@ -159,9 +168,11 @@ export function resolveApprovalStageReviewers({
 							return [];
 						}
 
+						// The intermediate manager is a current approver, never historical.
 						const result = resolveDirectEligibleManagers({
 							...managerInput,
 							requesterEmployeeId: primary.managerId,
+							requesterMode: "new_submission",
 						});
 						return result.ok ? result.managerIds : [];
 					}
