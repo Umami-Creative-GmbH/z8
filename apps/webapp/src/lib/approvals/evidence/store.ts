@@ -92,11 +92,26 @@ function parseAbsenceRevision(
 	row: SubmittedRevisionRow,
 	scope: { organizationId: string; workflowId: string },
 ): AbsenceSubmittedRevisionRecord {
+	if (row.authority !== "canonical" || row.workflowId !== scope.workflowId) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "submitted_revision",
+		});
+	}
+	return {
+		...parseAbsenceRevisionBody(row, scope.organizationId),
+		workflowId: scope.workflowId,
+	};
+}
+
+/** Authority-independent request facts shared by canonical and legacy rows. */
+function parseAbsenceRevisionBody(
+	row: SubmittedRevisionRow,
+	organizationId: string,
+): Omit<AbsenceSubmittedRevisionRecord, "workflowId"> {
 	const facts = row.facts;
 	const labels = row.labels;
 	if (
-		row.organizationId !== scope.organizationId ||
-		row.workflowId !== scope.workflowId ||
+		row.organizationId !== organizationId ||
 		row.workflowType !== "absence" ||
 		row.sourceType !== "absence_entry" ||
 		row.schemaVersion !== ABSENCE_EVIDENCE_SCHEMA_VERSION ||
@@ -133,7 +148,6 @@ function parseAbsenceRevision(
 	return {
 		id: row.id,
 		organizationId: row.organizationId,
-		workflowId: row.workflowId,
 		sourceId: row.sourceId,
 		requestCycleKey: row.requestCycleKey,
 		revision: row.revision,
@@ -266,6 +280,7 @@ function parseDecisionEvidence(
 ): DecisionEvidenceRecord {
 	if (
 		row.organizationId !== scope.organizationId ||
+		row.authority !== "canonical" ||
 		row.workflowId !== scope.workflowId ||
 		row.schemaVersion !== ABSENCE_EVIDENCE_SCHEMA_VERSION ||
 		!Array.isArray(row.eventIds) ||
@@ -281,7 +296,7 @@ function parseDecisionEvidence(
 	return {
 		id: row.id,
 		organizationId: row.organizationId,
-		workflowId: row.workflowId,
+		workflowId: scope.workflowId,
 		submittedRevisionId: row.submittedRevisionId,
 		operationKind: row.operationKind,
 		receipt: {
@@ -504,4 +519,311 @@ export async function loadEvidenceActorLabel(
 	});
 	if (!actor || actor.organizationId !== input.organizationId) return null;
 	return { name: actor.user?.name ?? null };
+}
+
+// ---------------------------------------------------------------------------
+// Legacy authority (#288). Same immutable tables, discriminated by authority.
+// A legacy lifecycle is identified by its request cycle and the legacy rows it
+// created, never by a canonical workflow: an observed shadow workflow is stored
+// only as an observation reference.
+// ---------------------------------------------------------------------------
+
+export interface LegacyLifecycleReference {
+	/** The legacy request created by the submission (its first assignment). */
+	approvalRequestId: string;
+	chainInstanceId: string | null;
+	/** Shadow observation of the lifecycle, if one was mirrored. Not authority. */
+	observedWorkflowId: string | null;
+}
+
+export interface LegacyAbsenceSubmittedRevisionRecord
+	extends Omit<AbsenceSubmittedRevisionRecord, "workflowId"> {
+	authority: "legacy";
+	legacy: LegacyLifecycleReference;
+}
+
+function parseLegacyAbsenceRevision(
+	row: SubmittedRevisionRow,
+	scope: { organizationId: string; absenceId: string },
+): LegacyAbsenceSubmittedRevisionRecord {
+	if (
+		row.authority !== "legacy" ||
+		row.workflowId !== null ||
+		row.sourceId !== scope.absenceId ||
+		!row.legacyApprovalRequestId
+	) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "legacy_submitted_revision",
+		});
+	}
+	return {
+		...parseAbsenceRevisionBody(row, scope.organizationId),
+		authority: "legacy",
+		legacy: {
+			approvalRequestId: row.legacyApprovalRequestId,
+			chainInstanceId: row.legacyChainInstanceId,
+			observedWorkflowId: row.observedWorkflowId,
+		},
+	};
+}
+
+export async function loadLegacyAbsenceSubmittedRevision(
+	database: ApprovalDatabase,
+	input: { organizationId: string; absenceId: string },
+): Promise<LegacyAbsenceSubmittedRevisionRecord | null> {
+	const rows = await database
+		.select()
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.authority, "legacy"),
+				eq(approvalSubmittedRevision.sourceType, "absence_entry"),
+				eq(approvalSubmittedRevision.sourceId, input.absenceId),
+			),
+		)
+		.orderBy(desc(approvalSubmittedRevision.revision))
+		.limit(1);
+	const row = rows[0];
+	return row ? parseLegacyAbsenceRevision(row, input) : null;
+}
+
+/**
+ * Written by the legacy submission owner inside its transaction, after the
+ * legacy rows (and any shadow observation) exist. A failure rolls back the
+ * whole submission.
+ */
+export async function captureLegacyAbsenceSubmittedRevision(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		requestCycleKey: string;
+		submittedAt: Instant;
+		facts: AbsenceSubmittedFacts;
+		labels: AbsenceSubmittedLabels;
+		submitter: SubmitterIdentity;
+		legacy: LegacyLifecycleReference;
+	},
+): Promise<LegacyAbsenceSubmittedRevisionRecord> {
+	if (input.facts.organizationId !== input.organizationId) {
+		throw new ApprovalEvidenceError("invariant", { field: "organization" });
+	}
+	const materialFingerprint = fingerprintAbsenceMaterialFacts(input.facts);
+	await database
+		.insert(approvalSubmittedRevision)
+		.values({
+			organizationId: input.organizationId,
+			authority: "legacy",
+			workflowId: null,
+			legacyApprovalRequestId: input.legacy.approvalRequestId,
+			legacyChainInstanceId: input.legacy.chainInstanceId,
+			observedWorkflowId: input.legacy.observedWorkflowId,
+			workflowType: "absence",
+			sourceType: "absence_entry",
+			sourceId: input.facts.absenceId,
+			requestCycleKey: input.requestCycleKey,
+			revision: 1,
+			subjectEmployeeId: input.facts.subjectEmployeeId,
+			requesterEmployeeId: input.facts.requesterEmployeeId,
+			submitterActorKind: input.submitter.kind,
+			submitterEmployeeId: input.submitter.employeeId,
+			submitterUserId: input.submitter.userId,
+			schemaVersion: ABSENCE_EVIDENCE_SCHEMA_VERSION,
+			materialFingerprint,
+			facts: input.facts as unknown as JsonObject,
+			labels: input.labels as unknown as JsonObject,
+			provenance: "captured_at_submission",
+			submittedAt: dateFromInstant(input.submittedAt),
+		})
+		.onConflictDoNothing();
+	const revision = await loadLegacyAbsenceSubmittedRevision(database, {
+		organizationId: input.organizationId,
+		absenceId: input.facts.absenceId,
+	});
+	if (
+		revision?.revision !== 1 ||
+		revision.requestCycleKey !== input.requestCycleKey ||
+		revision.materialFingerprint !== materialFingerprint ||
+		revision.legacy.approvalRequestId !== input.legacy.approvalRequestId
+	) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "legacy_submitted_revision",
+		});
+	}
+	return revision;
+}
+
+export interface LegacyDecisionEvidenceInput
+	extends Omit<
+		DecisionEvidenceInput,
+		"workflowId" | "stageId" | "assignmentId" | "eventIds" | "reviewedBindingId"
+	> {
+	legacy: {
+		/** The one legacy request (assignment equivalent) this operation decided. */
+		approvalRequestId: string;
+		chainStageId: string | null;
+		observedWorkflowId: string | null;
+	};
+}
+
+export interface LegacyDecisionEvidenceRecord
+	extends LegacyDecisionEvidenceInput {
+	id: string;
+	authority: "legacy";
+}
+
+function parseLegacyDecisionEvidence(
+	row: DecisionEvidenceRow,
+	organizationId: string,
+): LegacyDecisionEvidenceRecord {
+	if (
+		row.organizationId !== organizationId ||
+		row.authority !== "legacy" ||
+		row.workflowId !== null ||
+		!row.legacyApprovalRequestId ||
+		row.stageId !== null ||
+		row.assignmentId !== null ||
+		row.reviewedBindingId !== null ||
+		row.schemaVersion !== ABSENCE_EVIDENCE_SCHEMA_VERSION ||
+		!Array.isArray(row.eventIds) ||
+		row.eventIds.length !== 0 ||
+		!isRecord(row.result) ||
+		!isRecord(row.labels) ||
+		!nullableString(row.labels.actorName)
+	) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "legacy_decision_evidence",
+		});
+	}
+	return {
+		id: row.id,
+		authority: "legacy",
+		organizationId: row.organizationId,
+		submittedRevisionId: row.submittedRevisionId,
+		operationKind: row.operationKind,
+		receipt: {
+			idempotencyKey: row.receiptIdempotencyKey,
+			actorFingerprint: row.receiptActorFingerprint,
+			commandFingerprint: row.receiptCommandFingerprint,
+		},
+		action: row.action,
+		legacy: {
+			approvalRequestId: row.legacyApprovalRequestId,
+			chainStageId: row.legacyChainStageId,
+			observedWorkflowId: row.observedWorkflowId,
+		},
+		assignmentOutcome: row.assignmentOutcome,
+		requestOutcome: row.requestOutcome,
+		actor: {
+			kind: row.actorKind,
+			employeeId: row.actorEmployeeId,
+			userId: row.actorUserId,
+		},
+		decidedAt: instantFromDate(row.decidedAt),
+		result: row.result as JsonObject,
+		labels: { actorName: row.labels.actorName },
+	};
+}
+
+/**
+ * Written in the transaction that commits the legacy mutation (and its shadow
+ * observation). The row doubles as the legacy operation receipt: one per
+ * decided legacy request, so a concurrent second writer fails and rolls back.
+ */
+export async function recordLegacyDecisionEvidence(
+	database: ApprovalDatabase,
+	input: LegacyDecisionEvidenceInput,
+): Promise<LegacyDecisionEvidenceRecord> {
+	const inserted = await database
+		.insert(approvalDecisionEvidence)
+		.values({
+			organizationId: input.organizationId,
+			authority: "legacy",
+			workflowId: null,
+			legacyApprovalRequestId: input.legacy.approvalRequestId,
+			legacyChainStageId: input.legacy.chainStageId,
+			observedWorkflowId: input.legacy.observedWorkflowId,
+			submittedRevisionId: input.submittedRevisionId,
+			operationKind: input.operationKind,
+			receiptIdempotencyKey: input.receipt.idempotencyKey,
+			receiptActorFingerprint: input.receipt.actorFingerprint,
+			receiptCommandFingerprint: input.receipt.commandFingerprint,
+			action: input.action,
+			stageId: null,
+			assignmentId: null,
+			assignmentOutcome: input.assignmentOutcome,
+			requestOutcome: input.requestOutcome,
+			actorKind: input.actor.kind,
+			actorEmployeeId: input.actor.employeeId,
+			actorUserId: input.actor.userId,
+			decidedAt: dateFromInstant(input.decidedAt),
+			eventIds: [],
+			result: input.result,
+			labels: input.labels,
+			reviewedBindingId: null,
+			schemaVersion: ABSENCE_EVIDENCE_SCHEMA_VERSION,
+		})
+		.returning();
+	const row = inserted[0];
+	if (inserted.length !== 1 || !row) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "legacy_decision_evidence",
+		});
+	}
+	return parseLegacyDecisionEvidence(row, input.organizationId);
+}
+
+export async function listLegacyDecisionEvidence(
+	database: ApprovalDatabase,
+	input: { organizationId: string; submittedRevisionId: string },
+): Promise<LegacyDecisionEvidenceRecord[]> {
+	const rows = await database
+		.select()
+		.from(approvalDecisionEvidence)
+		.where(
+			and(
+				eq(approvalDecisionEvidence.organizationId, input.organizationId),
+				eq(approvalDecisionEvidence.authority, "legacy"),
+				eq(
+					approvalDecisionEvidence.submittedRevisionId,
+					input.submittedRevisionId,
+				),
+			),
+		)
+		.orderBy(
+			asc(approvalDecisionEvidence.decidedAt),
+			asc(approvalDecisionEvidence.id),
+		)
+		.limit(64);
+	return rows.map((row) =>
+		parseLegacyDecisionEvidence(row, input.organizationId),
+	);
+}
+
+/** The committed legacy operation for one exact legacy request, if any. */
+export async function findLegacyDecisionEvidenceByRequest(
+	database: ApprovalDatabase,
+	input: { organizationId: string; approvalRequestId: string },
+): Promise<LegacyDecisionEvidenceRecord | null> {
+	const rows = await database
+		.select()
+		.from(approvalDecisionEvidence)
+		.where(
+			and(
+				eq(approvalDecisionEvidence.organizationId, input.organizationId),
+				eq(approvalDecisionEvidence.authority, "legacy"),
+				eq(
+					approvalDecisionEvidence.legacyApprovalRequestId,
+					input.approvalRequestId,
+				),
+			),
+		)
+		.limit(2);
+	if (rows.length > 1) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "legacy_decision_evidence",
+		});
+	}
+	const row = rows[0];
+	return row ? parseLegacyDecisionEvidence(row, input.organizationId) : null;
 }

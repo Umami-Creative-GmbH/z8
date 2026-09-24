@@ -102,4 +102,5 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	src/lib/employee-lifecycle/commands.integration.test.ts \
 	src/lib/employee-lifecycle/employment-periods.integration.test.ts \
 	src/lib/employee-lifecycle/access.integration.test.ts \
-	src/lib/employee-lifecycle/projection-guards.integration.test.ts
+	src/lib/employee-lifecycle/projection-guards.integration.test.ts \
+	src/lib/approvals/evidence/legacy-absence.integration.test.ts

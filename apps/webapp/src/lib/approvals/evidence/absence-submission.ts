@@ -41,7 +41,8 @@ export interface CanonicalAbsenceSubmissionEvidenceInput {
 	canonicalRecord: { id: string; startAt: Date; endAt: Date };
 }
 
-async function loadEmployeeLabel(
+/** Organization-scoped role identity and its request-time label. */
+export async function loadEmployeeLabel(
 	database: ApprovalDatabase,
 	organizationId: string,
 	where: { employeeId: string } | { userId: string },
