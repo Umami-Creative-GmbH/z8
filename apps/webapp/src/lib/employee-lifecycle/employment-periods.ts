@@ -7,6 +7,21 @@ import type { LifecycleTransaction } from "./types";
 
 type CoverageDatabase = Pick<typeof rootDatabase, "select">;
 
+/**
+ * An effective departure ended this employee's employment and no rehire has
+ * opened a new period. Membership or provisioning changes cannot reactivate
+ * such an employee (migration 0071 enforces this on the projection).
+ */
+export async function hasEndedEmploymentWithoutRehire(
+	database: Pick<typeof rootDatabase, "execute">,
+	input: { organizationId: string; employeeId: string },
+): Promise<boolean> {
+	const result = await database.execute<{ ended: boolean }>(
+		sql`SELECT employee_employment_ended_without_rehire(${input.organizationId}, ${input.employeeId}::uuid) AS ended`,
+	);
+	return result.rows[0]?.ended === true;
+}
+
 export class EmploymentPeriodError extends Error {
 	constructor(readonly code: "employment_period_closed" | "terms_before_period_start") {
 		super(code);

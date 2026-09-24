@@ -498,6 +498,13 @@
       "when": 1790252399545,
       "tag": "0070_employee_departure_access",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1790252861365,
+      "tag": "0071_employee_employment_reactivation_guard",
+      "breakpoints": true
     }
   ]
 }
