@@ -328,11 +328,33 @@ async function recordClockOutReview(
 				affectedEndAt: cutoff,
 			})
 			.onConflictDoNothing();
+		if (result.postprocess) {
+			// Committed with the clock-out, so its side effects are never lost.
+			await tx
+				.insert(employeeDepartureTask)
+				.values({
+					...scope,
+					kind: "clock_postprocess",
+					dedupeKey: `clock-postprocess:${clockOutActionId}`,
+					payload: {
+						workPeriodId: result.workPeriodId,
+						clockOutEntryId: result.clockOutEntryId,
+						...result.postprocess,
+					},
+				})
+				.onConflictDoNothing();
+		}
 		return;
 	}
 	if (result.kind === "repair_required") {
 		// Unknown start is unbounded below until repaired, so payroll
-		// completeness checks can never skip it at a range boundary.
+		// completeness checks can never skip it at a range boundary. A period
+		// that began after the cutoff is covered from the cutoff to its start.
+		const periodStart = result.activePeriodStartedAt ?? null;
+		const affectedStartAt =
+			periodStart && periodStart.getTime() > cutoff.getTime() ? cutoff : periodStart;
+		const affectedEndAt =
+			periodStart && periodStart.getTime() > cutoff.getTime() ? periodStart : cutoff;
 		await tx
 			.insert(employeeDepartureReview)
 			.values({
@@ -344,8 +366,8 @@ async function recordClockOutReview(
 					clockOutActionId,
 					cutoff: cutoff.toISOString(),
 				},
-				affectedStartAt: result.activePeriodStartedAt ?? null,
-				affectedEndAt: cutoff,
+				affectedStartAt,
+				affectedEndAt,
 			})
 			.onConflictDoNothing();
 		await tx

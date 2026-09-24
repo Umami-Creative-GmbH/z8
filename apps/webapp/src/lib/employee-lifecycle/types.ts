@@ -47,7 +47,13 @@ export type ExecuteDepartureResult =
 
 export type DepartureClockOutResult =
 	| { kind: "not_running" }
-	| { kind: "closed"; workPeriodId: string; clockOutEntryId: string }
+	| {
+			kind: "closed";
+			workPeriodId: string;
+			clockOutEntryId: string;
+			/** Evidence for the durable post-clock-out work (breaks, compliance, surcharges). */
+			postprocess?: Record<string, unknown>;
+	  }
 	| { kind: "repair_required"; workPeriodId: string | null; reason: string };
 
 /**
