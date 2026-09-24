@@ -17,6 +17,7 @@ import type {
 	ApprovalWorkflowSourceLoader,
 	ApprovalWriteGate,
 } from "./ports";
+import { APPROVAL_ESCALATION_SYSTEM_ID } from "./ports";
 import type { ApprovalWorkflowRepository } from "./repository";
 import type { ApprovalWorkflowCommand } from "./state-machine";
 import {
@@ -258,6 +259,13 @@ function allowsAuthorization(
 	) {
 		return false;
 	}
+	if (
+		request.principal.kind === "system" &&
+		request.principal.systemId === APPROVAL_ESCALATION_SYSTEM_ID
+	) {
+		// The narrow scheduled capability replaces an overdue assignment only.
+		return authorization === "system" && request.command.type === "escalate";
+	}
 	if (authorization === "active_assignment") {
 		return (
 			request.principal.kind === "employee" &&
@@ -475,11 +483,19 @@ export function createApprovalTransitionEngine(
 					mode: gate.mode,
 				});
 			}
+			const systemCapability =
+				request.principal.kind === "system" &&
+				request.principal.systemId === APPROVAL_ESCALATION_SYSTEM_ID
+					? APPROVAL_ESCALATION_SYSTEM_ID
+					: undefined;
 			const receipt = {
 				organizationId: request.organizationId,
 				workflowId: request.workflowId,
 				idempotencyKey: request.idempotencyKey,
-				actorFingerprint: fingerprintApprovalCommandActor(actor),
+				actorFingerprint: fingerprintApprovalCommandActor(
+					actor,
+					systemCapability,
+				),
 				commandFingerprint: fingerprintApprovalWorkflowCommand(request.command),
 			};
 			const claim = await context.repository.claimCommand(receipt);
@@ -629,6 +645,7 @@ export function createApprovalTransitionEngine(
 					{
 						receipt,
 						receiptActor: commandActor.kind === "system" ? actor : undefined,
+						...(systemCapability ? { systemCapability } : {}),
 						actor: commandActor,
 					},
 				);

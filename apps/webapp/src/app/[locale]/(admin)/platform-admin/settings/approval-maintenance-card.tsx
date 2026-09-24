@@ -100,6 +100,14 @@ export function ApprovalMaintenanceCard() {
 						"Review binding",
 					),
 				})),
+				...result.data.escalationTransfers.map((id) => ({
+					id,
+					kind: "escalation_transfer",
+					label: t(
+						"admin:admin.settings.approvalMaintenance.escalationTransfer",
+						"Escalation transfer",
+					),
+				})),
 			]
 		: [];
 
