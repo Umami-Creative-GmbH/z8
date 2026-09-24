@@ -2,9 +2,9 @@
 
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { useTranslate } from "@tolgee/react";
+import { useTolgee } from "@tolgee/react";
 import { useRouter } from "next/navigation";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
 	createServerActionSkewHandler,
@@ -23,24 +23,19 @@ function isRetryable(error: unknown) {
 
 export function QueryProvider({ children }: QueryProviderProps) {
 	const router = useRouter();
-	const { t } = useTranslate();
-
-	const translateRef = useRef(t);
-	useEffect(() => {
-		translateRef.current = t;
-	}, [t]);
+	// Stable instance; translating at notify time picks up the current language.
+	const tolgee = useTolgee();
 
 	const [handleSkewError] = useState(() =>
 		createServerActionSkewHandler(() => {
-			const translate = translateRef.current;
-			toast(translate("common.deployment.skew.title", "Z8 was updated"), {
-				description: translate(
+			toast(tolgee.t("common.deployment.skew.title", "Z8 was updated"), {
+				description: tolgee.t(
 					"common.deployment.skew.description",
 					"Reload the page to continue. Your last action was not saved.",
 				),
 				duration: Infinity,
 				action: {
-					label: translate("common.sw.update.reload", "Reload"),
+					label: tolgee.t("common.sw.update.reload", "Reload"),
 					onClick: () => window.location.reload(),
 				},
 			});

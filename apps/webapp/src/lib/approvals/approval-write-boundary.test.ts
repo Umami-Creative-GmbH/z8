@@ -4881,7 +4881,7 @@ db.delete(approvalOutbox);`,
 					uncertainty: "dynamic_payload",
 				},
 			],
-			"src/lib/time-tracking/clocking-service.ts": [
+			"src/lib/time-tracking/clocking-core.ts": [
 				{
 					columns: [],
 					functionName: "insertEntry",

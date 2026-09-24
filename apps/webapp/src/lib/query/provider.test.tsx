@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("sonner", () => ({ toast: mocks.toast }));
 vi.mock("@tanstack/react-query-devtools", () => ({ ReactQueryDevtools: () => null }));
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+	useTolgee: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 vi.mock("next/navigation", async (importOriginal) => ({
 	...(await importOriginal<typeof import("next/navigation")>()),
