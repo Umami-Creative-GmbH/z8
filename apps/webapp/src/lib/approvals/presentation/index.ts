@@ -132,3 +132,9 @@ export async function prepareApprovalPresentation(input: {
 		reviewUrl: `${getDefaultAppBaseUrl()}/approvals/inbox`,
 	};
 }
+
+export {
+	type AbsenceReviewEvidence,
+	buildAbsenceReviewSections,
+	prepareAbsenceReviewEvidence,
+} from "./absence-review";

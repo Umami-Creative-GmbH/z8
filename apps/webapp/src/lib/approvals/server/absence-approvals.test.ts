@@ -66,6 +66,7 @@ vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	isEligibleManagerForApprovalRequest,
 }));
 
+import { ApprovalEvidenceError } from "@/lib/approvals/evidence/errors";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
 import {
@@ -121,6 +122,29 @@ describe("absence canonical decision errors", () => {
 		const engineError = new ApprovalTransitionEngineError(code);
 
 		expect(translateAbsenceDecisionError(engineError)).toBe(engineError);
+	});
+
+	it.each([
+		"evidence_required",
+		"evidence_incomplete",
+		"material_change",
+		"binding_mismatch",
+	] as const)("reports the %s evidence hold as a review conflict", (code) => {
+		const translated = translateAbsenceDecisionError(
+			new ApprovalEvidenceError(code),
+		);
+
+		expect(translated).toBeInstanceOf(ConflictError);
+		expect(translated).toMatchObject({
+			conflictType: "approval_evidence",
+			details: { code },
+		});
+	});
+
+	it("keeps evidence integrity contradictions internal", () => {
+		const error = new ApprovalEvidenceError("invariant");
+
+		expect(translateAbsenceDecisionError(error)).toBe(error);
 	});
 });
 

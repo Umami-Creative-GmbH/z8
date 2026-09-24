@@ -111,6 +111,46 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		expect(structuredClone(result)).toEqual(result);
 	});
 
+	it("inserts canonical absence evidence and mirrors the server-side material-change hold", async () => {
+		const entity = { id: "absence-1", approvalWorkflowId: "workflow-1" };
+		const loadAbsenceReviewEvidence = vi.fn(async () => ({
+			status: "not_captured" as const,
+			held: true,
+		}));
+
+		const result = await getApprovalInboxDetailFromRequest({
+			request,
+			handler: createHandler({ ...createDetail(), entity } as never),
+			loadAbsenceReviewEvidence,
+		});
+
+		expect(loadAbsenceReviewEvidence).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			entity,
+		});
+		expect(result.sections.map((section) => section.type)).toEqual([
+			"key_value",
+			"callout",
+			"timeline",
+		]);
+		expect(result.actions).toMatchObject({
+			canApprove: false,
+			canReject: false,
+			canBulkApprove: false,
+		});
+		expect(structuredClone(result)).toEqual(result);
+	});
+
+	it("leaves absence actions unchanged when no canonical evidence applies", async () => {
+		const result = await getApprovalInboxDetailFromRequest({
+			request,
+			handler: createHandler(),
+			loadAbsenceReviewEvidence: vi.fn(async () => null),
+		});
+
+		expect(result.actions.canApprove).toBe(true);
+	});
+
 	it("provides database services required by registered detail handlers", async () => {
 		const detail = createDetail();
 		const handler = {

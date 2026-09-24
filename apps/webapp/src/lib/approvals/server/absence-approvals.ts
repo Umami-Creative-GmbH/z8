@@ -52,6 +52,7 @@ import type { ApprovalActionOptions } from "../domain/types";
 import { captureAbsenceLegacyApprovalState } from "../domain-adapters/absence-legacy-state";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
+import { ApprovalEvidenceError } from "../evidence/errors";
 import {
 	ApprovalAuditLogger,
 	createApprovalAuditLogger,
@@ -80,7 +81,27 @@ import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "./wor
 
 const logger = createLogger("AbsenceApprovals");
 
+const EVIDENCE_REVIEW_MESSAGES = {
+	evidence_required:
+		"The facts submitted for this request were not captured. Review is required before a decision can be recorded.",
+	evidence_incomplete:
+		"The evidence for this decision is incomplete. Review is required before a decision can be recorded.",
+	material_change:
+		"This request changed after it was submitted. It must be cancelled and resubmitted before a decision can be recorded.",
+	binding_mismatch:
+		"This review no longer matches the current request. Reopen the request to review its current details.",
+} as const;
+
 export function translateAbsenceDecisionError(error: unknown): unknown {
+	if (error instanceof ApprovalEvidenceError) {
+		// Integrity contradictions stay infrastructure-visible errors.
+		if (error.code === "invariant") return error;
+		return new ConflictError({
+			message: EVIDENCE_REVIEW_MESSAGES[error.code],
+			conflictType: "approval_evidence",
+			details: { code: error.code },
+		});
+	}
 	if (!(error instanceof ApprovalTransitionEngineError)) return error;
 
 	switch (error.code) {
@@ -122,6 +143,8 @@ interface ExecuteAbsenceDecisionInput {
 	approvalRequestId?: string;
 	action: "approve" | "reject";
 	reason?: string;
+	/** Opaque reviewed-view handle, validated inside the canonical decision. */
+	reviewedBindingId?: string;
 	query?: ApprovalDbService["query"];
 	processLegacy(
 		dbService: ApprovalDbService,
@@ -274,6 +297,10 @@ export async function executeAbsenceDecisionInTransaction(
 			gate.mode === "shadow" ||
 			gate.mode === "ready"
 		) {
+			if (input.reviewedBindingId !== undefined) {
+				// Legacy authority has no reviewed-binding validation; never ignore one.
+				throw new ApprovalEvidenceError("binding_mismatch");
+			}
 			let expectedVersion: number | null = null;
 			if (gate.mode !== "legacy") {
 				const observedWorkflow =
@@ -383,6 +410,9 @@ export async function executeAbsenceDecisionInTransaction(
 					idempotencyKey: `absence:${input.organizationId}:${workflow.id}:${input.approvalRequestId}:${input.action}:${rejectionReasonFingerprint(input.reason)}`,
 					principal: { kind: "employee", userId: currentEmployee.userId },
 					command,
+					...(input.reviewedBindingId === undefined
+						? {}
+						: { reviewedBindingId: input.reviewedBindingId }),
 				},
 			);
 		return {
@@ -1393,6 +1423,9 @@ function authenticatedAbsenceDecisionEffect(
 						approvalRequestId: options?.approvalRequestId,
 						action,
 						reason,
+						...(options?.reviewedBindingId === undefined
+							? {}
+							: { reviewedBindingId: options.reviewedBindingId }),
 						query: dbService.query,
 						captureLegacyState: captureAbsenceLegacyApprovalState,
 						nowInstant: () => systemClock.nowInstant(),

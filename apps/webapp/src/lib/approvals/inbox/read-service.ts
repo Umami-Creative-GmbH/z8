@@ -10,6 +10,10 @@ import type {
 	UnifiedApprovalItem,
 } from "@/lib/approvals/domain/types";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import {
+	buildAbsenceReviewSections,
+	prepareAbsenceReviewEvidence,
+} from "../presentation/absence-review";
 import type { TimeCorrectionMetadataChanges } from "../server/time-correction-review-metadata";
 import { ApprovalInboxBadRequestError } from "./current-actor";
 import {
@@ -69,6 +73,7 @@ interface GetApprovalInboxDetailFromRequestInput {
 		approverId: string;
 	};
 	handler: ApprovalTypeHandler;
+	loadAbsenceReviewEvidence?: typeof prepareAbsenceReviewEvidence;
 }
 
 const DEFAULT_LIMIT = 50;
@@ -267,6 +272,7 @@ export async function getApprovalInboxCounts(
 export async function getApprovalInboxDetailFromRequest({
 	request,
 	handler,
+	loadAbsenceReviewEvidence = prepareAbsenceReviewEvidence,
 }: GetApprovalInboxDetailFromRequestInput): Promise<ApprovalInboxDetailResult> {
 	if (!isSupportedInboxType(request.entityType)) {
 		throw new ApprovalInboxBadRequestError("Unsupported approval type");
@@ -291,13 +297,34 @@ export async function getApprovalInboxDetailFromRequest({
 		handler,
 	};
 	const item = toInboxItem(source, detail.approval, undefined);
-	const actions = isOrphanedTimeCorrectionDetail(detail)
+	let actions = isOrphanedTimeCorrectionDetail(detail)
 		? { ...item.capabilities, canApprove: false, canBulkApprove: false }
 		: item.capabilities;
+	const sections = buildDetailSections(detail);
+
+	if (request.entityType === "absence_entry") {
+		const evidence = await loadAbsenceReviewEvidence({
+			organizationId: request.organizationId,
+			entity: detail.entity,
+		});
+		if (evidence) {
+			const review = buildAbsenceReviewSections(evidence);
+			sections.splice(1, 0, ...review.sections);
+			if (review.decisionsBlocked) {
+				// The server holds these decisions too; the UI only mirrors that.
+				actions = {
+					...actions,
+					canApprove: false,
+					canReject: false,
+					canBulkApprove: false,
+				};
+			}
+		}
+	}
 
 	return {
 		item,
-		sections: buildDetailSections(detail),
+		sections,
 		actions,
 	};
 }

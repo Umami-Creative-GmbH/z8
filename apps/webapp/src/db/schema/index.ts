@@ -9,6 +9,7 @@ export * from "./access-policy";
 export * from "./app-auth";
 export * from "./approval";
 export * from "./approval-escalation";
+export * from "./approval-evidence";
 export * from "./approval-policy";
 export * from "./approval-workflow";
 export * from "./audit";
