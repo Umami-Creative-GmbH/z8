@@ -819,7 +819,7 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			table: "work_period",
 		},
 	],
-	"src/lib/time-tracking/clocking-service.ts": [
+	"src/lib/time-tracking/clocking-core.ts": [
 		{
 			columns: [],
 			functionName: "insertEntry",

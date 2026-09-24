@@ -12,10 +12,7 @@ import { employee, timeEntry, workPeriod } from "@/db/schema";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "./blockchain";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
-import type {
-	WorkTransactionClient,
-	WorkTransactionContext,
-} from "./web-clock-out-transaction";
+import type { WorkTransactionContext } from "./web-clock-out-transaction";
 
 export class ClockingConflictError extends Error {
 	constructor(message: string) {
@@ -419,7 +416,14 @@ export function createClockingService(deps: ClockingDependencies) {
 
 export type ClockingTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-export function createDatabaseClockingStore(tx: WorkTransactionClient): ClockingStore {
+// Same shape as WorkTransactionClient, derived here from `db.transaction` so the
+// approval write-boundary scanner (per-file analysis) still sees these writes.
+type ClockingStoreClient = Pick<
+	ClockingTransaction,
+	"execute" | "query" | "select" | "insert" | "update" | "delete"
+>;
+
+export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingStore {
 	return {
 		transaction: tx,
 		lockEmployee: async (employeeId) => {
