@@ -14,6 +14,8 @@ import {
 } from "@/lib/effect/errors";
 import { onTravelExpenseApproved, onTravelExpenseRejected } from "@/lib/notifications/triggers";
 import type { ApprovalActionOptions } from "../domain/types";
+import { loadLegacyTravelExpenseSubmittedRevision } from "../evidence/store";
+import { compareTravelExpenseWithSubmittedRevision } from "../evidence/travel-expense-submission";
 import {
 	type ResolvePolicyAndCreateApprovalResult,
 	resolvePolicyAndCreateApproval,
@@ -222,6 +224,32 @@ export function preflightTravelExpenseDecision(
 					new ConflictError({
 						message: "Only submitted claims can be decided",
 						conflictType: "travel_expense_claim_status",
+					}),
+				),
+			);
+		}
+
+		// A frozen submission is always enforced: a changed receipt set, amount
+		// or date needs a new claim, not a decision on different facts.
+		const comparison = yield* _(
+			dbService.query("compareTravelExpenseSubmittedRevision", async () => {
+				const revision = await loadLegacyTravelExpenseSubmittedRevision(dbService.db, {
+					organizationId: currentEmployee.organizationId,
+					claimId,
+				});
+				return revision
+					? await compareTravelExpenseWithSubmittedRevision(dbService.db, revision)
+					: null;
+			}),
+		);
+		if (comparison?.kind === "material_change") {
+			return yield* _(
+				Effect.fail(
+					new ConflictError({
+						message:
+							"This claim changed after it was submitted. It cannot be decided; the employee must submit a new claim.",
+						conflictType: "approval_evidence",
+						details: { code: "material_change", changedFields: comparison.changedFields },
 					}),
 				),
 			);

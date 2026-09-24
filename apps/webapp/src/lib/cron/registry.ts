@@ -17,6 +17,7 @@ import type { ApprovalEscalationJobResult } from "@/lib/approvals/escalation/sch
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { SCIMMaintenanceResult } from "@/lib/jobs/scim-maintenance";
+import type { TravelExpenseReceiptCleanupJobResult } from "@/lib/jobs/travel-expense-receipt-cleanup";
 
 // ============================================
 // TYPES
@@ -316,6 +317,19 @@ export const CRON_JOBS = {
 				"@/lib/jobs/execution-cleanup"
 			);
 			return runExecutionCleanup();
+		},
+		defaultJobOptions: { attempts: 2, priority: 9 },
+	},
+
+	"cron:travel-expense-receipt-cleanup": {
+		schedule: "*/15 * * * *", // Every 15 minutes
+		description:
+			"Delete private receipt objects that were rejected, failed or abandoned before attaching to a travel expense claim",
+		processor: async (): Promise<TravelExpenseReceiptCleanupJobResult> => {
+			const { runTravelExpenseReceiptCleanupJob } = await import(
+				"@/lib/jobs/travel-expense-receipt-cleanup"
+			);
+			return runTravelExpenseReceiptCleanupJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
 	},

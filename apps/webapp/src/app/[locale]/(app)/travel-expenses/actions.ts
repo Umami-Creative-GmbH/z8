@@ -4,7 +4,11 @@ import { and, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { employee, project, travelExpenseClaim } from "@/db/schema";
+import { employee, project, travelExpenseAttachment, travelExpenseClaim } from "@/db/schema";
+import {
+	ApprovalEvidenceError,
+	captureTravelExpenseSubmissionEvidence,
+} from "@/lib/approvals/evidence";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { processApproval } from "@/lib/approvals/server/shared";
 import {
@@ -14,6 +18,7 @@ import {
 	preflightTravelExpenseDecision,
 } from "@/lib/approvals/server/travel-expense-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
+import { acquireApprovalWriteLock } from "@/lib/approvals/workflow/cutover";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { getAuthContext } from "@/lib/auth-helpers";
 import {
@@ -126,6 +131,10 @@ export async function createTravelExpenseDraft(
 				status: "draft",
 				tripStart,
 				tripEnd,
+				// The entered logical dates and the zone that derived the bounds above.
+				tripStartDate: tripStartDate.toString(),
+				tripEndDate: tripEndDate.toString(),
+				tripDateTimeZone: timezone,
 				destinationCity: input.destinationCity ?? null,
 				destinationCountry: input.destinationCountry ?? null,
 				projectId,
@@ -184,9 +193,6 @@ export async function submitTravelExpenseClaim(input: {
 					eq(travelExpenseClaim.id, input.claimId),
 					eq(travelExpenseClaim.organizationId, currentEmployee.organizationId),
 				),
-				with: {
-					attachments: true,
-				},
 			}),
 			db.query.employee.findFirst({
 				where: and(
@@ -212,13 +218,6 @@ export async function submitTravelExpenseClaim(input: {
 			return { success: false, error: "Only draft claims can be submitted" };
 		}
 
-		if (claim.type === "receipt" && claim.attachments.length < 1) {
-			return {
-				success: false,
-				error: TRAVEL_EXPENSE_VALIDATION_MESSAGES.RECEIPT_ATTACHMENT_REQUIRED,
-			};
-		}
-
 		if (!currentEmployeeRecord) {
 			return { success: false, error: "Employee not found" };
 		}
@@ -235,6 +234,58 @@ export async function submitTravelExpenseClaim(input: {
 
 		const submittedAt = new Date();
 		const submission = await db.transaction(async (tx) => {
+			const approvalDbService = {
+				db: tx,
+				query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
+			} satisfies ApprovalDbService;
+			// Shared rollout lock first, so the evidence mode read below is stable.
+			await acquireApprovalWriteLock(approvalDbService, {
+				organizationId: currentEmployee.organizationId,
+				workflowType: "travel_expense",
+			});
+
+			// Receipt finalization takes the same row lock: an upload either
+			// attached before this point or is rejected after submission.
+			const [lockedClaim] = await tx
+				.select({
+					id: travelExpenseClaim.id,
+					employeeId: travelExpenseClaim.employeeId,
+					status: travelExpenseClaim.status,
+					type: travelExpenseClaim.type,
+					calculatedAmount: travelExpenseClaim.calculatedAmount,
+				})
+				.from(travelExpenseClaim)
+				.where(
+					and(
+						eq(travelExpenseClaim.id, claim.id),
+						eq(travelExpenseClaim.organizationId, currentEmployee.organizationId),
+					),
+				)
+				.for("update");
+			if (
+				!lockedClaim ||
+				lockedClaim.employeeId !== currentEmployee.id ||
+				lockedClaim.status !== "draft"
+			) {
+				return { kind: "not_draft" } as const;
+			}
+
+			const attachments = await tx
+				.select({ id: travelExpenseAttachment.id })
+				.from(travelExpenseAttachment)
+				.where(
+					and(
+						eq(travelExpenseAttachment.claimId, lockedClaim.id),
+						eq(
+							travelExpenseAttachment.organizationId,
+							currentEmployee.organizationId,
+						),
+					),
+				);
+			if (lockedClaim.type === "receipt" && attachments.length < 1) {
+				return { kind: "receipt_required" } as const;
+			}
+
 			const [submittedClaim] = await tx
 				.update(travelExpenseClaim)
 				.set({
@@ -246,7 +297,7 @@ export async function submitTravelExpenseClaim(input: {
 				})
 				.where(
 					and(
-						eq(travelExpenseClaim.id, claim.id),
+						eq(travelExpenseClaim.id, lockedClaim.id),
 						eq(
 							travelExpenseClaim.organizationId,
 							currentEmployee.organizationId,
@@ -257,32 +308,42 @@ export async function submitTravelExpenseClaim(input: {
 				.returning({ id: travelExpenseClaim.id });
 
 			if (!submittedClaim) {
-				return null;
+				return { kind: "not_draft" } as const;
 			}
-
-			const approvalDbService = {
-				db: tx,
-				query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
-			} satisfies ApprovalDbService;
 
 			const approvalResult = await Effect.runPromise(
 				createTravelExpenseApprovalWorkflow(approvalDbService, {
 					claim: {
-						id: claim.id,
+						id: lockedClaim.id,
 						organizationId: currentEmployee.organizationId,
 						employeeId: currentEmployee.id,
-						calculatedAmount: claim.calculatedAmount,
+						calculatedAmount: lockedClaim.calculatedAmount,
 						employee: { teamId: currentEmployeeRecord.teamId ?? null },
 					},
 					defaultApproverId: approverId,
 				}),
 			);
 
-			return { submittedClaim, approvalResult };
+			// Freezes the submitted facts and receipt manifest; a failure rolls
+			// back the whole submission.
+			await captureTravelExpenseSubmissionEvidence(tx, {
+				organizationId: currentEmployee.organizationId,
+				claimId: lockedClaim.id,
+				submitter: { employeeId: currentEmployee.id, userId: authContext.user.id },
+				routing: approvalResult,
+			});
+
+			return { kind: "submitted", submittedClaim, approvalResult } as const;
 		});
 
-		if (!submission) {
+		if (submission.kind === "not_draft") {
 			return { success: false, error: "Only draft claims can be submitted" };
+		}
+		if (submission.kind === "receipt_required") {
+			return {
+				success: false,
+				error: TRAVEL_EXPENSE_VALIDATION_MESSAGES.RECEIPT_ATTACHMENT_REQUIRED,
+			};
 		}
 
 		logAudit({
@@ -312,8 +373,26 @@ export async function submitTravelExpenseClaim(input: {
 			},
 		};
 	} catch (error) {
+		if (error instanceof ApprovalEvidenceError && error.code === "evidence_incomplete") {
+			logger.warn(
+				{ claimId: input.claimId, details: error.details },
+				"Travel expense submission held: submission evidence is incomplete",
+			);
+			return { success: false, error: submissionEvidenceMessage(error.details.field) };
+		}
 		logger.error({ error }, "Failed to submit travel expense claim");
 		return { success: false, error: "Failed to submit travel expense claim" };
+	}
+}
+
+function submissionEvidenceMessage(field: string | undefined): string {
+	switch (field) {
+		case "trip_dates":
+			return "This claim was created before its trip dates were recorded as entered. Create a new claim to submit it.";
+		case "receipt_checksum":
+			return "A receipt on this claim was uploaded before receipt content was verified. Create a new claim with the receipts to submit it.";
+		default:
+			return "This claim cannot be submitted because required submission evidence is incomplete.";
 	}
 }
 

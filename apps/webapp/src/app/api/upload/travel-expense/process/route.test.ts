@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
@@ -8,11 +9,14 @@ const mockState = vi.hoisted(() => ({
 	publicSend: vi.fn(),
 	uploadPrivateObject: vi.fn(),
 	claimFindFirst: vi.fn(),
-	insert: vi.fn(),
-	values: vi.fn(),
-	returning: vi.fn(),
 	deleteCommand: vi.fn(),
 	getCommand: vi.fn(),
+	calls: [] as string[],
+	stage: vi.fn(),
+	finalize: vi.fn(),
+	markFailed: vi.fn(),
+	runCleanup: vi.fn(),
+	deletePrivateObject: vi.fn(),
 }));
 
 vi.mock("next/server", () => ({
@@ -73,6 +77,15 @@ vi.mock("@/lib/storage/s3-client", () => ({
 
 vi.mock("@/lib/storage/export-s3-client", () => ({
 	uploadPrivateObject: mockState.uploadPrivateObject,
+	deletePrivateObject: mockState.deletePrivateObject,
+}));
+
+vi.mock("@/lib/travel-expenses/receipt-upload", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/travel-expenses/receipt-upload")>()),
+	stageTravelExpenseReceiptUpload: mockState.stage,
+	finalizeTravelExpenseReceiptUpload: mockState.finalize,
+	markTravelExpenseReceiptUploadFailed: mockState.markFailed,
+	runTravelExpenseReceiptCleanup: mockState.runCleanup,
 }));
 
 vi.mock("@/db/schema", () => ({
@@ -96,7 +109,6 @@ vi.mock("@/db", () => ({
 		query: {
 			travelExpenseClaim: { findFirst: mockState.claimFindFirst },
 		},
-		insert: mockState.insert,
 	},
 }));
 
@@ -123,20 +135,34 @@ describe("travel expense upload processing", () => {
 
 			return Promise.resolve({});
 		});
-		mockState.uploadPrivateObject.mockResolvedValue({
-			bucket: "private-bucket",
+		mockState.calls = [];
+		mockState.stage.mockImplementation(async () => {
+			mockState.calls.push("stage");
 		});
-		mockState.returning.mockResolvedValue([
-			{
-				id: "attachment_1",
-				fileName: "receipt.pdf",
-				mimeType: "application/pdf",
-				sizeBytes: 4,
-				storageKey: "travel-expenses/org_1/claim_1/123-receipt.pdf",
-			},
-		]);
-		mockState.values.mockReturnValue({ returning: mockState.returning });
-		mockState.insert.mockReturnValue({ values: mockState.values });
+		mockState.uploadPrivateObject.mockImplementation(async () => {
+			mockState.calls.push("upload");
+			return { bucket: "private-bucket", versionId: "v1" };
+		});
+		mockState.finalize.mockImplementation(async (_db, input) => {
+			mockState.calls.push("finalize");
+			return {
+				kind: "attached",
+				attachment: {
+					id: input.attachmentId,
+					fileName: input.fileName,
+					mimeType: input.mimeType,
+					sizeBytes: input.sizeBytes,
+					storageKey: input.storageKey,
+				},
+			};
+		});
+		mockState.markFailed.mockResolvedValue(undefined);
+		mockState.runCleanup.mockResolvedValue({
+			claimed: 1,
+			deleted: 1,
+			released: 0,
+			failed: 0,
+		});
 	});
 
 	it("reads and deletes temporary uploads from public S3 but stores final receipts in private S3", async () => {
@@ -154,24 +180,44 @@ describe("travel expense upload processing", () => {
 			Bucket: "public-temp-bucket",
 			Key: "tus-user_1-upload",
 		});
+		const checksum = createHash("sha256")
+			.update(Buffer.from([1, 2, 3, 4]))
+			.digest("hex");
 		expect(mockState.uploadPrivateObject).toHaveBeenCalledWith(
 			"org_1",
 			expect.stringMatching(
-				/^travel-expenses\/org_1\/claim_1\/\d+-receipt\.pdf$/,
+				/^travel-expenses\/org_1\/claim_1\/[0-9a-f-]{36}-receipt\.pdf$/,
 			),
 			expect.any(Buffer),
 			"application/pdf",
 			expect.objectContaining({
 				"uploaded-by": "emp_1",
 				"original-key": "tus-user_1-upload",
+				"content-sha256": checksum,
 			}),
 		);
-		expect(mockState.values).toHaveBeenCalledWith(
+		const [, staged] = mockState.stage.mock.calls[0] ?? [];
+		expect(staged).toEqual(
 			expect.objectContaining({
-				storageProvider: "s3-private",
-				storageBucket: "private-bucket",
+				organizationId: "org_1",
+				claimId: "claim_1",
+				uploadedBy: "emp_1",
 			}),
 		);
+		expect(staged.storageKey).toBe(
+			`travel-expenses/org_1/claim_1/${staged.attachmentId}-receipt.pdf`,
+		);
+		expect(mockState.finalize).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({
+				...staged,
+				stored: { bucket: "private-bucket", versionId: "v1" },
+				checksumSha256: checksum,
+				sizeBytes: 4,
+				mimeType: "application/pdf",
+			}),
+		);
+		expect(mockState.calls).toEqual(["stage", "upload", "finalize"]);
 		expect(mockState.deleteCommand).toHaveBeenCalledWith({
 			Bucket: "public-temp-bucket",
 			Key: "tus-user_1-upload",
@@ -196,7 +242,7 @@ describe("travel expense upload processing", () => {
 		});
 		expect(mockState.publicSend).not.toHaveBeenCalled();
 		expect(mockState.uploadPrivateObject).not.toHaveBeenCalled();
-		expect(mockState.insert).not.toHaveBeenCalled();
+		expect(mockState.stage).not.toHaveBeenCalled();
 	});
 
 	it("rejects travel expense uploads whose metadata exceeds the configured limit", async () => {
@@ -261,6 +307,86 @@ describe("travel expense upload processing", () => {
 		expect(mockState.uploadPrivateObject).toHaveBeenCalled();
 	});
 
+	it("rejects a late upload after submission and leaves the object for cleanup", async () => {
+		mockState.finalize.mockResolvedValue({ kind: "claim_not_draft" });
+
+		const response = await POST({
+			json: () =>
+				Promise.resolve({
+					tusFileKey: "tus-user_1-upload",
+					claimId: "claim_1",
+					fileName: "receipt.pdf",
+				}),
+		} as never);
+
+		expect(response.status).toBe(409);
+		const [, staged] = mockState.stage.mock.calls[0] ?? [];
+		expect(mockState.runCleanup).toHaveBeenCalledWith(expect.anything(), {
+			deleteObject: mockState.deletePrivateObject,
+			only: { attachmentId: staged.attachmentId, organizationId: "org_1" },
+		});
+		expect(mockState.markFailed).not.toHaveBeenCalled();
+		expect(mockState.deleteCommand).toHaveBeenCalledWith({
+			Bucket: "public-temp-bucket",
+			Key: "tus-user_1-upload",
+		});
+	});
+
+	it("keeps the rejected object recorded when immediate cleanup fails", async () => {
+		mockState.finalize.mockResolvedValue({ kind: "claim_not_draft" });
+		mockState.runCleanup.mockRejectedValue(new Error("storage unavailable"));
+
+		const response = await POST({
+			json: () =>
+				Promise.resolve({
+					tusFileKey: "tus-user_1-upload",
+					claimId: "claim_1",
+					fileName: "receipt.pdf",
+				}),
+		} as never);
+
+		expect(response.status).toBe(409);
+	});
+
+	it("records cleanup work when storing or attaching the receipt fails", async () => {
+		mockState.uploadPrivateObject.mockRejectedValue(new Error("put failed"));
+
+		const response = await POST({
+			json: () =>
+				Promise.resolve({
+					tusFileKey: "tus-user_1-upload",
+					claimId: "claim_1",
+					fileName: "receipt.pdf",
+				}),
+		} as never);
+
+		expect(response.status).toBe(500);
+		const [, staged] = mockState.stage.mock.calls[0] ?? [];
+		expect(mockState.markFailed).toHaveBeenCalledWith(expect.anything(), {
+			attachmentId: staged.attachmentId,
+			organizationId: "org_1",
+			stored: null,
+			reason: "finalization_failed",
+		});
+		expect(mockState.finalize).not.toHaveBeenCalled();
+	});
+
+	it("does not store anything when the staging claim cannot be written", async () => {
+		mockState.stage.mockRejectedValue(new Error("db down"));
+
+		const response = await POST({
+			json: () =>
+				Promise.resolve({
+					tusFileKey: "tus-user_1-upload",
+					claimId: "claim_1",
+					fileName: "receipt.pdf",
+				}),
+		} as never);
+
+		expect(response.status).toBe(500);
+		expect(mockState.uploadPrivateObject).not.toHaveBeenCalled();
+	});
+
 	it.each([
 		"submitted",
 		"rejected",
@@ -287,6 +413,6 @@ describe("travel expense upload processing", () => {
 		});
 		expect(mockState.publicSend).not.toHaveBeenCalled();
 		expect(mockState.uploadPrivateObject).not.toHaveBeenCalled();
-		expect(mockState.insert).not.toHaveBeenCalled();
+		expect(mockState.stage).not.toHaveBeenCalled();
 	});
 });

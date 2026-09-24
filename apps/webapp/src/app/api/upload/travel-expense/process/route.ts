@@ -1,14 +1,23 @@
+import { createHash, randomUUID } from "node:crypto";
 import { DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { and, eq } from "drizzle-orm";
 import { fileTypeFromBuffer } from "file-type";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { travelExpenseAttachment, travelExpenseClaim } from "@/db/schema";
+import { travelExpenseClaim } from "@/db/schema";
 import { env } from "@/env";
 import { getAuthContext } from "@/lib/auth-helpers";
-import { uploadPrivateObject } from "@/lib/storage/export-s3-client";
+import { deletePrivateObject, uploadPrivateObject } from "@/lib/storage/export-s3-client";
 import { S3_PUBLIC_BUCKET, s3Client } from "@/lib/storage/s3-client";
 import { isAllowedTravelExpenseMime } from "@/lib/travel-expenses/attachment-validation";
+import {
+	finalizeTravelExpenseReceiptUpload,
+	markTravelExpenseReceiptUploadFailed,
+	runTravelExpenseReceiptCleanup,
+	type StoredReceiptObject,
+	stageTravelExpenseReceiptUpload,
+	travelExpenseReceiptStorageKey,
+} from "@/lib/travel-expenses/receipt-upload";
 import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
 
 const MAX_FILE_SIZE_BYTES = Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES);
@@ -143,56 +152,93 @@ export async function POST(request: NextRequest) {
 		const finalName = safeName.includes(".")
 			? safeName
 			: `${safeName}.${detectedType.ext}`;
-		const timestamp = Date.now();
-		const finalStorageKey = `travel-expenses/${claim.organizationId}/${claim.id}/${timestamp}-${finalName}`;
-
-		const privateUpload = await uploadPrivateObject(
-			claim.organizationId,
-			finalStorageKey,
-			buffer,
-			detectedType.mime,
-			{
-				"uploaded-by": authContext.employee.id,
-				"original-key": safeTusFileKey,
-				"upload-timestamp": new Date().toISOString(),
-			},
-		);
-
-		const [createdAttachment] = await db
-			.insert(travelExpenseAttachment)
-			.values({
+		// The server computes the content identity over the exact bytes it stores.
+		const checksumSha256 = createHash("sha256").update(buffer).digest("hex");
+		const attachmentId = randomUUID();
+		const staged = {
+			attachmentId,
+			organizationId: claim.organizationId,
+			claimId: claim.id,
+			uploadedBy: authContext.employee.id,
+			storageKey: travelExpenseReceiptStorageKey({
 				organizationId: claim.organizationId,
 				claimId: claim.id,
-				storageProvider: "s3-private",
-				storageBucket: privateUpload.bucket,
-				storageKey: finalStorageKey,
+				attachmentId,
+				fileName: finalName,
+			}),
+		};
+
+		// Durable before the object exists, so any later failure leaves cleanup work.
+		await stageTravelExpenseReceiptUpload(db, staged);
+
+		let stored: StoredReceiptObject | null = null;
+		let finalized: Awaited<ReturnType<typeof finalizeTravelExpenseReceiptUpload>>;
+		try {
+			stored = await uploadPrivateObject(
+				claim.organizationId,
+				staged.storageKey,
+				buffer,
+				detectedType.mime,
+				{
+					"uploaded-by": authContext.employee.id,
+					"original-key": safeTusFileKey,
+					"upload-timestamp": new Date().toISOString(),
+					"content-sha256": checksumSha256,
+				},
+			);
+			finalized = await finalizeTravelExpenseReceiptUpload(db, {
+				...staged,
+				stored,
 				fileName: finalName,
 				mimeType: detectedType.mime,
 				sizeBytes: buffer.length,
-				uploadedBy: authContext.employee.id,
-			})
-			.returning({
-				id: travelExpenseAttachment.id,
-				fileName: travelExpenseAttachment.fileName,
-				mimeType: travelExpenseAttachment.mimeType,
-				sizeBytes: travelExpenseAttachment.sizeBytes,
-				storageKey: travelExpenseAttachment.storageKey,
+				checksumSha256,
 			});
+		} catch (error) {
+			await markTravelExpenseReceiptUploadFailed(db, {
+				attachmentId: staged.attachmentId,
+				organizationId: staged.organizationId,
+				stored,
+				reason: "finalization_failed",
+			}).catch((markError) =>
+				console.error("Failed to record travel expense upload cleanup", markError),
+			);
+			throw error;
+		}
 
-		if (!createdAttachment) {
+		await s3Client
+			.send(
+				new DeleteObjectCommand({
+					Bucket: S3_PUBLIC_BUCKET,
+					Key: safeTusFileKey,
+				}),
+			)
+			.catch((error) =>
+				console.error("Failed to delete processed travel expense upload", error),
+			);
+
+		if (finalized.kind === "claim_not_draft") {
+			// The claim was submitted while this file was uploading. The stored
+			// object stays recorded for cleanup; try to remove it right away.
+			await runTravelExpenseReceiptCleanup(db, {
+				deleteObject: deletePrivateObject,
+				only: {
+					attachmentId: staged.attachmentId,
+					organizationId: staged.organizationId,
+				},
+			}).catch((error) =>
+				console.error("Deferred travel expense upload cleanup", error),
+			);
 			return NextResponse.json(
-				{ error: "Failed to create attachment record" },
-				{ status: 500 },
+				{
+					error:
+						"This claim is no longer a draft, so the file was not attached. Create a new claim to submit a different receipt set.",
+				},
+				{ status: 409 },
 			);
 		}
 
-		await s3Client.send(
-			new DeleteObjectCommand({
-				Bucket: S3_PUBLIC_BUCKET,
-				Key: safeTusFileKey,
-			}),
-		);
-
+		const createdAttachment = finalized.attachment;
 		return NextResponse.json({
 			success: true,
 			attachment: {

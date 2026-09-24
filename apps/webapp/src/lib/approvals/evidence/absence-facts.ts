@@ -243,7 +243,7 @@ export function buildAbsenceSubmittedFacts(input: {
 	};
 }
 
-function canonicalJson(value: unknown): string {
+export function canonicalJson(value: unknown): string {
 	if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
 	if (typeof value === "object" && value !== null) {
 		const record = value as Record<string, unknown>;
