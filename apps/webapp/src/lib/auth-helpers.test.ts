@@ -263,7 +263,9 @@ describe("getSettingsAccessInputForUser", () => {
 			source.indexOf("export async function getSettingsAccessTierForUser"),
 		);
 
-		expect(body).toContain("isActive: employee.isActive");
+		// Selected, not filtered: a due departure counts as inactive, and an
+		// inactive profile must never fall back to member-only access.
+		expect(body).toContain("isActive: employeeHasOrganizationAccess()");
 		expect(body).not.toContain("eq(employee.isActive, true)");
 	});
 

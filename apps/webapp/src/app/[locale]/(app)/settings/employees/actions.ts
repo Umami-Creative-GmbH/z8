@@ -2,6 +2,7 @@
 
 import type { employee } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
+import type { ExecuteDepartureResult } from "@/lib/employee-lifecycle/types";
 import type {
 	AssignManagers,
 	CreateEmployee,
@@ -23,6 +24,12 @@ import {
 	reactivateEmployeeAction,
 	removeEmployeeAccessAction,
 } from "./employee-lifecycle.actions";
+import {
+	cancelEmployeeDepartureAction,
+	offboardEmployeeNowAction,
+	rehireEmployeeAction,
+	scheduleEmployeeDepartureAction,
+} from "./employee-offboarding.actions";
 import {
 	assignManagersAction,
 	createEmployeeAction,
@@ -72,6 +79,28 @@ export async function reactivateEmployee(
 	employeeId: string,
 ): Promise<ServerActionResult<void>> {
 	return reactivateEmployeeAction(employeeId);
+}
+
+export async function scheduleEmployeeDeparture(
+	input: unknown,
+): Promise<ServerActionResult<{ departureId: string; revision: number }>> {
+	return scheduleEmployeeDepartureAction(input);
+}
+
+export async function cancelEmployeeDeparture(input: unknown): Promise<ServerActionResult<void>> {
+	return cancelEmployeeDepartureAction(input);
+}
+
+export async function offboardEmployeeNow(
+	input: unknown,
+): Promise<ServerActionResult<ExecuteDepartureResult>> {
+	return offboardEmployeeNowAction(input);
+}
+
+export async function rehireEmployee(
+	input: unknown,
+): Promise<ServerActionResult<{ employmentPeriodId: string }>> {
+	return rehireEmployeeAction(input);
 }
 
 export async function removeEmployeeAccess(

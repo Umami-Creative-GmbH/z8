@@ -18,6 +18,7 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { hasEndedEmploymentWithoutRehire } from "@/lib/employee-lifecycle/employment-periods";
 import { createLogger } from "@/lib/logger";
 import {
 	getEmployeeSettingsActorContext,
@@ -50,7 +51,8 @@ type LifecycleTransactionResult =
 	| { type: "target_membership_missing" }
 	| { type: "self_target" }
 	| { type: "admin_targeting_owner" }
-	| { type: "final_accessible_owner" };
+	| { type: "final_accessible_owner" }
+	| { type: "rehire_required" };
 
 function isOwnerInvariantViolation(error: DatabaseError) {
 	let cause: unknown = error.cause;
@@ -222,6 +224,17 @@ function setEmployeeLifecycleState(
 										return { type: "success", changed: false, targetEmployee };
 									}
 
+									// Ended employment is restored only through an explicit rehire.
+									if (
+										isActive &&
+										(await hasEndedEmploymentWithoutRehire(tx, {
+											organizationId: actor.organizationId,
+											employeeId: validatedEmployeeId,
+										}))
+									) {
+										return { type: "rehire_required" };
+									}
+
 									if (!isActive && targetIsOwner) {
 										const approvedOwners = await tx
 											.select({
@@ -343,6 +356,16 @@ function setEmployeeLifecycleState(
 								new ValidationError({
 									message:
 										"Assign and activate another approved owner before deactivating this employee",
+									field: "employeeId",
+								}),
+							),
+						);
+					case "rehire_required":
+						return yield* _(
+							Effect.fail(
+								new ValidationError({
+									message:
+										"This employee has left the organization. Rehire them to start a new employment period.",
 									field: "employeeId",
 								}),
 							),
