@@ -4,6 +4,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, expect, it } from "vitest";
+import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	findOpenDepartureClockRepairs,
 	resolveDepartureReview,
@@ -173,7 +174,7 @@ describeLifecycleDatabase("departure clock repairs", () => {
 			reviewId,
 			actorUserId,
 			resolution,
-			now: new Date("2026-09-20T10:00:00Z"),
+			now: parseInstant("2026-09-20T10:00:00Z"),
 		});
 
 	it("resolves an automatic clock-out review with a note and records who did it", async () => {
@@ -233,7 +234,7 @@ describeLifecycleDatabase("departure clock repairs", () => {
 				reviewId,
 				actorUserId: otherOwner.userId,
 				resolution: "ok",
-				now: new Date("2026-09-20T10:00:00Z"),
+				now: parseInstant("2026-09-20T10:00:00Z"),
 			}),
 		).rejects.toMatchObject({ code: "review_not_found" });
 	});
@@ -272,7 +273,12 @@ describeLifecycleDatabase("departure clock repairs", () => {
 		);
 		const taskId = task.rows[0]?.id ?? "";
 		const retry = (actorUserId: string, organizationId = fixture.organizationId) =>
-			retryDepartureTask(fixture.db, { organizationId, taskId, actorUserId, now: new Date() });
+			retryDepartureTask(fixture.db, {
+				organizationId,
+				taskId,
+				actorUserId,
+				now: systemClock.nowInstant(),
+			});
 
 		await expect(retry(member.userId)).rejects.toMatchObject({ code: "actor_not_authorized" });
 		const foreignOrganizationId = await fixture.createOrganization();

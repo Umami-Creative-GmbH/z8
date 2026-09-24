@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { employeeDepartureEvent, employeeDepartureReview } from "@/db/schema/employee-lifecycle";
-import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { memberIsAccessibleOwnerOrAdmin } from "./authority-sql";
 import { LATE_CLOCK_EVIDENCE_PROVENANCE } from "./late-clock-evidence";
 
@@ -109,20 +109,16 @@ export async function resolveDepartureReview(
 		reviewId: string;
 		actorUserId: string;
 		resolution: string;
-		now: Date;
+		now: Instant;
 	},
 ): Promise<void> {
 	const resolution = input.resolution.trim();
 	if (!resolution) throw new ResolveDepartureReviewError("resolution_required");
+	const at = dateFromInstant(input.now);
 
 	await database.transaction(async (tx) => {
 		if (
-			!(await actorMayResolveDepartureWork(
-				tx,
-				input.organizationId,
-				input.actorUserId,
-				instantFromDate(input.now),
-			))
+			!(await actorMayResolveDepartureWork(tx, input.organizationId, input.actorUserId, input.now))
 		) {
 			throw new ResolveDepartureReviewError("actor_not_authorized");
 		}
@@ -156,7 +152,7 @@ export async function resolveDepartureReview(
 			.set({
 				status: "resolved",
 				resolvedBy: input.actorUserId,
-				resolvedAt: input.now,
+				resolvedAt: at,
 				resolution,
 			})
 			.where(
@@ -174,7 +170,7 @@ export async function resolveDepartureReview(
 			requestId: randomUUID(),
 			kind: "review_resolved",
 			actorUserId: input.actorUserId,
-			occurredAt: input.now,
+			occurredAt: at,
 			metadata: { reviewId: review.id, reviewKind: review.kind, resolution },
 		});
 	});
@@ -196,23 +192,19 @@ export class RetryDepartureTaskError extends Error {
  */
 export async function retryDepartureTask(
 	database: Pick<typeof rootDatabase, "transaction">,
-	input: { organizationId: string; taskId: string; actorUserId: string; now: Date },
+	input: { organizationId: string; taskId: string; actorUserId: string; now: Instant },
 ): Promise<void> {
+	const at = dateFromInstant(input.now);
 	await database.transaction(async (tx) => {
 		if (
-			!(await actorMayResolveDepartureWork(
-				tx,
-				input.organizationId,
-				input.actorUserId,
-				instantFromDate(input.now),
-			))
+			!(await actorMayResolveDepartureWork(tx, input.organizationId, input.actorUserId, input.now))
 		) {
 			throw new RetryDepartureTaskError("actor_not_authorized");
 		}
 		const retried = await tx.execute(sql`
 			UPDATE employee_departure_task
 			SET status = 'pending', claim_token = NULL, attempt_count = 0, last_error = NULL,
-				available_at = ${input.now}, updated_at = ${input.now}, payload = payload - 'attemptedAt'
+				available_at = ${at}, updated_at = ${at}, payload = payload - 'attemptedAt'
 			WHERE organization_id = ${input.organizationId} AND id = ${input.taskId}::uuid
 				AND status = 'failed'
 			RETURNING id

@@ -56,14 +56,14 @@ export function getOffboardingFollowUp() {
 				reviewId: input.reviewId,
 				actorUserId: actor.userId,
 				resolution: input.resolution,
-				now: new Date(systemClock.nowInstant().epochMilliseconds),
+				now: systemClock.nowInstant(),
 			}),
 		retryTask: (actor: LifecycleActor, input: { taskId: string }) =>
 			retryDepartureTask(db, {
 				organizationId: actor.organizationId,
 				taskId: input.taskId,
 				actorUserId: actor.userId,
-				now: new Date(systemClock.nowInstant().epochMilliseconds),
+				now: systemClock.nowInstant(),
 			}),
 		assignReplacement: (actor: LifecycleActor, input: AssignDepartureReplacementInput) =>
 			assignDepartureReplacement(db, actor, input, systemClock.nowInstant()),
