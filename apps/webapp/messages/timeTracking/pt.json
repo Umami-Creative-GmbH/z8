@@ -61,6 +61,8 @@
     "deadline": "Prazo",
     "errors": {
       "clockInFailed": "Falha ao registrar entrada",
+      "appendReviewRequired": "Registrar a entrada requer uma revisão do seu histórico de tempo",
+      "appendReviewRequiredDesc": "Não foi possível verificar seus registros de tempo anteriores, então a nova entrada não foi salva. Entre em contato com seu administrador.",
       "clockOutFailed": "Falha ao registrar saída",
       "holidayBlocked": "Não é possível registrar saída em {holidayName}",
       "holidayBlockedDesc": "Este dia está marcado como feriado e registros de tempo não são permitidos",

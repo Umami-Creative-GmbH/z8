@@ -61,6 +61,8 @@
     "deadline": "Fecha límite",
     "errors": {
       "clockInFailed": "Error al marcar entrada",
+      "appendReviewRequired": "Marcar la entrada requiere revisar su historial de tiempo",
+      "appendReviewRequiredDesc": "No se pudieron verificar sus registros de tiempo anteriores, por lo que no se guardó la nueva entrada. Póngase en contacto con su administrador.",
       "clockOutFailed": "Error al marcar salida",
       "holidayBlocked": "No se puede marcar salida en {holidayName}",
       "holidayBlockedDesc": "Este día está marcado como feriado y no se permiten registros de tiempo",

@@ -61,6 +61,8 @@
     "deadline": "Son teslim tarihi",
     "errors": {
       "clockInFailed": "İşe giriş yapılamadı",
+      "appendReviewRequired": "Giriş kaydı için zaman geçmişinizin incelenmesi gerekiyor",
+      "appendReviewRequiredDesc": "Önceki zaman kayıtlarınız doğrulanamadığından yeni giriş kaydı kaydedilmedi. Lütfen yöneticinizle iletişime geçin.",
       "clockOutFailed": "İşten çıkış yapılamadı",
       "holidayBlocked": "{holidayName} tarihinde işten çıkış yapılamaz",
       "holidayBlockedDesc": "Bu gün tatil olarak işaretlenmiştir ve zaman kaydı girilmesine izin verilmemektedir",

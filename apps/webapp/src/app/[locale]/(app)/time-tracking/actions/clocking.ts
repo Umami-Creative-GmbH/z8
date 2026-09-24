@@ -53,6 +53,7 @@ import { employeeHasAccessToCategory } from "@/lib/query/work-category.queries";
 import {
 	ClockingConflictError,
 	clockingService,
+	TimeEntryAppendReviewRequiredError,
 } from "@/lib/time-tracking/clocking-service";
 import { resolvePolicyClockOutBreakSnapshotInTransaction } from "@/lib/time-tracking/policy-clock-out-break-snapshot";
 import {
@@ -71,6 +72,8 @@ import {
 	isWorkLocationType,
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
+import { APPEND_REVIEW_REQUIRED_CODE } from "@/lib/time-tracking/time-clock-client";
+import { withWebClockInTransaction } from "@/lib/time-tracking/web-clock-in-transaction";
 import { withWebClockOutTransaction } from "@/lib/time-tracking/web-clock-out-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { canonicalWorkRecordClient } from "../actions.canonical";
@@ -129,6 +132,9 @@ type WorkBalanceDirtyInput = Parameters<typeof markEmployeeWorkBalanceDirty>[0];
 
 const APPROVAL_POLICY_CHECK_ERROR =
 	"Could not verify time approval policy. Please try again.";
+// Ordinary users learn only that review is needed; operators get the scoped reasons.
+const APPEND_REVIEW_REQUIRED_ERROR =
+	"Your time history needs review before you can clock in. Please contact your administrator.";
 const CANONICAL_UUID =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
@@ -961,17 +967,26 @@ export async function clockIn(
 			browserSource: "browser",
 			fallbackSource: "user_setting",
 		});
-		const { entry } = await clockingService.clockIn({
-			employeeId: currentEmployee.id,
-			organizationId: currentEmployee.organizationId,
-			createdBy: session.user.id,
-			action: { instant: actionInstant, ...timezoneCapture },
-			source: {
-				ipAddress: null,
-				deviceInfo: actionContext.deviceInfo ?? "web",
+		const { entry } = await withWebClockInTransaction(
+			{
+				organizationId: currentEmployee.organizationId,
+				employeeId: currentEmployee.id,
+				userId: session.user.id,
 			},
-			workLocationType: resolvedWorkLocationType,
-		});
+			(coordination) =>
+				clockingService.clockIn({
+					coordination,
+					employeeId: currentEmployee.id,
+					organizationId: currentEmployee.organizationId,
+					createdBy: session.user.id,
+					action: { instant: actionInstant, ...timezoneCapture },
+					source: {
+						ipAddress: null,
+						deviceInfo: actionContext.deviceInfo ?? "web",
+					},
+					workLocationType: resolvedWorkLocationType,
+				}),
+		);
 
 		return {
 			success: true,
@@ -980,6 +995,17 @@ export async function clockIn(
 	} catch (error) {
 		if (error instanceof ClockingConflictError) {
 			return { success: false, error: "You are already clocked in" };
+		}
+		if (error instanceof TimeEntryAppendReviewRequiredError) {
+			logger.warn(
+				{ appendReviewRequirement: error.requirement },
+				"Clock in held for append history review",
+			);
+			return {
+				success: false,
+				error: APPEND_REVIEW_REQUIRED_ERROR,
+				code: APPEND_REVIEW_REQUIRED_CODE,
+			};
 		}
 		logger.error({ error }, "Clock in error");
 		return { success: false, error: "Failed to clock in. Please try again." };

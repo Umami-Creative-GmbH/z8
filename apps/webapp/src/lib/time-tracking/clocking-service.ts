@@ -19,6 +19,7 @@ export {
 	type ClockingDependencies,
 	ClockingOrganizationError,
 	createClockingService,
+	TimeEntryAppendReviewRequiredError,
 } from "./clocking-core";
 
 export const clockingService = createClockingService({

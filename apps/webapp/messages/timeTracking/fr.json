@@ -61,6 +61,8 @@
     "deadline": "Échéance",
     "errors": {
       "clockInFailed": "Échec du pointage de l'entrée",
+      "appendReviewRequired": "Le pointage d'arrivée nécessite une vérification de votre historique",
+      "appendReviewRequiredDesc": "Vos saisies de temps précédentes n'ont pas pu être vérifiées ; le nouveau pointage n'a donc pas été enregistré. Veuillez contacter votre administrateur.",
       "clockOutFailed": "Échec du pointage de la sortie",
       "holidayBlocked": "Impossible de pointer la sortie le {holidayName}",
       "holidayBlockedDesc": "Ce jour est marqué comme férié et les entrées de temps ne sont pas autorisées",

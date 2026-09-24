@@ -44,6 +44,7 @@ import {
 	surchargeRule,
 	team,
 	timeEntry,
+	timeEntryAppendPosition,
 	vacationAllowance,
 	waterIntakeLog,
 	workPeriod,
@@ -173,6 +174,10 @@ async function permanentlyDeleteOrganization(
 
 		// 1. Time tracking data
 		if (employeeIds.length > 0) {
+			// The append position references its tip entry; remove it with the history.
+			await tx
+				.delete(timeEntryAppendPosition)
+				.where(eq(timeEntryAppendPosition.organizationId, organizationId));
 			await tx
 				.delete(timeEntry)
 				.where(inArray(timeEntry.employeeId, employeeIds));

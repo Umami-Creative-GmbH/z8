@@ -29,6 +29,7 @@ import {
 	getTimeFormatDateTimeOptions,
 	type TimeFormat,
 } from "@/lib/user-preferences/time-format";
+import { showAppendReviewRequiredToast } from "./append-review-toast";
 import { WorkLocationSelector } from "./clock-in-out-widget-parts";
 import { ProjectSelectorView } from "./project-selector";
 import { QuickBreakPopover } from "./quick-break-popover";
@@ -307,7 +308,7 @@ export function TimeClockPopover({
 				);
 			}
 			setOpen(false);
-		} else {
+		} else if (!showAppendReviewRequiredToast(result, t)) {
 			const holidayName =
 				"holidayName" in result ? result.holidayName : undefined;
 			const errorMessage = holidayName
