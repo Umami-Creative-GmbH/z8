@@ -126,7 +126,7 @@ Organizations whose `absence` rollout mode is `legacy`, `shadow` or `ready` keep
 deciding through the legacy owners (`approval_request`, legacy chains). While
 capture is active those owners now write the same immutable evidence, into the
 same tables, marked `authority = 'legacy'` (migration
-`0071_legacy_approval_evidence.sql`).
+`0074_legacy_approval_evidence.sql`).
 
 | Evidence | Written by | When |
 | --- | --- | --- |
@@ -231,7 +231,7 @@ No application endpoint changes the mode.
 
 ### Activation blockers (all unresolved)
 
-1. Apply migrations 0070 and 0071 through the normal authorized deployment
+1. Apply migrations 0070 and 0074 through the normal authorized deployment
    (both have run only on the disposable PostgreSQL 16 test database, see
    Verification status).
 2. **In-flight classification.** Enabling capture holds every pending absence

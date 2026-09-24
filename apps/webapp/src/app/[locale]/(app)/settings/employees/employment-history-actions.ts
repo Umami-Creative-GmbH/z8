@@ -11,6 +11,11 @@ import {
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
+import {
+	EmploymentPeriodError,
+	resolveTermsEmploymentPeriod,
+} from "@/lib/employee-lifecycle/employment-periods";
+import type { LifecycleTransaction } from "@/lib/employee-lifecycle/types";
 import { adjustConfirmedTimeline, type TimelineUpdate } from "@/lib/employment-history/timeline";
 import { createLogger } from "@/lib/logger";
 import {
@@ -175,6 +180,30 @@ export function buildEmploymentCancellationRestorationPlan({
 	};
 }
 
+/**
+ * Terms belong to the employee's open employment period. An ended period is
+ * never reopened by terms; only an explicit rehire starts a new one.
+ */
+async function requireTermsEmploymentPeriod(
+	tx: LifecycleTransaction,
+	input: { organizationId: string; employeeId: string; validFrom: Date },
+) {
+	try {
+		return await resolveTermsEmploymentPeriod(tx, input);
+	} catch (error) {
+		if (error instanceof EmploymentPeriodError) {
+			throw new ValidationError({
+				message:
+					error.code === "employment_period_closed"
+						? "This employee's employment has ended. Rehire them before adding employment terms."
+						: "Employment terms cannot start before the current employment period.",
+				field: "validFrom",
+			});
+		}
+		throw error;
+	}
+}
+
 async function markContractWorkBalanceDirty(input: {
 	employeeId: string;
 	organizationId: string;
@@ -316,10 +345,17 @@ export async function createEmployeeEmploymentHistoryAction(
 								for update
 							`);
 
+							const employmentPeriodId = await requireTermsEmploymentPeriod(tx, {
+								organizationId: actor.organizationId,
+								employeeId,
+								validFrom: validatedData.validFrom,
+							});
+							// The timeline never joins terms across employment periods.
 							const existing = await tx.query.employeeEmploymentHistory.findMany({
 								where: and(
 									eq(employeeEmploymentHistory.employeeId, employeeId),
 									eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+									eq(employeeEmploymentHistory.employmentPeriodId, employmentPeriodId),
 								),
 							});
 							const now = currentTimestamp();
@@ -327,6 +363,7 @@ export async function createEmployeeEmploymentHistoryAction(
 								id: randomUUID(),
 								employeeId,
 								organizationId: actor.organizationId,
+								employmentPeriodId,
 								validFrom: validatedData.validFrom,
 								validUntil: null,
 								status: validatedData.status,
@@ -486,10 +523,26 @@ export async function confirmEmployeeEmploymentHistoryAction(
 								});
 							}
 
+							const employmentPeriodId = await requireTermsEmploymentPeriod(tx, {
+								organizationId: actor.organizationId,
+								employeeId,
+								validFrom: targetHistory.validFrom,
+							});
+							if (
+								targetHistory.employmentPeriodId &&
+								targetHistory.employmentPeriodId !== employmentPeriodId
+							) {
+								throw new ValidationError({
+									message:
+										"These terms belong to an ended employment period and can no longer be confirmed.",
+									field: "reviewState",
+								});
+							}
+
 							const now = currentTimestamp();
 							const adjusted = adjustConfirmedTimeline({
-								existing,
-								next: { ...targetHistory, reviewState: "confirmed" as const },
+								existing: existing.filter((row) => row.employmentPeriodId === employmentPeriodId),
+								next: { ...targetHistory, employmentPeriodId, reviewState: "confirmed" as const },
 							});
 							await Promise.all(
 								adjusted.updates.map((update) =>
@@ -513,6 +566,7 @@ export async function confirmEmployeeEmploymentHistoryAction(
 							const [updated] = await tx
 								.update(employeeEmploymentHistory)
 								.set({
+									employmentPeriodId,
 									validUntil: adjusted.next.validUntil,
 									reviewState: "confirmed",
 									updatedBy: session.user.id,
@@ -642,10 +696,24 @@ export async function cancelEmployeeEmploymentHistoryAction(
 							}
 
 							const now = currentTimestamp();
-							const restorationPlan = buildEmploymentCancellationRestorationPlan({
-								canceled: targetHistory,
-								existing,
-							});
+							// Restoration only extends terms inside the same open period; after
+							// a departure the previous terms already end at the cutoff.
+							const periodStatus = targetHistory.employmentPeriodId
+								? await tx.execute<{ status: string }>(sql`
+										select status from employee_employment_period
+										where id = ${targetHistory.employmentPeriodId}
+											and organization_id = ${actor.organizationId}
+									`)
+								: null;
+							const periodIsOpen = periodStatus ? periodStatus.rows[0]?.status === "open" : true;
+							const restorationPlan = periodIsOpen
+								? buildEmploymentCancellationRestorationPlan({
+										canceled: targetHistory,
+										existing: existing.filter(
+											(row) => row.employmentPeriodId === targetHistory.employmentPeriodId,
+										),
+									})
+								: null;
 
 							await tx
 								.delete(employeeEmploymentHistory)

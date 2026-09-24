@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { member, organization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 
 export class MobileApiError extends Error {
@@ -68,7 +69,7 @@ export async function requireMobileEmployee(
 		where: and(
 			eq(employee.userId, userId),
 			eq(employee.organizationId, organizationId),
-			eq(employee.isActive, true),
+			employeeHasOrganizationAccess(),
 		),
 	});
 
@@ -101,7 +102,7 @@ export async function getMobileOrganizationSummary(
 					where: and(
 						eq(employee.userId, userId),
 						eq(employee.organizationId, organizationId),
-						eq(employee.isActive, true),
+						employeeHasOrganizationAccess(),
 					),
 					columns: {
 						id: true,

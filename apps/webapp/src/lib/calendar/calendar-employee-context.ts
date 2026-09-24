@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import { asAppSubject, defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
 import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { todayCalendarDateKey } from "./date-keys";
 
@@ -35,16 +36,17 @@ export async function resolveAuthorizedCalendarEmployeeContext({
 		where: and(
 			eq(employee.id, currentEmployeeId),
 			eq(employee.organizationId, organizationId),
-			eq(employee.isActive, true),
+			employeeHasOrganizationAccess(now),
 		),
 	});
 	if (!currentEmployee) return undefined;
 
+	// Historical calendars stay readable after a departure: only the viewer must
+	// be active; the target may be inactive but must belong to the organization.
 	const targetEmployee = await db.query.employee.findFirst({
 		where: and(
 			eq(employee.id, requestedEmployeeId ?? currentEmployee.id),
 			eq(employee.organizationId, organizationId),
-			eq(employee.isActive, true),
 		),
 	});
 	if (!targetEmployee) return undefined;

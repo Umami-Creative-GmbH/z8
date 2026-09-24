@@ -4,14 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
 import {
 	addBreakToActiveSession,
-	clockIn,
-	clockOut,
 	getTimeClockStatus,
 	updateTimeEntryNotes,
 } from "@/app/[locale]/(app)/time-tracking/actions";
 import { useOfflineClock } from "@/hooks/use-offline-clock";
 import { useSession } from "@/lib/auth-client";
 import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
+import { postClockIn, postClockOut } from "@/lib/time-tracking/time-clock-client";
 import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { queryKeys } from "./keys";
@@ -143,8 +142,9 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				};
 			}
 
-			// Online - use normal server action
-			return clockIn(params?.workLocationType, {
+			// Online - use the route handler; server action IDs change per deployment
+			return postClockIn({
+				workLocationType: params?.workLocationType,
 				browserTimezone: resolveBrowserTimezone(params),
 			});
 		},
@@ -200,8 +200,10 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				};
 			}
 
-			// Online - use normal server action
-			return clockOut(params?.projectId, params?.workCategoryId, {
+			// Online - use the route handler; server action IDs change per deployment
+			return postClockOut({
+				projectId: params?.projectId,
+				workCategoryId: params?.workCategoryId,
 				browserTimezone: resolveBrowserTimezone(params),
 				submissionId: params?.submissionId as string,
 			});
