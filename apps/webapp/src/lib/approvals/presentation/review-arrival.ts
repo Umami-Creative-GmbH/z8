@@ -4,7 +4,7 @@ import { member } from "@/db/auth-schema";
 import { loadAuthorizedApprovalDetail } from "@/lib/approvals/inbox/authorized-detail";
 import type { ApprovalInboxItem } from "@/lib/approvals/inbox/types";
 import { createLogger } from "@/lib/logger";
-import type { ApprovalReviewTarget } from "./review-navigation";
+import { type ApprovalReviewTarget, referenceId } from "./review-navigation";
 
 const logger = createLogger("ApprovalReviewArrival");
 
@@ -56,8 +56,7 @@ export async function resolveApprovalReviewArrival(input: {
 	const result = await loadAuthorizedApprovalDetail({
 		userId: input.userId,
 		organizationId: target.organizationId,
-		approvalId:
-			reference.kind === "compatibility" ? reference.approvalRequestId : reference.assignmentId,
+		approvalId: referenceId(reference),
 		kind: reference.kind,
 	});
 	if (result.status !== "found") {

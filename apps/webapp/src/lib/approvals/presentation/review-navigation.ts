@@ -18,7 +18,8 @@ export interface ApprovalReviewTarget {
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ORGANIZATION_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
 
-function referenceId(reference: ApprovalReviewReference): string {
+/** The identifier a reference points at, whatever its kind. */
+export function referenceId(reference: ApprovalReviewReference): string {
 	return reference.kind === "compatibility" ? reference.approvalRequestId : reference.assignmentId;
 }
 

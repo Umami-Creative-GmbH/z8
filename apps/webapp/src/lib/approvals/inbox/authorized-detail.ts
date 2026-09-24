@@ -28,7 +28,10 @@ export type AuthorizedApprovalDetailResult =
  */
 export async function loadAuthorizedApprovalDetail(input: {
 	userId: string;
-	/** The session's active organization. */
+	/**
+	 * Must be the session's active organization: permissions come from
+	 * getAbility(), which is built for that organization only.
+	 */
 	organizationId: string;
 	approvalId: string;
 	kind?: "compatibility" | "canonical";
