@@ -2,11 +2,23 @@ import { sql } from "drizzle-orm";
 import type { LifecycleTransaction } from "./types";
 
 /**
- * Lock order for lifecycle transitions: organization row, then employee
- * advisory locks (sorted by ID when several are needed), then scoped rows.
- * Existing member/owner mutations and the owner-invariant triggers take the
- * same organization row lock, so owner checks serialize with them.
+ * Lock order for lifecycle transitions: the employee advisory lock (the
+ * canonical clocking key; sorted by ID when several are needed), then the
+ * organization row, then scoped rows. Clocking already holds the employee lock
+ * before its surcharge snapshot locks the organization row, so taking the
+ * organization first here could deadlock a departure against a clock-out.
+ * Member/owner mutations and the owner-invariant triggers take the same
+ * organization row lock, so owner checks still serialize with them.
  */
+export async function lockLifecycleScope(
+	tx: LifecycleTransaction,
+	organizationId: string,
+	employeeId: string,
+): Promise<void> {
+	await lockLifecycleEmployee(tx, employeeId);
+	await lockLifecycleOrganization(tx, organizationId);
+}
+
 export async function lockLifecycleOrganization(
 	tx: LifecycleTransaction,
 	organizationId: string,

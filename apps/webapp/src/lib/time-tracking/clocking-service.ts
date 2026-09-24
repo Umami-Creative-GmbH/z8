@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { assertEmployeeMayClock } from "@/lib/employee-lifecycle/clocking-gate";
 import {
 	type ClockingTransaction,
 	createClockingService,
@@ -44,6 +45,7 @@ export const clockingService = createClockingService({
 			})) ?? null
 		);
 	},
+	assertEmployeeMayClock,
 	storeForTransaction: (transaction) =>
 		createDatabaseClockingStore(transaction as ClockingTransaction),
 	storeForCoordinatedTransaction: (context) =>

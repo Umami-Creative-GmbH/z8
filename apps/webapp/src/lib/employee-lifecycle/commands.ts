@@ -22,7 +22,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { departureCutoff } from "./cutoff";
 import { resolveCurrentEmploymentPeriod } from "./employment-periods";
-import { assertReadCommitted, lockLifecycleEmployee, lockLifecycleOrganization } from "./locks";
+import { assertReadCommitted, lockLifecycleScope } from "./locks";
 import { type DepartureBlockedReason, evaluateDepartureAuthority } from "./owner-invariant";
 import { executeDepartureInTransaction } from "./transition";
 import type {
@@ -118,8 +118,7 @@ async function materializeDueDeparture(
 	await deps.db.transaction(async (tx) => {
 		const now = deps.clock.nowInstant();
 		await assertReadCommitted(tx);
-		await lockLifecycleOrganization(tx, organizationId);
-		await lockLifecycleEmployee(tx, employeeId);
+		await lockLifecycleScope(tx, organizationId, employeeId);
 		const [due] = await tx
 			.select({
 				id: employeeDeparture.id,
@@ -766,8 +765,7 @@ async function beginCommand(
 	employeeId: string,
 ): Promise<CommandTarget> {
 	await assertReadCommitted(tx);
-	await lockLifecycleOrganization(tx, actor.organizationId);
-	await lockLifecycleEmployee(tx, employeeId);
+	await lockLifecycleScope(tx, actor.organizationId, employeeId);
 	const [target] = await tx
 		.select({ id: employee.id, userId: employee.userId })
 		.from(employee)

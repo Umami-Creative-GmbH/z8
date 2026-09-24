@@ -15,7 +15,7 @@ import {
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
-import { assertReadCommitted, lockLifecycleEmployee, lockLifecycleOrganization } from "./locks";
+import { assertReadCommitted, lockLifecycleScope } from "./locks";
 import { evaluateDepartureAuthority } from "./owner-invariant";
 import type {
 	DepartureClockOutPort,
@@ -40,8 +40,7 @@ export async function executeDepartureInTransaction(
 	clockOut: DepartureClockOutPort,
 ): Promise<ExecuteDepartureResult> {
 	await assertReadCommitted(tx);
-	await lockLifecycleOrganization(tx, identity.organizationId);
-	await lockLifecycleEmployee(tx, identity.employeeId);
+	await lockLifecycleScope(tx, identity.organizationId, identity.employeeId);
 
 	const [departure] = await tx
 		.select()

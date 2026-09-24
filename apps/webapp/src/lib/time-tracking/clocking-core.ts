@@ -98,7 +98,7 @@ type CompletedPeriod = {
 	workCategoryId: string | null;
 };
 
-type ClockingStore = {
+export type ClockingStore = {
 	transaction?: unknown;
 	lockEmployee(employeeId: string): Promise<void>;
 	isOrganizationMember(
@@ -152,6 +152,16 @@ export type ClockingDependencies = {
 		typeof employee.$inferSelect,
 		"id" | "organizationId"
 	> | null>;
+	/**
+	 * Runs under the employee lock, so a clock action that raced a departure
+	 * sees it. Throws ClockingAccessError to refuse; a replay of an action that
+	 * is already recorded skips it. Transaction-bound system
+	 * callers (the departure clock-out itself) omit it.
+	 */
+	assertEmployeeMayClock?: (
+		store: ClockingStore,
+		input: { employeeId: string; organizationId: string },
+	) => Promise<void>;
 };
 
 function entryValues(
@@ -208,6 +218,15 @@ export function createClockingService(deps: ClockingDependencies) {
 				))
 			) {
 				throw new ClockingOrganizationError();
+			}
+			if (deps.assertEmployeeMayClock) {
+				// An already-recorded action replays idempotently; only new writes need access.
+				const replayed = await store.getEntryByActionId(
+					input.employeeId,
+					input.organizationId,
+					input.actionId,
+				);
+				if (!replayed) await deps.assertEmployeeMayClock(store, input);
 			}
 			return callback(store);
 		};

@@ -21,6 +21,7 @@ import {
 	requireBillingForMutation,
 } from "@/lib/billing/guard";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { preserveLateClockEvidence } from "@/lib/employee-lifecycle/late-clock-evidence";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import { employeeHasAccessToCategory } from "@/lib/query/work-category.queries";
@@ -197,6 +198,40 @@ export async function GET(request: NextRequest) {
  * POST /api/time-entries
  * Create a new time entry (clock in/out)
  */
+const REPLAY_MAX_AGE_MS = 7 * 24 * 60 * 60_000;
+const ACTION_ID_PATTERN = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
+
+/**
+ * A departed employee's queued extension capture is refused like any other
+ * clock action, but a valid pre-cutoff capture is kept for administrator
+ * review. Only complete replay evidence that would pass the accepted-replay
+ * checks qualifies; it never becomes a time entry here.
+ */
+async function preserveRefusedReplay(userId: string, organizationId: string, body: any) {
+	if (body?.replay !== true) return;
+	const { id, type, timestamp, browserTimezone, utcOffsetMinutes } = body;
+	if (typeof id !== "string" || !ACTION_ID_PATTERN.test(id)) return;
+	if (type !== "clock_in" && type !== "clock_out") return;
+	if (!timestamp || !isValidIanaTimezone(browserTimezone) || !Number.isInteger(utcOffsetMinutes)) {
+		return;
+	}
+	const capturedAt = new Date(timestamp);
+	if (Number.isNaN(capturedAt.getTime())) return;
+	const ageMs = Date.now() - capturedAt.getTime();
+	if (ageMs < -5 * 60_000 || ageMs > REPLAY_MAX_AGE_MS) return;
+	if (getUtcOffsetMinutesForZone(capturedAt, browserTimezone) !== utcOffsetMinutes) return;
+	await preserveLateClockEvidence(db, {
+		organizationId,
+		userId,
+		actionId: id,
+		type,
+		instant: instantFromDate(capturedAt),
+		utcOffsetMinutes,
+		timezone: browserTimezone,
+		receivedAt: instantFromDate(new Date()),
+	});
+}
+
 export async function POST(request: NextRequest) {
 	// Opt out of caching - must be awaited immediately, not stored as promise
 	await connection();
@@ -280,10 +315,17 @@ async function createClockEntry(resolvedHeaders: Headers, body: any) {
 		if (!requestedOrgId) {
 			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
-		await clockingService.requireActor({
-			userId: session.user.id,
-			activeOrganizationId: requestedOrgId,
-		});
+		try {
+			await clockingService.requireActor({
+				userId: session.user.id,
+				activeOrganizationId: requestedOrgId,
+			});
+		} catch (error) {
+			if (error instanceof ClockingAccessError) {
+				await preserveRefusedReplay(session.user.id, requestedOrgId, body);
+			}
+			throw error;
+		}
 
 		const [currentEmployee] = await db
 			.select()

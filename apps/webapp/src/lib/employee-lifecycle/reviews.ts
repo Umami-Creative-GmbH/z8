@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { employeeDepartureEvent, employeeDepartureReview } from "@/db/schema/employee-lifecycle";
+import { LATE_CLOCK_EVIDENCE_PROVENANCE } from "./late-clock-evidence";
 
 export type OpenDepartureClockRepair = {
 	reviewId: string;
@@ -33,7 +34,10 @@ export async function findOpenDepartureClockRepairs(
 		.select({
 			reviewId: employeeDepartureReview.id,
 			employeeId: employeeDepartureReview.employeeId,
-			workPeriodId: employeeDepartureReview.subjectId,
+			// Late clock evidence is keyed by its action id, not a work period.
+			workPeriodId: sql<string | null>`CASE
+				WHEN ${employeeDepartureReview.metadata}->>'provenance' = ${LATE_CLOCK_EVIDENCE_PROVENANCE}
+				THEN NULL ELSE ${employeeDepartureReview.subjectId} END`,
 			affectedStartAt: employeeDepartureReview.affectedStartAt,
 			affectedEndAt: employeeDepartureReview.affectedEndAt,
 		})
