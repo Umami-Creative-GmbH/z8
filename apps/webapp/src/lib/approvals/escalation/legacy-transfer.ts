@@ -52,6 +52,7 @@ import {
 	type DatabaseTransaction,
 	type EscalationOwnership,
 	type EscalationRuntime,
+	fixedGateContext,
 	readEscalationOwnership,
 	readEscalationPolicy,
 	SUPPORTED_WORKFLOW_TYPE,
@@ -102,8 +103,11 @@ export function isLegacyObservationRejection(error: unknown): boolean {
 	return (
 		error instanceof LegacyApprovalObservationPlannerError ||
 		error instanceof LegacyApprovalWriteBoundaryError ||
-		error instanceof ApprovalWorkflowRepositoryError ||
-		error instanceof AbsenceLegacyStateCaptureError
+		error instanceof AbsenceLegacyStateCaptureError ||
+		// Evidence the observation refused; persistence/CAS invariants stay
+		// infrastructure failures and are retried, never recorded as history.
+		(error instanceof ApprovalWorkflowRepositoryError &&
+			(error.code === "malformed" || error.code === "source_conflict"))
 	);
 }
 
@@ -145,7 +149,7 @@ export async function readAbsenceAuthorityForDiscovery(
  */
 export async function listDueLegacyRequestCandidates(
 	executor: DatabaseTransaction | typeof db,
-	input: { organizationId: string; createdCutoff: Date; limit: number },
+	input: { organizationId: string; createdCutoff: Instant; limit: number },
 ): Promise<string[]> {
 	const rows = await executor
 		.select({ id: approvalRequest.id })
@@ -155,7 +159,10 @@ export async function listDueLegacyRequestCandidates(
 				eq(approvalRequest.organizationId, input.organizationId),
 				eq(approvalRequest.entityType, "absence_entry"),
 				eq(approvalRequest.status, "pending"),
-				lt(approvalRequest.createdAt, new Date(input.createdCutoff.getTime() + 1)),
+				lt(
+					approvalRequest.createdAt,
+					dateFromInstant(input.createdCutoff.add({ milliseconds: 1 })),
+				),
 			),
 		)
 		.orderBy(asc(approvalRequest.createdAt), asc(approvalRequest.id))
@@ -420,20 +427,6 @@ interface CommitLegacyTransferInput {
 	reason: string | null;
 }
 
-function fixedGate(organizationId: string, gate: ApprovalWriteGateResult) {
-	return {
-		acquire: async (scope: { organizationId: string; workflowType: string }) => {
-			if (
-				scope.organizationId !== organizationId ||
-				scope.workflowType !== SUPPORTED_WORKFLOW_TYPE
-			) {
-				throw new Error("Escalation gate scope mismatch");
-			}
-			return gate;
-		},
-	};
-}
-
 /**
  * Moves the pending legacy request to the replacement, mirrors the change
  * into the shadow observation (shadow/ready), and journals it with its
@@ -470,7 +463,7 @@ async function commitLegacyTransfer(
 				};
 	let observed: ObservedLegacyTransitionResult | null = null;
 	const coordinator = createLegacyApprovalWriteCoordinator({
-		writeGate: fixedGate(organizationId, input.gate),
+		writeGate: fixedGateContext(context, organizationId, input.gate).writeGate,
 		compatibilityWriter: context.compatibilityWriter,
 	});
 	await coordinator.execute({
@@ -806,14 +799,19 @@ async function holdRejectedObservation(
 			)
 			.limit(1);
 		if (request?.status !== "pending") return { kind: "not_pending" };
+		// The same gates as the rolled-back transfer: no hold after ownership
+		// moved, automation paused or the policy was disabled.
+		const ownership = await readEscalationOwnership(tx, input.organizationId, true);
+		if (ownership.kind !== "owned" || ownership.paused) return { kind: "suppressed" };
 		const policy = await readEscalationPolicy(tx, input.organizationId);
+		if (!policy?.enabled) return { kind: "not_due" };
 		await raiseEscalationAttention(tx, {
 			organizationId: input.organizationId,
 			reason: "ambiguous_history",
 			subject: legacySubjectRef(input.approvalRequestId, request.approverId),
 			approvalType: SUPPORTED_WORKFLOW_TYPE,
 			approvalRequestId: input.approvalRequestId,
-			...(policy ? { policyRevision: policy.revision } : {}),
+			policyRevision: policy.revision,
 			evidence: {
 				cause: "legacy_observation_rejected",
 				error: error instanceof Error ? error.name : "unknown",

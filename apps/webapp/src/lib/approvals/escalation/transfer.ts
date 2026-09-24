@@ -520,7 +520,12 @@ export async function processDueEscalations(input: {
 	// Canonical versus legacy authority selects what is discovered; each
 	// transfer transaction re-reads the mode under the write gate.
 	if ((await readAbsenceAuthorityForDiscovery(db, organizationId)) === "legacy") {
-		return processDueLegacyEscalations({ organizationId, limit, now, createdCutoff: assignedCutoff });
+		return processDueLegacyEscalations({
+			organizationId,
+			limit,
+			now,
+			createdCutoff: now.subtract({ hours: policy.responseWindowHours }),
+		});
 	}
 	const candidates = await db
 		.select({
@@ -613,7 +618,7 @@ async function processDueLegacyEscalations(input: {
 	organizationId: string;
 	limit: number;
 	now: Instant;
-	createdCutoff: Date;
+	createdCutoff: Instant;
 }): Promise<ProcessDueEscalationsSummary> {
 	const { organizationId } = input;
 	const requestIds = await listDueLegacyRequestCandidates(db, {

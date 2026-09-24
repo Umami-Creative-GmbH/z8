@@ -128,6 +128,16 @@ describe("classifyLegacyAssignmentEvidence", () => {
 		).toMatchObject({ kind: "ambiguous", cause: "teams_escalation_attempt" });
 	});
 
+	it("reports inconsistent lineage before a Teams attempt, so a human cannot build on it", () => {
+		expect(
+			classifyLegacyAssignmentEvidence({
+				request: request(approverB),
+				transfers: [journal(0, approverA, approverB)],
+				teamsEscalationAttempted: true,
+			}),
+		).toMatchObject({ kind: "ambiguous", cause: "journal_representation_mismatch" });
+	});
+
 	it("holds when the journal has a transfer the request does not represent", () => {
 		expect(
 			classifyLegacyAssignmentEvidence({

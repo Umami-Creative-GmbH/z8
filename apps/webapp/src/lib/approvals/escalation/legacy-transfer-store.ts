@@ -52,7 +52,9 @@ export interface LegacyTransferredRequest {
 /**
  * The legacy absence request a decision addresses, when escalation ever
  * transferred it. Addressed exactly by ID when supplied (the inbox always
- * does), otherwise the pending request of the absence.
+ * does), otherwise the pending request of the absence. The request row is
+ * locked like the transfer locks it, so a decision and a transfer serialize:
+ * a transfer that commits first is always seen here.
  */
 export async function findLegacyTransferredRequest(
 	executor: LegacyTransferExecutor,
@@ -71,7 +73,8 @@ export async function findLegacyTransferredRequest(
 					: eq(approvalRequest.status, "pending"),
 			),
 		)
-		.limit(1);
+		.limit(1)
+		.for("update");
 	if (!request) return null;
 	const [transfer] = await executor
 		.select({ id: approvalEscalationTransfer.id })

@@ -310,7 +310,11 @@ refused with `ApprovalAssignmentReassignedError` (409 `approval_reassigned`)
 unless the trusted caller's explicit organization `manage Approval` check
 passes. Eligible-manager fallback therefore never bypasses a replacement; the
 replacement decides as the request's approver. Untransferred requests keep
-the unchanged legacy authorization.
+the unchanged legacy authorization. The check locks the request row like the
+transfer does, so a decision and a transfer serialize and a transfer that
+commits first is always seen. Former holders and other eligible managers still
+see the request in the inbox (as #298 does for canonical assignments); acting
+on it returns the stale "reassigned" outcome.
 
 ### Management UI
 
@@ -338,6 +342,15 @@ cancellation removed the request.
   transfer check. Deploy before activation and drain old workers.
 - The approval write-boundary scanner cannot read sources on Windows; the new
   `approval_request` update exception is verified by CI only.
+- Cutover from `shadow`/`ready` to `canonical`: canonical lineage classification
+  reads canonical journal rows only, so a still-pending absence whose observed
+  workflow carries a mirrored legacy transfer is held as `unjournaled_escalation`
+  (conservative) rather than recognized through `observed_event_id`. This joins
+  #288's in-flight classification (blocker 2).
+- A contradicted observation is held only for evidence refusals (planner,
+  write-boundary, capture, repository `malformed`/`source_conflict`), after
+  re-checking ownership, pause and policy; persistence invariants are retried
+  as failures.
 
 ### Verification — 2026-09-25
 
@@ -349,7 +362,7 @@ management, replay first), `maintenance.test.ts` (legacy journal cleanup).
 
 PostgreSQL 16 runtime evidence (`escalation/legacy-transfer.integration.test.ts`,
 disposable label-owned database, full migration chain including `0080`, run
-together with #288's suite: 22/22) through the real callers
+together with #288's suite: 23/23) through the real callers
 (`requestAbsenceEffect`, `processDueEscalations`, the escalation settings
 actions, `approveAbsenceEffect`, `deleteApproval`):
 
@@ -358,7 +371,9 @@ actions, `approveAbsenceEffect`, `deleteApproval`):
   eligible manager) is refused as reassigned; the replacement approves.
 - A later run holds `replacement_overdue` without a second transfer.
 - Two simultaneous scheduled runs commit exactly one transfer; a transfer racing
-  the current holder's decision leaves exactly one winner.
+  the current holder's decision leaves exactly one winner; an eligible
+  non-holder's decision waits on an in-flight transfer and is then refused as
+  reassigned (this test fails without the row lock).
 - Human transfer through the settings action: candidates, audit row, exact
   replay, idempotency mismatch; a human transfer does not consume the allowance;
   explicit management decides.

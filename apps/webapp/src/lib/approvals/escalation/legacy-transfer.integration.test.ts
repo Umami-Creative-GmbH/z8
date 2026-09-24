@@ -157,12 +157,15 @@ const ids = {
 	managerUser: "t299-manager-user",
 	backupUser: "t299-backup-user",
 	adminUser: "t299-admin-user",
+	thirdUser: "t299-third-user",
 	requester: "e2990000-0000-4000-8000-000000000001",
 	manager: "e2990000-0000-4000-8000-000000000002",
 	backup: "e2990000-0000-4000-8000-000000000003",
 	admin: "e2990000-0000-4000-8000-000000000004",
+	third: "e2990000-0000-4000-8000-000000000005",
 	managerLink: "e2991000-0000-4000-8000-000000000001",
 	backupLink: "e2991000-0000-4000-8000-000000000002",
+	thirdLink: "e2991000-0000-4000-8000-000000000003",
 	category: "e2992000-0000-4000-8000-000000000001",
 	policy: "e2993000-0000-4000-8000-000000000001",
 	firstStage: "e2993000-0000-4000-8000-000000000002",
@@ -189,11 +192,13 @@ describeIntegration("legacy escalation transfer (PostgreSQL)", () => {
 	async function cleanup() {
 		await admin.query("delete from organization where id = $1", [ids.organization]);
 		await admin.query('delete from "user" where id = any($1::text[])', [
-			[ids.requesterUser, ids.managerUser, ids.backupUser, ids.adminUser],
+			[ids.requesterUser, ids.managerUser, ids.backupUser, ids.adminUser, ids.thirdUser],
 		]);
 	}
 
-	async function seed(options: { mode?: RolloutMode; twoStageChain?: boolean } = {}) {
+	async function seed(
+		options: { mode?: RolloutMode; twoStageChain?: boolean; thirdManager?: boolean } = {},
+	) {
 		await cleanup();
 		const timestamp = new Date("2026-07-01T00:00:00Z");
 		await admin.query(
@@ -271,6 +276,37 @@ describeIntegration("legacy escalation transfer (PostgreSQL)", () => {
 				timestamp,
 			],
 		);
+		if (options.thirdManager) {
+			// Another eligible direct manager who never holds the request; linked
+			// later, so the backup stays the first candidate.
+			await admin.query(
+				`insert into "user" (id, name, email, created_at, updated_at)
+				 values ($1, 'Taylor Third', 't299-third@example.test', $2, $2)`,
+				[ids.thirdUser, timestamp],
+			);
+			await admin.query(
+				`insert into member (id, organization_id, user_id, role, status, created_at)
+				 values ('t299-member-third', $1, $2, 'member', 'approved', $3)`,
+				[ids.organization, ids.thirdUser, timestamp],
+			);
+			await admin.query(
+				`insert into employee (id, user_id, organization_id, role, updated_at)
+				 values ($1, $2, $3, 'manager', $4)`,
+				[ids.third, ids.thirdUser, ids.organization, timestamp],
+			);
+			await admin.query(
+				`insert into employee_managers
+				 (id, employee_id, manager_id, is_primary, assigned_by, assigned_at, created_at)
+				 values ($1, $2, $3, false, $4, $5, $5)`,
+				[
+					ids.thirdLink,
+					ids.requester,
+					ids.third,
+					ids.managerUser,
+					new Date("2026-07-02T00:00:00Z"),
+				],
+			);
+		}
 		await admin.query(
 			`insert into absence_category
 			 (id, organization_id, type, name, requires_approval, counts_against_vacation,
@@ -549,6 +585,67 @@ describeIntegration("legacy escalation transfer (PostgreSQL)", () => {
 			expect(processed.transferred).toBe(1);
 		}
 		expect(processed.failed).toBe(0);
+	});
+
+	it("serializes an eligible non-holder's decision behind an in-flight transfer and then refuses it", async () => {
+		await seed({ thirdManager: true });
+		const { absenceId, requestId } = await submit();
+
+		// Play the transfer's transaction by hand and keep its row lock open.
+		const transferring = await admin.connect();
+		let decisionSettled = false;
+		try {
+			await transferring.query("begin");
+			await transferring.query("select id from approval_request where id = $1 for update", [
+				requestId,
+			]);
+			await transferring.query("update approval_request set approver_id = $2 where id = $1", [
+				requestId,
+				ids.backup,
+			]);
+			await transferring.query(
+				`insert into approval_escalation_transfer
+				 (organization_id, operation_key, initiator, authority_mode, workflow_type,
+				  legacy_approval_request_id, legacy_source_sequence,
+				  source_approver_employee_id, replacement_approver_employee_id, requester_employee_id,
+				  receipt_idempotency_key, receipt_actor_fingerprint, receipt_command_fingerprint,
+				  request_fingerprint, actor_kind, actor_user_id, actor_employee_id, transferred_at)
+				 values ($1, 't299-in-flight', 'human', 'legacy', 'absence', $2, 0,
+				  $3, $4, $5, 't299-in-flight', 'v1', 'v1', 'v1', 'user', $6, $7, now())`,
+				[
+					ids.organization,
+					requestId,
+					ids.manager,
+					ids.backup,
+					ids.requester,
+					ids.adminUser,
+					ids.admin,
+				],
+			);
+
+			actAs(ids.thirdUser);
+			const decision = approveAbsenceEffect(absenceId, {
+				approvalRequestId: requestId,
+				allowAnyApprover: true,
+			}).finally(() => {
+				decisionSettled = true;
+			});
+			await new Promise((resolve) => setTimeout(resolve, 300));
+			// The decision waits on the transfer instead of deciding around it.
+			expect(decisionSettled).toBe(false);
+
+			await transferring.query("commit");
+			const refused = await decision;
+			expect(refused.success).toBe(false);
+			expect(JSON.stringify(refused)).toContain("reassigned");
+		} finally {
+			await transferring.query("rollback").catch(() => undefined);
+			transferring.release();
+		}
+		expect(await request(requestId)).toMatchObject({
+			status: "pending",
+			approver_id: ids.backup,
+		});
 	});
 
 	it("transfers through the management action with audit, exact replay and idempotency mismatch", async () => {

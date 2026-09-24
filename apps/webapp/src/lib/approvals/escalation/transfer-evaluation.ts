@@ -244,13 +244,6 @@ export function classifyLegacyAssignmentEvidence(input: {
 	teamsEscalationAttempted: boolean;
 }): LegacyAssignmentEvidence {
 	const { request } = input;
-	if (input.teamsEscalationAttempted) {
-		return {
-			kind: "ambiguous",
-			cause: "teams_escalation_attempt",
-			evidence: { approvalRequestId: request.id },
-		};
-	}
 	const lineage = readLegacyEscalationLineage(request.metadata);
 	if (lineage.kind === "malformed") {
 		return {
@@ -296,6 +289,15 @@ export function classifyLegacyAssignmentEvidence(input: {
 				compatibilityApproverEmployeeId: request.approverId,
 				journaledApproverEmployeeId: last.replacementApproverEmployeeId,
 			},
+		};
+	}
+	// Checked after consistency, so the only remaining doubt about a
+	// Teams-touched request is the Teams attempt itself.
+	if (input.teamsEscalationAttempted) {
+		return {
+			kind: "ambiguous",
+			cause: "teams_escalation_attempt",
+			evidence: { approvalRequestId: request.id },
 		};
 	}
 	return last
