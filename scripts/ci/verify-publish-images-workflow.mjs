@@ -172,6 +172,26 @@ if (webappRuntimeStage) {
 	);
 }
 
+const webappBuilderStage = getDockerStageBlock(webappDockerfile, "webapp-builder");
+expect(webappBuilderStage, "Dockerfile.webapp missing webapp-builder stage");
+
+if (webappBuilderStage) {
+	// Server action IDs are salted with this key at build time; a per-build
+	// random key breaks every open tab on each deploy.
+	includesAll(
+		webappBuilderStage,
+		[
+			"--mount=type=secret,id=next_server_actions_encryption_key",
+			'export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(cat /run/secrets/next_server_actions_encryption_key)"',
+		],
+		"Dockerfile.webapp build-time server action key",
+	);
+	expect(
+		!webappBuilderStage.includes("ARG NEXT_SERVER_ACTIONS_ENCRYPTION_KEY"),
+		"Dockerfile.webapp must pass the server action key as a build secret, not a build arg",
+	);
+}
+
 expectPushPathFilters([
 	"apps/webapp/**",
 	"docker/Dockerfile.webapp",
@@ -249,6 +269,15 @@ if (publishTargetsJob) {
 			"NEXT_PUBLIC_BUILD_HASH=${{ github.sha }}",
 		],
 		"publish-targets build args",
+	);
+
+	includesAll(
+		publishTargetsJob,
+		[
+			"secrets: |",
+			"next_server_actions_encryption_key=${{ secrets.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY }}",
+		],
+		"publish-targets build secrets",
 	);
 
 	expect(

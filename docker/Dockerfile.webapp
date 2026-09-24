@@ -71,7 +71,15 @@ ENV NEXT_DEPLOYMENT_ID=${NEXT_DEPLOYMENT_ID} \
     BUILD_HASH=${BUILD_HASH} \
     NEXT_PUBLIC_BUILD_HASH=${NEXT_PUBLIC_BUILD_HASH}
 RUN pnpm --filter webapp run generate-licenses || echo "{}" > apps/webapp/src/data/licenses.json
+# Server action IDs are salted with NEXT_SERVER_ACTIONS_ENCRYPTION_KEY at build
+# time. A stable key keeps IDs stable across deployments so open tabs keep working.
 RUN --mount=type=cache,id=next-cache,target=/app/apps/webapp/.next/cache \
+    --mount=type=secret,id=next_server_actions_encryption_key,required=false \
+    if [ -s /run/secrets/next_server_actions_encryption_key ]; then \
+      export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(cat /run/secrets/next_server_actions_encryption_key)"; \
+    else \
+      echo "WARNING: next_server_actions_encryption_key build secret missing; server action IDs will change on every build" >&2; \
+    fi && \
     pnpm --filter webapp exec next build
 
 FROM base AS webapp
