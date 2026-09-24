@@ -1,10 +1,6 @@
 import { unstable_isUnrecognizedActionError } from "next/navigation";
 
-const SKEW_MESSAGE_MARKERS = [
-	"failed-to-find-server-action",
-	"Failed to find Server Action",
-	"was not found on the server",
-];
+const SKEW_MESSAGE_MARKERS = ["failed-to-find-server-action", "Failed to find Server Action"];
 
 /**
  * True when a server action call failed because the page was loaded from a
@@ -14,7 +10,11 @@ export function isServerActionVersionSkewError(error: unknown): boolean {
 	if (unstable_isUnrecognizedActionError(error)) return true;
 	if (!(error instanceof Error)) return false;
 	if (error.name === "UnrecognizedActionError") return true;
-	return SKEW_MESSAGE_MARKERS.some((marker) => error.message.includes(marker));
+	const { message } = error;
+	return (
+		SKEW_MESSAGE_MARKERS.some((marker) => message.includes(marker)) ||
+		(message.includes("Server Action") && message.includes("was not found on the server"))
+	);
 }
 
 /**

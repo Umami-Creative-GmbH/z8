@@ -31,6 +31,9 @@ describe("isServerActionVersionSkewError", () => {
 
 	it("ignores ordinary failures", () => {
 		expect(isServerActionVersionSkewError(new Error("connection reset"))).toBe(false);
+		expect(isServerActionVersionSkewError(new Error("Employee was not found on the server"))).toBe(
+			false,
+		);
 		expect(isServerActionVersionSkewError("Server Action")).toBe(false);
 		expect(isServerActionVersionSkewError(null)).toBe(false);
 	});
