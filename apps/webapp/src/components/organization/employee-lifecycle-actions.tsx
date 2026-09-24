@@ -37,7 +37,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { EMPLOYEE_OFFBOARDING_RELEASE_READY } from "@/lib/employee-lifecycle/release";
 import { queryKeys } from "@/lib/query";
+import { Link } from "@/navigation";
 import { EmployeeLifecycleActionError } from "./employee-lifecycle-error";
 
 export interface EmployeeLifecycleTarget {
@@ -57,6 +59,12 @@ export interface EmployeeLifecycleActionsProps {
 	onRemoved?(employeeId: string): void;
 	/** A single button-compatible element that forwards its ref and received DOM props. */
 	trigger?: EmployeeLifecycleTriggerElement;
+	/**
+	 * Once offboarding is released, status changes go through the departure
+	 * and rehire flow on the employee's detail page instead of flipping the
+	 * active flag. Defaults to the server release gate.
+	 */
+	offboardingReleased?: boolean;
 }
 
 export type EmployeeLifecycleTriggerElement = ReactElement<
@@ -114,6 +122,8 @@ async function requireActionSuccess(
 
 interface LifecycleActionsMenuProps {
 	canChangeStatus: boolean;
+	/** Status changes open the detail page's departure and rehire flow. */
+	offboardingReleased: boolean;
 	canRemoveAccess: boolean;
 	isPending: boolean;
 	onSelectAction(action: LifecycleAction): void;
@@ -123,6 +133,7 @@ interface LifecycleActionsMenuProps {
 
 function LifecycleActionsMenu({
 	canChangeStatus,
+	offboardingReleased,
 	canRemoveAccess,
 	isPending,
 	onSelectAction,
@@ -150,7 +161,21 @@ function LifecycleActionsMenu({
 				)}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
-				{canChangeStatus && (
+				{canChangeStatus && offboardingReleased && (
+					<DropdownMenuItem asChild>
+						<Link href={`/settings/employees/${target.employeeId}#offboarding`}>
+							{target.isActive ? (
+								<IconPlayerPause aria-hidden="true" />
+							) : (
+								<IconPlayerPlay aria-hidden="true" />
+							)}
+							{target.isActive
+								? t("settings.employees.lifecycle.deactivate", "Deactivate")
+								: t("settings.employees.lifecycle.reactivate", "Reactivate")}
+						</Link>
+					</DropdownMenuItem>
+				)}
+				{canChangeStatus && !offboardingReleased && (
 					<DropdownMenuItem
 						onClick={() =>
 							onSelectAction(target.isActive ? "deactivate" : "reactivate")
@@ -298,6 +323,7 @@ export function EmployeeLifecycleActions({
 	onOptimisticStatusChange,
 	onRemoved,
 	trigger,
+	offboardingReleased = EMPLOYEE_OFFBOARDING_RELEASE_READY,
 }: EmployeeLifecycleActionsProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -459,6 +485,7 @@ export function EmployeeLifecycleActions({
 		<>
 			<LifecycleActionsMenu
 				canChangeStatus={canChangeStatus}
+				offboardingReleased={offboardingReleased}
 				canRemoveAccess={canRemoveAccess}
 				isPending={mutation.isPending}
 				onSelectAction={selectAction}

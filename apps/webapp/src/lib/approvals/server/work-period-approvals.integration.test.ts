@@ -3070,6 +3070,36 @@ describeIntegration(
 			await assertTerminalGraph("approved");
 		});
 
+		it.each([
+			["approve", "approved"],
+			["reject", "rejected"],
+		] as const)("a manager can %s ordinary time submitted before the requester departed", async (action, status) => {
+			const target = (await submit("manual_time_submission")).result
+				.approvalRequestId;
+			await pool.query(
+				"update employee set is_active = false where organization_id = $1 and id = $2",
+				[ids.organization, ids.requester],
+			);
+
+			const decided = await decide(
+				target,
+				action === "approve"
+					? { kind: "approve", reason: null }
+					: { kind: "reject", reason: "Requester departed" },
+			);
+
+			expect(decided.result.action).toBe(action);
+			await expect(
+				pool.query<{ status: string; requester_employee_id: string }>(
+					`select status, requester_employee_id from approval_workflow
+					 where organization_id = $1 and source_id = $2`,
+					[ids.organization, ids.period],
+				),
+			).resolves.toMatchObject({
+				rows: [{ status, requester_employee_id: ids.requester }],
+			});
+		});
+
 		it("Task8A split has exact period, canonical subtype, allocation, workflow, and synthetic-entry parity", async () => {
 			await seed("policy_clock_out", true);
 			const target = (await submit("policy_clock_out")).result

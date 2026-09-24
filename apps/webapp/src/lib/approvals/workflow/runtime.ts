@@ -17,7 +17,12 @@ import {
 } from "../domain-adapters/work-period.adapter";
 import { createLegacyApprovalRowWriter } from "./compatibility-writer";
 import { createLegacyApprovalObservationPlanner } from "./legacy-observation-planner";
-import { APPROVAL_ESCALATION_SYSTEM_ID } from "./ports";
+import { createOffboardingReassignmentAuthority } from "./offboarding-authority";
+import {
+	APPROVAL_ESCALATION_SYSTEM_ID,
+	EMPLOYEE_OFFBOARDING_SYSTEM_ID,
+	isOffboardingHandoverPrincipal,
+} from "./ports";
 import type {
 	ApprovalCommandActorResolver,
 	ApprovalMaterializedTransitionPlan,
@@ -96,7 +101,8 @@ export function createDatabaseApprovalCommandActorResolver(): ApprovalCommandAct
 				if (
 					input.principal.systemId !== "approval-expiry" &&
 					input.principal.systemId !== "approval-activation" &&
-					input.principal.systemId !== APPROVAL_ESCALATION_SYSTEM_ID
+					input.principal.systemId !== APPROVAL_ESCALATION_SYSTEM_ID &&
+					input.principal.systemId !== EMPLOYEE_OFFBOARDING_SYSTEM_ID
 				) {
 					return runtimeFailure("unknown system actor");
 				}
@@ -156,6 +162,11 @@ export function createApprovalWorkflowAuthorization(input: {
 		workflow: import("./ports").ApprovalWorkflowSnapshot;
 		command: import("./state-machine").ApprovalWorkflowCommand;
 	}) => Promise<boolean>;
+	/** Verifies departure-handover evidence; required to admit that principal. */
+	offboardingAuthority?: Pick<
+		ReturnType<typeof createOffboardingReassignmentAuthority>,
+		"authorize"
+	>;
 }): ApprovalWorkflowAuthorization {
 	return {
 		async authorize(request) {
@@ -176,6 +187,23 @@ export function createApprovalWorkflowAuthorization(input: {
 				)
 			) {
 				return runtimeFailure("authorization scope mismatch");
+			}
+			if (
+				request.principal &&
+				isOffboardingHandoverPrincipal(request.principal)
+			) {
+				// Evidence-bearing; never the generic system grant.
+				if (!input.offboardingAuthority) {
+					return runtimeFailure("offboarding authority unavailable");
+				}
+				return input.offboardingAuthority.authorize({
+					dbService: request.dbService,
+					organizationId: request.organizationId,
+					workflow,
+					principal: request.principal,
+					command,
+					replay: request.replay ?? null,
+				});
 			}
 			if (request.actor.kind === "system") return "system";
 			if (
@@ -428,6 +456,7 @@ export function createApprovalWorkflowRuntime(_input: {
 		actorResolver: createDatabaseApprovalCommandActorResolver(),
 		authorization: createApprovalWorkflowAuthorization({
 			canManageApproval: _input.canManageApproval,
+			offboardingAuthority: createOffboardingReassignmentAuthority({ clock }),
 		}),
 		sourceLoader: createRegistryApprovalSourceLoader(_input.adapterRegistry),
 		resultBuilder: createApprovalTransitionResultBuilder(),

@@ -1828,6 +1828,51 @@ describeIntegration(
 			});
 		});
 
+		it.each([
+			["approve", "approved", "home"],
+			["reject", "rejected", "office"],
+		] as const)("a manager can %s a correction submitted before the requester departed", async (action, status, location) => {
+			const submissionKey = `offboarding-departed-requester-${action}`;
+			await submitMetadataOnlyCorrection(submissionKey);
+			const command = await metadataOnlyDecisionCommand(submissionKey, action);
+			await pool.query(
+				"update employee set is_active = false where organization_id = $1 and id = $2",
+				[ids.organization, ids.requester],
+			);
+
+			const result = await runtime().transitionEngine.execute(command);
+
+			expect(result.snapshot.status).toBe(status);
+			expect(result.snapshot.requesterEmployeeId).toBe(ids.requester);
+			expect(await readWorkMetadata()).toMatchObject({
+				period_location: location,
+				canonical_location: location,
+			});
+		});
+
+		it("a departed requester cannot cancel a pending correction with a stale session", async () => {
+			await submitMetadataOnlyCorrection("offboarding-departed-requester-cancel");
+			await pool.query(
+				"update employee set is_active = false where organization_id = $1 and id = $2",
+				[ids.organization, ids.requester],
+			);
+
+			await expect(
+				cancelPendingTimeCorrection({
+					organizationId: ids.organization,
+					requesterEmployeeId: ids.requester,
+					requesterUserId: ids.requesterUser,
+					workPeriodId: ids.period,
+				}),
+			).rejects.toThrow();
+			await expect(
+				pool.query<{ status: string }>(
+					"select status from approval_workflow where organization_id = $1 and source_id = $2",
+					[ids.organization, ids.period],
+				),
+			).resolves.toMatchObject({ rows: [{ status: "pending" }] });
+		});
+
 		afterAll(async () => {
 			await cleanupTask13();
 			await runSqlStatements(pool, [

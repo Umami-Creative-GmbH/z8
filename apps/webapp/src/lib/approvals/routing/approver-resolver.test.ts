@@ -17,6 +17,7 @@ interface Directory {
 	managerLinks: EligibleManagerLink[];
 	teamMemberships: EligibleTeamMembership[];
 	teams: EligibleTeam[];
+	departureReplacements?: Array<{ employeeId: string; replacementEmployeeId: string }>;
 }
 
 function context(): ApprovalRoutingContext {
@@ -561,6 +562,106 @@ describe("resolveApprovalStageReviewers", () => {
 			"no_eligible_reviewer",
 			"No eligible reviewer.",
 		);
+	});
+
+	it("resolves the managers of a departed requester for an existing workflow stage", () => {
+		const departed = directory({
+			employees: directory().employees.map((employee) =>
+				employee.id === "requester" ? { ...employee, isActive: false } : employee,
+			),
+			managerLinks: [
+				{ employeeId: "requester", managerId: "manager-a", isPrimary: true },
+				{ employeeId: "manager-a", managerId: "director-a", isPrimary: true },
+			],
+		});
+		expect(
+			resolveApprovalStageReviewers({
+				context: context(),
+				stage: stage(),
+				directory: departed,
+				requesterMode: "existing_workflow",
+			}),
+		).toEqual({ activationMode: "human", approverEmployeeIds: ["manager-a"] });
+		expect(
+			resolveApprovalStageReviewers({
+				context: context(),
+				stage: stage({ approverType: "manager_manager" }),
+				directory: departed,
+				requesterMode: "existing_workflow",
+			}),
+		).toEqual({ activationMode: "human", approverEmployeeIds: ["director-a"] });
+		expectActivationError(
+			() =>
+				resolveApprovalStageReviewers({
+					context: context(),
+					stage: stage(),
+					directory: departed,
+				}),
+			"no_eligible_reviewer",
+			"No eligible reviewer.",
+		);
+	});
+
+	it("does not resolve a foreign historical requester for an existing workflow stage", () => {
+		expectActivationError(
+			() =>
+				resolveApprovalStageReviewers({
+					context: context(),
+					stage: stage(),
+					directory: directory({
+						employees: directory().employees.map((employee) =>
+							employee.id === "requester"
+								? { ...employee, organizationId: "org-2", isActive: false }
+								: employee,
+						),
+						managerLinks: [{ employeeId: "requester", managerId: "manager-a" }],
+					}),
+					requesterMode: "existing_workflow",
+				}),
+			"no_eligible_reviewer",
+			"No eligible reviewer.",
+		);
+	});
+
+	it("routes an explicit stage for a departed approver to the captured replacement", () => {
+		const departedDirectory = directory({
+			employees: directory().employees.map((employee) =>
+				employee.id === "manager-a" ? { ...employee, isActive: false } : employee,
+			),
+			departureReplacements: [{ employeeId: "manager-a", replacementEmployeeId: "manager-b" }],
+		});
+		expect(
+			resolveApprovalStageReviewers({
+				context: context(),
+				stage: stage({ approverType: "specific_employee", approverEmployeeId: "manager-a" }),
+				directory: departedDirectory,
+			}),
+		).toEqual({ activationMode: "human", approverEmployeeIds: ["manager-b"] });
+	});
+
+	it("fails visibly instead of auto-approving when a departed approver has no usable replacement", () => {
+		for (const replacements of [
+			[],
+			[{ employeeId: "manager-a", replacementEmployeeId: "inactive" }],
+			// A replacement who is the requester would auto-approve their own request.
+			[{ employeeId: "manager-a", replacementEmployeeId: "requester" }],
+		]) {
+			expectActivationError(
+				() =>
+					resolveApprovalStageReviewers({
+						context: context(),
+						stage: stage({ approverType: "specific_employee", approverEmployeeId: "manager-a" }),
+						directory: directory({
+							employees: directory().employees.map((employee) =>
+								employee.id === "manager-a" ? { ...employee, isActive: false } : employee,
+							),
+							departureReplacements: replacements,
+						}),
+					}),
+				"no_eligible_reviewer",
+				"No eligible reviewer.",
+			);
+		}
 	});
 
 	it("uses organization_admin fallback when the requester is absent from the directory", () => {

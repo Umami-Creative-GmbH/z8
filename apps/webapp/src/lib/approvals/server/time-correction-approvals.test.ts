@@ -9066,9 +9066,12 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 
 		expect(lockedTables).toEqual([employee, workPeriod, timeEntry, timeRecord]);
 		expect(mutations).toHaveLength(6);
+		// The departed requester's rows are still locked; activity is checked
+		// on the locked actor row, not in the lock predicate.
 		expect(collectSqlColumnNames(lockWhereClauses[0])).toEqual(
-			expect.arrayContaining(["id", "organization_id", "is_active"]),
+			expect.arrayContaining(["id", "organization_id"]),
 		);
+		expect(collectSqlColumnNames(lockWhereClauses[0])).not.toContain("is_active");
 		expect(collectSqlColumnNames(lockWhereClauses[1])).toEqual(
 			expect.arrayContaining(["id", "organization_id"]),
 		);

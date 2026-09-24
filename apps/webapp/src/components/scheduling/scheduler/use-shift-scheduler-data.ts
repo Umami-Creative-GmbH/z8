@@ -11,13 +11,15 @@ import {
 } from "@/app/[locale]/(app)/scheduling/actions";
 import type { DateRange } from "@/app/[locale]/(app)/scheduling/types";
 import { queryKeys } from "@/lib/query/keys";
-import { shiftToEvent } from "./shift-scheduler-utils";
+import { filterShiftsForEmployee, shiftToEvent } from "./shift-scheduler-utils";
 
 interface UseShiftSchedulerDataOptions {
 	organizationId: string;
 	organizationTimezone: string;
 	dateRange: DateRange;
 	isManager: boolean;
+	/** Shows only this employee's shifts on the calendar; counts still cover all. */
+	employeeFilter?: string | null;
 }
 
 export interface ShiftSchedulerUpdateInput {
@@ -34,6 +36,7 @@ export function useShiftSchedulerData({
 	organizationTimezone,
 	dateRange,
 	isManager,
+	employeeFilter = null,
 }: UseShiftSchedulerDataOptions) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -118,7 +121,9 @@ export function useShiftSchedulerData({
 	const complianceFindingsCount = complianceSummary?.totalFindings ?? 0;
 	const hasComplianceWarnings = complianceFindingsCount > 0;
 
-	const events = shifts.map((shift) => shiftToEvent(shift, organizationTimezone)) as any[];
+	const events = filterShiftsForEmployee(shifts, employeeFilter).map((shift) =>
+		shiftToEvent(shift, organizationTimezone),
+	) as any[];
 
 	return {
 		shifts,

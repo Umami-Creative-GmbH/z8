@@ -10,6 +10,7 @@ import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { EmployeeLifecycleActions } from "@/components/organization/employee-lifecycle-actions";
 import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
 import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
+import { EmployeeOffboardingSection } from "@/components/settings/employee-offboarding/employee-offboarding-section";
 import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
 import { RateHistoryCard } from "@/components/settings/rate-history-card";
@@ -104,11 +105,13 @@ export function EmployeeDetailPageClient({
 	accessTier,
 	currentUserId,
 	currentMemberRole,
+	highlightedReviewId = null,
 }: {
 	params: Promise<{ employeeId: string }>;
 	accessTier: SettingsAccessTier;
 	currentUserId: string;
 	currentMemberRole: string;
+	highlightedReviewId?: string | null;
 }) {
 	const { employeeId } = use(params);
 	const { t } = useTranslate();
@@ -317,6 +320,19 @@ export function EmployeeDetailPageClient({
 					employeeId={employeeId}
 					organizationId={employee.organizationId}
 					canManageSkills={canManageSkills}
+				/>
+			)}
+
+			{canShowRealEmployeeSections && (accessTier === "orgAdmin" || accessTier === "manager") && (
+				<EmployeeOffboardingSection
+					organizationId={employee.organizationId}
+					employeeId={employeeId}
+					highlightedReviewId={highlightedReviewId}
+					managers={availableManagers.map((manager) => ({
+						id: manager.id,
+						name: buildAuthUserDisplayName(manager.user) || manager.id,
+					}))}
+					workPolicies={workPolicies.map((policy) => ({ id: policy.id, name: policy.name }))}
 				/>
 			)}
 

@@ -13,11 +13,16 @@ import type {
 	ApprovalMaterializedTransitionPlan,
 	ApprovalTransitionResultBuilder,
 	ApprovalWorkflowAuthorization,
+	ApprovalWorkflowAuthorizationGrant,
 	ApprovalWorkflowCommandRequest,
 	ApprovalWorkflowSourceLoader,
 	ApprovalWriteGate,
 } from "./ports";
-import { APPROVAL_ESCALATION_SYSTEM_ID } from "./ports";
+import {
+	APPROVAL_ESCALATION_SYSTEM_ID,
+	EMPLOYEE_OFFBOARDING_SYSTEM_ID,
+	isOffboardingHandoverPrincipal,
+} from "./ports";
 import type { ApprovalWorkflowRepository } from "./repository";
 import type { ApprovalWorkflowCommand } from "./state-machine";
 import {
@@ -247,12 +252,16 @@ function assertSnapshotScope(
 
 function allowsAuthorization(
 	request: ApprovalWorkflowCommandRequest,
-	authorization:
-		| "active_assignment"
-		| "requester"
-		| "manage_approval"
-		| "system",
+	authorization: ApprovalWorkflowAuthorizationGrant,
 ): boolean {
+	if (isOffboardingHandoverPrincipal(request.principal)) {
+		// The departure-handover capability only replaces its captured duty.
+		return (
+			authorization === "offboarding_reassignment" &&
+			request.command.type === "reassign"
+		);
+	}
+	if (authorization === "offboarding_reassignment") return false;
 	if (
 		request.principal.kind === "system" &&
 		request.principal.systemId === "approval-activation"
@@ -483,9 +492,15 @@ export function createApprovalTransitionEngine(
 					mode: gate.mode,
 				});
 			}
-			const systemCapability =
-				request.principal.kind === "system" &&
-				request.principal.systemId === APPROVAL_ESCALATION_SYSTEM_ID
+			const offboardingPrincipal = isOffboardingHandoverPrincipal(
+				request.principal,
+			)
+				? request.principal
+				: null;
+			const systemCapability = offboardingPrincipal
+				? EMPLOYEE_OFFBOARDING_SYSTEM_ID
+				: request.principal.kind === "system" &&
+						request.principal.systemId === APPROVAL_ESCALATION_SYSTEM_ID
 					? APPROVAL_ESCALATION_SYSTEM_ID
 					: undefined;
 			const receipt = {
@@ -501,6 +516,23 @@ export function createApprovalTransitionEngine(
 			const claim = await context.repository.claimCommand(receipt);
 			if (claim.kind === "completed") {
 				assertResultScope(request, claim.result);
+				if (offboardingPrincipal) {
+					// A handover replay still proves current evidence and the
+					// recorded transfer; the lease may have rotated since.
+					const replayAuthorization =
+						await dependencies.authorization.authorize({
+							dbService: context.dbService,
+							organizationId: request.organizationId,
+							workflow,
+							actor,
+							command: request.command,
+							principal: request.principal,
+							replay: claim.result,
+						});
+					if (!allowsAuthorization(request, replayAuthorization)) {
+						throw engineError("forbidden", { command: request.command.type });
+					}
+				}
 				return {
 					result: claim.result,
 					disposition: "replayed",
@@ -529,6 +561,7 @@ export function createApprovalTransitionEngine(
 				workflow,
 				actor,
 				command: request.command,
+				principal: request.principal,
 			});
 			if (!allowsAuthorization(request, authorization)) {
 				throw engineError("forbidden", { command: request.command.type });
@@ -617,6 +650,17 @@ export function createApprovalTransitionEngine(
 				request.command,
 				policy,
 				dependencies.clock.nowInstant(),
+				offboardingPrincipal
+					? {
+							// Stable lineage only; the worker lease is never recorded.
+							offboardingLineage: {
+								departureId: offboardingPrincipal.departureId,
+								employmentPeriodId: offboardingPrincipal.employmentPeriodId,
+								handoverTaskId: offboardingPrincipal.handoverTaskId,
+								sourceAssignmentId: offboardingPrincipal.assignmentId,
+							},
+						}
+					: {},
 			);
 			if (plan.expectedVersion !== request.expectedVersion) {
 				throw engineError("version_conflict", {
@@ -720,6 +764,7 @@ export function createApprovalTransitionEngine(
 					stage,
 					actor: activationActor,
 					routingContext,
+					requesterMode: "existing_workflow",
 				});
 				if (
 					resolved.organizationId !== request.organizationId ||

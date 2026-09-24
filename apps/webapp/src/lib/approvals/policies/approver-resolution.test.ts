@@ -315,4 +315,26 @@ describe("resolveApproverFromDirectory", () => {
 			}),
 		).toEqual({ ok: false, reason: "Specific approver is not active in this organization." });
 	});
+
+	it("resolves a departed requester's manager only for an existing workflow", () => {
+		const departed = employees.map((employee) =>
+			employee.id === "emp_requester" ? { ...employee, isActive: false } : employee,
+		);
+		const input = {
+			organizationId: "org_1",
+			requesterEmployeeId: "emp_requester",
+			stage: stage({ approverType: "manager_manager" }),
+			employees: departed,
+			managerLinks,
+			teamMemberships,
+			teams,
+		};
+		expect(resolveApproverFromDirectory(input)).toEqual({
+			ok: false,
+			reason: "Requester is not active in this organization.",
+		});
+		expect(
+			resolveApproverFromDirectory({ ...input, requesterMode: "existing_workflow" }),
+		).toEqual({ ok: true, approverEmployeeId: "emp_senior_manager" });
+	});
 });

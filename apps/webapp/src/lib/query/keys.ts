@@ -94,6 +94,24 @@ export const queryKeys = {
 			["employees", "detail", employeeId, "rate-history"] as const,
 		employmentHistory: (employeeId: string) =>
 			["employees", "detail", employeeId, "employment-history"] as const,
+		/** Lifecycle view; under the organization key so directory changes refresh it. */
+		offboarding: (orgId: string, employeeId: string) =>
+			["employees", orgId, "offboarding", employeeId] as const,
+		offboardingPreview: (
+			orgId: string,
+			employeeId: string,
+			lastWorkingDay: string | null,
+			replacementEmployeeId: string | null,
+		) =>
+			[
+				"employees",
+				orgId,
+				"offboarding",
+				employeeId,
+				"preview",
+				lastWorkingDay,
+				replacementEmployeeId,
+			] as const,
 	},
 
 	// Employee clock statuses

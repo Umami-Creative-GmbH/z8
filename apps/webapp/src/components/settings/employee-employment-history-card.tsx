@@ -116,7 +116,7 @@ export function EmployeeEmploymentHistoryCard({
 		);
 	};
 	return (
-		<Card>
+		<Card id="employment-history">
 			<CardHeader className="flex flex-row items-start justify-between gap-4">
 				<div>
 					<CardTitle>{t("settings.employmentHistory.title", "Contract & Work Model")}</CardTitle>

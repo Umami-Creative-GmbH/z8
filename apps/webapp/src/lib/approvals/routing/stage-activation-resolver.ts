@@ -1,4 +1,8 @@
 import { sql } from "drizzle-orm";
+import {
+	type EscalationCandidateExecutor,
+	hasApprovalDecisionPath,
+} from "../escalation/candidates";
 import type {
 	EligibleManagerEmployee,
 	EligibleManagerLink,
@@ -122,6 +126,7 @@ function decodeDirectoryEnvelope(value: unknown): {
 	managerLinks: unknown[];
 	teamMemberships: unknown[];
 	teams: unknown[];
+	departureReplacements: unknown[];
 } {
 	if (
 		!isRecord(value) ||
@@ -131,7 +136,9 @@ function decodeDirectoryEnvelope(value: unknown): {
 		!Array.isArray(value.rows[0].employees) ||
 		!Array.isArray(value.rows[0].managerLinks) ||
 		!Array.isArray(value.rows[0].teamMemberships) ||
-		!Array.isArray(value.rows[0].teams)
+		!Array.isArray(value.rows[0].teams) ||
+		(value.rows[0].departureReplacements !== undefined &&
+			!Array.isArray(value.rows[0].departureReplacements))
 	) {
 		return invalid("Malformed approval directory query result.");
 	}
@@ -140,6 +147,8 @@ function decodeDirectoryEnvelope(value: unknown): {
 		managerLinks: value.rows[0].managerLinks,
 		teamMemberships: value.rows[0].teamMemberships,
 		teams: value.rows[0].teams,
+		departureReplacements: (value.rows[0].departureReplacements ??
+			[]) as unknown[],
 	};
 }
 
@@ -214,12 +223,63 @@ function decodeTeams(rows: unknown[]): EligibleTeam[] {
 	});
 }
 
-export function createDatabaseStageActivationResolver(): StageActivationResolver {
+type DepartureReplacementRow = {
+	employeeId: string;
+	replacementEmployeeId: string;
+	replacementUserId: string;
+};
+
+function decodeDepartureReplacements(
+	rows: unknown[],
+): DepartureReplacementRow[] {
+	return rows.map((row) => {
+		if (
+			!isRecord(row) ||
+			!nonEmptyString(row.employeeId) ||
+			!nonEmptyString(row.replacementEmployeeId) ||
+			!nonEmptyString(row.replacementUserId)
+		) {
+			return invalid("Malformed departure replacement directory row.");
+		}
+		return {
+			employeeId: row.employeeId,
+			replacementEmployeeId: row.replacementEmployeeId,
+			replacementUserId: row.replacementUserId,
+		};
+	});
+}
+
+export type ReplacementDecisionPath = (
+	executor: EscalationCandidateExecutor,
+	input: {
+		organizationId: string;
+		requesterEmployeeId: string;
+		managerEmployeeId: string;
+		managerUserId: string;
+	},
+) => Promise<boolean>;
+
+/**
+ * Resolves stage reviewers from the organization directory. A stage naming a
+ * departed person resolves to that stage's own assigned replacement, else the
+ * departure's replacement, and only while the replacement is still an
+ * accessible, approved member who can decide the requester's approvals: the
+ * same authority the departure handover checks before a transfer.
+ */
+export function createDatabaseStageActivationResolver(
+	deps: { hasDecisionPath?: ReplacementDecisionPath } = {},
+): StageActivationResolver {
+	const hasDecisionPath = deps.hasDecisionPath ?? hasApprovalDecisionPath;
 	return {
 		async resolve(input) {
 			const context = decodeRoutingContext(input.routingContext, input);
 			const stage = decodeResolverSnapshot(input.stage.resolverSnapshot);
 			const organizationId = input.organizationId;
+			// Only an explicitly named approver can be stood in for.
+			const namedApproverId =
+				stage.approverType === "specific_employee"
+					? (stage.approverEmployeeId ?? null)
+					: null;
 			const directoryResult = await input.dbService.db.execute(sql`
 				select
 					coalesce((
@@ -227,7 +287,10 @@ export function createDatabaseStageActivationResolver(): StageActivationResolver
 							json_build_object(
 								'id', employee.id,
 								'organizationId', employee.organization_id,
-								'isActive', employee.is_active,
+								-- A due departure ends activity before it is materialized.
+								'isActive', employee.is_active AND NOT employee_departure_denies_access(
+									employee.organization_id, employee.id, now()
+								),
 								'role', employee.role
 							)
 							order by employee.id
@@ -270,18 +333,76 @@ export function createDatabaseStageActivationResolver(): StageActivationResolver
 						)
 						from team
 						where team.organization_id = ${organizationId}
-					), '[]'::json) as teams
+					), '[]'::json) as teams,
+					coalesce((
+						select json_agg(
+							json_build_object(
+								'employeeId', latest.employee_id,
+								'replacementEmployeeId', replacement.id,
+								'replacementUserId', replacement.user_id
+							)
+						)
+						from (
+							select distinct on (departure.employee_id)
+								departure.employee_id,
+								coalesce(
+									(stage_review.metadata->>'replacementEmployeeId')::uuid,
+									departure.replacement_employee_id
+								) as replacement_employee_id
+							from employee_departure departure
+							left join employee_departure_review stage_review
+								on stage_review.organization_id = departure.organization_id
+								and stage_review.departure_id = departure.id
+								and stage_review.kind = 'approval_handover'
+								and stage_review.subject_id = ${input.stage.id}::uuid
+							where departure.organization_id = ${organizationId}
+								and departure.employee_id = ${namedApproverId}::uuid
+								and departure.status = 'effective'
+							order by departure.employee_id, departure.effective_at desc
+						) latest
+						join employee replacement
+							on replacement.id = latest.replacement_employee_id
+							and replacement.organization_id = ${organizationId}
+						where exists (
+								select 1 from member
+								where member.organization_id = replacement.organization_id
+									and member.user_id = replacement.user_id
+									and member.status = 'approved'
+							)
+							and not employee_departure_denies_access(
+								replacement.organization_id, replacement.id, now()
+							)
+					), '[]'::json) as "departureReplacements"
 			`);
 			const directory = decodeDirectoryEnvelope(directoryResult);
+			const replacementsWithDecisionPath = async (
+				rows: DepartureReplacementRow[],
+			) => {
+				const allowed = await Promise.all(
+					rows.map((row) =>
+						hasDecisionPath(input.dbService.db as EscalationCandidateExecutor, {
+							organizationId,
+							requesterEmployeeId: context.requesterEmployeeId,
+							managerEmployeeId: row.replacementEmployeeId,
+							managerUserId: row.replacementUserId,
+						}),
+					),
+				);
+				return rows.filter((_, index) => allowed[index]);
+			};
 
 			const resolution = resolveApprovalStageReviewers({
 				context,
 				stage,
+				requesterMode: input.requesterMode ?? "new_submission",
 				directory: {
 					employees: decodeEmployees(directory.employees),
 					managerLinks: decodeManagerLinks(directory.managerLinks),
 					teamMemberships: decodeTeamMemberships(directory.teamMemberships),
 					teams: decodeTeams(directory.teams),
+					departureReplacements: await replacementsWithDecisionPath(
+						decodeDepartureReplacements(directory.departureReplacements),
+					),
 				},
 			});
 

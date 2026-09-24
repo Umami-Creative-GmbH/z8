@@ -1,5 +1,5 @@
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { createTimeCorrectionApprovalAdapter } from "../domain-adapters/time-correction.adapter";
 import type {
@@ -140,12 +140,14 @@ function activationInput({
 	routing = routingContext(),
 	workflowSnapshot = workflow(),
 	stageSnapshot = stage(),
+	requesterMode,
 }: {
 	dbService?: ApprovalDbService;
 	organizationId?: string;
 	routing?: JsonObject;
 	workflowSnapshot?: ApprovalWorkflowSnapshot;
 	stageSnapshot?: ApprovalStageSnapshot;
+	requesterMode?: StageActivationInput["requesterMode"];
 } = {}): StageActivationInput {
 	return {
 		dbService,
@@ -154,6 +156,7 @@ function activationInput({
 		stage: stageSnapshot,
 		actor: { kind: "system", employeeId: null, userId: null },
 		routingContext: routing,
+		...(requesterMode ? { requesterMode } : {}),
 	};
 }
 
@@ -266,7 +269,17 @@ describe("createDatabaseStageActivationResolver", () => {
 
 		expect(fake.calls).toHaveLength(1);
 		const rendered = new PgDialect().sqlToQuery(fake.calls[0]);
-		expect(rendered.params).toEqual(["org-1", "org-1", "org-1", "org-1"]);
+		// Only an explicitly named approver has a replacement lookup.
+		expect(rendered.params).toEqual([
+			"org-1",
+			"org-1",
+			"org-1",
+			"org-1",
+			stageId,
+			"org-1",
+			null,
+			"org-1",
+		]);
 		expect(rendered.sql).toMatch(
 			/from employee[\s\S]*employee\.organization_id\s*=\s*\$1/,
 		);
@@ -280,6 +293,101 @@ describe("createDatabaseStageActivationResolver", () => {
 		expect(rendered.sql).toMatch(
 			/from team[\s\S]*team\.organization_id\s*=\s*\$4/,
 		);
+		// A due departure ends activity even before it is materialized.
+		expect(rendered.sql).toMatch(/employee_departure_denies_access\(/);
+		expect(rendered.sql).toMatch(
+			/from employee_departure departure[\s\S]*departure\.organization_id\s*=\s*\$6[\s\S]*status = 'effective'/,
+		);
+		// A stage's own replacement wins over the departure's.
+		expect(rendered.sql).toMatch(
+			/coalesce\(\s*\(stage_review\.metadata->>'replacementEmployeeId'\)::uuid,\s*departure\.replacement_employee_id/,
+		);
+		expect(rendered.sql).toMatch(/stage_review\.subject_id = \$5::uuid/);
+		expect(rendered.sql).toMatch(/member\.status = 'approved'/);
+	});
+
+	function departedApproverInput(hasDecisionPath: boolean) {
+		const rows = directoryRows.map((group) => [...group]);
+		rows[0] = rows[0].map((row) =>
+			(row as { id: string }).id === managerAId ? { ...(row as object), isActive: false } : row,
+		);
+		const fake = database([
+			{
+				...directoryEnvelope(rows),
+				departureReplacements: [
+					{
+						employeeId: managerAId,
+						replacementEmployeeId: managerBId,
+						replacementUserId: "user-manager-b",
+					},
+				],
+			},
+		]);
+		const decisionPath = vi.fn().mockResolvedValue(hasDecisionPath);
+		const resolution = createDatabaseStageActivationResolver({
+			hasDecisionPath: decisionPath,
+		}).resolve(
+			activationInput({
+				dbService: fake.dbService,
+				stageSnapshot: stage({
+					resolverSnapshot: {
+						approverType: "specific_employee",
+						approverEmployeeId: managerAId,
+						fallbackBehavior: "fail",
+					},
+				}),
+			}),
+		);
+		return { resolution, decisionPath, fake };
+	}
+
+	it("honors a captured departure replacement for an explicit stage approver", async () => {
+		const { resolution, decisionPath, fake } = departedApproverInput(true);
+
+		await expect(resolution).resolves.toMatchObject({
+			activationMode: "human",
+			assignments: [{ approverEmployeeId: managerBId, metadata: {} }],
+		});
+		expect(decisionPath).toHaveBeenCalledWith(fake.dbService.db, {
+			organizationId: "org-1",
+			requesterEmployeeId: requesterId,
+			managerEmployeeId: managerBId,
+			managerUserId: "user-manager-b",
+		});
+		expect(new PgDialect().sqlToQuery(fake.calls[0]).params).toContain(managerAId);
+	});
+
+	it("never activates a stage for a replacement who cannot decide the approval", async () => {
+		const { resolution } = departedApproverInput(false);
+
+		await expect(resolution).rejects.toMatchObject({ code: "no_eligible_reviewer" });
+	});
+
+	it("resolves a departed requester's managers only for a persisted workflow", async () => {
+		const rows = directoryRows.map((group) => [...group]);
+		rows[0] = rows[0].map((row) =>
+			(row as { id: string }).id === requesterId ? { ...(row as object), isActive: false } : row,
+		);
+
+		await expect(
+			createDatabaseStageActivationResolver().resolve(
+				activationInput({
+					dbService: database([directoryEnvelope(rows)]).dbService,
+					requesterMode: "existing_workflow",
+				}),
+			),
+		).resolves.toMatchObject({
+			activationMode: "human",
+			assignments: [
+				{ approverEmployeeId: managerAId, metadata: {} },
+				{ approverEmployeeId: managerBId, metadata: {} },
+			],
+		});
+		await expect(
+			createDatabaseStageActivationResolver().resolve(
+				activationInput({ dbService: database([directoryEnvelope(rows)]).dbService }),
+			),
+		).rejects.toMatchObject({ code: "no_eligible_reviewer" });
 	});
 
 	it("maps requester auto approval to no assignments", async () => {

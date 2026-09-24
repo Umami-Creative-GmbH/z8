@@ -2,12 +2,14 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { getEmployee } from "../actions";
 import { getCurrentApprovedMembership } from "../current-approved-membership";
 import { EmployeeDetailPageClient } from "./employee-detail-page-client";
 
 interface EmployeeDetailPageProps {
 	params: Promise<{ employeeId: string }>;
+	searchParams?: Promise<{ review?: string | string[] }>;
 }
 
 export default function EmployeeDetailPage(props: EmployeeDetailPageProps) {
@@ -18,11 +20,19 @@ export default function EmployeeDetailPage(props: EmployeeDetailPageProps) {
 	);
 }
 
-async function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
-	const [settingsRouteContext, { employeeId }] = await Promise.all([
+async function EmployeeDetailPageContent({
+	params,
+	searchParams,
+}: EmployeeDetailPageProps) {
+	const [settingsRouteContext, { employeeId }, query] = await Promise.all([
 		getCurrentSettingsRouteContext(),
 		params,
+		searchParams ?? Promise.resolve({ review: undefined }),
 	]);
+	// A notification links to one persisted review; only its id is passed on.
+	const highlightedReviewId = isCanonicalUuid(query.review)
+		? query.review
+		: null;
 
 	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
 		redirect("/settings");
@@ -54,6 +64,7 @@ async function EmployeeDetailPageContent({ params }: EmployeeDetailPageProps) {
 			accessTier={settingsRouteContext.accessTier}
 			currentUserId={currentUserId}
 			currentMemberRole={currentMember.role}
+			highlightedReviewId={highlightedReviewId}
 		/>
 	);
 }

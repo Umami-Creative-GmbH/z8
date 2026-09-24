@@ -29,6 +29,11 @@
         "restTime": "Ruhezeit: {count}",
         "title": "Compliance-Warnungen in diesem Datumsbereich"
       },
+      "focus": {
+        "anonymous": "Schichten einer Person werden angezeigt",
+        "employee": "Schichten von {name} werden angezeigt",
+        "showAll": "Alle Schichten anzeigen"
+      },
       "loading": "Schichtplan wird geladen...",
       "publish": {
         "failed": "Veröffentlichung der Schichten fehlgeschlagen",

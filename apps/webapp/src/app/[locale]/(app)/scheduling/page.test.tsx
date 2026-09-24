@@ -95,4 +95,52 @@ describe("SchedulingPageContent organization scope", () => {
 		expect(mockState.headers).not.toHaveBeenCalled();
 		expect(mockState.employeeFindFirst).not.toHaveBeenCalled();
 	});
+
+	it("focuses a manager's schedule on one employee and date from the URL", async () => {
+		mockState.getAuthContext.mockResolvedValue({
+			user: { id: "user-manager" },
+			session: { activeOrganizationId: "org-b" },
+			employee: {
+				id: "manager-b",
+				organizationId: "org-b",
+				role: "manager",
+				teamId: null,
+			},
+		});
+		const searchParams = Promise.resolve({
+			employeeId: "11111111-1111-4111-8111-111111111111",
+			date: "2026-10-01",
+		});
+		const suspenseShell = SchedulingPage({ searchParams });
+		const SchedulingPageContent = suspenseShell.props.children.type;
+		const page = await SchedulingPageContent(
+			suspenseShell.props.children.props,
+		);
+		const scheduler = page.props.children.props.children[1];
+
+		expect(scheduler.props).toMatchObject({
+			isManager: true,
+			focusEmployeeId: "11111111-1111-4111-8111-111111111111",
+			focusDate: "2026-10-01",
+		});
+	});
+
+	it("ignores an employee focus for non-managers", async () => {
+		const searchParams = Promise.resolve({
+			employeeId: "11111111-1111-4111-8111-111111111111",
+			date: "2026-10-01",
+		});
+		const suspenseShell = SchedulingPage({ searchParams });
+		const SchedulingPageContent = suspenseShell.props.children.type;
+		const page = await SchedulingPageContent(
+			suspenseShell.props.children.props,
+		);
+		const scheduler = page.props.children.props.children[1];
+
+		expect(scheduler.props).toMatchObject({
+			isManager: false,
+			focusEmployeeId: null,
+			focusDate: "2026-10-01",
+		});
+	});
 });

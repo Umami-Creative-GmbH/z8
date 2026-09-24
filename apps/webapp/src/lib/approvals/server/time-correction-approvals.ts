@@ -1908,19 +1908,20 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		.where(
 			and(
 				eq(employee.organizationId, input.organizationId),
-				eq(employee.isActive, true),
 				inArray(employee.id, employeeIds),
 			),
 		)
 		.orderBy(asc(employee.id))
 		.for("update");
+	// A submitted claim stays decidable after its requester departs; only the
+	// deciding actor must still be active.
 	if (
 		lockedEmployees.length !== employeeIds.length ||
 		lockedEmployees.some(
 			(row, index) =>
 				row.id !== employeeIds[index] ||
 				row.organizationId !== input.organizationId ||
-				row.isActive !== true,
+				(row.id === input.actorEmployeeId && row.isActive !== true),
 		)
 	) {
 		throw timeCorrectionFinalizationConflict("employee_lock_identity_mismatch");
@@ -2226,7 +2227,6 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	const employees = (await input.dbService.db.query.employee.findMany({
 		where: and(
 			eq(employee.organizationId, input.organizationId),
-			eq(employee.isActive, true),
 			inArray(employee.id, [period.employeeId, input.actorEmployeeId]),
 		),
 		with: { user: true },
@@ -2237,10 +2237,10 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	const actor = employees.find(
 		(candidate) => candidate.id === input.actorEmployeeId,
 	);
+	// The requester is historical identity; only the actor must be active.
 	if (
 		!requester ||
 		requester.organizationId !== input.organizationId ||
-		!requester.isActive ||
 		!actor ||
 		actor.organizationId !== input.organizationId ||
 		actor.userId !== input.actorUserId ||

@@ -249,6 +249,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"compliance_exception_expired", // Pre-approval expired
 	// Approval escalation administrative attention (admins/owners)
 	"approval_escalation_attention",
+	// Employee offboarding follow-up review (admins/owners, primary manager)
+	"employee_offboarding_review",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [

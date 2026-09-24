@@ -42,7 +42,10 @@ const {
 	mockSql,
 } = vi.hoisted(() => {
 	const mockReturning = vi.fn();
-	const mockValues = vi.fn(() => ({ returning: mockReturning }));
+	const mockValues = vi.fn(() => ({
+		returning: mockReturning,
+		onConflictDoNothing: vi.fn(() => ({ returning: mockReturning })),
+	}));
 	const mockInsert = vi.fn(() => ({ values: mockValues }));
 
 	const mockUpdateWhere = vi.fn(() => ({ returning: mockReturning }));
@@ -759,6 +762,85 @@ describe("Notification Service", () => {
 
 			// Default to enabled when no preference found
 			expect(result).toBe(true);
+		});
+	});
+
+	describe("single-channel delivery for durable callers", () => {
+		const params = {
+			userId: "user-1",
+			organizationId: "org-1",
+			type: "approval_escalation_attention" as const,
+			title: "Review",
+			message: "Needs review",
+			idempotencyKey: "offboarding-review:review-1:user-1",
+		};
+
+		test("reports a duplicate idempotent in-app insert instead of silently succeeding", async () => {
+			mockReturning.mockImplementation(() => Promise.resolve([]));
+			const { insertInAppNotification } = await import("../notification-service");
+
+			await expect(insertInAppNotification(params)).resolves.toEqual({ kind: "duplicate" });
+		});
+
+		test("returns the created in-app row", async () => {
+			const created = createMockNotification();
+			mockReturning.mockImplementation(() => Promise.resolve([created]));
+			const { insertInAppNotification } = await import("../notification-service");
+
+			await expect(insertInAppNotification(params)).resolves.toEqual({
+				kind: "created",
+				notification: created,
+			});
+		});
+
+		test("loads channel preferences with enabled defaults", async () => {
+			mockFindMany.mockImplementation(() =>
+				Promise.resolve([createMockPreference({ channel: "email", enabled: false })]),
+			);
+			const { loadNotificationChannelPreferences } = await import("../notification-service");
+
+			await expect(
+				loadNotificationChannelPreferences("user-1", "approval_escalation_attention"),
+			).resolves.toEqual({
+				in_app: true,
+				push: true,
+				email: false,
+				teams: true,
+				telegram: true,
+				discord: true,
+				slack: true,
+			});
+		});
+
+		test("awaits the transport and propagates its failure", async () => {
+			mockSendEmailNotification.mockImplementationOnce(() =>
+				Promise.reject(new Error("smtp down")),
+			);
+			const { deliverNotificationToChannel } = await import("../notification-service");
+
+			await expect(deliverNotificationToChannel("email", params, null)).rejects.toThrow(
+				"smtp down",
+			);
+			mockSendEmailNotification.mockImplementationOnce(() => Promise.resolve());
+			await expect(deliverNotificationToChannel("email", params, null)).resolves.toBe("sent");
+		});
+
+		test("separates an unavailable transport from a failed one", async () => {
+			mockIsPushAvailable.mockImplementation(() => false);
+			const { deliverNotificationToChannel } = await import("../notification-service");
+
+			await expect(deliverNotificationToChannel("push", params, null)).resolves.toBe(
+				"unavailable",
+			);
+			for (const { channel, available, send } of botChannels) {
+				available.mockResolvedValue(false);
+				await expect(deliverNotificationToChannel(channel, params, null)).resolves.toBe(
+					"unavailable",
+				);
+				available.mockResolvedValue(true);
+				await expect(deliverNotificationToChannel(channel, params, "n-1")).resolves.toBe("sent");
+				expect(send).toHaveBeenCalledWith(expect.objectContaining({ userId: "user-1" }));
+			}
 		});
 	});
 });
