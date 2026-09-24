@@ -322,3 +322,148 @@ contradictions, chain outcomes, observation checks, activation),
 evidence ordering and rollback), `request-absence-effect.test.ts` (capture after
 the legacy rows and observation binding; rollback), `presentation` and
 `maintenance` tests. Not executed: deployment, browser, the blocker 6 items.
+
+## Expense submissions and receipt identity (#295 / T31)
+
+Travel expense approvals are decided only by the legacy owners (there is no
+canonical `travel_expense` adapter), so a submitted claim is frozen as a
+**legacy** submitted revision in the same tables, linked to the approval request
+routing created. Capture follows `approval_evidence_control` for
+`(organization, 'travel_expense')` and is inactive everywhere until an
+authorized adoption writer enables it (same SQL as above, with the lock scope
+suffix `:14:travel_expense`). Apply migration
+`0078_travel_expense_submission_evidence.sql` first.
+
+Code: `lib/approvals/evidence/travel-expense-facts.ts` (facts, fingerprint,
+comparison), `travel-expense-submission.ts` (capture), rows in `store.ts`;
+upload coordination and cleanup in `lib/travel-expenses/receipt-upload.ts`.
+
+### What is captured, and by whom
+
+| Evidence | Written by | When |
+| --- | --- | --- |
+| Entered logical trip dates and interpretation zone (`travel_expense_claim.trip_start_date`, `trip_end_date`, `trip_date_time_zone`) | `createTravelExpenseDraft` | Always, with the draft. The zone is the effective zone that also derived the compatibility `trip_start`/`trip_end` bounds |
+| Server content checksum and provider object version (`travel_expense_attachment.checksum_sha256`, `storage_version_id`) | Upload route via `finalizeTravelExpenseReceiptUpload` | Always, over the exact bytes stored. Keys are write-once (`…/<attachmentId>-<name>`) |
+| Submitted revision (`approval_submitted_revision`, `authority = 'legacy'`, `workflow_type = 'travel_expense'`) | `submitTravelExpenseClaim` via `captureTravelExpenseSubmissionEvidence` | Same transaction that locks, submits and routes the claim; only while capture is active |
+| Submission activation outcome | Same | When routing auto-approves (requester is approver): `system` actor at the persisted `travel_expense_claim.decided_at` |
+
+Submitted facts: claim, subject/requester employee (the claim owner) and the
+separately evidenced submitter; claim type; logical trip dates with
+`interpretation: { source: "entered_logical_dates", zone }`; the persisted
+original and calculated amount/currency pairs verbatim; destination; and the
+**receipt manifest**: per attachment the exact claim relationship, storage
+provider/bucket/key/version and server checksum, sorted by attachment ID. The
+compatibility UTC bounds and project ID are kept but are not material (the
+project FK can clear itself). Labels hold request-time names, the project name
+(same organization only) and receipt file names. Notes, receipt contents and
+reimbursement, tax, exchange-rate, mileage or per-diem calculations are never
+stored or inferred. The material fingerprint is `travel_expense:v1:<sha256>`;
+changing a receipt's content identity changes it even when the count does not.
+
+Incomplete evidence throws `evidence_incomplete` and rolls back the whole
+submission (claim status, approval request/chain, revision), and the employee
+is told why: a draft created before logical dates were recorded (`trip_dates`;
+the current timezone is never used as a substitute), a receipt uploaded before
+checksums existed (`receipt_checksum`), a receipt outside private storage, a
+receipt claim without receipts, or malformed persisted money. An attachment row
+of another organization or claim is an integrity contradiction (`invariant`).
+
+### Upload and submission coordination
+
+- The upload route **stages** a `travel_expense_receipt_upload` row (committed)
+  before storing the private object, then finalizes in one transaction that
+  takes `SELECT … FOR UPDATE` on the claim. Still the uploader's draft: the
+  attachment is inserted and the staging row removed. Otherwise nothing is
+  attached, the row becomes `cleanup_required` (`claim_not_draft`) and the
+  route answers 409. The client no longer retries 4xx answers.
+- Submission acquires the shared `travel_expense` rollout lock, then the same
+  claim row lock, and only then reads the receipt set. An upload therefore
+  either attached before submission read the manifest or is rejected after it.
+  The receipt count check outside the transaction is gone.
+- Rejected, failed (`finalization_failed`) and abandoned (`pending` for more
+  than an hour) objects are deleted by `runTravelExpenseReceiptCleanup`: once
+  right after a rejection, and by `cron:travel-expense-receipt-cleanup` every
+  15 minutes. Work is leased, deletes the recorded object version, never deletes
+  a key referenced by an attachment, and on failure keeps the row with its last
+  error and backoff (1 min, 5 min, 30 min, 2 h, then 12 h; never dropped).
+  Staging rows keep organization and claim by value so cleanup outlives claim
+  and tenant deletion.
+
+### Material changes and decisions
+
+A claim leaves draft once and there is no expense amendment or resubmission
+path. `preflightTravelExpenseDecision` therefore compares every claim that has
+a revision with its live rows, inside the decision transaction. A changed
+receipt set, date, amount, type, destination or identity, or live rows that can
+no longer be verified, returns a 409 `approval_evidence` conflict and the claim
+stays pending; the supported successor is a new claim. Decision evidence,
+review presentation, bindings and the `evidence_required` hold for claims
+submitted before capture belong to #296.
+
+### Cleanup participation
+
+Expense revisions and activation outcomes are ordinary legacy evidence: listed
+as `legacy_evidence` and removed by privileged `deleteApproval` through their
+legacy request (or revision ID), preserving the claim, its attachments and other
+claims. Whole-organization deletion cascades them through the organization FK,
+with the same employee-FK gap as above (#306). Deleting a claim through an
+employee/organization cascade still leaves its stored receipt objects
+(pre-existing, not introduced here).
+
+### Activation blockers (#295, unresolved)
+
+1. Apply 0078 through the authorized deployment (it has run only on the
+   disposable PostgreSQL 16 database).
+2. **Historical drafts.** Drafts created before 0078 lack logical dates, and
+   receipts uploaded before it lack checksums. With capture on they cannot be
+   submitted and must be recreated; classify or drain them first. Claims
+   submitted before capture have no revision and are not held here (#296).
+3. Old binaries attach receipts without the claim lock or checksum and submit
+   without capture; drain them before relying on manifests.
+4. The web UI does not expose receipt upload or claim submission yet (only the
+   server action and route exist), so the 409 message is not browser-verified.
+5. **Storage immutability is not enforced by the provider.** On a bucket
+   without versioning `versionId` is null and the only protection is the
+   write-once key convention: `PutObject` is not conditional, and decision-time
+   comparison re-reads database rows, not objects. The checksum is computed over
+   the bytes sent, not confirmed by the provider (`ChecksumSHA256` is not sent).
+   Before activation, require bucket versioning (or conditional writes) for
+   receipt storage. Object storage was an in-memory stand-in in the runtime
+   suite; real version IDs, versioned deletes and the bucket-mismatch refusal
+   are unverified.
+6. **Abandoned objects on versioned buckets.** A process that dies after storing
+   but before finalizing leaves no recorded version, so cleanup deletes by key,
+   which on a versioned bucket only adds a delete marker. (A slow upload whose
+   row was already swept re-records itself with its version; that path is
+   covered.)
+7. **Held claims have no durable attention.** A materially changed claim is
+   refused for both approve and reject and there is no expense cancellation
+   path, so it stays `submitted` until authorized cleanup (`deleteApproval`)
+   or a separately agreed repair. No administrative-attention record is raised.
+8. Whole-organization cleanup ordering (#306), then a limited pilot (#328).
+
+**Not gated by capture.** These ship active on deploy, as bounded corrections:
+logical-date columns on new drafts, upload staging with checksum/version,
+the claim-lock coordination with its 409 for late uploads, the in-transaction
+receipt check, and the cleanup cron (it only touches staging rows this code
+creates). Only revision capture and the decision-time material-change check
+(which needs a revision) depend on `approval_evidence_control`.
+
+### Verification (#295)
+
+PostgreSQL 16 (`lib/travel-expenses/expense-submission.integration.test.ts`,
+part of `test:approval-workflow-repository:integration`), driving the real
+`createTravelExpenseDraft`, upload route, `submitTravelExpenseClaim`,
+`approveTravelExpenseClaim`, cleanup worker and maintenance, 13/13 passing:
+capture inactive versus active; full revision contents and the checksum over the
+stored bytes; organization-scoped loading and the update trigger; a late upload
+rejected with its object deleted; a failed immediate cleanup recovered by the
+worker after backoff; upload/submission races in **both arrival orders** behind
+a held claim lock; an injected revision insert failure rolling back the
+submission; historical date and checksum gaps held; missing receipts, a
+foreign-organization attachment row refusing submission, and an empty mileage
+manifest; a receipt-set change holding approval until reverted; self-approval
+activation evidence; privileged cleanup of one lifecycle; abandoned staging
+cleanup that never deletes an attached object; a slow upload re-recorded with
+its version after its row was swept. Unit seams: `travel-expense-facts.test.ts`,
+the upload route and submission action tests.

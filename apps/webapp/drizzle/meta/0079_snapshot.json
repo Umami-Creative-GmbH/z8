@@ -1,6 +1,6 @@
 {
-  "id": "8577eeee-7fd3-479c-8204-78f8c16088bd",
-  "prevId": "813ef16b-c28b-4bff-90c7-cc5c54ceb3af",
+  "id": "0532477f-6956-4dd9-86a1-8954e51beac0",
+  "prevId": "8577eeee-7fd3-479c-8204-78f8c16088bd",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -38669,6 +38669,235 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.time_entry_append_control": {
+      "name": "time_entry_append_control",
+      "schema": "",
+      "columns": {
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "mode": {
+          "name": "mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'inactive'"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "time_entry_append_control_organization_id_organization_id_fk": {
+          "name": "time_entry_append_control_organization_id_organization_id_fk",
+          "tableFrom": "time_entry_append_control",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "time_entry_append_control_mode_check": {
+          "name": "time_entry_append_control_mode_check",
+          "value": "\"time_entry_append_control\".\"mode\" IN ('inactive', 'active')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.time_entry_append_position": {
+      "name": "time_entry_append_position",
+      "schema": "",
+      "columns": {
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "employee_id": {
+          "name": "employee_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tip_entry_id": {
+          "name": "tip_entry_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tip_hash": {
+          "name": "tip_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entry_count": {
+          "name": "entry_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "admission": {
+          "name": "admission",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "admitted_tip_entry_id": {
+          "name": "admitted_tip_entry_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "admitted_tip_hash": {
+          "name": "admitted_tip_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "admitted_entry_count": {
+          "name": "admitted_entry_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "admitted_operation": {
+          "name": "admitted_operation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "admitted_at": {
+          "name": "admitted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_operation": {
+          "name": "last_operation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "time_entry_append_position_organization_id_organization_id_fk": {
+          "name": "time_entry_append_position_organization_id_organization_id_fk",
+          "tableFrom": "time_entry_append_position",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "time_entry_append_position_tip_entry_id_time_entry_id_fk": {
+          "name": "time_entry_append_position_tip_entry_id_time_entry_id_fk",
+          "tableFrom": "time_entry_append_position",
+          "tableTo": "time_entry",
+          "columnsFrom": [
+            "tip_entry_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "time_entry_append_position_admitted_tip_entry_id_time_entry_id_fk": {
+          "name": "time_entry_append_position_admitted_tip_entry_id_time_entry_id_fk",
+          "tableFrom": "time_entry_append_position",
+          "tableTo": "time_entry",
+          "columnsFrom": [
+            "admitted_tip_entry_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "time_entry_append_position_employee_fk": {
+          "name": "time_entry_append_position_employee_fk",
+          "tableFrom": "time_entry_append_position",
+          "tableTo": "employee",
+          "columnsFrom": [
+            "employee_id",
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "time_entry_append_position_organization_id_employee_id_pk": {
+          "name": "time_entry_append_position_organization_id_employee_id_pk",
+          "columns": [
+            "organization_id",
+            "employee_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "time_entry_append_position_version_check": {
+          "name": "time_entry_append_position_version_check",
+          "value": "\"time_entry_append_position\".\"version\" >= 1"
+        },
+        "time_entry_append_position_count_check": {
+          "name": "time_entry_append_position_count_check",
+          "value": "\"time_entry_append_position\".\"entry_count\" > \"time_entry_append_position\".\"admitted_entry_count\" AND \"time_entry_append_position\".\"admitted_entry_count\" >= 0"
+        },
+        "time_entry_append_position_admission_check": {
+          "name": "time_entry_append_position_admission_check",
+          "value": "(\"time_entry_append_position\".\"admission\" = 'empty_history' AND \"time_entry_append_position\".\"admitted_tip_entry_id\" IS NULL AND \"time_entry_append_position\".\"admitted_tip_hash\" IS NULL AND \"time_entry_append_position\".\"admitted_entry_count\" = 0) OR (\"time_entry_append_position\".\"admission\" = 'verified_lineage' AND \"time_entry_append_position\".\"admitted_tip_entry_id\" IS NOT NULL AND \"time_entry_append_position\".\"admitted_tip_hash\" IS NOT NULL AND \"time_entry_append_position\".\"admitted_entry_count\" > 0)"
+        },
+        "time_entry_append_position_operation_check": {
+          "name": "time_entry_append_position_operation_check",
+          "value": "\"time_entry_append_position\".\"admitted_operation\" IN ('live_clock_in') AND \"time_entry_append_position\".\"last_operation\" IN ('live_clock_in')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.time_record": {
