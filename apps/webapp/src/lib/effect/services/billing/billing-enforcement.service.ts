@@ -1,12 +1,12 @@
-import { count, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { member } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import { BillingError, DatabaseError } from "../../errors";
 import { type BillingAccessResult, evaluateBillingAccess } from "./billing-access";
+import { countBillableSeats } from "./billable-seat-count";
 
 export type { BillingAccessResult } from "./billing-access";
 
@@ -35,11 +35,7 @@ function checkBillingAccess(
 				if (existing || !createTrialIfMissing) return existing ?? null;
 
 				const trialEnd = DateTime.fromJSDate(now, { zone: "utc" }).plus({ days: 14 }).toJSDate();
-				const [memberCountResult] = await db
-					.select({ count: count() })
-					.from(member)
-					.where(eq(member.organizationId, organizationId));
-				const currentSeats = memberCountResult?.count ?? 0;
+				const currentSeats = await countBillableSeats(db, organizationId);
 				const inserted = await db
 					.insert(subscription)
 					.values({

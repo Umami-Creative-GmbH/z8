@@ -1,9 +1,9 @@
-import { count, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { member, organization } from "@/db/auth-schema";
+import { organization } from "@/db/auth-schema";
 import { env } from "@/env";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
@@ -14,6 +14,7 @@ import {
 	SubscriptionService,
 	SubscriptionServiceLive,
 } from "@/lib/effect/services/billing";
+import { countBillableSeats } from "@/lib/effect/services/billing/billable-seat-count";
 import { getDaysRemaining } from "@/lib/effect/services/billing/billing-access";
 import { createLogger } from "@/lib/logger";
 
@@ -85,11 +86,9 @@ export async function POST(request: NextRequest) {
 			return yield* Effect.fail(new Error("Organization not found"));
 		}
 
-		// Count current members for initial seats
-		const [memberCountResult] = yield* Effect.promise(() =>
-			db.select({ count: count() }).from(member).where(eq(member.organizationId, organizationId)),
-		);
-		const seatCount = Math.max(memberCountResult?.count ?? 1, 1);
+		// Initial seats use the shared billable-seat definition (at least one seat).
+		const billableSeats = yield* Effect.promise(() => countBillableSeats(db, organizationId));
+		const seatCount = Math.max(billableSeats, 1);
 
 		// Create or get Stripe customer
 		let customerId: string;

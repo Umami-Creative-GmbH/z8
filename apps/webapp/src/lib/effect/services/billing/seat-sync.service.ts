@@ -1,29 +1,16 @@
-import { and, count, eq, notLike } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { db } from "@/db";
-import { member, user } from "@/db/auth-schema";
 import { billingSeatAudit } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { DatabaseError, type StripeError } from "../../errors";
+import { countBillableSeats } from "./billable-seat-count";
 import { StripeService } from "./stripe.service";
 import { SubscriptionService } from "./subscription.service";
 
 const logger = createLogger("SeatSyncService");
 
-async function countBillableMembers(organizationId: string): Promise<number> {
-	const [result] = await db
-		.select({ count: count() })
-		.from(member)
-		.innerJoin(user, eq(user.id, member.userId))
-		.where(
-			and(
-				eq(member.organizationId, organizationId),
-				eq(member.status, "approved"),
-				notLike(user.email, "%@demo.invalid"),
-			),
-		);
-
-	return result?.count ?? 0;
+function countBillableMembers(organizationId: string): Promise<number> {
+	return countBillableSeats(db, organizationId);
 }
 
 /**

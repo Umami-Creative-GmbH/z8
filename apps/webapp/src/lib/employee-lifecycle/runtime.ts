@@ -4,7 +4,7 @@
  * in plain Node) and of Next.js request APIs.
  */
 import { and, asc, eq, lte } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import { db } from "@/db";
 import { type DepartureTaskKind, employeeDeparture } from "@/db/schema/employee-lifecycle";
 import {
@@ -17,6 +17,12 @@ import {
 	BreakEnforcementService,
 	BreakEnforcementServiceLive,
 } from "@/lib/effect/services/break-enforcement.service";
+import {
+	SeatSyncService,
+	SeatSyncServiceLive,
+	StripeServiceLive,
+	SubscriptionServiceLive,
+} from "@/lib/effect/services/billing";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/surcharge.service";
 import { WorkPolicyServiceLive } from "@/lib/effect/services/work-policy.service";
@@ -71,14 +77,31 @@ export type EmployeeDepartureJobScheduler = (input: {
 }) => Promise<void>;
 
 /**
- * Handlers for durable departure follow-up work. Billing is added with the
- * shared seat counter; kinds without a handler fail visibly.
+ * Handlers for durable departure follow-up work; kinds without a handler fail
+ * visibly. Billing recomputes the organization's current billable seats (the
+ * shared definition) rather than applying a captured increment or decrement,
+ * updating the local count even when Stripe is disabled.
  */
 export function createProductionDepartureTaskHandlers(options: {
 	scheduleDepartureJob: EmployeeDepartureJobScheduler;
 }): Partial<Record<DepartureTaskKind, DepartureTaskHandler>> {
 	return {
 		dispatch_departure: createDispatchDepartureHandler(options.scheduleDepartureJob),
+		billing_sync: async (claim) => {
+			await Effect.runPromise(
+				Effect.gen(function* () {
+					const seatSyncService = yield* SeatSyncService;
+					return yield* seatSyncService.syncSeatsForOrganization(claim.organizationId);
+				}).pipe(
+					Effect.provide(
+						SeatSyncServiceLive.pipe(
+							Layer.provide(StripeServiceLive),
+							Layer.provide(SubscriptionServiceLive),
+						),
+					),
+				),
+			);
+		},
 		session_revocation: createSessionRevocationHandler((token) =>
 			secondaryStorage.deleteOrThrow(token),
 		),

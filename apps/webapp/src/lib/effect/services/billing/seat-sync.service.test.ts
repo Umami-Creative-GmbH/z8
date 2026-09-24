@@ -1,30 +1,18 @@
 import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { member, user } from "@/db/auth-schema";
 import { SeatSyncService, SeatSyncServiceLive } from "./seat-sync.service";
 import { StripeService } from "./stripe.service";
 import { SubscriptionService } from "./subscription.service";
 
-const { select, selectFrom, selectInnerJoin, selectWhere } = vi.hoisted(() => ({
-	select: vi.fn(),
-	selectFrom: vi.fn(),
-	selectInnerJoin: vi.fn(),
-	selectWhere: vi.fn(),
+const { countBillableSeats, database } = vi.hoisted(() => ({
+	countBillableSeats: vi.fn(),
+	database: { marker: "db" },
 }));
 
-vi.mock("@/db", () => ({
-	db: {
-		select,
-	},
-}));
+vi.mock("@/db", () => ({ db: database }));
 
-vi.mock("drizzle-orm", async (importOriginal) => ({
-	...(await importOriginal<typeof import("drizzle-orm")>()),
-	and: vi.fn((...conditions) => ({ type: "and", conditions })),
-	count: vi.fn(() => ({ type: "count" })),
-	eq: vi.fn((column, value) => ({ type: "eq", column, value })),
-	notLike: vi.fn((column, value) => ({ type: "notLike", column, value })),
-}));
+// Seat semantics are covered by billable-seat-count.integration.test.ts.
+vi.mock("./billable-seat-count", () => ({ countBillableSeats }));
 
 describe("SeatSyncService", () => {
 	const appLayer = Layer.mergeAll(
@@ -68,21 +56,11 @@ describe("SeatSyncService", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		select.mockReturnValue({ from: selectFrom });
-		selectFrom.mockReturnValue({ innerJoin: selectInnerJoin, where: selectWhere });
-		selectInnerJoin.mockReturnValue({ where: selectWhere });
-		selectWhere.mockResolvedValue([{ count: 1 }]);
+		countBillableSeats.mockResolvedValue(1);
 	});
 
-	it("counts only approved non-demo organization members", async () => {
-		const seatCases = [
-			{ status: "approved", email: "employee@example.com", billable: true },
-			{ status: "pending", email: "pending@example.com", billable: false },
-			{ status: "approved", email: "employee@demo.invalid", billable: false },
-		];
-		selectWhere.mockResolvedValueOnce([
-			{ count: seatCases.filter(({ billable }) => billable).length },
-		]);
+	it("counts seats with the shared billable-seat definition", async () => {
+		countBillableSeats.mockResolvedValueOnce(3);
 
 		const result = await Effect.runPromise(
 			Effect.gen(function* () {
@@ -92,20 +70,7 @@ describe("SeatSyncService", () => {
 			}).pipe(Effect.provide(SeatSyncServiceLive), Effect.provide(appLayer)),
 		);
 
-		expect(result).toBe(1);
-		expect(selectFrom).toHaveBeenCalledWith(member);
-		expect(selectInnerJoin).toHaveBeenCalledWith(user, {
-			type: "eq",
-			column: user.id,
-			value: member.userId,
-		});
-		expect(selectWhere).toHaveBeenCalledWith({
-			type: "and",
-			conditions: [
-				{ type: "eq", column: member.organizationId, value: "org_123" },
-				{ type: "eq", column: member.status, value: "approved" },
-				{ type: "notLike", column: user.email, value: "%@demo.invalid" },
-			],
-		});
+		expect(result).toBe(3);
+		expect(countBillableSeats).toHaveBeenCalledWith(database, "org_123");
 	});
 });

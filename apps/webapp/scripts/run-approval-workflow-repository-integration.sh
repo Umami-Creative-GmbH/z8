@@ -105,4 +105,5 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	src/lib/employee-lifecycle/projection-guards.integration.test.ts \
 	src/lib/employee-lifecycle/clock-out.integration.test.ts \
 	src/lib/employee-lifecycle/reviews.integration.test.ts \
-	src/lib/employee-lifecycle/outbox.integration.test.ts
+	src/lib/employee-lifecycle/outbox.integration.test.ts \
+	src/lib/effect/services/billing/billable-seat-count.integration.test.ts

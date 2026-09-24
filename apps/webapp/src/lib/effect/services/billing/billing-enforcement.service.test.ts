@@ -1,6 +1,5 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
-import { member } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import {
@@ -33,6 +32,11 @@ vi.mock("@/db", () => ({
 		select,
 	},
 }));
+
+const { countBillableSeats } = vi.hoisted(() => ({ countBillableSeats: vi.fn() }));
+
+// Seat semantics are covered by billable-seat-count.integration.test.ts.
+vi.mock("./billable-seat-count", () => ({ countBillableSeats }));
 
 vi.mock("drizzle-orm", async (importOriginal) => ({
 	...(await importOriginal<typeof import("drizzle-orm")>()),
@@ -79,6 +83,7 @@ describe("BillingEnforcementService", () => {
 		select.mockReturnValue({ from: selectFrom });
 		selectFrom.mockReturnValue({ where: selectWhere });
 		selectWhere.mockResolvedValue([{ count: 3 }]);
+		countBillableSeats.mockResolvedValue(3);
 	});
 
 	it("creates a local trial lazily with current organization seats when billing is enabled and no row exists", async () => {
@@ -101,7 +106,7 @@ describe("BillingEnforcementService", () => {
 			trialEnd,
 			currentSeats: 3,
 		});
-		expect(selectFrom).toHaveBeenCalledWith(member);
+		expect(countBillableSeats).toHaveBeenCalledWith(expect.anything(), "org_123");
 		expect(onConflictDoNothing).toHaveBeenCalledWith({
 			target: subscription.organizationId,
 		});
