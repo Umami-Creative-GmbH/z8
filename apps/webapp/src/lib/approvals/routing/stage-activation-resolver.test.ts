@@ -1,5 +1,5 @@
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { createTimeCorrectionApprovalAdapter } from "../domain-adapters/time-correction.adapter";
 import type {
@@ -269,11 +269,15 @@ describe("createDatabaseStageActivationResolver", () => {
 
 		expect(fake.calls).toHaveLength(1);
 		const rendered = new PgDialect().sqlToQuery(fake.calls[0]);
+		// Only an explicitly named approver has a replacement lookup.
 		expect(rendered.params).toEqual([
 			"org-1",
 			"org-1",
 			"org-1",
 			"org-1",
+			stageId,
+			"org-1",
+			null,
 			"org-1",
 		]);
 		expect(rendered.sql).toMatch(
@@ -292,11 +296,17 @@ describe("createDatabaseStageActivationResolver", () => {
 		// A due departure ends activity even before it is materialized.
 		expect(rendered.sql).toMatch(/employee_departure_denies_access\(/);
 		expect(rendered.sql).toMatch(
-			/from employee_departure departure[\s\S]*departure\.organization_id\s*=\s*\$5[\s\S]*status = 'effective'/,
+			/from employee_departure departure[\s\S]*departure\.organization_id\s*=\s*\$6[\s\S]*status = 'effective'/,
 		);
+		// A stage's own replacement wins over the departure's.
+		expect(rendered.sql).toMatch(
+			/coalesce\(\s*\(stage_review\.metadata->>'replacementEmployeeId'\)::uuid,\s*departure\.replacement_employee_id/,
+		);
+		expect(rendered.sql).toMatch(/stage_review\.subject_id = \$5::uuid/);
+		expect(rendered.sql).toMatch(/member\.status = 'approved'/);
 	});
 
-	it("honors a captured departure replacement for an explicit stage approver", async () => {
+	function departedApproverInput(hasDecisionPath: boolean) {
 		const rows = directoryRows.map((group) => [...group]);
 		rows[0] = rows[0].map((row) =>
 			(row as { id: string }).id === managerAId ? { ...(row as object), isActive: false } : row,
@@ -304,27 +314,53 @@ describe("createDatabaseStageActivationResolver", () => {
 		const fake = database([
 			{
 				...directoryEnvelope(rows),
-				departureReplacements: [{ employeeId: managerAId, replacementEmployeeId: managerBId }],
+				departureReplacements: [
+					{
+						employeeId: managerAId,
+						replacementEmployeeId: managerBId,
+						replacementUserId: "user-manager-b",
+					},
+				],
 			},
 		]);
-
-		await expect(
-			createDatabaseStageActivationResolver().resolve(
-				activationInput({
-					dbService: fake.dbService,
-					stageSnapshot: stage({
-						resolverSnapshot: {
-							approverType: "specific_employee",
-							approverEmployeeId: managerAId,
-							fallbackBehavior: "fail",
-						},
-					}),
+		const decisionPath = vi.fn().mockResolvedValue(hasDecisionPath);
+		const resolution = createDatabaseStageActivationResolver({
+			hasDecisionPath: decisionPath,
+		}).resolve(
+			activationInput({
+				dbService: fake.dbService,
+				stageSnapshot: stage({
+					resolverSnapshot: {
+						approverType: "specific_employee",
+						approverEmployeeId: managerAId,
+						fallbackBehavior: "fail",
+					},
 				}),
-			),
-		).resolves.toMatchObject({
+			}),
+		);
+		return { resolution, decisionPath, fake };
+	}
+
+	it("honors a captured departure replacement for an explicit stage approver", async () => {
+		const { resolution, decisionPath, fake } = departedApproverInput(true);
+
+		await expect(resolution).resolves.toMatchObject({
 			activationMode: "human",
 			assignments: [{ approverEmployeeId: managerBId, metadata: {} }],
 		});
+		expect(decisionPath).toHaveBeenCalledWith(fake.dbService.db, {
+			organizationId: "org-1",
+			requesterEmployeeId: requesterId,
+			managerEmployeeId: managerBId,
+			managerUserId: "user-manager-b",
+		});
+		expect(new PgDialect().sqlToQuery(fake.calls[0]).params).toContain(managerAId);
+	});
+
+	it("never activates a stage for a replacement who cannot decide the approval", async () => {
+		const { resolution } = departedApproverInput(false);
+
+		await expect(resolution).rejects.toMatchObject({ code: "no_eligible_reviewer" });
 	});
 
 	it("resolves a departed requester's managers only for a persisted workflow", async () => {

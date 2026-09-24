@@ -223,6 +223,7 @@ const followUpMessages = {
 	task_not_found: "This handover no longer exists.",
 	task_in_progress: "This handover is being processed. Try again in a moment.",
 	task_already_completed: "This handover is already complete.",
+	stage_not_waiting: "This approval stage has already started. Manage it in approvals.",
 	replacement_invalid: "Choose an active colleague in this organization as the replacement.",
 	request_conflict: "This request was already used for different details. Please try again.",
 } satisfies Record<

@@ -69,7 +69,7 @@ Reviews are durable work items on the departure; they never hide time.
 | --- | --- | --- |
 | *Needs review: offboarding clock-out* | The timer was closed at the cutoff. | Check the period (*Correct time* opens the calendar at the cutoff), then mark resolved with a note. |
 | *Timer repair required* (`clock_repair`) | The clock-out failed, or a client captured a clock action before the cutoff that arrived after access ended. **Blocks payroll** for the affected range. | Correct the time through the canonical correction flow. The review cannot be resolved while the period is still open. |
-| *Approval duties need a replacement* | A captured duty could not be transferred (no replacement, ineligible replacement, or a legacy-only approval). | Assign a replacement on the review; the handover retries. Legacy-only approvals are reassigned in Approvals. |
+| *Approval duties need a replacement* | A captured duty could not be transferred (no replacement, ineligible replacement, or a legacy-only approval), or a later stage names only the departed person. | Assign a replacement on the review: the handover retries, or the later stage uses it when it starts. Legacy-only approvals are reassigned in Approvals. |
 | *Future employment terms need review* | Confirmed terms or policy assignments dated after the cutoff. | Review them in the employment history; they no longer apply to the ended period. |
 
 There is intentionally no "clear error" action.
@@ -90,12 +90,19 @@ lineage; the initiating admin stays in the departure's own audit trail.
 - A retry after a crash replays the committed transfer through its receipt.
 - A retry after a rehire does nothing (`employee_rehired`), and never touches
   duties created in the new employment.
-- A later stage routed explicitly to the departed person activates for the
-  departure's replacement. Without one, a stage whose fallback is *fail* cannot
-  activate (it never auto-approves), so approving the stage before it fails;
-  such stages are captured at the cutoff as *Approval duties need a replacement*
-  reviews naming the workflow and stage. Replacements assigned later on a
-  handover task apply to that task only, not to later stages.
+- A later stage routed explicitly to the departed person activates for a
+  replacement, resolved in this order: the replacement assigned on that stage's
+  review, otherwise the departure's replacement. A replacement assigned on a
+  handover task applies to that one duty only.
+- When the stage starts, the replacement is checked again exactly like a
+  transfer: accessible, approved member, and able to decide the requester's
+  approvals. Otherwise the stage falls back as configured; with fallback *fail*
+  it cannot activate (it never auto-approves), so approving the stage before it
+  fails.
+- Without a departure replacement, such *fail* stages are captured at the
+  cutoff as *Approval duties need a replacement* reviews. Assigning a
+  replacement on the review resolves it; this is possible until the stage
+  starts, after which the stage is managed in Approvals.
 - Submitted claims *of* the departed employee (absences, time corrections, work
   periods, expenses) stay decidable by their current approvers.
 

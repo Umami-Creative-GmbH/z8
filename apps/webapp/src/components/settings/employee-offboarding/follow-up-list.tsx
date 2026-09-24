@@ -15,8 +15,10 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { FUTURE_STAGE_REVIEW_REASON } from "@/lib/employee-lifecycle/review-reasons";
 import type { EmployeeOffboardingView } from "@/lib/employee-lifecycle/view-types";
 import { useRequestIdentity } from "@/lib/query/use-employee-offboarding";
+import type { AssignDepartureReplacementInput } from "@/lib/validations/employee-offboarding";
 import { Link } from "@/navigation";
 import { useOffboardingLabels } from "./labels";
 
@@ -50,13 +52,17 @@ export type FollowUpListProps = {
 		resolution: string;
 	}) => Promise<ServerActionResult<void>>;
 	retryTask: (input: { taskId: string }) => Promise<ServerActionResult<void>>;
-	assignReplacement: (input: {
-		departureId: string;
-		handoverTaskId: string;
-		replacementEmployeeId: string;
-		requestId: string;
-	}) => Promise<ServerActionResult<void>>;
+	assignReplacement: (input: AssignDepartureReplacementInput) => Promise<ServerActionResult<void>>;
 };
+
+/** What a replacement is assigned to: a handover task, or a later stage's review. */
+type ReplacementTarget = { handoverTaskId: string } | { reviewId: string };
+
+function replacementTarget(review: Review): ReplacementTarget | null {
+	if (review.kind !== "approval_handover" || review.status !== "open") return null;
+	if (review.handoverTaskId) return { handoverTaskId: review.handoverTaskId };
+	return review.reason === FUTURE_STAGE_REVIEW_REASON ? { reviewId: review.id } : null;
+}
 
 /**
  * Persistent follow-up after a departure. Every item is resolved where it
@@ -134,6 +140,7 @@ export function FollowUpList(props: FollowUpListProps) {
 
 function ReviewItem({ review, ...props }: FollowUpListProps & { review: Review }) {
 	const { t } = useTranslate();
+	const target = replacementTarget(review);
 	const labels = useOffboardingLabels();
 	const noteId = useId();
 	const [note, setNote] = useState("");
@@ -175,10 +182,10 @@ function ReviewItem({ review, ...props }: FollowUpListProps & { review: Review }
 				)}
 			</div>
 
-			{review.kind === "approval_handover" && review.handoverTaskId && props.canResolve && (
+			{target && props.canResolve && (
 				<ReplacementAssignment
 					departureId={props.departureId}
-					handoverTaskId={review.handoverTaskId}
+					target={target}
 					options={props.replacementOptions}
 					assignReplacement={props.assignReplacement}
 				/>
@@ -218,7 +225,7 @@ function ReviewItem({ review, ...props }: FollowUpListProps & { review: Review }
 
 function ReplacementAssignment(props: {
 	departureId: string;
-	handoverTaskId: string;
+	target: ReplacementTarget;
 	options: Array<{ id: string; name: string }>;
 	assignReplacement: FollowUpListProps["assignReplacement"];
 }) {
@@ -233,7 +240,7 @@ function ReplacementAssignment(props: {
 		setError(null);
 		const intent = {
 			departureId: props.departureId,
-			handoverTaskId: props.handoverTaskId,
+			...props.target,
 			replacementEmployeeId: replacementId,
 		};
 		const result = await trackPending(setPending, () =>

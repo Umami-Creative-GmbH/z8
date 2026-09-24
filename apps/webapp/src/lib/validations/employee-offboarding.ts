@@ -81,12 +81,17 @@ export const resolveDepartureReviewSchema = z.object({
 
 export const retryDepartureTaskSchema = z.object({ taskId: z.uuid() });
 
-export const assignDepartureReplacementSchema = z.object({
+const replacementAssignment = {
 	departureId: z.uuid(),
-	handoverTaskId: z.uuid(),
 	replacementEmployeeId: z.uuid(),
 	requestId: z.uuid(),
-});
+};
+
+/** Exactly one target: a handover task or a future-stage review. */
+export const assignDepartureReplacementSchema = z.union([
+	z.strictObject({ ...replacementAssignment, handoverTaskId: z.uuid() }),
+	z.strictObject({ ...replacementAssignment, reviewId: z.uuid() }),
+]);
 
 export type ScheduleDepartureInput = z.infer<typeof scheduleDepartureSchema>;
 export type CancelDepartureInput = z.infer<typeof cancelDepartureSchema>;

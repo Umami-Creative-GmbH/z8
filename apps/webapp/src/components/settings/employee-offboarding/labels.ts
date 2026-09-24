@@ -106,7 +106,7 @@ export function useOffboardingLabels() {
 			case "future_stage_without_replacement":
 				return t(
 					"settings.employees.offboarding.reasons.futureStage",
-					"A later approval stage is routed only to this person and there is no replacement. Approving the stage before it fails until the approval is decided another way.",
+					"A later approval stage is routed only to this person. Assign a replacement before it starts; otherwise approving the stage before it fails.",
 				);
 			case "future_terms_after_departure":
 				return t(

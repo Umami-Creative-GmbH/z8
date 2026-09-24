@@ -185,7 +185,7 @@
         "reasons": {
           "clockOutFailed": "Der laufende Timer konnte nicht automatisch beendet werden.",
           "futureAssignments": "Zukünftige Arbeitszeitmodell-Zuweisungen wurden deaktiviert.",
-          "futureStage": "Eine spätere Genehmigungsstufe ist nur dieser Person zugewiesen und es gibt keine Vertretung. Die Freigabe der vorherigen Stufe schlägt fehl, bis die Genehmigung anders entschieden wird.",
+          "futureStage": "Eine spätere Genehmigungsstufe ist nur dieser Person zugewiesen. Weise vor ihrem Beginn eine Vertretung zu, sonst schlägt die Freigabe der vorherigen Stufe fehl.",
           "futureTerms": "Bestätigte Vertragsbedingungen beginnen nach dem Austritt.",
           "legacyAuthority": "Diese Genehmigung kann nicht automatisch übertragen werden. Weise sie unter Genehmigungen neu zu.",
           "noReplacement": "Es wurde keine Vertretung gewählt.",

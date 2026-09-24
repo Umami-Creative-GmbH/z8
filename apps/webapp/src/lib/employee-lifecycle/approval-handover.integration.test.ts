@@ -524,6 +524,154 @@ describeLifecycleDatabase("approval handover", () => {
 				}),
 			]);
 		});
+
+		/** Seeds a two-stage workflow whose second stage names only `departing`. */
+		async function seedLaterStageDuty(departing: SeededEmployee) {
+			const firstApprover = await fixture.seedEmployee({ role: "admin" });
+			const duty = await seedPendingAbsenceWorkflow(fixture, {
+				requester,
+				approverEmployeeIds: [firstApprover.employeeId],
+				at: new Date(now.epochMilliseconds),
+				secondStageResolver: {
+					approverType: "specific_employee",
+					approverEmployeeId: departing.employeeId,
+					fallbackBehavior: "fail",
+				},
+			});
+			return { duty, firstApprover };
+		}
+
+		async function futureStageReview(departureId: string, stageId: string) {
+			const {
+				rows: [review],
+			} = await fixture.pool.query<{ id: string }>(
+				`select id from employee_departure_review
+				 where organization_id = $1 and departure_id = $2 and subject_id = $3`,
+				[fixture.organizationId, departureId, stageId],
+			);
+			if (!review) throw new Error("expected a future-stage review");
+			return review;
+		}
+
+		/** Approves the first stage, which activates the second. */
+		function approveFirstStage(duty: SeededAbsenceWorkflow, firstApprover: SeededEmployee) {
+			return absenceApprovalRuntime(fixture, clock).transitionEngine.execute({
+				organizationId: fixture.organizationId,
+				workflowId: duty.workflow,
+				expectedVersion: 1,
+				idempotencyKey: `stage-1:${duty.workflow}:${randomUUID()}`,
+				principal: { kind: "employee", userId: firstApprover.userId },
+				command: {
+					type: "approve",
+					stageId: duty.firstStage,
+					assignmentId: duty.assignments[0] ?? "",
+				},
+			});
+		}
+
+		it("does not activate a later stage for a replacement who lost approved membership", async () => {
+			const departing = await fixture.seedEmployee({ role: "admin" });
+			const suspended = await fixture.seedEmployee({ role: "admin" });
+			const { duty, firstApprover } = await seedLaterStageDuty(departing);
+			now = SCHEDULED_AT;
+			await offboard(departing, suspended.employeeId);
+			await fixture.pool.query(
+				`update member set status = 'suspended' where organization_id = $1 and user_id = $2`,
+				[fixture.organizationId, suspended.userId],
+			);
+
+			await expect(approveFirstStage(duty, firstApprover)).rejects.toThrow(/no eligible reviewer/i);
+			expect(await assignments(duty.workflow)).toEqual([
+				expect.objectContaining({ approver_employee_id: firstApprover.employeeId }),
+			]);
+		});
+
+		it("does not activate a later stage for a replacement without a decision path", async () => {
+			const departing = await fixture.seedEmployee({ role: "admin" });
+			const demoted = await fixture.seedEmployee({ role: "admin" });
+			const { duty, firstApprover } = await seedLaterStageDuty(departing);
+			now = SCHEDULED_AT;
+			await offboard(departing, demoted.employeeId);
+			// Demoted after the departure: no longer allowed to decide approvals.
+			await fixture.pool.query(
+				`update member set role = 'member' where organization_id = $1 and user_id = $2`,
+				[fixture.organizationId, demoted.userId],
+			);
+			await fixture.pool.query(
+				`update employee set role = 'employee' where organization_id = $1 and id = $2`,
+				[fixture.organizationId, demoted.employeeId],
+			);
+
+			await expect(approveFirstStage(duty, firstApprover)).rejects.toThrow(/no eligible reviewer/i);
+		});
+
+		it("routes a later stage to the replacement an admin assigned on its review", async () => {
+			const departing = await fixture.seedEmployee({ role: "admin" });
+			const { duty, firstApprover } = await seedLaterStageDuty(departing);
+			now = SCHEDULED_AT;
+			const departureId = await offboard(departing, null);
+			const review = await futureStageReview(departureId, duty.secondStage);
+			const assignment = {
+				departureId,
+				reviewId: review.id,
+				replacementEmployeeId: replacement.employeeId,
+				requestId: randomUUID(),
+			};
+			await assignDepartureReplacement(fixture.db, owner(), assignment, now);
+			// A retried submission of the same request changes nothing.
+			await assignDepartureReplacement(fixture.db, owner(), assignment, now);
+			await expect(
+				assignDepartureReplacement(
+					fixture.db,
+					owner(),
+					{ ...assignment, replacementEmployeeId: requester.employeeId },
+					now,
+				),
+			).rejects.toMatchObject({ code: "request_conflict" });
+			expect(await handoverReviews(departureId)).toEqual([
+				expect.objectContaining({
+					subject_id: duty.secondStage,
+					status: "resolved",
+					metadata: expect.objectContaining({ replacementEmployeeId: replacement.employeeId }),
+				}),
+			]);
+
+			const result = await approveFirstStage(duty, firstApprover);
+
+			expect(result.snapshot.stages.find((stage) => stage.id === duty.secondStage)).toMatchObject({
+				status: "pending",
+				assignments: [{ approverEmployeeId: replacement.employeeId, status: "pending" }],
+			});
+		});
+
+		it("refuses the requester or a started stage as a later-stage replacement", async () => {
+			const departing = await fixture.seedEmployee({ role: "admin" });
+			const { duty } = await seedLaterStageDuty(departing);
+			now = SCHEDULED_AT;
+			const departureId = await offboard(departing, null);
+			const review = await futureStageReview(departureId, duty.secondStage);
+			const assign = (replacementEmployeeId: string) =>
+				assignDepartureReplacement(
+					fixture.db,
+					owner(),
+					{ departureId, reviewId: review.id, replacementEmployeeId, requestId: randomUUID() },
+					now,
+				);
+
+			await expect(assign(requester.employeeId)).rejects.toMatchObject({
+				code: "replacement_invalid",
+			});
+			// Once the stage has started it is managed in approvals, not here.
+			await fixture.pool.query(
+				`update approval_workflow_stage set status = 'cancelled', decided_at = now(),
+					decision_reason = 'test'
+				 where organization_id = $1 and id = $2`,
+				[fixture.organizationId, duty.secondStage],
+			);
+			await expect(assign(replacement.employeeId)).rejects.toMatchObject({
+				code: "stage_not_waiting",
+			});
+		});
 	});
 
 	describe("review and resolution", () => {

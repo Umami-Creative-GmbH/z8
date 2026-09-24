@@ -7,7 +7,10 @@ import {
 	OffboardingReassignmentDeniedError,
 	parseApprovalHandoverTaskPayload,
 } from "@/lib/approvals/workflow/offboarding-authority";
-import type { ApprovalWorkflowCommandRequest } from "@/lib/approvals/workflow/ports";
+import {
+	type ApprovalWorkflowCommandRequest,
+	EMPLOYEE_OFFBOARDING_SYSTEM_ID,
+} from "@/lib/approvals/workflow/ports";
 import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import { ApprovalStateMachineError } from "@/lib/approvals/workflow/state-machine";
@@ -17,6 +20,7 @@ import { type DepartureTaskHandler, DepartureTaskNeedsResolutionError } from "./
 import { assertReadCommitted } from "./locks";
 import { enqueueReviewNotifications } from "./notifications";
 import { DepartureTaskLeaseNotOwnedError } from "./outbox";
+import { FUTURE_STAGE_REVIEW_REASON } from "./review-reasons";
 import { actorMayResolveDepartureWork } from "./reviews";
 import type { DepartureIdentity, LifecycleActor, LifecycleTransaction } from "./types";
 
@@ -79,7 +83,7 @@ export async function captureApprovalHandoverDuties(
 			SELECT s.organization_id, ${identity.employeeId}::uuid, ${identity.employmentPeriodId}::uuid,
 				${identity.departureId}::uuid, 'approval_handover', s.id,
 				jsonb_build_object(
-					'reason', 'future_stage_without_replacement', 'source', 'approval_workflow_stage',
+					'reason', ${FUTURE_STAGE_REVIEW_REASON}::text, 'source', 'approval_workflow_stage',
 					'workflowId', s.workflow_id, 'stageId', s.id
 				)
 			FROM approval_workflow_stage s
@@ -210,7 +214,7 @@ export function createApprovalHandoverHandler(deps: {
 				),
 				principal: {
 					kind: "system",
-					systemId: "employee-offboarding",
+					systemId: EMPLOYEE_OFFBOARDING_SYSTEM_ID,
 					departureId,
 					employmentPeriodId: claim.employmentPeriodId,
 					assignmentId: intent.assignmentId,
@@ -387,6 +391,8 @@ export type AssignDepartureReplacementErrorCode =
 	| "task_not_found"
 	| "task_in_progress"
 	| "task_already_completed"
+	| "review_not_found"
+	| "stage_not_waiting"
 	| "replacement_invalid"
 	| "request_conflict";
 
@@ -398,20 +404,38 @@ export class AssignDepartureReplacementError extends Error {
 }
 
 /**
- * Sets a new replacement on an unresolved handover task and queues it for
- * delivery again. Only the task intent changes: completed decisions and
- * transfers are never touched, and the departed employee is never revived.
- * The request ID makes a retried submission return without a second change.
+ * What a replacement is assigned to: an unresolved handover task (a duty in
+ * a current stage) or a future-stage review (a later stage routed only to
+ * the departed person, which stage activation resolves when it starts).
+ */
+export type DepartureReplacementTarget =
+	| { handoverTaskId: string; reviewId?: undefined }
+	| { reviewId: string; handoverTaskId?: undefined };
+
+export type AssignDepartureReplacementInput = {
+	departureId: string;
+	replacementEmployeeId: string;
+	requestId: string;
+} & DepartureReplacementTarget;
+
+type AppliedReplacement = {
+	employeeId: string;
+	employmentPeriodId: string;
+	metadata: Record<string, string>;
+};
+
+/**
+ * Assigns a replacement to one handover task or one future stage of a
+ * departure. A task is queued for delivery again; a future stage keeps the
+ * replacement on its review for stage activation, which re-checks the
+ * replacement when the stage starts. Completed decisions and transfers are
+ * never touched, and the departed employee is never revived. The request ID
+ * makes a retried submission return without a second change.
  */
 export async function assignDepartureReplacement(
 	database: Pick<typeof rootDatabase, "transaction">,
 	actor: LifecycleActor,
-	input: {
-		departureId: string;
-		handoverTaskId: string;
-		replacementEmployeeId: string;
-		requestId: string;
-	},
+	input: AssignDepartureReplacementInput,
 	now: Instant,
 ): Promise<void> {
 	const fingerprint = createHash("sha256")
@@ -439,69 +463,164 @@ export async function assignDepartureReplacement(
 			return;
 		}
 
-		const tasks = await tx.execute<{
-			employee_id: string;
-			employment_period_id: string;
-			status: string;
-			payload: unknown;
-		}>(sql`
-			SELECT employee_id, employment_period_id, status, payload
-			FROM employee_departure_task
-			WHERE organization_id = ${actor.organizationId} AND id = ${input.handoverTaskId}::uuid
-				AND departure_id = ${input.departureId}::uuid AND kind = 'approval_handover'
-			FOR UPDATE
-		`);
-		const task = tasks.rows[0];
-		const intent = parseApprovalHandoverTaskPayload(task?.payload);
-		if (!task || !intent) throw new AssignDepartureReplacementError("task_not_found");
-		if (task.status === "processing") throw new AssignDepartureReplacementError("task_in_progress");
-		if (task.status === "completed") {
-			throw new AssignDepartureReplacementError("task_already_completed");
-		}
-
-		const eligible = await tx.execute(sql`
-			SELECT 1 FROM employee e
-			JOIN member m ON m.user_id = e.user_id AND m.organization_id = e.organization_id
-			WHERE e.organization_id = ${actor.organizationId}
-				AND e.id = ${input.replacementEmployeeId}::uuid
-				AND e.id <> ${task.employee_id}::uuid
-				AND e.is_active = true AND m.status = 'approved'
-				AND NOT employee_departure_denies_access(
-					e.organization_id, e.id, ${dateFromInstant(now)}::timestamptz
-				)
-		`);
-		if (eligible.rows.length === 0) {
-			throw new AssignDepartureReplacementError("replacement_invalid");
-		}
-
-		const at = dateFromInstant(now);
-		await tx.execute(sql`
-			UPDATE employee_departure_task
-			SET payload = (payload - 'outcome') || jsonb_build_object(
-					'replacementEmployeeId', ${input.replacementEmployeeId}::uuid,
-					'resolutionRequestId', ${input.requestId}::uuid
-				),
-				status = 'pending', claim_token = NULL, attempt_count = 0, last_error = NULL,
-				available_at = ${at}, updated_at = ${at}
-			WHERE organization_id = ${actor.organizationId} AND id = ${input.handoverTaskId}::uuid
-		`);
+		const applied =
+			input.handoverTaskId !== undefined
+				? await retargetHandoverTask(tx, actor, input.handoverTaskId, input, now)
+				: await assignFutureStage(tx, actor, input.reviewId, input, now);
 		await tx.insert(employeeDepartureEvent).values({
 			organizationId: actor.organizationId,
-			employeeId: task.employee_id,
-			employmentPeriodId: task.employment_period_id,
+			employeeId: applied.employeeId,
+			employmentPeriodId: applied.employmentPeriodId,
 			departureId: input.departureId,
 			requestId: input.requestId,
 			eventIndex: 0,
 			kind: "replacement_assigned",
 			actorUserId: actor.userId,
-			occurredAt: at,
-			metadata: {
-				handoverTaskId: input.handoverTaskId,
-				assignmentId: intent.assignmentId,
-				replacementEmployeeId: input.replacementEmployeeId,
-			},
+			occurredAt: dateFromInstant(now),
+			metadata: { ...applied.metadata, replacementEmployeeId: input.replacementEmployeeId },
 			requestFingerprint: fingerprint,
 			result: {},
 		});
 	});
+}
+
+/**
+ * The replacement must currently be an accessible, approved member other than
+ * the excluded employees (the departed person and, for a known workflow, its
+ * requester). Authority to decide is re-checked when the duty is transferred
+ * or the stage is activated.
+ */
+async function assertReplacementEligible(
+	tx: LifecycleTransaction,
+	input: {
+		organizationId: string;
+		replacementEmployeeId: string;
+		excludedEmployeeIds: string[];
+		now: Instant;
+	},
+): Promise<void> {
+	if (input.excludedEmployeeIds.includes(input.replacementEmployeeId)) {
+		throw new AssignDepartureReplacementError("replacement_invalid");
+	}
+	const eligible = await tx.execute(sql`
+		SELECT 1 FROM employee e
+		JOIN member m ON m.user_id = e.user_id AND m.organization_id = e.organization_id
+		WHERE e.organization_id = ${input.organizationId}
+			AND e.id = ${input.replacementEmployeeId}::uuid
+			AND e.is_active = true AND m.status = 'approved'
+			AND NOT employee_departure_denies_access(
+				e.organization_id, e.id, ${dateFromInstant(input.now)}::timestamptz
+			)
+	`);
+	if (eligible.rows.length === 0) {
+		throw new AssignDepartureReplacementError("replacement_invalid");
+	}
+}
+
+async function retargetHandoverTask(
+	tx: LifecycleTransaction,
+	actor: LifecycleActor,
+	handoverTaskId: string,
+	input: AssignDepartureReplacementInput,
+	now: Instant,
+): Promise<AppliedReplacement> {
+	const tasks = await tx.execute<{
+		employee_id: string;
+		employment_period_id: string;
+		status: string;
+		payload: unknown;
+	}>(sql`
+		SELECT employee_id, employment_period_id, status, payload
+		FROM employee_departure_task
+		WHERE organization_id = ${actor.organizationId} AND id = ${handoverTaskId}::uuid
+			AND departure_id = ${input.departureId}::uuid AND kind = 'approval_handover'
+		FOR UPDATE
+	`);
+	const task = tasks.rows[0];
+	const intent = parseApprovalHandoverTaskPayload(task?.payload);
+	if (!task || !intent) throw new AssignDepartureReplacementError("task_not_found");
+	if (task.status === "processing") throw new AssignDepartureReplacementError("task_in_progress");
+	if (task.status === "completed") {
+		throw new AssignDepartureReplacementError("task_already_completed");
+	}
+	await assertReplacementEligible(tx, {
+		organizationId: actor.organizationId,
+		replacementEmployeeId: input.replacementEmployeeId,
+		excludedEmployeeIds: [task.employee_id],
+		now,
+	});
+
+	const at = dateFromInstant(now);
+	await tx.execute(sql`
+		UPDATE employee_departure_task
+		SET payload = (payload - 'outcome') || jsonb_build_object(
+				'replacementEmployeeId', ${input.replacementEmployeeId}::uuid,
+				'resolutionRequestId', ${input.requestId}::uuid
+			),
+			status = 'pending', claim_token = NULL, attempt_count = 0, last_error = NULL,
+			available_at = ${at}, updated_at = ${at}
+		WHERE organization_id = ${actor.organizationId} AND id = ${handoverTaskId}::uuid
+	`);
+	return {
+		employeeId: task.employee_id,
+		employmentPeriodId: task.employment_period_id,
+		metadata: { handoverTaskId, assignmentId: intent.assignmentId },
+	};
+}
+
+async function assignFutureStage(
+	tx: LifecycleTransaction,
+	actor: LifecycleActor,
+	reviewId: string,
+	input: AssignDepartureReplacementInput,
+	now: Instant,
+): Promise<AppliedReplacement> {
+	const reviews = await tx.execute<{
+		employee_id: string;
+		employment_period_id: string;
+		subject_id: string;
+	}>(sql`
+		SELECT employee_id, employment_period_id, subject_id
+		FROM employee_departure_review
+		WHERE organization_id = ${actor.organizationId} AND id = ${reviewId}::uuid
+			AND departure_id = ${input.departureId}::uuid AND kind = 'approval_handover'
+			AND metadata->>'reason' = ${FUTURE_STAGE_REVIEW_REASON}
+		FOR UPDATE
+	`);
+	const review = reviews.rows[0];
+	if (!review) throw new AssignDepartureReplacementError("review_not_found");
+	const stages = await tx.execute<{ workflow_id: string; requester_employee_id: string | null }>(
+		sql`
+			SELECT s.workflow_id, w.requester_employee_id
+			FROM approval_workflow_stage s
+			JOIN approval_workflow w ON w.id = s.workflow_id AND w.organization_id = s.organization_id
+			WHERE s.organization_id = ${actor.organizationId} AND s.id = ${review.subject_id}::uuid
+				AND s.status = 'waiting' AND w.status = 'pending'
+		`,
+	);
+	const stage = stages.rows[0];
+	if (!stage) throw new AssignDepartureReplacementError("stage_not_waiting");
+	await assertReplacementEligible(tx, {
+		organizationId: actor.organizationId,
+		replacementEmployeeId: input.replacementEmployeeId,
+		excludedEmployeeIds: [review.employee_id, stage.requester_employee_id].filter(
+			(id): id is string => id !== null,
+		),
+		now,
+	});
+
+	await tx.execute(sql`
+		UPDATE employee_departure_review
+		SET metadata = metadata || jsonb_build_object(
+				'replacementEmployeeId', ${input.replacementEmployeeId}::uuid,
+				'resolutionRequestId', ${input.requestId}::uuid
+			),
+			status = 'resolved', resolved_by = ${actor.userId}, resolved_at = ${dateFromInstant(now)}
+		WHERE organization_id = ${actor.organizationId} AND id = ${reviewId}::uuid
+	`);
+	return {
+		employeeId: review.employee_id,
+		employmentPeriodId: review.employment_period_id,
+		metadata: { reviewId, workflowId: stage.workflow_id, stageId: review.subject_id },
+	};
 }

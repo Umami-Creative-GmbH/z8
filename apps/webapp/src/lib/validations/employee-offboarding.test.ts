@@ -147,5 +147,14 @@ describe("follow-up schemas", () => {
 			assignDepartureReplacementSchema.safeParse({ ...replacement, replacementEmployeeId: null })
 				.success,
 		).toBe(false);
+		const { handoverTaskId: _task, ...stage } = replacement;
+		expect(assignDepartureReplacementSchema.safeParse({ ...stage, reviewId: uuid }).success).toBe(
+			true,
+		);
+		// Exactly one target: never both, never neither.
+		expect(
+			assignDepartureReplacementSchema.safeParse({ ...replacement, reviewId: uuid }).success,
+		).toBe(false);
+		expect(assignDepartureReplacementSchema.safeParse(stage).success).toBe(false);
 	});
 });

@@ -163,6 +163,36 @@ describe("FollowUpList", () => {
 		expect(second.requestId).toBe(first.requestId);
 	});
 
+	it("assigns a replacement for a later approval stage on its review", async () => {
+		const user = userEvent.setup();
+		const assignReplacement = vi.fn().mockResolvedValue({ success: true, data: undefined });
+		renderList({
+			assignReplacement,
+			reviews: [
+				{
+					id: "review-stage",
+					kind: "approval_handover",
+					status: "open",
+					reason: "future_stage_without_replacement",
+					handoverTaskId: null,
+					actionUrl: "/settings/employees/employee-1?review=review-stage",
+				},
+			],
+		});
+		const stage = reviewItem("Approval duties need a replacement");
+
+		await user.click(stage.getByRole("option", { name: "Robin Admin" }));
+		await user.click(stage.getByRole("button", { name: "Assign replacement" }));
+
+		await waitFor(() => expect(assignReplacement).toHaveBeenCalledTimes(1));
+		expect(assignReplacement.mock.calls[0]?.[0]).toEqual({
+			departureId: "departure-1",
+			reviewId: "review-stage",
+			replacementEmployeeId: "replacement-1",
+			requestId: expect.any(String),
+		});
+	});
+
 	it("retries failed follow-up work", async () => {
 		const user = userEvent.setup();
 		const props = renderList();

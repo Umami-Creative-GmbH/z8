@@ -185,7 +185,7 @@
         "reasons": {
           "clockOutFailed": "The running timer could not be closed automatically.",
           "futureAssignments": "Future work policy assignments were deactivated.",
-          "futureStage": "A later approval stage is routed only to this person and there is no replacement. Approving the stage before it fails until the approval is decided another way.",
+          "futureStage": "A later approval stage is routed only to this person. Assign a replacement before it starts; otherwise approving the stage before it fails.",
           "futureTerms": "Confirmed terms start after the departure.",
           "legacyAuthority": "This approval cannot be transferred automatically. Reassign it in approvals.",
           "noReplacement": "No replacement was chosen.",

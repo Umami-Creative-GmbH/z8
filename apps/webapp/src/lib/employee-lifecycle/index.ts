@@ -2,7 +2,10 @@ import "server-only";
 
 import { db } from "@/db";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { assignDepartureReplacement } from "./approval-handover";
+import {
+	type AssignDepartureReplacementInput,
+	assignDepartureReplacement,
+} from "./approval-handover";
 import type { createDepartureCommands } from "./commands";
 import { getEmployeeOffboardingView, previewEmployeeDeparture } from "./queries";
 import { resolveDepartureReview, retryDepartureTask } from "./reviews";
@@ -61,14 +64,7 @@ export function getOffboardingFollowUp() {
 				actorUserId: actor.userId,
 				now: new Date(systemClock.nowInstant().epochMilliseconds),
 			}),
-		assignReplacement: (
-			actor: LifecycleActor,
-			input: {
-				departureId: string;
-				handoverTaskId: string;
-				replacementEmployeeId: string;
-				requestId: string;
-			},
-		) => assignDepartureReplacement(db, actor, input, systemClock.nowInstant()),
+		assignReplacement: (actor: LifecycleActor, input: AssignDepartureReplacementInput) =>
+			assignDepartureReplacement(db, actor, input, systemClock.nowInstant()),
 	};
 }
