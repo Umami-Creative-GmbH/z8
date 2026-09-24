@@ -120,6 +120,91 @@ evidence-backed cards belongs to #290–#294.
   block that step for organizations with canonical workflows; the evidence
   employee FKs are the same class. Reconciling the whole-tenant order is #306.
 
+## Legacy-authoritative absences (#288 / T24)
+
+Organizations whose `absence` rollout mode is `legacy`, `shadow` or `ready` keep
+deciding through the legacy owners (`approval_request`, legacy chains). While
+capture is active those owners now write the same immutable evidence, into the
+same tables, marked `authority = 'legacy'` (migration
+`0075_legacy_approval_evidence.sql`).
+
+| Evidence | Written by | When |
+| --- | --- | --- |
+| Submitted revision | Legacy branch of the submission owner (`request-absence-effect.ts`) via `captureLegacyAbsenceSubmissionEvidence` | Same transaction, after the legacy rows (and any shadow observation plus its source binding) exist |
+| Decision evidence (doubles as the legacy operation receipt) | Legacy branch of `executeAbsenceDecisionInTransaction` via `recordLegacyAbsenceDecisionEvidence` | Same transaction, after the legacy mutation and shadow mirror |
+| Submission activation outcome | Submission owner | Requester auto-approval during routing, recorded with a `system` actor |
+
+Code: `apps/webapp/src/lib/approvals/evidence/legacy-absence.ts`, with the rows in
+`evidence/store.ts`.
+
+### References stay truthful
+
+- A legacy row never names a canonical workflow as its lifecycle
+  (`workflow_id` is null, enforced by check constraint). It records the legacy
+  rows it was captured for: the request routing created
+  (`legacy_approval_request_id`) and, for policy chains, the chain instance.
+- A shadow/ready observation is stored separately as `observed_workflow_id` (and
+  the observed event IDs in the decision `result.observation`). Canonical
+  loaders select by `workflow_id`, so an observation can never surface as, or be
+  enforced as, canonical evidence. After cutover a legacy revision stays
+  historical: the review shows it with a "previous approval process" notice and
+  canonical decisions hold while capture is active (in-flight classification,
+  blocker 2).
+- Legacy decision evidence identifies the one legacy request it decided (the
+  assignment equivalent) and, for chains, the chain stage. `stage_id`,
+  `assignment_id` and `reviewed_binding_id` are null by constraint. A decision
+  row always references a revision of the same organization and authority
+  (composite FK).
+- Legacy references are by value, because ordinary cancellation deletes pending
+  legacy requests; evidence must neither block nor disappear with that.
+
+### Facts, times and actors
+
+- Submitted facts are built exactly as for canonical absences (raw coverage,
+  labels, compatibility encodings, fingerprint). `submitted_at` is the persisted
+  `absence_entry.created_at`.
+- Decision outcome, stage and time come from the legacy rows re-read after the
+  mutation, never from the requested action or a clock: `approval_chain_stage_
+  instance.decided_at` for chains, otherwise `approval_request.approved_at`
+  (approval) or the `updated_at` written by the same statement (rejection). The
+  source is recorded in `result.decidedAtSource`. An intermediate chain approval
+  records `request_outcome = 'pending'`.
+- The actor is the authenticated operation actor; for chains the persisted
+  `decided_by` must equal it. Auto-approval during submission is a `system`
+  activation at the persisted `absence_entry.approved_at`. Reason text is never
+  copied; only its hash enters the command fingerprint.
+- A contradiction (unexpected outcome, other decider, request outside the
+  evidenced lifecycle, conflicting observation, unsupported legacy rows) throws
+  and rolls back the whole decision or submission.
+
+### Operation matching and replay
+
+- Legacy idempotency keys are unchanged
+  (`absence:<absenceId>:<action>:<observedVersion|initial>:<sha256(reason)>`)
+  and stored verbatim as `receipt_idempotency_key`; they still key the shadow
+  observation events. Because the key repeats across chain stages and changes
+  with the observed version, the legacy receipt is scoped to the decided legacy
+  request (unique per organization and request).
+- **Receipt before fresh checks.** With the exact legacy request ID (the inbox
+  always supplies it), a retry whose actor fingerprint and versioned command
+  fingerprint (`absence-legacy-decision:v1`: action, request, reason hash)
+  match the committed row returns that historical evidence: no mutation,
+  evidence write, observation, e-mail or notification. Anything else is not a
+  replay and goes through the unchanged legacy owner, which still rejects an
+  already-decided request. Without the request ID nothing is matched.
+- Fresh checks then run before the legacy mutation: once a legacy revision
+  exists it is always enforced (material change holds with the same 409 as
+  canonical); while capture is active a lifecycle without one is held
+  (`evidence_required`). Legacy authority still rejects reviewed bindings.
+
+### Shadow observation fix
+
+The legacy absence capture stored `approvedAt` as a Temporal `Instant` inside the
+observed `sourceSnapshot`; the shadow mirror requires plain JSON, so every
+shadow/ready absence **approval** failed as `malformed` regardless of evidence.
+It is now canonical UTC text, as the time-correction capture already does. No
+consumer read it as an `Instant`.
+
 ## Activation
 
 Migration `0070_approval_evidence.sql` adds the four tables and the update trigger.
@@ -146,12 +231,16 @@ No application endpoint changes the mode.
 
 ### Activation blockers (all unresolved)
 
-1. Apply the migration through the normal authorized deployment; verify it on a
-   real PostgreSQL instance (FKs, trigger, `ON DELETE CASCADE`, unique indexes).
-2. **In-flight classification.** Enabling capture holds every pending canonical
-   absence without a revision. Drain them first, or record provenance-bearing
-   reconstructed revisions through a separately authorized preparation step (not
-   implemented here).
+1. Apply migrations 0070 and 0075 through the normal authorized deployment
+   (both have run only on the disposable PostgreSQL 16 test database, see
+   Verification status).
+2. **In-flight classification.** Enabling capture holds every pending absence
+   without a revision of its deciding authority: canonical absences, and since
+   #288 also pending legacy/shadow/ready absences submitted before capture. At
+   cutover, pending absences with only legacy evidence hold under canonical
+   authority too. Drain them first, or record provenance-bearing reconstructed
+   revisions through a separately authorized preparation step (not implemented
+   here).
 3. Verify through the real caller boundaries with PostgreSQL: web and mobile
    submission, inbox single and bulk decisions, multi-stage intermediate approval,
    parallel races between decision and `sick-vacation-override`, replay after a
@@ -160,9 +249,16 @@ No application endpoint changes the mode.
 4. Confirm no old binaries decide canonical absences without the evidence hooks
    (pre-deployment binaries bypass them).
 5. Whole-organization cleanup ordering (see above) must be reconciled and
-   verified with PostgreSQL before production capture (#306).
-6. Legacy-authoritative absences are not covered (#288). Bots stay review-only;
-   exact-item navigation (#289) and binding issuance for cards (#290) remain.
+   verified with PostgreSQL before production capture (#306). Legacy evidence
+   carries the same employee FKs, so once capture is enabled for a legacy
+   organization it joins the set that `organization-cleanup.ts` cannot delete.
+6. Legacy absences (#288) remain unverified against PostgreSQL for: mobile
+   submission (same owner, different caller), inbox bulk decisions, concurrent
+   decision races (two approvers, decision versus `sick-vacation-override` or
+   cancellation), `ready` mode, and old binaries without the legacy hooks
+   (pre-deployment binaries decide without evidence or replay). Bots stay
+   review-only; exact-item navigation (#289) and binding issuance for cards
+   (#290) remain.
 7. Limited organization pilot, then expansion (#328).
 
 ## Verification status
@@ -186,3 +282,43 @@ Local seams written with this slice (database/provider boundaries replaced):
 None of these is runtime evidence for the guarantees above. No migration was
 applied and no PostgreSQL, browser or deployment check was executed. Keep #287's
 runtime acceptance open until the blockers are resolved.
+
+### #288 legacy authority
+
+PostgreSQL 16 runtime evidence (`evidence/legacy-absence.integration.test.ts`,
+run by `pnpm --filter webapp test:approval-workflow-repository:integration` on
+a disposable, label-owned database with the full migration chain). The real
+`requestAbsenceEffect`, `approveAbsenceEffect`, `rejectAbsenceEffect` and
+`cancelAbsenceRequest` server actions run with the real legacy owners, write
+gate, legacy capture, shadow mirror and store; only session, billing guard,
+e-mail/notification delivery, calendar queue and work-balance marking are
+replaced. Verified:
+
+- `legacy` mode submission and approval: revision and decision rows, no
+  canonical workflow created, verbatim legacy key, persisted decision time,
+  no note or reason text stored; exact retry replays with no new row and no
+  notification; a different retry is still refused; `UPDATE` rejected by the
+  trigger; review preparation of legacy evidence.
+- Rejection time from `approval_request.updated_at`; two-stage legacy chain
+  with an intermediate `pending` outcome and per-stage rows under one shared key.
+- Material change and missing-revision holds leave every row unchanged;
+  capture inactive writes nothing.
+- An injected insert failure on either evidence table rolls back the legacy
+  decision (request, absence, canonical parity, audit) or the whole submission
+  (absence, request, time record); the request is decidable afterwards.
+- Requester auto-approval recorded as a `system` activation.
+- `shadow` mode: observation stored separately and not visible to canonical
+  loaders; approval mirrors (after the snapshot fix) with observed event IDs
+  that exist.
+- Organization scoping of loaders, replay and review; composite FKs refuse
+  cross-organization and cross-authority rows.
+- Evidence survives cancellation, stays listed, and privileged cleanup removes
+  exactly one lifecycle (by legacy request, or by revision after cancellation)
+  while preserving the other cycle and the business record.
+
+Unit seams: `evidence/legacy-absence.test.ts` (replay matching, holds,
+contradictions, chain outcomes, observation checks, activation),
+`server/absence-approvals.test.ts` (receipt → preflight → mutation/mirror →
+evidence ordering and rollback), `request-absence-effect.test.ts` (capture after
+the legacy rows and observation binding; rollback), `presentation` and
+`maintenance` tests. Not executed: deployment, browser, the blocker 6 items.

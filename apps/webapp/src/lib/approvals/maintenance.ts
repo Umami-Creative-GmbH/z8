@@ -55,6 +55,13 @@ export async function listApprovals(
 			to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as created_at_utc
 		from approval_workflow
 		where organization_id = ${organizationId}
+		union all
+		-- Legacy evidence stays addressable after cancellation deletes its request.
+		select 'legacy_evidence' as storage_type, id, organization_id, 'captured',
+			source_type, source_id,
+			to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as created_at_utc
+		from approval_submitted_revision
+		where organization_id = ${organizationId} and authority = 'legacy'
 		order by created_at_utc, storage_type, id
 		`),
 	);
@@ -81,6 +88,22 @@ async function resolveLifecycle(
 			from approval_chain_stage_instance
 			where organization_id = ${organizationId}
 				and approval_request_id is not null
+			-- Legacy evidence records the lifecycle rows it was captured for; these
+			-- are verified links, not a shared source ID.
+			union all
+			select 'legacy_evidence', id, 'legacy', legacy_approval_request_id
+			from approval_submitted_revision
+			where organization_id = ${organizationId} and authority = 'legacy'
+			union all
+			select 'legacy_evidence', id, 'chain', legacy_chain_instance_id
+			from approval_submitted_revision
+			where organization_id = ${organizationId} and authority = 'legacy'
+				and legacy_chain_instance_id is not null
+			union all
+			select 'legacy_evidence', id, 'workflow', observed_workflow_id
+			from approval_submitted_revision
+			where organization_id = ${organizationId} and authority = 'legacy'
+				and observed_workflow_id is not null
 		), links as (
 			select from_kind, from_id, to_kind, to_id from edges
 			union all
@@ -142,6 +165,8 @@ export interface DeletedApprovalRecords {
 	workflows: string[];
 	chains: string[];
 	evidence: DeletedApprovalEvidenceRecords;
+	/** Escalation transfer journal entries; their delivery events cascade. */
+	escalationTransfers: string[];
 }
 
 export async function deleteApproval(
@@ -168,7 +193,8 @@ export async function deleteApprovalInTransaction(
 	await transaction.execute(sql`
 		lock table approval_request, approval_chain_instance, approval_chain_stage_instance,
 			approval_workflow, approval_workflow_stage, approval_submitted_revision,
-			approval_review_binding, approval_decision_evidence in share row exclusive mode
+			approval_review_binding, approval_decision_evidence, approval_escalation_transfer
+			in share row exclusive mode
 	`);
 
 	const matches = rows(
@@ -178,6 +204,10 @@ export async function deleteApprovalInTransaction(
 			union all
 			select 'workflow' as storage_type, id from approval_workflow
 			where organization_id = ${organizationId} and id = ${id}::uuid
+			union all
+			select 'legacy_evidence' as storage_type, id from approval_submitted_revision
+			where organization_id = ${organizationId} and id = ${id}::uuid
+				and authority = 'legacy'
 		`),
 	);
 	if (matches.length === 0) {
@@ -193,7 +223,7 @@ export async function deleteApprovalInTransaction(
 		);
 	}
 	const kind = matches[0].storage_type;
-	if (kind !== "legacy" && kind !== "workflow") {
+	if (kind !== "legacy" && kind !== "workflow" && kind !== "legacy_evidence") {
 		throw new Error("Unexpected approval storage type");
 	}
 
@@ -201,6 +231,7 @@ export async function deleteApprovalInTransaction(
 	const legacyIds: string[] = [];
 	const workflowIds: string[] = [];
 	const chainIds: string[] = [];
+	const legacyRevisionIds: string[] = [];
 	for (const row of lifecycle) {
 		switch (row.kind) {
 			case "legacy":
@@ -211,6 +242,9 @@ export async function deleteApprovalInTransaction(
 				break;
 			case "chain":
 				chainIds.push(rowId(row));
+				break;
+			case "legacy_evidence":
+				legacyRevisionIds.push(rowId(row));
 				break;
 		}
 	}
@@ -241,15 +275,38 @@ export async function deleteApprovalInTransaction(
 	// FKs also prevent a late capture from recreating purged evidence.
 	const evidenceScope = sql`organization_id = ${organizationId}
 		and workflow_id = any(${sql.param(workflowIds)}::uuid[])`;
-	const decisionEvidence = workflowIds.length === 0 ? [] : await deletedIds(sql`
+	// Escalation journals follow the same verified workflow links; their FKs to the
+	// workflow, its assignments and events likewise prevent late recreation.
+	const escalationTransfers = workflowIds.length === 0 ? [] : await deletedIds(sql`
+			delete from approval_escalation_transfer where ${evidenceScope} returning id
+		`);
+	const decisionEvidence: string[] = workflowIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_decision_evidence where ${evidenceScope} returning id
 		`);
 	const reviewBindings = workflowIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_review_binding where ${evidenceScope} returning id
 		`);
-	const submittedRevisions = workflowIds.length === 0 ? [] : await deletedIds(sql`
+	const submittedRevisions: string[] = workflowIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_submitted_revision where ${evidenceScope} returning id
 		`);
+	// Legacy evidence has no workflow; it follows the lifecycle rows it recorded.
+	const legacyScope = sql`organization_id = ${organizationId} and authority = 'legacy'
+		and submitted_revision_id = any(${sql.param(legacyRevisionIds)}::uuid[])`;
+	if (legacyRevisionIds.length > 0) {
+		decisionEvidence.push(
+			...(await deletedIds(sql`
+				delete from approval_decision_evidence where ${legacyScope} returning id
+			`)),
+		);
+		submittedRevisions.push(
+			...(await deletedIds(sql`
+				delete from approval_submitted_revision
+				where organization_id = ${organizationId} and authority = 'legacy'
+					and id = any(${sql.param(legacyRevisionIds)}::uuid[])
+				returning id
+			`)),
+		);
+	}
 	// Workflow FKs cascade through stages, assignments, events, commands, projections,
 	// outbox/deliveries and migration issues. No decision handlers are invoked.
 	const workflows = workflowIds.length === 0 ? [] : await deletedIds(sql`
@@ -267,5 +324,6 @@ export async function deleteApprovalInTransaction(
 			decisionEvidence: decisionEvidence.sort(),
 			reviewBindings: reviewBindings.sort(),
 		},
+		escalationTransfers: escalationTransfers.sort(),
 	};
 }

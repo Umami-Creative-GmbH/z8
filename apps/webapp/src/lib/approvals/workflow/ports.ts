@@ -95,8 +95,21 @@ export type ApprovalWorkflowPrincipal =
 	| { kind: "employee"; userId: string }
 	| {
 			kind: "system";
-			systemId: "approval-expiry" | "approval-activation";
+			systemId:
+				| "approval-expiry"
+				| "approval-activation"
+				| typeof APPROVAL_ESCALATION_SYSTEM_ID;
 	  };
+
+/**
+ * Narrow scheduled-escalation capability (#255 §3). It may only replace one
+ * overdue assignment: never approve, reject, cancel, expire, edit policy or
+ * nominate an arbitrary recipient. Its receipts carry a distinct versioned
+ * actor fingerprint so they never collide with generic system receipts.
+ */
+export const APPROVAL_ESCALATION_SYSTEM_ID = "approval-escalation";
+
+export type ApprovalSystemCapability = typeof APPROVAL_ESCALATION_SYSTEM_ID;
 
 export interface ApprovalWorkflowCommandRequest {
 	/** Legacy card access may return an exact receipt, but never execute a new command. */
@@ -495,6 +508,8 @@ export interface ApprovalCommandActorBinding {
 	 * is materialized under a caller-owned idempotency receipt.
 	 */
 	receiptActor?: ApprovalCommandActor;
+	/** Narrow system capability the receipt actor fingerprint was bound to. */
+	systemCapability?: ApprovalSystemCapability;
 	actor: ApprovalCommandActor;
 }
 

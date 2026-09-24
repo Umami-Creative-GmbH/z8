@@ -14,6 +14,7 @@ import {
 	approvalEscalationPolicyRevision,
 	employee,
 } from "@/db/schema";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { escalationAttentionApprovalHref } from "./attention";
 import {
 	describeChannelDeliveryPreferences,
@@ -217,9 +218,9 @@ export async function getEscalationManagementOverview(
 			? db
 					.select({
 						id: employee.id,
-						firstName: employee.firstName,
-						lastName: employee.lastName,
-						userName: user.name,
+						firstName: user.firstName,
+						lastName: user.lastName,
+						name: user.name,
 					})
 					.from(employee)
 					.leftJoin(user, eq(user.id, employee.userId))
@@ -254,9 +255,7 @@ export async function getEscalationManagementOverview(
 	const approverName = new Map(
 		approvers.map((row) => [
 			row.id,
-			[row.firstName, row.lastName].filter(Boolean).join(" ") ||
-				row.userName ||
-				row.id,
+			buildAuthUserDisplayName(row) || row.id,
 		]),
 	);
 	const eventsByAttention = new Map<string, EscalationAttentionEventView[]>();

@@ -101,6 +101,7 @@
         "recheck": "Erneut prüfen",
         "resolved": "Gelöst",
         "title": "Erfordert Aufmerksamkeit",
+        "transfer": "Übertragen…",
         "unknownApprover": "Nicht erfasst"
       },
       "channels": {
@@ -199,7 +200,22 @@
         "requestFailed": "Die Anfrage ist fehlgeschlagen. Bitte erneut versuchen.",
         "reviewed": "Konflikte als geprüft markiert",
         "saved": "Eskalationsrichtlinie gespeichert",
+        "transferred": "Genehmigungszuständigkeit übertragen",
         "unchanged": "Keine Änderungen zu speichern"
+      },
+      "transfer": {
+        "confirm": "Übertragen",
+        "currentApprover": "Derzeit zugewiesen an {name}.",
+        "description": "Die aktuell zuständige Person verliert diese Zuständigkeit, und die ausgewählte Vertretung kann den Antrag in ihrem Genehmigungseingang entscheiden. Die Genehmigung bleibt offen, andere Zuständigkeiten bleiben unverändert, und die Übertragung wird im Audit-Log festgehalten.",
+        "loadFailed": "Berechtigte Führungskräfte konnten nicht geladen werden.",
+        "loading": "Berechtigte Führungskräfte werden geladen…",
+        "noCandidates": "Keine berechtigte Vertretung verfügbar. Nur aktive Führungskräfte der antragstellenden Person mit Zugriff auf den Genehmigungseingang können übernehmen.",
+        "primary": "Primäre Führungskraft",
+        "reasonLabel": "Begründung (optional)",
+        "recipientLabel": "Übertragen an",
+        "recipientRequired": "Bitte eine Vertretung auswählen.",
+        "recommended": "Nächste in der Reihenfolge",
+        "title": "Genehmigungszuständigkeit übertragen"
       }
     },
     "approvalPolicies": {
