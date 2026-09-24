@@ -4,7 +4,7 @@ import { approvalEscalationControl } from "@/db/schema";
 
 export interface LegacyEscalationSuppression {
 	organizationId: string;
-	reason: "ownership_moved" | "automation_paused";
+	reason: "ownership_moved" | "automation_paused" | "unrecognized_owner";
 }
 
 /**
@@ -22,8 +22,13 @@ export async function getLegacyEscalationSuppression(
 		where: eq(approvalEscalationControl.organizationId, organizationId),
 		columns: { owner: true, automationPaused: true },
 	});
-	if (control && control.owner !== "legacy") {
+	if (control?.owner === "escalation") {
 		return { organizationId, reason: "ownership_moved" };
+	}
+	// The column is not constrained; an unknown owner fails closed but stays
+	// distinguishable from an intended ownership move.
+	if (control && control.owner !== "legacy") {
+		return { organizationId, reason: "unrecognized_owner" };
 	}
 	if (control?.automationPaused) {
 		return { organizationId, reason: "automation_paused" };

@@ -82,9 +82,11 @@ export async function reconcileCronSchedules({
 	schedules: Record<CronJobName, CronScheduleInput>;
 }): Promise<{
 	reconciled: Array<{ jobName: CronJobName }>;
+	retired: Array<{ jobName: CronJobName }>;
 	failed: Array<{ jobName: CronJobName; error: string }>;
 }> {
 	const reconciled: Array<{ jobName: CronJobName }> = [];
+	const retired: Array<{ jobName: CronJobName }> = [];
 	const failed: Array<{ jobName: CronJobName; error: string }> = [];
 
 	const results = await Promise.all(
@@ -97,12 +99,15 @@ export async function reconcileCronSchedules({
 	);
 
 	for (const { jobName, result } of results) {
-		if (result.success) {
-			reconciled.push({ jobName });
-		} else {
+		if (!result.success) {
 			failed.push({ jobName, error: result.error });
+		} else if (result.retired) {
+			// Removed, not installed: report separately so it is not read as an active schedule.
+			retired.push({ jobName });
+		} else {
+			reconciled.push({ jobName });
 		}
 	}
 
-	return { reconciled, failed };
+	return { reconciled, retired, failed };
 }

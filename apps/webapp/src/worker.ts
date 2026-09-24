@@ -377,10 +377,16 @@ export function registerCronTrackingListeners(
  */
 async function setupCronJobs(queue: Queue): Promise<void> {
 	// Disabling registration is not retirement: remove existing schedulers even
-	// on workers which are configured not to register schedules.
+	// on workers which are configured not to register schedules. A failed removal
+	// must not stop unrelated jobs; retained handlers stay behind organization
+	// execution gates and the next reconciliation retries the removal.
 	for (const { jobName, result } of await retireLegacyEscalationSchedulers(queue)) {
 		if (!result.success) {
-			throw new Error(`Failed to retire ${jobName}: ${result.error}`);
+			logger.error(
+				{ error: result.error, type: jobName },
+				"Failed to retire legacy escalation scheduler; worker startup will continue",
+			);
+			continue;
 		}
 		logger.info({ jobName }, "Legacy escalation scheduler retired; queued handlers retained");
 	}
@@ -440,6 +446,13 @@ async function setupCronJobs(queue: Queue): Promise<void> {
 			);
 		}
 
+		for (const job of result.retired) {
+			logger.info(
+				{ type: job.jobName },
+				"Retired cron job scheduler removed instead of reconciled",
+			);
+		}
+
 		for (const job of result.failed) {
 			logger.error(
 				{ error: job.error, type: job.jobName },
@@ -450,6 +463,7 @@ async function setupCronJobs(queue: Queue): Promise<void> {
 		logger.info(
 			{
 				reconciled: result.reconciled.length,
+				retired: result.retired.length,
 				failed: result.failed.length,
 			},
 			"Cron job scheduler reconciliation completed",
