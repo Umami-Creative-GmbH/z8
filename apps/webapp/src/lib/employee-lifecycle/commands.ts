@@ -21,6 +21,7 @@ import {
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
 import { departureCutoff } from "./cutoff";
+import { resolveCurrentEmploymentPeriod } from "./employment-periods";
 import { assertReadCommitted, lockLifecycleEmployee, lockLifecycleOrganization } from "./locks";
 import { type DepartureBlockedReason, evaluateDepartureAuthority } from "./owner-invariant";
 import { executeDepartureInTransaction } from "./transition";
@@ -819,21 +820,8 @@ async function ensureOpenEmploymentPeriod(
 	organizationId: string,
 	employeeId: string,
 ): Promise<string> {
-	// Employees created after migration 0069 receive their legacy period lazily.
-	await tx.execute(
-		sql`SELECT employee_employment_period_backfill_legacy(${organizationId}, ${employeeId}::uuid)`,
-	);
-	const [period] = await tx
-		.select({ id: employeeEmploymentPeriod.id })
-		.from(employeeEmploymentPeriod)
-		.where(
-			and(
-				eq(employeeEmploymentPeriod.organizationId, organizationId),
-				eq(employeeEmploymentPeriod.employeeId, employeeId),
-				eq(employeeEmploymentPeriod.status, "open"),
-			),
-		);
-	if (!period) throw new DepartureCommandError("no_open_employment_period");
+	const period = await resolveCurrentEmploymentPeriod(tx, { organizationId, employeeId });
+	if (period?.status !== "open") throw new DepartureCommandError("no_open_employment_period");
 	return period.id;
 }
 

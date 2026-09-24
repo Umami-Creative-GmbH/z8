@@ -222,6 +222,42 @@ describeLifecycleDatabase("employment periods", () => {
 		).toEqual({ status: "open", start_provenance: "legacy" });
 	});
 
+	it("keeps adding terms to a legacy-inactive employee possible", async () => {
+		const target = await fixture.seedEmployee({ withPeriod: false, isActive: false });
+
+		const periodId = await resolveTermsPeriod(target.employeeId, "2026-10-01T00:00:00Z");
+
+		expect(
+			await row(`select status from employee_employment_period where id = $1`, [periodId]),
+		).toEqual({ status: "legacy_unknown" });
+	});
+
+	it("reopens the legacy period in place for an employee reactivated by the old toggle", async () => {
+		const target = await fixture.seedEmployee({ withPeriod: false, isActive: false });
+		await fixture.pool.query(`select employee_employment_period_backfill_legacy($1, $2::uuid)`, [
+			fixture.organizationId,
+			target.employeeId,
+		]);
+		await fixture.pool.query(`update employee set is_active = true where id = $1`, [
+			target.employeeId,
+		]);
+
+		const result = await offboardNowAt(target.employeeId, "2026-09-14T09:30:00Z");
+
+		expect(result.status).toBe("effective");
+		expect(
+			await row(
+				`select status, started_at, start_provenance from employee_employment_period
+				 where employee_id = $1`,
+				[target.employeeId],
+			),
+		).toEqual({
+			status: "closed",
+			started_at: new Date("2026-01-01T00:00:00Z"),
+			start_provenance: "legacy",
+		});
+	});
+
 	it("refuses terms once the employment period has ended", async () => {
 		const target = await fixture.seedEmployee();
 		await offboardNowAt(target.employeeId, "2026-09-14T09:30:00Z");
