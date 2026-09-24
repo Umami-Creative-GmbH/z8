@@ -24,7 +24,7 @@ import {
 } from "@/lib/payroll-workspace/pdf-exporter";
 import { getPayrollWorkspaceSummary } from "@/lib/payroll-workspace/summary";
 import type {
-	PayrollBlockerType,
+	DismissiblePayrollBlockerType,
 	PayrollWorkspaceSummary,
 } from "@/lib/payroll-workspace/types";
 import { getTranslate } from "@/tolgee/server";
@@ -42,7 +42,7 @@ export interface PayrollWorkspaceRequest {
 
 export interface DismissPayrollBlockerRequest extends PayrollWorkspaceRequest {
 	blockerId: string;
-	blockerType: PayrollBlockerType;
+	blockerType: DismissiblePayrollBlockerType;
 }
 
 export interface PayrollExportFormatOption {
@@ -55,7 +55,7 @@ const PAYROLL_BLOCKER_TYPES = [
 	"missing_clock_out",
 	"pending_absence",
 	"pending_time_correction",
-] as const satisfies readonly PayrollBlockerType[];
+] as const satisfies readonly DismissiblePayrollBlockerType[];
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 type PayrollWorkspaceExportFormatId = (typeof PAYROLL_WORKSPACE_EXPORT_FORMATS)[number];
@@ -337,7 +337,7 @@ async function resolvePayrollWorkspaceActionContext(
 function validatePayrollBlockerDismissalRequest(
 	t: PayrollTranslate,
 	request: DismissPayrollBlockerRequest,
-): { blockerId: string; blockerType: PayrollBlockerType } {
+): { blockerId: string; blockerType: DismissiblePayrollBlockerType } {
 	if (!z.uuid().safeParse(request.blockerId).success) {
 		throw new ValidationError({
 			message: t("payroll.errors.invalidBlockerId", "Invalid payroll blocker ID"),
@@ -347,7 +347,7 @@ function validatePayrollBlockerDismissalRequest(
 
 	if (
 		typeof request.blockerType !== "string" ||
-		!PAYROLL_BLOCKER_TYPES.includes(request.blockerType as PayrollBlockerType)
+		!PAYROLL_BLOCKER_TYPES.includes(request.blockerType as DismissiblePayrollBlockerType)
 	) {
 		throw new ValidationError({
 			message: t("payroll.errors.invalidBlockerType", "Invalid payroll blocker type"),
