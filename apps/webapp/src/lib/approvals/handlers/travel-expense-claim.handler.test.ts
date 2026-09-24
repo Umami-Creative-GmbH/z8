@@ -2,6 +2,11 @@ import { Effect } from "effect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { approvalRequest } from "@/db/schema";
 
+vi.mock("@/lib/approvals/evidence/store", () => ({
+	// Claims here were submitted without captured evidence.
+	loadLegacyTravelExpenseSubmittedRevision: async () => null,
+}));
+
 vi.mock("@/env", () => ({
 	env: {
 		BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret",

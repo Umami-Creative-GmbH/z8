@@ -1,6 +1,8 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
+	date,
 	decimal,
 	foreignKey,
 	index,
@@ -39,6 +41,11 @@ export const travelExpenseClaim = pgTable(
 		status: travelExpenseClaimStatusEnum("status").notNull().default("draft"),
 		tripStart: timestamp("trip_start").notNull(),
 		tripEnd: timestamp("trip_end").notNull(),
+		// Logical trip dates exactly as entered, and the zone used to derive the
+		// compatibility bounds above. Null for claims created before capture.
+		tripStartDate: date("trip_start_date"),
+		tripEndDate: date("trip_end_date"),
+		tripDateTimeZone: text("trip_date_time_zone"),
 		destinationCity: text("destination_city"),
 		destinationCountry: text("destination_country"),
 		projectId: uuid("project_id").references(() => project.id, { onDelete: "set null" }),
@@ -75,6 +82,14 @@ export const travelExpenseClaim = pgTable(
 			columns: [table.approvalWorkflowId, table.organizationId],
 			foreignColumns: [approvalWorkflow.id, approvalWorkflow.organizationId],
 		}),
+		check(
+			"travel_expense_claim_trip_dates_check",
+			sql`(${table.tripStartDate} IS NULL AND ${table.tripEndDate} IS NULL
+				AND ${table.tripDateTimeZone} IS NULL)
+			OR (${table.tripStartDate} IS NOT NULL AND ${table.tripEndDate} IS NOT NULL
+				AND ${table.tripDateTimeZone} IS NOT NULL
+				AND ${table.tripEndDate} >= ${table.tripStartDate})`,
+		),
 	],
 );
 
@@ -94,7 +109,10 @@ export const travelExpenseAttachment = pgTable(
 		fileName: text("file_name").notNull(),
 		mimeType: text("mime_type"),
 		sizeBytes: integer("size_bytes"),
+		// Server-computed over the exact stored bytes; null only for historical uploads.
 		checksumSha256: text("checksum_sha256"),
+		// Provider object version, when the bucket reports one. The key is write-once.
+		storageVersionId: text("storage_version_id"),
 		uploadedBy: uuid("uploaded_by")
 			.notNull()
 			.references(() => employee.id, { onDelete: "cascade" }),
@@ -105,6 +123,66 @@ export const travelExpenseAttachment = pgTable(
 		index("travelExpenseAttachment_organizationId_idx").on(table.organizationId),
 		index("travelExpenseAttachment_uploadedBy_idx").on(table.uploadedBy),
 		uniqueIndex("travelExpenseAttachment_claim_storageKey_idx").on(table.claimId, table.storageKey),
+	],
+);
+
+export const TRAVEL_EXPENSE_RECEIPT_UPLOAD_STATUSES = ["pending", "cleanup_required"] as const;
+export type TravelExpenseReceiptUploadStatus =
+	(typeof TRAVEL_EXPENSE_RECEIPT_UPLOAD_STATUSES)[number];
+
+export const TRAVEL_EXPENSE_RECEIPT_CLEANUP_REASONS = [
+	"claim_not_draft",
+	"finalization_failed",
+	"abandoned",
+] as const;
+export type TravelExpenseReceiptCleanupReason =
+	(typeof TRAVEL_EXPENSE_RECEIPT_CLEANUP_REASONS)[number];
+
+// Durable staging claim for one private receipt object. It is written before
+// the object is stored and removed in the transaction that attaches it, so an
+// upload that is rejected (claim no longer a draft), fails or is abandoned
+// always leaves recoverable storage cleanup work. Organization and claim are
+// kept by value: cleanup must outlive claim and tenant deletion.
+export const travelExpenseReceiptUpload = pgTable(
+	"travel_expense_receipt_upload",
+	{
+		id: uuid("id").primaryKey(),
+		organizationId: text("organization_id").notNull(),
+		claimId: uuid("claim_id").notNull(),
+		uploadedBy: uuid("uploaded_by").notNull(),
+		storageKey: text("storage_key").notNull(),
+		storageBucket: text("storage_bucket"),
+		storageVersionId: text("storage_version_id"),
+		status: text("status")
+			.$type<TravelExpenseReceiptUploadStatus>()
+			.default("pending")
+			.notNull(),
+		reason: text("reason").$type<TravelExpenseReceiptCleanupReason>(),
+		attempts: integer("attempts").default(0).notNull(),
+		lastError: text("last_error"),
+		nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		uniqueIndex("travelExpenseReceiptUpload_org_storageKey_idx").on(
+			table.organizationId,
+			table.storageKey,
+		),
+		index("travelExpenseReceiptUpload_status_nextAttemptAt_idx").on(
+			table.status,
+			table.nextAttemptAt,
+		),
+		check(
+			"travel_expense_receipt_upload_status_check",
+			sql`${table.status} IN ('pending', 'cleanup_required')`,
+		),
+		check(
+			"travel_expense_receipt_upload_reason_check",
+			sql`(${table.status} = 'pending' AND ${table.reason} IS NULL)
+			OR (${table.status} = 'cleanup_required'
+				AND ${table.reason} IN ('claim_not_draft', 'finalization_failed', 'abandoned'))`,
+		),
 	],
 );
 

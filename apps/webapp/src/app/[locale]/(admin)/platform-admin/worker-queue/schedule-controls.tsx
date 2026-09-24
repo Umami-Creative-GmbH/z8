@@ -37,6 +37,7 @@ const HIGH_RISK_CRON_JOB_NAMES = new Set<string>([
 	"cron:scim-maintenance",
 	"cron:execution-cleanup",
 	"cron:organization-cleanup",
+	"cron:travel-expense-receipt-cleanup",
 	"cron:break-enforcement",
 	"cron:teams-daily-digest",
 	"cron:teams-escalation",
