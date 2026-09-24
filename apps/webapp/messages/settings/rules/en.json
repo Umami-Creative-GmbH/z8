@@ -101,6 +101,7 @@
         "recheck": "Recheck",
         "resolved": "Resolved",
         "title": "Needs attention",
+        "transfer": "Transfer…",
         "unknownApprover": "Not recorded"
       },
       "channels": {
@@ -199,7 +200,22 @@
         "requestFailed": "The request failed. Try again.",
         "reviewed": "Conflicts marked as reviewed",
         "saved": "Escalation policy saved",
+        "transferred": "Approval assignment transferred",
         "unchanged": "No changes to save"
+      },
+      "transfer": {
+        "confirm": "Transfer",
+        "currentApprover": "Currently assigned to {name}.",
+        "description": "The current approver loses this assignment and the selected backup manager can decide it from their approvals inbox. The approval stays pending, other assignments are unchanged, and the transfer is recorded in the audit log.",
+        "loadFailed": "Eligible managers could not be loaded.",
+        "loading": "Loading eligible managers…",
+        "noCandidates": "No eligible backup manager is available. Only active managers of the requester with approvals inbox access can take over.",
+        "primary": "Primary manager",
+        "reasonLabel": "Reason (optional)",
+        "recipientLabel": "Transfer to",
+        "recipientRequired": "Choose a backup manager.",
+        "recommended": "Next in order",
+        "title": "Transfer approval assignment"
       }
     },
     "approvalPolicies": {

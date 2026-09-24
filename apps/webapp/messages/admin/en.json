@@ -345,7 +345,8 @@
         "workflow": "Workflow",
         "submittedRevision": "Submitted revision",
         "decisionEvidence": "Decision evidence",
-        "reviewBinding": "Review binding"
+        "reviewBinding": "Review binding",
+        "escalationTransfer": "Escalation transfer"
       },
       "cookieConsent": {
         "description": "Injected on authentication pages for GDPR compliance",

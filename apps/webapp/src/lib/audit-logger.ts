@@ -67,6 +67,7 @@ export enum AuditAction {
 	APPROVAL_ESCALATION_POLICY_UPDATED = "approval_escalation.policy_updated",
 	APPROVAL_ESCALATION_CONFLICTS_REVIEWED = "approval_escalation.conflicts_reviewed",
 	APPROVAL_ESCALATION_ATTENTION_DISPOSED = "approval_escalation.attention_disposed",
+	APPROVAL_ESCALATION_TRANSFERRED = "approval_escalation.transferred",
 
 	// Vacation Operations
 	VACATION_CARRYOVER_APPLIED = "vacation.carryover_applied",

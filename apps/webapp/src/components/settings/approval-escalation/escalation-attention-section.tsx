@@ -1,13 +1,16 @@
 "use client";
 
 import {
+	IconArrowForwardUp,
 	IconExternalLink,
 	IconLoader2,
 	IconRefresh,
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { listApprovalEscalationCandidates } from "@/app/[locale]/(app)/settings/approval-escalation/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,9 +29,11 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { useDisplayContext } from "@/hooks/use-display-context";
 import type { EscalationAttentionView } from "@/lib/approvals/escalation/management-overview";
+import type { EscalationCandidateView } from "@/lib/approvals/escalation/transfer";
 import { Link } from "@/navigation";
 import {
 	attentionEventLabel,
@@ -325,26 +330,314 @@ function DisposeAttentionDialog({
 	);
 }
 
+export interface EscalationTransferRequest {
+	assignmentId: string;
+	recipientEmployeeId: string;
+	idempotencyKey: string;
+	reason?: string;
+}
+
+const TRANSFERABLE_REASONS = new Set<EscalationAttentionView["reason"]>([
+	"no_eligible_backup",
+	"replacement_overdue",
+	"unsupported_route",
+	"ambiguous_history",
+]);
+
+/** Human transfers are available for canonical absence assignments only. */
+function canTransfer(item: EscalationAttentionView): boolean {
+	return (
+		item.approvalType === "absence" &&
+		item.assignmentId !== null &&
+		TRANSFERABLE_REASONS.has(item.reason)
+	);
+}
+
+function TransferAssignmentForm({
+	candidates,
+	currentApproverName,
+	isSubmitting,
+	onCancel,
+	onSubmit,
+}: {
+	candidates: EscalationCandidateView[];
+	currentApproverName: string;
+	isSubmitting: boolean;
+	onCancel: () => void;
+	onSubmit: (values: {
+		recipientEmployeeId: string;
+		reason: string;
+	}) => Promise<void>;
+}) {
+	const { t } = useTranslate();
+	const form = useForm({
+		defaultValues: {
+			recipientEmployeeId:
+				candidates.find((candidate) => candidate.recommended)?.employeeId ??
+				"",
+			reason: "",
+		},
+		onSubmit: async ({ value }) => onSubmit(value),
+	});
+
+	return (
+		<form
+			className="space-y-4"
+			onSubmit={(event) => {
+				event.preventDefault();
+				form.handleSubmit();
+			}}
+		>
+			<p className="text-sm">
+				{t(
+					"settings.approvalEscalation.transfer.currentApprover",
+					"Currently assigned to {name}.",
+					{ name: currentApproverName },
+				)}
+			</p>
+			<form.Field
+				name="recipientEmployeeId"
+				validators={{
+					onSubmit: ({ value }) =>
+						value
+							? undefined
+							: t(
+									"settings.approvalEscalation.transfer.recipientRequired",
+									"Choose a backup manager.",
+								),
+				}}
+			>
+				{(field) => (
+					<fieldset className="space-y-2">
+						<legend className="text-sm font-medium">
+							{t(
+								"settings.approvalEscalation.transfer.recipientLabel",
+								"Transfer to",
+							)}
+						</legend>
+						<RadioGroup
+							value={field.state.value}
+							onValueChange={(value) => field.handleChange(value)}
+							disabled={isSubmitting}
+							aria-invalid={field.state.meta.errors.length > 0}
+						>
+							{candidates.map((candidate) => {
+								const id = `escalation-recipient-${candidate.employeeId}`;
+								return (
+									<div key={candidate.employeeId} className="flex items-center gap-2">
+										<RadioGroupItem value={candidate.employeeId} id={id} />
+										<Label htmlFor={id} className="flex flex-wrap items-center gap-2">
+											{candidate.name}
+											{candidate.isPrimary ? (
+												<Badge variant="secondary">
+													{t(
+														"settings.approvalEscalation.transfer.primary",
+														"Primary manager",
+													)}
+												</Badge>
+											) : null}
+											{candidate.recommended ? (
+												<Badge variant="outline">
+													{t(
+														"settings.approvalEscalation.transfer.recommended",
+														"Next in order",
+													)}
+												</Badge>
+											) : null}
+										</Label>
+									</div>
+								);
+							})}
+						</RadioGroup>
+						{field.state.meta.errors.length > 0 ? (
+							<p className="text-sm text-destructive" role="alert">
+								{field.state.meta.errors.join(" ")}
+							</p>
+						) : null}
+					</fieldset>
+				)}
+			</form.Field>
+			<form.Field name="reason">
+				{(field) => (
+					<div className="space-y-2">
+						<Label htmlFor="escalation-transfer-reason">
+							{t(
+								"settings.approvalEscalation.transfer.reasonLabel",
+								"Reason (optional)",
+							)}
+						</Label>
+						<Textarea
+							id="escalation-transfer-reason"
+							name="reason"
+							value={field.state.value}
+							onChange={(event) => field.handleChange(event.target.value)}
+							maxLength={500}
+							rows={3}
+							disabled={isSubmitting}
+						/>
+					</div>
+				)}
+			</form.Field>
+			<DialogFooter>
+				<Button
+					type="button"
+					variant="outline"
+					onClick={onCancel}
+					disabled={isSubmitting}
+				>
+					{t("common.cancel", "Cancel")}
+				</Button>
+				<Button type="submit" disabled={isSubmitting}>
+					{isSubmitting ? (
+						<IconLoader2
+							className="mr-2 size-4 motion-safe:animate-spin"
+							aria-hidden="true"
+						/>
+					) : null}
+					{t("settings.approvalEscalation.transfer.confirm", "Transfer")}
+				</Button>
+			</DialogFooter>
+		</form>
+	);
+}
+
+function TransferAssignmentDialog({
+	item,
+	isSubmitting,
+	onClose,
+	onTransfer,
+}: {
+	item: EscalationAttentionView | null;
+	isSubmitting: boolean;
+	onClose: () => void;
+	onTransfer: (request: EscalationTransferRequest) => Promise<boolean>;
+}) {
+	const { t } = useTranslate();
+	const assignmentId = item?.assignmentId ?? null;
+	// One key per submitted request: an uncertain retry reuses it; a changed
+	// request or a reopened dialog gets a new one.
+	const submission = useRef<{ key: string; fingerprint: string } | null>(null);
+	const candidates = useQuery({
+		queryKey: ["approval-escalation-candidates", assignmentId],
+		queryFn: () =>
+			listApprovalEscalationCandidates({ assignmentId: assignmentId ?? "" }),
+		enabled: assignmentId !== null,
+		staleTime: 0,
+	});
+	const close = () => {
+		submission.current = null;
+		onClose();
+	};
+
+	return (
+		<Dialog
+			open={item !== null}
+			onOpenChange={(open) => {
+				if (!open && !isSubmitting) close();
+			}}
+		>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>
+						{t(
+							"settings.approvalEscalation.transfer.title",
+							"Transfer approval assignment",
+						)}
+					</DialogTitle>
+					<DialogDescription>
+						{t(
+							"settings.approvalEscalation.transfer.description",
+							"The current approver loses this assignment and the selected backup manager can decide it from their approvals inbox. The approval stays pending, other assignments are unchanged, and the transfer is recorded in the audit log.",
+						)}
+					</DialogDescription>
+				</DialogHeader>
+				{candidates.isLoading ? (
+					<div className="flex items-center gap-2 text-sm text-muted-foreground">
+						<IconLoader2
+							className="size-4 motion-safe:animate-spin"
+							aria-hidden="true"
+						/>
+						{t(
+							"settings.approvalEscalation.transfer.loading",
+							"Loading eligible managers…",
+						)}
+					</div>
+				) : !candidates.data?.success ? (
+					<p className="text-sm text-destructive" role="alert">
+						{candidates.data?.error ??
+							t(
+								"settings.approvalEscalation.transfer.loadFailed",
+								"Eligible managers could not be loaded.",
+							)}
+					</p>
+				) : candidates.data.data.candidates.length === 0 ? (
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"settings.approvalEscalation.transfer.noCandidates",
+							"No eligible backup manager is available. Only active managers of the requester with approvals inbox access can take over.",
+						)}
+					</p>
+				) : (
+					<TransferAssignmentForm
+						key={assignmentId}
+						candidates={candidates.data.data.candidates}
+						currentApproverName={candidates.data.data.currentApprover.name}
+						isSubmitting={isSubmitting}
+						onCancel={close}
+						onSubmit={async (values) => {
+							if (!assignmentId) return;
+							const reason = values.reason.trim() || undefined;
+							const fingerprint = JSON.stringify([
+								values.recipientEmployeeId,
+								reason ?? null,
+							]);
+							if (submission.current?.fingerprint !== fingerprint) {
+								submission.current = {
+									key: globalThis.crypto.randomUUID(),
+									fingerprint,
+								};
+							}
+							const succeeded = await onTransfer({
+								assignmentId,
+								recipientEmployeeId: values.recipientEmployeeId,
+								idempotencyKey: submission.current.key,
+								reason,
+							});
+							if (succeeded) close();
+						}}
+					/>
+				)}
+			</DialogContent>
+		</Dialog>
+	);
+}
+
 export function EscalationAttentionCard({
 	openAttention,
 	closedAttention,
 	isRechecking,
 	isDisposing,
+	isTransferring,
 	onRecheck,
 	onDispose,
+	onTransfer,
 }: {
 	openAttention: EscalationAttentionView[];
 	closedAttention: EscalationAttentionView[];
 	isRechecking: boolean;
 	isDisposing: boolean;
+	isTransferring: boolean;
 	onRecheck: () => void;
 	onDispose: (attentionId: string, note: string) => Promise<boolean>;
+	onTransfer: (request: EscalationTransferRequest) => Promise<boolean>;
 }) {
 	const { t } = useTranslate();
 	const displayContext = useDisplayContext();
 	const [disposing, setDisposing] = useState<EscalationAttentionView | null>(
 		null,
 	);
+	const [transferring, setTransferring] =
+		useState<EscalationAttentionView | null>(null);
 
 	return (
 		<Card>
@@ -419,7 +712,23 @@ export function EscalationAttentionCard({
 											</p>
 										) : null}
 									</div>
-									<div className="flex shrink-0 gap-2">
+									<div className="flex shrink-0 flex-wrap gap-2">
+										{canTransfer(item) ? (
+											<Button
+												size="sm"
+												variant="outline"
+												onClick={() => setTransferring(item)}
+											>
+												<IconArrowForwardUp
+													className="mr-2 size-4"
+													aria-hidden="true"
+												/>
+												{t(
+													"settings.approvalEscalation.attention.transfer",
+													"Transfer…",
+												)}
+											</Button>
+										) : null}
 										<Button asChild variant="outline" size="sm">
 											<Link href={item.approvalHref}>
 												<IconExternalLink
@@ -503,6 +812,12 @@ export function EscalationAttentionCard({
 				isSubmitting={isDisposing}
 				onClose={() => setDisposing(null)}
 				onDispose={onDispose}
+			/>
+			<TransferAssignmentDialog
+				item={transferring}
+				isSubmitting={isTransferring}
+				onClose={() => setTransferring(null)}
+				onTransfer={onTransfer}
 			/>
 		</Card>
 	);

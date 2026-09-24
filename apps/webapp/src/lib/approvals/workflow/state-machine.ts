@@ -7,34 +7,36 @@ import {
 	type ApprovedCancellationAuthorization,
 	isApprovedCancellationAuthorization,
 } from "../domain-adapters/registry";
-import type {
-	ApprovalAssignmentActorIdentity,
-	ApprovalAssignmentChange,
-	ApprovalAssignmentSnapshot,
-	ApprovalCommandActor,
-	ApprovalCommandActorBinding,
-	ApprovalEventActorIdentity,
-	ApprovalEventActorIntent,
-	ApprovalMaterializedTransitionPlan,
-	ApprovalPlannedActorReference,
-	ApprovalPlannedAssignmentSnapshot,
-	ApprovalPlannedEntityReference,
-	ApprovalPlannedReassignmentActorReference,
-	ApprovalPlannedStageSnapshot,
-	ApprovalPlannedWorkflowSnapshot,
-	ApprovalStageSnapshot,
-	ApprovalTransitionIdentityResolution,
-	ApprovalTransitionNextAction,
-	ApprovalTransitionPlan,
-	ApprovalWorkflowEventIntent,
-	ApprovalWorkflowEventReferenceIntents,
-	ApprovalWorkflowEventReferences,
-	ApprovalWorkflowEventType,
-	ApprovalWorkflowRootState,
-	ApprovalWorkflowSnapshot,
-	JsonObject,
-	JsonValue,
-	ResolvedStage,
+import {
+	APPROVAL_ESCALATION_SYSTEM_ID,
+	type ApprovalAssignmentActorIdentity,
+	type ApprovalAssignmentChange,
+	type ApprovalAssignmentSnapshot,
+	type ApprovalCommandActor,
+	type ApprovalCommandActorBinding,
+	type ApprovalEventActorIdentity,
+	type ApprovalEventActorIntent,
+	type ApprovalMaterializedTransitionPlan,
+	type ApprovalPlannedActorReference,
+	type ApprovalPlannedAssignmentSnapshot,
+	type ApprovalPlannedEntityReference,
+	type ApprovalPlannedReassignmentActorReference,
+	type ApprovalPlannedStageSnapshot,
+	type ApprovalPlannedWorkflowSnapshot,
+	type ApprovalStageSnapshot,
+	type ApprovalSystemCapability,
+	type ApprovalTransitionIdentityResolution,
+	type ApprovalTransitionNextAction,
+	type ApprovalTransitionPlan,
+	type ApprovalWorkflowEventIntent,
+	type ApprovalWorkflowEventReferenceIntents,
+	type ApprovalWorkflowEventReferences,
+	type ApprovalWorkflowEventType,
+	type ApprovalWorkflowRootState,
+	type ApprovalWorkflowSnapshot,
+	type JsonObject,
+	type JsonValue,
+	type ResolvedStage,
 } from "./ports";
 import { APPROVAL_WORKFLOW_EVENT_TYPES } from "./types";
 
@@ -2212,10 +2214,25 @@ function validateCommandActor(
 	}
 }
 
+/**
+ * Existing receipts keep their `v1` fingerprints. A narrow system capability
+ * gets its own versioned fingerprint so its receipts can never be matched by,
+ * or match, a generic system command (#255 §3).
+ */
 export function fingerprintApprovalCommandActor(
 	actor: ApprovalCommandActor,
+	systemCapability?: ApprovalSystemCapability,
 ): string {
 	validateCommandActor(actor);
+	if (systemCapability !== undefined) {
+		if (
+			actor.kind !== "system" ||
+			systemCapability !== APPROVAL_ESCALATION_SYSTEM_ID
+		) {
+			materializationConflict("command_actor_capability");
+		}
+		return `v2:${JSON.stringify(["system", systemCapability, 1])}`;
+	}
 	return `v1:${JSON.stringify(
 		actor.kind === "system" ? ["system"] : ["employee", actor.employeeId],
 	)}`;
@@ -2810,7 +2827,7 @@ function materializeApprovalTransitionPlanUnchecked(
 		!nonEmpty(binding.receipt.idempotencyKey) ||
 		!nonEmpty(binding.receipt.commandFingerprint) ||
 		binding.receipt.actorFingerprint !==
-			fingerprintApprovalCommandActor(receiptActor)
+			fingerprintApprovalCommandActor(receiptActor, binding.systemCapability)
 	) {
 		materializationConflict("receipt_actor_fingerprint");
 	}

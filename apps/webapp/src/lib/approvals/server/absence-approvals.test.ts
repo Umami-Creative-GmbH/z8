@@ -2588,4 +2588,64 @@ describe("canonical absence fallback-manager authorization", () => {
 			} as never),
 		).resolves.toBe(false);
 	});
+
+	const escalatedWorkflow = {
+		...workflow,
+		stages: [
+			{
+				...workflow.stages[0],
+				assignments: [
+					{
+						id: "assignment-1",
+						status: "cancelled",
+						reassignedFromAssignmentId: null,
+						reassignmentMetadata: null,
+					},
+					{
+						id: "assignment-2",
+						status: "pending",
+						reassignedFromAssignmentId: "assignment-1",
+						reassignmentMetadata: { kind: "escalation" },
+					},
+				],
+			},
+		],
+	};
+	const replacementCommand = { ...command, assignmentId: "assignment-2" };
+
+	it("never lets eligible-manager status bypass an escalation replacement", async () => {
+		isEligibleManagerForApprovalRequest.mockResolvedValue(true);
+		const authorize = createAbsenceApprovalManagementAuthorization({
+			currentEmployee: actor,
+			canManageOrganizationApproval: async () => false,
+		});
+
+		await expect(
+			authorize({
+				dbService: { db: { query: {} } },
+				organizationId: "org-1",
+				actorEmployeeId: "manager-2",
+				workflow: escalatedWorkflow,
+				command: replacementCommand,
+			} as never),
+		).resolves.toBe(false);
+		expect(isEligibleManagerForApprovalRequest).not.toHaveBeenCalled();
+	});
+
+	it("keeps explicit organization approval management distinct", async () => {
+		const authorize = createAbsenceApprovalManagementAuthorization({
+			currentEmployee: actor,
+			canManageOrganizationApproval: async () => true,
+		});
+
+		await expect(
+			authorize({
+				dbService: { db: { query: {} } },
+				organizationId: "org-1",
+				actorEmployeeId: "manager-2",
+				workflow: escalatedWorkflow,
+				command: replacementCommand,
+			} as never),
+		).resolves.toBe(true);
+	});
 });

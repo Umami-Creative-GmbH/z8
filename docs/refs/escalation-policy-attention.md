@@ -103,9 +103,9 @@ consistency.
 
 ## Activation blockers
 
-- The transfer and delivery processors that raise attention and consume the
-  policy (#298–#300, #326) are not implemented; no production condition is
-  raised yet.
+- Canonical absence transfers (#298, [escalation-transfer.md](escalation-transfer.md))
+  raise and resolve transfer conditions once ownership moves; legacy absences,
+  delivery and other kinds (#299, #300, #326) are not implemented yet.
 - Policy preparation is not yet invoked for organizations that never open the
   page; cutover preparation must call it.
 - PostgreSQL migration application, partial-index upsert behavior, CHECK
