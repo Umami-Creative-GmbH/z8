@@ -10,6 +10,7 @@ import {
 	employeeManagers,
 	employeeVacationAllowance,
 	timeEntry,
+	timeEntryAppendPosition,
 	workPeriod,
 } from "@/db/schema";
 
@@ -94,6 +95,10 @@ export async function deleteNonAdminEmployeesData(
 		where: inArray(timeEntry.employeeId, employeeIds),
 	});
 	if (timeEntriesToDelete.length > 0) {
+		// The append position references its tip entry; remove it with the history.
+		await db
+			.delete(timeEntryAppendPosition)
+			.where(inArray(timeEntryAppendPosition.employeeId, employeeIds));
 		await db.delete(timeEntry).where(inArray(timeEntry.employeeId, employeeIds));
 		result.timeEntriesDeleted = timeEntriesToDelete.length;
 	}

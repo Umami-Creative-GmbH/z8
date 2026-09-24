@@ -198,6 +198,29 @@ describe("useClockInOutWidget", () => {
 		});
 	});
 
+	it("explains a clock-in held for time history review without server details", async () => {
+		mocks.userTimezone = "America/New_York";
+		mocks.clockIn.mockResolvedValue({
+			success: false,
+			code: "append_review_required",
+			error: "Server-side review message",
+		});
+		const { result } = renderHook(() => useClockInOutWidget(null));
+
+		await act(async () => {
+			await result.current.handleClockIn();
+		});
+
+		expect(mocks.toastError).toHaveBeenCalledWith(
+			"Clock-in needs a review of your time history",
+			{
+				description:
+					"Your earlier time entries could not be verified, so a new clock-in was not saved. Please contact your administrator.",
+			},
+		);
+		expect(mocks.toastSuccess).not.toHaveBeenCalled();
+	});
+
 	it("adds a break and shows the success toast", async () => {
 		mocks.addBreak.mockResolvedValue({ success: true });
 

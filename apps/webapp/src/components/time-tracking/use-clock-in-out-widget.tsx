@@ -12,6 +12,7 @@ import {
 	useElapsedTimer,
 	useTimeClock,
 } from "@/lib/query";
+import { APPEND_REVIEW_REQUIRED_CODE } from "@/lib/time-tracking/time-clock-client";
 import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import {
@@ -168,6 +169,22 @@ export function useClockInOutWidget(
 
 			toast.success(
 				t("timeTracking.clockInSuccess", "Clocked in successfully"),
+			);
+			return;
+		}
+
+		if ("code" in result && result.code === APPEND_REVIEW_REQUIRED_CODE) {
+			toast.error(
+				t(
+					"timeTracking.errors.appendReviewRequired",
+					"Clock-in needs a review of your time history",
+				),
+				{
+					description: t(
+						"timeTracking.errors.appendReviewRequiredDesc",
+						"Your earlier time entries could not be verified, so a new clock-in was not saved. Please contact your administrator.",
+					),
+				},
 			);
 			return;
 		}

@@ -23,6 +23,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useElapsedTimer, useTimeClock } from "@/lib/query";
 import type { AssignedProject } from "@/lib/query/use-assigned-projects";
+import { APPEND_REVIEW_REQUIRED_CODE } from "@/lib/time-tracking/time-clock-client";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import {
@@ -307,6 +308,19 @@ export function TimeClockPopover({
 				);
 			}
 			setOpen(false);
+		} else if ("code" in result && result.code === APPEND_REVIEW_REQUIRED_CODE) {
+			toast.error(
+				t(
+					"timeTracking.errors.appendReviewRequired",
+					"Clock-in needs a review of your time history",
+				),
+				{
+					description: t(
+						"timeTracking.errors.appendReviewRequiredDesc",
+						"Your earlier time entries could not be verified, so a new clock-in was not saved. Please contact your administrator.",
+					),
+				},
+			);
 		} else {
 			const holidayName =
 				"holidayName" in result ? result.holidayName : undefined;

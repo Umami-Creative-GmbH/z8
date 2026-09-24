@@ -5,6 +5,9 @@ import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 /** Deployment-stable endpoint; see src/app/api/time-clock/route.ts. */
 export const TIME_CLOCK_ROUTE = "/api/time-clock";
 
+/** Clock-in held because the employee's append history needs operator review. */
+export const APPEND_REVIEW_REQUIRED_CODE = "append_review_required";
+
 export type WebClockInResult = ServerActionResult<{ id: string }>;
 export type WebClockOutResult = ServerActionResult<
 	Pick<ClockOutResult, "id" | "complianceWarnings" | "breakAdjustment" | "pendingApproval">

@@ -1,0 +1,80 @@
+/**
+ * Shared outer work-transaction scope and the #264 acquisition protocol keys.
+ * Coordinators acquire, in order: the organization adoption gate, approval gates,
+ * organization configuration, sorted user configuration/access, sorted employee
+ * coordination, then source identities and rows. All advisory locks are
+ * transaction-scoped with hash seed zero.
+ */
+import { sql } from "drizzle-orm";
+import type { db } from "@/db";
+
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type WorkTransactionClient = Pick<
+	Transaction,
+	"execute" | "query" | "select" | "insert" | "update" | "delete"
+>;
+
+const protectedTransaction = Symbol("protected work transaction");
+
+/**
+ * `legacy` keeps each writer's established head selection. `append` admits fresh
+ * entries from evidence through the internal append collaborator; it is read
+ * from the organization's append control under the shared adoption gate.
+ */
+export type WorkTransactionAdmission = "legacy" | "append";
+
+/** Trusted server composition only; no transaction/savepoint or adoption upgrade capability. */
+export interface WorkTransactionScope {
+	readonly [protectedTransaction]: true;
+	readonly db: WorkTransactionClient;
+	readonly admission: WorkTransactionAdmission;
+	assertEmployee(organizationId: string, employeeId: string): void;
+}
+
+/** For the outer transaction coordinators only; ordinary callers receive a scope. */
+export function sealWorkTransactionScope<T extends object>(
+	scope: T,
+): T & { readonly [protectedTransaction]: true } {
+	return Object.freeze({ ...scope, [protectedTransaction]: true as const });
+}
+
+export async function acquireAdoptionGate(
+	transaction: Pick<Transaction, "execute">,
+	organizationId: string,
+) {
+	await transaction.execute(
+		sql`select pg_advisory_xact_lock_shared(hashtextextended(${JSON.stringify(["completed-work-adoption", organizationId])}, 0))`,
+	);
+}
+
+export async function acquireOrganizationConfigurationGuard(
+	transaction: Pick<Transaction, "execute">,
+	organizationId: string,
+) {
+	await transaction.execute(
+		sql`select pg_advisory_xact_lock_shared(hashtextextended(${JSON.stringify(["work-organization-configuration", organizationId])}, 0))`,
+	);
+}
+
+export async function acquireUserConfigurationAccessGuards(
+	transaction: Pick<Transaction, "execute">,
+	userIds: readonly string[],
+) {
+	for (const userId of [...new Set(userIds)].sort()) {
+		await transaction.execute(
+			sql`select pg_advisory_xact_lock_shared(hashtextextended(${JSON.stringify(["work-user-configuration-access", userId])}, 0))`,
+		);
+	}
+}
+
+/** Reuses the established exclusive employee key shared by every clocking writer. */
+export async function acquireEmployeeCoordination(
+	transaction: Pick<Transaction, "execute">,
+	employeeIds: readonly string[],
+) {
+	for (const employeeId of [...new Set(employeeIds)].sort()) {
+		await transaction.execute(
+			sql`select pg_advisory_xact_lock(hashtextextended(${employeeId}, 0))`,
+		);
+	}
+}
