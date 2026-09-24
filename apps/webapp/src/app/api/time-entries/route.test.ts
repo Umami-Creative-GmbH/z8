@@ -9,6 +9,7 @@ const mockState = vi.hoisted(() => {
 		}
 	}
 	class ClockingConflictError extends Error {}
+	class ClockingAccessError extends Error {}
 
 	const limit = vi.fn();
 	const where = vi.fn(() => ({ limit }));
@@ -32,7 +33,9 @@ const mockState = vi.hoisted(() => {
 
 	return {
 		UnsupportedAuthorizationConditionError,
+		ClockingAccessError,
 		ClockingConflictError,
+		preserveLateClockEvidence: vi.fn(),
 		accessibleByDrizzle: vi.fn(),
 		asAppSubject: vi.fn((subject, data) => ({ ...data, __caslSubjectType__: subject })),
 		connection: vi.fn(),
@@ -171,13 +174,17 @@ vi.mock("@/lib/effect/services/time-entry.service", () => ({
 }));
 
 vi.mock("@/lib/time-tracking/clocking-service", () => ({
-	ClockingAccessError: class ClockingAccessError extends Error {},
+	ClockingAccessError: mockState.ClockingAccessError,
 	ClockingConflictError: mockState.ClockingConflictError,
 	clockingService: {
 		clockIn: mockState.clockingClockIn,
 		clockOut: mockState.clockingClockOut,
 		requireActor: mockState.requireActor,
 	},
+}));
+
+vi.mock("@/lib/employee-lifecycle/late-clock-evidence", () => ({
+	preserveLateClockEvidence: mockState.preserveLateClockEvidence,
 }));
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/entry-helpers", () => ({
@@ -570,6 +577,75 @@ describe("POST /api/time-entries", () => {
 
 			expect(response.status).toBe(401);
 			expect(await response.json()).toEqual({ error: "Unauthorized" });
+		});
+
+		it("preserves a refused pre-cutoff extension replay for review and still refuses it", async () => {
+			const capturedAt = new Date(Date.now() - 60 * 60_000).toISOString();
+			mockState.requireActor.mockRejectedValue(new mockState.ClockingAccessError("Employee gone"));
+			mockState.getUtcOffsetMinutesForZone.mockReturnValue(120);
+			mockState.preserveLateClockEvidence.mockResolvedValue({ kind: "preserved", reviewId: "r-1" });
+
+			const response = await POST(
+				new Request("https://z8.test/api/time-entries", {
+					body: JSON.stringify({
+						id: "6f1c2a4e-8b3d-4c5e-9f70-1a2b3c4d5e6f",
+						type: "clock_out",
+						timestamp: capturedAt,
+						browserTimezone: "Europe/Berlin",
+						utcOffsetMinutes: 120,
+						replay: true,
+					}),
+					method: "POST",
+				}) as never,
+			);
+
+			expect(response.status).toBe(403);
+			expect(mockState.preserveLateClockEvidence).toHaveBeenCalledWith(
+				expect.anything(),
+				expect.objectContaining({
+					organizationId: "org-1",
+					userId: "user-1",
+					actionId: "6f1c2a4e-8b3d-4c5e-9f70-1a2b3c4d5e6f",
+					type: "clock_out",
+					utcOffsetMinutes: 120,
+					timezone: "Europe/Berlin",
+				}),
+			);
+			expect(
+				mockState.preserveLateClockEvidence.mock.calls[0]?.[1].instant.epochMilliseconds,
+			).toBe(Date.parse(capturedAt));
+			expect(mockState.clockingClockOut).not.toHaveBeenCalled();
+		});
+
+		it("does not preserve refused live clicks or evidence that fails replay validation", async () => {
+			mockState.requireActor.mockRejectedValue(new mockState.ClockingAccessError("Employee gone"));
+			mockState.getUtcOffsetMinutesForZone.mockReturnValue(60);
+			const send = (body: Record<string, unknown>) =>
+				POST(
+					new Request("https://z8.test/api/time-entries", {
+						body: JSON.stringify({
+							id: "6f1c2a4e-8b3d-4c5e-9f70-1a2b3c4d5e6f",
+							type: "clock_out",
+							timestamp: new Date(Date.now() - 60_000).toISOString(),
+							browserTimezone: "Europe/Berlin",
+							...body,
+						}),
+						method: "POST",
+					}) as never,
+				);
+
+			expect((await send({ utcOffsetMinutes: 60 })).status).toBe(403);
+			expect((await send({ utcOffsetMinutes: 120, replay: true })).status).toBe(403);
+			expect(
+				(
+					await send({
+						utcOffsetMinutes: 60,
+						replay: true,
+						timestamp: new Date(Date.now() - 8 * 24 * 60 * 60_000).toISOString(),
+					})
+				).status,
+			).toBe(403);
+			expect(mockState.preserveLateClockEvidence).not.toHaveBeenCalled();
 		});
 
 		it("passes successful extension captures through unchanged", async () => {

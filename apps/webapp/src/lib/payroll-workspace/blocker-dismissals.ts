@@ -5,7 +5,7 @@ export type DismissiblePayrollBlocker = PayrollBlocker & { type: DismissiblePayr
 export function isDismissiblePayrollBlockerType(
 	blockerType: PayrollBlockerType,
 ): blockerType is DismissiblePayrollBlockerType {
-	return blockerType !== "unresolved_work_minutes";
+	return blockerType !== "unresolved_work_minutes" && blockerType !== "offboarding_clock_repair";
 }
 
 export function isDismissiblePayrollBlocker(

@@ -1,7 +1,5 @@
-import { isNotNull } from "drizzle-orm";
 import { Effect, Layer } from "effect";
 import { db } from "@/db";
-import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import {
 	SeatSyncService,
@@ -26,20 +24,15 @@ function getErrorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
+/**
+ * Periodic safety net for seat delivery. Every organization with a local
+ * subscription is recounted and its local seat count updated, even while
+ * external billing is disabled; the seat sync skips Stripe in that case and
+ * reconciles any uncertain earlier delivery when enabled.
+ */
 export async function runBillingSeatReconciliation(): Promise<BillingSeatReconciliationResult> {
-	if (env.BILLING_ENABLED !== "true") {
-		return {
-			success: true,
-			billingEnabled: false,
-			processed: 0,
-			synced: 0,
-			skipped: 1,
-			errors: [],
-		};
-	}
-
+	const billingEnabled = env.BILLING_ENABLED === "true";
 	const subscriptions = await db.query.subscription.findMany({
-		where: isNotNull(subscription.stripeSubscriptionId),
 		columns: { organizationId: true },
 	});
 	const layers = SeatSyncServiceLive.pipe(
@@ -79,7 +72,7 @@ export async function runBillingSeatReconciliation(): Promise<BillingSeatReconci
 
 	return {
 		success: errors.length === 0,
-		billingEnabled: true,
+		billingEnabled,
 		processed: subscriptions.length,
 		synced: syncResults.filter((result) => result.synced).length,
 		skipped: 0,

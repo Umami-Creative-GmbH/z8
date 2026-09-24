@@ -18,6 +18,7 @@ import {
 import { timeRecord } from "@/db/schema";
 import type { InstantRange } from "@/lib/datetime/temporal-boundaries";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { findOpenDepartureClockRepairs } from "@/lib/employee-lifecycle/reviews";
 import { createLogger } from "@/lib/logger";
 import {
 	allocateProtectedMinutes,
@@ -26,6 +27,7 @@ import {
 import { assertCanonicalCutoverReady } from "@/lib/time-record/migration/cutover-state";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { buildPayrollQueryEnvelope } from "./calendar-boundaries";
+import { assertNoOpenDepartureClockRepairs } from "./offboarding-repair-guard";
 import type { AbsenceData, PayrollExportFilters, WageTypeMapping, WorkPeriodData } from "./types";
 import {
 	type BlockedPayrollWorkRecord,
@@ -55,6 +57,14 @@ export async function fetchWorkPeriodsForExport(
 	const { startDate, endDate } = getLogicalDateRange(filters);
 	const queryEnvelope = buildPayrollQueryEnvelope(startDate, endDate);
 	const organizationTimezone = await getOrganizationTimezone(organizationId);
+
+	// Unrepaired departure timers are neither complete nor absent: block, never omit.
+	await assertNoOpenDepartureClockRepairs({
+		organizationId,
+		employeeIds: await resolveExportEmployeeIds(organizationId, filters),
+		range: { start: queryEnvelope.start.toJSDate(), endExclusive: queryEnvelope.end.toJSDate() },
+		findRepairs: (query) => findOpenDepartureClockRepairs(db, query),
+	});
 
 	// Build where conditions
 	const whereConditions = [
@@ -601,6 +611,25 @@ function serializeFilters(filters: PayrollExportFilters) {
 		teamIds: filters.teamIds,
 		projectIds: filters.projectIds,
 	};
+}
+
+/** Employees an export covers: the explicit selection, else the organization (optionally by team). */
+async function resolveExportEmployeeIds(
+	organizationId: string,
+	filters: PayrollExportFilters,
+): Promise<string[]> {
+	if (filters.employeeIds && filters.employeeIds.length > 0) return filters.employeeIds;
+	const rows = await db.query.employee.findMany({
+		where:
+			filters.teamIds && filters.teamIds.length > 0
+				? and(
+						eq(employee.organizationId, organizationId),
+						inArray(employee.teamId, filters.teamIds),
+					)
+				: eq(employee.organizationId, organizationId),
+		columns: { id: true },
+	});
+	return rows.map((row) => row.id);
 }
 
 function hasEmptyEmployeeScope(filters: PayrollExportFilters) {

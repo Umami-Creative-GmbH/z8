@@ -1,29 +1,21 @@
-import { and, count, eq, notLike } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { db } from "@/db";
-import { member, user } from "@/db/auth-schema";
 import { billingSeatAudit } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
-import { DatabaseError, type StripeError } from "../../errors";
+import { DatabaseError, StripeError } from "../../errors";
+import { countBillableSeats } from "./billable-seat-count";
+import {
+	deliverOrganizationSeats,
+	SeatDeliveryUncertainError,
+	type SeatStripePort,
+} from "./seat-delivery";
 import { StripeService } from "./stripe.service";
 import { SubscriptionService } from "./subscription.service";
 
 const logger = createLogger("SeatSyncService");
 
-async function countBillableMembers(organizationId: string): Promise<number> {
-	const [result] = await db
-		.select({ count: count() })
-		.from(member)
-		.innerJoin(user, eq(user.id, member.userId))
-		.where(
-			and(
-				eq(member.organizationId, organizationId),
-				eq(member.status, "approved"),
-				notLike(user.email, "%@demo.invalid"),
-			),
-		);
-
-	return result?.count ?? 0;
+function countBillableMembers(organizationId: string): Promise<number> {
+	return countBillableSeats(db, organizationId);
 }
 
 /**
@@ -72,56 +64,60 @@ export const SeatSyncServiceLive = Layer.effect(
 		const stripeService = yield* StripeService;
 		const subscriptionService = yield* SubscriptionService;
 
+		const stripePort: SeatStripePort = {
+			getQuantity: async (subscriptionId) => {
+				const stripeSubscription = await Effect.runPromise(
+					stripeService.getSubscription(subscriptionId),
+				);
+				const item = stripeSubscription.items.data[0];
+				if (!item) throw new Error("Stripe subscription has no seat item");
+				return { itemId: item.id, quantity: item.quantity ?? 0 };
+			},
+			setQuantity: async (input) => {
+				await Effect.runPromise(
+					stripeService.updateSubscription(
+						input.subscriptionId,
+						{
+							items: [{ id: input.itemId, quantity: input.quantity }],
+							proration_behavior: "create_prorations",
+						},
+						{ idempotencyKey: input.idempotencyKey },
+					),
+				);
+			},
+		};
+
+		/**
+		 * Recomputes current billable seats and delivers them in order under the
+		 * per-organization seat lock: the local count always, Stripe only when
+		 * billing is enabled and a Stripe subscription exists.
+		 */
 		const syncSeatsForOrganization = (
 			organizationId: string,
 		): Effect.Effect<number, DatabaseError | StripeError> =>
-			Effect.gen(function* () {
-				const seatCount = yield* Effect.tryPromise({
-					try: () => countBillableMembers(organizationId),
-					catch: (error) =>
-						new DatabaseError({
-							message: "Failed to count billable members",
-							operation: "syncSeatsForOrganization",
-							table: "member",
-							cause: error,
-						}),
-				});
-
-				// Update subscription record
-				yield* subscriptionService.updateSeatCount(organizationId, seatCount);
-
-				// Get subscription to update Stripe
-				const sub = yield* subscriptionService.getByOrganization(organizationId);
-
-				if (sub?.stripeSubscriptionId && stripeService.config.enabled) {
-					// Get subscription from Stripe to find subscription item
-					const stripeSub = yield* stripeService.getSubscription(sub.stripeSubscriptionId);
-					const subscriptionItem = stripeSub.items.data[0];
-
-					if (subscriptionItem) {
-						// Update subscription quantity in Stripe
-						yield* stripeService.updateSubscription(sub.stripeSubscriptionId, {
-							items: [
-								{
-									id: subscriptionItem.id,
-									quantity: seatCount,
-								},
-							],
-							proration_behavior: "create_prorations",
-						});
-
-						logger.info(
-							{
-								organizationId,
-								seatCount,
-								subscriptionId: sub.stripeSubscriptionId,
-							},
-							"Synced seat count to Stripe",
-						);
-					}
-				}
-
-				return seatCount;
+			Effect.tryPromise({
+				try: async () => {
+					const outcome = await deliverOrganizationSeats({
+						pool: db.$client,
+						organizationId,
+						stripe: stripeService.config.enabled ? stripePort : null,
+					});
+					logger.info({ organizationId, ...outcome }, "Synced billable seats");
+					return outcome.seats;
+				},
+				catch: (error) =>
+					error instanceof SeatDeliveryUncertainError
+						? new StripeError({
+								message: "Stripe seat delivery is uncertain and will be reconciled",
+								operation: "syncSeatsForOrganization",
+								cause: error,
+							})
+						: new DatabaseError({
+								message: "Failed to sync billable seats",
+								operation: "syncSeatsForOrganization",
+								table: "subscription",
+								cause: error,
+							}),
 			});
 
 		const getCurrentSeatCount = (organizationId: string): Effect.Effect<number, DatabaseError> =>

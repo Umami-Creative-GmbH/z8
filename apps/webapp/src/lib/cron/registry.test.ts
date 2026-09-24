@@ -6,9 +6,16 @@ const {
 	getOrCreateTelemetryIdentity,
 	mockEnv,
 	runBillingSeatReconciliation,
+	runEmployeeDepartureMaintenance,
 	runSCIMMaintenance,
 	sendTelemetryReport,
 } = vi.hoisted(() => ({
+	runEmployeeDepartureMaintenance: vi.fn(async () => ({
+		released: false,
+		departures: { processed: 0, effective: 0, blocked: 0, obsolete: 0, notDue: 0, failed: 0 },
+		tasks: { claimed: 0, completed: 0, deferred: 0, failed: 0 },
+		errors: [],
+	})),
 	calculateTelemetryMetrics: vi.fn(),
 	getOrCreateTelemetryIdentity: vi.fn(),
 	mockEnv: { TELEMETRY_ENABLED: "true" },
@@ -46,6 +53,10 @@ vi.mock("@/lib/jobs/scim-maintenance", () => ({
 			super("SCIM maintenance degraded");
 		}
 	},
+}));
+
+vi.mock("@/lib/jobs/employee-departures", () => ({
+	runEmployeeDepartureMaintenance,
 }));
 
 vi.mock("@/env", () => ({ env: mockEnv }));
@@ -87,6 +98,21 @@ describe("CRON_JOBS billing seat reconciliation", () => {
 		});
 
 		expect(runBillingSeatReconciliation).toHaveBeenCalledOnce();
+	});
+});
+
+describe("CRON_JOBS employee departures", () => {
+	it("materializes due departures and delivers follow-up work every minute", async () => {
+		expect(CRON_JOBS["cron:employee-departures"]).toMatchObject({
+			schedule: "* * * * *",
+			defaultJobOptions: { attempts: 1 },
+		});
+
+		await CRON_JOBS["cron:employee-departures"].processor({
+			triggeredAt: "2026-09-15T00:00:00.000Z",
+		});
+
+		expect(runEmployeeDepartureMaintenance).toHaveBeenCalledOnce();
 	});
 });
 

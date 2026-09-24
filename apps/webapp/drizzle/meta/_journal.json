@@ -533,6 +533,13 @@
       "when": 1790784000000,
       "tag": "0075_legacy_approval_evidence",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1790870400000,
+      "tag": "0076_billing_seat_delivery",
+      "breakpoints": true
     }
   ]
 }

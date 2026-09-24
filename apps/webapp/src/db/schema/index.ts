@@ -18,6 +18,7 @@ export * from "./audit-export";
 export * from "./audit-pack";
 // Billing & subscriptions (Stripe integration)
 export * from "./billing";
+export * from "./billing-seat-delivery";
 // Calendar sync
 export * from "./calendar-sync";
 export * from "./change-policy";

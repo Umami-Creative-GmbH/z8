@@ -18,7 +18,8 @@
       "pendingTimeCorrection": "Ausstehende Zeitkorrektur",
       "refreshAfterClearFailed": "Blocker entfernt, aber die Gehaltsabrechnung konnte nicht aktualisiert werden",
       "unknownEmployee": "Unbekannter Mitarbeiter",
-      "unresolvedWorkMinutes": "Arbeitsminuten müssen geprüft werden"
+      "unresolvedWorkMinutes": "Arbeitsminuten müssen geprüft werden",
+      "offboardingClockRepair": "Ausstempeln beim Austritt muss korrigiert werden"
     },
     "description": "Überprüfen Sie die Lohnabrechnungssummen, die Bereitschaft und die Exporte für den ausgewählten Zeitraum.",
     "employeeTotals": {
@@ -47,6 +48,7 @@
       "employeeIdsMustContainOnlyStrings": "employeeIds darf nur Strings enthalten",
       "endDateAfterStart": "Das Enddatum muss nach oder am Startdatum liegen",
       "exportBlockedByUnresolvedWorkMinutes": "Export blockiert: Bitte zuerst die zu prüfenden Arbeitsminuten klären",
+      "exportBlockedByOffboardingClockRepair": "Export blockiert: Korrigiere zuerst das Ausstempeln beim Austritt",
       "exportFormatNotConfigured": "Das Lohnabrechnungs-Exportformat ist nicht konfiguriert",
       "invalidBlockerId": "Ungültige Gehaltsabrechnungs-Blocker-ID",
       "invalidBlockerType": "Ungültiger Gehaltsabrechnungs-Blockertyp",

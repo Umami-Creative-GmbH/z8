@@ -124,6 +124,16 @@ export interface AuditPackJobData {
 	organizationId: string;
 }
 
+/** Delayed execution of one employee departure revision (re-validated on run). */
+export interface EmployeeDepartureJobData {
+	type: "employee-departure";
+	organizationId: string;
+	employeeId: string;
+	employmentPeriodId: string;
+	departureId: string;
+	revision: number;
+}
+
 export type ImportReviewScanQueueJobData = ImportScanJobData;
 
 export type ImportReviewCommitQueueJobData = ImportCommitJobData;
@@ -139,6 +149,7 @@ export type JobData =
 	| CalendarSyncJobData
 	| OrganizationDeletionNotificationJobData
 	| AuditPackJobData
+	| EmployeeDepartureJobData
 	| ImportReviewScanQueueJobData
 	| ImportReviewCommitQueueJobData;
 

@@ -175,6 +175,36 @@ describe("clocking service", () => {
 		);
 	});
 
+	it("rejects a clock-out that precedes the clock-in before writing anything", async () => {
+		const insertEntry = vi.fn(async () => ({ id: "entry-1" }));
+		const closeActivePeriod = vi.fn(async () => ({ id: "period-1" }));
+		const service = createClockingService({
+			transaction: async (callback) =>
+				callback({
+					lockEmployee: async () => undefined,
+					isOrganizationMember: async () => true,
+					getEntryByActionId: async () => null,
+					getActivePeriod: async () => ({
+						id: "period-1",
+						startTime: new Date("2026-07-10T08:00:00Z"),
+					}),
+					getLatestHash: async () => null,
+					insertEntry,
+					insertActivePeriod: async () => ({ id: "period-1" }),
+					closeActivePeriod,
+				}),
+		});
+
+		await expect(
+			service.clockOut({
+				...clockIn,
+				action: { ...clockIn.action, instant: parseInstant("2026-07-10T07:59:00Z") },
+			}),
+		).rejects.toThrow(ClockingConflictError);
+		expect(insertEntry).not.toHaveBeenCalled();
+		expect(closeActivePeriod).not.toHaveBeenCalled();
+	});
+
 	it("serializes simultaneous clock-ins so exactly one creates an active period", async () => {
 		const { service, entries } = createHarness();
 		const results = await Promise.allSettled([

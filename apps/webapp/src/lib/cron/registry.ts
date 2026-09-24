@@ -15,6 +15,7 @@ import type { JobsOptions } from "bullmq";
 import type { LegacyEscalationSuppression } from "@/lib/approvals/escalation/legacy-execution";
 import type { ApprovalEscalationJobResult } from "@/lib/approvals/escalation/scheduled-job";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
+import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { SCIMMaintenanceResult } from "@/lib/jobs/scim-maintenance";
 
 // ============================================
@@ -289,6 +290,19 @@ export const CRON_JOBS = {
 				throw new SCIMMaintenanceDegradedError(result);
 			}
 			return result;
+		},
+		defaultJobOptions: { attempts: 1, priority: 8 },
+	},
+
+	"cron:employee-departures": {
+		schedule: "* * * * *", // Every minute
+		description:
+			"Materialize due employee departures and deliver their durable follow-up work",
+		processor: async (): Promise<EmployeeDepartureMaintenanceResult> => {
+			const { runEmployeeDepartureMaintenance } = await import(
+				"@/lib/jobs/employee-departures"
+			);
+			return runEmployeeDepartureMaintenance();
 		},
 		defaultJobOptions: { attempts: 1, priority: 8 },
 	},

@@ -59,9 +59,13 @@ export type DismissiblePayrollBlockerType =
 
 /**
  * `unresolved_work_minutes` marks completed work whose payroll credit cannot be allocated to the
- * period. It blocks exports, so it cannot be cleared as a false positive.
+ * period. `offboarding_clock_repair` marks a departure whose running timer could not be closed
+ * safely. Both block exports, so they cannot be cleared as false positives.
  */
-export type PayrollBlockerType = DismissiblePayrollBlockerType | "unresolved_work_minutes";
+export type PayrollBlockerType =
+	| DismissiblePayrollBlockerType
+	| "unresolved_work_minutes"
+	| "offboarding_clock_repair";
 
 export interface PayrollBlocker {
 	id: string;

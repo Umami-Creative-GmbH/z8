@@ -6,6 +6,7 @@ import {
 	DatabaseError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import { PayrollOffboardingRepairBlockedError } from "@/lib/payroll-export/offboarding-repair-guard";
 import { PayrollWorkAllocationBlockedError } from "@/lib/payroll-export/work-allocation-blocked-error";
 import { CanonicalCutoverNotReadyError } from "@/lib/time-record/migration/cutover-state";
 
@@ -44,6 +45,20 @@ export function mapPayrollWorkspaceActionError(
 			details: {
 				organizationId: error.organizationId,
 				blockedRecordCount: error.blockedRecords.length,
+			},
+		});
+	}
+
+	if (error instanceof PayrollOffboardingRepairBlockedError) {
+		return new ConflictError({
+			message: t(
+				"payroll.errors.exportBlockedByOffboardingClockRepair",
+				"Export blocked: repair the offboarding clock-out first",
+			),
+			conflictType: "payroll_offboarding_clock_repair",
+			details: {
+				organizationId: error.organizationId,
+				blockedEmployeeCount: error.employeeIds.length,
 			},
 		});
 	}

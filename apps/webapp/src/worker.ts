@@ -235,6 +235,15 @@ export async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 				return await processImportReviewJob(job as Job<typeof job.data>);
 			}
 
+			case "employee-departure": {
+				const { processEmployeeDepartureJob } = await import(
+					"@/lib/jobs/employee-departures"
+				);
+				const { type: _type, ...identity } = job.data;
+				const outcome = await processEmployeeDepartureJob(identity);
+				return { success: true, message: `Employee departure ${outcome.status}` };
+			}
+
 			case "payroll-export": {
 				const { processExportJob } = await import("@/lib/payroll-export");
 				await processExportJob({
