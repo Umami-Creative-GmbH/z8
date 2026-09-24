@@ -114,6 +114,11 @@ export const TEMPORARY_LEGACY_WRITE_EXCEPTIONS = {
 	"src/lib/absences/sick-vacation-override.ts": {
 		approval_request: ["insert", "update"],
 	},
+	// Legacy-authoritative escalation transfer (#299): moves a pending legacy
+	// absence request to its replacement until legacy absence authority retires.
+	"src/lib/approvals/escalation/legacy-transfer.ts": {
+		approval_request: ["update"],
+	},
 	// The design's chain/stage exceptions map to these persisted instance tables.
 	"src/lib/approvals/policies/chain-service.ts": {
 		approval_chain_instance: ["insert", "update"],

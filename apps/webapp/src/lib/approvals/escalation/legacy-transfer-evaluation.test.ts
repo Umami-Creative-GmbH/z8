@@ -77,7 +77,10 @@ describe("classifyLegacyAssignmentEvidence", () => {
 
 	it("starts a replacement's clock at its journaled transfer and records a consumed allowance", () => {
 		const evidence = classifyLegacyAssignmentEvidence({
-			request: request(approverB, lineageMetadata([[approverA, approverB, firstTransfer, "scheduled"]])),
+			request: request(
+				approverB,
+				lineageMetadata([[approverA, approverB, firstTransfer, "scheduled"]]),
+			),
 			transfers: [journal(0, approverA, approverB)],
 			teamsEscalationAttempted: false,
 		});
@@ -138,7 +141,10 @@ describe("classifyLegacyAssignmentEvidence", () => {
 	it("holds when the request represents a transfer the journal never committed", () => {
 		expect(
 			classifyLegacyAssignmentEvidence({
-				request: request(approverB, lineageMetadata([[approverA, approverB, firstTransfer, "scheduled"]])),
+				request: request(
+					approverB,
+					lineageMetadata([[approverA, approverB, firstTransfer, "scheduled"]]),
+				),
 				transfers: [],
 				teamsEscalationAttempted: false,
 			}),
@@ -148,7 +154,10 @@ describe("classifyLegacyAssignmentEvidence", () => {
 	it("holds when the journaled transfers name different approvers than the request", () => {
 		expect(
 			classifyLegacyAssignmentEvidence({
-				request: request(approverB, lineageMetadata([[approverA, approverB, firstTransfer, "scheduled"]])),
+				request: request(
+					approverB,
+					lineageMetadata([[approverA, approverB, firstTransfer, "scheduled"]]),
+				),
 				transfers: [journal(0, approverC, approverB)],
 				teamsEscalationAttempted: false,
 			}),
@@ -158,7 +167,10 @@ describe("classifyLegacyAssignmentEvidence", () => {
 	it("holds when the current approver is not the last replacement", () => {
 		expect(
 			classifyLegacyAssignmentEvidence({
-				request: request(approverC, lineageMetadata([[approverA, approverB, firstTransfer, "scheduled"]])),
+				request: request(
+					approverC,
+					lineageMetadata([[approverA, approverB, firstTransfer, "scheduled"]]),
+				),
 				transfers: [journal(0, approverA, approverB)],
 				teamsEscalationAttempted: false,
 			}),
@@ -200,7 +212,12 @@ describe("legacy automatic escalation decisions", () => {
 				now: parseInstant("2026-09-03T08:00:00Z"),
 				unsupportedRoute: null,
 				orderedCandidates: [
-					{ employeeId: approverB, isPrimary: true, relationshipSince: null, hasDecisionPath: true },
+					{
+						employeeId: approverB,
+						isPrimary: true,
+						relationshipSince: null,
+						hasDecisionPath: true,
+					},
 				],
 			}),
 		).toEqual({
@@ -213,7 +230,10 @@ describe("legacy automatic escalation decisions", () => {
 
 	it("holds an overdue replacement after the lineage's automatic transfer", () => {
 		const evidence = classifyLegacyAssignmentEvidence({
-			request: request(approverB, lineageMetadata([[approverA, approverB, firstTransfer, "scheduled"]])),
+			request: request(
+				approverB,
+				lineageMetadata([[approverA, approverB, firstTransfer, "scheduled"]]),
+			),
 			transfers: [journal(0, approverA, approverB)],
 			teamsEscalationAttempted: false,
 		});

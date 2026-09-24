@@ -23,7 +23,7 @@ pnpm approvals:delete --organization-id <org-id> --id <approval-id>
 pnpm approvals:delete --help
 ```
 
-The same commands are available from `apps/webapp`. Listing includes storage type (`legacy`, `workflow`, or `legacy_evidence` for a legacy-authority submitted revision, which stays listed after cancellation deletes its pending request), approval ID, organization ID, status, source type/ID, and UTC creation time. It reads approval tables directly, so missing source records do not hide orphaned approvals.
+The same commands are available from `apps/webapp`. Listing includes storage type (`legacy`, `workflow`, `legacy_evidence` for a legacy-authority submitted revision, or `legacy_transfer` for a legacy escalation transfer; both stay listed after cancellation deletes their pending request), approval ID, organization ID, status, source type/ID, and UTC creation time. It reads approval tables directly, so missing source records do not hide orphaned approvals.
 
 ## Access and configuration
 
@@ -40,6 +40,7 @@ Deletion bypasses approve/deny logic and works even if the source record is miss
 - Dependent approval stages, assignments, events, commands, projections, outbox/delivery records, migration issues, and legacy integration records through database cascades.
 - Immutable approval evidence linked to the lifecycle's canonical workflows (submitted revisions, decision evidence and review bindings). These are deleted explicitly and their IDs are returned and written to the platform-admin audit entry. See [Approval evidence](approval-evidence.md).
 - Legacy-authority evidence linked to the lifecycle through the legacy request, chain or observed shadow workflow it recorded. A legacy submitted revision ID can also be passed directly, which removes that revision, its decision evidence and any still-linked approval rows.
+- Escalation transfer journal entries: canonical ones through the lifecycle's workflows, legacy ones (#299) through the legacy request or observed shadow workflow they recorded. Their delivery events cascade, and their IDs are returned as `escalationTransfers`. A legacy transfer ID can also be passed directly. See [Escalation transfer](escalation-transfer.md).
 
 Time records, absences, shifts, expenses, and compliance source records remain. Only their nullable references to deleted approvals are cleared; their business statuses and approval outcomes are not changed. Deletion is cleanup, not approval or rejection, and does not send decision notifications. Already-sent external messages are not retracted.
 

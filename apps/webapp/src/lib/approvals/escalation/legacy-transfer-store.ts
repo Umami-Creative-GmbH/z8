@@ -1,9 +1,6 @@
 import { and, asc, eq } from "drizzle-orm";
 import type { db } from "@/db";
-import {
-	approvalEscalationTransfer,
-	approvalRequest,
-} from "@/db/schema";
+import { approvalEscalationTransfer, approvalRequest } from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import type { LegacyJournalTransferFact } from "./transfer-evaluation";
 
@@ -19,8 +16,7 @@ export async function listLegacyRequestTransferFacts(
 		.select({
 			sourceSequence: approvalEscalationTransfer.legacySourceSequence,
 			sourceApproverEmployeeId: approvalEscalationTransfer.sourceApproverEmployeeId,
-			replacementApproverEmployeeId:
-				approvalEscalationTransfer.replacementApproverEmployeeId,
+			replacementApproverEmployeeId: approvalEscalationTransfer.replacementApproverEmployeeId,
 			transferredAt: approvalEscalationTransfer.transferredAt,
 			initiator: approvalEscalationTransfer.initiator,
 		})

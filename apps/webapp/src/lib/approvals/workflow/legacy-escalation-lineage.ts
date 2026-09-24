@@ -1,8 +1,4 @@
-import {
-	type Instant,
-	instantToCanonicalString,
-	parseInstant,
-} from "@/lib/datetime/temporal-core";
+import { type Instant, instantToCanonicalString, parseInstant } from "@/lib/datetime/temporal-core";
 import type { JsonObject } from "./ports";
 
 /**
@@ -95,11 +91,7 @@ export function readLegacyEscalationLineage(
 		return { kind: "malformed" };
 	}
 	const pendingSince = instantOrNull(lineage.pendingSince);
-	if (
-		!pendingSince ||
-		!Array.isArray(lineage.transfers) ||
-		lineage.transfers.length === 0
-	) {
+	if (!pendingSince || !Array.isArray(lineage.transfers) || lineage.transfers.length === 0) {
 		return { kind: "malformed" };
 	}
 	const transfers: LegacyEscalationLineageTransfer[] = [];
@@ -108,8 +100,7 @@ export function readLegacyEscalationLineage(
 		const previous = transfers[index - 1];
 		if (
 			!transfer ||
-			(previous &&
-				previous.toApproverEmployeeId !== transfer.fromApproverEmployeeId)
+			(previous && previous.toApproverEmployeeId !== transfer.fromApproverEmployeeId)
 		) {
 			return { kind: "malformed" };
 		}
@@ -135,12 +126,8 @@ export function appendLegacyEscalationLineage(
 		throw new Error("Legacy escalation lineage is malformed");
 	}
 	const previous = current.kind === "lineage" ? current.transfers : [];
-	const pendingSince =
-		current.kind === "lineage" ? current.pendingSince : input.pendingSince;
-	const transfers = [
-		...previous,
-		{ ...input.transfer, sequence: previous.length },
-	];
+	const pendingSince = current.kind === "lineage" ? current.pendingSince : input.pendingSince;
+	const transfers = [...previous, { ...input.transfer, sequence: previous.length }];
 	return {
 		...(metadata ?? {}),
 		[LINEAGE_KEY]: {

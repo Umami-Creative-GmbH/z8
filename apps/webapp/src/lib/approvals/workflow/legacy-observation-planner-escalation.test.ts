@@ -307,11 +307,7 @@ describe("legacy observation of an escalation transfer", () => {
 
 		await expect(
 			planner.plan(
-				transition(
-					malformed,
-					state({ status: "approved", hops: [], updatedAt: decidedAt }),
-					1,
-				),
+				transition(malformed, state({ status: "approved", hops: [], updatedAt: decidedAt }), 1),
 			),
 		).rejects.toMatchObject({ code: "invalid_evidence" });
 	});

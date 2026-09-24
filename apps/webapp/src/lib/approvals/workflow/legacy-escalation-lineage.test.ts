@@ -118,8 +118,14 @@ describe("legacy escalation lineage on approval_request.metadata", () => {
 	});
 
 	it.each([
-		["unknown version", { escalation: { version: 2, pendingSince: "2026-09-01T08:00:00Z", transfers: [] } }],
-		["empty transfers", { escalation: { version: 1, pendingSince: "2026-09-01T08:00:00Z", transfers: [] } }],
+		[
+			"unknown version",
+			{ escalation: { version: 2, pendingSince: "2026-09-01T08:00:00Z", transfers: [] } },
+		],
+		[
+			"empty transfers",
+			{ escalation: { version: 1, pendingSince: "2026-09-01T08:00:00Z", transfers: [] } },
+		],
 		[
 			"sequence gap",
 			{

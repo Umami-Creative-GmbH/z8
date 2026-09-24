@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, asc, eq, lte } from "drizzle-orm";
+import { and, asc, eq, lt } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	type ApprovalEscalationAttentionReason,
@@ -40,11 +40,11 @@ import {
 } from "../workflow/ports";
 import { ApprovalWorkflowRepositoryError } from "../workflow/repository";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
+import type { EscalationAttentionSubject } from "./attention";
 import {
 	raiseEscalationAttention,
 	resolveRecoveredEscalationAttentionCondition,
 } from "./attention-store";
-import type { EscalationAttentionSubject } from "./attention";
 import { loadEscalationCandidateFacts } from "./candidates";
 import { type EscalationPolicySnapshot, evaluateEscalationDeadline } from "./deadline";
 import { listLegacyRequestTransferFacts } from "./legacy-transfer-store";
@@ -57,11 +57,11 @@ import {
 	SUPPORTED_WORKFLOW_TYPE,
 } from "./transfer-context";
 import {
+	classifyLegacyAssignmentEvidence,
 	decideAutomaticEscalation,
 	type EscalationCandidateFact,
 	type LegacyAssignmentEvidence,
 	type LegacyJournalTransferFact,
-	classifyLegacyAssignmentEvidence,
 	legacyAutomaticEscalationOperationKey,
 	orderEscalationCandidates,
 } from "./transfer-evaluation";
@@ -139,7 +139,9 @@ export async function readAbsenceAuthorityForDiscovery(
 /**
  * Pending legacy absence requests old enough to possibly be due, oldest
  * first. Every actionable instant is at or after the request's creation, so
- * this prefilter never skips a due request.
+ * this prefilter never skips a due request. `created_at` keeps microseconds
+ * while evaluation uses its millisecond floor, so the whole cutoff
+ * millisecond is included.
  */
 export async function listDueLegacyRequestCandidates(
 	executor: DatabaseTransaction | typeof db,
@@ -153,7 +155,7 @@ export async function listDueLegacyRequestCandidates(
 				eq(approvalRequest.organizationId, input.organizationId),
 				eq(approvalRequest.entityType, "absence_entry"),
 				eq(approvalRequest.status, "pending"),
-				lte(approvalRequest.createdAt, input.createdCutoff),
+				lt(approvalRequest.createdAt, new Date(input.createdCutoff.getTime() + 1)),
 			),
 		)
 		.orderBy(asc(approvalRequest.createdAt), asc(approvalRequest.id))
@@ -558,8 +560,7 @@ async function commitLegacyTransfer(
 			}),
 			requestFingerprint: input.requestFingerprint,
 			actorKind: input.commandActor.kind === "system" ? "system" : "user",
-			actorSystemId:
-				input.commandActor.kind === "system" ? APPROVAL_ESCALATION_SYSTEM_ID : null,
+			actorSystemId: input.commandActor.kind === "system" ? APPROVAL_ESCALATION_SYSTEM_ID : null,
 			actorUserId: input.commandActor.userId,
 			actorEmployeeId: input.commandActor.employeeId,
 			reason: input.reason,
@@ -604,7 +605,11 @@ async function commitLegacyTransfer(
 			}),
 		});
 	}
-	for (const reason of ["no_eligible_backup", "unsupported_route", "replacement_overdue"] as const) {
+	for (const reason of [
+		"no_eligible_backup",
+		"unsupported_route",
+		"replacement_overdue",
+	] as const) {
 		await resolveRecoveredEscalationAttentionCondition(tx, {
 			organizationId,
 			reason,
@@ -800,7 +805,7 @@ async function holdRejectedObservation(
 				),
 			)
 			.limit(1);
-		if (!request || request.status !== "pending") return { kind: "not_pending" };
+		if (request?.status !== "pending") return { kind: "not_pending" };
 		const policy = await readEscalationPolicy(tx, input.organizationId);
 		await raiseEscalationAttention(tx, {
 			organizationId: input.organizationId,
