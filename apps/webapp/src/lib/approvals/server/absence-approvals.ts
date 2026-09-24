@@ -57,6 +57,7 @@ import {
 	lineageContainsEscalation,
 	selectCanonicalDecisionTarget,
 } from "../escalation/decision-authority";
+import { findLegacyTransferredRequest } from "../escalation/legacy-transfer-store";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import {
 	findLegacyAbsenceDecisionReplay,
@@ -167,6 +168,15 @@ const defaultLegacyDecisionEvidence: LegacyAbsenceDecisionEvidencePort = {
 	record: recordLegacyAbsenceDecisionEvidence,
 };
 
+/** Transaction-bound read of legacy escalation transfers (#299). */
+export interface LegacyAbsenceTransferAuthorityPort {
+	findTransferredRequest: typeof findLegacyTransferredRequest;
+}
+
+const defaultLegacyTransferAuthority: LegacyAbsenceTransferAuthorityPort = {
+	findTransferredRequest: findLegacyTransferredRequest,
+};
+
 interface ExecuteAbsenceDecisionInput {
 	runtime: AbsenceDecisionRuntime;
 	organizationId: string;
@@ -192,6 +202,12 @@ interface ExecuteAbsenceDecisionInput {
 	}): Promise<VerifiedLegacyApprovalState>;
 	nowInstant(): Instant;
 	legacyEvidence?: LegacyAbsenceDecisionEvidencePort;
+	legacyTransferAuthority?: LegacyAbsenceTransferAuthorityPort;
+	/**
+	 * Explicit organization-level approval management, checked by the trusted
+	 * caller. Absent means no management authority (fail closed).
+	 */
+	canManageOrganizationApproval?(): Promise<boolean>;
 }
 
 export function createAbsenceApprovalManagementAuthorization(input: {
@@ -386,6 +402,23 @@ export async function executeAbsenceDecisionInTransaction(
 					commandResult: undefined,
 					replayed,
 				};
+			}
+			// An escalation transfer revoked the former holders' authority: only
+			// the current approver or explicit organization management may decide.
+			// Eligible-manager fallback never bypasses the replacement (#255 §4).
+			const transferred = await (
+				input.legacyTransferAuthority ?? defaultLegacyTransferAuthority
+			).findTransferredRequest(transactionDb, {
+				organizationId: input.organizationId,
+				absenceId: input.absenceId,
+				approvalRequestId: input.approvalRequestId,
+			});
+			if (
+				transferred &&
+				transferred.currentApproverEmployeeId !== currentEmployee.id &&
+				!(await input.canManageOrganizationApproval?.())
+			) {
+				throw new ApprovalAssignmentReassignedError();
 			}
 			const capturedAt = input.nowInstant();
 			const captureState = () =>
@@ -1495,6 +1528,12 @@ function authenticatedAbsenceDecisionEffect(
 					),
 				),
 		);
+		// Explicit organization approval management, from the caller's current
+		// abilities; never inferred from eligible-manager status.
+		const canManageOrganizationApproval = async () => {
+			const ability = await getAbility();
+			return ability?.cannot("manage", "Approval") === false;
+		};
 		const runtime = createProductionApprovalWorkflowRuntime({
 			db: dbService.db,
 			adapters: {
@@ -1528,10 +1567,7 @@ function authenticatedAbsenceDecisionEffect(
 			},
 			canManageApproval: createAbsenceApprovalManagementAuthorization({
 				currentEmployee,
-				canManageOrganizationApproval: async () => {
-					const ability = await getAbility();
-					return ability?.cannot("manage", "Approval") === false;
-				},
+				canManageOrganizationApproval,
 			}),
 			clock: systemClock,
 		});
@@ -1552,6 +1588,7 @@ function authenticatedAbsenceDecisionEffect(
 							: { reviewedBindingId: options.reviewedBindingId }),
 						query: dbService.query,
 						captureLegacyState: captureAbsenceLegacyApprovalState,
+						canManageOrganizationApproval,
 						nowInstant: () => systemClock.nowInstant(),
 						processLegacy: createLegacyAbsenceDecisionProcessor({
 							absenceId,

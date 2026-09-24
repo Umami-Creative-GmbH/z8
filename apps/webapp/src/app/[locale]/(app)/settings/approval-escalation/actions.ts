@@ -25,9 +25,11 @@ import {
 import {
 	type EscalationCandidateListOutcome,
 	escalateAssignmentByManager,
+	escalateLegacyApprovalByManager,
 	type HumanEscalationActor,
 	type HumanEscalationOutcome,
 	listHumanEscalationCandidates,
+	listLegacyHumanEscalationCandidates,
 	MAX_ESCALATION_REASON_LENGTH,
 } from "@/lib/approvals/escalation/transfer";
 import { getAbility, getAuthContext } from "@/lib/auth-helpers";
@@ -262,24 +264,37 @@ function humanEscalationError(
 	}
 }
 
-const assignmentSchema = z.object({ assignmentId: z.string().uuid() });
+/**
+ * What a human transfer moves: a canonical workflow assignment, or a
+ * legacy-authoritative approval request (#299).
+ */
+const targetSchema = z.union([
+	z.object({ assignmentId: z.string().uuid() }).strict(),
+	z.object({ approvalRequestId: z.string().uuid() }).strict(),
+]);
 
 export async function listApprovalEscalationCandidates(
-	input: z.input<typeof assignmentSchema>,
+	input: z.input<typeof targetSchema>,
 ): Promise<
 	ActionResult<Extract<EscalationCandidateListOutcome, { kind: "ok" }>>
 > {
 	const actor = await requireEscalationManagementActor();
 	if (!actor) return FORBIDDEN;
-	const parsed = assignmentSchema.safeParse(input);
+	const parsed = targetSchema.safeParse(input);
 	if (!parsed.success) {
 		return { success: false, error: "Invalid approval assignment." };
 	}
 	try {
-		const outcome = await listHumanEscalationCandidates({
-			actor,
-			assignmentId: parsed.data.assignmentId,
-		});
+		const outcome =
+			"assignmentId" in parsed.data
+				? await listHumanEscalationCandidates({
+						actor,
+						assignmentId: parsed.data.assignmentId,
+					})
+				: await listLegacyHumanEscalationCandidates({
+						actor,
+						approvalRequestId: parsed.data.approvalRequestId,
+					});
 		return outcome.kind === "ok"
 			? { success: true, data: outcome }
 			: { success: false, error: humanEscalationError(outcome) };
@@ -295,12 +310,15 @@ export async function listApprovalEscalationCandidates(
 	}
 }
 
-const transferSchema = z.object({
-	assignmentId: z.string().uuid(),
+const transferDetailsSchema = z.object({
 	recipientEmployeeId: z.string().uuid(),
 	idempotencyKey: z.string().uuid(),
 	reason: z.string().trim().max(MAX_ESCALATION_REASON_LENGTH).optional(),
 });
+const transferSchema = z.union([
+	transferDetailsSchema.extend({ assignmentId: z.string().uuid() }).strict(),
+	transferDetailsSchema.extend({ approvalRequestId: z.string().uuid() }).strict(),
+]);
 
 export async function transferApprovalEscalationAssignment(
 	input: z.input<typeof transferSchema>,
@@ -314,14 +332,23 @@ export async function transferApprovalEscalationAssignment(
 			error: parsed.error.issues[0]?.message ?? "Invalid transfer.",
 		};
 	}
+	const details = {
+		actor,
+		idempotencyKey: parsed.data.idempotencyKey,
+		recipientEmployeeId: parsed.data.recipientEmployeeId,
+		reason: parsed.data.reason,
+	};
 	try {
-		const outcome = await escalateAssignmentByManager({
-			actor,
-			assignmentId: parsed.data.assignmentId,
-			idempotencyKey: parsed.data.idempotencyKey,
-			recipientEmployeeId: parsed.data.recipientEmployeeId,
-			reason: parsed.data.reason,
-		});
+		const outcome =
+			"assignmentId" in parsed.data
+				? await escalateAssignmentByManager({
+						...details,
+						assignmentId: parsed.data.assignmentId,
+					})
+				: await escalateLegacyApprovalByManager({
+						...details,
+						approvalRequestId: parsed.data.approvalRequestId,
+					});
 		if (outcome.kind !== "transferred") {
 			return { success: false, error: humanEscalationError(outcome) };
 		}

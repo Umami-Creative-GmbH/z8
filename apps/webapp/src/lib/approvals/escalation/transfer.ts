@@ -1,22 +1,17 @@
-import { and, asc, eq, inArray, lte } from "drizzle-orm";
+import { and, asc, eq, lte } from "drizzle-orm";
 import { db } from "@/db";
-import { user } from "@/db/auth-schema";
 import {
 	type ApprovalEscalationAttentionReason,
-	approvalEscalationControl,
-	approvalEscalationPolicy,
 	approvalRequest,
 	approvalStageAssignment,
 	approvalWorkflow,
 	approvalWorkflowStage,
 	auditLog,
-	employee,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import {
 	dateFromInstant,
 	type Instant,
-	instantFromDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
@@ -31,9 +26,7 @@ import {
 	type ApprovalWriteGateResult,
 	type JsonObject,
 } from "../workflow/ports";
-import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import {
-	ApprovalStateMachineError,
 	type ApprovalWorkflowCommand,
 	fingerprintApprovalCommandActor,
 } from "../workflow/state-machine";
@@ -46,7 +39,27 @@ import {
 	resolveRecoveredEscalationAttentionCondition,
 } from "./attention-store";
 import { loadEscalationCandidateFacts } from "./candidates";
-import type { EscalationPolicySnapshot } from "./deadline";
+import {
+	commitLegacyHumanTransfer,
+	isLegacyObservationRejection,
+	LegacyTransferRaceError,
+	legacyEscalationRequestFingerprint,
+	listDueLegacyRequestCandidates,
+	prepareLegacyHumanEscalation,
+	processDueLegacyRequest,
+	readAbsenceAuthorityForDiscovery,
+} from "./legacy-transfer";
+import {
+	createEscalationRuntime,
+	type DatabaseTransaction,
+	type EscalationRuntime,
+	employeeNames,
+	fixedGateContext,
+	isTransitionRace,
+	readEscalationOwnership,
+	readEscalationPolicy,
+	SUPPORTED_WORKFLOW_TYPE,
+} from "./transfer-context";
 import {
 	automaticEscalationOperationKey,
 	type CanonicalAssignmentEvidence,
@@ -66,10 +79,6 @@ import {
 
 const logger = createLogger("ApprovalEscalationTransfer");
 
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-/** Kinds this slice transfers; the others are held until their own slice. */
-const SUPPORTED_WORKFLOW_TYPE = "absence" as const;
 export const DEFAULT_ESCALATION_BATCH_LIMIT = 100;
 export const MAX_ESCALATION_BATCH_LIMIT = 500;
 export const MAX_ESCALATION_REASON_LENGTH = 500;
@@ -107,120 +116,6 @@ function toTransferView(row: EscalationTransferRow): EscalationTransferView {
 		formerApproverEmployeeId: row.sourceApproverEmployeeId,
 		replacementApproverEmployeeId: row.replacementApproverEmployeeId,
 		transferredAt: row.transferredAt.toISOString(),
-	};
-}
-
-export type EscalationOwnership =
-	| { kind: "owned"; paused: boolean; ownedSince: Instant | null }
-	| { kind: "not_owner" | "unrecognized_owner" };
-
-/**
- * Fresh ownership read. Inside a transaction it takes a share lock so an
- * exclusive ownership switch cannot interleave with a transfer. It never
- * substitutes for the transition's own conditional writes.
- */
-async function readEscalationOwnership(
-	executor: typeof db | DatabaseTransaction,
-	organizationId: string,
-	lock: boolean,
-): Promise<EscalationOwnership> {
-	const query = executor
-		.select({
-			owner: approvalEscalationControl.owner,
-			automationPaused: approvalEscalationControl.automationPaused,
-			escalationOwnedSince: approvalEscalationControl.escalationOwnedSince,
-		})
-		.from(approvalEscalationControl)
-		.where(eq(approvalEscalationControl.organizationId, organizationId))
-		.limit(1);
-	const [control] = lock ? await query.for("share") : await query;
-	if (!control || control.owner === "legacy") return { kind: "not_owner" };
-	if (control.owner !== "escalation") return { kind: "unrecognized_owner" };
-	return {
-		kind: "owned",
-		paused: control.automationPaused,
-		ownedSince: control.escalationOwnedSince ? instantFromDate(control.escalationOwnedSince) : null,
-	};
-}
-
-async function readEscalationPolicy(
-	executor: typeof db | DatabaseTransaction,
-	organizationId: string,
-): Promise<EscalationPolicySnapshot | null> {
-	const [policy] = await executor
-		.select({
-			enabled: approvalEscalationPolicy.enabled,
-			responseWindowHours: approvalEscalationPolicy.responseWindowHours,
-			revision: approvalEscalationPolicy.revision,
-		})
-		.from(approvalEscalationPolicy)
-		.where(eq(approvalEscalationPolicy.organizationId, organizationId))
-		.limit(1);
-	return policy ?? null;
-}
-
-function refuseFinalization(): never {
-	throw new Error("Approval escalation never finalizes an approval");
-}
-
-/**
- * Workflow runtime for escalation commands. Escalation replaces an
- * assignment and never reaches terminal finalization, so every finalizer
- * refuses. Management authority is explicit, never eligible-manager fallback.
- */
-function createEscalationRuntime(
-	management: {
-		organizationId: string;
-		actorEmployeeId: string;
-	} | null,
-) {
-	return createProductionApprovalWorkflowRuntime({
-		db,
-		adapters: {
-			absence: {
-				clock: systemClock,
-				finalizeAbsenceTerminal: async () => refuseFinalization(),
-				deleteCancelledAbsence: async () => refuseFinalization(),
-			},
-			timeCorrection: {
-				clock: systemClock,
-				finalizeTimeCorrectionTerminal: async () => refuseFinalization(),
-				deleteCancelledCorrections: async () => refuseFinalization(),
-			},
-			ordinaryWorkPeriod: {
-				finalizeTerminal: async () => refuseFinalization(),
-			},
-		},
-		canManageApproval: async (input) =>
-			management !== null &&
-			input.command.type === "escalate" &&
-			input.organizationId === management.organizationId &&
-			input.workflow.organizationId === management.organizationId &&
-			input.actorEmployeeId === management.actorEmployeeId,
-		clock: systemClock,
-	});
-}
-
-type EscalationRuntime = ReturnType<typeof createEscalationRuntime>;
-
-function fixedGateContext(
-	context: ApprovalWorkflowTransactionContext,
-	organizationId: string,
-	gate: ApprovalWriteGateResult,
-): ApprovalWorkflowTransactionContext {
-	return {
-		...context,
-		writeGate: {
-			acquire: async (scope) => {
-				if (
-					scope.organizationId !== organizationId ||
-					scope.workflowType !== SUPPORTED_WORKFLOW_TYPE
-				) {
-					throw new Error("Escalation gate scope mismatch");
-				}
-				return gate;
-			},
-		},
 	};
 }
 
@@ -526,16 +421,6 @@ async function commitCanonicalTransfer(input: CommitTransferInput): Promise<Comm
 	return { disposition: "executed", transfer };
 }
 
-function isTransitionRace(error: unknown): boolean {
-	return (
-		(error instanceof ApprovalTransitionEngineError && error.code === "version_conflict") ||
-		(error instanceof ApprovalStateMachineError &&
-			(error.code === "REASSIGNMENT_CONFLICT" ||
-				error.code === "STALE_STAGE" ||
-				error.code === "TERMINAL_TRANSITION"))
-	);
-}
-
 // ============================================
 // SCHEDULED: PROCESS DUE ESCALATIONS
 // ============================================
@@ -558,13 +443,18 @@ export interface ProcessDueEscalationsSummary {
 		| "ownership_changed"
 		| "policy_not_prepared"
 		| "policy_disabled";
+	/** Which authority's assignments were discovered and processed (#299). */
+	authority: "canonical" | "legacy" | null;
 	examined: number;
 	transferred: number;
 	replayed: number;
 	held: Partial<Record<ApprovalEscalationAttentionReason, number>>;
 	notDue: number;
 	notPending: number;
+	/** Canonical discovery skipped: legacy owners decide these absences. */
 	legacyAuthority: number;
+	/** Legacy discovery skipped: the rollout moved to canonical authority. */
+	canonicalAuthority: number;
 	raced: number;
 	failed: number;
 }
@@ -576,6 +466,7 @@ function emptySummary(
 	return {
 		organizationId,
 		status,
+		authority: null,
 		examined: 0,
 		transferred: 0,
 		replayed: 0,
@@ -583,6 +474,7 @@ function emptySummary(
 		notDue: 0,
 		notPending: 0,
 		legacyAuthority: 0,
+		canonicalAuthority: 0,
 		raced: 0,
 		failed: 0,
 	};
@@ -625,6 +517,11 @@ export async function processDueEscalations(input: {
 	// actionableAt >= assignedAt for every evidence kind, so this prefilter
 	// never skips a due assignment.
 	const assignedCutoff = dateFromInstant(now.subtract({ hours: policy.responseWindowHours }));
+	// Canonical versus legacy authority selects what is discovered; each
+	// transfer transaction re-reads the mode under the write gate.
+	if ((await readAbsenceAuthorityForDiscovery(db, organizationId)) === "legacy") {
+		return processDueLegacyEscalations({ organizationId, limit, now, createdCutoff: assignedCutoff });
+	}
 	const candidates = await db
 		.select({
 			assignmentId: approvalStageAssignment.id,
@@ -661,7 +558,10 @@ export async function processDueEscalations(input: {
 		.orderBy(asc(approvalStageAssignment.assignedAt), asc(approvalStageAssignment.id))
 		.limit(limit);
 
-	const summary = emptySummary(organizationId, "processed");
+	const summary: ProcessDueEscalationsSummary = {
+		...emptySummary(organizationId, "processed"),
+		authority: "canonical",
+	};
 	const runtime = createEscalationRuntime(null);
 	for (const candidate of candidates) {
 		summary.examined += 1;
@@ -702,6 +602,68 @@ export async function processDueEscalations(input: {
 			logger.error(
 				{ error, organizationId, assignmentId: candidate.assignmentId },
 				"Scheduled approval escalation failed",
+			);
+		}
+	}
+	return summary;
+}
+
+/** Legacy-authoritative discovery and processing (#299); one transaction per request. */
+async function processDueLegacyEscalations(input: {
+	organizationId: string;
+	limit: number;
+	now: Instant;
+	createdCutoff: Date;
+}): Promise<ProcessDueEscalationsSummary> {
+	const { organizationId } = input;
+	const requestIds = await listDueLegacyRequestCandidates(db, {
+		organizationId,
+		createdCutoff: input.createdCutoff,
+		limit: input.limit,
+	});
+	const summary: ProcessDueEscalationsSummary = {
+		...emptySummary(organizationId, "processed"),
+		authority: "legacy",
+	};
+	const runtime = createEscalationRuntime(null);
+	for (const approvalRequestId of requestIds) {
+		summary.examined += 1;
+		try {
+			const outcome = await processDueLegacyRequest(runtime, {
+				organizationId,
+				approvalRequestId,
+				now: input.now,
+			});
+			switch (outcome.kind) {
+				case "transferred":
+					if (outcome.disposition === "executed") summary.transferred += 1;
+					else summary.replayed += 1;
+					break;
+				case "held":
+					summary.held[outcome.reason] = (summary.held[outcome.reason] ?? 0) + 1;
+					break;
+				case "not_due":
+					summary.notDue += 1;
+					break;
+				case "not_pending":
+					summary.notPending += 1;
+					break;
+				case "canonical_authority":
+					summary.canonicalAuthority += 1;
+					break;
+				case "suppressed":
+					summary.status = "ownership_changed";
+					return summary;
+			}
+		} catch (error) {
+			if (error instanceof LegacyTransferRaceError || isTransitionRace(error)) {
+				summary.raced += 1;
+				continue;
+			}
+			summary.failed += 1;
+			logger.error(
+				{ error, organizationId, approvalRequestId },
+				"Scheduled legacy approval escalation failed",
 			);
 		}
 	}
@@ -928,20 +890,6 @@ async function locateAssignment(
 	return row ?? null;
 }
 
-async function employeeNames(
-	executor: typeof db | DatabaseTransaction,
-	organizationId: string,
-	employeeIds: string[],
-): Promise<Map<string, string>> {
-	if (employeeIds.length === 0) return new Map();
-	const rows = await executor
-		.select({ id: employee.id, name: user.name })
-		.from(employee)
-		.innerJoin(user, eq(user.id, employee.userId))
-		.where(and(eq(employee.organizationId, organizationId), inArray(employee.id, employeeIds)));
-	return new Map(rows.map((row) => [row.id, row.name]));
-}
-
 type HumanPreparation =
 	| {
 			kind: "ready";
@@ -1135,6 +1083,138 @@ export async function escalateAssignmentByManager(input: {
 		}
 		if (error instanceof ApprovalTransitionEngineError && error.code === "idempotency_mismatch") {
 			return { kind: "idempotency_mismatch" };
+		}
+		throw error;
+	}
+}
+
+// ============================================
+// HUMAN: LEGACY-AUTHORITATIVE REQUESTS (#299)
+// ============================================
+
+/** Eligible recipients for a management-authorized legacy transfer, recommended first. */
+export async function listLegacyHumanEscalationCandidates(input: {
+	actor: HumanEscalationActor;
+	approvalRequestId: string;
+}): Promise<EscalationCandidateListOutcome> {
+	if (!input.actor.canManageApprovals) return { kind: "forbidden" };
+	const { organizationId } = input.actor;
+	const runtime = createEscalationRuntime(null);
+	return runtime.repository.withTransaction(async (context) => {
+		const tx = context.dbService.db as unknown as DatabaseTransaction;
+		const prepared = await prepareLegacyHumanEscalation(context, {
+			organizationId,
+			approvalRequestId: input.approvalRequestId,
+			ownership: await readEscalationOwnership(tx, organizationId, true),
+		});
+		if (prepared.kind !== "ready") return prepared;
+		const currentApproverId = prepared.subject.request.approverEmployeeId;
+		const names = await employeeNames(tx, organizationId, [
+			currentApproverId,
+			...prepared.candidates.map((candidate) => candidate.employeeId),
+		]);
+		return {
+			kind: "ok",
+			currentApprover: {
+				employeeId: currentApproverId,
+				name: names.get(currentApproverId) ?? "—",
+			},
+			candidates: prepared.candidates.map((candidate, index) => ({
+				employeeId: candidate.employeeId,
+				name: names.get(candidate.employeeId) ?? "—",
+				isPrimary: candidate.isPrimary,
+				recommended: index === 0,
+			})),
+		};
+	});
+}
+
+/**
+ * Management-authorized transfer of a legacy-authoritative request. The same
+ * explicit permission, idempotency and eligible-recipient rules as the
+ * canonical entry point apply; the journal row is the replay receipt, and an
+ * exact committed operation replays before any fresh check. It never consumes
+ * the automatic allowance.
+ */
+export async function escalateLegacyApprovalByManager(input: {
+	actor: HumanEscalationActor;
+	approvalRequestId: string;
+	idempotencyKey: string;
+	recipientEmployeeId?: string;
+	reason?: string;
+}): Promise<HumanEscalationOutcome> {
+	const { actor } = input;
+	if (!actor.canManageApprovals) return { kind: "forbidden" };
+	const reason = input.reason?.trim() || null;
+	const operationKey = humanEscalationOperationKey({
+		actorUserId: actor.userId,
+		idempotencyKey: input.idempotencyKey,
+	});
+	const requestFingerprint = legacyEscalationRequestFingerprint({
+		initiator: "human",
+		actorUserId: actor.userId,
+		approvalRequestId: input.approvalRequestId,
+		requestedRecipientEmployeeId: input.recipientEmployeeId ?? null,
+		reason,
+	});
+	const runtime = createEscalationRuntime(null);
+	try {
+		return await runtime.repository.withTransaction(
+			async (context): Promise<HumanEscalationOutcome> => {
+				const tx = context.dbService.db as unknown as DatabaseTransaction;
+				const committed = await findEscalationTransferByOperationKey(tx, {
+					organizationId: actor.organizationId,
+					operationKey,
+				});
+				if (committed) {
+					return committed.requestFingerprint === requestFingerprint
+						? {
+								kind: "transferred",
+								disposition: "replayed",
+								transfer: toTransferView(committed),
+							}
+						: { kind: "idempotency_mismatch" };
+				}
+				const prepared = await prepareLegacyHumanEscalation(context, {
+					organizationId: actor.organizationId,
+					approvalRequestId: input.approvalRequestId,
+					ownership: await readEscalationOwnership(tx, actor.organizationId, true),
+				});
+				if (prepared.kind !== "ready") return prepared;
+				const recipient = input.recipientEmployeeId
+					? prepared.candidates.find(
+							(candidate) => candidate.employeeId === input.recipientEmployeeId,
+						)
+					: prepared.candidates[0];
+				if (!recipient) {
+					return input.recipientEmployeeId
+						? { kind: "recipient_not_eligible" }
+						: { kind: "no_eligible_backup" };
+				}
+				const transfer = await commitLegacyHumanTransfer({
+					organizationId: actor.organizationId,
+					context,
+					prepared,
+					recipientEmployeeId: recipient.employeeId,
+					operationKey,
+					requestFingerprint,
+					actor: { userId: actor.userId, employeeId: actor.employeeId },
+					policy: await readEscalationPolicy(tx, actor.organizationId),
+					reason,
+				});
+				return {
+					kind: "transferred",
+					disposition: "executed",
+					transfer: toTransferView(transfer),
+				};
+			},
+		);
+	} catch (error) {
+		if (error instanceof LegacyTransferRaceError || isTransitionRace(error)) {
+			return { kind: "conflict" };
+		}
+		if (isLegacyObservationRejection(error)) {
+			return { kind: "unsupported", route: "legacy_observation_rejected" };
 		}
 		throw error;
 	}

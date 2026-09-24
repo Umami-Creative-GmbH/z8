@@ -330,12 +330,16 @@ function DisposeAttentionDialog({
 	);
 }
 
-export interface EscalationTransferRequest {
-	assignmentId: string;
+/** A canonical workflow assignment, or a legacy-authoritative request (#299). */
+export type EscalationTransferTarget =
+	| { assignmentId: string }
+	| { approvalRequestId: string };
+
+export type EscalationTransferRequest = EscalationTransferTarget & {
 	recipientEmployeeId: string;
 	idempotencyKey: string;
 	reason?: string;
-}
+};
 
 const TRANSFERABLE_REASONS = new Set<EscalationAttentionView["reason"]>([
 	"no_eligible_backup",
@@ -344,11 +348,25 @@ const TRANSFERABLE_REASONS = new Set<EscalationAttentionView["reason"]>([
 	"ambiguous_history",
 ]);
 
-/** Human transfers are available for canonical absence assignments only. */
+/**
+ * Canonical incidents name their assignment; legacy-authoritative incidents
+ * have none and name the approval request instead.
+ */
+function transferTarget(
+	item: EscalationAttentionView | null,
+): EscalationTransferTarget | null {
+	if (item?.assignmentId) return { assignmentId: item.assignmentId };
+	if (item?.approvalRequestId) {
+		return { approvalRequestId: item.approvalRequestId };
+	}
+	return null;
+}
+
+/** Human transfers are available for absence approvals. */
 function canTransfer(item: EscalationAttentionView): boolean {
 	return (
 		item.approvalType === "absence" &&
-		item.assignmentId !== null &&
+		transferTarget(item) !== null &&
 		TRANSFERABLE_REASONS.has(item.reason)
 	);
 }
@@ -513,15 +531,20 @@ function TransferAssignmentDialog({
 	onTransfer: (request: EscalationTransferRequest) => Promise<boolean>;
 }) {
 	const { t } = useTranslate();
-	const assignmentId = item?.assignmentId ?? null;
+	const target = transferTarget(item);
+	const targetKey = target
+		? "assignmentId" in target
+			? target.assignmentId
+			: target.approvalRequestId
+		: null;
 	// One key per submitted request: an uncertain retry reuses it; a changed
 	// request or a reopened dialog gets a new one.
 	const submission = useRef<{ key: string; fingerprint: string } | null>(null);
 	const candidates = useQuery({
-		queryKey: ["approval-escalation-candidates", assignmentId],
+		queryKey: ["approval-escalation-candidates", targetKey],
 		queryFn: () =>
-			listApprovalEscalationCandidates({ assignmentId: assignmentId ?? "" }),
-		enabled: assignmentId !== null,
+			listApprovalEscalationCandidates(target ?? { assignmentId: "" }),
+		enabled: target !== null,
 		staleTime: 0,
 	});
 	const close = () => {
@@ -579,13 +602,13 @@ function TransferAssignmentDialog({
 					</p>
 				) : (
 					<TransferAssignmentForm
-						key={assignmentId}
+						key={targetKey}
 						candidates={candidates.data.data.candidates}
 						currentApproverName={candidates.data.data.currentApprover.name}
 						isSubmitting={isSubmitting}
 						onCancel={close}
 						onSubmit={async (values) => {
-							if (!assignmentId) return;
+							if (!target) return;
 							const reason = values.reason.trim() || undefined;
 							const fingerprint = JSON.stringify([
 								values.recipientEmployeeId,
@@ -598,7 +621,7 @@ function TransferAssignmentDialog({
 								};
 							}
 							const succeeded = await onTransfer({
-								assignmentId,
+								...target,
 								recipientEmployeeId: values.recipientEmployeeId,
 								idempotencyKey: submission.current.key,
 								reason,

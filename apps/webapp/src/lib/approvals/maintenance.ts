@@ -62,6 +62,13 @@ export async function listApprovals(
 			to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as created_at_utc
 		from approval_submitted_revision
 		where organization_id = ${organizationId} and authority = 'legacy'
+		union all
+		-- Legacy escalation transfers likewise outlive a cancelled request.
+		select 'legacy_transfer' as storage_type, id, organization_id, 'transferred',
+			'approval_request', legacy_approval_request_id,
+			to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as created_at_utc
+		from approval_escalation_transfer
+		where organization_id = ${organizationId} and authority_mode = 'legacy'
 		order by created_at_utc, storage_type, id
 		`),
 	);
@@ -103,6 +110,15 @@ async function resolveLifecycle(
 			select 'legacy_evidence', id, 'workflow', observed_workflow_id
 			from approval_submitted_revision
 			where organization_id = ${organizationId} and authority = 'legacy'
+				and observed_workflow_id is not null
+			-- Legacy escalation transfers record the request they moved and the
+			-- shadow observation they mirrored into.
+			union all
+			select 'legacy_transfer', id, 'legacy', legacy_approval_request_id from approval_escalation_transfer
+			where organization_id = ${organizationId} and authority_mode = 'legacy'
+			union all
+			select 'legacy_transfer', id, 'workflow', observed_workflow_id from approval_escalation_transfer
+			where organization_id = ${organizationId} and authority_mode = 'legacy'
 				and observed_workflow_id is not null
 		), links as (
 			select from_kind, from_id, to_kind, to_id from edges
@@ -208,6 +224,10 @@ export async function deleteApprovalInTransaction(
 			select 'legacy_evidence' as storage_type, id from approval_submitted_revision
 			where organization_id = ${organizationId} and id = ${id}::uuid
 				and authority = 'legacy'
+			union all
+			select 'legacy_transfer' as storage_type, id from approval_escalation_transfer
+			where organization_id = ${organizationId} and id = ${id}::uuid
+				and authority_mode = 'legacy'
 		`),
 	);
 	if (matches.length === 0) {
@@ -223,7 +243,12 @@ export async function deleteApprovalInTransaction(
 		);
 	}
 	const kind = matches[0].storage_type;
-	if (kind !== "legacy" && kind !== "workflow" && kind !== "legacy_evidence") {
+	if (
+		kind !== "legacy" &&
+		kind !== "workflow" &&
+		kind !== "legacy_evidence" &&
+		kind !== "legacy_transfer"
+	) {
 		throw new Error("Unexpected approval storage type");
 	}
 
@@ -232,6 +257,7 @@ export async function deleteApprovalInTransaction(
 	const workflowIds: string[] = [];
 	const chainIds: string[] = [];
 	const legacyRevisionIds: string[] = [];
+	const legacyTransferIds: string[] = [];
 	for (const row of lifecycle) {
 		switch (row.kind) {
 			case "legacy":
@@ -245,6 +271,9 @@ export async function deleteApprovalInTransaction(
 				break;
 			case "legacy_evidence":
 				legacyRevisionIds.push(rowId(row));
+				break;
+			case "legacy_transfer":
+				legacyTransferIds.push(rowId(row));
 				break;
 		}
 	}
@@ -280,6 +309,18 @@ export async function deleteApprovalInTransaction(
 	const escalationTransfers = workflowIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_escalation_transfer where ${evidenceScope} returning id
 		`);
+	// Legacy transfers have no workflow; they follow the links they recorded.
+	// Their delivery events cascade.
+	if (legacyTransferIds.length > 0) {
+		escalationTransfers.push(
+			...(await deletedIds(sql`
+				delete from approval_escalation_transfer
+				where organization_id = ${organizationId} and authority_mode = 'legacy'
+					and id = any(${sql.param(legacyTransferIds)}::uuid[])
+				returning id
+			`)),
+		);
+	}
 	const decisionEvidence: string[] = workflowIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_decision_evidence where ${evidenceScope} returning id
 		`);

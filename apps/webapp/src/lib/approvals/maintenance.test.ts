@@ -176,4 +176,56 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 			expect(statement.params).toEqual(["org-1", [LEGACY_REVISION]]);
 		}
 	});
+
+	it("removes a legacy lifecycle's escalation transfers through the links they recorded", async () => {
+		const LEGACY_REQUEST = "70000000-0000-4000-8000-000000000001";
+		const LEGACY_TRANSFER = "70000000-0000-4000-8000-000000000003";
+		const { statements, transaction } = fakeTransaction({
+			workflowIds: [],
+			match: "legacy",
+			lifecycle: [
+				{ kind: "legacy", id: LEGACY_REQUEST },
+				{ kind: "legacy_transfer", id: LEGACY_TRANSFER },
+			],
+		});
+
+		const result = await deleteApprovalInTransaction(transaction, "org-1", LEGACY_REQUEST);
+
+		const lifecycle = statements.find((statement) =>
+			statement.sql.includes("with recursive edges"),
+		);
+		expect(lifecycle?.sql).toContain(
+			"select 'legacy_transfer', id, 'legacy', legacy_approval_request_id from approval_escalation_transfer",
+		);
+		expect(lifecycle?.sql).toContain(
+			"select 'legacy_transfer', id, 'workflow', observed_workflow_id from approval_escalation_transfer",
+		);
+		const transferDeletes = statements.filter((statement) =>
+			statement.sql.startsWith("delete from approval_escalation_transfer"),
+		);
+		expect(transferDeletes).toHaveLength(1);
+		expect(transferDeletes[0]?.sql).toContain("authority_mode = 'legacy'");
+		expect(transferDeletes[0]?.params).toEqual(["org-1", [LEGACY_TRANSFER]]);
+		expect(result.escalationTransfers).toEqual(["transfer-1", "transfer-2"]);
+	});
+
+	it("addresses a legacy escalation transfer whose request was already deleted", async () => {
+		const LEGACY_TRANSFER = "70000000-0000-4000-8000-000000000003";
+		const { statements, transaction } = fakeTransaction({
+			workflowIds: [],
+			match: "legacy_transfer",
+			lifecycle: [{ kind: "legacy_transfer", id: LEGACY_TRANSFER }],
+		});
+
+		const result = await deleteApprovalInTransaction(transaction, "org-1", LEGACY_TRANSFER);
+
+		const match = statements.find((statement) =>
+			statement.sql.includes("select 'legacy' as storage_type"),
+		);
+		expect(match?.sql).toContain(
+			"select 'legacy_transfer' as storage_type, id from approval_escalation_transfer",
+		);
+		expect(result.escalationTransfers).toEqual(["transfer-1", "transfer-2"]);
+		expect(result.legacyRequests).toEqual([]);
+	});
 });
