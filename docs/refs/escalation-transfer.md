@@ -296,7 +296,7 @@ for automatic transfers; human transfers share the canonical
 `escalation:human:v1:{userId}:{idempotencyKey}` namespace, with the request
 fingerprint naming `legacy:{request}`.
 
-`0078_legacy_escalation_transfer.sql` makes the canonical columns nullable,
+`0080_legacy_escalation_transfer.sql` makes the canonical columns nullable,
 adds the legacy and observation columns, and replaces the mode, evidence and
 deadline checks so canonical rows keep every canonical identity and legacy rows
 carry none. A legacy source position is unique per organization and request.
@@ -348,7 +348,7 @@ and decision), `server/absence-approvals.test.ts` (reassigned refusal, explicit
 management, replay first), `maintenance.test.ts` (legacy journal cleanup).
 
 PostgreSQL 16 runtime evidence (`escalation/legacy-transfer.integration.test.ts`,
-disposable label-owned database, full migration chain including `0078`, run
+disposable label-owned database, full migration chain including `0080`, run
 together with #288's suite: 22/22) through the real callers
 (`requestAbsenceEffect`, `processDueEscalations`, the escalation settings
 actions, `approveAbsenceEffect`, `deleteApproval`):

@@ -56,6 +56,8 @@
     "deadline": "Deadline",
     "errors": {
       "clockInFailed": "Det gick inte att stämpla in",
+      "appendReviewRequired": "Instämpling kräver granskning av din tidshistorik",
+      "appendReviewRequiredDesc": "Dina tidigare tidsposter kunde inte verifieras, så den nya instämplingen sparades inte. Kontakta din administratör.",
       "clockOutFailed": "Det gick inte att stämpla ut",
       "holidayBlocked": "Det går inte att stämpla ut på {holidayName}",
       "holidayBlockedDesc": "Denna dag är markerad som en helgdag och tidsregistreringar är inte tillåtna",

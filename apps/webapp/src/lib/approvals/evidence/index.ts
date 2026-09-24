@@ -4,3 +4,5 @@ export * from "./decision-outcome";
 export * from "./errors";
 export * from "./legacy-absence";
 export * from "./store";
+export * from "./travel-expense-facts";
+export * from "./travel-expense-submission";

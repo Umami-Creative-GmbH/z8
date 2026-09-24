@@ -28,6 +28,12 @@ import {
 	fingerprintAbsenceMaterialFacts,
 } from "./absence-facts";
 import { ApprovalEvidenceError } from "./errors";
+import {
+	fingerprintTravelExpenseMaterialFacts,
+	TRAVEL_EXPENSE_EVIDENCE_SCHEMA_VERSION,
+	type TravelExpenseSubmittedFacts,
+	type TravelExpenseSubmittedLabels,
+} from "./travel-expense-facts";
 
 /**
  * Evidence capture is additive and inactive by default. The mode is read in the
@@ -826,4 +832,200 @@ export async function findLegacyDecisionEvidenceByRequest(
 	}
 	const row = rows[0];
 	return row ? parseLegacyDecisionEvidence(row, input.organizationId) : null;
+}
+
+// ---------------------------------------------------------------------------
+// Travel expense claims (#295). Expense approvals are legacy-authoritative
+// only (no canonical adapter), so their submitted revision is a legacy row
+// linked to the approval request routing created for the claim.
+// ---------------------------------------------------------------------------
+
+export interface LegacyTravelExpenseSubmittedRevisionRecord {
+	id: string;
+	authority: "legacy";
+	organizationId: string;
+	claimId: string;
+	requestCycleKey: string;
+	revision: number;
+	subjectEmployeeId: string;
+	requesterEmployeeId: string;
+	submitter: SubmitterIdentity;
+	materialFingerprint: string;
+	facts: TravelExpenseSubmittedFacts;
+	labels: TravelExpenseSubmittedLabels;
+	provenance: "captured_at_submission";
+	submittedAt: Instant;
+	legacy: LegacyLifecycleReference;
+}
+
+function isStringRecord(value: unknown): value is Record<string, string> {
+	return (
+		isRecord(value) &&
+		Object.values(value).every((entry) => typeof entry === "string")
+	);
+}
+
+function parseLegacyTravelExpenseRevision(
+	row: SubmittedRevisionRow,
+	scope: { organizationId: string; claimId: string },
+): LegacyTravelExpenseSubmittedRevisionRecord {
+	const facts = row.facts;
+	const labels = row.labels;
+	if (
+		row.organizationId !== scope.organizationId ||
+		row.authority !== "legacy" ||
+		row.workflowId !== null ||
+		!row.legacyApprovalRequestId ||
+		row.workflowType !== "travel_expense" ||
+		row.sourceType !== "travel_expense_claim" ||
+		row.sourceId !== scope.claimId ||
+		row.schemaVersion !== TRAVEL_EXPENSE_EVIDENCE_SCHEMA_VERSION ||
+		row.provenance !== "captured_at_submission" ||
+		(row.submitterActorKind !== "employee" &&
+			row.submitterActorKind !== "system") ||
+		!isRecord(facts) ||
+		facts.kind !== "travel_expense" ||
+		facts.schemaVersion !== TRAVEL_EXPENSE_EVIDENCE_SCHEMA_VERSION ||
+		facts.organizationId !== row.organizationId ||
+		facts.claimId !== row.sourceId ||
+		facts.subjectEmployeeId !== row.subjectEmployeeId ||
+		facts.requesterEmployeeId !== row.requesterEmployeeId ||
+		!isRecord(facts.tripDates) ||
+		!isRecord(facts.money) ||
+		!isRecord(facts.receipts) ||
+		!Array.isArray(facts.receipts.manifest) ||
+		!isRecord(labels) ||
+		!nullableString(labels.subjectName) ||
+		!nullableString(labels.requesterName) ||
+		!nullableString(labels.submitterName) ||
+		!nullableString(labels.projectName) ||
+		!isStringRecord(labels.receiptFileNames)
+	) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "legacy_submitted_revision",
+		});
+	}
+	const parsedFacts = facts as unknown as TravelExpenseSubmittedFacts;
+	if (
+		fingerprintTravelExpenseMaterialFacts(parsedFacts) !==
+		row.materialFingerprint
+	) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "material_fingerprint",
+		});
+	}
+	return {
+		id: row.id,
+		authority: "legacy",
+		organizationId: row.organizationId,
+		claimId: row.sourceId,
+		requestCycleKey: row.requestCycleKey,
+		revision: row.revision,
+		subjectEmployeeId: row.subjectEmployeeId,
+		requesterEmployeeId: row.requesterEmployeeId,
+		submitter: {
+			kind: row.submitterActorKind,
+			employeeId: row.submitterEmployeeId,
+			userId: row.submitterUserId,
+		},
+		materialFingerprint: row.materialFingerprint,
+		facts: parsedFacts,
+		labels: labels as unknown as TravelExpenseSubmittedLabels,
+		provenance: "captured_at_submission",
+		submittedAt: instantFromDate(row.submittedAt),
+		legacy: {
+			approvalRequestId: row.legacyApprovalRequestId,
+			chainInstanceId: row.legacyChainInstanceId,
+			observedWorkflowId: row.observedWorkflowId,
+		},
+	};
+}
+
+/** The latest submitted revision of one claim, scoped to its organization. */
+export async function loadLegacyTravelExpenseSubmittedRevision(
+	database: ApprovalDatabase,
+	input: { organizationId: string; claimId: string },
+): Promise<LegacyTravelExpenseSubmittedRevisionRecord | null> {
+	const rows = await database
+		.select()
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.authority, "legacy"),
+				eq(approvalSubmittedRevision.sourceType, "travel_expense_claim"),
+				eq(approvalSubmittedRevision.sourceId, input.claimId),
+			),
+		)
+		.orderBy(desc(approvalSubmittedRevision.revision))
+		.limit(1);
+	const row = rows[0];
+	return row ? parseLegacyTravelExpenseRevision(row, input) : null;
+}
+
+/**
+ * Written by the expense submission owner inside the transaction that submits
+ * the claim and creates its legacy approval rows. A failure rolls back the
+ * whole submission.
+ */
+export async function captureLegacyTravelExpenseSubmittedRevision(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		requestCycleKey: string;
+		submittedAt: Instant;
+		facts: TravelExpenseSubmittedFacts;
+		labels: TravelExpenseSubmittedLabels;
+		submitter: SubmitterIdentity;
+		legacy: LegacyLifecycleReference;
+	},
+): Promise<LegacyTravelExpenseSubmittedRevisionRecord> {
+	if (input.facts.organizationId !== input.organizationId) {
+		throw new ApprovalEvidenceError("invariant", { field: "organization" });
+	}
+	const materialFingerprint = fingerprintTravelExpenseMaterialFacts(
+		input.facts,
+	);
+	await database
+		.insert(approvalSubmittedRevision)
+		.values({
+			organizationId: input.organizationId,
+			authority: "legacy",
+			workflowId: null,
+			legacyApprovalRequestId: input.legacy.approvalRequestId,
+			legacyChainInstanceId: input.legacy.chainInstanceId,
+			observedWorkflowId: input.legacy.observedWorkflowId,
+			workflowType: "travel_expense",
+			sourceType: "travel_expense_claim",
+			sourceId: input.facts.claimId,
+			requestCycleKey: input.requestCycleKey,
+			revision: 1,
+			subjectEmployeeId: input.facts.subjectEmployeeId,
+			requesterEmployeeId: input.facts.requesterEmployeeId,
+			submitterActorKind: input.submitter.kind,
+			submitterEmployeeId: input.submitter.employeeId,
+			submitterUserId: input.submitter.userId,
+			schemaVersion: TRAVEL_EXPENSE_EVIDENCE_SCHEMA_VERSION,
+			materialFingerprint,
+			facts: input.facts as unknown as JsonObject,
+			labels: input.labels as unknown as JsonObject,
+			provenance: "captured_at_submission",
+			submittedAt: dateFromInstant(input.submittedAt),
+		})
+		.onConflictDoNothing();
+	const revision = await loadLegacyTravelExpenseSubmittedRevision(database, {
+		organizationId: input.organizationId,
+		claimId: input.facts.claimId,
+	});
+	if (
+		revision?.revision !== 1 ||
+		revision.requestCycleKey !== input.requestCycleKey ||
+		revision.materialFingerprint !== materialFingerprint ||
+		revision.legacy.approvalRequestId !== input.legacy.approvalRequestId
+	) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "legacy_submitted_revision",
+		});
+	}
+	return revision;
 }

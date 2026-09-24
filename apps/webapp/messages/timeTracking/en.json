@@ -61,6 +61,8 @@
     "deadline": "Deadline",
     "errors": {
       "clockInFailed": "Failed to clock in",
+      "appendReviewRequired": "Clock-in needs a review of your time history",
+      "appendReviewRequiredDesc": "Your earlier time entries could not be verified, so a new clock-in was not saved. Please contact your administrator.",
       "clockOutFailed": "Failed to clock out",
       "holidayBlocked": "Cannot clock out on {holidayName}",
       "holidayBlockedDesc": "This day is marked as a holiday and time entries are not allowed",

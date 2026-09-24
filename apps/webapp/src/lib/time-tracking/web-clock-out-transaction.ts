@@ -1,6 +1,5 @@
 import "server-only";
 
-import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
 import type { StageActivationInput } from "@/lib/approvals/workflow/ports";
@@ -15,22 +14,22 @@ import {
 	routeWebClockOutResources,
 	WorkTransactionScopeChanged,
 } from "./web-clock-out-resources";
+import {
+	acquireAdoptionGate,
+	acquireEmployeeCoordination,
+	acquireOrganizationConfigurationGuard,
+	acquireUserConfigurationAccessGuards,
+	sealWorkTransactionScope,
+	type WorkTransactionScope,
+} from "./work-transaction";
 
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-export type WorkTransactionClient = Pick<
-	Transaction,
-	"execute" | "query" | "select" | "insert" | "update" | "delete"
->;
-
-const protectedTransaction = Symbol("protected work transaction");
+export type { WorkTransactionClient } from "./work-transaction";
 
 /** Trusted server composition only; no transaction/savepoint or adoption upgrade capability. */
-export interface WorkTransactionContext {
-	readonly [protectedTransaction]: true;
-	readonly db: WorkTransactionClient;
+export interface WorkTransactionContext extends WorkTransactionScope {
 	readonly approval: ApprovalWorkflowTransactionContext;
+	// Clock-out keeps its legacy head selection until #274 adopts the append collaborator.
 	readonly admission: "legacy";
-	assertEmployee(organizationId: string, employeeId: string): void;
 	assertParticipant(organizationId: string, employeeId: string): void;
 	assertApprovalPolicy(
 		organizationId: string,
@@ -92,34 +91,27 @@ async function runAttempt<T>(
 		});
 		try {
 			return await runtime.repository.withTransaction(async (approval) => {
-				await transaction.execute(
-					sql`select pg_advisory_xact_lock_shared(hashtextextended(${JSON.stringify(["completed-work-adoption", input.organizationId])}, 0))`,
-				);
+				await acquireAdoptionGate(transaction, input.organizationId);
 				// T08 is a legacy-only prefactor. There is deliberately no activation
 				// setter or new receipt/evidence capture before the parent gates pass.
 				const authority = await approval.writeGate.acquire({
 					organizationId: input.organizationId,
 					workflowType: "policy_clock_out",
 				});
-				await transaction.execute(
-					sql`select pg_advisory_xact_lock_shared(hashtextextended(${JSON.stringify(["work-organization-configuration", input.organizationId])}, 0))`,
+				await acquireOrganizationConfigurationGuard(
+					transaction,
+					input.organizationId,
 				);
-				for (const userId of routed
-					.filter((row) => row.table === "user")
-					.map((row) => row.id)
-					.sort()) {
-					await transaction.execute(
-						sql`select pg_advisory_xact_lock_shared(hashtextextended(${JSON.stringify(["work-user-configuration-access", userId])}, 0))`,
-					);
-				}
-				for (const employeeId of routed
-					.filter((row) => row.table === "employee")
-					.map((row) => row.id)
-					.sort()) {
-					await transaction.execute(
-						sql`select pg_advisory_xact_lock(hashtextextended(${employeeId}, 0))`,
-					);
-				}
+				await acquireUserConfigurationAccessGuards(
+					transaction,
+					routed.filter((row) => row.table === "user").map((row) => row.id),
+				);
+				await acquireEmployeeCoordination(
+					transaction,
+					routed
+						.filter((row) => row.table === "employee")
+						.map((row) => row.id),
+				);
 				assertSameWebClockOutResources(
 					routed,
 					await routeWebClockOutResources(transaction, input),
@@ -180,8 +172,7 @@ async function runAttempt<T>(
 					}
 				};
 				return operation(
-					Object.freeze({
-						[protectedTransaction]: true as const,
+					sealWorkTransactionScope({
 						db: transaction,
 						approval: {
 							...approval,

@@ -2,9 +2,24 @@ import { Cause, Effect, Exit, Option } from "effect";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import { ConflictError, DatabaseError } from "@/lib/effect/errors";
 
-const { onTravelExpenseApproved, onTravelExpenseRejected } = vi.hoisted(() => ({
+const {
+	onTravelExpenseApproved,
+	onTravelExpenseRejected,
+	loadSubmittedRevision,
+	compareSubmittedRevision,
+} = vi.hoisted(() => ({
 	onTravelExpenseApproved: vi.fn(),
 	onTravelExpenseRejected: vi.fn(),
+	loadSubmittedRevision: vi.fn(async () => null as unknown),
+	compareSubmittedRevision: vi.fn(),
+}));
+
+vi.mock("@/lib/approvals/evidence/store", () => ({
+	loadLegacyTravelExpenseSubmittedRevision: loadSubmittedRevision,
+}));
+
+vi.mock("@/lib/approvals/evidence/travel-expense-submission", () => ({
+	compareTravelExpenseWithSubmittedRevision: compareSubmittedRevision,
 }));
 
 vi.mock("drizzle-orm", async (importOriginal) => {
@@ -180,6 +195,54 @@ describe("preflightTravelExpenseDecision", () => {
 		expect(eq).toHaveBeenCalledWith("approvalOrganizationId", "org-1");
 		expect(eq).toHaveBeenCalledWith("approvalApproverId", "stage-2-approver");
 		expect(eq).toHaveBeenCalledWith("approvalStatus", "pending");
+	});
+
+	it("holds a decision when the frozen submission no longer matches the live claim", async () => {
+		const revision = { id: "revision-1", organizationId: "org-1", claimId: "claim-1" };
+		loadSubmittedRevision.mockResolvedValueOnce(revision);
+		compareSubmittedRevision.mockResolvedValueOnce({
+			kind: "material_change",
+			changedFields: ["receipts"],
+		});
+		const dbService = {
+			db: {
+				query: {
+					travelExpenseClaim: {
+						findFirst: vi.fn().mockResolvedValue({
+							id: "claim-1",
+							organizationId: "org-1",
+							approverId: "manager-1",
+							status: "submitted",
+						}),
+					},
+				},
+			},
+			query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
+		} as unknown as ApprovalDbService;
+		const currentEmployee: CurrentApprover = {
+			id: "manager-1",
+			userId: "user-manager",
+			organizationId: "org-1",
+			role: "manager",
+			user: { id: "user-manager", name: "Manager", email: "m@example.com", image: null },
+		};
+
+		const exit = await Effect.runPromiseExit(
+			preflightTravelExpenseDecision(dbService, "claim-1", currentEmployee, "approve"),
+		);
+
+		expect(loadSubmittedRevision).toHaveBeenCalledWith(dbService.db, {
+			organizationId: "org-1",
+			claimId: "claim-1",
+		});
+		expect(compareSubmittedRevision).toHaveBeenCalledWith(dbService.db, revision);
+		expect(Exit.isFailure(exit)).toBe(true);
+		const failure = Exit.isFailure(exit) ? Cause.failureOption(exit.cause) : Option.none();
+		expect(Option.getOrNull(failure)).toMatchObject({
+			_tag: "ConflictError",
+			conflictType: "approval_evidence",
+			details: { code: "material_change", changedFields: ["receipts"] },
+		});
 	});
 
 	it("rejects non-admin actors without a matching pending approval assignment", async () => {

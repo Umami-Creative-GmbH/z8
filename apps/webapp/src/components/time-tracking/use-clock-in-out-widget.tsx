@@ -18,6 +18,7 @@ import {
 	normalizeWorkLocationType,
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
+import { showAppendReviewRequiredToast } from "./append-review-toast";
 import { useQuickBreakHandler } from "./use-quick-break-handler";
 
 interface ActiveWorkPeriodData {
@@ -171,6 +172,8 @@ export function useClockInOutWidget(
 			);
 			return;
 		}
+
+		if (showAppendReviewRequiredToast(result, t)) return;
 
 		const holidayName =
 			"holidayName" in result ? result.holidayName : undefined;

@@ -61,6 +61,8 @@
     "deadline": "Scadenza",
     "errors": {
       "clockInFailed": "Timbratura entrata non riuscita",
+      "appendReviewRequired": "La timbratura di entrata richiede una verifica della cronologia",
+      "appendReviewRequiredDesc": "Non è stato possibile verificare le tue registrazioni precedenti, quindi la nuova timbratura non è stata salvata. Contatta il tuo amministratore.",
       "clockOutFailed": "Timbratura uscita non riuscita",
       "holidayBlocked": "Impossibile timbrare l'uscita il {holidayName}",
       "holidayBlockedDesc": "Questo giorno è segnato come festivo e le voci orarie non sono consentite",

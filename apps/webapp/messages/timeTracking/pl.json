@@ -61,6 +61,8 @@
     "deadline": "Termin",
     "errors": {
       "clockInFailed": "Nie udało się rozpocząć pracy",
+      "appendReviewRequired": "Rozpoczęcie pracy wymaga weryfikacji historii czasu",
+      "appendReviewRequiredDesc": "Nie udało się zweryfikować Twoich wcześniejszych wpisów czasu, więc nowe rozpoczęcie pracy nie zostało zapisane. Skontaktuj się z administratorem.",
       "clockOutFailed": "Nie udało się zakończyć pracy",
       "holidayBlocked": "Nie można zakończyć pracy w dniu {holidayName}",
       "holidayBlockedDesc": "Ten dzień jest oznaczony jako święto i wpisywanie czasu pracy jest niedozwolone",

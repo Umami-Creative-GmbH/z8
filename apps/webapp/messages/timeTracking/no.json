@@ -56,6 +56,8 @@
     "deadline": "Frist",
     "errors": {
       "clockInFailed": "Kunne ikke stemple inn",
+      "appendReviewRequired": "Innstempling krever gjennomgang av tidshistorikken din",
+      "appendReviewRequiredDesc": "De tidligere tidsregistreringene dine kunne ikke verifiseres, så den nye innstemplingen ble ikke lagret. Kontakt administratoren din.",
       "clockOutFailed": "Kunne ikke stemple ut",
       "holidayBlocked": "Kan ikke stemple ut på {holidayName}",
       "holidayBlockedDesc": "Denne dagen er markert som en helligdag, og tidsregistreringer er ikke tillatt",
