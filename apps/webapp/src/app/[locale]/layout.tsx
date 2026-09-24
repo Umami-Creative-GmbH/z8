@@ -4,7 +4,7 @@ import { Toaster } from "sonner";
 import { BProgressBar } from "@/components/bprogress/bprogress";
 import { DeploymentRefreshChecker } from "@/components/deployment-refresh";
 import { FontSizeProvider } from "@/components/font-size-preference";
-import { OfflineBanner, SWUpdatePrompt } from "@/components/offline";
+import { SWUpdatePrompt } from "@/components/offline";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
@@ -67,7 +67,6 @@ function ApplicationContent({ children }: { children: ReactNode }) {
 		<QueryProvider>
 			<BProgressBar />
 			<TooltipProvider delayDuration={0}>
-				<OfflineBanner />
 				<SWUpdatePrompt />
 				<Suspense fallback={null}>
 					<DeploymentRefreshChecker

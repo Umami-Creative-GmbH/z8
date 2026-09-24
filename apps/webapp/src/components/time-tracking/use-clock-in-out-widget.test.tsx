@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
 	clockIn: vi.fn(),
 	clockOut: vi.fn(),
 	getBrowserTimezone: vi.fn(),
+	isOffline: false,
+	toastInfo: vi.fn(),
 	toastError: vi.fn(),
 	toastSuccess: vi.fn(),
 	updateTimezone: vi.fn(),
@@ -24,6 +26,7 @@ vi.mock("@tolgee/react", () => ({
 vi.mock("sonner", () => ({
 	toast: {
 		error: mocks.toastError,
+		info: mocks.toastInfo,
 		success: mocks.toastSuccess,
 	},
 }));
@@ -63,6 +66,9 @@ vi.mock("@/lib/query", () => ({
 		isClockedIn: true,
 		isClockingOut: false,
 		isMutating: false,
+		get isOffline() {
+			return mocks.isOffline;
+		},
 		isUpdatingNotes: false,
 		updateNotes: vi.fn(),
 	}),
@@ -85,6 +91,7 @@ describe("useClockInOutWidget", () => {
 		mocks.clockOut.mockResolvedValue({ success: true, data: {} });
 		mocks.updateTimezone.mockResolvedValue({ success: true });
 		mocks.userTimezone = "Europe/Berlin";
+		mocks.isOffline = false;
 		vi.stubGlobal("localStorage", {
 			getItem: vi.fn(() => null),
 			setItem: vi.fn(),
@@ -119,6 +126,29 @@ describe("useClockInOutWidget", () => {
 
 		expect(mocks.updateTimezone).not.toHaveBeenCalled();
 		expect(mocks.clockOut).toHaveBeenCalledWith({ browserTimezone: "America/New_York" });
+	});
+
+	it("saves an offline clock-out for review without the timezone mismatch dialog", async () => {
+		mocks.isOffline = true;
+		mocks.clockOut.mockResolvedValue({ success: true, queued: true });
+		const { result } = renderHook(() =>
+			useClockInOutWidget({
+				id: "period-1",
+				startTime: new Date("2026-05-18T08:00:00Z"),
+				endTime: null,
+			}),
+		);
+
+		await act(async () => {
+			await result.current.handleClockOut();
+		});
+
+		// A pending dialog could later resume as a server clock-out once online.
+		expect(result.current.timezoneMismatch).toBeNull();
+		expect(mocks.updateTimezone).not.toHaveBeenCalled();
+		expect(mocks.clockOut).toHaveBeenCalledWith({
+			browserTimezone: "America/New_York",
+		});
 	});
 
 	it("ignores duplicate timezone mismatch continuation while clock submit is pending", async () => {

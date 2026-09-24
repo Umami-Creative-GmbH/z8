@@ -6,6 +6,7 @@ import { connection } from "next/server";
 import { type ReactNode, Suspense } from "react";
 import { TrialBanner } from "@/components/billing/trial-banner";
 import { PushPermissionProvider } from "@/components/notifications/push-permission-provider";
+import { OfflineBanner } from "@/components/offline";
 import { OrganizationDeletionBanner } from "@/components/organization/organization-deletion-banner";
 import { PostHogProvider } from "@/components/posthog-provider";
 import { OrganizationSettingsProvider } from "@/components/providers/organization-settings-provider";
@@ -195,6 +196,8 @@ export async function AuthenticatedAppContent({
 								<Suspense fallback={<SiteHeaderLoading />}>
 									<SiteHeader />
 								</Suspense>
+								{/* In flow so recovery status never covers header clock controls. */}
+								<OfflineBanner />
 								{showTrialBanner ? (
 									<TrialBanner
 										daysRemaining={trialDaysRemaining}
