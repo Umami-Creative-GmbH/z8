@@ -28,10 +28,9 @@ describeLifecycleDatabase("departure commands", () => {
 
 	beforeAll(async () => {
 		fixture = await createLifecycleDatabaseFixture();
-		await fixture.pool.query(
-			`update organization set timezone = 'Europe/Berlin' where id = $1`,
-			[fixture.organizationId],
-		);
+		await fixture.pool.query(`update organization set timezone = 'Europe/Berlin' where id = $1`, [
+			fixture.organizationId,
+		]);
 	});
 
 	afterAll(async () => {
@@ -60,9 +59,7 @@ describeLifecycleDatabase("departure commands", () => {
 
 	function scheduleInput(
 		employeeId: string,
-		overrides: Partial<
-			Parameters<ReturnType<typeof commands>["scheduleDeparture"]>[1]
-		> = {},
+		overrides: Partial<Parameters<ReturnType<typeof commands>["scheduleDeparture"]>[1]> = {},
 	) {
 		return {
 			employeeId,
@@ -79,10 +76,7 @@ describeLifecycleDatabase("departure commands", () => {
 		now = MONDAY;
 		const target = await fixture.seedEmployee();
 
-		const scheduled = await commands().scheduleDeparture(
-			owner(),
-			scheduleInput(target.employeeId),
-		);
+		const scheduled = await commands().scheduleDeparture(owner(), scheduleInput(target.employeeId));
 
 		expect(scheduled.revision).toBe(1);
 		expect(
@@ -99,11 +93,7 @@ describeLifecycleDatabase("departure commands", () => {
 			cutoff_at: new Date("2026-09-30T22:00:00Z"),
 			created_by: fixture.ownerUserId,
 		});
-		expect(
-			await row(`select is_active from employee where id = $1`, [
-				target.employeeId,
-			]),
-		).toEqual({
+		expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
 			is_active: true,
 		});
 		const tasks = await fixture.pool.query<{ kind: string }>(
@@ -112,10 +102,9 @@ describeLifecycleDatabase("departure commands", () => {
 		);
 		expect(tasks.rows).toEqual([{ kind: "dispatch_departure" }]);
 		expect(
-			await row(
-				`select kind, event_index from employee_departure_event where departure_id = $1`,
-				[scheduled.departureId],
-			),
+			await row(`select kind, event_index from employee_departure_event where departure_id = $1`, [
+				scheduled.departureId,
+			]),
 		).toEqual({ kind: "departure_scheduled", event_index: 0 });
 	});
 
@@ -135,20 +124,16 @@ describeLifecycleDatabase("departure commands", () => {
 			}),
 		).rejects.toMatchObject({ code: "request_conflict" });
 		expect(
-			await row(
-				`select count(*)::int as count from employee_departure where employee_id = $1`,
-				[target.employeeId],
-			),
+			await row(`select count(*)::int as count from employee_departure where employee_id = $1`, [
+				target.employeeId,
+			]),
 		).toEqual({ count: 1 });
 	});
 
 	it("rejects a second new pending departure instead of overwriting it", async () => {
 		now = MONDAY;
 		const target = await fixture.seedEmployee();
-		await commands().scheduleDeparture(
-			owner(),
-			scheduleInput(target.employeeId),
-		);
+		await commands().scheduleDeparture(owner(), scheduleInput(target.employeeId));
 
 		await expect(
 			commands().scheduleDeparture(owner(), scheduleInput(target.employeeId)),
@@ -158,10 +143,7 @@ describeLifecycleDatabase("departure commands", () => {
 	it("edits a pending departure as a new revision that makes the old queued work obsolete", async () => {
 		now = MONDAY;
 		const target = await fixture.seedEmployee();
-		const scheduled = await commands().scheduleDeparture(
-			owner(),
-			scheduleInput(target.employeeId),
-		);
+		const scheduled = await commands().scheduleDeparture(owner(), scheduleInput(target.employeeId));
 
 		const edited = await commands().scheduleDeparture(
 			owner(),
@@ -173,10 +155,9 @@ describeLifecycleDatabase("departure commands", () => {
 
 		expect(edited).toEqual({ departureId: scheduled.departureId, revision: 2 });
 		expect(
-			await row(
-				`select cutoff_at, revision from employee_departure where id = $1`,
-				[scheduled.departureId],
-			),
+			await row(`select cutoff_at, revision from employee_departure where id = $1`, [
+				scheduled.departureId,
+			]),
 		).toEqual({ cutoff_at: new Date("2026-10-15T22:00:00Z"), revision: 2 });
 		const dispatch = await fixture.pool.query<{ dedupe_key: string }>(
 			`select dedupe_key from employee_departure_task
@@ -197,11 +178,7 @@ describeLifecycleDatabase("departure commands", () => {
 			revision: 1,
 		});
 		expect(stale).toEqual({ status: "obsolete" });
-		expect(
-			await row(`select is_active from employee where id = $1`, [
-				target.employeeId,
-			]),
-		).toEqual({
+		expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
 			is_active: true,
 		});
 	});
@@ -209,10 +186,7 @@ describeLifecycleDatabase("departure commands", () => {
 	it("rejects an edit against a stale revision", async () => {
 		now = MONDAY;
 		const target = await fixture.seedEmployee();
-		await commands().scheduleDeparture(
-			owner(),
-			scheduleInput(target.employeeId),
-		);
+		await commands().scheduleDeparture(owner(), scheduleInput(target.employeeId));
 		await commands().scheduleDeparture(
 			owner(),
 			scheduleInput(target.employeeId, { expectedRevision: 1 }),
@@ -229,10 +203,7 @@ describeLifecycleDatabase("departure commands", () => {
 	it("cancels before the cutoff so a later queued execution changes nothing", async () => {
 		now = MONDAY;
 		const target = await fixture.seedEmployee();
-		const scheduled = await commands().scheduleDeparture(
-			owner(),
-			scheduleInput(target.employeeId),
-		);
+		const scheduled = await commands().scheduleDeparture(owner(), scheduleInput(target.employeeId));
 
 		await commands().cancelDeparture(owner(), {
 			employeeId: target.employeeId,
@@ -251,16 +222,11 @@ describeLifecycleDatabase("departure commands", () => {
 		});
 		expect(stale).toEqual({ status: "obsolete" });
 		expect(
-			await row(
-				`select status, revision from employee_departure where id = $1`,
-				[scheduled.departureId],
-			),
-		).toEqual({ status: "canceled", revision: 2 });
-		expect(
-			await row(`select is_active from employee where id = $1`, [
-				target.employeeId,
+			await row(`select status, revision from employee_departure where id = $1`, [
+				scheduled.departureId,
 			]),
-		).toEqual({
+		).toEqual({ status: "canceled", revision: 2 });
+		expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
 			is_active: true,
 		});
 		expect(
@@ -301,11 +267,7 @@ describeLifecycleDatabase("departure commands", () => {
 			effective_at: new Date("2026-09-14T09:30:00Z"),
 			last_working_day: null,
 		});
-		expect(
-			await row(`select is_active from employee where id = $1`, [
-				target.employeeId,
-			]),
-		).toEqual({
+		expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
 			is_active: false,
 		});
 	});
@@ -313,10 +275,7 @@ describeLifecycleDatabase("departure commands", () => {
 	it("lets Offboard now supersede a pending schedule, keeping both auditable", async () => {
 		now = MONDAY;
 		const target = await fixture.seedEmployee();
-		const scheduled = await commands().scheduleDeparture(
-			owner(),
-			scheduleInput(target.employeeId),
-		);
+		const scheduled = await commands().scheduleDeparture(owner(), scheduleInput(target.employeeId));
 
 		const result = await commands().offboardNow(owner(), {
 			employeeId: target.employeeId,
@@ -327,10 +286,9 @@ describeLifecycleDatabase("departure commands", () => {
 
 		expect(result.status).toBe("effective");
 		expect(
-			await row(
-				`select status, revision from employee_departure where id = $1`,
-				[scheduled.departureId],
-			),
+			await row(`select status, revision from employee_departure where id = $1`, [
+				scheduled.departureId,
+			]),
 		).toEqual({ status: "canceled", revision: 2 });
 		const events = await fixture.pool.query<{ kind: string }>(
 			`select kind from employee_departure_event where employee_id = $1 order by occurred_at, event_index`,
@@ -353,10 +311,7 @@ describeLifecycleDatabase("departure commands", () => {
 			{ userId: admin.userId, organizationId: fixture.organizationId },
 			scheduleInput(target.employeeId),
 		);
-		await fixture.pool.query(
-			`update member set role = 'member' where id = $1`,
-			[admin.memberId],
-		);
+		await fixture.pool.query(`update member set role = 'member' where id = $1`, [admin.memberId]);
 		now = parseInstant("2026-10-01T00:00:00Z");
 		const blocked = await commands().executeDeparture({
 			organizationId: fixture.organizationId,
@@ -383,10 +338,9 @@ describeLifecycleDatabase("departure commands", () => {
 			revision: 2,
 		});
 		expect(
-			await row(
-				`select status, created_by, blocked_reason from employee_departure where id = $1`,
-				[scheduled.departureId],
-			),
+			await row(`select status, created_by, blocked_reason from employee_departure where id = $1`, [
+				scheduled.departureId,
+			]),
 		).toEqual({
 			status: "pending",
 			created_by: fixture.ownerUserId,
@@ -415,10 +369,7 @@ describeLifecycleDatabase("departure commands", () => {
 			commands().scheduleDeparture(asAdmin, scheduleInput(admin.employeeId)),
 		).rejects.toMatchObject({ code: "self_target" });
 		await expect(
-			commands().scheduleDeparture(
-				asAdmin,
-				scheduleInput(otherOwner.employeeId),
-			),
+			commands().scheduleDeparture(asAdmin, scheduleInput(otherOwner.employeeId)),
 		).rejects.toMatchObject({ code: "owner_authorization_required" });
 		await expect(
 			commands().scheduleDeparture(
@@ -505,10 +456,7 @@ describeLifecycleDatabase("departure commands", () => {
 	it("materializes a due departure instead of cancelling it", async () => {
 		now = MONDAY;
 		const target = await fixture.seedEmployee();
-		const scheduled = await commands().scheduleDeparture(
-			owner(),
-			scheduleInput(target.employeeId),
-		);
+		const scheduled = await commands().scheduleDeparture(owner(), scheduleInput(target.employeeId));
 
 		now = parseInstant("2026-10-01T00:00:00Z");
 		await expect(
@@ -521,15 +469,9 @@ describeLifecycleDatabase("departure commands", () => {
 		).rejects.toMatchObject({ code: "departure_already_effective" });
 
 		expect(
-			await row(`select status from employee_departure where id = $1`, [
-				scheduled.departureId,
-			]),
+			await row(`select status from employee_departure where id = $1`, [scheduled.departureId]),
 		).toEqual({ status: "effective" });
-		expect(
-			await row(`select is_active from employee where id = $1`, [
-				target.employeeId,
-			]),
-		).toEqual({
+		expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
 			is_active: false,
 		});
 	});

@@ -15,11 +15,7 @@ import {
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
-import {
-	assertReadCommitted,
-	lockLifecycleEmployee,
-	lockLifecycleOrganization,
-} from "./locks";
+import { assertReadCommitted, lockLifecycleEmployee, lockLifecycleOrganization } from "./locks";
 import { evaluateDepartureAuthority } from "./owner-invariant";
 import type {
 	DepartureClockOutPort,
@@ -140,13 +136,7 @@ export async function executeDepartureInTransaction(
 		actorUserId: departure.createdBy,
 		clockOutActionId: departure.clockOutActionId,
 	});
-	await recordClockOutReview(
-		tx,
-		identity,
-		clockResult,
-		cutoffDate,
-		departure.clockOutActionId,
-	);
+	await recordClockOutReview(tx, identity, clockResult, cutoffDate, departure.clockOutActionId);
 	await persistFollowUpIntent(tx, identity, target.userId);
 
 	await recordSystemEvent(tx, identity, "departure_effective", nowDate, {
@@ -227,24 +217,20 @@ async function closeEmploymentWindows(
 			and(
 				eq(employeeEmploymentHistory.organizationId, identity.organizationId),
 				eq(employeeEmploymentHistory.employeeId, identity.employeeId),
-				eq(
-					employeeEmploymentHistory.employmentPeriodId,
-					identity.employmentPeriodId,
-				),
+				eq(employeeEmploymentHistory.employmentPeriodId, identity.employmentPeriodId),
 				eq(employeeEmploymentHistory.reviewState, "confirmed"),
 				gte(employeeEmploymentHistory.validFrom, cutoff),
 			),
 		);
-	const reviews: (typeof employeeDepartureReview.$inferInsert)[] =
-		futureTerms.map((terms) => ({
-			...scope,
-			kind: "employment_terms",
-			subjectId: terms.id,
-			metadata: {
-				reason: "future_terms_after_departure",
-				validFrom: terms.validFrom.toISOString(),
-			},
-		}));
+	const reviews: (typeof employeeDepartureReview.$inferInsert)[] = futureTerms.map((terms) => ({
+		...scope,
+		kind: "employment_terms",
+		subjectId: terms.id,
+		metadata: {
+			reason: "future_terms_after_departure",
+			validFrom: terms.validFrom.toISOString(),
+		},
+	}));
 	if (deactivated.rows.length > 0) {
 		reviews.push({
 			...scope,
@@ -252,17 +238,12 @@ async function closeEmploymentWindows(
 			subjectId: null,
 			metadata: {
 				reason: "future_assignments_deactivated",
-				workPolicyAssignmentIds: deactivated.rows.map(
-					(assignment) => assignment.id,
-				),
+				workPolicyAssignmentIds: deactivated.rows.map((assignment) => assignment.id),
 			},
 		});
 	}
 	if (reviews.length > 0) {
-		await tx
-			.insert(employeeDepartureReview)
-			.values(reviews)
-			.onConflictDoNothing();
+		await tx.insert(employeeDepartureReview).values(reviews).onConflictDoNothing();
 	}
 }
 

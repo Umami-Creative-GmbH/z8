@@ -9,21 +9,10 @@ import {
 	employeeDepartureTask,
 	employeeEmploymentPeriod,
 } from "@/db/schema/employee-lifecycle";
-import {
-	type Clock,
-	dateFromInstant,
-	type Instant,
-} from "@/lib/datetime/temporal-core";
+import { type Clock, dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { departureCutoff } from "./cutoff";
-import {
-	assertReadCommitted,
-	lockLifecycleEmployee,
-	lockLifecycleOrganization,
-} from "./locks";
-import {
-	type DepartureBlockedReason,
-	evaluateDepartureAuthority,
-} from "./owner-invariant";
+import { assertReadCommitted, lockLifecycleEmployee, lockLifecycleOrganization } from "./locks";
+import { type DepartureBlockedReason, evaluateDepartureAuthority } from "./owner-invariant";
 import { executeDepartureInTransaction } from "./transition";
 import type {
 	CancelDeparture,
@@ -71,35 +60,19 @@ type ScheduleResult = { departureId: string; revision: number };
 
 export function createDepartureCommands(deps: DepartureCommandDependencies) {
 	return {
-		scheduleDeparture: async (
-			actor: LifecycleActor,
-			input: ScheduleDeparture,
-		) => {
-			await materializeDueDeparture(
-				deps,
-				actor.organizationId,
-				input.employeeId,
-			);
+		scheduleDeparture: async (actor: LifecycleActor, input: ScheduleDeparture) => {
+			await materializeDueDeparture(deps, actor.organizationId, input.employeeId);
 			return scheduleDeparture(deps, actor, input);
 		},
 		cancelDeparture: async (actor: LifecycleActor, input: CancelDeparture) => {
-			await materializeDueDeparture(
-				deps,
-				actor.organizationId,
-				input.employeeId,
-			);
+			await materializeDueDeparture(deps, actor.organizationId, input.employeeId);
 			return cancelDeparture(deps, actor, input);
 		},
 		offboardNow: async (actor: LifecycleActor, input: OffboardNow) => {
-			await materializeDueDeparture(
-				deps,
-				actor.organizationId,
-				input.employeeId,
-			);
+			await materializeDueDeparture(deps, actor.organizationId, input.employeeId);
 			return offboardNow(deps, actor, input);
 		},
-		executeDeparture: (identity: DepartureIdentity) =>
-			executeDeparture(deps, identity),
+		executeDeparture: (identity: DepartureIdentity) => executeDeparture(deps, identity),
 	};
 }
 
@@ -108,12 +81,7 @@ function executeDeparture(
 	identity: DepartureIdentity,
 ): Promise<ExecuteDepartureResult> {
 	return deps.db.transaction((tx) =>
-		executeDepartureInTransaction(
-			tx,
-			identity,
-			deps.clock.nowInstant(),
-			deps.clockOut,
-		),
+		executeDepartureInTransaction(tx, identity, deps.clock.nowInstant(), deps.clockOut),
 	);
 }
 
@@ -172,27 +140,13 @@ async function scheduleDeparture(
 	return deps.db.transaction(async (tx) => {
 		const now = deps.clock.nowInstant();
 		const target = await beginCommand(tx, actor, input.employeeId);
-		const replay = await readReceipt<ScheduleResult>(
-			tx,
-			actor,
-			input.requestId,
-			fingerprint,
-		);
+		const replay = await readReceipt<ScheduleResult>(tx, actor, input.requestId, fingerprint);
 		if (replay) return replay;
 
 		await assertActorMayDepart(tx, actor, target);
 		await assertReplacementChoice(tx, actor.organizationId, target.id, input);
-		const periodId = await ensureOpenEmploymentPeriod(
-			tx,
-			actor.organizationId,
-			target.id,
-		);
-		const cutoff = await resolveCutoff(
-			tx,
-			actor.organizationId,
-			input.lastWorkingDay,
-			now,
-		);
+		const periodId = await ensureOpenEmploymentPeriod(tx, actor.organizationId, target.id);
+		const cutoff = await resolveCutoff(tx, actor.organizationId, input.lastWorkingDay, now);
 		const nowDate = dateFromInstant(now);
 		if (input.expectedRevision !== null) {
 			return reviseDeparture(tx, {
@@ -315,8 +269,7 @@ async function reviseDeparture(
 			id: employeeDeparture.id,
 			revision: employeeDeparture.revision,
 		});
-	if (!departure)
-		throw new DepartureCommandError("departure_revision_conflict");
+	if (!departure) throw new DepartureCommandError("departure_revision_conflict");
 
 	const result = { departureId: departure.id, revision: departure.revision };
 	await persistDispatchIntent(tx, {
@@ -366,8 +319,7 @@ async function cancelDeparture(
 					eq(employeeDeparture.id, input.departureId),
 				),
 			);
-		if (!departure)
-			throw new DepartureCommandError("departure_revision_conflict");
+		if (!departure) throw new DepartureCommandError("departure_revision_conflict");
 		if (departure.status === "effective") {
 			// An effective departure is restored only through rehire.
 			throw new DepartureCommandError("departure_already_effective");
@@ -382,8 +334,7 @@ async function cancelDeparture(
 			RETURNING revision
 		`);
 		const revision = canceled.rows[0]?.revision;
-		if (revision === undefined)
-			throw new DepartureCommandError("departure_revision_conflict");
+		if (revision === undefined) throw new DepartureCommandError("departure_revision_conflict");
 
 		await writeReceipt(tx, {
 			actor,
@@ -425,11 +376,7 @@ async function offboardNow(
 
 		await assertActorMayDepart(tx, actor, target);
 		await assertReplacementChoice(tx, actor.organizationId, target.id, input);
-		const periodId = await ensureOpenEmploymentPeriod(
-			tx,
-			actor.organizationId,
-			target.id,
-		);
+		const periodId = await ensureOpenEmploymentPeriod(tx, actor.organizationId, target.id);
 
 		const superseded = await tx
 			.update(employeeDeparture)
@@ -484,12 +431,7 @@ async function offboardNow(
 			departureId: created.id,
 			revision: 1,
 		};
-		const result = await executeDepartureInTransaction(
-			tx,
-			identity,
-			now,
-			deps.clockOut,
-		);
+		const result = await executeDepartureInTransaction(tx, identity, now, deps.clockOut);
 
 		await writeReceipt(tx, {
 			actor,
@@ -499,10 +441,7 @@ async function offboardNow(
 			revision: 1,
 			requestId: input.requestId,
 			fingerprint,
-			kind:
-				result.status === "blocked"
-					? "departure_blocked"
-					: "departure_effective",
+			kind: result.status === "blocked" ? "departure_blocked" : "departure_effective",
 			occurredAt: nowDate,
 			result,
 			metadata: { mode: "immediate" },
@@ -552,8 +491,7 @@ async function assertReplacementChoice(
 			WHERE e.organization_id = ${organizationId} AND e.id = ${input.replacementEmployeeId}
 				AND e.is_active = true AND m.status = 'approved'
 		`);
-		if (eligible.rows.length === 0)
-			throw new DepartureCommandError("replacement_invalid");
+		if (eligible.rows.length === 0) throw new DepartureCommandError("replacement_invalid");
 		return;
 	}
 	if (input.acknowledgeUnassignedDuties) return;
@@ -563,8 +501,7 @@ async function assertReplacementChoice(
 			AND status = 'pending'
 		LIMIT 1
 	`);
-	if (duties.rows.length > 0)
-		throw new DepartureCommandError("replacement_required");
+	if (duties.rows.length > 0) throw new DepartureCommandError("replacement_required");
 }
 
 type CommandTarget = { id: string; userId: string };
@@ -580,12 +517,7 @@ async function beginCommand(
 	const [target] = await tx
 		.select({ id: employee.id, userId: employee.userId })
 		.from(employee)
-		.where(
-			and(
-				eq(employee.organizationId, actor.organizationId),
-				eq(employee.id, employeeId),
-			),
-		);
+		.where(and(eq(employee.organizationId, actor.organizationId), eq(employee.id, employeeId)));
 	if (!target) throw new DepartureCommandError("employee_not_found");
 	return target;
 }
@@ -599,8 +531,7 @@ async function assertActorMayDepart(
 	actor: LifecycleActor,
 	target: CommandTarget,
 ) {
-	if (target.userId === actor.userId)
-		throw new DepartureCommandError("self_target");
+	if (target.userId === actor.userId) throw new DepartureCommandError("self_target");
 	const reason = await evaluateDepartureAuthority(tx, {
 		organizationId: actor.organizationId,
 		targetUserId: target.userId,
@@ -618,8 +549,7 @@ async function assertActorMayManage(
 	actor: LifecycleActor,
 	target: CommandTarget,
 ) {
-	if (target.userId === actor.userId)
-		throw new DepartureCommandError("self_target");
+	if (target.userId === actor.userId) throw new DepartureCommandError("self_target");
 	const reason = await evaluateDepartureAuthority(tx, {
 		organizationId: actor.organizationId,
 		targetUserId: target.userId,
@@ -628,8 +558,7 @@ async function assertActorMayManage(
 	if (reason === "initiator_authorization_lost") {
 		throw new DepartureCommandError("actor_not_authorized");
 	}
-	if (reason === "owner_authorization_required")
-		throw new DepartureCommandError(reason);
+	if (reason === "owner_authorization_required") throw new DepartureCommandError(reason);
 }
 
 async function ensureOpenEmploymentPeriod(
@@ -707,11 +636,7 @@ async function persistDispatchIntent(
 }
 
 /** Stable SHA-256 over actor, command and canonical (key-sorted) input. */
-export function requestFingerprint(
-	actor: LifecycleActor,
-	command: string,
-	input: object,
-): string {
+export function requestFingerprint(actor: LifecycleActor, command: string, input: object): string {
 	const canonical = JSON.stringify({
 		actor: actor.userId,
 		command,
@@ -757,8 +682,7 @@ async function readReceipt<T>(
 			),
 		);
 	if (!receipt) return null;
-	if (receipt.fingerprint !== fingerprint)
-		throw new DepartureCommandError("request_conflict");
+	if (receipt.fingerprint !== fingerprint) throw new DepartureCommandError("request_conflict");
 	return receipt.result as T;
 }
 

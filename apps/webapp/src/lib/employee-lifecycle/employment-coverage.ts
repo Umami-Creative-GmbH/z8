@@ -22,17 +22,13 @@ export function isDateKeyEmployed(
 ): boolean {
 	const day = parsePlainDate(dateKey);
 	const dayStart = day.toZonedDateTime(timezone).toInstant();
-	const nextDayStart = day
-		.add({ days: 1 })
-		.toZonedDateTime(timezone)
-		.toInstant();
+	const nextDayStart = day.add({ days: 1 }).toZonedDateTime(timezone).toInstant();
 
 	return coverage.some(
 		(interval) =>
 			(interval.startedAt === null ||
 				Temporal.Instant.compare(interval.startedAt, nextDayStart) < 0) &&
-			(interval.endedAt === null ||
-				Temporal.Instant.compare(interval.endedAt, dayStart) > 0),
+			(interval.endedAt === null || Temporal.Instant.compare(interval.endedAt, dayStart) > 0),
 	);
 }
 
@@ -49,15 +45,11 @@ export function clipRequirementsToEmployment<T>(
 	if (!coverage) return requirements;
 	const zone = isUsableTimeZone(timezone) ? timezone : "UTC";
 	return Object.fromEntries(
-		Object.entries(requirements).filter(([dateKey]) =>
-			isDateKeyEmployed(coverage, dateKey, zone),
-		),
+		Object.entries(requirements).filter(([dateKey]) => isDateKeyEmployed(coverage, dateKey, zone)),
 	);
 }
 
-function isUsableTimeZone(
-	timezone: string | null | undefined,
-): timezone is string {
+function isUsableTimeZone(timezone: string | null | undefined): timezone is string {
 	if (!timezone) return false;
 	try {
 		Temporal.Now.zonedDateTimeISO(timezone);

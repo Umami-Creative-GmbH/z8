@@ -1,22 +1,15 @@
-import {
-	foreignKey,
-	index,
-	integer,
-	pgTable,
-	text,
-	timestamp,
-	uuid,
-} from "drizzle-orm/pg-core";
+import { foreignKey, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { currentTimestamp } from "./timestamp";
+
 import { organization, user } from "../auth-schema";
-import { employeeEmploymentPeriod } from "./employee-lifecycle";
 import {
 	contractTypeEnum,
 	employmentReviewStateEnum,
 	employmentStatusEnum,
 	workModelEnum,
 } from "./enums";
+import { employeeEmploymentPeriod } from "./employee-lifecycle";
 import { employee } from "./organization";
-import { currentTimestamp } from "./timestamp";
 import { workPolicy } from "./work-policy";
 
 export const employeeEmploymentHistory = pgTable(
@@ -39,15 +32,11 @@ export const employeeEmploymentHistory = pgTable(
 		probationStartsOn: timestamp("probation_starts_on", { mode: "date" }),
 		probationEndsOn: timestamp("probation_ends_on", { mode: "date" }),
 		workModel: workModelEnum("work_model").default("onsite").notNull(),
-		workPolicyId: uuid("work_policy_id").references(() => workPolicy.id, {
-			onDelete: "set null",
-		}),
+		workPolicyId: uuid("work_policy_id").references(() => workPolicy.id, { onDelete: "set null" }),
 		hourlyRate: text("hourly_rate"),
 		currency: text("currency").default("EUR").notNull(),
 		changeReason: text("change_reason"),
-		reviewState: employmentReviewStateEnum("review_state")
-			.default("draft")
-			.notNull(),
+		reviewState: employmentReviewStateEnum("review_state").default("draft").notNull(),
 		createdBy: text("created_by")
 			.notNull()
 			.references(() => user.id),
@@ -59,29 +48,17 @@ export const employeeEmploymentHistory = pgTable(
 	},
 	(table) => [
 		index("employeeEmploymentHistory_employeeId_idx").on(table.employeeId),
-		index("employeeEmploymentHistory_organizationId_idx").on(
-			table.organizationId,
-		),
-		index("employeeEmploymentHistory_employee_validFrom_idx").on(
-			table.employeeId,
-			table.validFrom,
-		),
+		index("employeeEmploymentHistory_organizationId_idx").on(table.organizationId),
+		index("employeeEmploymentHistory_employee_validFrom_idx").on(table.employeeId, table.validFrom),
 		index("employeeEmploymentHistory_employee_reviewState_idx").on(
 			table.employeeId,
 			table.reviewState,
 		),
 		index("employeeEmploymentHistory_workPolicyId_idx").on(table.workPolicyId),
-		index("employeeEmploymentHistory_period_idx").on(
-			table.organizationId,
-			table.employmentPeriodId,
-		),
+		index("employeeEmploymentHistory_period_idx").on(table.organizationId, table.employmentPeriodId),
 		foreignKey({
 			name: "employeeEmploymentHistory_period_fk",
-			columns: [
-				table.employmentPeriodId,
-				table.organizationId,
-				table.employeeId,
-			],
+			columns: [table.employmentPeriodId, table.organizationId, table.employeeId],
 			foreignColumns: [
 				employeeEmploymentPeriod.id,
 				employeeEmploymentPeriod.organizationId,
@@ -91,7 +68,5 @@ export const employeeEmploymentHistory = pgTable(
 	],
 );
 
-export type EmployeeEmploymentHistory =
-	typeof employeeEmploymentHistory.$inferSelect;
-export type NewEmployeeEmploymentHistory =
-	typeof employeeEmploymentHistory.$inferInsert;
+export type EmployeeEmploymentHistory = typeof employeeEmploymentHistory.$inferSelect;
+export type NewEmployeeEmploymentHistory = typeof employeeEmploymentHistory.$inferInsert;

@@ -26,9 +26,7 @@ export function describeLifecycleDatabase(name: string, body: () => void) {
 		sentinel,
 	});
 	if (configuration.status === "error") {
-		throw new Error(
-			`Invalid lifecycle integration configuration: ${configuration.reason}`,
-		);
+		throw new Error(`Invalid lifecycle integration configuration: ${configuration.reason}`);
 	}
 	if (configuration.status === "unavailable") {
 		describe.skip(`${name} (PostgreSQL unavailable: ${configuration.reason})`, () => {
@@ -41,9 +39,7 @@ export function describeLifecycleDatabase(name: string, body: () => void) {
 
 const combinedSchema = { ...authSchema, ...schema };
 
-export type LifecycleTestDatabase = ReturnType<
-	typeof drizzle<typeof combinedSchema>
->;
+export type LifecycleTestDatabase = ReturnType<typeof drizzle<typeof combinedSchema>>;
 
 export type OrganizationRole = "owner" | "admin" | "member";
 
@@ -86,9 +82,7 @@ export async function createLifecycleDatabaseFixture(): Promise<LifecycleDatabas
 		required,
 		sentinel,
 		currentDatabase: async () => {
-			const result = await pool.query<{ name: string }>(
-				"select current_database() as name",
-			);
+			const result = await pool.query<{ name: string }>("select current_database() as name");
 			return result.rows[0]?.name ?? "";
 		},
 	});
@@ -112,9 +106,7 @@ export async function createLifecycleDatabaseFixture(): Promise<LifecycleDatabas
 		return id;
 	}
 
-	async function seedEmployee(
-		input: SeedEmployeeInput = {},
-	): Promise<SeededEmployee> {
+	async function seedEmployee(input: SeedEmployeeInput = {}): Promise<SeededEmployee> {
 		const targetOrganizationId = input.organizationId ?? organizationId;
 		const userId = randomUUID();
 		const memberId = randomUUID();
@@ -128,13 +120,7 @@ export async function createLifecycleDatabaseFixture(): Promise<LifecycleDatabas
 		await pool.query(
 			`insert into member (id, organization_id, user_id, role, status, created_at)
 			 values ($1, $2, $3, $4, 'approved', $5)`,
-			[
-				memberId,
-				targetOrganizationId,
-				userId,
-				input.role ?? "member",
-				createdAt,
-			],
+			[memberId, targetOrganizationId, userId, input.role ?? "member", createdAt],
 		);
 		await pool.query(
 			`insert into employee
@@ -180,13 +166,8 @@ export async function createLifecycleDatabaseFixture(): Promise<LifecycleDatabas
 			try {
 				// Deleting a tenant cascades to its lifecycle rows; append-only
 				// events permit deletion only once their organization is gone.
-				await pool.query(
-					"delete from organization where id = any($1::text[])",
-					[organizationIds],
-				);
-				await pool.query(`delete from "user" where id = any($1::text[])`, [
-					userIds,
-				]);
+				await pool.query("delete from organization where id = any($1::text[])", [organizationIds]);
+				await pool.query(`delete from "user" where id = any($1::text[])`, [userIds]);
 			} finally {
 				await pool.end();
 			}

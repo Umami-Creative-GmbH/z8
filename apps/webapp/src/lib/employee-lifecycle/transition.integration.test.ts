@@ -12,20 +12,14 @@ import {
 	type SeededEmployee,
 } from "./testing/database";
 import { executeDepartureInTransaction } from "./transition";
-import type {
-	DepartureClockOutPort,
-	DepartureClockOutResult,
-	DepartureIdentity,
-} from "./types";
+import type { DepartureClockOutPort, DepartureClockOutResult, DepartureIdentity } from "./types";
 
 const CUTOFF = "2026-09-15T00:00:00Z";
 const AFTER_CUTOFF = parseInstant("2026-09-15T00:17:00Z");
 
 type ClockOutCall = Parameters<DepartureClockOutPort["close"]>[0];
 
-function recordingClockOut(
-	result: DepartureClockOutResult = { kind: "not_running" },
-) {
+function recordingClockOut(result: DepartureClockOutResult = { kind: "not_running" }) {
 	const calls: ClockOutCall[] = [];
 	const port: DepartureClockOutPort = {
 		async close(input) {
@@ -82,14 +76,8 @@ describeLifecycleDatabase("departure transition", () => {
 		};
 	}
 
-	function execute(
-		identity: DepartureIdentity,
-		port: DepartureClockOutPort,
-		now = AFTER_CUTOFF,
-	) {
-		return fixture.db.transaction((tx) =>
-			executeDepartureInTransaction(tx, identity, now, port),
-		);
+	function execute(identity: DepartureIdentity, port: DepartureClockOutPort, now = AFTER_CUTOFF) {
+		return fixture.db.transaction((tx) => executeDepartureInTransaction(tx, identity, now, port));
 	}
 
 	async function row<T>(sql: string, params: unknown[]) {
@@ -104,12 +92,7 @@ describeLifecycleDatabase("departure transition", () => {
 			 (employee_id, organization_id, employment_period_id, valid_from, weekly_contract_minutes,
 			  review_state, created_by, updated_at)
 			 values ($1, $2, $3, '2026-01-01', 2400, 'confirmed', $4, now())`,
-			[
-				target.employeeId,
-				fixture.organizationId,
-				target.employmentPeriodId,
-				fixture.ownerUserId,
-			],
+			[target.employeeId, fixture.organizationId, target.employmentPeriodId, fixture.ownerUserId],
 		);
 		const identity = await schedulePending(target);
 		const clockOut = recordingClockOut();
@@ -121,32 +104,27 @@ describeLifecycleDatabase("departure transition", () => {
 			departureId: identity.departureId,
 		});
 		expect(
-			await row(
-				`select status, effective_at, processed_at from employee_departure where id = $1`,
-				[identity.departureId],
-			),
+			await row(`select status, effective_at, processed_at from employee_departure where id = $1`, [
+				identity.departureId,
+			]),
 		).toEqual({
 			status: "effective",
 			effective_at: new Date(CUTOFF),
 			processed_at: new Date(AFTER_CUTOFF.epochMilliseconds),
 		});
 		expect(
-			await row(
-				`select status, ended_at from employee_employment_period where id = $1`,
-				[target.employmentPeriodId],
-			),
+			await row(`select status, ended_at from employee_employment_period where id = $1`, [
+				target.employmentPeriodId,
+			]),
 		).toEqual({ status: "closed", ended_at: new Date(CUTOFF) });
 		expect(
-			await row(
-				`select valid_until from employee_employment_history where employee_id = $1`,
-				[target.employeeId],
-			),
-		).toEqual({ valid_until: new Date(CUTOFF) });
-		expect(
-			await row(`select is_active from employee where id = $1`, [
+			await row(`select valid_until from employee_employment_history where employee_id = $1`, [
 				target.employeeId,
 			]),
-		).toEqual({ is_active: false });
+		).toEqual({ valid_until: new Date(CUTOFF) });
+		expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
+			is_active: false,
+		});
 		expect(clockOut.calls).toHaveLength(1);
 		expect(clockOut.calls[0]).toMatchObject({
 			departureId: identity.departureId,
@@ -160,23 +138,15 @@ describeLifecycleDatabase("departure transition", () => {
 		const identity = await schedulePending(target);
 		const clockOut = recordingClockOut();
 
-		const result = await execute(
-			identity,
-			clockOut.port,
-			parseInstant("2026-09-14T23:59:59Z"),
-		);
+		const result = await execute(identity, clockOut.port, parseInstant("2026-09-14T23:59:59Z"));
 
 		expect(result).toEqual({ status: "not_due" });
 		expect(
-			await row(`select status from employee_departure where id = $1`, [
-				identity.departureId,
-			]),
+			await row(`select status from employee_departure where id = $1`, [identity.departureId]),
 		).toEqual({ status: "pending" });
-		expect(
-			await row(`select is_active from employee where id = $1`, [
-				target.employeeId,
-			]),
-		).toEqual({ is_active: true });
+		expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
+			is_active: true,
+		});
 		expect(clockOut.calls).toHaveLength(0);
 	});
 
@@ -188,11 +158,9 @@ describeLifecycleDatabase("departure transition", () => {
 		const result = await execute({ ...identity, revision: 1 }, clockOut.port);
 
 		expect(result).toEqual({ status: "obsolete" });
-		expect(
-			await row(`select is_active from employee where id = $1`, [
-				target.employeeId,
-			]),
-		).toEqual({ is_active: true });
+		expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
+			is_active: true,
+		});
 		expect(clockOut.calls).toHaveLength(0);
 	});
 
@@ -233,11 +201,9 @@ describeLifecycleDatabase("departure transition", () => {
 			status: "effective",
 			followUpPending: true,
 		});
-		expect(
-			await row(`select is_active from employee where id = $1`, [
-				target.employeeId,
-			]),
-		).toEqual({ is_active: false });
+		expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
+			is_active: false,
+		});
 		expect(
 			await row(
 				`select count(*)::int as count from employee_departure_task where dedupe_key = $1`,
@@ -297,10 +263,7 @@ describeLifecycleDatabase("departure transition", () => {
 			[otherOrganizationId, target.userId],
 		);
 		const identity = await schedulePending(target);
-		const insertSession = async (
-			userId: string,
-			activeOrganizationId: string,
-		) => {
+		const insertSession = async (userId: string, activeOrganizationId: string) => {
 			const id = crypto.randomUUID();
 			await fixture.pool.query(
 				`insert into session (id, token, user_id, active_organization_id, expires_at, created_at, updated_at)
@@ -309,18 +272,9 @@ describeLifecycleDatabase("departure transition", () => {
 			);
 			return id;
 		};
-		const departedSession = await insertSession(
-			target.userId,
-			fixture.organizationId,
-		);
-		const otherOrganizationSession = await insertSession(
-			target.userId,
-			otherOrganizationId,
-		);
-		const colleagueSession = await insertSession(
-			fixture.ownerUserId,
-			fixture.organizationId,
-		);
+		const departedSession = await insertSession(target.userId, fixture.organizationId);
+		const otherOrganizationSession = await insertSession(target.userId, otherOrganizationId);
+		const colleagueSession = await insertSession(fixture.ownerUserId, fixture.organizationId);
 
 		await execute(identity, recordingClockOut().port);
 
@@ -334,10 +288,9 @@ describeLifecycleDatabase("departure transition", () => {
 		const tasks = await fixture.pool.query<{
 			kind: string;
 			payload: { tokens?: string[] };
-		}>(
-			`select kind, payload from employee_departure_task where departure_id = $1 order by kind`,
-			[identity.departureId],
-		);
+		}>(`select kind, payload from employee_departure_task where departure_id = $1 order by kind`, [
+			identity.departureId,
+		]);
 		expect(tasks.rows).toEqual([
 			{ kind: "billing_sync", payload: {} },
 			{
@@ -363,9 +316,7 @@ describeLifecycleDatabase("departure transition", () => {
 	async function holdOrganizationLock(organizationId: string) {
 		const holder = await fixture.pool.connect();
 		await holder.query("begin");
-		await holder.query("select id from organization where id = $1 for update", [
-			organizationId,
-		]);
+		await holder.query("select id from organization where id = $1 for update", [organizationId]);
 		return holder;
 	}
 
@@ -388,11 +339,9 @@ describeLifecycleDatabase("departure transition", () => {
 		} finally {
 			holder.release();
 		}
-		expect(
-			await row(`select is_active from employee where id = $1`, [
-				target.employeeId,
-			]),
-		).toEqual({ is_active: true });
+		expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
+			is_active: true,
+		});
 		expect(clockOut.calls).toHaveLength(0);
 	});
 
@@ -428,28 +377,20 @@ describeLifecycleDatabase("departure transition", () => {
 			holder.release();
 		}
 
-		expect(results.map((result) => result.status).sort()).toEqual([
-			"blocked",
-			"effective",
-		]);
+		expect(results.map((result) => result.status).sort()).toEqual(["blocked", "effective"]);
 		expect(await accessibleOwnerCount(organizationId)).toBe(1);
 	});
 
 	it("reconciles a target whose membership was already removed without restoring it", async () => {
 		const target = await fixture.seedEmployee();
-		await fixture.pool.query(`delete from member where id = $1`, [
-			target.memberId,
-		]);
+		await fixture.pool.query(`delete from member where id = $1`, [target.memberId]);
 		const identity = await schedulePending(target);
 
 		const result = await execute(identity, recordingClockOut().port);
 
 		expect(result.status).toBe("effective");
 		expect(
-			await row(
-				`select count(*)::int as count from member where user_id = $1`,
-				[target.userId],
-			),
+			await row(`select count(*)::int as count from member where user_id = $1`, [target.userId]),
 		).toEqual({ count: 0 });
 		expect(
 			await row(`select status from employee_employment_period where id = $1`, [
@@ -464,11 +405,9 @@ describeLifecycleDatabase("departure transition", () => {
 
 		await execute(identity, recordingClockOut().port);
 
-		expect(
-			await row(`select is_active from employee where id = $1`, [
-				target.employeeId,
-			]),
-		).toEqual({ is_active: false });
+		expect(await row(`select is_active from employee where id = $1`, [target.employeeId])).toEqual({
+			is_active: false,
+		});
 	});
 
 	it("ignores an identity that names another organization", async () => {
@@ -483,9 +422,7 @@ describeLifecycleDatabase("departure transition", () => {
 
 		expect(result).toEqual({ status: "obsolete" });
 		expect(
-			await row(`select status from employee_departure where id = $1`, [
-				identity.departureId,
-			]),
+			await row(`select status from employee_departure where id = $1`, [identity.departureId]),
 		).toEqual({ status: "pending" });
 	});
 
@@ -555,19 +492,16 @@ describeLifecycleDatabase("departure transition", () => {
 			reason: "initiator_authorization_lost",
 		});
 		expect(
-			await row(
-				`select status, blocked_reason from employee_departure where id = $1`,
-				[secondLeaves.departureId],
-			),
+			await row(`select status, blocked_reason from employee_departure where id = $1`, [
+				secondLeaves.departureId,
+			]),
 		).toEqual({
 			status: "blocked",
 			blocked_reason: "initiator_authorization_lost",
 		});
-		expect(
-			await row(`select is_active from employee where id = $1`, [
-				second.employeeId,
-			]),
-		).toEqual({ is_active: true });
+		expect(await row(`select is_active from employee where id = $1`, [second.employeeId])).toEqual({
+			is_active: true,
+		});
 		expect(await accessibleOwnerCount(organizationId)).toBe(1);
 	});
 
@@ -594,11 +528,9 @@ describeLifecycleDatabase("departure transition", () => {
 				owner.employmentPeriodId,
 			]),
 		).toEqual({ status: "open" });
-		expect(
-			await row(`select is_active from employee where id = $1`, [
-				owner.employeeId,
-			]),
-		).toEqual({ is_active: true });
+		expect(await row(`select is_active from employee where id = $1`, [owner.employeeId])).toEqual({
+			is_active: true,
+		});
 		expect(clockOut.calls).toHaveLength(0);
 	});
 });

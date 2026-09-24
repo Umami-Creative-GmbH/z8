@@ -22,18 +22,14 @@ export async function lockLifecycleEmployee(
 	tx: LifecycleTransaction,
 	employeeId: string,
 ): Promise<void> {
-	await tx.execute(
-		sql`SELECT pg_advisory_xact_lock(hashtextextended(${employeeId}, 0))`,
-	);
+	await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${employeeId}, 0))`);
 }
 
 /**
  * The executor reads after taking locks and relies on each statement seeing
  * rows committed by transactions it waited for.
  */
-export async function assertReadCommitted(
-	tx: LifecycleTransaction,
-): Promise<void> {
+export async function assertReadCommitted(tx: LifecycleTransaction): Promise<void> {
 	const result = await tx.execute<{ level: string }>(
 		sql`SELECT current_setting('transaction_isolation') AS level`,
 	);

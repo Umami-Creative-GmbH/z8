@@ -22,23 +22,10 @@ type JsonObject = Record<string, unknown>;
 
 // Text checks instead of PostgreSQL enums so new values never need an enum
 // migration that is unusable inside the transaction that adds it.
-export const employmentPeriodStatuses = [
-	"open",
-	"closed",
-	"legacy_unknown",
-] as const;
-export const employmentPeriodStartProvenances = [
-	"recorded",
-	"legacy",
-	"unknown",
-] as const;
+export const employmentPeriodStatuses = ["open", "closed", "legacy_unknown"] as const;
+export const employmentPeriodStartProvenances = ["recorded", "legacy", "unknown"] as const;
 export const departureModes = ["scheduled", "immediate"] as const;
-export const departureStatuses = [
-	"pending",
-	"canceled",
-	"blocked",
-	"effective",
-] as const;
+export const departureStatuses = ["pending", "canceled", "blocked", "effective"] as const;
 export const departureEventKinds = [
 	"departure_scheduled",
 	"departure_rescheduled",
@@ -60,12 +47,7 @@ export const departureTaskKinds = [
 	"clock_repair",
 	"approval_handover",
 ] as const;
-export const departureTaskStatuses = [
-	"pending",
-	"processing",
-	"completed",
-	"failed",
-] as const;
+export const departureTaskStatuses = ["pending", "processing", "completed", "failed"] as const;
 export const departureReviewKinds = [
 	"clock_out",
 	"clock_repair",
@@ -76,17 +58,14 @@ export const departureReviewKinds = [
 export const departureReviewStatuses = ["open", "resolved"] as const;
 
 export type EmploymentPeriodStatus = (typeof employmentPeriodStatuses)[number];
-export type EmploymentPeriodStartProvenance =
-	(typeof employmentPeriodStartProvenances)[number];
+export type EmploymentPeriodStartProvenance = (typeof employmentPeriodStartProvenances)[number];
 export type DepartureEventKind = (typeof departureEventKinds)[number];
 export type DepartureTaskKind = (typeof departureTaskKinds)[number];
 export type DepartureTaskStatus = (typeof departureTaskStatuses)[number];
 export type DepartureReviewKind = (typeof departureReviewKinds)[number];
 
 function textIn(column: string, values: readonly string[]) {
-	return sql.raw(
-		`${column} IN (${values.map((value) => `'${value}'`).join(", ")})`,
-	);
+	return sql.raw(`${column} IN (${values.map((value) => `'${value}'`).join(", ")})`);
 }
 
 /**
@@ -104,23 +83,16 @@ export const employeeEmploymentPeriod = pgTable(
 		status: text("status").$type<EmploymentPeriodStatus>().notNull(),
 		startedAt: timestamp("started_at", { withTimezone: true }),
 		endedAt: timestamp("ended_at", { withTimezone: true }),
-		startProvenance: text("start_provenance")
-			.$type<EmploymentPeriodStartProvenance>()
-			.notNull(),
+		startProvenance: text("start_provenance").$type<EmploymentPeriodStartProvenance>().notNull(),
 		/** Why a legacy period could not be classified from existing dates. */
 		legacyDiagnostic: text("legacy_diagnostic"),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.defaultNow()
-			.notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		createdBy: text("created_by").references(() => user.id, {
 			onDelete: "set null",
 		}),
 	},
 	(table) => [
-		unique("employeeEmploymentPeriod_id_org_unique").on(
-			table.id,
-			table.organizationId,
-		),
+		unique("employeeEmploymentPeriod_id_org_unique").on(table.id, table.organizationId),
 		unique("employeeEmploymentPeriod_id_org_employee_unique").on(
 			table.id,
 			table.organizationId,
@@ -129,19 +101,13 @@ export const employeeEmploymentPeriod = pgTable(
 		uniqueIndex("employeeEmploymentPeriod_one_open_idx")
 			.on(table.organizationId, table.employeeId)
 			.where(sql`status = 'open'`),
-		index("employeeEmploymentPeriod_employee_idx").on(
-			table.organizationId,
-			table.employeeId,
-		),
+		index("employeeEmploymentPeriod_employee_idx").on(table.organizationId, table.employeeId),
 		foreignKey({
 			name: "employeeEmploymentPeriod_employee_fk",
 			columns: [table.employeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
 		}).onDelete("cascade"),
-		check(
-			"employeeEmploymentPeriod_status_check",
-			textIn("status", employmentPeriodStatuses),
-		),
+		check("employeeEmploymentPeriod_status_check", textIn("status", employmentPeriodStatuses)),
 		check(
 			"employeeEmploymentPeriod_start_provenance_check",
 			textIn("start_provenance", employmentPeriodStartProvenances),
@@ -158,10 +124,7 @@ export const employeeEmploymentPeriod = pgTable(
 			"employeeEmploymentPeriod_closed_end_check",
 			sql`status <> 'closed' OR ended_at IS NOT NULL`,
 		),
-		check(
-			"employeeEmploymentPeriod_open_end_check",
-			sql`status <> 'open' OR ended_at IS NULL`,
-		),
+		check("employeeEmploymentPeriod_open_end_check", sql`status <> 'open' OR ended_at IS NULL`),
 	],
 );
 
@@ -184,13 +147,9 @@ export const employeeDeparture = pgTable(
 		timezone: text("timezone").notNull(),
 		cutoffAt: timestamp("cutoff_at", { withTimezone: true }).notNull(),
 		replacementEmployeeId: uuid("replacement_employee_id"),
-		acknowledgeUnassignedDuties: boolean("acknowledge_unassigned_duties")
-			.default(false)
-			.notNull(),
+		acknowledgeUnassignedDuties: boolean("acknowledge_unassigned_duties").default(false).notNull(),
 		revision: integer("revision").notNull(),
-		status: text("status")
-			.$type<(typeof departureStatuses)[number]>()
-			.notNull(),
+		status: text("status").$type<(typeof departureStatuses)[number]>().notNull(),
 		createdBy: text("created_by")
 			.notNull()
 			.references(() => user.id),
@@ -201,19 +160,14 @@ export const employeeDeparture = pgTable(
 		effectiveAt: timestamp("effective_at", { withTimezone: true }),
 		processedAt: timestamp("processed_at", { withTimezone: true }),
 		blockedReason: text("blocked_reason"),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.defaultNow()
-			.notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
 	(table) => [
-		unique("employeeDeparture_id_org_unique").on(
-			table.id,
-			table.organizationId,
-		),
+		unique("employeeDeparture_id_org_unique").on(table.id, table.organizationId),
 		unique("employeeDeparture_identity_unique").on(
 			table.id,
 			table.organizationId,
@@ -223,17 +177,11 @@ export const employeeDeparture = pgTable(
 		uniqueIndex("employeeDeparture_one_pending_idx")
 			.on(table.organizationId, table.employeeId)
 			.where(sql`status = 'pending'`),
-		uniqueIndex("employeeDeparture_request_idx").on(
-			table.organizationId,
-			table.requestId,
-		),
+		uniqueIndex("employeeDeparture_request_idx").on(table.organizationId, table.requestId),
 		index("employeeDeparture_due_idx")
 			.on(table.cutoffAt, table.organizationId, table.id)
 			.where(sql`status = 'pending'`),
-		index("employeeDeparture_employee_idx").on(
-			table.organizationId,
-			table.employeeId,
-		),
+		index("employeeDeparture_employee_idx").on(table.organizationId, table.employeeId),
 		foreignKey({
 			name: "employeeDeparture_employee_fk",
 			columns: [table.employeeId, table.organizationId],
@@ -241,11 +189,7 @@ export const employeeDeparture = pgTable(
 		}).onDelete("cascade"),
 		foreignKey({
 			name: "employeeDeparture_period_fk",
-			columns: [
-				table.employmentPeriodId,
-				table.organizationId,
-				table.employeeId,
-			],
+			columns: [table.employmentPeriodId, table.organizationId, table.employeeId],
 			foreignColumns: [
 				employeeEmploymentPeriod.id,
 				employeeEmploymentPeriod.organizationId,
@@ -258,10 +202,7 @@ export const employeeDeparture = pgTable(
 			foreignColumns: [employee.id, employee.organizationId],
 		}),
 		check("employeeDeparture_mode_check", textIn("mode", departureModes)),
-		check(
-			"employeeDeparture_status_check",
-			textIn("status", departureStatuses),
-		),
+		check("employeeDeparture_status_check", textIn("status", departureStatuses)),
 		check("employeeDeparture_revision_check", sql`revision > 0`),
 		check(
 			"employeeDeparture_scheduled_day_check",
@@ -302,9 +243,7 @@ export const employeeDepartureEvent = pgTable(
 		kind: text("kind").$type<DepartureEventKind>().notNull(),
 		/** Audit evidence; not a foreign key so user deletion cannot rewrite history. */
 		actorUserId: text("actor_user_id"),
-		occurredAt: timestamp("occurred_at", { withTimezone: true })
-			.defaultNow()
-			.notNull(),
+		occurredAt: timestamp("occurred_at", { withTimezone: true }).defaultNow().notNull(),
 		metadata: jsonb("metadata").$type<JsonObject>().default({}).notNull(),
 		requestFingerprint: text("request_fingerprint"),
 		result: jsonb("result").$type<JsonObject>(),
@@ -322,11 +261,7 @@ export const employeeDepartureEvent = pgTable(
 		),
 		foreignKey({
 			name: "employeeDepartureEvent_period_fk",
-			columns: [
-				table.employmentPeriodId,
-				table.organizationId,
-				table.employeeId,
-			],
+			columns: [table.employmentPeriodId, table.organizationId, table.employeeId],
 			foreignColumns: [
 				employeeEmploymentPeriod.id,
 				employeeEmploymentPeriod.organizationId,
@@ -348,10 +283,7 @@ export const employeeDepartureEvent = pgTable(
 				employeeDeparture.employmentPeriodId,
 			],
 		}).onDelete("cascade"),
-		check(
-			"employeeDepartureEvent_kind_check",
-			textIn("kind", departureEventKinds),
-		),
+		check("employeeDepartureEvent_kind_check", textIn("kind", departureEventKinds)),
 		check("employeeDepartureEvent_index_check", sql`event_index >= 0`),
 	],
 );
@@ -371,44 +303,27 @@ export const employeeDepartureTask = pgTable(
 		kind: text("kind").$type<DepartureTaskKind>().notNull(),
 		dedupeKey: text("dedupe_key").notNull(),
 		payload: jsonb("payload").$type<JsonObject>().default({}).notNull(),
-		status: text("status")
-			.$type<DepartureTaskStatus>()
-			.default("pending")
-			.notNull(),
-		availableAt: timestamp("available_at", { withTimezone: true })
-			.defaultNow()
-			.notNull(),
+		status: text("status").$type<DepartureTaskStatus>().default("pending").notNull(),
+		availableAt: timestamp("available_at", { withTimezone: true }).defaultNow().notNull(),
 		claimToken: uuid("claim_token"),
 		attemptCount: integer("attempt_count").default(0).notNull(),
 		lastError: text("last_error"),
 		completedAt: timestamp("completed_at", { withTimezone: true }),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.defaultNow()
-			.notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => currentTimestamp())
 			.notNull(),
 	},
 	(table) => [
-		uniqueIndex("employeeDepartureTask_dedupe_idx").on(
-			table.organizationId,
-			table.dedupeKey,
-		),
+		uniqueIndex("employeeDepartureTask_dedupe_idx").on(table.organizationId, table.dedupeKey),
 		index("employeeDepartureTask_due_idx")
 			.on(table.availableAt, table.id)
 			.where(sql`status IN ('pending', 'processing')`),
-		index("employeeDepartureTask_departure_idx").on(
-			table.organizationId,
-			table.departureId,
-		),
+		index("employeeDepartureTask_departure_idx").on(table.organizationId, table.departureId),
 		foreignKey({
 			name: "employeeDepartureTask_period_fk",
-			columns: [
-				table.employmentPeriodId,
-				table.organizationId,
-				table.employeeId,
-			],
+			columns: [table.employmentPeriodId, table.organizationId, table.employeeId],
 			foreignColumns: [
 				employeeEmploymentPeriod.id,
 				employeeEmploymentPeriod.organizationId,
@@ -430,14 +345,8 @@ export const employeeDepartureTask = pgTable(
 				employeeDeparture.employmentPeriodId,
 			],
 		}).onDelete("cascade"),
-		check(
-			"employeeDepartureTask_kind_check",
-			textIn("kind", departureTaskKinds),
-		),
-		check(
-			"employeeDepartureTask_status_check",
-			textIn("status", departureTaskStatuses),
-		),
+		check("employeeDepartureTask_kind_check", textIn("kind", departureTaskKinds)),
+		check("employeeDepartureTask_status_check", textIn("status", departureTaskStatuses)),
 		check("employeeDepartureTask_attempt_check", sql`attempt_count >= 0`),
 	],
 );
@@ -467,9 +376,7 @@ export const employeeDepartureReview = pgTable(
 		resolution: text("resolution"),
 		affectedStartAt: timestamp("affected_start_at", { withTimezone: true }),
 		affectedEndAt: timestamp("affected_end_at", { withTimezone: true }),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.defaultNow()
-			.notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 	},
 	(table) => [
 		unique("employeeDepartureReview_subject_unique")
@@ -493,14 +400,8 @@ export const employeeDepartureReview = pgTable(
 				employeeDeparture.employmentPeriodId,
 			],
 		}).onDelete("cascade"),
-		check(
-			"employeeDepartureReview_kind_check",
-			textIn("kind", departureReviewKinds),
-		),
-		check(
-			"employeeDepartureReview_status_check",
-			textIn("status", departureReviewStatuses),
-		),
+		check("employeeDepartureReview_kind_check", textIn("kind", departureReviewKinds)),
+		check("employeeDepartureReview_status_check", textIn("status", departureReviewStatuses)),
 		check(
 			"employeeDepartureReview_resolution_check",
 			sql`(status = 'resolved') = (resolved_at IS NOT NULL)`,
@@ -512,10 +413,8 @@ export const employeeDepartureReview = pgTable(
 	],
 );
 
-export type EmployeeEmploymentPeriod =
-	typeof employeeEmploymentPeriod.$inferSelect;
+export type EmployeeEmploymentPeriod = typeof employeeEmploymentPeriod.$inferSelect;
 export type EmployeeDeparture = typeof employeeDeparture.$inferSelect;
 export type EmployeeDepartureEvent = typeof employeeDepartureEvent.$inferSelect;
 export type EmployeeDepartureTask = typeof employeeDepartureTask.$inferSelect;
-export type EmployeeDepartureReview =
-	typeof employeeDepartureReview.$inferSelect;
+export type EmployeeDepartureReview = typeof employeeDepartureReview.$inferSelect;

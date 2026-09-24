@@ -10,9 +10,7 @@ export type DepartureBlockedReason =
 // comma-separated list, and an owner is accessible while approved and not
 // linked to an inactive employee profile in the organization.
 const hasRole = (column: string, role: string) =>
-	sql.raw(
-		`'${role}' = ANY(regexp_split_to_array(COALESCE(${column}, ''), '\\s*,\\s*'))`,
-	);
+	sql.raw(`'${role}' = ANY(regexp_split_to_array(COALESCE(${column}, ''), '\\s*,\\s*'))`);
 
 /**
  * Re-validates, under the organization lock, that a departure may still take

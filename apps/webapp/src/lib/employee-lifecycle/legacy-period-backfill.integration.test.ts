@@ -55,23 +55,13 @@ describeLifecycleDatabase("legacy employment period backfill", () => {
 		return result.rows;
 	}
 
-	async function insertTerms(
-		employeeId: string,
-		validFrom: Date,
-		reviewState: string,
-	) {
+	async function insertTerms(employeeId: string, validFrom: Date, reviewState: string) {
 		const result = await fixture.pool.query<{ id: string }>(
 			`insert into employee_employment_history
 			 (employee_id, organization_id, valid_from, weekly_contract_minutes, review_state,
 			  created_by, updated_at)
 			 values ($1, $2, $3, 2400, $4, $5, $3) returning id`,
-			[
-				employeeId,
-				fixture.organizationId,
-				validFrom,
-				reviewState,
-				fixture.ownerUserId,
-			],
+			[employeeId, fixture.organizationId, validFrom, reviewState, fixture.ownerUserId],
 		);
 		return result.rows[0]?.id;
 	}

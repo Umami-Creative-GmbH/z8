@@ -6,10 +6,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import { createDepartureCommands } from "./commands";
-import {
-	loadEmploymentCoverage,
-	resolveTermsEmploymentPeriod,
-} from "./employment-periods";
+import { loadEmploymentCoverage, resolveTermsEmploymentPeriod } from "./employment-periods";
 import {
 	createLifecycleDatabaseFixture,
 	describeLifecycleDatabase,
@@ -68,10 +65,10 @@ describeLifecycleDatabase("employment periods", () => {
 
 	it("reports no lifecycle coverage for legacy-only history", async () => {
 		const target = await fixture.seedEmployee({ withPeriod: false });
-		await fixture.pool.query(
-			`select employee_employment_period_backfill_legacy($1, $2::uuid)`,
-			[fixture.organizationId, target.employeeId],
-		);
+		await fixture.pool.query(`select employee_employment_period_backfill_legacy($1, $2::uuid)`, [
+			fixture.organizationId,
+			target.employeeId,
+		]);
 
 		expect(await coverageOf(target.employeeId)).toBeNull();
 	});
@@ -173,22 +170,15 @@ describeLifecycleDatabase("employment periods", () => {
 
 		const cutoff = new Date("2026-09-14T09:30:00Z");
 		expect(
-			await row(
-				`select valid_until from employee_employment_history where id = $1`,
-				[earlier],
-			),
+			await row(`select valid_until from employee_employment_history where id = $1`, [earlier]),
 		).toEqual({ valid_until: new Date("2026-06-01T00:00:00Z") });
 		expect(
-			await row(
-				`select valid_until from employee_employment_history where id = $1`,
-				[current],
-			),
+			await row(`select valid_until from employee_employment_history where id = $1`, [current]),
 		).toEqual({ valid_until: cutoff });
 		expect(
-			await row(
-				`select valid_from, valid_until from employee_employment_history where id = $1`,
-				[future],
-			),
+			await row(`select valid_from, valid_until from employee_employment_history where id = $1`, [
+				future,
+			]),
 		).toEqual({
 			valid_from: new Date("2026-12-01T00:00:00Z"),
 			valid_until: null,
@@ -201,15 +191,12 @@ describeLifecycleDatabase("employment periods", () => {
 			),
 		).toEqual({ status: "open" });
 		expect(
-			await row(
-				`select effective_until, is_active from work_policy_assignment where id = $1`,
-				[currentAssignment],
-			),
+			await row(`select effective_until, is_active from work_policy_assignment where id = $1`, [
+				currentAssignment,
+			]),
 		).toEqual({ effective_until: cutoff, is_active: true });
 		expect(
-			await row(`select is_active from work_policy_assignment where id = $1`, [
-				futureAssignment,
-			]),
+			await row(`select is_active from work_policy_assignment where id = $1`, [futureAssignment]),
 		).toEqual({ is_active: false });
 	});
 
@@ -225,16 +212,12 @@ describeLifecycleDatabase("employment periods", () => {
 	it("attaches new terms to the open period, backfilling a legacy one on demand", async () => {
 		const target = await fixture.seedEmployee({ withPeriod: false });
 
-		const periodId = await resolveTermsPeriod(
-			target.employeeId,
-			"2026-10-01T00:00:00Z",
-		);
+		const periodId = await resolveTermsPeriod(target.employeeId, "2026-10-01T00:00:00Z");
 
 		expect(
-			await row(
-				`select status, start_provenance from employee_employment_period where id = $1`,
-				[periodId],
-			),
+			await row(`select status, start_provenance from employee_employment_period where id = $1`, [
+				periodId,
+			]),
 		).toEqual({ status: "open", start_provenance: "legacy" });
 	});
 

@@ -1,9 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
-import {
-	employeeDeparture,
-	employeeEmploymentPeriod,
-} from "@/db/schema/employee-lifecycle";
+import { employeeDeparture, employeeEmploymentPeriod } from "@/db/schema/employee-lifecycle";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import type { EmploymentInterval } from "./employment-coverage";
 import type { LifecycleTransaction } from "./types";
@@ -11,9 +8,7 @@ import type { LifecycleTransaction } from "./types";
 type CoverageDatabase = Pick<typeof rootDatabase, "select">;
 
 export class EmploymentPeriodError extends Error {
-	constructor(
-		readonly code: "employment_period_closed" | "terms_before_period_start",
-	) {
+	constructor(readonly code: "employment_period_closed" | "terms_before_period_start") {
 		super(code);
 		this.name = "EmploymentPeriodError";
 	}
@@ -78,10 +73,7 @@ export async function loadEmploymentCoverage(
 		.leftJoin(
 			employeeDeparture,
 			and(
-				eq(
-					employeeDeparture.organizationId,
-					employeeEmploymentPeriod.organizationId,
-				),
+				eq(employeeDeparture.organizationId, employeeEmploymentPeriod.organizationId),
 				eq(employeeDeparture.employmentPeriodId, employeeEmploymentPeriod.id),
 				eq(employeeDeparture.status, "effective"),
 			),
@@ -98,10 +90,7 @@ export async function loadEmploymentCoverage(
 			period.startProvenance === "recorded" && period.startedAt
 				? instantFromDate(period.startedAt)
 				: null,
-		endedAt:
-			period.departureId && period.endedAt
-				? instantFromDate(period.endedAt)
-				: null,
+		endedAt: period.departureId && period.endedAt ? instantFromDate(period.endedAt) : null,
 	}));
 	const hasLifecycleEvidence = coverage.some(
 		(interval) => interval.startedAt !== null || interval.endedAt !== null,

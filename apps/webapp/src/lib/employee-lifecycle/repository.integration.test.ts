@@ -50,9 +50,9 @@ describeLifecycleDatabase("employee lifecycle persistence constraints", () => {
 	it("rejects a departure that points at another tenant's employee", async () => {
 		const foreignOrganizationId = await fixture.createOrganization();
 
-		await expect(
-			insertDeparture({ organizationId: foreignOrganizationId }),
-		).rejects.toMatchObject({ code: "23503" });
+		await expect(insertDeparture({ organizationId: foreignOrganizationId })).rejects.toMatchObject({
+			code: "23503",
+		});
 	});
 
 	it("rejects attaching another employee's period in the same tenant", async () => {
@@ -106,12 +106,7 @@ describeLifecycleDatabase("employee lifecycle persistence constraints", () => {
 				`insert into employee_employment_period
 				 (organization_id, employee_id, status, started_at, ended_at, start_provenance)
 				 values ($1, $2, 'closed', $3, $4, 'recorded')`,
-				[
-					fixture.organizationId,
-					target.employeeId,
-					cutoff,
-					new Date("2026-09-14T00:00:00Z"),
-				],
+				[fixture.organizationId, target.employeeId, cutoff, new Date("2026-09-14T00:00:00Z")],
 			),
 		).rejects.toMatchObject({ code: "23514" });
 	});
@@ -219,24 +214,16 @@ describeLifecycleDatabase("employee lifecycle persistence constraints", () => {
 			),
 		).rejects.toMatchObject({ code: "55000" });
 		await expect(
-			fixture.pool.query(`delete from employee_departure_event where id = $1`, [
-				eventId,
-			]),
+			fixture.pool.query(`delete from employee_departure_event where id = $1`, [eventId]),
 		).rejects.toMatchObject({ code: "55000" });
 	});
 
 	it("still lets a deleted tenant cascade through its audit events", async () => {
 		const organizationId = await fixture.createOrganization();
 		const target = await fixture.seedEmployee({ organizationId });
-		await insertEvent(
-			organizationId,
-			target.employeeId,
-			target.employmentPeriodId,
-		);
+		await insertEvent(organizationId, target.employeeId, target.employmentPeriodId);
 
-		await fixture.pool.query(`delete from organization where id = $1`, [
-			organizationId,
-		]);
+		await fixture.pool.query(`delete from organization where id = $1`, [organizationId]);
 
 		const remaining = await fixture.pool.query(
 			`select 1 from employee_departure_event where organization_id = $1`,
@@ -252,12 +239,7 @@ describeLifecycleDatabase("employee lifecycle persistence constraints", () => {
 				`insert into employee_departure_task
 				 (organization_id, employee_id, employment_period_id, kind, dedupe_key)
 				 values ($1, $2, $3, 'billing_sync', $4)`,
-				[
-					fixture.organizationId,
-					fixture.employeeId,
-					fixture.employmentPeriodId,
-					dedupeKey,
-				],
+				[fixture.organizationId, fixture.employeeId, fixture.employmentPeriodId, dedupeKey],
 			);
 		await insertTask();
 

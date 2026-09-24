@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
-import {
-	clipRequirementsToEmployment,
-	isDateKeyEmployed,
-} from "./employment-coverage";
+import { clipRequirementsToEmployment, isDateKeyEmployed } from "./employment-coverage";
 
 const period = (startedAt: string | null, endedAt: string | null) => ({
 	startedAt: startedAt ? parseInstant(startedAt) : null,
@@ -15,12 +12,8 @@ describe("isDateKeyEmployed", () => {
 		// Berlin departure: last working day 2026-09-30, cutoff at local midnight.
 		const coverage = [period("2026-01-01T00:00:00Z", "2026-09-30T22:00:00Z")];
 
-		expect(isDateKeyEmployed(coverage, "2026-09-30", "Europe/Berlin")).toBe(
-			true,
-		);
-		expect(isDateKeyEmployed(coverage, "2026-10-01", "Europe/Berlin")).toBe(
-			false,
-		);
+		expect(isDateKeyEmployed(coverage, "2026-09-30", "Europe/Berlin")).toBe(true);
+		expect(isDateKeyEmployed(coverage, "2026-10-01", "Europe/Berlin")).toBe(false);
 	});
 
 	it("keeps the partial day of an immediate departure", () => {
@@ -53,12 +46,8 @@ describe("isDateKeyEmployed", () => {
 		// 2026-10-25 is 25 hours long in Berlin; the cutoff falls at its end.
 		const coverage = [period("2026-01-01T00:00:00Z", "2026-10-25T23:00:00Z")];
 
-		expect(isDateKeyEmployed(coverage, "2026-10-25", "Europe/Berlin")).toBe(
-			true,
-		);
-		expect(isDateKeyEmployed(coverage, "2026-10-26", "Europe/Berlin")).toBe(
-			false,
-		);
+		expect(isDateKeyEmployed(coverage, "2026-10-25", "Europe/Berlin")).toBe(true);
+		expect(isDateKeyEmployed(coverage, "2026-10-26", "Europe/Berlin")).toBe(false);
 	});
 });
 
@@ -76,25 +65,19 @@ describe("clipRequirementsToEmployment", () => {
 	it("drops requirement days outside employment", () => {
 		const coverage = [period("2026-01-01T00:00:00Z", "2026-09-30T22:00:00Z")];
 
-		expect(
-			clipRequirementsToEmployment(requirements, coverage, "Europe/Berlin"),
-		).toEqual({
+		expect(clipRequirementsToEmployment(requirements, coverage, "Europe/Berlin")).toEqual({
 			"2026-09-30": requirement,
 		});
 	});
 
 	it("leaves requirements untouched without lifecycle coverage", () => {
-		expect(
-			clipRequirementsToEmployment(requirements, null, "Europe/Berlin"),
-		).toBe(requirements);
+		expect(clipRequirementsToEmployment(requirements, null, "Europe/Berlin")).toBe(requirements);
 	});
 
 	it("falls back to UTC day keys for an invalid zone like the requirement builder", () => {
 		const coverage = [period(null, "2026-10-01T00:00:00Z")];
 
-		expect(
-			clipRequirementsToEmployment(requirements, coverage, "Not/AZone"),
-		).toEqual({
+		expect(clipRequirementsToEmployment(requirements, coverage, "Not/AZone")).toEqual({
 			"2026-09-30": requirement,
 		});
 	});
