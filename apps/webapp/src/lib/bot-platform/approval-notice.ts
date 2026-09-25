@@ -325,11 +325,31 @@ export function telegramApprovalNotice(notice: ApprovalNotice) {
 	};
 }
 
+/**
+ * Discord renders markdown in every message; provider-visible text is shown
+ * literally so names or labels cannot become links, mentions or formatting.
+ */
+export function escapeDiscordMarkdown(text: string): string {
+	return text.replace(/[\\*_~`|>#[\]()<-]/g, "\\$&");
+}
+
+/**
+ * A notice without controls. Sending or editing with only the review link
+ * removes any approve/reject buttons, and no mention can notify anyone.
+ */
 export function discordApprovalNotice(notice: ApprovalNotice) {
 	return {
-		content: `${notice.title}\n\n${notice.text}\n${notice.reviewUrl}`,
+		content: escapeDiscordMarkdown(`${notice.title}\n\n${notice.text}`),
 		embeds: [],
-		components: [],
+		components: [
+			{
+				type: 1 as const,
+				components: [
+					{ type: 2 as const, style: 5, label: notice.reviewLabel, url: notice.reviewUrl },
+				],
+			},
+		],
+		allowed_mentions: { parse: [] as Array<"roles" | "users" | "everyone"> },
 	};
 }
 

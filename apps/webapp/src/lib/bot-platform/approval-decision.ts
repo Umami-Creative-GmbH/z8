@@ -116,10 +116,10 @@ export async function attemptBotApproval(
  */
 export interface BotInvocationEnvelope {
 	scheme: ApprovalInvocationScheme;
-	/** Authenticated receiver, e.g. `telegram-bot:<bot user id>`. */
+	/** Authenticated receiver, e.g. `telegram-bot:<bot user id>` or `discord-app:<application id>`. */
 	receiverScope: string;
 	invocationId: string;
-	/** Transport delivery identity (Telegram update_id), kept separately. */
+	/** Transport delivery identity (Telegram update_id; none on Discord), kept separately. */
 	deliveryId: string | null;
 	providerActorId: string;
 }
@@ -148,7 +148,7 @@ export type BoundBotApprovalResult =
 
 const INVOCATION_SCHEMES: Partial<
 	Record<BotPlatform, ApprovalInvocationScheme>
-> = { telegram: "telegram_callback_query" };
+> = { telegram: "telegram_callback_query", discord: "discord_interaction" };
 
 /**
  * A bound card action. The binding and invocation cross the shared attempt

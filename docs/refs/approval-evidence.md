@@ -661,6 +661,13 @@ on-behalf roles, coverage, essential gaps), `telegram/bound-approval.test.ts`
 (request versus step outcome wording, replay label, review results),
 `maintenance.test.ts`.
 
+### Discord (#292)
+
+Discord cards use the same admission, bindings and decision owner. Its
+invocation scheme is `discord_interaction`: the top-level `interaction.id`,
+scoped as `discord-app:<application id>`, with no transport delivery ID. See
+[Approval card delivery](approval-delivery.md), section #292.
+
 ## Manual time submissions and policy clock-outs (#302 / T38)
 
 Manual time submissions and policy clock-outs keep immutable approval evidence

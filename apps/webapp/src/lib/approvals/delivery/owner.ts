@@ -86,6 +86,8 @@ async function loadAdapter(provider: ApprovalDeliveryProvider): Promise<Approval
 	switch (provider) {
 		case "telegram":
 			return (await import("@/lib/telegram/approval-delivery")).telegramApprovalDeliveryAdapter;
+		case "discord":
+			return (await import("@/lib/discord/approval-delivery")).discordApprovalDeliveryAdapter;
 	}
 }
 

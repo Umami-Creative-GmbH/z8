@@ -1,7 +1,8 @@
-# Approval card delivery — #291 / T27
+# Approval card delivery — #291 / T27, #292 / T28
 
 One durable owner sends approval cards and keeps them current. It covers
-Telegram cards for canonical absences. It is **inactive for every
+Telegram and Discord cards for canonical absences (Discord: see the #292
+section at the end). It is **inactive for every
 organization**: migration `0086_approval_delivery.sql` inserts no control rows.
 
 ```text
@@ -197,3 +198,117 @@ transport (`fetch`). 17/17 passing:
 
 Unit seams: `delivery/schedule.test.ts`, `telegram/delivery-outcome.test.ts`,
 `bot-platform/approval-status-notice.test.ts`, `maintenance.test.ts`.
+
+## Discord reviewed decisions and delivery — #292 / T28
+
+Discord uses the same prepared presentation, reviewed bindings, decision owner
+and delivery owner as Telegram. It adds no persistence, authority or dispatch
+of its own. Migration `0089_discord_approval_delivery.sql` only widens the
+provider and scheme CHECKs. It inserts no `approval_presentation_control` and
+no `approval_delivery_control` rows, so Discord stays review-only on the
+existing path for every organization.
+
+```text
+owner (provider "discord")                              lib/discord/approval-delivery.ts
+  bot active + approvals enabled; receiver scope discord-app:<application id>
+  destination = DM opened from the recipient's active account link   (never a stored channel)
+  prepareApprovalPresentation(provider "discord", fits: 2000 chars, labels ≤ 80, url ≤ 512)
+  create / edit message with explicit outcomes                        (api.ts, delivery-outcome.ts)
+
+interaction (signature verified by the route)          lib/discord/approval-handler.ts
+  custom_id {"a":"ba"|"br","b":<binding>}  → handleBoundApprovalInteraction
+    deferred ephemeral acknowledgment (type 5), within 3 s, before any decision
+    invocation = discord-app:<application id> + interaction.id  (application must match)
+    attemptBoundBotApproval → decideBoundAbsenceInvocation (scheme discord_interaction)
+    delivered card: pending and undecided → review notice; otherwise left to the owner
+    ephemeral follow-up = committed or verified outcome
+  custom_id {"a":"ap"|"rj","id":<request>} → legacy historical-only matching (unchanged)
+```
+
+- **Identity.** The invocation is the top-level `interaction.id`, scoped to the
+  installation's application ID (#261). The component `custom_id` and the source
+  message ID never stand in for it: a new interaction on the same button gets
+  fresh checks. The same interaction with the same command replays the original
+  result; with another command it is a conflict. Discord has no transport
+  delivery ID, so `delivery_id` is empty. An interaction for another
+  application, or without a snowflake ID or actor, decides nothing.
+- **Acknowledgment.** The deferred acknowledgment is protocol only and proves
+  nothing. The follow-up reports the committed outcome. When the outcome is
+  unknown (the decision call failed), it says so and claims nothing; the same
+  interaction replays if the decision did commit. Discord documents no inbound
+  interaction redelivery, so nothing relies on one.
+- **Destination.** Cards go only to the recipient's DM, opened through Discord
+  from their active `discord_user_mapping` in the organization. The stored
+  `discord_conversation` channel may be a server channel and is not used for
+  approval cards (legacy path included). No link is `destination_invalid:destination_missing`;
+  closed DMs (50007), an unknown channel or user and missing access are
+  `destination_invalid`. Any later interaction by the recipient
+  (`saveConversation`) re-arms that work.
+- **Outcomes.** 429 is `retryable`; 5xx, network errors, timeouts and invalid
+  responses are `ambiguous`; 401 is `unavailable`; other 4xx are `permanent`.
+  On edits, an unknown message or channel, or a message by another author, is
+  `gone`. Only the application that sent a message can edit it; a replaced
+  application's messages are `gone`.
+- **Rendering.** Card and notice text is markdown-escaped and sent with
+  `allowed_mentions: {parse: []}`. A refresh or review notice keeps only the
+  review link button, so controls are removed.
+- **Cross-platform.** The owner refreshes every tracked message of a lifecycle,
+  whatever the provider, so a decision on Telegram, Discord or the web retires
+  the cards on the others.
+- **Legacy path.** Without a Discord delivery control, `sendDiscordNotification`
+  keeps sending, now to the DM and, when admitted, as a bound card. With one,
+  it stays silent for absences that have a canonical workflow.
+
+### Activation (#292)
+
+Apply `0089` after `0088`, then per organization, after the #290/#291 gates:
+insert `approval_presentation_control (…, 'discord', 'actionable')` under the
+rollout lock as for Telegram, and
+`approval_delivery_control (:org, 'absence', 'discord')`.
+
+### Activation blockers (#292, unresolved)
+
+1. Apply `0089` through the authorized deployment. It has run only on the
+   disposable PostgreSQL 16 database.
+2. **Old binaries** do not know the Discord adapter or `discord_interaction`.
+   Insert controls only after every worker and app instance is upgraded.
+3. **Ingress.** The route answers 202 before any durable acceptance; an
+   interaction lost after that is not recovered.
+4. **Untracked duplicates** and **in-place material changes**, as for Telegram
+   (blockers 5 and 6 above).
+5. **Live Discord.** Only the REST transport was replaced in tests; no real
+   application, signature or DM was exercised.
+6. **Stored server channels.** Other (non-approval) Discord notifications still
+   use `discord_conversation`, which slash commands in a server also populate.
+7. Everything in the #290 and #291 blockers (legacy authority #384, escalation
+   replacement delivery #300, activation handover, pilot).
+
+### Verification (#292)
+
+PostgreSQL 16 (`lib/approvals/delivery/discord-delivery.integration.test.ts`,
+part of `test:approval-workflow-repository:integration`), driving the real
+`requestAbsenceEffect`, `approveAbsenceEffect`, `processApprovalDeliveries`,
+`handleDiscordInteraction`, `handleTelegramUpdate`, `saveConversation`,
+`sendDiscordNotification` and `deleteApproval`; only the Discord and Telegram
+HTTP transports, vault, session and side channels are replaced. 12/12 passing:
+
+- a real submission sends one bound card to the DM opened from the account
+  link (not the stored server channel) with full identity; a rerun sends nothing;
+- a press is acknowledged (deferred, ephemeral) while the workflow is still
+  pending, decides once with `discord_interaction` / `discord-app:<id>` /
+  interaction ID, reports "Request approved", and leaves the card to the owner,
+  which retires it at the current version;
+- the same interaction replays, a changed command conflicts, and a new
+  interaction on the same message and button decides nothing;
+- another application's interaction decides nothing;
+- a paused press turns the pending card into a review notice;
+- legacy `{"a":"ap"}` buttons stay historical-only;
+- 429 then 502 ×5 retry after 1m/5m/30m/2h/12h and exhaust with attention;
+- no link and closed DMs wait for repair; `saveConversation` re-arms;
+- a card that went stale in flight is tracked and retired;
+- Telegram and Discord decisions refresh each other's cards;
+- without a control the existing path sends to the DM; with one it is silent;
+- cleanup removes and reports Discord work, messages and invocations.
+
+Unit seams: `discord/bound-approval.test.ts`, `discord/delivery-outcome.test.ts`,
+`discord/approval-card.test.ts`.

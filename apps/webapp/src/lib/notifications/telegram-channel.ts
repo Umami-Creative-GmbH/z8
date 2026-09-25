@@ -7,8 +7,8 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { absenceEntry, approvalRequest, employee } from "@/db/schema";
-import { isApprovalDeliveryOwner } from "@/lib/approvals/delivery/store";
+import { approvalRequest, employee } from "@/db/schema";
+import { isAbsenceCardDeliveredByOwner } from "@/lib/approvals/delivery/store";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import { createLogger } from "@/lib/logger";
 import { localizeOutboundNotification } from "./outbound-localization";
@@ -47,31 +47,12 @@ export async function isTelegramAvailable(
 	}
 }
 
-/**
- * Whether the approval delivery owner (#291) sends this absence's Telegram
- * card: the owner is active for the organization and the absence has a
- * canonical workflow, whose committed intents the owner delivers. A legacy
- * request (e.g. a policy fallback) keeps this path.
- */
-async function deliveredByApprovalOwner(
+/** Whether the approval delivery owner (#291) sends this absence's Telegram card. */
+function deliveredByApprovalOwner(
 	organizationId: string,
 	absenceId: string | undefined,
 ): Promise<boolean> {
-	if (!absenceId) return false;
-	const owner = await isApprovalDeliveryOwner({
-		organizationId,
-		workflowType: "absence",
-		provider: "telegram",
-	});
-	if (!owner) return false;
-	const absence = await db.query.absenceEntry.findFirst({
-		where: and(
-			eq(absenceEntry.id, absenceId),
-			eq(absenceEntry.organizationId, organizationId),
-		),
-		columns: { approvalWorkflowId: true },
-	});
-	return Boolean(absence?.approvalWorkflowId);
+	return isAbsenceCardDeliveredByOwner({ organizationId, absenceId, provider: "telegram" });
 }
 
 /**

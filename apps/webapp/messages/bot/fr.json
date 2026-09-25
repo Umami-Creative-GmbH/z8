@@ -11,6 +11,7 @@
       "alreadyProcessed": "Cette approbation a déjà été traitée.",
       "boundReviewRequired": "Cette carte ne correspond plus à la demande ou à l’attribution actuelle, ou l’action n’a pas pu être vérifiée. Aucune décision n’a été prise. Examinez la demande dans Z8.",
       "invocationConflict": "Cet appui a déjà été enregistré avec une autre action. Aucune décision n’a été prise. Examinez la demande dans Z8.",
+      "outcomeUnknown": "Le résultat de cette action n’a pas pu être confirmé. Examinez la demande dans Z8 avant de réessayer.",
       "card": {
         "absenceTitle": "Demande d’absence à approuver",
         "boundHint": "Approuver ou refuser décide exactement de la demande affichée ci-dessus. Si elle a été modifiée ou réattribuée, rien n’est décidé et vous êtes invité à l’examiner dans Z8.",

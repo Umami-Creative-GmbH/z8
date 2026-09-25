@@ -18,7 +18,10 @@ import { type DecisionEvidenceRecord, findDecisionEvidenceById } from "./store";
  * and callbacks without a trustworthy ID stay review-only: nothing here
  * substitutes card IDs, nonces, timestamps or receive-time UUIDs.
  */
-export const APPROVAL_INVOCATION_SCHEMES = ["telegram_callback_query"] as const;
+export const APPROVAL_INVOCATION_SCHEMES = [
+	"telegram_callback_query",
+	"discord_interaction",
+] as const;
 export type ApprovalInvocationScheme =
 	(typeof APPROVAL_INVOCATION_SCHEMES)[number];
 
@@ -26,7 +29,7 @@ export const APPROVAL_INVOCATION_SCHEME_VERSION = 1;
 
 const SCHEME_PROVIDERS: Readonly<
 	Record<ApprovalInvocationScheme, ApprovalPresentationProvider>
-> = { telegram_callback_query: "telegram" };
+> = { telegram_callback_query: "telegram", discord_interaction: "discord" };
 
 /** The provider whose card admission governs invocations of this scheme. */
 export function approvalInvocationProvider(
@@ -51,7 +54,7 @@ export interface ApprovalInvocationIdentity {
 	organizationId: string;
 	scheme: ApprovalInvocationScheme;
 	schemeVersion: typeof APPROVAL_INVOCATION_SCHEME_VERSION;
-	/** Authenticated receiver, e.g. `telegram-bot:<bot user id>`. */
+	/** Authenticated receiver, e.g. `telegram-bot:<bot user id>` or `discord-app:<application id>`. */
 	receiverScope: string;
 	/** Exact provider invocation ID, kept opaque. */
 	invocationId: string;

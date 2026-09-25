@@ -8,6 +8,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
+import { isAbsenceCardDeliveredByOwner } from "@/lib/approvals/delivery/store";
 import { createLogger } from "@/lib/logger";
 import type { NotificationType } from "./types";
 
@@ -43,6 +44,14 @@ export async function isDiscordAvailable(
 	}
 }
 
+/** Whether the approval delivery owner (#292) sends this absence's Discord card. */
+function deliveredByApprovalOwner(
+	organizationId: string,
+	absenceId: string | undefined,
+): Promise<boolean> {
+	return isAbsenceCardDeliveredByOwner({ organizationId, absenceId, provider: "discord" });
+}
+
 /**
  * Send a notification via Discord
  */
@@ -61,6 +70,17 @@ export async function sendDiscordNotification(
 		const botConfig = await getBotConfigByOrganization(params.organizationId);
 		if (!botConfig) return;
 
+		// One owner per delivery effect: where the approval delivery owner has
+		// the absence card, this path sends neither the card nor a plain
+		// message about the same request.
+		if (
+			params.type === "approval_request_submitted" &&
+			params.entityType === "absence_entry" &&
+			(await deliveredByApprovalOwner(params.organizationId, params.entityId))
+		) {
+			return;
+		}
+
 		// Handle approval-related notifications specially
 		if (
 			params.type === "approval_request_submitted" &&
@@ -72,6 +92,13 @@ export async function sendDiscordNotification(
 					eq(approvalRequest.organizationId, params.organizationId),
 				),
 			});
+
+			if (
+				approval?.entityType === "absence_entry" &&
+				(await deliveredByApprovalOwner(params.organizationId, approval.entityId))
+			) {
+				return;
+			}
 
 			if (approval) {
 				const emp = await db.query.employee.findFirst({

@@ -11,6 +11,7 @@
       "alreadyProcessed": "To zatwierdzenie zostało już przetworzone.",
       "boundReviewRequired": "Ta karta nie odpowiada już bieżącemu wnioskowi lub przydziałowi albo nie udało się zweryfikować działania. Nie podjęto żadnej decyzji. Sprawdź wniosek w Z8.",
       "invocationConflict": "To naciśnięcie zostało już zarejestrowane z inną akcją. Nie podjęto żadnej decyzji. Sprawdź wniosek w Z8.",
+      "outcomeUnknown": "Nie udało się potwierdzić wyniku tej akcji. Sprawdź wniosek w Z8, zanim spróbujesz ponownie.",
       "card": {
         "absenceTitle": "Wniosek o nieobecność do zatwierdzenia",
         "boundHint": "Zatwierdź lub odrzuć rozstrzyga dokładnie wniosek pokazany powyżej. Jeśli został zmieniony lub przekazany, nic nie zostanie rozstrzygnięte i poprosimy o sprawdzenie go w Z8.",
