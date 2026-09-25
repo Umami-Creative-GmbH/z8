@@ -22,6 +22,7 @@ import type { ServerActionResult } from "@/lib/effect/result";
 import { AuthServiceLive } from "@/lib/effect/services/auth.service";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
+import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
 	ensureSettingsActorCanAccessCustomerTarget,
 	ensureSettingsActorCanAccessProjectTarget,
@@ -89,8 +90,14 @@ type ProjectAssignmentWithRelations = typeof projectAssignment.$inferSelect & {
 		| null;
 };
 
-async function getProjectRelationshipEmployee(employeeId: string, organizationId: string) {
-	return db.query.employee.findFirst({
+type ProjectSettingsReader = Pick<typeof db, "query">;
+
+async function getProjectRelationshipEmployee(
+	employeeId: string,
+	organizationId: string,
+	reader: ProjectSettingsReader = db,
+) {
+	return reader.query.employee.findFirst({
 		where: and(
 			eq(employee.id, employeeId),
 			eq(employee.organizationId, organizationId),
@@ -104,15 +111,28 @@ async function getProjectAssignmentTarget(
 	type: ProjectAssignmentType,
 	targetId: string,
 	organizationId: string,
+	reader: ProjectSettingsReader = db,
 ) {
 	if (type === "team") {
-		return db.query.team.findFirst({
+		return reader.query.team.findFirst({
 			where: and(eq(team.id, targetId), eq(team.organizationId, organizationId)),
 			columns: { id: true },
 		});
 	}
 
-	return getProjectRelationshipEmployee(targetId, organizationId);
+	return getProjectRelationshipEmployee(targetId, organizationId, reader);
+}
+
+/** Validation failures raised inside a guarded transaction keep their type. */
+function projectMutationError(error: unknown, message: string, operation: string, table: string) {
+	return error instanceof ValidationError || error instanceof NotFoundError
+		? error
+		: new DatabaseError({
+				message: error instanceof Error ? error.message : message,
+				operation,
+				table,
+				cause: error instanceof Error ? error : undefined,
+			});
 }
 
 export interface CreateProjectInput {
@@ -612,7 +632,22 @@ export async function updateProject(
 				yield* _(
 					Effect.tryPromise({
 						try: async () => {
-							await db.update(project).set(updateData).where(eq(project.id, projectId));
+							const scopedProject = and(
+								eq(project.id, projectId),
+								eq(project.organizationId, existingProject.organizationId),
+							);
+							if (input.status === undefined) {
+								await db.update(project).set(updateData).where(scopedProject);
+								return;
+							}
+							// The bookable lifecycle decides manual eligibility (#315).
+							await withOrganizationConfigurationMutation(
+								db,
+								existingProject.organizationId,
+								async (tx) => {
+									await tx.update(project).set(updateData).where(scopedProject);
+								},
+							);
 						},
 						catch: (error) =>
 							new DatabaseError({
@@ -930,7 +965,6 @@ export async function addProjectAssignment(
 					}),
 				);
 				const session = actor.session;
-				const dbService = actor.dbService;
 
 				yield* _(
 					ensureSettingsActorCanAccessProjectTarget(actor, existingProject, {
@@ -939,30 +973,6 @@ export async function addProjectAssignment(
 						action: "create",
 					}),
 				);
-
-				const assignmentTarget = yield* _(
-					Effect.tryPromise({
-						try: async () =>
-							await getProjectAssignmentTarget(type, targetId, existingProject.organizationId),
-						catch: (error) =>
-							new DatabaseError({
-								message:
-									error instanceof Error ? error.message : "Failed to validate assignment target",
-								operation: "select",
-								table: type,
-							}),
-					}),
-				);
-				if (!assignmentTarget) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: `${type === "team" ? "Team" : "Employee"} not found in this organization`,
-								field: type === "team" ? "teamId" : "employeeId",
-							}),
-						),
-					);
-				}
 
 				// Check if already assigned
 				const existingCondition =
@@ -978,45 +988,55 @@ export async function addProjectAssignment(
 								eq(projectAssignment.employeeId, targetId),
 							);
 
-				const existing = yield* _(
-					dbService.query("checkExisting", async () => {
-						return await db.query.projectAssignment.findFirst({
-							where: existingCondition,
-						});
-					}),
-				);
-
-				if (existing) {
-					yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: `This ${type} is already assigned to this project`,
-								field: type === "team" ? "teamId" : "employeeId",
-							}),
-						),
-					);
-				}
-
-				// Add the assignment
+				// Add the assignment. Target validation runs under exclusive configuration
+				// protection so it serializes with manual preparation (#315).
 				yield* _(
 					Effect.tryPromise({
-						try: async () => {
-							await db.insert(projectAssignment).values({
-								projectId,
-								organizationId: existingProject.organizationId,
-								assignmentType: type,
-								teamId: type === "team" ? targetId : null,
-								employeeId: type === "employee" ? targetId : null,
-								createdBy: session.user.id,
-							});
-						},
+						try: () =>
+							withOrganizationConfigurationMutation(
+								db,
+								existingProject.organizationId,
+								async (tx) => {
+									const assignmentTarget = await getProjectAssignmentTarget(
+										type,
+										targetId,
+										existingProject.organizationId,
+										tx,
+									);
+									if (!assignmentTarget) {
+										throw new ValidationError({
+											message: `${type === "team" ? "Team" : "Employee"} not found in this organization`,
+											field: type === "team" ? "teamId" : "employeeId",
+										});
+									}
+
+									const existing = await tx.query.projectAssignment.findFirst({
+										where: existingCondition,
+									});
+									if (existing) {
+										throw new ValidationError({
+											message: `This ${type} is already assigned to this project`,
+											field: type === "team" ? "teamId" : "employeeId",
+										});
+									}
+
+									await tx.insert(projectAssignment).values({
+										projectId,
+										organizationId: existingProject.organizationId,
+										assignmentType: type,
+										teamId: type === "team" ? targetId : null,
+										employeeId: type === "employee" ? targetId : null,
+										createdBy: session.user.id,
+									});
+								},
+							),
 						catch: (error) =>
-							new DatabaseError({
-								message:
-									error instanceof Error ? error.message : "Failed to add project assignment",
-								operation: "insert",
-								table: "projectAssignment",
-							}),
+							projectMutationError(
+								error,
+								"Failed to add project assignment",
+								"insert",
+								"projectAssignment",
+							),
 					}),
 				);
 
@@ -1112,16 +1132,35 @@ export async function removeProjectAssignment(
 				// Remove the assignment
 				yield* _(
 					Effect.tryPromise({
-						try: async () => {
-							await db.delete(projectAssignment).where(eq(projectAssignment.id, assignmentId));
-						},
+						try: () =>
+							withOrganizationConfigurationMutation(
+								db,
+								assignmentProject.organizationId,
+								async (tx) => {
+									const removed = await tx
+										.delete(projectAssignment)
+										.where(
+											and(
+												eq(projectAssignment.id, assignmentId),
+												eq(projectAssignment.organizationId, assignmentProject.organizationId),
+											),
+										)
+										.returning({ id: projectAssignment.id });
+									if (removed.length === 0) {
+										throw new NotFoundError({
+											message: "Assignment not found",
+											entityType: "projectAssignment",
+										});
+									}
+								},
+							),
 						catch: (error) =>
-							new DatabaseError({
-								message:
-									error instanceof Error ? error.message : "Failed to remove project assignment",
-								operation: "delete",
-								table: "projectAssignment",
-							}),
+							projectMutationError(
+								error,
+								"Failed to remove project assignment",
+								"delete",
+								"projectAssignment",
+							),
 					}),
 				);
 

@@ -9,7 +9,7 @@ import {
 	employee,
 	employeeManagers,
 } from "@/db/schema";
-import type { DatabaseError, NotFoundError, ValidationError } from "../errors";
+import type { DatabaseError } from "../errors";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
@@ -43,48 +43,6 @@ export type EditCapability =
 			reason: "within_approval_window" | "zero_day_policy";
 	  }
 	| { type: "forbidden"; reason: "beyond_approval_window"; daysBack: number };
-
-/**
- * Input for creating a new change policy
- */
-export interface CreatePolicyInput {
-	organizationId: string;
-	name: string;
-	description?: string;
-	selfServiceDays: number;
-	approvalDays: number;
-	noApprovalRequired?: boolean;
-	notifyAllManagers?: boolean;
-	createdBy: string;
-}
-
-/**
- * Input for updating a change policy
- */
-export interface UpdatePolicyInput {
-	name?: string;
-	description?: string;
-	selfServiceDays?: number;
-	approvalDays?: number;
-	noApprovalRequired?: boolean;
-	notifyAllManagers?: boolean;
-	isActive?: boolean;
-	updatedBy: string;
-}
-
-/**
- * Input for assigning a policy
- */
-export interface AssignPolicyInput {
-	policyId: string;
-	organizationId: string;
-	assignmentType: "organization" | "team" | "employee";
-	teamId?: string;
-	employeeId?: string;
-	effectiveFrom?: Date;
-	effectiveUntil?: Date;
-	createdBy: string;
-}
 
 /**
  * Manager information for notification
@@ -136,29 +94,11 @@ export class ChangePolicyService extends Context.Tag("ChangePolicyService")<
 			notifyAll: boolean,
 		) => Effect.Effect<ManagerInfo[], DatabaseError>;
 
-		// CRUD operations
-		readonly createPolicy: (
-			input: CreatePolicyInput,
-		) => Effect.Effect<ChangePolicy, ValidationError | DatabaseError>;
-
-		readonly updatePolicy: (
-			id: string,
-			input: UpdatePolicyInput,
-		) => Effect.Effect<ChangePolicy, NotFoundError | ValidationError | DatabaseError>;
-
-		readonly deletePolicy: (id: string) => Effect.Effect<void, NotFoundError | DatabaseError>;
-
+		// Configuration writes are owned by the settings actions, which take the
+		// organization configuration guard; this service only reads.
 		readonly getPolicies: (organizationId: string) => Effect.Effect<ChangePolicy[], DatabaseError>;
 
 		readonly getPolicyById: (id: string) => Effect.Effect<ChangePolicy | null, DatabaseError>;
-
-		readonly assignPolicy: (
-			input: AssignPolicyInput,
-		) => Effect.Effect<ChangePolicyAssignment, ValidationError | DatabaseError>;
-
-		readonly unassignPolicy: (
-			assignmentId: string,
-		) => Effect.Effect<void, NotFoundError | DatabaseError>;
 
 		readonly getAssignments: (organizationId: string) => Effect.Effect<
 			Array<
@@ -481,82 +421,7 @@ export const ChangePolicyServiceLive = Layer.effect(
 					return managers;
 				}),
 
-			// CRUD operations
-			createPolicy: (input) =>
-				Effect.gen(function* (_) {
-					const created = yield* _(
-						dbService.query("createChangePolicy", async () => {
-							const [policy] = await dbService.db
-								.insert(changePolicy)
-								.values({
-									organizationId: input.organizationId,
-									name: input.name,
-									description: input.description,
-									selfServiceDays: input.selfServiceDays,
-									approvalDays: input.approvalDays,
-									noApprovalRequired: input.noApprovalRequired ?? false,
-									notifyAllManagers: input.notifyAllManagers ?? false,
-									createdBy: input.createdBy,
-									updatedAt: new Date(),
-								})
-								.returning();
-							return policy;
-						}),
-					);
-
-					return created;
-				}),
-
-			updatePolicy: (id, input) =>
-				Effect.gen(function* (_) {
-					const updated = yield* _(
-						dbService.query("updateChangePolicy", async () => {
-							const [policy] = await dbService.db
-								.update(changePolicy)
-								.set({
-									...(input.name !== undefined && { name: input.name }),
-									...(input.description !== undefined && {
-										description: input.description,
-									}),
-									...(input.selfServiceDays !== undefined && {
-										selfServiceDays: input.selfServiceDays,
-									}),
-									...(input.approvalDays !== undefined && {
-										approvalDays: input.approvalDays,
-									}),
-									...(input.noApprovalRequired !== undefined && {
-										noApprovalRequired: input.noApprovalRequired,
-									}),
-									...(input.notifyAllManagers !== undefined && {
-										notifyAllManagers: input.notifyAllManagers,
-									}),
-									...(input.isActive !== undefined && {
-										isActive: input.isActive,
-									}),
-									updatedBy: input.updatedBy,
-								})
-								.where(eq(changePolicy.id, id))
-								.returning();
-							return policy;
-						}),
-					);
-
-					return updated;
-				}),
-
-			deletePolicy: (id) =>
-				Effect.gen(function* (_) {
-					// Soft delete
-					yield* _(
-						dbService.query("softDeleteChangePolicy", async () => {
-							await dbService.db
-								.update(changePolicy)
-								.set({ isActive: false })
-								.where(eq(changePolicy.id, id));
-						}),
-					);
-				}),
-
+			// Reads for configuration screens
 			getPolicies: (organizationId) =>
 				Effect.gen(function* (_) {
 					const policies = yield* _(
@@ -585,49 +450,6 @@ export const ChangePolicyServiceLive = Layer.effect(
 					);
 
 					return policy ?? null;
-				}),
-
-			assignPolicy: (input) =>
-				Effect.gen(function* (_) {
-					// Calculate priority based on assignment type
-					const priority =
-						input.assignmentType === "employee" ? 2 : input.assignmentType === "team" ? 1 : 0;
-
-					const created = yield* _(
-						dbService.query("assignChangePolicy", async () => {
-							const [assignment] = await dbService.db
-								.insert(changePolicyAssignment)
-								.values({
-									policyId: input.policyId,
-									organizationId: input.organizationId,
-									assignmentType: input.assignmentType,
-									teamId: input.teamId,
-									employeeId: input.employeeId,
-									priority,
-									effectiveFrom: input.effectiveFrom,
-									effectiveUntil: input.effectiveUntil,
-									createdBy: input.createdBy,
-									updatedAt: new Date(),
-								})
-								.returning();
-							return assignment;
-						}),
-					);
-
-					return created;
-				}),
-
-			unassignPolicy: (assignmentId) =>
-				Effect.gen(function* (_) {
-					// Soft delete
-					yield* _(
-						dbService.query("unassignChangePolicy", async () => {
-							await dbService.db
-								.update(changePolicyAssignment)
-								.set({ isActive: false })
-								.where(eq(changePolicyAssignment.id, assignmentId));
-						}),
-					);
 				}),
 
 			getAssignments: (organizationId) =>

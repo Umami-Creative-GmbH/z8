@@ -78,6 +78,8 @@ pub struct ClockJournal {
     pub server_reachable: bool,
     /// A new action can be frozen for the session's context now.
     pub commands_enabled: bool,
+    /// A confirmed idle break can be frozen as one atomic command (#281).
+    pub breaks_enabled: bool,
     pub commands: Vec<CommandView>,
     pub other_contexts: usize,
     pub projection: Option<Projection>,
@@ -90,6 +92,7 @@ pub struct JournalScope<'a> {
     pub context: Option<&'a CommandContext>,
     pub server_reachable: bool,
     pub commands_enabled: bool,
+    pub breaks_enabled: bool,
     /// Shown when no saved command determines the clock state.
     pub last_known: Option<Projection>,
 }
@@ -104,6 +107,7 @@ pub fn build(
         context,
         server_reachable,
         commands_enabled,
+        breaks_enabled,
         last_known,
     } = scope;
     let own =
@@ -121,9 +125,10 @@ pub fn build(
         .iter()
         .filter(|command| matches!(command.state, CommandState::Pending | CommandState::Stalled))
         .last()
+        // An unsent break leaves work resumed since its detected return.
         .map(|command| Projection {
-            is_clocked_in: command.kind == CommandKind::ClockIn,
-            since: (command.kind == CommandKind::ClockIn).then(|| command.occurred_at.clone()),
+            is_clocked_in: command.kind != CommandKind::ClockOut,
+            since: (command.kind != CommandKind::ClockOut).then(|| command.occurred_at.clone()),
         })
         .or(last_known);
     // Active first in capture order, then the most recently resolved.
@@ -136,6 +141,7 @@ pub fn build(
         legacy,
         server_reachable,
         commands_enabled,
+        breaks_enabled,
         commands: shown.into_iter().map(CommandView::from).collect(),
         other_contexts,
         projection,

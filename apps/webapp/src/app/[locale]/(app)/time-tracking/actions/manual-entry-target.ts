@@ -210,6 +210,10 @@ export async function getManualEntryTargetContextForEmployee(params: {
 			timezone: zone.timezone,
 			timezoneSource: zone.source,
 			manualCommandVersion: admission === "append" ? 2 : 1,
+			recoveryContext: {
+				userId: params.currentEmployee.userId,
+				organizationId: params.currentEmployee.organizationId,
+			},
 			projects,
 			categories,
 		},

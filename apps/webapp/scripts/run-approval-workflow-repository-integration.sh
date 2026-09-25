@@ -100,6 +100,11 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	src/lib/import-review/reviewed-import-operation.integration.test.ts \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.approval-evidence.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-command.integration.test.ts" \
+	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-eligibility.integration.test.ts" \
+	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-authorization.integration.test.ts" \
+	"src/app/[locale]/(app)/settings/organizations/organization-timezone.integration.test.ts" \
+	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-holiday-policy.integration.test.ts" \
+	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-command-billing.integration.test.ts" \
 	src/lib/demo/demo-work.integration.test.ts \
 	src/lib/bot-platform/clock-commands.integration.test.ts \
 	"src/app/[locale]/(app)/time-tracking/actions/work-period-amendment.integration.test.ts" \
@@ -140,4 +145,5 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	src/lib/teams/bound-approval.integration.test.ts \
 	src/lib/travel-expenses/expense-review-decision.integration.test.ts \
 	src/lib/approvals/delivery/discord-delivery.integration.test.ts \
-	src/lib/approvals/escalation/replacement-delivery.integration.test.ts
+	src/lib/approvals/escalation/replacement-delivery.integration.test.ts \
+	"src/app/[locale]/(app)/time-tracking/actions/correction-lifecycle.integration.test.ts"

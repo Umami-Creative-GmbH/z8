@@ -7,7 +7,7 @@ import type { ClockCommandOutcome, ClockJournal, ClockStatus, WorkLocationType }
 type ClockAction =
   | { command: "clock_in"; workLocationType: WorkLocationType }
   | { command: "clock_out" }
-  | { command: "clock_out_with_break"; breakStartTime: string; workLocationType: WorkLocationType };
+  | { command: "clock_out_with_break"; breakId: string; workLocationType: WorkLocationType };
 
 interface ClockScope {
   enabled: boolean;
@@ -149,11 +149,12 @@ export function useClock({ enabled, sessionVersion, serverUrl, organizationId }:
     journal,
     journalError: journalQuery.isError,
     canClock,
-    // Breaks still use the legacy two-request transport (#281).
-    canRecordBreak: canClock && serverReady && !hasUnsentCommands,
+    // An atomic break is saved like any other action (#281); the legacy
+    // two-request break needs the server and nothing unsent before it.
+    canRecordBreak: canClock && (journal?.breaksEnabled === true || (serverReady && !hasUnsentCommands)),
     clockIn: (workLocationType: WorkLocationType) => submit({ command: "clock_in", workLocationType }),
     clockOut: () => submit({ command: "clock_out" }),
-    clockOutWithBreak: (args: { breakStartTime: string; workLocationType: WorkLocationType }) =>
+    clockOutWithBreak: (args: { breakId: string; workLocationType: WorkLocationType }) =>
       submit({ command: "clock_out_with_break", ...args }),
     retrySavedCommand: (operationId: string) => savedCommandMutation.mutate({ command: "retry_clock_command", operationId }),
     archiveSavedCommand: (operationId: string) => savedCommandMutation.mutate({ command: "archive_clock_command", operationId }),

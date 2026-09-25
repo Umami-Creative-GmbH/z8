@@ -133,7 +133,7 @@ vi.mock("./shared", async (importOriginal) => {
 	};
 });
 
-const { createManualTimeEntry } = await import("../actions");
+const { createManualTimeEntry, lookupManualTimeEntry } = await import("../actions");
 const { clockIn } = await import("./clocking");
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
 
@@ -310,6 +310,7 @@ describeIntegration("strict versioned manual commands on PostgreSQL", () => {
 
 	async function cleanup() {
 		await admin.query("drop function if exists t308_fail() cascade");
+		await admin.query("drop function if exists t310_hold() cascade");
 		await admin.query("delete from organization where id in ($1, $2)", [
 			ids.organization,
 			ids.otherOrganization,
@@ -1179,8 +1180,203 @@ describeIntegration("strict versioned manual commands on PostgreSQL", () => {
 			await admin.query("delete from employee_managers where id = $1", [ids.managerLink]);
 			const before = await snapshot();
 
-			await expect(submit(manualCommand())).resolves.toMatchObject({ success: false });
+			await expect(submit(manualCommand())).resolves.toMatchObject({
+				success: false,
+				code: "approval_unroutable",
+			});
 
+			expect(await snapshot()).toEqual(before);
+		});
+	});
+
+	describe("frozen command recovery (#310)", () => {
+		const own = { userId: ids.employeeUser, organizationId: ids.organization };
+
+		function lookup(
+			command: unknown,
+			as: string = ids.employeeUser,
+			context: { userId: string; organizationId: string } = {
+				userId: as,
+				organizationId: ids.organization,
+			},
+		) {
+			actAs(as);
+			return lookupManualTimeEntry(command, context);
+		}
+
+		async function waitForAdvisoryWaiters(count: number) {
+			for (let attempt = 0; attempt < 100; attempt += 1) {
+				const { rows } = await admin.query<{ waiting: number }>(
+					"select count(*)::int as waiting from pg_locks where locktype = 'advisory' and not granted",
+				);
+				if ((rows[0]?.waiting ?? 0) >= count) return;
+				await new Promise((resolve) => setTimeout(resolve, 50));
+			}
+			throw new Error(`Fewer than ${count} transactions waited on advisory locks`);
+		}
+
+		it("reports the original participation of a committed command separately from its current status", async () => {
+			await seedChangePolicy({ selfServiceDays: 1, approvalDays: 30 });
+			harness.now = parseInstant("2026-09-10T10:00:00Z");
+			const command = manualCommand();
+			await expect(submit(command)).resolves.toMatchObject({
+				success: true,
+				data: { requiresApproval: true },
+			});
+			const before = await snapshot();
+
+			await expect(lookup(structuredClone(command))).resolves.toEqual({
+				status: "committed",
+				data: {
+					workPeriodId: command.submissionId,
+					requiresApproval: true,
+					disposition: "replayed",
+					currentApprovalStatus: "pending",
+				},
+			});
+			expect(await snapshot()).toEqual(before);
+			// A later decision changes the current status, never the committed outcome.
+			await admin.query("update work_period set approval_status = 'approved' where id = $1", [
+				command.submissionId,
+			]);
+			await expect(lookup(command)).resolves.toMatchObject({
+				status: "committed",
+				data: { requiresApproval: true, currentApprovalStatus: "approved" },
+			});
+			await expect(createManualTimeEntry(command, own)).resolves.toMatchObject({
+				success: true,
+				data: { requiresApproval: true, disposition: "replayed" },
+			});
+		});
+
+		it("answers not_committed for an absent identity without writing, and an exact retry then commits it", async () => {
+			const command = manualCommand();
+			const before = await snapshot();
+
+			await expect(lookup(command)).resolves.toEqual({ status: "not_committed" });
+			expect(await snapshot()).toEqual(before);
+
+			actAs(ids.employeeUser);
+			await expect(createManualTimeEntry(command, own)).resolves.toMatchObject({
+				success: true,
+				data: { workPeriodId: command.submissionId, disposition: "executed" },
+			});
+			await expect(lookup(command)).resolves.toMatchObject({ status: "committed" });
+			expect(await periods()).toHaveLength(1);
+		});
+
+		it("answers in every admission mode and never creates work", async () => {
+			const committed = manualCommand();
+			await submit(committed);
+			await setAppend("inactive");
+			const before = await snapshot();
+
+			await expect(lookup(committed)).resolves.toMatchObject({ status: "committed" });
+			await expect(lookup(manualCommand({ date: "2026-09-02" }))).resolves.toEqual({
+				status: "not_committed",
+			});
+			await setAppend(null);
+			await expect(lookup(committed)).resolves.toMatchObject({ status: "committed" });
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it("reports conflicts for a changed command, deleted work and legacy work under the identity", async () => {
+			const command = manualCommand();
+			await submit(command);
+			await expect(lookup({ ...command, reason: "Edited reason" })).resolves.toEqual({
+				status: "conflict",
+			});
+			await admin.query("update work_period set deleted_at = now() where id = $1", [
+				command.submissionId,
+			]);
+			await expect(lookup(command)).resolves.toEqual({ status: "conflict" });
+
+			await setAppend(null);
+			const legacy = {
+				submissionId: randomUUID(),
+				date: "2026-09-03",
+				clockInTime: "09:00",
+				clockOutTime: "10:00",
+				reason: "Legacy form",
+				timezone: "Europe/Berlin",
+				browserTimezone: "Europe/Berlin",
+			};
+			await expect(submit(legacy)).resolves.toMatchObject({ success: true });
+			await expect(
+				lookup(manualCommand({ submissionId: legacy.submissionId, date: "2026-09-03" })),
+			).resolves.toEqual({ status: "conflict" });
+		});
+
+		it("keeps unsupported representations distinct from absence", async () => {
+			await expect(
+				lookup({
+					submissionId: randomUUID(),
+					date: "2026-09-02",
+					clockInTime: "09:00",
+					clockOutTime: "10:00",
+					reason: "Legacy form",
+				}),
+			).resolves.toEqual({ status: "unsupported" });
+			await expect(lookup({ ...manualCommand(), version: 3 })).resolves.toEqual({
+				status: "unsupported",
+			});
+			await expect(lookup({ ...manualCommand(), extra: true })).resolves.toEqual({
+				status: "unsupported",
+			});
+		});
+
+		it("waits for an in-flight submission holding the identity and then reports its commit", async () => {
+			await admin.query(`create function t310_hold() returns trigger language plpgsql as $$
+				begin perform pg_advisory_xact_lock(hashtextextended('t310-hold', 0)); return new; end $$`);
+			await admin.query(
+				"create trigger t310_hold before insert on completed_work_operation for each row execute function t310_hold()",
+			);
+			const holder = await holdAdvisoryLock("t310-hold");
+			const command = manualCommand();
+			const submission = submit(command);
+			await waitForAdvisoryWaiters(1);
+
+			const pendingLookup = lookup(command);
+			await waitForAdvisoryWaiters(2);
+			await holder.release();
+
+			await expect(submission).resolves.toMatchObject({ success: true });
+			await expect(pendingLookup).resolves.toMatchObject({
+				status: "committed",
+				data: { workPeriodId: command.submissionId },
+			});
+		});
+
+		it("refuses another user, organization or unauthorized target before reading the identity", async () => {
+			const command = manualCommand();
+			await submit(command);
+			const before = await snapshot();
+
+			// The manager may create for the employee, but this command belongs to the employee's session.
+			await expect(lookup(command, ids.managerUser, own)).resolves.toMatchObject({
+				status: "refused",
+				code: "context_mismatch",
+			});
+			actAs(ids.managerUser);
+			await expect(
+				createManualTimeEntry(manualCommand({ date: "2026-09-02" }), own),
+			).resolves.toMatchObject({ success: false, code: "context_mismatch" });
+			await expect(
+				lookup(command, ids.employeeUser, {
+					userId: ids.employeeUser,
+					organizationId: ids.otherOrganization,
+				}),
+			).resolves.toMatchObject({ status: "refused", code: "context_mismatch" });
+			// A plain colleague may not create for the target at all.
+			await expect(lookup(command, ids.peerUser)).resolves.toMatchObject({
+				status: "refused",
+				code: "target_not_authorized",
+			});
+			harness.userId = null;
+			await expect(lookupManualTimeEntry(command, own)).resolves.toMatchObject({
+				status: "refused",
+				code: "not_authenticated",
+			});
 			expect(await snapshot()).toEqual(before);
 		});
 	});
