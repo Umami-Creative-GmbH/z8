@@ -9,6 +9,7 @@ import {
 	approvalReviewBinding,
 	approvalStageAssignment,
 	approvalSubmittedRevision,
+	approvalWorkflow,
 	employee,
 } from "@/db/schema";
 import {
@@ -482,8 +483,19 @@ export async function issueReviewBinding(
 			),
 		)
 		.limit(1);
-	const current = await loadCurrentAbsenceSubmittedRevision(database, target);
-	if (assignments.length !== 1 || current?.id !== target.submittedRevisionId) {
+	// Kind-agnostic: the workflow's latest revision, whatever its kind (#325).
+	const current = await database
+		.select({ id: approvalSubmittedRevision.id })
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, target.organizationId),
+				eq(approvalSubmittedRevision.workflowId, target.workflowId),
+			),
+		)
+		.orderBy(desc(approvalSubmittedRevision.revision))
+		.limit(1);
+	if (assignments.length !== 1 || current[0]?.id !== target.submittedRevisionId) {
 		throw new ApprovalEvidenceError("binding_mismatch", { field: "target" });
 	}
 	await database
@@ -579,6 +591,36 @@ export async function loadReviewBindingAuthority(
 		.limit(1);
 	const authority = rows[0]?.authority;
 	return authority === "canonical" || authority === "legacy" ? authority : null;
+}
+
+/**
+ * The kind of the workflow a canonical binding names, so a card action reaches
+ * that kind's decision owner (#325). Bindings are immutable, so routing on
+ * them keeps exact replays intact. Organization-scoped; null when unknown.
+ */
+export async function loadReviewBindingWorkflowType(
+	database: ApprovalDatabase,
+	input: { organizationId: string; bindingId: string },
+): Promise<ApprovalWorkflowType | null> {
+	const rows = await database
+		.select({ workflowType: approvalWorkflow.workflowType })
+		.from(approvalReviewBinding)
+		.innerJoin(
+			approvalWorkflow,
+			and(
+				eq(approvalWorkflow.id, approvalReviewBinding.workflowId),
+				eq(approvalWorkflow.organizationId, approvalReviewBinding.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(approvalReviewBinding.id, input.bindingId),
+				eq(approvalReviewBinding.organizationId, input.organizationId),
+				eq(approvalReviewBinding.authority, "canonical"),
+			),
+		)
+		.limit(1);
+	return rows[0]?.workflowType ?? null;
 }
 
 /** Transaction-time check that a supplied handle names exactly this target. */

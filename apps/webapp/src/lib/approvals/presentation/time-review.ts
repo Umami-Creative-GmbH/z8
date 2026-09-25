@@ -1,14 +1,32 @@
+import { and, eq, or } from "drizzle-orm";
+import { db } from "@/db";
+import {
+	approvalChainStageInstance,
+	approvalSubmittedRevision,
+	approvalWorkflowStage,
+} from "@/db/schema";
 import {
 	instantToCanonicalString,
 	parseInstant,
 } from "@/lib/datetime/temporal-core";
 import { formatUtcOffset, offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
-import type {
-	DecisionEvidenceRecord,
-	LegacyDecisionEvidenceRecord,
-	TimeCorrectionSubmittedRevisionRecord,
-	WorkPeriodSubmittedRevisionRecord,
+import {
+	type DecisionEvidenceRecord,
+	type LegacyDecisionEvidenceRecord,
+	listDecisionEvidence,
+	listLegacyDecisionEvidence,
+	loadCanonicalTimeCorrectionSubmittedRevision,
+	loadCanonicalWorkPeriodSubmittedRevision,
+	loadLegacyTimeCorrectionSubmittedRevision,
+	loadLegacyWorkPeriodSubmittedRevision,
+	readApprovalEvidenceMode,
+	type TimeCorrectionSubmittedRevisionRecord,
+	type WorkPeriodSubmittedRevisionRecord,
 } from "../evidence/store";
+import { compareTimeCorrectionWithSubmittedRevision } from "../evidence/time-correction-evidence";
+import { compareWorkPeriodWithSubmittedRevision } from "../evidence/work-period-evidence";
+import type { ApprovalDatabase } from "../server/types";
+import { loadTimeCorrectionCategoryNames, type TimeApprovalWorkflowType } from "./time-card";
 import type { TimeCorrectionRevisionComparison } from "../evidence/time-correction-facts";
 import type {
 	WorkPeriodEndpointFacts,
@@ -372,4 +390,164 @@ function correctionResultRows(terminal: Record<string, unknown>): Row[] {
 		value: (segment && segmentText(segment)) ?? UNAVAILABLE,
 	});
 	return rows;
+}
+
+/**
+ * The lifecycle a time request belongs to and the kind of its revision: its
+ * canonical workflow when a stage mirrors this request and the revision was
+ * captured under canonical authority, otherwise the legacy request or chain.
+ * A shared work-period ID alone never links two cycles.
+ */
+async function findTimeRevisionLifecycle(
+	database: ApprovalDatabase,
+	input: { organizationId: string; approvalRequestId: string; workPeriodId: string },
+): Promise<
+	| { authority: "canonical"; workflowId: string; kind: TimeApprovalWorkflowType }
+	| {
+			authority: "legacy";
+			chainInstanceId: string | null;
+			kind: TimeApprovalWorkflowType;
+	  }
+	| null
+> {
+	const [stages, chainStages] = await Promise.all([
+		database
+			.select({ workflowId: approvalWorkflowStage.workflowId })
+			.from(approvalWorkflowStage)
+			.where(
+				and(
+					eq(approvalWorkflowStage.organizationId, input.organizationId),
+					eq(approvalWorkflowStage.legacyApprovalRequestId, input.approvalRequestId),
+				),
+			)
+			.limit(2),
+		database
+			.select({ chainInstanceId: approvalChainStageInstance.chainInstanceId })
+			.from(approvalChainStageInstance)
+			.where(
+				and(
+					eq(approvalChainStageInstance.organizationId, input.organizationId),
+					eq(approvalChainStageInstance.approvalRequestId, input.approvalRequestId),
+				),
+			)
+			.limit(2),
+	]);
+	const workflowId = stages.length === 1 ? (stages[0]?.workflowId ?? null) : null;
+	const chainInstanceId = chainStages.length === 1 ? (chainStages[0]?.chainInstanceId ?? null) : null;
+	const legacyLifecycle = chainInstanceId
+		? or(
+				eq(approvalSubmittedRevision.legacyApprovalRequestId, input.approvalRequestId),
+				eq(approvalSubmittedRevision.legacyChainInstanceId, chainInstanceId),
+			)
+		: eq(approvalSubmittedRevision.legacyApprovalRequestId, input.approvalRequestId);
+	const rows = await database
+		.select({
+			authority: approvalSubmittedRevision.authority,
+			workflowType: approvalSubmittedRevision.workflowType,
+		})
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.sourceType, "time_entry"),
+				eq(approvalSubmittedRevision.sourceId, input.workPeriodId),
+				workflowId
+					? or(
+							and(
+								eq(approvalSubmittedRevision.authority, "canonical"),
+								eq(approvalSubmittedRevision.workflowId, workflowId),
+							),
+							and(eq(approvalSubmittedRevision.authority, "legacy"), legacyLifecycle),
+						)
+					: and(eq(approvalSubmittedRevision.authority, "legacy"), legacyLifecycle),
+			),
+		)
+		.limit(2);
+	const row = rows[0];
+	if (rows.length !== 1 || !row) return null;
+	const kind = row.workflowType as TimeApprovalWorkflowType;
+	return row.authority === "canonical" && workflowId
+		? { authority: "canonical", workflowId, kind }
+		: { authority: "legacy", chainInstanceId, kind };
+}
+
+/**
+ * Scoped review preparation for a time approval request (#325): its submitted
+ * revision under whichever authority captured it, whether the live work graph
+ * still matches it while the request is pending, and each committed
+ * decision's original evidence with its result. Infrastructure errors throw.
+ */
+export async function prepareTimeReviewEvidence(
+	input: {
+		organizationId: string;
+		approvalRequestId: string;
+		workPeriodId: string;
+		requestPending: boolean;
+		/** The request's kind as classified by the inbox, for the capture hold. */
+		kind: TimeApprovalWorkflowType | null;
+	},
+	database: ApprovalDatabase = db,
+): Promise<TimeReviewEvidence> {
+	const lifecycle = await findTimeRevisionLifecycle(database, input);
+	if (!lifecycle) {
+		const mode = input.kind
+			? await readApprovalEvidenceMode(database, {
+					organizationId: input.organizationId,
+					workflowType: input.kind,
+				})
+			: "inactive";
+		return { status: "not_captured", held: input.requestPending && mode === "capture" };
+	}
+	const legacyScope = {
+		organizationId: input.organizationId,
+		workPeriodId: input.workPeriodId,
+		approvalRequestId: input.approvalRequestId,
+		chainInstanceId: lifecycle.authority === "legacy" ? lifecycle.chainInstanceId : null,
+	};
+	const decisionsFor = (revisionId: string) =>
+		lifecycle.authority === "canonical"
+			? listDecisionEvidence(database, {
+					organizationId: input.organizationId,
+					workflowId: lifecycle.workflowId,
+				})
+			: listLegacyDecisionEvidence(database, {
+					organizationId: input.organizationId,
+					submittedRevisionId: revisionId,
+				});
+	if (lifecycle.kind === "time_correction") {
+		const revision =
+			lifecycle.authority === "canonical"
+				? await loadCanonicalTimeCorrectionSubmittedRevision(database, {
+						organizationId: input.organizationId,
+						workflowId: lifecycle.workflowId,
+					})
+				: await loadLegacyTimeCorrectionSubmittedRevision(database, legacyScope);
+		if (!revision) return { status: "not_captured", held: false };
+		const [comparison, decisions, categoryNames] = await Promise.all([
+			input.requestPending ? compareTimeCorrectionWithSubmittedRevision(database, revision) : null,
+			decisionsFor(revision.id),
+			loadTimeCorrectionCategoryNames(database, input.organizationId, revision),
+		]);
+		return {
+			status: "evidenced",
+			kind: "time_correction",
+			revision,
+			comparison,
+			decisions,
+			categoryNames,
+		};
+	}
+	const revision =
+		lifecycle.authority === "canonical"
+			? await loadCanonicalWorkPeriodSubmittedRevision(database, {
+					organizationId: input.organizationId,
+					workflowId: lifecycle.workflowId,
+				})
+			: await loadLegacyWorkPeriodSubmittedRevision(database, legacyScope);
+	if (!revision) return { status: "not_captured", held: false };
+	const [comparison, decisions] = await Promise.all([
+		input.requestPending ? compareWorkPeriodWithSubmittedRevision(database, revision) : null,
+		decisionsFor(revision.id),
+	]);
+	return { status: "evidenced", kind: "work_period", revision, comparison, decisions };
 }

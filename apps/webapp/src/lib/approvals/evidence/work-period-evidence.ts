@@ -31,6 +31,7 @@ import { loadEmployeeLabel } from "./absence-submission";
 import { deriveCommandDecisionOutcome } from "./decision-outcome";
 import { ApprovalEvidenceError } from "./errors";
 import {
+	assertReviewBindingMatches,
 	captureWorkPeriodSubmittedRevision,
 	type LegacyDecisionEvidenceRecord,
 	loadCanonicalWorkPeriodSubmittedRevision,
@@ -45,6 +46,7 @@ import {
 	buildWorkPeriodSubmittedFacts,
 	compareLiveWorkPeriodWithRevision,
 	verifyWorkPeriodInterval,
+	type WorkPeriodRevisionComparison,
 	type WorkPeriodEndpointFacts,
 	type WorkPeriodEvidenceKind,
 	type WorkPeriodFactsInput,
@@ -540,10 +542,14 @@ export async function captureWorkPeriodSubmissionEvidence(
 // Fresh decision checks shared by both authorities
 // ---------------------------------------------------------------------------
 
-async function enforceRevision(
+/**
+ * Whether the live work graph still is the submitted revision. Used by the
+ * decision owners (which hold on a change) and by review and card preparation.
+ */
+export async function compareWorkPeriodWithSubmittedRevision(
 	database: ApprovalDatabase,
 	revision: WorkPeriodSubmittedRevisionRecord,
-): Promise<void> {
+): Promise<WorkPeriodRevisionComparison> {
 	const live = await loadWorkPeriodFactsInput(database, {
 		organizationId: revision.organizationId,
 		employeeId: revision.subjectEmployeeId,
@@ -552,9 +558,16 @@ async function enforceRevision(
 		requesterEmployeeId: revision.requesterEmployeeId,
 		policy: { breakPolicySnapshot: null, surchargeSnapshot: null },
 	});
-	const comparison = live
+	return live
 		? compareLiveWorkPeriodWithRevision(revision.facts, live)
-		: { kind: "material_change" as const, changedFields: ["unverifiable:work_period"] };
+		: { kind: "material_change", changedFields: ["unverifiable:work_period"] };
+}
+
+async function enforceRevision(
+	database: ApprovalDatabase,
+	revision: WorkPeriodSubmittedRevisionRecord,
+): Promise<void> {
+	const comparison = await compareWorkPeriodWithSubmittedRevision(database, revision);
 	if (comparison.kind === "material_change") {
 		throw new ApprovalEvidenceError("material_change", {
 			fields: comparison.changedFields.join(","),
@@ -598,10 +611,19 @@ async function loadCanonicalDecisionRevision(
 	return revision;
 }
 
+/** The exact assignment a decision acts on, for reviewed-binding checks. */
+export interface ReviewedDecisionTarget {
+	/** The deciding employee; a binding names only its own recipient. */
+	actorEmployeeId: string | null;
+	stageId: string;
+	assignmentId: string;
+}
+
 /**
  * Fresh checks after the engine's receipt claim: an evidenced lifecycle must
  * still match its revision; while capture is active one without it is held.
- * Time-kind reviewed bindings are not issued yet, so any supplied one fails.
+ * A supplied reviewed binding (#325) must name exactly this actor, assignment
+ * and the current submitted revision; without a revision it can name nothing.
  */
 export async function preflightCanonicalWorkPeriodDecisionEvidence(
 	database: ApprovalDatabase,
@@ -610,13 +632,25 @@ export async function preflightCanonicalWorkPeriodDecisionEvidence(
 		kind: WorkPeriodEvidenceKind;
 		workflow: ApprovalWorkflowSnapshot;
 		reviewedBindingId: string | null;
+		target: ReviewedDecisionTarget;
 	},
 ): Promise<void> {
-	if (input.reviewedBindingId !== null) {
-		throw new ApprovalEvidenceError("binding_mismatch");
-	}
 	const revision = await loadCanonicalDecisionRevision(database, input);
-	if (revision) await enforceRevision(database, revision);
+	if (!revision) {
+		if (input.reviewedBindingId !== null) throw new ApprovalEvidenceError("binding_mismatch");
+		return;
+	}
+	await enforceRevision(database, revision);
+	if (input.reviewedBindingId === null) return;
+	if (!input.target.actorEmployeeId) throw new ApprovalEvidenceError("binding_mismatch");
+	await assertReviewBindingMatches(database, input.reviewedBindingId, {
+		organizationId: input.organizationId,
+		recipientEmployeeId: input.target.actorEmployeeId,
+		workflowId: input.workflow.id,
+		stageId: input.target.stageId,
+		assignmentId: input.target.assignmentId,
+		submittedRevisionId: revision.id,
+	});
 }
 
 /** Records one executed canonical decision in the engine's transaction. */

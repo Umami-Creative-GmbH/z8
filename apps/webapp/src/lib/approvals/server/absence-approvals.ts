@@ -72,6 +72,7 @@ import {
 	type ApprovalInvocationIdentity,
 	ApprovalInvocationNotAdmittedError,
 	approvalInvocationIdempotencyKey,
+	BoundAssignmentNotCurrentError,
 	approvalInvocationProvider,
 	findCommittedInvocationDecision,
 	lockApprovalInvocation,
@@ -1818,17 +1819,7 @@ export function createAbsenceDecisionRuntime(input: {
 	});
 }
 
-/**
- * A card action whose actor no longer holds the bound assignment. Raised under
- * the decision transaction, where the engine consults management authority
- * only after the active-assignment check failed.
- */
-export class BoundAssignmentNotCurrentError extends Error {
-	constructor() {
-		super("The bound assignment is no longer held by this actor");
-		this.name = "BoundAssignmentNotCurrentError";
-	}
-}
+export { BoundAssignmentNotCurrentError };
 
 export type BoundAbsenceInvocationResult =
 	| {

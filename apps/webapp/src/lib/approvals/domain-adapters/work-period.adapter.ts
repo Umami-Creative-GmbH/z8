@@ -46,6 +46,12 @@ export interface OrdinaryWorkPeriodDecisionEvidenceHooks {
 			kind: OrdinaryWorkPeriodApprovalKind;
 			workflow: ApprovalWorkflowSnapshot;
 			reviewedBindingId: string | null;
+			/** The deciding actor and exact assignment a reviewed binding must name. */
+			target: {
+				actorEmployeeId: string | null;
+				stageId: string;
+				assignmentId: string;
+			};
 		},
 	): Promise<void>;
 	record(
@@ -284,6 +290,12 @@ export function createOrdinaryWorkPeriodApprovalAdapter(
 						kind,
 						workflow: input.workflow,
 						reviewedBindingId: input.reviewedBindingId,
+						target: {
+							actorEmployeeId:
+								input.actor.kind === "employee" ? input.actor.employeeId : null,
+							stageId: input.command.stageId,
+							assignmentId: input.command.assignmentId,
+						},
 					});
 				},
 				async recordDecisionEvidence(input) {

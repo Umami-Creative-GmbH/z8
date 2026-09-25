@@ -1,3 +1,10 @@
+import { and, eq, inArray } from "drizzle-orm";
+import {
+	type ApprovalPresentationProvider,
+	approvalWorkflow,
+	approvalWorkflowRollout,
+	workCategory,
+} from "@/db/schema";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
@@ -6,12 +13,28 @@ import {
 	formatInstant,
 	formatUtcOffset,
 } from "@/lib/datetime/temporal-format";
-import type {
-	TimeCorrectionSubmittedRevisionRecord,
-	WorkPeriodSubmittedRevisionRecord,
+import { readApprovalPresentationMode } from "../evidence/invocation";
+import {
+	issueReviewBinding,
+	loadCanonicalTimeCorrectionSubmittedRevision,
+	loadCanonicalWorkPeriodSubmittedRevision,
+	readApprovalEvidenceMode,
+	type TimeCorrectionSubmittedRevisionRecord,
+	type WorkPeriodSubmittedRevisionRecord,
 } from "../evidence/store";
+import { compareTimeCorrectionWithSubmittedRevision } from "../evidence/time-correction-evidence";
+import { compareWorkPeriodWithSubmittedRevision } from "../evidence/work-period-evidence";
+import type { ApprovalDatabase } from "../server/types";
+import type { ApprovalWorkflowType } from "../workflow/ports";
 import type { WorkPeriodEndpointFacts } from "../evidence/work-period-facts";
-import type { ApprovalCardFact } from "./bound-card";
+import type {
+	ApprovalActionableCard,
+	ApprovalCardDraft,
+	ApprovalCardFact,
+	ApprovalCardTarget,
+	ApprovalReviewSummary,
+} from "./bound-card";
+import { approvalReviewUrl } from "./review-navigation";
 
 /**
  * An endpoint's full local date and time in the offset captured with that
@@ -243,4 +266,221 @@ function categoryText(
 ): string | null {
 	if (id === null) return t("bot.approval.card.noCategory", "No category");
 	return names[id] ?? null;
+}
+
+export const TIME_APPROVAL_WORKFLOW_TYPES = [
+	"manual_time_submission",
+	"policy_clock_out",
+	"time_correction",
+] as const satisfies readonly ApprovalWorkflowType[];
+export type TimeApprovalWorkflowType = (typeof TIME_APPROVAL_WORKFLOW_TYPES)[number];
+
+export function isTimeApprovalWorkflowType(value: unknown): value is TimeApprovalWorkflowType {
+	return TIME_APPROVAL_WORKFLOW_TYPES.includes(value as TimeApprovalWorkflowType);
+}
+
+const TITLES: Readonly<Record<TimeApprovalWorkflowType, { key: string; fallback: string }>> = {
+	manual_time_submission: {
+		key: "bot.approval.card.manualTimeTitle",
+		fallback: "Manual time approval request",
+	},
+	policy_clock_out: { key: "bot.approval.card.clockOutTitle", fallback: "Clock-out approval request" },
+	time_correction: {
+		key: "bot.approval.card.timeCorrectionTitle",
+		fallback: "Time correction approval request",
+	},
+};
+
+/** Current names of the categories a correction names, scoped to the organization. */
+export async function loadTimeCorrectionCategoryNames(
+	database: ApprovalDatabase,
+	organizationId: string,
+	revision: TimeCorrectionSubmittedRevisionRecord,
+): Promise<Record<string, string | null>> {
+	const { baseline, requested } = revision.facts;
+	const ids = [
+		baseline.attribution.workCategoryId,
+		requested.workCategoryId.kind === "set" ? requested.workCategoryId.value : null,
+	].filter((id): id is string => id !== null);
+	if (ids.length === 0) return {};
+	const rows = await database
+		.select({ id: workCategory.id, name: workCategory.name })
+		.from(workCategory)
+		.where(and(eq(workCategory.organizationId, organizationId), inArray(workCategory.id, ids)));
+	return Object.fromEntries(
+		ids.map((id) => [id, rows.find((row) => row.id === id)?.name ?? null]),
+	);
+}
+
+
+/**
+ * Facts from the immutable submitted revision for one recipient's exact
+ * pending canonical assignment, or null so the caller shows a review-only
+ * notice. Every gate must hold: a pending time workflow with canonical
+ * authority, evidence capture, a submitted revision that still matches the
+ * live work graph, and intelligible facts. Infrastructure errors propagate.
+ */
+async function loadTimeCardFacts(
+	database: ApprovalDatabase,
+	input: { target: ApprovalCardTarget; display: DisplayContext; t: BotTranslateFn },
+): Promise<{
+	facts: ApprovalCardFact[];
+	submittedRevisionId: string;
+	workflowType: TimeApprovalWorkflowType;
+} | null> {
+	const { target } = input;
+	const [workflow] = await database
+		.select({
+			workflowType: approvalWorkflow.workflowType,
+			sourceType: approvalWorkflow.sourceType,
+			sourceId: approvalWorkflow.sourceId,
+			status: approvalWorkflow.status,
+		})
+		.from(approvalWorkflow)
+		.where(
+			and(
+				eq(approvalWorkflow.organizationId, target.organizationId),
+				eq(approvalWorkflow.id, target.workflowId),
+			),
+		)
+		.limit(1);
+	if (
+		!workflow ||
+		!isTimeApprovalWorkflowType(workflow.workflowType) ||
+		workflow.sourceType !== "time_entry" ||
+		workflow.status !== "pending"
+	) {
+		return null;
+	}
+	const workflowType = workflow.workflowType;
+	const [rollout] = await database
+		.select({ mode: approvalWorkflowRollout.lifecycleMode })
+		.from(approvalWorkflowRollout)
+		.where(
+			and(
+				eq(approvalWorkflowRollout.organizationId, target.organizationId),
+				eq(approvalWorkflowRollout.workflowType, workflowType),
+			),
+		)
+		.limit(1);
+	if (rollout?.mode !== "canonical" && rollout?.mode !== "complete") return null;
+	const evidenceMode = await readApprovalEvidenceMode(database, {
+		organizationId: target.organizationId,
+		workflowType,
+	});
+	if (evidenceMode !== "capture") return null;
+	const scope = { organizationId: target.organizationId, workflowId: target.workflowId };
+	if (workflowType === "time_correction") {
+		const revision = await loadCanonicalTimeCorrectionSubmittedRevision(database, scope);
+		if (!revision || revision.workPeriodId !== workflow.sourceId) return null;
+		const comparison = await compareTimeCorrectionWithSubmittedRevision(database, revision);
+		if (comparison.kind !== "current") return null;
+		const names = await loadTimeCorrectionCategoryNames(database, target.organizationId, revision);
+		const facts = buildTimeCorrectionCardFacts(revision, names, input.display, input.t);
+		return facts ? { facts, submittedRevisionId: revision.id, workflowType } : null;
+	}
+	const revision = await loadCanonicalWorkPeriodSubmittedRevision(database, scope);
+	if (
+		!revision ||
+		revision.workflowType !== workflowType ||
+		revision.workPeriodId !== workflow.sourceId
+	) {
+		return null;
+	}
+	const comparison = await compareWorkPeriodWithSubmittedRevision(database, revision);
+	if (comparison.kind !== "current") return null;
+	const facts = buildWorkPeriodCardFacts(revision, input.display, input.t);
+	return facts ? { facts, submittedRevisionId: revision.id, workflowType } : null;
+}
+
+/**
+ * Prepares an actionable time approval card (manual submission, policy
+ * clock-out or correction) for one recipient's exact pending canonical
+ * assignment, or returns null so the caller shows a review-only notice (#325).
+ * The provider must be admitted for the kind and the card must fit its limits;
+ * a binding is issued only for a card that will be sent.
+ */
+export async function prepareBoundTimeCard(
+	database: ApprovalDatabase,
+	input: {
+		target: ApprovalCardTarget;
+		provider: ApprovalPresentationProvider;
+		/** Compatibility request of this stage; the review link's target. */
+		approvalRequestId: string;
+		recipientUserId: string;
+		display: DisplayContext;
+		t: BotTranslateFn;
+		fits?: (draft: ApprovalCardDraft) => boolean;
+	},
+): Promise<ApprovalActionableCard | null> {
+	const loaded = await loadTimeCardFacts(database, input);
+	if (!loaded) return null;
+	const presentationMode = await readApprovalPresentationMode(database, {
+		organizationId: input.target.organizationId,
+		workflowType: loaded.workflowType,
+		provider: input.provider,
+	});
+	if (presentationMode !== "actionable") return null;
+	const { t } = input;
+	const title = TITLES[loaded.workflowType];
+	const draft: ApprovalCardDraft = {
+		status: "actionable",
+		recipientUserId: input.recipientUserId,
+		title: t(title.key, title.fallback),
+		facts: loaded.facts,
+		text: t(
+			"bot.approval.card.boundHint",
+			"Approve or reject decides exactly the request shown above. If it changed or was reassigned, nothing is decided and you are asked to review it in Z8.",
+		),
+		reviewLabel: t("bot.approval.reviewInZ8", "Review in Z8"),
+		reviewUrl: await approvalReviewUrl({
+			organizationId: input.target.organizationId,
+			reference: { kind: "compatibility", approvalRequestId: input.approvalRequestId },
+		}),
+		approveLabel: t("bot.approval.card.approve", "Approve"),
+		rejectLabel: t("bot.approval.card.reject", "Reject"),
+	};
+	if (input.fits && !input.fits(draft)) return null;
+	const bindingId = await issueReviewBinding(database, {
+		...input.target,
+		submittedRevisionId: loaded.submittedRevisionId,
+	});
+	return { ...draft, bindingId };
+}
+
+/**
+ * The submitted facts without controls, for a provider that cannot decide
+ * (Slack). The same fact gates as an actionable card apply; nothing is bound.
+ */
+export async function prepareTimeReviewSummary(
+	database: ApprovalDatabase,
+	input: {
+		target: ApprovalCardTarget;
+		approvalRequestId: string;
+		recipientUserId: string;
+		display: DisplayContext;
+		t: BotTranslateFn;
+		fits?: (summary: ApprovalReviewSummary) => boolean;
+	},
+): Promise<ApprovalReviewSummary | null> {
+	const loaded = await loadTimeCardFacts(database, input);
+	if (!loaded) return null;
+	const { t } = input;
+	const title = TITLES[loaded.workflowType];
+	const summary: ApprovalReviewSummary = {
+		status: "review_summary",
+		recipientUserId: input.recipientUserId,
+		title: t(title.key, title.fallback),
+		facts: loaded.facts,
+		text: t(
+			"bot.approval.card.reviewOnlyHint",
+			"Approve or reject this request in Z8. It cannot be decided from this message.",
+		),
+		reviewLabel: t("bot.approval.reviewInZ8", "Review in Z8"),
+		reviewUrl: await approvalReviewUrl({
+			organizationId: input.target.organizationId,
+			reference: { kind: "compatibility", approvalRequestId: input.approvalRequestId },
+		}),
+	};
+	return input.fits && !input.fits(summary) ? null : summary;
 }

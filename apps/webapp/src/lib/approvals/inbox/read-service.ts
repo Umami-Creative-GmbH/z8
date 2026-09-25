@@ -14,6 +14,11 @@ import {
 	buildAbsenceReviewSections,
 	prepareAbsenceReviewEvidence,
 } from "../presentation/absence-review";
+import { isTimeApprovalWorkflowType } from "../presentation/time-card";
+import {
+	buildTimeReviewSections,
+	prepareTimeReviewEvidence,
+} from "../presentation/time-review";
 import {
 	buildTravelExpenseReviewSections,
 	prepareTravelExpenseReviewEvidence,
@@ -82,6 +87,9 @@ interface GetApprovalInboxDetailFromRequestInput {
 		organizationId: string;
 		claimId: string;
 	}) => ReturnType<typeof prepareTravelExpenseReviewEvidence>;
+	loadTimeReviewEvidence?: (
+		input: Parameters<typeof prepareTimeReviewEvidence>[0],
+	) => ReturnType<typeof prepareTimeReviewEvidence>;
 }
 
 const DEFAULT_LIMIT = 50;
@@ -282,6 +290,7 @@ export async function getApprovalInboxDetailFromRequest({
 	handler,
 	loadAbsenceReviewEvidence = prepareAbsenceReviewEvidence,
 	loadTravelExpenseReviewEvidence = prepareTravelExpenseReviewEvidence,
+	loadTimeReviewEvidence = prepareTimeReviewEvidence,
 }: GetApprovalInboxDetailFromRequestInput): Promise<ApprovalInboxDetailResult> {
 	if (!isSupportedInboxType(request.entityType)) {
 		throw new ApprovalInboxBadRequestError("Unsupported approval type");
@@ -309,7 +318,7 @@ export async function getApprovalInboxDetailFromRequest({
 	let actions = isOrphanedTimeCorrectionDetail(detail)
 		? { ...item.capabilities, canApprove: false, canBulkApprove: false }
 		: item.capabilities;
-	const sections = buildDetailSections(detail);
+	let sections = buildDetailSections(detail);
 
 	let review: { sections: ApprovalInboxDetailSection[]; decisionsBlocked: boolean } | null =
 		null;
@@ -327,6 +336,28 @@ export async function getApprovalInboxDetailFromRequest({
 				claimId: request.entityId,
 			}),
 		);
+	} else if (request.entityType === "time_entry") {
+		// The request's submitted revision and committed results (#325).
+		const evidence = await loadTimeReviewEvidence({
+			organizationId: request.organizationId,
+			approvalRequestId: request.id,
+			workPeriodId: request.entityId,
+			requestPending: request.status === "pending",
+			kind: timeApprovalKindOf(detail.entity),
+		});
+		if (evidence.status === "evidenced" && evidence.kind === "time_correction") {
+			// The live reconstruction (UTC clock times from current rows) would
+			// contradict the submitted proposal; the evidence replaces it.
+			sections = sections.filter(
+				(section) =>
+					!(
+						section.type === "key_value" &&
+						typeof section.title !== "string" &&
+						section.title.key === "approvals:approvals.requestedCorrection"
+					),
+			);
+		}
+		review = buildTimeReviewSections(evidence);
 	}
 	if (review) {
 		sections.splice(1, 0, ...review.sections);
@@ -556,6 +587,13 @@ function isOrdinaryTimeApprovalDetail(detail: ApprovalDetail): boolean {
 		entity.timeApprovalKind === "policy_clock_out" ||
 		entity.timeRequestHasOrdinaryEvidence === true
 	);
+}
+
+function timeApprovalKindOf(entity: unknown) {
+	if (typeof entity !== "object" || entity === null) return null;
+	const kind = (entity as { timeApprovalKind?: unknown }).timeApprovalKind;
+	if (isTimeApprovalWorkflowType(kind)) return kind;
+	return hasPendingCorrectionDetail(entity) ? "time_correction" : null;
 }
 
 function getTimeRequestWarning(entity: unknown): string | null {

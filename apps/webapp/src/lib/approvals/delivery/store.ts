@@ -14,6 +14,7 @@ import {
 	approvalStageAssignment,
 	approvalWorkflow,
 	approvalWorkflowRollout,
+	workPeriod,
 } from "@/db/schema";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import type { ApprovalReviewReference } from "../presentation/review-navigation";
@@ -77,8 +78,9 @@ export async function isApprovalDeliveryOwner(input: {
  * Whether the delivery owner sends the card an existing-path approval
  * notification is about, so that path sends neither the card nor a plain
  * message about the same request. The owner must be active for the provider
- * and the absence must have a canonical workflow, whose committed intents the
- * owner delivers; a legacy request (e.g. a policy fallback) keeps the path.
+ * and kind, and the absence or work period must have a canonical workflow,
+ * whose committed intents the owner delivers; a legacy request (e.g. a policy
+ * fallback) keeps the path.
  */
 export async function isApprovalNotificationDeliveredByOwner(input: {
 	organizationId: string;
@@ -88,8 +90,11 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 }): Promise<boolean> {
 	if (!input.entityId) return false;
 	let absenceId: string | null = null;
+	let workPeriodId: string | null = null;
 	if (input.entityType === "absence_entry") {
 		absenceId = input.entityId;
+	} else if (input.entityType === "work_period") {
+		workPeriodId = input.entityId;
 	} else if (input.entityType === "approval_request") {
 		const request = await db.query.approvalRequest.findFirst({
 			where: and(
@@ -99,6 +104,29 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 			columns: { entityType: true, entityId: true },
 		});
 		if (request?.entityType === "absence_entry") absenceId = request.entityId;
+		if (request?.entityType === "time_entry") workPeriodId = request.entityId;
+	}
+	if (workPeriodId) {
+		// Time kinds (#325): the period's current canonical workflow names the kind.
+		const [linked] = await db
+			.select({ workflowType: approvalWorkflow.workflowType })
+			.from(workPeriod)
+			.innerJoin(
+				approvalWorkflow,
+				and(
+					eq(approvalWorkflow.id, workPeriod.approvalWorkflowId),
+					eq(approvalWorkflow.organizationId, workPeriod.organizationId),
+				),
+			)
+			.where(and(eq(workPeriod.id, workPeriodId), eq(workPeriod.organizationId, input.organizationId)))
+			.limit(1);
+		return linked
+			? await isApprovalDeliveryOwner({
+					organizationId: input.organizationId,
+					workflowType: linked.workflowType,
+					provider: input.provider,
+				})
+			: false;
 	}
 	if (!absenceId) return false;
 	const owner = await isApprovalDeliveryOwner({
