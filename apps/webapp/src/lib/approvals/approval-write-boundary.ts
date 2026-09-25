@@ -322,7 +322,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"superseded_by_id",
 				"type",
 			],
-			functionName: "submitCorrection",
+			functionName: "submitCorrectionInTransaction",
 			operation: "delete",
 			semantic: "inactive_correction",
 			table: "time_entry",
