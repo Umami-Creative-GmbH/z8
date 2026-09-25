@@ -1979,22 +1979,37 @@ function validateCorrectionEntry(
 }
 
 /** The approval lifecycle a finalization belongs to, as its authority stores it. */
-function finalizationLifecycle(
+async function finalizationLifecycle(
 	input: FinalizeTimeCorrectionTerminalInput,
-	observedOrCanonicalWorkflowId: string | null,
-): TimeCorrectionLifecycleReference {
+	/** The canonical workflow, or the shadow workflow observed beside a legacy lifecycle. */
+	boundWorkflowId: string | null,
+): Promise<TimeCorrectionLifecycleReference> {
 	if (input.legacyApprovalRequestId !== null) {
+		// A chain is keyed by its chain, as its submission and cancellation are.
+		const [stage] = await input.dbService.db
+			.select({ chainInstanceId: approvalChainStageInstance.chainInstanceId })
+			.from(approvalChainStageInstance)
+			.where(
+				and(
+					eq(approvalChainStageInstance.organizationId, input.organizationId),
+					eq(
+						approvalChainStageInstance.approvalRequestId,
+						input.legacyApprovalRequestId,
+					),
+				),
+			)
+			.limit(1);
 		return {
 			authority: "legacy",
 			approvalRequestId: input.legacyApprovalRequestId,
-			chainInstanceId: null,
-			observedWorkflowId: observedOrCanonicalWorkflowId,
+			chainInstanceId: stage?.chainInstanceId ?? null,
+			observedWorkflowId: boundWorkflowId,
 		};
 	}
-	if (!observedOrCanonicalWorkflowId) {
+	if (!boundWorkflowId) {
 		throw timeCorrectionFinalizationConflict("approval_identity_mismatch");
 	}
-	return { authority: "canonical", workflowId: observedOrCanonicalWorkflowId };
+	return { authority: "canonical", workflowId: boundWorkflowId };
 }
 
 /** A segment by value from the locked endpoint entries (captured offsets included). */
@@ -2108,8 +2123,9 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	if (currentCorrection && !expectedOriginalWorkMetadata) {
 		throw timeCorrectionFinalizationConflict("missing_original_work_metadata");
 	}
-	// Adopted organizations (#301): the coordinated scope, or a refusal when the
-	// caller did not open the coordinated work transaction.
+	// Adopted organizations (#301): the coordinated scope; without one the legacy
+	// writes run. Every production caller opens the coordinated transaction, and
+	// the engine adapter refuses an adopted organization without it.
 	const adoptedScope = resolveCorrectionWorkScope(input.dbService.db, {
 		organizationId: input.organizationId,
 		employeeId: input.expectedRequesterEmployeeId,
@@ -2699,7 +2715,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	const adopted = adoptedScope
 		? {
 				scope: adoptedScope,
-				lifecycle: finalizationLifecycle(input, expectedApprovalWorkflowId),
+				lifecycle: await finalizationLifecycle(input, expectedApprovalWorkflowId),
 				intent: (correction.action === "delete"
 					? "delete"
 					: hasEndpointCorrection

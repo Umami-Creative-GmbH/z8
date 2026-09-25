@@ -241,7 +241,23 @@ The items below are activation gates, tracked in #327 (all-writer adoption), #32
    such stuck requests need review before activation.
 9. Holiday validation and the change-policy capability remain preflights (as in
    #286); configuration writers do not take the guards yet (#316/#327).
-10. Deployment, in-flight inventory, old-writer drain, the scoped pilot and
+10. **Cancelled meaning lives in the receipt.** Retained cancelled and rejected
+    entries keep the pending row shape (`is_superseded`, no successor); only the
+    `cancel_time_correction` / `finalize_time_correction` receipt names their
+    `cancelled_inactive` / `rejected_inactive` meaning. This avoids changing the
+    hashed `time_entry` table, but verifier and audit consumers must read the
+    receipts to tell a cancelled entry from a pending one (#262 §6, #327).
+11. **The scope registry is implicit.** The approval engine hands terminal
+    collaborators only its transaction client, so they find the coordinated scope
+    through `workTransactionScopeFor(client)` instead of a typed parameter. A typed
+    engine-to-collaborator scope would remove this side channel.
+12. **Decision replay.** A retried legacy decision (including a business deletion)
+    is refused as already decided, as before; the finalize receipt is evidence, not
+    a replay path. Canonical decisions replay through the engine's command receipt.
+13. **Not verified on PostgreSQL:** `deleteNonAdminEmployeesData` and privileged
+    `deleteApproval` for correction receipts and evidence, multi-stage legacy chains
+    (their finalize receipts are keyed by chain), and bots deciding corrections.
+14. Deployment, in-flight inventory, old-writer drain, the scoped pilot and
     compatible rollback (#327/#329/#331). A rollback to inactive keeps committed
     receipts; replay of adopted cancellations requires the receipt path, which is
     independent of the control.
