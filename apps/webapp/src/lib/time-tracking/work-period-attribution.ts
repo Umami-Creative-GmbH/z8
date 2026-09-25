@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
 import { workPeriod } from "@/db/schema";
 import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
-import { amendCompletedWork } from "./amend-completed-work";
+import { AMEND_COMPLETED_WORK_COMMAND_VERSION, amendCompletedWork } from "./amend-completed-work";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
 
 /**
@@ -54,7 +54,7 @@ export async function changeWorkPeriodProject(input: {
 				authority: "owner",
 				writer: "work_period_attribution_edit",
 				command: {
-					version: 1,
+					version: AMEND_COMPLETED_WORK_COMMAND_VERSION,
 					operationId: randomUUID(),
 					request: { workPeriodId: input.period.id, projectId: input.projectId },
 				},

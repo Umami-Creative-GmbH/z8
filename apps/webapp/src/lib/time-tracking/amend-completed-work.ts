@@ -36,6 +36,7 @@ import {
 	authorizeTimeCorrectionCategoryChange,
 	lockTrustedTimeCorrectionEmployeeTeamId,
 } from "@/lib/approvals/server/time-correction-category-authorization";
+import { BOOKABLE_PROJECT_STATUSES } from "@/app/[locale]/(app)/time-tracking/actions/shared";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import {
 	compareInstants,
@@ -51,6 +52,7 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import { createLogger } from "@/lib/logger";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import {
 	type AmendmentIntent,
@@ -80,9 +82,6 @@ import type { WorkTransactionScope } from "./work-transaction";
 export const AMEND_COMPLETED_WORK_COMMAND_VERSION = 1;
 export const AMEND_COMPLETED_WORK_RESULT_VERSION = 1;
 export const AMEND_COMPLETED_WORK_WRITER_VERSION = 1;
-
-/** BOOKABLE_PROJECT_STATUSES of the time-tracking actions. */
-const BOOKABLE_PROJECT_STATUSES = ["planned", "active", "paused"] as const;
 
 export type AmendmentWriter =
 	| "admin_time_edit"
@@ -225,6 +224,8 @@ export type AmendCompletedWorkInput = {
 
 type TransactionClient = WorkTransactionScope["db"];
 
+const logger = createLogger("CompletedWorkAmendment");
+
 function staleSource(): ConflictError {
 	return new ConflictError({
 		message: "Work period changed while editing",
@@ -324,7 +325,6 @@ export async function replayAmendCompletedWork(
 		.select({
 			clockInId: workPeriod.clockInId,
 			clockOutId: workPeriod.clockOutId,
-			graphRevision: workPeriod.graphRevision,
 			deletedAt: workPeriod.deletedAt,
 		})
 		.from(workPeriod)
@@ -336,12 +336,14 @@ export async function replayAmendCompletedWork(
 			),
 		)
 		.limit(1);
+	// The committed evidence must still stand: the same endpoint entries, not
+	// deleted, and no correction superseded since. A later revision alone (for
+	// example an approval or attribution change) does not invalidate the receipt.
 	if (
 		!period ||
 		period.deletedAt !== null ||
 		period.clockInId !== result.segment.clockInEntryId ||
-		period.clockOutId !== result.segment.clockOutEntryId ||
-		period.graphRevision !== result.revisions.workPeriod.result
+		period.clockOutId !== result.segment.clockOutEntryId
 	) {
 		throw new CompletedWorkCollisionError();
 	}
@@ -716,11 +718,17 @@ export async function amendCompletedWork(
 		.orderBy(asc(timeRecordAllocation.id))
 		.for("update");
 	if (!record || !detail) throw new CompletedWorkReviewRequiredError("canonical_record_missing");
+	const allocationAgrees = period.projectId
+		? projectAllocations.length === 1 &&
+			projectAllocations[0]?.projectId === period.projectId &&
+			projectAllocations[0]?.weightPercent === 100
+		: projectAllocations.length === 0;
 	if (
 		!sameInstant(record.startAt, instantFromDate(period.startTime)) ||
 		!sameInstant(record.endAt, instantFromDate(period.endTime)) ||
 		detail.workCategoryId !== period.workCategoryId ||
-		detail.workLocationType !== period.workLocationType
+		detail.workLocationType !== period.workLocationType ||
+		!allocationAgrees
 	) {
 		throw new CompletedWorkReviewRequiredError("canonical_divergence");
 	}
@@ -1198,6 +1206,14 @@ export function describeAmendmentFailure(error: unknown): { message: string; cod
 		return {
 			message: "This work needs review before it can be changed",
 			code: "completed_work_review_required",
+		};
+	}
+	if (error instanceof CompletedWorkIntegrityError) {
+		// A committed-evidence or graph invariant failed: an incident, not user error.
+		logger.error({ error }, "Completed-work amendment integrity failure");
+		return {
+			message: "This work could not be changed because its records disagree",
+			code: "completed_work_integrity",
 		};
 	}
 	return null;

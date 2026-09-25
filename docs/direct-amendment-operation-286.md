@@ -58,9 +58,13 @@ transaction the operation:
 3. Refuses work under unresolved review: a pending period, a pending legacy
    correction request, or a pending canonical `time_correction` workflow.
 4. Locks both endpoint entries and the canonical record, detail and project
-   allocations. The period and the record must describe the same segment. A
-   missing or diverging canonical record returns `This work needs review before it
-   can be changed`; it is never rebuilt inline (historical repair is #320).
+   allocations. The period and the record must describe the same segment: the same
+   endpoints, category and location, and a project allocation that matches the
+   period's project (exactly one 100 % allocation, or none when the period has no
+   project). A missing or diverging canonical record returns `This work needs review
+   before it can be changed`; it is never rebuilt inline (historical repair is #320).
+   The allocation check matters because the legacy project change used to move only
+   the period.
 5. Plans the change with the pure `planCompletedWorkAmendment`
    (`amend-completed-work-plan.ts`):
    - Endpoints are absolute. A form value at `minute` precision that still contains
@@ -136,11 +140,16 @@ it is a collision:
 
 - the same organization, employee, kind, writer, actor and exact command;
 - **current** authority (a removed manager link denies the replay with 403);
-- the work still standing exactly as committed: the same entry IDs and
-  `graph_revision`, not deleted, and the correction entries not superseded.
+- the committed evidence still standing: the same endpoint entry IDs, not deleted,
+  and none of its correction entries superseded.
 
-So an old token can never recreate or re-apply changed or deleted work. A deleted
-period is already refused by the action's own target read (`Work period not found`).
+A later revision alone does not invalidate a receipt. For example, a later
+attribution change, or a future revision-advancing approval change (#301), leaves
+the committed endpoints standing, and the old retry still replays with no writes
+(#252: later ordinary approval state changes do not by themselves invalidate a
+receipt). A later correction supersedes the entries, so an old token can never
+re-apply changed work. A deleted period is already refused by the action's own
+target read (`Work period not found`).
 
 Identities:
 
@@ -157,7 +166,8 @@ User-facing outcomes:
 | --- | --- |
 | Collision | "This change conflicts with an earlier request or changed work. Please refresh and try again." (`completed_work_collision`, HTTP 409) |
 | Interval conflict | "The time range overlaps other recorded work" (`work_interval_occupied`, 409) |
-| Evidence needing review (canonical gap or append hold) | "This work needs review before it can be changed" (`completed_work_review_required`, 409) |
+| Evidence needing review (canonical gap, divergence or append hold) | "This work needs review before it can be changed" (`completed_work_review_required`, 409) |
+| Integrity failure (a committed invariant broke inside the operation) | "This work could not be changed because its records disagree" (`completed_work_integrity`, 409), logged as an incident |
 | Stale source, pending review, validation, authorization | Keep the established messages and codes |
 
 ## Symmetric occupancy
@@ -235,7 +245,7 @@ billing provisioning, Next cache, the change-policy capability, and the CASL
 preflights. The CASL preflights are forced **open**, so the operation's own locks
 decide.
 
-Verified (24 tests):
+Verified (26 tests):
 
 - **Full graph.** An admin edit at 60m40s → 09:31:
   - the period and the record both store 91 minutes;
@@ -248,14 +258,16 @@ Verified (24 tests):
 - **Duration.** 29 s → 0 minutes and 30 s → 1 minute in both representations
   (HTTP); equal endpoints are rejected.
 - **Replay.** An exact retry changes no row (whole-organization snapshot equality).
-  A changed command under the same ID is a collision with no changes. An old token
-  after a later edit is a collision, and after business deletion it is refused; both
-  change nothing.
+  A changed command under the same ID is a collision with no changes. After a later
+  project change (a new revision), the old retry still replays with no changes. An
+  old token after a later edit is a collision, and after business deletion it is
+  refused; both change nothing.
 - **Occupancy.**
   - Overlap is refused with no changes; adjacency is allowed.
   - Moving within the period's own former interval is allowed.
   - Rejected work still occupies its interval; deleted work does not.
-  - Active work (started later that day) occupies from its start.
+  - Active work occupies from its start: both later the same day and when the open
+    work started on the previous day (moving work to the next morning is refused).
 - **Concurrency.** Two concurrent admin edits of one period: one commits and the
   other gets the stale-source conflict. The result is exactly one correction entry
   and revision 2.
@@ -281,20 +293,28 @@ Verified (24 tests):
   `Idempotency-Key` replays the same entry with no changes. After the manager link
   is removed, the replay is denied (403).
 - **Review guards.** A pending correction request blocks a project change. A
-  missing canonical record holds the edit for review; both change nothing.
+  missing canonical record, and a period whose project disagrees with its canonical
+  allocation, hold the edit for review; all change nothing.
 - **Inactive organizations.** A committed receipt still replays after the
   organization returns to inactive. A new edit then takes the legacy writes: no
   receipt and no revision advance.
 - **Cleanup.** `clearOrganizationTimeData` removes amendment receipts.
 
 Run together with the #272, #273 and #274 clocking suites and the time-correction
-approvals suite: **5 files / 135 tests passed**. The full runner result is recorded
-in the pull request.
+approvals suite: **5 files / 135 tests passed** (before the review fixes). After
+them, the full runner (`bash apps/webapp/scripts/run-approval-workflow-repository-integration.sh`,
+fresh container, migration recovery check and full chain including `0084`) passed
+**38 files / 627 tests**. The label-owned container was verified and removed.
 
 Mutation: disabling the occupancy check and the replay authority re-check failed 3
 tests (both occupancy scenarios and the authority replay).
 
 ### Database-free
+
+- Full webapp unit suite: 141 failures, all environmental and matching clean `dev`
+  (91 write-boundary source reads, CRLF and `pnpm` spawn checks in the runner/CI
+  tests, and the known date-dependent clock-out, mobile and dialog tests). None is
+  in a changed area. `pnpm run typecheck` passed.
 
 - `amend-completed-work-plan.test.ts` (12) covers: absolute and minute-precision
   endpoints, half-up minutes only when endpoints move, protected minutes for

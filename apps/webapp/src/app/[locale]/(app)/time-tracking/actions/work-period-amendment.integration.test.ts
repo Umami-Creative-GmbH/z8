@@ -648,6 +648,19 @@ describeIntegration(
 				code: "completed_work_collision",
 			});
 			expect(await snapshot()).toEqual(committed);
+
+			// A later attribution change advances the revision but leaves the
+			// committed endpoints standing: the old retry still replays, writing nothing.
+			actAs(ids.requesterUser);
+			await expect(updateWorkPeriodProject(period.id, ids.projectB)).resolves.toMatchObject({
+				success: true,
+			});
+			const attributed = await snapshot();
+			await expect(adminEdit(period.id, { clockOutTime: "09:31" }, submissionId)).resolves.toEqual({
+				success: true,
+				data: { status: "applied" },
+			});
+			expect(await snapshot()).toEqual(attributed);
 		});
 
 		it("never recreates corrected or deleted work from an old token", async () => {
@@ -716,7 +729,7 @@ describeIntegration(
 			});
 		});
 
-		it("treats active work, including a start on an earlier day, as occupying from its start", async () => {
+		it("treats active work as occupying from its start onward", async () => {
 			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }));
 			actAs(ids.requesterUser);
 			await expect(
@@ -724,6 +737,27 @@ describeIntegration(
 			).resolves.toMatchObject({ success: true });
 			const before = await snapshot();
 			await expect(adminEdit(period.id, { clockOutTime: "11:30" })).resolves.toMatchObject({
+				error: occupied,
+			});
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it("counts active work that started on the previous day", async () => {
+			// 2026-07-21 20:00-21:00, then still clocked in since 2026-07-21 22:00.
+			const period = await recordWork(
+				dayStart.subtract({ hours: 12 }),
+				dayStart.subtract({ hours: 11 }),
+			);
+			actAs(ids.requesterUser);
+			await expect(
+				clockIn("office", {
+					instant: dayStart.subtract({ hours: 10 }),
+					browserTimezone: "UTC",
+				}),
+			).resolves.toMatchObject({ success: true });
+			const before = await snapshot();
+			// Moving the finished work to the next morning lands inside that open work.
+			await expect(adminEdit(period.id, { clockOutTime: "09:00" })).resolves.toMatchObject({
 				error: occupied,
 			});
 			expect(await snapshot()).toEqual(before);
@@ -965,6 +999,22 @@ describeIntegration(
 			await expect(updateWorkPeriodProject(period.id, ids.projectB)).resolves.toMatchObject({
 				success: false,
 				error: "A time correction approval is already pending for this work period",
+			});
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it("holds work whose canonical project allocation disagrees with the period for review", async () => {
+			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }), ids.projectA);
+			// The legacy project change moved only the period (the historical divergence).
+			await admin.query("update work_period set project_id = $2 where id = $1", [
+				period.id,
+				ids.projectB,
+			]);
+			const before = await snapshot();
+			await expect(adminEdit(period.id, { clockOutTime: "09:30" })).resolves.toEqual({
+				success: false,
+				error: needsReview,
+				code: "completed_work_review_required",
 			});
 			expect(await snapshot()).toEqual(before);
 		});

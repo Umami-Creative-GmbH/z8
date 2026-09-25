@@ -13,13 +13,11 @@
  * - Attribution omission preserves, `clear` clears and `replace` replaces;
  *   replacing with the current value changes nothing.
  */
-import { Temporal } from "temporal-polyfill";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { AttributionIntent } from "./close-active-work";
+import { validateTimeCorrectionRange } from "./time-correction-temporal";
 import { deriveWorkDurationMinutes } from "./work-duration";
 import { isWorkLocationType, normalizeWorkLocationType } from "./work-location";
-
-const MAX_WORK_PERIOD_DURATION = Temporal.Duration.from({ hours: 24 });
 
 /**
  * `minute` is a wall-clock minute from an editing form: an endpoint whose stored
@@ -169,10 +167,13 @@ export function planCompletedWorkAmendment(
 	let durationMinutes = source.durationMinutes;
 	if (endpointsChanged) {
 		durationMinutes = deriveWorkDurationMinutes(clockIn.value, clockOut.value);
-		if (
-			Temporal.Duration.compare(clockIn.value.until(clockOut.value), MAX_WORK_PERIOD_DURATION) > 0
-		) {
-			throw new AmendmentRangeError("Work period cannot exceed 24 hours");
+		try {
+			// The established correction range rule (at most 24 elapsed hours).
+			validateTimeCorrectionRange(clockIn.value, clockOut.value);
+		} catch (error) {
+			throw new AmendmentRangeError(
+				error instanceof Error ? error.message : "Invalid work period range",
+			);
 		}
 	}
 

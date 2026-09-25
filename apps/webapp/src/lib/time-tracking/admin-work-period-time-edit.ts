@@ -23,6 +23,7 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import {
+	AMEND_COMPLETED_WORK_COMMAND_VERSION,
 	type AmendCompletedWorkCommand,
 	type AmendCompletedWorkIntent,
 	replayCommittedAmendment,
@@ -233,7 +234,7 @@ type AdminEditIdentity = Pick<
 
 function adminEditCommand(input: AdminEditIdentity): AmendCompletedWorkCommand {
 	return {
-		version: 1,
+		version: AMEND_COMPLETED_WORK_COMMAND_VERSION,
 		operationId: input.submissionId,
 		request: {
 			workPeriodId: input.workPeriodId,

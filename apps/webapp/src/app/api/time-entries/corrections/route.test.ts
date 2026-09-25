@@ -180,6 +180,7 @@ vi.mock("@/lib/time-tracking/completed-work-transaction", () => ({
 }));
 
 vi.mock("@/lib/time-tracking/amend-completed-work", () => ({
+	AMEND_COMPLETED_WORK_COMMAND_VERSION: 1,
 	describeAmendmentFailure: () => null,
 	replayCommittedAmendment: async () => null,
 	replayOrAmendCompletedWork: vi.fn(),

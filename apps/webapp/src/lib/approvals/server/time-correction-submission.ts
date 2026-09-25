@@ -84,6 +84,7 @@ import {
 import { EmailService } from "@/lib/effect/services/email.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
 import {
+	AMEND_COMPLETED_WORK_COMMAND_VERSION,
 	type AmendCompletedWorkCommand,
 	type AmendCompletedWorkIntent,
 	describeAmendmentFailure,
@@ -253,7 +254,7 @@ function sameDayEditCommand(
 	data: SameDayEditRequest,
 ): AmendCompletedWorkCommand {
 	return {
-		version: 1,
+		version: AMEND_COMPLETED_WORK_COMMAND_VERSION,
 		operationId: submissionId,
 		request: {
 			workPeriodId: data.workPeriodId,

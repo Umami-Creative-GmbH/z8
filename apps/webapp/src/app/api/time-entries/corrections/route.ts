@@ -31,6 +31,7 @@ import {
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import {
+	AMEND_COMPLETED_WORK_COMMAND_VERSION,
 	type AmendCompletedWorkCommand,
 	describeAmendmentFailure,
 	replayCommittedAmendment,
@@ -233,7 +234,7 @@ export async function POST(request: NextRequest) {
 			: randomUUID();
 		// The request exactly as submitted: an adopted direct correction's command.
 		const directCommand: AmendCompletedWorkCommand = {
-			version: 1,
+			version: AMEND_COMPLETED_WORK_COMMAND_VERSION,
 			operationId: submissionId,
 			request: {
 				replacesEntryId,
