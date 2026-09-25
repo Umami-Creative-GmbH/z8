@@ -27,6 +27,12 @@ const state = vi.hoisted(() => ({
 	lockSubmissionSource: vi.fn(),
 }));
 
+vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) =>
+	(await import("@/test/time-correction-work-transaction")).legacyTimeCorrectionWorkTransaction(
+		await importOriginal(),
+	),
+);
+
 vi.mock("@/db", () => ({ db: {} }));
 vi.mock("@/lib/approvals/workflow/runtime", () => ({
 	createProductionApprovalWorkflowRuntime: () => state.runtime,

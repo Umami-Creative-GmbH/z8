@@ -50,6 +50,12 @@ const {
 	},
 }));
 
+vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) =>
+	(await import("@/test/time-correction-work-transaction")).legacyTimeCorrectionWorkTransaction(
+		await importOriginal(),
+	),
+);
+
 vi.mock("@/env", () => ({
 	env: testEnv,
 }));

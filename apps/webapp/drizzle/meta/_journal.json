@@ -680,6 +680,13 @@
       "when": 1792598400000,
       "tag": "0096_escalation_replacement_delivery",
       "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1792684800000,
+      "tag": "0097_correction_lifecycle_operation",
+      "breakpoints": true
     }
   ]
 }

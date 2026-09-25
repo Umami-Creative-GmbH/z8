@@ -18,6 +18,8 @@ import {
 	instantFromTimeCorrectionBoundary,
 	validateTimeCorrectionTimezoneEvidence,
 } from "@/lib/time-tracking/time-correction-temporal";
+import type { TimeCorrectionLifecycleReference } from "@/lib/time-tracking/correction-lifecycle-work";
+import { assertCorrectionWorkCoordinated } from "@/lib/time-tracking/correction-work-fence";
 import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
 import type {
 	CancelledTimeCorrectionSourceEvidence,
@@ -128,6 +130,8 @@ export interface DeleteCancelledTimeCorrectionInput {
 	workPeriodId: string;
 	expectedSource: CancelledTimeCorrectionSourceEvidence;
 	correction: TimeCorrectionWorkflowPayload["timeCorrection"];
+	/** The cancelled lifecycle; adopted organizations record it (#301). */
+	lifecycle?: TimeCorrectionLifecycleReference;
 }
 
 export interface TimeCorrectionApprovalAdapterDependencies {
@@ -1008,6 +1012,12 @@ export function createTimeCorrectionApprovalAdapter(
 		},
 		async finalizeTerminal(input) {
 			await this.preflightTerminal(input);
+			// Any approval runtime can reach this terminal; adopted organizations
+			// only finalize inside the coordinated work transaction (#301).
+			await assertCorrectionWorkCoordinated(
+				input.dbService.db,
+				input.organizationId,
+			);
 			if (input.transition.kind === "cancel_pending") {
 				if (
 					!input.source.canonicalRecordId ||
@@ -1031,6 +1041,7 @@ export function createTimeCorrectionApprovalAdapter(
 						pendingCorrections: input.source.pendingCorrections,
 					},
 					correction: input.source.correction,
+					lifecycle: { authority: "canonical", workflowId: input.workflow.id },
 				});
 				return terminalEvidence(input);
 			}
