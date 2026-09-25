@@ -267,6 +267,56 @@ function isApprovalDbTypesModule(
 	);
 }
 
+// Exported transaction types whose values are database receivers, or scopes
+// exposing one as `db`. Analysis is per file, so an imported alias is trusted
+// only when its exact module export is listed here.
+const TRUSTED_TRANSACTION_TYPE_EXPORTS = new Map<
+	string,
+	ReadonlyMap<string, "approval_db_service" | "database_receiver">
+>([
+	[
+		"lib/approvals/escalation/transfer-context",
+		new Map([["DatabaseTransaction", "database_receiver"]]),
+	],
+	[
+		"lib/time-tracking/web-clock-out-transaction",
+		new Map([["WorkTransactionContext", "approval_db_service"]]),
+	],
+	[
+		"lib/time-tracking/work-transaction",
+		new Map([
+			["WorkTransactionClient", "database_receiver"],
+			["WorkTransactionScope", "approval_db_service"],
+		]),
+	],
+]);
+
+function trustedTransactionTypeExports(
+	moduleName: string,
+	fileName: string,
+): ReadonlyMap<string, "approval_db_service" | "database_receiver"> | null {
+	if (moduleName.startsWith("@/")) {
+		return TRUSTED_TRANSACTION_TYPE_EXPORTS.get(moduleName.slice(2)) ?? null;
+	}
+	if (!moduleName.startsWith(".")) return null;
+	const resolved = relativeModulePath(fileName, moduleName);
+	for (const [path, exports] of TRUSTED_TRANSACTION_TYPE_EXPORTS) {
+		if (resolved.endsWith(`/apps/webapp/src/${path}`)) return exports;
+	}
+	return null;
+}
+
+function trustedTransactionTypeProvenance(
+	moduleName: string,
+	importedName: string,
+	fileName: string,
+): Provenance | null {
+	return (
+		trustedTransactionTypeExports(moduleName, fileName)?.get(importedName) ??
+		null
+	);
+}
+
 function isDatabaseServiceModule(
 	moduleName: string,
 	fileName: string,
@@ -304,7 +354,8 @@ export function isApprovalWriteTrustedProvenanceModuleSpecifier(
 		isDatabaseModule(moduleName, fileName) ||
 		isApprovalWriteSchemaModuleSpecifier(moduleName, fileName) ||
 		isApprovalDbTypesModule(moduleName, fileName) ||
-		isDatabaseServiceModule(moduleName, fileName)
+		isDatabaseServiceModule(moduleName, fileName) ||
+		trustedTransactionTypeExports(moduleName, fileName) !== null
 	);
 }
 
@@ -348,7 +399,10 @@ export function isApprovalWriteTrustedReceiverImport(
 			(name) => name === importedName,
 		);
 	}
-	return false;
+	return (
+		trustedTransactionTypeProvenance(moduleName, importedName, fileName) !==
+		null
+	);
 }
 
 export function allowsApprovalWriteTrustedReceiverNamespace(
@@ -921,6 +975,14 @@ function analyzeApprovalWriteMutationsInContext(
 			) {
 				return "database_receiver";
 			}
+			if (moduleName && importedName) {
+				const provenance = trustedTransactionTypeProvenance(
+					moduleName,
+					importedName,
+					fileName,
+				);
+				if (provenance) return provenance;
+			}
 		}
 		if (ts.isIndexedAccessTypeNode(candidate)) {
 			const propertyName = ts.isLiteralTypeNode(candidate.indexType)
@@ -1018,6 +1080,16 @@ function analyzeApprovalWriteMutationsInContext(
 						) {
 							addRoot(element.name, "pg_pool_constructor");
 						}
+					} else {
+						const provenance = trustedTransactionTypeProvenance(
+							moduleName,
+							importedName,
+							fileName,
+						);
+						const symbol = provenance
+							? checker.getSymbolAtLocation(element.name)
+							: undefined;
+						if (provenance && symbol) knownTypes.set(symbol, provenance);
 					}
 				}
 			}
