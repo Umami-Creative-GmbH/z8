@@ -1,26 +1,20 @@
 "use server";
 
-import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { project, projectAssignment, timeEntry, workPeriod } from "@/db/schema";
+import { project, timeEntry, workPeriod } from "@/db/schema";
 import {
 	checkProjectBudgetWarnings,
 	getProjectTotalHours,
 } from "@/lib/notifications/project-notification-triggers";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { isProjectEligible, listEligibleProjects } from "@/lib/time-tracking/project-eligibility";
 import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
 import { getRequestMetadata } from "./auth";
 import { BOOKABLE_PROJECT_STATUSES } from "./shared";
 
 type TimeEntryDbClient = Pick<typeof db, "insert" | "select">;
 type TimeEntryUpdateDbClient = Pick<typeof db, "update">;
-
-type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
-	project: Pick<
-		typeof project.$inferSelect,
-		"id" | "name" | "color" | "status" | "isActive" | "budgetHours" | "deadline"
-	> | null;
-};
 
 export async function createTimeEntry(
 	params: {
@@ -135,8 +129,13 @@ export async function validateProjectAssignment(
 	teamId: string | null,
 	organizationId: string,
 	/** A protected operation passes its transaction; defaults to the global client. */
-	reader: Pick<typeof db, "query"> = db,
+	reader: Pick<typeof db, "query" | "select"> = db,
 ): Promise<{ isValid: boolean; error?: string }> {
+	// Validity is the shared eligibility rule; the reads below only explain a refusal.
+	if (await isProjectEligible({ employeeId, teamId, organizationId }, projectId, reader)) {
+		return { isValid: true };
+	}
+
 	const assignedProject = await reader.query.project.findFirst({
 		where: and(eq(project.id, projectId), eq(project.organizationId, organizationId)),
 	});
@@ -160,97 +159,20 @@ export async function validateProjectAssignment(
 		};
 	}
 
-	const assignment = await reader.query.projectAssignment.findFirst({
-		where: teamId
-			? or(
-					and(
-						eq(projectAssignment.projectId, projectId),
-						eq(projectAssignment.organizationId, organizationId),
-						eq(projectAssignment.employeeId, employeeId),
-					),
-					and(
-						eq(projectAssignment.projectId, projectId),
-						eq(projectAssignment.organizationId, organizationId),
-						eq(projectAssignment.teamId, teamId),
-					),
-				)
-			: and(
-					eq(projectAssignment.projectId, projectId),
-					eq(projectAssignment.organizationId, organizationId),
-					eq(projectAssignment.employeeId, employeeId),
-				),
-	});
-
-	if (!assignment) {
-		return {
-			isValid: false,
-			error: "You are not assigned to this project. Contact your administrator.",
-		};
-	}
-
-	return { isValid: true };
+	return {
+		isValid: false,
+		error: "You are not assigned to this project. Contact your administrator.",
+	};
 }
 
+/** Eligible projects (`listEligibleProjects`) with their booked hours in the organization. */
 export async function getAssignedProjectsWithHours(
 	employeeId: string,
 	organizationId: string,
 	teamId: string | null,
 ) {
-	const [directAssignments, teamAssignments] = await Promise.all([
-		db.query.projectAssignment.findMany({
-			where: and(
-				eq(projectAssignment.employeeId, employeeId),
-				eq(projectAssignment.organizationId, organizationId),
-			),
-			with: { project: true },
-		}),
-		teamId
-			? db.query.projectAssignment.findMany({
-					where: and(
-						eq(projectAssignment.teamId, teamId),
-						eq(projectAssignment.organizationId, organizationId),
-					),
-					with: { project: true },
-				})
-			: Promise.resolve([]),
-	]);
-
-	const projectsById = new Map<
-		string,
-		{
-			id: string;
-			name: string;
-			color: string | null;
-			status: string;
-			budgetHours: string | null;
-			deadline: Date | null;
-		}
-	>();
-
-	const typedAssignments = [
-		...directAssignments,
-		...teamAssignments,
-	] as unknown as ProjectAssignmentWithProject[];
-
-	for (const assignment of typedAssignments) {
-		const assignedProject = assignment.project;
-		if (
-			assignedProject?.isActive &&
-			BOOKABLE_PROJECT_STATUSES.includes(
-				assignedProject.status as (typeof BOOKABLE_PROJECT_STATUSES)[number],
-			) &&
-			!projectsById.has(assignedProject.id)
-		) {
-			projectsById.set(assignedProject.id, {
-				id: assignedProject.id,
-				name: assignedProject.name,
-				color: assignedProject.color,
-				status: assignedProject.status,
-				budgetHours: assignedProject.budgetHours,
-				deadline: assignedProject.deadline,
-			});
-		}
-	}
+	const eligible = await listEligibleProjects({ employeeId, teamId, organizationId });
+	const projectsById = new Map(eligible.map((row) => [row.id, row]));
 
 	const projectIds = Array.from(projectsById.keys());
 	const hoursByProjectId = new Map<string, number>();

@@ -25,7 +25,7 @@ resolutions of [#258](https://github.com/Umami-Creative-GmbH/z8/issues/258#issue
 [#259](https://github.com/Umami-Creative-GmbH/z8/issues/259#issuecomment-5654750145).
 
 ```text
-lib/time-tracking/work-transaction.ts                      # exclusive counterpart of the shared organization configuration guard
+lib/time-tracking/organization-configuration-guard.ts      # shared/exclusive organization configuration guard (reused, from dev)
 lib/effect/services/billing/billing-configuration.ts       # in-transaction read, protected mutation wrappers, trial provisioning
 lib/effect/services/billing/billing-enforcement.service.ts # provisioning path delegates to provisionLocalTrial
 lib/effect/services/billing/subscription.service.ts        # create, updateFromStripe, setStripeCustomerId, ensureLocalTrial
@@ -55,7 +55,11 @@ returns the original receipt unchanged. No creator-only restriction is added.
 
 ## Exclusive configuration protection for billing writers
 
-`acquireOrganizationConfigurationProtection` takes
+Billing writers reuse the shared organization configuration guard module
+(`lib/time-tracking/organization-configuration-guard.ts`, introduced by #315/#316):
+`withOrganizationConfigurationMutation` for writers that know their organization, and
+`acquireExclusiveOrganizationConfigurationGuard` per owning organization for writers addressed
+by Stripe subscription id. That guard takes
 `pg_advisory_xact_lock(hashtextextended(["work-organization-configuration", organizationId], 0))`,
 the exclusive mode of the key work transactions hold shared. It is taken in the writer's own
 transaction before the write, so the writer waits for in-flight work transactions, and new
@@ -154,8 +158,9 @@ This slice closes on implementation. The items below are activation gates for #3
 - **Other work transactions** (web clock-in/out, on-behalf clock-out, imports, demo, bots,
   direct HTTP) still check billing only before their transaction. The helper is reusable, but
   adopting it there is outside this ticket.
-- **Other configuration writers** (#311–#316, #318) do not yet take exclusive protection. The
-  billing writers are the first holders of the exclusive key.
+- **Other configuration writers**: holiday, blocking-category and change-policy writers take
+  the same exclusive key since #316. The remaining writers (#318 import, demo and cleanup
+  paths, among others) are tracked by their own tickets.
 - **Organization deletion** removes the subscription through the foreign-key cascade, without
   protection. Organization deletion and cleanup paths must take exclusive organization
   configuration protection (#258 "cleanup/cascade paths").

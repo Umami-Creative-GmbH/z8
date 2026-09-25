@@ -48,6 +48,20 @@ vi.mock("./employee-action-utils", () => ({
 	validateInput: mocks.validateInput,
 }));
 
+// Protection is covered by authorization-mutation.test.ts and the PostgreSQL
+// suite; here the mutation runs against the fake database.
+const protection = vi.hoisted(() => ({ scopes: [] as unknown[] }));
+vi.mock("@/lib/authorization/authorization-mutation", () => ({
+	withAuthorizationMutation: async (
+		scope: unknown,
+		mutation: (tx: unknown) => Promise<unknown>,
+		database: unknown,
+	) => {
+		protection.scopes.push(scope);
+		return mutation(database);
+	},
+}));
+
 vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty: mocks.markEmployeeWorkBalanceDirty,
 	requestEmployeeWorkBalanceFullRebuild:
@@ -244,6 +258,11 @@ describe("createEmployeeAction", () => {
 				lastName: expect.anything(),
 			}),
 		);
+		// The absent employee row is inserted under the new user's protection.
+		expect(protection.scopes).toContainEqual({
+			organizationId: "org-1",
+			userIds: [validUserId],
+		});
 	});
 
 	it("translates the serialized employee identity conflict without leaking database details", async () => {

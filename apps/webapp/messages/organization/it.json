@@ -256,6 +256,7 @@
       "title": "Team"
     },
     "timezone": {
+      "balances-recalculating": "I saldi di lavoro vengono ricalcolati per il nuovo fuso orario e restano nascosti finché non sono pronti.",
       "default": "Fuso orario predefinito",
       "description": "Imposta il fuso orario predefinito per la tua organizzazione. Viene utilizzato per il monitoraggio delle assenze, i report e altre funzionalità basate sulla data. I singoli utenti possono sovrascriverlo nelle impostazioni del loro profilo.",
       "owner-only": "Solo i proprietari dell'organizzazione possono modificare l'impostazione del fuso orario.",

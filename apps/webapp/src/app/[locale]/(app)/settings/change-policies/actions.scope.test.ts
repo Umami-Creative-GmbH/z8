@@ -154,6 +154,7 @@ const mockState = vi.hoisted(() => ({
 			employee: null,
 		},
 	],
+	guardCalls: [] as Array<unknown>,
 	insertedPolicies: [] as Array<any>,
 }));
 
@@ -162,6 +163,7 @@ vi.mock("drizzle-orm", () => ({
 	desc: vi.fn((value: unknown) => value),
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
 	inArray: vi.fn((left: unknown, right: unknown[]) => ({ inArray: [left, right] })),
+	sql: vi.fn((strings: TemplateStringsArray) => strings.join("")),
 }));
 
 vi.mock("@/db/schema", () => ({
@@ -235,6 +237,13 @@ vi.mock("../employees/employee-action-utils", async () => {
 							teamPermissions: {
 								findMany: vi.fn(async () => mockState.teamPermissionRows),
 							},
+						},
+						execute: vi.fn(async (statement: unknown) => {
+							mockState.guardCalls.push(statement);
+							return [];
+						}),
+						transaction(callback: (tx: unknown) => unknown) {
+							return callback(this);
 						},
 						insert: vi.fn(() => ({
 							values: vi.fn((value: unknown) => ({
@@ -371,6 +380,7 @@ describe("change policy scoped access", () => {
 		};
 		mockState.managedEmployeeIds = new Set(["employee-managed"]);
 		mockState.teamPermissionRows = [{ teamId: "team-managed", canManageTeamSettings: true }];
+		mockState.guardCalls = [];
 		mockState.insertedPolicies = [];
 	});
 
@@ -487,5 +497,6 @@ describe("change policy scoped access", () => {
 			data: { id: "created-policy" },
 		});
 		expect(mockState.insertedPolicies).toHaveLength(1);
+		expect(mockState.guardCalls).toHaveLength(1);
 	});
 });

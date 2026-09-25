@@ -1,6 +1,9 @@
 import "server-only";
 
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { db } from "@/db";
+import { workPeriod } from "@/db/schema";
 import {
 	completeOrdinaryWorkPeriodDecisionAfterCommit,
 	reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
@@ -9,12 +12,18 @@ import { type Clock, dateFromInstant, systemClock } from "@/lib/datetime/tempora
 import { ValidationError } from "@/lib/effect/errors";
 import type { BillingSuspensionReason } from "@/lib/effect/services/billing/billing-access";
 import { readBillingAccessInTransaction } from "@/lib/effect/services/billing/billing-configuration";
-import { CompletedWorkCollisionError } from "@/lib/time-tracking/close-active-work";
+import {
+	CompletedWorkCollisionError,
+	CompletedWorkIntegrityError,
+} from "@/lib/time-tracking/close-active-work";
 import {
 	type ManualTimeEntryCommand,
 	parseManualTimeEntryCommand,
 } from "@/lib/time-tracking/manual-command";
-import { withManualWorkTransaction } from "@/lib/time-tracking/manual-work-transaction";
+import {
+	manualSubmissionIdentity,
+	withManualWorkTransaction,
+} from "@/lib/time-tracking/manual-work-transaction";
 import {
 	type ManualWorkRejection,
 	type ManualWorkResult,
@@ -22,6 +31,7 @@ import {
 	recordManualWork,
 	replayManualWork,
 } from "@/lib/time-tracking/record-manual-work";
+import { acquireSourceIdentity } from "@/lib/time-tracking/work-transaction";
 import {
 	sendManualEntryApprovalNotifications,
 	sendManualEntryApprovedNotification,
@@ -33,9 +43,11 @@ import type { ManualActor, ManualPreparationRejection } from "./manual-preparati
 import { prepareManualWork } from "./manual-preparation";
 import { logger } from "./shared";
 import {
+	MANUAL_ENTRY_APPROVAL_UNROUTABLE,
 	MANUAL_ENTRY_COLLISION,
 	MANUAL_ENTRY_NOT_ADOPTED,
 	MANUAL_ENTRY_TARGET_NOT_AUTHORIZED,
+	type ManualTimeEntryLookup,
 	type ManualTimeEntryResult,
 } from "./types";
 
@@ -298,23 +310,16 @@ export async function createManualTimeEntryFromCommand(input: {
 			error.field === "managerId" &&
 			error.message === "No manager assigned to approve time changes"
 		) {
-			return { success: false, error: error.message };
+			return { success: false, error: error.message, code: MANUAL_ENTRY_APPROVAL_UNROUTABLE };
 		}
 		logger.error({ error, submissionId: command.submissionId }, "Failed to submit manual command");
 		return { success: false, error: "Failed to create time entry. Please try again." };
 	}
 	switch (outcome.kind) {
 		case "committed": {
-			const { result } = outcome;
 			return {
 				success: true,
-				data: {
-					workPeriodId: result.workPeriodId,
-					requiresApproval:
-						result.approval.participation === "manual_time_submission" &&
-						result.approval.outcome !== "auto_completed",
-					disposition: outcome.disposition,
-				},
+				data: { ...createdFromResult(outcome.result), disposition: outcome.disposition },
 			};
 		}
 		case "not_adopted":
@@ -345,5 +350,94 @@ export async function createManualTimeEntryFromCommand(input: {
 				...(rejection.reason === "holiday_blocked" ? { holidayName: rejection.holidayName } : {}),
 			};
 		}
+	}
+}
+
+function createdFromResult(result: ManualWorkResult) {
+	return {
+		workPeriodId: result.workPeriodId,
+		requiresApproval:
+			result.approval.participation === "manual_time_submission" &&
+			result.approval.outcome !== "auto_completed",
+	};
+}
+
+/**
+ * Lookup-only recovery of a frozen version-2 command (#310, #258 §7).
+ *
+ * The action has authenticated, matched the asserted user and organization and
+ * checked billing. The currently authorized target is resolved as for a
+ * submission. The lookup then serializes on the submission identity every
+ * version-2 submission holds until it commits, and applies the exact receipt
+ * matcher of replay. It reads and never writes, in every admission mode.
+ *
+ * `not_committed` means no commit under the identity was serialized before the
+ * lookup; it is not a tombstone. A request still before its transaction can
+ * commit later, and then an exact retry replays it.
+ */
+export async function lookupManualTimeEntryCommand(input: {
+	value: unknown;
+	currentEmployee: Parameters<typeof resolveManualEntryTarget>[0]["currentEmployee"];
+}): Promise<ManualTimeEntryLookup> {
+	const parsed = parseManualTimeEntryCommand(input.value);
+	// Legacy, unknown or unparsable representations have no supported matcher here.
+	if (!parsed.ok) return { status: "unsupported" };
+	const { command } = parsed;
+	const target = await resolveManualEntryTarget({
+		currentEmployee: input.currentEmployee,
+		requestedEmployeeId: command.targetEmployeeId,
+	});
+	if (!target.success) {
+		return { status: "refused", error: target.error, code: MANUAL_ENTRY_TARGET_NOT_AUTHORIZED };
+	}
+	const organizationId = input.currentEmployee.organizationId;
+	const employeeId = target.targetEmployee.id;
+	try {
+		return await db.transaction(async (transaction): Promise<ManualTimeEntryLookup> => {
+			await acquireSourceIdentity(
+				transaction,
+				manualSubmissionIdentity(organizationId, command.submissionId),
+			);
+			const result = await replayManualWork(
+				{
+					db: transaction,
+					assertEmployee(scopeOrganizationId, scopeEmployeeId) {
+						if (scopeOrganizationId !== organizationId || scopeEmployeeId !== employeeId) {
+							throw new Error("Employee scope is outside the lookup");
+						}
+					},
+				},
+				{ organizationId, employeeId, command },
+			);
+			if (!result) return { status: "not_committed" };
+			// The original outcome is the receipt; the current status is read now.
+			const [current] = await transaction
+				.select({ approvalStatus: workPeriod.approvalStatus })
+				.from(workPeriod)
+				.where(
+					and(
+						eq(workPeriod.id, result.workPeriodId),
+						eq(workPeriod.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+			if (!current) return { status: "conflict" };
+			return {
+				status: "committed",
+				data: {
+					...createdFromResult(result),
+					disposition: "replayed",
+					currentApprovalStatus: current.approvalStatus,
+				},
+			};
+		});
+	} catch (error) {
+		if (error instanceof CompletedWorkCollisionError) return { status: "conflict" };
+		if (error instanceof CompletedWorkIntegrityError) return { status: "unsupported" };
+		logger.error(
+			{ error, submissionId: command.submissionId },
+			"Failed to look up a manual command",
+		);
+		return { status: "failed", error: "Couldn't check this entry. Please try again." };
 	}
 }

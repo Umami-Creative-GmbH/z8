@@ -214,12 +214,15 @@ This slice closes on implementation. The items below are activation gates for #3
 
 - **Configuration writers** (#311–#318) do not yet take the exclusive configuration and
   user access guards, so the shared guards reserve the protocol without fencing settings,
-  auth/SCIM, project/category, holiday, change-policy and billing mutations.
+  auth/SCIM and project/category mutations. Holiday, blocking-category and
+  change-policy writers participate since #316
+  ([evidence](holiday-change-policy-coordination-316.md)), except the import, demo and
+  cleanup writers left to #318. Billing writers participate since #317.
 - **Billing**: implemented by #317. The transaction now also revalidates billing with a
   non-provisioning read before replay, and billing writers take exclusive protection. See
   [billing-revalidation-317.md](billing-revalidation-317.md).
 - **Frozen command recovery** (tab-scoped storage, lookup-only recovery, exact retry after an
-  uncertain result) is #310; this slice keeps the existing in-dialog submission identity.
+  uncertain result) was delivered by #310; see [manual-command-recovery-310.md](manual-command-recovery-310.md).
 - **Other writers** that create intervals (corrections #301/#286, breaks/splits #304, on-behalf
   clock-out #276, mobile/extension/desktop clients) must adopt occupancy and append
   participation before the shared guarantees hold against manual work.
@@ -230,8 +233,8 @@ This slice closes on implementation. The items below are activation gates for #3
 - **Not verified here:** unchanged surcharge event-time semantics with manual approval (the
   operation passes the exact interval to the existing snapshot resolver), and a manual/live
   clock race in both arrival orders (only manual-waits-behind-the-employee-key is exercised).
-- **Freezing** the confirmed command across the timezone prompt is left to #310; the dialog
-  rebuilds it from the draft once the zone is confirmed.
+- **Freezing** the confirmed command across the timezone prompt was delivered by #310: the
+  command is built once from the submit-time draft snapshot and captured target, then stored.
 - **Policy ambiguity** cannot currently occur in the database (unique active assignment
   indexes per level); the explicit failure is covered only by construction.
 - Deployment, old-client coexistence (forms without `manualCommandVersion` send legacy

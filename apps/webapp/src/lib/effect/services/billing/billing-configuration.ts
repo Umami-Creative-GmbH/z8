@@ -18,13 +18,13 @@ import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
 import {
-	acquireOrganizationConfigurationProtection,
-	type WorkTransactionClient,
-} from "@/lib/time-tracking/work-transaction";
+	acquireExclusiveOrganizationConfigurationGuard,
+	withOrganizationConfigurationMutation,
+} from "@/lib/time-tracking/organization-configuration-guard";
+import type { Transaction, WorkTransactionClient } from "@/lib/time-tracking/work-transaction";
 import { countBillableSeats } from "./billable-seat-count";
 import { type BillingAccessResult, evaluateBillingAccess } from "./billing-access";
 
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type SubscriptionRow = typeof subscription.$inferSelect;
 /** The subscription rows of one Stripe subscription within the protected organizations. */
 type ProtectedSubscriptionScope = SQL | undefined;
@@ -60,10 +60,7 @@ export function withOrganizationBillingMutation<T>(
 	organizationId: string,
 	mutate: (transaction: Transaction) => Promise<T>,
 ): Promise<T> {
-	return db.transaction(async (transaction) => {
-		await acquireOrganizationConfigurationProtection(transaction, [organizationId]);
-		return mutate(transaction);
-	});
+	return withOrganizationConfigurationMutation(db, organizationId, mutate);
 }
 
 /**
@@ -89,7 +86,10 @@ export async function withStripeSubscriptionMutation<T>(
 			const organizationIds = await owners(transaction);
 			// No local subscription: the update would match nothing, as before.
 			if (organizationIds.length === 0) return { done: true as const, value: undefined };
-			await acquireOrganizationConfigurationProtection(transaction, organizationIds);
+			// Owners are already sorted, so concurrent writers lock in one order.
+			for (const organizationId of organizationIds) {
+				await acquireExclusiveOrganizationConfigurationGuard(transaction, organizationId);
+			}
 			if (JSON.stringify(await owners(transaction)) !== JSON.stringify(organizationIds)) {
 				return { done: false as const };
 			}

@@ -14,6 +14,9 @@ const mockState = vi.hoisted(() => ({
 				findFirst: vi.fn(),
 				findMany: vi.fn(),
 			},
+			workBalanceRebuildIntent: {
+				findFirst: vi.fn(),
+			},
 		},
 		select: vi.fn(),
 		delete: vi.fn(),
@@ -182,6 +185,8 @@ describe("work balance helpers", () => {
 		});
 		mockState.db.query.employeeWorkBalance.findMany.mockReset();
 		mockState.db.query.employeeWorkBalance.findMany.mockResolvedValue([]);
+		mockState.db.query.workBalanceRebuildIntent.findFirst.mockReset();
+		mockState.db.query.workBalanceRebuildIntent.findFirst.mockResolvedValue(undefined);
 	});
 
 	it("builds all-time work balance values", () => {
@@ -404,6 +409,36 @@ describe("work balance helpers", () => {
 			"employee-1",
 			"employee-2",
 		]);
+	});
+
+	it("treats every projection as not current while its organization awaits a rebuild", async () => {
+		mockState.db.query.workBalanceRebuildIntent.findFirst.mockResolvedValue({ id: "intent-1" });
+		mockState.db.query.employeeWorkBalance.findMany.mockResolvedValueOnce([
+			{
+				id: "balance-1",
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				actualMinutes: 2520,
+				requiredMinutes: 2400,
+				balanceMinutes: 120,
+				computedFromDate: "2026-05-01",
+				computedThroughDate: "2026-05-22",
+				computedAt: new Date("2026-05-22T12:00:00.000Z"),
+				isDirty: false,
+				dirtyFromDate: null,
+				refreshRequestedAt: null,
+				lastError: null,
+				updatedAt: new Date("2026-05-22T12:00:00.000Z"),
+			},
+		]);
+
+		await expect(
+			getEmployeeWorkBalance({ employeeId: "employee-1", organizationId: "org-1" }),
+		).resolves.toBeNull();
+		await expect(
+			getEmployeeWorkBalances({ employeeIds: ["employee-1"], organizationId: "org-1" }),
+		).resolves.toEqual(new Map());
+		expect(eq).toHaveBeenCalledWith(expect.anything(), "org-1");
 	});
 
 	it("omits hidden full-rebuild markers from bulk work balances", async () => {
@@ -857,6 +892,15 @@ describe("work balance helpers", () => {
 		expect(lt).toHaveBeenCalledWith(
 			employeeWorkBalance.computedThroughDate,
 			expect.objectContaining({ values: expect.arrayContaining([now]) }),
+		);
+		// Organizations awaiting a rebuild are left to it.
+		expect(and).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.anything(),
+			expect.objectContaining({
+				sql: expect.arrayContaining([expect.stringContaining("not exists (select 1 from ")]),
+			}),
+			expect.anything(),
 		);
 	});
 

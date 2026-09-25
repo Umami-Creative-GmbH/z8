@@ -42,6 +42,14 @@ export interface ManualWorkTransactionInput {
 	submissionId: string;
 }
 
+/**
+ * The submission identity every manual submission (and legacy manual replay)
+ * serializes on; lookup-only recovery (#310) waits on the same key.
+ */
+export function manualSubmissionIdentity(organizationId: string, submissionId: string) {
+	return [organizationId, "manual_time_submission", "time_entry", submissionId] as const;
+}
+
 type ApprovalRuntimeFactory = (database: ApprovalWorkflowDatabase) => {
 	repository: ApprovalWorkflowRepository;
 };
@@ -177,12 +185,10 @@ async function runAttempt<T>(
 					restart = "scope";
 					throw new WorkTransactionScopeChanged();
 				}
-				await acquireSourceIdentity(transaction, [
-					input.organizationId,
-					"manual_time_submission",
-					"time_entry",
-					input.submissionId,
-				]);
+				await acquireSourceIdentity(
+					transaction,
+					manualSubmissionIdentity(input.organizationId, input.submissionId),
+				);
 				if (routed.policyIds.length > 0) {
 					await transaction.execute(
 						sql`select id from approval_policy where organization_id = ${input.organizationId} and id in (${sql.join(
