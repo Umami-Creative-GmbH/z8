@@ -194,6 +194,14 @@ The scanner cannot read sources on Windows, so it ran in a Linux `node:24` conta
 `approval-write-boundary.test.ts` passes **290/290**. The production inventory is unchanged
 apart from the two retired registrations.
 
+The full PostgreSQL runner list (66 files, including this suite) passes **1185 tests**; the 6
+skipped are the browser suite.
+
+The full unit suite has the same failure set as a clean `dev` worktree: 139 failures against
+141, all of them the known Windows, CRLF and date-dependent set. The one name that differs
+is the renamed scanner test, which fails on Windows like every scanner test and passes on
+Linux.
+
 ### Database-free
 
 - `import-review/committers.setup.test.ts`: work-category setup rows take the guard before
