@@ -9,6 +9,14 @@ import { eq, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { timeEntryAppendControl } from "@/db/schema/time-entry-append";
 
+// The organization configuration guard lives in a schema-free module so route
+// handlers can take it; coordinators keep importing it from here.
+export {
+	acquireExclusiveOrganizationConfigurationGuard,
+	acquireOrganizationConfigurationGuard,
+	withOrganizationConfigurationMutation,
+} from "./organization-configuration-guard";
+
 export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type WorkTransactionClient = Pick<
 	Transaction,
@@ -92,49 +100,8 @@ export async function readAppendAdmission(
 	return control?.mode === "active" ? "append" : "legacy";
 }
 
-const organizationConfigurationKey = (organizationId: string) =>
-	JSON.stringify(["work-organization-configuration", organizationId]);
 const userConfigurationAccessKey = (userId: string) =>
 	JSON.stringify(["work-user-configuration-access", userId]);
-
-export async function acquireOrganizationConfigurationGuard(
-	transaction: Pick<Transaction, "execute">,
-	organizationId: string,
-) {
-	await transaction.execute(
-		sql`select pg_advisory_xact_lock_shared(hashtextextended(${organizationConfigurationKey(organizationId)}, 0))`,
-	);
-}
-
-/**
- * Exclusive organization configuration protection for a writer of a manual
- * dependency, held from before its first dependent mutation through commit. It
- * drains and fences every holder of the shared guard; never upgrade from shared.
- */
-export async function acquireExclusiveOrganizationConfigurationGuard(
-	transaction: Pick<Transaction, "execute">,
-	organizationId: string,
-) {
-	await transaction.execute(
-		sql`select pg_advisory_xact_lock(hashtextextended(${organizationConfigurationKey(organizationId)}, 0))`,
-	);
-}
-
-/**
- * Runs one organization configuration mutation in its own transaction under
- * exclusive configuration protection (#315). Validation that decides whether the
- * write is allowed belongs inside `write`, so it serializes with preparation.
- */
-export async function withOrganizationConfigurationMutation<T>(
-	client: Pick<typeof db, "transaction">,
-	organizationId: string,
-	write: (transaction: Transaction) => Promise<T>,
-): Promise<T> {
-	return client.transaction(async (transaction) => {
-		await acquireExclusiveOrganizationConfigurationGuard(transaction, organizationId);
-		return write(transaction);
-	});
-}
 
 export async function acquireUserConfigurationAccessGuards(
 	transaction: Pick<Transaction, "execute">,

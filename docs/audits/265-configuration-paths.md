@@ -6,8 +6,10 @@ evidence limitations apply. Paths are relative to `apps/webapp/src/`.
 O/E/U mean organization/employee/user. Each row includes inserts when a row did
 not previously exist, updates, removals and relevant cascading effects.
 
-**Current state:** no row below is certified to participate in the new manual
-configuration protocol. Existing local transactions and SCIM transactional
+**Current state:** apart from C11–C13 (#316, see
+[its evidence](../holiday-change-policy-coordination-316.md), without the import, demo
+and cleanup writers left to #318), no row below is certified to participate in the new
+manual configuration protocol. Existing local transactions and SCIM transactional
 callbacks must be preserved, then extended at their actual mutation owner.
 Creation-time fallback changes and access changes require the same protection as
 an explicit timezone or permission edit.

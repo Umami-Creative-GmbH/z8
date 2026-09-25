@@ -208,6 +208,9 @@ vi.mock("@/db", () => ({
 const { POST } = await import("./route");
 
 const categoryId = "10000000-0000-4000-8000-000000000001";
+/** The exclusive organization configuration guard's advisory key. */
+const guardKey = (organizationId: string) =>
+	JSON.stringify(["work-organization-configuration", organizationId]);
 
 function holidayInput(name: string, date: string, endDate = date) {
 	return {
@@ -295,7 +298,7 @@ describe("POST /api/org-admin/holidays/import", () => {
 			type: "and",
 		});
 		expect(state.transaction).toHaveBeenCalledOnce();
-		expect(state.advisoryLockKeys).toEqual(["holiday-import:org-active"]);
+		expect(state.advisoryLockKeys).toEqual([guardKey("org-active")]);
 		expect(state.insertedHolidayBatches).toEqual([]);
 	});
 
@@ -378,8 +381,8 @@ describe("POST /api/org-admin/holidays/import", () => {
 			expect(state.existingHolidayReadCount.value).toBe(1);
 			expect(state.insertedHolidayBatches).toHaveLength(1);
 			expect(state.advisoryLockKeys).toEqual([
-				"holiday-import:org-active",
-				"holiday-import:org-active",
+				guardKey("org-active"),
+				guardKey("org-active"),
 			]);
 			expect(state.advisoryLockStatements).toEqual([
 				"select pg_advisory_xact_lock(hashtextextended(?, 0))",
@@ -416,7 +419,7 @@ describe("POST /api/org-admin/holidays/import", () => {
 			if (count === 2) secondTransactionStarted.resolve();
 		};
 		state.onAdvisoryLockAcquired.value = (lockKey) => {
-			if (lockKey === "holiday-import:org-other") secondLockAcquired.resolve();
+			if (lockKey === guardKey("org-other")) secondLockAcquired.resolve();
 		};
 		state.onExistingHolidayRead.value = (count) => {
 			if (count === 2) secondReadStarted.resolve();
@@ -443,8 +446,8 @@ describe("POST /api/org-admin/holidays/import", () => {
 
 		try {
 			expect(state.advisoryLockKeys).toEqual([
-				"holiday-import:org-active",
-				"holiday-import:org-other",
+				guardKey("org-active"),
+				guardKey("org-other"),
 			]);
 			await secondLockAcquired.promise;
 			await secondReadStarted.promise;
