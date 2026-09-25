@@ -18,10 +18,10 @@ import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { runActiveOrganizationActionActorCheck } from "@/lib/auth/organization-action-authorization";
 import { requireUser } from "@/lib/auth-helpers";
 import { ClockodoClient } from "@/lib/clockodo/client";
-import type { ImportUserMapping } from "@/lib/clockodo/import-orchestrator";
 import type {
 	ClockodoDataPreview,
 	ImportResult,
+	ImportUserMapping,
 	ImportSelections,
 	UserMappingEntry,
 } from "@/lib/clockodo/types";
