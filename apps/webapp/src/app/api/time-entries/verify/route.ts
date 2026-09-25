@@ -6,14 +6,26 @@ import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import { type AppAbility, asAppSubject, ForbiddenError, toHttpError } from "@/lib/authorization";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
+import { summarizeAppendAssurance } from "@/lib/time-tracking/append-assurance";
 import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
+
+/** Subject-scoped: a manager's TimeEntry grant covers direct reports only. */
+function canManageEntriesOf(
+	ability: AppAbility | null,
+	employeeId: string,
+	organizationId: string,
+): boolean {
+	return Boolean(ability?.can("manage", asAppSubject("TimeEntry", { employeeId, organizationId })));
+}
 
 /**
  * POST /api/time-entries/verify
- * Verify chain integrity for an employee's time entries
+ * Graph-aware append assurance for an employee's time entries (#324). Operators
+ * receive record-level diagnostics; employees verifying their own history receive
+ * status and limitation codes only.
  */
 export async function POST(request: NextRequest) {
 	await connection();
@@ -56,10 +68,18 @@ export async function POST(request: NextRequest) {
 		// Determine which employee's chain to verify
 		const targetEmployeeId = employeeId || currentEmployee.id;
 
-		// Only allow verifying own entries unless user can manage time entries
-		if (targetEmployeeId !== currentEmployee.id) {
-			const ability = await getAbility();
-			if (!ability || ability.cannot("manage", "TimeEntry")) {
+		// Every role self-manages its own time entries, so that alone does not make an
+		// operator. Record-level diagnostics need management of this other employee's
+		// entries, or organization administration when verifying one's own history.
+		const ability = await getAbility();
+		const isSelf = targetEmployeeId === currentEmployee.id;
+		const canDiagnose = isSelf
+			? Boolean(ability?.can("manage", "OrgSettings"))
+			: canManageEntriesOf(ability, targetEmployeeId, currentEmployee.organizationId);
+
+		// Only allow verifying own entries unless user can manage the target's time entries
+		if (!isSelf) {
+			if (!canDiagnose) {
 				const error = new ForbiddenError("read", "TimeEntry");
 				const httpError = toHttpError(error);
 				return NextResponse.json(httpError.body, { status: httpError.status });
@@ -85,15 +105,16 @@ export async function POST(request: NextRequest) {
 		const effect = Effect.gen(function* (_) {
 			const timeEntryService = yield* _(TimeEntryService);
 			return yield* _(
-				timeEntryService.verifyTimeEntryChain(targetEmployeeId, currentEmployee.organizationId),
+				timeEntryService.getAppendAssurance(targetEmployeeId, currentEmployee.organizationId),
 			);
 		});
 
-		const result = await runtime.runPromise(effect);
+		const report = await runtime.runPromise(effect);
 
 		return NextResponse.json({
 			employeeId: targetEmployeeId,
-			verification: result,
+			diagnostics: canDiagnose ? "record_level" : "summary",
+			assurance: canDiagnose ? report : summarizeAppendAssurance(report),
 			verifiedAt: new Date().toISOString(),
 		});
 	} catch (error) {
@@ -107,7 +128,8 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/time-entries/verify
- * Get chain hash for quick integrity check
+ * Digest of the employee's stored entry hashes, for detecting changes between
+ * reads. It is not a lineage verification; use POST for assurance.
  */
 export async function GET(request: NextRequest) {
 	await connection();
@@ -150,10 +172,10 @@ export async function GET(request: NextRequest) {
 		// Determine which employee's chain hash to get
 		const targetEmployeeId = employeeId || currentEmployee.id;
 
-		// Only allow viewing own chain hash unless user can manage time entries
+		// Only allow viewing own chain hash unless user can manage the target's time entries
 		if (targetEmployeeId !== currentEmployee.id) {
 			const ability = await getAbility();
-			if (!ability || ability.cannot("manage", "TimeEntry")) {
+			if (!canManageEntriesOf(ability, targetEmployeeId, currentEmployee.organizationId)) {
 				const error = new ForbiddenError("read", "TimeEntry");
 				const httpError = toHttpError(error);
 				return NextResponse.json(httpError.body, { status: httpError.status });
@@ -172,6 +194,7 @@ export async function GET(request: NextRequest) {
 		return NextResponse.json({
 			employeeId: targetEmployeeId,
 			chainHash,
+			claim: "change_digest",
 			generatedAt: new Date().toISOString(),
 		});
 	} catch (error) {

@@ -1,18 +1,19 @@
-import type { CorrectionClosureResult, CorrectionLinkNode } from "./types";
+import type { CorrectionClosureResult, LineageLinkNode } from "./types";
 
-function getLinkedIds(node: CorrectionLinkNode): string[] {
-	const linkedIds = [node.previousEntryId, node.replacesEntryId, node.supersededById];
+/** Append adjacency follows only the resolved predecessor, never an unresolved stored ID. */
+function getLinkedIds(node: LineageLinkNode): string[] {
+	const linkedIds = [node.appendPredecessorId, node.replacesEntryId, node.supersededById];
 	return linkedIds.filter((id): id is string => id !== null && id.length > 0);
 }
 
 export function buildCorrectionClosure(
-	seedNodes: readonly CorrectionLinkNode[],
-	lookupById: Readonly<Record<string, CorrectionLinkNode>>,
+	seedNodes: readonly LineageLinkNode[],
+	lookupById: Readonly<Record<string, LineageLinkNode>>,
 ): CorrectionClosureResult {
 	const seedIds = Array.from(new Set(seedNodes.map((node) => node.id))).toSorted();
 	const inRangeSeedIds = new Set(seedIds);
 
-	const nodesById = new Map<string, CorrectionLinkNode>(Object.entries(lookupById));
+	const nodesById = new Map<string, LineageLinkNode>(Object.entries(lookupById));
 	for (const seedNode of seedNodes) {
 		nodesById.set(seedNode.id, seedNode);
 	}

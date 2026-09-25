@@ -575,6 +575,13 @@
       "when": 1791302400000,
       "tag": "0081_approval_invocation",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1791388800000,
+      "tag": "0082_audit_pack_append_assurance",
+      "breakpoints": true
     }
   ]
 }

@@ -27,13 +27,9 @@ import {
 	lockTrustedTimeCorrectionEmployeeTeamId,
 } from "@/lib/approvals/server/time-correction-category-authorization";
 import { compareInstants } from "@/lib/datetime/temporal-core";
-import {
-	type ChainValidationResult,
-	calculateHash,
-	getChainHash,
-	validateChainDetailed,
-	verifyHash,
-} from "@/lib/time-tracking/blockchain";
+import type { AppendAssuranceReport } from "@/lib/time-tracking/append-assurance";
+import { readEmployeeAppendAssurance } from "@/lib/time-tracking/append-assurance-reader";
+import { calculateHash, getChainHash, verifyHash } from "@/lib/time-tracking/blockchain";
 import {
 	instantFromTimeCorrectionBoundary,
 	validateTimeCorrectionRange,
@@ -140,10 +136,11 @@ export class TimeEntryService extends Context.Tag("TimeEntryService")<
 			organizationId: string,
 		) => Effect.Effect<TimeEntry | null, DatabaseError>;
 
-		readonly verifyTimeEntryChain: (
+		/** Graph-aware append assurance; see `lib/time-tracking/append-assurance.ts`. */
+		readonly getAppendAssurance: (
 			employeeId: string,
 			organizationId: string,
-		) => Effect.Effect<ChainValidationResult, DatabaseError>;
+		) => Effect.Effect<AppendAssuranceReport, DatabaseError>;
 
 		readonly verifyEntry: (
 			entryId: string,
@@ -1009,25 +1006,10 @@ export const TimeEntryServiceLive = Layer.effect(
 					return entry;
 				}),
 
-			verifyTimeEntryChain: (employeeId, organizationId) =>
-				Effect.gen(function* (_) {
-					const entries = yield* _(
-						dbService.query("getEntriesForChainValidation", async () => {
-							return await dbService.db
-								.select()
-								.from(timeEntry)
-								.where(
-									and(
-										eq(timeEntry.employeeId, employeeId),
-										eq(timeEntry.organizationId, organizationId),
-									),
-								)
-								.orderBy(desc(timeEntry.createdAt));
-						}),
-					);
-
-					return validateChainDetailed(entries);
-				}),
+			getAppendAssurance: (employeeId, organizationId) =>
+				dbService.query("getAppendAssurance", () =>
+					readEmployeeAppendAssurance(dbService.db, { organizationId, employeeId }),
+				),
 
 			verifyEntry: (entryId, organizationId) =>
 				Effect.gen(function* (_) {

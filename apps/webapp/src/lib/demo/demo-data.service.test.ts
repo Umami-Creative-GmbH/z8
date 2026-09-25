@@ -13,7 +13,8 @@ import {
 	timeRecord,
 	workPeriod,
 } from "@/db/schema";
-import { calculateHash, validateChain } from "@/lib/time-tracking/blockchain";
+import { classifyAppendLineage } from "@/lib/time-tracking/append-lineage";
+import { calculateHash } from "@/lib/time-tracking/blockchain";
 
 type RolloutMode = "legacy" | "shadow" | "ready" | "canonical" | "complete";
 
@@ -997,18 +998,24 @@ describe("generateDemoPendingTimeCorrectionApprovals", () => {
 			...mocks.insertedTimeEntries[0],
 			createdAt: new Date("2026-01-06T09:00:02.000Z"),
 		};
-		await expect(
-			validateChain([
+		expect(
+			classifyAppendLineage(
 				{
-					...original,
-					previousEntryId: null,
-					previousHash: null,
-					createdAt: new Date("2026-01-05T08:00:01.000Z"),
+					organizationId: original.organizationId as string,
+					employeeId: original.employeeId as string,
 				},
-				mocks.lockedChainTail,
-				correction,
-			] as never),
-		).resolves.toBe(true);
+				[
+					{
+						...original,
+						previousEntryId: null,
+						previousHash: null,
+						createdAt: new Date("2026-01-05T08:00:01.000Z"),
+					},
+					mocks.lockedChainTail,
+					{ id: "demo-correction", ...correction },
+				] as never,
+			),
+		).toMatchObject({ kind: "lineage", entryCount: 3 });
 	});
 
 	it("locks employees and routing before source and hash-chain rows", async () => {
