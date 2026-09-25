@@ -72,6 +72,21 @@ const commandFields = {
 	context: contextAssertion,
 };
 
+/** A known period, or the queued clock-in (or break) operation that creates it. */
+const closeTarget = z.union([
+	z.strictObject({ workPeriodId: z.uuid() }),
+	z.strictObject({ clockInOperationId: operationId }),
+]);
+
+const ianaZone = z.string().refine((value) => isValidIanaTimezone(value));
+/** One device observation: the UTC wall clock and a monotonic reading taken together. */
+const observation = z.strictObject({
+	utc: utcInstant,
+	/** Process-relative monotonic milliseconds; only differences carry meaning. */
+	monotonicMs: z.number().int().nonnegative(),
+});
+const zonedObservation = z.strictObject({ ...observation.shape, timezone: ianaZone });
+
 const clockCommandSchema = z.discriminatedUnion("kind", [
 	z.strictObject({
 		...commandFields,
@@ -81,20 +96,71 @@ const clockCommandSchema = z.discriminatedUnion("kind", [
 	z.strictObject({
 		...commandFields,
 		kind: z.literal("clock_out"),
-		/** A known period, or the queued clock-in operation that creates it. */
-		target: z.union([
-			z.strictObject({ workPeriodId: z.uuid() }),
-			z.strictObject({ clockInOperationId: operationId }),
-		]),
+		target: closeTarget,
 		project: attribution,
 		workCategory: attribution,
+	}),
+	/**
+	 * A confirmed desktop idle break (#281, resolution #263 §8): one atomic
+	 * operation closes the target at the estimated idle start and resumes at the
+	 * detected return. `occurredAt`/`timezone` are the detected return, never the
+	 * later confirmation; `breakStart` is the close endpoint with the zone
+	 * observed when idleness was detected. The observations explain both.
+	 */
+	z.strictObject({
+		...commandFields,
+		kind: z.literal("break"),
+		target: closeTarget,
+		/** Location of the resumed work. */
+		workLocationType: z.enum(WORK_LOCATION_TYPES),
+		breakStart: z.strictObject({ at: utcInstant, timezone: ianaZone }),
+		observations: z.strictObject({
+			/** The last input before idleness: the estimated idle start. */
+			lastActivity: observation,
+			/** When the idle threshold was noticed, with the zone observed then. */
+			idleDetected: zonedObservation,
+			/** The first input after idleness, with the zone observed then. */
+			returnDetected: zonedObservation,
+			/** When the employee confirmed the break. */
+			confirmed: observation,
+		}),
 	}),
 ]);
 
 export type ClockCommand = z.infer<typeof clockCommandSchema>;
 export type ClockInCommand = Extract<ClockCommand, { kind: "clock_in" }>;
 export type ClockOutCommand = Extract<ClockCommand, { kind: "clock_out" }>;
+export type BreakCommand = Extract<ClockCommand, { kind: "break" }>;
 export type ClockCommandContext = ClockCommand["context"];
+
+type BreakObservation = keyof BreakCommand["observations"];
+const BREAK_OBSERVATION_ORDER = [
+	"lastActivity",
+	"idleDetected",
+	"returnDetected",
+	"confirmed",
+] as const satisfies readonly BreakObservation[];
+
+/**
+ * The endpoints must be exactly the observations they claim to be: the close is
+ * the last input with the idle-detection zone, the resume is the detected return
+ * with its own zone. The monotonic clock never runs backwards.
+ */
+function breakEndpointsMatchObservations(command: BreakCommand): boolean {
+	const { observations: seen } = command;
+	return (
+		command.breakStart.at === seen.lastActivity.utc &&
+		command.breakStart.timezone === seen.idleDetected.timezone &&
+		command.occurredAt === seen.returnDetected.utc &&
+		command.timezone === seen.returnDetected.timezone &&
+		BREAK_OBSERVATION_ORDER.every(
+			(name, index) =>
+				index === 0 ||
+				seen[name].monotonicMs >= seen[BREAK_OBSERVATION_ORDER[index - 1]].monotonicMs,
+		) &&
+		seen.lastActivity.monotonicMs < seen.returnDetected.monotonicMs
+	);
+}
 
 export type ParsedClockCommand =
 	| { ok: true; command: ClockCommand }
@@ -111,9 +177,40 @@ export function parseClockCommand(body: unknown): ParsedClockCommand {
 			: { ok: false, code: "invalid_command" };
 	}
 	const parsed = clockCommandSchema.safeParse(body);
-	return parsed.success
-		? { ok: true, command: parsed.data }
-		: { ok: false, code: "invalid_command" };
+	if (!parsed.success) return { ok: false, code: "invalid_command" };
+	if (parsed.data.kind === "break" && !breakEndpointsMatchObservations(parsed.data)) {
+		return { ok: false, code: "invalid_command" };
+	}
+	return { ok: true, command: parsed.data };
+}
+
+/**
+ * Wall-clock and monotonic elapsed time between consecutive observations may
+ * differ by two seconds plus one millisecond per monotonic second (clock slew).
+ * The desktop applies the same rule before it freezes a break.
+ */
+export const BREAK_CLOCK_TOLERANCE = { baseMilliseconds: 2_000, perSecondMilliseconds: 1 } as const;
+
+export type BreakClockDiscontinuity = { code: "clock_discontinuity"; from: BreakObservation };
+
+/**
+ * A wall-clock change while idle leaves the proposed interval uncertain, so the
+ * break needs a reviewed correction instead (#263 §8). Returns the first
+ * observation after which the clocks disagree, or null.
+ */
+export function checkBreakClockContinuity(command: BreakCommand): BreakClockDiscontinuity | null {
+	const seen = command.observations;
+	for (let index = 1; index < BREAK_OBSERVATION_ORDER.length; index += 1) {
+		const from = BREAK_OBSERVATION_ORDER[index - 1];
+		const to = BREAK_OBSERVATION_ORDER[index];
+		const monotonic = seen[to].monotonicMs - seen[from].monotonicMs;
+		const wall = Date.parse(seen[to].utc) - Date.parse(seen[from].utc);
+		const allowed =
+			BREAK_CLOCK_TOLERANCE.baseMilliseconds +
+			Math.floor(monotonic / 1000) * BREAK_CLOCK_TOLERANCE.perSecondMilliseconds;
+		if (Math.abs(wall - monotonic) > allowed) return { code: "clock_discontinuity", from };
+	}
+	return null;
 }
 
 export type ClockCommandAgeAdmission =

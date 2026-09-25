@@ -123,6 +123,9 @@ pub struct RecoverySummary {
     pub total: usize,
     pub malformed: usize,
     pub exhausted: usize,
+    /// Two-request breaks whose close or resume may have committed. They are
+    /// never replayed as close then resume, nor assumed uncommitted (#281).
+    pub possible_partial_breaks: usize,
 }
 
 impl OfflineQueue {
@@ -209,6 +212,14 @@ impl OfflineQueue {
             exhausted: records
                 .iter()
                 .filter(|record| record.reasons.contains(&ReviewReason::RetriesExhausted))
+                .count(),
+            possible_partial_breaks: records
+                .iter()
+                .filter(|record| {
+                    record
+                        .reasons
+                        .contains(&ReviewReason::BreakMayBePartiallyCommitted)
+                })
                 .count(),
         })
     }

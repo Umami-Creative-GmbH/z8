@@ -25,6 +25,12 @@ const WAITING_FOR: Record<WaitingFor, string> = {
   server: "Waiting for a server answer this app recognizes.",
 };
 
+const KIND_LABEL: Record<SavedClockCommand["kind"], string> = {
+  clock_in: "Clock in",
+  clock_out: "Clock out",
+  break: "Break, work resumed",
+};
+
 /** Shown in the zone the action was recorded in, not the viewer's current zone. */
 function eventTime(command: SavedClockCommand) {
   const formatted = new Intl.DateTimeFormat(undefined, {
@@ -67,7 +73,7 @@ function SavedCommand({ command, onRetry, onArchive, isUpdating }: {
   };
   return (
     <li>
-      <strong>{command.kind === "clock_in" ? "Clock in" : "Clock out"}</strong> at {eventTime(command)}
+      <strong>{KIND_LABEL[command.kind]}</strong> at {eventTime(command)}
       <br />
       {describeState(command)}
       <div className="clock-recovery-actions">
@@ -145,6 +151,7 @@ export function ClockRecoveryNotice({
           <ul>
             <li>Malformed records: {countFormatter.format(legacy.malformed)}</li>
             <li>Retry limit reached: {countFormatter.format(legacy.exhausted)}</li>
+            <li>Breaks that may be partly saved: {countFormatter.format(legacy.possiblePartialBreaks)}</li>
             <li>All retained records have unverified ownership or operation evidence.</li>
           </ul>
           <p>Stored failure times are not original click times. A break may already be partly saved. Record contents and export remain unavailable until ownership can be verified.</p>

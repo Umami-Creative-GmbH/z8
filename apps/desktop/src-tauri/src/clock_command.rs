@@ -1,15 +1,16 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, SecondsFormat, Utc};
 use parking_lot::Mutex;
 use serde::Serialize;
 
+use crate::break_evidence::{BreakEvidence, BreakReview};
 use crate::clock::{BreakFailure, ClockService, ClockStatus, ClockWriteOutcome, WorkLocationType};
 use crate::clock_journal::{self, ClockJournal, JournalScope, Projection};
 use crate::command_store::{token_fingerprint, CommandFailure, CommandState, CommandStore};
 use crate::command_sync::{self, Pacing};
 use crate::command_transport::{Capabilities, CapabilitiesFetch};
 use crate::frozen_command::{
-    freeze_clock_in, freeze_clock_out, new_operation_id, Admission, ClockTarget, CommandContext,
-    CommandFrame, CommandKind, FrozenCommand,
+    freeze_break, freeze_clock_in, freeze_clock_out, new_operation_id, Admission, ClockTarget,
+    CommandContext, CommandFrame, CommandKind, FrozenCommand,
 };
 use crate::offline::{ActionType, OfflineQueue};
 
@@ -19,28 +20,34 @@ pub const STORAGE_PAUSED: &str = "Cannot read local clock storage. Clock actions
 pub enum ClockCommand {
     ClockIn(WorkLocationType),
     ClockOut,
+    /// A confirmed idle break: close at the idle start, resume at the detected
+    /// return, where `location` is the resumed work's location (#281).
     Break {
-        start: String,
+        evidence: BreakEvidence,
         location: WorkLocationType,
     },
 }
 
-/// The clock actions that can be frozen. Breaks keep the two-request legacy
-/// transport until #281.
-#[derive(Clone, Copy)]
-enum WorkAction {
-    ClockIn(WorkLocationType),
-    ClockOut,
-}
-
 impl ClockCommand {
-    fn work_action(&self) -> Option<WorkAction> {
+    fn kind(&self) -> CommandKind {
         match self {
-            Self::ClockIn(location) => Some(WorkAction::ClockIn(*location)),
-            Self::ClockOut => Some(WorkAction::ClockOut),
-            Self::Break { .. } => None,
+            Self::ClockIn(_) => CommandKind::ClockIn,
+            Self::ClockOut => CommandKind::ClockOut,
+            Self::Break { .. } => CommandKind::Break,
         }
     }
+}
+
+/// Why a break needs a reviewed correction instead of an automatic record.
+fn break_review_error(review: BreakReview) -> ClockCommandError {
+    ClockCommandError::pre_send(match review {
+        BreakReview::ClockDiscontinuity => {
+            "The device clock changed while you were away, so this break cannot be recorded automatically. Nothing was recorded. Enter the break as a time correction in Z8."
+        }
+        BreakReview::StartZoneUnavailable | BreakReview::ReturnZoneUnavailable => {
+            "The device time zone could not be read while you were away, so this break cannot be recorded automatically. Nothing was recorded. Enter the break as a time correction in Z8."
+        }
+    })
 }
 
 /// Observed when the user acted, before any lock, network or storage work.
@@ -125,7 +132,6 @@ enum Route {
     Commands {
         capabilities: Capabilities,
         context: CommandContext,
-        timezone: String,
         status: Option<ClockStatus>,
     },
     Legacy,
@@ -197,7 +203,7 @@ fn now_ms() -> i64 {
 
 async fn choose_route(
     session: &ClockSession<'_>,
-    timezone: Option<&str>,
+    kind: CommandKind,
 ) -> Result<Route, ClockCommandError> {
     let capabilities = match negotiate(session).await.map_err(|_| storage_paused())? {
         Negotiated::Unauthorized => {
@@ -224,23 +230,18 @@ async fn choose_route(
         }
         Negotiated::NotOffered => return Ok(Route::Legacy),
     };
+    // A server that takes frozen clock-in/out but predates atomic breaks keeps
+    // the two-request break (#280).
     let Some(context) = capabilities
         .command_context()
-        .filter(|_| capabilities.accepts_frozen_commands())
+        .filter(|_| capabilities.accepts_frozen_commands() && capabilities.supports(kind))
     else {
         return Ok(Route::Legacy);
-    };
-    // This context accepts frozen commands, so the legacy writer is not a fallback.
-    let Some(timezone) = timezone else {
-        return Err(ClockCommandError::pre_send(
-            "The device time zone could not be read, so this clock action was not recorded. Try again.",
-        ));
     };
     let status = cached_status(session, &context).map_err(|_| storage_paused())?;
     Ok(Route::Commands {
         capabilities,
         context,
-        timezone: timezone.to_string(),
         status,
     })
 }
@@ -274,21 +275,32 @@ pub async fn execute(
         return Err(ClockCommandError::pre_send("Unresolved desktop records require review before another clock action. Check your time entries in Z8."));
     }
 
-    let action = command.work_action();
-    let route = match action {
-        Some(_) => choose_route(session, evidence.timezone.as_deref()).await?,
-        None => Route::Legacy,
-    };
-    match (route, action) {
-        (
-            Route::Commands {
-                capabilities,
-                context,
-                timezone,
-                status,
-            },
-            Some(action),
-        ) => {
+    // A break whose interval is uncertain is recorded by no transport; it needs
+    // a reviewed correction.
+    if let ClockCommand::Break { evidence, .. } = &command {
+        if !evidence.clocks_agree() {
+            return Err(break_review_error(BreakReview::ClockDiscontinuity));
+        }
+    }
+
+    match choose_route(session, command.kind()).await? {
+        Route::Commands {
+            capabilities,
+            context,
+            status,
+        } => {
+            // A break carries the zones it observed; other actions need the zone
+            // read at the click. This context accepts frozen commands, so the
+            // legacy writer is not a fallback either way.
+            let timezone = match (&command, evidence.timezone) {
+                (ClockCommand::Break { .. }, _) => String::new(),
+                (_, Some(timezone)) => timezone,
+                (_, None) => {
+                    return Err(ClockCommandError::pre_send(
+                        "The device time zone could not be read, so this clock action was not recorded. Try again.",
+                    ))
+                }
+            };
             let frame = CommandFrame {
                 operation_id: new_operation_id(),
                 context,
@@ -299,10 +311,10 @@ pub async fn execute(
                 admission: Admission::Delayed,
                 depends_on: None,
             };
-            let frozen = freeze_command(session, action, frame, status)?;
+            let frozen = freeze_command(session, &command, frame, status)?;
             send_frozen(session, &capabilities, frozen).await
         }
-        _ => {
+        Route::Legacy => {
             let unresolved = session
                 .store
                 .lock()
@@ -323,7 +335,7 @@ pub async fn execute(
 /// Binds the action to the work it continues and freezes it.
 fn freeze_command(
     session: &ClockSession<'_>,
-    action: WorkAction,
+    command: &ClockCommand,
     mut frame: CommandFrame,
     status: Option<ClockStatus>,
 ) -> Result<FrozenCommand, ClockCommandError> {
@@ -345,10 +357,34 @@ fn freeze_command(
     }
     let last = active.last();
     frame.depends_on = last.map(|saved| saved.operation_id.clone());
-    match action {
-        WorkAction::ClockIn(location) => {
+    // The work a clock-out or break closes: the work an unsent clock-in or break
+    // creates, or else the period last seen for this employee. Never whichever
+    // period is active when the command is sent.
+    let target = || match last {
+        Some(saved) if saved.kind != CommandKind::ClockOut => {
+            Ok(ClockTarget::ClockInOperation(saved.operation_id.clone()))
+        }
+        Some(_) => Err(ClockCommandError::pre_send(
+            "A clock-out is already saved on this device.",
+        )),
+        None => match &status {
+            Some(ClockStatus {
+                is_clocked_in: true,
+                active_work_period: Some(period),
+                ..
+            }) => Ok(ClockTarget::WorkPeriod(period.id.clone())),
+            Some(_) => Err(ClockCommandError::pre_send(
+                "You are not clocked in. Refresh status before another action.",
+            )),
+            None => Err(ClockCommandError::pre_send(
+                "Clock status is unknown. Refresh status before clocking out.",
+            )),
+        },
+    };
+    match command {
+        ClockCommand::ClockIn(location) => {
             let clocked_in = match last {
-                Some(saved) => saved.kind == CommandKind::ClockIn,
+                Some(saved) => saved.kind != CommandKind::ClockOut,
                 None => status.is_some_and(|status| status.is_clocked_in),
             };
             if clocked_in {
@@ -356,37 +392,11 @@ fn freeze_command(
                     "You are already clocked in. Refresh status before another action.",
                 ));
             }
-            Ok(freeze_clock_in(frame, location))
+            Ok(freeze_clock_in(frame, *location))
         }
-        WorkAction::ClockOut => {
-            let target = match last {
-                Some(saved) if saved.kind == CommandKind::ClockIn => {
-                    ClockTarget::ClockInOperation(saved.operation_id.clone())
-                }
-                Some(_) => {
-                    return Err(ClockCommandError::pre_send(
-                        "A clock-out is already saved on this device.",
-                    ))
-                }
-                None => match status {
-                    Some(ClockStatus {
-                        is_clocked_in: true,
-                        active_work_period: Some(period),
-                        ..
-                    }) => ClockTarget::WorkPeriod(period.id),
-                    Some(_) => {
-                        return Err(ClockCommandError::pre_send(
-                            "You are not clocked in. Refresh status before another action.",
-                        ))
-                    }
-                    None => {
-                        return Err(ClockCommandError::pre_send(
-                            "Clock status is unknown. Refresh status before clocking out.",
-                        ))
-                    }
-                },
-            };
-            Ok(freeze_clock_out(frame, target))
+        ClockCommand::ClockOut => Ok(freeze_clock_out(frame, target()?)),
+        ClockCommand::Break { evidence, location } => {
+            freeze_break(frame, target()?, *location, evidence).map_err(break_review_error)
         }
     }
 }
@@ -494,6 +504,7 @@ pub fn journal_offline(session: &ClockSession<'_>) -> anyhow::Result<ClockJourna
             context: context.as_ref(),
             server_reachable: true,
             commands_enabled: false,
+            breaks_enabled: false,
             last_known: None,
         },
     )
@@ -526,6 +537,9 @@ pub async fn sync(session: &ClockSession<'_>, pacing: Pacing) -> anyhow::Result<
             context: context.as_ref(),
             server_reachable,
             commands_enabled: capabilities.is_some_and(Capabilities::accepts_frozen_commands),
+            breaks_enabled: capabilities.is_some_and(|capabilities| {
+                capabilities.accepts_frozen_commands() && capabilities.supports(CommandKind::Break)
+            }),
             last_known,
         },
     )?;
@@ -550,15 +564,15 @@ async fn execute_legacy(
             None,
             service.clock_out_with_status(webapp_url, token).await,
         ),
-        ClockCommand::Break { start, location } => {
-            let instant = DateTime::parse_from_rfc3339(&start)
-                .map_err(|_| ClockCommandError::pre_send("Invalid break start time"))?
-                .with_timezone(&Utc);
+        // The legacy two-request break is unchanged: it closes at the idle start
+        // and resumes at request time, and neither request is atomic (#268).
+        ClockCommand::Break { evidence, location } => {
+            let instant = evidence.idle.last_activity.utc;
             let result = service
                 .break_with_status(webapp_url, token, instant, location)
                 .await;
             let mut payload = serde_json::json!({
-                "breakStartTime": start,
+                "breakStartTime": instant.to_rfc3339_opts(SecondsFormat::AutoSi, true),
                 "workLocationType": location.as_str(),
             });
             // Additional receipt capture waits for ownership-aware cleanup.
