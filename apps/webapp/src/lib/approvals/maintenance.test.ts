@@ -91,6 +91,7 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 		expect(result.delivery).toEqual({
 			work: ["work-1", "work-2"],
 			messages: ["message-1"],
+			intents: [],
 		});
 		const deletes = statements
 			.map((statement) => statement.sql)
@@ -123,6 +124,7 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 		expect(statements[2]?.sql).toContain("approval_invocation");
 		expect(statements[2]?.sql).toContain("approval_delivery_work");
 		expect(statements[2]?.sql).toContain("approval_delivery_message");
+		expect(statements[2]?.sql).toContain("approval_delivery_intent");
 	});
 
 	it("touches no evidence when the lifecycle has no canonical workflow", async () => {
@@ -141,7 +143,7 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 			invocations: [],
 		});
 		expect(result.escalationTransfers).toEqual([]);
-		expect(result.delivery).toEqual({ work: [], messages: [] });
+		expect(result.delivery).toEqual({ work: [], messages: [], intents: [] });
 		expect(
 			statements.some((statement) =>
 				/^delete from approval_(escalation_transfer|delivery_work|delivery_message|invocation|decision_evidence|review_binding|submitted_revision)/.test(
@@ -172,8 +174,9 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 		expect(result.evidence).toEqual({
 			submittedRevisions: ["legacy-revision-1"],
 			decisionEvidence: ["legacy-decision-1"],
-			reviewBindings: [],
-			invocations: [],
+			// Legacy card decisions (#296) name legacy bindings and invocations.
+			reviewBindings: ["binding-1"],
+			invocations: ["invocation-1"],
 		});
 		const lifecycle = statements.find((statement) =>
 			statement.sql.includes("with recursive edges"),
@@ -196,10 +199,49 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 		);
 		expect(
 			legacyDeletes.map((statement) => statement.sql.split(" ")[2]),
-		).toEqual(["approval_decision_evidence", "approval_submitted_revision"]);
+		).toEqual([
+			"approval_invocation",
+			"approval_decision_evidence",
+			"approval_review_binding",
+			"approval_submitted_revision",
+		]);
 		for (const statement of legacyDeletes) {
-			expect(statement.params).toEqual(["org-1", [LEGACY_REVISION]]);
+			expect(statement.params.at(0)).toBe("org-1");
+			expect(statement.params.at(-1)).toEqual([LEGACY_REVISION]);
 		}
+	});
+
+	it("removes a legacy lifecycle's delivery before its legacy requests (#296)", async () => {
+		const LEGACY_REQUEST = "70000000-0000-4000-8000-000000000001";
+		const { statements, transaction } = fakeTransaction({
+			workflowIds: [],
+			match: "legacy",
+			lifecycle: [{ kind: "legacy", id: LEGACY_REQUEST }],
+		});
+
+		const result = await deleteApprovalInTransaction(transaction, "org-1", LEGACY_REQUEST);
+
+		const deletes = statements
+			.map((statement) => statement)
+			.filter((statement) => statement.sql.startsWith("delete from"));
+		expect(deletes.map((statement) => statement.sql.split(" ")[2])).toEqual([
+			"approval_delivery_work",
+			"approval_delivery_message",
+			"approval_delivery_intent",
+			"approval_request",
+		]);
+		for (const statement of deletes.slice(0, 3)) {
+			// Scoped by organization and the lifecycle's legacy requests only.
+			expect(statement.sql).toContain("legacy_approval_request_id = any($2::uuid[])");
+			expect(statement.params).toEqual(["org-1", [LEGACY_REQUEST]]);
+		}
+		expect(deletes[0]?.sql).toContain("lifecycle = 'legacy'");
+		expect(deletes[1]?.sql).toContain("lifecycle = 'legacy'");
+		expect(result.delivery).toEqual({
+			work: ["work-1", "work-2"],
+			messages: ["message-1"],
+			intents: [],
+		});
 	});
 
 	it("removes a legacy lifecycle's escalation transfers through the links they recorded", async () => {

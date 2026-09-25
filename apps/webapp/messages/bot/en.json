@@ -33,7 +33,19 @@
         "afternoon": "afternoon",
         "halfDayPeriods": "Starts {start}, ends {end}",
         "explicitTimes": "{start} – {end} (local time, zone not recorded)",
-        "explicitTimesOvernight": "{start} – {end} next day (local time, zone not recorded)"
+        "explicitTimesOvernight": "{start} – {end} next day (local time, zone not recorded)",
+        "travelExpenseTitle": "Travel expense approval request",
+        "claimType": "Claim type",
+        "claimTypeReceipt": "Receipt",
+        "claimTypeMileage": "Mileage",
+        "claimTypePerDiem": "Per diem",
+        "tripDates": "Trip dates",
+        "claimAmount": "Claim amount",
+        "originalAmount": "Original amount",
+        "destination": "Destination",
+        "project": "Project",
+        "receipts": "Receipts",
+        "receiptCount": "{count} attached"
       },
       "outcome": {
         "requestApprovedTitle": "Request approved",

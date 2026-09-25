@@ -1208,7 +1208,11 @@ describeIntegration("escalation replacement delivery (PostgreSQL)", () => {
 		expect(deliveryMessages).toHaveLength(2);
 
 		const deleted = await deleteApproval(db, ids.organization, workflowId);
-		expect(deleted.delivery).toEqual({ work: deliveryWork, messages: deliveryMessages });
+		expect(deleted.delivery).toEqual({
+			work: deliveryWork,
+			messages: deliveryMessages,
+			intents: [],
+		});
 		expect(deleted.escalationTransfers).toEqual([transfer.id]);
 		expect(await work(workflowId)).toHaveLength(0);
 		expect(await messages(workflowId)).toHaveLength(0);

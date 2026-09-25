@@ -258,11 +258,18 @@ export async function handleBoundApprovalInvoke(
 		logger.error({ error, status: result.status }, "Failed to update bound Teams approval card");
 	}
 	// An untracked card: the response still reports the committed outcome.
-	if (result.status === "decided" && result.evidence.assignmentId) {
-		const decided = await boundDecisionNotice(result, recipient, {
-			kind: "canonical",
-			assignmentId: result.evidence.assignmentId,
-		});
+	if (result.status === "decided") {
+		// A legacy decision (#296) names its legacy request, never an assignment.
+		const reference =
+			"authority" in result.evidence
+				? {
+						kind: "compatibility" as const,
+						approvalRequestId: result.evidence.legacy.approvalRequestId,
+					}
+				: result.evidence.assignmentId
+					? { kind: "canonical" as const, assignmentId: result.evidence.assignmentId }
+					: null;
+		const decided = reference ? await boundDecisionNotice(result, recipient, reference) : null;
 		if (decided) return invokeMessage(decided.title);
 	}
 	return reviewRequiredMessage(recipient);

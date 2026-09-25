@@ -1045,6 +1045,7 @@ describeIntegration("Telegram approval delivery owner (PostgreSQL)", () => {
 		expect(deleted.delivery).toEqual({
 			work: [deliveryWork?.id],
 			messages: [message.id],
+			intents: [],
 		});
 		expect(await messages(workflowId)).toHaveLength(0);
 		expect(await work(workflowId)).toHaveLength(0);

@@ -7,6 +7,24 @@ vi.mock("@/lib/approvals/evidence/store", () => ({
 	loadLegacyTravelExpenseSubmittedRevision: async () => null,
 }));
 
+// Evidence, the rollout gate and delivery intents of the decision owner (#296)
+// run against PostgreSQL in expense-review-decision.integration.test.ts. Here
+// capture is inactive, nothing is replayed and no delivery control exists.
+vi.mock("@/lib/approvals/evidence/travel-expense-decision", () => ({
+	findLegacyTravelExpenseDecisionReplay: async () => null,
+	prepareLegacyTravelExpenseDecisionEvidence: async () => null,
+	recordLegacyTravelExpenseDecisionEvidence: async () => {
+		throw new Error("no evidence is recorded without a submitted revision");
+	},
+	travelExpenseDecisionIdempotencyKey: () => "key",
+}));
+vi.mock("@/lib/approvals/workflow/cutover", () => ({
+	acquireApprovalWriteLock: async () => undefined,
+}));
+vi.mock("@/lib/approvals/delivery/intents", () => ({
+	recordLegacyDeliveryIntent: async () => false,
+}));
+
 vi.mock("@/env", () => ({
 	env: {
 		BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret",
@@ -218,6 +236,12 @@ describe("TravelExpenseClaimHandler", () => {
 						}),
 					};
 				}),
+				// The decision owner's own target lookup finds no other pending request.
+				select: vi.fn(() => ({
+					from: vi.fn(() => ({
+						where: vi.fn(() => ({ limit: vi.fn(async () => []) })),
+					})),
+				})),
 				insert: vi.fn((table) => ({
 					values: vi.fn((values) => {
 						const result = Promise.resolve(testState.insertValues(values)).then(
@@ -283,6 +307,9 @@ describe("TravelExpenseClaimHandler", () => {
 				status: "submitted",
 				tripStart: new Date("2026-04-15T00:00:00.000Z"),
 				tripEnd: new Date("2026-04-17T00:00:00.000Z"),
+				tripStartDate: "2026-04-15",
+				tripEndDate: "2026-04-17",
+				tripDateTimeZone: "Europe/Berlin",
 				destinationCity: "Berlin",
 				destinationCountry: "DE",
 				projectId: "project-1",
@@ -414,6 +441,9 @@ describe("TravelExpenseClaimHandler", () => {
 				status: "submitted",
 				tripStart: new Date("2026-04-15T00:00:00.000Z"),
 				tripEnd: new Date("2026-04-17T00:00:00.000Z"),
+				tripStartDate: "2026-04-15",
+				tripEndDate: "2026-04-17",
+				tripDateTimeZone: "Europe/Berlin",
 				destinationCity: "Berlin",
 				destinationCountry: "DE",
 				projectId: null,
@@ -543,6 +573,9 @@ describe("TravelExpenseClaimHandler", () => {
 			status: "submitted",
 			tripStart: new Date("2026-04-15T00:00:00.000Z"),
 			tripEnd: new Date("2026-04-17T00:00:00.000Z"),
+			tripStartDate: "2026-04-15",
+			tripEndDate: "2026-04-17",
+			tripDateTimeZone: "Europe/Berlin",
 			destinationCity: "Berlin",
 			destinationCountry: "DE",
 			projectId: "project-1",
