@@ -240,9 +240,9 @@ These items move to #327, #329 and #331 (see
 
 - **Activation.** Adopted behavior is dormant until an organization's append
   control is `active`, and that waits for every competing writer to participate.
-  The ordinary automatic break paths are not yet coordinated:
-  `break-enforcement.service.ts` and the cron path. Their durable deferral is a
-  separate slice.
+  The ordinary automatic break paths (`break-enforcement.service.ts` and the cron
+  path) are coordinated and durably deferred since #305
+  ([automatic-break-adjustment-305.md](automatic-break-adjustment-305.md)).
 - **Uncoordinated runtimes.** A legacy organization's split reached outside
   both coordinators (for example a reassignment activation) still locks the
   employee late. Adopted organizations refuse that path. It must be coordinated

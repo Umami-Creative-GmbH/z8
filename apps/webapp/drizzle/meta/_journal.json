@@ -743,6 +743,13 @@
       "when": 1793376000000,
       "tag": "0105_historical_work_proposals",
       "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1793462400000,
+      "tag": "0106_automatic_break_adjustment",
+      "breakpoints": true
     }
   ]
 }

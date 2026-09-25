@@ -118,6 +118,8 @@ export interface ExecutionCleanupResult {
 export interface BreakEnforcementResult {
 	processedCount: number;
 	adjustedCount: number;
+	/** Adjustment intents still held by unresolved review or another blocker (#305). */
+	deferredCount: number;
 	errors: Array<{ workPeriodId: string; error: string }>;
 }
 
@@ -339,7 +341,8 @@ export const CRON_JOBS = {
 
 	"cron:break-enforcement": {
 		schedule: "* * * * *", // Every minute
-		description: "Check break compliance for active work periods",
+		description:
+			"Recover committed automatic break adjustments (any date) and check today's legacy work periods",
 		processor: async ({ manualParams }) => {
 			const { runBreakEnforcementCheck } = await import(
 				"@/lib/effect/services/break-enforcement.service"

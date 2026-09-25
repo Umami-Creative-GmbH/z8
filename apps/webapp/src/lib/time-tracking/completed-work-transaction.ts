@@ -19,8 +19,11 @@ export interface CompletedWorkTransactionInput {
 	organizationId: string;
 	/** The employee who owns the work. */
 	employeeId: string;
-	/** The authenticated human acting. */
-	actorUserId: string;
+	/**
+	 * The authenticated human acting, or null for a system process acting on the
+	 * owner's work (the automatic break adjustment, #305), which routes only the owner.
+	 */
+	actorUserId: string | null;
 }
 
 export type RoutedScope = { userIds: string[]; employeeIds: string[] };
@@ -28,22 +31,27 @@ export type RoutedScope = { userIds: string[]; employeeIds: string[] };
 /**
  * The owner's user and every employee row the amendment's authorization path
  * locks: the owner and each of the actor's employee records in the organization.
+ * A system actor routes the owner alone.
  */
 export async function routeScope(
 	transaction: WorkTransactionClient,
 	input: CompletedWorkTransactionInput,
 ): Promise<RoutedScope> {
+	const { actorUserId } = input;
 	const rows = await transaction
 		.select({ id: employee.id, userId: employee.userId })
 		.from(employee)
 		.where(
 			and(
 				eq(employee.organizationId, input.organizationId),
-				or(eq(employee.id, input.employeeId), eq(employee.userId, input.actorUserId)),
+				actorUserId === null
+					? eq(employee.id, input.employeeId)
+					: or(eq(employee.id, input.employeeId), eq(employee.userId, actorUserId)),
 			),
 		);
+	const userIds = rows.map(({ userId }) => userId);
 	return {
-		userIds: [...new Set([input.actorUserId, ...rows.map(({ userId }) => userId)])].sort(),
+		userIds: [...new Set(actorUserId === null ? userIds : [actorUserId, ...userIds])].sort(),
 		employeeIds: [...new Set([input.employeeId, ...rows.map(({ id }) => id)])].sort(),
 	};
 }

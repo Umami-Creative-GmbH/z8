@@ -275,9 +275,10 @@ These items move to #327, #329 and #331 (see
   split and break with raw writes, without coordination or the review guard.
   Old-consumer drain applies. An old binary cannot write `split_completed_work`,
   `work_period_split` or `completed_work_split`.
-- **Post-commit follow-ups.** Surcharge calculation after a split, and compliance,
-  break enforcement and surcharges after an adopted break, remain best effort, as
-  for clock-out. Their durable recovery belongs to #305.
+- **Post-commit follow-ups.** Surcharge calculation after a split, and compliance and
+  surcharges after an adopted break, remain best effort, as for clock-out. Break
+  enforcement after an adopted break commits a durable intent since #305
+  ([automatic-break-adjustment-305.md](automatic-break-adjustment-305.md)).
 - **Real browser.** The calendar dialog and the quick-break control were not
   exercised in a running app. The server paths are verified on PostgreSQL. The
   dialog's identity handling is covered in jsdom.

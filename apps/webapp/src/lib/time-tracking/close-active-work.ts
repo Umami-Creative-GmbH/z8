@@ -43,6 +43,10 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { assertEmployeeMayClock } from "@/lib/employee-lifecycle/clocking-gate";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import {
+	commitAutomaticBreakIntent,
+	isClosureCarriedByAutomaticBreak,
+} from "./automatic-break-intent";
 import { canonicalJson } from "./canonical-json";
 import {
 	appendClockEntry,
@@ -143,6 +147,8 @@ export type CompletedWorkFollowUp =
 			kind: "break_enforcement" | "surcharge_calculation" | "compliance_check";
 			delivery: "post_commit_best_effort";
 	  }
+	/** The durable automatic break adjustment intent committed with the closure (#305). */
+	| { kind: "break_enforcement"; delivery: "committed_intent"; intentId: string }
 	| { kind: "approval_notification"; delivery: "approval_owner" };
 
 export type CloseActiveWorkApprovalParticipation =
@@ -279,7 +285,9 @@ export async function replayCloseActiveWork(
 
 /**
  * The committed clock-out entry while the closure it describes still stands, or
- * null once the entry is superseded or the period was deleted or re-closed.
+ * null once the entry is superseded or the period was deleted or re-closed. An
+ * automatic break adjustment (#305) keeps the closure standing: it moves the
+ * closure's clock-out to the segment it generated from the period, never replacing it.
  */
 export async function findStandingClosure(
 	tx: WorkTransactionScope["db"],
@@ -311,15 +319,9 @@ export async function findStandingClosure(
 			),
 		)
 		.limit(1);
-	if (
-		!entry ||
-		entry.isSuperseded ||
-		period?.clockOutId !== entry.id ||
-		period.deletedAt !== null
-	) {
-		return null;
-	}
-	return entry;
+	if (!entry || entry.isSuperseded || !period || period.deletedAt !== null) return null;
+	if (period.clockOutId === entry.id) return entry;
+	return (await isClosureCarriedByAutomaticBreak(tx, scope, result.workPeriodId, entry.id)) ? entry : null;
 }
 
 export type CloseActiveWorkInput = {
@@ -599,6 +601,19 @@ export async function closeActiveWorkGraph(
 	// local start date covers the work's day in either representation.
 	const dirtyFromDate = earliestStartDate(start, clockIn.utcOffsetMinutes);
 	await markEmployeeWorkBalanceDirty({ employeeId, organizationId, dirtyFromDate }, tx);
+	// Ordinary closures owe any automatic break adjustment later; its intent commits
+	// with the work so process loss, dates and review cannot lose it (#305). An
+	// approval-routed closure splits at its terminal approval instead (#303).
+	const breakIntentId =
+		requiresApproval || context.admission !== "append"
+			? null
+			: await commitAutomaticBreakIntent(tx, {
+					organizationId,
+					employeeId,
+					workPeriodId: period.id,
+					closureEntryId: appended.entry.id,
+					triggeredByUserId: input.actorUserId,
+				});
 
 	const followUps: CompletedWorkFollowUp[] = [
 		{ kind: "work_balance_refresh", delivery: "committed_intent", dirtyFromDate },
@@ -606,7 +621,13 @@ export async function closeActiveWorkGraph(
 		...(requiresApproval
 			? [{ kind: "approval_notification" as const, delivery: "approval_owner" as const }]
 			: [
-					{ kind: "break_enforcement" as const, delivery: "post_commit_best_effort" as const },
+					breakIntentId === null
+						? { kind: "break_enforcement" as const, delivery: "post_commit_best_effort" as const }
+						: {
+								kind: "break_enforcement" as const,
+								delivery: "committed_intent" as const,
+								intentId: breakIntentId,
+							},
 					{ kind: "surcharge_calculation" as const, delivery: "post_commit_best_effort" as const },
 				]),
 	];
