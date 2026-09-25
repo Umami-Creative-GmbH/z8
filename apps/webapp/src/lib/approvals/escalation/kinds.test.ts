@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+	ESCALATION_WORKFLOW_TYPES,
 	isCanonicalEscalationWorkflowType,
+	isEscalationWorkflowType,
 	isLegacyEscalationEntityType,
+	isUntransferableEscalationRoute,
 	LEGACY_ESCALATION_ENTITY_TYPES,
-	TRANSFERABLE_ESCALATION_APPROVAL_TYPES,
 	unsupportedCanonicalReplacementRoute,
 } from "./kinds";
 
@@ -33,14 +35,20 @@ describe("admitted escalation kinds (#326)", () => {
 		expect(isLegacyEscalationEntityType("toString")).toBe(false);
 	});
 
-	it("offers management transfers for every transferred kind", () => {
-		expect([...TRANSFERABLE_ESCALATION_APPROVAL_TYPES].sort()).toEqual([
+	it("offers management transfers for every transferred kind, never on untransferable holds", () => {
+		expect([...ESCALATION_WORKFLOW_TYPES].sort()).toEqual([
 			"absence",
 			"manual_time_submission",
 			"policy_clock_out",
 			"time_correction",
 			"travel_expense",
 		]);
+		expect(isEscalationWorkflowType("travel_expense")).toBe(true);
+		expect(isEscalationWorkflowType(null)).toBe(false);
+		expect(isUntransferableEscalationRoute("legacy_time_authority")).toBe(true);
+		expect(isUntransferableEscalationRoute("travel_expense_without_legacy_authority")).toBe(true);
+		expect(isUntransferableEscalationRoute("legacy_chain_stage")).toBe(false);
+		expect(isUntransferableEscalationRoute(undefined)).toBe(false);
 	});
 
 	it("holds routes without the representative mirror or beside parallel assignments", () => {

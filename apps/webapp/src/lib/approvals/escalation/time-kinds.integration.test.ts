@@ -1007,6 +1007,9 @@ describeIntegration("escalated canonical time approvals (PostgreSQL)", () => {
 			approval_type: "manual_time_submission",
 			evidence: expect.objectContaining({ route: "legacy_time_authority" }),
 		});
+		// The held request no longer takes a place in later batches.
+		expect(await escalateAt(request.created_at, 180)).toMatchObject({ examined: 0 });
+		expect(await openAttention()).toHaveLength(1);
 
 		actAs(ids.adminUser);
 		const refused = await transferApprovalEscalationAssignment({

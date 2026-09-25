@@ -28,7 +28,8 @@ export function isCanonicalEscalationWorkflowType(
  * Legacy `approval_request` entity types escalation discovers under legacy
  * authority, with the workflow kind they belong to. Time entries are
  * discovered only to hold them: legacy and shadow time authority has no
- * transfer yet.
+ * transfer yet (#439). Travel expenses have no canonical adapter, so their
+ * requests are discovered under every rollout mode.
  */
 export const LEGACY_ESCALATION_ENTITY_TYPES = {
 	absence_entry: "absence",
@@ -37,6 +38,9 @@ export const LEGACY_ESCALATION_ENTITY_TYPES = {
 } as const;
 
 export type LegacyEscalationEntityType = keyof typeof LEGACY_ESCALATION_ENTITY_TYPES;
+
+/** Legacy entity types whose pending request a transfer moves. */
+export type TransferableLegacyEntityType = Exclude<LegacyEscalationEntityType, "time_entry">;
 
 /** Legacy kinds escalation transfers by moving the pending request. */
 export type LegacyEscalationWorkflowType = Exclude<
@@ -48,11 +52,35 @@ export function isLegacyEscalationEntityType(value: unknown): value is LegacyEsc
 	return typeof value === "string" && Object.hasOwn(LEGACY_ESCALATION_ENTITY_TYPES, value);
 }
 
-/** Kinds a management-authorized transfer can address (canonical or legacy). */
-export const TRANSFERABLE_ESCALATION_APPROVAL_TYPES: readonly string[] = [
+/** Every kind escalation discovers and can transfer (canonical or legacy). */
+export const ESCALATION_WORKFLOW_TYPES = [
 	...CANONICAL_ESCALATION_WORKFLOW_TYPES,
 	"travel_expense",
-];
+] as const satisfies readonly ApprovalWorkflowType[];
+
+export type EscalationWorkflowType = (typeof ESCALATION_WORKFLOW_TYPES)[number];
+
+export function isEscalationWorkflowType(value: unknown): value is EscalationWorkflowType {
+	return ESCALATION_WORKFLOW_TYPES.includes(value as EscalationWorkflowType);
+}
+
+/**
+ * Hold routes no transfer can resolve while the code stays as it is: the kind
+ * or mode has no transfer at all. Discovery skips requests that already carry
+ * an open hold with one of them (so they cannot starve the batch), and the
+ * management UI offers no transfer for them.
+ */
+export const UNTRANSFERABLE_ESCALATION_ROUTES = [
+	"legacy_time_authority",
+	"travel_expense_without_legacy_authority",
+	"legacy_observation_unsupported",
+] as const;
+
+export function isUntransferableEscalationRoute(value: unknown): boolean {
+	return UNTRANSFERABLE_ESCALATION_ROUTES.includes(
+		value as (typeof UNTRANSFERABLE_ESCALATION_ROUTES)[number],
+	);
+}
 
 /**
  * Why a canonical assignment's replacement would have no working inbox and

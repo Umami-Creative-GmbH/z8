@@ -32,7 +32,10 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { useDisplayContext } from "@/hooks/use-display-context";
-import { TRANSFERABLE_ESCALATION_APPROVAL_TYPES } from "@/lib/approvals/escalation/kinds";
+import {
+	isEscalationWorkflowType,
+	isUntransferableEscalationRoute,
+} from "@/lib/approvals/escalation/kinds";
 import type { EscalationAttentionView } from "@/lib/approvals/escalation/management-overview";
 import type { EscalationCandidateView } from "@/lib/approvals/escalation/transfer";
 import { Link } from "@/navigation";
@@ -363,11 +366,14 @@ function transferTarget(
 	return null;
 }
 
-/** Human transfers are available for the kinds escalation transfers (#326). */
+/**
+ * Human transfers are available for the kinds escalation transfers (#326),
+ * never on a hold whose kind or mode has no transfer at all.
+ */
 function canTransfer(item: EscalationAttentionView): boolean {
 	return (
-		item.approvalType !== null &&
-		TRANSFERABLE_ESCALATION_APPROVAL_TYPES.includes(item.approvalType) &&
+		isEscalationWorkflowType(item.approvalType) &&
+		!isUntransferableEscalationRoute(item.evidence.route) &&
 		transferTarget(item) !== null &&
 		TRANSFERABLE_REASONS.has(item.reason)
 	);

@@ -19,6 +19,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
+import { TIME_APPROVAL_WORKFLOW_TYPES } from "../time-approval-kinds";
 import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
 	type ApprovalAssignmentSnapshot,
@@ -26,7 +27,6 @@ import {
 	type ApprovalStageSnapshot,
 	type ApprovalWorkflowPrincipal,
 	type ApprovalWorkflowSnapshot,
-	type ApprovalWorkflowType,
 	type ApprovalWriteGateResult,
 	type JsonObject,
 } from "../workflow/ports";
@@ -46,7 +46,10 @@ import { loadEscalationCandidateFacts } from "./candidates";
 import {
 	CANONICAL_ESCALATION_WORKFLOW_TYPES,
 	type CanonicalEscalationWorkflowType,
+	ESCALATION_WORKFLOW_TYPES,
+	type EscalationWorkflowType,
 	isCanonicalEscalationWorkflowType,
+	LEGACY_ESCALATION_ENTITY_TYPES,
 	type LegacyEscalationEntityType,
 	unsupportedCanonicalReplacementRoute,
 } from "./kinds";
@@ -442,18 +445,6 @@ type DueAssignmentOutcome =
 	| { kind: "legacy_authority" }
 	| { kind: "suppressed" };
 
-/** Kinds escalation discovers, canonically or through their legacy requests. */
-const DISCOVERED_WORKFLOW_TYPES = [
-	...CANONICAL_ESCALATION_WORKFLOW_TYPES,
-	"travel_expense",
-] as const satisfies readonly ApprovalWorkflowType[];
-
-type DiscoveredWorkflowType = (typeof DISCOVERED_WORKFLOW_TYPES)[number];
-
-const TIME_WORKFLOW_TYPES = CANONICAL_ESCALATION_WORKFLOW_TYPES.filter(
-	(workflowType) => workflowType !== "absence",
-);
-
 export interface ProcessDueEscalationsSummary {
 	organizationId: string;
 	status:
@@ -468,7 +459,7 @@ export interface ProcessDueEscalationsSummary {
 	 * Discovery-time authority of each discovered kind (#299, #326): canonical
 	 * kinds' assignments or legacy kinds' pending requests were examined.
 	 */
-	authorities: Partial<Record<DiscoveredWorkflowType, "canonical" | "legacy">>;
+	authorities: Partial<Record<EscalationWorkflowType, "canonical" | "legacy">>;
 	examined: number;
 	transferred: number;
 	replayed: number;
@@ -511,9 +502,9 @@ type DiscoveredWork =
 			workflowId: string;
 			stageId: string;
 			assignmentId: string;
-			at: Instant;
+			pendingSince: Instant;
 	  }
-	| { authority: "legacy"; approvalRequestId: string; at: Instant };
+	| { authority: "legacy"; approvalRequestId: string; pendingSince: Instant };
 
 function discoveredId(work: DiscoveredWork): string {
 	return work.authority === "canonical" ? work.assignmentId : work.approvalRequestId;
@@ -563,19 +554,22 @@ export async function processDueEscalations(input: {
 	const authorities = await readDecisionAuthorityForDiscovery(
 		db,
 		organizationId,
-		DISCOVERED_WORKFLOW_TYPES,
+		ESCALATION_WORKFLOW_TYPES,
 	);
 	const canonicalTypes = CANONICAL_ESCALATION_WORKFLOW_TYPES.filter(
 		(workflowType) => authorities.get(workflowType) === "canonical",
 	);
-	const legacyEntityTypes: LegacyEscalationEntityType[] = [];
-	if (authorities.get("absence") === "legacy") legacyEntityTypes.push("absence_entry");
-	if (authorities.get("travel_expense") === "legacy") {
-		legacyEntityTypes.push("travel_expense_claim");
-	}
-	if (TIME_WORKFLOW_TYPES.some((workflowType) => authorities.get(workflowType) === "legacy")) {
-		legacyEntityTypes.push("time_entry");
-	}
+	const legacyEntityTypes = (
+		Object.keys(LEGACY_ESCALATION_ENTITY_TYPES) as LegacyEscalationEntityType[]
+	).filter((entityType) => {
+		const workflowType = LEGACY_ESCALATION_ENTITY_TYPES[entityType];
+		if (workflowType === null) {
+			return TIME_APPROVAL_WORKFLOW_TYPES.some((time) => authorities.get(time) === "legacy");
+		}
+		// Expenses have no canonical adapter: under any other mode their
+		// requests are held visibly, never skipped.
+		return workflowType === "travel_expense" || authorities.get(workflowType) === "legacy";
+	});
 
 	const canonicalWork = await listDueCanonicalAssignments({
 		organizationId,
@@ -596,12 +590,13 @@ export async function processDueEscalations(input: {
 	).map((request) => ({
 		authority: "legacy" as const,
 		approvalRequestId: request.approvalRequestId,
-		at: request.createdAt,
+		pendingSince: request.createdAt,
 	}));
 	const work = [...canonicalWork, ...legacyWork]
 		.sort(
 			(left, right) =>
-				compareInstants(left.at, right.at) || discoveredId(left).localeCompare(discoveredId(right)),
+				compareInstants(left.pendingSince, right.pendingSince) ||
+				discoveredId(left).localeCompare(discoveredId(right)),
 		)
 		.slice(0, limit);
 
@@ -720,7 +715,7 @@ async function listDueCanonicalAssignments(input: {
 						workflowId: row.workflowId,
 						stageId: row.stageId,
 						assignmentId: row.assignmentId,
-						at: instantFromDate(row.assignedAt),
+						pendingSince: instantFromDate(row.assignedAt),
 					},
 				]
 			: [],

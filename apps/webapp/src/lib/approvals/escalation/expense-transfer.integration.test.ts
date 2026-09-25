@@ -814,6 +814,33 @@ describeIntegration("escalated legacy travel expenses (PostgreSQL)", () => {
 		});
 	});
 
+	it("holds expenses visibly under a rollout mode without legacy authority", async () => {
+		await seed();
+		const { requestId, createdAt } = await submitClaim();
+		await admin.query(
+			`insert into approval_workflow_rollout
+			 (organization_id, workflow_type, lifecycle_mode, side_effect_mode, created_at, updated_at)
+			 values ($1, 'travel_expense', 'canonical', 'canonical', now(), now())
+			 on conflict (organization_id, workflow_type)
+			 do update set lifecycle_mode = 'canonical', side_effect_mode = 'canonical'`,
+			[ids.organization],
+		);
+
+		const due = await processAt(createdAt, 60);
+		expect(due).toMatchObject({
+			authorities: { travel_expense: "canonical" },
+			transferred: 0,
+			held: { unsupported_route: 1 },
+		});
+		expect((await request(requestId)).approver_id).toBe(ids.manager);
+		expect(only(await openAttention())).toMatchObject({
+			approval_type: "travel_expense",
+			evidence: expect.objectContaining({ route: "travel_expense_without_legacy_authority" }),
+		});
+		// The held request no longer takes a place in later batches.
+		expect(await processAt(createdAt, 180)).toMatchObject({ examined: 0 });
+	});
+
 	it("removes the expense lifecycle's legacy journal through approval maintenance", async () => {
 		await seed();
 		const { requestId, createdAt } = await submitClaim();

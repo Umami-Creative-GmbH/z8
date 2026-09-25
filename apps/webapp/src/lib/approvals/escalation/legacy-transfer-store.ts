@@ -2,6 +2,7 @@ import { and, asc, eq } from "drizzle-orm";
 import type { db } from "@/db";
 import { approvalEscalationTransfer, approvalRequest } from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
+import type { TransferableLegacyEntityType } from "./kinds";
 import type { LegacyJournalTransferFact } from "./transfer-evaluation";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -76,7 +77,7 @@ export async function findLegacyTransferredApprovalRequest(
 	executor: LegacyTransferExecutor,
 	input: {
 		organizationId: string;
-		entityType: "absence_entry" | "travel_expense_claim";
+		entityType: TransferableLegacyEntityType;
 		entityId: string;
 		approvalRequestId?: string;
 	},

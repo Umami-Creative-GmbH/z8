@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto";
-import { and, asc, count, eq, inArray, lt, notExists } from "drizzle-orm";
+import { and, asc, count, eq, inArray, lt, notExists, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	type ApprovalEscalationAttentionReason,
 	approvalChainInstance,
+	approvalEscalationAttention,
 	approvalRequest,
 	approvalWorkflow,
 	approvalWorkflowStage,
@@ -56,6 +57,8 @@ import {
 	LEGACY_ESCALATION_ENTITY_TYPES,
 	type LegacyEscalationEntityType,
 	type LegacyEscalationWorkflowType,
+	type TransferableLegacyEntityType,
+	UNTRANSFERABLE_ESCALATION_ROUTES,
 } from "./kinds";
 import { listLegacyRequestTransferFacts } from "./legacy-transfer-store";
 import {
@@ -131,7 +134,9 @@ const LEGACY_AUTHORITY_MODES = new Set<ApprovalWorkflowLifecycleMode>([
 /**
  * Pending legacy requests of the given entity types old enough to possibly
  * be due, oldest first, except representatives of workflows of kinds that
- * are discovered canonically. Every actionable instant is at or after the
+ * are discovered canonically and requests already held on a route no
+ * transfer can resolve (re-examining them would only starve the batch;
+ * their hold stays open). Every actionable instant is at or after the
  * request's creation, so this prefilter never skips a due request.
  * `created_at` keeps microseconds while evaluation uses its millisecond
  * floor, so the whole cutoff millisecond is included.
@@ -182,6 +187,22 @@ export async function listDueLegacyRequestCandidates(
 									),
 								),
 						),
+				notExists(
+					executor
+						.select({ id: approvalEscalationAttention.id })
+						.from(approvalEscalationAttention)
+						.where(
+							and(
+								eq(approvalEscalationAttention.organizationId, approvalRequest.organizationId),
+								eq(approvalEscalationAttention.approvalRequestId, approvalRequest.id),
+								eq(approvalEscalationAttention.status, "open"),
+								eq(approvalEscalationAttention.reason, "unsupported_route"),
+								inArray(sql`${approvalEscalationAttention.evidence} ->> 'route'`, [
+									...UNTRANSFERABLE_ESCALATION_ROUTES,
+								]),
+							),
+						),
+				),
 			),
 		)
 		.orderBy(asc(approvalRequest.createdAt), asc(approvalRequest.id))
@@ -219,7 +240,7 @@ interface LegacySubject {
 	workflowType: LegacyEscalationWorkflowType;
 	request: {
 		id: string;
-		sourceType: "absence_entry" | "travel_expense_claim";
+		sourceType: TransferableLegacyEntityType;
 		sourceId: string;
 		requesterEmployeeId: string;
 		approverEmployeeId: string;
@@ -293,7 +314,8 @@ async function loadLegacySubject(
 	},
 ): Promise<LegacySubjectLoad> {
 	const tx = context.dbService.db as unknown as DatabaseTransaction;
-	if (!LEGACY_AUTHORITY_MODES.has(gate.mode) || gate.behavior.decideCanonical) {
+	const legacyAuthority = LEGACY_AUTHORITY_MODES.has(gate.mode) && !gate.behavior.decideCanonical;
+	if (!legacyAuthority && input.workflowType === "absence") {
 		return { kind: "canonical_authority" };
 	}
 	const [request] = await tx
@@ -330,6 +352,16 @@ async function loadLegacySubject(
 		};
 	}
 	if (request.status !== "pending") return { kind: "not_pending" };
+	if (!legacyAuthority) {
+		// Expenses have no canonical adapter: no one can decide or transfer them
+		// under another mode, so they are held visibly instead of skipped.
+		return {
+			kind: "unsupported",
+			route: "travel_expense_without_legacy_authority",
+			approverEmployeeId: request.approverId,
+			createdAt: instantFromDate(request.createdAt),
+		};
+	}
 	return input.workflowType === "absence"
 		? loadLegacyAbsenceSubject(context, gate, { ...input, request })
 		: loadLegacyExpenseSubject(context, gate, { ...input, request });
@@ -511,7 +543,7 @@ async function loadLegacyExpenseSubject(
 			),
 		)
 		.limit(1);
-	if (!claim || claim.status !== "submitted" || claim.employeeId !== request.requestedBy) {
+	if (claim?.status !== "submitted" || claim.employeeId !== request.requestedBy) {
 		return unverifiable({ cause: "legacy_state_mismatch", approvalRequestId: request.id });
 	}
 	const [pending] = await tx

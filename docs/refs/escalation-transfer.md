@@ -407,7 +407,7 @@ legacy travel expenses; legacy and shadow time authority stays held.
 | --- | --- | --- | --- |
 | Absence | Transfer (#298) | Held | Transfer (#299) |
 | Manual time submission, policy clock-out, time correction | Transfer | Held (`time_inbox_requires_compatibility_mirror`) | Held once due (`legacy_time_authority`) |
-| Travel expense | — (no canonical adapter) | — | Transfer in `legacy`; `shadow`/`ready` held (`legacy_observation_unsupported`) |
+| Travel expense | Held (`travel_expense_without_legacy_authority`; no canonical adapter) | Held (same) | Transfer in `legacy`; `shadow`/`ready` held (`legacy_observation_unsupported`) |
 
 In every kind, parallel pending assignments and legacy chain stages are held
 as before. `kinds.ts` names the admitted kinds and the canonical route rule;
@@ -421,10 +421,15 @@ discovers, within one batch limit and oldest first:
 
 - pending assignments of active human stages of every admitted kind that
   decides canonically, and
-- pending legacy requests: absences under legacy authority, travel expenses,
-  and time entries while any time kind is legacy-authoritative. Compatibility
-  representatives of canonically decided workflows are excluded; they are
-  discovered through their assignments.
+- pending legacy requests: absences under legacy authority, travel expenses
+  (under every mode), and time entries while any time kind is
+  legacy-authoritative. Compatibility representatives of canonically decided
+  workflows are excluded; they are discovered through their assignments.
+  Requests that already carry an open hold on a route no transfer can resolve
+  (`UNTRANSFERABLE_ESCALATION_ROUTES`: legacy time authority, expenses without
+  legacy authority, expense observation modes) are excluded too, so permanent
+  holds cannot starve the batch. Their hold stays open, and the management UI
+  offers no **Transfer…** on them.
 
 Each item still commits in its own transaction under the write gate of its
 own kind, which re-reads the mode. A time request found under canonical
@@ -496,6 +501,9 @@ applies to the inbox, the expense page actions and cards alike.
   revocation to their legacy decision owners, is follow-up #439.
 - **`complete` mode and parallel assignments** are held for every canonical
   kind.
+- **Excluded holds:** a legacy request held on an untransferable route is
+  not re-examined, so a later change of its approver does not refresh that
+  hold until an attention recheck or disposition closes it.
 - **Expense delivery:** legacy transfer events stay `pending` until legacy
   replacement delivery exists (#408). The replacement gets no card, and the
   former holder's card is not retired; pressing it decides nothing. Expense
@@ -534,10 +542,10 @@ the real callers:
   - Delivery: the replacement card is sent and the former card retired
     ("Reassigned"). A press on the former card decides nothing; the
     replacement's press approves.
-  - Legacy time authority is held with `legacy_time_authority`, and the
-    management transfer refuses it.
+  - Legacy time authority is held with `legacy_time_authority`, the
+    management transfer refuses it, and later runs no longer examine it.
   - Approval maintenance removes the journal.
-- **`expense-transfer.integration.test.ts` (8 tests).** It runs the real
+- **`expense-transfer.integration.test.ts` (9 tests).** It runs the real
   draft/upload/submit actions, the processor, the settings actions, the inbox
   approve route, the expense page action, delivery and the Telegram webhook.
   The suite covers:
@@ -554,6 +562,8 @@ the real callers:
   - Concurrent runs commit one transfer, and a transfer racing a decision has
     one winner.
   - A chain stage is held, and maintenance cleans up the journal.
+  - Under a `canonical` expense rollout the request is held visibly
+    (`travel_expense_without_legacy_authority`) and later runs skip it.
 - **Regressions:** run together with #299's legacy absence suite, #300's
   replacement delivery, #296's expense suite, #325's time presentation and
   #301/#302's correction and work-period suites: 9 files, 349 tests passed.
