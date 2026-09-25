@@ -40,7 +40,11 @@
         "requestApproved": "Aprovado por {actor} em {time}. O pedido está aprovado.",
         "requestRejected": "Rejeitado por {actor} em {time}. O pedido está rejeitado.",
         "stepApproved": "Aprovado por {actor} em {time}. O pedido ainda aguarda outras aprovações.",
-        "replayed": "Este toque já tinha sido registado; este é o seu resultado original e nada de novo foi decidido."
+        "replayed": "Este toque já tinha sido registado; este é o seu resultado original e nada de novo foi decidido.",
+        "stepRejectedTitle": "Rejeição registada",
+        "stepRejected": "Rejeitado por {actor} em {time}. O pedido ainda não é definitivo; consulte o seu estado atual no Z8.",
+        "recordedTitle": "Decisão registada",
+        "recorded": "Registado por {actor} em {time}. Consulte o estado atual do pedido no Z8."
       }
     },
     "cmd": {

@@ -40,7 +40,11 @@
         "requestApproved": "Zatwierdzone przez {actor} {time}. Wniosek jest zatwierdzony.",
         "requestRejected": "Odrzucone przez {actor} {time}. Wniosek jest odrzucony.",
         "stepApproved": "Zatwierdzone przez {actor} {time}. Wniosek czeka jeszcze na dalsze zatwierdzenia.",
-        "replayed": "To naciśnięcie zostało już zarejestrowane; to jego pierwotny wynik i nie podjęto nowej decyzji."
+        "replayed": "To naciśnięcie zostało już zarejestrowane; to jego pierwotny wynik i nie podjęto nowej decyzji.",
+        "stepRejectedTitle": "Odrzucenie zapisane",
+        "stepRejected": "Odrzucone przez {actor} {time}. Wniosek nie jest jeszcze ostateczny; sprawdź jego aktualny status w Z8.",
+        "recordedTitle": "Decyzja zapisana",
+        "recorded": "Zapisane przez {actor} {time}. Sprawdź aktualny status wniosku w Z8."
       }
     },
     "cmd": {

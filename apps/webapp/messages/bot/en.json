@@ -40,7 +40,11 @@
         "requestApproved": "Approved by {actor} on {time}. The request is approved.",
         "requestRejected": "Rejected by {actor} on {time}. The request is rejected.",
         "stepApproved": "Approved by {actor} on {time}. The request still awaits further approval.",
-        "replayed": "This button press was already recorded; this is its original result and nothing new was decided."
+        "replayed": "This button press was already recorded; this is its original result and nothing new was decided.",
+        "stepRejectedTitle": "Rejection recorded",
+        "stepRejected": "Rejected by {actor} on {time}. The request is not final yet; review its current status in Z8.",
+        "recordedTitle": "Decision recorded",
+        "recorded": "Recorded by {actor} on {time}. Review the request's current status in Z8."
       }
     },
     "cmd": {

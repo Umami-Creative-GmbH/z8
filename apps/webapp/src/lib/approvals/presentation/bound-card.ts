@@ -22,6 +22,7 @@ import { readApprovalPresentationMode } from "../evidence/invocation";
 import {
 	type AbsenceSubmittedRevisionRecord,
 	issueReviewBinding,
+	type ReviewBindingTarget,
 	loadCurrentAbsenceSubmittedRevision,
 	readApprovalEvidenceMode,
 } from "../evidence/store";
@@ -50,6 +51,15 @@ export interface ApprovalActionableCard {
 	approveLabel: string;
 	rejectLabel: string;
 }
+
+/** Everything a provider renders, before a binding is issued for it. */
+export type ApprovalCardDraft = Omit<ApprovalActionableCard, "bindingId">;
+
+/** The exact pending assignment a card is prepared for. */
+export type ApprovalCardTarget = Omit<
+	ReviewBindingTarget,
+	"submittedRevisionId"
+>;
 
 function dateRange(start: string, end: string, locale: string): string {
 	const first = formatPlainDate(parsePlainDate(start), locale, "dateMedium");
@@ -170,24 +180,24 @@ export function buildAbsenceCardFacts(
  * assignment, or returns null so the caller shows a review-only notice. Every
  * gate must hold: canonical absence authority, evidence capture, an admitted
  * provider, a current submitted revision that still matches the live request,
- * and intelligible facts. Infrastructure errors propagate.
+ * intelligible facts, and the provider's own limits (`fits`). A binding is
+ * issued only for a card that will be sent. Infrastructure errors propagate.
  */
 export async function prepareBoundAbsenceCard(
 	database: ApprovalDatabase,
 	input: {
-		organizationId: string;
+		target: ApprovalCardTarget;
 		provider: ApprovalPresentationProvider;
 		/** Compatibility request of this stage; the review link's target. */
 		approvalRequestId: string;
-		recipientEmployeeId: string;
 		recipientUserId: string;
-		workflowId: string;
-		stageId: string;
-		assignmentId: string;
 		display: DisplayContext;
 		t: BotTranslateFn;
+		/** Provider limits; essential content never gets truncated controls. */
+		fits?: (draft: ApprovalCardDraft) => boolean;
 	},
 ): Promise<ApprovalActionableCard | null> {
+	const { target } = input;
 	const [workflow] = await database
 		.select({
 			workflowType: approvalWorkflow.workflowType,
@@ -198,8 +208,8 @@ export async function prepareBoundAbsenceCard(
 		.from(approvalWorkflow)
 		.where(
 			and(
-				eq(approvalWorkflow.organizationId, input.organizationId),
-				eq(approvalWorkflow.id, input.workflowId),
+				eq(approvalWorkflow.organizationId, target.organizationId),
+				eq(approvalWorkflow.id, target.workflowId),
 			),
 		)
 		.limit(1);
@@ -215,7 +225,7 @@ export async function prepareBoundAbsenceCard(
 		.from(approvalWorkflowRollout)
 		.where(
 			and(
-				eq(approvalWorkflowRollout.organizationId, input.organizationId),
+				eq(approvalWorkflowRollout.organizationId, target.organizationId),
 				eq(approvalWorkflowRollout.workflowType, "absence"),
 			),
 		)
@@ -224,11 +234,11 @@ export async function prepareBoundAbsenceCard(
 		return null;
 	const [evidenceMode, presentationMode] = await Promise.all([
 		readApprovalEvidenceMode(database, {
-			organizationId: input.organizationId,
+			organizationId: target.organizationId,
 			workflowType: "absence",
 		}),
 		readApprovalPresentationMode(database, {
-			organizationId: input.organizationId,
+			organizationId: target.organizationId,
 			workflowType: "absence",
 			provider: input.provider,
 		}),
@@ -236,8 +246,8 @@ export async function prepareBoundAbsenceCard(
 	if (evidenceMode !== "capture" || presentationMode !== "actionable")
 		return null;
 	const revision = await loadCurrentAbsenceSubmittedRevision(database, {
-		organizationId: input.organizationId,
-		workflowId: input.workflowId,
+		organizationId: target.organizationId,
+		workflowId: target.workflowId,
 	});
 	if (!revision || revision.sourceId !== workflow.sourceId) return null;
 	const [live] = await database
@@ -257,19 +267,19 @@ export async function prepareBoundAbsenceCard(
 			absenceCategory,
 			and(
 				eq(absenceCategory.id, absenceEntry.categoryId),
-				eq(absenceCategory.organizationId, input.organizationId),
+				eq(absenceCategory.organizationId, target.organizationId),
 			),
 		)
 		.where(
 			and(
-				eq(absenceEntry.organizationId, input.organizationId),
+				eq(absenceEntry.organizationId, target.organizationId),
 				eq(absenceEntry.id, workflow.sourceId),
 			),
 		)
 		.limit(1);
 	if (
 		!live ||
-		live.organizationId !== input.organizationId ||
+		live.organizationId !== target.organizationId ||
 		live.categoryId === null
 	) {
 		return null;
@@ -278,7 +288,7 @@ export async function prepareBoundAbsenceCard(
 		revision.facts,
 		revision.labels,
 		{
-			organizationId: input.organizationId,
+			organizationId: target.organizationId,
 			absenceId: live.id,
 			employeeId: live.employeeId,
 			categoryId: live.categoryId,
@@ -296,16 +306,8 @@ export async function prepareBoundAbsenceCard(
 		input.t,
 	);
 	if (!facts) return null;
-	const bindingId = await issueReviewBinding(database, {
-		organizationId: input.organizationId,
-		recipientEmployeeId: input.recipientEmployeeId,
-		workflowId: input.workflowId,
-		stageId: input.stageId,
-		assignmentId: input.assignmentId,
-		submittedRevisionId: revision.id,
-	});
 	const { t } = input;
-	return {
+	const draft: ApprovalCardDraft = {
 		status: "actionable",
 		recipientUserId: input.recipientUserId,
 		title: t("bot.approval.card.absenceTitle", "Absence approval request"),
@@ -318,14 +320,19 @@ export async function prepareBoundAbsenceCard(
 		// Exact item; it stays reviewable as history after a decision, and
 		// arrival rechecks membership and entitlement.
 		reviewUrl: await approvalReviewUrl({
-			organizationId: input.organizationId,
+			organizationId: target.organizationId,
 			reference: {
 				kind: "compatibility",
 				approvalRequestId: input.approvalRequestId,
 			},
 		}),
-		bindingId,
 		approveLabel: t("bot.approval.card.approve", "Approve"),
 		rejectLabel: t("bot.approval.card.reject", "Reject"),
 	};
+	if (input.fits && !input.fits(draft)) return null;
+	const bindingId = await issueReviewBinding(database, {
+		...target,
+		submittedRevisionId: revision.id,
+	});
+	return { ...draft, bindingId };
 }

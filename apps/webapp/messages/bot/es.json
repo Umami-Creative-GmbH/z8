@@ -40,7 +40,11 @@
         "requestApproved": "Aprobada por {actor} el {time}. La solicitud está aprobada.",
         "requestRejected": "Rechazada por {actor} el {time}. La solicitud está rechazada.",
         "stepApproved": "Aprobada por {actor} el {time}. La solicitud aún espera más aprobaciones.",
-        "replayed": "Esta pulsación ya se había registrado; este es su resultado original y no se decidió nada nuevo."
+        "replayed": "Esta pulsación ya se había registrado; este es su resultado original y no se decidió nada nuevo.",
+        "stepRejectedTitle": "Rechazo registrado",
+        "stepRejected": "Rechazada por {actor} el {time}. La solicitud aún no es definitiva; revisa su estado actual en Z8.",
+        "recordedTitle": "Decisión registrada",
+        "recorded": "Registrada por {actor} el {time}. Revisa el estado actual de la solicitud en Z8."
       }
     },
     "cmd": {

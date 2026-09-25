@@ -7,9 +7,10 @@ import {
 	approvalInvocation,
 	approvalPresentationControl,
 } from "@/db/schema";
-import type { ApprovalDatabase } from "../server/types";
+import type { ApprovalAction, ApprovalDatabase } from "../server/types";
 import type { ApprovalWorkflowType } from "../workflow/ports";
 import { ApprovalEvidenceError } from "./errors";
+import { type DecisionEvidenceRecord, findDecisionEvidenceById } from "./store";
 
 /**
  * Provider invocation identity (#257 §7, #261). Only schemes whose provider
@@ -22,6 +23,29 @@ export type ApprovalInvocationScheme =
 	(typeof APPROVAL_INVOCATION_SCHEMES)[number];
 
 export const APPROVAL_INVOCATION_SCHEME_VERSION = 1;
+
+const SCHEME_PROVIDERS: Readonly<
+	Record<ApprovalInvocationScheme, ApprovalPresentationProvider>
+> = { telegram_callback_query: "telegram" };
+
+/** The provider whose card admission governs invocations of this scheme. */
+export function approvalInvocationProvider(
+	scheme: ApprovalInvocationScheme,
+): ApprovalPresentationProvider {
+	return SCHEME_PROVIDERS[scheme];
+}
+
+/**
+ * A fresh invocation arrived while its provider's card admission is not
+ * actionable (never admitted, or paused after cards were sent). Committed
+ * invocations still replay; nothing new is decided.
+ */
+export class ApprovalInvocationNotAdmittedError extends Error {
+	constructor() {
+		super("Approval card actions are not admitted for this provider");
+		this.name = "ApprovalInvocationNotAdmittedError";
+	}
+}
 
 export interface ApprovalInvocationIdentity {
 	organizationId: string;
@@ -40,7 +64,7 @@ export interface ApprovalInvocationCommand {
 	/** Provider-authenticated actor (e.g. Telegram `from.id`), kept opaque. */
 	providerActorId: string;
 	reviewedBindingId: string;
-	action: "approve" | "reject";
+	action: ApprovalAction;
 	reason: string | null;
 }
 
@@ -115,8 +139,9 @@ export function fingerprintApprovalInvocationCommand(
 
 /**
  * Actionable card admission for one organization/kind/provider. Slack and a
- * missing row are always review-only. Preparation reads it; the decision never
- * trusts it (the bound decision is revalidated under the rollout lock).
+ * missing row are always review-only. Preparation reads it to admit a card; a
+ * fresh bound decision rereads it under the rollout gate, so pausing stops
+ * cards that were already sent.
  */
 export async function readApprovalPresentationMode(
 	database: ApprovalDatabase,
@@ -219,6 +244,41 @@ export async function findApprovalInvocation(
 		receiptIdempotencyKey: row.receiptIdempotencyKey,
 		decisionEvidenceId: row.decisionEvidenceId,
 	};
+}
+
+/**
+ * The original decision of a committed invocation, or null when this
+ * invocation never committed. The same invocation with a different command
+ * (actor, provider actor, binding, action or reason) is a mismatch, never a
+ * second operation. Current state is not consulted: a committed result stays
+ * replayable after later assignment, revision or source changes.
+ */
+export async function findCommittedInvocationDecision(
+	database: ApprovalDatabase,
+	input: {
+		identity: ApprovalInvocationIdentity;
+		command: ApprovalInvocationCommand;
+	},
+): Promise<DecisionEvidenceRecord | null> {
+	const existing = await findApprovalInvocation(database, input.identity);
+	if (!existing) return null;
+	if (
+		existing.commandFingerprint !==
+		fingerprintApprovalInvocationCommand(input.command)
+	) {
+		throw new ApprovalEvidenceError("invocation_mismatch");
+	}
+	const evidence = await findDecisionEvidenceById(database, {
+		organizationId: input.identity.organizationId,
+		workflowId: existing.workflowId,
+		id: existing.decisionEvidenceId,
+	});
+	if (!evidence) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "invocation_decision",
+		});
+	}
+	return evidence;
 }
 
 /** Written by the decision owner in the transaction that commits the decision. */

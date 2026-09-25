@@ -40,7 +40,11 @@
         "requestApproved": "{actor} tarafından {time} tarihinde onaylandı. Talep onaylandı.",
         "requestRejected": "{actor} tarafından {time} tarihinde reddedildi. Talep reddedildi.",
         "stepApproved": "{actor} tarafından {time} tarihinde onaylandı. Talep hâlâ başka onaylar bekliyor.",
-        "replayed": "Bu tuşa basma zaten kaydedilmişti; bu, orijinal sonucudur ve yeni bir karar verilmedi."
+        "replayed": "Bu tuşa basma zaten kaydedilmişti; bu, orijinal sonucudur ve yeni bir karar verilmedi.",
+        "stepRejectedTitle": "Ret kaydedildi",
+        "stepRejected": "{actor} tarafından {time} tarihinde reddedildi. Talep henüz kesinleşmedi; güncel durumunu Z8'de inceleyin.",
+        "recordedTitle": "Karar kaydedildi",
+        "recorded": "{actor} tarafından {time} tarihinde kaydedildi. Talebin güncel durumunu Z8'de inceleyin."
       }
     },
     "cmd": {

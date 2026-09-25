@@ -14,6 +14,8 @@ import { createLogger } from "@/lib/logger";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import {
 	type ApprovalActionableCard,
+	type ApprovalCardDraft,
+	type ApprovalCardTarget,
 	prepareBoundAbsenceCard,
 } from "./bound-card";
 import { approvalReviewUrl } from "./review-navigation";
@@ -43,6 +45,8 @@ export async function prepareApprovalPresentation(input: {
 	organizationId: string;
 	/** Only a provider passed here can ever receive an actionable card. */
 	provider?: ApprovalPresentationProvider;
+	/** The provider's limits for an actionable card (e.g. message length). */
+	fits?: (draft: ApprovalCardDraft) => boolean;
 }): Promise<
 	ApprovalReviewNotice | ApprovalActionableCard | { status: "undisclosable" }
 > {
@@ -67,11 +71,7 @@ export async function prepareApprovalPresentation(input: {
 		columns: { id: true, workflowId: true, sequence: true, status: true },
 		limit: 2,
 	});
-	let canonicalTarget: {
-		workflowId: string;
-		stageId: string;
-		assignmentId: string;
-	} | null = null;
+	let canonicalTarget: ApprovalCardTarget | null = null;
 	if (stages.length > 0) {
 		const stage = stages[0];
 		if (stages.length !== 1 || stage.status !== "pending")
@@ -101,6 +101,8 @@ export async function prepareApprovalPresentation(input: {
 		});
 		if (!assignment) return { status: "undisclosable" };
 		canonicalTarget = {
+			organizationId: input.organizationId,
+			recipientEmployeeId: input.recipientEmployeeId,
 			workflowId: workflow.id,
 			stageId: stage.id,
 			assignmentId: assignment.id,
@@ -133,14 +135,13 @@ export async function prepareApprovalPresentation(input: {
 	const t = await getBotTranslate(display.locale);
 	if (input.provider && canonicalTarget) {
 		const card = await prepareBoundAbsenceCard(db, {
-			organizationId: input.organizationId,
+			target: canonicalTarget,
 			provider: input.provider,
 			approvalRequestId: request.id,
-			recipientEmployeeId: input.recipientEmployeeId,
 			recipientUserId: recipient.userId,
-			...canonicalTarget,
 			display,
 			t,
+			...(input.fits ? { fits: input.fits } : {}),
 		});
 		if (card) return card;
 	}
@@ -170,7 +171,11 @@ export async function prepareApprovalPresentation(input: {
 	};
 }
 
-export type { ApprovalActionableCard, ApprovalCardFact } from "./bound-card";
+export type {
+	ApprovalActionableCard,
+	ApprovalCardDraft,
+	ApprovalCardFact,
+} from "./bound-card";
 export {
 	type AbsenceReviewEvidence,
 	buildAbsenceReviewSections,

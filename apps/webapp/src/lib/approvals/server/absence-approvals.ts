@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { enqueueVacationOverrideCalendarSyncJobs } from "@/app/[locale]/(app)/absences/request-absence-effect-helpers";
+import { member } from "@/db/auth-schema";
 import {
 	absenceEntry,
 	approvalRequest,
@@ -66,16 +67,18 @@ import {
 	recordLegacyAbsenceDecisionEvidence,
 } from "../evidence/legacy-absence";
 import {
+	type ApprovalInvocationCommand,
 	type ApprovalInvocationIdentity,
+	ApprovalInvocationNotAdmittedError,
 	approvalInvocationIdempotencyKey,
-	findApprovalInvocation,
-	fingerprintApprovalInvocationCommand,
+	approvalInvocationProvider,
+	findCommittedInvocationDecision,
 	lockApprovalInvocation,
+	readApprovalPresentationMode,
 	recordApprovalInvocation,
 } from "../evidence/invocation";
 import {
 	type DecisionEvidenceRecord,
-	findDecisionEvidenceById,
 	findDecisionEvidenceByReceipt,
 	type LegacyDecisionEvidenceRecord,
 	loadReviewBinding,
@@ -104,6 +107,7 @@ import {
 	finalizeTimeCorrectionTerminalInTransaction,
 } from "./time-correction-approvals";
 import type {
+	ApprovalAction,
 	ApprovalDatabase,
 	ApprovalDbService,
 	CurrentApprover,
@@ -291,6 +295,24 @@ export function createAbsenceApprovalManagementAuthorization(input: {
 	};
 }
 
+function absenceInvocationCommand(input: {
+	actorEmployeeId: string;
+	actorUserId: string;
+	invocation: AbsenceDecisionInvocation;
+	reviewedBindingId: string;
+	action: ApprovalAction;
+	reason?: string;
+}): ApprovalInvocationCommand {
+	return {
+		actorEmployeeId: input.actorEmployeeId,
+		actorUserId: input.actorUserId,
+		providerActorId: input.invocation.providerActorId,
+		reviewedBindingId: input.reviewedBindingId,
+		action: input.action,
+		reason: input.reason ?? null,
+	};
+}
+
 function requireInvocationBinding(bindingId: string | undefined): string {
 	// Only bound commands carry invocation identity.
 	if (bindingId === undefined)
@@ -396,16 +418,16 @@ export async function executeAbsenceDecisionInTransaction(
 			? {
 					...input.invocation,
 					key: approvalInvocationIdempotencyKey(input.invocation.identity),
-					command: {
+					command: absenceInvocationCommand({
 						actorEmployeeId: currentEmployee.id,
 						actorUserId: currentEmployee.userId,
-						providerActorId: input.invocation.providerActorId,
+						invocation: input.invocation,
 						reviewedBindingId: requireInvocationBinding(
 							input.reviewedBindingId,
 						),
 						action: input.action,
-						reason: input.reason ?? null,
-					},
+						reason: input.reason,
+					}),
 				}
 			: null;
 		if (invocation) {
@@ -415,27 +437,11 @@ export async function executeAbsenceDecisionInTransaction(
 			// Receipt before fresh checks: an exact committed invocation returns
 			// its original evidence even if authority, revision or rollout moved.
 			await lockApprovalInvocation(transactionDb, invocation.identity);
-			const existing = await findApprovalInvocation(
+			const evidence = await findCommittedInvocationDecision(
 				transactionDb,
-				invocation.identity,
+				invocation,
 			);
-			if (existing) {
-				if (
-					existing.commandFingerprint !==
-					fingerprintApprovalInvocationCommand(invocation.command)
-				) {
-					throw new ApprovalEvidenceError("invocation_mismatch");
-				}
-				const evidence = await findDecisionEvidenceById(transactionDb, {
-					organizationId: input.organizationId,
-					workflowId: existing.workflowId,
-					id: existing.decisionEvidenceId,
-				});
-				if (!evidence) {
-					throw new ApprovalEvidenceError("invariant", {
-						field: "invocation_decision",
-					});
-				}
+			if (evidence) {
 				return {
 					mode: gate.mode,
 					actor: currentEmployee,
@@ -444,6 +450,19 @@ export async function executeAbsenceDecisionInTransaction(
 					replayed: null as LegacyDecisionEvidenceRecord | null,
 					invocation: { replayed: true, evidence } as AbsenceInvocationOutcome,
 				};
+			}
+			// A fresh invocation needs current admission, read under the rollout
+			// gate: pausing a provider stops cards that were already sent.
+			const presentationMode = await readApprovalPresentationMode(
+				transactionDb,
+				{
+					organizationId: input.organizationId,
+					workflowType: "absence",
+					provider: approvalInvocationProvider(invocation.identity.scheme),
+				},
+			);
+			if (presentationMode !== "actionable") {
+				throw new ApprovalInvocationNotAdmittedError();
 			}
 		}
 
@@ -1742,9 +1761,13 @@ function authenticatedAbsenceDecisionEffect(
 	});
 }
 
+type AbsenceDecisionDatabase = Parameters<
+	typeof createProductionApprovalWorkflowRuntime
+>[0]["db"];
+
 /** The production decision runtime shared by the web and bot decision paths. */
 export function createAbsenceDecisionRuntime(input: {
-	db: Parameters<typeof createProductionApprovalWorkflowRuntime>[0]["db"];
+	db: AbsenceDecisionDatabase;
 	query: ApprovalDbService["query"];
 	canManageApproval: Parameters<
 		typeof createProductionApprovalWorkflowRuntime
@@ -1811,37 +1834,71 @@ export type BoundAbsenceInvocationResult =
 				| "reassigned"
 				| "stale"
 				| "material_change"
-				| "evidence";
+				| "evidence"
+				| "not_admitted";
 	  }
 	| { status: "conflict" }
 	| { status: "not_found" };
 
 /**
  * A reviewed-binding decision from an authenticated bot invocation (#290).
- * The actor comes from verified provider linkage, never a session. Authority is
- * the exact bound assignment only: neither eligible-manager fallback nor
- * organization management is ever invoked from a card, so a stale card needs
- * authenticated review instead. Infrastructure errors propagate.
+ * The actor comes from verified provider linkage, never a session. An exact
+ * committed invocation replays first, before any current state is read.
+ * Otherwise authority is the exact bound assignment only: neither
+ * eligible-manager fallback nor organization management is ever invoked from a
+ * card, so a stale card needs authenticated review instead. Infrastructure
+ * errors propagate.
  */
 export async function decideBoundAbsenceInvocation(input: {
 	organizationId: string;
 	actorEmployeeId: string;
 	actorUserId: string;
 	bindingId: string;
-	action: "approve" | "reject";
+	action: ApprovalAction;
 	reason?: string;
 	invocation: AbsenceDecisionInvocation;
-	database: Parameters<typeof createProductionApprovalWorkflowRuntime>[0]["db"];
+	database: AbsenceDecisionDatabase;
 }): Promise<BoundAbsenceInvocationResult> {
-	const database = input.database;
-	const binding = await loadReviewBinding(database as ApprovalDatabase, {
+	const database = input.database as ApprovalDatabase;
+	try {
+		const committed = await findCommittedInvocationDecision(database, {
+			identity: input.invocation.identity,
+			command: absenceInvocationCommand({
+				...input,
+				reviewedBindingId: input.bindingId,
+			}),
+		});
+		if (committed) {
+			return { status: "decided", replayed: true, evidence: committed };
+		}
+	} catch (error) {
+		return classifyBoundAbsenceError(error);
+	}
+	// The engine rechecks approved membership in the transaction; checking it
+	// here keeps a departed member's press a plain "not found".
+	const memberships = await database
+		.select({ id: member.id })
+		.from(member)
+		.where(
+			and(
+				eq(member.organizationId, input.organizationId),
+				eq(member.userId, input.actorUserId),
+				eq(member.status, "approved"),
+			),
+		)
+		.limit(1);
+	const binding = await loadReviewBinding(database, {
 		organizationId: input.organizationId,
 		bindingId: input.bindingId,
 	});
-	if (!binding || binding.recipientEmployeeId !== input.actorEmployeeId) {
+	if (
+		memberships.length !== 1 ||
+		!binding ||
+		binding.recipientEmployeeId !== input.actorEmployeeId
+	) {
 		return { status: "not_found" };
 	}
-	const sources = await (database as ApprovalDatabase)
+	const sources = await database
 		.select({ id: absenceEntry.id })
 		.from(absenceEntry)
 		.where(
@@ -1858,7 +1915,7 @@ export async function decideBoundAbsenceInvocation(input: {
 		operation: () => Promise<T>,
 	) => Effect.promise(operation);
 	const runtime = createAbsenceDecisionRuntime({
-		db: database,
+		db: input.database,
 		query,
 		// Only the current assignee (checked by the engine first) may decide;
 		// a card never reaches management or eligible-manager authority.
@@ -1910,6 +1967,9 @@ function classifyBoundAbsenceError(
 	}
 	if (error instanceof BoundAssignmentNotCurrentError) {
 		return { status: "review_required", reason: "stale" };
+	}
+	if (error instanceof ApprovalInvocationNotAdmittedError) {
+		return { status: "review_required", reason: "not_admitted" };
 	}
 	if (error instanceof ApprovalEvidenceError) {
 		switch (error.code) {

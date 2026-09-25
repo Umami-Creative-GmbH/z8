@@ -121,7 +121,9 @@ vi.mock("@/lib/work-balance/service", async (importOriginal) => ({
 const { requestAbsenceEffect } = await import(
 	"@/app/[locale]/(app)/absences/request-absence-effect"
 );
-const { approveAbsenceEffect } = await import("@/lib/approvals/server/absence-approvals");
+const { approveAbsenceEffect, decideBoundAbsenceInvocation } = await import(
+	"@/lib/approvals/server/absence-approvals"
+);
 const { deleteApproval } = await import("@/lib/approvals/maintenance");
 const { db } = await import("@/db");
 const { sendApprovalMessageToManager } = await import("./approval-handler");
@@ -401,12 +403,16 @@ describeIntegration("Telegram absence cards with reviewed bindings (PostgreSQL)"
 		);
 	}
 
-	async function submit(): Promise<{ absenceId: string; requestId: string; workflowId: string }> {
+	async function submit(
+		dates: { startDate: string; endDate: string } = {
+			startDate: "2026-08-03",
+			endDate: "2026-08-04",
+		},
+	): Promise<{ absenceId: string; requestId: string; workflowId: string }> {
 		actAs(ids.requesterUser);
 		const result = await requestAbsenceEffect({
 			categoryId: ids.category,
-			startDate: "2026-08-03",
-			endDate: "2026-08-04",
+			...dates,
 			startPeriod: "full_day",
 			endPeriod: "full_day",
 			durationKind: "full_day",
@@ -1023,5 +1029,154 @@ describeIntegration("Telegram absence cards with reviewed bindings (PostgreSQL)"
 				workflowId,
 			]),
 		).rejects.toThrow(/immutable/);
+	});
+
+	it("pauses cards already sent while committed presses still replay", async () => {
+		await seed();
+		const decidedCase = await submit();
+		const decidedCard = await sendCard(decidedCase.requestId);
+		const committed = callback({
+			data: decidedCard.callbackData[0] ?? "",
+			queryId: "t290-before-pause",
+			updateId: 9201,
+			messageId: decidedCard.messageId,
+		});
+		await press(committed);
+		const pendingCase = await submit({ startDate: "2026-09-07", endDate: "2026-09-08" });
+		const pendingCard = await sendCard(pendingCase.requestId);
+
+		// The adoption writer pauses Telegram after both cards were sent.
+		await admin.query(
+			`update approval_presentation_control set mode = 'review_only'
+			 where organization_id = $1 and workflow_type = 'absence' and provider = 'telegram'`,
+			[ids.organization],
+		);
+		const before = await counts(pendingCase.workflowId);
+		const paused = await press(
+			callback({
+				data: pendingCard.callbackData[0] ?? "",
+				queryId: "t290-after-pause",
+				updateId: 9202,
+				messageId: pendingCard.messageId,
+			}),
+		);
+		expect(await counts(pendingCase.workflowId)).toEqual(before);
+		expect(before).toMatchObject({ status: "pending", decisions: "0", invocations: "0" });
+		expect(only(paused.edits).body.text).toContain("Es wurde keine Entscheidung getroffen");
+
+		const decidedBefore = await counts(decidedCase.workflowId);
+		const replay = await press(committed);
+		expect(await counts(decidedCase.workflowId)).toEqual(decidedBefore);
+		expect(only(replay.edits).body.text).toContain("ursprüngliches Ergebnis");
+	});
+
+	it("replays a committed press without consulting current state and conflicts on another actor", async () => {
+		await seed();
+		const { requestId, workflowId, absenceId } = await submit();
+		const card = await sendCard(requestId);
+		const approveData = card.callbackData[0] ?? "";
+		const bindingId = (JSON.parse(approveData) as { b: string }).b;
+		const update = callback({
+			data: approveData,
+			queryId: "t290-relinked",
+			updateId: 9301,
+			messageId: card.messageId,
+		});
+		await press(update);
+		const decided = await counts(workflowId);
+
+		// Current source state moves on: the absence no longer points at the
+		// workflow. The committed press still returns its original evidence.
+		await admin.query("update absence_entry set approval_workflow_id = null where id = $1", [
+			absenceId,
+		]);
+		const replay = await press(update);
+		expect(await counts(workflowId)).toEqual(decided);
+		expect(only(replay.edits).body.text).toContain("Antrag genehmigt");
+		expect(only(replay.edits).body.text).toContain("ursprüngliches Ergebnis");
+
+		// The same query presented by another actor is a mismatch, not a new
+		// operation and not "not found".
+		await expect(
+			decideBoundAbsenceInvocation({
+				database: db,
+				organizationId: ids.organization,
+				actorEmployeeId: ids.secondManager,
+				actorUserId: ids.secondManagerUser,
+				bindingId,
+				action: "approve",
+				invocation: {
+					identity: {
+						organizationId: ids.organization,
+						scheme: "telegram_callback_query",
+						schemeVersion: 1,
+						receiverScope: "telegram-bot:290290290",
+						invocationId: "t290-relinked",
+					},
+					deliveryId: "9302",
+					providerActorId: String(SECOND_TELEGRAM_ID),
+				},
+			}),
+		).resolves.toEqual({ status: "conflict" });
+		expect(await counts(workflowId)).toEqual(decided);
+	});
+
+	it("issues no binding for a card that does not fit one Telegram message", async () => {
+		await seed();
+		await admin.query("update absence_category set name = repeat('Vacation ', 600) where id = $1", [
+			ids.category,
+		]);
+		const { requestId } = await submit();
+		const card = await sendCard(requestId);
+		expect(card.callbackData).toEqual([]);
+		expect(card.text).toContain("Prüfung erforderlich");
+		const { rows } = await admin.query(
+			"select count(*)::int as count from approval_review_binding where organization_id = $1",
+			[ids.organization],
+		);
+		expect(only(rows)).toEqual({ count: 0 });
+	});
+
+	it("decides nothing for an actor who is no longer an approved member", async () => {
+		await seed();
+		const { requestId, workflowId } = await submit();
+		const card = await sendCard(requestId);
+		const bindingId = (JSON.parse(card.callbackData[0] ?? "{}") as { b: string }).b;
+		await admin.query(
+			"update member set status = 'pending' where organization_id = $1 and user_id = $2",
+			[ids.organization, ids.managerUser],
+		);
+		const before = await counts(workflowId);
+		await press(
+			callback({
+				data: card.callbackData[0] ?? "",
+				queryId: "t290-departed",
+				updateId: 9401,
+				messageId: card.messageId,
+			}),
+		);
+		await expect(
+			decideBoundAbsenceInvocation({
+				database: db,
+				organizationId: ids.organization,
+				actorEmployeeId: ids.manager,
+				actorUserId: ids.managerUser,
+				bindingId,
+				action: "approve",
+				invocation: {
+					identity: {
+						organizationId: ids.organization,
+						scheme: "telegram_callback_query",
+						schemeVersion: 1,
+						receiverScope: "telegram-bot:290290290",
+						invocationId: "t290-departed-direct",
+					},
+					deliveryId: null,
+					providerActorId: String(MANAGER_TELEGRAM_ID),
+				},
+			}),
+		).resolves.toEqual({ status: "not_found" });
+		expect(await counts(workflowId)).toEqual(before);
+		expect(before).toMatchObject({ status: "pending", decisions: "0" });
 	});
 });

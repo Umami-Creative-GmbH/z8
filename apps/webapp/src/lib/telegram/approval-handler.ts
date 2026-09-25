@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { telegramApprovalMessage } from "@/db/schema";
 import {
 	type ApprovalActionableCard,
+	type ApprovalCardDraft,
 	prepareApprovalPresentation,
 } from "@/lib/approvals/presentation";
 import type { BoundBotApprovalResult } from "@/lib/bot-platform/approval-decision";
@@ -81,23 +82,30 @@ export async function handleApprovalCallback(
 	}
 }
 
-/**
- * Bound card layout. Returns null when the essential facts do not fit a single
- * Telegram message: a truncated proposal never keeps its controls.
- */
-export function telegramActionableCard(
-	card: ApprovalActionableCard,
-): Omit<TelegramSendMessageParams, "chat_id"> | null {
-	const text = [
+function telegramCardText(card: ApprovalCardDraft): string {
+	return [
 		card.title,
 		"",
 		...card.facts.map((fact) => `${fact.label}: ${fact.value}`),
 		"",
 		card.text,
 	].join("\n");
-	if (text.length > TELEGRAM_TEXT_LIMIT) return null;
+}
+
+/**
+ * Essential facts must fit one Telegram message; a truncated proposal never
+ * keeps its controls, so an oversized card is prepared as review-only.
+ */
+function fitsTelegramMessage(card: ApprovalCardDraft): boolean {
+	return telegramCardText(card).length <= TELEGRAM_TEXT_LIMIT;
+}
+
+/** Bound card layout: approve/reject carry only the binding handle. */
+export function telegramActionableCard(
+	card: ApprovalActionableCard,
+): Omit<TelegramSendMessageParams, "chat_id"> {
 	return {
-		text,
+		text: telegramCardText(card),
 		reply_markup: {
 			inline_keyboard: [
 				[
@@ -193,23 +201,13 @@ export async function sendApprovalMessageToManager(
 	botToken: string,
 ): Promise<void> {
 	try {
-		const prepared = await prepareApprovalPresentation({
+		const notice = await prepareApprovalPresentation({
 			approvalId,
 			recipientEmployeeId: approverId,
 			organizationId,
 			provider: "telegram",
+			fits: fitsTelegramMessage,
 		});
-		if (prepared.status === "undisclosable") return;
-		const bound =
-			prepared.status === "actionable" ? telegramActionableCard(prepared) : null;
-		const notice =
-			prepared.status === "actionable" && !bound
-				? await prepareApprovalPresentation({
-						approvalId,
-						recipientEmployeeId: approverId,
-						organizationId,
-					})
-				: prepared;
 		if (notice.status === "undisclosable") return;
 		const chatId = await getChatIdForUser(
 			notice.recipientUserId,
@@ -218,10 +216,9 @@ export async function sendApprovalMessageToManager(
 		if (!chatId) return;
 		const sent = await sendMessage(botToken, {
 			chat_id: chatId,
-			...(bound ??
-				telegramApprovalNotice(
-					notice as Exclude<typeof notice, ApprovalActionableCard>,
-				)),
+			...(notice.status === "actionable"
+				? telegramActionableCard(notice)
+				: telegramApprovalNotice(notice)),
 		});
 		if (sent)
 			await db

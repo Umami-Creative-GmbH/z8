@@ -2,11 +2,15 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
-import { approvalRequest, approvalWorkflowStage, employee } from "@/db/schema";
-import type { ApprovalInvocationScheme } from "@/lib/approvals/evidence/invocation";
+import { approvalRequest, employee } from "@/db/schema";
+import {
+	APPROVAL_INVOCATION_SCHEME_VERSION,
+	type ApprovalInvocationScheme,
+} from "@/lib/approvals/evidence/invocation";
 import type { DecisionEvidenceRecord } from "@/lib/approvals/evidence/store";
 import { loadApprovalInboxDecisionTarget } from "@/lib/approvals/inbox/decision-service";
 import { decideBoundAbsenceInvocation } from "@/lib/approvals/server/absence-approvals";
+import type { ApprovalAction } from "@/lib/approvals/server/types";
 import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
 import {
 	DatabaseService,
@@ -126,7 +130,7 @@ type BoundBotApprovalInput = {
 	actorUserId: string;
 	/** Opaque reviewed-binding handle carried by the card. */
 	bindingId: string;
-	action: "approve" | "reject";
+	action: ApprovalAction;
 	platform: BotPlatform;
 	invocation: BotInvocationEnvelope | null;
 };
@@ -137,8 +141,6 @@ export type BoundBotApprovalResult =
 			/** This invocation was already committed; the original is returned. */
 			replayed: boolean;
 			evidence: DecisionEvidenceRecord;
-			/** Compatibility request of the decided stage, for message tracking. */
-			compatibilityRequestId: string | null;
 	  }
 	| { status: "review_required" }
 	| { status: "conflict" }
@@ -158,15 +160,9 @@ export async function attemptBoundBotApproval(
 	input: BoundBotApprovalInput,
 ): Promise<BoundBotApprovalResult> {
 	const scheme = INVOCATION_SCHEMES[input.platform];
-	if (
-		!scheme ||
-		!input.invocation ||
-		input.invocation.scheme !== scheme ||
-		input.invocation.invocationId.trim().length === 0 ||
-		input.invocation.receiverScope.trim().length === 0 ||
-		input.invocation.providerActorId.trim().length === 0
-	) {
-		// No established invocation identity: never decide, never replay.
+	if (!scheme || input.invocation?.scheme !== scheme) {
+		// No established invocation identity: never decide, never replay. An
+		// incomplete identity is refused by the decision owner's parser.
 		return { status: "review_required" };
 	}
 	const result = await decideBoundAbsenceInvocation({
@@ -183,7 +179,7 @@ export async function attemptBoundBotApproval(
 			identity: {
 				organizationId: input.organizationId,
 				scheme,
-				schemeVersion: 1,
+				schemeVersion: APPROVAL_INVOCATION_SCHEME_VERSION,
 				receiverScope: input.invocation.receiverScope,
 				invocationId: input.invocation.invocationId,
 			},
@@ -191,25 +187,7 @@ export async function attemptBoundBotApproval(
 			providerActorId: input.invocation.providerActorId,
 		},
 	});
-	if (result.status !== "decided") {
-		return result.status === "review_required"
-			? { status: "review_required" }
-			: result;
-	}
-	const stageId = result.evidence.stageId;
-	const stage = stageId
-		? await db.query.approvalWorkflowStage.findFirst({
-				where: and(
-					eq(approvalWorkflowStage.organizationId, input.organizationId),
-					eq(approvalWorkflowStage.id, stageId),
-				),
-				columns: { legacyApprovalRequestId: true },
-			})
-		: undefined;
-	return {
-		status: "decided",
-		replayed: result.replayed,
-		evidence: result.evidence,
-		compatibilityRequestId: stage?.legacyApprovalRequestId ?? null,
-	};
+	return result.status === "review_required"
+		? { status: "review_required" }
+		: result;
 }

@@ -40,7 +40,11 @@
         "requestApproved": "Approuvée par {actor} le {time}. La demande est approuvée.",
         "requestRejected": "Refusée par {actor} le {time}. La demande est refusée.",
         "stepApproved": "Approuvée par {actor} le {time}. La demande attend encore d’autres approbations.",
-        "replayed": "Cet appui a déjà été enregistré ; ceci est son résultat d’origine et rien de nouveau n’a été décidé."
+        "replayed": "Cet appui a déjà été enregistré ; ceci est son résultat d’origine et rien de nouveau n’a été décidé.",
+        "stepRejectedTitle": "Refus enregistré",
+        "stepRejected": "Refusée par {actor} le {time}. La demande n’est pas encore définitive ; consultez son statut actuel dans Z8.",
+        "recordedTitle": "Décision enregistrée",
+        "recorded": "Enregistrée par {actor} le {time}. Consultez le statut actuel de la demande dans Z8."
       }
     },
     "cmd": {

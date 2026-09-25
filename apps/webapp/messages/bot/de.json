@@ -40,7 +40,11 @@
         "requestApproved": "Genehmigt von {actor} am {time}. Der Antrag ist genehmigt.",
         "requestRejected": "Abgelehnt von {actor} am {time}. Der Antrag ist abgelehnt.",
         "stepApproved": "Genehmigt von {actor} am {time}. Der Antrag wartet noch auf weitere Genehmigungen.",
-        "replayed": "Dieser Tastendruck wurde bereits erfasst; dies ist sein ursprüngliches Ergebnis, es wurde nichts Neues entschieden."
+        "replayed": "Dieser Tastendruck wurde bereits erfasst; dies ist sein ursprüngliches Ergebnis, es wurde nichts Neues entschieden.",
+        "stepRejectedTitle": "Ablehnung erfasst",
+        "stepRejected": "Abgelehnt von {actor} am {time}. Der Antrag ist noch nicht abgeschlossen; prüfen Sie seinen aktuellen Status in Z8.",
+        "recordedTitle": "Entscheidung erfasst",
+        "recorded": "Erfasst von {actor} am {time}. Prüfen Sie den aktuellen Status des Antrags in Z8."
       }
     },
     "cmd": {
