@@ -84,6 +84,7 @@ const NESTED_NAMESPACE_PREFIXES = [
 	["settings.apiKeys.", "settings/enterprise"],
 	["settings.payrollExport.", "settings/payrollExport"],
 	["settings.payrollReadiness.", "settings/payrollExport"],
+	["settings.workDiagnostics.", "settings/payrollExport"],
 	["settings.scheduledExports.", "settings/scheduledExports"],
 	["settings.holidays.", "settings/holidays"],
 	["settings.workPolicies.", "settings/workPolicies"],
