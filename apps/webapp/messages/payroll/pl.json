@@ -19,7 +19,11 @@
       "refreshAfterClearFailed": "Blokada usunięta, ale nie można było odświeżyć listy płac",
       "unknownEmployee": "Nieznany pracownik",
       "unresolvedWorkMinutes": "Minuty pracy wymagają sprawdzenia",
-      "offboardingClockRepair": "Wyrejestrowanie przy odejściu wymaga poprawy"
+      "offboardingClockRepair": "Wyrejestrowanie przy odejściu wymaga poprawy",
+      "openWork": "Praca bez wyrejestrowania",
+      "pendingWorkApproval": "Praca oczekuje na zatwierdzenie",
+      "uncertainHistoricalWork": "Praca historyczna wymaga sprawdzenia",
+      "openWorkDiagnostics": "Otwórz diagnostykę pracy"
     },
     "description": "Sprawdź sumy płac, gotowość i eksporty dla wybranego okresu.",
     "employeeTotals": {
@@ -49,6 +53,7 @@
       "endDateAfterStart": "Data końcowa musi być późniejsza lub równa dacie początkowej",
       "exportBlockedByUnresolvedWorkMinutes": "Eksport zablokowany: najpierw wyjaśnij minuty pracy wymagające sprawdzenia",
       "exportBlockedByOffboardingClockRepair": "Eksport zablokowany: najpierw popraw wyrejestrowanie przy odejściu",
+      "exportBlockedByUncertainWork": "Eksport zablokowany: najpierw wyjaśnij niepewną pracę w wybranym zakresie",
       "exportFormatNotConfigured": "Format eksportu płac nie jest skonfigurowany",
       "invalidBlockerId": "Nieprawidłowy identyfikator blokady listy płac",
       "invalidBlockerType": "Nieprawidłowy typ blokady listy płac",

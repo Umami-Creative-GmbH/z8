@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	index,
 	integer,
 	jsonb,
@@ -273,4 +274,52 @@ export const payrollExportSyncRecord = pgTable(
 			table.isRetryable,
 		),
 	],
+);
+
+export type PayrollWorkCollectionMode = "inactive" | "active";
+
+/**
+ * Per-organization switch for scoped payroll work collection (#322). While it is not
+ * `active`, workspace and export keep their previous reads. There is no application
+ * setter: activation is a separately authorized operation.
+ */
+export const payrollWorkCollectionControl = pgTable(
+	"payroll_work_collection_control",
+	{
+		organizationId: text("organization_id")
+			.primaryKey()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		mode: text("mode").$type<PayrollWorkCollectionMode>().default("inactive").notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		check(
+			"payroll_work_collection_control_mode_check",
+			sql`${table.mode} IN ('inactive', 'active')`,
+		),
+	],
+);
+
+/**
+ * Immutable work input collected for one export job (#322), stored before delivery so
+ * a recovery formats exactly what was collected instead of rereading changed work.
+ * `input` is a `CollectedPayrollWorkInput`; `digest` covers all of it. A trigger
+ * rejects updates; rows leave only with their job or organization.
+ */
+export const payrollExportWorkInput = pgTable(
+	"payroll_export_work_input",
+	{
+		jobId: uuid("job_id")
+			.primaryKey()
+			.references(() => payrollExportJob.id, { onDelete: "cascade" }),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		version: integer("version").notNull(),
+		digest: text("digest").notNull(),
+		workCount: integer("work_count").notNull(),
+		input: jsonb("input").$type<unknown>().notNull(),
+		collectedAt: timestamp("collected_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [index("payrollExportWorkInput_organizationId_idx").on(table.organizationId)],
 );
