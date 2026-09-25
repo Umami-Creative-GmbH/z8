@@ -636,7 +636,14 @@
       "idx": 90,
       "version": "7",
       "when": 1792080000000,
-      "tag": "0090_discord_approval_delivery",
+      "tag": "0090_approval_delivery_slack",
+      "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1792166400000,
+      "tag": "0091_discord_approval_delivery",
       "breakpoints": true
     }
   ]

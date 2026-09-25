@@ -65,10 +65,10 @@ export async function recoverApprovalDeliveryForAttention(input: {
 }
 
 /**
- * Destination repair: the recipient reached the provider's bot again, so their
- * work on that provider that was waiting for a usable destination is re-armed.
- * Nothing else is resent, and organizations without a delivery owner are
- * untouched.
+ * Destination repair: the recipient reached the provider's bot again, so
+ * their work for that provider that was waiting for a usable destination is
+ * re-armed. Nothing else is resent, and organizations without a delivery
+ * owner are untouched.
  */
 export async function rearmApprovalDeliveryForRepairedDestination(input: {
 	organizationId: string;

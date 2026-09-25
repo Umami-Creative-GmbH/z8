@@ -9,6 +9,7 @@ import {
 	approvalDeliveryControl,
 	approvalDeliveryMessage,
 	approvalDeliveryWork,
+	approvalRequest,
 	approvalStageAssignment,
 	approvalWorkflow,
 	approvalWorkflowRollout,
@@ -68,33 +69,43 @@ export async function isApprovalDeliveryOwner(input: {
 }
 
 /**
- * Whether the delivery owner sends this absence's card on a provider: the
- * owner is active there and the absence has a canonical workflow, whose
- * committed intents the owner delivers. A legacy request (e.g. a policy
- * fallback) keeps the existing notification path.
+ * Whether the delivery owner sends the card an existing-path approval
+ * notification is about, so that path sends neither the card nor a plain
+ * message about the same request. The owner must be active for the provider
+ * and the absence must have a canonical workflow, whose committed intents the
+ * owner delivers; a legacy request (e.g. a policy fallback) keeps the path.
  */
-export async function isAbsenceCardDeliveredByOwner(input: {
+export async function isApprovalNotificationDeliveredByOwner(input: {
 	organizationId: string;
-	absenceId: string | undefined;
 	provider: ApprovalDeliveryProvider;
+	entityType?: string;
+	entityId?: string;
 }): Promise<boolean> {
-	if (!input.absenceId) return false;
+	if (!input.entityId) return false;
+	let absenceId: string | null = null;
+	if (input.entityType === "absence_entry") {
+		absenceId = input.entityId;
+	} else if (input.entityType === "approval_request") {
+		const request = await db.query.approvalRequest.findFirst({
+			where: and(
+				eq(approvalRequest.id, input.entityId),
+				eq(approvalRequest.organizationId, input.organizationId),
+			),
+			columns: { entityType: true, entityId: true },
+		});
+		if (request?.entityType === "absence_entry") absenceId = request.entityId;
+	}
+	if (!absenceId) return false;
 	const owner = await isApprovalDeliveryOwner({
 		organizationId: input.organizationId,
 		workflowType: "absence",
 		provider: input.provider,
 	});
 	if (!owner) return false;
-	const [absence] = await db
-		.select({ approvalWorkflowId: absenceEntry.approvalWorkflowId })
-		.from(absenceEntry)
-		.where(
-			and(
-				eq(absenceEntry.id, input.absenceId),
-				eq(absenceEntry.organizationId, input.organizationId),
-			),
-		)
-		.limit(1);
+	const absence = await db.query.absenceEntry.findFirst({
+		where: and(eq(absenceEntry.id, absenceId), eq(absenceEntry.organizationId, input.organizationId)),
+		columns: { approvalWorkflowId: true },
+	});
 	return Boolean(absence?.approvalWorkflowId);
 }
 
@@ -741,6 +752,7 @@ export async function rearmApprovalDeliveryWork(input: {
 	workIds?: string[];
 	assignmentId?: string;
 	recipientEmployeeIds?: string[];
+	/** Only this provider's work (a repaired destination belongs to one provider). */
 	provider?: ApprovalDeliveryProvider;
 	/** Only work whose last outcome starts with this (e.g. `destination_invalid:`). */
 	outcomePrefix?: string;

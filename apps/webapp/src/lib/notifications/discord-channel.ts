@@ -8,7 +8,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
-import { isAbsenceCardDeliveredByOwner } from "@/lib/approvals/delivery/store";
+import { isApprovalNotificationDeliveredByOwner } from "@/lib/approvals/delivery/store";
 import { createLogger } from "@/lib/logger";
 import type { NotificationType } from "./types";
 
@@ -44,14 +44,6 @@ export async function isDiscordAvailable(
 	}
 }
 
-/** Whether the approval delivery owner (#292) sends this absence's Discord card. */
-function deliveredByApprovalOwner(
-	organizationId: string,
-	absenceId: string | undefined,
-): Promise<boolean> {
-	return isAbsenceCardDeliveredByOwner({ organizationId, absenceId, provider: "discord" });
-}
-
 /**
  * Send a notification via Discord
  */
@@ -75,8 +67,7 @@ export async function sendDiscordNotification(
 		// message about the same request.
 		if (
 			params.type === "approval_request_submitted" &&
-			params.entityType === "absence_entry" &&
-			(await deliveredByApprovalOwner(params.organizationId, params.entityId))
+			(await isApprovalNotificationDeliveredByOwner({ ...params, provider: "discord" }))
 		) {
 			return;
 		}
@@ -92,13 +83,6 @@ export async function sendDiscordNotification(
 					eq(approvalRequest.organizationId, params.organizationId),
 				),
 			});
-
-			if (
-				approval?.entityType === "absence_entry" &&
-				(await deliveredByApprovalOwner(params.organizationId, approval.entityId))
-			) {
-				return;
-			}
 
 			if (approval) {
 				const emp = await db.query.employee.findFirst({

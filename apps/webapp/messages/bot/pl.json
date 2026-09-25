@@ -15,6 +15,7 @@
       "card": {
         "absenceTitle": "Wniosek o nieobecność do zatwierdzenia",
         "boundHint": "Zatwierdź lub odrzuć rozstrzyga dokładnie wniosek pokazany powyżej. Jeśli został zmieniony lub przekazany, nic nie zostanie rozstrzygnięte i poprosimy o sprawdzenie go w Z8.",
+        "reviewOnlyHint": "Zatwierdź lub odrzuć ten wniosek w Z8. Nie można go rozstrzygnąć z tej wiadomości.",
         "approve": "Zatwierdź",
         "reject": "Odrzuć",
         "unavailable": "Niedostępne",
