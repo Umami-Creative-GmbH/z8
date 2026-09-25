@@ -568,6 +568,13 @@
       "when": 1791216000000,
       "tag": "0080_legacy_escalation_transfer",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1791302400000,
+      "tag": "0081_audit_pack_append_assurance",
+      "breakpoints": true
     }
   ]
 }

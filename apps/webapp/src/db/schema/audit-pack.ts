@@ -1,7 +1,20 @@
-import { index, integer, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 import { organization, user } from "../auth-schema";
 import { auditExportPackage } from "./audit-export";
+
+/**
+ * Append assurance disclosed by a pack (#324): how many assessed employees have
+ * whole-history, post-anchor-only or no append assurance, and every limitation
+ * code the pack discloses. Null for packs generated before the disclosure existed.
+ */
+export interface AuditPackAppendAssurance {
+	employeeCount: number;
+	wholeHistory: number;
+	postAnchor: number;
+	none: number;
+	limitations: string[];
+}
 
 export const auditPackStatusEnum = pgEnum("audit_pack_status", [
 	"requested",
@@ -55,6 +68,7 @@ export const auditPackArtifact = pgTable(
 		approvalEventCount: integer("approval_event_count").notNull().default(0),
 		timelineEventCount: integer("timeline_event_count").notNull().default(0),
 		expandedNodeCount: integer("expanded_node_count").notNull().default(0),
+		appendAssurance: jsonb("append_assurance").$type<AuditPackAppendAssurance>(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
 	(table) => [

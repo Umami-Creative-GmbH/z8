@@ -2,12 +2,25 @@ import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { approvalRequest, auditLog, type auditPackRequest, db, timeEntry } from "@/db";
 import { auditExportOrchestrator, type HardenExportResult } from "@/lib/audit-export";
+import type { AppendAssuranceReport } from "@/lib/time-tracking/append-assurance";
+import {
+	readAppendAssurance,
+	withAppendEvidenceSnapshot,
+} from "@/lib/time-tracking/append-assurance-reader";
+import {
+	type AuditEntryRow,
+	type AuditPackAppendAssurance,
+	summarizeAuditPackAssurance,
+	toEntryChainEvidenceInput,
+	toLineageNode,
+	toPackAssuranceRecord,
+} from "../domain/append-lineage-evidence";
 import { buildApprovalEvidence } from "../domain/approval-evidence-builder";
 import { buildAuditTimeline } from "../domain/audit-timeline-builder";
 import { assembleAuditPackZip } from "../domain/bundle-assembler";
 import { buildCorrectionClosure } from "../domain/correction-lineage-builder";
 import { buildEntryChainEvidence } from "../domain/entry-chain-builder";
-import type { CorrectionLinkNode } from "../domain/types";
+import type { CorrectionLinkNode, LineageLinkNode } from "../domain/types";
 import { auditPackRequestRepository } from "./request-repository";
 
 export type AuditPackExecutionStatus =
@@ -41,6 +54,7 @@ export interface AuditPackArtifactInput {
 	approvalEventCount: number;
 	timelineEventCount: number;
 	expandedNodeCount: number;
+	appendAssurance: AuditPackAppendAssurance;
 }
 
 export interface AuditPackAssembledPayload {
@@ -52,6 +66,7 @@ export interface AuditPackAssembledPayload {
 		timelineEventCount: number;
 		expandedNodeCount: number;
 	};
+	appendAssurance: AuditPackAppendAssurance;
 }
 
 export interface AuditPackRepository {
@@ -79,17 +94,14 @@ export interface AuditPackOrchestratorDependencies {
 
 interface AuditPackCollectResult {
 	request: typeof auditPackRequest.$inferSelect;
-	baseEntries: CorrectionLinkNode[];
+	baseEntries: Array<{ id: string; employeeId: string }>;
 }
 
 interface AuditPackExpandedResult extends AuditPackCollectResult {
 	closure: ReturnType<typeof buildCorrectionClosure>;
-	lineageEntries: Array<
-		CorrectionLinkNode & {
-			organizationId: string;
-			timestamp: Date;
-		}
-	>;
+	lineageEntries: AuditEntryRow[];
+	/** Every employee whose entries the pack includes, assessed from one snapshot. */
+	assuranceReports: AppendAssuranceReport[];
 }
 
 const STATUS_COLLECTING: Exclude<AuditPackExecutionStatus, "failed"> = "collecting";
@@ -142,11 +154,6 @@ function toLinkNode(entry: {
 	};
 }
 
-function getLinkedIds(node: CorrectionLinkNode): string[] {
-	const linkedIds = [node.previousEntryId, node.replacesEntryId, node.supersededById];
-	return linkedIds.filter((id): id is string => typeof id === "string" && id.length > 0);
-}
-
 function toIso(timestamp: Date): string {
 	return DateTime.fromJSDate(timestamp, { zone: "utc" }).toISO() ?? timestamp.toISOString();
 }
@@ -187,6 +194,7 @@ export class AuditPackOrchestrator {
 				approvalEventCount: assembled.counts.approvalEventCount,
 				timelineEventCount: assembled.counts.timelineEventCount,
 				expandedNodeCount: assembled.counts.expandedNodeCount,
+				appendAssurance: assembled.appendAssurance,
 			});
 
 			await this.repository.setStatus({ requestId, organizationId, status: STATUS_COMPLETED });
@@ -232,161 +240,119 @@ const defaultDependencies: AuditPackOrchestratorDependencies = {
 			),
 			columns: {
 				id: true,
-				previousEntryId: true,
-				replacesEntryId: true,
-				supersededById: true,
+				employeeId: true,
 			},
 		});
 
 		return {
 			request,
-			baseEntries: baseEntries.map((entry) => toLinkNode(entry)),
+			baseEntries,
 		} satisfies AuditPackCollectResult;
 	},
 	async expandLineage(collected) {
-		const typedCollected = collected as AuditPackCollectResult;
-		const entriesById = new Map<
-			string,
-			CorrectionLinkNode & { organizationId: string; timestamp: Date }
-		>();
+		const { request, baseEntries } = collected as AuditPackCollectResult;
+		const organizationId = request.organizationId;
 
-		const seedIds = new Set<string>();
-		for (const node of typedCollected.baseEntries) {
-			seedIds.add(node.id);
-		}
+		// Append links resolve under the shared compatibility rules, per employee, from
+		// one snapshot. Correction links may reach another employee in the organization.
+		return withAppendEvidenceSnapshot(db, async (reader) => {
+			const rowsById = new Map<string, AuditEntryRow>();
+			const reports = new Map<string, AppendAssuranceReport>();
 
-		if (seedIds.size > 0) {
-			const seedEntries = await db.query.timeEntry.findMany({
-				where: and(
-					eq(timeEntry.organizationId, typedCollected.request.organizationId),
-					inArray(timeEntry.id, [...seedIds]),
-				),
-				columns: {
-					id: true,
-					organizationId: true,
-					timestamp: true,
-					previousEntryId: true,
-					replacesEntryId: true,
-					supersededById: true,
-				},
-			});
+			const loadEmployees = async (employeeIds: readonly string[]) => {
+				const pending = [...new Set(employeeIds)].filter((id) => !reports.has(id));
+				if (pending.length === 0) return;
+				const assessed = await readAppendAssurance(reader, organizationId, pending);
+				for (const [employeeId, report] of assessed) reports.set(employeeId, report);
+				const rows = await reader
+					.select({
+						id: timeEntry.id,
+						organizationId: timeEntry.organizationId,
+						employeeId: timeEntry.employeeId,
+						type: timeEntry.type,
+						timestamp: timeEntry.timestamp,
+						hash: timeEntry.hash,
+						previousHash: timeEntry.previousHash,
+						previousEntryId: timeEntry.previousEntryId,
+						replacesEntryId: timeEntry.replacesEntryId,
+						supersededById: timeEntry.supersededById,
+					})
+					.from(timeEntry)
+					.where(
+						and(
+							eq(timeEntry.organizationId, organizationId),
+							inArray(timeEntry.employeeId, pending),
+						),
+					);
+				for (const row of rows) rowsById.set(row.id, row);
+			};
 
-			for (const entry of seedEntries) {
-				entriesById.set(entry.id, {
-					id: entry.id,
-					organizationId: entry.organizationId,
-					timestamp: entry.timestamp,
-					previousEntryId: entry.previousEntryId,
-					replacesEntryId: entry.replacesEntryId,
-					supersededById: entry.supersededById,
-				});
-			}
-
-			const missingSeedIds = [...seedIds].filter((id) => !entriesById.has(id));
+			await loadEmployees(baseEntries.map((entry) => entry.employeeId));
+			const missingSeedIds = baseEntries
+				.filter((entry) => !rowsById.has(entry.id))
+				.map((entry) => entry.id);
 			if (missingSeedIds.length > 0) {
 				throw new AuditPackGenerationError(
 					`Seed entries missing in organization scope: ${missingSeedIds.join(", ")}`,
 					"lineage_broken",
 				);
 			}
-		}
 
-		const pendingLookupIds = new Set<string>();
-		for (const entry of entriesById.values()) {
-			for (const linkedId of getLinkedIds(entry)) {
-				if (!entriesById.has(linkedId)) {
-					pendingLookupIds.add(linkedId);
-				}
-			}
-		}
-
-		while (pendingLookupIds.size > 0) {
-			const batchIds = [...pendingLookupIds];
-			pendingLookupIds.clear();
-
-			const linkedEntries = await db.query.timeEntry.findMany({
-				where: and(
-					eq(timeEntry.organizationId, typedCollected.request.organizationId),
-					inArray(timeEntry.id, batchIds),
-				),
-				columns: {
-					id: true,
-					organizationId: true,
-					timestamp: true,
-					previousEntryId: true,
-					replacesEntryId: true,
-					supersededById: true,
-				},
-			});
-
-			for (const entry of linkedEntries) {
-				entriesById.set(entry.id, {
-					id: entry.id,
-					organizationId: entry.organizationId,
-					timestamp: entry.timestamp,
-					previousEntryId: entry.previousEntryId,
-					replacesEntryId: entry.replacesEntryId,
-					supersededById: entry.supersededById,
-				});
-			}
-
-			const missingLinkedIds = batchIds.filter((id) => !entriesById.has(id));
-			if (missingLinkedIds.length > 0) {
-				throw new AuditPackGenerationError(
-					`Linked entries missing in organization scope: ${missingLinkedIds.join(", ")}`,
-					"lineage_broken",
+			for (;;) {
+				const lookupById: Record<string, LineageLinkNode> = {};
+				for (const row of rowsById.values()) lookupById[row.id] = toLineageNode(row, reports);
+				const closure = buildCorrectionClosure(
+					baseEntries.map((entry) => lookupById[entry.id]),
+					lookupById,
 				);
-			}
-
-			for (const entry of linkedEntries) {
-				for (const linkedId of getLinkedIds(entry)) {
-					if (!entriesById.has(linkedId)) {
-						pendingLookupIds.add(linkedId);
-					}
+				const missingIds = closure.nodeIds.filter((id) => !rowsById.has(id));
+				if (missingIds.length === 0) {
+					return {
+						request,
+						baseEntries,
+						closure,
+						lineageEntries: closure.nodeIds.flatMap((id) => {
+							const row = rowsById.get(id);
+							return row ? [row] : [];
+						}),
+						assuranceReports: [...reports.values()],
+					} satisfies AuditPackExpandedResult;
 				}
+
+				// Resolved append links stay within loaded employees, so only correction
+				// links can be missing. Required correction evidence is never silently dropped.
+				const linkedRows = await reader
+					.select({ id: timeEntry.id, employeeId: timeEntry.employeeId })
+					.from(timeEntry)
+					.where(
+						and(eq(timeEntry.organizationId, organizationId), inArray(timeEntry.id, missingIds)),
+					);
+				const foundIds = new Set(linkedRows.map((row) => row.id));
+				const unavailableIds = missingIds.filter((id) => !foundIds.has(id));
+				if (unavailableIds.length > 0) {
+					throw new AuditPackGenerationError(
+						`Linked entries missing in organization scope: ${unavailableIds.join(", ")}`,
+						"lineage_broken",
+					);
+				}
+				await loadEmployees(linkedRows.map((row) => row.employeeId));
 			}
-		}
-
-		const correctionLookupById: Record<string, CorrectionLinkNode> = {};
-		for (const entry of entriesById.values()) {
-			correctionLookupById[entry.id] = toLinkNode(entry);
-		}
-
-		const closure = buildCorrectionClosure(typedCollected.baseEntries, correctionLookupById);
-		const lineageEntries = closure.nodeIds
-			.map((id) => entriesById.get(id))
-			.filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
-
-		if (lineageEntries.length !== closure.nodeIds.length) {
-			const foundIds = new Set(lineageEntries.map((entry) => entry.id));
-			const missingIds = closure.nodeIds.filter((id) => !foundIds.has(id));
-			throw new AuditPackGenerationError(
-				`Closure contains missing lineage nodes: ${missingIds.join(", ")}`,
-				"lineage_broken",
-			);
-		}
-
-		return {
-			...typedCollected,
-			closure,
-			lineageEntries,
-		} satisfies AuditPackExpandedResult;
+		});
 	},
 	async assemble(expanded) {
 		const typedExpanded = expanded as AuditPackExpandedResult;
 		const organizationId = typedExpanded.request.organizationId;
 
+		const reportsByEmployee = new Map(
+			typedExpanded.assuranceReports.map((report) => [report.employeeId, report]),
+		);
 		const entryEvidence = buildEntryChainEvidence(
-			typedExpanded.lineageEntries.map((entry) => ({
-				id: entry.id,
-				organizationId: entry.organizationId,
-				occurredAt: toIso(entry.timestamp),
-				previousEntryId: entry.previousEntryId,
-				replacesEntryId: entry.replacesEntryId,
-				supersededById: entry.supersededById,
-			})),
+			typedExpanded.lineageEntries.map((entry) =>
+				toEntryChainEvidenceInput(entry, reportsByEmployee, toIso(entry.timestamp)),
+			),
 			organizationId,
 		);
+		const appendAssurance = summarizeAuditPackAssurance(typedExpanded.assuranceReports);
 
 		const correctionNodes = typedExpanded.closure.nodeIds
 			.map((id) => typedExpanded.lineageEntries.find((entry) => entry.id === id))
@@ -492,12 +458,17 @@ const defaultDependencies: AuditPackOrchestratorDependencies = {
 			corrections: correctionNodes,
 			approvals: approvalEvidence,
 			timeline: timelineEvents,
+			appendAssurance: typedExpanded.assuranceReports.map((report) =>
+				toPackAssuranceRecord(report),
+			),
 			scope: {
 				organizationId,
 				requestedStartDate: toIso(typedExpanded.request.startDate),
 				requestedEndDate: toIso(typedExpanded.request.endDate),
 				includedEntryCount: entryEvidence.length,
 				expandedOutsideRange: typedExpanded.closure.expandedOutsideRange,
+				// Exact append assurance scope; evidence/append-assurance.json has each employee's.
+				appendAssurance,
 				includedStartDate:
 					sortedLineageEntries.length > 0 ? toIso(sortedLineageEntries[0].timestamp) : null,
 				includedEndDate:
@@ -516,6 +487,7 @@ const defaultDependencies: AuditPackOrchestratorDependencies = {
 				timelineEventCount: timelineEvents.length,
 				expandedNodeCount: typedExpanded.closure.expandedOutsideRange.length,
 			},
+			appendAssurance,
 		};
 	},
 	async harden(assembled, input) {
