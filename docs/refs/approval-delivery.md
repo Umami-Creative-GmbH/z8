@@ -532,7 +532,7 @@ processEscalationReplacementDeliveries(org, limit)      escalation/replacement-d
 
 ### Ownership
 
-- `approval_delivery_work.escalation_transfer_id` (migration `0095`) links work
+- `approval_delivery_work.escalation_transfer_id` (migration `0096`) links work
   to the transfer whose delivery owns it. Escalation claims only linked work,
   and the delivery owner claims only unlinked work. Both claim under the same
   organization lock, and at most one refresh per message is in flight.
@@ -606,7 +606,7 @@ bound card.
 
 ### Activation blockers (#300, unresolved)
 
-1. Apply `0095` after `0094` (#292) through the authorized deployment. It has
+1. Apply `0096` after `0095` (#308) through the authorized deployment. It has
    run only on the disposable PostgreSQL 16 database.
 2. Everything under the #291, #294 and #292 blockers and "Teams specifics
    (#293)" above, the escalation activation blockers in `escalation-transfer.md`

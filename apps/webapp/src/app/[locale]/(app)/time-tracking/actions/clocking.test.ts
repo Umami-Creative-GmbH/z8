@@ -2441,6 +2441,8 @@ describe("clockOut", () => {
 			"employee-1",
 			"category-1",
 			"org-1",
+			expect.anything(),
+			expect.any(Date),
 		);
 		expect(mockState.clockingClockOut).not.toHaveBeenCalled();
 		expect(mockState.createCanonicalWorkRecord).not.toHaveBeenCalled();

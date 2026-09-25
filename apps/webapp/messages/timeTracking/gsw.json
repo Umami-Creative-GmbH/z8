@@ -89,11 +89,24 @@
       "dateLabel": "Datum",
       "description": "Erfass en Ziitiitrag für es vergangnigs Datum. Je nach Richtlinie vo dinere Organisation isch e Gnehmigung nötig.",
       "errors": {
+        "collision": "De Iitrag widerspricht ere früenere Übermittlig oder gänderter Arbet. Prüef dini vorhandene Iiträg.",
         "createFailed": "Ziitiitrag hät nöd chönne erstellt werde",
         "futureDate": "Iiträg für Zuekunftsdatum chönd nöd erstellt werde",
+        "futureTime": "Für zuekünftigi Ziite chönd kei Iiträg erstellt wärde",
+        "historyReview": "Dä Ziitverlauf mues prüeft wärde, bevor neui Iiträg gspeicheret wärde chönd. Mäld dich bi dinere Administration.",
         "invalidTime": "Gib e vollständigi, gültigi Uhrziit ii",
         "invalidTimeRange": "Uusstempliziit mues nach de Iistempliziit sii",
+        "nonexistentTime": "Die Uhrziit gits a dem Datum nöd, will d Uhre vorgstellt wärde.",
+        "occurrenceRequired": "Die Uhrziit chunnt a dem Datum zweimal vor. Wähl us, weli du meinsch.",
+        "overlap": "Die Ziit überschniidt sich mit erfasster Arbet. Wähl en Ziitruum ohni Überschniidig.",
+        "reconfirm": "D Ziitzone oder d Ziite händ sich gänderet. Prüef de Iitrag und schick en nomal.",
+        "refresh": "D Iistellige für manuelli Iiträg händ sich gänderet. Prüef de Iitrag und schick en nomal.",
         "tooLong": "Arbeitsziit darf nöd meh als 24 Stunde sii"
+      },
+      "occurrence": {
+        "earlier": "Erschti, {offset}",
+        "later": "Zweiti, {offset}",
+        "legend": "{time} chunnt a dem Datum zweimal vor. Weli Uhrziit meinsch du?"
       },
       "reasonLabel": "Grund",
       "reasonPlaceholder": "Beschriib, was du gmacht häsch…",

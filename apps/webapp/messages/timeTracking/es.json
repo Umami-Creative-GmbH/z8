@@ -89,11 +89,24 @@
       "dateLabel": "Fecha",
       "description": "Cree una entrada de tiempo para una fecha pasada. Puede requerir aprobación según la política de cambios de su organización.",
       "errors": {
+        "collision": "Esta entrada entra en conflicto con un envío anterior o con trabajo modificado. Revisa tus entradas.",
         "createFailed": "Error al crear la entrada de tiempo",
         "futureDate": "No se pueden crear entradas para fechas futuras",
+        "futureTime": "No se pueden crear entradas para horas futuras",
+        "historyReview": "Este historial de tiempo debe revisarse antes de guardar nuevas entradas. Contacta con tu administrador.",
         "invalidTime": "Introduce una hora completa y válida",
         "invalidTimeRange": "La hora de salida debe ser posterior a la hora de entrada",
+        "nonexistentTime": "Esta hora no existe en esta fecha porque los relojes se adelantan.",
+        "occurrenceRequired": "Esta hora se repite en esta fecha. Elige a cuál te refieres.",
+        "overlap": "Esta hora se solapa con trabajo registrado. Elige un intervalo que no se solape.",
+        "reconfirm": "La zona horaria o las horas han cambiado. Revisa la entrada y envíala de nuevo.",
+        "refresh": "La configuración de entradas manuales ha cambiado. Revisa la entrada y envíala de nuevo.",
         "tooLong": "El periodo de trabajo no puede exceder las 24 horas"
+      },
+      "occurrence": {
+        "earlier": "Primera, {offset}",
+        "later": "Segunda, {offset}",
+        "legend": "{time} se repite en esta fecha. ¿A cuál te refieres?"
       },
       "reasonLabel": "Motivo",
       "reasonPlaceholder": "Describa en qué trabajó…",

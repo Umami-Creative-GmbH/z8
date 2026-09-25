@@ -89,11 +89,24 @@
       "dateLabel": "Data",
       "description": "Utwórz wpis czasu dla daty z przeszłości. W zależności od polityki zmian w Twojej organizacji może być wymagane zatwierdzenie.",
       "errors": {
+        "collision": "Ten wpis koliduje z wcześniejszym zgłoszeniem lub zmienioną pracą. Sprawdź istniejące wpisy.",
         "createFailed": "Nie udało się utworzyć wpisu czasu",
         "futureDate": "Nie można tworzyć wpisów dla przyszłych dat",
+        "futureTime": "Nie można tworzyć wpisów dla przyszłych godzin",
+        "historyReview": "Ta historia czasu wymaga sprawdzenia, zanim będzie można zapisać nowe wpisy. Skontaktuj się z administratorem.",
         "invalidTime": "Wprowadź pełną, prawidłową godzinę",
         "invalidTimeRange": "Czas zakończenia pracy musi być późniejszy niż czas rozpoczęcia",
+        "nonexistentTime": "Ta godzina nie istnieje w tym dniu, ponieważ zegary są przestawiane do przodu.",
+        "occurrenceRequired": "Ta godzina występuje w tym dniu dwukrotnie. Wybierz, o którą chodzi.",
+        "overlap": "Ten czas nakłada się na zarejestrowaną pracę. Wybierz zakres bez nakładania się.",
+        "reconfirm": "Strefa czasowa lub godziny uległy zmianie. Sprawdź wpis i wyślij go ponownie.",
+        "refresh": "Ustawienia wpisów ręcznych uległy zmianie. Sprawdź wpis i wyślij go ponownie.",
         "tooLong": "Okres pracy nie może przekraczać 24 godzin"
+      },
+      "occurrence": {
+        "earlier": "Pierwsza, {offset}",
+        "later": "Druga, {offset}",
+        "legend": "{time} występuje w tym dniu dwukrotnie. O którą godzinę chodzi?"
       },
       "reasonLabel": "Powód",
       "reasonPlaceholder": "Opisz, nad czym pracowałeś…",
