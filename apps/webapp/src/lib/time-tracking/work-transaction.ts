@@ -9,7 +9,7 @@ import { eq, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { timeEntryAppendControl } from "@/db/schema/time-entry-append";
 
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type WorkTransactionClient = Pick<
 	Transaction,
 	"execute" | "query" | "select" | "insert" | "update" | "delete"
@@ -118,6 +118,22 @@ export async function acquireExclusiveOrganizationConfigurationGuard(
 	await transaction.execute(
 		sql`select pg_advisory_xact_lock(hashtextextended(${organizationConfigurationKey(organizationId)}, 0))`,
 	);
+}
+
+/**
+ * Runs one organization configuration mutation in its own transaction under
+ * exclusive configuration protection (#315). Validation that decides whether the
+ * write is allowed belongs inside `write`, so it serializes with preparation.
+ */
+export async function withOrganizationConfigurationMutation<T>(
+	client: Pick<typeof db, "transaction">,
+	organizationId: string,
+	write: (transaction: Transaction) => Promise<T>,
+): Promise<T> {
+	return client.transaction(async (transaction) => {
+		await acquireExclusiveOrganizationConfigurationGuard(transaction, organizationId);
+		return write(transaction);
+	});
 }
 
 export async function acquireUserConfigurationAccessGuards(

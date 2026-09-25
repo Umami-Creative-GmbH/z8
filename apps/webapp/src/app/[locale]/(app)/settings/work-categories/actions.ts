@@ -22,11 +22,16 @@ import {
 	ConflictError,
 	DatabaseError,
 	NotFoundError,
+	ValidationError,
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import {
+	type Transaction,
+	withOrganizationConfigurationMutation,
+} from "@/lib/time-tracking/work-transaction";
 import {
 	getEmployeeSettingsActorContext,
 	getManagedEmployeeIdsForSettingsActor,
@@ -271,6 +276,29 @@ function ensureScopedCategoryIds(
 				),
 			);
 		}
+	});
+}
+
+/**
+ * Category, set-content and effective-assignment writes decide which categories
+ * manual preparation accepts (#315). Each runs in one transaction under exclusive
+ * organization configuration protection; failures raised inside keep their type.
+ */
+function runWorkCategoryEligibilityMutation<T>(
+	dbService: WorkCategorySettingsActor["dbService"],
+	organizationId: string,
+	write: (tx: Transaction) => Promise<T>,
+	failure: { message: string; operation: string; table: string },
+) {
+	return Effect.tryPromise({
+		try: () => withOrganizationConfigurationMutation(dbService.db, organizationId, write),
+		catch: (error) =>
+			error instanceof NotFoundError || error instanceof ValidationError
+				? error
+				: new DatabaseError({
+						...failure,
+						cause: error instanceof Error ? error : undefined,
+					}),
 	});
 }
 
@@ -833,43 +861,36 @@ export async function deleteOrganizationCategory(
 			);
 		}
 
-		// Soft delete the category
+		// Soft delete the category and remove it from every set, together.
 		yield* _(
-			Effect.tryPromise({
-				try: async () =>
-					dbService.db
+			runWorkCategoryEligibilityMutation(
+				dbService,
+				actor.organizationId,
+				async (tx) => {
+					const deactivated = await tx
 						.update(workCategory)
 						.set({ isActive: false, updatedBy: actor.session.user.id })
 						.where(
 							and(
 								eq(workCategory.id, categoryId),
 								eq(workCategory.organizationId, actor.organizationId),
+								eq(workCategory.isActive, true),
 							),
-						),
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to delete work category",
-						operation: "update",
-						table: "work_category",
-						cause: error instanceof Error ? error : undefined,
-					}),
-			}),
-		);
-
-		// Remove from all sets (delete junction entries)
-		yield* _(
-			Effect.tryPromise({
-				try: async () =>
-					dbService.db
+						)
+						.returning({ id: workCategory.id });
+					if (deactivated.length === 0) {
+						throw new NotFoundError({
+							message: "Work category not found",
+							entityType: "work_category",
+							entityId: categoryId,
+						});
+					}
+					await tx
 						.delete(workCategorySetCategory)
-						.where(eq(workCategorySetCategory.categoryId, categoryId)),
-				catch: () =>
-					new DatabaseError({
-						message: "Failed to remove category from sets",
-						operation: "delete",
-						table: "work_category_set_category",
-					}),
-			}),
+						.where(eq(workCategorySetCategory.categoryId, categoryId));
+				},
+				{ message: "Failed to delete work category", operation: "update", table: "work_category" },
+			),
 		);
 
 		revalidatePath("/settings/work-categories");
@@ -1350,34 +1371,31 @@ export async function deleteWorkCategorySet(
 			);
 		}
 
-		// Soft delete the set
+		// Soft delete the set and its assignments, and remove its contents, together.
 		yield* _(
-			Effect.tryPromise({
-				try: async () =>
-					dbService.db
+			runWorkCategoryEligibilityMutation(
+				dbService,
+				actor.organizationId,
+				async (tx) => {
+					const deactivated = await tx
 						.update(workCategorySet)
 						.set({ isActive: false, updatedBy: actor.session.user.id })
 						.where(
 							and(
 								eq(workCategorySet.id, setId),
 								eq(workCategorySet.organizationId, actor.organizationId),
+								eq(workCategorySet.isActive, true),
 							),
-						),
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to delete work category set",
-						operation: "update",
-						table: "work_category_set",
-						cause: error instanceof Error ? error : undefined,
-					}),
-			}),
-		);
-
-		// Also soft delete all assignments for this set
-		yield* _(
-			Effect.tryPromise({
-				try: async () =>
-					dbService.db
+						)
+						.returning({ id: workCategorySet.id });
+					if (deactivated.length === 0) {
+						throw new NotFoundError({
+							message: "Work category set not found",
+							entityType: "work_category_set",
+							entityId: setId,
+						});
+					}
+					await tx
 						.update(workCategorySetAssignment)
 						.set({ isActive: false })
 						.where(
@@ -1385,30 +1403,15 @@ export async function deleteWorkCategorySet(
 								eq(workCategorySetAssignment.setId, setId),
 								eq(workCategorySetAssignment.organizationId, actor.organizationId),
 							),
-						),
-				catch: () =>
-					new DatabaseError({
-						message: "Failed to delete set assignments",
-						operation: "update",
-						table: "work_category_set_assignment",
-					}),
-			}),
-		);
-
-		// Remove junction table entries
-		yield* _(
-			Effect.tryPromise({
-				try: async () =>
-					dbService.db
-						.delete(workCategorySetCategory)
-						.where(eq(workCategorySetCategory.setId, setId)),
-				catch: () =>
-					new DatabaseError({
-						message: "Failed to remove set categories",
-						operation: "delete",
-						table: "work_category_set_category",
-					}),
-			}),
+						);
+					await tx.delete(workCategorySetCategory).where(eq(workCategorySetCategory.setId, setId));
+				},
+				{
+					message: "Failed to delete work category set",
+					operation: "update",
+					table: "work_category_set",
+				},
+			),
 		);
 
 		revalidatePath("/settings/work-categories");
@@ -1438,74 +1441,68 @@ export async function updateSetCategories(
 			}),
 		);
 		const dbService = actor.dbService;
-		const scopedSet = yield* _(
-			getScopedOrganizationWorkCategorySet(
+
+		// Validate and replace the set's contents in one protected transaction.
+		yield* _(
+			runWorkCategoryEligibilityMutation(
 				dbService,
 				actor.organizationId,
-				setId,
-				"updateSetCategories:scopedSet",
+				async (tx) => {
+					const [activeSet] = await tx
+						.select({ id: workCategorySet.id })
+						.from(workCategorySet)
+						.where(
+							and(
+								eq(workCategorySet.id, setId),
+								eq(workCategorySet.organizationId, actor.organizationId),
+								eq(workCategorySet.isActive, true),
+							),
+						)
+						.limit(1);
+					if (!activeSet) {
+						throw new NotFoundError({
+							message: "Work category set not found",
+							entityType: "work_category_set",
+							entityId: setId,
+						});
+					}
+					const requestedIds = [...new Set(categoryIds)];
+					if (requestedIds.length > 0) {
+						const scopedCategories = await tx
+							.select({ id: workCategory.id })
+							.from(workCategory)
+							.where(
+								and(
+									eq(workCategory.organizationId, actor.organizationId),
+									inArray(workCategory.id, requestedIds),
+								),
+							);
+						if (scopedCategories.length !== requestedIds.length) {
+							throw new NotFoundError({
+								message: "One or more work categories were not found in this organization",
+								entityType: "work_category",
+								entityId: requestedIds.join(","),
+							});
+						}
+					}
+					await tx.delete(workCategorySetCategory).where(eq(workCategorySetCategory.setId, setId));
+					if (categoryIds.length > 0) {
+						await tx.insert(workCategorySetCategory).values(
+							categoryIds.map((categoryId, index) => ({
+								setId,
+								categoryId,
+								sortOrder: index,
+							})),
+						);
+					}
+				},
+				{
+					message: "Failed to update set categories",
+					operation: "update",
+					table: "work_category_set_category",
+				},
 			),
 		);
-
-		if (!scopedSet) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Work category set not found",
-						entityType: "work_category_set",
-						entityId: setId,
-					}),
-				),
-			);
-		}
-		yield* _(
-			ensureScopedCategoryIds(
-				dbService,
-				actor.organizationId,
-				categoryIds,
-				"updateSetCategories:scopedCategoryIds",
-			),
-		);
-
-		// Delete existing junction entries
-		yield* _(
-			Effect.tryPromise({
-				try: async () =>
-					dbService.db
-						.delete(workCategorySetCategory)
-						.where(eq(workCategorySetCategory.setId, setId)),
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to clear set categories",
-						operation: "delete",
-						table: "work_category_set_category",
-						cause: error instanceof Error ? error : undefined,
-					}),
-			}),
-		);
-
-		// Insert new junction entries with order
-		if (categoryIds.length > 0) {
-			yield* _(
-				Effect.tryPromise({
-					try: async () => {
-						const junctionEntries = categoryIds.map((categoryId, index) => ({
-							setId,
-							categoryId,
-							sortOrder: index,
-						}));
-						return dbService.db.insert(workCategorySetCategory).values(junctionEntries);
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: "Failed to add categories to set",
-							operation: "insert",
-							table: "work_category_set_category",
-							cause: error instanceof Error ? error : undefined,
-						}),
-				}),
-			);
-		}
 
 		revalidatePath("/settings/work-categories");
 
@@ -1745,34 +1742,107 @@ export async function createSetAssignment(
 		// Calculate priority based on assignment type
 		const priority =
 			input.assignmentType === "employee" ? 2 : input.assignmentType === "team" ? 1 : 0;
+		// An unselected target (empty or absent) names none.
+		const teamId = input.teamId || null;
+		const employeeId = input.employeeId || null;
 
-		// Create the assignment
-		const [created] = yield* _(
-			Effect.tryPromise({
-				try: async () =>
-					dbService.db
+		// A level names exactly its own target: none for the organization default.
+		const levelMatchesTarget =
+			input.assignmentType === "organization"
+				? teamId === null && employeeId === null
+				: input.assignmentType === "team"
+					? teamId !== null && employeeId === null
+					: employeeId !== null && teamId === null;
+		if (!levelMatchesTarget) {
+			return yield* _(
+				Effect.fail(
+					new ValidationError({
+						message: "The assignment target does not match its level",
+						field: input.assignmentType === "team" ? "teamId" : "employeeId",
+					}),
+				),
+			);
+		}
+
+		// Target validation and the insert serialize with manual preparation.
+		const created = yield* _(
+			runWorkCategoryEligibilityMutation(
+				dbService,
+				input.organizationId,
+				async (tx) => {
+					const [activeSet] = await tx
+						.select({ id: workCategorySet.id })
+						.from(workCategorySet)
+						.where(
+							and(
+								eq(workCategorySet.id, input.setId),
+								eq(workCategorySet.organizationId, input.organizationId),
+								eq(workCategorySet.isActive, true),
+							),
+						)
+						.limit(1);
+					if (!activeSet) {
+						throw new NotFoundError({
+							message: "Work category set not found",
+							entityType: "work_category_set",
+							entityId: input.setId,
+						});
+					}
+					if (teamId !== null) {
+						const [scopedTeam] = await tx
+							.select({ id: team.id })
+							.from(team)
+							.where(and(eq(team.id, teamId), eq(team.organizationId, input.organizationId)))
+							.limit(1);
+						if (!scopedTeam) {
+							throw new ValidationError({
+								message: "Team not found in this organization",
+								field: "teamId",
+							});
+						}
+					}
+					if (employeeId !== null) {
+						const [scopedEmployee] = await tx
+							.select({ id: employee.id })
+							.from(employee)
+							.where(
+								and(
+									eq(employee.id, employeeId),
+									eq(employee.organizationId, input.organizationId),
+								),
+							)
+							.limit(1);
+						if (!scopedEmployee) {
+							throw new ValidationError({
+								message: "Employee not found in this organization",
+								field: "employeeId",
+							});
+						}
+					}
+
+					const [inserted] = await tx
 						.insert(workCategorySetAssignment)
 						.values({
 							setId: input.setId,
 							organizationId: input.organizationId,
 							assignmentType: input.assignmentType,
-							teamId: input.teamId ?? null,
-							employeeId: input.employeeId ?? null,
+							teamId,
+							employeeId,
 							priority,
 							effectiveFrom: input.effectiveFrom ?? null,
 							effectiveUntil: input.effectiveUntil ?? null,
 							createdBy: actor.session.user.id,
 							updatedAt: new Date(),
 						})
-						.returning(),
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to create set assignment",
-						operation: "insert",
-						table: "work_category_set_assignment",
-						cause: error instanceof Error ? error : undefined,
-					}),
-			}),
+						.returning({ id: workCategorySetAssignment.id });
+					return inserted;
+				},
+				{
+					message: "Failed to create set assignment",
+					operation: "insert",
+					table: "work_category_set_assignment",
+				},
+			),
 		);
 
 		revalidatePath("/settings/work-categories");
@@ -1824,25 +1894,35 @@ export async function deleteSetAssignment(
 
 		// Soft delete the assignment
 		yield* _(
-			Effect.tryPromise({
-				try: async () =>
-					dbService.db
+			runWorkCategoryEligibilityMutation(
+				dbService,
+				actor.organizationId,
+				async (tx) => {
+					const deactivated = await tx
 						.update(workCategorySetAssignment)
 						.set({ isActive: false })
 						.where(
 							and(
 								eq(workCategorySetAssignment.id, assignmentId),
 								eq(workCategorySetAssignment.organizationId, actor.organizationId),
+								eq(workCategorySetAssignment.isActive, true),
 							),
-						),
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to delete set assignment",
-						operation: "update",
-						table: "work_category_set_assignment",
-						cause: error instanceof Error ? error : undefined,
-					}),
-			}),
+						)
+						.returning({ id: workCategorySetAssignment.id });
+					if (deactivated.length === 0) {
+						throw new NotFoundError({
+							message: "Work category set assignment not found",
+							entityType: "work_category_set_assignment",
+							entityId: assignmentId,
+						});
+					}
+				},
+				{
+					message: "Failed to delete set assignment",
+					operation: "update",
+					table: "work_category_set_assignment",
+				},
+			),
 		);
 
 		revalidatePath("/settings/work-categories");
