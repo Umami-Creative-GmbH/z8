@@ -92,8 +92,9 @@ everything under its locks. It never replays a plan it made earlier.
    work.
 5. Breaks already taken: the gaps longer than one minute between the owner's
    non-rejected completed work on the work's local start day, up to the work's end. The
-   day is taken in the clock-out's captured zone, else the owner's setting, else the
-   captured offset. The plan (`automatic-break-plan.ts`) depends only on these facts,
+   day is taken in the zone captured with the work's start, else that entry's captured
+   offset, never a current setting. The break entries are captured like the closure's
+   clock-out. The plan (`automatic-break-plan.ts`) depends only on these facts,
    never on today's date. The placement is unchanged: after the lower of the
    maximum uninterrupted time and the rule's threshold. Each segment rounds its own
    exact UTC elapsed time half up, and a positive segment may store 0 minutes (#252).
@@ -154,8 +155,114 @@ legacy admission keeps its intents until it is adopted again.
 
 ## Evidence
 
-<!-- filled from the verification runs -->
+Everything below ran locally on 2026-09-25. The PostgreSQL results come from a
+disposable PostgreSQL 16 database with the full migration chain, including the recovery
+verification.
+
+- **`clocking.automatic-break.integration.test.ts`, 25/25.** It drives the real
+  `clockIn`/`clockOut`, `requestTimeCorrection`, `requestTimeEntryDeletion`,
+  `cancelMyTimeCorrectionRequest`, the inbox approve/reject, `clearOrganizationTimeData`
+  and `runBreakEnforcementCheck`. The work is 08:00:40 to 15:00:31 UTC (420 minutes), and
+  the regulation owes 30 minutes after 6 hours.
+  - **Adopted, immediate.** The response reports the adjustment. Both representations
+    hold 08:00:40–14:00:40 (360 minutes) and 14:30:40–15:00:31 (29m51s, rounded to 30).
+    The closure receipt names the intent, and the intent is gone. The break entries chain
+    from the closure entry, and the position's last operation is
+    `automatic_break_adjustment`. The balance is dirty from 2026-07-22, the source
+    revision goes from 1 to 2, the generated period is at revision 1, and the whole
+    receipt matches exactly.
+  - **Replay.** Replaying the clock-out succeeds and a later cron run writes nothing.
+  - **Failed adjustment.** The clock-out still succeeds and the 420-minute closure stays
+    whole. The intent stays `pending` with the database message. The cron retries it
+    (attempts 2) and, once the failure is gone, adjusts.
+  - **Write failures.** A failure injected at any of nine writes leaves every row
+    unchanged except the intent's failure evidence, and the retry adjusts once. The nine
+    writes are:
+    - the entry insert;
+    - the position update;
+    - the period update and insert;
+    - the record update and insert;
+    - the work detail;
+    - the balance;
+    - the intent deletion.
+  - **Process loss.** A worker's backend is terminated while it waits for the employee.
+    It leaves nothing but its failure evidence. Two concurrent workers then adjust exactly
+    once, with one receipt and no errors.
+  - **Deferral across dates.** A pending correction defers the adjustment with no writes
+    except the intent (`pending_time_correction_approval` and the observed revision). A
+    run on another date keeps the first deferral time. After the rejection it adjusts,
+    and the receipt names the deferral.
+  - **Cancellation.** After cancelling the correction, it adjusts the original work.
+  - **Approved correction.** An approved 07:30–16:00 correction re-plans from the
+    corrected work (07:30–13:30 and 14:00–16:00, 360 and 120 minutes). The receipt
+    records the current source revision and the older observed one. An approved
+    correction to 5 hours drops the intent with no receipt and no writes.
+  - **Business deletion.** Deleting the work while deferred drops the intent.
+  - **Occupancy.** Overlapping canonical work defers the adjustment
+    (`work_occupancy_conflict`) with no writes. Once the overlap is gone, it adjusts.
+  - **Policy change.** The break rule is removed while the adjustment is deferred. When
+    the review clears, nothing is adjusted and the intent is dropped.
+  - **Cleanup.** `clearOrganizationTimeData` removes deferred intents.
+  - **Approval-routed closure.** It commits no ordinary intent.
+  - **Legacy.** The established writes (floored minutes 360/29, revision 0, chain head
+    from the latest-created entry, the human as `created_by`) happen with no intent and
+    no receipt. A write failure leaves the closure whole with no break entries: before
+    this slice, those writes were left behind. A pending correction refuses the daily
+    check without writes, and after the cancellation it adjusts.
+- **Existing suites.** The web clock-out operation, active break, direct-HTTP command
+  and on-behalf suites exercise the widened closure replay: 110/110 together with the
+  new suite.
+- **Full runner.** 73 files: 1274 passed, 6 skipped (the Chrome-only browser suite),
+  none failed.
+- **Mutation checks.** Removing the review guard from the adopted evaluation fails 7
+  tests. Committing no intent with the closure fails 20.
+- **Write-boundary scanner (Linux `node:24`).** 290/290.
+  - The adopted evaluation is a canonical owner.
+  - The legacy period writes and the shared entry helper are exceptions.
+  - The retired `break-enforcement.service.ts` writes are removed.
+  - The scanner itself infers the `policy_clock_out_terminal_break` semantic for the
+    generated canonical record inserts, as for the #304 split.
+- **Unit tests.**
+  - `automatic-break-plan.test.ts` covers the planner.
+  - `break-enforcement.service.test.ts` covers the adapter result mapping.
+  - `tsc` is clean.
+  - The full webapp suite was compared with clean `dev` test by test: 139 failures on
+    each side, the same tests, the known Windows, CRLF and date-dependent ones.
 
 ## Not verified and activation blockers
 
-<!-- filled from the verification runs -->
+These items move to #327, #329 and #331 (see
+[spec #264 close-on-implementation](https://github.com/Umami-Creative-GmbH/z8/issues/264)):
+
+- **Activation (#327).** The intent, deferral and operation stay dormant until an
+  organization's append control is `active`.
+- **Legacy organizations (#327).** They changed without a gate:
+  - coordination;
+  - the review refusal;
+  - atomic writes;
+  - the human `created_by`, which also fixes the cron's foreign-key failure.
+
+  A legacy adjustment refused by review is not durable: only the daily check of today's
+  periods retries it. After midnight it is never adjusted, where before it would have
+  split work under review. Durable recovery arrives with adoption.
+- **Old binaries (#329).** During a rollout, an instance on the previous binary closes
+  adopted work without an intent and runs the uncoordinated service writes. An old
+  binary cannot write the `0106` values. Adopted organizations are excluded from the
+  daily check, so an adopted closure written by an old binary is never adjusted. The old
+  consumers must be drained first.
+- **Stuck intents (#327).** Intents are retried on every run, up to 100 per minute, least
+  recently checked first, with no backoff. `attempts` is unbounded and nothing alerts. A
+  permanent blocker such as `completed_work_review_required` or `append_review_required`
+  stays deferred indefinitely. Operations need an alert on `attempts`, `last_error` and
+  long-deferred intents before activation.
+- **Replacement work.** An adopted correction updates its period in place, which this
+  slice covers. A writer that instead replaced the period with a new one would leave the
+  replacement without an intent.
+- **Diagnostics (#327).** As for #303 and #304, the generated period has no receipt of
+  its own. Diagnostics must read it from the adjustment receipt.
+- **Not exercised.** Departure post-processing, the bot and desktop closures, and a
+  deferral on `completed_work_review_required` or `append_review_required`. They reach
+  the same owner.
+- **Rollback (#331).** A binary without this slice ignores intents and splits with the
+  uncoordinated writes. Receipts stay readable only while the `0106` CHECK values stay.
+  Intents left behind are inert without this binary.
