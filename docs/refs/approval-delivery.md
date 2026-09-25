@@ -456,9 +456,9 @@ bound card.
    (ownership writer, drained cutover) and the pilot gates.
 3. **Legacy-authoritative transfers** (#299) cannot be named by the shared
    delivery tables, because they have no workflow. Their events stay `pending`
-   (recoverable, never marked delivered) and raise no attention. No ticket
-   covers legacy replacement delivery yet; #384 covers legacy bound cards,
-   which it needs. The replacement finds the request in the web inbox.
+   (recoverable, never marked delivered) and raise no attention. Legacy
+   replacement delivery is #408; its actionable cards need #384's legacy bound
+   cards. The replacement finds the request in the web inbox.
 4. **Telegram, Slack and Teams only.** Slack replacement cards are
    review-only, like every Slack card (#294). The PostgreSQL suite covers
    Telegram; the Slack and Teams adapters' escalation-delivery checks are
