@@ -127,6 +127,10 @@ authorization, deployment coverage, or power-loss/fsync guarantees.
    retention does not cover a process loss before the recovery INSERT, including
    loss after remote commitment or after receipt arrival. A local storage failure
    cannot create durable evidence of itself.
+   *Update:* #280 adds pre-send capture, lookup and receipt-before-ack for
+   clock-in/out wherever the server accepts version 2 commands; see
+   [desktop-clock-commands-280.md](desktop-clock-commands-280.md). Legacy rows
+   and breaks are unchanged.
 4. **Atomic break (#281):** close/resume still uses the existing two-request
    transport. It is not a transaction or a durable per-substep checkpoint.
    Crash-between-substeps, exact detected-return capture, intended-period checks

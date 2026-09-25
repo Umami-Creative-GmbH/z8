@@ -145,6 +145,18 @@ body {
   cursor: pointer;
 }
 
+.clock-recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-block: 6px 10px;
+}
+
+.clock-recovery-refresh:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .clock-recovery-refresh:hover {
   border-color: var(--color-primary);
 }

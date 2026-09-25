@@ -316,6 +316,12 @@ pub fn logout(app_handle: &AppHandle) -> Result<()> {
     let state = app_handle.state::<Arc<AppState>>();
     state.set_session_token(None);
     state.set_clocked_in(false);
+    // Forget the negotiated context; saved commands stay for their own context.
+    if let Ok(store) = &state.command_store {
+        if let Err(error) = store.lock().forget_contexts() {
+            log::warn!("Clock context cache not cleared: {error}");
+        }
+    }
 
     // Update tray icon to gray
     tray::update_tray_icon(app_handle, false)?;
