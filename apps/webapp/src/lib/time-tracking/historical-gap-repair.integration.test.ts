@@ -295,6 +295,7 @@ describeIntegration("historical gap repair on PostgreSQL", () => {
 	}
 
 	async function cleanup() {
+		await admin.query("drop function if exists t327_park() cascade");
 		await admin.query("delete from organization where id in ($1, $2)", [
 			ids.organization,
 			ids.otherOrganization,
@@ -761,6 +762,88 @@ describeIntegration("historical gap repair on PostgreSQL", () => {
 		expect(outcome.body.outcomes).toEqual([{ employeeId: ids.worker, status: "stale" }]);
 		expect((await snapshot()).receipts).toEqual(before.receipts);
 		expect(await snapshot()).toEqual(afterSplit);
+	});
+
+	/**
+	 * Parks the first insert into `table` on a lock the returned holder owns (#327), so
+	 * that writer keeps the employee key while a competing real writer arrives.
+	 */
+	async function parkNextInsert(table: "time_entry" | "completed_work_operation") {
+		await admin.query(`create function t327_park() returns trigger language plpgsql as $$
+			begin perform pg_advisory_xact_lock(hashtextextended('t327-park', 0)); return new; end $$`);
+		await admin.query(
+			`create trigger t327_park before insert on ${table} for each row execute function t327_park()`,
+		);
+		const client = await admin.connect();
+		await client.query("begin");
+		await client.query("select pg_advisory_xact_lock(hashtextextended('t327-park', 0))");
+		return {
+			async release() {
+				await client.query("commit");
+				client.release();
+				await admin.query("drop function if exists t327_park() cascade");
+			},
+		};
+	}
+
+	async function waitForLockWaiters(count: number) {
+		for (let attempt = 0; attempt < 200; attempt += 1) {
+			const { rows } = await admin.query(
+				"select count(*)::int as waiting from pg_locks where locktype = 'advisory' and not granted",
+			);
+			if (rows[0].waiting >= count) return;
+			await new Promise((resolve) => setTimeout(resolve, 50));
+		}
+		throw new Error(`Fewer than ${count} transactions waited on advisory locks`);
+	}
+
+	// #327: the real split writer races the repair in both arrival orders, instead of
+	// an SQL write holding the shared key.
+	it("stops a stale plan when a real split commits first while the repair waits", async () => {
+		await authorizeRepair();
+		const { periodId } = await incompleteRecord("2026-07-23");
+		const plan = await readPlan();
+		const before = await snapshot();
+
+		const park = await parkNextInsert("time_entry");
+		actAs(ids.workerUser);
+		const split = splitWorkPeriod(periodId, "2026-07-23", "09:00");
+		await waitForLockWaiters(1);
+		const repair = apply(plan);
+		await waitForLockWaiters(2);
+		await park.release();
+
+		await expect(split).resolves.toMatchObject({ success: true });
+		const outcome = await repair;
+		expect(outcome.body.outcomes).toEqual([{ employeeId: ids.worker, status: "stale" }]);
+		expect((await snapshot()).receipts).toEqual(before.receipts);
+	});
+
+	it("lets a real split proceed on the repaired graph when the repair commits first", async () => {
+		await authorizeRepair();
+		const { periodId } = await incompleteRecord("2026-07-24");
+		const plan = await readPlan();
+
+		const park = await parkNextInsert("completed_work_operation");
+		const repair = apply(plan);
+		await waitForLockWaiters(1);
+		actAs(ids.workerUser);
+		const split = splitWorkPeriod(periodId, "2026-07-24", "09:00");
+		await waitForLockWaiters(2);
+		await park.release();
+
+		const outcome = await repair;
+		expect(outcome.body.outcomes).toEqual([
+			expect.objectContaining({ employeeId: ids.worker, status: "applied" }),
+		]);
+		await expect(split).resolves.toMatchObject({ success: true });
+		const { rows } = await admin.query(
+			`select count(*)::int as periods from work_period
+			 where employee_id = $1 and deleted_at is null
+			   and start_time >= '2026-07-24T00:00:00Z' and start_time < '2026-07-25T00:00:00Z'`,
+			[ids.worker],
+		);
+		expect(rows[0].periods).toBe(2);
 	});
 
 	it("applies a plan once under concurrent repeats and rolls back entirely on a failed write", async () => {

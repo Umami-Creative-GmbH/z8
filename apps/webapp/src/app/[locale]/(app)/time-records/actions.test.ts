@@ -67,104 +67,27 @@ vi.mock("@/db", () => ({
 	},
 }));
 
-const { createTimeRecord, listTimeRecords } = await import("./actions");
+const actions = await import("./actions");
+const { listTimeRecords } = actions;
 
 describe("time-record canonical actions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
+	// #327 (W18): the generic canonical creation candidate had no production
+	// caller and bypassed the completed-work operation, so it was retired.
+	it("exposes no generic canonical time record creation", () => {
+		expect(actions).not.toHaveProperty("createTimeRecord");
+	});
+
 	it("returns unauthorized when no employee context exists", async () => {
 		mockState.getAuthContext.mockResolvedValue(null);
 
-		const createResult = await createTimeRecord({
-			employeeId: "emp-1",
-			recordKind: "work",
-			startAt: "2026-01-01T08:00:00.000Z",
-		});
-
 		const listResult = await listTimeRecords({});
 
-		expect(createResult).toEqual({ success: false, error: "Unauthorized" });
 		expect(listResult).toEqual({ success: false, error: "Unauthorized" });
-		expect(mockState.dbInsert).not.toHaveBeenCalled();
 		expect(mockState.dbSelect).not.toHaveBeenCalled();
-	});
-
-	it("creates a time record scoped to active organization", async () => {
-		const insertedRecord = {
-			id: "rec-1",
-			organizationId: "org-1",
-			employeeId: "emp-1",
-			recordKind: "work",
-			startAt: new Date("2026-01-01T08:00:00.000Z"),
-		};
-
-		mockState.getAuthContext.mockResolvedValue({
-			user: { id: "user-1" },
-			employee: { id: "emp-1", organizationId: "org-1", role: "employee", teamId: null },
-		});
-		mockState.employeeFindFirst.mockResolvedValue({ id: "emp-1" });
-		mockState.insertReturning.mockResolvedValue([insertedRecord]);
-
-		const result = await createTimeRecord({
-			employeeId: "emp-1",
-			recordKind: "work",
-			startAt: "2026-01-01T08:00:00.000Z",
-		});
-
-		expect(result).toEqual({ success: true, data: insertedRecord });
-		expect(mockState.employeeFindFirst).toHaveBeenCalledTimes(1);
-		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({
-				organizationId: "org-1",
-				employeeId: "emp-1",
-				createdBy: "user-1",
-				updatedBy: "user-1",
-			}),
-		);
-	});
-
-	it("denies create for another employee when actor is a regular employee", async () => {
-		mockState.getAuthContext.mockResolvedValue({
-			user: { id: "user-1" },
-			employee: { id: "emp-1", organizationId: "org-1", role: "employee", teamId: null },
-		});
-
-		const result = await createTimeRecord({
-			employeeId: "emp-2",
-			recordKind: "work",
-			startAt: "2026-01-01T08:00:00.000Z",
-		});
-
-		expect(result).toEqual({ success: false, error: "Forbidden" });
-		expect(mockState.employeeFindFirst).not.toHaveBeenCalled();
-		expect(mockState.dbInsert).not.toHaveBeenCalled();
-	});
-
-	it("allows create for another employee when actor is manager", async () => {
-		const insertedRecord = {
-			id: "rec-2",
-			organizationId: "org-1",
-			employeeId: "emp-2",
-			recordKind: "work",
-			startAt: new Date("2026-01-01T08:00:00.000Z"),
-		};
-
-		mockState.getAuthContext.mockResolvedValue({
-			user: { id: "user-1" },
-			employee: { id: "mgr-1", organizationId: "org-1", role: "manager", teamId: null },
-		});
-		mockState.employeeFindFirst.mockResolvedValue({ id: "emp-2" });
-		mockState.insertReturning.mockResolvedValue([insertedRecord]);
-
-		const result = await createTimeRecord({
-			employeeId: "emp-2",
-			recordKind: "work",
-			startAt: "2026-01-01T08:00:00.000Z",
-		});
-
-		expect(result).toEqual({ success: true, data: insertedRecord });
 	});
 
 	it("lists records with organization predicate and limit", async () => {

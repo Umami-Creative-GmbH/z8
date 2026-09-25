@@ -104,7 +104,9 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/approvals", async (importOri
 
 const { POST: proposalsRoute } = await import("@/app/api/time-entries/diagnostics/proposals/route");
 const { POST: diagnosticsRoute } = await import("@/app/api/time-entries/diagnostics/route");
-const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracking/actions");
+const { createManualTimeEntry, splitWorkPeriod } = await import(
+	"@/app/[locale]/(app)/time-tracking/actions"
+);
 const { withCompletedWorkTransaction } = await import(
 	"@/lib/time-tracking/completed-work-transaction"
 );
@@ -374,6 +376,7 @@ describeIntegration("authorized repair and continuation proposals on PostgreSQL"
 	}
 
 	async function cleanup() {
+		await admin.query("drop function if exists t327_park() cascade");
 		await admin.query("delete from organization where id in ($1, $2)", [
 			ids.organization,
 			ids.otherOrganization,
@@ -711,6 +714,90 @@ describeIntegration("authorized repair and continuation proposals on PostgreSQL"
 			proposal.id,
 		]);
 		expect(rows).toEqual([]);
+	});
+
+	/** Parks the first insert into `table` while that writer holds the employee key (#327). */
+	async function parkNextInsert(table: "time_entry" | "completed_work_operation") {
+		await admin.query(`create function t327_park() returns trigger language plpgsql as $$
+			begin perform pg_advisory_xact_lock(hashtextextended('t327-park', 0)); return new; end $$`);
+		await admin.query(
+			`create trigger t327_park before insert on ${table} for each row execute function t327_park()`,
+		);
+		const client = await admin.connect();
+		await client.query("begin");
+		await client.query("select pg_advisory_xact_lock(hashtextextended('t327-park', 0))");
+		return {
+			async release() {
+				await client.query("commit");
+				client.release();
+				await admin.query("drop function if exists t327_park() cascade");
+			},
+		};
+	}
+
+	async function waitForLockWaiters(count: number) {
+		for (let attempt = 0; attempt < 200; attempt += 1) {
+			const { rows } = await admin.query(
+				"select count(*)::int as waiting from pg_locks where locktype = 'advisory' and not granted",
+			);
+			if (rows[0].waiting >= count) return;
+			await new Promise((resolve) => setTimeout(resolve, 50));
+		}
+		throw new Error(`Fewer than ${count} transactions waited on advisory locks`);
+	}
+
+	// #327: the real split writer races an approved field repair in both arrival orders.
+	it("goes stale when a real split commits first while the application waits", async () => {
+		await authorizeRepair();
+		const { periodId, recordId } = await conflictingWork("2026-07-10", 200);
+		const proposal = (
+			await proposeRepair(periodId, [
+				{ target: "time_record", field: "duration_minutes", after: 240 },
+			])
+		).body.proposal;
+		await approve(proposal);
+
+		const park = await parkNextInsert("time_entry");
+		actAs(ids.workerUser);
+		const split = splitWorkPeriod(periodId, "2026-07-10", "09:00");
+		await waitForLockWaiters(1);
+		const pending = applyProposal(proposal.id);
+		await waitForLockWaiters(2);
+		await park.release();
+
+		await expect(split).resolves.toMatchObject({ success: true });
+		expect((await pending).body).toMatchObject({ status: "stale" });
+		const { rows } = await admin.query("select id from completed_work_operation where id = $1", [
+			proposal.id,
+		]);
+		expect(rows).toEqual([]);
+		expect((await recordRow(recordId)).duration_minutes).not.toBe(240);
+	});
+
+	it("lets a real split proceed on the repaired graph when the application commits first", async () => {
+		await authorizeRepair();
+		const { periodId } = await conflictingWork("2026-07-11", 200);
+		const proposal = (
+			await proposeRepair(periodId, [
+				{ target: "time_record", field: "duration_minutes", after: 240 },
+			])
+		).body.proposal;
+		await approve(proposal);
+
+		const park = await parkNextInsert("completed_work_operation");
+		const pending = applyProposal(proposal.id);
+		await waitForLockWaiters(1);
+		actAs(ids.workerUser);
+		const split = splitWorkPeriod(periodId, "2026-07-11", "09:00");
+		await waitForLockWaiters(2);
+		await park.release();
+
+		expect((await pending).body).toMatchObject({ status: "applied" });
+		await expect(split).resolves.toMatchObject({ success: true });
+		const { rows } = await admin.query("select id from completed_work_operation where id = $1", [
+			proposal.id,
+		]);
+		expect(rows).toHaveLength(1);
 	});
 
 	it("rolls back the whole repair when its receipt fails, then serializes concurrent applications", async () => {

@@ -4633,22 +4633,6 @@ db.delete(approvalOutbox);`,
 					table: "time_record",
 				},
 			],
-			"src/lib/effect/services/time-record.service.ts": [
-				{
-					columns: [
-						"approval_state",
-						"duration_minutes",
-						"employee_id",
-						"end_at",
-						"organization_id",
-						"start_at",
-					],
-					functionName: "createTimeRecord",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record",
-				},
-			],
 			"src/lib/time-tracking/admin-work-period-time-edit.ts": [
 				{
 					columns: ["replaces_entry_id", "type"],
@@ -5602,6 +5586,11 @@ export function renamedCreateTimeRecord() {
 						path: correctionPath,
 						uncertainty: "dynamic_payload",
 					}),
+					// The generic canonical creation owner was retired (#327, W18).
+					expect.objectContaining({
+						functionName: "createTimeRecord",
+						path: recordPath,
+					}),
 					expect.objectContaining({
 						functionName: "renamedCreateTimeRecord",
 						path: recordPath,
@@ -5837,12 +5826,6 @@ export async function hiddenImport(values: object) {
 				functionName: "applyCorrectionWritesInTransaction",
 				table: "time_record",
 				operation: "update",
-			},
-			{
-				path: "src/lib/effect/services/time-record.service.ts",
-				functionName: "createTimeRecord",
-				table: "time_record",
-				operation: "insert",
 			},
 		] as const;
 		const byPath = new Map<

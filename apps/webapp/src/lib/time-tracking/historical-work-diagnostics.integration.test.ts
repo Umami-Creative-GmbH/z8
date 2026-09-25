@@ -22,6 +22,7 @@ import {
 	resolveApprovalWorkflowRepositoryTestConfiguration,
 	verifyApprovalWorkflowRepositoryTestDatabase,
 } from "@/lib/approvals/workflow/repository-integration-harness";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 
 const harness = vi.hoisted(() => ({
@@ -104,6 +105,7 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/approvals", async (importOri
 
 const { POST } = await import("@/app/api/time-entries/diagnostics/route");
 const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracking/actions");
+const { clockIn, clockOut } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
@@ -506,6 +508,50 @@ describeIntegration("historical work diagnostics on PostgreSQL", () => {
 		});
 		expect(conflicts.find((finding) => finding.workPeriodIds[0] === submissionId)).toMatchObject({
 			provenance: { state: "fresh_backdated", writer: "manual_entry" },
+			treatment: "integrity_incident",
+		});
+	});
+
+	// #327: work closed by the participating live writer carries its receipt, so a
+	// defect in it is an integrity incident rather than ambiguous history. Its event
+	// instants predate this run's admission, hence backdated rather than post-adoption.
+	it("classifies a defect in live work closed after adoption as a fresh incident", async () => {
+		await admin.query(
+			"insert into time_entry_append_control (organization_id, mode) values ($1, 'active')",
+			[ids.organization],
+		);
+		actAs(ids.workerUser);
+		await expect(
+			clockIn("office", {
+				instant: parseInstant("2026-07-10T06:00:00Z"),
+				browserTimezone: "Europe/Berlin",
+			}),
+		).resolves.toMatchObject({ success: true });
+		await expect(
+			clockOut(undefined, undefined, {
+				submissionId: randomUUID(),
+				instant: parseInstant("2026-07-10T10:00:00Z"),
+				browserTimezone: "Europe/Berlin",
+			}),
+		).resolves.toMatchObject({ success: true });
+		const {
+			rows: [live],
+		} = await admin.query<{ id: string }>(
+			"select id from work_period where employee_id = $1 and deleted_at is null",
+			[ids.worker],
+		);
+		await admin.query(
+			"update time_record set duration_minutes = 1 where id = (select canonical_record_id from work_period where id = $1)",
+			[live?.id],
+		);
+
+		const conflict = (await operatorFindings({ employeeId: ids.worker, ...july })).find(
+			(finding) => finding.kind === "duration_conflict",
+		);
+
+		expect(conflict).toMatchObject({
+			workPeriodIds: [live?.id],
+			provenance: { state: "fresh_backdated", writer: "web_clock_out" },
 			treatment: "integrity_incident",
 		});
 	});

@@ -33,6 +33,7 @@ import {
 	ClockingOrganizationError,
 	createDatabaseClockingStore,
 	type Entry,
+	LiveWorkOccupiedError,
 } from "./clocking-core";
 import {
 	type CloseActiveWorkWriter,
@@ -42,6 +43,8 @@ import {
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkLocationType } from "./work-location";
 import type { WorkTransactionAdmission, WorkTransactionScope } from "./work-transaction";
+
+export { LiveWorkOccupiedError } from "./clocking-core";
 
 export const START_LIVE_WORK_RESULT_VERSION = 1;
 
@@ -92,17 +95,6 @@ export type StartLiveWorkReceipt = {
 	entry: Entry;
 };
 
-/** Fresh start refused because other undeleted work occupies its interval. */
-export class LiveWorkOccupiedError extends Error {
-	constructor(readonly occupant: "active_work" | "completed_work") {
-		super(
-			occupant === "active_work"
-				? "Active work period already exists"
-				: "Work already occupies this interval",
-		);
-		this.name = "LiveWorkOccupiedError";
-	}
-}
 
 /**
  * Exact receipt replay. Returns null when no receipt exists for the identity. Any

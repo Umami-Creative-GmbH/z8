@@ -492,22 +492,6 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "time_record",
 		},
 	],
-	"src/lib/effect/services/time-record.service.ts": [
-		{
-			columns: [
-				"approval_state",
-				"duration_minutes",
-				"employee_id",
-				"end_at",
-				"organization_id",
-				"start_at",
-			],
-			functionName: "createTimeRecord",
-			operation: "insert",
-			semantic: "policy_clock_out_terminal_break",
-			table: "time_record",
-		},
-	],
 	// Owner/admin direct edits in legacy organizations (append ones amend below).
 	"src/lib/time-tracking/admin-work-period-time-edit.ts": [
 		{

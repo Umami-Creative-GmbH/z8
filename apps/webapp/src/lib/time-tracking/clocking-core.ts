@@ -5,7 +5,7 @@
  * can use it directly. Request paths use the access-coordinated
  * `clockingService` from `./clocking-service`.
  */
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
@@ -21,7 +21,12 @@ import {
 } from "./time-entry-append";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import { deriveWorkDurationMinutes } from "./work-duration";
-import type { WorkTransactionAdmission, WorkTransactionScope } from "./work-transaction";
+import {
+	acquireAdoptionGate,
+	readAppendAdmission,
+	type WorkTransactionAdmission,
+	type WorkTransactionScope,
+} from "./work-transaction";
 
 export { TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 
@@ -36,6 +41,32 @@ export class ClockingOrganizationError extends Error {
 	constructor() {
 		super("Employee does not belong to organization");
 		this.name = "ClockingOrganizationError";
+	}
+}
+
+/**
+ * A writer outside a work-transaction coordinator tried to write fresh entries
+ * into an organization that has adopted appends (#327). Its legacy head
+ * selection would interrupt the employee's append continuity, so it is refused
+ * before any write; an already-committed action still replays.
+ */
+export class ClockingAppendAdoptedError extends Error {
+	readonly code = "append_adopted";
+	constructor() {
+		super("This organization only accepts coordinated clock commands");
+		this.name = "ClockingAppendAdoptedError";
+	}
+}
+
+/** Fresh start refused because other undeleted work occupies its interval. */
+export class LiveWorkOccupiedError extends Error {
+	constructor(readonly occupant: "active_work" | "completed_work") {
+		super(
+			occupant === "active_work"
+				? "Active work period already exists"
+				: "Work already occupies this interval",
+		);
+		this.name = "LiveWorkOccupiedError";
 	}
 }
 
@@ -108,6 +139,10 @@ type CompletedPeriod = {
 
 export type ClockingStore = {
 	transaction?: unknown;
+	/** The shared organization adoption gate (#264 step 1); uncoordinated writers only. */
+	acquireAdoptionGate(organizationId: string): Promise<void>;
+	/** The organization's append admission, read under the adoption gate. */
+	readAppendAdmission(organizationId: string): Promise<WorkTransactionAdmission>;
 	lockEmployee(employeeId: string): Promise<void>;
 	isOrganizationMember(
 		employeeId: string,
@@ -129,6 +164,15 @@ export type ClockingStore = {
 		actionId: string,
 		workPeriodId?: string,
 	): Promise<CompletedPeriod | null>;
+	/**
+	 * Whether undeleted completed work of the employee ends after the instant. An
+	 * adopted live start is refused over it: active work occupies its start onward.
+	 */
+	hasCompletedWorkEndingAfter(
+		employeeId: string,
+		organizationId: string,
+		instant: Date,
+	): Promise<boolean>;
 	getLatestHash(
 		employeeId: string,
 		organizationId: string,
@@ -340,6 +384,11 @@ export function createClockingService(deps: ClockingDependencies) {
 					throw new Error("Clocking transaction context changed");
 				}
 			} else {
+				// Uncoordinated writers (the legacy direct route, the departure
+				// clock-out) hold the shared adoption gate, so an exclusive adoption
+				// holder drains them before a mode change becomes visible (#327).
+				// A caller-owned transaction may already hold its own locks.
+				await store.acquireAdoptionGate(input.organizationId);
 				await store.lockEmployee(input.employeeId);
 			}
 			if (
@@ -350,14 +399,22 @@ export function createClockingService(deps: ClockingDependencies) {
 			) {
 				throw new ClockingOrganizationError();
 			}
-			if (deps.assertEmployeeMayClock) {
-				// An already-recorded action replays idempotently; only new writes need access.
-				const replayed = await store.getEntryByActionId(
-					input.employeeId,
-					input.organizationId,
-					input.actionId,
-				);
-				if (!replayed) await deps.assertEmployeeMayClock(store, input);
+			// An already-recorded action replays idempotently; only new writes are
+			// admitted or need access.
+			const replayed = await store.getEntryByActionId(
+				input.employeeId,
+				input.organizationId,
+				input.actionId,
+			);
+			if (
+				!replayed &&
+				!input.coordination &&
+				(await store.readAppendAdmission(input.organizationId)) === "append"
+			) {
+				throw new ClockingAppendAdoptedError();
+			}
+			if (deps.assertEmployeeMayClock && !replayed) {
+				await deps.assertEmployeeMayClock(store, input);
 			}
 			return callback(store);
 		};
@@ -417,6 +474,18 @@ export function createClockingService(deps: ClockingDependencies) {
 					await store.getActivePeriod(input.employeeId, input.organizationId)
 				) {
 					throw new ClockingConflictError("Active work period already exists");
+				}
+				// Adopted starts share the completed-work operations' symmetric
+				// half-open occupancy (#327, W01); legacy starts keep their rule.
+				if (
+					input.coordination?.admission === "append" &&
+					(await store.hasCompletedWorkEndingAfter(
+						input.employeeId,
+						input.organizationId,
+						dateFromInstant(input.action.instant),
+					))
+				) {
+					throw new LiveWorkOccupiedError("completed_work");
 				}
 				const { entry } = await appendClockEntry(
 					store,
@@ -567,6 +636,8 @@ type ClockingStoreClient = Pick<
 export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingStore {
 	return {
 		transaction: tx,
+		acquireAdoptionGate: (organizationId) => acquireAdoptionGate(tx, organizationId),
+		readAppendAdmission: (organizationId) => readAppendAdmission(tx, organizationId),
 		lockEmployee: async (employeeId) => {
 			await tx.execute(
 				sql`select pg_advisory_xact_lock(hashtextextended(${employeeId}, 0))`,
@@ -654,6 +725,21 @@ export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingSt
 				endTime: period.endTime,
 				durationMinutes: period.durationMinutes,
 			};
+		},
+		hasCompletedWorkEndingAfter: async (employeeId, organizationId, instant) => {
+			const [occupant] = await tx
+				.select({ id: workPeriod.id })
+				.from(workPeriod)
+				.where(
+					and(
+						eq(workPeriod.employeeId, employeeId),
+						eq(workPeriod.organizationId, organizationId),
+						isNull(workPeriod.deletedAt),
+						gt(workPeriod.endTime, instant),
+					),
+				)
+				.limit(1);
+			return Boolean(occupant);
 		},
 		getLatestHash: async (employeeId, organizationId) => {
 			const [latest] = await tx

@@ -927,8 +927,12 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 				);
 				return { status: response.status, body: await response.json() };
 			};
+			// Committed before adoption: adopted organizations refuse fresh legacy
+			// writes (#327) but still answer committed ones.
+			await setAdmission("inactive");
 			const committed = await post();
 			expect(committed.status).toBe(201);
+			await setAdmission("active");
 			const before = await snapshot();
 
 			vi.setSystemTime(new Date("2026-09-28T10:00:00Z"));
