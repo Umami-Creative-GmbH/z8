@@ -134,7 +134,7 @@ vi.mock("./shared", async (importOriginal) => {
 });
 
 const { createManualTimeEntry, lookupManualTimeEntry } = await import("../actions");
-const { clockIn } = await import("./clocking");
+const { clockIn, clockOut } = await import("./clocking");
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
@@ -260,7 +260,8 @@ describeIntegration("strict versioned manual commands on PostgreSQL", () => {
 			   (select json_agg(row_to_json(t) order by t.id) from completed_work_operation t where organization_id = $1) as receipts,
 			   (select json_agg(row_to_json(t) order by t.employee_id) from time_entry_append_position t where organization_id = $1) as positions,
 			   (select json_agg(row_to_json(t) order by t.id) from approval_request t where organization_id = $1) as requests,
-			   (select json_agg(row_to_json(t) order by t.id) from employee_work_balance t where organization_id = $1) as balances`,
+			   (select json_agg(row_to_json(t) order by t.id) from employee_work_balance t where organization_id = $1) as balances,
+			   (select json_agg(row_to_json(t) order by t.id) from work_break_adjustment_intent t where organization_id = $1) as break_intents`,
 			[ids.organization],
 		);
 		return only(rows);
@@ -312,6 +313,7 @@ describeIntegration("strict versioned manual commands on PostgreSQL", () => {
 		await admin.query("drop function if exists t308_fail() cascade");
 		await admin.query("drop function if exists t310_hold() cascade");
 		await admin.query("drop function if exists t327_park() cascade");
+		await admin.query("drop function if exists t327_fail() cascade");
 		await admin.query("delete from organization where id in ($1, $2)", [
 			ids.organization,
 			ids.otherOrganization,
@@ -1141,6 +1143,125 @@ describeIntegration("strict versioned manual commands on PostgreSQL", () => {
 					browserTimezone: "Europe/Berlin",
 				}),
 			).resolves.toMatchObject({ success: true });
+		});
+	});
+
+	// #327: one failure matrix across the adopted writers of an employee graph. A
+	// failure at any protected write rolls back the whole operation (graph, canonical
+	// record, receipt, append position and committed intents), another employee keeps
+	// writing while the failure is armed, and the same command then commits.
+	describe("failure at every protected write (#327)", () => {
+		async function armFailure(table: string) {
+			await admin.query(`create function t327_fail() returns trigger language plpgsql as $$
+				declare fields jsonb := to_jsonb(new);
+				begin
+				  if coalesce(
+				       fields->>'employee_id',
+				       (select employee_id::text from time_record where id::text = fields->>'record_id')
+				     ) = '${ids.employee}' then
+				    raise exception 't327 injected failure on %', TG_TABLE_NAME;
+				  end if;
+				  return new;
+				end $$`);
+			await admin.query(
+				`create trigger t327_fail before insert or update on ${table}
+				 for each row execute function t327_fail()`,
+			);
+		}
+
+		async function disarm() {
+			await admin.query("drop function if exists t327_fail() cascade");
+		}
+
+		const liveStart = parseInstant("2026-09-01T06:00:00Z");
+		const liveEnd = parseInstant("2026-09-01T10:00:40Z");
+
+		function liveClockIn(as: string) {
+			actAs(as);
+			return clockIn("office", { instant: liveStart, browserTimezone: "Europe/Berlin" });
+		}
+
+		function liveClockOut(as: string, submissionId: string) {
+			actAs(as);
+			return clockOut(undefined, undefined, {
+				submissionId,
+				instant: liveEnd,
+				browserTimezone: "Europe/Berlin",
+			});
+		}
+
+		type Writer = {
+			/** Work that must exist before the operation under test (never failed). */
+			prepare?: (as: string) => Promise<void>;
+			run: (as: string) => Promise<{ success: boolean }>;
+		};
+
+		const writers: Record<string, () => Writer> = {
+			"live clock-in": () => ({ run: liveClockIn }),
+			"live clock-out": () => {
+				const submissions = new Map<string, string>();
+				return {
+					prepare: async (as) => {
+						await expect(liveClockIn(as)).resolves.toMatchObject({ success: true });
+					},
+					run: (as) => {
+						const submissionId = submissions.get(as) ?? randomUUID();
+						submissions.set(as, submissionId);
+						return liveClockOut(as, submissionId);
+					},
+				};
+			},
+			"manual version 2": () => {
+				const commands = new Map<string, ManualTimeEntryCommand>();
+				return {
+					run: (as) => {
+						const target = as === ids.peerUser ? ids.peer : ids.employee;
+						const command = commands.get(as) ?? manualCommand({ targetEmployeeId: target });
+						commands.set(as, command);
+						return submit(structuredClone(command), as);
+					},
+				};
+			},
+		};
+
+		const cases: [string, string][] = [
+			["live clock-in", "time_entry"],
+			["live clock-in", "work_period"],
+			["live clock-in", "time_entry_append_position"],
+			["live clock-out", "time_entry"],
+			["live clock-out", "work_period"],
+			["live clock-out", "time_record"],
+			["live clock-out", "time_record_work"],
+			["live clock-out", "completed_work_operation"],
+			["live clock-out", "time_entry_append_position"],
+			["live clock-out", "employee_work_balance"],
+			["live clock-out", "work_break_adjustment_intent"],
+			["manual version 2", "time_entry"],
+			["manual version 2", "work_period"],
+			["manual version 2", "time_record"],
+			["manual version 2", "time_record_work"],
+			["manual version 2", "completed_work_operation"],
+			["manual version 2", "time_entry_append_position"],
+			["manual version 2", "employee_work_balance"],
+		];
+
+		it.each(cases)("%s rolls back entirely when %s fails", async (name, table) => {
+			const writer = writers[name]();
+			await writer.prepare?.(ids.employeeUser);
+			await writer.prepare?.(ids.peerUser);
+			await armFailure(table);
+			try {
+				const before = await snapshot();
+				await expect(writer.run(ids.employeeUser)).resolves.toMatchObject({ success: false });
+				expect(await snapshot()).toEqual(before);
+
+				// Another employee's graph is not held by the failed operation.
+				await expect(writer.run(ids.peerUser)).resolves.toMatchObject({ success: true });
+			} finally {
+				await disarm();
+			}
+
+			await expect(writer.run(ids.employeeUser)).resolves.toMatchObject({ success: true });
 		});
 	});
 
