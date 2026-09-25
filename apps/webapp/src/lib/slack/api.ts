@@ -7,6 +7,7 @@
 import { WebClient } from "@slack/web-api";
 import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
+import { type SlackCallFailure, slackCallFailure } from "./delivery-outcome";
 
 const logger = createLogger("SlackAPI");
 
@@ -84,6 +85,90 @@ export async function openConversation(
 		logger.error({ error, slackUserId }, "Failed to open conversation");
 		return null;
 	}
+}
+
+const DELIVERY_CALL_TIMEOUT_MS = 30_000;
+
+export type SlackCallOutcome<T> = { kind: "ok"; result: T } | SlackCallFailure;
+
+/**
+ * A client for durable delivery: one attempt per call and a bounded wait.
+ * Retries belong to the delivery owner's schedule, and a rate limit is
+ * reported instead of waited out while a lease is held.
+ */
+function createDeliveryClient(botToken: string): WebClient {
+	return new WebClient(botToken, {
+		retryConfig: { retries: 0 },
+		rejectRateLimitedCalls: true,
+		timeout: DELIVERY_CALL_TIMEOUT_MS,
+	});
+}
+
+/**
+ * Call a method and report exactly what is known about the outcome, so
+ * durable delivery can classify it explicitly. A response without the
+ * identity we need is reported as `unknown`: Slack may have processed it.
+ */
+async function callWithOutcome<T>(
+	method: string,
+	call: () => Promise<T | null>,
+): Promise<SlackCallOutcome<T>> {
+	try {
+		const result = await call();
+		if (result === null) {
+			logger.warn({ method }, "Slack API response lacks the expected identity");
+			return { kind: "unknown", reason: "invalid_response" };
+		}
+		return { kind: "ok", result };
+	} catch (error) {
+		const failure = slackCallFailure(error);
+		logger.warn({ method, failure }, "Slack API delivery call failed");
+		return failure;
+	}
+}
+
+/** `chat.postMessage` with an explicit outcome for durable delivery. */
+export function postMessageWithOutcome(
+	botToken: string,
+	params: { channel: string; text: string; blocks: unknown[] },
+): Promise<SlackCallOutcome<{ channel: string; ts: string }>> {
+	return callWithOutcome("chat.postMessage", async () => {
+		const result = await createDeliveryClient(botToken).chat.postMessage({
+			channel: params.channel,
+			text: params.text,
+			blocks: params.blocks as never,
+		});
+		return result.channel && result.ts ? { channel: result.channel, ts: result.ts } : null;
+	});
+}
+
+/** `chat.update` with an explicit outcome for durable delivery. */
+export function updateMessageWithOutcome(
+	botToken: string,
+	params: { channel: string; ts: string; text: string; blocks: unknown[] },
+): Promise<SlackCallOutcome<true>> {
+	return callWithOutcome("chat.update", async () => {
+		await createDeliveryClient(botToken).chat.update({
+			channel: params.channel,
+			ts: params.ts,
+			text: params.text,
+			blocks: params.blocks as never,
+		});
+		return true as const;
+	});
+}
+
+/** `conversations.open` for a DM, with an explicit outcome. */
+export function openConversationWithOutcome(
+	botToken: string,
+	slackUserId: string,
+): Promise<SlackCallOutcome<string>> {
+	return callWithOutcome("conversations.open", async () => {
+		const result = await createDeliveryClient(botToken).conversations.open({
+			users: slackUserId,
+		});
+		return result.channel?.id ?? null;
+	});
 }
 
 /**

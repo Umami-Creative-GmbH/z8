@@ -100,7 +100,9 @@ regardless.
 
 Bot cards stay review-only (#270) unless a provider is admitted. #290 adds
 the first actionable path (Telegram, canonical absences); see "Telegram absence
-cards" below. Discord, Teams and Slack remain #292–#294.
+cards" below. Discord and Teams remain #292–#293. Slack is never admitted; its
+cards show the submitted facts without controls (#294, see
+[Approval card delivery](approval-delivery.md)).
 
 ## Cleanup participation (before any capture)
 

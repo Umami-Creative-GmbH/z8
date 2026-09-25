@@ -5,9 +5,11 @@ import {
 	type ApprovalDeliveryEffect,
 	type ApprovalDeliveryProvider,
 	type ApprovalDeliveryStatus,
+	absenceEntry,
 	approvalDeliveryControl,
 	approvalDeliveryMessage,
 	approvalDeliveryWork,
+	approvalRequest,
 	approvalStageAssignment,
 	approvalWorkflow,
 	approvalWorkflowRollout,
@@ -64,6 +66,47 @@ export async function isApprovalDeliveryOwner(input: {
 		)
 		.limit(1);
 	return row?.mode === "canonical" || row?.mode === "complete";
+}
+
+/**
+ * Whether the delivery owner sends the card an existing-path approval
+ * notification is about, so that path sends neither the card nor a plain
+ * message about the same request. The owner must be active for the provider
+ * and the absence must have a canonical workflow, whose committed intents the
+ * owner delivers; a legacy request (e.g. a policy fallback) keeps the path.
+ */
+export async function isApprovalNotificationDeliveredByOwner(input: {
+	organizationId: string;
+	provider: ApprovalDeliveryProvider;
+	entityType?: string;
+	entityId?: string;
+}): Promise<boolean> {
+	if (!input.entityId) return false;
+	let absenceId: string | null = null;
+	if (input.entityType === "absence_entry") {
+		absenceId = input.entityId;
+	} else if (input.entityType === "approval_request") {
+		const request = await db.query.approvalRequest.findFirst({
+			where: and(
+				eq(approvalRequest.id, input.entityId),
+				eq(approvalRequest.organizationId, input.organizationId),
+			),
+			columns: { entityType: true, entityId: true },
+		});
+		if (request?.entityType === "absence_entry") absenceId = request.entityId;
+	}
+	if (!absenceId) return false;
+	const owner = await isApprovalDeliveryOwner({
+		organizationId: input.organizationId,
+		workflowType: "absence",
+		provider: input.provider,
+	});
+	if (!owner) return false;
+	const absence = await db.query.absenceEntry.findFirst({
+		where: and(eq(absenceEntry.id, absenceId), eq(absenceEntry.organizationId, input.organizationId)),
+		columns: { approvalWorkflowId: true },
+	});
+	return Boolean(absence?.approvalWorkflowId);
 }
 
 /** Organizations with at least one delivery control, in stable order. */
@@ -709,6 +752,8 @@ export async function rearmApprovalDeliveryWork(input: {
 	workIds?: string[];
 	assignmentId?: string;
 	recipientEmployeeIds?: string[];
+	/** Only this provider's work (a repaired destination belongs to one provider). */
+	provider?: ApprovalDeliveryProvider;
 	/** Only work whose last outcome starts with this (e.g. `destination_invalid:`). */
 	outcomePrefix?: string;
 	now: Instant;
@@ -721,6 +766,7 @@ export async function rearmApprovalDeliveryWork(input: {
 	if (input.assignmentId) filters.push(eq(approvalDeliveryWork.assignmentId, input.assignmentId));
 	if (input.recipientEmployeeIds)
 		filters.push(inArray(approvalDeliveryWork.recipientEmployeeId, input.recipientEmployeeIds));
+	if (input.provider) filters.push(eq(approvalDeliveryWork.provider, input.provider));
 	if (input.outcomePrefix)
 		filters.push(sql`starts_with(${approvalDeliveryWork.lastOutcome}, ${input.outcomePrefix})`);
 	if (!input.workIds && !input.assignmentId && !input.recipientEmployeeIds) {
