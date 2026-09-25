@@ -213,6 +213,23 @@ export async function claimLinkCode(
 		"Slack account linked via code",
 	);
 
+	try {
+		// A linked account gives approval cards waiting for a DM a destination.
+		const { rearmApprovalDeliveryForRepairedDestination } = await import(
+			"@/lib/approvals/delivery/recovery"
+		);
+		await rearmApprovalDeliveryForRepairedDestination({
+			organizationId,
+			userId: linkCode.userId,
+			provider: "slack",
+		});
+	} catch (error) {
+		logger.warn(
+			{ error, userId: linkCode.userId, organizationId },
+			"Approval delivery re-arm after Slack linking failed; recovery stays available",
+		);
+	}
+
 	return { status: "success", userId: linkCode.userId, employeeId: emp.id };
 }
 

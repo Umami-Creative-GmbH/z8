@@ -54,7 +54,11 @@ export async function saveConversation(
 			const { rearmApprovalDeliveryForRepairedDestination } = await import(
 				"@/lib/approvals/delivery/recovery"
 			);
-			await rearmApprovalDeliveryForRepairedDestination({ organizationId, userId });
+			await rearmApprovalDeliveryForRepairedDestination({
+				organizationId,
+				userId,
+				provider: "telegram",
+			});
 		}
 	} catch (error) {
 		logger.error({ error, userId, chatId }, "Failed to save conversation");
