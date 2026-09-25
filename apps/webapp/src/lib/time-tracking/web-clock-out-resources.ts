@@ -29,7 +29,8 @@ function resourceQueries(
 	userIds = [input.userId],
 ) {
 	const org = input.organizationId;
-	const employeeScope = sql`select id from employee where organization_id = ${org} and id = ${input.employeeId}::uuid and user_id = ${input.userId} and is_active = true`;
+	const ownerUserId = input.ownerUserId ?? input.userId;
+	const employeeScope = sql`select id from employee where organization_id = ${org} and id = ${input.employeeId}::uuid and user_id = ${ownerUserId} and is_active = true`;
 	const sourceScope = sql`select id from work_period where organization_id = ${org} and employee_id = ${input.employeeId}::uuid and (clock_out_id = ${input.submissionId}::uuid or id = ${input.workPeriodId ?? null}::uuid)`;
 	const teamScope = sql`select team_id from employee where organization_id = ${org} and id in (${employeeScope})`;
 	const assignments = sql`organization_id = ${org} and is_active = true and (
@@ -68,7 +69,7 @@ function resourceQueries(
 		},
 		{
 			table: "user_settings",
-			scope: sql`user_id = ${input.userId} and exists (${employeeScope})`,
+			scope: sql`user_id = ${ownerUserId} and exists (${employeeScope})`,
 		},
 		{
 			table: "employee",
@@ -155,17 +156,18 @@ export async function routeWebClockOutResources(
 	db: WorkTransactionClient,
 	input: WebClockOutTransactionInput,
 ): Promise<readonly Resource[]> {
+	const ownerUserId = input.ownerUserId ?? input.userId;
 	const participants = input.requiresApproval
 		? await routeWorkPeriodApprovalParticipants({
 				db,
 				organizationId: input.organizationId,
 				requesterEmployeeId: input.employeeId,
 			})
-		: { employeeIds: [input.employeeId], userIds: [input.userId] };
+		: { employeeIds: [input.employeeId], userIds: [ownerUserId] };
 	const definitions = resourceQueries(
 		input,
 		participants.employeeIds,
-		[...new Set([input.userId, ...participants.userIds])].sort(),
+		[...new Set([input.userId, ownerUserId, ...participants.userIds])].sort(),
 	);
 	const result = await db.execute(
 		sql`/* web-clock-out:route */ ${sql.join(
@@ -223,7 +225,8 @@ export async function routeWebClockOutResources(
 		!resources.some(
 			(row) => row.table === "employee" && row.id === input.employeeId,
 		) ||
-		!resources.some((row) => row.table === "user" && row.id === input.userId)
+		!resources.some((row) => row.table === "user" && row.id === input.userId) ||
+		!resources.some((row) => row.table === "user" && row.id === ownerUserId)
 	) {
 		throw new Error("Active organization-scoped clocking access required");
 	}
