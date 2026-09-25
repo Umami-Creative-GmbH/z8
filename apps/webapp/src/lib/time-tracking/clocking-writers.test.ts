@@ -16,8 +16,15 @@ describe("live clocking writers", () => {
 		const clockInBot = source("../teams/commands/clock-in.ts");
 		const clockOutBot = source("../teams/commands/clock-out.ts");
 
-		for (const writer of [api, web, onBehalf, clockInBot, clockOutBot]) {
+		for (const writer of [api, web, onBehalf]) {
 			expect(writer).toContain("clockingService");
+		}
+		// Bots reach the web's shared live clock core (#277), never the raw service.
+		expect(clockInBot).toContain("clockInAs(");
+		expect(clockOutBot).toContain("clockOutAs(");
+		for (const bot of [clockInBot, clockOutBot]) {
+			expect(bot).toContain('time-tracking/actions/clocking"');
+			expect(bot).not.toContain("clockingService");
 		}
 		expect(api).not.toContain(".insert(timeEntry)");
 		expect(clockInBot).not.toContain(".insert(timeEntry)");

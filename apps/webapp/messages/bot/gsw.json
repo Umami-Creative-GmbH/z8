@@ -64,16 +64,26 @@
       },
       "clockin": {
         "alreadyIn": "Du bisch sit {time} am Schaffe ({hours}h {minutes}m).",
+        "alreadyInNow": "Sie sind scho igstämplet.",
+        "appendReview": "Ihre Ziitverlauf muess prüeft wärde, bevor Sie chönd istämple. Bitte wändet Sie sich a Ihre Administrator.",
         "cannotNow": "Cha momentan nöd iistemple.",
+        "committed": "Igstämplet.",
+        "failed": "Istämple het nöd klappt. Bitte versueched Sie's nomal.",
         "noProfile": "Mitarbeiterprofil nöd gfunde.",
-        "success": "Iigestemplet am {time}."
+        "success": "Iigestemplet am {time}.",
+        "unconfirmed": "Ihres Istämple het nöd chönne bestätigt wärde. Prüefed Sie Ihre Status, bevor Sie's nomal versueched."
       },
       "clockout": {
+        "appendReview": "Ihre Ziitverlauf muess prüeft wärde, bevor Sie chönd usstämple. Bitte wändet Sie sich a Ihre Administrator.",
         "cannotNow": "Cha momentan nöd uusstemple.",
+        "committed": "Usgstämplet.",
+        "failed": "Usstämple het nöd klappt. Bitte versueched Sie's nomal.",
         "noProfile": "Mitarbeiterprofil nöd gfunde.",
         "notClockedIn": "Du bisch aktuell nöd iigestemplet.",
         "policyCheckFailed": "Zeitfreigaberichtlinie konnte nicht überprüft werden. Bitte versuche es erneut.",
         "success": "Uusgestemplet am {time}. Duur: {hours}h {minutes}m.",
+        "successAt": "Usgstämplet um {time}.",
+        "unconfirmed": "Ihres Usstämple het nöd chönne bestätigt wärde. Prüefed Sie Ihre Status, bevor Sie's nomal versueched.",
         "unsupportedApproval": "Zeitänderungen, die eine Genehmigung erfordern, werden für diese Aktion noch nicht unterstützt"
       },
       "compliance": {
@@ -140,7 +150,8 @@
       "typeHelp": "Gib /help ii, zum d'Befehl z'gseh.",
       "unconfigured": "D'Z8-Integration vo dinere Organisation wird grad iigrichtet. Bitte wart, bis din Admin d'Konfiguration abschliesst.",
       "welcome": "Willkomme bi Z8! Zum dis Konto z'verbinde, gang in dim Z8-Dashboard uf Iistellige > Integratione > Telegram und generier en Link-Code. Schick dänn: /link DEIN_CODE",
-      "welcomeTeams": "Willkomme bi Z8! Gib \"help\" ii, zum d'Befehl z'gseh."
+      "welcomeTeams": "Willkomme bi Z8! Gib \"help\" ii, zum d'Befehl z'gseh.",
+      "replyUndelivered": "Ihre Befehl isch verarbeitet worde, aber d'Antwort het nöd chönne azeigt wärde. Prüefed Sie Ihre Status, bevor Sie ihn wiederholed."
     }
   }
 }

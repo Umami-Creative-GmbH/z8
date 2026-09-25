@@ -1,7 +1,9 @@
 import "server-only";
 
 /**
- * Completed-work operation for closing live work (#274 / T10, design #256).
+ * Completed-work operation for closing live work (#274 / T10, design #256). The
+ * web, mobile and all four bot adapters reach it through the shared live
+ * clock-out (#277).
  *
  * One call inside the web clock-out outer transaction establishes the whole
  * completed graph: the clock-out entry through the append collaborator, the
@@ -27,6 +29,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
+import type { BotPlatform } from "@/lib/bot-platform/types";
 import {
 	executeOrdinaryWorkPeriodSubmissionInTransaction,
 	type WorkPeriodPostCommitDescriptor,
@@ -61,6 +64,19 @@ import type { WorkTransactionAdmission, WorkTransactionScope } from "./work-tran
 export const CLOSE_ACTIVE_WORK_COMMAND_VERSION = 1;
 export const CLOSE_ACTIVE_WORK_RESULT_VERSION = 1;
 export const WEB_CLOCK_OUT_WRITER_VERSION = 1;
+export const BOT_CLOCK_OUT_WRITER_VERSION = 1;
+
+/** The adapter a live clock command arrived through; stored as device evidence. */
+export type ClockChannel = "web" | "mobile" | `${BotPlatform}-bot`;
+
+/** Entry source evidence. Bots keep their established `ip_address = "bot"`. */
+export function clockSource(channel: ClockChannel) {
+	return {
+		ipAddress: channel.endsWith("-bot") ? "bot" : null,
+		deviceInfo: channel,
+	};
+}
+
 
 /** Omission preserves the period's attribution; clearing and replacement are explicit. */
 export type AttributionIntent =
@@ -91,7 +107,16 @@ export type CloseActiveWorkWriter = {
 	writerVersion: number;
 	/** Stored on the clock-out entry as its source device. */
 	deviceInfo: string;
+	/** Stored on the clock-out entry as its source address; bots record `"bot"`. */
+	ipAddress?: string | null;
 };
+
+/** The receipt writer of a live clock channel: bots share one, the platform stays in the command. */
+export function liveClockOutWriter(channel: ClockChannel): CloseActiveWorkWriter {
+	return channel.endsWith("-bot")
+		? { writer: "bot_clock_out", writerVersion: BOT_CLOCK_OUT_WRITER_VERSION, ...clockSource(channel) }
+		: { writer: "web_clock_out", writerVersion: WEB_CLOCK_OUT_WRITER_VERSION, ...clockSource(channel) };
+}
 
 /** Versioned web request evidence. A retry must carry exactly the same command. */
 export type CloseActiveWorkCommand = CloseActiveWorkOperationCommand & {
@@ -99,7 +124,7 @@ export type CloseActiveWorkCommand = CloseActiveWorkOperationCommand & {
 	/** Client-captured event instant; null when the server sampled it. */
 	requestedInstant: string | null;
 	browserTimezone: string | null;
-	deviceInfo: "web" | "mobile";
+	deviceInfo: ClockChannel;
 };
 
 export type CompletedWorkFollowUp =
@@ -446,7 +471,7 @@ export async function closeActiveWork(
 			createdBy: input.actorUserId,
 			actionId: command.operationId,
 			action: { instant: input.eventInstant, ...input.capture },
-			source: { ipAddress: null, deviceInfo: input.writer.deviceInfo },
+			source: { ipAddress: input.writer.ipAddress ?? null, deviceInfo: input.writer.deviceInfo },
 		},
 		"clock_out",
 		context.admission,

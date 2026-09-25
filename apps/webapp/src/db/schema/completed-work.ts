@@ -28,6 +28,7 @@ export const COMPLETED_WORK_WRITERS = [
 	"direct_http",
 	"reviewed_import",
 	"runtime_demo",
+	"bot_clock_out",
 ] as const;
 export type CompletedWorkWriter = (typeof COMPLETED_WORK_WRITERS)[number];
 
@@ -84,7 +85,7 @@ export const completedWorkOperation = pgTable(
 		),
 		check(
 			"completed_work_operation_writer_check",
-			sql`${table.writer} IN ('web_clock_out', 'direct_http', 'reviewed_import', 'runtime_demo')`,
+			sql`${table.writer} IN ('web_clock_out', 'direct_http', 'reviewed_import', 'runtime_demo', 'bot_clock_out')`,
 		),
 		check(
 			"completed_work_operation_source_check",
