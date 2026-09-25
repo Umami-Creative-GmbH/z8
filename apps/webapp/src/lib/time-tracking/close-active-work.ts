@@ -16,6 +16,7 @@ import "server-only";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import {
+	type CompletedWorkWriter,
 	completedWorkOperation,
 	project,
 	timeEntry,
@@ -55,7 +56,7 @@ import {
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkTransactionContext } from "./web-clock-out-transaction";
 import { deriveWorkDurationMinutes } from "./work-duration";
-import type { WorkTransactionAdmission } from "./work-transaction";
+import type { WorkTransactionAdmission, WorkTransactionScope } from "./work-transaction";
 
 export const CLOSE_ACTIVE_WORK_COMMAND_VERSION = 1;
 export const CLOSE_ACTIVE_WORK_RESULT_VERSION = 1;
@@ -73,12 +74,28 @@ export function attributionIntent(value: string | null | undefined): Attribution
 	return { kind: "replace", id: value };
 }
 
-/** Versioned request evidence. A retry must carry exactly the same command. */
-export type CloseActiveWorkCommand = {
-	version: typeof CLOSE_ACTIVE_WORK_COMMAND_VERSION;
+/**
+ * What the operation reads from a writer's frozen command. The receipt stores the
+ * writer's whole command, and a retry must carry exactly the same value.
+ */
+export type CloseActiveWorkOperationCommand = {
+	version: number;
 	operationId: string;
 	project: AttributionIntent;
 	workCategory: AttributionIntent;
+};
+
+/** The writer that submitted the command; replay only matches the same writer. */
+export type CloseActiveWorkWriter = {
+	writer: CompletedWorkWriter;
+	writerVersion: number;
+	/** Stored on the clock-out entry as its source device. */
+	deviceInfo: string;
+};
+
+/** Versioned web request evidence. A retry must carry exactly the same command. */
+export type CloseActiveWorkCommand = CloseActiveWorkOperationCommand & {
+	version: typeof CLOSE_ACTIVE_WORK_COMMAND_VERSION;
 	/** Client-captured event instant; null when the server sampled it. */
 	requestedInstant: string | null;
 	browserTimezone: string | null;
@@ -192,8 +209,14 @@ const APPROVAL_REASON = "Clock-out requires approval (0-day policy)";
  * writer or command is a collision; nothing is re-executed or repaired.
  */
 export async function replayCloseActiveWork(
-	context: WorkTransactionContext,
-	input: { organizationId: string; employeeId: string; command: CloseActiveWorkCommand },
+	context: Pick<WorkTransactionScope, "db" | "assertEmployee">,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		command: Pick<CloseActiveWorkOperationCommand, "version" | "operationId">;
+		/** Defaults to the web clock-out writer. */
+		writer?: CompletedWorkWriter;
+	},
 ): Promise<CloseActiveWorkReceipt | null> {
 	context.assertEmployee(input.organizationId, input.employeeId);
 	const [receipt] = await context.db
@@ -206,7 +229,7 @@ export async function replayCloseActiveWork(
 		receipt.organizationId !== input.organizationId ||
 		receipt.employeeId !== input.employeeId ||
 		receipt.kind !== "close_active_work" ||
-		receipt.writer !== "web_clock_out" ||
+		receipt.writer !== (input.writer ?? "web_clock_out") ||
 		receipt.commandVersion !== input.command.version ||
 		canonicalJson(receipt.command) !== canonicalJson(input.command)
 	) {
@@ -216,20 +239,34 @@ export async function replayCloseActiveWork(
 		throw new CompletedWorkIntegrityError("Unsupported completed-work receipt version");
 	}
 	const result = receipt.result as CloseActiveWorkResult;
-	const [entry] = await context.db
+	// Replay returns the original result only while its evidence still stands: a
+	// deleted or corrected closure keeps the established conflict behavior.
+	const entry = await findStandingClosure(context.db, input, result);
+	if (!entry) throw new CompletedWorkCollisionError();
+	return { disposition: "replayed", result, entry };
+}
+
+/**
+ * The committed clock-out entry while the closure it describes still stands, or
+ * null once the entry is superseded or the period was deleted or re-closed.
+ */
+export async function findStandingClosure(
+	tx: WorkTransactionScope["db"],
+	scope: { organizationId: string; employeeId: string },
+	result: Pick<CloseActiveWorkResult, "clockOutEntryId" | "workPeriodId">,
+): Promise<Entry | null> {
+	const [entry] = await tx
 		.select()
 		.from(timeEntry)
 		.where(
 			and(
 				eq(timeEntry.id, result.clockOutEntryId),
-				eq(timeEntry.organizationId, input.organizationId),
-				eq(timeEntry.employeeId, input.employeeId),
+				eq(timeEntry.organizationId, scope.organizationId),
+				eq(timeEntry.employeeId, scope.employeeId),
 			),
 		)
 		.limit(1);
-	// Replay returns the original result only while its evidence still stands: a
-	// deleted or corrected closure keeps the established conflict behavior.
-	const [period] = await context.db
+	const [period] = await tx
 		.select({
 			clockOutId: workPeriod.clockOutId,
 			deletedAt: workPeriod.deletedAt,
@@ -238,8 +275,8 @@ export async function replayCloseActiveWork(
 		.where(
 			and(
 				eq(workPeriod.id, result.workPeriodId),
-				eq(workPeriod.organizationId, input.organizationId),
-				eq(workPeriod.employeeId, input.employeeId),
+				eq(workPeriod.organizationId, scope.organizationId),
+				eq(workPeriod.employeeId, scope.employeeId),
 			),
 		)
 		.limit(1);
@@ -249,9 +286,9 @@ export async function replayCloseActiveWork(
 		period?.clockOutId !== entry.id ||
 		period.deletedAt !== null
 	) {
-		throw new CompletedWorkCollisionError();
+		return null;
 	}
-	return { disposition: "replayed", result, entry };
+	return entry;
 }
 
 export type CloseActiveWorkInput = {
@@ -261,7 +298,8 @@ export type CloseActiveWorkInput = {
 	/** The authenticated human completing the work. */
 	actorUserId: string;
 	workPeriodId: string;
-	command: CloseActiveWorkCommand;
+	command: CloseActiveWorkOperationCommand;
+	writer: CloseActiveWorkWriter;
 	eventInstant: Instant;
 	capture: {
 		utcOffsetMinutes: number;
@@ -408,7 +446,7 @@ export async function closeActiveWork(
 			createdBy: input.actorUserId,
 			actionId: command.operationId,
 			action: { instant: input.eventInstant, ...input.capture },
-			source: { ipAddress: null, deviceInfo: command.deviceInfo },
+			source: { ipAddress: null, deviceInfo: input.writer.deviceInfo },
 		},
 		"clock_out",
 		context.admission,
@@ -552,8 +590,8 @@ export async function closeActiveWork(
 		organizationId,
 		employeeId,
 		kind: "close_active_work",
-		writer: "web_clock_out",
-		writerVersion: WEB_CLOCK_OUT_WRITER_VERSION,
+		writer: input.writer.writer,
+		writerVersion: input.writer.writerVersion,
 		commandVersion: command.version,
 		command,
 		appendAdmission: appended.admission,
