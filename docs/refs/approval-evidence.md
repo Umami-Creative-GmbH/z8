@@ -1457,7 +1457,8 @@ and the separately evidenced submitter where they differ, then:
   offsets) and its duration before; for an edit each changed endpoint
   `before → requested`, each with its own capture; changed work location and
   category `before → requested`. A deletion never shows its marker timestamps
-  as proposed working times. Category names are **current** names (no
+  as proposed working times. A change the mask names but the proposal does not
+  carry is contradictory evidence: the card is review-only. Category names are **current** names (no
   request-time name is captured) and labelled so; an unassigned category is
   "No category", and a category without a name makes the card review-only.
 - The submission instant in the recipient's zone, locale and hour cycle.
@@ -1515,10 +1516,12 @@ request, or the legacy request/chain. Sections:
   event's own offset, never shifted by the viewer. Metadata changes use the
   existing change values (named / none / unavailable category).
 - **Result** per committed decision: the outcome, the committed break
-  adjustment (`30 min break inserted`, `No break was required`) and **every
-  resulting segment** with its own endpoints and stored minutes; for a
-  correction the resulting entry or **Deleted**. Results come from the decision
-  evidence, never from the current period.
+  adjustment (**Break inserted** `30 min`, or "No break was required") and
+  **every resulting segment** with its own endpoints and stored minutes; for a
+  correction the resulting entry and its **Resulting duration**, or **Deleted**.
+  Results come from the decision evidence, never from the current period. When
+  a request has both a canonical and a legacy capture, the canonical lifecycle
+  (the authority owning the request) is shown.
 - **Evidence history**: submission and each decision with persisted actor and
   time, an intermediate step ("Approval recorded — awaiting further approval")
   apart from the request outcome.
@@ -1532,10 +1535,12 @@ request, or the legacy request/chain. Sections:
 The owner already expanded canonical outbox intents generically; with a
 delivery control for `(organization, kind, provider)` it now sends time cards
 through the same adapters and refreshes them with the committed outcome.
-`isApprovalNotificationDeliveredByOwner` also covers `work_period`
-notifications (and `approval_request` rows of `time_entry`): the period's
-current canonical workflow names the kind, and the existing channel path sends
-no plain message when the owner delivers that kind.
+`isApprovalNotificationDeliveredByOwner` also covers time notifications and
+resolves the notified cycle, never a subject alone: an `approval_request` of
+`time_entry` by the canonical stage that mirrors it (a legacy request has none
+and keeps the existing path), a `work_period` notification only by its linked
+workflow while that cycle is pending. The existing channel path then sends no
+plain message when the owner delivers that kind.
 
 ### Cleanup
 
@@ -1617,8 +1622,9 @@ correction approval are forced as in #301/#302. 12/12 passing:
   concurrent deliveries of the same query then commit one decision;
 - privileged cleanup removes and reports one lifecycle's binding, invocation
   and message, keeps the other cycle, and a late press recreates nothing;
-- the existing Telegram notification path is silent for a kind the owner
-  delivers, and speaks again without the control.
+- the existing Telegram notification path is silent for the pending cycle the
+  owner delivers (by period and by request), speaks again once that cycle is
+  decided, and without the control.
 
 The #302 suite (`clocking.approval-evidence.integration.test.ts`) still passes
 10/10 on the same runner. Unit seams: `presentation/time-card.test.ts` (facts,
