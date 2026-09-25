@@ -4,7 +4,9 @@ import { telegramApprovalMessage } from "@/db/schema";
 import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
 import {
 	type ApprovalDeliveryMessageRecord,
+	approvalDeliveryMessageReviewReference,
 	findApprovalDeliveryMessageByRemoteIdentity,
+	isApprovalDeliveryMessagePending,
 	markApprovalDeliveryMessageWithoutControls,
 } from "@/lib/approvals/delivery/store";
 import {
@@ -215,11 +217,13 @@ export async function handleBoundApprovalCallback(
 }
 
 /**
- * The clicked card was sent by the approval delivery owner (#291): show the
- * attempt's outcome and drop its controls. The recorded status version is
- * left alone, so the owner's refresh still brings the message to the
- * request's current status; the lifecycle's other messages are refreshed
- * from the decision's committed intent.
+ * The clicked card was sent by the approval delivery owner (#291). The
+ * acknowledgment carries the attempt's outcome. A card whose assignment or
+ * request is no longer pending (for example the one just decided) is left to
+ * the owner, which refreshes every message of the lifecycle from the
+ * committed intent, so it has one writer. A still-pending card whose action
+ * could not be decided here becomes a review notice without controls; the
+ * owner does not refresh pending cards.
  */
 async function updateDeliveredBoundCard(
 	result: BoundBotApprovalResult,
@@ -227,29 +231,33 @@ async function updateDeliveredBoundCard(
 	bot: ResolvedTelegramBot,
 	recipientUserId: string,
 ): Promise<string | undefined> {
-	const notice = await boundDecisionNotice(
-		result,
-		{ userId: recipientUserId, organizationId: bot.organizationId },
-		message.approvalRequestId
-			? { kind: "compatibility", approvalRequestId: message.approvalRequestId }
-			: { kind: "canonical", assignmentId: message.assignmentId },
-	);
 	try {
+		const notice = await boundDecisionNotice(
+			result,
+			{ userId: recipientUserId, organizationId: bot.organizationId },
+			approvalDeliveryMessageReviewReference(message),
+		);
 		if (!notice) return undefined;
-		const edited = await editMessageText(bot.botToken, {
-			chat_id: message.destinationId,
-			message_id: Number(message.remoteMessageId),
-			...telegramApprovalNotice(notice),
-		});
-		if (edited) {
-			await markApprovalDeliveryMessageWithoutControls({
-				organizationId: bot.organizationId,
-				messageId: message.id,
+		const remoteMessageId = Number(message.remoteMessageId);
+		if (
+			result.status !== "decided" &&
+			Number.isSafeInteger(remoteMessageId) &&
+			(await isApprovalDeliveryMessagePending(message))
+		) {
+			const edited = await editMessageText(bot.botToken, {
+				chat_id: message.destinationId,
+				message_id: remoteMessageId,
+				...telegramApprovalNotice(notice),
 			});
+			if (edited) {
+				await markApprovalDeliveryMessageWithoutControls({
+					organizationId: bot.organizationId,
+					messageId: message.id,
+				});
+			}
 		}
 		return notice.title;
 	} finally {
-		// After this edit, so the owner's refresh is the last word on the card.
 		kickApprovalDelivery({
 			organizationId: bot.organizationId,
 			workflowId: message.workflowId,

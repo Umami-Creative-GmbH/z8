@@ -18,17 +18,18 @@ import {
 	resolveRecoveredEscalationAttentionCondition,
 } from "../escalation/attention-store";
 import { listDecisionEvidence } from "../evidence/store";
-import type { ApprovalReviewReference } from "../presentation/review-navigation";
 import { nextApprovalDeliveryAttempt } from "./schedule";
 import {
 	type ApprovalDeliveryExecutor,
 	type ApprovalDeliveryMessageRecord,
 	type ClaimedApprovalDeliveryWork,
+	approvalDeliveryMessageReviewReference,
 	claimApprovalDeliveryWork,
 	expandApprovalDeliveryIntents,
 	finishApprovalDeliveryWork,
 	loadApprovalDeliveryMessage,
 	recordDeliveredApprovalMessage,
+	renewApprovalDeliveryLease,
 	retireApprovalDeliveryMessage,
 	scheduleApprovalMessageRefreshes,
 } from "./store";
@@ -302,8 +303,9 @@ async function finishSimply(
 async function processInitial(
 	work: ClaimedApprovalDeliveryWork,
 	adapter: ApprovalDeliveryAdapter,
-	now: Instant,
+	clock: () => Instant,
 ): Promise<ApprovalDeliveryOutcome> {
+	let now = clock();
 	const state = await loadWorkState(work);
 	if (!state) return finishSimply(work, "cancelled", "purged");
 	if (state.workflowStatus !== "pending" || state.assignmentStatus !== "pending") {
@@ -343,6 +345,9 @@ async function processInitial(
 	if (!preferences[work.provider]) {
 		return finishSimply(work, "suppressed", "preference_disabled");
 	}
+	// Attempt time, and proof the lease still holds right before sending.
+	now = clock();
+	if (!(await renewApprovalDeliveryLease({ work, now }))) return "lease_lost";
 	const sent = await adapter.sendInitial({
 		organizationId: work.organizationId,
 		approvalRequestId: state.approvalRequestId,
@@ -400,7 +405,7 @@ async function processInitial(
 async function processRefresh(
 	work: ClaimedApprovalDeliveryWork,
 	adapter: ApprovalDeliveryAdapter,
-	now: Instant,
+	clock: () => Instant,
 ): Promise<ApprovalDeliveryOutcome> {
 	const message = work.messageId
 		? await loadApprovalDeliveryMessage({
@@ -434,15 +439,16 @@ async function processRefresh(
 					})
 				).find((record) => record.assignmentId === work.assignmentId) ?? null)
 			: null;
-	const reference: ApprovalReviewReference = message.approvalRequestId
-		? { kind: "compatibility", approvalRequestId: message.approvalRequestId }
-		: { kind: "canonical", assignmentId: message.assignmentId };
 	const notice = await approvalStatusNotice(
 		{ workflowStatus: state.workflowStatus, evidence },
 		display,
 		work.organizationId,
-		reference,
+		approvalDeliveryMessageReviewReference(message),
 	);
+	// Attempt time, and proof the lease still holds right before editing: at
+	// most one refresh of a message reaches the provider at a time.
+	const now = clock();
+	if (!(await renewApprovalDeliveryLease({ work, now }))) return "lease_lost";
 	const refreshed = await adapter.refresh({
 		organizationId: work.organizationId,
 		message,
@@ -495,7 +501,10 @@ export async function processApprovalDeliveries(input: {
 		limit,
 		...(input.workflowId ? { workflowId: input.workflowId } : {}),
 	});
-	const now = input.now ?? systemClock.nowInstant();
+	// Tests pin one instant; production reads the clock per attempt so retry
+	// intervals are measured from the actual attempt.
+	const clock = () => input.now ?? systemClock.nowInstant();
+	const now = clock();
 	const claimed = await claimApprovalDeliveryWork({
 		organizationId: input.organizationId,
 		limit,
@@ -509,8 +518,8 @@ export async function processApprovalDeliveries(input: {
 			const adapter = await loadAdapter(work.provider);
 			outcome =
 				work.effect === "initial"
-					? await processInitial(work, adapter, now)
-					: await processRefresh(work, adapter, now);
+					? await processInitial(work, adapter, clock)
+					: await processRefresh(work, adapter, clock);
 		} catch (error) {
 			// Unexpected failure, possibly after the provider accepted the send:
 			// retry on the schedule as ambiguous (it may duplicate) instead of
@@ -523,7 +532,7 @@ export async function processApprovalDeliveries(input: {
 				work,
 				{ kind: "failed", outcome: "ambiguous", reason: "internal_error" },
 				null,
-				now,
+				clock(),
 			).catch(() => "lease_lost" as const);
 		}
 		outcomes[outcome] = (outcomes[outcome] ?? 0) + 1;

@@ -144,7 +144,12 @@ const { approveAbsenceEffect } = await import("@/lib/approvals/server/absence-ap
 const { deleteApproval } = await import("@/lib/approvals/maintenance");
 const { db } = await import("@/db");
 const { processApprovalDeliveries } = await import("./owner");
-const { expandApprovalDeliveryIntents, recordDeliveredApprovalMessage } = await import("./store");
+const {
+	claimApprovalDeliveryWork,
+	expandApprovalDeliveryIntents,
+	recordDeliveredApprovalMessage,
+	renewApprovalDeliveryLease,
+} = await import("./store");
 const { recoverApprovalDeliveryForAttention } = await import("./recovery");
 const { handleTelegramUpdate } = await import("@/lib/telegram/bot-handler");
 const { saveConversation } = await import("@/lib/telegram/conversation-manager");
@@ -601,62 +606,130 @@ describeIntegration("Telegram approval delivery owner (PostgreSQL)", () => {
 		expect(sends()).toHaveLength(1);
 	});
 
-	it("refreshes a card decided from Telegram through the same owner", async () => {
+	function botConfig() {
+		return {
+			organizationId: ids.organization,
+			botToken: BOT_TOKEN,
+			botUsername: "t291_bot",
+			webhookSecret: "t291-secret",
+			setupStatus: "active",
+			enableApprovals: true,
+			enableCommands: true,
+			enableDailyDigest: false,
+			enableEscalations: false,
+			digestTime: "09:00",
+			digestTimezone: "UTC",
+			escalationTimeoutHours: 24,
+		};
+	}
+
+	async function press(messageId: number, data: string, queryId: string) {
+		await handleTelegramUpdate(
+			{
+				update_id: 5000 + calls.length,
+				callback_query: {
+					id: queryId,
+					from: { id: MANAGER_TELEGRAM_ID, is_bot: false, first_name: "Morgan" },
+					message: {
+						message_id: messageId,
+						date: 1_790_000_000,
+						chat: { id: MANAGER_CHAT_ID, type: "private" as const },
+					},
+					data,
+				},
+			},
+			botConfig(),
+		);
+	}
+
+	function approveData(card: TelegramCall): string {
+		return (
+			buttonsOf(card).find((button) => button.callback_data?.includes('"ba"'))?.callback_data ?? ""
+		);
+	}
+
+	it("refreshes a card decided from Telegram through the owner as its only writer", async () => {
 		await seed();
 		const { workflowId } = await submit();
 		await deliver();
 		const card = only(sends());
-		const approve = buttonsOf(card).find((button) =>
-			button.callback_data?.includes('"ba"'),
-		)?.callback_data;
-		const [message] = await messages(workflowId);
+		const message = only(await messages(workflowId));
 
-		await handleTelegramUpdate(
-			{
-				update_id: 5001,
-				callback_query: {
-					id: "t291-q-1",
-					from: { id: MANAGER_TELEGRAM_ID, is_bot: false, first_name: "Morgan" },
-					message: {
-						message_id: Number(message?.remote_message_id),
-						date: 1_790_000_000,
-						chat: { id: MANAGER_CHAT_ID, type: "private" as const },
-					},
-					data: approve ?? "",
-				},
-			},
-			{
-				organizationId: ids.organization,
-				botToken: BOT_TOKEN,
-				botUsername: "t291_bot",
-				webhookSecret: "t291-secret",
-				setupStatus: "active",
-				enableApprovals: true,
-				enableCommands: true,
-				enableDailyDigest: false,
-				enableEscalations: false,
-				digestTime: "09:00",
-				digestTimezone: "UTC",
-				escalationTimeoutHours: 24,
-			},
-		);
+		await press(Number(message.remote_message_id), approveData(card), "t291-q-1");
 		const { rows: decided } = await admin.query<{ status: string }>(
 			"select status from approval_workflow where id = $1",
 			[workflowId],
 		);
 		expect(only(decided).status).toBe("approved");
-		// The clicked card showed the committed outcome and lost its controls.
-		expect(only(edits()).body.message_id).toBe(Number(message?.remote_message_id));
-		expect(only(await messages(workflowId))).toMatchObject({ controls: "none" });
+		// The acknowledgment reports the outcome; the decided card is left to the owner.
+		const answer = only(calls.filter((call) => call.method === "answerCallbackQuery"));
+		expect(answer.body.text).toBe("Request approved");
+		expect(edits()).toHaveLength(0);
 		expect(harness.kicks).toContainEqual({ organizationId: ids.organization, workflowId });
 
 		// The decision's committed intent brings it to the current status.
 		await deliver(minutes(1));
-		expect(edits()).toHaveLength(2);
+		expect(only(edits()).body.message_id).toBe(Number(message.remote_message_id));
 		expect(only(await messages(workflowId))).toMatchObject({
+			controls: "none",
 			state: "retired",
 			status_version: await workflowVersion(workflowId),
 		});
+	});
+
+	it("turns a still-pending card whose press decided nothing into a review notice", async () => {
+		await seed();
+		const { workflowId } = await submit();
+		await deliver();
+		const card = only(sends());
+		const message = only(await messages(workflowId));
+		// Actionable cards are paused after sending: a fresh press decides nothing.
+		await admin.query(
+			`update approval_presentation_control set mode = 'review_only'
+			 where organization_id = $1`,
+			[ids.organization],
+		);
+
+		await press(Number(message.remote_message_id), approveData(card), "t291-q-2");
+		const { rows } = await admin.query<{ status: string }>(
+			"select status from approval_workflow where id = $1",
+			[workflowId],
+		);
+		expect(only(rows).status).toBe("pending");
+		const edit = only(edits());
+		expect(String(edit.body.text)).toContain("Review required");
+		expect(buttonsOf(edit).every((button) => !button.callback_data)).toBe(true);
+		expect(only(await messages(workflowId))).toMatchObject({ controls: "none" });
+		// The owner leaves a pending card alone.
+		await deliver(minutes(1));
+		expect(edits()).toHaveLength(1);
+	});
+
+	it("does not let a worker whose lease expired reach the provider", async () => {
+		await seed();
+		const { workflowId } = await submit();
+		await expandApprovalDeliveryIntents({ organizationId: ids.organization, limit: 10 });
+		const [stalled] = await claimApprovalDeliveryWork({
+			organizationId: ids.organization,
+			limit: 10,
+			now: T0,
+		});
+		// Behind slow calls earlier in its batch, the first lease expires and
+		// another worker takes the work over.
+		const [takeover] = await claimApprovalDeliveryWork({
+			organizationId: ids.organization,
+			limit: 10,
+			now: minutes(3),
+		});
+		expect(takeover?.id).toBe(stalled?.id);
+		if (!stalled || !takeover) throw new Error("Expected both claims");
+		await expect(renewApprovalDeliveryLease({ work: stalled, now: minutes(3) })).resolves.toBe(
+			false,
+		);
+		await expect(renewApprovalDeliveryLease({ work: takeover, now: minutes(3) })).resolves.toBe(
+			true,
+		);
+		expect(only(await work(workflowId))).toMatchObject({ status: "processing", attempt_count: 2 });
 	});
 
 	it("retries after 1m, 5m, 30m, 2h and 12h, exhausts visibly and recovers only on request", async () => {

@@ -65,9 +65,13 @@ Telegram adapter                                        lib/telegram/approval-de
   `status_version` only increases. At most one refresh per message is in flight,
   and its content is computed at send time. A stale refresh therefore cannot
   bring controls back or overwrite newer content.
-- A card pressed on Telegram shows the attempt's outcome and loses its controls
-  in the webhook handler. The decision's own intent then refreshes it and every
-  other message of the lifecycle.
+- A card pressed on Telegram: the callback acknowledgment reports the
+  attempt's outcome. A card whose assignment or request is no longer pending
+  (the one just decided, too) has one writer, the owner, which refreshes it and
+  every other message of the lifecycle from the decision's intent. A card that
+  is still pending but decided nothing (paused, stale revision, not current)
+  becomes a review notice in the webhook; the owner does not refresh pending
+  cards.
 
 ## Failures, retries and recovery
 
@@ -82,15 +86,20 @@ Telegram adapter                                        lib/telegram/approval-de
 | suppressed | preference off, bot inactive, approvals disabled, not entitled | `suppressed`, nothing sent. |
 | obsolete | assignment decided or request withdrawn before sending | `cancelled`. |
 
-- Leases last two minutes; Telegram calls time out after 30 seconds. A worker
-  completes work only while its lease token holds. If a lease expired and
-  another worker took over, the late worker's message is still recorded.
+- Leases last two minutes; Telegram calls time out after 30 seconds. Right
+  before each provider call the worker renews its lease and gives up if it no
+  longer holds it (for example behind slow calls earlier in its batch), so a
+  taken-over item is not sent twice. A worker completes work only while its
+  lease token holds. If a lease expired during the call itself and another
+  worker took over, the late worker's message is still recorded. Retry times
+  are measured from the actual attempt.
 - Explicit recovery (**Retry delivery** on the escalation management page,
   `recoverApprovalDeliveryForAttention`) re-arms exhausted, failed or
   repair-waiting work with a fresh schedule. Delivered, suppressed and cancelled
   work is never resent. The incident closes only when a delivery succeeds.
 - Destination repair: when the recipient's private chat is saved again, their
-  `destination_invalid` work is re-armed.
+  `destination_invalid` work is re-armed. `unavailable` work (bot missing or
+  token revoked) waits for explicit recovery after the bot is repaired.
 - Delivery never changes a committed decision. A failed refresh leaves the
   decision as committed and retries on the schedule.
 - Guarantees begin when the intent commits. After a crash between commit and
@@ -134,12 +143,14 @@ canonical absence submissions then send no Telegram card at all.
 6. **Untracked duplicates.** A crash between Telegram's acceptance and tracking
    leaves one message without an identity. It keeps its controls, which decide
    only while the assignment is pending.
-7. **Refresh incidents** close through the existing attention recheck once the
+7. **Activation handover.** Pending workflows whose intents predate
+   `activated_at` get no card from the owner (in-flight classification).
+8. **Refresh incidents** close through the existing attention recheck once the
    approval is settled. The exhausted work row stays visible.
-8. **Ingress.** No durable acceptance before the webhook acknowledgment.
-9. Everything in the #290 and canonical evidence blockers (in-flight
+9. **Ingress.** No durable acceptance before the webhook acknowledgment.
+10. Everything in the #290 and canonical evidence blockers (in-flight
    classification, #306 cleanup ordering, pilot #328/#330).
-10. The approval write-boundary scanner cannot read sources on Windows. The new
+11. The approval write-boundary scanner cannot read sources on Windows. The new
     owners are registered but were not scanned.
 
 ## Verification (#291)
@@ -151,14 +162,18 @@ part of `test:approval-workflow-repository:integration`), driving the real
 and `deleteApproval`. Replaced: session, billing guard, e-mail and notification
 fan-out, calendar queue, work-balance marking, the vault, the post-commit fast
 path (recorded, so each test runs the owner explicitly) and the Telegram HTTP
-transport (`fetch`). 15/15 passing:
+transport (`fetch`). 17/17 passing:
 
 - a real submission commits pending intents and sends nothing until the owner
   runs; the owner then sends one bound card and records its full identity and
   binding; a rerun sends nothing;
 - a web decision refreshes the card to "Request approved" without controls, and
-  controls never return; a Telegram decision retires the clicked card and the
-  owner then refreshes it to the current version;
+  controls never return; a Telegram decision acknowledges "Request approved",
+  leaves the card to the owner, which then retires it at the current version;
+- a press on a paused, still-pending card decides nothing and turns the card
+  into a review notice, which the owner leaves alone;
+- a worker whose lease was taken over cannot renew it, so it never reaches the
+  provider;
 - retries are due exactly 1 min, 5 min, 30 min, 2 h and 12 h after the
   preceding attempt and not a second earlier; the sixth failure is exhausted
   with an open `delivery_exhausted` incident; explicit recovery sends once and

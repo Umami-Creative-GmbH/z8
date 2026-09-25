@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, inArray, lt, ne, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, lt, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	type ApprovalDeliveryEffect,
@@ -8,9 +8,12 @@ import {
 	approvalDeliveryControl,
 	approvalDeliveryMessage,
 	approvalDeliveryWork,
+	approvalStageAssignment,
+	approvalWorkflow,
 	approvalWorkflowRollout,
 } from "@/db/schema";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+import type { ApprovalReviewReference } from "../presentation/review-navigation";
 import type { ApprovalWorkflowType } from "../workflow/ports";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -346,7 +349,9 @@ export async function claimApprovalDeliveryWork(input: {
 	leaseMs?: number;
 }): Promise<ClaimedApprovalDeliveryWork[]> {
 	const now = dateFromInstant(input.now);
-	const leaseExpiresAt = new Date(now.getTime() + (input.leaseMs ?? APPROVAL_DELIVERY_LEASE_MS));
+	const leaseExpiresAt = dateFromInstant(
+		input.now.add({ milliseconds: input.leaseMs ?? APPROVAL_DELIVERY_LEASE_MS }),
+	);
 	return db.transaction(async (transaction) => {
 		await transaction.execute(sql`
 			select pg_advisory_xact_lock(hashtextextended(
@@ -424,6 +429,36 @@ export async function claimApprovalDeliveryWork(input: {
 			}))
 			.sort((left, right) => ids.indexOf(left.id) - ids.indexOf(right.id));
 	});
+}
+
+/**
+ * Re-checks and extends a claim right before a provider call. A worker whose
+ * lease expired (for example behind slow calls earlier in its batch) must not
+ * send: another worker may already own the work. Returns false then.
+ */
+export async function renewApprovalDeliveryLease(input: {
+	work: Pick<ClaimedApprovalDeliveryWork, "id" | "organizationId" | "claimToken">;
+	now: Instant;
+	leaseMs?: number;
+}): Promise<boolean> {
+	const renewed = await db
+		.update(approvalDeliveryWork)
+		.set({
+			leaseExpiresAt: dateFromInstant(
+				input.now.add({ milliseconds: input.leaseMs ?? APPROVAL_DELIVERY_LEASE_MS }),
+			),
+		})
+		.where(
+			and(
+				eq(approvalDeliveryWork.id, input.work.id),
+				eq(approvalDeliveryWork.organizationId, input.work.organizationId),
+				eq(approvalDeliveryWork.claimToken, input.work.claimToken),
+				eq(approvalDeliveryWork.status, "processing"),
+				gt(approvalDeliveryWork.leaseExpiresAt, dateFromInstant(input.now)),
+			),
+		)
+		.returning({ id: approvalDeliveryWork.id });
+	return renewed.length === 1;
 }
 
 /**
@@ -523,19 +558,7 @@ export async function recordDeliveredApprovalMessage(
 		if (isForeignKeyViolation(error)) return { kind: "purged" };
 		throw error;
 	}
-	const [known] = await db
-		.select({ id: approvalDeliveryMessage.id })
-		.from(approvalDeliveryMessage)
-		.where(
-			and(
-				eq(approvalDeliveryMessage.organizationId, input.organizationId),
-				eq(approvalDeliveryMessage.provider, input.provider),
-				eq(approvalDeliveryMessage.receiverScope, input.receiverScope),
-				eq(approvalDeliveryMessage.destinationId, input.destinationId),
-				eq(approvalDeliveryMessage.remoteMessageId, input.remoteMessageId),
-			),
-		)
-		.limit(1);
+	const known = await findApprovalDeliveryMessageByRemoteIdentity(input);
 	return known ? { kind: "known", messageId: known.id } : { kind: "purged" };
 }
 
@@ -580,6 +603,47 @@ export async function findApprovalDeliveryMessageByRemoteIdentity(input: {
 		)
 		.limit(1);
 	return message ?? null;
+}
+
+/** The exact item a delivered message's review link opens. */
+export function approvalDeliveryMessageReviewReference(
+	message: Pick<ApprovalDeliveryMessageRecord, "approvalRequestId" | "assignmentId">,
+): ApprovalReviewReference {
+	return message.approvalRequestId
+		? { kind: "compatibility", approvalRequestId: message.approvalRequestId }
+		: { kind: "canonical", assignmentId: message.assignmentId };
+}
+
+/**
+ * Whether a delivered card's assignment and request are still pending. When
+ * they are not, the owner refreshes the card from the committed intent, so no
+ * other writer should edit it.
+ */
+export async function isApprovalDeliveryMessagePending(
+	message: Pick<ApprovalDeliveryMessageRecord, "organizationId" | "workflowId" | "assignmentId">,
+): Promise<boolean> {
+	const [row] = await db
+		.select({
+			workflowStatus: approvalWorkflow.status,
+			assignmentStatus: approvalStageAssignment.status,
+		})
+		.from(approvalStageAssignment)
+		.innerJoin(
+			approvalWorkflow,
+			and(
+				eq(approvalWorkflow.id, approvalStageAssignment.workflowId),
+				eq(approvalWorkflow.organizationId, approvalStageAssignment.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(approvalStageAssignment.organizationId, message.organizationId),
+				eq(approvalStageAssignment.workflowId, message.workflowId),
+				eq(approvalStageAssignment.id, message.assignmentId),
+			),
+		)
+		.limit(1);
+	return row?.workflowStatus === "pending" && row.assignmentStatus === "pending";
 }
 
 /**
