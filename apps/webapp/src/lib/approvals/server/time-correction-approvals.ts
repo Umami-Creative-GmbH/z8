@@ -71,6 +71,7 @@ import {
 } from "../domain-adapters/time-correction-legacy-state";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import type { WorkPeriodApprovalResult } from "../domain-adapters/work-period-contract";
+import { translateWorkPeriodEvidenceError } from "../evidence/work-period-evidence";
 import {
 	ApprovalAuditLogger,
 	createApprovalAuditLogger,
@@ -4919,6 +4920,9 @@ export function decideTimeCorrectionWithStableTargetEffect(
 						action === "approve"
 							? { kind: "approve", reason: reason ?? null }
 							: { kind: "reject", reason: reason ?? "" },
+				}).catch((ordinaryError: unknown) => {
+					// Manual/policy clock-out evidence holds answer as 409 conflicts.
+					throw translateWorkPeriodEvidenceError(ordinaryError);
 				});
 				if (
 					ordinary.postCommit?.disposition === "dispatch" &&

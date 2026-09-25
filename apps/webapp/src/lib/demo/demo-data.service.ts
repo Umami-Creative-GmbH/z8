@@ -77,6 +77,7 @@ import {
 	type TimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
 import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
+import { deleteWorkPeriodApprovalEvidence } from "@/lib/approvals/maintenance";
 
 const demoLogger = createLogger("demo-data");
 
@@ -3116,6 +3117,8 @@ export async function clearOrganizationTimeData(
 	// ============================================
 
 	if (employeeIds.length > 0) {
+		// Manual/policy clock-out approval evidence describes this history (#302).
+		await deleteWorkPeriodApprovalEvidence(db, { organizationId, employeeIds });
 		// Delete work periods first (references time entries)
 		const workPeriodsToDelete = await db.query.workPeriod.findMany({
 			where: inArray(workPeriod.employeeId, employeeIds),

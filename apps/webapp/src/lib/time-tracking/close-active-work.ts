@@ -104,6 +104,12 @@ export type CloseActiveWorkApprovalParticipation =
 			disposition: "executed" | "replayed";
 			outcome: string;
 			approvalRequestId: string;
+			/**
+			 * Immutable submitted revision of this participation (#302), when
+			 * evidence capture is active. The current approval state is a
+			 * separate read; this records the original participation only.
+			 */
+			submittedRevisionId?: string | null;
 	  };
 
 /** Committed result (receipt version 1). Current state is a separate read. */
@@ -476,6 +482,7 @@ export async function closeActiveWork(
 			disposition: approvalSubmission.disposition,
 			outcome: approvalSubmission.result.kind,
 			approvalRequestId: approvalSubmission.result.approvalRequestId,
+			submittedRevisionId: approvalSubmission.evidence?.submittedRevisionId ?? null,
 		};
 		const [after] = await tx
 			.select({ approvalStatus: workPeriod.approvalStatus })

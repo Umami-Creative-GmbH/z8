@@ -58,6 +58,7 @@ import {
 	workPolicyScheduleDay,
 	workPolicyViolation,
 } from "@/db/schema";
+import { deleteWorkPeriodApprovalEvidence } from "@/lib/approvals/maintenance";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("organization-cleanup");
@@ -174,6 +175,11 @@ async function permanentlyDeleteOrganization(
 		// Delete in order (most dependent first)
 
 		// 1. Time tracking data
+		// Manual/policy clock-out approval evidence references employees (#302).
+		await deleteWorkPeriodApprovalEvidence(tx, {
+			organizationId,
+			employeeIds: "all",
+		});
 		if (employeeIds.length > 0) {
 			// The append position references its tip entry; remove it with the history.
 			await tx
