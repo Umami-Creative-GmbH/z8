@@ -144,7 +144,8 @@ detail's category in the same transaction and advances the period's
 
 "Clear time data" and "Delete non-admin data" remove each employee's whole time
 history in one transaction under that employee's key (`deleteDemoEmployeeHistory`):
-append position, receipts, periods and entries. In an adopted scope the same
+the manual/policy clock-out approval evidence describing it (#302), append
+position, receipts, periods and entries. In an adopted scope the same
 transaction also removes the canonical work records of those periods and commits
 the work-balance refresh intent from the earliest removed period. Legacy scopes keep
 their established rows; the canonical records of legacy periods are left as before.
@@ -164,7 +165,7 @@ their established rows; the canonical records of legacy periods are left as befo
   `clearOrganizationTimeData(organizationId)` without a user still works for system
   callers.
 
-## Schema (migration 0084)
+## Schema (migration 0085)
 
 - `time_entry_append_position` operations add `demo_generation` and
   `demo_correction`.
@@ -261,8 +262,8 @@ employee key failed 7 of the then 11 tests: every adopted generation, correction
 attribution test, plus the coordinated cleanup test.
 
 Full runner (`bash apps/webapp/scripts/run-approval-workflow-repository-integration.sh`,
-fresh container, migration recovery check and full chain through 0084): **38 files /
-615 tests passed**, including the #272/#273/#274 clocking suites. The label-owned
+fresh container, migration recovery check and full chain through 0085): **40 files /
+641 tests passed** after merging `dev` (#275, #302), including the #272/#273/#274 clocking suites. The label-owned
 container was verified and removed.
 
 ### Database-free

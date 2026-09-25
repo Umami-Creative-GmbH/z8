@@ -19,8 +19,8 @@ import "server-only";
  * canonical base/detail, the committed balance refresh intent and a
  * `completed_work_operation` receipt. The receipt names the demo generator as the
  * executing system actor (no actor user) and records the triggering admin in its
- * result. Demo
- * generation is unkeyed, so its receipts are evidence, never replay identities.
+ * result. Demo generation is unkeyed, so its receipts are evidence, never replay
+ * identities.
  */
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, gt, inArray, isNull, lt, notExists, or, sql } from "drizzle-orm";
@@ -34,6 +34,7 @@ import {
 	timeRecordWork,
 	workPeriod,
 } from "@/db/schema";
+import { deleteWorkPeriodApprovalEvidence } from "@/lib/approvals/maintenance";
 import {
 	compareInstants,
 	dateFromInstant,
@@ -590,7 +591,7 @@ export type DemoHistoryDeletion = {
 
 /**
  * Removes one employee's whole time history atomically under its employee key:
- * append position, receipts, periods and entries. In an adopted scope it also
+ * approval lifecycle evidence (#302), append position, receipts, periods and entries. In an adopted scope it also
  * removes the periods' canonical work records (except those a retained approval
  * request references) and commits the balance refresh intent. No other employee or
  * organization is touched.
@@ -601,6 +602,11 @@ export async function deleteDemoEmployeeHistory(
 ): Promise<DemoHistoryDeletion> {
 	scope.assertEmployee(input.organizationId, input.employeeId);
 	const client = scope.db;
+	// Manual/policy clock-out approval evidence describes this history (#302).
+	await deleteWorkPeriodApprovalEvidence(client, {
+		organizationId: input.organizationId,
+		employeeIds: [input.employeeId],
+	});
 	// The append position references its tip entry; remove it with the history.
 	await client
 		.delete(timeEntryAppendPosition)
