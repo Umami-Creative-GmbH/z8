@@ -624,6 +624,13 @@
       "when": 1791907200000,
       "tag": "0088_bot_clock_out_writer",
       "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1791993600000,
+      "tag": "0089_legacy_expense_presentation",
+      "breakpoints": true
     }
   ]
 }

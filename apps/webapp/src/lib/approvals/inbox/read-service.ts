@@ -14,6 +14,10 @@ import {
 	buildAbsenceReviewSections,
 	prepareAbsenceReviewEvidence,
 } from "../presentation/absence-review";
+import {
+	buildTravelExpenseReviewSections,
+	prepareTravelExpenseReviewEvidence,
+} from "../presentation/travel-expense-review";
 import type { TimeCorrectionMetadataChanges } from "../server/time-correction-review-metadata";
 import { ApprovalInboxBadRequestError } from "./current-actor";
 import {
@@ -74,6 +78,10 @@ interface GetApprovalInboxDetailFromRequestInput {
 	};
 	handler: ApprovalTypeHandler;
 	loadAbsenceReviewEvidence?: typeof prepareAbsenceReviewEvidence;
+	loadTravelExpenseReviewEvidence?: (input: {
+		organizationId: string;
+		claimId: string;
+	}) => ReturnType<typeof prepareTravelExpenseReviewEvidence>;
 }
 
 const DEFAULT_LIMIT = 50;
@@ -273,6 +281,7 @@ export async function getApprovalInboxDetailFromRequest({
 	request,
 	handler,
 	loadAbsenceReviewEvidence = prepareAbsenceReviewEvidence,
+	loadTravelExpenseReviewEvidence = prepareTravelExpenseReviewEvidence,
 }: GetApprovalInboxDetailFromRequestInput): Promise<ApprovalInboxDetailResult> {
 	if (!isSupportedInboxType(request.entityType)) {
 		throw new ApprovalInboxBadRequestError("Unsupported approval type");
@@ -302,23 +311,33 @@ export async function getApprovalInboxDetailFromRequest({
 		: item.capabilities;
 	const sections = buildDetailSections(detail);
 
+	let review: { sections: ApprovalInboxDetailSection[]; decisionsBlocked: boolean } | null =
+		null;
 	if (request.entityType === "absence_entry") {
 		const evidence = await loadAbsenceReviewEvidence({
 			organizationId: request.organizationId,
 			entity: detail.entity,
 		});
-		if (evidence) {
-			const review = buildAbsenceReviewSections(evidence);
-			sections.splice(1, 0, ...review.sections);
-			if (review.decisionsBlocked) {
-				// The server holds these decisions too; the UI only mirrors that.
-				actions = {
-					...actions,
-					canApprove: false,
-					canReject: false,
-					canBulkApprove: false,
-				};
-			}
+		if (evidence) review = buildAbsenceReviewSections(evidence);
+	} else if (request.entityType === "travel_expense_claim") {
+		// The claim's frozen submission and decision history (#296).
+		review = buildTravelExpenseReviewSections(
+			await loadTravelExpenseReviewEvidence({
+				organizationId: request.organizationId,
+				claimId: request.entityId,
+			}),
+		);
+	}
+	if (review) {
+		sections.splice(1, 0, ...review.sections);
+		if (review.decisionsBlocked) {
+			// The server holds these decisions too; the UI only mirrors that.
+			actions = {
+				...actions,
+				canApprove: false,
+				canReject: false,
+				canBulkApprove: false,
+			};
 		}
 	}
 

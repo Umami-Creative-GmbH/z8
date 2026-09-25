@@ -10,7 +10,12 @@ import {
 import type { ApprovalAction, ApprovalDatabase } from "../server/types";
 import type { ApprovalWorkflowType } from "../workflow/ports";
 import { ApprovalEvidenceError } from "./errors";
-import { type DecisionEvidenceRecord, findDecisionEvidenceById } from "./store";
+import {
+	type DecisionEvidenceRecord,
+	findDecisionEvidenceById,
+	findLegacyDecisionEvidenceById,
+	type LegacyDecisionEvidenceRecord,
+} from "./store";
 
 /**
  * Provider invocation identity (#257 §7, #261). Only schemes whose provider
@@ -172,13 +177,21 @@ export async function readApprovalPresentationMode(
 	return mode;
 }
 
+/**
+ * The lifecycle a committed invocation decided: a canonical workflow, or for
+ * legacy authority (#296) the exact legacy request, never a workflow.
+ */
+export type ApprovalInvocationLifecycle =
+	| { authority: "canonical"; workflowId: string }
+	| { authority: "legacy"; legacyApprovalRequestId: string };
+
 export interface ApprovalInvocationRecord {
 	id: string;
 	identity: ApprovalInvocationIdentity;
 	deliveryId: string | null;
 	command: ApprovalInvocationCommand;
 	commandFingerprint: string;
-	workflowId: string;
+	lifecycle: ApprovalInvocationLifecycle;
 	receiptIdempotencyKey: string;
 	decisionEvidenceId: string;
 }
@@ -219,10 +232,20 @@ export async function findApprovalInvocation(
 	}
 	const row = rows[0];
 	if (!row) return null;
+	const lifecycle: ApprovalInvocationLifecycle | null =
+		row.authority === "canonical" && row.workflowId && !row.legacyApprovalRequestId
+			? { authority: "canonical", workflowId: row.workflowId }
+			: row.authority === "legacy" && !row.workflowId && row.legacyApprovalRequestId
+				? {
+						authority: "legacy",
+						legacyApprovalRequestId: row.legacyApprovalRequestId,
+					}
+				: null;
 	if (
 		row.organizationId !== parsed.organizationId ||
 		row.schemeVersion !== parsed.schemeVersion ||
-		(row.action !== "approve" && row.action !== "reject")
+		(row.action !== "approve" && row.action !== "reject") ||
+		!lifecycle
 	) {
 		throw new ApprovalEvidenceError("invariant", { field: "invocation" });
 	}
@@ -240,7 +263,7 @@ export async function findApprovalInvocation(
 			reason: null,
 		},
 		commandFingerprint: row.commandFingerprint,
-		workflowId: row.workflowId,
+		lifecycle,
 		receiptIdempotencyKey: row.receiptIdempotencyKey,
 		decisionEvidenceId: row.decisionEvidenceId,
 	};
@@ -259,7 +282,7 @@ export async function findCommittedInvocationDecision(
 		identity: ApprovalInvocationIdentity;
 		command: ApprovalInvocationCommand;
 	},
-): Promise<DecisionEvidenceRecord | null> {
+): Promise<DecisionEvidenceRecord | LegacyDecisionEvidenceRecord | null> {
 	const existing = await findApprovalInvocation(database, input.identity);
 	if (!existing) return null;
 	if (
@@ -268,12 +291,40 @@ export async function findCommittedInvocationDecision(
 	) {
 		throw new ApprovalEvidenceError("invocation_mismatch");
 	}
-	const evidence = await findDecisionEvidenceById(database, {
-		organizationId: input.identity.organizationId,
-		workflowId: existing.workflowId,
-		id: existing.decisionEvidenceId,
-	});
-	if (!evidence) {
+	const evidence =
+		existing.lifecycle.authority === "canonical"
+			? await findDecisionEvidenceById(database, {
+					organizationId: input.identity.organizationId,
+					workflowId: existing.lifecycle.workflowId,
+					id: existing.decisionEvidenceId,
+				})
+			: await findLegacyDecisionEvidenceById(database, {
+					organizationId: input.identity.organizationId,
+					id: existing.decisionEvidenceId,
+				});
+	if (
+		!evidence ||
+		(existing.lifecycle.authority === "legacy" &&
+			(!("authority" in evidence) ||
+				evidence.legacy.approvalRequestId !==
+					existing.lifecycle.legacyApprovalRequestId))
+	) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "invocation_decision",
+		});
+	}
+	return evidence;
+}
+
+/**
+ * A canonical decision owner's view of a committed invocation. The command
+ * fingerprint includes the binding, whose authority is fixed, so a legacy
+ * decision here is an integrity contradiction, never a replay.
+ */
+export function requireCanonicalInvocationDecision(
+	evidence: DecisionEvidenceRecord | LegacyDecisionEvidenceRecord,
+): DecisionEvidenceRecord {
+	if ("authority" in evidence) {
 		throw new ApprovalEvidenceError("invariant", {
 			field: "invocation_decision",
 		});
@@ -288,10 +339,12 @@ export async function recordApprovalInvocation(
 		identity: ApprovalInvocationIdentity;
 		deliveryId: string | null;
 		command: ApprovalInvocationCommand;
-		workflowId: string;
 		receiptIdempotencyKey: string;
 		decisionEvidenceId: string;
-	},
+	} & (
+		| { workflowId: string; legacyApprovalRequestId?: never }
+		| { legacyApprovalRequestId: string; workflowId?: never }
+	),
 ): Promise<{ id: string }> {
 	const identity = parseApprovalInvocationIdentity(input.identity);
 	if (
@@ -313,7 +366,17 @@ export async function recordApprovalInvocation(
 			providerActorId: input.command.providerActorId,
 			actorEmployeeId: input.command.actorEmployeeId,
 			actorUserId: input.command.actorUserId,
-			workflowId: input.workflowId,
+			...(input.legacyApprovalRequestId
+				? {
+						authority: "legacy" as const,
+						workflowId: null,
+						legacyApprovalRequestId: input.legacyApprovalRequestId,
+					}
+				: {
+						authority: "canonical" as const,
+						workflowId: input.workflowId,
+						legacyApprovalRequestId: null,
+					}),
 			reviewedBindingId: input.command.reviewedBindingId,
 			action: input.command.action,
 			commandFingerprint: fingerprintApprovalInvocationCommand(input.command),

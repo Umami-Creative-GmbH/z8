@@ -134,6 +134,10 @@ export async function runApprovalMaintenanceCli(
 					storage_type: "delivery_work",
 					id,
 				})),
+				...result.delivery.intents.map((id) => ({
+					storage_type: "delivery_intent",
+					id,
+				})),
 			]);
 		}
 	} catch (error) {

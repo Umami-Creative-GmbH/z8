@@ -19,6 +19,7 @@ import {
 	prepareBoundAbsenceCard,
 } from "./bound-card";
 import { approvalReviewUrl } from "./review-navigation";
+import { prepareBoundTravelExpenseCard } from "./travel-expense-card";
 
 const logger = createLogger("ApprovalPresentation");
 
@@ -36,7 +37,9 @@ export interface ApprovalReviewNotice {
  * revision. Do not load live names, categories, projects, receipts or endpoints
  * to stand in for that history. With an explicit, admitted provider a canonical
  * absence gets an evidence-backed card bound to the recipient's exact
- * assignment and submitted revision (#290); everything else stays review-only.
+ * assignment and submitted revision (#290), and a legacy-authoritative expense
+ * claim one bound to the exact legacy request and its frozen submission (#296);
+ * everything else stays review-only.
  * Infrastructure failures propagate; lack of entitlement discloses nothing.
  */
 export async function prepareApprovalPresentation(input: {
@@ -57,7 +60,7 @@ export async function prepareApprovalPresentation(input: {
 			eq(approvalRequest.approverId, input.recipientEmployeeId),
 			eq(approvalRequest.status, "pending"),
 		),
-		columns: { id: true, metadata: true },
+		columns: { id: true, metadata: true, entityType: true },
 	});
 	if (!request) return { status: "undisclosable" };
 	// A compatibility representative is not proof that its former assignee
@@ -139,6 +142,19 @@ export async function prepareApprovalPresentation(input: {
 			provider: input.provider,
 			approvalRequestId: request.id,
 			recipientUserId: recipient.userId,
+			display,
+			t,
+			...(input.fits ? { fits: input.fits } : {}),
+		});
+		if (card) return card;
+	} else if (input.provider && request.entityType === "travel_expense_claim") {
+		// Legacy-authoritative expense claims bind the exact legacy request (#296).
+		const card = await prepareBoundTravelExpenseCard(db, {
+			organizationId: input.organizationId,
+			approvalRequestId: request.id,
+			recipientEmployeeId: input.recipientEmployeeId,
+			recipientUserId: recipient.userId,
+			provider: input.provider,
 			display,
 			t,
 			...(input.fits ? { fits: input.fits } : {}),
