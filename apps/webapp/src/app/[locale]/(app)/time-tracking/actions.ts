@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { headers } from "next/headers";
@@ -12,7 +12,6 @@ import {
 	employee,
 	project,
 	projectAssignment,
-	surchargeCalculation,
 	timeEntry,
 	userSettings,
 	workPeriod,
@@ -63,16 +62,10 @@ import {
 } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
-import {
-	getMonthRangeInTimezone,
-	getTodayRangeInTimezone,
-	getWeekRangeInTimezone,
-} from "@/lib/time-tracking/timezone-utils";
+import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
-import type { TimeSummary } from "@/lib/time-tracking/types";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { changeWorkPeriodProject } from "@/lib/time-tracking/work-period-attribution";
-import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import {
 	type AddBreakActionContext,
@@ -95,6 +88,7 @@ import {
 	parsePresenceFixedDays,
 	validatePresenceFixedDaysConfig,
 } from "./actions/presence-status";
+import { getActiveWorkPeriod, getTimeSummary } from "./actions/queries";
 import { splitOwnWorkPeriod } from "./actions/work-period-split";
 import {
 	createManualTimeEntryFromCommand,
@@ -115,7 +109,6 @@ import type {
 	CorrectionRequest as ModularCorrectionRequest,
 	SameDayEditRequest as ModularSameDayEditRequest,
 } from "./actions/types";
-import type { WorkPeriodWithEntries } from "./types";
 
 export async function addBreakToActiveSession(
 	breakMinutes: number,
@@ -296,156 +289,6 @@ export async function getTimeClockStatus(): Promise<{
 		activeWorkPeriod: period
 			? { id: period.id, startTime: period.startTime }
 			: null,
-	};
-}
-
-/**
- * Get active work period for current employee
- */
-export async function getActiveWorkPeriod(
-	employeeId: string,
-): Promise<WorkPeriodWithEntries | null> {
-	const period = await db.query.workPeriod.findFirst({
-		where: and(
-			eq(workPeriod.employeeId, employeeId),
-			isNull(workPeriod.endTime),
-		),
-		with: {
-			clockIn: true,
-			clockOut: true,
-		},
-	});
-
-	if (!period) return null;
-	const typedPeriod = period as unknown as WorkPeriodWithEntries;
-
-	return {
-		...typedPeriod,
-		clockIn: typedPeriod.clockIn,
-		clockOut: typedPeriod.clockOut || undefined,
-	};
-}
-
-/**
- * Get work periods for an employee within a date range
- */
-export async function getWorkPeriods(
-	employeeId: string,
-	startDate: Date,
-	endDate: Date,
-): Promise<WorkPeriodWithEntries[]> {
-	const periods = await db.query.workPeriod.findMany({
-		where: and(
-			eq(workPeriod.employeeId, employeeId),
-			isNull(workPeriod.deletedAt),
-			gte(workPeriod.startTime, startDate),
-			lte(workPeriod.startTime, endDate),
-		),
-		with: {
-			clockIn: true,
-			clockOut: true,
-		},
-		orderBy: [desc(workPeriod.startTime)],
-	});
-
-	const typedPeriods = periods as unknown as WorkPeriodWithEntries[];
-	return typedPeriods.map((p) => ({
-		...p,
-		clockIn: p.clockIn,
-		clockOut: p.clockOut || undefined,
-	}));
-}
-
-/**
- * Get time summary for an employee (today, week, month)
- * Uses employee's timezone for day/week/month boundaries
- * Includes surcharge credits if surcharges are enabled
- */
-export async function getTimeSummary(
-	employeeId: string,
-	timezone: string = "UTC",
-	weekStartDay: WeekStartDay = "sunday",
-): Promise<TimeSummary> {
-	// Use timezone-aware boundaries for accurate day/week/month calculations
-	const { start: todayStartDT, end: todayEndDT } =
-		getTodayRangeInTimezone(timezone);
-	const { start: weekStartDT, end: weekEndDT } = getWeekRangeInTimezone(
-		new Date(),
-		timezone,
-		weekStartDay,
-	);
-	const { start: monthStartDT, end: monthEndDT } = getMonthRangeInTimezone(
-		new Date(),
-		timezone,
-	);
-
-	const todayStart = dateToDB(todayStartDT)!;
-	const todayEnd = dateToDB(todayEndDT)!;
-	const weekStart = dateToDB(weekStartDT)!;
-	const weekEnd = dateToDB(weekEndDT)!;
-	const monthStart = dateToDB(monthStartDT)!;
-	const monthEnd = dateToDB(monthEndDT)!;
-
-	// Fetch all periods for the month with their surcharge calculations
-	const periodsWithSurcharges = await db
-		.select({
-			id: workPeriod.id,
-			startTime: workPeriod.startTime,
-			durationMinutes: workPeriod.durationMinutes,
-			surchargeMinutes: surchargeCalculation.surchargeMinutes,
-		})
-		.from(workPeriod)
-		.leftJoin(
-			surchargeCalculation,
-			eq(surchargeCalculation.workPeriodId, workPeriod.id),
-		)
-		.where(
-			and(
-				eq(workPeriod.employeeId, employeeId),
-				isNull(workPeriod.deletedAt),
-				gte(workPeriod.startTime, monthStart),
-				lte(workPeriod.startTime, monthEnd),
-			),
-		);
-
-	// Calculate base minutes for each time range
-	const todayMinutes = periodsWithSurcharges
-		.filter((p) => p.startTime >= todayStart && p.startTime <= todayEnd)
-		.reduce((sum, p) => sum + (p.durationMinutes || 0), 0);
-
-	const weekMinutes = periodsWithSurcharges
-		.filter((p) => p.startTime >= weekStart && p.startTime <= weekEnd)
-		.reduce((sum, p) => sum + (p.durationMinutes || 0), 0);
-
-	const monthMinutes = periodsWithSurcharges.reduce(
-		(sum, p) => sum + (p.durationMinutes || 0),
-		0,
-	);
-
-	// Calculate surcharge minutes for each time range
-	const todaySurchargeMinutes = periodsWithSurcharges
-		.filter((p) => p.startTime >= todayStart && p.startTime <= todayEnd)
-		.reduce((sum, p) => sum + (p.surchargeMinutes || 0), 0);
-
-	const weekSurchargeMinutes = periodsWithSurcharges
-		.filter((p) => p.startTime >= weekStart && p.startTime <= weekEnd)
-		.reduce((sum, p) => sum + (p.surchargeMinutes || 0), 0);
-
-	const monthSurchargeMinutes = periodsWithSurcharges.reduce(
-		(sum, p) => sum + (p.surchargeMinutes || 0),
-		0,
-	);
-
-	return {
-		todayMinutes,
-		weekMinutes,
-		monthMinutes,
-		// Only include surcharge fields if there are any surcharges
-		...(monthSurchargeMinutes > 0 && {
-			todaySurchargeMinutes,
-			weekSurchargeMinutes,
-			monthSurchargeMinutes,
-		}),
 	};
 }
 
@@ -1729,6 +1572,7 @@ export async function getPresenceStatus(
 							workPeriod.organizationId,
 							session.session.activeOrganizationId!,
 						),
+						isNull(workPeriod.deletedAt),
 						gte(workPeriod.startTime, periodStart.toJSDate()),
 						lte(workPeriod.startTime, periodEnd.toJSDate()),
 					),
