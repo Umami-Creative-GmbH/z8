@@ -49,7 +49,11 @@ export async function saveConversation(
 		const { rearmApprovalDeliveryForRepairedDestination } = await import(
 			"@/lib/approvals/delivery/recovery"
 		);
-		await rearmApprovalDeliveryForRepairedDestination({ organizationId, userId });
+		await rearmApprovalDeliveryForRepairedDestination({
+			organizationId,
+			userId,
+			provider: "discord",
+		});
 	} catch (error) {
 		logger.error({ error, userId, organizationId }, "Failed to re-arm Discord approval delivery");
 	}

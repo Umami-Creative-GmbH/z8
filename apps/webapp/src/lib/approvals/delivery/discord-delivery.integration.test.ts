@@ -917,6 +917,25 @@ describeIntegration("Discord approval decisions and delivery (PostgreSQL)", () =
 		});
 	});
 
+	it("re-arms only the provider whose destination was repaired", async () => {
+		await seed({ telegram: true });
+		await admin.query("delete from telegram_conversation where organization_id = $1", [
+			ids.organization,
+		]);
+		const { workflowId } = await submit();
+		await deliver();
+		const telegramWork = () =>
+			work(workflowId).then((rows) => only(rows.filter((row) => row.provider === "telegram")));
+		expect(await telegramWork()).toMatchObject({
+			status: "awaiting_repair",
+			last_outcome: "destination_invalid:destination_missing",
+		});
+
+		// Reaching the Discord bot says nothing about the Telegram chat.
+		await saveConversation(DM_CHANNEL_ID, ids.managerUser, ids.organization);
+		expect(await telegramWork()).toMatchObject({ status: "awaiting_repair" });
+	});
+
 	it("tracks a card that went stale while in flight and retires it", async () => {
 		await seed();
 		const submitted = await submit();

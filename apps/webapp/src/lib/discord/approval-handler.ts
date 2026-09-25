@@ -107,7 +107,9 @@ export async function handleApprovalButtonClick(
  * authenticated application, and the card's binding go through the shared
  * attempt into the authoritative decision. The deferred acknowledgment is
  * protocol handling within Discord's three seconds and proves nothing; the
- * ephemeral follow-up reports only a committed or verified outcome. Message
+ * ephemeral follow-up reports only a committed or verified outcome. Nothing is
+ * decided when the acknowledgment failed: Discord then shows the press as
+ * failed, and a decision the recipient never hears of must not commit. Message
  * updates are best effort and cannot change a committed decision.
  */
 export async function handleBoundApprovalInteraction(
@@ -121,9 +123,8 @@ export async function handleBoundApprovalInteraction(
 		InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
 		{ flags: EPHEMERAL },
 	);
-	const reply = await decideBoundInteraction(interaction, callback, bot);
-	// Without an acknowledgment Discord has already invalidated the token.
 	if (!acknowledged) return;
+	const reply = await decideBoundInteraction(interaction, callback, bot);
 	try {
 		await createFollowupMessage(bot.botToken, bot.applicationId, interaction.token, {
 			...reply,
@@ -173,18 +174,26 @@ async function decideBoundInteraction(
 		);
 		return outcomeUnknownReply(recipient);
 	}
+	let notice: ApprovalNotice | null;
 	try {
-		const notice = await updateClickedCard(interaction, result, bot, recipient);
-		return notice
-			? discordApprovalNotice(notice)
-			: { content: "This approval is unavailable. Open Z8 to review your inbox." };
+		notice = await updateClickedCard(interaction, result, bot, recipient);
 	} catch (error) {
+		// The outcome is known; only the card could not be looked up or updated.
 		logger.error(
 			{ error, bindingId: callback.bindingId, status: result.status },
 			"Failed to update bound Discord approval card",
 		);
-		return outcomeUnknownReply(recipient);
+		notice =
+			result.status === "decided" && result.evidence.assignmentId
+				? await boundDecisionNotice(result, recipient, {
+						kind: "canonical",
+						assignmentId: result.evidence.assignmentId,
+					}).catch(() => null)
+				: null;
 	}
+	return notice
+		? discordApprovalNotice(notice)
+		: { content: "This approval is unavailable. Open Z8 to review your inbox." };
 }
 
 async function outcomeUnknownReply(recipient: {
@@ -252,8 +261,13 @@ async function updateClickedCard(
 	if (!reference) return null;
 	const notice = await boundDecisionNotice(result, recipient, reference);
 	if (notice && tracked) {
-		await editMessage(bot.botToken, tracked.channelId, tracked.messageId, {
-			...discordApprovalNotice(notice),
+		await editMessage(
+			bot.botToken,
+			tracked.channelId,
+			tracked.messageId,
+			discordApprovalNotice(notice),
+		).catch((error: unknown) => {
+			logger.error({ error }, "Failed to edit tracked Discord approval card");
 		});
 	}
 	return notice;
@@ -272,19 +286,25 @@ async function updateDeliveredBoundCard(
 			approvalDeliveryMessageReviewReference(message),
 		);
 		if (!notice) return null;
-		if (result.status !== "decided" && (await isApprovalDeliveryMessagePending(message))) {
-			const edited = await editMessage(
-				bot.botToken,
-				message.destinationId,
-				message.remoteMessageId,
-				discordApprovalNotice(notice),
-			);
-			if (edited) {
-				await markApprovalDeliveryMessageWithoutControls({
-					organizationId: bot.organizationId,
-					messageId: message.id,
-				});
+		try {
+			if (result.status !== "decided" && (await isApprovalDeliveryMessagePending(message))) {
+				const edited = await editMessage(
+					bot.botToken,
+					message.destinationId,
+					message.remoteMessageId,
+					discordApprovalNotice(notice),
+				);
+				if (edited) {
+					await markApprovalDeliveryMessageWithoutControls({
+						organizationId: bot.organizationId,
+						messageId: message.id,
+					});
+				}
 			}
+		} catch (error) {
+			// The outcome stands; the card keeps its controls, which decide
+			// only while the assignment is pending.
+			logger.error({ error, messageId: message.id }, "Failed to mark Discord card for review");
 		}
 		return notice;
 	} finally {

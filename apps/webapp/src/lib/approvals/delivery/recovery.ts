@@ -1,6 +1,6 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { approvalEscalationAttention, employee } from "@/db/schema";
+import { type ApprovalDeliveryProvider, approvalEscalationAttention, employee } from "@/db/schema";
 import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { kickApprovalDelivery } from "./kick";
@@ -65,13 +65,15 @@ export async function recoverApprovalDeliveryForAttention(input: {
 }
 
 /**
- * Destination repair: the recipient reached the bot again, so their work that
- * was waiting for a usable destination is re-armed. Nothing else is resent,
- * and organizations without a delivery owner are untouched.
+ * Destination repair: the recipient reached the provider's bot again, so their
+ * work on that provider that was waiting for a usable destination is re-armed.
+ * Nothing else is resent, and organizations without a delivery owner are
+ * untouched.
  */
 export async function rearmApprovalDeliveryForRepairedDestination(input: {
 	organizationId: string;
 	userId: string;
+	provider: ApprovalDeliveryProvider;
 	now?: Instant;
 }): Promise<void> {
 	if (!(await hasApprovalDeliveryControl(input.organizationId))) return;
@@ -85,6 +87,7 @@ export async function rearmApprovalDeliveryForRepairedDestination(input: {
 	const result = await rearmApprovalDeliveryWork({
 		organizationId: input.organizationId,
 		recipientEmployeeIds: recipients.map((recipient) => recipient.id),
+		provider: input.provider,
 		outcomePrefix: "destination_invalid:",
 		now: input.now ?? systemClock.nowInstant(),
 	});

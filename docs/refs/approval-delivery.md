@@ -99,7 +99,7 @@ Telegram adapter                                        lib/telegram/approval-de
   repair-waiting work with a fresh schedule. Delivered, suppressed and cancelled
   work is never resent. The incident closes only when a delivery succeeds.
 - Destination repair: when the recipient's private chat is saved again, their
-  `destination_invalid` work is re-armed. `unavailable` work (bot missing or
+  Telegram `destination_invalid` work is re-armed. `unavailable` work (bot missing or
   token revoked) waits for explicit recovery after the bot is repaired.
 - Delivery never changes a committed decision. A failed refresh leaves the
   decision as committed and retries on the schedule.
@@ -233,17 +233,19 @@ interaction (signature verified by the route)          lib/discord/approval-hand
   delivery ID, so `delivery_id` is empty. An interaction for another
   application, or without a snowflake ID or actor, decides nothing.
 - **Acknowledgment.** The deferred acknowledgment is protocol only and proves
-  nothing. The follow-up reports the committed outcome. When the outcome is
-  unknown (the decision call failed), it says so and claims nothing; the same
-  interaction replays if the decision did commit. Discord documents no inbound
+  nothing. If it fails, nothing is decided (Discord shows the press as failed).
+  The follow-up reports the committed outcome, even when updating the card
+  fails. When the outcome is unknown (the decision call failed), it says so and
+  claims nothing; the same interaction replays if the decision did commit. Discord documents no inbound
   interaction redelivery, so nothing relies on one.
 - **Destination.** Cards go only to the recipient's DM, opened through Discord
   from their active `discord_user_mapping` in the organization. The stored
   `discord_conversation` channel may be a server channel and is not used for
   approval cards (legacy path included). No link is `destination_invalid:destination_missing`;
   closed DMs (50007), an unknown channel or user and missing access are
-  `destination_invalid`. Any later interaction by the recipient
-  (`saveConversation`) re-arms that work.
+  `destination_invalid`. Any later interaction by the recipient with the
+  Discord bot (`saveConversation`) re-arms that Discord work only; destination
+  repair is scoped to the provider (Telegram's re-arms Telegram work only).
 - **Outcomes.** 429 is `retryable`; 5xx, network errors, timeouts and invalid
   responses are `ambiguous`; 401 is `unavailable`; other 4xx are `permanent`.
   On edits, an unknown message or channel, or a message by another author, is
@@ -290,7 +292,7 @@ part of `test:approval-workflow-repository:integration`), driving the real
 `requestAbsenceEffect`, `approveAbsenceEffect`, `processApprovalDeliveries`,
 `handleDiscordInteraction`, `handleTelegramUpdate`, `saveConversation`,
 `sendDiscordNotification` and `deleteApproval`; only the Discord and Telegram
-HTTP transports, vault, session and side channels are replaced. 12/12 passing:
+HTTP transports, vault, session and side channels are replaced. 13/13 passing:
 
 - a real submission sends one bound card to the DM opened from the account
   link (not the stored server channel) with full identity; a rerun sends nothing;
@@ -304,7 +306,8 @@ HTTP transports, vault, session and side channels are replaced. 12/12 passing:
 - a paused press turns the pending card into a review notice;
 - legacy `{"a":"ap"}` buttons stay historical-only;
 - 429 then 502 ×5 retry after 1m/5m/30m/2h/12h and exhaust with attention;
-- no link and closed DMs wait for repair; `saveConversation` re-arms;
+- no link and closed DMs wait for repair; `saveConversation` re-arms Discord
+  work only, never another provider's;
 - a card that went stale in flight is tracked and retired;
 - Telegram and Discord decisions refresh each other's cards;
 - without a control the existing path sends to the DM; with one it is silent;
