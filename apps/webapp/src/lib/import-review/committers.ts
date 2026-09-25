@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import {
@@ -7,6 +7,7 @@ import {
 	employee,
 	holiday,
 	holidayCategory,
+	importBatch,
 	importStagedRow,
 	surchargeModel,
 	team,
@@ -14,9 +15,19 @@ import {
 	workCategory,
 	workPeriod,
 } from "@/db/schema";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import type { ImportedWorkHold } from "@/lib/time-tracking/imported-work-interval";
+import {
+	type ImportedWorkCommand,
+	importedWorkSourceKey,
+	recordImportedWork,
+	replayImportedWork,
+} from "@/lib/time-tracking/record-imported-work";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
-import type { ImportCommitJobData } from "./types";
+import { withReviewedImportTransaction } from "./import-work-transaction";
+import { importedWorkProviderEvidence } from "./imported-work-evidence";
+import type { ImportCommitJobData, ImportProvider } from "./types";
 
 type CommitRowError = { rowId: string; message: string };
 type CommitSummary = {
@@ -26,7 +37,10 @@ type CommitSummary = {
 };
 type CommitResult = {
 	committedRows: number;
+	/** Rows that failed and may succeed on a retry; held rows are not retried. */
 	failedRows: number;
+	/** Rows the work operation held for review, with their evidence on the row. */
+	heldRows: number;
 	errors: CommitRowError[];
 	summary: CommitSummary;
 };
@@ -36,6 +50,7 @@ type CommitDb = Pick<typeof db, "execute" | "insert" | "query" | "select" | "upd
 type CommitRowOutcome =
 	| { status: "committed" }
 	| { status: "blocked"; message: string }
+	| { status: "held"; message: string }
 	| { status: "skipped" };
 type BlockOptions = { finalAttempt: boolean };
 
@@ -116,6 +131,37 @@ async function markBlocked(
 				eq(importStagedRow.rowStatus, "committing"),
 			),
 		);
+}
+
+/**
+ * A row the work operation held for review keeps its evidence durably: it is
+ * blocked immediately, on any attempt, because retrying cannot change the outcome.
+ */
+async function markHeld(
+	database: CommitDb,
+	rowId: string,
+	job: ImportCommitJobData,
+	hold: ImportedWorkHold,
+): Promise<CommitRowOutcome> {
+	const message = `Held for review: ${hold.reason}`;
+	await database
+		.update(importStagedRow)
+		.set({
+			rowStatus: "blocked",
+			issueSeverity: "blocking",
+			commitError: message,
+			commitHold: hold,
+		})
+		.where(
+			and(
+				eq(importStagedRow.id, rowId),
+				eq(importStagedRow.batchId, job.batchId),
+				eq(importStagedRow.organizationId, job.organizationId),
+				eq(importStagedRow.entityType, job.entityType),
+				eq(importStagedRow.rowStatus, "committing"),
+			),
+		);
+	return { status: "held", message };
 }
 
 async function releaseBlocked(database: CommitDb, rowId: string, job: ImportCommitJobData) {
@@ -284,6 +330,11 @@ function isActiveValue(payload: SetupReferencePayload) {
 	return payload.isActive ?? payload.active ?? true;
 }
 
+/**
+ * Legacy work import for organizations that have not adopted appends. It runs
+ * under the reviewed-import transaction, which holds the shared employee key, and
+ * keeps its established unique-leaf head selection and period-only graph.
+ */
 async function commitWorkPeriod(
 	database: CommitDb,
 	row: typeof importStagedRow.$inferSelect,
@@ -291,8 +342,6 @@ async function commitWorkPeriod(
 ) {
 	const payload = row.normalizedPayload as unknown as WorkPeriodPayload;
 	await assertEmployeeInOrganization(database, payload.employeeId, job.organizationId);
-	const lockKey = `${job.organizationId}:${payload.employeeId}`;
-	await database.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
 
 	const startAt = parseUtcDateTime(payload.startsAt, "startsAt");
 	const endAt = payload.endsAt ? parseUtcDateTime(payload.endsAt, "endsAt") : null;
@@ -543,6 +592,141 @@ async function commitSurcharge(
 	await markCommitted(database, row.id, job, "surcharge_model", created.id);
 }
 
+/** A reviewer's mapping change between routing and the claim restarts the row. */
+class ImportRowScopeChangedError extends Error {
+	constructor() {
+		super("Import row scope changed while committing");
+		this.name = "ImportRowScopeChangedError";
+	}
+}
+
+const WORK_ROW_ATTEMPTS = 3;
+
+type StagedRow = typeof importStagedRow.$inferSelect;
+
+function routedEmployeeId(row: StagedRow): string {
+	const employeeId = (row.normalizedPayload as Partial<WorkPeriodPayload>).employeeId;
+	if (typeof employeeId !== "string" || employeeId.length === 0) {
+		throw new Error("work_period import row requires a mapped employee before commit");
+	}
+	return employeeId;
+}
+
+async function getBatchProvider(job: ImportCommitJobData): Promise<ImportProvider> {
+	const batch = await db.query.importBatch.findFirst({
+		where: and(eq(importBatch.id, job.batchId), eq(importBatch.organizationId, job.organizationId)),
+		columns: { provider: true },
+	});
+	if (!batch) throw new Error(`Import batch ${job.batchId} not found`);
+	return batch.provider;
+}
+
+function importedWorkCommand(
+	row: StagedRow,
+	job: ImportCommitJobData,
+	provider: ImportProvider,
+): ImportedWorkCommand {
+	const payload = row.normalizedPayload as Partial<WorkPeriodPayload>;
+	return {
+		version: 1,
+		operationId: row.id,
+		source: {
+			provider,
+			batchId: job.batchId,
+			entityType: "work_period",
+			providerSourceId: row.providerSourceId,
+			sourcePayloadHash: row.sourcePayloadHash,
+		},
+		startsAt: String(payload.startsAt),
+		endsAt: payload.endsAt ?? null,
+		providerEvidence: importedWorkProviderEvidence(provider, row.sourcePayload),
+	};
+}
+
+/**
+ * Commits one reviewed work row inside the reviewed-import transaction (#284).
+ * Routing reads the employee from the staged row; under protection the claimed
+ * row must still route to it, otherwise the transaction rolls back and routing
+ * restarts. Receipt replay runs first in every mode. Adopted organizations then
+ * use the completed-work operation, which commits the whole graph or holds the
+ * row with its evidence; the others keep the legacy writer.
+ */
+async function commitReviewedWorkRow(
+	routedRow: StagedRow,
+	job: ImportCommitJobData,
+	provider: ImportProvider,
+): Promise<CommitRowOutcome> {
+	let row = routedRow;
+	for (let attempt = 1; ; attempt++) {
+		const employeeId = routedEmployeeId(row);
+		const command = importedWorkCommand(row, job, provider);
+		try {
+			return await withReviewedImportTransaction(
+				{
+					organizationId: job.organizationId,
+					employeeId,
+					importerUserId: job.committedBy,
+					sourceKey: importedWorkSourceKey(command.source),
+				},
+				async (scope): Promise<CommitRowOutcome> => {
+					const database = scope.db as CommitDb;
+					const claimed = await claimRow(database, row.id, job);
+					if (!claimed) return { status: "skipped" };
+					const claimedCommand = importedWorkCommand(claimed, job, provider);
+					if (
+						routedEmployeeId(claimed) !== employeeId ||
+						importedWorkSourceKey(claimedCommand.source) !== importedWorkSourceKey(command.source)
+					) {
+						throw new ImportRowScopeChangedError();
+					}
+					const scoped = { organizationId: job.organizationId, employeeId };
+					const outcome =
+						(await replayImportedWork(scope, { ...scoped, command: claimedCommand })) ??
+						(scope.admission === "append"
+							? await recordImportedWork(scope, {
+									...scoped,
+									importerUserId: job.committedBy,
+									command: claimedCommand,
+									now: systemClock.nowInstant(),
+								})
+							: null);
+					if (!outcome) {
+						await commitWorkPeriod(database, claimed, job);
+						return { status: "committed" };
+					}
+					if (outcome.kind === "held") return markHeld(database, claimed.id, job, outcome.hold);
+					await markCommitted(
+						database,
+						claimed.id,
+						job,
+						"work_period",
+						outcome.result.workPeriodId,
+					);
+					return { status: "committed" };
+				},
+			);
+		} catch (error) {
+			if (!(error instanceof ImportRowScopeChangedError) || attempt >= WORK_ROW_ATTEMPTS) {
+				throw error;
+			}
+			const [rerouted] = await db
+				.select()
+				.from(importStagedRow)
+				.where(
+					and(
+						eq(importStagedRow.id, row.id),
+						eq(importStagedRow.batchId, job.batchId),
+						eq(importStagedRow.organizationId, job.organizationId),
+						eq(importStagedRow.entityType, job.entityType),
+					),
+				)
+				.limit(1);
+			if (rerouted?.rowStatus !== "accepted") return { status: "skipped" };
+			row = rerouted;
+		}
+	}
+}
+
 function mappingRequiredMessage(entityType: ImportCommitJobData["entityType"]) {
 	return `${entityType} import rows require mapping confirmation before commit`;
 }
@@ -562,51 +746,60 @@ export async function commitAcceptedRowsForEntity(
 				eq(importStagedRow.entityType, job.entityType),
 				eq(importStagedRow.rowStatus, "accepted"),
 			),
-		);
+		)
+		// Deterministic staging order: the order rows append to an employee's history.
+		.orderBy(asc(importStagedRow.createdAt), asc(importStagedRow.id));
 	let committedRows = 0;
+	let heldRows = 0;
 	const errors: CommitRowError[] = [];
 	const blockOptions = { finalAttempt };
+	const provider =
+		job.entityType === "work_period" && rows.length > 0 ? await getBatchProvider(job) : null;
 
 	for (const row of rows) {
 		if (row.rowStatus !== "accepted") continue;
 
 		try {
-			const outcome = await db.transaction(async (tx): Promise<CommitRowOutcome> => {
-				const claimedRow = await claimRow(tx as CommitDb, row.id, job);
-				if (!claimedRow) return { status: "skipped" };
+			const outcome = provider
+				? await commitReviewedWorkRow(row, job, provider)
+				: await db.transaction(async (tx): Promise<CommitRowOutcome> => {
+						const claimedRow = await claimRow(tx as CommitDb, row.id, job);
+						if (!claimedRow) return { status: "skipped" };
 
-				switch (job.entityType) {
-					case "work_period":
-						await commitWorkPeriod(tx as CommitDb, claimedRow, job);
-						return { status: "committed" };
-					case "absence":
-						await commitAbsence(tx as CommitDb, claimedRow, job);
-						return { status: "committed" };
-					case "team":
-						await commitTeam(tx as CommitDb, claimedRow, job);
-						return { status: "committed" };
-					case "service":
-					case "work_category":
-						await commitWorkCategory(tx as CommitDb, claimedRow, job);
-						return { status: "committed" };
-					case "holiday":
-						return commitHoliday(tx as CommitDb, claimedRow, job, blockOptions);
-					case "surcharge":
-						await commitSurcharge(tx as CommitDb, claimedRow, job);
-						return { status: "committed" };
-					case "target_hours":
-					case "work_policy":
-					case "holiday_quota":
-					case "employee":
-					case "absence_category": {
-						const message = mappingRequiredMessage(job.entityType);
-						return blockRow(tx as CommitDb, claimedRow.id, job, message, blockOptions);
-					}
-					default:
-						throw new Error(`Unsupported import review commit entity type: ${job.entityType}`);
-				}
-			});
+						switch (job.entityType) {
+							case "absence":
+								await commitAbsence(tx as CommitDb, claimedRow, job);
+								return { status: "committed" };
+							case "team":
+								await commitTeam(tx as CommitDb, claimedRow, job);
+								return { status: "committed" };
+							case "service":
+							case "work_category":
+								await commitWorkCategory(tx as CommitDb, claimedRow, job);
+								return { status: "committed" };
+							case "holiday":
+								return commitHoliday(tx as CommitDb, claimedRow, job, blockOptions);
+							case "surcharge":
+								await commitSurcharge(tx as CommitDb, claimedRow, job);
+								return { status: "committed" };
+							case "target_hours":
+							case "work_policy":
+							case "holiday_quota":
+							case "employee":
+							case "absence_category": {
+								const message = mappingRequiredMessage(job.entityType);
+								return blockRow(tx as CommitDb, claimedRow.id, job, message, blockOptions);
+							}
+							default:
+								throw new Error(`Unsupported import review commit entity type: ${job.entityType}`);
+						}
+					});
 			if (outcome.status === "skipped") continue;
+			if (outcome.status === "held") {
+				heldRows++;
+				errors.push({ rowId: row.id, message: outcome.message });
+				continue;
+			}
 			if (outcome.status === "blocked") {
 				errors.push({ rowId: row.id, message: outcome.message });
 				continue;
@@ -626,7 +819,8 @@ export async function commitAcceptedRowsForEntity(
 
 	return {
 		committedRows,
-		failedRows: errors.length,
+		failedRows: errors.length - heldRows,
+		heldRows,
 		errors,
 		summary: await getCommitSummary(job),
 	};
