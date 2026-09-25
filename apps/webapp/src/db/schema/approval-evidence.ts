@@ -305,6 +305,11 @@ export const approvalDecisionEvidence = pgTable(
 			table.organizationId,
 			table.submittedRevisionId,
 		),
+		unique("approvalDecisionEvidence_id_workflow_organizationId_idx").on(
+			table.id,
+			table.workflowId,
+			table.organizationId,
+		),
 		// Enforced for both authorities (the workflow-scoped FK is MATCH SIMPLE and
 		// skips rows without a workflow); a decision never crosses authorities.
 		foreignKey({
@@ -342,6 +347,144 @@ export const approvalDecisionEvidence = pgTable(
 				approvalReviewBinding.organizationId,
 			],
 		}),
+		foreignKey({
+			columns: [table.actorEmployeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}),
+	],
+);
+
+// Per organization/kind/provider admission of actionable bot cards (#290).
+// No row keeps cards review-only; the authorized adoption writer changes it
+// under the exclusive rollout lock. Slack has no established per-invocation
+// identity (#261), so it can never be admitted.
+export const APPROVAL_PRESENTATION_PROVIDERS = [
+	"telegram",
+	"discord",
+	"teams",
+	"slack",
+] as const;
+export type ApprovalPresentationProvider =
+	(typeof APPROVAL_PRESENTATION_PROVIDERS)[number];
+export const APPROVAL_PRESENTATION_MODES = [
+	"review_only",
+	"actionable",
+] as const;
+export type ApprovalPresentationMode =
+	(typeof APPROVAL_PRESENTATION_MODES)[number];
+
+export const approvalPresentationControl = pgTable(
+	"approval_presentation_control",
+	{
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		workflowType: approvalWorkflowTypeEnum("workflow_type").notNull(),
+		provider: text("provider").$type<ApprovalPresentationProvider>().notNull(),
+		mode: text("mode")
+			.$type<ApprovalPresentationMode>()
+			.default("review_only")
+			.notNull(),
+	},
+	(table) => [
+		primaryKey({
+			name: "approval_presentation_control_pk",
+			columns: [table.organizationId, table.workflowType, table.provider],
+		}),
+		check(
+			"approval_presentation_control_provider_check",
+			sql`${table.provider} IN ('telegram', 'discord', 'teams', 'slack')`,
+		),
+		check(
+			"approval_presentation_control_mode_check",
+			sql`${table.mode} IN ('review_only', 'actionable')`,
+		),
+		check(
+			"approval_presentation_control_slack_check",
+			sql`NOT (${table.provider} = 'slack' AND ${table.mode} = 'actionable')`,
+		),
+	],
+);
+
+// Immutable association of one authenticated provider invocation with the bound
+// command it carried and the decision it committed (#257 §7, #261). Written in
+// the decision transaction; the engine receipt uses the invocation-derived key.
+// The transport delivery identity (Telegram update_id) is kept separately and
+// is not part of invocation identity.
+export const approvalInvocation = pgTable(
+	"approval_invocation",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		scheme: text("scheme").$type<"telegram_callback_query">().notNull(),
+		schemeVersion: integer("scheme_version").notNull(),
+		receiverScope: text("receiver_scope").notNull(),
+		invocationId: text("invocation_id").notNull(),
+		deliveryId: text("delivery_id"),
+		providerActorId: text("provider_actor_id").notNull(),
+		actorEmployeeId: uuid("actor_employee_id").notNull(),
+		actorUserId: text("actor_user_id")
+			.notNull()
+			.references(() => user.id),
+		workflowId: uuid("workflow_id").notNull(),
+		reviewedBindingId: uuid("reviewed_binding_id").notNull(),
+		action: text("action").$type<"approve" | "reject">().notNull(),
+		commandFingerprint: text("command_fingerprint").notNull(),
+		receiptIdempotencyKey: text("receipt_idempotency_key").notNull(),
+		decisionEvidenceId: uuid("decision_evidence_id").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+	},
+	(table) => [
+		check(
+			"approval_invocation_scheme_check",
+			sql`${table.scheme} IN ('telegram_callback_query') AND ${table.schemeVersion} = 1`,
+		),
+		check(
+			"approval_invocation_action_check",
+			sql`${table.action} IN ('approve', 'reject')`,
+		),
+		uniqueIndex("approvalInvocation_org_identity_idx").on(
+			table.organizationId,
+			table.scheme,
+			table.receiverScope,
+			table.invocationId,
+		),
+		uniqueIndex("approvalInvocation_org_workflow_receipt_idx").on(
+			table.organizationId,
+			table.workflowId,
+			table.receiptIdempotencyKey,
+		),
+		index("approvalInvocation_org_workflow_idx").on(
+			table.organizationId,
+			table.workflowId,
+		),
+		foreignKey({
+			columns: [table.workflowId, table.organizationId],
+			foreignColumns: [approvalWorkflow.id, approvalWorkflow.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			columns: [table.reviewedBindingId, table.organizationId],
+			foreignColumns: [
+				approvalReviewBinding.id,
+				approvalReviewBinding.organizationId,
+			],
+		}).onDelete("cascade"),
+		foreignKey({
+			columns: [
+				table.decisionEvidenceId,
+				table.workflowId,
+				table.organizationId,
+			],
+			foreignColumns: [
+				approvalDecisionEvidence.id,
+				approvalDecisionEvidence.workflowId,
+				approvalDecisionEvidence.organizationId,
+			],
+		}).onDelete("cascade"),
 		foreignKey({
 			columns: [table.actorEmployeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],

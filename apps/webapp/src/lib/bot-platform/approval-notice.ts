@@ -3,7 +3,9 @@ import {
 	type ApprovalReviewReference,
 	approvalReviewUrl,
 } from "@/lib/approvals/presentation/review-navigation";
+import { formatInstant } from "@/lib/datetime/temporal-format";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
+import type { BoundBotApprovalResult } from "./approval-decision";
 import { getBotTranslate } from "./i18n";
 
 export type ApprovalNotice = Pick<
@@ -48,6 +50,86 @@ export async function approvalAttemptNotice(
 			organizationId: recipient.organizationId,
 			reference,
 		}),
+	};
+}
+
+/**
+ * Result of a bound card action. A decided result reports the committed
+ * evidence: the persisted actor and decision time, and the assignment outcome
+ * separately from the request outcome (an intermediate approval is not final).
+ * A replay presents the original evidence, never the retry's actor or time.
+ */
+export async function boundDecisionNotice(
+	result: BoundBotApprovalResult,
+	recipient: { userId: string; organizationId: string },
+	reference: ApprovalReviewReference,
+): Promise<ApprovalNotice | null> {
+	const display = await resolveRecipientDisplayContext(recipient);
+	if (!display) return null;
+	const t = await getBotTranslate(display.locale);
+	const reviewLabel = t("bot.approval.reviewInZ8", "Review in Z8");
+	const reviewUrl = await approvalReviewUrl({
+		organizationId: recipient.organizationId,
+		reference,
+	});
+	if (result.status !== "decided") {
+		return {
+			title: t("bot.approval.reviewRequiredTitle", "Review required"),
+			text:
+				result.status === "conflict"
+					? t(
+							"bot.approval.invocationConflict",
+							"This button press was already recorded with a different action. No decision was made. Review the request in Z8.",
+						)
+					: t(
+							"bot.approval.boundReviewRequired",
+							"This card no longer matches the current request or assignment, or the action could not be verified. No decision was made. Review the request in Z8.",
+						),
+			reviewLabel,
+			reviewUrl,
+		};
+	}
+	const { evidence } = result;
+	const params = {
+		actor:
+			evidence.labels.actorName ??
+			t("bot.approval.card.unavailable", "Unavailable"),
+		time: `${formatInstant(evidence.decidedAt, display, "dateTimeMedium")} (${display.timezone})`,
+	};
+	const title =
+		evidence.requestOutcome === "approved"
+			? t("bot.approval.outcome.requestApprovedTitle", "Request approved")
+			: evidence.requestOutcome === "rejected"
+				? t("bot.approval.outcome.requestRejectedTitle", "Request rejected")
+				: t("bot.approval.outcome.stepApprovedTitle", "Approval recorded");
+	const outcome =
+		evidence.requestOutcome === "approved"
+			? t(
+					"bot.approval.outcome.requestApproved",
+					"Approved by {actor} on {time}. The request is approved.",
+					params,
+				)
+			: evidence.requestOutcome === "rejected"
+				? t(
+						"bot.approval.outcome.requestRejected",
+						"Rejected by {actor} on {time}. The request is rejected.",
+						params,
+					)
+				: t(
+						"bot.approval.outcome.stepApproved",
+						"Approved by {actor} on {time}. The request still awaits further approval.",
+						params,
+					);
+	return {
+		title,
+		text: result.replayed
+			? `${outcome}\n\n${t(
+					"bot.approval.outcome.replayed",
+					"This button press was already recorded; this is its original result and nothing new was decided.",
+				)}`
+			: outcome,
+		reviewLabel,
+		reviewUrl,
 	};
 }
 

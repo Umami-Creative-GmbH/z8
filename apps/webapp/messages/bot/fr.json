@@ -8,7 +8,40 @@
       "historicalApproval": "Votre approbation précédemment enregistrée a été vérifiée. Il s’agit d’un résultat antérieur ; aucune nouvelle décision n’a été prise. Consultez la demande dans Z8 pour plus de détails.",
       "historicalRejection": "Votre refus précédemment enregistré a été vérifié. Il s’agit d’un résultat antérieur ; aucune nouvelle décision n’a été prise. Consultez la demande dans Z8 pour plus de détails.",
       "unboundCallback": "Cette carte ne permet pas de vérifier les informations initialement examinées. Aucune décision n’a été prise. Examinez la demande dans Z8.",
-      "alreadyProcessed": "Cette approbation a déjà été traitée."
+      "alreadyProcessed": "Cette approbation a déjà été traitée.",
+      "boundReviewRequired": "Cette carte ne correspond plus à la demande ou à l’attribution actuelle, ou l’action n’a pas pu être vérifiée. Aucune décision n’a été prise. Examinez la demande dans Z8.",
+      "invocationConflict": "Cet appui a déjà été enregistré avec une autre action. Aucune décision n’a été prise. Examinez la demande dans Z8.",
+      "card": {
+        "absenceTitle": "Demande d’absence à approuver",
+        "boundHint": "Approuver ou refuser décide exactement de la demande affichée ci-dessus. Si elle a été modifiée ou réattribuée, rien n’est décidé et vous êtes invité à l’examiner dans Z8.",
+        "approve": "Approuver",
+        "reject": "Refuser",
+        "unavailable": "Indisponible",
+        "employee": "Employé",
+        "requestedBy": "Demandé par",
+        "submittedBy": "Soumis par",
+        "category": "Catégorie",
+        "currentCategoryName": "Nom actuel de la catégorie",
+        "dates": "Dates",
+        "coverage": "Couverture",
+        "submittedAt": "Soumis",
+        "fullDays": "Journées entières",
+        "fullDay": "journée entière",
+        "morning": "le matin",
+        "afternoon": "l’après-midi",
+        "halfDayPeriods": "Commence {start}, se termine {end}",
+        "explicitTimes": "{start} – {end} (heure locale, fuseau non enregistré)",
+        "explicitTimesOvernight": "{start} – {end} le lendemain (heure locale, fuseau non enregistré)"
+      },
+      "outcome": {
+        "requestApprovedTitle": "Demande approuvée",
+        "requestRejectedTitle": "Demande refusée",
+        "stepApprovedTitle": "Approbation enregistrée",
+        "requestApproved": "Approuvée par {actor} le {time}. La demande est approuvée.",
+        "requestRejected": "Refusée par {actor} le {time}. La demande est refusée.",
+        "stepApproved": "Approuvée par {actor} le {time}. La demande attend encore d’autres approbations.",
+        "replayed": "Cet appui a déjà été enregistré ; ceci est son résultat d’origine et rien de nouveau n’a été décidé."
+      }
     },
     "cmd": {
       "billingRequired": "La facturation est requise pour continuer à utiliser le suivi du temps. Demandez à un administrateur d'organisation de mettre à jour la facturation.",
