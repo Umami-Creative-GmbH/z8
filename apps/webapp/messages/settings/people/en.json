@@ -182,6 +182,7 @@
         "primaryManager": "Primary manager",
         "probationOrder": "Probation end must be after probation start.",
         "reasons": {
+          "appendAdopted": "The running timer was left open because this organization only accepts coordinated clock commands. Close it with a time correction.",
           "clockOutFailed": "The running timer could not be closed automatically.",
           "futureAssignments": "Future work policy assignments were deactivated.",
           "futureStage": "A later approval stage is routed only to this person. Assign a replacement before it starts; otherwise approving the stage before it fails.",

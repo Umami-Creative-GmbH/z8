@@ -15,6 +15,7 @@ import {
 export {
 	type ClockingAction,
 	ClockingAccessError,
+	ClockingAppendAdoptedError,
 	ClockingConflictError,
 	type ClockingDependencies,
 	ClockingOrganizationError,

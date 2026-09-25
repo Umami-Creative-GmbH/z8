@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "./blockchain";
-import { type ClockingStore, createClockingService } from "./clocking-core";
+import {
+	type ClockingStore,
+	createClockingService,
+	LiveWorkOccupiedError,
+} from "./clocking-core";
 import { TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 import { sealWorkTransactionScope, type WorkTransactionAdmission } from "./work-transaction";
 
@@ -18,11 +22,15 @@ function harness(
 		kind: "admitted",
 		append: { predecessor, record: vi.fn(async () => undefined) },
 	},
+	occupied = false,
 ) {
 	const transaction = { id: "outer-transaction" };
 	const inserted: Record<string, unknown>[] = [];
 	const store = {
 		transaction,
+		acquireAdoptionGate: async () => undefined,
+		readAppendAdmission: async () => "legacy" as const,
+		hasCompletedWorkEndingAfter: vi.fn(async () => occupied),
 		lockEmployee: vi.fn(async () => undefined),
 		isOrganizationMember: async () => true,
 		getEntryByActionId: async (_employeeId: string, _organizationId: string, actionId?: string) =>
@@ -104,6 +112,34 @@ describe("coordinated live clock-in append admission", () => {
 		expect((failure as TimeEntryAppendReviewRequiredError).requirement).toEqual(requirement);
 		expect(store.insertEntry).not.toHaveBeenCalled();
 		expect(store.insertActivePeriod).not.toHaveBeenCalled();
+	});
+
+	// #327 (W01): an adopted live start shares the symmetric half-open occupancy
+	// of the completed-work operations; active work already refuses above.
+	it("refuses a start that other completed work ends after, before admission or writes", async () => {
+		const { store, clockIn } = harness("append", undefined, true);
+
+		const failure = await clockIn().catch((error: unknown) => error);
+
+		expect(failure).toBeInstanceOf(LiveWorkOccupiedError);
+		expect(failure).toMatchObject({ occupant: "completed_work" });
+		expect(store.hasCompletedWorkEndingAfter).toHaveBeenCalledWith(
+			scope.employeeId,
+			scope.organizationId,
+			new Date("2026-07-10T09:00:00.000Z"),
+		);
+		expect(store.admitAppend).not.toHaveBeenCalled();
+		expect(store.insertEntry).not.toHaveBeenCalled();
+		expect(store.insertActivePeriod).not.toHaveBeenCalled();
+	});
+
+	it("keeps the legacy start rule in organizations that have not adopted", async () => {
+		const { store, clockIn } = harness("legacy", undefined, true);
+
+		await clockIn();
+
+		expect(store.hasCompletedWorkEndingAfter).not.toHaveBeenCalled();
+		expect(store.insertActivePeriod).toHaveBeenCalledOnce();
 	});
 
 	it("replays a committed action before admission and never advances the tip", async () => {

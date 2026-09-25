@@ -16,7 +16,7 @@
  * directly: production has no activation setter.
  */
 
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -147,7 +147,14 @@ vi.mock("./shared", async (importOriginal) => {
 	};
 });
 
+// The reviewed-import worker (#327 races) enqueues nothing outside the test.
+vi.mock("@/lib/import-review/queue", () => ({
+	enqueueImportCommitJob: async () => {},
+	enqueueImportScanJob: async () => {},
+}));
+
 const { clockIn, clockOut } = await import("./clocking");
+const { processImportReviewJob } = await import("@/lib/import-review/worker");
 const { requestTimeCorrection, requestTimeEntryDeletion } = await import("./corrections");
 const { updateWorkPeriodTimes } = await import("./work-period-time-edit");
 await import("@/lib/approvals/init");
@@ -456,6 +463,7 @@ describeIntegration("approval-based correction lifecycles on PostgreSQL", () => 
 
 	async function cleanup() {
 		await admin.query("drop function if exists t301_fail() cascade");
+		await admin.query("drop function if exists t327_park() cascade");
 		await admin.query("delete from organization where id = $1", [ids.organization]);
 		await admin.query('delete from "user" where id = any($1::text[])', [
 			[ids.requesterUser, ids.managerUser, ids.adminUser],
@@ -894,6 +902,178 @@ describeIntegration("approval-based correction lifecycles on PostgreSQL", () => 
 			conflictType: "work_interval_occupied",
 		});
 		expect(await snapshot()).toEqual(committed);
+	});
+
+	// #327: a reviewed import and a correction submission of the same employee race
+	// in both arrival orders. The first writer parks at its first entry insert while it
+	// holds the employee key; the second waits on that key and sees the committed work.
+	describe("reviewed import and correction arrival order (#327)", () => {
+		async function importBatch(startsAt: string, endsAt: string) {
+			const batchId = randomUUID();
+			const jobId = randomUUID();
+			await admin.query(
+				`insert into import_batch
+				 (id, organization_id, provider, status, selected_scope, date_range, started_by, committed_by, created_at, updated_at)
+				 values ($1, $2, 'clockodo', 'committing', '{}', '{"startDate":"2021-01-01","endDate":"2026-12-31"}', $3, $3, now(), now())`,
+				[batchId, ids.organization, ids.adminUser],
+			);
+			await admin.query(
+				`insert into import_batch_job
+				 (id, batch_id, organization_id, kind, status, entity_type, partition_key, created_at, updated_at)
+				 values ($1, $2, $3, 'commit', 'queued', 'work_period', 'work_period', now(), now())`,
+				[jobId, batchId, ids.organization],
+			);
+			const rowId = randomUUID();
+			const sourcePayload = { id: `t327:${rowId}` };
+			await admin.query(
+				`insert into import_staged_row
+				 (id, batch_id, organization_id, entity_type, provider_source_id, source_payload_hash,
+				  source_payload, normalized_payload, row_status, issue_severity, created_at, updated_at)
+				 values ($1, $2, $3, 'work_period', $4, $5, $6, $7, 'accepted', 'none', now(), now())`,
+				[
+					rowId,
+					batchId,
+					ids.organization,
+					sourcePayload.id,
+					createHash("sha256").update(JSON.stringify(sourcePayload)).digest("hex"),
+					sourcePayload,
+					{ employeeId: ids.requester, startsAt, endsAt },
+				],
+			);
+			return {
+				rowId,
+				/** The real worker, as the job's final BullMQ attempt. */
+				commit: () =>
+					processImportReviewJob({
+						data: {
+							type: "import-review-commit" as const,
+							batchId,
+							jobId,
+							organizationId: ids.organization,
+							entityType: "work_period" as const,
+							committedBy: ids.adminUser,
+						},
+						opts: { attempts: 3 },
+						attemptsMade: 2,
+					} as never),
+			};
+		}
+
+		async function stagedRow(rowId: string) {
+			const { rows } = await admin.query<{
+				row_status: string;
+				commit_hold: Record<string, unknown> | null;
+				commit_target_id: string | null;
+			}>("select row_status, commit_hold, commit_target_id from import_staged_row where id = $1", [
+				rowId,
+			]);
+			return only(rows);
+		}
+
+		async function parkNextEntryInsert() {
+			await admin.query(`create function t327_park() returns trigger language plpgsql as $$
+				begin perform pg_advisory_xact_lock(hashtextextended('t327-park', 0)); return new; end $$`);
+			await admin.query(
+				"create trigger t327_park before insert on time_entry for each row execute function t327_park()",
+			);
+			const client = await admin.connect();
+			await client.query("begin");
+			await client.query("select pg_advisory_xact_lock(hashtextextended('t327-park', 0))");
+			return {
+				async release() {
+					await client.query("commit");
+					client.release();
+				},
+			};
+		}
+
+		async function waitForAdvisoryWaiters(count: number) {
+			for (let attempt = 0; attempt < 200; attempt += 1) {
+				const { rows } = await admin.query<{ waiting: number }>(
+					"select count(*)::int as waiting from pg_locks where locktype = 'advisory' and not granted",
+				);
+				if ((rows[0]?.waiting ?? 0) >= count) return;
+				await new Promise((resolve) => setTimeout(resolve, 50));
+			}
+			throw new Error(`Fewer than ${count} transactions waited on advisory locks`);
+		}
+
+		/** Undeleted work of the employee that overlaps other undeleted work. */
+		async function overlaps() {
+			const { rows } = await admin.query(
+				`select a.id from work_period a join work_period b
+				   on a.employee_id = b.employee_id and a.id < b.id
+				  and a.deleted_at is null and b.deleted_at is null
+				  and a.start_time < coalesce(b.end_time, 'infinity')
+				  and b.start_time < coalesce(a.end_time, 'infinity')
+				 where a.employee_id = $1`,
+				[ids.requester],
+			);
+			return rows;
+		}
+
+		it("imports around a correction that committed first, whose approval is then refused", async () => {
+			const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+			const batch = await importBatch("2026-07-22T10:30:00Z", "2026-07-22T11:30:00Z");
+			const park = await parkNextEntryInsert();
+			const correction = requestEdit(work.id, { clockIn: "08:00", clockOut: "11:00" });
+			await waitForAdvisoryWaiters(1);
+			const imported = batch.commit();
+			await waitForAdvisoryWaiters(2);
+			await park.release();
+
+			await expect(correction).resolves.toMatchObject({ success: true });
+			await imported;
+			// The pending correction does not occupy its requested interval; committed work does.
+			expect(await stagedRow(batch.rowId)).toMatchObject({ row_status: "committed" });
+			const committed = await snapshot();
+
+			await expect(approve(await pendingApprovalId(work.id))).rejects.toMatchObject({
+				conflictType: "work_interval_occupied",
+			});
+			expect(await snapshot()).toEqual(committed);
+			expect(await overlaps()).toEqual([]);
+		});
+
+		it("refuses a correction submission that arrives while an import commits into its interval", async () => {
+			const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+			const batch = await importBatch("2026-07-22T10:30:00Z", "2026-07-22T11:30:00Z");
+			const park = await parkNextEntryInsert();
+			const imported = batch.commit();
+			await waitForAdvisoryWaiters(1);
+			const correction = requestEdit(work.id, { clockIn: "08:00", clockOut: "11:00" });
+			await waitForAdvisoryWaiters(2);
+			await park.release();
+
+			await imported;
+			expect(await stagedRow(batch.rowId)).toMatchObject({ row_status: "committed" });
+			await expect(correction).resolves.toMatchObject({
+				success: false,
+				error: "The time range overlaps other recorded work",
+			});
+			expect(await corrections(work.id)).toEqual([]);
+			expect(await overlaps()).toEqual([]);
+		});
+
+		it("holds an import over the interval a correction already moved work into", async () => {
+			const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+			await expect(
+				requestEdit(work.id, { clockIn: "08:00", clockOut: "11:00" }),
+			).resolves.toMatchObject({ success: true });
+			await approve(await pendingApprovalId(work.id));
+			const batch = await importBatch("2026-07-22T10:30:00Z", "2026-07-22T11:30:00Z");
+
+			// The final attempt reports the held row instead of retrying it.
+			await expect(batch.commit()).rejects.toThrow("Held for review: occupancy_conflict");
+
+			expect(await stagedRow(batch.rowId)).toMatchObject({
+				commit_hold: {
+					reason: "occupancy_conflict",
+					occupants: [{ kind: "work_period", id: work.id }],
+				},
+			});
+			expect(await overlaps()).toEqual([]);
+		});
 	});
 
 	it("refuses an overlapping correction at submission, changing nothing", async () => {

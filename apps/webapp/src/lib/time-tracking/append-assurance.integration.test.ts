@@ -97,6 +97,8 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/approvals", async (importOri
 	>()),
 	sendClockOutApprovalNotifications: async () => {},
 	sendClockOutApprovedNotification: async () => {},
+	sendManualEntryApprovalNotifications: async () => {},
+	sendManualEntryApprovedNotification: async () => {},
 }));
 
 // Signing and S3 upload are the external boundary; the assembled zip is captured.
@@ -116,6 +118,8 @@ vi.mock("@/lib/audit-export", async (importOriginal) => {
 const { POST } = await import("@/app/api/time-entries/verify/route");
 const { POST: proposalsRoute } = await import("@/app/api/time-entries/diagnostics/proposals/route");
 const { clockIn, clockOut } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
+const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracking/actions");
+const { POST: legacyClockRoute } = await import("@/app/api/time-entries/route");
 const { processAuditPack } = await import("@/lib/audit-pack/application/audit-pack-processor");
 const { getPayrollReadiness } = await import("@/lib/payroll-readiness/get-payroll-readiness");
 
@@ -558,6 +562,65 @@ describeIntegration("graph-aware verification and audit assurance on PostgreSQL"
 			]),
 		});
 		expect(interrupted.assurance.scope).toBe("none");
+	});
+
+	// #327: once only participating writers can append, their writes keep the
+	// employee's continuity established from an empty-history admission.
+	it("keeps continuity established while every reachable writer participates", async () => {
+		await admin.query(
+			"insert into time_entry_append_control (organization_id, mode) values ($1, 'active')",
+			[ids.organization],
+		);
+		harness.userId = ids.workerUser;
+		harness.organizationId = ids.organization;
+		await expect(
+			clockIn("office", { instant: parseInstant("2026-07-22T08:00:00Z"), browserTimezone: "UTC" }),
+		).resolves.toMatchObject({ success: true });
+		await expect(
+			clockOut(undefined, undefined, {
+				submissionId: randomUUID(),
+				instant: parseInstant("2026-07-22T12:00:00Z"),
+				browserTimezone: "UTC",
+			}),
+		).resolves.toMatchObject({ success: true });
+		await expect(
+			createManualTimeEntry({
+				version: 2,
+				submissionId: randomUUID(),
+				targetEmployeeId: ids.worker,
+				date: "2026-07-21",
+				clockIn: { time: "08:00", occurrence: null, displayedOffsetMinutes: 0 },
+				clockOut: { time: "10:00", occurrence: null, displayedOffsetMinutes: 0 },
+				zone: { basis: "target", timezone: "UTC" },
+				browserTimezone: "UTC",
+				reason: "Forgot to clock in",
+				projectId: null,
+				workCategoryId: null,
+			}),
+		).resolves.toMatchObject({ success: true });
+		// The legacy direct writer can no longer append to this history.
+		const legacy = await legacyClockRoute(
+			new Request("http://localhost/api/time-entries", {
+				method: "POST",
+				body: JSON.stringify({ type: "clock_in" }),
+			}) as unknown as NextRequest,
+		);
+		expect(legacy.status).toBe(409);
+
+		const { rows: appended } = await admin.query<{ id: string }>(
+			"select id from time_entry where employee_id = $1 order by created_at, id",
+			[ids.worker],
+		);
+		const assurance = (await verifyAs(ids.ownerUser, { employeeId: ids.worker })).body.assurance;
+		expect(appended).toHaveLength(4);
+		expect(assurance.continuity).toMatchObject({
+			status: "established",
+			provenance: { admission: "empty_history", admittedEntryCount: 0, entryCount: 4 },
+		});
+		expect([...assurance.continuity.postAnchorEntryIds].sort()).toEqual(
+			appended.map((row) => row.id).sort(),
+		);
+		expect(assurance.assurance.scope).toBe("whole_history");
 	});
 
 	async function generatePack(range: { start: string; end: string }) {
