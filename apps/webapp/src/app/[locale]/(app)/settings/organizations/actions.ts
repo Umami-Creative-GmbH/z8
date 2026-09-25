@@ -13,7 +13,7 @@ import {
 	team,
 } from "@/db/schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
-import { auth } from "@/lib/auth";
+import { auth, runAuthMutation } from "@/lib/auth";
 import {
 	isInvitationActionable,
 	normalizeInvitationEmail,
@@ -882,14 +882,18 @@ export async function updateMemberRole(
 				yield* _(
 					Effect.tryPromise({
 						try: async () => {
-							await auth.api.updateMemberRole({
-								body: {
-									organizationId,
-									memberId,
-									role: validatedData.role,
-								},
-								headers: await headers(),
-							});
+							const requestHeaders = await headers();
+							// The role update commits with its access guard (#314).
+							await runAuthMutation(() =>
+								auth.api.updateMemberRole({
+									body: {
+										organizationId,
+										memberId,
+										role: validatedData.role,
+									},
+									headers: requestHeaders,
+								}),
+							);
 						},
 						catch: () => {
 							return new ValidationError({

@@ -2,7 +2,7 @@ import type {
 	SCIMIdentityState,
 	SCIMProjectedUserState,
 } from "@better-auth/scim";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	createSCIMCallbackModelRegistration,
 	createZ8SCIMPlugin,
@@ -11,6 +11,32 @@ import { resolveSCIMIdentity } from "./identity-resolution";
 import { scimRoleProjection } from "./projection-reconciler";
 import { SCIM_MODELS } from "./transaction-store";
 import { createTransactionFixture } from "./transaction-store.test-fixture";
+
+// The plugin's transaction as captured from Better Auth's drizzle adapter (#314).
+const guard = vi.hoisted(() => ({
+	transaction: null as object | null,
+	protect: vi.fn(),
+}));
+vi.mock("@/lib/auth/auth-transaction", async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import("@/lib/auth/auth-transaction")>();
+	return {
+		...actual,
+		requireAuthTransaction: (operation: string) => {
+			if (!guard.transaction)
+				throw new actual.UncoordinatedAuthMutationError(operation);
+			return guard.transaction;
+		},
+	};
+});
+vi.mock("@/lib/authorization/authorization-mutation", () => ({
+	protectAuthorizationMutation: guard.protect,
+}));
+
+beforeEach(() => {
+	guard.transaction = { marker: "scim-plugin-transaction" };
+	guard.protect.mockReset();
+});
 
 const organizationId = "org_target";
 const userId = "user_opaque";
@@ -147,6 +173,43 @@ describe("createZ8SCIMPlugin", () => {
 			sources: [],
 		} satisfies SCIMIdentityState;
 		expect(identityState).not.toHaveProperty("provisioningDomainId");
+	});
+
+	it("takes the user's guard in the plugin transaction before any SCIM write", async () => {
+		const target = createTransactionFixture(applicationRows());
+		const writesBeforeGuard: number[] = [];
+		guard.protect.mockImplementation(async () => {
+			writesBeforeGuard.push(
+				target.operations.create.mock.calls.length +
+					target.operations.update.mock.calls.length,
+			);
+		});
+		const reconcileUser = createZ8SCIMPlugin("s".repeat(32)).options.projection
+			?.reconcileUser;
+
+		await reconcileUser?.(projectedState(true), { database: target.database });
+
+		expect(guard.protect).toHaveBeenCalledExactlyOnceWith(guard.transaction, {
+			organizationId,
+			userIds: [userId],
+		});
+		expect(writesBeforeGuard).toEqual([0]);
+		expect(target.rows(SCIM_MODELS.member)).toHaveLength(1);
+	});
+
+	it("fails closed outside a captured SCIM plugin transaction", async () => {
+		guard.transaction = null;
+		const target = createTransactionFixture(applicationRows());
+		const reconcileUser = createZ8SCIMPlugin("s".repeat(32)).options.projection
+			?.reconcileUser;
+
+		await expect(
+			reconcileUser?.(projectedState(true), { database: target.database }),
+		).rejects.toThrow(
+			"SCIM user reconciliation must run inside a coordinated auth transaction",
+		);
+		expect(target.rows(SCIM_MODELS.member)).toHaveLength(0);
+		expect(guard.protect).not.toHaveBeenCalled();
 	});
 
 	it("creates lifecycle records before applying the projected role state", async () => {

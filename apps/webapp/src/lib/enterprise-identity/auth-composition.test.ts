@@ -15,6 +15,7 @@ const infrastructure = vi.hoisted(() => ({
 		userId: "actor",
 		isActive: true,
 	})),
+	guard: vi.fn(),
 }));
 vi.mock("@/env", async (original) => {
 	const module = await original<typeof import("@/env")>();
@@ -29,14 +30,37 @@ vi.mock("@/env", async (original) => {
 		},
 	};
 });
-vi.mock("@/db", () => ({
-	db: {
-		query: {
-			organization: { findFirst: infrastructure.organization },
-			employee: { findFirst: infrastructure.employee },
+vi.mock("@/db", async () => {
+	const { getTableName } = await import("drizzle-orm");
+	const rows = async (table: never) => {
+		switch (getTableName(table)) {
+			case "organization":
+				return [await infrastructure.organization()];
+			case "employee":
+				return [await infrastructure.employee()];
+			default:
+				return [];
+		}
+	};
+	// SSO provisioning runs its reads and writes in one guarded transaction (#314).
+	const transaction = {
+		execute: infrastructure.guard,
+		select: () => ({
+			from: (table: never) => ({ where: () => ({ limit: () => rows(table) }) }),
+		}),
+		insert: () => ({ values: async () => undefined }),
+	};
+	return {
+		db: {
+			query: {
+				organization: { findFirst: infrastructure.organization },
+				employee: { findFirst: infrastructure.employee },
+			},
+			transaction: async (run: (tx: typeof transaction) => Promise<unknown>) =>
+				run(transaction),
 		},
-	},
-}));
+	};
+});
 vi.mock("@/lib/domain/domain-service", () => ({
 	getDomainConfig: async () => null,
 }));
@@ -243,6 +267,8 @@ describe("production auth plugin composition with installed Better Auth", () => 
 			"two-factor",
 			"passkey",
 			"sso",
+			"z8-sso-verified-domain-membership",
+			"z8-auth-mutation-coordination",
 			"api-key",
 			"z8-sso-enforcement",
 			"next-cookies",
@@ -287,6 +313,7 @@ describe("production auth plugin composition with installed Better Auth", () => 
 				}),
 			]);
 			expect(infrastructure.employee).toHaveBeenCalled(); // Real production provisionUser ran before the marker.
+			expect(infrastructure.guard).toHaveBeenCalled(); // ...under the actor's exclusive guard.
 			const freshHeaders = cookieHeaders(callback);
 			expect(
 				await h.auth.api.setActiveOrganization({

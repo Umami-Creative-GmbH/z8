@@ -156,10 +156,13 @@ whose lock order changed.
 
 ## Remaining activation blockers
 
-1. Better Auth and SCIM membership, role and removal writers (#314) do not yet participate.
+1. ~~Better Auth and SCIM membership, role and removal writers (#314) do not yet participate.~~
+   They participate since #314; see [its evidence](auth-scim-coordination-314.md).
 2. Provisioning, invite-code, onboarding, demo, cleanup and import writers (#318) do not yet
    participate.
-3. User-global `role`, `banned` and `banExpires` writers (#312) do not yet participate.
+3. User-global `role`, `banned` and `banExpires` writers: the platform-admin ban and unban
+   participate since #312 ([record](user-configuration-access-312.md)); Better Auth's admin
+   plugin endpoints are #314.
 4. Old deployed binaries write these facts without protection. They must be drained or
    disabled before manual adoption activates (#327). New guards cannot fence old code.
 5. `employeeHasOrganizationAccess()` evaluates a departure cutoff at database `now()`, not at

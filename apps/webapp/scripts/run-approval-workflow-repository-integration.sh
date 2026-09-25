@@ -99,10 +99,13 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.web-clock-out-operation.integration.test.ts" \
 	src/lib/import-review/reviewed-import-operation.integration.test.ts \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.approval-evidence.integration.test.ts" \
+	"src/app/[locale]/(app)/time-tracking/actions/clocking.policy-break-split.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-command.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-eligibility.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-authorization.integration.test.ts" \
+	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-auth-scim.integration.test.ts" \
 	"src/app/[locale]/(app)/settings/organizations/organization-timezone.integration.test.ts" \
+	"src/app/[locale]/(app)/settings/profile/user-configuration-access.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-holiday-policy.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-command-billing.integration.test.ts" \
 	src/lib/demo/demo-work.integration.test.ts \
@@ -148,4 +151,5 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	src/lib/approvals/delivery/discord-delivery.integration.test.ts \
 	src/lib/approvals/escalation/replacement-delivery.integration.test.ts \
 	"src/app/[locale]/(app)/time-tracking/actions/correction-lifecycle.integration.test.ts" \
-	src/lib/approvals/pilot/readiness.integration.test.ts
+	src/lib/approvals/pilot/readiness.integration.test.ts \
+	src/lib/approvals/lifecycle-cleanup.integration.test.ts

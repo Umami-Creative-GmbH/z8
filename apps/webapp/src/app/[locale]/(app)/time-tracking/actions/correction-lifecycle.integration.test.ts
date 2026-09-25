@@ -156,6 +156,8 @@ const { approveApprovalInboxItem, rejectApprovalInboxItem } = await import(
 );
 const { cancelMyTimeCorrectionRequest } = await import("../../my-requests/actions");
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
+const { deleteApproval } = await import("@/lib/approvals/maintenance");
+const { db } = await import("@/db");
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
@@ -713,6 +715,26 @@ describeIntegration("approval-based correction lifecycles on PostgreSQL", () => 
 
 		expect(await snapshot()).toEqual(committed);
 	});
+
+	for (const admission of ["active", "inactive"] as const) {
+		it(`refuses a submission retry after privileged cleanup purged its lifecycle (${admission})`, async () => {
+			const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+			await setAdmission(admission);
+			const submissionId = randomUUID();
+			await expect(
+				requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }, submissionId),
+			).resolves.toMatchObject({ success: true });
+			await deleteApproval(db, ids.organization, await pendingApprovalId(work.id));
+			const purged = await snapshot();
+
+			// The retained correction entries name a lifecycle that no longer exists: a
+			// late retry must not route a new approval around them (#306).
+			await expect(
+				requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }, submissionId),
+			).resolves.toMatchObject({ success: false });
+			expect(await snapshot()).toEqual(purged);
+		});
+	}
 
 	it("serializes a correction submission with a concurrent live clock-in", async () => {
 		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));

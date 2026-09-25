@@ -1973,15 +1973,9 @@ runner.transaction(async (tx) => {
 					}),
 				],
 			},
-			{
-				relativePath: fixtures[2],
-				writes: [
-					expect.objectContaining({
-						operation: "delete",
-						table: "approval_request",
-					}),
-				],
-			},
+			// Tenant deletion removes approval rows through the organization
+			// cascade only (#306); it writes no approval table directly.
+			{ relativePath: fixtures[2], writes: [] },
 		]);
 	});
 
@@ -4295,14 +4289,8 @@ db.delete(approvalOutbox);`,
 			"src/lib/approvals/server/shared.ts": {
 				approval_request: ["update"],
 			},
-			"src/lib/demo/delete-non-admin.ts": {
-				approval_request: ["delete"],
-			},
 			"src/lib/demo/demo-data.service.ts": {
 				approval_request: ["insert"],
-			},
-			"src/lib/jobs/organization-cleanup.ts": {
-				approval_request: ["delete"],
 			},
 			"src/lib/teams/jobs/escalation-checker.ts": {
 				approval_request: ["update"],

@@ -31,7 +31,7 @@ canonical resolutions of
 | `lib/time-tracking/historical-gap-repair-executor.ts` | Reads plans in the diagnostics snapshot. Applies a reviewed plan per employee under the shared completed-work coordinator. |
 | `POST /api/time-entries/diagnostics/repair` | `plan` and `apply` for one employee or every employee and a calendar-date range (at most 366 days). Organization administrators only. |
 | `/settings/work-diagnostics` | Shows the repair panel below the diagnostics: repairable work, held gaps, authorization state, and a reason to apply. |
-| `historical_work_repair_control` (migration `0100`) | Separate per-organization authorization. Cascades with the organization. |
+| `historical_work_repair_control` (migration `0102`) | Separate per-organization authorization. Cascades with the organization. |
 
 The diagnostics reader gained two evidence fields: each endpoint entry's
 `created_by` and each period's `graph_revision`. It now accepts any

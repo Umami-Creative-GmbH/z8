@@ -5,11 +5,12 @@ import { db } from "@/db";
 import { member, user } from "@/db/auth-schema";
 import {
 	absenceEntry,
-	approvalRequest,
+	auditLog,
 	employee,
 	employeeManagers,
 	employeeVacationAllowance,
 } from "@/db/schema";
+import { deleteEmployeeApprovalLifecycles } from "@/lib/approvals/maintenance";
 import { deleteDemoEmployeeHistories } from "./demo-work";
 
 export interface DeleteNonAdminResult {
@@ -20,6 +21,10 @@ export interface DeleteNonAdminResult {
 	workPeriodsDeleted: number;
 	absencesDeleted: number;
 	approvalRequestsDeleted: number;
+	/** Approval lifecycles of any kind that named a deleted employee (#306). */
+	approvalLifecyclesDeleted: number;
+	/** Audit entries kept, with their reference to a deleted employee cleared. */
+	auditEntriesDetached: number;
 	managerAssignmentsDeleted: number;
 	vacationAllowancesDeleted: number;
 }
@@ -40,6 +45,8 @@ export async function deleteNonAdminEmployeesData(
 		workPeriodsDeleted: 0,
 		absencesDeleted: 0,
 		approvalRequestsDeleted: 0,
+		approvalLifecyclesDeleted: 0,
+		auditEntriesDetached: 0,
 		managerAssignmentsDeleted: 0,
 		vacationAllowancesDeleted: 0,
 	};
@@ -61,14 +68,18 @@ export async function deleteNonAdminEmployeesData(
 	const employeeIds = nonAdminEmployees.map((e) => e.id);
 	const userIds = nonAdminEmployees.map((e) => e.userId);
 
-	// Step 2: Delete approval requests for these employees
-	const approvalRequestsToDelete = await db.query.approvalRequest.findMany({
-		where: inArray(approvalRequest.requestedBy, employeeIds),
-	});
-	if (approvalRequestsToDelete.length > 0) {
-		await db.delete(approvalRequest).where(inArray(approvalRequest.requestedBy, employeeIds));
-		result.approvalRequestsDeleted = approvalRequestsToDelete.length;
-	}
+	// Step 2: Remove every approval lifecycle naming these employees in any role
+	// (requester, approver, decider, card recipient, ...) through the privileged
+	// owner's verified links, in one transaction. Sources keep their outcomes; the
+	// remaining employees' work history and receipts are not touched (#306).
+	const approvals = await db.transaction((transaction) =>
+		deleteEmployeeApprovalLifecycles(transaction, { organizationId, employeeIds }),
+	);
+	result.approvalLifecyclesDeleted = approvals.lifecycles.length;
+	result.approvalRequestsDeleted = approvals.lifecycles.reduce(
+		(total, lifecycle) => total + lifecycle.legacyRequests.length,
+		0,
+	);
 
 	// Step 3: Delete absence entries
 	const absencesToDelete = await db.query.absenceEntry.findMany({
@@ -120,11 +131,21 @@ export async function deleteNonAdminEmployeesData(
 	result.managerAssignmentsDeleted =
 		managerAssignmentsToDelete.length + managerAssignmentsAsManager.length;
 
-	// Step 8: Delete employee records
+	// Step 8: Keep the audit trail, detached from the employees being deleted.
+	const detached = await db
+		.update(auditLog)
+		.set({ employeeId: null })
+		.where(
+			and(eq(auditLog.organizationId, organizationId), inArray(auditLog.employeeId, employeeIds)),
+		)
+		.returning({ id: auditLog.id });
+	result.auditEntriesDetached = detached.length;
+
+	// Step 9: Delete employee records
 	await db.delete(employee).where(inArray(employee.id, employeeIds));
 	result.employeesDeleted = employeeIds.length;
 
-	// Step 9: Delete organization memberships
+	// Step 10: Delete organization memberships
 	const membersToDelete = await db.query.member.findMany({
 		where: and(eq(member.organizationId, organizationId), inArray(member.userId, userIds)),
 	});
@@ -135,7 +156,7 @@ export async function deleteNonAdminEmployeesData(
 		result.membersDeleted = membersToDelete.length;
 	}
 
-	// Step 10: Delete user accounts (only demo users with @demo.invalid email)
+	// Step 11: Delete user accounts (only demo users with @demo.invalid email)
 	// This prevents accidentally deleting real user accounts
 	const demoUsers = await db.query.user.findMany({
 		where: and(

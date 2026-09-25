@@ -190,8 +190,9 @@ This slice closes on implementation. The items below are activation gates for #3
 - **Persistent rebuild failure.** `attempts` is unbounded and nothing alerts on it. A
   rebuild that keeps failing keeps the organization's balances hidden and out of the
   refresh batch. Operations need an alert on `attempts` / `last_error` before activation.
-- **User timezone and multi-organization rebuilds** are #312. It will add a user-scoped
-  intent across affected organizations to this lifecycle.
+- **User timezone and multi-organization rebuilds** were added by #312: a user-scoped
+  intent per affected organization in this lifecycle (see
+  [its record](user-configuration-access-312.md)).
 - **Other configuration writers** (membership/roles, projects, categories, holidays, change
   policy, billing, provisioning/cleanup: #313–#318) still do not take exclusive protection.
 - **Rollback.** Returning an organization to inactive leaves any pending intent to be

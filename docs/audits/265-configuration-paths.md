@@ -8,8 +8,13 @@ not previously exist, updates, removals and relevant cascading effects.
 
 **Current state:** apart from C11–C13 (#316, see
 [its evidence](../holiday-change-policy-coordination-316.md), without the import, demo
-and cleanup writers left to #318), no row below is certified to participate in the new
-manual configuration protocol. Existing local transactions and SCIM transactional
+and cleanup writers left to #318) and the application writers of C02 and C07 (#312, see
+[its evidence](../user-configuration-access-312.md), with user cleanup left to #318), no row
+below is certified to participate in the new manual configuration protocol. The Better Auth,
+SCIM and SSO writers of C03, C07 (including the admin plugin's endpoints), C08, C18 and C19
+participate since #314 (see [its evidence](../auth-scim-coordination-314.md)); the
+provisioning, import, demo and cleanup writers of those rows remain with #318. Existing local
+transactions and SCIM transactional
 callbacks must be preserved, then extended at their actual mutation owner.
 Creation-time fallback changes and access changes require the same protection as
 an explicit timezone or permission edit.

@@ -7,7 +7,7 @@ import { z } from "zod";
 import { member, organization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { auth } from "@/lib/auth";
+import { auth, runAuthMutation } from "@/lib/auth";
 import { completeRemovedMemberCleanup } from "@/lib/auth/member-removal-cleanup";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
@@ -573,13 +573,17 @@ export async function removeEmployeeAccessAction(
 				const removalOutcome = yield* _(
 					Effect.tryPromise({
 						try: async () => {
-							await auth.api.removeMember({
-								body: {
-									organizationId: actor.organizationId,
-									memberIdOrEmail: targetMembership.id,
-								},
-								headers: await headers(),
-							});
+							const requestHeaders = await headers();
+							// Removal, its access guard and employee deactivation commit together (#314).
+							await runAuthMutation(() =>
+								auth.api.removeMember({
+									body: {
+										organizationId: actor.organizationId,
+										memberIdOrEmail: targetMembership.id,
+									},
+									headers: requestHeaders,
+								}),
+							);
 						},
 						catch: (cause) => cause,
 					}).pipe(

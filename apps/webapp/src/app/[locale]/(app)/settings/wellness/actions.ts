@@ -8,6 +8,7 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import {
 	type WaterReminderSettings,
 	type WaterReminderSettingsFormValues,
@@ -75,26 +76,14 @@ export async function updateWellnessSettings(
 
 		// Upsert userSettings with water reminder settings
 		yield* _(
-			dbService.query("updateWaterReminderSettings", async () => {
-				await dbService.db
-					.insert(userSettings)
-					.values({
-						userId: session.user.id,
-						waterReminderEnabled: enabled,
-						waterReminderPreset: preset,
-						waterReminderIntervalMinutes: actualInterval,
-						waterReminderDailyGoal: dailyGoal,
-					})
-					.onConflictDoUpdate({
-						target: userSettings.userId,
-						set: {
-							waterReminderEnabled: enabled,
-							waterReminderPreset: preset,
-							waterReminderIntervalMinutes: actualInterval,
-							waterReminderDailyGoal: dailyGoal,
-						},
-					});
-			}),
+			dbService.query("updateWaterReminderSettings", () =>
+				writeUserSettings(dbService.db, session.user.id, {
+					waterReminderEnabled: enabled,
+					waterReminderPreset: preset,
+					waterReminderIntervalMinutes: actualInterval,
+					waterReminderDailyGoal: dailyGoal,
+				}),
+			),
 		);
 	}).pipe(Effect.provide(AppLayer));
 

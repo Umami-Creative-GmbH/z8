@@ -44,6 +44,11 @@ vi.mock("@/lib/notifications/triggers", () => notificationMocks);
 vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
 	applyPolicyClockOutTerminalBreakInTransaction: terminalBreakMocks.enforce,
 }));
+vi.mock("./work-period-decision-transaction", async (importOriginal) =>
+	(await import("@/test/work-period-decision-transaction")).legacyWorkPeriodDecisionTransaction(
+		await importOriginal(),
+	),
+);
 vi.mock("../domain-adapters/work-period-legacy-state", () => ({
 	captureOrdinaryWorkPeriodLegacyState: legacyCaptureMocks.capture,
 	loadOrdinaryWorkPeriodLegacyDecisionEvidence: legacyCaptureMocks.load,
@@ -2465,6 +2470,14 @@ describe("ordinary work-period approval finalizer", () => {
 				organizationId: "org-1",
 				employeeId: "employee-1",
 				actorUserId: "manager-user-1",
+				actorEmployeeId: "manager-1",
+				// The exact lifecycle the finalizer verified, never a generic flag.
+				lifecycle: {
+					authority: "legacy",
+					approvalRequestId: "approval-1",
+					observedWorkflowId: "workflow-1",
+				},
+				decisionRecordId: "decision-1",
 				period: expect.objectContaining({
 					id: "period-1",
 					clockOutId: "clock-out-1",
@@ -2486,11 +2499,13 @@ describe("ordinary work-period approval finalizer", () => {
 			staleSurchargePeriodIds: [],
 			surchargeSnapshot,
 		});
+		// The decision is recorded on the originating record before the split, so
+		// the generated segment's lineage can name it (#303).
 		expect(
 			vi.mocked(dbService.db.update).mock.invocationCallOrder[1],
-		).toBeLessThan(terminalBreakMocks.enforce.mock.invocationCallOrder[0]);
-		expect(terminalBreakMocks.enforce.mock.invocationCallOrder[0]).toBeLessThan(
-			vi.mocked(dbService.db.insert).mock.invocationCallOrder[0],
+		).toBeLessThan(vi.mocked(dbService.db.insert).mock.invocationCallOrder[0]);
+		expect(vi.mocked(dbService.db.insert).mock.invocationCallOrder[0]).toBeLessThan(
+			terminalBreakMocks.enforce.mock.invocationCallOrder[0],
 		);
 	});
 
@@ -2514,7 +2529,8 @@ describe("ordinary work-period approval finalizer", () => {
 			finalize(dbService, { kind: "policy_clock_out" }),
 		).rejects.toThrow("Ordinary work-period finalization conflict");
 		expect(terminalBreakMocks.enforce).toHaveBeenCalledOnce();
-		expect(dbService.insertedValues).toHaveLength(0);
+		// The failure propagates, so the transaction rolls the decision row back.
+		expect(dbService.insertedValues).toHaveLength(1);
 	});
 
 	it.each([

@@ -348,7 +348,8 @@
         "reviewBinding": "Prüfbindung",
         "escalationTransfer": "Eskalationsübertragung",
         "deliveryMessage": "Zugestellte Nachricht",
-        "deliveryWork": "Zustellauftrag"
+        "deliveryWork": "Zustellauftrag",
+        "escalationAttention": "Eskalationshinweis"
       },
       "cookieConsent": {
         "description": "Zur DSGVO-Konformität auf Authentifizierungsseiten eingefügt",

@@ -8,57 +8,7 @@
 import { and, eq, inArray, isNotNull, lt } from "drizzle-orm";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import {
-	absenceCategory,
-	absenceEntry,
-	approvalRequest,
-	auditLog,
-	dataExport,
-	employee,
-	employeeManagers,
-	employeeVacationAllowance,
-	exportStorageConfig,
-	holiday,
-	holidayAssignment,
-	holidayCategory,
-	holidayPreset,
-	holidayPresetAssignment,
-	holidayPresetHoliday,
-	location,
-	locationEmployee,
-	locationSubarea,
-	notification,
-	notificationPreference,
-	organizationBranding,
-	organizationDomain,
-	organizationEmailConfig,
-	project,
-	projectAssignment,
-	projectManager,
-	pushSubscription,
-	shift,
-	shiftRequest,
-	shiftTemplate,
-	surchargeModel,
-	surchargeModelAssignment,
-	surchargeRule,
-	team,
-	timeEntry,
-	completedWorkOperation,
-	timeEntryAppendPosition,
-	vacationAllowance,
-	waterIntakeLog,
-	workPeriod,
-	workPolicy,
-	workPolicyAssignment,
-	workPolicyBreakOption,
-	workPolicyBreakRule,
-	workPolicyRegulation,
-	workPolicySchedule,
-	workPolicyScheduleDay,
-	workPolicyViolation,
-} from "@/db/schema";
-import { deleteWorkPeriodApprovalEvidence } from "@/lib/approvals/maintenance";
+import { employee, pushSubscription, waterIntakeLog } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("organization-cleanup");
@@ -150,8 +100,24 @@ export async function runOrganizationCleanup(): Promise<OrganizationCleanupResul
 }
 
 /**
- * Permanently delete an organization and all its related data
- * This is called after the 5-day grace period has passed
+ * Permanently delete an organization and all its related data.
+ * This is called after the 5-day grace period has passed.
+ *
+ * Topology (#306): every organization-scoped table cascades from `organization`,
+ * directly or through a parent that does (employees, workflows, periods, ...),
+ * so one delete removes the whole tenant, including adopted lifecycle state:
+ * approval evidence, bindings, invocations, delivery work/messages/intents,
+ * escalation journals and attention, work receipts, append positions and every
+ * adoption control. Rows that reference employees (or periods, workflows) without
+ * cascade are all direct organization children, so the same statement removes
+ * them before those references are checked; explicit deletes of employees or
+ * entries first would be blocked by them. Only rows outside the cascade are
+ * handled here first. Everything runs in one transaction: a failure, including a
+ * future non-cascading reference, rolls the whole tenant back.
+ *
+ * Staged receipt uploads (`travel_expense_receipt_upload`) are kept by value on
+ * purpose: they are outstanding storage cleanup work that must outlive the
+ * tenant until the stored object is deleted (#295).
  */
 async function permanentlyDeleteOrganization(
 	organizationId: string,
@@ -161,281 +127,24 @@ async function permanentlyDeleteOrganization(
 		"Starting permanent deletion of organization",
 	);
 
-	// Use a transaction to ensure all data is deleted atomically
 	await db.transaction(async (tx) => {
-		// Get all employees for this organization (needed for cascade deletes)
 		const employees = await tx.query.employee.findMany({
 			where: eq(employee.organizationId, organizationId),
+			columns: { userId: true },
 		});
-		const employeeIds = employees.map((e) => e.id);
 		const employeeUserIds = employees.flatMap((e) =>
 			e.userId ? [e.userId] : [],
 		);
 
-		// Delete in order (most dependent first)
-
-		// 1. Time tracking data
-		// Manual/policy clock-out approval evidence references employees (#302).
-		await deleteWorkPeriodApprovalEvidence(tx, {
-			organizationId,
-			employeeIds: "all",
-		});
-		if (employeeIds.length > 0) {
-			// The append position references its tip entry; remove it with the history.
-			await tx
-				.delete(timeEntryAppendPosition)
-				.where(eq(timeEntryAppendPosition.organizationId, organizationId));
-			await tx
-				.delete(completedWorkOperation)
-				.where(eq(completedWorkOperation.organizationId, organizationId));
-			await tx
-				.delete(timeEntry)
-				.where(inArray(timeEntry.employeeId, employeeIds));
-			await tx
-				.delete(workPeriod)
-				.where(inArray(workPeriod.employeeId, employeeIds));
-		}
+		// User-level rows of the tenant's users (no organization reference).
 		if (employeeUserIds.length > 0) {
 			await tx
 				.delete(waterIntakeLog)
 				.where(inArray(waterIntakeLog.userId, employeeUserIds));
-		}
-
-		// 2. Absence data
-		if (employeeIds.length > 0) {
-			await tx
-				.delete(absenceEntry)
-				.where(inArray(absenceEntry.employeeId, employeeIds));
-		}
-		await tx
-			.delete(absenceCategory)
-			.where(eq(absenceCategory.organizationId, organizationId));
-
-		// 3. Approval requests (by employee)
-		if (employeeIds.length > 0) {
-			await tx
-				.delete(approvalRequest)
-				.where(inArray(approvalRequest.requestedBy, employeeIds));
-		}
-
-		// 4. Vacation data
-		if (employeeIds.length > 0) {
-			await tx
-				.delete(employeeVacationAllowance)
-				.where(inArray(employeeVacationAllowance.employeeId, employeeIds));
-		}
-		await tx
-			.delete(vacationAllowance)
-			.where(eq(vacationAllowance.organizationId, organizationId));
-
-		// 5. Holiday data
-		await tx
-			.delete(holidayPresetAssignment)
-			.where(eq(holidayPresetAssignment.organizationId, organizationId));
-		await tx
-			.delete(holidayAssignment)
-			.where(eq(holidayAssignment.organizationId, organizationId));
-
-		const presets = await tx.query.holidayPreset.findMany({
-			where: eq(holidayPreset.organizationId, organizationId),
-		});
-		const presetIds = presets.map((preset) => preset.id);
-		if (presetIds.length > 0) {
-			await tx
-				.delete(holidayPresetHoliday)
-				.where(inArray(holidayPresetHoliday.presetId, presetIds));
-		}
-		await tx
-			.delete(holidayPreset)
-			.where(eq(holidayPreset.organizationId, organizationId));
-		await tx.delete(holiday).where(eq(holiday.organizationId, organizationId));
-		await tx
-			.delete(holidayCategory)
-			.where(eq(holidayCategory.organizationId, organizationId));
-
-		// 6. Project data
-		const projects = await tx.query.project.findMany({
-			where: eq(project.organizationId, organizationId),
-		});
-		const projectIds = projects.map((proj) => proj.id);
-		if (projectIds.length > 0) {
-			await tx
-				.delete(projectManager)
-				.where(inArray(projectManager.projectId, projectIds));
-			await tx
-				.delete(projectAssignment)
-				.where(inArray(projectAssignment.projectId, projectIds));
-		}
-		await tx.delete(project).where(eq(project.organizationId, organizationId));
-
-		// 7. Shift data
-		const shifts = await tx.query.shift.findMany({
-			where: eq(shift.organizationId, organizationId),
-		});
-		const shiftIds = shifts.map((s) => s.id);
-		if (shiftIds.length > 0) {
-			await tx
-				.delete(shiftRequest)
-				.where(inArray(shiftRequest.shiftId, shiftIds));
-		}
-		await tx.delete(shift).where(eq(shift.organizationId, organizationId));
-		await tx
-			.delete(shiftTemplate)
-			.where(eq(shiftTemplate.organizationId, organizationId));
-
-		// 8. Surcharge data
-		const surchargeModels = await tx.query.surchargeModel.findMany({
-			where: eq(surchargeModel.organizationId, organizationId),
-		});
-		const surchargeModelIds = surchargeModels.map((model) => model.id);
-		if (surchargeModelIds.length > 0) {
-			await tx
-				.delete(surchargeRule)
-				.where(inArray(surchargeRule.modelId, surchargeModelIds));
-			await tx
-				.delete(surchargeModelAssignment)
-				.where(inArray(surchargeModelAssignment.modelId, surchargeModelIds));
-		}
-		await tx
-			.delete(surchargeModel)
-			.where(eq(surchargeModel.organizationId, organizationId));
-
-		// 9. Work policy data (unified schedules + regulations)
-		const policies = await tx.query.workPolicy.findMany({
-			where: eq(workPolicy.organizationId, organizationId),
-		});
-		const policyIds = policies.map((policy) => policy.id);
-		if (policyIds.length > 0) {
-			// Delete schedule data
-			const schedules = await tx.query.workPolicySchedule.findMany({
-				where: inArray(workPolicySchedule.policyId, policyIds),
-			});
-			const scheduleIds = schedules.map((schedule) => schedule.id);
-			if (scheduleIds.length > 0) {
-				await tx
-					.delete(workPolicyScheduleDay)
-					.where(inArray(workPolicyScheduleDay.scheduleId, scheduleIds));
-				await tx
-					.delete(workPolicySchedule)
-					.where(inArray(workPolicySchedule.id, scheduleIds));
-			}
-
-			// Delete regulation data
-			const regulations = await tx.query.workPolicyRegulation.findMany({
-				where: inArray(workPolicyRegulation.policyId, policyIds),
-			});
-			const regulationIds = regulations.map((regulation) => regulation.id);
-			if (regulationIds.length > 0) {
-				const breakRules = await tx.query.workPolicyBreakRule.findMany({
-					where: inArray(workPolicyBreakRule.regulationId, regulationIds),
-				});
-				const breakRuleIds = breakRules.map((rule) => rule.id);
-				if (breakRuleIds.length > 0) {
-					await tx
-						.delete(workPolicyBreakOption)
-						.where(inArray(workPolicyBreakOption.breakRuleId, breakRuleIds));
-				}
-				await tx
-					.delete(workPolicyBreakRule)
-					.where(inArray(workPolicyBreakRule.regulationId, regulationIds));
-				await tx
-					.delete(workPolicyRegulation)
-					.where(inArray(workPolicyRegulation.id, regulationIds));
-			}
-
-			// Delete assignments
-			await tx
-				.delete(workPolicyAssignment)
-				.where(inArray(workPolicyAssignment.policyId, policyIds));
-		}
-		await tx
-			.delete(workPolicyViolation)
-			.where(eq(workPolicyViolation.organizationId, organizationId));
-		await tx
-			.delete(workPolicy)
-			.where(eq(workPolicy.organizationId, organizationId));
-
-		// 11. Location data
-		const locations = await tx.query.location.findMany({
-			where: eq(location.organizationId, organizationId),
-		});
-		const locationIds = locations.map((loc) => loc.id);
-		if (locationIds.length > 0) {
-			await tx
-				.delete(locationEmployee)
-				.where(inArray(locationEmployee.locationId, locationIds));
-			await tx
-				.delete(locationSubarea)
-				.where(inArray(locationSubarea.locationId, locationIds));
-		}
-		await tx
-			.delete(location)
-			.where(eq(location.organizationId, organizationId));
-
-		// 12. Employee manager assignments
-		if (employeeIds.length > 0) {
-			await tx
-				.delete(employeeManagers)
-				.where(inArray(employeeManagers.employeeId, employeeIds));
-			await tx
-				.delete(employeeManagers)
-				.where(inArray(employeeManagers.managerId, employeeIds));
-		}
-
-		// 13. Notification data
-		await tx
-			.delete(notificationPreference)
-			.where(eq(notificationPreference.organizationId, organizationId));
-		await tx
-			.delete(notification)
-			.where(eq(notification.organizationId, organizationId));
-
-		// 14. Export data
-		await tx
-			.delete(dataExport)
-			.where(eq(dataExport.organizationId, organizationId));
-		await tx
-			.delete(exportStorageConfig)
-			.where(eq(exportStorageConfig.organizationId, organizationId));
-
-		// 15. Audit log (by employee)
-		if (employeeIds.length > 0) {
-			await tx
-				.delete(auditLog)
-				.where(inArray(auditLog.employeeId, employeeIds));
-		}
-
-		// 16. Enterprise data
-		await tx
-			.delete(organizationDomain)
-			.where(eq(organizationDomain.organizationId, organizationId));
-		await tx
-			.delete(organizationBranding)
-			.where(eq(organizationBranding.organizationId, organizationId));
-		await tx
-			.delete(organizationEmailConfig)
-			.where(eq(organizationEmailConfig.organizationId, organizationId));
-
-		// 17. Push subscriptions
-		if (employeeUserIds.length > 0) {
 			await tx
 				.delete(pushSubscription)
 				.where(inArray(pushSubscription.userId, employeeUserIds));
 		}
-
-		// 18. Teams
-		await tx.delete(team).where(eq(team.organizationId, organizationId));
-
-		// 20. Employees
-		await tx
-			.delete(employee)
-			.where(eq(employee.organizationId, organizationId));
-
-		// 21. Better Auth data (invitations and sessions)
-		// Memberships cascade only when the organization is deleted below.
-		await tx
-			.delete(authSchema.invitation)
-			.where(eq(authSchema.invitation.organizationId, organizationId));
 
 		// Clear active organization from sessions
 		await tx
@@ -443,12 +152,12 @@ async function permanentlyDeleteOrganization(
 			.set({ activeOrganizationId: null })
 			.where(eq(authSchema.session.activeOrganizationId, organizationId));
 
-		// 22. SSO providers
+		// SSO providers carry the organization without a foreign key.
 		await tx
 			.delete(authSchema.ssoProvider)
 			.where(eq(authSchema.ssoProvider.organizationId, organizationId));
 
-		// 23. Finally, delete the organization itself
+		// Finally, delete the organization itself; everything else cascades.
 		await tx
 			.delete(authSchema.organization)
 			.where(eq(authSchema.organization.id, organizationId));
