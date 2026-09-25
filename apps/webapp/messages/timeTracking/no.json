@@ -105,6 +105,31 @@
       },
       "reasonLabel": "Årsak",
       "reasonPlaceholder": "Beskriv hva du jobbet med…",
+      "recovery": {
+        "check": "Sjekk status",
+        "checkFailed": "Kunne ikke sjekke oppføringen akkurat nå. Prøv igjen senere.",
+        "contextMismatch": "Du er logget inn på en annen konto eller organisasjon. Bytt tilbake for å håndtere oppføringen.",
+        "description": "Disse oppføringene ble sendt fra denne fanen uten et bekreftet resultat. Ingenting sendes på nytt med mindre du velger det.",
+        "discard": "Avvis",
+        "editAsNew": "Rediger som ny oppføring",
+        "notCommitted": "Ingen lagring funnet.",
+        "notCommittedToast": "Ingen lagring ble funnet for oppføringen. Prøv nøyaktig på nytt, eller rediger den som en ny oppføring.",
+        "retry": "Prøv nøyaktig på nytt",
+        "saved": "Oppføringen ble lagret.",
+        "savedForApproval": "Oppføringen ble lagret og sendt til godkjenning. Nåværende status: {status}.",
+        "status": {
+          "approved": "godkjent",
+          "pending": "venter",
+          "rejected": "avvist"
+        },
+        "stillUncertain": "Fortsatt ikke bekreftet. Oppføringen beholdes; prøv igjen når du er tilkoblet igjen.",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Ubekreftede oppføringer",
+        "uncertain": "Ikke bekreftet. Den kan allerede være lagret.",
+        "uncertainToast": "Vi kunne ikke bekrefte om oppføringen ble lagret. Den beholdes under Ubekreftede oppføringer, der du kan prøve nøyaktig på nytt eller sjekke statusen.",
+        "unsupported": "Statusen kan ikke sjekkes. Den kan allerede være lagret.",
+        "unsupportedToast": "Statusen til oppføringen kan ikke sjekkes akkurat nå. Et nytt forsøk sender nøyaktig samme oppføring."
+      },
       "submit": "Opprett registrering",
       "submitting": "Oppretter…",
       "success": {

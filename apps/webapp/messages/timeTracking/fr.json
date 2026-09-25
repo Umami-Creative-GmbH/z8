@@ -110,6 +110,31 @@
       },
       "reasonLabel": "Motif",
       "reasonPlaceholder": "Décrivez votre travail…",
+      "recovery": {
+        "check": "Vérifier le statut",
+        "checkFailed": "Impossible de vérifier cette saisie pour le moment. Réessayez plus tard.",
+        "contextMismatch": "Vous êtes connecté à un autre compte ou une autre organisation. Revenez-y pour traiter cette saisie.",
+        "description": "Ces saisies ont été envoyées depuis cet onglet sans résultat confirmé. Rien n'est renvoyé sans votre choix.",
+        "discard": "Ignorer",
+        "editAsNew": "Modifier comme nouvelle saisie",
+        "notCommitted": "Aucun enregistrement trouvé.",
+        "notCommittedToast": "Aucun enregistrement n'a été trouvé pour cette saisie. Renvoyez-la à l'identique ou modifiez-la comme nouvelle saisie.",
+        "retry": "Renvoyer à l'identique",
+        "saved": "Cette saisie a été enregistrée.",
+        "savedForApproval": "Cette saisie a été enregistrée et soumise pour approbation. Son statut actuel : {status}.",
+        "status": {
+          "approved": "approuvée",
+          "pending": "en attente",
+          "rejected": "refusée"
+        },
+        "stillUncertain": "Toujours non confirmée. La saisie est conservée ; réessayez une fois de nouveau en ligne.",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Saisies non confirmées",
+        "uncertain": "Non confirmée. Elle est peut-être déjà enregistrée.",
+        "uncertainToast": "Impossible de confirmer si cette saisie a été enregistrée. Elle est conservée dans Saisies non confirmées, où vous pouvez la renvoyer à l'identique ou vérifier son statut.",
+        "unsupported": "Son statut ne peut pas être vérifié. Elle est peut-être déjà enregistrée.",
+        "unsupportedToast": "Le statut de cette saisie ne peut pas être vérifié pour le moment. Un nouvel envoi transmet exactement la même saisie."
+      },
       "submit": "Créer la saisie",
       "submitting": "Création en cours…",
       "success": {
