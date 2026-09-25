@@ -38,12 +38,18 @@ function createTransaction(employees: Array<{ userId: string | null }> = []) {
 			}),
 		})),
 	}));
-	const execute = vi.fn(async () => ({ rows: [] }));
+	const execute = vi.fn(async () => {
+		events.push("guard");
+		return { rows: [] };
+	});
 	const tx = {
 		execute,
 		delete: deleteFrom,
 		update,
-		query: { employee: { findMany: vi.fn().mockResolvedValue(employees) } },
+		query: {
+			employee: { findMany: vi.fn().mockResolvedValue(employees) },
+			member: { findMany: vi.fn().mockResolvedValue([{ userId: "user-2" }]) },
+		},
 	};
 	return { deleteFrom, events, execute, tx };
 }
@@ -75,16 +81,20 @@ describe("organization cleanup topology", () => {
 			errors: [],
 		});
 		expect(mocks.db.transaction).toHaveBeenCalledOnce();
-		// Only rows outside the organization cascade are handled explicitly (#306):
-		// no employee, history or approval table is deleted before the organization.
+		// Exclusive organization configuration protection, then the guards of
+		// user-1 and user-2, precede the first delete (#318). Only rows outside
+		// the organization cascade are handled explicitly (#306): no employee,
+		// history or approval table is deleted before the organization.
 		expect(events).toEqual([
+			"guard",
+			"guard",
+			"guard",
 			"delete:water_intake_log",
 			"delete:push_subscription",
 			"update:session",
 			"delete:sso_provider",
 			"delete:organization",
 		]);
-		expect(execute).not.toHaveBeenCalled();
 		expect(deleteFrom).not.toHaveBeenCalledWith(authSchema.member);
 		expect(deleteFrom).not.toHaveBeenCalledWith(schema.employee);
 		expect(deleteFrom).toHaveBeenLastCalledWith(authSchema.organization);
