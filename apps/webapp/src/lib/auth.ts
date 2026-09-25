@@ -26,6 +26,7 @@ import {
 import { createGuardedAuthSecondaryStorage } from "@/lib/auth/guarded-secondary-storage";
 import { completeRemovedMemberCleanup } from "@/lib/auth/member-removal-cleanup";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
+import { rejectOrganizationTimezoneUpdate } from "@/lib/auth/organization-timezone-update-guard";
 import { socialOrgOAuthPlugin } from "@/lib/auth/social-org-oauth";
 import {
 	getAuthAllowedHosts,
@@ -614,6 +615,10 @@ export const auth = betterAuth({
 				});
 			},
 			organizationHooks: {
+				// Timezone changes go through the protected settings writer (#311).
+				beforeUpdateOrganization: async ({ organization }) =>
+					rejectOrganizationTimezoneUpdate(organization),
+
 				// Update user permissions when accepting invitation
 				afterAcceptInvitation: async ({ user, invitation, member }) => {
 					// Fetch the full invitation record to get custom invitation fields.

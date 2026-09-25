@@ -4,6 +4,7 @@ const mockState = vi.hoisted(() => ({
 	listEmployeesForWorkBalanceBatch: vi.fn(),
 	markEmployeeWorkBalanceFailed: vi.fn(),
 	refreshEmployeeWorkBalanceFromPeriods: vi.fn(),
+	processWorkBalanceRebuildIntents: vi.fn(),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -12,6 +13,10 @@ vi.mock("@/lib/logger", () => ({
 
 vi.mock("@/env", () => ({
 	env: { WORK_BALANCE_JOB_BATCH_LIMIT: "7" },
+}));
+
+vi.mock("@/lib/work-balance/rebuild-intents", () => ({
+	processWorkBalanceRebuildIntents: mockState.processWorkBalanceRebuildIntents,
 }));
 
 vi.mock("@/lib/work-balance/service", () => ({
@@ -26,6 +31,31 @@ describe("runWorkBalanceRefresh", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.markEmployeeWorkBalanceFailed.mockResolvedValue(undefined);
+		mockState.processWorkBalanceRebuildIntents.mockResolvedValue({
+			organizationsRebuilt: 0,
+			failures: [],
+		});
+	});
+
+	it("recovers pending rebuild intents before selecting the refresh batch", async () => {
+		mockState.processWorkBalanceRebuildIntents.mockResolvedValueOnce({
+			organizationsRebuilt: 1,
+			failures: [{ organizationId: "org-2", error: "rebuild failed" }],
+		});
+		mockState.listEmployeesForWorkBalanceBatch.mockResolvedValueOnce([]);
+
+		const result = await runWorkBalanceRefresh();
+
+		expect(mockState.processWorkBalanceRebuildIntents.mock.invocationCallOrder[0]).toBeLessThan(
+			mockState.listEmployeesForWorkBalanceBatch.mock.invocationCallOrder[0] ?? 0,
+		);
+		expect(result).toMatchObject({
+			success: false,
+			rebuildIntents: {
+				organizationsRebuilt: 1,
+				failures: [{ organizationId: "org-2", error: "rebuild failed" }],
+			},
+		});
 	});
 
 	it("refreshes selected employees from dirty period ranges and records per-employee failures", async () => {
@@ -92,6 +122,7 @@ describe("runWorkBalanceRefresh", () => {
 						error: "period refresh failed",
 					},
 				],
+				rebuildIntents: { organizationsRebuilt: 0, failures: [] },
 			});
 		} finally {
 			vi.useRealTimers();

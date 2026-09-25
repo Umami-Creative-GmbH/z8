@@ -694,6 +694,13 @@
       "when": 1792771200000,
       "tag": "0098_correction_lifecycle_operation",
       "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1792857600000,
+      "tag": "0099_work_balance_rebuild_intent",
+      "breakpoints": true
     }
   ]
 }

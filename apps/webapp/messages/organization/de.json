@@ -256,6 +256,7 @@
       "title": "Teams"
     },
     "timezone": {
+      "balances-recalculating": "Arbeitszeitsalden werden für die neue Zeitzone neu berechnet und bis dahin ausgeblendet.",
       "default": "Standard-Zeitzone",
       "description": "Legen Sie die Standardzeitzone für Ihre Organisation fest. Diese wird für die Abwesenheitsverfolgung, Berichte und andere datumsbasierte Funktionen verwendet. Einzelne Benutzer können dies in ihren Profileinstellungen überschreiben.",
       "owner-only": "Nur Organisationsinhaber können die Zeitzoneneinstellung ändern.",
