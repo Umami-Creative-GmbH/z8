@@ -1001,6 +1001,14 @@ function analyzeApprovalWriteMutationsInContext(
 				? "database_receiver"
 				: null;
 		}
+		// A union such as `typeof db | Transaction` may hold a database receiver.
+		if (ts.isUnionTypeNode(candidate)) {
+			for (const member of candidate.types) {
+				const provenance = typeProvenance(member);
+				if (provenance) return provenance;
+			}
+			return null;
+		}
 		if (containsTrustedTransactionType(candidate)) return "database_receiver";
 		return null;
 	};

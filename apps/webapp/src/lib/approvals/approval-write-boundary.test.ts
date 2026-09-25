@@ -2732,6 +2732,32 @@ function imported(scope: import("@/lib/time-tracking/work-transaction").WorkTran
 		);
 	});
 
+	it("tracks receivers typed by a union with a database receiver member", () => {
+		const source = `import { db } from "@/db";
+import { approvalRequest } from "@/db/schema";
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type Executor = typeof db | Transaction;
+function viaAlias(executor: Executor) {
+	executor.delete(approvalRequest);
+}
+function optional(executor: Transaction | undefined) {
+	executor?.delete(approvalRequest);
+}
+function unrelated(executor: { delete(table: unknown): unknown } | null) {
+	executor?.delete(approvalRequest);
+}`;
+
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual(
+			[6, 9].map((line) => ({
+				column: 2,
+				fileName: FILE_NAME,
+				line,
+				operation: "delete",
+				table: "approval_request",
+			})),
+		);
+	});
+
 	it("does not trust transaction lookalike exports, modules, or scope members", () => {
 		const fileName = "/repo/apps/webapp/src/lib/time-tracking/fixture.ts";
 		const source = `import { approvalRequest } from "@/db/schema";
