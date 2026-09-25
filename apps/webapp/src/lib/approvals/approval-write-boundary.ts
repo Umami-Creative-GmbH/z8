@@ -833,12 +833,57 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			semantic: "inactive_correction",
 			table: "time_entry",
 		},
+	],
+	// Runtime demo work (#285) writes through the shared work-transaction scope.
+	"src/lib/demo/demo-work.ts": [
 		{
 			columns: ["type"],
-			functionName: "generateDemoTimeEntries",
+			functionName: "insertDemoEntry",
 			operation: "insert",
 			table: "time_entry",
 			uncertainty: "dynamic_payload",
+		},
+		{
+			columns: [
+				"approval_state",
+				"duration_minutes",
+				"employee_id",
+				"end_at",
+				"organization_id",
+				"start_at",
+			],
+			functionName: "recordAdoptedDemoWorkDay",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+		},
+		{
+			columns: [
+				"computation_metadata",
+				"organization_id",
+				"record_id",
+				"record_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "recordAdoptedDemoWorkDay",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_work",
+		},
+		{
+			columns: [
+				"approval_status",
+				"canonical_record_id",
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"start_time",
+			],
+			functionName: "recordAdoptedDemoWorkDay",
+			operation: "insert",
+			table: "work_period",
 		},
 		{
 			columns: [
@@ -848,7 +893,7 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 				"end_time",
 				"start_time",
 			],
-			functionName: "generateDemoTimeEntries",
+			functionName: "recordLegacyDemoWorkDay",
 			operation: "insert",
 			table: "work_period",
 		},
@@ -1011,7 +1056,7 @@ const MAX_TOTAL_SOURCE_BYTES = 32 * 1024 * 1024;
 const APPROVAL_TABLE_PREFILTER =
 	/approval_(?:assignment|chain|command|decision|delivery|event|evidence|inbox|invocation|migration|outbox|presentation|projection|request|requester|review|rollout|stage|submitted|workflow)/i;
 const APPROVAL_TABLE_SYMBOL_PREFILTER =
-	/approval(?:Chain|Decision|Evidence|Inbox|Invocation|Outbox|Presentation|Request|Requester|Review|Stage|Submitted|Workflow)/;
+	/approval(?:Chain|Decision|Delivery|Evidence|Inbox|Invocation|Outbox|Presentation|Request|Requester|Review|Stage|Submitted|Workflow)/;
 const COMPOSED_APPROVAL_TABLE_PREFILTER =
 	/approval_?["'`+\s]+(?:assignment|chain|command|decision|delivery|event|evidence|inbox|invocation|migration|outbox|presentation|projection|request|review|rollout|stage|submitted|workflow)/i;
 const SOURCE_TABLE_PREFILTER = /time_entry|work_period|time_record/i;
