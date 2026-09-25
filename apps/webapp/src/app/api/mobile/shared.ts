@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { member, organization } from "@/db/auth-schema";
-import { employee } from "@/db/schema";
+import { employee, timeEntry } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
@@ -78,6 +78,32 @@ export async function requireMobileEmployee(
 	}
 
 	return employeeRecord as typeof employee.$inferSelect;
+}
+
+/**
+ * Whether a legacy mobile clock-out submission already committed for this employee.
+ * Its submission ID is the clock-out entry ID. Committed recovery precedes fresh age
+ * admission, so installed apps can recover a clock-out they got no answer for (#283);
+ * absence proves nothing about identity-less requests.
+ */
+export async function hasCommittedMobileClockOut(input: {
+	organizationId: string;
+	employeeId: string;
+	submissionId: string;
+}): Promise<boolean> {
+	const [entry] = await db
+		.select({ id: timeEntry.id })
+		.from(timeEntry)
+		.where(
+			and(
+				eq(timeEntry.id, input.submissionId),
+				eq(timeEntry.type, "clock_out"),
+				eq(timeEntry.organizationId, input.organizationId),
+				eq(timeEntry.employeeId, input.employeeId),
+			),
+		)
+		.limit(1);
+	return entry !== undefined;
 }
 
 export async function getMobileOrganizationSummary(

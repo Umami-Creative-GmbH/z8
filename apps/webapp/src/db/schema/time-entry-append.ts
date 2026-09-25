@@ -25,6 +25,7 @@ export const TIME_ENTRY_APPEND_OPERATIONS = [
 	"reviewed_import",
 	"demo_generation",
 	"demo_correction",
+	"completed_work_correction",
 ] as const;
 export type TimeEntryAppendOperation = (typeof TIME_ENTRY_APPEND_OPERATIONS)[number];
 
@@ -91,7 +92,7 @@ export const timeEntryAppendPosition = pgTable(
 		),
 		check(
 			"time_entry_append_position_operation_check",
-			sql`${table.admittedOperation} IN ('live_clock_in', 'live_clock_out', 'reviewed_import', 'demo_generation', 'demo_correction') AND ${table.lastOperation} IN ('live_clock_in', 'live_clock_out', 'reviewed_import', 'demo_generation', 'demo_correction')`,
+			sql`${table.admittedOperation} IN ('live_clock_in', 'live_clock_out', 'reviewed_import', 'demo_generation', 'demo_correction', 'completed_work_correction') AND ${table.lastOperation} IN ('live_clock_in', 'live_clock_out', 'reviewed_import', 'demo_generation', 'demo_correction', 'completed_work_correction')`,
 		),
 	],
 );
