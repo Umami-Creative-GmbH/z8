@@ -17,7 +17,7 @@ import {
 	raiseEscalationAttention,
 	resolveRecoveredEscalationAttentionCondition,
 } from "../escalation/attention-store";
-import { listDecisionEvidence } from "../evidence/store";
+import { findLegacyDecisionEvidenceByRequest, listDecisionEvidence } from "../evidence/store";
 import { nextApprovalDeliveryAttempt } from "./schedule";
 import {
 	type ApprovalDeliveryExecutor,
@@ -28,6 +28,7 @@ import {
 	expandApprovalDeliveryIntents,
 	finishApprovalDeliveryWork,
 	loadApprovalDeliveryMessage,
+	loadLegacyDeliveryState,
 	recordDeliveredApprovalMessage,
 	renewApprovalDeliveryLease,
 	retireApprovalDeliveryMessage,
@@ -97,13 +98,38 @@ interface WorkState {
 	workflowStatus: string;
 	workflowVersion: number;
 	assignmentStatus: string;
-	stageId: string;
+	stageId: string | null;
 	approvalRequestId: string | null;
+	/** Legacy lifecycles: the request's current approver (reassignment check). */
+	approverEmployeeId: string | null;
 }
 
 async function loadWorkState(
-	work: Pick<ClaimedApprovalDeliveryWork, "organizationId" | "workflowId" | "assignmentId">,
+	work: Pick<
+		ClaimedApprovalDeliveryWork,
+		"organizationId" | "workflowId" | "assignmentId" | "legacy"
+	>,
 ): Promise<WorkState | null> {
+	if (work.legacy) {
+		// A legacy lifecycle (#296): its request stands in for the assignment
+		// and the source's status for the workflow's.
+		const legacy = await loadLegacyDeliveryState({
+			organizationId: work.organizationId,
+			lifecycle: work.legacy,
+			approvalRequestId: work.legacy.approvalRequestId,
+		});
+		return legacy
+			? {
+					workflowStatus: legacy.lifecycleStatus,
+					workflowVersion: legacy.version,
+					assignmentStatus: legacy.requestStatus,
+					stageId: null,
+					approvalRequestId: work.legacy.approvalRequestId,
+					approverEmployeeId: legacy.approverEmployeeId,
+				}
+			: null;
+	}
+	if (!work.workflowId || !work.assignmentId) return null;
 	const [state] = await db
 		.select({
 			workflowStatus: approvalWorkflow.status,
@@ -135,7 +161,7 @@ async function loadWorkState(
 			),
 		)
 		.limit(1);
-	return state ?? null;
+	return state ? { ...state, approverEmployeeId: null } : null;
 }
 
 function attentionCondition(
@@ -149,11 +175,22 @@ function attentionCondition(
 	return {
 		organizationId: work.organizationId,
 		reason,
-		subject: { kind: "assignment", assignmentId: work.assignmentId },
+		// A legacy request has no assignment row; it and its approver stand in.
+		subject: work.legacy
+			? {
+					kind: "legacy_assignment",
+					approvalRequestId: work.legacy.approvalRequestId,
+					approverEmployeeId: work.recipientEmployeeId,
+				}
+			: { kind: "assignment", assignmentId: work.assignmentId ?? "" },
 		deliveryChannel: work.provider,
 		approvalType: work.workflowType,
-		...(approvalRequestId ? { approvalRequestId } : {}),
-		workflowId: work.workflowId,
+		...(approvalRequestId
+			? { approvalRequestId }
+			: work.legacy
+				? { approvalRequestId: work.legacy.approvalRequestId }
+				: {}),
+		...(work.workflowId ? { workflowId: work.workflowId } : {}),
 		currentApproverEmployeeId: work.recipientEmployeeId,
 		evidence: {
 			workId: work.id,
@@ -312,7 +349,12 @@ async function processInitial(
 	let now = clock();
 	const state = await loadWorkState(work);
 	if (!state) return finishSimply(work, "cancelled", "purged");
-	if (state.workflowStatus !== "pending" || state.assignmentStatus !== "pending") {
+	if (
+		state.workflowStatus !== "pending" ||
+		state.assignmentStatus !== "pending" ||
+		// A legacy request moved to another approver no longer needs this card.
+		(state.approverEmployeeId !== null && state.approverEmployeeId !== work.recipientEmployeeId)
+	) {
 		return finishSimply(work, "cancelled", "obsolete");
 	}
 	const [recipient] = await db
@@ -364,11 +406,8 @@ async function processInitial(
 	}
 	// Identity first: a late or duplicate send is tracked even if our lease
 	// was taken over, so it can still be refreshed and retired.
-	const recorded = await recordDeliveredApprovalMessage({
+	const remote = {
 		organizationId: work.organizationId,
-		workflowId: work.workflowId,
-		stageId: state.stageId,
-		assignmentId: work.assignmentId,
 		approvalRequestId: state.approvalRequestId,
 		recipientEmployeeId: work.recipientEmployeeId,
 		recipientUserId: recipient.userId,
@@ -380,7 +419,15 @@ async function processInitial(
 		originWorkId: work.id,
 		controls: sent.controls,
 		statusVersion: state.workflowVersion,
-	});
+	};
+	const recorded = work.legacy
+		? await recordDeliveredApprovalMessage({ ...remote, legacy: work.legacy })
+		: await recordDeliveredApprovalMessage({
+				...remote,
+				workflowId: work.workflowId ?? "",
+				stageId: state.stageId ?? "",
+				assignmentId: work.assignmentId ?? "",
+			});
 	const finished = await db.transaction(async (transaction) => {
 		const done = await finishApprovalDeliveryWork(transaction, {
 			work,
@@ -393,10 +440,11 @@ async function processInitial(
 	// The card was prepared from state read before sending. If the request
 	// moved on meanwhile, this message is stale: schedule its retirement.
 	if (recorded.kind !== "purged") {
-		await scheduleApprovalMessageRefreshes({
-			organizationId: work.organizationId,
-			workflowId: work.workflowId,
-		});
+		await scheduleApprovalMessageRefreshes(
+			work.legacy
+				? { organizationId: work.organizationId, legacy: work.legacy }
+				: { organizationId: work.organizationId, workflowId: work.workflowId ?? "" },
+		);
 	}
 	return finished ? "delivered" : "lease_lost";
 }
@@ -435,14 +483,20 @@ async function processRefresh(
 	});
 	const decided = state.assignmentStatus === "approved" || state.assignmentStatus === "rejected";
 	const evidence =
-		display && decided
-			? ((
-					await listDecisionEvidence(db, {
+		!display || !decided
+			? null
+			: work.legacy
+				? // The legacy decision evidence of exactly this request (#296).
+					await findLegacyDecisionEvidenceByRequest(db, {
 						organizationId: work.organizationId,
-						workflowId: work.workflowId,
+						approvalRequestId: work.legacy.approvalRequestId,
 					})
-				).find((record) => record.assignmentId === work.assignmentId) ?? null)
-			: null;
+				: ((
+						await listDecisionEvidence(db, {
+							organizationId: work.organizationId,
+							workflowId: work.workflowId ?? "",
+						})
+					).find((record) => record.assignmentId === work.assignmentId) ?? null);
 	const notice = await approvalStatusNotice(
 		{ workflowStatus: state.workflowStatus, evidence },
 		display,

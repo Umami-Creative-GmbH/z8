@@ -30,6 +30,7 @@ export const PROTECTED_APPROVAL_TABLES = [
 	"approval_delivery_control",
 	"approval_delivery_message",
 	"approval_delivery_work",
+	"approval_delivery_intent",
 ] as const;
 
 export type ProtectedApprovalTable = (typeof PROTECTED_APPROVAL_TABLES)[number];

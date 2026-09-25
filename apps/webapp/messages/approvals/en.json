@@ -93,7 +93,19 @@
       "submittedBy": "Submitted by",
       "category": "Category",
       "currentCategoryName": "Current category name",
-      "submittedTitle": "Submitted request"
+      "submittedTitle": "Submitted request",
+      "submittedClaimTitle": "Submitted claim",
+      "claimType": "Claim type",
+      "claimTypeReceipt": "Receipt",
+      "claimTypeMileage": "Mileage",
+      "claimTypePerDiem": "Per diem",
+      "tripDates": "Trip dates",
+      "tripDatesZone": "Dates entered in",
+      "claimAmount": "Claim amount",
+      "originalAmount": "Original amount",
+      "destination": "Destination",
+      "project": "Project",
+      "receipts": "Receipts"
     },
     "review": {
       "title": "Approval review",

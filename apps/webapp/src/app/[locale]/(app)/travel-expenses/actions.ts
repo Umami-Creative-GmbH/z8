@@ -10,12 +10,12 @@ import {
 	captureTravelExpenseSubmissionEvidence,
 } from "@/lib/approvals/evidence";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
-import { processApproval } from "@/lib/approvals/server/shared";
+import { recordLegacyDeliveryIntent } from "@/lib/approvals/delivery/intents";
+import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
 import {
 	createTravelExpenseApprovalWorkflow,
-	notifyTravelExpenseRequesterAfterDecisionForApprover,
-	persistTravelExpenseDecision,
-	preflightTravelExpenseDecision,
+	decideTravelExpenseClaimEffect,
+	loadTravelExpenseApprover,
 } from "@/lib/approvals/server/travel-expense-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { acquireApprovalWriteLock } from "@/lib/approvals/workflow/cutover";
@@ -26,7 +26,9 @@ import {
 	dateFromInstant,
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
-import type { ServerActionResult } from "@/lib/effect/result";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { TRAVEL_EXPENSE_VALIDATION_MESSAGES } from "@/lib/travel-expenses/types";
@@ -333,7 +335,26 @@ export async function submitTravelExpenseClaim(input: {
 				routing: approvalResult,
 			});
 
-			return { kind: "submitted", submittedClaim, approvalResult } as const;
+			// The approver's card is owned by the delivery owner (#296); its
+			// intent commits with the submission (only while a control exists).
+			const deliveryIntent =
+				approvalResult.kind === "auto_completed"
+					? false
+					: await recordLegacyDeliveryIntent(tx, {
+							organizationId: currentEmployee.organizationId,
+							workflowType: "travel_expense",
+							sourceType: "travel_expense_claim",
+							sourceId: lockedClaim.id,
+							approvalRequestId: approvalResult.approvalRequestId,
+							event: "submitted",
+						});
+
+			return {
+				kind: "submitted",
+				submittedClaim,
+				approvalResult,
+				deliveryIntent,
+			} as const;
 		});
 
 		if (submission.kind === "not_draft") {
@@ -344,6 +365,10 @@ export async function submitTravelExpenseClaim(input: {
 				success: false,
 				error: TRAVEL_EXPENSE_VALIDATION_MESSAGES.RECEIPT_ATTACHMENT_REQUIRED,
 			};
+		}
+		if (submission.deliveryIntent) {
+			// Best effort; the scheduled pass sends anything missed.
+			kickApprovalDelivery({ organizationId: currentEmployee.organizationId });
 		}
 
 		logAudit({
@@ -396,6 +421,29 @@ function submissionEvidenceMessage(field: string | undefined): string {
 	}
 }
 
+/**
+ * Decides as the session's employee through the single expense decision owner
+ * (#296): replay, frozen-submission holds and decision evidence commit with the
+ * legacy mutation; the requester is notified after commit.
+ */
+function decideAsEmployee(
+	employeeId: string,
+	input: {
+		claimId: string;
+		action: "approve" | "reject";
+		reason?: string;
+		note?: string;
+	},
+): Promise<ServerActionResult<void>> {
+	return runServerActionSafe(
+		Effect.gen(function* (_) {
+			const dbService = yield* _(DatabaseService);
+			const approver = yield* _(loadTravelExpenseApprover(dbService, employeeId));
+			yield* _(decideTravelExpenseClaimEffect(dbService, approver, input));
+		}).pipe(Effect.provide(AppLayer)),
+	);
+}
+
 export async function approveTravelExpenseClaim(input: {
 	claimId: string;
 	note?: string;
@@ -406,46 +454,14 @@ export async function approveTravelExpenseClaim(input: {
 			return { success: false, error: "Unauthorized" };
 		}
 
-		const result = await processApproval(
-			"travel_expense_claim",
-			input.claimId,
-			"approve",
-			undefined,
-			(dbService, claimId, currentEmployee) =>
-				persistTravelExpenseDecision(
-					dbService,
-					claimId,
-					currentEmployee,
-					"approve",
-					input.note,
-				),
-			(dbService, claimId, currentEmployee) =>
-				preflightTravelExpenseDecision(
-					dbService,
-					claimId,
-					currentEmployee,
-					"approve",
-				),
-			{ transactional: true },
-		);
-
+		const result = await decideAsEmployee(authContext.employee.id, {
+			claimId: input.claimId,
+			action: "approve",
+			...(input.note ? { note: input.note } : {}),
+		});
 		if (!result.success) {
 			return result;
 		}
-
-		const approvalDbService = {
-			db,
-			query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
-		} satisfies ApprovalDbService;
-
-		await Effect.runPromise(
-			notifyTravelExpenseRequesterAfterDecisionForApprover(
-				approvalDbService,
-				input.claimId,
-				authContext.employee.id,
-				"approve",
-			),
-		);
 
 		revalidatePath("/travel-expenses");
 		return { success: true, data: { status: "approved" } };
@@ -465,47 +481,14 @@ export async function rejectTravelExpenseClaim(input: {
 			return { success: false, error: "Unauthorized" };
 		}
 
-		const result = await processApproval(
-			"travel_expense_claim",
-			input.claimId,
-			"reject",
-			input.reason,
-			(dbService, claimId, currentEmployee) =>
-				persistTravelExpenseDecision(
-					dbService,
-					claimId,
-					currentEmployee,
-					"reject",
-					input.reason,
-				),
-			(dbService, claimId, currentEmployee) =>
-				preflightTravelExpenseDecision(
-					dbService,
-					claimId,
-					currentEmployee,
-					"reject",
-				),
-			{ transactional: true },
-		);
-
+		const result = await decideAsEmployee(authContext.employee.id, {
+			claimId: input.claimId,
+			action: "reject",
+			reason: input.reason,
+		});
 		if (!result.success) {
 			return result;
 		}
-
-		const approvalDbService = {
-			db,
-			query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
-		} satisfies ApprovalDbService;
-
-		await Effect.runPromise(
-			notifyTravelExpenseRequesterAfterDecisionForApprover(
-				approvalDbService,
-				input.claimId,
-				authContext.employee.id,
-				"reject",
-				input.reason,
-			),
-		);
 
 		revalidatePath("/travel-expenses");
 		return { success: true, data: { status: "rejected" } };
