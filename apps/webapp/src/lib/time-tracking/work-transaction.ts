@@ -92,12 +92,17 @@ export async function readAppendAdmission(
 	return control?.mode === "active" ? "append" : "legacy";
 }
 
+const organizationConfigurationKey = (organizationId: string) =>
+	JSON.stringify(["work-organization-configuration", organizationId]);
+const userConfigurationAccessKey = (userId: string) =>
+	JSON.stringify(["work-user-configuration-access", userId]);
+
 export async function acquireOrganizationConfigurationGuard(
 	transaction: Pick<Transaction, "execute">,
 	organizationId: string,
 ) {
 	await transaction.execute(
-		sql`select pg_advisory_xact_lock_shared(hashtextextended(${JSON.stringify(["work-organization-configuration", organizationId])}, 0))`,
+		sql`select pg_advisory_xact_lock_shared(hashtextextended(${organizationConfigurationKey(organizationId)}, 0))`,
 	);
 }
 
@@ -111,7 +116,7 @@ export async function acquireExclusiveOrganizationConfigurationGuard(
 	organizationId: string,
 ) {
 	await transaction.execute(
-		sql`select pg_advisory_xact_lock(hashtextextended(${JSON.stringify(["work-organization-configuration", organizationId])}, 0))`,
+		sql`select pg_advisory_xact_lock(hashtextextended(${organizationConfigurationKey(organizationId)}, 0))`,
 	);
 }
 
@@ -121,7 +126,23 @@ export async function acquireUserConfigurationAccessGuards(
 ) {
 	for (const userId of [...new Set(userIds)].sort()) {
 		await transaction.execute(
-			sql`select pg_advisory_xact_lock_shared(hashtextextended(${JSON.stringify(["work-user-configuration-access", userId])}, 0))`,
+			sql`select pg_advisory_xact_lock_shared(hashtextextended(${userConfigurationAccessKey(userId)}, 0))`,
+		);
+	}
+}
+
+/**
+ * Exclusive user configuration/access protection for a writer of a user's
+ * manual dependencies (#313), sorted, taken after any organization protection
+ * and before the writer's first dependent mutation; never upgrade from shared.
+ */
+export async function acquireExclusiveUserConfigurationAccessGuards(
+	transaction: Pick<Transaction, "execute">,
+	userIds: readonly string[],
+) {
+	for (const userId of [...new Set(userIds)].sort()) {
+		await transaction.execute(
+			sql`select pg_advisory_xact_lock(hashtextextended(${userConfigurationAccessKey(userId)}, 0))`,
 		);
 	}
 }

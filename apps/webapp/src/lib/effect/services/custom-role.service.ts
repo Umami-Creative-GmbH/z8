@@ -14,6 +14,7 @@ import {
 	employee,
 	employeeCustomRole,
 } from "@/db/schema";
+import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { isValidPermission } from "@/lib/authorization/permission-registry";
 import { ConflictError, type DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
@@ -360,18 +361,25 @@ export const CustomRoleServiceLive = Layer.effect(
 						),
 					);
 
-					// Soft delete: set isActive = false
+					// Soft delete: set isActive = false. Deactivation withdraws the role's
+					// grants from every holder, so it takes organization-wide protection.
 					yield* _(
-						dbService.query("softDeleteCustomRole", async () => {
-							await dbService.db
-								.update(customRole)
-								.set({
-									isActive: false,
-									updatedBy: deletedBy,
-									updatedAt: new Date(),
-								})
-								.where(eq(customRole.id, roleId));
-						}),
+						dbService.query("softDeleteCustomRole", () =>
+							withAuthorizationMutation(
+								{ organizationId: orgId, organizationWide: true },
+								async (tx) => {
+									await tx
+										.update(customRole)
+										.set({
+											isActive: false,
+											updatedBy: deletedBy,
+											updatedAt: new Date(),
+										})
+										.where(and(eq(customRole.id, roleId), eq(customRole.organizationId, orgId)));
+								},
+								dbService.db,
+							),
+						),
 					);
 
 					yield* _(writeAuditLog(orgId, roleId, "role_deleted", {}, deletedBy));
@@ -459,23 +467,30 @@ export const CustomRoleServiceLive = Layer.effect(
 						}
 					}
 
-					// Replace all permissions (delete + insert)
+					// Replace all permissions (delete + insert) atomically: every holder's
+					// grants change, so this takes organization-wide protection.
 					yield* _(
-						dbService.query("setCustomRolePermissions", async () => {
-							await dbService.db
-								.delete(customRolePermission)
-								.where(eq(customRolePermission.customRoleId, roleId));
+						dbService.query("setCustomRolePermissions", () =>
+							withAuthorizationMutation(
+								{ organizationId: orgId, organizationWide: true },
+								async (tx) => {
+									await tx
+										.delete(customRolePermission)
+										.where(eq(customRolePermission.customRoleId, roleId));
 
-							if (permissions.length > 0) {
-								await dbService.db.insert(customRolePermission).values(
-									permissions.map((p) => ({
-										customRoleId: roleId,
-										action: p.action,
-										subject: p.subject,
-									})),
-								);
-							}
-						}),
+									if (permissions.length > 0) {
+										await tx.insert(customRolePermission).values(
+											permissions.map((p) => ({
+												customRoleId: roleId,
+												action: p.action,
+												subject: p.subject,
+											})),
+										);
+									}
+								},
+								dbService.db,
+							),
+						),
 					);
 
 					yield* _(
@@ -539,16 +554,22 @@ export const CustomRoleServiceLive = Layer.effect(
 
 					// Insert with conflict ignore (idempotent)
 					yield* _(
-						dbService.query("assignCustomRole", async () => {
-							await dbService.db
-								.insert(employeeCustomRole)
-								.values({
-									employeeId,
-									customRoleId: roleId,
-									assignedBy,
-								})
-								.onConflictDoNothing();
-						}),
+						dbService.query("assignCustomRole", () =>
+							withAuthorizationMutation(
+								{ organizationId: orgId, employeeIds: [employeeId] },
+								async (tx) => {
+									await tx
+										.insert(employeeCustomRole)
+										.values({
+											employeeId,
+											customRoleId: roleId,
+											assignedBy,
+										})
+										.onConflictDoNothing();
+								},
+								dbService.db,
+							),
+						),
 					);
 
 					yield* _(
@@ -607,16 +628,22 @@ export const CustomRoleServiceLive = Layer.effect(
 					);
 
 					yield* _(
-						dbService.query("unassignCustomRole", async () => {
-							await dbService.db
-								.delete(employeeCustomRole)
-								.where(
-									and(
-										eq(employeeCustomRole.employeeId, employeeId),
-										eq(employeeCustomRole.customRoleId, roleId),
-									),
-								);
-						}),
+						dbService.query("unassignCustomRole", () =>
+							withAuthorizationMutation(
+								{ organizationId: orgId, employeeIds: [employeeId] },
+								async (tx) => {
+									await tx
+										.delete(employeeCustomRole)
+										.where(
+											and(
+												eq(employeeCustomRole.employeeId, employeeId),
+												eq(employeeCustomRole.customRoleId, roleId),
+											),
+										);
+								},
+								dbService.db,
+							),
+						),
 					);
 
 					yield* _(

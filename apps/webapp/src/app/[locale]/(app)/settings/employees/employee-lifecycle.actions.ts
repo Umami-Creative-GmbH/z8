@@ -10,6 +10,7 @@ import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { auth } from "@/lib/auth";
 import { completeRemovedMemberCleanup } from "@/lib/auth/member-removal-cleanup";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
+import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { revokeOrganizationActiveSessions } from "@/lib/auth/organization-session-revocation";
 import {
 	AuthorizationError,
@@ -159,7 +160,10 @@ function setEmployeeLifecycleState(
 				const transactionResult = yield* _(
 					actor.dbService
 						.query("setEmployeeLifecycleState", async () => {
-							return await actor.dbService.db.transaction(
+							// The target's active state feeds manual creation, so its protection
+							// precedes the organization row lock and every write.
+							return await withAuthorizationMutation(
+								{ organizationId: actor.organizationId, employeeIds: [validatedEmployeeId] },
 								async (tx): Promise<LifecycleTransactionResult> => {
 									// All lifecycle mutations for an organization take this row lock, serializing owner safety checks.
 									const [lockedOrganization] = await tx
@@ -280,6 +284,7 @@ function setEmployeeLifecycleState(
 
 									return { type: "success", changed: true, targetEmployee };
 								},
+								actor.dbService.db,
 							);
 						})
 						.pipe(
