@@ -9,11 +9,14 @@ import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
+import { summarizeAppendAssurance } from "@/lib/time-tracking/append-assurance";
 import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
 
 /**
  * POST /api/time-entries/verify
- * Verify chain integrity for an employee's time entries
+ * Graph-aware append assurance for an employee's time entries (#324). Operators
+ * who can manage time entries receive record-level diagnostics; others verifying
+ * their own history receive status and limitation codes only.
  */
 export async function POST(request: NextRequest) {
 	await connection();
@@ -56,10 +59,12 @@ export async function POST(request: NextRequest) {
 		// Determine which employee's chain to verify
 		const targetEmployeeId = employeeId || currentEmployee.id;
 
+		const ability = await getAbility();
+		const canDiagnose = Boolean(ability?.can("manage", "TimeEntry"));
+
 		// Only allow verifying own entries unless user can manage time entries
 		if (targetEmployeeId !== currentEmployee.id) {
-			const ability = await getAbility();
-			if (!ability || ability.cannot("manage", "TimeEntry")) {
+			if (!canDiagnose) {
 				const error = new ForbiddenError("read", "TimeEntry");
 				const httpError = toHttpError(error);
 				return NextResponse.json(httpError.body, { status: httpError.status });
@@ -89,11 +94,12 @@ export async function POST(request: NextRequest) {
 			);
 		});
 
-		const result = await runtime.runPromise(effect);
+		const report = await runtime.runPromise(effect);
 
 		return NextResponse.json({
 			employeeId: targetEmployeeId,
-			verification: result,
+			diagnostics: canDiagnose ? "record_level" : "summary",
+			assurance: canDiagnose ? report : summarizeAppendAssurance(report),
 			verifiedAt: new Date().toISOString(),
 		});
 	} catch (error) {
@@ -107,7 +113,8 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/time-entries/verify
- * Get chain hash for quick integrity check
+ * Digest of the employee's stored entry hashes, for detecting changes between
+ * reads. It is not a lineage verification; use POST for assurance.
  */
 export async function GET(request: NextRequest) {
 	await connection();
@@ -172,6 +179,7 @@ export async function GET(request: NextRequest) {
 		return NextResponse.json({
 			employeeId: targetEmployeeId,
 			chainHash,
+			claim: "change_digest",
 			generatedAt: new Date().toISOString(),
 		});
 	} catch (error) {

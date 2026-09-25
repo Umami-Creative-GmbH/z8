@@ -127,6 +127,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 				isValid: verification.isValid,
 				calculatedHash: verification.calculatedHash,
 				storedHash: verification.storedHash,
+				// Reproducing one hash says nothing about lineage, row identity or authorship.
+				claim: "hash_reproducibility",
+				limitations: ["hash_commits_event_fields_only", "original_actor_and_capture_unproven"],
 			},
 		});
 	} catch (error) {

@@ -1,17 +1,12 @@
 /**
  * Comprehensive tests for blockchain hash service
- * Tests hash calculation, verification, chain validation, and tamper detection
+ * Tests hash calculation, verification, the change digest, and tamper detection.
+ * Lineage and continuity are covered by append-lineage and append-assurance tests.
  */
 
 import { describe, expect, it } from "vitest";
 import type { timeEntry } from "@/db/schema";
-import {
-	calculateHash,
-	getChainHash,
-	validateChain,
-	validateChainDetailed,
-	verifyHash,
-} from "../blockchain";
+import { calculateHash, getChainHash, verifyHash } from "../blockchain";
 
 type TimeEntry = typeof timeEntry.$inferSelect;
 
@@ -225,243 +220,20 @@ describe("getChainHash", () => {
 		expect(hash1).not.toBe(hash2);
 	});
 
+	it("does not depend on creation time or input order", () => {
+		const entries = createValidChain("emp-123", 4).map((entry) => ({
+			...entry,
+			createdAt: new Date("2026-07-01T00:00:00.000Z"),
+		}));
+
+		expect(getChainHash(entries.toReversed())).toBe(getChainHash(entries));
+	});
+
 	it("should return 64 character hex string", () => {
 		const entries = createValidChain("emp-123", 3);
 		const hash = getChainHash(entries);
 
 		expect(hash).toHaveLength(64);
 		expect(hash).toMatch(/^[a-f0-9]{64}$/);
-	});
-});
-
-describe("validateChain", () => {
-	it("should return true for valid chain", async () => {
-		const entries = createValidChain("emp-123", 5);
-		const result = await validateChain(entries);
-		expect(result).toBe(true);
-	});
-
-	it("should return true for empty chain", async () => {
-		const result = await validateChain([]);
-		expect(result).toBe(true);
-	});
-
-	it("should return true for single entry", async () => {
-		const entries = createValidChain("emp-123", 1);
-		const result = await validateChain(entries);
-		expect(result).toBe(true);
-	});
-
-	it("should return false for chain with hash mismatch", async () => {
-		const entries = createValidChain("emp-123", 5);
-
-		// Tamper with middle entry's hash
-		entries[2].hash = "tampered_hash";
-
-		const result = await validateChain(entries);
-		expect(result).toBe(false);
-	});
-
-	it("should return false for chain with broken link", async () => {
-		const entries = createValidChain("emp-123", 5);
-
-		// Break the chain link
-		entries[3].previousHash = "wrong_previous_hash";
-
-		const result = await validateChain(entries);
-		expect(result).toBe(false);
-	});
-
-	it("should return false if first entry has non-null previousHash", async () => {
-		const entries = createValidChain("emp-123", 3);
-
-		// First entry should have null previousHash
-		entries[0].previousHash = "should_be_null";
-
-		const result = await validateChain(entries);
-		expect(result).toBe(false);
-	});
-});
-
-describe("validateChainDetailed", () => {
-	it("should return valid result for valid chain", () => {
-		const entries = createValidChain("emp-123", 5);
-		const result = validateChainDetailed(entries);
-
-		expect(result.isValid).toBe(true);
-		expect(result.totalEntries).toBe(5);
-		expect(result.validEntries).toBe(5);
-		expect(result.issues).toHaveLength(0);
-		expect(result.chainHash).toBeDefined();
-	});
-
-	it("should return valid result for empty chain", () => {
-		const result = validateChainDetailed([]);
-
-		expect(result.isValid).toBe(true);
-		expect(result.totalEntries).toBe(0);
-		expect(result.validEntries).toBe(0);
-		expect(result.issues).toHaveLength(0);
-		expect(result.chainHash).toBeNull();
-	});
-
-	it("should detect hash mismatch with details", () => {
-		const entries = createValidChain("emp-123", 5);
-		const originalHash = entries[2].hash;
-
-		// Tamper with entry's data (not hash) to cause mismatch
-		entries[2].timestamp = new Date("2099-01-01T00:00:00.000Z");
-
-		const result = validateChainDetailed(entries);
-
-		expect(result.isValid).toBe(false);
-		expect(result.issues.length).toBeGreaterThan(0);
-
-		const hashIssue = result.issues.find((i) => i.type === "hash_mismatch");
-		expect(hashIssue).toBeDefined();
-		expect(hashIssue?.entryId).toBe("entry-2");
-		expect(hashIssue?.entryIndex).toBe(2);
-		expect(hashIssue?.actualValue).toBe(originalHash);
-		expect(result.chainHash).toBeNull();
-	});
-
-	it("should detect chain break with details", () => {
-		const entries = createValidChain("emp-123", 5);
-
-		// Break the chain by changing previousHash
-		entries[3].previousHash = "wrong_previous_hash";
-
-		const result = validateChainDetailed(entries);
-
-		expect(result.isValid).toBe(false);
-
-		const breakIssue = result.issues.find((i) => i.type === "chain_break");
-		expect(breakIssue).toBeDefined();
-		expect(breakIssue?.entryId).toBe("entry-3");
-		expect(breakIssue?.expectedValue).toBe(entries[2].hash);
-		expect(breakIssue?.actualValue).toBe("wrong_previous_hash");
-	});
-
-	it("should detect invalid genesis entry", () => {
-		const entries = createValidChain("emp-123", 3);
-
-		// First entry should have null previousHash
-		entries[0].previousHash = "should_be_null";
-		// Recalculate hash to make it valid hash-wise but invalid chain-wise
-		entries[0].hash = calculateHash({
-			employeeId: entries[0].employeeId,
-			type: entries[0].type,
-			timestamp: entries[0].timestamp.toISOString(),
-			previousHash: "should_be_null",
-		});
-
-		const result = validateChainDetailed(entries);
-
-		expect(result.isValid).toBe(false);
-
-		const genesisIssue = result.issues.find((i) => i.type === "invalid_genesis");
-		expect(genesisIssue).toBeDefined();
-		expect(genesisIssue?.expectedValue).toBe("null");
-		expect(genesisIssue?.actualValue).toBe("should_be_null");
-	});
-
-	it("should report multiple issues in chain", () => {
-		const entries = createValidChain("emp-123", 5);
-
-		// Create multiple issues
-		entries[0].previousHash = "bad_genesis"; // Invalid genesis
-		entries[0].hash = calculateHash({
-			employeeId: entries[0].employeeId,
-			type: entries[0].type,
-			timestamp: entries[0].timestamp.toISOString(),
-			previousHash: "bad_genesis",
-		});
-
-		entries[2].timestamp = new Date("2099-01-01T00:00:00.000Z"); // Hash mismatch
-
-		const result = validateChainDetailed(entries);
-
-		expect(result.isValid).toBe(false);
-		expect(result.issues.length).toBeGreaterThanOrEqual(2);
-	});
-
-	it("should count valid entries correctly", () => {
-		const entries = createValidChain("emp-123", 5);
-
-		// Tamper with one entry
-		entries[2].hash = "tampered";
-
-		const result = validateChainDetailed(entries);
-
-		// Entry 2 is invalid, and entry 3 has broken link to entry 2
-		expect(result.validEntries).toBeLessThan(5);
-	});
-});
-
-describe("Chain integrity scenarios", () => {
-	it("should handle correction entries in chain", () => {
-		const entries: TimeEntry[] = [];
-		let previousHash: string | null = null;
-
-		// Create normal entry
-		const entry1 = createMockEntry({
-			id: "entry-1",
-			employeeId: "emp-123",
-			type: "clock_in",
-			timestamp: new Date("2024-01-15T08:00:00.000Z"),
-			previousHash: null,
-			createdAt: new Date("2024-01-15T08:00:00.000Z"),
-		});
-		entries.push(entry1);
-		previousHash = entry1.hash;
-
-		// Create correction entry
-		const correctionHash = calculateHash({
-			employeeId: "emp-123",
-			type: "correction",
-			timestamp: new Date("2024-01-15T08:15:00.000Z").toISOString(),
-			previousHash,
-		});
-
-		const correction = createMockEntry({
-			id: "entry-2",
-			employeeId: "emp-123",
-			type: "correction",
-			timestamp: new Date("2024-01-15T08:15:00.000Z"),
-			hash: correctionHash,
-			previousHash,
-			replacesEntryId: "entry-1",
-			createdAt: new Date("2024-01-15T08:15:01.000Z"),
-		});
-		entries.push(correction);
-
-		const result = validateChainDetailed(entries);
-		expect(result.isValid).toBe(true);
-	});
-
-	it("should validate long chains efficiently", () => {
-		const entries = createValidChain("emp-123", 100);
-
-		const startTime = Date.now();
-		const result = validateChainDetailed(entries);
-		const duration = Date.now() - startTime;
-
-		expect(result.isValid).toBe(true);
-		expect(duration).toBeLessThan(1000); // Should complete in under 1 second
-	});
-
-	it("should handle entries from different employees separately", () => {
-		// This tests that chain validation is per-employee
-		const entries1 = createValidChain("emp-123", 3);
-		const entries2 = createValidChain("emp-456", 3);
-
-		const result1 = validateChainDetailed(entries1);
-		const result2 = validateChainDetailed(entries2);
-
-		expect(result1.isValid).toBe(true);
-		expect(result2.isValid).toBe(true);
-
-		// Chain hashes should be different
-		expect(getChainHash(entries1)).not.toBe(getChainHash(entries2));
 	});
 });
