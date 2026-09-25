@@ -13,7 +13,9 @@
  * production has no setter. Live clock-out approval is production-false today
  * (`checkClockOutNeedsApproval`), and manual approval depends on the change
  * policy, so approval scenarios force only those decisions and keep the real
- * routing, approval and evidence collaborators.
+ * routing, approval and evidence collaborators. Append admission is active, so
+ * manual entries are strict version-2 commands (#308) through the public action;
+ * their approval comes from a real change policy.
  */
 
 import { randomUUID } from "node:crypto";
@@ -130,7 +132,8 @@ vi.mock("./shared", async (importOriginal) => {
 	};
 });
 
-const { clockIn, clockOut, createManualTimeEntry } = await import("./clocking");
+const { clockIn, clockOut } = await import("./clocking");
+const { createManualTimeEntry } = await import("../actions");
 // The inbox API route registers the approval type handlers the same way.
 await import("@/lib/approvals/init");
 const { approveApprovalInboxItem, rejectApprovalInboxItem } = await import(
@@ -176,6 +179,8 @@ const ids = {
 	regulation: "f3000000-0000-4000-8000-000000000002",
 	breakRule: "f3000000-0000-4000-8000-000000000003",
 	policyAssignment: "f3000000-0000-4000-8000-000000000004",
+	changePolicy: "f3000000-0000-4000-8000-000000000005",
+	changePolicyAssignment: "f3000000-0000-4000-8000-000000000006",
 } as const;
 const clockInAt = parseInstant("2026-07-22T08:00:00Z");
 const materialChange =
@@ -334,16 +339,38 @@ describeIntegration("manual and policy clock-out approval lifecycle evidence on 
 		return { period, submissionId, result };
 	}
 
-	function submitManual(submissionId = randomUUID()) {
+	/** Approval for any past manual entry, through the real change policy. */
+	async function requireManualApproval() {
+		await admin.query(
+			`insert into change_policy
+			 (id, organization_id, name, self_service_days, approval_days, created_by, updated_at)
+			 values ($1, $2, 'T302 manual approval', 0, 3650, $3, now()) on conflict do nothing`,
+			[ids.changePolicy, ids.organization, ids.managerUser],
+		);
+		await admin.query(
+			`insert into change_policy_assignment
+			 (id, policy_id, organization_id, assignment_type, priority, created_by, updated_at)
+			 values ($1, $2, $3, 'organization', 0, $4, now()) on conflict do nothing`,
+			[ids.changePolicyAssignment, ids.changePolicy, ids.organization, ids.managerUser],
+		);
+	}
+
+	async function submitManual(submissionId = randomUUID()) {
 		actAs(ids.requesterUser);
+		if (harness.forceManualApproval) await requireManualApproval();
+		// Continued once in the Berlin browser zone; the saved zone is UTC.
 		return createManualTimeEntry({
+			version: 2,
 			submissionId,
+			targetEmployeeId: ids.requester,
 			date: "2026-07-20",
-			clockInTime: "09:00",
-			clockOutTime: "17:30",
-			reason: "Forgot to clock",
-			timezone: "Europe/Berlin",
+			clockIn: { time: "09:00", occurrence: null, displayedOffsetMinutes: 120 },
+			clockOut: { time: "17:30", occurrence: null, displayedOffsetMinutes: 120 },
+			zone: { basis: "browser", timezone: "Europe/Berlin" },
 			browserTimezone: "Europe/Berlin",
+			reason: "Forgot to clock",
+			projectId: null,
+			workCategoryId: null,
 		});
 	}
 
@@ -944,7 +971,10 @@ describeIntegration("manual and policy clock-out approval lifecycle evidence on 
 
 		// The exact retry replays without new evidence.
 		const before = await snapshot();
-		await expect(submitManual(submissionId)).resolves.toEqual(result);
+		await expect(submitManual(submissionId)).resolves.toEqual({
+			success: true,
+			data: { ...(result.success ? result.data : {}), disposition: "replayed" },
+		});
 		expect(await snapshot()).toEqual(before);
 
 		await expect(approveAs(pending.id)).resolves.toMatchObject({ status: "approved" });

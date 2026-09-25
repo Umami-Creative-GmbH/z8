@@ -134,8 +134,10 @@ export async function validateProjectAssignment(
 	employeeId: string,
 	teamId: string | null,
 	organizationId: string,
+	/** A protected operation passes its transaction; defaults to the global client. */
+	reader: Pick<typeof db, "query"> = db,
 ): Promise<{ isValid: boolean; error?: string }> {
-	const assignedProject = await db.query.project.findFirst({
+	const assignedProject = await reader.query.project.findFirst({
 		where: and(eq(project.id, projectId), eq(project.organizationId, organizationId)),
 	});
 
@@ -158,7 +160,7 @@ export async function validateProjectAssignment(
 		};
 	}
 
-	const assignment = await db.query.projectAssignment.findFirst({
+	const assignment = await reader.query.projectAssignment.findFirst({
 		where: teamId
 			? or(
 					and(

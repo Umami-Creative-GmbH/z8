@@ -89,11 +89,24 @@
       "dateLabel": "Date",
       "description": "Créez une saisie de temps pour une date passée. Une approbation peut être requise selon la politique de changement de votre organisation.",
       "errors": {
+        "collision": "Cette entrée est en conflit avec un envoi précédent ou un travail modifié. Vérifiez vos entrées existantes.",
         "createFailed": "Échec de la création de la saisie de temps",
         "futureDate": "Impossible de créer des saisies pour des dates futures",
+        "futureTime": "Impossible de créer des entrées pour des heures futures",
+        "historyReview": "Cet historique de temps doit être vérifié avant d'enregistrer de nouvelles entrées. Contactez votre administrateur.",
         "invalidTime": "Saisissez une heure complète et valide",
         "invalidTimeRange": "L'heure de sortie doit être postérieure à l'heure d'entrée",
+        "nonexistentTime": "Cette heure n'existe pas à cette date, car les horloges avancent.",
+        "occurrenceRequired": "Cette heure revient deux fois à cette date. Choisissez celle que vous voulez dire.",
+        "overlap": "Cette plage chevauche du travail enregistré. Choisissez une plage sans chevauchement.",
+        "reconfirm": "Le fuseau horaire ou les heures ont changé. Vérifiez l'entrée et envoyez-la à nouveau.",
+        "refresh": "Les paramètres des entrées manuelles ont changé. Vérifiez l'entrée et envoyez-la à nouveau.",
         "tooLong": "La période de travail ne peut pas dépasser 24 heures"
+      },
+      "occurrence": {
+        "earlier": "Première, {offset}",
+        "later": "Seconde, {offset}",
+        "legend": "{time} revient deux fois à cette date. Laquelle voulez-vous dire ?"
       },
       "reasonLabel": "Motif",
       "reasonPlaceholder": "Décrivez votre travail…",

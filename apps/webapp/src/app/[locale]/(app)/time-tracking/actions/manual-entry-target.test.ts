@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
 	getPrincipalContext: vi.fn(),
 	getAvailableCategoriesForEmployee: vi.fn(),
 	getAssignedProjectsWithHours: vi.fn(),
+	readAppendAdmission: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
@@ -28,6 +29,9 @@ vi.mock("@/lib/query/work-category.queries", () => ({
 }));
 vi.mock("./entry-helpers", () => ({
 	getAssignedProjectsWithHours: mocks.getAssignedProjectsWithHours,
+}));
+vi.mock("@/lib/time-tracking/work-transaction", () => ({
+	readAppendAdmission: mocks.readAppendAdmission,
 }));
 
 const { getManualEntryTargetContextForEmployee, resolveManualEntryTargetZone } =
@@ -86,6 +90,7 @@ function principal(options: {
 describe("getManualEntryTargetContextForEmployee", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mocks.readAppendAdmission.mockResolvedValue("legacy");
 		mocks.findUserSettings.mockResolvedValue({ timezone: "Europe/Berlin" });
 		mocks.findOrganization.mockResolvedValue({ timezone: "America/New_York" });
 		mocks.findUser.mockResolvedValue({
@@ -152,6 +157,7 @@ describe("getManualEntryTargetContextForEmployee", () => {
 				isOwnEntry: true,
 				timezone: "Europe/Berlin",
 				timezoneSource: "employee",
+				manualCommandVersion: 1,
 				projects: [
 					{
 						id: "project-a",
@@ -177,6 +183,17 @@ describe("getManualEntryTargetContextForEmployee", () => {
 				],
 			},
 		});
+	});
+
+	it("advertises version-2 commands once the organization has adopted them", async () => {
+		mocks.readAppendAdmission.mockResolvedValue("append");
+
+		const result = await getManualEntryTargetContextForEmployee({
+			currentEmployee: employeeRecord({ role: "employee" }),
+		});
+
+		expect(result.success && result.data.manualCommandVersion).toBe(2);
+		expect(mocks.readAppendAdmission).toHaveBeenCalledWith(expect.anything(), "org-1");
 	});
 
 	it("loads the direct report's zone and choices for an authorized manager", async () => {

@@ -89,11 +89,24 @@
       "dateLabel": "Data",
       "description": "Crea una voce di tempo per una data passata. Potrebbe essere richiesta l'approvazione in base alla policy della tua organizzazione.",
       "errors": {
+        "collision": "Questa voce è in conflitto con un invio precedente o con lavoro modificato. Controlla le tue voci esistenti.",
         "createFailed": "Impossibile creare la voce di tempo",
         "futureDate": "Impossibile creare voci per date future",
+        "futureTime": "Non è possibile creare voci per orari futuri",
+        "historyReview": "Questo storico dei tempi deve essere verificato prima di salvare nuove voci. Contatta l'amministratore.",
         "invalidTime": "Inserisci un orario completo e valido",
         "invalidTimeRange": "L'orario di uscita deve essere successivo all'orario di ingresso",
+        "nonexistentTime": "Questo orario non esiste in questa data perché gli orologi vanno avanti.",
+        "occurrenceRequired": "Questo orario si ripete in questa data. Scegli quello che intendi.",
+        "overlap": "Questo orario si sovrappone a lavoro registrato. Scegli un intervallo senza sovrapposizioni.",
+        "reconfirm": "Il fuso orario o gli orari sono cambiati. Controlla la voce e inviala di nuovo.",
+        "refresh": "Le impostazioni delle voci manuali sono cambiate. Controlla la voce e inviala di nuovo.",
         "tooLong": "Il periodo di lavoro non può superare le 24 ore"
+      },
+      "occurrence": {
+        "earlier": "Prima, {offset}",
+        "later": "Seconda, {offset}",
+        "legend": "{time} si ripete in questa data. Quale intendi?"
       },
       "reasonLabel": "Motivo",
       "reasonPlaceholder": "Descrivi il lavoro svolto...",

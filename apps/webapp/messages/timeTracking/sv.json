@@ -84,11 +84,24 @@
       "dateLabel": "Datum",
       "description": "Skapa en tidsregistrering för ett tidigare datum. Godkännande kan krävas baserat på din organisations ändringspolicy.",
       "errors": {
+        "collision": "Den här posten står i konflikt med en tidigare inskickning eller ändrat arbete. Kontrollera dina befintliga poster.",
         "createFailed": "Det gick inte att skapa tidsregistreringen",
         "futureDate": "Det går inte att skapa registreringar för framtida datum",
+        "futureTime": "Det går inte att skapa poster för framtida tider",
+        "historyReview": "Den här tidshistoriken måste granskas innan nya poster kan sparas. Kontakta din administratör.",
         "invalidTime": "Ange en fullständig, giltig tid",
         "invalidTimeRange": "Utstämplingstiden måste vara efter instämplingstiden",
+        "nonexistentTime": "Den här tiden finns inte på det här datumet eftersom klockan ställs fram.",
+        "occurrenceRequired": "Den här tiden förekommer två gånger på det här datumet. Välj vilken du menar.",
+        "overlap": "Den här tiden överlappar registrerat arbete. Välj ett intervall utan överlappning.",
+        "reconfirm": "Tidszonen eller tiderna har ändrats. Granska posten och skicka den igen.",
+        "refresh": "Inställningarna för manuella poster har ändrats. Granska posten och skicka den igen.",
         "tooLong": "Arbetsperioden får inte överstiga 24 timmar"
+      },
+      "occurrence": {
+        "earlier": "Första, {offset}",
+        "later": "Andra, {offset}",
+        "legend": "{time} förekommer två gånger på det här datumet. Vilken menar du?"
       },
       "reasonLabel": "Anledning",
       "reasonPlaceholder": "Beskriv vad du har arbetat med…",
