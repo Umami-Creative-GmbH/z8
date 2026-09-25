@@ -132,6 +132,14 @@ export function ApprovalMaintenanceCard() {
 						"Delivery intent",
 					),
 				})),
+				...result.data.attention.map((id) => ({
+					id,
+					kind: "escalation_attention",
+					label: t(
+						"admin:admin.settings.approvalMaintenance.escalationAttention",
+						"Escalation attention",
+					),
+				})),
 			]
 		: [];
 

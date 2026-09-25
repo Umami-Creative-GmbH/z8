@@ -348,7 +348,8 @@
         "reviewBinding": "Review binding",
         "escalationTransfer": "Escalation transfer",
         "deliveryMessage": "Delivered message",
-        "deliveryWork": "Delivery work"
+        "deliveryWork": "Delivery work",
+        "escalationAttention": "Escalation attention"
       },
       "cookieConsent": {
         "description": "Injected on authentication pages for GDPR compliance",

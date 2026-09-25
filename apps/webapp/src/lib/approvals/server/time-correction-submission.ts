@@ -1940,6 +1940,7 @@ function submitCorrectionInTransaction(
 			submissionKey,
 			submissionId: input.submissionId,
 			correction,
+			correctionEntriesCommitted: newlyInserted.length < correctionEntries.length,
 		})) as Omit<ApprovalResult, "correctionEntryIds">;
 		if (result.disposition !== "replayed") {
 			await validateCorrectionWorkMetadata({

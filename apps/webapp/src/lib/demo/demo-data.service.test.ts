@@ -112,6 +112,7 @@ vi.mock("@/lib/approvals/server/time-correction-approvals", () => ({
 	deleteCancelledTimeCorrectionsInTransaction: vi.fn(),
 	finalizeTimeCorrectionTerminalInTransaction: vi.fn(),
 	executeTimeCorrectionSubmissionInTransaction: mocks.executeSubmission,
+	isPurgedTimeCorrectionConflict: vi.fn(() => false),
 	insertTimeCorrectionSourceEntry: vi.fn(async (input) => {
 		const [created] = await input.dbService.db
 			.insert(timeEntry)
