@@ -19,7 +19,6 @@ import {
 	workPolicy,
 	workPolicyPresence,
 } from "@/db/schema";
-import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import {
 	isBillingMutationAllowed,
@@ -39,11 +38,6 @@ import {
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import {
-	type BreakEnforcementResult,
-	BreakEnforcementService,
-	BreakEnforcementServiceLive,
-} from "@/lib/effect/services/break-enforcement.service";
-import {
 	ChangePolicyService,
 	ChangePolicyServiceLive,
 	type EditCapability,
@@ -52,10 +46,6 @@ import {
 	DatabaseService,
 	DatabaseServiceLive,
 } from "@/lib/effect/services/database.service";
-import {
-	SurchargeService,
-	SurchargeServiceLive,
-} from "@/lib/effect/services/surcharge.service";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import {
 	WorkPolicyService,
@@ -144,31 +134,6 @@ export async function addBreakToActiveSession(
 }
 
 const logger = createLogger("TimeTrackingActionsEffect");
-
-type ManagerResolverDb = Parameters<
-	typeof getPrimaryEligibleManagerIdForRequester
->[0]["db"];
-
-export async function resolveTimeApprovalManagerId(input: {
-	db: ManagerResolverDb;
-	requiresApproval: boolean;
-	requesterEmployeeId: string;
-	organizationId: string;
-}): Promise<string | null> {
-	if (!input.requiresApproval) {
-		return null;
-	}
-
-	const managerId = await getPrimaryEligibleManagerIdForRequester({
-		db: input.db,
-		requesterEmployeeId: input.requesterEmployeeId,
-		organizationId: input.organizationId,
-	});
-	if (!managerId) {
-		throw new Error("No manager assigned to approve time changes");
-	}
-	return managerId;
-}
 
 type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
 	project: Pick<
@@ -563,82 +528,6 @@ async function validateProjectAssignment(
 }
 
 /**
- * Check compliance after clocking out and log any violations
- * This is a warning-only system - it logs violations but doesn't block actions
- */
-export async function checkComplianceAfterClockOut(
-	employeeId: string,
-	organizationId: string,
-	workPeriodId: string,
-	currentSessionMinutes: number,
-	timezone: string = "UTC",
-): Promise<ComplianceWarning[]> {
-	try {
-		// Get time summary for today and this week using employee's timezone
-		const timeSummary = await getTimeSummary(employeeId, timezone);
-
-		// Calculate breaks taken today (gaps between work periods)
-		const breaksTaken = await calculateBreaksTakenToday(employeeId, timezone);
-
-		// Use Effect to check compliance
-		const complianceEffect = Effect.gen(function* (_) {
-			const workPolicyService = yield* _(WorkPolicyService);
-
-			const result = yield* _(
-				workPolicyService.checkCompliance({
-					employeeId,
-					currentSessionMinutes,
-					totalDailyMinutes: timeSummary.todayMinutes,
-					totalWeeklyMinutes: timeSummary.weekMinutes,
-					breaksTakenMinutes: breaksTaken,
-				}),
-			);
-
-			// Log violations if any
-			if (result.warnings.length > 0) {
-				const effectivePolicy = yield* _(
-					workPolicyService.getEffectivePolicy(employeeId),
-				);
-
-				if (effectivePolicy?.regulation) {
-					for (const warning of result.warnings) {
-						if (warning.severity === "violation") {
-							yield* _(
-								workPolicyService.logViolation({
-									employeeId,
-									organizationId,
-									policyId: effectivePolicy.policyId,
-									workPeriodId,
-									violationType: warning.type,
-									details: {
-										actualMinutes: warning.actualValue,
-										limitMinutes: warning.limitValue,
-										warningShownAt: new Date().toISOString(),
-										userContinued: true,
-									},
-								}),
-							);
-						}
-					}
-				}
-			}
-
-			return result.warnings;
-		}).pipe(
-			Effect.provide(WorkPolicyServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
-
-		const warnings = await Effect.runPromise(complianceEffect);
-		return warnings;
-	} catch (error) {
-		// Log the error but don't fail the clock-out
-		logger.error({ error }, "Failed to check compliance after clock-out");
-		return [];
-	}
-}
-
-/**
  * Calculate total break minutes taken today (gaps between completed work periods)
  * Uses employee's timezone for "today" calculation
  */
@@ -679,82 +568,6 @@ async function calculateBreaksTakenToday(
 	}
 
 	return totalBreakMinutes;
-}
-
-/**
- * Calculate and persist surcharge credits for a work period
- * Only runs if surcharges are enabled for the organization
- * Errors are logged but don't fail the clock-out
- */
-export async function calculateAndPersistSurcharges(
-	workPeriodId: string,
-	organizationId: string,
-): Promise<void> {
-	try {
-		const surchargeEffect = Effect.gen(function* (_) {
-			const surchargeService = yield* _(SurchargeService);
-
-			// Check if surcharges are enabled for this organization
-			const isEnabled = yield* _(
-				surchargeService.isSurchargesEnabled(organizationId),
-			);
-			if (!isEnabled) {
-				return;
-			}
-
-			// Persist the surcharge calculation
-			yield* _(surchargeService.persistSurchargeCalculation(workPeriodId));
-		}).pipe(
-			Effect.provide(SurchargeServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
-
-		await Effect.runPromise(surchargeEffect);
-	} catch (error) {
-		// Log the error but don't fail the clock-out
-		logger.error(
-			{ error, workPeriodId },
-			"Failed to calculate surcharges after clock-out",
-		);
-	}
-}
-
-/**
- * Enforce breaks after clock-out by automatically splitting work periods
- * if they violate break requirements.
- * Errors are logged but don't fail the clock-out.
- */
-export async function enforceBreaksAfterClockOut(input: {
-	employeeId: string;
-	organizationId: string;
-	workPeriodId: string;
-	sessionDurationMinutes: number;
-	timezone: string;
-	createdBy: string;
-}): Promise<BreakEnforcementResult> {
-	try {
-		const enforcementEffect = Effect.gen(function* (_) {
-			const breakService = yield* _(BreakEnforcementService);
-
-			return yield* _(breakService.enforceBreaksAfterClockOut(input));
-		}).pipe(
-			Effect.provide(BreakEnforcementServiceLive),
-			Effect.provide(WorkPolicyServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
-
-		return await Effect.runPromise(enforcementEffect);
-	} catch (error) {
-		// Log the error but don't fail the clock-out
-		logger.error(
-			{ error, workPeriodId: input.workPeriodId },
-			"Failed to enforce breaks after clock-out",
-		);
-		return {
-			wasAdjusted: false,
-			affectedWorkPeriodIds: [input.workPeriodId],
-		};
-	}
 }
 
 export async function requestTimeCorrection(
