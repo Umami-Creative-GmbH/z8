@@ -642,6 +642,12 @@ describeIntegration("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 					headers: as(ids.ownerUser),
 				}),
 			).rejects.toBeInstanceOf(UncoordinatedAuthMutationError);
+			await expect(
+				auth.api.leaveOrganization({
+					body: { organizationId: ids.organization },
+					headers: as(ids.employeeUser),
+				}),
+			).rejects.toBeInstanceOf(UncoordinatedAuthMutationError);
 
 			expect(await membership(ids.adminUser)).toMatchObject({ role: "admin" });
 			expect(await membership(ids.employeeUser)).toMatchObject({ status: "approved" });

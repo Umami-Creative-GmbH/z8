@@ -70,15 +70,27 @@ const COORDINATED_AUTH_MUTATION_PATHS = new Set([
 /** Users whose exclusive guard each coordinated transaction took before writing. */
 const protectedUsers = new WeakMap<object, Set<string>>();
 
+function recordProtectedUsers(transaction: object, userIds: readonly string[]) {
+	const users = protectedUsers.get(transaction) ?? new Set<string>();
+	for (const userId of userIds) users.add(userId);
+	protectedUsers.set(transaction, users);
+}
+
 async function protectAuthMutation(
 	operation: string,
 	scope: Omit<AuthorizationMutationScope, "route">,
 ) {
 	const transaction = requireAuthTransaction(operation);
 	await protectAuthorizationMutation(transaction, scope);
-	const users = protectedUsers.get(transaction) ?? new Set<string>();
-	for (const userId of scope.userIds ?? []) users.add(userId);
-	protectedUsers.set(transaction, users);
+	recordProtectedUsers(transaction, scope.userIds ?? []);
+}
+
+/** Refuses (rolling back) a write whose user was not guarded before it. */
+function assertProtected(operation: string, userId: string) {
+	const transaction = requireAuthTransaction(operation);
+	if (!protectedUsers.get(transaction)?.has(userId)) {
+		throw new UncoordinatedAuthMutationError(operation);
+	}
 }
 
 /**
@@ -87,10 +99,8 @@ async function protectAuthMutation(
  * the member's guard before deleting the membership.
  */
 async function cleanUpRemovedMember(input: { organizationId: string; userId: string }) {
+	assertProtected("organization member removal", input.userId);
 	const transaction = requireAuthTransaction("organization member removal cleanup");
-	if (!protectedUsers.get(transaction)?.has(input.userId)) {
-		throw new UncoordinatedAuthMutationError("organization member removal");
-	}
 	const outcome = await revokeRemovedMemberAccessInTransaction(
 		transaction,
 		input.userId,
@@ -181,6 +191,9 @@ async function requestingUserId(ctx: BeforeHookContext): Promise<string | null> 
 /**
  * Guards the Better Auth writers without organization hooks: leaving an
  * organization (plus its removal cleanup) and admin global access changes.
+ * Both require the coordinated transaction before anything else, lock only
+ * for a resolved caller, and refuse a successful write whose user was not
+ * guarded first (for a caller this hook could not resolve).
  */
 export function authMutationCoordinationPlugin() {
 	return {
@@ -190,6 +203,7 @@ export function authMutationCoordinationPlugin() {
 				{
 					matcher: (context) => context.path === ORGANIZATION_LEAVE_PATH,
 					handler: createAuthMiddleware(async (ctx) => {
+						requireAuthTransaction("organization leave");
 						const organizationId = stringField(ctx.body, "organizationId");
 						const userId = await requestingUserId(ctx);
 						// Unresolved here, the removal cleanup refuses the unguarded leave.
@@ -200,13 +214,12 @@ export function authMutationCoordinationPlugin() {
 				{
 					matcher: (context) => GLOBAL_ACCESS_PATHS.has(context.path ?? ""),
 					handler: createAuthMiddleware(async (ctx) => {
-						// The target is in the body; the endpoint authorizes the caller afterwards.
+						const transaction = requireAuthTransaction("global user access change");
 						const userId = stringField(ctx.body, "userId");
-						if (!userId) return;
-						await acquireExclusiveUserConfigurationAccessGuards(
-							requireAuthTransaction("global user access change"),
-							[userId],
-						);
+						// An anonymous request is refused by the endpoint and locks nothing.
+						if (!userId || !(await requestingUserId(ctx))) return;
+						await acquireExclusiveUserConfigurationAccessGuards(transaction, [userId]);
+						recordProtectedUsers(transaction, [userId]);
 					}),
 				},
 			],
@@ -214,11 +227,19 @@ export function authMutationCoordinationPlugin() {
 				{
 					matcher: (context) => context.path === ORGANIZATION_LEAVE_PATH,
 					handler: createAuthMiddleware(async (ctx) => {
-						const left = ctx.context.returned;
-						const userId = stringField(left, "userId");
-						const organizationId = stringField(left, "organizationId");
-						if (left instanceof Error || !userId || !organizationId) return;
+						const leaveResult = ctx.context.returned;
+						const userId = stringField(leaveResult, "userId");
+						const organizationId = stringField(leaveResult, "organizationId");
+						if (leaveResult instanceof Error || !userId || !organizationId) return;
 						await cleanUpRemovedMember({ organizationId, userId });
+					}),
+				},
+				{
+					matcher: (context) => GLOBAL_ACCESS_PATHS.has(context.path ?? ""),
+					handler: createAuthMiddleware(async (ctx) => {
+						const userId = stringField(ctx.body, "userId");
+						if (ctx.context.returned instanceof Error || !userId) return;
+						assertProtected("global user access change", userId);
 					}),
 				},
 			],

@@ -77,15 +77,29 @@ transaction, user email lookups therefore stay case-insensitive.
 | Provider-bound SSO login | `provisionSsoProviderOrganization` (own transaction) | Logging-in user |
 | Social login with a verified SSO domain | `assignSsoOrganizationByVerifiedDomain` (own transaction) | Logging-in user |
 
-Every guard is taken before the writer's first dependent write and before any identity lock or
-row lock it takes afterwards. This matches #264 ranks 3–4 and #313.
+Every guard is taken before the writer's first write of a fact that manual creation reads, and
+before any identity lock or row lock the writer takes on such facts. This matches #264 ranks
+3–4 and #313.
+
+There is one exception to "before anything". In a SCIM request, the plugin first writes its own
+identity rows (`scimUser`, `scimSubject` and the managed user's name and email), and only then
+calls `reconcileSCIMProjectedUser`. Manual creation does not lock those rows and does not read
+them under protection, so taking the guard after them creates no wait cycle with a submission.
 
 Plugin before-hooks see the request's original headers, because Better Auth merges the bearer
 plugin's session cookie only after every before-hook has run. The leave hook therefore resolves
 the session from the cookie, falling back to the bearer token. The admin hooks guard the target
-named in the body, without looking up a session. As a backstop, removal cleanup refuses unless
-the removed user's guard was taken earlier in the same transaction. A removal or leave whose
-member was not guarded before the delete is rolled back.
+named in the body once a caller is resolved. An anonymous request, which the endpoint refuses
+anyway, locks nothing. Both plugin hooks require the coordinated transaction before anything
+else.
+
+As a backstop, after-hooks refuse a successful removal, leave or admin change unless that user's
+guard was taken earlier in the same transaction. Such a write is rolled back, so a session
+mechanism these hooks do not recognize fails closed rather than unguarded.
+
+A coordinated HTTP request opens its transaction before Better Auth authenticates the caller.
+Each such request therefore holds one pool connection for its duration, including requests that
+are then refused.
 
 ### Removal cleanup is part of the removal
 
@@ -98,6 +112,11 @@ Auth's `queueAfterTransactionHook`).
 
 `revokeRemovedMemberAccessInTransaction` takes the user's guard first. This also covers the
 action's retry path (`completeRemovedMemberCleanup`).
+
+Work queued after commit can still fail after the write has committed: billing
+reconciliation, secondary-storage session deletion, or provisioning. Better Auth then rethrows
+the error. As before this slice, the HTTP response is an error for a change that did commit.
+`removeEmployeeAccessAction` detects the committed removal and retries the cleanup.
 
 Provisioning after a membership is added or accepted keeps its existing after-commit timing,
 now deferred with `queueAfterTransactionHook`. That provisioning covers the employee, the
@@ -170,7 +189,7 @@ that key's `hashtextextended` value.
 | Admin demotion while an on-behalf submission is in flight | Demotion waits on the admin's guard; the submission commits under the authority it validated |
 | Submission while a demotion is in flight | Submission waits, then is refused (`target_not_authorized`) with nothing written |
 | HTTP `/organization/update-member-role` | Same ordering; a refused request (member caller, 403) writes nothing |
-| `updateMemberRole` / `removeMember` outside a coordinated transaction | Refused with `UncoordinatedAuthMutationError`; nothing written |
+| `updateMemberRole` / `removeMember` / `leaveOrganization` outside a coordinated transaction | Refused with `UncoordinatedAuthMutationError`; nothing written |
 | Member removal | Waits on the target's guard; membership delete, employee deactivation and session-row deletion commit together; billing reconciled after commit |
 | Removal whose in-transaction cleanup fails (trigger fault) | Whole removal rolls back; membership and active employee remain; no billing call |
 | HTTP `/organization/leave` (bearer session) | Waits on the leaver's guard; same cleanup |
@@ -183,12 +202,15 @@ that key's `hashtextextended` value.
 | Submission while SCIM deprovisioning is in flight | Submission waits, then is refused with nothing written |
 | HTTP `/organization/delete` | Waits on the organization guard. The pre-existing owner-retention trigger then refuses the cascade (500), and the request rolls back |
 
-All 16 pass. To show the guards are what the races observe, the suite was also run with
+All 16 pass (plus a fail-closed check for an uncoordinated `leaveOrganization`). To show the guards are what the races observe, the suite was also run with
 `protectAuthorizationMutation` and the admin hook stubbed out. All 13 races failed, because no
 transaction waited on the guard. The 3 cases that do not depend on a guard passed: the
 baseline submission, fail-closed refusal and cleanup rollback. The existing SCIM suites
 (`protocol`, `scim-callback-atomicity`) now build their Better Auth instances over the captured
 client, as production does, and still pass.
+
+The full runner list then passed on the same kind of database: 61 files and 1122 tests. One
+file was skipped: the browser suite, which needs `Z8_TEST_CHROME_PATH`.
 
 ### Database-free
 
@@ -202,6 +224,21 @@ client, as production does, and still pass.
   closed), the removal cleanup's guard order, the auth route, and the production composition
   test (plugin order; real `provisionUser` takes a guard).
 
+### Not verified at a real boundary
+
+The suite does not cover:
+
+- SCIM `/Users` and `/Groups` requests, decommission, absent-member and stale-projection cases.
+  Only the replay path is raced. All of these reach the same guarded callback.
+- The SSO callback endpoints. The provisioning functions are called directly, and the
+  production composition test covers the wiring (`organizationProvisioning.disabled`,
+  `provisionUser`, plugin order) without PostgreSQL.
+- HTTP `/organization/remove-member` and `/organization/add-member`, and the admin endpoints
+  `/admin/unban-user`, `/admin/update-user` and `/admin/remove-user`. They share the hooks
+  exercised by the raced paths.
+- A ban racing submissions in several organizations. The user guard is global by
+  construction, but no test shows it.
+
 ## Remaining activation blockers
 
 1. Employee provisioning after membership addition or acceptance, invite-code joins,
@@ -214,11 +251,18 @@ client, as production does, and still pass.
    example a group change listing members in request order. Domain replays are ordered by user
    ID. Against a submission holding one of those users' guards, PostgreSQL detects the
    resulting deadlock and aborts one side. Both sides keep their guarantees, but the aborted
-   side needs a retry: the SCIM client or recovery, or the user resubmitting. Production
-   observation of lock waits and aborts belongs to #327.
+   side needs a retry: the SCIM client or recovery, or the user resubmitting. Sorted
+   acquisition is only possible inside the SCIM plugin, which calls the callback once per user.
+   This needs a focused follow-up: upstream support, or an application pre-lock of the
+   batch's routed users. Production observation of lock waits and aborts belongs to #327.
 5. Organization deletion briefly pauses manual submissions across the organization, like the
    other organization-wide writers in #313. Better Auth's hard deletion of an organization that
    has an owner cannot succeed today because of the owner-retention trigger.
-6. The leave hook resolves bearer sessions itself, because before-hooks precede the bearer
-   plugin's header rewrite. A session mechanism it does not recognize makes leaving fail
-   closed, not unguarded.
+6. The leave and admin hooks resolve bearer sessions themselves, because before-hooks run
+   before the bearer plugin's header rewrite. A session mechanism they do not recognize makes
+   the change fail closed, not unguarded.
+7. Changes to `ssoRequiresApproval` (organization update and settings) take no guard. Audit row
+   C19 asks for approval-setting changes to participate. Manual creation does not read the
+   setting. SSO provisioning reads it inside its own user-guarded transaction, but no
+   organization guard orders a concurrent setting change against that read. This is left to
+   #318 with the rest of provisioning.
