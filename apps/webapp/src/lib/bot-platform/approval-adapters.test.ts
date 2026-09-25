@@ -168,6 +168,7 @@ vi.mock("@/lib/discord/api", () => ({
 }));
 vi.mock("@/lib/teams/bot-adapter", () => ({
 	sendAdaptiveCard: state.sends.teams,
+	sendProactiveMessage: state.sends.teams,
 }));
 vi.mock("@/lib/slack/conversation-manager", () => ({
 	getChannelIdForUser: async () => "channel",

@@ -5,6 +5,7 @@ import {
 	type ApprovalDeliveryEffect,
 	type ApprovalDeliveryProvider,
 	type ApprovalDeliveryStatus,
+	absenceEntry,
 	approvalDeliveryControl,
 	approvalDeliveryMessage,
 	approvalDeliveryWork,
@@ -64,6 +65,34 @@ export async function isApprovalDeliveryOwner(input: {
 		)
 		.limit(1);
 	return row?.mode === "canonical" || row?.mode === "complete";
+}
+
+/**
+ * Whether the delivery owner sends this absence's card on the provider: the
+ * owner is active for the organization and the absence has a canonical
+ * workflow, whose committed intents the owner delivers. A legacy request
+ * (e.g. a policy fallback) keeps the existing notification path.
+ */
+export async function isAbsenceCardDeliveredByOwner(input: {
+	organizationId: string;
+	absenceId: string | undefined;
+	provider: ApprovalDeliveryProvider;
+}): Promise<boolean> {
+	if (!input.absenceId) return false;
+	const owner = await isApprovalDeliveryOwner({
+		organizationId: input.organizationId,
+		workflowType: "absence",
+		provider: input.provider,
+	});
+	if (!owner) return false;
+	const [absence] = await db
+		.select({ approvalWorkflowId: absenceEntry.approvalWorkflowId })
+		.from(absenceEntry)
+		.where(
+			and(eq(absenceEntry.id, input.absenceId), eq(absenceEntry.organizationId, input.organizationId)),
+		)
+		.limit(1);
+	return Boolean(absence?.approvalWorkflowId);
 }
 
 /** Organizations with at least one delivery control, in stable order. */
@@ -709,6 +738,7 @@ export async function rearmApprovalDeliveryWork(input: {
 	workIds?: string[];
 	assignmentId?: string;
 	recipientEmployeeIds?: string[];
+	provider?: ApprovalDeliveryProvider;
 	/** Only work whose last outcome starts with this (e.g. `destination_invalid:`). */
 	outcomePrefix?: string;
 	now: Instant;
@@ -721,6 +751,7 @@ export async function rearmApprovalDeliveryWork(input: {
 	if (input.assignmentId) filters.push(eq(approvalDeliveryWork.assignmentId, input.assignmentId));
 	if (input.recipientEmployeeIds)
 		filters.push(inArray(approvalDeliveryWork.recipientEmployeeId, input.recipientEmployeeIds));
+	if (input.provider) filters.push(eq(approvalDeliveryWork.provider, input.provider));
 	if (input.outcomePrefix)
 		filters.push(sql`starts_with(${approvalDeliveryWork.lastOutcome}, ${input.outcomePrefix})`);
 	if (!input.workIds && !input.assignmentId && !input.recipientEmployeeIds) {

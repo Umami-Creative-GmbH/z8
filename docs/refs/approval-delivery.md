@@ -1,8 +1,9 @@
-# Approval card delivery — #291 / T27
+# Approval card delivery — #291 / T27, #293 / T29
 
 One durable owner sends approval cards and keeps them current. It covers
-Telegram cards for canonical absences. It is **inactive for every
-organization**: migration `0086_approval_delivery.sql` inserts no control rows.
+Telegram and Teams cards for canonical absences. It is **inactive for every
+organization**: migrations `0086_approval_delivery.sql` and
+`0089_teams_approval_actions.sql` insert no control rows.
 
 ```text
 canonical submission / decision / cancellation (one transaction)
@@ -22,7 +23,38 @@ processApprovalDeliveries(organization, limit)          lib/approvals/delivery/o
 Telegram adapter                                        lib/telegram/approval-delivery.ts
   bot + approvals enabled, recipient's private chat, prepareApprovalPresentation (#290)
   sendMessage / editMessageText with explicit outcomes   (api.ts, delivery-outcome.ts)
+
+Teams adapter (#293)                                    lib/teams/approval-delivery.ts
+  bot credentials, active tenant with approvals enabled, recipient's personal
+  conversation in that tenant, prepareApprovalPresentation (provider "teams")
+  proactive send / update with explicit outcomes   (bot-adapter.ts, delivery-outcome.ts)
 ```
+
+### Teams specifics (#293)
+
+- Message identity: receiver scope `teams-bot:<app id>:tenant:<tenant id>`,
+  destination = the personal conversation ID, remote message = the activity ID
+  the connector returned. A send that returns no activity ID is `ambiguous`
+  (`no_message_identity`): the message cannot be tracked or retired, and the
+  retry may duplicate it.
+- A refresh updates the message through the stored reference of its
+  conversation (active or not). Another bot or tenant, or an unknown
+  conversation, makes the message `gone`.
+- Connector failures: 429, 409 and 412 are `retryable`; network errors,
+  timeouts (30 s) and 5xx are `ambiguous`; 401 is `unavailable`; 403 and 404
+  are `destination_invalid` for a send (blocked, uninstalled, conversation not
+  found) and `gone` for an update; other 4xx are `permanent`. No bot
+  credentials or no tenant configuration is `unavailable`; an inactive tenant
+  or approvals disabled is `suppressed`; a stored conversation from another
+  tenant is `destination_invalid`.
+- Destination repair: a personal conversation saved for the recipient (they
+  messaged the bot) re-arms their Teams `destination_invalid` work. Repair is
+  per provider: a Telegram chat does not re-arm Teams work, and the reverse.
+- The existing Teams channel stays silent for an absence with a canonical
+  workflow while the Teams owner is active, both for `absence_entry` and for
+  `approval_request` notifications of that absence.
+- Pressed cards: see "Teams absence cards with reviewed bindings" in
+  [approval-evidence.md](approval-evidence.md).
 
 ## Ownership and routing
 
@@ -124,6 +156,9 @@ app instance, then, per organization and after the #290 gates:
 ```sql
 insert into approval_delivery_control (organization_id, workflow_type, provider)
 values (:org, 'absence', 'telegram');
+-- Teams (#293), after 0089:
+insert into approval_delivery_control (organization_id, workflow_type, provider)
+values (:org, 'absence', 'teams');
 ```
 
 Deleting the row stops the owner. Unfinished work stays for recovery, but

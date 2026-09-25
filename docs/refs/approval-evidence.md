@@ -661,6 +661,147 @@ on-behalf roles, coverage, essential gaps), `telegram/bound-approval.test.ts`
 (request versus step outcome wording, replay label, review results),
 `maintenance.test.ts`.
 
+## Teams absence cards with reviewed bindings (#293 / T29)
+
+Canonical absence cards on Teams can carry Approve/Reject controls with the
+same binding, gates and decision owner as Telegram (#290). Each **recorded
+incoming activity** is one invocation. Admission is **inactive for every
+organization** (migration `0089_teams_approval_actions.sql` inserts no control
+rows).
+
+```text
+delivery owner (teams adapter) / existing Teams channel
+  prepareApprovalPresentation(provider "teams", fits: ≤ 28 000 bytes)
+    all #290 gates hold?  no → review-only notice
+  Adaptive Card 1.4: FactSet + Action.Execute (verb z8.approval.approve|reject,
+                     data {"b": <binding>}) + Action.OpenUrl (exact item)
+
+POST /api/teams/messages → CloudAdapter (connector JWT) → handleBotActivity
+  handleInvoke: tenant from conversation.tenantId → org; aadObjectId → user
+    parseTeamsBoundApprovalInvoke                     (teams/bound-approval.ts)
+      invoke "adaptiveCard/action", Action.Execute, our verb, trigger "manual",
+      data exactly {"b": uuid}
+      trigger "automatic" → refresh: nothing decided, nothing written
+      our verb in any other shape → review-only
+    teamsInvocationEnvelope → attemptBoundBotApproval → decideBoundAbsenceInvocation
+  invokeResponse: application/vnd.microsoft.activity.message = outcome title
+```
+
+### Supported profile and invocation identity
+
+- Identity is `(organization, teams_adaptive_card_action v1,
+  teams-bot:<app id>:tenant:<tenant id>:conversation:<conversation id>,
+  activity.id)`. The activity ID is kept exactly as sent. There is no separate
+  transport delivery ID (`delivery_id` is null).
+- The envelope is refused, and the press is review-only, unless every part is
+  established: `channelId` `msteams`; `recipient.id` is `28:<MICROSOFT_APP_ID>`
+  (the audience the connector JWT was validated for); a tenant GUID, with
+  `conversation.tenantId` and `channelData.tenant.id` agreeing when both are
+  present; a personal conversation with an ID; a non-empty activity ID; and
+  the sender's `aadObjectId` (provider actor). The resolved user's mapping
+  must belong to the tenant's organization.
+- `replyToId` (the card message) and `value.action.id` (the copied card
+  action) identify the card, never the invocation, and are never substituted
+  for a missing activity ID.
+- Same activity with the same command replays the original evidence; with a
+  different command it conflicts; a new activity gets fresh checks and never
+  matches an older semantic receipt. **Limit (#261):** this deduplicates the
+  same recorded activity. Microsoft does not promise that every client or
+  service retry keeps the activity ID, nor that every physical click creates a
+  new activity; a retry with a new ID is a fresh invocation and is decided only
+  if the binding is still current.
+- Pause reaches sent cards: a fresh invocation rereads
+  `approval_presentation_control` for `teams`.
+- Old unbound cards (`value.action` + `value.approvalId`) keep their
+  historical-result-only path; the value is now validated instead of cast.
+  Old `messageBack` cards are not approval invocations.
+
+### Acknowledgment and card writers
+
+The webhook awaits the decision before answering the invoke (Teams may retry
+after 15 seconds; a retry of the same activity replays). The response carries
+the outcome title ("Request approved", "Approval recorded", "Review
+required"); if the decision failed with an unknown outcome it is an
+`application/vnd.microsoft.error` saying so, and nothing is claimed. It is not
+evidence of commitment.
+
+- Card sent by the delivery owner: a decided card (assignment or request no
+  longer pending) is left to the owner, which refreshes every message of the
+  lifecycle. A still-pending card whose press decided nothing is updated in
+  the turn into a review notice and marked without controls.
+- Card sent by the existing Teams channel (no delivery control): tracked in
+  `teams_approval_card` and updated in place with the outcome notice.
+
+### Activation
+
+Apply `0089` after `0088`, then per organization, as the authorized adoption
+writer under the rollout lock (same statement as #290 with provider
+`teams`):
+
+```sql
+insert into approval_presentation_control (organization_id, workflow_type, provider, mode)
+values (:org, 'absence', 'teams', 'actionable')
+on conflict (organization_id, workflow_type, provider) do update set mode = excluded.mode;
+```
+
+### Activation blockers (#293, unresolved)
+
+1. Apply `0089` through the authorized deployment (it has run only on the
+   disposable PostgreSQL 16 database).
+2. **Live Teams profile.** The Universal Action shape, the presence of
+   `activity.id` on `adaptiveCard/action` invokes and the invoke response were
+   built from Microsoft's documentation and verified with constructed
+   activities. A real tenant must confirm them before admission; until then
+   any deviation is review-only, never a decision.
+3. **Retry identity.** No first-party statement that retries keep the activity
+   ID (#261 §4). Accepted as scoped recorded-activity deduplication only.
+4. **Connector authentication** runs in the route (`CloudAdapter.process`) and
+   was not exercised by the suite.
+5. Legacy authority (#384), escalation replacement delivery (#300), ingress
+   (no durable acceptance before the invoke is answered), and everything in
+   the #290 and #291 blockers.
+
+### Verification (#293)
+
+PostgreSQL 16 (`lib/teams/bound-approval.integration.test.ts`, part of
+`test:approval-workflow-repository:integration`), driving the real
+`requestAbsenceEffect`, `processApprovalDeliveries`, `handleBotActivity`,
+`approveAbsenceEffect`, `saveConversationReference`, `sendTeamsNotification`,
+`sendApprovalCardToManager` and `deleteApproval`. Replaced: session, billing
+guard, e-mail/notification fan-out, calendar queue, work-balance marking, the
+post-commit fast path, the bot credentials and the connector transport
+(`sendActivityWithOutcome`, `updateActivityWithOutcome`,
+`sendProactiveMessage`). 13/13 passing:
+
+- one bound card with full identity (bot/tenant scope, conversation, activity,
+  binding); no private note; a rerun sends nothing;
+- approve commits one decision and one invocation with the scoped identity and
+  the invocation-derived receipt key; the response says "Request approved";
+  the webhook leaves the card to the owner, which retires it; the same
+  activity replays with no writes; the same activity with Reject conflicts; a
+  new activity after the decision decides nothing;
+- an automatic refresh decides and writes nothing;
+- a missing activity ID, conflicting tenant fields, another bot and another
+  channel decide nothing; the pending card becomes a review notice;
+- a web decision, an in-place material change after rendering, and a departed
+  member decide nothing;
+- an old unbound invoke stays historical-only;
+- a missing conversation waits for repair and is delivered after the
+  recipient messages the bot; 502 is an ambiguous retry after 1 minute, 403
+  `ConversationBlockedByUser` waits for repair, a send without a message ID is
+  ambiguous and untracked; a failed refresh leaves the decision approved and
+  retries;
+- a card that went stale in flight is retired; an oversized card is sent
+  review-only without a binding;
+- the existing Teams channel stays silent under the owner and still sends
+  without it; a bound card from that path is decided and updated in place;
+- privileged cleanup reports the invocation and message; a late retry
+  recreates nothing.
+
+Unit seams: `teams/bound-approval.test.ts` (profile, refresh, envelope scope
+and refusals), `teams/delivery-outcome.test.ts` (connector failure
+classification).
+
 ## Manual time submissions and policy clock-outs (#302 / T38)
 
 Manual time submissions and policy clock-outs keep immutable approval evidence

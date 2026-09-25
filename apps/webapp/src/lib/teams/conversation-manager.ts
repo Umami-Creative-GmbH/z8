@@ -89,6 +89,17 @@ export async function saveConversationReference(
 
 			logger.debug({ conversationId, organizationId, userId }, "Saved new conversation reference");
 		}
+		if (userId && conversationType === "personal") {
+			// Approval cards waiting for a usable destination can be delivered now.
+			const { rearmApprovalDeliveryForRepairedDestination } = await import(
+				"@/lib/approvals/delivery/recovery"
+			);
+			await rearmApprovalDeliveryForRepairedDestination({
+				organizationId,
+				userId,
+				provider: "teams",
+			});
+		}
 	} catch (error) {
 		logger.error({ error }, "Failed to save conversation reference");
 	}
@@ -126,6 +137,54 @@ export async function getConversationReferenceForUser(
 		logger.error({ error, userId, organizationId }, "Failed to get conversation reference");
 		return null;
 	}
+}
+
+/**
+ * The recipient's most recently used active personal conversation, for the
+ * approval delivery owner. Unlike the lookups above, read failures propagate
+ * so a database outage is never mistaken for a missing destination.
+ */
+export async function findPersonalConversation(
+	userId: string,
+	organizationId: string,
+): Promise<{
+	teamsConversationId: string;
+	teamsTenantId: string;
+	reference: ConversationReference;
+} | null> {
+	const conv = await db.query.teamsConversation.findFirst({
+		where: and(
+			eq(teamsConversation.userId, userId),
+			eq(teamsConversation.organizationId, organizationId),
+			eq(teamsConversation.isActive, true),
+			eq(teamsConversation.conversationType, "personal"),
+		),
+		orderBy: (t, { desc }) => [desc(t.lastUsedAt)],
+	});
+	if (!conv) return null;
+	return {
+		teamsConversationId: conv.teamsConversationId,
+		teamsTenantId: conv.teamsTenantId,
+		reference: JSON.parse(conv.conversationReference) as ConversationReference,
+	};
+}
+
+/**
+ * The stored reference of one known conversation, active or not, so a sent
+ * message can still be updated. Read failures propagate.
+ */
+export async function findConversationReference(
+	teamsConversationId: string,
+	organizationId: string,
+): Promise<ConversationReference | null> {
+	const conv = await db.query.teamsConversation.findFirst({
+		where: and(
+			eq(teamsConversation.teamsConversationId, teamsConversationId),
+			eq(teamsConversation.organizationId, organizationId),
+		),
+		columns: { conversationReference: true },
+	});
+	return conv ? (JSON.parse(conv.conversationReference) as ConversationReference) : null;
 }
 
 /**
