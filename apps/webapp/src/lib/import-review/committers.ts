@@ -220,6 +220,8 @@ async function claimRow(database: CommitDb, rowId: string, job: ImportCommitJobD
 		.set({
 			rowStatus: "committing",
 			commitError: null,
+			// A fresh attempt replaces any earlier hold evidence with its own outcome.
+			commitHold: null,
 		})
 		.where(
 			and(

@@ -1,9 +1,9 @@
-import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	acquireAdoptionGate,
 	acquireEmployeeCoordination,
 	acquireOrganizationConfigurationGuard,
+	acquireSourceIdentity,
 	acquireUserConfigurationAccessGuards,
 	readAppendAdmission,
 	sealWorkTransactionScope,
@@ -45,13 +45,11 @@ export async function withReviewedImportTransaction<T>(
 		await acquireOrganizationConfigurationGuard(transaction, input.organizationId);
 		await acquireUserConfigurationAccessGuards(transaction, [input.importerUserId]);
 		await acquireEmployeeCoordination(transaction, [input.employeeId]);
-		await transaction.execute(
-			sql`select pg_advisory_xact_lock(hashtextextended(${JSON.stringify([
-				"reviewed-import-source",
-				input.organizationId,
-				input.sourceKey,
-			])}, 0))`,
-		);
+		await acquireSourceIdentity(transaction, [
+			"reviewed-import-source",
+			input.organizationId,
+			input.sourceKey,
+		]);
 
 		let active = true;
 		try {

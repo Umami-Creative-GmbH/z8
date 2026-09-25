@@ -90,7 +90,8 @@ A held row is set to `blocked` with `issue_severity = blocking`, `commit_error` 
 structured `commit_hold` evidence, in the same transaction as its claim. Holds are
 durable on any attempt and are not retried; genuine failures keep the existing
 retry-then-`commit_failed` behavior. The review table shows a localized reason under the
-row status (all 12 locales). Resolving a held row is not part of this slice.
+row status of blocked rows (all 12 locales). A later claim of the row clears the old
+hold evidence before its own outcome. Resolving a held row is not part of this slice.
 
 ### Occupancy
 

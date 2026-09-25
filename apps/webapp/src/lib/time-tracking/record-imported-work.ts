@@ -31,6 +31,7 @@ import {
 	type Instant,
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
+import type { ImportProvider } from "@/lib/import-review/types";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { canonicalJson } from "./canonical-json";
 import {
@@ -46,6 +47,7 @@ import {
 	type ImportedWorkProviderEvidence,
 	interpretImportedWorkInterval,
 } from "./imported-work-interval";
+import { resolveFallbackTimezoneCapture, type TimeEntryTimezoneCapture } from "./timezone-capture";
 import type { WorkTransactionScope } from "./work-transaction";
 
 export const IMPORTED_WORK_COMMAND_VERSION = 1;
@@ -54,7 +56,7 @@ export const REVIEWED_IMPORT_WRITER_VERSION = 1;
 
 /** Where the imported row came from: its staging identity and provider source. */
 export type ImportedWorkSource = {
-	provider: "clockodo" | "clockin";
+	provider: ImportProvider;
 	batchId: string;
 	entityType: "work_period";
 	providerSourceId: string;
@@ -97,7 +99,7 @@ export type ImportedWorkResult = {
 		durationMinutes: number | null;
 		utcOffsetMinutes: number;
 		timezone: string;
-		timezoneSource: "backfill";
+		timezoneSource: TimeEntryTimezoneCapture["timezoneSource"];
 	};
 	providerEvidence: ImportedWorkProviderEvidence;
 	revisions: { workPeriod: { source: null; result: number } };
@@ -150,12 +152,16 @@ export async function replayImportedWork(
 	const [receipt] = await scope.db
 		.select()
 		.from(completedWorkOperation)
-		.where(eq(completedWorkOperation.id, input.command.operationId))
+		.where(
+			and(
+				eq(completedWorkOperation.id, input.command.operationId),
+				eq(completedWorkOperation.organizationId, input.organizationId),
+			),
+		)
 		.limit(1);
 	if (!receipt) return null;
 	const collision: ImportedWorkOutcome = { kind: "held", hold: { reason: "operation_collision" } };
 	if (
-		receipt.organizationId !== input.organizationId ||
 		receipt.employeeId !== input.employeeId ||
 		receipt.writer !== "reviewed_import" ||
 		!IMPORT_KINDS.includes(receipt.kind) ||
@@ -244,11 +250,19 @@ export async function recordImportedWork(
 	if (occupants.length > 0)
 		return { kind: "held", hold: { reason: "occupancy_conflict", occupants } };
 
+	// Providers send UTC instants; the event-local offset is not established, so
+	// entries keep the legacy import capture through the shared fallback helper.
+	const capture = (instant: Instant) =>
+		resolveFallbackTimezoneCapture({
+			timestamp: dateFromInstant(instant),
+			timezone: "UTC",
+			timezoneSource: "backfill",
+		});
 	const entryInput = (instant: Instant): ClockingInput => ({
 		employeeId,
 		organizationId,
 		createdBy: input.importerUserId,
-		action: { instant, utcOffsetMinutes: 0, timezone: "UTC", timezoneSource: "backfill" },
+		action: { instant, ...capture(instant) },
 		source: { ipAddress: null, deviceInfo: null },
 	});
 	let appended: AppendedClockEntry[];
@@ -350,9 +364,7 @@ export async function recordImportedWork(
 			startAt: instantToCanonicalString(interval.start),
 			endAt: end ? instantToCanonicalString(end) : null,
 			durationMinutes,
-			utcOffsetMinutes: 0,
-			timezone: "UTC",
-			timezoneSource: "backfill",
+			...capture(interval.start),
 		},
 		providerEvidence: command.providerEvidence,
 		revisions: { workPeriod: { source: null, result: resultRevision } },

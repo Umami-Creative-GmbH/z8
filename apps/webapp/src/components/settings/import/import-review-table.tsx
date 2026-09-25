@@ -11,6 +11,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import type { ImportedWorkHoldReason } from "@/lib/time-tracking/imported-work-interval";
 
 export type ImportReviewRowStatus =
 	| "staged"
@@ -49,7 +50,7 @@ const statusLabels: Record<ImportReviewRowStatus, { key: string; fallback: strin
 	staged: { key: "settings.import.review.status.staged", fallback: "Staged" },
 };
 
-const holdReasonLabels: Record<string, { key: string; fallback: string }> = {
+const holdReasonLabels: Record<ImportedWorkHoldReason, { key: string; fallback: string }> = {
 	invalid_interval: {
 		key: "settings.import.review.hold.invalidInterval",
 		fallback: "The provider times lack an explicit offset, are not in order, or lie in the future.",
@@ -83,9 +84,11 @@ const holdReasonLabels: Record<string, { key: string; fallback: string }> = {
 const heldForReview = { key: "settings.import.review.hold.label", fallback: "Held for review" };
 
 function holdReasonLabel(row: ImportReviewRow) {
-	if (!row.commitHold) return null;
+	if (row.rowStatus !== "blocked" || !row.commitHold) return null;
 	const reason = row.commitHold.reason;
-	return (typeof reason === "string" && holdReasonLabels[reason]) || heldForReview;
+	return typeof reason === "string" && Object.hasOwn(holdReasonLabels, reason)
+		? holdReasonLabels[reason as ImportedWorkHoldReason]
+		: heldForReview;
 }
 
 function formatEntityType(entityType: string) {
