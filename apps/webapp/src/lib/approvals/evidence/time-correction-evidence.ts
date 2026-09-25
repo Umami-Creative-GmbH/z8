@@ -71,7 +71,9 @@ function incomplete(field: string): never {
 // Live graph reads
 // ---------------------------------------------------------------------------
 
-const ENTRY_COLUMNS = {
+// Built on use: approval runtimes load this module, and eager table access
+// would couple every importer to the full schema module.
+const entryColumns = () => ({
 	id: timeEntry.id,
 	organizationId: timeEntry.organizationId,
 	employeeId: timeEntry.employeeId,
@@ -83,7 +85,7 @@ const ENTRY_COLUMNS = {
 	replacesEntryId: timeEntry.replacesEntryId,
 	isSuperseded: timeEntry.isSuperseded,
 	supersededById: timeEntry.supersededById,
-};
+});
 
 async function loadPeriod(
 	database: ApprovalDatabase,
@@ -127,7 +129,7 @@ async function loadEntries(
 	const present = ids.filter((id): id is string => typeof id === "string");
 	if (present.length === 0) return [];
 	return await database
-		.select(ENTRY_COLUMNS)
+		.select(entryColumns())
 		.from(timeEntry)
 		.where(
 			and(
