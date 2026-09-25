@@ -187,6 +187,7 @@ vi.mock("@/lib/telegram/conversation-manager", () => ({
 }));
 vi.mock("@/lib/discord/conversation-manager", () => ({
 	getChannelIdForUser: async () => "channel",
+	resolveApprovalDMChannel: async () => ({ kind: "ok", result: "channel" }),
 }));
 vi.mock("@/lib/teams/conversation-manager", () => ({
 	getConversationReferenceForUser: async () => ({

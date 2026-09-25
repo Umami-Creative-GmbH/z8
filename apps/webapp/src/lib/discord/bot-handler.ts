@@ -10,7 +10,8 @@ import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommandContext } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { createFollowupMessage, createInteractionResponse } from "./api";
-import { handleApprovalButtonClick } from "./approval-handler";
+import { handleApprovalButtonClick, handleBoundApprovalInteraction } from "./approval-handler";
+import { parseBoundApprovalCustomId } from "./bound-approval";
 import { saveConversation } from "./conversation-manager";
 import { buildNotificationEmbed } from "./formatters";
 import type { ApprovalButtonData, DiscordInteraction, ResolvedDiscordBot } from "./types";
@@ -192,6 +193,12 @@ async function handleButtonClick(
 
 	// Skip disabled/resolved buttons
 	if (customId.startsWith("resolved_")) return;
+
+	const bound = parseBoundApprovalCustomId(customId);
+	if (bound) {
+		await handleBoundApprovalInteraction(interaction, bound, bot);
+		return;
+	}
 
 	try {
 		const buttonData = JSON.parse(customId) as ApprovalButtonData;

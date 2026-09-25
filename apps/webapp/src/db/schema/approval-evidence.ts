@@ -464,7 +464,7 @@ export const approvalPresentationControl = pgTable(
 // Immutable association of one authenticated provider invocation with the bound
 // command it carried and the decision it committed (#257 §7, #261). Written in
 // the decision transaction; the engine receipt uses the invocation-derived key.
-// The transport delivery identity (Telegram update_id) is kept separately and
+// The transport delivery identity (Telegram update_id; Discord has none) is kept separately and
 // is not part of invocation identity.
 export const approvalInvocation = pgTable(
 	"approval_invocation",
@@ -474,7 +474,7 @@ export const approvalInvocation = pgTable(
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
 		scheme: text("scheme")
-			.$type<"telegram_callback_query" | "teams_adaptive_card_action">()
+			.$type<"telegram_callback_query" | "teams_adaptive_card_action" | "discord_interaction">()
 			.notNull(),
 		schemeVersion: integer("scheme_version").notNull(),
 		receiverScope: text("receiver_scope").notNull(),
@@ -505,7 +505,7 @@ export const approvalInvocation = pgTable(
 	(table) => [
 		check(
 			"approval_invocation_scheme_check",
-			sql`${table.scheme} IN ('telegram_callback_query', 'teams_adaptive_card_action') AND ${table.schemeVersion} = 1`,
+			sql`${table.scheme} IN ('telegram_callback_query', 'teams_adaptive_card_action', 'discord_interaction') AND ${table.schemeVersion} = 1`,
 		),
 		check(
 			"approval_invocation_action_check",
