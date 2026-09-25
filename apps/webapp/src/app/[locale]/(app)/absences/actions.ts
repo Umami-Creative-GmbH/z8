@@ -6,7 +6,6 @@ import { getCurrentEmployee as getCurrentEmployeeAction } from "./current-employ
 import { cancelAbsenceRequest as cancelAbsenceRequestAction } from "./mutations";
 import { getAbsencePlanPreview as getAbsencePlanPreviewAction } from "./plan-preview";
 import {
-	getAbsenceCategories as getAbsenceCategoriesAction,
 	getAbsenceEntries as getAbsenceEntriesAction,
 	getHolidays as getHolidaysAction,
 	getVacationBalance as getVacationBalanceAction,
@@ -24,10 +23,6 @@ export async function getCurrentEmployee() {
 
 export async function cancelAbsenceRequest(absenceId: string) {
 	return cancelAbsenceRequestAction(absenceId);
-}
-
-export async function getAbsenceCategories(organizationId: string) {
-	return getAbsenceCategoriesAction(organizationId);
 }
 
 export async function getAbsenceEntries(

@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const source = readFileSync(fileURLToPath(new URL("./queries.ts", import.meta.url)), "utf8");
-const legacySource = readFileSync(fileURLToPath(new URL("../actions.ts", import.meta.url)), "utf8");
+const actionsSource = readFileSync(fileURLToPath(new URL("../actions.ts", import.meta.url)), "utf8");
 
 function functionBody(sourceText: string, name: string): string {
 	const match = new RegExp(`(?:export\\s+)?async function ${name}\\s*\\(`).exec(sourceText);
@@ -15,22 +15,18 @@ function functionBody(sourceText: string, name: string): string {
 }
 
 describe("time tracking read queries", () => {
-	it.each([
-		["modular", source],
-		["legacy", legacySource],
-	])("excludes deleted work periods from %s getWorkPeriods", (_name, sourceText) => {
-		expect(functionBody(sourceText, "getWorkPeriods")).toContain("isNull(workPeriod.deletedAt)");
-	});
+	it.each(["getWorkPeriods", "getTimeSummary"])(
+		"excludes deleted work periods from %s",
+		(name) => {
+			expect(functionBody(source, name)).toContain("isNull(workPeriod.deletedAt)");
+		},
+	);
 
-	it.each([
-		["modular", source],
-		["legacy", legacySource],
-	])("excludes deleted work periods from %s getTimeSummary", (_name, sourceText) => {
-		expect(functionBody(sourceText, "getTimeSummary")).toContain("isNull(workPeriod.deletedAt)");
-	});
-
-	it("excludes deleted work periods from modular getPresenceStatus", () => {
-		expect(functionBody(source, "getPresenceStatus")).toContain("isNull(workPeriod.deletedAt)");
+	// The presence widget calls the getPresenceStatus server action in ../actions.ts.
+	it("excludes deleted work periods from getPresenceStatus", () => {
+		expect(functionBody(actionsSource, "getPresenceStatus")).toContain(
+			"isNull(workPeriod.deletedAt)",
+		);
 	});
 
 	it("requires the current employee and organization for period and summary reads", () => {

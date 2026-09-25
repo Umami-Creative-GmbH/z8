@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getTranslate } from "@/tolgee/server";
-import { getAbsenceCategories } from "../../absences/actions";
+import { getAbsenceCategories } from "../../absences/queries";
 import { getCurrentEmployee } from "../actions";
 import { getManagerAbsenceCalendar, getManagerAbsenceEmployees } from "./actions";
 import { canUseManagerAbsencePage } from "./manager-absence-permissions";
