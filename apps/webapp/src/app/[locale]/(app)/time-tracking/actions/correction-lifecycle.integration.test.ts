@@ -700,6 +700,49 @@ describeIntegration("approval-based correction lifecycles on PostgreSQL", () => 
 		expect(await snapshot()).toEqual(committed);
 	});
 
+	it("replays a submission retry after cancellation without recreating the work", async () => {
+		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+		const submissionId = randomUUID();
+		await expect(
+			requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }, submissionId),
+		).resolves.toMatchObject({ success: true });
+		await expect(cancel(work.id)).resolves.toEqual({ success: true });
+		const committed = await snapshot();
+
+		await requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }, submissionId);
+
+		expect(await snapshot()).toEqual(committed);
+	});
+
+	it("serializes a correction submission with a concurrent live clock-in", async () => {
+		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+		const before = await position();
+
+		const [submitted, clocked] = await Promise.all([
+			requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }),
+			(async () => {
+				actAs(ids.requesterUser);
+				return clockIn("office", {
+					instant: at("2026-07-22T12:00:00Z"),
+					browserTimezone: "UTC",
+				});
+			})(),
+		]);
+
+		expect(submitted).toMatchObject({ success: true });
+		expect(clocked).toMatchObject({ success: true });
+		// Both appends were admitted in turn: one lineage, two entries past the tip.
+		const after = await position();
+		expect(after.entry_count).toBe(before.entry_count + 2);
+		const { rows } = await admin.query<{ id: string; previous_entry_id: string | null }>(
+			`select id, previous_entry_id from time_entry
+			 where organization_id = $1 and employee_id = $2`,
+			[ids.organization, ids.requester],
+		);
+		const predecessors = rows.map((row) => row.previous_entry_id).filter(Boolean);
+		expect(new Set(predecessors).size).toBe(predecessors.length);
+	});
+
 	it("rejects with the entries retained inactive and a rejection receipt", async () => {
 		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
 		await expect(
