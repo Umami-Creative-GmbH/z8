@@ -396,7 +396,8 @@ export async function deleteApprovalInTransaction(
  * employees') work history remove the lifecycle evidence describing it before
  * the history and the employees, dependants first, so employee FKs never block
  * the delete. It runs in the caller's transaction when the caller has one; the
- * demo cleanup paths have none. Other kinds are untouched.
+ * demo cleanup paths call it per employee inside its coordinated history
+ * transaction (#285). Other kinds are untouched.
  */
 export async function deleteWorkPeriodApprovalEvidence(
 	transaction: ApprovalTransactionClient,

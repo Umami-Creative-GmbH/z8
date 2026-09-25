@@ -150,9 +150,10 @@ opposite order.
   organization deletion delete receipts with the history, next to the append
   positions.
 - Receipts have no FK to periods or entries. A partial physical delete
-  (pending-correction cancellation, demo correction replay, Clockodo/Clockin)
+  (pending-correction cancellation, legacy demo correction replay, Clockodo/Clockin)
   leaves the receipt as evidence. Retention of cancelled work belongs to #301,
-  #306, #285 and #284.
+  #306 and #284. Demo cleanup deletes whole histories per employee under the
+  employee key ([#285](runtime-demo-work-285.md)).
 
 ## Verification
 
@@ -262,8 +263,10 @@ in #327 (all-writer adoption), #329 (pilot) and #331 (rollback).
 
 - Every competing writer of the same employee graph must participate or be
   drained: direct HTTP (#275), on-behalf (#276), manual (#308), active
-  breaks and splits (#304), corrections (#301/#286), imports (#284, now participating: [reviewed-import-operation-284.md](reviewed-import-operation-284.md)), demo (#285),
-  and ordinary, cron and terminal breaks (#303/#305). Until then, `graph_revision` is
+  breaks and splits (#304), corrections (#301/#286), imports (#284, now participating: [reviewed-import-operation-284.md](reviewed-import-operation-284.md)),
+  and ordinary, cron and terminal breaks (#303/#305). Runtime demo writers participate since
+  [#285](runtime-demo-work-285.md) and also advance `graph_revision` (category
+  assignment). Until then, `graph_revision` is
   only advanced by this operation.
 - Terminal break-split results: the receipt records the approval outcome and the
   committed approval state, but not split segments. That belongs to #303.

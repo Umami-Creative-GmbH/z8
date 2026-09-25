@@ -1,5 +1,6 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
 import { faker } from "@faker-js/faker";
 import {
 	and,
@@ -10,7 +11,6 @@ import {
 	inArray,
 	isNotNull,
 	isNull,
-	notExists,
 	notInArray,
 } from "drizzle-orm";
 import { Effect } from "effect";
@@ -39,8 +39,6 @@ import {
 	team,
 	teamMembership,
 	timeEntry,
-	completedWorkOperation,
-	timeEntryAppendPosition,
 	timeRecord,
 	workCategory,
 	workCategorySet,
@@ -63,7 +61,10 @@ import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflo
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import {
 	compareInstants,
+	comparePlainDates,
 	dateFromInstant,
+	instantFromDate,
+	type PlainDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
@@ -73,16 +74,31 @@ import {
 	validateTimeCorrectionTimezoneEvidence,
 } from "@/lib/time-tracking/time-correction-temporal";
 import {
-	resolveFallbackTimezoneCapture,
-	type TimeEntryTimezoneCapture,
-} from "@/lib/time-tracking/timezone-capture";
+	type AppendReviewRequirement,
+	admitTimeEntryAppend,
+	type TimeEntryAppend,
+} from "@/lib/time-tracking/time-entry-append";
+import type { TimeEntryTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
-import { deleteWorkPeriodApprovalEvidence } from "@/lib/approvals/maintenance";
+import {
+	acquireDemoWorkScope,
+	assignDemoWorkCategory,
+	type DemoWorkSession,
+	deleteDemoEmployeeHistories,
+	recordDemoWorkDay,
+	withDemoWorkTransaction,
+} from "./demo-work";
 
 const demoLogger = createLogger("demo-data");
 
 class DemoCorrectionAutoCompletedError extends Error {}
 class DemoCorrectionSourceChangedError extends Error {}
+class DemoCorrectionReplayedError extends Error {}
+class DemoCorrectionHeldForReviewError extends Error {
+	constructor(readonly requirement: AppendReviewRequirement) {
+		super("Demo time correction requires append review");
+	}
+}
 
 const DEMO_CORRECTION_TIMEZONE_SOURCES = new Set<
 	TimeEntryTimezoneCapture["timezoneSource"]
@@ -114,14 +130,6 @@ function validDemoTimezoneSource(
 	return DEMO_CORRECTION_TIMEZONE_SOURCES.has(
 		value as TimeEntryTimezoneCapture["timezoneSource"],
 	);
-}
-
-function demoTimeEntryTimezoneCapture(timestamp: Date) {
-	return resolveFallbackTimezoneCapture({
-		timestamp,
-		timezone: "UTC",
-		timezoneSource: "backfill",
-	});
 }
 
 /**
@@ -289,36 +297,78 @@ function randomTimeBetween(
 }
 
 /**
- * Check if a Luxon DateTime is a weekend
+ * Plans one generated work day in UTC: a morning session, lunch, then one
+ * afternoon session or two around a short break.
  */
-function isWeekend(dt: DateTime): boolean {
-	// Luxon weekday: 1=Monday, 7=Sunday
-	return dt.weekday === 6 || dt.weekday === 7;
+function planDemoWorkDay(day: PlainDate): DemoWorkSession[] {
+	const at = (minutesFromMidnight: number) =>
+		day
+			.toZonedDateTime({
+				timeZone: "UTC",
+				plainTime: {
+					hour: Math.floor(minutesFromMidnight / 60),
+					minute: minutesFromMidnight % 60,
+				},
+			})
+			.toInstant();
+	// Morning session: clock in (7:30-9:30) to lunch (12:00-13:00)
+	const morningIn = at(randomTimeBetween(7, 9, 30, 30));
+	const morningOut = at(randomTimeBetween(12, 13, 0, 0));
+	// Lunch break: 30-60 minutes
+	const afternoonIn = morningOut.add({ minutes: Math.floor(Math.random() * 31) + 30 });
+	const sessions: DemoWorkSession[] = [
+		{
+			start: morningIn,
+			end: morningOut,
+			clockInNotes: "Demo data",
+			clockOutNotes: generateMorningWorkDescription(),
+		},
+	];
+
+	// Afternoon break around 15:00-15:30 (30% chance) for 10-20 minutes
+	if (Math.random() < 0.3) {
+		const breakStart = at(randomTimeBetween(15, 15, 0, 30));
+		const breakEnd = breakStart.add({ minutes: Math.floor(Math.random() * 11) + 10 });
+		sessions.push(
+			{
+				start: afternoonIn,
+				end: breakStart,
+				clockInNotes: "Demo data - Back from lunch",
+				clockOutNotes: generateAfternoonWorkDescription(),
+			},
+			{
+				start: breakEnd,
+				// Final clock out: 16:30-18:30
+				end: at(randomTimeBetween(16, 18, 30, 30)),
+				clockInNotes: "Demo data - Back from break",
+				clockOutNotes: generateEndOfDayDescription(),
+			},
+		);
+	} else {
+		sessions.push({
+			start: afternoonIn,
+			end: at(randomTimeBetween(16, 18, 30, 30)),
+			clockInNotes: "Demo data - Back from lunch",
+			clockOutNotes: generateEndOfDayDescription(),
+		});
+	}
+	return sessions;
 }
 
 /**
- * Add minutes to a DateTime
+ * Generate demo time entries with realistic work patterns including breaks.
+ * Each employee-day is one coordinated work transaction (see `demo-work.ts`): an
+ * adopted organization admits the appends from evidence, skips days that overlap
+ * existing work and holds an employee whose history needs review.
  */
-function addMinutesToDT(dt: DateTime, minutes: number): DateTime {
-	return dt.plus({ minutes });
-}
-
-/**
- * Set time on a DateTime (hours and minutes)
- */
-function setTimeOnDT(dt: DateTime, hours: number, minutes: number): DateTime {
-	return dt.set({ hour: hours, minute: minutes, second: 0, millisecond: 0 });
-}
-
-/**
- * Generate demo time entries with realistic work patterns including breaks
- * Uses Luxon DateTime in UTC for consistent date handling
- */
-export async function generateDemoTimeEntries(
-	options: DemoDataOptions,
-): Promise<{ timeEntriesCreated: number; workPeriodsCreated: number }> {
+export async function generateDemoTimeEntries(options: DemoDataOptions): Promise<{
+	timeEntriesCreated: number;
+	workPeriodsCreated: number;
+	employeesHeldForReview: number;
+}> {
+	const empty = { timeEntriesCreated: 0, workPeriodsCreated: 0, employeesHeldForReview: 0 };
 	if (!options.includeTimeEntries) {
-		return { timeEntriesCreated: 0, workPeriodsCreated: 0 };
+		return empty;
 	}
 
 	// Get employees for the organization
@@ -332,370 +382,63 @@ export async function generateDemoTimeEntries(
 	});
 
 	if (employees.length === 0) {
-		return { timeEntriesCreated: 0, workPeriodsCreated: 0 };
+		return empty;
 	}
 
 	let timeEntriesCreated = 0;
 	let workPeriodsCreated = 0;
+	const heldForReview = new Set<string>();
+	const runId = randomUUID();
 
-	// Convert date range to Luxon DateTime in UTC
-	const startDT = DateTime.fromJSDate(options.dateRange.start, {
-		zone: "utc",
-	}).startOf("day");
-	const endDT = DateTime.fromJSDate(options.dateRange.end, {
-		zone: "utc",
-	}).endOf("day");
-
-	// Iterate through each day in the date range
-	let currentDT = startDT;
-
-	while (currentDT <= endDT) {
+	// Whole UTC days from the start date through the end date
+	const lastDay = instantFromDate(options.dateRange.end).toZonedDateTimeISO("UTC").toPlainDate();
+	for (
+		let day = instantFromDate(options.dateRange.start).toZonedDateTimeISO("UTC").toPlainDate();
+		comparePlainDates(day, lastDay) <= 0;
+		day = day.add({ days: 1 })
+	) {
 		// Skip weekends
-		if (isWeekend(currentDT)) {
-			currentDT = currentDT.plus({ days: 1 });
+		if (day.dayOfWeek === 6 || day.dayOfWeek === 7) {
 			continue;
 		}
 
-		// Process each employee for this day
 		for (const emp of employees) {
 			// 10% chance to skip this day (realistic gaps)
-			if (Math.random() < 0.1) {
+			if (heldForReview.has(emp.id) || Math.random() < 0.1) {
 				continue;
 			}
 
-			// Get the last entry for this employee to chain hashes
-			const lastEntry = await db.query.timeEntry.findFirst({
-				where: eq(timeEntry.employeeId, emp.id),
-				orderBy: (t, { desc }) => desc(t.createdAt),
-			});
-
-			let previousHash = lastEntry?.hash ?? null;
-			let previousEntryId = lastEntry?.id ?? null;
-
-			// Morning session: Clock in (7:30-9:30) to lunch (12:00-13:00)
-			const morningStartMinutes = randomTimeBetween(7, 9, 30, 30); // 7:30-9:30
-			const morningStartHour = Math.floor(morningStartMinutes / 60);
-			const morningStartMin = morningStartMinutes % 60;
-			const morningClockInDT = setTimeOnDT(
-				currentDT,
-				morningStartHour,
-				morningStartMin,
-			);
-			const morningClockIn = dateToDB(morningClockInDT)!;
-
-			const lunchStartMinutes = randomTimeBetween(12, 13, 0, 0); // 12:00-13:00
-			const lunchStartHour = Math.floor(lunchStartMinutes / 60);
-			const lunchStartMin = lunchStartMinutes % 60;
-			const morningClockOutDT = setTimeOnDT(
-				currentDT,
-				lunchStartHour,
-				lunchStartMin,
-			);
-			const morningClockOut = dateToDB(morningClockOutDT)!;
-
-			// Create morning clock in
-			const morningInHash = calculateHash({
-				employeeId: emp.id,
-				type: "clock_in",
-				timestamp: morningClockInDT.toISO()!,
-				previousHash,
-			});
-
-			const [morningInEntry] = await db
-				.insert(timeEntry)
-				.values({
-					employeeId: emp.id,
+			const sessions = planDemoWorkDay(day);
+			const outcome = await withDemoWorkTransaction(
+				{
 					organizationId: options.organizationId,
-					type: "clock_in",
-					timestamp: morningClockIn,
-					hash: morningInHash,
-					previousHash,
-					previousEntryId,
-					notes: "Demo data",
-					createdBy: options.createdBy,
-					...demoTimeEntryTimezoneCapture(morningClockIn),
-				})
-				.returning();
-
-			previousHash = morningInEntry.hash;
-			previousEntryId = morningInEntry.id;
-			timeEntriesCreated++;
-
-			// Create morning clock out (for lunch)
-			const morningOutHash = calculateHash({
-				employeeId: emp.id,
-				type: "clock_out",
-				timestamp: morningClockOutDT.toISO()!,
-				previousHash,
-			});
-
-			const [morningOutEntry] = await db
-				.insert(timeEntry)
-				.values({
-					employeeId: emp.id,
-					organizationId: options.organizationId,
-					type: "clock_out",
-					timestamp: morningClockOut,
-					hash: morningOutHash,
-					previousHash,
-					previousEntryId,
-					notes: generateMorningWorkDescription(),
-					createdBy: options.createdBy,
-					...demoTimeEntryTimezoneCapture(morningClockOut),
-				})
-				.returning();
-
-			previousHash = morningOutEntry.hash;
-			previousEntryId = morningOutEntry.id;
-			timeEntriesCreated++;
-
-			// Create morning work period
-			const morningDuration = Math.round(
-				morningClockOutDT.diff(morningClockInDT, "minutes").minutes,
-			);
-			await db.insert(workPeriod).values({
-				employeeId: emp.id,
-				organizationId: options.organizationId,
-				clockInId: morningInEntry.id,
-				clockOutId: morningOutEntry.id,
-				startTime: morningClockIn,
-				endTime: morningClockOut,
-				durationMinutes: morningDuration,
-				isActive: false,
-			});
-			workPeriodsCreated++;
-
-			// Lunch break: 30-60 minutes
-			const lunchDuration = Math.floor(Math.random() * 31) + 30; // 30-60 minutes
-			const afternoonClockInDT = addMinutesToDT(
-				morningClockOutDT,
-				lunchDuration,
-			);
-			const afternoonClockIn = dateToDB(afternoonClockInDT)!;
-
-			// Create afternoon clock in
-			const afternoonInHash = calculateHash({
-				employeeId: emp.id,
-				type: "clock_in",
-				timestamp: afternoonClockInDT.toISO()!,
-				previousHash,
-			});
-
-			const [afternoonInEntry] = await db
-				.insert(timeEntry)
-				.values({
-					employeeId: emp.id,
-					organizationId: options.organizationId,
-					type: "clock_in",
-					timestamp: afternoonClockIn,
-					hash: afternoonInHash,
-					previousHash,
-					previousEntryId,
-					notes: "Demo data - Back from lunch",
-					createdBy: options.createdBy,
-					...demoTimeEntryTimezoneCapture(afternoonClockIn),
-				})
-				.returning();
-
-			previousHash = afternoonInEntry.hash;
-			previousEntryId = afternoonInEntry.id;
-			timeEntriesCreated++;
-
-			// Check if we should add an afternoon break (30% chance)
-			const hasAfternoonBreak = Math.random() < 0.3;
-
-			if (hasAfternoonBreak) {
-				// Afternoon break around 15:00-15:30
-				const breakStartMinutes = randomTimeBetween(15, 15, 0, 30);
-				const breakStartHour = Math.floor(breakStartMinutes / 60);
-				const breakStartMin = breakStartMinutes % 60;
-				const breakStartDT = setTimeOnDT(
-					currentDT,
-					breakStartHour,
-					breakStartMin,
-				);
-				const breakStart = dateToDB(breakStartDT)!;
-
-				// Clock out for break
-				const breakOutHash = calculateHash({
-					employeeId: emp.id,
-					type: "clock_out",
-					timestamp: breakStartDT.toISO()!,
-					previousHash,
-				});
-
-				const [breakOutEntry] = await db
-					.insert(timeEntry)
-					.values({
-						employeeId: emp.id,
+					triggeringUserId: options.createdBy,
+					employeeIds: [emp.id],
+				},
+				(scope) =>
+					recordDemoWorkDay(scope, {
 						organizationId: options.organizationId,
-						type: "clock_out",
-						timestamp: breakStart,
-						hash: breakOutHash,
-						previousHash,
-						previousEntryId,
-						notes: generateAfternoonWorkDescription(),
-						createdBy: options.createdBy,
-						...demoTimeEntryTimezoneCapture(breakStart),
-					})
-					.returning();
-
-				previousHash = breakOutEntry.hash;
-				previousEntryId = breakOutEntry.id;
-				timeEntriesCreated++;
-
-				// Create first afternoon work period
-				const firstAfternoonDuration = Math.round(
-					breakStartDT.diff(afternoonClockInDT, "minutes").minutes,
-				);
-				await db.insert(workPeriod).values({
-					employeeId: emp.id,
-					organizationId: options.organizationId,
-					clockInId: afternoonInEntry.id,
-					clockOutId: breakOutEntry.id,
-					startTime: afternoonClockIn,
-					endTime: breakStart,
-					durationMinutes: firstAfternoonDuration,
-					isActive: false,
-				});
-				workPeriodsCreated++;
-
-				// Break duration: 10-20 minutes
-				const breakDuration = Math.floor(Math.random() * 11) + 10;
-				const breakEndDT = addMinutesToDT(breakStartDT, breakDuration);
-				const breakEnd = dateToDB(breakEndDT)!;
-
-				// Clock in after break
-				const breakInHash = calculateHash({
-					employeeId: emp.id,
-					type: "clock_in",
-					timestamp: breakEndDT.toISO()!,
-					previousHash,
-				});
-
-				const [breakInEntry] = await db
-					.insert(timeEntry)
-					.values({
 						employeeId: emp.id,
-						organizationId: options.organizationId,
-						type: "clock_in",
-						timestamp: breakEnd,
-						hash: breakInHash,
-						previousHash,
-						previousEntryId,
-						notes: "Demo data - Back from break",
-						createdBy: options.createdBy,
-						...demoTimeEntryTimezoneCapture(breakEnd),
-					})
-					.returning();
-
-				previousHash = breakInEntry.hash;
-				previousEntryId = breakInEntry.id;
-				timeEntriesCreated++;
-
-				// Final clock out: 16:30-18:30
-				const endMinutes = randomTimeBetween(16, 18, 30, 30);
-				const endHour = Math.floor(endMinutes / 60);
-				const endMin = endMinutes % 60;
-				const finalClockOutDT = setTimeOnDT(currentDT, endHour, endMin);
-				const finalClockOut = dateToDB(finalClockOutDT)!;
-
-				const finalOutHash = calculateHash({
-					employeeId: emp.id,
-					type: "clock_out",
-					timestamp: finalClockOutDT.toISO()!,
-					previousHash,
-				});
-
-				const [finalOutEntry] = await db
-					.insert(timeEntry)
-					.values({
-						employeeId: emp.id,
-						organizationId: options.organizationId,
-						type: "clock_out",
-						timestamp: finalClockOut,
-						hash: finalOutHash,
-						previousHash,
-						previousEntryId,
-						notes: generateEndOfDayDescription(),
-						createdBy: options.createdBy,
-						...demoTimeEntryTimezoneCapture(finalClockOut),
-					})
-					.returning();
-
-				timeEntriesCreated++;
-
-				// Create final afternoon work period
-				const finalDuration = Math.round(
-					finalClockOutDT.diff(breakEndDT, "minutes").minutes,
+						triggeringUserId: options.createdBy,
+						runId,
+						sessions,
+					}),
+			);
+			if (outcome.kind === "recorded") {
+				timeEntriesCreated += outcome.timeEntriesCreated;
+				workPeriodsCreated += outcome.workPeriodsCreated;
+			} else if (outcome.kind === "held_for_review") {
+				// Scoped to this employee; operators get the reasons, other employees continue.
+				heldForReview.add(emp.id);
+				demoLogger.warn(
+					{ appendReviewRequirement: outcome.requirement },
+					"Demo work generation held for append review",
 				);
-				await db.insert(workPeriod).values({
-					employeeId: emp.id,
-					organizationId: options.organizationId,
-					clockInId: breakInEntry.id,
-					clockOutId: finalOutEntry.id,
-					startTime: breakEnd,
-					endTime: finalClockOut,
-					durationMinutes: finalDuration,
-					isActive: false,
-				});
-				workPeriodsCreated++;
-			} else {
-				// No afternoon break - single afternoon session
-				const endMinutes = randomTimeBetween(16, 18, 30, 30);
-				const endHour = Math.floor(endMinutes / 60);
-				const endMin = endMinutes % 60;
-				const finalClockOutDT = setTimeOnDT(currentDT, endHour, endMin);
-				const finalClockOut = dateToDB(finalClockOutDT)!;
-
-				const finalOutHash = calculateHash({
-					employeeId: emp.id,
-					type: "clock_out",
-					timestamp: finalClockOutDT.toISO()!,
-					previousHash,
-				});
-
-				const [finalOutEntry] = await db
-					.insert(timeEntry)
-					.values({
-						employeeId: emp.id,
-						organizationId: options.organizationId,
-						type: "clock_out",
-						timestamp: finalClockOut,
-						hash: finalOutHash,
-						previousHash,
-						previousEntryId,
-						notes: generateEndOfDayDescription(),
-						createdBy: options.createdBy,
-						...demoTimeEntryTimezoneCapture(finalClockOut),
-					})
-					.returning();
-
-				timeEntriesCreated++;
-
-				// Create afternoon work period
-				const afternoonDuration = Math.round(
-					finalClockOutDT.diff(afternoonClockInDT, "minutes").minutes,
-				);
-				await db.insert(workPeriod).values({
-					employeeId: emp.id,
-					organizationId: options.organizationId,
-					clockInId: afternoonInEntry.id,
-					clockOutId: finalOutEntry.id,
-					startTime: afternoonClockIn,
-					endTime: finalClockOut,
-					durationMinutes: afternoonDuration,
-					isActive: false,
-				});
-				workPeriodsCreated++;
 			}
 		}
-
-		// Move to next day
-		currentDT = currentDT.plus({ days: 1 });
 	}
 
-	return { timeEntriesCreated, workPeriodsCreated };
+	return { timeEntriesCreated, workPeriodsCreated, employeesHeldForReview: heldForReview.size };
 }
 
 /**
@@ -1121,6 +864,28 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 		try {
 			submission = await runtime.repository.withTransaction(async (context) => {
 				const tx = context.dbService.db as unknown as typeof db;
+				// Shared work protocol (#285): adoption gate, the time-correction approval
+				// gate, configuration and admin access guards, then the requester's key.
+				const scope = await acquireDemoWorkScope(
+					tx,
+					{
+						organizationId: options.organizationId,
+						triggeringUserId: options.createdBy,
+						employeeIds: [requester.id],
+						// Routing depends on the requester's and approver's access.
+						accessUserIds: [requester.userId, employeesById.get(approverId)?.userId].filter(
+							(userId): userId is string => typeof userId === "string",
+						),
+					},
+					{
+						afterAdoptionGate: async () => {
+							await context.writeGate.acquire({
+								organizationId: options.organizationId,
+								workflowType: "time_correction",
+							});
+						},
+					},
+				);
 				const lockedEmployees = await tx
 					.select()
 					.from(employee)
@@ -1378,6 +1143,7 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 					query: dbService.query,
 				};
 				let insertedCorrection = false;
+				let append: TimeEntryAppend | null = null;
 				if (existing) {
 					const [lockedPredecessor] = existing.previousEntryId
 						? await tx
@@ -1425,26 +1191,46 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 						);
 					}
 				} else {
-					const [lockedChainTail] = await tx
-						.select()
-						.from(timeEntry)
-						.where(
-							and(
-								eq(timeEntry.organizationId, options.organizationId),
-								eq(timeEntry.employeeId, requester.id),
-							),
-						)
-						.orderBy(desc(timeEntry.createdAt))
-						.limit(1)
-						.for("update");
-					if (!lockedChainTail) {
-						throw new DemoCorrectionSourceChangedError();
+					let predecessor: { id: string; hash: string };
+					if (scope.admission === "append") {
+						// Adopted: the exact predecessor admitted from evidence, never the
+						// latest-created row.
+						const admitted = await admitTimeEntryAppend(
+							tx,
+							{ organizationId: options.organizationId, employeeId: requester.id },
+							"demo_correction",
+						);
+						if (admitted.kind === "review_required") {
+							throw new DemoCorrectionHeldForReviewError(admitted.requirement);
+						}
+						if (!admitted.append.predecessor) {
+							throw new DemoCorrectionSourceChangedError();
+						}
+						predecessor = admitted.append.predecessor;
+						append = admitted.append;
+					} else {
+						const [lockedChainTail] = await tx
+							.select()
+							.from(timeEntry)
+							.where(
+								and(
+									eq(timeEntry.organizationId, options.organizationId),
+									eq(timeEntry.employeeId, requester.id),
+								),
+							)
+							.orderBy(desc(timeEntry.createdAt))
+							.limit(1)
+							.for("update");
+						if (!lockedChainTail) {
+							throw new DemoCorrectionSourceChangedError();
+						}
+						predecessor = lockedChainTail;
 					}
 					const correctionHash = calculateHash({
 						employeeId: requester.id,
 						type: "correction",
 						timestamp: correctionTimestamp.toISOString(),
-						previousHash: lockedChainTail.hash,
+						previousHash: predecessor.hash,
 					});
 					const created = await insertTimeCorrectionSourceEntry({
 						dbService: transactionDbService,
@@ -1453,8 +1239,8 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 						organizationId: options.organizationId,
 						timestamp: correctionTimestamp,
 						hash: correctionHash,
-						previousHash: lockedChainTail.hash,
-						previousEntryId: lockedChainTail.id,
+						previousHash: predecessor.hash,
+						previousEntryId: predecessor.id,
 						replacesEntryId: lockedOriginal.id,
 						notes: "Demo data - Pending time correction",
 						createdBy: options.createdBy,
@@ -1464,6 +1250,12 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 					});
 					if (!created)
 						throw new Error("Demo time correction row was not created");
+					await append?.record({
+						id: correctionId,
+						hash: correctionHash,
+						previousEntryId: predecessor.id,
+						previousHash: predecessor.hash,
+					});
 					insertedCorrection = true;
 				}
 				const result = await executeTimeCorrectionSubmissionInTransaction({
@@ -1489,6 +1281,9 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 					throw new DemoCorrectionAutoCompletedError();
 				}
 				if (result.disposition === "replayed" && insertedCorrection) {
+					// The admitted row already advanced the append position: roll the
+					// speculative write back with it instead of deleting a positioned tip.
+					if (append) throw new DemoCorrectionReplayedError();
 					const deleted = await tx
 						.delete(timeEntry)
 						.where(
@@ -1510,9 +1305,18 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 				return { result, submissionId };
 			});
 		} catch (error) {
+			if (error instanceof DemoCorrectionHeldForReviewError) {
+				// Scoped to this requester; operators get the reasons.
+				demoLogger.warn(
+					{ appendReviewRequirement: error.requirement },
+					"Demo time correction held for append review",
+				);
+				continue;
+			}
 			if (
 				error instanceof DemoCorrectionAutoCompletedError ||
-				error instanceof DemoCorrectionSourceChangedError
+				error instanceof DemoCorrectionSourceChangedError ||
+				error instanceof DemoCorrectionReplayedError
 			) {
 				continue;
 			}
@@ -2763,6 +2567,7 @@ export async function assignWorkCategoriesToPeriods(
 	// Get work periods without a category assignment
 	const periodsWithoutCategory = await db.query.workPeriod.findMany({
 		where: and(
+			eq(workPeriod.organizationId, options.organizationId),
 			inArray(workPeriod.employeeId, employeeIds),
 			eq(workPeriod.isActive, false), // Only completed periods
 		),
@@ -2791,15 +2596,37 @@ export async function assignWorkCategoriesToPeriods(
 		}
 	}
 
+	// Attribution changes the work graph: one coordinated transaction per employee.
+	const assignmentsByEmployee = new Map<string, { workPeriodId: string; categoryId: string }[]>();
 	for (const period of periodsToAssign) {
-		const categoryId = faker.helpers.arrayElement(weightedCategories);
-
-		await db
-			.update(workPeriod)
-			.set({ workCategoryId: categoryId })
-			.where(eq(workPeriod.id, period.id));
-
-		workCategoriesAssigned++;
+		const assignments = assignmentsByEmployee.get(period.employeeId) ?? [];
+		assignments.push({
+			workPeriodId: period.id,
+			categoryId: faker.helpers.arrayElement(weightedCategories),
+		});
+		assignmentsByEmployee.set(period.employeeId, assignments);
+	}
+	for (const [employeeId, assignments] of assignmentsByEmployee) {
+		workCategoriesAssigned += await withDemoWorkTransaction(
+			{
+				organizationId: options.organizationId,
+				triggeringUserId: options.createdBy,
+				employeeIds: [employeeId],
+			},
+			async (scope) => {
+				let assigned = 0;
+				for (const assignment of assignments) {
+					const changed = await assignDemoWorkCategory(scope, {
+						organizationId: options.organizationId,
+						employeeId,
+						workPeriodId: assignment.workPeriodId,
+						workCategoryId: assignment.categoryId,
+					});
+					if (changed) assigned++;
+				}
+				return assigned;
+			},
+		);
 	}
 
 	return { workCategoriesAssigned };
@@ -2881,6 +2708,8 @@ export async function generateDemoData(
  */
 export async function clearOrganizationTimeData(
 	organizationId: string,
+	/** The admin who requested the cleanup; null for system callers. */
+	triggeringUserId: string | null = null,
 ): Promise<ClearDataResult> {
 	// Initialize result with zeros
 	const result: ClearDataResult = {
@@ -2967,25 +2796,24 @@ export async function clearOrganizationTimeData(
 	}
 
 	// ============================================
-	// WORK CATEGORY CLEANUP
+	// TIME HISTORY CLEANUP
 	// ============================================
 
-	// Remove work category assignments from work periods
-	if (employeeIds.length > 0) {
-		const periodsWithCategories = await db.query.workPeriod.findMany({
-			where: and(
-				inArray(workPeriod.employeeId, employeeIds),
-				isNotNull(workPeriod.workCategoryId),
-			),
-		});
-		if (periodsWithCategories.length > 0) {
-			await db
-				.update(workPeriod)
-				.set({ workCategoryId: null })
-				.where(inArray(workPeriod.employeeId, employeeIds));
-			result.workCategoryAssignmentsRemoved = periodsWithCategories.length;
-		}
-	}
+	// Time history goes first, before the categories its periods reference. Each
+	// employee's history is removed atomically under its employee key, so a
+	// concurrent writer never sees a partial graph or a position without its tip.
+	const deleted = await deleteDemoEmployeeHistories({
+		organizationId,
+		triggeringUserId,
+		employeeIds,
+	});
+	result.workPeriodsDeleted = deleted.workPeriodsDeleted;
+	result.workCategoryAssignmentsRemoved = deleted.workPeriodsWithCategory;
+	result.timeEntriesDeleted = deleted.timeEntriesDeleted;
+
+	// ============================================
+	// WORK CATEGORY CLEANUP
+	// ============================================
 
 	// Delete work category set assignments (cascade from sets)
 	// Delete work category set categories (cascade from sets/categories)
@@ -3113,77 +2941,10 @@ export async function clearOrganizationTimeData(
 	}
 
 	// ============================================
-	// EXISTING CLEANUP (work periods, time entries, absences, etc.)
+	// EXISTING CLEANUP (absences, allowances, teams, managers)
 	// ============================================
 
 	if (employeeIds.length > 0) {
-		// Manual/policy clock-out approval evidence describes this history (#302).
-		await deleteWorkPeriodApprovalEvidence(db, { organizationId, employeeIds });
-		// Delete work periods first (references time entries)
-		const workPeriodsToDelete = await db.query.workPeriod.findMany({
-			where: inArray(workPeriod.employeeId, employeeIds),
-		});
-		if (workPeriodsToDelete.length > 0) {
-			await db
-				.delete(workPeriod)
-				.where(inArray(workPeriod.employeeId, employeeIds));
-			result.workPeriodsDeleted = workPeriodsToDelete.length;
-			// The periods' canonical work goes with them (#284); left behind it would
-			// read as unlinked canonical-native work. Records an approval request still
-			// references stay, as before.
-			const canonicalRecordIds = workPeriodsToDelete.flatMap((period) =>
-				period.canonicalRecordId ? [period.canonicalRecordId] : [],
-			);
-			if (canonicalRecordIds.length > 0) {
-				await db.delete(timeRecord).where(
-					and(
-						eq(timeRecord.organizationId, organizationId),
-						inArray(timeRecord.id, canonicalRecordIds),
-						notExists(
-							db
-								.select({ id: approvalRequest.id })
-								.from(approvalRequest)
-								.where(
-									and(
-										eq(approvalRequest.organizationId, organizationId),
-										eq(approvalRequest.canonicalRecordId, timeRecord.id),
-									),
-								),
-						),
-					),
-				);
-			}
-		}
-
-		// Delete time entries
-		const timeEntriesToDelete = await db.query.timeEntry.findMany({
-			where: inArray(timeEntry.employeeId, employeeIds),
-		});
-		if (timeEntriesToDelete.length > 0) {
-			// The append position references its tip entry; remove it with the history.
-			await db
-				.delete(timeEntryAppendPosition)
-				.where(
-					and(
-						eq(timeEntryAppendPosition.organizationId, organizationId),
-						inArray(timeEntryAppendPosition.employeeId, employeeIds),
-					),
-				);
-			// Operation receipts describe that history by value; remove them with it.
-			await db
-				.delete(completedWorkOperation)
-				.where(
-					and(
-						eq(completedWorkOperation.organizationId, organizationId),
-						inArray(completedWorkOperation.employeeId, employeeIds),
-					),
-				);
-			await db
-				.delete(timeEntry)
-				.where(inArray(timeEntry.employeeId, employeeIds));
-			result.timeEntriesDeleted = timeEntriesToDelete.length;
-		}
-
 		// Delete absence entries
 		const absencesToDelete = await db.query.absenceEntry.findMany({
 			where: inArray(absenceEntry.employeeId, employeeIds),

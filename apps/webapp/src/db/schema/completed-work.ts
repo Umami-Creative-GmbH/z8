@@ -19,6 +19,7 @@ export const COMPLETED_WORK_OPERATION_KINDS = [
 	"start_live_work",
 	"import_completed_work",
 	"import_open_work",
+	"create_completed_work",
 ] as const;
 export type CompletedWorkOperationKind = (typeof COMPLETED_WORK_OPERATION_KINDS)[number];
 
@@ -26,6 +27,7 @@ export const COMPLETED_WORK_WRITERS = [
 	"web_clock_out",
 	"direct_http",
 	"reviewed_import",
+	"runtime_demo",
 	"bot_clock_out",
 ] as const;
 export type CompletedWorkWriter = (typeof COMPLETED_WORK_WRITERS)[number];
@@ -39,6 +41,9 @@ export type CompletedWorkActorKind = (typeof COMPLETED_WORK_ACTOR_KINDS)[number]
 // entry ID; for a direct-HTTP command, its operation ID, which is also the entry ID). Work identities are stored by value: the receipt is committed evidence
 // and does not follow later business changes to the work it created. Organization
 // and employee deletion cascade; partial history cleanup deletes receipts explicitly.
+// `actor_user_id` names a human actor only. A `system` actor (runtime demo
+// generation, #285) leaves it null; its result names the process and any human
+// who triggered it.
 export const completedWorkOperation = pgTable(
 	"completed_work_operation",
 	{
@@ -76,11 +81,11 @@ export const completedWorkOperation = pgTable(
 			.where(sql`${table.sourceKey} IS NOT NULL`),
 		check(
 			"completed_work_operation_kind_check",
-			sql`${table.kind} IN ('close_active_work', 'start_live_work', 'import_completed_work', 'import_open_work')`,
+			sql`${table.kind} IN ('close_active_work', 'start_live_work', 'import_completed_work', 'import_open_work', 'create_completed_work')`,
 		),
 		check(
 			"completed_work_operation_writer_check",
-			sql`${table.writer} IN ('web_clock_out', 'direct_http', 'reviewed_import', 'bot_clock_out')`,
+			sql`${table.writer} IN ('web_clock_out', 'direct_http', 'reviewed_import', 'runtime_demo', 'bot_clock_out')`,
 		),
 		check(
 			"completed_work_operation_source_check",
