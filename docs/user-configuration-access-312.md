@@ -99,7 +99,14 @@ The action validates the zone first, as before. After the commit it runs
 `processWorkBalanceRebuildIntents({ organizationId })` for each adopted organization, one after
 another. A failure is logged and left on the intent; the action still reports the save as
 successful, and the other organizations still run. A failure before the commit is reported as
-`Failed to update timezone`, without the database message.
+`Failed to update timezone`, without the database message. The executor claims every pending
+intent of the organization, so this run also completes an organization-wide #311 rebuild that
+happens to be pending, exactly as the organization timezone action does.
+
+A first settings row written for another purpose (see above) records no rebuild intent. It
+moves the manual zone from the organization zone to UTC, but balances are unaffected: their
+only zone input, the batch cutoff, already treats a `UTC` setting as absent and uses the
+organization zone.
 
 ## Rebuild representation and execution
 
@@ -150,7 +157,7 @@ key, a writer on the user row (a settings insert's foreign-key check, an existin
 a ban's update). It then proves that the other side waits on the exact guard key, by the
 `pg_locks` classid/objid of its `hashtextextended` value.
 
-**19/19**, together with the #311 suite (14/14) on the same database.
+**20/20**, together with the #311 suite (14/14) on the same database.
 
 | Scenario | Result |
 | --- | --- |
@@ -160,11 +167,12 @@ a ban's update). It then proves that the other side waits on the exact guard key
 | Unchanged zone | No intent and no reset |
 | One organization not adopted | Its reset stays inside the save, so its failure fails the save; after recovery, intents for none and resets for both |
 | Submission in flight in organization B | The change waits on the user guard, then commits |
-| Change in flight | Submissions in organizations A and B both wait on the user guard, then get `reconfirmation_required / zone_changed` (New York); a new-zone submission commits with offset `-240` while the rebuild state is committed |
+| Change in flight | Submissions in organizations A and B both wait on the user guard, then get `reconfirmation_required / zone_changed` (New York); a new-zone submission then commits with offset `-240` |
 | Same-zone source change (organization Berlin → user Berlin) | A waiting Berlin submission commits without reconfirmation |
 | First row via `updateWeekStartDay` | Waits for an in-flight submission; when the row wins, a waiting organization-zone submission must reconfirm to UTC |
 | First row via `setUserLocale` and `startOnboarding` | Each waits for an in-flight submission |
 | Organization C gains the user's employee while the change waits | The change restarts and records an intent for C too; the rebuild resets all three employees |
+| The user's employee in organization B is removed while the change waits | The change restarts and records an intent for A only |
 | Ban with a submission in flight | The ban waits; afterwards a new submission is refused with nothing written |
 | Ban in flight | Submissions in both organizations wait, then are refused (`target_not_authorized`) with nothing written; after an unban a submission commits |
 | Unban while a submission holds shared protection | The unban waits |
@@ -175,14 +183,20 @@ a ban's update). It then proves that the other side waits on the exact guard key
 Mutation checks. Each change failed the named tests and nothing else:
 
 - No guard in `changeUserTimezone`: the 4 timezone protection and restart tests.
-- No routing re-check: the restart test.
+- No routing re-check: both restart tests.
 - No guard in `writeUserSettings`: the 4 first-row tests.
 - No guard in ban/unban: the 3 ban tests.
 - Freshness ignores user intents: the consumer test.
 - Executor always organization-wide: 4 tests (colleague reset).
 - Reset inline instead of intents: 7 tests.
 
-FULL_RUNNER_PLACEHOLDER
+The whole runner file list then passed on one disposable database: 61 files and 1125 tests,
+with 1 file skipped (the browser suite, which needs `Z8_TEST_CHROME_PATH` and is also skipped in
+CI). That includes the #311 organization timezone suite, whose intents and executor this slice
+extends, and the #308/#313/#315 manual suites.
+
+The full unit suite has the same 139 failing tests as a clean `dev` worktree at the same
+commit (the known Windows environment baseline): 0 new, 0 fixed.
 
 ### Database-free
 
@@ -213,6 +227,9 @@ adoption and drain), #329 (pilot) and #331 (rollback).
   can add a user's employee record in a new organization without the guard. The timezone
   writer's restart covers an organization that appears while it waits, but not one added after
   its re-check. That window closes only when those writers take the user guard.
+- **Restart limit.** A scope that keeps changing fails the save after three attempts. This
+  path, like #313's, is not exercised against PostgreSQL; it needs a scope change on every
+  attempt, which only unprotected writers (#318) can cause.
 - **Fallback semantics.** A first settings row for any purpose changes a user's manual zone
   from the organization zone to UTC, because of the column default. The row is now ordered
   against submissions, and a waiting submission is asked to reconfirm. The fallback change

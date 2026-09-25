@@ -35,7 +35,7 @@ export class UserTimezoneScopeChanged extends Error {
 const MAX_ATTEMPTS = 3;
 
 /** Organizations in which the user has an employee record, sorted. */
-async function routeOrganizations(transaction: Transaction, userId: string) {
+async function employmentOrganizationIds(transaction: Transaction, userId: string) {
 	const rows = await transaction
 		.selectDistinct({ organizationId: employee.organizationId })
 		.from(employee)
@@ -79,15 +79,17 @@ async function attemptChange(
 	transaction: Transaction,
 	input: { userId: string; timezone: string },
 ): Promise<UserTimezoneChange> {
-	const organizationIds = await routeOrganizations(transaction, input.userId);
+	const organizationIds = await employmentOrganizationIds(transaction, input.userId);
 	const admissions = new Map<string, WorkTransactionAdmission>();
 	for (const organizationId of organizationIds) {
 		await acquireAdoptionGate(transaction, organizationId);
 		admissions.set(organizationId, await readAppendAdmission(transaction, organizationId));
 	}
 	await acquireExclusiveUserConfigurationAccessGuards(transaction, [input.userId]);
-	const confirmed = await routeOrganizations(transaction, input.userId);
-	if (confirmed.join("\n") !== organizationIds.join("\n")) throw new UserTimezoneScopeChanged();
+	const confirmed = await employmentOrganizationIds(transaction, input.userId);
+	if (JSON.stringify(confirmed) !== JSON.stringify(organizationIds)) {
+		throw new UserTimezoneScopeChanged();
+	}
 
 	// An absent row resolves to the organization zone, so creating one is a change
 	// even when it names UTC.

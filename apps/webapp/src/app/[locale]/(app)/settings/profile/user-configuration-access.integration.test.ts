@@ -763,6 +763,30 @@ describeIntegration("user configuration and access mutations on PostgreSQL", () 
 			await processWorkBalanceRebuildIntents();
 			expect(await resetEmployees()).toEqual([ids.employeeA, ids.employeeB, ids.employeeC].sort());
 		});
+
+		it("restarts without an organization the user left while the change waited", async () => {
+			const submission = await pausedSubmission(ids.orgA);
+			const change = changeTimezone("America/New_York");
+			await waitForWaiterOn(userGuard);
+
+			// An unprotected cleanup path (#318) removes the user's employee in organization B.
+			await admin.query("delete from employee where id = $1", [ids.employeeB]);
+			await failRebuilds();
+			// A stale scope would still write organization B's intent; make that fail the save.
+			await admin.query(`create or replace function t312_fail_intent() returns trigger language plpgsql as $$
+				begin
+					if new.organization_id = '${ids.orgB}' then raise exception 't312 stale organization intent'; end if;
+					return new;
+				end $$`);
+			await admin.query(
+				"create trigger t312_fail_intent before insert on work_balance_rebuild_intent for each row execute function t312_fail_intent()",
+			);
+			await submission.release();
+			await expect(submission.pending).resolves.toMatchObject({ success: true });
+			await expect(change).resolves.toMatchObject({ success: true });
+
+			expect((await intents()).map((row) => row.organization_id)).toEqual([ids.orgA]);
+		});
 	});
 
 	describe("global access (platform ban)", () => {
