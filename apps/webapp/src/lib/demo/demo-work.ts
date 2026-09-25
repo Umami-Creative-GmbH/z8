@@ -33,6 +33,7 @@ import {
 	timeEntryAppendPosition,
 	timeRecord,
 	timeRecordWork,
+	workBreakAdjustmentIntent,
 	workPeriod,
 } from "@/db/schema";
 import { deleteWorkPeriodApprovalEvidence } from "@/lib/approvals/maintenance";
@@ -592,7 +593,8 @@ export type DemoHistoryDeletion = {
 
 /**
  * Removes one employee's whole time history atomically under its employee key:
- * approval lifecycle evidence (#302), append position, proposals (#323), receipts, periods, their
+ * approval lifecycle evidence (#302), append position, proposals (#323), break adjustment
+ * intents (#305), receipts, periods, their
  * canonical work records (except those a retained approval request references) and
  * entries. An adopted scope also commits the balance refresh intent. No other
  * employee or organization is touched.
@@ -625,6 +627,15 @@ export async function deleteDemoEmployeeHistory(
 			and(
 				eq(historicalWorkProposal.organizationId, input.organizationId),
 				eq(historicalWorkProposal.employeeId, input.employeeId),
+			),
+		);
+	// Automatic break adjustment intents (#305) name that history's periods by value.
+	await client
+		.delete(workBreakAdjustmentIntent)
+		.where(
+			and(
+				eq(workBreakAdjustmentIntent.organizationId, input.organizationId),
+				eq(workBreakAdjustmentIntent.employeeId, input.employeeId),
 			),
 		);
 	// Operation receipts describe that history by value; remove them with it.

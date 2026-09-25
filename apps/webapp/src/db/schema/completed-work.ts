@@ -29,6 +29,7 @@ export const COMPLETED_WORK_OPERATION_KINDS = [
 	"repair_historical_gap",
 	"split_completed_work",
 	"apply_historical_repair_proposal",
+	"automatic_break_adjustment",
 ] as const;
 export type CompletedWorkOperationKind = (typeof COMPLETED_WORK_OPERATION_KINDS)[number];
 
@@ -51,6 +52,7 @@ export const COMPLETED_WORK_WRITERS = [
 	"historical_gap_repair",
 	"work_period_split",
 	"historical_repair_proposal",
+	"automatic_break_enforcement",
 ] as const;
 export type CompletedWorkWriter = (typeof COMPLETED_WORK_WRITERS)[number];
 
@@ -111,11 +113,11 @@ export const completedWorkOperation = pgTable(
 			.where(sql`${table.sourceKey} IS NOT NULL`),
 		check(
 			"completed_work_operation_kind_check",
-			sql`${table.kind} IN ('close_active_work', 'start_live_work', 'import_completed_work', 'import_open_work', 'create_completed_work', 'amend_completed_work', 'close_resume_work', 'submit_time_correction', 'finalize_time_correction', 'cancel_time_correction', 'split_policy_clock_out_break', 'repair_historical_gap', 'split_completed_work', 'apply_historical_repair_proposal')`,
+			sql`${table.kind} IN ('close_active_work', 'start_live_work', 'import_completed_work', 'import_open_work', 'create_completed_work', 'amend_completed_work', 'close_resume_work', 'submit_time_correction', 'finalize_time_correction', 'cancel_time_correction', 'split_policy_clock_out_break', 'repair_historical_gap', 'split_completed_work', 'apply_historical_repair_proposal', 'automatic_break_adjustment')`,
 		),
 		check(
 			"completed_work_operation_writer_check",
-			sql`${table.writer} IN ('web_clock_out', 'direct_http', 'reviewed_import', 'runtime_demo', 'bot_clock_out', 'admin_time_edit', 'self_service_time_edit', 'http_direct_correction', 'work_period_attribution_edit', 'manager_on_behalf', 'manual_entry', 'time_correction_request', 'time_correction_decision', 'time_correction_cancellation', 'policy_clock_out_decision', 'historical_gap_repair', 'work_period_split', 'historical_repair_proposal')`,
+			sql`${table.writer} IN ('web_clock_out', 'direct_http', 'reviewed_import', 'runtime_demo', 'bot_clock_out', 'admin_time_edit', 'self_service_time_edit', 'http_direct_correction', 'work_period_attribution_edit', 'manager_on_behalf', 'manual_entry', 'time_correction_request', 'time_correction_decision', 'time_correction_cancellation', 'policy_clock_out_decision', 'historical_gap_repair', 'work_period_split', 'historical_repair_proposal', 'automatic_break_enforcement')`,
 		),
 		check(
 			"completed_work_operation_source_check",
@@ -133,6 +135,77 @@ export const completedWorkOperation = pgTable(
 			"completed_work_operation_version_check",
 			sql`${table.writerVersion} >= 1 AND ${table.commandVersion} >= 1 AND ${table.resultVersion} >= 1`,
 		),
+	],
+);
+
+export const WORK_BREAK_ADJUSTMENT_INTENT_STATUSES = ["pending", "deferred"] as const;
+export type WorkBreakAdjustmentIntentStatus =
+	(typeof WORK_BREAK_ADJUSTMENT_INTENT_STATUSES)[number];
+
+export const WORK_BREAK_ADJUSTMENT_BLOCKERS = [
+	"work_period_pending_approval",
+	"pending_time_correction_approval",
+	"completed_work_review_required",
+	"work_occupancy_conflict",
+	"append_review_required",
+] as const;
+export type WorkBreakAdjustmentBlocker = (typeof WORK_BREAK_ADJUSTMENT_BLOCKERS)[number];
+
+// Durable automatic break adjustment intent (#256 §5/§7, #305). An adopted ordinary
+// closure commits one row with the work (`pending`); the adjustment owner
+// (`lib/time-tracking/automatic-break-adjustment.ts`) evaluates it under the owner's
+// coordination and deletes it once the work is adjusted, needs no adjustment or no longer
+// exists. An unresolved review or other blocker keeps it `deferred` with the blocker and
+// the source revision it observed; every later run re-evaluates the current work, whatever
+// its date, and never applies a formerly planned split. The ID is derived from the
+// organization and period, so the intent has one stable identity. Work identities are
+// stored by value; organization and employee deletion cascade and partial history
+// cleanup deletes intents explicitly.
+export const workBreakAdjustmentIntent = pgTable(
+	"work_break_adjustment_intent",
+	{
+		id: uuid("id").primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").notNull(),
+		workPeriodId: uuid("work_period_id").notNull(),
+		// The clock-out entry of the closure that committed the intent.
+		closureEntryId: uuid("closure_entry_id"),
+		// The human whose closure triggered the adjustment; never its executing actor.
+		triggeredByUserId: text("triggered_by_user_id").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		status: text("status").$type<WorkBreakAdjustmentIntentStatus>().default("pending").notNull(),
+		blocker: text("blocker").$type<WorkBreakAdjustmentBlocker>(),
+		observedGraphRevision: integer("observed_graph_revision"),
+		requestedAt: timestamp("requested_at", { withTimezone: true }).notNull(),
+		deferredAt: timestamp("deferred_at", { withTimezone: true }),
+		checkedAt: timestamp("checked_at", { withTimezone: true }),
+		attempts: integer("attempts").default(0).notNull(),
+		lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+		lastError: text("last_error"),
+	},
+	(table) => [
+		foreignKey({
+			name: "work_break_adjustment_intent_employee_fk",
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+		uniqueIndex("workBreakAdjustmentIntent_org_period_idx").on(
+			table.organizationId,
+			table.workPeriodId,
+		),
+		index("workBreakAdjustmentIntent_checked_idx").on(table.checkedAt, table.requestedAt),
+		check(
+			"work_break_adjustment_intent_status_check",
+			sql`${table.status} IN ('pending', 'deferred')`,
+		),
+		check(
+			"work_break_adjustment_intent_blocker_check",
+			sql`(${table.status} = 'deferred') = (${table.blocker} IS NOT NULL AND ${table.observedGraphRevision} IS NOT NULL AND ${table.deferredAt} IS NOT NULL) AND (${table.blocker} IS NULL OR ${table.blocker} IN ('work_period_pending_approval', 'pending_time_correction_approval', 'completed_work_review_required', 'work_occupancy_conflict', 'append_review_required'))`,
+		),
+		check("work_break_adjustment_intent_attempts_check", sql`${table.attempts} >= 0`),
 	],
 );
 

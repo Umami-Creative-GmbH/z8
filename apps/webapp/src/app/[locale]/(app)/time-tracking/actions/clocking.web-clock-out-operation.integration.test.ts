@@ -107,6 +107,9 @@ vi.mock("./shared", async (importOriginal) => {
 
 const { clockIn, clockOut } = await import("./clocking");
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
+const { deriveAutomaticBreakIntentId } = await import(
+	"@/lib/time-tracking/automatic-break-adjustment"
+);
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
@@ -510,7 +513,15 @@ describeIntegration("web clock-out through the completed-work operation on Postg
 			followUps: [
 				{ kind: "work_balance_refresh", delivery: "committed_intent", dirtyFromDate: "2026-07-22" },
 				{ kind: "compliance_check", delivery: "post_commit_best_effort" },
-				{ kind: "break_enforcement", delivery: "post_commit_best_effort" },
+				// The automatic break adjustment intent commits with the closure (#305).
+				{
+					kind: "break_enforcement",
+					delivery: "committed_intent",
+					intentId: deriveAutomaticBreakIntentId({
+						organizationId: ids.organization,
+						workPeriodId: period.id,
+					}),
+				},
 				{ kind: "surcharge_calculation", delivery: "post_commit_best_effort" },
 			],
 		});

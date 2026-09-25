@@ -36,6 +36,7 @@ export const TIME_ENTRY_APPEND_OPERATIONS = [
 	"policy_clock_out_break",
 	"completed_work_split",
 	"authorized_continuation",
+	"automatic_break_adjustment",
 ] as const;
 export type TimeEntryAppendOperation = (typeof TIME_ENTRY_APPEND_OPERATIONS)[number];
 
@@ -109,7 +110,7 @@ export const timeEntryAppendPosition = pgTable(
 		),
 		check(
 			"time_entry_append_position_operation_check",
-			sql`${table.admittedOperation} IN ('live_clock_in', 'live_clock_out', 'reviewed_import', 'demo_generation', 'demo_correction', 'completed_work_correction', 'manual_entry', 'time_correction_submission', 'policy_clock_out_break', 'completed_work_split', 'authorized_continuation') AND ${table.lastOperation} IN ('live_clock_in', 'live_clock_out', 'reviewed_import', 'demo_generation', 'demo_correction', 'completed_work_correction', 'manual_entry', 'time_correction_submission', 'policy_clock_out_break', 'completed_work_split', 'authorized_continuation')`,
+			sql`${table.admittedOperation} IN ('live_clock_in', 'live_clock_out', 'reviewed_import', 'demo_generation', 'demo_correction', 'completed_work_correction', 'manual_entry', 'time_correction_submission', 'policy_clock_out_break', 'completed_work_split', 'authorized_continuation', 'automatic_break_adjustment') AND ${table.lastOperation} IN ('live_clock_in', 'live_clock_out', 'reviewed_import', 'demo_generation', 'demo_correction', 'completed_work_correction', 'manual_entry', 'time_correction_submission', 'policy_clock_out_break', 'completed_work_split', 'authorized_continuation', 'automatic_break_adjustment')`,
 		),
 	],
 );
