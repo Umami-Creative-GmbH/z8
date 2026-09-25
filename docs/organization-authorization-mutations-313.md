@@ -41,8 +41,9 @@ The scope names the organization and the changed facts:
 
 The keys and hash seed are the ones `acquireOrganizationConfigurationGuard` and
 `acquireUserConfigurationAccessGuards` take shared (`lib/time-tracking/work-transaction.ts`).
-The exclusive counterparts `protectOrganizationConfiguration` and
-`protectUserConfigurationAccess` live beside them, so both sides build the key in one place.
+The exclusive counterparts `acquireExclusiveOrganizationConfigurationGuard` (shared with the
+#311 timezone writer) and `acquireExclusiveUserConfigurationAccessGuards` live beside them, so
+both sides build the key in one place.
 
 Acquisition order matches #264 ranks 3–4: routing reads, then the organization guard, then the
 sorted user guards, then routing runs again. Employee IDs resolve to users inside the

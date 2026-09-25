@@ -310,6 +310,12 @@ const context = {
 	activationResolver: {},
 };
 
+vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) =>
+	(await import("@/test/time-correction-work-transaction")).legacyTimeCorrectionWorkTransaction(
+		await importOriginal(),
+	),
+);
+
 vi.mock("@/db", () => ({ db }));
 vi.mock("next/headers", () => ({ headers: state.headers }));
 vi.mock("next/server", async () => {

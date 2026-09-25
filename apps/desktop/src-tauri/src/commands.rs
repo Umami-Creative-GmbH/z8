@@ -3,6 +3,7 @@ use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 
 use crate::auth;
+use crate::break_evidence::{BreakEvidence, Observation};
 use crate::clock::{ClockService, ClockStatus, WorkLocationType};
 use crate::clock_command::{
     self, ActionEvidence, ClockCommand, ClockCommandError, ClockCommandOutcome, ClockSession,
@@ -87,23 +88,48 @@ pub async fn clock_out(app_handle: AppHandle) -> Result<ClockCommandOutcome, Clo
     run_clock_command(app_handle, ClockCommand::ClockOut).await
 }
 
-/// Clocks out at a specific time (for break handling) then immediately clocks back in
+/// Records the confirmed idle break: close at the idle start, resume at the
+/// detected return (#281). The observed interval comes from native state, not
+/// from the webview; the confirmation only names it.
 #[tauri::command]
 pub async fn clock_out_with_break(
     app_handle: AppHandle,
-    break_start_time: String,
+    break_id: String,
     work_location_type: String,
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
+    // The confirmation is observed first, before waiting on anything.
+    let confirmed = Observation::now();
     let work_location_type = WorkLocationType::from_str(&work_location_type)
         .ok_or_else(|| ClockCommandError::pre_send("Invalid work location type"))?;
-    run_clock_command(
-        app_handle,
+    let idle = app_handle
+        .state::<Arc<AppState>>()
+        .pending_break(&break_id)
+        .ok_or_else(|| {
+            ClockCommandError::pre_send(
+                "This break is no longer available. Nothing was recorded. Enter it as a time correction in Z8 if needed.",
+            )
+        })?;
+    let outcome = run_clock_command(
+        app_handle.clone(),
         ClockCommand::Break {
-            start: break_start_time,
+            evidence: BreakEvidence { idle, confirmed },
             location: work_location_type,
         },
     )
-    .await
+    .await?;
+    // Recorded, saved or retained: the same span is never offered again.
+    app_handle
+        .state::<Arc<AppState>>()
+        .clear_pending_break(&break_id);
+    Ok(outcome)
+}
+
+/// The employee was still working: the idle span is discarded.
+#[tauri::command]
+pub fn dismiss_idle_break(app_handle: AppHandle, break_id: String) {
+    app_handle
+        .state::<Arc<AppState>>()
+        .clear_pending_break(&break_id);
 }
 
 fn command_store(state: &AppState) -> Result<&parking_lot::Mutex<CommandStore>, String> {

@@ -256,6 +256,7 @@
       "title": "Zespoły"
     },
     "timezone": {
+      "balances-recalculating": "Salda czasu pracy są przeliczane dla nowej strefy czasowej i pozostają ukryte, dopóki nie będą gotowe.",
       "default": "Domyślna strefa czasowa",
       "description": "Ustaw domyślną strefę czasową dla swojej organizacji. Jest ona używana do śledzenia nieobecności, raportów i innych funkcji opartych na dacie. Poszczególni użytkownicy mogą zmienić to ustawienie w swoich profilach.",
       "owner-only": "Tylko właściciele organizacji mogą zmieniać ustawienia strefy czasowej.",

@@ -32,11 +32,38 @@ export interface WorkTransactionScope {
 	assertEmployee(organizationId: string, employeeId: string): void;
 }
 
-/** For the outer transaction coordinators only; ordinary callers receive a scope. */
+const scopesByTransaction = new WeakMap<object, WorkTransactionScope>();
+
+/**
+ * For the outer transaction coordinators only; ordinary callers receive a scope.
+ * The sealed scope is also registered for its transaction client, so trusted
+ * collaborators that the approval engine calls with only that client (#301
+ * correction finalization and cancellation) can find the coordinated scope.
+ */
 export function sealWorkTransactionScope<T extends object>(
 	scope: T,
 ): T & { readonly [protectedTransaction]: true } {
-	return Object.freeze({ ...scope, [protectedTransaction]: true as const });
+	const sealed = Object.freeze({ ...scope, [protectedTransaction]: true as const });
+	if (isWorkTransactionScope(sealed)) scopesByTransaction.set(sealed.db, sealed);
+	return sealed;
+}
+
+function isWorkTransactionScope(value: object): value is WorkTransactionScope {
+	const candidate = value as Partial<WorkTransactionScope>;
+	return (
+		typeof candidate.db === "object" &&
+		candidate.db !== null &&
+		(candidate.admission === "legacy" || candidate.admission === "append") &&
+		typeof candidate.assertEmployee === "function"
+	);
+}
+
+/**
+ * The coordinated scope sealed for this transaction client, or null when the
+ * client was not opened by a work-transaction coordinator.
+ */
+export function workTransactionScopeFor(client: object): WorkTransactionScope | null {
+	return scopesByTransaction.get(client) ?? null;
 }
 
 export async function acquireAdoptionGate(
@@ -79,6 +106,20 @@ export async function acquireOrganizationConfigurationGuard(
 	);
 }
 
+/**
+ * Exclusive organization configuration protection for a writer of a manual
+ * dependency, held from before its first dependent mutation through commit. It
+ * drains and fences every holder of the shared guard; never upgrade from shared.
+ */
+export async function acquireExclusiveOrganizationConfigurationGuard(
+	transaction: Pick<Transaction, "execute">,
+	organizationId: string,
+) {
+	await transaction.execute(
+		sql`select pg_advisory_xact_lock(hashtextextended(${organizationConfigurationKey(organizationId)}, 0))`,
+	);
+}
+
 export async function acquireUserConfigurationAccessGuards(
 	transaction: Pick<Transaction, "execute">,
 	userIds: readonly string[],
@@ -91,21 +132,11 @@ export async function acquireUserConfigurationAccessGuards(
 }
 
 /**
- * Exclusive counterpart for a writer of organization-wide configuration that
- * work transactions depend on. Writers take it in their original transaction
- * before the first dependent mutation, and before any user protection.
+ * Exclusive user configuration/access protection for a writer of a user's
+ * manual dependencies (#313), sorted, taken after any organization protection
+ * and before the writer's first dependent mutation; never upgrade from shared.
  */
-export async function protectOrganizationConfiguration(
-	transaction: Pick<Transaction, "execute">,
-	organizationId: string,
-) {
-	await transaction.execute(
-		sql`select pg_advisory_xact_lock(hashtextextended(${organizationConfigurationKey(organizationId)}, 0))`,
-	);
-}
-
-/** Exclusive counterpart for writers of user-scoped configuration/access facts, sorted. */
-export async function protectUserConfigurationAccess(
+export async function acquireExclusiveUserConfigurationAccessGuards(
 	transaction: Pick<Transaction, "execute">,
 	userIds: readonly string[],
 ) {

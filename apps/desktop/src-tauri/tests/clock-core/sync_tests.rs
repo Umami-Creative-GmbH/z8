@@ -449,7 +449,11 @@ async fn saved_commands_are_never_downgraded_when_the_server_stops_accepting_the
         .act(
             &url,
             ClockCommand::Break {
-                start: "2026-09-20T10:00:00Z".into(),
+                evidence: crate::support::confirmed_break(
+                    "2026-09-20T10:00:00Z".parse().unwrap(),
+                    Some("Europe/Berlin"),
+                    Some("Europe/Berlin"),
+                ),
                 location: WorkLocationType::Office,
             },
         )

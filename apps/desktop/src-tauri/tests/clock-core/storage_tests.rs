@@ -139,3 +139,62 @@ fn crash_writer_process() {
         .unwrap();
     std::process::exit(0);
 }
+
+#[test]
+fn legacy_breaks_are_classified_by_the_close_evidence_they_carry() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut queue = OfflineQueue::new(dir.path()).unwrap();
+    let payload = |failure: serde_json::Value| {
+        let mut value = serde_json::json!({
+            "breakStartTime": "2026-09-20T10:00:00Z",
+            "workLocationType": "office",
+        });
+        if !failure.is_null() {
+            value["observedFailure"] = failure;
+        }
+        Some(value.to_string())
+    };
+    queue
+        .enqueue(
+            ActionType::ClockOutWithBreak,
+            1,
+            payload(serde_json::Value::Null),
+        )
+        .unwrap();
+    queue
+        .enqueue(
+            ActionType::ClockOutWithBreak,
+            2,
+            payload(serde_json::json!({ "closeAcknowledged": false, "resumeAttempted": false })),
+        )
+        .unwrap();
+    queue
+        .enqueue(
+            ActionType::ClockOutWithBreak,
+            3,
+            payload(serde_json::json!({
+                "closeAcknowledged": true,
+                "closeEntry": { "id": "close-1" },
+                "resumeAttempted": true,
+            })),
+        )
+        .unwrap();
+
+    let records = queue.get_pending().unwrap();
+    let acknowledged: Vec<bool> = records
+        .iter()
+        .map(|record| {
+            record
+                .reasons
+                .contains(&ReviewReason::BreakCloseAcknowledged)
+        })
+        .collect();
+    // Only an acknowledged close is known to have committed; nothing proves absence.
+    assert_eq!(acknowledged, [false, false, true]);
+    assert!(records.iter().all(|record| record
+        .reasons
+        .contains(&ReviewReason::BreakMayBePartiallyCommitted)));
+    let summary = queue.recovery_summary().unwrap();
+    assert_eq!(summary.possible_partial_breaks, 3);
+    assert_eq!(summary.breaks_with_acknowledged_close, 1);
+}

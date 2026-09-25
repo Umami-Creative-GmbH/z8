@@ -100,11 +100,21 @@ import {
 	parsePresenceFixedDays,
 	validatePresenceFixedDaysConfig,
 } from "./actions/presence-status";
-import { createManualTimeEntryFromCommand } from "./actions/manual-command-submission";
+import {
+	createManualTimeEntryFromCommand,
+	lookupManualTimeEntryCommand,
+} from "./actions/manual-command-submission";
+import {
+	MANUAL_ENTRY_CONTEXT_MISMATCH,
+	MANUAL_ENTRY_EMPLOYEE_NOT_FOUND,
+	MANUAL_ENTRY_NOT_AUTHENTICATED,
+} from "./actions/types";
 import type {
 	BrowserTimezoneContext,
 	ClockOutActionContext,
+	ManualEntryRecoveryContext,
 	ManualTimeEntryInput,
+	ManualTimeEntryLookup,
 	ManualTimeEntryResult,
 	CorrectionRequest as ModularCorrectionRequest,
 	SameDayEditRequest as ModularSameDayEditRequest,
@@ -1707,18 +1717,37 @@ export async function getWorkPeriodEditCapability(
  * Respects the organization's change policy for approval requirements.
  * A strict version-2 command (#308) goes through the completed-work operation
  * in adopted organizations; unversioned input keeps the legacy path.
+ *
+ * A frozen command's retry (#310) asserts the user and organization it was
+ * frozen for; another session refuses it before anything runs.
  */
 export async function createManualTimeEntry(
 	data: ManualTimeEntryInput | ManualTimeEntryCommand,
+	recoveryContext?: ManualEntryRecoveryContext,
 ): Promise<ManualTimeEntryResult> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
+		return { success: false, error: "Not authenticated", code: MANUAL_ENTRY_NOT_AUTHENTICATED };
 	}
 
 	const emp = await getCurrentEmployee();
 	if (!emp) {
-		return { success: false, error: "Employee profile not found" };
+		return {
+			success: false,
+			error: "Employee profile not found",
+			code: MANUAL_ENTRY_EMPLOYEE_NOT_FOUND,
+		};
+	}
+	if (
+		recoveryContext &&
+		(recoveryContext.userId !== session.user.id ||
+			recoveryContext.organizationId !== emp.organizationId)
+	) {
+		return {
+			success: false,
+			error: "You are signed in to a different account or organization.",
+			code: MANUAL_ENTRY_CONTEXT_MISMATCH,
+		};
 	}
 
 	const billingAccess = await requireBillingForMutation(emp.organizationId);
@@ -1738,6 +1767,48 @@ export async function createManualTimeEntry(
 		});
 	}
 	return createManualTimeEntryModular(data);
+}
+
+/**
+ * Lookup-only recovery of a frozen version-2 manual command (#310). It answers
+ * under the current session, access and billing gates for exactly the asserted
+ * user and organization, and never creates work.
+ */
+export async function lookupManualTimeEntry(
+	command: unknown,
+	recoveryContext: ManualEntryRecoveryContext,
+): Promise<ManualTimeEntryLookup> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return { status: "refused", error: "Not authenticated", code: MANUAL_ENTRY_NOT_AUTHENTICATED };
+	}
+	const emp = await getCurrentEmployee();
+	if (!emp) {
+		return {
+			status: "refused",
+			error: "Employee profile not found",
+			code: MANUAL_ENTRY_EMPLOYEE_NOT_FOUND,
+		};
+	}
+	if (
+		recoveryContext?.userId !== session.user.id ||
+		recoveryContext.organizationId !== emp.organizationId
+	) {
+		return {
+			status: "refused",
+			error: "You are signed in to a different account or organization.",
+			code: MANUAL_ENTRY_CONTEXT_MISMATCH,
+		};
+	}
+	const billingAccess = await requireBillingForMutation(emp.organizationId);
+	if (!isBillingMutationAllowed(billingAccess)) {
+		return {
+			status: "refused",
+			error: "billing_required",
+			code: billingAccess.reason ?? "subscription_required",
+		};
+	}
+	return lookupManualTimeEntryCommand({ value: command, currentEmployee: emp });
 }
 
 /**

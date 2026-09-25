@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	admitClockCommandAge,
+	checkBreakClockContinuity,
 	parseClockCommand,
 	verifyClockCommandContext,
 } from "./clock-command";
@@ -93,6 +94,156 @@ describe("parseClockCommand", () => {
 	});
 });
 
+describe("break commands (#281)", () => {
+	// Idle from the last input at 10:00:05.123 until the detected return at
+	// 10:30:00.456; the employee confirmed five minutes after returning.
+	const breakCommand = {
+		version: 2,
+		operationId: "b0000000-0000-4000-8000-000000000003",
+		kind: "break",
+		admission: "delayed",
+		occurredAt: "2026-09-25T10:30:00.456Z",
+		timezone: "Europe/Berlin",
+		context,
+		target: { workPeriodId: "d0000000-0000-4000-8000-000000000001" },
+		workLocationType: "home",
+		breakStart: { at: "2026-09-25T10:00:05.123Z", timezone: "Europe/Lisbon" },
+		observations: {
+			lastActivity: { utc: "2026-09-25T10:00:05.123Z", monotonicMs: 7_200_000 },
+			idleDetected: {
+				utc: "2026-09-25T10:05:08.123Z",
+				monotonicMs: 7_503_000,
+				timezone: "Europe/Lisbon",
+			},
+			returnDetected: {
+				utc: "2026-09-25T10:30:00.456Z",
+				monotonicMs: 8_995_333,
+				timezone: "Europe/Berlin",
+			},
+			confirmed: { utc: "2026-09-25T10:35:00.456Z", monotonicMs: 9_295_333 },
+		},
+	};
+	type BreakBody = typeof breakCommand;
+	const observed = (
+		patch: (observations: BreakBody["observations"]) => void,
+		command: Partial<BreakBody> = {},
+	) => {
+		const observations = structuredClone(breakCommand.observations);
+		patch(observations);
+		return { ...breakCommand, ...command, observations };
+	};
+
+	it("accepts the source-bound break with separate endpoint evidence verbatim", () => {
+		expect(parseClockCommand(breakCommand)).toEqual({ ok: true, command: breakCommand });
+		expect(
+			parseClockCommand({
+				...breakCommand,
+				target: { clockInOperationId: clockIn.operationId },
+			}),
+		).toMatchObject({ ok: true });
+	});
+
+	it.each([
+		["a break without target", { ...breakCommand, target: undefined }],
+		["a break without start", { ...breakCommand, breakStart: undefined }],
+		["a break without observations", { ...breakCommand, observations: undefined }],
+		["a break without resume location", { ...breakCommand, workLocationType: undefined }],
+		["attribution on a break", { ...breakCommand, project: { kind: "preserve" } }],
+		[
+			"a start that is not the last observed input",
+			{ ...breakCommand, breakStart: { ...breakCommand.breakStart, at: "2026-09-25T10:00:00Z" } },
+		],
+		[
+			"a start zone that was not observed at idle detection",
+			{ ...breakCommand, breakStart: { ...breakCommand.breakStart, timezone: "Europe/Berlin" } },
+		],
+		[
+			"a resume that is not the detected return",
+			{ ...breakCommand, occurredAt: "2026-09-25T10:35:00.456Z" },
+		],
+		["a resume zone that was not observed at return", { ...breakCommand, timezone: "UTC" }],
+		[
+			"a return zone that does not exist",
+			observed((o) => {
+				o.returnDetected.timezone = "Mars/Olympus";
+			}),
+		],
+		[
+			"monotonic time running backwards",
+			observed((o) => {
+				o.confirmed.monotonicMs = o.returnDetected.monotonicMs - 1;
+			}),
+		],
+		[
+			"a fractional monotonic reading",
+			observed((o) => {
+				o.lastActivity.monotonicMs = 0.5;
+			}),
+		],
+	])("rejects %s", (_label, body) => {
+		expect(parseClockCommand(body)).toEqual({ ok: false, code: "invalid_command" });
+	});
+
+	it("keeps observations whose wall and monotonic elapsed times agree", () => {
+		const parsed = parseClockCommand(breakCommand);
+		if (!parsed.ok || parsed.command.kind !== "break") throw new Error("expected a break");
+		expect(checkBreakClockContinuity(parsed.command)).toBeNull();
+	});
+
+	it.each([
+		[
+			"the wall clock jumped forward while idle",
+			(o: BreakBody["observations"]) => {
+				o.lastActivity.utc = "2026-09-25T09:00:05.123Z";
+			},
+			"lastActivity",
+		],
+		[
+			"the wall clock was set back while idle",
+			(o: BreakBody["observations"]) => {
+				o.returnDetected.monotonicMs += 600_000;
+				o.confirmed.monotonicMs += 600_000;
+			},
+			"idleDetected",
+		],
+		[
+			"the wall clock changed between return and confirmation",
+			(o: BreakBody["observations"]) => {
+				o.confirmed.utc = "2026-09-25T10:45:00.456Z";
+			},
+			"returnDetected",
+		],
+	])("requires review when %s", (_label, patch, from) => {
+		const body = observed(patch);
+		body.breakStart = { ...body.breakStart, at: body.observations.lastActivity.utc };
+		const parsed = parseClockCommand(body);
+		if (!parsed.ok || parsed.command.kind !== "break") throw new Error("expected a break");
+		expect(checkBreakClockContinuity(parsed.command)).toEqual({
+			code: "clock_discontinuity",
+			from,
+		});
+	});
+
+	it("tolerates two seconds plus one millisecond per monotonic second of drift", () => {
+		// 303 s of wall time against 305.305 s of monotonic time: 2 s + 305 ms allowed.
+		const shifted = (drift: number) =>
+			observed((o) => {
+				o.idleDetected.monotonicMs += drift;
+				o.returnDetected.monotonicMs += drift;
+				o.confirmed.monotonicMs += drift;
+			});
+		const within = shifted(2_305);
+		const beyond = shifted(2_306);
+		const assess = (body: unknown) => {
+			const parsed = parseClockCommand(body);
+			if (!parsed.ok || parsed.command.kind !== "break") throw new Error("expected a break");
+			return checkBreakClockContinuity(parsed.command);
+		};
+		expect(assess(within)).toBeNull();
+		expect(assess(beyond)).toEqual({ code: "clock_discontinuity", from: "lastActivity" });
+	});
+});
+
 describe("admitClockCommandAge", () => {
 	const now = parseInstant("2026-09-25T12:00:00Z");
 	const at = (offset: { minutes?: number; days?: number; milliseconds?: number }) =>
@@ -155,7 +306,7 @@ describe("desktop frozen commands (#280)", () => {
 			"utf8",
 		).trimEnd();
 
-	it.each(["desktop-v2-clock-in.json", "desktop-v2-clock-out.json"])(
+	it.each(["desktop-v2-clock-in.json", "desktop-v2-clock-out.json", "desktop-v2-break.json"])(
 		"accepts the exact bytes the desktop sends: %s",
 		(name) => {
 			const sent = JSON.parse(fixture(name));

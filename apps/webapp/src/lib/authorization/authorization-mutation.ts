@@ -23,8 +23,8 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { db } from "@/db";
 import { employee } from "@/db/schema";
 import {
-	protectOrganizationConfiguration,
-	protectUserConfigurationAccess,
+	acquireExclusiveOrganizationConfigurationGuard,
+	acquireExclusiveUserConfigurationAccessGuards,
 } from "@/lib/time-tracking/work-transaction";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -83,9 +83,9 @@ export async function protectAuthorizationMutation(
 ): Promise<void> {
 	const userIds = await resolveUsers(transaction, scope);
 	if (scope.organizationWide) {
-		await protectOrganizationConfiguration(transaction, scope.organizationId);
+		await acquireExclusiveOrganizationConfigurationGuard(transaction, scope.organizationId);
 	}
-	await protectUserConfigurationAccess(transaction, userIds);
+	await acquireExclusiveUserConfigurationAccessGuards(transaction, userIds);
 	if (!scope.route && !scope.employeeIds?.length) return;
 	const confirmed = await resolveUsers(transaction, scope);
 	if (confirmed.some((userId) => !userIds.includes(userId))) {
