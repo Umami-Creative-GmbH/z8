@@ -88,6 +88,11 @@ vi.mock("@/lib/approvals/workflow/runtime", () => ({
 vi.mock("@/lib/approvals/domain-adapters/work-period-legacy-state", () => ({
 	loadOrdinaryWorkPeriodLegacyDecisionEvidence: state.legacyEvidence,
 }));
+vi.mock("@/lib/approvals/server/work-period-decision-transaction", async (importOriginal) =>
+	(await import("@/test/work-period-decision-transaction")).legacyWorkPeriodDecisionTransaction(
+		await importOriginal(),
+	),
+);
 vi.mock(
 	"@/lib/approvals/domain-adapters/legacy-write-coordinator",
 	async (importOriginal) => {

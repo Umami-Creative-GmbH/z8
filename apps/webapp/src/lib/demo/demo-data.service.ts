@@ -53,6 +53,7 @@ import {
 	executeTimeCorrectionSubmissionInTransaction,
 	finalizeTimeCorrectionTerminalInTransaction,
 	insertTimeCorrectionSourceEntry,
+	isPurgedTimeCorrectionConflict,
 } from "@/lib/approvals/server/time-correction-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
@@ -1276,6 +1277,7 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 						workLocationType,
 						workCategoryId,
 					},
+					correctionEntriesCommitted: !insertedCorrection,
 				});
 				if (result.kind === "auto_completed") {
 					throw new DemoCorrectionAutoCompletedError();
@@ -1316,7 +1318,9 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 			if (
 				error instanceof DemoCorrectionAutoCompletedError ||
 				error instanceof DemoCorrectionSourceChangedError ||
-				error instanceof DemoCorrectionReplayedError
+				error instanceof DemoCorrectionReplayedError ||
+				// Its approval was purged (#306): the committed correction stays, unrouted.
+				isPurgedTimeCorrectionConflict(error)
 			) {
 				continue;
 			}

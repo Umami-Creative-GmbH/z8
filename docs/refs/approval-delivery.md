@@ -281,7 +281,7 @@ canonical absence submissions then send no Telegram card at all.
    approval is settled. The exhausted work row stays visible.
 9. **Ingress.** No durable acceptance before the webhook acknowledgment.
 10. Everything in the #290 and canonical evidence blockers (in-flight
-   classification, #306 cleanup ordering, pilot #328/#330).
+   classification, pilot #328/#330; cleanup ordering resolved in #306).
 11. The approval write-boundary scanner cannot read sources on Windows. The new
     owners are registered but were not scanned.
 

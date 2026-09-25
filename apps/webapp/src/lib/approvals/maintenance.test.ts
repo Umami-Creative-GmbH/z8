@@ -1,7 +1,7 @@
 import type { SQL } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
-import { deleteApprovalInTransaction } from "./maintenance";
+import { deleteApprovalInTransaction, deleteEmployeeApprovalLifecycles } from "./maintenance";
 
 const dialect = new PgDialect();
 const WORKFLOW_ID = "60000000-0000-4000-8000-000000000001";
@@ -21,6 +21,9 @@ function fakeTransaction(options: {
 				options.lifecycle ??
 				options.workflowIds.map((id) => ({ kind: "workflow", id }))
 			);
+		}
+		if (text.startsWith("delete from approval_escalation_attention")) {
+			return [{ id: "attention-2" }, { id: "attention-1" }];
 		}
 		if (text.startsWith("delete from approval_escalation_transfer")) {
 			return [{ id: "transfer-2" }, { id: "transfer-1" }];
@@ -100,6 +103,7 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 		// Delivery work first: replacement work would otherwise cascade
 		// unreported from the escalation journal.
 		expect(deletes).toEqual([
+			"approval_escalation_attention",
 			"approval_delivery_work",
 			"approval_delivery_message",
 			"approval_escalation_transfer",
@@ -125,6 +129,42 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 		expect(statements[2]?.sql).toContain("approval_delivery_work");
 		expect(statements[2]?.sql).toContain("approval_delivery_message");
 		expect(statements[2]?.sql).toContain("approval_delivery_intent");
+		expect(statements[2]?.sql).toContain("approval_escalation_attention");
+	});
+
+	it("removes the lifecycle's escalation attention through the links each incident recorded", async () => {
+		const LEGACY_REQUEST = "70000000-0000-4000-8000-000000000001";
+		const { statements, transaction } = fakeTransaction({
+			workflowIds: [WORKFLOW_ID],
+			lifecycle: [
+				{ kind: "workflow", id: WORKFLOW_ID },
+				{ kind: "legacy", id: LEGACY_REQUEST },
+			],
+		});
+
+		const result = await deleteApprovalInTransaction(transaction, "org-1", WORKFLOW_ID);
+
+		expect(result.attention).toEqual(["attention-1", "attention-2"]);
+		const attention = statements.filter((statement) =>
+			statement.sql.startsWith("delete from approval_escalation_attention"),
+		);
+		expect(attention).toHaveLength(1);
+		// Incidents follow the workflow, its assignments (also as lineage root) or the
+		// legacy request they recorded; their events cascade.
+		expect(attention[0]?.sql).toContain("organization_id = $1");
+		expect(attention[0]?.sql).toContain("workflow_id = any($2::uuid[])");
+		expect(attention[0]?.sql).toContain("approval_request_id = any($3::uuid[])");
+		expect(attention[0]?.sql).toContain(
+			"assignment_id in (select id from approval_stage_assignment",
+		);
+		expect(attention[0]?.sql).toContain(
+			"lineage_root_assignment_id in (select id from approval_stage_assignment",
+		);
+		expect(attention[0]?.sql).not.toContain("source_id");
+		expect(attention[0]?.params.slice(0, 3)).toEqual(["org-1", [WORKFLOW_ID], [LEGACY_REQUEST]]);
+		// Recovery state goes before the approval rows it describes.
+		const deletes = statements.filter((statement) => statement.sql.startsWith("delete from"));
+		expect(deletes[0]?.sql.split(" ")[2]).toBe("approval_escalation_attention");
 	});
 
 	it("touches no evidence when the lifecycle has no canonical workflow", async () => {
@@ -146,7 +186,7 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 		expect(result.delivery).toEqual({ work: [], messages: [], intents: [] });
 		expect(
 			statements.some((statement) =>
-				/^delete from approval_(escalation_transfer|delivery_work|delivery_message|invocation|decision_evidence|review_binding|submitted_revision)/.test(
+				/^delete from approval_(escalation_attention|escalation_transfer|delivery_work|delivery_message|invocation|decision_evidence|review_binding|submitted_revision)/.test(
 					statement.sql,
 				),
 			),
@@ -225,18 +265,19 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 			.map((statement) => statement)
 			.filter((statement) => statement.sql.startsWith("delete from"));
 		expect(deletes.map((statement) => statement.sql.split(" ")[2])).toEqual([
+			"approval_escalation_attention",
 			"approval_delivery_work",
 			"approval_delivery_message",
 			"approval_delivery_intent",
 			"approval_request",
 		]);
-		for (const statement of deletes.slice(0, 3)) {
+		for (const statement of deletes.slice(1, 4)) {
 			// Scoped by organization and the lifecycle's legacy requests only.
 			expect(statement.sql).toContain("legacy_approval_request_id = any($2::uuid[])");
 			expect(statement.params).toEqual(["org-1", [LEGACY_REQUEST]]);
 		}
-		expect(deletes[0]?.sql).toContain("lifecycle = 'legacy'");
 		expect(deletes[1]?.sql).toContain("lifecycle = 'legacy'");
+		expect(deletes[2]?.sql).toContain("lifecycle = 'legacy'");
 		expect(result.delivery).toEqual({
 			work: ["work-1", "work-2"],
 			messages: ["message-1"],
@@ -294,5 +335,116 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 		);
 		expect(result.escalationTransfers).toEqual(["transfer-1", "transfer-2"]);
 		expect(result.legacyRequests).toEqual([]);
+	});
+});
+
+describe("deleteEmployeeApprovalLifecycles", () => {
+	const EMPLOYEE = "80000000-0000-4000-8000-000000000001";
+	const FIRST = "80000000-0000-4000-8000-000000000002";
+	const SECOND = "80000000-0000-4000-8000-000000000003";
+
+	function employeeTransaction(options: { roots: string[]; purged: string[] }) {
+		const statements: Array<{ sql: string; params: unknown[] }> = [];
+		return {
+			statements,
+			transaction: {
+				execute: async (query: SQL) => {
+					const rendered = dialect.sqlToQuery(query);
+					const text = rendered.sql.replace(/\s+/g, " ").trim();
+					statements.push({ sql: text, params: rendered.params });
+					if (text.includes("references_to_employees")) {
+						return { rows: options.roots.map((id) => ({ id })) };
+					}
+					if (text.includes("select 'legacy' as storage_type")) {
+						// An earlier lifecycle's deletion already removed a purged root.
+						const id = rendered.params.find((param) => options.roots.includes(String(param)));
+						return {
+							rows: options.purged.includes(String(id)) ? [] : [{ storage_type: "workflow", id }],
+						};
+					}
+					if (text.includes("with recursive edges")) {
+						const id = rendered.params.find((param) => options.roots.includes(String(param)));
+						return { rows: [{ kind: "workflow", id }] };
+					}
+					if (text.startsWith("delete from approval_workflow ")) {
+						return { rows: [{ id: rendered.params.at(-1)?.toString() ?? "" }] };
+					}
+					if (text.startsWith("delete from approval_escalation_attention")) {
+						return {
+							rows: text.includes("current_approver_employee_id") ? [{ id: "attention-9" }] : [],
+						};
+					}
+					return { rows: [] };
+				},
+			},
+		};
+	}
+
+	it("finds lifecycles through every employee reference and purges each through its links", async () => {
+		const { statements, transaction } = employeeTransaction({ roots: [FIRST, SECOND], purged: [] });
+
+		const result = await deleteEmployeeApprovalLifecycles(transaction, {
+			organizationId: "org-1",
+			employeeIds: [EMPLOYEE],
+		});
+
+		expect(result.lifecycles.map((lifecycle) => lifecycle.approvalId)).toEqual([FIRST, SECOND]);
+		const roots = statements.find((statement) =>
+			statement.sql.includes("references_to_employees"),
+		);
+		for (const reference of [
+			"approval_workflow where",
+			"requester_employee_id",
+			"approver_employee_id",
+			"reassigned_by_employee_id",
+			"resolved_by_actor_id",
+			"actor_employee_id",
+			"recipient_employee_id",
+			"requested_by",
+			"approver_id",
+			"decided_by",
+			"resolved_approver_employee_id",
+			"subject_employee_id",
+			"submitter_employee_id",
+			"source_approver_employee_id",
+			"replacement_approver_employee_id",
+			"current_approver_employee_id",
+		]) {
+			expect({ reference, found: roots?.sql.includes(reference) }).toEqual({
+				reference,
+				found: true,
+			});
+		}
+		// Scoped to the organization and the given employees; never a shared source ID.
+		expect(roots?.params.at(0)).toBe("org-1");
+		expect(roots?.params).toContainEqual([EMPLOYEE]);
+		expect(roots?.sql).not.toContain("source_id");
+		// Attention that names an employee without a remaining lifecycle goes last.
+		expect(result.attention).toEqual(["attention-9"]);
+		const last = statements.filter((statement) => statement.sql.startsWith("delete from")).at(-1);
+		expect(last?.sql).toContain("current_approver_employee_id = any(");
+	});
+
+	it("skips a root that an earlier lifecycle's deletion already removed", async () => {
+		const { transaction } = employeeTransaction({ roots: [FIRST, SECOND], purged: [SECOND] });
+
+		const result = await deleteEmployeeApprovalLifecycles(transaction, {
+			organizationId: "org-1",
+			employeeIds: [EMPLOYEE],
+		});
+
+		expect(result.lifecycles.map((lifecycle) => lifecycle.approvalId)).toEqual([FIRST]);
+	});
+
+	it("does nothing without employees", async () => {
+		const { statements, transaction } = employeeTransaction({ roots: [FIRST], purged: [] });
+
+		const result = await deleteEmployeeApprovalLifecycles(transaction, {
+			organizationId: "org-1",
+			employeeIds: [],
+		});
+
+		expect(result).toEqual({ lifecycles: [], attention: [] });
+		expect(statements).toEqual([]);
 	});
 });

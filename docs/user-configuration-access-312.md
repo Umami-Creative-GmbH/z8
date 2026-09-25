@@ -110,7 +110,7 @@ organization zone.
 
 ## Rebuild representation and execution
 
-Migration `0100_user_timezone_rebuild_intent` adds the nullable `user_id` column (FK to `user`,
+Migration `0101_user_timezone_rebuild_intent` adds the nullable `user_id` column (FK to `user`,
 cascade), widens the reason check to `('organization_timezone', 'user_timezone')`, and adds
 `work_balance_rebuild_intent_scope_check`: `reason = 'user_timezone'` exactly when `user_id` is
 set. Existing organization intents satisfy it unchanged.
