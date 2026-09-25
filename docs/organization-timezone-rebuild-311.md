@@ -145,7 +145,7 @@ and Next cache are replaced. **14/14.**
   and the batch skips the organization, while another organization's balance stays
   visible. After the reset, the reads still show nothing until the refresh.
 
-The whole runner file list passed on the same database: 53 files and 971 tests, with the
+The whole runner file list passed on the same database: 53 files and 979 tests after merging dev (with #281), with the
 Chrome-only browser suite skipped.
 
 Mutation checks. Each change failed the named tests:
