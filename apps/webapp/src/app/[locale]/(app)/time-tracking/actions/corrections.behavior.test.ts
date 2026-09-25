@@ -542,6 +542,20 @@ function configureDirectCategoryEdit(input: {
 		.mockImplementation((table) => rows.get(table) ?? []);
 }
 
+// Legacy organizations: the coordinated scope borrows the mocked transaction.
+vi.mock("@/lib/time-tracking/completed-work-transaction", async () => {
+	const { db } = await import("@/db");
+	return {
+		withCompletedWorkTransaction: (
+			_input: unknown,
+			operation: (scope: unknown) => Promise<unknown>,
+		) =>
+			db.transaction((tx: unknown) =>
+				operation({ admission: "legacy", db: tx, assertEmployee: () => {} }),
+			),
+	};
+});
+
 vi.mock("@/db", () => ({
 	db: {
 		query: {
@@ -2109,6 +2123,9 @@ describe("time correction submission actions", () => {
 			success: false,
 			error: "At least one correction value must change",
 		});
-		expect(state.directTransaction).not.toHaveBeenCalled();
+		// Decided under the coordinated transaction, before any lock or write.
+		expect(state.directSelectForUpdate).not.toHaveBeenCalled();
+		expect(state.directUpdateCalls).toEqual([]);
+		expect(state.createCorrectionEntry).not.toHaveBeenCalled();
 	});
 });

@@ -33,7 +33,11 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { applyAdminWorkPeriodTimeEdit } from "@/lib/time-tracking/admin-work-period-time-edit";
+import {
+	applyAdminWorkPeriodTimeEdit,
+	replayAdminWorkPeriodTimeEdit,
+} from "@/lib/time-tracking/admin-work-period-time-edit";
+import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
 import {
@@ -309,6 +313,38 @@ async function applyAdminEdit(
 	reason: string,
 ): Promise<ServerActionResult<{ status: "applied" | "pending" }>> {
 	const { period, organizationId, context } = target;
+	const submitted = {
+		clockInDate: input.clockInDate,
+		clockInTime: input.clockInTime,
+		clockOutDate: input.clockOutDate,
+		clockOutTime: input.clockOutTime,
+	};
+	const notes = reason || DEFAULT_DIRECT_EDIT_NOTE;
+	try {
+		// A committed adopted edit replays before fresh checks, which its own
+		// result may have changed.
+		if (
+			await replayAdminWorkPeriodTimeEdit({
+				organizationId,
+				actorUserId: target.userId,
+				submissionId: input.submissionId,
+				workPeriodId: period.id,
+				submitted,
+				notes,
+			})
+		) {
+			return { success: true, data: { status: "applied" } };
+		}
+	} catch (error) {
+		const failure = describeAmendmentFailure(error);
+		if (failure)
+			return { success: false, error: failure.message, code: failure.code };
+		logger.error({ error }, "Failed to replay admin work period time edit");
+		return {
+			success: false,
+			error: "Failed to update time entry. Please try again.",
+		};
+	}
 	if (!period.endTime || !period.clockOutId) {
 		return blockedAccessError({ kind: "blocked", reason: "running" });
 	}
@@ -369,6 +405,8 @@ async function applyAdminEdit(
 			organizationId,
 			actorUserId: target.userId,
 			workPeriodId: period.id,
+			submissionId: input.submissionId,
+			submitted,
 			expected: {
 				employeeId: period.employeeId,
 				clockInId: period.clockInId,
@@ -382,22 +420,24 @@ async function applyAdminEdit(
 			timezoneSource: target.isOwnEntry
 				? "user_setting"
 				: "manager_target_user_setting",
-			notes: reason || DEFAULT_DIRECT_EDIT_NOTE,
+			notes,
 			ipAddress: requestMetadata.ipAddress,
 			deviceInfo: requestMetadata.userAgent,
 		});
 
-		try {
-			await markEmployeeWorkBalanceDirty({
-				employeeId: result.employeeId,
-				organizationId,
-				dirtyFromDate: result.dirtyFromDate ?? undefined,
-			});
-		} catch (error) {
-			logger.error(
-				{ error, workPeriodId: period.id },
-				"Failed to mark work balance dirty after admin time edit",
-			);
+		if (result.balanceRefresh === "caller") {
+			try {
+				await markEmployeeWorkBalanceDirty({
+					employeeId: result.employeeId,
+					organizationId,
+					dirtyFromDate: result.dirtyFromDate ?? undefined,
+				});
+			} catch (error) {
+				logger.error(
+					{ error, workPeriodId: period.id },
+					"Failed to mark work balance dirty after admin time edit",
+				);
+			}
 		}
 
 		logger.info(
@@ -417,6 +457,10 @@ async function applyAdminEdit(
 			error instanceof AuthorizationError
 		) {
 			return { success: false, error: error.message };
+		}
+		const failure = describeAmendmentFailure(error);
+		if (failure) {
+			return { success: false, error: failure.message, code: failure.code };
 		}
 		logger.error({ error }, "Failed to apply admin work period time edit");
 		return {
@@ -458,17 +502,21 @@ export async function updateWorkPeriodTimes(
 		clockOutDate: input.clockOutDate,
 		clockOutTime: input.clockOutTime,
 	};
-	if (!haveWorkPeriodTimesChanged(values, next)) {
+	const reason = input.reason.trim();
+	const route = resolveWorkPeriodTimeEditRoute(access, {
+		datesChanged: haveWorkPeriodDatesChanged(values, next),
+	});
+	// Direct edits decide "no change" under their own locks, after exact replay:
+	// a retried submission that already committed shows its values as current.
+	if (
+		route === "approval_request" &&
+		!haveWorkPeriodTimesChanged(values, next)
+	) {
 		return {
 			success: false,
 			error: "At least one correction value must change",
 		};
 	}
-
-	const reason = input.reason.trim();
-	const route = resolveWorkPeriodTimeEditRoute(access, {
-		datesChanged: haveWorkPeriodDatesChanged(values, next),
-	});
 	if (route === "admin_direct") {
 		return applyAdminEdit(target, input, reason);
 	}
@@ -487,6 +535,7 @@ export async function updateWorkPeriodTimes(
 	if (route === "self_service_direct") {
 		const result = await editSameDayTimeEntry({
 			...correction,
+			submissionId: input.submissionId,
 			reason: reason || undefined,
 		});
 		return result.success
