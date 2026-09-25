@@ -36,6 +36,7 @@ function loadTenants(organizationId: string) {
 			tenantId: teamsTenantConfig.tenantId,
 			setupStatus: teamsTenantConfig.setupStatus,
 			enableApprovals: teamsTenantConfig.enableApprovals,
+			enableEscalations: teamsTenantConfig.enableEscalations,
 		})
 		.from(teamsTenantConfig)
 		.where(eq(teamsTenantConfig.organizationId, organizationId));
@@ -49,6 +50,12 @@ function loadTenants(organizationId: string) {
  */
 export const teamsApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 	provider: "teams",
+
+	/** Intended while any of the organization's tenants delivers escalations. */
+	async acceptsEscalationDelivery(organizationId) {
+		const tenants = await loadTenants(organizationId);
+		return tenants.some((tenant) => tenant.enableEscalations);
+	},
 
 	async sendInitial(input) {
 		if (!isBotConfigured()) {
@@ -78,6 +85,10 @@ export const teamsApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 			return { kind: "suppressed", reason: "integration_disabled" };
 		}
 		if (!tenant.enableApprovals) return { kind: "suppressed", reason: "approvals_disabled" };
+		// The recipient's own tenant decides escalation delivery.
+		if (input.purpose === "replacement" && !tenant.enableEscalations) {
+			return { kind: "suppressed", reason: "escalations_disabled" };
+		}
 		const receiverScope = teamsReceiverScope(env.MICROSOFT_APP_ID, tenant.tenantId);
 		if (!receiverScope) {
 			return { kind: "failed", outcome: "unavailable", reason: "bot_identity_unknown" };

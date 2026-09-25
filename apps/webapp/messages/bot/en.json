@@ -63,6 +63,8 @@
       "status": {
         "withdrawnTitle": "Request withdrawn",
         "withdrawn": "This request was withdrawn. No decision is needed from this card.",
+        "reassignedTitle": "Reassigned",
+        "reassigned": "This approval was reassigned to another approver. No decision is needed from you on this card, and none was made here. Review its current status in Z8.",
         "inactiveTitle": "No longer actionable",
         "inactive": "This request no longer needs your decision from this card. No decision was made here. Review its current status in Z8.",
         "currentApproved": "Current request status: approved.",

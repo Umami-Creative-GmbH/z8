@@ -51,6 +51,8 @@
       "status": {
         "withdrawnTitle": "Antrag zurückgezogen",
         "withdrawn": "Dieser Antrag wurde zurückgezogen. Über diese Karte ist keine Entscheidung mehr nötig.",
+        "reassignedTitle": "Neu zugewiesen",
+        "reassigned": "Diese Genehmigung wurde einer anderen Person zugewiesen. Über diese Karte ist keine Entscheidung mehr von Ihnen nötig, und hier wurde nichts entschieden. Prüfen Sie den aktuellen Stand in Z8.",
         "inactiveTitle": "Nicht mehr entscheidbar",
         "inactive": "Dieser Antrag braucht über diese Karte keine Entscheidung mehr von Ihnen. Hier wurde nichts entschieden. Prüfen Sie den aktuellen Stand in Z8.",
         "currentApproved": "Aktueller Stand des Antrags: genehmigt.",

@@ -1,3 +1,6 @@
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { telegramBotConfig } from "@/db/schema";
 import type {
 	ApprovalDeliveryAdapter,
 	ApprovalDeliveryFailure,
@@ -29,6 +32,15 @@ function failure(
 export const telegramApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 	provider: "telegram",
 
+	async acceptsEscalationDelivery(organizationId) {
+		const [config] = await db
+			.select({ enableEscalations: telegramBotConfig.enableEscalations })
+			.from(telegramBotConfig)
+			.where(eq(telegramBotConfig.organizationId, organizationId))
+			.limit(1);
+		return config?.enableEscalations === true;
+	},
+
 	async sendInitial(input) {
 		const bot = await getBotConfigByOrganization(input.organizationId);
 		if (!bot) return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
@@ -36,6 +48,9 @@ export const telegramApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 			return { kind: "suppressed", reason: "integration_disabled" };
 		}
 		if (!bot.enableApprovals) return { kind: "suppressed", reason: "approvals_disabled" };
+		if (input.purpose === "replacement" && !bot.enableEscalations) {
+			return { kind: "suppressed", reason: "escalations_disabled" };
+		}
 		const receiverScope = telegramReceiverScope(bot.botToken);
 		if (!receiverScope) {
 			return { kind: "failed", outcome: "unavailable", reason: "bot_identity_unknown" };

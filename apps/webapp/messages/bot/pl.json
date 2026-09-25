@@ -51,6 +51,8 @@
       "status": {
         "withdrawnTitle": "Wniosek wycofany",
         "withdrawn": "Ten wniosek został wycofany. Z tej karty nie jest potrzebna żadna decyzja.",
+        "reassignedTitle": "Przekazano dalej",
+        "reassigned": "To zatwierdzenie przekazano innej osobie zatwierdzającej. Z tej karty nie jest potrzebna Twoja decyzja i nie podjęto tu żadnej decyzji. Sprawdź jego aktualny status w Z8.",
         "inactiveTitle": "Nie wymaga już działania",
         "inactive": "Ten wniosek nie wymaga już Twojej decyzji z tej karty. Nie podjęto tu żadnej decyzji. Sprawdź jego aktualny status w Z8.",
         "currentApproved": "Aktualny status wniosku: zatwierdzony.",

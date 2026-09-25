@@ -713,6 +713,7 @@ describeIntegration("Telegram approval delivery owner (PostgreSQL)", () => {
 		await expandApprovalDeliveryIntents({ organizationId: ids.organization, limit: 10 });
 		const [stalled] = await claimApprovalDeliveryWork({
 			organizationId: ids.organization,
+			owner: "delivery",
 			limit: 10,
 			now: T0,
 		});
@@ -720,6 +721,7 @@ describeIntegration("Telegram approval delivery owner (PostgreSQL)", () => {
 		// another worker takes the work over.
 		const [takeover] = await claimApprovalDeliveryWork({
 			organizationId: ids.organization,
+			owner: "delivery",
 			limit: 10,
 			now: minutes(3),
 		});

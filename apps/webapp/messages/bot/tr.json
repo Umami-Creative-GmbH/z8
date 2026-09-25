@@ -51,6 +51,8 @@
       "status": {
         "withdrawnTitle": "Talep geri çekildi",
         "withdrawn": "Bu talep geri çekildi. Bu karttan karar verilmesi gerekmiyor.",
+        "reassignedTitle": "Yeniden atandı",
+        "reassigned": "Bu onay başka bir onaylayana yeniden atandı. Bu karttan kararınız gerekmiyor ve burada karar verilmedi. Güncel durumunu Z8'de inceleyin.",
         "inactiveTitle": "Artık işlem gerektirmiyor",
         "inactive": "Bu talep artık bu karttan kararınızı gerektirmiyor. Burada karar verilmedi. Güncel durumunu Z8'de inceleyin.",
         "currentApproved": "Talebin güncel durumu: onaylandı.",

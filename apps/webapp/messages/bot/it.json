@@ -51,6 +51,8 @@
       "status": {
         "withdrawnTitle": "Richiesta ritirata",
         "withdrawn": "Questa richiesta è stata ritirata. Non serve alcuna decisione da questa scheda.",
+        "reassignedTitle": "Riassegnata",
+        "reassigned": "Questa approvazione è stata riassegnata a un'altra persona. Non serve la tua decisione da questa scheda e qui non è stato deciso nulla. Controlla lo stato attuale in Z8.",
         "inactiveTitle": "Non più da decidere",
         "inactive": "Questa richiesta non richiede più la tua decisione da questa scheda. Qui non è stato deciso nulla. Controlla lo stato attuale in Z8.",
         "currentApproved": "Stato attuale della richiesta: approvata.",

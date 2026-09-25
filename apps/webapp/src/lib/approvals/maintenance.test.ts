@@ -97,10 +97,12 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 			.map((statement) => statement.sql)
 			.filter((text) => text.startsWith("delete from"))
 			.map((text) => text.split(" ")[2]);
+		// Delivery work first: replacement work would otherwise cascade
+		// unreported from the escalation journal.
 		expect(deletes).toEqual([
-			"approval_escalation_transfer",
 			"approval_delivery_work",
 			"approval_delivery_message",
+			"approval_escalation_transfer",
 			"approval_invocation",
 			"approval_decision_evidence",
 			"approval_review_binding",

@@ -51,6 +51,8 @@
       "status": {
         "withdrawnTitle": "Aatrag zruggzoge",
         "withdrawn": "De Aatrag isch zruggzoge worde. Über die Charte bruchts kei Entscheid meh.",
+        "reassignedTitle": "Neu zuegwise",
+        "reassigned": "Die Gnehmigung isch öpper anderem zuegwise worde. Über die Charte bruchts kei Entscheid meh vo dir, und da isch nüt entschide worde. Lueg de aktuell Stand in Z8 aa.",
         "inactiveTitle": "Nüm entscheidbar",
         "inactive": "De Aatrag bruucht über die Charte kei Entscheid meh vo dir. Da isch nüt entschide worde. Lueg de aktuell Stand in Z8 aa.",
         "currentApproved": "Aktuelle Stand vom Aatrag: gnehmigt.",

@@ -141,6 +141,11 @@ export interface ApprovalStatusNoticeInput {
 		DecisionEvidenceRecord,
 		"assignmentOutcome" | "requestOutcome" | "decidedAt" | "labels"
 	> | null;
+	/**
+	 * The recipient's assignment was replaced by another approver's (escalation
+	 * or reassignment, #300). Its outcome is not theirs to learn from the card.
+	 */
+	reassigned?: boolean;
 }
 
 /**
@@ -176,6 +181,17 @@ export async function approvalStatusNotice(
 		return {
 			title,
 			text: current ? `${text}\n\n${current}` : text,
+			reviewLabel,
+			reviewUrl,
+		};
+	}
+	if (display && status.reassigned) {
+		return {
+			title: t("bot.approval.status.reassignedTitle", "Reassigned"),
+			text: t(
+				"bot.approval.status.reassigned",
+				"This approval was reassigned to another approver. No decision is needed from you on this card, and none was made here. Review its current status in Z8.",
+			),
 			reviewLabel,
 			reviewUrl,
 		};

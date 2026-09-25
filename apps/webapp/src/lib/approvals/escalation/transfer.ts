@@ -15,6 +15,7 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
@@ -578,8 +579,11 @@ export async function processDueEscalations(input: {
 			});
 			switch (outcome.kind) {
 				case "transferred":
-					if (outcome.disposition === "executed") summary.transferred += 1;
-					else summary.replayed += 1;
+					if (outcome.disposition === "executed") {
+						summary.transferred += 1;
+						// Committed; the replacement delivery pass also runs on schedule.
+						kickApprovalDelivery({ organizationId, workflowId: candidate.workflowId });
+					} else summary.replayed += 1;
 					break;
 				case "held":
 					summary.held[outcome.reason] = (summary.held[outcome.reason] ?? 0) + 1;
@@ -1026,7 +1030,7 @@ export async function escalateAssignmentByManager(input: {
 		actorEmployeeId: actor.employeeId,
 	});
 	try {
-		return await runtime.repository.withTransaction(
+		const result = await runtime.repository.withTransaction(
 			async (context): Promise<HumanEscalationOutcome> => {
 				const tx = context.dbService.db as unknown as DatabaseTransaction;
 				const committed = await findEscalationTransferByOperationKey(tx, {
@@ -1081,6 +1085,14 @@ export async function escalateAssignmentByManager(input: {
 				};
 			},
 		);
+		// Committed; the replacement delivery pass also runs on schedule.
+		if (result.kind === "transferred" && result.disposition === "executed") {
+			kickApprovalDelivery({
+				organizationId: actor.organizationId,
+				workflowId: result.transfer.workflowId,
+			});
+		}
+		return result;
 	} catch (error) {
 		if (isTransitionRace(error)) return { kind: "conflict" };
 		if (error instanceof ApprovalTransitionEngineError && error.code === "forbidden") {

@@ -51,6 +51,8 @@
       "status": {
         "withdrawnTitle": "Solicitud retirada",
         "withdrawn": "Esta solicitud se retiró. No se necesita ninguna decisión desde esta tarjeta.",
+        "reassignedTitle": "Reasignada",
+        "reassigned": "Esta aprobación se reasignó a otra persona. Ya no necesitas decidir desde esta tarjeta y aquí no se tomó ninguna decisión. Revisa su estado actual en Z8.",
         "inactiveTitle": "Ya no requiere acción",
         "inactive": "Esta solicitud ya no necesita tu decisión desde esta tarjeta. Aquí no se tomó ninguna decisión. Revisa su estado actual en Z8.",
         "currentApproved": "Estado actual de la solicitud: aprobada.",

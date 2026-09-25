@@ -1,3 +1,6 @@
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { discordBotConfig } from "@/db/schema";
 import type {
 	ApprovalDeliveryAdapter,
 	ApprovalDeliveryFailure,
@@ -33,6 +36,15 @@ function failure(
 export const discordApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 	provider: "discord",
 
+	async acceptsEscalationDelivery(organizationId) {
+		const [config] = await db
+			.select({ enableEscalations: discordBotConfig.enableEscalations })
+			.from(discordBotConfig)
+			.where(eq(discordBotConfig.organizationId, organizationId))
+			.limit(1);
+		return config?.enableEscalations === true;
+	},
+
 	async sendInitial(input) {
 		const bot = await getBotConfigByOrganization(input.organizationId);
 		if (!bot) return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
@@ -40,6 +52,9 @@ export const discordApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 			return { kind: "suppressed", reason: "integration_disabled" };
 		}
 		if (!bot.enableApprovals) return { kind: "suppressed", reason: "approvals_disabled" };
+		if (input.purpose === "replacement" && !bot.enableEscalations) {
+			return { kind: "suppressed", reason: "escalations_disabled" };
+		}
 		const receiverScope = discordReceiverScope(bot.applicationId);
 		if (!receiverScope) {
 			return { kind: "failed", outcome: "unavailable", reason: "bot_identity_unknown" };

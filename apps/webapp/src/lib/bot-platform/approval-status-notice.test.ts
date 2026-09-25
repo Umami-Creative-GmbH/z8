@@ -76,6 +76,30 @@ describe("approvalStatusNotice", () => {
 		expect(notice.text).not.toContain("approved");
 	});
 
+	it("tells a former assignee that the approval was reassigned, without its outcome", async () => {
+		const notice = await approvalStatusNotice(
+			{ workflowStatus: "approved", evidence: null, reassigned: true },
+			display,
+			"org",
+			reference,
+		);
+		expect(notice.title).toBe("Reassigned");
+		expect(notice.text).toBe(
+			"This approval was reassigned to another approver. No decision is needed from you on this card, and none was made here. Review its current status in Z8.",
+		);
+		expect(notice.reviewUrl).toBe("https://org.z8.test/approvals/review/org/compatibility/r");
+	});
+
+	it("keeps a reassigned card generic for a recipient who is no longer entitled", async () => {
+		const notice = await approvalStatusNotice(
+			{ workflowStatus: "pending", evidence: null, reassigned: true },
+			null,
+			"org",
+			reference,
+		);
+		expect(notice.title).toBe("No longer actionable");
+	});
+
 	it("discloses no outcome to a recipient who is no longer entitled", async () => {
 		const notice = await approvalStatusNotice(
 			{ workflowStatus: "approved", evidence: evidence("approved", "approved") },

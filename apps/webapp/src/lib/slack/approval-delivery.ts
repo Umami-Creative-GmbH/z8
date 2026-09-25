@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { slackUserMapping } from "@/db/schema";
+import { slackUserMapping, slackWorkspaceConfig } from "@/db/schema";
 import type {
 	ApprovalDeliveryAdapter,
 	ApprovalDeliveryFailure,
@@ -82,6 +82,15 @@ async function resolveDirectMessage(
 export const slackApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 	provider: "slack",
 
+	async acceptsEscalationDelivery(organizationId) {
+		const [config] = await db
+			.select({ enableEscalations: slackWorkspaceConfig.enableEscalations })
+			.from(slackWorkspaceConfig)
+			.where(eq(slackWorkspaceConfig.organizationId, organizationId))
+			.limit(1);
+		return config?.enableEscalations === true;
+	},
+
 	async sendInitial(input) {
 		const bot = await getBotConfigByOrganization(input.organizationId);
 		if (!bot) return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
@@ -89,6 +98,9 @@ export const slackApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 			return { kind: "suppressed", reason: "integration_disabled" };
 		}
 		if (!bot.enableApprovals) return { kind: "suppressed", reason: "approvals_disabled" };
+		if (input.purpose === "replacement" && !bot.enableEscalations) {
+			return { kind: "suppressed", reason: "escalations_disabled" };
+		}
 		// Entitlement first: no DM is opened for a recipient who may not see
 		// the request.
 		const card = await prepareApprovalPresentation({
