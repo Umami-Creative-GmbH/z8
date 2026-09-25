@@ -118,6 +118,32 @@ Open findings from this run:
   while records are pending, and real network loss (only `navigator.onLine` was
   simulated).
 
+## Closure evidence (2026-09-25)
+
+#267 closes on implementation. The scenarios the authenticated run left open were
+run where they do not need the shared dev database or a second signed-in account.
+The shared dev database lacks the #340+ migrations and was not migrated.
+
+| Scenario | Evidence |
+| --- | --- |
+| Non-manager scope | `offline-context/route.integration.test.ts` on the disposable PostgreSQL 16 runner. The real route, membership and employee lookups, SSO admission, principal loader and CASL run against the database; only the session is replaced. Owner: `canReviewLegacy: true`. A manager with a direct report and a plain employee: `false`. |
+| Revocation | The same suite. After a successful read, a membership set to `pending`, then deleted, returns 403 on the next read. So do a deactivated employee, an active organization the user does not belong to, and a deleted organization. Granted and then withdrawn admin rights flip `canReviewLegacy` on the next read. Every response is `no-store`. A mutation that let a self-scoped grant match unattributed records failed two tests. |
+| Real network loss | `offline-queue.browser.test.ts` in real Chromium. `Network.emulateNetworkConditions` takes both the page and the worker target offline (`navigator.onLine` is `false`, and the test server receives no request). The intercepted clock-in is stored as `review_required` with unknown commitment. |
+| Worker restart with a pending record | The same test reconnects, stops all workers, reloads and restarts the worker, then triggers sync. No request is sent, and the record is unchanged. |
+| Export download | Not run in a browser. Export reauthorization and its dialog/unmount/context fencing are covered by caller tests only. It is part of the #329 pilot click-through. |
+
+The offline queue suite passed 7/7, then both browser suites together passed 12/12 on
+two further runs (Chrome, Windows). The PostgreSQL suite passed 7/7.
+
+The remaining obligations below are activation work, not #267 implementation. Each now
+lives in its owning ticket:
+
+- 2 (deployed old-consumer control): #266 (C266-B) and #327.
+- 3 (pilot and release authorization): #329, with rollback in #331.
+- 4 (later clock adoption): #275 and #279.
+- 5 (hosted Tolgee sync): a release prerequisite recorded on #329. It needs the
+  `TOLGEE_*` credentials.
+
 ## Unresolved completion/activation evidence
 
 These remain obligations; this implementation commit does not satisfy them:
