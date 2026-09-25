@@ -913,6 +913,79 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "work_period",
 		},
 	],
+	// Ordinary automatic break adjustment (#305) divides one completed period inside the
+	// outer completed-work transaction, guarded against the locked source and its graph.
+	"src/lib/time-tracking/automatic-break-adjustment.ts": [
+		{
+			columns: [
+				"approval_state",
+				"duration_minutes",
+				"employee_id",
+				"end_at",
+				"organization_id",
+				"start_at",
+			],
+			functionName: "adjustAutomaticBreakInTransaction",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+		},
+		{
+			columns: ["duration_minutes", "end_at"],
+			functionName: "adjustAutomaticBreakInTransaction",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+		{
+			columns: [
+				"allocation_kind",
+				"cost_center_id",
+				"organization_id",
+				"project_id",
+				"record_id",
+				"weight_percent",
+			],
+			functionName: "adjustAutomaticBreakInTransaction",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_allocation",
+		},
+		{
+			columns: [
+				"computation_metadata",
+				"organization_id",
+				"record_id",
+				"record_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "adjustAutomaticBreakInTransaction",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_work",
+		},
+		{
+			columns: [
+				"approval_status",
+				"canonical_record_id",
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"start_time",
+			],
+			functionName: "adjustAutomaticBreakInTransaction",
+			operation: "insert",
+			table: "work_period",
+		},
+		{
+			columns: ["clock_out_id", "duration_minutes", "end_time"],
+			functionName: "adjustAutomaticBreakInTransaction",
+			operation: "update",
+			table: "work_period",
+		},
+	],
 } as const satisfies CanonicalApprovalSourceWriteOwners;
 
 export const SOURCE_WRITE_EXCEPTIONS = {
@@ -1095,17 +1168,19 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			table: "work_period",
 		},
 	],
-	"src/lib/effect/services/break-enforcement.service.ts": [
+	// #305: both adjustment paths append their break entries through a local helper, and a
+	// legacy organization keeps the established period writes inside the coordinated owner.
+	"src/lib/time-tracking/automatic-break-adjustment.ts": [
 		{
 			columns: ["type"],
-			functionName: "createBreakTimeEntry",
+			functionName: "insertEntry",
 			operation: "insert",
 			table: "time_entry",
 			uncertainty: "dynamic_payload",
 		},
 		{
 			columns: ["clock_out_id", "duration_minutes", "end_time"],
-			functionName: "enforceBreaksAfterClockOutInternal",
+			functionName: "applyLegacyAutomaticBreakInTransaction",
 			operation: "update",
 			table: "work_period",
 		},
@@ -1117,7 +1192,7 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 				"end_time",
 				"start_time",
 			],
-			functionName: "enforceBreaksAfterClockOutInternal",
+			functionName: "applyLegacyAutomaticBreakInTransaction",
 			operation: "insert",
 			table: "work_period",
 		},

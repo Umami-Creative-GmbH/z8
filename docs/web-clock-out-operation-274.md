@@ -122,7 +122,8 @@ status. It writes nothing and repeats no effects.
 | --- | --- |
 | Work-balance refresh | Committed intent in the closure transaction; recovered by the existing balance refresh owner |
 | Approval notification (pending/approved) | Existing approval owner: legacy post-commit dispatch or the canonical outbox |
-| Break enforcement, surcharge calculation, compliance check | Post-commit best effort, unchanged. Durable recovery belongs to #305 and the remaining #327 follow-up adoption |
+| Break enforcement | Since #305, a committed intent in the closure transaction, recovered by the automatic break adjustment owner ([automatic-break-adjustment-305.md](automatic-break-adjustment-305.md)) |
+| Surcharge calculation, compliance check | Post-commit best effort, unchanged. Durable recovery belongs to the remaining #327 follow-up adoption |
 | Project budget warning, cache revalidation | Best effort; losing them loses no business work |
 
 The receipt lists which follow-ups were required and how each is delivered.
@@ -271,8 +272,8 @@ in #327 (all-writer adoption), #329 (pilot) and #331 (rollback).
   only advanced by this operation.
 - Terminal break-split results: the receipt records the approval outcome and the
   committed approval state, but not split segments. That belongs to #303.
-- Durable break-adjustment and surcharge follow-ups (#305 and #327). They are still
-  post-commit best effort.
+- Durable surcharge follow-ups (#327) are still post-commit best effort. The break
+  adjustment became a committed intent in #305.
 - Web command identity is still generated per click. Durable pre-send capture
   belongs to #279. Mobile uses the same action and command, including its client
   instant (#278).

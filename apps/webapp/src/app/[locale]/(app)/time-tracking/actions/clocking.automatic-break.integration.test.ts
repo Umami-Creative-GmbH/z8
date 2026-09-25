@@ -165,6 +165,7 @@ const { cancelMyTimeCorrectionRequest } = await import("../../my-requests/action
 const { runBreakEnforcementCheck } = await import(
 	"@/lib/effect/services/break-enforcement.service"
 );
+const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
 const { deriveAutomaticBreakIntentId, deriveAutomaticBreakOperationId } = await import(
 	"@/lib/time-tracking/automatic-break-adjustment"
 );
@@ -1018,6 +1019,18 @@ describeIntegration("automatic break adjustment on PostgreSQL", () => {
 		await expect(recover(laterRunDate)).resolves.toMatchObject({ adjustedCount: 0, errors: [] });
 		expect(await intents()).toEqual([]);
 		expect(await receipts()).toEqual([]);
+	});
+
+	it("removes deferred intents with the organization's time data", async () => {
+		const { id: periodId } = await workWithLostAdjustment();
+		await requestEdit(periodId, { clockIn: "08:00", clockOut: "16:00" });
+		await expect(recover(laterRunDate)).resolves.toMatchObject({ deferredCount: 1 });
+		expect(await intents()).toHaveLength(1);
+
+		await clearOrganizationTimeData(ids.organization);
+
+		expect(await intents()).toEqual([]);
+		expect(await periods()).toEqual([]);
 	});
 
 	it("commits no ordinary intent for an approval-routed closure", async () => {
