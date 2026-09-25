@@ -1021,6 +1021,50 @@ describeIntegration("automatic break adjustment on PostgreSQL", () => {
 		expect(await receipts()).toEqual([]);
 	});
 
+	it("defers while other recorded work overlaps and applies once the overlap is gone", async () => {
+		const { id: periodId } = await workWithLostAdjustment();
+		// Canonical work without a period link occupies its own interval.
+		const occupant = randomUUID();
+		await admin.query(
+			`insert into time_record
+			 (id, organization_id, employee_id, record_kind, start_at, end_at, duration_minutes,
+			  approval_state, origin, created_by, updated_at)
+			 values ($1, $2, $3, 'work', '2026-07-22T10:00:00Z', '2026-07-22T11:00:00Z', 60,
+			         'approved', 'manual', $4, now())`,
+			[occupant, ids.organization, ids.requester, ids.requesterUser],
+		);
+		const before = await snapshot();
+
+		await expect(recover(laterRunDate)).resolves.toMatchObject({ deferredCount: 1, errors: [] });
+		expect(only(await intents())).toMatchObject({
+			status: "deferred",
+			blocker: "work_occupancy_conflict",
+		});
+		const after = (await snapshot()) as Record<string, unknown>;
+		expect({ ...after, intents: null }).toEqual({ ...before, intents: null });
+
+		await admin.query("delete from time_record where id = $1", [occupant]);
+		await expect(recover(laterRunDate)).resolves.toMatchObject({ adjustedCount: 1, errors: [] });
+		await expectStandardAdjustment(periodId);
+	});
+
+	it("applies the regulation as it stands when the deferral clears, not as first planned", async () => {
+		const { id: periodId } = await workWithLostAdjustment();
+		await requestEdit(periodId, { clockIn: "08:00", clockOut: "16:00" });
+		await expect(recover(laterRunDate)).resolves.toMatchObject({ deferredCount: 1 });
+		// The policy stops requiring the break while the adjustment waits.
+		await admin.query("delete from work_policy_break_rule where id = $1", [ids.breakRule]);
+		actAs(ids.requesterUser);
+		await cancelMyTimeCorrectionRequest(periodId);
+		const before = await snapshot();
+
+		await expect(recover(laterRunDate)).resolves.toMatchObject({ adjustedCount: 0, errors: [] });
+		expect(await intents()).toEqual([]);
+		expect(await receipts()).toEqual([]);
+		const after = (await snapshot()) as Record<string, unknown>;
+		expect({ ...after, intents: null }).toEqual({ ...before, intents: null });
+	});
+
 	it("removes deferred intents with the organization's time data", async () => {
 		const { id: periodId } = await workWithLostAdjustment();
 		await requestEdit(periodId, { clockIn: "08:00", clockOut: "16:00" });

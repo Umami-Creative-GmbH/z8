@@ -1,10 +1,12 @@
 /**
- * Stable identities of an automatic break adjustment (#305) and the intent an
- * adopted ordinary closure commits with its work. Kept apart from the operation so
- * the closure can commit the intent without depending on the adjustment itself.
+ * Stable identities of an automatic break adjustment (#305), the intent an adopted
+ * ordinary closure commits with its work, and how a closure replay recognizes the
+ * segment an adjustment moved its clock-out to. Kept apart from the operation so the
+ * closure owner does not depend on the adjustment itself.
  */
 import { createHash } from "node:crypto";
-import { workBreakAdjustmentIntent } from "@/db/schema";
+import { and, eq, isNull } from "drizzle-orm";
+import { completedWorkOperation, workBreakAdjustmentIntent, workPeriod } from "@/db/schema";
 import type { WorkTransactionClient } from "./work-transaction";
 
 const INTENT_NAMESPACE = "z8:automatic-break-adjustment-intent:v1";
@@ -57,4 +59,56 @@ export async function commitAutomaticBreakIntent(
 		requestedAt: new Date(),
 	});
 	return id;
+}
+
+/** Whether the period's automatic break adjustment generated the segment ending in this entry. */
+export async function isClosureCarriedByAutomaticBreak(
+	tx: Pick<WorkTransactionClient, "select">,
+	scope: { organizationId: string; employeeId: string },
+	workPeriodId: string,
+	clockOutEntryId: string,
+): Promise<boolean> {
+	const [adjustment] = await tx
+		.select({ result: completedWorkOperation.result })
+		.from(completedWorkOperation)
+		.where(
+			and(
+				eq(
+					completedWorkOperation.id,
+					deriveAutomaticBreakOperationId({ organizationId: scope.organizationId, workPeriodId }),
+				),
+				eq(completedWorkOperation.organizationId, scope.organizationId),
+				eq(completedWorkOperation.employeeId, scope.employeeId),
+				eq(completedWorkOperation.kind, "automatic_break_adjustment"),
+				eq(completedWorkOperation.workPeriodId, workPeriodId),
+			),
+		)
+		.limit(1);
+	// The committed segments by value (`AutomaticBreakAdjustmentResult`).
+	const segments = (adjustment?.result as { segments?: unknown } | undefined)?.segments;
+	const generated = Array.isArray(segments)
+		? (
+				segments as Array<{ role?: unknown; workPeriodId?: unknown; clockOutEntryId?: unknown }>
+			).find((segment) => segment.role === "generated")
+		: undefined;
+	if (
+		typeof generated?.workPeriodId !== "string" ||
+		generated.clockOutEntryId !== clockOutEntryId
+	) {
+		return false;
+	}
+	const [carrier] = await tx
+		.select({ id: workPeriod.id })
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.id, generated.workPeriodId),
+				eq(workPeriod.organizationId, scope.organizationId),
+				eq(workPeriod.employeeId, scope.employeeId),
+				eq(workPeriod.clockOutId, clockOutEntryId),
+				isNull(workPeriod.deletedAt),
+			),
+		)
+		.limit(1);
+	return carrier !== undefined;
 }

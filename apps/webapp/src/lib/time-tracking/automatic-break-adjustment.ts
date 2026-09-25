@@ -29,13 +29,11 @@ import { and, asc, desc, eq, exists, gte, inArray, isNull, lte, ne, sql } from "
 import { db } from "@/db";
 import {
 	completedWorkOperation,
-	employee,
 	timeEntry,
 	timeRecord,
 	timeRecordAllocation,
 	timeRecordApprovalDecision,
 	timeRecordWork,
-	userSettings,
 	type WorkBreakAdjustmentBlocker,
 	type WorkPeriodAutoAdjustmentReason,
 	workBreakAdjustmentIntent,
@@ -56,11 +54,7 @@ import {
 	deriveAutomaticBreakIntentId,
 	deriveAutomaticBreakOperationId,
 } from "./automatic-break-intent";
-import {
-	type AutomaticBreakPlan,
-	breakMinutesTakenBefore,
-	planAutomaticBreak,
-} from "./automatic-break-plan";
+import { breakMinutesTakenBefore, planAutomaticBreak } from "./automatic-break-plan";
 import { calculateHash } from "./blockchain";
 import type { BreakPolicyRegulation } from "./break-policy-calculation";
 import {
@@ -234,8 +228,11 @@ export type AutomaticBreakAdjustmentResult = {
 	followUps: CompletedWorkFollowUp[];
 };
 
-function zoneFor(value: string | null | undefined, fallbackOffsetMinutes: number): string {
-	return isValidIanaTimezone(value) ? value : offsetMinutesToTimeZoneId(fallbackOffsetMinutes);
+/** The zone an entry was captured in, or its captured offset as a fixed zone. */
+function capturedZone(entry: { timezone: string | null; utcOffsetMinutes: number }): string {
+	return isValidIanaTimezone(entry.timezone)
+		? entry.timezone
+		: offsetMinutesToTimeZoneId(entry.utcOffsetMinutes);
 }
 
 function regulationFrom(
@@ -298,7 +295,9 @@ export async function adjustAutomaticBreakInTransaction(
 		? { userId: intent.triggeredByUserId, closureEntryId: intent.closureEntryId }
 		: input.trigger;
 
-	const complete = async <T extends AutomaticBreakAdjustmentOutcome>(outcome: T): Promise<T> => {
+	const resolveIntent = async <T extends AutomaticBreakAdjustmentOutcome>(
+		outcome: T,
+	): Promise<T> => {
 		if (intent) {
 			await tx.delete(workBreakAdjustmentIntent).where(eq(workBreakAdjustmentIntent.id, intent.id));
 		}
@@ -316,23 +315,28 @@ export async function adjustAutomaticBreakInTransaction(
 			),
 		)
 		.for("update");
-	if (!period) return complete({ kind: "obsolete", reason: "missing" });
-	if (period.deletedAt) return complete({ kind: "obsolete", reason: "deleted" });
+	if (!period) return resolveIntent({ kind: "obsolete", reason: "missing" });
+	if (period.deletedAt) return resolveIntent({ kind: "obsolete", reason: "deleted" });
 	if (period.isActive || !period.endTime || !period.clockOutId) {
-		return complete({ kind: "obsolete", reason: "active" });
+		return resolveIntent({ kind: "obsolete", reason: "active" });
 	}
 	const operationId = deriveAutomaticBreakOperationId(input);
 	const [receipt] = await tx
 		.select({ id: completedWorkOperation.id })
 		.from(completedWorkOperation)
-		.where(eq(completedWorkOperation.id, operationId))
+		.where(
+			and(
+				eq(completedWorkOperation.id, operationId),
+				eq(completedWorkOperation.organizationId, organizationId),
+			),
+		)
 		.limit(1);
 	// A committed adjustment is final: replaying anything never regenerates it.
 	if (period.wasAutoAdjusted || receipt) {
-		return complete({ kind: "obsolete", reason: "already_adjusted" });
+		return resolveIntent({ kind: "obsolete", reason: "already_adjusted" });
 	}
 	if (period.approvalStatus === "rejected")
-		return complete({ kind: "obsolete", reason: "rejected" });
+		return resolveIntent({ kind: "obsolete", reason: "rejected" });
 
 	const defer = async (
 		blocker: WorkBreakAdjustmentBlocker,
@@ -476,21 +480,16 @@ export async function adjustAutomaticBreakInTransaction(
 	});
 	const regulation = regulationFrom(breakPolicy);
 	if (!regulation || breakPolicy.resolution === "none") {
-		return complete({ kind: "not_required" });
+		return resolveIntent({ kind: "not_required" });
 	}
 
-	// Breaks already taken on the work's local start day, in the zone the work was
-	// captured in; the plan depends on the work's facts, not on today's date.
-	const [owner] = await tx
-		.select({ timezone: userSettings.timezone })
-		.from(employee)
-		.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
-		.where(and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)))
-		.limit(1);
-	const timezone = isValidIanaTimezone(sourceClockOut.timezone)
-		? sourceClockOut.timezone
-		: zoneFor(owner?.timezone, sourceClockOut.utcOffsetMinutes ?? 0);
-	const dayStart = sourceStart.toZonedDateTimeISO(timezone).startOfDay().toInstant();
+	// Breaks already taken on the work's local start day, in the zone captured with the
+	// work's start (its offset when no zone was captured), never a viewer's or today's
+	// setting: the plan depends on the work's facts, not on the date it is evaluated.
+	const startZone = capturedZone(sourceClockIn);
+	// The break entries are captured like the closure they divide.
+	const timezone = capturedZone(sourceClockOut);
+	const dayStart = sourceStart.toZonedDateTimeISO(startZone).startOfDay().toInstant();
 	const dayWork = await tx
 		.select({ id: workPeriod.id, startTime: workPeriod.startTime, endTime: workPeriod.endTime })
 		.from(workPeriod)
@@ -520,7 +519,7 @@ export async function adjustAutomaticBreakInTransaction(
 		alreadyTakenBreakMinutes: breakMinutesTakenBefore(intervals, sourceEnd),
 		regulation,
 	});
-	if (!plan) return complete({ kind: "not_required" });
+	if (!plan) return resolveIntent({ kind: "not_required" });
 
 	// Symmetric occupancy: both resulting segments lie inside the source interval.
 	try {
@@ -740,7 +739,7 @@ export async function adjustAutomaticBreakInTransaction(
 	if (!generated) throw new Error("Generated work period insert failed");
 
 	// Independent rounding can change the total: the refresh commits with the work.
-	const dirtyFromDate = earliestStartDate(sourceStart, sourceClockIn.utcOffsetMinutes ?? 0);
+	const dirtyFromDate = earliestStartDate(sourceStart, sourceClockIn.utcOffsetMinutes);
 	await markEmployeeWorkBalanceDirty({ employeeId, organizationId, dirtyFromDate }, tx);
 	const followUps: CompletedWorkFollowUp[] = [
 		{ kind: "work_balance_refresh", delivery: "committed_intent", dirtyFromDate },
@@ -900,7 +899,7 @@ export async function adjustAutomaticBreakInTransaction(
 		resultVersion: AUTOMATIC_BREAK_ADJUSTMENT_RESULT_VERSION,
 		result,
 	});
-	return complete({
+	return resolveIntent({
 		kind: "adjusted",
 		operationId,
 		workPeriodId: period.id,
@@ -1265,4 +1264,3 @@ export {
 	deriveAutomaticBreakIntentId,
 	deriveAutomaticBreakOperationId,
 } from "./automatic-break-intent";
-export type { AutomaticBreakPlan };

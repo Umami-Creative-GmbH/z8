@@ -15,7 +15,7 @@ import "server-only";
  * Exact replay of a committed receipt writes nothing. Receipt-less committed
  * clock-outs keep the legacy matcher in the action; this module never repairs them.
  */
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import {
 	type CompletedWorkWriter,
@@ -43,7 +43,10 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { assertEmployeeMayClock } from "@/lib/employee-lifecycle/clocking-gate";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-import { commitAutomaticBreakIntent, deriveAutomaticBreakOperationId } from "./automatic-break-intent";
+import {
+	commitAutomaticBreakIntent,
+	isClosureCarriedByAutomaticBreak,
+} from "./automatic-break-intent";
 import { canonicalJson } from "./canonical-json";
 import {
 	appendClockEntry,
@@ -318,55 +321,7 @@ export async function findStandingClosure(
 		.limit(1);
 	if (!entry || entry.isSuperseded || !period || period.deletedAt !== null) return null;
 	if (period.clockOutId === entry.id) return entry;
-	return (await isCarriedByAutomaticBreak(tx, scope, result.workPeriodId, entry.id)) ? entry : null;
-}
-
-/** Whether the period's automatic break adjustment generated the segment ending in this entry. */
-async function isCarriedByAutomaticBreak(
-	tx: WorkTransactionScope["db"],
-	scope: { organizationId: string; employeeId: string },
-	workPeriodId: string,
-	clockOutEntryId: string,
-): Promise<boolean> {
-	const [adjustment] = await tx
-		.select({ result: completedWorkOperation.result })
-		.from(completedWorkOperation)
-		.where(
-			and(
-				eq(
-					completedWorkOperation.id,
-					deriveAutomaticBreakOperationId({ organizationId: scope.organizationId, workPeriodId }),
-				),
-				eq(completedWorkOperation.organizationId, scope.organizationId),
-				eq(completedWorkOperation.employeeId, scope.employeeId),
-				eq(completedWorkOperation.kind, "automatic_break_adjustment"),
-				eq(completedWorkOperation.workPeriodId, workPeriodId),
-			),
-		)
-		.limit(1);
-	const segments = (adjustment?.result as { segments?: unknown } | undefined)?.segments;
-	const generated = Array.isArray(segments)
-		? (segments as Array<{ role?: unknown; workPeriodId?: unknown; clockOutEntryId?: unknown }>).find(
-				(segment) => segment.role === "generated",
-			)
-		: undefined;
-	if (typeof generated?.workPeriodId !== "string" || generated.clockOutEntryId !== clockOutEntryId) {
-		return false;
-	}
-	const [carrier] = await tx
-		.select({ id: workPeriod.id })
-		.from(workPeriod)
-		.where(
-			and(
-				eq(workPeriod.id, generated.workPeriodId),
-				eq(workPeriod.organizationId, scope.organizationId),
-				eq(workPeriod.employeeId, scope.employeeId),
-				eq(workPeriod.clockOutId, clockOutEntryId),
-				isNull(workPeriod.deletedAt),
-			),
-		)
-		.limit(1);
-	return carrier !== undefined;
+	return (await isClosureCarriedByAutomaticBreak(tx, scope, result.workPeriodId, entry.id)) ? entry : null;
 }
 
 export type CloseActiveWorkInput = {
