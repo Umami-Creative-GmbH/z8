@@ -69,7 +69,15 @@ export type StartLiveWorkResult = {
 		timezone: string;
 		timezoneSource: TimeEntryTimezoneSource;
 	};
-	attribution: { workLocationType: WorkLocationType };
+	/**
+	 * Project and category are recorded only when the start carries them over from
+	 * work it resumes (#304); a plain start has none.
+	 */
+	attribution: {
+		workLocationType: WorkLocationType;
+		projectId?: string | null;
+		workCategoryId?: string | null;
+	};
 	revisions: { workPeriod: { result: number } };
 	append: {
 		admission: WorkTransactionAdmission;
@@ -179,6 +187,8 @@ export type StartLiveWorkInput = {
 	actorUserId: string;
 	command: StartLiveWorkOperationCommand;
 	writer: StartLiveWorkWriter;
+	/** Attribution a resumed start carries over from the work it continues. */
+	carriedAttribution?: { projectId: string | null; workCategoryId: string | null };
 	eventInstant: Instant;
 	capture: {
 		utcOffsetMinutes: number;
@@ -275,6 +285,8 @@ export async function startLiveWorkGraph(
 			startTime: startAt,
 			isActive: true,
 			workLocationType: command.workLocationType,
+			projectId: input.carriedAttribution?.projectId ?? null,
+			workCategoryId: input.carriedAttribution?.workCategoryId ?? null,
 		})
 		.returning({ id: workPeriod.id, graphRevision: workPeriod.graphRevision });
 	if (!period) throw new ClockingConflictError("Failed to create work period");
@@ -290,7 +302,10 @@ export async function startLiveWorkGraph(
 			at: instantToCanonicalString(input.eventInstant),
 			...input.capture,
 		},
-		attribution: { workLocationType: command.workLocationType },
+		attribution: {
+			workLocationType: command.workLocationType,
+			...(input.carriedAttribution ?? {}),
+		},
 		revisions: { workPeriod: { result: period.graphRevision } },
 		append: {
 			admission: appended.admission,

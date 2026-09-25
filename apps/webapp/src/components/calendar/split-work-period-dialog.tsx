@@ -58,6 +58,9 @@ export function SplitWorkPeriodDialog({
 	const [afterNotes, setAfterNotes] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 	const [disambiguation, setDisambiguation] = useState<"earlier" | "later" | undefined>();
+	// One identity per split: a retry after a lost or refused response reuses it, so
+	// the server replays a committed split instead of splitting twice.
+	const [submissionId, setSubmissionId] = useState(() => crypto.randomUUID());
 	const splitDates = event.endDate
 		? getWorkPeriodSplitDates({
 				startTime: event.date,
@@ -119,12 +122,14 @@ export function SplitWorkPeriodDialog({
 			beforeNotes.trim() || undefined,
 			afterNotes.trim() || undefined,
 			disambiguation,
+			submissionId,
 		).catch(() => null);
 
 		if (!result) {
 			toast.error(t("calendar.split.failed", "Failed to split work period"));
 		} else if (result.success) {
 			toast.success(t("calendar.split.success", "Work period split successfully"));
+			setSubmissionId(crypto.randomUUID());
 			onSplitComplete?.();
 			onOpenChange(false);
 		} else {
@@ -139,6 +144,7 @@ export function SplitWorkPeriodDialog({
 		setSplitDate(splitDates[0] ?? "");
 		setBeforeNotes(metadata.notes || "");
 		setAfterNotes("");
+		setSubmissionId(crypto.randomUUID());
 		onOpenChange(false);
 	};
 

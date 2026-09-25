@@ -10,6 +10,10 @@ const clockingSource = readFileSync(
 	fileURLToPath(new URL("./actions/clocking.ts", import.meta.url)),
 	"utf8",
 );
+const splitSource = readFileSync(
+	fileURLToPath(new URL("./actions/work-period-split.ts", import.meta.url)),
+	"utf8",
+);
 const correctionSubmissionSource = readFileSync(
 	fileURLToPath(
 		new URL(
@@ -149,7 +153,7 @@ describe("legacy time-tracking action billing guards", () => {
 	it("guards break insertion before delegating to the clocking mutation", () => {
 		expectBillingGuardBeforeWrite(
 			"addBreakToActiveSession",
-			"addBreakToActiveSessionAction(breakMinutes)",
+			"addBreakToActiveSessionAction(breakMinutes, actionContext)",
 		);
 	});
 
@@ -163,11 +167,19 @@ describe("legacy time-tracking action billing guards", () => {
 	it.each([
 		["requestTimeCorrection", "requestTimeCorrectionEffect(data)"],
 		["updateWorkPeriodNotes", ".update(timeEntry)"],
-		["splitWorkPeriod", "createTimeEntry({"],
 		["updateTimeEntryNotes", ".update(timeEntry)"],
 		["updateWorkPeriodProject", "changeWorkPeriodProject({"],
 	])("guards %s before writing time data", (name, writeMarker) => {
 		expectBillingGuardBeforeWrite(name, writeMarker);
+	});
+
+	it("guards the shared calendar split before its coordinated transaction", () => {
+		expectBillingGuardBeforeWrite(
+			"splitOwnWorkPeriod",
+			"withCompletedWorkTransaction(",
+			splitSource,
+		);
+		expect(functionBody("splitWorkPeriod")).toContain("return splitOwnWorkPeriod({");
 	});
 
 	it("guards the canonical same-day edit before writing time data", () => {

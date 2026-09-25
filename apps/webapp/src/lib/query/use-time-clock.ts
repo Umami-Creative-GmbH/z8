@@ -297,7 +297,13 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 
 	// Add break mutation (online only - break changes must be confirmed immediately)
 	const addBreakMutation = useMutation({
-		mutationFn: async ({ breakMinutes }: { breakMinutes: number }) => {
+		mutationFn: async ({
+			breakMinutes,
+			submissionId,
+		}: {
+			breakMinutes: number;
+			submissionId: string;
+		}) => {
 			if (isOffline) {
 				return {
 					success: false as const,
@@ -305,7 +311,10 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				};
 			}
 
-			return addBreakToActiveSession(breakMinutes);
+			return addBreakToActiveSession(breakMinutes, {
+				submissionId,
+				browserTimezone: getBrowserTimezone(),
+			});
 		},
 		onSuccess: (result) => {
 			if (result.success) {
@@ -367,7 +376,9 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				...(params ?? {}),
 				...(!isOffline ? { submissionId: crypto.randomUUID() } : {}),
 			}),
-		addBreak: addBreakMutation.mutateAsync,
+		// One identity per request, as for clock-out; the server replays a committed identity.
+		addBreak: (params: { breakMinutes: number }) =>
+			addBreakMutation.mutateAsync({ ...params, submissionId: crypto.randomUUID() }),
 		updateNotes: updateNotesMutation.mutateAsync,
 		isClockingIn: clockInMutation.isPending,
 		isClockingOut: clockOutMutation.isPending,
