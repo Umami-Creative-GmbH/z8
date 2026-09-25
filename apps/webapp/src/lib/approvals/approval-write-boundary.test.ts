@@ -5155,38 +5155,6 @@ db.delete(approvalOutbox);`,
 					table: "work_period",
 				},
 			],
-			"src/lib/clockin/import-orchestrator.ts": [
-				{
-					columns: [],
-					functionName: "insertTimeEntry",
-					operation: "insert",
-					table: "time_entry",
-					uncertainty: "dynamic_payload",
-				},
-				{
-					columns: [],
-					functionName: "insertWorkPeriod",
-					operation: "insert",
-					table: "work_period",
-					uncertainty: "dynamic_payload",
-				},
-			],
-			"src/lib/clockodo/import-orchestrator.ts": [
-				{
-					columns: [],
-					functionName: "importClockodoData",
-					operation: "insert",
-					table: "time_entry",
-					uncertainty: "dynamic_payload",
-				},
-				{
-					columns: [],
-					functionName: "importClockodoData",
-					operation: "insert",
-					table: "work_period",
-					uncertainty: "dynamic_payload",
-				},
-			],
 			"src/lib/demo/demo-data.service.ts": [
 				{
 					columns: [
@@ -5609,10 +5577,10 @@ export function renamedCreateTimeRecord() {
 		});
 	});
 
-	it("keeps Clockodo uncertainty exceptions scoped to their named helper", () => {
-		const path = "src/lib/clockodo/import-orchestrator.ts";
+	it("keeps uncertainty exceptions scoped to their named helper", () => {
+		const path = "src/lib/time-tracking/clocking-core.ts";
 		const source = `import { db, timeEntry } from "@/db";
-export async function importClockodoData(values: object) {
+export async function insertEntry(values: object) {
   return db.transaction(async (tx) => tx.insert(timeEntry).values(values));
 }
 export async function hiddenImport(values: object) {

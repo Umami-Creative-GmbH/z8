@@ -13,7 +13,12 @@ and cleanup writers left to #318) and the application writers of C02 and C07 (#3
 below is certified to participate in the new manual configuration protocol. The Better Auth,
 SCIM and SSO writers of C03, C07 (including the admin plugin's endpoints), C08, C18 and C19
 participate since #314 (see [its evidence](../auth-scim-coordination-314.md)); the
-provisioning, import, demo and cleanup writers of those rows remain with #318. Existing local
+provisioning, import, demo and cleanup writers of those rows remain with #318. Since #318
+(see [its evidence](../provisioning-cleanup-coordination-318.md)), those writers participate:
+member, invite-code and onboarding provisioning, pending-member rejection, reviewed-import
+holiday and work-category setup rows, every runtime demo configuration writer, and
+whole-organization cleanup. `ssoRequiresApproval` updates through Better Auth are refused, and
+the direct Clockodo/Clockin orchestrators (W16) are retired. Existing local
 transactions and SCIM transactional
 callbacks must be preserved, then extended at their actual mutation owner.
 Creation-time fallback changes and access changes require the same protection as

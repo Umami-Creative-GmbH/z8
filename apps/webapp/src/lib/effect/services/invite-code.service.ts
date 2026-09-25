@@ -27,6 +27,7 @@ import { normalizeInvitationEmail } from "@/lib/auth/employee-invitation-draft";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import { assertEnterpriseIdentityInviteCodeRedemptionAllowed } from "@/lib/enterprise-identity/enforcement";
+import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
 	type AuthorizationError,
 	type DatabaseError,
@@ -377,6 +378,10 @@ export const InviteCodeServiceLive = Layer.effect(
 		) =>
 			dbService.db.transaction(async (tx) => {
 				const redemptionDb = tx as RedemptionDb;
+				// Redemption adds the user's membership and employee in the code's
+				// organization: the user's exclusive configuration/access guard comes
+				// before the invite-code row lock and the identity lock (#318).
+				await acquireExclusiveUserConfigurationAccessGuards(redemptionDb, [input.userId]);
 				await redemptionDb.execute(sql`
 					SELECT ${inviteCode.id}
 					FROM ${inviteCode}

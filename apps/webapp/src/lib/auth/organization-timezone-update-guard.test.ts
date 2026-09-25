@@ -23,7 +23,7 @@ describe("rejectOrganizationTimezoneUpdate", () => {
 	it("is installed as the organization plugin's update hook", () => {
 		const source = readFileSync(new URL("../auth.ts", import.meta.url), "utf8");
 		expect(source).toMatch(
-			/beforeUpdateOrganization: async \(\{ organization \}\) =>\s*rejectOrganizationTimezoneUpdate\(organization\)/,
+			/beforeUpdateOrganization: async \(\{ organization \}\) => \{\s*rejectOrganizationTimezoneUpdate\(organization\);/,
 		);
 	});
 });

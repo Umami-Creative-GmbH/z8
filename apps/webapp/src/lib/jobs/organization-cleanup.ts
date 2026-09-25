@@ -9,6 +9,7 @@ import { and, eq, inArray, isNotNull, lt } from "drizzle-orm";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee, pushSubscription, waterIntakeLog } from "@/db/schema";
+import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("organization-cleanup");
@@ -118,6 +119,14 @@ export async function runOrganizationCleanup(): Promise<OrganizationCleanupResul
  * Staged receipt uploads (`travel_expense_receipt_upload`) are kept by value on
  * purpose: they are outstanding storage cleanup work that must outlive the
  * tenant until the stored object is deleted (#295).
+ *
+ * The delete removes every manual dependency of the organization and every
+ * membership and employee of its users (#318). Before the first delete it takes
+ * exclusive organization configuration protection, then the sorted guards of
+ * every member's and employee's user, discovered from current rows and
+ * confirmed under protection; a user who joined meanwhile restarts the
+ * transaction. A fresh manual submission therefore commits before the tenant
+ * disappears or waits and finds it gone.
  */
 async function permanentlyDeleteOrganization(
 	organizationId: string,
@@ -127,41 +136,55 @@ async function permanentlyDeleteOrganization(
 		"Starting permanent deletion of organization",
 	);
 
-	await db.transaction(async (tx) => {
-		const employees = await tx.query.employee.findMany({
-			where: eq(employee.organizationId, organizationId),
-			columns: { userId: true },
-		});
-		const employeeUserIds = employees.flatMap((e) =>
-			e.userId ? [e.userId] : [],
-		);
+	let employeeUserIds: string[] = [];
+	await withAuthorizationMutation(
+		{
+			organizationId,
+			organizationWide: true,
+			route: async (tx) => {
+				const [employees, members] = await Promise.all([
+					tx.query.employee.findMany({
+						where: eq(employee.organizationId, organizationId),
+						columns: { userId: true },
+					}),
+					tx.query.member.findMany({
+						where: eq(authSchema.member.organizationId, organizationId),
+						columns: { userId: true },
+					}),
+				]);
+				employeeUserIds = employees.flatMap((e) => (e.userId ? [e.userId] : []));
+				return { userIds: [...employeeUserIds, ...members.map((m) => m.userId)] };
+			},
+		},
+		async (tx) => {
+			// User-level rows of the tenant's users (no organization reference).
+			if (employeeUserIds.length > 0) {
+				await tx
+					.delete(waterIntakeLog)
+					.where(inArray(waterIntakeLog.userId, employeeUserIds));
+				await tx
+					.delete(pushSubscription)
+					.where(inArray(pushSubscription.userId, employeeUserIds));
+			}
 
-		// User-level rows of the tenant's users (no organization reference).
-		if (employeeUserIds.length > 0) {
+			// Clear active organization from sessions
 			await tx
-				.delete(waterIntakeLog)
-				.where(inArray(waterIntakeLog.userId, employeeUserIds));
+				.update(authSchema.session)
+				.set({ activeOrganizationId: null })
+				.where(eq(authSchema.session.activeOrganizationId, organizationId));
+
+			// SSO providers carry the organization without a foreign key.
 			await tx
-				.delete(pushSubscription)
-				.where(inArray(pushSubscription.userId, employeeUserIds));
-		}
+				.delete(authSchema.ssoProvider)
+				.where(eq(authSchema.ssoProvider.organizationId, organizationId));
 
-		// Clear active organization from sessions
-		await tx
-			.update(authSchema.session)
-			.set({ activeOrganizationId: null })
-			.where(eq(authSchema.session.activeOrganizationId, organizationId));
-
-		// SSO providers carry the organization without a foreign key.
-		await tx
-			.delete(authSchema.ssoProvider)
-			.where(eq(authSchema.ssoProvider.organizationId, organizationId));
-
-		// Finally, delete the organization itself; everything else cascades.
-		await tx
-			.delete(authSchema.organization)
-			.where(eq(authSchema.organization.id, organizationId));
-	});
+			// Finally, delete the organization itself; everything else cascades.
+			await tx
+				.delete(authSchema.organization)
+				.where(eq(authSchema.organization.id, organizationId));
+		},
+		db,
+	);
 
 	logger.info(
 		{ organizationId },

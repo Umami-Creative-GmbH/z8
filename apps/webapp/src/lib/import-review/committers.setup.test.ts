@@ -4,6 +4,7 @@ const dbMock = vi.hoisted(() => ({
 	rows: [] as Array<Record<string, unknown>>,
 	persistedRows: new Map<string, Record<string, unknown>>(),
 	transaction: vi.fn(),
+	execute: vi.fn(),
 	select: vi.fn(),
 	update: vi.fn(),
 	insert: vi.fn(),
@@ -133,6 +134,7 @@ beforeEach(() => {
 		const persistedSnapshot = clonePersistedRows();
 		try {
 			return await callback({
+				execute: dbMock.execute,
 				select: dbMock.select,
 				update: dbMock.update,
 				insert: dbMock.insert,
@@ -246,6 +248,8 @@ describe("commitAcceptedRowsForEntity setup/reference rows", () => {
 		const result = await commitAcceptedRowsForEntity(commitJob("work_category"));
 
 		expect(result).toMatchObject({ committedRows: 1, failedRows: 0, errors: [] });
+		// Exclusive organization configuration protection before the claim (#318).
+		expect(dbMock.execute).toHaveBeenCalledOnce();
 		expect(dbMock.insertCalls).toContainEqual(
 			expect.objectContaining({
 				organizationId: "org_1",

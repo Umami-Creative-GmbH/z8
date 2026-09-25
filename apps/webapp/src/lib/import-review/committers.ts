@@ -25,6 +25,7 @@ import {
 	replayImportedWork,
 } from "@/lib/time-tracking/record-imported-work";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
+import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
 import { withReviewedImportTransaction } from "./import-work-transaction";
 import { importedWorkProviderEvidence } from "./imported-work-evidence";
 import type { ImportCommitJobData, ImportProvider } from "./types";
@@ -729,6 +730,20 @@ async function commitReviewedWorkRow(
 	}
 }
 
+/**
+ * Setup entities whose rows manual preparation reads (#318): organization
+ * holidays (blocking whenever their category blocks) and work categories,
+ * which Clockodo stages as `service` rows. Their commit takes exclusive
+ * organization configuration protection before claiming the row, so it drains
+ * and fences fresh manual submissions. Teams (created without members),
+ * absences and surcharge models are not manual dependencies.
+ */
+const MANUAL_DEPENDENCY_SETUP_ENTITIES: ReadonlySet<ImportCommitJobData["entityType"]> = new Set([
+	"holiday",
+	"service",
+	"work_category",
+]);
+
 function mappingRequiredMessage(entityType: ImportCommitJobData["entityType"]) {
 	return `${entityType} import rows require mapping confirmation before commit`;
 }
@@ -765,6 +780,9 @@ export async function commitAcceptedRowsForEntity(
 			const outcome = provider
 				? await commitReviewedWorkRow(row, job, provider)
 				: await db.transaction(async (tx): Promise<CommitRowOutcome> => {
+						if (MANUAL_DEPENDENCY_SETUP_ENTITIES.has(job.entityType)) {
+							await acquireExclusiveOrganizationConfigurationGuard(tx, job.organizationId);
+						}
 						const claimedRow = await claimRow(tx as CommitDb, row.id, job);
 						if (!claimedRow) return { status: "skipped" };
 

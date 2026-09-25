@@ -1000,38 +1000,6 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			table: "work_period",
 		},
 	],
-	"src/lib/clockin/import-orchestrator.ts": [
-		{
-			columns: [],
-			functionName: "insertTimeEntry",
-			operation: "insert",
-			table: "time_entry",
-			uncertainty: "dynamic_payload",
-		},
-		{
-			columns: [],
-			functionName: "insertWorkPeriod",
-			operation: "insert",
-			table: "work_period",
-			uncertainty: "dynamic_payload",
-		},
-	],
-	"src/lib/clockodo/import-orchestrator.ts": [
-		{
-			columns: [],
-			functionName: "importClockodoData",
-			operation: "insert",
-			table: "time_entry",
-			uncertainty: "dynamic_payload",
-		},
-		{
-			columns: [],
-			functionName: "importClockodoData",
-			operation: "insert",
-			table: "work_period",
-			uncertainty: "dynamic_payload",
-		},
-	],
 	"src/lib/demo/demo-data.service.ts": [
 		{
 			columns: [
