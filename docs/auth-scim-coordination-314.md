@@ -165,6 +165,8 @@ invitation's organization-creation flag, and billing seats.
   `ssoRequiresApproval` only affects SSO employee creation. SSO provisioning reads it inside
   its own guarded transaction.
 - `accountBanPlugin` enforces bans on reads and writes nothing.
+- `storePendingInvitation` (`app/[locale]/(auth)/invitation-actions.ts`) writes only `user.invitedVia`,
+  which manual creation does not read.
 
 ## Verification
 
