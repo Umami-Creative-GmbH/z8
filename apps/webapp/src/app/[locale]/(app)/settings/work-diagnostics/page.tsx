@@ -98,7 +98,7 @@ async function WorkDiagnosticsContent({ searchParams }: WorkDiagnosticsPageProps
 		]),
 	);
 	const selectedEmployeeId =
-		params.employee && params.employee in employeeLabels ? params.employee : null;
+		params.employee && Object.hasOwn(employeeLabels, params.employee) ? params.employee : null;
 
 	const { work, appendAssurance } = await readHistoricalWorkDiagnostics(db, organizationId, {
 		employeeIds: selectedEmployeeId ? [selectedEmployeeId] : employees.map((row) => row.id),

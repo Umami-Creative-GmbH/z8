@@ -64,6 +64,8 @@ export interface HistoricalPeriodEvidence {
 	isActive: boolean;
 	approvalStatus: "pending" | "approved" | "rejected";
 	hasPendingChanges: boolean;
+	/** Whether a legacy approval request names this period (before workflow links existed). */
+	hasApprovalRequest: boolean;
 	approvalWorkflowId: string | null;
 	deletedAt: Instant | null;
 	projectId: string | null;
@@ -650,6 +652,7 @@ export function assessHistoricalWork(
 		if (
 			period.approvalStatus === "pending" &&
 			!period.hasPendingChanges &&
+			!period.hasApprovalRequest &&
 			period.approvalWorkflowId === null
 		) {
 			push({ kind: "approval_relationship_missing", shape: "missing", relevance });
@@ -1073,7 +1076,8 @@ function diagnoseManualSubmission(
 	const zone = request.timezone ?? capture?.timezone ?? null;
 	const zoneBasis = request.timezone !== null ? "request" : "capture";
 	if (zone === null || !isValidIanaTimeZone(zone)) {
-		return [{ kind: "manual_zone_unrecorded", shape: "disclosure", details: {} }];
+		// Intent is unrecoverable: a reviewer must ask for human evidence.
+		return [{ kind: "manual_zone_unrecorded", shape: "suspected_defect", details: {} }];
 	}
 
 	const clockIn = interpretWallTime(request.date, request.clockInTime, zone);

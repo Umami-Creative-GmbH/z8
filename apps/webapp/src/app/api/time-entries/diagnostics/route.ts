@@ -19,6 +19,7 @@ import { readHistoricalWorkDiagnostics } from "@/lib/time-tracking/historical-wo
 
 /** Longest diagnostic scope, in calendar days; wider reads belong to the operator page. */
 const MAX_SCOPE_DAYS = 366;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function parseScopeDates(body: unknown): { startDate: string; endDate: string } | null {
 	if (typeof body !== "object" || body === null) return null;
@@ -92,10 +93,14 @@ export async function POST(request: NextRequest) {
 		}
 
 		const requestedEmployeeId = (body as { employeeId?: unknown }).employeeId;
-		const targetEmployeeId =
-			typeof requestedEmployeeId === "string" && requestedEmployeeId
-				? requestedEmployeeId
-				: currentEmployee.id;
+		if (
+			requestedEmployeeId !== undefined &&
+			requestedEmployeeId !== null &&
+			(typeof requestedEmployeeId !== "string" || !UUID.test(requestedEmployeeId))
+		) {
+			return NextResponse.json({ error: "employeeId must be a UUID" }, { status: 400 });
+		}
+		const targetEmployeeId = requestedEmployeeId ?? currentEmployee.id;
 		const access = historicalWorkViewerAccess(await getAbility(), {
 			organizationId: currentEmployee.organizationId,
 			employeeId: currentEmployee.id,

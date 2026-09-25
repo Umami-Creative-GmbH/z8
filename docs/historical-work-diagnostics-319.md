@@ -75,7 +75,7 @@ A canonical record is one of three things:
 | Duration | `duration_missing` (never derived), `duration_conflict` (never picks a side), `negative_duration`, `reversed_interval`, `empty_interval` (nondeleted equal endpoints). Zero minutes over a positive sub-minute interval is accepted. `stored_elapsed_discrepancy` is a disclosure, because established stored minutes govern (#321). |
 | Deleted work | Deletion evidence is preserved, and a deleted period needs no canonical record. The only finding is `deleted_work_payable`: its record still spans a nonempty interval. A deletion sentinel (equal endpoints) is accepted. |
 | Metadata | `metadata_missing`: the period has a value and the record has none. `metadata_conflict`: both have values and they differ. `metadata_canonical_only`: the record is richer (disclosure). A period's project counts as present when any project allocation of the record holds it. |
-| Approvals | `approval_state_conflict`. `approval_relationship_missing`: pending work with neither pending changes nor a workflow. Current status is never used to infer history. |
+| Approvals | `approval_state_conflict`. `approval_relationship_missing`: pending work with no pending changes, no workflow and no legacy `approval_request` naming the period. Current status is never used to infer history. |
 | Duplicate lineage | `overlapping_work`: every nondeleted period and native record occupies its half-open interval, active work from its start onward, and adjacency is allowed. It covers overlapping concurrent submissions (§8) and records left behind as duplicates. Matching intervals are reported, never merged. Append lineage issues remain in append assurance. |
 
 ## Provenance and treatment (#260 §7)
@@ -116,7 +116,7 @@ times in the evidenced zone. That zone is the request's zone or, if the request 
 none, the clock-in capture recorded at submission. A capture that was inferred later
 is never used.
 
-- `manual_zone_unrecorded`: neither the request nor a contemporaneous capture names the zone. The diagnosis asks for human evidence instead of choosing one.
+- `manual_zone_unrecorded`: neither the request nor a contemporaneous capture names the zone. It is `review_required`: a reviewer asks for human evidence instead of choosing a zone.
 - `manual_interpretation_ambiguous`: the wall time falls into a daylight-saving gap or fold.
 - `manual_interpretation_mismatch`: the untrimmed persisted result differs from the reconstruction.
 - `manual_trimmed`: the legacy writer trimmed the submission. The diagnosis reports the submitted and persisted intervals, and nothing is restored.
@@ -191,7 +191,7 @@ Verified:
 
 - Consistent legacy manual work is `complete` with no findings, and the read writes nothing (full row snapshot equality).
 - Legacy trimming: a real overlapping submission is reported as `manual_trimmed` with the submitted and persisted intervals, together with the UTC holiday-date finding. Stored rows are unchanged.
-- Pending work without a duration or relationship, a missing time record, and June work with an unknown end are all reported for July before any payroll filter. Another employee's scope stays complete.
+- Pending work without a duration or relationship, a missing time record, and June work with an unknown end are all reported for July before any payroll filter. Pending work linked only through a legacy approval request is not reported as missing a relationship. Another employee's scope stays complete.
 - Adoption provenance: after real admission, the same injected duration conflict is `review_required` on pre-adoption legacy work and an `integrity_incident` (`fresh_backdated`, `manual_entry`) on the version-2 work.
 - A deleted period with a payable record yields only `deleted_work_payable`, and the deletion is kept.
 - Authorization:
@@ -200,7 +200,7 @@ Verified:
   - The employee gets a summary without IDs.
   - A peer and a manager asking about a non-report get 403.
   - A foreign-organization employee gets 404.
-  - A reversed range gets 400.
+  - A reversed range and a non-UUID `employeeId` get 400.
 
 Mutation check: filtering periods to `approved` in the reader, and granting record
 level to every non-self employee, each made the corresponding test fail.
@@ -218,6 +218,14 @@ level to every non-self employee, each made the corresponding test fail.
 Not verified: the settings page was not rendered in a browser against a database.
 Its data path is the reader verified above, and its presentation is covered by the
 jsdom test.
+
+## Known limits from review
+
+- The holiday diagnosis compares the dates the legacy validator checked with the dates the work occupies. It does not decide whether a holiday was accepted, because that would reevaluate historical holiday eligibility (#260 §8).
+- Approval checks read the period, its workflow link and legacy approval requests. They do not reconstruct decision history.
+- Canonical-native records have no receipts, so their provenance is only `pre_adoption` or `ambiguous`.
+- Record-level UI is org-admin only. Managers use `POST /api/time-entries/diagnostics` for their direct reports.
+- The route and page are read-only and ungated. They ship under #259's early allowance for graph-aware diagnostics, which also covered #324's verify route.
 
 ## Remaining activation blockers
 

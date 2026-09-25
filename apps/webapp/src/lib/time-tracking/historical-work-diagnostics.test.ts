@@ -78,6 +78,7 @@ function work(
 		isActive: false,
 		approvalStatus: "approved",
 		hasPendingChanges: false,
+		hasApprovalRequest: false,
 		approvalWorkflowId: null,
 		deletedAt: null,
 		projectId: null,
@@ -554,8 +555,16 @@ describe("assessHistoricalWork shape matrix", () => {
 			period: { approvalStatus: "pending" },
 			record: { approvalState: "pending" },
 		});
+		// Older pending work is linked only through its legacy approval request.
+		const requestLinked = work("2026-07-04T08:00:00Z", "2026-07-04T16:00:00Z", {
+			period: { approvalStatus: "pending", hasApprovalRequest: true },
+			record: { approvalState: "pending" },
+		});
 
-		const findings = assessHistoricalWork(evidence([conflict, orphanPending]), july).findings;
+		const findings = assessHistoricalWork(
+			evidence([conflict, orphanPending, requestLinked]),
+			july,
+		).findings;
 
 		expect(only(findings, "approval_state_conflict").details).toEqual({
 			periodState: "pending",
@@ -801,9 +810,11 @@ describe("assessHistoricalWork historical manual entries", () => {
 		};
 
 		const findings = assessHistoricalWork(evidence([fixture]), july).findings;
+		// Unrecoverable intent asks a reviewer for human evidence; it never blocks.
 		expect(only(findings, "manual_zone_unrecorded")).toMatchObject({
-			shape: "disclosure",
-			treatment: "disclosed",
+			shape: "suspected_defect",
+			treatment: "review_required",
+			blocking: false,
 		});
 		expect(kinds(findings)).toEqual(["capture_inferred", "manual_zone_unrecorded"]);
 	});

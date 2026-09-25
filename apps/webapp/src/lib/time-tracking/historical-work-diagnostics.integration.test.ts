@@ -420,6 +420,25 @@ describeIntegration("historical work diagnostics on PostgreSQL", () => {
 			"update work_period set end_time = null, duration_minutes = null, clock_out_id = null where id = $1",
 			[juneOpenEnd],
 		);
+		// Older pending work linked only through its legacy approval request.
+		const requestLinked = await legacyManual({
+			date: "2026-07-15",
+			clockInTime: "08:00",
+			clockOutTime: "12:00",
+		});
+		await admin.query("update work_period set approval_status = 'pending' where id = $1", [
+			requestLinked,
+		]);
+		await admin.query(
+			"update time_record set approval_state = 'pending' where id = (select canonical_record_id from work_period where id = $1)",
+			[requestLinked],
+		);
+		await admin.query(
+			`insert into approval_request
+			 (organization_id, entity_type, entity_id, requested_by, approver_id, status, updated_at)
+			 values ($1, 'time_entry', $2, $3, $4, 'pending', now())`,
+			[ids.organization, requestLinked, ids.worker, ids.manager],
+		);
 
 		const findings = await operatorFindings({ employeeId: ids.worker, ...july });
 		const byKind = (kind: string) => findings.filter((finding) => finding.kind === kind);
@@ -570,5 +589,8 @@ describeIntegration("historical work diagnostics on PostgreSQL", () => {
 		expect(
 			(await diagnose(ids.ownerUser, { startDate: "2026-07-31", endDate: "2026-07-01" })).status,
 		).toBe(400);
+		expect((await diagnose(ids.ownerUser, { employeeId: "constructor", ...july })).status).toBe(
+			400,
+		);
 	});
 });

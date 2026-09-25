@@ -11,6 +11,7 @@
 import { and, eq, inArray, notInArray, type SQL } from "drizzle-orm";
 import type { db as database } from "@/db";
 import {
+	approvalRequest,
 	completedWorkOperation,
 	employee,
 	timeEntry,
@@ -166,6 +167,23 @@ export async function readHistoricalWorkEvidence(
 			.from(timeEntry)
 			.where(and(eq(timeEntry.organizationId, organizationId), inArray(timeEntry.id, chunk))),
 	);
+	// Legacy approval requests name the period as their entity.
+	const requestedPeriodIds = new Set(
+		(
+			await selectInChunks(periodIds, (chunk) =>
+				reader
+					.selectDistinct({ entityId: approvalRequest.entityId })
+					.from(approvalRequest)
+					.where(
+						and(
+							eq(approvalRequest.organizationId, organizationId),
+							inArray(approvalRequest.entityType, ["time_entry", "work_period"]),
+							inArray(approvalRequest.entityId, chunk),
+						),
+					),
+			)
+		).map((row) => row.entityId),
+	);
 	const details = await selectInChunks(recordIds, (chunk) =>
 		reader
 			.select({
@@ -291,6 +309,7 @@ export async function readHistoricalWorkEvidence(
 				isActive: row.isActive,
 				approvalStatus: row.approvalStatus,
 				hasPendingChanges: row.pendingChanges !== null,
+				hasApprovalRequest: requestedPeriodIds.has(row.id),
 				approvalWorkflowId: row.approvalWorkflowId,
 				deletedAt: row.deletedAt ? instantFromDate(row.deletedAt) : null,
 				projectId: row.projectId,
