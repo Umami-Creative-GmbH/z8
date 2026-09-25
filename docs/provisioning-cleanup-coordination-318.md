@@ -244,7 +244,9 @@ This slice closes on implementation. The items below are activation gates for #3
   unchanged value. No z8 caller sends it.
 - **Observation, outside manual dependencies:** organization cleanup deletes
   `water_intake_log` and `push_subscription` rows for every employee user of the deleted
-  organization (#306), including users who still belong to other organizations.
+  organization (#306), including users who still belong to other organizations. Resolved in
+  #437: water intake logs are kept, and push subscriptions are deleted only for users who are
+  left without any membership or employee, checked under their held guards.
 - The retired orchestrators' `CLOCKODO_IMPORT_QUERY_CHUNK_SIZE` and
   `CLOCKODO_IMPORT_CONCURRENCY` environment settings are now unused. They are left in `env.ts`,
   so that deployment configuration does not have to change together with this slice.

@@ -5,10 +5,10 @@
  * This job should be run daily via cron.
  */
 
-import { and, eq, inArray, isNotNull, lt } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, lt, ne } from "drizzle-orm";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { employee, pushSubscription, waterIntakeLog } from "@/db/schema";
+import { employee, pushSubscription } from "@/db/schema";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { createLogger } from "@/lib/logger";
 
@@ -157,14 +157,41 @@ async function permanentlyDeleteOrganization(
 			},
 		},
 		async (tx) => {
-			// User-level rows of the tenant's users (no organization reference).
+			// Push subscriptions are user-level (no organization reference): only
+			// users left without any membership or employee elsewhere lose them
+			// (#437). Their guards are held, so no other organization can gain
+			// them before commit. Water intake logs are personal wellness history,
+			// like hydration stats, and outlive the organization with the user.
 			if (employeeUserIds.length > 0) {
-				await tx
-					.delete(waterIntakeLog)
-					.where(inArray(waterIntakeLog.userId, employeeUserIds));
-				await tx
-					.delete(pushSubscription)
-					.where(inArray(pushSubscription.userId, employeeUserIds));
+				const [otherMemberships, otherEmployees] = await Promise.all([
+					tx
+						.select({ userId: authSchema.member.userId })
+						.from(authSchema.member)
+						.where(
+							and(
+								inArray(authSchema.member.userId, employeeUserIds),
+								ne(authSchema.member.organizationId, organizationId),
+							),
+						),
+					tx
+						.select({ userId: employee.userId })
+						.from(employee)
+						.where(
+							and(
+								inArray(employee.userId, employeeUserIds),
+								ne(employee.organizationId, organizationId),
+							),
+						),
+				]);
+				const retainedUserIds = new Set(
+					[...otherMemberships, ...otherEmployees].map((row) => row.userId),
+				);
+				const departingUserIds = employeeUserIds.filter((userId) => !retainedUserIds.has(userId));
+				if (departingUserIds.length > 0) {
+					await tx
+						.delete(pushSubscription)
+						.where(inArray(pushSubscription.userId, departingUserIds));
+				}
 			}
 
 			// Clear active organization from sessions
