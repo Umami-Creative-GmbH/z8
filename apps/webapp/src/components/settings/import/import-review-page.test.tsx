@@ -158,4 +158,35 @@ describe("ImportReviewPage", () => {
 		expect(screen.getByText("5")).toBeTruthy();
 		expect(screen.getByText("3")).toBeTruthy();
 	});
+
+	it("explains why the work operation held a row for review", () => {
+		render(
+			<ImportReviewPage
+				organizationId="org_1"
+				batchId="batch_1"
+				summary={{ ...baseSummary, blockedRows: 2 }}
+				rows={[
+					{
+						...acceptedRow,
+						id: "row_overlap",
+						rowStatus: "blocked",
+						issueSeverity: "blocking",
+						commitHold: { reason: "occupancy_conflict", occupants: [] },
+					},
+					{
+						...acceptedRow,
+						id: "row_future_reason",
+						rowStatus: "blocked",
+						issueSeverity: "blocking",
+						commitHold: { reason: "a_reason_from_a_later_release" },
+					},
+				]}
+			/>,
+		);
+
+		expect(
+			screen.getByText("The time overlaps work already recorded for this employee."),
+		).toBeTruthy();
+		expect(screen.getByText("Held for review")).toBeTruthy();
+	});
 });

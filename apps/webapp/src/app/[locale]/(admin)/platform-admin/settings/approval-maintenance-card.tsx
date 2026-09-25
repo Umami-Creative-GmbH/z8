@@ -108,6 +108,22 @@ export function ApprovalMaintenanceCard() {
 						"Escalation transfer",
 					),
 				})),
+				...result.data.delivery.messages.map((id) => ({
+					id,
+					kind: "delivery_message",
+					label: t(
+						"admin:admin.settings.approvalMaintenance.deliveryMessage",
+						"Delivered message",
+					),
+				})),
+				...result.data.delivery.work.map((id) => ({
+					id,
+					kind: "delivery_work",
+					label: t(
+						"admin:admin.settings.approvalMaintenance.deliveryWork",
+						"Delivery work",
+					),
+				})),
 			]
 		: [];
 

@@ -45,6 +45,14 @@
         "stepRejected": "Abgelehnt von {actor} am {time}. Der Antrag ist noch nicht abgeschlossen; prüfen Sie seinen aktuellen Status in Z8.",
         "recordedTitle": "Entscheidung erfasst",
         "recorded": "Erfasst von {actor} am {time}. Prüfen Sie den aktuellen Status des Antrags in Z8."
+      },
+      "status": {
+        "withdrawnTitle": "Antrag zurückgezogen",
+        "withdrawn": "Dieser Antrag wurde zurückgezogen. Über diese Karte ist keine Entscheidung mehr nötig.",
+        "inactiveTitle": "Nicht mehr entscheidbar",
+        "inactive": "Dieser Antrag braucht über diese Karte keine Entscheidung mehr von Ihnen. Hier wurde nichts entschieden. Prüfen Sie den aktuellen Stand in Z8.",
+        "currentApproved": "Aktueller Stand des Antrags: genehmigt.",
+        "currentRejected": "Aktueller Stand des Antrags: abgelehnt."
       }
     },
     "cmd": {

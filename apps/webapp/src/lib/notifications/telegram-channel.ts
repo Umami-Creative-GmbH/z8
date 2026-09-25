@@ -7,7 +7,8 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { approvalRequest, employee } from "@/db/schema";
+import { absenceEntry, approvalRequest, employee } from "@/db/schema";
+import { isApprovalDeliveryOwner } from "@/lib/approvals/delivery/store";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import { createLogger } from "@/lib/logger";
 import { localizeOutboundNotification } from "./outbound-localization";
@@ -47,6 +48,33 @@ export async function isTelegramAvailable(
 }
 
 /**
+ * Whether the approval delivery owner (#291) sends this absence's Telegram
+ * card: the owner is active for the organization and the absence has a
+ * canonical workflow, whose committed intents the owner delivers. A legacy
+ * request (e.g. a policy fallback) keeps this path.
+ */
+async function deliveredByApprovalOwner(
+	organizationId: string,
+	absenceId: string | undefined,
+): Promise<boolean> {
+	if (!absenceId) return false;
+	const owner = await isApprovalDeliveryOwner({
+		organizationId,
+		workflowType: "absence",
+		provider: "telegram",
+	});
+	if (!owner) return false;
+	const absence = await db.query.absenceEntry.findFirst({
+		where: and(
+			eq(absenceEntry.id, absenceId),
+			eq(absenceEntry.organizationId, organizationId),
+		),
+		columns: { approvalWorkflowId: true },
+	});
+	return Boolean(absence?.approvalWorkflowId);
+}
+
+/**
  * Send a notification via Telegram
  */
 export async function sendTelegramNotification(
@@ -75,6 +103,17 @@ export async function sendTelegramNotification(
 			return;
 		}
 
+		// One owner per delivery effect (#291): where the approval delivery owner
+		// has the absence card, this path sends neither the card nor a plain
+		// message about the same request.
+		if (
+			params.type === "approval_request_submitted" &&
+			params.entityType === "absence_entry" &&
+			(await deliveredByApprovalOwner(params.organizationId, params.entityId))
+		) {
+			return;
+		}
+
 		// Handle approval-related notifications specially
 		if (
 			params.type === "approval_request_submitted" &&
@@ -86,6 +125,13 @@ export async function sendTelegramNotification(
 					eq(approvalRequest.organizationId, params.organizationId),
 				),
 			});
+
+			if (
+				approval?.entityType === "absence_entry" &&
+				(await deliveredByApprovalOwner(params.organizationId, approval.entityId))
+			) {
+				return;
+			}
 
 			if (approval) {
 				const emp = await db.query.employee.findFirst({

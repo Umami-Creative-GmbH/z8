@@ -66,11 +66,11 @@ import { calculateHash } from "./blockchain";
 import {
 	type AttributionIntent,
 	CompletedWorkCollisionError,
-	canonicalJson,
 	CompletedWorkIntegrityError,
 	type CompletedWorkFollowUp,
 	earliestStartDate,
 } from "./close-active-work";
+import { canonicalJson } from "./canonical-json";
 import { admitTimeEntryAppend, TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import { WorkIntervalError } from "./work-duration";

@@ -374,7 +374,24 @@ async function createClockEntry(resolvedHeaders: Headers, body: any) {
 		if (Number.isNaN(entryTime.getTime())) {
 			return NextResponse.json({ error: "Invalid clock instant" }, { status: 400 });
 		}
-		if (hasCapturedEvidence) {
+		// Historical committed recovery precedes fresh age admission (#275): an
+		// action id that already committed in this scope replays through the
+		// clocking service's unchanged legacy matcher at any age. Absence of an entry
+		// proves nothing about identity-less requests, which keep their rules.
+		const [committedAction] = actionId
+			? await db
+					.select({ id: timeEntry.id })
+					.from(timeEntry)
+					.where(
+						and(
+							eq(timeEntry.id, actionId),
+							eq(timeEntry.employeeId, currentEmployee.id),
+							eq(timeEntry.organizationId, requestedOrgId),
+						),
+					)
+					.limit(1)
+			: [];
+		if (hasCapturedEvidence && !committedAction) {
 			const ageMs = Date.now() - entryTime.getTime();
 			const maxAgeMs = isReplay ? 7 * 24 * 60 * 60_000 : 5 * 60_000;
 			if (ageMs < -5 * 60_000 || ageMs > maxAgeMs) {

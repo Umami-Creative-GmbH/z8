@@ -635,24 +635,37 @@ function TransferAssignmentDialog({
 	);
 }
 
+/** Delivery incidents recorded by the approval delivery owner (#291). */
+function canRetryDelivery(item: EscalationAttentionView): boolean {
+	return (
+		(item.reason === "delivery_exhausted" ||
+			item.reason === "delivery_unavailable") &&
+		typeof item.evidence.workId === "string"
+	);
+}
+
 export function EscalationAttentionCard({
 	openAttention,
 	closedAttention,
 	isRechecking,
 	isDisposing,
 	isTransferring,
+	isRetryingDelivery,
 	onRecheck,
 	onDispose,
 	onTransfer,
+	onRetryDelivery,
 }: {
 	openAttention: EscalationAttentionView[];
 	closedAttention: EscalationAttentionView[];
 	isRechecking: boolean;
 	isDisposing: boolean;
 	isTransferring: boolean;
+	isRetryingDelivery: boolean;
 	onRecheck: () => void;
 	onDispose: (attentionId: string, note: string) => Promise<boolean>;
 	onTransfer: (request: EscalationTransferRequest) => Promise<boolean>;
+	onRetryDelivery: (attentionId: string) => void;
 }) {
 	const { t } = useTranslate();
 	const displayContext = useDisplayContext();
@@ -736,6 +749,20 @@ export function EscalationAttentionCard({
 										) : null}
 									</div>
 									<div className="flex shrink-0 flex-wrap gap-2">
+										{canRetryDelivery(item) ? (
+											<Button
+												size="sm"
+												variant="outline"
+												disabled={isRetryingDelivery}
+												onClick={() => onRetryDelivery(item.id)}
+											>
+												<IconRefresh className="mr-2 size-4" aria-hidden="true" />
+												{t(
+													"settings.approvalEscalation.attention.retryDelivery",
+													"Retry delivery",
+												)}
+											</Button>
+										) : null}
 										{canTransfer(item) ? (
 											<Button
 												size="sm"

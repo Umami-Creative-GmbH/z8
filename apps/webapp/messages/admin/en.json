@@ -346,7 +346,9 @@
         "submittedRevision": "Submitted revision",
         "decisionEvidence": "Decision evidence",
         "reviewBinding": "Review binding",
-        "escalationTransfer": "Escalation transfer"
+        "escalationTransfer": "Escalation transfer",
+        "deliveryMessage": "Delivered message",
+        "deliveryWork": "Delivery work"
       },
       "cookieConsent": {
         "description": "Injected on authentication pages for GDPR compliance",

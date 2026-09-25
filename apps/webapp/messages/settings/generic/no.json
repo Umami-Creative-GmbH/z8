@@ -293,6 +293,16 @@
         "commitQueued": "Satte {count} godtatte rader i kø for bekreftelse",
         "committing": "Fullfører...",
         "description": "Gå gjennom klargjorte importrader, løs blokkerende problemer, og overfør godkjente poster når bunken er klar.",
+        "hold": {
+          "appendReviewRequired": "Den ansattes tidshistorikk må gjennomgås før nye oppføringer kan legges til.",
+          "invalidInterval": "Leverandørens tider mangler en eksplisitt forskyvning, er ikke i rekkefølge eller ligger i fremtiden.",
+          "label": "Holdt tilbake for gjennomgang",
+          "occupancyConflict": "Tiden overlapper arbeid som allerede er registrert for denne ansatte.",
+          "operationCollision": "Denne raden er i konflikt med den tidligere bekreftede importen.",
+          "providerDurationMismatch": "Leverandørens varighet avviker fra start- og sluttidspunktet.",
+          "sourceCollision": "Denne leverandørposten er allerede importert.",
+          "unlocatedBreak": "Leverandøren rapporterer pauser uten tidspunktene, så det arbeidede intervallet er ukjent."
+        },
         "issueGroups": {
           "currentMarkers": "Gjeldende rader inneholder {blockingRows} blokkerende markører og {warningRows} advarselsmarkører.",
           "description": "Grupperte gjennomgangsområder bidrar til å holde kvalitetskontroller synlige før godkjente rader overføres.",

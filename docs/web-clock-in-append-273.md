@@ -110,10 +110,11 @@ the web action.
 - Paths that delete an employee's whole history delete positions first:
   `clearOrganizationTimeData`, `deleteNonAdminEmployeesData` and organization
   permanent deletion.
-- Partial physical deletes are not adopted here: pending-correction cancellation,
-  demo correction replay cleanup, and the retained Clockodo/Clockin writers. In an
-  adopted scope, deleting a tip fails and deleting a non-tip holds the next append.
-  Retention belongs to #301/#285/#284.
+- Partial physical deletes are not adopted here: pending-correction cancellation
+  and the retained Clockodo/Clockin writers. In an adopted scope, deleting a tip
+  fails and deleting a non-tip holds the next append. Retention belongs to
+  #301/#284. Demo correction replay no longer deletes an admitted row; it rolls
+  back ([#285](runtime-demo-work-285.md)).
 
 ## Verification
 
@@ -198,8 +199,9 @@ is measured in the #329 pilot. Before any organization's control row is set acti
   participates ([#274](web-clock-out-operation-274.md)); still outstanding are
   direct HTTP (#275), on-behalf (#276), bot (#277), mobile clients (#278; the mobile
   route's clock-out already uses the web action), manual (#308),
-  active breaks and splits (#304), corrections (#301/#286), imports (#284), demo (#285)
-  and ordinary/cron/terminal breaks (#303/#305). Until then, one legacy write holds the
+  active breaks and splits (#304), corrections (#301/#286), imports (#284, now participating: [reviewed-import-operation-284.md](reviewed-import-operation-284.md))
+  and ordinary/cron/terminal breaks (#303/#305). Runtime demo generation, corrections
+  and cleanup participate since [#285](runtime-demo-work-285.md). Until then, one legacy write holds the
   employee's next clock-in, which the suite demonstrates with the shared legacy
   closer (web clock-out itself was the legacy writer until #274).
 - Authorized continuation for held histories (#323). Graph-aware verifier and audit

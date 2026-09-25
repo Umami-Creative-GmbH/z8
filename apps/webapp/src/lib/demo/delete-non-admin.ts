@@ -9,11 +9,8 @@ import {
 	employee,
 	employeeManagers,
 	employeeVacationAllowance,
-	timeEntry,
-	completedWorkOperation,
-	timeEntryAppendPosition,
-	workPeriod,
 } from "@/db/schema";
+import { deleteDemoEmployeeHistories } from "./demo-work";
 
 export interface DeleteNonAdminResult {
 	employeesDeleted: number;
@@ -82,41 +79,16 @@ export async function deleteNonAdminEmployeesData(
 		result.absencesDeleted = absencesToDelete.length;
 	}
 
-	// Step 4: Delete work periods (must be before time entries due to FK)
-	const workPeriodsToDelete = await db.query.workPeriod.findMany({
-		where: inArray(workPeriod.employeeId, employeeIds),
+	// Steps 4-5: Delete each employee's time history atomically under its employee
+	// key (position, receipts, periods, canonical work records, entries). Admin
+	// employees' histories are never touched.
+	const deleted = await deleteDemoEmployeeHistories({
+		organizationId,
+		triggeringUserId: currentUserId,
+		employeeIds,
 	});
-	if (workPeriodsToDelete.length > 0) {
-		await db.delete(workPeriod).where(inArray(workPeriod.employeeId, employeeIds));
-		result.workPeriodsDeleted = workPeriodsToDelete.length;
-	}
-
-	// Step 5: Delete time entries
-	const timeEntriesToDelete = await db.query.timeEntry.findMany({
-		where: inArray(timeEntry.employeeId, employeeIds),
-	});
-	if (timeEntriesToDelete.length > 0) {
-		// The append position references its tip entry; remove it with the history.
-		await db
-			.delete(timeEntryAppendPosition)
-			.where(
-				and(
-					eq(timeEntryAppendPosition.organizationId, organizationId),
-					inArray(timeEntryAppendPosition.employeeId, employeeIds),
-				),
-			);
-		// Operation receipts describe that history by value; remove them with it.
-		await db
-			.delete(completedWorkOperation)
-			.where(
-				and(
-					eq(completedWorkOperation.organizationId, organizationId),
-					inArray(completedWorkOperation.employeeId, employeeIds),
-				),
-			);
-		await db.delete(timeEntry).where(inArray(timeEntry.employeeId, employeeIds));
-		result.timeEntriesDeleted = timeEntriesToDelete.length;
-	}
+	result.workPeriodsDeleted = deleted.workPeriodsDeleted;
+	result.timeEntriesDeleted = deleted.timeEntriesDeleted;
 
 	// Step 6: Delete employee vacation allowances
 	const allowancesToDelete = await db.query.employeeVacationAllowance.findMany({

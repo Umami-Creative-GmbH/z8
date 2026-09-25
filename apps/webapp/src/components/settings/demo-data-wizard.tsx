@@ -603,9 +603,15 @@ function useDemoDataWizardController({
 									const d = data as {
 										timeEntriesCreated: number;
 										workPeriodsCreated: number;
+										employeesHeldForReview: number;
 									};
+									// Employees whose time history needs review get no demo work.
+									const held =
+										d.employeesHeldForReview > 0
+											? `, ${d.employeesHeldForReview} employees held for history review`
+											: "";
 									return {
-										result: `${d.timeEntriesCreated} entries, ${d.workPeriodsCreated} periods`,
+										result: `${d.timeEntriesCreated} entries, ${d.workPeriodsCreated} periods${held}`,
 										updates: {
 											timeEntriesCreated: d.timeEntriesCreated,
 											workPeriodsCreated: d.workPeriodsCreated,
