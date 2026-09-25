@@ -47,8 +47,10 @@ describe("approval workflow repository integration CI contract", () => {
     branches:
       - main
     paths:
-      - "apps/**"
+      - "apps/webapp/**"
+      - "apps/desktop/**"
       - "packages/**"
+      - "!**/*.md"
       - "docker/scripts/**"
       - "docker/Dockerfile.*"
       - "docker/targets/**"
