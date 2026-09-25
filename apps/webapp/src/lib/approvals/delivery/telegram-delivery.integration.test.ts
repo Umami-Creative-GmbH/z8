@@ -179,7 +179,9 @@ if (integrationConfiguration.status === "unavailable") {
 const MANAGER_TELEGRAM_ID = 29_101;
 const MANAGER_CHAT_ID = 291_555;
 const RECEIVER_SCOPE = "telegram-bot:291291291";
-const T0 = Temporal.Instant.from("2026-09-25T10:00:00Z");
+// Pinned pass time. New work becomes due at the database's now(), so the
+// pinned clock must lie after the real time the test runs at.
+const T0 = Temporal.Instant.from("2030-01-07T10:00:00Z");
 
 const ids = {
 	organization: "t291-delivery-org",
