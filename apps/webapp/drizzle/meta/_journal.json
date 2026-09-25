@@ -701,6 +701,20 @@
       "when": 1792857600000,
       "tag": "0099_work_balance_rebuild_intent",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1792944000000,
+      "tag": "0100_policy_clock_out_break_split",
+      "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1793030400000,
+      "tag": "0101_user_timezone_rebuild_intent",
+      "breakpoints": true
     }
   ]
 }

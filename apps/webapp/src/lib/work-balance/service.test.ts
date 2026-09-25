@@ -15,7 +15,7 @@ const mockState = vi.hoisted(() => ({
 				findMany: vi.fn(),
 			},
 			workBalanceRebuildIntent: {
-				findFirst: vi.fn(),
+				findMany: vi.fn(),
 			},
 		},
 		select: vi.fn(),
@@ -97,7 +97,6 @@ import {
 	refreshEmployeeWorkBalanceFromPeriods,
 	requestEmployeeWorkBalanceFullRebuild,
 	requestOrganizationWorkBalanceFullRebuild,
-	requestUserWorkBalanceFullRebuild,
 	shouldIncludeWorkBalanceInBatch,
 	upsertEmployeeWorkBalance,
 } from "./service";
@@ -185,8 +184,8 @@ describe("work balance helpers", () => {
 		});
 		mockState.db.query.employeeWorkBalance.findMany.mockReset();
 		mockState.db.query.employeeWorkBalance.findMany.mockResolvedValue([]);
-		mockState.db.query.workBalanceRebuildIntent.findFirst.mockReset();
-		mockState.db.query.workBalanceRebuildIntent.findFirst.mockResolvedValue(undefined);
+		mockState.db.query.workBalanceRebuildIntent.findMany.mockReset();
+		mockState.db.query.workBalanceRebuildIntent.findMany.mockResolvedValue([]);
 	});
 
 	it("builds all-time work balance values", () => {
@@ -412,7 +411,7 @@ describe("work balance helpers", () => {
 	});
 
 	it("treats every projection as not current while its organization awaits a rebuild", async () => {
-		mockState.db.query.workBalanceRebuildIntent.findFirst.mockResolvedValue({ id: "intent-1" });
+		mockState.db.query.workBalanceRebuildIntent.findMany.mockResolvedValue([{ userId: null }]);
 		mockState.db.query.employeeWorkBalance.findMany.mockResolvedValueOnce([
 			{
 				id: "balance-1",
@@ -439,6 +438,55 @@ describe("work balance helpers", () => {
 			getEmployeeWorkBalances({ employeeIds: ["employee-1"], organizationId: "org-1" }),
 		).resolves.toEqual(new Map());
 		expect(eq).toHaveBeenCalledWith(expect.anything(), "org-1");
+	});
+
+	it("treats only the changed user's projections as not current while a user rebuild is pending", async () => {
+		const storedRow = (employeeId: string) => ({
+			id: `balance-${employeeId}`,
+			employeeId,
+			organizationId: "org-1",
+			actualMinutes: 2520,
+			requiredMinutes: 2400,
+			balanceMinutes: 120,
+			computedFromDate: "2026-05-01",
+			computedThroughDate: "2026-05-22",
+			computedAt: new Date("2026-05-22T12:00:00.000Z"),
+			isDirty: false,
+			dirtyFromDate: null,
+			refreshRequestedAt: null,
+			lastError: null,
+			updatedAt: new Date("2026-05-22T12:00:00.000Z"),
+		});
+		mockState.db.query.workBalanceRebuildIntent.findMany.mockResolvedValue([
+			{ userId: "user-changed" },
+		]);
+
+		mockState.db.query.employee.findFirst.mockResolvedValueOnce({ userId: "user-changed" });
+		await expect(
+			getEmployeeWorkBalance({ employeeId: "employee-1", organizationId: "org-1" }),
+		).resolves.toBeNull();
+		expect(mockState.db.query.employeeWorkBalance.findFirst).not.toHaveBeenCalled();
+
+		mockState.db.query.employee.findFirst.mockResolvedValueOnce({ userId: "user-other" });
+		await expect(
+			getEmployeeWorkBalance({ employeeId: "employee-2", organizationId: "org-1" }),
+		).resolves.toMatchObject({ balanceMinutes: 120 });
+
+		mockState.db.query.employee.findMany.mockResolvedValueOnce([
+			{ id: "employee-1", userId: "user-changed" },
+			{ id: "employee-2", userId: "user-other" },
+		]);
+		mockState.db.query.employeeWorkBalance.findMany.mockResolvedValueOnce([
+			storedRow("employee-2"),
+		]);
+		const team = await getEmployeeWorkBalances({
+			employeeIds: ["employee-1", "employee-2"],
+			organizationId: "org-1",
+		});
+		expect([...team.keys()]).toEqual(["employee-2"]);
+		expect(inArray).toHaveBeenLastCalledWith(employeeWorkBalance.employeeId, ["employee-2"]);
+		// Employees resolve to users inside the organization only.
+		expect(eq).toHaveBeenCalledWith(employee.organizationId, "org-1");
 	});
 
 	it("omits hidden full-rebuild markers from bulk work balances", async () => {
@@ -642,22 +690,6 @@ describe("work balance helpers", () => {
 				refreshRequestedAt: requestedAt,
 			}),
 		);
-	});
-
-	it("requests rebuilds for every employee profile linked to a user", async () => {
-		mockState.db.query.employee.findMany.mockResolvedValue([
-			{ id: "employee-1", organizationId: "org-1" },
-			{ id: "employee-2", organizationId: "org-2" },
-		]);
-
-		await requestUserWorkBalanceFullRebuild({ userId: "user-1" });
-
-		expect(mockState.db.query.employee.findMany).toHaveBeenCalledWith({
-			where: { eq: [employee.userId, "user-1"] },
-			columns: { id: true, organizationId: true },
-		});
-		expect(mockState.db.transaction).toHaveBeenCalledTimes(1);
-		expect(mockState.txExecute).toHaveBeenCalledTimes(2);
 	});
 
 	it("preserves dirty state when a newer refresh request arrives during computation", async () => {
@@ -893,12 +925,15 @@ describe("work balance helpers", () => {
 			employeeWorkBalance.computedThroughDate,
 			expect.objectContaining({ values: expect.arrayContaining([now]) }),
 		);
-		// Organizations awaiting a rebuild are left to it.
+		// Projections awaiting a rebuild (organization-wide or the employee's user) are left to it.
 		expect(and).toHaveBeenCalledWith(
 			expect.anything(),
 			expect.anything(),
 			expect.objectContaining({
-				sql: expect.arrayContaining([expect.stringContaining("not exists (select 1 from ")]),
+				sql: expect.arrayContaining([
+					expect.stringContaining("not exists (select 1 from "),
+					expect.stringContaining(" is null or "),
+				]),
 			}),
 			expect.anything(),
 		);

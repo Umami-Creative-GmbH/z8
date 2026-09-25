@@ -126,15 +126,20 @@ export function shouldIncludeWorkBalanceInBatch(
 }
 
 /**
- * A pending rebuild intent (#311) means the organization's stored projections
- * were computed under configuration that has since changed: none is current.
+ * The organization's pending rebuild intents. A pending intent means the stored
+ * projections it covers were computed under configuration that has since
+ * changed: none of them is current. An organization intent (#311) covers every
+ * projection, a user intent (#312) that user's employees.
  */
-export async function hasPendingWorkBalanceRebuild(organizationId: string): Promise<boolean> {
-	const pending = await db.query.workBalanceRebuildIntent.findFirst({
+async function readPendingWorkBalanceRebuilds(organizationId: string) {
+	const intents = await db.query.workBalanceRebuildIntent.findMany({
 		where: eq(workBalanceRebuildIntent.organizationId, organizationId),
-		columns: { id: true },
+		columns: { userId: true },
 	});
-	return pending !== undefined;
+	return {
+		organizationWide: intents.some(({ userId }) => userId === null),
+		userIds: new Set(intents.flatMap(({ userId }) => (userId ? [userId] : []))),
+	};
 }
 
 export async function getEmployeeWorkBalance(input: {
@@ -143,7 +148,18 @@ export async function getEmployeeWorkBalance(input: {
 }): Promise<EmployeeWorkBalancePayload | null> {
 	// Intent first: a rebuild deletes its intent in the transaction that resets
 	// the rows, so a row read afterwards is never an old-zone projection.
-	if (await hasPendingWorkBalanceRebuild(input.organizationId)) return null;
+	const pending = await readPendingWorkBalanceRebuilds(input.organizationId);
+	if (pending.organizationWide) return null;
+	if (pending.userIds.size > 0) {
+		const scopedEmployee = await db.query.employee.findFirst({
+			where: and(
+				eq(employee.id, input.employeeId),
+				eq(employee.organizationId, input.organizationId),
+			),
+			columns: { userId: true },
+		});
+		if (!scopedEmployee || pending.userIds.has(scopedEmployee.userId)) return null;
+	}
 	const row = await db.query.employeeWorkBalance.findFirst({
 		where: and(
 			eq(employeeWorkBalance.employeeId, input.employeeId),
@@ -186,11 +202,25 @@ export async function getEmployeeWorkBalances(input: {
 	employeeIds: string[];
 	organizationId: string;
 }): Promise<Map<string, EmployeeWorkBalancePayload>> {
-	const employeeIds = [...new Set(input.employeeIds)];
+	let employeeIds = [...new Set(input.employeeIds)];
 	if (employeeIds.length === 0) return new Map();
 
 	// Intent first, as in getEmployeeWorkBalance.
-	if (await hasPendingWorkBalanceRebuild(input.organizationId)) return new Map();
+	const pending = await readPendingWorkBalanceRebuilds(input.organizationId);
+	if (pending.organizationWide) return new Map();
+	if (pending.userIds.size > 0) {
+		const scopedEmployees = await db.query.employee.findMany({
+			where: and(
+				eq(employee.organizationId, input.organizationId),
+				inArray(employee.id, employeeIds),
+			),
+			columns: { id: true, userId: true },
+		});
+		employeeIds = scopedEmployees
+			.filter(({ userId }) => !pending.userIds.has(userId))
+			.map(({ id }) => id);
+		if (employeeIds.length === 0) return new Map();
+	}
 	const rows = await db.query.employeeWorkBalance.findMany({
 		where: and(
 			eq(employeeWorkBalance.organizationId, input.organizationId),
@@ -737,38 +767,6 @@ export async function requestOrganizationWorkBalanceFullRebuild(
 	await db.transaction((tx) => resetBalances(tx as WorkBalanceDbClient));
 }
 
-export async function requestUserWorkBalanceFullRebuild(
-	input: { userId: string },
-	options?: { dbClient?: WorkBalanceDbClient; requestedAt?: Date },
-) {
-	const requestedAt = options?.requestedAt ?? new Date();
-	const resetBalances = async (dbClient: WorkBalanceDbClient) => {
-		const linkedEmployees = await dbClient.query.employee.findMany({
-			where: eq(employee.userId, input.userId),
-			columns: { id: true, organizationId: true },
-		});
-
-		await Promise.all(
-			linkedEmployees.map((linkedEmployee) =>
-				requestEmployeeWorkBalanceFullRebuild(
-					{
-						employeeId: linkedEmployee.id,
-						organizationId: linkedEmployee.organizationId,
-					},
-					{ dbClient, requestedAt },
-				),
-			),
-		);
-	};
-
-	if (options?.dbClient) {
-		await resetBalances(options.dbClient);
-		return;
-	}
-
-	await db.transaction((tx) => resetBalances(tx as WorkBalanceDbClient));
-}
-
 export async function deleteEmployeeWorkBalance(input: {
 	employeeId: string;
 	organizationId: string;
@@ -832,7 +830,7 @@ export async function listEmployeesForWorkBalanceBatch(limit = 1000, now = new D
 				eq(employee.isActive, true),
 				isNotNull(employee.organizationId),
 				// A pending rebuild resets these projections first; see rebuild-intents.ts.
-				sql`not exists (select 1 from ${workBalanceRebuildIntent} where ${workBalanceRebuildIntent.organizationId} = ${employee.organizationId})`,
+				sql`not exists (select 1 from ${workBalanceRebuildIntent} where ${workBalanceRebuildIntent.organizationId} = ${employee.organizationId} and (${workBalanceRebuildIntent.userId} is null or ${workBalanceRebuildIntent.userId} = ${employee.userId}))`,
 				or(
 					isNull(employeeWorkBalance.id),
 					eq(employeeWorkBalance.isDirty, true),

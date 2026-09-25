@@ -3203,6 +3203,27 @@ function isPendingApprovalUniqueConflict(error: DatabaseError) {
 	);
 }
 
+/**
+ * The submission's correction entries were committed earlier, yet no lifecycle
+ * exists for its key: privileged cleanup purged it (#306). A late retry must not
+ * route a new approval around retained entries.
+ */
+export function purgedTimeCorrectionConflict(workPeriodId: string) {
+	return new ConflictError({
+		message:
+			"The approval for this time correction was removed. Submit a new correction instead.",
+		conflictType: "purged_time_correction_approval",
+		details: { workPeriodId },
+	});
+}
+
+export function isPurgedTimeCorrectionConflict(error: unknown): boolean {
+	return (
+		error instanceof ConflictError &&
+		error.conflictType === "purged_time_correction_approval"
+	);
+}
+
 function pendingTimeCorrectionConflict(workPeriodId: string) {
 	return new ConflictError({
 		message:
@@ -3357,6 +3378,11 @@ export interface ExecuteTimeCorrectionSubmissionInput {
 	submissionKey: string;
 	submissionId?: string;
 	correction: TimeCorrectionWorkflowPayload["timeCorrection"];
+	/**
+	 * The correction entries named in `correction` existed before this attempt.
+	 * Without a lifecycle for `submissionKey` the attempt is refused (#306).
+	 */
+	correctionEntriesCommitted?: boolean;
 	nowInstant?: () => Instant;
 	captureLegacyState?: typeof captureTimeCorrectionLegacyApprovalState;
 }
@@ -3970,6 +3996,9 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 				},
 			} as TimeCorrectionSubmissionResult;
 		}
+		if (input.correctionEntriesCommitted) {
+			throw purgedTimeCorrectionConflict(input.workPeriodId);
+		}
 		const pending = requests.find((request) => request.status === "pending");
 		if (pending) {
 			throw pendingTimeCorrectionConflict(input.workPeriodId);
@@ -4263,6 +4292,9 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 				terminal: null,
 			},
 		} as TimeCorrectionSubmissionResult;
+	}
+	if (input.correctionEntriesCommitted) {
+		throw purgedTimeCorrectionConflict(input.workPeriodId);
 	}
 	const started = await startApprovalWorkflow({
 		context: transactionContext,

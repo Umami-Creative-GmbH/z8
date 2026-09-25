@@ -153,14 +153,8 @@ export const TEMPORARY_LEGACY_WRITE_EXCEPTIONS = {
 	"src/lib/approvals/server/shared.ts": {
 		approval_request: ["update"],
 	},
-	"src/lib/demo/delete-non-admin.ts": {
-		approval_request: ["delete"],
-	},
 	"src/lib/demo/demo-data.service.ts": {
 		approval_request: ["insert"],
-	},
-	"src/lib/jobs/organization-cleanup.ts": {
-		approval_request: ["delete"],
 	},
 	"src/lib/teams/jobs/escalation-checker.ts": {
 		approval_request: ["update"],

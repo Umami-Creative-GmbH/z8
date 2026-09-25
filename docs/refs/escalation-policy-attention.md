@@ -96,7 +96,9 @@ processors (#298–#300) raise and resolve reason-specific conditions.
 Migration `0069_escalation_policy_attention.sql` adds the four tables and the
 `approval_escalation_attention` notification type. Every table cascades from its
 organization (revisions and events through composite FKs), so whole-organization
-deletion removes the lifecycle. User FKs (`updated_by`, `changed_by`,
+deletion removes the lifecycle. Privileged approval deletion removes the
+incidents of the purged lifecycle, which name its workflow, assignments or
+legacy requests by value (#306). User FKs (`updated_by`, `changed_by`,
 `disposed_by`, `actor_user_id`) follow the existing audit convention of
 `ON DELETE NO ACTION`. CHECK constraints enforce closure/disposition/actor
 consistency.

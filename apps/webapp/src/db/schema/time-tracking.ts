@@ -387,9 +387,11 @@ export const employeeWorkBalancePeriod = pgTable(
 
 /**
  * Durable balance-rebuild intent (#311). A configuration change that invalidates
- * every balance projection of an organization commits one row with the change;
+ * balance projections commits one row per affected organization with the change;
  * `processWorkBalanceRebuildIntents` executes it separately and deletes it.
- * While a row exists, the organization's projections are not current.
+ * An organization timezone intent (`user_id` null) covers every projection of the
+ * organization; a user timezone intent (#312) covers that user's employees in it.
+ * While a row exists, the projections it covers are not current.
  */
 export const workBalanceRebuildIntent = pgTable(
 	"work_balance_rebuild_intent",
@@ -399,6 +401,8 @@ export const workBalanceRebuildIntent = pgTable(
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
 		reason: text("reason").notNull(),
+		/** The user whose employees are affected; null for the whole organization. */
+		userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
 		requestedBy: text("requested_by").references(() => user.id, {
 			onDelete: "set null",
 		}),
@@ -414,7 +418,11 @@ export const workBalanceRebuildIntent = pgTable(
 		),
 		check(
 			"work_balance_rebuild_intent_reason_check",
-			sql`${table.reason} IN ('organization_timezone')`,
+			sql`${table.reason} IN ('organization_timezone', 'user_timezone')`,
+		),
+		check(
+			"work_balance_rebuild_intent_scope_check",
+			sql`(${table.reason} = 'user_timezone') = (${table.userId} IS NOT NULL)`,
 		),
 	],
 );

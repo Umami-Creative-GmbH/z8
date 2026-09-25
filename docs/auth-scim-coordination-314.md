@@ -247,8 +247,8 @@ The suite does not cover:
 
 1. Employee provisioning after membership addition or acceptance, invite-code joins,
    onboarding, demo and cleanup writers (#318) do not yet participate.
-2. Platform-administration direct writes of global role and ban, and user settings (#312), do
-   not yet participate.
+2. ~~Platform-administration direct writes of global role and ban, and user settings (#312).~~
+   They participate since #312; see [its evidence](user-configuration-access-312.md).
 3. Old deployed binaries write these facts without protection (#327). New guards cannot fence
    old code. They must be drained or disabled before manual adoption activates.
 4. A SCIM request that projects several users can take their guards out of sorted order, for
