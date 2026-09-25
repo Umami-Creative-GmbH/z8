@@ -11,7 +11,7 @@
       "alreadyProcessed": "Bu onay zaten işleme alınmış.",
       "boundReviewRequired": "Bu kart artık mevcut talep veya atamayla eşleşmiyor ya da işlem doğrulanamadı. Karar verilmedi. Talebi Z8'de inceleyin.",
       "invocationConflict": "Bu tuşa basma zaten farklı bir işlemle kaydedildi. Karar verilmedi. Talebi Z8'de inceleyin.",
-      "outcomeUnknown": "Bu işlemin sonucu doğrulanamadı. Tekrar denemeden önce talebi Z8'de inceleyin.",
+      "outcomeUnknown": "Bu basışın sonucu doğrulanamadı. Tekrar basmadan önce talebi Z8'de kontrol edin.",
       "card": {
         "absenceTitle": "Onay bekleyen izin talebi",
         "boundHint": "Onayla veya Reddet yalnızca yukarıda gösterilen talep hakkında karar verir. Talep değiştiyse veya yeniden atandıysa hiçbir karar verilmez ve talebi Z8'de incelemeniz istenir.",

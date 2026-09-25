@@ -11,7 +11,7 @@
       "alreadyProcessed": "Diese Genehmigung wurde bereits bearbeitet.",
       "boundReviewRequired": "Diese Karte passt nicht mehr zum aktuellen Antrag oder zur aktuellen Zuweisung, oder die Aktion konnte nicht verifiziert werden. Es wurde keine Entscheidung getroffen. Prüfen Sie den Antrag in Z8.",
       "invocationConflict": "Dieser Tastendruck wurde bereits mit einer anderen Aktion erfasst. Es wurde keine Entscheidung getroffen. Prüfen Sie den Antrag in Z8.",
-      "outcomeUnknown": "Das Ergebnis dieser Aktion konnte nicht bestätigt werden. Prüfen Sie den Antrag in Z8, bevor Sie es erneut versuchen.",
+      "outcomeUnknown": "Das Ergebnis dieses Tastendrucks konnte nicht bestätigt werden. Prüfen Sie den Antrag in Z8, bevor Sie erneut drücken.",
       "card": {
         "absenceTitle": "Abwesenheitsantrag zur Genehmigung",
         "boundHint": "Genehmigen oder Ablehnen entscheidet genau über den oben gezeigten Antrag. Wurde er geändert oder neu zugewiesen, wird nichts entschieden und Sie werden gebeten, ihn in Z8 zu prüfen.",

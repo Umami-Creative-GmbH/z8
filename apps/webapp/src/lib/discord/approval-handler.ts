@@ -206,7 +206,7 @@ async function outcomeUnknownReply(recipient: {
 		content: escapeDiscordMarkdown(
 			t(
 				"bot.approval.outcomeUnknown",
-				"The outcome of this action could not be confirmed. Review the request in Z8 before trying again.",
+				"The result of this press could not be confirmed. Check the request in Z8 before pressing again.",
 			),
 		),
 		allowed_mentions: { parse: [] },

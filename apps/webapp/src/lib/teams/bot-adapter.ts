@@ -16,6 +16,7 @@ import {
 } from "botbuilder";
 import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
+import { type TeamsCallFailure, teamsCallFailureFromError } from "./delivery-outcome";
 import { TeamsError } from "./types";
 
 const logger = createLogger("TeamsBotAdapter");
@@ -204,6 +205,82 @@ export async function updateMessage(
 		throw new TeamsError("Failed to update message", "CARD_UPDATE_FAILED", {
 			originalError: error instanceof Error ? error.message : String(error),
 		});
+	}
+}
+
+/** Long enough for one connector call, well inside a delivery lease. */
+const TEAMS_CALL_TIMEOUT_MS = 30_000;
+
+async function withinTimeout<T>(work: Promise<T>): Promise<T> {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	const timeout = new Promise<never>((_, reject) => {
+		timer = setTimeout(
+			() => reject(Object.assign(new Error("Teams call timed out"), { name: "TimeoutError" })),
+			TEAMS_CALL_TIMEOUT_MS,
+		);
+	});
+	try {
+		return await Promise.race([work, timeout]);
+	} finally {
+		clearTimeout(timer);
+	}
+}
+
+export type TeamsSendResult = { kind: "ok"; activityId: string | null } | TeamsCallFailure;
+export type TeamsUpdateResult = { kind: "ok" } | TeamsCallFailure;
+
+/**
+ * Proactive send with an explicit outcome for the approval delivery owner:
+ * the remote activity ID on success, otherwise what the connector reported.
+ * A timeout is `unknown` because Teams may still have posted the message.
+ */
+export async function sendActivityWithOutcome(
+	conversationReference: ConversationReference,
+	activity: Partial<Activity>,
+): Promise<TeamsSendResult> {
+	try {
+		const adapter = getBotAdapter();
+		const appId = env.MICROSOFT_APP_ID;
+		if (!appId) throw new TeamsError("MICROSOFT_APP_ID not configured", "BOT_ERROR");
+		let activityId: string | null = null;
+		await withinTimeout(
+			adapter.continueConversationAsync(appId, conversationReference, async (turnContext) => {
+				const response = await turnContext.sendActivity(activity);
+				activityId = response?.id ?? null;
+			}),
+		);
+		return { kind: "ok", activityId };
+	} catch (error) {
+		logger.warn(
+			{ error, conversationId: conversationReference.conversation?.id },
+			"Teams send failed",
+		);
+		return teamsCallFailureFromError(error);
+	}
+}
+
+/** Updates one sent message in place, with an explicit outcome. */
+export async function updateActivityWithOutcome(
+	conversationReference: ConversationReference,
+	activityId: string,
+	activity: Partial<Activity>,
+): Promise<TeamsUpdateResult> {
+	try {
+		const adapter = getBotAdapter();
+		const appId = env.MICROSOFT_APP_ID;
+		if (!appId) throw new TeamsError("MICROSOFT_APP_ID not configured", "BOT_ERROR");
+		await withinTimeout(
+			adapter.continueConversationAsync(appId, conversationReference, async (turnContext) => {
+				await turnContext.updateActivity({ ...activity, id: activityId });
+			}),
+		);
+		return { kind: "ok" };
+	} catch (error) {
+		logger.warn(
+			{ error, conversationId: conversationReference.conversation?.id, activityId },
+			"Teams update failed",
+		);
+		return teamsCallFailureFromError(error);
 	}
 }
 

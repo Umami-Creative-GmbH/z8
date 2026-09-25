@@ -20,6 +20,9 @@ import { type DecisionEvidenceRecord, findDecisionEvidenceById } from "./store";
  */
 export const APPROVAL_INVOCATION_SCHEMES = [
 	"telegram_callback_query",
+	// Teams Universal Action invoke (`adaptiveCard/action`, manual trigger):
+	// the recorded activity ID, scoped by bot, tenant and conversation (#293).
+	"teams_adaptive_card_action",
 	"discord_interaction",
 ] as const;
 export type ApprovalInvocationScheme =
@@ -29,7 +32,11 @@ export const APPROVAL_INVOCATION_SCHEME_VERSION = 1;
 
 const SCHEME_PROVIDERS: Readonly<
 	Record<ApprovalInvocationScheme, ApprovalPresentationProvider>
-> = { telegram_callback_query: "telegram", discord_interaction: "discord" };
+> = {
+	telegram_callback_query: "telegram",
+	teams_adaptive_card_action: "teams",
+	discord_interaction: "discord",
+};
 
 /** The provider whose card admission governs invocations of this scheme. */
 export function approvalInvocationProvider(

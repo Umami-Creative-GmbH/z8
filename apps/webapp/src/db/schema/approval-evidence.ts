@@ -418,7 +418,9 @@ export const approvalInvocation = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
-		scheme: text("scheme").$type<"telegram_callback_query" | "discord_interaction">().notNull(),
+		scheme: text("scheme")
+			.$type<"telegram_callback_query" | "teams_adaptive_card_action" | "discord_interaction">()
+			.notNull(),
 		schemeVersion: integer("scheme_version").notNull(),
 		receiverScope: text("receiver_scope").notNull(),
 		invocationId: text("invocation_id").notNull(),
@@ -441,7 +443,7 @@ export const approvalInvocation = pgTable(
 	(table) => [
 		check(
 			"approval_invocation_scheme_check",
-			sql`${table.scheme} IN ('telegram_callback_query', 'discord_interaction') AND ${table.schemeVersion} = 1`,
+			sql`${table.scheme} IN ('telegram_callback_query', 'teams_adaptive_card_action', 'discord_interaction') AND ${table.schemeVersion} = 1`,
 		),
 		check(
 			"approval_invocation_action_check",

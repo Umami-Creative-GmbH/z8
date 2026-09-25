@@ -11,7 +11,7 @@
       "alreadyProcessed": "Esta aprovação já foi processada.",
       "boundReviewRequired": "Este cartão já não corresponde ao pedido ou à atribuição atual, ou não foi possível verificar a ação. Nenhuma decisão foi tomada. Reveja o pedido no Z8.",
       "invocationConflict": "Este toque já foi registado com outra ação. Nenhuma decisão foi tomada. Reveja o pedido no Z8.",
-      "outcomeUnknown": "Não foi possível confirmar o resultado desta ação. Reveja o pedido no Z8 antes de tentar novamente.",
+      "outcomeUnknown": "Não foi possível confirmar o resultado deste clique. Verifique o pedido no Z8 antes de clicar novamente.",
       "card": {
         "absenceTitle": "Pedido de ausência para aprovação",
         "boundHint": "Aprovar ou rejeitar decide exatamente o pedido mostrado acima. Se foi alterado ou reatribuído, nada é decidido e será pedido que o reveja no Z8.",

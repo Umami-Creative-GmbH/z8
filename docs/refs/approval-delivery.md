@@ -1,11 +1,11 @@
-# Approval card delivery — #291 / T27, #294 / T30, #292 / T28
+# Approval card delivery — #291 / T27, #294 / T30, #293 / T29, #292 / T28
 
 One durable owner sends approval cards and keeps them current. It covers
-Telegram cards (#291), review-only Slack cards (#294) and Discord cards (#292,
-see its section at the end) for canonical absences. It is **inactive for every
-organization**: migrations `0086_approval_delivery.sql`,
-`0090_approval_delivery_slack.sql` and `0091_discord_approval_delivery.sql`
-insert no control rows.
+Telegram cards (#291), review-only Slack cards (#294), Teams cards (#293) and
+Discord cards (#292, see its section at the end) for canonical absences. It is
+**inactive for every organization**: migrations `0086_approval_delivery.sql`,
+`0090_approval_delivery_slack.sql`, `0091_teams_approval_actions.sql` and
+`0092_discord_approval_delivery.sql` insert no control rows.
 
 ```text
 canonical submission / decision / cancellation (one transaction)
@@ -30,7 +30,43 @@ Slack adapter (review-only)                             lib/slack/approval-deliv
   installation + approvals enabled, recipient's DM (saved, or opened for the linked account)
   prepareApprovalPresentation with a review summary       (approval-card.ts renders it)
   chat.postMessage / chat.update, no client retries       (api.ts, delivery-outcome.ts)
+
+Teams adapter (#293)                                    lib/teams/approval-delivery.ts
+  bot credentials, active tenant with approvals enabled, recipient's personal
+  conversation in that tenant, prepareApprovalPresentation (provider "teams")
+  proactive send / update with explicit outcomes   (bot-adapter.ts, delivery-outcome.ts)
 ```
+
+### Teams specifics (#293)
+
+- Message identity: receiver scope `teams-bot:<app id>:tenant:<tenant id>`,
+  destination = the personal conversation ID, remote message = the activity ID
+  the connector returned. A send that returns no activity ID is `ambiguous`
+  (`no_message_identity`): the message cannot be tracked or retired, and the
+  retry may duplicate it.
+- A refresh updates the message through the stored reference of its
+  conversation (active or not). Another bot or tenant, or an unknown
+  conversation, makes the message `gone`.
+- Connector failures: 429, 409 and 412 are `retryable`; network errors,
+  timeouts (30 s) and 5xx are `ambiguous`; 401 is `unavailable`; 403 and 404
+  are `destination_invalid` for a send (blocked, uninstalled, conversation not
+  found) and `gone` for an update; other 4xx are `permanent`. No bot
+  credentials or no tenant configuration is `unavailable`; an inactive tenant
+  or approvals disabled is `suppressed`; a stored conversation from another
+  tenant is `destination_invalid`.
+- An organization can connect several tenants. A send uses the tenant of the
+  recipient's personal conversation; a refresh uses the tenant named in the
+  message's receiver scope, never an arbitrary tenant of the organization.
+- Destination repair: a personal conversation saved for the recipient (they
+  messaged the bot) re-arms their Teams `destination_invalid` work. Repair is
+  per provider: a Telegram chat does not re-arm Teams work, and the reverse.
+- The existing Teams channel stays silent for an absence with a canonical
+  workflow while the Teams owner is active, both for `absence_entry` and for
+  `approval_request` notifications of that absence. The old sender
+  (`sendApprovalCardToManager`) checks the same condition itself, so the
+  legacy Teams escalation checker cannot send a second card either.
+- Pressed cards: see "Teams absence cards with reviewed bindings" in
+  [approval-evidence.md](approval-evidence.md).
 
 ## Ownership and routing
 
@@ -177,6 +213,9 @@ values (:org, 'absence', 'telegram');
 -- #294, after 0090:
 insert into approval_delivery_control (organization_id, workflow_type, provider)
 values (:org, 'absence', 'slack');
+-- Teams (#293), after 0091:
+insert into approval_delivery_control (organization_id, workflow_type, provider)
+values (:org, 'absence', 'teams');
 ```
 
 Deleting the row stops the owner. Unfinished work stays for recovery, but
@@ -319,7 +358,7 @@ Unit seams: `slack/delivery-outcome.test.ts`, `slack/approval-card.test.ts`,
 
 Discord uses the same prepared presentation, reviewed bindings, decision owner
 and delivery owner as Telegram. It adds no persistence, authority or dispatch
-of its own. Migration `0091_discord_approval_delivery.sql` only widens the
+of its own. Migration `0092_discord_approval_delivery.sql` only widens the
 provider and scheme CHECKs. It inserts no `approval_presentation_control` and
 no `approval_delivery_control` rows, so Discord stays review-only on the
 existing path for every organization.
@@ -379,14 +418,14 @@ interaction (signature verified by the route)          lib/discord/approval-hand
 
 ### Activation (#292)
 
-Apply `0091` after `0090`, then per organization, after the #290/#291 gates:
+Apply `0092` after `0091`, then per organization, after the #290/#291 gates:
 insert `approval_presentation_control (…, 'discord', 'actionable')` under the
 rollout lock as for Telegram, and
 `approval_delivery_control (:org, 'absence', 'discord')`.
 
 ### Activation blockers (#292, unresolved)
 
-1. Apply `0091` through the authorized deployment. It has run only on the
+1. Apply `0092` through the authorized deployment. It has run only on the
    disposable PostgreSQL 16 database.
 2. **Old binaries** do not know the Discord adapter or `discord_interaction`.
    Insert controls only after every worker and app instance is upgraded.
