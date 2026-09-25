@@ -389,6 +389,7 @@ the runner's migration verification):
   touched unit suites pass. The only failures are the 5 date-dependent
   `clockOut` tests in `actions/clocking.test.ts`, which also fail on clean `dev`.
 - **Typecheck.** `pnpm run typecheck` passes.
+- **Full unit suite (Windows).** 12,336 passed, 139 failed. All failures are pre-existing or environmental: 92 in the write-boundary scanner file (it cannot read sources on Windows; it passes on Linux), CRLF/date-dependent migration and `clockOut` tests, and source sweeps over files this slice does not touch. The count is in line with the clean-`dev` baseline of about 139–146.
 - **PostgreSQL, full runner list.** 75 files passed and 1 skipped (Redis); 1335
   tests passed, 6 skipped.
 - **Write-boundary scanner (Linux, `node:24` container, run as `node`).**
