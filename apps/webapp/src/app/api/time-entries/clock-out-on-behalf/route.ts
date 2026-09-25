@@ -90,10 +90,7 @@ export async function POST(request: NextRequest) {
 			request: parsed,
 			session: { userId: session.user.id, activeOrganizationId },
 		});
-		if (result.outcome === "rejected") {
-			const { outcome: _outcome, operationId, ...rejection } = result;
-			return rejected(rejection as OnBehalfClockOutRejection, operationId);
-		}
+		if (result.outcome === "rejected") return rejected(result, result.operationId);
 		return NextResponse.json(result, { status: result.outcome === "executed" ? 201 : 200 });
 	} catch (error) {
 		logger.error({ error }, "On-behalf clock-out failed");

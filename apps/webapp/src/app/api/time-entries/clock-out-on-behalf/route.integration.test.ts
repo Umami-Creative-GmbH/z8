@@ -112,7 +112,8 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/compliance", async (importOr
 });
 
 const route = await import("./route");
-const { clockIn } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
+const { clockIn, clockOutAs } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
+const { db } = await import("@/db");
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
@@ -691,6 +692,83 @@ describeIntegration("manager on-behalf clock-out on PostgreSQL", () => {
 			[ids.target],
 		);
 		expect(only(rows).count).toBe(1);
+	});
+
+	/**
+	 * The target's own web clock-out, through the shared live closer. It takes its
+	 * actor explicitly, so it can race the manager's request without sharing the
+	 * mocked session.
+	 */
+	async function selfClockOut() {
+		const owner = await db.query.employee.findFirst({
+			where: (row, { eq }) => eq(row.id, ids.target),
+		});
+		if (!owner) throw new Error("Target employee missing");
+		return clockOutAs(
+			{
+				userId: ids.targetUser,
+				employee: owner,
+				resolveTimezone: async () => "America/New_York",
+			},
+			undefined,
+			undefined,
+			{ submissionId: randomUUID(), instant: clockOutAt },
+		);
+	}
+
+	async function closures() {
+		const { rows } = await admin.query<{ clock_outs: number; writers: string[] | null }>(
+			`select (select count(*)::int from time_entry where employee_id = $1 and type = 'clock_out') as clock_outs,
+			        (select array_agg(writer order by writer) from completed_work_operation where employee_id = $1) as writers`,
+			[ids.target],
+		);
+		return only(rows);
+	}
+
+	it("refuses the manager's closure after the employee's own clock-out committed first", async () => {
+		const running = await clockInAs(ids.targetUser);
+
+		await expect(selfClockOut()).resolves.toMatchObject({ success: true });
+		expect(
+			await closeAs(ids.managerUser, { workPeriodId: running.id, operationId: randomUUID() }),
+		).toMatchObject({ status: 409, body: { code: "target_not_active" } });
+
+		expect(await closures()).toEqual({ clock_outs: 1, writers: ["web_clock_out"] });
+	});
+
+	it("refuses the employee's own clock-out after the manager's closure committed first", async () => {
+		const running = await clockInAs(ids.targetUser);
+
+		expect(
+			await closeAs(ids.managerUser, { workPeriodId: running.id, operationId: randomUUID() }),
+		).toMatchObject({ status: 201 });
+		await expect(selfClockOut()).resolves.toMatchObject({
+			success: false,
+			failure: "not_clocked_in",
+		});
+
+		expect(await closures()).toEqual({ clock_outs: 1, writers: ["manager_on_behalf"] });
+	});
+
+	it("serializes a concurrent on-behalf closure and the employee's own clock-out into one closure", async () => {
+		const running = await clockInAs(ids.targetUser);
+
+		const [self, onBehalf] = await Promise.all([
+			selfClockOut(),
+			closeAs(ids.managerUser, { workPeriodId: running.id, operationId: randomUUID() }),
+		]);
+
+		// Exactly one writer wins; the other is refused without writing.
+		expect([self.success, onBehalf.status === 201].filter(Boolean)).toHaveLength(1);
+		if (self.success) {
+			expect(onBehalf).toMatchObject({ status: 409, body: { code: "target_not_active" } });
+		} else {
+			expect(self).toMatchObject({ failure: "not_clocked_in" });
+		}
+		const committed = await closures();
+		expect(committed.clock_outs).toBe(1);
+		expect(committed.writers).toHaveLength(1);
+		expect(await graph(running.id)).toMatchObject({ is_active: false, graph_revision: 1 });
 	});
 
 	it("returns one committed outcome for concurrent identical submissions", async () => {

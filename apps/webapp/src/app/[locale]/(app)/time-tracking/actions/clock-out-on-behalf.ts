@@ -44,6 +44,7 @@ import {
 import {
 	type AttributionIntent,
 	attributionIntent,
+	attributionValue,
 	type CloseActiveWorkOperationCommand,
 	type CloseActiveWorkResult,
 	type CloseActiveWorkWriter,
@@ -176,8 +177,8 @@ async function resolveTarget(actor: Actor, workPeriodId: string): Promise<Target
 }
 
 function intentValue(intent: AttributionIntent, current: string | null): string | null {
-	if (intent.kind === "preserve") return current;
-	return intent.kind === "clear" ? null : intent.id;
+	const value = attributionValue(intent);
+	return value === undefined ? current : value;
 }
 
 function transactionInput(actor: Actor, target: Target, command: OnBehalfClockOutCommand) {
@@ -368,9 +369,6 @@ async function closeFresh(
 		timezone: zone.timezone,
 		timezoneSource: "manager_target_user_setting",
 	});
-	const explicit = (intent: AttributionIntent) =>
-		intent.kind === "preserve" ? undefined : intentValue(intent, null);
-
 	const result = await withWebClockOutTransaction(
 		{
 			...transactionInput(actor, target, command),
@@ -379,8 +377,8 @@ async function closeFresh(
 			// On-behalf closure never routes the policy clock-out approval: the
 			// authorized actor's closure is approved work, as before adoption.
 			requiresApproval: false,
-			projectId: explicit(command.project),
-			workCategoryId: explicit(command.workCategory),
+			projectId: attributionValue(command.project),
+			workCategoryId: attributionValue(command.workCategory),
 		},
 		createOrdinaryApprovalRuntime,
 		async (coordination) => {
@@ -410,20 +408,12 @@ async function closeFresh(
 		return { outcome: "replayed", operationId: command.operationId, ...result.committed };
 	}
 
-	const committed: OnBehalfClockOutOutcome =
-		result.kind === "operation"
-			? {
-					outcome: "executed",
-					operationId: command.operationId,
-					entry: result.closed.entry,
-					receipt: result.closed.result,
-				}
-			: {
-					outcome: "executed",
-					operationId: command.operationId,
-					entry: result.closed.entry,
-					receipt: null,
-				};
+	const committed: OnBehalfClockOutOutcome = {
+		outcome: "executed",
+		operationId: command.operationId,
+		entry: result.closed.entry,
+		receipt: result.kind === "operation" ? result.closed.result : null,
+	};
 	const outcome: ClockOutCommitOutcome =
 		result.kind === "operation"
 			? {

@@ -90,6 +90,12 @@ export function attributionIntent(value: string | null | undefined): Attribution
 	return { kind: "replace", id: value };
 }
 
+/** The inverse of `attributionIntent`: undefined preserves, null clears, an ID replaces. */
+export function attributionValue(intent: AttributionIntent): string | null | undefined {
+	if (intent.kind === "preserve") return undefined;
+	return intent.kind === "clear" ? null : intent.id;
+}
+
 /**
  * What the operation reads from a writer's frozen command. The receipt stores the
  * writer's whole command, and a retry must carry exactly the same value.

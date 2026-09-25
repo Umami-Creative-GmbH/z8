@@ -165,7 +165,7 @@ running work is started by the real web `clockIn` action. Replaced: session, bil
 provisioning, the server clock, the compliance follow-up (to inject a post-commit
 failure) and the Next cache.
 
-Verified (19 tests):
+Verified (22 tests):
 
 - The complete graph from one closure at 8h0m40s gives 481 minutes in the period and
   the canonical record. The clock-in keeps the target as actor. The clock-out entry,
@@ -190,6 +190,11 @@ Verified (19 tests):
 - Competing closures with different identities give one 201 and one
   `target_not_active`, with one receipt and one clock-out entry. Three concurrent
   identical submissions give one 201 and two 200 with the same receipt.
+- Against the target's own web clock-out (the shared live closer, also adopted), in
+  both arrival orders: the later writer is refused (`target_not_active`, or
+  `not_clocked_in` for the self clock-out) and only the first writer's receipt
+  exists. Run concurrently, exactly one of them closes the period, with one
+  clock-out entry, one receipt and `graph_revision` 1.
 - Injected failures on the canonical record, detail, allocation, clock-out entry,
   position update, period update, balance intent and receipt each roll back the whole
   graph (organization snapshot equality) and return 500 `unknown`. Resending the same
@@ -209,8 +214,11 @@ skipping target eligibility for project replacement. A recheck-after-refusal bra
 copied from #275 was removed because no ordering reaches it: the replay inside the
 coordinated transaction already covers the race.
 
-Run together with the #272, #273, #274, #275, #277, offline-context, approval-evidence
-and clocking-access suites: **9 files / 254 tests passed**.
+Before the `dev` merge that renumbered the migration to `0090`, the suite passed
+together with the #272, #273, #274, #275, #277, offline-context, approval-evidence and
+clocking-access suites (**9 files / 254 tests**). After the merge, on a fresh chain
+through `0090`, the suite (22 tests), its adapter tests and the #275 suite passed
+**59/59**.
 
 ### Database-free
 
@@ -239,6 +247,11 @@ This slice closes on implementation. Activation items move to #327, #329 and #33
 - **Deployed calendar clients (#329).** Old bundles send no identity. They close work
   correctly but cannot recover a lost response. After deployment, their inventory and
   drain is part of the client-adoption gate.
+- **Durable client identity (#329, with #279).** The calendar keeps the identity in
+  memory for the page's lifetime. A lost response followed by a reload mints a new
+  identity. The retry is then refused with `target_not_active`, which is safe (no
+  second closure) but does not recover the original outcome. Durable pre-send capture
+  belongs with the web clock client adoption in #279.
 - **Departed owners.** A receipt for work whose owner has since become inactive
   cannot be replayed through this route: the target resolves as `target_unknown`.
   The same holds for self clock-out replay, whose coordinator routing requires an
