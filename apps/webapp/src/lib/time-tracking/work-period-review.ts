@@ -59,18 +59,15 @@ export async function assertNoUnresolvedWorkPeriodReview(
 /**
  * The exact approval lifecycle whose own terminal transition a policy clock-out
  * break split resolves (#256 §7, #303). Built by the terminal finalizer from the
- * lifecycle it verified, never from a caller flag.
+ * lifecycle it verified, never from a caller flag. Exactly one identity is set.
  */
 export interface ResolvingWorkPeriodReview {
 	readonly workPeriodId: string;
 	readonly employeeId: string;
 	readonly workflowType: "policy_clock_out";
-	/**
-	 * The workflow bound to the period for this lifecycle: the canonical authority,
-	 * or the shadow mirror a legacy lifecycle is observed through.
-	 */
+	/** The canonical workflow that is the lifecycle's authority. */
 	readonly workflowId: string | null;
-	/** The resolving legacy request; null when the canonical workflow is the authority. */
+	/** The legacy request that is the lifecycle's authority. */
 	readonly approvalRequestId: string | null;
 }
 
@@ -82,12 +79,19 @@ function rowsOf(result: unknown): Record<string, unknown>[] {
 
 /**
  * The unresolved-review guard for a terminal break split. Only the resolving
- * lifecycle is exempt: its bound workflow and that workflow's legacy
- * compatibility mirror rows, or its legacy request. Any other pending ordinary
- * approval or time correction for the period still blocks the split. The
- * resolving identities are verified against the period and its owner first; a
- * mismatch is an integrity failure, not an exemption. The caller holds the
- * period row lock.
+ * lifecycle is exempt, identified by linkage rather than by what the period is
+ * bound to:
+ *
+ * - a canonical lifecycle: its workflow and the legacy compatibility rows its
+ *   stages mirror;
+ * - a legacy lifecycle: its request and any shadow mirror workflow of the same
+ *   kind whose stage mirrors that request, with the other rows that mirror
+ *   mirrors.
+ *
+ * Any other pending ordinary approval or time correction for the period, such
+ * as an older cycle's workflow, still blocks the split. The authority's identity
+ * is verified against the period and its owner first; a mismatch is an
+ * integrity failure, not an exemption. The caller holds the period row lock.
  */
 export async function assertNoUnrelatedWorkPeriodReview(
 	tx: Pick<WorkTransactionClient, "execute">,
@@ -96,20 +100,31 @@ export async function assertNoUnrelatedWorkPeriodReview(
 ) {
 	const workflowId = resolving.workflowId;
 	const approvalRequestId = resolving.approvalRequestId;
-	if (!workflowId && !approvalRequestId) {
-		throw new Error("Terminal split has no resolving approval lifecycle");
+	if ((workflowId === null) === (approvalRequestId === null)) {
+		throw new Error("Terminal split needs exactly one resolving approval authority");
 	}
 	const result = await tx.execute(sql`
+		with exempt_workflow as (
+			select workflow.id
+			from approval_workflow workflow
+			where workflow.organization_id = ${organizationId}
+				and workflow.workflow_type = ${resolving.workflowType}
+				and workflow.source_type = 'time_entry'
+				and workflow.source_id = ${resolving.workPeriodId}::uuid
+				and workflow.requester_employee_id = ${resolving.employeeId}::uuid
+				and (
+					workflow.id = ${workflowId}::uuid
+					or exists (
+						select 1 from approval_workflow_stage stage
+						where stage.organization_id = workflow.organization_id
+							and stage.workflow_id = workflow.id
+							and stage.legacy_approval_request_id = ${approvalRequestId}::uuid
+					)
+				)
+		)
 		select
-			(${workflowId}::uuid is null or exists (
-				select 1 from approval_workflow workflow
-				where workflow.id = ${workflowId}::uuid
-					and workflow.organization_id = ${organizationId}
-					and workflow.workflow_type = ${resolving.workflowType}
-					and workflow.source_type = 'time_entry'
-					and workflow.source_id = ${resolving.workPeriodId}::uuid
-					and workflow.requester_employee_id = ${resolving.employeeId}::uuid
-			)) as "workflowMatches",
+			(${workflowId}::uuid is null
+				or ${workflowId}::uuid in (select id from exempt_workflow)) as "workflowMatches",
 			(${approvalRequestId}::uuid is null or exists (
 				select 1 from approval_request request
 				where request.id = ${approvalRequestId}::uuid
@@ -128,7 +143,7 @@ export async function assertNoUnrelatedWorkPeriodReview(
 					and not exists (
 						select 1 from approval_workflow_stage stage
 						where stage.organization_id = request.organization_id
-							and stage.workflow_id = ${workflowId}::uuid
+							and stage.workflow_id in (select id from exempt_workflow)
 							and stage.legacy_approval_request_id = request.id
 					)
 			) as "legacyPending",
@@ -138,7 +153,7 @@ export async function assertNoUnrelatedWorkPeriodReview(
 					and workflow.source_type = 'time_entry'
 					and workflow.source_id = ${resolving.workPeriodId}::uuid
 					and workflow.status = 'pending'
-					and workflow.id is distinct from ${workflowId}::uuid
+					and workflow.id not in (select id from exempt_workflow)
 			) as "canonicalPending"
 	`);
 	const [row] = rowsOf(result);

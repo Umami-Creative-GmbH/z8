@@ -97,30 +97,32 @@ The finalizer builds the resolving lifecycle from the evidence it has already
 verified:
 
 - a canonical lifecycle: `{ authority: "canonical", workflowId }`;
-- a legacy lifecycle: `{ authority: "legacy", approvalRequestId, observedWorkflowId }`,
-  where `observedWorkflowId` is the shadow mirror bound to the period, if any.
+- a legacy lifecycle: `{ authority: "legacy", approvalRequestId, observedWorkflowId }`.
 
 The split first checks that the lifecycle's workflow is the one bound to the
-locked period. Only then does it call `assertNoUnrelatedWorkPeriodReview`
-(`lib/time-tracking/work-period-review.ts`). That guard first verifies the
-resolving identities: the workflow's type, source and requester, and the
-request's entity and requester. A mismatch is an integrity failure, not an
-exemption.
+locked period. Then `assertNoUnrelatedWorkPeriodReview`
+(`lib/time-tracking/work-period-review.ts`) receives exactly one authority: the
+canonical workflow, or the legacy request. It verifies that identity against
+the period and its owner; a mismatch is an integrity failure, not an exemption.
 
-Only three things are exempt:
+The exemption is defined by linkage, not by what the period happens to be
+bound to:
 
-- the resolving workflow;
-- that workflow's legacy compatibility mirror rows (`approval_workflow_stage.legacy_approval_request_id`);
-- the resolving legacy request.
+- **Canonical:** the workflow, plus the legacy compatibility rows its stages
+  mirror (`approval_workflow_stage.legacy_approval_request_id`).
+- **Legacy:** the request, plus any `policy_clock_out` shadow mirror for the
+  period whose stage mirrors that request, plus the rows that mirror mirrors.
+  This covers a mirror that shadow or ready mode bootstraps during the decision,
+  before it is bound to the period.
 
 Any other pending approval request or workflow for the period blocks the split,
-whatever its type. For example, a pending time correction blocks it. A blocked
-split raises a `ConflictError` (`work_period_pending_approval`, "Another approval
-for this work period is still pending"). That error passes through the finalizer
-and decision wrappers, so the approver sees the reason as a `stale` inbox
-failure, and the whole approval rolls back. The guard runs only when a split is
-needed, after the period lock and before the first split write. There is no
-generic bypass flag.
+whatever its type: a pending time correction, or an older cycle's workflow still
+bound to the period. A blocked split raises a `ConflictError`
+(`work_period_pending_approval`, "Another approval for this work period is still
+pending"). That error passes through the finalizer and decision wrappers, so
+the approver sees the reason as a `stale` inbox failure, and the whole approval
+rolls back. The guard runs only when a split is needed, after the period lock
+and before the first split write. There is no generic bypass flag.
 
 ## What a split commits
 
@@ -144,8 +146,10 @@ Adopted organizations additionally commit:
   collaborator with operation `policy_clock_out_break`. Each entry records its
   exact predecessor ID and hash, and the position advances with a version check.
 - **Independent rounding.** Each segment's minutes come from its own exact UTC
-  endpoints, rounded half up (`deriveWorkDurationMinutes`). Legacy organizations
-  keep the established arithmetic on the stored minutes.
+  endpoints, rounded half up (`deriveWorkDurationMinutes`). A positive segment
+  that rounds to zero minutes is valid work (#252), for example 20 seconds after
+  the break. Legacy organizations keep the established arithmetic on the stored
+  minutes, which still refuses a zero-minute segment.
 - **Revisions.** The source period's `graph_revision` advances with a
   compare-and-set in the same update. The generated period starts at revision 1,
   like other adopted creators.

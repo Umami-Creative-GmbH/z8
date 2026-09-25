@@ -386,11 +386,11 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 		await lockEmployeeUncoordinated(input);
 	}
 	const adopted = scope?.admission === "append";
-	const lifecycleWorkflowId =
+	const boundWorkflowId =
 		input.lifecycle.authority === "canonical"
 			? input.lifecycle.workflowId
 			: input.lifecycle.observedWorkflowId;
-	if (lifecycleWorkflowId !== input.period.approvalWorkflowId) return fail();
+	if (boundWorkflowId !== input.period.approvalWorkflowId) return fail();
 
 	const sourceResult = await db.execute(sql`
 		select
@@ -650,13 +650,16 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 		? deriveWorkDurationMinutes(breakEnd, sourceEnd)
 		: source.durationMinutes - finalCalculation.deficit - insertAfterMinutes;
 	const adjustedTotal = firstDurationMinutes + secondDurationMinutes;
+	// A positive segment that rounds to zero minutes is valid work (#252); the
+	// endpoint checks above already rejected empty or reversed segments.
+	const minimumSegmentMinutes = adopted ? 0 : 1;
 	if (
 		!Number.isSafeInteger(adjustedTotal) ||
 		!Number.isSafeInteger(firstDurationMinutes) ||
 		!Number.isSafeInteger(secondDurationMinutes) ||
-		adjustedTotal <= 0 ||
-		firstDurationMinutes <= 0 ||
-		secondDurationMinutes <= 0
+		adjustedTotal < minimumSegmentMinutes ||
+		firstDurationMinutes < minimumSegmentMinutes ||
+		secondDurationMinutes < minimumSegmentMinutes
 	) {
 		return fail();
 	}
@@ -667,7 +670,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 		workPeriodId: source.id,
 		employeeId: input.employeeId,
 		workflowType: "policy_clock_out",
-		workflowId: lifecycleWorkflowId,
+		workflowId: input.lifecycle.authority === "canonical" ? input.lifecycle.workflowId : null,
 		approvalRequestId:
 			input.lifecycle.authority === "legacy" ? input.lifecycle.approvalRequestId : null,
 	});

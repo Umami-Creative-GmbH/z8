@@ -216,7 +216,7 @@ describeIntegration("policy clock-out terminal break splits on PostgreSQL", () =
 		harness.organizationId = ids.organization;
 	}
 
-	async function setRollout(mode: "legacy" | "canonical") {
+	async function setRollout(mode: "legacy" | "shadow" | "ready" | "canonical") {
 		await admin.query(
 			`insert into approval_workflow_rollout
 			 (organization_id, workflow_type, lifecycle_mode, side_effect_mode, created_at, updated_at)
@@ -778,6 +778,7 @@ describeIntegration("policy clock-out terminal break splits on PostgreSQL", () =
 
 	it("splits a self-approved clock-out under the clock-out's own coordination", async () => {
 		// The requester is their own approver, so routing auto-completes the request.
+		await admin.query("update employee set role = 'manager' where id = $1", [ids.requester]);
 		await admin.query("update employee_managers set manager_id = $1 where id = $2", [
 			ids.requester,
 			ids.managerLink,
@@ -813,6 +814,43 @@ describeIntegration("policy clock-out terminal break splits on PostgreSQL", () =
 			decision: {
 				lifecycle: { authority: "legacy", approvalRequestId: request.id, observedWorkflowId: null },
 			},
+		});
+	});
+
+	it.each(["shadow", "ready"] as const)(
+		"exempts the shadow mirror of a legacy lifecycle in %s mode",
+		async (mode) => {
+			await setRollout(mode);
+			const { periodId } = await policyClockOut();
+			const requestId = await pendingRequest(periodId);
+
+			await expect(approve(requestId)).resolves.toMatchObject({ status: "approved" });
+
+			expect((await periods()).map((period) => period.duration_minutes)).toEqual([360, 31]);
+			const { rows: workflows } = await admin.query<{ status: string }>(
+				"select status from approval_workflow where organization_id = $1 and source_id = $2",
+				[ids.organization, periodId],
+			);
+			expect(only(workflows).status).toBe("approved");
+			expect(only(await receipts()).result).toMatchObject({
+				decision: { lifecycle: { authority: "legacy", approvalRequestId: requestId } },
+			});
+		},
+	);
+
+	it("commits a positive generated segment that rounds to zero minutes", async () => {
+		// 6h 30m 20s: the 30-minute break leaves a 20-second generated segment.
+		const { periodId } = await policyClockOut(clockInAt.add({ hours: 6, minutes: 30, seconds: 20 }));
+		const requestId = await pendingRequest(periodId);
+
+		await expect(approve(requestId)).resolves.toMatchObject({ status: "approved" });
+
+		const [retained, generated] = await periods();
+		expect(retained).toMatchObject({ duration_minutes: 360 });
+		expect(generated).toMatchObject({
+			start_time: new Date("2026-07-22T14:30:00Z"),
+			end_time: new Date("2026-07-22T14:30:20Z"),
+			duration_minutes: 0,
 		});
 	});
 

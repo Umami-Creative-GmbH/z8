@@ -861,9 +861,11 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 			),
 		).resolves.toMatchObject({ kind: "adjusted" });
 		const guard = queries.find((query) => query.sql.includes('as "workflowMatches"'));
+		// A legacy lifecycle is identified by its request; its mirror is found by
+		// stage linkage, never by the workflow the period happens to be bound to.
+		expect(guard?.params).not.toContain(snapshot.approvalWorkflowId);
 		expect(guard?.params).toEqual(
 			expect.arrayContaining([
-				snapshot.approvalWorkflowId,
 				legacyLifecycle.approvalRequestId,
 				snapshot.id,
 				employeeId,
