@@ -41,6 +41,7 @@ import {
 	type GapRepairUnit,
 	type HistoricalGapRepairPlan,
 	planHistoricalGapRepair,
+	type RepairedWorkDetail,
 } from "./historical-gap-repair";
 import {
 	assessHistoricalWork,
@@ -52,6 +53,7 @@ import {
 	type HistoricalWorkEvidenceReader,
 	readHistoricalWorkEvidence,
 } from "./historical-work-diagnostics-reader";
+import { WORK_LOCATION_TYPES, type WorkLocationType } from "./work-location";
 import type { WorkTransactionClient } from "./work-transaction";
 
 type Database = typeof database;
@@ -352,21 +354,29 @@ async function applyUnit(tx: WorkTransactionClient, context: UnitContext) {
 				if (unit.originalActor.kind !== "human") {
 					throw new StaleHistoricalRepairPlanError(unit.workPeriodId);
 				}
-				await tx.insert(timeRecord).values({
-					id: fill.recordId,
-					organizationId,
-					employeeId: unit.employeeId,
-					recordKind: "work",
-					startAt: dateFromInstant(parseInstant(fill.record.startAt)),
-					endAt: dateFromInstant(parseInstant(fill.record.endAt)),
-					durationMinutes: fill.record.durationMinutes,
-					approvalState: fill.record.approvalState,
-					// A representation created by a system process; its creator is the
-					// human the completing entry evidences.
-					origin: "system",
-					createdBy: unit.originalActor.userId,
-					updatedAt: executedAt,
-				});
+				// A record another writer created under this ID meanwhile is a stale plan.
+				const inserted = await tx
+					.insert(timeRecord)
+					.values({
+						id: fill.recordId,
+						organizationId,
+						employeeId: unit.employeeId,
+						recordKind: "work",
+						startAt: dateFromInstant(parseInstant(fill.record.startAt)),
+						endAt: dateFromInstant(parseInstant(fill.record.endAt)),
+						durationMinutes: fill.record.durationMinutes,
+						approvalState: fill.record.approvalState,
+						// A representation created by a system process; its creator is the
+						// human the completing entry evidences.
+						origin: "system",
+						createdBy: unit.originalActor.userId,
+						// The repair wrote this row: its executor is the updater.
+						updatedAt: executedAt,
+						updatedBy: context.actorUserId,
+					})
+					.onConflictDoNothing()
+					.returning({ id: timeRecord.id });
+				expectOne(inserted, unit);
 				await insertDetail(tx, organizationId, fill.recordId, fill.detail, unit);
 				if (fill.projectId) await insertProject(tx, organizationId, fill.recordId, fill.projectId);
 				periodSet.canonicalRecordId = fill.recordId;
@@ -390,6 +400,7 @@ async function applyUnit(tx: WorkTransactionClient, context: UnitContext) {
 							endAt: dateFromInstant(parseInstant(fill.endAt)),
 							...(fill.durationMinutes === null ? {} : { durationMinutes: fill.durationMinutes }),
 							updatedAt: executedAt,
+							updatedBy: context.actorUserId,
 						})
 						.where(
 							and(
@@ -410,7 +421,11 @@ async function applyUnit(tx: WorkTransactionClient, context: UnitContext) {
 				expectOne(
 					await tx
 						.update(timeRecord)
-						.set({ durationMinutes: fill.durationMinutes, updatedAt: executedAt })
+						.set({
+							durationMinutes: fill.durationMinutes,
+							updatedAt: executedAt,
+							updatedBy: context.actorUserId,
+						})
 						.where(
 							and(
 								recordTarget(organizationId, unit, fill.recordId),
@@ -444,7 +459,7 @@ async function applyUnit(tx: WorkTransactionClient, context: UnitContext) {
 						.set(
 							fill.field === "work_category"
 								? { workCategoryId: fill.value }
-								: { workLocationType: fill.value as typeof timeRecordWork.$inferInsert.workLocationType },
+								: { workLocationType: workLocationTypeOf(fill.value, unit) },
 						)
 						.where(
 							and(
@@ -553,7 +568,7 @@ async function insertDetail(
 	tx: WorkTransactionClient,
 	organizationId: string,
 	recordId: string,
-	detail: { workCategoryId: string | null; workLocationType: string | null },
+	detail: RepairedWorkDetail,
 	unit: GapRepairUnit,
 ) {
 	expectOne(
@@ -565,7 +580,9 @@ async function insertDetail(
 				recordKind: "work",
 				workCategoryId: detail.workCategoryId,
 				workLocationType:
-					detail.workLocationType as typeof timeRecordWork.$inferInsert.workLocationType,
+					detail.workLocationType === null
+						? null
+						: workLocationTypeOf(detail.workLocationType, unit),
 				computationMetadata: null,
 			})
 			.onConflictDoNothing()
@@ -600,6 +617,14 @@ async function insertProject(
 		projectId,
 		weightPercent: 100,
 	});
+}
+
+/** A stored location outside the enum cannot be written back; the plan is stale. */
+function workLocationTypeOf(value: string, unit: GapRepairUnit): WorkLocationType {
+	if (!(WORK_LOCATION_TYPES as readonly string[]).includes(value)) {
+		throw new StaleHistoricalRepairPlanError(unit.workPeriodId);
+	}
+	return value as WorkLocationType;
 }
 
 function uuidFromDigest(value: string): string {

@@ -83,9 +83,16 @@ separately:
 - `reason`;
 - `evidence`: the finding IDs, the expected field state, and the source of every fill.
 
-The created record uses `origin = 'system'`, the representation convention of
-earlier backfills, and `updated_by` stays null. Filled records keep their
-original `created_by` and `updated_by`.
+On the rows themselves:
+
+- A created record uses `origin = 'system'`, the representation convention of earlier backfills.
+- Its `created_by` is the evidenced completing author. Its `created_at`, `updated_at` and `updated_by` are the repair's write: the executor and the time of the repair.
+- A filled record keeps its `created_by` and gets the executor as `updated_by`.
+- `time_record` has no column for an unknown original actor. A created record therefore requires the completing entry's evidence, and `unknown_historical` lives only in the receipt (#260 §3 allows repair only where the schema can represent the actor honestly).
+
+A created record copies the period's current approval state. It writes no
+decision history, and legacy requests stay where they are. The state is
+representation, not a reconstructed sequence of decisions.
 
 ## Coordination, staleness and idempotency
 
@@ -96,7 +103,7 @@ original `created_by` and `updated_by`.
 2. The repair authorization, read inside the transaction.
 3. A first read of the employee's evidence to find the planned rows. Those periods, then records, are locked `FOR UPDATE` in ID order.
 4. A second read of the field, absence and lineage evidence under those locks, and a new plan. If its fingerprint differs from the reviewed one, the executor stops without writing.
-5. Every fill is a guarded write. `canonical_record_id IS NULL`, `end_at IS NULL`, `duration_minutes IS NULL`, detail `ON CONFLICT DO NOTHING`, and "no project allocation yet" each must affect exactly one row. The period's `graph_revision` advances from its expected value, with `deleted_at IS NULL`. Any mismatch rolls back the employee's whole repair as `stale`.
+5. Every fill is a guarded write. `canonical_record_id IS NULL`, `end_at IS NULL`, `duration_minutes IS NULL`, record and detail inserts `ON CONFLICT DO NOTHING`, and "no project allocation yet" each must affect exactly one row. A project allocation is added beside existing cost-center allocations, never replacing them. The period's `graph_revision` advances from its expected value, with `deleted_at IS NULL`. Any mismatch rolls back the employee's whole repair as `stale`.
 6. One receipt per repaired work, of kind `repair_historical_gap` and writer `historical_gap_repair`, commits with the graph. Its ID is derived from the organization, the period and the unit's plan fingerprint.
 
 Repeating a reviewed plan after it committed finds its receipts by plan
@@ -105,7 +112,9 @@ concurrent applies serialize on the employee key: one applies and the other
 replays. A repair receipt under `append` admission does not mark the work as
 amended after adoption in later diagnostics.
 
-Committed replay never calls this module. The organization-wide
+Committed replay never calls this module. The suite replays a committed legacy
+manual submission over a missing link: it keeps its established collision
+outcome, writes nothing, and the gap stays. The organization-wide
 `runCanonicalBackfill` is not used: nothing here relinks, overwrites, deletes or
 rebuilds.
 
@@ -116,7 +125,7 @@ rebuilds.
 The suite is `apps/webapp/src/lib/time-tracking/historical-gap-repair.integration.test.ts`.
 It is registered in `scripts/run-approval-workflow-repository-integration.sh` and
 in the CI `integration-tests` job. It ran against a fresh label-owned PostgreSQL 16
-container with the full migration chain: **7 tests passed**. The #319 diagnostics
+container with the full migration chain: **8 tests passed**. The #319 diagnostics
 suite passed 6/6 alongside it.
 
 Work is written by the real legacy `createManualTimeEntry`. Gaps are injected with
@@ -130,7 +139,15 @@ Verified:
 - **Races and staleness.** A concurrent completion, approval or deletion holds the worker's coordination key while the repair waits for it (observed in `pg_locks`), then commits. The repair re-reads and returns `stale` without a receipt. A real legacy calendar split before apply also yields `stale`, and the split's result is unchanged.
 - **Failure and concurrency.** A trigger that fails the receipt insert rolls back the created record, detail, allocation, link and revision (snapshot equal). Two concurrent applies then give exactly one `applied` and one `already_applied`, with 2 receipts, 2 records and 1 allocation.
 - **Adoption.** In an adopted organization only the pre-adoption gap is planned. A fresh version-2 manual entry's missing detail stays an integrity incident. After repair (receipt under `append` admission), the work's remaining held gap is still `historical_gap`.
+- **Replay.** A committed legacy manual submission replayed over a missing link keeps its collision outcome, writes nothing, and the gap stays.
 - **Authorization.** A manager and an employee get 403 for plan and apply. A foreign-organization employee gets 404. An `expected` naming them gets 400, as do a blank reason and a reversed range. Another organization's active control does not authorize this one (409).
+
+Mutation checks: accepting any current plan instead of the reviewed fingerprint
+failed the split test. Letting repair receipts count as post-adoption amendments
+failed the adoption test.
+
+The approval write-boundary scanner passed 290/290 in a Linux `node:24` container
+with the six repair writes registered.
 
 ### Database-free
 
@@ -138,6 +155,8 @@ Verified:
 - `work-repair-panel.test.tsx` (3 tests) covers the unauthorized read-only state, the required reason, the exact apply request, the stale outcome, and the server's refusal.
 
 ## Known limits
+
+- Plans are read-only and ungated, like the #319 diagnostics under #259's early allowance. The settings page builds the plan with the diagnostics in the same snapshot. Only `apply` is gated.
 
 - Races with the real completion, approval and deletion writers were exercised at their shared coordination key with SQL writes, not through those writers' code. The legacy split ran for real, but it does not take the key: the row locks and the re-plan protect the repair from it.
 - The plan is O(history) per employee, read twice per applied employee (to find rows, then under locks).

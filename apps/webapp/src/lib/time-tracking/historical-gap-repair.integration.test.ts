@@ -522,7 +522,8 @@ describeIntegration("historical gap repair on PostgreSQL", () => {
 			approval_state: "pending",
 			origin: "system",
 			created_by: clockOut.created_by,
-			updated_by: null,
+			// The repair wrote the row; the completing author stays its creator.
+			updated_by: ids.ownerUser,
 		});
 		expect(clockOut.created_by).toBe(ids.workerUser);
 		const { rows: createdDetail } = await admin.query(
@@ -551,12 +552,14 @@ describeIntegration("historical gap repair on PostgreSQL", () => {
 		const {
 			rows: [completed],
 		} = await admin.query(
-			"select end_at, duration_minutes from time_record where id = $1",
+			"select end_at, duration_minutes, created_by, updated_by from time_record where id = $1",
 			[incomplete.recordId],
 		);
 		expect(completed).toEqual({
 			end_at: incompletePeriod.end_time,
 			duration_minutes: incompletePeriod.duration_minutes,
+			created_by: ids.workerUser,
+			updated_by: ids.ownerUser,
 		});
 
 		// Receipts: the executor acts; the original actor stays honest and separate.
@@ -905,5 +908,28 @@ describeIntegration("historical gap repair on PostgreSQL", () => {
 		);
 		expect((await apply(plan)).status).toBe(409);
 		expect(await snapshot()).toEqual(before);
+	});
+
+	it("never repairs inline when a committed submission is replayed", async () => {
+		await authorizeRepair();
+		// The legacy period ID is its submission ID; the gap is a missing link.
+		const submissionId = await missingLink("2026-07-28");
+		const before = await snapshot();
+
+		actAs(ids.workerUser);
+		const replay = await createManualTimeEntry({
+			submissionId,
+			reason: "Forgot to clock",
+			timezone: "Europe/Berlin",
+			browserTimezone: "Europe/Berlin",
+			date: "2026-07-28",
+			clockInTime: "13:00",
+			clockOutTime: "15:00",
+		} as unknown as ManualTimeEntryCommand);
+
+		// The replay keeps its established collision handling and repairs nothing.
+		expect(replay).toMatchObject({ success: false });
+		expect(await snapshot()).toEqual(before);
+		expect(await findingKinds()).toContain("canonical_link_missing:historical_gap");
 	});
 });
