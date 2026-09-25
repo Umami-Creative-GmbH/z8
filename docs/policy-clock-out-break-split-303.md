@@ -178,7 +178,60 @@ Organization and employee deletion cascade.
 
 ## Evidence
 
-<!-- filled from the runs below -->
+Everything below ran locally on 2026-09-25. The PostgreSQL results come from a
+disposable PostgreSQL 16 container with the full migration chain, including the
+recovery verification.
+
+- **New suite:** `clocking.policy-break-split.integration.test.ts`, **10/10**.
+  It drives the real `clockIn`/`clockOut` actions and inbox
+  `approveApprovalInboxItem`:
+  - **Adopted legacy lifecycle:**
+    - the retained segment is 08:00–14:00 (360 min) and the generated segment
+      14:30–15:00:40 (31 min), each rounded half up from its own endpoints;
+    - the break entries chain from the submitted clock-out, and the append
+      position tip is the generated clock-in with `last_operation`
+      `policy_clock_out_break`;
+    - the source revision advances by one and the generated period is at 1;
+    - there is exactly one `time_record_approval_decision`, on the originating
+      record;
+    - the receipt's lineage matches exactly, with actor `system` and the
+      triggering manager;
+    - an exact replay writes nothing;
+    - after a later SQL mutation of the source, the receipt and the #302
+      decision evidence still show the committed 360/31 split.
+  - **Not adopted:** the split commits minutes 360/31 at revision 0, with no
+    receipt and no append position.
+  - **Unrelated pending `time_correction` workflow:**
+    - the approval is refused with "Another approval for this work period is
+      still pending";
+    - every row is unchanged;
+    - once the blocker resolves, the same approval splits.
+  - **Injected receipt failure:** every row stays unchanged, including entries,
+    periods, records, position, decision and request. A retry then commits.
+  - **Two-stage chain:** the intermediate approval leaves one pending period and
+    no receipt; the final approval splits and names the second-stage request.
+  - **Shadow and ready modes:** the bootstrapped mirror is exempt and ends
+    `approved`, and the split commits.
+  - **Zero-minute segment:** a 20-second generated segment is stored as 0
+    minutes.
+  - **Self-approved clock-out:** auto-completion splits under the clock-out's
+    own coordination, and the receipt names the requester as the trigger.
+  - **Canonical lifecycle:** the split commits with the canonical lifecycle in
+    the receipt.
+- **Existing suites:** `work-period-approvals.integration.test.ts` and
+  `clocking.approval-evidence.integration.test.ts` pass 224/224. Their two
+  concurrent duplicate-approval tests failed until the decision observation was
+  added.
+- **Full runner:** 61 files / 1116 tests passed. One file was skipped: the
+  Chrome-only browser suite.
+- **Mutation check:** disabling the review guard fails the blocker scenario.
+- **Write-boundary scanner (Linux `node:24`):** 290/290.
+- **Unit tests:**
+  - `tsc` is clean.
+  - The full webapp suite compared with clean `dev`, test by test, shows no new
+    failures. There were 148 on the baseline; two scanner tests timed out at 5 s
+    while the PostgreSQL runner loaded the machine. That scanner cannot read
+    sources on Windows anyway; the Linux run above is authoritative.
 
 ## Not verified and activation blockers
 
