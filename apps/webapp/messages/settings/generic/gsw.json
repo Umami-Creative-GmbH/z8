@@ -293,6 +293,16 @@
         "commitQueued": "{count} akzeptierte Zeilen für die Übernahme in die Warteschlange gestellt",
         "committing": "Wird übernommen...",
         "description": "Überprüfen Sie die importierten Zeilen, lösen Sie blockierende Probleme und übernehmen Sie die akzeptierten Datensätze, sobald der Stapel bereit ist.",
+        "hold": {
+          "appendReviewRequired": "De Ziitverlauf vom Mitarbeiter mues prüeft werde, bevor neui Iiträg dezuecho chönd.",
+          "invalidInterval": "D Ziite vom Aabieter händ kei explizite Versatz, sind nöd i de richtige Reiefolg oder liged i de Zuekunft.",
+          "label": "Zur Prüefig zruggbhalte",
+          "occupancyConflict": "D Ziit überschnidet sich mit Arbet, wo für dä Mitarbeiter scho erfasst isch.",
+          "operationCollision": "Die Ziile staht im Konflikt mit ihrem früener übernoh Import.",
+          "providerDurationMismatch": "D Duur vom Aabieter weicht vo Start- und Endziit ab.",
+          "sourceCollision": "Dä Datesatz vom Aabieter isch scho importiert worde.",
+          "unlocatedBreak": "De Aabieter meldet Pause ohni d Ziite, drum isch de gschaffti Ziitruum unbekannt."
+        },
         "issueGroups": {
           "currentMarkers": "Die aktuellen Zeilen enthalten {blockingRows} blockierende und {warningRows} warnende Problemmarkierungen.",
           "description": "Gruppierte Überprüfungsbereiche helfen dabei, Qualitätskontrollen sichtbar zu halten, bevor akzeptierte Zeilen übernommen werden.",

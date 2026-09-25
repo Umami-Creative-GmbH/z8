@@ -261,7 +261,7 @@ in #327 (all-writer adoption), #329 (pilot) and #331 (rollback).
 
 - Every competing writer of the same employee graph must participate or be
   drained: direct HTTP (#275), on-behalf (#276), bots (#277), manual (#308), active
-  breaks and splits (#304), corrections (#301/#286), imports (#284), demo (#285),
+  breaks and splits (#304), corrections (#301/#286), imports (#284, now participating: [reviewed-import-operation-284.md](reviewed-import-operation-284.md)), demo (#285),
   and ordinary, cron and terminal breaks (#303/#305). Until then, `graph_revision` is
   only advanced by this operation.
 - Terminal break-split results: the receipt records the approval outcome and the

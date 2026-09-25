@@ -293,6 +293,16 @@
         "commitQueued": "Köade {count} godkända rader för verkställande",
         "committing": "Verkställer...",
         "description": "Granska mellanlagrade importrader, åtgärda blockerande problem och verkställ godkända poster när batchen är klar.",
+        "hold": {
+          "appendReviewRequired": "Medarbetarens tidshistorik måste granskas innan nya poster kan läggas till.",
+          "invalidInterval": "Leverantörens tider saknar en explicit förskjutning, är inte i ordning eller ligger i framtiden.",
+          "label": "Hålls kvar för granskning",
+          "occupancyConflict": "Tiden överlappar arbete som redan registrerats för den här medarbetaren.",
+          "operationCollision": "Den här raden står i konflikt med sin tidigare bekräftade import.",
+          "providerDurationMismatch": "Leverantörens varaktighet skiljer sig från start- och sluttiden.",
+          "sourceCollision": "Den här leverantörsposten har redan importerats.",
+          "unlocatedBreak": "Leverantören rapporterar raster utan deras tider, så det arbetade intervallet är okänt."
+        },
         "issueGroups": {
           "currentMarkers": "Aktuella rader innehåller {blockingRows} blockerande markeringar och {warningRows} varningsmarkeringar.",
           "description": "Grupperade granskningsområden hjälper till att hålla kvalitetskontroller synliga innan godkända rader verkställs.",

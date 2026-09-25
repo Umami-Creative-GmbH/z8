@@ -8,15 +8,21 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "../auth-schema";
 import { employee } from "./organization";
 
-export const COMPLETED_WORK_OPERATION_KINDS = ["close_active_work", "start_live_work"] as const;
+export const COMPLETED_WORK_OPERATION_KINDS = [
+	"close_active_work",
+	"start_live_work",
+	"import_completed_work",
+	"import_open_work",
+] as const;
 export type CompletedWorkOperationKind = (typeof COMPLETED_WORK_OPERATION_KINDS)[number];
 
-export const COMPLETED_WORK_WRITERS = ["web_clock_out", "direct_http"] as const;
+export const COMPLETED_WORK_WRITERS = ["web_clock_out", "direct_http", "reviewed_import"] as const;
 export type CompletedWorkWriter = (typeof COMPLETED_WORK_WRITERS)[number];
 
 export const COMPLETED_WORK_ACTOR_KINDS = ["human", "system", "unknown_historical"] as const;
@@ -48,6 +54,9 @@ export const completedWorkOperation = pgTable(
 		workPeriodId: uuid("work_period_id").notNull(),
 		resultVersion: integer("result_version").notNull(),
 		result: jsonb("result").$type<Record<string, unknown>>().notNull(),
+		// Provider source identity of a reviewed import (#284); one committed operation
+		// per source and organization, so a re-import cannot recreate the work.
+		sourceKey: text("source_key"),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 	},
 	(table) => [
@@ -57,8 +66,21 @@ export const completedWorkOperation = pgTable(
 			foreignColumns: [employee.id, employee.organizationId],
 		}).onDelete("cascade"),
 		index("completedWorkOperation_org_employee_idx").on(table.organizationId, table.employeeId),
-		check("completed_work_operation_kind_check", sql`${table.kind} IN ('close_active_work', 'start_live_work')`),
-		check("completed_work_operation_writer_check", sql`${table.writer} IN ('web_clock_out', 'direct_http')`),
+		uniqueIndex("completedWorkOperation_org_source_idx")
+			.on(table.organizationId, table.sourceKey)
+			.where(sql`${table.sourceKey} IS NOT NULL`),
+		check(
+			"completed_work_operation_kind_check",
+			sql`${table.kind} IN ('close_active_work', 'start_live_work', 'import_completed_work', 'import_open_work')`,
+		),
+		check(
+			"completed_work_operation_writer_check",
+			sql`${table.writer} IN ('web_clock_out', 'direct_http', 'reviewed_import')`,
+		),
+		check(
+			"completed_work_operation_source_check",
+			sql`(${table.writer} = 'reviewed_import') = (${table.sourceKey} IS NOT NULL)`,
+		),
 		check(
 			"completed_work_operation_admission_check",
 			sql`${table.appendAdmission} IN ('legacy', 'append')`,
