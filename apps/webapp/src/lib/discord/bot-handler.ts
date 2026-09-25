@@ -122,9 +122,23 @@ async function handleSlashCommand(
 	};
 
 	// Execute command and send follow-up response
+	let response: Awaited<ReturnType<typeof executeCommand>>;
 	try {
-		const response = await executeCommand(commandName, commandContext);
+		response = await executeCommand(commandName, commandContext);
+	} catch (error) {
+		logger.error(
+			{ error, commandName, organizationId: bot.organizationId },
+			"Failed to execute command",
+		);
+		await sendFollowupBestEffort(
+			bot,
+			interaction,
+			"Something went wrong processing your command. Please try again.",
+		);
+		return;
+	}
 
+	try {
 		// For card responses on Discord, we fall back to the text version wrapped in an embed
 		const embeds = buildNotificationEmbed(commandName, response.text);
 
@@ -134,17 +148,28 @@ async function handleSlashCommand(
 	} catch (error) {
 		logger.error(
 			{ error, commandName, organizationId: bot.organizationId },
-			"Failed to execute command or send follow-up",
+			"Failed to deliver command reply",
 		);
+		// The command already ran (a clock command may have committed), so a failed
+		// reply must not invite a blind retry.
+		await sendFollowupBestEffort(
+			bot,
+			interaction,
+			"Your command was processed, but its reply could not be shown. Check /status before repeating it.",
+		);
+	}
+}
 
-		// Attempt to send an error message so user doesn't see "thinking..." forever
-		try {
-			await createFollowupMessage(bot.botToken, bot.applicationId, interaction.token, {
-				content: "Something went wrong processing your command. Please try again.",
-			});
-		} catch {
-			// Nothing more we can do
-		}
+/** Avoids a "thinking..." interaction that never resolves. */
+async function sendFollowupBestEffort(
+	bot: ResolvedDiscordBot,
+	interaction: DiscordInteraction,
+	content: string,
+): Promise<void> {
+	try {
+		await createFollowupMessage(bot.botToken, bot.applicationId, interaction.token, { content });
+	} catch {
+		// Nothing more we can do
 	}
 }
 

@@ -1,7 +1,9 @@
 import "server-only";
 
 /**
- * Completed-work operation for closing live work (#274 / T10, design #256).
+ * Completed-work operation for closing live work (#274 / T10, design #256). The
+ * web, mobile and all four bot adapters reach it through the shared live
+ * clock-out (#277).
  *
  * One call inside the web clock-out outer transaction establishes the whole
  * completed graph: the clock-out entry through the append collaborator, the
@@ -16,6 +18,7 @@ import "server-only";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import {
+	type CompletedWorkWriter,
 	completedWorkOperation,
 	project,
 	timeEntry,
@@ -26,6 +29,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
+import type { BotPlatform } from "@/lib/bot-platform/types";
 import {
 	executeOrdinaryWorkPeriodSubmissionInTransaction,
 	type WorkPeriodPostCommitDescriptor,
@@ -59,6 +63,28 @@ import type { WorkTransactionAdmission } from "./work-transaction";
 export const CLOSE_ACTIVE_WORK_COMMAND_VERSION = 1;
 export const CLOSE_ACTIVE_WORK_RESULT_VERSION = 1;
 export const WEB_CLOCK_OUT_WRITER_VERSION = 1;
+export const BOT_CLOCK_OUT_WRITER_VERSION = 1;
+
+/** The adapter a live clock command arrived through; stored as device evidence. */
+export type ClockChannel = "web" | "mobile" | `${BotPlatform}-bot`;
+
+/** Entry source evidence. Bots keep their established `ip_address = "bot"`. */
+export function clockSource(channel: ClockChannel) {
+	return {
+		ipAddress: channel.endsWith("-bot") ? "bot" : null,
+		deviceInfo: channel,
+	};
+}
+
+/** Receipt writer for a channel: bots share one writer, the platform stays in the command. */
+function writerFor(channel: ClockChannel): {
+	writer: CompletedWorkWriter;
+	writerVersion: number;
+} {
+	return channel.endsWith("-bot")
+		? { writer: "bot_clock_out", writerVersion: BOT_CLOCK_OUT_WRITER_VERSION }
+		: { writer: "web_clock_out", writerVersion: WEB_CLOCK_OUT_WRITER_VERSION };
+}
 
 /** Omission preserves the period's attribution; clearing and replacement are explicit. */
 export type AttributionIntent =
@@ -81,7 +107,7 @@ export type CloseActiveWorkCommand = {
 	/** Client-captured event instant; null when the server sampled it. */
 	requestedInstant: string | null;
 	browserTimezone: string | null;
-	deviceInfo: "web" | "mobile";
+	deviceInfo: ClockChannel;
 };
 
 export type CompletedWorkFollowUp =
@@ -213,7 +239,7 @@ export async function replayCloseActiveWork(
 		receipt.organizationId !== input.organizationId ||
 		receipt.employeeId !== input.employeeId ||
 		receipt.kind !== "close_active_work" ||
-		receipt.writer !== "web_clock_out" ||
+		receipt.writer !== writerFor(input.command.deviceInfo).writer ||
 		receipt.commandVersion !== input.command.version ||
 		canonicalJson(receipt.command) !== canonicalJson(input.command)
 	) {
@@ -415,7 +441,7 @@ export async function closeActiveWork(
 			createdBy: input.actorUserId,
 			actionId: command.operationId,
 			action: { instant: input.eventInstant, ...input.capture },
-			source: { ipAddress: null, deviceInfo: command.deviceInfo },
+			source: clockSource(command.deviceInfo),
 		},
 		"clock_out",
 		context.admission,
@@ -558,8 +584,7 @@ export async function closeActiveWork(
 		organizationId,
 		employeeId,
 		kind: "close_active_work",
-		writer: "web_clock_out",
-		writerVersion: WEB_CLOCK_OUT_WRITER_VERSION,
+		...writerFor(command.deviceInfo),
 		commandVersion: command.version,
 		command,
 		appendAdmission: appended.admission,

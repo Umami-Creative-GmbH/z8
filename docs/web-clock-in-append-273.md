@@ -195,8 +195,9 @@ re-verified when #279 gives web clock-in an action ID. The O(history) admission 
 is measured in the #329 pilot. Before any organization's control row is set active:
 
 - Every competing appender must participate or be drained. Web clock-out now
-  participates ([#274](web-clock-out-operation-274.md)); still outstanding are
-  direct HTTP (#275), on-behalf (#276), bot (#277), mobile clients (#278; the mobile
+  participates ([#274](web-clock-out-operation-274.md)), and so do all four bot
+  adapters ([#277](bot-clocking-277.md)); still outstanding are
+  direct HTTP (#275), on-behalf (#276), mobile clients (#278; the mobile
   route's clock-out already uses the web action), manual (#308),
   active breaks and splits (#304), corrections (#301/#286), imports (#284), demo (#285)
   and ordinary/cron/terminal breaks (#303/#305). Until then, one legacy write holds the

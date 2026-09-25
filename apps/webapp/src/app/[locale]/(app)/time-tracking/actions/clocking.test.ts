@@ -2711,6 +2711,7 @@ describe("clockOut", () => {
 			disposition: "replayed",
 			entry: { id: defaultSubmissionId, type: "clock_out" },
 			result: {
+				segment: { durationMinutes: 61 },
 				approval: {
 					participation: "policy_clock_out",
 					disposition: "executed",

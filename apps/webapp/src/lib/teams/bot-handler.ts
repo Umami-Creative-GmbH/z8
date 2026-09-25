@@ -216,20 +216,35 @@ async function handleMessage(context: TurnContext): Promise<void> {
 	// Execute command
 	const response = await executeCommand(parsed.command, commandContext);
 
-	// Send response
-	if (response.type === "card" && response.card) {
-		await context.sendActivity({
-			type: "message",
-			text: response.text,
-			attachments: [
-				{
-					contentType: "application/vnd.microsoft.card.adaptive",
-					content: response.card,
-				},
-			],
-		});
-	} else {
-		await context.sendActivity(response.text);
+	// Send response. The command already ran (a clock command may have
+	// committed), so a failed reply must not surface as the generic "try again".
+	try {
+		if (response.type === "card" && response.card) {
+			await context.sendActivity({
+				type: "message",
+				text: response.text,
+				attachments: [
+					{
+						contentType: "application/vnd.microsoft.card.adaptive",
+						content: response.card,
+					},
+				],
+			});
+		} else {
+			await context.sendActivity(response.text);
+		}
+	} catch (error) {
+		logger.error({ error, command: parsed.command }, "Failed to deliver command reply");
+		try {
+			await context.sendActivity(
+				t(
+					"bot.static.replyUndelivered",
+					"Your command was processed, but its reply could not be shown. Check your status before repeating it.",
+				),
+			);
+		} catch {
+			// Nothing more we can do
+		}
 	}
 }
 

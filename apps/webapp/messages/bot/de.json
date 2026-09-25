@@ -56,16 +56,26 @@
       },
       "clockin": {
         "alreadyIn": "Sie sind bereits seit {time} eingestempelt ({hours}h {minutes}m).",
+        "alreadyInNow": "Sie sind bereits eingestempelt.",
+        "appendReview": "Ihr Zeitverlauf muss geprüft werden, bevor Sie einstempeln können. Bitte wenden Sie sich an Ihren Administrator.",
         "cannotNow": "Einstempeln zu diesem Zeitpunkt nicht möglich.",
+        "committed": "Eingestempelt.",
+        "failed": "Einstempeln fehlgeschlagen. Bitte versuchen Sie es erneut.",
         "noProfile": "Mitarbeiterprofil nicht gefunden.",
-        "success": "Eingestempelt um {time}."
+        "success": "Eingestempelt um {time}.",
+        "unconfirmed": "Ihr Einstempeln konnte nicht bestätigt werden. Prüfen Sie Ihren Status, bevor Sie es erneut versuchen."
       },
       "clockout": {
+        "appendReview": "Ihr Zeitverlauf muss geprüft werden, bevor Sie ausstempeln können. Bitte wenden Sie sich an Ihren Administrator.",
         "cannotNow": "Ausstempeln zu diesem Zeitpunkt nicht möglich.",
+        "committed": "Ausgestempelt.",
+        "failed": "Ausstempeln fehlgeschlagen. Bitte versuchen Sie es erneut.",
         "noProfile": "Mitarbeiterprofil nicht gefunden.",
         "notClockedIn": "Sie sind derzeit nicht eingestempelt.",
         "policyCheckFailed": "Zeitfreigaberichtlinie konnte nicht verifiziert werden. Bitte versuchen Sie es erneut.",
         "success": "Ausgestempelt um {time}. Dauer: {hours}h {minutes}m.",
+        "successAt": "Ausgestempelt um {time}.",
+        "unconfirmed": "Ihr Ausstempeln konnte nicht bestätigt werden. Prüfen Sie Ihren Status, bevor Sie es erneut versuchen.",
         "unsupportedApproval": "Zeitänderungen, die eine Genehmigung erfordern, werden für diese Aktion noch nicht unterstützt"
       },
       "compliance": {
@@ -132,7 +142,8 @@
       "typeHelp": "Geben Sie /help ein, um die verfügbaren Befehle anzuzeigen.",
       "unconfigured": "Die Z8-Integration Ihrer Organisation wird gerade eingerichtet. Bitte warten Sie, bis Ihr Administrator die Konfiguration abgeschlossen hat.",
       "welcome": "Willkommen bei Z8! Um Ihr Konto zu verbinden, gehen Sie in Ihrem Z8-Dashboard zu Einstellungen > Integrationen > Telegram und generieren Sie einen Link-Code. Senden Sie dann: /link IHR_CODE",
-      "welcomeTeams": "Willkommen bei Z8! Geben Sie „help“ ein, um die verfügbaren Befehle anzuzeigen."
+      "welcomeTeams": "Willkommen bei Z8! Geben Sie „help“ ein, um die verfügbaren Befehle anzuzeigen.",
+      "replyUndelivered": "Ihr Befehl wurde verarbeitet, aber die Antwort konnte nicht angezeigt werden. Prüfen Sie Ihren Status, bevor Sie ihn wiederholen."
     }
   }
 }

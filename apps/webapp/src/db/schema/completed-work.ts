@@ -16,7 +16,7 @@ import { employee } from "./organization";
 export const COMPLETED_WORK_OPERATION_KINDS = ["close_active_work"] as const;
 export type CompletedWorkOperationKind = (typeof COMPLETED_WORK_OPERATION_KINDS)[number];
 
-export const COMPLETED_WORK_WRITERS = ["web_clock_out"] as const;
+export const COMPLETED_WORK_WRITERS = ["web_clock_out", "bot_clock_out"] as const;
 export type CompletedWorkWriter = (typeof COMPLETED_WORK_WRITERS)[number];
 
 export const COMPLETED_WORK_ACTOR_KINDS = ["human", "system", "unknown_historical"] as const;
@@ -58,7 +58,10 @@ export const completedWorkOperation = pgTable(
 		}).onDelete("cascade"),
 		index("completedWorkOperation_org_employee_idx").on(table.organizationId, table.employeeId),
 		check("completed_work_operation_kind_check", sql`${table.kind} IN ('close_active_work')`),
-		check("completed_work_operation_writer_check", sql`${table.writer} IN ('web_clock_out')`),
+		check(
+			"completed_work_operation_writer_check",
+			sql`${table.writer} IN ('web_clock_out', 'bot_clock_out')`,
+		),
 		check(
 			"completed_work_operation_admission_check",
 			sql`${table.appendAdmission} IN ('legacy', 'append')`,

@@ -56,16 +56,26 @@
       },
       "clockin": {
         "alreadyIn": "You are already clocked in since {time} ({hours}h {minutes}m).",
+        "alreadyInNow": "You are already clocked in.",
+        "appendReview": "Your time history needs review before you can clock in. Please contact your administrator.",
         "cannotNow": "Cannot clock in at this time.",
+        "committed": "Clocked in.",
+        "failed": "Could not clock in. Please try again.",
         "noProfile": "Employee profile not found.",
-        "success": "Clocked in at {time}."
+        "success": "Clocked in at {time}.",
+        "unconfirmed": "Your clock-in could not be confirmed. Check your status before trying again."
       },
       "clockout": {
+        "appendReview": "Your time history needs review before you can clock out. Please contact your administrator.",
         "cannotNow": "Cannot clock out at this time.",
+        "committed": "Clocked out.",
+        "failed": "Could not clock out. Please try again.",
         "noProfile": "Employee profile not found.",
         "notClockedIn": "You are not currently clocked in.",
         "policyCheckFailed": "Could not verify time approval policy. Please try again.",
         "success": "Clocked out at {time}. Duration: {hours}h {minutes}m.",
+        "successAt": "Clocked out at {time}.",
+        "unconfirmed": "Your clock-out could not be confirmed. Check your status before trying again.",
         "unsupportedApproval": "Time changes requiring approval are not supported for this action yet"
       },
       "compliance": {
@@ -132,7 +142,8 @@
       "typeHelp": "Type /help to see available commands.",
       "unconfigured": "Your organization's Z8 integration is being set up. Please wait for your admin to complete configuration.",
       "welcome": "Welcome to Z8! To connect your account, go to Settings > Integrations > Telegram in your Z8 dashboard and generate a link code. Then send: /link YOUR_CODE",
-      "welcomeTeams": "Welcome to Z8! Type \"help\" to see available commands."
+      "welcomeTeams": "Welcome to Z8! Type \"help\" to see available commands.",
+      "replyUndelivered": "Your command was processed, but its reply could not be shown. Check your status before repeating it."
     }
   }
 }

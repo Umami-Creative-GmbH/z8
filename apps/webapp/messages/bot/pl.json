@@ -56,16 +56,26 @@
       },
       "clockin": {
         "alreadyIn": "Jesteś w pracy od {time} ({hours} godz. {minutes} min).",
+        "alreadyInNow": "Rozpoczęcie pracy jest już zarejestrowane.",
+        "appendReview": "Twoja historia czasu wymaga weryfikacji, zanim będzie można zarejestrować rozpoczęcie pracy. Skontaktuj się z administratorem.",
         "cannotNow": "Nie można teraz rozpocząć pracy.",
+        "committed": "Zarejestrowano rozpoczęcie pracy.",
+        "failed": "Nie udało się zarejestrować rozpoczęcia pracy. Spróbuj ponownie.",
         "noProfile": "Nie znaleziono profilu pracownika.",
-        "success": "Rozpoczęto pracę o {time}."
+        "success": "Rozpoczęto pracę o {time}.",
+        "unconfirmed": "Nie udało się potwierdzić rozpoczęcia pracy. Sprawdź swój status przed ponowną próbą."
       },
       "clockout": {
+        "appendReview": "Twoja historia czasu wymaga weryfikacji, zanim będzie można zarejestrować zakończenie pracy. Skontaktuj się z administratorem.",
         "cannotNow": "Nie można teraz zakończyć pracy.",
+        "committed": "Zarejestrowano zakończenie pracy.",
+        "failed": "Nie udało się zarejestrować zakończenia pracy. Spróbuj ponownie.",
         "noProfile": "Nie znaleziono profilu pracownika.",
         "notClockedIn": "Obecnie nie jesteś w pracy.",
         "policyCheckFailed": "Nie można zweryfikować polityki zatwierdzania czasu. Spróbuj ponownie.",
         "success": "Zakończono pracę o {time}. Czas trwania: {hours} godz. {minutes} min.",
+        "successAt": "Zakończenie pracy zarejestrowano o {time}.",
+        "unconfirmed": "Nie udało się potwierdzić zakończenia pracy. Sprawdź swój status przed ponowną próbą.",
         "unsupportedApproval": "Zmiany czasu wymagające zatwierdzenia nie są jeszcze obsługiwane dla tej akcji"
       },
       "compliance": {
@@ -132,7 +142,8 @@
       "typeHelp": "Wpisz /help, aby zobaczyć dostępne polecenia.",
       "unconfigured": "Integracja Z8 Twojej organizacji jest w trakcie konfiguracji. Poczekaj, aż administrator zakończy proces.",
       "welcome": "Witamy w Z8! Aby połączyć swoje konto, przejdź do Ustawienia > Integracje > Telegram w panelu Z8 i wygeneruj kod łączenia. Następnie wyślij: /link TWÓJ_KOD",
-      "welcomeTeams": "Witamy w Z8! Wpisz „help”, aby zobaczyć dostępne polecenia."
+      "welcomeTeams": "Witamy w Z8! Wpisz „help”, aby zobaczyć dostępne polecenia.",
+      "replyUndelivered": "Polecenie zostało przetworzone, ale nie udało się wyświetlić odpowiedzi. Sprawdź swój status, zanim je powtórzysz."
     }
   }
 }

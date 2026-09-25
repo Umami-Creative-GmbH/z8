@@ -12,16 +12,26 @@
       },
       "clockin": {
         "alreadyIn": "Du är redan instämplad sedan {time} ({hours}h {minutes}m).",
+        "alreadyInNow": "Du är redan instämplad.",
+        "appendReview": "Din tidshistorik behöver granskas innan du kan stämpla in. Kontakta din administratör.",
         "cannotNow": "Det går inte att stämpla in just nu.",
+        "committed": "Instämplad.",
+        "failed": "Det gick inte att stämpla in. Försök igen.",
         "noProfile": "Medarbetarprofilen hittades inte.",
-        "success": "Instämplad {time}."
+        "success": "Instämplad {time}.",
+        "unconfirmed": "Din instämpling kunde inte bekräftas. Kontrollera din status innan du försöker igen."
       },
       "clockout": {
+        "appendReview": "Din tidshistorik behöver granskas innan du kan stämpla ut. Kontakta din administratör.",
         "cannotNow": "Det går inte att stämpla ut just nu.",
+        "committed": "Utstämplad.",
+        "failed": "Det gick inte att stämpla ut. Försök igen.",
         "noProfile": "Medarbetarprofilen hittades inte.",
         "notClockedIn": "Du är för närvarande inte instämplad.",
         "policyCheckFailed": "Kunde inte verifiera policyn för tidsgodkännande. Försök igen.",
         "success": "Utstämplad {time}. Varaktighet: {hours}h {minutes}m.",
+        "successAt": "Utstämplad kl. {time}.",
+        "unconfirmed": "Din utstämpling kunde inte bekräftas. Kontrollera din status innan du försöker igen.",
         "unsupportedApproval": "Tidsändringar som kräver godkännande stöds inte för denna åtgärd ännu"
       },
       "compliance": {
@@ -88,7 +98,8 @@
       "typeHelp": "Skriv /help för att se tillgängliga kommandon.",
       "unconfigured": "Din organisations Z8-integration håller på att konfigureras. Vänta medan din administratör slutför konfigurationen.",
       "welcome": "Välkommen till Z8! För att ansluta ditt konto, gå till Inställningar > Integrationer > Telegram i din Z8-översikt och generera en länkkod. Skicka sedan: /link DIN_KOD",
-      "welcomeTeams": "Välkommen till Z8! Skriv \"help\" för att se tillgängliga kommandon."
+      "welcomeTeams": "Välkommen till Z8! Skriv \"help\" för att se tillgängliga kommandon.",
+      "replyUndelivered": "Ditt kommando behandlades, men svaret kunde inte visas. Kontrollera din status innan du upprepar det."
     }
   }
 }

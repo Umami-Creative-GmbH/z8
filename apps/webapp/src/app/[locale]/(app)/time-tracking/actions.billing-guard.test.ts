@@ -112,14 +112,14 @@ describe("legacy time-tracking action billing guards", () => {
 
 	it("guards clock-in before creating time entries", () => {
 		expectBillingGuardBeforeWrite(
-			"clockIn",
+			"clockInAs",
 			"clockingService.clockIn({",
 			clockingSource,
 		);
 	});
 
 	it("captures browser timezone context in live clock-in entries", () => {
-		const body = functionBody("clockIn", clockingSource);
+		const body = functionBody("clockInAs", clockingSource);
 
 		expect(body).toContain("actionContext: ClockActionContext = {}");
 		expect(body).toContain("resolveTimeEntryTimezoneCapture({");
@@ -130,14 +130,14 @@ describe("legacy time-tracking action billing guards", () => {
 
 	it("guards clock-out before creating time entries", () => {
 		expectBillingGuardBeforeWrite(
-			"clockOut",
+			"clockOutAs",
 			"clockingService.clockOut({",
 			clockingSource,
 		);
 	});
 
 	it("captures browser timezone context in live clock-out entries", () => {
-		const body = functionBody("clockOut", clockingSource);
+		const body = functionBody("clockOutAs", clockingSource);
 
 		expect(body).toContain("actionContext: ClockOutActionContext");
 		expect(body).toContain("resolveTimeEntryTimezoneCapture({");
@@ -199,7 +199,7 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it("marks work balances dirty after clockOut changes payable time", () => {
-		const body = functionBody("clockOut", clockingSource);
+		const body = functionBody("clockOutAs", clockingSource);
 		expect(body).toContain(
 			"await markWorkBalanceDirtyAfterClockOutBestEffort(",
 		);
@@ -241,7 +241,7 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it("lets the shared clock-out boundary resolve policy routing without a default manager", () => {
-		const body = functionBody("clockOut", clockingSource);
+		const body = functionBody("clockOutAs", clockingSource);
 
 		expect(body).not.toContain(
 			'error: "No manager assigned to approve time changes"',
@@ -268,7 +268,7 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it.each([
-		"clockOut",
+		"clockOutAs",
 		"createManualTimeEntry",
 	])("creates approval requests from approval-required %s through the shared boundary", (name) => {
 		const body = functionBody(name, clockingSource);
@@ -283,7 +283,7 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it.each([
-		["clockOut", "clockingService.clockOut({"],
+		["clockOutAs", "clockingService.clockOut({"],
 		["createManualTimeEntry", "createTimeEntry("],
 	])("fails closed when %s policy checks fail before writing", (name, writeMarker) => {
 		expectPolicyCheckFailureBeforeWrite(name, writeMarker, clockingSource);

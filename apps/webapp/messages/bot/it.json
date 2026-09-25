@@ -56,16 +56,26 @@
       },
       "clockin": {
         "alreadyIn": "Sei già in servizio dalle {time} ({hours}h {minutes}m).",
+        "alreadyInNow": "Hai già timbrato l'entrata.",
+        "appendReview": "La cronologia dei tuoi tempi deve essere verificata prima di poter timbrare l'entrata. Contatta il tuo amministratore.",
         "cannotNow": "Impossibile timbrare l'ingresso in questo momento.",
+        "committed": "Entrata timbrata.",
+        "failed": "Impossibile timbrare l'entrata. Riprova.",
         "noProfile": "Profilo dipendente non trovato.",
-        "success": "Ingresso registrato alle {time}."
+        "success": "Ingresso registrato alle {time}.",
+        "unconfirmed": "Non è stato possibile confermare la timbratura di entrata. Controlla il tuo stato prima di riprovare."
       },
       "clockout": {
+        "appendReview": "La cronologia dei tuoi tempi deve essere verificata prima di poter timbrare l'uscita. Contatta il tuo amministratore.",
         "cannotNow": "Impossibile timbrare l'uscita in questo momento.",
+        "committed": "Uscita timbrata.",
+        "failed": "Impossibile timbrare l'uscita. Riprova.",
         "noProfile": "Profilo dipendente non trovato.",
         "notClockedIn": "Al momento non sei in servizio.",
         "policyCheckFailed": "Impossibile verificare la politica di approvazione dell'orario. Riprova.",
         "success": "Uscita registrata alle {time}. Durata: {hours}h {minutes}m.",
+        "successAt": "Uscita timbrata alle {time}.",
+        "unconfirmed": "Non è stato possibile confermare la timbratura di uscita. Controlla il tuo stato prima di riprovare.",
         "unsupportedApproval": "Le modifiche all'orario che richiedono approvazione non sono ancora supportate per questa azione"
       },
       "compliance": {
@@ -132,7 +142,8 @@
       "typeHelp": "Digita /help per vedere i comandi disponibili.",
       "unconfigured": "L'integrazione Z8 della tua organizzazione è in fase di configurazione. Attendi che l'amministratore completi la procedura.",
       "welcome": "Benvenuto su Z8! Per collegare il tuo account, vai su Impostazioni > Integrazioni > Telegram nel tuo pannello di controllo Z8 e genera un codice di collegamento. Quindi invia: /link IL_TUO_CODICE",
-      "welcomeTeams": "Benvenuto su Z8! Digita \"help\" per vedere i comandi disponibili."
+      "welcomeTeams": "Benvenuto su Z8! Digita \"help\" per vedere i comandi disponibili.",
+      "replyUndelivered": "Il tuo comando è stato elaborato, ma non è stato possibile mostrare la risposta. Controlla il tuo stato prima di ripeterlo."
     }
   }
 }

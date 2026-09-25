@@ -56,16 +56,26 @@
       },
       "clockin": {
         "alreadyIn": "Você já está registrado desde as {time} ({hours}h {minutes}m).",
+        "alreadyInNow": "Você já registrou a entrada.",
+        "appendReview": "Seu histórico de tempo precisa ser revisado antes que você possa registrar a entrada. Entre em contato com o administrador.",
         "cannotNow": "Não é possível registrar entrada neste momento.",
+        "committed": "Entrada registrada.",
+        "failed": "Não foi possível registrar a entrada. Tente novamente.",
         "noProfile": "Perfil do funcionário não encontrado.",
-        "success": "Entrada registrada às {time}."
+        "success": "Entrada registrada às {time}.",
+        "unconfirmed": "Não foi possível confirmar seu registro de entrada. Verifique seu status antes de tentar novamente."
       },
       "clockout": {
+        "appendReview": "Seu histórico de tempo precisa ser revisado antes que você possa registrar a saída. Entre em contato com o administrador.",
         "cannotNow": "Não é possível registrar saída neste momento.",
+        "committed": "Saída registrada.",
+        "failed": "Não foi possível registrar a saída. Tente novamente.",
         "noProfile": "Perfil do funcionário não encontrado.",
         "notClockedIn": "Você não está registrado no momento.",
         "policyCheckFailed": "Não foi possível verificar a política de aprovação de tempo. Por favor, tente novamente.",
         "success": "Saída registrada às {time}. Duração: {hours}h {minutes}m.",
+        "successAt": "Saída registrada às {time}.",
+        "unconfirmed": "Não foi possível confirmar seu registro de saída. Verifique seu status antes de tentar novamente.",
         "unsupportedApproval": "Alterações de tempo que exigem aprovação ainda não são suportadas para esta ação"
       },
       "compliance": {
@@ -132,7 +142,8 @@
       "typeHelp": "Digite /help para ver os comandos disponíveis.",
       "unconfigured": "A integração do Z8 da sua organização está sendo configurada. Por favor, aguarde seu administrador concluir a configuração.",
       "welcome": "Bem-vindo ao Z8! Para conectar sua conta, vá em Configurações > Integrações > Telegram no seu painel Z8 e gere um código de link. Em seguida, envie: /link SEU_CÓDIGO",
-      "welcomeTeams": "Bem-vindo ao Z8! Digite \"help\" para ver os comandos disponíveis."
+      "welcomeTeams": "Bem-vindo ao Z8! Digite \"help\" para ver os comandos disponíveis.",
+      "replyUndelivered": "Seu comando foi processado, mas a resposta não pôde ser exibida. Verifique seu status antes de repeti-lo."
     }
   }
 }
