@@ -8,6 +8,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
+import { isApprovalNotificationDeliveredByOwner } from "@/lib/approvals/delivery/store";
 import { createLogger } from "@/lib/logger";
 import type { NotificationType } from "./types";
 
@@ -66,6 +67,16 @@ export async function sendTeamsNotification(
 			sendProactiveMessage,
 			sendApprovalCardToManager,
 		} = await import("@/lib/teams");
+
+		// One owner per delivery effect (#293): where the approval delivery owner
+		// has the absence card, this path sends neither the card nor a plain
+		// message about the same request.
+		if (
+			params.type === "approval_request_submitted" &&
+			(await isApprovalNotificationDeliveredByOwner({ ...params, provider: "teams" }))
+		) {
+			return;
+		}
 
 		// Handle approval-related notifications specially
 		if (

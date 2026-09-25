@@ -23,7 +23,7 @@ describe.skipIf(!executablePath)("browser clock queue persistence", () => {
 		server = createServer(async (request, response) => {
 			const pathname = new URL(request.url!, "http://localhost").pathname;
 			if (
-				["/sw.js", "/lib/offline-queue-db.js", "/lib/sync-service.js"].includes(
+				["/sw.js", "/lib/offline-queue-db.js", "/lib/sync-service.js", "/lib/clock-command-dispatch.js"].includes(
 					pathname,
 				)
 			) {
@@ -104,7 +104,7 @@ describe.skipIf(!executablePath)("browser clock queue persistence", () => {
 		await page.evaluate(`(async () => {
 			await OfflineQueueDB.enqueue({ type: 'clock_in', timestamp: 123, organizationId: 'org-1' });
 			await new Promise((resolve, reject) => {
-				const request = indexedDB.open('z8-offline-queue', 1);
+				const request = indexedDB.open('z8-offline-queue');
 				request.onsuccess = () => {
 					const db = request.result, tx = db.transaction('clock-events', 'readwrite');
 					const store = tx.objectStore('clock-events'); store.clear();
@@ -242,7 +242,7 @@ describe.skipIf(!executablePath)("browser clock queue persistence", () => {
 			await page.evaluate(
 				`sendWorker({ type: 'GET_QUEUE_COUNT', context: { userId: 'user-1', organizationId: 'org-1' } })`,
 			),
-		).toEqual({ count: 0, reviewCount: 0, savedCount: 1 });
+		).toEqual({ count: 0, reviewCount: 0, waitingCount: 0, savedCount: 1 });
 		expect(
 			await page.evaluate(
 				`sendWorker({ type: 'GET_QUEUE_RECORDS', context: { userId: 'user-1', organizationId: 'org-1' } })`,

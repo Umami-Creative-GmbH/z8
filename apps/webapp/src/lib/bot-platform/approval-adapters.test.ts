@@ -170,8 +170,14 @@ vi.mock("@/lib/discord/api", () => ({
 	sendMessage: state.sends.discord,
 	createInteractionResponse: state.replies.discord,
 }));
+// No approval delivery owner is active in these adapter tests.
+vi.mock("@/lib/approvals/delivery/store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/delivery/store")>()),
+	isApprovalNotificationDeliveredByOwner: async () => false,
+}));
 vi.mock("@/lib/teams/bot-adapter", () => ({
 	sendAdaptiveCard: state.sends.teams,
+	sendProactiveMessage: state.sends.teams,
 }));
 vi.mock("@/lib/slack/conversation-manager", () => ({
 	getChannelIdForUser: async () => "channel",

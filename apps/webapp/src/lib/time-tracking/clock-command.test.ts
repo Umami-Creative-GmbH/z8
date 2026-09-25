@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
@@ -144,4 +145,22 @@ describe("verifyClockCommandContext", () => {
 		).toEqual(["userId", "organizationId", "employeeId", "server"]);
 		expect(verifyClockCommandContext(context, { ...context, server: null })).toEqual(["server"]);
 	});
+});
+
+describe("desktop frozen commands (#280)", () => {
+	// Byte-exact commands pinned by the desktop's frozen_command_tests.rs.
+	const fixture = (name: string) =>
+		readFileSync(
+			new URL(`../../../../desktop/src-tauri/tests/clock-core/fixtures/${name}`, import.meta.url),
+			"utf8",
+		).trimEnd();
+
+	it.each(["desktop-v2-clock-in.json", "desktop-v2-clock-out.json"])(
+		"accepts the exact bytes the desktop sends: %s",
+		(name) => {
+			const sent = JSON.parse(fixture(name));
+			const parsed = parseClockCommand(sent);
+			expect(parsed).toEqual({ ok: true, command: sent });
+		},
+	);
 });

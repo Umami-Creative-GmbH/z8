@@ -23,7 +23,12 @@ import {
  * and callbacks without a trustworthy ID stay review-only: nothing here
  * substitutes card IDs, nonces, timestamps or receive-time UUIDs.
  */
-export const APPROVAL_INVOCATION_SCHEMES = ["telegram_callback_query"] as const;
+export const APPROVAL_INVOCATION_SCHEMES = [
+	"telegram_callback_query",
+	// Teams Universal Action invoke (`adaptiveCard/action`, manual trigger):
+	// the recorded activity ID, scoped by bot, tenant and conversation (#293).
+	"teams_adaptive_card_action",
+] as const;
 export type ApprovalInvocationScheme =
 	(typeof APPROVAL_INVOCATION_SCHEMES)[number];
 
@@ -31,7 +36,7 @@ export const APPROVAL_INVOCATION_SCHEME_VERSION = 1;
 
 const SCHEME_PROVIDERS: Readonly<
 	Record<ApprovalInvocationScheme, ApprovalPresentationProvider>
-> = { telegram_callback_query: "telegram" };
+> = { telegram_callback_query: "telegram", teams_adaptive_card_action: "teams" };
 
 /** The provider whose card admission governs invocations of this scheme. */
 export function approvalInvocationProvider(
