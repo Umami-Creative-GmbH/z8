@@ -12,16 +12,26 @@
       },
       "clockin": {
         "alreadyIn": "Du er allerede stemplet inn siden {time} ({hours}t {minutes}m).",
+        "alreadyInNow": "Du er allerede stemplet inn.",
+        "appendReview": "Tidshistorikken din må gjennomgås før du kan stemple inn. Kontakt administratoren din.",
         "cannotNow": "Kan ikke stemple inn for øyeblikket.",
+        "committed": "Stemplet inn.",
+        "failed": "Kunne ikke stemple inn. Prøv igjen.",
         "noProfile": "Fant ikke ansattprofil.",
-        "success": "Stemplet inn kl. {time}."
+        "success": "Stemplet inn kl. {time}.",
+        "unconfirmed": "Innstemplingen din kunne ikke bekreftes. Sjekk statusen din før du prøver igjen."
       },
       "clockout": {
+        "appendReview": "Tidshistorikken din må gjennomgås før du kan stemple ut. Kontakt administratoren din.",
         "cannotNow": "Kan ikke stemple ut for øyeblikket.",
+        "committed": "Stemplet ut.",
+        "failed": "Kunne ikke stemple ut. Prøv igjen.",
         "noProfile": "Fant ikke ansattprofil.",
         "notClockedIn": "Du er for øyeblikket ikke stemplet inn.",
         "policyCheckFailed": "Kunne ikke verifisere retningslinjer for timegodkjenning. Prøv igjen.",
         "success": "Stemplet ut kl. {time}. Varighet: {hours}t {minutes}m.",
+        "successAt": "Stemplet ut kl. {time}.",
+        "unconfirmed": "Utstemplingen din kunne ikke bekreftes. Sjekk statusen din før du prøver igjen.",
         "unsupportedApproval": "Tidsendringer som krever godkjenning støttes ikke for denne handlingen ennå"
       },
       "compliance": {
@@ -88,7 +98,8 @@
       "typeHelp": "Skriv /help for å se tilgjengelige kommandoer.",
       "unconfigured": "Organisasjonens Z8-integrasjon settes opp. Vennligst vent mens administratoren fullfører konfigurasjonen.",
       "welcome": "Velkommen til Z8! For å koble til kontoen din, gå til Innstillinger > Integrasjoner > Telegram i Z8-dashbordet og generer en tilkoblingskode. Send deretter: /link DIN_KODE",
-      "welcomeTeams": "Velkommen til Z8! Skriv \"help\" for å se tilgjengelige kommandoer."
+      "welcomeTeams": "Velkommen til Z8! Skriv \"help\" for å se tilgjengelige kommandoer.",
+      "replyUndelivered": "Kommandoen din ble behandlet, men svaret kunne ikke vises. Sjekk statusen din før du gjentar den."
     }
   }
 }

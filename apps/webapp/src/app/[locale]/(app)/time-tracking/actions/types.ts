@@ -1,6 +1,7 @@
 import type { timeEntry } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
+import type { ClockChannel } from "@/lib/time-tracking/close-active-work";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 
 export interface CorrectionRequest {
@@ -55,7 +56,7 @@ export interface BrowserTimezoneContext {
 export interface ClockOutActionContext extends BrowserTimezoneContext {
 	submissionId: string;
 	instant?: Instant;
-	deviceInfo?: "web" | "mobile";
+	deviceInfo?: ClockChannel;
 }
 
 export interface AssignedProject {

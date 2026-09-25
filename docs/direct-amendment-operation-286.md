@@ -226,7 +226,7 @@ Correction entries are retained history like any other entry.
 
 ## Migration
 
-`drizzle/0088_completed_work_amendment.sql` is additive (renumbered from `0084` after merging `dev`, which added `0084`-`0087`). It widens:
+`drizzle/0089_completed_work_amendment.sql` is additive (renumbered from `0084` after merging `dev`, which added `0084`-`0088`). It widens:
 
 - the receipt `kind` check with `amend_completed_work`;
 - the `writer` check with the four writers;

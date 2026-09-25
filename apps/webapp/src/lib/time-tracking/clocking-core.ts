@@ -487,7 +487,7 @@ export function createClockingService(deps: ClockingDependencies) {
 				}
 				// Positive intervals use the shared half-up rule (#252, #388). Equal
 				// endpoints keep this closer's legacy zero-minute result for its other
-				// callers until their own adoption (#275-#277).
+				// callers until their own adoption (#275, #276). Bots left it in #277.
 				const durationMinutes =
 					elapsedMinutes === 0
 						? 0
