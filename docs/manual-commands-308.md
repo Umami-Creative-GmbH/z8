@@ -187,6 +187,10 @@ clock can be pinned. **27/27.**
 Mutations each failed their tests: no occupancy (3), not-adopted before replay (1), no zone
 check (2), no configuration guard (2), UTC instead of effective-zone age (1).
 
+The approval write-boundary scanner registers the operation's `time_record`, detail,
+allocation and `work_period` writes (`ManualWorkTransactionContext` is a trusted
+transaction type); `approval-write-boundary.test.ts` passes 290/290 in a Linux container.
+
 The #302 evidence suite and the #284 import suite now submit v2 commands in their adopted
 organizations (10/10 and 28/28). The import suite's former pinned legacy trimming is replaced
 by the target behavior: manual work over imported work is refused with the occupant.
@@ -227,9 +231,6 @@ This slice closes on implementation. The items below are activation gates for #3
   rebuilds it from the draft once the zone is confirmed.
 - **Policy ambiguity** cannot currently occur in the database (unique active assignment
   indexes per level); the explicit failure is covered only by construction.
-- **Write-boundary inventory**: the new `time_entry`/`work_period`/`time_record` writes in
-  `record-manual-work.ts` are not yet in `approval-write-boundary.ts`, like the earlier
-  operations; the scanner cannot read sources on Windows.
 - Deployment, old-client coexistence (forms without `manualCommandVersion` send legacy
   input and get `manual_entry_refresh_required` once adopted), the scoped pilot and
   compatible rollback (#327/#329/#331). A rollback to inactive keeps replaying receipts.
