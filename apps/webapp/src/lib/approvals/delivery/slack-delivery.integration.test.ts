@@ -1071,7 +1071,11 @@ describeIntegration("Slack approval delivery owner (PostgreSQL)", () => {
 		const [deliveryWork] = await work(workflowId);
 
 		const deleted = await deleteApproval(db, ids.organization, workflowId);
-		expect(deleted.delivery).toEqual({ work: [deliveryWork?.id], messages: [message.id] });
+		expect(deleted.delivery).toEqual({
+			work: [deliveryWork?.id],
+			messages: [message.id],
+			intents: [],
+		});
 		expect(await messages(workflowId)).toHaveLength(0);
 		expect(await work(workflowId)).toHaveLength(0);
 	});

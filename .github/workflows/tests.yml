@@ -156,7 +156,8 @@ jobs:
             src/lib/telegram/bound-approval.integration.test.ts \
             src/lib/approvals/delivery/telegram-delivery.integration.test.ts \
             src/lib/approvals/delivery/slack-delivery.integration.test.ts \
-            src/lib/teams/bound-approval.integration.test.ts
+            src/lib/teams/bound-approval.integration.test.ts \
+            src/lib/travel-expenses/expense-review-decision.integration.test.ts
 
   tests:
     # Preserve the required check name and fail if any shard/integration job fails or skips.

@@ -124,6 +124,14 @@ export function ApprovalMaintenanceCard() {
 						"Delivery work",
 					),
 				})),
+				...result.data.delivery.intents.map((id) => ({
+					id,
+					kind: "delivery_intent",
+					label: t(
+						"admin:admin.settings.approvalMaintenance.deliveryIntent",
+						"Delivery intent",
+					),
+				})),
 			]
 		: [];
 

@@ -185,8 +185,11 @@ export interface DeletedApprovalRecords {
 	evidence: DeletedApprovalEvidenceRecords;
 	/** Escalation transfer journal entries; their delivery events cascade. */
 	escalationTransfers: string[];
-	/** Approval-card delivery (#291): outstanding and past work, and every tracked remote message. */
-	delivery: { work: string[]; messages: string[] };
+	/**
+	 * Approval-card delivery (#291): outstanding and past work, every tracked
+	 * remote message, and the lifecycle intents of legacy lifecycles (#296).
+	 */
+	delivery: { work: string[]; messages: string[]; intents: string[] };
 }
 
 export async function deleteApproval(
@@ -214,7 +217,8 @@ export async function deleteApprovalInTransaction(
 		lock table approval_request, approval_chain_instance, approval_chain_stage_instance,
 			approval_workflow, approval_workflow_stage, approval_submitted_revision,
 			approval_review_binding, approval_decision_evidence, approval_escalation_transfer,
-			approval_invocation, approval_delivery_work, approval_delivery_message
+			approval_invocation, approval_delivery_work, approval_delivery_message,
+			approval_delivery_intent
 			in share row exclusive mode
 	`);
 
@@ -299,6 +303,19 @@ export async function deleteApprovalInTransaction(
 			where organization_id = ${organizationId} and id = any(${sql.param(chainIds)}::uuid[])
 			returning id
 		`);
+	// Delivery of legacy lifecycles (#296) follows the lifecycle's legacy requests.
+	// Delete it before the requests (whose FKs would cascade it unreported); a
+	// late send completing afterwards cannot record a message (its FK fails).
+	const legacyDeliveryScope = sql`organization_id = ${organizationId} and legacy_approval_request_id = any(${sql.param(legacyIds)}::uuid[])`;
+	const legacyDeliveryWork = legacyIds.length === 0 ? [] : await deletedIds(sql`
+			delete from approval_delivery_work where lifecycle = 'legacy' and ${legacyDeliveryScope} returning id
+		`);
+	const legacyDeliveryMessages = legacyIds.length === 0 ? [] : await deletedIds(sql`
+			delete from approval_delivery_message where lifecycle = 'legacy' and ${legacyDeliveryScope} returning id
+		`);
+	const deliveryIntents = legacyIds.length === 0 ? [] : await deletedIds(sql`
+			delete from approval_delivery_intent where ${legacyDeliveryScope} returning id
+		`);
 	const legacyRequests = legacyIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_request
 			where organization_id = ${organizationId} and id = any(${sql.param(legacyIds)}::uuid[])
@@ -337,13 +354,13 @@ export async function deleteApprovalInTransaction(
 		`);
 	// Invocation associations reference their decision and binding; delete them
 	// first so the audit records them and a late redelivery cannot replay.
-	const invocations = workflowIds.length === 0 ? [] : await deletedIds(sql`
+	const invocations: string[] = workflowIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_invocation where ${evidenceScope} returning id
 		`);
 	const decisionEvidence: string[] = workflowIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_decision_evidence where ${evidenceScope} returning id
 		`);
-	const reviewBindings = workflowIds.length === 0 ? [] : await deletedIds(sql`
+	const reviewBindings: string[] = workflowIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_review_binding where ${evidenceScope} returning id
 		`);
 	const submittedRevisions: string[] = workflowIds.length === 0 ? [] : await deletedIds(sql`
@@ -353,9 +370,26 @@ export async function deleteApprovalInTransaction(
 	const legacyScope = sql`organization_id = ${organizationId} and authority = 'legacy'
 		and submitted_revision_id = any(${sql.param(legacyRevisionIds)}::uuid[])`;
 	if (legacyRevisionIds.length > 0) {
+		// Invocations and bindings of legacy card decisions (#296): dependants
+		// first, so the audit records them and a late redelivery cannot replay.
+		invocations.push(
+			...(await deletedIds(sql`
+				delete from approval_invocation
+				where organization_id = ${organizationId} and authority = 'legacy'
+					and decision_evidence_id in (
+						select id from approval_decision_evidence where ${legacyScope}
+					)
+				returning id
+			`)),
+		);
 		decisionEvidence.push(
 			...(await deletedIds(sql`
 				delete from approval_decision_evidence where ${legacyScope} returning id
+			`)),
+		);
+		reviewBindings.push(
+			...(await deletedIds(sql`
+				delete from approval_review_binding where ${legacyScope} returning id
 			`)),
 		);
 		submittedRevisions.push(
@@ -386,7 +420,11 @@ export async function deleteApprovalInTransaction(
 			invocations: invocations.sort(),
 		},
 		escalationTransfers: escalationTransfers.sort(),
-		delivery: { work: deliveryWork.sort(), messages: deliveryMessages.sort() },
+		delivery: {
+			work: [...deliveryWork, ...legacyDeliveryWork].sort(),
+			messages: [...deliveryMessages, ...legacyDeliveryMessages].sort(),
+			intents: deliveryIntents.sort(),
+		},
 	};
 }
 
