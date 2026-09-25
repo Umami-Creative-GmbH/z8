@@ -2,18 +2,24 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { slackApprovalMessage, slackUserMapping } from "@/db/schema";
 import { prepareApprovalPresentation } from "@/lib/approvals/presentation";
-import {
-	approvalAttemptNotice,
-	slackApprovalNotice,
-} from "@/lib/bot-platform/approval-notice";
+import { approvalAttemptNotice } from "@/lib/bot-platform/approval-notice";
 import { createLogger } from "@/lib/logger";
 import { openConversation, postMessage, updateMessage } from "./api";
+import { slackApprovalCard } from "./approval-card";
 import { getChannelIdForUser } from "./conversation-manager";
 import type { ResolvedSlackBot, SlackInteractionPayload } from "./types";
 import { resolveSlackUser } from "./user-resolver";
 
 const logger = createLogger("SlackApprovalHandler");
 
+/**
+ * A press on a legacy Slack approval card. Slack has no established
+ * per-invocation identity (#261), so a fresh press never decides: no
+ * `action_ts` composite, card value, payload hash or receive-time ID reaches
+ * a decision. Only supported historical replay, verified against the
+ * committed result, is reported; everything else gets authenticated review.
+ * Cards sent by the delivery owner carry no decision controls at all.
+ */
 export async function handleApprovalAction(
 	payload: SlackInteractionPayload,
 	action: { action_id: string; value?: string },
@@ -60,7 +66,7 @@ export async function handleApprovalAction(
 		await updateMessage(bot.botAccessToken, {
 			channel: tracked.channelId,
 			ts: tracked.messageTs,
-			...slackApprovalNotice(notice),
+			...slackApprovalCard(notice),
 		});
 	} catch (error) {
 		logger.error(
@@ -101,7 +107,7 @@ export async function sendApprovalMessageToManager(
 		if (!channelId) return;
 		const sent = await postMessage(botAccessToken, {
 			channel: channelId,
-			...slackApprovalNotice(notice),
+			...slackApprovalCard(notice),
 		});
 		if (sent)
 			await db

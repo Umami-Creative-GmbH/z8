@@ -635,3 +635,15 @@ which build each origin serves. A read-only request for `https://z8-time.app/sw.
 on 2026-09-25 returned 503, and `app.z8-time.app` did not answer, so the deployed
 worker's `preservation-only-v1` capability was not observed. Confirming the
 served digest per origin is the first item of the evidence packet in #329.
+
+### Extension retirement (2026-09-25)
+
+The user retired the browser extension, and #282 closes as not planned. No
+extension client will adopt version 2 commands, so the #282 references above
+(C266-E, the fence retirement trigger) no longer point at planned adoption.
+Installed X1–X3 readers remain old consumers under #329. See
+[the retirement record](../extension-clock-client-retirement-282.md).
+
+The mobile app was retired the same day (#283 and #278 close as not planned).
+C266-M no longer points at planned adoption. Installed apps remain old consumers
+under #329. See [the mobile retirement record](../mobile-clock-client-retirement-283.md).

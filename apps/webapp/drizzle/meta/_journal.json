@@ -624,6 +624,20 @@
       "when": 1791907200000,
       "tag": "0088_bot_clock_out_writer",
       "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1791993600000,
+      "tag": "0089_completed_work_amendment",
+      "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1792080000000,
+      "tag": "0090_approval_delivery_slack",
+      "breakpoints": true
     }
   ]
 }

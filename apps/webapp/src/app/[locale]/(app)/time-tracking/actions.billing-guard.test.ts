@@ -165,7 +165,7 @@ describe("legacy time-tracking action billing guards", () => {
 		["updateWorkPeriodNotes", ".update(timeEntry)"],
 		["splitWorkPeriod", "createTimeEntry({"],
 		["updateTimeEntryNotes", ".update(timeEntry)"],
-		["updateWorkPeriodProject", ".update(workPeriod)"],
+		["updateWorkPeriodProject", "changeWorkPeriodProject({"],
 	])("guards %s before writing time data", (name, writeMarker) => {
 		expectBillingGuardBeforeWrite(name, writeMarker);
 	});

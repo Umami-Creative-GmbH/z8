@@ -14,6 +14,7 @@
       "card": {
         "absenceTitle": "Abwäseheitsaatrag zur Genehmigung",
         "boundHint": "Genehmige oder Ablehne entscheidet genau über de Aatrag obe. Isch er gänderet oder neu zuegwise worde, wird nüt entschide und du wirsch bitte, ihn in Z8 z’prüefe.",
+        "reviewOnlyHint": "Genehmig oder lehn dä Aatrag in Z8 ab. Über die Nachricht chan er nöd entschide werde.",
         "approve": "Genehmige",
         "reject": "Ablehne",
         "unavailable": "Nöd verfüegbar",
