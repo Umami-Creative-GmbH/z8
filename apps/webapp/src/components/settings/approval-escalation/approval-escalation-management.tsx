@@ -7,6 +7,7 @@ import {
 	disposeApprovalEscalationAttention,
 	getApprovalEscalationOverview,
 	recheckApprovalEscalationAttention,
+	retryApprovalEscalationDelivery,
 	reviewApprovalEscalationPolicyConflicts,
 	transferApprovalEscalationAssignment,
 	updateApprovalEscalationPolicy,
@@ -146,6 +147,24 @@ export function ApprovalEscalationManagement({
 		return true;
 	}
 
+	const retryDeliveryMutation = useMutation({
+		mutationFn: retryApprovalEscalationDelivery,
+		onSuccess: async (result) => {
+			if (!result.success) {
+				toast.error(result.error);
+			} else {
+				toast.success(
+					t(
+						"settings.approvalEscalation.toast.deliveryRetried",
+						"Delivery retry scheduled",
+					),
+				);
+			}
+			await invalidate();
+		},
+		onError: () => toast.error(requestFailed()),
+	});
+
 	async function handleDispose(
 		attentionId: string,
 		note: string,
@@ -202,9 +221,13 @@ export function ApprovalEscalationManagement({
 						isRechecking={recheckMutation.isPending}
 						isDisposing={disposeMutation.isPending}
 						isTransferring={transferMutation.isPending}
+						isRetryingDelivery={retryDeliveryMutation.isPending}
 						onRecheck={() => recheckMutation.mutate()}
 						onDispose={handleDispose}
 						onTransfer={handleTransfer}
+						onRetryDelivery={(attentionId) =>
+							retryDeliveryMutation.mutate({ attentionId })
+						}
 					/>
 					<EscalationPolicyCard
 						key={overview.policy.revision}

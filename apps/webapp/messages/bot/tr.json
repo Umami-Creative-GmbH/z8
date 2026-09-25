@@ -45,6 +45,14 @@
         "stepRejected": "{actor} tarafından {time} tarihinde reddedildi. Talep henüz kesinleşmedi; güncel durumunu Z8'de inceleyin.",
         "recordedTitle": "Karar kaydedildi",
         "recorded": "{actor} tarafından {time} tarihinde kaydedildi. Talebin güncel durumunu Z8'de inceleyin."
+      },
+      "status": {
+        "withdrawnTitle": "Talep geri çekildi",
+        "withdrawn": "Bu talep geri çekildi. Bu karttan karar verilmesi gerekmiyor.",
+        "inactiveTitle": "Artık işlem gerektirmiyor",
+        "inactive": "Bu talep artık bu karttan kararınızı gerektirmiyor. Burada karar verilmedi. Güncel durumunu Z8'de inceleyin.",
+        "currentApproved": "Talebin güncel durumu: onaylandı.",
+        "currentRejected": "Talebin güncel durumu: reddedildi."
       }
     },
     "cmd": {

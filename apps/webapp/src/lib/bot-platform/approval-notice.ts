@@ -4,10 +4,13 @@ import {
 	approvalReviewUrl,
 } from "@/lib/approvals/presentation/review-navigation";
 import { formatInstant } from "@/lib/datetime/temporal-format";
-import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
+import {
+	type RecipientDisplayContext,
+	resolveRecipientDisplayContext,
+} from "@/lib/notifications/recipient-display-context";
 import type { DecisionEvidenceRecord } from "@/lib/approvals/evidence/store";
 import type { BoundBotApprovalResult } from "./approval-decision";
-import { getBotTranslate } from "./i18n";
+import { type BotTranslateFn, getBotTranslate } from "./i18n";
 
 export type ApprovalNotice = Pick<
 	ApprovalReviewNotice,
@@ -90,7 +93,29 @@ export async function boundDecisionNotice(
 			reviewUrl,
 		};
 	}
-	const { evidence } = result;
+	const { title, text } = decisionEvidenceText(result.evidence, display, t);
+	return {
+		title,
+		text: result.replayed
+			? `${text}\n\n${t(
+					"bot.approval.outcome.replayed",
+					"This button press was already recorded; this is its original result and nothing new was decided.",
+				)}`
+			: text,
+		reviewLabel,
+		reviewUrl,
+	};
+}
+
+/** Committed outcome wording with the persisted actor and decision time. */
+function decisionEvidenceText(
+	evidence: Pick<
+		DecisionEvidenceRecord,
+		"assignmentOutcome" | "requestOutcome" | "decidedAt" | "labels"
+	>,
+	display: RecipientDisplayContext,
+	t: BotTranslateFn,
+): { title: string; text: string } {
 	const params = {
 		actor:
 			evidence.labels.actorName ??
@@ -98,15 +123,80 @@ export async function boundDecisionNotice(
 		time: `${formatInstant(evidence.decidedAt, display, "dateTimeMedium")} (${display.timezone})`,
 	};
 	const outcome = BOUND_OUTCOME_TEXT[boundOutcome(evidence)];
-	const text = t(outcome.text.key, outcome.text.fallback, params);
 	return {
 		title: t(outcome.title.key, outcome.title.fallback),
-		text: result.replayed
-			? `${text}\n\n${t(
-					"bot.approval.outcome.replayed",
-					"This button press was already recorded; this is its original result and nothing new was decided.",
-				)}`
-			: text,
+		text: t(outcome.text.key, outcome.text.fallback, params),
+	};
+}
+
+/**
+ * What a delivered card's recipient may learn when the card is refreshed
+ * (#291). `display` is null when the recipient is no longer entitled to fresh
+ * details: the controls are still removed, with a generic notice only.
+ */
+export interface ApprovalStatusNoticeInput {
+	workflowStatus: string;
+	/** Committed evidence of this recipient's own assignment, if it was decided. */
+	evidence: Pick<
+		DecisionEvidenceRecord,
+		"assignmentOutcome" | "requestOutcome" | "decidedAt" | "labels"
+	> | null;
+}
+
+/**
+ * Status notice for a card that is no longer actionable. It never repeats the
+ * request's facts; a decided assignment reports its own committed outcome, and
+ * a later request result is stated separately as the current status.
+ */
+export async function approvalStatusNotice(
+	status: ApprovalStatusNoticeInput,
+	display: RecipientDisplayContext | null,
+	organizationId: string,
+	reference: ApprovalReviewReference,
+): Promise<ApprovalNotice> {
+	const t = await getBotTranslate(display?.locale ?? "en");
+	const reviewLabel = t("bot.approval.reviewInZ8", "Review in Z8");
+	const reviewUrl = await approvalReviewUrl({ organizationId, reference });
+	if (display && status.evidence) {
+		const { title, text } = decisionEvidenceText(status.evidence, display, t);
+		const current =
+			status.workflowStatus !== status.evidence.requestOutcome
+				? status.workflowStatus === "approved"
+					? t(
+							"bot.approval.status.currentApproved",
+							"Current request status: approved.",
+						)
+					: status.workflowStatus === "rejected"
+						? t(
+								"bot.approval.status.currentRejected",
+								"Current request status: rejected.",
+							)
+						: null
+				: null;
+		return {
+			title,
+			text: current ? `${text}\n\n${current}` : text,
+			reviewLabel,
+			reviewUrl,
+		};
+	}
+	if (display && status.workflowStatus === "cancelled") {
+		return {
+			title: t("bot.approval.status.withdrawnTitle", "Request withdrawn"),
+			text: t(
+				"bot.approval.status.withdrawn",
+				"This request was withdrawn. No decision is needed from this card.",
+			),
+			reviewLabel,
+			reviewUrl,
+		};
+	}
+	return {
+		title: t("bot.approval.status.inactiveTitle", "No longer actionable"),
+		text: t(
+			"bot.approval.status.inactive",
+			"This request no longer needs your decision from this card. No decision was made here. Review its current status in Z8.",
+		),
 		reviewLabel,
 		reviewUrl,
 	};

@@ -58,6 +58,9 @@ describe("approval write boundary raw SQL analyzer", () => {
 			"approval_decision_evidence",
 			"approval_presentation_control",
 			"approval_invocation",
+			"approval_delivery_control",
+			"approval_delivery_message",
+			"approval_delivery_work",
 		]);
 	});
 	it.each([
@@ -4186,11 +4189,18 @@ db.delete(approvalOutbox);`,
 			"src/lib/approvals/maintenance.ts": {
 				approval_chain_instance: ["delete"],
 				approval_decision_evidence: ["delete"],
+				approval_delivery_message: ["delete"],
+				approval_delivery_work: ["delete"],
 				approval_invocation: ["delete"],
 				approval_request: ["delete"],
 				approval_review_binding: ["delete"],
 				approval_submitted_revision: ["delete"],
 				approval_workflow: ["delete"],
+			},
+			"src/lib/approvals/delivery/store.ts": {
+				approval_delivery_message: ["insert", "update"],
+				approval_delivery_work: ["insert", "update"],
+				approval_outbox: ["update"],
 			},
 			"src/lib/approvals/evidence/invocation.ts": {
 				approval_invocation: ["insert"],

@@ -45,6 +45,14 @@
         "stepRejected": "Rechazada por {actor} el {time}. La solicitud aún no es definitiva; revisa su estado actual en Z8.",
         "recordedTitle": "Decisión registrada",
         "recorded": "Registrada por {actor} el {time}. Revisa el estado actual de la solicitud en Z8."
+      },
+      "status": {
+        "withdrawnTitle": "Solicitud retirada",
+        "withdrawn": "Esta solicitud se retiró. No se necesita ninguna decisión desde esta tarjeta.",
+        "inactiveTitle": "Ya no requiere acción",
+        "inactive": "Esta solicitud ya no necesita tu decisión desde esta tarjeta. Aquí no se tomó ninguna decisión. Revisa su estado actual en Z8.",
+        "currentApproved": "Estado actual de la solicitud: aprobada.",
+        "currentRejected": "Estado actual de la solicitud: rechazada."
       }
     },
     "cmd": {

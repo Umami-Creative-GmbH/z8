@@ -185,6 +185,8 @@ export interface DeletedApprovalRecords {
 	evidence: DeletedApprovalEvidenceRecords;
 	/** Escalation transfer journal entries; their delivery events cascade. */
 	escalationTransfers: string[];
+	/** Approval-card delivery (#291): outstanding and past work, and every tracked remote message. */
+	delivery: { work: string[]; messages: string[] };
 }
 
 export async function deleteApproval(
@@ -212,7 +214,7 @@ export async function deleteApprovalInTransaction(
 		lock table approval_request, approval_chain_instance, approval_chain_stage_instance,
 			approval_workflow, approval_workflow_stage, approval_submitted_revision,
 			approval_review_binding, approval_decision_evidence, approval_escalation_transfer,
-			approval_invocation
+			approval_invocation, approval_delivery_work, approval_delivery_message
 			in share row exclusive mode
 	`);
 
@@ -324,6 +326,15 @@ export async function deleteApprovalInTransaction(
 			`)),
 		);
 	}
+	// Delivery work and tracked messages follow the same workflow links. Delete
+	// them explicitly so the audit records the remote message identities; a late
+	// send completing afterwards cannot record a message (its FKs fail).
+	const deliveryWork = workflowIds.length === 0 ? [] : await deletedIds(sql`
+			delete from approval_delivery_work where ${evidenceScope} returning id
+		`);
+	const deliveryMessages = workflowIds.length === 0 ? [] : await deletedIds(sql`
+			delete from approval_delivery_message where ${evidenceScope} returning id
+		`);
 	// Invocation associations reference their decision and binding; delete them
 	// first so the audit records them and a late redelivery cannot replay.
 	const invocations = workflowIds.length === 0 ? [] : await deletedIds(sql`
@@ -375,6 +386,7 @@ export async function deleteApprovalInTransaction(
 			invocations: invocations.sort(),
 		},
 		escalationTransfers: escalationTransfers.sort(),
+		delivery: { work: deliveryWork.sort(), messages: deliveryMessages.sort() },
 	};
 }
 
@@ -384,7 +396,8 @@ export async function deleteApprovalInTransaction(
  * employees') work history remove the lifecycle evidence describing it before
  * the history and the employees, dependants first, so employee FKs never block
  * the delete. It runs in the caller's transaction when the caller has one; the
- * demo cleanup paths have none. Other kinds are untouched.
+ * demo cleanup paths call it per employee inside its coordinated history
+ * transaction (#285). Other kinds are untouched.
  */
 export async function deleteWorkPeriodApprovalEvidence(
 	transaction: ApprovalTransactionClient,
