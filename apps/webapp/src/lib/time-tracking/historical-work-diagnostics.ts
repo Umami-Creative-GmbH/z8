@@ -51,6 +51,8 @@ export interface HistoricalEntryEvidence {
 	timezoneSource: string;
 	isSuperseded: boolean;
 	supersededById: string | null;
+	/** The human who wrote the entry: evidence of that particular action only. */
+	createdBy: string;
 }
 
 export interface HistoricalPeriodEvidence {
@@ -72,6 +74,8 @@ export interface HistoricalPeriodEvidence {
 	workCategoryId: string | null;
 	workLocationType: string | null;
 	canonicalRecordId: string | null;
+	/** Explicit work-graph revision (#256 §6); repairs expect it unchanged. */
+	graphRevision: number;
 	/** Row write time: write evidence, never the work date. */
 	createdAt: Instant;
 }
@@ -994,10 +998,15 @@ function provenanceResolver(
 			const creating = operations.find((operation) => CREATING_OPERATION_KINDS.has(operation.kind));
 			const point = adoptionPoint(period.employeeId);
 			if (!creating) {
+				// An evidence-only gap repair (#320) fills absent facts; it is not an amendment.
 				return withoutReceipt(
 					period.employeeId,
 					period.createdAt,
-					operations.some((operation) => operation.appendAdmission === "append"),
+					operations.some(
+						(operation) =>
+							operation.appendAdmission === "append" &&
+							operation.kind !== "repair_historical_gap",
+					),
 				);
 			}
 			if (creating.appendAdmission === "legacy") {

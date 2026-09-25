@@ -25,7 +25,6 @@ import {
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import type { AppendAssuranceReport } from "./append-assurance";
 import {
-	type AppendEvidenceReader,
 	readAppendAssurance,
 	withAppendEvidenceSnapshot,
 } from "./append-assurance-reader";
@@ -40,6 +39,12 @@ import {
 } from "./historical-work-diagnostics";
 
 type Database = typeof database;
+type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+/**
+ * Any organization-scoped reader: the diagnostics snapshot, or a coordinated write
+ * transaction that re-reads evidence before a repair (#320).
+ */
+export type HistoricalWorkEvidenceReader = Pick<Transaction, "select">;
 
 /** Keeps each `IN` list well under PostgreSQL's bind-parameter limit. */
 const ID_CHUNK = 5_000;
@@ -74,6 +79,7 @@ const periodColumns = {
 	workCategoryId: workPeriod.workCategoryId,
 	workLocationType: workPeriod.workLocationType,
 	canonicalRecordId: workPeriod.canonicalRecordId,
+	graphRevision: workPeriod.graphRevision,
 	createdAt: workPeriod.createdAt,
 };
 
@@ -89,7 +95,7 @@ const recordColumns = {
 };
 
 export async function readHistoricalWorkEvidence(
-	reader: AppendEvidenceReader,
+	reader: HistoricalWorkEvidenceReader,
 	organizationId: string,
 	employeeIds: readonly string[],
 ): Promise<HistoricalWorkEvidence> {
@@ -163,6 +169,7 @@ export async function readHistoricalWorkEvidence(
 				timezoneSource: timeEntry.timezoneSource,
 				isSuperseded: timeEntry.isSuperseded,
 				supersededById: timeEntry.supersededById,
+				createdBy: timeEntry.createdBy,
 			})
 			.from(timeEntry)
 			.where(and(eq(timeEntry.organizationId, organizationId), inArray(timeEntry.id, chunk))),
@@ -172,7 +179,7 @@ export async function readHistoricalWorkEvidence(
 		(
 			await selectInChunks(periodIds, (chunk) =>
 				reader
-					.selectDistinct({ entityId: approvalRequest.entityId })
+					.select({ entityId: approvalRequest.entityId })
 					.from(approvalRequest)
 					.where(
 						and(
@@ -316,6 +323,7 @@ export async function readHistoricalWorkEvidence(
 				workCategoryId: row.workCategoryId,
 				workLocationType: row.workLocationType,
 				canonicalRecordId: row.canonicalRecordId,
+				graphRevision: row.graphRevision,
 				createdAt: instantFromDate(row.createdAt),
 			}),
 		),

@@ -157,6 +157,7 @@ jobs:
             src/app/api/mobile/time-clock/route.integration.test.ts \
             src/lib/time-tracking/append-assurance.integration.test.ts \
             src/lib/time-tracking/historical-work-diagnostics.integration.test.ts \
+            src/lib/time-tracking/historical-gap-repair.integration.test.ts \
             src/lib/cron/legacy-escalation-fencing.integration.test.ts \
             src/lib/approvals/presentation/review-arrival.integration.test.ts \
             src/lib/telegram/bound-approval.integration.test.ts \

@@ -115,6 +115,7 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	src/app/api/mobile/time-clock/route.integration.test.ts \
 	src/lib/time-tracking/append-assurance.integration.test.ts \
 	src/lib/time-tracking/historical-work-diagnostics.integration.test.ts \
+	src/lib/time-tracking/historical-gap-repair.integration.test.ts \
 	src/lib/cron/legacy-escalation-fencing.integration.test.ts \
 	src/lib/employee-lifecycle/repository.integration.test.ts \
 	src/lib/employee-lifecycle/legacy-period-backfill.integration.test.ts \

@@ -41,6 +41,7 @@ function entry(
 		timezoneSource: "user_setting",
 		isSuperseded: false,
 		supersededById: null,
+		createdBy: "worker-user",
 		...overrides,
 	};
 }
@@ -85,6 +86,7 @@ function work(
 		workCategoryId: null,
 		workLocationType: null,
 		canonicalRecordId: recordId,
+		graphRevision: 0,
 		createdAt: at(end),
 		...options.period,
 	};
