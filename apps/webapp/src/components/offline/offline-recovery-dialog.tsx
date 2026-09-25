@@ -22,9 +22,12 @@ const ACTIVE_COMMAND_STATES = new Set(["pending", "exhausted", "review_required"
 
 /** Whether the record is still owed an outcome, and so can be archived. */
 function isActiveRecord(record: OfflineRecoveryRecord) {
-	return record.format === COMMAND_RECORD_FORMAT
-		? ACTIVE_COMMAND_STATES.has(String(record.state))
-		: record.recovery?.state !== "archived";
+	if (record.format !== COMMAND_RECORD_FORMAT) return record.recovery?.state !== "archived";
+	// A refusal the page never confirmed as shown still needs a person.
+	return (
+		ACTIVE_COMMAND_STATES.has(String(record.state)) ||
+		(record.state === "rejected" && !record.resolvedAt)
+	);
 }
 
 function holdLabel(reason: unknown, t: Translate) {

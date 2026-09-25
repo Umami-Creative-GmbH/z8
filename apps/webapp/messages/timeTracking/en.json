@@ -167,7 +167,11 @@
     "workLocationHome": "Home",
     "workLocationOffice": "Office",
     "workLocationOther": "Other",
-    "workLocationRemote": "Remote"
+    "workLocationRemote": "Remote",
+    "clockInSavedForSending": "Clock-in saved on this device. It is sent automatically and is not confirmed yet.",
+    "clockOutSavedForSending": "Clock-out saved on this device. It is sent automatically and is not confirmed yet.",
+    "clockInSavedHeld": "Clock-in saved on this device but not sent. Review saved records.",
+    "clockOutSavedHeld": "Clock-out saved on this device but not sent. Review saved records."
   },
   "wellness": {
     "water": {
@@ -177,9 +181,5 @@
       "snoozed": "Water reminders snoozed for today",
       "snoozeError": "Failed to snooze reminders"
     }
-  },
-  "clockInSavedForSending": "Clock-in saved on this device. It is sent automatically and is not confirmed yet.",
-  "clockOutSavedForSending": "Clock-out saved on this device. It is sent automatically and is not confirmed yet.",
-  "clockInSavedHeld": "Clock-in saved on this device but not sent. Review saved records.",
-  "clockOutSavedHeld": "Clock-out saved on this device but not sent. Review saved records."
+  }
 }

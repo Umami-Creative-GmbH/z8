@@ -49,7 +49,12 @@ async function transact(mode, operation, storeName = STORE_NAME) {
 		let result;
 		let failure;
 		try {
-			tx = db.transaction(storeName, mode);
+			// Strict: a record reported as saved must survive an OS crash too.
+			tx = db.transaction(
+				storeName,
+				mode,
+				mode === "readwrite" ? { durability: "strict" } : undefined,
+			);
 			tx.oncomplete = () => {
 				db.close();
 				resolve(result);
@@ -217,8 +222,28 @@ const COMMAND_RECORD_FORMAT = "z8-clock-command-record-v1";
 const OPERATION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 /** Still owed a server outcome; the active queue. */
 const ACTIVE_COMMAND_STATES = new Set(["pending", "exhausted", "review_required"]);
-/** A dependant in one of these states no longer claims its clock-in. */
-const RELEASED_COMMAND_STATES = new Set(["rejected", "archived"]);
+const COMMAND_CONTEXT_FIELDS = ["userId", "organizationId", "employeeId", "server"];
+
+/**
+ * Settled without a possible commit: refused, or archived after an outcome was
+ * established. It no longer claims or blocks anything. An archived command that
+ * may have committed still does, until a lookup settles it.
+ */
+function isReleased(record) {
+	return (
+		record.state === "rejected" || (record.state === "archived" && !record.uncertain)
+	);
+}
+
+/** Owed an outcome that later work must wait for. */
+function isUnsettled(record) {
+	return ACTIVE_COMMAND_STATES.has(record.state) || (record.state === "archived" && record.uncertain);
+}
+
+/** Refused while the page watched, but not yet confirmed as shown. */
+function isUnacknowledgedRejection(record) {
+	return record.state === "rejected" && !record.resolvedAt;
+}
 
 class ClockCommandCaptureError extends Error {
 	constructor(code, message) {
@@ -228,9 +253,7 @@ class ClockCommandCaptureError extends Error {
 }
 
 function sameCommandContext(left, right) {
-	return ["userId", "organizationId", "employeeId", "server"].every(
-		(field) => left[field] === right[field],
-	);
+	return COMMAND_CONTEXT_FIELDS.every((field) => left[field] === right[field]);
 }
 
 function validCaptureRequest(request) {
@@ -243,9 +266,7 @@ function validCaptureRequest(request) {
 		typeof request.occurredAt === "string" &&
 		typeof request.timezone === "string" &&
 		context &&
-		["userId", "organizationId", "employeeId", "server"].every(
-			(field) => typeof context[field] === "string" && context[field],
-		)
+		COMMAND_CONTEXT_FIELDS.every((field) => typeof context[field] === "string" && context[field])
 	);
 }
 
@@ -259,20 +280,16 @@ function resolveCaptureTarget(request, records) {
 		sameCommandContext(record.command.context, request.context),
 	);
 	const claims = (record) =>
-		inContext.some(
-			(other) =>
-				other.dependsOn === record.operationId &&
-				!RELEASED_COMMAND_STATES.has(other.state),
-		);
+		inContext.some((other) => other.dependsOn === record.operationId && !isReleased(other));
 	const clockIns = inContext
 		.filter(
 			(record) =>
 				record.kind === "clock_in" &&
-				!RELEASED_COMMAND_STATES.has(record.state) &&
+				!isReleased(record) &&
 				!claims(record),
 		)
 		.sort((left, right) => right.sequence - left.sequence);
-	const open = clockIns.find((record) => ACTIVE_COMMAND_STATES.has(record.state));
+	const open = clockIns.find(isUnsettled);
 	if (request.kind === "clock_in") {
 		if (open) {
 			throw new ClockCommandCaptureError(
@@ -280,7 +297,11 @@ function resolveCaptureTarget(request, records) {
 				"An earlier clock-in on this device is not confirmed yet",
 			);
 		}
-		return { target: null, dependsOn: null };
+		// A new period starts only after the unconfirmed close of the previous one.
+		const closing = inContext
+			.filter((record) => record.kind === "clock_out" && isUnsettled(record))
+			.sort((left, right) => right.sequence - left.sequence)[0];
+		return { target: null, dependsOn: closing?.operationId ?? null };
 	}
 	if (open) {
 		return {
@@ -453,7 +474,7 @@ async function archiveCommand(recoveryId, context) {
 					fail(new Error("This record belongs to another account or organization"));
 					return;
 				}
-				if (ACTIVE_COMMAND_STATES.has(record.state)) {
+				if (ACTIVE_COMMAND_STATES.has(record.state) || isUnacknowledgedRejection(record)) {
 					store.put({
 						...record,
 						state: "archived",
@@ -469,13 +490,42 @@ async function archiveCommand(recoveryId, context) {
 	);
 }
 
-/** Linked cleanup: only records whose receipt or resolution is already stored. */
+/** The page showed a refusal to the person: it is now resolved. */
+async function acknowledgeCommand(operationId) {
+	return transact(
+		"readwrite",
+		(store, done) => {
+			store.index("operationId").get(operationId).onsuccess = (event) => {
+				const record = event.target.result;
+				if (record && isUnacknowledgedRejection(record)) {
+					store.put({ ...record, resolvedAt: Date.now(), revision: record.revision + 1 });
+					done(true);
+					return;
+				}
+				done(false);
+			};
+		},
+		COMMAND_STORE_NAME,
+	);
+}
+
+/**
+ * Linked cleanup: only records whose receipt or acknowledged resolution is
+ * stored, and that no unsettled command still names as its predecessor.
+ */
 async function pruneCommands(resolvedBefore) {
 	return transact(
 		"readwrite",
 		(store, done) => {
 			let removed = 0;
-			store.openCursor().onsuccess = (event) => {
+			const needed = new Set();
+			store.getAll().onsuccess = (event) => {
+				for (const record of event.target.result) {
+					if (record.dependsOn && isUnsettled(record)) needed.add(record.dependsOn);
+				}
+				store.openCursor().onsuccess = prune;
+			};
+			const prune = (event) => {
 				const cursor = event.target.result;
 				if (!cursor) {
 					done(removed);
@@ -484,7 +534,8 @@ async function pruneCommands(resolvedBefore) {
 				const record = cursor.value;
 				if (
 					(record.state === "committed" || record.state === "rejected") &&
-					record.resolvedAt < resolvedBefore
+					record.resolvedAt < resolvedBefore &&
+					!needed.has(record.operationId)
 				) {
 					cursor.delete();
 					removed++;
@@ -498,10 +549,12 @@ async function pruneCommands(resolvedBefore) {
 
 self.ClockCommandStore = {
 	ACTIVE_STATES: ACTIVE_COMMAND_STATES,
+	isUnacknowledgedRejection,
 	capture: captureCommand,
 	list: listCommands,
 	update: updateCommand,
 	archive: archiveCommand,
+	acknowledge: acknowledgeCommand,
 	prune: pruneCommands,
 	canInspect: canInspectCommand,
 };

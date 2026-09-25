@@ -166,7 +166,7 @@ function ClockControlsView({
 	workLocationType,
 }: ClockControlsViewProps) {
 	// Offline controls cannot trust the last server status, so both ends stay open.
-	const isLocalReview = captureMode !== "server";
+	const isLocalCapture = captureMode !== "server";
 	return (
 		<>
 			<div className="font-medium">
@@ -185,7 +185,7 @@ function ClockControlsView({
 					</div>
 				</div>
 			)}
-			{(isClockedIn || isLocalReview) && (
+			{(isClockedIn || isLocalCapture) && (
 				<ProjectSelectorView
 					value={selectedProjectId}
 					onValueChange={onProjectChange}
@@ -195,7 +195,7 @@ function ClockControlsView({
 					isError={projectsIsError}
 				/>
 			)}
-			{(isClockedIn || isLocalReview) && employeeId && (
+			{(isClockedIn || isLocalCapture) && employeeId && (
 				<WorkCategorySelectorView
 					employeeId={employeeId}
 					value={selectedWorkCategoryId}
@@ -206,7 +206,7 @@ function ClockControlsView({
 					isError={workCategoriesIsError}
 				/>
 			)}
-			{(!isClockedIn || isLocalReview) && (
+			{(!isClockedIn || isLocalCapture) && (
 				<WorkLocationSelector
 					value={workLocationType}
 					onChange={onWorkLocationChange}

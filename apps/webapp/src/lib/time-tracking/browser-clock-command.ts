@@ -121,7 +121,8 @@ export function prepareBrowserClockCommand(input: {
 		admission: "delayed" as const,
 		occurredAt: input.now.toString({ fractionalSecondDigits: 3 }),
 		timezone: input.timezone,
-		context: { ...capabilities.context, server: capabilities.context.server },
+		// Checked equal to the page origin above; typed here as a string.
+		context: { ...capabilities.context, server: input.session.origin },
 	};
 	if (input.kind === "clock_in") {
 		return {

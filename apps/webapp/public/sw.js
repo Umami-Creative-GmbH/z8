@@ -383,8 +383,8 @@ async function handleClockSync(options = {}) {
 }
 
 /**
- * Send stored frozen commands. Every commit is announced only as an invalidation
- * for its own account and organization; tabs reread status themselves.
+ * Send stored frozen commands. A commit is announced only as an invalidation;
+ * tabs reread their own status.
  */
 async function dispatchClockCommands(options = {}) {
 	const run = await self.ClockCommandDispatch.process({
@@ -394,14 +394,9 @@ async function dispatchClockCommands(options = {}) {
 		attendedOperationId: options.attendedOperationId,
 		retryExhausted: options.retryExhausted === true,
 	});
-	for (const commit of run.committed) {
-		await broadcastSafely({
-			type: "SYNC_SUCCESS",
-			eventId: commit.operationId,
-			serverId: commit.operationId,
-			userId: commit.userId,
-			organizationId: commit.organizationId,
-		});
+	if (run.committed.length) {
+		// Bare invalidation: no account, organization or operation reaches other tabs.
+		await broadcastSafely({ type: "SYNC_SUCCESS" });
 	}
 	if (run.status === "offline" || run.status === "unavailable") {
 		await registerClockSync();
@@ -462,6 +457,14 @@ self.addEventListener("message", (event) => {
 
 		case "DISPATCH_CLOCK_COMMANDS":
 			event.waitUntil(handleDispatchClockCommands(event));
+			break;
+
+		case "ACKNOWLEDGE_CLOCK_COMMAND":
+			event.waitUntil(
+				self.ClockCommandStore.acknowledge(event.data.operationId)
+					.then(() => notifyQueueUpdateSafely())
+					.catch((error) => console.warn("[SW] Acknowledgment not stored:", error)),
+			);
 			break;
 
 		case "QUEUE_CLOCK_EVENT":
@@ -556,6 +559,10 @@ function commandOutcome(record) {
  */
 async function handleDispatchClockCommands(event) {
 	const operationId = event.data.operationId;
+	// Only the caller's own context: another account's outcome is never returned.
+	const scope = event.data.context
+		? { ...event.data.context, serverOrigin: self.location.origin }
+		: null;
 	try {
 		const run = await handleClockSync({
 			attendedOperationId: operationId,
@@ -563,7 +570,9 @@ async function handleDispatchClockCommands(event) {
 		});
 		const record = operationId
 			? (await self.ClockCommandStore.list()).find(
-					(item) => item.operationId === operationId,
+					(item) =>
+						item.operationId === operationId &&
+						self.ClockCommandStore.canInspect(item, scope),
 				)
 			: null;
 		event.ports[0]?.postMessage({
@@ -598,7 +607,10 @@ async function handleGetQueueCount(event) {
 		).length;
 		const waitingCount = commands.filter((record) => record.state === "pending").length;
 		const heldCount = commands.filter(
-			(record) => record.state === "exhausted" || record.state === "review_required",
+			(record) =>
+				record.state === "exhausted" ||
+				record.state === "review_required" ||
+				self.ClockCommandStore.isUnacknowledgedRejection(record),
 		).length;
 		event.ports[0]?.postMessage({
 			count: legacyCount + waitingCount + heldCount,
@@ -608,7 +620,9 @@ async function handleGetQueueCount(event) {
 			savedCount:
 				legacy.length +
 				commands.filter(
-					(record) => record.state !== "committed" && record.state !== "rejected",
+					(record) =>
+						record.state !== "committed" &&
+						!(record.state === "rejected" && record.resolvedAt),
 				).length,
 		});
 	} catch (error) {

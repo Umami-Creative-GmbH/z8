@@ -227,9 +227,11 @@ export function useOfflineClock() {
 					break;
 				case "SYNC_SUCCESS":
 					// Scoped commitment is separate from the subsequent current-state read.
+					// Frozen-command commits arrive as a bare invalidation without scope.
 					if (
-						event.data.userId !== userId ||
-						event.data.organizationId !== organizationId
+						(event.data.userId !== undefined && event.data.userId !== userId) ||
+						(event.data.organizationId !== undefined &&
+							event.data.organizationId !== organizationId)
 					)
 						break;
 					update({ lastSyncAt: Date.now() });
@@ -358,10 +360,25 @@ export function useOfflineClock() {
 			}),
 		);
 		const dispatch = await sendMessageToSW<ClockCommandDispatchReply>(
-			{ type: "DISPATCH_CLOCK_COMMANDS", operationId: request.operationId },
+			{
+				type: "DISPATCH_CLOCK_COMMANDS",
+				operationId: request.operationId,
+				context: {
+					userId: request.context.userId,
+					organizationId: request.context.organizationId,
+				},
+			},
 			DISPATCH_REPLY_TIMEOUT_MS,
 		).catch(() => null);
-		return toBrowserClockActionResult(dispatch?.success ? dispatch.record : null);
+		const record = dispatch?.success ? dispatch.record : null;
+		if (record?.state === "rejected") {
+			// The refusal is shown now; until this is stored it stays in review.
+			void sendMessageToSW({
+				type: "ACKNOWLEDGE_CLOCK_COMMAND",
+				operationId: request.operationId,
+			}).catch(() => {});
+		}
+		return toBrowserClockActionResult(record);
 	};
 
 	const triggerSync = async () => {

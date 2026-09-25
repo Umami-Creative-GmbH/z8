@@ -378,6 +378,42 @@ describe.skipIf(!executablePath)("browser frozen clock commands", () => {
 		});
 	});
 
+	it("orders a clock-in behind an unconfirmed clock-out and keeps archived uncertain work blocking", async () => {
+		await loadLibraries();
+		const result = await page.evaluate(`(async () => {
+			await ClockCommandStore.capture(${JSON.stringify(request(OP_IN, "clock_in"))});
+			await ClockCommandStore.capture(${JSON.stringify(request(OP_OUT, "clock_out"))});
+			const next = await ClockCommandStore.capture(${JSON.stringify(request(OP_OTHER, "clock_in"))});
+			return next.record;
+		})()`);
+		expect(result).toMatchObject({ operationId: OP_OTHER, dependsOn: OP_OUT });
+
+		await page.evaluate(`indexedDB.deleteDatabase('z8-offline-queue')`);
+		const archived = await page.evaluate(`(async () => {
+			const { record } = await ClockCommandStore.capture(${JSON.stringify(request(OP_IN, "clock_in"))});
+			await ClockCommandStore.update(record.recoveryId, record.revision, { uncertain: true, attemptCount: 1 });
+			await ClockCommandStore.archive(record.recoveryId, { userId: 'user-1', organizationId: 'org-1', serverOrigin: location.origin });
+			try { await ClockCommandStore.capture(${JSON.stringify(request(OP_OTHER, "clock_in"))}); return 'captured'; }
+			catch (error) { return error.code; }
+		})()`);
+		expect(archived).toBe("clock_in_pending");
+	});
+
+	it("prunes only acknowledged or committed resolutions that nothing still depends on", async () => {
+		await loadLibraries();
+		const remaining = await page.evaluate(`(async () => {
+			const clockIn = (await ClockCommandStore.capture(${JSON.stringify(request(OP_IN, "clock_in"))})).record;
+			await ClockCommandStore.capture(${JSON.stringify(request(OP_OUT, "clock_out"))});
+			await ClockCommandStore.update(clockIn.recoveryId, clockIn.revision, { state: 'rejected', lastOutcome: { kind: 'rejected', code: 'occupancy_conflict' } });
+			await ClockCommandStore.acknowledge('${OP_IN}');
+			const afterAck = (await ClockCommandStore.list()).find(r => r.operationId === '${OP_IN}');
+			await ClockCommandStore.prune(Date.now() + 1);
+			return { resolved: typeof afterAck.resolvedAt, operations: (await ClockCommandStore.list()).map(r => r.operationId) };
+		})()`);
+		// The refused clock-in stays: its clock-out is still blocked by it.
+		expect(remaining).toEqual({ resolved: "number", operations: [OP_IN, OP_OUT] });
+	});
+
 	it("keeps the command active when the receipt write aborts, then records the replayed receipt", async () => {
 		await loadLibraries();
 		const first = await page.evaluate(`(async () => {
@@ -422,7 +458,7 @@ describe.skipIf(!executablePath)("browser frozen clock commands", () => {
 
 		mode = "commit_then_drop";
 		const dropped = await page.evaluate(
-			`sendWorker({ type: 'DISPATCH_CLOCK_COMMANDS', operationId: '${OP_IN}' }, 30000)`,
+			`sendWorker({ type: 'DISPATCH_CLOCK_COMMANDS', operationId: '${OP_IN}', context: { userId: 'user-1', organizationId: 'org-1' } }, 30000)`,
 		);
 		// Committed on the server, unknown here: saved and pending, never a failure.
 		expect(dropped).toMatchObject({ success: true, record: { state: "pending" } });
@@ -450,7 +486,7 @@ describe.skipIf(!executablePath)("browser frozen clock commands", () => {
 		await page.reload();
 		await startWorker();
 		const recovered = await page.evaluate(
-			`sendWorker({ type: 'DISPATCH_CLOCK_COMMANDS', operationId: '${OP_OUT}' }, 30000)`,
+			`sendWorker({ type: 'DISPATCH_CLOCK_COMMANDS', operationId: '${OP_OUT}', context: { userId: 'user-1', organizationId: 'org-1' } }, 30000)`,
 		);
 		expect(recovered).toMatchObject({ success: true, record: { state: "committed" } });
 		const stored = await storedCommands();
@@ -515,7 +551,7 @@ describe.skipIf(!executablePath)("browser frozen clock commands", () => {
 				await startWorker(secondPage);
 				expect(
 					await secondPage.evaluate(
-						`sendWorker({ type: 'DISPATCH_CLOCK_COMMANDS', operationId: '${OP_IN}' }, 30000)`,
+						`sendWorker({ type: 'DISPATCH_CLOCK_COMMANDS', operationId: '${OP_IN}', context: { userId: 'user-1', organizationId: 'org-1' } }, 30000)`,
 					),
 				).toMatchObject({ record: { state: "committed", receipt: commits.get(OP_IN)!.receipt } });
 				expect(posts).toEqual([beforeRestartSend[0].body, beforeRestartSend[0].body]);
@@ -536,7 +572,7 @@ describe.skipIf(!executablePath)("browser frozen clock commands", () => {
 		capabilitiesContext = { ...context, organizationId: "org-2" };
 		expect(
 			await page.evaluate(
-				`sendWorker({ type: 'DISPATCH_CLOCK_COMMANDS', operationId: '${OP_IN}' }, 30000)`,
+				`sendWorker({ type: 'DISPATCH_CLOCK_COMMANDS', operationId: '${OP_IN}', context: { userId: 'user-1', organizationId: 'org-1' } }, 30000)`,
 			),
 		).toMatchObject({
 			record: {
@@ -545,11 +581,17 @@ describe.skipIf(!executablePath)("browser frozen clock commands", () => {
 			},
 		});
 		expect(posts).toHaveLength(0);
+		// A caller in another account never reads this record's outcome.
+		expect(
+			await page.evaluate(
+				`sendWorker({ type: 'DISPATCH_CLOCK_COMMANDS', operationId: '${OP_IN}', context: { userId: 'user-2', organizationId: 'org-1' } }, 30000)`,
+			),
+		).toMatchObject({ success: true, record: null });
 
 		capabilitiesContext = { ...context };
 		expect(
 			await page.evaluate(
-				`sendWorker({ type: 'DISPATCH_CLOCK_COMMANDS', operationId: '${OP_IN}' }, 30000)`,
+				`sendWorker({ type: 'DISPATCH_CLOCK_COMMANDS', operationId: '${OP_IN}', context: { userId: 'user-1', organizationId: 'org-1' } }, 30000)`,
 			),
 		).toMatchObject({ record: { state: "committed", hold: null } });
 		expect(posts).toHaveLength(1);

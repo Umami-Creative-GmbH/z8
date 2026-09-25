@@ -58,11 +58,15 @@ The worker stores the command in a single readwrite transaction on
    the page last saw active, then the period of the latest committed local
    clock-in. It never falls back to whatever is active later. With no target the
    capture fails with `no_target`. A second clock-in while one is unconfirmed is
-   `clock_in_pending`.
+   `clock_in_pending`. A clock-in captured behind an unconfirmed clock-out depends
+   on that clock-out, so a new period never overtakes the close of the previous one.
+   An archived command whose outcome is still uncertain keeps blocking.
 3. Serializes the command once, with a fixed key order, and stores those bytes.
    Every attempt sends exactly these bytes.
 
-If the transaction fails, the page reports a failure and nothing is sent. The
+Every readwrite transaction requests `durability: "strict"`, so a record reported as
+saved survives an OS crash too. If the transaction fails, the page reports a failure
+and nothing is sent. The
 reply field is `message`, not `error`, because the page treats `error` as an
 unanswered worker. A capture whose acknowledgment is lost reads as "could not
 confirm the save", never as queued.
@@ -93,16 +97,24 @@ looks unsent. The outcome is then stored:
   `context_mismatch`, `unsupported_version` → a hold. The record stays pending
   and is retried when the condition clears.
 - Any other rejection → `review_required`. The one exception is a first,
-  never-uncertain attempt that the user saw (the attended dispatch): it resolves
-  as `rejected` and the page shows the server's reason.
+  never-uncertain attempt of the attended dispatch: it is stored as `rejected`, and
+  the page shows the server's reason. It counts as unresolved until the page
+  acknowledges that it showed it (`ACKNOWLEDGE_CLOCK_COMMAND`). A page whose reply
+  wait ran out never acknowledges, so the refusal stays visible for review.
 - Network failure, a cut response, 5xx, `approval_policy_unavailable` →
   transient. After 5 transient failures the record is `exhausted`, which stops
   automatic attempts but keeps the record. An explicit "Refresh status" resumes it.
 
 A rejection after an uncertain attempt stays `review_required` with
 `uncertain: true`. Each later run looks it up and marks it `committed` if the earlier
-attempt did commit. Committed and rejected records are removed 7 days after their
-resolution was stored. Unresolved records are never removed by age or retry count.
+attempt did commit. The same applies to an archived uncertain command: archiving
+never cancels a possible commit. Committed records and acknowledged rejections are
+removed 7 days after their resolution was stored, unless an unsettled command still
+depends on them. Unresolved records are never removed by age or retry count.
+
+A commit is broadcast to open tabs only as a bare `SYNC_SUCCESS` invalidation, with no
+account, organization or operation. The attended dispatch reply names only a record
+captured in the caller's own account and organization.
 
 Triggers: the attended dispatch after capture, page load and reconnect, Background
 Sync (registered when the run finds no network), and the banner's explicit retry.
@@ -156,11 +168,11 @@ origin.
   command holds `not_adopted` with no request and no writes.
 
 Run with the #275 suite: **21/21** (fresh container, migration recovery check,
-container verified and removed).
+container verified and removed), before and after the review fixes.
 
 ### Real Chromium and IndexedDB (no application database)
 
-`src/lib/__tests__/clock-commands.browser.test.ts`, **9/9**, opt-in via
+`src/lib/__tests__/clock-commands.browser.test.ts`, **11/11**, opt-in via
 `Z8_TEST_CHROME_PATH`:
 
 - An interrupted v1→v2 upgrade (thrown in `versionchange`) leaves version 1 and the
@@ -178,6 +190,9 @@ container verified and removed).
 - Context pause and resume; a refused clock-in blocks its clock-out; scoped counts,
   inspection, archive, and no disclosure to another user.
 - Uncertain command with submission unavailable: lookup only.
+- A clock-in captured behind an unconfirmed clock-out depends on it; an archived
+  uncertain clock-in still blocks a new one; pruning keeps a refused predecessor
+  that a clock-out still depends on; another account's dispatch reply is empty.
 
 Finding: Chromium silently resends a POST when a reused connection resets before any
 response byte arrives. The stand-in first dropped the socket and saw two requests. A
@@ -188,9 +203,9 @@ has no such protection.
 
 - `browser-clock-command.test.ts` (20): when a command may be frozen, the capture
   request, and result mapping. After a save, the result is never a failure.
-- `clock-command-dispatch.test.ts` (19): canonical bytes, attempt before send, byte-exact
+- `clock-command-dispatch.test.ts` (20): canonical bytes, attempt before send, byte-exact
   resend, bounded retries, holds, dependency order, attended versus unattended
-  rejections, lookup of uncertain records, serialized runs. Six mutations (no
+  rejections, lookup of uncertain and archived-uncertain records, serialized runs. Six mutations (no
   dependency hold, resolving uncertain rejections, no context check, resending when
   submission is unavailable, not marking the attempt uncertain before sending,
   resolving every rejection) each failed at least one test.
@@ -217,6 +232,8 @@ This slice closes on implementation. Activation items move to #327, #329 and #33
 - **Writer provenance (#329).** Browser commands commit with writer `direct_http`
   and timezone source `browser`. A distinct browser writer needs a migration that
   widens the receipt writer check.
+- **Offline after reload.** Capabilities are read online and kept in memory. A page
+  reloaded while offline has no session either, so it cannot capture on any path.
 - **Manual pilot (#329).** Verify the offline controls, toasts, banner and recovery
   dialog in a deployed browser (service worker and IndexedDB, not the dev preview
   pane), including a real account switch and a real reconnect.

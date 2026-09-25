@@ -127,7 +127,9 @@ function evaluate(record, byOperation, capabilities) {
 	}
 	const fields = contextMismatch(record.command.context, capabilities.context);
 	if (fields.length) return { action: "hold", hold: { reason: "context_mismatch", fields } };
-	if (record.state === "review_required") return { action: "lookup" };
+	if (record.state === "review_required" || record.state === "archived") {
+		return { action: "lookup" };
+	}
 	if (record.dependsOn) {
 		const predecessor = byOperation.get(record.dependsOn);
 		// A pruned predecessor committed; the server resolves it by operation ID.
@@ -196,7 +198,9 @@ async function runOnce(options) {
 		(record) =>
 			record.state === "pending" ||
 			(record.state === "exhausted" && options.retryExhausted) ||
-			(record.state === "review_required" && record.uncertain),
+			(record.state === "review_required" && record.uncertain) ||
+			// Archiving never cancels a possible commit: keep establishing it.
+			(record.state === "archived" && record.uncertain),
 	);
 	const committed = [];
 	const finish = async (status) => {
@@ -278,12 +282,12 @@ async function runOnce(options) {
 			const attended =
 				options.attendedOperationId === record.operationId && firstAttempt && !wasUncertain;
 			await save(attempting, {
-				// Only a refusal the person saw, of a command that was never uncertain,
-				// resolves here. Everything else is kept for review.
+				// Only a refusal the person is shown, of a command that was never
+				// uncertain, becomes `rejected`. It counts as unresolved until the page
+				// acknowledges that it displayed it. Everything else is kept for review.
 				state: attended ? "rejected" : "review_required",
 				uncertain: wasUncertain,
 				lastOutcome: { kind: "rejected", ...stripKind(outcome), at: now() },
-				...(attended ? { resolvedAt: now() } : {}),
 			});
 		} else {
 			const transientFailures = (attempting.transientFailures ?? 0) + 1;

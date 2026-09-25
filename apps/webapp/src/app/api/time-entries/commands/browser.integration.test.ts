@@ -301,7 +301,12 @@ describeIntegration("browser frozen clock commands through the real route on Pos
 	const capture = (kind: "clock_in" | "clock_out", operationId: string) =>
 		send({ type: "CAPTURE_CLOCK_COMMAND", payload: captureRequest(kind, operationId) });
 	const dispatch = (operationId?: string) =>
-		send({ type: "DISPATCH_CLOCK_COMMANDS", ...(operationId ? { operationId } : {}) });
+		send({
+			type: "DISPATCH_CLOCK_COMMANDS",
+			// As the page does: the context the command was captured in.
+			context: { userId: ids.requesterUser, organizationId: ids.organization },
+			...(operationId ? { operationId } : {}),
+		});
 
 	async function stored() {
 		await page.addScriptTag({ url: `${origin}/lib/clock-command-dispatch.js` });

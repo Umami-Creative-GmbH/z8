@@ -283,7 +283,35 @@ describe("offline clock caller outcomes", () => {
 			});
 			expect(committed).toEqual({ success: true, data: { id: "entry-1" } });
 			expect(messages).toContainEqual({ type: "CAPTURE_CLOCK_COMMAND", payload: captureRequest });
-			expect(messages).toContainEqual({ type: "DISPATCH_CLOCK_COMMANDS", operationId: OPERATION_ID });
+			expect(messages).toContainEqual({
+				type: "DISPATCH_CLOCK_COMMANDS",
+				operationId: OPERATION_ID,
+				context: { userId: "user-1", organizationId: "org-1" },
+			});
+			expect(messages).not.toContainEqual(
+				expect.objectContaining({ type: "ACKNOWLEDGE_CLOCK_COMMAND" }),
+			);
+
+			dispatchReply = {
+				success: true,
+				status: "done",
+				record: {
+					operationId: OPERATION_ID,
+					kind: "clock_in",
+					state: "rejected",
+					lastOutcome: { kind: "rejected", code: "already_clocked_in" },
+				},
+			};
+			let refused: unknown;
+			await act(async () => {
+				refused = await result.current.submitClockCommand(captureRequest);
+			});
+			expect(refused).toMatchObject({ success: false, code: "already_clocked_in" });
+			// Shown to the person, so the worker may resolve it.
+			expect(messages).toContainEqual({
+				type: "ACKNOWLEDGE_CLOCK_COMMAND",
+				operationId: OPERATION_ID,
+			});
 
 			dispatchReply = { success: false, error: "Worker stopped" };
 			let unknown: unknown;

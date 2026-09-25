@@ -61,8 +61,8 @@ export type SWToClientMessage =
 	| { type: "QUEUE_UPDATED"; count?: number }
 	| {
 			type: "SYNC_SUCCESS";
-			eventId: string;
-			serverId: string;
+			eventId?: string;
+			serverId?: string;
 			userId?: string;
 			organizationId?: string;
 	  }
@@ -93,8 +93,11 @@ export type ClientToSWMessage =
 			type: "DISPATCH_CLOCK_COMMANDS";
 			/** The command the caller just captured and waits for. */
 			operationId?: string;
+			/** The caller's account; the reply names only a record captured in it. */
+			context?: OfflineRecoveryContext;
 			retryExhausted?: boolean;
 	  }
+	| { type: "ACKNOWLEDGE_CLOCK_COMMAND"; operationId: string }
 	| { type: "CLEAR_OLD_QUEUE" }
 	| { type: "SKIP_WAITING" }
 	| { type: "GET_VERSION" };

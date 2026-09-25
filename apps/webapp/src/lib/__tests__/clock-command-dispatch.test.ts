@@ -378,7 +378,6 @@ describe("browser clock command dispatch", () => {
 		});
 		expect(attended.records[0]).toMatchObject({
 			state: "rejected",
-			resolvedAt: expect.any(Number),
 			lastOutcome: { kind: "rejected", code: "not_allowed_at_time", holidayName: "Neujahr" },
 		});
 
@@ -389,6 +388,8 @@ describe("browser clock command dispatch", () => {
 				init?.method === "POST" ? rejected("op-in") : json(200, capabilities),
 			origin: "https://z8.test",
 		});
+		// Resolved only once the page confirms it showed the refusal (acknowledgment).
+		expect(attended.records[0]).not.toHaveProperty("resolvedAt");
 		expect(unattended.records[0]).toMatchObject({ state: "review_required" });
 
 		const uncertain = memoryStore([
@@ -402,6 +403,20 @@ describe("browser clock command dispatch", () => {
 			attendedOperationId: "op-in",
 		});
 		expect(uncertain.records[0]).toMatchObject({ state: "review_required", uncertain: true });
+	});
+
+	it("keeps looking up an archived uncertain command and records its commit", async () => {
+		const store = memoryStore([
+			record({ operationId: "op-in", state: "archived", uncertain: true, attemptCount: 1 }),
+		]);
+		const fetch = vi.fn(async (url: string, init?: RequestInit) => {
+			if (init?.method === "POST") throw new Error("must not submit");
+			return url.endsWith("/op-in")
+				? json(200, { outcome: "committed", operationId: "op-in", receipt: startReceipt("op-in") })
+				: json(200, capabilities);
+		});
+		await dispatch.process({ store, fetch, origin: "https://z8.test" });
+		expect(store.records[0]).toMatchObject({ state: "committed", uncertain: false });
 	});
 
 	it("re-checks uncertain review records by lookup and never resubmits them", async () => {
