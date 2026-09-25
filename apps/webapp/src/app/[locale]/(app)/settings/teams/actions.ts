@@ -23,6 +23,7 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import { PermissionsService } from "@/lib/effect/services/permissions.service";
 import { createLogger } from "@/lib/logger";
 import { onTeamMemberAdded, onTeamMemberRemoved } from "@/lib/notifications/triggers";
+import { mutateOrganizationConfiguration } from "@/lib/time-tracking/organization-configuration-guard";
 import {
 	buildTeamSettingsSurface,
 	canUseManagerScopedTeamSettings,
@@ -721,11 +722,18 @@ export async function deleteTeam(teamId: string): Promise<ServerActionResult<voi
 					);
 				}
 
-				// Delete team
+				// Deleting the team cascades its change-policy assignment, which manual
+				// submissions read under the organization configuration guard.
 				yield* _(
-					dbService.query("deleteTeam", async () => {
-						await dbService.db.delete(team).where(eq(team.id, teamId));
-					}),
+					dbService.query("deleteTeam", () =>
+						mutateOrganizationConfiguration(dbService.db, targetTeam.organizationId, (tx) =>
+							tx
+								.delete(team)
+								.where(
+									and(eq(team.id, teamId), eq(team.organizationId, targetTeam.organizationId)),
+								),
+						),
+					),
 				);
 
 				logger.info({ teamId }, "Team deleted successfully");

@@ -2,9 +2,8 @@
  * Shared outer work-transaction scope and the #264 acquisition protocol keys.
  * Coordinators acquire, in order: the organization adoption gate, approval gates,
  * organization configuration, sorted user configuration/access, sorted employee
- * coordination, then source identities and rows. Configuration writers take the
- * organization guard exclusively (`organization-configuration-guard.ts`). All
- * advisory locks are transaction-scoped with hash seed zero.
+ * coordination, then source identities and rows. All advisory locks are
+ * transaction-scoped with hash seed zero.
  */
 import { eq, sql } from "drizzle-orm";
 import type { db } from "@/db";
@@ -67,6 +66,7 @@ export async function readAppendAdmission(
 	return control?.mode === "active" ? "append" : "legacy";
 }
 
+/** Shared; configuration writers take it exclusively (`organization-configuration-guard.ts`). */
 export async function acquireOrganizationConfigurationGuard(
 	transaction: Pick<Transaction, "execute">,
 	organizationId: string,

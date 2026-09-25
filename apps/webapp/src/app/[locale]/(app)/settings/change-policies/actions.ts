@@ -773,7 +773,6 @@ export async function createChangePolicyAssignment(
 							and(
 								eq(changePolicy.id, data.policyId),
 								eq(changePolicy.organizationId, actor.organizationId),
-								eq(changePolicy.isActive, true),
 							),
 						)
 						.limit(1);
@@ -825,8 +824,7 @@ export async function createChangePolicyAssignment(
 			return yield* _(
 				Effect.fail(
 					new ValidationError({
-						message:
-							"The policy must be active, and it and the assignment target must belong to this organization",
+						message: "The policy and the assignment target must belong to this organization",
 						field: created.invalid,
 					}),
 				),

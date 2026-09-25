@@ -164,6 +164,7 @@ const categoriesRoute = await import("@/app/api/org-admin/holiday-categories/rou
 const categoryRoute = await import("@/app/api/org-admin/holiday-categories/[id]/route");
 const holidayActions = await import("@/app/[locale]/(app)/settings/holidays/actions");
 const policyActions = await import("@/app/[locale]/(app)/settings/change-policies/actions");
+const teamActions = await import("@/app/[locale]/(app)/settings/teams/actions");
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
@@ -203,6 +204,8 @@ const ids = {
 	otherPolicy: "e3160000-0000-4000-8000-000000000032",
 	organizationAssignment: "e3160000-0000-4000-8000-000000000035",
 	employeeAssignment: "e3160000-0000-4000-8000-000000000036",
+	teamAssignment: "e3160000-0000-4000-8000-000000000037",
+	team: "e3160000-0000-4000-8000-000000000050",
 	blockingCategory: "e3160000-0000-4000-8000-000000000040",
 	openCategory: "e3160000-0000-4000-8000-000000000041",
 	holiday: "e3160000-0000-4000-8000-000000000045",
@@ -948,6 +951,34 @@ describeIntegration("holiday and change-policy configuration writers on PostgreS
 			expect(written).toMatchObject({ success: true });
 			expectOutcome(submitted, { approval: false });
 		});
+
+		it("a deleted team, which cascades its team-level assignment", async () => {
+			await seedPolicies();
+			await admin.query(
+				"insert into team (id, organization_id, name, updated_at) values ($1, $2, 'T316 team', now())",
+				[ids.team, ids.organization],
+			);
+			// Preparation resolves the team through employee.team_id; the team has no
+			// team_membership rows, so deleteTeam allows the delete.
+			await admin.query("update employee set team_id = $1 where id = $2", [ids.team, ids.employee]);
+			await admin.query(
+				`insert into change_policy_assignment
+				 (id, policy_id, organization_id, assignment_type, team_id, priority, created_by, updated_at)
+				 values ($1, $2, $3, 'team', $4, 1, $5, now())`,
+				[ids.teamAssignment, ids.strictPolicy, ids.organization, ids.team, ids.ownerUser],
+			);
+			expectOutcome(await submit(manualCommand({ clockIn: at("06:00"), clockOut: at("07:00") })), {
+				approval: true,
+			});
+
+			const { written, submitted } = await submitBehindParkedWriter(
+				{ statement: "select id from team where id = $1 for update", values: [ids.team] },
+				() => teamActions.deleteTeam(ids.team),
+			);
+
+			expect(written).toMatchObject({ success: true });
+			expectOutcome(submitted, { approval: false });
+		});
 	});
 
 	describe("fresh restart versus committed replay", () => {
@@ -1085,7 +1116,7 @@ describeIntegration("holiday and change-policy configuration writers on PostgreS
 	});
 
 	describe("organization scope of assignment writes", () => {
-		it("refuses another organization's policy or employee and an inactive policy, writing nothing", async () => {
+		it("refuses another organization's policy or employee, writing nothing", async () => {
 			await seedPolicies();
 			const before = await policySnapshot();
 
@@ -1101,21 +1132,8 @@ describeIntegration("holiday and change-policy configuration writers on PostgreS
 					asOwner(() => policyActions.createChangePolicyAssignment(ids.organization, input)),
 				).resolves.toMatchObject({ success: false });
 			}
-			await admin.query("update change_policy set is_active = false where id = $1", [
-				ids.trustPolicy,
-			]);
-			const afterDeactivation = await policySnapshot();
-			await expect(
-				asOwner(() =>
-					policyActions.createChangePolicyAssignment(ids.organization, {
-						policyId: ids.trustPolicy,
-						assignmentType: "organization",
-					}),
-				),
-			).resolves.toMatchObject({ success: false });
 
-			expect(afterDeactivation.assignments).toEqual(before.assignments);
-			expect((await policySnapshot()).assignments).toEqual(before.assignments);
+			expect(await policySnapshot()).toEqual(before);
 		});
 	});
 });

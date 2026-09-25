@@ -4,8 +4,9 @@
 
 Every writer of the organization holiday, blocking-category and change-policy facts that
 manual preparation (#308) reads now takes the organization configuration guard
-**exclusively** before its first read or write, and holds it until its transaction
-commits. A fresh manual submission holds the same guard **shared** while it reads those
+**exclusively** before its first dependent mutation, and holds it until its transaction
+commits. Existence and validation reads run under the guard too, except
+`updateChangePolicy`'s initial policy lookup; its update stays organization-scoped. A fresh manual submission holds the same guard **shared** while it reads those
 facts, so a configuration change can no longer commit between a submission's validation
 and its commit.
 
@@ -30,8 +31,8 @@ The inventory rows are C11–C13 in [the configuration-path audit](audits/265-co
 - `acquireExclusiveOrganizationConfigurationGuard(tx, organizationId)` takes
   `pg_advisory_xact_lock(hashtextextended(key, 0))`.
 - `mutateOrganizationConfiguration(client, organizationId, mutation)` opens the writer's
-  transaction, takes the exclusive guard first, then runs the mutation on that
-  transaction.
+  transaction, takes the exclusive guard as its first statement, then runs the mutation on
+  that transaction.
 
 `work-transaction.ts` takes the shared guard with the same key. Configuration writers take
 nothing ranked earlier (no adoption or approval gate), so the #258 order holds: they never
@@ -51,12 +52,15 @@ upgrade from shared to exclusive and never acquire an earlier-ranked resource la
 | `PATCH /api/org-admin/holiday-categories/[id]` | `blocksTimeEntry`, activation and other fields | Guarded update; `returning` decides 404 |
 | `DELETE /api/org-admin/holiday-categories/[id]` | Soft delete | Guarded update; `returning` decides 404 |
 | `settings/change-policies` `createChangePolicy`, `updateChangePolicy`, `deleteChangePolicy` | Policy values and activation | Guarded insert/update |
-| `settings/change-policies` `createChangePolicyAssignment` | Effective assignment insertion, with `effectiveFrom`/`effectiveUntil` | Guarded insert. The policy must now be an active policy of the organization, and a team or employee target must belong to it (`ValidationError` otherwise) |
+| `settings/change-policies` `createChangePolicyAssignment` | Effective assignment insertion, with `effectiveFrom`/`effectiveUntil` | Guarded insert. The policy and a team or employee target must now belong to the organization (`ValidationError` otherwise); before, a foreign policy ID was inserted unchecked |
 | `settings/change-policies` `deleteChangePolicyAssignment` | Assignment deactivation | Guarded update |
+| `settings/teams` `deleteTeam` | Cascade-deletes the team-level assignment and sets `employee.team_id` to null | Guarded delete, now also organization-scoped. The action only refuses a team with `team_membership` rows, while preparation resolves the team through `employee.team_id`, so this delete can change an employee's policy |
 
 **Retired:** `ChangePolicyService.createPolicy`, `updatePolicy`, `deletePolicy`,
 `assignPolicy` and `unassignPolicy` in `lib/effect/services/change-policy.service.ts` had
-no caller. They are removed with their input types, so the service only reads.
+no caller and no organization predicate. Rather than leaving an unguarded mutation surface,
+they are removed with their input types (the "confirmed retirement of unused bypasses"
+of #259 §3), so the service only reads.
 
 **Not in scope, because manual preparation does not read them:** holiday presets
 (`preset-actions.ts`, `/api/org-admin/holiday-presets`) and holiday/category
@@ -66,15 +70,14 @@ deliberately does not substitute for the organization-level check.
 **Handed to other slices:**
 
 - #318: the retained Clockodo import (`lib/clockodo/import-orchestrator.ts`, holiday and
-  category inserts), the reviewed-import holiday committer (`lib/import-review/committers.ts`),
-  demo policy setup and cleanup (`lib/demo/demo-data.service.ts`), and whole-organization
-  cleanup (`lib/jobs/organization-cleanup.ts`).
-- #313 (team facts) and #318 (cascades): `settings/teams` `deleteTeam` cascade-deletes a
-  team-level assignment and sets `employee.team_id` to null. The action refuses a team that
-  still has members, so in consistent data no employee resolves a policy through a deleted
-  team.
-- Employee hard deletion cascades employee-level assignments, but only demo and cleanup
-  paths do it (#318).
+  category inserts); the reviewed-import holiday committer (`lib/import-review/committers.ts`),
+  which runs inside `import-work-transaction.ts` holding the guard only **shared** and so
+  must switch to exclusive; demo policy setup and cleanup (`lib/demo/demo-data.service.ts`);
+  and whole-organization cleanup (`lib/jobs/organization-cleanup.ts`).
+- #313: the other team facts (membership, `employee.team_id` assignment) and the
+  `team_membership` check in `deleteTeam`, which still runs before the guard.
+- Employee and user hard deletion cascades employee-level assignments: demo
+  (`lib/demo/delete-non-admin.ts`, `demo-data.service.ts`) and organization cleanup (#318).
 
 ## Preserved semantics
 
@@ -82,7 +85,10 @@ Manual preparation is unchanged. This slice verifies it against the real writers
 
 - Organization-level blocking: active holidays in active, blocking categories of the
   organization. Occupied local dates in the effective zone are half-open, so an end at
-  local midnight does not occupy the next date.
+  local midnight does not occupy the next date. A v2 command names one date and needs its
+  end after its start, so it cannot end at local midnight; that traversal stays covered by
+  the #308 unit tests of `manualOccupiedLocalDates`, and the effective-zone date by the
+  #308 Auckland case.
 - Change policy: organization-scoped and active, with the assignment effective and not
   yet expired at the one evaluation instant (`effectiveFrom <= at < effectiveUntil`).
   Precedence is employee, then team, then organization. More than one candidate at the
@@ -103,7 +109,7 @@ The real `createManualTimeEntry` action races the real route handlers and settin
 actions. Only the request/session, billing provisioning, notification delivery and Next
 cache are replaced. Each concurrent caller keeps its own identity through
 `AsyncLocalStorage`. Writers and submissions are paused with real PostgreSQL locks, not
-mocked transactions. **24/24.**
+mocked transactions. **25/25.**
 
 - **Every mutation owner waits for in-flight submissions (15 cases).** A submission is
   parked on its employee key while it holds the shared guard. The writer must then wait on
@@ -116,9 +122,10 @@ mocked transactions. **24/24.**
     deactivated so the organization's strict policy decides → approval; organization
     assignment inserted → approval; employee assignment deleted → approval.
 - **A submission arriving during a mutation waits and reads the commit.** A created
-  blocking holiday, an inserted employee assignment and a deleted assignment. Each writer
-  is parked on a row lock after taking the guard; the submission waits on the guard and
-  then reflects the committed change.
+  blocking holiday, an inserted employee assignment, a deleted assignment and a deleted
+  team whose team-level assignment cascades. Each writer is parked on a row lock after
+  taking the guard; the submission waits on the guard and then reflects the committed
+  change.
 - **Fresh restart:** a submission needs approval on the strict policy and restarts to
   route participants. A policy change queued behind it commits before the second attempt
   can take the shared guard. The second attempt evaluates freshly and executes directly,
@@ -131,12 +138,17 @@ mocked transactions. **24/24.**
   with `effectiveFrom` at Berlin midnight does not apply at 23:59:59.999, when the entry is
   from today. At 00:00 it applies, and the same instant makes the entry one day old. An
   `effectiveUntil` at midnight applies until 23:59:59.999 and not at 00:00.
-- **Organization scope:** assignment creation refuses another organization's policy,
-  another organization's employee and an inactive policy, and writes nothing.
+- **Organization scope:** assignment creation refuses another organization's policy and
+  another organization's employee, and writes nothing.
 
-Mutation: with the exclusive guard made a no-op, all 19 coordination tests fail
+Mutation: with the exclusive guard made a no-op, all 19 coordination tests fail (run
+before the team case was added)
 (`Timed out waiting for …`). The 5 replay, instant and scope tests do not depend on the
 guard.
+
+The unit suite shows no new failures against a clean `dev` baseline (the remaining
+failures are the known Windows/date-dependent set). Two tests that differed once under
+full-suite load passed on rerun.
 
 ### Database-free
 

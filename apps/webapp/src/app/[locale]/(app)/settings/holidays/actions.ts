@@ -523,7 +523,7 @@ export async function deleteCategory(categoryId: string): Promise<ServerActionRe
 					new ConflictError({
 						message: "Cannot delete category - it is being used by active holidays",
 						conflictType: "category_in_use",
-						details: { categoryId, holidayCount: 1 },
+						details: { categoryId },
 					}),
 				),
 			);
