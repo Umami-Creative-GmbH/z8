@@ -235,5 +235,5 @@ items move to #327/#329/#331:
 - **Scale (#329 pilot):** the diagnostic read is O(history) per scoped employee, like append assurance. The org-wide page reads every employee. Measure it, and add paging if needed.
 - **Provenance (#327):** provenance relies on the per-employee admission instant and on the control's `updated_at`. A durable organization activation record and an enumerated legacy in-flight inventory would make `pre_adoption` stronger than row write time. Until every writer participates, legacy writers in adopted scopes appear as `ambiguous`.
 - **Payroll gate (#322):** consuming these findings as the all-or-blocked gate, and keeping readiness and collection in one snapshot, belongs to #322. `assertCanonicalCutoverReady` still guards payroll reads until then.
-- **Repair (#320, #323):** repairs are not authorized here. `historical_gap` only marks candidates, which #320 must revalidate under coordination.
+- **Repair (#320, #323):** repairs are not authorized here. `historical_gap` only marks candidates. #320 revalidates them under coordination (see `docs/historical-gap-repair-320.md`); explicit proposals for everything else belong to #323.
 - **Rollback (#331):** the route and page are read-only additions with no stored state. Rolling back removes them, and nothing needs cleanup.

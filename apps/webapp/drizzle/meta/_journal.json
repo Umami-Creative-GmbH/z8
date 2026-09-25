@@ -715,6 +715,13 @@
       "when": 1793030400000,
       "tag": "0101_user_timezone_rebuild_intent",
       "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1793116800000,
+      "tag": "0102_historical_gap_repair",
+      "breakpoints": true
     }
   ]
 }

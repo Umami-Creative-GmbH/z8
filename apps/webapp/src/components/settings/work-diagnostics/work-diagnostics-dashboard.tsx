@@ -113,7 +113,7 @@ export function WorkDiagnosticsDashboard({
 					<CardDescription>
 						{t(
 							"settings.workDiagnostics.findings.description",
-							"Every finding is read-only evidence. Nothing is repaired or reinterpreted here; changing established work needs a separately authorized review.",
+							"Every finding is read-only evidence. Only the historical gap repair below fills missing values, from evidence and with separate authorization; changing established work needs a separately authorized review.",
 						)}
 					</CardDescription>
 				</CardHeader>

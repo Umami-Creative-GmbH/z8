@@ -26,6 +26,7 @@ export const COMPLETED_WORK_OPERATION_KINDS = [
 	"finalize_time_correction",
 	"cancel_time_correction",
 	"split_policy_clock_out_break",
+	"repair_historical_gap",
 ] as const;
 export type CompletedWorkOperationKind = (typeof COMPLETED_WORK_OPERATION_KINDS)[number];
 
@@ -45,6 +46,7 @@ export const COMPLETED_WORK_WRITERS = [
 	"time_correction_decision",
 	"time_correction_cancellation",
 	"policy_clock_out_decision",
+	"historical_gap_repair",
 ] as const;
 export type CompletedWorkWriter = (typeof COMPLETED_WORK_WRITERS)[number];
 
@@ -57,7 +59,9 @@ export type CompletedWorkActorKind = (typeof COMPLETED_WORK_ACTOR_KINDS)[number]
 // entry ID; for a direct-HTTP command, its operation ID, which is also the entry ID;
 // for a direct amendment (#286), the edit's submission ID or a server-generated
 // ID for unkeyed requests; for a desktop break (#281), its operation ID, which is
-// also the resumed clock-in entry ID, with `work_period_id` naming the closed source). Work identities are stored by value: the receipt is committed evidence
+// also the resumed clock-in entry ID, with `work_period_id` naming the closed source; for an
+// evidence-only historical gap repair (#320), an ID derived from the repaired work and its
+// plan, with the repair executor as actor and the original actor in its result). Work identities are stored by value: the receipt is committed evidence
 // and does not follow later business changes to the work it created. Organization
 // and employee deletion cascade; partial history cleanup deletes receipts explicitly.
 // `actor_user_id` names a human actor only. A `system` actor (runtime demo
@@ -100,11 +104,11 @@ export const completedWorkOperation = pgTable(
 			.where(sql`${table.sourceKey} IS NOT NULL`),
 		check(
 			"completed_work_operation_kind_check",
-			sql`${table.kind} IN ('close_active_work', 'start_live_work', 'import_completed_work', 'import_open_work', 'create_completed_work', 'amend_completed_work', 'close_resume_work', 'submit_time_correction', 'finalize_time_correction', 'cancel_time_correction', 'split_policy_clock_out_break')`,
+			sql`${table.kind} IN ('close_active_work', 'start_live_work', 'import_completed_work', 'import_open_work', 'create_completed_work', 'amend_completed_work', 'close_resume_work', 'submit_time_correction', 'finalize_time_correction', 'cancel_time_correction', 'split_policy_clock_out_break', 'repair_historical_gap')`,
 		),
 		check(
 			"completed_work_operation_writer_check",
-			sql`${table.writer} IN ('web_clock_out', 'direct_http', 'reviewed_import', 'runtime_demo', 'bot_clock_out', 'admin_time_edit', 'self_service_time_edit', 'http_direct_correction', 'work_period_attribution_edit', 'manager_on_behalf', 'manual_entry', 'time_correction_request', 'time_correction_decision', 'time_correction_cancellation', 'policy_clock_out_decision')`,
+			sql`${table.writer} IN ('web_clock_out', 'direct_http', 'reviewed_import', 'runtime_demo', 'bot_clock_out', 'admin_time_edit', 'self_service_time_edit', 'http_direct_correction', 'work_period_attribution_edit', 'manager_on_behalf', 'manual_entry', 'time_correction_request', 'time_correction_decision', 'time_correction_cancellation', 'policy_clock_out_decision', 'historical_gap_repair')`,
 		),
 		check(
 			"completed_work_operation_source_check",
@@ -121,6 +125,29 @@ export const completedWorkOperation = pgTable(
 		check(
 			"completed_work_operation_version_check",
 			sql`${table.writerVersion} >= 1 AND ${table.commandVersion} >= 1 AND ${table.resultVersion} >= 1`,
+		),
+	],
+);
+
+export const HISTORICAL_WORK_REPAIR_MODES = ["inactive", "active"] as const;
+export type HistoricalWorkRepairMode = (typeof HISTORICAL_WORK_REPAIR_MODES)[number];
+
+// Separate authorization for automatic evidence-only historical gap repair (#260 §9,
+// #320). No row keeps repair inactive; plans stay readable. There is deliberately no
+// application setter: activation is an operational decision recorded under #327.
+export const historicalWorkRepairControl = pgTable(
+	"historical_work_repair_control",
+	{
+		organizationId: text("organization_id")
+			.primaryKey()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		mode: text("mode").$type<HistoricalWorkRepairMode>().default("inactive").notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		check(
+			"historical_work_repair_control_mode_check",
+			sql`${table.mode} IN ('inactive', 'active')`,
 		),
 	],
 );

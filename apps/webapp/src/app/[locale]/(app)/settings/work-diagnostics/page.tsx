@@ -3,14 +3,15 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { Temporal } from "temporal-polyfill";
 import { WorkDiagnosticsDashboard } from "@/components/settings/work-diagnostics/work-diagnostics-dashboard";
+import { WorkRepairPanel } from "@/components/settings/work-diagnostics/work-repair-panel";
 import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db, user } from "@/db";
 import { employee } from "@/db/schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { readHistoricalGapRepairPlan } from "@/lib/time-tracking/historical-gap-repair-executor";
 import { calendarDateEnvelope } from "@/lib/time-tracking/historical-work-diagnostics";
-import { readHistoricalWorkDiagnostics } from "@/lib/time-tracking/historical-work-diagnostics-reader";
 import { getTranslate } from "@/tolgee/server";
 
 export const metadata = {
@@ -100,7 +101,8 @@ async function WorkDiagnosticsContent({ searchParams }: WorkDiagnosticsPageProps
 	const selectedEmployeeId =
 		params.employee && Object.hasOwn(employeeLabels, params.employee) ? params.employee : null;
 
-	const { work, appendAssurance } = await readHistoricalWorkDiagnostics(db, organizationId, {
+	// Diagnostics, append assurance and the repair plan come from one snapshot.
+	const { work, appendAssurance, repair } = await readHistoricalGapRepairPlan(db, organizationId, {
 		employeeIds: selectedEmployeeId ? [selectedEmployeeId] : employees.map((row) => row.id),
 		range: calendarDateEnvelope(period.startDate, period.endDate),
 	});
@@ -114,20 +116,29 @@ async function WorkDiagnosticsContent({ searchParams }: WorkDiagnosticsPageProps
 	};
 
 	return (
-		<WorkDiagnosticsDashboard
-			t={t}
-			data={{
-				report: work,
-				appendAssurance: [...appendAssurance].map(([employeeId, report]) => ({
-					employeeId,
-					report,
-				})),
-				employeeLabels,
-				period,
-				selectedEmployeeId,
-				hrefFor,
-			}}
-		/>
+		<div className="space-y-6">
+			<WorkDiagnosticsDashboard
+				t={t}
+				data={{
+					report: work,
+					appendAssurance: [...appendAssurance].map(([employeeId, report]) => ({
+						employeeId,
+						report,
+					})),
+					employeeLabels,
+					period,
+					selectedEmployeeId,
+					hrefFor,
+				}}
+			/>
+			<WorkRepairPanel
+				plan={repair.plan}
+				authorized={repair.authorized}
+				period={period}
+				selectedEmployeeId={selectedEmployeeId}
+				employeeLabels={employeeLabels}
+			/>
+		</div>
 	);
 }
 
