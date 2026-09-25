@@ -9,11 +9,41 @@ mod clock_command;
 #[path = "../../src/offline.rs"]
 mod offline;
 
+#[path = "../../src/frozen_command.rs"]
+mod frozen_command;
+
+#[path = "../../src/command_store.rs"]
+mod command_store;
+
+#[path = "../../src/command_transport.rs"]
+mod command_transport;
+
+#[path = "../../src/command_sync.rs"]
+mod command_sync;
+
+#[path = "../../src/clock_journal.rs"]
+mod clock_journal;
+
 #[cfg(test)]
 mod storage_tests;
 
 #[cfg(test)]
+mod command_store_tests;
+
+#[cfg(test)]
 mod command_tests;
+
+#[cfg(test)]
+mod frozen_command_tests;
+
+#[cfg(test)]
+mod sync_tests;
+
+#[cfg(test)]
+mod support;
+
+#[cfg(test)]
+mod test_http;
 
 #[cfg(test)]
 mod tests {

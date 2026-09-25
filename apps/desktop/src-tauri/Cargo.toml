@@ -13,7 +13,8 @@ crate-type = ["lib", "cdylib", "staticlib"]
 tauri-build = { version = "2", features = [] }
 
 [features]
-# Inactive until #280 ownership/recovery and linked cleanup gates are verified.
+# Extra observations in legacy break rows. Inactive: those rows still have no
+# account/organization binding (#280 covers clock-in/out only; breaks move in #281).
 desktop-recovery-evidence = []
 
 [dependencies]
@@ -40,6 +41,8 @@ parking_lot = "0.12"
 rand = "0.8"
 sha2 = "0.10"
 url = "2"
+uuid = { version = "1", features = ["v4"] }
+iana-time-zone = "0.1"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"
