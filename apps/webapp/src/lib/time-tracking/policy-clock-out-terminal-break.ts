@@ -347,16 +347,45 @@ function validateLockedSource(
 	return source;
 }
 
+/** The established employee locks of a legacy split outside the coordinators. */
+async function lockEmployeeUncoordinated(
+	input: EnforcePolicyClockOutTerminalBreakInput,
+): Promise<void> {
+	const db = input.dbService.db;
+	const employeeLock = await db.execute(
+		sql`select pg_advisory_xact_lock(hashtextextended(${input.employeeId}, 0)) as locked`,
+	);
+	if (rows(employeeLock).length !== 1) fail();
+	const ownershipLockKey = JSON.stringify([input.organizationId, input.employeeId]);
+	const ownershipLock = await db.execute(
+		sql`select pg_advisory_xact_lock(hashtextextended(${ownershipLockKey}, 0)) as locked`,
+	);
+	if (rows(ownershipLock).length !== 1) fail();
+}
+
 export async function applyPolicyClockOutTerminalBreakInTransaction(
 	input: EnforcePolicyClockOutTerminalBreakInput,
 ): Promise<PolicyClockOutTerminalBreakResult> {
 	const db = input.dbService.db;
 	// The decision or submission coordinator already holds the owner's #264
-	// protocol for this transaction; a split without it is refused, not locked late.
+	// protocol for this transaction, so the split takes no lock of its own.
 	const scope = workTransactionScopeFor(db);
-	if (!scope || scope.db !== db) return fail();
-	scope.assertEmployee(input.organizationId, input.employeeId);
-	const adopted = scope.admission === "append";
+	if (scope) {
+		if (scope.db !== db) return fail();
+		scope.assertEmployee(input.organizationId, input.employeeId);
+	} else {
+		// Another approval runtime reached this terminal outside the coordinators
+		// (for example an assignment activation after a reassignment). As for #301
+		// corrections, an adopted organization is refused; a legacy organization
+		// keeps the established employee locks.
+		const control = await db.execute(sql`
+			select mode from time_entry_append_control
+			where organization_id = ${input.organizationId}
+		`);
+		if (rows(control).some((row) => object(row).mode === "active")) return fail();
+		await lockEmployeeUncoordinated(input);
+	}
+	const adopted = scope?.admission === "append";
 	const lifecycleWorkflowId =
 		input.lifecycle.authority === "canonical"
 			? input.lifecycle.workflowId

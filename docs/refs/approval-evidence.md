@@ -1156,7 +1156,11 @@ the persisted decision time, the actor and its label. `result` holds:
 The finalizer reports what it did (`WorkPeriodApprovalResult.outcome`, passed
 to the engine as `finalization.workOutcome`); the recorder never reconstructs
 the result from the requested action. The submitted revision stays unchanged
-when a break split moves the original period's end.
+when a break split moves the original period's end. In adopted organizations
+the split also writes its own `split_policy_clock_out_break` completed-work
+receipt, which holds the segment and decision lineage (see
+[#303](../policy-clock-out-break-split-303.md)). The decision evidence does not
+depend on that receipt.
 
 The owners' receipt keys embed the decision reason. Evidence stores only
 `receipt-key:sha256:<digest of the exact key>` (`workPeriodReceiptKeyDigest`),

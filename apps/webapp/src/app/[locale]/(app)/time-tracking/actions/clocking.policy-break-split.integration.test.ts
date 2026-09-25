@@ -776,6 +776,46 @@ describeIntegration("policy clock-out terminal break splits on PostgreSQL", () =
 		});
 	});
 
+	it("splits a self-approved clock-out under the clock-out's own coordination", async () => {
+		// The requester is their own approver, so routing auto-completes the request.
+		await admin.query("update employee_managers set manager_id = $1 where id = $2", [
+			ids.requester,
+			ids.managerLink,
+		]);
+		actAs(ids.requesterUser);
+		await expect(
+			clockIn("office", { instant: clockInAt, browserTimezone: "UTC" }),
+		).resolves.toMatchObject({ success: true });
+		await expect(
+			clockOut(undefined, undefined, {
+				submissionId: randomUUID(),
+				instant: clockOutAt,
+				browserTimezone: "UTC",
+			}),
+		).resolves.toMatchObject({ success: true });
+
+		expect(
+			(await periods()).map((period) => [period.approval_status, period.duration_minutes]),
+		).toEqual([
+			["approved", 360],
+			["approved", 31],
+		]);
+		const { rows: requests } = await admin.query<{ id: string; status: string }>(
+			"select id, status from approval_request where organization_id = $1",
+			[ids.organization],
+		);
+		const request = only(requests);
+		expect(request.status).toBe("approved");
+		expect(only(await receipts()).result).toMatchObject({
+			actors: {
+				triggeredBy: { kind: "human", userId: ids.requesterUser, employeeId: ids.requester },
+			},
+			decision: {
+				lifecycle: { authority: "legacy", approvalRequestId: request.id, observedWorkflowId: null },
+			},
+		});
+	});
+
 	it("exempts the canonical lifecycle's own transition and its compatibility mirror", async () => {
 		await setRollout("canonical");
 		const { periodId } = await policyClockOut();

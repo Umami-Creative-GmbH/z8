@@ -177,6 +177,7 @@ function splitDatabase(options?: {
 	gaps?: Array<{ gapStart: Date; gapEnd: Date }>;
 	policies?: Record<string, unknown>[];
 	missingAssignedPolicy?: boolean;
+	appendControl?: "active" | "inactive";
 	review?: Partial<Record<
 		"workflowMatches" | "requestMatches" | "legacyPending" | "canonicalPending",
 		boolean
@@ -198,6 +199,10 @@ function splitDatabase(options?: {
 		const compiled = dialect.sqlToQuery(query);
 		queries.push(compiled);
 		const text = compiled.sql;
+		if (text.includes("from time_entry_append_control")) {
+			return { rows: options?.appendControl ? [{ mode: options.appendControl }] : [] };
+		}
+		if (text.includes("pg_advisory_xact_lock")) return { rows: [{ locked: null }] };
 		if (text.includes('as "workflowMatches"')) {
 			return {
 				rows: [
@@ -795,8 +800,8 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 		expect(queries.map((query) => query.sql).join("\n")).not.toContain("pg_advisory");
 	});
 
-	it("refuses a split outside a coordinated work transaction before any read", async () => {
-		const { execute } = splitDatabase();
+	it("refuses an adopted organization outside a coordinated work transaction", async () => {
+		const { execute, queries } = splitDatabase({ appendControl: "active" });
 
 		await expect(
 			enforcePolicyClockOutTerminalBreakInTransaction({
@@ -804,7 +809,28 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 				dbService: { db: { execute } } as never,
 			}),
 		).rejects.toThrow("Policy clock-out terminal break enforcement conflict");
-		expect(execute).not.toHaveBeenCalled();
+		expect(queries.map((query) => query.sql).join("\n")).not.toMatch(
+			/pg_advisory|clockOutTimezone/,
+		);
+	});
+
+	it.each([
+		["no append control", undefined],
+		["an inactive append control", "inactive"],
+	] as const)("keeps the established employee locks outside the coordinators with %s", async (_label, appendControl) => {
+		const { execute, queries } = splitDatabase({ appendControl });
+
+		await expect(
+			enforcePolicyClockOutTerminalBreakInTransaction({
+				...input(execute),
+				dbService: { db: { execute } } as never,
+			}),
+		).resolves.toMatchObject({ kind: "adjusted" });
+		const locks = queries.filter((query) => query.sql.includes("pg_advisory_xact_lock"));
+		expect(locks.map((query) => query.params)).toEqual([
+			[employeeId],
+			[JSON.stringify([organizationId, employeeId])],
+		]);
 	});
 
 	it("refuses a lifecycle whose workflow is not the one bound to the period", async () => {
