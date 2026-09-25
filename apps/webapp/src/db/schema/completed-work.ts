@@ -27,6 +27,7 @@ export const COMPLETED_WORK_OPERATION_KINDS = [
 	"cancel_time_correction",
 	"split_policy_clock_out_break",
 	"repair_historical_gap",
+	"split_completed_work",
 	"apply_historical_repair_proposal",
 ] as const;
 export type CompletedWorkOperationKind = (typeof COMPLETED_WORK_OPERATION_KINDS)[number];
@@ -48,6 +49,7 @@ export const COMPLETED_WORK_WRITERS = [
 	"time_correction_cancellation",
 	"policy_clock_out_decision",
 	"historical_gap_repair",
+	"work_period_split",
 	"historical_repair_proposal",
 ] as const;
 export type CompletedWorkWriter = (typeof COMPLETED_WORK_WRITERS)[number];
@@ -63,8 +65,10 @@ export type CompletedWorkActorKind = (typeof COMPLETED_WORK_ACTOR_KINDS)[number]
 // ID for unkeyed requests; for a desktop break (#281), its operation ID, which is
 // also the resumed clock-in entry ID, with `work_period_id` naming the closed source; for an
 // evidence-only historical gap repair (#320), an ID derived from the repaired work and its
-// plan, with the repair executor as actor and the original actor in its result; for an
-// applied explicit repair proposal (#323), the proposal's ID). Work identities are stored by value: the receipt is committed evidence
+// plan, with the repair executor as actor and the original actor in its result; for a calendar
+// split (#304), the split's submission ID or a server-generated ID, with `work_period_id` naming the
+// split source and the generated period in its result; for an applied explicit repair proposal
+// (#323), the proposal's ID). Work identities are stored by value: the receipt is committed evidence
 // and does not follow later business changes to the work it created. Organization
 // and employee deletion cascade; partial history cleanup deletes receipts explicitly.
 // `actor_user_id` names a human actor only. A `system` actor (runtime demo
@@ -107,11 +111,11 @@ export const completedWorkOperation = pgTable(
 			.where(sql`${table.sourceKey} IS NOT NULL`),
 		check(
 			"completed_work_operation_kind_check",
-			sql`${table.kind} IN ('close_active_work', 'start_live_work', 'import_completed_work', 'import_open_work', 'create_completed_work', 'amend_completed_work', 'close_resume_work', 'submit_time_correction', 'finalize_time_correction', 'cancel_time_correction', 'split_policy_clock_out_break', 'repair_historical_gap', 'apply_historical_repair_proposal')`,
+			sql`${table.kind} IN ('close_active_work', 'start_live_work', 'import_completed_work', 'import_open_work', 'create_completed_work', 'amend_completed_work', 'close_resume_work', 'submit_time_correction', 'finalize_time_correction', 'cancel_time_correction', 'split_policy_clock_out_break', 'repair_historical_gap', 'split_completed_work', 'apply_historical_repair_proposal')`,
 		),
 		check(
 			"completed_work_operation_writer_check",
-			sql`${table.writer} IN ('web_clock_out', 'direct_http', 'reviewed_import', 'runtime_demo', 'bot_clock_out', 'admin_time_edit', 'self_service_time_edit', 'http_direct_correction', 'work_period_attribution_edit', 'manager_on_behalf', 'manual_entry', 'time_correction_request', 'time_correction_decision', 'time_correction_cancellation', 'policy_clock_out_decision', 'historical_gap_repair', 'historical_repair_proposal')`,
+			sql`${table.writer} IN ('web_clock_out', 'direct_http', 'reviewed_import', 'runtime_demo', 'bot_clock_out', 'admin_time_edit', 'self_service_time_edit', 'http_direct_correction', 'work_period_attribution_edit', 'manager_on_behalf', 'manual_entry', 'time_correction_request', 'time_correction_decision', 'time_correction_cancellation', 'policy_clock_out_decision', 'historical_gap_repair', 'work_period_split', 'historical_repair_proposal')`,
 		),
 		check(
 			"completed_work_operation_source_check",

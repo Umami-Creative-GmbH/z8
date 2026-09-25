@@ -4968,6 +4968,77 @@ db.delete(approvalOutbox);`,
 					table: "work_period",
 				},
 			],
+			"src/lib/time-tracking/split-completed-work.ts": [
+				{
+					columns: [
+						"approval_state",
+						"duration_minutes",
+						"employee_id",
+						"end_at",
+						"organization_id",
+						"start_at",
+					],
+					functionName: "splitCompletedWork",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+				},
+				{
+					columns: ["duration_minutes", "end_at"],
+					functionName: "splitCompletedWork",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
+				{
+					columns: [
+						"allocation_kind",
+						"cost_center_id",
+						"organization_id",
+						"project_id",
+						"record_id",
+						"weight_percent",
+					],
+					functionName: "splitCompletedWork",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_allocation",
+				},
+				{
+					columns: [
+						"computation_metadata",
+						"organization_id",
+						"record_id",
+						"record_kind",
+						"work_category_id",
+						"work_location_type",
+					],
+					functionName: "splitCompletedWork",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_work",
+				},
+				{
+					columns: [
+						"approval_status",
+						"canonical_record_id",
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"start_time",
+					],
+					functionName: "splitCompletedWork",
+					operation: "insert",
+					table: "work_period",
+				},
+				{
+					columns: ["clock_out_id", "duration_minutes", "end_time"],
+					functionName: "splitCompletedWork",
+					operation: "update",
+					table: "work_period",
+				},
+			],
 			"src/lib/time-tracking/start-live-work.ts": [
 				{
 					columns: ["clock_in_id", "start_time"],
@@ -5022,33 +5093,6 @@ db.delete(approvalOutbox);`,
 					uncertainty: "dynamic_payload",
 				},
 			],
-			"src/app/[locale]/(app)/time-tracking/actions.ts": [
-				{
-					columns: ["is_superseded", "superseded_by_id"],
-					functionName: "splitWorkPeriod",
-					operation: "update",
-					semantic: "correction_lifecycle",
-					table: "time_entry",
-				},
-				{
-					columns: ["clock_out_id", "duration_minutes", "end_time"],
-					functionName: "splitWorkPeriod",
-					operation: "update",
-					table: "work_period",
-				},
-				{
-					columns: [
-						"clock_in_id",
-						"clock_out_id",
-						"duration_minutes",
-						"end_time",
-						"start_time",
-					],
-					functionName: "splitWorkPeriod",
-					operation: "insert",
-					table: "work_period",
-				},
-			],
 			"src/app/[locale]/(app)/time-tracking/actions/clocking.ts": [
 				{
 					columns: [
@@ -5058,13 +5102,13 @@ db.delete(approvalOutbox);`,
 						"end_time",
 						"pending_changes",
 					],
-					functionName: "addBreakToActiveSession",
+					functionName: "addLegacyBreak",
 					operation: "update",
 					table: "work_period",
 				},
 				{
 					columns: ["clock_in_id", "start_time"],
-					functionName: "addBreakToActiveSession",
+					functionName: "addLegacyBreak",
 					operation: "insert",
 					table: "work_period",
 				},
@@ -5085,17 +5129,17 @@ db.delete(approvalOutbox);`,
 					table: "time_entry",
 				},
 			],
-			"src/app/[locale]/(app)/time-tracking/actions/mutations.ts": [
+			"src/app/[locale]/(app)/time-tracking/actions/work-period-split.ts": [
 				{
 					columns: ["is_superseded", "superseded_by_id"],
-					functionName: "splitWorkPeriod",
+					functionName: "splitLegacyWorkPeriod",
 					operation: "update",
 					semantic: "correction_lifecycle",
 					table: "time_entry",
 				},
 				{
 					columns: ["clock_out_id", "duration_minutes", "end_time"],
-					functionName: "splitWorkPeriod",
+					functionName: "splitLegacyWorkPeriod",
 					operation: "update",
 					table: "work_period",
 				},
@@ -5107,7 +5151,7 @@ db.delete(approvalOutbox);`,
 						"end_time",
 						"start_time",
 					],
-					functionName: "splitWorkPeriod",
+					functionName: "splitLegacyWorkPeriod",
 					operation: "insert",
 					table: "work_period",
 				},
@@ -5124,38 +5168,6 @@ db.delete(approvalOutbox);`,
 					functionName: "finalizeTimeCorrectionTerminalDetailedInTransaction",
 					operation: "update",
 					table: "work_period",
-				},
-			],
-			"src/lib/clockin/import-orchestrator.ts": [
-				{
-					columns: [],
-					functionName: "insertTimeEntry",
-					operation: "insert",
-					table: "time_entry",
-					uncertainty: "dynamic_payload",
-				},
-				{
-					columns: [],
-					functionName: "insertWorkPeriod",
-					operation: "insert",
-					table: "work_period",
-					uncertainty: "dynamic_payload",
-				},
-			],
-			"src/lib/clockodo/import-orchestrator.ts": [
-				{
-					columns: [],
-					functionName: "importClockodoData",
-					operation: "insert",
-					table: "time_entry",
-					uncertainty: "dynamic_payload",
-				},
-				{
-					columns: [],
-					functionName: "importClockodoData",
-					operation: "insert",
-					table: "work_period",
-					uncertainty: "dynamic_payload",
 				},
 			],
 			"src/lib/demo/demo-data.service.ts": [
@@ -5580,10 +5592,10 @@ export function renamedCreateTimeRecord() {
 		});
 	});
 
-	it("keeps Clockodo uncertainty exceptions scoped to their named helper", () => {
-		const path = "src/lib/clockodo/import-orchestrator.ts";
+	it("keeps uncertainty exceptions scoped to their named helper", () => {
+		const path = "src/lib/time-tracking/clocking-core.ts";
 		const source = `import { db, timeEntry } from "@/db";
-export async function importClockodoData(values: object) {
+export async function insertEntry(values: object) {
   return db.transaction(async (tx) => tx.insert(timeEntry).values(values));
 }
 export async function hiddenImport(values: object) {

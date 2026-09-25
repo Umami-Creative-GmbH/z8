@@ -198,8 +198,8 @@ This slice closes on implementation. The items below are activation gates for #3
   on-behalf (#276), bots (#277), demo (#285) and break enforcement (#303/#305) must adopt
   occupancy and append participation before the shared guarantees hold against imports.
 - **Retained direct Clockodo/Clockin orchestrators** (`lib/clockodo/import-orchestrator.ts`,
-  `lib/clockin/import-orchestrator.ts`) are disabled entry points and were not migrated.
-  They must be migrated or retired before any reactivation.
+  `lib/clockin/import-orchestrator.ts`) were disabled entry points and were not migrated.
+  #318 retired them (see [its evidence](provisioning-cleanup-coordination-318.md)).
 - **Held-row resolution:** there is no reviewer flow to resolve a hold (for example
   confirming a break placement). Held rows keep their evidence on the staged row and in
   the review table; the rejected-rows export covers only `rejected` rows.

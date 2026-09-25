@@ -44,8 +44,8 @@ Decisions made with the user on 2026-09-25:
 | `lib/time-tracking/historical-work-proposals.ts` | Create, approve, reject and apply both kinds; list for the settings page. |
 | `POST /api/time-entries/diagnostics/proposals` | `propose_repair`, `propose_continuation`, `approve`, `reject`, `apply`. Organization administrators only. |
 | `/settings/work-diagnostics` | `WorkProposalPanel` below the #320 repair panel: create both kinds, inspect, approve, reject, apply. |
-| `historical_work_proposal` (migration `0103`) | The proposals. Cascades with the organization and the employee. |
-| `time_entry_append_position` (migration `0103`) | New admission `authorized_continuation` with `admitted_history_digest` and `continuation_proposal_id`. |
+| `historical_work_proposal` (migration `0105`) | The proposals. Cascades with the organization and the employee. |
+| `time_entry_append_position` (migration `0105`) | New admission `authorized_continuation` with `admitted_history_digest` and `continuation_proposal_id`. |
 
 ## Field repair proposals
 
@@ -306,7 +306,7 @@ move to #327/#329/#331:
 - **Linked cleanup:** proposals cascade with the organization and the employee, and
   `deleteDemoEmployeeHistory` removes them after the append position. The PostgreSQL suite
   checks both.
-- **Rollback (#331):** the route and panel can be removed; migration `0103` is additive.
+- **Rollback (#331):** the route and panel can be removed; migration `0105` is additive.
   Applied repairs are ordinary graph values with receipts; undoing one is a new proposal.
   A continuation position cannot be dropped without losing its provenance; rollback
   pauses fresh appends (append control) instead. An older release does not know the

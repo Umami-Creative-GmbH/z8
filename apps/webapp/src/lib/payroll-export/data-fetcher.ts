@@ -24,7 +24,10 @@ import {
 	allocateProtectedMinutes,
 	employeePayrollWindow,
 } from "@/lib/payroll-allocation/protected-minutes";
-import { assertCanonicalCutoverReady } from "@/lib/time-record/migration/cutover-state";
+import {
+	assertCanonicalAbsencesReady,
+	assertCanonicalCutoverReady,
+} from "@/lib/time-record/migration/cutover-state";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { buildPayrollQueryEnvelope } from "./calendar-boundaries";
 import { assertNoOpenDepartureClockRepairs } from "./offboarding-repair-guard";
@@ -192,12 +195,20 @@ export async function fetchWorkPeriodsForExport(
 export async function fetchAbsencesForExport(
 	organizationId: string,
 	filters: PayrollExportFilters,
+	options: {
+		/** `absences`: read-only absence check for jobs with collected work input (#322). */
+		canonicalReadiness?: "cutover" | "absences";
+	} = {},
 ): Promise<AbsenceData[]> {
 	if (hasEmptyEmployeeScope(filters)) {
 		return [];
 	}
 
-	await assertCanonicalCutoverReady(organizationId);
+	if (options.canonicalReadiness === "absences") {
+		await assertCanonicalAbsencesReady(organizationId);
+	} else {
+		await assertCanonicalCutoverReady(organizationId);
+	}
 	const { startDate, endDate } = getLogicalDateRange(filters);
 	const logicalStart = DateTime.fromISO(startDate, { zone: "utc" }).startOf("day");
 	const logicalEnd = DateTime.fromISO(endDate, { zone: "utc" }).endOf("day");

@@ -727,7 +727,21 @@
       "idx": 103,
       "version": "7",
       "when": 1793203200000,
-      "tag": "0103_historical_work_proposals",
+      "tag": "0103_completed_work_split",
+      "breakpoints": true
+    },
+    {
+      "idx": 104,
+      "version": "7",
+      "when": 1793289600000,
+      "tag": "0104_payroll_work_collection",
+      "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "7",
+      "when": 1793376000000,
+      "tag": "0105_historical_work_proposals",
       "breakpoints": true
     }
   ]

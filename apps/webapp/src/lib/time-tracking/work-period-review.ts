@@ -7,8 +7,10 @@ import type { WorkTransactionClient, WorkTransactionScope } from "./work-transac
 
 /**
  * Structural changes to a work period wait while an ordinary approval or a time
- * correction for it is unresolved (#256): an amendment (#286) or a break that
- * splits active work (#281) must not change the facts under review.
+ * correction for it is unresolved (#256): an amendment (#286), a break that
+ * splits active work (#281, #304) or a calendar split (#304) must not change the
+ * facts under review. Any pending legacy request or canonical workflow of the
+ * period blocks, whatever its type.
  */
 export async function assertNoUnresolvedWorkPeriodReview(
 	tx: WorkTransactionScope["db"],
@@ -34,20 +36,27 @@ export async function assertNoUnresolvedWorkPeriodReview(
 				),
 			)
 			.limit(1),
+		// Any canonical review of the period, not only corrections: an ordinary
+		// workflow may still be pending while the period status lags (#304).
 		tx
-			.select({ id: approvalWorkflow.id })
+			.select({ id: approvalWorkflow.id, workflowType: approvalWorkflow.workflowType })
 			.from(approvalWorkflow)
 			.where(
 				and(
 					eq(approvalWorkflow.organizationId, organizationId),
-					eq(approvalWorkflow.workflowType, "time_correction"),
 					eq(approvalWorkflow.sourceType, "time_entry"),
 					eq(approvalWorkflow.sourceId, period.id),
 					eq(approvalWorkflow.status, "pending"),
 				),
 			)
-			.limit(1),
+			.limit(2),
 	]);
+	if (canonicalPending.some(({ workflowType }) => workflowType !== "time_correction")) {
+		throw new ConflictError({
+			message: "This work period is awaiting approval and cannot be edited",
+			conflictType: "work_period_pending_approval",
+		});
+	}
 	if (legacyPending.length > 0 || canonicalPending.length > 0) {
 		throw new ConflictError({
 			message: "A time correction approval is already pending for this work period",

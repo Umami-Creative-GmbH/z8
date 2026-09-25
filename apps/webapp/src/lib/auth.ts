@@ -34,6 +34,7 @@ import {
 } from "@/lib/auth/employee-invitation-draft";
 import { createGuardedAuthSecondaryStorage } from "@/lib/auth/guarded-secondary-storage";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
+import { rejectOrganizationSsoApprovalUpdate } from "@/lib/auth/organization-sso-approval-update-guard";
 import { rejectOrganizationTimezoneUpdate } from "@/lib/auth/organization-timezone-update-guard";
 import { socialOrgOAuthPlugin } from "@/lib/auth/social-org-oauth";
 import {
@@ -639,9 +640,12 @@ export const auth = betterAuth({
 			// Membership, role and removal writers take their configuration/access
 			// guards in their own transaction (#314); see auth-mutation-coordination.
 			organizationHooks: createCoordinatedOrganizationHooks({
-				// Timezone changes go through the protected settings writer (#311).
-				beforeUpdateOrganization: async ({ organization }) =>
-					rejectOrganizationTimezoneUpdate(organization),
+				// Timezone changes go through the protected settings writer (#311); the
+				// SSO approval setting has no protected writer and cannot change (#318).
+				beforeUpdateOrganization: async ({ organization }) => {
+					rejectOrganizationTimezoneUpdate(organization);
+					rejectOrganizationSsoApprovalUpdate(organization);
+				},
 
 				// Update user permissions when accepting invitation (after it commits)
 				afterAcceptInvitation: async ({ user, invitation, member }) => {

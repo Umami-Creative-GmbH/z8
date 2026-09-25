@@ -1848,6 +1848,8 @@ export async function startExportAction(input: StartExportInput): Promise<
 					formatId: input.formatId,
 					requestedById: currentEmployee.id,
 					filters,
+					// Checked above: an organization administrator may execute eligible repairs.
+					repairActorUserId: session.user.id,
 				}),
 			),
 		);
