@@ -10,15 +10,50 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { resolveBotClockActor } from "@/lib/bot-platform/clock-actor";
+import {
+	type ClockCommandReplies,
+	clockFailureReply,
+	committedReply,
+	textReply,
+} from "@/lib/bot-platform/clock-replies";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
 import { createLogger } from "@/lib/logger";
-import { resolveBotClockActor } from "./clock-actor";
 import { getCommandTemporalContext } from "./command-temporal";
 
 const logger = createLogger("BotCommand:ClockOut");
+
+const replies: ClockCommandReplies = {
+	failures: {
+		not_clocked_in: (t) => t("bot.cmd.clockout.notClockedIn", "You are not currently clocked in."),
+		approval_unavailable: (t) =>
+			t(
+				"bot.cmd.clockout.policyCheckFailed",
+				"Could not verify time approval policy. Please try again.",
+			),
+		approval_required: (t) =>
+			t(
+				"bot.cmd.clockout.unsupportedApproval",
+				"Time changes requiring approval are not supported for this action yet",
+			),
+		append_review_required: (t) =>
+			t(
+				"bot.cmd.clockout.appendReview",
+				"Your time history needs review before you can clock out. Please contact your administrator.",
+			),
+		unconfirmed: (t) =>
+			t(
+				"bot.cmd.clockout.unconfirmed",
+				"Your clock-out could not be confirmed. Check your status before trying again.",
+			),
+	},
+	cannotNow: (t) => t("bot.cmd.clockout.cannotNow", "Cannot clock out at this time."),
+	failed: (t) => t("bot.cmd.clockout.failed", "Could not clock out. Please try again."),
+	committed: (t) => t("bot.cmd.clockout.committed", "Clocked out."),
+};
 
 export const clockOutCommand: BotCommand = {
 	name: "clockout",
@@ -34,11 +69,10 @@ export const clockOutCommand: BotCommand = {
 				getBotTranslate(ctx.locale),
 			]);
 			const temporal = ctx.temporal ?? getCommandTemporalContext(ctx);
-			const text = (value: string): BotCommandResponse => ({ type: "text", text: value });
 
 			const actor = await resolveBotClockActor(ctx, temporal.effectiveTimezone);
 			if (!actor) {
-				return text(t("bot.cmd.clockout.noProfile", "Employee profile not found."));
+				return textReply(t("bot.cmd.clockout.noProfile", "Employee profile not found."));
 			}
 
 			const result = await clockOutAs(
@@ -54,73 +88,30 @@ export const clockOutCommand: BotCommand = {
 					deviceInfo: `${ctx.platform}-bot`,
 				},
 				// Approval-routed clock-out stays unsupported from bots.
-				{ approval: "refuse" },
+				{ refuseApprovalRouting: true },
 			);
-			if (result.success) {
-				// Committed: a formatting failure must not turn the reply into an error.
-				try {
+			if (!result.success) return clockFailureReply(result, replies, t);
+
+			return committedReply(
+				() => {
 					const time = formatInstant(instantFromDate(result.data.timestamp), temporal, "time");
 					if (result.durationMinutes === null) {
-						return text(t("bot.cmd.clockout.successAt", "Clocked out at {time}.", { time }));
+						return t("bot.cmd.clockout.successAt", "Clocked out at {time}.", { time });
 					}
-					return text(
-						t("bot.cmd.clockout.success", "Clocked out at {time}. Duration: {hours}h {minutes}m.", {
+					return t(
+						"bot.cmd.clockout.success",
+						"Clocked out at {time}. Duration: {hours}h {minutes}m.",
+						{
 							time,
 							hours: Math.floor(result.durationMinutes / 60),
 							minutes: result.durationMinutes % 60,
-						}),
+						},
 					);
-				} catch (error) {
-					logger.error({ error }, "Failed to format committed clock-out reply");
-					return text(t("bot.cmd.clockout.committed", "Clocked out."));
-				}
-			}
-
-			switch (result.failure) {
-				case "not_clocked_in":
-					return text(t("bot.cmd.clockout.notClockedIn", "You are not currently clocked in."));
-				case "rejected":
-					return text(
-						result.error || t("bot.cmd.clockout.cannotNow", "Cannot clock out at this time."),
-					);
-				case "billing_required":
-					return text(
-						t(
-							"bot.cmd.billingRequired",
-							"Billing is required to continue using time tracking. Ask an organization admin to update billing.",
-						),
-					);
-				case "approval_unavailable":
-					return text(
-						t(
-							"bot.cmd.clockout.policyCheckFailed",
-							"Could not verify time approval policy. Please try again.",
-						),
-					);
-				case "approval_required":
-					return text(
-						t(
-							"bot.cmd.clockout.unsupportedApproval",
-							"Time changes requiring approval are not supported for this action yet",
-						),
-					);
-				case "append_review_required":
-					return text(
-						t(
-							"bot.cmd.clockout.appendReview",
-							"Your time history needs review before you can clock out. Please contact your administrator.",
-						),
-					);
-				case "unconfirmed":
-					return text(
-						t(
-							"bot.cmd.clockout.unconfirmed",
-							"Your clock-out could not be confirmed. Check your status before trying again.",
-						),
-					);
-				default:
-					return text(t("bot.cmd.clockout.failed", "Could not clock out. Please try again."));
-			}
+				},
+				replies,
+				t,
+				(error) => logger.error({ error }, "Failed to format committed clock-out reply"),
+			);
 		} catch (error) {
 			logger.error({ error, ctx }, "Failed to clock out");
 			throw error;

@@ -163,6 +163,7 @@ const ids = {
 	slackTeam: "T277",
 	teamsTenant: "t277-tenant",
 	platformUser: "277001",
+	project: "e7700000-0000-4000-8000-000000000010",
 } as const;
 
 const botSettings = {
@@ -179,7 +180,52 @@ const platforms = ["slack", "telegram", "discord", "teams"] as const;
 type Platform = (typeof platforms)[number];
 
 const clockInAt = parseInstant("2026-07-22T08:00:00Z");
-const unconfirmed = "Your clock-out could not be confirmed. Check your status before trying again.";
+const unconfirmedClockOut =
+	"Your clock-out could not be confirmed. Check your status before trying again.";
+const unconfirmedClockIn =
+	"Your clock-in could not be confirmed. Check your status before trying again.";
+
+const modes = [
+	["adopted", "active"],
+	["pre-adoption", "inactive"],
+] as const;
+type AdmissionMode = (typeof modes)[number][1];
+
+/** Every write the closure makes in its transaction, per admission mode. */
+const closureWrites: Record<AdmissionMode, readonly (readonly [string, string])[]> = {
+	active: [
+		["time_record", "insert"],
+		["time_record_work", "insert"],
+		["time_record_allocation", "insert"],
+		["time_entry", "insert"],
+		["time_entry_append_position", "update"],
+		// Also advances the graph revision.
+		["work_period", "update"],
+		["employee_work_balance", "insert"],
+		["completed_work_operation", "insert"],
+	],
+	// Before adoption the balance refresh is post-commit and omission clears the
+	// project, so there is no allocation, position or receipt write.
+	inactive: [
+		["time_record", "insert"],
+		["time_record_work", "insert"],
+		["time_entry", "insert"],
+		["work_period", "update"],
+	],
+};
+
+/** Every write a clock-in makes in its transaction, per admission mode. */
+const startWrites: Record<AdmissionMode, readonly (readonly [string, string])[]> = {
+	active: [
+		["time_entry", "insert"],
+		["time_entry_append_position", "insert"],
+		["work_period", "insert"],
+	],
+	inactive: [
+		["time_entry", "insert"],
+		["work_period", "insert"],
+	],
+};
 
 function only<T>(rows: readonly T[]): T {
 	const [row] = rows;
@@ -299,6 +345,7 @@ describeIntegration("bot clocking through the shared clock commands on PostgreSQ
 			   (select json_agg(row_to_json(t) order by t.id) from time_entry t where organization_id = any($1)) as entries,
 			   (select json_agg(row_to_json(t) order by t.id) from time_record t where organization_id = any($1)) as records,
 			   (select json_agg(row_to_json(t) order by t.record_id) from time_record_work t where organization_id = any($1)) as works,
+			   (select json_agg(row_to_json(t) order by t.id) from time_record_allocation t where organization_id = any($1)) as allocations,
 			   (select json_agg(row_to_json(t) order by t.employee_id) from time_entry_append_position t where organization_id = any($1)) as positions,
 			   (select json_agg(row_to_json(t) order by t.employee_id) from employee_work_balance t where organization_id = any($1)) as balances,
 			   (select json_agg(row_to_json(t) order by t.id) from completed_work_operation t where organization_id = any($1)) as receipts,
@@ -393,6 +440,11 @@ describeIntegration("bot clocking through the shared clock commands on PostgreSQ
 		await admin.query(
 			"insert into user_settings (user_id, timezone, updated_at) values ($1, 'UTC', $2)",
 			[ids.user, timestamp],
+		);
+		await admin.query(
+			`insert into project (id, organization_id, name, status, is_active, created_by, updated_at)
+			 values ($1, $2, 'T277 project', 'active', true, $3, $4)`,
+			[ids.project, ids.organization, ids.user, timestamp],
 		);
 		await admin.query(
 			`insert into slack_user_mapping (user_id, organization_id, slack_user_id, slack_team_id, updated_at)
@@ -555,72 +607,15 @@ describeIntegration("bot clocking through the shared clock commands on PostgreSQ
 		},
 	);
 
-	it("rejects an employee resolved outside the bot's organization", async () => {
-		// A Slack mapping into another organization resolves that organization's
-		// employee, while the workspace's bot belongs to this one.
-		await admin.query("update slack_user_mapping set organization_id = $1 where user_id = $2", [
-			ids.otherOrganization,
-			ids.user,
-		]);
-		await send("telegram", "clockin", clockInAt);
-		const before = await snapshot();
-
-		await expect(send("slack", "clockout", clockInAt.add({ minutes: 30 }))).resolves.toBe(
-			"Employee profile not found.",
+	/** Moves the platform's user mapping into the other organization. */
+	async function mapOutsideOrganization(platform: Platform) {
+		await admin.query(
+			`update ${platform}_user_mapping set organization_id = $1 where user_id = $2`,
+			[ids.otherOrganization, ids.user],
 		);
+	}
 
-		expect(await snapshot()).toEqual(before);
-	});
-
-	it("stores positive partial-minute work with the shared rounding", async () => {
-		await send("telegram", "clockin", clockInAt);
-		const first = await activePeriod();
-		await expect(send("telegram", "clockout", clockInAt.add({ seconds: 29 }))).resolves.toContain(
-			"Duration: 0h 0m.",
-		);
-		await send("telegram", "clockin", clockInAt.add({ hours: 1 }));
-		const second = await activePeriod();
-		await expect(
-			send("telegram", "clockout", clockInAt.add({ hours: 1, seconds: 30 })),
-		).resolves.toContain("Duration: 0h 1m.");
-
-		expect(await closedGraph(first.id)).toMatchObject({ duration_minutes: 0, record_duration: 0 });
-		expect(await closedGraph(second.id)).toMatchObject({ duration_minutes: 1, record_duration: 1 });
-	});
-
-	it("rejects equal endpoints without writing anything", async () => {
-		await send("discord", "clockin", clockInAt);
-		const before = await snapshot();
-
-		await expect(send("discord", "clockout", clockInAt)).resolves.toContain(
-			"Clock-out must be after clock-in",
-		);
-
-		expect(await snapshot()).toEqual(before);
-	});
-
-	it("treats a repeated unkeyed command as a fresh command, not a replay", async () => {
-		await send("slack", "clockin", clockInAt);
-		await send("slack", "clockout", clockInAt.add({ hours: 1 }));
-		const before = await snapshot();
-
-		await expect(send("slack", "clockout", clockInAt.add({ hours: 1, seconds: 5 }))).resolves.toBe(
-			"You are not currently clocked in.",
-		);
-
-		expect(await snapshot()).toEqual(before);
-		expect(await receipts()).toHaveLength(1);
-	});
-
-	it.each([
-		["time_record", "insert"],
-		["time_entry", "insert"],
-		["time_entry_append_position", "update"],
-		["work_period", "update"],
-		["completed_work_operation", "insert"],
-	])("rolls back the whole closure when the %s %s fails", async (table, event) => {
-		await send("teams", "clockin", clockInAt);
-		const before = await snapshot();
+	async function withFailingWrite<T>(table: string, event: string, run: () => Promise<T>) {
 		await admin.query(
 			`create function t277_fail() returns trigger language plpgsql as $$
 			 begin raise exception 't277 injected failure'; end $$`,
@@ -628,12 +623,151 @@ describeIntegration("bot clocking through the shared clock commands on PostgreSQ
 		await admin.query(
 			`create trigger t277_fail before ${event} on ${table} for each row execute function t277_fail()`,
 		);
+		try {
+			return await run();
+		} finally {
+			await admin.query("drop function t277_fail() cascade");
+		}
+	}
 
-		const reply = await send("teams", "clockout", clockInAt.add({ hours: 1 }));
-		await admin.query("drop function t277_fail() cascade");
+	// Slack and Teams resolve the mapping's employee but run in the bot's
+	// organization, so the command refuses the foreign employee. Telegram and
+	// Discord look the mapping up in the bot's organization and find none.
+	const outsideReply: Record<Platform, string> = {
+		slack: "Employee profile not found.",
+		teams: "Employee profile not found.",
+		telegram: "not linked",
+		discord: "not linked",
+	};
 
-		expect(reply).toBe(unconfirmed);
+	describe.each(modes)("%s organization", (_label, mode) => {
+		beforeEach(async () => {
+			await setAdmission(mode);
+		});
+
+		it.each(platforms)(
+			"%s refuses a clock-out resolved outside the bot's organization",
+			async (platform) => {
+				await send(platform, "clockin", clockInAt);
+				await mapOutsideOrganization(platform);
+				const before = await snapshot();
+
+				const reply = await send(platform, "clockout", clockInAt.add({ minutes: 30 }));
+
+				expect(reply).toContain(outsideReply[platform]);
+				expect(reply).not.toContain("Clocked out");
+				expect(await snapshot()).toEqual(before);
+			},
+		);
+
+		it.each(platforms)(
+			"%s refuses a clock-in resolved outside the bot's organization",
+			async (platform) => {
+				await mapOutsideOrganization(platform);
+				const before = await snapshot();
+
+				const reply = await send(platform, "clockin", clockInAt);
+
+				expect(reply).toContain(outsideReply[platform]);
+				expect(reply).not.toContain("Clocked in");
+				expect(await snapshot()).toEqual(before);
+			},
+		);
+
+		it.each(platforms)(
+			"%s stores positive partial-minute work with the shared rounding",
+			async (platform) => {
+				await send(platform, "clockin", clockInAt);
+				const first = await activePeriod();
+				await expect(send(platform, "clockout", clockInAt.add({ seconds: 29 }))).resolves.toContain(
+					"Duration: 0h 0m.",
+				);
+				await send(platform, "clockin", clockInAt.add({ hours: 1 }));
+				const second = await activePeriod();
+				await expect(
+					send(platform, "clockout", clockInAt.add({ hours: 1, seconds: 30 })),
+				).resolves.toContain("Duration: 0h 1m.");
+
+				expect(await closedGraph(first.id)).toMatchObject({
+					duration_minutes: 0,
+					record_duration: 0,
+				});
+				expect(await closedGraph(second.id)).toMatchObject({
+					duration_minutes: 1,
+					record_duration: 1,
+				});
+			},
+		);
+
+		it.each(platforms)(
+			"%s treats a repeated unkeyed clock-out as a fresh command",
+			async (platform) => {
+				await send(platform, "clockin", clockInAt);
+				await send(platform, "clockout", clockInAt.add({ hours: 1 }));
+				const before = await snapshot();
+
+				await expect(
+					send(platform, "clockout", clockInAt.add({ hours: 1, seconds: 5 })),
+				).resolves.toContain("You are not currently clocked in.");
+
+				expect(await snapshot()).toEqual(before);
+			},
+		);
+
+		it.each(
+			platforms.flatMap((platform) =>
+				closureWrites[mode].map(([table, event]) => [platform, table, event] as const),
+			),
+		)("%s rolls back the whole closure when the %s %s fails", async (platform, table, event) => {
+			await send(platform, "clockin", clockInAt);
+			// An attributed period, so the adopted closure also writes its allocation.
+			await admin.query("update work_period set project_id = $1 where employee_id = $2", [
+				ids.project,
+				ids.requester,
+			]);
+			const before = await snapshot();
+
+			const reply = await withFailingWrite(table, event, () =>
+				send(platform, "clockout", clockInAt.add({ hours: 1 })),
+			);
+
+			expect(reply).toContain(unconfirmedClockOut);
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it.each(
+			platforms.flatMap((platform) =>
+				startWrites[mode].map(([table, event]) => [platform, table, event] as const),
+			),
+		)("%s rolls back the whole start when the %s %s fails", async (platform, table, event) => {
+			const before = await snapshot();
+
+			const reply = await withFailingWrite(table, event, () =>
+				send(platform, "clockin", clockInAt),
+			);
+
+			expect(reply).toContain(unconfirmedClockIn);
+			expect(await snapshot()).toEqual(before);
+		});
+	});
+
+	it.each(platforms)("%s rejects equal endpoints without writing anything", async (platform) => {
+		await send(platform, "clockin", clockInAt);
+		const before = await snapshot();
+
+		await expect(send(platform, "clockout", clockInAt)).resolves.toContain(
+			"Clock-out must be after clock-in",
+		);
+
 		expect(await snapshot()).toEqual(before);
+	});
+
+	it("keeps exactly one receipt when an unkeyed clock-out is repeated", async () => {
+		await send("slack", "clockin", clockInAt);
+		await send("slack", "clockout", clockInAt.add({ hours: 1 }));
+		await send("slack", "clockout", clockInAt.add({ hours: 1, seconds: 5 }));
+
+		expect(await receipts()).toHaveLength(1);
 	});
 
 	it("refuses approval-routed clock-out before writing", async () => {
@@ -648,20 +782,42 @@ describeIntegration("bot clocking through the shared clock commands on PostgreSQ
 		expect(await snapshot()).toEqual(before);
 	});
 
-	it("holds the closure for review when adopted history changed outside the collaborator", async () => {
-		await send("telegram", "clockin", clockInAt);
-		const period = await activePeriod();
-		await admin.query("update time_entry set hash = 'tampered' where id = $1", [
-			period.clock_in_id,
-		]);
-		const before = await snapshot();
+	it.each(platforms)(
+		"%s holds a clock-out for review when adopted history changed",
+		async (platform) => {
+			await send(platform, "clockin", clockInAt);
+			const period = await activePeriod();
+			await admin.query("update time_entry set hash = 'tampered' where id = $1", [
+				period.clock_in_id,
+			]);
+			const before = await snapshot();
 
-		await expect(send("telegram", "clockout", clockInAt.add({ hours: 1 }))).resolves.toContain(
-			"Your time history needs review before you can clock out.",
-		);
+			await expect(send(platform, "clockout", clockInAt.add({ hours: 1 }))).resolves.toContain(
+				"Your time history needs review before you can clock out.",
+			);
 
-		expect(await snapshot()).toEqual(before);
-	});
+			expect(await snapshot()).toEqual(before);
+		},
+	);
+
+	it.each(platforms)(
+		"%s holds a clock-in for review when adopted history changed",
+		async (platform) => {
+			await send(platform, "clockin", clockInAt);
+			await send(platform, "clockout", clockInAt.add({ hours: 1 }));
+			await admin.query(
+				"update time_entry set hash = 'tampered' where employee_id = $1 and type = 'clock_out'",
+				[ids.requester],
+			);
+			const before = await snapshot();
+
+			await expect(send(platform, "clockin", clockInAt.add({ hours: 2 }))).resolves.toContain(
+				"Your time history needs review before you can clock in.",
+			);
+
+			expect(await snapshot()).toEqual(before);
+		},
+	);
 
 	it("keeps a committed clock-out when its Discord reply cannot be delivered", async () => {
 		await send("discord", "clockin", clockInAt);

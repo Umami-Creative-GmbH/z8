@@ -6,6 +6,7 @@
  */
 
 import { executeCommand } from "@/lib/bot-platform/command-registry";
+import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommandContext } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { createFollowupMessage, createInteractionResponse } from "./api";
@@ -152,11 +153,15 @@ async function handleSlashCommand(
 		);
 		// The command already ran (a clock command may have committed), so a failed
 		// reply must not invite a blind retry.
-		await sendFollowupBestEffort(
-			bot,
-			interaction,
-			"Your command was processed, but its reply could not be shown. Check /status before repeating it.",
-		);
+		let notice =
+			"Your command was processed, but its reply could not be shown. Check your status before repeating it.";
+		try {
+			const t = await getBotTranslate(commandContext.locale);
+			notice = t("bot.static.replyUndelivered", notice);
+		} catch {
+			// Keep the English notice.
+		}
+		await sendFollowupBestEffort(bot, interaction, notice);
 	}
 }
 

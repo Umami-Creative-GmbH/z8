@@ -110,7 +110,7 @@ describe("bot clock-out command", () => {
 			submissionId: expect.stringMatching(/^[0-9a-f-]{36}$/),
 			deviceInfo: "telegram-bot",
 		});
-		expect(first?.[4]).toEqual({ approval: "refuse" });
+		expect(first?.[4]).toEqual({ refuseApprovalRouting: true });
 		// An unkeyed repeat is a new command, never a replay of the first.
 		expect(second?.[3].submissionId).not.toBe(first?.[3].submissionId);
 	});

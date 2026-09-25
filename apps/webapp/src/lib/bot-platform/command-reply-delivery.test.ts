@@ -101,7 +101,7 @@ describe("command reply delivery", () => {
 			"token-1",
 			{
 				content:
-					"Your command was processed, but its reply could not be shown. Check /status before repeating it.",
+					"Your command was processed, but its reply could not be shown. Check your status before repeating it.",
 			},
 		);
 	});

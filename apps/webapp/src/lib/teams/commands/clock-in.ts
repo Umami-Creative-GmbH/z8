@@ -9,15 +9,39 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
-import { getBotTranslate } from "@/lib/bot-platform/i18n";
+import { resolveBotClockActor } from "@/lib/bot-platform/clock-actor";
+import {
+	type ClockCommandReplies,
+	clockFailureReply,
+	committedReply,
+	textReply,
+} from "@/lib/bot-platform/clock-replies";
+import { type BotTranslateFn, getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
 import { createLogger } from "@/lib/logger";
-import { resolveBotClockActor } from "./clock-actor";
 import { elapsedHoursAndMinutes, getCommandTemporalContext } from "./command-temporal";
 
 const logger = createLogger("BotCommand:ClockIn");
+
+const replies: ClockCommandReplies = {
+	failures: {
+		append_review_required: (t) =>
+			t(
+				"bot.cmd.clockin.appendReview",
+				"Your time history needs review before you can clock in. Please contact your administrator.",
+			),
+		unconfirmed: (t) =>
+			t(
+				"bot.cmd.clockin.unconfirmed",
+				"Your clock-in could not be confirmed. Check your status before trying again.",
+			),
+	},
+	cannotNow: (t) => t("bot.cmd.clockin.cannotNow", "Cannot clock in at this time."),
+	failed: (t) => t("bot.cmd.clockin.failed", "Could not clock in. Please try again."),
+	committed: (t) => t("bot.cmd.clockin.committed", "Clocked in."),
+};
 
 export const clockInCommand: BotCommand = {
 	name: "clockin",
@@ -33,59 +57,28 @@ export const clockInCommand: BotCommand = {
 				getBotTranslate(ctx.locale),
 			]);
 			const temporal = ctx.temporal ?? getCommandTemporalContext(ctx);
-			const text = (value: string): BotCommandResponse => ({ type: "text", text: value });
 
 			const actor = await resolveBotClockActor(ctx, temporal.effectiveTimezone);
 			if (!actor) {
-				return text(t("bot.cmd.clockin.noProfile", "Employee profile not found."));
+				return textReply(t("bot.cmd.clockin.noProfile", "Employee profile not found."));
 			}
 
 			const result = await clockInAs(actor, "office", { deviceInfo: `${ctx.platform}-bot` });
 			if (result.success) {
-				// Committed: a formatting failure must not turn the reply into an error.
-				try {
-					return text(
+				return committedReply(
+					() =>
 						t("bot.cmd.clockin.success", "Clocked in at {time}.", {
 							time: formatInstant(instantFromDate(result.data.timestamp), temporal, "time"),
 						}),
-					);
-				} catch (error) {
-					logger.error({ error }, "Failed to format committed clock-in reply");
-					return text(t("bot.cmd.clockin.committed", "Clocked in."));
-				}
+					replies,
+					t,
+					(error) => logger.error({ error }, "Failed to format committed clock-in reply"),
+				);
 			}
-
-			switch (result.failure) {
-				case "already_clocked_in":
-					return text(await alreadyClockedIn(ctx, temporal, t));
-				case "rejected":
-					return text(
-						result.error || t("bot.cmd.clockin.cannotNow", "Cannot clock in at this time."),
-					);
-				case "billing_required":
-					return text(
-						t(
-							"bot.cmd.billingRequired",
-							"Billing is required to continue using time tracking. Ask an organization admin to update billing.",
-						),
-					);
-				case "append_review_required":
-					return text(
-						t(
-							"bot.cmd.clockin.appendReview",
-							"Your time history needs review before you can clock in. Please contact your administrator.",
-						),
-					);
-				case "unconfirmed":
-					return text(
-						t(
-							"bot.cmd.clockin.unconfirmed",
-							"Your clock-in could not be confirmed. Check your status before trying again.",
-						),
-					);
-				default:
-					return text(t("bot.cmd.clockin.failed", "Could not clock in. Please try again."));
+			if (result.failure === "already_clocked_in") {
+				return textReply(await alreadyClockedIn(ctx, temporal, t));
 			}
+			return clockFailureReply(result, replies, t);
 		} catch (error) {
 			logger.error({ error, ctx }, "Failed to clock in");
 			throw error;
@@ -97,7 +90,7 @@ export const clockInCommand: BotCommand = {
 async function alreadyClockedIn(
 	ctx: BotCommandContext,
 	temporal: ReturnType<typeof getCommandTemporalContext>,
-	t: Awaited<ReturnType<typeof getBotTranslate>>,
+	t: BotTranslateFn,
 ): Promise<string> {
 	try {
 		const activePeriod = await db.query.workPeriod.findFirst({

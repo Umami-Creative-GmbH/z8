@@ -56,7 +56,7 @@ change the web action returned "Failed to clock out" in that case.
 
 Provider authentication (signatures, webhook secrets, Bot Framework) and
 provider-user resolution are unchanged. Before any clock write,
-`resolveBotClockActor` re-checks, in the bot's own organization, that the resolved
+`resolveBotClockActor` (`lib/bot-platform/clock-actor.ts`) re-checks, in the bot's own organization, that the resolved
 user is an approved member (`resolveCommandActorEmployee`) and that their active
 employee record is the one the adapter resolved. A Slack mapping into another
 organization therefore clocks nobody. The core and the operation re-check
@@ -99,7 +99,7 @@ runs them itself.
 
 Approval-routed live clock-out stays unsupported from bots, as before (`3c123396`).
 The core evaluates the same policy check as the web and, when called with
-`approval: "refuse"`, returns `approval_required` before any write. No new
+`refuseApprovalRouting`, returns `approval_required` before any write. No new
 live-clock-out approval policy is introduced.
 
 ### Replies and transport
@@ -111,8 +111,9 @@ live-clock-out approval policy is introduced.
   trying again". It does not invite a blind retry.
 - Discord and Teams no longer answer a failed reply delivery with the generic
   "something went wrong, please try again". The command has already run. They
-  log the delivery failure and send "Your command was processed, but its reply
-  could not be shown…" as a best effort. Telegram only logs a failed send, and
+  log the delivery failure and send the translated `bot.static.replyUndelivered`
+  notice ("Your command was processed, but its reply could not be shown…") as a
+  best effort. Telegram only logs a failed send, and
   Slack returns the reply in its HTTP response, so neither implied failure.
 - New bot strings (`bot.cmd.clockin.*`, `bot.cmd.clockout.*`,
   `bot.static.replyUndelivered`) are translated in all 12 bot locales. The old
@@ -149,51 +150,63 @@ label-owned disposable PostgreSQL 16 database. Real provider-user resolution
 transport, conversation bookkeeping, the Teams tenant lookup, billing
 provisioning, the Next request/cache boundaries and the clock are replaced.
 
-Verified (20 tests):
+Verified (123 tests). "Each adapter" means Slack, Telegram, Discord and Teams,
+through their real handlers. "Both modes" means an adopted organization and one
+before adoption.
 
-- For **each** of the four adapters, in an adopted organization: clock-in, then
-  clock-out at 60m40s. The period and the canonical record both store 61 minutes
-  with the same endpoints, and `origin = clock`. The requester is the canonical
-  creator and the entry actor. The clock-out entry has `device_info =
-  <platform>-bot`, `ip_address = bot` and an explicit predecessor. The position is
-  at version 2 (`live_clock_out`), the balance is dirty from the work date, and the
-  receipt (`bot_clock_out`) has exactly the expected command and segment. The reply
-  reads "Clocked out at 09:00. Duration: 1h 1m."
+- For **each** adapter in an adopted organization: clock-in, then clock-out at
+  60m40s. The period and the canonical record both store 61 minutes with the same
+  endpoints, and `origin = clock`. The requester is the canonical creator and the
+  entry actor. The clock-out entry has `device_info = <platform>-bot`,
+  `ip_address = bot` and an explicit predecessor. The position is at version 2
+  (`live_clock_out`), the balance is dirty from the work date, and the receipt
+  (`bot_clock_out`) has exactly the expected command and segment. The reply reads
+  "Clocked out at 09:00. Duration: 1h 1m."
 - For **each** adapter before adoption: the same closure writes the canonical
   record with the period's 61 minutes, and no receipt or revision.
-- Organization rejection: a Slack mapping into another organization (where the
-  same user is also an employee) is refused with "Employee profile not found." and
-  no row changes in either organization.
-- Partial minutes: 29 s stores 0 minutes and 30 s stores 1, in both
-  representations and in the reply. Equal endpoints are rejected with no changes.
-- A repeated unkeyed clock-out is a fresh command: "not clocked in", no changes,
-  one receipt.
-- Injected failures on the canonical record, clock-out entry, position update,
-  period update and receipt insert roll back everything (two-organization snapshot
-  equality). The reply is the "could not be confirmed" wording.
+- Organization rejection, for **each** adapter in **both** modes, for clock-in and
+  for clock-out: the platform mapping is moved into another organization where the
+  same user is also an employee. Slack and Teams resolve that organization's
+  employee and the command refuses it ("Employee profile not found."). Telegram
+  and Discord find no mapping in the bot's organization ("not linked"). Neither
+  organization has any row changes.
+- Partial minutes, for **each** adapter in **both** modes: 29 s stores 0 minutes
+  and 30 s stores 1, in both representations and in the reply.
+- Equal endpoints (each adapter) are rejected with no changes.
+- A repeated unkeyed clock-out (each adapter, both modes) is a fresh command: "not
+  clocked in", no changes, and one receipt.
+- Rollback, for **each** adapter, by injecting a failure at every write the
+  transaction makes. Adopted closure: canonical record, work detail, allocation
+  (attributed period), clock-out entry, position update, period update (which also
+  advances the graph revision), balance intent and receipt. Pre-adoption closure:
+  canonical record, work detail, clock-out entry and period update. Clock-in:
+  entry, position insert (adopted) and period insert. Each rolls back everything
+  (two-organization snapshot equality), and the reply is the "could not be
+  confirmed" wording.
 - Approval-routed clock-out is refused with no changes.
-- Changed adopted history (tampered tip hash) holds the clock-out for review, with
-  no changes.
+- Changed adopted history (a tampered hash) holds both clock-out and the next
+  clock-in for review, for each adapter, with no changes.
 - A Discord reply that fails after a committed clock-out leaves the work committed
   (one receipt), and the user gets the truthful delivery message.
 
-Run with the old bot commands and handlers swapped back in, 19 of the 20 fail.
-Old bot closures wrote no canonical record and no receipt, ignored changed adopted
-history, answered failures with the generic "please try again", and Discord
-reported a delivered-late command as failed. (The approval case also fails there,
-but only because the old command read the policy through a different module than
-the one the suite forces. It proves nothing about the old code.)
+The first version of this suite (20 tests) was run with the old bot commands and
+handlers swapped back in, and 19 of the 20 failed. Old bot closures wrote no
+canonical record and no receipt, ignored changed adopted history, answered
+failures with the generic "please try again", and Discord reported a
+delivered-late command as failed. (The approval case also fails there, but only
+because the old command read the policy through a different module than the one
+the suite forces. It proves nothing about the old code.)
 
 The full runner (`bash apps/webapp/scripts/run-approval-workflow-repository-integration.sh`:
 fresh container, migration recovery check and full chain including `0084`) passed
-**38 files / 621 tests**, including the #272, #273 and #274 clocking suites against
+**38 files / 724 tests**, including the #272, #273 and #274 clocking suites against
 the refactored web core. The label-owned containers were verified and removed.
 
 ### Database-free
 
 - `lib/teams/commands/clock-commands.test.ts` (replaces the static source checks in
   `clock-out.test.ts`): the actor passed to the core, omitted attribution, a
-  distinct operation ID per invocation, `approval: "refuse"`, the wording of every
+  distinct operation ID per invocation, `refuseApprovalRouting`, the wording of every
   outcome, committed replies surviving a formatting failure, and org-scoped actor
   refusal.
 - `lib/bot-platform/command-reply-delivery.test.ts`: Discord and Teams reply
@@ -205,8 +218,10 @@ the refactored web core. The label-owned containers were verified and removed.
   `billing-guard.test.ts` is removed: the billing guard now runs in the shared
   core, and the bots' wording of `billing_required` is covered by the behavior
   suite above.
-- `actions/clocking.test.ts`: the 5 date-dependent failures that also fail on
-  clean `dev`, and no others. One receipt fixture gained the `segment` every
+- `actions/clocking.test.ts`: a new test covers work that is saved before a
+  post-commit step throws. The action reports success and logs the error; disabling
+  the guard fails the test. Otherwise the file has the 5 date-dependent failures
+  that also fail on clean `dev`, and no others. One receipt fixture gained the `segment` every
   version-1 receipt carries.
 - Full webapp suite: 141 failures, none new. Clean `dev` in a separate worktree:
   145 failures. The 4 that fail only on `dev` are demo and Telegram digest tests

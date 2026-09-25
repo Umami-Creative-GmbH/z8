@@ -1754,6 +1754,22 @@ describe("clockOut", () => {
 		);
 	});
 
+	it("reports committed work as saved when a post-commit step throws", async () => {
+		mockState.validateProjectAssignment.mockResolvedValue({ isValid: true });
+		mockState.checkProjectBudgetAfterClockOut.mockImplementation(() => {
+			throw new Error("budget reader crashed");
+		});
+
+		const result = await clockOut("project-1");
+
+		expect(mockState.clockingClockOut).toHaveBeenCalledOnce();
+		expect(result).toMatchObject({ success: true, data: { type: "clock_out" } });
+		expect(mockState.logger.error).toHaveBeenCalledWith(
+			{ error: expect.objectContaining({ message: "budget reader crashed" }) },
+			"Clock out post-commit error",
+		);
+	});
+
 	it("does not repeat post-commit effects for an observed clock-out replay", async () => {
 		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
 		mockState.executeOrdinarySubmission.mockResolvedValueOnce({

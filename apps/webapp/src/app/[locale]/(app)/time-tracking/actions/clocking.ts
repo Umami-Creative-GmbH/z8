@@ -884,7 +884,10 @@ export type ClockActionContext = BrowserTimezoneContext & {
 export type ClockActor = {
 	userId: string;
 	employee: CurrentEmployee;
-	/** Saved zone for the event capture when the adapter supplies no browser zone. */
+	/**
+	 * Fallback zone for the event capture when the adapter supplies no browser
+	 * zone: the web uses the saved user setting, bots their temporal context.
+	 */
 	resolveTimezone(): Promise<string>;
 };
 
@@ -1172,10 +1175,10 @@ export async function clockOut(
 
 export type ClockOutOptions = {
 	/**
-	 * `refuse` rejects a closure the policy routes to approval before any write.
-	 * Bots use it: approval-routed clock-out stays unsupported there (#277).
+	 * Rejects a closure the policy routes to approval, before any write. Bots
+	 * set it: approval-routed clock-out stays unsupported there (#277).
 	 */
-	approval?: "route" | "refuse";
+	refuseApprovalRouting?: boolean;
 };
 
 /**
@@ -1394,7 +1397,7 @@ export async function clockOutAs(
 			failure: "approval_unavailable",
 		};
 	}
-	if (needsClockOutApproval && options.approval === "refuse") {
+	if (needsClockOutApproval && options.refuseApprovalRouting) {
 		return {
 			success: false,
 			error: CLOCK_OUT_APPROVAL_UNSUPPORTED_ERROR,
