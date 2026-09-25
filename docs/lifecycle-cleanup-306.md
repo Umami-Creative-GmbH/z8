@@ -245,7 +245,8 @@ operator SQL writes them. The scenarios:
 `time-tracking/actions/correction-lifecycle.integration.test.ts` gained two
 scenarios, one for an adopted and one for a legacy organization. A web
 correction retry after `deleteApproval` purged its lifecycle is refused and
-writes nothing (26/26). `demo/demo-work.integration.test.ts` still passes 14/14.
+writes nothing (26/26). `demo/demo-work.integration.test.ts` still passes 14/14. The full runner list (62 files, including this suite) passes 1120 tests with
+no failures; 6 are skipped (the Chrome-dependent browser suite).
 
 ### Database-free
 
