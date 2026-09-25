@@ -8,7 +8,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
-import { isAbsenceCardDeliveredByOwner } from "@/lib/approvals/delivery/store";
+import { isApprovalNotificationDeliveredByOwner } from "@/lib/approvals/delivery/store";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import { createLogger } from "@/lib/logger";
 import { localizeOutboundNotification } from "./outbound-localization";
@@ -81,12 +81,7 @@ export async function sendTelegramNotification(
 		// message about the same request.
 		if (
 			params.type === "approval_request_submitted" &&
-			params.entityType === "absence_entry" &&
-			(await isAbsenceCardDeliveredByOwner({
-				organizationId: params.organizationId,
-				absenceId: params.entityId,
-				provider: "telegram",
-			}))
+			(await isApprovalNotificationDeliveredByOwner({ ...params, provider: "telegram" }))
 		) {
 			return;
 		}
@@ -102,17 +97,6 @@ export async function sendTelegramNotification(
 					eq(approvalRequest.organizationId, params.organizationId),
 				),
 			});
-
-			if (
-				approval?.entityType === "absence_entry" &&
-				(await isAbsenceCardDeliveredByOwner({
-					organizationId: params.organizationId,
-					absenceId: approval.entityId,
-					provider: "telegram",
-				}))
-			) {
-				return;
-			}
 
 			if (approval) {
 				const emp = await db.query.employee.findFirst({

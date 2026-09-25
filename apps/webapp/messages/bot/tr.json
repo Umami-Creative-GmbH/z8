@@ -15,6 +15,7 @@
       "card": {
         "absenceTitle": "Onay bekleyen izin talebi",
         "boundHint": "Onayla veya Reddet yalnızca yukarıda gösterilen talep hakkında karar verir. Talep değiştiyse veya yeniden atandıysa hiçbir karar verilmez ve talebi Z8'de incelemeniz istenir.",
+        "reviewOnlyHint": "Bu talebi Z8'de onaylayın veya reddedin. Bu mesajdan karar verilemez.",
         "approve": "Onayla",
         "reject": "Reddet",
         "unavailable": "Mevcut değil",

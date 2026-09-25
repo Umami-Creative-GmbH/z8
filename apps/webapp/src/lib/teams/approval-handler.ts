@@ -1,14 +1,14 @@
 import type { Activity, TurnContext } from "botbuilder";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { approvalRequest, teamsApprovalCard } from "@/db/schema";
+import { teamsApprovalCard } from "@/db/schema";
 import { env } from "@/env";
 import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
 import {
 	type ApprovalDeliveryMessageRecord,
 	approvalDeliveryMessageReviewReference,
 	findApprovalDeliveryMessageByRemoteIdentity,
-	isAbsenceCardDeliveredByOwner,
+	isApprovalNotificationDeliveredByOwner,
 	isApprovalDeliveryMessagePending,
 	markApprovalDeliveryMessageWithoutControls,
 } from "@/lib/approvals/delivery/store";
@@ -363,25 +363,13 @@ async function updateDeliveredBoundCard(
  * sender outside the owner (notification channel, legacy escalation) checks
  * it, so a card is never sent twice.
  */
-async function deliveredByApprovalOwner(
-	approvalId: string,
-	organizationId: string,
-): Promise<boolean> {
-	const request = await db.query.approvalRequest.findFirst({
-		where: and(
-			eq(approvalRequest.id, approvalId),
-			eq(approvalRequest.organizationId, organizationId),
-		),
-		columns: { entityType: true, entityId: true },
+function deliveredByApprovalOwner(approvalId: string, organizationId: string): Promise<boolean> {
+	return isApprovalNotificationDeliveredByOwner({
+		organizationId,
+		provider: "teams",
+		entityType: "approval_request",
+		entityId: approvalId,
 	});
-	return (
-		request?.entityType === "absence_entry" &&
-		isAbsenceCardDeliveredByOwner({
-			organizationId,
-			absenceId: request.entityId,
-			provider: "teams",
-		})
-	);
 }
 
 export async function sendApprovalCardToManager(

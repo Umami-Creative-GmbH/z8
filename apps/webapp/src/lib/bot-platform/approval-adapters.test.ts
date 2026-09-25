@@ -169,7 +169,7 @@ vi.mock("@/lib/discord/api", () => ({
 // No approval delivery owner is active in these adapter tests.
 vi.mock("@/lib/approvals/delivery/store", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/approvals/delivery/store")>()),
-	isAbsenceCardDeliveredByOwner: async () => false,
+	isApprovalNotificationDeliveredByOwner: async () => false,
 }));
 vi.mock("@/lib/teams/bot-adapter", () => ({
 	sendAdaptiveCard: state.sends.teams,

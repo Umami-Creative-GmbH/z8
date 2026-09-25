@@ -15,6 +15,7 @@
       "card": {
         "absenceTitle": "Solicitud de ausencia para aprobar",
         "boundHint": "Aprobar o rechazar decide exactamente la solicitud mostrada arriba. Si cambió o se reasignó, no se decide nada y se te pedirá revisarla en Z8.",
+        "reviewOnlyHint": "Aprueba o rechaza esta solicitud en Z8. No se puede decidir desde este mensaje.",
         "approve": "Aprobar",
         "reject": "Rechazar",
         "unavailable": "No disponible",

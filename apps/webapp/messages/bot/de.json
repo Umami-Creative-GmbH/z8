@@ -15,6 +15,7 @@
       "card": {
         "absenceTitle": "Abwesenheitsantrag zur Genehmigung",
         "boundHint": "Genehmigen oder Ablehnen entscheidet genau über den oben gezeigten Antrag. Wurde er geändert oder neu zugewiesen, wird nichts entschieden und Sie werden gebeten, ihn in Z8 zu prüfen.",
+        "reviewOnlyHint": "Genehmigen oder lehnen Sie diesen Antrag in Z8 ab. Über diese Nachricht kann er nicht entschieden werden.",
         "approve": "Genehmigen",
         "reject": "Ablehnen",
         "unavailable": "Nicht verfügbar",

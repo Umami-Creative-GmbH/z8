@@ -15,6 +15,7 @@
       "card": {
         "absenceTitle": "Demande d’absence à approuver",
         "boundHint": "Approuver ou refuser décide exactement de la demande affichée ci-dessus. Si elle a été modifiée ou réattribuée, rien n’est décidé et vous êtes invité à l’examiner dans Z8.",
+        "reviewOnlyHint": "Approuvez ou refusez cette demande dans Z8. Elle ne peut pas être décidée depuis ce message.",
         "approve": "Approuver",
         "reject": "Refuser",
         "unavailable": "Indisponible",

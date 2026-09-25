@@ -88,6 +88,8 @@ async function loadAdapter(provider: ApprovalDeliveryProvider): Promise<Approval
 			return (await import("@/lib/telegram/approval-delivery")).telegramApprovalDeliveryAdapter;
 		case "teams":
 			return (await import("@/lib/teams/approval-delivery")).teamsApprovalDeliveryAdapter;
+		case "slack":
+			return (await import("@/lib/slack/approval-delivery")).slackApprovalDeliveryAdapter;
 	}
 }
 

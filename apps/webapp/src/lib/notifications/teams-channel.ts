@@ -8,7 +8,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
-import { isAbsenceCardDeliveredByOwner } from "@/lib/approvals/delivery/store";
+import { isApprovalNotificationDeliveredByOwner } from "@/lib/approvals/delivery/store";
 import { createLogger } from "@/lib/logger";
 import type { NotificationType } from "./types";
 
@@ -73,12 +73,7 @@ export async function sendTeamsNotification(
 		// message about the same request.
 		if (
 			params.type === "approval_request_submitted" &&
-			params.entityType === "absence_entry" &&
-			(await isAbsenceCardDeliveredByOwner({
-				organizationId: params.organizationId,
-				absenceId: params.entityId,
-				provider: "teams",
-			}))
+			(await isApprovalNotificationDeliveredByOwner({ ...params, provider: "teams" }))
 		) {
 			return;
 		}
@@ -95,17 +90,6 @@ export async function sendTeamsNotification(
 					eq(approvalRequest.organizationId, params.organizationId),
 				),
 			});
-
-			if (
-				approval?.entityType === "absence_entry" &&
-				(await isAbsenceCardDeliveredByOwner({
-					organizationId: params.organizationId,
-					absenceId: approval.entityId,
-					provider: "teams",
-				}))
-			) {
-				return;
-			}
 
 			if (approval) {
 				// Get employee ID from user ID
