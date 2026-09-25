@@ -53,13 +53,13 @@ import {
 	executeTimeCorrectionSubmissionInTransaction,
 	finalizeTimeCorrectionTerminalInTransaction,
 	insertTimeCorrectionSourceEntry,
+	isPurgedTimeCorrectionConflict,
 } from "@/lib/approvals/server/time-correction-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
 import { deriveTimeCorrectionRowId } from "@/lib/approvals/workflow/identity";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { ConflictError } from "@/lib/effect/errors";
 import {
 	compareInstants,
 	comparePlainDates,
@@ -1320,8 +1320,7 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 				error instanceof DemoCorrectionSourceChangedError ||
 				error instanceof DemoCorrectionReplayedError ||
 				// Its approval was purged (#306): the committed correction stays, unrouted.
-				(error instanceof ConflictError &&
-					error.conflictType === "purged_time_correction_approval")
+				isPurgedTimeCorrectionConflict(error)
 			) {
 				continue;
 			}

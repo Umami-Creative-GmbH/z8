@@ -352,8 +352,8 @@ describe("deleteEmployeeApprovalLifecycles", () => {
 					const rendered = dialect.sqlToQuery(query);
 					const text = rendered.sql.replace(/\s+/g, " ").trim();
 					statements.push({ sql: text, params: rendered.params });
-					if (text.includes("as root_kind")) {
-						return { rows: options.roots.map((id) => ({ root_kind: "workflow", id })) };
+					if (text.includes("references_to_employees")) {
+						return { rows: options.roots.map((id) => ({ id })) };
 					}
 					if (text.includes("select 'legacy' as storage_type")) {
 						// An earlier lifecycle's deletion already removed a purged root.
@@ -389,7 +389,9 @@ describe("deleteEmployeeApprovalLifecycles", () => {
 		});
 
 		expect(result.lifecycles.map((lifecycle) => lifecycle.approvalId)).toEqual([FIRST, SECOND]);
-		const roots = statements.find((statement) => statement.sql.includes("as root_kind"));
+		const roots = statements.find((statement) =>
+			statement.sql.includes("references_to_employees"),
+		);
 		for (const reference of [
 			"approval_workflow where",
 			"requester_employee_id",

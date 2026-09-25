@@ -3217,6 +3217,13 @@ export function purgedTimeCorrectionConflict(workPeriodId: string) {
 	});
 }
 
+export function isPurgedTimeCorrectionConflict(error: unknown): boolean {
+	return (
+		error instanceof ConflictError &&
+		error.conflictType === "purged_time_correction_approval"
+	);
+}
+
 function pendingTimeCorrectionConflict(workPeriodId: string) {
 	return new ConflictError({
 		message:

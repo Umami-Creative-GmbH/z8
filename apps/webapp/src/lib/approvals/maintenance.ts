@@ -207,15 +207,9 @@ export async function deleteApproval(
 	);
 }
 
-// The caller owns the transaction so platform-admin audit logging can be atomic
-// with deletion. Authorization is enforced at the CLI/server-action boundary.
-export async function deleteApprovalInTransaction(
-	transaction: ApprovalTransactionClient,
-	organizationId: string,
-	id: string,
-): Promise<DeletedApprovalRecords> {
-	// Privileged maintenance only: do not race submissions or stage linking.
-	// Keep FK checks enabled so an unexpected dependency rolls everything back.
+// Privileged maintenance only: do not race submissions or stage linking. Keep FK
+// checks enabled so an unexpected dependency rolls everything back.
+async function lockApprovalTopology(transaction: ApprovalTransactionClient): Promise<void> {
 	await transaction.execute(sql`set local lock_timeout = '10s'`);
 	await transaction.execute(sql`set local statement_timeout = '30s'`);
 	await transaction.execute(sql`
@@ -226,6 +220,16 @@ export async function deleteApprovalInTransaction(
 			approval_delivery_intent, approval_escalation_attention
 			in share row exclusive mode
 	`);
+}
+
+// The caller owns the transaction so platform-admin audit logging can be atomic
+// with deletion. Authorization is enforced at the CLI/server-action boundary.
+export async function deleteApprovalInTransaction(
+	transaction: ApprovalTransactionClient,
+	organizationId: string,
+	id: string,
+): Promise<DeletedApprovalRecords> {
+	await lockApprovalTopology(transaction);
 
 	const matches = rows(
 		await transaction.execute(sql`
@@ -478,31 +482,33 @@ export async function deleteEmployeeApprovalLifecycles(
 	if (input.employeeIds.length === 0) return { lifecycles: [], attention: [] };
 	const org = input.organizationId;
 	const employees = sql`${sql.param([...input.employeeIds])}::uuid[]`;
+	// Lock before scanning, so no new reference to the employees appears meanwhile.
+	await lockApprovalTopology(transaction);
 	// Every employee reference of the approval tables, mapped to an ID that
 	// `deleteApprovalInTransaction` addresses: a workflow, a legacy request, a
 	// legacy submitted revision or a legacy transfer.
 	const roots = rows(
 		await transaction.execute(sql`
-			select distinct root_kind, id from (
-				select 'workflow' as root_kind, id from approval_workflow where organization_id = ${org}
+			select distinct id from (
+				select id from approval_workflow where organization_id = ${org}
 					and requester_employee_id = any(${employees})
 				union all
-				select 'workflow', workflow_id from approval_stage_assignment where organization_id = ${org}
+				select workflow_id from approval_stage_assignment where organization_id = ${org}
 					and (approver_employee_id = any(${employees})
 						or reassigned_by_employee_id = any(${employees})
 						or resolved_by_actor_id = any(${employees}))
 				union all
-				select 'workflow', workflow_id from approval_workflow_event where organization_id = ${org}
+				select workflow_id from approval_workflow_event where organization_id = ${org}
 					and actor_employee_id = any(${employees})
 				union all
-				select 'workflow', o.workflow_id from approval_outbox_delivery d
+				select o.workflow_id from approval_outbox_delivery d
 				join approval_outbox o on o.organization_id = d.organization_id and o.id = d.outbox_id
 				where d.organization_id = ${org} and d.recipient_employee_id = any(${employees})
 				union all
-				select 'legacy', id from approval_request where organization_id = ${org}
+				select id from approval_request where organization_id = ${org}
 					and (requested_by = any(${employees}) or approver_id = any(${employees}))
 				union all
-				select 'legacy', s.approval_request_id from approval_chain_stage_instance s
+				select s.approval_request_id from approval_chain_stage_instance s
 				join approval_chain_instance c
 					on c.organization_id = s.organization_id and c.id = s.chain_instance_id
 				where s.organization_id = ${org} and s.approval_request_id is not null
@@ -510,55 +516,47 @@ export async function deleteEmployeeApprovalLifecycles(
 						or s.decided_by = any(${employees})
 						or s.resolved_approver_employee_id = any(${employees}))
 				union all
-				select case when authority = 'legacy' then 'legacy_evidence' else 'workflow' end,
-					case when authority = 'legacy' then id else workflow_id end
+				select case when authority = 'legacy' then id else workflow_id end
 				from approval_submitted_revision where organization_id = ${org}
 					and (subject_employee_id = any(${employees})
 						or requester_employee_id = any(${employees})
 						or submitter_employee_id = any(${employees}))
 				union all
-				select case when authority = 'legacy' then 'legacy_evidence' else 'workflow' end,
-					case when authority = 'legacy' then submitted_revision_id else workflow_id end
+				select case when authority = 'legacy' then submitted_revision_id else workflow_id end
 				from approval_decision_evidence where organization_id = ${org}
 					and actor_employee_id = any(${employees})
 				union all
-				select case when authority = 'legacy' then 'legacy_evidence' else 'workflow' end,
-					case when authority = 'legacy' then submitted_revision_id else workflow_id end
+				select case when authority = 'legacy' then submitted_revision_id else workflow_id end
 				from approval_review_binding where organization_id = ${org}
 					and recipient_employee_id = any(${employees})
 				union all
-				select case when i.authority = 'legacy' then 'legacy_evidence' else 'workflow' end,
-					case when i.authority = 'legacy' then d.submitted_revision_id else i.workflow_id end
+				select case when i.authority = 'legacy' then d.submitted_revision_id else i.workflow_id end
 				from approval_invocation i
 				left join approval_decision_evidence d
 					on d.organization_id = i.organization_id and d.id = i.decision_evidence_id
 				where i.organization_id = ${org} and i.actor_employee_id = any(${employees})
 				union all
-				select case when authority_mode = 'legacy' then 'legacy_transfer' else 'workflow' end,
-					case when authority_mode = 'legacy' then id else workflow_id end
+				select case when authority_mode = 'legacy' then id else workflow_id end
 				from approval_escalation_transfer where organization_id = ${org}
 					and (requester_employee_id = any(${employees})
 						or source_approver_employee_id = any(${employees})
 						or replacement_approver_employee_id = any(${employees})
 						or actor_employee_id = any(${employees}))
 				union all
-				select case when lifecycle = 'legacy' then 'legacy' else 'workflow' end,
-					case when lifecycle = 'legacy' then legacy_approval_request_id else workflow_id end
+				select case when lifecycle = 'legacy' then legacy_approval_request_id else workflow_id end
 				from approval_delivery_work where organization_id = ${org}
 					and recipient_employee_id = any(${employees})
 				union all
-				select case when lifecycle = 'legacy' then 'legacy' else 'workflow' end,
-					case when lifecycle = 'legacy' then legacy_approval_request_id else workflow_id end
+				select case when lifecycle = 'legacy' then legacy_approval_request_id else workflow_id end
 				from approval_delivery_message where organization_id = ${org}
 					and recipient_employee_id = any(${employees})
 				union all
-				select case when workflow_id is null then 'legacy' else 'workflow' end,
-					coalesce(workflow_id, approval_request_id)
+				select coalesce(workflow_id, approval_request_id)
 				from approval_escalation_attention where organization_id = ${org}
 					and current_approver_employee_id = any(${employees})
-			) references_to_employees
+			) as references_to_employees (id)
 			where id is not null
-			order by root_kind, id
+			order by id
 		`),
 	).map(rowId);
 
