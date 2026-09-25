@@ -27,7 +27,10 @@ export interface OrdinaryWorkPeriodApprovalAdapterDependencies {
 	finalizeTerminal(
 		input: FinalizeOrdinaryWorkPeriodTerminalAdapterInput,
 	): Promise<WorkPeriodApprovalResult>;
-	/** Decision evidence (#302). Omitted, the adapter records no evidence. */
+	/**
+	 * Decision evidence (#302). Without hooks the adapter records none; the
+	 * production runtime supplies them unless a caller passes `null`.
+	 */
 	evidence?: OrdinaryWorkPeriodDecisionEvidenceHooks | null;
 }
 

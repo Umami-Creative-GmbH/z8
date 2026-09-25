@@ -44,6 +44,7 @@ import {
 import {
 	buildWorkPeriodSubmittedFacts,
 	compareLiveWorkPeriodWithRevision,
+	verifyWorkPeriodInterval,
 	type WorkPeriodEndpointFacts,
 	type WorkPeriodEvidenceKind,
 	type WorkPeriodFactsInput,
@@ -206,25 +207,14 @@ export async function readWorkPeriodResultSegments(
 	return input.workPeriodIds.map((id) => {
 		const period = periods.find((candidate) => candidate.id === id);
 		if (!period) return incomplete("result_segment");
-		// Built with the same verification as submitted facts, so an unverifiable
+		// The same verification as submitted intervals, so an unverifiable
 		// resulting segment is never recorded as an outcome.
-		const facts = buildWorkPeriodSubmittedFacts({
-			kind: "manual_time_submission",
-			requesterEmployeeId: period.employeeId,
+		const interval = verifyWorkPeriodInterval(
 			period,
-			clockIn: entries.find((entry) => entry.id === period.clockInId) ?? null,
-			clockOut: entries.find((entry) => entry.id === period.clockOutId) ?? null,
-			policy: { breakPolicySnapshot: null, surchargeSnapshot: null },
-		});
-		return {
-			workPeriodId: facts.workPeriodId,
-			canonicalRecordId: facts.canonicalRecordId,
-			approvalStatus: period.approvalStatus,
-			clockIn: facts.interval.clockIn,
-			clockOut: facts.interval.clockOut,
-			storedDurationMinutes: facts.interval.storedDurationMinutes,
-			elapsedSeconds: facts.interval.elapsedSeconds,
-		};
+			entries.find((entry) => entry.id === period.clockInId) ?? null,
+			entries.find((entry) => entry.id === period.clockOutId) ?? null,
+		);
+		return { workPeriodId: period.id, approvalStatus: period.approvalStatus, ...interval };
 	});
 }
 
@@ -659,6 +649,13 @@ export async function recordCanonicalWorkPeriodDecisionEvidence(
 	) {
 		return incomplete("terminal_outcome");
 	}
+	// The period as this transaction leaves it, never the requested action.
+	const [period, ...otherPeriods] = await loadPeriods(
+		database,
+		{ organizationId: input.organizationId, employeeId: revision.subjectEmployeeId },
+		[revision.workPeriodId],
+	);
+	if (!period || otherPeriods.length > 0) return incomplete("work_period");
 	await recordDecisionEvidence(database, {
 		organizationId: input.organizationId,
 		workflowId: input.workflow.id,
@@ -681,7 +678,7 @@ export async function recordCanonicalWorkPeriodDecisionEvidence(
 		decidedAt: outcome.decidedAt,
 		eventIds: outcome.eventIds,
 		result: {
-			workPeriodStatus: outcome.requestOutcome,
+			workPeriodStatus: period.approvalStatus,
 			terminal:
 				finalized && workOutcome
 					? await terminalResult(database, {
@@ -782,6 +779,7 @@ export async function recordLegacyWorkPeriodDecisionEvidence(
 			.select({
 				id: approvalRequest.id,
 				status: approvalRequest.status,
+				approverId: approvalRequest.approverId,
 				approvedAt: approvalRequest.approvedAt,
 				updatedAt: approvalRequest.updatedAt,
 			})
@@ -903,6 +901,14 @@ export async function recordLegacyWorkPeriodDecisionEvidence(
 			workPeriodStatus: requestOutcome,
 			legacyRequestStatus: request.status,
 			decidedAtSource: decided.source,
+			// A single-stage request keeps its assigned approver when an eligible
+			// manager or organization-wide approver decides it, so the persisted row
+			// cannot name the decider. Record how the authorized actor relates to it.
+			actorAuthority: stage
+				? "decided_stage"
+				: request.approverId === input.actor.employeeId
+					? "assigned_approver"
+					: "other_authorized_approver",
 			terminal:
 				final && input.finalized?.outcome
 					? await terminalResult(database, {

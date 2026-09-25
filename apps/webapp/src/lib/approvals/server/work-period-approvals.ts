@@ -1854,11 +1854,8 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 	if (updatedRecords.length !== 1 || updatedRecords[0]?.id !== record.id) {
 		throw fail();
 	}
-	let outcome: WorkPeriodTerminalOutcome = {
-		status: terminalStatus,
-		adjustment: { kind: "none" },
-		resultPeriodIds: [period.id],
-	};
+	let adjustment: WorkPeriodTerminalOutcome["adjustment"] = { kind: "none" };
+	const resultPeriodIds = [period.id];
 	if (
 		input.kind === "policy_clock_out" &&
 		input.transition.kind === "approve" &&
@@ -1890,21 +1887,15 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 			surchargeSnapshot: sourceSurchargeSnapshot,
 		});
 		maintenance = breakResult.maintenance;
-		outcome =
-			breakResult.kind === "adjusted"
-				? {
-						status: terminalStatus,
-						adjustment: {
-							kind: "break_enforced",
-							breakMinutes: breakResult.breakMinutes,
-						},
-						resultPeriodIds: [period.id, breakResult.secondPeriodId],
-					}
-				: {
-						status: terminalStatus,
-						adjustment: { kind: "break_not_required" },
-						resultPeriodIds: [period.id],
-					};
+		if (breakResult.kind === "adjusted") {
+			adjustment = {
+				kind: "break_enforced",
+				breakMinutes: breakResult.breakMinutes,
+			};
+			resultPeriodIds.push(breakResult.secondPeriodId);
+		} else {
+			adjustment = { kind: "break_not_required" };
+		}
 	}
 
 	const decisions = await db
@@ -1933,7 +1924,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 			endTime: new Date(period.endTime.getTime()),
 		},
 		maintenance,
-		outcome,
+		outcome: { status: terminalStatus, adjustment, resultPeriodIds },
 	};
 }
 

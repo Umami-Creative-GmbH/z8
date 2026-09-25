@@ -137,7 +137,9 @@ const { approveApprovalInboxItem, rejectApprovalInboxItem } = await import(
 	"@/lib/approvals/inbox/decision-service"
 );
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
-const { deleteApproval } = await import("@/lib/approvals/maintenance");
+const { deleteApproval, deleteWorkPeriodApprovalEvidence } = await import(
+	"@/lib/approvals/maintenance"
+);
 const { workPeriodReceiptKeyDigest } = await import(
 	"@/lib/approvals/evidence/work-period-evidence"
 );
@@ -674,6 +676,7 @@ describeIntegration("manual and policy clock-out approval lifecycle evidence on 
 			workPeriodStatus: "approved",
 			legacyRequestStatus: "approved",
 			decidedAtSource: "approval_request.approved_at",
+			actorAuthority: "assigned_approver",
 			terminal: {
 				status: "approved",
 				adjustment: { kind: "break_enforced", breakMinutes: 30 },
@@ -979,6 +982,27 @@ describeIntegration("manual and policy clock-out approval lifecycle evidence on 
 		expect((await revisions()).map((row) => row.source_id)).toEqual([manualId]);
 
 		await clearOrganizationTimeData(ids.organization);
+		expect(await revisions()).toEqual([]);
+		expect(await decisions()).toEqual([]);
+	});
+
+	it("removes evidence a deleted employee decided even when its subject stays", async () => {
+		harness.forceClockOutApproval = true;
+		await setCapture("policy_clock_out", "capture");
+		await linkManager();
+		const { period } = await policyClockOut();
+		await approveAs((await request(period.id)).id);
+		expect(only(await decisions())).toMatchObject({ actor_employee_id: ids.manager });
+
+		// Deleting only the deciding manager's history-bearing references.
+		const { db } = await import("@/db");
+		const deleted = await deleteWorkPeriodApprovalEvidence(db as never, {
+			organizationId: ids.organization,
+			employeeIds: [ids.manager],
+		});
+
+		expect(deleted.submittedRevisions).toHaveLength(1);
+		expect(deleted.decisionEvidence).toHaveLength(1);
 		expect(await revisions()).toEqual([]);
 		expect(await decisions()).toEqual([]);
 	});

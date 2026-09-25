@@ -1,5 +1,10 @@
 import { createHash } from "node:crypto";
-import { instantFromDate, instantToCanonicalString } from "@/lib/datetime/temporal-core";
+import {
+	compareInstants,
+	type Instant,
+	instantFromDate,
+	instantToCanonicalString,
+} from "@/lib/datetime/temporal-core";
 import type { PolicyClockOutBreakSnapshot } from "@/lib/time-tracking/policy-clock-out-break-snapshot";
 import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import { canonicalJson } from "./absence-facts";
@@ -111,27 +116,26 @@ function incomplete(field: string): never {
 }
 
 function endpoint(
-	input: WorkPeriodFactsInput,
+	period: WorkPeriodFactsInput["period"],
 	field: "clock_in" | "clock_out",
 	entry: EntryRow | null,
 	expectedId: string | null,
-	expectedAt: Date | null,
+	expectedAt: Instant,
 ): WorkPeriodEndpointFacts {
 	if (
 		!entry ||
-		!expectedAt ||
 		entry.id !== expectedId ||
-		entry.organizationId !== input.period.organizationId ||
-		entry.employeeId !== input.period.employeeId ||
+		entry.organizationId !== period.organizationId ||
+		entry.employeeId !== period.employeeId ||
 		entry.type !== field ||
-		entry.timestamp.getTime() !== expectedAt.getTime() ||
+		compareInstants(instantFromDate(entry.timestamp), expectedAt) !== 0 ||
 		!Number.isSafeInteger(entry.utcOffsetMinutes)
 	) {
 		return incomplete(field);
 	}
 	return {
 		entryId: entry.id,
-		at: instantToCanonicalString(instantFromDate(entry.timestamp)),
+		at: instantToCanonicalString(expectedAt),
 		utcOffsetMinutes: entry.utcOffsetMinutes,
 		timezone: entry.timezone,
 		timezoneSource: entry.timezoneSource,
@@ -163,43 +167,58 @@ function policy(input: WorkPeriodFactsInput): WorkPeriodSubmittedPolicy {
 }
 
 /**
- * Builds the submitted facts from the locked, closed work graph. Anything that
- * cannot be verified throws `evidence_incomplete` instead of being guessed; a
- * manual submission has no before state, so none is recorded.
+ * One closed period's verified interval: both endpoint entries must be this
+ * employee's, of the right type and exactly at the period boundaries. Stored
+ * minutes are taken as persisted; UTC elapsed time is derived from the instants.
+ * Anything unverifiable throws `evidence_incomplete` instead of being guessed.
+ */
+export function verifyWorkPeriodInterval(
+	period: WorkPeriodFactsInput["period"],
+	clockInEntry: EntryRow | null,
+	clockOutEntry: EntryRow | null,
+): WorkPeriodSubmittedInterval & { canonicalRecordId: string } {
+	if (period.isActive || period.deletedAt !== null || period.endTime === null) {
+		return incomplete("interval");
+	}
+	const start = instantFromDate(period.startTime);
+	const end = instantFromDate(period.endTime);
+	if (compareInstants(end, start) <= 0) return incomplete("interval");
+	if (period.durationMinutes === null || !Number.isSafeInteger(period.durationMinutes)) {
+		return incomplete("duration");
+	}
+	if (!period.canonicalRecordId) return incomplete("canonical_record");
+	return {
+		canonicalRecordId: period.canonicalRecordId,
+		clockIn: endpoint(period, "clock_in", clockInEntry, period.clockInId, start),
+		clockOut: endpoint(period, "clock_out", clockOutEntry, period.clockOutId, end),
+		storedDurationMinutes: period.durationMinutes,
+		elapsedSeconds: end.since(start).total({ unit: "seconds" }),
+	};
+}
+
+/**
+ * Builds the submitted facts from the locked, closed work graph. A manual
+ * submission has no before state, so none is recorded.
  */
 export function buildWorkPeriodSubmittedFacts(
 	input: WorkPeriodFactsInput,
 ): WorkPeriodSubmittedFacts {
 	const { period } = input;
-	if (
-		period.isActive ||
-		period.deletedAt !== null ||
-		period.endTime === null ||
-		period.endTime.getTime() <= period.startTime.getTime()
-	) {
-		return incomplete("interval");
-	}
-	if (period.durationMinutes === null || !Number.isSafeInteger(period.durationMinutes)) {
-		return incomplete("duration");
-	}
-	if (!period.canonicalRecordId) return incomplete("canonical_record");
+	const { canonicalRecordId, ...interval } = verifyWorkPeriodInterval(
+		period,
+		input.clockIn,
+		input.clockOut,
+	);
 	if (input.requesterEmployeeId !== period.employeeId) return incomplete("roles");
-	const clockIn = endpoint(input, "clock_in", input.clockIn, period.clockInId, period.startTime);
-	const clockOut = endpoint(input, "clock_out", input.clockOut, period.clockOutId, period.endTime);
 	return {
 		schemaVersion: WORK_PERIOD_EVIDENCE_SCHEMA_VERSION,
 		kind: input.kind,
 		organizationId: period.organizationId,
 		workPeriodId: period.id,
-		canonicalRecordId: period.canonicalRecordId,
+		canonicalRecordId,
 		subjectEmployeeId: period.employeeId,
 		requesterEmployeeId: input.requesterEmployeeId,
-		interval: {
-			clockIn,
-			clockOut,
-			storedDurationMinutes: period.durationMinutes,
-			elapsedSeconds: (period.endTime.getTime() - period.startTime.getTime()) / 1000,
-		},
+		interval,
 		policy: policy(input),
 		attribution: {
 			projectId: period.projectId,

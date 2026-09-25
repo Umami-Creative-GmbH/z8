@@ -725,10 +725,16 @@ The decision row records the action, the approver's own outcome, the request
 outcome as of the operation (an intermediate chain approval stays `pending`),
 the persisted decision time, the actor and its label. `result` holds:
 
-- `workPeriodStatus` after the operation;
+- `workPeriodStatus`, read from the period as the operation leaves it;
 - legacy: `legacyRequestStatus` and `decidedAtSource`
   (`approval_request.approved_at`, `approval_request.updated_at` for a
-  rejection, or `approval_chain_stage_instance.decided_at`);
+  rejection, or `approval_chain_stage_instance.decided_at`), and
+  `actorAuthority`. A chain stage persists its decider, which must equal the
+  actor (`decided_stage`). A single-stage request keeps its assigned approver
+  even when an eligible manager or organization-wide approver decides it, so
+  its row cannot name the decider; the evidence records whether the
+  authorized actor was the assigned approver (`assigned_approver`) or not
+  (`other_authorized_approver`) instead of pretending the row confirmed it;
 - `terminal`, when this operation finalized the period: `status`, the committed
   `adjustment` (`none`, `break_not_required`, or `break_enforced` with the
   inserted minutes) and **every resulting segment**, each with its period,
@@ -771,10 +777,13 @@ so reason text stays in workflow events and legacy rows.
   decision evidence through its verified workflow or legacy request links, as
   for other kinds, and reports them in the audit.
 - Whole-history paths remove time-kind evidence with the history it describes,
-  in their transaction and before employees are deleted:
-  `clearOrganizationTimeData` and `deleteNonAdminEmployeesData` (their
-  employees), organization cleanup (the whole organization). Other kinds are
-  untouched (#306).
+  before the history and employees are deleted: `clearOrganizationTimeData`
+  and `deleteNonAdminEmployeesData` (every lifecycle naming one of their
+  employees as subject, requester, submitter or deciding actor), organization
+  cleanup (the whole organization). Only organization cleanup runs in one
+  transaction; the two demo paths have never been transactional, so a failure
+  part-way through them can leave history without its evidence. Other kinds
+  are untouched (#306).
 - Organization deletion also cascades through the organization FK.
 
 ### Activation
@@ -809,7 +818,11 @@ No application endpoint changes the mode.
    clock-out path is verified only with that decision forced.
 4. Manual submissions still use the pre-#308 action (caller-side zone
    interpretation, overlap trimming, age check). The evidence records what that
-   action stored; the strict manual command is #308.
+   action stored; the strict manual command is #308. That action's own record
+   of the submission (the canonical record's `computationMetadata`) is written
+   before routing and does not name the submitted revision; the revision is
+   reachable through the approval request it references. A manual operation
+   receipt that names it belongs with #308.
 5. Terminal split lineage and the review exemption are #303; this slice
    records the committed segments but does not change how splits are made
    (including the second segment's minutes, derived by subtraction).
@@ -830,7 +843,7 @@ part of `test:approval-workflow-repository:integration`), driving the real
 inbox `approveApprovalInboxItem`/`rejectApprovalInboxItem`, `deleteApproval`
 and `clearOrganizationTimeData`. Only session, billing, notification delivery
 and Next cache are replaced; clock-out and manual approval requirements are
-forced. 9/9 passing:
+forced. 10/10 passing:
 
 - policy clock-out capture: legacy revision linked to the routed request,
   endpoint captures, stored 61 minutes versus 3640 elapsed seconds, break
@@ -853,6 +866,10 @@ forced. 9/9 passing:
   before state, no reason text; exact retry writes nothing; approval evidence;
 - privileged cleanup removes exactly one lifecycle; time-data cleanup removes
   the rest.
+- the whole-history helper removes a lifecycle whose deciding approver is
+  deleted while its subject stays. (`deleteNonAdminEmployeesData` itself still
+  cannot delete such an approver: the pre-existing `approval_request.approver_id`
+  FK blocks it, unrelated to evidence.)
 
 Unit seams: `evidence/work-period-facts.test.ts`,
 `domain-adapters/work-period.adapter.test.ts` (hooks, work outcome),
