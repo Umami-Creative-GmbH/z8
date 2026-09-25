@@ -67,6 +67,7 @@ import {
 	getTodayRangeInTimezone,
 	getWeekRangeInTimezone,
 } from "@/lib/time-tracking/timezone-utils";
+import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import type { TimeSummary } from "@/lib/time-tracking/types";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
@@ -92,10 +93,12 @@ import {
 	parsePresenceFixedDays,
 	validatePresenceFixedDaysConfig,
 } from "./actions/presence-status";
+import { createManualTimeEntryFromCommand } from "./actions/manual-command-submission";
 import type {
 	BrowserTimezoneContext,
 	ClockOutActionContext,
 	ManualTimeEntryInput,
+	ManualTimeEntryResult,
 	CorrectionRequest as ModularCorrectionRequest,
 	SameDayEditRequest as ModularSameDayEditRequest,
 } from "./actions/types";
@@ -1689,22 +1692,13 @@ export async function getWorkPeriodEditCapability(
 
 /**
  * Create a manual time entry for a past date
- * Respects the organization's change policy for approval requirements
+ * Respects the organization's change policy for approval requirements.
+ * A strict version-2 command (#308) goes through the completed-work operation
+ * in adopted organizations; unversioned input keeps the legacy path.
  */
 export async function createManualTimeEntry(
-	data: ManualTimeEntryInput,
-): Promise<
-	ServerActionResult<{
-		workPeriodId: string;
-		requiresApproval: boolean;
-		wasAdjusted?: boolean;
-		adjustedTimes?: {
-			clockIn: string;
-			clockOut: string;
-			durationMinutes: number;
-		};
-	}>
-> {
+	data: ManualTimeEntryInput | ManualTimeEntryCommand,
+): Promise<ManualTimeEntryResult> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -1724,6 +1718,13 @@ export async function createManualTimeEntry(
 		};
 	}
 
+	if ("version" in data) {
+		return createManualTimeEntryFromCommand({
+			value: data,
+			session: { userId: session.user.id, isPlatformAdmin: session.user.role === "admin" },
+			currentEmployee: emp,
+		});
+	}
 	return createManualTimeEntryModular(data);
 }
 

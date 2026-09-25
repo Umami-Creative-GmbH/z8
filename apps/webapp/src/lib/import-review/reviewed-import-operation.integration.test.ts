@@ -80,9 +80,10 @@ vi.mock("@/lib/billing/guard", () => ({
 }));
 
 const { processImportReviewJob } = await import("./worker");
-const { clockIn, clockOut, createManualTimeEntry } = await import(
+const { clockIn, clockOut } = await import(
 	"@/app/[locale]/(app)/time-tracking/actions/clocking"
 );
+const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracking/actions");
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
@@ -1319,19 +1320,27 @@ describeIntegration("reviewed imports through the completed-work operation on Po
 			},
 		);
 
-		it("holds an import over committed manual work, and records the manual writer's own rule", async () => {
+		it("holds an import over committed manual work, and manual work over imported work", async () => {
 			// Manual entry rejects future times, so the scenario uses yesterday (UTC).
 			const day = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-			actAs(ids.employeeUser);
-			const manual = await createManualTimeEntry({
+			// Adopted organizations admit strict version-2 manual commands (#308).
+			const manualCommand = (clockIn: string, clockOut: string, reason: string) => ({
+				version: 2 as const,
 				submissionId: randomUUID(),
+				targetEmployeeId: ids.employee,
 				date: day,
-				clockInTime: "08:00",
-				clockOutTime: "09:00",
-				reason: "Forgot to clock in",
-				timezone: "UTC",
+				clockIn: { time: clockIn, occurrence: null, displayedOffsetMinutes: 0 },
+				clockOut: { time: clockOut, occurrence: null, displayedOffsetMinutes: 0 },
+				zone: { basis: "target" as const, timezone: "UTC" },
 				browserTimezone: "UTC",
+				reason,
+				projectId: null,
+				workCategoryId: null,
 			});
+			actAs(ids.employeeUser);
+			const manual = await createManualTimeEntry(
+				manualCommand("08:00", "09:00", "Forgot to clock in"),
+			);
 			expect(manual).toMatchObject({ success: true });
 			const manualPeriod = only(await periods());
 			const batch = await createBatch();
@@ -1354,25 +1363,19 @@ describeIntegration("reviewed imports through the completed-work operation on Po
 			});
 			expect((await stagedRow(beforeManual)).row_status).toBe("committed");
 
-			// Import first: the manual writer has not adopted the shared rule yet (#308). It
-			// avoids the overlap by trimming its own interval, which #254 forbids; pinned
-			// here as the current behavior, not the target.
+			// Import first: manual work shares the exact occupancy rule (#308) and is
+			// refused without trimming its interval.
+			const imported = (await periods()).find(
+				(period) => period.start_time.toISOString() === `${day}T06:00:00.000Z`,
+			);
 			actAs(ids.employeeUser);
-			const overImport = await createManualTimeEntry({
-				submissionId: randomUUID(),
-				date: day,
-				clockInTime: "06:30",
-				clockOutTime: "07:30",
-				reason: "Overlaps the imported work",
-				timezone: "UTC",
-				browserTimezone: "UTC",
-			});
+			const overImport = await createManualTimeEntry(
+				manualCommand("06:30", "07:30", "Overlaps the imported work"),
+			);
 			expect(overImport).toMatchObject({
-				success: true,
-				data: {
-					wasAdjusted: true,
-					adjustedTimes: { clockIn: `${day}T07:01:00.000Z`, clockOut: `${day}T07:30:00.000Z` },
-				},
+				success: false,
+				code: "occupancy_conflict",
+				rejection: { occupants: [{ kind: "work_period", id: imported?.id }] },
 			});
 			const { rows: overlaps } = await admin.query(
 				`select a.id from work_period a join work_period b

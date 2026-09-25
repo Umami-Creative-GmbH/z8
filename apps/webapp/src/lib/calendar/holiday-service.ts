@@ -20,6 +20,8 @@ export async function isHolidayBlockingTimeEntry(
 	organizationId: string,
 	date: Date,
 	employeeTimezone: string = "UTC",
+	/** A protected operation passes its transaction; defaults to the global client. */
+	reader: Pick<typeof db, "select"> = db,
 ): Promise<{ isBlocked: boolean; holiday: HolidayWithCategory | null }> {
 	// Convert to DateTime (UTC from database)
 	const dateDT = dateFromDB(date);
@@ -33,7 +35,7 @@ export async function isHolidayBlockingTimeEntry(
 	const dateEnd = dateToDB(employeeLocalDT.endOf("day").toUTC())!;
 
 	// Query non-recurring holidays
-	const nonRecurringHolidays = await db
+	const nonRecurringHolidays = await reader
 		.select({
 			holiday: holiday,
 			category: holidayCategory,
@@ -61,7 +63,7 @@ export async function isHolidayBlockingTimeEntry(
 	}
 
 	// Query recurring holidays
-	const recurringHolidays = await db
+	const recurringHolidays = await reader
 		.select({
 			holiday: holiday,
 			category: holidayCategory,

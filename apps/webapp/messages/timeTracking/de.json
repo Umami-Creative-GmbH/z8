@@ -89,11 +89,24 @@
       "dateLabel": "Datum",
       "description": "Erstellen Sie einen Zeiteintrag für ein vergangenes Datum. Je nach Änderungsrichtlinie Ihrer Organisation kann eine Genehmigung erforderlich sein.",
       "errors": {
+        "collision": "Dieser Eintrag widerspricht einer früheren Übermittlung oder geänderter Arbeit. Prüfe deine vorhandenen Einträge.",
         "createFailed": "Zeiteintrag konnte nicht erstellt werden",
         "futureDate": "Einträge für zukünftige Daten können nicht erstellt werden",
+        "futureTime": "Für zukünftige Zeiten können keine Einträge erstellt werden",
+        "historyReview": "Dieser Zeitverlauf muss geprüft werden, bevor neue Einträge gespeichert werden können. Wende dich an deine Administration.",
         "invalidTime": "Gib eine vollständige, gültige Uhrzeit ein",
         "invalidTimeRange": "Die Zeit für das Ausstempeln muss nach der Zeit für das Einstempeln liegen",
+        "nonexistentTime": "Diese Uhrzeit gibt es an diesem Datum nicht, weil die Uhren vorgestellt werden.",
+        "occurrenceRequired": "Diese Uhrzeit kommt an diesem Datum zweimal vor. Wähle aus, welche du meinst.",
+        "overlap": "Diese Zeit überschneidet sich mit erfasster Arbeit. Wähle einen Zeitraum ohne Überschneidung.",
+        "reconfirm": "Die Zeitzone oder die Zeiten haben sich geändert. Prüfe den Eintrag und sende ihn erneut.",
+        "refresh": "Die Einstellungen für manuelle Einträge haben sich geändert. Prüfe den Eintrag und sende ihn erneut.",
         "tooLong": "Die Arbeitsdauer darf 24 Stunden nicht überschreiten"
+      },
+      "occurrence": {
+        "earlier": "Erste, {offset}",
+        "later": "Zweite, {offset}",
+        "legend": "{time} kommt an diesem Datum zweimal vor. Welche Uhrzeit meinst du?"
       },
       "reasonLabel": "Grund",
       "reasonPlaceholder": "Beschreiben Sie, woran Sie gearbeitet haben …",

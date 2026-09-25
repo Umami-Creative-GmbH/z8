@@ -8,6 +8,7 @@ import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { getPrincipalContext } from "@/lib/auth-helpers";
 import { asAppSubject, defineAbilityFor } from "@/lib/authorization";
 import { getAvailableCategoriesForEmployee } from "@/lib/query/work-category.queries";
+import { readAppendAdmission } from "@/lib/time-tracking/work-transaction";
 import { resolvePersonalTimezone } from "@/lib/timezone/resolve-timezone";
 import { getAssignedProjectsWithHours } from "./entry-helpers";
 import type {
@@ -99,13 +100,15 @@ export async function resolveManualEntryTarget(params: {
  */
 export async function resolveManualEntryTargetZone(
 	targetEmployee: Pick<Employee, "userId" | "organizationId">,
+	/** Protected preparation passes its transaction; defaults to the global client. */
+	reader: Pick<typeof db, "query"> = db,
 ): Promise<ManualEntryTargetZone> {
 	const [settings, organizationRecord] = await Promise.all([
-		db.query.userSettings.findFirst({
+		reader.query.userSettings.findFirst({
 			where: eq(userSettings.userId, targetEmployee.userId),
 			columns: { timezone: true },
 		}),
-		db.query.organization.findFirst({
+		reader.query.organization.findFirst({
 			where: eq(organization.id, targetEmployee.organizationId),
 			columns: { timezone: true },
 		}),
@@ -187,7 +190,7 @@ export async function getManualEntryTargetContextForEmployee(params: {
 	}
 
 	const { targetEmployee, isOwnEntry } = target;
-	const [zone, projects, categories, targetUser] = await Promise.all([
+	const [zone, projects, categories, targetUser, admission] = await Promise.all([
 		resolveManualEntryTargetZone(targetEmployee),
 		listManualEntryProjectChoices(targetEmployee),
 		listManualEntryCategoryChoices(targetEmployee),
@@ -195,6 +198,7 @@ export async function getManualEntryTargetContextForEmployee(params: {
 			where: eq(user.id, targetEmployee.userId),
 			columns: { firstName: true, lastName: true, name: true, email: true },
 		}),
+		readAppendAdmission(db, targetEmployee.organizationId),
 	]);
 
 	return {
@@ -205,6 +209,7 @@ export async function getManualEntryTargetContextForEmployee(params: {
 			isOwnEntry,
 			timezone: zone.timezone,
 			timezoneSource: zone.source,
+			manualCommandVersion: admission === "append" ? 2 : 1,
 			projects,
 			categories,
 		},

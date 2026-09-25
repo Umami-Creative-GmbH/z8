@@ -84,11 +84,24 @@
       "dateLabel": "Dato",
       "description": "Opprett en timeregistrering for en tidligere dato. Godkjenning kan være påkrevd basert på organisasjonens retningslinjer for endring.",
       "errors": {
+        "collision": "Denne oppføringen er i konflikt med en tidligere innsending eller endret arbeid. Sjekk de eksisterende oppføringene dine.",
         "createFailed": "Kunne ikke opprette timeregistrering",
         "futureDate": "Kan ikke opprette registreringer for fremtidige datoer",
+        "futureTime": "Kan ikke opprette oppføringer for fremtidige tidspunkter",
+        "historyReview": "Denne tidshistorikken må gjennomgås før nye oppføringer kan lagres. Kontakt administratoren din.",
         "invalidTime": "Angi et fullstendig, gyldig klokkeslett",
         "invalidTimeRange": "Tidspunkt for utstempling må være etter innstempling",
+        "nonexistentTime": "Dette klokkeslettet finnes ikke på denne datoen fordi klokkene stilles frem.",
+        "occurrenceRequired": "Dette klokkeslettet forekommer to ganger på denne datoen. Velg hvilket du mener.",
+        "overlap": "Denne tiden overlapper registrert arbeid. Velg et tidsrom uten overlapp.",
+        "reconfirm": "Tidssonen eller tidene er endret. Se over oppføringen og send den på nytt.",
+        "refresh": "Innstillingene for manuelle oppføringer er endret. Se over oppføringen og send den på nytt.",
         "tooLong": "Arbeidsperioden kan ikke overstige 24 timer"
+      },
+      "occurrence": {
+        "earlier": "Første, {offset}",
+        "later": "Andre, {offset}",
+        "legend": "{time} forekommer to ganger på denne datoen. Hvilket mener du?"
       },
       "reasonLabel": "Årsak",
       "reasonPlaceholder": "Beskriv hva du jobbet med…",

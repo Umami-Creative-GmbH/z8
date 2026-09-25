@@ -92,6 +92,7 @@ import {
 	withWebClockOutTransaction,
 } from "@/lib/time-tracking/web-clock-out-transaction";
 import { WorkIntervalError } from "@/lib/time-tracking/work-duration";
+import { acquireAdoptionGate, readAppendAdmission } from "@/lib/time-tracking/work-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { canonicalWorkRecordClient } from "../actions.canonical";
 import {
@@ -139,6 +140,7 @@ import type {
 	ClockOutResult,
 	ManualTimeEntryInput,
 } from "./types";
+import { MANUAL_ENTRY_REFRESH_REQUIRED } from "./types";
 
 type ManualEntryOverlapResult =
 	| {
@@ -2529,14 +2531,12 @@ export async function createManualTimeEntry(
 		let immediateSurchargeSnapshot: PolicyClockOutSurchargeSnapshot | null =
 			null;
 		const runtime = createOrdinaryApprovalRuntime();
-		const {
-			period: createdWorkPeriod,
-			approvalSubmission,
-			disposition,
-			requiresApproval: committedRequiresApproval,
-			resultEvidence: committedResultEvidence,
-		} = await runtime.repository.withTransaction(async (context) => {
+		const committed = await runtime.repository.withTransaction(async (context) => {
 			const tx = context.dbService.db as unknown as typeof db;
+			// Adopted organizations (#308) admit fresh work only from version-2
+			// commands; unversioned input may still replay what it committed.
+			await acquireAdoptionGate(tx, targetEmployee.organizationId);
+			const admission = await readAppendAdmission(tx, targetEmployee.organizationId);
 			const existingEvidence = await findAndReplayManualSubmission({
 				context,
 				submissionId,
@@ -2553,6 +2553,8 @@ export async function createManualTimeEntry(
 					resultEvidence: existingEvidence.result,
 				};
 			}
+			// Absence is established under the submission identity lock.
+			if (admission === "append") return { disposition: "refresh_required" as const };
 			const clockInEntry = await createTimeEntry(
 				{
 					employeeId: targetEmployee.id,
@@ -2669,6 +2671,20 @@ export async function createManualTimeEntry(
 				resultEvidence,
 			};
 		});
+		if (committed.disposition === "refresh_required") {
+			return {
+				success: false,
+				error: "Manual entry settings changed. Please review the entry and submit it again.",
+				code: MANUAL_ENTRY_REFRESH_REQUIRED,
+			};
+		}
+		const {
+			period: createdWorkPeriod,
+			approvalSubmission,
+			disposition,
+			requiresApproval: committedRequiresApproval,
+			resultEvidence: committedResultEvidence,
+		} = committed;
 		requiresApproval = committedRequiresApproval;
 
 		const approvalResult = approvalSubmission?.result;
