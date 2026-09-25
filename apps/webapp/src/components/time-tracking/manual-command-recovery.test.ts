@@ -311,9 +311,10 @@ describe("settling attempts", () => {
 		expect(listManualRecoveries(storage, scope)).toEqual([]);
 	});
 
-	it("never discards an uncertain command", () => {
+	it("never discards a command that may be saved", () => {
 		const begun = firstAttempt();
 		expect(canDiscardManualRecovery(begun)).toBe(false);
+		expect(canDiscardManualRecovery({ ...begun, status: "unsupported" })).toBe(false);
 		expect(() => discardManualRecovery(storage, begun)).toThrow();
 		expect(listManualRecoveries(storage, scope)).toEqual([begun]);
 

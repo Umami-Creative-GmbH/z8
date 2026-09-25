@@ -95,8 +95,11 @@ Nothing is resent automatically, on mount, on reconnect or after a context switc
   project and category into the editable draft and removes the record. Occurrence
   choices are not copied; the user confirms them again in the current zone. Submitting
   the draft is a deliberate fresh submission with a new identity.
-- **Dismiss** is offered for `not_committed`, `conflict` and `unsupported`, never for
-  `uncertain`.
+- **Dismiss** is offered for `not_committed` and `conflict` only. `uncertain` and
+  `unsupported` commands may already be saved and stay until resolved or the tab ends.
+- While this tab's own first request is in flight, every recovery action is disabled, so a
+  lookup cannot overtake it. The panel says "No save found" rather than "not saved",
+  because a lookup's absence is not a tombstone.
 - Editing and submitting the draft while a command is uncertain creates a new identity
   and never touches the stored command.
 
@@ -159,7 +162,9 @@ without the scope assertion (1).
 - `manual-time-entry-dialog.test.tsx` and `manual-entry-target.test.ts` were updated for
   the recovery context.
 
-`pnpm run typecheck` passes.
+Full webapp suite: 148 failures, compared with 142 on clean `dev` (efe9ec7fc) for the
+same files. The difference is one pinned source-shape test for the new codes (updated)
+and five tests that pass when run alone (load flakiness). `pnpm run typecheck` passes.
 
 ## Remaining activation blockers
 

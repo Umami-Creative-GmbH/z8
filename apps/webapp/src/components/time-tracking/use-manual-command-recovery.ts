@@ -82,13 +82,27 @@ export function useManualCommandRecovery(scope: ManualRecoveryScope | null) {
 		return { result, verdict, record: settled };
 	}
 
-	/** Freeze a confirmed command and send its first attempt. */
+	/**
+	 * Freeze a confirmed command and send its first attempt. Recovery actions stay
+	 * disabled meanwhile, so a lookup cannot overtake this tab's own request.
+	 */
 	async function submit(
 		frozenScope: ManualRecoveryScope,
 		command: ManualTimeEntryCommand,
 	): Promise<ManualAttemptOutcome> {
 		const frozen = freezeManualCommand(frozenScope, command, Temporal.Now.instant().toString());
-		return attempt(frozen, null);
+		setBusyId(frozen.submissionId);
+		try {
+			return await attempt(frozen, null);
+		} finally {
+			setBusyId(null);
+		}
+	}
+
+	function findStored(shown: ManualRecoveryRecord) {
+		return listManualRecoveries(storage, shown.scope).find(
+			(candidate) => candidate.submissionId === shown.submissionId,
+		);
 	}
 
 	/**
@@ -99,9 +113,7 @@ export function useManualCommandRecovery(scope: ManualRecoveryScope | null) {
 		shown: ManualRecoveryRecord,
 		task: (record: ManualRecoveryRecord) => Promise<T>,
 	): Promise<T | null> {
-		const record = listManualRecoveries(storage, shown.scope).find(
-			(candidate) => candidate.submissionId === shown.submissionId,
-		);
+		const record = findStored(shown);
 		if (!record) {
 			refresh();
 			return null;
@@ -139,9 +151,7 @@ export function useManualCommandRecovery(scope: ManualRecoveryScope | null) {
 	}
 
 	function discard(shown: ManualRecoveryRecord) {
-		const record = listManualRecoveries(storage, shown.scope).find(
-			(candidate) => candidate.submissionId === shown.submissionId,
-		);
+		const record = findStored(shown);
 		if (record && canDiscardManualRecovery(record)) discardManualRecovery(storage, record);
 		refresh();
 	}

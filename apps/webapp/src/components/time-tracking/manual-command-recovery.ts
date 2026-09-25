@@ -7,6 +7,7 @@ import {
 	MANUAL_ENTRY_NOT_AUTHENTICATED,
 	MANUAL_ENTRY_REFRESH_REQUIRED,
 	MANUAL_ENTRY_TARGET_NOT_AUTHORIZED,
+	type ManualEntryRecoveryContext,
 	type ManualTimeEntryLookup,
 	type ManualTimeEntryResult,
 } from "@/app/[locale]/(app)/time-tracking/actions/types";
@@ -27,19 +28,18 @@ import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command"
 
 export const MANUAL_RECOVERY_KEY_PREFIX = "z8.manual-entry-recovery.v1:";
 
-export interface ManualRecoveryScope {
-	userId: string;
-	organizationId: string;
+export interface ManualRecoveryScope extends ManualEntryRecoveryContext {
 	targetEmployeeId: string;
 }
 
 /**
  * - `uncertain`: an attempt was sent and may have committed.
- * - `not_committed`: the server established that nothing committed under the identity.
+ * - `not_committed`: the server found no commit under the identity (not a tombstone).
  * - `conflict`: the identity names other work or changed evidence; inspect, never recreate.
  * - `unsupported`: no supported matcher could answer; not proof of absence.
  */
-export type ManualRecoveryStatus = "uncertain" | "not_committed" | "conflict" | "unsupported";
+const STATUSES = ["uncertain", "not_committed", "conflict", "unsupported"] as const;
+export type ManualRecoveryStatus = (typeof STATUSES)[number];
 
 export interface ManualRecoveryRecord {
 	version: 1;
@@ -151,13 +151,6 @@ function sameScope(left: ManualRecoveryScope, right: ManualRecoveryScope) {
 		left.targetEmployeeId === right.targetEmployeeId
 	);
 }
-
-const STATUSES: readonly ManualRecoveryStatus[] = [
-	"uncertain",
-	"not_committed",
-	"conflict",
-	"unsupported",
-];
 
 function parseRecord(value: string | null): ManualRecoveryRecord | null {
 	if (value === null) return null;
@@ -304,14 +297,17 @@ export function settleManualLookup(
 	}
 }
 
-/** An uncertain command stays until a retry or lookup resolves it. */
+/**
+ * Only settled records can be dismissed: absence was found or the identity
+ * conflicts. Uncertain and unsupported commands may already be saved.
+ */
 export function canDiscardManualRecovery(record: ManualRecoveryRecord) {
-	return record.status !== "uncertain";
+	return record.status === "not_committed" || record.status === "conflict";
 }
 
 export function discardManualRecovery(storage: RecoveryStorage, record: ManualRecoveryRecord) {
 	if (!canDiscardManualRecovery(record)) {
-		throw new Error("An uncertain manual command cannot be discarded");
+		throw new Error("A manual command that may be saved cannot be discarded");
 	}
 	storage.remove(recordKey(record));
 }

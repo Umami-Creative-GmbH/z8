@@ -1,4 +1,4 @@
-import type { timeEntry } from "@/db/schema";
+import type { approvalStatusEnum, timeEntry } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import type { ClockChannel } from "@/lib/time-tracking/close-active-work";
@@ -178,7 +178,7 @@ export type ManualTimeEntryLookup =
 	| {
 			status: "committed";
 			data: ManualTimeEntryCreated & {
-				currentApprovalStatus: "pending" | "approved" | "rejected";
+				currentApprovalStatus: (typeof approvalStatusEnum.enumValues)[number];
 			};
 	  }
 	/** No commit under the identity was serialized before this lookup. */

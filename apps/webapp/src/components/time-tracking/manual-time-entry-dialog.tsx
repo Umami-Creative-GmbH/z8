@@ -194,7 +194,7 @@ const MESSAGES = {
 	],
 	notCommitted: [
 		"timeTracking.manualEntry.recovery.notCommittedToast",
-		"This entry wasn't saved. Retry it exactly, or edit it as a new entry.",
+		"No save was found for this entry. Retry it exactly, or edit it as a new entry.",
 	],
 	unsupported: [
 		"timeTracking.manualEntry.recovery.unsupportedToast",
@@ -747,7 +747,7 @@ function recoveryStatusMessage(record: ManualRecoveryRecord): Message {
 				"Not confirmed. It may already be saved.",
 			];
 		case "not_committed":
-			return ["timeTracking.manualEntry.recovery.notCommitted", "Not saved."];
+			return ["timeTracking.manualEntry.recovery.notCommitted", "No save found."];
 		case "conflict":
 			return MESSAGES.collision;
 		case "unsupported":

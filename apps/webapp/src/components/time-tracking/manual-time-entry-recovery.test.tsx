@@ -255,6 +255,12 @@ describe("frozen manual command recovery (#310)", () => {
 		await fillAndSubmit(user);
 		await waitFor(() => expect(actions.createManualTimeEntry).toHaveBeenCalledOnce());
 		expect(recoveryKeys()).toHaveLength(1);
+		// A lookup cannot overtake the request still in flight in this tab.
+		expect(
+			within(recoveryItem())
+				.getByRole<HTMLButtonElement>("button", { name: "Check status" })
+				.hasAttribute("disabled"),
+		).toBe(true);
 
 		first.unmount();
 		mountDialog(targetContext());
@@ -372,6 +378,8 @@ describe("frozen manual command recovery (#310)", () => {
 		);
 		expect(actions.lookupManualTimeEntry).toHaveBeenLastCalledWith(frozen, MANAGER);
 		expect(within(recoveryItem()).queryByRole("button", { name: "Edit as new entry" })).toBeNull();
+		// It may already be saved, so it cannot be dismissed.
+		expect(within(recoveryItem()).queryByRole("button", { name: "Dismiss" })).toBeNull();
 
 		actions.lookupManualTimeEntry.mockResolvedValueOnce({ status: "failed", error: "x" });
 		await check();
@@ -384,7 +392,7 @@ describe("frozen manual command recovery (#310)", () => {
 
 		actions.lookupManualTimeEntry.mockResolvedValueOnce({ status: "not_committed" });
 		await check();
-		await waitFor(() => expect(within(recoveryItem()).getByText("Not saved.")).toBeTruthy());
+		await waitFor(() => expect(within(recoveryItem()).getByText("No save found.")).toBeTruthy());
 		expect(actions.createManualTimeEntry).toHaveBeenCalledOnce();
 
 		// Conclusive absence: its values become the editable draft for a fresh submission.
