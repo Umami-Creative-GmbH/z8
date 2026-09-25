@@ -1171,8 +1171,8 @@ so reason text stays in workflow events and legacy rows.
   revision it is always enforced: the live period, its endpoint entries, stored
   minutes and canonical record must equal the revision, otherwise
   `material_change`. While capture is active, a lifecycle without a revision is
-  held (`evidence_required`). Supplied reviewed bindings are refused
-  (`binding_mismatch`); time-kind bindings are #325.
+  held (`evidence_required`). Legacy decisions refuse a supplied reviewed
+  binding (`binding_mismatch`); canonical ones validate it since #325.
 - Holds surface as `ConflictError` with `conflictType: "approval_evidence"` on
   the inbox (`decideTimeCorrectionWithStableTargetEffect` delegation), the
   admin/bot path (`decideOrdinaryWorkPeriodWithStableTargetEffect`) and the API
@@ -1237,8 +1237,8 @@ No application endpoint changes the mode.
 5. Terminal split lineage and the review exemption are #303; this slice
    records the committed segments but does not change how splits are made
    (including the second segment's minutes, derived by subtraction).
-6. Presentation of these facts in the inbox and cards is #325; bindings for
-   time kinds do not exist yet.
+6. Presentation and canonical bindings: implemented by #325 (see its
+   section); legacy-authority time cards stay review-only.
 7. Not verified on PostgreSQL: mobile and offline clock-out callers (same
    owner), bots deciding time approvals, multi-stage chains, `shadow`/`ready`
    modes, concurrent decision races, and old binaries (pre-deployment binaries
@@ -1351,8 +1351,8 @@ and the zero-length canonical sentinel. Legacy rows also record
 - Once a lifecycle has a submitted revision it is always enforced: the live
   baseline and proposal must equal the revision, otherwise `material_change`.
   While capture is active a lifecycle without a revision is held
-  (`evidence_required`). Supplied reviewed bindings are refused
-  (`binding_mismatch`).
+  (`evidence_required`). Legacy decisions refuse a supplied reviewed binding
+  (`binding_mismatch`); canonical ones validate it since #325.
 - Holds answer as `ConflictError` with `conflictType: "approval_evidence"`. An
   evidence write failure rolls back the submission or decision completely.
 
@@ -1368,8 +1368,8 @@ and the zero-length canonical sentinel. Legacy rows also record
 
 1. **In-flight classification.** Enabling capture holds every pending correction
    submitted before capture (`evidence_required`) until it is drained or cancelled.
-2. **Presentation** of these facts in the inbox and cards is #325; bindings for
-   time kinds do not exist yet.
+2. **Presentation** and canonical bindings: implemented by #325 (see its
+   section); legacy-authority time cards stay review-only.
 3. **Demo corrections** (#285) capture no evidence.
 4. Not verified on PostgreSQL: multi-stage chains, `shadow`/`ready` modes, bots
    deciding corrections, and old binaries (pre-deployment binaries submit and
@@ -1396,3 +1396,231 @@ submission, inbox decision and cleanup callers. 7 evidence scenarios pass:
 - `clearOrganizationTimeData` removes the revision and decision evidence.
 
 Unit seam: `evidence/time-correction-facts.test.ts`.
+
+## Time approval presentation and bound decisions (#325 / T60)
+
+Manual time submissions, policy clock-outs and time corrections (edit,
+metadata-only and deletion) are now presented from the evidence #301/#302/#303
+capture, and decided from cards through reviewed bindings. The scope agreed on
+2026-09-25 is **canonical authority only** for bound cards and card decisions;
+legacy-authoritative time approvals stay review-only on every bot (follow-up
+ticket, see blockers). Authenticated review works for both authorities.
+Everything is **inactive for every organization**: no migration and no control
+row is added; the existing tables and checks already admit the three kinds.
+
+```text
+canonical submission (clockOut / createManualTimeEntry / requestTimeCorrection / requestTimeEntryDeletion)
+  evidence capture (#301/#302) → workflow outbox intent (unchanged)
+
+processApprovalDeliveries → adapter.sendInitial → prepareApprovalPresentation
+  canonical stage of the compatibility request, recipient's pending assignment
+  workflow kind is a time kind → prepareBoundTimeCard            (presentation/time-card.ts)
+    rollout canonical|complete, capture, presentation control actionable,
+    current revision still matches the live graph, intelligible facts, fits
+    → issueReviewBinding(recipient, workflow, stage, assignment, revision)
+  otherwise → review-only notice (Slack: prepareTimeReviewSummary, no binding)
+
+provider press → attemptBoundBotApproval                         (bot-platform/approval-decision.ts)
+  binding authority canonical + workflow kind is a time kind
+  → decideBoundTimeInvocation                                   (server/time-bound-decision.ts)
+      committed invocation? replay / conflict (no current state read)
+      approved member, binding names this actor, workflow is a time kind
+      manual / policy clock-out → executeOrdinaryWorkPeriodDecisionInTransaction({ bound })
+      correction                → executeTimeCorrectionDecisionInTransaction({ bound })
+        receipt-before-fresh replay again at each attempt (restart-safe)
+        #264 protocol (gates, guards, employee lock) → invocation lock → replay?
+        presentation control reread (paused → nothing decided)
+        canonical authority and the exact bound assignment only
+        engine: invocation receipt key, reviewedBindingId → evidence preflight
+          asserts binding = actor, workflow, stage, assignment, current revision
+        decision evidence → approval_invocation (same transaction)
+
+inbox detail / exact-item review → prepareTimeReviewEvidence    (presentation/time-review.ts)
+  revision by canonical workflow (stage mirrors the request) or legacy request/chain
+  → buildTimeReviewSections: submitted facts, each committed result, evidence history
+```
+
+### Card facts
+
+`buildWorkPeriodCardFacts` and `buildTimeCorrectionCardFacts` read the
+submitted revision only (#253 §3). The card shows the employee, the requester
+and the separately evidenced submitter where they differ, then:
+
+- **Manual / policy clock-out**: each endpoint as its full local date and time
+  in the offset captured with that event, labelled `(UTC±hh:mm)` (endpoints may
+  differ); **Submitted duration** (the stored minutes) and **Elapsed time** (UTC
+  elapsed between the endpoints) kept apart; for a policy clock-out whose break
+  snapshot allows it, **Break adjustment: May apply when approved; the result is
+  recorded separately**. No before state and no predicted deduction.
+- **Correction**: the request (**Change times**, **Change work details** or
+  **Delete this entry**), the affected entry as it stood (with its captured
+  offsets) and its duration before; for an edit each changed endpoint
+  `before → requested`, each with its own capture; changed work location and
+  category `before → requested`. A deletion never shows its marker timestamps
+  as proposed working times. Category names are **current** names (no
+  request-time name is captured) and labelled so; an unassigned category is
+  "No category", and a category without a name makes the card review-only.
+- The submission instant in the recipient's zone, locale and hour cycle.
+
+Reasons and other free text stay in authenticated review. Only the
+recipient's locale and hour cycle apply to endpoints; the recipient's zone never
+reinterprets them. Titles: "Manual time approval request", "Clock-out approval
+request", "Time correction approval request".
+
+### Decisions from cards
+
+- Identity, receipt key and replay are exactly #290's: the invocation-derived
+  receipt key (`approval-invocation:v1:…`), `approval_invocation` written with
+  the decision evidence in the same transaction, replay of a committed
+  invocation before any current state is read, and `invocation_mismatch`
+  (conflict) for the same invocation with another command. A new invocation
+  never falls back to an older semantic receipt.
+- The replay check runs at the start of every attempt of the owners' coordinated
+  transaction, so a concurrent duplicate that restarts after the first commit
+  replays instead of being refused. Serialization is the invocation advisory
+  lock, taken under the owners' #264 protocol (rank 6, after the employee lock).
+- Only the exact bound canonical assignment decides: management and
+  eligible-manager authority are never invoked from a card
+  (`BoundAssignmentNotCurrentError`); a legacy/shadow/ready rollout, a
+  compatibility request as target, or a correction binding on another kind is
+  `binding_mismatch`.
+- The evidence preflight hooks now receive the deciding actor and the exact
+  stage and assignment; a supplied binding must name exactly those and the
+  current submitted revision, after the live graph was compared with it
+  (`material_change` holds as before). Without a revision a binding is refused.
+- Time-kind decision evidence keeps only digests: `receipt-key:sha256:…` of the
+  invocation key (the invocation row keeps the key itself) and now also
+  `command-fingerprint:sha256:…` of the engine's command fingerprint, which
+  carries a rejection reason verbatim. This also changes web decisions: before
+  #325 canonical time-kind evidence stored that fingerprint (and so the reason
+  text) as is. Nothing reads the column for time kinds.
+- Card presses report: "Request approved/rejected" (request outcome as of the
+  operation), "Approval recorded" for an intermediate chain step, otherwise
+  review required. A press on an entry changed after the card was sent, on a
+  decided, reassigned or purged request, or while the provider is paused decides
+  nothing; the adapters' source refusal (`…ApprovalAdapterError`) and the
+  owners' generic refusals are review-only outcomes, not errors.
+- After commit, manual/policy decisions run the owner's maintenance
+  (surcharge reconciliation, work-balance dirty mark); canonical notifications
+  follow the workflow outbox, as for web decisions.
+
+### Authenticated review
+
+The inbox detail (and so exact-item review, #289) of a `time_entry` request
+loads its lifecycle's revision: the canonical workflow whose stage mirrors the
+request, or the legacy request/chain. Sections:
+
+- **Submitted times** (manual / policy clock-out) or **Requested correction**:
+  the same facts as the card, endpoints as `YYYY-MM-DD HH:mm (UTC±hh:mm)` in the
+  event's own offset, never shifted by the viewer. Metadata changes use the
+  existing change values (named / none / unavailable category).
+- **Result** per committed decision: the outcome, the committed break
+  adjustment (`30 min break inserted`, `No break was required`) and **every
+  resulting segment** with its own endpoints and stored minutes; for a
+  correction the resulting entry or **Deleted**. Results come from the decision
+  evidence, never from the current period.
+- **Evidence history**: submission and each decision with persisted actor and
+  time, an intermediate step ("Approval recorded — awaiting further approval")
+  apart from the request outcome.
+- A material change (danger callout) or a pending request without a revision
+  while capture is active (warning) disables approve, reject and bulk actions,
+  as the server does. With evidence, the old live correction section (UTC clock
+  times from current rows) is no longer shown.
+
+### Delivery
+
+The owner already expanded canonical outbox intents generically; with a
+delivery control for `(organization, kind, provider)` it now sends time cards
+through the same adapters and refreshes them with the committed outcome.
+`isApprovalNotificationDeliveredByOwner` also covers `work_period`
+notifications (and `approval_request` rows of `time_entry`): the period's
+current canonical workflow names the kind, and the existing channel path sends
+no plain message when the owner delivers that kind.
+
+### Cleanup
+
+No new rows: bindings, invocations and delivery rows of a time lifecycle are
+removed by privileged `deleteApproval` through the workflow, as for absences
+(verified), and a late redelivery of a purged press recreates nothing.
+Whole-history paths are unchanged (#301/#302/#306).
+
+### Activation
+
+As the authorized adoption writer, after capture is active for the kind
+(#301/#302) and under that kind's exclusive rollout lock
+(`:16:policy_clock_out`, `:22:manual_time_submission`, `:15:time_correction`):
+
+```sql
+insert into approval_presentation_control (organization_id, workflow_type, provider, mode)
+values (:org, 'manual_time_submission', 'telegram', 'actionable')
+on conflict (organization_id, workflow_type, provider) do update set mode = excluded.mode;
+insert into approval_delivery_control (organization_id, workflow_type, provider)
+values (:org, 'manual_time_submission', 'telegram');
+```
+
+No application endpoint changes either control.
+
+### Activation blockers (#325, unresolved)
+
+1. **Legacy authority.** Legacy-authoritative time approvals (every
+   organization today) stay review-only on bots: no legacy binding, no legacy
+   delivery intent, and legacy delivery assumes one lifecycle per source while a
+   work period has several approval cycles. Follow-up ticket required.
+2. **Canonical-only (`complete`) references.** Presentation starts from the
+   compatibility request; a `complete`-mode workflow without one is delivered as
+   `unsupported_route` attention (same limit as absences).
+3. **Only Telegram is verified**, plus the Slack review-only summary through the
+   shared preparation. Teams and Discord use the same preparation and bound path
+   but were not exercised for time kinds: do not admit them.
+4. **Category names** are current names; request-time names are not captured.
+5. Everything in the #301/#302/#303 blockers: in-flight classification, held
+   requests without durable attention, dormant live clock-out approval (#361),
+   old binaries, ingress, and the pilot (#330).
+6. The approval write-boundary scanner cannot read sources on Windows; this
+   slice adds no writer (it reuses the invocation and binding stores).
+
+### Verification (#325)
+
+PostgreSQL 16 (`time-tracking/actions/clocking.time-presentation.integration.test.ts`,
+part of `test:approval-workflow-repository:integration`), driving the real
+`clockIn`/`clockOut`, `createManualTimeEntry`, `requestTimeCorrection`,
+`requestTimeEntryDeletion`, `processApprovalDeliveries`, `handleTelegramUpdate`,
+`approveApprovalInboxItem`, `getApprovalInboxDetail`,
+`prepareApprovalPresentation`, `sendTelegramNotification` and `deleteApproval`.
+Replaced: session, billing, notification fan-out, Next cache, bot-token vault,
+the delivery fast path and the Telegram transport; live clock-out, manual and
+correction approval are forced as in #301/#302. 12/12 passing:
+
+- policy clock-out: the owner sends one bound card (captured offsets, 421
+  stored minutes versus 7 h 0 min 40 s elapsed, break disclosure, submission in
+  the recipient's zone); the binding names the recipient's assignment and the
+  revision; one press commits one decision and invocation with the digested
+  receipt; the evidence holds both segments (360 and 31 minutes); the owner
+  retires the card as "Request approved"; the review separates submission and
+  result; redelivery replays, the same query with Reject and a new query decide
+  nothing;
+- manual rejection by press: no before state, no reason text; "Request
+  rejected"; review result;
+- correction edit by press: before → requested with captures, location change,
+  review sections, the live UTC reconstruction replaced;
+- deletion and metadata-only cards, deletion result "Deleted";
+- a change after the card was sent: nothing decided, the card becomes a review
+  notice, the review is blocked, a fresh card is review-only;
+- gates (`review_only`, no control, no capture, oversized card) bind nothing;
+  the Slack summary shows facts without controls;
+- legacy authority: review-only card, nothing delivered, review shows the
+  evidence and history after a web approval;
+- a two-stage chain: "Approval recorded" with no terminal result, then the
+  final web approval, and the history separates both;
+- pausing the provider stops a sent card while a committed press replays;
+- an injected invocation insert failure rolls back the whole decision; three
+  concurrent deliveries of the same query then commit one decision;
+- privileged cleanup removes and reports one lifecycle's binding, invocation
+  and message, keeps the other cycle, and a late press recreates nothing;
+- the existing Telegram notification path is silent for a kind the owner
+  delivers, and speaks again without the control.
+
+The #302 suite (`clocking.approval-evidence.integration.test.ts`) still passes
+10/10 on the same runner. Unit seams: `presentation/time-card.test.ts` (facts,
+offsets, durations, roles, correction subtypes, category intelligibility) and
+`presentation/time-review.test.ts` (sections, results, holds, history).
