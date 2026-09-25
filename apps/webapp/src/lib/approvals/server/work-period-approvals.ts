@@ -1,5 +1,5 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { Effect } from "effect";
+import { Cause, Effect, Runtime } from "effect";
 import {
 	approvalRequest,
 	approvalStageAssignment,
@@ -46,6 +46,7 @@ import {
 	policyClockOutSurchargeSnapshotsEqual,
 } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import { applyPolicyClockOutTerminalBreakInTransaction } from "@/lib/time-tracking/policy-clock-out-terminal-break";
+import { isUnresolvedWorkPeriodReview } from "@/lib/time-tracking/work-period-review";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { decodeApprovalDatabaseJsonText } from "../approval-database-row";
 import type { ApprovalActionOptions } from "../domain/types";
@@ -84,6 +85,11 @@ import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
 import { fingerprintApprovalWorkflowCommand } from "../workflow/transition-engine";
 import { processApprovalWithCurrentEmployee } from "./shared";
+import {
+	acquireWorkPeriodDecisionScope,
+	observeWorkPeriodDecision,
+	retryWorkPeriodDecisionTransaction,
+} from "./work-period-decision-transaction";
 import type {
 	ApprovalDbService,
 	CurrentApprover,
@@ -98,6 +104,20 @@ export type {
 } from "../domain-adapters/work-period-contract";
 
 const ORDINARY_DECISION_ERROR = "Ordinary work-period decision failed";
+
+/**
+ * The terminal break split's unresolved-review refusal (#303), wherever the
+ * decision wrappers carried it. It reaches the approver as its conflict so they
+ * learn which review blocks the approval; every other failure stays generic.
+ */
+function unresolvedWorkPeriodReviewFrom(error: unknown): ConflictError | null {
+	if (Runtime.isFiberFailure(error)) {
+		return unresolvedWorkPeriodReviewFrom(
+			Cause.squash(error[Runtime.FiberFailureCauseId]),
+		);
+	}
+	return isUnresolvedWorkPeriodReview(error) ? error : null;
+}
 const logger = createLogger("WorkPeriodApprovals");
 
 function exactDecisionMetadata(value: unknown): {
@@ -384,641 +404,374 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 	postCommit: WorkPeriodPostCommitDescriptor | null;
 }> {
 	try {
-		return await input.runtime.repository.withTransaction(async (context) => {
-			const database = context.dbService
-				.db as unknown as ApprovalDbService["db"];
-			const actors = await database.query.employee.findMany({
-				where: and(
-					eq(employee.id, input.actor.id),
-					eq(employee.organizationId, input.organizationId),
-					eq(employee.userId, input.actor.userId),
-					eq(employee.isActive, true),
-				),
-				with: { user: true },
-				limit: 2,
-			});
-			const actor = actors[0] as CurrentApprover | undefined;
-			if (
-				actors.length !== 1 ||
-				!actor ||
-				actor.id !== input.actor.id ||
-				actor.organizationId !== input.organizationId ||
-				actor.userId !== input.actor.userId
-			) {
-				throw new Error(ORDINARY_DECISION_ERROR);
-			}
-			const requestRow = await database.query.approvalRequest.findFirst({
-				where: and(
-					eq(approvalRequest.id, input.approvalRequestId),
-					eq(approvalRequest.organizationId, input.organizationId),
-					eq(approvalRequest.entityType, "time_entry"),
-					eq(approvalRequest.entityId, input.workPeriodId),
-				),
-			});
-			const assignment = requestRow
-				? null
-				: await database.query.approvalStageAssignment.findFirst({
-						where: and(
-							eq(approvalStageAssignment.id, input.approvalRequestId),
-							eq(approvalStageAssignment.organizationId, input.organizationId),
-						),
-						columns: {
-							id: true,
-							workflowId: true,
-							stageId: true,
-							approverEmployeeId: true,
-							status: true,
-						},
-					});
-			const assignmentStage = assignment
-				? await database.query.approvalWorkflowStage.findFirst({
-						where: and(
-							eq(approvalWorkflowStage.id, assignment.stageId),
-							eq(approvalWorkflowStage.organizationId, input.organizationId),
-						),
-						columns: {
-							id: true,
-							workflowId: true,
-							sequence: true,
-							status: true,
-						},
-					})
-				: null;
-			const canonicalTarget = assignmentStage
-				? await database.query.approvalWorkflow.findFirst({
-						where: and(
-							eq(approvalWorkflow.id, assignmentStage.workflowId),
-							eq(approvalWorkflow.organizationId, input.organizationId),
-							eq(approvalWorkflow.sourceType, "time_entry"),
-						),
-					})
-				: null;
-			if (
-				(!requestRow && !assignment) ||
-				(requestRow &&
-					(requestRow.id !== input.approvalRequestId ||
-						requestRow.organizationId !== input.organizationId ||
-						requestRow.entityType !== "time_entry" ||
-						requestRow.entityId !== input.workPeriodId)) ||
-				(assignment &&
-					(assignment.id !== input.approvalRequestId ||
-						assignment.workflowId !== assignmentStage?.workflowId ||
-						assignment.stageId !== assignmentStage?.id ||
-						assignment.workflowId !== canonicalTarget?.id ||
-						!canonicalTarget ||
-						canonicalTarget.organizationId !== input.organizationId ||
-						canonicalTarget.sourceType !== "time_entry" ||
-						(canonicalTarget.workflowType !== "manual_time_submission" &&
-							canonicalTarget.workflowType !== "policy_clock_out") ||
-						canonicalTarget.sourceId !== input.workPeriodId ||
-						!canonicalTarget.requesterEmployeeId))
-			) {
-				throw new Error(ORDINARY_DECISION_ERROR);
-			}
-			const verifiedLegacyState = requestRow
-				? await loadOrdinaryWorkPeriodLegacyDecisionEvidence({
-						dbService: {
-							db: database,
-							query: input.dbService.query,
-						},
-						organizationId: input.organizationId,
-						workPeriodId: input.workPeriodId,
-						expectedRequesterEmployeeId: requestRow.requestedBy,
-						approvalRequestId: input.approvalRequestId,
-						expectedRequestStatus: requestRow.status,
-					})
-				: null;
-			if (
-				verifiedLegacyState &&
-				(!verifiedLegacyState.approvalRequest ||
-					verifiedLegacyState.approvalRequest.id !== requestRow?.id ||
-					verifiedLegacyState.approvalRequest.organizationId !==
-						input.organizationId ||
-					verifiedLegacyState.approvalRequest.entityId !== input.workPeriodId ||
-					verifiedLegacyState.approvalRequest.requestedBy !==
-						requestRow?.requestedBy ||
-					verifiedLegacyState.approvalRequest.approverId !==
-						requestRow?.approverId ||
-					verifiedLegacyState.approvalRequest.status !== requestRow?.status)
-			) {
-				throw new Error(ORDINARY_DECISION_ERROR);
-			}
-			const request = requestRow ?? {
-				id: input.approvalRequestId,
-				organizationId: input.organizationId,
-				entityType: "time_entry",
-				entityId: canonicalTarget?.sourceId ?? "",
-				requestedBy: canonicalTarget?.requesterEmployeeId ?? "",
-				approverId: null,
-				status: canonicalTarget?.status ?? "pending",
-				metadata: canonicalTarget?.contextSnapshot ?? null,
-			};
-			if (
-				input.historicalOnly &&
-				(requestRow?.approverId ?? assignment?.approverEmployeeId) !== actor.id
-			) {
-				throw new Error(ORDINARY_DECISION_ERROR);
-			}
-			const metadata = requestRow
+		return await retryWorkPeriodDecisionTransaction(() =>
+			executeOrdinaryWorkPeriodDecisionAttempt(input),
+		);
+	} catch (error) {
+		// Evidence holds and contradictions keep their meaning for the caller.
+		if (error instanceof ApprovalEvidenceError) throw error;
+		throw unresolvedWorkPeriodReviewFrom(error) ?? new Error(ORDINARY_DECISION_ERROR);
+	}
+}
+
+async function executeOrdinaryWorkPeriodDecisionAttempt(
+	input: Parameters<typeof executeOrdinaryWorkPeriodDecisionInTransaction>[0],
+): ReturnType<typeof executeOrdinaryWorkPeriodDecisionInTransaction> {
+	return await input.runtime.repository.withTransaction(async (context) => {
+		const database = context.dbService
+			.db as unknown as ApprovalDbService["db"];
+		// Observed before the first read and re-observed under the protocol.
+		const observed = await observeWorkPeriodDecision(context, {
+			organizationId: input.organizationId,
+			workPeriodId: input.workPeriodId,
+		});
+		const actors = await database.query.employee.findMany({
+			where: and(
+				eq(employee.id, input.actor.id),
+				eq(employee.organizationId, input.organizationId),
+				eq(employee.userId, input.actor.userId),
+				eq(employee.isActive, true),
+			),
+			with: { user: true },
+			limit: 2,
+		});
+		const actor = actors[0] as CurrentApprover | undefined;
+		if (
+			actors.length !== 1 ||
+			!actor ||
+			actor.id !== input.actor.id ||
+			actor.organizationId !== input.organizationId ||
+			actor.userId !== input.actor.userId
+		) {
+			throw new Error(ORDINARY_DECISION_ERROR);
+		}
+		const requestRow = await database.query.approvalRequest.findFirst({
+			where: and(
+				eq(approvalRequest.id, input.approvalRequestId),
+				eq(approvalRequest.organizationId, input.organizationId),
+				eq(approvalRequest.entityType, "time_entry"),
+				eq(approvalRequest.entityId, input.workPeriodId),
+			),
+		});
+		const assignment = requestRow
+			? null
+			: await database.query.approvalStageAssignment.findFirst({
+					where: and(
+						eq(approvalStageAssignment.id, input.approvalRequestId),
+						eq(approvalStageAssignment.organizationId, input.organizationId),
+					),
+					columns: {
+						id: true,
+						workflowId: true,
+						stageId: true,
+						approverEmployeeId: true,
+						status: true,
+					},
+				});
+		const assignmentStage = assignment
+			? await database.query.approvalWorkflowStage.findFirst({
+					where: and(
+						eq(approvalWorkflowStage.id, assignment.stageId),
+						eq(approvalWorkflowStage.organizationId, input.organizationId),
+					),
+					columns: {
+						id: true,
+						workflowId: true,
+						sequence: true,
+						status: true,
+					},
+				})
+			: null;
+		const canonicalTarget = assignmentStage
+			? await database.query.approvalWorkflow.findFirst({
+					where: and(
+						eq(approvalWorkflow.id, assignmentStage.workflowId),
+						eq(approvalWorkflow.organizationId, input.organizationId),
+						eq(approvalWorkflow.sourceType, "time_entry"),
+					),
+				})
+			: null;
+		if (
+			(!requestRow && !assignment) ||
+			(requestRow &&
+				(requestRow.id !== input.approvalRequestId ||
+					requestRow.organizationId !== input.organizationId ||
+					requestRow.entityType !== "time_entry" ||
+					requestRow.entityId !== input.workPeriodId)) ||
+			(assignment &&
+				(assignment.id !== input.approvalRequestId ||
+					assignment.workflowId !== assignmentStage?.workflowId ||
+					assignment.stageId !== assignmentStage?.id ||
+					assignment.workflowId !== canonicalTarget?.id ||
+					!canonicalTarget ||
+					canonicalTarget.organizationId !== input.organizationId ||
+					canonicalTarget.sourceType !== "time_entry" ||
+					(canonicalTarget.workflowType !== "manual_time_submission" &&
+						canonicalTarget.workflowType !== "policy_clock_out") ||
+					canonicalTarget.sourceId !== input.workPeriodId ||
+					!canonicalTarget.requesterEmployeeId))
+		) {
+			throw new Error(ORDINARY_DECISION_ERROR);
+		}
+		const verifiedLegacyState = requestRow
+			? await loadOrdinaryWorkPeriodLegacyDecisionEvidence({
+					dbService: {
+						db: database,
+						query: input.dbService.query,
+					},
+					organizationId: input.organizationId,
+					workPeriodId: input.workPeriodId,
+					expectedRequesterEmployeeId: requestRow.requestedBy,
+					approvalRequestId: input.approvalRequestId,
+					expectedRequestStatus: requestRow.status,
+				})
+			: null;
+		if (
+			verifiedLegacyState &&
+			(!verifiedLegacyState.approvalRequest ||
+				verifiedLegacyState.approvalRequest.id !== requestRow?.id ||
+				verifiedLegacyState.approvalRequest.organizationId !==
+					input.organizationId ||
+				verifiedLegacyState.approvalRequest.entityId !== input.workPeriodId ||
+				verifiedLegacyState.approvalRequest.requestedBy !==
+					requestRow?.requestedBy ||
+				verifiedLegacyState.approvalRequest.approverId !==
+					requestRow?.approverId ||
+				verifiedLegacyState.approvalRequest.status !== requestRow?.status)
+		) {
+			throw new Error(ORDINARY_DECISION_ERROR);
+		}
+		const request = requestRow ?? {
+			id: input.approvalRequestId,
+			organizationId: input.organizationId,
+			entityType: "time_entry",
+			entityId: canonicalTarget?.sourceId ?? "",
+			requestedBy: canonicalTarget?.requesterEmployeeId ?? "",
+			approverId: null,
+			status: canonicalTarget?.status ?? "pending",
+			metadata: canonicalTarget?.contextSnapshot ?? null,
+		};
+		if (
+			input.historicalOnly &&
+			(requestRow?.approverId ?? assignment?.approverEmployeeId) !== actor.id
+		) {
+			throw new Error(ORDINARY_DECISION_ERROR);
+		}
+		const metadata = requestRow
+			? {
+					...(requestRow.metadata === null
+						? {
+								workflowId: null,
+								workflowOrganizationId: null,
+								stageId: null,
+								stageSequence: null,
+								assignmentId: null,
+							}
+						: exactDecisionMetadata(requestRow.metadata)),
+					kind: verifiedLegacyState?.source
+						.workflowType as OrdinaryTimeApprovalKind,
+				}
+			: {
+					kind: parseOrdinaryWorkPeriodWorkflowPayload(
+						canonicalTarget?.contextSnapshot,
+					).timeRequest.kind,
+					workflowId: canonicalTarget?.id ?? "",
+					workflowOrganizationId: canonicalTarget?.organizationId ?? "",
+					stageId: assignment?.stageId ?? null,
+					stageSequence: null,
+					assignmentId: assignment?.id ?? null,
+				};
+		const expectedTerminalStatus =
+			input.decision.kind === "approve" ? "approved" : "rejected";
+		const canonicalCommand = assignmentStage
+			? input.decision.kind === "approve"
 				? {
-						...(requestRow.metadata === null
-							? {
-									workflowId: null,
-									workflowOrganizationId: null,
-									stageId: null,
-									stageSequence: null,
-									assignmentId: null,
-								}
-							: exactDecisionMetadata(requestRow.metadata)),
-						kind: verifiedLegacyState?.source
-							.workflowType as OrdinaryTimeApprovalKind,
+						type: "approve" as const,
+						stageId: assignmentStage.id,
+						assignmentId: assignment?.id ?? "",
 					}
 				: {
-						kind: parseOrdinaryWorkPeriodWorkflowPayload(
-							canonicalTarget?.contextSnapshot,
-						).timeRequest.kind,
-						workflowId: canonicalTarget?.id ?? "",
-						workflowOrganizationId: canonicalTarget?.organizationId ?? "",
-						stageId: assignment?.stageId ?? null,
-						stageSequence: null,
-						assignmentId: assignment?.id ?? null,
-					};
-			const expectedTerminalStatus =
-				input.decision.kind === "approve" ? "approved" : "rejected";
-			const canonicalCommand = assignmentStage
-				? input.decision.kind === "approve"
-					? {
-							type: "approve" as const,
-							stageId: assignmentStage.id,
-							assignmentId: assignment?.id ?? "",
-						}
-					: {
-							type: "reject" as const,
-							stageId: assignmentStage.id,
-							assignmentId: assignment?.id ?? "",
-							reason: input.decision.reason,
-						}
-				: null;
-			const canonicalIdempotencyKey = canonicalTarget
-				? `ordinary-decision:${input.organizationId}:${canonicalTarget.id}:${input.approvalRequestId}:${input.decision.kind}:${input.decision.reason ?? ""}`
-				: null;
-			const canonicalActorFingerprint = fingerprintApprovalCommandActor({
-				kind: "employee",
-				employeeId: actor.id,
-				userId: actor.userId,
-			});
-			const canonicalCommandFingerprint = canonicalCommand
-				? fingerprintApprovalWorkflowCommand(canonicalCommand)
-				: null;
-			const canonicalReplayReceipt =
-				assignment &&
-				assignmentStage &&
-				canonicalTarget &&
-				canonicalCommand &&
-				canonicalIdempotencyKey &&
-				canonicalCommandFingerprint &&
-				assignment.status === expectedTerminalStatus &&
-				assignmentStage.status === expectedTerminalStatus
-					? await database.query.approvalWorkflowCommand.findFirst({
-							where: and(
-								eq(
-									approvalWorkflowCommand.organizationId,
-									input.organizationId,
-								),
-								eq(approvalWorkflowCommand.workflowId, canonicalTarget.id),
-								eq(
-									approvalWorkflowCommand.idempotencyKey,
-									canonicalIdempotencyKey,
-								),
-								eq(
-									approvalWorkflowCommand.actorFingerprint,
-									canonicalActorFingerprint,
-								),
-								eq(
-									approvalWorkflowCommand.commandFingerprint,
-									canonicalCommandFingerprint,
-								),
-								eq(approvalWorkflowCommand.state, "completed"),
-							),
-							columns: {
-								organizationId: true,
-								workflowId: true,
-								idempotencyKey: true,
-								actorFingerprint: true,
-								commandFingerprint: true,
-								state: true,
-								result: true,
-							},
-						})
-					: null;
-			const exactCanonicalReplay = Boolean(
-				canonicalReplayReceipt &&
-					canonicalReplayReceipt.organizationId === input.organizationId &&
-					canonicalReplayReceipt.workflowId === canonicalTarget?.id &&
-					canonicalReplayReceipt.idempotencyKey === canonicalIdempotencyKey &&
-					canonicalReplayReceipt.actorFingerprint ===
-						canonicalActorFingerprint &&
-					canonicalReplayReceipt.commandFingerprint ===
-						canonicalCommandFingerprint &&
-					canonicalReplayReceipt.state === "completed" &&
-					canonicalReplayReceipt.result !== null,
-			);
-			const terminalRequestMatches =
-				request.status === expectedTerminalStatus &&
-				(input.decision.kind === "approve"
-					? requestRow?.approvedAt instanceof Date
-					: requestRow?.rejectionReason === input.decision.reason);
-			const period = await database.query.workPeriod.findFirst({
-				where: and(
-					eq(workPeriod.id, input.workPeriodId),
-					eq(workPeriod.organizationId, input.organizationId),
-					eq(workPeriod.employeeId, request.requestedBy),
-				),
-			});
-			if (
-				!period ||
-				period.id !== input.workPeriodId ||
-				period.organizationId !== input.organizationId ||
-				period.employeeId !== request.requestedBy ||
-				!period.canonicalRecordId ||
-				!period.endTime ||
-				period.durationMinutes === null ||
-				period.isActive !== false ||
-				period.deletedAt !== null ||
-				(period.approvalStatus !== "pending" &&
-					!(
-						(terminalRequestMatches || exactCanonicalReplay) &&
-						period.approvalStatus === expectedTerminalStatus
-					))
-			) {
-				throw new Error(ORDINARY_DECISION_ERROR);
-			}
-			const decisionPeriod = {
-				id: period.id,
-				organizationId: period.organizationId,
-				employeeId: period.employeeId,
-				canonicalRecordId: period.canonicalRecordId,
-				startTime: period.startTime,
-				endTime: period.endTime,
-			};
-
-			const authority = await context.writeGate.acquire({
-				organizationId: input.organizationId,
-				workflowType: metadata.kind,
-			});
-			const fixedGate = {
-				acquire: async (scope: {
-					organizationId: string;
-					workflowType: OrdinaryTimeApprovalKind;
-				}) => {
-					if (
-						scope.organizationId !== input.organizationId ||
-						scope.workflowType !== metadata.kind
-					) {
-						throw new Error(ORDINARY_DECISION_ERROR);
-					}
-					return authority;
-				},
-			};
-			const decisionContext = {
-				...context,
-				writeGate: fixedGate,
-				compatibilityWriter:
-					context.compatibilityWriter.withWriteGate(fixedGate),
-			} as ApprovalWorkflowTransactionContext;
-			if (
-				authority.mode === "legacy" ||
-				authority.mode === "shadow" ||
-				authority.mode === "ready"
-			) {
-				const observedWorkflow =
-					authority.mode === "legacy" || !period.approvalWorkflowId
-						? null
-						: await context.repository.loadSnapshot({
-								organizationId: input.organizationId,
-								workflowId: period.approvalWorkflowId,
-							});
-				const observedIdentityMatches =
-					observedWorkflow?.id === period.approvalWorkflowId &&
-					observedWorkflow.organizationId === input.organizationId &&
-					observedWorkflow.workflowType === metadata.kind &&
-					observedWorkflow.sourceType === "time_entry" &&
-					observedWorkflow.sourceId === period.id &&
-					observedWorkflow.requesterEmployeeId === period.employeeId;
-				const observedIntermediateReplay =
-					input.decision.kind === "approve" &&
-					terminalRequestMatches &&
-					period.approvalStatus === "pending" &&
-					observedIdentityMatches &&
-					observedWorkflow?.status === "pending" &&
-					observedWorkflow.stages.some(
-						(stage) =>
-							stage.legacyApprovalRequestId === input.approvalRequestId &&
-							stage.status === "approved" &&
-							stage.assignments.some(
-								(assignment) =>
-									assignment.approverEmployeeId === request.approverId &&
-									assignment.status === "approved",
-							),
-					);
-				const verifiedLegacyIntermediateReplay =
-					authority.mode === "legacy" &&
-					terminalRequestMatches &&
-					period.approvalStatus === "pending" &&
-					isVerifiedLegacyIntermediateReplay({
-						state: verifiedLegacyState,
-						approvalRequestId: input.approvalRequestId,
-						actorEmployeeId: actor.id,
-						decision: input.decision.kind,
-					});
-				if (
-					verifiedLegacyIntermediateReplay ||
-					observedIntermediateReplay ||
-					(terminalRequestMatches &&
-						period.approvalStatus === expectedTerminalStatus &&
-						(authority.mode === "legacy" ||
-							(observedIdentityMatches &&
-								observedWorkflow?.status === expectedTerminalStatus)))
-				) {
-					return {
-						result: ordinaryDecisionResult({
-							kind: metadata.kind,
-							decision: input.decision,
-							period: decisionPeriod,
-						}),
-						postCommit: null,
-					};
-				}
-				if (
-					input.historicalOnly ||
-					!requestRow ||
-					request.status !== "pending"
-				) {
-					throw new Error(ORDINARY_DECISION_ERROR);
-				}
-				let expectedObservedVersion = observedWorkflow?.version ?? null;
-				let bootstrappedWorkflowId: string | null = null;
-				if (authority.mode !== "legacy" && !observedWorkflow) {
-					if (!verifiedLegacyState) {
-						throw new Error(ORDINARY_DECISION_ERROR);
-					}
-					const bootstrapped =
-						await decisionContext.compatibilityWriter.mirrorLegacyToCanonical({
-							before: {
-								...verifiedLegacyState,
-								approvalRequest: null,
-								chain: null,
-								chainRows: [],
-							},
-							after: verifiedLegacyState,
-							actor: {
-								kind: "employee",
-								employeeId: actor.id,
-								userId: actor.userId,
-							},
-							idempotencyKey: `ordinary-bootstrap:${input.organizationId}:${period.id}:${input.approvalRequestId}`,
-							expectedVersion: null,
-						});
-					if (
-						!bootstrapped ||
-						bootstrapped.snapshot.organizationId !== input.organizationId ||
-						bootstrapped.snapshot.workflowType !== metadata.kind ||
-						bootstrapped.snapshot.sourceType !== "time_entry" ||
-						bootstrapped.snapshot.sourceId !== period.id ||
-						bootstrapped.snapshot.requesterEmployeeId !== period.employeeId ||
-						bootstrapped.snapshot.status !== "pending" ||
-						bootstrapped.snapshot.version !== 1
-					) {
-						throw new Error(ORDINARY_DECISION_ERROR);
-					}
-					bootstrappedWorkflowId = bootstrapped.snapshot.id;
-					expectedObservedVersion = bootstrapped.snapshot.version;
-				}
-				// Fresh evidence checks run only after the established replay matching
-				// above found no committed operation.
-				const evidencePlan = await prepareLegacyWorkPeriodDecisionEvidence(
-					database,
-					{
-						organizationId: input.organizationId,
-						kind: metadata.kind,
-						workPeriodId: period.id,
-						approvalRequestId: input.approvalRequestId,
-						chainInstanceId: verifiedLegacyState?.chain?.id ?? null,
-					},
-				);
-				const legacyIdempotencyKey = [
-					"ordinary-decision",
-					input.organizationId,
-					period.id,
-					input.approvalRequestId,
-					input.decision.kind,
-					input.decision.reason ?? "",
-				].join(":");
-				const coordinator = createLegacyApprovalWriteCoordinator({
-					writeGate: fixedGate,
-					compatibilityWriter: decisionContext.compatibilityWriter,
-				});
-				let mutationResult: WorkPeriodApprovalResult | undefined;
-				let captureCount = 0;
-				const domainResult = await coordinator.execute({
-					organizationId: input.organizationId,
-					workflowType: metadata.kind,
-					sourceIdentity: {
-						organizationId: input.organizationId,
-						workflowType: metadata.kind,
-						sourceType: "time_entry",
-						sourceId: period.id,
-					},
-					actor: {
-						kind: "employee",
-						employeeId: actor.id,
-						userId: actor.userId,
-					},
-					idempotencyKey: legacyIdempotencyKey,
-					expectedVersion: expectedObservedVersion,
-					captureState:
-						authority.mode === "legacy"
-							? undefined
-							: async () => {
-									captureCount += 1;
-									if (captureCount === 1 && verifiedLegacyState) {
-										return verifiedLegacyState;
-									}
-									return await captureOrdinaryWorkPeriodLegacyState({
-										dbService: {
-											db: database,
-											query: input.dbService.query,
-										},
-										organizationId: input.organizationId,
-										workPeriodId: period.id,
-										expectedKind: metadata.kind,
-										expectedRequesterEmployeeId: period.employeeId,
-										approvalRequestId: input.approvalRequestId,
-										expectedRequestStatus:
-											input.decision.kind === "approve"
-												? "approved"
-												: "rejected",
-										expectedSourceStatus:
-											mutationResult === undefined
-												? "pending"
-												: input.decision.kind === "approve"
-													? "approved"
-													: "rejected",
-									});
-								},
-					mutate: async () => {
-						mutationResult = await Effect.runPromise(
-							decideWorkPeriodWithCurrentApproverInTransaction(
-								{
-									db: database,
-									query: input.dbService.query,
-								},
-								actor,
-								period.id,
-								metadata.kind,
-								input.decision.kind,
-								input.decision.reason ?? undefined,
-								{
-									approvalRequestId: input.approvalRequestId,
-									allowAnyApprover: input.allowAnyApprover,
-									allowOrganizationWideApprover:
-										input.allowOrganizationWideApprover,
-								},
-							).pipe(
-								Effect.provideService(
-									ApprovalAuditLogger,
-									createApprovalAuditLogger({
-										db: database,
-										query: input.dbService.query,
-									}),
-								),
-							) as Effect.Effect<
-								WorkPeriodApprovalResult | undefined,
-								unknown,
-								never
-							>,
-						);
-						return mutationResult;
-					},
-					afterMirror: async (observed) => {
-						if (!bootstrappedWorkflowId) return;
-						if (
-							observed.snapshot.id !== bootstrappedWorkflowId ||
-							observed.snapshot.organizationId !== input.organizationId ||
-							observed.snapshot.workflowType !== metadata.kind ||
-							observed.snapshot.sourceType !== "time_entry" ||
-							observed.snapshot.sourceId !== period.id ||
-							observed.snapshot.requesterEmployeeId !== period.employeeId ||
-							observed.snapshot.status !== expectedTerminalStatus ||
-							observed.snapshot.version !== 2
-						) {
-							throw new Error(ORDINARY_DECISION_ERROR);
-						}
-						await bindPreCanonicalOrdinaryWorkflow({
-							dbService: { db: database, query: input.dbService.query },
-							organizationId: input.organizationId,
-							workPeriodId: period.id,
-							requesterEmployeeId: period.employeeId,
-							canonicalRecordId: decisionPeriod.canonicalRecordId,
-							workflowId: bootstrappedWorkflowId,
-							approvalStatus: expectedTerminalStatus,
-						});
-					},
-				});
-				if (evidencePlan) {
-					const finalized = domainResult as WorkPeriodApprovalResult | undefined;
-					await recordLegacyWorkPeriodDecisionEvidence(database, evidencePlan, {
-						organizationId: input.organizationId,
-						action: input.decision.kind,
+						type: "reject" as const,
+						stageId: assignmentStage.id,
+						assignmentId: assignment?.id ?? "",
 						reason: input.decision.reason,
-						approvalRequestId: input.approvalRequestId,
-						idempotencyKey: legacyIdempotencyKey,
-						actor: { employeeId: actor.id, userId: actor.userId },
-						finalized: finalized
-							? {
-									outcome: finalized.outcome,
-									maintenance: finalized.maintenance,
-								}
-							: null,
-					});
-				}
-				const result =
-					(domainResult as WorkPeriodApprovalResult | undefined) ??
-					ordinaryDecisionResult({
-						kind: metadata.kind,
-						decision: input.decision,
-						period: decisionPeriod,
-					});
-				return {
-					result,
-					postCommit: Object.freeze({
-						disposition: "dispatch" as const,
-						dedupeKey: `ordinary-decision:${period.id}:${input.approvalRequestId}:${input.decision.kind}`,
-						event: domainResult
-							? input.decision.kind === "approve"
-								? ("approved" as const)
-								: ("rejected" as const)
-							: ("pending" as const),
-						organizationId: input.organizationId,
-						workPeriodId: period.id,
-						requesterEmployeeId: period.employeeId,
-						approverEmployeeId: actor.id,
-						kind: metadata.kind,
-						startTime: instantToCanonicalString(
-							instantFromDate(period.startTime),
+					}
+			: null;
+		const canonicalIdempotencyKey = canonicalTarget
+			? `ordinary-decision:${input.organizationId}:${canonicalTarget.id}:${input.approvalRequestId}:${input.decision.kind}:${input.decision.reason ?? ""}`
+			: null;
+		const canonicalActorFingerprint = fingerprintApprovalCommandActor({
+			kind: "employee",
+			employeeId: actor.id,
+			userId: actor.userId,
+		});
+		const canonicalCommandFingerprint = canonicalCommand
+			? fingerprintApprovalWorkflowCommand(canonicalCommand)
+			: null;
+		const canonicalReplayReceipt =
+			assignment &&
+			assignmentStage &&
+			canonicalTarget &&
+			canonicalCommand &&
+			canonicalIdempotencyKey &&
+			canonicalCommandFingerprint &&
+			assignment.status === expectedTerminalStatus &&
+			assignmentStage.status === expectedTerminalStatus
+				? await database.query.approvalWorkflowCommand.findFirst({
+						where: and(
+							eq(
+								approvalWorkflowCommand.organizationId,
+								input.organizationId,
+							),
+							eq(approvalWorkflowCommand.workflowId, canonicalTarget.id),
+							eq(
+								approvalWorkflowCommand.idempotencyKey,
+								canonicalIdempotencyKey,
+							),
+							eq(
+								approvalWorkflowCommand.actorFingerprint,
+								canonicalActorFingerprint,
+							),
+							eq(
+								approvalWorkflowCommand.commandFingerprint,
+								canonicalCommandFingerprint,
+							),
+							eq(approvalWorkflowCommand.state, "completed"),
 						),
-						endTime: instantToCanonicalString(instantFromDate(period.endTime)),
-						durationMinutes: period.durationMinutes,
-						reason: input.decision.reason,
-						maintenance: domainResult?.maintenance ?? null,
-					}),
-				};
-			}
-			if (
-				!period.approvalWorkflowId ||
-				(metadata.workflowId !== null &&
-					metadata.workflowId !== period.approvalWorkflowId) ||
-				(metadata.workflowOrganizationId !== null &&
-					metadata.workflowOrganizationId !== input.organizationId)
-			) {
-				throw new Error(ORDINARY_DECISION_ERROR);
-			}
-			const snapshot = await context.repository.loadSnapshot({
-				organizationId: input.organizationId,
-				workflowId: period.approvalWorkflowId,
-			});
-			if (
-				snapshot.id !== period.approvalWorkflowId ||
-				snapshot.organizationId !== input.organizationId ||
-				snapshot.workflowType !== metadata.kind ||
-				snapshot.sourceType !== "time_entry" ||
-				snapshot.sourceId !== period.id ||
-				snapshot.requesterEmployeeId !== period.employeeId ||
-				(snapshot.status !== "pending" &&
-					!(
-						(terminalRequestMatches || exactCanonicalReplay) &&
-						snapshot.status === expectedTerminalStatus
-					))
-			) {
-				throw new Error(ORDINARY_DECISION_ERROR);
-			}
-			if (exactCanonicalReplay && canonicalCommand && canonicalIdempotencyKey) {
-				const replay =
-					await input.runtime.transitionEngine.executeInTransactionWithDisposition(
-						decisionContext,
-						{
-							organizationId: input.organizationId,
-							workflowId: snapshot.id,
-							expectedVersion: snapshot.version,
-							idempotencyKey: canonicalIdempotencyKey,
-							historicalOnly: input.historicalOnly,
-							principal: { kind: "employee", userId: actor.userId },
-							command: canonicalCommand,
+						columns: {
+							organizationId: true,
+							workflowId: true,
+							idempotencyKey: true,
+							actorFingerprint: true,
+							commandFingerprint: true,
+							state: true,
+							result: true,
 						},
-					);
-				if (replay.disposition !== "replayed") {
-					throw new Error(ORDINARY_DECISION_ERROR);
-				}
+					})
+				: null;
+		const exactCanonicalReplay = Boolean(
+			canonicalReplayReceipt &&
+				canonicalReplayReceipt.organizationId === input.organizationId &&
+				canonicalReplayReceipt.workflowId === canonicalTarget?.id &&
+				canonicalReplayReceipt.idempotencyKey === canonicalIdempotencyKey &&
+				canonicalReplayReceipt.actorFingerprint ===
+					canonicalActorFingerprint &&
+				canonicalReplayReceipt.commandFingerprint ===
+					canonicalCommandFingerprint &&
+				canonicalReplayReceipt.state === "completed" &&
+				canonicalReplayReceipt.result !== null,
+		);
+		const terminalRequestMatches =
+			request.status === expectedTerminalStatus &&
+			(input.decision.kind === "approve"
+				? requestRow?.approvedAt instanceof Date
+				: requestRow?.rejectionReason === input.decision.reason);
+		const period = await database.query.workPeriod.findFirst({
+			where: and(
+				eq(workPeriod.id, input.workPeriodId),
+				eq(workPeriod.organizationId, input.organizationId),
+				eq(workPeriod.employeeId, request.requestedBy),
+			),
+		});
+		if (
+			!period ||
+			period.id !== input.workPeriodId ||
+			period.organizationId !== input.organizationId ||
+			period.employeeId !== request.requestedBy ||
+			!period.canonicalRecordId ||
+			!period.endTime ||
+			period.durationMinutes === null ||
+			period.isActive !== false ||
+			period.deletedAt !== null ||
+			(period.approvalStatus !== "pending" &&
+				!(
+					(terminalRequestMatches || exactCanonicalReplay) &&
+					period.approvalStatus === expectedTerminalStatus
+				))
+		) {
+			throw new Error(ORDINARY_DECISION_ERROR);
+		}
+		const decisionPeriod = {
+			id: period.id,
+			organizationId: period.organizationId,
+			employeeId: period.employeeId,
+			canonicalRecordId: period.canonicalRecordId,
+			startTime: period.startTime,
+			endTime: period.endTime,
+		};
+
+		// Every read above is plain; the #264 protocol is taken before the first
+		// row lock, so a final policy clock-out approval's break split runs under
+		// the owner's coordination instead of locking late (#303).
+		const { authority, writeGate: fixedGate } =
+			await acquireWorkPeriodDecisionScope(context, {
+				organizationId: input.organizationId,
+				kind: metadata.kind,
+				ownerEmployeeId: period.employeeId,
+				actorUserId: actor.userId,
+				workPeriodId: period.id,
+				observed,
+			});
+		const decisionContext = {
+			...context,
+			writeGate: fixedGate,
+			compatibilityWriter:
+				context.compatibilityWriter.withWriteGate(fixedGate),
+		} as ApprovalWorkflowTransactionContext;
+		if (
+			authority.mode === "legacy" ||
+			authority.mode === "shadow" ||
+			authority.mode === "ready"
+		) {
+			const observedWorkflow =
+				authority.mode === "legacy" || !period.approvalWorkflowId
+					? null
+					: await context.repository.loadSnapshot({
+							organizationId: input.organizationId,
+							workflowId: period.approvalWorkflowId,
+						});
+			const observedIdentityMatches =
+				observedWorkflow?.id === period.approvalWorkflowId &&
+				observedWorkflow.organizationId === input.organizationId &&
+				observedWorkflow.workflowType === metadata.kind &&
+				observedWorkflow.sourceType === "time_entry" &&
+				observedWorkflow.sourceId === period.id &&
+				observedWorkflow.requesterEmployeeId === period.employeeId;
+			const observedIntermediateReplay =
+				input.decision.kind === "approve" &&
+				terminalRequestMatches &&
+				period.approvalStatus === "pending" &&
+				observedIdentityMatches &&
+				observedWorkflow?.status === "pending" &&
+				observedWorkflow.stages.some(
+					(stage) =>
+						stage.legacyApprovalRequestId === input.approvalRequestId &&
+						stage.status === "approved" &&
+						stage.assignments.some(
+							(assignment) =>
+								assignment.approverEmployeeId === request.approverId &&
+								assignment.status === "approved",
+						),
+				);
+			const verifiedLegacyIntermediateReplay =
+				authority.mode === "legacy" &&
+				terminalRequestMatches &&
+				period.approvalStatus === "pending" &&
+				isVerifiedLegacyIntermediateReplay({
+					state: verifiedLegacyState,
+					approvalRequestId: input.approvalRequestId,
+					actorEmployeeId: actor.id,
+					decision: input.decision.kind,
+				});
+			if (
+				verifiedLegacyIntermediateReplay ||
+				observedIntermediateReplay ||
+				(terminalRequestMatches &&
+					period.approvalStatus === expectedTerminalStatus &&
+					(authority.mode === "legacy" ||
+						(observedIdentityMatches &&
+							observedWorkflow?.status === expectedTerminalStatus)))
+			) {
 				return {
 					result: ordinaryDecisionResult({
 						kind: metadata.kind,
@@ -1028,96 +781,216 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 					postCommit: null,
 				};
 			}
-			const targets = snapshot.stages.flatMap((stage) =>
-				(metadata.stageId === null || stage.id === metadata.stageId) &&
-				(metadata.stageSequence === null ||
-					stage.sequence === metadata.stageSequence) &&
-				(terminalRequestMatches ||
-					snapshot.status !== "pending" ||
-					stage.sequence === snapshot.currentStageOrder) &&
-				stage.status ===
-					(terminalRequestMatches
-						? expectedTerminalStatus
-						: snapshot.status === "pending"
-							? "pending"
-							: expectedTerminalStatus) &&
-				(requestRow
-					? stage.legacyApprovalRequestId === input.approvalRequestId
-					: true)
-					? stage.assignments.flatMap((assignment) =>
-							(metadata.assignmentId === null ||
-								assignment.id === metadata.assignmentId) &&
-							assignment.status ===
-								(terminalRequestMatches
-									? expectedTerminalStatus
-									: snapshot.status === "pending"
-										? "pending"
-										: expectedTerminalStatus) &&
-							(requestRow
-								? assignment.approverEmployeeId === request.approverId
-								: true)
-								? [{ stage, assignment }]
-								: [],
-						)
-					: [],
-			);
-			const target = targets[0];
-			if (targets.length !== 1 || !target) {
+			if (
+				input.historicalOnly ||
+				!requestRow ||
+				request.status !== "pending"
+			) {
 				throw new Error(ORDINARY_DECISION_ERROR);
 			}
-			const execution =
-				await input.runtime.transitionEngine.executeInTransactionWithDisposition(
-					decisionContext,
-					{
-						organizationId: input.organizationId,
-						workflowId: snapshot.id,
-						expectedVersion: snapshot.version,
-						idempotencyKey: `ordinary-decision:${input.organizationId}:${snapshot.id}:${input.approvalRequestId}:${input.decision.kind}:${input.decision.reason ?? ""}`,
-						historicalOnly: input.historicalOnly,
-						principal: { kind: "employee", userId: actor.userId },
-						command:
-							input.decision.kind === "approve"
-								? {
-										type: "approve",
-										stageId: target.stage.id,
-										assignmentId: target.assignment.id,
-									}
-								: {
-										type: "reject",
-										stageId: target.stage.id,
-										assignmentId: target.assignment.id,
-										reason: input.decision.reason,
-									},
-					},
-				);
-			const result = ordinaryDecisionResult({
-				kind: metadata.kind,
-				decision: input.decision,
-				period: decisionPeriod,
-			});
-			if (execution.disposition === "replayed") {
-				return { result, postCommit: null };
+			let expectedObservedVersion = observedWorkflow?.version ?? null;
+			let bootstrappedWorkflowId: string | null = null;
+			if (authority.mode !== "legacy" && !observedWorkflow) {
+				if (!verifiedLegacyState) {
+					throw new Error(ORDINARY_DECISION_ERROR);
+				}
+				const bootstrapped =
+					await decisionContext.compatibilityWriter.mirrorLegacyToCanonical({
+						before: {
+							...verifiedLegacyState,
+							approvalRequest: null,
+							chain: null,
+							chainRows: [],
+						},
+						after: verifiedLegacyState,
+						actor: {
+							kind: "employee",
+							employeeId: actor.id,
+							userId: actor.userId,
+						},
+						idempotencyKey: `ordinary-bootstrap:${input.organizationId}:${period.id}:${input.approvalRequestId}`,
+						expectedVersion: null,
+					});
+				if (
+					!bootstrapped ||
+					bootstrapped.snapshot.organizationId !== input.organizationId ||
+					bootstrapped.snapshot.workflowType !== metadata.kind ||
+					bootstrapped.snapshot.sourceType !== "time_entry" ||
+					bootstrapped.snapshot.sourceId !== period.id ||
+					bootstrapped.snapshot.requesterEmployeeId !== period.employeeId ||
+					bootstrapped.snapshot.status !== "pending" ||
+					bootstrapped.snapshot.version !== 1
+				) {
+					throw new Error(ORDINARY_DECISION_ERROR);
+				}
+				bootstrappedWorkflowId = bootstrapped.snapshot.id;
+				expectedObservedVersion = bootstrapped.snapshot.version;
 			}
-			const event =
-				execution.result.snapshot.status === "approved"
-					? "approved"
-					: execution.result.snapshot.status === "rejected"
-						? "rejected"
-						: "pending";
-			const maintenance =
-				event === "pending"
-					? null
-					: exactMaintenanceFacts(execution.finalization?.maintenance, {
-							organizationId: input.organizationId,
-							employeeId: period.employeeId,
-							decision: event,
-						});
+			// Fresh evidence checks run only after the established replay matching
+			// above found no committed operation.
+			const evidencePlan = await prepareLegacyWorkPeriodDecisionEvidence(
+				database,
+				{
+					organizationId: input.organizationId,
+					kind: metadata.kind,
+					workPeriodId: period.id,
+					approvalRequestId: input.approvalRequestId,
+					chainInstanceId: verifiedLegacyState?.chain?.id ?? null,
+				},
+			);
+			const legacyIdempotencyKey = [
+				"ordinary-decision",
+				input.organizationId,
+				period.id,
+				input.approvalRequestId,
+				input.decision.kind,
+				input.decision.reason ?? "",
+			].join(":");
+			const coordinator = createLegacyApprovalWriteCoordinator({
+				writeGate: fixedGate,
+				compatibilityWriter: decisionContext.compatibilityWriter,
+			});
+			let mutationResult: WorkPeriodApprovalResult | undefined;
+			let captureCount = 0;
+			const domainResult = await coordinator.execute({
+				organizationId: input.organizationId,
+				workflowType: metadata.kind,
+				sourceIdentity: {
+					organizationId: input.organizationId,
+					workflowType: metadata.kind,
+					sourceType: "time_entry",
+					sourceId: period.id,
+				},
+				actor: {
+					kind: "employee",
+					employeeId: actor.id,
+					userId: actor.userId,
+				},
+				idempotencyKey: legacyIdempotencyKey,
+				expectedVersion: expectedObservedVersion,
+				captureState:
+					authority.mode === "legacy"
+						? undefined
+						: async () => {
+								captureCount += 1;
+								if (captureCount === 1 && verifiedLegacyState) {
+									return verifiedLegacyState;
+								}
+								return await captureOrdinaryWorkPeriodLegacyState({
+									dbService: {
+										db: database,
+										query: input.dbService.query,
+									},
+									organizationId: input.organizationId,
+									workPeriodId: period.id,
+									expectedKind: metadata.kind,
+									expectedRequesterEmployeeId: period.employeeId,
+									approvalRequestId: input.approvalRequestId,
+									expectedRequestStatus:
+										input.decision.kind === "approve"
+											? "approved"
+											: "rejected",
+									expectedSourceStatus:
+										mutationResult === undefined
+											? "pending"
+											: input.decision.kind === "approve"
+												? "approved"
+												: "rejected",
+								});
+							},
+				mutate: async () => {
+					mutationResult = await Effect.runPromise(
+						decideWorkPeriodWithCurrentApproverInTransaction(
+							{
+								db: database,
+								query: input.dbService.query,
+							},
+							actor,
+							period.id,
+							metadata.kind,
+							input.decision.kind,
+							input.decision.reason ?? undefined,
+							{
+								approvalRequestId: input.approvalRequestId,
+								allowAnyApprover: input.allowAnyApprover,
+								allowOrganizationWideApprover:
+									input.allowOrganizationWideApprover,
+							},
+						).pipe(
+							Effect.provideService(
+								ApprovalAuditLogger,
+								createApprovalAuditLogger({
+									db: database,
+									query: input.dbService.query,
+								}),
+							),
+						) as Effect.Effect<
+							WorkPeriodApprovalResult | undefined,
+							unknown,
+							never
+						>,
+					);
+					return mutationResult;
+				},
+				afterMirror: async (observed) => {
+					if (!bootstrappedWorkflowId) return;
+					if (
+						observed.snapshot.id !== bootstrappedWorkflowId ||
+						observed.snapshot.organizationId !== input.organizationId ||
+						observed.snapshot.workflowType !== metadata.kind ||
+						observed.snapshot.sourceType !== "time_entry" ||
+						observed.snapshot.sourceId !== period.id ||
+						observed.snapshot.requesterEmployeeId !== period.employeeId ||
+						observed.snapshot.status !== expectedTerminalStatus ||
+						observed.snapshot.version !== 2
+					) {
+						throw new Error(ORDINARY_DECISION_ERROR);
+					}
+					await bindPreCanonicalOrdinaryWorkflow({
+						dbService: { db: database, query: input.dbService.query },
+						organizationId: input.organizationId,
+						workPeriodId: period.id,
+						requesterEmployeeId: period.employeeId,
+						canonicalRecordId: decisionPeriod.canonicalRecordId,
+						workflowId: bootstrappedWorkflowId,
+						approvalStatus: expectedTerminalStatus,
+					});
+				},
+			});
+			if (evidencePlan) {
+				const finalized = domainResult as WorkPeriodApprovalResult | undefined;
+				await recordLegacyWorkPeriodDecisionEvidence(database, evidencePlan, {
+					organizationId: input.organizationId,
+					action: input.decision.kind,
+					reason: input.decision.reason,
+					approvalRequestId: input.approvalRequestId,
+					idempotencyKey: legacyIdempotencyKey,
+					actor: { employeeId: actor.id, userId: actor.userId },
+					finalized: finalized
+						? {
+								outcome: finalized.outcome,
+								maintenance: finalized.maintenance,
+							}
+						: null,
+				});
+			}
+			const result =
+				(domainResult as WorkPeriodApprovalResult | undefined) ??
+				ordinaryDecisionResult({
+					kind: metadata.kind,
+					decision: input.decision,
+					period: decisionPeriod,
+				});
 			return {
 				result,
 				postCommit: Object.freeze({
-					disposition: "observe" as const,
-					dedupeKey: `ordinary-decision:${snapshot.id}:${input.approvalRequestId}:${snapshot.version}`,
-					event,
+					disposition: "dispatch" as const,
+					dedupeKey: `ordinary-decision:${period.id}:${input.approvalRequestId}:${input.decision.kind}`,
+					event: domainResult
+						? input.decision.kind === "approve"
+							? ("approved" as const)
+							: ("rejected" as const)
+						: ("pending" as const),
 					organizationId: input.organizationId,
 					workPeriodId: period.id,
 					requesterEmployeeId: period.employeeId,
@@ -1129,15 +1002,169 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 					endTime: instantToCanonicalString(instantFromDate(period.endTime)),
 					durationMinutes: period.durationMinutes,
 					reason: input.decision.reason,
-					maintenance,
+					maintenance: domainResult?.maintenance ?? null,
 				}),
 			};
+		}
+		if (
+			!period.approvalWorkflowId ||
+			(metadata.workflowId !== null &&
+				metadata.workflowId !== period.approvalWorkflowId) ||
+			(metadata.workflowOrganizationId !== null &&
+				metadata.workflowOrganizationId !== input.organizationId)
+		) {
+			throw new Error(ORDINARY_DECISION_ERROR);
+		}
+		const snapshot = await context.repository.loadSnapshot({
+			organizationId: input.organizationId,
+			workflowId: period.approvalWorkflowId,
 		});
-	} catch (error) {
-		// Evidence holds and contradictions keep their meaning for the caller.
-		if (error instanceof ApprovalEvidenceError) throw error;
-		throw new Error(ORDINARY_DECISION_ERROR);
-	}
+		if (
+			snapshot.id !== period.approvalWorkflowId ||
+			snapshot.organizationId !== input.organizationId ||
+			snapshot.workflowType !== metadata.kind ||
+			snapshot.sourceType !== "time_entry" ||
+			snapshot.sourceId !== period.id ||
+			snapshot.requesterEmployeeId !== period.employeeId ||
+			(snapshot.status !== "pending" &&
+				!(
+					(terminalRequestMatches || exactCanonicalReplay) &&
+					snapshot.status === expectedTerminalStatus
+				))
+		) {
+			throw new Error(ORDINARY_DECISION_ERROR);
+		}
+		if (exactCanonicalReplay && canonicalCommand && canonicalIdempotencyKey) {
+			const replay =
+				await input.runtime.transitionEngine.executeInTransactionWithDisposition(
+					decisionContext,
+					{
+						organizationId: input.organizationId,
+						workflowId: snapshot.id,
+						expectedVersion: snapshot.version,
+						idempotencyKey: canonicalIdempotencyKey,
+						historicalOnly: input.historicalOnly,
+						principal: { kind: "employee", userId: actor.userId },
+						command: canonicalCommand,
+					},
+				);
+			if (replay.disposition !== "replayed") {
+				throw new Error(ORDINARY_DECISION_ERROR);
+			}
+			return {
+				result: ordinaryDecisionResult({
+					kind: metadata.kind,
+					decision: input.decision,
+					period: decisionPeriod,
+				}),
+				postCommit: null,
+			};
+		}
+		const targets = snapshot.stages.flatMap((stage) =>
+			(metadata.stageId === null || stage.id === metadata.stageId) &&
+			(metadata.stageSequence === null ||
+				stage.sequence === metadata.stageSequence) &&
+			(terminalRequestMatches ||
+				snapshot.status !== "pending" ||
+				stage.sequence === snapshot.currentStageOrder) &&
+			stage.status ===
+				(terminalRequestMatches
+					? expectedTerminalStatus
+					: snapshot.status === "pending"
+						? "pending"
+						: expectedTerminalStatus) &&
+			(requestRow
+				? stage.legacyApprovalRequestId === input.approvalRequestId
+				: true)
+				? stage.assignments.flatMap((assignment) =>
+						(metadata.assignmentId === null ||
+							assignment.id === metadata.assignmentId) &&
+						assignment.status ===
+							(terminalRequestMatches
+								? expectedTerminalStatus
+								: snapshot.status === "pending"
+									? "pending"
+									: expectedTerminalStatus) &&
+						(requestRow
+							? assignment.approverEmployeeId === request.approverId
+							: true)
+							? [{ stage, assignment }]
+							: [],
+					)
+				: [],
+		);
+		const target = targets[0];
+		if (targets.length !== 1 || !target) {
+			throw new Error(ORDINARY_DECISION_ERROR);
+		}
+		const execution =
+			await input.runtime.transitionEngine.executeInTransactionWithDisposition(
+				decisionContext,
+				{
+					organizationId: input.organizationId,
+					workflowId: snapshot.id,
+					expectedVersion: snapshot.version,
+					idempotencyKey: `ordinary-decision:${input.organizationId}:${snapshot.id}:${input.approvalRequestId}:${input.decision.kind}:${input.decision.reason ?? ""}`,
+					historicalOnly: input.historicalOnly,
+					principal: { kind: "employee", userId: actor.userId },
+					command:
+						input.decision.kind === "approve"
+							? {
+									type: "approve",
+									stageId: target.stage.id,
+									assignmentId: target.assignment.id,
+								}
+							: {
+									type: "reject",
+									stageId: target.stage.id,
+									assignmentId: target.assignment.id,
+									reason: input.decision.reason,
+								},
+				},
+			);
+		const result = ordinaryDecisionResult({
+			kind: metadata.kind,
+			decision: input.decision,
+			period: decisionPeriod,
+		});
+		if (execution.disposition === "replayed") {
+			return { result, postCommit: null };
+		}
+		const event =
+			execution.result.snapshot.status === "approved"
+				? "approved"
+				: execution.result.snapshot.status === "rejected"
+					? "rejected"
+					: "pending";
+		const maintenance =
+			event === "pending"
+				? null
+				: exactMaintenanceFacts(execution.finalization?.maintenance, {
+						organizationId: input.organizationId,
+						employeeId: period.employeeId,
+						decision: event,
+					});
+		return {
+			result,
+			postCommit: Object.freeze({
+				disposition: "observe" as const,
+				dedupeKey: `ordinary-decision:${snapshot.id}:${input.approvalRequestId}:${snapshot.version}`,
+				event,
+				organizationId: input.organizationId,
+				workPeriodId: period.id,
+				requesterEmployeeId: period.employeeId,
+				approverEmployeeId: actor.id,
+				kind: metadata.kind,
+				startTime: instantToCanonicalString(
+					instantFromDate(period.startTime),
+				),
+				endTime: instantToCanonicalString(instantFromDate(period.endTime)),
+				durationMinutes: period.durationMinutes,
+				reason: input.decision.reason,
+				maintenance,
+			}),
+		};
+	});
 }
 
 function decideWorkPeriodWithCurrentApproverInTransaction(
@@ -1854,6 +1881,22 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 	if (updatedRecords.length !== 1 || updatedRecords[0]?.id !== record.id) {
 		throw fail();
 	}
+	// The decision is recorded on the originating record before any split, so the
+	// generated segment's lineage names it instead of a fabricated approval.
+	const decisions = await db
+		.insert(timeRecordApprovalDecision)
+		.values({
+			organizationId: input.organizationId,
+			recordId: record.id,
+			actorEmployeeId: input.actorEmployeeId,
+			action: terminalStatus,
+			reason: input.transition.reason,
+			createdAt: finalizedAt,
+		})
+		.returning({ id: timeRecordApprovalDecision.id });
+	const decision = decisions[0];
+	if (decisions.length !== 1 || !decision) throw fail();
+
 	let adjustment: WorkPeriodTerminalOutcome["adjustment"] = { kind: "none" };
 	const resultPeriodIds = [period.id];
 	if (
@@ -1867,6 +1910,18 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 			organizationId: input.organizationId,
 			employeeId: input.requesterEmployeeId,
 			actorUserId: input.actorUserId,
+			actorEmployeeId: input.actorEmployeeId,
+			// The exact lifecycle this finalizer verified; only its own transition is
+			// exempt from the split's unresolved-review guard.
+			lifecycle:
+				evidence.mode === "canonical"
+					? { authority: "canonical", workflowId: evidence.workflowId }
+					: {
+							authority: "legacy",
+							approvalRequestId: evidence.approvalRequestId,
+							observedWorkflowId: period.approvalWorkflowId,
+						},
+			decisionRecordId: decision.id,
 			period: {
 				id: period.id,
 				organizationId: period.organizationId,
@@ -1898,19 +1953,6 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 		}
 	}
 
-	const decisions = await db
-		.insert(timeRecordApprovalDecision)
-		.values({
-			organizationId: input.organizationId,
-			recordId: record.id,
-			actorEmployeeId: input.actorEmployeeId,
-			action: terminalStatus,
-			reason: input.transition.reason,
-			createdAt: finalizedAt,
-		})
-		.returning({ id: timeRecordApprovalDecision.id });
-	if (decisions.length !== 1) throw fail();
-
 	return {
 		kind: input.kind,
 		action: input.transition.kind,
@@ -1933,8 +1975,8 @@ export async function finalizeOrdinaryWorkPeriodTerminalInTransaction(
 ): Promise<WorkPeriodApprovalResult> {
 	try {
 		return await finalizeOrdinaryWorkPeriodTerminal(input);
-	} catch {
-		throw ordinaryWorkPeriodFinalizationConflict();
+	} catch (error) {
+		throw unresolvedWorkPeriodReviewFrom(error) ?? ordinaryWorkPeriodFinalizationConflict();
 	}
 }
 
@@ -2034,7 +2076,9 @@ function finalizeCurrentWorkPeriodDecision(
 								: { kind: "reject", reason: reason ?? "" },
 						finalizedAt: systemClock.nowInstant(),
 					}),
-				catch: () => conflict("Ordinary work-period finalization conflict"),
+				catch: (error) =>
+					unresolvedWorkPeriodReviewFrom(error) ??
+					conflict("Ordinary work-period finalization conflict"),
 			}),
 		);
 	});

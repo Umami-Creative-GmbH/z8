@@ -1,0 +1,257 @@
+# Policy clock-out terminal break splits (#303 / T39)
+
+## Delivery and activation status
+
+A final policy clock-out approval that owes a required break splits the
+approved period inside the approval transaction. Before this slice, the split
+already ran in that transaction, but it:
+
+- took the employee advisory lock late, after the decision had locked period
+  and canonical rows;
+- ignored other unresolved reviews of the period;
+- read the time-entry chain head from the latest-created row, even in
+  organizations whose append control is active;
+- gave the generated segment an approved status with no recorded origin or
+  decision lineage.
+
+The split now runs in two terminal paths:
+
+| Terminal path | Real callers | Coordination |
+| --- | --- | --- |
+| Final manager decision | inbox (`approveApprovalInboxItem`), bots and the time-tracking actions, all through `executeOrdinaryWorkPeriodDecisionInTransaction` | new work-period decision coordinator |
+| Requester auto-completion | web, direct-HTTP, bot and on-behalf clock-out, through `executeOrdinaryWorkPeriodSubmissionInTransaction` | the clock-out's existing work transaction |
+
+One switch decides what an organization writes, and nothing sets it:
+
+- **Work adoption** follows the organization's `time_entry_append_control`
+  (`active`), the same control that gates #273, #274, #286, #301 and #308.
+  Adopted organizations do four extra things:
+  - append the generated break entries through the append collaborator;
+  - round each segment on its own;
+  - advance the source revision;
+  - write a `split_policy_clock_out_break` receipt.
+
+All other changes apply to every organization, whether or not it has adopted
+append:
+
+- the coordinated transaction and its lock order;
+- the exact-lifecycle review guard;
+- recording the decision before the split.
+
+Legacy organizations keep their established split writes.
+
+References: [#303](https://github.com/Umami-Creative-GmbH/z8/issues/303),
+[parent #264](https://github.com/Umami-Creative-GmbH/z8/issues/264), and the
+canonical resolutions of [#252](https://github.com/Umami-Creative-GmbH/z8/issues/252#issuecomment-5653113300),
+[#256](https://github.com/Umami-Creative-GmbH/z8/issues/256#issuecomment-5654366538) §7,
+[#257](https://github.com/Umami-Creative-GmbH/z8/issues/257#issuecomment-5654287041),
+[#262](https://github.com/Umami-Creative-GmbH/z8/issues/262#issuecomment-5654495073) and
+[#259](https://github.com/Umami-Creative-GmbH/z8/issues/259#issuecomment-5654750145).
+
+## Coordination
+
+`acquireWorkPeriodDecisionScope` (`lib/approvals/server/work-period-decision-transaction.ts`)
+runs on the approval repository transaction before any row lock. It takes the
+#264 locks in this order:
+
+1. the shared adoption gate, with the append control read under it;
+2. the ordinary approval write gate of the decided kind (rank 2);
+3. the organization configuration guard;
+4. the sorted user access guards (the deciding actor and the owner's user);
+5. the sorted exclusive employee keys (the owner and every employee record of
+   the actor).
+
+Previously this position held only the write gate.
+
+The decision routes from plain reads of its request, workflow and period.
+Before its first read it records an observation of those rows:
+
+- the period;
+- its legacy requests;
+- its workflows, with their versions, stages and assignments.
+
+Under the locks it takes that observation again and re-reads the routed scope.
+A change in either throws `WorkTransactionScopeChanged`.
+`retryWorkPeriodDecisionTransaction` then restarts the transaction, at most
+twice. The restart matters for a second decision that waited for the first one:
+it replays the committed decision from fresh reads instead of deciding on stale
+ones. Two existing concurrent-duplicate PostgreSQL tests failed until this
+check was added.
+
+The sealed scope is registered for the transaction client. The terminal split
+(`lib/time-tracking/policy-clock-out-terminal-break.ts`) looks it up with
+`workTransactionScopeFor` and takes no lock of its own. Requester
+auto-completion finds the clock-out's coordinated scope the same way.
+
+Another approval runtime can still reach this terminal outside both
+coordinators, for example an assignment activation after a reassignment. That
+case follows the #301 correction fence:
+
+- an adopted organization is refused;
+- a legacy organization keeps the established employee locks, so a working
+  path does not start failing.
+
+## Review guard with exact exemption
+
+The finalizer builds the resolving lifecycle from the evidence it has already
+verified:
+
+- a canonical lifecycle: `{ authority: "canonical", workflowId }`;
+- a legacy lifecycle: `{ authority: "legacy", approvalRequestId, observedWorkflowId }`.
+
+The split first checks that the lifecycle's workflow is the one bound to the
+locked period. Then `assertNoUnrelatedWorkPeriodReview`
+(`lib/time-tracking/work-period-review.ts`) receives exactly one authority: the
+canonical workflow, or the legacy request. It verifies that identity against
+the period and its owner; a mismatch is an integrity failure, not an exemption.
+
+The exemption is defined by linkage, not by what the period happens to be
+bound to:
+
+- **Canonical:** the workflow, plus the legacy compatibility rows its stages
+  mirror (`approval_workflow_stage.legacy_approval_request_id`).
+- **Legacy:** the request, plus any `policy_clock_out` shadow mirror for the
+  period whose stage mirrors that request, plus the rows that mirror mirrors.
+  This covers a mirror that shadow or ready mode bootstraps during the decision,
+  before it is bound to the period.
+
+Any other pending approval request or workflow for the period blocks the split,
+whatever its type: a pending time correction, or an older cycle's workflow still
+bound to the period. A blocked split raises a `ConflictError`
+(`work_period_pending_approval`, "Another approval for this work period is still
+pending"). That error passes through the finalizer and decision wrappers, so
+the approver sees the reason as a `stale` inbox failure, and the whole approval
+rolls back. The guard runs only when a split is needed, after the period lock
+and before the first split write. There is no generic bypass flag.
+
+## What a split commits
+
+Every organization gets the same split graph:
+
+- both synthetic entries;
+- the shortened source period;
+- the source canonical record;
+- the generated period;
+- the generated canonical record, with its work detail and cloned allocations;
+- the approval status.
+
+These are committed together, or the whole approval rolls back. The human
+decision (`time_record_approval_decision`) is now written on the originating
+record before the split, so the split can name it. The generated record gets no
+decision row of its own, because no second human approval exists.
+
+Adopted organizations additionally commit:
+
+- **Append.** Both generated entries are admitted through the append
+  collaborator with operation `policy_clock_out_break`. Each entry records its
+  exact predecessor ID and hash, and the position advances with a version check.
+- **Independent rounding.** Each segment's minutes come from its own exact UTC
+  endpoints, rounded half up (`deriveWorkDurationMinutes`). A positive segment
+  that rounds to zero minutes is valid work (#252), for example 20 seconds after
+  the break. Legacy organizations keep the established arithmetic on the stored
+  minutes, which still refuses a zero-minute segment.
+- **Revisions.** The source period's `graph_revision` advances with a
+  compare-and-set in the same update. The generated period starts at revision 1,
+  like other adopted creators.
+- **Receipt.** `completed_work_operation` stores kind `split_policy_clock_out_break`
+  and writer `policy_clock_out_decision`. Its actor is `system`, with no human
+  user. Its ID is derived from the lifecycle
+  (`derivePolicyClockOutBreakOperationId`), so a second fresh split is a key
+  collision. The result records:
+  - the executing process and the triggering human (user and employee);
+  - the originating work, by value;
+  - the decision lineage: the lifecycle, the record decision ID and the action;
+  - the policy adjustment;
+  - both segments, by value, with their roles. The generated segment records its
+    origin and `approval: { state: "approved", basis: "originating_decision" }`;
+  - the append links;
+  - the revisions;
+  - the follow-ups.
+
+Migration `0100_policy_clock_out_break_split` adds the receipt kind, the writer
+and the append operation to their CHECK constraints. It keeps every existing
+value, including `close_resume_work` and the #301 kinds.
+
+Cleanup: whole-history cleanup (demo history deletion and organization cleanup)
+already deletes every receipt by organization and employee, whatever its kind.
+Organization and employee deletion cascade.
+
+## Evidence
+
+Everything below ran locally on 2026-09-25. The PostgreSQL results come from a
+disposable PostgreSQL 16 container with the full migration chain, including the
+recovery verification.
+
+- **New suite:** `clocking.policy-break-split.integration.test.ts`, **10/10**.
+  It drives the real `clockIn`/`clockOut` actions and inbox
+  `approveApprovalInboxItem`:
+  - **Adopted legacy lifecycle:**
+    - the retained segment is 08:00–14:00 (360 min) and the generated segment
+      14:30–15:00:40 (31 min), each rounded half up from its own endpoints;
+    - the break entries chain from the submitted clock-out, and the append
+      position tip is the generated clock-in with `last_operation`
+      `policy_clock_out_break`;
+    - the source revision advances by one and the generated period is at 1;
+    - there is exactly one `time_record_approval_decision`, on the originating
+      record;
+    - the receipt's lineage matches exactly, with actor `system` and the
+      triggering manager;
+    - an exact replay writes nothing;
+    - after a later SQL mutation of the source, the receipt and the #302
+      decision evidence still show the committed 360/31 split.
+  - **Not adopted:** the split commits minutes 360/31 at revision 0, with no
+    receipt and no append position.
+  - **Unrelated pending `time_correction` workflow:**
+    - the approval is refused with "Another approval for this work period is
+      still pending";
+    - every row is unchanged;
+    - once the blocker resolves, the same approval splits.
+  - **Injected receipt failure:** every row stays unchanged, including entries,
+    periods, records, position, decision and request. A retry then commits.
+  - **Two-stage chain:** the intermediate approval leaves one pending period and
+    no receipt; the final approval splits and names the second-stage request.
+  - **Shadow and ready modes:** the bootstrapped mirror is exempt and ends
+    `approved`, and the split commits.
+  - **Zero-minute segment:** a 20-second generated segment is stored as 0
+    minutes.
+  - **Self-approved clock-out:** auto-completion splits under the clock-out's
+    own coordination, and the receipt names the requester as the trigger.
+  - **Canonical lifecycle:** the split commits with the canonical lifecycle in
+    the receipt.
+- **Existing suites:** `work-period-approvals.integration.test.ts` and
+  `clocking.approval-evidence.integration.test.ts` pass 224/224. Their two
+  concurrent duplicate-approval tests failed until the decision observation was
+  added.
+- **Full runner:** 61 files / 1116 tests passed. One file was skipped: the
+  Chrome-only browser suite.
+- **Mutation check:** disabling the review guard fails the blocker scenario.
+- **Write-boundary scanner (Linux `node:24`):** 290/290.
+- **Unit tests:**
+  - `tsc` is clean.
+  - The full webapp suite compared with clean `dev`, test by test, shows no new
+    failures. There were 148 on the baseline; two scanner tests timed out at 5 s
+    while the PostgreSQL runner loaded the machine. That scanner cannot read
+    sources on Windows anyway; the Linux run above is authoritative.
+
+## Not verified and activation blockers
+
+These items move to #327, #329 and #331 (see
+[spec #264 close-on-implementation](https://github.com/Umami-Creative-GmbH/z8/issues/264)):
+
+- **Activation.** Adopted behavior is dormant until an organization's append
+  control is `active`, and that waits for every competing writer to participate.
+  The ordinary automatic break paths are not yet coordinated:
+  `break-enforcement.service.ts` and the cron path. Their durable deferral is a
+  separate slice.
+- **Uncoordinated runtimes.** A legacy organization's split reached outside
+  both coordinators (for example a reassignment activation) still locks the
+  employee late. Adopted organizations refuse that path. It must be coordinated
+  or retired before activation (#327).
+- **Old binaries.** During a rollout, instances on the previous binary decide
+  without the protocol. Old-consumer drain applies (#329).
+- **Unverified paths.** Canonical multi-stage lifecycles, shadow and ready
+  rollout modes, and bot and mobile decisions were not exercised against
+  PostgreSQL. They use the same decision entry point.
+- **Rollback.** Rolling back to a binary without the coordinator reintroduces the
+  late employee lock. Receipts already written stay as evidence. An old binary
+  cannot write kind `split_policy_clock_out_break` (#331).
