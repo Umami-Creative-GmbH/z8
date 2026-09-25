@@ -906,16 +906,16 @@ describeIntegration("approval-based correction lifecycles on PostgreSQL", () => 
 			approval: { lifecycle: { authority: "canonical" } },
 		});
 
+		const { workflowId } = (
+			submission?.result.approval as { lifecycle: { workflowId: string } } | undefined
+		)?.lifecycle ?? { workflowId: "missing" };
+
 		await expect(approve(await pendingApprovalId(work.id))).resolves.toBeDefined();
 
 		const [finalized] = await receipts("finalize_time_correction");
 		expect(finalized?.result).toMatchObject({
 			transition: "approved",
-			lifecycle: {
-				authority: "canonical",
-				workflowId: (submission?.result.approval as { lifecycle: { workflowId: string } }).lifecycle
-					.workflowId,
-			},
+			lifecycle: { authority: "canonical", workflowId },
 			result: { kind: "amended", segment: { durationMinutes: 90 } },
 		});
 	});
