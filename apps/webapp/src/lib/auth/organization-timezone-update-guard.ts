@@ -5,7 +5,7 @@ import { APIError } from "better-auth/api";
  * that manual preparation relies on, so a timezone change through it is refused
  * (#311). The organization settings writer is the only timezone path.
  */
-export function rejectProtectedOrganizationUpdate(data: Record<string, unknown>) {
+export function rejectOrganizationTimezoneUpdate(data: Record<string, unknown>) {
 	if ("timezone" in data && data.timezone !== undefined) {
 		throw new APIError("BAD_REQUEST", {
 			code: "ORGANIZATION_TIMEZONE_PROTECTED",

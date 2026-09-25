@@ -1,6 +1,7 @@
 import { asc, eq, inArray, min, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { employee, workBalanceRebuildIntent } from "@/db/schema";
+import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { requestEmployeeWorkBalanceFullRebuild, type WorkBalanceDbClient } from "./service";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -61,10 +62,13 @@ async function rebuildOrganization(organizationId: string, now: Date): Promise<b
 	for (let attempt = 0; ; attempt += 1) {
 		try {
 			return await db.transaction(async (transaction) => {
-				const claimed = await transaction.execute<{ id: string }>(
-					sql`select id from work_balance_rebuild_intent where organization_id = ${organizationId} order by requested_at, id for update skip locked`,
-				);
-				const intentIds = claimed.rows.map(({ id }) => id);
+				const claimed = await transaction
+					.select({ id: workBalanceRebuildIntent.id })
+					.from(workBalanceRebuildIntent)
+					.where(eq(workBalanceRebuildIntent.organizationId, organizationId))
+					.orderBy(asc(workBalanceRebuildIntent.requestedAt), asc(workBalanceRebuildIntent.id))
+					.for("update", { skipLocked: true });
+				const intentIds = claimed.map(({ id }) => id);
 				if (intentIds.length === 0) return false;
 
 				const scope = await organizationEmployeeIds(transaction, organizationId);
@@ -91,7 +95,7 @@ async function rebuildOrganization(organizationId: string, now: Date): Promise<b
 }
 
 /** The database's own message, without the failed statement and its parameters. */
-function failureMessage(error: unknown): string {
+export function failureMessage(error: unknown): string {
 	let current = error;
 	while (current instanceof Error && current.cause instanceof Error) current = current.cause;
 	return current instanceof Error ? current.message : String(current);
@@ -99,8 +103,8 @@ function failureMessage(error: unknown): string {
 
 async function recordFailure(organizationId: string, error: string, now: Date) {
 	await db.execute(
-		sql`update work_balance_rebuild_intent set attempts = attempts + 1, last_attempt_at = ${now}, last_error = ${error}
-			where id in (select id from work_balance_rebuild_intent where organization_id = ${organizationId} for update skip locked)`,
+		sql`update ${workBalanceRebuildIntent} set attempts = attempts + 1, last_attempt_at = ${now}, last_error = ${error}
+			where id in (select id from ${workBalanceRebuildIntent} where organization_id = ${organizationId} for update skip locked)`,
 	);
 }
 
@@ -111,7 +115,7 @@ async function recordFailure(organizationId: string, error: string, now: Date) {
  * cannot turn the committed change into a failure.
  */
 export async function processWorkBalanceRebuildIntents(
-	options: { organizationId?: string; limit?: number; now?: Date } = {},
+	options: { organizationId?: string } = {},
 ): Promise<WorkBalanceRebuildResult> {
 	const organizations = await db
 		.select({ organizationId: workBalanceRebuildIntent.organizationId })
@@ -123,11 +127,11 @@ export async function processWorkBalanceRebuildIntents(
 		)
 		.groupBy(workBalanceRebuildIntent.organizationId)
 		.orderBy(asc(min(workBalanceRebuildIntent.requestedAt)))
-		.limit(options.limit ?? 100);
+		.limit(100);
 
 	const result: WorkBalanceRebuildResult = { organizationsRebuilt: 0, failures: [] };
 	for (const { organizationId } of organizations) {
-		const now = options.now ?? new Date();
+		const now = dateFromInstant(systemClock.nowInstant());
 		try {
 			if (await rebuildOrganization(organizationId, now)) result.organizationsRebuilt += 1;
 		} catch (error) {

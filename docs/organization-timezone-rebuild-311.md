@@ -23,7 +23,7 @@ resolutions of [#258](https://github.com/Umami-Creative-GmbH/z8/issues/258#issue
 | Path | Participation |
 | --- | --- |
 | Settings, `updateOrganizationTimezone` (owner only) | `changeOrganizationTimezone` in `lib/timezone/organization-timezone-change.ts` |
-| Better Auth `POST /organization/update` with `data.timezone` (the field is `input: true`) | Refused by `beforeUpdateOrganization` (`lib/auth/organization-update-guard.ts`). It could not join the protection, and it also bypassed the owner-only rule. Name, slug, logo and metadata updates are unchanged |
+| Better Auth `POST /organization/update` with `data.timezone` (the field is `input: true`) | Refused by `beforeUpdateOrganization` (`lib/auth/organization-timezone-update-guard.ts`). It could not join the protection, and it also bypassed the owner-only rule. Name, slug, logo and metadata updates are unchanged |
 | Organization creation (onboarding, Better Auth create) | Not a mutation of existing configuration: a new organization has no employees or submissions. Provisioning is #318 |
 | Organization deletion | The intent cascades with the organization. Other cleanup paths are #318 |
 
@@ -38,7 +38,10 @@ No other code path writes `organization.timezone`.
    holds this guard shared, so a change waits for in-flight submissions, and new submissions
    wait for the change.
 3. The actor's shared `["work-user-configuration-access", userId]`.
-4. The `organization` row `FOR UPDATE`.
+4. The `organization` row `FOR NO KEY UPDATE`, the mode the previous plain `UPDATE` took.
+   `FOR UPDATE` would also block the key-share locks that every insert referencing the
+   organization takes. A balance refresh holds its work-balance lock while inserting period
+   rows, and the legacy reset waits on that lock, so the stronger mode could deadlock.
 
 Under that protection it revalidates the actor as an approved owner whose employee record,
 if any, is active, and it returns `unchanged` when the zone is already set. Otherwise it
@@ -88,6 +91,8 @@ A pending intent means that none of the organization's stored projections is cur
 projections may still look clean, because they were computed in the old zone.
 
 - `getEmployeeWorkBalance` returns `null` and `getEmployeeWorkBalances` returns no entries
+  (the intent is checked before the rows are read: a rebuild deletes its intent in the
+  transaction that resets the rows, so a later row read is never an old-zone projection)
   for that organization. These are the reads behind the time-tracking summary card, the
   calendar balance and the team list. `null` is the state these consumers already show as
   "Not calculated yet" for reset markers, so a pending rebuild and a completed reset look the
@@ -108,7 +113,7 @@ It is registered in `scripts/run-approval-workflow-repository-integration.sh` an
 `createManualTimeEntry` actions, the real balance reads and batch selection, and the real
 `runWorkBalanceRefresh` job all run on the label-owned disposable PostgreSQL 16 database.
 Only the request/session, SSO session store, billing provisioning, notification delivery
-and Next cache are replaced. **13/13.**
+and Next cache are replaced. **14/14.**
 
 - Atomic save: the zone and the intent commit, and the post-commit rebuild resets exactly
   the organization's employees. The same user's employee in another organization is
@@ -128,6 +133,8 @@ and Next cache are replaced. **13/13.**
   rebuild is still pending.
 - No late or foreign locks: while the employee coordination and work-balance locks are held
   elsewhere, the save still commits; only the separate rebuild waits.
+- Lock mode: a save neither waits for nor blocks a key-share lock on the organization row,
+  the lock that an insert referencing the organization takes.
 - Authorization: a non-owner is refused with no writes. An owner demoted while the change
   waits on the actor's access guard is refused under protection.
 - Routed scope: an employee created after the commit and before the rebuild is included.
@@ -148,6 +155,7 @@ Mutation checks. Each change failed the named tests:
 - No freshness check in the single read: the consumer test.
 - `FOR UPDATE` without `SKIP LOCKED`: the process-loss test.
 - Reset inside the save instead of an intent: 7 tests.
+- `FOR UPDATE` instead of `FOR NO KEY UPDATE` on the organization row: the lock-mode test.
 
 ### Database-free
 
@@ -159,7 +167,7 @@ Mutation checks. Each change failed the named tests:
   reads, and the batch exclusion.
 - `lib/jobs/work-balance.test.ts`: intents are recovered before the batch is selected, and a
   rebuild failure fails the job result.
-- `lib/auth/organization-update-guard.test.ts`: timezone updates through Better Auth are
+- `lib/auth/organization-timezone-update-guard.test.ts`: timezone updates through Better Auth are
   refused and other fields are admitted. The hook is wired in `auth.ts`.
 - `components/organization/organization-timezone-card.test.tsx`: a saved change shows the
   recalculation notice, and a failed save reverts the optimistic zone.
@@ -179,6 +187,9 @@ This slice closes on implementation. The items below are activation gates for #3
 - **Recovery latency.** A failed post-commit rebuild is retried by `cron:work-balance`, which
   runs every three hours. Balances stay hidden, not wrong, until then. The pilot should
   confirm whether that latency is acceptable, or whether the job should run more often.
+- **Persistent rebuild failure.** `attempts` is unbounded and nothing alerts on it. A
+  rebuild that keeps failing keeps the organization's balances hidden and out of the
+  refresh batch. Operations need an alert on `attempts` / `last_error` before activation.
 - **User timezone and multi-organization rebuilds** are #312. It will add a user-scoped
   intent across affected organizations to this lifecycle.
 - **Other configuration writers** (membership/roles, projects, categories, holidays, change

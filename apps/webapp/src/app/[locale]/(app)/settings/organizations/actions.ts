@@ -47,7 +47,10 @@ import {
 	updateMemberRoleSchema,
 	updateOrganizationSchema,
 } from "@/lib/validations/invitation";
-import { processWorkBalanceRebuildIntents } from "@/lib/work-balance/rebuild-intents";
+import {
+	failureMessage,
+	processWorkBalanceRebuildIntents,
+} from "@/lib/work-balance/rebuild-intents";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 import { isOrganizationFeature } from "./organization-features";
 
@@ -1341,8 +1344,7 @@ export async function updateOrganizationTimezone(
 									failures: [
 										{
 											organizationId,
-											error:
-												error instanceof Error ? error.message : String(error),
+											error: failureMessage(error),
 										},
 									],
 								}),

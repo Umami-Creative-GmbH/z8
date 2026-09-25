@@ -110,6 +110,8 @@ vi.mock("@/lib/timezone/organization-timezone-change", () => ({
 
 vi.mock("@/lib/work-balance/rebuild-intents", () => ({
 	processWorkBalanceRebuildIntents: processWorkBalanceRebuildIntentsMock,
+	failureMessage: (error: unknown) =>
+		error instanceof Error ? error.message : String(error),
 }));
 
 vi.mock("@/db", () => ({

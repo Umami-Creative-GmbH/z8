@@ -599,6 +599,20 @@ describeIntegration("organization timezone changes and balance rebuilds on Postg
 			expect(await resetEmployees()).toEqual(organizationEmployees);
 		});
 
+		it("does not block or wait on inserts that reference the organization", async () => {
+			// A balance refresh inserting period rows holds this key-share lock while it
+			// holds the work-balance lock the legacy reset needs.
+			await setAppend(null);
+			const referencingInsert = await holdLock(
+				"select 1 from organization where id = $1 for key share",
+				[ids.organization],
+			);
+
+			await expect(changeTimezone("America/New_York")).resolves.toMatchObject({ success: true });
+			await referencingInsert.release();
+			expect(await organizationTimezone()).toBe("America/New_York");
+		});
+
 		it("refuses a non-owner before any change", async () => {
 			await expect(changeTimezone("America/New_York", ids.adminUser)).resolves.toMatchObject({
 				success: false,

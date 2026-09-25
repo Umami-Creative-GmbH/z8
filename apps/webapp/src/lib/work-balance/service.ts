@@ -141,17 +141,17 @@ export async function getEmployeeWorkBalance(input: {
 	employeeId: string;
 	organizationId: string;
 }): Promise<EmployeeWorkBalancePayload | null> {
-	const [row, rebuildPending] = await Promise.all([
-		db.query.employeeWorkBalance.findFirst({
-			where: and(
-				eq(employeeWorkBalance.employeeId, input.employeeId),
-				eq(employeeWorkBalance.organizationId, input.organizationId),
-			),
-		}),
-		hasPendingWorkBalanceRebuild(input.organizationId),
-	]);
+	// Intent first: a rebuild deletes its intent in the transaction that resets
+	// the rows, so a row read afterwards is never an old-zone projection.
+	if (await hasPendingWorkBalanceRebuild(input.organizationId)) return null;
+	const row = await db.query.employeeWorkBalance.findFirst({
+		where: and(
+			eq(employeeWorkBalance.employeeId, input.employeeId),
+			eq(employeeWorkBalance.organizationId, input.organizationId),
+		),
+	});
 
-	if (!row || rebuildPending) return null;
+	if (!row) return null;
 	if (
 		isEmployeeWorkBalanceResetMarker({
 			computedFromDate: row.computedFromDate,
@@ -189,16 +189,14 @@ export async function getEmployeeWorkBalances(input: {
 	const employeeIds = [...new Set(input.employeeIds)];
 	if (employeeIds.length === 0) return new Map();
 
-	const [rows, rebuildPending] = await Promise.all([
-		db.query.employeeWorkBalance.findMany({
-			where: and(
-				eq(employeeWorkBalance.organizationId, input.organizationId),
-				inArray(employeeWorkBalance.employeeId, employeeIds),
-			),
-		}),
-		hasPendingWorkBalanceRebuild(input.organizationId),
-	]);
-	if (rebuildPending) return new Map();
+	// Intent first, as in getEmployeeWorkBalance.
+	if (await hasPendingWorkBalanceRebuild(input.organizationId)) return new Map();
+	const rows = await db.query.employeeWorkBalance.findMany({
+		where: and(
+			eq(employeeWorkBalance.organizationId, input.organizationId),
+			inArray(employeeWorkBalance.employeeId, employeeIds),
+		),
+	});
 
 	return new Map(
 		rows.flatMap((row) =>

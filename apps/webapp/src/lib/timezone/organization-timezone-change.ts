@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { member, organization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
+import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	acquireAdoptionGate,
 	acquireExclusiveOrganizationConfigurationGuard,
@@ -42,7 +43,6 @@ export async function changeOrganizationTimezone(input: {
 	organizationId: string;
 	actorUserId: string;
 	timezone: string;
-	requestedAt?: Date;
 }): Promise<OrganizationTimezoneChange> {
 	return db.transaction(async (transaction) => {
 		await acquireAdoptionGate(transaction, input.organizationId);
@@ -54,7 +54,10 @@ export async function changeOrganizationTimezone(input: {
 			.select({ timezone: organization.timezone })
 			.from(organization)
 			.where(eq(organization.id, input.organizationId))
-			.for("update");
+			// Not FOR UPDATE: that would also block the key-share locks every
+			// organization-referencing insert takes (e.g. a balance refresh
+			// holding its work-balance lock), which the legacy reset waits on.
+			.for("no key update");
 		if (!current) return { status: "not_found" };
 
 		const [membership] = await transaction
@@ -92,7 +95,7 @@ export async function changeOrganizationTimezone(input: {
 				organizationId: input.organizationId,
 				reason: "organization_timezone",
 				requestedBy: input.actorUserId,
-				requestedAt: input.requestedAt ?? new Date(),
+				requestedAt: dateFromInstant(systemClock.nowInstant()),
 			});
 			return { status: "changed", rebuild: "intent" };
 		}
