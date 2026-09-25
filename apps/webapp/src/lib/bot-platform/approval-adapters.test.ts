@@ -133,6 +133,12 @@ vi.mock("@/lib/bot-platform/i18n", () => ({
 	getBotTranslate: async () => (_key: string, fallback: string) => fallback,
 }));
 vi.mock("@/lib/logger", () => ({ createLogger: () => state.logger }));
+// Bound-card admission (#290) reads evidence and controls; it is exercised
+// against PostgreSQL in telegram/bound-approval.integration.test.ts. Here no
+// card is admitted, so every adapter must behave review-only.
+vi.mock("@/lib/approvals/presentation/bound-card", () => ({
+	prepareBoundAbsenceCard: async () => null,
+}));
 vi.mock("@/lib/app-url", () => ({
 	getOrganizationBaseUrl: async (organizationId: string) =>
 		`https://${organizationId}.z8.test`,
@@ -749,7 +755,12 @@ describe("Telegram webhook dispatcher after review-only cutover", () => {
 				typeof handleTelegramUpdate
 			>[1],
 		);
-		expect(state.acknowledge).toHaveBeenCalledExactlyOnceWith("token", "query");
+		// No committed or verified outcome, so the acknowledgment carries no text.
+		expect(state.acknowledge).toHaveBeenCalledExactlyOnceWith(
+			"token",
+			"query",
+			undefined,
+		);
 		expect(state.track).not.toHaveBeenCalled();
 	});
 });

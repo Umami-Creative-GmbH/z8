@@ -16,7 +16,7 @@ for `absence`) can now retain immutable evidence for its whole lifecycle:
 | **Submitted revision** (`approval_submitted_revision`) | Absence submission owner (`request-absence-effect.ts`, web and mobile) via `captureCanonicalAbsenceSubmissionEvidence` | Same transaction that inserts the absence, canonical record and workflow, after the workflow exists and before the compatibility mirror |
 | **Decision evidence** (`approval_decision_evidence`) | Transition engine calling the absence adapter's `recordDecisionEvidence` hook | Same transaction as the authoritative transition, terminal finalization and receipt, only for an executed (never replayed) `approve`/`reject` |
 | **Submission activation outcome** | Submission owner | When routing approves/rejects during submission, recorded with a `system` actor and the submission key as receipt |
-| **Reviewed binding** (`approval_review_binding`) | `issueReviewBinding` (no caller yet; for #289/#290) | Opaque handle for one recipient, assignment and submitted revision |
+| **Reviewed binding** (`approval_review_binding`) | `issueReviewBinding`, called by bound Telegram card preparation (#290) | Opaque handle for one recipient, assignment and submitted revision |
 
 Code lives in `apps/webapp/src/lib/approvals/evidence/`. Review preparation lives
 in `apps/webapp/src/lib/approvals/presentation/absence-review.ts`.
@@ -98,8 +98,9 @@ and an **Evidence history** timeline using persisted submission/decision instant
 Held requests disable approve/reject/bulk actions in the UI; the server holds them
 regardless.
 
-Bot cards are unchanged: they stay review-only (#270). Admitting actionable
-evidence-backed cards belongs to #290–#294.
+Bot cards stay review-only (#270) unless a provider is admitted. #290 adds
+the first actionable path (Telegram, canonical absences); see "Telegram absence
+cards" below. Discord, Teams and Slack remain #292–#294.
 
 ## Cleanup participation (before any capture)
 
@@ -467,3 +468,196 @@ activation evidence; privileged cleanup of one lifecycle; abandoned staging
 cleanup that never deletes an attached object; a slow upload re-recorded with
 its version after its row was swept. Unit seams: `travel-expense-facts.test.ts`,
 the upload route and submission action tests.
+
+## Telegram absence cards with reviewed bindings (#290 / T26)
+
+A canonical absence card on Telegram can carry Approve/Reject controls bound to
+the recipient's exact pending assignment and the current submitted revision.
+The decision is revalidated in the transaction that commits it, and every
+Telegram callback query is recorded as one invocation. Admission is **inactive
+for every organization** (migration `0081_approval_invocation.sql` inserts no
+control rows).
+
+```text
+sendApprovalMessageToManager(provider "telegram")
+  prepareApprovalPresentation → prepareBoundAbsenceCard   (presentation/bound-card.ts)
+    all gates hold?  no → unchanged review-only notice
+    issueReviewBinding(recipient, workflow, stage, assignment, revision)
+    facts from the submitted revision only; buttons carry {"a":"ba"|"br","b":<binding>}
+
+webhook update → handleBoundApprovalCallback               (telegram/approval-handler.ts)
+  invocation = telegram-bot:<bot id> + callback_query.id; update_id kept as delivery
+  attemptBoundBotApproval                                   (bot-platform/approval-decision.ts)
+    decideBoundAbsenceInvocation                            (server/absence-approvals.ts)
+      committed invocation? replay / conflict (no current state is read)
+      approved member; binding (org-scoped) must name this actor; absence by workflow
+      executeAbsenceDecisionInTransaction
+        rollout gate → invocation advisory lock → committed invocation? replay / conflict
+        provider admission reread (paused → nothing decided)
+        engine: receipt key from the invocation, exact bound assignment,
+                authority = active assignment only, adapter asserts the binding
+        decision evidence → approval_invocation row (same transaction)
+  edit the clicked, tracked message; answerCallbackQuery text = outcome title
+```
+
+### Admission gates
+
+A card is actionable only when **all** of these hold at preparation, otherwise
+the existing review-only notice is sent:
+
+- absence rollout mode `canonical` or `complete` (legacy-authoritative absences
+  have no bindable assignment and stay review-only);
+- `approval_evidence_control` = `capture` for `(organization, absence)`;
+- `approval_presentation_control` = `actionable` for
+  `(organization, absence, telegram)`; Slack is refused by a check constraint;
+- a pending workflow whose current stage has the recipient's pending assignment;
+- a current submitted revision that still matches the live absence (a
+  label-only category rename is shown as "current category name");
+- the essential labels (employee, category) exist and the card fits one
+  Telegram message (4096 characters). The fit is checked before a binding is
+  issued, so an oversized card leaves no unused binding.
+
+The card shows the request-time employee, requester and submitter where they
+differ, category, logical dates in the recipient's locale (never shifted by a
+zone), coverage (full days, genuine half-day periods, or entered times labelled
+"zone not recorded") and the submission instant in the recipient's zone and
+hour cycle, labelled with that zone. Notes stay in authenticated review. The
+review button opens the exact compatibility request (#289).
+
+### Invocation identity and replay
+
+- Identity is `(organization, telegram_callback_query v1, telegram-bot:<numeric
+  bot id from the token>, callback_query.id)`, kept opaque. `update_id` is
+  stored as `delivery_id` of the committing delivery and is not identity. A
+  callback without a query ID, sender or recognizable bot token is review-only.
+- The engine receipt key is
+  `approval-invocation:v1:<scheme>:<len>:<scope>:<len>:<id>`. Existing semantic
+  keys, fingerprints and the legacy replay path are unchanged; a new invocation
+  can never match an older semantic receipt.
+- `approval_invocation` binds actor, provider actor, binding, action and the
+  command fingerprint (`approval-invocation-command:v1:<sha256>`, including the
+  reason) to the decision evidence and receipt. Rows are immutable (update
+  trigger).
+- Receipt before fresh checks: a committed invocation with the same command
+  returns its original decision evidence (actor, time, assignment and request
+  outcome) before any binding, source or membership state is read, so later
+  re-linking or removal cannot turn a replay into "not found". The check is
+  repeated after the rollout gate under an advisory lock on the invocation,
+  which serializes concurrent deliveries. A different command (including
+  another actor presenting the same query) is `invocation_mismatch` (conflict).
+  A fresh invocation runs every current check.
+- **Pause reaches sent cards.** A fresh invocation rereads
+  `approval_presentation_control` under the rollout gate; unless it is still
+  `actionable` nothing is decided (`ApprovalInvocationNotAdmittedError`) and the
+  card turns into a review notice. Committed invocations keep replaying.
+- The actor must still be an approved member (checked before the decision and
+  again by the engine's actor resolver).
+- Bound decisions use the exact bound assignment and only active-assignment
+  authority. Eligible-manager and organization-management authority are never
+  invoked from a card (`BoundAssignmentNotCurrentError`); a decided, replaced or
+  materially changed request, or a binding for another recipient or tenant,
+  decides nothing and the card turns into a review notice.
+- Old unbound cards keep their historical-only path (review-only for absences).
+
+The outcome notice reports the request outcome as of the committed operation
+("Request approved/rejected"); otherwise the step's own outcome ("Approval
+recorded … still awaits further approval", "Rejection recorded … not final
+yet"), and for anything else only that a decision was recorded, with the
+persisted actor and time.
+
+The webhook still acknowledges Telegram before processing, and
+`answerCallbackQuery` carries text only for a committed or verified outcome. A
+failed decision logs and claims nothing; message updates are best effort and
+never change a committed decision. Guarantees begin at commit: a click lost
+after the HTTP acknowledgment but before commit is not recovered (no durable
+ingress is claimed); a redelivered or retried query replays.
+
+### Cleanup
+
+`deleteApprovalInTransaction` locks `approval_invocation`, deletes the
+lifecycle's invocations before decision evidence and reports them in
+`evidence.invocations` (and so in the platform-admin audit). Workflow, binding
+and decision FKs cascade. A late redelivery after a purge finds no binding and
+recreates nothing.
+
+### Activation
+
+Apply `0081` after `0070`/`0075`, then, as the authorized adoption writer and
+under the exclusive rollout lock (same scope as the evidence control):
+
+```sql
+begin;
+select pg_advisory_xact_lock(hashtextextended(
+  'approval-rollout:' || length(:org) || ':' || :org || ':7:absence', 0));
+insert into approval_presentation_control (organization_id, workflow_type, provider, mode)
+values (:org, 'absence', 'telegram', 'actionable')
+on conflict (organization_id, workflow_type, provider) do update set mode = excluded.mode;
+commit;
+```
+
+No application endpoint changes the mode.
+
+### Activation blockers (#290, unresolved)
+
+1. Apply `0081` through the authorized deployment (it has run only on the
+   disposable PostgreSQL 16 database).
+2. **Legacy authority.** Bindings exist only for canonical assignments, so
+   organizations whose absences are `legacy`, `shadow` or `ready` keep
+   review-only cards. A legacy binding representation is not implemented
+   (#384).
+3. **Routing and delivery (#291).** Real submission routing, durable delivery
+   intents, retries, complete message identity (tracking is still one row per
+   compatibility request, without the binding) and refreshing cards after web or
+   cross-platform decisions are not part of this slice. Until then a stale card
+   keeps its buttons; pressing one decides nothing.
+4. **Ingress.** No durable acceptance before the webhook acknowledgment.
+5. **Escalation race.** Revalidation after a web decision and after a material
+   change is verified; a real escalation transfer (#298) between rendering and
+   the click is covered by the same active-assignment check but not exercised.
+6. Everything in blockers 2–7 of the canonical evidence activation above
+   (in-flight classification, old binaries, #306 cleanup ordering, pilot #328).
+7. The approval write-boundary scanner cannot read sources on Windows; the new
+   raw-SQL delete was checked with the analyzer directly, the builder inserts in
+   `evidence/invocation.ts` were not.
+
+### Verification (#290)
+
+PostgreSQL 16 (`lib/telegram/bound-approval.integration.test.ts`, part of
+`test:approval-workflow-repository:integration`), driving the real
+`requestAbsenceEffect`, `sendApprovalMessageToManager`, `handleTelegramUpdate`,
+`approveAbsenceEffect` and `deleteApproval`. Only the session, billing guard,
+e-mail/notification fan-out, calendar queue, work-balance marking and the
+Telegram HTTP transport (`fetch`) are replaced. 16/16 passing:
+
+- the rendered card (German locale, Berlin zone, logical dates) and its binding
+  rows match the recipient's pending assignment and submitted revision;
+- approve commits one decision, receipt and invocation (delivery ID, provider
+  actor, binding) and retires the card; the same update and a new update with
+  the same query replay with no writes and the original time; the same query
+  with a different action conflicts; a new query after the decision decides
+  nothing;
+- reject; an intermediate stage approval reported as recorded, not final;
+- a web decision or an in-place material change after rendering decides
+  nothing and binds nothing;
+- another recipient's press, the same user through another organization's bot,
+  a missing query ID and an unrecognizable bot token decide nothing;
+- an old unbound card stays review-only; each gate (no control, `review_only`,
+  capture off, legacy rollout) yields a review-only card with no binding; the
+  Slack constraint;
+- an injected invocation insert failure rolls back the whole decision, and the
+  same query then decides freshly; three concurrent deliveries of one query
+  produce one decision and two replays; privileged cleanup removes and reports
+  the invocation and a late redelivery recreates nothing; the update trigger;
+- pausing the provider after two cards were sent: the uncommitted card decides
+  nothing, the committed press still replays;
+- a committed press replays after the absence was unlinked from its workflow,
+  and the same query presented by another actor is a conflict;
+- an oversized card is sent review-only and issues no binding;
+- an actor whose membership is no longer approved decides nothing.
+
+Unit seams: `evidence/invocation.test.ts` (key encoding, identity refusal,
+fingerprint), `presentation/bound-card.test.ts` (facts, zones, hour cycles,
+on-behalf roles, coverage, essential gaps), `telegram/bound-approval.test.ts`
+(callback codec, invocation envelope), `bot-platform/bound-decision-notice.test.ts`
+(request versus step outcome wording, replay label, review results),
+`maintenance.test.ts`.

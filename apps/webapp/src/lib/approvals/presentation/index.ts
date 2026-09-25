@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import {
+	type ApprovalPresentationProvider,
 	approvalRequest,
 	approvalStageAssignment,
 	approvalWorkflow,
@@ -11,6 +12,12 @@ import {
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
+import {
+	type ApprovalActionableCard,
+	type ApprovalCardDraft,
+	type ApprovalCardTarget,
+	prepareBoundAbsenceCard,
+} from "./bound-card";
 import { approvalReviewUrl } from "./review-navigation";
 
 const logger = createLogger("ApprovalPresentation");
@@ -25,17 +32,24 @@ export interface ApprovalReviewNotice {
 }
 
 /**
- * Early truthfulness cutover. Existing unbound cards have no provable submitted
+ * Early truthfulness cutover. Unbound cards have no provable submitted
  * revision. Do not load live names, categories, projects, receipts or endpoints
- * to stand in for that history. Admission of evidenced summaries belongs to the
- * later presentation/evidence slice, not a platform-specific fallback.
+ * to stand in for that history. With an explicit, admitted provider a canonical
+ * absence gets an evidence-backed card bound to the recipient's exact
+ * assignment and submitted revision (#290); everything else stays review-only.
  * Infrastructure failures propagate; lack of entitlement discloses nothing.
  */
 export async function prepareApprovalPresentation(input: {
 	approvalId: string;
 	recipientEmployeeId: string;
 	organizationId: string;
-}): Promise<ApprovalReviewNotice | { status: "undisclosable" }> {
+	/** Only a provider passed here can ever receive an actionable card. */
+	provider?: ApprovalPresentationProvider;
+	/** The provider's limits for an actionable card (e.g. message length). */
+	fits?: (draft: ApprovalCardDraft) => boolean;
+}): Promise<
+	ApprovalReviewNotice | ApprovalActionableCard | { status: "undisclosable" }
+> {
 	const request = await db.query.approvalRequest.findFirst({
 		where: and(
 			eq(approvalRequest.id, input.approvalId),
@@ -57,6 +71,7 @@ export async function prepareApprovalPresentation(input: {
 		columns: { id: true, workflowId: true, sequence: true, status: true },
 		limit: 2,
 	});
+	let canonicalTarget: ApprovalCardTarget | null = null;
 	if (stages.length > 0) {
 		const stage = stages[0];
 		if (stages.length !== 1 || stage.status !== "pending")
@@ -85,6 +100,13 @@ export async function prepareApprovalPresentation(input: {
 			columns: { id: true },
 		});
 		if (!assignment) return { status: "undisclosable" };
+		canonicalTarget = {
+			organizationId: input.organizationId,
+			recipientEmployeeId: input.recipientEmployeeId,
+			workflowId: workflow.id,
+			stageId: stage.id,
+			assignmentId: assignment.id,
+		};
 	} else if (request.metadata?.workflow || request.metadata?.stage) {
 		return { status: "undisclosable" };
 	}
@@ -111,6 +133,18 @@ export async function prepareApprovalPresentation(input: {
 	});
 	if (!display) return { status: "undisclosable" };
 	const t = await getBotTranslate(display.locale);
+	if (input.provider && canonicalTarget) {
+		const card = await prepareBoundAbsenceCard(db, {
+			target: canonicalTarget,
+			provider: input.provider,
+			approvalRequestId: request.id,
+			recipientUserId: recipient.userId,
+			display,
+			t,
+			...(input.fits ? { fits: input.fits } : {}),
+		});
+		if (card) return card;
+	}
 	logger.warn(
 		{
 			approvalId: input.approvalId,
@@ -137,6 +171,11 @@ export async function prepareApprovalPresentation(input: {
 	};
 }
 
+export type {
+	ApprovalActionableCard,
+	ApprovalCardDraft,
+	ApprovalCardFact,
+} from "./bound-card";
 export {
 	type AbsenceReviewEvidence,
 	buildAbsenceReviewSections,

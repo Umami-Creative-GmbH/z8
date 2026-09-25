@@ -25,6 +25,9 @@ function fakeTransaction(options: {
 		if (text.startsWith("delete from approval_escalation_transfer")) {
 			return [{ id: "transfer-2" }, { id: "transfer-1" }];
 		}
+		if (text.startsWith("delete from approval_invocation")) {
+			return [{ id: "invocation-1" }];
+		}
 		if (text.startsWith("delete from approval_decision_evidence")) {
 			return text.includes("authority = 'legacy'")
 				? [{ id: "legacy-decision-1" }]
@@ -76,6 +79,7 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 			submittedRevisions: ["revision-1"],
 			decisionEvidence: ["decision-1", "decision-2"],
 			reviewBindings: ["binding-1"],
+			invocations: ["invocation-1"],
 		});
 		expect(result.escalationTransfers).toEqual(["transfer-1", "transfer-2"]);
 		const deletes = statements
@@ -84,13 +88,14 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 			.map((text) => text.split(" ")[2]);
 		expect(deletes).toEqual([
 			"approval_escalation_transfer",
+			"approval_invocation",
 			"approval_decision_evidence",
 			"approval_review_binding",
 			"approval_submitted_revision",
 			"approval_workflow",
 		]);
 		for (const statement of statements.filter((candidate) =>
-			/^delete from approval_(escalation_transfer|decision_evidence|review_binding|submitted_revision)/.test(
+			/^delete from approval_(escalation_transfer|invocation|decision_evidence|review_binding|submitted_revision)/.test(
 				candidate.sql,
 			),
 		)) {
@@ -101,6 +106,7 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 		}
 		expect(statements[2]?.sql).toContain("approval_submitted_revision");
 		expect(statements[2]?.sql).toContain("approval_decision_evidence");
+		expect(statements[2]?.sql).toContain("approval_invocation");
 	});
 
 	it("touches no evidence when the lifecycle has no canonical workflow", async () => {
@@ -116,11 +122,12 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 			submittedRevisions: [],
 			decisionEvidence: [],
 			reviewBindings: [],
+			invocations: [],
 		});
 		expect(result.escalationTransfers).toEqual([]);
 		expect(
 			statements.some((statement) =>
-				/^delete from approval_(escalation_transfer|decision_evidence|review_binding|submitted_revision)/.test(
+				/^delete from approval_(escalation_transfer|invocation|decision_evidence|review_binding|submitted_revision)/.test(
 					statement.sql,
 				),
 			),
@@ -149,6 +156,7 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 			submittedRevisions: ["legacy-revision-1"],
 			decisionEvidence: ["legacy-decision-1"],
 			reviewBindings: [],
+			invocations: [],
 		});
 		const lifecycle = statements.find((statement) =>
 			statement.sql.includes("with recursive edges"),

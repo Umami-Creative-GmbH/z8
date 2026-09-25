@@ -414,6 +414,25 @@ export async function findDecisionEvidenceByReceipt(
 	return row ? parseDecisionEvidence(row, input) : null;
 }
 
+export async function findDecisionEvidenceById(
+	database: ApprovalDatabase,
+	input: { organizationId: string; workflowId: string; id: string },
+): Promise<DecisionEvidenceRecord | null> {
+	const rows = await database
+		.select()
+		.from(approvalDecisionEvidence)
+		.where(
+			and(
+				eq(approvalDecisionEvidence.organizationId, input.organizationId),
+				eq(approvalDecisionEvidence.workflowId, input.workflowId),
+				eq(approvalDecisionEvidence.id, input.id),
+			),
+		)
+		.limit(1);
+	const row = rows[0];
+	return row ? parseDecisionEvidence(row, input) : null;
+}
+
 export interface ReviewBindingTarget {
 	organizationId: string;
 	recipientEmployeeId: string;
@@ -479,6 +498,42 @@ export async function issueReviewBinding(
 	if (!id)
 		throw new ApprovalEvidenceError("invariant", { field: "review_binding" });
 	return id;
+}
+
+export interface ReviewBindingRecord extends ReviewBindingTarget {
+	id: string;
+}
+
+/**
+ * Organization-scoped handle lookup. The handle names a target; it is neither
+ * authority nor invocation identity, and every field is revalidated under the
+ * decision transaction.
+ */
+export async function loadReviewBinding(
+	database: ApprovalDatabase,
+	input: { organizationId: string; bindingId: string },
+): Promise<ReviewBindingRecord | null> {
+	const rows = await database
+		.select()
+		.from(approvalReviewBinding)
+		.where(
+			and(
+				eq(approvalReviewBinding.id, input.bindingId),
+				eq(approvalReviewBinding.organizationId, input.organizationId),
+			),
+		)
+		.limit(1);
+	const row = rows[0];
+	if (!row || row.organizationId !== input.organizationId) return null;
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		recipientEmployeeId: row.recipientEmployeeId,
+		workflowId: row.workflowId,
+		stageId: row.stageId,
+		assignmentId: row.assignmentId,
+		submittedRevisionId: row.submittedRevisionId,
+	};
 }
 
 /** Transaction-time check that a supplied handle names exactly this target. */

@@ -7,6 +7,8 @@ export type ApprovalEvidenceErrorCode =
 	| "material_change"
 	/** A supplied reviewed binding does not match the exact scoped decision target. */
 	| "binding_mismatch"
+	/** A known provider invocation arrived with a different bound command. */
+	| "invocation_mismatch"
 	/** Stored evidence contradicts its lifecycle identity or scope. */
 	| "invariant";
 
