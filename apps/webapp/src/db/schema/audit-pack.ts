@@ -1,6 +1,5 @@
 import { index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-import type { AppendAssuranceLimitationCode } from "@/lib/time-tracking/append-assurance";
 import { organization, user } from "../auth-schema";
 import { auditExportPackage } from "./audit-export";
 
@@ -13,7 +12,8 @@ export interface AuditPackAppendAssurance {
 	employeeCount: number;
 	wholeHistory: number;
 	none: number;
-	limitations: AppendAssuranceLimitationCode[];
+	/** Limitation codes as written by the generating release. */
+	limitations: string[];
 }
 
 export const auditPackStatusEnum = pgEnum("audit_pack_status", [
